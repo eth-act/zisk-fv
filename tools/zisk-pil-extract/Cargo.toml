@@ -1,0 +1,20 @@
+[package]
+name = "zisk-pil-extract"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+description = "Extract Lean4 constraint definitions from ZisK pilout files"
+
+# Standalone crate — not part of the parent zisk workspace.
+[workspace]
+
+[dependencies]
+anyhow = "1"
+bytes = "1"
+clap = { version = "4", features = ["derive"] }
+prost = "0.13"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[build-dependencies]
+prost-build = "0.13"
