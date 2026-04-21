@@ -1,4 +1,5 @@
 import Mathlib
+import ZiskFv.Fundamentals.PrattCertificate
 
 /-!
 Goldilocks field scaffold for ZisK circuits: `p = 2^64 - 2^32 + 1`.
@@ -16,7 +17,26 @@ namespace Goldilocks
 notation "FGL" => Fin GL_prime
 @[simp] lemma F_eq : FGL = Fin GL_prime := rfl
 
-lemma prime_GoldilocksPrime : Nat.Prime GL_prime := by native_decide
+/-- Pratt primality certificate for Goldilocks `p = 2^64 - 2^32 + 1`.
+
+`p - 1 = 2^32 · 3 · 5 · 17 · 257 · 65537`, and `7` is a primitive root mod `p`.
+
+Each prime factor is ≤ 65537 and handled by a `.small` sub-certificate that
+defers to `Nat.decidablePrime` (fast under `native_decide`). Replaces a
+`native_decide` on `Nat.Prime p` that trial-divides up to `sqrt p ≈ 2^32`
+and took ~6 minutes cold. -/
+def goldilocks_pratt : ZiskFv.Pratt :=
+  .step 18446744069414584321 7
+    [ (2,     32, .small 2)
+    , (3,      1, .small 3)
+    , (5,      1, .small 5)
+    , (17,     1, .small 17)
+    , (257,    1, .small 257)
+    , (65537,  1, .small 65537)
+    ]
+
+lemma prime_GoldilocksPrime : Nat.Prime GL_prime :=
+  ZiskFv.Pratt.verify_correct goldilocks_pratt (by native_decide)
 
 instance Fact_GLPrime : Fact (Nat.Prime GL_prime) := ⟨prime_GoldilocksPrime⟩
 instance : NeZero GL_prime := by constructor; decide
