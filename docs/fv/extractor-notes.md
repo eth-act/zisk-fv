@@ -87,9 +87,10 @@ oracle for the `BinaryAdd` extraction; `just verify-phase0` diffs the generated
 file against it (whitespace-normalized) and fails on drift.
 
 **Provenance.** The oracle was written by hand from the
-`state-machines/binary/pil/binary_add.pil` source, applying the rendering rules
-described in the "Contract" and "Pilout structure observations" sections
-above — not by copying generator output. Metadata lines are pass-through, not
+`vendor/zisk/state-machines/binary/pil/binary_add.pil` source, applying the
+rendering rules described in the "Contract" and "Pilout structure observations"
+sections above — not by copying generator output. Metadata lines are
+pass-through, not
 translation:
 - the `-- airgroup: …` line and the `-- witness column names:` block are
   derived from the pilout symbol table;

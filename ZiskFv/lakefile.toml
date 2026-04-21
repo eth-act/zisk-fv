@@ -17,5 +17,10 @@ name = "LeanZKCircuit"
 git = "https://github.com/NethermindEth/leanzkcircuit.git"
 rev = "v4.26.0"
 
+[[require]]
+name = "LeanRV"
+git = "https://github.com/NethermindEth/sail-riscv-lean"
+rev = "main"
+
 [[lean_lib]]
 name = "ZiskFv"

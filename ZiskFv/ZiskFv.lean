@@ -1,3 +1,11 @@
 import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Extraction.BinaryAdd
+import ZiskFv.Extraction.Main
+import ZiskFv.Airs.Binary.BinaryAdd
+import ZiskFv.Airs.Main
+import ZiskFv.Airs.OperationBus
+import ZiskFv.Spec.Add
+import ZiskFv.Equivalence.Add
+import ZiskFv.GoldenTraces.Add
 import ZiskFv.Spike

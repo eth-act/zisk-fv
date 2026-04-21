@@ -26,33 +26,33 @@ namespace BinaryAdd.extraction
 --   stage 2 col 2: im[1]
 
   @[simp]
-  def constraint_0 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  def constraint_0_every_row {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
     -- binary/pil/binary_add.pil:15 cout[0]*(1-cout[0])
     (((Circuit.main c (id := 1) (column := 8) (row := row) (rotation := 0)) * (1 - (Circuit.main c (id := 1) (column := 8) (row := row) (rotation := 0))))) = 0
 
   @[simp]
-  def constraint_1 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  def constraint_1_every_row {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
     -- binary/pil/binary_add.pil:20 (a[0]+b[0])-(((cout[0]*4294967296)+(c_chunks[1]*65536))+c_chunks[0])
     ((((Circuit.main c (id := 1) (column := 0) (row := row) (rotation := 0)) + (Circuit.main c (id := 1) (column := 2) (row := row) (rotation := 0))) - ((((Circuit.main c (id := 1) (column := 8) (row := row) (rotation := 0)) * 4294967296) + ((Circuit.main c (id := 1) (column := 5) (row := row) (rotation := 0)) * 65536)) + (Circuit.main c (id := 1) (column := 4) (row := row) (rotation := 0))))) = 0
 
   @[simp]
-  def constraint_2 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  def constraint_2_every_row {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
     -- binary/pil/binary_add.pil:15 cout[1]*(1-cout[1])
     (((Circuit.main c (id := 1) (column := 9) (row := row) (rotation := 0)) * (1 - (Circuit.main c (id := 1) (column := 9) (row := row) (rotation := 0))))) = 0
 
   @[simp]
-  def constraint_3 {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+  def constraint_3_every_row {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
     -- binary/pil/binary_add.pil:20 ((a[1]+b[1])+cout[0])-(((cout[1]*4294967296)+(c_chunks[3]*65536))+c_chunks[2])
     (((((Circuit.main c (id := 1) (column := 1) (row := row) (rotation := 0)) + (Circuit.main c (id := 1) (column := 3) (row := row) (rotation := 0))) + (Circuit.main c (id := 1) (column := 8) (row := row) (rotation := 0))) - ((((Circuit.main c (id := 1) (column := 9) (row := row) (rotation := 0)) * 4294967296) + ((Circuit.main c (id := 1) (column := 7) (row := row) (rotation := 0)) * 65536)) + (Circuit.main c (id := 1) (column := 6) (row := row) (rotation := 0))))) = 0
 
-  -- constraint_4 skipped: operand kind Challenge(Challenge { stage: 2, idx: 0 }) not yet supported by zisk-pil-extract
+  -- constraint_4_every_row skipped: constraint mixes F (witness cells) with ExtF (challenges/exposed values); cannot typecheck without coercion. The named-constraint layer should rebind it via OperationBusEntry
 
-  -- constraint_5 skipped: operand kind Challenge(Challenge { stage: 2, idx: 0 }) not yet supported by zisk-pil-extract
+  -- constraint_5_every_row skipped: constraint mixes F (witness cells) with ExtF (challenges/exposed values); cannot typecheck without coercion. The named-constraint layer should rebind it via OperationBusEntry
 
-  -- constraint_6 skipped: operand kind FixedCol(FixedCol { idx: 0, row_offset: 0 }) not yet supported by zisk-pil-extract
+  -- constraint_6_every_row skipped: constraint mixes F (witness cells) with ExtF (challenges/exposed values); cannot typecheck without coercion. The named-constraint layer should rebind it via OperationBusEntry
 
-  -- constraint_7 skipped: operand kind AirValue(AirValue { idx: 1 }) not yet supported by zisk-pil-extract
+  -- constraint_7_every_row skipped: constraint mixes F (witness cells) with ExtF (challenges/exposed values); cannot typecheck without coercion. The named-constraint layer should rebind it via OperationBusEntry
 
-  -- constraint_8 skipped: operand kind FixedCol(FixedCol { idx: 0, row_offset: 1 }) not yet supported by zisk-pil-extract
+  -- constraint_8_every_row skipped: constraint mixes F (witness cells) with ExtF (challenges/exposed values); cannot typecheck without coercion. The named-constraint layer should rebind it via OperationBusEntry
 
 end BinaryAdd.extraction

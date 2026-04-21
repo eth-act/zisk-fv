@@ -17,10 +17,10 @@ lemma cout_0_boolean
     {C : Type → Type → Type}
     [Circuit FGL FGL C]
     (c : C FGL FGL) (row : ℕ)
-    (h : constraint_0 (F := FGL) (ExtF := FGL) c row) :
+    (h : constraint_0_every_row (F := FGL) (ExtF := FGL) c row) :
     Circuit.main c (id := 1) (column := 8) (row := row) (rotation := 0) = (0 : FGL)
     ∨ Circuit.main c (id := 1) (column := 8) (row := row) (rotation := 0) = (1 : FGL) := by
-  unfold constraint_0 at h
+  unfold constraint_0_every_row at h
   grind
 
 end ZiskFv.Spike

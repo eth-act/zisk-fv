@@ -238,9 +238,15 @@ fn render_air(pilout: &PilOut, hit: AirHit<'_>, opts: &RenderOpts) -> Result<Str
                     error = %e,
                     "skipped constraint (unsupported); emitting stub"
                 );
+                let suffix = c
+                    .constraint
+                    .as_ref()
+                    .map(constraint_kind_suffix)
+                    .unwrap_or_else(|| "unknown_kind".to_string());
                 out.push_str(&format!(
-                    "  -- constraint_{} skipped: {}\n\n",
+                    "  -- constraint_{}_{} skipped: {}\n\n",
                     i,
+                    suffix,
                     e.to_string().replace('\n', " ")
                 ));
             }
@@ -250,6 +256,21 @@ fn render_air(pilout: &PilOut, hit: AirHit<'_>, opts: &RenderOpts) -> Result<Str
 
     out.push_str(&format!("end {}.extraction\n", sanitized));
     Ok(out)
+}
+
+/// Suffix for a `constraint_N` definition, reflecting the pilout row domain the
+/// constraint applies to. `EveryRow` / `FirstRow` / `LastRow` carry no payload;
+/// `EveryFrame` carries `(offsetMin, offsetMax)` so we encode both into the name
+/// to keep siblings distinct when an AIR emits multiple frames.
+fn constraint_kind_suffix(kind: &ConstraintKind) -> String {
+    match kind {
+        ConstraintKind::EveryRow(_) => "every_row".to_string(),
+        ConstraintKind::FirstRow(_) => "first_row".to_string(),
+        ConstraintKind::LastRow(_) => "last_row".to_string(),
+        ConstraintKind::EveryFrame(ef) => {
+            format!("every_frame_{}_{}", ef.offset_min, ef.offset_max)
+        }
+    }
 }
 
 fn render_constraint(
@@ -273,17 +294,76 @@ fn render_constraint(
         .ok_or_else(|| anyhow!("constraint #{} has no expression_idx", idx))?
         .idx as usize;
 
+    // Permutation/lookup constraints mix `F`-typed witness cells with
+    // `ExtF`-typed challenges and exposed values. Lean cannot synthesize
+    // `HMul F ExtF _` without a coercion (and openvm-fv's extractor leaves
+    // these as comments rather than emitting an ill-typed `def`). We do the
+    // same: detect `Challenge`/`AirValue`/`AirGroupValue` references and
+    // skip-stub the constraint. The named-constraint layer (Airs/) provides
+    // a hand-written replacement using `OperationBusEntry`.
+    if expr_uses_extf(pilout, air, expr_idx)? {
+        bail!(
+            "constraint mixes F (witness cells) with ExtF (challenges/exposed values); cannot typecheck without coercion. The named-constraint layer should rebind it via OperationBusEntry"
+        );
+    }
+
     let rendered = render_expr_by_idx(pilout, air, expr_idx)?;
+    let suffix = constraint_kind_suffix(kind);
     out.push_str("  @[simp]\n");
     out.push_str(&format!(
-        "  def constraint_{} {{C : Type → Type → Type}} {{F ExtF : Type}} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=\n",
-        idx
+        "  def constraint_{}_{} {{C : Type → Type → Type}} {{F ExtF : Type}} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=\n",
+        idx, suffix
     ));
     if let Some(line) = debug_line.as_deref().filter(|s| !s.is_empty()) {
         out.push_str(&format!("    -- {}\n", line));
     }
     out.push_str(&format!("    ({}) = 0\n\n", rendered));
     Ok(())
+}
+
+/// Walk an expression tree (via the pilout expression pool) and report
+/// whether any operand is an `ExtF`-typed reference (Challenge, AirValue,
+/// AirGroupValue). These cannot be mixed with witness cells in a single
+/// constraint definition without explicit coercions.
+fn expr_uses_extf(pilout: &PilOut, air: &Air, idx: usize) -> Result<bool> {
+    let expr = air
+        .expressions
+        .get(idx)
+        .ok_or_else(|| anyhow!("expression index {} out of range", idx))?;
+    let op = expr
+        .operation
+        .as_ref()
+        .ok_or_else(|| anyhow!("expression has no operation"))?;
+    match op {
+        ExprOp::Add(e) => {
+            Ok(operand_uses_extf(pilout, air, e.lhs.as_ref())?
+                || operand_uses_extf(pilout, air, e.rhs.as_ref())?)
+        }
+        ExprOp::Sub(e) => {
+            Ok(operand_uses_extf(pilout, air, e.lhs.as_ref())?
+                || operand_uses_extf(pilout, air, e.rhs.as_ref())?)
+        }
+        ExprOp::Mul(e) => {
+            Ok(operand_uses_extf(pilout, air, e.lhs.as_ref())?
+                || operand_uses_extf(pilout, air, e.rhs.as_ref())?)
+        }
+        ExprOp::Neg(e) => operand_uses_extf(pilout, air, e.value.as_ref()),
+    }
+}
+
+fn operand_uses_extf(pilout: &PilOut, air: &Air, operand: Option<&Operand>) -> Result<bool> {
+    let operand = operand.ok_or_else(|| anyhow!("operand missing"))?;
+    let kind = operand
+        .operand
+        .as_ref()
+        .ok_or_else(|| anyhow!("operand has no kind"))?;
+    match kind {
+        OperandKind::Challenge(_) | OperandKind::AirValue(_) | OperandKind::AirGroupValue(_) => {
+            Ok(true)
+        }
+        OperandKind::Expression(e) => expr_uses_extf(pilout, air, e.idx as usize),
+        _ => Ok(false),
+    }
 }
 
 fn render_expr_by_idx(pilout: &PilOut, air: &Air, idx: usize) -> Result<String> {
@@ -330,26 +410,94 @@ fn render_operand(pilout: &PilOut, air: &Air, operand: Option<&Operand>) -> Resu
         .ok_or_else(|| anyhow!("operand has no kind"))?;
     match kind {
         OperandKind::Constant(c) => Ok(format_basefield(&c.value)),
-        OperandKind::WitnessCol(w) => Ok(format!(
-            "(Circuit.main c (id := {}) (column := {}) (row := row) (rotation := {}))",
-            /* airgroup-level id used by openvm-fv is the stage index here: */
-            w.stage,
-            w.col_idx,
-            w.row_offset,
-        )),
+        OperandKind::WitnessCol(w) => {
+            if w.row_offset < 0 {
+                bail!(
+                    "WitnessCol with negative rowOffset {} not yet supported (Circuit.main rotation is ℕ); the named-constraint layer should rebind this cell explicitly",
+                    w.row_offset
+                );
+            }
+            Ok(format!(
+                "(Circuit.main c (id := {}) (column := {}) (row := row) (rotation := {}))",
+                /* airgroup-level id used by openvm-fv is the stage index here: */
+                w.stage,
+                w.col_idx,
+                w.row_offset,
+            ))
+        }
         OperandKind::Expression(e) => render_expr_by_idx(pilout, air, e.idx as usize),
-        OperandKind::FixedCol(_)
-        | OperandKind::PeriodicCol(_)
-        | OperandKind::Challenge(_)
+        OperandKind::FixedCol(f) => {
+            if f.row_offset < 0 {
+                bail!(
+                    "FixedCol with negative rowOffset {} not yet supported (Circuit.preprocessed rotation is ℕ)",
+                    f.row_offset
+                );
+            }
+            Ok(format!(
+                "(Circuit.preprocessed c (column := {}) (row := row) (rotation := {}))",
+                f.idx, f.row_offset,
+            ))
+        }
+        OperandKind::Challenge(ch) => {
+            let flat = flatten_challenge_index(pilout, ch.stage, ch.idx)?;
+            Ok(format!("(Circuit.challenge c (index := {}))", flat))
+        }
+        OperandKind::AirValue(av) => Ok(format!(
+            "(Circuit.exposed c (index := {}))",
+            av.idx,
+        )),
+        // AirGroupValue is shared across the AIRs of a group (e.g. bus
+        // accumulators carried between Main and BinaryAdd). LeanZKCircuit's
+        // OpenVM circuit class doesn't differentiate these from AIR-local
+        // exposed values, so we share the `Circuit.exposed` accessor and rely
+        // on the named-constraint layer (Airs/Constraints) to pick distinct
+        // identifiers. Index spaces overlap with AirValue — see
+        // docs/fv/extractor-notes.md.
+        OperandKind::AirGroupValue(av) => Ok(format!(
+            "(Circuit.exposed c (index := {}))",
+            av.idx,
+        )),
+        OperandKind::PeriodicCol(_)
         | OperandKind::ProofValue(_)
-        | OperandKind::AirGroupValue(_)
-        | OperandKind::AirValue(_)
         | OperandKind::PublicValue(_)
         | OperandKind::CustomCol(_) => bail!(
             "operand kind {:?} not yet supported by zisk-pil-extract",
             kind
         ),
     }
+}
+
+/// Flatten a pilout `Challenge { stage, idx }` into the linear index expected by
+/// `LeanZKCircuit.OpenVM.Circuit.challenge`. PIL2 numbers challenges by the
+/// stage at which they become *available* (1-based: stage 1 is the first
+/// witness commit), while `pilout.num_challenges[s]` lists challenges drawn
+/// during stage `s+1` and made available at stage `s+2`. So a `Challenge { stage
+/// = K }` references `num_challenges[K - 1]`. The flat index for the Lean
+/// `Circuit.challenge` accessor lays the challenges out
+/// `[available@stage1 ++ available@stage2 ++ …]`.
+fn flatten_challenge_index(pilout: &PilOut, stage: u32, idx: u32) -> Result<usize> {
+    if stage == 0 {
+        bail!("challenge stage 0 is invalid (no challenges are available before stage 1)");
+    }
+    let stage_idx = (stage - 1) as usize;
+    let per_stage = &pilout.num_challenges;
+    if stage_idx >= per_stage.len() {
+        bail!(
+            "challenge references stage {} but pilout num_challenges only covers up to stage {}",
+            stage,
+            per_stage.len()
+        );
+    }
+    let width = per_stage[stage_idx] as usize;
+    let idx = idx as usize;
+    if idx >= width {
+        bail!(
+            "challenge idx {} out of range for stage {} (width {})",
+            idx, stage, width
+        );
+    }
+    let base: usize = per_stage.iter().take(stage_idx).map(|w| *w as usize).sum();
+    Ok(base + idx)
 }
 
 /// Render a protobuf-encoded base-field constant (little-endian bytes) as a
@@ -456,5 +604,90 @@ mod tests {
     #[test]
     fn sanitize_empty() {
         assert_eq!(sanitize(""), "");
+    }
+
+    #[test]
+    fn constraint_kind_suffix_every_row() {
+        let k = ConstraintKind::EveryRow(pilout::constraint::EveryRow::default());
+        assert_eq!(constraint_kind_suffix(&k), "every_row");
+    }
+
+    #[test]
+    fn constraint_kind_suffix_first_row() {
+        let k = ConstraintKind::FirstRow(pilout::constraint::FirstRow::default());
+        assert_eq!(constraint_kind_suffix(&k), "first_row");
+    }
+
+    #[test]
+    fn constraint_kind_suffix_last_row() {
+        let k = ConstraintKind::LastRow(pilout::constraint::LastRow::default());
+        assert_eq!(constraint_kind_suffix(&k), "last_row");
+    }
+
+    #[test]
+    fn constraint_kind_suffix_every_frame_encodes_bounds() {
+        let ef = pilout::constraint::EveryFrame {
+            expression_idx: None,
+            offset_min: 2,
+            offset_max: 5,
+            debug_line: None,
+        };
+        assert_eq!(
+            constraint_kind_suffix(&ConstraintKind::EveryFrame(ef)),
+            "every_frame_2_5"
+        );
+    }
+
+    #[test]
+    fn flatten_challenge_index_single_stage() {
+        // num_challenges array index `s - 1` carries the count of
+        // `Challenge { stage = s }` challenges. Length 1 covers stage 1 only.
+        let pilout = PilOut {
+            num_challenges: vec![3],
+            ..Default::default()
+        };
+        assert_eq!(flatten_challenge_index(&pilout, 1, 0).unwrap(), 0);
+        assert_eq!(flatten_challenge_index(&pilout, 1, 2).unwrap(), 2);
+    }
+
+    #[test]
+    fn flatten_challenge_index_later_stage_offsets() {
+        // num_challenges = [2, 1, 4] declares 2 stage-1, 1 stage-2, 4 stage-3
+        // challenges. A `Challenge { stage = 3, idx = 0 }` skips past the
+        // stage-1 + stage-2 challenges (2 + 1 = 3).
+        let pilout = PilOut {
+            num_challenges: vec![2, 1, 4],
+            ..Default::default()
+        };
+        assert_eq!(flatten_challenge_index(&pilout, 3, 0).unwrap(), 3);
+        assert_eq!(flatten_challenge_index(&pilout, 3, 3).unwrap(), 6);
+    }
+
+    #[test]
+    fn flatten_challenge_index_zisk_pilout_shape() {
+        // Regression: ZisK's pilout has num_challenges = [0, 2] and
+        // BinaryAdd's permutation argument references Challenge { stage: 2 }.
+        // Verify the (stage 2, idx 0/1) → (flat 0/1) mapping holds.
+        let pilout = PilOut {
+            num_challenges: vec![0, 2],
+            ..Default::default()
+        };
+        assert_eq!(flatten_challenge_index(&pilout, 2, 0).unwrap(), 0);
+        assert_eq!(flatten_challenge_index(&pilout, 2, 1).unwrap(), 1);
+    }
+
+    #[test]
+    fn flatten_challenge_index_out_of_range_errors() {
+        let pilout = PilOut {
+            num_challenges: vec![2],
+            ..Default::default()
+        };
+        // Stage 0 is never legal — challenges must be drawn after at least one
+        // committed stage.
+        assert!(flatten_challenge_index(&pilout, 0, 0).is_err());
+        // idx ≥ width.
+        assert!(flatten_challenge_index(&pilout, 2, 2).is_err());
+        // Stage exceeds num_challenges.len().
+        assert!(flatten_challenge_index(&pilout, 3, 0).is_err());
     }
 }

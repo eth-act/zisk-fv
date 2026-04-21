@@ -1,0 +1,19 @@
+[package]
+name = "zisk-fv-harness"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Phase 1 ships a fixture-emitter that hard-codes the canonical
+# `3 + 5 = 8` ADD example. Live ZisK SDK integration (`ProverClient`,
+# `get_instance_trace`) is Phase 1.5: it requires the full proving stack
+# (`proofman_common`, `pil2-stark`, …) and a built RISC-V probe ELF.
+# See docs/fv/phase-1-handoff.md.
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+
+[[bin]]
+name = "zisk-fv-harness"
+path = "src/main.rs"
