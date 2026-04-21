@@ -14,30 +14,84 @@ Every later opcode is a variation on this proof. The metaplan calls Phase 1
 "the single most de-risking artifact in the plan" — that's why we prove ADD
 end-to-end rather than, say, just Main's opcode dispatch.
 
-Pre-execution reconnaissance (captured in `docs/fv/phase-1-recon.md`, to be
-written as Task 0) established:
+Pre-execution reconnaissance established five load-bearing facts with
+citations into `vendor/zisk/` (pinned at commit `48cf7ccef`):
 
-1. **Main AIR** encodes "this row runs opcode X" with an 8-bit `op` literal
-   column (`state-machines/main/pil/main.pil:136`) plus an `is_external_op`
-   flag that gates the operation-bus hop. ADD's operands live in
-   `a[RC]`, `b[RC]`, `c[RC]` (RC=2 limbs for 64-bit) and the row handshake
-   with `BinaryAdd` uses the 11-field bus schema from `pil/operations.pil:144`.
-2. **`zisk.pilout`'s Main AIR** has 146 constraints; the current extractor
-   renders ~30 and skips ~116 on `FixedCol` / `Challenge` / `AirValue`.
-   Extending the extractor is Phase 1's first hard gate.
-3. **openvm-fv's ADD chain** is a 6-layer stack — Extraction → Airs (with
-   `Valid_<Air>` structures via `#define_subair`) → Constraints (simp-lemma
-   bridge `constraint_N_of_extraction`) → `RV32D/add` (pure spec + Sail
-   equivalence) → `Spec/BaseALU` (circuit-correctness theorem) →
-   `Equivalence/BaseALU` (final theorem, composed via the `alu_non_imm_proof`
-   macro). We replicate the shape for RV64.
-4. **`LeanRV64D`** exists on `main` of `NethermindEth/sail-riscv-lean` but is
-   flagged Sail-auto-translated "work-in-progress". Real risk: we may need
-   to write lemmas or port fixes upstream. Track A budget accounts for this.
-5. **Golden-trace plumbing is free.** ZisK's SDK exposes
-   `ProverClient::get_instance_trace(instance_id, first_row, num_rows, offset)`
-   returning `Vec<proofman_common::RowInfo>`. We wire it, we don't build it.
-   Pattern: `examples/sha-hasher/host/bin/execute.rs` in the ZisK tree.
+### 1. Main AIR opcode dispatch
+
+`vendor/zisk/state-machines/main/pil/main.pil:135-136` declares the per-row
+opcode columns:
+
+```
+col witness bits(1) is_external_op;
+col witness bits(8) op;
+```
+
+Operands `a[RC]`, `b[RC]`, `c[RC]` are `bits(32)` with `RC = 2` (so two limbs
+covering 64 bits) at `main.pil:94-97`. The bus hop is gated by `is_external_op`
+in `assumes_operation(...)` at `main.pil:367-374` (one call per row, with
+`a := [a[0], (1-m32)*a[1]]`, `b := [b[0], (1-m32)*b[1]]`, `c := c`,
+`flag := flag`, `main_step := STEP * is_precompiled`,
+`extended_arg := jmp_offset1 * is_precompiled`, `sel := is_external_op`). The
+row-to-row pc handshake (`main.pil:393-404`) and the `op == 0/1` internal
+shortcuts complete the pic.
+
+Opcode literal for ADD: `OP_ADD = 0x0A` per `vendor/zisk/pil/opids.pil`.
+`OPERATION_BUS_ID = 5000` per `vendor/zisk/pil/opids.pil:2`.
+
+### 2. Pilout extractor coverage gap
+
+`zisk.pilout`'s `Main` AIR has 146 constraints. The Phase 0 extractor
+(`tools/zisk-pil-extract/src/main.rs:341-352`) renders `Constant`,
+`WitnessCol`, and `Expression` operand kinds; the other six kinds bail out.
+Empirically `Main` extraction without `--skip-unsupported` aborts immediately
+on the first `FixedCol` reference. Operand-kind coverage —
+`FixedCol` / `Challenge` / `AirValue` for ADD; `PeriodicCol`,
+`ProofValue`, `AirGroupValue`, `PublicValue`, `CustomCol` deferred — is
+Phase 1's first hard gate (Tasks 1, 2 below).
+
+Constraint kinds are also currently flattened: `EveryRow`, `FirstRow`,
+`LastRow`, `EveryFrame` all render as `constraint_N`
+(`render_constraint`, `main.rs:255-287`). Phase 1 separates them so the
+bridging proofs can quantify over the right row domain (Task 1).
+
+### 3. openvm-fv ADD chain shape (proof template)
+
+The reference proof for ADD is a 6-layer stack. We mirror it for RV64:
+
+| openvm-fv path | role |
+|---|---|
+| `OpenvmFv/Extraction/*.lean` | raw extracted constraints (numeric column indices) |
+| `OpenvmFv/Airs/Alu/BaseAluCoreAir.lean` | named-column `Valid_<Air>` structures (`#define_subair`) |
+| `OpenvmFv/Constraints/VmAirWrapper_alu.lean` | `constraint_N_of_extraction` simp bridges |
+| `OpenvmFv/RV32D/add.lean` | `PureSpec.AddInput`/`AddOutput` + `execute_RTYPE_add_pure_equiv` against Sail |
+| `OpenvmFv/Spec/BaseALU.lean` | circuit-correctness theorem (constraints ⇒ ALU semantics) |
+| `OpenvmFv/Equivalence/BaseALU.lean` | final per-opcode theorem composed via `alu_non_imm_proof` macro (`Equivalence.lean:153-157`) |
+
+Phase 1 hand-writes the macro expansion for ADD; macros come in Phase 2.
+
+### 4. LeanRV64D status
+
+`NethermindEth/sail-riscv-lean` `main` exposes `LeanRV64D`, but commits
+flag it as Sail-auto-translated WIP. We expect to discover and patch lemmas
+on contact. Track A budget assumes ≤4 hours of upstream churn before falling
+back to inlining what Track B Task 10 needs.
+
+### 5. Golden-trace plumbing
+
+ZisK's SDK exposes `ProverClient::get_instance_trace(instance_id, first_row,
+num_rows, offset)` returning `Vec<proofman_common::RowInfo>`. Reference call
+site: `vendor/zisk/examples/sha-hasher/host/bin/execute.rs`. Phase 1's harness
+(Task 13) wires this; it does not implement it.
+
+### ADD subset of Main constraints (working set)
+
+Tasks 3, 8 restrict Main extraction to constraints that are (a) wired by the
+ADD transpilation per `vendor/zisk/core/src/riscv2zisk_context.rs:631-643`
+(`create_register_op` calls `src_a("reg", rs1)`, `src_b("reg", rs2)`,
+`op("add")`, `store("reg", rd)`, `j(4, 4)`), or (b) gate the operation-bus
+hop. Concrete index list is established by Task 3 against a fresh
+`--list-constraints` dump and pinned in `Main.hand.lean`.
 
 ## Scope (strict)
 
@@ -74,7 +128,8 @@ written as Task 0) established:
   constraints hold on the real witness.
 - `justfile::verify-phase1` — new target. Runs extractor unit tests, the
   ADD harness, `lake build`, and the golden-trace fixture check.
-- `docs/fv/phase-1-recon.md` (Task 0) and `docs/fv/phase-1-handoff.md`.
+- Post-execution "Phase 1 status" section appended to this plan (see end of
+  file).
 
 **In scope — Track A (Sail-side, parallel, subagent-driven):**
 
@@ -99,9 +154,10 @@ written as Task 0) established:
 
 ### Track B — serial
 
-**Task 0: Recon doc.** Write `docs/fv/phase-1-recon.md` (≤600 words) capturing
-the four reconnaissance findings above with exact file:line citations. This
-is the frozen context the rest of the plan references.
+**Task 0: Lock in the recon.** The pre-execution reconnaissance lives in
+this document's "Pre-execution reconnaissance" section above. Task 0 is the
+acceptance check that those facts still hold against `vendor/zisk/@48cf7ccef`
+before any other task proceeds.
 
 **Task 1: Extractor — constraint-kind differentiation.** Today the extractor
 emits a single `constraint_N` regardless of `firstRow` / `lastRow` /
@@ -292,11 +348,10 @@ verify-phase1:
 
 `verify-phase0` becomes a subset (should still pass on regression).
 
-**Task 16: Handoff + memory.** `docs/fv/phase-1-handoff.md` (≤600 words)
-listing shipped artifacts, what we learned that contradicts the metaplan,
-per-opcode effort estimate for Phase 2 planning. Update
-`project_phase0_outcomes.md` → append or add `project_phase1_outcomes.md`;
-update `MEMORY.md` index.
+**Task 16: Handoff + memory.** Append a "Phase 1 status — CLOSED" section
+to this plan (shipped artifacts, what we learned that contradicts the
+metaplan, per-opcode effort estimate for Phase 2 planning). Add
+`project_phase1_outcomes.md`; update `MEMORY.md` index.
 
 ### Track A — parallel, subagent-driven
 
@@ -323,17 +378,15 @@ specifically; if Track A is behind, Task 10 inlines the minimum.
 
 ## Critical files to read / reference
 
-- **Recon substrate:** `docs/fv/phase-1-recon.md` (to be written Task 0).
+- **Recon substrate:** the "Pre-execution reconnaissance" section at the
+  top of this file.
 - **Extractor extension targets:** `tools/zisk-pil-extract/src/main.rs`
   functions `render_operand` (operand kinds) and `render_constraint`
   (constraint kinds).
-- **Main PIL source:** `state-machines/main/pil/main.pil:94-97, 135-136,
-  165, 367-374, 393-404` (from Task 0 recon). If the ZisK tree isn't
-  vendored as a submodule by Task 1, these references won't resolve on a
-  clone — so Task 1 also adds `vendor/zisk/` as a submodule pinned to the
-  commit the pilout was built from.
-- **Bus schema:** `pil/operations.pil:144` (also needs the submodule).
-- **Transpiler reference:** `/home/cody/zisk/core/src/riscv2zisk_context.rs`
+- **Main PIL source:** `vendor/zisk/state-machines/main/pil/main.pil:94-97,
+  135-136, 165, 367-374, 393-404`.
+- **Bus schema:** `vendor/zisk/pil/operations.pil:144`.
+- **Transpiler reference:** `vendor/zisk/core/src/riscv2zisk_context.rs`
   ADD case.
 - **Proof template:** `openvm-fv/OpenvmFv/Airs/Alu/BaseAluCoreAir.lean`,
   `openvm-fv/OpenvmFv/Constraints/VmAirWrapper_alu.lean`,
@@ -421,8 +474,9 @@ Specifically:
    `theorem equiv_ADD` has the metaplan-specified shape.
 4. Manual inspection: open `ZiskFv/GoldenTraces/Add.lean` — confirm the
    fixture is a concrete witness, not a stub.
-5. Read `docs/fv/phase-1-handoff.md` — confirm it lists metaplan revisions
-   needed and per-opcode effort estimate.
+5. Read the "Phase 1 status — CLOSED" section at the end of this plan —
+   confirm it lists metaplan revisions needed and per-opcode effort
+   estimate.
 
 ## Parallelism overview
 
@@ -441,3 +495,148 @@ out to be. First serious slip point is Task 11's compositional proof —
 that's where a week could silently become three. If Task 11 isn't showing
 progress after 3 days, stop and audit `LeanZKCircuit.Interactions`
 primitives directly.
+
+---
+
+## Phase 1 status — CLOSED 2026-04-21
+
+`just verify-phase1` exits 0 from a clean checkout in `/home/cody/zisk-fv/`.
+Commit `ad55fcb`.
+
+### What shipped
+
+- **Extractor extensions** (`tools/zisk-pil-extract/`):
+  - Constraint-kind differentiation: `every_row` / `first_row` / `last_row` /
+    `every_frame_<min>_<max>` suffixes (was: flattened `constraint_N`).
+  - New operand-kind support: `FixedCol`, `Challenge`, `AirValue`,
+    `AirGroupValue`. Negative `rowOffset` on `WitnessCol`/`FixedCol` and
+    constraints mixing `F` (witness cells) with `ExtF` (challenges, exposed
+    values) skip-stub instead of failing typecheck downstream.
+  - Pilout `Challenge { stage, idx }` → flat index via cumulative
+    `num_challenges[0..stage-1]` (PIL2's stage numbering is 1-based).
+  - 19 unit tests; integration via `verify-phase1` diff gate against hand
+    oracles for both `BinaryAdd` (4 of 9 constraints — same as Phase 0;
+    bus/permutation constraints stay stubbed and are abstracted in `Airs/`)
+    and `Main` (8 of 146; the ADD subset).
+- **`ZiskFv/`** Lean package, full ADD chain, zero `sorry`:
+  - `Fundamentals/Goldilocks.lean` — `NatCast FGL`, `BitVec 8/16/32` ↔ `FGL`
+    coercions, `isU64_chunks` / `isU64_lanes`, `chunks_to_bv64` /
+    `lanes_to_bv64`. Critical note: do NOT shadow `[Field FGL]` as a
+    proof-local instance variable (a comment guards against the trap that
+    bit `Spec.Add` once).
+  - `Fundamentals/Transpiler.lean` — `transpile_ADD` axiom over
+    `RV64State`. **Trusted** surface, mirrors
+    `vendor/zisk/core/src/riscv2zisk_context.rs::create_register_op`.
+  - `Extraction/{Main,BinaryAdd}.lean` (+ `.hand.lean` oracles) — auto-
+    regenerable from the extended extractor; diff-gated.
+  - `Airs/Main.lean`, `Airs/Binary/BinaryAdd.lean` — named-column
+    `Valid_<AIR>` structures (hand-written, not via `#define_subair`) with
+    9 named-constraint predicates and `constraint_N_of_extraction` iff
+    bridges (one per ADD-subset constraint).
+  - `Airs/OperationBus.lean` — 12-field `OperationBusEntry`; sender
+    (`opBus_row_Main`) and receiver (`opBus_row_BinaryAdd`) projections.
+    Specialized to `m32 = 0`; the 32-bit-op path is out of Phase 1 scope.
+  - `Spec/Add.lean` — `add_compositional`: the **first compositional proof**
+    in the codebase (Main + BinaryAdd + bus → Goldilocks ADD). Closes via
+    `linear_combination` over the two carry-chain equations.
+  - `Equivalence/Add.lean` — `equiv_ADD`: composes `add_compositional` with
+    the `transpile_ADD` axiom into the per-row equivalence statement.
+  - `GoldenTraces/Add.lean` — concrete witness for `3 + 5 = 8`. Four
+    `example`-level `decide` checks confirm chunk reassembly, lane
+    recombination, and both carry chains hold on the witness.
+- **`tools/zisk-fv-harness/`** — fixture-emitter Rust crate. Hardcodes the
+  canonical ADD example; emits `ZiskFv/GoldenTraces/Add.lean`. Two unit
+  tests cover the rendering and overflow-carry propagation.
+- **`vendor/zisk/`** — git submodule pinned at `48cf7ccef` (the commit
+  the vendored `pil/zisk.pilout` was built from).
+- **`justfile::verify-phase1`** — extractor + harness tests, regenerate +
+  diff both extractions, regenerate fixture, full `lake build`. Exits 0
+  from a clean checkout.
+
+### What was learned (relevant to the metaplan)
+
+- **The metaplan's "first compositional proof" was not the bottleneck the
+  metaplan feared.** `LeanZKCircuit.Interactions` was *not* needed for
+  Phase 1 — the whole permutation-argument primitive is cleanly abstracted
+  by `OperationBusEntry` (a plain projection-equality between two
+  field-valued tuples). The bus-equation constraints were skip-stubbed at
+  the extraction layer (mixed `F`/`ExtF` arithmetic doesn't typecheck),
+  but the named-constraint layer's `matches_entry` predicate replaces
+  them entirely without losing semantic content.
+- **`ring` over `Fin p` works — but can be silently shadowed.**
+  Declaring `[Field FGL]` as a proof-local variable creates a dummy
+  instance that defeats `ring`. The workaround is to declare it once
+  globally in `Fundamentals/Goldilocks.lean` and never re-quantify.
+- **Coefficients written as `4294967296 * 4294967296` close `ring`;
+  written as `18446744073709551616` (the same number) do not.** ring
+  treats them as different polynomial atoms, with no automatic
+  literal-product recognition. The `equiv_ADD` statement uses the
+  factored form for this reason.
+- **`(1 - 0) * x` over `Fin p` does not reduce to `x` via `simp` /
+  `ring_nf` / `decide`-based rewriting** in the contexts we tried. To
+  side-step this, `opBus_row_Main` is specialized to the `m32 = 0` case
+  rather than carrying the `(1 - m32) *` factor that the upstream PIL
+  uses. Generalizing this is Phase 1.5 work (relevant once the 32-bit
+  `*_W` opcodes are in scope).
+- **Track A's RV64D port shipped 47 ported files** (`ZiskFv/RV64D/*.lean`)
+  with `add.lean` syntactically clean (zero `sorry`) but unbuildable
+  pending `Fundamentals/Execution.lean` (a Phase 1.5 Track B deliverable
+  per the STATUS.md plan). 43 RV32-specific equivalence proofs went to
+  `sorry` — explicitly because they relied on RV32-width tactics, not
+  upstream `LeanRV64D` brokenness. One genuine upstream blocker:
+  `currentlyEnabled Ext_Zca` doesn't simp-normalize through `SailME.run`,
+  blocking `jump_to_equiv` and (transitively) every branch + jump
+  equivalence proof.
+- **`native_decide` for Goldilocks primality is still ~386s on a cold
+  build.** Not addressed in Phase 1 (was deemed Phase 2 work).
+
+### Per-opcode effort estimate (for Phase 2 planning)
+
+ADD took the structure work — reusable across all RV64 R-type ALU ops:
+- `Valid_Main` is fully reusable.
+- `Valid_BinaryAdd` is template for `Valid_BinaryAnd`, `Valid_BinaryOr`,
+  `Valid_BinaryXor`; the carry-chain predicates change but the
+  bus-projection shape doesn't.
+- `OperationBusEntry` and the named-constraint bridge pattern are reusable.
+- `Spec.Add` is the proof template — most opcodes will be a strict
+  one-equation rewrite of the carry-chain shape (subtraction is trivially
+  ADD-with-2's-complement; bitwise ops are independent per chunk).
+
+**Estimate: ~1 day per ALU opcode** once Phase 2 starts (vs. ~2 weeks
+for ADD's pioneering structure work). Macros (`alu_non_imm_proof`
+analogue) come once 3-5 opcodes have shipped and the pattern is
+crystallized.
+
+### What remains (Phase 1.5 backlog)
+
+In priority order:
+
+1. **`Fundamentals/Execution.lean`** — port openvm-fv's RV32 Execution
+   helpers (~420 lines) to RV64. Unblocks Track A's `RV64D/add.lean`
+   and the full Sail-side equivalence chain. Without this,
+   `Equivalence/Add.lean` is a "circuit-level" theorem rather than a
+   "Sail-equivalent" theorem.
+2. **Generalize `opBus_row_Main` to handle `m32 ∈ {0, 1}`.** Either
+   (a) prove the `(1 - m32) * x = x` lemma cleanly over `Fin p`, or
+   (b) keep the `m32 = 0` specialization and add a parallel `m32 = 1`
+   variant for the 32-bit-op path (covers `addw`, `subw`, etc.).
+3. **Replace the harness's hardcoded fixture with live `ProverClient`
+   output.** Requires a `cargo zisk build`-compiled probe ELF and the
+   `proofman_common` dependency tree. Per-instance trace dump verifies
+   that real ZisK witnesses satisfy our named-constraint model.
+4. **Goldilocks primality via Pratt certificate** — reduce the 386s
+   cold-build penalty.
+5. **Upstream sail-riscv-lean issue:** `currentlyEnabled Ext_Zca`
+   simp normalization through `SailME.run`. Blocks Track A's branch +
+   jump equivalence proofs.
+
+### Repro
+
+```bash
+cd /home/cody/zisk-fv
+git submodule update --init  # if vendor/zisk isn't checked out
+just verify-phase1
+```
+
+Expected: exit 0. First cold build is ~10 min (Goldilocks primality
+dominates).

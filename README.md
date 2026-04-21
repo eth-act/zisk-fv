@@ -13,8 +13,9 @@ package, and runs extractor unit tests.
 with Main-AIR extraction, the harness-emitted golden-trace fixture, and a
 full lake build covering the compositional ADD spec
 (`ZiskFv.Spec.Add.add_compositional`) and final equivalence
-(`ZiskFv.Equivalence.Add.equiv_ADD`) — both with zero `sorry`. See
-`docs/fv/phase-1-handoff.md` for the post-execution learnings and
+(`ZiskFv.Equivalence.Add.equiv_ADD`) — both with zero `sorry`. See the
+"Phase 1 status — CLOSED" section at the end of
+`ai_plans/zisk-fv-phase-1.md` for the post-execution learnings, and
 `ai_plans/zisk-fv-metaplan.md` for the overall plan.
 
 ## Layout
@@ -45,7 +46,8 @@ just verify-phase0
 ```
 
 First cold build takes roughly 10 minutes, dominated by `native_decide` on
-Goldilocks primality (see `docs/fv/phase-0-handoff.md` for why).
+Goldilocks primality (see `ai_plans/zisk-fv-phase-0.md` "What was learned"
+section for why).
 
 Requires `cargo`, `just`, and the Lean toolchain (`elan`). The Lake package
 pulls `mathlib` + `LeanZKCircuit` on first `lake update` (run automatically by

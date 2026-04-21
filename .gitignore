@@ -8,3 +8,7 @@
 # Scratch / OS
 /tmp
 .DS_Store
+
+# Local-dev convenience symlink (see CLAUDE.md). Points outside the repo;
+# do not commit.
+/openvm-fv
