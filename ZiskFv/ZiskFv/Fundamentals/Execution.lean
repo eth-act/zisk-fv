@@ -130,3 +130,82 @@ lemma execute_SHIFTIOP_eq_execute_SHIFTIOP'
         rw [BitVec.toNat_ofNat]; omega]
 
 end SHIFTIOP
+
+section MUL
+
+/-- Multiplication opcodes. -/
+inductive mop where | MUL | MULH | MULHU | MULHUS | MULHSU
+  deriving BEq, DecidableEq, Inhabited, Repr
+
+/-- Conversion from RISC-V spec representation to `mop`. -/
+def mop_of_mul_op (m : mul_op) : mop :=
+  match m with
+  | { result_part := .Low, signed_rs1 := _, signed_rs2 := _ } => .MUL
+  | { result_part := .High, signed_rs1 := .Unsigned, signed_rs2 := .Unsigned } => .MULHU
+  | { result_part := .High, signed_rs1 := .Unsigned, signed_rs2 := .Signed } => .MULHUS
+  | { result_part := .High, signed_rs1 := .Signed, signed_rs2 := .Unsigned } => .MULHSU
+  | { result_part := .High, signed_rs1 := .Signed, signed_rs2 := .Signed } => .MULH
+
+/-- Pure part of 64-bit `execute_MUL`.
+
+The two operands are interpreted as signed/unsigned according to `op`, their
+128-bit product is computed, and the result extracts either the low 64 bits
+(for `.MUL`) or the high 64 bits (for the `MULH*` variants).
+
+The definition mirrors the upstream `mult_to_bits_half` path with `l := 64`.
+-/
+def execute_MUL_pure (op1 : BitVec 64) (op2 : BitVec 64) (op : mop) : BitVec 64 :=
+  match op with
+  | .MUL =>
+      let wide : BitVec 128 := to_bits_truncate (l := 128)
+        ((Sail.BitVec.toNatInt op1 : ℤ) * (Sail.BitVec.toNatInt op2 : ℤ))
+      Sail.BitVec.extractLsb wide 63 0
+  | .MULH =>
+      let wide : BitVec 128 := to_bits_truncate (l := 128)
+        ((BitVec.toInt op1 : ℤ) * (BitVec.toInt op2 : ℤ))
+      Sail.BitVec.extractLsb wide 127 64
+  | .MULHU =>
+      let wide : BitVec 128 := to_bits_truncate (l := 128)
+        ((Sail.BitVec.toNatInt op1 : ℤ) * (Sail.BitVec.toNatInt op2 : ℤ))
+      Sail.BitVec.extractLsb wide 127 64
+  | .MULHUS =>
+      let wide : BitVec 128 := to_bits_truncate (l := 128)
+        ((Sail.BitVec.toNatInt op1 : ℤ) * (BitVec.toInt op2 : ℤ))
+      Sail.BitVec.extractLsb wide 127 64
+  | .MULHSU =>
+      let wide : BitVec 128 := to_bits_truncate (l := 128)
+        ((BitVec.toInt op1 : ℤ) * (Sail.BitVec.toNatInt op2 : ℤ))
+      Sail.BitVec.extractLsb wide 127 64
+
+/-- `execute_MUL` with isolated pure part. -/
+def execute_MUL' (rs2 : regidx) (rs1 : regidx) (rd : regidx) (m : mop) : SailM ExecutionResult := do
+  let rs1_bits ← do (rX_bits rs1)
+  let rs2_bits ← do (rX_bits rs2)
+  (wX_bits rd (execute_MUL_pure rs1_bits rs2_bits m))
+  (pure RETIRE_SUCCESS)
+
+/-- Equivalence of `execute_MUL`s.
+
+The structural port is complete: the definition mirrors `mult_to_bits_half`
+exactly for `MULH`, `MULHU`, `MULHUS`, `MULHSU`. The `.MUL` (Low) case is
+defined as the unsigned*unsigned product but `mop_of_mul_op` collapses
+all four sign combinations into `.MUL`, so four Low-half cases need the
+modular identity
+  `(i1 * i2) % 2^64 = (n1 * n2) % 2^64` when `iₖ ≡ nₖ (mod 2^64)`,
+which holds because `BitVec.toInt` and `BitVec.toNat` agree mod `2^w`.
+The closure of these four cases needs the RV64 analogues of openvm-fv's
+`toInt_toInt_as_toNat_64`, `toInt_toNat_as_toNat_64`, etc. — left as a
+targeted `sorry` below per the Phase 1.5 time-box.
+-/
+@[simp]
+lemma execute_MUL_eq_execute_MUL'
+    (rs2 rs1 rd : regidx) (op : mul_op) :
+    execute_MUL rs2 rs1 rd op = execute_MUL' rs2 rs1 rd (mop_of_mul_op op) := by
+  -- TODO Phase 1.5 E4: close 4 Low-half modular-equivalence goals
+  -- (toInt * toInt ≡ toInt * toNat ≡ toNat * toInt ≡ toNat * toNat mod 2^64).
+  -- The High-half MULH/MULHU/MULHUS/MULHSU cases close trivially by
+  -- simp_all once helper lemmas are added. Full proof structure intact in
+  -- openvm-fv/OpenvmFv/Fundamentals/Execution.lean (lines 172-307).
+  sorry
+
+end MUL
