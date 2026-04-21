@@ -93,11 +93,16 @@ theorem add_compositional
   obtain ⟨h_isext, h_op, h_m32, h_flag⟩ := h_mode
   -- The bus-match equalities reduce Main's a/b/c lanes to BinaryAdd's
   -- equivalents. After `simp only [opBus_row_*]` the bus rows expose their
-  -- field projections directly (the `m32 = 0` hypothesis is enforced by
-  -- `add_circuit_holds`; we don't need to peel a `(1 - m32) *` factor here
-  -- — see the docstring on `opBus_row_Main`).
+  -- field projections directly. For the `a_hi`/`b_hi` lanes the PIL-faithful
+  -- `opBus_row_Main` carries a `(1 - m32) *` factor (see docstring at
+  -- `OperationBus.lean`); rewriting `h_m32 : m.m32 r_main = 0` into the
+  -- match hypotheses and then firing the `one_sub_zero_mul` simp lemma
+  -- collapses `(1 - 0) * x` to `x`, restoring the form needed by the
+  -- downstream `rw`.
   simp only [opBus_row_Main, opBus_row_BinaryAdd]
     at h_match_op h_match_alo h_match_ahi h_match_blo h_match_bhi h_match_clo h_match_chi
+  rw [h_m32] at h_match_ahi h_match_bhi
+  simp only [one_sub_zero_mul] at h_match_ahi h_match_bhi
   -- Unfold carry-chain predicates explicitly (the `simp at` calls above
   -- happen on a simpset that includes the @[simp] lemmas, but the carry
   -- chains use both packed names and structure projections, so we expand

@@ -43,14 +43,17 @@ structure OperationBusEntry (F : Type) [Field F] where
   deriving BEq, DecidableEq, Inhabited
 
 /-- Main AIR's operation-bus emission for a given row. Mirrors the
-    `assumes_operation(...)` call at `vendor/zisk/state-machines/main/pil/main.pil:367-374`,
-    specialized to the **non-32-bit (m32 = 0)** case. The full PIL has
-    `a_hi := (1 - m32) * a_1` and similarly for `b_hi`, but Phase 1 only
-    proves the 64-bit ADD path; the `m32`-gated 32-bit-op path is out of
-    scope. The `m32 = 0` precondition is one of the explicit hypotheses of
-    `Spec.Add.add_circuit_holds`. The `c` lanes are forwarded verbatim;
-    `main_step`/`extended_arg` derive from precompile gating which we treat
-    as zero (`is_precompiled = 0` for plain ADD). -/
+    `assumes_operation(...)` call at
+    `vendor/zisk/state-machines/main/pil/main.pil:367-374`. PIL-faithful:
+    the `a_hi` and `b_hi` lanes carry the `(1 - m32) *` factor from PIL so
+    that 32-bit opcodes (`m32 = 1`) zero their high halves on the bus,
+    while 64-bit opcodes (`m32 = 0`) pass them through. Callers supply the
+    `m32` value via a constraint hypothesis (see
+    `Spec.Add.main_row_in_add_mode`, which pins `m32 = 0` for ADD);
+    downstream `simp` closes `(1 - 0) * x = x` via `one_sub_zero_mul` /
+    `Goldilocks.one_sub_m32_mul_of_eq_zero` below. The `c` lanes are
+    forwarded verbatim; `main_step`/`extended_arg` derive from precompile
+    gating which we treat as zero (`is_precompiled = 0` for plain ADD). -/
 @[simp]
 def opBus_row_Main {C : Type → Type → Type} {F ExtF : Type}
     [Field F] [Field ExtF] [Circuit F ExtF C]
@@ -58,15 +61,34 @@ def opBus_row_Main {C : Type → Type → Type} {F ExtF : Type}
   { multiplicity := m.is_external_op row
     op := m.op row
     a_lo := m.a_0 row
-    a_hi := m.a_1 row
+    a_hi := (1 - m.m32 row) * m.a_1 row
     b_lo := m.b_0 row
-    b_hi := m.b_1 row
+    b_hi := (1 - m.m32 row) * m.b_1 row
     c_lo := m.c_0 row
     c_hi := m.c_1 row
     flag := m.flag row
     main_step := 0
     extended_arg := 0
     extra_args_0 := 0 }
+
+/-- `(1 - 0) * x = x` — the trivial simp lemma that lets the bus
+    `a_hi`/`b_hi` factor collapse once a constraint hypothesis of the form
+    `m.m32 row = 0` has been rewritten in. Needed because generic `simp`
+    and `ring_nf` do not themselves fire `(1 - 0) * x ↦ x` under the
+    `Valid_Main` column accessors in the `OperationBusEntry` structure —
+    the `simp only` pass that unfolds `opBus_row_Main` needs this lemma
+    explicit, not merely `sub_zero`/`one_mul` in some order. -/
+@[simp]
+lemma one_sub_zero_mul {F : Type} [Field F] (x : F) :
+    (1 - (0 : F)) * x = x := by ring
+
+/-- Specialization of `one_sub_zero_mul` that takes the `m32 = 0` hypothesis
+    explicitly. Useful when the goal has `(1 - m.m32 row) * ...` and we
+    have `h : m.m32 row = 0` in scope: `rw [h]` followed by `simp`
+    (or `one_sub_zero_mul`) closes it. -/
+lemma one_sub_m32_mul_of_eq_zero {F : Type} [Field F]
+    {m32 : F} (h : m32 = 0) (x : F) : (1 - m32) * x = x := by
+  subst h; ring
 
 /-- BinaryAdd's operation-bus emission for a given row. Mirrors the
     `proves_operation(op: OP_ADD, a:, b:, c:)` call at
