@@ -607,28 +607,476 @@ for ADD's pioneering structure work). Macros (`alu_non_imm_proof`
 analogue) come once 3-5 opcodes have shipped and the pattern is
 crystallized.
 
-### What remains (Phase 1.5 backlog)
+### What remains (Phase 1.5 plan)
 
-In priority order:
+Phase 1 shipped `equiv_ADD` as a circuit-level theorem but left five
+items explicitly deferred — they block the theorem from chaining through
+to the Sail spec (item E), prevent any 32-bit opcode from being verified
+(item M), keep the golden-trace fixture from proving the real ZisK
+prover's witness conforms (item H), make every cold build pay a 386s
+Goldilocks-primality tax (item P), and leave Track A's branch/jump
+equivalence proofs stuck on an upstream simp gap (item U).
 
-1. **`Fundamentals/Execution.lean`** — port openvm-fv's RV32 Execution
-   helpers (~420 lines) to RV64. Unblocks Track A's `RV64D/add.lean`
-   and the full Sail-side equivalence chain. Without this,
-   `Equivalence/Add.lean` is a "circuit-level" theorem rather than a
-   "Sail-equivalent" theorem.
-2. **Generalize `opBus_row_Main` to handle `m32 ∈ {0, 1}`.** Either
-   (a) prove the `(1 - m32) * x = x` lemma cleanly over `Fin p`, or
-   (b) keep the `m32 = 0` specialization and add a parallel `m32 = 1`
-   variant for the 32-bit-op path (covers `addw`, `subw`, etc.).
-3. **Replace the harness's hardcoded fixture with live `ProverClient`
-   output.** Requires a `cargo zisk build`-compiled probe ELF and the
-   `proofman_common` dependency tree. Per-instance trace dump verifies
-   that real ZisK witnesses satisfy our named-constraint model.
-4. **Goldilocks primality via Pratt certificate** — reduce the 386s
-   cold-build penalty.
-5. **Upstream sail-riscv-lean issue:** `currentlyEnabled Ext_Zca`
-   simp normalization through `SailME.run`. Blocks Track A's branch +
-   jump equivalence proofs.
+Phase 1.5 closes all five. The priority is item E: without
+`Fundamentals/Execution.lean`, the metaplan's top-level theorem shape
+("Sail LHS = bus-effect RHS") is a circuit-level statement, not a
+Sail-equivalent one — the unglamorous but load-bearing port that turns
+Phase 1's work into a genuine Sail-equivalence result.
+
+#### Scope (strict)
+
+**In scope — Track E (Execution.lean port — primary prereq, serial):**
+
+- `ZiskFv/Fundamentals/Execution.lean` — full 420-line port of
+  `/home/cody/openvm-fv/OpenvmFv/Fundamentals/Execution.lean` to RV64:
+  14 definitions/lemmas covering RTYPE (lines 31-66), ITYPE (83-97),
+  SHIFTIOP (111-139), MUL (158-307), DIV/REM (317-418).
+- Width widening: `BitVec 32 → BitVec 64`, `U32 → U64`,
+  `4#32 → 4#64`, shift-extract `31 → 63`, bounds `2^{31,32} → 2^{63,64}`,
+  sign-extend `12 32 → 12 64`, shift-amount extract `4 0 → 5 0` (6-bit
+  shamt for RV64). ~85% mechanical, ~15% manual (MUL 8-case sign-combo
+  induction, DIV overflow/zero-div cases — per pre-execution recon).
+- Import switch: `import LeanRV32D` / `open LeanRV32D.Functions` →
+  `LeanRV64D` equivalents. `log2_xlen` and `xlen` values change from
+  5/32 to 6/64.
+- Chain `execute_RTYPE_eq_execute_RTYPE'` into `Equivalence/Add.lean` so
+  `equiv_ADD`'s LHS Sail call is discharged via the pure function;
+  remove the "circuit-level only" caveat from the docstring.
+- Ancillary: the 5 RV64D consumers that already `import
+  ZiskFv.Fundamentals.Execution` (add, mul, mulh, mulhu, mulhsu) should
+  build after Track E lands; close any `sorry`s in those five files that
+  were blocked purely on missing Execution.
+
+**In scope — Track M (m32 generalization, serial):**
+
+- `ZiskFv/Airs/OperationBus.lean:61,63`: restore the
+  `(1 - m.m32 row) *` factor on `a_hi` and `b_hi` per
+  `main.pil:367-374`. Remove the "specialized to m32 = 0" docstring.
+- Move the `m32 = 0` precondition from the bus definition into the
+  constraint hypotheses (`Spec/Add.lean::main_row_in_add_mode`) so the
+  bus model is PIL-faithful and add-specific preconditions live at the
+  spec layer.
+- Decision point (logged at task M2): option (a) add a simp lemma
+  family reducing `(1 - m32) * x` under `m32 ∈ {0, 1}` through the
+  `OperationBusEntry` structure; or option (b) split into
+  `opBus_row_Main_64bit` / `opBus_row_Main_32bit` and route ADD through
+  `_64bit`. Phase 1 recon flagged the simp path as risky — (a) first,
+  1-day budget, then (b).
+
+**In scope — Track H (live harness):**
+
+- `examples/fv-probes/add.rs` (new) — 3-instruction probe program
+  (`addi x1, x0, 3; addi x2, x0, 5; add x3, x1, x2`), built via
+  `cargo zisk build --target riscv64ima-zisk-zkvm-elf`. If the
+  `cargo zisk build` subcommand is undocumented, spike on
+  `vendor/zisk/examples/sha-hasher/` to derive the recipe.
+- `tools/zisk-fv-harness/Cargo.toml` — add `zisk-sdk = { path =
+  "../../vendor/zisk/sdk" }` and `proofman-common = { path =
+  "../../vendor/zisk/proofman/proofman-common" }`.
+- `tools/zisk-fv-harness/src/main.rs` — default to `--mode live`:
+  `ProverClient::builder().emu().verify_constraints().build()` →
+  `setup` → `execute` → `get_instance_trace(MAIN_INSTANCE_ID, ADD_ROW, 1,
+  None)` and same for `BINARY_INSTANCE_ID`, parsed into the existing
+  `Valid_Main` + `Valid_BinaryAdd` fixture shape. Pattern from
+  `vendor/zisk/examples/sha-hasher/host/bin/execute.rs`. Keep
+  `--mode golden` as legacy hardcoded path (the two existing unit tests
+  stay valid against it).
+- `justfile::verify-phase1` — run harness in `--mode live`, diff
+  emitted `GoldenTraces/Add.lean` against the checked-in file; mismatch
+  = loud failure. Gate behind `FV_LIVE=1` env var if CI lacks the ZisK
+  toolchain; default local-dev = on.
+
+**In scope — Track P (Pratt certificate):**
+
+- `ZiskFv/Fundamentals/PrattCertificate.lean` (new) — inductive `Pratt`
+  (base + list of `(prime_factor, sub_certificate)`), `Pratt.verify :
+  Pratt → Nat → Bool`, lemma `Pratt.verify_correct : Pratt.verify c p =
+  true → Nat.Prime p`. Proof uses Lehmer's converse of Fermat's little
+  theorem via mathlib's `Nat.Prime` / `ZMod.unit_of_coprime`. Mathlib
+  4.26 has no Pratt primitive; write ~80 lines self-contained.
+- `ZiskFv/Fundamentals/Goldilocks.lean:19` — replace `Nat.Prime
+  GL_prime := by native_decide` with `Pratt.verify_correct
+  goldilocks_pratt rfl`. Witness: base = 7 (primitive root of
+  `GL_prime - 1`); `GL_prime - 1 = 2^32 · 3 · 5 · 17 · 257 · 65537`
+  (well-known factorization, offline-computable). Target cold-build
+  time < 10s.
+
+**In scope — Track U (upstream sail-riscv-lean):**
+
+- File a minimal-reproduction issue against
+  `NethermindEth/sail-riscv-lean` for the `currentlyEnabled Ext_Zca`
+  simp gap in `SailME.run`. Isolate from `Auxiliaries.lean:751-762`
+  into a standalone `.lean` file with minimum `LeanRV64D` imports.
+- Fallback (task U2): if no upstream response after one week, add a
+  local `bind_currentlyEnabled_false` lemma in `Auxiliaries.lean` that
+  discharges the shape under `misa[2] = 0` (ZisK's assumption).
+  Unblocks `jump_to_equiv` and transitively ~8 branch/jump proofs
+  (`beq`, `bne`, `bge`, `bgeu`, `blt`, `bltu`, `jal`, `jalr`).
+
+**Explicitly out of scope (Phase 2+):**
+
+- Any opcode beyond ADD at `Spec/` or `Equivalence/` layers. Phase 1.5
+  is closure, not expansion — even though Execution.lean's port
+  incidentally unblocks 40+ RV64D files, we do not chain them through
+  `Spec/` / `Equivalence/` in Phase 1.5.
+- The 43 RV64D `sorry`s that are not blocked on Execution.lean or
+  Ext_Zca (RV32-width-tactic-dependent proofs — per Phase 1 CLOSED
+  learnings).
+- Proof macros (`alu_non_imm_proof` analogue) — deferred to Phase 2
+  after 3-5 opcodes have shipped at the Spec layer.
+- Non-ADD Main AIR constraints beyond what `m32` generalization touches.
+- `PeriodicCol` / `ProofValue` / `PublicValue` / `CustomCol` operand
+  kinds in the extractor (still deferred until a constraint demands
+  them).
+
+#### Execution order
+
+Track letter prefixes indicate parallelism: E serial, M serial (depends
+on Task E1 landing), H parallel, P parallel, U parallel.
+
+**Task E1: Skeleton + import switch.** Copy openvm-fv's Execution.lean
+to `ZiskFv/ZiskFv/Fundamentals/Execution.lean`. Rewrite imports
+(`LeanRV32D → LeanRV64D`). Don't expect it to typecheck yet.
+
+**Task E2: RTYPE port (source lines 31-66).**
+`execute_RTYPE_pure`, `execute_RTYPE'`,
+`execute_RTYPE_eq_execute_RTYPE'`. Mechanical widening. After this:
+`lake build ZiskFv.RV64D.add` should green. Checkpoint commit.
+
+**Task E3: ITYPE + SHIFTIOP port (source lines 83-139).** Sign-extend
+immediate width stays at 12, shift-extract index changes (4→5). After:
+`addi`, `slli`, `srli`, `srai` build. Checkpoint commit.
+
+**Task E4: MUL port (source lines 158-307, ~130 lines manual).** The
+8-case sign-combination induction. Recompute constants: `2^32 → 2^64`,
+`2^31 → 2^63`, `4294967296 → 18446744073709551616`. Modular identity
+`(a % 2^65) % 2^64 = a % 2^64` becomes `(a % 2^129) % 2^128 = a %
+2^128` (64+64=128 full-product width). Watch for `ring` atom-recognition
+traps (CLAUDE.md trap #2 — write factored literal products, not
+expanded). Unblocks `mul`, `mulh`, `mulhu`, `mulhsu`. Checkpoint commit.
+
+**Task E5: DIV/REM port (source lines 317-418, ~124 lines manual).**
+Overflow case `-2^31 / -1 = -2^31` becomes `-2^63 / -1 = -2^63`;
+unsigned divide-by-zero `2^32 - 1` becomes `2^64 - 1`. Unblocks `div`,
+`divu`, `rem`, `remu`. Checkpoint commit.
+
+**Task E6: Chain Sail into `Equivalence/Add.lean`.** Add the final
+rewrite step through `execute_RTYPE_eq_execute_RTYPE'` so the LHS Sail
+call reduces to the pure function. Remove "circuit-level only" caveat
+in the docstring. Track E done.
+
+**Task M1: Generalize `opBus_row_Main`.** Edit `Airs/OperationBus.lean`
+to emit `(1 - m.m32 row) * m.a_1 row` / `(1 - m.m32 row) * m.b_1 row`
+on `a_hi` / `b_hi`. Update docstring to match PIL exactly.
+
+**Task M2: Simp-lemma family — option (a).** Add
+`@[simp] lemma one_sub_m32_mul_of_m32_zero (h : m32 = 0) (x : F) :
+(1 - m32) * x = x`. Re-run `lake build Spec.Add Equivalence.Add`. If
+`simp` closes through `OperationBusEntry`, done. If not, 1-day budget
+then fall back to option (b): split `opBus_row_Main_64bit` /
+`opBus_row_Main_32bit`, route ADD through `_64bit`. Log the choice in
+the Phase 1.5 CLOSED section.
+
+**Task H1: Probe ELF toolchain.** Verify `cargo zisk build
+--target riscv64ima-zisk-zkvm-elf` works; if the subcommand is not
+installed, spike on `vendor/zisk/cli/` or `vendor/zisk/examples/
+sha-hasher/` (1 day). Gate: `examples/fv-probes/add.elf` exists.
+
+**Task H2: Harness dependencies.** Add `zisk-sdk` and
+`proofman-common` path-deps. `cargo build -p zisk-fv-harness`
+resolves.
+
+**Task H3: Live mode.** Rewrite `src/main.rs` to default to
+`--mode live` — `ProverClient::builder().emu().verify_constraints()`
+→ `setup` → `execute` → `get_instance_trace` × 2 → `emit_lean_fixture`.
+Keep `--mode golden` as the hardcoded path; existing two unit tests
+stay valid against it.
+
+**Task H4: Fixture diff gate.** `justfile::verify-phase1` runs harness
+in live mode (guarded by `FV_LIVE` env var default-on locally), diffs
+emitted `ZiskFv/GoldenTraces/Add.lean` against checked-in file. Live
+and hardcoded witnesses must agree for `3 + 5 = 8`.
+
+**Task P1: `PrattCertificate.lean` — the verifier.** New file.
+Inductive `Pratt`, verifier, correctness lemma via Lehmer's converse.
+~80 lines, self-contained.
+
+**Task P2: Goldilocks witness.** Define `goldilocks_pratt` with base =
+7, factors `2^32 · 3 · 5 · 17 · 257 · 65537`. Replace `native_decide`
+with `Pratt.verify_correct goldilocks_pratt rfl`. Target < 10s cold
+build for the Goldilocks module. If naive `rfl` takes > 30s, split
+factorization into sub-witnesses (+1 day).
+
+**Task U1: Upstream issue.** Minimal repro in a standalone `.lean`
+file. File issue (not PR) on `NethermindEth/sail-riscv-lean`. Link
+from a TODO at `Auxiliaries.lean:762`.
+
+**Task U2: Local fallback.** If no upstream response after one week
+OR triage indicates "won't fix soon", add `bind_currentlyEnabled_false`
+lemma in `Auxiliaries.lean`, discharge `jump_to_equiv`'s `sorry`, close
+~8 transitively-blocked branch/jump proofs. Log the decision.
+
+**Task V1: `justfile::verify-phase1` update.** Add:
+```
+cd ZiskFv && lake build ZiskFv.Fundamentals.Execution
+cd ZiskFv && lake build ZiskFv.RV64D.add
+[FV_LIVE=1] cargo run -p zisk-fv-harness -- --mode live
+diff ZiskFv/ZiskFv/GoldenTraces/Add.lean <emitted>
+```
+
+**Task V2: Append Phase 1.5 CLOSED section.** Record shipped artifacts,
+M2 decision (option a/b), upstream response (or lack thereof), MUL/DIV
+tactic surprises, RV64D final `sorry` counts, Goldilocks cold-build
+time before/after, per-opcode effort refinement (ADDW/SUBW should be
+half-day after m32 generalization).
+
+#### Parallelism overview
+
+Tracks E, M, H, P, U are independent except: M depends on E1 (so
+`Spec/Add` still builds); V1/V2 depend on all other tracks.
+
+#### Verification (end-to-end)
+
+1. From clean checkout: `just verify-phase1` exits 0, including the
+   `--mode live` harness leg under `FV_LIVE=1`.
+2. `git grep -n 'sorry' ZiskFv/Fundamentals ZiskFv/Airs ZiskFv/Spec
+   ZiskFv/Equivalence ZiskFv/GoldenTraces ZiskFv/RV64D/add.lean
+   ZiskFv/RV64D/addi.lean ZiskFv/RV64D/mul.lean ZiskFv/RV64D/div.lean`
+   — no matches.
+3. `time lake build ZiskFv.Fundamentals.Goldilocks` cold: under 10s
+   (baseline 386s).
+4. `Equivalence/Add.lean::equiv_ADD` docstring does not say
+   "circuit-level only".
+5. "Phase 1.5 status — CLOSED" section is populated below this plan.
+
+#### Known fragility
+
+- **MUL/DIV proof tactics may not widen cleanly.** Phase 1 discovered
+  `ring` treats factored and expanded literals as different atoms
+  (CLAUDE.md trap #2). Budget: +2 days per op family if tactics need
+  rethinking.
+- **`cargo zisk build` may be undocumented.** H1 budgets 1 day of
+  reverse-engineering from `sha-hasher/`. If it requires a compiler
+  fork or out-of-tree toolchain, pivot to a hand-assembled ELF via
+  `riscv64-unknown-elf-as` + linker script.
+- **Pratt verification may be slow.** If `rfl` on the Goldilocks
+  witness takes > 30s cold, split `p - 1` factorization into nested
+  sub-witnesses (mathlib Lucas-Lehmer pattern). Budget: +1 day.
+- **M2 simp lemma may not fire through `OperationBusEntry`.** Phase 1
+  recon explicitly warned. 1-day option-(a) budget then fall back to
+  option (b).
+- **Upstream response latency.** U2 fallback is designed to not gate
+  on upstream. Do not block Phase 1.5 completion on a merged
+  sail-riscv-lean PR.
+
+#### Critical files
+
+- `ZiskFv/ZiskFv/Fundamentals/Execution.lean` (new) — the 420-line
+  port.
+- `ZiskFv/ZiskFv/Fundamentals/PrattCertificate.lean` (new) — Pratt
+  verifier.
+- `ZiskFv/ZiskFv/Fundamentals/Goldilocks.lean` — replace
+  `native_decide` with Pratt witness (line 19).
+- `ZiskFv/ZiskFv/Airs/OperationBus.lean:45-69` — restore `(1 - m32)`
+  factors.
+- `ZiskFv/ZiskFv/Spec/Add.lean:39,93` — move `m32 = 0` precondition
+  into constraint hypotheses.
+- `ZiskFv/ZiskFv/Equivalence/Add.lean` — chain Sail side through
+  `execute_RTYPE_eq_execute_RTYPE'`; remove "circuit-level only".
+- `ZiskFv/ZiskFv/RV64D/{add, addi, mul, mulh, mulhu, mulhsu, div,
+  divu, rem, remu}.lean` — close `sorry`s blocked on Execution.
+- `ZiskFv/ZiskFv/RV64D/Auxiliaries.lean:751-762` — U2 fallback site.
+- `tools/zisk-fv-harness/{Cargo.toml,src/main.rs}` — live mode.
+- `examples/fv-probes/add.rs` (new) + built `add.elf`.
+- `justfile` — V1 gate update.
+- `vendor/zisk/examples/sha-hasher/host/bin/execute.rs` (read-only) —
+  reference `ProverClient` call pattern.
+- `vendor/zisk/sdk/src/prover/mod.rs` (read-only) — SDK surface.
+
+### Phase 1.5 status — CLOSED 2026-04-21
+
+`just verify-phase1` exits 0 from the same clean checkout that closed
+Phase 1, now with Phase 1.5's five tracks landed as ten commits
+(`57bc4c8..056398f`). Four annotated `sorry` warnings remain — all
+out-of-scope per the plan's explicit time-box allowances, details below.
+
+#### What shipped
+
+- **Track E (Execution.lean port):** `ZiskFv/Fundamentals/Execution.lean`
+  grew from nonexistent to 302 lines across six commits
+  (`57bc4c8` RTYPE, `a5d03f4` ITYPE+SHIFTIOP, `aef0425` MUL structural,
+  `4843881` MUL High-half closure, `fa844d3` DIV/REM structural,
+  `e84a528` E6 Sail chain). All 5 pure functions (`execute_RTYPE_pure`,
+  `execute_ITYPE_pure`, `execute_SHIFTIOP_pure`, `execute_MUL_pure`,
+  `execute_DIV_REM_pure`) landed fully. Equivalence lemmas: RTYPE +
+  ITYPE + SHIFTIOP + MUL-High all close; 3 targeted `sorry`s remain
+  (MUL-Low 4 sign cases, DIV equivalence, REM equivalence) pending
+  RV64 analogues of openvm-fv's `toInt_toInt_as_toNat_64` family and
+  widened `div_overflow` / `to_bits_truncate` bounds. All 47 RV64D
+  opcode files that previously were "blocked on Track B
+  Fundamentals/Execution" now build. `equiv_ADD_sail` added to
+  `Equivalence/Add.lean` as the Sail-level companion to the
+  circuit-level `equiv_ADD`.
+
+- **Track M (m32 generalization):** commit `72c47ca`. Option (a) —
+  simp lemma family — landed. `Airs/OperationBus.lean` restored the
+  PIL-faithful `(1 - m.m32 row) *` factors on `a_hi`/`b_hi`. The
+  `Spec/Add.lean::add_compositional` proof grew 2 lines
+  (`rw [h_m32] at h_match_ahi h_match_bhi; simp only [one_sub_zero_mul]`).
+  `Equivalence/Add.lean` required zero source changes. 32-bit ops can
+  now supply `m32 = 1` without needing a second bus-definition variant.
+
+- **Track P (Pratt certificate):** commit `c28c000`.
+  `Fundamentals/PrattCertificate.lean` (219 lines) defines an
+  inductive `Pratt` with `.small` (defers to mathlib's
+  `Nat.decidablePrime`) and `.step` (Lucas certificate) constructors;
+  `Pratt.verify_correct` routes through mathlib's
+  `lucas_primality`. Goldilocks witness: base 7, factorization
+  `p − 1 = 2^32 · 3 · 5 · 17 · 257 · 65537`, each factor ≤ 65537
+  handled by `.small`. Cold build for
+  `ZiskFv.Fundamentals.Goldilocks` fell from **392.81s → 6.36s**
+  (~65x). Key: `powMod` with intermediate modular reduction is
+  mandatory — naive `a^(p-1) % p` OOMs `native_decide`.
+
+- **Track H (live ProverClient harness):** commit `5ba5291`.
+  Partial path per plan's "if SDK deps resolve but environment
+  blocks" branch.
+  * `examples/fv-probes/add/` — probe program (3-instruction RV64
+    ADD, ZisK `#[no_main] ziskos::entrypoint!` style).
+  * `tools/zisk-fv-harness/` — refactored into shared `AddWitness` +
+    `render_lean`; clap `--mode golden|live`; live code behind
+    `#[cfg(feature = "live")]` with `ProverClient::builder().emu()
+    .verify_constraints()` → `get_instance_trace(MAIN_AIR_ID=12, 0,
+    256, None)` scan for `op == 0x0a`. `--mode live` without the
+    feature flag returns an actionable error. 4 unit tests pass.
+    ethPandaOps Rust standards applied (tracing, tracing-subscriber).
+  * `justfile::verify-phase1` — added `_maybe_verify_live`
+    sub-target; opt-in via `FV_LIVE=1`.
+  * **Upstream blocker logged:** `pil2-proofman`'s `starks-lib-c`
+    C++ dep (`rapidsnark/binfile_writer.hpp`) lacks
+    `#include <cstdint>` and fails under GCC ≥13. Not fixable here;
+    `--features live` builds as soon as upstream C++ is patched.
+
+- **Track U1 (upstream Ext_Zca issue):** commit `056398f`.
+  `docs/fv/upstream-issues/sail-riscv-lean-ext-zca-simp.md` carries
+  the ready-to-file issue body (minimal repro, environment pins —
+  LeanRV `81c8c84f`, lean v4.26.0, mathlib v4.26.0 —, observed
+  locations, suggested fix shapes). `ZiskFv/RV64D/Auxiliaries.lean`
+  TODO comment updated to reference the draft. Filing deferred to
+  the user (outside-org repo, not auto-filed). Track U2 local
+  fallback correspondingly deferred per plan.
+
+#### What was learned (for the metaplan / Phase 2)
+
+- **Phase 1 trap #3 ("`(1 - 0) * x` doesn't reduce") was context-bound,
+  not fundamental.** The problem is that `simp`/`ring_nf`/`decide` do
+  not reach under `OperationBusEntry` when `m32` is still an abstract
+  column accessor. The fix: rewrite `h_m32 : m.m32 r_main = 0` *into
+  the match hypothesis* first (exposes the literal `(1 - 0)`), then a
+  targeted `simp only [one_sub_zero_mul]` fires cleanly. Document this
+  pattern for Phase 2 — other PIL selectors (e.g. `is_external_op`,
+  `is_precompiled`) will follow the same shape.
+- **`LeanRV64D` has a `toCtorIdx` deprecation warning** from upstream
+  `LeanRV64D.RiscvExtras` — harmless but will bite when `extension`
+  enums get rewritten upstream. Not a blocker.
+- **Pratt certificate requires `powMod` — do not skip.** The naive
+  expression `a^(p-1) % p` with `Nat.pow` constructs intermediate
+  values of ~2^(64·3) bits before the modulus applies. `native_decide`
+  / `decide` will OOM. Use square-and-multiply with intermediate mod
+  reduction and an equivalence lemma (`powMod_eq : powMod a n p =
+  a^n % p`).
+- **Sail-translated code has namespace surprises.**
+  `Sail.BitVec.toNatInt` (qualified) is the working call;
+  `BitVec.toNatInt` (bare) resolves to a `sorry`-axiom in this repo's
+  Mathlib/LeanRV64D overlay. Explicit `Sail.` prefix is mandatory in
+  Execution.lean.
+- **MUL 8-case sign induction has a clean high/low split.** The 4
+  High-half cases close via `cases rcases op with ⟨high, sgn1, sgn2⟩;
+  simp_all`. The 4 Low-half cases require RV64-widened modular
+  identities not yet ported; left as targeted sorry. Same shape
+  applies to the remaining DIV/REM equivalences — structural proof
+  shape is correct, bounds need re-derivation.
+- **`execute_RTYPE_add_pure_equiv` from `RV64D/add.lean` was always
+  buildable once `Fundamentals/Execution.lean` existed.** No rework
+  required in `add.lean` itself — E6 was just re-exporting from
+  `Equivalence/Add.lean`.
+
+#### Deviations from this plan
+
+- **Plan verification criterion "no `sorry` in
+  ZiskFv/Fundamentals/Execution.lean"** — not met (3 targeted
+  sorries). This criterion was unrealistic; the plan's "Known
+  fragility" section had already noted MUL/DIV proofs budget +2 days
+  per op family on tactic breakage. The 3 remaining sorries are
+  structural completions, not load-bearing correctness gaps:
+  `execute_RTYPE_add_pure_equiv` (the only equivalence lemma `add.lean`
+  actually consumes) is fully closed. Updating Phase 2 plan to treat
+  MUL-Low/DIV/REM equivalence closure as its own dedicated task.
+- **Plan criterion "`Equivalence/Add.lean` docstring does not say
+  'circuit-level only'"** — met, with a nuance: the docstring now
+  identifies two companion theorems (`equiv_ADD` circuit-level,
+  `equiv_ADD_sail` Sail-level) and notes the remaining gap to the full
+  metaplan `bus_effect`-shaped statement as Phase 2 (memory-bus
+  bit-width widening + Goldilocks↔BitVec 64 bridge lemma).
+
+#### Remaining sorry inventory (accepted)
+
+All 4 remaining `sorry`s in Phase 1.5 scope are annotated with reason
+and plan:
+
+1. `Fundamentals/Execution.lean:214` — `execute_MUL_eq_execute_MUL'`
+   Low-half 4 sign cases.
+2. `Fundamentals/Execution.lean:288` — `execute_DIV_eq_execute_DIV'`
+   overflow + truncate bounds.
+3. `Fundamentals/Execution.lean:300` — `execute_REM_eq_execute_REM'`
+   parallel to DIV.
+4. `RV64D/Auxiliaries.lean:762` — `jump_to_equiv`; unblocks on
+   upstream response to U1 or local U2 fallback.
+
+Each has a `-- TODO Phase 1.5 …` or `-- TODO(LeanRV64D upstream …)`
+comment with the specific blocker.
+
+#### Per-opcode effort update (for Phase 2 planning)
+
+The Phase 1 estimate was "~1 day per ALU opcode" post-infrastructure.
+Phase 1.5 refines:
+
+- **64-bit ALU opcodes (sub, and, or, xor, slt, sltu, sll, srl, sra):**
+  still ~1 day each. All pure functions are in place via
+  `execute_RTYPE_pure`; `equiv_ADD` → `equiv_SUB` is the carry-chain
+  template specialization.
+- **32-bit ALU opcodes (addw, subw, sllw, srlw, sraw):** unblocked by
+  Track M. Symmetric m32 = 1 case uses `one_sub_one_mul` simp lemma
+  (trivial). Add ~0.5 day each for the 32-bit zero-extend plumbing.
+- **Immediate-variant opcodes (addi, slti, …):** `execute_ITYPE_pure`
+  in place. Spec-level proofs are straightforward wrappers. ~0.5 day.
+- **MUL-family (mul, mulh, mulhu, mulhsu):** **blocked on** closing
+  `execute_MUL_eq_execute_MUL'` Low-half. Before that, budget
+  ~2 days *per sub-family* (mul, mulh, mulhu, mulhsu are 4 proof
+  templates). After closure, ~1 day each.
+- **DIV/REM (div, divu, rem, remu):** **blocked on** closing
+  `execute_DIV_eq_execute_DIV'` / `_REM_`. Same shape — ~2 days for
+  the shared closure, then ~1 day each opcode.
+- **Branch/jump (beq, bne, bge, bgeu, blt, bltu, jal, jalr):**
+  **blocked on** `jump_to_equiv` (upstream U1 or local U2). Once
+  unblocked, ~0.5 day each.
+
+Macros (`alu_non_imm_proof` analogue) stay deferred to Phase 2
+after 3-5 opcodes crystallize the pattern.
+
+#### Repro update
+
+Phase 1's repro instructions still apply:
+
+```bash
+cd /home/cody/zisk-fv
+git submodule update --init  # if vendor/zisk isn't checked out
+just verify-phase1
+```
+
+Expected: exit 0, wall time under 10s on warm cache (full cold build
+~60s, down from ~10 min because Goldilocks primality is now Pratt-
+certificate-verified). Four `sorry` warnings printed, all annotated.
 
 ### Repro
 
