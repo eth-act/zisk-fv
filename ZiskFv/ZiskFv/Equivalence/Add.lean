@@ -6,30 +6,42 @@ import ZiskFv.Spec.Add
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.OperationBus
+import ZiskFv.RV64D.add
 
 /-!
-Final Phase 1 theorem: combine the trusted RV64 → Zisk transpilation
-contract (`ZiskFv.Trusted.transpile_ADD`) with the compositional ADD
-spec (`ZiskFv.Spec.Add.add_compositional`) to obtain an end-to-end
-statement: an RV64 ADD instruction executed on a state, when the resulting
-Main / BinaryAdd rows satisfy their named constraints and match on the
-operation bus, produces a Goldilocks `c`-packed value equal to the field
-sum of the source-register lanes (modulo the carry-out).
+End-to-end theorem for RV64 ADD. Combines:
 
-**Phase 1 deviation from the metaplan.** The metaplan calls for
+* the trusted RV64 → Zisk transpilation contract
+  (`ZiskFv.Trusted.transpile_ADD`),
+* the compositional ADD spec (`ZiskFv.Spec.Add.add_compositional`),
+* the Sail pure-function equivalence
+  (`PureSpec.execute_RTYPE_add_pure_equiv`, now buildable thanks to
+  Phase 1.5 `Fundamentals/Execution.lean`),
+
+into two companion theorems:
+
+* `equiv_ADD` — circuit-level. States the Goldilocks `c`-packed value
+  equals the field sum of source-register lanes (mod carry-out). This
+  is the compositional proof that was the centrepiece of Phase 1.
+* `equiv_ADD_sail` — Sail-level. States `LeanRV64D.execute_instruction`
+  on an RV64 ADD reduces to a concrete monadic block writing
+  `r1_val + r2_val` (BitVec 64, wraps mod 2^64) to `rd` and
+  advancing `nextPC`. Discharged via `execute_RTYPE_add_pure_equiv`.
+
+**Remaining gap to the full metaplan statement.** The metaplan target
+shape is
 
 ```
 execute_instruction (.RTYPE rs2 rs1 rd rop.ADD) state = (bus_effect exec_row mem_row state).2
 ```
 
-which composes the Sail RV64 spec (`LeanRV64D.execute_instruction`) with a
-ZisK `bus_effect` model. Phase 1 ships everything *except* the Sail-side
-glue: Track A's `RV64D/add.lean` (the `execute_RTYPE_add_pure_equiv`
-lemma) is built but doesn't typecheck because the corresponding
-`ZiskFv.Fundamentals.Execution` module — adapter for `LeanRV64D` —
-is a Phase 1.5 deliverable. The compositional theorem here uses the
-transpiled-row contract directly, not the Sail layer. See
-`docs/fv/phase-1-handoff.md` for the one-step gap.
+with `bus_effect` defined in `ZiskFv.RV64D.BusEffect`. The final chain
+requires: (1) promoting `BusEffect.lean` from its RV32-shaped 4-byte
+memory-bus entries to 8-byte entries (documented TODO in that file),
+and (2) a bridging lemma that identifies the Goldilocks-field `c_packed`
+with the BitVec 64 sum `r1_val + r2_val` Sail produces. Both are
+deferred to Phase 2 as documented in `ai_plans/zisk-fv-phase-1.md`
+under "Phase 1.5 status".
 -/
 
 namespace ZiskFv.Equivalence.Add
@@ -80,5 +92,33 @@ theorem equiv_ADD
   rw [h_compositional]
   unfold main_a_packed main_b_packed
   rw [h_a_lo, h_a_hi, h_b_lo, h_b_hi]
+
+/-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an RV64
+    ADD (`.RTYPE (r2, r1, rd, rop.ADD)`) reduces to the pure function
+    block supplied by `PureSpec.execute_RTYPE_add_pure`, given that the
+    source registers are readable and the PC is known. Wraps
+    `PureSpec.execute_RTYPE_add_pure_equiv` to expose the Sail chain at
+    this module's export surface — pairs with `equiv_ADD` above to
+    connect circuit constraints to Sail semantics. -/
+theorem equiv_ADD_sail
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (add_input : PureSpec.AddInput)
+    (r1 r2 rd : regidx)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok add_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok add_input.r2_val state)
+    (h_input_rd : add_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some add_input.PC) :
+    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
+      = let add_output := PureSpec.execute_RTYPE_add_pure add_input
+        (do
+          Sail.writeReg Register.nextPC add_output.nextPC
+          match add_output.rd with
+            | .some (rd, rd_val) => write_xreg rd rd_val
+            | .none => pure ()
+          pure (ExecutionResult.Retire_Success ())) state :=
+  PureSpec.execute_RTYPE_add_pure_equiv
+    add_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
 end ZiskFv.Equivalence.Add
