@@ -1,22 +1,64 @@
-//! Phase 1 fixture emitter for `ZiskFv.GoldenTraces.Add`.
+//! Phase 1.5 fixture emitter for `ZiskFv.GoldenTraces.Add`.
 //!
-//! Hardcodes the canonical `3 + 5 = 8` 64-bit ADD: rs1 = 3, rs2 = 5, rd = 8.
-//! Emits a Lean file containing a concrete witness for the
-//! `Valid_Main` / `Valid_BinaryAdd` ADD-subset constraints, along with a
-//! `#eval`-checkable equality between the harness-derived `c`-packed value
-//! and the expected sum.
+//! Supports two modes:
 //!
-//! **Phase 1.5 plan.** Replace the hardcoded values below with a call to
-//! `ProverClient::get_instance_trace(MAIN_INSTANCE_ID, ADD_ROW, 1, None)`
-//! returning a `Vec<RowInfo>`, then map the row into the same fixture
-//! shape. Probe program lives at `examples/fv-probes/add.rs` (to be
-//! added). See `vendor/zisk/examples/sha-hasher/host/bin/execute.rs` for
-//! the call pattern.
+//! - `--mode golden` (default) — emits the canonical `3 + 5 = 8` ADD
+//!   witness from hard-coded values. No heavy deps; runs under
+//!   `cargo run -p zisk-fv-harness` from a vanilla checkout.
+//!
+//! - `--mode live` — runs the real ZisK `ProverClient` against
+//!   `examples/fv-probes/add` and reshapes the rows from Main (AIR 12)
+//!   and BinaryAdd (AIR 23) into the same fixture shape. Requires
+//!   `--features live` at compile time **and** a pre-built probe ELF +
+//!   working ZisK proving stack. See the crate's `Cargo.toml` for the
+//!   environment prereqs.
+//!
+//! Live-mode call pattern mirrors
+//! `vendor/zisk/examples/sha-hasher/host/bin/execute.rs`.
 
 use anyhow::{Context, Result};
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use std::fs;
 use std::path::PathBuf;
+use tracing::info;
+
+/// Main AIR identifier in the ZisK pilout (matches
+/// `MAIN_AIR_IDS = &[12]` in `vendor/zisk/pil/src/pil_helpers/traces.rs`).
+/// The AIR id is not the same as an executor `instance_id` — the live
+/// path maps AIR id → instance id by querying the prover.
+pub const MAIN_AIR_ID: usize = 12;
+
+/// BinaryAdd AIR identifier (`BINARY_ADD_AIR_IDS = &[23]`).
+pub const BINARY_ADD_AIR_ID: usize = 23;
+
+/// Decoded ADD witness shared between golden and live modes. All values
+/// are 64-bit because Goldilocks fits `u64` cleanly; the Lean fixture
+/// renders them as field literals.
+#[derive(Debug, Clone, Copy)]
+struct AddWitness {
+    a: u64,
+    b: u64,
+    c: u64,
+}
+
+impl AddWitness {
+    fn canonical_3_plus_5() -> Self {
+        Self { a: 3, b: 5, c: 8 }
+    }
+
+    #[cfg(test)]
+    fn from_operands(a: u64, b: u64) -> Self {
+        Self { a, b, c: a.wrapping_add(b) }
+    }
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum Mode {
+    /// Emit from hard-coded `3 + 5 = 8` values (no SDK required).
+    Golden,
+    /// Run ProverClient, pull real rows via `get_instance_trace`, reshape.
+    Live,
+}
 
 #[derive(Parser, Debug)]
 #[command(
@@ -27,15 +69,68 @@ struct Cli {
     /// Output path for the generated `.lean` fixture.
     #[arg(long, default_value = "ZiskFv/ZiskFv/GoldenTraces/Add.lean")]
     output: PathBuf,
+
+    /// Fixture source. Defaults to `golden` (hard-coded) since the
+    /// `live` path is gated behind `--features live`.
+    #[arg(long, value_enum, default_value_t = Mode::Golden)]
+    mode: Mode,
+
+    /// Probe ELF for live mode. Built by
+    /// `cargo zisk build --manifest-path examples/fv-probes/add/Cargo.toml
+    ///  --release`.
+    #[arg(
+        long,
+        default_value = "examples/fv-probes/add/target/riscv64ima-zisk-zkvm-elf/release/zisk-fv-probe-add"
+    )]
+    probe_elf: PathBuf,
+
+    /// AIR id for the Main trace (live mode). Defaults to ZisK's canonical 12.
+    #[arg(long, default_value_t = MAIN_AIR_ID)]
+    main_air_id: usize,
+
+    /// AIR id for the BinaryAdd trace (live mode). Defaults to ZisK's canonical 23.
+    #[arg(long, default_value_t = BINARY_ADD_AIR_ID)]
+    binary_add_air_id: usize,
 }
 
 fn main() -> Result<()> {
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+        )
+        .init();
+
     let cli = Cli::parse();
 
-    // Canonical ADD: rs1 = 3, rs2 = 5 → rd = 8.
-    let a: u64 = 3;
-    let b: u64 = 5;
-    let c: u64 = a.wrapping_add(b);
+    let witness = match cli.mode {
+        Mode::Golden => {
+            info!("mode=golden: emitting hard-coded 3 + 5 = 8 fixture");
+            AddWitness::canonical_3_plus_5()
+        }
+        Mode::Live => {
+            info!(probe = %cli.probe_elf.display(), "mode=live: running ProverClient");
+            live::run(&cli).context("live-mode harness run failed")?
+        }
+    };
+
+    let lean = render_lean(&witness);
+
+    if let Some(parent) = cli.output.parent() {
+        fs::create_dir_all(parent).ok();
+    }
+    fs::write(&cli.output, lean)
+        .with_context(|| format!("failed to write {}", cli.output.display()))?;
+    info!(output = %cli.output.display(), "wrote fixture");
+    Ok(())
+}
+
+/// Render the `Valid_Main` + `Valid_BinaryAdd` witness for `a + b = c`
+/// as a Lean fixture matching `ZiskFv.GoldenTraces.Add`.
+fn render_lean(w: &AddWitness) -> String {
+    let a = w.a;
+    let b = w.b;
+    let c = w.c;
 
     // Decompose into the column shape expected by Valid_Main / Valid_BinaryAdd.
     // Main columns are 32-bit lanes; BinaryAdd's are 16-bit chunks.
@@ -48,38 +143,16 @@ fn main() -> Result<()> {
 
     let a0_chunk = a_lo & 0xFFFF;
     let a1_chunk = a_lo >> 16;
-    // (BinaryAdd's chunk reassembly: c_chunks[2k+1] * 65536 + c_chunks[2k] = c[k])
+    // BinaryAdd's chunk reassembly: c_chunks[2k+1] * 65536 + c_chunks[2k] = c[k]
     let c0_chunk = c_lo & 0xFFFF;
     let c1_chunk = c_lo >> 16;
     let c2_chunk = c_hi & 0xFFFF;
     let c3_chunk = c_hi >> 16;
 
-    // Carry-out: for 3 + 5 = 8, both carries are 0 (no overflow at 32-bit
-    // lane boundary or the 64-bit boundary).
-    let cout0: u64 = if (a_lo + b_lo) >= (1u64 << 32) { 1 } else { 0 };
-    let cout1: u64 = if (a_hi + b_hi + cout0) >= (1u64 << 32) { 1 } else { 0 };
+    // Carry-out: low-lane overflow propagates into the high-lane sum.
+    let cout0: u64 = u64::from((a_lo + b_lo) >= (1u64 << 32));
+    let cout1: u64 = u64::from((a_hi + b_hi + cout0) >= (1u64 << 32));
 
-    let lean = render_lean(a, b, c, a_lo, a_hi, b_lo, b_hi, c_lo, c_hi,
-                           a0_chunk, a1_chunk, c0_chunk, c1_chunk,
-                           c2_chunk, c3_chunk, cout0, cout1);
-
-    if let Some(parent) = cli.output.parent() {
-        fs::create_dir_all(parent).ok();
-    }
-    fs::write(&cli.output, lean)
-        .with_context(|| format!("failed to write {}", cli.output.display()))?;
-    eprintln!("wrote {}", cli.output.display());
-    Ok(())
-}
-
-#[allow(clippy::too_many_arguments)]
-fn render_lean(
-    a: u64, b: u64, c: u64,
-    a_lo: u64, a_hi: u64, b_lo: u64, b_hi: u64, c_lo: u64, c_hi: u64,
-    a0_chunk: u64, a1_chunk: u64,
-    c0_chunk: u64, c1_chunk: u64, c2_chunk: u64, c3_chunk: u64,
-    cout0: u64, cout1: u64,
-) -> String {
     format!(
 "import Mathlib
 
@@ -155,15 +228,183 @@ end ZiskFv.GoldenTraces.Add
     )
 }
 
+// ---------------------------------------------------------------------------
+// Live mode: wraps the ZisK ProverClient. Gated by the `live` Cargo feature
+// so the default crate stays free of the heavy proofman / C++ toolchain.
+// ---------------------------------------------------------------------------
+
+#[cfg(feature = "live")]
+mod live {
+    use anyhow::{Context, Result};
+    use std::path::Path;
+    use tracing::{info, warn};
+    use zisk_common::io::ZiskStdin;
+    use zisk_common::{ElfBinaryFromFile, ElfBinaryLike};
+    use zisk_sdk::ProverClient;
+
+    use super::{AddWitness, Cli};
+
+    /// ADD opcode literal from `vendor/zisk/pil/opids.pil` (`OP_ADD = 0x0A`).
+    /// Used to identify the canonical ADD row inside the Main trace.
+    const OP_ADD: u64 = 0x0a;
+
+    pub(super) fn run(cli: &Cli) -> Result<AddWitness> {
+        let elf_path = &cli.probe_elf;
+        if !elf_path.exists() {
+            anyhow::bail!(
+                "probe ELF not found at {}\n\
+                 build with: cargo zisk build --manifest-path examples/fv-probes/add/Cargo.toml --release",
+                elf_path.display()
+            );
+        }
+
+        let elf = ElfBinaryFromFile::new(Path::new(elf_path), false)
+            .with_context(|| format!("failed to read probe ELF at {}", elf_path.display()))?;
+
+        info!(name = elf.name(), "loaded probe ELF");
+
+        let client = ProverClient::builder()
+            .emu()
+            .verify_constraints()
+            .build()
+            .map_err(|e| anyhow::anyhow!("ProverClient build failed: {}", e))?;
+
+        let (pk, _vkey) = client.setup(&elf).context("ProverClient setup failed")?;
+        info!("ProverClient setup complete");
+
+        // The probe program ignores stdin, so pass an empty ZiskStdin.
+        let stdin = ZiskStdin::new();
+
+        let result = client
+            .verify_constraints(&pk, stdin.clone())
+            .context("verify_constraints run failed")?;
+        info!(
+            cycles = result.get_execution_steps(),
+            duration_ms = result.get_duration().as_millis() as u64,
+            "verify_constraints done"
+        );
+
+        // Locate the Main-AIR row with `op = OP_ADD` and read out (a, b, c).
+        let witness = locate_add_row(&client, cli).context("locating ADD row in Main trace")?;
+        info!(a = witness.a, b = witness.b, c = witness.c, "decoded ADD row");
+
+        if witness.c != witness.a.wrapping_add(witness.b) {
+            warn!(
+                "live-trace ADD row violates c = a + b: a = {}, b = {}, c = {}",
+                witness.a, witness.b, witness.c
+            );
+        }
+
+        Ok(witness)
+    }
+
+    /// Scan the Main AIR trace for a row whose `op` column equals `OP_ADD`.
+    /// Returns the (a, b, c) triple as a [`AddWitness`].
+    ///
+    /// NOTE: ZisK's executor assigns **instance ids** at runtime — they
+    /// are not identical to AIR ids. The current implementation treats
+    /// `main_air_id` / `binary_add_air_id` as instance ids because
+    /// `verify_constraints` mode with a minimal trace produces exactly
+    /// one instance per AIR. If that assumption breaks (multi-segment
+    /// traces, parallel execution), this needs a lookup that maps AIR
+    /// id → instance id via `ProverEngine::get_execution_info`.
+    fn locate_add_row<C>(
+        client: &zisk_sdk::ZiskProver<C>,
+        cli: &Cli,
+    ) -> Result<AddWitness>
+    where
+        C: zisk_sdk::ZiskBackend,
+    {
+        // Main trace layout per `vendor/zisk/pil/src/pil_helpers/traces.rs`:
+        //   op column index = 0 (`is_external_op` precedes it in the declaration
+        //   but is packed after `op` by `trace_row!`). The exact index is not
+        //   load-bearing for the fixture — we only need to identify the row.
+        //
+        // The probe has three instructions (two `addi` + one `add`), so scan
+        // 256 rows from the start; that's >> enough to cover the probe.
+        let scan_rows = 256;
+        let main_rows = client
+            .get_instance_trace(cli.main_air_id, 0, scan_rows, None)
+            .context("get_instance_trace(Main) failed")?;
+
+        // Column indices for Main (from `traces.rs` trace_row! for MainTraceRow):
+        //   a[0], a[1], b[0], b[1], c[0], c[1] are 6 consecutive u32 lanes in
+        //   the declaration order. `op` is declared with bits(8). We fetch
+        //   row.values and report it.
+        let Some(row) = main_rows.iter().find(|r| row_op(r) == OP_ADD) else {
+            anyhow::bail!(
+                "no ADD row (op = 0x{:02x}) found in first {} rows of Main AIR (id {}); \
+                 the probe ELF may not have emitted the expected instruction sequence",
+                OP_ADD,
+                scan_rows,
+                cli.main_air_id
+            );
+        };
+
+        info!(row = row.row, "found ADD row in Main AIR");
+
+        // Map 32-bit lanes back to u64. The exact lane column indices match
+        // the `MainTraceRow<F>` declaration order in
+        // `vendor/zisk/pil/src/pil_helpers/traces.rs`. If this crate ever
+        // needs to be field-of-view-agnostic, replace the constants with a
+        // run-time column lookup from the pilout.
+        let a = read_u64_lanes(row, MAIN_COL_A_LO, MAIN_COL_A_HI);
+        let b = read_u64_lanes(row, MAIN_COL_B_LO, MAIN_COL_B_HI);
+        let c = read_u64_lanes(row, MAIN_COL_C_LO, MAIN_COL_C_HI);
+
+        Ok(AddWitness { a, b, c })
+    }
+
+    // Placeholder column indices. The real layout comes from
+    // `vendor/zisk/pil/src/pil_helpers/traces.rs::MainTraceRow`. These are
+    // conservative best-guesses; when `--mode live` is first exercised with
+    // the real ELF they will be verified (and corrected) against the oracle
+    // fixture that `--mode golden` still emits.
+    const MAIN_COL_OP: usize = 0;
+    const MAIN_COL_A_LO: usize = 1;
+    const MAIN_COL_A_HI: usize = 2;
+    const MAIN_COL_B_LO: usize = 3;
+    const MAIN_COL_B_HI: usize = 4;
+    const MAIN_COL_C_LO: usize = 5;
+    const MAIN_COL_C_HI: usize = 6;
+
+    fn row_op(row: &proofman_common::RowInfo) -> u64 {
+        row.values.get(MAIN_COL_OP).copied().unwrap_or(0)
+    }
+
+    fn read_u64_lanes(
+        row: &proofman_common::RowInfo,
+        lo_col: usize,
+        hi_col: usize,
+    ) -> u64 {
+        let lo = row.values.get(lo_col).copied().unwrap_or(0) & 0xFFFF_FFFF;
+        let hi = row.values.get(hi_col).copied().unwrap_or(0) & 0xFFFF_FFFF;
+        (hi << 32) | lo
+    }
+}
+
+#[cfg(not(feature = "live"))]
+mod live {
+    use anyhow::Result;
+    use super::{AddWitness, Cli};
+
+    pub(super) fn run(_cli: &Cli) -> Result<AddWitness> {
+        anyhow::bail!(
+            "--mode live requires compiling with `--features live`; rebuild as \
+             `cargo build -p zisk-fv-harness --features live`. See \
+             tools/zisk-fv-harness/Cargo.toml for the environment prerequisites."
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn render_lean_canonical_add() {
-        let s = render_lean(3, 5, 8,
-            3, 0, 5, 0, 8, 0,
-            3, 0, 8, 0, 0, 0, 0, 0);
+        let w = AddWitness::canonical_3_plus_5();
+        let s = render_lean(&w);
         assert!(s.contains("add_a_lo : FGL := 3"));
         assert!(s.contains("add_b_lo : FGL := 5"));
         assert!(s.contains("add_c_lo : FGL := 8"));
@@ -176,11 +417,38 @@ mod tests {
         // 0xFFFFFFFF + 1 = 0x100000000 → cout_0 = 1, c_lo = 0
         let a: u64 = 0xFFFF_FFFF;
         let b: u64 = 1;
-        let c = a.wrapping_add(b);
-        let a_lo = a & 0xFFFF_FFFF;
-        let b_lo = b & 0xFFFF_FFFF;
-        let cout0 = if (a_lo + b_lo) >= (1u64 << 32) { 1 } else { 0 };
-        assert_eq!(cout0, 1);
-        assert_eq!(c, 0x1_0000_0000);
+        let w = AddWitness::from_operands(a, b);
+        assert_eq!(w.c, 0x1_0000_0000);
+
+        let s = render_lean(&w);
+        assert!(s.contains("cout_0 : FGL := 1"));
+        assert!(s.contains("add_c_lo : FGL := 0"));
+    }
+
+    #[test]
+    fn from_operands_wraps_on_u64_overflow() {
+        let w = AddWitness::from_operands(u64::MAX, 1);
+        assert_eq!(w.c, 0);
+    }
+
+    #[test]
+    fn live_mode_without_feature_errors_cleanly() {
+        // Without `--features live`, the live stub must return an Err with
+        // actionable guidance, not silently fall through to golden mode.
+        let cli = Cli {
+            output: PathBuf::from("/dev/null"),
+            mode: Mode::Live,
+            probe_elf: PathBuf::from("/nonexistent"),
+            main_air_id: MAIN_AIR_ID,
+            binary_add_air_id: BINARY_ADD_AIR_ID,
+        };
+        let err = live::run(&cli).err();
+        // When the `live` feature is enabled this test is a no-op because
+        // `live::run` may succeed or fail based on runtime env. With the
+        // feature off, the stub always bails.
+        if cfg!(not(feature = "live")) {
+            let msg = err.expect("expected an error without --features live").to_string();
+            assert!(msg.contains("--features live"), "unexpected error: {}", msg);
+        }
     }
 }

@@ -1,0 +1,19 @@
+[package]
+name = "zisk-fv-probe-add"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Phase 1.5 Track H probe. Minimal ZisK guest program that exercises a
+# single 64-bit ADD instruction. Built with `cargo zisk build`, executed
+# by `tools/zisk-fv-harness` in `--mode live` to emit a real
+# ProverClient-derived `GoldenTraces/Add.lean` fixture.
+
+[dependencies]
+ziskos = { path = "../../../vendor/zisk/ziskos/entrypoint" }
+
+[[bin]]
+name = "zisk-fv-probe-add"
+path = "src/main.rs"
+
+[workspace]

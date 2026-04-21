@@ -4,15 +4,45 @@ version = "0.1.0"
 edition = "2021"
 publish = false
 
-# Phase 1 ships a fixture-emitter that hard-codes the canonical
-# `3 + 5 = 8` ADD example. Live ZisK SDK integration (`ProverClient`,
-# `get_instance_trace`) is Phase 1.5: it requires the full proving stack
-# (`proofman_common`, `pil2-stark`, …) and a built RISC-V probe ELF.
-# See docs/fv/phase-1-handoff.md.
+# Phase 1.5 Track H: fixture-emitter for `ZiskFv.GoldenTraces.Add`.
+#
+# Default (`--mode golden`, no extra features): emits the canonical
+# `3 + 5 = 8` ADD fixture from hard-coded values. Zero heavy deps; the
+# diff gate in `justfile::verify-phase1` runs this unconditionally.
+#
+# Opt-in (`--mode live`, `--features live`): links the real ZisK SDK
+# path-deps (`zisk-sdk`, `proofman-common`) into the crate, runs
+# `ProverClient::builder().emu().verify_constraints()`, calls
+# `get_instance_trace` for MAIN (AIR id 12) and BINARY_ADD (AIR id 23),
+# reshapes rows into the same fixture shape, and writes `Add.lean`.
+#
+# `--features live` is **not** enabled by default because the SDK pulls
+# in the full pil2-proofman C++ stack (starks-lib-c, sppark, rapidsnark,
+# …) and MPI. Environment prerequisites for a successful `--features live`
+# build:
+#
+#   - a pre-built `libstarks.a` reachable via `STARKS_LIB_PATH` (see
+#     `docs/fv/harness-notes.md` — Phase 1.5 write-up pending).
+#   - a working `cargo zisk build` to produce `examples/fv-probes/add`'s
+#     ELF at `examples/fv-probes/add/target/riscv64ima-zisk-zkvm-elf/release/zisk-fv-probe-add`.
+#
+# `justfile::verify-phase1` only invokes live mode when `FV_LIVE=1`.
 
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+
+# Live SDK wiring — only pulled in under `--features live`. The path-deps
+# mirror the Phase 1.5 plan in `ai_plans/zisk-fv-phase-1.md`.
+zisk-sdk = { path = "../../vendor/zisk/sdk", optional = true }
+zisk-common = { path = "../../vendor/zisk/common", optional = true }
+proofman-common = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.1", optional = true }
+
+[features]
+default = []
+live = ["dep:zisk-sdk", "dep:zisk-common", "dep:proofman-common"]
 
 [[bin]]
 name = "zisk-fv-harness"

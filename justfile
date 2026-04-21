@@ -34,9 +34,27 @@ verify-phase1:
         --pilout {{pilout}} --air Main --only 8,9,15,16,17,18,19,24,30 \
         --output {{main_extr}}
     diff -w {{main_extr}} {{main_orcl}}
-    # Regenerate the golden-trace fixture.
+    # Regenerate the golden-trace fixture (hard-coded 3 + 5 = 8).
     cargo run --manifest-path tools/zisk-fv-harness/Cargo.toml -- \
-        --output {{fixture}}
+        --mode golden --output {{fixture}}
+    # Phase 1.5 Track H: opt-in live-mode regeneration + byte-diff against
+    # the checked-in fixture. Gated by FV_LIVE=1 because it requires the
+    # full ZisK proving stack + a pre-built probe ELF. See
+    # tools/zisk-fv-harness/Cargo.toml for environment prerequisites.
+    just _maybe_verify_live
     # Full Lean build: Goldilocks → Extraction → Airs → Spec → Equivalence
     # → GoldenTraces.
     cd ZiskFv && lake build
+
+# Internal: run the harness in live mode when FV_LIVE=1 and diff against
+# the hard-coded fixture; no-op otherwise. Split out because just's `{{ }}`
+# interpolation collides with bash's `${VAR:-default}` inline syntax.
+_maybe_verify_live:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "${FV_LIVE:-0}" = "1" ]; then
+        echo "FV_LIVE=1: running harness in live mode"
+        cargo run --manifest-path tools/zisk-fv-harness/Cargo.toml \
+            --features live -- --mode live --output /tmp/Add.live.lean
+        diff {{fixture}} /tmp/Add.live.lean
+    fi
