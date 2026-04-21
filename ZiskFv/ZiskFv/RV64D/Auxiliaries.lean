@@ -747,7 +747,12 @@ section ControlFlow
         cannot evaluate to a constant by the misa-bit-2-zero hypothesis alone.
         Closing this proof requires either an additional upstream `simp`-normal
         form for `(... ← currentlyEnabled Ext_Zca ...)` or hand-written bind
-        simplifications. Left as `sorry` for now. -/
+        simplifications. Issue body drafted at
+        `docs/fv/upstream-issues/sail-riscv-lean-ext-zca-simp.md`; file
+        against NethermindEth/sail-riscv-lean. Local fallback
+        (`bind_currentlyEnabled_Ext_Zca_of_misa_bit_zero` simp lemma) is
+        deferred per plan Task U2 until upstream response. Left as
+        `sorry` for now. -/
   lemma jump_to_equiv
     (h_misa : state.regs.get? Register.misa = .some misa_val)
     (h_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
