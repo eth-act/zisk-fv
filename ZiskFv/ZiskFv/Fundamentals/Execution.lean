@@ -201,12 +201,17 @@ targeted `sorry` below per the Phase 1.5 time-box.
 lemma execute_MUL_eq_execute_MUL'
     (rs2 rs1 rd : regidx) (op : mul_op) :
     execute_MUL rs2 rs1 rd op = execute_MUL' rs2 rs1 rd (mop_of_mul_op op) := by
-  -- TODO Phase 1.5 E4: close 4 Low-half modular-equivalence goals
-  -- (toInt * toInt ≡ toInt * toNat ≡ toNat * toInt ≡ toNat * toNat mod 2^64).
-  -- The High-half MULH/MULHU/MULHUS/MULHSU cases close trivially by
-  -- simp_all once helper lemmas are added. Full proof structure intact in
-  -- openvm-fv/OpenvmFv/Fundamentals/Execution.lean (lines 172-307).
-  sorry
+  rcases op with ⟨ high, sgn1, sgn2 ⟩
+  -- Split into High (4 cases: close by simp_all) and Low (4 cases: sorry).
+  rcases high with high | high
+  all_goals
+    rcases sgn2 with sgn2 | sgn2 <;> rcases sgn1 with sgn1 | sgn1 <;>
+      simp_all [execute_MUL', execute_MUL, execute_MUL_pure, mop_of_mul_op,
+                LeanRV64D.Functions.xlen, mult_to_bits_half]
+  -- Four Low-half goals remain: modular identity (i*i ≡ n*n mod 2^64).
+  -- TODO Phase 1.5 E4: close via RV64 analogues of openvm-fv's
+  -- toInt_toInt_as_toNat_64 / toInt_toNat_as_toNat_64 / toNat_toInt_as_toNat_64.
+  all_goals sorry
 
 end MUL
 
