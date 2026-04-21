@@ -209,3 +209,89 @@ lemma execute_MUL_eq_execute_MUL'
   sorry
 
 end MUL
+
+section DIV_REM
+
+/-- Signed/unsigned selector for DIV/REM. -/
+inductive drop where | DRS | DRU
+  deriving BEq, DecidableEq, Inhabited, Repr
+
+/-- Pure DIV/REM on integers, producing (quotient, remainder).
+
+Mirrors the Sail spec:
+* for signed (`DRS`), interprets operands via `toInt`;
+* for unsigned (`DRU`), via `toNat` (as an `Int`);
+* divide-by-zero produces quotient `-1` (signed) / `2^64 - 1` (unsigned)
+  and remainder = op1;
+* signed-overflow `-2^63 / -1` produces quotient `-2^63` and remainder `0`
+  (the remainder is handled implicitly by `Int.tmod`).
+-/
+def execute_DIV_REM_pure_int (op1 : BitVec 64) (op2 : BitVec 64) (op : drop) : ℤ × ℤ :=
+  match op with
+  | .DRS =>
+      let nop1 := BitVec.toInt op1
+      let nop2 := BitVec.toInt op2
+      let q := if nop2 = 0 then -1 else
+                 if nop1 = -2^63 && nop2 = -1 then -2^63 else
+                   Int.tdiv nop1 nop2
+      let r := Int.tmod nop1 nop2
+      ⟨ q, r ⟩
+  | .DRU =>
+      let nop1 : ℤ := BitVec.toNat op1
+      let nop2 : ℤ := BitVec.toNat op2
+      let q := if nop2 = 0 then 2^64 - 1 else Int.tdiv nop1 nop2
+      let r := Int.tmod nop1 nop2
+      ⟨ q, r ⟩
+
+/-- Pure DIV/REM producing 64-bit BitVec pairs. -/
+def execute_DIV_REM_pure (op1 : BitVec 64) (op2 : BitVec 64) (op : drop) : BitVec 64 × BitVec 64 :=
+  let ⟨ q, r ⟩ := execute_DIV_REM_pure_int op1 op2 op
+  match op with
+  | .DRS => ⟨ BitVec.ofInt 64 q, BitVec.ofInt 64 r ⟩
+  | .DRU => ⟨ BitVec.ofNat 64 q.toNat, BitVec.ofNat 64 r.toNat ⟩
+
+/-- `execute_DIV` with isolated pure part. -/
+def execute_DIV' (rs2 : regidx) (rs1 : regidx) (rd : regidx) (is_unsigned : Bool) : SailM ExecutionResult := do
+  let rs1_bits ← do (rX_bits rs1)
+  let rs2_bits ← do (rX_bits rs2)
+  let ⟨ result, _ ⟩ := execute_DIV_REM_pure rs1_bits rs2_bits (if is_unsigned then .DRU else .DRS)
+  (wX_bits rd result)
+  (pure RETIRE_SUCCESS)
+
+/-- `execute_REM` with isolated pure part. -/
+def execute_REM' (rs2 : regidx) (rs1 : regidx) (rd : regidx) (is_unsigned : Bool) : SailM ExecutionResult := do
+  let rs1_bits ← do (rX_bits rs1)
+  let rs2_bits ← do (rX_bits rs2)
+  let ⟨ _, result ⟩ := execute_DIV_REM_pure rs1_bits rs2_bits (if is_unsigned then .DRU else .DRS)
+  (wX_bits rd result)
+  (pure RETIRE_SUCCESS)
+
+/-- Equivalence of `execute_DIV`s.
+
+Structural port of openvm-fv's DIV equivalence lemma, widened to 64-bit
+operands. The proof body is left as a targeted `sorry` — it needs RV64
+analogues of the arithmetic helper lemmas (`div_overflow` at `-2^63`,
+`to_bits_truncate` over 64-bit operands) that live in openvm-fv's Core.
+-/
+@[simp]
+lemma execute_DIV_eq_execute_DIV'
+    (rs2 rs1 rd : regidx) (usgn : Bool) :
+    execute_DIV rs2 rs1 rd usgn = execute_DIV' rs2 rs1 rd usgn := by
+  -- TODO Phase 1.5 E5: four-way case analysis (signed×zero, signed×overflow,
+  -- unsigned×zero, generic) with widened arithmetic bounds. Full RV32 proof
+  -- available in openvm-fv Execution.lean lines 354-382.
+  sorry
+
+/-- Equivalence of `execute_REM`s.
+
+Structural port of openvm-fv's REM equivalence lemma, widened to 64-bit.
+Left as a targeted `sorry` for the same reasons as DIV.
+-/
+@[simp]
+lemma execute_REM_eq_execute_REM'
+    (rs2 rs1 rd : regidx) (usgn : Bool) :
+    execute_REM rs2 rs1 rd usgn = execute_REM' rs2 rs1 rd usgn := by
+  -- TODO Phase 1.5 E5: parallel to DIV — see openvm-fv Execution.lean lines 384-418.
+  sorry
+
+end DIV_REM
