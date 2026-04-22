@@ -348,6 +348,49 @@ axiom transpile_LD :
       ∧ row.a_lo = lane_lo (state.xreg rs1)
       ∧ row.a_hi = lane_hi (state.xreg rs1)
 
+/-- The axiomatic RV64 → Zisk row contract for LWU (Phase 2.5 D4c —
+    `LoadArchetype` sibling validation of LD).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:211` an RV64 LWU
+    `rd, imm(rs1)` transpiles via `self.load_op(i, "copyb", 4, 4)`
+    (line 803) to exactly one Zisk microinstruction. The row shape is
+    identical to LD's modulo the `ind_width` (4 vs 8), which does not
+    appear on the Main AIR columns this contract axiomatizes — it is
+    consumed downstream by the memory-bus `bytes` projection:
+    * `op = OP_COPYB = 1` — same Internal op as LD; constraint 9
+      still forces `c = b`, **no operation-bus hop**;
+    * `is_external_op = 0` — OpType::Internal;
+    * `zib.ind_width(4)` — memory operand width is 4 bytes. The
+      memory-bus entry's high 4 byte lanes (`x4..x7`) are zero for a
+      4-byte load (ZisK's memory SM emits zero in those lanes when
+      `bytes < 8`). This zeroing is a **bus-side** condition the
+      archetype carries as an explicit hypothesis (`h_bus_bytes_zero`
+      in `Spec/LoadWU.lean`) until Phase 3+ derives it from the
+      memory-SM permutation;
+    * `zib.src_a("reg", rs1, false)`, `zib.src_b("ind", imm, false)`,
+      `zib.store("reg", rd, false, false)`, `zib.j(4, 4)` — all
+      identical to LD.
+
+    **Trust basis.** Pure spec of `fn load_op` in
+    `riscv2zisk_context.rs:803` specialized to `width = 4`. Matches
+    `transpile_LD` on every column because the Main AIR does not
+    distinguish load widths — the width difference is carried on the
+    memory-bus entry and composed via the archetype's width-specific
+    zeroing hypothesis. LHU (width = 2) / LBU (width = 1) will mirror
+    this axiom with narrower zeroing hypotheses. -/
+axiom transpile_LWU :
+    ∀ (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_COPYB
+      ∧ row.is_external_op = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+
 /-- The axiomatic RV64 → Zisk row contract for SD (store doubleword).
 
     Per `vendor/zisk/core/src/riscv2zisk_context.rs:223` an RV64 SD
