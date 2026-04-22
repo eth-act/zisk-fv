@@ -1324,4 +1324,24 @@ axiom transpile_SLLIW :
       ∧ row.b_lo = shamt_w_b_lo shamt
       ∧ row.b_hi = 0
 
+/-- The axiomatic RV64 → Zisk row contract for SRLIW (Phase 3A H2c).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:196`. Same shape as
+    `transpile_SLLIW` with `OP_SLL_W → OP_SRL_W`. -/
+axiom transpile_SRLIW :
+    ∀ (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SRL_W
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 1
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = shamt_w_b_lo shamt
+      ∧ row.b_hi = 0
+
 end ZiskFv.Trusted
