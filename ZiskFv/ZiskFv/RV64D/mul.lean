@@ -30,9 +30,24 @@ namespace PureSpec
     : MulOutput
   }
 
+  /-- RV64 MUL Sail-equivalence (Phase 2 A5-RV64D).
+
+      Mirrors the RV64 `execute_RTYPE_add_pure_equiv` proof shape: strip the
+      monadic bindings via the register-read lemmas (`rX_read_xreg_equiv`,
+      `read_xreg_write_other_reg_state`), collapse `execute_MUL` to
+      `execute_MUL'` via the `Fundamentals/Execution` lemma
+      `execute_MUL_eq_execute_MUL'`, then case-split on `rd = 0` to hit the
+      `write_xreg` zero/non-zero lemmas.
+
+      Restricted to the MUL (`.MUL` / Low half) case: the input carries a
+      `result_part = .Low` discriminator so `mop_of_mul_op` collapses the
+      signed/unsigned combinations into the single `.MUL` flavour. MULH /
+      MULHU / MULHSU are covered by sibling archetypes (they will share
+      the same proof skeleton parameterized on the `mop` constructor). -/
   lemma execute_MULH_mul_pure_equiv
     (mul_input : MulInput)
     (r1 r2 rd: regidx)
+    (srs1 srs2 : Signedness)
     (h_input_r1: read_xreg (regidx_to_fin r1) state = EStateM.Result.ok (mul_input.r1_val) state)
     (h_input_r2: read_xreg (regidx_to_fin r2) state = EStateM.Result.ok (mul_input.r2_val) state)
     (h_input_rd: mul_input.rd = regidx_to_fin rd)
@@ -51,6 +66,50 @@ namespace PureSpec
         | .none => pure ()
       pure (ExecutionResult.Retire_Success ())
     ) state
-  := sorry
+  := by
+    -- Mirror the RV64 ADD proof: reduce PC write + `LeanRV64D.Functions.execute`
+    -- to `execute_MUL'` via the MUL↔MUL' equivalence.
+    simp [
+      readReg_succ h_input_pc,
+      writeReg_state_success,
+      LeanRV64D.Functions.execute,
+      execute_MUL'
+    ]
+
+    -- Register reads: rewrite `rX_bits` to `read_xreg`, then use the
+    -- write-other-reg commute to pass the `nextPC` write through.
+    rewrite [rX_read_xreg_equiv _ r1 (regidx_to_fin r1) (by simp [regidx_to_fin])]
+    rewrite [read_xreg_write_other_reg_state _ h_input_r1 reg_of_fin_neq_nextPC]
+    simp
+    rewrite [rX_read_xreg_equiv _ r2 (regidx_to_fin r2) (by simp [regidx_to_fin])]
+    rewrite [read_xreg_write_other_reg_state _ h_input_r2 reg_of_fin_neq_nextPC]
+    simp [
+      execute_MUL_pure,
+      execute_MULH_mul_pure,
+      mop_of_mul_op
+    ]
+
+    -- Case-split rd = 0 vs. nonzero for `write_xreg`.
+    obtain ⟨rd⟩ := rd
+    by_cases h_zero: rd = 0
+    . rewrite [h_zero, wX_write_xreg_zero_equiv]
+      simp
+      rewrite [dite_cond_eq_true]
+      . simp
+      . simp [h_input_rd, h_zero, regidx_to_fin]
+    . have h_inc := regidx_non_zero h_zero
+      apply Finset.mem_Icc.mp at h_inc
+      obtain ⟨h_low, h_high⟩ := h_inc
+      rewrite [
+        wX_write_xreg_non_zero_equiv _ _
+          (regidx.Regidx rd)
+          ⟨(regidx_to_fin (regidx.Regidx rd)).val, Finset.mem_Icc.mpr ⟨h_low, h_high⟩⟩
+          (by simp [regidx_to_fin])
+      ]
+      simp [regidx_to_fin]
+      rewrite [dite_cond_eq_false]
+      . simp [h_input_rd, regidx_to_fin]
+      . simp [regidx_to_fin] at *
+        omega
 
 end PureSpec
