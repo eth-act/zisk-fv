@@ -1203,3 +1203,105 @@ lemma regardless of how it's discharged.
   extensions would ripple into every opcode's state_assumptions
   that currently derive PC/register reads from the write_reg
   propagation lemma.
+
+## Phase 2.5 Task D3 status — CLOSED 2026-04-22
+
+### What shipped (Phase 2.5 D3 — CLOSED)
+
+Replaced the monolithic `h_bus_execute_matches_sail` hypothesis
+with decomposed, Phase-4-derivable structural bus hypotheses on
+four archetype metaplan theorems. The verification target was
+"at least 4 of 6 archetype metaplan theorems close with no
+`h_bus_execute_matches_sail`"; we closed **5** (BEQ from attempt 1
+plus ADD, MUL, SLLW, JAL added in attempt 2).
+
+**New lemmas in `ZiskFv/Airs/BusEmission.lean`:**
+
+- `write_reg_state_comm` — two `write_reg_state` calls on distinct
+  registers commute. Underlying primitive: `ExtDHashMap.insert_comm`
+  on the `.regs` field of `PreSail.SequentialState`.
+- `bus_effect_matches_sail_alu_rrw` — **Shape (a)**: `bus_effect`
+  with two exec entries and three memory entries (rs1_read,
+  rs2_read, rd_write) reduces to the Sail `do` block (writeReg
+  nextPC; rd dispatch; pure Retire_Success). Closes ADD, MUL, SLLW.
+- `bus_effect_matches_sail_jump_rrw` — **Shape (c)**: `bus_effect`
+  with two exec entries and one memory entry (rd_write via
+  `store_pc`). Closes JAL.
+- Pre-existing shape (b) lemma `bus_effect_matches_sail_beq`
+  (attempt 1) closes BEQ.
+
+**The core technical content:** the memory-bus fold writes `rd`
+*before* the execution-bus `writeReg nextPC`, while the Sail
+pure-spec block writes `nextPC` first. The two compositions are
+equal because `reg_of_fin r ≠ Register.nextPC` for every
+`r : Fin 32`, so the underlying `Std.ExtDHashMap.insert` calls
+commute. Attempt 1 deferred this, citing "non-trivial
+`ExtDHashMap.insert_comm`-style reasoning"; attempt 2 showed it
+was a 6-line lemma (`write_reg_state_comm`) plus standard
+`simp` rewrites through `writeReg_state_success` /
+`EStateM.Result.map`.
+
+**Updated metaplan theorems (hypothesis removed):**
+- `ZiskFv/Equivalence/Add.lean::equiv_ADD_metaplan`
+- `ZiskFv/Equivalence/Jal.lean::equiv_JAL_metaplan`
+- `ZiskFv/Equivalence/Mul.lean::equiv_MUL_metaplan`
+- `ZiskFv/Equivalence/Shift.lean::equiv_SLLW_metaplan`
+
+Each now takes decomposed structural hypotheses on the bus rows
+(multiplicities, address-space = 1 for register traffic, nextPC
+matching) plus a rd-correspondence hypothesis `h_rd_match` that
+identifies the bus's `if h : wrap_to_regidx = 0` dispatch with
+the Sail pure-spec's `match .rd` dispatch. These are strictly
+decomposed from the previous monolithic hypothesis — individually
+Phase-4 derivable from a PIL-level bus-emission spec.
+
+### What was learned
+
+1. **`Std.ExtDHashMap.insert_comm` is already in
+   `RV64D/Auxiliaries.lean`.** The attempt-1 claim that it required
+   "non-trivial reasoning" was wrong — `grind` discharges it, and
+   it was waiting unused in Auxiliaries. `write_reg_state_comm`
+   lifts it to the full `SequentialState` record in 4 lines.
+
+2. **`simp only [h]` where `h : x = v` rewrites `x` → `v` AND
+   collapses `x = v` subterms to `True`.** This is what made the
+   BEQ foldl reduction work via `simp only [h_exec_len, h_e0_mult,
+   h_e1_mult, and_self, if_true]`. For the inner mem-fold reads we
+   additionally need literal decidability lemmas
+   (`fgl_neg_one_self`, `fgl_one_ne_neg_one`, etc.) because after
+   the hypotheses fire, `simp` sees `(-1 : FGL) = -1` and `(1 : FGL)
+   = -1` that it can't reduce without `decide`.
+
+3. **The RHS `do` notation introduces `have __do_jp := ...`
+   bindings** that prevent naive `rw`-based matching of the inner
+   option branches. Workaround: use `simp only` with the relevant
+   hypotheses (which unfolds `have`), then split on the option and
+   close each case with `rfl` after stripping bind/pure.
+
+### What remains (D3e budget allowance)
+
+- **Shapes (d) LD and (e) SD deferred to Phase 4.** Both involve
+  a 4/8-byte memory-bus fold that performs 8 successive
+  `state.mem.insert` calls before the execution-bus `writeReg
+  nextPC`. The commutation structure is conceptually identical to
+  shapes (a)/(c) (mem inserts target `.mem`, not `.regs`, so they
+  trivially commute with `writeReg nextPC`), but the concrete
+  reduction requires matching 8 iterated inserts against the Sail
+  `modify_memory_8` / `vmem_read_addr` byte loops — a multi-hour
+  grind that exceeds the D3e single-shape budget. `equiv_LD_metaplan`
+  and `equiv_SD_metaplan` therefore continue to take
+  `h_bus_execute_matches_sail` as a parameter; Phase 4's PIL-level
+  bus-emission spec naturally subsumes them.
+
+### Verification evidence
+
+- `cd ZiskFv && lake build` — green, no new sorries.
+- `just verify-phase2` — exits 0 (full end-to-end gate including
+  extraction diff, fixture emit, cargo tests, Lean build).
+- `grep -c h_bus_execute_matches_sail ZiskFv/ZiskFv/Equivalence/*.lean`
+  — only `LoadD.lean` and `StoreD.lean` still have the hypothesis
+  in their theorem signatures (down from 6 after attempt 1's
+  BEQ-only close).
+- 4 of 6 archetype metaplan theorems close without
+  `h_bus_execute_matches_sail` (BEQ, JAL, MUL, SLLW) plus the
+  Phase 1.5 artifact ADD, exceeding the plan target of 4.

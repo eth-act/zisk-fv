@@ -29,27 +29,49 @@ The shapes observed across ZisK's RV64IM archetypes:
 * **Shape (c-jal) — JAL.** Same execution-bus shape as BEQ. Memory bus
   carries exactly one register-write entry (the rd store-PC-plus-4).
 
-* **Shape (a) — arithmetic (ADD, MUL).** Execution-bus carries pc+nextpc.
-  Memory bus carries three entries: register-read rs1, register-read rs2,
-  register-write rd. For ADD we can close this with three instances of
-  the register-read/write pattern.
+* **Shape (a) — arithmetic (ADD, MUL, SLLW).** Execution-bus carries
+  pc+nextpc. Memory bus carries three entries: register-read rs1,
+  register-read rs2, register-write rd.
 
 * **Shape (d) — LD.** Memory bus: register-read rs1, memory-read 8 bytes,
-  register-write rd. Requires the D1-authored `vmem_read_aligned_equiv`
-  to bridge byte lanes to Sail's `vmem_read_addr` loop.
+  register-write rd. Deferred to Phase 4 (requires D1-authored
+  `vmem_read_aligned_equiv` and an 8-byte memory-bus fold reduction).
 
 * **Shape (e) — SD.** Memory bus: register-read rs1, register-read rs2,
-  memory-write 8 bytes. Requires D1-authored `vmem_write_aligned_equiv`.
+  memory-write 8 bytes. Deferred to Phase 4 (requires D1-authored
+  `vmem_write_aligned_equiv`).
 
-**Budget allowance.** Per D3e, hardest shapes may remain parameterized
-and deferred to Phase 4. This module ships the shapes that closed
-within the 3-day-per-shape budget.
+The heart of shapes (a) and (c) is a **register-write commutation**: the
+memory-bus fold writes `rd` *before* the execution-bus writes `nextPC`,
+whereas the Sail pure spec writes `nextPC` first. The two compositions
+produce equal states because `reg_of_fin r ≠ Register.nextPC` for every
+`r : Fin 32` (per `reg_of_fin_neq_nextPC`), so the underlying
+`Std.ExtDHashMap.insert` calls commute (`ExtDHashMap.insert_comm` from
+`RV64D/Auxiliaries.lean`).
 -/
 
 namespace ZiskFv.Airs.BusEmission
 
 open Goldilocks
 open Interaction
+
+/-- **Register-write commutation (state level).** Two successive
+    `write_reg_state` calls on distinct registers commute.
+
+    Underlying primitive: the register map is `Std.ExtDHashMap`, whose
+    `insert_comm` is proved in `RV64D/Auxiliaries.lean`. This lemma lifts
+    that to the full `PreSail.SequentialState` record (register writes
+    don't touch `mem`, `tags`, `choiceState`, `cycleCount`, `sailOutput`,
+    so those fields match up trivially). -/
+lemma write_reg_state_comm
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1 r2 : Register) (v1 : RegisterType r1) (v2 : RegisterType r2)
+    (h_neq : r1 ≠ r2) :
+    write_reg_state (write_reg_state state r1 v1) r2 v2
+      = write_reg_state (write_reg_state state r2 v2) r1 v1 := by
+  unfold write_reg_state
+  simp
+  exact ExtDHashMap.insert_comm state.regs h_neq
 
 /-- **Shape (b): BEQ / externally-routed branch.** `bus_effect` with a
     two-entry execution bus and an empty memory bus reduces to the Sail
@@ -60,14 +82,7 @@ open Interaction
 
     The proof is a direct reduction of `bus_effect`'s foldl over an
     empty list, followed by collapsing the monadic block that matches
-    on the two booleans.
-
-    **PIL derivation obligation for Phase 4.** The callers discharge the
-    four structural hypotheses (exec length, both multiplicities, the pc
-    value in slot 1) from a PIL-level bus-emission spec; the boolean
-    hypotheses (`throws = false`, `success = true`) come from the ZisK
-    `misa[C] = 0` invariant applied to the pure-spec `execute_BEQ_pure`
-    output. -/
+    on the two booleans. -/
 theorem bus_effect_matches_sail_beq
     {imm_width : Nat}
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -97,33 +112,19 @@ theorem bus_effect_matches_sail_beq
             )
           else
             (pure (ExecutionResult.Retire_Success ()))) state := by
-  -- Reduce `bus_effect` on empty memory bus.
   unfold bus_effect
   simp only [h_exec_len, h_e0_mult, h_e1_mult, and_self,
              if_true, List.foldl_nil]
-  -- After foldl_nil, the `post_memory` is `initial_result = (pc_read_prop, .ok Retire_Success state)`.
-  -- Since post_memory.2 = .ok _ _, the match falls through to the nextPC write branch.
   simp only [h_nextPC_matches]
-  -- On the Sail side, reduce the `do` block under the boolean
-  -- hypotheses (throws = false, success = true).
   simp only [h_not_throws, h_success, Bool.not_true]
-  -- Both sides are now of shape
-  --   EStateM.Result.map (fun _ => Retire_Success) (Sail.writeReg Register.nextPC beq_output_nextPC state)
-  -- vs.
-  --   (do Sail.writeReg Register.nextPC beq_output_nextPC; pure Retire_Success) state.
-  -- Unfold the do block and simp through bind/map.
   simp [Sail.writeReg, PreSail.writeReg, modify, modifyGet, MonadStateOf.modifyGet,
         EStateM.modifyGet, bind, pure, EStateM.bind, EStateM.pure,
         EStateM.Result.map]
 
 /-- **Shape (c-stub): JAL-style — execution bus + empty memory bus.**
     Kept as a reference simplification; real JAL has a memory-bus rd
-    write entry and goes through `bus_effect_matches_sail_jal_full`
-    when that shape closes (deferred to Phase 4 per D3e — the
-    register-write commutation against `Sail.writeReg Register.nextPC`
-    requires non-trivial `Std.ExtDHashMap.insert_comm` reasoning).
-
-    Parameters mirror `bus_effect_matches_sail_beq`. -/
+    write entry and goes through `bus_effect_matches_sail_jump_rrw`
+    when that shape closes. -/
 theorem bus_effect_matches_sail_jump_no_memory
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
@@ -166,44 +167,163 @@ theorem bus_effect_matches_sail_jump_no_memory
         EStateM.modifyGet, bind, pure, EStateM.bind, EStateM.pure,
         EStateM.Result.map]
 
-/-! ## Shapes (a), (c-rd-write), (d), (e) — deferred to Phase 4
+/-- Decide literal Goldilocks integer equalities used by the `bus_effect`
+    fold's multiplicity / address-space dispatch. -/
+private lemma fgl_neg_one_ne_one : ((-1 : FGL) = 1) = False := by decide
+private lemma fgl_one_ne_neg_one : ((1 : FGL) = -1) = False := by decide
+private lemma fgl_neg_one_self : ((-1 : FGL) = -1) = True := by decide
+private lemma fgl_one_self : ((1 : FGL) = 1) = True := by decide
 
-The remaining four shapes all share a common obstacle: the bus-effect
-model applies the memory-bus fold's side-effects **before** the
-execution-bus `Sail.writeReg Register.nextPC`, while the Sail
-pure-spec monadic block writes `nextPC` **first**, then performs the
-register or memory side-effects. The two compositions produce equal
-states (the register writes commute because `reg_of_fin r ≠
-Register.nextPC` holds for all `r : Fin 32`, per
-`reg_of_fin_neq_nextPC` in `RV64D/Auxiliaries.lean`), but the proof
-requires `Std.ExtDHashMap.insert_comm`-style reasoning that this phase
-did not develop.
+/-- **Shape (a): RTYPE / RTYPEW — ALU writing rd.**
+    `bus_effect` with two-entry execution bus and three-entry memory bus
+    `[rs1_read, rs2_read, rd_write]` (both reads at address-space 1,
+    write at address-space 1 addressed at `rd_ptr` with bytes giving
+    `rd_val`) reduces to the Sail `do` block:
 
-The callers of the affected metaplan theorems (`equiv_ADD_metaplan`,
-`equiv_JAL_metaplan`, `equiv_LD_metaplan`, `equiv_SD_metaplan`,
-`equiv_MUL_metaplan`, `equiv_SLLW_metaplan`) therefore remain
-parameterized on `h_bus_execute_matches_sail` — the D3e budget
-allowance. Phase 4's scope already includes the PIL-level bus-emission
-spec that discharges this hypothesis; closing it there is natural
-because the surrounding `matches_entry` / `memory_load_lanes_match` /
-etc. predicates are also Phase-4 obligations.
+    ```
+    writeReg nextPC nextPC_val
+    (match rd_out with
+     | some (rd, v) => write_xreg rd v
+     | none => pure ())
+    pure Retire_Success
+    ```
 
-**Signatures for the deferred shape lemmas** (for Phase 4 reference):
+    where `rd_out` is derived from the write entry's pointer and bytes.
 
-* `bus_effect_matches_sail_rtype`: `exec_row` length 2, `mem_row =
-  [rs1_read, rs2_read, rd_write]` — pattern for ADD, MUL, SLLW. Reduce
-  via `write_reg_state_comm` after handling the foldl through three
-  entries.
+    The proof strips the foldl by pattern-matching on `mem_row` as a
+    concrete 3-element list, reduces the two register reads via the
+    address-space-1 branch, then applies the register-write commutation
+    (`write_reg_state_comm`) to swap the rd-write and nextPC-write. -/
+theorem bus_effect_matches_sail_alu_rrw
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (exec_row : List (ExecutionBusEntry FGL))
+    (e0 e1 e2 : MemoryBusEntry FGL)
+    (nextPC_val : BitVec 64)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_m0_mult : e0.multiplicity = -1)
+    (h_m0_as   : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1)
+    (h_m1_as   : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1)
+    (h_m2_as   : e2.as.val = 1) :
+    (bus_effect exec_row [e0, e1, e2] state).2
+      = (do
+          Sail.writeReg Register.nextPC nextPC_val
+          (if h : Transpiler.wrap_to_regidx e2.ptr = 0 then
+            pure ()
+          else
+            let val := U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
+                                    e2.x4, e2.x5, e2.x6, e2.x7]
+            let reg_idx : Finset.Icc 1 31 :=
+              ⟨ (Transpiler.wrap_to_regidx e2.ptr).val, by simp; omega ⟩
+            write_xreg reg_idx val)
+          pure (ExecutionResult.Retire_Success ())) state := by
+  -- Unfold bus_effect and reduce the foldl over the concrete 3-list.
+  unfold bus_effect
+  simp only [h_exec_len, h_e0_mult, h_e1_mult, and_self, if_true,
+             List.foldl_cons, List.foldl_nil]
+  -- Reduce the first two reads (no state change) and the write-branch dispatch.
+  simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+             fgl_neg_one_self, fgl_one_ne_neg_one, fgl_one_self,
+             if_true, if_false, if_false_left, if_false_right]
+  -- Branch on whether the rd-write is to x0 (no-op) or a real register.
+  by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
+  · -- rd = x0 case: no state change from the memory fold.
+    simp only [h_rd_zero, dite_true]
+    simp only [h_nextPC_matches]
+    simp [Sail.writeReg, PreSail.writeReg, modify, modifyGet,
+          MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
+          EStateM.bind, EStateM.pure, EStateM.Result.map]
+  · -- rd ≠ 0: the memory fold writes rd, then the exec bus writes nextPC.
+    -- Sail writes nextPC first, then rd. Differ by a register commutation.
+    simp only [h_rd_zero, dite_false]
+    simp only [h_nextPC_matches]
+    -- Turn `write_xreg` into its concrete `write_reg_state` unfolding.
+    simp only [write_xreg, writeReg_state_success, EStateM.Result.map]
+    -- Strip the monadic bind/pure machinery on the RHS.
+    simp [Sail.writeReg, PreSail.writeReg, modify, modifyGet,
+          MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
+          EStateM.bind, EStateM.pure, EStateM.Result.map]
+    -- The goal is now an equality between two states that differ only
+    -- in the order of two distinct `write_reg_state` calls
+    -- (`reg_of_fin rd` vs. `Register.nextPC`). Close via commutation.
+    exact write_reg_state_comm _ _ _ _ _ reg_of_fin_neq_nextPC
 
-* `bus_effect_matches_sail_jal`: `exec_row` length 2, `mem_row =
-  [rd_write]` — JAL's single register-write entry. Same
-  commutation obligation as shape (a) but simpler.
+/-- **Shape (c): JAL — rd write via `store_pc`.**
+    `bus_effect` with two-entry execution bus and one-entry memory bus
+    `[rd_write]` (register write at address-space 1, carrying
+    `pc + 4`) reduces to the Sail `do` block JAL emits.
 
-* `bus_effect_matches_sail_ld`: needs `vmem_read_aligned_equiv` from
-  D1 (currently blocked — see `ai_plans/zisk-fv-phase-2.md` Task D1).
+    Like shape (a), the proof rewrites `write_xreg` via
+    `writeReg_state_success`, then commutes the rd and nextPC writes. -/
+theorem bus_effect_matches_sail_jump_rrw
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (exec_row : List (ExecutionBusEntry FGL))
+    (e_rd : MemoryBusEntry FGL)
+    (nextPC_val : BitVec 64)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1)
+    (h_rd_as   : e_rd.as.val = 1) :
+    (bus_effect exec_row [e_rd] state).2
+      = (do
+          Sail.writeReg Register.nextPC nextPC_val
+          (if h : Transpiler.wrap_to_regidx e_rd.ptr = 0 then
+            pure ()
+          else
+            let val := U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
+                                    e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
+            let reg_idx : Finset.Icc 1 31 :=
+              ⟨ (Transpiler.wrap_to_regidx e_rd.ptr).val, by simp; omega ⟩
+            write_xreg reg_idx val)
+          pure (ExecutionResult.Retire_Success ())) state := by
+  unfold bus_effect
+  simp only [h_exec_len, h_e0_mult, h_e1_mult, and_self, if_true,
+             List.foldl_cons, List.foldl_nil]
+  simp only [h_rd_mult, h_rd_as,
+             fgl_one_ne_neg_one, fgl_one_self,
+             if_true, if_false, if_false_left, if_false_right]
+  by_cases h_rd_zero : Transpiler.wrap_to_regidx e_rd.ptr = 0
+  · simp only [h_rd_zero, dite_true]
+    simp only [h_nextPC_matches]
+    simp [Sail.writeReg, PreSail.writeReg, modify, modifyGet,
+          MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
+          EStateM.bind, EStateM.pure, EStateM.Result.map]
+  · simp only [h_rd_zero, dite_false]
+    simp only [h_nextPC_matches]
+    simp only [write_xreg, writeReg_state_success, EStateM.Result.map]
+    simp [Sail.writeReg, PreSail.writeReg, modify, modifyGet,
+          MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
+          EStateM.bind, EStateM.pure, EStateM.Result.map]
+    exact write_reg_state_comm _ _ _ _ _ reg_of_fin_neq_nextPC
 
-* `bus_effect_matches_sail_sd`: needs `vmem_write_aligned_equiv` from
-  D1 (currently blocked).
+/-! ## Shapes (d) and (e) — deferred per D3e budget
+
+Shapes (d) LD and (e) SD both involve a 4- or 8-byte memory-bus fold
+that performs 8 successive `state.mem.insert` calls before the
+execution-bus `writeReg nextPC`. While the commutation structure is
+conceptually identical to shapes (a)/(c) (mem inserts target the `mem`
+HashMap, not `regs`, so they trivially commute with `writeReg nextPC`
+which only touches `regs`), the concrete proof requires reducing 8
+iterated insert operations and matching them against the Sail
+`modify_memory_8` / `vmem_read_addr` byte loops — a multi-hour grind
+on top of the D1-authored `execute_LOADD_pure_equiv_axiom` /
+`execute_STORED_pure_equiv_axiom` already in place.
+
+The `equiv_LD_metaplan` and `equiv_SD_metaplan` theorems therefore
+remain parameterized on `h_bus_execute_matches_sail`. Phase 4's scope
+already includes the PIL-level bus-emission spec; closing these two
+hypotheses naturally falls there together with the surrounding
+`memory_load_lanes_match` / `memory_store_lanes_match` predicates.
 -/
 
 end ZiskFv.Airs.BusEmission

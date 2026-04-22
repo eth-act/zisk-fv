@@ -6,6 +6,7 @@ import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Spec.Jal
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.jal
 import ZiskFv.RV64D.BusEffect
 
@@ -160,37 +161,56 @@ theorem equiv_JAL_metaplan
     (rd : regidx)
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (mem_row : List (Interaction.MemoryBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (nextPC_val : BitVec 64)
     (h_input_imm : jal_input.imm = imm)
     (h_input_rd : jal_input.rd = regidx_to_fin rd)
     (h_input_pc : state.regs.get? Register.PC = .some jal_input.PC)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    (h_bus_execute_matches_sail :
-      (bus_effect exec_row mem_row state).2
-        = (let jal_output := PureSpec.execute_JAL_pure jal_input
-           (do
-             match jal_output.nextPC with
-               | .some nextPC => Sail.writeReg Register.nextPC nextPC
-               | .none => pure ()
-             match jal_output.rd with
-               | .some (reg, rd_val) => write_xreg reg rd_val
-               | .none => pure ()
-             if jal_output.throws then
-               throw (Sail.Error.Assertion "extensions/I/base_insts.sail:59.29-59.30")
-             else if !jal_output.success then
-               pure (
-                 ExecutionResult.Memory_Exception (
-                   (virtaddr.Virtaddr (jal_input.PC + BitVec.signExtend 64 jal_input.imm)),
-                   (ExceptionType.E_Fetch_Addr_Align ())
-                 )
-               )
-             else
-               (pure (ExecutionResult.Retire_Success ()))) state)) :
+    -- Phase 2.5 D3: structural bus hypotheses (Phase-4 derivable).
+    -- JAL has a single memory-bus write entry (rd ← PC+4 via `store_pc`).
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    -- Happy-path hypotheses: no alignment fault under ZisK's RV64IM profile.
+    (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
+    (h_success : (PureSpec.execute_JAL_pure jal_input).success = true)
+    (h_nextPC_option :
+      (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val)
+    (h_rd_match :
+      (if h : Transpiler.wrap_to_regidx e_rd.ptr = 0 then
+        (pure () : SailM Unit)
+      else
+        let val := U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
+                                e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
+        let reg_idx : Finset.Icc 1 31 :=
+          ⟨ (Transpiler.wrap_to_regidx e_rd.ptr).val, by simp; omega ⟩
+        write_xreg reg_idx val)
+      =
+      (match (PureSpec.execute_JAL_pure jal_input).rd with
+        | .some (rd, rd_val) => write_xreg rd rd_val
+        | .none => pure ())) :
     execute_instruction (instruction.JAL (imm, rd)) state
-      = (bus_effect exec_row mem_row state).2 := by
+      = (bus_effect exec_row [e_rd] state).2 := by
   rw [equiv_JAL_sail state jal_input imm rd misa_val
         h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c]
-  exact h_bus_execute_matches_sail.symm
+  symm
+  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_jump_rrw
+        state exec_row e_rd nextPC_val
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_rd_mult h_rd_as]
+  -- Unfold `have jal_output := ...` so the hypotheses about
+  -- `.throws`/`.success`/`.nextPC`/`.rd` can fire.
+  simp only [h_nextPC_option, h_not_throws, h_success, Bool.not_true]
+  -- Bridge the shape-(c) `if h :` output to the Sail `match rd`.
+  rw [h_rd_match]
+  -- Normalize the `do`-notation `__do_jp` residue on both sides.
+  simp only [bind, pure, EStateM.bind, EStateM.pure, if_true, if_false,
+             ite_false]
+  rcases (PureSpec.execute_JAL_pure jal_input).rd with _ | ⟨r, v⟩ <;> rfl
 
 end ZiskFv.Equivalence.Jal

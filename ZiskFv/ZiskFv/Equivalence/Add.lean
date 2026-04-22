@@ -8,6 +8,7 @@ import ZiskFv.Spec.Add
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.add
 import ZiskFv.RV64D.BusEffect
 
@@ -129,33 +130,33 @@ theorem equiv_ADD_sail
     on an RV64 ADD equals the state computed by applying `bus_effect` to
     the circuit's execution and memory bus rows.
 
-    Composes:
-    * `equiv_ADD` — circuit arithmetic (Goldilocks field sum minus carry),
-    * `equiv_ADD_sail` — Sail semantics (`BitVec 64` monadic reduction),
-    * `lane_lo_lane_hi_recombine_eq_toNat` — lane encoding (bridge 1),
-    * `add_bv_toNat_eq_field_sum_minus_carry` — carry absorption (bridge 2).
+    Phase 2.5 D3 replaced the monolithic `h_bus_execute_matches_sail`
+    hypothesis with decomposed structural bus hypotheses, discharged
+    internally via the shape-(a) bus-emission lemma
+    `ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw`.
 
     **Hypotheses.**
-    * Circuit side: `h_circuit` supplies `add_circuit_holds m b r_main r_binary`,
-      and `h_main_a`/`h_main_b` pin the Main AIR lanes to `state.xreg rs1`/`rs2`.
-    * Sail side (from `equiv_ADD_sail`): `h_input_r1`/`h_input_r2`/`h_input_rd`/
-      `h_input_pc` expose the source registers and program counter as Sail
-      monadic reads return them.
-    * Bus side: `h_bus_execute_matches_sail` asserts that the two-entry
-      execution bus and the ordered memory bus, when fed through
-      `bus_effect`, produce exactly the same `EStateM.Result` as the
-      concrete Sail monadic block in `equiv_ADD_sail`'s conclusion. This
-      is the bus-emission-correctness obligation for the ADD Main row —
-      essentially a restatement of the plan's "bus entries for Main ADD
-      are register-read(rs1), register-read(rs2), register-write(rd)
-      plus the PC advancement".
+    * Circuit side (for the companion `equiv_ADD`): `h_circuit` supplies
+      `add_circuit_holds m b r_main r_binary`, and `h_main_a`/`h_main_b`
+      pin the Main AIR lanes to `state.xreg rs1`/`rs2`.
+    * Sail side (from `equiv_ADD_sail`): `h_input_r1`/`h_input_r2`/
+      `h_input_rd`/`h_input_pc` expose the source registers and PC.
+    * Bus side (Phase 2.5 D3): structural hypotheses on the two-entry
+      execution bus and the three-entry memory bus (ordered rs1_read,
+      rs2_read, rd_write), plus an rd-correspondence hypothesis
+      `h_rd_match` that identifies the bus's rd-write branch with the
+      Sail pure-spec `match add_output.rd` branch. These are strictly
+      decomposed from the earlier `h_bus_execute_matches_sail` and
+      individually Phase-4 derivable from a PIL-level bus-emission spec.
 
-    **Proof closure.** Chains `equiv_ADD_sail` with the bus-matching
-    hypothesis. The circuit-side `equiv_ADD` and bridge lemmas are
-    available for callers that want to *derive* `h_bus_execute_matches_sail`
-    from a more elementary bus-emission spec; that derivation is the
-    subject of Phase 2 (full PIL-to-bus correspondence). Inlining it here
-    would require a per-bus-entry case analysis over `bus_effect`'s
+    **Proof closure.** Composes:
+    * `equiv_ADD_sail` — reduces LHS to the Sail `do` block,
+    * `bus_effect_matches_sail_alu_rrw` — reduces RHS to the shape-(a)
+      `do` block (register-write commutation against nextPC),
+    * `h_rd_match` — bridges the `if h :` and `match .rd` dispatches.
+
+    **Historical note.** Inlining this reduction historically required a
+    per-bus-entry case analysis over `bus_effect`'s
     foldl, which is more than the metaplan commits to at Phase 1.5 —
     the companion theorems (`equiv_ADD`, `equiv_ADD_sail`) already
     carry the mathematical content; the metaplan-shape theorem just
@@ -165,28 +166,59 @@ theorem equiv_ADD_metaplan
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (mem_row : List (Interaction.MemoryBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (h_input_r1 : read_xreg (regidx_to_fin r1) state
       = EStateM.Result.ok add_input.r1_val state)
     (h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok add_input.r2_val state)
     (h_input_rd : add_input.rd = regidx_to_fin rd)
     (h_input_pc : state.regs.get? Register.PC = .some add_input.PC)
-    (h_bus_execute_matches_sail :
-      (bus_effect exec_row mem_row state).2
-        = (let add_output := PureSpec.execute_RTYPE_add_pure add_input
-           (do
-             Sail.writeReg Register.nextPC add_output.nextPC
-             match add_output.rd with
-               | .some (rd, rd_val) => write_xreg rd rd_val
-               | .none => pure ()
-             pure (ExecutionResult.Retire_Success ())) state)) :
+    -- Phase 2.5 D3: structural bus hypotheses (Phase-4 derivable from a
+    -- PIL-level bus-emission spec). The execution bus carries the PC
+    -- read + nextPC write; the memory bus carries rs1_read, rs2_read,
+    -- rd_write as three entries matching shape (a).
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_add_pure add_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    -- rd correspondence: the shape-(a) rd-write branch equals the Sail
+    -- pure-spec `match add_output.rd` branch. Discharged in Phase 4 from
+    -- the per-opcode rd/val/reg-idx alignment in `Transpiler.transpile_ADD`.
+    (h_rd_match :
+      (if h : Transpiler.wrap_to_regidx e2.ptr = 0 then
+        (pure () : SailM Unit)
+      else
+        let val := U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
+                                e2.x4, e2.x5, e2.x6, e2.x7]
+        let reg_idx : Finset.Icc 1 31 :=
+          ⟨ (Transpiler.wrap_to_regidx e2.ptr).val, by simp; omega ⟩
+        write_xreg reg_idx val)
+      =
+      (match (PureSpec.execute_RTYPE_add_pure add_input).rd with
+        | .some (rd, rd_val) => write_xreg rd rd_val
+        | .none => pure ())) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
-      = (bus_effect exec_row mem_row state).2 := by
-  -- Sail-side reduction via the existing companion theorem.
+      = (bus_effect exec_row [e0, e1, e2] state).2 := by
   rw [equiv_ADD_sail state add_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
-  -- Flip the bus-matching hypothesis to match the shape of the goal.
-  exact h_bus_execute_matches_sail.symm
+  symm
+  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+        state exec_row e0 e1 e2
+        (PureSpec.execute_RTYPE_add_pure add_input).nextPC
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
+  -- Close the residual match/option equivalence using the rd hypothesis.
+  rw [h_rd_match]
+  -- Both sides are now the same monadic block; the RHS uses the `do`
+  -- notation's `__do_jp` binder while the LHS is the concatenated form.
+  -- Normalize by splitting on the rd option and simplifying the inner
+  -- `pure ≫= fun _ => pure Retire_Success` pattern.
+  simp only [bind, pure, EStateM.bind, EStateM.pure]
+  rcases (PureSpec.execute_RTYPE_add_pure add_input).rd with _ | ⟨r, v⟩ <;> rfl
 
 end ZiskFv.Equivalence.Add
