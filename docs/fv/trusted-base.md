@@ -105,6 +105,64 @@ Add the PMP-OFF and CLINT-disjoint hypotheses to `RISC_V_assumptions`;
 prove (1)-(3); then derive `vmem_{read,write}_addr_aligned_equiv` as
 mechanical unfolds. M1-M4 become theorems.
 
+## Phase 3A Track S memory-model axioms (2026-04-22)
+
+The SH (store halfword) and SB (store byte) sibling fan-out ships
+two additional trusted memory-model axioms — narrow companions of
+M2 (SD) / M4 (SW). Structurally identical to M2/M4 modulo the
+`width` parameter and the `modify_memory_{1,2}` primitive; jointly
+closable with M1-M4 under the same PMP/CLINT extension to
+`RISC_V_assumptions` (see "Why M1-M4 exist" above).
+
+### Entry M10: `PureSpec.execute_STOREH_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/sh.lean`
+- **Statement (informal):** narrow companion of M2/M4 for
+  `execute_STORE imm rs2 rs1 2` (width 2). Under `RISC_V_assumptions`
+  + `sh_state_assumptions` (rs1/rs2 readable, PC readable, address
+  below `OpenVM_address_space_size`, **2-byte alignment**), reduces
+  to: `+4` to PC; the two `state.mem.insert` writes encoded by
+  `modify_memory_2`; retire-success.
+- **Consumers:** `PureSpec.execute_STOREH_pure_equiv`; consumed by
+  `ZiskFv/Equivalence/StoreH.lean::equiv_SH_sail` and transitively
+  `equiv_SH_metaplan`.
+- **Provenance:** `LeanRV64D/VmemUtils.lean::vmem_write_addr` +
+  `LeanRV64D/InstsEnd.lean::execute_STORE` (width 2 path).
+
+### Entry M11: `PureSpec.execute_STOREB_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/sb.lean`
+- **Statement (informal):** narrowest of the store family; companion
+  of M2/M4/M10 for `execute_STORE imm rs2 rs1 1` (width 1). Under
+  `RISC_V_assumptions` + `sb_state_assumptions` (rs1/rs2 readable,
+  PC readable, address below `OpenVM_address_space_size` — **no
+  alignment condition** since SB is byte-aligned), reduces to: `+4`
+  to PC; the single `state.mem.insert` write encoded by
+  `modify_memory_1`; retire-success.
+- **Consumers:** `PureSpec.execute_STOREB_pure_equiv`; consumed by
+  `ZiskFv/Equivalence/StoreB.lean::equiv_SB_sail` and transitively
+  `equiv_SB_metaplan`.
+- **Provenance:** `LeanRV64D/VmemUtils.lean::vmem_write_addr` +
+  `LeanRV64D/InstsEnd.lean::execute_STORE` (width 1 path).
+
+### Why M10-M11 exist
+
+Identical obstruction class to M1-M4 — the same platform-config gap
+in `RISC_V_assumptions` blocks closure via `simp`-reduction of the
+Sail `execute_STORE` body through `vmem_write_addr`. The narrower
+widths (2 and 1 bytes) are strictly simpler than the 4-byte SW / 8-byte
+SD cases: SB even drops the alignment divisibility hypothesis from
+`sb_state_assumptions`. A successful
+`vmem_write_addr_aligned_equiv` lemma built from the PMP-OFF /
+CLINT-disjoint / pma-writable witnesses would simultaneously retire
+M2 (SD), M4 (SW), M10 (SH), and M11 (SB) — they share the exact same
+Sail write-path skeleton, differing only in loop-bound / width
+arguments.
+
+No new closure machinery is required beyond what M1-M4 already need;
+the four store axioms form a single jointly-closable cluster under
+the memory-model extension catalogued in "Why M1-M4 exist".
+
 ## Control-flow axioms (Phase 2.5 D4b, path (b) — 2026-04-22)
 
 ### Entry C1: `PureSpec.execute_JALR_pure_equiv_axiom`
@@ -288,3 +346,9 @@ When accepting a new trusted axiom:
   skeleton with a per-opcode comparator case-split, axiomatized in
   lockstep to keep Track B tractable. Estimated consolidated closure
   ≈1 day total; no `RISC_V_assumptions` extension needed.
+- **2026-04-22 — Phase 3A S1-S2.** M10 (SH) and M11 (SB) introduced
+  as narrow width-2 / width-1 companions of M2 (SD) / M4 (SW). Same
+  obstruction class (PMP/CLINT platform-config gap); jointly closable
+  with M1-M4 under a single `vmem_write_addr_aligned_equiv` lemma.
+  Total store-family trusted axioms now: M2 (SD), M4 (SW), M10 (SH),
+  M11 (SB).
