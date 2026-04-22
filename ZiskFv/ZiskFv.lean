@@ -39,4 +39,10 @@ import ZiskFv.Equivalence.Srli
 import ZiskFv.GoldenTraces.SRLI
 import ZiskFv.Equivalence.Srai
 import ZiskFv.GoldenTraces.SRAI
+import ZiskFv.Equivalence.Shift
+import ZiskFv.GoldenTraces.SLLW
+import ZiskFv.Equivalence.ShiftR
+import ZiskFv.GoldenTraces.SRLW
+import ZiskFv.Equivalence.ShiftRA
+import ZiskFv.GoldenTraces.SRAW
 import ZiskFv.Spike

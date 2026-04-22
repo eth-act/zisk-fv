@@ -156,6 +156,23 @@ structure ZiskInstructionRow where
     Type `BinaryE` — handled by the `BinaryExtension` SM. -/
 @[simp] def OP_SRA : FGL := 35
 
+/-- Goldilocks literal for the 32-bit shift-right-logical-word opcode.
+    `0x25` per `vendor/zisk/pil/operations.pil` and
+    `vendor/zisk/core/src/zisk_ops.rs:417`. Used by RV64 SRLW
+    (`riscv2zisk_context.rs:156`, `create_register_op(..., "srl_w", 4)`)
+    and SRLIW (`riscv2zisk_context.rs:196`, `immediate_op(..., "srl_w", 4)`).
+    Type `BinaryE` — handled by the `BinaryExtension` SM. -/
+@[simp] def OP_SRL_W : FGL := 37
+
+/-- Goldilocks literal for the 32-bit shift-right-arithmetic-word opcode.
+    `0x26` per `vendor/zisk/pil/operations.pil` and
+    `vendor/zisk/core/src/zisk_ops.rs:418`. Used by RV64 SRAW
+    (`riscv2zisk_context.rs:157`, `create_register_op(..., "sra_w", 4)`)
+    and SRAIW (`riscv2zisk_context.rs:197`, `immediate_op(..., "sra_w", 4)`).
+    Type `BinaryE` — handled by the `BinaryExtension` SM. -/
+@[simp] def OP_SRA_W : FGL := 38
+
+
 /-- Goldilocks literal for OPERATION_BUS_ID. Per `vendor/zisk/pil/opids.pil:2`. -/
 @[simp] def OPERATION_BUS_ID : FGL := 5000
 
@@ -1196,5 +1213,61 @@ axiom transpile_SRAI :
       ∧ row.a_hi = lane_hi (state.xreg rs1)
       ∧ row.b_lo = shamt_b_lo shamt
       ∧ row.b_hi = 0
+
+/-- The axiomatic RV64 → Zisk row contract for SRLW (Phase 3A H2 —
+    `ShiftArchetype` sibling of SLLW, register variant).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:156` an RV64 SRLW
+    `rd, rs1, rs2` transpiles via `create_register_op(instr, "srl_w", 4)`.
+    Emitted row mirrors SLLW with `op = OP_SRL_W = 37` (`zisk_ops.rs:417`).
+    The direction of the shift (logical-right) is dispatched inside the
+    `BinaryExtension` SM based on the `op` field.
+
+    **Trust basis.** Direct transposition of `transpile_SLLW` with
+    `OP_SLL_W → OP_SRL_W`. SRAW mirrors with `OP_SRA_W`. -/
+axiom transpile_SRLW :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SRL_W
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 1
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for SRAW (Phase 3A H2a —
+    `ShiftArchetype` sibling of SLLW/SRLW, register variant).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:157` an RV64 SRAW
+    `rd, rs1, rs2` transpiles via `create_register_op(instr, "sra_w", 4)`.
+    Emitted row mirrors SLLW/SRLW with `op = OP_SRA_W = 38`
+    (`zisk_ops.rs:418`). The direction of the shift
+    (arithmetic-right, signed) is dispatched inside the
+    `BinaryExtension` SM based on the `op` field. `m32 = 1` zeroes the
+    bus's high lanes so only the low 32 bits reach the SM.
+
+    **Trust basis.** Direct transposition of `transpile_SLLW` with
+    `OP_SLL_W → OP_SRA_W`. -/
+axiom transpile_SRAW :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SRA_W
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 1
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
 
 end ZiskFv.Trusted
