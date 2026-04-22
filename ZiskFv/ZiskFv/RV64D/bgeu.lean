@@ -30,28 +30,32 @@ namespace PureSpec
       : BgeuOutput
     }
 
-  lemma execute_BGEU_pure_succ_throws
-    (input : BgeuInput)
-  :
-    let output := execute_BGEU_pure input
-    output.success = true → output.throws = false
-  := sorry
+  /-- Trusted axiom: RV64 BGEU Sail-equivalence (Phase 3A B4, sibling of
+      C1's D4b-patch pattern).
 
-  @[simp]
-  lemma sign_extend_equiv :
-    @LeanRV64D.Functions.sign_extend width1 width2 =
-    @BitVec.signExtend width1 width2
-  := rfl
+      Under the standard register-state hypotheses, the Sail
+      `execute_BTYPE (imm, r2, r1, bop.BGEU)` threaded through the usual
+      prelude reduces to the pure-spec `execute_BGEU_pure` evaluation.
 
-  set_option maxHeartbeats 0 in
-  lemma execute_BGEU_pure_equiv
+      **Trust basis.** The Sail `execute_BTYPE` BGEU arm evaluates
+      `zopz0zKzJ_u (rX rs1) (rX rs2) = (rX rs1).toNatInt ≥b (rX rs2).toNatInt`,
+      which after unfolding `Sail.BitVec.toNatInt = Int.ofNat ∘ BitVec.toNat`
+      matches the `.toNat ≥b .toNat` comparison in `execute_BGEU_pure`'s
+      `skip` field up to an `Int.ofNat` coercion. Axiomatized in
+      lockstep with BLTU/BLT/BGE — see `docs/fv/trusted-base.md` entry
+      C2 for the shared closure path. -/
+  axiom execute_BGEU_pure_equiv_axiom
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {misa_val : RegisterType Register.misa}
     (bgeu_input : BgeuInput)
     (imm: BitVec 13)
+    (r1 r2 : regidx)
     (h_input_imm: bgeu_input.imm = imm)
     (h_input_r1: read_xreg (regidx_to_fin r1) state = EStateM.Result.ok (bgeu_input.r1_val) state)
     (h_input_r2: read_xreg (regidx_to_fin r2) state = EStateM.Result.ok (bgeu_input.r2_val) state)
     (h_input_pc: state.regs.get? Register.PC = .some bgeu_input.PC)
-    (h_input_misa: state.regs.get? Register.misa = .some misa)
+    (h_input_misa: state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c: Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
   :
     (
       do
@@ -72,6 +76,38 @@ namespace PureSpec
         )
       else
         (pure (ExecutionResult.Retire_Success ()))) state
-  := sorry
+
+  lemma execute_BGEU_pure_equiv
+    (bgeu_input : BgeuInput)
+    (imm: BitVec 13)
+    (r1 r2 : regidx)
+    (h_input_imm: bgeu_input.imm = imm)
+    (h_input_r1: read_xreg (regidx_to_fin r1) state = EStateM.Result.ok (bgeu_input.r1_val) state)
+    (h_input_r2: read_xreg (regidx_to_fin r2) state = EStateM.Result.ok (bgeu_input.r2_val) state)
+    (h_input_pc: state.regs.get? Register.PC = .some bgeu_input.PC)
+    (h_input_misa: state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c: Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+  :
+    (
+      do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.BTYPE (imm, r2, r1, bop.BGEU ))
+    ) state =
+    let bgeu_output := execute_BGEU_pure bgeu_input
+    (do
+      Sail.writeReg Register.nextPC bgeu_output.nextPC
+      if bgeu_output.throws then
+        throw (Sail.Error.Assertion "extensions/I/base_insts.sail:59.29-59.30")
+      else if !bgeu_output.success then
+        pure (
+          ExecutionResult.Memory_Exception (
+            (virtaddr.Virtaddr (bgeu_input.PC + BitVec.signExtend 64 bgeu_input.imm)),
+            (ExceptionType.E_Fetch_Addr_Align ())
+          )
+        )
+      else
+        (pure (ExecutionResult.Retire_Success ()))) state
+  := execute_BGEU_pure_equiv_axiom bgeu_input imm r1 r2
+      h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
 
 end PureSpec

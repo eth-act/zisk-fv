@@ -17,4 +17,6 @@ import ZiskFv.Equivalence.BranchGreaterEqual
 import ZiskFv.GoldenTraces.BGE
 import ZiskFv.Equivalence.BranchLessThanUnsigned
 import ZiskFv.GoldenTraces.BLTU
+import ZiskFv.Equivalence.BranchGreaterEqualUnsigned
+import ZiskFv.GoldenTraces.BGEU
 import ZiskFv.Spike
