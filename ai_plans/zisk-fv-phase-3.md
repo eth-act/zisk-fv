@@ -738,20 +738,25 @@ wall-clock if serial.
     4 bytes), M7 (LHU, 2 bytes), M9 (LBU, 1 byte), M10 (SH, 2 bytes),
     M11 (SB, 1 byte).
 
-**Track II (P4 + JALR) — partial.**
+**Track II (P4 + JALR) — complete.**
 
 - Added P4 `update_elp_state_is_pure_unit` axiom (monadic form).
 - Catalogued P4 in `docs/fv/trusted-base.md`.
-- **JALR body promotion deferred.** The P4 axiom collapses
-  `update_elp_state` cleanly, but the full JALR proof port from
-  `OpenvmFv/RV32D/jalr.lean` hits RV64-specific unfolding complexity:
-  the goal retains a `LeanRV64D.Functions.jump_to (mask &&& target) …`
-  call that requires invoking `jump_to_equiv` with an additional
-  `misa[C] = 0` hypothesis (`h_misa_c`) that the existing axiom
-  signature does not carry. A proof draft of `execute_JALR_pure_equiv`
-  exists but several `BitVec` bit-0/bit-1 reasoning steps need
-  refinement around the mask-preserves-low-bits identity. C1 remains
-  an axiom pending that refinement (single-file, localized work).
+- **C1 (JALR) promoted to theorem.** The P4 axiom collapses
+  `update_elp_state` cleanly. The remaining structural work:
+  (a) added `h_misa_c : Sail.BitVec.extractLsb misa 2 2 = 0#1` to
+  `execute_JALR_pure_equiv`, `equiv_JALR_sail`, and
+  `equiv_JALR_metaplan` (matching the sibling JAL theorem's
+  signature); (b) used `jump_to_equiv` on the state-mutated misa
+  witness; (c) bridged `(Sail.BitVec.update x 0 0#1)[1] = x[1]` via
+  `simp [Sail.BitVec.update, Sail.BitVec.updateSubrange']`; (d) fixed
+  a pre-existing pure-spec bug — the JALR mask was written as
+  `0xFFFFFFFE` (32-bit zero-extended, which masks bits 32-63 — incorrect
+  under RISC-V JALR semantics which only clear bit 0). Corrected to
+  `0xFFFFFFFFFFFFFFFE` in both `execute_JALR_pure` and
+  `equiv_JALR_sail`. This bug was masked by the former axiom
+  (Phase 2.5 D4b-patch, path (b)) and only surfaced when the proof
+  needed internal consistency.
 
 **Track III (Execution.lean triples + C3/C4-promotions) — complete.**
 
@@ -773,17 +778,15 @@ wall-clock if serial.
   C2a, C2b, C2c, C2d, C3a, C3b, C3c, C4.
 - Total: 50 axioms.
 
-**After Phase 3.5 (HEAD `15fac99`):**
+**After Phase 3.5 (final):**
 
 - 34 transpile axioms (unchanged).
 - 4 platform-scope axioms (new category): P1, P2, P3, P4.
-- 5 Sail-equivalence axioms remaining:
-  - C1 (JALR) — Track II deferred; P4 added, promotion draft
-    incomplete.
+- 4 Sail-equivalence axioms remaining:
   - C2a-d (BLT/BGE/BLTU/BGEU) — explicitly out of Phase 3.5 scope
     per plan; Phase 4 audit sweep.
-- Total: 43 axioms. **Net: −7 axioms** (relative to the plan's
-  predicted −8, the one-axiom shortfall is C1's deferral).
+- Total: 42 axioms. **Net: −8 axioms** (matching the plan's
+  predicted accounting exactly).
 
 ### Gate targets — pass state
 
@@ -827,7 +830,15 @@ wall-clock if serial.
    but a complication that the plan's estimated line count did not
    foresee.
 
-4. **JALR (C1) promotion deferred** — see Track II "partial" above.
+4. **Pre-existing pure-spec mask bug in JALR surfaced.** The original
+   `execute_JALR_pure` used `mask := 0xFFFFFFFE` (literal elaborated
+   as `BitVec 64 = 4294967294#64`, i.e., `0x00000000FFFFFFFE`), which
+   truncates the jump target to 32 bits. RISC-V JALR only clears bit 0
+   (the full 64-bit mask is `0xFFFFFFFFFFFFFFFE`). Under the prior
+   axiomatization this mismatch was never checked. Phase 3.5 corrected
+   the mask in both `execute_JALR_pure` and `equiv_JALR_sail`; the
+   new theorem body now forms a concrete consistency check on these
+   shapes.
 
 ### What this buys
 
@@ -851,10 +862,6 @@ wall-clock if serial.
 
 ### Residual gaps carried to Phase 4+
 
-- **C1 (JALR)** — P4 axiom exists; body-port draft needs
-  `BitVec`-identity refinement (`mask &&& x` preserves bit[0]=0 and
-  bit[1]=bit[1] of `x`). Localized single-file work, ~1-2 hours of
-  proof engineering.
 - **C2a-d (branches)** — four axioms out of Phase 3.5 scope per
   plan. Phase 4 audit sweep; consolidated closure via BNE skeleton
   + per-opcode comparator bridge lemma.
@@ -867,10 +874,11 @@ wall-clock if serial.
 ### Repro
 
 ```
-git checkout 15fac99
-cd /home/cody/zisk-fv/ZiskFv && lake build
+cd /home/cody/zisk-fv
+just verify-phase2
+cd ZiskFv && lake build
 ```
 
-Exit 0, 7988 jobs, no sorries, 43 total axioms (34 transpile +
-4 platform + 5 Sail-equivalence).
+Exit 0, 7988 jobs, no sorries, 42 total axioms (34 transpile +
+4 platform + 4 Sail-equivalence (C2a-d)).
 

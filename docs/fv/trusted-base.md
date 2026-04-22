@@ -268,7 +268,7 @@ the memory-model extension catalogued in "Why M1-M4 exist".
 
 ## Control-flow axioms (Phase 2.5 D4b, path (b) — 2026-04-22)
 
-### Entry C1: `PureSpec.execute_JALR_pure_equiv_axiom`
+### Entry C1 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_JALR_pure_equiv_axiom`
 
 - **File:** `ZiskFv/ZiskFv/RV64D/jalr.lean`
 - **Statement (informal):** under the standard register-state

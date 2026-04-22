@@ -116,6 +116,7 @@ theorem equiv_JALR_sail
       = EStateM.Result.ok jalr_input.rs1_val state)
     (h_input_pc : state.regs.get? Register.PC = .some jalr_input.PC)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
     (h_cur_privilege : Sail.readReg Register.cur_privilege state
       = EStateM.Result.ok Privilege.Machine state)
     (h_mseccfg : Sail.readReg Register.mseccfg state
@@ -134,7 +135,7 @@ theorem equiv_JALR_sail
           if !jalr_output.success then
             pure (
               ExecutionResult.Memory_Exception (
-                (virtaddr.Virtaddr (0xFFFFFFFE &&& (jalr_input.rs1_val +
+                (virtaddr.Virtaddr (0xFFFFFFFFFFFFFFFE &&& (jalr_input.rs1_val +
                   BitVec.signExtend 64 jalr_input.imm))),
                 (ExceptionType.E_Fetch_Addr_Align ())
               )
@@ -142,7 +143,7 @@ theorem equiv_JALR_sail
           else
             (pure (ExecutionResult.Retire_Success ()))) state :=
   PureSpec.execute_JALR_pure_equiv jalr_input imm rs1 rd
-    h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa
+    h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
     h_cur_privilege h_mseccfg
 
 /-- **Metaplan theorem.** The shape the original metaplan targets for
@@ -183,6 +184,7 @@ theorem equiv_JALR_metaplan
       = EStateM.Result.ok jalr_input.rs1_val state)
     (h_input_pc : state.regs.get? Register.PC = .some jalr_input.PC)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
     (h_cur_privilege : Sail.readReg Register.cur_privilege state
       = EStateM.Result.ok Privilege.Machine state)
     (h_mseccfg : Sail.readReg Register.mseccfg state
@@ -218,7 +220,7 @@ theorem equiv_JALR_metaplan
         LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
       = (bus_effect exec_row [e_rd] state).2 := by
   rw [equiv_JALR_sail state jalr_input imm rs1 rd misa_val mseccfg
-        h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa
+        h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
         h_cur_privilege h_mseccfg]
   symm
   rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_jump_rrw
