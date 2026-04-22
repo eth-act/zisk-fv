@@ -13,4 +13,6 @@ import ZiskFv.Equivalence.Add
 import ZiskFv.GoldenTraces.Add
 import ZiskFv.Equivalence.BranchLessThan
 import ZiskFv.GoldenTraces.BLT
+import ZiskFv.Equivalence.BranchGreaterEqual
+import ZiskFv.GoldenTraces.BGE
 import ZiskFv.Spike
