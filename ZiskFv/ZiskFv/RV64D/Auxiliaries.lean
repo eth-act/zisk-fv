@@ -852,6 +852,24 @@ namespace ZiskFv.PlatformScope
   : LeanRV64D.Functions.pmaCheck paddr width acc res_or_con
       = (pure none : SailM (Option ExceptionType))
 
+  /-- **Phase 3.5 P4 (platform-feature axiom).** The Zicfilp landing-pad
+      extension is disabled in ZisK's RV64IM target. Under this scope
+      `LeanRV64D.Functions.update_elp_state` (ZicfilpRegs.lean:224) is a
+      no-op: its `currentlyEnabled Ext_Zicfilp` guard is always false,
+      so the helper reduces to `pure ()`.
+
+      Without this axiom, closing `execute_JALR_pure_equiv` on RV64
+      would require extending `RISC_V_assumptions` with either
+      `currentlyEnabled Ext_Zicfilp state = ok false state` or
+      `mseccfg.MLPE = 0`; both are valid derivation closure paths.
+      The universal axiom form sidesteps this at the same trust cost.
+      Stated in monadic (uncurried) form. -/
+  @[simp high]
+  axiom update_elp_state_is_pure_unit
+    (rs1 : regidx)
+  : LeanRV64D.Functions.update_elp_state rs1
+      = (pure () : SailM Unit)
+
 end ZiskFv.PlatformScope
 
 section Spec

@@ -97,7 +97,20 @@ openvm-fv's RV32D JALR proof.
 
 ### Entry P4: `ZiskFv.PlatformScope.update_elp_state_is_pure_unit`
 
-*(Introduced in Phase 3.5 Track II — see II1 commit.)*
+- **File:** `ZiskFv/ZiskFv/RV64D/Auxiliaries.lean`
+- **Statement:** `∀ rs1,
+  update_elp_state rs1 = (pure () : SailM Unit)` — in monadic form.
+- **Consumers:** `PureSpec.execute_JALR_pure_equiv` (jalr.lean).
+- **Scope claim:** ZisK targets RV64IM and does not enable the
+  Zicfilp landing-pad extension. The `currentlyEnabled Ext_Zicfilp`
+  guard in `LeanRV64D.Functions.update_elp_state`
+  (`ZicfilpRegs.lean:224`) is taken on the `false` branch, making the
+  helper a no-op. Under that scope `update_elp_state` is inert.
+- **Closure path if promoted to theorem:** extend
+  `RISC_V_assumptions` with `mseccfg.MLPE = 0` (or equivalently a
+  direct `currentlyEnabled Ext_Zicfilp state = ok false state`
+  witness) and prove the helper collapses via the `get_xLPE` Machine
+  branch (estimated 60-80 lines).
 
 ## Memory-model axioms (Phase 2.5 D1, path (b) — 2026-04-22)
 
