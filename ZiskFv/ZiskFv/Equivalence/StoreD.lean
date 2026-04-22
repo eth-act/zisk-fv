@@ -18,8 +18,9 @@ of `Equivalence.LoadD`. Combines:
 * the compositional SD spec
   (`ZiskFv.Spec.StoreD.store_d_compositional`),
 * the Sail pure-function equivalence
-  (`PureSpec.execute_STORED_pure_equiv`; carries a focused sorry
-  symmetric to A3's LD — see `RV64D/sd.lean`),
+  (`PureSpec.execute_STORED_pure_equiv`; closed via the trusted
+  memory-model axiom `execute_STORED_pure_equiv_axiom` — see
+  `RV64D/sd.lean` and `docs/fv/trusted-base.md` entry M2),
 
 into three companion theorems paralleling the LD archetype:
 
@@ -74,9 +75,9 @@ theorem equiv_SD
     block supplied by `PureSpec.execute_STORED_pure`, given the
     register/PC/alignment assumptions.
 
-    Wraps `PureSpec.execute_STORED_pure_equiv` (carries a narrow
-    `sorry` on the Sail tactical reduction symmetric to A3; see
-    `RV64D/sd.lean`). -/
+    Wraps `PureSpec.execute_STORED_pure_equiv`, which delegates to the
+    trusted `execute_STORED_pure_equiv_axiom` (Phase 2.5 D1; see
+    `RV64D/sd.lean` and `docs/fv/trusted-base.md` M2). -/
 theorem equiv_SD_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sd_input : PureSpec.SdInput)

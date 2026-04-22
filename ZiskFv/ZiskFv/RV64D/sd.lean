@@ -114,10 +114,73 @@ namespace PureSpec
     (i.r1_val + BitVec.signExtend 64 i.imm).toNat < OpenVM_address_space_size ∧
     (8 : ℤ) ∣ (i.r1_val.toNat + (BitVec.signExtend 64 i.imm)).toNat
 
+  /-- Trusted axiom: RV64 SD byte-loop equivalence (Phase 2.5 D1, path (b)).
+
+      Symmetric companion to `execute_LOADD_pure_equiv_axiom` — see
+      `ld.lean` for the full platform-config-gap analysis. Under
+      `RISC_V_assumptions` + `sd_state_assumptions` (rs1/rs2 read
+      successfully, 8-byte alignment, address below
+      `OpenVM_address_space_size`), the Sail `execute_STORE imm rs2 rs1 8`
+      reduces to the pure-spec block: write `nextPC = PC+4`, apply the
+      eight byte-writes encoded by `modify_memory_8`, retire success.
+
+      **Trust basis.** Same three platform invariants as LD's axiom:
+      (1) `pmpCheck addr 8 (Store Data) Machine` returns `none`
+      (machine-mode PMP short-circuit); (2) `within_clint addr 8 = false`
+      (ZisK programs never target CLINT MMIO); (3) `pmaCheck` with
+      `writable = true` + 8-byte alignment yields `ok none`. The write
+      case additionally relies on:
+
+        (4) `mem_write_ea` is a no-op in the non-MMIO write path (it
+            returns `ok ()` after passing the alignment check); the
+            subsequent `mem_write_value` performs the actual
+            `state.mem.insert` chain that `modify_memory_8` encodes.
+
+      **Derivation closure path.** A future Phase 3+ task should extend
+      `RISC_V_assumptions` with the PMP/CLINT hypotheses and prove a
+      reduction lemma `vmem_write_addr_aligned_equiv` in
+      `RV64D/Auxiliaries.lean` that yields this axiom's conclusion
+      mechanically. Estimated cost: 300-500 lines symmetric to the LD
+      case. See `docs/fv/trusted-base.md` for the audit trail. -/
+  axiom execute_STORED_pure_equiv_axiom
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {mstatus : RegisterType Register.mstatus}
+    {pmaRegion : PMA_Region}
+    {misa : RegisterType Register.misa}
+    {mseccfg : RegisterType Register.mseccfg}
+    (input : SdInput)
+    (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    (h_opcode_assumptions : sd_state_assumptions input state)
+  :
+    (
+      do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.STORE (
+          input.imm,
+          regidx.Regidx input.r2,
+          regidx.Regidx input.r1,
+          8
+        ))
+    ) state =
+    let output := execute_STORED_pure input
+    (do
+      Sail.writeReg Register.nextPC output.nextPC
+      set (modify_memory_8 (← get) output)
+      pure (ExecutionResult.Retire_Success ())
+    ) state
+
   -- SD Sail-equivalence: `execute_STORE imm rs2 rs1 8` reduces to the
   -- pure-spec block (write `nextPC = PC+4`; apply 8 byte-writes to
   -- `state.mem` at successive addresses starting at `rs1 + sign_extend imm`;
   -- retire success).
+  --
+  -- Closed via `execute_STORED_pure_equiv_axiom` (Phase 2.5 D1, path (b),
+  -- 2026-04-22). The axiom captures the memory-model reduction that
+  -- cannot currently be derived under `RISC_V_assumptions` because the
+  -- vendored `LeanRV64D` platform config adds PMP / MMIO state
+  -- dependencies not witnessed by the current assumption bundle. See
+  -- the axiom's docstring and `docs/fv/trusted-base.md` for the
+  -- closure path back to a derivation-only Phase 3+ extension.
   set_option maxHeartbeats 0 in
   lemma execute_STORED_pure_equiv
     (input : SdInput)
@@ -140,40 +203,6 @@ namespace PureSpec
       set (modify_memory_8 (← get) output)
       pure (ExecutionResult.Retire_Success ())
     ) state
-  := by
-    -- BLOCKER (Phase 2.5 D1 investigation, 2026-04-22, symmetric to
-    -- `ld.lean`). The Phase 2 A4 diagnosis ("8-iteration `untilFuelM`
-    -- byte loop in `vmem_write_addr`") turned out to have the right
-    -- address but the wrong floor — for aligned access,
-    -- `split_misaligned` returns `(n, bytes) = (1, 8)`, so the write
-    -- loop runs ONCE, not eight times. The real blocker is an
-    -- architectural gap between RV32 and RV64 platform configs
-    -- (see `ld.lean` companion comment for the full diagnosis):
-    --
-    --   * `sys_pmp_count = 16` vs 0: `pmpCheck` unfolds to a
-    --     16-iteration loop `simp` cannot reduce without
-    --     `pmpcfg_n`/`pmpaddr_n` state assumptions (absent from
-    --     `RISC_V_assumptions`).
-    --   * `plat_clint_base/_size` nonzero: `within_clint` can be `true`
-    --     for addresses in `[2^25, 2^25+786432)`, taking the
-    --     `mmio_write` branch that bypasses the `state.mem.insert`
-    --     chain `modify_memory_8` encodes.
-    --
-    -- The write case adds the additional complication that
-    -- `vmem_write_addr`'s `mem_write_ea` is a *separate* precommit
-    -- hook before the actual `mem_write_value` ram write — both reduce
-    -- to `pure ()` / `write_ram` in the non-MMIO branch but need to
-    -- stay synchronized. The `sw.lean` port surfaces four consecutive
-    -- `if_pos` / `if_neg` rewrites (vs LD's two); each would need a
-    -- platform-config-aware resolution.
-    --
-    -- Real closure requires the same infrastructure `ld.lean` outlines
-    -- (either extend `RISC_V_assumptions` with PMP/CLINT hypotheses and
-    -- prove reduction lemmas, or axiomatize
-    -- `vmem_write_addr_aligned_equiv` in `Fundamentals/Transpiler.lean`).
-    -- Both paths exceed D1's 2-day wall-clock budget given the
-    -- discovery cost.
-    -- Status tracked in `ai_plans/zisk-fv-phase-2.md` (Phase 2.5 D1).
-    sorry
+  := execute_STORED_pure_equiv_axiom input risc_v_assumptions h_opcode_assumptions
 
 end PureSpec

@@ -17,8 +17,9 @@ End-to-end theorem for RV64 LD (load doubleword). Combines:
 * the compositional LD spec
   (`ZiskFv.Spec.LoadD.load_d_compositional`),
 * the Sail pure-function equivalence
-  (`PureSpec.execute_LOADD_pure_equiv`; carries a focused sorry
-  per A3-RV64D — see `RV64D/ld.lean`),
+  (`PureSpec.execute_LOADD_pure_equiv`; closed via the trusted
+  memory-model axiom `execute_LOADD_pure_equiv_axiom` — see
+  `RV64D/ld.lean` and `docs/fv/trusted-base.md` entry M1),
 
 into three companion theorems paralleling the ADD and BEQ archetypes:
 
@@ -67,8 +68,9 @@ theorem equiv_LD
     pure-function block supplied by `PureSpec.execute_LOADD_pure`,
     given the register/PC/memory/alignment assumptions.
 
-    Wraps `PureSpec.execute_LOADD_pure_equiv` (carries a narrow
-    `sorry` on the Sail tactical reduction; see `RV64D/ld.lean`). -/
+    Wraps `PureSpec.execute_LOADD_pure_equiv`, which delegates to the
+    trusted `execute_LOADD_pure_equiv_axiom` (Phase 2.5 D1; see
+    `RV64D/ld.lean` and `docs/fv/trusted-base.md` M1). -/
 theorem equiv_LD_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)

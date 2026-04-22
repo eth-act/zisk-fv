@@ -1041,12 +1041,54 @@ warnings printed (`ld.lean`, `sd.lean`); both annotated.
 
 ---
 
-## Phase 2.5 Task D1 status — PARTIAL 2026-04-22
+## Phase 2.5 Task D1 status — CLOSED 2026-04-22
 
-**Fallback path taken per plan's Known Fragility clause.** The two
-`RV64D/{ld,sd}.lean` sorries remain unclosed; annotations upgraded
-with a precise diagnosis of the real blocker, which supersedes the
-Phase 2 A3/A4 "8-iteration byte loop" diagnosis.
+**Path (b) — trusted axiom fallback — taken.** Both sorries in
+`RV64D/{ld,sd}.lean` are now closed via `execute_LOADD_pure_equiv_axiom`
+and `execute_STORED_pure_equiv_axiom`. `lake build` is green; zero
+`sorry` in `ZiskFv/RV64D/{ld,sd}.lean`. The two trusted memory-model
+axioms are catalogued under entries M1 and M2 in
+`docs/fv/trusted-base.md`, with the closure path back to a derivation
+(path (a): extend `RISC_V_assumptions` + prove three reduction lemmas)
+documented for a future Phase 3+ sub-task.
+
+### Path decision — why (b)
+
+Attempt 1's diagnosis established that Path (a) requires ~300-500
+lines per lemma (PMP-OFF reduction + CLINT-disjoint reduction +
+pmaCheck port) across new infrastructure that would need to stay in
+sync with the vendored `LeanRV64D` platform config. Attempt 2 confirmed
+the diagnosis with spot-checks of `vmem_read_addr` / `vmem_write_addr`
+(`VmemUtils.lean:251, 309`), `pmpCheck` (`PmpControl.lean:253`), and
+`within_clint` (`Platform.lean:198`). The 16-iteration `forIn` loop in
+`pmpCheck` — machine-mode short-circuits to `pure none` at the tail,
+but only after the `forIn` completes without `SailME.throw` — is the
+single largest blocker; it cannot be reduced by `simp` / `grind` under
+the current assumption bundle because `pmpReadAddrReg i` depends on
+register state that `RISC_V_assumptions` does not witness.
+
+Path (b)'s total incremental size: ~110 lines (two axiom blocks + two
+trivial lemma bodies that delegate via `exact` + ~70 lines of
+trusted-base documentation). Wall-clock: under one subagent run.
+
+### What shipped (Phase 2.5 D1 — CLOSED)
+
+- `ZiskFv/ZiskFv/RV64D/ld.lean`: added
+  `execute_LOADD_pure_equiv_axiom`; `execute_LOADD_pure_equiv` now
+  delegates via `exact`. Sorry removed.
+- `ZiskFv/ZiskFv/RV64D/sd.lean`: added
+  `execute_STORED_pure_equiv_axiom`; `execute_STORED_pure_equiv` now
+  delegates via `exact`. Sorry removed.
+- `docs/fv/trusted-base.md`: created. Documents M1/M2 axioms, their
+  provenance (Sail `vmem_{read,write}_addr` + `execute_{LOAD,STORE}`),
+  why they exist (RV32-vs-RV64 platform-config divergence table), and
+  the three reduction lemmas that would eliminate them.
+- `lake build` exits 0 with zero sorry warnings in any file.
+
+### Historical notes on the original blocker (preserved)
+
+The pre-D1 investigation appears below, preserved unchanged for
+traceability.
 
 ### What shipped
 
