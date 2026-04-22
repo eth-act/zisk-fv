@@ -10,6 +10,12 @@ beq_fix   := "ZiskFv/ZiskFv/GoldenTraces/BEQ.lean"
 beq_doc   := "docs/fv/archetype-branch.md"
 jal_fix   := "ZiskFv/ZiskFv/GoldenTraces/JAL.lean"
 jal_doc   := "docs/fv/archetype-jump.md"
+arith_extr := "ZiskFv/ZiskFv/Extraction/Arith.lean"
+arith_orcl := "ZiskFv/ZiskFv/Extraction/Arith.hand.lean"
+mul_fix   := "ZiskFv/ZiskFv/GoldenTraces/MUL.lean"
+mul_doc   := "docs/fv/archetype-arith.md"
+sllw_fix  := "ZiskFv/ZiskFv/GoldenTraces/SLLW.lean"
+sllw_doc  := "docs/fv/archetype-shift.md"
 
 # Phase 0 gate: regenerate the BinaryAdd extraction, diff vs. the hand-written
 # oracle, then typecheck the Lean package end-to-end.
@@ -63,9 +69,22 @@ verify-phase2: verify-phase1
     # Phase 2 A2 deliverables (JAL): fixture + archetype doc exist.
     test -f {{jal_fix}}
     test -f {{jal_doc}}
-    # Build the A1 + A2 archetype modules explicitly (verify-phase1's
-    # `lake build` already covers the full package, but being explicit
-    # guards against accidental module-drop regressions in refactors).
+    # Phase 2 A5 deliverables (MUL): Arith extraction diff, fixture,
+    # archetype doc exist.
+    cargo run --manifest-path tools/zisk-pil-extract/Cargo.toml -- \
+        --pilout {{pilout}} --air Arith \
+        --only 2,6,7,8,31,32,33,34,35,36,37,38,40,41,42,43,44,45,46 \
+        --output {{arith_extr}}
+    diff -w {{arith_extr}} {{arith_orcl}}
+    test -f {{mul_fix}}
+    test -f {{mul_doc}}
+    # Phase 2 A6 deliverables (SLLW): fixture + archetype doc exist.
+    test -f {{sllw_fix}}
+    test -f {{sllw_doc}}
+    # Build the A1 + A2 + A5 + A6 archetype modules explicitly
+    # (verify-phase1's `lake build` already covers the full package, but
+    # being explicit guards against accidental module-drop regressions
+    # in refactors).
     cd ZiskFv && lake build \
         ZiskFv.Spec.BranchEqual \
         ZiskFv.Equivalence.BranchEqual \
@@ -74,7 +93,17 @@ verify-phase2: verify-phase1
         ZiskFv.Spec.Jal \
         ZiskFv.Equivalence.Jal \
         ZiskFv.Tactics.JumpArchetype \
-        ZiskFv.GoldenTraces.JAL
+        ZiskFv.GoldenTraces.JAL \
+        ZiskFv.Extraction.Arith \
+        ZiskFv.Airs.Arith.Mul \
+        ZiskFv.Spec.Mul \
+        ZiskFv.Equivalence.Mul \
+        ZiskFv.Tactics.MulArchetype \
+        ZiskFv.GoldenTraces.MUL \
+        ZiskFv.Spec.Shift \
+        ZiskFv.Equivalence.Shift \
+        ZiskFv.Tactics.ShiftArchetype \
+        ZiskFv.GoldenTraces.SLLW
 
 # Internal: run the harness in live mode when FV_LIVE=1 and diff against
 # the hard-coded fixture; no-op otherwise. Split out because just's `{{ }}`
