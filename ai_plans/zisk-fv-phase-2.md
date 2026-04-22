@@ -614,6 +614,190 @@ together with fresh effort.
 
 ---
 
-## Phase 2 status — CLOSED <date TBD>
+## Phase 2 status — CLOSED 2026-04-22
 
-(To be populated when Phase 2 executes.)
+`just verify-phase2` exits 0 from a clean checkout. 41 Phase 2 commits
+on top of `7ccfb90` (`e30af44..38eff3a` plus a V closure commit). All
+six archetypes shipped: A1 BEQ, A2 JAL, A3 LD, A4 SD, A5 MUL, A6 SLLW.
+Two documented `sorry`s accepted in strict scope (both on the Sail
+`vmem_{read,write}_addr` byte-loop unfolding at 8-byte width —
+`RV64D/ld.lean:88` and `RV64D/sd.lean:126`); zero `sorry` everywhere
+else in `Fundamentals/Airs/Spec/Equivalence/GoldenTraces/Tactics`.
+
+### What shipped
+
+- **A1 Branch (BEQ, 10 commits `e30af44..7ccfb90`).** BEQ transpiles
+  to Zisk `OP_EQ = 0x09` (external op, Binary SM). `Spec/BranchEqual`,
+  `Equivalence/BranchEqual` with three-theorem shape (`equiv_BEQ`
+  circuit, `equiv_BEQ_sail` Sail, `equiv_BEQ_metaplan` parameterized
+  over `h_bus_execute_matches_sail`). `Tactics/BranchArchetype`
+  parameterized over `opcode_lit` for BEQ/BLT/BLTU fan-out.
+  Main AIR got `pc`, `jmp_offset1`, `jmp_offset2` column accessors
+  + `pc_handshake` / `branch_subset_holds` predicates.
+  **Main constraint 20 (PC handshake) is not extractable** due to
+  negative rotation; `pc_handshake` predicate parameterized on
+  `next_pc` as workaround — Phase 3 prereq.
+- **A2 Jump+link (JAL, 9 commits `ca18f8c..cd01880`).** JAL
+  transpiles to Zisk `OP_FLAG = 0x00` (internal op, **no bus hop**,
+  `src_a = src_b = 0`, `store_pc = 1`). Required extending
+  `ZiskInstructionRow` with `store_pc`. `Spec/Jal`, `Equivalence/Jal`,
+  `Tactics/JumpArchetype` (specialized to `opcode_lit = 0`).
+- **A3 Load (LD, 9 commits `d22fc1f..cad5ca3`).** LD transpiles to
+  `OP_COPYB = 0x01` (internal op, **no operation-bus hop** — memory
+  bus only, Main constraint 9 enforces `c = b`). New shared module
+  `Airs/MemoryBus.lean` with write-symmetric design (reused by A4).
+  Three-theorem shape. **One documented `sorry` at `RV64D/ld.lean:88`**
+  on the Sail `vmem_read_addr` byte-loop: the 8-byte unfold iterates
+  `untilFuelM` 8× with outer `forIn { stop := 15 }`; PMP check chain
+  dominates. Phase 3 mitigation: `vmem_read_aligned_equiv` bulk lemma
+  bypassing the byte-loop.
+- **A4 Store (SD, 9 commits `cad5ca3..38eff3a`).** SD transpiles
+  to same `OP_COPYB = 0x01` with `src_b = reg(rs2)`. Extended
+  `MemoryBus.lean` with `memory_store_lanes_match` +
+  `register_read_rs2_lanes_match`. `Spec/StoreD`, `Equivalence/
+  StoreD`, `Tactics/StoreArchetype` (SD/SW/SH/SB — stores have
+  no signed/unsigned split). **Symmetric documented `sorry` at
+  `RV64D/sd.lean:126`** — the `vmem_write_addr` bulk-lemma
+  ambitious-mode was estimated at 300-500 lines of Sail tactic
+  reduction (exceeds A4's budget).
+- **A5 Arith SM (MUL).** MUL transpiles to `OP_MUL = 0xB4` (external,
+  Arith SM). Added `Airs/Arith/Mul.lean` (28 columns, 19 MUL-subset
+  constraints), `Extraction/Arith.lean` + `.hand.lean`. **Arith is
+  a fused multiplier-divider:** MUL rows fix `main_mul=1,
+  main_div=0, div=0, sext=0, m32=0`; carry chains encode
+  `a*b = c + 2^64*d` over 8×16-bit chunks. `ArithMul64` template
+  exists but is unused; active template is plain `Arith`
+  (65 constraints). **Extractor required one 25-LOC tweak**:
+  `find_air` now prefers exact-name matches (resolves `--air Arith`
+  ambiguity with `ArithEq`/`ArithEq384`). Macro parameterized over
+  mul flavor.
+- **A6 -W family (SLLW, 8 commits `b6b29c5..a9c7ccc`).** SLLW
+  transpiles to `OP_SLL_W = 0x24` (external, routes to
+  `BinaryExtension` AIR). New `one_sub_one_mul` simp lemma
+  landed alongside `one_sub_zero_mul` — **no Track M regressions**.
+  `Spec/Shift`, `Equivalence/Shift`, `Tactics/ShiftArchetype`
+  (parametric over `m32 = 0` and `m32 = 1`). `execute_RTYPEW_pure`
+  landed in `Fundamentals/Execution.lean` covering all five `ropw`
+  cases (ADDW/SUBW/SLLW/SRLW/SRAW).
+
+### Cross-cutting decisions
+
+- **A1-B / B1: DEFER bus-emission derivation** for all six
+  archetypes. Each `equiv_<OP>_metaplan` parameterizes over
+  `h_bus_execute_matches_sail` the same way `equiv_ADD_metaplan`
+  does. Phase 4 audit owns the PIL-level per-entry case analysis
+  over `bus_effect`'s foldl.
+- **C1 simp-race: KEEP both lemmas** (local `@[simp high]
+  currentlyEnabled_Zca_of_misa_val` wins the race; upstream
+  `LeanRV64D.Lemmas` version is regression anchor). Documented in
+  `Auxiliaries.lean`.
+
+### What was learned (for the metaplan)
+
+- **ZisK's microinstruction IR genuinely reshapes archetype
+  boundaries.** Per-archetype op map:
+  * BEQ → `OP_EQ` (external, Binary SM)
+  * JAL → `OP_FLAG` (internal, **no bus**)
+  * LD / SD → `OP_COPYB` (internal, **no bus** — memory-bus only)
+  * MUL → `OP_MUL` (external, Arith SM)
+  * SLLW → `OP_SLL_W` (external, `BinaryExtension` SM)
+  Three distinct "bus-vs-no-bus" profiles across six archetypes —
+  the metaplan's "compositional Main+Secondary reasoning" applies
+  only to the A1, A5, A6 family; A2/A3/A4 are Main-only
+  compositional.
+- **`BinaryExtension` is a single AIR covering 9 opcodes** (SLL,
+  SRL, SRA, SLL_W, SRL_W, SRA_W, SEXT_B, SEXT_H, SEXT_W). Phase 3
+  fan-out over these nine should be nearly free — one extraction +
+  one bus-match proof covers all nine.
+- **Arith AIR is a fused multiplier-divider.** Implies the DIV/REM
+  family (not an explicit Phase 2 archetype — DIV/REM live in
+  the same Arith AIR as MUL) reuses most of A5's infrastructure.
+  Phase 3 Divrem work should save significant time over the initial
+  ~1 day/opcode estimate.
+- **Sail byte-loop unfolding at 8-byte width is a shared Phase 3
+  obstacle.** Both A3 and A4 hit the same `untilFuelM` 8-iteration
+  PMP-chain barrier. Proposed mitigation: `vmem_{read,write}_aligned
+  _equiv` lemma family in `Auxiliaries.lean` that takes
+  `RISC_V_assumptions` + 8-byte alignment and emits byte-level
+  memory-equality conjuncts directly. Estimate: 2-3 days one-time,
+  unblocks entire LOAD/STORE family (~10 opcodes).
+- **Main constraint 20 (PC handshake) extractor limitation.**
+  Uses negative rotation; `zisk-pil-extract` skips it. A1/A2
+  parameterize on `next_pc` as workaround. Phase 3 or dedicated
+  Phase 0.5 session should extend extractor for negative
+  row-offsets.
+- **Extractor AIR-name ambiguity** (fixed in A5-EXTRACT): prior
+  substring matching collided between `Arith` / `ArithEq` /
+  `ArithEq384`. Now exact-name match preferred.
+- **No upstream `LeanRV64D.Lemmas` additions needed during
+  Phase 2.** The fork `codygunton/sail-riscv-lean@ext-zca-simp-
+  lemmas` (consumed via lakefile pin) proved sufficient for every
+  archetype that needed `currentlyEnabled Ext_Zca` reduction.
+
+### Archetype macros delivered (ready for Phase 3 fan-out)
+
+| Macro module | Covers | Est. per-opcode cost |
+|---|---|---|
+| `BranchArchetype` | BEQ done; BNE / BGE / BGEU / BLT / BLTU | ~0.25 d each |
+| `JumpArchetype` | JAL done; JALR | ~0.5 d |
+| `LoadArchetype` | LD done; LWU / LHU / LBU | blocked on `vmem_read_aligned_equiv`; ~0.5 d after |
+| `StoreArchetype` | SD done; SW / SH / SB | blocked on `vmem_write_aligned_equiv`; ~0.5 d after |
+| `MulArchetype` | MUL done; MULH / MULHU / MULHSU / MUL_W | ~0.5 d each |
+| `ShiftArchetype` | SLLW done; SLL / SRL / SRA / SRLW / SRAW | ~0.5 d each |
+
+Not yet covered by an archetype (Phase 3 new work):
+
+- **DIV / REM family** (DIV / DIVU / REM / REMU). Reuses A5's Arith
+  infrastructure + existing `execute_DIV_eq_execute_DIV'` from
+  Phase 1.5. Budget: ~2 days for a Divrem archetype, ~0.5 d each
+  after.
+- **Signed loads** (LW / LH / LB). Mirror LD; primary addition is
+  sign-extension plumbing.
+- **AUIPC / LUI.** Immediate-only; very cheap (~0.25 d each).
+- **Immediate ALU family** (ADDI / SLTI / SLTIU / XORI / ORI / ANDI).
+  `execute_ITYPE_pure` is ready; primary cost is Main-constraint-
+  subset audit.
+- **Non-W ALU** (SUB / AND / OR / XOR / SLT / SLTU / SLL / SRL / SRA)
+  and immediate-shift (SLLI / SRLI / SRAI).
+
+### Phase 2 gate state (strict invariants)
+
+1. `just verify-phase2` exits 0 from clean checkout. ✓
+2. Six `docs/fv/archetype-*.md` files:
+   `archetype-{branch,jump,load,store,arith,shift}.md`. ✓
+3. Six archetype macros in `ZiskFv/Tactics/`. ✓
+4. Six golden-trace fixtures in `ZiskFv/GoldenTraces/`
+   (`BEQ`, `JAL`, `LD`, `SD`, `MUL`, `SLLW`). ✓
+5. Zero `sorry` in Fundamentals/Airs/Spec/Equivalence/GoldenTraces/
+   Tactics. ✓
+6. Two documented `sorry`s accepted: `RV64D/ld.lean:88` +
+   `RV64D/sd.lean:126`. Both on the same Sail byte-loop obstacle;
+   Phase 3 mitigation documented. ✓
+
+### Phase 3 prerequisites (recommended)
+
+Before fanning out, Phase 3 should:
+
+1. **`vmem_{read,write}_aligned_equiv` bulk-lemma session** in
+   `RV64D/Auxiliaries.lean`. 2-3 day investment that unblocks
+   the entire LOAD/STORE opcode family plus closes A3 and A4's
+   accepted `sorry`s.
+2. **Main constraint 20 extractor extension or axiomatization.**
+   Either extend `zisk-pil-extract` for negative-rotation
+   constraints (keeps everything derivable) or add a trusted
+   axiom in `ZiskFv.Trusted` covering the PC handshake.
+3. **DIV/REM archetype** — not a Phase 2 archetype by plan, but
+   the next natural template given Arith AIR's fused mul/div
+   nature. Phase 3 decides whether to write a seventh archetype
+   macro or fold DIV/REM into fan-out with ad-hoc patterns.
+
+### Repro
+
+```bash
+cd /home/cody/zisk-fv
+git submodule update --init  # if vendor/zisk isn't checked out
+just verify-phase2
+```
+
+Expected: exit 0, wall time ~6s warm / ~60s cold. Two `sorry`
+warnings printed (`ld.lean`, `sd.lean`); both annotated.
