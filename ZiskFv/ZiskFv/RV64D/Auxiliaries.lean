@@ -120,8 +120,8 @@ attribute [simp]
   LeanRV64D.Functions.not
   LeanRV64D.Functions.phys_access_check
   LeanRV64D.Functions.plat_enable_misaligned_access
-  LeanRV64D.Functions.pmaCheck
-  LeanRV64D.Functions.pmpCheck
+  -- pmaCheck: closed via ZiskFv.PlatformScope.pmaCheck_is_pure_none (Phase 3.5 P3).
+  -- pmpCheck: closed via ZiskFv.PlatformScope.pmpCheck_is_pure_none (Phase 3.5 P1).
   LeanRV64D.Functions.range_subset
   LeanRV64D.Functions.read_kind_of_flags
   LeanRV64D.Functions.read_ram
@@ -139,7 +139,7 @@ attribute [simp]
   LeanRV64D.Functions.to_bits
   LeanRV64D.Functions.to_bits_checked
   LeanRV64D.Functions.translateAddr
-  LeanRV64D.Functions.within_clint
+  -- within_clint: closed via ZiskFv.PlatformScope.within_clint_is_false (Phase 3.5 P2).
   LeanRV64D.Functions.within_htif_readable
   LeanRV64D.Functions.within_htif_writable
   LeanRV64D.Functions.within_mmio_readable
@@ -804,13 +804,17 @@ namespace ZiskFv.PlatformScope
       identity: it returns `(ok none, state)` unconditionally.
 
       Narrow and scope-honest: ZisK (per `CLAUDE.md`) excludes Zicclsm,
-      precompiles, and privilege-model extensions; PMP is out of scope. -/
+      precompiles, and privilege-model extensions; PMP is out of scope.
+
+      Stated in monadic form (LHS `pmpCheck args`, not `pmpCheck args state`)
+      so `simp` can rewrite the call inside a `bind` chain before `state`
+      is threaded in. -/
+  @[simp high]
   axiom pmpCheck_is_pure_none
     (addr : physaddr) (width : Nat) (acc : MemoryAccessType Unit)
     (priv : Privilege)
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-  : LeanRV64D.Functions.pmpCheck addr width acc priv state
-      = EStateM.Result.ok none state
+  : LeanRV64D.Functions.pmpCheck addr width acc priv
+      = (pure none : SailM (Option ExceptionType))
 
   /-- **Phase 3.5 P2 (platform-feature axiom).** The CLINT MMIO region is
       never addressed by ZisK-generated code: user programs access only
@@ -824,12 +828,14 @@ namespace ZiskFv.PlatformScope
       `addr_disjoint` precondition would be necessary to close `within_clint`
       derivationally; axiomatizing the inert-for-all-inputs form is strictly
       stronger, scope-honest, and avoids threading per-opcode disjointness
-      hypotheses. -/
+      hypotheses.
+
+      Stated in monadic (uncurried) form for the same reason as P1. -/
+  @[simp high]
   axiom within_clint_is_false
     (addr : physaddr) (width : Nat)
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-  : LeanRV64D.Functions.within_clint addr width state
-      = EStateM.Result.ok false state
+  : LeanRV64D.Functions.within_clint addr width
+      = (pure false : SailM Bool)
 
   /-- **Phase 3.5 P3 (platform-feature axiom).** The PMA check is inert
       when the single-region / readable / writable / `AlignmentFault`
@@ -838,13 +844,13 @@ namespace ZiskFv.PlatformScope
       `AlignmentFault` arm of `pmaCheck`, we axiomatize the end-state
       `(ok none, state)` directly — a form that ports cleanly from
       openvm-fv's RV32D proof for which the same reduction closes by
-      `simp`. -/
+      `simp`. Stated in monadic (uncurried) form. -/
+  @[simp high]
   axiom pmaCheck_is_pure_none
     (paddr : physaddr) (width : Nat) (acc : MemoryAccessType Unit)
     (res_or_con : Bool)
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-  : LeanRV64D.Functions.pmaCheck paddr width acc res_or_con state
-      = EStateM.Result.ok none state
+  : LeanRV64D.Functions.pmaCheck paddr width acc res_or_con
+      = (pure none : SailM (Option ExceptionType))
 
 end ZiskFv.PlatformScope
 
@@ -920,8 +926,11 @@ section Spec
     . rw [readReg_of_write_other_reg_state (reg' := Register.nextPC) (val' := val) h_htif (by trivial)]
     . grind [write_reg_state]
     . rw [readReg_of_write_other_reg_state (reg' := Register.nextPC) (val' := val) h_mseccfg (by trivial)]
-    . intros; exact ZiskFv.PlatformScope.pmpCheck_is_pure_none _ _ _ _ _
-    . intros; exact ZiskFv.PlatformScope.within_clint_is_false _ _ _
-    . intros; exact ZiskFv.PlatformScope.pmaCheck_is_pure_none _ _ _ _ _
+    . intros addr width acc priv
+      rw [ZiskFv.PlatformScope.pmpCheck_is_pure_none addr width acc priv]; rfl
+    . intros addr width
+      rw [ZiskFv.PlatformScope.within_clint_is_false addr width]; rfl
+    . intros paddr width acc rc
+      rw [ZiskFv.PlatformScope.pmaCheck_is_pure_none paddr width acc rc]; rfl
 
 end Spec
