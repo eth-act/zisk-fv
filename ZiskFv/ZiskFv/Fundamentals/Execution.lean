@@ -132,6 +132,62 @@ lemma execute_SHIFTIOP_eq_execute_SHIFTIOP'
 
 end SHIFTIOP
 
+section RTYPEW
+
+/-- Pure part of 64-bit `execute_RTYPEW` (RV64-only word-size variants of
+    the RTYPE family: `ADDW`, `SUBW`, `SLLW`, `SRLW`, `SRAW`).
+
+    Matches the Sail-level `execute_RTYPEW` shape at
+    `LeanRV64D.InstsEnd.lean:65650-65661`:
+
+    1. take the low 32 bits of each source register
+       (`Sail.BitVec.extractLsb _ 31 0`);
+    2. apply the opcode-specific 32-bit operation — for shifts the shift
+       amount is the low 5 bits of `rs2` (`extractLsb 4 0`);
+    3. sign-extend the 32-bit result to 64 via `sign_extend (m := 64)`.
+
+    For ADDW/SUBW this matches modular 32-bit add / sub. For SLLW it is
+    a 32-bit shift-left by `rs2[4:0]` followed by sign-extension. -/
+def execute_RTYPEW_pure (op1 : BitVec 64) (op2 : BitVec 64) (op : ropw) : BitVec 64 :=
+  let a32 : BitVec 32 := Sail.BitVec.extractLsb op1 31 0
+  let b32 : BitVec 32 := Sail.BitVec.extractLsb op2 31 0
+  let result : BitVec 32 :=
+    match op with
+    | .ADDW => a32 + b32
+    | .SUBW => a32 - b32
+    | .SLLW => Sail.shift_bits_left a32 (Sail.BitVec.extractLsb b32 4 0)
+    | .SRLW => Sail.shift_bits_right a32 (Sail.BitVec.extractLsb b32 4 0)
+    | .SRAW => shift_bits_right_arith a32 (Sail.BitVec.extractLsb b32 4 0)
+  sign_extend (m := 64) result
+
+/-- `execute_RTYPEW` with isolated pure part. -/
+def execute_RTYPEW' (rs2 : regidx) (rs1 : regidx) (rd : regidx) (op : ropw) : SailM ExecutionResult := do
+  let rs1_bits ← do (rX_bits rs1)
+  let rs2_bits ← do (rX_bits rs2)
+  (wX_bits rd (execute_RTYPEW_pure rs1_bits rs2_bits op))
+  (pure RETIRE_SUCCESS)
+
+/-- Equivalence of `execute_RTYPEW`s.
+
+    Five cases (`ADDW`, `SUBW`, `SLLW`, `SRLW`, `SRAW`). The Sail definition
+    takes the low-32 extraction inside an extra monadic binding; after
+    `simp_all` unfolds both sides they agree on each opcode by `rfl`
+    modulo the implicit `sign_extend (m := 64) result` at the end.
+    `log2_xlen` does not appear (shifts use the explicit `extractLsb _ 4 0`
+    shape since `ropw` is a 32-bit family). -/
+@[simp]
+lemma execute_RTYPEW_eq_execute_RTYPEW'
+    (rs2 rs1 rd : regidx) (op : ropw) :
+    execute_RTYPEW rs2 rs1 rd op = execute_RTYPEW' rs2 rs1 rd op := by
+  cases op <;>
+    simp_all [execute_RTYPEW', execute_RTYPEW, execute_RTYPEW_pure]
+  -- SRAW residual: `BitVec.setWidth 32 y_1.toNat` vs `BitVec.ofNat 32 y_1.toNat`
+  -- differ only syntactically; close by `rfl` on setWidth = ofNat for ℕ (both
+  -- reduce to `Fin.ofNat' (2^32) y_1.toNat`).
+  rfl
+
+end RTYPEW
+
 section MUL
 
 /-- Multiplication opcodes. -/

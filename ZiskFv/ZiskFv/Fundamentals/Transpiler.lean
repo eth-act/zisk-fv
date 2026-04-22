@@ -296,4 +296,126 @@ axiom transpile_LD :
       ∧ row.a_lo = lane_lo (state.xreg rs1)
       ∧ row.a_hi = lane_hi (state.xreg rs1)
 
+/-- Goldilocks literal for the MUL opcode. `0xb4 = 180` per
+    `vendor/zisk/core/src/zisk_ops.rs:427`. Signed × signed multiplication,
+    low 64 bits (`result_part = Low`). Dispatched to the Arith state
+    machine via the operation bus. Used by RV64 MUL
+    (`riscv2zisk_context.rs:243`, `create_register_op(..., "mul", 4)`). -/
+@[simp] def OP_MUL : FGL := 180
+
+/-- Goldilocks literal for the MULU opcode. `0xb0 = 176` — unsigned ×
+    unsigned, low 64 bits. `zisk_ops.rs:424`. Arith "primary = mulu,
+    secondary = muluh" (both share the same row, disambiguated by the
+    result-lane selector). Note: RV64 does not have a distinct MULU;
+    plain MUL covers the low-64 case for both signed/unsigned since
+    the low bits agree. -/
+@[simp] def OP_MULU : FGL := 176
+
+/-- Goldilocks literal for the MULUH opcode. `0xb1 = 177` — unsigned ×
+    unsigned, high 64 bits. `zisk_ops.rs:425`. Maps to RV64 MULHU via
+    the transpiler rename at `riscv2zisk_context.rs:246`
+    (`"mulhu" → "muluh"`). -/
+@[simp] def OP_MULUH : FGL := 177
+
+/-- Goldilocks literal for the MULSUH opcode. `0xb3 = 179` — signed ×
+    unsigned, high 64 bits. `zisk_ops.rs:426`. Maps to RV64 MULHSU via
+    the transpiler rename at `riscv2zisk_context.rs:245`
+    (`"mulhsu" → "mulsuh"`). -/
+@[simp] def OP_MULSUH : FGL := 179
+
+/-- Goldilocks literal for the MULH opcode. `0xb5 = 181` — signed ×
+    signed, high 64 bits. `zisk_ops.rs:428`. Used by RV64 MULH
+    (`riscv2zisk_context.rs:244`). -/
+@[simp] def OP_MULH : FGL := 181
+
+/-- Goldilocks literal for the MUL_W opcode. `0xb6 = 182` — the RV64 MULW
+    32-bit variant. `zisk_ops.rs:429`. Maps to RV64 MULW via
+    `riscv2zisk_context.rs:247`. `m32 = 1` on the Main row. -/
+@[simp] def OP_MUL_W : FGL := 182
+
+/-- The axiomatic RV64 → Zisk row contract for MUL (Archetype A5).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:243` an RV64 MUL
+    `rd, rs1, rs2` transpiles via `create_register_op(..., "mul", 4)`
+    (line 631) — the exact helper ADD uses. One Main-AIR row with:
+    * `op = OP_MUL = 180`;
+    * `is_external_op = 1` — type `ArithAm32` dispatches to the Arith
+      state machine via the operation bus;
+    * `set_pc = 0`, `store_pc = 0` — MUL does not touch PC or write
+      PC-derived values; default register write via `store_reg`;
+    * `jmp_offset1 = jmp_offset2 = 4` — `zib.j(4, 4)` regardless of
+      the flag output (MUL's bus flag is `div_by_zero`, fixed to 0 for
+      multiplications);
+    * `m32 = 0` — MUL is the 64-bit operand form; MULW (`OP_MUL_W`)
+      sets `m32 = 1` instead (out of A5 scope);
+    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)` same as ADD;
+    * `flag` is left as an output (populated by the Arith bus-pop with
+      `div_by_zero = 0`). Not constrained by the transpile contract.
+
+    **Trust basis.** Pure spec of the `"mul"` arm in
+    `riscv2zisk_context.rs:243`, which is `create_register_op(i, "mul", 4)`
+    — the identical call shape to ADD's, modulo the `op` string. MULH,
+    MULHU, MULHSU, MULW share this shape with only `op` (and `m32` for
+    MULW) changing; their transpile-axioms will mirror this one with
+    the `OP_*` literal swapped and, for MULW, `m32 = 1`. -/
+axiom transpile_MUL :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_MUL
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for SLLW (Archetype A6).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:155` an RV64 SLLW
+    `rd, rs1, rs2` transpiles via `create_register_op(instr, "sll_w", 4)`
+    (line 631) to exactly one Zisk microinstruction:
+    * `op = OP_SLL_W = 0x24 = 36` (`zisk_ops.rs:416`, type `BinaryE`);
+    * `is_external_op = 1` — `BinaryE ≠ Internal | Fcall`
+      (`zisk_inst_builder.rs:203`); the bus hop goes to the
+      `BinaryExtension` SM, not `BinaryAdd`;
+    * `m32 = 1` — `"sll_w".contains("_w")` is `true`
+      (`zisk_inst_builder.rs:206`). **This is the only Phase 2
+      archetype with `m32 = 1`;** it exercises the `(1 - m32) * x`
+      bus-zeroing path that Phase 1.5 Track M generalized;
+    * `set_pc = 0`, `store_pc = 0` — register-op, not PC-mutating;
+    * `jmp_offset1 = jmp_offset2 = 4` — no branch, fall-through advance;
+    * `flag = 0` — `op_sll_w`'s `flag` return is always `false`
+      (`zisk_ops.rs:624`).
+
+    `a` / `b` lanes carry the full 64-bit `xreg(rs1)` / `xreg(rs2)`
+    values. `m32 = 1` signals downstream (via the PIL
+    `a = [a[0], (1 - m32) * a[1]]` bus-emission) that the high lanes
+    are zeroed on the bus, so only the low 32 bits reach the
+    `BinaryExtension` SM.
+
+    **Trust basis.** Pure spec of the `"sllw"` arm of the
+    `create_register_op` dispatch in `riscv2zisk_context.rs:155`.
+    SRLW / SRAW mirror this with `op = OP_SRL_W = 37` /
+    `op = OP_SRA_W = 38` and the same `m32 = 1` path. SLL / SRL /
+    SRA (64-bit siblings) keep `m32 = 0`. -/
+axiom transpile_SLLW :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SLL_W
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 1
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
 end ZiskFv.Trusted
