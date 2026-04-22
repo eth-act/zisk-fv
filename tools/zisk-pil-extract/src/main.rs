@@ -120,6 +120,7 @@ struct AirHit<'a> {
 
 fn find_air<'a>(pilout: &'a PilOut, needle: &str) -> Result<AirHit<'a>> {
     let mut matches: Vec<AirHit<'a>> = Vec::new();
+    let mut exact: Vec<AirHit<'a>> = Vec::new();
     for (gi, group) in pilout.air_groups.iter().enumerate() {
         for (ai, air) in group.airs.iter().enumerate() {
             let name = air.name.as_deref().unwrap_or("");
@@ -131,7 +132,21 @@ fn find_air<'a>(pilout: &'a PilOut, needle: &str) -> Result<AirHit<'a>> {
                     air,
                 });
             }
+            if name == needle {
+                exact.push(AirHit {
+                    airgroup_idx: gi,
+                    air_idx: ai,
+                    airgroup_name: group.name.clone().unwrap_or_default(),
+                    air,
+                });
+            }
         }
+    }
+    // Prefer an unambiguous exact-name match over a broader substring set. This
+    // lets the caller disambiguate "Arith" from "ArithEq" / "ArithEq384" by
+    // passing the exact AIR name.
+    if exact.len() == 1 {
+        return Ok(exact.into_iter().next().unwrap());
     }
     match matches.len() {
         0 => Err(anyhow!(
@@ -689,5 +704,27 @@ mod tests {
         assert!(flatten_challenge_index(&pilout, 2, 2).is_err());
         // Stage exceeds num_challenges.len().
         assert!(flatten_challenge_index(&pilout, 3, 0).is_err());
+    }
+
+    #[test]
+    fn find_air_exact_name_disambiguates_substring_sibling() {
+        // Regression: ZisK's pilout declares both `Arith` and `ArithEq` —
+        // pre-fix, substring matching found 3 airs ("Arith", "ArithEq",
+        // "ArithEq384") and aborted. Exact name "Arith" now resolves
+        // unambiguously to the Zisk::Arith AIR.
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                name: Some("Zisk".to_string()),
+                airs: vec![
+                    Air { name: Some("Arith".to_string()), ..Default::default() },
+                    Air { name: Some("ArithEq".to_string()), ..Default::default() },
+                    Air { name: Some("ArithEq384".to_string()), ..Default::default() },
+                ],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let hit = find_air(&pilout, "Arith").expect("exact-name Arith should resolve");
+        assert_eq!(hit.air.name.as_deref(), Some("Arith"));
     }
 }
