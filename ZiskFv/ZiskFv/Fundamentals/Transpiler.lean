@@ -211,6 +211,58 @@ axiom transpile_BEQ :
       ∧ row.b_lo = lane_lo (state.xreg rs2)
       ∧ row.b_hi = lane_hi (state.xreg rs2)
 
+/-- The axiomatic RV64 → Zisk row contract for BNE (Phase 2.5 D4a).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:203` an RV64 BNE
+    `rs1, rs2, imm` transpiles via `create_branch_op(instr, "eq", true, 4)`
+    — **same helper as BEQ, same `"eq"` op string, but `neg = true`**.
+    The `neg` flag flips `jmp_offset1` and `jmp_offset2` inside
+    `create_branch_op`
+    (`riscv2zisk_context.rs:740-760`, the `zib.j(taken, not_taken)` call
+    that orders the two offsets based on `neg`). Concretely the emitted
+    Main-AIR row has:
+
+    * `op = OP_EQ = 9` — **same as BEQ**. The Binary SM computes
+      `a == b` and emits its verdict via `flag`; the interpretation
+      flip is done on the PC side, not in the opcode literal;
+    * `is_external_op = 1` (OpType::Binary);
+    * `set_pc = 0` (branches don't use `c[0]` as next-pc source);
+    * `jmp_offset1 = 4` — **swapped vs BEQ**; the "flag = 1" path is
+      now the fall-through (not-taken) direction;
+    * `jmp_offset2 = imm` — **swapped vs BEQ**; the "flag = 0" path
+      is the BNE-taken direction;
+    * `m32 = 0` — EQ is 64-bit on RV64;
+    * `flag` — left as an output, populated by the Binary SM
+      (`a == b`). Not constrained by the transpiler contract.
+
+    The PC handshake
+    `next_pc = pc + jmp_offset2 + flag * (jmp_offset1 - jmp_offset2)`
+    then evaluates to:
+    * `flag = 0` → `next_pc = pc + imm`  (BNE taken),
+    * `flag = 1` → `next_pc = pc + 4`    (BNE not-taken).
+
+    `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)`, same as BEQ.
+
+    **Trust basis.** Pure spec of `create_branch_op` with `neg = true`
+    in `riscv2zisk_context.rs:203`. BGE/BGEU use the same helper with
+    different op strings (`"lt"`, `"ltu"`) and `neg = true`; their
+    transpile-axioms will mirror this one with `OP_EQ` → `OP_LT`/
+    `OP_LTU`. -/
+axiom transpile_BNE :
+    ∀ (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_EQ
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = imm_offset
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
 /-- The axiomatic RV64 → Zisk row contract for JAL.
 
     Per `vendor/zisk/core/src/riscv2zisk_context.rs:201,1098` an RV64 JAL
@@ -410,6 +462,41 @@ axiom transpile_MUL :
     ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
       ∃ (row : ZiskInstructionRow),
         row.op = OP_MUL
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for MULH (Phase 2.5 D4e).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:244` an RV64 MULH
+    `rd, rs1, rs2` transpiles via `create_register_op(..., "mulh", 4)`
+    — the identical helper MUL uses, only the opcode string changes. One
+    Main-AIR row with:
+    * `op = OP_MULH = 181`;
+    * `is_external_op = 1` — dispatch to Arith SM over the operation bus;
+    * `set_pc = 0`, `store_pc = 0` — MULH does not touch PC;
+    * `jmp_offset1 = jmp_offset2 = 4` — fall-through advance;
+    * `m32 = 0` — 64-bit operand form (`"mulh"` has no `_w` suffix);
+    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)` same as MUL;
+    * `flag` is populated by the Arith bus-pop with `div_by_zero = 0`.
+
+    **Trust basis.** Pure spec of the `"mulh"` arm in
+    `riscv2zisk_context.rs:244`. Differs from `transpile_MUL` only in the
+    opcode literal (180 → 181); MULHSU / MULHU share the same shape with
+    opcodes 179 / 177 respectively. The Arith SM selects high-64 vs.
+    low-64 via the secondary op; the Main row's transpile contract is
+    uniform across the family. -/
+axiom transpile_MULH :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_MULH
       ∧ row.is_external_op = 1
       ∧ row.m32 = 0
       ∧ row.set_pc = 0
