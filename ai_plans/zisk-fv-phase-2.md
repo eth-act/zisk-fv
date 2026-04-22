@@ -317,6 +317,68 @@ Rough. Archetype work dominates; other items fit in around it.
 
 ---
 
+## Reconnaissance A1 (BEQ) — 2026-04-22
+
+**Zisk microinstruction.** `vendor/zisk/core/src/riscv2zisk_context.rs:202`
+maps `"beq" → self.create_branch_op(instr, "eq", false, 4)`. The
+`create_branch_op` helper (line 740) emits exactly one Zisk
+microinstruction with: `src_a = reg(rs1)`, `src_b = reg(rs2)`,
+`op = "eq"` (ZisK opcode `0x09`, `Binary` type — `zisk_ops.rs:391`),
+and crucially `j(imm, inst_size=4)` — i.e. `jmp_offset1 = imm`,
+`jmp_offset2 = 4`. The `neg` parameter (false for BEQ) places `imm`
+in `jmp_offset1` (flag=1 path) and `4` in `jmp_offset2` (flag=0 path).
+BNE passes `neg=true`, swapping the two. Because `eq` has `OpType::Binary`,
+`is_external_op = true` (`zisk_inst_builder.rs:203`).
+
+**Main AIR branch-relevant constraints.** The PC handshake
+`(1 - SEGMENT_L1) * (pc - expected_current_pc) === 0` at `main.pil:410` —
+where `expected_current_pc = 'set_pc*('c[0]+'jmp_offset1) +
+(1-'set_pc)*('pc+'jmp_offset2) + 'flag*('jmp_offset1-'jmp_offset2)` —
+is constraint **20**, and it uses a negative rotation (the `'` prefixed
+columns are previous-row). Our `zisk-pil-extract` tool currently skips
+this because `Circuit.main` rotation is `ℕ`. **This is the key blocker:**
+the constraint tying `next_pc` to `flag` lives in the row *after* the BEQ
+row. No existing extracted constraint names `jmp_offset1`/`jmp_offset2`/
+`set_pc` in a usable way for per-row PC reasoning. Constraints 8,9,15-19,
+24,30 (the ADD subset) are reusable as-is for BEQ's `flag`/`is_external_op`
+booleans and `flag*set_pc = 0` disjointness.
+
+**Bus hop?** YES. Because `eq` is `OpType::Binary`, the Main row has
+`is_external_op = 1` and emits an OperationBus entry with
+`op = OP_EQ = 9`. The Binary state machine's `flag` output bit is what
+Main's `flag` column pulls in. The BinaryAdd SM does not handle `eq` —
+that's the full Binary SM (`vendor/zisk/state-machines/binary/pil/binary.pil`).
+`flag`'s correctness is delegated to that SM; for Phase 2 we parameterize
+rather than derive.
+
+**`is_precompiled` / `is_external_op`.** `is_external_op = 1`,
+`is_precompiled = 0` (no precompile for `eq`). Same shape as ADD on those
+two selectors.
+
+**PC taken vs. not-taken.** On flag=1 (branch taken), next row's `pc =
+pc + jmp_offset1 = pc + imm`. On flag=0, `pc + jmp_offset2 = pc + 4`.
+For BNE, `neg=true` makes this `pc + 4` taken vs. `pc + imm` not-taken —
+i.e. `flag` inverted.
+
+**A1-B decision (Bus-emission).** **DEFER.** Deriving
+`h_bus_execute_matches_sail` requires modeling the full Binary SM's bus
+emission (not just BinaryAdd's restricted shape). That is net-new scope
+beyond ADD's proof, which uses BinaryAdd's narrower carry-chain SM.
+Parameterizing keeps BEQ aligned with `equiv_ADD_metaplan`'s shape and
+hands the full bus derivation to Phase 4.
+
+**A1-E2 PC handshake.** Since constraint 20 is not extractable, we
+introduce a **named PC-handshake predicate** at the Main AIR layer —
+not derived from `constraint_20_of_extraction`, but parameterized on a
+"next-row `pc`" cell the caller supplies. This mirrors how
+`equiv_ADD_metaplan` parameterizes `h_bus_execute_matches_sail`: the
+PIL-level handshake stays a trusted boundary for Phase 2, and Phase 4
+audit closes the loop by wiring `zisk-pil-extract` for negative-rotation
+cells. Logged as new scope item — the extractor feature is Phase 4
+(per metaplan revision 2026-04-22), not Phase 2.
+
+---
+
 ## Phase 2 status — CLOSED <date TBD>
 
 (To be populated when Phase 2 executes.)
