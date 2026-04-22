@@ -23,4 +23,6 @@ import ZiskFv.Equivalence.StoreH
 import ZiskFv.GoldenTraces.SH
 import ZiskFv.Equivalence.StoreB
 import ZiskFv.GoldenTraces.SB
+import ZiskFv.Equivalence.LoadHU
+import ZiskFv.GoldenTraces.LHU
 import ZiskFv.Spike
