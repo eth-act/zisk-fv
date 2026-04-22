@@ -558,6 +558,62 @@ remains parameterized in `equiv_MUL_metaplan`, parallel to
 
 ---
 
+## Reconnaissance A4 (SD) — 2026-04-22
+
+**Zisk microinstruction.** `vendor/zisk/core/src/riscv2zisk_context.rs:223`
+maps `"sd" → self.store_op(riscv_instruction, "copyb", 8, 4)`. `store_op`
+(line 828) emits exactly one Zisk microinstruction via `ZiskInstBuilder`:
+* `src_a = reg(rs1)` — `a[0]`/`a[1]` carry `xreg(rs1)` lanes;
+* `src_b = reg(rs2)` — `b[0]`/`b[1]` carry `xreg(rs2)` lanes (the
+  store *value*), **unlike LD** which reads `b` from memory;
+* `op = "copyb"` (same `OP_COPYB = 1`, `OpType::Internal`);
+* `ind_width = 8` — memory-write width;
+* `store = ind(imm, false, false)` — `store_ind = 1`, writes `c`
+  to memory at `addr2 = a[0] + b_offset_imm0` (per `main.pil:314-321`,
+  store-side `mem_op` uses `addr2 = a + store_offset`);
+* `j(4, 4)` — `jmp_offset1 = jmp_offset2 = 4`. No `set_pc()`,
+  no `store_pc()`, so `set_pc = 0`, `store_pc = 0`.
+
+**Main AIR constraints reused from A3.** Same shape: `is_external_op =
+0`, `op = OP_COPYB = 1` activates constraints 9/16 which force `c = b`
+at the Main level; 18 clears `flag`; 19 disjointness; PC handshake with
+`set_pc = 0, flag = 0` yields `next_pc = pc + 4`. **No new Main columns
+needed** — A3's `load_subset_holds` transfers verbatim; we reuse it and
+rename the spec-layer predicate.
+
+**Memory bus for stores.** Per `main.pil:314-321` + `main.pil:323-328`,
+a store row emits (up to) three memory-bus entries:
+* **Register read rs1** — `as = 1, multiplicity = -1, ptr = 4 * rs1,
+  x0..x7 = bytes of xreg(rs1)`;
+* **Register read rs2** — `as = 1, multiplicity = -1, ptr = 4 * rs2,
+  x0..x7 = bytes of xreg(rs2)` (the store value). For LD the second
+  read was memory; for SD it's the second *register* read (value).
+* **Memory write** — `as = 2, multiplicity = 1`, `ptr = rs1_val +
+  sign_extend(imm)`, `x0..x7 = bytes of xreg(rs2)` (the value, lo-byte
+  first, little-endian, same packing `memory_entry_toField` uses).
+
+**Multiplicity conventions** (per `BusEffect.lean:36,49,75`): `-1` =
+read (assume), `+1` = write (prove). SD's *proved* entry is the memory
+write at `as = 2`.
+
+**A4-B decision.** DEFER (same as A1/A2/A3): `h_bus_execute_matches_sail`
+parameterized in `equiv_SD_metaplan`.
+
+**Ambitious-mode evaluation.** The A3 sorry on `vmem_read_addr` reflects
+the 8-iteration `untilFuelM` byte-loop reduction. `vmem_write_addr`
+(`VmemUtils.lean:309`) has the *same* byte-loop shape — 8 iterations,
+each doing `translateAddr → mem_write_ea → mem_write_value`. A bulk
+bypass lemma would need to show the fold-state equivalence across 8
+nested `do`-blocks with `SailME.throw` early-exit and per-iteration
+`write_ram` side-effects. Estimated ~300-500 lines of Sail tactical
+reduction — exceeds the 1-2 hour timebox. **Decision: conservative
+mode.** Accept a symmetric narrow sorry at `RV64D/sd.lean` mirroring
+A3's; document clearly; leave both for a dedicated Phase 3 sweep
+that can tackle `vmem_read_aligned_equiv` and `vmem_write_aligned_equiv`
+together with fresh effort.
+
+---
+
 ## Phase 2 status — CLOSED <date TBD>
 
 (To be populated when Phase 2 executes.)
