@@ -1,12 +1,18 @@
 import ZiskFv.RV64D.Auxiliaries
 import ZiskFv.Fundamentals.Interaction
+import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Fundamentals.Transpiler
 
--- TODO(Phase 1.5): the original RV32 bus_effect uses 4-byte memory bus entries
--- because XLEN=32 fits in 4 bytes. RV64 needs 8-byte entries. The literal
--- `#v[entry.x0, entry.x1, entry.x2, entry.x3]` below must be widened to 8
--- entries (or the `MemoryBusEntry` shape must be widened upstream in Track B's
--- `Fundamentals/Interaction.lean`). Left as-is until Track B finalizes the
--- entry shape.
+/-!
+RV64 bus-effect model: port of `OpenvmFv/RV32D/BusEffect.lean` widened from
+4-byte to 8-byte memory bus entries (per `Fundamentals/Interaction.lean`).
+
+Field parameter is `FGL` (Goldilocks) throughout — this is ZisK's native
+prime, and all coercions `BitVec 8 ↔ FGL` needed by memory-byte comparisons
+live in `Fundamentals/Goldilocks.lean`.
+-/
+
+open Goldilocks
 
 /-- `bus_effect` captures the effect of execution and memory bus contents
     on the RISC-V state, returning:
@@ -20,8 +26,8 @@ import ZiskFv.Fundamentals.Interaction
     - the multiplicities of each entry are in { -1, 0, 1 }; and
     - the address space is either 1 (registers) or 2 (memory) -/
 def bus_effect
-  (execution_bus : List (Interaction.ExecutionBusEntry FBB))
-  (memory_bus : List (Interaction.MemoryBusEntry FBB))
+  (execution_bus : List (Interaction.ExecutionBusEntry FGL))
+  (memory_bus : List (Interaction.MemoryBusEntry FGL))
   (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
 :
   Prop × (EStateM.Result (Sail.Error exception) (PreSail.SequentialState RegisterType Sail.trivialChoiceSource) ExecutionResult)
@@ -40,15 +46,16 @@ def bus_effect
           | .error _ _ => ⟨ cond, result ⟩
           | .ok _ state =>
             -- Read
-            if (entry.multiplicity = (-1 : FBB)) then
+            if (entry.multiplicity = (-1 : FGL)) then
               -- Register read adds the assumption that the value of the read
-              -- register is equal to the 32-bit interpretation of the
-              -- appropriate memory bus entry values
+              -- register is equal to the 64-bit interpretation of the
+              -- appropriate memory bus entry values (8 byte lanes)
               (if (entry.as.val = 1) then
-                let val := U64.toBV #v[entry.x0, entry.x1, entry.x2, entry.x3]
+                let val := U64.toBV #v[entry.x0, entry.x1, entry.x2, entry.x3,
+                                        entry.x4, entry.x5, entry.x6, entry.x7]
                 let reg_idx := Transpiler.wrap_to_regidx entry.ptr
                 ⟨ cond ∧ read_xreg reg_idx state = EStateM.Result.ok val state, result ⟩
-              -- Memory read adds the assumption that the four values in memory
+              -- Memory read adds the assumption that the eight values in memory
               -- starting from the given pointer are equal to the appropriate
               -- memory bus entry values
               else if (entry.as.val = 2) then
@@ -56,39 +63,48 @@ def bus_effect
                   state.mem[entry.ptr.toNat]? = .some entry.x0 ∧
                   state.mem[entry.ptr.toNat + 1]? = .some entry.x1 ∧
                   state.mem[entry.ptr.toNat + 2]? = .some entry.x2 ∧
-                  state.mem[entry.ptr.toNat + 3]? = .some entry.x3
+                  state.mem[entry.ptr.toNat + 3]? = .some entry.x3 ∧
+                  state.mem[entry.ptr.toNat + 4]? = .some entry.x4 ∧
+                  state.mem[entry.ptr.toNat + 5]? = .some entry.x5 ∧
+                  state.mem[entry.ptr.toNat + 6]? = .some entry.x6 ∧
+                  state.mem[entry.ptr.toNat + 7]? = .some entry.x7
                 , result ⟩
               -- Neither a register nor a memory read: impossible under assumptions
               else ⟨ cond, EStateM.Result.error Sail.Error.Unreachable state ⟩)
             -- Write
-            else if (entry.multiplicity = (1 : FBB)) then
+            else if (entry.multiplicity = (1 : FGL)) then
               (if (entry.as.val = 1) then
-                -- Register write writes the four values from the memory bus entry
-                -- to the given register as a 32-bit value
+                -- Register write writes the eight values from the memory bus entry
+                -- to the given register as a 64-bit value
                 if h : Transpiler.wrap_to_regidx entry.ptr = 0 then
                   ⟨ cond, result ⟩
                 else
-                  let val := U64.toBV #v[entry.x0, entry.x1, entry.x2, entry.x3]
+                  let val := U64.toBV #v[entry.x0, entry.x1, entry.x2, entry.x3,
+                                          entry.x4, entry.x5, entry.x6, entry.x7]
                   let reg_idx := ⟨ (Transpiler.wrap_to_regidx entry.ptr).val, by simp; omega ⟩
                   ⟨ cond, EStateM.Result.map
                           (fun x ↦ ExecutionResult.Retire_Success ())
                             (write_xreg reg_idx val state) ⟩
-              -- Memory write writes the four values from the memory bus entry
+              -- Memory write writes the eight values from the memory bus entry
               -- to memory starting from the given pointer
               else if (entry.as.val = 2) then
                 ⟨
                   cond
                 , EStateM.Result.ok (ExecutionResult.Retire_Success ()) {
                     state with mem :=
-                      ((((state.mem.insert entry.ptr.toNat entry.x0
+                      ((((((((state.mem.insert entry.ptr.toNat entry.x0
                       ).insert (entry.ptr.toNat + 1) entry.x1
                       ).insert (entry.ptr.toNat + 2) entry.x2
-                      ).insert (entry.ptr.toNat + 3) entry.x3)
+                      ).insert (entry.ptr.toNat + 3) entry.x3
+                      ).insert (entry.ptr.toNat + 4) entry.x4
+                      ).insert (entry.ptr.toNat + 5) entry.x5
+                      ).insert (entry.ptr.toNat + 6) entry.x6
+                      ).insert (entry.ptr.toNat + 7) entry.x7)
                   }⟩
               -- Address space not 1 or 2 : impossible under assumptions
               else ⟨ cond, EStateM.Result.error Sail.Error.Unreachable state ⟩)
             -- Multiplicity zero: no effect
-            else if (entry.multiplicity = (0 : FBB)) then ⟨ cond, result ⟩
+            else if (entry.multiplicity = (0 : FGL)) then ⟨ cond, result ⟩
             -- Neither a register nor a memory read nor a no-effect: impossible under assumptions
             else ⟨ cond, EStateM.Result.error Sail.Error.Unreachable state ⟩
         )
