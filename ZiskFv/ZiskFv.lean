@@ -11,4 +11,6 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Spec.Add
 import ZiskFv.Equivalence.Add
 import ZiskFv.GoldenTraces.Add
+import ZiskFv.Equivalence.BranchLessThan
+import ZiskFv.GoldenTraces.BLT
 import ZiskFv.Spike

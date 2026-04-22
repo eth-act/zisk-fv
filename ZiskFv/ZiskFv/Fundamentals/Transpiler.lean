@@ -94,6 +94,20 @@ structure ZiskInstructionRow where
     (`riscv2zisk_context.rs:202,203`). -/
 @[simp] def OP_EQ : FGL := 9
 
+/-- Goldilocks literal for the LT opcode. `0x07` per
+    `vendor/zisk/core/src/zisk_ops.rs:389`. Signed less-than comparator
+    used by RV64 branch opcodes BLT / BGE via `create_branch_op`
+    (`riscv2zisk_context.rs:204,205`). Dispatched to the Binary state
+    machine via the operation bus (same routing as OP_EQ). -/
+@[simp] def OP_LT : FGL := 7
+
+/-- Goldilocks literal for the LTU opcode. `0x06` per
+    `vendor/zisk/core/src/zisk_ops.rs:388`. Unsigned less-than
+    comparator used by RV64 branch opcodes BLTU / BGEU via
+    `create_branch_op` (`riscv2zisk_context.rs:206,207`). Dispatched to
+    the Binary state machine via the operation bus. -/
+@[simp] def OP_LTU : FGL := 6
+
 /-- Goldilocks literal for the FLAG opcode. `0x00` per
     `vendor/zisk/core/src/zisk_ops.rs:382`. Internal op whose
     `op_flag(a, b) = (0, true)` semantics give `c = 0, flag = 1`.
@@ -690,6 +704,138 @@ axiom transpile_SLLW :
       ∧ row.store_pc = 0
       ∧ row.jmp_offset1 = 4
       ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for BLT (Phase 3A B1).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:204` an RV64 BLT
+    `rs1, rs2, imm` transpiles via `create_branch_op(instr, "lt", false, 4)`
+    — the same `create_branch_op` helper BEQ uses, with `op = "lt"` and
+    `neg = false` (BEQ polarity). The emitted Main-AIR row has:
+
+    * `op = OP_LT = 7` — Binary-SM signed less-than (`zisk_ops.rs:389`);
+    * `is_external_op = 1`;
+    * `set_pc = 0`, `m32 = 0`, `store_pc = 0`;
+    * `jmp_offset1 = imm` — **taken offset (flag = 1 path)** — since
+      `neg = false`, the Binary SM's `lt` verdict `flag = 1` signals
+      `a <s b`, which is BLT-taken;
+    * `jmp_offset2 = 4` — fall-through (not-taken);
+    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)`, same as BEQ.
+
+    **Trust basis.** Direct transposition of `transpile_BEQ` with
+    `OP_EQ → OP_LT`. The Binary-SM secondary interprets `op = OP_LT`
+    as signed less-than on the concatenation `(b_hi::b_lo)` vs
+    `(a_hi::a_lo)`; that interpretation is captured at the
+    operation-bus edge, not in this axiom. -/
+axiom transpile_BLT :
+    ∀ (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_LT
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = imm_offset
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for BGE (Phase 3A B2).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:205` an RV64 BGE
+    transpiles via `create_branch_op(instr, "lt", true, 4)` — **same
+    `"lt"` op string as BLT, but `neg = true`**. The `neg` flag swaps
+    `jmp_offset1`/`jmp_offset2` (BNE polarity):
+
+    * `op = OP_LT = 7` — Binary-SM still computes signed `<`. The
+      interpretation flip (`≥` instead of `<`) is done on the PC side
+      via the offset swap;
+    * `is_external_op = 1`, `set_pc = 0`, `m32 = 0`, `store_pc = 0`;
+    * `jmp_offset1 = 4` — fall-through (the `flag = 1 → a <s b` path,
+      which for BGE is *not-taken*);
+    * `jmp_offset2 = imm` — taken (the `flag = 0 → a ≥s b` path,
+      BGE-taken).
+
+    The PC handshake `next_pc = pc + jmp_offset2 + flag * (jmp_offset1
+    - jmp_offset2)` then yields:
+    * `flag = 0` (`a ≥s b`) → `next_pc = pc + imm` (BGE taken),
+    * `flag = 1` (`a <s b`)  → `next_pc = pc + 4`   (BGE not-taken).
+
+    **Trust basis.** Direct transposition of `transpile_BNE` with
+    `OP_EQ → OP_LT`. -/
+axiom transpile_BGE :
+    ∀ (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_LT
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = imm_offset
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for BLTU (Phase 3A B3).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:206` an RV64 BLTU
+    transpiles via `create_branch_op(instr, "ltu", false, 4)` — BEQ
+    polarity, unsigned comparator. The emitted row:
+
+    * `op = OP_LTU = 6` — Binary-SM unsigned less-than
+      (`zisk_ops.rs:388`);
+    * `is_external_op = 1`, `set_pc = 0`, `m32 = 0`, `store_pc = 0`;
+    * `jmp_offset1 = imm` — taken (flag = 1 path, `a <u b`);
+    * `jmp_offset2 = 4` — fall-through.
+
+    **Trust basis.** Direct transposition of `transpile_BLT` with
+    `OP_LT → OP_LTU`. -/
+axiom transpile_BLTU :
+    ∀ (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_LTU
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = imm_offset
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for BGEU (Phase 3A B4).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:207` an RV64 BGEU
+    transpiles via `create_branch_op(instr, "ltu", true, 4)` — BNE
+    polarity, unsigned comparator. The emitted row:
+
+    * `op = OP_LTU = 6` — Binary-SM computes `a <u b`; BGEU's
+      `flag = 0` → `a ≥u b` is the taken direction;
+    * `is_external_op = 1`, `set_pc = 0`, `m32 = 0`, `store_pc = 0`;
+    * `jmp_offset1 = 4` — fall-through;
+    * `jmp_offset2 = imm` — taken.
+
+    **Trust basis.** Direct transposition of `transpile_BGE` with
+    `OP_LT → OP_LTU`. -/
+axiom transpile_BGEU :
+    ∀ (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_LTU
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = imm_offset
       ∧ row.a_lo = lane_lo (state.xreg rs1)
       ∧ row.a_hi = lane_hi (state.xreg rs1)
       ∧ row.b_lo = lane_lo (state.xreg rs2)
