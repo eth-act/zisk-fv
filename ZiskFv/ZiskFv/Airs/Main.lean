@@ -47,6 +47,12 @@ structure Valid_Main (C : Type → Type → Type) (F ExtF : Type)
   jmp_offset1 : ℕ → F
   /-- `jmp_offset2` (column 27). Branch-not-taken offset. -/
   jmp_offset2 : ℕ → F
+  /-- `store_pc` selector (column 22 of the Main AIR, `main.pil:142`).
+      When 1, `store_value[0] = pc + jmp_offset2 - c[0] + c[0] = pc + jmp_offset2`
+      is written to the destination register (for JAL/JALR: rd ← pc + 4).
+      When 0, `store_value[0] = c[0]`. Boolean — PIL asserts
+      `store_pc * (1 - store_pc) === 0` (constraint 102 at `main.pil:473`). -/
+  store_pc : ℕ → F
   /-- stage-2 column `im_high_degree[2]` — the permutation-sum cell
       carrying the operation-bus entry for this row. -/
   im_high_degree_2 : ℕ → F
@@ -78,6 +84,8 @@ structure Valid_Main (C : Type → Type → Type) (F ExtF : Type)
     jmp_offset1 row = Circuit.main circuit (id := 1) (column := 26) (row := row) (rotation := 0)
   jmp_offset2_def : ∀ row,
     jmp_offset2 row = Circuit.main circuit (id := 1) (column := 27) (row := row) (rotation := 0)
+  store_pc_def : ∀ row,
+    store_pc row = Circuit.main circuit (id := 1) (column := 22) (row := row) (rotation := 0)
   im_high_degree_2_def : ∀ row,
     im_high_degree_2 row = Circuit.main circuit (id := 2) (column := 7) (row := row) (rotation := 0)
 
@@ -183,6 +191,60 @@ lemma pc_handshake_branch
   rw [h_set_pc] at h
   linear_combination h
 
+variable {C' : Type → Type → Type} [Circuit FGL FGL C']
+
+/-- From the three `jump_subset_holds` ingredients (`is_external_op = 0`,
+    `op = 0`, constraint 17 — `internal_op0_sets_flag`), we can derive
+    `flag = 1`. Specialized to `FGL` so `linear_combination` sees a
+    commutative-ring. Used by `Spec.Jal`. -/
+lemma flag_eq_one_of_internal_op_zero
+    (v : Valid_Main C' FGL FGL) (row : ℕ)
+    (h_ext : v.is_external_op row = 0)
+    (h_op : v.op row = 0)
+    (h17 : internal_op0_sets_flag v row) :
+    v.flag row = 1 := by
+  simp only [internal_op0_sets_flag] at h17
+  rw [h_ext, h_op] at h17
+  linear_combination -h17
+
+/-- From `internal_op0_zeroes_c0` with `is_external_op = 0` and `op = 0`,
+    we can derive `c_0 = 0`. Used to show `store_value[0]` simplifies to
+    `pc + jmp_offset2` for JAL (i.e. `rd ← pc + 4`). -/
+lemma c_0_eq_zero_of_internal_op_zero
+    (v : Valid_Main C' FGL FGL) (row : ℕ)
+    (h_ext : v.is_external_op row = 0)
+    (h_op : v.op row = 0)
+    (h8 : internal_op0_zeroes_c0 v row) :
+    v.c_0 row = 0 := by
+  simp only [internal_op0_zeroes_c0] at h8
+  rw [h_ext, h_op] at h8
+  linear_combination h8
+
+/-- From `internal_op0_zeroes_c1` with `is_external_op = 0` and `op = 0`,
+    we can derive `c_1 = 0`. -/
+lemma c_1_eq_zero_of_internal_op_zero
+    (v : Valid_Main C' FGL FGL) (row : ℕ)
+    (h_ext : v.is_external_op row = 0)
+    (h_op : v.op row = 0)
+    (h15 : internal_op0_zeroes_c1 v row) :
+    v.c_1 row = 0 := by
+  simp only [internal_op0_zeroes_c1] at h15
+  rw [h_ext, h_op] at h15
+  linear_combination h15
+
+/-- Specialized PC handshake for **unconditional jump** (JAL): `set_pc = 0`
+    and `flag = 1`. The handshake collapses to `next_pc = pc + jmp_offset1`
+    (the taken-offset path). Used by `Spec.Jal.jal_pc_advance`. -/
+lemma pc_handshake_jump
+    (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F)
+    (h_set_pc : v.set_pc row = 0)
+    (h_flag : v.flag row = 1)
+    (h : pc_handshake v row next_pc) :
+    next_pc = v.pc row + v.jmp_offset1 row := by
+  simp only [pc_handshake] at h
+  rw [h_set_pc, h_flag] at h
+  linear_combination h
+
 /-- Branch subset — the Main constraints a BEQ-family row must satisfy,
     plus the PC handshake (parameterized on `next_pc`). Constraints 17,
     18 are trivially satisfied because `is_external_op = 1` makes the
@@ -193,6 +255,23 @@ def branch_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Pr
   flag_boolean v row
   ∧ is_external_op_boolean v row
   ∧ flag_set_pc_disjoint v row
+  ∧ pc_handshake v row next_pc
+
+/-- Jump subset — the Main constraints a JAL (internal-op `flag`) row must
+    satisfy, plus the PC handshake. Unlike the branch subset, JAL is
+    `is_external_op = 0` with `op = OP_FLAG = 0`, so constraints 8 + 15
+    (internal-op=0 zeroes c) and constraint 17 (internal-op=0 sets flag)
+    are non-trivial — they force `c = 0, flag = 1`. This is the
+    constraint bundle consumed by `Spec.Jal.jal_pc_advance` to establish
+    `next_pc = pc + jmp_offset1`. -/
+@[simp]
+def jump_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Prop :=
+  flag_boolean v row
+  ∧ is_external_op_boolean v row
+  ∧ flag_set_pc_disjoint v row
+  ∧ internal_op0_zeroes_c0 v row
+  ∧ internal_op0_zeroes_c1 v row
+  ∧ internal_op0_sets_flag v row
   ∧ pc_handshake v row next_pc
 
 section extraction_bridge
