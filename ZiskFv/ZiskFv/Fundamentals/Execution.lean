@@ -1,5 +1,6 @@
 import LeanRV64D
 import Mathlib
+import ZiskFv.Fundamentals.U64
 
 open PreSail
 open LeanRV64D.Functions
@@ -186,32 +187,94 @@ def execute_MUL' (rs2 : regidx) (rs1 : regidx) (rd : regidx) (m : mop) : SailM E
 
 /-- Equivalence of `execute_MUL`s.
 
-The structural port is complete: the definition mirrors `mult_to_bits_half`
-exactly for `MULH`, `MULHU`, `MULHUS`, `MULHSU`. The `.MUL` (Low) case is
-defined as the unsigned*unsigned product but `mop_of_mul_op` collapses
-all four sign combinations into `.MUL`, so four Low-half cases need the
-modular identity
+The definition mirrors `mult_to_bits_half` exactly for `MULH`, `MULHU`,
+`MULHUS`, `MULHSU`.  The `.MUL` (Low) case is defined as the
+unsigned × unsigned product but `mop_of_mul_op` collapses all four sign
+combinations into `.MUL`, so four Low-half cases need the modular identity
   `(i1 * i2) % 2^64 = (n1 * n2) % 2^64` when `iₖ ≡ nₖ (mod 2^64)`,
 which holds because `BitVec.toInt` and `BitVec.toNat` agree mod `2^w`.
-The closure of these four cases needs the RV64 analogues of openvm-fv's
-`toInt_toInt_as_toNat_64`, `toInt_toNat_as_toNat_64`, etc. — left as a
-targeted `sorry` below per the Phase 1.5 time-box.
 -/
 @[simp]
 lemma execute_MUL_eq_execute_MUL'
     (rs2 rs1 rd : regidx) (op : mul_op) :
     execute_MUL rs2 rs1 rd op = execute_MUL' rs2 rs1 rd (mop_of_mul_op op) := by
   rcases op with ⟨ high, sgn1, sgn2 ⟩
-  -- Split into High (4 cases: close by simp_all) and Low (4 cases: sorry).
+  -- Split into High (4 cases: close by simp_all) and Low (4 cases below).
   rcases high with high | high
   all_goals
     rcases sgn2 with sgn2 | sgn2 <;> rcases sgn1 with sgn1 | sgn1 <;>
       simp_all [execute_MUL', execute_MUL, execute_MUL_pure, mop_of_mul_op,
                 LeanRV64D.Functions.xlen, mult_to_bits_half]
   -- Four Low-half goals remain: modular identity (i*i ≡ n*n mod 2^64).
-  -- TODO Phase 1.5 E4: close via RV64 analogues of openvm-fv's
-  -- toInt_toInt_as_toNat_64 / toInt_toNat_as_toNat_64 / toNat_toInt_as_toNat_64.
-  all_goals sorry
+  -- All goals have the form:
+  --   wX_bits rd (BitVec.setWidth 64 (to_bits_truncate (EXPR_I))) =
+  --   wX_bits rd (BitVec.setWidth 64 (to_bits_truncate (EXPR_N)))
+  -- where EXPR_I is some mix of (toInt, toNat) products, EXPR_N is (toNat * toNat).
+  -- Both sides agree because toInt ≡ toNat (mod 2^64) for 64-bit BitVecs.
+  all_goals
+    refine bind_congr ?_; intro r1
+    refine bind_congr ?_; intro r2
+    -- Strip the `wX_bits` / `(· <$> ·)` monadic wrapping.
+    ext s
+    simp_all
+    congr 3
+    -- Goal: BitVec.setWidth 64 (to_bits_truncate EXPR_I) = BitVec.setWidth 64 (to_bits_truncate EXPR_N)
+    -- Strategy: reduce both sides to `BitVec.ofInt 64 EXPR` via explicit width manipulation,
+    -- then use `BitVec.ofInt`-is-invariant-under-mod-2^64 reasoning.
+    -- Helper: `BitVec.setWidth 64 (to_bits_truncate (l := 128) x) = BitVec.ofInt 64 x`.
+    have to_bits_setWidth_64 : ∀ (x : ℤ),
+        BitVec.setWidth 64 (to_bits_truncate (l := 128) x) = BitVec.ofInt 64 x := by
+      intro x
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_setWidth, to_bits_truncate, Sail.get_slice_int,
+                 BitVec.extractLsb'_toNat, BitVec.toNat_ofInt, Nat.shiftRight_zero,
+                 Nat.zero_add]
+      -- Goal: (((x % 2^129).toNat) % 2^128) % 2^64 = (x % 2^64).toNat
+      -- The mod and extract use ℕ literals, but we need to reduce them and compare.
+      -- Change the numeric form to ℤ literals for uniform reasoning.
+      show (x % ((2 : ℕ) ^ (128 + 1) : ℤ)).toNat % 2 ^ 128 % 2 ^ 64
+           = (x % ((2 : ℕ) ^ 64 : ℤ)).toNat
+      have eq1 : (((2 : ℕ) ^ (128 + 1)) : ℤ) = 680564733841876926926749214863536422912 := by
+        norm_num
+      have eq2 : (((2 : ℕ) ^ 64) : ℤ) = 18446744073709551616 := by norm_num
+      rw [eq1, eq2]
+      show (x % 680564733841876926926749214863536422912).toNat
+             % ((2 : ℕ) ^ 128) % ((2 : ℕ) ^ 64)
+           = (x % 18446744073709551616).toNat
+      have eq3 : ((2 : ℕ) ^ 128) = 340282366920938463463374607431768211456 := by norm_num
+      have eq4 : ((2 : ℕ) ^ 64) = 18446744073709551616 := by norm_num
+      rw [eq3, eq4]
+      -- Goal: (x % 680564...).toNat % 340282... % 184467... = (x % 184467...).toNat
+      have h_bound_big : (0 : ℤ) ≤ x % 680564733841876926926749214863536422912 := by
+        apply Int.emod_nonneg; norm_num
+      have h_bound_64 : (0 : ℤ) ≤ x % 18446744073709551616 := by
+        apply Int.emod_nonneg; norm_num
+      -- Convert (.toNat).Nat.mod to coercion arithmetic.
+      zify
+      rw [Int.toNat_of_nonneg h_bound_big, Int.toNat_of_nonneg h_bound_64]
+      have step1 : x % 680564733841876926926749214863536422912 % 340282366920938463463374607431768211456
+                   = x % 340282366920938463463374607431768211456 := by
+        apply Int.emod_emod_of_dvd; norm_num
+      have step2 : x % 340282366920938463463374607431768211456 % 18446744073709551616
+                   = x % 18446744073709551616 := by
+        apply Int.emod_emod_of_dvd; norm_num
+      rw [step1, step2]
+    rw [to_bits_setWidth_64, to_bits_setWidth_64]
+    -- Goal: BitVec.ofInt 64 EXPR_I = BitVec.ofInt 64 EXPR_N
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_ofInt]
+    congr 1
+    -- Goal: EXPR_I % 2^64 = EXPR_N % 2^64
+    have hr1 : (r1.toInt : ℤ) % (2^64 : ℕ) = (r1.toNat : ℤ) % (2^64 : ℕ) := by
+      rw [BitVec.toInt_eq_toNat_bmod, Int.bmod]
+      split_ifs <;> push_cast <;> omega
+    have hr2 : (r2.toInt : ℤ) % (2^64 : ℕ) = (r2.toNat : ℤ) % (2^64 : ℕ) := by
+      rw [BitVec.toInt_eq_toNat_bmod, Int.bmod]
+      split_ifs <;> push_cast <;> omega
+    first
+    | (rw [Int.mul_emod, hr1, hr2, ← Int.mul_emod])
+    | (rw [Int.mul_emod, hr1, ← Int.mul_emod])
+    | (rw [Int.mul_emod, hr2, ← Int.mul_emod])
 
 end MUL
 
@@ -271,32 +334,124 @@ def execute_REM' (rs2 : regidx) (rs1 : regidx) (rd : regidx) (is_unsigned : Bool
   (wX_bits rd result)
   (pure RETIRE_SUCCESS)
 
+set_option maxHeartbeats 10000000 in
 /-- Equivalence of `execute_DIV`s.
 
 Structural port of openvm-fv's DIV equivalence lemma, widened to 64-bit
-operands. The proof body is left as a targeted `sorry` — it needs RV64
-analogues of the arithmetic helper lemmas (`div_overflow` at `-2^63`,
-`to_bits_truncate` over 64-bit operands) that live in openvm-fv's Core.
+operands.
 -/
 @[simp]
 lemma execute_DIV_eq_execute_DIV'
     (rs2 rs1 rd : regidx) (usgn : Bool) :
     execute_DIV rs2 rs1 rd usgn = execute_DIV' rs2 rs1 rd usgn := by
-  -- TODO Phase 1.5 E5: four-way case analysis (signed×zero, signed×overflow,
-  -- unsigned×zero, generic) with widened arithmetic bounds. Full RV32 proof
-  -- available in openvm-fv Execution.lean lines 354-382.
-  sorry
+  simp_all [execute_DIV, execute_DIV']
+  refine bind_congr ?_; intro r1
+  refine bind_congr ?_; intro r2
+  ext s; simp; congr
+  have range_int_r1 : -9223372036854775808 ≤ r1.toInt ∧ r1.toInt < 9223372036854775808 := by
+    constructor
+    · have := @BitVec.le_toInt 64 r1; norm_num at this ⊢; exact_mod_cast this
+    · have := @BitVec.toInt_lt 64 r1; norm_num at this ⊢; exact_mod_cast this
+  have range_int_r2 : -9223372036854775808 ≤ r2.toInt ∧ r2.toInt < 9223372036854775808 := by
+    constructor
+    · have := @BitVec.le_toInt 64 r2; norm_num at this ⊢; exact_mod_cast this
+    · have := @BitVec.toInt_lt 64 r2; norm_num at this ⊢; exact_mod_cast this
+  have range_nat_r1 : 0 ≤ r1.toNat ∧ r1.toNat < 18446744073709551616 := by
+    constructor
+    · omega
+    · have := r1.isLt; omega
+  have range_nat_r2 : 0 ≤ r2.toNat ∧ r2.toNat < 18446744073709551616 := by
+    constructor
+    · omega
+    · have := r2.isLt; omega
+  by_cases husgn : usgn <;>
+    simp_all [execute_DIV_REM_pure, execute_DIV_REM_pure_int,
+              LeanRV64D.Functions.not, LeanRV64D.Functions.xlen, instHPowInt_leanRV64D] <;>
+    by_cases r2z : r2 = 0 <;> simp_all
+  · -- Unsigned, r2 = 0 → quotient is 2^64 - 1
+    simp [to_bits_truncate, Sail.get_slice_int]
+  · -- Unsigned, r2 ≠ 0 → use plain tdiv
+    repeat rw [ if_neg (by rw [← BitVec.toNat_inj] at r2z; simp_all) ]
+    rw [← BitVec.toNat_inj]
+    simp [to_bits_truncate, Sail.get_slice_int]
+    congr
+    rw [Int.emod_eq_of_lt]
+    · apply Int.zero_le_ofNat
+    · have := @Int.ediv_le_self r1.toNat r2.toNat (by omega)
+      omega
+  · -- Signed, r2 = 0 → quotient is -1
+    simp [to_bits_truncate, Sail.get_slice_int]
+  · -- Signed, r2 ≠ 0: may overflow at -2^63 / -1, else tdiv
+    by_cases of : 9223372036854775808 ≤ r1.toInt.tdiv r2.toInt <;>
+    have of' := ZiskFv.U64.div_overflow_64 range_int_r1 range_int_r2 <;>
+    simp_all [to_bits_truncate, Sail.get_slice_int]
+    simp [BitVec.ofNat, BitVec.ofInt]
+    congr
+    simp [Fin.ext_iff]
+    omega
 
+set_option maxHeartbeats 10000000 in
 /-- Equivalence of `execute_REM`s.
 
 Structural port of openvm-fv's REM equivalence lemma, widened to 64-bit.
-Left as a targeted `sorry` for the same reasons as DIV.
 -/
 @[simp]
 lemma execute_REM_eq_execute_REM'
     (rs2 rs1 rd : regidx) (usgn : Bool) :
     execute_REM rs2 rs1 rd usgn = execute_REM' rs2 rs1 rd usgn := by
-  -- TODO Phase 1.5 E5: parallel to DIV — see openvm-fv Execution.lean lines 384-418.
-  sorry
+  simp_all [execute_REM, execute_REM']
+  refine bind_congr ?_; intro r1
+  refine bind_congr ?_; intro r2
+  ext s; simp_all; congr
+  have range_int_r1 : -9223372036854775808 ≤ r1.toInt ∧ r1.toInt < 9223372036854775808 := by
+    constructor
+    · have := @BitVec.le_toInt 64 r1; norm_num at this ⊢; exact_mod_cast this
+    · have := @BitVec.toInt_lt 64 r1; norm_num at this ⊢; exact_mod_cast this
+  have range_int_r2 : -9223372036854775808 ≤ r2.toInt ∧ r2.toInt < 9223372036854775808 := by
+    constructor
+    · have := @BitVec.le_toInt 64 r2; norm_num at this ⊢; exact_mod_cast this
+    · have := @BitVec.toInt_lt 64 r2; norm_num at this ⊢; exact_mod_cast this
+  have range_nat_r1 : 0 ≤ r1.toNat ∧ r1.toNat < 18446744073709551616 := by
+    constructor
+    · omega
+    · have := r1.isLt; omega
+  have range_nat_r2 : 0 ≤ r2.toNat ∧ r2.toNat < 18446744073709551616 := by
+    constructor
+    · omega
+    · have := r2.isLt; omega
+  by_cases husgn : usgn <;>
+    simp_all [execute_DIV_REM_pure, execute_DIV_REM_pure_int] <;>
+    by_cases r2z : r2 = 0 <;> simp_all
+  · -- Unsigned, r2 = 0
+    simp [to_bits_truncate, Sail.get_slice_int]
+    rw [Nat.mod_eq_of_lt (by omega)]; simp
+  · -- Unsigned, r2 ≠ 0
+    repeat rw [ if_neg (by rw [← BitVec.toNat_inj] at r2z; simp_all) ]
+    rw [← BitVec.toNat_inj]
+    simp [to_bits_truncate, Sail.get_slice_int]
+    congr
+    rw [Int.emod_eq_of_lt]
+    · apply Int.zero_le_ofNat
+    · rw [Int.tmod_eq_emod_of_nonneg (by omega)]
+      trans (r2.toNat : ℤ)
+      · simp [← BitVec.toNat_inj] at r2z
+        apply Int.emod_lt_of_pos r1.toNat (by omega)
+      · omega
+  · -- Signed, r2 = 0 → remainder = r1
+    simp [to_bits_truncate, Sail.get_slice_int]
+    simp [← BitVec.toNat_inj]
+    have mod_65_to_64 : ∀ (a : ℤ),
+        (a % 36893488147419103232).toNat % 18446744073709551616
+          = (a % 18446744073709551616).toNat := by omega
+    simp [mod_65_to_64, BitVec.toInt]
+    split_ifs with hneg <;> [ skip; simp ] <;>
+      rw [Int.emod_eq_of_lt (by omega)] <;> simp <;> omega
+  · -- Signed, r2 ≠ 0
+    repeat rw [ if_neg (by rw [← BitVec.toInt_inj] at r2z; simp_all) ]
+    simp_all [to_bits_truncate, Sail.get_slice_int]
+    simp [BitVec.ofNat, BitVec.ofInt]
+    congr
+    simp [Fin.ext_iff]
+    omega
 
 end DIV_REM
