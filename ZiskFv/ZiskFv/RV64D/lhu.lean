@@ -51,58 +51,8 @@ namespace PureSpec
     i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat < OpenVM_address_space_size ∧
     (2 : ℤ) ∣ i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat
 
-  /-- Trusted axiom: RV64 LHU byte-loop equivalence (Phase 3A L3, path (b)
-      — sibling of `execute_LOADWU_pure_equiv_axiom` narrowed to width 2
-      with `is_unsigned = true`).
-
-      Under `RISC_V_assumptions` + `lhu_state_assumptions` (pins two source
-      bytes, establishes 2-byte alignment, bounds the address below
-      `OpenVM_address_space_size = 2^29`), the Sail
-      `execute_LOAD imm rs1 rd true 2` reduces to the pure-spec block:
-      write `nextPC = PC+4`, conditionally write the 2 bytes zero-extended
-      into `rd`, retire success.
-
-      **Trust basis.** Same platform-config gap as M1 (LOADD) /
-      M3 (LOADWU), symmetric at width = 2. The obstruction (`pmpCheck`'s
-      16-iteration `forIn`, `within_clint` disjointness, `pmaCheck` with
-      2-byte alignment) lives outside the assumption bundle currently
-      recorded in `RISC_V_assumptions`. A future Phase 3+ extension would
-      generalize the bulk lemma `vmem_read_addr_aligned_equiv` over the
-      `width ∈ {1, 2, 4, 8}` and `is_unsigned ∈ {false, true}` axes; until
-      then this axiom captures the narrowed case pointwise. See
-      `docs/fv/trusted-base.md` entries M1/M3/M7 for the full audit trail. -/
-  axiom execute_LOADHU_pure_equiv_axiom
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    {mstatus : RegisterType Register.mstatus}
-    {pmaRegion : PMA_Region}
-    {misa : RegisterType Register.misa}
-    {mseccfg : RegisterType Register.mseccfg}
-    (input : LhuInput)
-    (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions : lhu_state_assumptions input state)
-  :
-    (
-      do
-        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-        LeanRV64D.Functions.execute (instruction.LOAD (
-          input.imm,
-          regidx.Regidx input.r1,
-          regidx.Regidx input.rd,
-          true,
-          2
-        ))
-    ) state =
-    let output := execute_LOADHU_pure input
-    (do
-      Sail.writeReg Register.nextPC output.nextPC
-      match output.rd with
-        | .some (rd, rd_val) => write_xreg rd rd_val
-        | .none => pure ()
-      pure (ExecutionResult.Retire_Success ())
-    ) state
-
-  -- LHU Sail-equivalence. Closed via `execute_LOADHU_pure_equiv_axiom`
-  -- (Phase 3A L3, 2026-04-22). Sibling of M3 (LWU) narrowed to width = 2.
+  -- LHU Sail-equivalence. Phase 3.5 promotion via P1-P3. Sibling of M3
+  -- (LWU) narrowed to width = 2.
   set_option maxHeartbeats 0 in
   lemma execute_LOADHU_pure_equiv
     (input : LhuInput)
@@ -128,6 +78,32 @@ namespace PureSpec
         | .none => pure ()
       pure (ExecutionResult.Retire_Success ())
     ) state
-  := execute_LOADHU_pure_equiv_axiom input risc_v_assumptions h_opcode_assumptions
+  := by
+    have next_gma := RISC_V_assumptions_invariant_under_pc_increment risc_v_assumptions (val := input.PC + 4#64)
+    unfold lhu_state_assumptions at h_opcode_assumptions
+
+    simp [
+      Sail.readReg,
+      PreSail.readReg,
+      writeReg_state_success,
+      LeanRV64D.Functions.execute,
+      *
+    ]
+
+    have h_r1_val := rX_bits_write_other_reg_state (val := input.PC + 4#64) h_opcode_assumptions.2.1 reg_of_fin_neq_nextPC
+
+    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg, _, _, _ ⟩ := next_gma
+    have := arithmetic_helper (a := input.r1_val.toNat) (b := (BitVec.signExtend 64 input.imm).toNat) (by grind)
+
+    simp [LeanRV64D.Functions.execute_LOAD, LeanRV64D.Functions.vmem_read, EStateM.map, *]
+    simp [LeanRV64D.Functions.vmem_read_addr, ExceptT.run, *]
+
+    simp [write_reg_state, execute_LOADHU_pure, *]
+
+    split_ifs with h_rd
+    . simp [LeanRV64D.Functions.wX_bits, LeanRV64D.Functions.wX, *]
+    . let r : Finset.Icc 1 31 := ⟨input.rd.toNat, range input.rd h_rd⟩
+      rewrite [ wX_write_xreg_non_zero_equiv _ _ _ r (by simp [r])]
+      grind
 
 end PureSpec

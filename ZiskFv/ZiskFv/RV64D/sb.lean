@@ -57,66 +57,9 @@ namespace PureSpec
     LeanRV64D.Functions.rX_bits (regidx.Regidx i.r2) state = EStateM.Result.ok i.r2_val state ∧
     (i.r1_val + (BitVec.signExtend 64 i.imm)).toNat < OpenVM_address_space_size
 
-  /-- Trusted axiom: RV64 SB byte-loop equivalence (Phase 3A S2, path (b)).
-
-      Narrowest companion of the store family — SH/SW/SD analogues live
-      in `sh.lean` / `sw.lean` / `sd.lean`. See `sd.lean` for the full
-      platform-config-gap analysis. Under `RISC_V_assumptions` +
-      `sb_state_assumptions` (rs1/rs2 read successfully, address below
-      `OpenVM_address_space_size` — SB is byte-aligned so no alignment
-      divisibility condition is needed), the Sail
-      `execute_STORE imm rs2 rs1 1` reduces to the pure-spec block:
-      write `nextPC = PC+4`, apply the single byte-write encoded by
-      `modify_memory_1`, retire success.
-
-      **Trust basis.** Same three platform invariants as SD/SW/SH's
-      axiom: (1) `pmpCheck addr 1 (Store Data) Machine` returns `none`
-      (machine-mode PMP short-circuit); (2) `within_clint addr 1 = false`
-      (ZisK programs never target CLINT MMIO); (3) `pmaCheck` with
-      `writable = true` yields `ok none`. The write case additionally
-      relies on `mem_write_ea` being a no-op in the non-MMIO write
-      path; `mem_write_value` performs the `state.mem.insert` that
-      `modify_memory_1` encodes.
-
-      The 1-byte case is strictly narrower than SD's 8-byte / SW's
-      4-byte / SH's 2-byte cases; the symmetric derivation closure path
-      via `vmem_write_addr_aligned_equiv` would retire all four
-      together. Catalogued as M11 in `docs/fv/trusted-base.md`. -/
-  axiom execute_STOREB_pure_equiv_axiom
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    {mstatus : RegisterType Register.mstatus}
-    {pmaRegion : PMA_Region}
-    {misa : RegisterType Register.misa}
-    {mseccfg : RegisterType Register.mseccfg}
-    (input : SbInput)
-    (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions : sb_state_assumptions input state)
-  :
-    (
-      do
-        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-        LeanRV64D.Functions.execute (instruction.STORE (
-          input.imm,
-          regidx.Regidx input.r2,
-          regidx.Regidx input.r1,
-          1
-        ))
-    ) state =
-    let output := execute_STOREB_pure input
-    (do
-      Sail.writeReg Register.nextPC output.nextPC
-      set (modify_memory_1 (← get) output)
-      pure (ExecutionResult.Retire_Success ())
-    ) state
-
-  -- SB Sail-equivalence: `execute_STORE imm rs2 rs1 1` reduces to the
-  -- pure-spec block (write `nextPC = PC+4`; apply 1 byte-write to
-  -- `state.mem` at `rs1 + sign_extend imm`; retire success).
-  --
-  -- Closed via `execute_STOREB_pure_equiv_axiom` (Phase 3A S2, path (b),
-  -- 2026-04-22). Same memory-model-reduction blocker as LD/SD/LWU/SW/SH —
-  -- see the axiom's docstring and `sd.lean` for the platform-config-gap
-  -- analysis.
+  -- SB Sail-equivalence. Phase 3.5 promotion: direct port of SH narrowed
+  -- to width = 1 (alignment vacuous). The `@[simp high]` P1-P3 platform
+  -- axioms discharge the PMP/CLINT/PMA chain.
   set_option maxHeartbeats 0 in
   lemma execute_STOREB_pure_equiv
     (input : SbInput)
@@ -139,6 +82,33 @@ namespace PureSpec
       set (modify_memory_1 (← get) output)
       pure (ExecutionResult.Retire_Success ())
     ) state
-  := execute_STOREB_pure_equiv_axiom input risc_v_assumptions h_opcode_assumptions
+  := by
+    have next_gma := RISC_V_assumptions_invariant_under_pc_increment risc_v_assumptions (val := input.PC + 4#64)
+    unfold sb_state_assumptions at h_opcode_assumptions
+
+    simp [
+      Sail.readReg,
+      PreSail.readReg,
+      writeReg_state_success,
+      LeanRV64D.Functions.execute,
+      *
+    ]
+
+    have h_r1_val := rX_bits_write_other_reg_state (val := input.PC + 4#64) h_opcode_assumptions.2.1 reg_of_fin_neq_nextPC
+    have h_r2_val := rX_bits_write_other_reg_state (val := input.PC + 4#64) h_opcode_assumptions.2.2.1 reg_of_fin_neq_nextPC
+
+    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg, _, _, _ ⟩ := next_gma
+
+    simp at h_opcode_assumptions
+    simp [LeanRV64D.Functions.execute_STORE, LeanRV64D.Functions.vmem_write, EStateM.map, *]
+    simp [LeanRV64D.Functions.vmem_write_addr, ExceptT.run, *]
+
+    simp [execute_STOREB_pure, EStateM.set, modify_memory_1,
+          BitVec.extractLsb, BitVec.extractLsb', *]
+    have h_eq0 : BitVec.ofNat 8 (input.r2_val.toNat % 256) =
+                 BitVec.setWidth 8 input.r2_val := by
+      apply BitVec.eq_of_toNat_eq
+      simp [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    rw [h_eq0]
 
 end PureSpec

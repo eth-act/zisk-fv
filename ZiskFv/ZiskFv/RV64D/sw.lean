@@ -79,74 +79,14 @@ namespace PureSpec
     (i.r1_val + BitVec.signExtend 64 i.imm).toNat < OpenVM_address_space_size ∧
     (4 : ℤ) ∣ (i.r1_val.toNat + (BitVec.signExtend 64 i.imm)).toNat
 
-  /-- Trusted axiom: RV64 SW byte-loop equivalence (Phase 2.5 D4d, path (b)).
-
-      Narrow companion to `execute_STORED_pure_equiv_axiom` — see
-      `sd.lean` for the full platform-config-gap analysis. Under
-      `RISC_V_assumptions` + `sw_state_assumptions` (rs1/rs2 read
-      successfully, 4-byte alignment, address below
-      `OpenVM_address_space_size`), the Sail `execute_STORE imm rs2 rs1 4`
-      reduces to the pure-spec block: write `nextPC = PC+4`, apply the
-      four byte-writes encoded by `modify_memory_4`, retire success.
-
-      **Trust basis.** Same three platform invariants as SD's axiom:
-      (1) `pmpCheck addr 4 (Store Data) Machine` returns `none`
-      (machine-mode PMP short-circuit); (2) `within_clint addr 4 = false`
-      (ZisK programs never target CLINT MMIO); (3) `pmaCheck` with
-      `writable = true` + 4-byte alignment yields `ok none`. The write
-      case additionally relies on:
-
-        (4) `mem_write_ea` is a no-op in the non-MMIO write path (it
-            returns `ok ()` after passing the alignment check); the
-            subsequent `mem_write_value` performs the actual
-            `state.mem.insert` chain that `modify_memory_4` encodes.
-
-      Unlike RV32 (where openvm-fv's `sw.lean` discharges this without
-      an axiom), the vendored `LeanRV64D` platform config
-      (`sys_pmp_count = 16`, `plat_clint_base = 2^25`,
-      `plat_clint_size = 786432`) adds PMP / MMIO state dependencies not
-      witnessed by the current assumption bundle — the same blocker
-      documented in SD. The 4-byte case is strictly narrower than SD's
-      8-byte case; the symmetric derivation closure path via
-      `vmem_write_addr_aligned_equiv` would retire both together. -/
-  axiom execute_STOREW_pure_equiv_axiom
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    {mstatus : RegisterType Register.mstatus}
-    {pmaRegion : PMA_Region}
-    {misa : RegisterType Register.misa}
-    {mseccfg : RegisterType Register.mseccfg}
-    (input : SwInput)
-    (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions : sw_state_assumptions input state)
-  :
-    (
-      do
-        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-        LeanRV64D.Functions.execute (instruction.STORE (
-          input.imm,
-          regidx.Regidx input.r2,
-          regidx.Regidx input.r1,
-          4
-        ))
-    ) state =
-    let output := execute_STOREW_pure input
-    (do
-      Sail.writeReg Register.nextPC output.nextPC
-      set (modify_memory_4 (← get) output)
-      pure (ExecutionResult.Retire_Success ())
-    ) state
-
   -- SW Sail-equivalence: `execute_STORE imm rs2 rs1 4` reduces to the
   -- pure-spec block (write `nextPC = PC+4`; apply 4 byte-writes to
   -- `state.mem` at successive addresses starting at `rs1 + sign_extend imm`;
   -- retire success).
   --
-  -- Closed via `execute_STOREW_pure_equiv_axiom` (Phase 2.5 D4d, path (b),
-  -- 2026-04-22). Same memory-model-reduction blocker as LD/SD/LWU — see
-  -- the axiom's docstring and `sd.lean` for the platform-config-gap
-  -- analysis. The 4-byte case is the RV64 twin of openvm-fv's RV32
-  -- `execute_STOREW_pure_equiv`, which closed without an axiom; the
-  -- derivation-only closure path for both RV64 variants is symmetric.
+  -- Phase 3.5 promotion: direct port of SD narrowed to width = 4.
+  -- The `@[simp high]` P1-P3 platform axioms discharge the PMP/CLINT/PMA
+  -- chain.
   set_option maxHeartbeats 0 in
   lemma execute_STOREW_pure_equiv
     (input : SwInput)
@@ -169,6 +109,49 @@ namespace PureSpec
       set (modify_memory_4 (← get) output)
       pure (ExecutionResult.Retire_Success ())
     ) state
-  := execute_STOREW_pure_equiv_axiom input risc_v_assumptions h_opcode_assumptions
+  := by
+    have next_gma := RISC_V_assumptions_invariant_under_pc_increment risc_v_assumptions (val := input.PC + 4#64)
+    unfold sw_state_assumptions at h_opcode_assumptions
+
+    simp [
+      Sail.readReg,
+      PreSail.readReg,
+      writeReg_state_success,
+      LeanRV64D.Functions.execute,
+      *
+    ]
+
+    have h_r1_val := rX_bits_write_other_reg_state (val := input.PC + 4#64) h_opcode_assumptions.2.1 reg_of_fin_neq_nextPC
+    have h_r2_val := rX_bits_write_other_reg_state (val := input.PC + 4#64) h_opcode_assumptions.2.2.1 reg_of_fin_neq_nextPC
+
+    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg, _, _, _ ⟩ := next_gma
+
+    simp at h_opcode_assumptions
+    simp [LeanRV64D.Functions.execute_STORE, LeanRV64D.Functions.vmem_write, EStateM.map, *]
+    simp [LeanRV64D.Functions.vmem_write_addr, ExceptT.run, *]
+    rw [if_pos (by omega)]; simp [*]
+
+    simp [execute_STOREW_pure, EStateM.set, modify_memory_4,
+          BitVec.extractLsb, BitVec.extractLsb', *]
+    repeat rw [Nat.mod_eq_of_lt (b := 18446744073709551616) (by omega)]
+    -- Normalize `r2_val.toNat % 2^32 >>> k` = `r2_val.toNat >>> k` for
+    -- k ∈ {0, 8, 16, 24}, and `setWidth 8 r2_val = ofNat 8 (r2_val.toNat % 2^32)`.
+    have h_eq0 : BitVec.ofNat 8 (input.r2_val.toNat % 4294967296) =
+                 BitVec.setWidth 8 input.r2_val := by
+      apply BitVec.eq_of_toNat_eq
+      simp [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    have h_eq1 : BitVec.ofNat 8 ((input.r2_val.toNat % 4294967296) >>> 8) =
+                 BitVec.ofNat 8 (input.r2_val.toNat >>> 8) := by
+      apply BitVec.eq_of_toNat_eq
+      simp [BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]; omega
+    have h_eq2 : BitVec.ofNat 8 ((input.r2_val.toNat % 4294967296) >>> 16) =
+                 BitVec.ofNat 8 (input.r2_val.toNat >>> 16) := by
+      apply BitVec.eq_of_toNat_eq
+      simp [BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]; omega
+    have h_eq3 : BitVec.ofNat 8 ((input.r2_val.toNat % 4294967296) >>> 24) =
+                 BitVec.ofNat 8 (input.r2_val.toNat >>> 24) := by
+      apply BitVec.eq_of_toNat_eq
+      simp [BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]; omega
+    rw [h_eq0, h_eq1, h_eq2, h_eq3]
 
 end PureSpec

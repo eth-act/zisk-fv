@@ -48,56 +48,8 @@ namespace PureSpec
     state.mem[i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat]? = .some i.data0 ∧
     i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat < OpenVM_address_space_size
 
-  /-- Trusted axiom: RV64 LBU byte-loop equivalence (Phase 3A L5, path (b)
-      — sibling of `execute_LOADWU_pure_equiv_axiom` / `execute_LOADHU_
-      pure_equiv_axiom` narrowed to width 1 with `is_unsigned = true`).
-
-      Under `RISC_V_assumptions` + `lbu_state_assumptions` (pins one source
-      byte, bounds the address below `OpenVM_address_space_size = 2^29`;
-      1-byte "alignment" is trivial), the Sail
-      `execute_LOAD imm rs1 rd true 1` reduces to the pure-spec block:
-      write `nextPC = PC+4`, conditionally write the byte zero-extended
-      into `rd`, retire success.
-
-      **Trust basis.** Same platform-config gap as M1 (LOADD) /
-      M3 (LOADWU) / M7 (LOADHU), now at width = 1. The 1-byte case is the
-      simplest — alignment is vacuous — but the PMP/CLINT/PMA chain is
-      identical. Future closure via `vmem_read_addr_aligned_equiv`
-      generalization subsumes all widths uniformly. See
-      `docs/fv/trusted-base.md` entry M9 for the audit trail. -/
-  axiom execute_LOADBU_pure_equiv_axiom
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    {mstatus : RegisterType Register.mstatus}
-    {pmaRegion : PMA_Region}
-    {misa : RegisterType Register.misa}
-    {mseccfg : RegisterType Register.mseccfg}
-    (input : LbuInput)
-    (risc_v_assumptions : RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions : lbu_state_assumptions input state)
-  :
-    (
-      do
-        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-        LeanRV64D.Functions.execute (instruction.LOAD (
-          input.imm,
-          regidx.Regidx input.r1,
-          regidx.Regidx input.rd,
-          true,
-          1
-        ))
-    ) state =
-    let output := execute_LOADBU_pure input
-    (do
-      Sail.writeReg Register.nextPC output.nextPC
-      match output.rd with
-        | .some (rd, rd_val) => write_xreg rd rd_val
-        | .none => pure ()
-      pure (ExecutionResult.Retire_Success ())
-    ) state
-
-  -- LBU Sail-equivalence. Closed via `execute_LOADBU_pure_equiv_axiom`
-  -- (Phase 3A L5, 2026-04-22). Sibling of M3 (LWU) / M7 (LHU) narrowed to
-  -- width = 1.
+  -- LBU Sail-equivalence. Phase 3.5 promotion via P1-P3. Sibling of M3
+  -- (LWU) / M7 (LHU) narrowed to width = 1 (alignment vacuous).
   set_option maxHeartbeats 0 in
   lemma execute_LOADBU_pure_equiv
     (input : LbuInput)
@@ -123,6 +75,32 @@ namespace PureSpec
         | .none => pure ()
       pure (ExecutionResult.Retire_Success ())
     ) state
-  := execute_LOADBU_pure_equiv_axiom input risc_v_assumptions h_opcode_assumptions
+  := by
+    have next_gma := RISC_V_assumptions_invariant_under_pc_increment risc_v_assumptions (val := input.PC + 4#64)
+    unfold lbu_state_assumptions at h_opcode_assumptions
+
+    simp [
+      Sail.readReg,
+      PreSail.readReg,
+      writeReg_state_success,
+      LeanRV64D.Functions.execute,
+      *
+    ]
+
+    have h_r1_val := rX_bits_write_other_reg_state (val := input.PC + 4#64) h_opcode_assumptions.2.1 reg_of_fin_neq_nextPC
+
+    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg, _, _, _ ⟩ := next_gma
+    have := arithmetic_helper (a := input.r1_val.toNat) (b := (BitVec.signExtend 64 input.imm).toNat) (by grind)
+
+    simp [LeanRV64D.Functions.execute_LOAD, LeanRV64D.Functions.vmem_read, EStateM.map, *]
+    simp [LeanRV64D.Functions.vmem_read_addr, ExceptT.run, *]
+
+    simp [write_reg_state, execute_LOADBU_pure, *]
+
+    split_ifs with h_rd
+    . simp [LeanRV64D.Functions.wX_bits, LeanRV64D.Functions.wX, *]
+    . let r : Finset.Icc 1 31 := ⟨input.rd.toNat, range input.rd h_rd⟩
+      rewrite [ wX_write_xreg_non_zero_equiv _ _ _ r (by simp [r])]
+      grind
 
 end PureSpec

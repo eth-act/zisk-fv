@@ -101,7 +101,16 @@ openvm-fv's RV32D JALR proof.
 
 ## Memory-model axioms (Phase 2.5 D1, path (b) — 2026-04-22)
 
-### Entry M1: `PureSpec.execute_LOADD_pure_equiv_axiom`
+**All entries below are now theorems (Phase 3.5 — 2026-04-22).** M1-M4,
+M7, M9-M11 each close via a direct port of openvm-fv's RV32 proof, with
+the `@[simp high]` P1-P3 platform axioms in `ZiskFv.PlatformScope`
+discharging the 16-entry PMP loop / CLINT MMIO check / PMA alignment
+chain that previously blocked simp reduction. The historical entries
+are retained below for audit trail; each `*_pure_equiv_axiom` axiom
+declaration has been deleted from its RV64D/*.lean file, and the
+`*_pure_equiv` lemma is now proved directly.
+
+### Entry M1 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_LOADD_pure_equiv_axiom`
 
 - **File:** `ZiskFv/ZiskFv/RV64D/ld.lean`
 - **Statement (informal):** under `RISC_V_assumptions` +
@@ -118,7 +127,7 @@ openvm-fv's RV32D JALR proof.
   `LeanRV64D/InstsEnd.lean::execute_LOAD` (lines 251 and 67179 in the
   vendored `sail-riscv-lean@ext-zca-simp-lemmas`).
 
-### Entry M2: `PureSpec.execute_STORED_pure_equiv_axiom`
+### Entry M2 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_STORED_pure_equiv_axiom`
 
 - **File:** `ZiskFv/ZiskFv/RV64D/sd.lean`
 - **Statement (informal):** symmetric to M1 for
@@ -131,7 +140,7 @@ openvm-fv's RV32D JALR proof.
 - **Provenance:** `LeanRV64D/VmemUtils.lean::vmem_write_addr` +
   `LeanRV64D/InstsEnd.lean::execute_STORE`.
 
-### Entry M3: `PureSpec.execute_LOADWU_pure_equiv_axiom`
+### Entry M3 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_LOADWU_pure_equiv_axiom`
 
 - **File:** `ZiskFv/ZiskFv/RV64D/lwu.lean`
 - **Statement (informal):** narrow companion of M1 for
@@ -145,7 +154,7 @@ openvm-fv's RV32D JALR proof.
 - **Provenance:** `LeanRV64D/VmemUtils.lean::vmem_read_addr` +
   `LeanRV64D/InstsEnd.lean::execute_LOAD` (width 4, zero-extend path).
 
-### Entry M4: `PureSpec.execute_STOREW_pure_equiv_axiom`
+### Entry M4 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_STOREW_pure_equiv_axiom`
 
 - **File:** `ZiskFv/ZiskFv/RV64D/sw.lean`
 - **Statement (informal):** narrow companion of M2 for
@@ -195,7 +204,7 @@ M2 (SD) / M4 (SW). Structurally identical to M2/M4 modulo the
 closable with M1-M4 under the same PMP/CLINT extension to
 `RISC_V_assumptions` (see "Why M1-M4 exist" above).
 
-### Entry M10: `PureSpec.execute_STOREH_pure_equiv_axiom`
+### Entry M10 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_STOREH_pure_equiv_axiom`
 
 - **File:** `ZiskFv/ZiskFv/RV64D/sh.lean`
 - **Statement (informal):** narrow companion of M2/M4 for
@@ -210,7 +219,7 @@ closable with M1-M4 under the same PMP/CLINT extension to
 - **Provenance:** `LeanRV64D/VmemUtils.lean::vmem_write_addr` +
   `LeanRV64D/InstsEnd.lean::execute_STORE` (width 2 path).
 
-### Entry M11: `PureSpec.execute_STOREB_pure_equiv_axiom`
+### Entry M11 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_STOREB_pure_equiv_axiom`
 
 - **File:** `ZiskFv/ZiskFv/RV64D/sb.lean`
 - **Statement (informal):** narrowest of the store family; companion
@@ -409,7 +418,7 @@ M9. LW (L1), LH (L2), LB (L4) are **flag-and-stop** for a new
 sign-extension-load archetype (Phase 3B or later); the axiom slots
 M5 / M6 / M8 are reserved but not yet introduced.
 
-### Entry M7: `PureSpec.execute_LOADHU_pure_equiv_axiom`
+### Entry M7 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_LOADHU_pure_equiv_axiom`
 
 - **File:** `ZiskFv/ZiskFv/RV64D/lhu.lean`
 - **Statement (informal):** narrow companion of M1 / M3 for
@@ -424,7 +433,7 @@ M5 / M6 / M8 are reserved but not yet introduced.
 - **Provenance:** `LeanRV64D/VmemUtils.lean::vmem_read_addr` +
   `LeanRV64D/InstsEnd.lean::execute_LOAD` (width 2, zero-extend path).
 
-### Entry M9: `PureSpec.execute_LOADBU_pure_equiv_axiom`
+### Entry M9 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_LOADBU_pure_equiv_axiom`
 
 - **File:** `ZiskFv/ZiskFv/RV64D/lbu.lean`
 - **Statement (informal):** narrowest companion of M1 / M3 / M7 for
