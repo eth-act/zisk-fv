@@ -462,6 +462,33 @@ closure mirroring `sllw.lean::execute_RTYPE_sllw_pure_equiv` with the
 not a register read). Estimated 60-80 lines total across the three
 opcodes — same shape as the openvm-fv SLLI/SRLI/SRAI proofs.
 
+### Entry C4: `PureSpec.execute_MULW_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/mulw.lean`
+- **Statement (informal):** under the standard register-state
+  hypotheses (r1/r2 readable, rd mapping, PC readable), the Sail
+  `execute_instruction (.MULW (r2, r1, rd))` threaded through the
+  `writeReg nextPC (PC+4); execute …` prelude reduces to the pure-spec
+  block: write `nextPC = PC + 4`, conditionally sign-extend the
+  low-32-bit signed product of `r1_val` / `r2_val` to 64 bits and
+  write to `rd` (or no-op when `rd = 0`), retire success.
+- **Consumers:** `PureSpec.execute_MULW_pure_equiv`; consumed by
+  `ZiskFv/Equivalence/MulW.lean::equiv_MULW_sail` and transitively
+  `equiv_MULW_metaplan`.
+- **Provenance:** `LeanRV64D/InstsEnd.lean::execute_MULW` (line 66799).
+
+### Why C4 exists
+
+Parallels C3a-C3c exactly: `Fundamentals/Execution.lean` provides
+`execute_RTYPEW_pure` / `execute_RTYPEW'` / `execute_RTYPEW_eq_…`
+for SLLW/SRLW/SRAW but no analogous triple for MULW. The Phase 3A
+invariants forbid mutating `Fundamentals/Execution.lean`, so MULW's
+Sail equivalence is axiomatized pointwise pending a future
+`execute_MULW_pure` / `execute_MULW'` / `execute_MULW_eq_…` refactor
+(mechanical port of the `execute_RTYPEW` triple, adjusted for
+`to_bits_truncate` / `sign_extend` plumbing). Estimated 40-60 lines
+once that refactor lands.
+
 ## Audit procedure
 
 When accepting a new trusted axiom:
@@ -531,6 +558,12 @@ When accepting a new trusted axiom:
   the `execute_RTYPEW` triple that SLLW/SRLW/SRAW use. The Phase 3A
   H2 invariants forbid mutating `Fundamentals/Execution.lean`, so
   C3a is added pointwise; C3b/C3c will follow in sibling commits.
+- **2026-04-22 — Phase 3A M3 (salvage).** C4 (MULW) introduced.
+  Same obstruction class as C3a-C3c: missing `execute_MULW_pure` /
+  `execute_MULW'` / `execute_MULW_eq_…` refactor triple in
+  `Fundamentals/Execution.lean`. The Track M agent returned with an
+  incomplete proof referencing unqualified `to_bits_truncate` /
+  `sign_extend` identifiers; salvage axiomatized per the C3 precedent.
 - **2026-04-22 — Phase 3A H2c.** C3b (SRLIW) introduced. Same
   obstruction class as C3a (SLLIW), same closure path — a future
   commit that adds the `execute_SHIFTIWOP` refactor triple to
