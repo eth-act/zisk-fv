@@ -310,6 +310,100 @@ helper lemma `BitVec.toInt_lt_iff : (x.toInt <b y.toInt) = x.slt y`
 times. The Int-coercion bridge for the unsigned opcodes is just
 `Int.ofNat_lt` + `decide`-able reassociation.
 
+## Phase 3A Load-family memory-model axioms (2026-04-22)
+
+Track L fans out the five RV64IM sibling loads (LB, LBU, LH, LHU, LW)
+off the shipped `LoadArchetype` macro (the zero-extension "copyb"
+archetype validated by LWU / D4c). Of the five, only the three
+**zero-extension** loads (LBU, LHU, LWU-sibling) fit the macro
+directly — the three **signed-extension** loads (LB, LH, LW)
+transpile to Zisk external ops `signextend_{b,h,w}` with
+`is_external_op = 1` and route through the Binary Extension SM; the
+macro's `load_archetype_copyb_circuit_holds` hardcodes
+`is_external_op = 0`, `op = OP_COPYB = 1`.
+
+Phase 3A Track L therefore ships only the two remaining copyb loads —
+LHU (L3) and LBU (L5) — with corresponding memory-model axioms M7 and
+M9. LW (L1), LH (L2), LB (L4) are **flag-and-stop** for a new
+sign-extension-load archetype (Phase 3B or later); the axiom slots
+M5 / M6 / M8 are reserved but not yet introduced.
+
+### Entry M7: `PureSpec.execute_LOADHU_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/lhu.lean`
+- **Statement (informal):** narrow companion of M1 / M3 for
+  `execute_LOAD imm rs1 rd true 2` (width 2, `is_unsigned = true`).
+  Under `RISC_V_assumptions` + `lhu_state_assumptions` (two source
+  bytes pinned, 2-byte alignment, address below `2^29`), reduces to
+  `+4` to PC; conditional little-endian halfword-concatenation
+  zero-extended into `rd`; retire-success.
+- **Consumers:** `PureSpec.execute_LOADHU_pure_equiv`; consumed by
+  `ZiskFv/Equivalence/LoadHU.lean::equiv_LHU_sail` and transitively
+  `equiv_LHU_metaplan`.
+- **Provenance:** `LeanRV64D/VmemUtils.lean::vmem_read_addr` +
+  `LeanRV64D/InstsEnd.lean::execute_LOAD` (width 2, zero-extend path).
+
+### Entry M9: `PureSpec.execute_LOADBU_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/lbu.lean`
+- **Statement (informal):** narrowest companion of M1 / M3 / M7 for
+  `execute_LOAD imm rs1 rd true 1` (width 1, `is_unsigned = true`).
+  Under `RISC_V_assumptions` + `lbu_state_assumptions` (one source
+  byte pinned, address below `2^29`; 1-byte alignment is vacuous),
+  reduces to `+4` to PC; conditional byte-zero-extension into `rd`;
+  retire-success.
+- **Consumers:** `PureSpec.execute_LOADBU_pure_equiv`; consumed by
+  `ZiskFv/Equivalence/LoadBU.lean::equiv_LBU_sail` and transitively
+  `equiv_LBU_metaplan`.
+- **Provenance:** `LeanRV64D/VmemUtils.lean::vmem_read_addr` +
+  `LeanRV64D/InstsEnd.lean::execute_LOAD` (width 1, zero-extend path).
+
+### M5-M9 closure path (shared with M1 / M3)
+
+M7 and M9 — together with M5, M6, M8 once the sign-extension load
+archetype lands — share the M1 / M3 platform-config gap exactly: each
+is a width / sign-extension specialization of the same
+`vmem_read_addr_aligned_equiv` reduction blocked by ZisK's (absent)
+PMP-OFF and CLINT-disjoint witnesses in `RISC_V_assumptions`. A single
+Phase 2.6 / Phase 4 extension of `RISC_V_assumptions` with the
+PMP-OFF + CLINT-disjoint hypotheses, plus the three reusable lemmas
+enumerated in the "Why M1-M4 exist" section above, would retire M1,
+M2, M3, M4, M7, M9 (and any future M5, M6, M8) together — the closure
+is uniform over the `(width, is_unsigned)` axes and does not need a
+per-opcode axiom chase.
+
+### Phase 3A Track L flag-and-stop — LW / LH / LB
+
+The signed-extension load opcodes LW (L1), LH (L2), LB (L4) transpile
+via `riscv2zisk_context.rs:214,215,210` to Zisk `signextend_w` /
+`signextend_h` / `signextend_b` — `BinaryE` external ops (opcodes
+0x29 / 0x28 / 0x27; `zisk_ops.rs:419-421`). These route through the
+operation bus to the Binary Extension SM, materially unlike the
+copyb-shape loads the shipped `LoadArchetype` macro validates:
+
+* mode is `is_external_op = 1`, `op = OP_SIGNEXTEND_{B,H,W}` (not
+  pinned in `Transpiler.lean` yet);
+* `c_packed` is populated by the BinaryE SM's bus reply, not by
+  Main constraint 9 (`c = b`);
+* the Main row's `b` lanes feed off the memory bus; the
+  sign-extension step happens on the SM side.
+
+Closing the signed-load family therefore requires either:
+
+1. extending `LoadArchetype` with a new `load_archetype_signext_*`
+   variant for the external-op path (parametric over the
+   Op-literal ∈ {`OP_SIGNEXTEND_B`, `OP_SIGNEXTEND_H`,
+   `OP_SIGNEXTEND_W`}), following the SLLW / `Spec.Shift` pattern for
+   external-op Main-row spec with a bus match; or
+2. authoring three per-opcode specs that combine a `matches_entry`
+   bus-match hypothesis with the memory-bus `memory_entry_toField`
+   packing.
+
+Either path introduces a new `Tactics/*Archetype.lean` variant (or an
+extension to `LoadArchetype` — **read-only per Phase 3A scope**) and
+is out of scope for Phase 3A. LW / LH / LB are deferred to Phase 3B
+alongside the ALU-ITYPE / DIV / UTYPE archetype work.
+
 ## Audit procedure
 
 When accepting a new trusted axiom:
@@ -340,6 +434,14 @@ When accepting a new trusted axiom:
   blocked on `currentlyEnabled Ext_Zicfilp` rather than PMP/CLINT. Would
   close directly under an `mseccfg.MLPE = 0` extension to
   `RISC_V_assumptions`.
+- **2026-04-22 — Phase 3A L3/L5.** M7 (LHU) and M9 (LBU) introduced —
+  narrow width-2 and width-1 zero-extension load siblings of M1/M3.
+  Retiring `vmem_read_addr_aligned_equiv` (the shared closure for
+  M1-M4) retires M7 and M9 together. LW / LH / LB (M5 / M6 / M8 slots
+  reserved) deferred as flag-and-stop — they transpile to Zisk
+  external `signextend_*` ops, incompatible with the copyb-only
+  `LoadArchetype` macro; a new sign-extension-load archetype is
+  Phase 3B work.
 - **2026-04-22 — Phase 3A B1-B4.** C2a-C2d introduced (BLT / BGE / BLTU
   / BGEU). Distinct from both M1-M4 and C1: no platform-config gap and
   no CSR-read chain — these are structurally closable via the BNE-style
