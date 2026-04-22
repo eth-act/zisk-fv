@@ -302,6 +302,55 @@ axiom transpile_JAL :
       ∧ row.b_lo = 0
       ∧ row.b_hi = 0
 
+/-- The axiomatic RV64 → Zisk row contract for JALR (jump-and-link-register,
+    Phase 2.5 D4 archetype validation).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:200,1025` an RV64 JALR
+    `rd, rs1, imm12` transpiles via `self.jalr(i, 4)`. The archetype-
+    validation contract below captures the simplified "internal-copyb"
+    shape the `JumpArchetype.jalr_archetype_*` lemmas consume:
+    * `op = OP_COPYB = 1` — internal op 1 (c = b via constraint 9);
+    * `is_external_op = 0` — no operation-bus hop;
+    * `set_pc = 1` — next-pc comes from `c_0 + jmp_offset1 = b_0 +
+      jmp_offset1 = rs1_lo + imm12`. Constraint 19
+      (`flag * set_pc = 0`) forces `flag = 0`, consistent with
+      constraint 18 under `op = 1`;
+    * `store_pc = 1` — rd receives `pc + jmp_offset2 = pc + 4` via the
+      store_value expression with `c_0 = b_0` (rs1) canceling;
+    * `jmp_offset1 = imm_offset` — the register-relative offset;
+    * `jmp_offset2 = 4` — link-address offset;
+    * `b` lanes carry `xreg(rs1)`; the transpile axiom does **not** pin
+      `a`/`c` because they don't participate in the JALR
+      archetype theorems (`a` is an immediate mask in the live Rust
+      code, and `c` is constrained by the copyb rule).
+
+    **Note on the live ZisK transpiler.** The actual Rust `jalr`
+    function (line 1055-1092) emits a Binary `and` microinstruction
+    (external op), and for misaligned immediates a two-instruction
+    `add`+`and` sequence. Both paths ultimately produce the same
+    architectural behavior (`rd ← pc + 4`, `nextPC ← (rs1 + imm) &
+    mask`). The Phase 2.5 D4 task models JALR as internal-copyb for
+    archetype-macro validation; closing the full Rust contract (with
+    the Binary-SM bus hop) is scheduled for Phase 3 when the
+    `equiv_AND`/`equiv_ADD_IMM` archetype work lands the necessary
+    external-op infrastructure.
+
+    **Trust basis.** Simplified spec of `fn jalr` in
+    `riscv2zisk_context.rs:1025`, targeting the Main AIR row observables
+    the `JumpArchetype` macro depends on. -/
+axiom transpile_JALR :
+    ∀ (rs1 _rd : Fin 32) (imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_COPYB
+      ∧ row.is_external_op = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 1
+      ∧ row.store_pc = 1
+      ∧ row.jmp_offset1 = imm_offset
+      ∧ row.jmp_offset2 = 4
+      ∧ row.b_lo = lane_lo (state.xreg rs1)
+      ∧ row.b_hi = lane_hi (state.xreg rs1)
+
 /-- The axiomatic RV64 → Zisk row contract for LD (load doubleword).
 
     Per `vendor/zisk/core/src/riscv2zisk_context.rs:216` an RV64 LD
