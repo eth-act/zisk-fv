@@ -379,6 +379,39 @@ cells. Logged as new scope item — the extractor feature is Phase 4
 
 ---
 
+## Reconnaissance A2 (JAL) — 2026-04-22
+
+**Zisk microinstruction.** `vendor/zisk/core/src/riscv2zisk_context.rs:201,1098` —
+RV64 `jal rd, label` dispatches to `self.jal(i, 4)` which emits a single Zisk
+microinstruction via `ZiskInstBuilder`:
+* `src_a = imm 0`, `src_b = imm 0` (no register source; a/b lanes all zero),
+* `op("flag")` — ZisK opcode `0x00`, `OpType::Internal` (`zisk_ops.rs:382`),
+* `store_pc("reg", rd, false)` — store **`pc + jmp_offset2`** to rd (per the PIL
+  `store_value` expression at `main.pil:311`),
+* `j(imm, 4)` — `jmp_offset1 = imm`, `jmp_offset2 = 4`.
+**No** `set_pc()` call: JAL's PC advance uses `flag = 1` + the standard handshake,
+not `c[0]` as next-pc source (that's JALR's path).
+
+**Main AIR constraints relevant.** Because `is_external_op = 0`, constraints 17/18
+force `flag = 1` (`(1-ext)*(1-op)*(1-flag) = 0`). Constraints 8/15 force
+`c[0] = c[1] = 0` (internal op=0 zeroes c). Constraint 19 (`flag * set_pc = 0`) is
+satisfied trivially since `set_pc = 0`. **Reused from A1 (BEQ):** the
+`pc_handshake` predicate at `Airs.Main.pc_handshake` and its specialization
+`pc_handshake_branch`. The `jmp_offset1`/`jmp_offset2`/`set_pc`/`pc` columns are
+already exposed. No new Main column accessors required.
+
+**PC handshake for unconditional jumps.** With `set_pc = 0` and `flag = 1`, the
+specialized handshake collapses to
+`next_pc = pc + jmp_offset2 + 1 * (jmp_offset1 - jmp_offset2) = pc + jmp_offset1`
+`= pc + imm`. Symmetric to BEQ's taken case, but `flag` is forced by constraints
+17+30 (no external SM delegation) rather than parameterized.
+
+**Bus hop?** NO. `is_external_op = 0`, so the `assumes_operation` call
+(`main.pil:367-374`) is inactive. `h_bus_execute_matches_sail` parameterization
+mirrors BEQ (DEFER Phase 4 derivation).
+
+---
+
 ## Phase 2 status — CLOSED <date TBD>
 
 (To be populated when Phase 2 executes.)
