@@ -296,6 +296,54 @@ axiom transpile_LD :
       ∧ row.a_lo = lane_lo (state.xreg rs1)
       ∧ row.a_hi = lane_hi (state.xreg rs1)
 
+/-- The axiomatic RV64 → Zisk row contract for SD (store doubleword).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:223` an RV64 SD
+    `rs2, imm(rs1)` transpiles via `self.store_op(i, "copyb", 8, 4)`
+    (line 828) to exactly one Zisk microinstruction emitted by
+    `ZiskInstBuilder`:
+    * `zib.src_a("reg", rs1, false)` — `a` lanes carry `xreg(rs1)`
+      (the base address register);
+    * `zib.src_b("reg", rs2, false)` — `b` lanes carry `xreg(rs2)`
+      (the store *value*). **This is the key departure from LD:**
+      LD has `src_b = "ind"` (memory read), SD has `src_b = "reg"`
+      (register read of the value);
+    * `zib.op("copyb")` — ZisK `OP_COPYB = 1`, `OpType::Internal`.
+      Same as LD. Constraint 9 still forces `c = b`, so `c` equals
+      the store value;
+    * `zib.ind_width(8)` — memory-write width is 8 bytes;
+    * `zib.store("ind", imm, false, false)` — `store_ind = 1`,
+      `store_offset = imm`. PIL writes `store_value` (= `c` since
+      `store_pc = 0`) to memory at `addr2 = a + imm` (per
+      `main.pil:314-321`). No register write, so this is a pure
+      memory side-effect;
+    * `zib.j(4, 4)` — `jmp_offset1 = jmp_offset2 = 4`. No
+      `set_pc()`, no `store_pc()`, so `set_pc = 0`, `store_pc = 0`.
+      With `flag = 0` (forced by constraint 18), the PC handshake
+      yields `next_pc = pc + 4`;
+    * `m32 = 0` — SD is a 64-bit store (no `m32` distinction for
+      internal ops anyway).
+
+    **Trust basis.** Pure spec of `fn store_op` in
+    `riscv2zisk_context.rs:828`. SB/SH/SW use the same helper with
+    different `w` (1/2/4); their transpile-axioms will mirror this one
+    with the `ind_width` fact adjusted (and a byte-zeroing hypothesis
+    on the memory-bus-write entry's high lanes). A4 scope is SD only. -/
+axiom transpile_SD :
+    ∀ (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_COPYB
+      ∧ row.is_external_op = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
 /-- Goldilocks literal for the MUL opcode. `0xb4 = 180` per
     `vendor/zisk/core/src/zisk_ops.rs:427`. Signed × signed multiplication,
     low 64 bits (`result_part = Low`). Dispatched to the Arith state
