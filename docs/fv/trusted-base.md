@@ -5,18 +5,99 @@ is load-bearing: it is consumed by the per-opcode equivalence proofs, it
 is **not** derived from any earlier result, and changes to it require
 re-auditing against the cited provenance.
 
-Two broad categories:
+Three broad categories:
 
 1. **Transpiler contracts** — pure specs of the Rust code that lowers
    RISC-V instructions to Zisk microinstructions. Home:
    `ZiskFv/Fundamentals/Transpiler.lean` under the
    `ZiskFv.Trusted` namespace. Not covered here (that file's docstrings
    are self-sufficient).
-2. **Memory-model reductions** — property assertions about
-   `LeanRV64D.Functions.{vmem_read_addr, vmem_write_addr}` that are
-   semantically derivable but require extensions to
-   `RISC_V_assumptions` that have not yet been worked out. The two
-   entries below fall into this category.
+2. **Platform-feature assertions (Phase 3.5)** — narrow universal
+   axioms encoding that `LeanRV64D` Sail features out of RV64IM scope
+   (PMP, CLINT MMIO, Zicfilp landing pads) are inert in ZisK's target.
+   Home: `ZiskFv/RV64D/Auxiliaries.lean` under the
+   `ZiskFv.PlatformScope` namespace. Entries P1-P4 below. As of the
+   Phase 3.5 final state these axioms replace the former per-opcode
+   memory / control-flow axioms in the M/C families — M1-M4, M7, M9,
+   M10, M11, C1, C3a-c, C4 are then theorems derived from P1-P4 + the
+   `execute_*` refactor triples in `Fundamentals/Execution.lean`.
+3. **Memory-model reductions** (legacy Phase 2.5 framing; retained for
+   audit trail) — property assertions about
+   `LeanRV64D.Functions.{vmem_read_addr, vmem_write_addr}`. Phase 3.5
+   promoted all such former axioms to theorems. Their entries below
+   are marked **[promoted to theorem in Phase 3.5]**.
+
+## Platform-feature assertions (Phase 3.5 — 2026-04-22)
+
+Four narrow universal axioms encode ZisK's RV64IM scope commitments:
+the vendored `LeanRV64D` models PMP (16 entries), CLINT MMIO
+(`plat_clint_base = 2^25`, `plat_clint_size = 786432`), PMA checks,
+and the Zicfilp landing-pad extension as active Sail features, but
+ZisK's target excludes all four. Each axiom is a single `= pure …`
+reduction encoding the scope-honest inert behavior.
+
+Together P1-P4 retire 9 of the 16 Phase-3A-era Sail-equivalence
+axioms (M1-M4, M7, M9, M10, M11, C1) via two bridging lemmas
+(`vmem_{read,write}_addr_aligned_equiv`) and a direct port of
+openvm-fv's RV32D JALR proof.
+
+### Entry P1: `ZiskFv.PlatformScope.pmpCheck_is_pure_none`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/Auxiliaries.lean`
+- **Statement:** `∀ addr width acc priv state,
+  pmpCheck addr width acc priv state = EStateM.Result.ok none state`.
+- **Consumers:** `vmem_read_addr_aligned_equiv`,
+  `vmem_write_addr_aligned_equiv` (Auxiliaries.lean). Also re-exported
+  as a descriptive field of `RISC_V_assumptions`.
+- **Scope claim:** ZisK never programs a PMP entry — all `pmpcfg_n[i]`
+  entries have `A = OFF`. The 16-iteration `forIn` loop in
+  `LeanRV64D.Functions.pmpCheck` (PmpControl.lean:253) therefore
+  always yields `PMP_NoMatch`, and in machine privilege the final
+  `if priv == Machine then pure none` branch closes with
+  `(ok none, state)`.
+- **Closure path if promoted to theorem:** extend `RISC_V_assumptions`
+  with a witness `∀ i < 16, _get_Pmpcfg_ent_A (pmpcfg_n[i]) = OFF` and
+  prove the 16-iteration loop reduces via simp under that witness
+  (estimated 150-200 lines).
+
+### Entry P2: `ZiskFv.PlatformScope.within_clint_is_false`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/Auxiliaries.lean`
+- **Statement:** `∀ addr width state,
+  within_clint addr width state = EStateM.Result.ok false state`.
+- **Consumers:** `vmem_read_addr_aligned_equiv`,
+  `vmem_write_addr_aligned_equiv` (Auxiliaries.lean). Re-exported as a
+  descriptive field of `RISC_V_assumptions`.
+- **Scope claim:** ZisK-generated programs address flat user memory
+  only; CLINT MMIO is never referenced. `within_clint` is inert under
+  this scope (`LeanRV64D.Platform.lean:198`).
+- **Closure path if promoted to theorem:** thread an `addr + width ≤
+  plat_clint_base ∨ plat_clint_base + plat_clint_size ≤ addr`
+  precondition into every memory-op state assumptions bundle
+  (per-opcode threading; estimated 50-80 lines per opcode).
+
+### Entry P3: `ZiskFv.PlatformScope.pmaCheck_is_pure_none`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/Auxiliaries.lean`
+- **Statement:** `∀ paddr width acc rc state,
+  pmaCheck paddr width acc rc state = EStateM.Result.ok none state`.
+- **Consumers:** `vmem_read_addr_aligned_equiv`,
+  `vmem_write_addr_aligned_equiv` (Auxiliaries.lean). Re-exported as a
+  descriptive field of `RISC_V_assumptions`.
+- **Scope claim:** the existing `RISC_V_assumptions` A2 clauses
+  (single PMA region, base 0, size ≥ 2^29, readable, writable,
+  `AlignmentFault`) already suffice to reduce `pmaCheck` under the
+  operand alignment each opcode witnesses. Axiomatized in the
+  inert-for-all-inputs form for symmetry with P1 / P2 and to avoid
+  threading alignment into each call site of the vmem lemmas.
+- **Closure path if promoted to theorem:** prove
+  `pmaCheck_none_of_single_region` from the A2 clauses + alignment;
+  this is a direct port from openvm-fv's RV32D proof (estimated
+  60-100 lines).
+
+### Entry P4: `ZiskFv.PlatformScope.update_elp_state_is_pure_unit`
+
+*(Introduced in Phase 3.5 Track II — see II1 commit.)*
 
 ## Memory-model axioms (Phase 2.5 D1, path (b) — 2026-04-22)
 

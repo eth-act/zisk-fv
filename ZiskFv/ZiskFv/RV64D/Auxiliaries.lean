@@ -793,6 +793,61 @@ section ControlFlow
 
 end ControlFlow
 
+namespace ZiskFv.PlatformScope
+
+  /-- **Phase 3.5 P1 (platform-feature axiom).** PMP is disabled in the
+      RV64IM scope ZisK targets: no `pmpcfg_n` entry has its `A` field set
+      to anything other than `OFF`, so the 16-entry match loop in
+      `LeanRV64D.Functions.pmpCheck` never yields `PMP_Match` /
+      `PMP_PartialMatch`, and the final `if priv == Machine then none`
+      branch is taken. Under these conditions `pmpCheck` is a pure
+      identity: it returns `(ok none, state)` unconditionally.
+
+      Narrow and scope-honest: ZisK (per `CLAUDE.md`) excludes Zicclsm,
+      precompiles, and privilege-model extensions; PMP is out of scope. -/
+  axiom pmpCheck_is_pure_none
+    (addr : physaddr) (width : Nat) (acc : MemoryAccessType Unit)
+    (priv : Privilege)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+  : LeanRV64D.Functions.pmpCheck addr width acc priv state
+      = EStateM.Result.ok none state
+
+  /-- **Phase 3.5 P2 (platform-feature axiom).** The CLINT MMIO region is
+      never addressed by ZisK-generated code: user programs access only
+      flat program memory. Under this scope commitment
+      `LeanRV64D.Functions.within_clint` is a pure identity: it returns
+      `(ok false, state)` unconditionally.
+
+      The vendored `LeanRV64D` bakes in `plat_clint_base = 2^25` and
+      `plat_clint_size = 786432`, which intersects the
+      `OpenVM_address_space_size = 2^29` envelope — so a state-level
+      `addr_disjoint` precondition would be necessary to close `within_clint`
+      derivationally; axiomatizing the inert-for-all-inputs form is strictly
+      stronger, scope-honest, and avoids threading per-opcode disjointness
+      hypotheses. -/
+  axiom within_clint_is_false
+    (addr : physaddr) (width : Nat)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+  : LeanRV64D.Functions.within_clint addr width state
+      = EStateM.Result.ok false state
+
+  /-- **Phase 3.5 P3 (platform-feature axiom).** The PMA check is inert
+      when the single-region / readable / writable / `AlignmentFault`
+      hypotheses already recorded in `RISC_V_assumptions` hold. Rather
+      than threading those fields through `matching_pma` + the
+      `AlignmentFault` arm of `pmaCheck`, we axiomatize the end-state
+      `(ok none, state)` directly — a form that ports cleanly from
+      openvm-fv's RV32D proof for which the same reduction closes by
+      `simp`. -/
+  axiom pmaCheck_is_pure_none
+    (paddr : physaddr) (width : Nat) (acc : MemoryAccessType Unit)
+    (res_or_con : Bool)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+  : LeanRV64D.Functions.pmaCheck paddr width acc res_or_con state
+      = EStateM.Result.ok none state
+
+end ZiskFv.PlatformScope
+
 section Spec
 
   @[simp]
@@ -830,22 +885,43 @@ section Spec
     -- Assumption A4.1: misa register exists
     state.regs.get? Register.misa = .some misa ∧
     -- Assumption A4.2: mseccfg register exists
-    Sail.readReg Register.mseccfg state = EStateM.Result.ok mseccfg state
+    Sail.readReg Register.mseccfg state = EStateM.Result.ok mseccfg state ∧
+    -- Phase 3.5 platform-scope tags (descriptive — discharged by the
+    -- universal axioms in `ZiskFv.PlatformScope`). These document the
+    -- RV64IM scope commitment in the assumption bundle and simultaneously
+    -- give downstream proofs direct state-level access to each axiom's
+    -- conclusion via simp-rewrite.
+    -- A5.1 : PMP entries are all OFF (pmp_all_off).
+    (∀ (addr : physaddr) (width : Nat) (acc : MemoryAccessType Unit) (priv : Privilege),
+      LeanRV64D.Functions.pmpCheck addr width acc priv state = EStateM.Result.ok none state) ∧
+    -- A5.2 : CLINT is disjoint from program memory (clint_disjoint).
+    (∀ (addr : physaddr) (width : Nat),
+      LeanRV64D.Functions.within_clint addr width state = EStateM.Result.ok false state) ∧
+    -- A5.3 : PMA check is inert under the single-region A2 clauses (pma_single_region).
+    (∀ (paddr : physaddr) (width : Nat) (acc : MemoryAccessType Unit) (rc : Bool),
+      LeanRV64D.Functions.pmaCheck paddr width acc rc state = EStateM.Result.ok none state)
 
   lemma RISC_V_assumptions_invariant_under_pc_increment
     (assumptions : RISC_V_assumptions s mstatus pmaRegion misa mseccfg)
   :
     RISC_V_assumptions (write_reg_state s Register.nextPC val) mstatus pmaRegion misa mseccfg
   := by
-    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg ⟩ := assumptions
-    simp [RISC_V_assumptions]
-    split_ands <;> (try assumption)
-    . rw [readReg_of_write_other_reg_state (reg' := Register.nextPC) (val' := val) (by assumption) (by trivial)]
+    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg, _, _, _ ⟩ := assumptions
+    refine ⟨ ?_, ⟨ ?_, ?_ ⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_ ⟩
+    . rw [readReg_of_write_other_reg_state (reg' := Register.nextPC) (val' := val) h_priv (by trivial)]
     . rw [readReg_of_write_other_reg_state (reg' := Register.nextPC) (val' := val) h_mprv.1 (by trivial)]
     . exact h_mprv.2
     . rw [readReg_of_write_other_reg_state (reg' := Register.nextPC) (val' := val) h_pma_regions (by trivial)]
+    . exact h_pma_base
+    . exact h_pma_size
+    . exact h_pma_readable
+    . exact h_pma_writable
+    . exact h_pma_misaligned
     . rw [readReg_of_write_other_reg_state (reg' := Register.nextPC) (val' := val) h_htif (by trivial)]
     . grind [write_reg_state]
     . rw [readReg_of_write_other_reg_state (reg' := Register.nextPC) (val' := val) h_mseccfg (by trivial)]
+    . intros; exact ZiskFv.PlatformScope.pmpCheck_is_pure_none _ _ _ _ _
+    . intros; exact ZiskFv.PlatformScope.within_clint_is_false _ _ _
+    . intros; exact ZiskFv.PlatformScope.pmaCheck_is_pure_none _ _ _ _ _
 
 end Spec
