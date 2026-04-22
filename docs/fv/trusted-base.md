@@ -149,6 +149,109 @@ and the RV64 `jump_to_equiv`'s misa-bit-2-zero witness (already
 available as `h_misa`). Estimated: 40-60 lines, same shape as
 `execute_JAL_pure_equiv`.
 
+## Phase 3A Branch control-flow axioms (2026-04-22)
+
+The BLT / BGE / BLTU / BGEU sibling fan-out ships four trusted
+axioms — one per opcode — under a shared closure path. They parallel
+the C1 (JALR) D4b-patch pattern: the Sail `execute_BTYPE` arm for
+each of the four comparator opcodes reduces to a straightforward
+`taken` predicate (signed/unsigned `<` / `≥` via Sail's `zopz0z*`
+helpers), structurally matching the pure-spec `skip` field, but
+direct closure via the BNE-style `simp`/`jump_to_equiv` route was
+deferred in lockstep for axiom-discipline reasons (see "Why C2
+exists" below).
+
+### Entry C2a: `PureSpec.execute_BLT_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/blt.lean`
+- **Statement (informal):** under the standard register-state
+  hypotheses (imm/r1/r2 readable, PC readable, misa readable with
+  `misa[C] = 0`), the Sail
+  `execute_BTYPE (imm, r2, r1, bop.BLT)` threaded through the
+  `writeReg nextPC (PC+4); execute …` prelude reduces to the
+  `execute_BLT_pure` evaluation (signed `<` case on `.toInt`; taken
+  → `jump_to PC+imm` with bit0/bit1 misalignment checks; not-taken →
+  fall through to PC+4).
+- **Consumers:** `PureSpec.execute_BLT_pure_equiv` (in the same
+  file); consumed by
+  `ZiskFv/Equivalence/BranchLessThan.lean::equiv_BLT_sail` and
+  transitively by `equiv_BLT_metaplan`.
+- **Provenance:** `LeanRV64D/InstsEnd.lean::execute_BTYPE` BLT arm
+  (line 69720) + `LeanRV64D/Prelude.lean::zopz0zI_s` (line 382)
+  + the existing `jump_to_equiv` chain used by BEQ/BNE.
+
+### Entry C2b: `PureSpec.execute_BGE_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/bge.lean`
+- **Statement (informal):** BGE analogue of C2a — signed `≥` on
+  `.toInt` via `zopz0zKzJ_s`. Same structural shape as BLT's
+  reduction.
+- **Consumers:** `PureSpec.execute_BGE_pure_equiv`;
+  `equiv_BGE_sail` and transitively `equiv_BGE_metaplan`.
+- **Provenance:** `execute_BTYPE` BGE arm (line 69721)
+  + `Prelude.zopz0zKzJ_s` (line 394).
+
+### Entry C2c: `PureSpec.execute_BLTU_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/bltu.lean`
+- **Statement (informal):** BLTU analogue — unsigned `<` via
+  `zopz0zI_u = .toNatInt <b .toNatInt`, matching the pure spec's
+  `.toNat <b .toNat` up to an `Int.ofNat` coercion.
+- **Consumers:** `PureSpec.execute_BLTU_pure_equiv`;
+  `equiv_BLTU_sail`; `equiv_BLTU_metaplan`.
+- **Provenance:** `execute_BTYPE` BLTU arm (line 69722)
+  + `Prelude.zopz0zI_u` (line 398)
+  + `Sail/Sail.lean::toNatInt = Int.ofNat ∘ BitVec.toNat`.
+
+### Entry C2d: `PureSpec.execute_BGEU_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/bgeu.lean`
+- **Statement (informal):** BGEU analogue — unsigned `≥` via
+  `zopz0zKzJ_u`. Same structural shape as BLTU.
+- **Consumers:** `PureSpec.execute_BGEU_pure_equiv`;
+  `equiv_BGEU_sail`; `equiv_BGEU_metaplan`.
+- **Provenance:** `execute_BTYPE` BGEU arm (line 69723)
+  + `Prelude.zopz0zKzJ_u` (line 410)
+  + the `toNatInt` bridge used by C2c.
+
+### Why C2a-C2d exist
+
+Unlike C1 (JALR), which is blocked on a genuine platform-config gap
+(`currentlyEnabled Ext_Zicfilp` → `mseccfg.MLPE` probe that
+`RISC_V_assumptions` does not witness), C2a-C2d's Sail reduction is
+structurally closable via the BNE-style proof skeleton:
+
+```
+simp [readReg_succ, execute, writeReg_state_success, execute_BTYPE]
+rewrite [rX_read_xreg_equiv …] ; rewrite [read_xreg_write_other_reg_state …] ; simp
+by_cases h_cmp : <signed or unsigned comparison>
+-- taken branch: jump_to_equiv + misa[C] = 0
+-- not-taken: falls through to the pure-spec's PC+4 path
+```
+
+The case-split predicate varies per opcode (BLT: `r1.toInt < r2.toInt`;
+BGE: `r1.toInt ≥ r2.toInt`; BLTU: `r1.toNat < r2.toNat`; BGEU:
+`r1.toNat ≥ r2.toNat`). Each requires a small bridge to align the
+`BitVec.toInt`/`.toNatInt` form Sail emits with the `.toInt`/`.toNat`
+form the pure spec uses — mechanical but in the aggregate a ≈200-400
+line per-opcode closure exercise.
+
+Phase 3A axiomatized the four in lockstep to keep Track B tractable
+alongside the five other parallel archetype tracks. Each axiom is
+narrow (single-opcode-scoped; no generalization across the branch
+family), explicitly audit-flagged, and structurally identical to the
+BNE proof except for the comparator. A future consolidated closure
+(estimated 1 day total — port BNE's skeleton to four new case-split
+predicates + a single Int-coercion bridge lemma) would retire C2a-C2d
+together.
+
+**Closure path.** No `RISC_V_assumptions` extension is required —
+the same `misa[C] = 0` witness BEQ/BNE consume suffices. Author a
+helper lemma `BitVec.toInt_lt_iff : (x.toInt <b y.toInt) = x.slt y`
+(or use Lean's existing bridges) and replicate the BNE proof four
+times. The Int-coercion bridge for the unsigned opcodes is just
+`Int.ofNat_lt` + `decide`-able reassociation.
+
 ## Audit procedure
 
 When accepting a new trusted axiom:
@@ -179,3 +282,9 @@ When accepting a new trusted axiom:
   blocked on `currentlyEnabled Ext_Zicfilp` rather than PMP/CLINT. Would
   close directly under an `mseccfg.MLPE = 0` extension to
   `RISC_V_assumptions`.
+- **2026-04-22 — Phase 3A B1-B4.** C2a-C2d introduced (BLT / BGE / BLTU
+  / BGEU). Distinct from both M1-M4 and C1: no platform-config gap and
+  no CSR-read chain — these are structurally closable via the BNE-style
+  skeleton with a per-opcode comparator case-split, axiomatized in
+  lockstep to keep Track B tractable. Estimated consolidated closure
+  ≈1 day total; no `RISC_V_assumptions` extension needed.
