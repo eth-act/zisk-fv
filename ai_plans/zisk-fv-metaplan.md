@@ -1,5 +1,89 @@
 # ZisK Formal Verification — Metaplan
 
+## Revision 2026-04-22 (post-Phase 1 and Phase 1.5)
+
+Phase 1 closed 2026-04-21 and Phase 1.5 closed 2026-04-22 (both in
+`ai_plans/zisk-fv-phase-1.md`). `just verify-phase1` exits 0; zero
+`sorry` in Fundamentals/Airs/Spec/Equivalence/GoldenTraces/
+`RV64D/Auxiliaries.lean`. Below: the deltas that refute or refine
+assumptions this metaplan made, which Phase 2 planning must take
+into account.
+
+- **`LeanZKCircuit.Interactions` was *not* the bottleneck "Known
+  fragility #2" feared.** The permutation-argument primitive is
+  cleanly abstracted by `OperationBusEntry` (a plain projection-
+  equality between two field-valued tuples). The named-constraint
+  layer's `matches_entry` predicate replaces the primitive entirely
+  without losing semantic content. No upstream PR, no vendor-and-
+  extend needed. Remove this from active concerns.
+- **First compositional Main+Binary proof (`add_compositional`) went
+  smoothly** once the `(1 - m32) * x` simp trap was understood. The
+  fix is: rewrite the constraint hypothesis `h_m32 : m.m32 row = 0`
+  *into the match hypothesis* before invoking simp, exposing the
+  literal `(1 - 0)`, and then a targeted `simp only
+  [one_sub_zero_mul]` fires cleanly. Document as a pattern for
+  Phase 2 since every PIL selector (`is_external_op`,
+  `is_precompiled`, etc.) will follow the same shape.
+- **Goldilocks primality via Pratt certificate (~65× speedup).** The
+  original "~386s via `native_decide` (cold)" is now ~6.36s via
+  `ZiskFv.Pratt.verify_correct` on a Lucas witness. The supporting
+  `ZiskFv/Fundamentals/PrattCertificate.lean` is reusable for any
+  future large prime needing fast-decide. No longer a CI concern.
+- **Sail-side simp gap discovered and partially addressed.**
+  `LeanRV64D.Functions.currentlyEnabled Ext_Zca` cannot simp-reduce
+  under a known `misa[2]=0` hypothesis in the raw upstream. Fix:
+  proven `bind_currentlyEnabled_*` lemma family shipped on
+  `codygunton/sail-riscv-lean@ext-zca-simp-lemmas` (a private fork
+  of `NethermindEth/sail-riscv-lean`). Our `ZiskFv/lakefile.toml`
+  pins that fork branch. Upstream issue body drafted at
+  `docs/fv/upstream-issues/sail-riscv-lean-ext-zca-simp.md`;
+  regression-test plan for openvm-fv at
+  `docs/fv/upstream-issues/openvm-fv-regression-test-plan.md`
+  (ran 2026-04-22, green). The upstream PR is a follow-up
+  coordination item, non-blocking for our work.
+- **`RV64D/` is upstream-naming, not the RISC-V "D" extension.**
+  `LeanRV64D` is the Sail-RV64 Lean translation. Our opcode
+  coverage is RV64IM only (I + M). Zero F / D / C / V / atomic /
+  compressed / privileged ops implemented; the one extension-named
+  artifact (`Ext_Zca` lemmas on the fork) is us proving the C/Zca
+  extension is *disabled* under `misa[2]=0`.
+- **`Fundamentals/Execution.lean` + `Fundamentals/U64.lean` +
+  `Fundamentals/Interaction.lean` + `Fundamentals/GoldilocksBridge.lean`
+  now exist.** Together with `RV64D/BusEffect.lean`, they constitute
+  the full Sail-bridge infrastructure. Every RV64IM opcode's
+  equivalence proof no longer has infrastructure blockers — all 43
+  Track-A `sorry`s from Phase 1 carry only opcode-specific proof
+  work, not missing-infrastructure blockers.
+- **Metaplan theorem shape achieved for ADD.** `equiv_ADD_metaplan`
+  in `Equivalence/Add.lean` has the exact shape the metaplan targets
+  (`execute_instruction (.RTYPE ...) state = (bus_effect exec_row
+  mem_row state).2`), zero sorry in proof body. **But** it
+  parameterizes over an `h_bus_execute_matches_sail` hypothesis —
+  the bus-emission-correctness obligation tying circuit witness to
+  `bus_effect` input. Deriving that hypothesis from a more
+  elementary PIL-level bus-emission spec (per-bus-entry case
+  analysis over `bus_effect`'s foldl) is **new Phase 2 scope** —
+  the missing piece to make the metaplan theorem shape not just
+  stated but also *derivable from purely circuit constraints*.
+- **Per-opcode effort refined (supersedes Phase 1's "~1 day per
+  opcode" estimate).** See `ai_plans/zisk-fv-phase-1.md` Round 2
+  addendum for the per-archetype table.
+- **`m32 = 1` path unused.** Track M generalized the operation bus
+  to the `m32 ∈ {0, 1}` case, but no downstream opcode exercises
+  `m32 = 1` yet — so regressions there would go undetected until
+  the first 32-bit-op opcode (ADDW / SUBW / etc.) lands in Phase 2.
+  Prioritize one `-W` archetype early in Phase 2 to close that gap.
+- **Harness `--features live` still blocked on upstream C++.**
+  `pil2-proofman`'s `starks-lib-c` needs `#include <cstdint>` in
+  `rapidsnark/binfile_writer.hpp` for GCC ≥13. `--mode golden`
+  works; `--mode live` is structurally correct but unbuildable
+  end-to-end. Non-blocking for proof work; re-visit when upstream
+  C++ lands.
+
+Phase 2 planning document: `ai_plans/zisk-fv-phase-2.md`.
+
+---
+
 ## Revision 2026-04-20 (post-Phase 0)
 
 Phase 0 executed successfully (see `ai_plans/zisk-fv-phase-0.md` status section). The following facts update assumptions that matter for Phase 1; no existing phase text below is rewritten.
@@ -56,7 +140,14 @@ Status: invariants met. See `ai_plans/zisk-fv-phase-0.md` status section for the
 
 ---
 
-## Phase 1 — Vertical slice on one opcode
+## Phase 1 — Vertical slice on one opcode  · **CLOSED 2026-04-21, with 1.5 addendum CLOSED 2026-04-22**
+
+Status: invariants met. Phase 1 shipped `equiv_ADD` circuit-level;
+Phase 1.5 added `equiv_ADD_sail` Sail-side companion, then
+`equiv_ADD_metaplan` in the metaplan target shape. See
+`ai_plans/zisk-fv-phase-1.md` status section + Round 2 addendum for
+the shipped artifacts, what differed from the metaplan, and per-opcode
+effort refinement.
 
 **Purpose.** Prove RV64 `ADD` end-to-end through the full pipeline. This is the single most de-risking artifact in the plan; every later opcode is a variation on this one.
 
