@@ -465,3 +465,251 @@ cd ZiskFv && lake build
 
 Exit 0, 7988 jobs, no sorries.
 
+---
+
+# Phase 3.5 — trust-base closure
+
+## Context
+
+Phase 3A closed at `e952496` with 22 new opcodes and a growing trust
+base: 34 transpile axioms + 16 Sail-equivalence axioms (M1-M4, M7, M9-
+M11, C1, C2a-d, C3a-c, C4). Of the 16 Sail-equivalence axioms, two
+groups have principled closure paths:
+
+1. **M1-M11 + C1 (9 axioms)** — these encode end-to-end Sail memory /
+   control-flow reductions that only fail to simp-reduce because
+   `LeanRV64D`'s platform config bakes in `sys_pmp_count = 16`,
+   `plat_clint_base = 2^25`, and nontrivial Zicfilp-enable bits.
+   `openvm-fv`'s RV32D gets the corresponding simp reductions for
+   free because its RV32 platform constants are zero. The semantic
+   content of the RV64 axioms is **true by computation** once the
+   platform features are stipulated inert, which is a direct
+   consequence of RV64IM-scope (PMP, CLINT, Zicfilp are all out of
+   scope per `CLAUDE.md`).
+2. **C3a-c + C4 (4 axioms)** — genuine implementation gap in
+   `ZiskFv/ZiskFv/Fundamentals/Execution.lean`: it provides a
+   `execute_RTYPEW_pure` / `execute_RTYPEW'` /
+   `execute_RTYPEW_eq_execute_RTYPEW'` triple used by SLLW/SRLW/SRAW
+   but lacks analogous triples for `execute_SHIFTIWOP` and
+   `execute_MULW`. Adding those triples is a mechanical port.
+
+Phase 3.5 closes both groups. **C2a-d** (branch skeleton port, ~1
+day of BNE mechanical replication) remains out of scope for 3.5 —
+no downstream leverage; better fit in Phase 4's audit sweep.
+
+Phase 3.5 ships zero new opcodes. After 3.5 the metaplan's
+remainders are: **Phase 3B** (~28 opcodes across 4 new archetypes —
+signed-load, ALU-RTYPE, ALU-ITYPE, DIV/REM, UTYPE), and **Phase 4**
+(audit, REPORT.md, final sign-off).
+
+## Scope (strict)
+
+**In scope — Track I (Platform-feature axioms for M-closure):**
+
+Add three narrow, scope-honest axioms at the lowest Sail-function
+level, encoding that ZisK's RV64IM target explicitly disables PMP,
+CLINT, and the relevant PMA-check paths:
+
+```
+axiom pmpCheck_is_pure_none  : ∀ addr width priv state,
+  pmpCheck addr width priv state = (pure none, state)
+axiom within_clint_is_false  : ∀ addr width state,
+  within_clint addr width state = (pure false, state)
+axiom pmaCheck_is_pure_none  : ∀ addr width access state,
+  pmaCheck addr width access state = (pure none, state)
+```
+
+Each is one line of semantic content that maps directly to a single
+out-of-scope RV64 feature. Home: a new section in
+`ZiskFv/ZiskFv/RV64D/Auxiliaries.lean` under a `ZiskFv.PlatformScope`
+namespace; catalogued in `docs/fv/trusted-base.md` as P1-P3 (a
+distinct category from M/C: "platform-feature assertions" rather
+than "memory-model reductions" or "control-flow reductions").
+
+Derive `vmem_read_addr_aligned_equiv` and
+`vmem_write_addr_aligned_equiv` as lemmas consuming the three
+axioms (~100-150 lines of mechanical unfolding). These are the
+bridging lemmas that `trusted-base.md § "Why M1-M4 exist"` already
+named.
+
+Re-derive M1, M2, M3, M4, M7, M9, M10, M11 as theorems (were
+axioms). Each shrinks to a ~5-line invocation of the vmem lemmas.
+Remove the eight `execute_*_pure_equiv_axiom`s from their RV64D
+files; keep the `execute_*_pure_equiv` lemmas (with the same
+signatures their consumers expect) and re-point their bodies to
+the new theorems.
+
+**In scope — Track II (Zicfilp axiom for C1-closure):**
+
+Add one narrow axiom for the Zicfilp landing-pad feature:
+
+```
+axiom update_elp_state_is_pure_unit : ∀ rs1 state,
+  update_elp_state rs1 state = (pure (), state)
+```
+
+Catalogued as P4. Derive `execute_JALR_pure_equiv` as a theorem
+porting `/home/cody/openvm-fv/OpenvmFv/RV32D/jalr.lean::execute_JALR_pure_equiv`
+(which closes directly in RV32 because Zicfilp is disabled there
+too) with the obvious width widening (`signExtend 32 → signExtend
+64`) and the existing RV64 `jump_to_equiv` misa witness.
+
+**In scope — Track III (Execution.lean triples for C3/C4-closure):**
+
+Mechanical port of the `execute_RTYPEW_pure` / `execute_RTYPEW'` /
+`execute_RTYPEW_eq_execute_RTYPEW'` triple (lines 151-187 of
+`Fundamentals/Execution.lean`) to two new Sail functions:
+
+- `execute_SHIFTIWOP`: opens the monadic block via `let`-bindings so
+  `simp` can reduce it. Sail enum: `sopw ∈ {SLLIW, SRLIW, SRAIW}`;
+  shamt signature `BitVec 5`. Enables direct closure of the three
+  SLLIW/SRLIW/SRAIW Sail-equivalence lemmas.
+- `execute_MULW`: same refactor for the 32-bit signed multiply.
+  Single opcode, no enum branching.
+
+Then re-derive `execute_SHIFTIWOP_slliw_pure_equiv`,
+`execute_SHIFTIWOP_srliw_pure_equiv`,
+`execute_SHIFTIWOP_sraiw_pure_equiv`, `execute_MULW_pure_equiv` as
+theorems (were axioms C3a-c and C4).
+
+**Explicitly out of scope:**
+
+- C2a-d closure (branches) — no downstream leverage; Phase 4 audit.
+- Phase 3B's ~28 opcodes — Phase 3B needs its own plan after 3.5.
+- Transpile-axiom reduction — all 34 are principled (specifications
+  of the Rust transpiler, not the Sail chain).
+
+## Execution order
+
+**I1:** Extend `RISC_V_assumptions` with `pmp_all_off`,
+`clint_disjoint`, `pma_single_region` fields. Purely descriptive;
+no proof cost. Commit.
+
+**I2:** Author P1-P3 platform axioms in
+`RV64D/Auxiliaries.lean::ZiskFv.PlatformScope`. Add P1-P3 entries
+to `trusted-base.md` under a new "Platform-feature assertions
+(Phase 3.5)" section. Commit.
+
+**I3:** Author `vmem_read_addr_aligned_equiv` as a lemma in
+`Auxiliaries.lean` (or `RV64D/Memory.lean` if import-order demands).
+~50-80 lines, consumes P1-P3 + existing `RISC_V_assumptions`
+fields. Commit.
+
+**I4:** Author `vmem_write_addr_aligned_equiv` (symmetric). Commit.
+
+**I5:** Promote M1-M4 to theorems. Replace the four axioms in
+`RV64D/{ld,sd,lwu,sw}.lean` with proof bodies invoking the vmem
+lemmas (~5 lines each). Keep the lemma signatures downstream
+consumers use. Mark M1-M4 in `trusted-base.md` as "promoted to
+theorem in Phase 3.5" with a link to the theorem body. Commit.
+
+**I6:** Promote M7, M9, M10, M11 to theorems. Same pattern for
+`RV64D/{lhu,lbu,sh,sb}.lean`. Commit.
+
+**II1:** Author P4 Zicfilp axiom in `Auxiliaries.lean::PlatformScope`.
+Add P4 to `trusted-base.md`. Commit.
+
+**II2:** Promote C1 to theorem. Replace `execute_JALR_pure_equiv_axiom`
+in `RV64D/jalr.lean` with a port of openvm-fv's RV32D proof.
+Estimated 40-60 lines. Commit.
+
+**III1:** Port the RTYPEW triple to `execute_SHIFTIWOP` in
+`Fundamentals/Execution.lean`. ~80-100 lines. Commit.
+
+**III2:** Promote C3a-c to theorems in
+`RV64D/{slliw,srliw,sraiw}.lean` using `execute_SHIFTIWOP'`. Each
+~20-30 lines mirroring `sllw.lean::execute_RTYPE_sllw_pure_equiv`.
+Commit.
+
+**III3:** Port the RTYPEW triple to `execute_MULW` in
+`Fundamentals/Execution.lean`. ~50-80 lines. Commit.
+
+**III4:** Promote C4 to theorem in `RV64D/mulw.lean`. ~20-30 lines.
+Commit.
+
+**V1:** Append Phase 3.5 CLOSED section to
+`ai_plans/zisk-fv-phase-3.md` with axiom accounting:
+- Before 3.5: 50 axioms total (34 transpile + 16 Sail-equiv).
+- After 3.5: 34 transpile + 4 C2 (deferred) + 4 P1-P4 (new category)
+  = 42 axioms. Net −8.
+- M1-M11 and C1 catalogued as "promoted to theorem".
+
+**V2:** Run verification gates (see next section).
+
+## Parallelism
+
+Low. Tracks I / II / III could be split across 1-2 subagents, but
+all three touch `Auxiliaries.lean` and the per-opcode files are
+disjoint — serial execution by a single agent avoids the
+merge-resolution overhead Phase 3A experienced. Budget: ~3 days
+wall-clock if serial.
+
+## Verification (end-to-end)
+
+1. From clean checkout: `just verify-phase2` exits 0.
+2. `lake build` green, zero `sorry` in `Fundamentals/`, `Airs/`,
+   `Spec/`, `Equivalence/`, `GoldenTraces/`, `Tactics/`, and in all
+   32 shipped opcode `RV64D/*.lean` files (the original 22 from
+   3A plus the 10 promoted here: ld, sd, lwu, sw, lhu, lbu, sh, sb,
+   jalr, slliw, srliw, sraiw, mulw).
+3. `#print axioms` on each former M/C1 metaplan theorem shows only
+   kernel axioms + transpile_* + P1-P4 (as applicable) + the still-
+   parameterized bus-emission hypotheses (for load/store metaplans).
+   No `sorryAx`. No `execute_*_pure_equiv_axiom`.
+4. `docs/fv/trusted-base.md` reflects: 4 P-axioms; 4 C2 axioms
+   marked "deferred to Phase 4"; M1-M11, C1, C3a-c, C4 marked
+   "promoted to theorem in Phase 3.5" with theorem-body links.
+5. `git grep -n '^axiom ' ZiskFv/ZiskFv/RV64D/` returns only the 4
+   P-axioms (from `Auxiliaries.lean`) — no per-opcode
+   `*_pure_equiv_axiom`s remain.
+
+## Critical files
+
+**Edited in Phase 3.5:**
+- `ZiskFv/ZiskFv/RV64D/Auxiliaries.lean` — extend `RISC_V_assumptions`;
+  add P1-P4 axioms + `vmem_{read,write}_addr_aligned_equiv` lemmas.
+- `ZiskFv/ZiskFv/Fundamentals/Execution.lean` — add
+  `execute_SHIFTIWOP_*` and `execute_MULW_*` refactor triples.
+- `ZiskFv/ZiskFv/RV64D/{ld,sd,lwu,sw,lhu,lbu,sh,sb}.lean` — remove
+  `execute_*_pure_equiv_axiom`; convert lemma bodies to theorems.
+- `ZiskFv/ZiskFv/RV64D/jalr.lean` — remove
+  `execute_JALR_pure_equiv_axiom`; port the openvm-fv RV32D proof.
+- `ZiskFv/ZiskFv/RV64D/{slliw,srliw,sraiw,mulw}.lean` — remove
+  axioms; real proofs via the new Execution.lean triples.
+- `docs/fv/trusted-base.md` — add P-category section; mark promoted
+  axioms; history entry.
+
+**Read-only (reference):**
+- `/home/cody/openvm-fv/OpenvmFv/RV32D/jalr.lean` — Track II port
+  source.
+- `ZiskFv/ZiskFv/Fundamentals/Execution.lean:151-187` — Track III
+  template (existing RTYPEW triple).
+- `ZiskFv/ZiskFv/RV64D/sllw.lean::execute_RTYPE_sllw_pure_equiv` —
+  direct-closure template for Track III's C3 promotions.
+
+## Known fragility
+
+1. **`vmem_{read,write}_addr_aligned_equiv` unfolding may be longer
+   than the sketched ~50-80 lines each.** Real unfolding of
+   `execute_LOAD` through `checked_mem_read` may hit simp-resistant
+   intermediaries (`pma_attribute_lookup`, `VMReadResult`
+   construction). If the naive unfold doesn't close under simp +
+   P1-P3, add one or two additional narrow platform axioms (P5,
+   P6, …) — staying in scope-honest territory — rather than
+   falling back to re-axiomatizing at the top level.
+
+2. **JALR port from RV32D may have RV64-specific diffs beyond
+   width.** If `update_elp_state`'s callee graph differs
+   structurally between RV32 and RV64 (not just bit-width),
+   additional narrow axioms may be needed. Same mitigation: small
+   narrow axioms over top-level re-axiomatization.
+
+3. **C4 MULW's `to_bits_truncate` / `sign_extend` may resist simp**
+   even after the refactor. If so, add small `@[simp]` helpers on
+   the underlying `BitVec` primitives. These are in-scope
+   computational aids, not platform-feature assertions.
+
+## Phase 3.5 status — CLOSED <date TBD>
+
+(To be populated when Phase 3.5 executes.)
+
