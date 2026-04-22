@@ -517,6 +517,47 @@ fold). That is Phase 4 scope. Parameterize.
 
 ---
 
+## Reconnaissance A5 (MUL) — 2026-04-22
+
+**Arith AIR location.** `vendor/zisk/state-machines/arith/pil/arith.pil`
+(airtemplate `Arith`, 65 constraints; there is also a `arith_mul64.pil`
+variant specialised to 64-bit mul which is unused by the active pilout).
+PIL emits one permutation-proved bus entry per row
+(`proves_operation(op:, a:, b:, c:, flag: div_by_zero, mul: multiplicity)`)
+at `arith.pil:269-270`. Opcodes 0xb0/0xb1/0xb3/0xb4/0xb5/0xb6 map to
+mulu/muluh/mulsuh/mul/mulh/mul_w (`zisk_ops.rs:424-429`). MUL uses the
+same `create_register_op` helper as ADD — `riscv2zisk_context.rs:243`.
+
+**MUL constraint subset.** `--only 2,6,7,8,31,32,33,34,35,36,37,38,40,41,42,43,44,45,46`
+(19 constraints): main_mul/main_div disjoint (2), fab/na_fb/nb_fa defs
+(6,7,8), 8-chunk carry chains (31-38), boolean selectors m32/na/nb/nr/
+np/sext (40-45), bus_res1 projection (46). The carry chains 31-38 are
+extracted but **not consumed** by the Phase-2 proof; they are delegated
+to Phase 4 audit. Constraints 49-64 are permutation/bus-argument stubs
+(skipped identically to BinaryAdd/Main).
+
+**Operand-kind coverage gap.** The Arith AIR required **zero** new
+operand kinds — it uses the same FixedCol / Challenge / AirValue /
+AirGroupValue set Main and BinaryAdd already handle. The only extractor
+extension needed was an **exact-name disambiguation** in `find_air`
+(one unit test added) so that `--air Arith` resolves unambiguously past
+the `ArithEq` / `ArithEq384` siblings. Total extractor diff: ~25 LOC.
+
+**openvm-fv analogue.** `OpenvmFv/Spec/Mul.lean` and `Mulh.lean` each
+*derive* the product bit-by-bit via `BabyBear.inv256_prod_diff_div_mod`
+chained over 4 bytes (~225 lines per file). ZisK-fv's Arith has 8 chunks
+over Goldilocks — a direct port would balloon to ~800 lines of
+`linear_combination` work and leans on Goldilocks-specific carry bounds.
+**A5 takes the BEQ path instead**: parameterize over the bus-entry
+match, delegate Arith-internal correctness (carry chains → BitVec 64
+multiplication) to Phase 4 audit.
+
+**A5-B decision.** DEFER (applied same as A1-B/A2-B): `h_bus_execute_matches_sail`
+remains parameterized in `equiv_MUL_metaplan`, parallel to
+`equiv_ADD_metaplan` / `equiv_BEQ_metaplan`.
+
+---
+
 ## Phase 2 status — CLOSED <date TBD>
 
 (To be populated when Phase 2 executes.)
