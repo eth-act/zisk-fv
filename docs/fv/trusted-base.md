@@ -454,3 +454,16 @@ When accepting a new trusted axiom:
   with M1-M4 under a single `vmem_write_addr_aligned_equiv` lemma.
   Total store-family trusted axioms now: M2 (SD), M4 (SW), M10 (SH),
   M11 (SB).
+- **2026-04-22 — Phase 3A H1-H6.** **No Sail-equivalence axioms
+  introduced.** SLL / SRL / SRA / SLLI / SRLI / SRAI shipped six new
+  transpile axioms (`transpile_SLL`, `transpile_SRL`, `transpile_SRA`,
+  `transpile_SLLI`, `transpile_SRLI`, `transpile_SRAI` in
+  `Fundamentals/Transpiler.lean`) and associated `OP_SLL = 33`,
+  `OP_SRL = 34`, `OP_SRA = 35` Zisk-opcode constants plus a
+  `shamt_b_lo : BitVec 6 → FGL` helper for the immediate-shamt lane
+  encoding. The pure-spec Sail equivalences all closed directly via
+  the SLLW/SRLW precedent (`execute_RTYPE'` for registers,
+  `execute_SHIFTIOP'` for immediates). Per-opcode effort matched the
+  ½-day estimate from Phase 2.5 D4. All transpile axioms are pure
+  specs of the Rust transpiler; no RISC_V_assumptions or LeanRV64D
+  chain obstructions encountered.
