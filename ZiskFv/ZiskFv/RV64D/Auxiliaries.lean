@@ -674,7 +674,19 @@ section SimplerFunctions
       disables the C extension, i.e. the caller must witness `misa[2] = 0`.
       The original RV32D lemma takes only the misa-readable hypothesis because
       the upstream `LeanRV32D` `currentlyEnabled` definition for `Ext_Zca`
-      ignores misa.  See `LeanRV64D/Types.lean` lines ~540-545. -/
+      ignores misa.  See `LeanRV64D/Types.lean` lines ~540-545.
+
+      **Phase 2 A1-CLEAN decision (2026-04-22): KEEP both lemmas.** The
+      upstream
+      `LeanRV64D.Lemmas.currentlyEnabled_Ext_Zca_eq_false_of_misa_bit_zero`
+      (from the `codygunton/sail-riscv-lean@ext-zca-simp-lemmas` fork,
+      not yet merged upstream) proves the same equation with the same
+      hypotheses. Both are visible to simp during `jump_to_equiv` and
+      the new `execute_BEQ_pure_equiv` proof. Retiring the local helper
+      would require promoting the upstream lemma to `@[simp high]`
+      priority, which is inappropriate at upstream's granularity. The
+      local one wins the simp race in practice; the upstream one is
+      cited as a regression anchor. -/
   @[simp high]
   lemma currentlyEnabled_Zca_of_misa_val
     {misa_val : BitVec 64}
