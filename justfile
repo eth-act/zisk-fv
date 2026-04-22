@@ -10,6 +10,8 @@ beq_fix   := "ZiskFv/ZiskFv/GoldenTraces/BEQ.lean"
 beq_doc   := "docs/fv/archetype-branch.md"
 jal_fix   := "ZiskFv/ZiskFv/GoldenTraces/JAL.lean"
 jal_doc   := "docs/fv/archetype-jump.md"
+ld_fix    := "ZiskFv/ZiskFv/GoldenTraces/LD.lean"
+ld_doc    := "docs/fv/archetype-load.md"
 arith_extr := "ZiskFv/ZiskFv/Extraction/Arith.lean"
 arith_orcl := "ZiskFv/ZiskFv/Extraction/Arith.hand.lean"
 mul_fix   := "ZiskFv/ZiskFv/GoldenTraces/MUL.lean"
@@ -69,6 +71,9 @@ verify-phase2: verify-phase1
     # Phase 2 A2 deliverables (JAL): fixture + archetype doc exist.
     test -f {{jal_fix}}
     test -f {{jal_doc}}
+    # Phase 2 A3 deliverables (LD): fixture + archetype doc exist.
+    test -f {{ld_fix}}
+    test -f {{ld_doc}}
     # Phase 2 A5 deliverables (MUL): Arith extraction diff, fixture,
     # archetype doc exist.
     cargo run --manifest-path tools/zisk-pil-extract/Cargo.toml -- \
@@ -94,6 +99,11 @@ verify-phase2: verify-phase1
         ZiskFv.Equivalence.Jal \
         ZiskFv.Tactics.JumpArchetype \
         ZiskFv.GoldenTraces.JAL \
+        ZiskFv.Airs.MemoryBus \
+        ZiskFv.Spec.LoadD \
+        ZiskFv.Equivalence.LoadD \
+        ZiskFv.Tactics.LoadArchetype \
+        ZiskFv.GoldenTraces.LD \
         ZiskFv.Extraction.Arith \
         ZiskFv.Airs.Arith.Mul \
         ZiskFv.Spec.Mul \
