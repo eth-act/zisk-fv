@@ -135,6 +135,27 @@ structure ZiskInstructionRow where
     Type `BinaryE` — handled by the `BinaryExtension` SM (not `BinaryAdd`). -/
 @[simp] def OP_SLL_W : FGL := 36
 
+/-- Goldilocks literal for the 64-bit shift-left opcode.
+    `0x21` per `vendor/zisk/core/src/zisk_ops.rs:413`. Used by RV64 SLL
+    (`riscv2zisk_context.rs:135`, `create_register_op(..., "sll", 4)`)
+    and SLLI (`riscv2zisk_context.rs:175`, `immediate_op(..., "sll", 4)`).
+    Type `BinaryE` — handled by the `BinaryExtension` SM. -/
+@[simp] def OP_SLL : FGL := 33
+
+/-- Goldilocks literal for the 64-bit shift-right-logical opcode.
+    `0x22` per `vendor/zisk/core/src/zisk_ops.rs:414`. Used by RV64 SRL
+    (`riscv2zisk_context.rs:139`, `create_register_op(..., "srl", 4)`)
+    and SRLI (`riscv2zisk_context.rs:179`, `immediate_op(..., "srl", 4)`).
+    Type `BinaryE` — handled by the `BinaryExtension` SM. -/
+@[simp] def OP_SRL : FGL := 34
+
+/-- Goldilocks literal for the 64-bit shift-right-arithmetic opcode.
+    `0x23` per `vendor/zisk/core/src/zisk_ops.rs:415`. Used by RV64 SRA
+    (`riscv2zisk_context.rs:140`, `create_register_op(..., "sra", 4)`)
+    and SRAI (`riscv2zisk_context.rs:180`, `immediate_op(..., "sra", 4)`).
+    Type `BinaryE` — handled by the `BinaryExtension` SM. -/
+@[simp] def OP_SRA : FGL := 35
+
 /-- Goldilocks literal for OPERATION_BUS_ID. Per `vendor/zisk/pil/opids.pil:2`. -/
 @[simp] def OPERATION_BUS_ID : FGL := 5000
 
@@ -996,5 +1017,184 @@ axiom transpile_SB :
       ∧ row.a_hi = lane_hi (state.xreg rs1)
       ∧ row.b_lo = lane_lo (state.xreg rs2)
       ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for SLL (Phase 3A H1).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:135` an RV64 SLL
+    `rd, rs1, rs2` transpiles via `create_register_op(instr, "sll", 4)`
+    (line 631) to exactly one Zisk microinstruction:
+    * `op = OP_SLL = 0x21 = 33` (`zisk_ops.rs:413`, type `BinaryE`);
+    * `is_external_op = 1` — bus hop to `BinaryExtension` SM;
+    * `m32 = 0` — SLL is the full 64-bit shift (vs SLLW's 32-bit);
+    * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`;
+    * `flag = 0`.
+
+    `a` / `b` lanes carry the full 64-bit `xreg(rs1)` / `xreg(rs2)`.
+
+    **Trust basis.** Direct transposition of `transpile_SLLW` with
+    `OP_SLL_W → OP_SLL` and `m32 = 1 → m32 = 0`. SRL/SRA mirror this
+    with `OP_SRL`/`OP_SRA`. -/
+axiom transpile_SLL :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SLL
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for SRL (Phase 3A H2).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:139` an RV64 SRL
+    transpiles via `create_register_op(instr, "srl", 4)`. Emitted row
+    mirrors SLL with `op = OP_SRL = 0x22 = 34` (`zisk_ops.rs:414`).
+    The direction of the shift (logical-right) is dispatched inside the
+    `BinaryExtension` SM based on the `op` field.
+
+    **Trust basis.** Direct transposition of `transpile_SLL` with
+    `OP_SLL → OP_SRL`. -/
+axiom transpile_SRL :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SRL
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for SRA (Phase 3A H3).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:140` an RV64 SRA
+    transpiles via `create_register_op(instr, "sra", 4)`. Emitted row
+    mirrors SLL with `op = OP_SRA = 0x23 = 35` (`zisk_ops.rs:415`).
+    The direction of the shift (arithmetic-right) is dispatched inside
+    the `BinaryExtension` SM based on the `op` field.
+
+    **Trust basis.** Direct transposition of `transpile_SLL` with
+    `OP_SLL → OP_SRA`. -/
+axiom transpile_SRA :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SRA
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- Zisk-side representation of a 6-bit shift-amount immediate.
+
+    The transpiler helper `immediate_op` at
+    `vendor/zisk/core/src/riscv2zisk_context.rs:853-864` emits
+    `zib.src_b("imm", i.imm as u64, false)`. For SLLI/SRLI/SRAI
+    `i.imm` is the 6-bit shamt (RV64 shift amounts are `log2(XLEN) = 6`
+    bits); as a u64 this is just `shamt.toNat` with zero high bits.
+
+    In the Main row this is split into two 32-bit lanes:
+    * `b_lo = shamt.toNat` (always fits — shamt < 64);
+    * `b_hi = 0` (the u64 of a 6-bit value has zero high half). -/
+def shamt_b_lo (shamt : BitVec 6) : FGL :=
+  ⟨shamt.toNat, by
+    have : shamt.toNat < 64 := shamt.isLt
+    omega⟩
+
+/-- The axiomatic RV64 → Zisk row contract for SLLI (Phase 3A H4).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:175` an RV64 SLLI
+    `rd, rs1, shamt` transpiles via `immediate_op(instr, "sll", 4)`
+    (line 853) to exactly one Zisk microinstruction:
+    * `op = OP_SLL = 33` — **same op-string as SLL** (the
+      `BinaryExtension` SM cannot distinguish SLL from SLLI; they share
+      the same Zisk opcode literal);
+    * `is_external_op = 1`, `flag = 0`, `m32 = 0`;
+    * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`;
+    * `a_lo = lane_lo (xreg rs1)`, `a_hi = lane_hi (xreg rs1)`;
+    * `b_lo = shamt.toNat` (the 6-bit immediate as a field element),
+      `b_hi = 0` (the u64-extended shamt has no high lane).
+
+    The only structural difference from `transpile_SLL` is the `b`
+    source: `immediate_op` uses `"imm"`/`i.imm as u64` whereas
+    `create_register_op` uses `"reg"`/`i.rs2`. The Main-AIR bus
+    emission is identical (b-source-agnostic — the Main row treats
+    `b_lo`/`b_hi` as data regardless of how they got there).
+
+    **Trust basis.** Pure spec of the `"slli"` arm of the ITYPE
+    dispatch in `riscv2zisk_context.rs:175`. SRLI / SRAI mirror this
+    with `OP_SRL` / `OP_SRA`. -/
+axiom transpile_SLLI :
+    ∀ (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SLL
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = shamt_b_lo shamt
+      ∧ row.b_hi = 0
+
+/-- The axiomatic RV64 → Zisk row contract for SRLI (Phase 3A H5).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:179`. Same shape
+    as `transpile_SLLI` with `OP_SLL → OP_SRL`. -/
+axiom transpile_SRLI :
+    ∀ (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SRL
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = shamt_b_lo shamt
+      ∧ row.b_hi = 0
+
+/-- The axiomatic RV64 → Zisk row contract for SRAI (Phase 3A H6).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:180`. Same shape
+    as `transpile_SLLI` with `OP_SLL → OP_SRA`. -/
+axiom transpile_SRAI :
+    ∀ (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SRA
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = shamt_b_lo shamt
+      ∧ row.b_hi = 0
 
 end ZiskFv.Trusted

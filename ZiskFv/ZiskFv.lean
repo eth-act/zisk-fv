@@ -27,4 +27,16 @@ import ZiskFv.Equivalence.LoadHU
 import ZiskFv.GoldenTraces.LHU
 import ZiskFv.Equivalence.LoadBU
 import ZiskFv.GoldenTraces.LBU
+import ZiskFv.Equivalence.Sll
+import ZiskFv.GoldenTraces.SLL
+import ZiskFv.Equivalence.Srl
+import ZiskFv.GoldenTraces.SRL
+import ZiskFv.Equivalence.Sra
+import ZiskFv.GoldenTraces.SRA
+import ZiskFv.Equivalence.Slli
+import ZiskFv.GoldenTraces.SLLI
+import ZiskFv.Equivalence.Srli
+import ZiskFv.GoldenTraces.SRLI
+import ZiskFv.Equivalence.Srai
+import ZiskFv.GoldenTraces.SRAI
 import ZiskFv.Spike
