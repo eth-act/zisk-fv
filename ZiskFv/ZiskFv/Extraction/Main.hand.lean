@@ -94,6 +94,11 @@ namespace Main.extraction
     (((Circuit.main c (id := 1) (column := 6) (row := row) (rotation := 0)) * (Circuit.main c (id := 1) (column := 25) (row := row) (rotation := 0)))) = 0
 
   @[simp]
+  def constraint_20_every_row {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
+    -- main/pil/main.pil:401 (1-Main.SEGMENT_L1)*(pc-(expected_current_pc))
+    (((1 - (Circuit.preprocessed c (column := 0) (row := row) (rotation := 0))) * ((Circuit.main c (id := 1) (column := 7) (row := row) (rotation := 0)) - ((((Circuit.main c (id := 1) (column := 25) (row := row - 1) (rotation := 0)) * ((Circuit.main c (id := 1) (column := 4) (row := row - 1) (rotation := 0)) + (Circuit.main c (id := 1) (column := 26) (row := row - 1) (rotation := 0)))) + ((1 - (Circuit.main c (id := 1) (column := 25) (row := row - 1) (rotation := 0))) * ((Circuit.main c (id := 1) (column := 7) (row := row - 1) (rotation := 0)) + (Circuit.main c (id := 1) (column := 27) (row := row - 1) (rotation := 0))))) + ((Circuit.main c (id := 1) (column := 6) (row := row - 1) (rotation := 0)) * ((Circuit.main c (id := 1) (column := 26) (row := row - 1) (rotation := 0)) - (Circuit.main c (id := 1) (column := 27) (row := row - 1) (rotation := 0)))))))) = 0
+
+  @[simp]
   def constraint_24_every_row {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=
     -- main/pil/main.pil:450 flag*(1-flag)
     (((Circuit.main c (id := 1) (column := 6) (row := row) (rotation := 0)) * (1 - (Circuit.main c (id := 1) (column := 6) (row := row) (rotation := 0))))) = 0

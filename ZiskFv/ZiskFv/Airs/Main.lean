@@ -56,6 +56,13 @@ structure Valid_Main (C : Type → Type → Type) (F ExtF : Type)
   /-- stage-2 column `im_high_degree[2]` — the permutation-sum cell
       carrying the operation-bus entry for this row. -/
   im_high_degree_2 : ℕ → F
+  /-- Fixed column `SEGMENT_L1` (preprocessed column 0). Equals `1` on
+      the first row of each segment and `0` elsewhere — PIL declares it
+      as `col fixed SEGMENT_L1 = [1,0...];` (`main.pil:19`). Used to
+      gate the PC handshake (constraint 20) so the handshake is
+      vacuously satisfied at a segment boundary where "previous row"
+      is ill-defined. -/
+  segment_l1 : ℕ → F
   a_0_def : ∀ row,
     a_0 row = Circuit.main circuit (id := 1) (column := 0) (row := row) (rotation := 0)
   a_1_def : ∀ row,
@@ -88,6 +95,8 @@ structure Valid_Main (C : Type → Type → Type) (F ExtF : Type)
     store_pc row = Circuit.main circuit (id := 1) (column := 22) (row := row) (rotation := 0)
   im_high_degree_2_def : ∀ row,
     im_high_degree_2 row = Circuit.main circuit (id := 2) (column := 7) (row := row) (rotation := 0)
+  segment_l1_def : ∀ row,
+    segment_l1 row = Circuit.preprocessed circuit (column := 0) (row := row) (rotation := 0)
 
 variable {C : Type → Type → Type} {F ExtF : Type}
   [Field F] [Field ExtF] [Circuit F ExtF C]
@@ -152,29 +161,81 @@ def add_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
   ∧ flag_boolean v row
   ∧ is_external_op_boolean v row
 
-/-- **PC handshake** (`main.pil:410`) — the row's `pc` equals the
-    *previous* row's pc-update expression:
+/-- **PC handshake** (`main.pil:410`) — the *closed form* of the PIL
+    constraint:
+
+    `(1 - SEGMENT_L1 row) * (pc row - expected_current_pc(row - 1)) = 0`
+
+    where `expected_current_pc` is evaluated against the previous row's
+    witness cells:
+
     `expected_current_pc = 'set_pc * ('c[0] + 'jmp_offset1)
                          + (1 - 'set_pc) * ('pc + 'jmp_offset2)
                          + 'flag * ('jmp_offset1 - 'jmp_offset2)`.
 
-    This constraint has a negative rotation (all `'`-prefixed cells are
-    "previous row"). `zisk-pil-extract` skips it because `Circuit.main`
-    rotation is `ℕ`. We expose it as a named predicate parameterized on
-    `next_pc` — the *next*-row `pc` cell — which the caller must supply
-    when reasoning about row `r`.
+    Phase 2.5 D2 closed this form: `zisk-pil-extract` now handles the
+    `'`-prefix (negative row rotation) by rewriting `row_offset = -1`
+    to `(row := row - 1) (rotation := 0)`. `Circuit.main`'s rotation is
+    `ℕ`, so at row 0 the `row - 1` subterm saturates to 0 — but the
+    `(1 - SEGMENT_L1)` gate evaluates to `0` at row 0 (`SEGMENT_L1 = 1`
+    there by definition), so the misaligned subterm is multiplied out.
+    See `Extraction/Main.hand.lean`'s `constraint_20_every_row` and the
+    extractor-notes for the full argument.
 
-    Specialization for branches (the archetype A1 use case): when the
-    row at `r` has `set_pc = 0`, the handshake reduces to
+    Callers who need the classical "next_pc" formulation (at some row
+    `r`, the next-row pc equals the current-row formula) should use
+    `pc_handshake_with_next_pc` below (derived from this via
+    `pc_handshake_to_next_pc` when the row is not a segment boundary). -/
+@[simp]
+def pc_handshake (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
+  (1 - v.segment_l1 row) *
+    (v.pc row -
+      (v.set_pc (row - 1) * (v.c_0 (row - 1) + v.jmp_offset1 (row - 1))
+        + (1 - v.set_pc (row - 1)) * (v.pc (row - 1) + v.jmp_offset2 (row - 1))
+        + v.flag (row - 1) * (v.jmp_offset1 (row - 1) - v.jmp_offset2 (row - 1)))) = 0
+
+/-- **Specialization form** of the PC handshake, parameterized on the
+    *next-row* pc cell. Historically this was `pc_handshake`; Phase 2.5
+    demoted it to a specialization once the extractor handled the
+    closed form. Callers that already carry a `next_pc : F` (e.g.
+    `Spec.BranchEqual`, `Spec.Jal`, `Spec.LoadD`) use this form directly
+    — they can port to the closed form via `pc_handshake_to_next_pc`.
+
+    At row `r` with `set_pc = 0`, this reduces to
     `next_pc = pc r + jmp_offset2 r + flag r * (jmp_offset1 r - jmp_offset2 r)`.
     For flag=1 (taken), `next_pc = pc + jmp_offset1 = pc + imm`.
     For flag=0 (not-taken), `next_pc = pc + jmp_offset2 = pc + 4`. -/
 @[simp]
-def pc_handshake (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Prop :=
+def pc_handshake_with_next_pc (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Prop :=
   next_pc =
     v.set_pc row * (v.c_0 row + v.jmp_offset1 row)
       + (1 - v.set_pc row) * (v.pc row + v.jmp_offset2 row)
       + v.flag row * (v.jmp_offset1 row - v.jmp_offset2 row)
+
+/-- Bridge the closed-form `pc_handshake` to the specialization
+    `pc_handshake_with_next_pc`: at a non-segment-boundary row (i.e.
+    `segment_l1 (row + 1) = 0`), the handshake at `row + 1` says
+    `v.pc (row + 1) = expected_current_pc(row)`, which is exactly
+    `pc_handshake_with_next_pc v row (v.pc (row + 1))`.
+
+    Specialized to `FGL` so `linear_combination` / `ring` can see a
+    commutative-ring. -/
+lemma pc_handshake_to_next_pc
+    {C' : Type → Type → Type} [Circuit FGL FGL C']
+    (v : Valid_Main C' FGL FGL) (row : ℕ)
+    (h_seg : v.segment_l1 (row + 1) = 0)
+    (h : pc_handshake v (row + 1)) :
+    pc_handshake_with_next_pc v row (v.pc (row + 1)) := by
+  simp only [pc_handshake] at h
+  -- The witness accessors at (row + 1 - 1) simplify to (row).
+  have hrow : row + 1 - 1 = row := Nat.succ_sub_one row
+  rw [h_seg, hrow] at h
+  -- h : (1 - 0) * (pc (row+1) - expected(row)) = 0
+  -- Clear the gate factor: since (1 - 0) = 1, h reduces to
+  -- pc (row+1) = expected(row), which is exactly the `with_next_pc` form.
+  simp only [sub_zero, one_mul] at h
+  simp only [pc_handshake_with_next_pc]
+  linear_combination h
 
 /-- Specialized PC handshake for branch archetype: `set_pc = 0` and
     `is_external_op = 1` (the Binary SM's `flag` output drives taken/
@@ -184,10 +245,10 @@ def pc_handshake (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Prop :=
 lemma pc_handshake_branch
     (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F)
     (h_set_pc : v.set_pc row = 0)
-    (h : pc_handshake v row next_pc) :
+    (h : pc_handshake_with_next_pc v row next_pc) :
     next_pc = v.pc row + v.jmp_offset2 row
             + v.flag row * (v.jmp_offset1 row - v.jmp_offset2 row) := by
-  simp only [pc_handshake] at h
+  simp only [pc_handshake_with_next_pc] at h
   rw [h_set_pc] at h
   linear_combination h
 
@@ -239,9 +300,9 @@ lemma pc_handshake_jump
     (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F)
     (h_set_pc : v.set_pc row = 0)
     (h_flag : v.flag row = 1)
-    (h : pc_handshake v row next_pc) :
+    (h : pc_handshake_with_next_pc v row next_pc) :
     next_pc = v.pc row + v.jmp_offset1 row := by
-  simp only [pc_handshake] at h
+  simp only [pc_handshake_with_next_pc] at h
   rw [h_set_pc, h_flag] at h
   linear_combination h
 
@@ -255,7 +316,7 @@ def branch_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Pr
   flag_boolean v row
   ∧ is_external_op_boolean v row
   ∧ flag_set_pc_disjoint v row
-  ∧ pc_handshake v row next_pc
+  ∧ pc_handshake_with_next_pc v row next_pc
 
 /-- Jump subset — the Main constraints a JAL (internal-op `flag`) row must
     satisfy, plus the PC handshake. Unlike the branch subset, JAL is
@@ -272,7 +333,7 @@ def jump_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Prop
   ∧ internal_op0_zeroes_c0 v row
   ∧ internal_op0_zeroes_c1 v row
   ∧ internal_op0_sets_flag v row
-  ∧ pc_handshake v row next_pc
+  ∧ pc_handshake_with_next_pc v row next_pc
 
 section extraction_bridge
 
@@ -324,6 +385,24 @@ lemma constraint_19_of_extraction
     constraint_19_every_row v.circuit row ↔ flag_set_pc_disjoint v row := by
   unfold constraint_19_every_row flag_set_pc_disjoint
   rw [v.flag_def, v.set_pc_def]
+
+/-- **Constraint 20 (PC handshake) bridge.** The raw extracted
+    `constraint_20_every_row` — `(1 - SEGMENT_L1) * (pc - expected) = 0`
+    with all primed cells rendered at `(row := row - 1) (rotation := 0)`
+    by the extractor — is definitionally the named closed-form
+    `pc_handshake`. Bridge via `unfold` + the per-column
+    `<col>_def` lemmas.
+
+    The extractor rewrite `row - 1` is a `ℕ` (saturating) subtraction;
+    the `(1 - SEGMENT_L1)` gate makes the `row = 0` case vacuous, so
+    the bridge is sound. -/
+@[simp]
+lemma constraint_20_of_extraction
+    (v : Valid_Main C F ExtF) (row : ℕ) :
+    constraint_20_every_row v.circuit row ↔ pc_handshake v row := by
+  unfold constraint_20_every_row pc_handshake
+  simp only [v.segment_l1_def, v.pc_def, v.set_pc_def, v.c_0_def,
+             v.jmp_offset1_def, v.jmp_offset2_def, v.flag_def]
 
 @[simp]
 lemma constraint_24_of_extraction

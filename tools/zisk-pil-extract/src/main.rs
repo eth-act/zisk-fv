@@ -426,31 +426,58 @@ fn render_operand(pilout: &PilOut, air: &Air, operand: Option<&Operand>) -> Resu
     match kind {
         OperandKind::Constant(c) => Ok(format_basefield(&c.value)),
         OperandKind::WitnessCol(w) => {
-            if w.row_offset < 0 {
+            // `Circuit.main` rotation is `ℕ` in LeanZKCircuit, so we cannot pass
+            // a negative offset as `rotation`. PIL's `'`-prefixed cell (row -k)
+            // at evaluation row `R` is definitionally the same field element as
+            // the cell at row `R - k` with rotation 0. We emit the latter form.
+            //
+            // Soundness note for `R < k`: Lean's `ℕ` subtraction saturates at 0,
+            // so `row - k` wraps to 0 when `row < k`. Every PIL constraint that
+            // uses a negative rotation gates itself with `(1 - SEGMENT_L1)`
+            // (a fixed column that is 1 on the first row of a segment and 0
+            // elsewhere), so the misrendered cell at `row = 0` is multiplied
+            // by zero and the constraint remains vacuously true. This is why
+            // the named-constraint layer can reason about constraint 20 (the
+            // PC handshake) without ever applying it at row 0.
+            if w.row_offset > 0 {
                 bail!(
-                    "WitnessCol with negative rowOffset {} not yet supported (Circuit.main rotation is ℕ); the named-constraint layer should rebind this cell explicitly",
+                    "WitnessCol with positive rowOffset {} not yet supported (PIL typically only uses `'` postfix for row -1)",
                     w.row_offset
                 );
             }
+            let row_expr = if w.row_offset < 0 {
+                let k = w.row_offset.unsigned_abs();
+                format!("row - {}", k)
+            } else {
+                "row".to_string()
+            };
             Ok(format!(
-                "(Circuit.main c (id := {}) (column := {}) (row := row) (rotation := {}))",
+                "(Circuit.main c (id := {}) (column := {}) (row := {}) (rotation := 0))",
                 /* airgroup-level id used by openvm-fv is the stage index here: */
                 w.stage,
                 w.col_idx,
-                w.row_offset,
+                row_expr,
             ))
         }
         OperandKind::Expression(e) => render_expr_by_idx(pilout, air, e.idx as usize),
         OperandKind::FixedCol(f) => {
-            if f.row_offset < 0 {
+            // Same `row - k` rewrite as the WitnessCol arm above; see that
+            // comment for the SEGMENT_L1 soundness argument.
+            if f.row_offset > 0 {
                 bail!(
-                    "FixedCol with negative rowOffset {} not yet supported (Circuit.preprocessed rotation is ℕ)",
+                    "FixedCol with positive rowOffset {} not yet supported (PIL typically only uses `'` postfix for row -1)",
                     f.row_offset
                 );
             }
+            let row_expr = if f.row_offset < 0 {
+                let k = f.row_offset.unsigned_abs();
+                format!("row - {}", k)
+            } else {
+                "row".to_string()
+            };
             Ok(format!(
-                "(Circuit.preprocessed c (column := {}) (row := row) (rotation := {}))",
-                f.idx, f.row_offset,
+                "(Circuit.preprocessed c (column := {}) (row := {}) (rotation := 0))",
+                f.idx, row_expr,
             ))
         }
         OperandKind::Challenge(ch) => {
@@ -704,6 +731,67 @@ mod tests {
         assert!(flatten_challenge_index(&pilout, 2, 2).is_err());
         // Stage exceeds num_challenges.len().
         assert!(flatten_challenge_index(&pilout, 3, 0).is_err());
+    }
+
+    /// Build a minimal `Air` whose sole expression references a single witness
+    /// cell at `(stage, col_idx, row_offset)`. Used by the negative-row-offset
+    /// render tests below.
+    fn single_witness_expr_air(stage: u32, col_idx: u32, row_offset: i32) -> Air {
+        Air {
+            expressions: vec![Expression {
+                operation: Some(ExprOp::Add(pilout::expression::Add {
+                    lhs: Some(Operand {
+                        operand: Some(OperandKind::WitnessCol(pilout::operand::WitnessCol {
+                            stage,
+                            col_idx,
+                            row_offset,
+                        })),
+                    }),
+                    rhs: Some(Operand {
+                        operand: Some(OperandKind::Constant(pilout::operand::Constant {
+                            value: vec![0x00],
+                        })),
+                    }),
+                })),
+            }],
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn render_operand_witness_col_negative_offset_rewrites_to_row_sub_k() {
+        // Regression (Phase 2.5 D2): PIL's `'`-postfix cell (row -1) was
+        // previously a hard error. We now emit `(row := row - 1)` with
+        // `rotation := 0`, which is definitionally the same cell. SEGMENT_L1
+        // gating in PIL guarantees ℕ saturation at row 0 is vacuous.
+        let pilout = PilOut::default();
+        let air = single_witness_expr_air(1, 7, -1);
+        let rendered = render_expr_by_idx(&pilout, &air, 0).expect("should render");
+        assert_eq!(
+            rendered,
+            "((Circuit.main c (id := 1) (column := 7) (row := row - 1) (rotation := 0)) + 0)"
+        );
+    }
+
+    #[test]
+    fn render_operand_witness_col_row_offset_zero_unchanged() {
+        // The default (non-rotated) rendering form is unchanged.
+        let pilout = PilOut::default();
+        let air = single_witness_expr_air(1, 7, 0);
+        let rendered = render_expr_by_idx(&pilout, &air, 0).expect("should render");
+        assert_eq!(
+            rendered,
+            "((Circuit.main c (id := 1) (column := 7) (row := row) (rotation := 0)) + 0)"
+        );
+    }
+
+    #[test]
+    fn render_operand_witness_col_positive_offset_still_errors() {
+        // PIL2 doesn't use positive rotations in ZisK's pilout; keep them
+        // failing loudly so we don't silently misrender a future use.
+        let pilout = PilOut::default();
+        let air = single_witness_expr_air(1, 7, 1);
+        assert!(render_expr_by_idx(&pilout, &air, 0).is_err());
     }
 
     #[test]

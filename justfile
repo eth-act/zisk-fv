@@ -43,9 +43,11 @@ verify-phase1:
         --pilout {{pilout}} --air BinaryAdd --skip-unsupported \
         --output {{extracted}}
     diff -w {{extracted}} {{oracle}}
-    # Re-extract the ADD-relevant Main subset and diff against the oracle.
+    # Re-extract the ADD/branch/jump-relevant Main subset and diff against the
+    # oracle. Constraint 20 (PC handshake) was added in Phase 2.5 D2 after
+    # the extractor learned to handle PIL's negative row-rotation postfix.
     cargo run --manifest-path tools/zisk-pil-extract/Cargo.toml -- \
-        --pilout {{pilout}} --air Main --only 8,9,15,16,17,18,19,24,30 \
+        --pilout {{pilout}} --air Main --only 8,9,15,16,17,18,19,20,24,30 \
         --output {{main_extr}}
     diff -w {{main_extr}} {{main_orcl}}
     # Regenerate the golden-trace fixture (hard-coded 3 + 5 = 8).

@@ -57,6 +57,35 @@ theorem equiv_BEQ
             + m.flag r_main * (m.jmp_offset1 r_main - m.jmp_offset2 r_main) :=
   branch_eq_compositional m r_main next_pc h_circuit
 
+/-- **Closed-form circuit-level BEQ theorem.** Phase 2.5 D2 eliminated
+    the `next_pc : FGL` parameter by deriving it from the extracted
+    closed-form `pc_handshake` (Main constraint 20) via
+    `pc_handshake_to_next_pc`. The caller supplies instead:
+
+    * the booleans + disjointness for row `r_main`,
+    * the BEQ mode witnesses at `r_main`,
+    * the extracted handshake at `r_main + 1` (closed form — no
+      `next_pc` quantifier),
+    * the non-segment-boundary witness `segment_l1 (r_main + 1) = 0`.
+
+    The next-row `pc` cell (`m.pc (r_main + 1)`) plays the role of
+    `next_pc` in the conclusion. -/
+theorem equiv_BEQ_closed
+    (_rs1 _rs2 : Fin 32) (_state : RV64State)
+    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (h_flag_bool : flag_boolean m r_main)
+    (h_ext_bool : is_external_op_boolean m r_main)
+    (h_disjoint : flag_set_pc_disjoint m r_main)
+    (h_mode : main_row_in_beq_mode m r_main)
+    (h_seg : m.segment_l1 (r_main + 1) = 0)
+    (h_handshake_next : pc_handshake m (r_main + 1)) :
+    m.pc (r_main + 1) = m.pc r_main + m.jmp_offset2 r_main
+            + m.flag r_main * (m.jmp_offset1 r_main - m.jmp_offset2 r_main) :=
+  branch_eq_compositional m r_main (m.pc (r_main + 1))
+    ⟨⟨h_flag_bool, h_ext_bool, h_disjoint,
+      pc_handshake_to_next_pc m r_main h_seg h_handshake_next⟩,
+     h_mode⟩
+
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 BEQ reduces to the pure-function block supplied by
     `PureSpec.execute_BEQ_pure`, given source-register readability, PC

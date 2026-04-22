@@ -65,7 +65,7 @@ def load_subset_holds (m : Valid_Main C FGL FGL) (row : ℕ) (next_pc : FGL) : P
   ∧ internal_op1_copies_b1 m row
   ∧ internal_op1_clears_flag m row
   ∧ flag_set_pc_disjoint m row
-  ∧ pc_handshake m row next_pc
+  ∧ pc_handshake_with_next_pc m row next_pc
 
 /-- Hypotheses needed by the LD compositional theorem. Combines:
     * the Main-subset constraints (load-specific);

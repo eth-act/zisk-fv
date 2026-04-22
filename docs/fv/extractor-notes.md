@@ -105,6 +105,31 @@ parenthesization) — update the oracle to match and note the change here;
 (b) extractor regressed — fix the extractor, not the oracle; (c) the `.pil`
 source changed — re-translate the oracle from the new source.
 
+## Negative row rotations (Phase 2.5 D2)
+
+PIL2 uses a postfix `'` to denote "previous-row" cells (row rotation `-1`),
+as in `'set_pc` and `'c[0]` inside the PC-handshake constraint
+(`main.pil:409-410`). `Circuit.main` / `Circuit.preprocessed` from
+`LeanZKCircuit.OpenVM.Circuit` both type rotation as `ℕ`, so a negative
+rotation can't live in the rotation field. The extractor rewrites
+`row_offset = -k` (k > 0) to `(row := row - k) (rotation := 0)` — evaluated
+cells are definitionally identical, so this is sound wherever `row ≥ k`.
+
+**Soundness at row 0**: Lean's `ℕ` subtraction saturates at 0, so `row - 1`
+evaluates to `0` when `row = 0`. That misaligns the decoded cell relative to
+PIL's semantics. Every constraint in ZisK's pilout that uses a negative
+rotation gates itself with `(1 - SEGMENT_L1)`, where `SEGMENT_L1` is a
+fixed column equal to `1` on the first row of each segment and `0`
+elsewhere. At row 0, the gate factor is `0`, so the misaligned subterm is
+multiplied out and the constraint is vacuously true. Callers of the named-
+constraint layer (e.g. `Airs/Main.lean::pc_handshake_to_next_pc`) must
+provide a `segment_l1 (row + 1) = 0` witness to derive the useful
+specialization.
+
+Positive row rotations are still rejected loudly — ZisK's pilout doesn't
+use them and supporting them would require auditing every AIR for
+`row + k` semantics.
+
 ## Extending
 
 Adding a new operand kind is a match arm in `render_operand` (`src/main.rs`).
