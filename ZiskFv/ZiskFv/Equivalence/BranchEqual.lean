@@ -6,6 +6,7 @@ import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Spec.BranchEqual
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.beq
 import ZiskFv.RV64D.BusEffect
 
@@ -152,7 +153,6 @@ theorem equiv_BEQ_metaplan
     (r1 r2 : regidx)
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (mem_row : List (Interaction.MemoryBusEntry FGL))
     (h_input_imm : beq_input.imm = imm)
     (h_input_r1 : read_xreg (regidx_to_fin r1) state
       = EStateM.Result.ok beq_input.r1_val state)
@@ -161,26 +161,28 @@ theorem equiv_BEQ_metaplan
     (h_input_pc : state.regs.get? Register.PC = .some beq_input.PC)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    (h_bus_execute_matches_sail :
-      (bus_effect exec_row mem_row state).2
-        = (let beq_output := PureSpec.execute_BEQ_pure beq_input
-           (do
-             Sail.writeReg Register.nextPC beq_output.nextPC
-             if beq_output.throws then
-               throw (Sail.Error.Assertion "extensions/I/base_insts.sail:59.29-59.30")
-             else if !beq_output.success then
-               pure (
-                 ExecutionResult.Memory_Exception (
-                   (virtaddr.Virtaddr (beq_input.PC + BitVec.signExtend 64 beq_input.imm)),
-                   (ExceptionType.E_Fetch_Addr_Align ())
-                 )
-               )
-             else
-               (pure (ExecutionResult.Retire_Success ()))) state)) :
+    -- Structural bus hypotheses (Phase 2.5 D3): derived from a PIL-level
+    -- bus-emission spec in Phase 4.
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BEQ_pure beq_input).nextPC)
+    (h_not_throws : (PureSpec.execute_BEQ_pure beq_input).throws = false)
+    (h_success : (PureSpec.execute_BEQ_pure beq_input).success = true) :
     execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BEQ)) state
-      = (bus_effect exec_row mem_row state).2 := by
+      = (bus_effect exec_row [] state).2 := by
   rw [equiv_BEQ_sail state beq_input imm r1 r2 misa_val
         h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c]
-  exact h_bus_execute_matches_sail.symm
+  -- Discharge the bus-side equation via the shape lemma.
+  symm
+  exact ZiskFv.Airs.BusEmission.bus_effect_matches_sail_beq
+    state exec_row
+    (PureSpec.execute_BEQ_pure beq_input).nextPC
+    (PureSpec.execute_BEQ_pure beq_input).throws
+    (PureSpec.execute_BEQ_pure beq_input).success
+    beq_input.PC beq_input.imm
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
 end ZiskFv.Equivalence.BranchEqual
