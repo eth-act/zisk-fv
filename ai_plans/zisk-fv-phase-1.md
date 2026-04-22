@@ -1019,22 +1019,11 @@ out-of-scope per the plan's explicit time-box allowances, details below.
   metaplan `bus_effect`-shaped statement as Phase 2 (memory-bus
   bit-width widening + Goldilocks↔BitVec 64 bridge lemma).
 
-#### Remaining sorry inventory (accepted)
+#### Remaining sorry inventory
 
-All 4 remaining `sorry`s in Phase 1.5 scope are annotated with reason
-and plan:
-
-1. `Fundamentals/Execution.lean:214` — `execute_MUL_eq_execute_MUL'`
-   Low-half 4 sign cases.
-2. `Fundamentals/Execution.lean:288` — `execute_DIV_eq_execute_DIV'`
-   overflow + truncate bounds.
-3. `Fundamentals/Execution.lean:300` — `execute_REM_eq_execute_REM'`
-   parallel to DIV.
-4. `RV64D/Auxiliaries.lean:762` — `jump_to_equiv`; unblocks on
-   upstream response to U1 or local U2 fallback.
-
-Each has a `-- TODO Phase 1.5 …` or `-- TODO(LeanRV64D upstream …)`
-comment with the specific blocker.
+**Empty.** All 4 originally-accepted Phase 1.5 `sorry`s closed in a
+round-2 execution pass on 2026-04-22 (commits `3a91787..eb32aae`, 8
+commits on top of the round-1 close). See "Round 2 addendum" below.
 
 #### Per-opcode effort update (for Phase 2 planning)
 
@@ -1063,6 +1052,108 @@ Phase 1.5 refines:
 
 Macros (`alu_non_imm_proof` analogue) stay deferred to Phase 2
 after 3-5 opcodes crystallize the pattern.
+
+#### Round 2 addendum — 2026-04-22
+
+Closed the 4 `sorry`s and landed the full metaplan theorem shape in 8
+commits `3a91787..eb32aae`. `just verify-phase1` exits 0, `git grep
+sorry` across Fundamentals/Airs/Spec/Equivalence/GoldenTraces and
+`RV64D/Auxiliaries.lean` returns **zero matches**.
+
+**What closed:**
+
+- **Metaplan theorem composition** (commits `3a91787..be94732`):
+  - `Fundamentals/Interaction.lean` created (minimal port of openvm-fv's
+    RV32 version; `ExecutionBusEntry`, `MemoryBusEntry` widened to 8
+    byte lanes `x0..x7`).
+  - `RV64D/BusEffect.lean` widened from RV32-shaped 4-byte entries to
+    8 byte lanes (matches the TODO at the top of the file, now removed).
+  - `Fundamentals/GoldilocksBridge.lean` created with proven bridges:
+    `lane_lo_lane_hi_recombine_eq_toNat` and
+    `add_bv_toNat_eq_field_sum_minus_carry` plus helpers. Leverages
+    `GL_prime < 2^64` so `push_cast` discharges the `ZMod` reduction.
+  - `Equivalence/Add.lean::equiv_ADD_metaplan` now exists with the
+    metaplan target statement `execute_instruction (.RTYPE ...) state
+    = (bus_effect exec_row mem_row state).2`. **Proof body has no
+    sorry.** Parameterizes over a `h_bus_execute_matches_sail`
+    hypothesis — deriving that hypothesis from a more elementary
+    PIL-level bus-emission spec is per-entry case analysis over
+    `bus_effect`'s foldl and stays Phase 2.
+
+- **Execution.lean equivalences** (commits `d8ae4bf`, `1840927`):
+  - `Fundamentals/U64.lean` created (port of openvm-fv's `U32.lean`
+    helper family to 64-bit width): `toInt_toInt_as_toNat_128`,
+    `toInt_toNat_as_toNat_128`, `toNat_toInt_as_toNat_128`,
+    `toNat_toNat_as_toNat_128`, `div_overflow_64`,
+    `ZiskFv.Int.sign_cases`.
+  - MUL Low-half 4 sign cases, DIV overflow/truncate, REM parallel —
+    all closed with actual proof bodies. Strategic choice: rather than
+    mirror openvm-fv's msb-case-split proofs, collapse both sides to
+    `BitVec.ofInt` via `signExtend v = ofInt v toInt` etc., shortening
+    substantially. Required `set_option maxHeartbeats 10000000` for
+    DIV/REM's four-way case split.
+
+- **`jump_to_equiv` via the upstream fork path, not local U2**
+  (commits `cfcca65`, `eb32aae`):
+  - Fork `codygunton/sail-riscv-lean` branch `ext-zca-simp-lemmas`
+    (HEAD `4692edd7`) now carries proven `LeanRV64D.Lemmas`:
+    `currentlyEnabled_Ext_C_eq_false_of_misa_bit_zero`,
+    `currentlyEnabled_Ext_Zca_eq_false_of_misa_bit_zero`, the
+    `bind_currentlyEnabled_Ext_Zca_of_misa_bit_zero` combinator,
+    plus `hartSupports_Ext_{Zca,F,D,Zcd,Zcf,C}` constant-folds.
+    ~170 lines, no sorry.
+  - `ZiskFv/lakefile.toml` now pins `LeanRV` at
+    `codygunton/sail-riscv-lean@ext-zca-simp-lemmas`. Our project
+    consumes the upstream lemmas rather than duplicating them
+    locally — this is the "real U1" outcome rather than the U2
+    fallback.
+  - `RV64D/Auxiliaries.lean::jump_to_equiv` proof closed.
+    Transitively unblocks the 8 branch/jump opcode equivalence
+    proofs (their per-opcode `sorry`s are separate Phase 2 work, not
+    caused by `jump_to_equiv`).
+  - **Minor redundancy to address in Phase 2:** an in-file `@[simp
+    high]` `currentlyEnabled_Zca_of_misa_val` helper already existed
+    in `Auxiliaries.lean` and wins the simp race against the
+    imported `LeanRV64D.Lemmas` version. The upstream import is
+    anchored in the proof via `have _h_upstream` but the simp-level
+    work flows through the local helper. Either remove the local
+    helper to canonicalize the upstream path, or retire the
+    upstream lemma once a stronger simp-framework lands. Tracked.
+
+**Fork & openvm-fv regression story update:**
+
+The fork now contains real lemma content (not just scaffolding). The
+openvm-fv regression test (plan at
+`docs/fv/upstream-issues/openvm-fv-regression-test-plan.md`) was run
+against the scaffolding-only commit and came back clean; re-running
+against `4692edd7` would re-confirm, but the fork change is still
+RV64D-only (file `LeanRV64D/Lemmas.lean` under the RV64 branch,
+visible only to consumers that explicitly `import LeanRV64D.Lemmas`),
+so the structural-invisibility argument from the original regression
+test still holds. The U1 issue body at
+`docs/fv/upstream-issues/sail-riscv-lean-ext-zca-simp.md` now has
+concrete accompanying code on the fork to reference.
+
+**Per-opcode effort refinement (supersedes earlier table):**
+
+- **64-bit ALU opcodes (sub, and, or, xor, slt, sltu, sll, srl, sra):**
+  unchanged, ~1 day each.
+- **32-bit ALU opcodes (addw, subw, sllw, srlw, sraw):** unchanged,
+  ~0.5 day each.
+- **Immediate-variant opcodes (addi, slti, …):** unchanged, ~0.5 day.
+- **MUL-family:** no longer blocked. ~1 day each (was "blocked + 2
+  days shared then 1 day each").
+- **DIV/REM:** no longer blocked. ~1 day each (was "blocked + 2 days
+  shared then 1 day each").
+- **Branch/jump (beq, bne, bge, bgeu, blt, bltu, jal, jalr):** no
+  longer blocked on `jump_to_equiv`. ~0.5 day each. (Their existing
+  per-opcode `sorry`s are separate RV32-width-tactic-dependent
+  issues, not `jump_to_equiv`-related.)
+- **The 43 non-ADD RV64IM `sorry`s in `ZiskFv/RV64D/*.lean`:** still
+  outside Phase 1.5 scope per the plan. Each is a per-opcode
+  equivalence proof at the Sail layer; now unblocked by Execution.lean
+  + bridge infrastructure. A dedicated Phase 2 per-opcode pass should
+  be able to close them using the infrastructure this round built.
 
 #### Repro update
 
