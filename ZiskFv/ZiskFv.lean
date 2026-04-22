@@ -1,5 +1,8 @@
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Fundamentals.Interaction
+import ZiskFv.Fundamentals.GoldilocksBridge
+import ZiskFv.RV64D.BusEffect
 import ZiskFv.Extraction.BinaryAdd
 import ZiskFv.Extraction.Main
 import ZiskFv.Airs.Binary.BinaryAdd
