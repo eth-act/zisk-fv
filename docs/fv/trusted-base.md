@@ -509,7 +509,7 @@ alongside the ALU-ITYPE / DIV / UTYPE archetype work.
 
 ## Control-flow axioms (Phase 3A H2b/c/d, path (b) — 2026-04-22)
 
-### Entry C3a: `PureSpec.execute_SHIFTIWOP_slliw_pure_equiv_axiom`
+### Entry C3a *(promoted to theorem 2026-04-22)*: `PureSpec.execute_SHIFTIWOP_slliw_pure_equiv_axiom`
 
 - **File:** `ZiskFv/ZiskFv/RV64D/slliw.lean`
 - **Statement (informal):** under the standard register-state
@@ -524,7 +524,7 @@ alongside the ALU-ITYPE / DIV / UTYPE archetype work.
 - **Provenance:** `LeanRV64D/InstsEnd.lean::execute_SHIFTIWOP`
   (line 65520).
 
-### Entry C3b: `PureSpec.execute_SHIFTIWOP_srliw_pure_equiv_axiom`
+### Entry C3b *(promoted to theorem 2026-04-22)*: `PureSpec.execute_SHIFTIWOP_srliw_pure_equiv_axiom`
 
 - **File:** `ZiskFv/ZiskFv/RV64D/srliw.lean`
 - **Statement (informal):** same as C3a with `sopw.SLLIW → sopw.SRLIW`
@@ -533,7 +533,7 @@ alongside the ALU-ITYPE / DIV / UTYPE archetype work.
   consumed by `ZiskFv/Equivalence/ShiftRLI.lean::equiv_SRLIW_sail`.
 - **Provenance:** same as C3a.
 
-### Entry C3c: `PureSpec.execute_SHIFTIWOP_sraiw_pure_equiv_axiom`
+### Entry C3c *(promoted to theorem 2026-04-22)*: `PureSpec.execute_SHIFTIWOP_sraiw_pure_equiv_axiom`
 
 - **File:** `ZiskFv/ZiskFv/RV64D/sraiw.lean`
 - **Statement (informal):** same as C3a with `sopw.SLLIW → sopw.SRAIW`
@@ -565,7 +565,7 @@ closure mirroring `sllw.lean::execute_RTYPE_sllw_pure_equiv` with the
 not a register read). Estimated 60-80 lines total across the three
 opcodes — same shape as the openvm-fv SLLI/SRLI/SRAI proofs.
 
-### Entry C4: `PureSpec.execute_MULW_pure_equiv_axiom`
+### Entry C4 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_MULW_pure_equiv_axiom`
 
 - **File:** `ZiskFv/ZiskFv/RV64D/mulw.lean`
 - **Statement (informal):** under the standard register-state

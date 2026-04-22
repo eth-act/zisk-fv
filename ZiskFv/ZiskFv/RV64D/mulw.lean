@@ -59,41 +59,9 @@ namespace PureSpec
     : MulwOutput
   }
 
-  /-- Trusted axiom: RV64 MULW Sail-equivalence (Phase 3A M3, C4).
-
-      Under the standard register-state hypotheses, the Sail
-      `execute_instruction (.MULW (r2, r1, rd))` threaded through the
-      `writeReg nextPC (PC+4); execute …` prelude reduces to the
-      `execute_MULW_pure` block.
-
-      **Trust basis.** `Fundamentals/Execution.lean` has
-      `execute_RTYPEW_pure` / `execute_RTYPEW'` / `execute_RTYPEW_eq_…`
-      for SLLW/SRLW/SRAW, but no analogous triple for MULW. The
-      Phase 3A invariants forbid mutating `Fundamentals/Execution.lean`,
-      so MULW's Sail equivalence is axiomatized pointwise pending a
-      future refactor that would discharge this via a direct closure. -/
-  axiom execute_MULW_pure_equiv_axiom
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    (mulw_input : MulwInput)
-    (r1 r2 rd : regidx)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state = EStateM.Result.ok (mulw_input.r1_val) state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state = EStateM.Result.ok (mulw_input.r2_val) state)
-    (h_input_rd : mulw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some mulw_input.PC) :
-    (
-      do
-        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-        LeanRV64D.Functions.execute (instruction.MULW (r2, r1, rd))
-    ) state =
-    let mulw_output := execute_MULW_pure mulw_input
-    (do
-      Sail.writeReg Register.nextPC mulw_output.nextPC
-      match mulw_output.rd with
-        | .some (rd, rd_val) => write_xreg rd rd_val
-        | .none => pure ()
-      pure (ExecutionResult.Retire_Success ())
-    ) state
-
+  /-- **MULW Sail-equivalence.** Phase 3.5 promotion: direct port of
+      `sllw.lean::execute_RTYPE_sllw_pure_equiv`, using the new
+      `execute_MULW'` refactor triple in Execution.lean. -/
   lemma execute_MULW_pure_equiv
     (mulw_input : MulwInput)
     (r1 r2 rd : regidx)
@@ -113,8 +81,39 @@ namespace PureSpec
         | .some (rd, rd_val) => write_xreg rd rd_val
         | .none => pure ()
       pure (ExecutionResult.Retire_Success ())
-    ) state
-  := execute_MULW_pure_equiv_axiom mulw_input r1 r2 rd
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
+    ) state := by
+    simp [
+      readReg_succ h_input_pc,
+      writeReg_state_success,
+      LeanRV64D.Functions.execute,
+      execute_MULW'
+    ]
+    rewrite [rX_read_xreg_equiv _ r1 (regidx_to_fin r1) (by simp [regidx_to_fin])]
+    rewrite [read_xreg_write_other_reg_state _ h_input_r1 reg_of_fin_neq_nextPC]
+    simp
+    rewrite [rX_read_xreg_equiv _ r2 (regidx_to_fin r2) (by simp [regidx_to_fin])]
+    rewrite [read_xreg_write_other_reg_state _ h_input_r2 reg_of_fin_neq_nextPC]
+    simp [execute_MULW_pure, execute_MULW_pure_val, _root_.execute_MULW_pure]
+    obtain ⟨rd⟩ := rd
+    by_cases h_zero: rd = 0
+    . rewrite [h_zero, wX_write_xreg_zero_equiv]
+      simp
+      rewrite [dite_cond_eq_true]
+      . simp
+      . simp [h_input_rd, h_zero, regidx_to_fin]
+    . have h_inc := regidx_non_zero h_zero
+      apply Finset.mem_Icc.mp at h_inc
+      obtain ⟨h_low, h_high⟩ := h_inc
+      rewrite [
+        wX_write_xreg_non_zero_equiv _ _
+          (regidx.Regidx rd)
+          ⟨(regidx_to_fin (regidx.Regidx rd)).val, Finset.mem_Icc.mpr ⟨h_low, h_high⟩⟩
+          (by simp [regidx_to_fin])
+      ]
+      simp [regidx_to_fin]
+      rewrite [dite_cond_eq_false]
+      . simp [h_input_rd, regidx_to_fin]
+      . simp [regidx_to_fin] at *
+        omega
 
 end PureSpec

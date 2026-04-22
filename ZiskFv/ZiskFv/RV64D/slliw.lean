@@ -59,48 +59,10 @@ namespace PureSpec
     : SlliwOutput
   }
 
-  /-- **SLLIW Sail-equivalence (trusted — C3a).**
-
-      An RV64 SLLIW `.SHIFTIWOP (shamt, r1, rd, sopw.SLLIW)` reduces to
-      the pure-spec block that (a) writes `nextPC = PC + 4`, (b) writes
-      the 32-bit-shift-then-sign-extend result to `rd` (or no-ops when
-      `rd = 0`), (c) retires.
-
-      Axiomatized because `Fundamentals/Execution.lean` does not yet
-      define an `execute_SHIFTIWOP_pure` / `execute_SHIFTIWOP'` /
-      `execute_SHIFTIWOP_eq_execute_SHIFTIWOP'` refactor triple that
-      would permit the `sllw.lean`-style direct closure via `simp
-      [execute_RTYPEW']`. Catalogued as **C3a** in
-      `docs/fv/trusted-base.md`.
-
-      **Closure path.** Add the refactor triple to
-      `Fundamentals/Execution.lean` (mechanical port of the existing
-      `execute_RTYPEW_pure` / `execute_RTYPEW'` /
-      `execute_RTYPEW_eq_execute_RTYPEW'` pattern to the 5-bit
-      immediate shamt signature), then replace this axiom body with the
-      proof shape from `sllw.lean::execute_RTYPE_sllw_pure_equiv`
-      stripped of the `r2` register-read step. -/
-  axiom execute_SHIFTIWOP_slliw_pure_equiv_axiom
-    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    (slliw_input : SlliwInput)
-    (r1 rd : regidx)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok slliw_input.r1_val state)
-    (h_input_rd : slliw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some slliw_input.PC) :
-    execute_instruction
-      (instruction.SHIFTIWOP (slliw_input.shamt, r1, rd, sopw.SLLIW)) state =
-    let slliw_output := execute_SHIFTIWOP_slliw_pure slliw_input
-    (do
-      Sail.writeReg Register.nextPC slliw_output.nextPC
-      match slliw_output.rd with
-        | .some (rd, rd_val) => write_xreg rd rd_val
-        | .none => pure ()
-      pure (ExecutionResult.Retire_Success ())
-    ) state
-
-  /-- **SLLIW Sail-equivalence.** Closed via
-      `execute_SHIFTIWOP_slliw_pure_equiv_axiom`. -/
+  /-- **SLLIW Sail-equivalence.** Phase 3.5 promotion: direct port of
+      `sllw.lean::execute_RTYPE_sllw_pure_equiv` with the `r2`
+      register-read step dropped (shamt is a 5-bit immediate), using the
+      new `execute_SHIFTIWOP'` refactor triple in Execution.lean. -/
   lemma execute_SHIFTIWOP_slliw_pure_equiv
     (slliw_input : SlliwInput)
     (r1 rd : regidx)
@@ -117,8 +79,36 @@ namespace PureSpec
         | .some (rd, rd_val) => write_xreg rd rd_val
         | .none => pure ()
       pure (ExecutionResult.Retire_Success ())
-    ) state :=
-    execute_SHIFTIWOP_slliw_pure_equiv_axiom slliw_input r1 rd
-      h_input_r1 h_input_rd h_input_pc
+    ) state := by
+    simp [
+      readReg_succ h_input_pc,
+      writeReg_state_success,
+      LeanRV64D.Functions.execute,
+      execute_SHIFTIWOP'
+    ]
+    rewrite [rX_read_xreg_equiv _ r1 (regidx_to_fin r1) (by simp [regidx_to_fin])]
+    rewrite [read_xreg_write_other_reg_state _ h_input_r1 reg_of_fin_neq_nextPC]
+    simp [execute_SHIFTIWOP_slliw_pure, execute_SHIFTIWOP_pure]
+    obtain ⟨rd⟩ := rd
+    by_cases h_zero: rd = 0
+    . rewrite [h_zero, wX_write_xreg_zero_equiv]
+      simp
+      rewrite [dite_cond_eq_true]
+      . simp
+      . simp [h_input_rd, h_zero, regidx_to_fin]
+    . have h_inc := regidx_non_zero h_zero
+      apply Finset.mem_Icc.mp at h_inc
+      obtain ⟨h_low, h_high⟩ := h_inc
+      rewrite [
+        wX_write_xreg_non_zero_equiv _ _
+          (regidx.Regidx rd)
+          ⟨(regidx_to_fin (regidx.Regidx rd)).val, Finset.mem_Icc.mpr ⟨h_low, h_high⟩⟩
+          (by simp [regidx_to_fin])
+      ]
+      simp [regidx_to_fin]
+      rewrite [dite_cond_eq_false]
+      . simp [h_input_rd, regidx_to_fin]
+      . simp [regidx_to_fin] at *
+        omega
 
 end PureSpec
