@@ -841,4 +841,46 @@ axiom transpile_BGEU :
       ∧ row.b_lo = lane_lo (state.xreg rs2)
       ∧ row.b_hi = lane_hi (state.xreg rs2)
 
+/-- The axiomatic RV64 → Zisk row contract for SH (store halfword — Phase 3A S1).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:221` an RV64 SH
+    `rs2, imm(rs1)` transpiles via `self.store_op(i, "copyb", 2, 4)`
+    (line 828) to exactly one Zisk microinstruction. The row shape is
+    identical to `transpile_SW` / `transpile_SD` at the Main-AIR columns
+    modelled by `ZiskInstructionRow` — the `ind_width` width (2 vs 4
+    vs 8) is *not* a Main-AIR column; it surfaces only on the
+    memory-bus entry as the count of live byte lanes.
+
+    * `op = OP_COPYB = 1` — shared across the entire integer store
+      family (SB/SH/SW/SD all use `copyb` per
+      `riscv2zisk_context.rs:220-223`);
+    * `is_external_op = 0` — OpType::Internal; constraint 9 forces
+      `c = b`, no operation-bus hop;
+    * `m32 = 0` — the `m32` selector is unused for internal ops;
+    * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`;
+    * `a` lanes carry `xreg(rs1)` (base address);
+    * `b` lanes carry `xreg(rs2)` (store value).
+
+    The 2-vs-4/8 byte distinction manifests on the memory-bus write
+    entry as a high-byte-zeroing hypothesis on `entry.x2..x7` supplied
+    by the caller (SH zeros six lanes; SW zeros four; SD zeros none).
+
+    **Trust basis.** Pure spec of `fn store_op` in
+    `riscv2zisk_context.rs:828` specialized to `w = 2`. Direct
+    transposition of `transpile_SW`. -/
+axiom transpile_SH :
+    ∀ (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_COPYB
+      ∧ row.is_external_op = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
 end ZiskFv.Trusted
