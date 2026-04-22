@@ -19,8 +19,8 @@ namespace ZiskFv.Airs.Main
 open Goldilocks
 open Main.extraction
 
-/-- Named accessors for the ADD-relevant Main-AIR columns. Column numbers
-    come from the witness-column header of
+/-- Named accessors for the ADD- and branch-relevant Main-AIR columns.
+    Column numbers come from the witness-column header of
     `ZiskFv/ZiskFv/Extraction/Main.lean`. -/
 structure Valid_Main (C : Type → Type → Type) (F ExtF : Type)
     [Field F] [Field ExtF] [Circuit F ExtF C] where
@@ -33,12 +33,20 @@ structure Valid_Main (C : Type → Type → Type) (F ExtF : Type)
   c_0 : ℕ → F
   c_1 : ℕ → F
   flag : ℕ → F
+  /-- Main AIR stage-1 col 7 — program-counter cell. -/
+  pc : ℕ → F
   is_external_op : ℕ → F
   op : ℕ → F
   m32 : ℕ → F
   /-- `set_pc` selector (column 25). Constrained to be disjoint from `flag`
       via `constraint_19_every_row`. -/
   set_pc : ℕ → F
+  /-- `jmp_offset1` (column 26). Branch-taken offset (per
+      `main.pil:151` and `create_branch_op` in
+      `riscv2zisk_context.rs:748,750`). -/
+  jmp_offset1 : ℕ → F
+  /-- `jmp_offset2` (column 27). Branch-not-taken offset. -/
+  jmp_offset2 : ℕ → F
   /-- stage-2 column `im_high_degree[2]` — the permutation-sum cell
       carrying the operation-bus entry for this row. -/
   im_high_degree_2 : ℕ → F
@@ -56,6 +64,8 @@ structure Valid_Main (C : Type → Type → Type) (F ExtF : Type)
     c_1 row = Circuit.main circuit (id := 1) (column := 5) (row := row) (rotation := 0)
   flag_def : ∀ row,
     flag row = Circuit.main circuit (id := 1) (column := 6) (row := row) (rotation := 0)
+  pc_def : ∀ row,
+    pc row = Circuit.main circuit (id := 1) (column := 7) (row := row) (rotation := 0)
   is_external_op_def : ∀ row,
     is_external_op row = Circuit.main circuit (id := 1) (column := 19) (row := row) (rotation := 0)
   op_def : ∀ row,
@@ -64,6 +74,10 @@ structure Valid_Main (C : Type → Type → Type) (F ExtF : Type)
     m32 row = Circuit.main circuit (id := 1) (column := 28) (row := row) (rotation := 0)
   set_pc_def : ∀ row,
     set_pc row = Circuit.main circuit (id := 1) (column := 25) (row := row) (rotation := 0)
+  jmp_offset1_def : ∀ row,
+    jmp_offset1 row = Circuit.main circuit (id := 1) (column := 26) (row := row) (rotation := 0)
+  jmp_offset2_def : ∀ row,
+    jmp_offset2 row = Circuit.main circuit (id := 1) (column := 27) (row := row) (rotation := 0)
   im_high_degree_2_def : ∀ row,
     im_high_degree_2 row = Circuit.main circuit (id := 2) (column := 7) (row := row) (rotation := 0)
 
@@ -129,6 +143,57 @@ def add_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
   ∧ flag_set_pc_disjoint v row
   ∧ flag_boolean v row
   ∧ is_external_op_boolean v row
+
+/-- **PC handshake** (`main.pil:410`) — the row's `pc` equals the
+    *previous* row's pc-update expression:
+    `expected_current_pc = 'set_pc * ('c[0] + 'jmp_offset1)
+                         + (1 - 'set_pc) * ('pc + 'jmp_offset2)
+                         + 'flag * ('jmp_offset1 - 'jmp_offset2)`.
+
+    This constraint has a negative rotation (all `'`-prefixed cells are
+    "previous row"). `zisk-pil-extract` skips it because `Circuit.main`
+    rotation is `ℕ`. We expose it as a named predicate parameterized on
+    `next_pc` — the *next*-row `pc` cell — which the caller must supply
+    when reasoning about row `r`.
+
+    Specialization for branches (the archetype A1 use case): when the
+    row at `r` has `set_pc = 0`, the handshake reduces to
+    `next_pc = pc r + jmp_offset2 r + flag r * (jmp_offset1 r - jmp_offset2 r)`.
+    For flag=1 (taken), `next_pc = pc + jmp_offset1 = pc + imm`.
+    For flag=0 (not-taken), `next_pc = pc + jmp_offset2 = pc + 4`. -/
+@[simp]
+def pc_handshake (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Prop :=
+  next_pc =
+    v.set_pc row * (v.c_0 row + v.jmp_offset1 row)
+      + (1 - v.set_pc row) * (v.pc row + v.jmp_offset2 row)
+      + v.flag row * (v.jmp_offset1 row - v.jmp_offset2 row)
+
+/-- Specialized PC handshake for branch archetype: `set_pc = 0` and
+    `is_external_op = 1` (the Binary SM's `flag` output drives taken/
+    not-taken selection). The consequent isolates the flag-dispatch
+    form used by the archetype proof:
+    `next_pc = pc + jmp_offset2 + flag * (jmp_offset1 - jmp_offset2)`. -/
+lemma pc_handshake_branch
+    (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F)
+    (h_set_pc : v.set_pc row = 0)
+    (h : pc_handshake v row next_pc) :
+    next_pc = v.pc row + v.jmp_offset2 row
+            + v.flag row * (v.jmp_offset1 row - v.jmp_offset2 row) := by
+  simp only [pc_handshake] at h
+  rw [h_set_pc] at h
+  linear_combination h
+
+/-- Branch subset — the Main constraints a BEQ-family row must satisfy,
+    plus the PC handshake (parameterized on `next_pc`). Constraints 17,
+    18 are trivially satisfied because `is_external_op = 1` makes the
+    factor `(1 - is_external_op) = 0`; we include the booleans for
+    `flag`, `is_external_op`, and the `flag * set_pc = 0` disjointness. -/
+@[simp]
+def branch_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Prop :=
+  flag_boolean v row
+  ∧ is_external_op_boolean v row
+  ∧ flag_set_pc_disjoint v row
+  ∧ pc_handshake v row next_pc
 
 section extraction_bridge
 
