@@ -43,7 +43,8 @@ namespace ZiskFv.Trusted
 open Goldilocks
 
 /-- Subset of the Zisk-instruction row populated by a single Main-AIR row.
-    Mirrors the witness columns relevant to ADD correctness:
+    Mirrors the witness columns relevant to ADD correctness + branch-relevant
+    `jmp_offset1`/`jmp_offset2`/`set_pc` (Phase 2 archetype A1):
 
     | field | Main AIR column (stage-1) | reference |
     |-------|---------------------------|-----------|
@@ -56,10 +57,13 @@ open Goldilocks
     | `c_lo` | 4 | `main.pil:96` (c[0]) |
     | `c_hi` | 5 | `main.pil:96` (c[1]) |
     | `flag` | 6 | `main.pil:97` |
+    | `set_pc` | 25 | `main.pil:150` |
+    | `jmp_offset1` | 26 | `main.pil:151` |
+    | `jmp_offset2` | 27 | `main.pil:152` |
     | `m32` | 28 | `main.pil:161` |
 
     Other columns (pc, src selectors, store_*) are omitted since they do not
-    participate in the ADD-bus interaction. -/
+    participate in the ADD or branch bus interactions. -/
 structure ZiskInstructionRow where
   op : FGL
   is_external_op : FGL
@@ -70,10 +74,19 @@ structure ZiskInstructionRow where
   c_lo : FGL
   c_hi : FGL
   flag : FGL
+  set_pc : FGL
+  jmp_offset1 : FGL
+  jmp_offset2 : FGL
   m32 : FGL
 
 /-- Goldilocks literal for the ADD opcode. `0x0A` per `vendor/zisk/pil/opids.pil`. -/
 @[simp] def OP_ADD : FGL := 10
+
+/-- Goldilocks literal for the EQ opcode. `0x09` per
+    `vendor/zisk/core/src/zisk_ops.rs:391`. Used by RV64 branch opcodes
+    (BEQ/BNE) which transpile to Zisk `eq` via `create_branch_op`
+    (`riscv2zisk_context.rs:202,203`). -/
+@[simp] def OP_EQ : FGL := 9
 
 /-- Goldilocks literal for OPERATION_BUS_ID. Per `vendor/zisk/pil/opids.pil:2`. -/
 @[simp] def OPERATION_BUS_ID : FGL := 5000
@@ -117,6 +130,47 @@ axiom transpile_ADD :
       ∧ row.is_external_op = 1
       ∧ row.flag = 0
       ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for BEQ.
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:202` an RV64 BEQ
+    `rs1, rs2, imm` transpiles via `create_branch_op(instr, "eq", false, 4)`
+    (line 740) to exactly one Zisk microinstruction. Concretely the emitted
+    Main-AIR row has:
+    * `op = OP_EQ = 9` (Binary state machine, `zisk_ops.rs:391`);
+    * `is_external_op = 1` (OpType::Binary);
+    * `set_pc = 0` (branches don't use `c[0]` as the next-pc source);
+    * `jmp_offset1 = imm` — taken branch offset; packed as signed `i64`
+      in the microinstruction. We expose it as the field element from
+      sign-extending the RV64 immediate;
+    * `jmp_offset2 = 4` — not-taken fall-through (4-byte instruction);
+    * `m32 = 0` — EQ is the 64-bit comparison;
+    * `flag` — output, determined by the Binary SM's `eq` verdict;
+      not constrained by the transpiler contract (only by the bus hop).
+
+    `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)`, same as ADD.
+
+    **Trust basis.** Pure spec of `create_branch_op` in
+    `riscv2zisk_context.rs`. BNE/BLT/BGE/BLTU/BGEU use the same helper
+    with a different op-string; their transpile-axioms will mirror this
+    one with `OP_EQ`/`OP_LT`/`OP_LTU` swapped and (for BNE/BGE/BGEU)
+    the `neg=true` path that swaps `jmp_offset1` and `jmp_offset2`. -/
+axiom transpile_BEQ :
+    ∀ (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_EQ
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.jmp_offset1 = imm_offset
+      ∧ row.jmp_offset2 = 4
       ∧ row.a_lo = lane_lo (state.xreg rs1)
       ∧ row.a_hi = lane_hi (state.xreg rs1)
       ∧ row.b_lo = lane_lo (state.xreg rs2)
