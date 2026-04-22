@@ -21,4 +21,6 @@ import ZiskFv.Equivalence.BranchGreaterEqualUnsigned
 import ZiskFv.GoldenTraces.BGEU
 import ZiskFv.Equivalence.StoreH
 import ZiskFv.GoldenTraces.SH
+import ZiskFv.Equivalence.StoreB
+import ZiskFv.GoldenTraces.SB
 import ZiskFv.Spike

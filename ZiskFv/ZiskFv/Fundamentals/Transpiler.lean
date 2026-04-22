@@ -883,4 +883,39 @@ axiom transpile_SH :
       ∧ row.b_lo = lane_lo (state.xreg rs2)
       ∧ row.b_hi = lane_hi (state.xreg rs2)
 
+/-- The axiomatic RV64 → Zisk row contract for SB (store byte — Phase 3A S2).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:220` an RV64 SB
+    `rs2, imm(rs1)` transpiles via `self.store_op(i, "copyb", 1, 4)`
+    (line 828) to exactly one Zisk microinstruction. Main-AIR row shape
+    identical to SH/SW/SD modulo the `ind_width = 1` fact that surfaces
+    only on the memory-bus entry.
+
+    * `op = OP_COPYB = 1` — shared store-family opcode;
+    * `is_external_op = 0` — OpType::Internal;
+    * `m32 = 0`, `set_pc = 0`, `store_pc = 0`;
+    * `jmp_offset1 = jmp_offset2 = 4`;
+    * `a` lanes = `xreg(rs1)`; `b` lanes = `xreg(rs2)`.
+
+    SB's high-byte-zeroing witness covers `entry.x1..x7` (seven lanes,
+    vs SH's six and SW's four).
+
+    **Trust basis.** Pure spec of `fn store_op` in
+    `riscv2zisk_context.rs:828` specialized to `w = 1`. Direct
+    transposition of `transpile_SW`. -/
+axiom transpile_SB :
+    ∀ (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_COPYB
+      ∧ row.is_external_op = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
 end ZiskFv.Trusted
