@@ -118,10 +118,6 @@ namespace PureSpec
   -- pure-spec block (write `nextPC = PC+4`; apply 8 byte-writes to
   -- `state.mem` at successive addresses starting at `rs1 + sign_extend imm`;
   -- retire success).
-  --
-  -- Proof strategy mirrors `RV32D/sw.lean` widened from 4-byte to 8-byte
-  -- store. Encounters the same A3-class blocker (8-iteration `untilFuelM`
-  -- byte loop in `vmem_write_addr`, symmetric to `vmem_read_addr`).
   set_option maxHeartbeats 0 in
   lemma execute_STORED_pure_equiv
     (input : SdInput)
@@ -145,32 +141,39 @@ namespace PureSpec
       pure (ExecutionResult.Retire_Success ())
     ) state
   := by
-    -- BLOCKER (Phase 2 A4 budget, symmetric to A3's `ld.lean:131` sorry).
-    -- Sail's `execute_STORE` at width = 8 reduces through the 8-iteration
-    -- `untilFuelM` byte loop in `vmem_write_addr`
-    -- (sail-riscv-lean/LeanRV64D/VmemUtils.lean:309). openvm-fv's
-    -- `RV32D/sw.lean` proves the 4-byte version by a ~25-line simp-chain
-    -- against `vmem_write_addr`'s body. Porting that chain to width = 8
-    -- encounters the same two issues the LD case did:
-    --   (1) The 8-byte alignment witness `8 ∣ (r1_val + imm)` fails
-    --       `omega` at the `if is_aligned_vaddr` branch without an
-    --       explicit `Nat.mod_eq_zero_of_dvd` rewrite;
-    --   (2) The byte-loop produces a nested `match`-tree without a
-    --       top-level `if`; `rw [if_pos ...]` doesn't fire.
+    -- BLOCKER (Phase 2.5 D1 investigation, 2026-04-22, symmetric to
+    -- `ld.lean`). The Phase 2 A4 diagnosis ("8-iteration `untilFuelM`
+    -- byte loop in `vmem_write_addr`") turned out to have the right
+    -- address but the wrong floor — for aligned access,
+    -- `split_misaligned` returns `(n, bytes) = (1, 8)`, so the write
+    -- loop runs ONCE, not eight times. The real blocker is an
+    -- architectural gap between RV32 and RV64 platform configs
+    -- (see `ld.lean` companion comment for the full diagnosis):
     --
-    -- RECOMMENDATION (carried forward from A3). A shared Phase 3 sweep
-    -- task should produce both:
-    --   * `vmem_read_aligned_equiv` (bypasses the 8-iteration read loop
-    --     given `RISC_V_assumptions + 8-byte alignment`, closing A3's
-    --     `ld.lean:131` sorry);
-    --   * `vmem_write_aligned_equiv` (bypasses the 8-iteration write
-    --     loop under the same hypotheses, closing this sorry).
+    --   * `sys_pmp_count = 16` vs 0: `pmpCheck` unfolds to a
+    --     16-iteration loop `simp` cannot reduce without
+    --     `pmpcfg_n`/`pmpaddr_n` state assumptions (absent from
+    --     `RISC_V_assumptions`).
+    --   * `plat_clint_base/_size` nonzero: `within_clint` can be `true`
+    --     for addresses in `[2^25, 2^25+786432)`, taking the
+    --     `mmio_write` branch that bypasses the `state.mem.insert`
+    --     chain `modify_memory_8` encodes.
     --
-    -- Placing both bulk lemmas in `RV64D/Auxiliaries.lean` closes the
-    -- entire RV64 8-byte memory-op family (LD + SD) in one sweep plus
-    -- the per-opcode consumer lines. Estimated 1-2 days; the A4
-    -- ambitious-mode attempt deferred this to a dedicated session.
-    -- Status tracked in `ai_plans/zisk-fv-phase-2.md` (A4 CLOSED).
+    -- The write case adds the additional complication that
+    -- `vmem_write_addr`'s `mem_write_ea` is a *separate* precommit
+    -- hook before the actual `mem_write_value` ram write — both reduce
+    -- to `pure ()` / `write_ram` in the non-MMIO branch but need to
+    -- stay synchronized. The `sw.lean` port surfaces four consecutive
+    -- `if_pos` / `if_neg` rewrites (vs LD's two); each would need a
+    -- platform-config-aware resolution.
+    --
+    -- Real closure requires the same infrastructure `ld.lean` outlines
+    -- (either extend `RISC_V_assumptions` with PMP/CLINT hypotheses and
+    -- prove reduction lemmas, or axiomatize
+    -- `vmem_write_addr_aligned_equiv` in `Fundamentals/Transpiler.lean`).
+    -- Both paths exceed D1's 2-day wall-clock budget given the
+    -- discovery cost.
+    -- Status tracked in `ai_plans/zisk-fv-phase-2.md` (Phase 2.5 D1).
     sorry
 
 end PureSpec

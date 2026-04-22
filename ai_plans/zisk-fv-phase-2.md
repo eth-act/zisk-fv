@@ -1038,3 +1038,126 @@ just verify-phase2
 
 Expected: exit 0, wall time ~6s warm / ~60s cold. Two `sorry`
 warnings printed (`ld.lean`, `sd.lean`); both annotated.
+
+---
+
+## Phase 2.5 Task D1 status — PARTIAL 2026-04-22
+
+**Fallback path taken per plan's Known Fragility clause.** The two
+`RV64D/{ld,sd}.lean` sorries remain unclosed; annotations upgraded
+with a precise diagnosis of the real blocker, which supersedes the
+Phase 2 A3/A4 "8-iteration byte loop" diagnosis.
+
+### What shipped
+
+- `ZiskFv/RV64D/ld.lean:84` (was 88) sorry: comment rewritten from
+  ~20 lines of Phase 2 guesswork to ~45 lines of concrete
+  post-investigation findings. Names the real infrastructure gap
+  (RV32 vs RV64 platform-config divergence) and the two
+  resolution paths (extend `RISC_V_assumptions` vs axiomatize).
+- `ZiskFv/RV64D/sd.lean:122` (was 126) sorry: symmetric comment
+  upgrade, plus identifies SD-specific wrinkle (`mem_write_ea`
+  precommit hook vs `mem_write_value` actual write).
+- `lake build` still exits 0; `just verify-phase2` still exits 0
+  with the two `sorry` warnings (line numbers shifted by the
+  comment upgrades).
+
+### What was learned (supersedes Phase 2 A3/A4 diagnosis)
+
+1. **The "8-iteration `untilFuelM` byte loop" claim was wrong**
+   at the surface. For aligned 8-byte access,
+   `split_misaligned` returns `(n, bytes) = (1, 8)`, so
+   `untilFuelM` runs ONCE, not eight times. The per-iteration
+   step reads 8 bytes at one go via `read_ram` /
+   `mem_read`'s `width` parameter. The RV32 `lw.lean` proof's
+   simp chain is the same length whether width=4 or width=8.
+
+2. **The real blocker is an RV32 vs RV64 platform-config
+   divergence.** `LeanRV64D/PmpRegs.lean` sets
+   `sys_pmp_count := 16` where `LeanRV32D/PmpRegs.lean` sets
+   it to 0; `LeanRV64D/PlatformConfig.lean` sets
+   `plat_clint_base = 2^25, plat_clint_size = 786432` where
+   `LeanRV32D/PlatformConfig.lean` sets both to 0.
+   - `pmpCheck`'s short-circuit
+     `if sys_pmp_count == 0 then pure none else ...` takes the
+     `pure none` branch for RV32 (trivial) but the else
+     branch for RV64 (16-iteration `forIn` loop over
+     `pmpReadAddrReg` and `pmpMatchAddr` that `simp`
+     cannot reduce without `pmpcfg_n` / `pmpaddr_n`
+     register state assumptions that `RISC_V_assumptions`
+     does not currently carry).
+   - `within_clint`'s conjunction
+     `(clint_base ≤ addr) ∧ (addr + width ≤ clint_base + clint_size)`
+     trivially reduces to `false` for RV32 (the right-hand
+     conjunct becomes `addr + width ≤ 0`), but for RV64 it
+     can be `true` for addresses in `[2^25, 2^25 + 786432)` —
+     a subset of the `< 2^29 = OpenVM_address_space_size`
+     envelope `ld_state_assumptions` provides. Hitting that
+     subset takes the `mmio_read` branch, which does NOT
+     consult `state.mem[addr]?`, invalidating the eight
+     `.some data_i` hypotheses.
+
+3. **`pmaCheck`'s `range_subset` reduction ports cleanly** from
+   `lw.lean` to `ld.lean`. That part of the proof chain is
+   identical for width=4 and width=8 given the alignment
+   witness.
+
+### Infrastructure required to actually close
+
+Either:
+
+- **(a) Extend `RISC_V_assumptions`** with concrete hypotheses
+  that:
+  - `state.regs.get? Register.pmpcfg_n = .some (zero-vector)`
+    (initial PMP config)
+  - `state.regs.get? Register.pmpaddr_n = .some (zero-vector)`
+  - `addr + width ≤ plat_clint_base` (memory below CLINT), or
+    equivalently `addr + width < 2^25`.
+
+  Plus prove reusable simp-friendly lemmas:
+  - `pmpCheck_eq_none_of_zero_config_and_machine`
+  - `within_clint_eq_false_of_addr_below_base`
+  - `within_htif_readable_eq_false_of_tohost_none` (probably
+    derivable from existing htif assumption).
+
+  Estimated **~300-500 lines across `Auxiliaries.lean` and a
+  new `PmpReductions.lean`**, 2-4 days wall-clock. This is
+  the engineering-clean path.
+
+- **(b) Axiomatize** `vmem_read_addr_aligned_equiv` +
+  `vmem_write_addr_aligned_equiv` in
+  `Fundamentals/Transpiler.lean` (or a dedicated
+  `Fundamentals/Memory.lean` under `ZiskFv.Trusted`).
+  Estimated **~100-150 lines** + doc update at
+  `docs/fv/trusted-base.md`. Faster but grows the trust
+  base by two axioms per width * two operations.
+
+D2, D3, D4 of Phase 2.5 are **unaffected by this decision** —
+each of those tracks operates above the SD/LD pure-spec layer
+and consumes `execute_{LOADD,STORED}_pure_equiv` as an opaque
+lemma regardless of how it's discharged.
+
+### What remains
+
+- Decide path (a) vs (b) — user-gated call, suggest raising in
+  Phase 2.5 mid-review. The plan's D2 sub-task has a parallel
+  (a)-vs-(b) choice; aligning them makes trust-base
+  accounting cleaner.
+- Actually implement chosen path. Budget: 2-4 days for (a),
+  1 day for (b).
+- Revisit `ld.lean:84` and `sd.lean:122` sorries with the
+  chosen infrastructure. Expected per-opcode consumer: 15-25
+  lines.
+- Regression-check A3/A4 archetype macros against the new
+  discharge path — should be mechanical.
+
+### Known fragility (updated)
+
+- **D1 is blocked by D2's axiom/extraction decision in spirit**
+  if path (b) is taken. Keep them synchronized.
+- **Path (a) requires the codygunton/sail-riscv-lean fork
+  to stay in sync.** `pmpcfg_n` / `pmpaddr_n` register access
+  patterns are stable upstream, but `RISC_V_assumptions`
+  extensions would ripple into every opcode's state_assumptions
+  that currently derive PC/register reads from the write_reg
+  propagation lemma.

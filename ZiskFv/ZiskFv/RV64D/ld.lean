@@ -80,10 +80,6 @@ namespace PureSpec
   -- the pure-spec block (write `nextPC = PC+4`; if `rd ≠ 0` write
   -- little-endian concatenation of `data7..data0` to `rd`; retire
   -- success).
-  --
-  -- Proof strategy mirrors `RV64D/lw.lean` widened from 4-byte to 8-byte
-  -- load. The `arithmetic_helper` lemma in `Auxiliaries.lean` already
-  -- accounts for the 8-byte width (third conjunct, `mod 2^64`).
   set_option maxHeartbeats 0 in
   lemma execute_LOADD_pure_equiv
     (input : LdInput)
@@ -110,24 +106,47 @@ namespace PureSpec
       pure (ExecutionResult.Retire_Success ())
     ) state
   := by
-    -- BLOCKER (Phase 2 A3 budget): Sail's `execute_LOAD` at width = 8
-    -- reduces through the 8-iteration `untilFuelM` byte loop in
-    -- `vmem_read_addr` (sail-riscv-lean/LeanRV64D/VmemUtils.lean:251).
-    -- openvm-fv's `RV32D/lw.lean` proves the 4-byte version by a
-    -- ~15-line simp-chain against `vmem_read_addr`'s body. Porting
-    -- that chain to width = 8 surfaces two issues:
-    --   (1) The 8-byte alignment witness `8 ∣ (r1_val + imm)` fails
-    --       `omega` at the `if is_aligned_vaddr` branch — `omega` can't
-    --       reason modularly about the div-by-8 residue without an
-    --       explicit `Nat.mod_eq_zero_of_dvd` rewrite;
-    --   (2) The `rw [if_pos ...]` doesn't fire because the 8-iteration
-    --       loop produces a nested `match`-tree without a top-level
-    --       `if`, requiring a different tactical decomposition
-    --       (per-iteration simp + `forIn_succ` unfolding).
-    -- Both are tractable Phase 3 sweep work — estimated 1-2 days per
-    -- load-family opcode (LD/LWU/LHU/LBU). The circuit-side archetype
-    -- stack is complete and consumes this lemma parametrically.
-    -- Status tracked in `ai_plans/zisk-fv-phase-2.md` (A3 CLOSED).
+    -- BLOCKER (Phase 2.5 D1 investigation, 2026-04-22). The Phase 2 A3
+    -- diagnosis ("8-iteration `untilFuelM` byte loop") turned out wrong
+    -- on the surface but right underneath — for aligned access,
+    -- `split_misaligned` returns `(n, bytes) = (1, 8)`, so
+    -- `untilFuelM` runs ONCE, not eight times. A direct port of
+    -- openvm-fv's `RV32D/lw.lean` simp-chain was attempted and fails
+    -- for a **deeper** reason: RV64's platform config
+    -- (`LeanRV64D/PlatformConfig.lean` + `PmpRegs.lean`) diverges from
+    -- RV32's trivial one in three load-bearing ways:
+    --
+    --   * `sys_pmp_count = 16` (RV32: 0). `pmpCheck` unfolds to a
+    --     16-iteration `forIn { stop := 15 }` loop over `pmpReadAddrReg`
+    --     + `pmpMatchAddr`. `simp` cannot reduce this without
+    --     `pmpcfg_n`/`pmpaddr_n` register state assumptions (none
+    --     exist in `RISC_V_assumptions`).
+    --   * `plat_clint_base = 2^25, plat_clint_size = 786432` (RV32:
+    --     both 0). Under RV32 `within_clint` trivially reduces to
+    --     `false`; under RV64 it can be `true` for
+    --     `addr ∈ [2^25, 2^25+786432)` — within the
+    --     `< OpenVM_address_space_size = 2^29` envelope. The
+    --     `mmio_read` path is taken, which does NOT consult
+    --     `state.mem[addr]?`, so the eight `.some data_i`
+    --     hypotheses in `ld_state_assumptions` become unusable.
+    --   * `pmaCheck`'s `range_subset` check reduces by `omega`
+    --     identically for width=4 and width=8 given the alignment
+    --     witness — this part DOES port.
+    --
+    -- Real closure requires either:
+    --   (a) Extend `RISC_V_assumptions` with `pmpcfg_n.get? = 0` +
+    --       `addr + 8 ≤ plat_clint_base` and prove
+    --       `pmpCheck_eq_none_of_zero_config` +
+    --       `within_clint_eq_false_of_addr_below_base` as reusable
+    --       simp-friendly lemmas (~200-400 lines, multi-file).
+    --   (b) Axiomatize `vmem_read_addr_aligned_equiv` in
+    --       `Fundamentals/Transpiler.lean` as trust-base addition.
+    --
+    -- Both paths exceed D1's 2-day wall-clock budget given the
+    -- discovery cost (the Phase 2 diagnosis pointed at the loop, not
+    -- the platform-config gap). Deferred to a dedicated Phase 2.6 or
+    -- Phase 3 sub-task after trust-base design is settled.
+    -- Status tracked in `ai_plans/zisk-fv-phase-2.md` (Phase 2.5 D1).
     sorry
 
 end PureSpec
