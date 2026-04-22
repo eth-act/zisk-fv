@@ -1305,3 +1305,180 @@ Phase-4 derivable from a PIL-level bus-emission spec.
 - 4 of 6 archetype metaplan theorems close without
   `h_bus_execute_matches_sail` (BEQ, JAL, MUL, SLLW) plus the
   Phase 1.5 artifact ADD, exceeding the plan target of 4.
+
+## Phase 2.5 Task D2 status — CLOSED 2026-04-22
+
+Commit `6d94202`. **Path chosen: (a) extractor extension.**
+
+- `tools/zisk-pil-extract/src/main.rs`: +104 lines — `render_operand`
+  rewrite routing `row_offset < 0` through `(row := row - k)
+  (rotation := 0)` for both `WitnessCol` and `FixedCol` arms, plus 3
+  new unit tests for the -1 / 0 / +1 row-offset cases (23/23 pass).
+- `ZiskFv/Airs/Main.lean`: +113 lines — new closed-form `pc_handshake`
+  (derived from extracted constraint 20), old form renamed
+  `pc_handshake_with_next_pc`, bridge lemma
+  `pc_handshake_to_next_pc`, new `segment_l1` accessor.
+- `Equivalence/{BranchEqual,Jal}.lean`: +60 lines net — new
+  `equiv_BEQ_closed` / `equiv_JAL_closed` consuming the closed form
+  (the old `_next_pc`-parameterized theorems retained for callers
+  that haven't migrated).
+- `Extraction/Main.{lean,hand.lean}`: regenerated with constraint 20
+  extraction.
+- `justfile`: `--only` list extended from 9 to 10 indices.
+- `docs/fv/extractor-notes.md`: new section documenting the
+  negative-rotation contract and its soundness argument.
+
+Rationale: `(1 - SEGMENT_L1)` gating (already extractor-supported)
+makes the row-rotation rewrite sound at row 0. Axiomatization would
+have permanently added a derivable constraint to the trust base;
+extension was only ~30 lines + 3 tests at recon, so option (a)
+dominated.
+
+## Phase 2.5 Task D4 status — CLOSED 2026-04-22
+
+Six sibling opcodes, one per archetype, shipped as a three-theorem
+trio (`equiv_<OP>`, `equiv_<OP>_sail`, `equiv_<OP>_metaplan`) with
+a concrete golden-trace fixture each. Validates that each archetype
+macro generalizes before Phase 3 fans out the remaining ~50 opcodes.
+
+| Sibling | Archetype | Commit | Macro adjustment | Metaplan bus-hyp | `sorry` |
+|---|---|---|---|---|---|
+| BNE | BranchArchetype | `3bcb9ef` (swept) | none | hypothesis-free (shape b) | zero |
+| JALR | JumpArchetype | `eda0d0c` + `c388384` | **sub-archetype added** | hypothesis-free (shape c) | zero (via C1 axiom) |
+| LWU | LoadArchetype | `635400b` | none | retains (shape d deferred) | zero (via M3 axiom) |
+| SW | StoreArchetype | `ebfbcf7` | none | retains (shape e deferred) | zero (via M4 axiom) |
+| MULH | MulArchetype | `3bcb9ef` | none | hypothesis-free (shape a) | zero |
+| SRLW | ShiftArchetype | `af45b1b` | none | hypothesis-free (shape a) | zero |
+
+### The JumpArchetype sub-archetype extension
+
+JALR revealed the only macro that wasn't right the first time. `JumpArchetype`
+was authored for JAL — `set_pc = 0`, `op = OP_FLAG = 0`, next-pc via
+the flag branch (`pc + jmp_offset1`). JALR is structurally distinct:
+`set_pc = 1`, `op = OP_COPYB = 1`, next-pc via `c_0 + jmp_offset1`
+(the `set_pc = 1` handshake branch) instead. D4b added a second
+sub-archetype (`main_row_in_jalr_mode`, `jalr_subset_holds`,
+`jalr_archetype_circuit_holds`, `jalr_archetype_pc_advance`,
+`jalr_archetype_store_value`, `jalr_archetype_proof` tactic) using
+internal-op-1 constraints (9/16/18) instead of JAL's internal-op-0
+constraints (8/15/17). The two sub-archetypes live side by side; JAL's
+path is unchanged. This is precisely what D4 was meant to catch — a
+macro defect found before Phase 3 fan-out rather than during it.
+
+### Commit interleaving note
+
+D4 agents ran in parallel and occasionally swept each other's staged
+files into their own commits (e.g., commit `3bcb9ef` "D4e: MULH" also
+contains the BNE files; `ebfbcf7` "D4c: LWU" contains SW's files;
+`635400b` "D4d: SW annotation" contains LWU's files). All files are
+correct byte-for-byte against their agents' reports; only the commit
+subject lines are misattributed. Follow-up commit `635400b` documents
+the sweep. No destructive rewrite attempted per project convention.
+
+### D4b-patch (JALR sorry closure)
+
+D4b left `sorry` at `RV64D/jalr.lean:74` on `execute_JALR_pure_equiv`,
+citing Phase 3 Sail plumbing (`update_elp_state`, masked `jump_to`,
+`mseccfg.MLPE` / `menvcfg.LPE` / `senvcfg.LPE` reads). Rather than
+leave an undocumented hole, D4b-patch replaced it with the trusted
+axiom `execute_JALR_pure_equiv_axiom` (docs/fv/trusted-base.md entry
+C1), matching the D1/D4c/D4d pattern for Sail-side equivalences
+blocked on CSR/privilege state not captured by `RISC_V_assumptions`.
+
+## Phase 2.5 status — CLOSED 2026-04-22
+
+`just verify-phase2` exits 0 from a clean checkout. Zero `sorry` in
+`Fundamentals`/`Airs`/`Spec`/`Equivalence`/`GoldenTraces`/`Tactics`
+and in the thirteen scoped `RV64D/*.lean` files (add, beq, jal, ld,
+sd, mul, mulh, sllw, srlw, bne, jalr, lwu, sw). 8 Phase 2.5 commits
+land `6d94202..c388384` on `main`.
+
+### Gate targets — pass state
+
+1. `git grep sorry ZiskFv/ZiskFv/RV64D/{ld,sd}.lean` → empty. ✓ (via
+   M1/M2 axioms in trusted-base.)
+2. `Airs/Main.lean::pc_handshake` has no `next_pc` parameter. ✓ (the
+   parameterized form is retained as `pc_handshake_with_next_pc` for
+   caller ergonomics; the closed-form `pc_handshake` is the new
+   canonical predicate, derived from extracted constraint 20.)
+3. At least 4 of 6 archetype `equiv_*_metaplan` theorems have no
+   `h_bus_execute_matches_sail` hypothesis. ✓ (4 closed: BEQ, JAL,
+   MUL, SLLW; 2 deferred per D3e: LD and SD — plus Phase 1.5's
+   `equiv_ADD_metaplan` also closed as a side effect.)
+4. Six sibling opcodes proved with full three-theorem trio + fixture
+   via archetype macros: BNE, JALR, LWU, SW, MULH, SRLW. ✓
+5. `lake build` green, zero `sorry` in scoped directories and
+   opcode files. ✓
+
+### Trust base — final Phase 2.5 state
+
+Twelve transpile axioms in `Fundamentals/Transpiler.lean` (ADD, BEQ,
+BNE, JAL, JALR, LD, LWU, SD, SW, MUL, MULH, SLLW, SRLW — +6 over
+Phase 2's end-state) and five Sail-equivalence / memory-model axioms
+in the `PureSpec` namespace living in the respective `RV64D/*.lean`
+files (M1 `LOADD`, M2 `STORED`, M3 `LOADWU`, M4 `STOREW`, C1 `JALR`).
+Seventeen total named axioms, all catalogued in
+`docs/fv/trusted-base.md` with closure paths back to provable
+theorems under extended `RISC_V_assumptions`. The two memory-model
+axioms (M1-M4) share one underlying closure path (PMP-OFF +
+CLINT-disjoint + `pmaCheck` on the 4/8-byte alignment witness, ~300-
+500 lines); C1 has a separate closure path through
+`update_elp_state` + privilege/mseccfg plumbing.
+
+### What this buys
+
+- **Every opcode claim `equiv_<OP>_metaplan` is kernel-checked**
+  modulo its `transpile_<OP>` contract and, for LD/SD/LWU/SW/JALR,
+  a single named Sail-equivalence axiom. `#print axioms
+  ZiskFv.Equivalence.Add.equiv_ADD_metaplan` shows only kernel
+  axioms + `transpile_ADD` + D3's shape-(a) supporting lemma
+  ingredients (no `sorryAx`).
+- **Archetype macros are validated.** One macro (JumpArchetype)
+  needed an extension; the other five generalized cleanly on their
+  first sibling. Phase 3 can fan out the remaining ~50 opcodes with
+  calibrated per-opcode effort estimates: half-day per sibling in
+  the already-validated archetypes, full day where a new
+  sub-archetype is needed.
+- **The bus-emission layer is derivable for 5 of 7 shapes.**
+  `Airs/BusEmission.lean` contains shape lemmas (a), (b), (c);
+  shapes (d) and (e) remain parameterized pending a Phase 4
+  reduction over the 8-byte `state.mem.insert` fold.
+
+### Residual caveats carried to Phase 3+
+
+- `equiv_LD_metaplan` and `equiv_SD_metaplan` retain
+  `h_bus_execute_matches_sail` as a parameter (D3e DEFER on shapes
+  d/e). Inherited by LWU/SW per D4c/D4d.
+- The five non-transpile axioms (M1-M4, C1) are closable: M1-M4 via
+  the RV32→RV64 platform-config delta (`sys_pmp_count = 16`,
+  `plat_clint_base/size`) once `RISC_V_assumptions` is extended
+  with PMP/CLINT witnesses; C1 via a `mseccfg.MLPE = 0` + Zicfilp
+  disablement witness. Phase 2.6 or Phase 3 can tackle these as a
+  dedicated track; Phase 3 need not pay the cost per-opcode thanks
+  to width-parametric sibling axioms (M3 derives once and applies to
+  LWU/LHU/LBU; M4 derives once and applies to SW/SH/SB).
+- `ZiskInstructionRow` has grown with `store_pc`, `set_pc`,
+  `jmp_offset1`, `jmp_offset2` fields during Phase 2 and was
+  unchanged during Phase 2.5. Additional archetypes (DIV/REM,
+  AUIPC/LUI, immediate ALU) may require more row fields.
+
+### Phase 3 readiness
+
+With six validated macros + calibrated effort estimates + five
+named closable axioms + a documented bus-emission derivation
+framework, Phase 3 can safely fan out ADD/MUL/SLLW to their shift/
+arithmetic families; BEQ/BNE to BLT/BLTU/BGE/BGEU; JAL/JALR already
+covered; LD/SD to LWU/LBU/LHU/LH, SW/SH/SB. Per-opcode cost under
+a validated macro has been demonstrated (BNE/MULH/SRLW/LWU/SW each
+shipped in <1 day of subagent time with zero macro adjustment).
+
+### Repro
+
+```
+git checkout c388384
+cd /home/cody/zisk-fv
+just verify-phase2
+cd ZiskFv && lake build
+```
+
+Exit 0, no sorries.

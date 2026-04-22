@@ -18,9 +18,9 @@ validation). Combines:
   (`ZiskFv.Trusted.transpile_JALR`),
 * the compositional JALR spec (`ZiskFv.Spec.Jalr.jalr_pc_advance`),
 * the Sail pure-function equivalence
-  (`PureSpec.execute_JALR_pure_equiv` — currently a sorry'd shim at
-  `ZiskFv/RV64D/jalr.lean:74`; unfreezing that sorry is Phase 3 scope
-  alongside the remaining JAL-family Sail helpers),
+  (`PureSpec.execute_JALR_pure_equiv`, closed via the trusted
+  `execute_JALR_pure_equiv_axiom` at `ZiskFv/RV64D/jalr.lean:67` —
+  see `docs/fv/trusted-base.md` for the closure path),
 
 into a metaplan-shaped theorem:
 
@@ -99,9 +99,10 @@ theorem equiv_JALR_closed
     `PureSpec.execute_JALR_pure`, given source-register readability
     (rs1), PC knowledge, misa, and ZisK-level privilege/PMA witnesses.
 
-    Wraps `PureSpec.execute_JALR_pure_equiv` (which is currently a
-    sorry'd placeholder — closing it is Phase 3 work). The metaplan
-    theorem below composes this with the shape-(c) bus-matching lemma. -/
+    Wraps `PureSpec.execute_JALR_pure_equiv`, which is closed via the
+    trusted `execute_JALR_pure_equiv_axiom` (see `trusted-base.md`).
+    The metaplan theorem below composes this with the shape-(c)
+    bus-matching lemma. -/
 theorem equiv_JALR_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jalr_input : PureSpec.JalrInput)
