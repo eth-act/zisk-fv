@@ -455,6 +455,68 @@ mirrors BEQ (DEFER Phase 4 derivation).
 
 ---
 
+## Reconnaissance A3 (LD) — 2026-04-22
+
+**Zisk microinstruction.** `vendor/zisk/core/src/riscv2zisk_context.rs:216`
+maps `"ld" → self.load_op(riscv_instruction, "copyb", 8, 4)`. `load_op`
+(line 803) emits exactly one Zisk microinstruction via `ZiskInstBuilder`:
+* `src_a = reg(rs1)` — `a[0]`/`a[1]` carry `xreg(rs1)` lanes;
+* `ind_width = 8` — memory operand width is 8 bytes;
+* `src_b = ind(imm)` — `b_src_ind = 1`, `b_offset_imm0 = imm`; Main
+  reads `b` from memory at `addr1 = imm + a[0]` (`main.pil:192`);
+* `op = "copyb"` (`0x01`, `OpType::Internal`, `zisk_ops.rs:383`);
+* `store = reg(rd)` — `store_reg = 1`, `store_offset = rd`; Main writes
+  `c` (= `c[0] + c[1]*2^32`) to register `rd`;
+* `j(4, 4)` — both `jmp_offset1 = 4` and `jmp_offset2 = 4`.
+**No** `set_pc()` call, so `set_pc = 0`.
+
+**Main AIR constraints.** Because `is_external_op = 0`, constraint 9
+(`(1 - is_external_op) * op * (b[i] - c[i]) = 0`) + constraint 16 force
+`c[i] = b[i]` at the Main level — the internal op=1 "copy_b" short-circuit
+replaces an external bus hop. Constraint 18 forces `flag = 0`. PC handshake
+(set_pc=0, flag=0) collapses to `next_pc = pc + jmp_offset2 = pc + 4`.
+**No operation-bus entry is emitted for copyb.**
+
+**Memory bus.** Two `mem_op` calls fire per LD row:
+`main.pil:300` (load-b from memory, `MEMORY_LOAD_OP = 1`, `bytes = 8`,
+`addr = imm + a[0]`, value = `b`) and `main.pil:323` (store-c to register,
+`MEMORY_REG_OP = 3`, `bytes = 8`, `addr = rd`, value = `store_value`).
+Permutation entry shape: `[op, addr, mem_step, bytes, ...value]`
+(`state-machines/mem/pil/mem.pil:524-527`). In our Lean model
+(`Interaction.MemoryBusEntry`) each row carries `(multiplicity, as, ptr,
+x0..x7, timestamp)` with `as ∈ {1 (reg), 2 (mem)}`.
+
+**Memory-bus-entry format for LD.** Two entries:
+* **Memory read** — `multiplicity = -1` (assume), `as = 2`, `ptr = rs1_val +
+  imm`, `x0..x7 = bytes of mem[ptr..ptr+7]`. (Also an assumed-side
+  register-read of rs1 with `as = 1`, `multiplicity = -1`, `ptr = 4 * rs1`
+  — precedes the memory read in the bus list.)
+* **Register write** — `multiplicity = 1` (prove), `as = 1`,
+  `ptr = 4 * rd`, `x0..x7 = the 8 bytes of the loaded doubleword`.
+
+**Alignment gating.** Sail's `vmem_read` performs the alignment check via
+`is_aligned_vaddr` / `check_misaligned`; under `RISC_V_assumptions` (PMA
+attribute `misaligned_fault = AlignmentFault`), misaligned 8-byte loads
+raise `E_Load_Addr_Align`. ZisK's PIL `mem_op` does not itself fault on
+misalignment — the memory SM enforces byte-range via permutation; the
+transpiler assumes aligned `ld` at the program level. **Approach:** mirror
+openvm-fv's `lw_state_assumptions` pattern — per-input `ld_state_assumptions`
+include `8 ∣ (rs1 + imm)` and `rs1_val + imm < OpenVM_address_space_size`
+so Sail's `vmem_read` takes the Ok/aligned branch.
+
+**`bus_effect` memory-read branch** (`BusEffect.lean:47-62`). For
+`multiplicity = -1` + `as = 2`: adds eight `state.mem[ptr+i]? = .some x_i`
+conjuncts. Matches what `vmem_read` consumes via byte-by-byte `read_ram`.
+`U64.toBV` rebuilds the `BitVec 64` from byte lanes in little-endian order —
+same byte-order as `vmem_read`'s accumulator.
+
+**A3-B decision (Bus-emission).** **DEFER** (same as A1, A2). Deriving
+`h_bus_execute_matches_sail` from PIL-level bus emission requires modeling
+the Mem SM's permutation argument end-to-end (not just `bus_effect`'s
+fold). That is Phase 4 scope. Parameterize.
+
+---
+
 ## Phase 2 status — CLOSED <date TBD>
 
 (To be populated when Phase 2 executes.)
