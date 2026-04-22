@@ -188,6 +188,88 @@ lemma execute_RTYPEW_eq_execute_RTYPEW'
 
 end RTYPEW
 
+section SHIFTIWOP
+
+/-- Pure part of 64-bit `execute_SHIFTIWOP` (the W-variant immediate
+    shift: `SLLIW`, `SRLIW`, `SRAIW`).
+
+    Matches the Sail-level `execute_SHIFTIWOP` shape at
+    `LeanRV64D.InstsEnd.lean:65520-65528`:
+
+    1. extract the low 32 bits of `rs1_val`
+       (`Sail.BitVec.extractLsb _ 31 0`);
+    2. apply the opcode-specific 32-bit shift (shamt is a `BitVec 5`);
+    3. sign-extend the 32-bit result to 64 via `sign_extend (m := 64)`. -/
+def execute_SHIFTIWOP_pure (op1 : BitVec 64) (shamt : BitVec 5) (op : sopw) : BitVec 64 :=
+  let a32 : BitVec 32 := Sail.BitVec.extractLsb op1 31 0
+  let result : BitVec 32 :=
+    match op with
+    | .SLLIW => Sail.shift_bits_left a32 shamt
+    | .SRLIW => Sail.shift_bits_right a32 shamt
+    | .SRAIW => shift_bits_right_arith a32 shamt
+  sign_extend (m := 64) result
+
+/-- `execute_SHIFTIWOP` with isolated pure part. -/
+def execute_SHIFTIWOP' (shamt : BitVec 5) (rs1 : regidx) (rd : regidx) (op : sopw) : SailM ExecutionResult := do
+  let rs1_bits ← do (rX_bits rs1)
+  (wX_bits rd (execute_SHIFTIWOP_pure rs1_bits shamt op))
+  (pure RETIRE_SUCCESS)
+
+/-- Equivalence of `execute_SHIFTIWOP`s.
+
+    Three cases (`SLLIW`, `SRLIW`, `SRAIW`). The Sail definition takes
+    the low-32 extraction inside an extra monadic binding; after
+    `simp_all` unfolds both sides they agree on each opcode. -/
+@[simp]
+lemma execute_SHIFTIWOP_eq_execute_SHIFTIWOP'
+    (shamt : BitVec 5) (rs1 rd : regidx) (op : sopw) :
+    execute_SHIFTIWOP shamt rs1 rd op = execute_SHIFTIWOP' shamt rs1 rd op := by
+  cases op <;>
+    simp_all [execute_SHIFTIWOP', execute_SHIFTIWOP, execute_SHIFTIWOP_pure]
+
+end SHIFTIWOP
+
+section MULW
+
+/-- Pure part of 64-bit `execute_MULW` (the 32-bit signed multiply
+    W-variant).
+
+    Matches the Sail-level `execute_MULW` shape at
+    `LeanRV64D.InstsEnd.lean:66799-66806`:
+
+    1. extract the low 32 bits of both source registers;
+    2. interpret as signed 32-bit integers and multiply;
+    3. truncate the integer product to 32 bits, then sign-extend to 64. -/
+def execute_MULW_pure (op1 : BitVec 64) (op2 : BitVec 64) : BitVec 64 :=
+  let a32 : BitVec 32 := Sail.BitVec.extractLsb op1 31 0
+  let b32 : BitVec 32 := Sail.BitVec.extractLsb op2 31 0
+  let a_int := BitVec.toInt a32
+  let b_int := BitVec.toInt b32
+  let result32 : BitVec 32 := to_bits_truncate (l := 32) (a_int * b_int)
+  sign_extend (m := 64) result32
+
+/-- `execute_MULW` with isolated pure part. -/
+def execute_MULW' (rs2 : regidx) (rs1 : regidx) (rd : regidx) : SailM ExecutionResult := do
+  let rs1_bits ← do (rX_bits rs1)
+  let rs2_bits ← do (rX_bits rs2)
+  (wX_bits rd (execute_MULW_pure rs1_bits rs2_bits))
+  (pure RETIRE_SUCCESS)
+
+/-- Equivalence of `execute_MULW`s.
+
+    Single-opcode (no enum branching). The Sail definition performs the
+    low-32 extraction inside two separate monadic bindings; after
+    `simp_all` unfolds both sides they agree on the signed 32-bit
+    multiply — `to_bits_truncate` normalizes the intermediate integer
+    product identically on both sides. -/
+@[simp]
+lemma execute_MULW_eq_execute_MULW'
+    (rs2 rs1 rd : regidx) :
+    execute_MULW rs2 rs1 rd = execute_MULW' rs2 rs1 rd := by
+  simp_all [execute_MULW', execute_MULW, execute_MULW_pure]
+
+end MULW
+
 section MUL
 
 /-- Multiplication opcodes. -/
