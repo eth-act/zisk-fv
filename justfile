@@ -8,6 +8,8 @@ main_orcl := "ZiskFv/ZiskFv/Extraction/Main.hand.lean"
 fixture   := "ZiskFv/ZiskFv/GoldenTraces/Add.lean"
 beq_fix   := "ZiskFv/ZiskFv/GoldenTraces/BEQ.lean"
 beq_doc   := "docs/fv/archetype-branch.md"
+jal_fix   := "ZiskFv/ZiskFv/GoldenTraces/JAL.lean"
+jal_doc   := "docs/fv/archetype-jump.md"
 
 # Phase 0 gate: regenerate the BinaryAdd extraction, diff vs. the hand-written
 # oracle, then typecheck the Lean package end-to-end.
@@ -55,17 +57,24 @@ verify-phase1:
 # Equivalence.BranchEqual, Tactics.BranchArchetype via package
 # default targets).
 verify-phase2: verify-phase1
-    # Phase 2 A1 deliverables: fixture + archetype doc exist.
+    # Phase 2 A1 deliverables (BEQ): fixture + archetype doc exist.
     test -f {{beq_fix}}
     test -f {{beq_doc}}
-    # Build the A1 archetype modules explicitly (verify-phase1's `lake
-    # build` already covers the full package, but being explicit guards
-    # against accidental module-drop regressions in refactors).
+    # Phase 2 A2 deliverables (JAL): fixture + archetype doc exist.
+    test -f {{jal_fix}}
+    test -f {{jal_doc}}
+    # Build the A1 + A2 archetype modules explicitly (verify-phase1's
+    # `lake build` already covers the full package, but being explicit
+    # guards against accidental module-drop regressions in refactors).
     cd ZiskFv && lake build \
         ZiskFv.Spec.BranchEqual \
         ZiskFv.Equivalence.BranchEqual \
         ZiskFv.Tactics.BranchArchetype \
-        ZiskFv.GoldenTraces.BEQ
+        ZiskFv.GoldenTraces.BEQ \
+        ZiskFv.Spec.Jal \
+        ZiskFv.Equivalence.Jal \
+        ZiskFv.Tactics.JumpArchetype \
+        ZiskFv.GoldenTraces.JAL
 
 # Internal: run the harness in live mode when FV_LIVE=1 and diff against
 # the hard-coded fixture; no-op otherwise. Split out because just's `{{ }}`
