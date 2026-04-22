@@ -498,6 +498,41 @@ axiom transpile_LHU :
       ∧ row.a_lo = lane_lo (state.xreg rs1)
       ∧ row.a_hi = lane_hi (state.xreg rs1)
 
+/-- The axiomatic RV64 → Zisk row contract for LBU (Phase 3A L5 —
+    `LoadArchetype` sibling of LWU/LD, narrowest width).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:212` an RV64 LBU
+    `rd, imm(rs1)` transpiles via `self.load_op(i, "copyb", 1, 4)`
+    (line 803) to exactly one Zisk microinstruction. The row shape is
+    identical to the other zero-extension loads modulo `ind_width`
+    (1 byte):
+    * `op = OP_COPYB = 1` — Internal op; constraint 9 forces `c = b`;
+    * `is_external_op = 0`;
+    * `zib.ind_width(1)` — 1-byte load. All 7 high byte lanes
+      (`x1..x7`) of the memory-bus entry are zero (ZisK's Memory SM
+      zero-pads for `bytes < 8`). The zero-pad is a compositional
+      hypothesis carried on `Spec/LoadBU.lean` via
+      `memory_entry_high_bytes_zero_bu`;
+    * `zib.src_a("reg", rs1, false)`, `zib.src_b("ind", imm, false)`,
+      `zib.store("reg", rd, false, false)`, `zib.j(4, 4)` — identical
+      to LD / LWU / LHU.
+
+    **Trust basis.** Pure spec of `fn load_op` in
+    `riscv2zisk_context.rs:803` specialized to `width = 1` +
+    `op = "copyb"`. Identical Main-AIR row shape to LD/LWU/LHU. -/
+axiom transpile_LBU :
+    ∀ (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_COPYB
+      ∧ row.is_external_op = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+
 /-- The axiomatic RV64 → Zisk row contract for SD (store doubleword).
 
     Per `vendor/zisk/core/src/riscv2zisk_context.rs:223` an RV64 SD
