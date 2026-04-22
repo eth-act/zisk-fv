@@ -1270,4 +1270,58 @@ axiom transpile_SRAW :
       ∧ row.b_lo = lane_lo (state.xreg rs2)
       ∧ row.b_hi = lane_hi (state.xreg rs2)
 
+/-- Zisk-side representation of a 5-bit W-variant shift-amount immediate.
+
+    The transpiler helper `immediate_op` at
+    `vendor/zisk/core/src/riscv2zisk_context.rs:853-864` emits
+    `zib.src_b("imm", i.imm as u64, false)` — the `imm` field of the
+    RISC-V I-type encoding is parsed as a `u64`. For the W-variant
+    immediate shifts (SLLIW, SRLIW, SRAIW) the shift amount is a
+    5-bit field (per the RV32/RV64 spec; funct7 = 0 for the non-sign
+    variants, 0x20 for SRAIW; `i.imm` isolates the 5-bit shamt).
+    As a u64 this is just `shamt.toNat` with zero high bits.
+
+    In the Main row this is split into two 32-bit lanes:
+    * `b_lo = shamt.toNat` (always fits — shamt < 32);
+    * `b_hi = 0`. -/
+def shamt_w_b_lo (shamt : BitVec 5) : FGL :=
+  ⟨shamt.toNat, by
+    have : shamt.toNat < 32 := shamt.isLt
+    omega⟩
+
+/-- The axiomatic RV64 → Zisk row contract for SLLIW (Phase 3A H2b —
+    `ShiftArchetype` sibling, W-variant immediate).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:195` an RV64 SLLIW
+    `rd, rs1, shamt` transpiles via `immediate_op(instr, "sll_w", 4)`
+    (line 853) to exactly one Zisk microinstruction:
+    * `op = OP_SLL_W = 36` (type `BinaryE`);
+    * `is_external_op = 1`;
+    * `m32 = 1` — the `"_w"` suffix enables the 32-bit bus-zeroing;
+    * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`;
+    * `flag = 0`;
+    * `zib.src_a("reg", rs1, false)` — `a` lanes carry `xreg(rs1)`;
+    * `zib.src_b("imm", i.imm as u64, false)` — `b_lo` carries the
+      5-bit shamt zero-extended to u64; `b_hi = 0`.
+
+    **Trust basis.** Pure spec of the `"slliw"` arm of the ITYPEW
+    dispatch in `riscv2zisk_context.rs:195`. SRLIW / SRAIW mirror this
+    with `OP_SRL_W` / `OP_SRA_W` — same bus shape, different
+    secondary-SM opcode. -/
+axiom transpile_SLLIW :
+    ∀ (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SLL_W
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 1
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = shamt_w_b_lo shamt
+      ∧ row.b_hi = 0
+
 end ZiskFv.Trusted

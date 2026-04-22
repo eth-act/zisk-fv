@@ -404,6 +404,46 @@ extension to `LoadArchetype` — **read-only per Phase 3A scope**) and
 is out of scope for Phase 3A. LW / LH / LB are deferred to Phase 3B
 alongside the ALU-ITYPE / DIV / UTYPE archetype work.
 
+## Control-flow axioms (Phase 3A H2b/c/d, path (b) — 2026-04-22)
+
+### Entry C3a: `PureSpec.execute_SHIFTIWOP_slliw_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/slliw.lean`
+- **Statement (informal):** under the standard register-state
+  hypotheses (r1 readable, rd mapping, PC readable), the Sail
+  `execute_instruction (.SHIFTIWOP (shamt, r1, rd, sopw.SLLIW))`
+  threaded through `state` reduces to the pure-spec block: write
+  `nextPC = PC + 4`, conditionally write `sign_extend (shift_bits_left
+  (extractLsb r1_val 31 0) shamt)` to `rd` (or no-op when `rd = 0`),
+  retire success.
+- **Consumers:** `PureSpec.execute_SHIFTIWOP_slliw_pure_equiv`;
+  consumed by `ZiskFv/Equivalence/ShiftLI.lean::equiv_SLLIW_sail`.
+- **Provenance:** `LeanRV64D/InstsEnd.lean::execute_SHIFTIWOP`
+  (line 65520).
+
+### Why C3a-C3c exist
+
+Unlike SLLW/SRLW/SRAW (register-variant W-shifts), whose Sail-side
+equivalence closes directly against `execute_RTYPEW'` —
+a refactored form of `execute_RTYPEW` provided by
+`Fundamentals/Execution.lean::execute_RTYPEW'` + the `@[simp]` lemma
+`execute_RTYPEW_eq_execute_RTYPEW'` — the W-variant immediate shifts
+route through Sail's `execute_SHIFTIWOP`, for which no such refactor
+triple exists in `Fundamentals/Execution.lean`. The Phase 3A H2
+invariants forbid mutating `Fundamentals/Execution.lean`, so the
+Sail-level equivalence is axiomatized pointwise per-opcode.
+
+**Closure path.** Add `execute_SHIFTIWOP_pure` + `execute_SHIFTIWOP'`
++ `execute_SHIFTIWOP_eq_execute_SHIFTIWOP'` to `Fundamentals/Execution.
+lean` (mechanical port of the existing `execute_RTYPEW_pure` /
+`execute_RTYPEW'` / `execute_RTYPEW_eq_execute_RTYPEW'` triple,
+adjusted for the `BitVec 5` shamt signature and the `sopw` opcode
+enum). Under that refactor, each C3x axiom becomes a direct `simp`
+closure mirroring `sllw.lean::execute_RTYPE_sllw_pure_equiv` with the
+`r2` register-read step dropped (the shift amount is an immediate,
+not a register read). Estimated 60-80 lines total across the three
+opcodes — same shape as the openvm-fv SLLI/SRLI/SRAI proofs.
+
 ## Audit procedure
 
 When accepting a new trusted axiom:
@@ -467,3 +507,9 @@ When accepting a new trusted axiom:
   ½-day estimate from Phase 2.5 D4. All transpile axioms are pure
   specs of the Rust transpiler; no RISC_V_assumptions or LeanRV64D
   chain obstructions encountered.
+- **2026-04-22 — Phase 3A H2b.** C3a (SLLIW) introduced. Obstruction:
+  `Fundamentals/Execution.lean` lacks a
+  `execute_SHIFTIWOP_pure`/`'`/`_eq_` refactor triple analogous to
+  the `execute_RTYPEW` triple that SLLW/SRLW/SRAW use. The Phase 3A
+  H2 invariants forbid mutating `Fundamentals/Execution.lean`, so
+  C3a is added pointwise; C3b/C3c will follow in sibling commits.
