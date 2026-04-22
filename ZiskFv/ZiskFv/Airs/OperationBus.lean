@@ -90,6 +90,26 @@ lemma one_sub_m32_mul_of_eq_zero {F : Type} [Field F]
     {m32 : F} (h : m32 = 0) (x : F) : (1 - m32) * x = x := by
   subst h; ring
 
+/-- `(1 - 1) * x = 0` — the mirror of `one_sub_zero_mul` for the
+    `m32 = 1` path. Added in Phase 2 A6 (SLLW) to collapse the
+    `(1 - m32) * a_hi` / `(1 - m32) * b_hi` factors on the bus entry
+    when the opcode is a 32-bit word variant (`m32 = 1`). Fires after
+    `rw [h_m32]` rewrites `m.m32 row = 1` into the `OperationBusEntry`.
+    Without this lemma `simp` leaves `(1 - 1) * x` unreduced under the
+    named-column accessors, mirroring the same pitfall
+    `one_sub_zero_mul` documents for the `m32 = 0` case. -/
+@[simp]
+lemma one_sub_one_mul {F : Type} [Field F] (x : F) :
+    (1 - (1 : F)) * x = 0 := by ring
+
+/-- Specialization of `one_sub_one_mul` that takes the `m32 = 1`
+    hypothesis explicitly. Useful when the goal has
+    `(1 - m.m32 row) * ...` and we have `h : m.m32 row = 1` in scope:
+    `rw [h]` then `simp` (or `one_sub_one_mul`) closes the factor to 0. -/
+lemma one_sub_m32_mul_of_eq_one {F : Type} [Field F]
+    {m32 : F} (h : m32 = 1) (x : F) : (1 - m32) * x = 0 := by
+  subst h; ring
+
 /-- BinaryAdd's operation-bus emission for a given row. Mirrors the
     `proves_operation(op: OP_ADD, a:, b:, c:)` call at
     `vendor/zisk/state-machines/binary/pil/binary_add.pil:25`. Multiplicity
