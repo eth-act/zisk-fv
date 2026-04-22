@@ -379,6 +379,49 @@ cells. Logged as new scope item — the extractor feature is Phase 4
 
 ---
 
+## Reconnaissance A6 (SLLW) — 2026-04-22
+
+**Zisk microinstruction.** `vendor/zisk/core/src/riscv2zisk_context.rs:155` maps
+RV64 `sllw rd, rs1, rs2` → `self.create_register_op(instr, "sll_w", 4)`. The
+`create_register_op` helper (line 631) emits a single microinstruction with
+`src_a = reg(rs1)`, `src_b = reg(rs2)`, `op = "sll_w"`, `store = reg(rd)`,
+`j(4, 4)` (no branch). `zisk_inst_builder.rs:206` sets `self.i.m32 = true`
+because `"sll_w".contains("_w")`. The opcode is **`OP_SLL_W = 0x24`**
+(`pil/operations.pil:62`, `zisk_ops.rs:416`), type `BinaryE`, so
+`is_external_op = 1`, `is_precompiled = 0`, `set_pc = 0`, `flag = 0`.
+
+**Binary SM routing.** `OP_SLL_W = 0x24` is one of the 9 shift/sign-extend
+opcodes listed at `binary_extension.pil:10-19` (`SLL`, `SRL`, `SRA`, `SLL_W`,
+`SRL_W`, `SRA_W`, `SEXT_B`, `SEXT_H`, `SEXT_W`). They are handled by the
+**`BinaryExtension` AIR**, *not* the `BinaryAdd` AIR we used for ADD. Like
+BEQ (which hit the full `Binary` AIR), we DEFER the BinaryExtension bus-
+emission derivation: the bus match `opBus_row_Main r = opBus_row_BinaryExt r'`
+is parameterized. No `Airs/Binary/BinaryExt.lean` is produced this phase;
+that's Phase 4 audit scope. The bus entry's `c = (c_lo, c_hi)` carries the
+32-bit result sign-extended to 64 (so `c_hi = 0xFFFF_FFFF` when bit 31 of
+the low half is set, else `0`).
+
+**m32 = 1 path through `opBus_row_Main`.** The PIL emits bus entry
+`a = [a[0], (1 - m32) * a[1]]`, `b = [b[0], (1 - m32) * b[1]]`. For SLLW
+(`m32 = 1`), the high lanes zero out: `a_hi = b_hi = 0` on the bus. The
+secondary SM (`BinaryExtension`) sees a 32-bit operand. To close `simp` on
+`(1 - m.m32 row) * x` under `h : m.m32 row = 1`, we add lemma
+`one_sub_one_mul : (1 - 1) * x = 0` — mirror of Phase 1's `one_sub_zero_mul`.
+
+**Sail pure function.** LeanRV64D exposes `execute_RTYPEW` at
+`InstsEnd.lean:65650-65661`: extracts low 32 bits of rs1/rs2, computes
+`shift_bits_left rs1_val (Sail.BitVec.extractLsb rs2_val 4 0)`, and sign-
+extends to 64 via `sign_extend (m := 64) result`. The instruction is
+`instruction.RTYPEW (rs2, rs1, rd, ropw.SLLW)` (`Defs.lean:527,757`).
+No port needed — we author `execute_RTYPEW_pure` / equivalence in
+`Fundamentals/Execution.lean` mirroring `execute_RTYPE`.
+
+**A6-B decision.** DEFER bus-emission derivation (same as A1-B). The full
+`BinaryExtension` AIR is net-new infrastructure; parameterizing the bus-
+match hypothesis keeps SLLW aligned with BEQ/JAL's metaplan shape.
+
+---
+
 ## Reconnaissance A2 (JAL) — 2026-04-22
 
 **Zisk microinstruction.** `vendor/zisk/core/src/riscv2zisk_context.rs:201,1098` —
