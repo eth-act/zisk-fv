@@ -22,7 +22,7 @@ namespace PureSpec
         else .some (⟨input.rd, by {
           apply Finset.mem_Icc.mpr
           omega
-        }⟩, input.imm ++ 0#12)
+        }⟩, BitVec.signExtend 64 (input.imm ++ 0#12))
     }
 
   set_option maxHeartbeats 0 in
@@ -46,6 +46,35 @@ namespace PureSpec
         | .some (reg, rd_val) => write_xreg reg rd_val
         | .none => pure ()
       (pure (ExecutionResult.Retire_Success ()))) state
-  := sorry
+  := by
+    simp [
+      readReg_succ h_input_pc,
+      writeReg_state_success,
+      LeanRV64D.Functions.execute,
+      LeanRV64D.Functions.execute_UTYPE,
+      ← h_input_imm
+    ]
+    simp [execute_LUI_pure]
+    obtain ⟨rd⟩ := rd
+    by_cases h_zero: rd = 0
+    . rewrite [h_zero, wX_write_xreg_zero_equiv]
+      simp
+      rewrite [dite_cond_eq_true]
+      . simp
+      . simp [h_input_rd, h_zero, regidx_to_fin]
+    . have h_inc := regidx_non_zero h_zero
+      apply Finset.mem_Icc.mp at h_inc
+      obtain ⟨h_low, h_high⟩ := h_inc
+      rewrite [
+        wX_write_xreg_non_zero_equiv _ _
+          (regidx.Regidx rd)
+          ⟨(regidx_to_fin (regidx.Regidx rd)).val, Finset.mem_Icc.mpr ⟨h_low, h_high⟩⟩
+          (by simp [regidx_to_fin])
+      ]
+      simp [regidx_to_fin]
+      rewrite [dite_cond_eq_false]
+      . simp [h_input_rd, regidx_to_fin]
+      . simp [regidx_to_fin] at *
+        omega
 
 end PureSpec

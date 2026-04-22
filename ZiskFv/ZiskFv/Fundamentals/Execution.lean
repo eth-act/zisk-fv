@@ -593,3 +593,34 @@ lemma execute_REM_eq_execute_REM'
     omega
 
 end DIV_REM
+
+section ADDIW
+
+/-- Pure part of 64-bit `execute_ADDIW` (add-immediate-word).
+
+    Matches the Sail-level `execute_ADDIW` shape at
+    `LeanRV64D.InstsEnd.lean:69927-69930`:
+
+    1. add `rs1_val + sign_extend(m := 64) imm`;
+    2. extract the low 32 bits of the sum;
+    3. sign-extend the 32-bit result to 64.
+
+    Equivalent to `execute_RTYPEW_pure rs1_bits (sign_extend (m := 64) imm) ropw.ADDW`,
+    since `extractLsb (a + b) 31 0 = extractLsb a 31 0 + extractLsb b 31 0`. -/
+def execute_ADDIW_pure (imm : BitVec 12) (rs1_val : BitVec 64) : BitVec 64 :=
+  BitVec.signExtend 64 (BitVec.setWidth 32 (rs1_val + BitVec.signExtend 64 imm))
+
+/-- `execute_ADDIW` with isolated pure part. -/
+def execute_ADDIW' (imm : BitVec 12) (rs1 : regidx) (rd : regidx) : SailM ExecutionResult := do
+  let rs1_bits ← do (rX_bits rs1)
+  (wX_bits rd (execute_ADDIW_pure imm rs1_bits))
+  (pure RETIRE_SUCCESS)
+
+/-- Equivalence of `execute_ADDIW`s. -/
+@[simp]
+lemma execute_ADDIW_eq_execute_ADDIW'
+    (imm : BitVec 12) (rs1 rd : regidx) :
+    execute_ADDIW imm rs1 rd = execute_ADDIW' imm rs1 rd := by
+  simp [execute_ADDIW', execute_ADDIW, execute_ADDIW_pure]
+
+end ADDIW

@@ -882,3 +882,459 @@ cd ZiskFv && lake build
 Exit 0, 7988 jobs, no sorries, 42 total axioms (34 transpile +
 4 platform + 4 Sail-equivalence (C2a-d)).
 
+---
+
+# Phase 3C — Final circuit-level sweep (closes Phase 3)
+
+## Hard completion requirement
+
+**Phase 3C MUST ship all 24 remaining opcodes in this phase. No
+follow-on "Phase 3D".** The gate is binary: when this plan closes,
+every RV64IM opcode has an `equiv_<OP>_metaplan` theorem with the
+standard metaplan shape (`execute_instruction LHS =
+(bus_effect ...).2`), zero `sorry`. The next plan the user executes
+after this one is **Phase 4** (audit + REPORT.md) per the metaplan.
+
+If an opcode resists direct proof, the agent MUST close it by the
+catalogued escape hatches (trusted-base axiom + `trusted-base.md`
+entry, following the M1-M11 / C1 / C3a-c / C4 / M5-M11 precedent —
+or promote to theorem in a later phase per the 3.5 pattern). **What
+is NOT permitted:** leaving a `sorry`, leaving an opcode file
+unshipped, or proposing yet another sub-phase. The flag-and-stop
+mechanism from Phase 3A Track L (LW/LH/LB) is **closed** for
+Phase 3C — those three opcodes are Track T-SL deliverables below and
+must ship.
+
+## Context
+
+Phase 3A (CLOSED 2026-04-22) shipped 22 circuit-level opcodes.
+Phase 3.5 (CLOSED 2026-04-22) promoted 12 axioms to theorems but
+shipped no new opcodes.
+Phase 3B (CLOSED 2026-04-22) shipped Sail-side pure-spec equivalence
+theorems for the 24 new-archetype opcodes but **did not** build the
+circuit-level Spec/Equivalence/GoldenTrace layer for them. Those
+opcodes currently live under `ZiskFv/ZiskFv/RV64D/*.lean` with their
+`PureSpec.execute_<OP>_pure_equiv` lemmas closed (zero `sorry`) but
+are not yet wired into the metaplan theorem chain.
+
+**Current coverage:** 34 of the 58 RV64IM opcode files have an
+`Equivalence/*.lean`. The 24 files without one are the exclusive
+Phase 3C scope:
+
+- **Signed loads (3):** lw, lh, lb
+- **ALU RTYPE (6):** sub, and, or, xor, slt, sltu
+- **ALU ITYPE (6):** addi, andi, ori, xori, slti, sltiu
+- **RTYPEW (2):** addw, subw
+- **ADDIW (1):** addiw
+- **UTYPE (2):** lui, auipc
+- **DIV/REM (4):** div, divu, rem, remu
+
+All 24 have their Sail-side pure spec + `execute_<OP>_pure_equiv`
+already proved (Phase 3B). Phase 3C builds the remaining four
+deliverables per opcode: transpile axiom, `Spec/<Family>.lean`,
+`Equivalence/<Op>.lean`, and `GoldenTraces/<OP>.lean`.
+
+## Scope (strict, exhaustive)
+
+**In scope — every one of the 24 opcodes listed above must ship with:**
+
+1. **Transpile axiom.** A new `axiom transpile_<OP> : ...` in
+   `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`, specifying the
+   Rust-side `riscv2zisk_context.rs` contract. Catalogued in
+   `docs/fv/trusted-base.md` under the transpile section.
+2. **Spec file.** `ZiskFv/ZiskFv/Spec/<Family>.lean` proving that the
+   Main-AIR constraint conjunction (plus Binary / Arith secondary-SM
+   calls via the operation bus, where applicable) implies the opcode's
+   pure-spec semantics. Uses an archetype macro from
+   `ZiskFv/ZiskFv/Tactics/*Archetype.lean` wherever possible; new
+   archetype macros (see § "Archetype macros needed") are built
+   inline in Phase 3C.
+3. **Equivalence file.** `ZiskFv/ZiskFv/Equivalence/<Op>.lean`
+   exporting the three-theorem trio per phase-2.5 / phase-3a
+   convention:
+   - `equiv_<OP>` (circuit-level, zero-`sorry` except any
+     bus-emission `h_bus_execute_matches_sail` hypothesis inherited
+     from the load/store archetype per the D3e-DEFERRED shape),
+   - `equiv_<OP>_sail` (Sail-side, consumes
+     `PureSpec.execute_<OP>_pure_equiv` from the Phase 3B artifacts),
+   - `equiv_<OP>_metaplan` (the uniform metaplan theorem shape).
+4. **Golden trace.** `ZiskFv/ZiskFv/GoldenTraces/<OP>.lean` with a
+   concrete witness fixture. Fixtures come from
+   `tools/zisk-fv-harness` probe programs or hand-written RISC-V
+   stubs, following the pattern of existing `GoldenTraces/*.lean`.
+5. **Root import.** An `import ZiskFv.Equivalence.<Op>` entry added to
+   `ZiskFv/ZiskFv.lean`. Append-only; alphabetical within family.
+
+**Explicitly not in scope (Phase 4):**
+
+- C2a-d (branch Sail-equivalence axioms, 4 axioms) — still deferred
+  per the Phase 3.5 plan. Phase 4 audit sweep closes them.
+- `REPORT.md`, opportunistic-axiom elimination, multi-fixture
+  golden-trace matrix (Phase 4 tasks 2 / 4 / 5 / 6 per the metaplan).
+- Zicclsm / F / D / C / V / atomic / compressed / privileged — out of
+  project scope per `CLAUDE.md`.
+
+## Archetype macros needed
+
+Phase 3C introduces up to **six** new archetype macros (some may be
+generalizations of existing ones, determined during pre-flight for
+each track):
+
+1. **`ALURTypeArchetype`** (new) — ALU RTYPE family (SUB, AND, OR,
+   XOR, SLT, SLTU). Generalizes `Spec/Add.lean`'s bus-connection
+   pattern over Binary-SM op code (parameterized by
+   `opcode_lit ∈ {OP_SUB, OP_AND, OP_OR, OP_XOR, OP_LT, OP_LTU}`,
+   `m32 = 0`). Very likely to fit the existing Add-shape macro
+   extracted into a reusable tactic.
+2. **`ALUITypeArchetype`** (new) — ALU ITYPE family (ADDI, ANDI, ORI,
+   XORI, SLTI, SLTIU, ADDIW). Same Binary-SM shape as ALU RTYPE but
+   with `b_lo = sign_extend(imm)` via `create_imm_op` transpile
+   routing. Must capture both `m32 = 0` (ADDI etc.) and `m32 = 1`
+   (ADDIW) routes; the shamt-immediate shift macro (H4-H6 in 3A)
+   already exercised this pattern for SLLI/SRLI/SRAI so the
+   generalization is modest.
+3. **`UTypeArchetype`** (new) — LUI, AUIPC. No secondary-SM call
+   (the Main AIR computes the immediate directly). Simplest new
+   archetype; the `wX_bits rd off` tail is shared with existing
+   ALU opcodes.
+4. **`SignExtendLoadArchetype`** (new) — LW, LH, LB (flagged in
+   Phase 3A Track L flag-and-stop). Handles `is_external_op = 1`,
+   `op ∈ {OP_SIGNEXTEND_B, OP_SIGNEXTEND_H, OP_SIGNEXTEND_W}`,
+   which differs from the `copyb`-shape `LoadArchetype` by pushing
+   sign-extension through the operation bus rather than computing
+   it in the Main AIR.
+5. **`ArithSMArchetype`** (new) — DIV, DIVU, REM, REMU. Routes
+   through the **Arith** state machine (not Binary), so the
+   `OperationBusEntry` assertion lands on a different SM AIR
+   reference. The bus-emission abstraction (`matches_entry`
+   predicate) is shared with Binary; the proof of
+   `h_bus_execute_matches_sail` is new per family.
+6. **`RTypeWArchetype`** (possibly new; possibly reuse `ShiftArchetype`
+   at `m32 = 1` with a different opcode_lit) — ADDW, SUBW. Pre-flight
+   task W1 (below) is to determine whether `ShiftArchetype` at
+   `m32 = 1` generalizes cleanly via just swapping the Binary-SM op
+   code (`OP_SLL → OP_ADD_W`), or whether a sibling archetype is
+   needed. If it generalizes, no new macro.
+
+Policy: new archetype macros go in `ZiskFv/ZiskFv/Tactics/`, named
+consistently (`*Archetype.lean`). Existing `Tactics/*.lean` remain
+read-only unless a Phase 3C sibling cannot otherwise close; in which
+case the agent MUST flag the macro tweak in the CLOSED section
+rather than silently mutating.
+
+## Execution tracks
+
+Tracks are independent except where noted. All 24 opcodes MUST ship
+before the phase closes. Recommended order: pilot-then-fan-out
+within each track (build/validate the archetype on one opcode, then
+fan siblings). Cross-track parallelism (subagents with worktree
+isolation) is encouraged but optional.
+
+### Track T-SL — Signed loads (3 opcodes)
+
+**SL0.** Build `SignExtendLoadArchetype` in
+`Tactics/SignExtendLoadArchetype.lean`. Pilot on LW (matches the
+Phase 3A LWU/LHU/LBU pattern but with `signextend` bus op). Emit
+`transpile_LW`, `Spec/LoadW.lean`, `Equivalence/LoadW.lean`,
+`GoldenTraces/LW.lean`. Catalogue new trusted M-entries as needed
+(M12…, following the M5-M11 series). Expected to inherit
+`h_bus_execute_matches_sail` per D3e.
+
+**SL1.** Fan out LH via `SignExtendLoadArchetype`. OP code:
+`OP_SIGNEXTEND_H` (to confirm during pre-flight).
+`Spec/LoadH.lean`, `Equivalence/LoadH.lean`, `GoldenTraces/LH.lean`.
+
+**SL2.** Fan out LB. `OP_SIGNEXTEND_B`.
+`Spec/LoadB.lean`, `Equivalence/LoadB.lean`, `GoldenTraces/LB.lean`.
+
+### Track T-RT — ALU RTYPE (6 opcodes)
+
+**RT0.** Build `ALURTypeArchetype` in
+`Tactics/ALURTypeArchetype.lean`, factoring out the reusable core
+of `Spec/Add.lean`'s compositional Main+Binary proof parameterized
+by `opcode_lit` and the pure-spec combinator. Pilot on SUB
+(`OP_SUB = 11`).
+
+**RT1.** Fan out AND (`OP_AND = 14`).
+**RT2.** Fan out OR (`OP_OR = 15`).
+**RT3.** Fan out XOR (`OP_XOR = 16`).
+**RT4.** Fan out SLT (`OP_LT = 7`, reused from 3A).
+**RT5.** Fan out SLTU (`OP_LTU = 6`, reused from 3A).
+
+Each emits: `transpile_<OP>`, `Spec/<Name>.lean`,
+`Equivalence/<Op>.lean`, `GoldenTraces/<OP>.lean`.
+
+### Track T-IT — ALU ITYPE (7 opcodes: 6 RV64 ITYPE + ADDIW)
+
+**IT0.** Build `ALUITypeArchetype` in
+`Tactics/ALUITypeArchetype.lean`, parameterized over `opcode_lit`
+and `m32`. Pilot on ADDI (reuses `OP_ADD` — transpile routing via
+`create_imm_op`).
+
+**IT1.** Fan out ANDI (`OP_AND`, `m32 = 0`).
+**IT2.** Fan out ORI (`OP_OR`, `m32 = 0`).
+**IT3.** Fan out XORI (`OP_XOR`, `m32 = 0`).
+**IT4.** Fan out SLTI (`OP_LT`, `m32 = 0`).
+**IT5.** Fan out SLTIU (`OP_LTU`, `m32 = 0`).
+**IT6.** Fan out ADDIW (`OP_ADD_W = 26` or `OP_ADD` with `m32 = 1`
+— confirm during pre-flight; the Sail-side uses `execute_ADDIW'`).
+
+### Track T-W — RTYPEW (2 opcodes)
+
+**W1.** Pre-flight: read `Tactics/ShiftArchetype.lean` and check
+whether it is agnostic to the `opcode_lit` value passed into the
+bus-entry shape. If yes, reuse it at `m32 = 1` with
+`opcode_lit = OP_ADD_W` (`= 26`). If not, either extend it
+(flag-and-log per § "Known fragility" below) or spin
+`Tactics/RTypeWArchetype.lean`.
+
+**W2.** ADDW. `transpile_ADDW`, `Spec/RTypeWAdd.lean` (or whatever
+family name fits), `Equivalence/Addw.lean`, `GoldenTraces/ADDW.lean`.
+
+**W3.** SUBW (`OP_SUB_W = 27`). Same template.
+
+### Track T-U — UTYPE (2 opcodes)
+
+**U0.** Build `UTypeArchetype` in `Tactics/UTypeArchetype.lean`.
+No secondary-SM call. The Main AIR alone expresses the full
+semantics; bus-emission hypotheses are trivially absent (no bus
+entry to match). Pilot on LUI.
+
+**U1.** LUI. `transpile_LUI`, `Spec/LoadUpperImmediate.lean`,
+`Equivalence/Lui.lean`, `GoldenTraces/LUI.lean`.
+
+**U2.** AUIPC. Same archetype; the pure spec reads `input.PC + ...`
+rather than just the immediate. `transpile_AUIPC`,
+`Spec/AddUpperImmediatePC.lean`, `Equivalence/Auipc.lean`,
+`GoldenTraces/AUIPC.lean`.
+
+### Track T-D — DIV/REM (4 opcodes)
+
+**D0.** Build `ArithSMArchetype` in `Tactics/ArithSMArchetype.lean`.
+Pre-flight: inventory what `Airs/OperationBus.lean` already exposes
+about the Arith SM (vs. Binary SM). If the Main-AIR → Arith bus
+entry is already extracted in `Airs/Main.lean`, the archetype just
+parameterizes over `opcode_lit ∈ {OP_DIV, OP_REM, OP_DIVU, OP_REMU}`
+and the pure-spec combinator. If Arith-SM constraints aren't yet
+covered in `Airs/`, spin a minimal `Airs/Arith.lean` with only the
+columns the four opcodes need (append-only). Pilot on DIV
+(`OP_DIV = 186`).
+
+**D1.** DIVU (`OP_DIVU = 184`).
+**D2.** REM (`OP_REM = 187`).
+**D3.** REMU (`OP_REMU = 185`).
+
+Each emits: `transpile_<OP>`, `Spec/<DivOrRem><U?>.lean`,
+`Equivalence/<Op>.lean`, `GoldenTraces/<OP>.lean`.
+
+### Track T-V — Verify + CLOSED
+
+**V1.** `lake build` green from clean checkout. Expected job count:
+≈ 7988 + O(150) for the 24 new files (varies with archetype
+compilation).
+
+**V2.** `just verify-phase2` exits 0 (no regression of the
+Phase 2.5 gate).
+
+**V3.** Zero-sorry gate, machine-checked:
+```
+git grep -n 'sorry' ZiskFv/ZiskFv/Fundamentals ZiskFv/ZiskFv/Airs \
+  ZiskFv/ZiskFv/Spec ZiskFv/ZiskFv/Equivalence \
+  ZiskFv/ZiskFv/GoldenTraces ZiskFv/ZiskFv/Tactics \
+  ZiskFv/ZiskFv/RV64D
+```
+Returns empty.
+
+**V4.** Every RV64IM opcode accounted for. For each of the 58 opcodes
+in `ZiskFv/ZiskFv/RV64D/*.lean` (excluding `Auxiliaries.lean` and
+`BusEffect.lean`), there exists exactly one matching
+`ZiskFv/ZiskFv/Equivalence/*.lean`. Script to assert:
+```
+diff <(ls ZiskFv/ZiskFv/RV64D/*.lean | grep -vE '(Auxiliaries|BusEffect)' | \
+       xargs -n1 basename -s .lean | tr '[:upper:]' '[:lower:]' | sort) \
+     <(ls ZiskFv/ZiskFv/Equivalence/*.lean | xargs -n1 basename -s .lean | \
+       # map family names back to opcodes — append a manual crosswalk or
+       # use a per-family lookup in trusted-base.md
+       ... | sort)
+```
+The crosswalk is Phase 3C's single housekeeping artifact; document it
+in a new subsection of `docs/fv/trusted-base.md` alongside the axiom
+table.
+
+**V5.** Axiom audit. For each of the 24 new `equiv_<OP>_metaplan`
+theorems, `#print axioms` shows only:
+- Kernel axioms + Mathlib / LeanZKCircuit axioms.
+- `transpile_<OP>` (the new Phase 3C axiom for this opcode).
+- The catalogued platform axioms (P1-P4 where consumed via vmem
+  chain).
+- Any new Sail-equivalence axioms introduced in 3C per the
+  trusted-base policy (named following the M / C / C2 / C3 precedent
+  — e.g., `M12` for the first new signed-load memory-model axiom,
+  `C5` for the first new control/ALU axiom).
+No `sorryAx`. No stray axioms outside `docs/fv/trusted-base.md`'s
+catalogue.
+
+**V6.** `docs/fv/trusted-base.md` updated with every new entry:
+24 transpile rows, plus any new M/C-family rows required for
+per-opcode Sail closure. Each row carries: statement, file,
+consumer list, provenance, closure path (theorem-promotion story
+if any, matching Phase 3.5's convention).
+
+**V7.** CLOSED section appended to this file
+(`ai_plans/zisk-fv-phase-3.md`) below the Phase 3.5 CLOSED section.
+Required subsections (mirror Phase 3A / 3.5 CLOSED shape):
+- Shipped opcodes (24 opcodes, grouped by track).
+- Trust-base accounting (before/after axiom deltas, new category
+  labels if any).
+- Gate targets — pass state.
+- Plan deviations (if any — especially archetype-scope surprises).
+- What this buys (cumulative RV64IM coverage, now 58/58).
+- Residual gaps carried to Phase 4 (C2a-d + any new 3C axioms
+  awaiting theorem promotion).
+- Repro instructions.
+
+**V8.** `git log --oneline main..HEAD` reads as the expected
+per-track commit sequence (~6-8 commits). No amended / force-pushed
+commits.
+
+## Parallelism overview
+
+Six tracks (T-SL, T-RT, T-IT, T-W, T-U, T-D) are largely
+independent. Shared edits:
+
+- `Fundamentals/Transpiler.lean` — 24 append-only axioms plus
+  up to ~10 new OP constants. Sequential `git apply` resolves trivial
+  conflicts between concurrent subagents.
+- `ZiskFv/ZiskFv.lean` — 24 append-only imports. Same story.
+- `Tactics/*.lean` — each archetype macro lives in its own file;
+  conflict-free between tracks.
+
+Track sequencing (for fan-out): T-U is the simplest new archetype
+(no secondary SM) and is the recommended pilot. Afterwards the
+remaining five tracks (T-SL, T-RT, T-IT, T-W, T-D) can fan out in
+parallel subagents with worktree isolation.
+
+## Transpile / Sail-equivalence axiom policy
+
+**Transpile axioms:** each new `transpile_<OP>` is a trusted contract
+against `vendor/zisk/core/src/riscv2zisk_context.rs`. Catalogue
+verbatim in `docs/fv/trusted-base.md`. 24 of these ship in
+Phase 3C. This is non-negotiable and matches the Phase 2.5 / 3A
+precedent (34 existing transpile axioms).
+
+**Sail-equivalence axioms:** if an opcode's Sail-side proof does not
+close directly against the current `LeanRV64D` + P1-P4 + Phase 3B
+pure-spec infrastructure, introduce a narrow axiom under the
+trusted-base catalogue following the existing naming scheme:
+- **M-series** (memory model): next free index (M12 onwards) for new
+  load/store closure gaps.
+- **C-series** (control-flow / opcode-specific): next free index
+  (C5 onwards) for new ALU / arith / UTYPE gaps.
+- **P-series** (platform-feature): only if a new vendored Sail
+  function for an out-of-scope feature resists reduction; prefer this
+  over per-opcode axioms when the content is a scope-honest platform
+  claim (e.g., "this CSR is disabled"), matching the 3.5 pattern.
+
+Every new axiom entry in `trusted-base.md` MUST state a closure path
+(even if deferred to Phase 4). Axioms without a written closure path
+are a Phase 3C review failure.
+
+## Known fragility
+
+1. **`Spec/Add.lean` generalization resists refactor.** The existing
+   `Spec/Add.lean` is ADD-specific (hard-coded `OP_ADD`), not a
+   parametric archetype. If factoring it into `ALURTypeArchetype`
+   breaks the `h_bus_execute_matches_sail` discharge, pivot to
+   duplicating it per-opcode (six siblings — acceptable cost) rather
+   than mutating the shared macro. Log in CLOSED section.
+
+2. **Arith-SM AIR layout not yet extracted.** If `Airs/` has no
+   `Arith.lean`, Track T-D (D0) must spin one using the
+   `zisk-pil-extract` pipeline per Phase 1's pattern. Note in
+   the pre-flight. Does not invalidate the "all-24-must-ship"
+   gate.
+
+3. **ADDIW route ambiguity.** `create_imm_op` in
+   `riscv2zisk_context.rs` may emit `m32 = 1` with `OP_ADD` rather
+   than a dedicated `OP_ADD_W`. If so, ADDIW shares ADDI's transpile
+   shape modulo the `m32` flag. Verify against
+   `vendor/zisk/core/src/riscv2zisk_context.rs` during T-IT pre-flight.
+
+4. **UTYPE `AUIPC` get_arch_pc() routing.** The pure-spec Sail proof
+   (Phase 3B) already handled the PC-after-nextPC-write read via
+   `readReg_succ (writeReg_read_diff ...)`. The circuit-level proof
+   needs the same bridge; if the `UTypeArchetype` macro doesn't
+   expose a PC-read slot, extend it to accept one (AUIPC is the only
+   consumer; LUI has `PC` only as `input.PC + 4#64` in `nextPC`).
+
+5. **Signed-load `signextend` bus op alignment.** If the Arith SM
+   (rather than Binary SM) services `OP_SIGNEXTEND_*`, T-SL's
+   archetype overlaps Track T-D's work. Pre-flight SL0 to confirm
+   which SM services it and refactor if needed.
+
+## Critical files
+
+**New (per-opcode, 24 × 3 = 72 files):**
+- `ZiskFv/ZiskFv/Spec/<Family>.lean` (24, where families map 1-to-1
+  to opcodes unless an archetype consolidates siblings into a shared
+  file — which is NOT the Phase 2.5/3A convention; prefer per-opcode
+  files for auditability).
+- `ZiskFv/ZiskFv/Equivalence/<Op>.lean` (24).
+- `ZiskFv/ZiskFv/GoldenTraces/<OP>.lean` (24).
+
+**New (archetype macros, up to 6 files):**
+- `ZiskFv/ZiskFv/Tactics/ALURTypeArchetype.lean` (new).
+- `ZiskFv/ZiskFv/Tactics/ALUITypeArchetype.lean` (new).
+- `ZiskFv/ZiskFv/Tactics/UTypeArchetype.lean` (new).
+- `ZiskFv/ZiskFv/Tactics/SignExtendLoadArchetype.lean` (new).
+- `ZiskFv/ZiskFv/Tactics/ArithSMArchetype.lean` (new).
+- `ZiskFv/ZiskFv/Tactics/RTypeWArchetype.lean` (new — conditional on
+  W1 pre-flight).
+
+**Edited (additive only):**
+- `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean` — +24 transpile
+  axioms, +O(10) new `OP_*` constants, +O(2) new helper functions
+  (e.g., `sign_extend_imm_b_lo`).
+- `ZiskFv/ZiskFv.lean` — +24 `import` lines.
+- `docs/fv/trusted-base.md` — +24 transpile rows, +O(5) M/C-family
+  rows for Sail-equivalence gaps.
+- `ZiskFv/ZiskFv/Airs/Main.lean` — **read-only by default**. If a
+  new constraint shape is required (e.g., Arith-SM integration),
+  additive column accessors only; any structural change is
+  flag-and-stop.
+- `ZiskFv/ZiskFv/Airs/OperationBus.lean` — **read-only by default**.
+
+**Read-only (must not be mutated — flag-and-stop if mutation
+needed):**
+- Existing `ZiskFv/ZiskFv/Tactics/*Archetype.lean` (6 existing).
+- `ZiskFv/ZiskFv/Fundamentals/Execution.lean`.
+- `ZiskFv/ZiskFv/Fundamentals/Goldilocks.lean`,
+  `Fundamentals/U64.lean`, `Fundamentals/Interaction.lean`,
+  `Fundamentals/GoldilocksBridge.lean`,
+  `Fundamentals/PrattCertificate.lean`.
+- `ZiskFv/ZiskFv/RV64D/*.lean` (Phase 3B-shipped; they carry the
+  pure-spec + `execute_<OP>_pure_equiv` theorems that Phase 3C
+  consumes). The only permitted edit is if an archetype needs a
+  new projection or accessor — prefer adding a helper lemma in a
+  new file instead.
+
+## Kickoff
+
+When the user prompts Phase 3C execution, begin with:
+
+1. Read `Spec/Add.lean` and `Tactics/*.lean` to confirm the archetype
+   shape assumptions above.
+2. Write a ≤300-word execution plan for the first track (recommended:
+   T-U — UTYPE is the simplest new archetype and validates the
+   per-opcode deliverable pipeline without needing a secondary SM).
+3. Execute T-U serially, then fan the remaining five tracks (T-SL,
+   T-RT, T-IT, T-W, T-D) in parallel via subagents with worktree
+   isolation, or serially if the user prefers.
+4. After all 24 opcodes are shipped and gates V1-V8 pass, append the
+   Phase 3C CLOSED section.
+
+**End state:** `ZiskFv/ZiskFv.lean` exports 58 `equiv_<OP>_metaplan`
+theorems covering all RV64IM opcodes, zero `sorry`, axioms only in
+the catalogued trusted-base. The next plan the user executes is
+`ai_plans/zisk-fv-phase-4.md`.
+

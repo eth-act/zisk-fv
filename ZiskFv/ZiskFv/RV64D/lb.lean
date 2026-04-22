@@ -73,6 +73,32 @@ namespace PureSpec
         | .none => pure ()
       pure (ExecutionResult.Retire_Success ())
     ) state
-  := sorry
+  := by
+    have next_gma := RISC_V_assumptions_invariant_under_pc_increment risc_v_assumptions (val := input.PC + 4#64)
+    unfold lb_state_assumptions at h_opcode_assumptions
+
+    simp [
+      Sail.readReg,
+      PreSail.readReg,
+      writeReg_state_success,
+      LeanRV64D.Functions.execute,
+      *
+    ]
+
+    have h_r1_val := rX_bits_write_other_reg_state (val := input.PC + 4#64) h_opcode_assumptions.2.1 reg_of_fin_neq_nextPC
+
+    obtain ⟨ h_priv, h_mprv, h_pma_regions, h_pma_base, h_pma_size, h_pma_readable, h_pma_writable, h_pma_misaligned, h_htif, h_misa, h_mseccfg, _, _, _ ⟩ := next_gma
+    have := arithmetic_helper (a := input.r1_val.toNat) (b := (BitVec.signExtend 64 input.imm).toNat) (by grind)
+
+    simp [LeanRV64D.Functions.execute_LOAD, LeanRV64D.Functions.vmem_read, EStateM.map, *]
+    simp [LeanRV64D.Functions.vmem_read_addr, ExceptT.run, *]
+
+    simp [write_reg_state, execute_LOADB_pure, *]
+
+    split_ifs with h_rd
+    . simp [LeanRV64D.Functions.wX_bits, LeanRV64D.Functions.wX, *]
+    . let r : Finset.Icc 1 31 := ⟨input.rd.toNat, range input.rd h_rd⟩
+      rewrite [ wX_write_xreg_non_zero_equiv _ _ _ r (by simp [r])]
+      grind
 
 end PureSpec
