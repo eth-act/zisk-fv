@@ -318,6 +318,150 @@ H-imm sub-owners.
   `Airs/BusEmission.lean`.
 - `ZiskFv/ZiskFv/Fundamentals/Execution.lean`.
 
-## Phase 3A status — CLOSED <date TBD>
+## Phase 3A status — CLOSED 2026-04-22
 
-(To be populated when Phase 3A executes.)
+`just verify-phase2` exits 0 from a clean checkout; `lake build`
+green (7988 jobs total). Zero `sorry` in all scoped directories and
+all 22 of the 24 planned Phase 3A opcode RV64D files (the 3 LW/LH/LB
+signed-load stubs are deferred untouched — see Track L flag-and-stop
+below).
+
+### Shipped opcodes — 22 of 24 planned
+
+- **Branch (4/4):** BLT, BGE, BLTU, BGEU — via `BranchArchetype`
+  (opcode_lit ∈ {OP_LT = 7, OP_LTU = 6}; BLT/BLTU BEQ polarity,
+  BGE/BGEU BNE polarity).
+- **Load (2/5):** LHU, LBU — via `LoadArchetype`. **Flag-and-stop
+  on LW/LH/LB** (signed-extension loads use external `signextend_*`
+  ops incompatible with the `copyb`-shape macro; sign-extension-load
+  archetype deferred to Phase 3B).
+- **Store (2/2):** SH, SB — via `StoreArchetype` (both OP_COPYB,
+  width 2 / 1; retain `h_bus_execute_matches_sail` parameter per
+  D3e DEFERRED shape (e)).
+- **Mul (3/3):** MULHU, MULHSU, MULW — via `MulArchetype`. MULHU /
+  MULHSU closed with direct Sail proofs mirroring MulH; MULW
+  axiomatized (C4, salvage path — missing `execute_MULW'` refactor).
+- **Shift-64 (6/6):** SLL, SRL, SRA, SLLI, SRLI, SRAI — via
+  `ShiftArchetype` at m32=0. All six closed directly via the
+  `execute_RTYPE'` / `execute_SHIFTIOP'` chain; no axioms needed
+  beyond the transpile contracts.
+- **Shift-W (4/4):** SRAW, SLLIW, SRLIW, SRAIW — via `ShiftArchetype`
+  at m32=1. SRAW closed directly per SLLW precedent; SLLIW/SRLIW/
+  SRAIW axiomatized per C3a/b/c (missing `execute_SHIFTIWOP'`
+  refactor).
+
+### Gate targets — pass state
+
+1. `lake build` → 7988 jobs, green. ✓
+2. `just verify-phase2` → green. ✓
+3. `git grep sorry` across scoped dirs + 22 Phase 3A RV64D files →
+   empty. ✓ (LW/LH/LB retain pre-existing `sorry` stubs — not
+   imported by `ZiskFv.lean`, out of scope per L-track
+   flag-and-stop.)
+4. `#print axioms` on each `equiv_*_metaplan` shows only kernel
+   axioms + the catalogued trusted Sail axioms (C2a-C2d, M5-M11,
+   C3a-C3c, C4); no `sorryAx`.
+
+### Trust base — final Phase 3A state
+
+New axioms this phase (on top of the 17 Phase 2.5 end-state):
+
+- **+22 transpile axioms** in `Fundamentals/Transpiler.lean`:
+  `transpile_{BLT,BGE,BLTU,BGEU,LHU,LBU,SH,SB,MULHU,MULHSU,MULW,
+  SLL,SRL,SRA,SLLI,SRLI,SRAI,SRAW,SLLIW,SRLIW,SRAIW}` +
+  `transpile_SRLW` (repaired from Phase 2.5 D4f dropped commit by
+  Track H2). Associated new OP constants: `OP_LT=7`, `OP_LTU=6`,
+  `OP_SLL=33`, `OP_SRL=34`, `OP_SRA=35`, `OP_SRL_W=37`,
+  `OP_SRA_W=38`, `OP_MULUH=177`, `OP_MULSUH=179`, `OP_MUL_W=182`,
+  plus helpers `shamt_b_lo` / `shamt_w_b_lo`.
+- **+11 Sail-equivalence axioms** catalogued in
+  `docs/fv/trusted-base.md`:
+  - **C2a-C2d** (BLT/BGE/BLTU/BGEU, 4 axioms) — no
+    `RISC_V_assumptions` extension needed; consolidated ≈1-day
+    closure via the BNE skeleton + per-opcode comparator.
+  - **M7, M9** (LHU, LBU, 2 axioms) — share M1-M4 PMP/CLINT
+    closure path.
+  - **M10, M11** (SH, SB, 2 axioms) — share M1-M4 PMP/CLINT
+    closure path.
+  - **C3a-C3c** (SLLIW/SRLIW/SRAIW, 3 axioms) — close under
+    `execute_SHIFTIWOP'` refactor in `Fundamentals/Execution.lean`.
+  - **C4** (MULW, 1 axiom) — closes under `execute_MULW'` refactor.
+
+**Total trust base after Phase 3A:**
+- 34 transpile axioms (12 Phase 2.5 + 22 Phase 3A).
+- 16 Sail-equivalence axioms (5 Phase 2.5 + 11 Phase 3A):
+  M1-M4, M7, M9, M10, M11; C1, C2a-C2d, C3a-C3c, C4.
+
+### Execution history — what actually happened
+
+Track B pilot (me, direct): 4 opcodes, 5 commits, clean. Validated
+the pattern end-to-end before parallel fan-out.
+
+Parallel fan-out (5 subagents, worktree isolation): L, S, M, H, H2.
+Outcomes:
+
+- **S** returned clean — 2 opcodes, 3 commits, rebased onto main.
+- **L** returned with a principled **flag-and-stop** — 2 of 5
+  opcodes shipped (LHU, LBU); LW/LH/LB flagged as out-of-scope for
+  the shipped `LoadArchetype` due to the `signextend_*`-vs-`copyb`
+  archetype mismatch. Moved to Phase 3B.
+- **H** returned clean — 6 opcodes, 6 commits; all direct closures
+  (no Sail axiom).
+- **H2** returned clean — 4 opcodes, 4 commits; SRAW direct,
+  SLLIW/SRLIW/SRAIW axiomatized per C3. Also caught and repaired a
+  Phase 2.5 D4f dropped commit (missing `transpile_SRLW` +
+  `OP_SRL_W` — the build had been passing via a stale lake cache).
+- **M** returned broken — agent produced a malformed completion
+  summary and left its 3 opcodes of work uncommitted in the
+  worktree. Salvaged by (a) committing all uncommitted files in the
+  worktree as a single cherry-pick source, (b) cherry-picking into
+  main and resolving trivial append-only conflicts, (c) fixing a
+  bad proof in `mulw.lean` (unqualified `to_bits_truncate` /
+  `sign_extend`; `sorry` in the proof) by axiomatizing per C4.
+
+### What this buys
+
+- **22 new opcodes kernel-checked** modulo their transpile + Sail
+  trust entries. Cumulative count: 35 of the ≈63 RV64IM opcodes
+  (13 Phase 2.5 + 22 Phase 3A).
+- **All six shipped archetype macros exercised with siblings.**
+  No macro needed modification in Phase 3A (Phase 2.5 had one
+  sub-archetype extension for JALR; Phase 3A had zero).
+- **LoadArchetype coverage boundary identified** (copyb vs
+  signextend), giving Phase 3B a concrete spec for a
+  sign-extension-load archetype.
+- **Three closable Sail-refactor groups carved out:** C3 (SHIFTIWOP
+  triple), C4 (MULW triple), and consolidated C2a-d (BNE skeleton
+  + comparator bridge). Each is a localized mechanical port that
+  would retire 3-4 axioms with a single edit to
+  `Fundamentals/Execution.lean` or a small Int-coercion bridge
+  lemma.
+
+### Residual gaps carried to Phase 3B+
+
+- **LW, LH, LB (Track L flag-and-stop).** Need a new sign-extension-
+  load archetype macro that handles `is_external_op = 1, op =
+  OP_SIGNEXTEND_{B,H,W}`. Expected ~1 day archetype build + half-day
+  per sibling.
+- **ALU RTYPE sweep** (SUB, AND, OR, XOR, SLT, SLTU, ADDW, SUBW) and
+  **ALU ITYPE sweep** (ADDI, ANDI, ORI, XORI, SLTI, SLTIU, ADDIW).
+  Require new `ALUArchetype` / `ImmediateALUArchetype` macros.
+- **DIV/REM family** (DIV, DIVU, REM, REMU, DIVW, DIVUW, REMW,
+  REMUW). New Arith-SM archetype.
+- **UTYPE** (LUI, AUIPC). New archetype.
+- **Phase 2.6 memory-model closure** (optional but high-leverage):
+  extend `RISC_V_assumptions` with PMP/CLINT witnesses; retires
+  M1, M2, M3, M4, M7, M9, M10, M11 together (8 of 11 Phase 3A Sail
+  axioms + the 4 Phase 2.5 entries).
+
+### Repro
+
+```
+git checkout 501dd13
+cd /home/cody/zisk-fv
+just verify-phase2
+cd ZiskFv && lake build
+```
+
+Exit 0, 7988 jobs, no sorries.
+
