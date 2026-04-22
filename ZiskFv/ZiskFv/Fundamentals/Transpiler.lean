@@ -103,6 +103,24 @@ structure ZiskInstructionRow where
     `op`'s return value. -/
 @[simp] def OP_FLAG : FGL := 0
 
+/-- Goldilocks literal for the CopyB opcode. `0x01` per
+    `vendor/zisk/core/src/zisk_ops.rs:383`. Used by unsigned-width RV64
+    load opcodes (LD/LWU/LHU/LBU) which transpile via `load_op` with
+    `op = "copyb"` (`riscv2zisk_context.rs:211-216`). `OpType::Internal`,
+    so `is_external_op = 0`: Main constraint 9 forces `c = b` directly,
+    no operation-bus hop. The load value flows into `b` via `b_src_ind`
+    from the memory bus, then copies through to `c` (and on to `rd` via
+    `store_reg`). -/
+@[simp] def OP_COPYB : FGL := 1
+
+/-- Goldilocks literal for the 32-bit shift-left-word opcode.
+    `0x24` per `vendor/zisk/pil/operations.pil:62` and
+    `vendor/zisk/core/src/zisk_ops.rs:416`. Used by RV64 SLLW
+    (`riscv2zisk_context.rs:155`, `create_register_op(..., "sll_w", 4)`)
+    and SLLIW (`riscv2zisk_context.rs:195`, `immediate_op(..., "sll_w", 4)`).
+    Type `BinaryE` — handled by the `BinaryExtension` SM (not `BinaryAdd`). -/
+@[simp] def OP_SLL_W : FGL := 36
+
 /-- Goldilocks literal for OPERATION_BUS_ID. Per `vendor/zisk/pil/opids.pil:2`. -/
 @[simp] def OPERATION_BUS_ID : FGL := 5000
 
@@ -231,5 +249,51 @@ axiom transpile_JAL :
       ∧ row.a_hi = 0
       ∧ row.b_lo = 0
       ∧ row.b_hi = 0
+
+/-- The axiomatic RV64 → Zisk row contract for LD (load doubleword).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:216` an RV64 LD
+    `rd, imm(rs1)` transpiles via `self.load_op(i, "copyb", 8, 4)`
+    (line 803) to exactly one Zisk microinstruction emitted by
+    `ZiskInstBuilder`:
+    * `zib.src_a("reg", rs1, false)` — `a` lanes carry `xreg(rs1)`;
+    * `zib.ind_width(8)` — memory operand width is 8 bytes;
+    * `zib.src_b("ind", imm, false)` — `b_src_ind = 1`,
+      `b_offset_imm0 = imm`; Main reads `b` from memory at
+      `addr1 = imm + a[0]` (`main.pil:192`). The transpile contract
+      does **not** fix `b`'s value — it's pinned by the memory-bus
+      entry (see `Spec/LoadD.lean`);
+    * `zib.op("copyb")` — ZisK `OP_COPYB = 1`, `OpType::Internal`.
+      With `is_external_op = 0` + `op = 1`, Main constraint 9 forces
+      `c = b`, no operation-bus hop;
+    * `zib.store("reg", rd, false, false)` — `store_reg = 1`,
+      destination register is `rd`. PIL `store_value = c` when
+      `store_pc = 0`, so rd receives the loaded doubleword verbatim;
+    * `zib.j(4, 4)` — `jmp_offset1 = jmp_offset2 = 4`. No `set_pc()`
+      call, so `set_pc = 0`. With `flag = 0` (forced by constraint 18)
+      and `set_pc = 0`, the PC handshake yields
+      `next_pc = pc + jmp_offset2 = pc + 4`;
+    * `m32 = 0` — LD is a 64-bit load (no `m32` distinction for
+      internal ops anyway).
+
+    **Trust basis.** Pure spec of `fn load_op` in
+    `riscv2zisk_context.rs:803`. LWU/LHU/LBU use the same helper with
+    different `w` (memory width) but the same `op = "copyb"`; their
+    transpile-axioms will mirror this one with the `ind_width` fact
+    adjusted. LB/LH/LW use `signextend_*` ops (distinct Zisk opcodes)
+    and delegate sign-extension to the BinaryExtension SM via the bus
+    — A3 scope is LD only. -/
+axiom transpile_LD :
+    ∀ (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_COPYB
+      ∧ row.is_external_op = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
 
 end ZiskFv.Trusted
