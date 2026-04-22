@@ -16,6 +16,28 @@ require re-auditing against the Rust source and re-signing off on the axiom
 statement.
 -/
 
+/-!
+Minimal `Transpiler` helper namespace for bus-effect pointer decoding.
+`wrap_to_regidx` takes a 32-bit-tagged Goldilocks pointer (as emitted on
+the memory bus for register reads/writes) and returns the RISC-V integer
+register index `0..31`. Mirrors openvm-fv's `Fundamentals/Transpiler.lean`
+definition, specialized to FGL.
+-/
+namespace Transpiler
+
+  /-- Byte-tag indicator: 4 × regidx, packed into a Goldilocks element. -/
+  def ind (rd : Fin 32) : FGL :=
+    ⟨4 * rd.val, by omega⟩
+
+  /-- Reverse the `ind` tag: `val / 4 mod 32`. The domain is Goldilocks
+      (`FGL`); division is integer division on the representative. -/
+  def wrap_to_regidx (val : FGL) : Fin 32 :=
+    ⟨val.val / 4 % 32, by
+      have : val.val / 4 % 32 < 32 := Nat.mod_lt _ (by decide)
+      exact this⟩
+
+end Transpiler
+
 namespace ZiskFv.Trusted
 
 open Goldilocks
