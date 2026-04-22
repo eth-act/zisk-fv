@@ -1364,4 +1364,116 @@ axiom transpile_SRAIW :
       ∧ row.b_lo = shamt_w_b_lo shamt
       ∧ row.b_hi = 0
 
+/-- The axiomatic RV64 → Zisk row contract for MULHU (Phase 3A M1).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:246` an RV64 MULHU
+    `rd, rs1, rs2` transpiles via
+    `create_register_op(..., "muluh", 4)` — note the string rename
+    (`"mulhu" → "muluh"`). Differs from `transpile_MULH` only in the
+    opcode literal (181 → 177). One Main-AIR row with:
+
+    * `op = OP_MULUH = 177`;
+    * `is_external_op = 1` — dispatch to Arith SM over the operation bus;
+    * `set_pc = 0`, `store_pc = 0` — MULHU does not touch PC;
+    * `jmp_offset1 = jmp_offset2 = 4` — fall-through advance;
+    * `m32 = 0` — 64-bit operand form (the `"muluh"` op string has no
+      `_w` suffix);
+    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)` same as MUL;
+    * `flag` is populated by the Arith bus-pop with `div_by_zero = 0`.
+
+    **Trust basis.** Pure spec of the `"mulhu"` arm in
+    `riscv2zisk_context.rs:246`. Differs from `transpile_MULH` only in
+    the opcode literal (181 → 177). -/
+axiom transpile_MULHU :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_MULUH
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for MULHSU (Phase 3A M2).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:245` an RV64 MULHSU
+    `rd, rs1, rs2` transpiles via
+    `create_register_op(..., "mulsuh", 4)` — note the string rename
+    (`"mulhsu" → "mulsuh"`). Differs from `transpile_MULH` only in the
+    opcode literal (181 → 179). One Main-AIR row with:
+
+    * `op = OP_MULSUH = 179`;
+    * `is_external_op = 1` — dispatch to Arith SM over the operation bus;
+    * `set_pc = 0`, `store_pc = 0` — MULHSU does not touch PC;
+    * `jmp_offset1 = jmp_offset2 = 4` — fall-through advance;
+    * `m32 = 0` — 64-bit operand form;
+    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)` same as MUL;
+    * `flag` is populated by the Arith bus-pop with `div_by_zero = 0`.
+
+    **Trust basis.** Pure spec of the `"mulhsu"` arm in
+    `riscv2zisk_context.rs:245`. Differs from `transpile_MULH` only in
+    the opcode literal (181 → 179). -/
+axiom transpile_MULHSU :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_MULSUH
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for MULW (Phase 3A M3).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:247` an RV64 MULW
+    `rd, rs1, rs2` transpiles via
+    `create_register_op(..., "mul_w", 4)`. Unlike MUL / MULH / MULHU /
+    MULHSU (all `m32 = 0`, 64-bit operand form), MULW is the 32-bit
+    variant and carries `m32 = 1` — same bit the SLLW / SRLW
+    archetypes exercise for the `BinaryExtension` SM. For MULW the
+    secondary SM is still Arith (not BinaryExtension); the `m32 = 1`
+    bit signals Arith to sign-extend the 32-bit product to 64
+    (`sext = 1` on the Arith row).
+
+    One Main-AIR row with:
+
+    * `op = OP_MUL_W = 182`;
+    * `is_external_op = 1` — dispatch to Arith SM over the operation bus;
+    * `set_pc = 0`, `store_pc = 0` — MULW does not touch PC;
+    * `jmp_offset1 = jmp_offset2 = 4` — fall-through advance;
+    * `m32 = 1` — 32-bit operand form (`"mul_w".contains("_w")` is
+      `true`, `zisk_inst_builder.rs:206`);
+    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)`. The `m32 = 1`
+      signal to the PIL emission zeros the `a_hi`/`b_hi` bus lanes
+      via `(1 - m32) * a[1]`, so only the low 32 bits reach Arith;
+    * `flag` is populated by the Arith bus-pop with `div_by_zero = 0`.
+
+    **Trust basis.** Pure spec of the `"mulw"` arm in
+    `riscv2zisk_context.rs:247`. Differs from `transpile_MUL` only in
+    the opcode literal (180 → 182) and `m32` (0 → 1). -/
+axiom transpile_MULW :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_MUL_W
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 1
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
 end ZiskFv.Trusted

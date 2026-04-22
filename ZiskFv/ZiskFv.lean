@@ -51,4 +51,10 @@ import ZiskFv.Equivalence.ShiftRLI
 import ZiskFv.GoldenTraces.SRLIW
 import ZiskFv.Equivalence.ShiftRAI
 import ZiskFv.GoldenTraces.SRAIW
+import ZiskFv.Equivalence.MulHU
+import ZiskFv.GoldenTraces.MULHU
+import ZiskFv.Equivalence.MulHSU
+import ZiskFv.GoldenTraces.MULHSU
+import ZiskFv.Equivalence.MulW
+import ZiskFv.GoldenTraces.MULW
 import ZiskFv.Spike
