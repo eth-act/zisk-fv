@@ -614,6 +614,243 @@ together with fresh effort.
 
 ---
 
+## Phase 2.5 — closure rework (pre-execution plan)
+
+Phase 2 closed with three load-bearing items that are **not Phase 3
+prerequisites** in the "foreign phase's problem" sense — they are
+Phase 2 work that went incomplete under time-box pressure. Phase 3
+fan-out would mechanically propagate each limitation to every
+additional opcode rather than resolve them. Phase 2.5 closes them in
+the same dedicated-sub-phase style Phase 1.5 used for its post-Phase-1
+gaps.
+
+### Context — what's really unresolved
+
+1. **Two `RV64D/*.lean` `sorry`s.** `ld.lean:88` and `sd.lean:126`
+   on the Sail `vmem_{read,write}_addr` 8-byte byte-loop. A3 and
+   A4 both hit the same `untilFuelM` × 8 + PMP-check-chain
+   obstacle. A4's ambitious-mode estimate for a bulk lemma was
+   300-500 lines of Sail tactic reduction, exceeding budget.
+2. **Main constraint 20 (PC handshake) architecturally
+   parameterized.** `zisk-pil-extract` can't extract it (negative
+   row rotation). `Airs/Main.lean::pc_handshake` takes `next_pc`
+   as a hypothesis rather than deriving it from the constraint.
+   Every branch/jump `equiv_*_metaplan` inherits the
+   parameterization.
+3. **`h_bus_execute_matches_sail` parameterization on all six
+   archetype metaplan theorems.** A1-B DEFER decision. The
+   theorems have the metaplan's target *shape* but are
+   conditional on a bus-emission-correctness hypothesis the
+   caller supplies. Shared with `equiv_ADD_metaplan` from
+   Phase 1.5 — project-wide, not just Phase 2.
+
+Plus one validation-gap: the six archetype macros in `Tactics/`
+have only been exercised on their own archetype's opcode (BEQ
+via `BranchArchetype`, JAL via `JumpArchetype`, …). First
+Phase 3 fan-out would test them — but if adjustment is needed,
+the discovery is made mid-Phase-3, forcing mid-sweep rework.
+Catching this in Phase 2.5 is cheaper.
+
+### Scope (strict)
+
+**In scope — Track D (resolve the three real items + the
+validation gap):**
+
+- **D1 — Sail memory-bus bulk lemmas.** New
+  `vmem_read_aligned_equiv` and `vmem_write_aligned_equiv` in
+  `ZiskFv/RV64D/Auxiliaries.lean`, parameterized on
+  `RISC_V_assumptions` + 8-byte alignment, emitting byte-level
+  memory-equality conjuncts directly without unfolding the
+  `untilFuelM` loop. Apply to close `RV64D/ld.lean:88` and
+  `RV64D/sd.lean:126`. Verify the closures don't regress A3/A4's
+  existing archetype proofs.
+- **D2 — Main constraint 20 resolution.** Pick ONE of:
+  (a) Extend `tools/zisk-pil-extract` to handle negative
+  row-offset constraints (the PIL `'` postfix / `rotation = -1`
+  shape). Update `Extraction/Main.hand.lean` to match the
+  extended extractor output. Verify `pc_handshake` is derivable.
+  OR
+  (b) Add a trusted axiom `pc_handshake_axiom` to
+  `ZiskFv/Fundamentals/Transpiler.lean` (which is the
+  `ZiskFv.Trusted` home) that captures Main constraint 20's
+  content as an axiom, documented in `docs/fv/trusted-base.md`
+  as a named trust-base entry.
+  **Decision criterion:** prefer (a) unless it surfaces extractor
+  rework beyond ~1.5 days; then pivot to (b) with a clear
+  comment tying the axiom to PIL line number.
+  Regardless: remove the `next_pc` parameter from
+  `Airs/Main.lean::pc_handshake` (or demote it to a
+  specialization). Update A1 (BEQ) and A2 (JAL) `equiv_*` proofs
+  to use the closed form.
+- **D3 — `h_bus_execute_matches_sail` derivation.** Identify the
+  ≤5 distinct bus-entry shapes across ZisK's Main AIR:
+  * (a) register-read + register-read + register-write (ADD, MUL, …)
+  * (b) register-read + register-read (BEQ and other externally-
+    routed branches)
+  * (c) `OP_FLAG` internal-op (no bus)
+  * (d) `OP_COPYB` internal-op + memory-bus-read (LD)
+  * (e) `OP_COPYB` internal-op + memory-bus-write (SD)
+  For each shape, prove a single reusable lemma
+  `bus_effect_matches_sail_<shape>` in a new
+  `ZiskFv/Airs/BusEmission.lean`. Have each archetype's
+  `equiv_*_metaplan` discharge its own `h_bus_execute_matches_sail`
+  from the appropriate shape lemma, removing the hypothesis from
+  the theorem statement. **Concurrent outcome for ADD:**
+  `equiv_ADD_metaplan` also loses its hypothesis (Phase 1.5
+  unfinished business closes here).
+- **D4 — Archetype macro validation.** For each of the six
+  archetype macros, instantiate on ONE sibling opcode within the
+  family:
+  * `BranchArchetype` → prove `equiv_BNE`
+  * `JumpArchetype` → prove `equiv_JALR`
+  * `LoadArchetype` → prove `equiv_LWU`
+  * `StoreArchetype` → prove `equiv_SW`
+  * `MulArchetype` → prove `equiv_MULH`
+  * `ShiftArchetype` → prove `equiv_SRLW`
+  Each instantiation must go via the macro, producing a full
+  three-theorem trio. This is NOT Phase 3 fan-out — it's the
+  minimum validation that each macro works at all. If a macro
+  needs adjustment, do it here; Phase 3 then fans out safely.
+  Each proved opcode gets a fixture too.
+
+**Explicitly out of scope:**
+
+- Phase 3 fan-out (the remaining ~50 opcodes). Phase 2.5 proves
+  ONE sibling per archetype; Phase 3 scales.
+- Any new archetype (DIV/REM, AUIPC/LUI, immediate ALU). Those
+  belong in Phase 3 as per Phase 2 CLOSED.
+- Filing the upstream Ext_Zca issue on `sail-riscv-lean`
+  (user-gated).
+- Fixing the upstream C++ `#include <cstdint>` blocker
+  (outside our code).
+
+### Execution order
+
+**Task D1 (highest leverage — unblocks 10+ LOAD/STORE opcodes):**
+- D1a: Recon openvm-fv's memory-bus byte-loop handling (if any
+  analogous aligned-memory lemmas exist); read Sail's
+  `vmem_read_addr`/`vmem_write_addr` implementations at
+  `.lake/packages/LeanRV/LeanRV64D/Mem.lean` for exact shape.
+- D1b: Author `vmem_read_aligned_equiv` taking
+  `RISC_V_assumptions` + `addr.toNat % 8 = 0` +
+  memory-bus-entry hypothesis, producing the 8 byte-equality
+  conjuncts.
+- D1c: Author `vmem_write_aligned_equiv` symmetric.
+- D1d: Close `RV64D/ld.lean:88` and `RV64D/sd.lean:126` using
+  the new lemmas. Verify.
+- D1e: Confirm A3/A4 archetype macros still close (no regression).
+
+**Task D2 (order-agnostic with D1):**
+- D2a: Audit `tools/zisk-pil-extract/src/main.rs`
+  `render_operand` / `render_constraint` for the negative-row-
+  offset skip site. Estimate line count to handle it.
+- D2b: If ≤1.5 days, extend extractor + re-extract Main +
+  diff against oracle + update `Airs/Main.lean::pc_handshake`.
+- D2c: If >1.5 days, pivot to axiom: add
+  `axiom pc_handshake_axiom` in `Fundamentals/Transpiler.lean`
+  (or dedicated `Fundamentals/PcHandshake.lean` under Trusted
+  namespace). Document at `docs/fv/trusted-base.md`.
+- D2d: Remove `next_pc` parameter from `pc_handshake` callers;
+  rebuild A1/A2 `equiv_*` proofs without it.
+
+**Task D3 (biggest uncertainty — could be ~1 week):**
+- D3a: Enumerate bus-entry shapes concretely by inspecting
+  A1/A2/A3/A4/A5/A6's current `h_bus_execute_matches_sail`
+  hypothesis statements. Confirm ≤5 distinct shapes.
+- D3b: For each shape, prove a reusable shape lemma in
+  `Airs/BusEmission.lean`. Expected ~50-150 lines per shape.
+- D3c: Update each archetype's `equiv_*_metaplan` to discharge
+  the hypothesis internally via the shape lemma.
+- D3d: Update `equiv_ADD_metaplan` too (Phase 1.5 artifact
+  closes).
+- D3e: If D3b blows past 3 days on the hardest shape, DEFER that
+  shape's lemma to Phase 4 but ship the others that closed
+  cleanly. Log which archetypes remain parameterized.
+
+**Task D4 (after D1, D2, D3 land — validates macros at the
+same time the framework closes):**
+- D4a-D4f: instantiate each macro (BNE, JALR, LWU, SW, MULH,
+  SRLW), one per archetype. Each produces Spec+Equivalence+
+  Fixture using the macro. If a macro needs changes, adjust
+  the macro; don't hack around it.
+- D4-V: extend `justfile::verify-phase2` with the six new
+  sibling-opcode checks (or rename to `verify-phase2.5` to
+  avoid confusion).
+
+**Task V — Phase 2.5 closure.**
+- Append "Phase 2.5 status — CLOSED <date>" section below this
+  plan, Phase-1.5-style. Record: D1/D2/D3/D4 outcomes; which of
+  the two A3/A4 sorries actually closed; D2 path chosen; D3
+  per-shape outcomes; macro adjustments needed; sibling-opcode
+  per-macro validation result; any residual caveats.
+
+### Verification (end-to-end)
+
+Phase 2.5 is complete iff `just verify-phase2` (or `verify-phase2.5`
+if renamed) exits 0 AND:
+
+1. `git grep -n 'sorry' ZiskFv/ZiskFv/RV64D/{ld,sd}.lean` → zero.
+2. `Airs/Main.lean::pc_handshake` has no `next_pc` parameter
+   (or there's a documented axiom in `ZiskFv.Trusted` replacing
+   it).
+3. At least 4 of the 6 archetype `equiv_*_metaplan` theorems have
+   no `h_bus_execute_matches_sail` hypothesis (D3e budget
+   allowance — hardest 1-2 shapes may remain).
+4. Six sibling opcodes proved: BNE, JALR, LWU, SW, MULH, SRLW.
+   Each full three-theorem trio, fixture + macro-based proof.
+5. `lake build` green, zero sorry in
+   Fundamentals/Airs/Spec/Equivalence/GoldenTraces/Tactics AND
+   in RV64D/{add,beq,jal,ld,sd,mul,mulh,sllw,srlw,bne,jalr,
+   lwu,sw}.lean.
+
+### Known fragility
+
+- **D3 is the biggest unknown.** Per-shape lemmas over
+  `bus_effect`'s foldl could be 50-500 lines each depending on
+  how cleanly Sail's monadic write-back composes with the
+  circuit's emitted bus-entry shapes. Budget 3 days for D3b per
+  shape; if one shape blows the budget, D3e carries it to
+  Phase 4.
+- **D1 could discover that `vmem_*_aligned_equiv` is harder
+  than A4 estimated.** The 300-500-line estimate was pessimistic
+  but real. If D1b/D1c each exceed 2 days, re-scope: accept the
+  existing two sorries but extend the per-opcode cost estimates
+  in phase-2.md's effort table.
+- **D2 path (a) vs (b) asymmetry.** Extractor extension (a) is
+  derivable/sound; axiom (b) adds trust-base mass. Prefer (a)
+  but don't over-invest — the axiom path is explicitly allowed
+  per the metaplan trust model, and the PC handshake is a
+  concrete PIL constraint that can be documented precisely.
+- **D4 could reveal macro defects late.** If BNE doesn't close
+  via `BranchArchetype` cleanly, the macro was wrong and all
+  other branch opcodes inherit the bug. Fix the macro; do NOT
+  accept BNE as a deviation. This IS the validation gate.
+
+### Critical files
+
+- `ZiskFv/ZiskFv/RV64D/Auxiliaries.lean` — new bulk lemmas
+  (D1b, D1c).
+- `ZiskFv/ZiskFv/RV64D/{ld,sd}.lean` — close sorries (D1d).
+- `tools/zisk-pil-extract/src/main.rs` — possible extension
+  (D2b).
+- `ZiskFv/ZiskFv/Extraction/Main.hand.lean` — possible update
+  (D2b).
+- `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean` or a new
+  `Fundamentals/PcHandshake.lean` — possible axiom site (D2c).
+- `ZiskFv/ZiskFv/Airs/Main.lean` — `pc_handshake` parameter
+  removal (D2d).
+- `ZiskFv/ZiskFv/Airs/BusEmission.lean` (new) — shape lemmas
+  (D3b).
+- `ZiskFv/ZiskFv/Equivalence/{Add,BranchEqual,Jal,LoadD,StoreD,
+  Mul,Shift}.lean` — metaplan-theorem hypothesis removal (D3c,
+  D3d).
+- Six new `Spec/*_sibling.lean` + `Equivalence/*_sibling.lean` +
+  `GoldenTraces/*.lean` per D4.
+- `docs/fv/trusted-base.md` — update if D2c (axiom path) chosen.
+- `justfile` — add Phase 2.5 verifications.
+
+---
+
 ## Phase 2 status — CLOSED 2026-04-22
 
 `just verify-phase2` exits 0 from a clean checkout. 41 Phase 2 commits
