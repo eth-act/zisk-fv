@@ -430,6 +430,15 @@ alongside the ALU-ITYPE / DIV / UTYPE archetype work.
   consumed by `ZiskFv/Equivalence/ShiftRLI.lean::equiv_SRLIW_sail`.
 - **Provenance:** same as C3a.
 
+### Entry C3c: `PureSpec.execute_SHIFTIWOP_sraiw_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/sraiw.lean`
+- **Statement (informal):** same as C3a with `sopw.SLLIW → sopw.SRAIW`
+  and `shift_bits_left → shift_bits_right_arith`.
+- **Consumers:** `PureSpec.execute_SHIFTIWOP_sraiw_pure_equiv`;
+  consumed by `ZiskFv/Equivalence/ShiftRAI.lean::equiv_SRAIW_sail`.
+- **Provenance:** same as C3a.
+
 ### Why C3a-C3c exist
 
 Unlike SLLW/SRLW/SRAW (register-variant W-shifts), whose Sail-side
@@ -526,3 +535,7 @@ When accepting a new trusted axiom:
   obstruction class as C3a (SLLIW), same closure path — a future
   commit that adds the `execute_SHIFTIWOP` refactor triple to
   `Fundamentals/Execution.lean` retires C3a and C3b together.
+- **2026-04-22 — Phase 3A H2d.** C3c (SRAIW) introduced, completing
+  the W-variant immediate-shift triple. Retiring the C3a/b/c group
+  requires one Execution.lean extension (the `execute_SHIFTIWOP`
+  refactor) plus three mechanical ~20-line proofs per opcode.
