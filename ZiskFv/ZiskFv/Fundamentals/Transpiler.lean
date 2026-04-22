@@ -61,9 +61,10 @@ open Goldilocks
     | `jmp_offset1` | 26 | `main.pil:151` |
     | `jmp_offset2` | 27 | `main.pil:152` |
     | `m32` | 28 | `main.pil:161` |
+    | `store_pc` | 22 | `main.pil:142` |
 
-    Other columns (pc, src selectors, store_*) are omitted since they do not
-    participate in the ADD or branch bus interactions. -/
+    Other columns (pc, src selectors, most store_*) are omitted since they
+    do not participate in the ADD / branch / JAL bus interactions. -/
 structure ZiskInstructionRow where
   op : FGL
   is_external_op : FGL
@@ -78,6 +79,11 @@ structure ZiskInstructionRow where
   jmp_offset1 : FGL
   jmp_offset2 : FGL
   m32 : FGL
+  /-- `store_pc` selector (col 22 of the Main AIR).
+      `main.pil:311`: `store_value[0] = store_pc*(pc + jmp_offset2 - c[0]) + c[0]`.
+      With `store_pc = 1` and `c[0] = 0`, this writes `pc + jmp_offset2` (= `pc + 4` for
+      JAL) to the destination register. Pinned to 0 for ADD/BEQ; 1 for JAL. -/
+  store_pc : FGL
 
 /-- Goldilocks literal for the ADD opcode. `0x0A` per `vendor/zisk/pil/opids.pil`. -/
 @[simp] def OP_ADD : FGL := 10
@@ -87,6 +93,15 @@ structure ZiskInstructionRow where
     (BEQ/BNE) which transpile to Zisk `eq` via `create_branch_op`
     (`riscv2zisk_context.rs:202,203`). -/
 @[simp] def OP_EQ : FGL := 9
+
+/-- Goldilocks literal for the FLAG opcode. `0x00` per
+    `vendor/zisk/core/src/zisk_ops.rs:382`. Internal op whose
+    `op_flag(a, b) = (0, true)` semantics give `c = 0, flag = 1`.
+    Used by RV64 JAL (`riscv2zisk_context.rs:1098`, `zib.op("flag")`)
+    as the microinstruction op — the actual PC+4 value written to rd
+    comes from the `store_pc` selector (PIL `main.pil:311`), not the
+    `op`'s return value. -/
+@[simp] def OP_FLAG : FGL := 0
 
 /-- Goldilocks literal for OPERATION_BUS_ID. Per `vendor/zisk/pil/opids.pil:2`. -/
 @[simp] def OPERATION_BUS_ID : FGL := 5000
@@ -131,6 +146,7 @@ axiom transpile_ADD :
       ∧ row.flag = 0
       ∧ row.m32 = 0
       ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
       ∧ row.jmp_offset1 = 4
       ∧ row.jmp_offset2 = 4
       ∧ row.a_lo = lane_lo (state.xreg rs1)
@@ -169,11 +185,51 @@ axiom transpile_BEQ :
       ∧ row.is_external_op = 1
       ∧ row.m32 = 0
       ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
       ∧ row.jmp_offset1 = imm_offset
       ∧ row.jmp_offset2 = 4
       ∧ row.a_lo = lane_lo (state.xreg rs1)
       ∧ row.a_hi = lane_hi (state.xreg rs1)
       ∧ row.b_lo = lane_lo (state.xreg rs2)
       ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for JAL.
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:201,1098` an RV64 JAL
+    `rd, imm` transpiles via `self.jal(i, 4)` to exactly one Zisk
+    microinstruction emitted by `ZiskInstBuilder`:
+    * `zib.src_a("imm", 0, false)` — `a` lanes are 0,
+    * `zib.src_b("imm", 0, false)` — `b` lanes are 0,
+    * `zib.op("flag")` — ZisK `OP_FLAG = 0`, `OpType::Internal`
+      (`zisk_ops.rs:382`). `op_flag(a,b) = (0, true)` — but the
+      `c`/`flag` values are constrained by Main constraints 8/15/17,
+      not by the transpile contract itself;
+    * `zib.store_pc("reg", rd, false)` — `store_pc = 1`, destination
+      register is `rd`. The PIL `store_value[0] = store_pc*(pc+jmp_offset2-c[0])+c[0]`
+      (`main.pil:311`) evaluates to `pc + jmp_offset2 = pc + 4` when
+      `c[0] = 0` (forced by constraint 8);
+    * `zib.j(imm, 4)` — `jmp_offset1 = imm`, `jmp_offset2 = 4`.
+      **No** `set_pc()` is called, so `set_pc = 0` — the next-pc comes
+      from the row handshake with `flag = 1` forcing
+      `next_pc = pc + jmp_offset1 = pc + imm`;
+    * `m32 = 0` — JAL is 64-bit on RV64 (no `m32` distinction for
+      internal ops anyway).
+
+    **Trust basis.** Pure spec of `fn jal` in `riscv2zisk_context.rs`
+    at line 1098. -/
+axiom transpile_JAL :
+    ∀ (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_FLAG
+      ∧ row.is_external_op = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 1
+      ∧ row.jmp_offset1 = imm_offset
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = 0
+      ∧ row.a_hi = 0
+      ∧ row.b_lo = 0
+      ∧ row.b_hi = 0
 
 end ZiskFv.Trusted
