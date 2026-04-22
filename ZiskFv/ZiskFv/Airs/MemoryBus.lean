@@ -142,4 +142,55 @@ def register_write_lanes_match
   m.c_0 row = memory_entry_lo e
   ∧ m.c_1 row = memory_entry_hi e
 
+/-! ## Store-side (A4 SD) projections.
+
+These predicates are the write-side mirror of `memory_load_lanes_match`.
+SD reads `b` from register rs2 (the value) and writes it to memory via
+`store_ind` (`main.pil:314-321`): the *proved* memory-bus entry carries
+the store value's 8 bytes at `as = 2, multiplicity = 1`.
+
+Because constraint 9/16 still force `c = b` for `is_external_op = 0,
+op = OP_COPYB = 1`, the store-side lane match is equally expressible
+against `b` or `c`. We expose the `c`-side form (symmetric with LD's
+`register_write_lanes_match`) so the spec theorem composes uniformly. -/
+
+/-- **Memory-write lane hypotheses for SD.** The Main row's `c` lanes
+    equal the low/high halves of the memory-bus *write* entry's packed
+    8-byte store value.
+
+    This is the A4 symmetric analogue of `memory_load_lanes_match`:
+    * LD reads the memory entry (`mult = -1, as = 2`) and matches it
+      against `b`;
+    * SD writes the memory entry (`mult = 1, as = 2`) with the same
+      lane-packing, matched against `c` (equivalently `b`, via
+      constraint 9/16).
+
+    For compositional A4 we take this as a hypothesis — the caller
+    supplies a `MemoryBusEntry` whose bytes spell the store value, and
+    we verify `c`'s lanes agree. Phase 4's audit task is to derive it
+    from the PIL memory-SM `permutation_proves` side. -/
+@[simp]
+def memory_store_lanes_match
+    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (e : MemoryBusEntry FGL) : Prop :=
+  m.c_0 row = memory_entry_lo e
+  ∧ m.c_1 row = memory_entry_hi e
+
+/-- **Register-read lane hypothesis for SD (rs2 value).** The Main
+    row's `b` lanes equal the low/high halves of the register-read
+    entry that provides the SD store value (`ptr = 4 * rs2,
+    multiplicity = -1, as = 1`). Symmetric to LD's register-read-of-rs1;
+    the load fetched *memory* into `b`, the store fetches *register rs2*
+    into `b`.
+
+    For compositional A4 this is a hypothesis supplied by the Sail
+    side (Sail evaluates `rX_bits rs2` giving the same 8 bytes); Phase
+    4 derives from PIL bus emission. -/
+@[simp]
+def register_read_rs2_lanes_match
+    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (e : MemoryBusEntry FGL) : Prop :=
+  m.b_0 row = memory_entry_lo e
+  ∧ m.b_1 row = memory_entry_hi e
+
 end ZiskFv.Airs.MemoryBus
