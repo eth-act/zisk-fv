@@ -695,6 +695,120 @@ the Binary SM writes the comparison verdict into it.
 - **Closure path:** identical to C5 (paired closure — a single
   BitVec-bridge helper retires both together).
 
+## Phase 3C T-IT transpile axioms (2026-04-23)
+
+Six transpile axioms for the Phase 3C ALU-ITYPE fan-out (ADDI, ANDI,
+ORI, XORI, SLTI, SLTIU). All six route through
+`immediate_op` / `immediate_op_or_x0_copyb` and reuse the
+corresponding RTYPE sibling's Zisk opcode literal (ADDI uses `OP_ADD`,
+ANDI uses `OP_AND`, etc. — the Binary SM cannot distinguish the
+register-register from the register-immediate variant). The only
+structural difference from the T-RT siblings is the `b` lane source:
+`b_lo` / `b_hi` are caller-supplied Goldilocks representatives of
+the sign-extended 12-bit ITYPE immediate's 32-bit lanes (the same
+treatment `transpile_LUI` applies to its u20 immediate). `m32 = 0`
+across all six (ITYPE is 64-bit on RV64I; ADDIW uses `OP_ADD_W`
+under Track T-W).
+
+### Entry T-IT transpile row: `transpile_ADDI`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Addi.equiv_ADDI_metaplan`.
+- **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:160-174`
+  (`"addi" → immediate_op_or_x0_copyb(..., "add", 4)` on the
+  non-degenerate path) + `vendor/zisk/core/src/zisk_ops.rs` opcode
+  `OP_ADD = 10` (shared with ADD).
+- **Closure path:** trusted (transpiler-contract axiom; not a proof
+  obligation). Retires only if ZisK's Rust transpiler is replaced.
+
+### Entry T-IT transpile row: `transpile_ANDI`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Andi.equiv_ANDI_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:182`
+  (`"andi" → immediate_op(..., "and", 4)`) + `OP_AND = 14` (shared
+  with AND).
+- **Closure path:** trusted.
+
+### Entry T-IT transpile row: `transpile_ORI`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Ori.equiv_ORI_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:181`
+  (`"ori" → immediate_op_or_x0_copyb(..., "or", 4)` non-degenerate
+  path) + `OP_OR = 15` (shared with OR).
+- **Closure path:** trusted.
+
+### Entry T-IT transpile row: `transpile_XORI`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Xori.equiv_XORI_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:178`
+  (`"xori" → immediate_op_or_x0_copyb(..., "xor", 4)` non-degenerate
+  path) + `OP_XOR = 16` (shared with XOR).
+- **Closure path:** trusted.
+
+### Entry T-IT transpile row: `transpile_SLTI`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Slti.equiv_SLTI_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:176`
+  (`"slti" → immediate_op(..., "lt", 4)`) + `OP_LT = 7` (shared with
+  BLT / BGE / SLT).
+- **Closure path:** trusted. Like SLT, `flag` is unconstrained — the
+  Binary-SM writes the signed comparison verdict.
+
+### Entry T-IT transpile row: `transpile_SLTIU`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Sltiu.equiv_SLTIU_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:177`
+  (`"sltiu" → immediate_op(..., "ltu", 4)`) + `OP_LTU = 6` (shared
+  with BLTU / BGEU / SLTU).
+- **Closure path:** trusted. SLTIU's immediate is still sign-extended
+  on the bus (per the RV64I spec); only the Binary-SM's comparator is
+  unsigned. `flag` unconstrained per SLT/SLTU precedent.
+
+## Phase 3C T-IT Sail-equivalence escape-hatch axioms (2026-04-23)
+
+### Entry C7: `PureSpec.slti_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/SltiEquivHelper.lean`.
+- **Statement:** Sail-level equivalence for RV64 SLTI — `do { writeReg
+  nextPC (PC + 4); execute (ITYPE imm r1 rd iop.SLTI) } state =
+  <pure-spec block>` under the standard `read_xreg` / `h_input_imm` /
+  `h_input_pc` premises.
+- **Consumers:** `ZiskFv.Equivalence.Slti.equiv_SLTI_sail`,
+  `ZiskFv.Equivalence.Slti.equiv_SLTI_metaplan`.
+- **Provenance:** Phase 3B shipped `execute_ITYPE_slti_pure_equiv` in
+  `ZiskFv/RV64D/slti.lean` but that proof fails to close the same
+  residual class as `RV64D/slt.lean` (C5) — an unreduced
+  `BitVec.setWidth 64 (if .toInt < then 1#1 else 0#1)` /
+  `if .slt then 1#64 else 0#64` equivalence. The shipped file is not
+  imported by any module on the main branch, so `lake build`
+  succeeded at the Phase 3B CLOSED commit; Phase 3C T-IT needs the
+  equivalence to ship SLTI's circuit-level theorem.
+- **Closure path if promoted to theorem:** identical to C5 / C6 —
+  fix the shipped Phase 3B proof in `ZiskFv/RV64D/slti.lean` by
+  appending, after the `dite_cond_eq_false` branch, a BitVec-bridge
+  step (e.g. `congr 1; split_ifs <;> first | rfl | (simp_all
+  [BitVec.slt, BitVec.toInt]; bv_decide)`). Estimated 15-25 lines.
+  Jointly closable with C5 / C6 / C8 under a single BitVec-bridge
+  helper.
+
+### Entry C8: `PureSpec.sltiu_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/SltiEquivHelper.lean`.
+- **Statement:** Sail-level equivalence for RV64 SLTIU (unsigned LT
+  against sign-extended immediate).
+- **Consumers:** `ZiskFv.Equivalence.Sltiu.equiv_SLTIU_sail`,
+  `ZiskFv.Equivalence.Sltiu.equiv_SLTIU_metaplan`.
+- **Provenance:** `ZiskFv/RV64D/sltiu.lean` Phase 3B proof has the
+  same `BitVec.setWidth` vs. comparison-predicate unification gap as
+  SLT / SLTU / SLTI.
+- **Closure path:** identical to C5 / C6 / C7 (paired closure — a
+  single BitVec-bridge helper retires all four together).
+
 ## Audit procedure
 
 When accepting a new trusted axiom:
@@ -824,3 +938,22 @@ When accepting a new trusted axiom:
   `sltu_pure` reprints so the broken upstream file stays untouched
   per the Phase 3C read-only invariant. Same transpile-only-plus-
   narrow-Sail-axiom shipping pattern as Phase 3A H1-H6.
+- **2026-04-23 — Phase 3C T-IT.** Six transpile axioms shipped for
+  ALU-ITYPE fan-out (ADDI, ANDI, ORI, XORI, SLTI, SLTIU). SLTI /
+  SLTIU additionally triggered the new **C7 / C8** escape-hatch
+  axioms — same `BitVec.setWidth` / `BitVec.slt` obstruction as
+  C5 / C6 (the Phase 3B `execute_ITYPE_slti_pure_equiv` /
+  `execute_ITYPE_sltiu_pure_equiv` proofs inherit the SLT / SLTU
+  failure shape verbatim). C7 / C8 are catalogued in
+  `ZiskFv/RV64D/SltiEquivHelper.lean` alongside lightly-renamed
+  `SltiInput'` / `SltiuInput'` / `slti_pure` / `sltiu_pure` reprints.
+  The archetype reuses `Tactics.ALURTypeArchetype` verbatim (the
+  circuit-level `main_c_packed = bus_entry.c_lo + c_hi * 2^32`
+  identity is b-source-agnostic); `ALUITypeArchetype.lean` is a
+  shallow rebranded alias to keep track-T-IT consumer sites
+  textually symmetric with T-RT. No new OP constants introduced
+  (all six ITYPE opcodes piggyback on their RTYPE siblings'
+  literals). ADDIW is **not** a T-IT deliverable — per
+  `riscv2zisk_context.rs:184-193` `addiw` emits
+  `immediate_op(..., "add_w", 4)` (OP_ADD_W, m32=1), so it belongs
+  to Track T-W.

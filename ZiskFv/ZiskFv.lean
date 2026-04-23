@@ -74,6 +74,19 @@ import ZiskFv.Equivalence.Sub
 import ZiskFv.GoldenTraces.SUB
 import ZiskFv.Equivalence.Xor
 import ZiskFv.GoldenTraces.XOR
+-- Phase 3C T-IT — ALU ITYPE opcodes (ADDI, ANDI, ORI, XORI, SLTI, SLTIU)
+import ZiskFv.Equivalence.Addi
+import ZiskFv.GoldenTraces.ADDI
+import ZiskFv.Equivalence.Andi
+import ZiskFv.GoldenTraces.ANDI
+import ZiskFv.Equivalence.Ori
+import ZiskFv.GoldenTraces.ORI
+import ZiskFv.Equivalence.Xori
+import ZiskFv.GoldenTraces.XORI
+import ZiskFv.Equivalence.Slti
+import ZiskFv.GoldenTraces.SLTI
+import ZiskFv.Equivalence.Sltiu
+import ZiskFv.GoldenTraces.SLTIU
 -- RV64D coverage gate: force `lake build` to compile every Phase 3B
 -- pure-spec file, even those whose Equivalence file hasn't landed yet.
 -- Without this, Phase 3B's `slt`/`sltu` shipping bug (unclosed
@@ -84,11 +97,14 @@ import ZiskFv.GoldenTraces.XOR
 --
 -- **Known broken (Phase 3B, omitted from the gate deliberately):**
 -- `slt`, `sltu`, `slti`, `sltiu`, `lw` — each carries an unclosed
--- Sail-reduction residual. Salvaged per Phase 3C policy when each
--- track consumes them (T-RT already did this for slt/sltu via
--- `RV64D.SltEquivHelper`, C5/C6; T-IT will handle slti/sltiu;
--- T-SL will handle lw). Re-enable lines here when those helpers
--- ship, so the gate regresses against future drift.
+-- Sail-reduction residual. The `Sltu?EquivHelper` / `Slti?EquivHelper`
+-- files added by Phase 3C T-RT and T-IT do **not** fix the upstream
+-- proofs; they sidestep by declaring renamed `Input'` / `Output'`
+-- structs and axiomatizing the equivalence under C5 / C6 (T-RT) and
+-- C7 / C8 (T-IT). Re-enable the corresponding lines here when the
+-- underlying BitVec-setWidth/BitVec.slt bridge ships and the upstream
+-- proofs close (estimate: single Phase 4 audit day, jointly
+-- retiring C5-C8).
 import ZiskFv.RV64D.Auxiliaries
 import ZiskFv.RV64D.addi
 import ZiskFv.RV64D.addiw
