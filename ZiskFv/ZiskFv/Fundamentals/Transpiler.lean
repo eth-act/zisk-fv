@@ -1791,4 +1791,224 @@ axiom transpile_SLTU :
       ∧ row.b_lo = lane_lo (state.xreg rs2)
       ∧ row.b_hi = lane_hi (state.xreg rs2)
 
+/-! ## Phase 3C T-IT — ALU ITYPE opcodes
+
+    Six transpile axioms for the Phase 3C ALU-ITYPE fan-out: ADDI,
+    ANDI, ORI, XORI, SLTI, SLTIU. All six route through either
+    `immediate_op` (SLLI-style) or `immediate_op_or_x0_copyb` (ADDI,
+    XORI, ORI — which collapse to `copyb` when `rs1 = x0`). The
+    non-`copyb` emission path is identical in shape to the R-type
+    siblings except:
+
+    * `a` lanes carry `xreg(rs1)` — same as RTYPE;
+    * `b` lanes carry the sign-extended 12-bit immediate packed into
+      `(imm_b_lo, imm_b_hi)`. The Rust code reads `i.imm as u64` where
+      `i.imm : i32` — so the RV64 ITYPE 12-bit immediate is first
+      sign-extended to `i32`, then zero-extended (bit-for-bit as u64)
+      before splitting into 32-bit lanes. Matching the Sail side
+      (`BitVec.signExtend 64 input.imm`) happens at the bus / bus-entry
+      match level in downstream `Equivalence/*` modules; the transpile
+      axiom itself leaves `imm_b_lo` and `imm_b_hi` as free parameters
+      the caller supplies (mirroring the `imm_lo` / `imm_hi` treatment
+      in `transpile_LUI`).
+
+    **Scope note.** These axioms cover only the non-degenerate
+    (`rs1 ≠ x0`) path of `immediate_op_or_x0_copyb`. The `rs1 = x0`
+    path rewrites to `copyb` and changes the emitted opcode; Phase 3C
+    does not exercise this since the Sail pure specs for ADDI / ORI /
+    XORI unify it via the same arithmetic identity on `x0`. Should a
+    future phase need it, a distinct `transpile_ADDI_x0` axiom mirrors
+    `transpile_LUI`. -/
+
+/-- The axiomatic RV64 → Zisk row contract for ADDI (Phase 3C T-IT).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:160-174` an RV64
+    ADDI `rd, rs1, imm` transpiles (on the non-degenerate path,
+    `rd ≠ 0 ∧ ¬(imm = 0 ∧ rs1 ≠ 0)`) via
+    `immediate_op_or_x0_copyb(..., "add", 4)` — reusing **`OP_ADD`**
+    (`zisk_ops.rs`) since the Binary-SM cannot distinguish ADD from
+    ADDI; they share the same Zisk opcode literal.
+
+    * `op = OP_ADD = 10`;
+    * `is_external_op = 1` — dispatch to Binary SM via operation bus;
+    * `flag = 0` — `op_add` always returns `(_, false)`;
+    * `m32 = 0` — 64-bit ADD (ADDIW uses `OP_ADD_W`, separate axiom in
+      Track T-W);
+    * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`;
+    * `a_lo = lane_lo (xreg rs1)`, `a_hi = lane_hi (xreg rs1)`;
+    * `b_lo = imm_b_lo`, `b_hi = imm_b_hi` — caller-supplied
+      Goldilocks representatives of the sign-extended 12-bit ITYPE
+      immediate's 32-bit lanes.
+
+    **Trust basis.** Pure spec of the `"addi"` arm of
+    `riscv2zisk_context.rs:160`. ANDI, ORI, XORI mirror this with
+    `OP_ADD → OP_{AND,OR,XOR}`; SLTI / SLTIU with `OP_ADD → OP_{LT,LTU}`
+    and `flag` left unconstrained (the Binary-SM writes the verdict).
+
+    **Piggyback note.** ADDI and ADD share `OP_ADD`; the distinction is
+    transpiler-internal (`create_register_op` vs.
+    `immediate_op_or_x0_copyb`). The bus shape is agnostic — Main's
+    row simply carries whatever `(b_lo, b_hi)` values the transpiler
+    emits, registered or immediate. -/
+axiom transpile_ADDI :
+    ∀ (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_ADD
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = imm_b_lo
+      ∧ row.b_hi = imm_b_hi
+
+/-- The axiomatic RV64 → Zisk row contract for ANDI (Phase 3C T-IT).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:182` an RV64 ANDI
+    `rd, rs1, imm` transpiles via `immediate_op(..., "and", 4)` —
+    reusing `OP_AND = 14` (shared with AND). Shape identical to
+    `transpile_ADDI` modulo opcode literal.
+
+    * `op = OP_AND = 14`;
+    * `flag = 0` — `op_and` returns `(_, false)`;
+    * all other columns identical to `transpile_ADDI`.
+
+    **Trust basis.** Pure spec of the `"andi"` arm. -/
+axiom transpile_ANDI :
+    ∀ (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_AND
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = imm_b_lo
+      ∧ row.b_hi = imm_b_hi
+
+/-- The axiomatic RV64 → Zisk row contract for ORI (Phase 3C T-IT).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:181` an RV64 ORI
+    `rd, rs1, imm` transpiles via
+    `immediate_op_or_x0_copyb(..., "or", 4)` — reusing `OP_OR = 15`
+    (shared with OR). Shape identical to `transpile_ADDI` modulo
+    opcode literal.
+
+    * `op = OP_OR = 15`;
+    * `flag = 0` — `op_or` returns `(_, false)`;
+    * all other columns identical to `transpile_ADDI`.
+
+    **Trust basis.** Pure spec of the `"ori"` arm. -/
+axiom transpile_ORI :
+    ∀ (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_OR
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = imm_b_lo
+      ∧ row.b_hi = imm_b_hi
+
+/-- The axiomatic RV64 → Zisk row contract for XORI (Phase 3C T-IT).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:178` an RV64 XORI
+    `rd, rs1, imm` transpiles via
+    `immediate_op_or_x0_copyb(..., "xor", 4)` — reusing `OP_XOR = 16`
+    (shared with XOR). Shape identical to `transpile_ADDI` modulo
+    opcode literal.
+
+    * `op = OP_XOR = 16`;
+    * `flag = 0` — `op_xor` returns `(_, false)`;
+    * all other columns identical to `transpile_ADDI`.
+
+    **Trust basis.** Pure spec of the `"xori"` arm. -/
+axiom transpile_XORI :
+    ∀ (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_XOR
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = imm_b_lo
+      ∧ row.b_hi = imm_b_hi
+
+/-- The axiomatic RV64 → Zisk row contract for SLTI (Phase 3C T-IT).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:176` an RV64 SLTI
+    `rd, rs1, imm` transpiles via `immediate_op(..., "lt", 4)` —
+    reusing `OP_LT = 7` (shared with BLT / BGE / SLT). Like SLT, the
+    Binary-SM's `flag` output carries the signed comparison verdict
+    and is written to `c`; the transpile axiom leaves `flag`
+    unconstrained.
+
+    * `op = OP_LT = 7`;
+    * `is_external_op = 1`;
+    * **`flag` left unconstrained** — Binary-SM output;
+    * `m32 = 0`, `set_pc = 0`, `store_pc = 0`,
+      `jmp_offset1 = jmp_offset2 = 4`;
+    * `a` lanes = `xreg(rs1)`; `b` lanes = sign-extended immediate.
+
+    **Trust basis.** Pure spec of the `"slti"` arm. -/
+axiom transpile_SLTI :
+    ∀ (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_LT
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = imm_b_lo
+      ∧ row.b_hi = imm_b_hi
+
+/-- The axiomatic RV64 → Zisk row contract for SLTIU (Phase 3C T-IT).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:177` an RV64 SLTIU
+    `rd, rs1, imm` transpiles via `immediate_op(..., "ltu", 4)` —
+    reusing `OP_LTU = 6` (shared with BLTU / BGEU / SLTU). Shape
+    identical to `transpile_SLTI` modulo `OP_LT → OP_LTU`. Note that
+    SLTIU's immediate is **still sign-extended** to 64 bits (per the
+    RV64I spec), then compared as unsigned — the immediate encoding
+    on the bus is identical to SLTI; only the Binary-SM's comparator
+    is unsigned.
+
+    **Trust basis.** Pure spec of the `"sltiu"` arm. -/
+axiom transpile_SLTIU :
+    ∀ (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_LTU
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = imm_b_lo
+      ∧ row.b_hi = imm_b_hi
+
 end ZiskFv.Trusted
