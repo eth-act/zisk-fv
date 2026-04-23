@@ -74,6 +74,13 @@ import ZiskFv.Equivalence.Sub
 import ZiskFv.GoldenTraces.SUB
 import ZiskFv.Equivalence.Xor
 import ZiskFv.GoldenTraces.XOR
+-- Phase 3C T-W — RTYPEW + ADDIW (ADDW, SUBW, ADDIW)
+import ZiskFv.Equivalence.Addw
+import ZiskFv.GoldenTraces.ADDW
+import ZiskFv.Equivalence.Subw
+import ZiskFv.GoldenTraces.SUBW
+import ZiskFv.Equivalence.Addiw
+import ZiskFv.GoldenTraces.ADDIW
 -- RV64D coverage gate: force `lake build` to compile every Phase 3B
 -- pure-spec file, even those whose Equivalence file hasn't landed yet.
 -- Without this, Phase 3B's `slt`/`sltu` shipping bug (unclosed
