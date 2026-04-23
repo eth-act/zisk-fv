@@ -110,4 +110,26 @@ example :
 
 end CanonicalCase
 
+-- Phase 4 T-FIX: additional edge-case fixtures.
+
+namespace ZeroMultiply
+
+-- Edge case: `7 * 0 = 0`.
+@[simp] def c_low : FGL := 0
+@[simp] def c_high : FGL := 0
+example : c_low + c_high * 4294967296 = (0 : FGL) := by decide
+
+end ZeroMultiply
+
+namespace MaxU32Times2
+
+-- Edge case: `(2^32 - 1) * 2 = 2^33 - 2`, which straddles the 32-bit
+-- lane boundary (low = 0xFFFFFFFE, high = 1).
+@[simp] def c_low : FGL := 4294967294          -- 0xFFFFFFFE
+@[simp] def c_high : FGL := 1
+example : c_low + c_high * 4294967296
+    = (8589934590 : FGL) := by decide
+
+end MaxU32Times2
+
 end ZiskFv.GoldenTraces.MUL

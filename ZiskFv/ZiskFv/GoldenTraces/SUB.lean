@@ -56,4 +56,39 @@ example :
     sub_m32 * (1 - sub_m32) = (0 : FGL) ∧
     sub_flag * sub_set_pc = (0 : FGL) := by decide
 
+-- Phase 4 T-FIX: additional edge-case fixtures.
+
+namespace Identity
+
+-- Edge case: `x - x = 0` (self-subtraction, any x).
+@[simp] def sub_a_lo : FGL := 42
+@[simp] def sub_a_hi : FGL := 0
+@[simp] def sub_b_lo : FGL := 42
+@[simp] def sub_b_hi : FGL := 0
+@[simp] def sub_c_lo : FGL := 0
+@[simp] def sub_c_hi : FGL := 0
+
+example : sub_c_lo + sub_c_hi * 4294967296 = (0 : FGL) := by decide
+
+end Identity
+
+namespace Underflow
+
+-- Edge case: `0 - 1 = 2^64 - 1` (full underflow; two's complement).
+-- Low lane: 0 - 1 = 0xFFFFFFFF with borrow.
+-- High lane: 0 - 0 - 1(borrow) = 0xFFFFFFFF.
+@[simp] def sub_a_lo : FGL := 0
+@[simp] def sub_a_hi : FGL := 0
+@[simp] def sub_b_lo : FGL := 1
+@[simp] def sub_b_hi : FGL := 0
+@[simp] def sub_c_lo : FGL := 4294967295      -- 0xFFFFFFFF
+@[simp] def sub_c_hi : FGL := 4294967295
+
+-- 2^64 - 1 as a Goldilocks element.
+example :
+    sub_c_lo + sub_c_hi * 4294967296
+      = (18446744073709551615 : FGL) := by decide
+
+end Underflow
+
 end ZiskFv.GoldenTraces.SUB

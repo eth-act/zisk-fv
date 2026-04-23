@@ -55,4 +55,27 @@ example :
     slt_m32 * (1 - slt_m32) = (0 : FGL) ∧
     slt_flag * slt_set_pc = (0 : FGL) := by decide
 
+-- Phase 4 T-FIX: additional edge-case fixtures.
+
+namespace NotLessThan
+
+-- Edge case: `1 < -1` signed → false → rd = 0.
+@[simp] def slt_c_lo : FGL := 0
+@[simp] def slt_c_hi : FGL := 0
+
+example : slt_c_lo + slt_c_hi * 4294967296 = (0 : FGL) := by decide
+
+end NotLessThan
+
+namespace SignBoundary
+
+-- Edge case: `INT64_MIN < INT64_MAX` → true → rd = 1.
+-- INT64_MIN = 0x8000_0000_0000_0000.
+@[simp] def slt_c_lo : FGL := 1
+@[simp] def slt_c_hi : FGL := 0
+
+example : slt_c_lo + slt_c_hi * 4294967296 = (1 : FGL) := by decide
+
+end SignBoundary
+
 end ZiskFv.GoldenTraces.SLT

@@ -62,4 +62,43 @@ example :
     add_a_hi + add_b_hi + cout_0
       = cout_1 * 4294967296 + chunk_c3 * 65536 + chunk_c2 := by decide
 
+-- Phase 4 T-FIX: additional edge-case fixtures.
+
+namespace ZeroResult
+
+-- Edge case: `0 + 0 = 0` (zero-register sum, no carry).
+@[simp] def add_a_lo : FGL := 0
+@[simp] def add_a_hi : FGL := 0
+@[simp] def add_b_lo : FGL := 0
+@[simp] def add_b_hi : FGL := 0
+@[simp] def add_c_lo : FGL := 0
+@[simp] def add_c_hi : FGL := 0
+@[simp] def cout_0 : FGL := 0
+@[simp] def cout_1 : FGL := 0
+
+example : add_c_lo + add_c_hi * 4294967296 = (0 : FGL) := by decide
+example : add_a_lo + add_b_lo = cout_0 * 4294967296 + add_c_lo := by decide
+
+end ZeroResult
+
+namespace HighLaneOverflow
+
+-- Edge case: `2^63 + 2^63 = 2^64 = 0 mod 2^64` (carry out of high lane).
+-- a = 0x8000_0000_0000_0000, b = 0x8000_0000_0000_0000, c = 0, cout_1 = 1.
+@[simp] def add_a_lo : FGL := 0
+@[simp] def add_a_hi : FGL := 2147483648       -- 0x8000_0000
+@[simp] def add_b_lo : FGL := 0
+@[simp] def add_b_hi : FGL := 2147483648
+@[simp] def add_c_lo : FGL := 0
+@[simp] def add_c_hi : FGL := 0
+@[simp] def cout_0 : FGL := 0
+@[simp] def cout_1 : FGL := 1
+
+example : add_c_lo + add_c_hi * 4294967296 = (0 : FGL) := by decide
+example :
+    add_a_hi + add_b_hi + cout_0
+      = cout_1 * 4294967296 + add_c_hi := by decide
+
+end HighLaneOverflow
+
 end ZiskFv.GoldenTraces.Add

@@ -39,4 +39,25 @@ example :
     and_m32 * (1 - and_m32) = (0 : FGL) ∧
     and_flag * and_set_pc = (0 : FGL) := by decide
 
+-- Phase 4 T-FIX: additional edge-case fixtures.
+
+namespace AllOnes
+
+-- Edge case: `0xFFFFFFFFFFFFFFFF AND 0xFFFFFFFFFFFFFFFF = 0xFFFFFFFFFFFFFFFF`.
+@[simp] def and_c_lo : FGL := 4294967295
+@[simp] def and_c_hi : FGL := 4294967295
+example : and_c_lo + and_c_hi * 4294967296
+    = (18446744073709551615 : FGL) := by decide
+
+end AllOnes
+
+namespace Zero
+
+-- Edge case: `anything AND 0 = 0`.
+@[simp] def and_c_lo : FGL := 0
+@[simp] def and_c_hi : FGL := 0
+example : and_c_lo + and_c_hi * 4294967296 = (0 : FGL) := by decide
+
+end Zero
+
 end ZiskFv.GoldenTraces.AND

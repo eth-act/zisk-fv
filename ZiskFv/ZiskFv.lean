@@ -11,6 +11,18 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Spec.Add
 import ZiskFv.Equivalence.Add
 import ZiskFv.GoldenTraces.Add
+-- Phase 4 T-LINT re-export audit: missing direct imports for older opcodes
+-- whose equivalence theorems shipped before the coverage-gate discipline.
+import ZiskFv.Equivalence.BranchEqual
+import ZiskFv.Equivalence.BranchNotEqual
+import ZiskFv.Equivalence.Jal
+import ZiskFv.Equivalence.Jalr
+import ZiskFv.Equivalence.LoadD
+import ZiskFv.Equivalence.LoadWU
+import ZiskFv.Equivalence.Mul
+import ZiskFv.Equivalence.MulH
+import ZiskFv.Equivalence.StoreD
+import ZiskFv.Equivalence.StoreW
 import ZiskFv.Equivalence.Auipc
 import ZiskFv.GoldenTraces.AUIPC
 import ZiskFv.Equivalence.BranchLessThan
