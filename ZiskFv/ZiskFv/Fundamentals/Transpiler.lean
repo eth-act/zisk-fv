@@ -1476,4 +1476,227 @@ axiom transpile_MULW :
       ∧ row.b_lo = lane_lo (state.xreg rs2)
       ∧ row.b_hi = lane_hi (state.xreg rs2)
 
+/-! ## Phase 3C T-RT — ALU RTYPE opcodes
+
+    Six transpile axioms for the Phase 3C ALU-RTYPE fan-out: SUB, AND,
+    OR, XOR, SLT, SLTU. All six route through `create_register_op`
+    (`riscv2zisk_context.rs:134-152`), so the row shape is identical to
+    `transpile_ADD` modulo the Zisk opcode literal. SLT / SLTU
+    additionally leave `flag` unconstrained because the Binary SM's
+    `flag` output carries the comparison verdict. -/
+
+/-- Goldilocks literal for the SUB opcode. `0x0b = 11` per
+    `vendor/zisk/core/src/zisk_ops.rs:393` (`"sub"`, Binary type).
+    Used by RV64 SUB (`riscv2zisk_context.rs:134`,
+    `create_register_op(..., "sub", 4)`). -/
+@[simp] def OP_SUB : FGL := 11
+
+-- `OP_LT` and `OP_LTU` are defined earlier in this file (BLT / BGE /
+-- BLTU / BGEU branches share them). SLT / SLTU reuse those literals.
+
+/-- Goldilocks literal for the AND opcode. `0x0e = 14` per
+    `vendor/zisk/core/src/zisk_ops.rs:396` (`"and"`, Binary type).
+    Used by RV64 AND (`riscv2zisk_context.rs:152`,
+    `create_register_op(..., "and", 4)`) and ANDI (line 182). -/
+@[simp] def OP_AND : FGL := 14
+
+/-- Goldilocks literal for the OR opcode. `0x0f = 15` per
+    `vendor/zisk/core/src/zisk_ops.rs:397` (`"or"`, Binary type).
+    Used by RV64 OR (`riscv2zisk_context.rs:149`,
+    `create_register_op(..., "or", 4)` — inside the `"or"` arm's
+    enclosing block at lines 141-150, whose terminal statement is
+    this `create_register_op`) and ORI (line 181). -/
+@[simp] def OP_OR : FGL := 15
+
+/-- Goldilocks literal for the XOR opcode. `0x10 = 16` per
+    `vendor/zisk/core/src/zisk_ops.rs:398` (`"xor"`, Binary type).
+    Used by RV64 XOR (`riscv2zisk_context.rs:138`,
+    `create_register_op(..., "xor", 4)`) and XORI (line 178). -/
+@[simp] def OP_XOR : FGL := 16
+
+/-- The axiomatic RV64 → Zisk row contract for SUB (Phase 3C T-RT).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:134` an RV64 SUB
+    `rd, rs1, rs2` transpiles via `create_register_op(..., "sub", 4)`
+    — the identical helper ADD uses. Row shape mirrors
+    `transpile_ADD` with the opcode literal changed:
+
+    * `op = OP_SUB = 11` (Binary type, `zisk_ops.rs:393`);
+    * `is_external_op = 1` — dispatch to Binary SM via operation bus;
+    * `m32 = 0` — 64-bit; the 32-bit SUBW uses `OP_SUB_W` (separate
+      axiom);
+    * `flag = 0` — `op_sub` returns `(_, false)`
+      (`zisk_ops.rs:585`); Binary SM emits flag = 0 on the bus;
+    * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`
+      — `zib.j(4, 4)` fall-through;
+    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)`.
+
+    **Trust basis.** Pure spec of the `"sub"` arm in
+    `riscv2zisk_context.rs:134`. -/
+axiom transpile_SUB :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SUB
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for AND (Phase 3C T-RT).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:152` an RV64 AND
+    `rd, rs1, rs2` transpiles via `create_register_op(..., "and", 4)`.
+    Shape identical to `transpile_SUB` modulo opcode literal.
+
+    * `op = OP_AND = 14`;
+    * `flag = 0` — `op_and` returns `(_, false)`
+      (`zisk_ops.rs:861`);
+    * all other columns identical to `transpile_SUB`.
+
+    **Trust basis.** Pure spec of the `"and"` arm. -/
+axiom transpile_AND :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_AND
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for OR (Phase 3C T-RT).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:141-150` an RV64 OR
+    `rd, rs1, rs2` transpiles via `create_register_op(..., "or", 4)`.
+    The `"or"` arm in Rust has an outer block that is purely
+    organizational; the terminal microinstruction emission (line 149)
+    is the same plain `create_register_op` SUB / AND / XOR use.
+
+    * `op = OP_OR = 15`;
+    * `flag = 0` — `op_or` returns `(_, false)`
+      (`zisk_ops.rs:873`);
+    * all other columns identical to `transpile_SUB`.
+
+    **Trust basis.** Pure spec of the `"or"` arm. -/
+axiom transpile_OR :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_OR
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for XOR (Phase 3C T-RT).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:138` an RV64 XOR
+    `rd, rs1, rs2` transpiles via `create_register_op(..., "xor", 4)`.
+    Shape identical to `transpile_SUB` modulo opcode literal.
+
+    * `op = OP_XOR = 16`;
+    * `flag = 0` — `op_xor` returns `(_, false)`
+      (`zisk_ops.rs:885`);
+    * all other columns identical to `transpile_SUB`.
+
+    **Trust basis.** Pure spec of the `"xor"` arm. -/
+axiom transpile_XOR :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_XOR
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for SLT (Phase 3C T-RT).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:136` an RV64 SLT
+    `rd, rs1, rs2` transpiles via `create_register_op(..., "lt", 4)`
+    — the Rust string `"lt"` routes through the shared `OP_LT = 7`
+    opcode (`zisk_ops.rs:389`), the **same** opcode used by BLT / BGE.
+    The distinction: SLT reads the Binary-SM's `flag` output as the
+    boolean result written to `c`; BLT / BGE use the same flag purely
+    for PC dispatch.
+
+    * `op = OP_LT = 7`;
+    * `is_external_op = 1`;
+    * `m32 = 0`;
+    * **`flag` is left unconstrained** — `op_lt` returns `(1, true)`
+      when `a < b` and `(0, false)` otherwise (`zisk_ops.rs:741`), so
+      the flag is an *output* the Binary SM writes via the bus. Phase 4
+      audit ties `flag` to the SLT verdict;
+    * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`;
+    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)`.
+
+    **Trust basis.** Pure spec of the `"slt"` arm in
+    `riscv2zisk_context.rs:136`. -/
+axiom transpile_SLT :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_LT
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for SLTU (Phase 3C T-RT).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:137` an RV64 SLTU
+    `rd, rs1, rs2` transpiles via `create_register_op(..., "ltu", 4)`.
+    Shape identical to `transpile_SLT` modulo opcode literal
+    (`OP_LT → OP_LTU`).
+
+    * `op = OP_LTU = 6`;
+    * **`flag` is unconstrained** — output of the Binary SM
+      (`op_ltu`, `zisk_ops.rs:724`).
+
+    **Trust basis.** Pure spec of the `"sltu"` arm. -/
+axiom transpile_SLTU :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_LTU
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
 end ZiskFv.Trusted
