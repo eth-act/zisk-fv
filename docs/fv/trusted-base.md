@@ -657,6 +657,54 @@ the Binary SM writes the comparison verdict into it.
 - **Closure path:** trusted. Same `flag`-unconstrained treatment as
   SLT.
 
+## Phase 3C T-W transpile axioms (2026-04-23)
+
+Three transpile axioms for the Phase 3C RTYPEW + ADDIW fan-out
+(ADDW, SUBW, ADDIW). All three mirror the `m32 = 1` path taken by
+the shift archetype (SLLW / SRLW / SRAW), dispatching to the
+**Binary** SM (not `BinaryExtension`) via distinct `OP_ADD_W` /
+`OP_SUB_W` literals. `flag = 0` is pinned for all three (their
+Binary-SM `op_*` hooks return `(_, false)` — `zisk_ops.rs:572`,
+`zisk_ops.rs:596`). ADDIW shares `OP_ADD_W + m32 = 1` with ADDW at
+the operation-bus layer; the only difference is the source-b routing
+(register for ADDW, sign-extended 12-bit imm for ADDIW).
+
+### Entry T-W transpile row: `transpile_ADDW`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Addw.equiv_ADDW_metaplan` (indirect,
+  via bus-match + `Spec.Addw.addw_compositional`).
+- **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:153`
+  (`"addw" → create_register_op(..., "add_w", 4)`) +
+  `vendor/zisk/core/src/zisk_ops.rs:408` (opcode `0x1a = 26`, type
+  `Binary`).
+- **Closure path:** trusted (transpiler-contract axiom; not a proof
+  obligation). Retires only if ZisK's Rust transpiler is replaced.
+
+### Entry T-W transpile row: `transpile_SUBW`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Subw.equiv_SUBW_metaplan`.
+- **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:154`
+  (`"subw" → create_register_op(..., "sub_w", 4)`) +
+  `vendor/zisk/core/src/zisk_ops.rs:409` (opcode `0x1b = 27`, type
+  `Binary`).
+- **Closure path:** trusted.
+
+### Entry T-W transpile row: `transpile_ADDIW`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Addiw.equiv_ADDIW_metaplan`.
+- **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:184-194`
+  (`"addiw" → immediate_op(..., "add_w", 4)`, line 192) +
+  `vendor/zisk/core/src/zisk_ops.rs:408` (opcode `OP_ADD_W = 0x1a =
+  26`, shared with ADDW). **Routing note.** Per `create_imm_op`
+  inspection, ADDIW emits `OP_ADD_W + m32 = 1` (not `OP_ADD + m32 =
+  1`); this pins the T-W pre-flight finding. A degenerate
+  `rd = 0 ∧ rs1 = 0 ∧ imm = 0` nop case is shunted to `self.nop(i,
+  4)` at line 190 and is outside this axiom's nominal row shape.
+- **Closure path:** trusted.
+
 ## Phase 3C T-RT Sail-equivalence escape-hatch axioms (2026-04-22)
 
 ### Entry C5: `PureSpec.slt_pure_equiv_axiom`

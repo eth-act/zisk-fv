@@ -172,6 +172,26 @@ structure ZiskInstructionRow where
     Type `BinaryE` — handled by the `BinaryExtension` SM. -/
 @[simp] def OP_SRA_W : FGL := 38
 
+/-- Goldilocks literal for the 32-bit add-word opcode.
+    `0x1a = 26` per `vendor/zisk/core/src/zisk_ops.rs:408`
+    (`(AddW, "add_w", Binary, …, 0x1a, …)`). Used by RV64 ADDW
+    (`riscv2zisk_context.rs:153`, `create_register_op(..., "add_w", 4)`)
+    and ADDIW (`riscv2zisk_context.rs:192`,
+    `immediate_op(..., "add_w", 4)`). Type `Binary` — handled by the
+    Binary SM (not `BinaryExtension`). Behaviour: `op_add_w(a, b) =
+    ((a as i32) + (b as i32)) as u64` with flag `false`
+    (`zisk_ops.rs:572`). -/
+@[simp] def OP_ADD_W : FGL := 26
+
+/-- Goldilocks literal for the 32-bit sub-word opcode.
+    `0x1b = 27` per `vendor/zisk/core/src/zisk_ops.rs:409`
+    (`(SubW, "sub_w", Binary, …, 0x1b, …)`). Used by RV64 SUBW
+    (`riscv2zisk_context.rs:154`, `create_register_op(..., "sub_w", 4)`).
+    Type `Binary`. Behaviour: `op_sub_w(a, b) =
+    ((a as i32) - (b as i32)) as u64` with flag `false`
+    (`zisk_ops.rs:596`). -/
+@[simp] def OP_SUB_W : FGL := 27
+
 
 /-- Goldilocks literal for OPERATION_BUS_ID. Per `vendor/zisk/pil/opids.pil:2`. -/
 @[simp] def OPERATION_BUS_ID : FGL := 5000
@@ -2010,5 +2030,137 @@ axiom transpile_SLTIU :
       ∧ row.a_hi = lane_hi (state.xreg rs1)
       ∧ row.b_lo = imm_b_lo
       ∧ row.b_hi = imm_b_hi
+
+/-! ## Phase 3C Track T-W — RTYPEW / ADDIW transpile axioms
+
+Three transpile axioms for the 32-bit-word ALU opcodes ADDW, SUBW,
+and ADDIW. All three mirror the `m32 = 1` path taken by the shift
+archetype (SLLW / SRLW / SRAW), except they dispatch to the
+**Binary** SM (not `BinaryExtension`) with distinct `OP_ADD_W` /
+`OP_SUB_W` literals. ADDIW shares the row shape with ADDW modulo the
+immediate-vs-register b-source (immediate form — `b_lo`/`b_hi` carry
+the sign-extended 12-bit immediate lanes).
+
+**ADDIW routing finding.** `vendor/zisk/core/src/riscv2zisk_context.rs:184-194`:
+the `"addiw"` arm calls `immediate_op(..., "add_w", 4)` (line 192) —
+i.e. **OP_ADD_W + m32 = 1**, *not* `OP_ADD` with `m32 = 1`. (The
+preceding `if rd == 0 && rs1 == 0 && imm == 0` branch emits a nop;
+that degenerate instance is outside the per-opcode metaplan axiom's
+scope — `transpile_ADDIW` quantifies over the nominal register/imm
+shape.) -/
+
+/-- The axiomatic RV64 → Zisk row contract for ADDW (Phase 3C T-W).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:153` an RV64 ADDW
+    `rd, rs1, rs2` transpiles via `create_register_op(..., "add_w", 4)`
+    — the identical helper ADD / SUB use. Row shape mirrors
+    `transpile_ADD` / `transpile_SUB` with:
+
+    * `op = OP_ADD_W = 26` (Binary type, `zisk_ops.rs:408`);
+    * `is_external_op = 1` — dispatch to Binary SM via operation bus;
+    * `m32 = 1` — `"add_w".contains("_w")` is `true`
+      (`zisk_inst_builder.rs:206`). Zeroes the high-lane bus hops per
+      PIL `a = [a[0], (1 - m32) * a[1]]`;
+    * `flag = 0` — `op_add_w` returns `(_, false)`
+      (`zisk_ops.rs:572`); Binary SM emits flag = 0 on the bus;
+    * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`
+      — `zib.j(4, 4)` fall-through;
+    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)` (the full 64-bit
+      value; the `m32 = 1` bit signals bus-zeroing of high lanes
+      downstream).
+
+    **Trust basis.** Pure spec of the `"addw"` arm in
+    `riscv2zisk_context.rs:153`. -/
+axiom transpile_ADDW :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_ADD_W
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 1
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for SUBW (Phase 3C T-W).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:154` an RV64 SUBW
+    `rd, rs1, rs2` transpiles via `create_register_op(..., "sub_w", 4)`.
+    Row shape mirrors `transpile_ADDW` with the opcode literal
+    changed:
+
+    * `op = OP_SUB_W = 27` (Binary type, `zisk_ops.rs:409`);
+    * `flag = 0` — `op_sub_w` returns `(_, false)`
+      (`zisk_ops.rs:596`);
+    * all other fields identical to `transpile_ADDW`.
+
+    **Trust basis.** Pure spec of the `"subw"` arm in
+    `riscv2zisk_context.rs:154`. -/
+axiom transpile_SUBW :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SUB_W
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 1
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for ADDIW (Phase 3C T-W).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:184-194` an RV64
+    ADDIW `rd, rs1, imm` transpiles via `immediate_op(..., "add_w", 4)`
+    (line 192) — **OP_ADD_W with m32 = 1**, distinct from ADDI's
+    OP_ADD-with-m32=0 routing. The degenerate `rd=0, rs1=0, imm=0`
+    case emits a nop (line 190); that sub-case is outside the nominal
+    row shape this axiom pins.
+
+    The emitted row:
+    * `op = OP_ADD_W = 26`;
+    * `is_external_op = 1`, type `Binary`;
+    * `m32 = 1` — 32-bit add then sign-extend to 64;
+    * `flag = 0`; `set_pc = 0`, `store_pc = 0`;
+    * `jmp_offset1 = jmp_offset2 = 4`;
+    * `zib.src_a("reg", rs1, false)` — `a` lanes carry
+      `xreg(rs1)`;
+    * `zib.src_b("imm", i.imm as u64, false)` — `b` lanes carry the
+      RISC-V I-type 12-bit immediate sign-extended to 64 bits (via
+      `i32 → i64 → u64`). Caller supplies `imm_lo`/`imm_hi` as the
+      32-bit lane decomposition of this sign-extended value.
+
+    **Trust basis.** Pure spec of the `"addiw"` arm in
+    `riscv2zisk_context.rs:184-194`. Shape mirrors SLLIW
+    (`transpile_SLLIW`) in the `immediate_op` pattern, diverges in
+    the `b_lo`/`b_hi` decomposition (12-bit signed imm vs. 5-bit
+    unsigned shamt). The correspondence between `(imm_lo, imm_hi)`
+    and the Sail-side `BitVec.signExtend 64 imm` is discharged by
+    the Sail-level metaplan proof (`equiv_ADDIW_sail`), not by this
+    axiom. -/
+axiom transpile_ADDIW :
+    ∀ (rs1 _rd : Fin 32) (imm_lo imm_hi : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_ADD_W
+      ∧ row.is_external_op = 1
+      ∧ row.flag = 0
+      ∧ row.m32 = 1
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = imm_lo
+      ∧ row.b_hi = imm_hi
 
 end ZiskFv.Trusted
