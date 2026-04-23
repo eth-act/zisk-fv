@@ -1476,4 +1476,96 @@ axiom transpile_MULW :
       ∧ row.b_lo = lane_lo (state.xreg rs2)
       ∧ row.b_hi = lane_hi (state.xreg rs2)
 
+/-- The axiomatic RV64 → Zisk row contract for LUI (load-upper-immediate,
+    Phase 3C Track T-U).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:1009` an RV64 LUI
+    `rd, imm` transpiles via `self.lui(i, 4)` to exactly one Zisk
+    microinstruction emitted by `ZiskInstBuilder`:
+    * `zib.src_a("imm", 0, false)` — `a` lanes are 0;
+    * `zib.src_b("imm", i.imm as u64, false)` — `b_src_imm = 1`,
+      `b_offset_imm0 = imm`. Main constraint `b_src_imm * (b - b_imm) = 0`
+      (`main.pil:390`) forces `b = imm`;
+    * `zib.op("copyb")` — ZisK `OP_COPYB = 1`, `OpType::Internal`. With
+      `is_external_op = 0` + `op = 1`, Main constraints 9/16 force
+      `c = b`, no operation-bus hop;
+    * `zib.store("reg", rd, false, false)` — `store_reg = 1`, `store_pc = 0`.
+      PIL `store_value[0] = store_pc * (pc + jmp_offset2 - c[0]) + c[0] = c[0]`
+      when `store_pc = 0`, so rd receives `c = b = imm` verbatim;
+    * `zib.j(4, 4)` — `jmp_offset1 = jmp_offset2 = 4`. No `set_pc()` call,
+      so `set_pc = 0`. With `flag = 0` (forced by constraint 18 under
+      internal-op-1) and `set_pc = 0`, the PC handshake yields
+      `next_pc = pc + jmp_offset2 = pc + 4`;
+    * `m32 = 0` — LUI is a 64-bit operation (though `copyb` has no `_w`
+      variant anyway).
+
+    **Trust basis.** Pure spec of `fn lui` in `riscv2zisk_context.rs:1009`.
+    The Sail-side semantics write `signExtend 64 (imm ++ 0#12)` to rd;
+    the circuit writes `b` with `b_lo = imm[11:0] ++ 0#12` (low 32 bits)
+    and `b_hi = signExtend(imm[19:12])` (high 32 bits). The lane-level
+    transpile axiom pins only the `b_lo`/`b_hi` decomposition; the
+    sign-extension identity between Goldilocks lanes and the BitVec 64
+    target is discharged in `Equivalence.Lui`. -/
+axiom transpile_LUI :
+    ∀ (_rd : Fin 32) (imm_lo imm_hi : FGL) (_state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_COPYB
+      ∧ row.is_external_op = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = 0
+      ∧ row.a_hi = 0
+      ∧ row.b_lo = imm_lo
+      ∧ row.b_hi = imm_hi
+
+/-- The axiomatic RV64 → Zisk row contract for AUIPC (add-upper-immediate-PC,
+    Phase 3C Track T-U).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:907` an RV64 AUIPC
+    `rd, imm` transpiles via `self.auipc(i)` to exactly one Zisk
+    microinstruction emitted by `ZiskInstBuilder`:
+    * `zib.src_a("imm", 0, false)` — `a` lanes are 0;
+    * `zib.src_b("imm", 0, false)` — `b` lanes are 0;
+    * `zib.op("flag")` — ZisK `OP_FLAG = 0`, `OpType::Internal`. With
+      `is_external_op = 0` + `op = 0`, Main constraints 8/15 force
+      `c = 0` and constraint 17 forces `flag = 1`;
+    * `zib.store_pc("reg", i.rd as i64, false)` — `store_pc = 1`,
+      `store_reg = 1`. PIL `store_value[0] = 1*(pc + jmp_offset2 - c[0]) + c[0]
+      = pc + jmp_offset2` when `c[0] = 0`;
+    * `zib.j(4, i.imm as i64)` — **`jmp_offset1 = 4`,
+      `jmp_offset2 = imm`**. AUIPC uniquely uses `jmp_offset2` for the
+      AUIPC immediate since that's the "default" (not-taken / no-flag)
+      offset, and for AUIPC the rd store path uses `jmp_offset2`. The
+      PC handshake at `set_pc = 0, flag = 1` is
+      `next_pc = pc + jmp_offset2 + flag * (jmp_offset1 - jmp_offset2)
+              = pc + imm + (4 - imm) = pc + 4`;
+    * No `set_pc()` call, so `set_pc = 0`;
+    * `m32 = 0` — AUIPC is 64-bit.
+
+    **Trust basis.** Pure spec of `fn auipc` in
+    `riscv2zisk_context.rs:907`. The Sail-side semantics write
+    `pc + signExtend 64 (imm ++ 0#12)` to rd; the circuit writes
+    `pc + jmp_offset2` where `jmp_offset2` is the sign-extended
+    20-bit-immediate-shifted-left-by-12 value. The lane-level
+    transpile axiom pins `jmp_offset2 = imm_offset` (the
+    caller-supplied Goldilocks representative of the 32-bit-signed
+    AUIPC offset). -/
+axiom transpile_AUIPC :
+    ∀ (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_FLAG
+      ∧ row.is_external_op = 0
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 1
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = imm_offset
+      ∧ row.a_lo = 0
+      ∧ row.a_hi = 0
+      ∧ row.b_lo = 0
+      ∧ row.b_hi = 0
+
 end ZiskFv.Trusted
