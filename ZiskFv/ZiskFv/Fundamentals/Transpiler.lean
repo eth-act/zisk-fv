@@ -1791,4 +1791,125 @@ axiom transpile_SLTU :
       ∧ row.b_lo = lane_lo (state.xreg rs2)
       ∧ row.b_hi = lane_hi (state.xreg rs2)
 
+/-- Zisk `signextend_b` opcode (0x27 = 39). `BinaryE` external op
+    (`vendor/zisk/core/src/zisk_ops.rs:419`). Routes through the
+    BinaryExtension SM via the operation bus; populates `c` with
+    `sign_extend 8 → 64` of the low byte of `b`. Consumed by LB and
+    (out-of-scope here) the sign-extend step of AMO byte-ops. -/
+@[simp] def OP_SIGNEXTEND_B : FGL := 39
+
+/-- Zisk `signextend_h` opcode (0x28 = 40). Same SM / bus shape as
+    `OP_SIGNEXTEND_B`, with the sign-extension source width bumped to
+    16 bits (`vendor/zisk/core/src/zisk_ops.rs:420`). Consumed by LH. -/
+@[simp] def OP_SIGNEXTEND_H : FGL := 40
+
+/-- Zisk `signextend_w` opcode (0x29 = 41). Same SM / bus shape as
+    `OP_SIGNEXTEND_B` / `OP_SIGNEXTEND_H` with the source width at
+    32 bits (`vendor/zisk/core/src/zisk_ops.rs:421`). Consumed by LW
+    (and, out of scope, several atomic-memory ops). -/
+@[simp] def OP_SIGNEXTEND_W : FGL := 41
+
+/-- The axiomatic RV64 → Zisk row contract for LW (Phase 3C T-SL —
+    pilot of the `SignExtendLoadArchetype`).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:214` an RV64 LW
+    `rd, imm(rs1)` transpiles via `self.load_op(i, "signextend_w", 4, 4)`
+    (line 803) to exactly one Zisk microinstruction. Unlike the
+    zero-extension loads (LD/LWU/LHU/LBU — `"copyb"`), LW uses the
+    `"signextend_w"` Binary-extension external op and thus:
+    * `op = OP_SIGNEXTEND_W = 41` (`zisk_ops.rs:421`, type `BinaryE`);
+    * `is_external_op = 1` — `BinaryE ≠ Internal | Fcall`
+      (`zisk_inst_builder.rs:203`); the bus hop goes to the
+      BinaryExtension SM, not Main's constraint 9;
+    * `m32 = 1` — `"signextend_w".contains("_w")` is `true`
+      (`zisk_inst_builder.rs:206`). This mirrors SLLW's bus-zeroing
+      path (the `(1 - m32) * a[1]` / `(1 - m32) * b[1]` bus factors
+      zero on the bus for `m32 = 1`);
+    * `flag = 0` — `op_signextend_w` always returns `(_, false)`
+      (`zisk_ops.rs:547`);
+    * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`
+      (fall-through advance, `inst_size = 4`).
+
+    `a` lanes carry `xreg(rs1)` (the base address register). `b` is
+    populated from memory (the loaded 32-bit word), so the transpile
+    contract does not pin its lanes — the memory-bus match carries
+    that information into the compositional spec.
+
+    **Trust basis.** Pure spec of `fn load_op` in
+    `riscv2zisk_context.rs:803` specialized to `op = "signextend_w"`,
+    `w = 4`, `inst_size = 4`. LH / LB mirror this with
+    `OP_SIGNEXTEND_H` / `OP_SIGNEXTEND_B` and `m32 = 0` (neither string
+    contains `_w`). -/
+axiom transpile_LW :
+    ∀ (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SIGNEXTEND_W
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 1
+      ∧ row.flag = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+
+/-- The axiomatic RV64 → Zisk row contract for LH (Phase 3C T-SL —
+    sibling of `transpile_LW`, narrower width).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:212` an RV64 LH
+    `rd, imm(rs1)` transpiles via `self.load_op(i, "signextend_h", 2, 4)`
+    (line 803) to exactly one Zisk microinstruction:
+    * `op = OP_SIGNEXTEND_H = 40` (`zisk_ops.rs:420`, type `BinaryE`);
+    * `is_external_op = 1` — same BinaryE routing as LW;
+    * `m32 = 0` — `"signextend_h".contains("_w")` is `false`;
+    * `flag = 0` — `op_signextend_h` always returns `(_, false)`
+      (`zisk_ops.rs:531`);
+    * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`.
+
+    **Trust basis.** Pure spec of `fn load_op` specialized to
+    `op = "signextend_h"`, `w = 2`, `inst_size = 4`. -/
+axiom transpile_LH :
+    ∀ (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SIGNEXTEND_H
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.flag = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+
+/-- The axiomatic RV64 → Zisk row contract for LB (Phase 3C T-SL —
+    sibling of `transpile_LW`, narrowest width).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:210` an RV64 LB
+    `rd, imm(rs1)` transpiles via `self.load_op(i, "signextend_b", 1, 4)`
+    (line 803) to exactly one Zisk microinstruction:
+    * `op = OP_SIGNEXTEND_B = 39` (`zisk_ops.rs:419`, type `BinaryE`);
+    * `is_external_op = 1` — BinaryE routing;
+    * `m32 = 0` — `"signextend_b".contains("_w")` is `false`;
+    * `flag = 0` — `op_signextend_b` always returns `(_, false)`
+      (`zisk_ops.rs:515`);
+    * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`.
+
+    **Trust basis.** Pure spec of `fn load_op` specialized to
+    `op = "signextend_b"`, `w = 1`, `inst_size = 4`. -/
+axiom transpile_LB :
+    ∀ (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_SIGNEXTEND_B
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.flag = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+
 end ZiskFv.Trusted
