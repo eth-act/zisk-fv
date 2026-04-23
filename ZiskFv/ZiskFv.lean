@@ -57,4 +57,17 @@ import ZiskFv.Equivalence.MulHSU
 import ZiskFv.GoldenTraces.MULHSU
 import ZiskFv.Equivalence.MulW
 import ZiskFv.GoldenTraces.MULW
+-- Phase 3C T-RT — ALU RTYPE opcodes (SUB, AND, OR, XOR, SLT, SLTU)
+import ZiskFv.Equivalence.And
+import ZiskFv.GoldenTraces.AND
+import ZiskFv.Equivalence.Or
+import ZiskFv.GoldenTraces.OR
+import ZiskFv.Equivalence.Slt
+import ZiskFv.GoldenTraces.SLT
+import ZiskFv.Equivalence.Sltu
+import ZiskFv.GoldenTraces.SLTU
+import ZiskFv.Equivalence.Sub
+import ZiskFv.GoldenTraces.SUB
+import ZiskFv.Equivalence.Xor
+import ZiskFv.GoldenTraces.XOR
 import ZiskFv.Spike

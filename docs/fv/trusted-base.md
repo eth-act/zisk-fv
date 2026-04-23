@@ -592,6 +592,109 @@ Sail equivalence is axiomatized pointwise pending a future
 `to_bits_truncate` / `sign_extend` plumbing). Estimated 40-60 lines
 once that refactor lands.
 
+## Phase 3C T-RT transpile axioms (2026-04-22)
+
+Six transpile axioms for the Phase 3C ALU-RTYPE fan-out (SUB, AND, OR,
+XOR, SLT, SLTU). All six mirror `transpile_ADD`'s shape: one Main-AIR
+row from `create_register_op`, `is_external_op = 1`, `m32 = 0`,
+`set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`,
+`a`/`b` lanes = `xreg(rs1)`/`xreg(rs2)`. SUB / AND / OR / XOR
+additionally pin `flag = 0` (their Binary-SM `op_*` functions always
+return `(_, false)`); SLT / SLTU leave `flag` unconstrained because
+the Binary SM writes the comparison verdict into it.
+
+### Entry T-RT transpile row: `transpile_SUB`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Sub.equiv_SUB_metaplan` (indirect,
+  via bus-match + `Spec.Sub.sub_compositional`).
+- **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:134`
+  (`"sub" → create_register_op(..., "sub", 4)`) +
+  `vendor/zisk/core/src/zisk_ops.rs:393` (opcode `0x0b = 11`).
+- **Closure path:** trusted (transpiler-contract axiom; not a proof
+  obligation). Retires only if ZisK's Rust transpiler is replaced.
+
+### Entry T-RT transpile row: `transpile_AND`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.And.equiv_AND_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:152` +
+  `zisk_ops.rs:396` (opcode `0x0e = 14`).
+- **Closure path:** trusted.
+
+### Entry T-RT transpile row: `transpile_OR`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Or.equiv_OR_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:141-150` +
+  `zisk_ops.rs:397` (opcode `0x0f = 15`).
+- **Closure path:** trusted.
+
+### Entry T-RT transpile row: `transpile_XOR`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Xor.equiv_XOR_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:138` +
+  `zisk_ops.rs:398` (opcode `0x10 = 16`).
+- **Closure path:** trusted.
+
+### Entry T-RT transpile row: `transpile_SLT`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Slt.equiv_SLT_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:136` +
+  `zisk_ops.rs:389` (opcode `0x07 = 7`, shared with BLT / BGE).
+- **Closure path:** trusted. Note: `flag` is left as an unconstrained
+  Binary-SM output (vs. pinned = 0 for SUB/AND/OR/XOR) because
+  `op_lt` returns `(1, true)` when `a < b`.
+
+### Entry T-RT transpile row: `transpile_SLTU`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Sltu.equiv_SLTU_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:137` +
+  `zisk_ops.rs:388` (opcode `0x06 = 6`, shared with BLTU / BGEU).
+- **Closure path:** trusted. Same `flag`-unconstrained treatment as
+  SLT.
+
+## Phase 3C T-RT Sail-equivalence escape-hatch axioms (2026-04-22)
+
+### Entry C5: `PureSpec.slt_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/SltEquivHelper.lean`.
+- **Statement:** Sail-level equivalence for RV64 SLT — `do { writeReg
+  nextPC (PC + 4); execute (RTYPE rs2 rs1 rd rop.SLT) } state =
+  <pure-spec block>` under the standard `read_xreg` / `h_input_pc`
+  premises.
+- **Consumers:** `ZiskFv.Equivalence.Slt.equiv_SLT_sail`,
+  `ZiskFv.Equivalence.Slt.equiv_SLT_metaplan`.
+- **Provenance:** Phase 3B shipped `execute_RTYPE_slt_pure_equiv` in
+  `ZiskFv/RV64D/slt.lean` but that proof fails to close the residual
+  `BitVec.setWidth 64 (if .toInt < then 1#1 else 0#1)` /
+  `if .slt then 1#64 else 0#64` equivalence. The shipped file is not
+  imported by any module on the main branch, so `lake build`
+  succeeded at the Phase 3B CLOSED commit; Phase 3C needs the
+  equivalence to ship SLT's circuit-level theorem.
+- **Closure path if promoted to theorem:** fix the shipped Phase 3B
+  proof in `ZiskFv/RV64D/slt.lean` by appending, after the
+  `dite_cond_eq_false` branch, a BitVec-bridge step (e.g.
+  `congr 1; split_ifs <;> first | rfl | (simp_all [BitVec.slt,
+  BitVec.toInt]; bv_decide)`). Estimated 15-25 lines. Once fixed,
+  retire the axiom by replacing
+  `ZiskFv.RV64D.SltEquivHelper` imports with
+  `ZiskFv.RV64D.slt`'s lemma directly.
+
+### Entry C6: `PureSpec.sltu_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/SltEquivHelper.lean`.
+- **Statement:** Sail-level equivalence for RV64 SLTU (unsigned LT).
+- **Consumers:** `ZiskFv.Equivalence.Sltu.equiv_SLTU_sail`,
+  `ZiskFv.Equivalence.Sltu.equiv_SLTU_metaplan`.
+- **Provenance:** `ZiskFv/RV64D/sltu.lean` Phase 3B proof has the same
+  `BitVec.setWidth` vs. comparison-predicate unification gap as SLT.
+- **Closure path:** identical to C5 (paired closure — a single
+  BitVec-bridge helper retires both together).
+
 ## Audit procedure
 
 When accepting a new trusted axiom:
@@ -675,3 +778,15 @@ When accepting a new trusted axiom:
   the W-variant immediate-shift triple. Retiring the C3a/b/c group
   requires one Execution.lean extension (the `execute_SHIFTIWOP`
   refactor) plus three mechanical ~20-line proofs per opcode.
+- **2026-04-22 — Phase 3C T-RT.** Six transpile axioms shipped for
+  ALU-RTYPE fan-out (SUB, AND, OR, XOR, SLT, SLTU). SLT / SLTU
+  additionally triggered the new **C5 / C6** escape-hatch axioms —
+  the Phase 3B `execute_RTYPE_slt_pure_equiv` /
+  `execute_RTYPE_sltu_pure_equiv` proofs shipped with an unclosed
+  `BitVec.setWidth` / `BitVec.slt` bridge (the main branch hides
+  this because no module imports those two RV64D files). C5 and C6
+  are catalogued in `ZiskFv/RV64D/SltEquivHelper.lean` alongside
+  lightly-renamed `SltInput'` / `SltuInput'` / `slt_pure` /
+  `sltu_pure` reprints so the broken upstream file stays untouched
+  per the Phase 3C read-only invariant. Same transpile-only-plus-
+  narrow-Sail-axiom shipping pattern as Phase 3A H1-H6.
