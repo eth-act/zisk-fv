@@ -675,3 +675,37 @@ When accepting a new trusted axiom:
   the W-variant immediate-shift triple. Retiring the C3a/b/c group
   requires one Execution.lean extension (the `execute_SHIFTIWOP`
   refactor) plus three mechanical ~20-line proofs per opcode.
+- **2026-04-22 — Phase 3C Track T-U.** **No Sail-equivalence axioms
+  introduced.** LUI and AUIPC shipped two new transpile axioms
+  (`transpile_LUI`, `transpile_AUIPC` in
+  `Fundamentals/Transpiler.lean`) with the existing `OP_COPYB = 1`
+  and `OP_FLAG = 0` Zisk-opcode constants (both already catalogued).
+  The Phase 3B pure-spec equivalences closed directly against
+  `LeanRV64D.Functions.execute_UTYPE` — LUI via
+  `wX_write_xreg_{zero,non_zero}_equiv`; AUIPC via the same plus
+  `readReg_succ (writeReg_read_diff h_input_pc (PC ≠ nextPC))` to
+  bridge the `get_arch_pc` read-after-write-nextPC. No new M/C/P
+  axioms required. Archetype macros: `UTypeArchetype.lean` (new,
+  two sub-archetypes — `lui_archetype_*` and `auipc_archetype_*`),
+  no secondary-SM bus entry on either path. The metaplan bus
+  closure consumes the existing shape-(c)
+  `bus_effect_matches_sail_jump_rrw` with no modifications.
+
+  The transpile axioms encode:
+  * `transpile_LUI`: `op = OP_COPYB, is_external_op = 0,
+    set_pc = 0, store_pc = 0, m32 = 0, jmp_offset1 = 4,
+    jmp_offset2 = 4, a_lo = a_hi = 0, b_lo = imm_lo,
+    b_hi = imm_hi`. **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
+    **Consumer:** `ZiskFv.Equivalence.Lui.equiv_LUI_metaplan`.
+    **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:1009`
+    (`fn lui`). **Closure path:** trusted spec of Rust transpiler;
+    audit scope — any change to `fn lui` requires re-signing this
+    axiom against the Rust source.
+  * `transpile_AUIPC`: `op = OP_FLAG, is_external_op = 0,
+    set_pc = 0, store_pc = 1, m32 = 0, jmp_offset1 = 4,
+    jmp_offset2 = imm_offset, a_lo = a_hi = b_lo = b_hi = 0`.
+    **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
+    **Consumer:** `ZiskFv.Equivalence.Auipc.equiv_AUIPC_metaplan`.
+    **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:907`
+    (`fn auipc`). **Closure path:** trusted spec of Rust transpiler;
+    audit scope.
