@@ -94,6 +94,13 @@ import ZiskFv.Equivalence.Subw
 import ZiskFv.GoldenTraces.SUBW
 import ZiskFv.Equivalence.Addiw
 import ZiskFv.GoldenTraces.ADDIW
+-- Phase 3C T-SL — signed loads (LW, LH, LB)
+import ZiskFv.Equivalence.Lw
+import ZiskFv.GoldenTraces.LW
+import ZiskFv.Equivalence.Lh
+import ZiskFv.GoldenTraces.LH
+import ZiskFv.Equivalence.Lb
+import ZiskFv.GoldenTraces.LB
 -- RV64D coverage gate: force `lake build` to compile every Phase 3B
 -- pure-spec file, even those whose Equivalence file hasn't landed yet.
 -- Without this, Phase 3B's `slt`/`sltu` shipping bug (unclosed
@@ -104,14 +111,15 @@ import ZiskFv.GoldenTraces.ADDIW
 --
 -- **Known broken (Phase 3B, omitted from the gate deliberately):**
 -- `slt`, `sltu`, `slti`, `sltiu`, `lw` — each carries an unclosed
--- Sail-reduction residual. The `Sltu?EquivHelper` / `Slti?EquivHelper`
--- files added by Phase 3C T-RT and T-IT do **not** fix the upstream
--- proofs; they sidestep by declaring renamed `Input'` / `Output'`
--- structs and axiomatizing the equivalence under C5 / C6 (T-RT) and
--- C7 / C8 (T-IT). Re-enable the corresponding lines here when the
--- underlying BitVec-setWidth/BitVec.slt bridge ships and the upstream
--- proofs close (estimate: single Phase 4 audit day, jointly
--- retiring C5-C8).
+-- Sail-reduction residual. Salvaged per Phase 3C policy: T-RT added
+-- `RV64D.SltEquivHelper` (C5/C6 for slt/sltu), T-IT added
+-- `RV64D.SltiEquivHelper` (C7/C8 for slti/sltiu), T-SL added
+-- `RV64D.LoadEquivHelper` (C9 for lw). The helpers declare renamed
+-- `Input'` / `Output'` structs and axiomatize the equivalence; the
+-- upstream files themselves remain broken until their terminal
+-- tactic is fixed (single Phase 4 audit day jointly retires C5-C9).
+-- Re-enable lines here when those upstream fixes ship, so the gate
+-- regresses against future drift.
 import ZiskFv.RV64D.Auxiliaries
 import ZiskFv.RV64D.addi
 import ZiskFv.RV64D.addiw

@@ -857,6 +857,100 @@ under Track T-W).
 - **Closure path:** identical to C5 / C6 / C7 (paired closure — a
   single BitVec-bridge helper retires all four together).
 
+## Phase 3C T-SL transpile axioms (2026-04-23)
+
+Three transpile axioms for the Phase 3C signed-load fan-out (LW, LH,
+LB). All three mirror the load-family structure of `transpile_LWU` /
+`transpile_LHU` / `transpile_LBU` but use the `OP_SIGNEXTEND_*`
+external ops (`zisk_ops.rs:419-421`, type `BinaryE`) instead of
+`OP_COPYB` / internal op. The Main row pins `is_external_op = 1`,
+`flag = 0`, `set_pc = 0`, `store_pc = 0`,
+`jmp_offset1 = jmp_offset2 = 4`, `a` lanes = `xreg(rs1)`; `m32 = 1`
+for LW (the `"signextend_w"` string contains `"_w"`), `m32 = 0` for
+LH / LB.
+
+Three new Zisk-opcode constants ship alongside the transpile axioms:
+`OP_SIGNEXTEND_B = 39`, `OP_SIGNEXTEND_H = 40`, `OP_SIGNEXTEND_W = 41`.
+These are simp-attribute `@[simp] def` definitions in
+`Fundamentals/Transpiler.lean`, not axioms — they are trusted only
+via the transpile axioms that reference them (same treatment as
+`OP_COPYB` / `OP_EQ` / `OP_SLL_W` etc.).
+
+### Entry T-SL transpile row: `transpile_LW`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Lw.equiv_LW_metaplan` (indirect,
+  via bus-match + `Spec.LoadWord.lw_compositional`).
+- **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:214`
+  (`"lw" → load_op(..., "signextend_w", 4, 4)`) +
+  `vendor/zisk/core/src/zisk_ops.rs:421` (opcode `0x29 = 41`).
+- **Closure path:** trusted (transpiler-contract axiom; not a proof
+  obligation). Retires only if ZisK's Rust transpiler is replaced.
+
+### Entry T-SL transpile row: `transpile_LH`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Lh.equiv_LH_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:212` + `zisk_ops.rs:420`
+  (opcode `0x28 = 40`).
+- **Closure path:** trusted.
+
+### Entry T-SL transpile row: `transpile_LB`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Lb.equiv_LB_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:210` + `zisk_ops.rs:419`
+  (opcode `0x27 = 39`).
+- **Closure path:** trusted.
+
+## Phase 3C T-SL Sail-equivalence escape-hatch axioms (2026-04-23)
+
+### Entry C9: `PureSpec.lw_pure_equiv_axiom`
+
+- **File:** `ZiskFv/ZiskFv/RV64D/LoadEquivHelper.lean`.
+- **Statement:** Sail-level equivalence for RV64 LW — `do { writeReg
+  nextPC (PC + 4); execute (LOAD (imm, rs1, rd, true, 4)) } state =
+  <pure-spec block>` under the standard `RISC_V_assumptions` +
+  `lw_state_assumptions'` premises (PC readable, `rX_bits` for
+  rs1, four memory bytes at the sign-extended offset, address-space
+  bound, 4-byte alignment).
+- **Consumers:** `ZiskFv.Equivalence.Lw.equiv_LW_sail`,
+  `ZiskFv.Equivalence.Lw.equiv_LW_metaplan`.
+- **Provenance:** Phase 3B shipped `execute_LOADW_pure_equiv` in
+  `ZiskFv/RV64D/lw.lean` but that proof fails at the terminal `grind`
+  in the split-on-`rd = 0` branch: the tactic leaves a residual
+  address-arithmetic side-hypothesis
+  `input.imm.toNat = input.r1_val.toNat + (BitVec.signExtend 64
+  input.imm).toNat` inside its state, despite the match scrutinees
+  being syntactically equal on both sides (both the pure-spec and
+  Sail output reduce to
+  `write_xreg ⟨input.rd.toNat, ⋯⟩ (BitVec.signExtend 64 (data3 ++
+  data2 ++ data1 ++ data0))`). The shipped file is not imported by
+  any module on the main branch, so `lake build` succeeded at the
+  Phase 3B CLOSED commit; Phase 3C T-SL needs the equivalence to
+  ship LW's circuit-level theorem.
+- **Closure path if promoted to theorem:** replace the terminal
+  `grind` in `ZiskFv/RV64D/lw.lean` with an explicit state-match
+  chain — `split_ifs` on `h_rd : input.rd ≠ 0`, rewrite the
+  `wX_write_xreg_non_zero_equiv` term, observe that both sides
+  reduce to the identical `write_xreg ⟨input.rd.toNat, ⋯⟩
+  (BitVec.signExtend 64 …)` call, and close with a small `simp only`
+  followed by `rfl`. Estimated 10-20 lines. Retiring C9 is a
+  single-hour Phase 4 audit deliverable; the helper's renamed structs
+  (`LwInput'` / `LwOutput'`) can then alias `LwInput` / `LwOutput`
+  directly.
+- **Why C-series (vs. M-series):** the obstruction is
+  control-flow / tactic-engineering, not a memory-model platform gap.
+  No PMP / CLINT / alignment axiom chain is missing — `grind` fails
+  to close despite all the `RISC_V_assumptions` consequences being in
+  scope. Same obstruction class as C5 / C6 (the Phase 3B SLT / SLTU
+  escape-hatches).
+- **No C10 / C11 / M12 for LH / LB:** these two opcodes' Phase 3B
+  pure-spec equivalence lemmas (`execute_LOADH_pure_equiv` /
+  `execute_LOADB_pure_equiv`) close directly under the same tactic
+  skeleton that breaks for LW; `lake env lean ZiskFv/RV64D/lh.lean`
+  and `lb.lean` both returned no errors at the worktree base commit.
+
 ## Audit procedure
 
 When accepting a new trusted axiom:
