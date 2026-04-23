@@ -11,6 +11,8 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Spec.Add
 import ZiskFv.Equivalence.Add
 import ZiskFv.GoldenTraces.Add
+import ZiskFv.Equivalence.Auipc
+import ZiskFv.GoldenTraces.AUIPC
 import ZiskFv.Equivalence.BranchLessThan
 import ZiskFv.GoldenTraces.BLT
 import ZiskFv.Equivalence.BranchGreaterEqual
@@ -27,6 +29,8 @@ import ZiskFv.Equivalence.LoadHU
 import ZiskFv.GoldenTraces.LHU
 import ZiskFv.Equivalence.LoadBU
 import ZiskFv.GoldenTraces.LBU
+import ZiskFv.Equivalence.Lui
+import ZiskFv.GoldenTraces.LUI
 import ZiskFv.Equivalence.Sll
 import ZiskFv.GoldenTraces.SLL
 import ZiskFv.Equivalence.Srl
