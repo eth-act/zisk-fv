@@ -695,6 +695,54 @@ the Binary SM writes the comparison verdict into it.
 - **Closure path:** identical to C5 (paired closure — a single
   BitVec-bridge helper retires both together).
 
+## Phase 3C T-D transpile axioms (2026-04-23)
+
+Four transpile axioms for the Phase 3C DIV/REM fan-out (DIV, DIVU,
+REM, REMU). All four mirror `transpile_MUL`'s shape: one Main-AIR row
+from `create_register_op`, `is_external_op = 1`, `m32 = 0`,
+`set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`,
+`a`/`b` lanes = `xreg(rs1)`/`xreg(rs2)`. The Main `flag` column is
+left unconstrained by all four — it is populated on the Arith SM's
+`div_by_zero` output rather than pinned by the Main transpile
+contract (Phase 4 audit handles the div-by-zero path).
+
+### Entry T-D transpile row: `transpile_DIVU`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Divu.equiv_DIVU_metaplan`
+  (indirect, via bus-match + `Spec.Divu.divu_compositional`).
+- **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:249`
+  (`"divu" → create_register_op(..., "divu", 4)`) +
+  `vendor/zisk/core/src/zisk_ops.rs:430` (opcode `0xb8 = 184`).
+- **Closure path:** trusted (transpiler-contract axiom). Retires only
+  if ZisK's Rust transpiler is replaced.
+
+### Entry T-D transpile row: `transpile_REMU`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Remu.equiv_REMU_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:253` +
+  `zisk_ops.rs:431` (opcode `0xb9 = 185`).
+- **Closure path:** trusted.
+
+### Entry T-D transpile row: `transpile_DIV`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Div.equiv_DIV_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:248` +
+  `zisk_ops.rs:432` (opcode `0xba = 186`).
+- **Closure path:** trusted. Signed / unsigned distinction lives
+  inside the Arith SM witnesses (`na`/`nb`/`np`/`nr`) — the Main
+  transpile contract is uniform across signed and unsigned DIV.
+
+### Entry T-D transpile row: `transpile_REM`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Consumer:** `ZiskFv.Equivalence.Rem.equiv_REM_metaplan`.
+- **Provenance:** `riscv2zisk_context.rs:252` +
+  `zisk_ops.rs:433` (opcode `0xbb = 187`).
+- **Closure path:** trusted.
+
 ## Audit procedure
 
 When accepting a new trusted axiom:
@@ -824,3 +872,23 @@ When accepting a new trusted axiom:
   `sltu_pure` reprints so the broken upstream file stays untouched
   per the Phase 3C read-only invariant. Same transpile-only-plus-
   narrow-Sail-axiom shipping pattern as Phase 3A H1-H6.
+- **2026-04-23 — Phase 3C T-D.** **No Sail-equivalence axioms
+  introduced.** DIV, DIVU, REM, REMU shipped four new transpile
+  axioms (`transpile_DIV`, `transpile_DIVU`, `transpile_REM`,
+  `transpile_REMU` in `Fundamentals/Transpiler.lean`) alongside the
+  `OP_DIV = 186` / `OP_DIVU = 184` / `OP_REM = 187` / `OP_REMU = 185`
+  Zisk-opcode constants. The Phase 3B pure-spec equivalences
+  (`execute_DIVREM_{div,divu,rem,remu}_pure_equiv`) closed directly
+  against `LeanRV64D.Functions.execute_DIV'` / `execute_REM'` with
+  no obstruction. Archetype macros live in
+  `ZiskFv/ZiskFv/Tactics/ArithSMArchetype.lean` (new for T-D,
+  mirroring `MulArchetype`): two archetype lemmas —
+  `arith_archetype_div_bus_match` (primary, quotient in `a[]`) and
+  `arith_archetype_rem_bus_match` (secondary, remainder in `d[]`).
+  Both discharge the Main+Arith bus-match identity by destructuring
+  `matches_entry` only; the Arith-internal carry-chain correctness
+  (division chains 31–38 under `div = 1`) is **not** axiomatized
+  separately — it enters the end-to-end proof exclusively via the
+  structural bus / rd-match hypotheses on `equiv_*_metaplan` (same
+  treatment as the MUL family). Retiring those structural hypotheses
+  is Phase 4 audit scope.
