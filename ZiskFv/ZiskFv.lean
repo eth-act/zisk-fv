@@ -101,6 +101,15 @@ import ZiskFv.Equivalence.Lh
 import ZiskFv.GoldenTraces.LH
 import ZiskFv.Equivalence.Lb
 import ZiskFv.GoldenTraces.LB
+-- Phase 3C T-D — DIV/REM
+import ZiskFv.Equivalence.Div
+import ZiskFv.GoldenTraces.DIV
+import ZiskFv.Equivalence.Divu
+import ZiskFv.GoldenTraces.DIVU
+import ZiskFv.Equivalence.Rem
+import ZiskFv.GoldenTraces.REM
+import ZiskFv.Equivalence.Remu
+import ZiskFv.GoldenTraces.REMU
 -- RV64D coverage gate: force `lake build` to compile every Phase 3B
 -- pure-spec file, even those whose Equivalence file hasn't landed yet.
 -- Without this, Phase 3B's `slt`/`sltu` shipping bug (unclosed
