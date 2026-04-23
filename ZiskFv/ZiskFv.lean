@@ -74,6 +74,13 @@ import ZiskFv.Equivalence.Sub
 import ZiskFv.GoldenTraces.SUB
 import ZiskFv.Equivalence.Xor
 import ZiskFv.GoldenTraces.XOR
+-- Phase 3C T-SL — signed loads (LW, LH, LB)
+import ZiskFv.Equivalence.Lw
+import ZiskFv.GoldenTraces.LW
+import ZiskFv.Equivalence.Lh
+import ZiskFv.GoldenTraces.LH
+import ZiskFv.Equivalence.Lb
+import ZiskFv.GoldenTraces.LB
 -- RV64D coverage gate: force `lake build` to compile every Phase 3B
 -- pure-spec file, even those whose Equivalence file hasn't landed yet.
 -- Without this, Phase 3B's `slt`/`sltu` shipping bug (unclosed
@@ -85,10 +92,14 @@ import ZiskFv.GoldenTraces.XOR
 -- **Known broken (Phase 3B, omitted from the gate deliberately):**
 -- `slt`, `sltu`, `slti`, `sltiu`, `lw` — each carries an unclosed
 -- Sail-reduction residual. Salvaged per Phase 3C policy when each
--- track consumes them (T-RT already did this for slt/sltu via
--- `RV64D.SltEquivHelper`, C5/C6; T-IT will handle slti/sltiu;
--- T-SL will handle lw). Re-enable lines here when those helpers
--- ship, so the gate regresses against future drift.
+-- track consumes them (T-RT did this for slt/sltu via
+-- `RV64D.SltEquivHelper`, C5/C6; T-SL did this for lw via
+-- `RV64D.LoadEquivHelper`, C9; T-IT will handle slti/sltiu).
+-- The helpers introduce narrow axioms with renamed structs that
+-- mirror the broken upstream lemma; the upstream files themselves
+-- remain broken until their terminal tactic is fixed (Phase 4
+-- audit). Re-enable lines here when those upstream fixes ship, so
+-- the gate regresses against future drift.
 import ZiskFv.RV64D.Auxiliaries
 import ZiskFv.RV64D.addi
 import ZiskFv.RV64D.addiw
