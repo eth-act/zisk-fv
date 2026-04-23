@@ -1791,4 +1791,194 @@ axiom transpile_SLTU :
       ∧ row.b_lo = lane_lo (state.xreg rs2)
       ∧ row.b_hi = lane_hi (state.xreg rs2)
 
+/- ============================================================
+   Phase 3C Track T-D — DIV / REM family
+   ============================================================
+
+   The DIV subfamily (DIV, DIVU, REM, REMU) all dispatch through the
+   Arith state machine via the operation bus, sharing the Zisk
+   microinstruction shape `create_register_op(..., <op_str>, 4)` at
+   `vendor/zisk/core/src/riscv2zisk_context.rs:248-253`:
+
+     "div"  → create_register_op(i, "div",  4)  -- line 248
+     "divu" → create_register_op(i, "divu", 4)  -- line 249
+     "rem"  → create_register_op(i, "rem",  4)  -- line 252
+     "remu" → create_register_op(i, "remu", 4)  -- line 253
+
+   Opcode literals from `vendor/zisk/core/src/zisk_ops.rs:430-433`.
+-/
+
+/-- Goldilocks literal for the DIVU opcode. `0xb8 = 184` per
+    `vendor/zisk/core/src/zisk_ops.rs:430`. Unsigned integer division,
+    64-bit operands, quotient output (low 64 bits). Dispatched to the
+    Arith state machine via the operation bus as the **primary**
+    result on a DIV-family Arith row (`main_div = 1`). Used by RV64
+    DIVU (`riscv2zisk_context.rs:249`, `create_register_op(...,
+    "divu", 4)`). -/
+@[simp] def OP_DIVU : FGL := 184
+
+/-- Goldilocks literal for the REMU opcode. `0xb9 = 185` per
+    `zisk_ops.rs:431`. Unsigned integer remainder, 64-bit operands,
+    remainder output (low 64 bits). Dispatched to the Arith SM as the
+    **secondary** result on the same DIV-family Arith row that handles
+    DIVU (`main_mul = main_div = 0`, `secondary = 1`). Used by RV64
+    REMU (`riscv2zisk_context.rs:253`). -/
+@[simp] def OP_REMU : FGL := 185
+
+/-- Goldilocks literal for the DIV opcode. `0xba = 186` per
+    `zisk_ops.rs:432`. Signed integer division, 64-bit operands.
+    Dispatched to the Arith SM as the **primary** on a signed-DIV row.
+    Used by RV64 DIV (`riscv2zisk_context.rs:248`). -/
+@[simp] def OP_DIV : FGL := 186
+
+/-- Goldilocks literal for the REM opcode. `0xbb = 187` per
+    `zisk_ops.rs:433`. Signed integer remainder, 64-bit operands.
+    Dispatched to the Arith SM as the **secondary** on the signed-DIV
+    row. Used by RV64 REM (`riscv2zisk_context.rs:252`). -/
+@[simp] def OP_REM : FGL := 187
+
+/-- The axiomatic RV64 → Zisk row contract for DIVU (Phase 3C T-D).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:249` an RV64 DIVU
+    `rd, rs1, rs2` transpiles via `create_register_op(..., "divu", 4)`
+    — the identical helper MUL / DIV / REM use, only the opcode string
+    changes. One Main-AIR row with:
+
+    * `op = OP_DIVU = 184`;
+    * `is_external_op = 1` — dispatch to Arith SM over the operation bus;
+    * `set_pc = 0`, `store_pc = 0` — register-op, no PC mutation;
+    * `jmp_offset1 = jmp_offset2 = 4` — fall-through advance;
+    * `m32 = 0` — 64-bit operand form (the `"divu"` op string has no
+      `_w` suffix; DIVUW is out of scope);
+    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)` same as MUL;
+    * `flag` is populated by the Arith bus-pop — `flag = div_by_zero`.
+      On DIV-family rows the flag is non-trivial (it fires when the
+      divisor is 0), but the transpile contract does not pin it — the
+      Phase 4 audit will discharge the div-by-zero semantics.
+
+    **Trust basis.** Pure spec of the `"divu"` arm in
+    `riscv2zisk_context.rs:249`. Differs from `transpile_MUL` only in
+    the opcode literal (180 → 184). -/
+axiom transpile_DIVU :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_DIVU
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for REMU (Phase 3C T-D).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:253` an RV64 REMU
+    `rd, rs1, rs2` transpiles via `create_register_op(..., "remu", 4)`.
+    One Main-AIR row with:
+
+    * `op = OP_REMU = 185`;
+    * `is_external_op = 1` — dispatch to Arith SM over the operation bus;
+    * `set_pc = 0`, `store_pc = 0`;
+    * `jmp_offset1 = jmp_offset2 = 4`;
+    * `m32 = 0` — 64-bit operand form;
+    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)`.
+
+    On the Arith SM side a REMU instruction consumes the **secondary**
+    lane of a DIV-family row (`main_mul = main_div = 0`,
+    `secondary = 1`), producing the remainder in `d[]`.
+
+    **Trust basis.** Pure spec of the `"remu"` arm in
+    `riscv2zisk_context.rs:253`. Differs from `transpile_DIVU` only in
+    the opcode literal (184 → 185). -/
+axiom transpile_REMU :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_REMU
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for DIV (Phase 3C T-D).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:248` an RV64 DIV
+    `rd, rs1, rs2` transpiles via `create_register_op(..., "div", 4)`.
+    One Main-AIR row with:
+
+    * `op = OP_DIV = 186`;
+    * `is_external_op = 1`;
+    * `set_pc = 0`, `store_pc = 0`;
+    * `jmp_offset1 = jmp_offset2 = 4`;
+    * `m32 = 0` — 64-bit operand form (signed);
+    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)`.
+
+    On the Arith SM side DIV consumes the **primary** lane of a signed
+    DIV-family row (`main_div = 1`, `na = a3`, `nb = b3`, `np = c3`,
+    `nr = d3` per the arith.pil row-type table line 232), producing
+    the signed quotient in `a[]`.
+
+    **Trust basis.** Pure spec of the `"div"` arm in
+    `riscv2zisk_context.rs:248`. Differs from `transpile_DIVU` only in
+    the opcode literal (184 → 186). The signed-vs-unsigned distinction
+    lives inside the Arith SM witnesses (na/nb/np/nr) — the Main
+    transpile contract is uniform. -/
+axiom transpile_DIV :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_DIV
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
+/-- The axiomatic RV64 → Zisk row contract for REM (Phase 3C T-D).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:252` an RV64 REM
+    `rd, rs1, rs2` transpiles via `create_register_op(..., "rem", 4)`.
+    One Main-AIR row with:
+
+    * `op = OP_REM = 187`;
+    * `is_external_op = 1`;
+    * `set_pc = 0`, `store_pc = 0`;
+    * `jmp_offset1 = jmp_offset2 = 4`;
+    * `m32 = 0`;
+    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)`.
+
+    On the Arith SM side REM consumes the **secondary** lane of a
+    signed DIV-family row, producing the signed remainder in `d[]`.
+
+    **Trust basis.** Pure spec of the `"rem"` arm in
+    `riscv2zisk_context.rs:252`. Differs from `transpile_DIV` only in
+    the opcode literal (186 → 187). -/
+axiom transpile_REM :
+    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      ∃ (row : ZiskInstructionRow),
+        row.op = OP_REM
+      ∧ row.is_external_op = 1
+      ∧ row.m32 = 0
+      ∧ row.set_pc = 0
+      ∧ row.store_pc = 0
+      ∧ row.jmp_offset1 = 4
+      ∧ row.jmp_offset2 = 4
+      ∧ row.a_lo = lane_lo (state.xreg rs1)
+      ∧ row.a_hi = lane_hi (state.xreg rs1)
+      ∧ row.b_lo = lane_lo (state.xreg rs2)
+      ∧ row.b_hi = lane_hi (state.xreg rs2)
+
 end ZiskFv.Trusted
