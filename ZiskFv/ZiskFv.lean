@@ -74,4 +74,34 @@ import ZiskFv.Equivalence.Sub
 import ZiskFv.GoldenTraces.SUB
 import ZiskFv.Equivalence.Xor
 import ZiskFv.GoldenTraces.XOR
+-- RV64D coverage gate: force `lake build` to compile every Phase 3B
+-- pure-spec file, even those whose Equivalence file hasn't landed yet.
+-- Without this, Phase 3B's `slt`/`sltu` shipping bug (unclosed
+-- `BitVec.setWidth` / `BitVec.slt` residual) hid because nothing
+-- transitively imported those files. Any RV64D file not yet pulled
+-- in by an Equivalence module goes here so regressions surface at
+-- build time.
+--
+-- **Known broken (Phase 3B, omitted from the gate deliberately):**
+-- `slt`, `sltu`, `slti`, `sltiu`, `lw` — each carries an unclosed
+-- Sail-reduction residual. Salvaged per Phase 3C policy when each
+-- track consumes them (T-RT already did this for slt/sltu via
+-- `RV64D.SltEquivHelper`, C5/C6; T-IT will handle slti/sltiu;
+-- T-SL will handle lw). Re-enable lines here when those helpers
+-- ship, so the gate regresses against future drift.
+import ZiskFv.RV64D.Auxiliaries
+import ZiskFv.RV64D.addi
+import ZiskFv.RV64D.addiw
+import ZiskFv.RV64D.addw
+import ZiskFv.RV64D.andi
+import ZiskFv.RV64D.div
+import ZiskFv.RV64D.divu
+import ZiskFv.RV64D.lb
+import ZiskFv.RV64D.lh
+import ZiskFv.RV64D.ori
+import ZiskFv.RV64D.rem
+import ZiskFv.RV64D.remu
+import ZiskFv.RV64D.subw
+import ZiskFv.RV64D.xori
+
 import ZiskFv.Spike
