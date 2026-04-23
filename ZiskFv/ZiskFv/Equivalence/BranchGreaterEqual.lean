@@ -20,9 +20,8 @@ End-to-end theorem for RV64 BGE (Phase 3A B2). Combines:
   wrapper over `BranchArchetype.branch_archetype_pc_dispatch` at
   `opcode_lit = OP_LT`),
 * the Sail pure-function equivalence
-  (`PureSpec.execute_BGE_pure_equiv`, closed via the trusted axiom
-  `execute_BGE_pure_equiv_axiom` — see C2 in
-  `docs/fv/trusted-base.md`).
+  (`PureSpec.execute_BGE_pure_equiv`, direct proof — Phase 4 retired
+  C2b).
 
 **Hypothesis-free bus side.** D3 closed bus-emission for shape (b);
 BGE shares shape (b) with BEQ/BNE so the metaplan reuses

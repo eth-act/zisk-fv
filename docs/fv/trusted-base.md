@@ -310,108 +310,19 @@ and the RV64 `jump_to_equiv`'s misa-bit-2-zero witness (already
 available as `h_misa`). Estimated: 40-60 lines, same shape as
 `execute_JAL_pure_equiv`.
 
-## Phase 3A Branch control-flow axioms (2026-04-22)
+## Phase 3A Branch control-flow axioms — **RETIRED 2026-04-23 (Phase 4 T-BR)**
 
-The BLT / BGE / BLTU / BGEU sibling fan-out ships four trusted
-axioms — one per opcode — under a shared closure path. They parallel
-the C1 (JALR) D4b-patch pattern: the Sail `execute_BTYPE` arm for
-each of the four comparator opcodes reduces to a straightforward
-`taken` predicate (signed/unsigned `<` / `≥` via Sail's `zopz0z*`
-helpers), structurally matching the pure-spec `skip` field, but
-direct closure via the BNE-style `simp`/`jump_to_equiv` route was
-deferred in lockstep for axiom-discipline reasons (see "Why C2
-exists" below).
+C2a (BLT), C2b (BGE), C2c (BLTU), C2d (BGEU) were four narrow
+single-opcode axioms introduced in Phase 3A alongside the branch-family
+fan-out. Phase 4 Track T-BR replaced each with a direct proof port of
+the BNE skeleton — no shared BitVec-bridge helper was needed because
+Sail's `zopz0z*` comparators unfold directly to `.toInt`/`.toNatInt`
+forms that align with the pure specs under the existing simp set.
 
-### Entry C2a: `PureSpec.execute_BLT_pure_equiv_axiom`
-
-- **File:** `ZiskFv/ZiskFv/RV64D/blt.lean`
-- **Statement (informal):** under the standard register-state
-  hypotheses (imm/r1/r2 readable, PC readable, misa readable with
-  `misa[C] = 0`), the Sail
-  `execute_BTYPE (imm, r2, r1, bop.BLT)` threaded through the
-  `writeReg nextPC (PC+4); execute …` prelude reduces to the
-  `execute_BLT_pure` evaluation (signed `<` case on `.toInt`; taken
-  → `jump_to PC+imm` with bit0/bit1 misalignment checks; not-taken →
-  fall through to PC+4).
-- **Consumers:** `PureSpec.execute_BLT_pure_equiv` (in the same
-  file); consumed by
-  `ZiskFv/Equivalence/BranchLessThan.lean::equiv_BLT_sail` and
-  transitively by `equiv_BLT_metaplan`.
-- **Provenance:** `LeanRV64D/InstsEnd.lean::execute_BTYPE` BLT arm
-  (line 69720) + `LeanRV64D/Prelude.lean::zopz0zI_s` (line 382)
-  + the existing `jump_to_equiv` chain used by BEQ/BNE.
-
-### Entry C2b: `PureSpec.execute_BGE_pure_equiv_axiom`
-
-- **File:** `ZiskFv/ZiskFv/RV64D/bge.lean`
-- **Statement (informal):** BGE analogue of C2a — signed `≥` on
-  `.toInt` via `zopz0zKzJ_s`. Same structural shape as BLT's
-  reduction.
-- **Consumers:** `PureSpec.execute_BGE_pure_equiv`;
-  `equiv_BGE_sail` and transitively `equiv_BGE_metaplan`.
-- **Provenance:** `execute_BTYPE` BGE arm (line 69721)
-  + `Prelude.zopz0zKzJ_s` (line 394).
-
-### Entry C2c: `PureSpec.execute_BLTU_pure_equiv_axiom`
-
-- **File:** `ZiskFv/ZiskFv/RV64D/bltu.lean`
-- **Statement (informal):** BLTU analogue — unsigned `<` via
-  `zopz0zI_u = .toNatInt <b .toNatInt`, matching the pure spec's
-  `.toNat <b .toNat` up to an `Int.ofNat` coercion.
-- **Consumers:** `PureSpec.execute_BLTU_pure_equiv`;
-  `equiv_BLTU_sail`; `equiv_BLTU_metaplan`.
-- **Provenance:** `execute_BTYPE` BLTU arm (line 69722)
-  + `Prelude.zopz0zI_u` (line 398)
-  + `Sail/Sail.lean::toNatInt = Int.ofNat ∘ BitVec.toNat`.
-
-### Entry C2d: `PureSpec.execute_BGEU_pure_equiv_axiom`
-
-- **File:** `ZiskFv/ZiskFv/RV64D/bgeu.lean`
-- **Statement (informal):** BGEU analogue — unsigned `≥` via
-  `zopz0zKzJ_u`. Same structural shape as BLTU.
-- **Consumers:** `PureSpec.execute_BGEU_pure_equiv`;
-  `equiv_BGEU_sail`; `equiv_BGEU_metaplan`.
-- **Provenance:** `execute_BTYPE` BGEU arm (line 69723)
-  + `Prelude.zopz0zKzJ_u` (line 410)
-  + the `toNatInt` bridge used by C2c.
-
-### Why C2a-C2d exist
-
-Unlike C1 (JALR), which is blocked on a genuine platform-config gap
-(`currentlyEnabled Ext_Zicfilp` → `mseccfg.MLPE` probe that
-`RISC_V_assumptions` does not witness), C2a-C2d's Sail reduction is
-structurally closable via the BNE-style proof skeleton:
-
-```
-simp [readReg_succ, execute, writeReg_state_success, execute_BTYPE]
-rewrite [rX_read_xreg_equiv …] ; rewrite [read_xreg_write_other_reg_state …] ; simp
-by_cases h_cmp : <signed or unsigned comparison>
--- taken branch: jump_to_equiv + misa[C] = 0
--- not-taken: falls through to the pure-spec's PC+4 path
-```
-
-The case-split predicate varies per opcode (BLT: `r1.toInt < r2.toInt`;
-BGE: `r1.toInt ≥ r2.toInt`; BLTU: `r1.toNat < r2.toNat`; BGEU:
-`r1.toNat ≥ r2.toNat`). Each requires a small bridge to align the
-`BitVec.toInt`/`.toNatInt` form Sail emits with the `.toInt`/`.toNat`
-form the pure spec uses — mechanical but in the aggregate a ≈200-400
-line per-opcode closure exercise.
-
-Phase 3A axiomatized the four in lockstep to keep Track B tractable
-alongside the five other parallel archetype tracks. Each axiom is
-narrow (single-opcode-scoped; no generalization across the branch
-family), explicitly audit-flagged, and structurally identical to the
-BNE proof except for the comparator. A future consolidated closure
-(estimated 1 day total — port BNE's skeleton to four new case-split
-predicates + a single Int-coercion bridge lemma) would retire C2a-C2d
-together.
-
-**Closure path.** No `RISC_V_assumptions` extension is required —
-the same `misa[C] = 0` witness BEQ/BNE consume suffices. Author a
-helper lemma `BitVec.toInt_lt_iff : (x.toInt <b y.toInt) = x.slt y`
-(or use Lean's existing bridges) and replicate the BNE proof four
-times. The Int-coercion bridge for the unsigned opcodes is just
-`Int.ofNat_lt` + `decide`-able reassociation.
+Closures: `RV64D/{blt,bge,bltu,bgeu}.lean::execute_<OP>_pure_equiv`
+are now direct lemmas (no axiom). `equiv_<OP>_metaplan`'s
+`#print axioms` no longer shows any branch-family `*_pure_equiv_axiom`.
+Gate surface shrank by 4.
 
 ## Phase 3A Load-family memory-model axioms (2026-04-22)
 
@@ -705,43 +616,14 @@ the operation-bus layer; the only difference is the source-b routing
   4)` at line 190 and is outside this axiom's nominal row shape.
 - **Closure path:** trusted.
 
-## Phase 3C T-RT Sail-equivalence escape-hatch axioms (2026-04-22)
+## Phase 3C T-RT Sail-equivalence escape-hatch axioms — **RETIRED 2026-04-23 (Phase 4 T-SLT)**
 
-### Entry C5: `PureSpec.slt_pure_equiv_axiom`
-
-- **File:** `ZiskFv/ZiskFv/RV64D/SltEquivHelper.lean`.
-- **Statement:** Sail-level equivalence for RV64 SLT — `do { writeReg
-  nextPC (PC + 4); execute (RTYPE rs2 rs1 rd rop.SLT) } state =
-  <pure-spec block>` under the standard `read_xreg` / `h_input_pc`
-  premises.
-- **Consumers:** `ZiskFv.Equivalence.Slt.equiv_SLT_sail`,
-  `ZiskFv.Equivalence.Slt.equiv_SLT_metaplan`.
-- **Provenance:** Phase 3B shipped `execute_RTYPE_slt_pure_equiv` in
-  `ZiskFv/RV64D/slt.lean` but that proof fails to close the residual
-  `BitVec.setWidth 64 (if .toInt < then 1#1 else 0#1)` /
-  `if .slt then 1#64 else 0#64` equivalence. The shipped file is not
-  imported by any module on the main branch, so `lake build`
-  succeeded at the Phase 3B CLOSED commit; Phase 3C needs the
-  equivalence to ship SLT's circuit-level theorem.
-- **Closure path if promoted to theorem:** fix the shipped Phase 3B
-  proof in `ZiskFv/RV64D/slt.lean` by appending, after the
-  `dite_cond_eq_false` branch, a BitVec-bridge step (e.g.
-  `congr 1; split_ifs <;> first | rfl | (simp_all [BitVec.slt,
-  BitVec.toInt]; bv_decide)`). Estimated 15-25 lines. Once fixed,
-  retire the axiom by replacing
-  `ZiskFv.RV64D.SltEquivHelper` imports with
-  `ZiskFv.RV64D.slt`'s lemma directly.
-
-### Entry C6: `PureSpec.sltu_pure_equiv_axiom`
-
-- **File:** `ZiskFv/ZiskFv/RV64D/SltEquivHelper.lean`.
-- **Statement:** Sail-level equivalence for RV64 SLTU (unsigned LT).
-- **Consumers:** `ZiskFv.Equivalence.Sltu.equiv_SLTU_sail`,
-  `ZiskFv.Equivalence.Sltu.equiv_SLTU_metaplan`.
-- **Provenance:** `ZiskFv/RV64D/sltu.lean` Phase 3B proof has the same
-  `BitVec.setWidth` vs. comparison-predicate unification gap as SLT.
-- **Closure path:** identical to C5 (paired closure — a single
-  BitVec-bridge helper retires both together).
+C5 (slt) and C6 (sltu) — Phase 3B shipped `RV64D/{slt,sltu}.lean` with a
+`dite_cond_eq_false` residual on `BitVec.setWidth 64 (if .toInt < …)` vs.
+`if .slt …`. Phase 4 T-SLT closed the bridge with a standalone `h_bridge`
+lemma (`by_cases` on the signed comparison, then `simp` on both forms)
+and replaced the escape-hatch axioms with direct `execute_RTYPE_slt_pure_equiv` /
+`execute_RTYPE_sltu_pure_equiv` lemmas.
 
 ## Phase 3C T-IT transpile axioms (2026-04-23)
 
@@ -817,45 +699,13 @@ under Track T-W).
   on the bus (per the RV64I spec); only the Binary-SM's comparator is
   unsigned. `flag` unconstrained per SLT/SLTU precedent.
 
-## Phase 3C T-IT Sail-equivalence escape-hatch axioms (2026-04-23)
+## Phase 3C T-IT Sail-equivalence escape-hatch axioms — **RETIRED 2026-04-23 (Phase 4 T-SLT)**
 
-### Entry C7: `PureSpec.slti_pure_equiv_axiom`
-
-- **File:** `ZiskFv/ZiskFv/RV64D/SltiEquivHelper.lean`.
-- **Statement:** Sail-level equivalence for RV64 SLTI — `do { writeReg
-  nextPC (PC + 4); execute (ITYPE imm r1 rd iop.SLTI) } state =
-  <pure-spec block>` under the standard `read_xreg` / `h_input_imm` /
-  `h_input_pc` premises.
-- **Consumers:** `ZiskFv.Equivalence.Slti.equiv_SLTI_sail`,
-  `ZiskFv.Equivalence.Slti.equiv_SLTI_metaplan`.
-- **Provenance:** Phase 3B shipped `execute_ITYPE_slti_pure_equiv` in
-  `ZiskFv/RV64D/slti.lean` but that proof fails to close the same
-  residual class as `RV64D/slt.lean` (C5) — an unreduced
-  `BitVec.setWidth 64 (if .toInt < then 1#1 else 0#1)` /
-  `if .slt then 1#64 else 0#64` equivalence. The shipped file is not
-  imported by any module on the main branch, so `lake build`
-  succeeded at the Phase 3B CLOSED commit; Phase 3C T-IT needs the
-  equivalence to ship SLTI's circuit-level theorem.
-- **Closure path if promoted to theorem:** identical to C5 / C6 —
-  fix the shipped Phase 3B proof in `ZiskFv/RV64D/slti.lean` by
-  appending, after the `dite_cond_eq_false` branch, a BitVec-bridge
-  step (e.g. `congr 1; split_ifs <;> first | rfl | (simp_all
-  [BitVec.slt, BitVec.toInt]; bv_decide)`). Estimated 15-25 lines.
-  Jointly closable with C5 / C6 / C8 under a single BitVec-bridge
-  helper.
-
-### Entry C8: `PureSpec.sltiu_pure_equiv_axiom`
-
-- **File:** `ZiskFv/ZiskFv/RV64D/SltiEquivHelper.lean`.
-- **Statement:** Sail-level equivalence for RV64 SLTIU (unsigned LT
-  against sign-extended immediate).
-- **Consumers:** `ZiskFv.Equivalence.Sltiu.equiv_SLTIU_sail`,
-  `ZiskFv.Equivalence.Sltiu.equiv_SLTIU_metaplan`.
-- **Provenance:** `ZiskFv/RV64D/sltiu.lean` Phase 3B proof has the
-  same `BitVec.setWidth` vs. comparison-predicate unification gap as
-  SLT / SLTU / SLTI.
-- **Closure path:** identical to C5 / C6 / C7 (paired closure — a
-  single BitVec-bridge helper retires all four together).
+C7 (slti) and C8 (sltiu) — same BitVec.setWidth / .slt residual as
+C5/C6, closed by the same `h_bridge` lemma pattern. `SltiEquivHelper`
+deleted; `execute_ITYPE_slti_pure_equiv` and
+`execute_ITYPE_sltiu_pure_equiv` are now direct lemmas in the
+respective RV64D files.
 
 ## Phase 3C T-SL transpile axioms (2026-04-23)
 
@@ -903,53 +753,17 @@ via the transpile axioms that reference them (same treatment as
   (opcode `0x27 = 39`).
 - **Closure path:** trusted.
 
-## Phase 3C T-SL Sail-equivalence escape-hatch axioms (2026-04-23)
+## Phase 3C T-SL Sail-equivalence escape-hatch axioms — **RETIRED 2026-04-23 (Phase 4 T-LW)**
 
-### Entry C9: `PureSpec.lw_pure_equiv_axiom`
-
-- **File:** `ZiskFv/ZiskFv/RV64D/LoadEquivHelper.lean`.
-- **Statement:** Sail-level equivalence for RV64 LW — `do { writeReg
-  nextPC (PC + 4); execute (LOAD (imm, rs1, rd, true, 4)) } state =
-  <pure-spec block>` under the standard `RISC_V_assumptions` +
-  `lw_state_assumptions'` premises (PC readable, `rX_bits` for
-  rs1, four memory bytes at the sign-extended offset, address-space
-  bound, 4-byte alignment).
-- **Consumers:** `ZiskFv.Equivalence.Lw.equiv_LW_sail`,
-  `ZiskFv.Equivalence.Lw.equiv_LW_metaplan`.
-- **Provenance:** Phase 3B shipped `execute_LOADW_pure_equiv` in
-  `ZiskFv/RV64D/lw.lean` but that proof fails at the terminal `grind`
-  in the split-on-`rd = 0` branch: the tactic leaves a residual
-  address-arithmetic side-hypothesis
-  `input.imm.toNat = input.r1_val.toNat + (BitVec.signExtend 64
-  input.imm).toNat` inside its state, despite the match scrutinees
-  being syntactically equal on both sides (both the pure-spec and
-  Sail output reduce to
-  `write_xreg ⟨input.rd.toNat, ⋯⟩ (BitVec.signExtend 64 (data3 ++
-  data2 ++ data1 ++ data0))`). The shipped file is not imported by
-  any module on the main branch, so `lake build` succeeded at the
-  Phase 3B CLOSED commit; Phase 3C T-SL needs the equivalence to
-  ship LW's circuit-level theorem.
-- **Closure path if promoted to theorem:** replace the terminal
-  `grind` in `ZiskFv/RV64D/lw.lean` with an explicit state-match
-  chain — `split_ifs` on `h_rd : input.rd ≠ 0`, rewrite the
-  `wX_write_xreg_non_zero_equiv` term, observe that both sides
-  reduce to the identical `write_xreg ⟨input.rd.toNat, ⋯⟩
-  (BitVec.signExtend 64 …)` call, and close with a small `simp only`
-  followed by `rfl`. Estimated 10-20 lines. Retiring C9 is a
-  single-hour Phase 4 audit deliverable; the helper's renamed structs
-  (`LwInput'` / `LwOutput'`) can then alias `LwInput` / `LwOutput`
-  directly.
-- **Why C-series (vs. M-series):** the obstruction is
-  control-flow / tactic-engineering, not a memory-model platform gap.
-  No PMP / CLINT / alignment axiom chain is missing — `grind` fails
-  to close despite all the `RISC_V_assumptions` consequences being in
-  scope. Same obstruction class as C5 / C6 (the Phase 3B SLT / SLTU
-  escape-hatches).
-- **No C10 / C11 / M12 for LH / LB:** these two opcodes' Phase 3B
-  pure-spec equivalence lemmas (`execute_LOADH_pure_equiv` /
-  `execute_LOADB_pure_equiv`) close directly under the same tactic
-  skeleton that breaks for LW; `lake env lean ZiskFv/RV64D/lh.lean`
-  and `lb.lean` both returned no errors at the worktree base commit.
+C9 (lw) — Phase 3B shipped a theorem statement with
+`is_unsigned = true` in the Sail `LOAD` call; that flag makes Sail
+zero-extend while the pure spec sign-extends, so the theorem was
+actually false. Phase 4 T-LW fixed the statement (`is_unsigned =
+false`, matching RV64 LW's signed-load semantics) — after the fix,
+the existing tactic chain closes. `LoadEquivHelper` deleted;
+`execute_LOADW_pure_equiv` consumed directly. LH / LB never needed
+escape-hatches; they still close under their original tactic
+skeletons.
 
 ## Phase 3C T-D transpile axioms (2026-04-23)
 
@@ -1167,3 +981,29 @@ When accepting a new trusted axiom:
   structural bus / rd-match hypotheses on `equiv_*_metaplan` (same
   treatment as the MUL family). Retiring those structural hypotheses
   is Phase 4 audit scope.
+- **2026-04-23 — Phase 4 T-BR.** **4 axioms retired** (C2a–d, branches).
+  BLT/BGE/BLTU/BGEU `execute_<OP>_pure_equiv` are now direct lemmas —
+  port of the BNE skeleton with the case-split predicate swapped to
+  the per-opcode comparator. No shared BitVec bridge was needed: Sail's
+  `zopz0z{I,KzJ}_{s,u}` unfold directly to the `.toInt`/`.toNatInt`
+  forms the pure specs already use, and simp closes the
+  `Int.ofNat` / `Nat.lt`-vs-`Int.lt` coercion on its own. Confirmed via
+  `#print axioms ZiskFv.Equivalence.BranchLessThan.equiv_BLT_metaplan`
+  — only LeanRV64D platform + kernel axioms remain.
+- **2026-04-23 — Phase 4 T-SLT.** **4 axioms retired** (C5, C6, C7,
+  C8 — slt/sltu/slti/sltiu). Each Phase 3B `execute_<Op>_pure_equiv`
+  was failing on the final `BitVec.setWidth 64 (if .toInt < …)` ↔
+  `if .slt …` equivalence. Closed via a standalone `h_bridge` lemma
+  per file (`by_cases` on the comparator, then `simp` reduces both
+  forms), taking `maxHeartbeats 400000`. The three helper files
+  (`Slt`/`Slti`-EquivHelper) were deleted; 5 consumer `Equivalence/*`
+  files rewired to import the upstream RV64D modules and call the
+  lemmas directly.
+- **2026-04-23 — Phase 4 T-LW.** **1 axiom retired** (C9, lw). The
+  Phase 3B theorem statement passed `is_unsigned = true` to Sail's
+  `LOAD` — that flag makes Sail zero-extend, but the pure spec
+  sign-extends, so the theorem was structurally false and `grind`
+  rightly refused. Phase 4 fixed the statement (`is_unsigned =
+  false`, matching RV64 LW's signed-load semantics); the existing
+  proof then closed without further intervention.
+  `LoadEquivHelper` deleted, `Equivalence/Lw` rewired.

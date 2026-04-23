@@ -7,16 +7,14 @@ import ZiskFv.Spec.Sltiu
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.SltiEquivHelper
+import ZiskFv.RV64D.sltiu
 import ZiskFv.RV64D.BusEffect
 import ZiskFv.Tactics.ALUITypeArchetype
 
 /-!
-End-to-end theorem for RV64 SLTIU (Phase 3C T-IT).
-
-**Escape-hatch note.** Consumes `PureSpec.sltiu_pure_equiv_axiom` (C8
-in `docs/fv/trusted-base.md`) — same obstruction class as C5 / C6 /
-C7. See `ZiskFv/RV64D/SltiEquivHelper.lean` for closure path.
+End-to-end theorem for RV64 SLTIU (Phase 3C T-IT). Consumes
+`PureSpec.execute_ITYPE_sltiu_pure_equiv` directly (C8 retired by
+Phase 4 T-SLT).
 -/
 
 namespace ZiskFv.Equivalence.Sltiu
@@ -42,7 +40,7 @@ theorem equiv_SLTIU
 
 theorem equiv_SLTIU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (sltiu_input : PureSpec.SltiuInput')
+    (sltiu_input : PureSpec.SltiuInput)
     (r1 rd : regidx) (imm : BitVec 12)
     (h_input_r1 : read_xreg (regidx_to_fin r1) state
       = EStateM.Result.ok sltiu_input.r1_val state)
@@ -54,19 +52,19 @@ theorem equiv_SLTIU_sail
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.SLTIU))) state
-      = let sltiu_output := PureSpec.sltiu_pure sltiu_input
+      = let sltiu_output := PureSpec.execute_ITYPE_sltiu_pure sltiu_input
         (do
           Sail.writeReg Register.nextPC sltiu_output.nextPC
           match sltiu_output.rd with
             | .some (rd, rd_val) => write_xreg rd rd_val
             | .none => pure ()
           pure (ExecutionResult.Retire_Success ())) state :=
-  PureSpec.sltiu_pure_equiv_axiom
+  PureSpec.execute_ITYPE_sltiu_pure_equiv (state := state) (imm := imm)
     sltiu_input r1 rd h_input_r1 h_input_imm h_input_rd h_input_pc
 
 theorem equiv_SLTIU_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (sltiu_input : PureSpec.SltiuInput')
+    (sltiu_input : PureSpec.SltiuInput)
     (r1 rd : regidx) (imm : BitVec 12)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
@@ -80,7 +78,7 @@ theorem equiv_SLTIU_metaplan
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.sltiu_pure sltiu_input).nextPC)
+        = (PureSpec.execute_ITYPE_sltiu_pure sltiu_input).nextPC)
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
@@ -94,7 +92,7 @@ theorem equiv_SLTIU_metaplan
           ⟨ (Transpiler.wrap_to_regidx e2.ptr).val, by simp; omega ⟩
         write_xreg reg_idx val)
       =
-      (match (PureSpec.sltiu_pure sltiu_input).rd with
+      (match (PureSpec.execute_ITYPE_sltiu_pure sltiu_input).rd with
         | .some (rd, rd_val) => write_xreg rd rd_val
         | .none => pure ())) :
     (do
@@ -108,11 +106,11 @@ theorem equiv_SLTIU_metaplan
   symm
   rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
-        (PureSpec.sltiu_pure sltiu_input).nextPC
+        (PureSpec.execute_ITYPE_sltiu_pure sltiu_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
   rw [h_rd_match]
   simp only [bind, pure, EStateM.bind, EStateM.pure]
-  rcases (PureSpec.sltiu_pure sltiu_input).rd with _ | ⟨r, v⟩ <;> rfl
+  rcases (PureSpec.execute_ITYPE_sltiu_pure sltiu_input).rd with _ | ⟨r, v⟩ <;> rfl
 
 end ZiskFv.Equivalence.Sltiu

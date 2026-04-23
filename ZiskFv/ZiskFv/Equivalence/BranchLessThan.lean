@@ -20,9 +20,9 @@ End-to-end theorem for RV64 BLT (Phase 3A B1). Combines:
   wrapper over `BranchArchetype.branch_archetype_pc_dispatch` at
   `opcode_lit = OP_LT`),
 * the Sail pure-function equivalence
-  (`PureSpec.execute_BLT_pure_equiv`, closed via the trusted axiom
-  `execute_BLT_pure_equiv_axiom` — see entry C2 in
-  `docs/fv/trusted-base.md`),
+  (`PureSpec.execute_BLT_pure_equiv`, a direct proof port of
+  `execute_BNE_pure_equiv` with `h_lt : r1.toInt < r2.toInt` as the
+  case-split predicate — Phase 4 retired C2a),
 
 into three theorems mirroring `Equivalence/BranchEqual.lean` /
 `Equivalence/BranchNotEqual.lean`:

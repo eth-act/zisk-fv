@@ -68,7 +68,7 @@ namespace PureSpec
           input.imm,
           regidx.Regidx input.r1,
           regidx.Regidx input.rd,
-          true,
+          false,
           4
         ))
     ) state =

@@ -6,28 +6,21 @@ import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Spec.LoadWord
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
-import ZiskFv.RV64D.LoadEquivHelper
+import ZiskFv.RV64D.lw
 import ZiskFv.RV64D.BusEffect
 
 /-!
 End-to-end theorem for RV64 LW (load word, signed / sign-extended).
-Phase 3C T-SL0 — pilot of the `SignExtendLoadArchetype`.
-
-**Escape-hatch note.** Phase 3B shipped `ZiskFv/RV64D/lw.lean` with a
-`execute_LOADW_pure_equiv` lemma whose terminal `grind` fails at the
-split-on-`rd = 0` step (see `ZiskFv/RV64D/LoadEquivHelper.lean`
-docstring for the full obstruction story). This module does not
-import the broken upstream file; it consumes the narrow
-escape-hatch axiom `PureSpec.lw_pure_equiv_axiom` (catalogued as C9
-in `docs/fv/trusted-base.md`) from the helper. The archetype /
-circuit-level piece (`equiv_LW`) is unaffected and closes from
-`lw_compositional` verbatim.
+Phase 3C T-SL0 — pilot of the `SignExtendLoadArchetype`. Consumes
+`PureSpec.execute_LOADW_pure_equiv` directly (C9 retired by Phase 4
+T-LW; also fixed a Phase 3B statement bug that passed
+`is_unsigned = true` — correct for RV64 LW is `false`).
 
 Parallels the Phase 3A LHU / LBU equivalence structure (same trio
 of theorems) but consumes the signed-load archetype's bus-zeroing
 corollary rather than LHU/LBU's memory-bus copy argument. The
-`h_bus_execute_matches_sail` Phase-4-deferred bus-matching
-hypothesis is parameterized as in LHU / LBU / SLLW.
+`h_bus_execute_matches_sail` bus-matching hypothesis is
+parameterized as in LHU / LBU / SLLW.
 -/
 
 namespace ZiskFv.Equivalence.Lw
@@ -58,13 +51,11 @@ theorem equiv_LW
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 LW-shape LOAD reduces to the pure-function block supplied by
-    `PureSpec.lw_pure`, given the standard register/PC/memory
-    assumptions. Wraps the C9 escape-hatch axiom
-    `PureSpec.lw_pure_equiv_axiom` — see
-    `ZiskFv/RV64D/LoadEquivHelper.lean`. -/
+    `PureSpec.execute_LOADW_pure`, given the standard register/PC/memory
+    assumptions. -/
 theorem equiv_LW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (lw_input : PureSpec.LwInput')
+    (lw_input : PureSpec.LwInput)
     (mstatus : RegisterType Register.mstatus)
     (pmaRegion : PMA_Region)
     (misa : RegisterType Register.misa)
@@ -72,7 +63,7 @@ theorem equiv_LW_sail
     (risc_v_assumptions :
       RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
     (h_opcode_assumptions :
-      PureSpec.lw_state_assumptions' lw_input state) :
+      PureSpec.lw_state_assumptions lw_input state) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -80,17 +71,19 @@ theorem equiv_LW_sail
         lw_input.imm,
         regidx.Regidx lw_input.r1,
         regidx.Regidx lw_input.rd,
-        true,
+        false,
         4
       ))) state
-      = let output := PureSpec.lw_pure lw_input
+      = let output := PureSpec.execute_LOADW_pure lw_input
         (do
           Sail.writeReg Register.nextPC output.nextPC
           match output.rd with
             | .some (rd, rd_val) => write_xreg rd rd_val
             | .none => pure ()
           pure (ExecutionResult.Retire_Success ())) state :=
-  PureSpec.lw_pure_equiv_axiom lw_input risc_v_assumptions h_opcode_assumptions
+  PureSpec.execute_LOADW_pure_equiv (state := state)
+    (mstatus := mstatus) (pmaRegion := pmaRegion) (misa := misa)
+    (mseccfg := mseccfg) lw_input risc_v_assumptions h_opcode_assumptions
 
 /-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64 LW
     (Phase 3B's LOAD-with-`(true, 4)` shape) equals the state computed
@@ -100,7 +93,7 @@ theorem equiv_LW_sail
     derivation, same shape as LHU / LBU / SLLW). -/
 theorem equiv_LW_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (lw_input : PureSpec.LwInput')
+    (lw_input : PureSpec.LwInput)
     (mstatus : RegisterType Register.mstatus)
     (pmaRegion : PMA_Region)
     (misa : RegisterType Register.misa)
@@ -110,10 +103,10 @@ theorem equiv_LW_metaplan
     (risc_v_assumptions :
       RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
     (h_opcode_assumptions :
-      PureSpec.lw_state_assumptions' lw_input state)
+      PureSpec.lw_state_assumptions lw_input state)
     (h_bus_execute_matches_sail :
       (bus_effect exec_row mem_row state).2
-        = (let output := PureSpec.lw_pure lw_input
+        = (let output := PureSpec.execute_LOADW_pure lw_input
            (do
              Sail.writeReg Register.nextPC output.nextPC
              match output.rd with
@@ -127,7 +120,7 @@ theorem equiv_LW_metaplan
         lw_input.imm,
         regidx.Regidx lw_input.r1,
         regidx.Regidx lw_input.rd,
-        true,
+        false,
         4
       ))) state = (bus_effect exec_row mem_row state).2 := by
   rw [equiv_LW_sail state lw_input mstatus pmaRegion misa mseccfg

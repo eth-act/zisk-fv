@@ -32,6 +32,7 @@ def execute_RTYPE_slt_pure (input : SltInput) : SltOutput := {
   : SltOutput
 }
 
+set_option maxHeartbeats 400000 in
 lemma execute_RTYPE_slt_pure_equiv
   (slt_input : SltInput)
   (r1 r2 rd: regidx)
@@ -84,7 +85,20 @@ lemma execute_RTYPE_slt_pure_equiv
     ]
     simp [regidx_to_fin]
     rewrite [dite_cond_eq_false]
-    . simp [h_input_rd, regidx_to_fin]
+    . -- Bridge: BitVec.setWidth 64 (if .toInt < then 1#1 else 0#1)
+      --       = if .slt then 1#64 else 0#64
+      have h_bridge :
+        BitVec.setWidth 64
+          (if slt_input.r1_val.toInt < slt_input.r2_val.toInt
+           then 1#1 else 0#1) =
+        if slt_input.r1_val.slt slt_input.r2_val = true
+        then 1#64 else 0#64 := by
+        rw [BitVec.slt]
+        by_cases h : slt_input.r1_val.toInt < slt_input.r2_val.toInt
+        · simp [h]
+        · simp [h]
+      rw [h_bridge]
+      simp [h_input_rd, regidx_to_fin]
     . simp [regidx_to_fin] at *
       omega
 

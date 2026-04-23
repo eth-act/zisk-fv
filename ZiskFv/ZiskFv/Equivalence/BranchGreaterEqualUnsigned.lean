@@ -16,8 +16,8 @@ End-to-end theorem for RV64 BGEU (Phase 3A B4). Combines:
 * `ZiskFv.Trusted.transpile_BGEU`,
 * `ZiskFv.Spec.BranchGreaterEqualUnsigned.branch_geu_compositional`
   (archetype at `opcode_lit = OP_LTU`),
-* `PureSpec.execute_BGEU_pure_equiv` (via
-  `execute_BGEU_pure_equiv_axiom`, entry C2 of `trusted-base.md`).
+* `PureSpec.execute_BGEU_pure_equiv` (direct proof — Phase 4
+  retired C2d).
 
 Shape (b) bus — reuses `bus_effect_matches_sail_beq`.
 -/

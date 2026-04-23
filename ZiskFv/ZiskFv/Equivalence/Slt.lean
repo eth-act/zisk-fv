@@ -7,25 +7,16 @@ import ZiskFv.Spec.Slt
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.SltEquivHelper
+import ZiskFv.RV64D.slt
+import ZiskFv.RV64D.sltu
 import ZiskFv.RV64D.BusEffect
 import ZiskFv.Tactics.ALURTypeArchetype
 
 /-!
 End-to-end theorem for RV64 SLT (Phase 3C T-RT4). Mirrors
 `Equivalence.Sub` shape with `OP_SUB → OP_LT` and `rop.SUB → rop.SLT`.
-
-**Escape-hatch note.** Phase 3B shipped `ZiskFv/RV64D/slt.lean` with
-a `execute_RTYPE_slt_pure_equiv` lemma whose proof fails to discharge
-the final `BitVec.setWidth 64 (if .toInt < then 1#1 else 0#1)` /
-`if .slt then 1#64 else 0#64` equivalence (see
-`ZiskFv/RV64D/SltEquivHelper.lean` docstring). This module does not
-import the broken upstream file; it consumes the narrow escape-hatch
-axiom `PureSpec.slt_pure_equiv_axiom` (catalogued as C5 in
-`docs/fv/trusted-base.md`) from the helper.
-
-The archetype / circuit-level piece (`equiv_SLT`) is unaffected and
-closes from `slt_compositional` verbatim.
+Consumes `PureSpec.execute_RTYPE_slt_pure_equiv` directly (C5 retired
+by Phase 4 T-SLT).
 -/
 
 namespace ZiskFv.Equivalence.Slt
@@ -50,7 +41,7 @@ theorem equiv_SLT
 
 theorem equiv_SLT_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (slt_input : PureSpec.SltInput')
+    (slt_input : PureSpec.SltInput)
     (r1 r2 rd : regidx)
     (h_input_r1 : read_xreg (regidx_to_fin r1) state
       = EStateM.Result.ok slt_input.r1_val state)
@@ -63,19 +54,19 @@ theorem equiv_SLT_sail
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.SLT))) state
-      = let slt_output := PureSpec.slt_pure slt_input
+      = let slt_output := PureSpec.execute_RTYPE_slt_pure slt_input
         (do
           Sail.writeReg Register.nextPC slt_output.nextPC
           match slt_output.rd with
             | .some (rd, rd_val) => write_xreg rd rd_val
             | .none => pure ()
           pure (ExecutionResult.Retire_Success ())) state :=
-  PureSpec.slt_pure_equiv_axiom
+  PureSpec.execute_RTYPE_slt_pure_equiv (state := state)
     slt_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
 theorem equiv_SLT_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (slt_input : PureSpec.SltInput')
+    (slt_input : PureSpec.SltInput)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
@@ -90,7 +81,7 @@ theorem equiv_SLT_metaplan
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
     (h_nextPC_matches :
       (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.slt_pure slt_input).nextPC)
+        = (PureSpec.execute_RTYPE_slt_pure slt_input).nextPC)
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
@@ -104,7 +95,7 @@ theorem equiv_SLT_metaplan
           ⟨ (Transpiler.wrap_to_regidx e2.ptr).val, by simp; omega ⟩
         write_xreg reg_idx val)
       =
-      (match (PureSpec.slt_pure slt_input).rd with
+      (match (PureSpec.execute_RTYPE_slt_pure slt_input).rd with
         | .some (rd, rd_val) => write_xreg rd rd_val
         | .none => pure ())) :
     (do
@@ -118,11 +109,11 @@ theorem equiv_SLT_metaplan
   symm
   rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
-        (PureSpec.slt_pure slt_input).nextPC
+        (PureSpec.execute_RTYPE_slt_pure slt_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
   rw [h_rd_match]
   simp only [bind, pure, EStateM.bind, EStateM.pure]
-  rcases (PureSpec.slt_pure slt_input).rd with _ | ⟨r, v⟩ <;> rfl
+  rcases (PureSpec.execute_RTYPE_slt_pure slt_input).rd with _ | ⟨r, v⟩ <;> rfl
 
 end ZiskFv.Equivalence.Slt

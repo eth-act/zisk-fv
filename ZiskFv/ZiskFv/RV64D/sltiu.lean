@@ -32,6 +32,7 @@ namespace PureSpec
     : SltiuOutput
   }
 
+  set_option maxHeartbeats 400000 in
   lemma execute_ITYPE_sltiu_pure_equiv
     (sltiu_input : SltiuInput)
     (r1 rd: regidx)
@@ -81,7 +82,24 @@ namespace PureSpec
       ]
       simp [regidx_to_fin]
       rewrite [dite_cond_eq_false]
-      . simp [h_input_rd, regidx_to_fin]
+      . -- Bridge: BitVec.setWidth 64 (if r1.toNat < sext(imm).toNat then 1#1 else 0#1)
+        --       = if r1 < sext(imm) then 1#64 else 0#64
+        have h_bridge :
+          BitVec.setWidth 64
+            (if sltiu_input.r1_val.toNat
+                < (BitVec.signExtend 64 sltiu_input.imm).toNat
+             then 1#1 else 0#1) =
+          if sltiu_input.r1_val < (BitVec.signExtend 64 sltiu_input.imm)
+          then 1#64 else 0#64 := by
+          by_cases h : sltiu_input.r1_val < (BitVec.signExtend 64 sltiu_input.imm)
+          · have : sltiu_input.r1_val.toNat
+                   < (BitVec.signExtend 64 sltiu_input.imm).toNat := h
+            simp [this, h]
+          · have : ¬ sltiu_input.r1_val.toNat
+                   < (BitVec.signExtend 64 sltiu_input.imm).toNat := h
+            simp [this, h]
+        rw [h_bridge]
+        simp [h_input_rd, regidx_to_fin]
       . simp [regidx_to_fin] at *
         omega
 

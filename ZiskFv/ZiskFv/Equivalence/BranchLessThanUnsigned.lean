@@ -16,8 +16,8 @@ End-to-end theorem for RV64 BLTU (Phase 3A B3). Combines:
 * `ZiskFv.Trusted.transpile_BLTU`,
 * `ZiskFv.Spec.BranchLessThanUnsigned.branch_ltu_compositional`
   (archetype at `opcode_lit = OP_LTU`),
-* `PureSpec.execute_BLTU_pure_equiv` (via
-  `execute_BLTU_pure_equiv_axiom`, entry C2 of `trusted-base.md`).
+* `PureSpec.execute_BLTU_pure_equiv` (direct proof — Phase 4
+  retired C2c).
 
 Shape (b) bus — reuses `bus_effect_matches_sail_beq`.
 -/
