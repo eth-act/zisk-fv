@@ -9,6 +9,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.bge
 import ZiskFv.RV64D.BusEffect
+import ZiskFv.Airs.BusHypotheses
 
 /-!
 End-to-end theorem for RV64 BGE (Phase 3A B2). Combines:
@@ -122,5 +123,45 @@ theorem equiv_BGE_metaplan
     (PureSpec.execute_BGE_pure bge_input).success
     bge_input.PC bge_input.imm
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
+
+
+/-- **Phase 5 V12 companion for BGE.** Drops `h_input_pc` via
+    `chip_bus_hyps_branch_rrw` + `readReg_of_readReg_succ`. Other
+    `h_input_*` stay — branch memory bus is empty, so rs1/rs2
+    reads go via operation bus (not derivable from `h_bus` here). -/
+theorem equiv_BGE_metaplan_from_bus
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (bge_input : PureSpec.BgeInput)
+    (imm : BitVec 13)
+    (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_imm : bge_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok bge_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok bge_input.r2_val state)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    -- Phase 5 V12: bus precondition + PC match (replaces h_input_pc).
+    (h_bus : (bus_effect exec_row [] state).1)
+    (h_pc : bge_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BGE_pure bge_input).nextPC)
+    (h_not_throws : (PureSpec.execute_BGE_pure bge_input).throws = false)
+    (h_success : (PureSpec.execute_BGE_pure bge_input).success = true) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BGE)) state
+      = (bus_effect exec_row [] state).2
+    := by
+  have h_pc_read := ZiskFv.Airs.BusHypotheses.chip_bus_hyps_branch_rrw
+    state exec_row h_exec_len h_e0_mult h_e1_mult h_bus
+  have h_input_pc : state.regs.get? Register.PC = .some bge_input.PC := by
+    rw [h_pc]
+    exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
+  exact equiv_BGE_metaplan state bge_input imm r1 r2 misa_val exec_row h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
 end ZiskFv.Equivalence.BranchGreaterEqual
