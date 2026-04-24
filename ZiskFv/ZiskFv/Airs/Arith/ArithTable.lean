@@ -1,0 +1,169 @@
+import Mathlib
+
+import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Airs.Arith.Mul
+import ZiskFv.Airs.Arith.Div
+
+/-!
+# arith_table permutation-lookup soundness (Phase 5 item 2)
+
+The ZisK Arith state machine pipes every active row through a fixed lookup
+table `arith_table` (see
+`vendor/zisk/state-machines/arith/pil/arith_table.pil`) that deterministically
+maps an opcode / mode pair to sign / parity witnesses
+`(na, nb, np, nr)`.
+
+Before this module, the Arith-family compositional lemmas
+(`arith_mul_unsigned_packed_correct`, `arith_mul_signed_packed_correct`,
+the Div equivalents) accepted those four witnesses as free parameters,
+documenting the reliance on `arith_table` as a scope-honest hypothesis
+(see REPORT §3.2 item 1).
+
+This module closes the hypothesis layer: one axiom encodes the table's
+deterministic mapping (grand-product soundness — retiring this is a
+permutation-argument-soundness proof, itself out of scope), and one
+theorem per RV64 opcode family specializes it to a concrete
+`(na, nb, np, nr)` quadruple.
+
+## Scope of the axiom
+
+`arith_table_row_witness` pins `(na, nb, np, nr)` as a *function of*
+`(op, m32)`. The specific mapping encoded matches `arith_table.pil`'s
+14-row table. For the RV64IM subset this project covers:
+
+- `(OP_MULU, m32=0)`  → `(0, 0, 0, 0)` — RV64 MULHU
+- `(OP_MULUH, m32=0)` → `(0, 0, 0, 0)` — RV64 MULHU (secondary)
+- `(OP_MUL, m32=0)`   → `(a.3, b.3, d.3, 0)` — RV64 MUL / MULH (signed).
+                        (`a.3`/`b.3`/`d.3` are specific bit-cells;
+                        scope-honest conditional — see REPORT §3.1)
+- `(OP_DIVU, m32=0)`  → `(0, 0, 0, 0)` — RV64 DIVU (primary)
+- `(OP_REMU, m32=0)`  → `(0, 0, 0, 0)` — RV64 DIVU (secondary)
+- `(OP_MUL_W, m32=1)` → `(0, 0, 0, 0)` — RV64 MULW
+
+The axiom covers only the unsigned cases (where the quadruple is
+constant zero) directly. The signed cases are still conditional
+(na = a.3, nb = b.3, np = d.3) and require the bit-extraction
+constraints — handled separately in the existing
+`arith_mul_signed_packed_correct` carry-chain closure.
+
+## Retired scope-honest parameters
+
+After this module, the four `(h_na, h_nb, h_np, h_nr)` parameters on
+the unsigned-mode Arith lemmas become derivable from the row's
+`(op, m32)` hypotheses. Signed-mode variants still take sign witnesses
+as parameters (they're conditional on operand bit-31 values, not
+universal constants).
+-/
+
+namespace ZiskFv.Airs.Arith.ArithTable
+
+open Goldilocks
+open ZiskFv.Trusted
+open ZiskFv.Airs.ArithMul
+open ZiskFv.Airs.ArithDiv
+
+variable {C : Type → Type → Type} {F ExtF : Type}
+variable [Field F] [Field ExtF] [Circuit F ExtF C]
+
+/-- `arith_table_row_witness` — the permutation-lookup soundness axiom for
+    the Arith state machine's fixed-table lookup.
+
+    Given a `Valid_ArithMul` row with opcode `v.op row = X` and mode
+    `v.m32 row = m`, the lookup forces the four sign-witness columns
+    to the values pinned by `arith_table.pil`. This axiom covers the
+    four RV64IM unsigned cases where all four are 0.
+
+    **Trust basis.** The ZK permutation-argument soundness (grand-product
+    equivalence) for lookups is a standard Plookup / logUp result;
+    replicating its Lean proof here is out of scope. Retires the
+    scope-honest `(h_na, h_nb, h_np, h_nr)` hypotheses from the
+    unsigned-mode specializations. -/
+axiom arith_table_row_witness_unsigned :
+    ∀ (v : Valid_ArithMul C F ExtF) (row : ℕ),
+      -- OP_MULU: RV64 MULHU (unsigned × unsigned → high 64).
+      (v.op row = (OP_MULU : F) → v.m32 row = 0 →
+        v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+      -- OP_MUL_W: RV64 MULW (signed × signed → low 32, sign-extended).
+      -- The 32-bit path forces the 4 sign witnesses to 0 because the
+      -- top-half carry-chain is zeroed out.
+      ∧ (v.op row = (OP_MUL_W : F) → v.m32 row = 1 →
+          v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+
+/-- Divide analogue: OP_DIVU (primary) and OP_REMU (secondary) unsigned-div
+    rows force the sign witnesses to zero.
+
+    Note: `Valid_ArithDiv` is a distinct named-column structure from
+    `Valid_ArithMul`; they share the table but not the Lean structure. -/
+axiom arith_table_row_witness_unsigned_div :
+    ∀ (v : Valid_ArithDiv C F ExtF) (row : ℕ),
+      (v.op row = (OP_DIVU : F) → v.m32 row = 0 →
+        v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+      ∧ (v.op row = (OP_REMU : F) → v.m32 row = 0 →
+          v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+
+/-- **Specialization — OP_MULU unsigned.** The arith_table forces
+    `(na, nb, np, nr) = (0, 0, 0, 0)` for an unsigned 64-bit MUL-high row.
+
+    Retires the `(h_na, h_nb, h_np, h_nr)` parameters on
+    `arith_mul_unsigned_packed_correct` (the compositional lemma for
+    MULU/MULHU rows). -/
+theorem arith_table_mulu_witnesses
+    (v : Valid_ArithMul C F ExtF) (row : ℕ)
+    (h_op : v.op row = (OP_MULU : F)) (h_m32 : v.m32 row = 0) :
+    v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0 :=
+  (arith_table_row_witness_unsigned v row).1 h_op h_m32
+
+/-- **Specialization — OP_MUL_W 32-bit.** The arith_table forces
+    `(na, nb, np, nr) = (0, 0, 0, 0)` for a 32-bit MULW row. -/
+theorem arith_table_mulw_witnesses
+    (v : Valid_ArithMul C F ExtF) (row : ℕ)
+    (h_op : v.op row = (OP_MUL_W : F)) (h_m32 : v.m32 row = 1) :
+    v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0 :=
+  (arith_table_row_witness_unsigned v row).2 h_op h_m32
+
+/-- **Specialization — OP_DIVU primary.** The arith_table forces
+    `(na, nb, np, nr) = (0, 0, 0, 0)` for an unsigned 64-bit DIVU row. -/
+theorem arith_table_divu_witnesses
+    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+    (h_op : v.op row = (OP_DIVU : F)) (h_m32 : v.m32 row = 0) :
+    v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0 :=
+  (arith_table_row_witness_unsigned_div v row).1 h_op h_m32
+
+/-- **Specialization — OP_REMU secondary.** The arith_table forces
+    `(na, nb, np, nr) = (0, 0, 0, 0)` for an unsigned 64-bit REMU row. -/
+theorem arith_table_remu_witnesses
+    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+    (h_op : v.op row = (OP_REMU : F)) (h_m32 : v.m32 row = 0) :
+    v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0 :=
+  (arith_table_row_witness_unsigned_div v row).2 h_op h_m32
+
+/-! ## Table-closed wrappers (item 2 closure)
+
+Wrappers that retire the scope-honest `(h_na, h_nb, h_np, h_nr)`
+parameters on the unsigned-mode packed-correct lemmas by invoking
+the `arith_table_*_witnesses` specializations internally.
+
+Callers need only supply the opcode + mode hypotheses; the four sign
+witnesses are derived from the arith_table lookup.
+-/
+
+/-- Table-closed wrapper for `arith_mul_unsigned_packed_correct_bundled`.
+    Drops `(h_na, h_nb, h_np, h_nr)` in favor of the `(h_op, h_m32)`
+    pair that identifies this as a MULU row. -/
+theorem arith_mul_unsigned_packed_correct_table_closed
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (v : Valid_ArithMul C FGL FGL) (row : ℕ)
+    (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v row)
+    (h_op : v.op row = OP_MULU) (h_sext : v.sext row = 0)
+    (h_m32 : v.m32 row = 0) (h_div : v.div row = 0) :
+    ZiskFv.Airs.ArithMul.a_chunks_packed v row
+      * ZiskFv.Airs.ArithMul.b_chunks_packed v row
+      = ZiskFv.Airs.ArithMul.c_chunks_packed v row
+        + ZiskFv.Airs.ArithMul.d_chunks_packed v row
+          * (65536 * 65536 * 65536 * 65536) := by
+  obtain ⟨h_na, h_nb, h_np, h_nr⟩ := arith_table_mulu_witnesses v row h_op h_m32
+  exact ZiskFv.Airs.ArithMul.arith_mul_unsigned_packed_correct_bundled
+    v row h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div
+
+end ZiskFv.Airs.Arith.ArithTable
