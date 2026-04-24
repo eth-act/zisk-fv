@@ -96,7 +96,7 @@ end TakenJump
 
 -- Phase 4.5 Track D: additional edge-case fixture.
 
-section BackwardsJump
+namespace BackwardsJump
 
 /- Witness row: JAL `x1, -20` (backwards jump). At pc = 100 this jumps
    to 80. Tests sign-handling at the field level (negative imm encoded

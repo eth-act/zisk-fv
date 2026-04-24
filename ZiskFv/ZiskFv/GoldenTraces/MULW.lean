@@ -118,7 +118,7 @@ end CanonicalCase
 
 -- Phase 4.5 Track D: additional edge-case fixture.
 
-section Overflow32
+namespace Overflow32
 
 /- Witness row: MULW with 32-bit overflow. `0x1_0001 * 0x1_0001`
    = `0x1_0002_0001`. Low 32 bits = `0x0002_0001 = 131073`.

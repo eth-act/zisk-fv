@@ -114,7 +114,7 @@ end TakenJump
 
 -- Phase 4.5 Track D: additional edge-case fixture.
 
-section ZeroBase
+namespace ZeroBase
 
 /- Witness row: JALR x1, x0, +0 at pc = 100. rs1 = 0, imm = 0 ⇒
    next_pc = 0 (zeros the PC). Link write: rd = pc + 4 = 104. -/

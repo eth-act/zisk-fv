@@ -111,7 +111,7 @@ end CanonicalCase
 
 -- Phase 4.5 Track D: additional edge-case fixture.
 
-section ZeroDividend
+namespace ZeroDividend
 
 /- Witness row: DIVU `x3, x0, x2` — dividend 0, any positive divisor,
    quotient 0. Smallest non-trivial DIVU case. -/

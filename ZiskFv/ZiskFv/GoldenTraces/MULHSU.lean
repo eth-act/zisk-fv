@@ -109,7 +109,7 @@ end CanonicalCase
 
 -- Phase 4.5 Track D: additional edge-case fixture.
 
-section ZeroOperand
+namespace ZeroOperand
 
 /- Witness row: MULHSU of `x1 = 0` (signed) × `x2 = big unsigned`. Product
    = 0, high half = 0. -/

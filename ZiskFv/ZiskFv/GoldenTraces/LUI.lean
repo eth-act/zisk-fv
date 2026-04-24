@@ -109,7 +109,7 @@ end LuiWitness
 
 -- Phase 4.5 Track D: additional edge-case fixture.
 
-section ZeroImm
+namespace ZeroImm
 
 /- Witness row: LUI `x1, 0` — imm = 0 ⇒ rd = 0. Smallest corner case. -/
 

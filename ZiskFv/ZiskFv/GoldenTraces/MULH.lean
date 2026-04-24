@@ -120,7 +120,7 @@ end CanonicalCase
 
 -- Phase 4.5 Track D: additional edge-case fixture.
 
-section HighBitProduct
+namespace HighBitProduct
 
 /- Witness row: MULH of two signed values whose 128-bit product exceeds
    2^64, so the high 64 bits are non-zero. Concretely: `(-1)_s64 * 2

@@ -136,7 +136,7 @@ end CanonicalCase
 
 -- Phase 4.5 Track D: additional edge-case fixture.
 
-section DivByOne
+namespace DivByOne
 
 /- Witness row: DIV `x1, x1, 1` — dividing any x1 by 1 yields x1. Trivial
    but useful corner: divisor = 1 pins quotient = dividend, remainder = 0. -/

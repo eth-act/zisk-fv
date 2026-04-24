@@ -119,7 +119,7 @@ end AuipcWitness
 
 -- Phase 4.5 Track D: additional edge-case fixture.
 
-section ZeroPC
+namespace ZeroPC
 
 /- Witness row: AUIPC `x1, 0` at `pc = 0`. Immediate = 0, so the
    rd-write is `pc + 0 = 0`. Tests the degenerate PC-origin case. -/

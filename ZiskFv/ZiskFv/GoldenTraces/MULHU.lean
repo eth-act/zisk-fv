@@ -113,7 +113,7 @@ end CanonicalCase
 
 -- Phase 4.5 Track D: additional edge-case fixture.
 
-section BigProduct
+namespace BigProduct
 
 /- Witness row: MULHU of `0xFFFF_FFFF * 0xFFFF_FFFF`. Product
    = 0xFFFF_FFFE_0000_0001 (fits in low 64), so high half = 0. -/

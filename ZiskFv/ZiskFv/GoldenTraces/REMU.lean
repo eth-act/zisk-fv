@@ -109,7 +109,7 @@ end CanonicalCase
 
 -- Phase 4.5 Track D: additional edge-case fixture.
 
-section DivisorOne
+namespace DivisorOne
 
 /- Witness row: REMU `x3, x1, x0+1` — any dividend mod 1 = 0. -/
 
