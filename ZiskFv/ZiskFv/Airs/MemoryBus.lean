@@ -2,6 +2,7 @@ import Mathlib
 
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
+import ZiskFv.Fundamentals.PackedBitVec
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Airs.Main
 
@@ -192,5 +193,63 @@ def register_read_rs2_lanes_match
     (e : MemoryBusEntry FGL) : Prop :=
   m.b_0 row = memory_entry_lo e
   ∧ m.b_1 row = memory_entry_hi e
+
+/-! ## Bridge to `U64.toBV` for register-write values
+
+The Phase 4.5 A-rewire requires bridging from `memory_entry_toField`
+(field-level byte pack) to `U64.toBV` (`BitVec 64` register-write
+value). Under per-byte range hypotheses and a no-wrap bound, this is
+a direct consequence of `Fundamentals/PackedBitVec.lean`'s
+`u64_toBV_eq_ofNat_fgl_val`.
+
+Exposed here as the consumable form for A-rewire:
+`memory_entry_toField_eq_toBV_toNat` reduces the entry bytes'
+`U64.toBV` to `BitVec.ofNat 64 (memory_entry_toField e).val`. -/
+
+/-- **Entry byte ranges.** Each of the 8 byte lanes of a memory-bus
+    entry has `.val < 256`. Phase 4 / the PIL range-checker bus
+    discharges this. -/
+@[simp]
+def memory_entry_bytes_in_range (e : MemoryBusEntry FGL) : Prop :=
+  e.x0.val < 256 ∧ e.x1.val < 256 ∧ e.x2.val < 256 ∧ e.x3.val < 256
+  ∧ e.x4.val < 256 ∧ e.x5.val < 256 ∧ e.x6.val < 256 ∧ e.x7.val < 256
+
+/-- **No-wraparound bound on the packed entry.** The Nat byte-sum
+    `x0.val + x1.val * 256 + … + x7.val * 256^7` is below `GL_prime`.
+
+    Under `memory_entry_bytes_in_range`, the byte-sum is at most
+    `2^64 - 1`, which *can* exceed `GL_prime = 2^64 - 2^32 + 1` in the
+    "high-register" range. Callers discharge this either
+    architecturally (e.g. for 32-bit ops the top four bytes are zero)
+    or from the concrete product range. -/
+@[simp]
+def memory_entry_packed_no_wrap (e : MemoryBusEntry FGL) : Prop :=
+  e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+  + e.x4.val * 4294967296 + e.x5.val * 1099511627776
+  + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936 < GL_prime
+
+/-- **Bridge: `U64.toBV` of entry bytes equals `BitVec.ofNat 64
+    (memory_entry_toField e).val`.** Given byte ranges and the
+    no-wraparound bound, the 8 memory-bus byte lanes — fed through
+    `U64.toBV` (which coerces each `FGL` byte to `BitVec 8` via the
+    `mod 256` instance) — produce the same `BitVec 64` as
+    `BitVec.ofNat 64` applied to the field-level packed byte-sum's
+    `.val`.
+
+    This is the direct Phase 4.5 Bridge 3 application expressed at
+    the memory-bus-entry level. Consumed by A-rewire. -/
+lemma memory_entry_toField_eq_toBV_toNat
+    (e : MemoryBusEntry FGL)
+    (h_range : memory_entry_bytes_in_range e)
+    (h_no_wrap : memory_entry_packed_no_wrap e) :
+    U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
+                (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
+    = BitVec.ofNat 64 (memory_entry_toField e).val := by
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := h_range
+  simp only [memory_entry_packed_no_wrap] at h_no_wrap
+  simp only [memory_entry_toField]
+  exact ZiskFv.PackedBitVec.u64_toBV_eq_ofNat_fgl_val
+    e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
+    h0 h1 h2 h3 h4 h5 h6 h7 h_no_wrap
 
 end ZiskFv.Airs.MemoryBus
