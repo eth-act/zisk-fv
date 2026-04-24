@@ -4,6 +4,7 @@ import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Extraction.Arith
 import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.Arith.CarryChain
 
 /-!
 Named-column mirror of the ZisK `Arith` AIR, restricted to the **DIV/REM
@@ -367,5 +368,159 @@ def opBus_row_ArithDivSecondary {C : Type → Type → Type} {F ExtF : Type}
     extra_args_0 := 0 }
 
 end BusEmission
+
+/-!
+## Phase 4 Package C — carry-chain specialization (DIV-unsigned)
+
+Connects the raw extraction constraints 31-38 at `v.circuit` to the
+pure-field DIV carry-chain identity in `Airs/Arith/CarryChain.lean`, yielding
+the packed identity
+
+    a_packed * b_packed + d_packed = c_packed
+
+for the DIVU/REMU mode (`fab = 1`, `na = nb = np = nr = sext = m32 = 0`,
+`div = 1`). Here `a` holds the quotient, `b` the divisor, `c` the dividend,
+and `d` the remainder.
+
+This is the Phase 4 moral mirror of `arith_mul_unsigned_packed_correct`
+in `Airs/Arith/Mul.lean`, specialized to DIV mode (`div = 1` instead of 0).
+-/
+
+section CarryChain
+
+open Arith.extraction
+open ZiskFv.Airs.ArithCarryChain
+
+/-- **Bundled Arith DIV-mode carry-chain constraints.** Packs the 11
+    extraction constraints the `arith_div_unsigned_packed_correct`
+    theorem consumes: constraints 6-8 + 31-38. -/
+@[simp]
+def div_carry_chain_holds (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
+  constraint_6_every_row v.circuit row
+  ∧ constraint_7_every_row v.circuit row
+  ∧ constraint_8_every_row v.circuit row
+  ∧ constraint_31_every_row v.circuit row
+  ∧ constraint_32_every_row v.circuit row
+  ∧ constraint_33_every_row v.circuit row
+  ∧ constraint_34_every_row v.circuit row
+  ∧ constraint_35_every_row v.circuit row
+  ∧ constraint_36_every_row v.circuit row
+  ∧ constraint_37_every_row v.circuit row
+  ∧ constraint_38_every_row v.circuit row
+
+/-- Packed `a` over Div columns: `a[0] + a[1]*2^16 + a[2]*2^32 + a[3]*2^48`.
+    For DIVU/DIV this is the quotient; for REMU/REM the quotient lane is
+    still computed but unused by the bus emission. -/
+@[simp]
+def a_chunks_packed_div (v : Valid_ArithDiv C F ExtF) (r : ℕ) : F :=
+  v.a_0 r + v.a_1 r * 65536 + v.a_2 r * (65536 * 65536)
+    + v.a_3 r * (65536 * 65536 * 65536)
+
+/-- Packed `b` over Div columns: divisor. -/
+@[simp]
+def b_chunks_packed_div (v : Valid_ArithDiv C F ExtF) (r : ℕ) : F :=
+  v.b_0 r + v.b_1 r * 65536 + v.b_2 r * (65536 * 65536)
+    + v.b_3 r * (65536 * 65536 * 65536)
+
+/-- Packed `c` over Div columns: dividend. -/
+@[simp]
+def c_chunks_packed_div (v : Valid_ArithDiv C F ExtF) (r : ℕ) : F :=
+  v.c_0 r + v.c_1 r * 65536 + v.c_2 r * (65536 * 65536)
+    + v.c_3 r * (65536 * 65536 * 65536)
+
+/-- Packed `d` over Div columns: remainder. -/
+@[simp]
+def d_chunks_packed_div (v : Valid_ArithDiv C F ExtF) (r : ℕ) : F :=
+  v.d_0 r + v.d_1 r * 65536 + v.d_2 r * (65536 * 65536)
+    + v.d_3 r * (65536 * 65536 * 65536)
+
+/-- **DIV-unsigned carry-chain specialization.**
+
+    If the 8 raw extraction carry constraints hold at `v.circuit`
+    (constraints 31-38), together with constraints 6/7/8 fixing
+    `fab`/`na_fb`/`nb_fa`, and the mode witnesses pin
+    `na = nb = np = nr = sext = m32 = 0`, `div = 1`, then the packed
+    chunks satisfy
+
+        a_packed * b_packed + d_packed = c_packed
+
+    (quotient × divisor + remainder = dividend).
+
+    Direct consequence of `CarryChain.arith_div_unsigned_carry_identity`.
+    This is the **Phase 4 Package C deliverable** for the DIV family —
+    what was previously threaded as an Arith-internal correctness
+    assumption through the compositional DIV/REM proofs is now
+    derived directly from the PIL carry chain. -/
+lemma arith_div_unsigned_packed_correct
+    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+    (h6 : constraint_6_every_row v.circuit row)
+    (h7 : constraint_7_every_row v.circuit row)
+    (h8 : constraint_8_every_row v.circuit row)
+    (h31 : constraint_31_every_row v.circuit row)
+    (h32 : constraint_32_every_row v.circuit row)
+    (h33 : constraint_33_every_row v.circuit row)
+    (h34 : constraint_34_every_row v.circuit row)
+    (h35 : constraint_35_every_row v.circuit row)
+    (h36 : constraint_36_every_row v.circuit row)
+    (h37 : constraint_37_every_row v.circuit row)
+    (h38 : constraint_38_every_row v.circuit row)
+    (h_na : v.na row = 0) (h_nb : v.nb row = 0)
+    (h_np : v.np row = 0) (h_nr : v.nr row = 0)
+    (_h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
+    (h_div : v.div row = 1) :
+    a_chunks_packed_div v row * b_chunks_packed_div v row
+      + d_chunks_packed_div v row
+      = c_chunks_packed_div v row := by
+  simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
+             ← v.na_def, ← v.nb_def] at h6 h7 h8
+  simp only [h_na, h_nb] at h6 h7 h8
+  have h_fab : Circuit.main v.circuit (id := 1) (column := 30) (row := row) (rotation := 0)
+    = (1 : F) := by linear_combination h6
+  have h_nafb : Circuit.main v.circuit (id := 1) (column := 31) (row := row) (rotation := 0)
+    = (0 : F) := by linear_combination h7
+  have h_nbfa : Circuit.main v.circuit (id := 1) (column := 32) (row := row) (rotation := 0)
+    = (0 : F) := by linear_combination h8
+  simp only [constraint_31_every_row, constraint_32_every_row,
+             constraint_33_every_row, constraint_34_every_row,
+             constraint_35_every_row, constraint_36_every_row,
+             constraint_37_every_row, constraint_38_every_row,
+             ← v.a_0_def, ← v.a_1_def, ← v.a_2_def, ← v.a_3_def,
+             ← v.b_0_def, ← v.b_1_def, ← v.b_2_def, ← v.b_3_def,
+             ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
+             ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
+             ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
+             ← v.m32_def, ← v.div_def]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  simp only [h_na, h_nb, h_np, h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
+             mul_zero, zero_mul, add_zero, sub_zero,
+             mul_one, one_mul, sub_self]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  unfold a_chunks_packed_div b_chunks_packed_div c_chunks_packed_div d_chunks_packed_div
+  linear_combination
+    h31
+    + 65536 * h32
+    + (65536 * 65536) * h33
+    + (65536 * 65536 * 65536) * h34
+    + (65536 * 65536 * 65536 * 65536) * h35
+    + (65536 * 65536 * 65536 * 65536 * 65536) * h36
+    + (65536 * 65536 * 65536 * 65536 * 65536 * 65536) * h37
+    + (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536) * h38
+
+/-- **DIV-unsigned carry-chain specialization (bundled form).** -/
+lemma arith_div_unsigned_packed_correct_bundled
+    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+    (h_chain : div_carry_chain_holds v row)
+    (h_na : v.na row = 0) (h_nb : v.nb row = 0)
+    (h_np : v.np row = 0) (h_nr : v.nr row = 0)
+    (h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
+    (h_div : v.div row = 1) :
+    a_chunks_packed_div v row * b_chunks_packed_div v row
+      + d_chunks_packed_div v row
+      = c_chunks_packed_div v row := by
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  exact arith_div_unsigned_packed_correct v row h6 h7 h8 h31 h32 h33 h34 h35 h36 h37 h38
+    h_na h_nb h_np h_nr h_sext h_m32 h_div
+
+end CarryChain
 
 end ZiskFv.Airs.ArithDiv

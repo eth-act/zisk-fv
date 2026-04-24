@@ -299,3 +299,70 @@ When the user prompts Phase 4 execution:
 **End state.** Trust base at 62 ± 3 axioms. 58/58 RV64IM opcodes × ≥3 fixtures
 each. Uniformity lint passes. REPORT.md merged. Project ready for external
 audit / declaration of "ZisK RV64IM verified against the Sail spec".
+
+## Phase 4 Package C status — PARTIAL (2026-04-23)
+
+Package C targeted the Arith state-machine internal correctness proof
+(nine `equiv_{MUL,MULH,MULHU,MULHSU,MULW,DIV,DIVU,REM,REMU}_metaplan`
+theorems, dropping their `h_rd_match` structural hypothesis by deriving
+it from the 8-chunk carry chain).
+
+### What shipped
+
+**Step 1 — `Airs/Arith/CarryChain.lean` (164 lines).** Pure-field carry
+chain identity, closed via `linear_combination` with coefficients
+`65536^k` (factored form per Phase 1 ring-atom trap). Two theorems:
+
+* `arith_mul_unsigned_carry_identity` (MUL-mode, `fab=1`, all-zero sign
+  witnesses): `a_packed * b_packed = c_packed + d_packed * 2^64`.
+* `arith_div_unsigned_carry_identity` (DIV-mode, `div=1`): `a * b + d = c`.
+
+Default heartbeats suffice — no `maxHeartbeats` set needed. `ring`
+correctly identifies `65536 * 65536 * 65536 * 65536` as `2^64` against
+the packed-form goal.
+
+**Step 2 — per-family specializations in `Airs/Arith/{Mul,Div}.lean`
+(~200 and ~140 lines respectively).** Connects the raw extraction
+constraints at `v.circuit` to the pure-field identity:
+
+* `arith_mul_unsigned_packed_correct` — takes constraints 6-8 and 31-38
+  plus 7 mode witnesses, concludes the packed MUL identity over named
+  columns.
+* `arith_div_unsigned_packed_correct` — mirror for DIV mode.
+* Bundled forms `*_bundled` consume `mul_carry_chain_holds` /
+  `div_carry_chain_holds` predicates for ergonomic downstream use.
+
+### What did not ship
+
+Steps 3 and 4 — rewiring `Spec/*.lean` and dropping `h_rd_match` from
+the nine `equiv_<OP>_metaplan` theorems — stayed open this pass. Three
+bridges still needed (full catalogue in
+`docs/fv/package-c-residuals.md`):
+
+1. Constraint-46 specialization for `bus_res1` normalization (~40 lines).
+2. Main ↔ Arith operand composition at the bus (~270 lines).
+3. Field ↔ `BitVec 64` lift for the `U64.toBV` bridge (~300 lines).
+
+Signed MUL/DIV modes also stayed unclosed (~400 lines).
+
+**Total follow-on estimate:** ~1000 lines, 3-5 days. No new axioms
+expected — all three bridges have closure paths.
+
+### Trust-base impact
+
+No axiom retirements. The `h_rd_match` hypotheses on the nine
+metaplan theorems were always proof-signature parameters, not declared
+axioms. They remain structural parameters, pending the follow-on pass.
+
+### Commits
+
+* `0db8b9e` — Phase 4 T-MUL-CC1: Arith carry-chain identity (pure-field)
+* `8ee913f` — Phase 4 T-MUL-CC2 + T-DIV-CC1: per-family carry-chain
+  specializations
+* `ec5e29b` — Phase 4 T-MUL-CC3: document Package C residuals
+* `f93bce7` — Phase 4 T-MUL-CC4: bundled carry-chain-holds predicates
+
+### Build gate
+
+* `lake build` — 8118 jobs green.
+* `git grep -n 'sorry' ZiskFv/ZiskFv/{Fundamentals,Airs,Spec,Equivalence,GoldenTraces,Tactics,RV64D}` — empty.
