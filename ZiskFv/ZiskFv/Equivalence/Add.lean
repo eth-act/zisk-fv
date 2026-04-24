@@ -281,4 +281,85 @@ theorem equiv_ADD_metaplan_from_bus
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
     h_rd_idx h_rd_val
 
+/-- **AddInput constructor from bus fields.** Mirrors openvm-fv's
+    `MulInput_of_MUL_instruction_fields` pattern: assembles an
+    `AddInput` whose fields are directly the bus entries' byte-packed
+    values and pointers. Used by `equiv_ADD_metaplan_bus_self` to
+    eliminate the match hypotheses (they become rfl). -/
+def AddInput_of_bus
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL)) : PureSpec.AddInput :=
+  { r1_val := U64.toBV #v[e0.x0, e0.x1, e0.x2, e0.x3,
+                          e0.x4, e0.x5, e0.x6, e0.x7]
+    r2_val := U64.toBV #v[e1.x0, e1.x1, e1.x2, e1.x3,
+                          e1.x4, e1.x5, e1.x6, e1.x7]
+    rd := Transpiler.wrap_to_regidx e2.ptr
+    PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
+
+/-- **Item 4 closure for ADD — bus-derived input.** Eliminates the
+    five match hypotheses of `equiv_ADD_metaplan_from_bus` by
+    constructing the `AddInput` directly from the bus entries. The
+    match hyps become `rfl` and drop out of the signature.
+
+    This is the openvm-fv `MulInput_of_MUL_instruction_fields` pattern
+    applied to zisk-fv. Demonstrates that the `_from_bus` match
+    hypotheses are genuinely harness-level conditions that disappear
+    when `input` is constructed from the bus rather than taken as a
+    free parameter.
+
+    Remaining non-`rfl` hypotheses:
+    - `h_bus`: the bus precondition (irreducible — encodes state
+      consistency with bus claims).
+    - `h_rd_idx`: ties the pure-spec's rd to bus e2.ptr. With bus-derived
+      input this becomes the trivial `wrap_to_regidx e2.ptr = wrap_to_regidx e2.ptr`.
+    - `h_rd_val`: the Arith/Binary packed-correct identity (derivable
+      from `equiv_ADD`'s compositional result + bus match on c-lanes
+      — left as a parameter here pending full derivation composition).
+    - Structural bus hypotheses: `h_exec_len`, `h_e*_mult`, `h_m*_*`,
+      `h_nextPC_matches` — shape claims that are PIL-level (out of
+      our derivation path). -/
+theorem equiv_ADD_metaplan_bus_self
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_add_pure
+            (AddInput_of_bus e0 e1 e2 exec_row)).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
+    -- Ptr matches are the ONLY scenario-binding hypotheses that remain;
+    -- they tie Sail's instruction operands (r1, r2, rd : regidx) to the
+    -- bus-emitted register pointers.
+    (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
+    (h_r2_ptr : regidx_to_fin r2 = Transpiler.wrap_to_regidx e1.ptr)
+    (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_rd_val :
+      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
+                  e2.x4, e2.x5, e2.x6, e2.x7]
+      = U64.toBV #v[e0.x0, e0.x1, e0.x2, e0.x3,
+                    e0.x4, e0.x5, e0.x6, e0.x7]
+      + U64.toBV #v[e1.x0, e1.x1, e1.x2, e1.x3,
+                    e1.x4, e1.x5, e1.x6, e1.x7]) :
+    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- Delegate to equiv_ADD_metaplan_from_bus with the bus-derived input.
+  -- Value-level match hypotheses (h_r1_val, h_r2_val, h_pc) become rfl
+  -- because AddInput_of_bus's fields are those exact expressions.
+  exact equiv_ADD_metaplan_from_bus state
+    (AddInput_of_bus e0 e1 e2 exec_row) r1 r2 rd exec_row e0 e1 e2
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    h_bus
+    h_r1_ptr rfl h_r2_ptr rfl rfl h_rd_ptr
+    (show (AddInput_of_bus e0 e1 e2 exec_row).rd
+          = Transpiler.wrap_to_regidx e2.ptr from rfl)
+    h_rd_val
+
 end ZiskFv.Equivalence.Add
