@@ -83,19 +83,12 @@ theorem equiv_SRA_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_match :
-      (if h : Transpiler.wrap_to_regidx e2.ptr = 0 then
-        (pure () : SailM Unit)
-      else
-        let val := U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                                e2.x4, e2.x5, e2.x6, e2.x7]
-        let reg_idx : Finset.Icc 1 31 :=
-          ⟨ (Transpiler.wrap_to_regidx e2.ptr).val, by simp; omega ⟩
-        write_xreg reg_idx val)
-      =
-      (match (PureSpec.execute_RTYPE_sra_pure sra_input).rd with
-        | .some (rd, rd_val) => write_xreg rd rd_val
-        | .none => pure ())) :
+    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    (h_rd_idx : sra_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_rd_val :
+      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
+                  e2.x4, e2.x5, e2.x6, e2.x7]
+      = execute_RTYPE_pure sra_input.r1_val sra_input.r2_val rop.SRA) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRA)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
   rw [equiv_SRA_sail state sra_input r1 r2 rd
@@ -106,8 +99,9 @@ theorem equiv_SRA_metaplan
         (PureSpec.execute_RTYPE_sra_pure sra_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
-  rw [h_rd_match]
-  simp only [bind, pure, EStateM.bind, EStateM.pure]
-  rcases (PureSpec.execute_RTYPE_sra_pure sra_input).rd with _ | ⟨r, v⟩ <;> rfl
+  simp only [PureSpec.execute_RTYPE_sra_pure, h_rd_idx]
+  split_ifs with h_rd_zero
+  · simp only [bind, pure, EStateM.bind, EStateM.pure]
+  · rw [h_rd_val]
 
 end ZiskFv.Equivalence.Sra
