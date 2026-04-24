@@ -70,7 +70,7 @@ Not yet shipped:
   (9 theorems). Proof body discharges via `Bridge1 ∘ Bridge2 ∘ Bridge3 ∘
   arith_mul_unsigned_packed_correct`. ~200 lines mechanical.
 
-**Effort (remaining):** ~550 lines. 2-3 days.
+**Size (remaining):** ~550 lines.
 
 ### Track B — Signed MUL/DIV carry-chain closure
 
@@ -82,7 +82,7 @@ in `Airs/Arith/{Mul,Div}.lean`.
 Closes signed-mode carry-chain polynomial identity. Does **not** close
 the `arith_table` permutation dependency (that stays scope-honest).
 
-**Effort:** ~400 lines. 2-3 days. Blocks: none (Bridge 1 already shipped).
+**Size:** ~400 lines. Blocks: none (Bridge 1 already shipped).
 
 ### Track C — Shape (d) and (e) LD/SD bus-emission lemmas
 
@@ -102,20 +102,18 @@ authoring or a narrow vmem axiom (audit LeanRV64D first).
 
 Rewire 51 MEM-family Equivalence files.
 
-**Effort:** ~700 lines. 2-3 days. Parallelizable with A, B.
+**Size:** ~700 lines. Parallelizable with A, B.
 
 ### Track D — Golden-trace matrix expansion
 
 Target 58 × 3 = 174 fixtures. Current: 6 × 3 + 52 × 1 = 70. Need ~104
 new fixtures via harness extension + generation.
 
-**Effort:** ½ day harness + 1-2 days generation. Parallel with proof tracks.
+Parallel with proof tracks.
 
 ### Track E — `just verify-phase4` target
 
-Bundle V1–V11 gates into a justfile target.
-
-**Effort:** ~1 hour at end.
+Bundle V1–V11 gates into a justfile target. Runs at end.
 
 ### Track F — Memory + CLOSED + REPORT deltas
 
@@ -127,18 +125,16 @@ Bundle V1–V11 gates into a justfile target.
 - `docs/fv/openvm-fv-parity.md`: mark Gap 2 closed; flag Gaps 1 and 3 as Phase 5 scope.
 - `docs/fv/trusted-base.md`: Phase 4.5 history entry.
 
-**Effort:** ½ day at end.
+Runs at end.
 
 ## Execution order
 
 Six-track Gantt. Critical path: A3 (Bridge 3) → A-rewire.
 
-1. **A3 (Bridge 3)** serial in main session (hardest piece; ~2 days).
+1. **A3 (Bridge 3)** serial in main session (hardest piece).
 2. After A3: **A-rewire** (9 Arith files) + **B** (signed) + **C** (LD/SD) in parallel worktree subagents.
 3. **D** (fixtures) runs any time, parallel.
 4. **E** + **F** at the end.
-
-**Wall-clock:** 5-7 days single-threaded; 3-4 days with subagent parallelism.
 
 ## Critical files
 
@@ -181,3 +177,79 @@ Six-track Gantt. Critical path: A3 (Bridge 3) → A-rewire.
   in current shape. Requires axiom-level refactor scoped in Phase 5.
 - Arith table-lookup witnesses, Zicclsm, precompiles, ZisK custom ops —
   all scope-honest per CLAUDE.md.
+
+## Phase 4.5 status — PARTIAL-CLOSED 2026-04-24
+
+Session-2 shipped Track A3 (Bridge 3) and Track E
+(`just verify-phase4`). Full phase closure remains a multi-session
+effort; tracks A-rewire, B, C, D are outstanding.
+
+### What shipped
+
+- **A3 — Bridge 3** (`Fundamentals/PackedBitVec.lean`, 206 lines,
+  commit `6cddb9b`). Provides six public lemmas:
+  - `u64_toBV_toNat` — BV-concatenation to Nat byte-sum, via the
+    openvm-fv `BitVec.toNat_append` + `Nat.shiftLeft_add_eq_or_of_lt`
+    idiom (`OpenvmFv/Fundamentals/U32.lean:195`). Session-1 blocker
+    (`bv_decide` vs `omega` tactic gap) avoided by using the Nat-form
+    approach per the plan's fallback.
+  - `fgl_byte_coe_toBV8_toNat` — FGL→BitVec 8 coercion preserves
+    `.toNat` under byte range.
+  - `u64_toBV_of_bytes_toNat` — composed: `U64.toBV` of coerced FGL
+    bytes reduces to the Nat byte-sum.
+  - `fgl_packed_bytes_nat_cast` — field-packed expression equals
+    Nat cast (algebraic identity over `ZMod GL_prime`).
+  - `fgl_packed_bytes_val_of_lt_prime` — `.val` equals Nat sum under
+    the no-wraparound bound `sum < GL_prime`.
+  - `u64_toBV_eq_ofNat_fgl_val` — final bridge consumed by A-rewire.
+- **E — `just verify-phase4`** (commit `7ebb55b`). Bundles V1 (lake
+  build green), V3 (zero sorry outside `Extraction/`), V8 (uniformity
+  lint: 58 opcodes). Runs `verify-phase2` as a regression gate.
+
+### What was learned
+
+- **Scope of A-rewire is larger than the plan estimated.** "Drop
+  `h_rd_match`" for the 9 Arith opcodes requires either (a) adding 5+
+  decomposed hypotheses per theorem (byte ranges, Main-AIR c-lane ↔
+  byte-pack match, Arith field identity, operand-packing identities,
+  no-wraparound bound) or (b) deriving all of those from existing
+  circuit hypotheses — which in turn requires authoring a Main-AIR
+  `register_write_lanes_match` analogue (currently only exists for
+  MEM-family in `Airs/MemoryBus.lean:139-143`). Both paths are
+  substantive lifts, not the "~200 lines mechanical" the plan
+  estimated. Bridge 3 is load-bearing infrastructure, but it is not
+  sufficient on its own to close Gap 2 — it needs the bus-emission
+  spec that ties Main `c_0`/`c_1` lanes to the register-write entry's
+  byte lanes, which is currently only done for the MEM family.
+
+### What remains — carry-over into Phase 4.5.1 (or fold into Phase 5)
+
+- **A-rewire.** 9 Arith `equiv_<OP>_metaplan` theorems still take
+  `h_rd_match` as a hypothesis. Gap 2 closure for Arith family still
+  open.
+- **Track B.** Signed MUL/DIV carry-chain closure. Independent of
+  A-rewire; Bridge 1 (`Airs/Arith/Bridge1.lean`) already shipped in
+  session 1 covers the unsigned specialization.
+- **Track C.** Shape (d) LD / shape (e) SD bus-emission lemmas. 51
+  MEM-family metaplan theorems still parameterize
+  `h_bus_execute_matches_sail` monolithically. Closing these requires
+  reducing an 8-element memory-bus fold, which
+  `Airs/BusEmission.lean:309-323` already flags as multi-hour work.
+- **Track D.** 58 × 3 = 174 golden-trace fixtures. Currently at 70
+  (6 × 3 + 52 × 1). Requires harness extension + 104 new fixtures.
+- **Track F (partial).** This CLOSED section appended; remaining docs
+  (`REPORT.md` §3.1/§3.3, `docs/fv/{package-c-residuals,openvm-fv-parity,
+  trusted-base}.md`) still carry the Phase-4 language. Roll them when
+  A-rewire and C ship.
+
+### Recommended next-session plan
+
+1. Pick **one Arith opcode (MUL)** and do A-rewire as a pilot. This
+   proves the Bridge 3 → `h_rd_match` discharge chain end-to-end and
+   determines the per-opcode template for the remaining 8.
+2. In parallel (worktree subagent), author the Main-AIR
+   `register_write_lanes_match` analogue in `Airs/MemoryBus.lean`
+   (or a sibling module) so the pilot has a named hypothesis to
+   consume rather than inlining byte ↔ lane equations.
+3. Track B and Track C are independent of A-rewire and can run in
+   their own worktree subagents.
