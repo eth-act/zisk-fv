@@ -506,6 +506,93 @@ lemma arith_div_unsigned_packed_correct
     + (65536 * 65536 * 65536 * 65536 * 65536 * 65536) * h37
     + (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536) * h38
 
+/-- **DIV-signed carry-chain specialization.**
+
+    Extends `arith_div_unsigned_packed_correct` to signed DIV
+    (`(na, nb, np, nr) ∈ {0,1}⁴` with the signed-DIV rows per
+    `arith.pil:222-234`; `m32 = 0`, `div = 1`).
+
+    The conclusion mirrors the pure-field
+    `ArithCarryChain.arith_div_signed_carry_identity`:
+
+        fab * a_packed * b_packed + (1 - 2*nr) * d_packed
+          + (nb_fa * a_packed + na_fb * b_packed) * B^4
+          + (nr - np) * B^4 + na*nb * B^8
+        = (1 - 2*np) * c_packed
+
+    where `fab`, `na_fb`, `nb_fa` are pinned by constraints 6/7/8 to
+        fab = 1 - 2*na - 2*nb + 4*na*nb,
+        na_fb = na*(1 - 2*nb),
+        nb_fa = nb*(1 - 2*na).
+
+    Specializing `(na, nb, np, nr) = (0, 0, 0, 0)` recovers
+    `a_packed * b_packed + d_packed = c_packed`
+    (quotient × divisor + remainder = dividend).
+
+    **Scope note — arith_table.** The 4-DIV-opcode mapping
+    `(opcode, m32) ↦ (na, nb, np, nr)` is enforced by the arith_table
+    permutation lookup; this theorem takes the sign witnesses as
+    explicit hypotheses, not derived from the table. -/
+lemma arith_div_signed_packed_correct
+    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+    (h6 : constraint_6_every_row v.circuit row)
+    (h7 : constraint_7_every_row v.circuit row)
+    (h8 : constraint_8_every_row v.circuit row)
+    (h31 : constraint_31_every_row v.circuit row)
+    (h32 : constraint_32_every_row v.circuit row)
+    (h33 : constraint_33_every_row v.circuit row)
+    (h34 : constraint_34_every_row v.circuit row)
+    (h35 : constraint_35_every_row v.circuit row)
+    (h36 : constraint_36_every_row v.circuit row)
+    (h37 : constraint_37_every_row v.circuit row)
+    (h38 : constraint_38_every_row v.circuit row)
+    (_h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
+    (h_div : v.div row = 1) :
+    (1 - 2 * v.na row - 2 * v.nb row + 4 * v.na row * v.nb row)
+        * a_chunks_packed_div v row * b_chunks_packed_div v row
+      + (1 - 2 * v.nr row) * d_chunks_packed_div v row
+      + (v.nb row * (1 - 2 * v.na row) * a_chunks_packed_div v row
+          + v.na row * (1 - 2 * v.nb row) * b_chunks_packed_div v row)
+          * (65536 * 65536 * 65536 * 65536)
+      + (v.nr row - v.np row) * (65536 * 65536 * 65536 * 65536)
+      + v.na row * v.nb row
+          * (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536)
+      = (1 - 2 * v.np row) * c_chunks_packed_div v row := by
+  -- Derive fab / na_fb / nb_fa from constraints 6/7/8.
+  simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
+             ← v.na_def, ← v.nb_def] at h6 h7 h8
+  have h_fab : Circuit.main v.circuit (id := 1) (column := 30) (row := row) (rotation := 0)
+    = 1 - 2 * v.na row - 2 * v.nb row + 4 * v.na row * v.nb row := by linear_combination h6
+  have h_nafb : Circuit.main v.circuit (id := 1) (column := 31) (row := row) (rotation := 0)
+    = v.na row * (1 - 2 * v.nb row) := by linear_combination h7
+  have h_nbfa : Circuit.main v.circuit (id := 1) (column := 32) (row := row) (rotation := 0)
+    = v.nb row * (1 - 2 * v.na row) := by linear_combination h8
+  simp only [constraint_31_every_row, constraint_32_every_row,
+             constraint_33_every_row, constraint_34_every_row,
+             constraint_35_every_row, constraint_36_every_row,
+             constraint_37_every_row, constraint_38_every_row,
+             ← v.a_0_def, ← v.a_1_def, ← v.a_2_def, ← v.a_3_def,
+             ← v.b_0_def, ← v.b_1_def, ← v.b_2_def, ← v.b_3_def,
+             ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
+             ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
+             ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
+             ← v.m32_def, ← v.div_def]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  simp only [h_m32, h_div, h_fab, h_nafb, h_nbfa,
+             mul_zero, add_zero, sub_zero,
+             mul_one, sub_self]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  unfold a_chunks_packed_div b_chunks_packed_div c_chunks_packed_div d_chunks_packed_div
+  linear_combination
+    h31
+    + 65536 * h32
+    + (65536 * 65536) * h33
+    + (65536 * 65536 * 65536) * h34
+    + (65536 * 65536 * 65536 * 65536) * h35
+    + (65536 * 65536 * 65536 * 65536 * 65536) * h36
+    + (65536 * 65536 * 65536 * 65536 * 65536 * 65536) * h37
+    + (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536) * h38
+
 /-- **DIV-unsigned carry-chain specialization (bundled form).** -/
 lemma arith_div_unsigned_packed_correct_bundled
     (v : Valid_ArithDiv C F ExtF) (row : ℕ)

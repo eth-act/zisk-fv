@@ -462,6 +462,107 @@ lemma arith_mul_unsigned_packed_correct
     + (65536 * 65536 * 65536 * 65536 * 65536 * 65536) * h37
     + (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536) * h38
 
+/-- **MUL-signed carry-chain specialization.**
+
+    Extends `arith_mul_unsigned_packed_correct` to the signed MUL family
+    (`(na, nb) ∈ {0,1}²` with `np` matching the product sign). The `nr`,
+    `sext`, `m32`, `div` witnesses remain zero — signed-MUL 64-bit uses
+    the same 64×64→128 carry chain as unsigned; only the sign-preprocess
+    witnesses differ.
+
+    The conclusion mirrors the pure-field
+    `ArithCarryChain.arith_mul_signed_carry_identity`:
+
+        fab * a_packed * b_packed
+          + (nb_fa * a_packed + na_fb * b_packed) * B^4
+          + (na*nb - np) * B^8
+        = (1 - 2*np) * (c_packed + d_packed * B^4)
+
+    where `fab`, `na_fb`, `nb_fa` are the named columns pinned by
+    constraints 6/7/8 to
+        fab = 1 - 2*na - 2*nb + 4*na*nb,
+        na_fb = na*(1 - 2*nb),
+        nb_fa = nb*(1 - 2*na).
+    The caller may specialize `(na, nb, np)` to any of the four MUL-mode
+    quadrants to recover a concrete sign-adjusted packed identity; the
+    unsigned specialization (`na = nb = np = 0`) reduces the LHS to
+    `a_packed * b_packed` and the RHS to `c_packed + d_packed * B^4`.
+
+    **Scope note — arith_table.** The 9-opcode mapping
+    `(opcode, m32) ↦ (na, nb, np, nr)` is enforced by the arith_table
+    permutation lookup, which we treat scope-honestly — this theorem
+    takes the sign witnesses as explicit hypotheses, not derived from
+    the table.
+
+    The `np` witness is left free (only asserted boolean via
+    `constraint_44`'s simp form) because the MUL primary/secondary row
+    pattern in `arith.pil:222-227` couples `np` to the top nibble of
+    `d[3]` via the arith_table — again scope-honest. -/
+lemma arith_mul_signed_packed_correct
+    (v : Valid_ArithMul C F ExtF) (row : ℕ)
+    (h6 : constraint_6_every_row v.circuit row)
+    (h7 : constraint_7_every_row v.circuit row)
+    (h8 : constraint_8_every_row v.circuit row)
+    (h31 : constraint_31_every_row v.circuit row)
+    (h32 : constraint_32_every_row v.circuit row)
+    (h33 : constraint_33_every_row v.circuit row)
+    (h34 : constraint_34_every_row v.circuit row)
+    (h35 : constraint_35_every_row v.circuit row)
+    (h36 : constraint_36_every_row v.circuit row)
+    (h37 : constraint_37_every_row v.circuit row)
+    (h38 : constraint_38_every_row v.circuit row)
+    (h_nr : v.nr row = 0)
+    (_h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
+    (h_div : v.div row = 0) :
+    (1 - 2 * v.na row - 2 * v.nb row + 4 * v.na row * v.nb row)
+        * a_chunks_packed v row * b_chunks_packed v row
+      + (v.nb row * (1 - 2 * v.na row) * a_chunks_packed v row
+          + v.na row * (1 - 2 * v.nb row) * b_chunks_packed v row)
+          * (65536 * 65536 * 65536 * 65536)
+      + (v.na row * v.nb row - v.np row)
+          * (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536)
+      = (1 - 2 * v.np row)
+          * (c_chunks_packed v row
+            + d_chunks_packed v row * (65536 * 65536 * 65536 * 65536)) := by
+  -- Derive fab / na_fb / nb_fa from constraints 6/7/8.
+  simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
+             ← v.na_def, ← v.nb_def] at h6 h7 h8
+  have h_fab : Circuit.main v.circuit (id := 1) (column := 30) (row := row) (rotation := 0)
+    = 1 - 2 * v.na row - 2 * v.nb row + 4 * v.na row * v.nb row := by linear_combination h6
+  have h_nafb : Circuit.main v.circuit (id := 1) (column := 31) (row := row) (rotation := 0)
+    = v.na row * (1 - 2 * v.nb row) := by linear_combination h7
+  have h_nbfa : Circuit.main v.circuit (id := 1) (column := 32) (row := row) (rotation := 0)
+    = v.nb row * (1 - 2 * v.na row) := by linear_combination h8
+  -- Unfold the carry constraints and rewrite named columns back.
+  simp only [constraint_31_every_row, constraint_32_every_row,
+             constraint_33_every_row, constraint_34_every_row,
+             constraint_35_every_row, constraint_36_every_row,
+             constraint_37_every_row, constraint_38_every_row,
+             ← v.a_0_def, ← v.a_1_def, ← v.a_2_def, ← v.a_3_def,
+             ← v.b_0_def, ← v.b_1_def, ← v.b_2_def, ← v.b_3_def,
+             ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
+             ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
+             ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
+             ← v.m32_def, ← v.div_def]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  -- Substitute mode witnesses (m32 = 0, nr = 0, div = 0) and the fab / na_fb / nb_fa
+  -- identities.
+  simp only [h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
+             mul_zero, zero_mul, add_zero, sub_zero,
+             mul_one]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  -- The signed carry-chain identity now applies.
+  unfold a_chunks_packed b_chunks_packed c_chunks_packed d_chunks_packed
+  linear_combination
+    h31
+    + 65536 * h32
+    + (65536 * 65536) * h33
+    + (65536 * 65536 * 65536) * h34
+    + (65536 * 65536 * 65536 * 65536) * h35
+    + (65536 * 65536 * 65536 * 65536 * 65536) * h36
+    + (65536 * 65536 * 65536 * 65536 * 65536 * 65536) * h37
+    + (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536) * h38
+
 /-- **MUL-unsigned carry-chain specialization (bundled form).** Same as
     `arith_mul_unsigned_packed_correct` but consuming the bundled
     `mul_carry_chain_holds` predicate — more ergonomic for downstream
