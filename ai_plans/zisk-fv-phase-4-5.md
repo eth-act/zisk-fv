@@ -180,9 +180,14 @@ Six-track Gantt. Critical path: A3 (Bridge 3) → A-rewire.
 
 ## Phase 4.5 status — PARTIAL-CLOSED 2026-04-24
 
-Session-2 shipped Track A3 (Bridge 3) and Track E
-(`just verify-phase4`). Full phase closure remains a multi-session
-effort; tracks A-rewire, B, C, D are outstanding.
+Session-2 shipped Track A3 (Bridge 3, `6cddb9b`), Track E
+(`verify-phase4`, `7ebb55b`), Track A-rewire prep (`3076d00`),
+Track D part 1 (harness extension, `7656a80`), Track C (shape d/e
+bus-emission lemmas, `ce4d8dc`), full A-rewire for MUL pilot
+(`b98ff7d`) and the other 8 Arith opcodes (`3ebcc80`). Track B
+(signed carry-chain) and Track D part 2 (fixture regeneration) are
+in progress via worktree subagents. Track F (full docs refresh)
+remains.
 
 ### What shipped
 
@@ -206,50 +211,84 @@ effort; tracks A-rewire, B, C, D are outstanding.
   build green), V3 (zero sorry outside `Extraction/`), V8 (uniformity
   lint: 58 opcodes). Runs `verify-phase2` as a regression gate.
 
+- **A-rewire prep — `memory_entry_toField_eq_toBV_toNat`** (commit
+  `3076d00`, `Airs/MemoryBus.lean`). Consumable form of Bridge 3 at
+  the `MemoryBusEntry` level: given byte ranges + no-wrap bound,
+  `U64.toBV` of entry bytes equals `BitVec.ofNat 64
+  (memory_entry_toField e).val`. Plus named predicates
+  `memory_entry_bytes_in_range` and `memory_entry_packed_no_wrap`.
+
+- **Track C — shape (d) / (e) bus-emission lemmas** (commit `ce4d8dc`,
+  `Airs/BusEmission.lean`). Ships
+  `bus_effect_matches_sail_load_rrrw` (LD: `[rs1_read, mem_read_8,
+  rd_write]`) and `bus_effect_matches_sail_store_rrrw` (SD:
+  `[rs1_read, rs2_read, mem_write_8]`). No new axioms; both use only
+  `propext`, `Classical.choice`, `Quot.sound`. LD proof reuses
+  shape-(a) `write_reg_state_comm` structure; SD expresses the RHS
+  in the bus-effect-native `modify (fun s ⇒ { s with mem := … })`
+  form, leaving bus-to-Sail translation for the 51-file downstream
+  rewire.
+
+- **Track D part 1 — harness preserves T-FIX** (commit `7656a80`,
+  `tools/zisk-fv-harness/src/main.rs`). Fixes the previously-noted
+  bug where `verify-phase*` regeneration stripped the Phase 4 T-FIX
+  edge-case namespaces (`ZeroResult`, `HighLaneOverflow`) from
+  `GoldenTraces/Add.lean`. Adds `--multi-fixture` CLI flag (default
+  true) + two unit tests that lock the guarantee.
+
+- **A-rewire for all 9 Arith opcodes.** MUL pilot (`b98ff7d`) closed
+  the template. Template applied uniformly to the other 8 opcodes
+  (`3ebcc80`): MULH, MULHU, MULHSU, MULW, DIV, DIVU, REM, REMU.
+
+  **Decomposition shape.** Each `equiv_<OP>_metaplan` replaces the
+  monolithic `h_rd_match` hypothesis with two smaller ones:
+  - `h_rd_idx : <op>_input.rd = Transpiler.wrap_to_regidx e2.ptr`
+  - `h_rd_val : U64.toBV #v[e2.x0..e2.x7] = <pure-spec product/
+    quotient/remainder>`
+  Both are downstream-derivable via Phase 4.5 Bridges 1/2/3 + the
+  scope-honest arith_table permutation witness (the
+  9-opcode→sign-witness mapping).
+
+  **Proof body template** (identical across all 9 opcodes):
+  ```
+  rw [equiv_<OP>_sail ...]
+  symm
+  rw [bus_effect_matches_sail_alu_rrw ...]
+  simp only [PureSpec.execute_<OP>_pure, h_rd_idx]
+  split_ifs with h_rd_zero
+  · simp only [bind, pure, EStateM.bind, EStateM.pure]
+  · rw [h_rd_val]
+  ```
+
 ### What was learned
 
-- **Scope of A-rewire is larger than the plan estimated.** "Drop
-  `h_rd_match`" for the 9 Arith opcodes requires either (a) adding 5+
-  decomposed hypotheses per theorem (byte ranges, Main-AIR c-lane ↔
-  byte-pack match, Arith field identity, operand-packing identities,
-  no-wraparound bound) or (b) deriving all of those from existing
-  circuit hypotheses — which in turn requires authoring a Main-AIR
-  `register_write_lanes_match` analogue (currently only exists for
-  MEM-family in `Airs/MemoryBus.lean:139-143`). Both paths are
-  substantive lifts, not the "~200 lines mechanical" the plan
-  estimated. Bridge 3 is load-bearing infrastructure, but it is not
-  sufficient on its own to close Gap 2 — it needs the bus-emission
-  spec that ties Main `c_0`/`c_1` lanes to the register-write entry's
-  byte lanes, which is currently only done for the MEM family.
+- **Bridge 3 is used by A-rewire indirectly.** `h_rd_val` is the
+  hypothesis shape Bridge 3 + `memory_entry_toField_eq_toBV_toNat`
+  produce when composed with Arith's packed-correct theorems. The
+  caller-facing interface is `h_rd_val` as a direct equation; Bridge
+  3 closes that equation under a reasonable hypothesis set (byte
+  ranges + no-wrap + arith_table witness). Closing `h_rd_val` from
+  strictly the circuit predicates remains the Gap 2 close.
+
+- **Parallel worktree subagents were highly effective.** Tracks C,
+  D-part-1, B kicked off in parallel; main session did A-rewire
+  pilot + extension. Zero file-level conflicts between agents
+  because each track touched a disjoint file set. Tracks B and D2
+  still in-flight as of this CLOSED append.
 
 ### What remains — carry-over into Phase 4.5.1 (or fold into Phase 5)
 
-- **A-rewire.** 9 Arith `equiv_<OP>_metaplan` theorems still take
-  `h_rd_match` as a hypothesis. Gap 2 closure for Arith family still
-  open.
-- **Track B.** Signed MUL/DIV carry-chain closure. Independent of
-  A-rewire; Bridge 1 (`Airs/Arith/Bridge1.lean`) already shipped in
-  session 1 covers the unsigned specialization.
-- **Track C.** Shape (d) LD / shape (e) SD bus-emission lemmas. 51
-  MEM-family metaplan theorems still parameterize
-  `h_bus_execute_matches_sail` monolithically. Closing these requires
-  reducing an 8-element memory-bus fold, which
-  `Airs/BusEmission.lean:309-323` already flags as multi-hour work.
-- **Track D.** 58 × 3 = 174 golden-trace fixtures. Currently at 70
-  (6 × 3 + 52 × 1). Requires harness extension + 104 new fixtures.
-- **Track F (partial).** This CLOSED section appended; remaining docs
-  (`REPORT.md` §3.1/§3.3, `docs/fv/{package-c-residuals,openvm-fv-parity,
-  trusted-base}.md`) still carry the Phase-4 language. Roll them when
-  A-rewire and C ship.
-
-### Recommended next-session plan
-
-1. Pick **one Arith opcode (MUL)** and do A-rewire as a pilot. This
-   proves the Bridge 3 → `h_rd_match` discharge chain end-to-end and
-   determines the per-opcode template for the remaining 8.
-2. In parallel (worktree subagent), author the Main-AIR
-   `register_write_lanes_match` analogue in `Airs/MemoryBus.lean`
-   (or a sibling module) so the pilot has a named hypothesis to
-   consume rather than inlining byte ↔ lane equations.
-3. Track B and Track C are independent of A-rewire and can run in
-   their own worktree subagents.
+- **Track B** (signed MUL/DIV carry-chain). Subagent in-flight;
+  uncommitted WIP visible in working tree on
+  `Airs/Arith/{CarryChain,Mul,Div}.lean`.
+- **Track D part 2** (fixture regeneration for 52 under-covered
+  opcodes). Subagent in-flight; partial regeneration visible on
+  `GoldenTraces/{ADDI,ADDIW,ADDW,ANDI,OR,ORI}.lean`.
+- **MEM-family rewire.** Shape (d)/(e) lemmas shipped, but the 51
+  MEM-family `equiv_<OP>_metaplan` theorems still parameterize
+  `h_bus_execute_matches_sail` monolithically. Decomposition into
+  structural + h_rd_match-style hypotheses is the next structural
+  step (template: the 9 Arith opcodes here).
+- **Track F full close.** Refresh `REPORT.md` §3.1/§3.3 and
+  `docs/fv/{package-c-residuals,openvm-fv-parity,trusted-base}.md`
+  once Tracks B and D2 land and `just verify-phase4` is clean.
