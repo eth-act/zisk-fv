@@ -3,8 +3,6 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Extraction.Arith
-import ZiskFv.Airs.Arith.Mul
-import ZiskFv.Airs.Arith.Div
 
 /-!
 **Arith carry-chain identity (Phase 4 Package C).**
