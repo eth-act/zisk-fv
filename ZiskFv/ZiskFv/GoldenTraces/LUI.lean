@@ -107,4 +107,37 @@ example :
 
 end LuiWitness
 
+-- Phase 4.5 Track D: additional edge-case fixture.
+
+section ZeroImm
+
+/- Witness row: LUI `x1, 0` — imm = 0 ⇒ rd = 0. Smallest corner case. -/
+
+@[simp] def lui_pc : FGL := 100
+@[simp] def lui_b_lo : FGL := 0
+@[simp] def lui_b_hi : FGL := 0
+@[simp] def lui_c_lo : FGL := 0
+@[simp] def lui_c_hi : FGL := 0
+@[simp] def lui_flag : FGL := 0
+@[simp] def lui_set_pc : FGL := 0
+@[simp] def lui_store_pc : FGL := 0
+@[simp] def lui_jmp_offset1 : FGL := 4
+@[simp] def lui_jmp_offset2 : FGL := 4
+
+/-- rd = c_0 = 0. -/
+example :
+    lui_store_pc * (lui_pc + lui_jmp_offset2 - lui_c_lo) + lui_c_lo
+      = (0 : FGL) := by decide
+
+/-- High lane zero. -/
+example : (1 - lui_store_pc) * lui_c_hi = (0 : FGL) := by decide
+
+/-- Next-pc = 104. -/
+example :
+    lui_pc + lui_jmp_offset2
+      + lui_flag * (lui_jmp_offset1 - lui_jmp_offset2)
+      = (104 : FGL) := by decide
+
+end ZeroImm
+
 end ZiskFv.GoldenTraces.LUI

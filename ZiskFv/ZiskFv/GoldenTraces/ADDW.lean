@@ -62,4 +62,34 @@ example :
     (0x1a, 0x1b) in `zisk_ops.rs:408-409`. -/
 example : (OP_ADD_W : FGL) + 1 = OP_SUB_W := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace ZeroSum
+
+-- Edge case: `ADDW x1, x0, x0` — zero addition, zero result.
+@[simp] def addw_a_lo : FGL := 0
+@[simp] def addw_b_lo : FGL := 0
+@[simp] def addw_c_lo : FGL := 0
+@[simp] def addw_c_hi : FGL := 0
+
+example : addw_c_lo + addw_c_hi * 4294967296 = (0 : FGL) := by decide
+example : addw_a_lo + addw_b_lo = addw_c_lo := by decide
+
+end ZeroSum
+
+namespace Max32Wrap
+
+-- Edge case: 32-bit top-bit-set result with sign-extension.
+-- rs1 = 0xFFFF_FFFE, rs2 = 1 → 32-bit sum = 0xFFFF_FFFF; c_hi = 0xFFFF_FFFF.
+@[simp] def addw_a_lo : FGL := 4294967294         -- 0xFFFF_FFFE
+@[simp] def addw_b_lo : FGL := 1
+@[simp] def addw_c_lo : FGL := 4294967295         -- 0xFFFF_FFFF
+@[simp] def addw_c_hi : FGL := 4294967295         -- sign-extend
+
+example : addw_c_lo + addw_c_hi * 4294967296
+    = (18446744073709551615 : FGL) := by decide
+example : addw_a_lo + addw_b_lo = addw_c_lo := by decide
+
+end Max32Wrap
+
 end ZiskFv.GoldenTraces.ADDW

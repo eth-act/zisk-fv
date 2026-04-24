@@ -57,4 +57,38 @@ example :
     addiw_m32 * (1 - addiw_m32) = (0 : FGL) ∧
     addiw_flag * addiw_set_pc = (0 : FGL) := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace ZeroSum
+
+-- Edge case: `ADDIW x1, x0, 0` on the m32=1 path.
+@[simp] def addiw_a_lo : FGL := 0
+@[simp] def addiw_b_lo : FGL := 0
+@[simp] def addiw_c_lo : FGL := 0
+@[simp] def addiw_c_hi : FGL := 0
+
+example : addiw_c_lo + addiw_c_hi * 4294967296 = (0 : FGL) := by decide
+example : addiw_a_lo + addiw_b_lo = addiw_c_lo := by decide
+
+end ZeroSum
+
+namespace NegSignExtend
+
+-- Edge case: 32-bit result with top bit set: rs1 = 1, imm = -2
+-- (sign-ext as 0xFFFF_FFFE in low 32). 32-bit sum = 0xFFFF_FFFF,
+-- sign-ext to 64 with c_hi = 0xFFFF_FFFF.
+@[simp] def addiw_a_lo : FGL := 1
+@[simp] def addiw_a_hi : FGL := 0
+@[simp] def addiw_b_lo : FGL := 4294967294
+@[simp] def addiw_b_hi : FGL := 4294967295        -- m32=1 zeros this on bus
+@[simp] def addiw_c_lo : FGL := 4294967295
+@[simp] def addiw_c_hi : FGL := 4294967295
+
+example : (1 - (1 : FGL)) * addiw_a_hi = (0 : FGL) := by decide
+example : (1 - (1 : FGL)) * addiw_b_hi = (0 : FGL) := by decide
+example : addiw_c_lo + addiw_c_hi * 4294967296
+    = (18446744073709551615 : FGL) := by decide
+
+end NegSignExtend
+
 end ZiskFv.GoldenTraces.ADDIW

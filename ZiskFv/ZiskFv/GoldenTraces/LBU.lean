@@ -96,4 +96,32 @@ example :
     ((1 : FGL) - (0 : FGL)) * (1 : FGL)
       * ((0 : FGL) - (0 : FGL)) = 0 := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace ZeroByte
+
+-- Edge case: byte value 0. No bits set; packed value is 0.
+@[simp] def lbu_x0 : FGL := 0
+@[simp] def lbu_packed_expected : FGL := 0
+
+example :
+    (lbu_x0 + 0 * 256 + 0 * 65536 + 0 * 16777216
+      + 0 * 4294967296 + 0 * 1099511627776
+      + 0 * 281474976710656 + 0 * 72057594037927936 : FGL)
+    = lbu_packed_expected := by decide
+example : lbu_x0 = (0 : FGL) := by decide
+
+end ZeroByte
+
+namespace MaxByte
+
+-- Edge case: byte value 0xFF (max unsigned i8). Zero-extended to 64 = 255.
+@[simp] def lbu_x0 : FGL := 0xFF
+@[simp] def lbu_packed_expected : FGL := 0xFF
+
+example : lbu_x0 = (255 : FGL) := by decide
+example : (lbu_x0 + 0 * 256 : FGL) = lbu_packed_expected := by decide
+
+end MaxByte
+
 end ZiskFv.GoldenTraces.LBU

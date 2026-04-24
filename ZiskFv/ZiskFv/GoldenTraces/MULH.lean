@@ -118,4 +118,26 @@ example : (OP_MULH : FGL) = OP_MUL + 1 := by decide
 
 end CanonicalCase
 
+-- Phase 4.5 Track D: additional edge-case fixture.
+
+section HighBitProduct
+
+/- Witness row: MULH of two signed values whose 128-bit product exceeds
+   2^64, so the high 64 bits are non-zero. Concretely: `(-1)_s64 * 2
+   = -2 (128-bit signed)`, high half = 0xFFFF_FFFF_FFFF_FFFF (all ones).
+   Represented on the Main row as `c_lo = c_hi = 0xFFFF_FFFF`. -/
+
+@[simp] def mulh_main_a_0 : FGL := 4294967295         -- -1 low 32
+@[simp] def mulh_main_a_1 : FGL := 4294967295         -- -1 high 32
+@[simp] def mulh_main_b_0 : FGL := 2
+@[simp] def mulh_main_b_1 : FGL := 0
+@[simp] def mulh_main_c_0 : FGL := 4294967295         -- high-half = -1
+@[simp] def mulh_main_c_1 : FGL := 4294967295
+
+/-- Packed high-half is 0xFFFF_FFFF_FFFF_FFFF (all ones). -/
+example : mulh_main_c_0 + mulh_main_c_1 * 4294967296
+    = (18446744073709551615 : FGL) := by decide
+
+end HighBitProduct
+
 end ZiskFv.GoldenTraces.MULH

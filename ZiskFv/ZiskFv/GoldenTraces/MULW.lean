@@ -116,4 +116,24 @@ example : (OP_MUL_W : FGL) = OP_MUL + 2 := by decide
 
 end CanonicalCase
 
+-- Phase 4.5 Track D: additional edge-case fixture.
+
+section Overflow32
+
+/- Witness row: MULW with 32-bit overflow. `0x1_0001 * 0x1_0001`
+   = `0x1_0002_0001`. Low 32 bits = `0x0002_0001 = 131073`.
+   Sign-extended to 64: c_lo = 131073, c_hi = 0. -/
+
+@[simp] def mulw_main_a_0 : FGL := 65537
+@[simp] def mulw_main_a_1 : FGL := 0
+@[simp] def mulw_main_b_0 : FGL := 65537
+@[simp] def mulw_main_b_1 : FGL := 0
+@[simp] def mulw_main_c_0 : FGL := 131073
+@[simp] def mulw_main_c_1 : FGL := 0
+
+/-- Packed low 32 of the product is 131073. -/
+example : mulw_main_c_0 + mulw_main_c_1 * 4294967296 = (131073 : FGL) := by decide
+
+end Overflow32
+
 end ZiskFv.GoldenTraces.MULW

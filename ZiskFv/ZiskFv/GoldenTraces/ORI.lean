@@ -39,4 +39,34 @@ example :
     ori_m32 * (1 - ori_m32) = (0 : FGL) ∧
     ori_flag * ori_set_pc = (0 : FGL) := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace ZeroImm
+
+-- Edge case: `ORI x1, rs1, 0` — OR with 0 returns rs1 unchanged.
+@[simp] def ori_a_lo : FGL := 2596069104          -- 0x9ABC_DEF0
+@[simp] def ori_a_hi : FGL := 305419896
+@[simp] def ori_b_lo : FGL := 0
+@[simp] def ori_b_hi : FGL := 0
+@[simp] def ori_c_lo : FGL := 2596069104
+@[simp] def ori_c_hi : FGL := 305419896
+
+example : ori_c_lo + ori_c_hi * 4294967296
+    = ori_a_lo + ori_a_hi * 4294967296 := by decide
+
+end ZeroImm
+
+namespace AllOnesImm
+
+-- Edge case: `ORI x1, 0, -1` — sign-ext -1 ⇒ result is all ones.
+@[simp] def ori_b_lo : FGL := 4294967295
+@[simp] def ori_b_hi : FGL := 4294967295
+@[simp] def ori_c_lo : FGL := 4294967295
+@[simp] def ori_c_hi : FGL := 4294967295
+
+example : ori_c_lo + ori_c_hi * 4294967296
+    = (18446744073709551615 : FGL) := by decide
+
+end AllOnesImm
+
 end ZiskFv.GoldenTraces.ORI

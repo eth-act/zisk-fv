@@ -109,4 +109,29 @@ example : (OP_REM : FGL) = OP_DIV + 1 := by decide
 
 end CanonicalCase
 
+-- Phase 4.5 Track D: additional edge-case fixture.
+
+section ZeroDividend
+
+/- Witness row: REM `x3, x0, x2` — dividend 0, divisor 5, remainder 0. -/
+
+@[simp] def rem_main_a_0 : FGL := 0
+@[simp] def rem_main_a_1 : FGL := 0
+@[simp] def rem_main_b_0 : FGL := 5
+@[simp] def rem_main_b_1 : FGL := 0
+@[simp] def rem_main_c_0 : FGL := 0
+@[simp] def rem_main_c_1 : FGL := 0
+@[simp] def rem_arith_b_0 : FGL := 5
+@[simp] def rem_arith_b_1 : FGL := 0
+@[simp] def rem_arith_c_0 : FGL := 0
+@[simp] def rem_arith_c_1 : FGL := 0
+
+/-- Remainder = 0. -/
+example : rem_main_c_0 + rem_main_c_1 * 4294967296 = (0 : FGL) := by decide
+
+/-- Bus a-lane matches (dividend = 0). -/
+example : rem_main_a_0 = rem_arith_c_0 + rem_arith_c_1 * 65536 := by decide
+
+end ZeroDividend
+
 end ZiskFv.GoldenTraces.REM

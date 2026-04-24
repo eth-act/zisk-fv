@@ -39,4 +39,37 @@ example :
     xori_m32 * (1 - xori_m32) = (0 : FGL) ∧
     xori_flag * xori_set_pc = (0 : FGL) := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace ZeroImm
+
+-- Edge case: `XORI x1, rs1, 0` — XOR with 0 is identity.
+@[simp] def xori_a_lo : FGL := 2596069104
+@[simp] def xori_a_hi : FGL := 305419896
+@[simp] def xori_b_lo : FGL := 0
+@[simp] def xori_b_hi : FGL := 0
+@[simp] def xori_c_lo : FGL := 2596069104
+@[simp] def xori_c_hi : FGL := 305419896
+
+example : xori_c_lo + xori_c_hi * 4294967296
+    = xori_a_lo + xori_a_hi * 4294967296 := by decide
+
+end ZeroImm
+
+namespace NegImmFlip
+
+-- Edge case: `XORI x1, 0, -1` (imm sign-extends to all ones). Result
+-- is all ones (= bitwise NOT of 0).
+@[simp] def xori_a_lo : FGL := 0
+@[simp] def xori_a_hi : FGL := 0
+@[simp] def xori_b_lo : FGL := 4294967295
+@[simp] def xori_b_hi : FGL := 4294967295
+@[simp] def xori_c_lo : FGL := 4294967295
+@[simp] def xori_c_hi : FGL := 4294967295
+
+example : xori_c_lo + xori_c_hi * 4294967296
+    = (18446744073709551615 : FGL) := by decide
+
+end NegImmFlip
+
 end ZiskFv.GoldenTraces.XORI

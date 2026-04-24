@@ -107,4 +107,27 @@ example : (OP_REMU : FGL) = OP_DIVU + 1 := by decide
 
 end CanonicalCase
 
+-- Phase 4.5 Track D: additional edge-case fixture.
+
+section DivisorOne
+
+/- Witness row: REMU `x3, x1, x0+1` — any dividend mod 1 = 0. -/
+
+@[simp] def remu_main_a_0 : FGL := 42
+@[simp] def remu_main_a_1 : FGL := 0
+@[simp] def remu_main_b_0 : FGL := 1
+@[simp] def remu_main_b_1 : FGL := 0
+@[simp] def remu_main_c_0 : FGL := 0
+@[simp] def remu_main_c_1 : FGL := 0
+@[simp] def remu_arith_b_0 : FGL := 1
+@[simp] def remu_arith_b_1 : FGL := 0
+
+/-- Remainder = 0 (any x mod 1 = 0). -/
+example : remu_main_c_0 + remu_main_c_1 * 4294967296 = (0 : FGL) := by decide
+
+/-- Divisor bus-b match. -/
+example : remu_main_b_0 = remu_arith_b_0 + remu_arith_b_1 * 65536 := by decide
+
+end DivisorOne
+
 end ZiskFv.GoldenTraces.REMU

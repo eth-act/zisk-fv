@@ -100,4 +100,31 @@ example :
     ((1 : FGL) - (0 : FGL)) * (1 : FGL)
       * ((0 : FGL) - (0 : FGL)) = 0 := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace ZeroHalf
+
+-- Edge case: half value 0. Zero-extended to 64 = 0.
+@[simp] def lhu_x0 : FGL := 0
+@[simp] def lhu_x1 : FGL := 0
+@[simp] def lhu_packed_expected : FGL := 0
+
+example : (lhu_x0 + lhu_x1 * 256 : FGL) = lhu_packed_expected := by decide
+
+end ZeroHalf
+
+namespace MaxHalf
+
+-- Edge case: half value 0xFFFF (max unsigned u16). Zero-extended to 64
+-- = 65535. All other memory-entry lanes zero.
+@[simp] def lhu_x0 : FGL := 0xFF
+@[simp] def lhu_x1 : FGL := 0xFF
+@[simp] def lhu_packed_expected : FGL := 0xFFFF
+
+example : (lhu_x0 + lhu_x1 * 256 : FGL)
+    = lhu_packed_expected := by decide
+example : (lhu_packed_expected : FGL) = (65535 : FGL) := by decide
+
+end MaxHalf
+
 end ZiskFv.GoldenTraces.LHU

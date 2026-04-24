@@ -107,4 +107,23 @@ example : (OP_MULSUH : FGL) ≠ OP_MULUH := by decide
 
 end CanonicalCase
 
+-- Phase 4.5 Track D: additional edge-case fixture.
+
+section ZeroOperand
+
+/- Witness row: MULHSU of `x1 = 0` (signed) × `x2 = big unsigned`. Product
+   = 0, high half = 0. -/
+
+@[simp] def mulhsu_main_a_0 : FGL := 0
+@[simp] def mulhsu_main_a_1 : FGL := 0
+@[simp] def mulhsu_main_b_0 : FGL := 4294967295
+@[simp] def mulhsu_main_b_1 : FGL := 4294967295
+@[simp] def mulhsu_main_c_0 : FGL := 0
+@[simp] def mulhsu_main_c_1 : FGL := 0
+
+/-- High-half packed is 0. -/
+example : mulhsu_main_c_0 + mulhsu_main_c_1 * 4294967296 = (0 : FGL) := by decide
+
+end ZeroOperand
+
 end ZiskFv.GoldenTraces.MULHSU

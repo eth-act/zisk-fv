@@ -112,4 +112,36 @@ example :
 
 end TakenJump
 
+-- Phase 4.5 Track D: additional edge-case fixture.
+
+section ZeroBase
+
+/- Witness row: JALR x1, x0, +0 at pc = 100. rs1 = 0, imm = 0 ⇒
+   next_pc = 0 (zeros the PC). Link write: rd = pc + 4 = 104. -/
+
+@[simp] def jalr_pc : FGL := 100
+@[simp] def jalr_b_lo : FGL := 0
+@[simp] def jalr_b_hi : FGL := 0
+@[simp] def jalr_c_lo : FGL := 0
+@[simp] def jalr_c_hi : FGL := 0
+@[simp] def jalr_flag : FGL := 0
+@[simp] def jalr_set_pc : FGL := 1
+@[simp] def jalr_store_pc : FGL := 1
+@[simp] def jalr_jmp_offset1 : FGL := 0
+@[simp] def jalr_jmp_offset2 : FGL := 4
+
+/-- `next_pc = c_0 + jmp_offset1 = 0 + 0 = 0`. -/
+example :
+    jalr_set_pc * (jalr_c_lo + jalr_jmp_offset1)
+      + (1 - jalr_set_pc) * (jalr_pc + jalr_jmp_offset2)
+      + jalr_flag * (jalr_jmp_offset1 - jalr_jmp_offset2)
+      = (0 : FGL) := by decide
+
+/-- Link write: `pc + jmp_offset2 = 104`, independent of `c_0`. -/
+example :
+    jalr_store_pc * (jalr_pc + jalr_jmp_offset2 - jalr_c_lo) + jalr_c_lo
+      = (104 : FGL) := by decide
+
+end ZeroBase
+
 end ZiskFv.GoldenTraces.JALR

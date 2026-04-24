@@ -43,4 +43,35 @@ example :
     sltiu_m32 * (1 - sltiu_m32) = (0 : FGL) ∧
     sltiu_flag * sltiu_set_pc = (0 : FGL) := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace LargeNotLessThan
+
+-- Edge case: `0xFFFF_FFFF <u 1` is false (unsigned: big > small).
+@[simp] def sltiu_a_lo : FGL := 4294967295
+@[simp] def sltiu_a_hi : FGL := 0
+@[simp] def sltiu_b_lo : FGL := 1
+@[simp] def sltiu_b_hi : FGL := 0
+@[simp] def sltiu_c_lo : FGL := 0
+@[simp] def sltiu_c_hi : FGL := 0
+@[simp] def sltiu_flag : FGL := 0
+
+example : sltiu_c_lo + sltiu_c_hi * 4294967296 = (0 : FGL) := by decide
+example : sltiu_flag * (1 - sltiu_flag) = (0 : FGL) := by decide
+
+end LargeNotLessThan
+
+namespace ImmZero
+
+-- Edge case: `rs1 <u 0` is always false (unsigned lower bound).
+@[simp] def sltiu_a_lo : FGL := 42
+@[simp] def sltiu_b_lo : FGL := 0
+@[simp] def sltiu_c_lo : FGL := 0
+@[simp] def sltiu_c_hi : FGL := 0
+@[simp] def sltiu_flag : FGL := 0
+
+example : sltiu_c_lo + sltiu_c_hi * 4294967296 = (0 : FGL) := by decide
+
+end ImmZero
+
 end ZiskFv.GoldenTraces.SLTIU

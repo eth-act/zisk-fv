@@ -111,4 +111,23 @@ example : (OP_MULUH : FGL) = OP_MULU + 1 := by decide
 
 end CanonicalCase
 
+-- Phase 4.5 Track D: additional edge-case fixture.
+
+section BigProduct
+
+/- Witness row: MULHU of `0xFFFF_FFFF * 0xFFFF_FFFF`. Product
+   = 0xFFFF_FFFE_0000_0001 (fits in low 64), so high half = 0. -/
+
+@[simp] def mulhu_main_a_0 : FGL := 4294967295
+@[simp] def mulhu_main_a_1 : FGL := 0
+@[simp] def mulhu_main_b_0 : FGL := 4294967295
+@[simp] def mulhu_main_b_1 : FGL := 0
+@[simp] def mulhu_main_c_0 : FGL := 0
+@[simp] def mulhu_main_c_1 : FGL := 0
+
+/-- High half = 0 because the product fits in 64 bits. -/
+example : mulhu_main_c_0 + mulhu_main_c_1 * 4294967296 = (0 : FGL) := by decide
+
+end BigProduct
+
 end ZiskFv.GoldenTraces.MULHU

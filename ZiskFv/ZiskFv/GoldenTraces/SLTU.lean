@@ -42,4 +42,35 @@ example :
     sltu_m32 * (1 - sltu_m32) = (0 : FGL) ∧
     sltu_flag * sltu_set_pc = (0 : FGL) := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace NotLessThan
+
+-- Edge case: `5 <u 1` is false (unsigned); rd = 0.
+@[simp] def sltu_a_lo : FGL := 5
+@[simp] def sltu_b_lo : FGL := 1
+@[simp] def sltu_c_lo : FGL := 0
+@[simp] def sltu_c_hi : FGL := 0
+@[simp] def sltu_flag : FGL := 0
+
+example : sltu_c_lo + sltu_c_hi * 4294967296 = (0 : FGL) := by decide
+
+end NotLessThan
+
+namespace HighBound
+
+-- Edge case: `0xFFFF_FFFF_FFFF_FFFF <u 0` is false (unsigned upper
+-- bound not less than 0).
+@[simp] def sltu_a_lo : FGL := 4294967295
+@[simp] def sltu_a_hi : FGL := 4294967295
+@[simp] def sltu_b_lo : FGL := 0
+@[simp] def sltu_b_hi : FGL := 0
+@[simp] def sltu_c_lo : FGL := 0
+@[simp] def sltu_c_hi : FGL := 0
+@[simp] def sltu_flag : FGL := 0
+
+example : sltu_c_lo + sltu_c_hi * 4294967296 = (0 : FGL) := by decide
+
+end HighBound
+
 end ZiskFv.GoldenTraces.SLTU

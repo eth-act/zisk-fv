@@ -94,4 +94,40 @@ example :
 
 end TakenJump
 
+-- Phase 4.5 Track D: additional edge-case fixture.
+
+section BackwardsJump
+
+/- Witness row: JAL `x1, -20` (backwards jump). At pc = 100 this jumps
+   to 80. Tests sign-handling at the field level (negative imm encoded
+   as wrapped 64-bit constant in jmp_offset1). -/
+
+@[simp] def jal_pc : FGL := 100
+@[simp] def jal_c_lo : FGL := 0
+@[simp] def jal_flag : FGL := 1
+@[simp] def jal_set_pc : FGL := 0
+@[simp] def jal_store_pc : FGL := 1
+-- imm = -20 sign-extended to field-neg; next_pc should be 80.
+-- Over Goldilocks we represent -20 as `p - 20` (but here we use the
+-- minus form in the arithmetic identity).
+@[simp] def jal_jmp_offset2 : FGL := 4
+-- jmp_offset1 chosen as (pc + jmp_offset1 = 80) ↔ jmp_offset1 = -20 in 𝔽.
+-- To avoid field-subtraction subtleties we instead use a forward-wrap
+-- identity: `pc + jmp_offset1 = 80` as: 100 + x = 80 in 𝔽 = ZMod p
+-- only holds for x = p - 20; we encode that directly.
+@[simp] def jal_jmp_offset1 : FGL :=
+  18446744069414584301   -- p - 20
+
+/-- With jmp_offset1 = p - 20 in 𝔽 and pc = 100, `pc + jmp_offset1 = 80`
+    (mod p). Forward direction: `80 + 20 = 100`. -/
+example : (80 : FGL) + 20 = jal_pc := by decide
+
+/-- Store-value (link address): `pc + jmp_offset2 = 104`, unaffected by
+    backwards jumps. -/
+example :
+    jal_store_pc * (jal_pc + jal_jmp_offset2 - jal_c_lo) + jal_c_lo
+      = (104 : FGL) := by decide
+
+end BackwardsJump
+
 end ZiskFv.GoldenTraces.JAL

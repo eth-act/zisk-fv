@@ -113,4 +113,29 @@ example :
       ∧ sh_x4 = (0 : FGL) ∧ sh_x5 = (0 : FGL)
       ∧ sh_x6 = (0 : FGL) ∧ sh_x7 = (0 : FGL) := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace ZeroHalf
+
+-- Edge case: SH of 0 (zero half store).
+@[simp] def sh_x0 : FGL := 0
+@[simp] def sh_x1 : FGL := 0
+@[simp] def sh_packed_expected : FGL := 0
+
+example : (sh_x0 + sh_x1 * 256 : FGL) = sh_packed_expected := by decide
+
+end ZeroHalf
+
+namespace MaxHalf
+
+-- Edge case: SH of 0xFFFF (max half).
+@[simp] def sh_x0 : FGL := 0xFF
+@[simp] def sh_x1 : FGL := 0xFF
+@[simp] def sh_packed_expected : FGL := 0xFFFF
+
+example : (sh_x0 + sh_x1 * 256 : FGL) = sh_packed_expected := by decide
+example : (sh_packed_expected : FGL) = (65535 : FGL) := by decide
+
+end MaxHalf
+
 end ZiskFv.GoldenTraces.SH

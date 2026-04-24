@@ -110,4 +110,48 @@ example :
 example :
     ((1 : FGL) - (0 : FGL)) * (1 : FGL) * (0 : FGL) = 0 := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace AllZero
+
+-- Edge case: SD of 0 (zero doubleword).
+@[simp] def sd_x0 : FGL := 0
+@[simp] def sd_x1 : FGL := 0
+@[simp] def sd_x2 : FGL := 0
+@[simp] def sd_x3 : FGL := 0
+@[simp] def sd_x4 : FGL := 0
+@[simp] def sd_x5 : FGL := 0
+@[simp] def sd_x6 : FGL := 0
+@[simp] def sd_x7 : FGL := 0
+@[simp] def sd_packed_expected : FGL := 0
+
+example :
+    (sd_x0 + sd_x1 * 256 + sd_x2 * 65536 + sd_x3 * 16777216
+      + sd_x4 * 4294967296 + sd_x5 * 1099511627776
+      + sd_x6 * 281474976710656 + sd_x7 * 72057594037927936)
+    = sd_packed_expected := by decide
+
+end AllZero
+
+namespace AllOnes
+
+-- Edge case: SD of 0xFFFF_FFFF_FFFF_FFFF (all-ones).
+@[simp] def sd_x0 : FGL := 0xFF
+@[simp] def sd_x1 : FGL := 0xFF
+@[simp] def sd_x2 : FGL := 0xFF
+@[simp] def sd_x3 : FGL := 0xFF
+@[simp] def sd_x4 : FGL := 0xFF
+@[simp] def sd_x5 : FGL := 0xFF
+@[simp] def sd_x6 : FGL := 0xFF
+@[simp] def sd_x7 : FGL := 0xFF
+@[simp] def sd_packed_expected : FGL := 0xFFFFFFFFFFFFFFFF
+
+example :
+    (sd_x0 + sd_x1 * 256 + sd_x2 * 65536 + sd_x3 * 16777216
+      + sd_x4 * 4294967296 + sd_x5 * 1099511627776
+      + sd_x6 * 281474976710656 + sd_x7 * 72057594037927936)
+    = sd_packed_expected := by decide
+
+end AllOnes
+
 end ZiskFv.GoldenTraces.SD

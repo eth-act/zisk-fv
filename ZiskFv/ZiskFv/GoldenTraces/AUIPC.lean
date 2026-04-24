@@ -117,4 +117,36 @@ example :
 
 end AuipcWitness
 
+-- Phase 4.5 Track D: additional edge-case fixture.
+
+section ZeroPC
+
+/- Witness row: AUIPC `x1, 0` at `pc = 0`. Immediate = 0, so the
+   rd-write is `pc + 0 = 0`. Tests the degenerate PC-origin case. -/
+
+@[simp] def auipc_pc : FGL := 0
+@[simp] def auipc_c_lo : FGL := 0
+@[simp] def auipc_c_hi : FGL := 0
+@[simp] def auipc_flag : FGL := 1
+@[simp] def auipc_set_pc : FGL := 0
+@[simp] def auipc_store_pc : FGL := 1
+@[simp] def auipc_jmp_offset1 : FGL := 4
+@[simp] def auipc_jmp_offset2 : FGL := 0         -- zero imm
+@[simp] def auipc_is_external_op : FGL := 0
+@[simp] def auipc_op : FGL := 0
+
+/-- rd-write: `pc + imm = 0 + 0 = 0`. -/
+example :
+    auipc_store_pc * (auipc_pc + auipc_jmp_offset2 - auipc_c_lo)
+      + auipc_c_lo
+      = (0 : FGL) := by decide
+
+/-- Next-pc: `pc + jmp_offset1 = 0 + 4 = 4`. -/
+example :
+    auipc_pc + auipc_jmp_offset2
+      + auipc_flag * (auipc_jmp_offset1 - auipc_jmp_offset2)
+      = (4 : FGL) := by decide
+
+end ZeroPC
+
 end ZiskFv.GoldenTraces.AUIPC

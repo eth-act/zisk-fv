@@ -108,4 +108,34 @@ example :
     sw_x4 = (0 : FGL) ∧ sw_x5 = (0 : FGL)
       ∧ sw_x6 = (0 : FGL) ∧ sw_x7 = (0 : FGL) := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace ZeroWord
+
+-- Edge case: SW of 0 (zero word).
+@[simp] def sw_x0 : FGL := 0
+@[simp] def sw_x1 : FGL := 0
+@[simp] def sw_x2 : FGL := 0
+@[simp] def sw_x3 : FGL := 0
+@[simp] def sw_packed_expected : FGL := 0
+
+example : (sw_x0 + sw_x1 * 256 + sw_x2 * 65536 + sw_x3 * 16777216 : FGL)
+    = sw_packed_expected := by decide
+
+end ZeroWord
+
+namespace MaxWord
+
+-- Edge case: SW of 0xFFFF_FFFF (max word).
+@[simp] def sw_x0 : FGL := 0xFF
+@[simp] def sw_x1 : FGL := 0xFF
+@[simp] def sw_x2 : FGL := 0xFF
+@[simp] def sw_x3 : FGL := 0xFF
+@[simp] def sw_packed_expected : FGL := 0xFFFFFFFF
+
+example : (sw_x0 + sw_x1 * 256 + sw_x2 * 65536 + sw_x3 * 16777216 : FGL)
+    = sw_packed_expected := by decide
+
+end MaxWord
+
 end ZiskFv.GoldenTraces.SW

@@ -102,4 +102,48 @@ example :
 example :
     ((1 : FGL) - (0 : FGL)) * (1 : FGL) * (0 : FGL) = 0 := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace AllZeroBytes
+
+-- Edge case: LD of zero doubleword.
+@[simp] def ld_x0 : FGL := 0
+@[simp] def ld_x1 : FGL := 0
+@[simp] def ld_x2 : FGL := 0
+@[simp] def ld_x3 : FGL := 0
+@[simp] def ld_x4 : FGL := 0
+@[simp] def ld_x5 : FGL := 0
+@[simp] def ld_x6 : FGL := 0
+@[simp] def ld_x7 : FGL := 0
+@[simp] def ld_packed_expected : FGL := 0
+
+example :
+    (ld_x0 + ld_x1 * 256 + ld_x2 * 65536 + ld_x3 * 16777216
+      + ld_x4 * 4294967296 + ld_x5 * 1099511627776
+      + ld_x6 * 281474976710656 + ld_x7 * 72057594037927936)
+    = ld_packed_expected := by decide
+
+end AllZeroBytes
+
+namespace AllOnesBytes
+
+-- Edge case: LD of all-ones doubleword (0xFFFF_FFFF_FFFF_FFFF).
+@[simp] def ld_x0 : FGL := 0xFF
+@[simp] def ld_x1 : FGL := 0xFF
+@[simp] def ld_x2 : FGL := 0xFF
+@[simp] def ld_x3 : FGL := 0xFF
+@[simp] def ld_x4 : FGL := 0xFF
+@[simp] def ld_x5 : FGL := 0xFF
+@[simp] def ld_x6 : FGL := 0xFF
+@[simp] def ld_x7 : FGL := 0xFF
+@[simp] def ld_packed_expected : FGL := 0xFFFFFFFFFFFFFFFF
+
+example :
+    (ld_x0 + ld_x1 * 256 + ld_x2 * 65536 + ld_x3 * 16777216
+      + ld_x4 * 4294967296 + ld_x5 * 1099511627776
+      + ld_x6 * 281474976710656 + ld_x7 * 72057594037927936)
+    = ld_packed_expected := by decide
+
+end AllOnesBytes
+
 end ZiskFv.GoldenTraces.LD

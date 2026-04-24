@@ -134,4 +134,39 @@ example : (OP_DIV : FGL) = OP_DIVU + 2 := by decide
 
 end CanonicalCase
 
+-- Phase 4.5 Track D: additional edge-case fixture.
+
+section DivByOne
+
+/- Witness row: DIV `x1, x1, 1` — dividing any x1 by 1 yields x1. Trivial
+   but useful corner: divisor = 1 pins quotient = dividend, remainder = 0. -/
+
+@[simp] def div_main_a_0 : FGL := 42
+@[simp] def div_main_a_1 : FGL := 0
+@[simp] def div_main_b_0 : FGL := 1
+@[simp] def div_main_b_1 : FGL := 0
+@[simp] def div_main_c_0 : FGL := 42
+@[simp] def div_main_c_1 : FGL := 0
+@[simp] def div_arith_a_0 : FGL := 42
+@[simp] def div_arith_a_1 : FGL := 0
+@[simp] def div_arith_b_0 : FGL := 1
+@[simp] def div_arith_c_0 : FGL := 42
+@[simp] def div_arith_c_1 : FGL := 0
+@[simp] def div_arith_d_0 : FGL := 0
+@[simp] def div_arith_bus_res1 : FGL := 0
+
+/-- Packed quotient equals 42 on Main side. -/
+example : div_main_c_0 + div_main_c_1 * 4294967296 = (42 : FGL) := by decide
+
+/-- Arith-side packed quotient agrees. -/
+example :
+    (div_arith_a_0 + div_arith_a_1 * 65536) + div_arith_bus_res1 * 4294967296
+      = (42 : FGL) := by decide
+
+/-- Bus `a`-lane consistency on divisor = 1. -/
+example :
+    div_main_a_0 = div_arith_c_0 + div_arith_c_1 * 65536 := by decide
+
+end DivByOne
+
 end ZiskFv.GoldenTraces.DIV

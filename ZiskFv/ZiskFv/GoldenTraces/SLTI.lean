@@ -44,4 +44,35 @@ example :
     slti_m32 * (1 - slti_m32) = (0 : FGL) ∧
     slti_flag * slti_set_pc = (0 : FGL) := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace NotLessThan
+
+-- Edge case: `5 < 1` is false, so `rd = 0` (flag = 0).
+@[simp] def slti_a_lo : FGL := 5
+@[simp] def slti_a_hi : FGL := 0
+@[simp] def slti_b_lo : FGL := 1
+@[simp] def slti_b_hi : FGL := 0
+@[simp] def slti_c_lo : FGL := 0
+@[simp] def slti_c_hi : FGL := 0
+@[simp] def slti_flag : FGL := 0
+
+example : slti_c_lo + slti_c_hi * 4294967296 = (0 : FGL) := by decide
+example : slti_flag * (1 - slti_flag) = (0 : FGL) := by decide
+
+end NotLessThan
+
+namespace Equal
+
+-- Edge case: `3 < 3` is false, `rd = 0`.
+@[simp] def slti_a_lo : FGL := 3
+@[simp] def slti_b_lo : FGL := 3
+@[simp] def slti_c_lo : FGL := 0
+@[simp] def slti_c_hi : FGL := 0
+@[simp] def slti_flag : FGL := 0
+
+example : slti_c_lo + slti_c_hi * 4294967296 = (0 : FGL) := by decide
+
+end Equal
+
 end ZiskFv.GoldenTraces.SLTI

@@ -49,4 +49,39 @@ example :
     addi_m32 * (1 - addi_m32) = (0 : FGL) ∧
     addi_flag * addi_set_pc = (0 : FGL) := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace ZeroImm
+
+-- Edge case: `ADDI x1, x0, 0` — rs1 = 0, imm = 0, result = 0.
+@[simp] def addi_a_lo : FGL := 0
+@[simp] def addi_a_hi : FGL := 0
+@[simp] def addi_b_lo : FGL := 0
+@[simp] def addi_b_hi : FGL := 0
+@[simp] def addi_c_lo : FGL := 0
+@[simp] def addi_c_hi : FGL := 0
+
+example : addi_c_lo + addi_c_hi * 4294967296 = (0 : FGL) := by decide
+example : addi_a_lo + addi_b_lo = addi_c_lo := by decide
+
+end ZeroImm
+
+namespace HighLaneSpan
+
+-- Edge case: `ADDI` with rs1 spanning the 32-bit boundary. rs1 has
+-- high lane set; imm positive small; result stays in 64-bit with no
+-- carry across lanes.
+@[simp] def addi_a_lo : FGL := 100
+@[simp] def addi_a_hi : FGL := 7                 -- rs1 = 7*2^32 + 100
+@[simp] def addi_b_lo : FGL := 42
+@[simp] def addi_b_hi : FGL := 0
+@[simp] def addi_c_lo : FGL := 142               -- 100 + 42
+@[simp] def addi_c_hi : FGL := 7                 -- high lane preserved
+
+example :
+    addi_c_lo + addi_c_hi * 4294967296
+      = (addi_a_lo + addi_b_lo) + (addi_a_hi + addi_b_hi) * 4294967296 := by decide
+
+end HighLaneSpan
+
 end ZiskFv.GoldenTraces.ADDI

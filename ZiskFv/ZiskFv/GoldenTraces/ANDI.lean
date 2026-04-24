@@ -39,4 +39,34 @@ example :
     andi_m32 * (1 - andi_m32) = (0 : FGL) ∧
     andi_flag * andi_set_pc = (0 : FGL) := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace ZeroMask
+
+-- Edge case: `ANDI x1, rs1, 0` — mask with 0 always yields 0.
+@[simp] def andi_b_lo : FGL := 0
+@[simp] def andi_b_hi : FGL := 0
+@[simp] def andi_c_lo : FGL := 0
+@[simp] def andi_c_hi : FGL := 0
+
+example : andi_c_lo + andi_c_hi * 4294967296 = (0 : FGL) := by decide
+
+end ZeroMask
+
+namespace AllOnesImm
+
+-- Edge case: `ANDI x1, rs1, -1` — sign-extended -1 is all ones; result
+-- equals rs1 unchanged. rs1 = 0x1234_5678_9ABC_DEF0.
+@[simp] def andi_a_lo : FGL := 2596069104          -- 0x9ABC_DEF0
+@[simp] def andi_a_hi : FGL := 305419896           -- 0x1234_5678
+@[simp] def andi_b_lo : FGL := 4294967295          -- all 1s
+@[simp] def andi_b_hi : FGL := 4294967295
+@[simp] def andi_c_lo : FGL := 2596069104
+@[simp] def andi_c_hi : FGL := 305419896
+
+example : andi_c_lo + andi_c_hi * 4294967296
+    = andi_a_lo + andi_a_hi * 4294967296 := by decide
+
+end AllOnesImm
+
 end ZiskFv.GoldenTraces.ANDI

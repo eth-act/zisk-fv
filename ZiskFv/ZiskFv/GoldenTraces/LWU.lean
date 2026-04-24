@@ -104,4 +104,37 @@ example :
     ((1 : FGL) - (0 : FGL)) * (1 : FGL)
       * ((0 : FGL) - (0 : FGL)) = 0 := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace ZeroWord
+
+-- Edge case: word value 0 zero-extends to 0.
+@[simp] def lwu_x0 : FGL := 0
+@[simp] def lwu_x1 : FGL := 0
+@[simp] def lwu_x2 : FGL := 0
+@[simp] def lwu_x3 : FGL := 0
+@[simp] def lwu_packed_expected : FGL := 0
+
+example :
+    (lwu_x0 + lwu_x1 * 256 + lwu_x2 * 65536 + lwu_x3 * 16777216 : FGL)
+    = lwu_packed_expected := by decide
+
+end ZeroWord
+
+namespace MaxWord
+
+-- Edge case: word value 0xFFFF_FFFF (max u32). Zero-extended = 4294967295.
+@[simp] def lwu_x0 : FGL := 0xFF
+@[simp] def lwu_x1 : FGL := 0xFF
+@[simp] def lwu_x2 : FGL := 0xFF
+@[simp] def lwu_x3 : FGL := 0xFF
+@[simp] def lwu_packed_expected : FGL := 0xFFFFFFFF
+
+example :
+    (lwu_x0 + lwu_x1 * 256 + lwu_x2 * 65536 + lwu_x3 * 16777216 : FGL)
+    = lwu_packed_expected := by decide
+example : (lwu_packed_expected : FGL) = (4294967295 : FGL) := by decide
+
+end MaxWord
+
 end ZiskFv.GoldenTraces.LWU

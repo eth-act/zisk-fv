@@ -109,4 +109,35 @@ example : (OP_DIVU : FGL) + 2 = OP_DIV := by decide
 
 end CanonicalCase
 
+-- Phase 4.5 Track D: additional edge-case fixture.
+
+section ZeroDividend
+
+/- Witness row: DIVU `x3, x0, x2` — dividend 0, any positive divisor,
+   quotient 0. Smallest non-trivial DIVU case. -/
+
+@[simp] def divu_main_a_0 : FGL := 0
+@[simp] def divu_main_a_1 : FGL := 0
+@[simp] def divu_main_b_0 : FGL := 7
+@[simp] def divu_main_b_1 : FGL := 0
+@[simp] def divu_main_c_0 : FGL := 0
+@[simp] def divu_main_c_1 : FGL := 0
+@[simp] def divu_arith_a_0 : FGL := 0
+@[simp] def divu_arith_a_1 : FGL := 0
+@[simp] def divu_arith_b_0 : FGL := 7
+@[simp] def divu_arith_b_1 : FGL := 0
+@[simp] def divu_arith_c_0 : FGL := 0
+@[simp] def divu_arith_c_1 : FGL := 0
+@[simp] def divu_arith_bus_res1 : FGL := 0
+
+/-- Quotient = 0. -/
+example : divu_main_c_0 + divu_main_c_1 * 4294967296 = (0 : FGL) := by decide
+
+/-- Arith-side packed quotient agrees. -/
+example :
+    (divu_arith_a_0 + divu_arith_a_1 * 65536) + divu_arith_bus_res1 * 4294967296
+      = (0 : FGL) := by decide
+
+end ZeroDividend
+
 end ZiskFv.GoldenTraces.DIVU

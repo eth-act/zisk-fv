@@ -53,4 +53,32 @@ example :
     subw_m32 * (1 - subw_m32) = (0 : FGL) ∧
     subw_flag * subw_set_pc = (0 : FGL) := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace Zero
+
+-- Edge case: `0 - 0 = 0` (identity subtraction).
+@[simp] def subw_a_lo : FGL := 0
+@[simp] def subw_b_lo : FGL := 0
+@[simp] def subw_c_lo : FGL := 0
+@[simp] def subw_c_hi : FGL := 0
+
+example : subw_c_lo + subw_c_hi * 4294967296 = (0 : FGL) := by decide
+example : subw_a_lo - subw_b_lo = subw_c_lo := by decide
+
+end Zero
+
+namespace Underflow
+
+-- Edge case: `0 - 1 = 0xFFFF_FFFF` in u32, sign-ext to 0xFFFF_FFFF_FFFF_FFFF.
+@[simp] def subw_a_lo : FGL := 0
+@[simp] def subw_b_lo : FGL := 1
+@[simp] def subw_c_lo : FGL := 4294967295
+@[simp] def subw_c_hi : FGL := 4294967295
+
+example : subw_c_lo + subw_c_hi * 4294967296
+    = (18446744073709551615 : FGL) := by decide
+
+end Underflow
+
 end ZiskFv.GoldenTraces.SUBW

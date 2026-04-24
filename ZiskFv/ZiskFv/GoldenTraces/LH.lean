@@ -51,4 +51,25 @@ example : BitVec.signExtend 64 (0x8000 : BitVec 16)
 example : BitVec.signExtend 64 (0xFFFF : BitVec 16)
             = (0xFFFFFFFFFFFFFFFF : BitVec 64) := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace ZeroHalf
+
+-- Edge case: sign-extension of zero.
+example : BitVec.signExtend 64 (0x0000 : BitVec 16)
+            = (0x0000000000000000 : BitVec 64) := by decide
+example : ((1 : FGL) - (0 : FGL)) * (0 : FGL) = (0 : FGL) := by decide
+
+end ZeroHalf
+
+namespace SignBoundary
+
+-- Edge case: just-positive (0x7FFF) vs just-negative (0x8001) 16-bit.
+example : BitVec.signExtend 64 (0x7FFF : BitVec 16)
+            = (0x0000000000007FFF : BitVec 64) := by decide
+example : BitVec.signExtend 64 (0x8001 : BitVec 16)
+            = (0xFFFFFFFFFFFF8001 : BitVec 64) := by decide
+
+end SignBoundary
+
 end ZiskFv.GoldenTraces.LH

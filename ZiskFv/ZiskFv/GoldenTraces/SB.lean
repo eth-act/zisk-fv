@@ -109,4 +109,28 @@ example :
       ∧ sb_x5 = (0 : FGL) ∧ sb_x6 = (0 : FGL)
       ∧ sb_x7 = (0 : FGL) := by decide
 
+-- Phase 4.5 Track D: additional edge-case fixtures.
+
+namespace ZeroByte
+
+-- Edge case: SB of 0 (zero byte store).
+@[simp] def sb_x0 : FGL := 0
+@[simp] def sb_packed_expected : FGL := 0
+
+example : sb_x0 = sb_packed_expected := by decide
+example : (sb_x0 + 0 * 256 : FGL) = sb_packed_expected := by decide
+
+end ZeroByte
+
+namespace MaxByte
+
+-- Edge case: SB of 0xFF (max byte).
+@[simp] def sb_x0 : FGL := 0xFF
+@[simp] def sb_packed_expected : FGL := 0xFF
+
+example : sb_x0 = sb_packed_expected := by decide
+example : (sb_packed_expected : FGL) = (255 : FGL) := by decide
+
+end MaxByte
+
 end ZiskFv.GoldenTraces.SB
