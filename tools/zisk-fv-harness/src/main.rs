@@ -15,6 +15,11 @@
 //!
 //! Live-mode call pattern mirrors
 //! `vendor/zisk/examples/sha-hasher/host/bin/execute.rs`.
+//!
+//! Phase 4.5 Track D: `--multi-fixture` flag (default: true) emits the
+//! Phase 4 T-FIX edge-case namespaces (`ZeroResult`, `HighLaneOverflow`)
+//! in addition to the canonical fixture, fixing a pre-Phase-4.5 bug
+//! where the harness silently stripped those namespaces on regeneration.
 
 use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
@@ -91,6 +96,15 @@ struct Cli {
     /// AIR id for the BinaryAdd trace (live mode). Defaults to ZisK's canonical 23.
     #[arg(long, default_value_t = BINARY_ADD_AIR_ID)]
     binary_add_air_id: usize,
+
+    /// When true (default), emit the Phase 4 T-FIX edge-case namespaces
+    /// (`ZeroResult`, `HighLaneOverflow`) in addition to the canonical
+    /// fixture. Pre-Phase-4.5 the harness silently stripped those
+    /// namespaces on every regeneration; Track D makes preservation the
+    /// default. Pass `--multi-fixture=false` for the pre-4.5 single-
+    /// fixture output shape (useful for diffing).
+    #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
+    multi_fixture: bool,
 }
 
 fn main() -> Result<()> {
@@ -114,7 +128,7 @@ fn main() -> Result<()> {
         }
     };
 
-    let lean = render_lean(&witness);
+    let lean = render_lean_full(&witness, cli.multi_fixture);
 
     if let Some(parent) = cli.output.parent() {
         fs::create_dir_all(parent).ok();
@@ -124,6 +138,74 @@ fn main() -> Result<()> {
     info!(output = %cli.output.display(), "wrote fixture");
     Ok(())
 }
+
+/// Emit the Add.lean fixture text: canonical witness plus (optionally)
+/// the Phase 4 T-FIX `ZeroResult` / `HighLaneOverflow` sub-namespaces.
+///
+/// Pre-Phase-4.5 this harness only emitted the canonical witness; any
+/// hand-authored sub-namespaces in `Add.lean` were silently stripped on
+/// regeneration. Track D fixes that by rendering all three fixtures in
+/// one pass whenever `multi_fixture` is true (the default).
+fn render_lean_full(w: &AddWitness, multi_fixture: bool) -> String {
+    let canonical = render_lean(w);
+    if !multi_fixture {
+        return canonical;
+    }
+
+    // The canonical render ends with `end ZiskFv.GoldenTraces.Add\n`.
+    // Splice the T-FIX namespaces right before that closing `end`.
+    const CLOSE: &str = "end ZiskFv.GoldenTraces.Add\n";
+    let Some(idx) = canonical.rfind(CLOSE) else {
+        // Defensive fallback: if the closer moved, emit canonical only
+        // rather than producing a syntactically broken file.
+        return canonical;
+    };
+    let (prefix, suffix) = canonical.split_at(idx);
+    format!("{prefix}{tfix}\n{suffix}", tfix = TFIX_NAMESPACES)
+}
+
+/// Phase 4 T-FIX edge-case sub-namespaces. Hand-authored in
+/// `GoldenTraces/Add.lean` pre-Phase-4.5; inlined here so the harness
+/// preserves them verbatim on regeneration.
+const TFIX_NAMESPACES: &str = "-- Phase 4 T-FIX: additional edge-case fixtures.
+
+namespace ZeroResult
+
+-- Edge case: `0 + 0 = 0` (zero-register sum, no carry).
+@[simp] def add_a_lo : FGL := 0
+@[simp] def add_a_hi : FGL := 0
+@[simp] def add_b_lo : FGL := 0
+@[simp] def add_b_hi : FGL := 0
+@[simp] def add_c_lo : FGL := 0
+@[simp] def add_c_hi : FGL := 0
+@[simp] def cout_0 : FGL := 0
+@[simp] def cout_1 : FGL := 0
+
+example : add_c_lo + add_c_hi * 4294967296 = (0 : FGL) := by decide
+example : add_a_lo + add_b_lo = cout_0 * 4294967296 + add_c_lo := by decide
+
+end ZeroResult
+
+namespace HighLaneOverflow
+
+-- Edge case: `2^63 + 2^63 = 2^64 = 0 mod 2^64` (carry out of high lane).
+-- a = 0x8000_0000_0000_0000, b = 0x8000_0000_0000_0000, c = 0, cout_1 = 1.
+@[simp] def add_a_lo : FGL := 0
+@[simp] def add_a_hi : FGL := 2147483648       -- 0x8000_0000
+@[simp] def add_b_lo : FGL := 0
+@[simp] def add_b_hi : FGL := 2147483648
+@[simp] def add_c_lo : FGL := 0
+@[simp] def add_c_hi : FGL := 0
+@[simp] def cout_0 : FGL := 0
+@[simp] def cout_1 : FGL := 1
+
+example : add_c_lo + add_c_hi * 4294967296 = (0 : FGL) := by decide
+example :
+    add_a_hi + add_b_hi + cout_0
+      = cout_1 * 4294967296 + add_c_hi := by decide
+
+end HighLaneOverflow
+";
 
 /// Render the `Valid_Main` + `Valid_BinaryAdd` witness for `a + b = c`
 /// as a Lean fixture matching `ZiskFv.GoldenTraces.Add`.
@@ -432,6 +514,34 @@ mod tests {
     }
 
     #[test]
+    fn multi_fixture_default_includes_tfix_namespaces() {
+        // Track D guarantee: the default render preserves the Phase 4
+        // T-FIX edge-case sub-namespaces. Pre-Phase-4.5 the harness
+        // silently stripped them on every regeneration.
+        let w = AddWitness::canonical_3_plus_5();
+        let s = render_lean_full(&w, /* multi_fixture = */ true);
+        assert!(s.contains("namespace ZeroResult"));
+        assert!(s.contains("namespace HighLaneOverflow"));
+        assert!(s.contains("end ZeroResult"));
+        assert!(s.contains("end HighLaneOverflow"));
+        // Canonical body still present and not duplicated.
+        assert_eq!(s.matches("add_a_lo : FGL := 3").count(), 1);
+        // File ends at the outer namespace closer.
+        assert!(s.trim_end().ends_with("end ZiskFv.GoldenTraces.Add"));
+    }
+
+    #[test]
+    fn multi_fixture_off_matches_legacy_canonical() {
+        let w = AddWitness::canonical_3_plus_5();
+        let legacy = render_lean(&w);
+        let opt_out = render_lean_full(&w, /* multi_fixture = */ false);
+        assert_eq!(legacy, opt_out);
+        // And in legacy mode, no T-FIX markers.
+        assert!(!opt_out.contains("ZeroResult"));
+        assert!(!opt_out.contains("HighLaneOverflow"));
+    }
+
+    #[test]
     fn live_mode_without_feature_errors_cleanly() {
         // Without `--features live`, the live stub must return an Err with
         // actionable guidance, not silently fall through to golden mode.
@@ -441,6 +551,7 @@ mod tests {
             probe_elf: PathBuf::from("/nonexistent"),
             main_air_id: MAIN_AIR_ID,
             binary_add_air_id: BINARY_ADD_AIR_ID,
+            multi_fixture: true,
         };
         let err = live::run(&cli).err();
         // When the `live` feature is enabled this test is a no-op because
