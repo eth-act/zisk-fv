@@ -4,9 +4,14 @@
 [official Sail RISC-V specification](https://github.com/riscv/sail-riscv),
 restricted to **RV64IM** (base integer + M extension).
 
-**Status.** `lake build` green (8089 jobs, 0 errors, 0 `sorry`). 58/58
+**Status.** `lake build` green (8119 jobs, 0 errors, 0 `sorry`). 58/58
 RV64IM opcodes proved. Trust base: 62 axioms, all catalogued with
 closure paths in [`docs/fv/trusted-base.md`](docs/fv/trusted-base.md).
+Phase 4.5 shipped in two sessions (2026-04-23 / 2026-04-24): Arith
+carry-chain closure (unsigned + signed), Main↔Arith field composition,
+field→BitVec 64 lift (Bridge 3), full `h_rd_match` decomposition for
+all 9 Arith opcodes + LD pilot, shape (d/e) bus-emission lemmas,
+`just verify-phase4` gate, and the 175-scenario fixture matrix.
 
 ---
 
@@ -80,33 +85,36 @@ the escape-hatch helper files (`SltEquivHelper`, `SltiEquivHelper`,
 
 ## 3. Caveats and residual structural parameters
 
-### 3.1 Arith state-machine internal correctness
+### 3.1 Arith state-machine internal correctness — Phase 4.5 update
 
-Theorems for the MUL family (MUL / MULH / MULHU / MULHSU / MULW, Phase
-3A) and DIV/REM family (DIV / DIVU / REM / REMU, Phase 3C T-D) ship
-with the following structural parameterization:
+**Carry-chain polynomial identity closed** (Phase 4 Package C +
+Phase 4.5 Track B). `Airs/Arith/CarryChain.lean` ships pure-field
+`linear_combination` closures for:
 
-- The Main ↔ Arith bus-match projection (`mul_compositional` /
-  `div_compositional`) proves Main's packed `c` equals Arith's packed
-  output lanes. This **does not derive** the claim that Arith's output
-  lanes equal the actual 64-bit product/quotient — that derivation
-  requires deriving from Arith's 8-chunk × 16-bit carry chain
-  (constraints 31–38 in `ZiskFv/ZiskFv/Extraction/Arith.lean`) the
-  polynomial identity
-  `(a[0] + … + a[3]*2^48) * (b[0] + … + b[3]*2^48) = (c[0] + … + c[3]*2^48) + (d[0] + … + d[3]*2^48) * 2^64`.
+- `arith_mul_unsigned_carry_identity` — MUL-unsigned modes (fab=1,
+  na=nb=np=nr=0).
+- `arith_div_unsigned_carry_identity` — DIV/REM-unsigned modes.
+- `arith_mul_signed_carry_identity` — MUL signed modes with per-quadrant
+  (na,nb,np,nr) witnesses (Phase 4.5 Track B, commit `6bc6250`).
+- `arith_div_signed_carry_identity` — DIV/REM signed analogue.
 
-- The `equiv_<OP>_metaplan` theorems consume a `h_rd_match` structural
-  hypothesis that the bus row's register-write bytes match the pure
-  spec's `.rd` output. Proving this without the carry-chain derivation
-  requires assuming Arith's internal correctness.
+Per-mode specializations in `Airs/Arith/{Mul,Div}.lean` plug the raw
+extraction constraints 6/7/8 + 31/38 into the pure-field identities,
+yielding the packed 128-bit product / dividend identity at the named-
+column level for all 9 opcode/mode combinations.
 
-The 8-chunk carry-chain identity is a tractable `linear_combination`
-proof (templated off BinaryAdd's 42-line Phase 1 closure), estimated
-~300-500 lines in a new `Airs/Arith/CarryChain.lean` plus per-mode
-specializations. This is deferred scope — the existing theorems are
-usable in a trust-base mode "assume Arith's carry chains are correct"
-identical to how BinaryAdd's permutation accumulator (`gsum`) is
-treated.
+**`h_rd_match` decomposed** (Phase 4.5 A-rewire). All 9
+Arith-family `equiv_<OP>_metaplan` theorems replace the monolithic
+`h_rd_match` hypothesis with two decomposed ones (`h_rd_idx`,
+`h_rd_val`) that Phase 4.5 Bridges 1/2/3 + the packed-correct theorems
+downstream-discharge. Sail-side dite-on-input.rd-zero collapse is now
+uniform across all 9 opcodes.
+
+**Still parameterized.** The arith-table permutation lookup (which
+enforces the `(opcode, mode) → (na, nb, np, nr)` mapping for the 9
+opcodes) remains a scope-honest hypothesis. Closing it requires the
+permutation-argument infrastructure, which is orthogonal to the
+carry-chain polynomial identity and is not part of Phase 4.5.
 
 ### 3.2 Arith lookup-table witnesses
 
@@ -126,15 +134,19 @@ These are lookup-correctness claims orthogonal to the carry-chain
 derivation; they stay trusted in the same scope-honest way the
 BinaryAdd permutation accumulator is trusted.
 
-### 3.3 Sample-level golden-trace coverage
+### 3.3 Sample-level golden-trace coverage — Phase 4.5 update
 
-Each opcode ships with ≥1 golden-trace witness fixture
-(`ZiskFv/ZiskFv/GoldenTraces/*.lean`). Phase 4 demonstrated the
-pattern for ≥3 fixtures per opcode (ADD, SUB, AND, SLT, MUL, LW
-currently carry 3 fixtures each, exercising zero / max-value / sign-
-boundary / overflow edge cases). The full 58 × 3 = 174-fixture matrix
-is a mechanical extension; the harness at
-[`tools/zisk-fv-harness/`](tools/zisk-fv-harness/) supports emission.
+Every opcode (58/58) now ships with ≥3 golden-trace witness fixtures
+(Phase 4.5 Track D, commits `e9fceec` + `7a977a0`). Scenarios cover
+canonical / zero-edge / boundary cases with non-trivial witnesses.
+
+**Final count:** 175 scenarios (57 opcodes × 3 + 1 opcode × 4 for MUL)
+across 58 files, with 533 total `example : … := by decide` declarations.
+
+The harness at [`tools/zisk-fv-harness/`](tools/zisk-fv-harness/) now
+preserves the `Add.lean` T-FIX sub-namespaces on regeneration (Phase
+4.5 Track D part 1, commit `7656a80`, with unit tests locking the
+guarantee); previously `verify-phase*` silently stripped them.
 
 ## 4. Known limitations (explicitly out of scope)
 
@@ -158,7 +170,7 @@ Per [`CLAUDE.md`](CLAUDE.md):
 ```bash
 git clone <this repo>
 cd zisk-fv
-cd ZiskFv && lake build          # ~8089 jobs on a cold cache
+cd ZiskFv && lake build          # ~8119 jobs on a cold cache
 cd .. && git grep -n 'sorry' ZiskFv/ZiskFv/{Fundamentals,Airs,Spec,Equivalence,GoldenTraces,Tactics,RV64D}
 # Expected: empty (no sorrys)
 bash tools/zisk-fv-lint/uniformity-lint.sh

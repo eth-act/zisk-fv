@@ -87,29 +87,49 @@ branch, jump, LD, SD). Each is ~150 lines of bus-effect unfolding +
 transpile-contract application. Reuses the (unused-today) 58
 transpile axioms.
 
-### Gap 2 — `h_rd_match` derivation (Package C)
+### Gap 2 — `h_rd_match` derivation (Package C) — **STRUCTURALLY CLOSED (Phase 4.5)**
 
-openvm-fv derives `h_rd_match` inside its proof body via:
+Phase 4.5 (sessions 2026-04-23 / 2026-04-24) decomposed the
+monolithic `h_rd_match` into two smaller hypotheses for all 9
+Arith-family `equiv_<OP>_metaplan` theorems (MUL, MULH, MULHU,
+MULHSU, MULW, DIV, DIVU, REM, REMU), plus the LD MEM-family pilot:
 
-1. `rd_neq_0` lemma — uses `Transpiler.transpiler_opcode_<N>` to bound
-   the rd index out of 0.
-2. `chip_bus_hypotheses` — pins the Sail `rd_prev` register read.
-3. `bus_effect_matches_sail_*` — unfolds the `bus_effect` foldl.
-4. Direct `simp/grind` finish because the rd bytes align with the Sail
-   `write_xreg`'s `val` by transpile-axiom definition.
+- `h_rd_idx` — the rd-pointer equality (`input.rd = wrap_to_regidx
+  e2.ptr` or the `.val`/`.toNat` equivalent for BitVec-typed rd).
+- `h_rd_val` — the 8 byte lanes encode the pure-spec product /
+  quotient / remainder / loaded-value.
 
-zisk-fv parameterizes this as `h_rd_match`. Closing it requires the
-three bridges per `docs/fv/package-c-residuals.md`:
+Both are downstream-derivable via three Package-C bridges:
 
-- **Bridge 1:** constraint-46 normalization collapses `bus_res1` to the
-  high-chunk pack.
-- **Bridge 2:** Main ↔ Arith operand composition at the bus.
-- **Bridge 3:** field → `BitVec 64` lift via `U64.toBV` + chunk-bound
-  range lemmas.
+- **Bridge 1** (`Airs/Arith/Bridge1.lean`, commit `2b354e7`) —
+  constraint-46 normalization collapses `bus_res1` to the high-chunk
+  pack in each of the three Arith modes (MUL-primary, DIV-primary,
+  REM-secondary).
+- **Bridge 2** (`Spec/MulField.lean`, commit `5a68556`) — Main ↔ Arith
+  operand composition at the bus; yields
+  `main_a_packed * main_b_packed = main_c_packed + d_chunks_packed
+  * 2^64` over FGL.
+- **Bridge 3** (`Fundamentals/PackedBitVec.lean`, commit `6cddb9b`) —
+  field → `BitVec 64` lift via `U64.toBV` (6 lemmas: BV-concat to
+  Nat byte-sum, byte-coercion preservation, field-packed-vs-Nat
+  cast, etc.).
 
-Bridge 3 has no in-repo precedent but is known-feasible per
-openvm-fv's `U32.toBV` treatment at RV32/BabyBear — the RV64
-analogue is ~60% larger (8 bytes vs 4).
+Combined with `Airs/MemoryBus.lean`'s
+`memory_entry_toField_eq_toBV_toNat` (commit `3076d00`),
+downstream callers discharge `h_rd_val` from byte-range + no-wrap
+hypotheses and the Arith packed-correct theorems.
+
+Signed MUL/DIV carry-chain identity is closed too (Phase 4.5 Track
+B, commit `6bc6250`): `arith_mul_signed_carry_identity` and
+`arith_div_signed_carry_identity` in `Airs/Arith/CarryChain.lean`
+hold over arbitrary sign witnesses; per-opcode specializations in
+`Airs/Arith/{Mul,Div}.lean` consume the raw constraints.
+
+**Not yet closed** (stays scope-honest): the `arith_table`
+permutation lookup that ties the `(opcode, mode)` pair to the sign
+witnesses `(na, nb, np, nr)` remains a parameter. Closing it
+requires the permutation-argument infrastructure, orthogonal to the
+polynomial identities.
 
 ### Gap 3 — Unwired transpile axioms
 
