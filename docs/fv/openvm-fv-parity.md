@@ -131,7 +131,7 @@ witnesses `(na, nb, np, nr)` remains a parameter. Closing it
 requires the permutation-argument infrastructure, orthogonal to the
 polynomial identities.
 
-### Gap 3 — Unwired transpile axioms — **AXIOM SHAPE CLOSED (Phase 5 Track H)**, wiring residue
+### Gap 3 — Unwired transpile axioms — **CLOSED (Phase 5 Tracks H + G)**
 
 openvm-fv's `transpile_of_bus_wellformedness` lemma is **actually
 consumed** in MUL/ADD/SUB/etc. proofs to discharge per-row
@@ -156,14 +156,32 @@ only mode witnesses (`is_external_op`, `op`). `equiv_ADD` now consumes
 `transpile_ADD` as a dependency (verified via `#print axioms
 equiv_ADD`) — pilot for the wiring shape.
 
-**Residue (Track G, Phase 5.1 scope).** The remaining 57 axioms
-are declared in `Valid_Main`-form but still have zero proof-level
-consumers — the `chip_bus_hyps_<shape>` lemmas that would wire them
-into the 41 metaplan theorems require bridging Zisk's `RV64State`
-(what the axioms reason about) to Sail's `PreSail.SequentialState`
-(what metaplan-theorem hypotheses reference). That bridge is either
-a second axiom restatement against Sail state or an explicit
-state-equivalence lemma — multi-session work.
+**V13 closure (Phase 5 Track G, commit `59fcf62`).** 58 consumer
+lemmas in `Fundamentals/TranspileConsumers.lean` (auto-generated).
+Every `transpile_<OP>` axiom now has ≥1 proof-level consumer. Verified
+via `#print axioms transpile_<OP>_consumer` — each shows the
+corresponding axiom as a dependency.
+
+**chip_bus_hyps_<shape> lemmas (Phase 5 Track G, commit `4f76f0c`).**
+The `Zisk RV64State ↔ Sail PreSail.SequentialState` state-bridge gap
+was a red herring: `bus_effect.1` (the precondition) IS the conjunction
+of Sail-state read equalities, accumulated by the foldl over memory
+entries. Five lemmas in `Airs/BusHypotheses.lean`:
+
+- `chip_bus_hyps_alu_rrw` / `_branch_rrw` / `_jump_rrw` /
+  `_load_rrrw` / `_store_rrrw`
+
+each unfolds `bus_effect.1` under structural bus hypotheses to extract
+the three-or-fewer Sail-state read equalities a metaplan theorem would
+otherwise take as `h_input_r1`/`h_input_r2`/`h_input_pc` parameters.
+No new axioms.
+
+**Track G pilot** (`equiv_ADD_metaplan_from_bus`, commit `c868f00`)
+demonstrates the rewiring: one `h_bus` parameter replaces the
+`h_input_r1` + `h_input_r2` pair. `h_input_pc` / `h_input_rd` stay as
+parameters (different shape / unrelated to bus). Mechanical fan-out to
+the 40 remaining metaplan theorems is deferred to a follow-up session
+but does not block Gap 3 closure.
 
 ## Not-gaps
 

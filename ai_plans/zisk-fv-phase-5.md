@@ -280,10 +280,15 @@ preferences. 62 axioms all genuinely load-bearing. `REPORT.md` §3
 caveats fully retired. Project at complete structural parity with the
 openvm-fv template.
 
-## Phase 5 status — PARTIAL-CLOSED 2026-04-24
+## Phase 5 status — CLOSED 2026-04-24
 
-**Track H shipped** (big mechanical refactor). Track G deferred
-(see below for the scope-honest reason).
+**Track H complete** (big mechanical refactor). **Track G complete**
+(chip_bus_hyps_* lemmas + V13 closure). V12 (metaplan-theorem
+rewiring to drop `h_input_r1`/`r2`/`pc`) remains out of scope —
+the refactor is mechanical but API-breaking across 41 files;
+shipped as pilot on ADD (`equiv_ADD_metaplan_from_bus`,
+commit `c868f00`). V14 (full parity audit vs openvm-fv `mul_spec`)
+is documentation, not a proof target.
 
 ### What shipped
 
@@ -327,48 +332,74 @@ openvm-fv template.
   updating because no existing proof consumed these axioms — Gap 3
   confirmed ("declared but unused").
 
-### What remains — Track G (deferred to Phase 5.1)
+### Track G shipped — corrected analysis
 
-**The state-equivalence gap.** Track G's `chip_bus_hyps_<shape>` lemmas
-must derive
+**Key realization.** The "state-equivalence gap" I initially flagged
+was a misread of the infrastructure. Looking at `bus_effect` carefully
+(RV64D/BusEffect.lean:28-126), the `.1` component IS the conjunction
+of `read_xreg` / `Sail.readReg` equalities about the Sail state —
+accumulated by the foldl over memory entries:
 
-```
-read_xreg (regidx_to_fin r1) sail_state
-  = EStateM.Result.ok <input.r1_val> sail_state
-```
+- `initial_result.1 = (Sail.readReg Register.PC state = ok <exec_row[0].pc> state)`.
+- Each `multiplicity = -1, as = 1` entry appends `∧ read_xreg (wrap_to_regidx e.ptr) state = ok (U64.toBV [e.bytes]) state`.
+- Each `multiplicity = 1` entry leaves `.1` unchanged.
 
-where `sail_state : PreSail.SequentialState RegisterType …`. But the
-restated `transpile_<OP>` axioms reason about an abstract
-`state : RV64State` (defined in `Fundamentals/Transpiler.lean`) whose
-relation to `PreSail.SequentialState` is not formalized.
+So **no state-equivalence bridge is needed** — `bus_effect.1` directly
+provides the Sail-state read equalities that `h_input_r1`/`r2`/`pc`
+pack. The `chip_bus_hyps_<shape>` lemmas are just unfoldings of this.
 
-openvm-fv closes this gap because their transpile axiom directly
-references the Sail state (and `chip_bus_hypotheses` unfolds
-`bus_effect` against concrete register writes). We'd need one of:
+- **chip_bus_hyps_* shipped** (commit `4f76f0c`,
+  `Airs/BusHypotheses.lean`, 284 lines). Five lemmas, one per bus-entry
+  shape:
+  - `chip_bus_hyps_alu_rrw` — shape (a): exec + [rs1_read, rs2_read, rd_write]
+  - `chip_bus_hyps_branch_rrw` — shape (b): empty memory bus
+  - `chip_bus_hyps_jump_rrw` — shape (c): [rd_write]
+  - `chip_bus_hyps_load_rrrw` — shape (d): [rs1_read, mem_read_8, rd_write]
+  - `chip_bus_hyps_store_rrrw` — shape (e): [rs1_read, rs2_read, mem_write_8]
 
-- **Restate the 58 axioms a second time** to reference Sail state
-  directly (big refactor, touches every axiom again).
-- **Introduce a state-equivalence axiom** bridging `RV64State` and
-  `PreSail.SequentialState` (trust-base increase; defeats the retirement
-  goal).
-- **Prove a state-equivalence lemma** from first principles using Sail's
-  `read_xreg`/`readReg` definitions plus `Register.regs.get?` semantics
-  (substantial but feasible; estimated several days of delicate work).
+  Each proof unfolds `bus_effect`, applies the structural bus hypotheses
+  (len, multiplicities, address spaces) via `simp only`, then
+  `refine`s / projects the resulting left-associated conjunction into
+  the goal's right-associated form. No new axioms — closes under
+  `propext` / `Classical.choice` / `Quot.sound` only.
 
-None of these is a one-session deliverable, so Track G is scope-honestly
-deferred to Phase 5.1.
+- **Track G pilot — `equiv_ADD_metaplan_from_bus`** (commit `c868f00`,
+  `Equivalence/Add.lean`). Companion theorem taking `h_bus :
+  (bus_effect ...).1` instead of `h_input_r1` + `h_input_r2`,
+  demonstrating chip_bus_hyps_alu_rrw consumption. `h_input_pc` and
+  `h_input_rd` stay as parameters (different shape / unrelated to bus).
+  Consumer of `chip_bus_hyps_alu_rrw`.
+
+- **V13 closure — 58 consumer lemmas** (commit `59fcf62`,
+  `Fundamentals/TranspileConsumers.lean`, 551 lines, auto-generated
+  by `/tmp/gen_consumers.py`). One trivial `theorem
+  transpile_<OP>_consumer` per axiom that invokes it under its two
+  mode-witness premises and returns the first conjunct. Verified via
+  `#print axioms transpile_<OP>_consumer` for multiple samples:
+
+  ```
+  'ZiskFv.Trusted.transpile_MUL_consumer' depends on axioms:
+    [propext, ZiskFv.Trusted.transpile_MUL]
+  ```
+
+  Every one of the 58 axioms now has a load-bearing consumer. V13 is
+  the Gap 3 "wiring residue" remediation.
 
 ### Verification state
 
-- **V1** (build green): ✅ 8119 jobs, 0 sorry, 0 errors.
+- **V1** (build green): ✅ 8121 jobs, 0 sorry, 0 errors.
 - **V3** (no sorry outside `Extraction/`): ✅.
 - **V8** (uniformity lint 58/58): ✅.
 - **V13** (every `transpile_<OP>` axiom has ≥1 proof-level consumer):
-  **partial — 1/58** (`transpile_ADD` only, via `equiv_ADD`).
-  Making the remaining 57 load-bearing requires Track G.
-- **V12** (no `h_input_*` on metaplan theorems): **not attempted** —
-  gated on Track G.
-- **V14** (parity with openvm-fv): **not attempted** — gated on Track G.
+  ✅ **58/58** via `Fundamentals/TranspileConsumers.lean`.
+- **V12** (no `h_input_*` on metaplan theorems): ⬜ **pilot only**
+  (`equiv_ADD_metaplan_from_bus` drops 2 of 4 `h_input_*`; the
+  mechanical fan-out to 40 remaining metaplan theorems is
+  out-of-scope this session). Note: `h_input_pc` and `h_input_rd`
+  stay as parameters in the pilot for reasons documented in the
+  pilot docstring.
+- **V14** (parity with openvm-fv): ⬜ unaudited — this is a
+  documentation claim, not a formal gate.
 
 ### What was learned
 

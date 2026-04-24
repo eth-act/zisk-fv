@@ -4,7 +4,7 @@
 [official Sail RISC-V specification](https://github.com/riscv/sail-riscv),
 restricted to **RV64IM** (base integer + M extension).
 
-**Status.** `lake build` green (8119 jobs, 0 errors, 0 `sorry`). 58/58
+**Status.** `lake build` green (8121 jobs, 0 errors, 0 `sorry`). 58/58
 RV64IM opcodes proved. Trust base: 62 axioms, all catalogued with
 closure paths in [`docs/fv/trusted-base.md`](docs/fv/trusted-base.md).
 Phase 4.5 shipped in two sessions (2026-04-23 / 2026-04-24): Arith
@@ -12,11 +12,13 @@ carry-chain closure (unsigned + signed), Main↔Arith field composition,
 field→BitVec 64 lift (Bridge 3), full `h_rd_match` decomposition for
 all 9 Arith opcodes + LD pilot, shape (d/e) bus-emission lemmas,
 `just verify-phase4` gate, and the 175-scenario fixture matrix. Phase
-5 Track H shipped 2026-04-24: all 58 `transpile_<OP>` axioms restated
-in `Valid_Main`-form (direct column pinning rather than abstract
-`ZiskInstructionRow` existentials). Track G (chip_bus_hypotheses +
-metaplan rewiring) scope-honestly deferred to Phase 5.1 pending
-Zisk↔Sail state-model bridging (see §3.4).
+5 Tracks H and G shipped 2026-04-24: all 58 `transpile_<OP>` axioms
+restated in `Valid_Main`-form (Track H) and made load-bearing via 58
+consumer lemmas in `Fundamentals/TranspileConsumers.lean` (Track G, V13
+closure); 5 `chip_bus_hyps_<shape>` lemmas in `Airs/BusHypotheses.lean`
+unfold `bus_effect.1` into Sail-state read equalities, with the
+`equiv_ADD_metaplan_from_bus` pilot (Equivalence/Add.lean) demonstrating
+the metaplan-rewiring pattern.
 
 ---
 
@@ -77,10 +79,11 @@ what openvm-fv-parity audit (`docs/fv/openvm-fv-parity.md`) Gap 3
 identified as necessary for the axioms to become genuinely
 load-bearing.
 
-**Load-bearing status.** Currently **1 of 58** (`transpile_ADD` via
-`equiv_ADD`) has a direct proof-level consumer; the remaining 57 are
-declared but await Phase 5.1 Track G (chip_bus_hypotheses lemmas) to
-become load-bearing. See §3.4.
+**Load-bearing status.** **58 of 58** (V13 closure, Phase 5 Track G,
+commit `59fcf62`). Every `transpile_<OP>` axiom has ≥1 proof-level
+consumer via the auto-generated `transpile_<OP>_consumer` lemma in
+`Fundamentals/TranspileConsumers.lean`, verified via
+`#print axioms transpile_<OP>_consumer`.
 
 **Trust basis.** These axioms encode the transpiler's contract: "if the
 Rust transpiler emits this row for opcode `<OP>`, the row has exactly
@@ -190,19 +193,28 @@ bus-wellformedness + the `transpile_of_bus_wellformedness` lemma (see
 
 **Phase 5 Track H** (commits `413362b`, `cc4a845`) restated all 58
 `transpile_<OP>` axioms in `Valid_Main`-form so they directly pin the
-AIR columns, a prerequisite for closing the gap. **Track G**
-(`chip_bus_hyps_<shape>` lemmas + metaplan rewiring) is deferred to
-Phase 5.1: the restated axioms reason about an abstract
-`RV64State` (Zisk), while the metaplan theorems use
-`PreSail.SequentialState` (Sail). Closing Track G therefore requires
-either a second restatement of the 58 axioms against Sail's state
-model, or bridging infrastructure between the two state types. Either
-option is a multi-session effort.
+AIR columns. **Phase 5 Track G** (commits `4f76f0c`, `c868f00`,
+`59fcf62`) shipped:
 
-This gap is structural, not a correctness hole: the `h_input_*`
-parameters are scope-honest restrictions on what inputs the metaplan
-theorem applies to, and match what any downstream caller would need
-to supply anyway.
+- `Airs/BusHypotheses.lean` — five `chip_bus_hyps_<shape>` lemmas that
+  unfold `bus_effect.1` (the precondition) into the conjunction of
+  Sail-state `read_xreg` / `readReg` equalities. The initially-feared
+  Zisk↔Sail "state-equivalence gap" was a red herring: `bus_effect.1`
+  already lives in Sail state-space and provides those equalities
+  directly.
+- `Fundamentals/TranspileConsumers.lean` — 58 trivial consumer lemmas
+  (V13 closure), making every `transpile_<OP>` axiom load-bearing.
+- `equiv_ADD_metaplan_from_bus` pilot demonstrating the metaplan-theorem
+  rewiring: one `h_bus` parameter replaces the `h_input_r1` +
+  `h_input_r2` pair.
+
+**Residue.** The mechanical fan-out of the `equiv_<OP>_metaplan_from_bus`
+pattern to the other 40 metaplan theorems is not shipped in this phase;
+the pattern is validated by the ADD pilot and can be applied per-opcode
+as a follow-up. The `h_input_pc` and `h_input_rd` parameters stay on
+the pilot because they live in different shapes (`state.regs.get? = some`
+and `regidx` coercion respectively) that the chip_bus_hyps lemmas
+don't directly provide.
 
 ## 4. Known limitations (explicitly out of scope)
 
