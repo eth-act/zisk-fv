@@ -366,3 +366,116 @@ axioms. They remain structural parameters, pending the follow-on pass.
 
 * `lake build` — 8118 jobs green.
 * `git grep -n 'sorry' ZiskFv/ZiskFv/{Fundamentals,Airs,Spec,Equivalence,GoldenTraces,Tactics,RV64D}` — empty.
+
+## Phase 4 status — CLOSED 2026-04-23
+
+Phase 4 retired 9 of the 10 scoped trust-base items (C2a–d branches + C5–C9
+SLT-family + LW) and shipped the audit / export deliverables (uniformity
+lint, top-level re-export, REPORT.md). Package C (Arith-SM internal
+carry-chain correctness) delivered its mathematical core — the 8-chunk
+carry-chain identity and per-family unsigned-mode specializations — but
+deferred the `h_rd_match` rewiring and signed-mode case-splits to a
+follow-on pass; no axiom retirements are gated on that follow-on.
+
+### Shipped (by track)
+
+- **T-BR** (Package A, commits `8caa440..490991e`). C2a/b/c/d retired.
+  BLT/BGE/BLTU/BGEU `execute_<OP>_pure_equiv` now direct lemmas via port
+  of the BNE skeleton. No shared BitVec bridge needed — Sail's
+  `zopz0z{I,KzJ}_{s,u}` unfold directly to `.toInt` / `.toNatInt` forms
+  matching the pure specs.
+
+- **T-SLT** (Package B1, in `490991e`). C5/C6/C7/C8 retired via a standalone
+  `h_bridge` lemma per file (`by_cases` on the comparator, then `simp`
+  reduces both `BitVec.setWidth 64 (if .toInt < …)` and `if .slt …`
+  forms). `maxHeartbeats 400000`.
+
+- **T-LW** (Package B2, in `490991e`). C9 retired. Fixed a Phase 3B
+  statement bug: `is_unsigned = true` in the Sail `LOAD` call makes Sail
+  zero-extend, but the pure spec sign-extends, so the theorem was
+  structurally false and `grind` rightly refused. Setting
+  `is_unsigned = false` (correct for RV64 LW) closes the proof cleanly.
+
+- **T-LINT** (commit `f10f5d6`). `tools/zisk-fv-lint/uniformity-lint.sh`
+  authored and passing. 58/58 `Equivalence/<Op>.lean` files export exactly
+  one `equiv_<OP>_metaplan` theorem with the canonical `bus_effect` RHS.
+  Also closed 10 missing top-level re-exports in `ZiskFv.lean`
+  (BEQ/BNE/JAL/JALR/LD/LWU/MUL/MULH/SD/SW — older opcodes that shipped
+  before the coverage-gate discipline).
+
+- **T-FIX** (in `f10f5d6`). Validated the ≥3-fixtures-per-opcode pattern
+  on ADD, SUB, AND, SLT, MUL (LW already had 3). Each additional fixture
+  exercises an edge case — zero-register, max-value, underflow, high-lane
+  overflow, or sign-boundary. Full 174-fixture expansion is mechanical
+  and documented for Phase 5 audit-day extension.
+
+- **T-REPORT** (in `f10f5d6`). `REPORT.md` at repo root: 7 sections
+  (what's proved / trust base / caveats / known limitations / repro /
+  history / prior art). ≤2000 words.
+
+- **T-MUL-CC + T-DIV-CC** (Package C, commits `0db8b9e..5779d14`,
+  merged in `ae5cfe5`). PARTIAL — see § "Phase 4 Package C status" above.
+
+### Gate states (V1–V9)
+
+- **V1.** `lake build` green at **8118 jobs**, exit 0.
+- **V2.** `just verify-phase2` still exits 0 (no regression of Phase 2.5
+  gate). `just verify-phase4` target not yet added — deferred to V
+  follow-on since Phase 4 gates pass via direct invocation.
+- **V3.** Zero-sorry: `git grep -n 'sorry' ZiskFv/ZiskFv/{Fundamentals,Airs,Spec,Equivalence,GoldenTraces,Tactics,RV64D}`
+  returns empty.
+- **V4'.** Axiom-removal audit passes for the 10 branch + SLT-family + LW
+  metaplan theorems (`#print axioms equiv_BLT_metaplan` shows only
+  LeanRV64D platform + kernel axioms). The 9 Arith-family metaplan
+  theorems still consume `h_rd_match` structural parameters (no axioms,
+  so no delta).
+- **V5.** Trust base **62 axioms** (58 transpile + 4 platform + 0 Sail-
+  equivalence). Hit the `62 ± 3` target exactly at the low end.
+- **V6.** `docs/fv/trusted-base.md` updated: C2 and C5–C9 sections
+  replaced with RETIRED banners; 3 history entries (T-BR, T-SLT, T-LW).
+- **V7.** Every RV64IM opcode has ≥1 fixture (58/58); ≥3 fixtures on 6
+  opcodes (ADD, SUB, AND, SLT, MUL, LW). Full-matrix expansion deferred.
+- **V8.** Uniformity lint passes: 58/58 opcodes with canonical
+  metaplan-theorem shape.
+- **V9.** `REPORT.md` merged at repo root, 195 lines.
+
+### Trust-base accounting (62 → 62)
+
+Before Phase 4: 71 axioms. After: **62 axioms**.
+
+- **−9 Sail-equivalence** (C2a-d + C5-C9 retired as direct lemmas).
+- **0 transpile / platform delta** (58 + 4 unchanged).
+- **0 new structural axioms** — Package C's deferred `h_rd_match`
+  rewiring remains a proof-signature parameter, not an axiom.
+
+### What Phase 4 leaves for Phase 5
+
+**Deferred from this phase** (with explicit closure paths):
+
+1. **Package C Steps 3+4** (~1000 lines, 3-5 days). Drop `h_rd_match`
+   from the nine Arith-family metaplan theorems. Three bridge lemmas
+   detailed in `docs/fv/package-c-residuals.md`. No new axioms expected.
+
+2. **Signed MUL/DIV carry-chain closure** (~400 lines). Case-split on
+   `(na, nb) ∈ {0,1}²`. Shipped `arith_mul_unsigned_packed_correct` /
+   `arith_div_unsigned_packed_correct` handle the `na = nb = 0` leg.
+
+3. **Full golden-trace matrix expansion** (~116 new fixtures). Pattern
+   validated on 6 opcodes; extension is mechanical.
+
+4. **`just verify-phase4` justfile target** bundling V1–V9 as one
+   command.
+
+### Repro instructions
+
+```bash
+git checkout main  # ae5cfe5 or later
+cd ZiskFv && lake build          # 8118 jobs, exit 0
+cd .. && git grep -n 'sorry' ZiskFv/ZiskFv/{Fundamentals,Airs,Spec,Equivalence,GoldenTraces,Tactics,RV64D}
+bash tools/zisk-fv-lint/uniformity-lint.sh   # "PASSED. 58 opcodes"
+```
+
+### Commit range
+
+Phase 4 range: `d42a5b8..ae5cfe5` on `main`, ~15 commits across the 8
+tracks. No force pushes, no amends to earlier commits.
