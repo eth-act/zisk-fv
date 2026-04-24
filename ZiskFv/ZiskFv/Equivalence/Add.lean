@@ -73,26 +73,21 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     Coefficient `4294967296 * 4294967296 = 2^64` written in factored form
     so `ring` can match it against the carry-chain coefficient. -/
 theorem equiv_ADD
-    (rs1 rs2 _rd : Fin 32) (state : RV64State)
+    (rs1 rs2 : Fin 32) (state : RV64State)
     (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
     (r_main r_binary : ℕ)
-    (h_circuit : add_circuit_holds m b r_main r_binary)
-    (h_main_a : m.a_0 r_main = lane_lo (state.xreg rs1)
-              ∧ m.a_1 r_main = lane_hi (state.xreg rs1))
-    (h_main_b : m.b_0 r_main = lane_lo (state.xreg rs2)
-              ∧ m.b_1 r_main = lane_hi (state.xreg rs2)) :
+    (h_circuit : add_circuit_holds m b r_main r_binary) :
     main_c_packed m r_main
       = (lane_lo (state.xreg rs1) + lane_hi (state.xreg rs1) * 4294967296)
       + (lane_lo (state.xreg rs2) + lane_hi (state.xreg rs2) * 4294967296)
       - b.cout_1 r_binary * (4294967296 * 4294967296) := by
-  -- Discharge `transpile_ADD` (the trusted contract) — its existential
-  -- gives us a row that matches the Main columns. We don't need the row
-  -- explicitly here; the hypotheses `h_main_a` and `h_main_b` already
-  -- provide the column equalities the contract guarantees.
   have h_compositional := add_compositional m b r_main r_binary h_circuit
-  obtain ⟨h_a_lo, h_a_hi⟩ := h_main_a
-  obtain ⟨h_b_lo, h_b_hi⟩ := h_main_b
-  -- Substitute the Main lanes into the compositional equation.
+  -- `add_circuit_holds` bundles `main_row_in_add_mode`, which gives us
+  -- `is_external_op = 1` and `op = OP_ADD` — the premises of `transpile_ADD`.
+  obtain ⟨_, _, _, h_isext, h_op, _, _⟩ := h_circuit
+  -- Apply `transpile_ADD` to discharge the lane equalities.
+  obtain ⟨h_a_lo, h_a_hi, h_b_lo, h_b_hi, _, _, _, _, _⟩ :=
+    transpile_ADD m r_main state rs1 rs2 h_isext h_op
   rw [h_compositional]
   unfold main_a_packed main_b_packed
   rw [h_a_lo, h_a_hi, h_b_lo, h_b_hi]

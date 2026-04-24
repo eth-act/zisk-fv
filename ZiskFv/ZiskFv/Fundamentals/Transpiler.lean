@@ -1,6 +1,7 @@
 import Mathlib
 
 import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Airs.Main
 
 /-!
 RV64 → Zisk-instruction transpilation contract (axiomatized).
@@ -41,6 +42,7 @@ end Transpiler
 namespace ZiskFv.Trusted
 
 open Goldilocks
+open ZiskFv.Airs.Main
 
 /-- Subset of the Zisk-instruction row populated by a single Main-AIR row.
     Mirrors the witness columns relevant to ADD correctness + branch-relevant
@@ -217,32 +219,37 @@ def lane_hi (v : BitVec 64) : FGL :=
     have := Nat.mod_lt (v.toNat / 4294967296) (by decide : 0 < 4294967296)
     omega⟩
 
-/-- The axiomatic RV64 → Zisk row contract for ADD.
+/-- The axiomatic RV64 → Zisk row contract for ADD, Phase-5 `Valid_Main`-form.
 
-    Given RV64 state and registers `rs1`, `rs2`, `rd`, the ADD microinstruction
-    emitted by `vendor/zisk/core/src/riscv2zisk_context.rs::create_register_op`
-    (called from the `"add"` arm at line 100) produces exactly one Main-AIR row
-    with the shape below.
+    Given a Main AIR instance, a row index, RV64 state, and source registers,
+    whenever the row is an active ADD row (`is_external_op = 1`, `op = OP_ADD`),
+    the Main row's `a`/`b` lanes equal the split lanes of `state.xreg rs1` and
+    `state.xreg rs2`, and the mode selectors (`m32`, `set_pc`, `store_pc`,
+    `jmp_offset1/2`) take the values emitted by the Rust transpiler's ADD arm
+    at `vendor/zisk/core/src/riscv2zisk_context.rs::create_register_op`
+    (called from the `"add"` arm at line 100).
 
-    **Trust basis.** This axiom is a pure spec of the Rust transpiler's ADD
-    branch — not a consequence of anything else in the Lean development. If
-    ZisK's transpiler changes (new opcode encoding, different source routing),
-    this axiom must change in lockstep. -/
+    **Trust basis.** Pure spec of the Rust transpiler's ADD branch, restated in
+    direct `Valid_Main`-row form (Phase 5 Track H): the axiom pins the named
+    columns of the Main AIR at index `r_main` rather than quantifying over an
+    abstract `ZiskInstructionRow` with no connection to a concrete AIR row.
+    If ZisK's transpiler changes (new opcode encoding, different source
+    routing), this axiom must change in lockstep. -/
 axiom transpile_ADD :
-    ∀ (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      ∃ (row : ZiskInstructionRow),
-        row.op = OP_ADD
-      ∧ row.is_external_op = 1
-      ∧ row.flag = 0
-      ∧ row.m32 = 0
-      ∧ row.set_pc = 0
-      ∧ row.store_pc = 0
-      ∧ row.jmp_offset1 = 4
-      ∧ row.jmp_offset2 = 4
-      ∧ row.a_lo = lane_lo (state.xreg rs1)
-      ∧ row.a_hi = lane_hi (state.xreg rs1)
-      ∧ row.b_lo = lane_lo (state.xreg rs2)
-      ∧ row.b_hi = lane_hi (state.xreg rs2)
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (state : RV64State)
+      (rs1 rs2 : Fin 32),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_ADD →
+      m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+      ∧ m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
 
 /-- The axiomatic RV64 → Zisk row contract for BEQ.
 
