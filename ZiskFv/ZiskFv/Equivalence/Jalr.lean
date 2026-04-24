@@ -9,6 +9,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.jalr
 import ZiskFv.RV64D.BusEffect
+import ZiskFv.Airs.BusHypotheses
 
 /-!
 End-to-end theorem for RV64 JALR (Phase 2.5 D4 archetype-macro
@@ -239,5 +240,68 @@ theorem equiv_JALR_metaplan
                Bool.false_eq_true, if_false, ite_false,
                bind, pure, EStateM.bind, EStateM.pure]
     rw [h_rd_val]
+
+/-- **Phase 5 V12 companion for JALR.** Drops `h_input_pc` and
+    `h_input_rd` via `chip_bus_hyps_jump_rrw` + `readReg_of_readReg_succ`.
+    `h_input_rs1` stays (rs1 read is routed via operation bus for JALR,
+    not the memory bus). Other stateful hyps (misa, cur_privilege,
+    mseccfg) stay as parameters — privileged-register reads are
+    orthogonal to the memory-bus shape. -/
+theorem equiv_JALR_metaplan_from_bus
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (jalr_input : PureSpec.JalrInput)
+    (imm : BitVec 12)
+    (rs1 rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (nextPC_val : BitVec 64)
+    (h_input_imm : jalr_input.imm = imm)
+    (h_input_rs1 : read_xreg (regidx_to_fin rs1) state
+      = EStateM.Result.ok jalr_input.rs1_val state)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_cur_privilege : Sail.readReg Register.cur_privilege state
+      = EStateM.Result.ok Privilege.Machine state)
+    (h_mseccfg : Sail.readReg Register.mseccfg state
+      = EStateM.Result.ok mseccfg state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_success : (PureSpec.execute_JALR_pure jalr_input).success = true)
+    (h_nextPC_option :
+      (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val)
+    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_pc, h_input_rd).
+    (h_bus : (bus_effect exec_row [e_rd] state).1)
+    (h_pc : jalr_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
+    (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_rd_val :
+      U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
+                  e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
+      = jalr_input.PC + 4) :
+    (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
+      = (bus_effect exec_row [e_rd] state).2 := by
+  have h_pc_read := ZiskFv.Airs.BusHypotheses.chip_bus_hyps_jump_rrw
+    state exec_row e_rd
+    h_exec_len h_e0_mult h_e1_mult h_rd_mult h_rd_as h_bus
+  have h_input_rd : jalr_input.rd = regidx_to_fin rd := by
+    rw [h_rd_ptr]; exact h_rd_idx
+  have h_input_pc : state.regs.get? Register.PC = .some jalr_input.PC := by
+    rw [h_pc]
+    exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
+  exact equiv_JALR_metaplan state jalr_input imm rs1 rd misa_val mseccfg
+    exec_row e_rd nextPC_val
+    h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
+    h_cur_privilege h_mseccfg
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_rd_mult h_rd_as h_success h_nextPC_option h_rd_idx h_rd_val
 
 end ZiskFv.Equivalence.Jalr

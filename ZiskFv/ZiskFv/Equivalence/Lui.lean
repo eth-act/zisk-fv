@@ -8,6 +8,7 @@ import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.lui
+import ZiskFv.Airs.BusHypotheses
 import ZiskFv.RV64D.BusEffect
 
 /-!
@@ -147,5 +148,50 @@ theorem equiv_LUI_metaplan
   split_ifs with h_rd_zero
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
+
+/-- **Phase 5 V12 companion for LUI.** Drops `h_input_pc` and
+    `h_input_rd` via `chip_bus_hyps_jump_rrw` + `readReg_of_readReg_succ`.
+    `h_input_imm` stays (not bus-derivable). -/
+theorem equiv_LUI_metaplan_from_bus
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (lui_input : PureSpec.LuiInput)
+    (imm : BitVec 20)
+    (rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (nextPC_val : BitVec 64)
+    (h_input_imm : lui_input.imm = imm)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_nextPC_eq :
+      (PureSpec.execute_LUI_pure lui_input).nextPC = nextPC_val)
+    -- Phase 5 V12: bus precondition + ptr/value match.
+    (h_bus : (bus_effect exec_row [e_rd] state).1)
+    (h_pc : lui_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
+    (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_rd_idx : lui_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_rd_val :
+      U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
+                  e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
+      = BitVec.signExtend 64 (lui_input.imm ++ 0#12)) :
+    execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
+      = (bus_effect exec_row [e_rd] state).2 := by
+  have h_pc_read := ZiskFv.Airs.BusHypotheses.chip_bus_hyps_jump_rrw
+    state exec_row e_rd
+    h_exec_len h_e0_mult h_e1_mult h_rd_mult h_rd_as h_bus
+  have h_input_rd : lui_input.rd = regidx_to_fin rd := by
+    rw [h_rd_ptr]; exact h_rd_idx
+  have h_input_pc : state.regs.get? Register.PC = .some lui_input.PC := by
+    rw [h_pc]
+    exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
+  exact equiv_LUI_metaplan state lui_input imm rd exec_row e_rd
+    nextPC_val h_input_imm h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_rd_mult h_rd_as h_nextPC_eq h_rd_idx h_rd_val
 
 end ZiskFv.Equivalence.Lui
