@@ -331,6 +331,24 @@ section CarryChain
 open Arith.extraction
 open ZiskFv.Airs.ArithCarryChain
 
+/-- **Bundled Arith MUL-mode carry-chain constraints.** Packs the 11
+    extraction constraints the `arith_mul_unsigned_packed_correct`
+    theorem consumes: constraints 6-8 (fab / na_fb / nb_fa closures) plus
+    constraints 31-38 (the 8-chunk carry chain). -/
+@[simp]
+def mul_carry_chain_holds (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
+  constraint_6_every_row v.circuit row
+  ∧ constraint_7_every_row v.circuit row
+  ∧ constraint_8_every_row v.circuit row
+  ∧ constraint_31_every_row v.circuit row
+  ∧ constraint_32_every_row v.circuit row
+  ∧ constraint_33_every_row v.circuit row
+  ∧ constraint_34_every_row v.circuit row
+  ∧ constraint_35_every_row v.circuit row
+  ∧ constraint_36_every_row v.circuit row
+  ∧ constraint_37_every_row v.circuit row
+  ∧ constraint_38_every_row v.circuit row
+
 /-- Packed low-64 value `c_packed := c[0] + c[1] * 2^16 + c[2] * 2^32 + c[3] * 2^48`
     expressed over the named `Valid_ArithMul` columns. For MUL this is the
     low 64 bits of the product. -/
@@ -443,6 +461,24 @@ lemma arith_mul_unsigned_packed_correct
     + (65536 * 65536 * 65536 * 65536 * 65536) * h36
     + (65536 * 65536 * 65536 * 65536 * 65536 * 65536) * h37
     + (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536) * h38
+
+/-- **MUL-unsigned carry-chain specialization (bundled form).** Same as
+    `arith_mul_unsigned_packed_correct` but consuming the bundled
+    `mul_carry_chain_holds` predicate — more ergonomic for downstream
+    consumers. -/
+lemma arith_mul_unsigned_packed_correct_bundled
+    (v : Valid_ArithMul C F ExtF) (row : ℕ)
+    (h_chain : mul_carry_chain_holds v row)
+    (h_na : v.na row = 0) (h_nb : v.nb row = 0)
+    (h_np : v.np row = 0) (h_nr : v.nr row = 0)
+    (h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
+    (h_div : v.div row = 0) :
+    a_chunks_packed v row * b_chunks_packed v row
+      = c_chunks_packed v row
+        + d_chunks_packed v row * (65536 * 65536 * 65536 * 65536) := by
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  exact arith_mul_unsigned_packed_correct v row h6 h7 h8 h31 h32 h33 h34 h35 h36 h37 h38
+    h_na h_nb h_np h_nr h_sext h_m32 h_div
 
 end CarryChain
 

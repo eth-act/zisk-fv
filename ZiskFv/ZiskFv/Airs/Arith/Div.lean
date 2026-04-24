@@ -391,6 +391,23 @@ section CarryChain
 open Arith.extraction
 open ZiskFv.Airs.ArithCarryChain
 
+/-- **Bundled Arith DIV-mode carry-chain constraints.** Packs the 11
+    extraction constraints the `arith_div_unsigned_packed_correct`
+    theorem consumes: constraints 6-8 + 31-38. -/
+@[simp]
+def div_carry_chain_holds (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
+  constraint_6_every_row v.circuit row
+  ∧ constraint_7_every_row v.circuit row
+  ∧ constraint_8_every_row v.circuit row
+  ∧ constraint_31_every_row v.circuit row
+  ∧ constraint_32_every_row v.circuit row
+  ∧ constraint_33_every_row v.circuit row
+  ∧ constraint_34_every_row v.circuit row
+  ∧ constraint_35_every_row v.circuit row
+  ∧ constraint_36_every_row v.circuit row
+  ∧ constraint_37_every_row v.circuit row
+  ∧ constraint_38_every_row v.circuit row
+
 /-- Packed `a` over Div columns: `a[0] + a[1]*2^16 + a[2]*2^32 + a[3]*2^48`.
     For DIVU/DIV this is the quotient; for REMU/REM the quotient lane is
     still computed but unused by the bus emission. -/
@@ -488,6 +505,21 @@ lemma arith_div_unsigned_packed_correct
     + (65536 * 65536 * 65536 * 65536 * 65536) * h36
     + (65536 * 65536 * 65536 * 65536 * 65536 * 65536) * h37
     + (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536) * h38
+
+/-- **DIV-unsigned carry-chain specialization (bundled form).** -/
+lemma arith_div_unsigned_packed_correct_bundled
+    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+    (h_chain : div_carry_chain_holds v row)
+    (h_na : v.na row = 0) (h_nb : v.nb row = 0)
+    (h_np : v.np row = 0) (h_nr : v.nr row = 0)
+    (h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
+    (h_div : v.div row = 1) :
+    a_chunks_packed_div v row * b_chunks_packed_div v row
+      + d_chunks_packed_div v row
+      = c_chunks_packed_div v row := by
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  exact arith_div_unsigned_packed_correct v row h6 h7 h8 h31 h32 h33 h34 h35 h36 h37 h38
+    h_na h_nb h_np h_nr h_sext h_m32 h_div
 
 end CarryChain
 
