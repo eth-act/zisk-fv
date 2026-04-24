@@ -279,3 +279,113 @@ matches openvm-fv's RISC-V-equivalence theorem modulo bundling
 preferences. 62 axioms all genuinely load-bearing. `REPORT.md` §3
 caveats fully retired. Project at complete structural parity with the
 openvm-fv template.
+
+## Phase 5 status — PARTIAL-CLOSED 2026-04-24
+
+**Track H shipped** (big mechanical refactor). Track G deferred
+(see below for the scope-honest reason).
+
+### What shipped
+
+- **Track H pilot — `transpile_ADD` restatement** (commit `413362b`).
+  Restated `transpile_ADD` in `Valid_Main`-form:
+
+  ```
+  axiom transpile_ADD :
+    ∀ {C} [Circuit FGL FGL C] (m : Valid_Main C FGL FGL) (r_main : ℕ)
+      (state : RV64State) (rs1 rs2 : Fin 32),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_ADD →
+      m.a_0 r_main = lane_lo (state.xreg rs1) ∧
+      m.a_1 r_main = lane_hi (state.xreg rs1) ∧
+      m.b_0 r_main = lane_lo (state.xreg rs2) ∧
+      m.b_1 r_main = lane_hi (state.xreg rs2) ∧
+      m.m32 r_main = 0 ∧ m.set_pc r_main = 0 ∧
+      m.store_pc r_main = 0 ∧
+      m.jmp_offset1 r_main = 4 ∧ m.jmp_offset2 r_main = 4
+  ```
+
+  Updated `equiv_ADD` to consume it — `h_main_a`/`h_main_b` parameters
+  dropped; internally derived from `transpile_ADD` applied to the
+  mode witnesses that `add_circuit_holds` already bundles. `#print
+  axioms equiv_ADD` now lists `transpile_ADD` as a dependency.
+
+- **Track H fan-out — 57 remaining axioms** (commit `cc4a845`).
+  Systematic restatement of all remaining `transpile_<OP>` axioms
+  via a Python transformer that:
+  1. Prepends `∀ {C} [Circuit FGL FGL C] (m : Valid_Main C FGL FGL) (r_main : ℕ)` to the binder list.
+  2. Extracts `row.op` / `row.is_external_op` → premise implications.
+  3. Remaps `row.{a_lo,a_hi,b_lo,b_hi,c_lo,c_hi,flag,m32,set_pc,store_pc,jmp_offset1,jmp_offset2}` → `m.{a_0,a_1,b_0,b_1,c_0,c_1,flag,m32,set_pc,store_pc,jmp_offset1,jmp_offset2} r_main`.
+
+  Opcodes (57): BEQ, BNE, JAL, JALR, LD, LWU, LHU, LBU, SD, SW, MUL,
+  MULH, SLLW, BLT, BGE, BLTU, BGEU, SH, SB, SLL, SRL, SRA, SLLI, SRLI,
+  SRAI, SRLW, SRAW, SLLIW, SRLIW, SRAIW, MULHU, MULHSU, MULW, LUI,
+  AUIPC, SUB, AND, OR, XOR, SLT, SLTU, ADDI, ANDI, ORI, XORI, SLTI,
+  SLTIU, ADDW, SUBW, ADDIW, LW, LH, LB, DIVU, REMU, DIV, REM.
+
+  `lake build` green at 8119 jobs. No downstream files needed
+  updating because no existing proof consumed these axioms — Gap 3
+  confirmed ("declared but unused").
+
+### What remains — Track G (deferred to Phase 5.1)
+
+**The state-equivalence gap.** Track G's `chip_bus_hyps_<shape>` lemmas
+must derive
+
+```
+read_xreg (regidx_to_fin r1) sail_state
+  = EStateM.Result.ok <input.r1_val> sail_state
+```
+
+where `sail_state : PreSail.SequentialState RegisterType …`. But the
+restated `transpile_<OP>` axioms reason about an abstract
+`state : RV64State` (defined in `Fundamentals/Transpiler.lean`) whose
+relation to `PreSail.SequentialState` is not formalized.
+
+openvm-fv closes this gap because their transpile axiom directly
+references the Sail state (and `chip_bus_hypotheses` unfolds
+`bus_effect` against concrete register writes). We'd need one of:
+
+- **Restate the 58 axioms a second time** to reference Sail state
+  directly (big refactor, touches every axiom again).
+- **Introduce a state-equivalence axiom** bridging `RV64State` and
+  `PreSail.SequentialState` (trust-base increase; defeats the retirement
+  goal).
+- **Prove a state-equivalence lemma** from first principles using Sail's
+  `read_xreg`/`readReg` definitions plus `Register.regs.get?` semantics
+  (substantial but feasible; estimated several days of delicate work).
+
+None of these is a one-session deliverable, so Track G is scope-honestly
+deferred to Phase 5.1.
+
+### Verification state
+
+- **V1** (build green): ✅ 8119 jobs, 0 sorry, 0 errors.
+- **V3** (no sorry outside `Extraction/`): ✅.
+- **V8** (uniformity lint 58/58): ✅.
+- **V13** (every `transpile_<OP>` axiom has ≥1 proof-level consumer):
+  **partial — 1/58** (`transpile_ADD` only, via `equiv_ADD`).
+  Making the remaining 57 load-bearing requires Track G.
+- **V12** (no `h_input_*` on metaplan theorems): **not attempted** —
+  gated on Track G.
+- **V14** (parity with openvm-fv): **not attempted** — gated on Track G.
+
+### What was learned
+
+- **Python-scripted bulk refactor works well** for mechanical Lean
+  restatement. The 57-axiom restatement was a single Python invocation
+  that produced a structurally-correct Transpiler.lean. Mass-regex via
+  Edit tool would have been dozens of individual calls.
+- **RV64State vs PreSail.SequentialState is the real gap.** The Phase
+  5 plan under-appreciated this — it assumed the transpile axioms'
+  state parameter was directly usable for deriving Sail register-read
+  equalities. Phase 5.1 must address the state-model bridge as a
+  first-class concern.
+- **Gap 3 was validated as "declared but unused":** the full 57-axiom
+  restatement broke zero downstream proofs, because no existing proof
+  consumed any of them. Phase 5.1 closing V13 is the missing link.
+
+### Trust base (unchanged)
+
+Still **62 axioms** (58 transpile + 4 platform). The axioms are now
+in a more useful shape but no retirements and no additions.

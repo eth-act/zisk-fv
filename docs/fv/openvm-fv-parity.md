@@ -131,22 +131,39 @@ witnesses `(na, nb, np, nr)` remains a parameter. Closing it
 requires the permutation-argument infrastructure, orthogonal to the
 polynomial identities.
 
-### Gap 3 — Unwired transpile axioms
+### Gap 3 — Unwired transpile axioms — **AXIOM SHAPE CLOSED (Phase 5 Track H)**, wiring residue
 
 openvm-fv's `transpile_of_bus_wellformedness` lemma is **actually
 consumed** in MUL/ADD/SUB/etc. proofs to discharge per-row
 equalities that would otherwise be parameters.
 
-zisk-fv's 58 `transpile_<OP>` axioms in `Fundamentals/Transpiler.lean`
-are **declared but never invoked** anywhere in the Lean tree (verified
-via grep 2026-04-24: zero non-docstring consumers). They are intended
-to play the same role as openvm-fv's, but the wiring never landed.
+**Phase 5 Track H** (commits `413362b` + `cc4a845`, 2026-04-24)
+restated all 58 `transpile_<OP>` axioms in `Valid_Main`-form:
 
-Closing this is a **mechanical rewiring** — one `have := transpile_<OP>
-...; obtain ⟨...⟩ := this.choose_spec` per opcode, consuming the
-axiom's existential to discharge the bus-shape and rd-alignment
-hypotheses that are currently parameters. Enables Gap 1 and part of
-Gap 2.
+```
+axiom transpile_<OP> :
+  ∀ {C} [Circuit FGL FGL C] (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (state : RV64State) …,
+    m.is_external_op r_main = <val> →
+    m.op r_main = OP_<OP> →
+    <column equalities on m.{a_0,a_1,b_0,b_1,…} r_main>
+```
+
+replacing the Phase-1 form that produced a fresh abstract
+`ZiskInstructionRow` existential with no connection to the AIR. The
+new form is directly applicable to a concrete `Valid_Main` row given
+only mode witnesses (`is_external_op`, `op`). `equiv_ADD` now consumes
+`transpile_ADD` as a dependency (verified via `#print axioms
+equiv_ADD`) — pilot for the wiring shape.
+
+**Residue (Track G, Phase 5.1 scope).** The remaining 57 axioms
+are declared in `Valid_Main`-form but still have zero proof-level
+consumers — the `chip_bus_hyps_<shape>` lemmas that would wire them
+into the 41 metaplan theorems require bridging Zisk's `RV64State`
+(what the axioms reason about) to Sail's `PreSail.SequentialState`
+(what metaplan-theorem hypotheses reference). That bridge is either
+a second axiom restatement against Sail state or an explicit
+state-equivalence lemma — multi-session work.
 
 ## Not-gaps
 

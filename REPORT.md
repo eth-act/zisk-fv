@@ -11,7 +11,12 @@ Phase 4.5 shipped in two sessions (2026-04-23 / 2026-04-24): Arith
 carry-chain closure (unsigned + signed), Main↔Arith field composition,
 field→BitVec 64 lift (Bridge 3), full `h_rd_match` decomposition for
 all 9 Arith opcodes + LD pilot, shape (d/e) bus-emission lemmas,
-`just verify-phase4` gate, and the 175-scenario fixture matrix.
+`just verify-phase4` gate, and the 175-scenario fixture matrix. Phase
+5 Track H shipped 2026-04-24: all 58 `transpile_<OP>` axioms restated
+in `Valid_Main`-form (direct column pinning rather than abstract
+`ZiskInstructionRow` existentials). Track G (chip_bus_hypotheses +
+metaplan rewiring) scope-honestly deferred to Phase 5.1 pending
+Zisk↔Sail state-model bridging (see §3.4).
 
 ---
 
@@ -51,6 +56,31 @@ pure-functional spec of the corresponding arm in
 [`vendor/zisk/core/src/riscv2zisk_context.rs`](vendor/zisk/core/src/riscv2zisk_context.rs) —
 ZisK's Rust transpiler that lowers RV64 instructions to Zisk
 microinstructions.
+
+**Shape.** After Phase 5 Track H (commit `cc4a845` + pilot `413362b`),
+each axiom has the `Valid_Main`-form
+
+```
+axiom transpile_<OP> :
+  ∀ {C} [Circuit FGL FGL C] (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (state : RV64State) (rs1 rs2 … : Fin 32),
+    m.is_external_op r_main = <val> →
+    m.op r_main = OP_<OP> →
+    <conjunction of column equalities pinning
+     m.{a_0,a_1,b_0,b_1,c_0,c_1,flag,m32,set_pc,store_pc,
+        jmp_offset1,jmp_offset2} r_main>
+```
+
+rather than the Phase-1 form that produced a fresh abstract
+`ZiskInstructionRow` with no connection to the AIR. The new form is
+what openvm-fv-parity audit (`docs/fv/openvm-fv-parity.md`) Gap 3
+identified as necessary for the axioms to become genuinely
+load-bearing.
+
+**Load-bearing status.** Currently **1 of 58** (`transpile_ADD` via
+`equiv_ADD`) has a direct proof-level consumer; the remaining 57 are
+declared but await Phase 5.1 Track G (chip_bus_hypotheses lemmas) to
+become load-bearing. See §3.4.
 
 **Trust basis.** These axioms encode the transpiler's contract: "if the
 Rust transpiler emits this row for opcode `<OP>`, the row has exactly
@@ -147,6 +177,32 @@ The harness at [`tools/zisk-fv-harness/`](tools/zisk-fv-harness/) now
 preserves the `Add.lean` T-FIX sub-namespaces on regeneration (Phase
 4.5 Track D part 1, commit `7656a80`, with unit tests locking the
 guarantee); previously `verify-phase*` silently stripped them.
+
+### 3.4 Structural parameters on metaplan theorems — Phase 5 update
+
+Every `equiv_<OP>_metaplan` theorem currently accepts four "Sail input
+state" parameters — `h_input_r1`, `h_input_r2`, `h_input_pc`, and (for
+Arith/Load/Store shapes) `h_input_rd` — that assert the source
+registers / PC were read to the pure-spec values that Sail consumes.
+openvm-fv's analogous theorems derive these internally from
+bus-wellformedness + the `transpile_of_bus_wellformedness` lemma (see
+`docs/fv/openvm-fv-parity.md` Gap 1). Ours accept them as parameters.
+
+**Phase 5 Track H** (commits `413362b`, `cc4a845`) restated all 58
+`transpile_<OP>` axioms in `Valid_Main`-form so they directly pin the
+AIR columns, a prerequisite for closing the gap. **Track G**
+(`chip_bus_hyps_<shape>` lemmas + metaplan rewiring) is deferred to
+Phase 5.1: the restated axioms reason about an abstract
+`RV64State` (Zisk), while the metaplan theorems use
+`PreSail.SequentialState` (Sail). Closing Track G therefore requires
+either a second restatement of the 58 axioms against Sail's state
+model, or bridging infrastructure between the two state types. Either
+option is a multi-session effort.
+
+This gap is structural, not a correctness hole: the `h_input_*`
+parameters are scope-honest restrictions on what inputs the metaplan
+theorem applies to, and match what any downstream caller would need
+to supply anyway.
 
 ## 4. Known limitations (explicitly out of scope)
 
