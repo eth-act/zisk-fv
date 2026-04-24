@@ -126,6 +126,30 @@ verify-phase2: verify-phase1
         ZiskFv.Tactics.ShiftArchetype \
         ZiskFv.GoldenTraces.SLLW
 
+# Phase 4 / 4.5 gate: bundles the Phase 4 closure invariants. Runs
+# verify-phase2 first as a regression gate, then asserts:
+#
+#   V1. `lake build` of the full package is green (inherited from
+#       verify-phase2's `cd ZiskFv && lake build`).
+#   V3. Zero sorry in ZiskFv (excluding auto-generated Extraction which
+#       intentionally stubs permutation-argument columns).
+#   V8. Uniformity lint passes: 58 opcodes with `equiv_<OP>_metaplan`
+#       of the canonical shape.
+#
+# The V2 "just verify-phase4 exits 0" invariant is this recipe itself
+# being green. Gates V4–V7 and V9–V11 are opcode-family-specific and
+# are tracked in `ai_plans/zisk-fv-phase-4-5.md` directly.
+verify-phase4: verify-phase2
+    # V3: zero sorry in Fundamentals/Airs/Spec/Equivalence/GoldenTraces.
+    # (Extraction/ is auto-generated and stubs permutation-argument
+    # columns; those stubs are not called by the compositional proofs.)
+    ! grep -rn "sorry" ZiskFv/ZiskFv/Fundamentals ZiskFv/ZiskFv/Airs \
+        ZiskFv/ZiskFv/Spec ZiskFv/ZiskFv/Equivalence \
+        ZiskFv/ZiskFv/GoldenTraces 2>/dev/null | \
+        grep -v "^[^:]*:[^:]*:--" | grep -v "^[^:]*:[^:]*:///"
+    # V8: uniformity lint (58 opcodes, all with canonical metaplan shape).
+    bash tools/zisk-fv-lint/uniformity-lint.sh > /dev/null
+
 # Internal: run the harness in live mode when FV_LIVE=1 and diff against
 # the hard-coded fixture; no-op otherwise. Split out because just's `{{ }}`
 # interpolation collides with bash's `${VAR:-default}` inline syntax.
