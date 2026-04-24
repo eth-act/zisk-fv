@@ -202,19 +202,14 @@ theorem equiv_JALR_metaplan
     (h_success : (PureSpec.execute_JALR_pure jalr_input).success = true)
     (h_nextPC_option :
       (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val)
-    (h_rd_match :
-      (if h : Transpiler.wrap_to_regidx e_rd.ptr = 0 then
-        (pure () : SailM Unit)
-      else
-        let val := U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
-                                e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
-        let reg_idx : Finset.Icc 1 31 :=
-          ⟨ (Transpiler.wrap_to_regidx e_rd.ptr).val, by simp; omega ⟩
-        write_xreg reg_idx val)
-      =
-      (match (PureSpec.execute_JALR_pure jalr_input).rd with
-        | .some (rd, rd_val) => write_xreg rd rd_val
-        | .none => pure ())) :
+    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- JALR's rd dite has a compound condition (bit1/rd=0), so we bridge
+    -- the bit-validity disjunct via the happy-path `h_success` hypothesis.
+    (h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_rd_val :
+      U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
+                  e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
+      = jalr_input.PC + 4) :
     (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
@@ -226,13 +221,23 @@ theorem equiv_JALR_metaplan
   rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_jump_rrw
         state exec_row e_rd nextPC_val
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_rd_mult h_rd_as]
-  -- Unfold `let jalr_output := ...` so the hypotheses about
-  -- `.success`/`.nextPC`/`.rd` can fire.
   simp only [h_nextPC_option, h_success, Bool.not_true]
-  -- Bridge the shape-(c) `if h :` output to the Sail `match rd`.
-  rw [h_rd_match]
-  -- Normalize the `do`-notation residue on both sides.
-  simp only [bind, pure, EStateM.bind, EStateM.pure]
-  rcases (PureSpec.execute_JALR_pure jalr_input).rd with _ | ⟨r, v⟩ <;> rfl
+  -- From h_success (success = bit1_valid = true), derive !bit1_valid = false.
+  have h_bit1_neg :
+      (!BitVec.ofBool (jalr_input.rs1_val + BitVec.signExtend 64 jalr_input.imm)[1]! == 0#1)
+      = false := by
+    have h_s : (PureSpec.execute_JALR_pure jalr_input).success = true := h_success
+    simp only [PureSpec.execute_JALR_pure] at h_s
+    simp_all
+  -- Unfold the pure spec and discharge the rd dite.
+  simp only [PureSpec.execute_JALR_pure, h_rd_idx, h_bit1_neg]
+  by_cases h_rd_zero : Transpiler.wrap_to_regidx e_rd.ptr = 0
+  · simp only [h_rd_zero, decide_true, Bool.false_or, ↓reduceDIte,
+               Bool.false_eq_true, if_false, ite_false,
+               bind, pure, EStateM.bind, EStateM.pure]
+  · simp only [h_rd_zero, decide_false, Bool.or_false, ↓reduceDIte,
+               Bool.false_eq_true, if_false, ite_false,
+               bind, pure, EStateM.bind, EStateM.pure]
+    rw [h_rd_val]
 
 end ZiskFv.Equivalence.Jalr

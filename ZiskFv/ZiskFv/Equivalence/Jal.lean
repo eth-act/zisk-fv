@@ -182,19 +182,17 @@ theorem equiv_JAL_metaplan
     (h_success : (PureSpec.execute_JAL_pure jal_input).success = true)
     (h_nextPC_option :
       (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val)
-    (h_rd_match :
-      (if h : Transpiler.wrap_to_regidx e_rd.ptr = 0 then
-        (pure () : SailM Unit)
-      else
-        let val := U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
-                                e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
-        let reg_idx : Finset.Icc 1 31 :=
-          ⟨ (Transpiler.wrap_to_regidx e_rd.ptr).val, by simp; omega ⟩
-        write_xreg reg_idx val)
-      =
-      (match (PureSpec.execute_JAL_pure jal_input).rd with
-        | .some (rd, rd_val) => write_xreg rd rd_val
-        | .none => pure ())) :
+    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- `h_rd_idx` ties the circuit rd-pointer to the Sail rd; `h_rd_val`
+    -- ties the 8 byte lanes to the pure-spec written value (`PC + 4`).
+    -- JAL's rd dite has a compound condition (bit0/bit1/rd=0), so we go
+    -- through the `.rd = _` projection form rather than unfolding
+    -- `execute_JAL_pure` directly.
+    (h_rd_idx : jal_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_rd_val :
+      U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
+                  e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
+      = jal_input.PC + 4) :
     execute_instruction (instruction.JAL (imm, rd)) state
       = (bus_effect exec_row [e_rd] state).2 := by
   rw [equiv_JAL_sail state jal_input imm rd misa_val
@@ -203,14 +201,32 @@ theorem equiv_JAL_metaplan
   rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_jump_rrw
         state exec_row e_rd nextPC_val
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_rd_mult h_rd_as]
-  -- Unfold `have jal_output := ...` so the hypotheses about
-  -- `.throws`/`.success`/`.nextPC`/`.rd` can fire.
+  -- Discharge `.throws = false`, `.success = true`, `.nextPC = some _` via
+  -- the happy-path hypotheses before unfolding the spec.
   simp only [h_nextPC_option, h_not_throws, h_success, Bool.not_true]
-  -- Bridge the shape-(c) `if h :` output to the Sail `match rd`.
-  rw [h_rd_match]
-  -- Normalize the `do`-notation `__do_jp` residue on both sides.
-  simp only [bind, pure, EStateM.bind, EStateM.pure, if_true, if_false,
-             ite_false]
-  rcases (PureSpec.execute_JAL_pure jal_input).rd with _ | ⟨r, v⟩ <;> rfl
+  -- From h_not_throws (throws = !bit0_valid = false ⇒ bit0_valid = true)
+  -- and h_success (success = bit0_valid && bit1_valid = true ⇒ also bit1_valid = true),
+  -- derive each of the two bit-validity facts individually so we can
+  -- rewrite the JAL pure spec's compound dite.
+  have h_bit0_neg :
+      (!BitVec.ofBool (jal_input.PC + BitVec.signExtend 64 jal_input.imm)[0]! == 0#1)
+      = false := by
+    have h_t : (PureSpec.execute_JAL_pure jal_input).throws = false := h_not_throws
+    simp only [PureSpec.execute_JAL_pure] at h_t
+    exact h_t
+  have h_bit1_neg :
+      (!BitVec.ofBool (jal_input.PC + BitVec.signExtend 64 jal_input.imm)[1]! == 0#1)
+      = false := by
+    have h_s : (PureSpec.execute_JAL_pure jal_input).success = true := h_success
+    simp only [PureSpec.execute_JAL_pure] at h_s
+    simp_all
+  -- Unfold the pure spec and discharge the rd dite.
+  simp only [PureSpec.execute_JAL_pure, h_rd_idx, h_bit0_neg, h_bit1_neg, Bool.false_or]
+  by_cases h_rd_zero : Transpiler.wrap_to_regidx e_rd.ptr = 0
+  · simp only [h_rd_zero, decide_true, ↓reduceDIte, Bool.false_eq_true,
+               if_false, ite_false, bind, pure, EStateM.bind, EStateM.pure]
+  · simp only [h_rd_zero, decide_false, ↓reduceDIte, Bool.false_eq_true,
+               if_false, ite_false, bind, pure, EStateM.bind, EStateM.pure]
+    rw [h_rd_val]
 
 end ZiskFv.Equivalence.Jal
