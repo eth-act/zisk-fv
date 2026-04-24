@@ -37,11 +37,6 @@ iterated multiplications — consistent across all goals.
 
 * `arith_mul_unsigned_carry_identity` — MUL/MULHU mode. Unsigned 64×64 =
   128-bit multiplication. All sign witnesses zero.
-* `arith_mulw_unsigned_carry_identity` — MULW mode (`m32 = 1`, `sext = 1`).
-  Zero-pads `a[2..3]`, `b[2..3]` via the extraction's `na_fb`/`nb_fa`
-  terms absorbing the sign-extend; low 32 bits land in `c[0..1]`.
-  *(Currently presented in the same proof style; the MULW specialization
-  is folded into the per-family theorem in `Airs/Arith/Mul.lean`.)*
 * `arith_div_unsigned_carry_identity` — DIVU/REMU mode. Same 8-chunk carry
   chain with roles swapped: `a` is quotient, `c` is dividend, `b` is
   divisor. Rearranges to `a * b + d = c`.
@@ -87,8 +82,7 @@ variable {F : Type} [Field F]
     variables telescope cleanly because each carry-out appears with
     coefficient `-B^(k+1)` on chunk `k` and with coefficient `+B^(k+1)`
     on chunk `k+1`. -/
-set_option maxHeartbeats 1200000 in
-theorem arith_mul_unsigned_carry_identity
+lemma arith_mul_unsigned_carry_identity
     (a0 a1 a2 a3 b0 b1 b2 b3 c0 c1 c2 c3 d0 d1 d2 d3
      carry0 carry1 carry2 carry3 carry4 carry5 carry6 : F)
     (hC31 : a0 * b0 - c0 - carry0 * 65536 = 0)
@@ -136,18 +130,13 @@ theorem arith_mul_unsigned_carry_identity
     sends the dividend through `c`; the high-chunk product sum closes
     against the carry-out tail.)
 
-    Target: `a * b + d = c` packed as
-
-    ```
-    (a[0..3]) * (b[0..3]) + (d[0..3])
-      = (c[0..3]) + 0 * B^4 - but the high carry chain contributes
-      zero to the packed identity since a, b, c, d are bounded 64-bit
-      and a*b + d < 2^128.
-    ```
+    Target: `a * b + d = c` packed, where the high half of `a * b`
+    (coefficient `B^4`) lands in zero because the DIV constraint also
+    witnesses that chain's residual is zero (the `c_d` high-chunk
+    equations pin `0 = 0` in DIV mode).
 
     This theorem states that identity at the field level. -/
-set_option maxHeartbeats 1200000 in
-theorem arith_div_unsigned_carry_identity
+lemma arith_div_unsigned_carry_identity
     (a0 a1 a2 a3 b0 b1 b2 b3 c0 c1 c2 c3 d0 d1 d2 d3
      carry0 carry1 carry2 carry3 carry4 carry5 carry6 : F)
     (hC31 : a0 * b0 + d0 - c0 - carry0 * 65536 = 0)
