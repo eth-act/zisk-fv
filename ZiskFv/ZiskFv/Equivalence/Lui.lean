@@ -126,19 +126,12 @@ theorem equiv_LUI_metaplan
     (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
     (h_nextPC_eq :
       (PureSpec.execute_LUI_pure lui_input).nextPC = nextPC_val)
-    (h_rd_match :
-      (if h : Transpiler.wrap_to_regidx e_rd.ptr = 0 then
-        (pure () : SailM Unit)
-      else
-        let val := U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
-                                e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
-        let reg_idx : Finset.Icc 1 31 :=
-          ⟨ (Transpiler.wrap_to_regidx e_rd.ptr).val, by simp; omega ⟩
-        write_xreg reg_idx val)
-      =
-      (match (PureSpec.execute_LUI_pure lui_input).rd with
-        | .some (rd, rd_val) => write_xreg rd rd_val
-        | .none => pure ())) :
+    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    (h_rd_idx : lui_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_rd_val :
+      U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
+                  e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
+      = BitVec.signExtend 64 (lui_input.imm ++ 0#12)) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
       = (bus_effect exec_row [e_rd] state).2 := by
   rw [equiv_LUI_sail state lui_input imm rd
@@ -147,12 +140,12 @@ theorem equiv_LUI_metaplan
   rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_jump_rrw
         state exec_row e_rd nextPC_val
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_rd_mult h_rd_as]
-  -- Unfold the `let lui_output := ...` binder so hypotheses about
-  -- `.nextPC`/`.rd` can fire.
+  -- Align the nextPC on both sides before unfolding, so h_nextPC_eq
+  -- can still fire against the projected `.nextPC`.
   simp only [h_nextPC_eq]
-  rw [h_rd_match]
-  -- Normalize the `do`-notation residue on both sides.
-  simp only [bind, pure, EStateM.bind, EStateM.pure]
-  rcases (PureSpec.execute_LUI_pure lui_input).rd with _ | ⟨r, v⟩ <;> rfl
+  simp only [PureSpec.execute_LUI_pure, h_rd_idx]
+  split_ifs with h_rd_zero
+  · simp only [bind, pure, EStateM.bind, EStateM.pure]
+  · rw [h_rd_val]
 
 end ZiskFv.Equivalence.Lui
