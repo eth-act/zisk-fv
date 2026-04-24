@@ -176,12 +176,18 @@ the three-or-fewer Sail-state read equalities a metaplan theorem would
 otherwise take as `h_input_r1`/`h_input_r2`/`h_input_pc` parameters.
 No new axioms.
 
-**Track G pilot** (`equiv_ADD_metaplan_from_bus`, commit `c868f00`)
-demonstrates the rewiring: one `h_bus` parameter replaces the
-`h_input_r1` + `h_input_r2` pair. `h_input_pc` / `h_input_rd` stay as
-parameters (different shape / unrelated to bus). Mechanical fan-out to
-the 40 remaining metaplan theorems is deferred to a follow-up session
-but does not block Gap 3 closure.
+**V12 closure** (commits `11b5163`, `6ad2747`, `4e797a8`, `db6995b`):
+47 `equiv_<OP>_metaplan_from_bus` companion theorems author one per
+opcode that previously had `h_input_*` params. Shape-dependent
+coverage:
+- Shape (a) ALU (37 opcodes): full 4-of-4 `h_input_*` drop.
+- Shape (c) Jump/UTYPE (4 opcodes): 2-of-4 drop (pc + rd).
+- Shape (b) Branch (6 opcodes): 1-of-4 drop (pc only; rs1/rs2
+  routing goes via Binary SM's operation bus).
+
+All 58 metaplan theorems are V12-compliant — 47 via `_from_bus`
+companions, 11 via pre-Phase-4.5 monolithic `h_bus_execute_matches_sail`
+pattern.
 
 ## Not-gaps
 

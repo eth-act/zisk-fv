@@ -194,27 +194,27 @@ bus-wellformedness + the `transpile_of_bus_wellformedness` lemma (see
 **Phase 5 Track H** (commits `413362b`, `cc4a845`) restated all 58
 `transpile_<OP>` axioms in `Valid_Main`-form so they directly pin the
 AIR columns. **Phase 5 Track G** (commits `4f76f0c`, `c868f00`,
-`59fcf62`) shipped:
+`59fcf62`, `11b5163`, `6ad2747`, `4e797a8`, `db6995b`) shipped:
 
 - `Airs/BusHypotheses.lean` — five `chip_bus_hyps_<shape>` lemmas that
   unfold `bus_effect.1` (the precondition) into the conjunction of
-  Sail-state `read_xreg` / `readReg` equalities. The initially-feared
-  Zisk↔Sail "state-equivalence gap" was a red herring: `bus_effect.1`
-  already lives in Sail state-space and provides those equalities
-  directly.
+  Sail-state `read_xreg` / `readReg` equalities, plus the
+  `readReg_of_readReg_succ` inversion lemma.
 - `Fundamentals/TranspileConsumers.lean` — 58 trivial consumer lemmas
   (V13 closure), making every `transpile_<OP>` axiom load-bearing.
-- `equiv_ADD_metaplan_from_bus` pilot demonstrating the metaplan-theorem
-  rewiring: one `h_bus` parameter replaces the `h_input_r1` +
-  `h_input_r2` pair.
+- **47 `equiv_<OP>_metaplan_from_bus` companion theorems** (V12 closure).
+  One per metaplan theorem that previously took `h_input_*` parameters,
+  now derived from a single `h_bus : (bus_effect …).1` + ptr/value
+  match hypotheses. Shape-dependent drop coverage:
+  - Shape (a) ALU (37): full drop of all 4 `h_input_*`.
+  - Shape (c) Jump/UTYPE (4): drop `h_input_pc` + `h_input_rd`.
+  - Shape (b) Branch (6): drop `h_input_pc` only; branch shape's
+    empty memory bus routes rs1/rs2 reads via the Binary SM
+    operation bus.
 
-**Residue.** The mechanical fan-out of the `equiv_<OP>_metaplan_from_bus`
-pattern to the other 40 metaplan theorems is not shipped in this phase;
-the pattern is validated by the ADD pilot and can be applied per-opcode
-as a follow-up. The `h_input_pc` and `h_input_rd` parameters stay on
-the pilot because they live in different shapes (`state.regs.get? = some`
-and `regidx` coercion respectively) that the chip_bus_hyps lemmas
-don't directly provide.
+V12 coverage summary: 58/58 metaplan theorems are V12-compliant —
+47 via `_from_bus` companions, 11 trivially via pre-Phase-4.5 monolithic
+`h_bus_execute_matches_sail` pattern (no `h_input_*` parameters ever).
 
 ## 4. Known limitations (explicitly out of scope)
 

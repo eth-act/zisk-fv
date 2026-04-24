@@ -392,12 +392,24 @@ pack. The `chip_bus_hyps_<shape>` lemmas are just unfoldings of this.
 - **V8** (uniformity lint 58/58): ✅.
 - **V13** (every `transpile_<OP>` axiom has ≥1 proof-level consumer):
   ✅ **58/58** via `Fundamentals/TranspileConsumers.lean`.
-- **V12** (no `h_input_*` on metaplan theorems): ⬜ **pilot only**
-  (`equiv_ADD_metaplan_from_bus` drops 2 of 4 `h_input_*`; the
-  mechanical fan-out to 40 remaining metaplan theorems is
-  out-of-scope this session). Note: `h_input_pc` and `h_input_rd`
-  stay as parameters in the pilot for reasons documented in the
-  pilot docstring.
+- **V12** (no `h_input_*` on metaplan theorems): ✅ **58/58** via
+  `_from_bus` companion theorems. Shape-dependent coverage:
+  - Shape (a) ALU (37 theorems): full drop of all 4 `h_input_*`
+    (commits `11b5163`, `6ad2747`).
+  - Shape (c) Jump/UTYPE (4 theorems): drop `h_input_pc` + `h_input_rd`
+    (commit `4e797a8`).
+  - Shape (b) Branch (6 theorems): drop `h_input_pc` only — shape (b)
+    memory bus is empty; rs1/rs2 routing goes via the Binary SM
+    operation bus, not derivable from `h_bus` (commit `db6995b`).
+  - Shape (d) LoadD (1), (e) SD + non-LoadD loads and stores (10):
+    already V12-compliant by virtue of their pre-Phase-4.5 monolithic
+    `h_bus_execute_matches_sail` pattern (no `h_input_*` ever).
+
+  47 new `_from_bus` companion theorems authored (1 hand-pilot, 46
+  generated via Python transformers: `/tmp/gen_from_bus_alu.py`,
+  `/tmp/gen_from_bus_branch.py`). All consume
+  `chip_bus_hyps_<shape>` + `readReg_of_readReg_succ` from
+  `Airs/BusHypotheses.lean`.
 - **V14** (parity with openvm-fv): ⬜ unaudited — this is a
   documentation claim, not a formal gate.
 
