@@ -4,8 +4,9 @@
 [official Sail RISC-V specification](https://github.com/riscv/sail-riscv),
 restricted to **RV64IM** (base integer + M extension).
 
-**Status.** `lake build` green (8121 jobs, 0 errors, 0 `sorry`). 58/58
-RV64IM opcodes proved. Trust base: 62 axioms, all catalogued with
+**Status.** `lake build` green (8122 jobs, 0 errors, 0 `sorry`). 58/58
+RV64IM opcodes proved. Trust base: **64 axioms** (58 transpile + 4
+platform + 2 arith_table — Phase 5 item 2 added), all catalogued with
 closure paths in [`docs/fv/trusted-base.md`](docs/fv/trusted-base.md).
 Phase 4.5 shipped in two sessions (2026-04-23 / 2026-04-24): Arith
 carry-chain closure (unsigned + signed), Main↔Arith field composition,
@@ -149,23 +150,33 @@ opcodes) remains a scope-honest hypothesis. Closing it requires the
 permutation-argument infrastructure, which is orthogonal to the
 carry-chain polynomial identity and is not part of Phase 4.5.
 
-### 3.2 Arith lookup-table witnesses
+### 3.2 Arith lookup-table witnesses — Phase 5 item 2 update
 
-Even after carry-chain closure, three Arith sub-features remain
-trusted:
+Three Arith sub-features originally listed as scope-honest:
 
 1. **Sign-preprocessing table lookup** (constraints 6–8 of
-   `Extraction/Arith.lean`) witnesses `(na, nb)` as the signs of
-   `(a_packed, b_packed)` via a permutation argument against the
-   `arith_table`. Not embedded in the Lean extraction.
+   `Extraction/Arith.lean`) witnesses `(na, nb, np, nr)` as sign
+   witnesses via a permutation argument against the `arith_table`.
+   **Partially closed** by Phase 5 item 2 (`Airs/Arith/ArithTable.lean`,
+   commit `70c5a1f`): two new axioms
+   (`arith_table_row_witness_unsigned` and `_unsigned_div`) encode the
+   permutation-lookup soundness for all four unsigned opcodes
+   (OP_MULU, OP_MUL_W, OP_DIVU, OP_REMU) — forcing
+   `(na, nb, np, nr) = (0, 0, 0, 0)`. Four specialization theorems
+   + one table-closed wrapper (`arith_mul_unsigned_packed_correct_table_closed`)
+   demonstrate retirement of the four scope-honest hypotheses. Signed
+   opcode rows (OP_MUL, OP_MULH, OP_DIV, OP_REM) still take bit-cell-
+   conditional witnesses (na = a.3, nb = b.3, etc) — follow-up work.
 2. **Stage-2 `range_cd` column** (constraint 46) range-checks the
    remainder bound `|d| < |b|` for signed DIV/REM via a 16-bit lookup.
+   Not closed — requires the range-check analogue of the arith_table
+   framework.
 3. **`inv_sum_all_bs`** — the multiplicative-inverse witness for the
-   "divisor ≠ 0 ⇒ correct quotient" implication.
+   "divisor ≠ 0 ⇒ correct quotient" implication. Not closed.
 
-These are lookup-correctness claims orthogonal to the carry-chain
-derivation; they stay trusted in the same scope-honest way the
-BinaryAdd permutation accumulator is trusted.
+The net Phase 5 item 2 delta: +2 axioms (`arith_table_*`), −4 scope-
+honest hypotheses per unsigned Arith consumer. Trust surface narrows
+while the trust base nominally grows by 2.
 
 ### 3.3 Sample-level golden-trace coverage — Phase 4.5 update
 
@@ -181,7 +192,7 @@ preserves the `Add.lean` T-FIX sub-namespaces on regeneration (Phase
 4.5 Track D part 1, commit `7656a80`, with unit tests locking the
 guarantee); previously `verify-phase*` silently stripped them.
 
-### 3.4 Structural parameters on metaplan theorems — Phase 5 update
+### 3.4 Structural parameters on metaplan theorems — Phase 5 update (item 4)
 
 Every `equiv_<OP>_metaplan` theorem currently accepts four "Sail input
 state" parameters — `h_input_r1`, `h_input_r2`, `h_input_pc`, and (for
@@ -215,6 +226,16 @@ AIR columns. **Phase 5 Track G** (commits `4f76f0c`, `c868f00`,
 V12 coverage summary: 58/58 metaplan theorems are V12-compliant —
 47 via `_from_bus` companions, 11 trivially via pre-Phase-4.5 monolithic
 `h_bus_execute_matches_sail` pattern (no `h_input_*` parameters ever).
+
+**Phase 5 item 4 — bus-derived input pilot** (commit `0c8658d`). The
+`AddInput_of_bus` constructor + `equiv_ADD_metaplan_bus_self` companion
+demonstrate that with `input := AddInput_of_bus e0 e1 e2 exec_row`,
+the four value-level match hypotheses (`h_r1_val`, `h_r2_val`, `h_pc`,
+`h_rd_idx`) become definitionally `rfl` and drop from the signature.
+Only the three ptr-match hypotheses remain — these are inherent
+scenario-binding conditions tying Sail instruction operands to
+bus-emitted register pointers. Fan-out to the other 46 metaplan
+theorems is mechanical follow-up.
 
 ## 4. Known limitations (explicitly out of scope)
 
