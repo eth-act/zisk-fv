@@ -147,11 +147,25 @@ zisk-fv's proof structure is **weaker than openvm-fv on three axes**,
 all of which are closure work (not fundamental rethinks):
 
 1. **Gap 1 — Sail input derivation.** ~150 lines × 5 shape families =
-   ~750 lines of `chip_bus_hypotheses`-analogue lemmas.
+   ~750 lines of `chip_bus_hypotheses`-analogue lemmas. **Phase 5 scope**
+   (depends on Gap 3 closure).
 2. **Gap 2 — `h_rd_match` derivation (Package C).** ~550 lines across
-   three bridges.
-3. **Gap 3 — Unwired transpile axioms.** Mechanical rewiring across
-   ~41 metaplan theorems; enables Gaps 1+2.
+   three bridges. **Phase 4.5 scope** (Bridges 1+2 shipped session 1).
+3. **Gap 3 — Unwired transpile axioms.** ~2500-4000-line axiom-level
+   refactor: the 58 `transpile_<OP>` axioms have shape `∃ row :
+   ZiskInstructionRow, …` with no connection to concrete `Valid_Main`
+   rows. Making them load-bearing requires restating all 58 in
+   `Valid_Main`-form and updating ~41 consumer theorems. **Phase 5 scope.**
 
 All other comparison axes are either equal or reflect legitimate
 scope differences.
+
+## Plan references
+
+- **Phase 4.5** (`ai_plans/zisk-fv-phase-4-5.md`): closes Gap 2 (9 Arith
+  metaplan theorems drop `h_rd_match`) plus Phase 4 deferred completeness
+  items (signed MUL/DIV, LD/SD bus shapes, 174 fixtures, verify-phase4
+  target).
+- **Phase 5** (`ai_plans/zisk-fv-phase-5.md`): closes Gaps 1 and 3 via the
+  transpile-axiom refactor (Track H) and `chip_bus_hypotheses`-analogue
+  lemmas (Track G). Completes structural parity with openvm-fv.
