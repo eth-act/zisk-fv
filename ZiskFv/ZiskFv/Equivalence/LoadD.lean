@@ -6,6 +6,7 @@ import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Spec.LoadD
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.ld
 import ZiskFv.RV64D.BusEffect
 
@@ -126,29 +127,77 @@ theorem equiv_LD_metaplan
     (misa : RegisterType Register.misa)
     (mseccfg : RegisterType Register.mseccfg)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (mem_row : List (Interaction.MemoryBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (risc_v_assumptions :
       RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
     (h_opcode_assumptions :
       PureSpec.ld_state_assumptions ld_input state)
-    (h_bus_execute_matches_sail :
-      (bus_effect exec_row mem_row state).2
-        = (let output := PureSpec.execute_LOADD_pure ld_input
-           (do
-             Sail.writeReg Register.nextPC output.nextPC
-             match output.rd with
-               | .some (rd, rd_val) => write_xreg rd rd_val
-               | .none => pure ()
-             pure (ExecutionResult.Retire_Success ())) state)) :
+    -- Phase 4.5 Track C: structural bus hypotheses (shape d — LD).
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_LOADD_pure ld_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
+    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1)
+    -- Phase 4.5 A-rewire pattern: decomposed rd-match hypotheses.
+    (h_rd_zero_iff :
+      Transpiler.wrap_to_regidx e2.ptr = 0 ↔ ld_input.rd = 0)
+    (h_rd_idx : ld_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val)
+    (h_rd_val :
+      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
+                  e2.x4, e2.x5, e2.x6, e2.x7]
+      = ld_input.data7 ++ ld_input.data6 ++ ld_input.data5 ++ ld_input.data4
+        ++ ld_input.data3 ++ ld_input.data2 ++ ld_input.data1 ++ ld_input.data0) :
     execute_instruction (instruction.LOAD (
       ld_input.imm,
       regidx.Regidx ld_input.r1,
       regidx.Regidx ld_input.rd,
       false,
       8
-    )) state = (bus_effect exec_row mem_row state).2 := by
+    )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
   rw [equiv_LD_sail state ld_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
-  exact h_bus_execute_matches_sail.symm
+  symm
+  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_load_rrrw
+        state exec_row e0 e1 e2
+        (PureSpec.execute_LOADD_pure ld_input).nextPC
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
+  -- Discharge the rd-match branch via the decomposed hypotheses.
+  simp only [PureSpec.execute_LOADD_pure]
+  by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
+  · -- Zero case: both sides reduce to `pure ()`.
+    rw [dif_pos h_rd_zero, dif_pos (h_rd_zero_iff.mp h_rd_zero)]
+  · -- Nonzero case: both sides write the same rd with the same value.
+    have h_rd_input_ne : ld_input.rd ≠ 0 :=
+      fun h => h_rd_zero (h_rd_zero_iff.mpr h)
+    rw [dif_neg h_rd_zero, dif_neg h_rd_input_ne, h_rd_val]
+    -- Establish the `Finset.Icc 1 31` subtype equality and rewrite it
+    -- in the LHS. The two wrappers carry identical proofs modulo the
+    -- underlying Nat; only the Nat side matters.
+    have h_rd_ub : (Transpiler.wrap_to_regidx e2.ptr).val < 32 :=
+      (Transpiler.wrap_to_regidx e2.ptr).isLt
+    have h_tn_bound : ld_input.rd.toNat < 32 := by
+      obtain ⟨⟨n, hn⟩⟩ := ld_input.rd
+      simp [BitVec.toNat]; omega
+    have h_tn_ne : ld_input.rd.toNat ≠ 0 := by
+      intro h
+      apply h_rd_input_ne
+      apply BitVec.eq_of_toNat_eq
+      simp [h]
+    have h_idx_eq :
+        (⟨(Transpiler.wrap_to_regidx e2.ptr).val, by
+            apply Finset.mem_Icc.mpr
+            refine ⟨?_, by omega⟩
+            rw [← h_rd_idx]; omega⟩
+          : Finset.Icc 1 31)
+          = ⟨ld_input.rd.toNat,
+              Finset.mem_Icc.mpr ⟨by omega, by omega⟩⟩ := by
+      apply Subtype.ext
+      exact h_rd_idx.symm
+    rw [h_idx_eq]
 
 end ZiskFv.Equivalence.LoadD
