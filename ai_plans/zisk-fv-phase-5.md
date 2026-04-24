@@ -84,13 +84,12 @@ The signature varies per opcode family:
 **Templating opportunity.** Opcodes within a family share an axiom
 skeleton (same premise shape, same conclusion shape modulo opcode
 literal). A Lean macro at `Tactics/TranspileAxiomMacro.lean` could
-factor out per-family axiom generation — ~1 day of macro authoring
-then ~1 axiom per ~10 lines. Reduces total ~3000 lines → ~1500 lines.
+factor out per-family axiom generation — reduces ~3000 naive lines
+to ~1500 with macro templating.
 
 **Subagent fan-out.** Split by family: one subagent per family (10-11
 subagents), each restating ~5-7 axioms + updating ~5-7 consumers.
-Worktree-isolated per Phase 3C pattern. Wall-clock ~1 week with
-parallelism vs ~2 weeks solo.
+Worktree-isolated per Phase 3C pattern.
 
 **Effort:** ~2500-4000 lines total (3000 naive, 1500 with macro templating).
 
@@ -130,17 +129,19 @@ bus-match.
 `h_input_pc`, `h_input_rd` parameters. Each theorem's proof invokes the
 appropriate `chip_bus_hyps_*` lemma.
 
-**Effort:** ~750 lines lemmas + ~200 lines rewiring. 3-4 days serial,
-or 1-2 days with subagent parallelism per shape family.
+**Effort:** ~750 lines lemmas + ~200 lines rewiring.
 
 ## Execution order
 
-Two-track Gantt. H precedes G; within H, parallelism per opcode family.
+H precedes G; within H, parallelism per opcode family.
 
-### Week 1 — Track H (transpile-axiom refactor)
-- **Day 0:** Author macro at `Tactics/TranspileAxiomMacro.lean` (optional optimization).
-- **Day 1:** Pilot — restate `transpile_ADD` and update `equiv_ADD`/`equiv_ADD_metaplan`. Validates the per-axiom shape end-to-end.
-- **Days 2-5:** Fan-out via parallel worktree subagents, one per opcode family:
+### Stage 1 — Track H (transpile-axiom refactor)
+- **(Optional) macro pilot:** Author `Tactics/TranspileAxiomMacro.lean`
+  as a per-family axiom generator if Stage-1-pilot hand-writing turns
+  tedious.
+- **Pilot:** Restate `transpile_ADD` and update `equiv_ADD` /
+  `equiv_ADD_metaplan`. Validates the per-axiom shape end-to-end.
+- **Fan-out** via parallel worktree subagents, one per opcode family:
   - RTYPE subagent: ADD, SUB, AND, OR, XOR, SLT, SLTU, SLL, SRL, SRA (10 axioms)
   - ITYPE subagent: ADDI, ANDI, ORI, XORI, SLTI, SLTIU, SLLI, SRLI, SRAI (9 axioms)
   - RTYPEW subagent: ADDW, SUBW, SLLW, SRLW, SRAW (5 axioms)
@@ -156,21 +157,23 @@ Two-track Gantt. H precedes G; within H, parallelism per opcode family.
   Per subagent: draft axioms + update consumer signatures + local build green.
   Total: ~58 axioms / 11 subagents.
 
-- **Day 6:** Merge subagent branches. Full build. V13 (every transpile axiom consumed).
+- **Merge** subagent branches. Full build. V13 (every transpile axiom consumed).
 
-### Week 2 — Track G (chip_bus_hypotheses) + rewiring
-- **Days 1-3:** Author 5 `chip_bus_hyps_*` lemmas serial in main session. Uses Week-1-shipped transpile axioms.
-- **Days 3-5:** Fan-out metaplan-theorem rewiring via worktree subagents per shape family: 41 theorems drop `h_input_*` parameters.
-- **Day 6:** Final build. V12 (no `h_input_*` on metaplan theorems).
+### Stage 2 — Track G (chip_bus_hypotheses) + rewiring
+- Author 5 `chip_bus_hyps_*` lemmas serial in main session. Uses
+  Stage-1-shipped transpile axioms.
+- Fan-out metaplan-theorem rewiring via worktree subagents per shape
+  family: 41 theorems drop `h_input_*` parameters.
+- Final build. V12 (no `h_input_*` on metaplan theorems).
 
-### Week 3 — Verification + CLOSED
-- Full `lake build` + all gates V1–V14 (including parity V14: side-by-side with openvm-fv `mul_spec`).
+### Stage 3 — Verification + CLOSED
+- Full `lake build` + all gates V1–V14 (including parity V14:
+  side-by-side with openvm-fv `mul_spec`).
 - Append **Phase 5 CLOSED** section.
-- Update `REPORT.md` §2 (transpile axioms load-bearing); §3 (structural hypotheses discharged).
+- Update `REPORT.md` §2 (transpile axioms load-bearing); §3 (structural
+  hypotheses discharged).
 - Mark `docs/fv/openvm-fv-parity.md` as "all gaps closed."
 - Update memory `project_phase_status.md`.
-
-**Wall-clock:** ~2-3 weeks with aggressive subagent parallelism; ~4-6 weeks solo.
 
 ## Critical files
 

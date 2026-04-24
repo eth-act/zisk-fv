@@ -178,16 +178,15 @@ Six-track Gantt. Critical path: A3 (Bridge 3) → A-rewire.
 - Arith table-lookup witnesses, Zicclsm, precompiles, ZisK custom ops —
   all scope-honest per CLAUDE.md.
 
-## Phase 4.5 status — PARTIAL-CLOSED 2026-04-24
+## Phase 4.5 status — CLOSED 2026-04-24
 
-Session-2 shipped Track A3 (Bridge 3, `6cddb9b`), Track E
-(`verify-phase4`, `7ebb55b`), Track A-rewire prep (`3076d00`),
-Track D part 1 (harness extension, `7656a80`), Track C (shape d/e
-bus-emission lemmas, `ce4d8dc`), full A-rewire for MUL pilot
-(`b98ff7d`) and the other 8 Arith opcodes (`3ebcc80`). Track B
-(signed carry-chain) and Track D part 2 (fixture regeneration) are
-in progress via worktree subagents. Track F (full docs refresh)
-remains.
+All seven planned tracks shipped, plus two beyond-plan extensions
+(LD MEM-family pilot and 32-file ALU rewire). `lake build` green at
+8119 jobs, 0 sorry, 58/58 uniformity lint, `just verify-phase4`
+exits 0. Trust base unchanged at 62 axioms (58 transpile + 4
+platform). Gap 2 (`h_rd_match` derivation) is structurally closed:
+**41/41** metaplan theorems now decompose `h_rd_match` into
+`h_rd_idx` + `h_rd_val`.
 
 ### What shipped
 
@@ -276,19 +275,89 @@ remains.
   because each track touched a disjoint file set. Tracks B and D2
   still in-flight as of this CLOSED append.
 
-### What remains — carry-over into Phase 4.5.1 (or fold into Phase 5)
+### What shipped (continued — session-2 + post-PARTIAL-CLOSED work)
 
-- **Track B** (signed MUL/DIV carry-chain). Subagent in-flight;
-  uncommitted WIP visible in working tree on
-  `Airs/Arith/{CarryChain,Mul,Div}.lean`.
-- **Track D part 2** (fixture regeneration for 52 under-covered
-  opcodes). Subagent in-flight; partial regeneration visible on
-  `GoldenTraces/{ADDI,ADDIW,ADDW,ANDI,OR,ORI}.lean`.
-- **MEM-family rewire.** Shape (d)/(e) lemmas shipped, but the 51
-  MEM-family `equiv_<OP>_metaplan` theorems still parameterize
-  `h_bus_execute_matches_sail` monolithically. Decomposition into
-  structural + h_rd_match-style hypotheses is the next structural
-  step (template: the 9 Arith opcodes here).
-- **Track F full close.** Refresh `REPORT.md` §3.1/§3.3 and
-  `docs/fv/{package-c-residuals,openvm-fv-parity,trusted-base}.md`
-  once Tracks B and D2 land and `just verify-phase4` is clean.
+- **Track B — signed MUL/DIV carry-chain** (commit `6bc6250`).
+  `Airs/Arith/CarryChain.lean` gains `arith_mul_signed_carry_identity`
+  (+80 lines) and `arith_div_signed_carry_identity` (+62 lines),
+  holding over arbitrary sign witnesses `(na, nb, np, nr)` ∈ {0, 1}.
+  Per-opcode specializations shipped as `arith_mul_signed_packed_correct`
+  (`Airs/Arith/Mul.lean`, +101 lines) and `arith_div_signed_packed_correct`
+  (`Airs/Arith/Div.lean`, +87 lines). Closes carry-chain identity
+  for all 9 Arith opcode/mode combinations at the named-column level.
+
+- **Track D part 2 — golden-trace coverage** (commits `e9fceec`,
+  `7a977a0`, `c582822`). Hand-authored edge fixtures bring every
+  opcode to ≥3 scenarios. Final count: **175 scenarios** across 58
+  files, **533 total `example : … := by decide` declarations**.
+  Fixtures use `namespace` (not `section`) per Phase-4 T-FIX
+  convention; `verify-phase*` now preserves them thanks to Track D
+  part 1 (`7656a80`).
+
+- **LD pilot — MEM-family rewire template** (commit `2632066`,
+  `Equivalence/LoadD.lean`). Decomposes `h_bus_execute_matches_sail`
+  into structural bus hypotheses (`h_exec_len`, `h_e*_mult`, `h_m*_*`,
+  `h_nextPC_matches`) + decomposed rd-match (`h_rd_zero_iff`,
+  `h_rd_idx`, `h_rd_val`). Proof uses `bus_effect_matches_sail_load_rrrw`
+  (Track C) + Subtype.ext + explicit `Finset.mem_Icc.mpr` for the
+  `Finset.Icc 1 31` index alignment. Validates the MEM-family template.
+
+- **32-file ALU rewire** (8 commits `93134da`, `701eb1b`, `8c0ff24`,
+  `f14f1a2`, `57bb579`, `640d36a`, `f7c4b46`, `8e17c88`). Dispatched
+  to a worktree subagent that stripped `h_rd_match` from every
+  remaining ALU/UTYPE/jump/branch/shift metaplan theorem, landing the
+  A-rewire pattern uniformly across:
+  - RTYPE add-family (ADD/AND/OR/XOR/SUB), `93134da`.
+  - ITYPE bitwise (ADDI/ANDI/ORI/XORI), `701eb1b`.
+  - SLT family (SLT/SLTU/SLTI/SLTIU, 4 with nested if), `8c0ff24`.
+  - W-family ALU (ADDW/SUBW/ADDIW), `f14f1a2`.
+  - Shift family (SLL/SRL/SRA + SLLI/SRLI/SRAI), `57bb579`.
+  - W-variant shifts (SLLW/SRLW/SRAW + SLLIW/SRLIW/SRAIW), `640d36a`.
+  - UTYPE (LUI, AUIPC — use `h_nextPC_eq`), `f7c4b46`.
+  - Jumps (JAL, JALR — compound dite conditions), `8e17c88`.
+
+  After all 8 land: `grep -c '^\s*(h_rd_match :' ZiskFv/ZiskFv/Equivalence/*.lean`
+  returns 0 for every file. **All 41 metaplan theorems have
+  `h_rd_match` decomposed.**
+
+- **Track F — full docs close** (commit `baada62`). `REPORT.md` §3.1
+  rewritten to reflect Arith carry-chain identity closed + `h_rd_match`
+  decomposed; §3.3 updated to 58/58 opcodes ≥3 scenarios / 175 total.
+  `docs/fv/openvm-fv-parity.md` Gap 2 marked STRUCTURALLY CLOSED
+  with Bridge 1/2/3 commit citations. Header status block refreshed.
+
+### What was learned
+
+- **Bridge 3 is used by A-rewire indirectly.** `h_rd_val` is the
+  hypothesis shape Bridge 3 + `memory_entry_toField_eq_toBV_toNat`
+  produce when composed with Arith's packed-correct theorems. The
+  caller-facing interface is `h_rd_val` as a direct equation; Bridge
+  3 closes that equation under a reasonable hypothesis set (byte
+  ranges + no-wrap + arith_table witness).
+
+- **Parallel worktree subagents were highly effective.** Tracks B, C,
+  D-part-1/2, and the 32-file ALU rewire all ran as isolated
+  subagents with zero file-level conflicts. Main session did A-rewire
+  pilot + Arith extension + LD pilot. Lesson captured: subagent
+  prompts must use worktree-relative paths (agents sometimes
+  resolved absolute paths to the main repo; no data loss but caused
+  merge confusion). Saved as feedback memory.
+
+- **LD pilot pattern generalizes.** The Subtype.ext + explicit
+  `Finset.mem_Icc.mpr` construction in `Equivalence/LoadD.lean` is
+  the template for the remaining MEM-family rewire. Applying it to
+  the other 50 MEM-family theorems is a mechanical fan-out (scoped
+  for Phase 5 or a 4.5.1 follow-up).
+
+### What remains — carry-over into Phase 5
+
+- **Gap 1** (Sail input derivation) and **Gap 3** (unwired transpile
+  axioms) per `docs/fv/openvm-fv-parity.md` — scoped to Phase 5.
+- **MEM-family rewire extension.** LD pilot validates the template;
+  applying to LB/LH/LW/LBU/LHU/LWU/SB/SH/SW/SD is mechanical and can
+  be folded into Phase 5 Track G concurrently with the
+  `chip_bus_hyps_*` work.
+- **Arith table-lookup witnesses** (sign-preprocessing, range_cd,
+  inv_sum_all_bs). Orthogonal to carry-chain closure; stays deferred
+  as scope-honest hypotheses on the `arith_table` permutation
+  argument.
