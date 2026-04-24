@@ -203,24 +203,20 @@ theorem equiv_ADD_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Track-G companion.** Same conclusion as `equiv_ADD_metaplan`, but
-    derives `h_input_r1` and `h_input_r2` internally from a single
-    `h_bus : (bus_effect exec_row [e0, e1, e2] state).1` hypothesis via
-    `chip_bus_hyps_alu_rrw`. Demonstrates the Phase 5 Track G rewiring
-    pattern: two of the four Sail-input register-read parameters collapse
-    into one bus-precondition parameter plus two "bus byte ↔ Sail input
-    value" match hypotheses that are downstream-derivable from a
-    PIL-level bus-emission spec + the restated `transpile_ADD` axiom
-    (Phase 5 Track H).
+/-- **Track-G companion — full V12.** Same conclusion as
+    `equiv_ADD_metaplan`, but derives all four `h_input_*` parameters
+    internally from a single `h_bus : (bus_effect ...).1` plus ptr/value
+    match hypotheses that tie bus entries to Sail-input fields.
 
-    `h_input_pc` and `h_input_rd` stay as parameters: `h_input_pc`
-    lives in a different form (`state.regs.get? Register.PC = .some …`)
-    that doesn't directly follow from the chip_bus_hyps `Sail.readReg`
-    shape without extra monad-unfolding boilerplate; `h_input_rd` ties
-    the regidx-type side of rd and is unrelated to `h_bus`.
+    - `h_input_r1`/`h_input_r2` come from `chip_bus_hyps_alu_rrw h_bus`
+      rewritten through the `h_r1_ptr`/`h_r1_val`/`h_r2_ptr`/`h_r2_val`
+      match hypotheses.
+    - `h_input_pc` comes from the PC-read conjunct of `h_bus` via
+      `readReg_of_readReg_succ` applied with `h_pc`.
+    - `h_input_rd` comes from `h_rd_ptr` (ptr match) + `h_rd_idx`.
 
-    Consumer of `chip_bus_hyps_alu_rrw` — establishes that lemma as
-    load-bearing for at least one downstream metaplan path. -/
+    Establishes `chip_bus_hyps_alu_rrw` and `readReg_of_readReg_succ` as
+    load-bearing for the ADD metaplan path. -/
 theorem equiv_ADD_metaplan_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
@@ -236,9 +232,9 @@ theorem equiv_ADD_metaplan_from_bus
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Bus precondition (replaces h_input_r1, h_input_r2):
+    -- Bus precondition (replaces h_input_r1, h_input_r2, h_input_pc):
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
-    -- Bus byte ↔ Sail input value match (downstream-derivable from
+    -- Bus ↔ Sail input match hypotheses (downstream-derivable from
     -- transpile_ADD + operation-bus match):
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r1_val : add_input.r1_val
@@ -248,9 +244,9 @@ theorem equiv_ADD_metaplan_from_bus
     (h_r2_val : add_input.r2_val
       = U64.toBV #v[e1.x0, e1.x1, e1.x2, e1.x3,
                     e1.x4, e1.x5, e1.x6, e1.x7])
-    -- PC and rd sides (unchanged):
-    (h_input_rd : add_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some add_input.PC)
+    (h_pc : add_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
+    (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
+    -- Remaining bus/rd value hypotheses (unchanged):
     (h_rd_idx : add_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -259,15 +255,13 @@ theorem equiv_ADD_metaplan_from_bus
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
   -- Split h_bus via chip_bus_hyps_alu_rrw.
-  obtain ⟨_, h_rs1_read, h_rs2_read⟩ :=
+  obtain ⟨h_pc_read, h_rs1_read, h_rs2_read⟩ :=
     ZiskFv.Airs.BusHypotheses.chip_bus_hyps_alu_rrw
       state exec_row e0 e1 e2
       h_exec_len h_e0_mult h_e1_mult
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
       h_bus
-  -- Rewrite the derived reads through the match hypotheses to get
-  -- equalities in terms of `add_input` fields, as required by
-  -- `equiv_ADD_metaplan`.
+  -- Derive the four h_input_* hypotheses.
   have h_input_r1 :
       read_xreg (regidx_to_fin r1) state
         = EStateM.Result.ok add_input.r1_val state := by
@@ -276,6 +270,11 @@ theorem equiv_ADD_metaplan_from_bus
       read_xreg (regidx_to_fin r2) state
         = EStateM.Result.ok add_input.r2_val state := by
     rw [h_r2_ptr, h_r2_val]; exact h_rs2_read
+  have h_input_rd : add_input.rd = regidx_to_fin rd := by
+    rw [h_rd_ptr]; exact h_rd_idx
+  have h_input_pc : state.regs.get? Register.PC = .some add_input.PC := by
+    rw [h_pc]
+    exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
   exact equiv_ADD_metaplan state add_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

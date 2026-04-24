@@ -52,6 +52,29 @@ namespace ZiskFv.Airs.BusHypotheses
 open Goldilocks
 open Interaction
 
+/-- Inversion of `readReg_succ`: from a successful-read equation we can
+    recover the `state.regs.get?` equality. Used by metaplan theorems to
+    derive `h_input_pc` from the PC-read component of `bus_effect.1`. -/
+theorem readReg_of_readReg_succ
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {reg : Register} {v : RegisterType reg}
+    (h : Sail.readReg reg state = EStateM.Result.ok v state) :
+    state.regs.get? reg = .some v := by
+  unfold Sail.readReg PreSail.readReg at h
+  -- Sail.readReg unfolds to `do let s ← get; match s.regs.get? reg with …`.
+  -- The `get` reads state, then we pattern match on `state.regs.get? reg`.
+  simp only [bind, EStateM.bind, get, getThe, MonadStateOf.get,
+             EStateM.get] at h
+  cases h_get : state.regs.get? reg with
+  | none =>
+    rw [h_get] at h
+    simp [pure, EStateM.pure, throw, EStateM.throw, throwThe,
+          MonadExceptOf.throw] at h
+  | some w =>
+    rw [h_get] at h
+    simp [pure, EStateM.pure] at h
+    rw [h]
+
 private lemma fgl_one_ne_neg_one : ((1 : FGL) = -1) = False := by decide
 private lemma fgl_neg_one_self : ((-1 : FGL) = -1) = True := by decide
 private lemma fgl_one_self : ((1 : FGL) = 1) = True := by decide
