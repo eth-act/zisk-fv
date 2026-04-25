@@ -1007,3 +1007,215 @@ When accepting a new trusted axiom:
   false`, matching RV64 LW's signed-load semantics); the existing
   proof then closed without further intervention.
   `LoadEquivHelper` deleted, `Equivalence/Lw` rewired.
+
+---
+
+## Trust surface analysis — 2026-04-25
+
+**Audience.** This section is for someone trying to determine
+which axioms and *active hypotheses* must change for confidence
+that ZisK correctly implements RV64IM. It supplements the
+opcode-level entries above with a categorization by the kind of
+trust each item embodies.
+
+### Active axiom inventory (76 total)
+
+Full list via:
+
+```
+grep -rh "^\s*axiom " ZiskFv/ZiskFv/ --include="*.lean" \
+  | grep -v "axiom itself" | awk '{print $2}' | sort -u
+```
+
+Categorized:
+
+| # | Category | Count | Confidence-blocking? | Retirement path |
+|---|---|---|---|---|
+| 1 | Transpile axioms | 63 | **Yes — most** | Independent audit of `riscv2zisk_context.rs` (or Rust-side proof framework) |
+| 2 | Arith lookup axioms | 4 | **Yes — moderate** | Formalize plookup / grand-product soundness in Lean |
+| 3 | Platform axioms | 4 | Mild (scope-honest) | Only retire if ZisK's deployment changes |
+| 4 | Sail-equivalence axioms | 5 | **No — pure tech debt** | Unfold the corresponding Sail bodies (mechanical) |
+
+### Category 4 in depth — Sail-equivalence axioms ARE NOT trust expansion
+
+The 5 axioms (`execute_FENCE_pure_equiv_axiom`,
+`execute_DIVREM_{divuw,divw,remuw,remw}_pure_equiv_axiom`) all have
+the shape
+
+```
+execute_instruction (instruction.<X> …) state =
+  (do Sail.writeReg Register.nextPC <pc+4>; <result>) state
+```
+
+This is a **Sail-internal reduction** — what `execute_instruction`
+computes when applied to a specific instruction. We could prove it
+by unfolding the Sail definition (which is a Lean `def` produced
+by Sail's auto-translation) and `simp`-ing through 100–300 lines
+of monadic boilerplate. We took the shortcut and asserted the
+result instead.
+
+Important: **this does not add Sail to the trust base beyond what
+"Sail RISC-V is the spec" already entails.** The Sail spec is the
+specification regardless. The axiom asserts a *consequence* of the
+spec, not a new claim about RV64IM. Retirement = mechanical proof
+work; zero confidence gain.
+
+These axioms exist for FENCE and the four `*W` divides because
+their Sail bodies have CSR reads + barrier matches (FENCE) or
+nested let/if/`Int.tdiv`-style logic (`*W` divides) that are
+syntactically painful to unfold even though semantically trivial.
+
+### Category 3 — platform axioms
+
+`pmpCheck_is_pure_none`, `pmaCheck_is_pure_none`,
+`within_clint_is_false`, `update_elp_state_is_pure_unit`. Each says
+"this Sail privileged-mode feature is inert in ZisK's
+configuration." Won't retire unless ZisK's deployment turns on the
+feature; out of RV64IM scope by definition.
+
+### Category 2 — Arith lookup axioms
+
+Four axioms in `Airs/Arith/{ArithTable,ArithRangeTable}.lean`. They
+encode plookup soundness in a tightly bundled form:
+`arith_table_row_witness_unsigned` directly states "if Lean trace
+columns `(op, m32)` take certain values, then sign-witness columns
+`(na, nb, np, nr)` are forced to zero." This packages **two
+distinct claims**:
+
+1. **Table content correctness** — that the `arith_table.pil`
+   row for `(MULU, m32=0)` really has `(0, 0, 0, 0)` in the
+   sign-witness columns. Mechanically extractable from
+   `arith_table.pil`; we don't currently extract it.
+2. **Lookup-linkage soundness** — that the trace's claim "I'm row
+   X of the table" is enforced by the grand-product polynomial.
+   This is plookup / logUp soundness; standard ZK math.
+
+Cleaner factorization (not yet implemented):
+
+- Extract the arith_table rows into a Lean `def` (constant data).
+- One `axiom` for plookup soundness ("if grand-product check
+  passes, multiset inclusion holds").
+- Per-opcode theorems derive the witness mapping from the data + 1
+  axiom.
+
+This would split a soundness-relevant axiom (lookup linkage) from
+a verifiable claim (table content), letting the latter be checked
+by inspection / extraction. Not yet shipped.
+
+### Category 1 — transpile axioms (the elephant)
+
+63 axioms, one per RV64IM opcode. Each says "the Rust function in
+`vendor/zisk/core/src/riscv2zisk_context.rs` for this opcode emits
+a Main AIR row with these specific column values."
+
+**These are unverified against the Rust source.** A mismatch
+(misread arm, Rust code change, typo) silently makes the whole
+proof chain about a phantom row that the implementation never
+actually emits.
+
+Retirement options:
+
+- **Audit by inspection.** Person reads each Rust arm, verifies
+  the axiom matches. ~weeks of careful work; doesn't scale to
+  refactors.
+- **Rust-side proof framework.** Use Aeneas / Verus / a
+  Rust-verifying tool that proves properties of `*.rs` source. Our
+  axioms become theorems with Rust-source provenance. Substantial
+  infrastructure effort; not a current ZisK direction.
+- **Trace-based testing.** Run real binaries, compare emitted AIR
+  rows against axiom claims. Provides counterexample detection,
+  not a formal proof.
+
+This is the **biggest unverified surface** for "ZisK ↔ RV64IM."
+Bounded above by the correctness of a 63-row hand-transcription
+from Rust to Lean.
+
+### Active hypotheses — also part of the trust surface
+
+The active hypotheses on metaplan theorems are NOT axioms but they
+behave like per-application axioms: callers must supply them, and
+if a hypothesis is too strong (excludes valid inputs) or false
+(asserts something the implementation doesn't satisfy), the proof
+delivers no useful guarantee.
+
+Re-evaluated for confidence impact (correcting earlier glib
+dismissals):
+
+| Hypothesis | Active form | Confidence concern | Severity |
+|---|---|---|---|
+| `h_exec_len`, `h_e*_mult`, `h_m*_*` | bus-shape structural | Says "ZisK's PIL emits this exact bus shape on this opcode." Should derive from a PIL bus-emission spec; not yet extracted. If wrong → proof about phantom shape. | ⚠️ real |
+| `h_rd_val` | bus rd-write encodes pure-spec result | **The actual circuit-correctness claim.** Should derive from `<op>_compositional` + bus-match + Phase 4.5 Bridges 1/2/3. We have the pieces; the gluing isn't shipped. If wrong → buggy circuit accepted as correct. | ⚠️⚠️ real, biggest |
+| `h_input_r1`, `h_input_r2` (branches/JALR) | rs1/rs2 read via op bus | We model the *memory* bus's read predicates via `chip_bus_hyps_*`; the *operation* bus that branches/JALR use for rs reads has no analogous derivation. | ⚠️ real |
+| `h_not_throws`, `h_success` | branch happy-path | Restricts theorem to non-faulting inputs. Soundness-safe but **completeness gap**: real binaries with faulting branches not covered. Analogous to the JALR-alignment example. | ⚠️ completeness |
+| `h_input_misa`, `h_misa_c`, `h_cur_privilege`, `h_mseccfg` | privileged CSR reads | Caller must establish the harness's CSR setup. Restricts theorem to specific privilege configs. | ⚠️ completeness |
+| `h_r1_ptr`, `h_r2_ptr`, `h_rd_ptr` | Sail register ↔ bus ptr correspondence | Says "the AIR's register-pointer column equals the Sail rs-operand." Should derive from an `rs_address` extension to transpile axioms; not yet done. | ⚠️ real |
+| `h_input_imm`, `h_input_pc`, `h_input_rd` | input-from-bus matches | Become `rfl` in `_bus_self` companions (via `<Op>Input_of_bus` constructor). On the older non-`_bus_self` paths, they're scenario-binding harness conditions. | ✅ for `_bus_self`; ⚠️ otherwise |
+
+### What we DON'T verify about the bus
+
+The bus is critical infrastructure and partly axiomatized
+indirectly:
+
+- We define `OperationBusEntry`, `MemoryBusEntry`, `bus_effect`,
+  `opBus_row_*` projections, and `matches_entry` predicates.
+- We **prove** the 5 `bus_effect_matches_sail_<shape>` lemmas
+  (memory-bus shape → Sail state transition) and the 5
+  `chip_bus_hyps_<shape>` lemmas (memory-bus precondition → read
+  equalities).
+- We **don't prove** that the actual AIR's bus emissions match the
+  `matches_entry` predicate. Caller asserts this on each
+  invocation.
+- We **don't prove** that the operation bus's permutation argument
+  enforces multiset equality between Main's emissions and the
+  secondary SM's consumptions. Same plookup-style issue as the
+  Arith lookup axioms.
+- We **don't prove** that `bus_effect`'s definition (multiplicity
+  encoding, address-space encoding) matches PIL2 bus semantics.
+
+Net: bus correctness = (proven shape lemmas) + (trusted PIL
+bus-emission correspondence) + (trusted permutation-argument
+soundness).
+
+### What's out of scope for confidence purposes
+
+- **GPU code paths.** ZisK's CUDA acceleration is performance
+  infrastructure; the AIR/PIL2 constraint system being verified is
+  identical CPU-vs-GPU. Bugs in GPU code produce traces that fail
+  verification, not false positives.
+- **AOT-to-x86_64 compilation.** ZisK compiles RV64 binaries AOT
+  for fast execution at proving time; proofs are about the
+  PIL2/AIR not the AOT path. Out of scope.
+- **SNARK protocol soundness.** Cryptographic protocol analysis is
+  a separate project; we assume verifier-accept ⇒ claim-true with
+  full literal force.
+- **Sail spec correctness.** Sail RISC-V is THE spec; trusted by
+  definition.
+- **LeanRV64D inherited axioms.** Floating-point primitives,
+  reservation-set ops, `plat_term_write`, `get_16_random_bits` —
+  imported from `LeanRV64D`. Trusted as part of accepting the Sail
+  spec import.
+
+### Priority list for retirement to maximize confidence in "ZisK ↔ RV64IM"
+
+1. **Audit the 63 transpile axioms** against
+   `vendor/zisk/core/src/riscv2zisk_context.rs`. Biggest unverified
+   surface; outside Lean. ~weeks of careful reading.
+2. **Compose `h_rd_val` derivation** for each opcode via the
+   existing `<op>_compositional` + `matches_entry` + Phase 4.5
+   Bridges + Phase 5 arith_table. Pieces shipped; gluing not.
+   ~days per shape family.
+3. **Extract the PIL bus-emission spec** to derive `h_exec_len`,
+   `h_m*_*` from the AIR rather than parameterize on them.
+4. **Factor the Arith lookup axioms** into table-data + plookup
+   soundness; extract the table mechanically.
+5. **Author `chip_op_bus_hyps_*`** (operation-bus analogue) to
+   derive `h_input_r1`/`h_input_r2` for branches/JALR.
+6. **Retire the 5 Sail-equivalence axioms** by unfolding. Pure
+   tech debt; zero confidence gain but cleans up the surface.
+7. **Cover the not-happy-path** for branches/jumps (faulting
+   alignment cases) — closes completeness gaps.
+8. **Formalize plookup / grand-product soundness** to retire the
+   Arith lookup axioms' linkage piece. Substantial; standard math.
+
+**Items 1, 2, 3, 5 are the biggest confidence wins.** Items 6–8
+are cleanup or out-of-scope for "RV64IM correctness."
