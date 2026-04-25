@@ -28,6 +28,10 @@ import ZiskFv.Equivalence.StoreW
 import ZiskFv.Equivalence.Auipc
 import ZiskFv.GoldenTraces.AUIPC
 import ZiskFv.Equivalence.Fence
+import ZiskFv.Equivalence.Divuw
+import ZiskFv.Equivalence.Remuw
+import ZiskFv.Equivalence.Divw
+import ZiskFv.Equivalence.Remw
 import ZiskFv.Equivalence.BranchLessThan
 import ZiskFv.GoldenTraces.BLT
 import ZiskFv.Equivalence.BranchGreaterEqual

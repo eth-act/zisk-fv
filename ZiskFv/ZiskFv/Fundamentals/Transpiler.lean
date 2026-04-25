@@ -2375,6 +2375,103 @@ axiom transpile_LB :
     row. Used by RV64 REM (`riscv2zisk_context.rs:252`). -/
 @[simp] def OP_REM : FGL := 187
 
+/-- Goldilocks literal for the unsigned 32-bit divide opcode.
+    `0xbc = 188` per `vendor/zisk/core/src/zisk_ops.rs:434`. Used by
+    RV64 DIVUW (`riscv2zisk_context.rs:251`,
+    `create_register_op(..., "divu_w", 4)`). Type `ArithA32` — handled
+    by the Arith state machine with `m32 = 1`. -/
+@[simp] def OP_DIVU_W : FGL := 188
+
+/-- Goldilocks literal for the unsigned 32-bit remainder opcode.
+    `0xbd = 189` per `vendor/zisk/core/src/zisk_ops.rs:435`. Used by
+    RV64 REMUW (`riscv2zisk_context.rs:255`). Type `ArithA32`,
+    secondary lane on the same Arith row that produces the quotient. -/
+@[simp] def OP_REMU_W : FGL := 189
+
+/-- Goldilocks literal for the signed 32-bit divide opcode.
+    `0xbe = 190` per `vendor/zisk/core/src/zisk_ops.rs:436`. Used by
+    RV64 DIVW (`riscv2zisk_context.rs:250`,
+    `create_register_op(..., "div_w", 4)`). Type `ArithA32` — handled
+    by the Arith state machine with `m32 = 1, sa = sb = 1`. -/
+@[simp] def OP_DIV_W : FGL := 190
+
+/-- Goldilocks literal for the signed 32-bit remainder opcode.
+    `0xbf = 191` per `vendor/zisk/core/src/zisk_ops.rs:437`. Used by
+    RV64 REMW (`riscv2zisk_context.rs:254`). Type `ArithA32`,
+    secondary lane on the same Arith row that produces the
+    quotient. -/
+@[simp] def OP_REM_W : FGL := 191
+
+/-- Transpile contract for RV64M DIVUW (Phase 5 follow-on Track J2).
+    Mirrors `transpile_DIVU` modulo opcode = `OP_DIVU_W` and
+    `m32 = 1`. -/
+axiom transpile_DIVUW :
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_DIVU_W →
+        m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+/-- Transpile contract for RV64M REMUW (Phase 5 follow-on Track J3).
+    Mirrors `transpile_REMU` modulo opcode = `OP_REMU_W` and
+    `m32 = 1`. -/
+axiom transpile_REMUW :
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_REMU_W →
+        m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+/-- Transpile contract for RV64M DIVW (Phase 5 follow-on Track J4).
+    Signed 32-bit divide. -/
+axiom transpile_DIVW :
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_DIV_W →
+        m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+/-- Transpile contract for RV64M REMW (Phase 5 follow-on Track J5).
+    Signed 32-bit remainder. -/
+axiom transpile_REMW :
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_REM_W →
+        m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
 /-- The axiomatic RV64 → Zisk row contract for DIVU (Phase 3C T-D).
 
     Per `vendor/zisk/core/src/riscv2zisk_context.rs:249` an RV64 DIVU

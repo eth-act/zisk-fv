@@ -521,6 +521,42 @@ theorem transpile_LB_consumer
   fun h_p1 h_p2 =>
     (transpile_LB m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
 
+/-- V13 consumer-witness for `transpile_DIVUW`. Axiom-load-bearing via
+    first-conjunct extraction. -/
+theorem transpile_DIVUW_consumer
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
+    : m.is_external_op r_main = 1 → m.op r_main = OP_DIVU_W → m.m32 r_main = 1 :=
+  fun h_p1 h_p2 =>
+    (transpile_DIVUW m r_main rs1 rs2 _rd state h_p1 h_p2).1
+
+/-- V13 consumer-witness for `transpile_REMUW`. Axiom-load-bearing via
+    first-conjunct extraction. -/
+theorem transpile_REMUW_consumer
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
+    : m.is_external_op r_main = 1 → m.op r_main = OP_REMU_W → m.m32 r_main = 1 :=
+  fun h_p1 h_p2 =>
+    (transpile_REMUW m r_main rs1 rs2 _rd state h_p1 h_p2).1
+
+/-- V13 consumer-witness for `transpile_DIVW`. Axiom-load-bearing via
+    first-conjunct extraction. -/
+theorem transpile_DIVW_consumer
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
+    : m.is_external_op r_main = 1 → m.op r_main = OP_DIV_W → m.m32 r_main = 1 :=
+  fun h_p1 h_p2 =>
+    (transpile_DIVW m r_main rs1 rs2 _rd state h_p1 h_p2).1
+
+/-- V13 consumer-witness for `transpile_REMW`. Axiom-load-bearing via
+    first-conjunct extraction. -/
+theorem transpile_REMW_consumer
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
+    : m.is_external_op r_main = 1 → m.op r_main = OP_REM_W → m.m32 r_main = 1 :=
+  fun h_p1 h_p2 =>
+    (transpile_REMW m r_main rs1 rs2 _rd state h_p1 h_p2).1
+
 /-- V13 consumer-witness for `transpile_DIVU`. Axiom-load-bearing via
     first-conjunct extraction. -/
 theorem transpile_DIVU_consumer

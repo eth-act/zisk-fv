@@ -1,0 +1,179 @@
+import Mathlib
+
+import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Fundamentals.Interaction
+import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Airs.Main
+import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.BusHypotheses
+import ZiskFv.RV64D.remuw
+import ZiskFv.RV64D.BusEffect
+
+/-!
+End-to-end theorem for RV64M REMUW (unsigned 32-bit divide).
+Phase 5 follow-on Track J2.
+
+REMUW is the W-variant sibling of DIVU. Both transpile through
+`create_register_op` with `m32 = 1` for the 32-bit width. Sail-side,
+both call `execute_REMW` with `is_unsigned = true`.
+
+Three theorems mirroring the DIVU pattern (shape-(a) — ALU/Arith bus):
+
+* `equiv_REMUW` — circuit-level (defined in terms of m.a/b lanes via
+  `transpile_REMUW` per the Phase 5 axiom shape).
+* `equiv_REMUW_sail` — Sail-level wrapper for
+  `execute_DIVREM_remuw_pure_equiv`.
+* `equiv_REMUW_metaplan` — metaplan-target shape composing
+  Sail + bus-effect via `bus_effect_matches_sail_alu_rrw`.
+
+Plus V12 companion `equiv_REMUW_metaplan_from_bus`.
+-/
+
+namespace ZiskFv.Equivalence.Remuw
+
+open Goldilocks
+open Interaction
+open ZiskFv.Trusted
+open ZiskFv.Airs.Main
+
+/-- **Sail-level companion.** Wraps `execute_DIVREM_remuw_pure_equiv`. -/
+theorem equiv_REMUW_sail
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (remuw_input : PureSpec.RemuwInput)
+    (r1 r2 rd : regidx)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok remuw_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok remuw_input.r2_val state)
+    (h_input_rd : remuw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some remuw_input.PC) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, true))) state
+      = let remuw_output := PureSpec.execute_DIVREM_remuw_pure remuw_input
+        (do
+          Sail.writeReg Register.nextPC remuw_output.nextPC
+          match remuw_output.rd with
+            | .some (rd, rd_val) => write_xreg rd rd_val
+            | .none => pure ()
+          pure (ExecutionResult.Retire_Success ())) state :=
+  PureSpec.execute_DIVREM_remuw_pure_equiv
+    remuw_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
+
+/-- **Metaplan theorem.** Shape (a) ALU/Arith. -/
+theorem equiv_REMUW_metaplan
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (remuw_input : PureSpec.RemuwInput)
+    (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok remuw_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok remuw_input.r2_val state)
+    (h_input_rd : remuw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some remuw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : remuw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_rd_val :
+      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
+                  e2.x4, e2.x5, e2.x6, e2.x7]
+      = (let r1_lo32 : BitVec 32 := Sail.BitVec.extractLsb remuw_input.r1_val 31 0
+         let r2_lo32 : BitVec 32 := Sail.BitVec.extractLsb remuw_input.r2_val 31 0
+         let q32 : BitVec 32 :=
+           if r2_lo32 = 0#32
+             then r1_lo32
+             else BitVec.ofNat 32 (r1_lo32.toNat % r2_lo32.toNat)
+         BitVec.signExtend 64 q32)) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, true))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  rw [equiv_REMUW_sail state remuw_input r1 r2 rd
+        h_input_r1 h_input_r2 h_input_rd h_input_pc]
+  symm
+  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+        state exec_row e0 e1 e2
+        (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
+  simp only [PureSpec.execute_DIVREM_remuw_pure, h_rd_idx]
+  by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
+  · simp [h_rd_zero, bind, pure, EStateM.bind, EStateM.pure]
+  · simp only [h_rd_zero, dite_false]
+    rw [h_rd_val]
+
+/-- **V12 companion.** Drops `h_input_*` via chip_bus_hyps_alu_rrw. -/
+theorem equiv_REMUW_metaplan_from_bus
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (remuw_input : PureSpec.RemuwInput)
+    (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
+    (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
+    (h_r1_val : remuw_input.r1_val
+      = U64.toBV #v[e0.x0, e0.x1, e0.x2, e0.x3, e0.x4, e0.x5, e0.x6, e0.x7])
+    (h_r2_ptr : regidx_to_fin r2 = Transpiler.wrap_to_regidx e1.ptr)
+    (h_r2_val : remuw_input.r2_val
+      = U64.toBV #v[e1.x0, e1.x1, e1.x2, e1.x3, e1.x4, e1.x5, e1.x6, e1.x7])
+    (h_pc : remuw_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
+    (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_rd_idx : remuw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_rd_val :
+      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
+                  e2.x4, e2.x5, e2.x6, e2.x7]
+      = (let r1_lo32 : BitVec 32 := Sail.BitVec.extractLsb remuw_input.r1_val 31 0
+         let r2_lo32 : BitVec 32 := Sail.BitVec.extractLsb remuw_input.r2_val 31 0
+         let q32 : BitVec 32 :=
+           if r2_lo32 = 0#32
+             then r1_lo32
+             else BitVec.ofNat 32 (r1_lo32.toNat % r2_lo32.toNat)
+         BitVec.signExtend 64 q32)) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, true))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_pc_read, h_rs1_read, h_rs2_read⟩ :=
+    ZiskFv.Airs.BusHypotheses.chip_bus_hyps_alu_rrw
+      state exec_row e0 e1 e2 h_exec_len h_e0_mult h_e1_mult
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_bus
+  have h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok remuw_input.r1_val state := by
+    rw [h_r1_ptr, h_r1_val]; exact h_rs1_read
+  have h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok remuw_input.r2_val state := by
+    rw [h_r2_ptr, h_r2_val]; exact h_rs2_read
+  have h_input_rd : remuw_input.rd = regidx_to_fin rd := by
+    rw [h_rd_ptr]; exact h_rd_idx
+  have h_input_pc : state.regs.get? Register.PC = .some remuw_input.PC := by
+    rw [h_pc]
+    exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
+  exact equiv_REMUW_metaplan state remuw_input r1 r2 rd exec_row e0 e1 e2
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    h_rd_idx h_rd_val
+
+end ZiskFv.Equivalence.Remuw

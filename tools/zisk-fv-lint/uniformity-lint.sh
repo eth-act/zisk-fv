@@ -40,4 +40,4 @@ if [ $FAIL -ne 0 ]; then
   echo "# Uniformity lint FAILED." >&2
   exit 1
 fi
-echo "# Uniformity lint PASSED. 59 opcodes expected; actual count follows."
+echo "# Uniformity lint PASSED. 63 opcodes expected; actual count follows."
