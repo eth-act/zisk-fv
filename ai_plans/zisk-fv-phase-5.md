@@ -432,3 +432,215 @@ pack. The `chip_bus_hyps_<shape>` lemmas are just unfoldings of this.
 
 Still **62 axioms** (58 transpile + 4 platform). The axioms are now
 in a more useful shape but no retirements and no additions.
+
+---
+
+## Phase 5 follow-on — coverage gaps + residual closure
+
+**Appended 2026-04-25.** Surfaced by comparing zisk-fv's per-opcode roster
+against the eth-act `act4-full` SP1 ISA test suite (RV64IM coverage at
+opcode granularity). zisk-fv covers 58 opcodes; the eth-act suite covers
+64 — a 6-opcode delta. Two of the six are non-issues (NOP is an
+`ADDI x0, x0, 0` alias and is already covered by `equiv_ADDI_metaplan`;
+AUIPC is in zisk-fv, even though SP1 fails the AUIPC test). The remaining
+**5 opcodes are real coverage gaps** that this follow-on closes, alongside
+the residuals carried over from Phase 5 items 2/4 and from the Phase 4.5
+Arith lookup-witness scope.
+
+### Track J — Coverage closure (5 opcodes)
+
+#### J1. FENCE (RV64I)
+
+Status: completely absent from zisk-fv. CLAUDE.md scope is "RV64IM" so
+FENCE is in scope.
+
+**Spec.** RISC-V FENCE orders memory accesses with a `pred, succ`
+hint pair. Under ZisK's single-threaded zkVM execution model, FENCE
+is a no-op that advances PC: `nextPC = PC + 4`, all other state
+unchanged. Sail's `LeanRV64D.Functions.execute (instruction.FENCE …)`
+should reduce to a `Sail.writeReg Register.nextPC (PC + 4)` block
+with no register / memory side-effect.
+
+**ZisK transpile.** Need to identify which Zisk microinstruction (if
+any) `riscv2zisk_context.rs` emits for FENCE. Likely a `flag` /
+`copyb` no-op routing, similar to JAL's bookkeeping.
+
+**Deliverables.**
+- `RV64D/fence.lean` — pure spec + Sail equivalence axiom (`execute_FENCE_pure_equiv`).
+- `Spec/Fence.lean` — circuit-side compositional spec.
+- `Equivalence/Fence.lean` — `equiv_FENCE`, `equiv_FENCE_sail`, `equiv_FENCE_metaplan`, `equiv_FENCE_metaplan_from_bus`, `equiv_FENCE_metaplan_bus_self`.
+- `Fundamentals/Transpiler.lean` — `axiom transpile_FENCE` in `Valid_Main`-form.
+- `Fundamentals/TranspileConsumers.lean` — `transpile_FENCE_consumer` (V13 closure).
+- `GoldenTraces/FENCE.lean` — ≥3 fixtures.
+- `tools/zisk-fv-lint/uniformity-lint.sh` — add FENCE to roster.
+
+**Effort.** Modeled as a no-op opcode → the simplest archetype. ~200 lines.
+
+#### J2–J5. DIVW / DIVUW / REMW / REMUW (RV64M 32-bit divide/remainder)
+
+Status: completely absent. zisk-fv has DIV/DIVU/REM/REMU (64-bit) and
+MULW (32-bit) but never shipped the 32-bit divide variants.
+
+**Spec.** Each `*W` opcode operates on the low 32 bits of `rs1`, `rs2`,
+treating them as 32-bit integers (signed for DIVW/REMW, unsigned for
+DIVUW/REMUW), divides/computes-remainder, and sign-extends the 32-bit
+result to 64 bits before writing `rd`.
+
+**ZisK transpile.** Likely uses `arith_table` rows
+`(OP_DIVU_W, m32=1)` (for DIVUW), `(OP_DIV_W, m32=1)` (DIVW),
+`(OP_REMU_W, m32=1)` (REMUW), `(OP_REM_W, m32=1)` (REMW). All four are
+already enumerated in `vendor/zisk/state-machines/arith/pil/arith_table.pil:21`
+(see comment block listing `divu_w`/`div_w`/`remu_w`/`rem_w`).
+
+**Deliverables (per opcode × 4).**
+- `RV64D/divw.lean`, `RV64D/divuw.lean`, `RV64D/remw.lean`, `RV64D/remuw.lean` — pure specs + Sail equivalence.
+- `Spec/DivW.lean`, `Spec/DivuW.lean`, `Spec/RemW.lean`, `Spec/RemuW.lean` — circuit-side using existing Phase 4.5 carry-chain + Phase 5 arith_table for the unsigned variants (DIVUW, REMUW). Signed (DIVW, REMW) follows the signed-MUL-style conditional witness pattern.
+- `Equivalence/DivW.lean` etc. — `equiv_<OP>_metaplan` family with all the V12 companions.
+- 4 new `transpile_<OP>` axioms + consumers.
+- 4 new `arith_table_<OP>_witnesses` specializations (for unsigned variants — they extend `arith_table_row_witness_unsigned_div`'s axiom; signed variants need the conditional-witness extension below).
+- 4 new `GoldenTraces/<OP>.lean` files.
+
+**Effort.** ~150 lines per opcode × 4 ≈ 600 lines, plus arith_table
+extension (~80 lines). The unsigned pair (DIVUW, REMUW) falls out
+cleanly. The signed pair (DIVW, REMW) is gated on signed-mode
+conditional-witness work in Track L below.
+
+### Track K — Item 2 residuals (Arith lookup-table closures)
+
+Carried from Phase 5 item 2. Items K2 and K3 are independent of the
+opcode coverage closure and can run in parallel.
+
+#### K1. Signed-mode conditional witnesses
+
+For OP_MUL/MULH/DIV/REM (signed 64-bit) and OP_DIVW/REMW (signed
+32-bit), the arith_table maps `(op, m32) → (na = a.3-bit, nb = b.3-bit,
+np = d.3-bit, nr = …)` — i.e. the sign witnesses are *conditional* on
+specific bit-cells of the operands, not constants.
+
+**Closure.** Extend `Airs/Arith/ArithTable.lean` with a second axiom
+`arith_table_row_witness_signed` whose conclusion ties `(na, nb, np, nr)`
+to those bit-cells. Combine with `Spec/MulField.lean`'s sign-bit
+extraction lemmas (Phase 4.5 Track B). Per-opcode specializations
+retire the conditional witness parameters from
+`arith_mul_signed_packed_correct` and the DIV signed analogues.
+
+**Effort.** ~300 lines including bit-extraction composition.
+
+#### K2. range_cd 16-bit lookup
+
+Constraint 46 of `Extraction/Arith.lean` range-checks the remainder
+bound `|d| < |b|` for signed DIV/REM via a 16-bit lookup against
+`arith_range_table`. Currently a scope-honest hypothesis on the signed
+DIV/REM compositional theorems.
+
+**Closure.** Author `Airs/Arith/ArithRangeTable.lean` mirroring the
+arith_table framework. One axiom for `range_cd ∈ [0, 2^16)` lookup
+soundness (analogous to `arith_table_row_witness_unsigned`); per-row
+specializations apply to signed DIV/REM.
+
+**Effort.** ~150 lines.
+
+#### K3. inv_sum_all_bs
+
+The multiplicative-inverse witness for "divisor ≠ 0 ⇒ correct
+quotient." Constraint structure: `b ≠ 0` is enforced by exhibiting
+an `inv_sum_all_bs` cell satisfying `inv_sum_all_bs * (b_0 + b_1 + b_2 + b_3) = 1`
+or similar. Currently a scope-honest hypothesis.
+
+**Closure.** Add to `Airs/Arith/ArithRangeTable.lean` (or new
+`Airs/Arith/InvWitness.lean`). One axiom encoding the non-zero-divisor
+witness's correctness; specialization retires the `divisor ≠ 0`
+hypothesis from signed DIV/REM.
+
+**Effort.** ~80 lines.
+
+### Track L — Item 4 fan-out (bus-derived input across all metaplans)
+
+Carried from Phase 5 item 4. The `AddInput_of_bus` pattern is
+demonstrated for ADD; fan out to all 46 remaining `_from_bus` companion
+theorems.
+
+**Per-shape constructors.**
+- `RTYPEInput_of_bus` (covers SUB, AND, OR, XOR, SLT, SLTU, SLL, SRL, SRA — 9 opcodes)
+- `ITYPEInput_of_bus` (ADDI, ANDI, ORI, XORI, SLTI, SLTIU, SLLI, SRLI, SRAI — 9)
+- `RTYPEWInput_of_bus` (ADDW, SUBW, SLLW, SRLW, SRAW — 5)
+- `ITYPEWInput_of_bus` (ADDIW, SLLIW, SRLIW, SRAIW — 4)
+- `BranchInput_of_bus` (BEQ, BNE, BLT, BGE, BLTU, BGEU — 6)
+- `JumpInput_of_bus` (JAL, JALR — 2; LUI, AUIPC use a `UTYPEInput_of_bus`)
+- `LoadInput_of_bus` (LB, LH, LW, LD, LBU, LHU, LWU — 7)
+- `StoreInput_of_bus` (SB, SH, SW, SD — 4)
+- `MulInput_of_bus`, `DivInput_of_bus` (5 + 4 = 9)
+
+After fan-out, every `_from_bus` companion drops the value-level match
+hyps via `rfl`, leaving only ptr-match scenario-binding hypotheses.
+
+**Effort.** Mechanical via Python generator (analogue of
+`/tmp/gen_from_bus_alu.py`). ~50 lines per opcode × 46 ≈ 2300 lines.
+
+### Track M — V14 parity audit
+
+Documentation task — side-by-side comparison of representative
+metaplan theorems against openvm-fv's analogues:
+
+- `equiv_MUL_metaplan_from_bus` vs openvm-fv `OpenvmFv/Equivalence/Mul.lean:540-597`
+- `equiv_BEQ_metaplan_from_bus` vs openvm-fv branch
+- `equiv_JAL_metaplan_from_bus` vs openvm-fv jump
+- `equiv_LD_metaplan_from_bus` vs openvm-fv load
+- `equiv_SD_metaplan_from_bus` vs openvm-fv store
+
+Output: a new section in `docs/fv/openvm-fv-parity.md` with each pair's
+parameter-list diff and signature-shape comparison. Confirms Phase 5's
+"structural parity reached" claim.
+
+**Effort.** ~200-line prose document.
+
+### Verification gates (V15+, extending V1–V14)
+
+- **V15.** All RV64IM opcodes from `act4-full`'s SP1 suite present in
+  `tools/zisk-fv-lint/uniformity-lint.sh` roster — minus AUIPC alias
+  collision and NOP. Lint script: cross-reference uniformity roster
+  against an authoritative RV64IM opcode list, expect exact match.
+- **V16.** Zero scope-honest `(h_na, h_nb, h_np, h_nr)` parameters on
+  any Arith compositional lemma — both unsigned (closed Phase 5 K0) and
+  signed (closed K1).
+- **V17.** Zero scope-honest `range_cd_in_range` / `inv_sum_all_bs_*`
+  parameters on signed DIV/REM theorems (K2, K3).
+- **V18.** Every `equiv_<OP>_metaplan_from_bus` companion has zero
+  value-level match hyps (only ptr-matches remain). Lint:
+  `grep '_val :' Equivalence/*.lean` expected to find only ptr-match
+  hypotheses.
+
+### Effort summary
+
+| Track | Items | Estimated lines |
+|---|---|---|
+| J — coverage | FENCE + 4 *W ops | ~800 |
+| K — Arith lookups | signed witnesses + range_cd + inv_sum | ~530 |
+| L — fan-out | 46 _from_bus + 4 from-J | ~2300 |
+| M — parity audit | docs only | ~200 |
+
+Trust-base trajectory: 64 → ~67 axioms (J adds 4-5 transpile axioms +
+0-1 arith_table axioms; K1 adds 1 signed-mode arith_table axiom; K2
+adds 1 range-table axiom; K3 adds 1 inv-witness axiom; minus 4
+scope-honest parameters retired per opcode, net trust surface
+narrows substantially).
+
+### Closes residuals from prior phases
+
+- Phase 5 §3.1 ("arith_table permutation lookup `(opcode, mode) → (na, nb, np, nr)` mapping remains a parameter") — **K1**.
+- Phase 5 §3.2 item 1 (sign-preprocessing — partially closed for unsigned only) — **K1**.
+- Phase 5 §3.2 item 2 (range_cd) — **K2**.
+- Phase 5 §3.2 item 3 (inv_sum_all_bs) — **K3**.
+- Phase 5 §3.4 ("fan-out of `AddInput_of_bus` pattern to other 46 metaplan theorems") — **L**.
+
+### Out-of-scope (still deferred)
+
+- **Independent Rust-side audit of the 58 transpile axioms** vs.
+  `vendor/zisk/core/src/riscv2zisk_context.rs`. Per REPORT §2 this is
+  the natural project-completion step but external to the Lean
+  development.
+- **Platform axioms P1–P4.** Retire only if ZisK's execution model
+  changes.
+- **Sail spec / LeanRV64D inherited axioms** — trusted inputs.
+- **Zicclsm, precompiles (Keccak, SHA256), ZisK custom internal ops** —
+  scope-honestly excluded per CLAUDE.md.
