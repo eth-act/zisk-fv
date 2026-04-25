@@ -231,15 +231,24 @@ V12 coverage summary: 58/58 metaplan theorems are V12-compliant —
 47 via `_from_bus` companions, 11 trivially via pre-Phase-4.5 monolithic
 `h_bus_execute_matches_sail` pattern (no `h_input_*` parameters ever).
 
-**Phase 5 item 4 — bus-derived input pilot** (commit `0c8658d`). The
-`AddInput_of_bus` constructor + `equiv_ADD_metaplan_bus_self` companion
-demonstrate that with `input := AddInput_of_bus e0 e1 e2 exec_row`,
-the four value-level match hypotheses (`h_r1_val`, `h_r2_val`, `h_pc`,
-`h_rd_idx`) become definitionally `rfl` and drop from the signature.
-Only the three ptr-match hypotheses remain — these are inherent
-scenario-binding conditions tying Sail instruction operands to
-bus-emitted register pointers. Fan-out to the other 46 metaplan
-theorems is mechanical follow-up.
+**Phase 5 item 4 — bus-derived input fan-out** (commits `0c8658d`,
+`a08662b`, `2a25b0a`, `57cbb6d`, `1359d37`, `abc48ac`). The
+`<Op>Input_of_bus` constructor + `equiv_<OP>_metaplan_bus_self`
+companion pattern is now shipped for **44 of 52** `_from_bus`
+companions, covering:
+- All 41 ALU shape-(a) opcodes (RTYPE + ITYPE + W-variants + MUL
+  family + shift-imm)
+- 3 of 4 Jump/UTYPE (JAL, LUI, AUIPC; JALR pending due to privileged-
+  register extras)
+
+With `input := <Op>Input_of_bus(...)`, the value-level match
+hypotheses (`h_r1_val`, `h_r2_val`, `h_pc`, `h_rd_idx`) become
+definitionally `rfl` and drop from the signature. Only the
+ptr-match hypotheses remain — these are inherent scenario-binding
+conditions tying Sail instruction operands to bus-emitted register
+pointers. **Remaining 8**: 6 branches + Fence (shape (b) empty memory
+bus; only `h_pc` collapses, marginal benefit) and JALR (shape (c)
+with 3 privileged-register hyps; per-opcode complexity).
 
 ## 4. Known limitations (explicitly out of scope)
 
