@@ -228,4 +228,54 @@ theorem equiv_BEQ_metaplan_from_bus
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
   exact equiv_BEQ_metaplan state beq_input imm r1 r2 misa_val exec_row h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
+
+/-- Constructor: build a `PureSpec.BeqInput` from exec_row PC + free operand values. -/
+def BeqInput_of_bus
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (imm : BitVec 13)
+    (r1_val r2_val : BitVec 64) :
+    PureSpec.BeqInput :=
+  { imm := imm
+    r1_val := r1_val
+    r2_val := r2_val
+    PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
+
+/-- **Item 4 closure for BEQ.** Bus-derived input form. -/
+theorem equiv_BEQ_metaplan_bus_self
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (imm : BitVec 13)
+    (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (r1_val r2_val : BitVec 64)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok (BeqInput_of_bus exec_row imm r1_val r2_val).r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok (BeqInput_of_bus exec_row imm r1_val r2_val).r2_val state)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    -- Phase 5 V12: bus precondition + PC match (replaces h_input_pc).
+    (h_bus : (bus_effect exec_row [] state).1)
+    -- Structural bus hypotheses (Phase 2.5 D3): derived from a PIL-level
+    -- bus-emission spec in Phase 4.
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BEQ_pure (BeqInput_of_bus exec_row imm r1_val r2_val)).nextPC)
+    (h_not_throws : (PureSpec.execute_BEQ_pure (BeqInput_of_bus exec_row imm r1_val r2_val)).throws = false)
+    (h_success : (PureSpec.execute_BEQ_pure (BeqInput_of_bus exec_row imm r1_val r2_val)).success = true) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BEQ)) state
+      = (bus_effect exec_row [] state).2
+
+    := by
+  exact equiv_BEQ_metaplan_from_bus state
+    (BeqInput_of_bus exec_row imm r1_val r2_val) imm r1 r2 misa_val exec_row
+    rfl h_input_r1 h_input_r2
+    h_input_misa h_misa_c 
+    h_bus rfl
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_not_throws h_success
+
 end ZiskFv.Equivalence.BranchEqual

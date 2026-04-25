@@ -304,4 +304,67 @@ theorem equiv_JALR_metaplan_from_bus
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_rd_mult h_rd_as h_success h_nextPC_option h_rd_idx h_rd_val
 
+/-- Constructor: build a `PureSpec.JalrInput` from bus + imm + rs1_val.
+    rs1 read goes via the operation bus (not memory bus), so rs1_val
+    stays as a free parameter. -/
+def JalrInput_of_bus
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (imm : BitVec 12) (rs1_val : BitVec 64) : PureSpec.JalrInput :=
+  { imm := imm
+    rs1_val := rs1_val
+    rd := Transpiler.wrap_to_regidx e_rd.ptr
+    PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
+
+/-- **Item 4 closure for JALR.** Bus-derived input form: drops
+    `h_input_imm`, `h_pc`, `h_rd_idx` to `rfl` via `JalrInput_of_bus`.
+    `h_input_rs1` stays (rs1 routed via op bus); other privileged-state
+    hyps stay. -/
+theorem equiv_JALR_metaplan_bus_self
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (imm : BitVec 12)
+    (rs1 rd : regidx)
+    (rs1_val : BitVec 64)
+    (misa_val : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (nextPC_val : BitVec 64)
+    (h_input_rs1 : read_xreg (regidx_to_fin rs1) state
+      = EStateM.Result.ok rs1_val state)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_cur_privilege : Sail.readReg Register.cur_privilege state
+      = EStateM.Result.ok Privilege.Machine state)
+    (h_mseccfg : Sail.readReg Register.mseccfg state
+      = EStateM.Result.ok mseccfg state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_success :
+      (PureSpec.execute_JALR_pure (JalrInput_of_bus e_rd exec_row imm rs1_val)).success = true)
+    (h_nextPC_option :
+      (PureSpec.execute_JALR_pure (JalrInput_of_bus e_rd exec_row imm rs1_val)).nextPC = .some nextPC_val)
+    (h_bus : (bus_effect exec_row [e_rd] state).1)
+    (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_rd_val :
+      U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
+                  e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
+      = (JalrInput_of_bus e_rd exec_row imm rs1_val).PC + 4) :
+    (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
+      = (bus_effect exec_row [e_rd] state).2 := by
+  exact equiv_JALR_metaplan_from_bus state
+    (JalrInput_of_bus e_rd exec_row imm rs1_val)
+    imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val
+    rfl h_input_rs1 h_input_misa h_misa_c h_cur_privilege h_mseccfg
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_rd_mult h_rd_as h_success h_nextPC_option
+    h_bus rfl h_rd_ptr rfl h_rd_val
+
 end ZiskFv.Equivalence.Jalr

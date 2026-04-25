@@ -131,4 +131,27 @@ theorem equiv_FENCE_metaplan_from_bus
   exact equiv_FENCE_metaplan state fence_input fm pred succ rs rd
     exec_row h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
 
+/-- Constructor: build a `PureSpec.FenceInput` from exec_row PC. -/
+def FenceInput_of_bus
+    (exec_row : List (Interaction.ExecutionBusEntry FGL)) : PureSpec.FenceInput :=
+  { PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
+
+/-- **Item 4 closure for FENCE.** Bus-derived input form. -/
+theorem equiv_FENCE_metaplan_bus_self
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (fm pred succ : BitVec 4) (rs rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_FENCE_pure (FenceInput_of_bus exec_row)).nextPC)
+    (h_bus : (bus_effect exec_row [] state).1) :
+    execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
+      = (bus_effect exec_row [] state).2 :=
+  equiv_FENCE_metaplan_from_bus state (FenceInput_of_bus exec_row)
+    fm pred succ rs rd exec_row
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_bus rfl
+
 end ZiskFv.Equivalence.Fence
