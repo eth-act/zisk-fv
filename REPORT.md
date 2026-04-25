@@ -4,14 +4,16 @@
 [official Sail RISC-V specification](https://github.com/riscv/sail-riscv),
 restricted to **RV64IM** (base integer + M extension).
 
-**Status.** `lake build` green (8133 jobs, 0 errors, 0 `sorry`). **63/63
+**Status.** `lake build` green (8134 jobs, 0 errors, 0 `sorry`). **63/63
 RV64IM opcodes proved** (the ECALL/EBREAK system instructions are out
 of scope per CLAUDE.md; NOP is encoded as `ADDI x0, x0, 0` and is
-covered by `equiv_ADDI_metaplan` parametrically). Trust base: **76
+covered by `equiv_ADDI_metaplan` parametrically). Trust base: **78
 axioms** (63 transpile + 4 platform + 2 arith_table + 2 arith_range
-+ 1 fence Sail-eq + 4 *W Sail-eq — Phase 5 follow-on additions),
-all catalogued with closure paths in
-[`docs/fv/trusted-base.md`](docs/fv/trusted-base.md).
++ 1 fence Sail-eq + 4 *W Sail-eq + 2 plookup-soundness — Phase 6
+Track P additions; the 2 plookup-soundness axioms factor table-data
+correctness from protocol soundness — see
+[`docs/fv/trusted-base.md`](docs/fv/trusted-base.md) for the full
+catalog and Phase 6 closure plan).
 Phase 4.5 shipped in two sessions (2026-04-23 / 2026-04-24): Arith
 carry-chain closure (unsigned + signed), Main↔Arith field composition,
 field→BitVec 64 lift (Bridge 3), full `h_rd_match` decomposition for

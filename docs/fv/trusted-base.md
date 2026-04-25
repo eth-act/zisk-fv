@@ -1219,3 +1219,77 @@ soundness).
 
 **Items 1, 2, 3, 5 are the biggest confidence wins.** Items 6–8
 are cleanup or out-of-scope for "RV64IM correctness."
+
+---
+
+## Phase 6 — trust-base closure (in progress 2026-04-25)
+
+Implementing the closure plan from
+`/home/cody/.claude/plans/squishy-strolling-catmull.md`. Six tracks:
+N (h_rd_val composition), O (PIL bus-emission extraction), P (lookup
+table data), Q (op-bus effect), R (Sail-eq retirement), T
+(not-happy-path coverage).
+
+### Track P shipped (2026-04-25, commit `597c6f7`)
+
+**P1.** Extracted 74-row arith_table data from
+`vendor/zisk/state-machines/arith/src/arith_table_data.rs::ARITH_TABLE`
+into `ZiskFv/Extraction/ArithTable.lean`. Each row decoded with the
+12-bit FLAGS column unpacked per `arith_table.pil:209-211`
+(m32, div, na, nb, np, nr, sext, div_by_zero, div_overflow,
+main_mul, main_div, signed). Table content now verifiable by
+inspection against the Rust source.
+
+**P2.** Added 2 plookup-soundness axioms in
+`ZiskFv/Airs/Arith/ArithTable.lean`:
+- `arith_table_lookup_sound_mul` — every `Valid_ArithMul` row's
+  `(op, m32, na, nb, np, nr)` tuple matches some row in
+  `arith_table`.
+- `arith_table_lookup_sound_div` — same for `Valid_ArithDiv`.
+
+These are the irreducible protocol-soundness statements (standard
+plookup / logUp from the ZK literature; Lean formalization of the
+underlying protocol is out of scope per the SNARK out-of-scope
+declaration).
+
+**P3 follow-up.** The deprecated specialized witness axioms
+(`arith_table_row_witness_unsigned`, `_unsigned_div`) remain in place;
+their consumers still compile. Retirement requires rederiving
+`arith_table_mulu_witnesses` etc as theorems via 74-row case
+analysis on the extracted data — mechanical but ~100-200 lines per
+opcode. Once shipped, the 2 deprecated axioms retire and the trust
+base returns to 76.
+
+**Trust-base impact (current):** 76 → 78 axioms (+2 plookup
+soundness; deprecated axioms remain during transition). Once P3
+completes: 78 → 76. Net delta is zero in axiom count but
+*content* improves substantially: table-data correctness becomes
+verifiable by inspection rather than bundled into the witness
+axiom.
+
+### Track R deferred
+
+Track R (Sail-equivalence axiom retirement) was started but
+revealed an unexpected complication: `execute_FENCE_pure_equiv_axiom`
+implicitly assumes `cur_privilege ∈ {Machine, Supervisor, User}`
+because Sail's `is_fiom_active` (`SysRegs.lean:1102`) calls
+`internal_error` for VirtualUser/VirtualSupervisor privileges. The
+axiom is currently overstated for adversarial states. Retirement
+requires either:
+- Adding a `cur_privilege` hypothesis to `equiv_FENCE_metaplan` (and
+  the 4 `*W` divides analogously), OR
+- Strengthening the axiom statement to assume the privilege bound.
+
+Either path is a real semantic refinement, not just "lazy proof"
+cleanup. Deferred pending a decision on the cleaner factor.
+
+### Tracks N, O, Q, T pending
+
+- **N (h_rd_val composition)** — blocked on Track O for the
+  bus-byte-to-Main-column connection. Re-evaluable after O ships.
+- **O (PIL bus-emission extraction)** — substantial Rust extractor
+  extension + Lean derivation lemmas. Multi-session.
+- **Q (op-bus effect)** — substantial new infrastructure. ~2000 lines.
+- **T (not-happy-path)** — completeness extension. Needs Sail
+  fault-path semantics modeled (likely overlaps with R's
+  privilege-condition refinement).
