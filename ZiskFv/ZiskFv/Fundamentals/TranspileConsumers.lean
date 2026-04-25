@@ -62,6 +62,15 @@ theorem transpile_JAL_consumer
   fun h_p1 h_p2 =>
     (transpile_JAL m r_main _rd imm_offset _state h_p1 h_p2).1
 
+/-- V13 consumer-witness for `transpile_FENCE`. Axiom-load-bearing via
+    first-conjunct extraction. -/
+theorem transpile_FENCE_consumer
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (_state : RV64State)
+    : m.is_external_op r_main = 0 → m.op r_main = OP_FLAG → m.m32 r_main = 0 :=
+  fun h_p1 h_p2 =>
+    (transpile_FENCE m r_main _state h_p1 h_p2).1
+
 /-- V13 consumer-witness for `transpile_JALR`. Axiom-load-bearing via
     first-conjunct extraction. -/
 theorem transpile_JALR_consumer

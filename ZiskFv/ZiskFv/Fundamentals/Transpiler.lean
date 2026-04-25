@@ -381,6 +381,44 @@ axiom transpile_JAL :
       ∧ m.b_0 r_main = 0
       ∧ m.b_1 r_main = 0
 
+/-- The axiomatic RV64 → Zisk row contract for FENCE (Phase 5
+    follow-on Track J1).
+
+    Per `vendor/zisk/core/src/riscv2zisk_context.rs:228` an RV64 FENCE
+    transpiles via `self.nop(...)` (line 772) — the same routing as a
+    pseudo-NOP. The emitted Zisk microinstruction sets:
+
+    * `op = OP_FLAG = 0` (Internal op);
+    * `is_external_op = 0` — no operation-bus hop;
+    * `src_a("imm", 0, false)` → `a_0 = a_1 = 0`;
+    * `src_b("imm", 0, false)` → `b_0 = b_1 = 0`;
+    * `j(4, 4)` → `jmp_offset1 = jmp_offset2 = 4`;
+    * No `set_pc()` / `store_pc()` / `store(...)` calls — `set_pc = 0`,
+      `store_pc = 0`. With `flag = 1` (forced by `op_flag`'s
+      output) and `set_pc = 0`, the PC handshake yields
+      `next_pc = pc + jmp_offset1 = pc + 4` — the fall-through case
+      (since `flag = 1` selects `jmp_offset1`); but with both
+      offsets = 4 the PC always advances by 4 regardless of flag.
+    * `m32 = 0`.
+
+    **Trust basis.** Pure spec of `fn nop` in `riscv2zisk_context.rs`
+    at line 772, which the `"fence"` arm at line 228 invokes. Same
+    routing covers FENCE.I (line 229). -/
+axiom transpile_FENCE :
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_state : RV64State),
+      m.is_external_op r_main = 0 →
+      m.op r_main = OP_FLAG →
+        m.m32 r_main = 0
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = 0
+      ∧ m.a_1 r_main = 0
+      ∧ m.b_0 r_main = 0
+      ∧ m.b_1 r_main = 0
+
 /-- The axiomatic RV64 → Zisk row contract for JALR (jump-and-link-register,
     Phase 2.5 D4 archetype validation).
 
