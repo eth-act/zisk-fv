@@ -2,6 +2,7 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Fundamentals.TranspileConsumers
 import ZiskFv.Airs.Arith.ArithTable
+import ZiskFv.Airs.Arith.ArithRangeTable
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.GoldilocksBridge
 import ZiskFv.RV64D.BusEffect
