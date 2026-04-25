@@ -285,4 +285,52 @@ theorem equiv_JAL_metaplan_from_bus
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_rd_mult h_rd_as
     h_not_throws h_success h_nextPC_option h_rd_idx h_rd_val
 
+/-- Constructor: build a `PureSpec.JalInput` from bus + imm. -/
+def JalInput_of_bus
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (imm : BitVec 21) : PureSpec.JalInput :=
+  { imm := imm
+    rd := Transpiler.wrap_to_regidx e_rd.ptr
+    PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
+
+/-- **Item 4 closure for JAL.** Bus-derived input form: drops
+    `h_input_imm`, `h_pc`, `h_rd_idx` to `rfl`. -/
+theorem equiv_JAL_metaplan_bus_self
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (imm : BitVec 21)
+    (rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (nextPC_val : BitVec 64)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_not_throws : (PureSpec.execute_JAL_pure (JalInput_of_bus e_rd exec_row imm)).throws = false)
+    (h_success : (PureSpec.execute_JAL_pure (JalInput_of_bus e_rd exec_row imm)).success = true)
+    (h_nextPC_option :
+      (PureSpec.execute_JAL_pure (JalInput_of_bus e_rd exec_row imm)).nextPC = .some nextPC_val)
+    (h_bus : (bus_effect exec_row [e_rd] state).1)
+    (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_rd_val :
+      U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
+                  e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
+      = (JalInput_of_bus e_rd exec_row imm).PC + 4) :
+    execute_instruction (instruction.JAL (imm, rd)) state
+      = (bus_effect exec_row [e_rd] state).2 := by
+  exact equiv_JAL_metaplan_from_bus state
+    (JalInput_of_bus e_rd exec_row imm) imm rd misa_val
+    exec_row e_rd nextPC_val
+    rfl h_input_misa h_misa_c
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_rd_mult h_rd_as h_not_throws h_success h_nextPC_option
+    h_bus rfl h_rd_ptr rfl h_rd_val
+
 end ZiskFv.Equivalence.Jal

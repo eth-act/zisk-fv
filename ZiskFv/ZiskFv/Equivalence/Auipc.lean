@@ -202,4 +202,47 @@ theorem equiv_AUIPC_metaplan_from_bus
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_rd_mult h_rd_as h_nextPC_eq h_rd_idx h_rd_val
 
+/-- Constructor: build a `PureSpec.AuipcInput` from bus + imm. -/
+def AuipcInput_of_bus
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (imm : BitVec 20) : PureSpec.AuipcInput :=
+  { imm := imm
+    rd := Transpiler.wrap_to_regidx e_rd.ptr
+    PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
+
+/-- **Item 4 closure for AUIPC.** Bus-derived input form. -/
+theorem equiv_AUIPC_metaplan_bus_self
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (imm : BitVec 20)
+    (rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (nextPC_val : BitVec 64)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_nextPC_eq :
+      (PureSpec.execute_AUIPC_pure (AuipcInput_of_bus e_rd exec_row imm)).nextPC = nextPC_val)
+    (h_bus : (bus_effect exec_row [e_rd] state).1)
+    (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_rd_val :
+      U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
+                  e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
+      = (AuipcInput_of_bus e_rd exec_row imm).PC
+        + BitVec.signExtend 64 ((AuipcInput_of_bus e_rd exec_row imm).imm ++ 0#12)) :
+    execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
+      = (bus_effect exec_row [e_rd] state).2 := by
+  exact equiv_AUIPC_metaplan_from_bus state
+    (AuipcInput_of_bus e_rd exec_row imm) imm rd
+    exec_row e_rd nextPC_val
+    rfl
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_rd_mult h_rd_as h_nextPC_eq
+    h_bus rfl h_rd_ptr rfl h_rd_val
+
 end ZiskFv.Equivalence.Auipc
