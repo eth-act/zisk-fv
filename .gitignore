@@ -13,3 +13,6 @@
 # do not commit.
 /openvm-fv
 .claude/
+
+# Git worktrees for isolated agent work.
+.worktrees/
