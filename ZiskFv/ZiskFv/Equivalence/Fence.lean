@@ -9,6 +9,8 @@ import ZiskFv.Airs.BusEmission
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.RV64D.fence
 import ZiskFv.RV64D.BusEffect
+import ZiskFv.Airs.OpBusEffect
+import ZiskFv.Airs.OpBusHypotheses
 
 /-!
 End-to-end theorem for RV64I FENCE (Phase 5 follow-on Track J1).
@@ -58,19 +60,27 @@ theorem equiv_FENCE
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 FENCE reduces to `Sail.writeReg Register.nextPC (PC + 4) ;
-    pure RETIRE_SUCCESS`. Wraps `PureSpec.execute_FENCE_pure_equiv`. -/
+    pure RETIRE_SUCCESS`. Wraps `PureSpec.execute_FENCE_pure_equiv`.
+
+    The M-mode privilege hypothesis is required to collapse Sail's
+    `is_fiom_active` to the constant `false`. ZisK targets RV64IM
+    Machine-mode only, so this is part of the trusted scope (see
+    `RISC_V_assumptions` A1.1 in `RV64D/Auxiliaries.lean`). -/
 theorem equiv_FENCE_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (fence_input : PureSpec.FenceInput)
     (fm pred succ : BitVec 4) (rs rd : regidx)
-    (h_input_pc : state.regs.get? Register.PC = .some fence_input.PC) :
+    (h_input_pc : state.regs.get? Register.PC = .some fence_input.PC)
+    (h_input_priv :
+      state.regs.get? Register.cur_privilege = .some Privilege.Machine) :
     execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state =
     let fence_output := PureSpec.execute_FENCE_pure fence_input
     (do
       Sail.writeReg Register.nextPC fence_output.nextPC
       pure (ExecutionResult.Retire_Success ())
     ) state :=
-  PureSpec.execute_FENCE_pure_equiv fence_input fm pred succ rs rd h_input_pc
+  PureSpec.execute_FENCE_pure_equiv fence_input fm pred succ rs rd
+    h_input_pc h_input_priv
 
 /-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64
     FENCE equals `(bus_effect exec_row [] state).2`. Composes
@@ -82,6 +92,8 @@ theorem equiv_FENCE_metaplan
     (fm pred succ : BitVec 4) (rs rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (h_input_pc : state.regs.get? Register.PC = .some fence_input.PC)
+    (h_input_priv :
+      state.regs.get? Register.cur_privilege = .some Privilege.Machine)
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -90,7 +102,8 @@ theorem equiv_FENCE_metaplan
         = (PureSpec.execute_FENCE_pure fence_input).nextPC) :
     execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
       = (bus_effect exec_row [] state).2 := by
-  rw [equiv_FENCE_sail state fence_input fm pred succ rs rd h_input_pc]
+  rw [equiv_FENCE_sail state fence_input fm pred succ rs rd h_input_pc
+        h_input_priv]
   symm
   -- Use bus_effect_matches_sail_beq with throws=false, success=true.
   -- The beq_PC / beq_imm parameters are unused under those flags;
@@ -113,6 +126,8 @@ theorem equiv_FENCE_metaplan_from_bus
     (fence_input : PureSpec.FenceInput)
     (fm pred succ : BitVec 4) (rs rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_priv :
+      state.regs.get? Register.cur_privilege = .some Privilege.Machine)
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -129,7 +144,8 @@ theorem equiv_FENCE_metaplan_from_bus
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
   exact equiv_FENCE_metaplan state fence_input fm pred succ rs rd
-    exec_row h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    exec_row h_input_pc h_input_priv h_exec_len h_e0_mult h_e1_mult
+    h_nextPC_matches
 
 /-- Constructor: build a `PureSpec.FenceInput` from exec_row PC. -/
 def FenceInput_of_bus
@@ -141,6 +157,8 @@ theorem equiv_FENCE_metaplan_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (fm pred succ : BitVec 4) (rs rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_priv :
+      state.regs.get? Register.cur_privilege = .some Privilege.Machine)
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -151,7 +169,47 @@ theorem equiv_FENCE_metaplan_bus_self
     execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
       = (bus_effect exec_row [] state).2 :=
   equiv_FENCE_metaplan_from_bus state (FenceInput_of_bus exec_row)
-    fm pred succ rs rd exec_row
+    fm pred succ rs rd exec_row h_input_priv
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_bus rfl
+
+/-- **Track Q POC for FENCE.** Operation-bus companion to
+    `equiv_FENCE_metaplan_from_bus`.
+
+    FENCE has no rs1/rs2 reads at the Sail level (its body is a no-op
+    barrier composition) and no operation-bus emission at the Main AIR
+    level (`is_external_op = 0`, all `a/b` lanes pinned to zero by
+    `transpile_FENCE`). The op-bus precondition is therefore vacuously
+    `True`: any caller can supply an empty op-bus list, whose
+    `op_bus_effect`-`.1` is `True` by definition.
+
+    We expose the `_op_bus` companion shape uniformly with the branch
+    family for caller ergonomics — the Track Q closure becomes
+    "every shape-(b) opcode ships an `_op_bus` form" rather than
+    "every shape-(b) opcode ships an `_op_bus` form, except FENCE." -/
+theorem equiv_FENCE_metaplan_op_bus
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (fence_input : PureSpec.FenceInput)
+    (fm pred succ : BitVec 4) (rs rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (op_bus : List (ZiskFv.Airs.OperationBus.OperationBusEntry FGL))
+    -- Op-bus precondition (vacuously discharged when `op_bus = []`).
+    -- `regidx_to_fin rs` is the natural choice for the rs1 slot of any
+    -- entry, but FENCE's lanes are all zero so the equality is trivial.
+    (_h_op_bus : (ZiskFv.Airs.OpBusEffect.op_bus_effect op_bus state
+                    (regidx_to_fin rs) (regidx_to_fin rs)).1)
+    (h_input_priv :
+      state.regs.get? Register.cur_privilege = .some Privilege.Machine)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_FENCE_pure fence_input).nextPC)
+    (h_bus : (bus_effect exec_row [] state).1)
+    (h_pc : fence_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val) :
+    execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
+      = (bus_effect exec_row [] state).2 :=
+  equiv_FENCE_metaplan_from_bus state fence_input fm pred succ rs rd exec_row
+    h_input_priv h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_bus h_pc
 
 end ZiskFv.Equivalence.Fence
