@@ -105,17 +105,19 @@ Then rewrite `Airs/MemoryBus/LaneMatch.lean`'s three theorems to
 derive lane-match from slot-match (replacing the trivial `.symm`
 proofs with proper bus-shape compositions).
 
-**Known residual gap:** `register_write_lanes_match` has **no F-typed
-Main bus emission** — destination-write isn't directly emitted; ZisK's
-memory protocol consistency-checks via the *next* read. Two options:
+**Known residual gap (writes side):** `register_write_lanes_match`
+has **no F-typed Main bus emission** — destination-write isn't
+directly emitted; ZisK's memory protocol consistency-checks via the
+*next* read's `prev_value` field. Closing it requires the Mem AIR
++ a multi-row argument.
 
-- **(c)** Document the gap in `trusted-base.md` and keep
-  `register_write_lanes_match_of_bus_emission` at Layer 1 (structural).
-- **(d)** Build a multi-row "next-read consumes our write" argument
-  using the Mem AIR. This is a much bigger lift — needs Mem AIR
-  extraction (which is `finishing3` territory, not finishing2).
+That work is **explicitly scoped to `finishing3.md` S4** — it
+needs the Mem AIR extraction (which finishing3 S1 ships) and is
+the natural closing act for K2 once Mem is available.
 
-Default to (c). Track (d) explicitly as deferred.
+Within this branch (`finishing2`), the writes-side theorem stays at
+Layer 1 (the structural form `2c627ac` shipped). Document the
+deferral in `docs/fv/track-n-traps.md`.
 
 ### S4. Phase 2 — per-shape derivation lemmas
 

@@ -60,9 +60,18 @@ But two complications block "close K2 properly" inside this branch:
    involving the Mem AIR, or accepting Layer 1 trust with a documented
    gap.
 
-→ **K2 closure moves to `finishing2.md` alongside the unextracted-AIR
-work.** This branch leaves K2 at Layer 1 (structural unfolding) and
-documents the gap.
+→ **K2 closure spans two later phases:**
+- The reads-side theorems (rs1, rs2) close at Layer 2 in
+  `finishing2.md` S3 (against the F-typed extracted Main memory-bus
+  emissions).
+- The writes-side theorem closes at Layer 2 in `finishing3.md` S4,
+  once the Mem AIR is extracted to support the multi-row argument.
+
+This branch leaves all three K2 theorems at Layer 1 (structural
+unfolding, commit `2c627ac`) and documents the gap. Phase 2
+derivations in this branch consume K2 as-is; trust on
+`register_*_lanes_match` propagates upward, exactly as the
+operation-bus `matches_entry` does today.
 
 ## What's left in this branch
 
