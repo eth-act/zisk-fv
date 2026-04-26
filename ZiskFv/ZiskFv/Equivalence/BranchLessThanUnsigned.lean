@@ -10,6 +10,8 @@ import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.bltu
 import ZiskFv.RV64D.BusEffect
 import ZiskFv.Airs.BusHypotheses
+import ZiskFv.Airs.OpBusEffect
+import ZiskFv.Airs.OpBusHypotheses
 
 /-!
 End-to-end theorem for RV64 BLTU (Phase 3A B3). Combines:
@@ -199,5 +201,49 @@ theorem equiv_BLTU_metaplan_bus_self
     h_bus rfl
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_not_throws h_success
+
+/-- **Track Q POC for BLTU.** Operation-bus companion to
+    `equiv_BLTU_metaplan_from_bus`. Mirrors `equiv_BEQ_metaplan_op_bus`. -/
+theorem equiv_BLTU_metaplan_op_bus
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (bltu_input : PureSpec.BltuInput)
+    (imm : BitVec 13)
+    (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (op_entry : OperationBusEntry FGL)
+    (h_input_imm : bltu_input.imm = imm)
+    (h_op_mult : op_entry.multiplicity = 1)
+    (h_op_bus : (ZiskFv.Airs.OpBusEffect.op_bus_effect [op_entry] state
+                  (regidx_to_fin r1) (regidx_to_fin r2)).1)
+    (h_a_match :
+      bltu_input.r1_val = Goldilocks.lanes_to_bv64 op_entry.a_lo op_entry.a_hi)
+    (h_b_match :
+      bltu_input.r2_val = Goldilocks.lanes_to_bv64 op_entry.b_lo op_entry.b_hi)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_bus : (bus_effect exec_row [] state).1)
+    (h_pc : bltu_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BLTU_pure bltu_input).nextPC)
+    (h_not_throws : (PureSpec.execute_BLTU_pure bltu_input).throws = false)
+    (h_success : (PureSpec.execute_BLTU_pure bltu_input).success = true) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLTU)) state
+      = (bus_effect exec_row [] state).2 := by
+  have h_reads := ZiskFv.Airs.OpBusHypotheses.chip_op_bus_hyps_branch
+    state op_entry (regidx_to_fin r1) (regidx_to_fin r2) h_op_mult h_op_bus
+  obtain ⟨h_r1_read, h_r2_read⟩ := h_reads
+  have h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok bltu_input.r1_val state := by rw [h_a_match]; exact h_r1_read
+  have h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok bltu_input.r2_val state := by rw [h_b_match]; exact h_r2_read
+  exact equiv_BLTU_metaplan_from_bus state bltu_input imm r1 r2 misa_val exec_row
+    h_input_imm h_input_r1 h_input_r2 h_input_misa h_misa_c
+    h_bus h_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
 end ZiskFv.Equivalence.BranchLessThanUnsigned

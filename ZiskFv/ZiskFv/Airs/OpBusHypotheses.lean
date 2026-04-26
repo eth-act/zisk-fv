@@ -80,4 +80,33 @@ theorem chip_op_bus_hyps_branch
   rw [List.foldl_cons, List.foldl_nil, if_pos h_mult] at h_op_bus
   exact ⟨h_op_bus.2.1, h_op_bus.2.2⟩
 
+/-- **JALR shape — single op-bus entry, single rs1 read on b-lanes.**
+
+    JALR's `transpile_JALR` axiom pins `m.b_0 = lane_lo (xreg rs1)`
+    and `m.b_1 = lane_hi (xreg rs1)` — the JALR row carries its single
+    source register on the `b` lanes (rather than `a` as the branch
+    family does). Modelling the op-bus emission analogously, this
+    lemma extracts the `read_xreg rs1` equality from the `b`-lane half
+    of the op-bus precondition.
+
+    Caller convention: invoke with `rs1` supplied as both the `r1`
+    and `r2` arguments to `op_bus_effect` (the `a`-side equality is
+    discarded; the `b`-side equality is the JALR rs1 read). This
+    re-uses the existing branch-shape `op_bus_effect` definition
+    without adding a new variant.
+
+    The `BitVec 64` value on the right of the equality is reassembled
+    from the bus's `b_lo`/`b_hi` lane fields via `lanes_to_bv64`,
+    matching `transpile_JALR`'s `b_0`/`b_1` pinning. -/
+theorem chip_op_bus_hyps_jalr
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (entry : OperationBusEntry FGL)
+    (rs1 : Fin 32)
+    (h_mult : entry.multiplicity = 1)
+    (h_op_bus : (op_bus_effect [entry] state rs1 rs1).1) :
+    read_xreg rs1 state
+        = EStateM.Result.ok
+            (Goldilocks.lanes_to_bv64 entry.b_lo entry.b_hi) state :=
+  (chip_op_bus_hyps_branch state entry rs1 rs1 h_mult h_op_bus).2
+
 end ZiskFv.Airs.OpBusHypotheses

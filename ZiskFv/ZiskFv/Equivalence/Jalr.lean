@@ -10,6 +10,8 @@ import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.jalr
 import ZiskFv.RV64D.BusEffect
 import ZiskFv.Airs.BusHypotheses
+import ZiskFv.Airs.OpBusEffect
+import ZiskFv.Airs.OpBusHypotheses
 
 /-!
 End-to-end theorem for RV64 JALR (Phase 2.5 D4 archetype-macro
@@ -366,5 +368,80 @@ theorem equiv_JALR_metaplan_bus_self
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_rd_mult h_rd_as h_success h_nextPC_option
     h_bus rfl h_rd_ptr rfl h_rd_val
+
+/-- **Track Q POC for JALR.** Operation-bus companion to
+    `equiv_JALR_metaplan_from_bus`: drops the scenario-binding
+    `h_input_rs1` parameter in favour of an op-bus precondition.
+
+    JALR has a single source register (rs1), pinned by `transpile_JALR`
+    onto the Main row's `b` lanes (`m.b_0 = lane_lo (xreg rs1)`,
+    `m.b_1 = lane_hi (xreg rs1)`). The op-bus companion therefore reads
+    rs1 from the entry's `b`-lane fields via `chip_op_bus_hyps_jalr`,
+    which delegates to the branch-shape lemma with `rs1` supplied as
+    both bus-bound `r1`/`r2` (the `a`-side equality is discarded).
+
+    The user supplies a witness `h_b_match` that the bus's
+    `lanes_to_bv64`-reconstructed b-lanes equal `jalr_input.rs1_val`.
+
+    All other privileged-state hypotheses (misa, cur_privilege, mseccfg)
+    pass through unchanged — they are orthogonal to the bus shape. -/
+theorem equiv_JALR_metaplan_op_bus
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (jalr_input : PureSpec.JalrInput)
+    (imm : BitVec 12)
+    (rs1 rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (op_entry : OperationBusEntry FGL)
+    (nextPC_val : BitVec 64)
+    (h_input_imm : jalr_input.imm = imm)
+    -- Op-bus precondition (replaces h_input_rs1).
+    (h_op_mult : op_entry.multiplicity = 1)
+    (h_op_bus : (ZiskFv.Airs.OpBusEffect.op_bus_effect [op_entry] state
+                  (regidx_to_fin rs1) (regidx_to_fin rs1)).1)
+    (h_b_match :
+      jalr_input.rs1_val = Goldilocks.lanes_to_bv64 op_entry.b_lo op_entry.b_hi)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_cur_privilege : Sail.readReg Register.cur_privilege state
+      = EStateM.Result.ok Privilege.Machine state)
+    (h_mseccfg : Sail.readReg Register.mseccfg state
+      = EStateM.Result.ok mseccfg state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_success : (PureSpec.execute_JALR_pure jalr_input).success = true)
+    (h_nextPC_option :
+      (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val)
+    (h_bus : (bus_effect exec_row [e_rd] state).1)
+    (h_pc : jalr_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
+    (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_rd_val :
+      U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
+                  e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
+      = jalr_input.PC + 4) :
+    (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
+      = (bus_effect exec_row [e_rd] state).2 := by
+  -- Extract the rs1 read from the op-bus precondition (b-lanes).
+  have h_rs1_read := ZiskFv.Airs.OpBusHypotheses.chip_op_bus_hyps_jalr
+    state op_entry (regidx_to_fin rs1) h_op_mult h_op_bus
+  have h_input_rs1 : read_xreg (regidx_to_fin rs1) state
+      = EStateM.Result.ok jalr_input.rs1_val state := by
+    rw [h_b_match]; exact h_rs1_read
+  exact equiv_JALR_metaplan_from_bus state jalr_input imm rs1 rd misa_val mseccfg
+    exec_row e_rd nextPC_val
+    h_input_imm h_input_rs1 h_input_misa h_misa_c h_cur_privilege h_mseccfg
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_rd_mult h_rd_as h_success h_nextPC_option
+    h_bus h_pc h_rd_ptr h_rd_idx h_rd_val
 
 end ZiskFv.Equivalence.Jalr
