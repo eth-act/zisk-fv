@@ -594,6 +594,75 @@ lemma execute_REM_eq_execute_REM'
 
 end DIV_REM
 
+section DIVW_REMW
+
+/-- `execute_DIVW` with isolated pure part (mirrors the Sail body
+    structure but factored).
+
+    Sail body (`InstsEnd.lean:69371-69391`):
+    1. extract low 32 bits of each operand;
+    2. interpret as `ℤ` (signed via `toInt`, unsigned via `toNatInt`);
+    3. quotient = `if rs2 == 0 then -1 else Int.tdiv rs1 rs2`;
+    4. signed-overflow patch: if `!is_unsigned ∧ quotient ≥ 2^31` then
+       `quotient := -2^31`;
+    5. write `sign_extend (m := 64) (to_bits_truncate (l := 32) quotient)`. -/
+def execute_DIVW' (rs2 : regidx) (rs1 : regidx) (rd : regidx) (is_unsigned : Bool)
+    : SailM ExecutionResult := do
+  let rs1_bits ← do (pure (Sail.BitVec.extractLsb (← (rX_bits rs1)) 31 0))
+  let rs2_bits ← do (pure (Sail.BitVec.extractLsb (← (rX_bits rs2)) 31 0))
+  let rs1_int :=
+    if (is_unsigned : Bool)
+    then (Sail.BitVec.toNatInt rs1_bits)
+    else (BitVec.toInt rs1_bits)
+  let rs2_int :=
+    if (is_unsigned : Bool)
+    then (Sail.BitVec.toNatInt rs2_bits)
+    else (BitVec.toInt rs2_bits)
+  let quotient :=
+    if ((rs2_int == 0) : Bool)
+    then (Neg.neg 1)
+    else (Int.tdiv rs1_int rs2_int)
+  let quotient :=
+    if (((LeanRV64D.Functions.not is_unsigned) && (quotient ≥b (2 ^i 31))) : Bool)
+    then (Neg.neg (2 ^i 31))
+    else quotient
+  (wX_bits rd (sign_extend (m := 64) (to_bits_truncate (l := 32) quotient)))
+  (pure RETIRE_SUCCESS)
+
+/-- `execute_REMW` with isolated pure part. -/
+def execute_REMW' (rs2 : regidx) (rs1 : regidx) (rd : regidx) (is_unsigned : Bool)
+    : SailM ExecutionResult := do
+  let rs1_bits ← do (pure (Sail.BitVec.extractLsb (← (rX_bits rs1)) 31 0))
+  let rs2_bits ← do (pure (Sail.BitVec.extractLsb (← (rX_bits rs2)) 31 0))
+  let rs1_int :=
+    if (is_unsigned : Bool)
+    then (Sail.BitVec.toNatInt rs1_bits)
+    else (BitVec.toInt rs1_bits)
+  let rs2_int :=
+    if (is_unsigned : Bool)
+    then (Sail.BitVec.toNatInt rs2_bits)
+    else (BitVec.toInt rs2_bits)
+  let remainder :=
+    if ((rs2_int == 0) : Bool)
+    then rs1_int
+    else (Int.tmod rs1_int rs2_int)
+  (wX_bits rd (sign_extend (m := 64) (to_bits_truncate (l := 32) remainder)))
+  (pure RETIRE_SUCCESS)
+
+@[simp]
+lemma execute_DIVW_eq_execute_DIVW'
+    (rs2 rs1 rd : regidx) (usgn : Bool) :
+    execute_DIVW rs2 rs1 rd usgn = execute_DIVW' rs2 rs1 rd usgn := by
+  rfl
+
+@[simp]
+lemma execute_REMW_eq_execute_REMW'
+    (rs2 rs1 rd : regidx) (usgn : Bool) :
+    execute_REMW rs2 rs1 rd usgn = execute_REMW' rs2 rs1 rd usgn := by
+  rfl
+
+end DIVW_REMW
+
 section ADDIW
 
 /-- Pure part of 64-bit `execute_ADDIW` (add-immediate-word).
