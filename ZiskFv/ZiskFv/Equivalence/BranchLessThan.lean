@@ -234,4 +234,176 @@ theorem equiv_BLT_metaplan_bus_self
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_not_throws h_success
 
+/-! ## Phase 6 Track T POC: misaligned-target companion
+
+The metaplan theorems above (`equiv_BLT_metaplan`,
+`equiv_BLT_metaplan_from_bus`, `equiv_BLT_metaplan_bus_self`) cover
+**only the happy path** where the branch target is 4-byte aligned
+(both bit-0 and bit-1 of `PC + sext imm` are 0). The hypotheses
+`h_not_throws : (...).throws = false` and
+`h_success : (...).success = true` exclude misaligned targets.
+
+This is a real completeness gap for the FV trust base: a binary that
+emits a BLT whose taken target is misaligned (bit-1 of `PC + sext imm`
+equals 1) would, per RV64I, raise `Memory_Exception
+(Virtaddr (PC + sext imm), E_Fetch_Addr_Align ())`. Our existing
+proofs say nothing about that path.
+
+### Bus-effect modeling gap
+
+ZisK's PIL emits **no fault-flag column** on the operation/execution
+bus (see `vendor/zisk/pil/zisk.pil` — no `fault`/`misalign`/`exception`
+identifiers anywhere in the column set). Consequently
+`bus_effect : List ExecutionBusEntry × List MemoryBusEntry × State →
+Prop × EStateM.Result` is **hardcoded** to return
+`EStateM.Result.ok (Retire_Success ()) state'` whenever the
+execution-bus shape (length 2 + multiplicities ±1) is well-formed
+(`RV64D/BusEffect.lean:115-121`). It cannot model `Memory_Exception`.
+
+So the metaplan-shape equation
+`execute_instruction (.BTYPE …) state = (bus_effect exec_row [] state).2`
+is **literally false** in the misaligned-success-fail case: the LHS
+returns `.ok (Memory_Exception …) state'` while the RHS returns
+`.ok (Retire_Success ()) state'`. The two `EStateM.Result.ok` payloads
+have different `ExecutionResult` constructors (`Memory_Exception` vs.
+`Retire_Success`), so propositional equality fails by a constructor
+mismatch even when the post-states agree.
+
+Closing this gap requires one of:
+
+1. **Extend `bus_effect`** to emit `Memory_Exception` when a future
+   PIL fault-flag column is asserted. This needs new ZisK PIL columns
+   (Track T's circuit-side prerequisite — out of scope for the FV-only
+   POC), then a Phase 4-shape extension to `RV64D/BusEffect.lean`'s
+   final `match post_memory.2 with` block to dispatch on the new flag.
+
+2. **Project the comparison to states only.** Prove
+   `(execute_instruction …).snd state = (bus_effect …).snd state` —
+   weaker but directly closeable, since `execute_BLT_pure` already
+   pins the misaligned-failure nextPC writeback to `PC + 4` (matching
+   what an honest ZisK trace would emit for a known-misaligned target,
+   though ZisK has no enforcement mechanism today).
+
+3. **Companion theorem characterising the Sail RHS only.** Prove
+   that under misaligned-target hypotheses the LHS reduces to a
+   concrete `Memory_Exception` form, leaving the bus-side equation
+   for option (1)/(2) once infrastructure exists. **This is what the
+   POC below ships.**
+
+### Theorem
+
+`equiv_BLT_metaplan_misaligned` characterises the bit-1-misaligned
+case (target's bit-1 = 1, bit-0 = 0): under taken (`r1 < r2` signed)
+and the misalignment hypothesis, `execute_instruction (.BTYPE …)`
+yields `EStateM.Result.ok (Memory_Exception (Virtaddr (PC + sext imm),
+E_Fetch_Addr_Align ())) state'` where `state'` is `state` with
+`Register.nextPC` set to `PC + 4` (the pure-spec-mandated fall-through).
+
+The bit-0-misaligned case is documented in a sibling theorem
+`equiv_BLT_metaplan_misaligned_bit0` at the end of this file: that one
+yields `EStateM.Result.error (Sail.Error.Assertion …) state'` (a Sail
+assertion failure rather than `Memory_Exception`), reflecting the
+RVA/RVI distinction in `LeanRV64D.Functions.jump_to`.
+
+Together these two companions cover both halves of the
+`success = false` ∨ `throws = true` partition of `execute_BLT_pure`'s
+output. -/
+
+/-- **Misaligned-target companion (bit-1 case): Sail-side reduction.**
+
+    Under taken-branch and bit-1-misaligned target hypotheses (and
+    bit-0 aligned, so this is `Memory_Exception` not `Assertion`),
+    `execute_instruction (.BTYPE …)` reduces to
+    `.ok (Memory_Exception (Virtaddr target, E_Fetch_Addr_Align ()))`
+    on a state with `nextPC := PC + 4` (per `execute_BLT_pure`'s
+    fall-through normalisation when `fails = true`).
+
+    No bus-effect comparison: see the docstring above for why
+    `(bus_effect exec_row [] state).2` cannot be reached today.
+
+    Reuses `equiv_BLT_sail` (no new axiom). -/
+theorem equiv_BLT_metaplan_misaligned
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (blt_input : PureSpec.BltInput)
+    (imm : BitVec 13)
+    (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (h_input_imm : blt_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok blt_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok blt_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some blt_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    -- Misaligned-target hypotheses (bit-1 case, bit-0 aligned):
+    (h_taken : blt_input.r1_val.toInt < blt_input.r2_val.toInt)
+    (h_bit0_aligned :
+      BitVec.ofBool (blt_input.PC + BitVec.signExtend 64 blt_input.imm)[0] = 0#1)
+    (h_bit1_misaligned :
+      BitVec.ofBool (blt_input.PC + BitVec.signExtend 64 blt_input.imm)[1] = 1#1) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLT)) state
+      = EStateM.Result.ok
+          (ExecutionResult.Memory_Exception
+            ((virtaddr.Virtaddr (blt_input.PC + BitVec.signExtend 64 blt_input.imm)),
+             (ExceptionType.E_Fetch_Addr_Align ())))
+          (write_reg_state state Register.nextPC (blt_input.PC + 4#64)) := by
+  -- Reduce the LHS to the pure-spec block via `equiv_BLT_sail`.
+  rw [equiv_BLT_sail state blt_input imm r1 r2 misa_val
+        h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c]
+  -- Pattern follows `RV64D/jal.lean` misaligned-bit-1 case (lines 125-132).
+  have h_lt_b : (blt_input.r1_val.toInt <b blt_input.r2_val.toInt) = true := by
+    simp [h_taken]
+  -- The post-rewrite goal references `blt_input.imm`; use raw hypotheses.
+  simp [PureSpec.execute_BLT_pure, h_lt_b, h_bit0_aligned, h_bit1_misaligned,
+        Sail.writeReg, PreSail.writeReg, modify, modifyGet,
+        MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
+        EStateM.bind, EStateM.pure, write_reg_state]
+
+/-- **Misaligned-target companion (bit-0 case): Sail-side reduction.**
+
+    Under taken-branch and bit-0-misaligned target hypotheses
+    (bit-0 = 1), `execute_instruction (.BTYPE …)` reduces to
+    `.error (Sail.Error.Assertion …)` on a state with
+    `nextPC := PC + 4`. This is a Sail-level assertion failure, not a
+    `Memory_Exception` ExecutionResult — `LeanRV64D.Functions.jump_to`
+    triggers the assertion path before the alignment-check fall-through.
+
+    Like the bit-1 case, no bus-effect equation: `bus_effect` cannot
+    return `EStateM.Result.error`. -/
+theorem equiv_BLT_metaplan_misaligned_bit0
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (blt_input : PureSpec.BltInput)
+    (imm : BitVec 13)
+    (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (h_input_imm : blt_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok blt_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok blt_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some blt_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    -- Misaligned-target hypotheses (bit-0 case):
+    (h_taken : blt_input.r1_val.toInt < blt_input.r2_val.toInt)
+    (h_bit0_misaligned :
+      BitVec.ofBool (blt_input.PC + BitVec.signExtend 64 blt_input.imm)[0] = 1#1) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLT)) state
+      = EStateM.Result.error
+          (Sail.Error.Assertion "extensions/I/base_insts.sail:59.29-59.30")
+          (write_reg_state state Register.nextPC (blt_input.PC + 4#64)) := by
+  rw [equiv_BLT_sail state blt_input imm r1 r2 misa_val
+        h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c]
+  -- Pattern follows `RV64D/jal.lean` misaligned-bit-0 case (lines 173-176).
+  have h_lt_b : (blt_input.r1_val.toInt <b blt_input.r2_val.toInt) = true := by
+    simp [h_taken]
+  -- Reduce the pure-spec record fields and the Sail bind chain.
+  -- (`EStateM.throw` reduces to `EStateM.Result.error` via the high-priority
+  -- `throw_equiv` simp lemma in `RV64D/Auxiliaries.lean`.)
+  simp [PureSpec.execute_BLT_pure, h_lt_b, h_bit0_misaligned,
+        Sail.writeReg, PreSail.writeReg, modify, modifyGet,
+        MonadStateOf.modifyGet, EStateM.modifyGet, bind,
+        EStateM.bind, write_reg_state]
+
 end ZiskFv.Equivalence.BranchLessThan
