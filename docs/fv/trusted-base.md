@@ -1406,7 +1406,7 @@ threaded through `equiv_FENCE_sail`, `equiv_FENCE_metaplan`,
 1. Track P signed witness cases (MULSUH/MUL/MULH/DIV/REM/MULW/REMW signed) — bit-extraction work.
 2. Track O multi-AIR fan-out (Arith/Binary/Memory bus emissions + 63-opcode `bus_shape_for_<OP>` lemmas).
 3. Track R remaining 4 axioms (DIVW/DIVUW/REMW/REMUW). FENCE pattern transfers but each needs ~200 lines of bit-extract + sign-extension reasoning.
-4. Track N `h_rd_val` composition — depends on Track O bus-shape derivation being available across opcodes.
+4. Track N `h_rd_val` composition — depends on Track O bus-shape derivation being available across opcodes. **Track N6 deferral note (2026-04-26):** Jump/UTYPE shape attempted; needs (a) Track O register-write-lanes-match bridge, (b) FGL→BitVec immediate bridge for transpile_LUI/AUIPC, (c) FGL→BitVec PC bridge for transpile_JAL/JALR. See "Track N6 deferral analysis" section below.
 
 ### Track T scope clarification (2026-04-26)
 
@@ -1437,3 +1437,53 @@ fan-out, 8 opcodes total: BLT/BEQ/BNE/BGE/BGEU/BLTU/JAL/JALR). No
 bus-side work remains within Track T's scope. Misaligned-execution
 exclusion as a circuit-level guarantee is inherited from Track O's
 PIL constraint extraction.
+
+### Track N6 deferral analysis: Jump/UTYPE `h_rd_val` (2026-04-26)
+
+**Status: deferred** — Track N (`h_rd_val` retirement) was attempted on
+the Jump/UTYPE shape (JAL/JALR/LUI/AUIPC) under the hypothesis that the
+shape is "simplest" because there's no Arith / BinaryAdd intermediary.
+Investigation found the derivation requires more new infrastructure
+than initially scoped. Concrete blockers:
+
+1. **No bus-emission lane-match exposed for the rd-write entry.** The
+   `chip_bus_hyps_jump_rrw` lemma (`Airs/BusHypotheses.lean:167`)
+   produces only the PC-read fact from the bus precondition; it does
+   not expose the rd-write entry's bytes as matching the Main row's
+   `store_value[0]` / `store_value[1]` lanes. Phase 4 / Track O is the
+   right home for that bridge — it requires a `register_write_lanes_match`
+   form analogous to the existing load-side `memory_load_lanes_match`,
+   but tied to the *store_value expression* (`store_pc * (pc + jmp_offset2 - c_0) + c_0`)
+   rather than to a column directly. No such bridge exists today.
+
+2. **No FGL→BitVec immediate bridge for transpile_LUI.** The axiom
+   `transpile_LUI` pins `m.b_0 = imm_lo` and `m.b_1 = imm_hi` where
+   `imm_lo`/`imm_hi` are caller-supplied **Goldilocks representatives**
+   of the LUI immediate. Closing the rd-byte equation
+   `U64.toBV [bytes] = BitVec.signExtend 64 (imm ++ 0#12)`
+   needs an architectural bridge `(imm_lo + imm_hi * 2^32 : FGL).val
+   = (BitVec.signExtend 64 (imm ++ 0#12)).toNat`, which is not
+   currently in the trust base. Same for AUIPC's `jmp_offset2`
+   carrying the immediate.
+
+3. **No FGL→BitVec PC bridge for transpile_JAL/JALR.** The Sail-side
+   `jal_input.PC : BitVec 64` connects to the Main row `m.pc r_main : FGL`
+   only via the bus-derived `BitVec.ofNat 64 (exec_row[0]!.pc).val`
+   path. For h_rd_val we need the full `m.pc r_main + 4 (FGL) → PC + 4
+   (BitVec)` bridge, which crosses the same lane-recombine + carry
+   reasoning as `lane_lo_lane_hi_recombine_eq_toNat` —
+   tractable but a non-trivial new lemma per opcode.
+
+**Path forward.** Track N6 should land *after* Track O Phase 3
+publishes per-opcode bus-emission witness theorems exposing the
+`store_value` ↔ `e_rd` bytes correspondence. With that bridge in
+hand, the four wrappers reduce to: spec `*_store_value*` theorem +
+bus-emission lane match + Bridge 3 (`u64_toBV_eq_ofNat_fgl_val`) +
+the immediate/PC bridge axioms (added to the trust base alongside
+`transpile_*`). Estimated 4 × ~80 lines (one wrapper per opcode), but
+**only** after the prerequisite infrastructure is in place.
+
+No new code shipped under Track N6 in this round; trust-base axiom
+count unchanged. The four `h_rd_val` parameters in
+`equiv_{JAL,JALR,LUI,AUIPC}_metaplan*` remain as Phase-4-derivable
+obligations.
