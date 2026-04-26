@@ -18,6 +18,8 @@ import ZiskFv.Airs.BusShape
 -- Track Q POC: operation-bus effect model + chip_op_bus_hyps lemmas.
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
+-- Track N K2: promoted lane-match theorems for register memory-bus entries.
+import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Spec.Add
 import ZiskFv.Equivalence.Add
 import ZiskFv.GoldenTraces.Add

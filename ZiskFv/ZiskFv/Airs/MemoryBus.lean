@@ -177,6 +177,25 @@ def memory_store_lanes_match
   m.c_0 row = memory_entry_lo e
   ∧ m.c_1 row = memory_entry_hi e
 
+/-- **Register-read lane hypothesis (rs1 / a-lanes).** The Main row's
+    `a` lanes equal the low/high halves of the register-read entry
+    that provides the address-base register rs1 (`ptr = 4 * rs1,
+    multiplicity = -1, as = 1`). This mirrors the `register_read_rs2_lanes_match`
+    predicate for the `b` lanes and is the direct analogue for instructions
+    (e.g. LD, SD, JALR) that read rs1 from `a[0]`/`a[1]`.
+
+    For compositional proofs this is a hypothesis supplied by the Sail
+    side (Sail evaluates `rX_bits rs1` giving the 8-byte bus value);
+    `register_read_rs1_lanes_match_of_bus_emission` in
+    `Airs/MemoryBus/LaneMatch.lean` promotes it to a theorem derived
+    from the structural bus-entry predicate `matches_memory_entry`. -/
+@[simp]
+def register_read_rs1_lanes_match
+    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (e : MemoryBusEntry FGL) : Prop :=
+  m.a_0 row = memory_entry_lo e
+  ∧ m.a_1 row = memory_entry_hi e
+
 /-- **Register-read lane hypothesis for SD (rs2 value).** The Main
     row's `b` lanes equal the low/high halves of the register-read
     entry that provides the SD store value (`ptr = 4 * rs2,
