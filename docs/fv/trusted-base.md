@@ -1487,3 +1487,101 @@ No new code shipped under Track N6 in this round; trust-base axiom
 count unchanged. The four `h_rd_val` parameters in
 `equiv_{JAL,JALR,LUI,AUIPC}_metaplan*` remain as Phase-4-derivable
 obligations.
+
+### Track N7 deferral analysis: MUL/DIV/REM family `h_rd_val` (2026-04-26)
+
+**Status: deferred** — Track N (`h_rd_val` retirement) was attempted on
+the MUL/DIV/REM family (15 opcodes: MUL, MULH, MULHU, MULHSU, MULW,
+MULU, MULUH, DIV, DIVU, DIVW, DIVUW, REM, REMU, REMW, REMUW) under
+the hypothesis that the just-shipped Track P signed witness theorems
+(`arith_table_<op>_witnesses_from_data`) plus Phase 4.5 Bridges 1/2/3
+plus the `_table_closed` wrappers would compose into a complete
+`h_rd_val` derivation. Investigation found the composition is genuinely
+blocked on the same memory-bus emission infrastructure that Track N6
+flagged for Jump/UTYPE, plus an additional Goldilocks-to-`BitVec 64`
+multiplicative-reduction step that Bridge 3 alone does not provide.
+Concrete blockers:
+
+1. **Memory-bus emission lane-match for the rd-write entry is a
+   compositional hypothesis, not a derived theorem.**
+   `Airs/MemoryBus.lean::register_write_lanes_match m row e` is a
+   `Prop` definition that asserts `m.c_0 row = memory_entry_lo e ∧
+   m.c_1 row = memory_entry_hi e`. The compositional ADD/MUL/DIV
+   metaplan companions today *don't even take* this as a hypothesis —
+   they take `h_rd_val` directly, treating the entire lane-to-byte
+   bridge as a parameter. Retiring `h_rd_val` requires either (a)
+   adding `register_write_lanes_match` to every metaplan companion's
+   signature (just substituting one black-box for another), or (b)
+   deriving it from a PIL-level memory-bus emission spec — which is
+   Track O Phase 4 scope.
+
+2. **No FGL→BitVec multiplicative reduction lemma for the MUL family.**
+   The Bridge 2 closure `Spec/MulField.lean::main_mul_unsigned_field_correct`
+   produces an *FGL* identity:
+   ```
+   main_a_packed * main_b_packed
+     = main_c_packed + d_chunks_packed * (65536^4)    (over FGL)
+   ```
+   What `h_rd_val` requires is a `BitVec 64` identity:
+   ```
+   BitVec.ofNat 64 (main_c_packed m r_main).val
+     = execute_MUL_pure r1_val r2_val .MUL
+   ```
+   The lift requires (i) a range bound on `main_a_packed.val`,
+   `main_b_packed.val`, `main_c_packed.val`, `d_chunks_packed.val`
+   that pins each below `2^64`, plus a no-wrap bound
+   `main_c_packed.val + d_chunks_packed.val * 2^64 < GL_prime` so
+   that `(c + d * 2^64) % p` doesn't reduce; (ii) a Nat-level
+   identity `main_c.val % 2^64 = (main_a.val * main_b.val) % 2^64`
+   derived from (i); (iii) a connection to
+   `execute_MUL_pure`'s `to_bits_truncate (Sail.BitVec.toNatInt op1 *
+   toNatInt op2)` shape via `Sail.BitVec.toNatInt = .toNat` for
+   non-negative BVs. None of these lemmas exist in
+   `Fundamentals/PackedBitVec.lean` today; Bridge 3 ships only the
+   *byte-pack* lift (`u64_toBV_eq_ofNat_fgl_val`), not the
+   *multiplication* lift.
+
+3. **Signed cases (MULH, MULHSU, DIV, REM) require additional
+   `BitVec.toInt` reasoning and `Int.tdiv` overflow handling for
+   `INT_MIN / -1`.** Even with blockers (1) and (2) resolved for
+   unsigned MUL, the signed variants need a separate path: Bridge 2
+   produces a *signed* field identity (`Spec/MulField` lemma:
+   `(1 - 2*np) * (c_packed + d_packed * B^4) = ...`) that lifts to a
+   `BitVec.toInt`-mod-2^64 equation, requiring sign-bit case analysis
+   on `np`. DIV's special cases (`x / 0 = -1`, `INT_MIN / -1 = INT_MIN`)
+   need explicit witness mapping at the wrapper layer.
+
+4. **Operand-side `r1_val = U64.toBV [e0 bytes]` is also not currently
+   derivable** without the same memory-bus lane-match hypothesis on
+   `e0` and `e1` (analogous to (1) for the read side). The `chip_bus_hyps_alu_rrw`
+   lemma exposes `read_xreg`-equality, not byte-level lane matching.
+
+**Path forward.** Track N7 should land *after*:
+
+- Track O Phase 4 publishes per-opcode bus-emission lane-match
+  theorems (rd-write, rs1-read, rs2-read) deriving
+  `register_write_lanes_match`-shaped facts from the PIL constraint
+  set + bus permutation soundness;
+- A new `Fundamentals/FieldBVMul.lean` or extension to
+  `Fundamentals/PackedBitVec.lean` ships the FGL→BitVec
+  multiplicative reduction under chunk-range bounds;
+- The arith_table chunk-range constraints (Phase 4 deferred
+  `range_ab` / `range_cd` / `inv_sum_all_bs` lookups) are exposed
+  as theorems pinning `c_chunks_packed.val < 2^64` and similar.
+
+With those prerequisites, the wrappers reduce to per-opcode
+`Spec/<Op>RdVal.lean` files of ~50 lines each (unsigned) /
+~120 lines each (signed) that compose:
+- Bridges 1+2 (existing) → field-level packed identity;
+- Bus-emission lane match (new in Track O) → Main lanes = e2 bytes;
+- Bridge 3 byte-pack (existing) → `U64.toBV [bytes]`;
+- Field-BV multiplicative reduction (new in N7) → `BitVec.ofNat 64`
+  of the field product equals the BV product low/high half.
+
+No new code shipped under Track N7 in this round; trust-base axiom
+count unchanged. The 60 `h_rd_val` parameters in
+`equiv_{MUL,MULH,MULHU,MULHSU,MULW,MULU,MULUH,DIV,DIVU,DIVW,DIVUW,REM,REMU,REMW,REMUW}_metaplan*`
+(15 files × 4 companions) remain as Phase-4/Track-O-derivable
+obligations. The Track P witness theorems shipped in commit `ab9c0f9`
+remain ready to consume as soon as the bus-emission and field-BV-mul
+prerequisites land.
