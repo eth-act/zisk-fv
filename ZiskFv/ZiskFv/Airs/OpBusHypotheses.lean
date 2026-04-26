@@ -80,6 +80,81 @@ theorem chip_op_bus_hyps_branch
   rw [List.foldl_cons, List.foldl_nil, if_pos h_mult] at h_op_bus
   exact ⟨h_op_bus.2.1, h_op_bus.2.2⟩
 
+/-- **ALU shape — single op-bus entry.** Identical extraction to
+    `chip_op_bus_hyps_branch`: the ALU family (RTYPE/ITYPE/RTYPEW +
+    ADDIW) emits a single Main↔Binary or Main↔Arith op-bus entry with
+    `multiplicity = 1` (`is_external_op = 1` for ALU rows per
+    `transpile_ADD` and friends), with rs1 on the `a` lanes and rs2 on
+    the `b` lanes — the same lane convention as the branch shape. The
+    rd write happens via the *memory* bus, not the op bus, so this
+    lemma only extracts the input-read equalities (rs1, rs2).
+    Provided as a name-aliased re-export of `chip_op_bus_hyps_branch`
+    so callers in the ADD / SUB / AND / … fan-out can read the proof
+    documentation as ALU-specific. -/
+theorem chip_op_bus_hyps_alu
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (entry : OperationBusEntry FGL)
+    (rs1 rs2 : Fin 32)
+    (h_mult : entry.multiplicity = 1)
+    (h_op_bus : (op_bus_effect [entry] state rs1 rs2).1) :
+    read_xreg rs1 state
+        = EStateM.Result.ok
+            (Goldilocks.lanes_to_bv64 entry.a_lo entry.a_hi) state
+    ∧ read_xreg rs2 state
+        = EStateM.Result.ok
+            (Goldilocks.lanes_to_bv64 entry.b_lo entry.b_hi) state :=
+  chip_op_bus_hyps_branch state entry rs1 rs2 h_mult h_op_bus
+
+/-- **Load shape — single op-bus entry, single rs1 read on a-lanes.**
+    LD/LB/LH/LW/LBU/LHU/LWU emit a Main↔Binary op-bus entry whose `a`
+    lanes carry `xreg(rs1)` (the address-base register) per
+    `transpile_LD` / `transpile_LW` / etc. The `b` lanes are pinned to
+    the immediate (not a register), so this lemma extracts only the
+    rs1 read.
+    Caller convention: invoke with `rs1` supplied as both the `r1` and
+    `r2` arguments to `op_bus_effect` (the `b`-side equality is
+    discarded). Re-uses the existing branch-shape `op_bus_effect`. -/
+theorem chip_op_bus_hyps_load
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (entry : OperationBusEntry FGL)
+    (rs1 : Fin 32)
+    (h_mult : entry.multiplicity = 1)
+    (h_op_bus : (op_bus_effect [entry] state rs1 rs1).1) :
+    read_xreg rs1 state
+        = EStateM.Result.ok
+            (Goldilocks.lanes_to_bv64 entry.a_lo entry.a_hi) state :=
+  (chip_op_bus_hyps_branch state entry rs1 rs1 h_mult h_op_bus).1
+
+/-- **Store shape — single op-bus entry, two reads (rs1 + rs2).**
+    SD/SB/SH/SW emit a Main↔internal-copyb microinstruction with
+    `is_external_op = 0` — meaning **the op-bus emission for stores has
+    multiplicity 0**, not 1. The transpile axioms (`transpile_SD` and
+    siblings) confirm this: stores route their rs1/rs2 reads via the
+    *memory bus* exclusively (shape (e) `chip_bus_hyps_store_rrrw`),
+    not the operation bus.
+    Provided here as a documentation-only stub: the *signature* mirrors
+    `chip_op_bus_hyps_alu` so callers can pattern-match on the same
+    shape, but in practice store-family equiv theorems should derive
+    rs1/rs2 reads from the memory bus rather than the op-bus. The
+    op-bus precondition for stores collapses to the trivial `True`
+    (multiplicity-0 entries are no-ops in `op_bus_effect`); this lemma
+    therefore re-states `chip_op_bus_hyps_alu` for the rare case a
+    caller wants to ride a `multiplicity = 1` op-bus entry alongside
+    a store row. -/
+theorem chip_op_bus_hyps_store
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (entry : OperationBusEntry FGL)
+    (rs1 rs2 : Fin 32)
+    (h_mult : entry.multiplicity = 1)
+    (h_op_bus : (op_bus_effect [entry] state rs1 rs2).1) :
+    read_xreg rs1 state
+        = EStateM.Result.ok
+            (Goldilocks.lanes_to_bv64 entry.a_lo entry.a_hi) state
+    ∧ read_xreg rs2 state
+        = EStateM.Result.ok
+            (Goldilocks.lanes_to_bv64 entry.b_lo entry.b_hi) state :=
+  chip_op_bus_hyps_branch state entry rs1 rs2 h_mult h_op_bus
+
 /-- **JALR shape — single op-bus entry, single rs1 read on b-lanes.**
 
     JALR's `transpile_JALR` axiom pins `m.b_0 = lane_lo (xreg rs1)`
