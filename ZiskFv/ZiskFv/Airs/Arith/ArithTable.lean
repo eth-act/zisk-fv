@@ -385,6 +385,455 @@ theorem arith_table_row_witness_unsigned_div
   ⟨fun h_op _ => arith_table_divu_witnesses_from_data v row h_op,
    fun h_op _ => arith_table_remu_witnesses_from_data v row h_op⟩
 
+/-! ## Phase 6 Track P signed fan-out — `_from_data` theorems
+
+For each signed RV64IM opcode, a private `_witnesses_disj` lemma (by
+`decide` over the 74-row table) plus a `_from_data` theorem deriving
+the witness mapping from `arith_table_lookup_sound_mul/_div` + the
+disjunction lemma.
+
+Unlike the unsigned cases (where every matching row has
+`(na, nb, np, nr) = (0, 0, 0, 0)`), signed opcodes have multiple
+matching rows with different sign-witness patterns — the conclusion
+is a disjunction over the distinct `(na, nb, np, nr)` tuples that
+appear in the table for the target opcode.
+
+No new axioms; each theorem chains `arith_table_lookup_sound_*` with
+the disjunction lemma. The disjunction lemma is decidable because the
+table is a concrete 74-row constant.
+-/
+
+/-- Helper: every row of `arith_table` whose `op` field equals
+    `OP_MULSUH` has its `(na, nb, np, nr)` field tuple matching one
+    of the 3 patterns. -/
+private lemma arith_table_op_mulsuh_witnesses_disj :
+    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+      tbl_row.op = OP_MULSUH →
+      (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0) := by
+  decide
+
+/-- **Witness mapping theorem (Phase 6 Track P signed fan-out) — OP_MULSUH.**
+    Disjunction over the 3 distinct `(na, nb, np, nr)` patterns that
+    `OP_MULSUH` rows take in the extracted `arith_table`. -/
+theorem arith_table_mulsuh_witnesses_from_data
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (v : Valid_ArithMul C FGL FGL) (row : ℕ)
+    (h_op : v.op row = OP_MULSUH) :
+    (v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 0) := by
+  obtain ⟨tbl_row, h_in, h_op_eq, _, h_na_eq, h_nb_eq, h_np_eq, h_nr_eq⟩ :=
+    arith_table_lookup_sound_mul v row
+  have h_tbl_op : tbl_row.op = OP_MULSUH := h_op_eq.symm.trans h_op
+  have lift : ∀ (a b c d : Nat),
+      tbl_row.na = a → tbl_row.nb = b → tbl_row.np = c → tbl_row.nr = d →
+      v.na row = (a : FGL) ∧ v.nb row = (b : FGL)
+        ∧ v.np row = (c : FGL) ∧ v.nr row = (d : FGL) := by
+    intro a b c d hna hnb hnp hnr
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · rw [h_na_eq, hna]
+    · rw [h_nb_eq, hnb]
+    · rw [h_np_eq, hnp]
+    · rw [h_nr_eq, hnr]
+  rcases arith_table_op_mulsuh_witnesses_disj tbl_row h_in h_tbl_op with
+    ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+  · exact Or.inl (by simpa using lift 0 0 0 0 hna hnb hnp hnr)
+  · exact Or.inr (Or.inl (by simpa using lift 1 0 0 0 hna hnb hnp hnr))
+  · exact Or.inr (Or.inr (by simpa using lift 1 0 1 0 hna hnb hnp hnr))
+
+/-- Helper: every row of `arith_table` whose `op` field equals
+    `OP_MUL` has its `(na, nb, np, nr)` field tuple matching one of
+    the 6 patterns (`nr = 0` always; `(na, nb, np)` ranges over a
+    6-element subset of `{0,1}^3`). -/
+private lemma arith_table_op_mul_witnesses_disj :
+    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+      tbl_row.op = OP_MUL →
+      (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0) := by
+  decide
+
+/-- **Witness mapping theorem (Phase 6 Track P signed fan-out) — OP_MUL.**
+    Disjunction over the 6 distinct `(na, nb, np, nr)` patterns that
+    `OP_MUL` rows take in the extracted `arith_table`. -/
+theorem arith_table_mul_witnesses_from_data
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (v : Valid_ArithMul C FGL FGL) (row : ℕ)
+    (h_op : v.op row = OP_MUL) :
+    (v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 1 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 1 ∧ v.nr row = 0) := by
+  obtain ⟨tbl_row, h_in, h_op_eq, _, h_na_eq, h_nb_eq, h_np_eq, h_nr_eq⟩ :=
+    arith_table_lookup_sound_mul v row
+  have h_tbl_op : tbl_row.op = OP_MUL := h_op_eq.symm.trans h_op
+  -- Quad lift: each disjunct converts `tbl_row.{na,nb,np,nr}` to `v.{na,nb,np,nr} row`.
+  have lift : ∀ (a b c d : Nat),
+      tbl_row.na = a → tbl_row.nb = b → tbl_row.np = c → tbl_row.nr = d →
+      v.na row = (a : FGL) ∧ v.nb row = (b : FGL)
+        ∧ v.np row = (c : FGL) ∧ v.nr row = (d : FGL) := by
+    intro a b c d hna hnb hnp hnr
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · rw [h_na_eq, hna]
+    · rw [h_nb_eq, hnb]
+    · rw [h_np_eq, hnp]
+    · rw [h_nr_eq, hnr]
+  rcases arith_table_op_mul_witnesses_disj tbl_row h_in h_tbl_op with
+    ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+    | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+  · exact Or.inl (by simpa using lift 0 0 0 0 hna hnb hnp hnr)
+  · exact Or.inr (Or.inl (by simpa using lift 1 0 0 0 hna hnb hnp hnr))
+  · exact Or.inr (Or.inr (Or.inl (by simpa using lift 0 1 0 0 hna hnb hnp hnr)))
+  · exact Or.inr (Or.inr (Or.inr (Or.inl (by simpa using lift 1 1 0 0 hna hnb hnp hnr))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 1 0 1 0 hna hnb hnp hnr)))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+      (by simpa using lift 0 1 1 0 hna hnb hnp hnr)))))
+
+/-- Helper: every row of `arith_table` whose `op` field equals
+    `OP_MULH` has its `(na, nb, np, nr)` field tuple matching one of
+    the 6 patterns. Same patterns as `OP_MUL` (the table places them
+    on different `range_ab/range_cd` rows but the sign witnesses
+    coincide). -/
+private lemma arith_table_op_mulh_witnesses_disj :
+    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+      tbl_row.op = OP_MULH →
+      (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0) := by
+  decide
+
+/-- **Witness mapping theorem (Phase 6 Track P signed fan-out) — OP_MULH.**
+    Same disjunction shape as `OP_MUL` (the two opcodes share their
+    sign-witness patterns). -/
+theorem arith_table_mulh_witnesses_from_data
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (v : Valid_ArithMul C FGL FGL) (row : ℕ)
+    (h_op : v.op row = OP_MULH) :
+    (v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 1 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 1 ∧ v.nr row = 0) := by
+  obtain ⟨tbl_row, h_in, h_op_eq, _, h_na_eq, h_nb_eq, h_np_eq, h_nr_eq⟩ :=
+    arith_table_lookup_sound_mul v row
+  have h_tbl_op : tbl_row.op = OP_MULH := h_op_eq.symm.trans h_op
+  have lift : ∀ (a b c d : Nat),
+      tbl_row.na = a → tbl_row.nb = b → tbl_row.np = c → tbl_row.nr = d →
+      v.na row = (a : FGL) ∧ v.nb row = (b : FGL)
+        ∧ v.np row = (c : FGL) ∧ v.nr row = (d : FGL) := by
+    intro a b c d hna hnb hnp hnr
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · rw [h_na_eq, hna]
+    · rw [h_nb_eq, hnb]
+    · rw [h_np_eq, hnp]
+    · rw [h_nr_eq, hnr]
+  rcases arith_table_op_mulh_witnesses_disj tbl_row h_in h_tbl_op with
+    ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+    | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+  · exact Or.inl (by simpa using lift 0 0 0 0 hna hnb hnp hnr)
+  · exact Or.inr (Or.inl (by simpa using lift 1 0 0 0 hna hnb hnp hnr))
+  · exact Or.inr (Or.inr (Or.inl (by simpa using lift 0 1 0 0 hna hnb hnp hnr)))
+  · exact Or.inr (Or.inr (Or.inr (Or.inl (by simpa using lift 1 1 0 0 hna hnb hnp hnr))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 1 0 1 0 hna hnb hnp hnr)))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+      (by simpa using lift 0 1 1 0 hna hnb hnp hnr)))))
+
+/-- Helper: every row of `arith_table` whose `op` field equals
+    `OP_DIV` has its `(na, nb, np, nr)` field tuple matching one of
+    the 10 distinct patterns. (The table has 11 rows for OP_DIV but
+    two share their sign-witness pattern, so 10 distinct tuples.) -/
+private lemma arith_table_op_div_witnesses_disj :
+    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+      tbl_row.op = OP_DIV →
+      (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 1)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 1)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 1)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0) := by
+  decide
+
+/-- **Witness mapping theorem (Phase 6 Track P signed fan-out) — OP_DIV.**
+    Disjunction over the 10 distinct `(na, nb, np, nr)` patterns. -/
+theorem arith_table_div_witnesses_from_data
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (v : Valid_ArithDiv C FGL FGL) (row : ℕ)
+    (h_op : v.op row = OP_DIV) :
+    (v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 1 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 1 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 1)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 1)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 1 ∧ v.nr row = 1)
+    ∨ (v.na row = 1 ∧ v.nb row = 1 ∧ v.np row = 1 ∧ v.nr row = 0) := by
+  obtain ⟨tbl_row, h_in, h_op_eq, _, h_na_eq, h_nb_eq, h_np_eq, h_nr_eq⟩ :=
+    arith_table_lookup_sound_div v row
+  have h_tbl_op : tbl_row.op = OP_DIV := h_op_eq.symm.trans h_op
+  have lift : ∀ (a b c d : Nat),
+      tbl_row.na = a → tbl_row.nb = b → tbl_row.np = c → tbl_row.nr = d →
+      v.na row = (a : FGL) ∧ v.nb row = (b : FGL)
+        ∧ v.np row = (c : FGL) ∧ v.nr row = (d : FGL) := by
+    intro a b c d hna hnb hnp hnr
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · rw [h_na_eq, hna]
+    · rw [h_nb_eq, hnb]
+    · rw [h_np_eq, hnp]
+    · rw [h_nr_eq, hnr]
+  rcases arith_table_op_div_witnesses_disj tbl_row h_in h_tbl_op with
+    ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+    | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+    | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+    | ⟨hna, hnb, hnp, hnr⟩
+  · exact Or.inl (by simpa using lift 0 0 0 0 hna hnb hnp hnr)
+  · exact Or.inr (Or.inl (by simpa using lift 1 0 0 0 hna hnb hnp hnr))
+  · exact Or.inr (Or.inr (Or.inl (by simpa using lift 0 1 0 0 hna hnb hnp hnr)))
+  · exact Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 1 1 0 0 hna hnb hnp hnr))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 1 0 1 0 hna hnb hnp hnr)))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 0 1 1 0 hna hnb hnp hnr))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 0 0 1 1 hna hnb hnp hnr)))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 1 0 1 1 hna hnb hnp hnr))))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 0 1 1 1 hna hnb hnp hnr)))))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+      (by simpa using lift 1 1 1 0 hna hnb hnp hnr)))))))))
+
+/-- Helper: every row of `arith_table` whose `op` field equals
+    `OP_REM` has its `(na, nb, np, nr)` field tuple matching one of
+    the 10 distinct patterns. Same patterns as `OP_DIV`. -/
+private lemma arith_table_op_rem_witnesses_disj :
+    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+      tbl_row.op = OP_REM →
+      (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 1)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 1)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 1)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0) := by
+  decide
+
+/-- **Witness mapping theorem (Phase 6 Track P signed fan-out) — OP_REM.**
+    Same disjunction shape as `OP_DIV`. -/
+theorem arith_table_rem_witnesses_from_data
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (v : Valid_ArithDiv C FGL FGL) (row : ℕ)
+    (h_op : v.op row = OP_REM) :
+    (v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 1 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 1 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 1)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 1)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 1 ∧ v.nr row = 1)
+    ∨ (v.na row = 1 ∧ v.nb row = 1 ∧ v.np row = 1 ∧ v.nr row = 0) := by
+  obtain ⟨tbl_row, h_in, h_op_eq, _, h_na_eq, h_nb_eq, h_np_eq, h_nr_eq⟩ :=
+    arith_table_lookup_sound_div v row
+  have h_tbl_op : tbl_row.op = OP_REM := h_op_eq.symm.trans h_op
+  have lift : ∀ (a b c d : Nat),
+      tbl_row.na = a → tbl_row.nb = b → tbl_row.np = c → tbl_row.nr = d →
+      v.na row = (a : FGL) ∧ v.nb row = (b : FGL)
+        ∧ v.np row = (c : FGL) ∧ v.nr row = (d : FGL) := by
+    intro a b c d hna hnb hnp hnr
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · rw [h_na_eq, hna]
+    · rw [h_nb_eq, hnb]
+    · rw [h_np_eq, hnp]
+    · rw [h_nr_eq, hnr]
+  rcases arith_table_op_rem_witnesses_disj tbl_row h_in h_tbl_op with
+    ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+    | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+    | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+    | ⟨hna, hnb, hnp, hnr⟩
+  · exact Or.inl (by simpa using lift 0 0 0 0 hna hnb hnp hnr)
+  · exact Or.inr (Or.inl (by simpa using lift 1 0 0 0 hna hnb hnp hnr))
+  · exact Or.inr (Or.inr (Or.inl (by simpa using lift 0 1 0 0 hna hnb hnp hnr)))
+  · exact Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 1 1 0 0 hna hnb hnp hnr))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 1 0 1 0 hna hnb hnp hnr)))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 0 1 1 0 hna hnb hnp hnr))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 0 0 1 1 hna hnb hnp hnr)))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 1 0 1 1 hna hnb hnp hnr))))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 0 1 1 1 hna hnb hnp hnr)))))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+      (by simpa using lift 1 1 1 0 hna hnb hnp hnr)))))))))
+
+/-- Helper: every row of `arith_table` whose `op` field equals
+    `OP_DIV_W` has its `(na, nb, np, nr)` field tuple matching one of
+    the 10 distinct patterns. (Same pattern set as `OP_DIV` — the W
+    variant uses the 32-bit range tables but the sign-witness columns
+    match.) -/
+private lemma arith_table_op_div_w_witnesses_disj :
+    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+      tbl_row.op = OP_DIV_W →
+      (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 1)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 1)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 1)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0) := by
+  decide
+
+/-- **Witness mapping theorem (Phase 6 Track P signed fan-out) — OP_DIV_W.**
+    Same disjunction shape as `OP_DIV`. -/
+theorem arith_table_div_w_witnesses_from_data
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (v : Valid_ArithDiv C FGL FGL) (row : ℕ)
+    (h_op : v.op row = OP_DIV_W) :
+    (v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 1 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 1 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 1)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 1)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 1 ∧ v.nr row = 1)
+    ∨ (v.na row = 1 ∧ v.nb row = 1 ∧ v.np row = 1 ∧ v.nr row = 0) := by
+  obtain ⟨tbl_row, h_in, h_op_eq, _, h_na_eq, h_nb_eq, h_np_eq, h_nr_eq⟩ :=
+    arith_table_lookup_sound_div v row
+  have h_tbl_op : tbl_row.op = OP_DIV_W := h_op_eq.symm.trans h_op
+  have lift : ∀ (a b c d : Nat),
+      tbl_row.na = a → tbl_row.nb = b → tbl_row.np = c → tbl_row.nr = d →
+      v.na row = (a : FGL) ∧ v.nb row = (b : FGL)
+        ∧ v.np row = (c : FGL) ∧ v.nr row = (d : FGL) := by
+    intro a b c d hna hnb hnp hnr
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · rw [h_na_eq, hna]
+    · rw [h_nb_eq, hnb]
+    · rw [h_np_eq, hnp]
+    · rw [h_nr_eq, hnr]
+  rcases arith_table_op_div_w_witnesses_disj tbl_row h_in h_tbl_op with
+    ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+    | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+    | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+    | ⟨hna, hnb, hnp, hnr⟩
+  · exact Or.inl (by simpa using lift 0 0 0 0 hna hnb hnp hnr)
+  · exact Or.inr (Or.inl (by simpa using lift 1 0 0 0 hna hnb hnp hnr))
+  · exact Or.inr (Or.inr (Or.inl (by simpa using lift 0 1 0 0 hna hnb hnp hnr)))
+  · exact Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 1 1 0 0 hna hnb hnp hnr))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 1 0 1 0 hna hnb hnp hnr)))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 0 1 1 0 hna hnb hnp hnr))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 0 0 1 1 hna hnb hnp hnr)))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 1 0 1 1 hna hnb hnp hnr))))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 0 1 1 1 hna hnb hnp hnr)))))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+      (by simpa using lift 1 1 1 0 hna hnb hnp hnr)))))))))
+
+/-- Helper: every row of `arith_table` whose `op` field equals
+    `OP_REM_W` has its `(na, nb, np, nr)` field tuple matching one of
+    the 10 distinct patterns. Same pattern set as `OP_DIV_W`. -/
+private lemma arith_table_op_rem_w_witnesses_disj :
+    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+      tbl_row.op = OP_REM_W →
+      (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 1)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 1)
+      ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 1)
+      ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0) := by
+  decide
+
+/-- **Witness mapping theorem (Phase 6 Track P signed fan-out) — OP_REM_W.**
+    Same disjunction shape as `OP_DIV_W`. -/
+theorem arith_table_rem_w_witnesses_from_data
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (v : Valid_ArithDiv C FGL FGL) (row : ℕ)
+    (h_op : v.op row = OP_REM_W) :
+    (v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 1 ∧ v.np row = 0 ∧ v.nr row = 0)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 1 ∧ v.nr row = 0)
+    ∨ (v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 1)
+    ∨ (v.na row = 1 ∧ v.nb row = 0 ∧ v.np row = 1 ∧ v.nr row = 1)
+    ∨ (v.na row = 0 ∧ v.nb row = 1 ∧ v.np row = 1 ∧ v.nr row = 1)
+    ∨ (v.na row = 1 ∧ v.nb row = 1 ∧ v.np row = 1 ∧ v.nr row = 0) := by
+  obtain ⟨tbl_row, h_in, h_op_eq, _, h_na_eq, h_nb_eq, h_np_eq, h_nr_eq⟩ :=
+    arith_table_lookup_sound_div v row
+  have h_tbl_op : tbl_row.op = OP_REM_W := h_op_eq.symm.trans h_op
+  have lift : ∀ (a b c d : Nat),
+      tbl_row.na = a → tbl_row.nb = b → tbl_row.np = c → tbl_row.nr = d →
+      v.na row = (a : FGL) ∧ v.nb row = (b : FGL)
+        ∧ v.np row = (c : FGL) ∧ v.nr row = (d : FGL) := by
+    intro a b c d hna hnb hnp hnr
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · rw [h_na_eq, hna]
+    · rw [h_nb_eq, hnb]
+    · rw [h_np_eq, hnp]
+    · rw [h_nr_eq, hnr]
+  rcases arith_table_op_rem_w_witnesses_disj tbl_row h_in h_tbl_op with
+    ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+    | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+    | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩ | ⟨hna, hnb, hnp, hnr⟩
+    | ⟨hna, hnb, hnp, hnr⟩
+  · exact Or.inl (by simpa using lift 0 0 0 0 hna hnb hnp hnr)
+  · exact Or.inr (Or.inl (by simpa using lift 1 0 0 0 hna hnb hnp hnr))
+  · exact Or.inr (Or.inr (Or.inl (by simpa using lift 0 1 0 0 hna hnb hnp hnr)))
+  · exact Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 1 1 0 0 hna hnb hnp hnr))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 1 0 1 0 hna hnb hnp hnr)))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 0 1 1 0 hna hnb hnp hnr))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 0 0 1 1 hna hnb hnp hnr)))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 1 0 1 1 hna hnb hnp hnr))))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+      (by simpa using lift 0 1 1 1 hna hnb hnp hnr)))))))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+      (by simpa using lift 1 1 1 0 hna hnb hnp hnr)))))))))
+
 /-! ## Table-closed wrappers (item 2 closure)
 
 Wrappers that retire the scope-honest `(h_na, h_nb, h_np, h_nr)`
