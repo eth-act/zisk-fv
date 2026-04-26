@@ -246,4 +246,76 @@ theorem equiv_BLTU_metaplan_op_bus
     h_bus h_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
+/-! ## Phase 6 Track T fan-out: misaligned-target companions
+
+BLTU fan-out of the BLT misaligned-target POC (commit 9345092). Same
+shape as BLT; case-split predicate is `h_taken : r1.toNat < r2.toNat`
+(BLTU taken on unsigned less-than). -/
+
+/-- **Misaligned-target companion (bit-1 case): Sail-side reduction.** -/
+theorem equiv_BLTU_metaplan_misaligned
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (bltu_input : PureSpec.BltuInput)
+    (imm : BitVec 13)
+    (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (h_input_imm : bltu_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok bltu_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok bltu_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some bltu_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_taken : bltu_input.r1_val.toNat < bltu_input.r2_val.toNat)
+    (h_bit0_aligned :
+      BitVec.ofBool (bltu_input.PC + BitVec.signExtend 64 bltu_input.imm)[0] = 0#1)
+    (h_bit1_misaligned :
+      BitVec.ofBool (bltu_input.PC + BitVec.signExtend 64 bltu_input.imm)[1] = 1#1) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLTU)) state
+      = EStateM.Result.ok
+          (ExecutionResult.Memory_Exception
+            ((virtaddr.Virtaddr (bltu_input.PC + BitVec.signExtend 64 bltu_input.imm)),
+             (ExceptionType.E_Fetch_Addr_Align ())))
+          (write_reg_state state Register.nextPC (bltu_input.PC + 4#64)) := by
+  rw [equiv_BLTU_sail state bltu_input imm r1 r2 misa_val
+        h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c]
+  have h_ltu_b : (bltu_input.r1_val.toNat <b bltu_input.r2_val.toNat) = true := by
+    simp [h_taken]
+  simp [PureSpec.execute_BLTU_pure, h_ltu_b, h_bit0_aligned, h_bit1_misaligned,
+        Sail.writeReg, PreSail.writeReg, modify, modifyGet,
+        MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
+        EStateM.bind, EStateM.pure, write_reg_state]
+
+/-- **Misaligned-target companion (bit-0 case): Sail-side reduction.** -/
+theorem equiv_BLTU_metaplan_misaligned_bit0
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (bltu_input : PureSpec.BltuInput)
+    (imm : BitVec 13)
+    (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (h_input_imm : bltu_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok bltu_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok bltu_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some bltu_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_taken : bltu_input.r1_val.toNat < bltu_input.r2_val.toNat)
+    (h_bit0_misaligned :
+      BitVec.ofBool (bltu_input.PC + BitVec.signExtend 64 bltu_input.imm)[0] = 1#1) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLTU)) state
+      = EStateM.Result.error
+          (Sail.Error.Assertion "extensions/I/base_insts.sail:59.29-59.30")
+          (write_reg_state state Register.nextPC (bltu_input.PC + 4#64)) := by
+  rw [equiv_BLTU_sail state bltu_input imm r1 r2 misa_val
+        h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c]
+  have h_ltu_b : (bltu_input.r1_val.toNat <b bltu_input.r2_val.toNat) = true := by
+    simp [h_taken]
+  simp [PureSpec.execute_BLTU_pure, h_ltu_b, h_bit0_misaligned,
+        Sail.writeReg, PreSail.writeReg, modify, modifyGet,
+        MonadStateOf.modifyGet, EStateM.modifyGet, bind,
+        EStateM.bind, write_reg_state]
+
 end ZiskFv.Equivalence.BranchLessThanUnsigned

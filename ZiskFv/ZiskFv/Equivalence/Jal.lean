@@ -333,4 +333,77 @@ theorem equiv_JAL_metaplan_bus_self
     h_rd_mult h_rd_as h_not_throws h_success h_nextPC_option
     h_bus rfl h_rd_ptr rfl h_rd_val
 
+/-! ## Phase 6 Track T fan-out: misaligned-target companions
+
+JAL fan-out of the BLT misaligned-target POC (commit 9345092). JAL is
+unconditional (no taken/not-taken case-split), so the misaligned cases
+fire purely on the bits of `PC + sext imm`. Pure-spec encoding:
+* `bit0_valid := (...[0]! == 0#1)`, `bit1_valid := (...[1]! == 0#1)`.
+* `success := bit0_valid && bit1_valid`, `throws := !bit0_valid`.
+* `rd := if !bit0_valid || !bit1_valid || rd = 0 then .none else ...`,
+  so on either misaligned case the rd write is suppressed.
+
+Misaligned-bit-1 case (bit0=0, bit1=1): throws=false, success=false,
+nextPC = .some (PC + 4) → Sail emits `Memory_Exception` (E_Fetch_Addr_Align).
+Misaligned-bit-0 case (bit0=1): throws=true → Sail throws Assertion. -/
+
+/-- **Misaligned-target companion (bit-1 case): Sail-side reduction.**
+    Mirrors `RV64D/jal.lean` lines 125-132 lifted to the metaplan
+    surface. `rd` write is suppressed by `!bit1_valid` triggering the
+    `.none` arm of the dite. -/
+theorem equiv_JAL_metaplan_misaligned
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (jal_input : PureSpec.JalInput)
+    (imm : BitVec 21)
+    (rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (h_input_imm : jal_input.imm = imm)
+    (h_input_rd : jal_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some jal_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_bit0_aligned :
+      BitVec.ofBool (jal_input.PC + BitVec.signExtend 64 jal_input.imm)[0] = 0#1)
+    (h_bit1_misaligned :
+      BitVec.ofBool (jal_input.PC + BitVec.signExtend 64 jal_input.imm)[1] = 1#1) :
+    execute_instruction (instruction.JAL (imm, rd)) state
+      = EStateM.Result.ok
+          (ExecutionResult.Memory_Exception
+            ((virtaddr.Virtaddr (jal_input.PC + BitVec.signExtend 64 jal_input.imm)),
+             (ExceptionType.E_Fetch_Addr_Align ())))
+          (write_reg_state state Register.nextPC (jal_input.PC + 4#64)) := by
+  rw [equiv_JAL_sail state jal_input imm rd misa_val
+        h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c]
+  simp [PureSpec.execute_JAL_pure, h_bit0_aligned, h_bit1_misaligned,
+        Sail.writeReg, PreSail.writeReg, modify, modifyGet,
+        MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
+        EStateM.bind, EStateM.pure, write_reg_state]
+
+/-- **Misaligned-target companion (bit-0 case): Sail-side reduction.**
+    Mirrors `RV64D/jal.lean` lines 173-176. `throws = !bit0_valid` is
+    true, so Sail emits an Assertion error. -/
+theorem equiv_JAL_metaplan_misaligned_bit0
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (jal_input : PureSpec.JalInput)
+    (imm : BitVec 21)
+    (rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (h_input_imm : jal_input.imm = imm)
+    (h_input_rd : jal_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some jal_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_bit0_misaligned :
+      BitVec.ofBool (jal_input.PC + BitVec.signExtend 64 jal_input.imm)[0] = 1#1) :
+    execute_instruction (instruction.JAL (imm, rd)) state
+      = EStateM.Result.error
+          (Sail.Error.Assertion "extensions/I/base_insts.sail:59.29-59.30")
+          (write_reg_state state Register.nextPC (jal_input.PC + 4#64)) := by
+  rw [equiv_JAL_sail state jal_input imm rd misa_val
+        h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c]
+  simp [PureSpec.execute_JAL_pure, h_bit0_misaligned,
+        Sail.writeReg, PreSail.writeReg, modify, modifyGet,
+        MonadStateOf.modifyGet, EStateM.modifyGet, bind,
+        EStateM.bind, write_reg_state]
+
 end ZiskFv.Equivalence.Jal

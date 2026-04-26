@@ -250,7 +250,7 @@ theorem equiv_BNE_metaplan_bus_self
   exact equiv_BNE_metaplan_from_bus state
     (BneInput_of_bus exec_row imm r1_val r2_val) imm r1 r2 misa_val exec_row
     rfl h_input_r1 h_input_r2
-    h_input_misa h_misa_c 
+    h_input_misa h_misa_c
     h_bus rfl
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_not_throws h_success
@@ -308,5 +308,77 @@ theorem equiv_BNE_metaplan_op_bus
     h_input_imm h_input_r1 h_input_r2 h_input_misa h_misa_c
     h_bus h_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
+
+/-! ## Phase 6 Track T fan-out: misaligned-target companions
+
+BNE fan-out of the BLT misaligned-target POC (commit 9345092). Same
+shape as BEQ; case-split predicate is `h_taken : r1_val ≠ r2_val`
+(BNE taken on NOT-EQUAL — `skip = !(r1 != r2) = (r1 == r2) = false`). -/
+
+/-- **Misaligned-target companion (bit-1 case): Sail-side reduction.** -/
+theorem equiv_BNE_metaplan_misaligned
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (bne_input : PureSpec.BneInput)
+    (imm : BitVec 13)
+    (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (h_input_imm : bne_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok bne_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok bne_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some bne_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_taken : bne_input.r1_val ≠ bne_input.r2_val)
+    (h_bit0_aligned :
+      BitVec.ofBool (bne_input.PC + BitVec.signExtend 64 bne_input.imm)[0] = 0#1)
+    (h_bit1_misaligned :
+      BitVec.ofBool (bne_input.PC + BitVec.signExtend 64 bne_input.imm)[1] = 1#1) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BNE)) state
+      = EStateM.Result.ok
+          (ExecutionResult.Memory_Exception
+            ((virtaddr.Virtaddr (bne_input.PC + BitVec.signExtend 64 bne_input.imm)),
+             (ExceptionType.E_Fetch_Addr_Align ())))
+          (write_reg_state state Register.nextPC (bne_input.PC + 4#64)) := by
+  rw [equiv_BNE_sail state bne_input imm r1 r2 misa_val
+        h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c]
+  have h_neq_b : (bne_input.r1_val != bne_input.r2_val) = true :=
+    bne_iff_ne.mpr h_taken
+  simp [PureSpec.execute_BNE_pure, h_neq_b, h_bit0_aligned, h_bit1_misaligned,
+        Sail.writeReg, PreSail.writeReg, modify, modifyGet,
+        MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
+        EStateM.bind, EStateM.pure, write_reg_state]
+
+/-- **Misaligned-target companion (bit-0 case): Sail-side reduction.** -/
+theorem equiv_BNE_metaplan_misaligned_bit0
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (bne_input : PureSpec.BneInput)
+    (imm : BitVec 13)
+    (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (h_input_imm : bne_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok bne_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok bne_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some bne_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_taken : bne_input.r1_val ≠ bne_input.r2_val)
+    (h_bit0_misaligned :
+      BitVec.ofBool (bne_input.PC + BitVec.signExtend 64 bne_input.imm)[0] = 1#1) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BNE)) state
+      = EStateM.Result.error
+          (Sail.Error.Assertion "extensions/I/base_insts.sail:59.29-59.30")
+          (write_reg_state state Register.nextPC (bne_input.PC + 4#64)) := by
+  rw [equiv_BNE_sail state bne_input imm r1 r2 misa_val
+        h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c]
+  have h_neq_b : (bne_input.r1_val != bne_input.r2_val) = true :=
+    bne_iff_ne.mpr h_taken
+  simp [PureSpec.execute_BNE_pure, h_neq_b, h_bit0_misaligned,
+        Sail.writeReg, PreSail.writeReg, modify, modifyGet,
+        MonadStateOf.modifyGet, EStateM.modifyGet, bind,
+        EStateM.bind, write_reg_state]
 
 end ZiskFv.Equivalence.BranchNotEqual

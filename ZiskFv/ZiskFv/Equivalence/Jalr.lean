@@ -444,4 +444,65 @@ theorem equiv_JALR_metaplan_op_bus
     h_rd_mult h_rd_as h_success h_nextPC_option
     h_bus h_pc h_rd_ptr h_rd_idx h_rd_val
 
+/-! ## Phase 6 Track T fan-out: misaligned-target companion
+
+JALR fan-out of the BLT misaligned-target POC (commit 9345092). JALR
+differs from JAL at the alignment-check boundary: its jump argument
+is pre-masked via `Sail.BitVec.update target 0 0#1`, which clears
+bit-0 silently. Hence:
+
+* Pure-spec output has only `success` — no `throws` field (jalr.lean:13-19).
+* Bit-0 misaligned case **never fires** (cleared by the mask before the
+  alignment check). No `_bit0` companion.
+* Bit-1 misaligned case → `success = false` → Sail emits
+  `Memory_Exception (Virtaddr (mask &&& (rs1_val + sext imm)),
+  E_Fetch_Addr_Align)`.
+
+The mask in the Memory_Exception's virtaddr is `0xFFFFFFFFFFFFFFFE`,
+which equals `Sail.BitVec.update (rs1_val + sext imm) 0 0#1` (clearing
+bit-0). The pure-spec uses the explicit `&&&` form, while the underlying
+Sail uses the `update` form; both reduce to the same value, but the
+pure-spec block from `equiv_JALR_sail` already exposes the `&&&` form. -/
+
+/-- **Misaligned-target companion (bit-1 case): Sail-side reduction.**
+    JALR has only one misaligned case (bit-0 is silently cleared by the
+    target mask), so no `_bit0` sibling. -/
+theorem equiv_JALR_metaplan_misaligned
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (jalr_input : PureSpec.JalrInput)
+    (imm : BitVec 12)
+    (rs1 rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (h_input_imm : jalr_input.imm = imm)
+    (h_input_rd : jalr_input.rd = regidx_to_fin rd)
+    (h_input_rs1 : read_xreg (regidx_to_fin rs1) state
+      = EStateM.Result.ok jalr_input.rs1_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some jalr_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_cur_privilege : Sail.readReg Register.cur_privilege state
+      = EStateM.Result.ok Privilege.Machine state)
+    (h_mseccfg : Sail.readReg Register.mseccfg state
+      = EStateM.Result.ok mseccfg state)
+    (h_bit1_misaligned :
+      BitVec.ofBool (jalr_input.rs1_val + BitVec.signExtend 64 jalr_input.imm)[1] = 1#1) :
+    (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
+      = EStateM.Result.ok
+          (ExecutionResult.Memory_Exception
+            ((virtaddr.Virtaddr
+              (0xFFFFFFFFFFFFFFFE &&&
+                (jalr_input.rs1_val + BitVec.signExtend 64 jalr_input.imm))),
+             (ExceptionType.E_Fetch_Addr_Align ())))
+          (write_reg_state state Register.nextPC (jalr_input.PC + 4#64)) := by
+  rw [equiv_JALR_sail state jalr_input imm rs1 rd misa_val mseccfg
+        h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
+        h_cur_privilege h_mseccfg]
+  simp [PureSpec.execute_JALR_pure, h_bit1_misaligned,
+        Sail.writeReg, PreSail.writeReg, modify, modifyGet,
+        MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
+        EStateM.bind, EStateM.pure, write_reg_state]
+
 end ZiskFv.Equivalence.Jalr
