@@ -11,8 +11,9 @@ pub mod pilout {
 }
 
 use pilout::{
-    constraint::Constraint as ConstraintKind, expression::Operation as ExprOp,
-    operand::Operand as OperandKind, Air, Constraint, Expression, Operand, PilOut, SymbolType,
+    constraint::Constraint as ConstraintKind, expression::Operation as ExprOp, hint_field,
+    operand::Operand as OperandKind, Air, Constraint, Expression, Hint, HintField,
+    HintFieldArray, Operand, PilOut, SymbolType,
 };
 
 #[derive(Parser, Debug)]
@@ -49,6 +50,20 @@ struct Cli {
     /// regardless of `--skip-unsupported`.
     #[arg(long, value_delimiter = ',')]
     only: Vec<usize>,
+
+    /// Emit bus-emission specs (extracted from `gsum_debug_data` hints)
+    /// instead of constraint definitions. When set, the tool walks the
+    /// pilout-level hints filtered by the resolved AIR and renders each
+    /// `gsum_debug_data` entry whose busid matches `--bus-id` (default
+    /// 5000 = OPERATION_BUS_ID) as a Lean `BusEmissionSpec` definition.
+    #[arg(long)]
+    bus_emissions: bool,
+
+    /// Bus ID filter for `--bus-emissions`. Defaults to ZisK's
+    /// `OPERATION_BUS_ID = 5000` (`vendor/zisk/pil/opids.pil:2`). Set to
+    /// `0` to emit every gsum_debug_data hint for the AIR.
+    #[arg(long, default_value_t = 5000)]
+    bus_id: u64,
 }
 
 fn main() -> Result<()> {
@@ -72,11 +87,19 @@ fn main() -> Result<()> {
     }
 
     let hit = find_air(&pilout, &cli.air)?;
-    let opts = RenderOpts {
-        skip_unsupported: cli.skip_unsupported,
-        only: if cli.only.is_empty() { None } else { Some(cli.only.iter().copied().collect()) },
+    let rendered = if cli.bus_emissions {
+        render_bus_emissions(&pilout, &hit, cli.bus_id)?
+    } else {
+        let opts = RenderOpts {
+            skip_unsupported: cli.skip_unsupported,
+            only: if cli.only.is_empty() {
+                None
+            } else {
+                Some(cli.only.iter().copied().collect())
+            },
+        };
+        render_air(&pilout, hit, &opts)?
     };
-    let rendered = render_air(&pilout, hit, &opts)?;
 
     match &cli.output {
         Some(path) => {
@@ -580,6 +603,298 @@ fn sanitize(s: &str) -> String {
         .collect()
 }
 
+// ----------------------------------------------------------------------
+// Bus-emission extraction
+// ----------------------------------------------------------------------
+//
+// PIL2's `lookup_assumes` / `lookup_proves` / `permutation_assumes` /
+// `permutation_proves` macros compile bus-tuple emissions into:
+//   * one or more "every-row" `Constraint` entries that mix witness cells
+//     with `Challenge` operands (the running-product update of the
+//     permutation argument);
+//   * one `gsum_debug_data` `Hint` per emission that records the tuple
+//     structurally — its busid, multiplicity expression, per-slot
+//     expressions, and (string-form) human-readable names.
+//
+// The hint is the structurally clean rendering target. We resolve each
+// slot's `Expression` operand via the existing constraint renderer
+// (`render_expr_by_idx`). All slots in ZisK's operation-bus emissions
+// reference only witness cells and constants (no challenges), so the
+// renderer types cleanly over `F`.
+
+/// One bus emission resolved from a `gsum_debug_data` hint. The fields
+/// mirror the hint payload's named slots — see the inline doc comment
+/// above and `examples/probe_buses.rs` for the discovery path.
+struct BusEmission {
+    /// `Permutation` / `Lookup` / `Direct` / `Range Check` etc. — the PIL2
+    /// PIOP family the tuple participates in. Operation-bus emissions are
+    /// `Permutation` (Main↔BinaryAdd) or `Lookup` when stratified.
+    name_piop: String,
+    /// `1` = "proves"-side (the secondary state machine emits the tuple),
+    /// `0` (often encoded as empty `Const.bytes = []`) = "assumes"-side
+    /// (Main side that consumes / matches the tuple).
+    type_piop: bool,
+    busid: u64,
+    /// Rendered Lean expression for the tuple's multiplicity (often the
+    /// gating selector — e.g. `is_external_op` for Main's operation-bus).
+    multiplicity: String,
+    /// Per-slot rendered Lean expressions and human-readable names. Length
+    /// matches the original PIL macro's tuple width — typically 8 for the
+    /// operation bus (`[op, a_lo, a_hi, b_lo, b_hi, c_lo, c_hi, flag]`).
+    slots: Vec<(String, String)>,
+}
+
+/// Parse a `Const` operand's bytes as a u64 (big-endian, leading-zero
+/// stripped — same convention as `format_basefield`). Returns `None` if
+/// the bytes don't correspond to a `Const` operand.
+fn const_operand_to_u64(op: &Operand) -> Option<u64> {
+    match op.operand.as_ref()? {
+        OperandKind::Constant(c) => {
+            let mut acc: u64 = 0;
+            for &b in c.value.iter() {
+                acc = acc.checked_mul(256)?.checked_add(b as u64)?;
+            }
+            Some(acc)
+        }
+        _ => None,
+    }
+}
+
+fn const_to_u64(op: &Operand) -> Result<u64> {
+    const_operand_to_u64(op).ok_or_else(|| anyhow!("expected a Constant operand for u64 read"))
+}
+
+/// Look up a hint's named field, asserting that exactly one matches.
+fn hint_field_by_name<'a>(fields: &'a [HintField], name: &str) -> Option<&'a HintField> {
+    fields.iter().find(|f| f.name.as_deref() == Some(name))
+}
+
+/// Render a hint slot's `Operand` value uniformly. `Const`s are emitted as
+/// their decimal value, `Expression`s recurse via the existing constraint
+/// renderer. All other operand kinds produce an error — bus tuples in
+/// ZisK's pilout never reference challenges or fixed columns directly.
+fn render_hint_operand(pilout: &PilOut, air: &Air, op: &Operand) -> Result<String> {
+    let kind = op
+        .operand
+        .as_ref()
+        .ok_or_else(|| anyhow!("hint operand has no kind"))?;
+    match kind {
+        OperandKind::Constant(c) => Ok(format_basefield(&c.value)),
+        OperandKind::Expression(e) => render_expr_by_idx(pilout, air, e.idx as usize),
+        _ => bail!(
+            "hint operand kind {:?} not supported in bus-emission extraction",
+            kind
+        ),
+    }
+}
+
+/// Convert a `gsum_debug_data` hint into a structured `BusEmission`. The
+/// hint layout (8 named fields wrapped in a `HintFieldArray`) is fixed by
+/// PIL2's runtime — see `pil2-proofman/.../std/permutation.pil` upstream
+/// and the `probe_buses` example for the empirical schema.
+fn parse_bus_emission(pilout: &PilOut, air: &Air, hint: &Hint) -> Result<BusEmission> {
+    if hint.name != "gsum_debug_data" {
+        bail!("expected gsum_debug_data hint, got {}", hint.name);
+    }
+    let outer = hint
+        .hint_fields
+        .first()
+        .ok_or_else(|| anyhow!("hint has no fields"))?;
+    let array = match outer.value.as_ref() {
+        Some(hint_field::Value::HintFieldArray(a)) => &a.hint_fields,
+        _ => bail!("gsum_debug_data outer field is not a HintFieldArray"),
+    };
+
+    let name_piop = match hint_field_by_name(array, "name_piop")
+        .and_then(|f| f.value.as_ref())
+    {
+        Some(hint_field::Value::StringValue(s)) => s.clone(),
+        _ => bail!("missing or non-string name_piop"),
+    };
+    let type_piop = match hint_field_by_name(array, "type_piop")
+        .and_then(|f| f.value.as_ref())
+    {
+        Some(hint_field::Value::Operand(op)) => const_to_u64(op)? != 0,
+        _ => bail!("missing or non-operand type_piop"),
+    };
+    let busid = match hint_field_by_name(array, "busid")
+        .and_then(|f| f.value.as_ref())
+    {
+        Some(hint_field::Value::Operand(op)) => const_to_u64(op)?,
+        _ => bail!("missing or non-operand busid"),
+    };
+    let multiplicity = match hint_field_by_name(array, "num_reps")
+        .and_then(|f| f.value.as_ref())
+    {
+        Some(hint_field::Value::Operand(op)) => render_hint_operand(pilout, air, op)?,
+        _ => bail!("missing or non-operand num_reps"),
+    };
+
+    let names_arr = match hint_field_by_name(array, "name_exprs")
+        .and_then(|f| f.value.as_ref())
+    {
+        Some(hint_field::Value::HintFieldArray(a)) => &a.hint_fields,
+        _ => bail!("missing or non-array name_exprs"),
+    };
+    let exprs_arr = match hint_field_by_name(array, "expressions")
+        .and_then(|f| f.value.as_ref())
+    {
+        Some(hint_field::Value::HintFieldArray(a)) => &a.hint_fields,
+        _ => bail!("missing or non-array expressions"),
+    };
+    if names_arr.len() != exprs_arr.len() {
+        bail!(
+            "name_exprs / expressions length mismatch ({} vs {})",
+            names_arr.len(),
+            exprs_arr.len()
+        );
+    }
+
+    let mut slots = Vec::with_capacity(names_arr.len());
+    for (n, e) in names_arr.iter().zip(exprs_arr.iter()) {
+        let nm = match n.value.as_ref() {
+            Some(hint_field::Value::StringValue(s)) => s.clone(),
+            _ => bail!("name_exprs slot is not a string"),
+        };
+        let rendered = match e.value.as_ref() {
+            Some(hint_field::Value::Operand(op)) => render_hint_operand(pilout, air, op)?,
+            _ => bail!("expressions slot is not an operand"),
+        };
+        slots.push((nm, rendered));
+    }
+    Ok(BusEmission {
+        name_piop,
+        type_piop,
+        busid,
+        multiplicity,
+        slots,
+    })
+}
+
+/// Render every operation-bus emission attached to the given AIR as a Lean
+/// file under `ZiskFv.Extraction.Buses`. Only `gsum_debug_data` hints
+/// matching the requested `bus_id` are emitted.
+fn render_bus_emissions(pilout: &PilOut, hit: &AirHit<'_>, bus_id: u64) -> Result<String> {
+    let air_name = hit
+        .air
+        .name
+        .clone()
+        .ok_or_else(|| anyhow!("air has no name"))?;
+    let sanitized = sanitize(&air_name);
+
+    let matching: Vec<(usize, &Hint)> = pilout
+        .hints
+        .iter()
+        .enumerate()
+        .filter(|(_, h)| h.name == "gsum_debug_data")
+        .filter(|(_, h)| h.air_group_id == Some(hit.airgroup_idx as u32))
+        .filter(|(_, h)| h.air_id == Some(hit.air_idx as u32))
+        .filter(|(_, h)| {
+            if bus_id == 0 {
+                return true;
+            }
+            // Decode the hint's busid without rendering, so we can filter
+            // before any expensive walk.
+            let outer = match h.hint_fields.first().and_then(|f| f.value.as_ref()) {
+                Some(hint_field::Value::HintFieldArray(a)) => &a.hint_fields,
+                _ => return false,
+            };
+            let bus_field = match hint_field_by_name(outer, "busid").and_then(|f| f.value.as_ref())
+            {
+                Some(hint_field::Value::Operand(op)) => op,
+                _ => return false,
+            };
+            const_operand_to_u64(bus_field) == Some(bus_id)
+        })
+        .collect();
+
+    let mut out = String::new();
+    out.push_str("import Mathlib\n\n");
+    out.push_str("import LeanZKCircuit.OpenVM.Circuit\n\n");
+    out.push_str("set_option linter.all false\n\n");
+    out.push_str("namespace ZiskFv.Extraction.Buses\n\n");
+    out.push_str(&format!(
+        "/-! Bus-emission specs auto-extracted from `gsum_debug_data` hints\n\
+         attached to AIR `{}` (group {}, air idx {}). Filter: bus_id = {}.\n\
+         Each `BusEmissionSpec` mirrors one PIL2 `lookup_*` / `permutation_*`\n\
+         macro: `multiplicity` is the gating selector and `slots` is the\n\
+         tuple, in the same order PIL2 emits it. -/\n\n",
+        air_name, hit.airgroup_idx, hit.air_idx, bus_id
+    ));
+
+    out.push_str("/-- One slot of a bus emission tuple. `name` is a debug\n");
+    out.push_str("    string (verbatim from the PIL macro call site); `value`\n");
+    out.push_str("    is the rendered Lean expression. -/\n");
+    out.push_str("structure BusEmissionSlot {C : Type → Type → Type} {F ExtF : Type}\n");
+    out.push_str("    [Field F] [Field ExtF] [Circuit F ExtF C] where\n");
+    out.push_str("  name : String\n");
+    out.push_str("  value : C F ExtF → ℕ → F\n\n");
+
+    out.push_str("/-- One bus emission rule. `bus_id` selects the bus (e.g.\n");
+    out.push_str("    `5000 = OPERATION_BUS_ID`); `is_proves = true` marks\n");
+    out.push_str("    the proves-side (secondary state machine), `false` the\n");
+    out.push_str("    assumes-side (the consumer, typically Main). -/\n");
+    out.push_str("structure BusEmissionSpec {C : Type → Type → Type} {F ExtF : Type}\n");
+    out.push_str("    [Field F] [Field ExtF] [Circuit F ExtF C] where\n");
+    out.push_str("  bus_id : ℕ\n");
+    out.push_str("  is_proves : Bool\n");
+    out.push_str("  piop : String\n");
+    out.push_str("  multiplicity : C F ExtF → ℕ → F\n");
+    out.push_str("  slots : List (BusEmissionSlot (C := C) (F := F) (ExtF := ExtF))\n\n");
+
+    if matching.is_empty() {
+        out.push_str(&format!(
+            "-- No matching bus emissions for AIR `{}` and bus_id {}.\n\n",
+            air_name, bus_id
+        ));
+    }
+
+    for (n, (i, h)) in matching.iter().enumerate() {
+        let em = parse_bus_emission(pilout, hit.air, h)
+            .with_context(|| format!("hint #{} (AIR {})", i, air_name))?;
+        out.push_str(&format!(
+            "-- gsum_debug_data #{} ({} {}; bus_id {})\n",
+            i,
+            em.name_piop,
+            if em.type_piop { "proves" } else { "assumes" },
+            em.busid
+        ));
+        for (nm, _) in &em.slots {
+            out.push_str(&format!("--   slot: {}\n", nm));
+        }
+        out.push_str(&format!(
+            "@[simp]\ndef bus_emission_{}_{} {{C : Type → Type → Type}} {{F ExtF : Type}}\n",
+            sanitized, n
+        ));
+        out.push_str(
+            "    [Field F] [Field ExtF] [Circuit F ExtF C]\n\
+             : @BusEmissionSpec C F ExtF _ _ _ :=\n",
+        );
+        out.push_str(&format!("  {{ bus_id := {}\n", em.busid));
+        out.push_str(&format!("    is_proves := {}\n", em.type_piop));
+        out.push_str(&format!("    piop := \"{}\"\n", em.name_piop.replace('\\', "\\\\").replace('\"', "\\\"")));
+        out.push_str(&format!(
+            "    multiplicity := fun c row => {}\n",
+            em.multiplicity
+        ));
+        out.push_str("    slots := [\n");
+        for (idx, (nm, val)) in em.slots.iter().enumerate() {
+            let comma = if idx + 1 < em.slots.len() { "," } else { "" };
+            out.push_str(&format!(
+                "      {{ name := \"{}\", value := fun c row => {} }}{}\n",
+                nm.replace('\\', "\\\\").replace('\"', "\\\""),
+                val,
+                comma
+            ));
+        }
+        out.push_str("    ] }\n\n");
+    }
+
+    out.push_str("end ZiskFv.Extraction.Buses\n");
+    Ok(out)
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -814,5 +1129,126 @@ mod tests {
         };
         let hit = find_air(&pilout, "Arith").expect("exact-name Arith should resolve");
         assert_eq!(hit.air.name.as_deref(), Some("Arith"));
+    }
+
+    fn const_operand(bytes: Vec<u8>) -> Operand {
+        Operand {
+            operand: Some(OperandKind::Constant(pilout::operand::Constant { value: bytes })),
+        }
+    }
+
+    #[test]
+    fn const_operand_to_u64_decodes_big_endian() {
+        // 0x1388 = 5000 — the operation-bus id.
+        assert_eq!(const_operand_to_u64(&const_operand(vec![0x13, 0x88])), Some(5000));
+        // Empty bytes = 0 (PIL2 strips leading zeros).
+        assert_eq!(const_operand_to_u64(&const_operand(vec![])), Some(0));
+        // 0x0a = 10 = OP_ADD opcode literal.
+        assert_eq!(const_operand_to_u64(&const_operand(vec![0x0a])), Some(10));
+    }
+
+    #[test]
+    fn const_operand_to_u64_rejects_non_constant() {
+        let op = Operand {
+            operand: Some(OperandKind::WitnessCol(pilout::operand::WitnessCol {
+                stage: 1,
+                col_idx: 0,
+                row_offset: 0,
+            })),
+        };
+        assert_eq!(const_operand_to_u64(&op), None);
+    }
+
+    /// Build the minimal `gsum_debug_data` hint shape the PIL2 runtime
+    /// emits: an outer field wrapping a `HintFieldArray` of named slots
+    /// (`name_piop`, `type_piop`, `busid`, `num_reps`, `name_exprs`,
+    /// `expressions`, `deg_expr`, `deg_sel`).
+    fn make_hint(name_piop: &str, type_piop_byte: u8, busid: u64, num_reps: Operand,
+                 slots: Vec<(String, Operand)>) -> Hint {
+        let busid_bytes = if busid == 0 { vec![] } else {
+            let mut b = busid.to_be_bytes().to_vec();
+            while b.first().copied() == Some(0) { b.remove(0); }
+            b
+        };
+        let names_arr = HintFieldArray {
+            hint_fields: slots.iter().map(|(n, _)| HintField {
+                name: None,
+                value: Some(hint_field::Value::StringValue(n.clone())),
+            }).collect(),
+        };
+        let exprs_arr = HintFieldArray {
+            hint_fields: slots.iter().map(|(_, op)| HintField {
+                name: None,
+                value: Some(hint_field::Value::Operand(op.clone())),
+            }).collect(),
+        };
+        let outer = HintFieldArray {
+            hint_fields: vec![
+                HintField { name: Some("name_piop".into()),
+                    value: Some(hint_field::Value::StringValue(name_piop.into())) },
+                HintField { name: Some("type_piop".into()),
+                    value: Some(hint_field::Value::Operand(const_operand(
+                        if type_piop_byte == 0 { vec![] } else { vec![type_piop_byte] }))) },
+                HintField { name: Some("busid".into()),
+                    value: Some(hint_field::Value::Operand(const_operand(busid_bytes))) },
+                HintField { name: Some("num_reps".into()),
+                    value: Some(hint_field::Value::Operand(num_reps)) },
+                HintField { name: Some("name_exprs".into()),
+                    value: Some(hint_field::Value::HintFieldArray(names_arr)) },
+                HintField { name: Some("expressions".into()),
+                    value: Some(hint_field::Value::HintFieldArray(exprs_arr)) },
+            ],
+        };
+        Hint {
+            name: "gsum_debug_data".into(),
+            hint_fields: vec![HintField {
+                name: None,
+                value: Some(hint_field::Value::HintFieldArray(outer)),
+            }],
+            air_group_id: Some(0),
+            air_id: Some(0),
+        }
+    }
+
+    #[test]
+    fn parse_bus_emission_extracts_assumes_side_lookup() {
+        let hint = make_hint(
+            "Lookup",
+            0, // type_piop = false (assumes)
+            5000,
+            const_operand(vec![1]),
+            vec![
+                ("op".into(), const_operand(vec![10])),
+                ("a[0]".into(), const_operand(vec![0xaa])),
+            ],
+        );
+        let pilout = PilOut::default();
+        let air = Air::default();
+        let em = parse_bus_emission(&pilout, &air, &hint).expect("parse should succeed");
+        assert_eq!(em.name_piop, "Lookup");
+        assert!(!em.type_piop);
+        assert_eq!(em.busid, 5000);
+        assert_eq!(em.multiplicity, "1");
+        assert_eq!(em.slots.len(), 2);
+        assert_eq!(em.slots[0].0, "op");
+        assert_eq!(em.slots[0].1, "10");
+        assert_eq!(em.slots[1].0, "a[0]");
+        assert_eq!(em.slots[1].1, "170"); // 0xaa
+    }
+
+    #[test]
+    fn parse_bus_emission_handles_proves_side() {
+        let hint = make_hint("Permutation", 1, 5000, const_operand(vec![1]), vec![]);
+        let pilout = PilOut::default();
+        let air = Air::default();
+        let em = parse_bus_emission(&pilout, &air, &hint).expect("parse should succeed");
+        assert!(em.type_piop, "type_piop = 1 byte should decode as proves-side");
+    }
+
+    #[test]
+    fn parse_bus_emission_rejects_wrong_hint_name() {
+        let mut h = make_hint("Lookup", 0, 5000, const_operand(vec![1]), vec![]);
+        h.name = "im_col".into();
+        assert!(parse_bus_emission(&PilOut::default(), &Air::default(), &h).is_err());
     }
 }

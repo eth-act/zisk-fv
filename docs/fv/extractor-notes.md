@@ -9,6 +9,7 @@ extractor at `tools/zisk-pil-extract/`.
 zisk-pil-extract --pilout <path> --air <needle>
                  [--output <path>] [--list]
                  [--skip-unsupported] [--only <i>[,<j>…]]
+                 [--bus-emissions [--bus-id <N>]]
 ```
 
 - `--pilout`: path to a compiled `.pilout` (protobuf, schema vendored at
@@ -27,6 +28,19 @@ zisk-pil-extract --pilout <path> --air <needle>
   aborts on an unsupported operand inside a selected constraint, even with
   `--skip-unsupported` set — the point of `--only` is to assert that a
   specific constraint extracts cleanly.
+- `--bus-emissions`: switch the tool to **bus-emission mode** (Track O POC).
+  Instead of walking `air.constraints`, it walks `pilout.hints` filtered to
+  `gsum_debug_data` entries attached to the resolved AIR, parses each into a
+  structured tuple (`piop`, `bus_id`, `is_proves`, `multiplicity`, named
+  `slots`), and emits a `BusEmissionSpec` def per emission under the
+  `ZiskFv.Extraction.Buses` namespace. Slots are rendered through the same
+  expression pipeline used for constraints, so witness cells, fixed cells,
+  and constants all type cleanly over `F` (no `ExtF` mixing — operation-bus
+  tuples reference only stage-1 cells).
+- `--bus-id <N>`: bus-id filter for `--bus-emissions` mode. Defaults to
+  `5000 = OPERATION_BUS_ID` (`vendor/zisk/pil/opids.pil:2`). Set to `0` to
+  emit every `gsum_debug_data` hint for the AIR (useful for memory-bus
+  exploration).
 
 Output shape mirrors `openvm-fv/OpenvmFv/Extraction/*.lean`: one `constraint_N`
 definition per pilout constraint, typed over `Circuit F ExtF C` (from
@@ -53,6 +67,41 @@ definition per pilout constraint, typed over `Circuit F ExtF C` (from
 - Witness columns expose `(stage, col_idx, row_offset)`. The `Symbol` table
   names them — for arrays, `Symbol.id` is the base index and `Symbol.lengths`
   gives per-dimension sizes; we flatten to `name[k]` entries.
+
+### Bus emissions (Track O POC, 2026-04-26)
+
+Permutation- and lookup-style bus emissions (PIL2 macros `lookup_assumes`,
+`lookup_proves`, `permutation_assumes`, `permutation_proves`) compile to two
+artefacts in the pilout:
+
+1. **One or more `Constraint` entries** that update a stage-2 `im_col`
+   running-product accumulator. These mix witness cells with `Challenge`
+   operands (the `α` / `γ` permutation challenges that compress the tuple
+   into a single field element) and are the constraints the existing
+   extractor skip-stubs as `mixes F (witness cells) with ExtF`.
+2. **One `Hint` named `gsum_debug_data`**, attached to the same AIR, that
+   records the tuple structurally — bus id, multiplicity expression, and
+   per-slot human-readable name + Expression-index pair. The hint payload
+   layout (verified empirically via `examples/probe_buses.rs`) is an outer
+   `HintFieldArray` with named slots:
+   * `name_piop`: string — `"Permutation"` / `"Lookup"` / `"Direct"` /
+     `"Range Check"`.
+   * `type_piop`: `Const` byte — `1` = proves-side, empty bytes = assumes.
+   * `busid`: `Const` bytes (big-endian); `5000 = OPERATION_BUS_ID`,
+     `10` = `MEMORY_BUS_ID`, etc.
+   * `num_reps`: `Operand` (typically `Expression(idx)`) — multiplicity /
+     gating selector.
+   * `name_exprs`: `HintFieldArray` of `String` — human-readable per-slot
+     names (verbatim from PIL macro call site).
+   * `expressions`: `HintFieldArray` of `Operand` (typically
+     `Expression(idx)`) — the rendered tuple slot values.
+   * `deg_expr`, `deg_sel`: degree bookkeeping (ignored).
+
+The hint is the structurally-clean rendering target. Operation-bus emissions
+in ZisK's pilout reference only stage-1 witness cells (no challenges), so
+the existing constraint renderer types them cleanly over `F`. The
+`--bus-emissions` mode walks these hints and produces `BusEmissionSpec`
+defs.
 
 ## Limitations (deliberate; expand as phases demand)
 

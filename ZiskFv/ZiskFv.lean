@@ -12,6 +12,9 @@ import ZiskFv.Extraction.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
+-- Track O POC: pilout bus-emission extraction + derivation lemma.
+import ZiskFv.Extraction.Buses
+import ZiskFv.Airs.BusShape
 import ZiskFv.Spec.Add
 import ZiskFv.Equivalence.Add
 import ZiskFv.GoldenTraces.Add
