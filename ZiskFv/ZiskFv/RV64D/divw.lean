@@ -13,6 +13,16 @@ false)` — signed truncated division of low 32 bits, sign-extended
 to 64 bits. Special cases per RV64 spec:
   - rs2 = 0           → -1 (all bits set)
   - rs1 = INT32_MIN, rs2 = -1 → INT32_MIN (signed overflow)
+
+**Phase 6 Track R note.** The unsigned variants (DIVUW / REMUW) were
+retired by introducing `execute_DIVW'` / `execute_REMW'` refactor
+triples. The signed variants encounter an additional rewrite hurdle:
+the bridged `BitVec.signExtend 64 (to_bits_truncate (l := 32) (...))`
+expression doesn't `rw` cleanly into the goal post-`set` (likely due
+to elaborated implicit-argument differences). The `div_overflow_32`
+helper is in place; the remaining gap is the substitution step. A
+follow-on commit can close DIVW / REMW once the right `congr` /
+generalize chain is found.
 -/
 
 namespace PureSpec
