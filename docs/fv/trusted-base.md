@@ -1405,7 +1405,35 @@ threaded through `equiv_FENCE_sail`, `equiv_FENCE_metaplan`,
 **Next-step priorities:**
 1. Track P signed witness cases (MULSUH/MUL/MULH/DIV/REM/MULW/REMW signed) — bit-extraction work.
 2. Track O multi-AIR fan-out (Arith/Binary/Memory bus emissions + 63-opcode `bus_shape_for_<OP>` lemmas).
-3. Track T bus-side fault-flag column (PIL emits no fault path; `bus_effect.2` hardcodes Retire_Success — architectural change to OperationBus.lean).
-4. Track R remaining 4 axioms (DIVW/DIVUW/REMW/REMUW). FENCE pattern transfers but each needs ~200 lines of bit-extract + sign-extension reasoning.
-5. Track N `h_rd_val` composition — depends on Track O bus-shape derivation being available across opcodes.
-5. Track T bus-effect-fault-flag extension (substantial new infrastructure — closes the bus-side gap that Track T identified).
+3. Track R remaining 4 axioms (DIVW/DIVUW/REMW/REMUW). FENCE pattern transfers but each needs ~200 lines of bit-extract + sign-extension reasoning.
+4. Track N `h_rd_val` composition — depends on Track O bus-shape derivation being available across opcodes.
+
+### Track T scope clarification (2026-04-26)
+
+The original Phase 6 plan suggested Track T would also need a "bus-side
+fault-flag column" extension to mirror the Sail-side misaligned-target
+companions. Investigation closes this as architecturally absent rather
+than unfinished work:
+
+- ZisK's PIL (`vendor/zisk/state-machines/main/pil/main.pil`) emits no
+  fault-flag column. `OperationBusEntry` has no fault field, and
+  `bus_effect.2` returns `Retire_Success` unconditionally.
+- This is by design: ZisK's circuit constrains *valid execution
+  traces only*. A misaligned branch would never appear in a witness
+  the prover can satisfy — the PC-alignment constraint at extraction
+  blocks it. There is no bus shape to extend because the circuit
+  cannot encode misaligned execution at all.
+- The metaplan theorems remain *vacuously sound* on misaligned inputs:
+  the bus-match precondition (`bus_effect _ _ state).1`) cannot hold
+  for a witness with misaligned PCs, so the implication is trivially
+  satisfied. The Sail-side companions (`equiv_<OP>_metaplan_misaligned`)
+  document what Sail would compute *if such a trace existed*.
+- The "exclusion" guarantee — "no satisfying witness has a misaligned
+  PC" — properly belongs to Track O (extracted PIL constraint set
+  includes the alignment check), not Track T.
+
+**Track T closure:** Sail-side completeness extension shipped (POC +
+fan-out, 8 opcodes total: BLT/BEQ/BNE/BGE/BGEU/BLTU/JAL/JALR). No
+bus-side work remains within Track T's scope. Misaligned-execution
+exclusion as a circuit-level guarantee is inherited from Track O's
+PIL constraint extraction.
