@@ -206,28 +206,68 @@ open ZiskFv.Extraction.ArithTable in
     **Note.** We compare `m32`, `na`, `nb`, `np`, `nr` as `Nat` values
     (the table entries) cast into `F`. Direct tuple equality avoids
     a lift. -/
-axiom arith_table_lookup_sound_mul :
-    ∀ (v : Valid_ArithMul C F ExtF) (row : ℕ),
+axiom arith_table_lookup_sound_mul
+    {C : Type → Type → Type} [Circuit FGL FGL C] :
+    ∀ (v : Valid_ArithMul C FGL FGL) (row : ℕ),
       ∃ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
         v.op row = tbl_row.op
-      ∧ v.m32 row = (Nat.cast tbl_row.m32 : F)
-      ∧ v.na row = (Nat.cast tbl_row.na : F)
-      ∧ v.nb row = (Nat.cast tbl_row.nb : F)
-      ∧ v.np row = (Nat.cast tbl_row.np : F)
-      ∧ v.nr row = (Nat.cast tbl_row.nr : F)
+      ∧ v.m32 row = (Nat.cast tbl_row.m32 : FGL)
+      ∧ v.na row = (Nat.cast tbl_row.na : FGL)
+      ∧ v.nb row = (Nat.cast tbl_row.nb : FGL)
+      ∧ v.np row = (Nat.cast tbl_row.np : FGL)
+      ∧ v.nr row = (Nat.cast tbl_row.nr : FGL)
 
 /-- **Plookup-soundness for the Arith DIV state machine.** -/
-axiom arith_table_lookup_sound_div :
-    ∀ (v : Valid_ArithDiv C F ExtF) (row : ℕ),
+axiom arith_table_lookup_sound_div
+    {C : Type → Type → Type} [Circuit FGL FGL C] :
+    ∀ (v : Valid_ArithDiv C FGL FGL) (row : ℕ),
       ∃ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
         v.op row = tbl_row.op
-      ∧ v.m32 row = (Nat.cast tbl_row.m32 : F)
-      ∧ v.na row = (Nat.cast tbl_row.na : F)
-      ∧ v.nb row = (Nat.cast tbl_row.nb : F)
-      ∧ v.np row = (Nat.cast tbl_row.np : F)
-      ∧ v.nr row = (Nat.cast tbl_row.nr : F)
+      ∧ v.m32 row = (Nat.cast tbl_row.m32 : FGL)
+      ∧ v.na row = (Nat.cast tbl_row.na : FGL)
+      ∧ v.nb row = (Nat.cast tbl_row.nb : FGL)
+      ∧ v.np row = (Nat.cast tbl_row.np : FGL)
+      ∧ v.nr row = (Nat.cast tbl_row.nr : FGL)
 
-/-! ### Witness-mapping derivations (Phase 6.x follow-up)
+/-! ### Witness-mapping theorems (Phase 6 Track P / P3)
+
+POC ship: derive `arith_table_mulu_witnesses` as a *theorem* from
+`arith_table_lookup_sound_mul` + 74-row case analysis on the
+extracted table data. Validates the factorization end-to-end. -/
+
+/-- Helper: every row of `arith_table` whose `op` field equals
+    `OP_MULU` has all four sign-witness fields equal to zero (as
+    `Nat`). Proven by `decide` over the 74-row concrete list. -/
+private lemma arith_table_op_mulu_witnesses_zero :
+    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+      tbl_row.op = OP_MULU →
+      tbl_row.na = 0 ∧ tbl_row.nb = 0
+      ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0 := by
+  decide
+
+/-- **Witness mapping theorem (Phase 6 Track P/P3) — OP_MULU.**
+    Derived from `arith_table_lookup_sound_mul` + case analysis on
+    the extracted `arith_table`. Replaces the deprecated
+    `arith_table_row_witness_unsigned`'s OP_MULU branch — the
+    witness mapping is now provable from data + 1 plookup axiom,
+    rather than directly axiomatized. -/
+theorem arith_table_mulu_witnesses_from_data
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (v : Valid_ArithMul C FGL FGL) (row : ℕ)
+    (h_op : v.op row = OP_MULU) :
+    v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0 := by
+  obtain ⟨tbl_row, h_in, h_op_eq, _, h_na_eq, h_nb_eq, h_np_eq, h_nr_eq⟩ :=
+    arith_table_lookup_sound_mul v row
+  have h_tbl_op : tbl_row.op = OP_MULU := h_op_eq.symm.trans h_op
+  obtain ⟨hna, hnb, hnp, hnr⟩ :=
+    arith_table_op_mulu_witnesses_zero tbl_row h_in h_tbl_op
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [h_na_eq, hna]; rfl
+  · rw [h_nb_eq, hnb]; rfl
+  · rw [h_np_eq, hnp]; rfl
+  · rw [h_nr_eq, hnr]; rfl
+
+/-! ### Witness-mapping derivations — fan-out follow-up
 
 The `arith_table_*_witnesses` specializations above (e.g.,
 `arith_table_mulu_witnesses`) currently pull from the deprecated
