@@ -1378,18 +1378,34 @@ Multi-day effort, not 2-3 hours. Worktree cleaned up.
 
 ### Phase 6 trajectory (post-2026-04-26)
 
-| Track | POC status | Net lines | Trust impact |
+| Track | POC | Round-2 fan-out | Trust impact |
 |---|---|---|---|
-| **N** (h_rd_val) | Pending — depends on O composition | 0 | Unblocked by O ship |
-| **O** (PIL bus-emission) | ✅ POC shipped | +888 | 0 new axioms |
-| **P** (lookup tables) | ✅ POC shipped earlier | +268 | +2 plookup, deprecated -2 (transition) |
-| **Q** (op_bus_effect) | ✅ POC shipped | +247 | 0 new axioms |
-| **R** (Sail-eq retirement) | ⚠️ POC failed; semantic refinement needed | 0 | -1 axiom *if* completed |
-| **T** (not-happy-path) | ✅ Sail-side POC shipped | +172 | 0 new axioms; bus-effect gap surfaced |
+| **N** (h_rd_val) | Pending — depends on O composition | — | Unblocked by O ship |
+| **O** (PIL bus-emission) | ✅ POC shipped | Pending: multi-AIR + 63-opcode fan-out | 0 new axioms |
+| **P** (lookup tables) | ✅ POC shipped | ✅ `ff7aef8` — 4 unsigned witness theorems (MULUH/MUL_W/DIVU/REMU) + 2 deprecated axioms retired | -2 axioms net |
+| **Q** (op_bus_effect) | ✅ POC shipped | ✅ `569cdad` — op_bus companions for BNE/BLT/BGE/BLTU/BGEU/JALR | 0 new axioms |
+| **R** (Sail-eq retirement) | ✅ `114094d` — FENCE retired (2nd attempt with explicit commit) | Pending: 4 *W divide axioms | -1 axiom (FENCE) |
+| **T** (not-happy-path) | ✅ Sail-side POC shipped | ✅ `15d03a8` — misaligned companions for BEQ/BNE/BGE/BGEU/BLTU/JAL/JALR (13 theorems) | 0 new axioms; bus-effect fault-flag gap remains |
+
+**Round-2 (2026-04-26 evening) summary.** Trust base 79 → 77 axioms. All
+fan-outs landed on main and build green (8138 jobs).
+
+**Track R FENCE retirement details.** First agent attempt built green
+but did not commit before its worktree was cleaned up — recipe was
+captured from the report and a second agent reproduced + committed.
+Final proof shape: under `cur_privilege = Machine` hypothesis,
+`is_fiom_active_machine` reduces to `pure false`, then
+`execute_FENCE_machine_pure` closes the 11-arm barrier match by
+`generalize` + `interval_cases np <;> interval_cases nq <;> rfl` over
+the 16 (BitVec 2 × BitVec 2) pairs (every arm reduces to `pure ()`
+after `sail_barrier _` unfolds). New `h_input_priv` parameter
+threaded through `equiv_FENCE_sail`, `equiv_FENCE_metaplan`,
+`equiv_FENCE_metaplan_from_bus`, `equiv_FENCE_metaplan_bus_self`.
 
 **Next-step priorities:**
-1. Fan out Track Q's `equiv_BEQ_metaplan_op_bus` pattern to other branches + JALR.
-2. Fan out Track T's misaligned companion to other branches + JAL.
-3. Compose Track O's `bus_shape_for_ADD` derivation pattern into Track N's `h_rd_val` for ALU opcodes.
-4. Track R retirement (requires substantial Sail unfolding work — multi-day).
+1. Track P signed witness cases (MULSUH/MUL/MULH/DIV/REM/MULW/REMW signed) — bit-extraction work.
+2. Track O multi-AIR fan-out (Arith/Binary/Memory bus emissions + 63-opcode `bus_shape_for_<OP>` lemmas).
+3. Track T bus-side fault-flag column (PIL emits no fault path; `bus_effect.2` hardcodes Retire_Success — architectural change to OperationBus.lean).
+4. Track R remaining 4 axioms (DIVW/DIVUW/REMW/REMUW). FENCE pattern transfers but each needs ~200 lines of bit-extract + sign-extension reasoning.
+5. Track N `h_rd_val` composition — depends on Track O bus-shape derivation being available across opcodes.
 5. Track T bus-effect-fault-flag extension (substantial new infrastructure — closes the bus-side gap that Track T identified).
