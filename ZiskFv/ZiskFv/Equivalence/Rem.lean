@@ -12,6 +12,8 @@ import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.rem
 import ZiskFv.RV64D.BusEffect
 import ZiskFv.Airs.BusHypotheses
+import ZiskFv.Airs.OpBusEffect
+import ZiskFv.Airs.OpBusHypotheses
 
 /-!
 End-to-end theorem for RV64 **REM** (Phase 3C T-D). REM is the
@@ -258,5 +260,57 @@ theorem equiv_REM_metaplan_bus_self
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
     h_bus h_r1_ptr rfl h_r2_ptr rfl rfl h_rd_ptr
     rfl h_rd_val
+
+/-- **Track Q ALU/MUL/DIV fan-out for REM.** Op-bus companion to
+    `equiv_REM_metaplan`: drops `h_input_r1` / `h_input_r2` in
+    favour of an op-bus precondition. Mirrors
+    `equiv_ADD_metaplan_op_bus`. -/
+theorem equiv_REM_metaplan_op_bus
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (rem_input : PureSpec.RemInput)
+    (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (op_entry : OperationBusEntry FGL)
+    (h_op_mult : op_entry.multiplicity = 1)
+    (h_op_bus : (ZiskFv.Airs.OpBusEffect.op_bus_effect [op_entry] state
+                  (regidx_to_fin r1) (regidx_to_fin r2)).1)
+    (h_a_match :
+      rem_input.r1_val = Goldilocks.lanes_to_bv64 op_entry.a_lo op_entry.a_hi)
+    (h_b_match :
+      rem_input.r2_val = Goldilocks.lanes_to_bv64 op_entry.b_lo op_entry.b_hi)
+    (h_input_rd : rem_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some rem_input.PC)
+    -- Structural bus hypotheses (Phase-4 derivable).
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    (h_rd_idx : rem_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_rd_val :
+      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
+                  e2.x4, e2.x5, e2.x6, e2.x7]
+      = (execute_DIV_REM_pure rem_input.r1_val rem_input.r2_val .DRS).2) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_r1_read, h_r2_read⟩ :=
+    ZiskFv.Airs.OpBusHypotheses.chip_op_bus_hyps_alu
+      state op_entry (regidx_to_fin r1) (regidx_to_fin r2) h_op_mult h_op_bus
+  have h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok rem_input.r1_val state := by
+    rw [h_a_match]; exact h_r1_read
+  have h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok rem_input.r2_val state := by
+    rw [h_b_match]; exact h_r2_read
+  exact equiv_REM_metaplan state rem_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 end ZiskFv.Equivalence.Rem
