@@ -1293,3 +1293,103 @@ cleanup. Deferred pending a decision on the cleaner factor.
 - **T (not-happy-path)** — completeness extension. Needs Sail
   fault-path semantics modeled (likely overlaps with R's
   privilege-condition refinement).
+
+### Tracks O, Q, T shipped via parallel-subagent POCs (2026-04-26)
+
+Three additional Phase 6 closure tracks landed POCs via parallel
+worktree-isolated subagents. All build green; zero new project-level
+axioms across the three.
+
+**Track O — PIL bus-emission extraction** (commit `d0ab622`).
+- Extended `tools/zisk-pil-extract/` with `--bus-emissions` mode
+  (~450 lines + 5 unit tests, 28/28 passing). Walks pilout's
+  `gsum_debug_data` Hint payloads to extract bus-emission tuple
+  shapes (bus id, multiplicity expression, per-slot named expressions).
+- Auto-emitted `ZiskFv/Extraction/Buses.lean` (63 lines) with
+  `bus_emission_Main_0 : BusEmissionSpec` for the Main AIR's
+  operation-bus emission. Tuple: `op, a[0], (1-m32)*a[1], b[0],
+  (1-m32)*b[1], c[0], c[1], flag` with multiplicity =
+  `is_external_op`.
+- Authored `ZiskFv/Airs/BusShape.lean` (158 lines) with two
+  derivation theorems:
+  - `bus_emission_main_slots_match_opBus_row_Main` — slot-by-slot
+    equality between extracted spec and hand-written
+    `opBus_row_Main`.
+  - `bus_shape_for_ADD` — ADD-specific specialization under
+    `op = OP_ADD ∧ is_external_op = 1 ∧ m32 = 0`.
+- Verifies the extraction pipeline: `#print axioms` lists kernel
+  only (propext + Classical.choice + Quot.sound). No new ZisK
+  axioms.
+- Follow-on: drop the hand-written `Airs/OperationBus.opBus_row_Main`
+  and rebind downstream callers (Spec.Add etc.) to consume a
+  generic `BusEmissionSpec`.
+
+**Track Q — operation-bus effect model** (commit `4bd806c`).
+- New `ZiskFv/Airs/OpBusEffect.lean` (85 lines): `op_bus_effect`
+  for branch shape, encoding read_xreg equalities from
+  operation-bus `a_lo/a_hi/b_lo/b_hi` lane reconstructions
+  (analogous to `bus_effect`'s memory-bus model but for op-bus's
+  value-carrying entries).
+- New `ZiskFv/Airs/OpBusHypotheses.lean` (76 lines) with
+  `chip_op_bus_hyps_branch` lemma proving (not axiomatizing) that
+  `(op_bus_effect ...).1 → read_xreg rs1 state = ok ... ∧ ...`.
+- Modified `ZiskFv/Equivalence/BranchEqual.lean` (+66 lines) with
+  `equiv_BEQ_metaplan_op_bus` companion: drops
+  `h_input_r1`/`h_input_r2` in favor of `h_op_bus` + match hyps.
+- Zero new project-level axioms (only `Lean.ofReduceBool` /
+  `Lean.trustCompiler` from decide-based tactics).
+- Pattern fans out to BNE/BLT/BGE/BLTU/BGEU + JALR mechanically.
+
+**Track T — not-happy-path coverage (BLT misaligned)** (commit
+`9345092`).
+- Added `equiv_BLT_metaplan_misaligned` (bit-1 misaligned target →
+  `Memory_Exception (Virtaddr (PC + sext imm), E_Fetch_Addr_Align)`)
+  and `equiv_BLT_metaplan_misaligned_bit0` (bit-0 misaligned →
+  Sail `Assertion` from RVI-mode pre-check) in
+  `Equivalence/BranchLessThan.lean` (+172 lines).
+- Both proven from existing `equiv_BLT_sail` + `simp` on
+  `PureSpec.execute_BLT_pure` with bit-level hypotheses.
+- Zero new axioms.
+- **Critical finding (documented in theorem docstring, lines
+  237-322).** ZisK's PIL emits **no fault-flag column** anywhere
+  on the bus (verified by grep over `vendor/zisk/pil/zisk.pil`).
+  `RV64D/BusEffect.lean:115-121` hardcodes the post-fold result to
+  `EStateM.Result.ok (Retire_Success ()) state'`. So the
+  metaplan-shape equation `LHS = (bus_effect …).2` is **literally
+  false** in misaligned cases — a constructor mismatch even when
+  post-states agree. The companions therefore prove only the
+  Sail-side reduction; closing the bus-side requires either
+  extending `bus_effect` with a fault-flag, projecting to the
+  `state` field only, or settling for Sail-only completeness.
+- Generalizes mechanically to BEQ/BNE/BLTU/BGE/BGEU/JAL/JALR — all
+  blocked on the same bus-effect gap.
+
+### Track R — POC failed; not yet retired
+
+Agent attempted retirement with privilege hypothesis added but
+proof tactics didn't close (syntax error in `set_option ... in
+lemma` form + unsolved `simp` goals on the 11-arm barrier match
+unfolding). Discovery from earlier session confirmed: retirement
+requires a real semantic refinement (`cur_privilege ∈ {Machine,
+Supervisor, User}` hypothesis), but executing the proof needs
+substantial Sail-side machinery (per-arm barrier reductions, fiom
+CSR read state-preservation, `effective_fence_set` simplification).
+Multi-day effort, not 2-3 hours. Worktree cleaned up.
+
+### Phase 6 trajectory (post-2026-04-26)
+
+| Track | POC status | Net lines | Trust impact |
+|---|---|---|---|
+| **N** (h_rd_val) | Pending — depends on O composition | 0 | Unblocked by O ship |
+| **O** (PIL bus-emission) | ✅ POC shipped | +888 | 0 new axioms |
+| **P** (lookup tables) | ✅ POC shipped earlier | +268 | +2 plookup, deprecated -2 (transition) |
+| **Q** (op_bus_effect) | ✅ POC shipped | +247 | 0 new axioms |
+| **R** (Sail-eq retirement) | ⚠️ POC failed; semantic refinement needed | 0 | -1 axiom *if* completed |
+| **T** (not-happy-path) | ✅ Sail-side POC shipped | +172 | 0 new axioms; bus-effect gap surfaced |
+
+**Next-step priorities:**
+1. Fan out Track Q's `equiv_BEQ_metaplan_op_bus` pattern to other branches + JALR.
+2. Fan out Track T's misaligned companion to other branches + JAL.
+3. Compose Track O's `bus_shape_for_ADD` derivation pattern into Track N's `h_rd_val` for ALU opcodes.
+4. Track R retirement (requires substantial Sail unfolding work — multi-day).
+5. Track T bus-effect-fault-flag extension (substantial new infrastructure — closes the bus-side gap that Track T identified).
