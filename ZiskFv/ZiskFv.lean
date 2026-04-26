@@ -20,6 +20,8 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 -- Track N K2: promoted lane-match theorems for register memory-bus entries.
 import ZiskFv.Airs.MemoryBus.LaneMatch
+-- Track N K3: FGL → BitVec 64 arithmetic-extension lifts (h_rd_val bridges).
+import ZiskFv.Fundamentals.PackedBitVec.Extensions
 import ZiskFv.Spec.Add
 import ZiskFv.Equivalence.Add
 import ZiskFv.GoldenTraces.Add
