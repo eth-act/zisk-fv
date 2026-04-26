@@ -130,6 +130,10 @@ import ZiskFv.Equivalence.Lh
 import ZiskFv.GoldenTraces.LH
 import ZiskFv.Equivalence.Lb
 import ZiskFv.GoldenTraces.LB
+-- Track N K4 — Signed-case PackedBitVec + MulFieldSigned + DivFieldSigned
+import ZiskFv.Fundamentals.PackedBitVec.Signed
+import ZiskFv.Spec.MulFieldSigned
+import ZiskFv.Spec.DivFieldSigned
 -- Phase 3C T-D — DIV/REM
 import ZiskFv.Equivalence.Div
 import ZiskFv.GoldenTraces.DIV
