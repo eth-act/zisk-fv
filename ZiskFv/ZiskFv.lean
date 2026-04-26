@@ -15,6 +15,9 @@ import ZiskFv.Airs.OperationBus
 -- Track O POC: pilout bus-emission extraction + derivation lemma.
 import ZiskFv.Extraction.Buses
 import ZiskFv.Airs.BusShape
+-- Track Q POC: operation-bus effect model + chip_op_bus_hyps lemmas.
+import ZiskFv.Airs.OpBusEffect
+import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Spec.Add
 import ZiskFv.Equivalence.Add
 import ZiskFv.GoldenTraces.Add

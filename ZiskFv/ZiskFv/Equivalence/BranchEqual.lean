@@ -10,6 +10,8 @@ import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.beq
 import ZiskFv.RV64D.BusEffect
 import ZiskFv.Airs.BusHypotheses
+import ZiskFv.Airs.OpBusEffect
+import ZiskFv.Airs.OpBusHypotheses
 
 /-!
 End-to-end theorem for RV64 BEQ. Combines:
@@ -277,5 +279,70 @@ theorem equiv_BEQ_metaplan_bus_self
     h_bus rfl
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_not_throws h_success
+
+/-- **Track Q POC for BEQ.** Operation-bus companion to
+    `equiv_BEQ_metaplan_from_bus`: drops the scenario-binding
+    `h_input_r1` / `h_input_r2` parameters in favour of a single
+    `h_op_bus : (op_bus_effect [op_entry] state rs1 rs2).1`
+    precondition.
+
+    The op-bus carries register *values* (in `a_lo`/`a_hi`/`b_lo`/`b_hi`)
+    rather than pointer-keyed register-byte payloads — so the user
+    additionally supplies the proof witness that the bus's
+    `lanes_to_bv64` reconstructions equal `beq_input.r1_val` /
+    `beq_input.r2_val`. The hypothesis `h_mult : op_entry.multiplicity
+    = 1` pins the entry as Main's assume-side branch emission.
+
+    Proof body: split `h_op_bus` via `chip_op_bus_hyps_branch`,
+    rewrite the resulting `read_xreg` values to match the
+    `beq_input` fields via `h_a_match` / `h_b_match`, and delegate to
+    `equiv_BEQ_metaplan_from_bus`. -/
+theorem equiv_BEQ_metaplan_op_bus
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (beq_input : PureSpec.BeqInput)
+    (imm : BitVec 13)
+    (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (op_entry : OperationBusEntry FGL)
+    (h_input_imm : beq_input.imm = imm)
+    -- Op-bus precondition (replaces h_input_r1 / h_input_r2).
+    (h_op_mult : op_entry.multiplicity = 1)
+    (h_op_bus : (ZiskFv.Airs.OpBusEffect.op_bus_effect [op_entry] state
+                  (regidx_to_fin r1) (regidx_to_fin r2)).1)
+    (h_a_match :
+      beq_input.r1_val = Goldilocks.lanes_to_bv64 op_entry.a_lo op_entry.a_hi)
+    (h_b_match :
+      beq_input.r2_val = Goldilocks.lanes_to_bv64 op_entry.b_lo op_entry.b_hi)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    -- Memory-bus precondition (PC read).
+    (h_bus : (bus_effect exec_row [] state).1)
+    (h_pc : beq_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
+    -- Structural bus hypotheses (Phase 2.5 D3).
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BEQ_pure beq_input).nextPC)
+    (h_not_throws : (PureSpec.execute_BEQ_pure beq_input).throws = false)
+    (h_success : (PureSpec.execute_BEQ_pure beq_input).success = true) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BEQ)) state
+      = (bus_effect exec_row [] state).2 := by
+  -- Extract the two register-read equalities from the op-bus precondition.
+  have h_reads := ZiskFv.Airs.OpBusHypotheses.chip_op_bus_hyps_branch
+    state op_entry (regidx_to_fin r1) (regidx_to_fin r2) h_op_mult h_op_bus
+  obtain ⟨h_r1_read, h_r2_read⟩ := h_reads
+  -- Rewrite the lane-recombined values to match `beq_input.r1_val` / `r2_val`.
+  have h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok beq_input.r1_val state := by rw [h_a_match]; exact h_r1_read
+  have h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok beq_input.r2_val state := by rw [h_b_match]; exact h_r2_read
+  -- Delegate to the previously-shipped `_from_bus` form.
+  exact equiv_BEQ_metaplan_from_bus state beq_input imm r1 r2 misa_val exec_row
+    h_input_imm h_input_r1 h_input_r2 h_input_misa h_misa_c
+    h_bus h_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
 end ZiskFv.Equivalence.BranchEqual
