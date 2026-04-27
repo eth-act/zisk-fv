@@ -57,6 +57,28 @@ it doesn't transfer directly:
   contract (see `ZiskFv.Fundamentals.Transpiler`) — it's part of the
   **trusted** surface.
 
+## Trusted surface
+
+Items below are accepted as axioms; downstream theorems compose on top
+of them. Improving any of them to a proven theorem is a strict trust
+reduction and is welcome but out of scope for current phases.
+
+- `ZiskFv.Fundamentals.Transpiler` — the RV→Zisk microinstruction
+  contract from `core/src/riscv2zisk_context.rs`.
+- `ZiskFv.Airs.OperationBus.matches_entry` — operation-bus protocol
+  soundness (`bus_id=5000`): a Main row's emission equals the matched
+  secondary AIR's row.
+- `ZiskFv.Airs.BinaryTable` (added in `finishing2.md` S0) — the binary
+  lookup table at `bus_id=125` carries the per-byte switch semantics
+  defined by `vendor/zisk/state-machines/binary/pil/binary_table.pil`
+  (AND/OR/XOR bitwise ops; LT/LTU/EQ/GT/LE/LEU/LT_ABS_*/MIN(U)/MAX(U)
+  comparison ops; ADD/SUB carry semantics; SEXT_00/FF byte sign-extends).
+  Mirrors openvm-fv's `Fundamentals/Interaction.lean::BitwiseBusEntry`
+  (whose XOR semantics is similarly trusted at the bus-entry definition).
+- `ZiskFv.Airs.BinaryExtensionTable` (added in `finishing2.md` S0) — the
+  shift lookup table at `bus_id=124` carries per-byte shift semantics
+  from `binary_extension_table.pil` (SLL/SRL/SRA byte-level views).
+
 ## Working conventions
 
 ### Metaplan + prompted phases

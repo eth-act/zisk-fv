@@ -26,7 +26,55 @@ the corresponding `_compositional_with_<X>` Spec lemmas;
 
 **Total scope: 26 opcodes** (1 SUB + 3 ALU-W + 6 Logic + 12 Shift + 4 Compare).
 
+## Architectural prerequisite — trust binary lookup tables
+
+After running `zisk-pil-extract` on `Binary` and `BinaryExtension`, we
+discovered both AIRs encode their byte-level semantics as **lookup
+arguments against virtual fixed tables** (`bus_id=125 BinaryTable`,
+`bus_id=124 BinaryExtensionTable`), not as F-typed polynomial
+constraints:
+
+* `Binary` (idx 10, 14 constraints): only constraints 0–6 are F-typed
+  — booleanity / linearity for the flag columns. Constraints 7–13
+  are 8 lookup arguments, one per byte, against `bus_id=125`.
+* `BinaryExtension` (idx 12, 8 constraints): **zero** F-typed
+  constraints. All 8 are lookups against `bus_id=124`.
+
+This means the K1-B / K1-C BitVec lifts cannot be derived from
+extracted F-typed constraints alone; the byte-level relation lives in
+the lookup. Two options were considered:
+
+* **(A) Trust the table contents**, mirroring openvm-fv's
+  `BitwiseBusEntry` / `RangeTupleCheckerBus` pattern in
+  `OpenvmFv/Fundamentals/Interaction.lean`: define a `BusEntry`-style
+  contract whose `wf_properties` baking-in the per-op switch from
+  `binary_table.pil`. Trusted at the bus-entry definition site.
+* **(B) Prove the table** by porting the PIL2 generator switch to
+  Lean and verifying each branch.
+
+We pick **(A)**, matching the openvm-fv template (which never proves
+its bitwise / range-check / program-bus tables; their semantics are
+trusted axioms in the `BusEntry` instance). Trust grows by **two new
+bus contracts** — same shape as today's `OperationBus.matches_entry`.
+Documented in CLAUDE.md alongside the other trusted-surface items.
+
+(Improving (A) → (B) later by porting the PIL switch is straightforward
+and doesn't change downstream proofs — only retires axioms.)
+
 ## Scope items
+
+### S0. Trusted bus contracts for the binary tables
+
+**Files to author:**
+
+| File | Notes |
+|---|---|
+| `ZiskFv/Airs/BinaryTable.lean` | `BinaryTableEntry F` 7-slot structure `(pos_ind, op, a, b, cin, c, flags)`; `binTable_row_Binary_byte_i` projection (`Valid_Binary` row → byte-i `BinaryTableEntry`); `bin_table_consumer_wf` Prop = the trusted per-op switch from `vendor/zisk/state-machines/binary/pil/binary_table.pil` (case-split on `op` literal: AND → `c = a &&& b`; OR → `c = a ||| b`; XOR → `c = a ^^^ b`; LT/LTU/EQ/etc. → cout-as-bool semantics; range conditions on a/b/c). Mirrors openvm-fv's `BitwiseBusEntryInstance.wf_properties`. |
+| `ZiskFv/Airs/BinaryExtensionTable.lean` | `BinaryExtensionTableEntry F` 7-slot structure `(op, byte_index, a_byte, shift_amount, c_lo_byte, c_hi_byte, op_is_shift)`; `binExtTable_row_BinaryExtension_byte_i` projection; `bin_ext_table_consumer_wf` Prop = trusted shift-byte semantics from `binary_extension_table.pil` (SLL → `c[i] := a[i] << shift_amount` byte-projected; SRL/SRA → analogous). |
+
+These files contain **only definitions and trusted-surface props** — no
+proofs of the `wf_properties`. Both are added to the trusted-surface
+list in `CLAUDE.md`.
 
 ### S1. Extract `Binary` AIR
 
@@ -41,7 +89,7 @@ SLT/SLTU and their I-immediates).
 | `ZiskFv/Extraction/Binary.lean` | `Extraction/BinaryAdd.lean` | auto-generated via `tools/zisk-pil-extract --air Binary` |
 | `ZiskFv/Extraction/Binary.hand.lean` | `Extraction/BinaryAdd.hand.lean` | oracle copy for diff-check by `verify-phase*` |
 | `ZiskFv/Airs/Binary/Binary.lean` | `Airs/Binary/BinaryAdd.lean` | named-column `Valid_Binary` wrapper + per-constraint bridge lemmas |
-| `ZiskFv/Airs/Binary/BinaryPackedCorrect.lean` | `Airs/Binary/BinaryAddPackedCorrect.lean` | (a.k.a. K1-B+SLT-half-of-K1-C) BitVec lifts: AND/OR/XOR conclude `BitVec.{and,or,xor} 64`; SLT(U) concludes signed/unsigned compare → 0/1 |
+| `ZiskFv/Airs/Binary/BinaryPackedCorrect.lean` | `Airs/Binary/BinaryAddPackedCorrect.lean` | (a.k.a. K1-B+SLT-half-of-K1-C) BitVec lifts: AND/OR/XOR conclude `BitVec.{and,or,xor} 64`; SLT(U) concludes signed/unsigned compare → 0/1. **Derives the byte-level relation from S0's `bin_table_consumer_wf`** (assumed at consumer multiplicity = 1) plus the F-typed booleanity constraints on the auxiliary flags. The 8 byte-tuples are reassembled into 64-bit BitVec lifts via `Fundamentals/PackedBitVec/NoWrap.lean`'s machinery. |
 
 `tools/zisk-pil-extract` already handles this AIR — same template as
 the existing `BinaryAdd` extraction (which is 9 constraints / 198
@@ -61,7 +109,7 @@ for *W byte/half/word loads.
 | `ZiskFv/Extraction/BinaryExtension.lean` | `Extraction/BinaryAdd.lean` | auto-generated |
 | `ZiskFv/Extraction/BinaryExtension.hand.lean` | `Extraction/BinaryAdd.hand.lean` | oracle copy |
 | `ZiskFv/Airs/Binary/BinaryExtension.lean` | `Airs/Binary/BinaryAdd.lean` | `Valid_BinaryExtension` |
-| `ZiskFv/Airs/Binary/BinaryExtensionPackedCorrect.lean` | `Airs/Binary/BinaryAddPackedCorrect.lean` | Shift-half-of-K1-C: BitVec lifts for `shiftLeft`, `ushiftRight`, `sshiftRight` |
+| `ZiskFv/Airs/Binary/BinaryExtensionPackedCorrect.lean` | `Airs/Binary/BinaryAddPackedCorrect.lean` | Shift-half-of-K1-C: BitVec lifts for `shiftLeft`, `ushiftRight`, `sshiftRight`. **Derives entirely from S0's `bin_ext_table_consumer_wf`** (consumer-side trust at multiplicity 1) — `BinaryExtension` has zero F-typed constraints, so no booleanity supplements are needed. |
 
 ### S3. Close K2 (Layer-2 memory-bus lane-match)
 
@@ -171,8 +219,12 @@ SRA, SRAI, SRAW, SRAIW, SLT, SLTU, SLTI, SLTIU = 22 opcodes):
 ## Verification gates
 
 ```bash
-# After S1 (Binary)
+# After S0 (trusted bus contracts)
 cd ZiskFv
+lake build ZiskFv.Airs.BinaryTable
+lake build ZiskFv.Airs.BinaryExtensionTable
+
+# After S1 (Binary)
 lake build ZiskFv.Airs.Binary.Binary
 lake build ZiskFv.Airs.Binary.BinaryPackedCorrect
 
@@ -206,12 +258,14 @@ cd ZiskFv && lake build
 | `register_write_lanes_match` Layer-2 closure (option (d) above) | needs Mem AIR multi-row argument | finishing3 |
 | Range-check soundness (SpecifiedRanges, VirtualTable) | infra-AIR closure work | finishing3 |
 | Permutation-soundness Lean theorem | bus-protocol math | finishing3 |
+| Proving `BinaryTable` / `BinaryExtensionTable` `wf_properties` from the PIL2 generator (port the `binary_table.pil` switch to Lean) | optional improvement; trusted in `S0` for now per the openvm-fv pattern | future finishing pass |
 | Top-level "ZisK execution ≅ Sail interpreter" theorem | per-opcode goal does not require it | finishing3 |
 | Transpile contract derivation (riscv2zisk_context.rs port) | trusted surface per CLAUDE.md | finishing3 |
 
 ## Status / next action
 
-- Branch not yet started. Wait for `finishing1.md` to close.
-- **Recommended order:** S1 + S2 in parallel (independent AIR
-  extractions). S3 in parallel with S1/S2 (different files entirely).
-  Then S4 (gated on S1/S2/S3). Then S5 cleanup.
+- Branch: `feature/track-n-h-rd-val` (continues finishing1's worktree).
+- **Recommended order:** **S0 first** (trusted bus contracts — small,
+  unblocks everything). Then S1 + S2 in parallel (independent AIR
+  extractions; both depend on S0). S3 in parallel with S1/S2 (different
+  files entirely). Then S4 (gated on S1/S2/S3). Then S5 cleanup.
