@@ -1737,3 +1737,54 @@ The four axioms above (MB-L, MB-S, MS-L, MS-S) are designed to
 load / store metaplan theorems. Per-opcode rewiring (S5 of
 `finishing3.md`) is left to follow-up commits — the bridge lemmas
 shipped here unblock that work without performing it.
+
+### S5b: per-opcode metaplan retirement (2026-04-27)
+
+The 11 load / store metaplan theorems (`equiv_{LD,LW,LWU,LH,LHU,LB,
+LBU,SD,SW,SH,SB}_metaplan`) have been rewired to drop their
+`h_bus_execute_matches_sail` parameter (and the LD-specific
+`h_rd_val :` parameter). Each theorem now closes via the structural
+bus-emission lemma family in `Airs/BusEmission.lean`
+(`bus_effect_matches_sail_load_<n>byte_rrrw`,
+`..._loadu_<n>byte_rrrw`, `..._store{,_<n>byte}_rrrw`) plus the
+memory-model bridges in `Spec/MemModel.lean`
+(`mem_load_correct{,_<n>byte}`, `mem_store_correct{,_<n>byte}`).
+
+**New metaplan parameter classes (S5b).** Each metaplan theorem now
+takes:
+* `Valid_Main`, `Valid_Mem` AIR witnesses + a `r_main : ℕ` row index
+  (CIRCUIT-CONSTRAINT class).
+* `h_main_emit_b` / `h_main_emit_c` — the load / store memory-bus
+  emission shape (`b_0 = lo(e), b_1 = hi(e)`, `as = 2`,
+  `multiplicity = ±1`) — feeds `mem_load_correct` /
+  `mem_store_correct`.
+* `h_ptr_match` — bridges Sail's `r1_val + signExtend imm` (or
+  `r1_val + signExtend imm` for stores) to the bus entry's
+  `e.ptr.toNat` (TRANSPILE-PIN class).
+* For loads: `h_e1_e2_bytes` (8-byte LD) or `h_high_bytes_<sign|zero>ext`
+  (narrow-width loads) — bridges the bus's mem-read-entry bytes to
+  the rd-write-entry's lanes via the appropriate Sail-level
+  extension shape.
+* For stores: `h_byte_<i>` per-byte equalities to
+  `BitVec.extractLsb (8(i+1)-1) (8i) r2_val` for SD; for narrow
+  stores, a single bridging premise `h_mem_eq` ties the bus's
+  8-insert chain on `state.mem` to Sail's narrow `modify_memory_<n>`
+  data fields.
+
+**M-family axiom load-bearing status.** M1-M4, M7, M9-M11 (the
+`*_pure_equiv_axiom` per-opcode axioms) were already promoted to
+theorems in Phase 3.5 (2026-04-22) and were never load-bearing on
+the metaplan-parameter retirement; their entries above remain valid
+historical audit records. The load-bearing metaplan-side trust is
+now MB-L / MB-S / MS-L / MS-S (the four memory-bus / state-bridge
+axioms documented immediately above) plus the per-opcode pure-spec
+equivalence theorems (no axiom).
+
+**Trust-base impact.** No new axioms beyond MB-L/MB-S/MS-L/MS-S/MB-W
+(already on the trust ledger). The S5b rewiring is a strict trust
+reduction relative to the parameterized
+`h_bus_execute_matches_sail` form — the closure shifts caller
+obligations from one monolithic Sail-state-equality predicate to
+several smaller circuit-level facts (bus shape + ptr-match + lane
+match), each in CIRCUIT-CONSTRAINT, LANE-MATCH, or TRANSPILE-PIN
+classes that the broader project plan is auditing separately.

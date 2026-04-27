@@ -4,39 +4,17 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Spec.LoadBU
+import ZiskFv.Spec.MemModel
 import ZiskFv.Airs.Main
+import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.lbu
 import ZiskFv.RV64D.BusEffect
 
 /-!
 End-to-end theorem for RV64 LBU (load byte, unsigned / zero-extended).
-Phase 3A L5 sibling of `Equivalence/LoadWU.lean` / `Equivalence/LoadHU.lean`.
-Combines:
-
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_LBU`),
-* the compositional LBU spec
-  (`ZiskFv.Spec.LoadBU.load_bu_compositional`),
-* the Sail pure-function equivalence
-  (`PureSpec.execute_LOADBU_pure_equiv`; closed via the trusted
-  memory-model axiom `execute_LOADBU_pure_equiv_axiom` — see
-  `RV64D/lbu.lean` — sibling of M1/M3/M7/M9),
-
-into three companion theorems paralleling LWU/LHU's trio:
-
-* `equiv_LBU` — circuit-level. States that the Main row's packed `c`
-  lanes equal the memory-bus entry's byte, given the constraint-set +
-  mode + memory-match + high-bytes-zero hypotheses.
-* `equiv_LBU_sail` — Sail-level. Wraps `execute_LOADBU_pure_equiv`.
-* `equiv_LBU_metaplan` — the metaplan-shaped theorem
-  `execute_instruction (.LOAD (imm, rs1, rd, true, 1)) state
-    = (bus_effect exec_row mem_row state).2`.
-
-As with LWU / LHU (`equiv_LWU_metaplan` / `equiv_LHU_metaplan`), the
-bus-emission correctness hypothesis `h_bus_execute_matches_sail` is
-parameterized — D3e DEFERRED shape (d) (memory-bus-read) inherits to
-LBU.
+`finishing3` S5b retired the the bus-execute-matches-sail premise parameter.
 -/
 
 namespace ZiskFv.Equivalence.LoadBU
@@ -45,19 +23,13 @@ open Goldilocks
 open Interaction
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
+open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Spec.LoadD
 open ZiskFv.Spec.LoadBU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Circuit-level LBU theorem.** With the LD-shape load hypotheses
-    plus the memory-bus entry's 7 high byte lanes zeroed (the
-    `ind_width = 1` bus-side zero-pad), the Main row's packed `c` cell
-    encodes the 8-bit loaded value (equal to `memory_entry_byte entry`).
-
-    LBU-analogue of `equiv_LWU` / `equiv_LHU`, narrowed via
-    `load_bu_compositional`. -/
 theorem equiv_LBU
     (_rs1 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
@@ -66,15 +38,6 @@ theorem equiv_LBU
     main_c_packed m r_main = memory_entry_byte entry :=
   load_bu_compositional m r_main next_pc entry h_circuit
 
-/-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
-    RV64 LBU (`.LOAD (imm, rs1, rd, true, 1)`) reduces to the
-    pure-function block supplied by `PureSpec.execute_LOADBU_pure`,
-    given the register/PC/memory assumptions (alignment is vacuous
-    for 1-byte loads).
-
-    Wraps `PureSpec.execute_LOADBU_pure_equiv`, which delegates to the
-    trusted `execute_LOADBU_pure_equiv_axiom` (sibling of M1/M3/M7;
-    see `RV64D/lbu.lean`). -/
 theorem equiv_LBU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lbu_input : PureSpec.LbuInput)
@@ -103,15 +66,7 @@ theorem equiv_LBU_sail
   PureSpec.execute_LOADBU_pure_equiv
     lbu_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** The metaplan-target shape for RV64 LBU: Sail's
-    `execute_instruction` on an LBU equals the state computed by
-    applying `bus_effect` to the circuit's execution + memory bus rows.
-
-    Composes `equiv_LBU_sail` with the bus-matching hypothesis
-    `h_bus_execute_matches_sail`. As in `equiv_LWU_metaplan` /
-    `equiv_LHU_metaplan` / `equiv_LD_metaplan`, the
-    bus-emission-correctness obligation is parameterized; D3e DEFERRED
-    shape (d) (memory-bus-read) inherits here. -/
+/-- **Metaplan theorem.** `finishing3` S5b. -/
 theorem equiv_LBU_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lbu_input : PureSpec.LbuInput)
@@ -120,29 +75,90 @@ theorem equiv_LBU_metaplan
     (misa : RegisterType Register.misa)
     (mseccfg : RegisterType Register.mseccfg)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (mem_row : List (Interaction.MemoryBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (risc_v_assumptions :
       RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
     (h_opcode_assumptions :
       PureSpec.lbu_state_assumptions lbu_input state)
-    (h_bus_execute_matches_sail :
-      (bus_effect exec_row mem_row state).2
-        = (let output := PureSpec.execute_LOADBU_pure lbu_input
-           (do
-             Sail.writeReg Register.nextPC output.nextPC
-             match output.rd with
-               | .some (rd, rd_val) => write_xreg rd rd_val
-               | .none => pure ()
-             pure (ExecutionResult.Retire_Success ())) state)) :
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_LOADBU_pure lbu_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
+    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1)
+    (h_rd_zero_iff :
+      Transpiler.wrap_to_regidx e2.ptr = 0 ↔ lbu_input.rd = 0)
+    (h_rd_idx : lbu_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
+    (h_main_emit_b :
+      main.b_0 r_main = memory_entry_lo e1
+      ∧ main.b_1 r_main = memory_entry_hi e1
+      ∧ e1.as = 2
+      ∧ e1.multiplicity = -1)
+    (h_ptr_match :
+      e1.ptr.toNat
+        = lbu_input.r1_val.toNat + (BitVec.signExtend 64 lbu_input.imm).toNat)
+    (h_high_bytes_zeroext :
+      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
+                  e2.x4, e2.x5, e2.x6, e2.x7]
+        = (BitVec.setWidth 32 (e1.x0 : BitVec 8)).setWidth 64) :
     execute_instruction (instruction.LOAD (
       lbu_input.imm,
       regidx.Regidx lbu_input.r1,
       regidx.Regidx lbu_input.rd,
       true,
       1
-    )) state = (bus_effect exec_row mem_row state).2 := by
+    )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
   rw [equiv_LBU_sail state lbu_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
-  exact h_bus_execute_matches_sail.symm
+  symm
+  have h_mem :=
+    ZiskFv.Spec.MemModel.mem_load_correct_1byte
+      main mem r_main e1 state h_main_emit_b
+  obtain ⟨_h_pc, _h_r1_read,
+          h_d0,
+          _h_bound⟩ := h_opcode_assumptions
+  rw [h_ptr_match] at h_mem
+  have hd0 : (e1.x0 : BitVec 8) = lbu_input.data0 := by
+    rw [h_d0] at h_mem; exact (Option.some.inj h_mem).symm
+  have h_rd_val_derived :
+      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
+                  e2.x4, e2.x5, e2.x6, e2.x7]
+        = (BitVec.setWidth 32 lbu_input.data0).setWidth 64 := by
+    rw [h_high_bytes_zeroext, hd0]
+  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_loadu_1byte_rrrw
+        state exec_row e0 e1 e2
+        (PureSpec.execute_LOADBU_pure lbu_input).nextPC
+        ((BitVec.setWidth 32 lbu_input.data0).setWidth 64)
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+        h_rd_val_derived]
+  simp only [PureSpec.execute_LOADBU_pure]
+  by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
+  · rw [dif_pos h_rd_zero, dif_pos (h_rd_zero_iff.mp h_rd_zero)]
+  · have h_rd_input_ne : lbu_input.rd ≠ 0 :=
+      fun h => h_rd_zero (h_rd_zero_iff.mpr h)
+    rw [dif_neg h_rd_zero, dif_neg h_rd_input_ne]
+    have h_rd_ub : (Transpiler.wrap_to_regidx e2.ptr).val < 32 :=
+      (Transpiler.wrap_to_regidx e2.ptr).isLt
+    have h_tn_bound : lbu_input.rd.toNat < 32 := by
+      obtain ⟨⟨n, hn⟩⟩ := lbu_input.rd
+      simp [BitVec.toNat]; omega
+    have h_tn_ne : lbu_input.rd.toNat ≠ 0 := by
+      intro h; apply h_rd_input_ne
+      apply BitVec.eq_of_toNat_eq; simp [h]
+    have h_idx_eq :
+        (⟨(Transpiler.wrap_to_regidx e2.ptr).val, by
+            apply Finset.mem_Icc.mpr
+            refine ⟨?_, by omega⟩
+            rw [← h_rd_idx]; omega⟩
+          : Finset.Icc 1 31)
+          = ⟨lbu_input.rd.toNat,
+              Finset.mem_Icc.mpr ⟨by omega, by omega⟩⟩ := by
+      apply Subtype.ext; exact h_rd_idx.symm
+    rw [h_idx_eq]
 
 end ZiskFv.Equivalence.LoadBU

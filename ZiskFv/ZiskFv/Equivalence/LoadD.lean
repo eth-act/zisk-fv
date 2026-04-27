@@ -4,8 +4,11 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Spec.LoadD
+import ZiskFv.Spec.MemModel
 import ZiskFv.Airs.Main
+import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.ld
 import ZiskFv.RV64D.BusEffect
@@ -31,9 +34,13 @@ into three companion theorems paralleling the ADD and BEQ archetypes:
 * `equiv_LD_metaplan` — the metaplan-shaped theorem
   `execute_instruction (.LOAD …) = (bus_effect …).2`.
 
-As with the ADD/BEQ archetypes, the bus-emission correctness
-hypothesis `h_bus_execute_matches_sail` is parameterized — Phase 4
-audit derives it from a PIL-level bus-emission spec.
+`finishing3` S5b: the per-byte rd-write-value parameter `h_rd_val` was
+retired here in favour of a derivation from `mem_load_correct` (see
+`Spec/MemModel.lean`) plus a new ptr-match hypothesis tying the
+memory-read entry's pointer to Sail's `r1_val + signExtend imm` and a
+per-byte mem-read-entry ↔ rd-write-entry passthrough hypothesis. The
+new parameters carry circuit content (Mem AIR witness + Main AIR
+witness + bus emission shape), not Sail-spec output content.
 -/
 
 namespace ZiskFv.Equivalence.LoadD
@@ -42,6 +49,7 @@ open Goldilocks
 open Interaction
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
+open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Spec.LoadD
 
@@ -104,21 +112,26 @@ theorem equiv_LD_sail
     `execute_instruction` on an LD equals the state computed by applying
     `bus_effect` to the circuit's execution + memory bus rows.
 
-    Composes `equiv_LD_sail` with the bus-matching hypothesis
-    `h_bus_execute_matches_sail`. As in `equiv_ADD_metaplan`, the
-    bus-emission-correctness obligation is parameterized; Phase 4
-    derives it from PIL-level bus emission.
+    `finishing3` S5b: the previous decomposed `h_rd_val` parameter
+    (an output-equality stating `U64.toBV #v[e2.x0..e2.x7] = data7 ++
+    ... ++ data0`) is **derived internally** from
+    `Spec.MemModel.mem_load_correct` plus the new circuit hypotheses
+    (`main`, `mem`, `r_main`, `h_main_emit_b`, `h_ptr_match`,
+    `h_e1_e2_bytes`). The `h_rd_zero_iff` and `h_rd_idx` hypotheses are
+    retained — they are scenario-binding ptr-match facts (Sail's `rd`
+    operand vs the bus's `e2.ptr`) that cannot be derived from circuit
+    content alone.
 
     **Hypotheses.**
     * Sail side (from `equiv_LD_sail`): full `RISC_V_assumptions` +
-      per-input `ld_state_assumptions` (register readability, PC,
-      8 memory bytes, address-space bound, 8-byte alignment).
-    * Bus side: `h_bus_execute_matches_sail` asserts that the
-      execution bus (read PC, write nextPC) + memory bus
-      (register-read rs1, memory-read 8 bytes, register-write rd)
-      fed through `bus_effect` produces the same `EStateM.Result`
-      as the concrete Sail monadic block in `equiv_LD_sail`'s
-      conclusion. -/
+      per-input `ld_state_assumptions`.
+    * Bus side (Phase 4.5 Track C): structural multiplicities +
+      address-spaces on the two-entry execution bus and the
+      three-entry memory bus (rs1_read, mem_read_8, rd_write).
+    * **New (S5b):** `Valid_Main` + `Valid_Mem` witnesses, the load-side
+      memory bus emission `h_main_emit_b`, the ptr-match
+      `h_ptr_match`, and the per-byte mem-read ↔ rd-write entry
+      passthrough `h_e1_e2_bytes`. -/
 theorem equiv_LD_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)
@@ -142,15 +155,30 @@ theorem equiv_LD_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
     (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1)
-    -- Phase 4.5 A-rewire pattern: decomposed rd-match hypotheses.
+    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (retained;
+    -- ptr-match between Sail's rd and bus e2.ptr is not circuit-derivable).
     (h_rd_zero_iff :
       Transpiler.wrap_to_regidx e2.ptr = 0 ↔ ld_input.rd = 0)
     (h_rd_idx : ld_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = ld_input.data7 ++ ld_input.data6 ++ ld_input.data5 ++ ld_input.data4
-        ++ ld_input.data3 ++ ld_input.data2 ++ ld_input.data1 ++ ld_input.data0) :
+    -- finishing3 S5b: new circuit-level parameters that supplant `h_rd_val`.
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
+    (h_main_emit_b :
+      main.b_0 r_main = memory_entry_lo e1
+      ∧ main.b_1 r_main = memory_entry_hi e1
+      ∧ e1.as = 2
+      ∧ e1.multiplicity = -1)
+    (h_ptr_match :
+      e1.ptr.toNat
+        = ld_input.r1_val.toNat + (BitVec.signExtend 64 ld_input.imm).toNat)
+    (h_e1_e2_bytes :
+      (e2.x0 : BitVec 8) = e1.x0
+      ∧ (e2.x1 : BitVec 8) = e1.x1
+      ∧ (e2.x2 : BitVec 8) = e1.x2
+      ∧ (e2.x3 : BitVec 8) = e1.x3
+      ∧ (e2.x4 : BitVec 8) = e1.x4
+      ∧ (e2.x5 : BitVec 8) = e1.x5
+      ∧ (e2.x6 : BitVec 8) = e1.x6
+      ∧ (e2.x7 : BitVec 8) = e1.x7) :
     execute_instruction (instruction.LOAD (
       ld_input.imm,
       regidx.Regidx ld_input.r1,
@@ -158,14 +186,71 @@ theorem equiv_LD_metaplan
       false,
       8
     )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- Step 1. Reduce LHS via Sail-level equivalence.
   rw [equiv_LD_sail state ld_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
   symm
+  -- Step 2. Reduce RHS via the 8-byte load bus-effect lemma.
   rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_load_rrrw
         state exec_row e0 e1 e2
         (PureSpec.execute_LOADD_pure ld_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
+  -- Step 3. Derive the per-byte data ↔ e1.x_i agreement via mem_load_correct
+  -- + the load-side state.mem assumptions + ptr-match.
+  have h_mem :=
+    ZiskFv.Spec.MemModel.mem_load_correct
+      main mem r_main e1 state h_main_emit_b
+  -- Unpack ld_state_assumptions: data0..data7 are at successive
+  -- state.mem keys starting at r1_val + signExt(imm).
+  obtain ⟨_h_pc, _h_r1_read,
+          h_d0, h_d1, h_d2, h_d3, h_d4, h_d5, h_d6, h_d7,
+          _h_bound, _h_aligned⟩ := h_opcode_assumptions
+  -- Bridge state.mem facts via h_ptr_match: e1.ptr.toNat = r1_val +
+  -- signExt(imm).toNat, so mem_load_correct's keys equal the
+  -- assumption-side keys. Hence (e1.x_i : BitVec 8) = data_i via
+  -- .some-injectivity.
+  have h_ptr_match' := h_ptr_match
+  rw [h_ptr_match'] at h_mem
+  obtain ⟨he0, he1, he2, he3, he4, he5, he6, he7⟩ := h_mem
+  -- Combine with state.mem assumptions to get (e1.x_i : BitVec 8) = data_i.
+  have hd0 : (e1.x0 : BitVec 8) = ld_input.data0 := by
+    rw [h_d0] at he0; exact (Option.some.inj he0).symm
+  have hd1 : (e1.x1 : BitVec 8) = ld_input.data1 := by
+    rw [h_d1] at he1; exact (Option.some.inj he1).symm
+  have hd2 : (e1.x2 : BitVec 8) = ld_input.data2 := by
+    rw [h_d2] at he2; exact (Option.some.inj he2).symm
+  have hd3 : (e1.x3 : BitVec 8) = ld_input.data3 := by
+    rw [h_d3] at he3; exact (Option.some.inj he3).symm
+  have hd4 : (e1.x4 : BitVec 8) = ld_input.data4 := by
+    rw [h_d4] at he4; exact (Option.some.inj he4).symm
+  have hd5 : (e1.x5 : BitVec 8) = ld_input.data5 := by
+    rw [h_d5] at he5; exact (Option.some.inj he5).symm
+  have hd6 : (e1.x6 : BitVec 8) = ld_input.data6 := by
+    rw [h_d6] at he6; exact (Option.some.inj he6).symm
+  have hd7 : (e1.x7 : BitVec 8) = ld_input.data7 := by
+    rw [h_d7] at he7; exact (Option.some.inj he7).symm
+  -- Compose with h_e1_e2_bytes to get (e2.x_i : BitVec 8) = data_i.
+  obtain ⟨h12_0, h12_1, h12_2, h12_3, h12_4, h12_5, h12_6, h12_7⟩ :=
+    h_e1_e2_bytes
+  have hd2_0 : (e2.x0 : BitVec 8) = ld_input.data0 := h12_0.trans hd0
+  have hd2_1 : (e2.x1 : BitVec 8) = ld_input.data1 := h12_1.trans hd1
+  have hd2_2 : (e2.x2 : BitVec 8) = ld_input.data2 := h12_2.trans hd2
+  have hd2_3 : (e2.x3 : BitVec 8) = ld_input.data3 := h12_3.trans hd3
+  have hd2_4 : (e2.x4 : BitVec 8) = ld_input.data4 := h12_4.trans hd4
+  have hd2_5 : (e2.x5 : BitVec 8) = ld_input.data5 := h12_5.trans hd5
+  have hd2_6 : (e2.x6 : BitVec 8) = ld_input.data6 := h12_6.trans hd6
+  have hd2_7 : (e2.x7 : BitVec 8) = ld_input.data7 := h12_7.trans hd7
+  -- Build the rd-value equality (the previous `h_rd_val` shape).
+  have h_rd_val_derived :
+      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
+                  e2.x4, e2.x5, e2.x6, e2.x7]
+        = ld_input.data7 ++ ld_input.data6 ++ ld_input.data5 ++ ld_input.data4
+          ++ ld_input.data3 ++ ld_input.data2 ++ ld_input.data1
+          ++ ld_input.data0 := by
+    simp only [U64.toBV, Vector.getElem_mk, List.getElem_toArray,
+               List.getElem_cons_zero, List.getElem_cons_succ]
+    rw [hd2_0, hd2_1, hd2_2, hd2_3, hd2_4, hd2_5, hd2_6, hd2_7]
   -- Discharge the rd-match branch via the decomposed hypotheses.
   simp only [PureSpec.execute_LOADD_pure]
   by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
@@ -174,7 +259,7 @@ theorem equiv_LD_metaplan
   · -- Nonzero case: both sides write the same rd with the same value.
     have h_rd_input_ne : ld_input.rd ≠ 0 :=
       fun h => h_rd_zero (h_rd_zero_iff.mpr h)
-    rw [dif_neg h_rd_zero, dif_neg h_rd_input_ne, h_rd_val]
+    rw [dif_neg h_rd_zero, dif_neg h_rd_input_ne, h_rd_val_derived]
     -- Establish the `Finset.Icc 1 31` subtype equality and rewrite it
     -- in the LHS. The two wrappers carry identical proofs modulo the
     -- underlying Nat; only the Nat side matters.

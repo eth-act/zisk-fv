@@ -4,37 +4,20 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Spec.LoadHU
+import ZiskFv.Spec.MemModel
 import ZiskFv.Airs.Main
+import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.lhu
 import ZiskFv.RV64D.BusEffect
 
 /-!
 End-to-end theorem for RV64 LHU (load halfword, unsigned / zero-extended).
-Phase 3A L3 sibling of `Equivalence/LoadWU.lean`. Combines:
-
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_LHU`),
-* the compositional LHU spec
-  (`ZiskFv.Spec.LoadHU.load_hu_compositional`),
-* the Sail pure-function equivalence
-  (`PureSpec.execute_LOADHU_pure_equiv`; closed via the trusted
-  memory-model axiom `execute_LOADHU_pure_equiv_axiom` — see
-  `RV64D/lhu.lean` — sibling of M1/M3/M5/M7),
-
-into three companion theorems paralleling LWU's trio:
-
-* `equiv_LHU` — circuit-level. States that the Main row's packed `c`
-  lanes equal the memory-bus entry's 16-bit half, given the
-  constraint-set + mode + memory-match + high-bytes-zero hypotheses.
-* `equiv_LHU_sail` — Sail-level. Wraps `execute_LOADHU_pure_equiv`.
-* `equiv_LHU_metaplan` — the metaplan-shaped theorem
-  `execute_instruction (.LOAD (imm, rs1, rd, true, 2)) state
-    = (bus_effect exec_row mem_row state).2`.
-
-As with LWU (`equiv_LWU_metaplan`), the bus-emission correctness
-hypothesis `h_bus_execute_matches_sail` is parameterized — D3e
-DEFERRED shape (d) (memory-bus-read) inherits to LHU.
+`finishing3` S5b retired the the bus-execute-matches-sail premise parameter
+in favour of structural bus hypotheses + `mem_load_correct_2byte`.
+LHU's pure-spec uses `BitVec.setWidth 32` (zero-extend to 32 bits) on
+the 16-bit halfword.
 -/
 
 namespace ZiskFv.Equivalence.LoadHU
@@ -43,18 +26,13 @@ open Goldilocks
 open Interaction
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
+open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Spec.LoadD
 open ZiskFv.Spec.LoadHU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Circuit-level LHU theorem.** With the LD-shape load hypotheses
-    plus the memory-bus entry's high 6 byte lanes zeroed (the `ind_width
-    = 2` bus-side zero-pad), the Main row's packed `c` cell encodes the
-    16-bit loaded value (equal to `memory_entry_half entry`).
-
-    LHU-analogue of `equiv_LWU`, narrowed via `load_hu_compositional`. -/
 theorem equiv_LHU
     (_rs1 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
@@ -63,14 +41,6 @@ theorem equiv_LHU
     main_c_packed m r_main = memory_entry_half entry :=
   load_hu_compositional m r_main next_pc entry h_circuit
 
-/-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
-    RV64 LHU (`.LOAD (imm, rs1, rd, true, 2)`) reduces to the
-    pure-function block supplied by `PureSpec.execute_LOADHU_pure`,
-    given the register/PC/memory/alignment assumptions.
-
-    Wraps `PureSpec.execute_LOADHU_pure_equiv`, which delegates to the
-    trusted `execute_LOADHU_pure_equiv_axiom` (sibling of M1/M3; see
-    `RV64D/lhu.lean`). -/
 theorem equiv_LHU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lhu_input : PureSpec.LhuInput)
@@ -99,15 +69,8 @@ theorem equiv_LHU_sail
   PureSpec.execute_LOADHU_pure_equiv
     lhu_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** The metaplan-target shape for RV64 LHU: Sail's
-    `execute_instruction` on an LHU equals the state computed by applying
-    `bus_effect` to the circuit's execution + memory bus rows.
-
-    Composes `equiv_LHU_sail` with the bus-matching hypothesis
-    `h_bus_execute_matches_sail`. As in `equiv_LWU_metaplan` /
-    `equiv_LD_metaplan`, the bus-emission-correctness obligation is
-    parameterized; D3e DEFERRED shape (d) (memory-bus-read) — LHU
-    inherits the parameterization. -/
+/-- **Metaplan theorem.** `finishing3` S5b: retired
+    the bus-execute-matches-sail premise. -/
 theorem equiv_LHU_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lhu_input : PureSpec.LhuInput)
@@ -116,29 +79,107 @@ theorem equiv_LHU_metaplan
     (misa : RegisterType Register.misa)
     (mseccfg : RegisterType Register.mseccfg)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (mem_row : List (Interaction.MemoryBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (risc_v_assumptions :
       RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
     (h_opcode_assumptions :
       PureSpec.lhu_state_assumptions lhu_input state)
-    (h_bus_execute_matches_sail :
-      (bus_effect exec_row mem_row state).2
-        = (let output := PureSpec.execute_LOADHU_pure lhu_input
-           (do
-             Sail.writeReg Register.nextPC output.nextPC
-             match output.rd with
-               | .some (rd, rd_val) => write_xreg rd rd_val
-               | .none => pure ()
-             pure (ExecutionResult.Retire_Success ())) state)) :
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_LOADHU_pure lhu_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
+    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1)
+    (h_rd_zero_iff :
+      Transpiler.wrap_to_regidx e2.ptr = 0 ↔ lhu_input.rd = 0)
+    (h_rd_idx : lhu_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
+    (h_main_emit_b :
+      main.b_0 r_main = memory_entry_lo e1
+      ∧ main.b_1 r_main = memory_entry_hi e1
+      ∧ e1.as = 2
+      ∧ e1.multiplicity = -1)
+    (h_ptr_match :
+      e1.ptr.toNat
+        = lhu_input.r1_val.toNat + (BitVec.signExtend 64 lhu_input.imm).toNat)
+    -- LHU rd value: setWidth 32 (zero-extend) of the 16-bit halfword,
+    -- then writeReg pads to 64 bits.
+    (h_high_bytes_zeroext :
+      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
+                  e2.x4, e2.x5, e2.x6, e2.x7]
+        = (BitVec.setWidth 32
+            ((e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8))).setWidth 64) :
     execute_instruction (instruction.LOAD (
       lhu_input.imm,
       regidx.Regidx lhu_input.r1,
       regidx.Regidx lhu_input.rd,
       true,
       2
-    )) state = (bus_effect exec_row mem_row state).2 := by
+    )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
   rw [equiv_LHU_sail state lhu_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
-  exact h_bus_execute_matches_sail.symm
+  symm
+  have h_mem :=
+    ZiskFv.Spec.MemModel.mem_load_correct_2byte
+      main mem r_main e1 state h_main_emit_b
+  obtain ⟨_h_pc, _h_r1_read,
+          h_d0, h_d1,
+          _h_bound, _h_aligned⟩ := h_opcode_assumptions
+  rw [h_ptr_match] at h_mem
+  obtain ⟨he0, he1⟩ := h_mem
+  have hd0 : (e1.x0 : BitVec 8) = lhu_input.data0 := by
+    rw [h_d0] at he0; exact (Option.some.inj he0).symm
+  have hd1 : (e1.x1 : BitVec 8) = lhu_input.data1 := by
+    rw [h_d1] at he1; exact (Option.some.inj he1).symm
+  -- `BitVec.setWidth 32 ... |>.setWidth 64` is the "zero-extend the
+  -- LHU rd value (a 32-bit setWidth) up to 64 bits for register write".
+  -- The Sail `match output.rd` writes a 64-bit value; the underlying
+  -- 32-bit setWidth comes from the LHU pure-spec.
+  have h_rd_val_derived :
+      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
+                  e2.x4, e2.x5, e2.x6, e2.x7]
+        = (BitVec.setWidth 32
+            (lhu_input.data1 ++ lhu_input.data0)).setWidth 64 := by
+    rw [h_high_bytes_zeroext, hd0, hd1]
+  -- The narrow loadu_2byte_rrrw lemma takes rd_val as `BitVec 64`,
+  -- so we use the setWidth-64'd LHU value as our rd_val.
+  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_loadu_2byte_rrrw
+        state exec_row e0 e1 e2
+        (PureSpec.execute_LOADHU_pure lhu_input).nextPC
+        ((BitVec.setWidth 32
+            (lhu_input.data1 ++ lhu_input.data0)).setWidth 64)
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+        h_rd_val_derived]
+  -- Discharge the rd-match branch. LHU's pure spec writes `setWidth 32 ...`
+  -- (a 32-bit BitVec); the do-block's `write_xreg` expects a 64-bit value.
+  -- The implicit zero-extension to 64 bits is what `setWidth 64` produces.
+  simp only [PureSpec.execute_LOADHU_pure]
+  by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
+  · rw [dif_pos h_rd_zero, dif_pos (h_rd_zero_iff.mp h_rd_zero)]
+  · have h_rd_input_ne : lhu_input.rd ≠ 0 :=
+      fun h => h_rd_zero (h_rd_zero_iff.mpr h)
+    rw [dif_neg h_rd_zero, dif_neg h_rd_input_ne]
+    have h_rd_ub : (Transpiler.wrap_to_regidx e2.ptr).val < 32 :=
+      (Transpiler.wrap_to_regidx e2.ptr).isLt
+    have h_tn_bound : lhu_input.rd.toNat < 32 := by
+      obtain ⟨⟨n, hn⟩⟩ := lhu_input.rd
+      simp [BitVec.toNat]; omega
+    have h_tn_ne : lhu_input.rd.toNat ≠ 0 := by
+      intro h; apply h_rd_input_ne
+      apply BitVec.eq_of_toNat_eq; simp [h]
+    have h_idx_eq :
+        (⟨(Transpiler.wrap_to_regidx e2.ptr).val, by
+            apply Finset.mem_Icc.mpr
+            refine ⟨?_, by omega⟩
+            rw [← h_rd_idx]; omega⟩
+          : Finset.Icc 1 31)
+          = ⟨lhu_input.rd.toNat,
+              Finset.mem_Icc.mpr ⟨by omega, by omega⟩⟩ := by
+      apply Subtype.ext; exact h_rd_idx.symm
+    rw [h_idx_eq]
 
 end ZiskFv.Equivalence.LoadHU
