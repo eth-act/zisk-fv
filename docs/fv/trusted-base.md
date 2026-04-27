@@ -1018,7 +1018,7 @@ that ZisK correctly implements RV64IM. It supplements the
 opcode-level entries above with a categorization by the kind of
 trust each item embodies.
 
-### Active axiom inventory (76 total)
+### Active axiom inventory (76 total — 2026-04-25 snapshot; see "Inventory update — 2026-04-27" below for current state)
 
 Full list via:
 
@@ -1586,6 +1586,71 @@ obligations. The Track P witness theorems shipped in commit `ab9c0f9`
 remain ready to consume as soon as the bus-emission and field-BV-mul
 prerequisites land.
 
+## Lookup-table bus contracts (finishing2 S0 — 2026-04-27)
+
+The Binary AIR (pilout idx 10) and BinaryExtension AIR (pilout idx 12)
+encode their byte-level semantics as **lookup arguments against virtual
+fixed tables** (`bus_id = 125 BinaryTable`, `bus_id = 124 BinaryExtensionTable`),
+not as F-typed polynomial constraints. Following the openvm-fv pattern
+in `Fundamentals/Interaction.lean::BitwiseBusEntry`, the per-row
+semantic relation `wf_properties` is **trusted at the bus-entry
+definition site**. openvm-fv never proves its bitwise / range-checker
+/ program-bus tables; the relation is asserted as part of the
+`BusEntry` instance. The two axioms below adopt the same convention.
+
+### Entry BT-B: `ZiskFv.Airs.BinaryTable.bin_table_consumer_wf`
+
+- **File:** `ZiskFv/ZiskFv/Airs/BinaryTable.lean`.
+- **Statement:** every entry the Binary AIR consumes against
+  `bus_id = 125` (multiplicity = 1) satisfies `wf_properties`. The
+  `wf_properties` predicate is the conjunction of per-op clauses
+  encoding the byte-level switch from
+  `vendor/zisk/state-machines/binary/pil/binary_table.pil`'s `for`
+  loop: AND/OR/XOR bitwise ops, LT/LTU/EQ/GT/LE/LEU comparison
+  byte-chain rules, ADD/SUB carry/borrow byte semantics, and
+  SEXT_00/FF byte sign-extends.
+- **Consumers:** all 12 K1-B BitVec lifts in
+  `Airs/Binary/BinaryPackedCorrect.lean` (binary AND/OR/XOR via S1;
+  LTU/LT/SUB/ADDW chain lifts via E commit `3e437f5`). Each lift
+  pulls its op's clause out of `wf_properties` via the byte-relation
+  extractors `byte_relation_{AND,OR,XOR,LTU,LT,SUB,ADD,SEXT_00,SEXT_FF}`.
+- **Provenance:** PIL2 plookup soundness on `bus_id = 125` plus the
+  table-content correctness of `binary_table.pil`'s deterministic
+  generator switch. Trust class: bus-protocol soundness +
+  table-content correctness, both project-trusted (`CLAUDE.md` "Trust
+  scoping").
+- **Why axiomatic:** the openvm-fv pattern. Closing it would split
+  into (a) plookup soundness as a Lean theorem and (b) a
+  metaprogram-derived `def` enumerating `binary_table.pil`'s rows.
+  The metaplan's stated goal is per-opcode and is met without that
+  closure.
+- **Mirrors:** the operation-bus pattern at `bus_id = 5000`
+  (`OperationBus.matches_entry`). Differs in carrying multiple ops
+  in one entry rather than one op per bus.
+
+### Entry BT-X: `ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf`
+
+- **File:** `ZiskFv/ZiskFv/Airs/BinaryExtensionTable.lean`.
+- **Statement:** every entry the BinaryExtension AIR consumes against
+  `bus_id = 124` satisfies `wf_properties`. The predicate's per-op
+  clauses encode the byte-level shift semantics from
+  `vendor/zisk/state-machines/binary/pil/binary_extension_table.pil`'s
+  for-loop switch: SLL/SRL/SRA 64-bit shifts and SLL_W/SRL_W/SRA_W
+  32-bit-word shifts (with sign-extension to 64).
+- **Consumers:** all 6 K1-C BitVec lifts in
+  `Airs/Binary/BinaryExtensionPackedCorrect.lean`
+  (`binary_extension_{sll,srl,sra,sllw,srlw,sraw}_chunks_eq_bv_*`).
+- **Provenance:** PIL2 plookup soundness on `bus_id = 124` plus the
+  table-content correctness of `binary_extension_table.pil`'s
+  generator switch. Trust class: same as BT-B.
+- **Why axiomatic:** same reason as BT-B (openvm-fv pattern; closure
+  out of per-opcode scope).
+- **Architectural note:** unlike `Binary` (where the AIR exposes 7
+  F-typed booleanity / linearity flag constraints), `BinaryExtension`
+  exposes **zero** F-typed constraints — every constraint in the AIR
+  is a permutation/lookup. The semantic content of every shift opcode
+  flows entirely through this axiom.
+
 ## Memory-bus permutation soundness — register writes (finishing3 S4 — 2026-04-27)
 
 ### Entry MB-W: `ZiskFv.Airs.MemoryBus.LaneMatch.memory_bus_register_write_perm_sound`
@@ -1788,3 +1853,83 @@ obligations from one monolithic Sail-state-equality predicate to
 several smaller circuit-level facts (bus shape + ptr-match + lane
 match), each in CIRCUIT-CONSTRAINT, LANE-MATCH, or TRANSPILE-PIN
 classes that the broader project plan is auditing separately.
+
+## Inventory update — 2026-04-27 (post finishing1/2/3)
+
+### Current axiom count
+
+`grep -rh "^\s*axiom " ZiskFv/ZiskFv/ --include="*.lean" | awk '{print $2}' | sort -u | wc -l`
+returns **82** as of HEAD `cde0d6f` on `main`.
+
+Net delta from the 2026-04-25 snapshot (76):
+- **+7 new axioms** added in finishing2 + finishing3:
+  - `bin_table_consumer_wf` (BT-B, finishing2 S0)
+  - `bin_ext_table_consumer_wf` (BT-X, finishing2 S0)
+  - `memory_bus_register_write_perm_sound` (MB-W, finishing3 S4)
+  - `lookup_consumer_matches_provider_load` (MB-L, finishing3 S3)
+  - `lookup_consumer_matches_provider_store` (MB-S, finishing3 S3)
+  - `row_models_sail_state_load` (MS-L, finishing3 S3)
+  - `row_models_sail_state_store` (MS-S, finishing3 S3)
+- **−1 axiom net** elsewhere from Phase 6 retirements between
+  2026-04-25 and 2026-04-27 (FENCE on Track R; un-retired/re-counted
+  drift on intermediate Phase 6 commits — not separately tracked
+  here).
+
+### Updated category breakdown
+
+| # | Category | Count | Confidence-blocking? | Retirement path |
+|---|---|---|---|---|
+| 1 | Transpile axioms | ~63 | **Yes — most** | Independent audit of `riscv2zisk_context.rs` (or Rust-side proof framework) |
+| 2 | Arith lookup axioms | 4 | **Yes — moderate** | Formalize plookup / grand-product soundness in Lean |
+| 3 | Platform axioms | 4 | Mild (scope-honest) | Only retire if ZisK's deployment changes |
+| 4 | Sail-equivalence axioms | 4 | **No — pure tech debt** | Unfold the corresponding Sail bodies; FENCE retired in Phase 6 Track R |
+| 5 | **Bus-protocol soundness axioms** (new) | 7 | **No — project-trusted by design** | All seven (BT-B, BT-X, MB-W, MB-L, MB-S, MS-L, MS-S) live in `Airs/{BinaryTable, BinaryExtensionTable, MemoryBus/{LaneMatch, MemBridge}}` and `Spec/MemModel`. Per `CLAUDE.md`, plookup / logUp / permutation soundness is project-trusted. Closing them would mean formalizing the proving system itself — out of per-opcode scope. |
+
+### M-family load-bearing status (2026-04-27)
+
+The per-opcode `*_pure_equiv_axiom` entries (M1-M4, M7, M9-M11) were
+already promoted to theorems in Phase 3.5 (2026-04-22). With the
+finishing3 S5b rewires (commit `144fb1b`), these entries are now
+**doubly retired**: they were already non-axiomatic at the Sail-side,
+and they're no longer load-bearing on the metaplan-parameter side
+either (the 11 load/store metaplan theorems take MB-L/MB-S/MS-L/MS-S
+as the trust-input now, not the per-opcode M-axiom). The entries
+remain in this document as an audit trail of the Phase 3.5 promotion
+work; they are no longer part of the active load-bearing trust
+surface.
+
+### Per-opcode coverage (2026-04-27)
+
+- **finishing1 (3 ops):** ADD, LUI, ADDI — `equiv_<OP>_metaplan_tier1`
+  derives `h_rd_val` from BT-B + circuit primitives. Original
+  `equiv_<OP>_metaplan` retained for callers.
+- **finishing2 (26 ops):** Logic (6) + Shifts (12) + Compares (4)
+  + SUB + ALU-W (3) — `equiv_<OP>_metaplan_tier1` companions on top
+  of BT-B / BT-X via 14 `SailBridge` lemmas.
+- **finishing3 (11 ops):** LD/LW/LWU/LH/LHU/LB/LBU + SD/SW/SH/SB —
+  `h_bus_execute_matches_sail` (and LD-specific `h_rd_val :`) dropped
+  in-place from the existing metaplan; replaced by MB-L/MB-S/MS-L/MS-S
+  composed through narrow-width `mem_{load,store}_correct_<n>byte`
+  bridges. Final grep gate over the 11 files: 0 hits.
+
+40 of 56 RV64IM ops have metaplan parameter retirements landed.
+finishing4 (13 multiplicative) and finishing5 (3 store_pc=1) remain.
+
+### Trust classification (2026-04-27)
+
+The 7 new bus-protocol axioms cleanly partition the trust surface:
+
+- **2 lookup-table content axioms** (BT-B, BT-X) — assert the
+  byte-level switch semantics of two virtual fixed tables in the
+  ZisK PIL2 spec. Plookup soundness + table-content correctness
+  bundled.
+- **3 bus-protocol soundness axioms** (MB-W, MB-L, MB-S) — assert
+  permutation soundness on `bus_id = 10`. PLONK-class.
+- **2 Sail-state correspondence axioms** (MS-L, MS-S) — assert the
+  Mem AIR's view of memory agrees with Sail's `state.mem` on aligned
+  reads/writes. Implementation-models-spec faithfulness.
+
+Together these seven, combined with the pre-existing
+`OperationBus.matches_entry` (`bus_id = 5000`) and the Transpiler
+contract, form the 9-item trusted surface the metaplan revision
+notes in `ai_plans/zisk-fv-metaplan.md` (2026-04-27) summarize.
