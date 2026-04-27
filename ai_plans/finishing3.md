@@ -117,13 +117,22 @@ shim bridges that to ZisK's multi-byte-lane Mem AIR.
 | MemAlignReadByte | 10 | `Extraction/MemAlignReadByte.lean`, `Airs/MemAlignReadByte.lean` |
 | MemAlignWriteByte | 15 | `Extraction/MemAlignWriteByte.lean`, `Airs/MemAlignWriteByte.lean` |
 
-**Open question — RV64IM unaligned access.** The Sail RV64IM
-specification's stance on unaligned memory access (allowed with
-slowdown, vs. trap) needs to be determined and the bridge written
-to match. If Sail's per-opcode model assumes aligned access only,
-the MemAlign* extractions become "soundness scaffolding only" — the
-load/store equivalence proofs may not invoke them directly. This
-question must be resolved before authoring S3 below.
+**Resolution (2026-04-27).** **Unaligned access is out of scope.**
+The Zicclsm extension is not in the Sail RV64IM model the project
+targets, so per-opcode load/store equivalence proofs assume aligned
+access. Consistent with `CLAUDE.md`'s "Zicclsm, precompiles, and
+ZisK's custom internal ops are out of scope" line. Implications:
+- The MemAlign* extractions shipped in commit `f8e60b6` are
+  **soundness scaffolding only** — they confirm the AIRs are
+  internally consistent (booleanity, recombination identities,
+  value-reconstruction bridges), but the load/store equivalence
+  proofs in S5 do **not** invoke them.
+- S3 below bridges Sail's aligned `mem_read` / `mem_write` directly
+  to Mem AIR rows. No alignment shim is needed in the per-opcode
+  proof path.
+- If Zicclsm enters the Sail model later, the MemAlign* `Valid_*`
+  wrappers + bridge lemmas are already in tree and ready to be
+  invoked from a future Sail-side bridge.
 
 ### S3. Memory-model bridge
 
