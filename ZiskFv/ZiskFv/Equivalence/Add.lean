@@ -14,6 +14,8 @@ import ZiskFv.RV64D.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
+import ZiskFv.Airs.MemoryBus
+import ZiskFv.Equivalence.RdValDerivation.Arith
 
 /-!
 End-to-end theorem for RV64 ADD. Combines:
@@ -204,6 +206,76 @@ theorem equiv_ADD_metaplan
   split_ifs with h_rd_zero
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
+
+/-- **Tier-1 metaplan: ADD without `h_rd_val` parameter.**
+
+    Same conclusion as `equiv_ADD_metaplan`, but the `h_rd_val` OUTPUT-EQ
+    parameter is **derived internally** from circuit primitives via the
+    `RdValDerivation.Arith.h_rd_val_arith_add` discharge lemma rather
+    than supplied by the caller. This is the honest Tier-1 metaplan
+    closure: every parameter classifies as one of {CIRCUIT-CONSTRAINT,
+    LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} —
+    no parameter mentions the spec output `r1_val + r2_val`.
+
+    The original `equiv_ADD_metaplan` is preserved (above) for the
+    GoldenTraces fixtures and other callers that already construct
+    `h_rd_val` from concrete witnesses. -/
+theorem equiv_ADD_metaplan_tier1
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (add_input : PureSpec.AddInput)
+    (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (r_main r_binary : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    -- Sail-state Sail-input bridges (TRANSPILE-BRIDGE class)
+    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok add_input.r1_val state)
+    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok add_input.r2_val state)
+    (h_input_rd : add_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some add_input.PC)
+    -- Bus-protocol structural hypotheses (CIRCUIT-CONSTRAINT class)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_add_pure add_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : add_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    -- Tier-1 discharge parameters (replacing the OUTPUT-EQ h_rd_val)
+    (h_circuit : add_circuit_holds m b r_main r_binary)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_a_range : a_chunks_in_range b r_binary)
+    (h_b_range : b_chunks_in_range b r_binary)
+    (h_c_range : c_chunks_in_range b r_binary)
+    (h_input_r1_circuit : add_input.r1_val
+      = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296))
+    (h_input_r2_circuit : add_input.r2_val
+      = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)) :
+    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- Derive h_rd_val internally via the discharge lemma.
+  have h_rd_val :=
+    ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_add
+      m b r_main r_binary e2 add_input
+      h_circuit h_lane_rd
+      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+      h_a_range h_b_range h_c_range
+      h_input_r1_circuit h_input_r2_circuit
+  -- Delegate to the parametric metaplan with the derived h_rd_val.
+  exact equiv_ADD_metaplan state add_input r1 r2 rd exec_row e0 e1 e2
+    h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    h_rd_idx h_rd_val
 
 /-- **Track-G companion — full V12.** Same conclusion as
     `equiv_ADD_metaplan`, but derives all four `h_input_*` parameters

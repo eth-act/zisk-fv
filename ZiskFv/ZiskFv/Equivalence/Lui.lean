@@ -10,6 +10,8 @@ import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.lui
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.RV64D.BusEffect
+import ZiskFv.Airs.MemoryBus
+import ZiskFv.Equivalence.RdValDerivation.JumpUType
 
 /-!
 End-to-end theorem for RV64 LUI (Phase 3C Track T-U1). Combines:
@@ -148,6 +150,61 @@ theorem equiv_LUI_metaplan
   split_ifs with h_rd_zero
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
+
+/-- **Tier-1 metaplan: LUI without `h_rd_val` parameter.**
+
+    Same conclusion as `equiv_LUI_metaplan`, but the `h_rd_val`
+    OUTPUT-EQ parameter is **derived internally** via the
+    `RdValDerivation.JumpUType.h_rd_val_jut_lui` discharge lemma. -/
+theorem equiv_LUI_metaplan_tier1
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (lui_input : PureSpec.LuiInput)
+    (imm : BitVec 20)
+    (rd : regidx)
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (nextPC_val : BitVec 64)
+    -- Sail-state input bridges
+    (h_input_imm : lui_input.imm = imm)
+    (h_input_rd : lui_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some lui_input.PC)
+    -- Bus-protocol structural hypotheses
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_nextPC_eq :
+      (PureSpec.execute_LUI_pure lui_input).nextPC = nextPC_val)
+    (h_rd_idx : lui_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    -- Tier-1 discharge parameters (replacing the OUTPUT-EQ h_rd_val)
+    (h_circuit : ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e_rd)
+    (h_imm_lo_nat : (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat)
+    (h_imm_hi_nat : (m.b_1 r_main).val
+      = (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat / 4294967296)
+    (h_e2_0 : e_rd.x0.val < 256) (h_e2_1 : e_rd.x1.val < 256)
+    (h_e2_2 : e_rd.x2.val < 256) (h_e2_3 : e_rd.x3.val < 256)
+    (h_e2_4 : e_rd.x4.val < 256) (h_e2_5 : e_rd.x5.val < 256)
+    (h_e2_6 : e_rd.x6.val < 256) (h_e2_7 : e_rd.x7.val < 256) :
+    execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
+      = (bus_effect exec_row [e_rd] state).2 := by
+  -- Derive h_rd_val internally via the discharge lemma.
+  have h_rd_val :=
+    ZiskFv.Equivalence.RdValDerivation.JumpUType.h_rd_val_jut_lui
+      imm m r_main next_pc e_rd
+      h_circuit h_lane_rd h_imm_lo_nat h_imm_hi_nat
+      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+  -- Need lui_input.imm = imm to thread the conclusion shape.
+  rw [← h_input_imm] at h_rd_val
+  -- Delegate to the parametric metaplan with the derived h_rd_val.
+  exact equiv_LUI_metaplan state lui_input imm rd exec_row e_rd nextPC_val
+    h_input_imm h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_rd_mult h_rd_as h_nextPC_eq h_rd_idx h_rd_val
 
 /-- **Phase 5 V12 companion for LUI.** Drops `h_input_pc` and
     `h_input_rd` via `chip_bus_hyps_jump_rrw` + `readReg_of_readReg_succ`.

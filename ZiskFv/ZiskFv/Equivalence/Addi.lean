@@ -11,6 +11,9 @@ import ZiskFv.RV64D.addi
 import ZiskFv.RV64D.BusEffect
 import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.Airs.BusHypotheses
+import ZiskFv.Airs.Binary.BinaryAdd
+import ZiskFv.Airs.MemoryBus
+import ZiskFv.Equivalence.RdValDerivation.Arith
 
 /-!
 End-to-end theorem for RV64 ADDI (Phase 3C T-IT).
@@ -39,6 +42,7 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Spec.Addi
 open ZiskFv.Tactics.ALURTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
+open ZiskFv.Airs.BinaryAdd
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -128,8 +132,75 @@ theorem equiv_ADDI_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
+/-- **Tier-1 metaplan: ADDI without `h_rd_val` parameter.**
 
-/-- **Phase 5 V12 companion.** Drops `h_input_r1` / `h_input_r2` / 
+    Same conclusion as `equiv_ADDI_metaplan`, but the `h_rd_val`
+    OUTPUT-EQ parameter is **derived internally** via the
+    `RdValDerivation.Arith.h_rd_val_arith_addi` discharge lemma, which
+    composes `Spec/Addi::addi_compositional_with_binaryadd` with K1-A's
+    `binary_add_chunks_eq_bv_add` + the Wave B.5 toolkit. -/
+theorem equiv_ADDI_metaplan_tier1
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (addi_input : PureSpec.AddiInput)
+    (r1 rd : regidx) (imm : BitVec 12)
+    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (r_main r_binary : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    -- Sail-state input bridges
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok addi_input.r1_val state)
+    (h_input_imm : addi_input.imm = imm)
+    (h_input_rd : addi_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some addi_input.PC)
+    -- Bus-protocol structural hypotheses
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : addi_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    -- Tier-1 discharge parameters (replacing the OUTPUT-EQ h_rd_val)
+    (h_circuit : ZiskFv.Spec.Addi.addi_circuit_holds_with_binaryadd m b r_main r_binary)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_a_range : ZiskFv.Airs.BinaryAdd.a_chunks_in_range b r_binary)
+    (h_b_range : ZiskFv.Airs.BinaryAdd.b_chunks_in_range b r_binary)
+    (h_c_range : ZiskFv.Airs.BinaryAdd.c_chunks_in_range b r_binary)
+    (h_input_r1_circuit : addi_input.r1_val
+      = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296))
+    (h_input_imm_circuit : BitVec.signExtend 64 addi_input.imm
+      = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- Derive h_rd_val internally via the discharge lemma.
+  have h_rd_val :=
+    ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_addi
+      m b r_main r_binary e2 addi_input.r1_val addi_input.imm
+      h_circuit h_lane_rd
+      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+      h_a_range h_b_range h_c_range
+      h_input_r1_circuit h_input_imm_circuit
+  -- Delegate to the parametric metaplan with the derived h_rd_val.
+  exact equiv_ADDI_metaplan state addi_input r1 rd imm exec_row e0 e1 e2
+    h_input_r1 h_input_imm h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    h_rd_idx h_rd_val
+
+
+/-- **Phase 5 V12 companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
     Delegates to `equiv_ADDI_metaplan` after chip_bus_hyps + match composition.  -/
