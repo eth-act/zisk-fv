@@ -161,6 +161,112 @@ lemma mul_lo_bv64_of_byte_sum
   rw [h_sum]
   simp [Nat.mod_mod_of_dvd]
 
+/-! ## Part 1b — MUL high-half: `execute_MUL_pure op1 op2 .MULHU` as `BitVec.ofNat 64`
+
+`execute_MUL_pure op1 op2 .MULHU` is defined as:
+```lean
+let wide : BitVec 128 := to_bits_truncate (l := 128)
+  (Sail.BitVec.toNatInt op1 * Sail.BitVec.toNatInt op2)
+Sail.BitVec.extractLsb wide 127 64
+```
+where `Sail.BitVec.extractLsb wide 127 64 = BitVec.extractLsb' 64 64 wide`.
+
+Unfolding gives `execute_MUL_pure op1 op2 .MULHU = BitVec.ofNat 64 ((op1.toNat * op2.toNat) / 2^64)`.
+-/
+
+-- Helper: `BitVec.extractLsb' 64 64 (to_bits_truncate (l:=128) ↑n) = BitVec.ofNat 64 (n / 2^64)`.
+-- Proof strategy (working entirely in ℕ after Int.toNat_of_nonneg):
+--   (1) `extractLsb'_toNat`: LHS.toNat = wide.toNat >>> 64 % 2^64
+--   (2) unfold `to_bits_truncate` → wide.toNat = (↑n % 2^129).toNat % 2^128
+--   (3) `Int.toNat_of_nonneg` + `Nat.mod_mod_of_dvd`: wide.toNat = n % 2^128
+--   (4) `Nat.shiftRight_eq_div_pow`: >>> 64 = / 2^64
+--   (5) `Nat.mod_mul_right_div_self`: n % (2^64 * 2^64) / 2^64 = n/2^64 % 2^64
+private lemma to_bits_truncate128_extractLsb_64_64 (n : ℕ) :
+    BitVec.extractLsb' 64 64 (to_bits_truncate (l := 128) (n : ℤ))
+      = BitVec.ofNat 64 (n / 2 ^ 64) := by
+  apply BitVec.eq_of_toNat_eq
+  -- Unfold extractLsb'_toNat on LHS; toNat_ofNat on RHS
+  simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat]
+  -- Unfold to_bits_truncate to expose (↑n % ↑(2^129)).toNat % 2^128
+  simp only [to_bits_truncate, Sail.get_slice_int, BitVec.extractLsb'_toNat,
+             BitVec.toNat_ofInt, Nat.shiftRight_zero, Nat.zero_add]
+  -- Goal: ((↑n % ↑(2^129)).toNat % 2^128 >>> 64) % 2^64 = n / 2^64 % 2^64
+  -- Step 1: (↑n % ↑(2^129)).toNat = n % 2^129 (n : ℕ ≥ 0)
+  -- The goal has `↑(2^(128+1))` which is `(2^(128+1) : ℕ) : ℤ`.
+  -- `Int.toNat_natCast` gives: `(↑m : ℤ).toNat = m` for `m : ℕ`.
+  -- Combined with `Int.natCast_mod`: `↑n % ↑m = ↑(n % m)`, then `Int.toNat_natCast`.
+  have step_toNat : ((n : ℤ) % ↑(2 ^ (128 + 1) : ℕ)).toNat = n % 2 ^ (128 + 1) := by
+    rw [← Int.natCast_mod, Int.toNat_natCast]
+  rw [step_toNat]
+  -- Now the goal is in ℕ: (n % 2^129 % 2^128 >>> 64) % 2^64 = n / 2^64 % 2^64
+  -- Step 2: n % 2^129 % 2^128 = n % 2^128
+  have step_mod129 : n % 2 ^ (128 + 1) % 2 ^ 128 = n % 2 ^ 128 :=
+    Nat.mod_mod_of_dvd n ⟨2, by norm_num⟩
+  rw [step_mod129]
+  -- Step 3: >>> 64 = / 2^64  (Nat.shiftRight_eq_div_pow)
+  rw [Nat.shiftRight_eq_div_pow]
+  -- Goal: (n % 2^128 / 2^64) % 2^64 = n / 2^64 % 2^64
+  -- Step 4: n % (2^64 * 2^64) / 2^64 = n / 2^64 % 2^64  (Nat.mod_mul_right_div_self)
+  have h128 : (2 : ℕ) ^ 128 = 2 ^ 64 * 2 ^ 64 := by norm_num
+  rw [h128, Nat.mod_mul_right_div_self]
+  -- The RHS `BitVec.toNat_ofNat` introduced an extra `% 2^64`; strip it via `x % m % m = x % m`.
+  simp [Nat.mod_mod_of_dvd]
+
+/-- **`execute_MUL_pure .MULHU` as `BitVec.ofNat 64`.** The high-half MULHU
+    result equals the high 64 bits of the unsigned product, expressed as
+    `BitVec.ofNat 64 ((op1.toNat * op2.toNat) / 2^64)`.
+
+    Parallel to `execute_MUL_pure_lo_eq` for the high half, using the
+    `extractLsb' 64 64` → `/ 2^64` reduction from
+    `to_bits_truncate128_extractLsb_64_64`. -/
+lemma execute_MUL_pure_hi_eq (op1 op2 : BitVec 64) :
+    execute_MUL_pure op1 op2 .MULHU
+      = BitVec.ofNat 64 ((op1.toNat * op2.toNat) / 2 ^ 64) := by
+  simp only [execute_MUL_pure, Sail.BitVec.toNatInt, Sail.BitVec.extractLsb, BitVec.extractLsb]
+  -- Goal: (to_bits_truncate (l:=128) (↑op1.toNat * ↑op2.toNat)).extractLsb 127 64
+  --     = BitVec.ofNat 64 (op1.toNat * op2.toNat / 2^64)
+  -- `extractLsb 127 64 = extractLsb' 64 (127-64+1) = extractLsb' 64 64`
+  change BitVec.extractLsb' 64 64 (to_bits_truncate (l := 128) (Int.ofNat op1.toNat * Int.ofNat op2.toNat))
+    = BitVec.ofNat 64 (op1.toNat * op2.toNat / 2 ^ 64)
+  -- Cast the ℤ product to ℕ form: Int.ofNat = (↑ : ℕ → ℤ) = natCast
+  simp only [Int.ofNat_eq_natCast, ← Nat.cast_mul]
+  exact to_bits_truncate128_extractLsb_64_64 (op1.toNat * op2.toNat)
+
+/-- **MUL high-half bridge.** Given byte ranges + `byte_sum = (op1.toNat * op2.toNat) / 2^64`,
+    `U64.toBV [bytes]` equals `execute_MUL_pure op1 op2 .MULHU`.
+
+    Parallel to `mul_lo_bv64_of_byte_sum` for the high half. -/
+lemma mul_hi_bv64_of_byte_sum
+    (op1 op2 : BitVec 64)
+    (x0 x1 x2 x3 x4 x5 x6 x7 : FGL)
+    (h0 : x0.val < 256) (h1 : x1.val < 256) (h2 : x2.val < 256) (h3 : x3.val < 256)
+    (h4 : x4.val < 256) (h5 : x5.val < 256) (h6 : x6.val < 256) (h7 : x7.val < 256)
+    (h_sum :
+      x0.val + x1.val * 256 + x2.val * 65536 + x3.val * 16777216
+        + x4.val * 4294967296 + x5.val * 1099511627776
+        + x6.val * 281474976710656 + x7.val * 72057594037927936
+      = (op1.toNat * op2.toNat) / 2 ^ 64) :
+    U64.toBV #v[(x0 : BitVec 8), (x1 : BitVec 8), (x2 : BitVec 8), (x3 : BitVec 8),
+                (x4 : BitVec 8), (x5 : BitVec 8), (x6 : BitVec 8), (x7 : BitVec 8)]
+      = execute_MUL_pure op1 op2 .MULHU := by
+  rw [execute_MUL_pure_hi_eq]
+  apply BitVec.eq_of_toNat_eq
+  rw [ZiskFv.PackedBitVec.u64_toBV_of_bytes_toNat _ _ _ _ _ _ _ _
+        h0 h1 h2 h3 h4 h5 h6 h7]
+  rw [BitVec.toNat_ofNat]
+  rw [h_sum]
+  -- prod / 2^64 < 2^64 since prod < 2^128
+  have h_prod_bound : op1.toNat * op2.toNat < 4294967296 * 4294967296 * 4294967296 * 4294967296 := by
+    have h1 : op1.toNat < 4294967296 * 4294967296 := op1.isLt
+    have h2 : op2.toNat < 4294967296 * 4294967296 := op2.isLt
+    nlinarith [Nat.zero_le op1.toNat, Nat.zero_le op2.toNat]
+  have h_hi_bound : op1.toNat * op2.toNat / 2 ^ 64 < 2 ^ 64 := by
+    have : (2 : ℕ)^64 = 4294967296 * 4294967296 := by norm_num
+    rw [this]
+    apply Nat.div_lt_iff_lt_mul (by norm_num) |>.mpr
+    linarith
+  exact (Nat.mod_eq_of_lt h_hi_bound).symm
+
 /-! ## Part 2 — LUI/AUIPC: sign-extended immediate as BitVec 64
 
 LUI and AUIPC write `BitVec.signExtend 64 (imm ++ 0#12)` to `rd`,

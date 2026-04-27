@@ -31,7 +31,7 @@ matching the `h_rd_val :` parameter in the corresponding
 | Opcode | Pure-spec rd value | K3/local lemma |
 |---|---|---|
 | MUL   | `execute_MUL_pure op1 op2 .MUL`          | `mul_lo_bv64_of_byte_sum` (K3) |
-| MULHU | `execute_MUL_pure op1 op2 .MULHU`         | `mul_hi_bv64_of_byte_sum` (local) |
+| MULHU | `execute_MUL_pure op1 op2 .MULHU`         | `mul_hi_bv64_of_byte_sum` (K3) |
 | DIVU  | `(execute_DIV_REM_pure op1 op2 .DRU).1`   | local byte-sum bridge |
 | REMU  | `(execute_DIV_REM_pure op1 op2 .DRU).2`   | local byte-sum bridge |
 | MULW  | `PureSpec.execute_MULW_pure_val op1 op2`  | local byte-sum bridge |
@@ -45,13 +45,11 @@ field-level equation; the caller bridges from there to `h_byte_sum`.
 
 ## MULHU high-half BitVec lift
 
-K3 (`PackedBitVec/Extensions.lean`) deferred the MULHU high-half lift.
-This file provides `execute_MUL_pure_hi_eq` locally (the parallel of
-`execute_MUL_pure_lo_eq`), using `to_bits_truncate128_setWidth64`.
-
-**Note:** `execute_MUL_pure_hi_eq` uses `sorry` for the `extractLsb' 64 64`
-reduction step; MULHU is DONE_WITH_CONCERNS pending a dedicated K3 follow-up
-that derives `extractLsb' 64 64 wide = BitVec.ofNat 64 (wide.toNat / 2^64)`.
+K3 (`PackedBitVec/Extensions.lean`) provides `execute_MUL_pure_hi_eq` and
+`mul_hi_bv64_of_byte_sum` for the MULHU high-half lift. The key lemma is
+`to_bits_truncate128_extractLsb_64_64` (Wave A, finishing1) which proves
+`extractLsb' 64 64 (to_bits_truncate (l:=128) ↑n) = BitVec.ofNat 64 (n / 2^64)`
+using `Nat.mod_mul_right_div_self` and `Nat.shiftRight_eq_div_pow`. No sorry.
 -/
 
 set_option maxHeartbeats 800000
@@ -65,54 +63,7 @@ open ZiskFv.PackedBitVec.Extensions
 open LeanRV64D.Functions
 
 /-! ## MULHU support: high-half BitVec lift
-    (K3 explicitly deferred these; they live here.) -/
-
-/-- `execute_MUL_pure op1 op2 .MULHU` equals the high 64 bits of the
-    unsigned 128-bit product, `BitVec.ofNat 64 ((op1.toNat * op2.toNat) / 2^64)`.
-
-    **Note:** The `extractLsb' 64 64` → `shiftRight 64` step currently uses
-    `sorry`. A complete proof requires `BitVec.extractLsb'_toNat` plus
-    `Nat.shiftRight_eq_div` applied to the 128-bit truncation; this is a
-    pure Lean BitVec identity deferred to a K3 follow-up. -/
-private lemma execute_MUL_pure_hi_eq (op1 op2 : BitVec 64) :
-    execute_MUL_pure op1 op2 .MULHU
-      = BitVec.ofNat 64 ((op1.toNat * op2.toNat) / 2 ^ 64) := by
-  sorry
-
-/-- **MULHU high-half bridge.** Given byte ranges and `h_sum` stating the
-    byte-assembled value equals `(op1.toNat * op2.toNat) / 2^64`,
-    `U64.toBV [bytes]` equals `execute_MUL_pure op1 op2 .MULHU`.
-
-    Parallel to `mul_lo_bv64_of_byte_sum` for the high half. -/
-private lemma mul_hi_bv64_of_byte_sum
-    (op1 op2 : BitVec 64)
-    (x0 x1 x2 x3 x4 x5 x6 x7 : FGL)
-    (h0 : x0.val < 256) (h1 : x1.val < 256) (h2 : x2.val < 256) (h3 : x3.val < 256)
-    (h4 : x4.val < 256) (h5 : x5.val < 256) (h6 : x6.val < 256) (h7 : x7.val < 256)
-    (h_sum :
-      x0.val + x1.val * 256 + x2.val * 65536 + x3.val * 16777216
-        + x4.val * 4294967296 + x5.val * 1099511627776
-        + x6.val * 281474976710656 + x7.val * 72057594037927936
-      = (op1.toNat * op2.toNat) / 2 ^ 64) :
-    U64.toBV #v[(x0 : BitVec 8), (x1 : BitVec 8), (x2 : BitVec 8), (x3 : BitVec 8),
-                (x4 : BitVec 8), (x5 : BitVec 8), (x6 : BitVec 8), (x7 : BitVec 8)]
-      = execute_MUL_pure op1 op2 .MULHU := by
-  rw [execute_MUL_pure_hi_eq]
-  apply BitVec.eq_of_toNat_eq
-  rw [ZiskFv.PackedBitVec.u64_toBV_of_bytes_toNat _ _ _ _ _ _ _ _
-        h0 h1 h2 h3 h4 h5 h6 h7]
-  rw [BitVec.toNat_ofNat, h_sum]
-  -- prod / 2^64 < 2^64 since prod < 2^128
-  have h_prod_bound : op1.toNat * op2.toNat < 4294967296 * 4294967296 * 4294967296 * 4294967296 := by
-    have h1 : op1.toNat < 4294967296 * 4294967296 := op1.isLt
-    have h2 : op2.toNat < 4294967296 * 4294967296 := op2.isLt
-    nlinarith [Nat.zero_le op1.toNat, Nat.zero_le op2.toNat]
-  have h_hi_bound : op1.toNat * op2.toNat / 2 ^ 64 < 2 ^ 64 := by
-    have : (2 : ℕ)^64 = 4294967296 * 4294967296 := by norm_num
-    rw [this]
-    apply Nat.div_lt_iff_lt_mul (by norm_num) |>.mpr
-    linarith
-  exact (Nat.mod_eq_of_lt h_hi_bound).symm
+    (K3 now provides both `execute_MUL_pure_hi_eq` and `mul_hi_bv64_of_byte_sum`.) -/
 
 /-! ## DIVU/REMU support -/
 
@@ -232,11 +183,9 @@ theorem h_rd_val_mdru_mul
 
     matching `h_rd_val :` in `Equivalence.MulHU.equiv_MULHU_metaplan`.
 
-    **Status: DONE_WITH_CONCERNS.** `execute_MUL_pure_hi_eq` uses `sorry`
-    for the `extractLsb' 64 64` → `/ 2^64` reduction, deferred to a K3
-    follow-up (`mul_hi_bv64_of_byte_sum` from `PackedBitVec/Extensions.lean`).
-    The outer structure (byte-sum hypothesis shape, composition pattern) is
-    correct. -/
+    Delegates to `mul_hi_bv64_of_byte_sum` (K3, `PackedBitVec/Extensions.lean`).
+    The high-half `extractLsb' 64 64` → `/ 2^64` reduction is now fully proven
+    via `to_bits_truncate128_extractLsb_64_64` (Wave A, finishing1). No sorry. -/
 theorem h_rd_val_mdru_mulhu
     (op1 op2 : BitVec 64)
     (e : MemoryBusEntry FGL)
