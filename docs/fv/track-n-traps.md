@@ -483,3 +483,146 @@ hypothesis. When `finishing3` S4 lands, the writes-side theorem
 will be promoted via the same slot-match-driven derivation as the
 reads side — the API shape stays the same, only the proof
 composition changes.
+
+## S4 escalation: SLT/SLTU/SLTI/SLTIU blocked on wf_LTU / wf_LT aggregation
+
+**Status (2026-04-27).** SLT, SLTU, SLTI, SLTIU were listed as S4
+"stretch ops" (`finishing2.md` S4, N-ALU-Binary-Compare). They are
+**escalated** — Tier-1 derivation is impossible from the in-tree
+primitives without strengthening `Airs/BinaryTable.lean`.
+
+**What's missing.** `BinaryTable.wf_LTU` currently carries only the
+**per-byte chain** clause:
+
+```lean
+def wf_LTU (e : BinaryTableEntry FGL) : Prop :=
+  e.op.val = OP_LTU →
+    e.c_byte.val = 0 ∧
+    (e.a_byte.val < e.b_byte.val → e.flags.val % 2 = 1) ∧
+    (e.a_byte.val = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
+    (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 0)
+```
+
+`wf_LT` is even thinner: only `e.c_byte.val = 0` (sign-byte
+semantics deferred). Critically missing in both:
+
+1. **Final-byte aggregation rule**: when `pos_ind = 1` (i.e., the
+   highest byte of the 64-bit comparison), the cout chain produces
+   the whole-result comparison value via the `use_last_cout_as_c`
+   switch in `binary_table.pil`'s `OP_LTU` branch. That clause
+   says: at the final byte, instead of `c_byte = 0`, we have the
+   compare bit emitted to (one of) the c-bytes (and zero in the
+   others).
+2. **Sign-byte handling for OP_LT**: when `pos_ind = 1` and the
+   sign bytes of `a` / `b` differ (one is negative, one is not),
+   the chain rule is overridden by sign comparison.
+
+Without (1), no K1-B compare lift is derivable. Without (2), even
+`wf_LT`'s final-byte rule is incomplete.
+
+**What S0 strengthening would unblock.** Adding the following two
+clauses to `Airs/BinaryTable.lean`:
+
+```lean
+-- Add to wf_LTU (and analogously to wf_LT):
+∧ (e.pos_ind.val = 1 ∨ e.pos_ind.val = 2 →
+   -- Final-byte rule. The exact byte that carries the compare bit
+   -- depends on `use_first_byte` (LSB byte for last-cout-as-c) but
+   -- the result-of-comparison convention is:
+   --   the c-byte at the lowest output lane = the final cout.
+   ...)
+```
+
+Once that lands, a K1-B Compare lift theorem
+`binary_lt_chunks_eq_bv_lt` can be authored mirroring the AND/OR/XOR
+shape, and then four Tier-1 lemmas
+`h_rd_val_compare_{slt,sltu,slti,sltiu}` follow with the same shape
+as the BinaryLogic file.
+
+**Why we don't widen the trust unilaterally.** The strengthening
+above is a non-trivial extension of `Airs/BinaryTable.lean`'s
+trusted surface. The user's instructions for S4 explicitly forbid
+"silently widening trust"; per-op escalations belong here. The
+finishing2.md S0 design intentionally kept `wf_LTU` / `wf_LT` minimal
+(per-byte chain only) so this gap is **visible**.
+
+**File status.** `Equivalence/RdValDerivation/BinaryCompare.lean`
+ships as a stub namespace (no theorems) with a top-level docstring
+linking to this manifest. The pre-existing Tier-1.5 derivations
+(parametric `OperationBusEntry` form with `h_input_val` chunk-level
+OUTPUT-EQ residual) continue to hold for these four opcodes.
+
+## S4 escalation: SUB blocked on wf_SUB borrow semantics
+
+**Status (2026-04-27).** SUB (the 64-bit RTYPE subtraction; `OP_SUB
+= 11`) was listed as an S4 "stretch op" alongside ADDW/ADDIW/SUBW.
+It is **escalated** — `Airs/BinaryTable.lean::wf_SUB` is currently
+stubbed at `c_byte.val < 256` only; the borrow semantics needed for
+a Tier-1 lift is not present.
+
+**What's missing.** `wf_SUB` should carry:
+
+```lean
+def wf_SUB (e : BinaryTableEntry FGL) : Prop :=
+  e.op.val = OP_SUB →
+    -- borrow semantics: c = 256·borrow + a - cin - b.
+    e.c_byte.val = (256 * (e.flags.val % 2) + e.a_byte.val - e.cin.val - e.b_byte.val) % 256
+    ∧ -- final-byte rule for cout (similar to wf_ADD)
+    ...
+```
+
+The current stub does not let a K1-B subtractive lift derive the
+64-bit `BitVec` subtraction identity from the byte chain.
+
+**What S0 strengthening would unblock.** A `binary_sub_chunks_eq_bv_sub`
+K1-B theorem (analog of `binary_add_chunks_eq_bv_add` for ADD), then
+a Tier-1 derivation `h_rd_val_arith_sub_tier1` extending Arith.lean.
+
+**File status.** SUB stays at Tier-1.5 (with `h_input_val` chunk-
+level residual in `Arith.lean::h_rd_val_arith_sub`); the residual
+parameter is documented as a Phase 4 audit obligation in the
+existing CLOSED section of finishing1's plan.
+
+## S4 escalation: ADDW / ADDIW / SUBW blocked on byte-level sign-extension
+
+**Status (2026-04-27).** ADDW, ADDIW, SUBW were listed as S4 "stretch
+ops" alongside SUB. They are **escalated** — the W-mode arithmetic
+opcodes route through the `Binary` AIR with `m32 = 1` and need the
+**sign-extension** of the 32-bit result into the high 32 bits of the
+64-bit destination. ZisK encodes this via an *internal* lookup against
+the auxiliary opcodes `OP_SEXT_00 = 0x200` / `OP_SEXT_FF = 0x201`
+(produced by the `b_op_or_sext` linear combination in `Valid_Binary`).
+
+**What's missing.** `Airs/BinaryTable.lean` defines `OP_SEXT_00`
+and `OP_SEXT_FF` as constants but **does not include `wf_SEXT_00`
+or `wf_SEXT_FF` per-row clauses**. Without those, no K1-B lift can
+derive the byte-level identity for the upper 4 bytes of the W-mode
+result.
+
+The full byte semantics are described in `binary_table.pil`'s
+`OP_SEXT_00` / `OP_SEXT_FF` branches; they say: "the result byte is
+0x00 (resp. 0xFF) if the input sign-byte is non-negative (resp.
+negative)". The W-path in the Binary AIR uses the `b_op_or_sext`
+lookup column to switch between AND/OR/XOR/ADD/SUB on the low 4
+bytes and SEXT_00/SEXT_FF on the upper 4 bytes.
+
+**What S0 strengthening would unblock.** Adding `wf_SEXT_00` and
+`wf_SEXT_FF` clauses to `wf_properties`, then extending the K1-B
+lift to compose ADD's lower-4-bytes carry chain (already shipped
+via `binary_add_chunks_eq_bv_add` for the 64-bit case) with
+sign-extension on the upper 4 bytes. The result is a
+`binary_addw_chunks_eq_bv_sext_add32` theorem — qualitatively
+different from the 64-bit lifts because the upper bytes are not
+themselves the result of the arithmetic, but a sign-extension
+projection.
+
+**File status.** ADDW, ADDIW, SUBW stay at Tier-1.5 (parametric
+`OperationBusEntry` form with chunk-level `h_input_val` residual
+in `Arith.lean`); see the existing docstrings in
+`h_rd_val_arith_addw` / `h_rd_val_arith_addiw` /
+`h_rd_val_arith_subw`. The `Equivalence/RdValDerivation/Arith.lean`
+file is **not extended** by S4 — its existing 6-opcode coverage
+(ADD, ADDI, ADDW, ADDIW, SUB, SUBW) holds at the same Tier-1 (ADD,
+ADDI) / Tier-1.5 (rest) classification as it shipped from
+finishing1.
+
