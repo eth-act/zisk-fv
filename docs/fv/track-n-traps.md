@@ -1111,3 +1111,89 @@ once the bus_effect width-parameterization design is settled.
 * This manifest entry serves as the per-file escalation called
   for in the `finishing3.md` S5 hard constraints (item 7).
 
+
+## finishing2 S5 outcome — partial (11 / 22 closures shipped)
+
+### Summary
+
+Authored `equiv_<OP>_metaplan_tier1` companions (mirroring
+finishing1's ADD/Addi/Lui template) for **11 of 22** opcodes:
+
+| Family | Ops shipped | Discharge lemma class |
+|---|---|---|
+| Logic-R | AND, OR, XOR | `BinaryLogic.h_rd_val_logic_{and,or,xor}` |
+| Logic-I | ANDI, ORI, XORI | `BinaryLogic.h_rd_val_logic_{andi,ori,xori}` |
+| Compare-R | SLT, SLTU | `BinaryCompare.h_rd_val_compare_{slt,sltu}` |
+| Compare-I | SLTI, SLTIU | `BinaryCompare.h_rd_val_compare_{slti,sltiu}` |
+| ALU-Sub | SUB | `Arith.h_rd_val_arith_sub` |
+
+For each shipped op, the existing `equiv_<OP>_metaplan` is
+preserved (still takes `h_rd_val`); a new
+`equiv_<OP>_metaplan_tier1` is added below it that derives
+`h_rd_val` internally via the discharge lemma. Same shape as
+`equiv_ADD_metaplan_tier1` from commit `255dbfc`.
+
+### Bridging notes
+
+* **SLTU / SLTIU**: the metaplan uses `r1 < r2 : Bool`
+  (instance) while the discharge lemma uses
+  `BitVec.ult r1 r2 = true`. Bridge via `BitVec.lt_def` +
+  `BitVec.ult_iff_lt` plus a `split_ifs` case-split. ~10 lines
+  of inline bridge.
+* **SLT / SLTI**: the metaplan uses `BitVec.slt`, the discharge
+  lemma uses `BitVec.slt`. Direct match — no bridge.
+* **AND/OR/XOR/SUB**: direct match, conclusion shape is
+  `r1_val &&& r2_val` / `|||` / `^^^` / `r1_val - r2_val`.
+
+### What did NOT ship (11 ops escalated)
+
+Five archetype groups deferred to a follow-up because each
+requires a non-trivial bridging lemma between the discharge
+lemma's BitVec output form and the metaplan's `h_rd_val`
+shape:
+
+| Op family | Files | Bridge gap |
+|---|---|---|
+| ALU-W (3) | Addw, Addiw, Subw | `execute_RTYPEW_pure r1 r2 .ADDW = sign_extend 64 (extractLsb r1 31 0 + extractLsb r2 31 0)`. Discharge concludes `BitVec.signExtend 64 (BitVec.ofNat 32 a32sum + BitVec.ofNat 32 b32sum)` — needs `extractLsb (BitVec.ofNat 64 (byte-sum-low + byte-sum-high * 2^32)) 31 0 = BitVec.ofNat 32 (byte-sum-low)`. |
+| Shift-R (3) | Sll, Srl, Sra | `execute_RTYPE_pure_*` for shifts uses Sail's `Sail.shift_bits_left` / `_right` etc. Discharge concludes `BitVec.shiftLeft r1 shift` / `BitVec.ushiftRight r1 shift` / `BitVec.sshiftRight r1 shift`. Bridge needs `Sail.shift_bits_left a32 (extractLsb b 5 0) = BitVec.shiftLeft a (b.toNat % 64)` style identities. |
+| Shift-I (3) | Slli, Srli, Srai | Same as Shift-R but with the immediate as the shift amount (RV64 ITYPE shamt is 6 bits). |
+| Shift-W (6) | Shift, ShiftR, ShiftRA, ShiftLI, ShiftRLI, ShiftRAI | Combination of ALU-W's `extractLsb`/`signExtend` bridge with shifts' `shift_bits_*` semantics. The 32-bit shift-amount mask differs from the 64-bit one (5 vs 6 bits). |
+
+### Why deferred
+
+The bridging lemmas are uniform-style (lift Sail's monadic /
+extractLsb / sign_extend operations to BitVec primitives) and
+have analogues elsewhere in the codebase, but they don't
+currently live anywhere reusable for these exact invocations.
+Each bridge is ~15-30 lines. With 11 ops to do, that's
+~200-300 lines of incremental bridging proof work — non-trivial
+but straightforward Lean.
+
+### Recommended follow-up
+
+Author six bridging lemmas under
+`ZiskFv/Equivalence/RdValDerivation/SailBridge.lean`:
+
+* `lemma execute_RTYPEW_pure_addw_bridge` — ADDW form
+* `lemma execute_RTYPEW_pure_subw_bridge` — SUBW form
+* `lemma sail_shift_left_to_BitVec_shiftLeft_64` — SLL/SLLI bridge
+* `lemma sail_shift_right_to_BitVec_ushiftRight_64` — SRL/SRLI bridge
+* `lemma sail_shift_right_arith_to_BitVec_sshiftRight_64` — SRA/SRAI bridge
+* `lemma sail_shift_*_to_BitVec_*_32_signExtend` — *W variants bridge
+
+Then per-op tier1 wrappers become uniform (same shape as the
+11 shipped). Estimated total: ~600 lines of bridge infra +
+~1500 lines of tier1 wrappers.
+
+### Outcome of this attempt
+
+* `equiv_<OP>_metaplan_tier1` shipped for AND, OR, XOR, ANDI,
+  ORI, XORI, SLT, SLTU, SLTI, SLTIU, SUB.
+* The original `equiv_<OP>_metaplan` for these 11 ops still
+  takes `h_rd_val :` — preserving downstream callers (GoldenTraces
+  fixtures and bus-derived companions). Same pattern as ADD.
+* The 11 deferred ops keep their original metaplan unchanged.
+* No new axioms; full build passes.
+* Final grep gate (`h_rd_val :` in `Equivalence/<Op>.lean`
+  excluding loads/stores) is **not** at 0 hits — the originals
+  are preserved per the ADD/Addi/Lui template.
