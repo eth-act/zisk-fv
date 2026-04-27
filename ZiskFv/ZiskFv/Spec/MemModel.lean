@@ -268,6 +268,129 @@ us the load-side memory predicate directly.
 Composition with `chip_bus_hyps_load_rrrw` is left to per-opcode
 `Equivalence/<Op>.lean` callers. -/
 
+/-! ## Narrow-width companions (S5a)
+
+Per-width projections of `mem_load_correct` / `mem_store_correct` for
+1-byte (LB/LBU/SB), 2-byte (LH/LHU/SH), and 4-byte (LW/LWU/SW) memory
+ops. The 8-byte version is the template; each narrow variant exposes
+only the bytes the corresponding Sail spec writes/reads.
+
+* **Loads (`mem_load_correct_<n>`).** Pure projection: take the first
+  `n` conjuncts of the 8-byte conclusion. The Sail-state bridge axiom
+  is invoked once via the 8-byte version; the higher-byte conjuncts
+  are simply discarded.
+
+* **Stores (`mem_store_correct_<n>`).** Concludes byte facts about the
+  `n`-insert chain (`state.mem.insert ... .insert (ptr+(n-1)) e.x_(n-1)`).
+  Differs from the 8-byte updated_mem in shape; the byte-equality
+  facts are pure consequences of `Std.ExtDHashMap.get?_insert` plus
+  key arithmetic. No axiom is required for these — the closure mirrors
+  the 8-byte version's structural-only content for narrow widths. -/
+
+/-- 4-byte projection of `mem_load_correct` for LW / LWU. -/
+theorem mem_load_correct_4byte
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
+    (r_main : ℕ) (e : MemoryBusEntry FGL)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (h_main_emit : main.b_0 r_main = memory_entry_lo e
+                   ∧ main.b_1 r_main = memory_entry_hi e
+                   ∧ e.as = 2
+                   ∧ e.multiplicity = -1) :
+    state.mem[e.ptr.toNat]? = .some e.x0
+    ∧ state.mem[e.ptr.toNat + 1]? = .some e.x1
+    ∧ state.mem[e.ptr.toNat + 2]? = .some e.x2
+    ∧ state.mem[e.ptr.toNat + 3]? = .some e.x3 := by
+  have h := mem_load_correct main mem r_main e state h_main_emit
+  exact ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩
+
+/-- 2-byte projection of `mem_load_correct` for LH / LHU. -/
+theorem mem_load_correct_2byte
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
+    (r_main : ℕ) (e : MemoryBusEntry FGL)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (h_main_emit : main.b_0 r_main = memory_entry_lo e
+                   ∧ main.b_1 r_main = memory_entry_hi e
+                   ∧ e.as = 2
+                   ∧ e.multiplicity = -1) :
+    state.mem[e.ptr.toNat]? = .some e.x0
+    ∧ state.mem[e.ptr.toNat + 1]? = .some e.x1 := by
+  have h := mem_load_correct main mem r_main e state h_main_emit
+  exact ⟨h.1, h.2.1⟩
+
+/-- 1-byte projection of `mem_load_correct` for LB / LBU. -/
+theorem mem_load_correct_1byte
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
+    (r_main : ℕ) (e : MemoryBusEntry FGL)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (h_main_emit : main.b_0 r_main = memory_entry_lo e
+                   ∧ main.b_1 r_main = memory_entry_hi e
+                   ∧ e.as = 2
+                   ∧ e.multiplicity = -1) :
+    state.mem[e.ptr.toNat]? = .some e.x0 := by
+  have h := mem_load_correct main mem r_main e state h_main_emit
+  exact h.1
+
+/-- 4-byte store correctness — narrow companion of `mem_store_correct`
+    for SW. The post-store state has 4 inserts on `state.mem`; the
+    conclusion exposes byte equalities for those 4 keys. -/
+theorem mem_store_correct_4byte
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
+    (r_main : ℕ) (e : MemoryBusEntry FGL)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (h_main_emit : main.c_0 r_main = memory_entry_lo e
+                   ∧ main.c_1 r_main = memory_entry_hi e
+                   ∧ e.as = 2
+                   ∧ e.multiplicity = 1) :
+    let updated_mem :=
+      ((((state.mem.insert e.ptr.toNat e.x0
+        ).insert (e.ptr.toNat + 1) e.x1
+        ).insert (e.ptr.toNat + 2) e.x2
+        ).insert (e.ptr.toNat + 3) e.x3)
+    updated_mem[e.ptr.toNat]? = .some e.x0
+    ∧ updated_mem[e.ptr.toNat + 1]? = .some e.x1
+    ∧ updated_mem[e.ptr.toNat + 2]? = .some e.x2
+    ∧ updated_mem[e.ptr.toNat + 3]? = .some e.x3 := by
+  -- The conclusion is a structural consequence of `Std.ExtDHashMap.get?_insert`
+  -- under key-distinctness (the four keys ptr+0..ptr+3 are pairwise
+  -- distinct). The 8-byte axiom is not required for the narrow shape.
+  -- We invoke it (via mem_store_correct) anyway for trust-budget parity:
+  -- the bus-permutation match still has to hold to authorize the store.
+  have _ := mem_store_correct main mem r_main e state h_main_emit
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> grind
+
+/-- 2-byte store correctness — narrow companion of `mem_store_correct`
+    for SH. -/
+theorem mem_store_correct_2byte
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
+    (r_main : ℕ) (e : MemoryBusEntry FGL)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (h_main_emit : main.c_0 r_main = memory_entry_lo e
+                   ∧ main.c_1 r_main = memory_entry_hi e
+                   ∧ e.as = 2
+                   ∧ e.multiplicity = 1) :
+    let updated_mem :=
+      ((state.mem.insert e.ptr.toNat e.x0
+        ).insert (e.ptr.toNat + 1) e.x1)
+    updated_mem[e.ptr.toNat]? = .some e.x0
+    ∧ updated_mem[e.ptr.toNat + 1]? = .some e.x1 := by
+  have _ := mem_store_correct main mem r_main e state h_main_emit
+  refine ⟨?_, ?_⟩ <;> grind
+
+/-- 1-byte store correctness — narrow companion of `mem_store_correct`
+    for SB. -/
+theorem mem_store_correct_1byte
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
+    (r_main : ℕ) (e : MemoryBusEntry FGL)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (h_main_emit : main.c_0 r_main = memory_entry_lo e
+                   ∧ main.c_1 r_main = memory_entry_hi e
+                   ∧ e.as = 2
+                   ∧ e.multiplicity = 1) :
+    let updated_mem := state.mem.insert e.ptr.toNat e.x0
+    updated_mem[e.ptr.toNat]? = .some e.x0 := by
+  have _ := mem_store_correct main mem r_main e state h_main_emit
+  grind
+
 /-! ## Axiom audit
 
 `mem_load_correct` and `mem_store_correct` each add **two** ZisK
@@ -283,9 +406,15 @@ trust-base axioms beyond Mathlib's kernel:
 Together these replace the M-family per-opcode axioms catalogued in
 `docs/fv/trusted-base.md`. The trade is: 22 per-opcode M-axioms
 (M1-M11 ×2 for read/write half) → 4 protocol-level axioms here.
+
+The narrow-width companions (`mem_load_correct_{1,2,4}byte` /
+`mem_store_correct_{1,2,4}byte`) add no new axioms — they project /
+restrict the 8-byte versions.
 -/
 
 #print axioms mem_load_correct
 #print axioms mem_store_correct
+#print axioms mem_load_correct_4byte
+#print axioms mem_store_correct_4byte
 
 end ZiskFv.Spec.MemModel
