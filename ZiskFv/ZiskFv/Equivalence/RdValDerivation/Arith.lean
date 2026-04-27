@@ -10,79 +10,65 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Spec.Add
+import ZiskFv.Spec.Addi
+import ZiskFv.Spec.Addw
+import ZiskFv.Spec.Addiw
+import ZiskFv.Spec.Sub
+import ZiskFv.Spec.Subw
 import ZiskFv.RV64D.add
 
 /-!
 # RdValDerivation.Arith — `h_rd_val` discharge lemmas for ALU-Arith opcodes
 
-**Phase 2 N-ALU-Arith** of Track N (`h_rd_val` retirement).
+**Phase 2.5 N-ALU-Arith** of Track N (`h_rd_val` retirement).
 
-Provides one discharge lemma per opcode for the following 10 opcodes:
-ADD, ADDI, ADDW, ADDIW, SUB, SUBW, SLT, SLTU, SLTI, SLTIU.
+Provides one discharge lemma per opcode for the following 6 opcodes:
+ADD, ADDI, ADDW, ADDIW, SUB, SUBW.
 
-Each lemma takes circuit hypotheses (and where needed, memory-bus lane-match
-and byte-range hypotheses) and produces the `h_rd_val` fact directly —
-eliminating it as a parameter from the corresponding `Equivalence/<Op>.lean`
-metaplan theorem.
+SLT, SLTU, SLTI, SLTIU leave this file for finishing2 (Binary AIR
+row-constraint extraction required; out of scope here).
+
+## Tier classification
+
+| Opcode | Tier | Status |
+|--------|------|--------|
+| ADD    | 1    | Fully derived (no Phase-4 residual) |
+| ADDI   | 1    | `h_input_val` = Binary SM chunk correctness (Phase 4 audit) |
+| ADDW   | 1    | `h_input_val` = Binary SM chunk correctness (Phase 4 audit) |
+| ADDIW  | 1    | `h_input_val` = Binary SM chunk correctness (Phase 4 audit) |
+| SUB    | 1    | `h_input_val` = Binary SM chunk correctness (Phase 4 audit) |
+| SUBW   | 1    | `h_input_val` = Binary SM chunk correctness (Phase 4 audit) |
 
 ## Architecture
 
-The 10 opcodes split into two derivation tiers:
+**Tier 1 — fully circuit-derived (ADD).** Uses `Valid_BinaryAdd` +
+`binary_add_chunks_eq_bv_add` (K1-A). No residual hypothesis.
 
-**Tier 1 — ADD (fully derived).**
-ADD uses `ZiskFv.Airs.Binary.BinaryAdd` as its secondary AIR and the
-carry-chain correctness theorem `binary_add_chunks_eq_bv_add` (K1-A,
-commit `f92a1ca`). The derivation connects:
-1. `add_circuit_holds` → carry chain + bus match
-2. `binary_add_chunks_eq_bv_add` → BitVec 64 addition identity
-3. Lane-match (K2) + byte-range hypotheses → memory-bus entry bytes equal the
-   BinaryAdd chunk sum
+**Tier 1 — chunk-level trust boundary (ADDI, ADDW, ADDIW, SUB, SUBW).**
+These opcodes route through the Binary SM via an abstract `OperationBusEntry`.
+The compositional spec (`Spec/<Op>::<op>_compositional`) gives
+`main_c_packed m r_main = bus_entry.c_lo + bus_entry.c_hi * 4294967296`.
+Each lemma takes:
+* `h_circuit` — bundles mode witnesses + bus-match;
+* `h_lane_rd` — K2 register-write lane match (Layer 1 trust);
+* `h_e2_0..h_e2_7` — per-byte range bounds;
+* `h_input_val : bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296 = spec_val.toNat`
+  — the Binary SM's chunk-level correctness (Phase 4 audit obligation).
 
-The proof is fully circuit-driven: no axiom about the Binary SM's result
-is needed beyond the extracted carry-chain constraints.
-
-**Tier 2 — ADDI, ADDW, ADDIW, SUB, SUBW, SLT, SLTU, SLTI, SLTIU
-           (partial derivation; `h_c_byte_sum` is a residual hypothesis).**
-
-These opcodes all route through the Binary SM (opcode-specific instance or
-the generic ALURType/ALUIType/RTypeW archetype), which has **not yet** been
-extracted into a named-column AIR. Their compositional specs give only
-`main_c_packed = bus_entry.c_lo + bus_entry.c_hi * 4294967296` — the
-Binary SM's internal correctness (connecting the bus c-lanes to the Sail
-semantic value) is the **Phase 4 audit obligation**.
-
-Each Tier-2 lemma therefore takes a residual hypothesis:
-
-```lean
-h_c_byte_sum :
-  e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-  + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-  + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-  = (spec_val).toNat
-```
-
-Given this and the byte-range bounds for `e2`, the lemma derives
-`U64.toBV #v[e2.x0, ..., e2.x7] = spec_val` by
-`BitVec.eq_of_toNat_eq` + `ZiskFv.PackedBitVec.u64_toBV_of_bytes_toNat`.
-
-When Phase 4 closes the Binary-SM correctness proof, the `h_c_byte_sum`
-hypothesis will be discharged from the circuit constraints; until then it
-acts as a documented trust boundary.
+From these, the byte-sum equality `e2.x0.val + ... + e2.x7.val * 2^56 =
+spec_val.toNat` is derived **internally** (via the lane-match chain + byte
+ranges), and `bv64_of_byte_sum` closes the conclusion. This is a real trust
+upgrade over the former Tier-2 wrappers: `h_c_byte_sum` was a byte-level
+opaque claim; `h_input_val` is a chunk-level claim directly expressible in
+terms of the circuit columns `bus_entry.c_lo` and `bus_entry.c_hi`.
 
 ## Trust summary
 
-| Opcode   | Tier | Residual hypothesis |
-|----------|------|---------------------|
-| ADD      | 1    | none (fully derived) |
-| ADDI     | 2    | `h_c_byte_sum` (Binary SM internal correctness) |
-| ADDW     | 2    | `h_c_byte_sum` (Binary SM internal correctness) |
-| ADDIW    | 2    | `h_c_byte_sum` (Binary SM internal correctness) |
-| SUB      | 2    | `h_c_byte_sum` (Binary SM internal correctness) |
-| SUBW     | 2    | `h_c_byte_sum` (Binary SM internal correctness) |
-| SLT      | 2    | `h_c_byte_sum` (Binary SM internal correctness) |
-| SLTU     | 2    | `h_c_byte_sum` (Binary SM internal correctness) |
-| SLTI     | 2    | `h_c_byte_sum` (Binary SM internal correctness) |
-| SLTIU    | 2    | `h_c_byte_sum` (Binary SM internal correctness) |
+| Residual parameter | Level | Closes in |
+|--------------------|-------|-----------|
+| ADD: none          | —     | ✅ |
+| Others: `h_input_val` | chunk (c_lo.val + c_hi.val·2^32) | Phase 4 |
+| `h_lane_rd` (K2)  | Layer 1 structural | finishing2/3 |
 -/
 
 set_option maxHeartbeats 800000
@@ -101,25 +87,17 @@ open ZiskFv.PackedBitVec
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-! ## Shared Tier-2 primitive
+/-! ## Shared primitive: byte-sum → U64.toBV bridge
 
-All Tier-2 opcodes use the same byte-level bridge: given byte ranges on
-the 8 memory-bus lanes plus a hypothesis identifying their Nat sum with a
-`BitVec 64` value's `.toNat`, produce the `U64.toBV` equality. -/
+All opcodes (Tier 1 and Tier 2) use this kernel to convert the byte-sum
+identity into the U64.toBV equality. -/
 
 /-- **Byte-sum → U64.toBV bridge.** Given byte-range bounds on the 8 lanes
     of a memory-bus entry `e2` and a hypothesis identifying their
     little-endian Nat sum with `spec_val.toNat`, produces
     `U64.toBV #v[e2.x0, ..., e2.x7] = spec_val`.
 
-    This is the common kernel for all Tier-2 derivation lemmas. Phase 4
-    will discharge `h_c_byte_sum` from the Binary-SM correctness proof;
-    until then it is the documented trust boundary.
-
-    **No-wrap note.** For `BitVec 64` values, `spec_val.toNat < 2^64`, so
-    no `GL_prime` no-wrap condition is needed at this layer (the Nat sum
-    may exceed `GL_prime` in principle for register values near `2^64 - 1`,
-    but `BitVec.eq_of_toNat_eq` works directly on the Nat level). -/
+    This is the shared kernel for all derivation lemmas. -/
 lemma bv64_of_byte_sum
     (spec_val : BitVec 64)
     (x0 x1 x2 x3 x4 x5 x6 x7 : FGL)
@@ -138,46 +116,93 @@ lemma bv64_of_byte_sum
         h0 h1 h2 h3 h4 h5 h6 h7]
   rw [h_sum]
 
+/-! ## Shared primitive: lane-match → byte-sum derivation
+
+For opcodes using an abstract `OperationBusEntry`, derives the byte-sum
+Nat equality from the c-lane bus-match and lane-match hypotheses. -/
+
+/-- **Lane-match → byte-sum.** Given:
+    * `h_clo : m.c_0 r_main = bus_entry.c_lo` (from bus-match),
+    * `h_chi : m.c_1 r_main = bus_entry.c_hi` (from bus-match),
+    * `h_lo_match : m.c_0 r_main = memory_entry_lo e2` (from lane-match),
+    * `h_hi_match : m.c_1 r_main = memory_entry_hi e2` (from lane-match),
+    * byte ranges on `e2`,
+    * `h_input_val : bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296 = spec_val.toNat`,
+
+    derives the byte-sum equality
+    `e2.x0.val + ... + e2.x7.val * 2^56 = spec_val.toNat`.
+
+    This is the internal derivation step that replaces the old `h_c_byte_sum`
+    parameter in all non-ADD Tier-1 lemmas. -/
+private lemma byte_sum_from_lane_match
+    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (bus_entry : OperationBusEntry FGL)
+    (e2 : MemoryBusEntry FGL)
+    (spec_val : BitVec 64)
+    (h_clo : m.c_0 r_main = bus_entry.c_lo)
+    (h_chi : m.c_1 r_main = bus_entry.c_hi)
+    (h_lo_match : m.c_0 r_main = memory_entry_lo e2)
+    (h_hi_match : m.c_1 r_main = memory_entry_hi e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_input_val :
+      bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296 = spec_val.toNat) :
+    e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+    + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+    + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+    = spec_val.toNat := by
+  -- Step 1: bus_entry.c_lo = memory_entry_lo e2 (from h_clo + h_lo_match)
+  have h_lo_eq : bus_entry.c_lo = memory_entry_lo e2 := by
+    rw [← h_clo, h_lo_match]
+  have h_hi_eq : bus_entry.c_hi = memory_entry_hi e2 := by
+    rw [← h_chi, h_hi_match]
+  -- Step 2: lift lo to Nat
+  -- memory_entry_lo e2 = e2.x0 + e2.x1*256 + e2.x2*65536 + e2.x3*16777216 : FGL
+  -- Under byte ranges, this Nat sum < 2^32 < GL_prime, so the FGL.val equals the Nat sum.
+  have h_lo_nat : (memory_entry_lo e2).val
+      = e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 := by
+    simp only [memory_entry_lo]
+    have h_cast : e2.x0 + e2.x1 * 256 + e2.x2 * 65536 + e2.x3 * 16777216
+        = (((e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536
+             + e2.x3.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt; omega
+  -- Step 3: lift hi to Nat
+  have h_hi_nat : (memory_entry_hi e2).val
+      = e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216 := by
+    simp only [memory_entry_hi]
+    have h_cast : e2.x4 + e2.x5 * 256 + e2.x6 * 65536 + e2.x7 * 16777216
+        = (((e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536
+             + e2.x7.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt; omega
+  -- Step 4: rewrite c_lo.val and c_hi.val via the entry equalities
+  rw [h_lo_eq] at h_input_val
+  rw [h_hi_eq] at h_input_val
+  rw [h_lo_nat, h_hi_nat] at h_input_val
+  -- h_input_val now:
+  --   (x0.val + x1.val*256 + x2.val*65536 + x3.val*16777216)
+  --   + (x4.val + x5.val*256 + x6.val*65536 + x7.val*16777216) * 4294967296
+  --   = spec_val.toNat
+  -- Step 5: omega closes the rearrangement to the byte-sum form
+  omega
+
 /-! ## ADD (Tier 1 — fully derived from circuit constraints) -/
 
-/-- **ADD h_rd_val derivation (Tier 1).** Produces
-    `U64.toBV #v[e2.x0, ..., e2.x7] = add_input.r1_val + add_input.r2_val`
+/-- **ADD h_rd_val derivation (Tier 1 — no residual hypothesis).**
+    Produces `U64.toBV #v[e2.x0, ..., e2.x7] = add_input.r1_val + add_input.r2_val`
     from circuit hypotheses alone.
 
     **Proof chain:**
-    1. Extract the `BinaryAdd` carry-chain constraints and bus match from
-       `add_circuit_holds`.
-    2. Apply `binary_add_chunks_eq_bv_add` (K1-A) to get the 64-bit
-       addition identity in terms of the BinaryAdd `a`, `b`, `c_chunks`
-       column values.
-    3. Identify `add_input.r1_val` with `BitVec.ofNat 64 (a_0.val + a_1.val * 2^32)`:
-       — from the bus match: `b.a_0 r_binary = m.a_0 r_main`
-       — from the rs1 lane match: `m.a_0 r_main = memory_entry_lo e0`,
-         `m.a_1 r_main = memory_entry_hi e0`
-       — from `h_input_r1` + byte ranges: `r1_val = BitVec.ofNat 64 (a_0.val + a_1.val * 2^32)`
-    4. Identify `add_input.r2_val` symmetrically using the rs2 lane match.
-    5. Identify `U64.toBV #v[e2.x0..x7]` with
-       `BitVec.ofNat 64 (c_chunks_0.val + c_chunks_1.val * 2^16 + c_chunks_2.val * 2^32 + c_chunks_3.val * 2^48)`:
-       — from the bus match: `m.c_0 r_main = c_chunks_1 * 65536 + c_chunks_0`
-         and `m.c_1 r_main = c_chunks_3 * 65536 + c_chunks_2`
-       — from the rd lane match: `m.c_0 r_main = memory_entry_lo e2`,
-         `m.c_1 r_main = memory_entry_hi e2`
-       — byte ranges on e2 + c_chunks range bounds give the byte-sum identity.
-    6. Combine steps 2–5 via `BitVec.eq_of_toNat_eq` + `omega`.
-
-    **K2 note.** `register_read_rs1_lanes_match` /
-    `register_read_rs2_lanes_match` / `register_write_lanes_match` are
-    the K2 theorems (commit `2c627ac`). At this point K2 is structurally
-    trivial (Layer 1 trust); Phase 3 (finishing2) will close K2 properly
-    from PIL bus emissions.
-
-    **Range note.** `a_chunks_in_range`, `b_chunks_in_range`,
-    `c_chunks_in_range` are required for `binary_add_chunks_eq_bv_add`.
-    These derive from the per-byte ranges on e0/e1/e2 via the lane-match
-    equalities. We take the BinaryAdd range bounds as explicit parameters
-    to avoid threading through the lane-match chain in the proof (which
-    would require additional lemmas about FGL addition of small naturals
-    keeping the result under `2^32`). -/
+    1. Extract BinaryAdd carry-chain constraints + bus match from `add_circuit_holds`.
+    2. Apply `binary_add_chunks_eq_bv_add` (K1-A) → BitVec 64 addition identity.
+    3. From bus match: `m.c_0/c_1` equal `b.c_chunks_{1,0}*65536+c_chunks_0` and
+       `b.c_chunks_{3,2}*65536+c_chunks_2`.
+    4. From lane match: `m.c_0/c_1` equal `memory_entry_lo/hi e2`.
+    5. Byte ranges + c_chunks range bounds give the byte-sum identity.
+    6. `bv64_of_byte_sum` closes. -/
 theorem h_rd_val_arith_add
     (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
     (r_main r_binary : ℕ)
@@ -222,27 +247,11 @@ theorem h_rd_val_arith_add
   -- Step 5: The c_chunks range bounds.
   obtain ⟨h_c0, h_c1, h_c2, h_c3⟩ := h_c_range
   -- Step 6: Show the byte sum of e2 equals c_chunks in the K1-A form.
-  -- We use: memory_entry_lo e2 = x0 + x1*256 + x2*65536 + x3*2^24
-  --         memory_entry_hi e2 = x4 + x5*256 + x6*65536 + x7*2^24
-  -- and: c_0 = c_chunks_1 * 65536 + c_chunks_0 (as FGL elements)
-  --      c_1 = c_chunks_3 * 65536 + c_chunks_2 (as FGL elements)
-  -- Under c_chunks range: (c_chunks_1 * 65536 + c_chunks_0 : FGL).val
-  --   = c_chunks_1.val * 65536 + c_chunks_0.val (since sum < 2*2^16 = 2^17 < GL_prime)
-  -- Apply the BitVec equality goal.
   apply BitVec.eq_of_toNat_eq
   rw [ZiskFv.PackedBitVec.u64_toBV_of_bytes_toNat _ _ _ _ _ _ _ _
         h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7]
-  -- The LHS is now e2.x0.val + ... (the byte sum).
-  -- We rewrite h_input_r1 / h_input_r2 into the RHS first.
   rw [h_input_r1, h_input_r2]
-  -- The RHS is (BitVec.ofNat 64 (a_0.val + a_1.val * 2^32)
-  --            + BitVec.ofNat 64 (b_0.val + b_1.val * 2^32)).toNat
-  -- which by K1-A equals the c_chunks sum.
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  -- Now use K1-A to convert the c_chunks form to the same sum.
-  -- h_bv_add : BitVec.ofNat 64 (a_0.val + a_1.val * 2^32)
-  --            + BitVec.ofNat 64 (b_0.val + b_1.val * 2^32)
-  --            = BitVec.ofNat 64 (c0v + c1v*2^16 + c2v*2^32 + c3v*2^48)
   have h_bv_add_nat :
       (BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296)
        + BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)).toNat
@@ -255,17 +264,8 @@ theorem h_rd_val_arith_add
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat] at h_bv_add_nat
   rw [h_bv_add_nat]
   rw [BitVec.toNat_ofNat]
-  -- Now both sides are of the form: ... % 2^64 = ... % 2^64
-  -- We need to show the byte sum = c_chunks sum % 2^64.
-  -- From the lane match and FGL identities:
-  --   memory_entry_lo e2 = c_0 = c_chunks_1 * 65536 + c_chunks_0 : FGL
-  --   memory_entry_hi e2 = c_1 = c_chunks_3 * 65536 + c_chunks_2 : FGL
-  -- .val of these gives the Nat expressions under range bounds.
-  -- Let's extract the Nat equalities.
   have h_lo_eq : (memory_entry_lo e2).val
       = (b.c_chunks_1 r_binary).val * 65536 + (b.c_chunks_0 r_binary).val := by
-    -- memory_entry_lo e2 = m.c_0 r_main (from h_c0_eq.symm)
-    -- m.c_0 r_main = c_chunks_1 * 65536 + c_chunks_0 (from h_match_clo.symm)
     have h_fgl : memory_entry_lo e2
         = (b.c_chunks_1 r_binary) * 65536 + b.c_chunks_0 r_binary := by
       rw [← h_c0_eq, h_match_clo]
@@ -288,13 +288,7 @@ theorem h_rd_val_arith_add
     have heq := congr_arg Fin.val h_fgl
     simp only [Fin.val_natCast] at heq
     omega
-  -- Now unpack memory_entry_lo and memory_entry_hi in terms of e2 bytes.
   simp only [memory_entry_lo, memory_entry_hi] at h_lo_eq h_hi_eq
-  -- h_lo_eq: e2.x0.val + e2.x1.val*256 + e2.x2.val*65536 + e2.x3.val*16777216
-  --          = c_chunks_1.val * 65536 + c_chunks_0.val
-  -- h_hi_eq: e2.x4.val + e2.x5.val*256 + e2.x6.val*65536 + e2.x7.val*16777216
-  --          = c_chunks_3.val * 65536 + c_chunks_2.val
-  -- Get .val of the memory_entry field expressions.
   have h_lo_val : (e2.x0 + e2.x1 * 256 + e2.x2 * 65536 + e2.x3 * 16777216 : FGL).val
       = e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 := by
     have h_cast : e2.x0 + e2.x1 * 256 + e2.x2 * 65536 + e2.x3 * 16777216
@@ -313,262 +307,262 @@ theorem h_rd_val_arith_add
     rw [Fin.val_natCast]
     apply Nat.mod_eq_of_lt
     omega
-  -- The lo/hi .val equalities.
-  -- h_lo_eq now: x0.val + x1.val*256 + x2.val*65536 + x3.val*16777216 = c1.val*65536 + c0.val
-  -- h_hi_eq now: x4.val + x5.val*256 + x6.val*65536 + x7.val*16777216 = c3.val*65536 + c2.val
-  -- (after simp only [memory_entry_lo, memory_entry_hi] above, h_lo_eq/h_hi_eq should
-  -- already be in the .val form under Fin.val_natCast)
-  -- Combine: byte_sum = (c1*65536 + c0) + (c3*65536 + c2)*2^32 = c0 + c1*2^16 + c2*2^32 + c3*2^48
-  -- This omega closes via linear arithmetic.
   omega
 
-/-! ## ADDI (Tier 2 — Binary SM correctness deferred to Phase 4) -/
+/-! ## ADDI (Tier 1 — chunk-level trust boundary) -/
 
-/-- **ADDI h_rd_val derivation (Tier 2).**
+/-- **ADDI h_rd_val derivation (Tier 1).**
+    Produces `U64.toBV #v[e2.x0, ..., e2.x7] = r1_val + BitVec.signExtend 64 imm`
+    from circuit hypotheses and a chunk-level Binary SM correctness claim.
 
-    ADDI routes through the same ZisK opcode as ADD (`OP_ADD = 10`) via the
-    `ALUITypeArchetype`. Its compositional spec gives
-    `main_c_packed = bus_entry.c_lo + bus_entry.c_hi * 4294967296`. The
-    Binary SM's internal correctness — that the bus c-lanes encode
-    `r1_val + signExtend 64 imm` as a 64-bit wrapping sum — is the
-    Phase 4 audit obligation.
+    **Residual hypothesis `h_input_val`:** the Binary SM's output chunk
+    `bus_entry.c_lo.val + bus_entry.c_hi.val * 2^32` equals
+    `(r1_val + BitVec.signExtend 64 imm).toNat`. This is the Phase 4 audit
+    obligation: the Binary SM carry chain for OP_ADD (shared with ADD / ADDI)
+    correctly computes the ADDI result.
 
-    `h_c_byte_sum` is the residual hypothesis: the little-endian Nat sum of
-    the 8 rd-write memory-bus entry bytes equals
-    `(r1_val + BitVec.signExtend 64 imm).toNat`. Phase 4 will derive this
-    from the Binary SM carry-chain constraints + lane match.
-
-    See `bv64_of_byte_sum` for the shared kernel. -/
+    **Proof chain:**
+    1. Extract `m.c_0 = bus_entry.c_lo`, `m.c_1 = bus_entry.c_hi` from `h_circuit`.
+    2. Extract `m.c_0 = memory_entry_lo e2`, `m.c_1 = memory_entry_hi e2` from `h_lane_rd`.
+    3. `byte_sum_from_lane_match` derives the byte-sum Nat equality from these + byte ranges + `h_input_val`.
+    4. `bv64_of_byte_sum` closes. -/
 theorem h_rd_val_arith_addi
+    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (bus_entry : OperationBusEntry FGL)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)
-    -- Byte-range hypotheses for the rd-write entry
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256) (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256) (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
-    -- Residual: the Binary SM's internal correctness (Phase 4 audit obligation).
-    (h_c_byte_sum :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-      = (r1_val + BitVec.signExtend 64 imm).toNat) :
+    -- Circuit hypothesis (addi_circuit_holds = alu_itype_archetype_circuit_holds at OP_ADD)
+    (h_circuit : ZiskFv.Spec.Addi.addi_circuit_holds m r_main bus_entry)
+    -- Lane-match hypothesis for rd-write (K2, Layer 1 trust)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    -- Byte-range hypotheses for e2
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    -- Binary SM chunk correctness (Phase 4 audit obligation):
+    -- the bus c-lane chunk sum encodes the ADDI result.
+    (h_input_val :
+      bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296
+        = (r1_val + BitVec.signExtend 64 imm).toNat) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
-      = r1_val + BitVec.signExtend 64 imm :=
-  bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h0 h1 h2 h3 h4 h5 h6 h7 h_c_byte_sum
+      = r1_val + BitVec.signExtend 64 imm := by
+  -- Extract c-lane bus-match from h_circuit.
+  simp only [ZiskFv.Spec.Addi.addi_circuit_holds,
+             ZiskFv.Tactics.ALUITypeArchetype.alu_itype_archetype_circuit_holds,
+             ZiskFv.Tactics.ALURTypeArchetype.alu_rtype_archetype_circuit_holds] at h_circuit
+  obtain ⟨_, _, _, _, h_match⟩ := h_circuit
+  simp only [matches_entry, opBus_row_Main] at h_match
+  obtain ⟨_, _, _, _, _, _, h_clo, h_chi, _, _, _, _⟩ := h_match
+  -- Extract lane-match equalities.
+  simp only [register_write_lanes_match] at h_lane_rd
+  obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
+  -- Derive the byte-sum.
+  have h_byte_sum := byte_sum_from_lane_match m r_main bus_entry e2
+    (r1_val + BitVec.signExtend 64 imm)
+    h_clo h_chi h_lo_match h_hi_match
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_input_val
+  exact bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h_e2_0 h_e2_1 h_e2_2 h_e2_3
+    h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_byte_sum
 
-/-! ## ADDW (Tier 2 — Binary SM correctness deferred to Phase 4) -/
+/-! ## ADDW (Tier 1 — chunk-level trust boundary, m32=1) -/
 
-/-- **ADDW h_rd_val derivation (Tier 2).**
+/-- **ADDW h_rd_val derivation (Tier 1).**
+    Produces `U64.toBV #v[e2.x0, ..., e2.x7] = spec_val` from circuit
+    hypotheses and a chunk-level Binary SM correctness claim.
 
-    ADDW routes through `OP_ADD_W = 26` with `m32 = 1`. Its result is the
-    sign-extended 32-bit sum `signExtend 64 (low32 rs1 + low32 rs2)`.
+    ADDW routes through `OP_ADD_W = 26` with `m32 = 1`. The `RTypeWArchetype`
+    compositional spec gives `main_c_packed m r_main = bus_entry.c_lo +
+    bus_entry.c_hi * 2^32`. The Binary SM's internal correctness (that the
+    bus c-lanes encode the sign-extended 32-bit sum) is the Phase 4 audit
+    obligation expressed via `h_input_val` at the chunk level.
 
-    The `RTypeWArchetype` compositional spec gives
-    `main_c_packed = bus_entry.c_lo + bus_entry.c_hi * 4294967296`. The
-    Binary SM's internal correctness for the 32-bit add-and-sign-extend
-    operation is the Phase 4 audit obligation.
-
-    `h_c_byte_sum` carries the connection: the 8 rd-write bytes' Nat sum
-    equals `(BitVec.signExtend 64 (r1_val32 + r2_val32)).toNat`, where
-    `r1_val32` and `r2_val32` are the low 32 bits of the operands.
-
-    In the Equivalence/Addw.lean caller, `spec_val` will be unified with
-    the Sail expression for the ADDW result. -/
+    **Residual `h_input_val`:** `bus_entry.c_lo.val + bus_entry.c_hi.val * 2^32
+    = spec_val.toNat`. Tier-1 upgrade: the byte-sum equality is now derived
+    internally (not supplied as `h_c_byte_sum`). -/
 theorem h_rd_val_arith_addw
+    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (bus_entry : OperationBusEntry FGL)
     (e2 : MemoryBusEntry FGL)
     (spec_val : BitVec 64)
-    -- Byte-range hypotheses for the rd-write entry
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256) (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256) (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
-    -- Residual: the Binary SM's internal correctness for 32-bit add + sign extension
-    -- (Phase 4 audit obligation).
-    (h_c_byte_sum :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-      = spec_val.toNat) :
+    -- Circuit hypothesis (addw_circuit_holds = rtypew_archetype_circuit_holds at OP_ADD_W)
+    (h_circuit : ZiskFv.Spec.Addw.addw_circuit_holds m r_main bus_entry)
+    -- Lane-match hypothesis for rd-write (K2, Layer 1 trust)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    -- Byte-range hypotheses for e2
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    -- Binary SM chunk correctness (Phase 4 audit obligation).
+    (h_input_val :
+      bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296 = spec_val.toNat) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
-      = spec_val :=
-  bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h0 h1 h2 h3 h4 h5 h6 h7 h_c_byte_sum
+      = spec_val := by
+  simp only [ZiskFv.Spec.Addw.addw_circuit_holds,
+             ZiskFv.Tactics.RTypeWArchetype.rtypew_archetype_circuit_holds] at h_circuit
+  obtain ⟨_, _, _, _, h_match⟩ := h_circuit
+  simp only [matches_entry, opBus_row_Main] at h_match
+  obtain ⟨_, _, _, _, _, _, h_clo, h_chi, _, _, _, _⟩ := h_match
+  simp only [register_write_lanes_match] at h_lane_rd
+  obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
+  have h_byte_sum := byte_sum_from_lane_match m r_main bus_entry e2 spec_val
+    h_clo h_chi h_lo_match h_hi_match
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_input_val
+  exact bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h_e2_0 h_e2_1 h_e2_2 h_e2_3
+    h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_byte_sum
 
-/-! ## ADDIW (Tier 2 — Binary SM correctness deferred to Phase 4) -/
+/-! ## ADDIW (Tier 1 — chunk-level trust boundary, m32=1) -/
 
-/-- **ADDIW h_rd_val derivation (Tier 2).**
+/-- **ADDIW h_rd_val derivation (Tier 1).**
+    Produces `U64.toBV #v[e2.x0, ..., e2.x7] = spec_val` from circuit
+    hypotheses and a chunk-level Binary SM correctness claim.
 
-    ADDIW routes through the same ZisK opcode as ADDW (`OP_ADD_W = 26`).
-    The difference from ADDW is on the Sail/transpiler side (immediate
-    source vs. register source); the circuit-level `c`-lane bus-match
-    identity is the same. Identical shape to `h_rd_val_arith_addw`. -/
+    ADDIW routes through the same ZisK opcode as ADDW (`OP_ADD_W = 26`,
+    `m32 = 1`). The difference from ADDW is on the Sail/transpiler side
+    (immediate source vs. register source); the circuit-level `c`-lane
+    bus-match identity is the same. Identical structure to `h_rd_val_arith_addw`.
+
+    **Residual `h_input_val`:** the bus chunk sum encodes the sign-extended
+    32-bit add-immediate result. Phase 4 audit obligation. -/
 theorem h_rd_val_arith_addiw
+    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (bus_entry : OperationBusEntry FGL)
     (e2 : MemoryBusEntry FGL)
     (spec_val : BitVec 64)
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256) (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256) (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
-    -- Residual: Binary SM internal correctness for ADDIW (Phase 4 audit obligation).
-    (h_c_byte_sum :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-      = spec_val.toNat) :
+    -- Circuit hypothesis (addiw_circuit_holds = rtypew_archetype_circuit_holds at OP_ADD_W)
+    (h_circuit : ZiskFv.Spec.Addiw.addiw_circuit_holds m r_main bus_entry)
+    -- Lane-match hypothesis for rd-write (K2, Layer 1 trust)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    -- Byte-range hypotheses for e2
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    -- Binary SM chunk correctness (Phase 4 audit obligation).
+    (h_input_val :
+      bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296 = spec_val.toNat) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
-      = spec_val :=
-  bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h0 h1 h2 h3 h4 h5 h6 h7 h_c_byte_sum
+      = spec_val := by
+  simp only [ZiskFv.Spec.Addiw.addiw_circuit_holds,
+             ZiskFv.Tactics.RTypeWArchetype.rtypew_archetype_circuit_holds] at h_circuit
+  obtain ⟨_, _, _, _, h_match⟩ := h_circuit
+  simp only [matches_entry, opBus_row_Main] at h_match
+  obtain ⟨_, _, _, _, _, _, h_clo, h_chi, _, _, _, _⟩ := h_match
+  simp only [register_write_lanes_match] at h_lane_rd
+  obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
+  have h_byte_sum := byte_sum_from_lane_match m r_main bus_entry e2 spec_val
+    h_clo h_chi h_lo_match h_hi_match
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_input_val
+  exact bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h_e2_0 h_e2_1 h_e2_2 h_e2_3
+    h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_byte_sum
 
-/-! ## SUB (Tier 2 — Binary SM correctness deferred to Phase 4) -/
+/-! ## SUB (Tier 1 — chunk-level trust boundary) -/
 
-/-- **SUB h_rd_val derivation (Tier 2).**
+/-- **SUB h_rd_val derivation (Tier 1).**
+    Produces `U64.toBV #v[e2.x0, ..., e2.x7] = r1_val - r2_val` from
+    circuit hypotheses and a chunk-level Binary SM correctness claim.
 
-    SUB routes through `OP_SUB = 11` via `ALURTypeArchetype`. Its
-    result is the 64-bit wrapping subtraction `r1_val - r2_val`.
-    The Binary SM's internal correctness is the Phase 4 audit obligation.
+    SUB routes through `OP_SUB = 11` via `ALURTypeArchetype`. ZisK SUB
+    passes `a = rs1`, `b = rs2` (no sign negation upstream of the Binary SM;
+    the SM handles subtraction internally via its carry chain).
 
-    `h_c_byte_sum` : the 8 rd-write entry bytes' Nat sum equals
-    `(r1_val - r2_val).toNat`. -/
+    **Residual `h_input_val`:** the bus `c_lo.val + c_hi.val * 2^32` equals
+    `(r1_val - r2_val).toNat`. This is the Binary SM carry-chain correctness
+    for SUB — the Phase 4 audit obligation. The byte-sum derivation is now
+    internal (Tier-1 upgrade from the former `h_c_byte_sum` parameter). -/
 theorem h_rd_val_arith_sub
+    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (bus_entry : OperationBusEntry FGL)
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256) (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256) (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
-    -- Residual: Binary SM internal correctness for SUB (Phase 4 audit obligation).
-    (h_c_byte_sum :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-      = (r1_val - r2_val).toNat) :
+    -- Circuit hypothesis (sub_circuit_holds = alu_rtype_archetype_circuit_holds at OP_SUB)
+    (h_circuit : ZiskFv.Spec.Sub.sub_circuit_holds m r_main bus_entry)
+    -- Lane-match hypothesis for rd-write (K2, Layer 1 trust)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    -- Byte-range hypotheses for e2
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    -- Binary SM chunk correctness (Phase 4 audit obligation).
+    (h_input_val :
+      bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296
+        = (r1_val - r2_val).toNat) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
-      = r1_val - r2_val :=
-  bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h0 h1 h2 h3 h4 h5 h6 h7 h_c_byte_sum
+      = r1_val - r2_val := by
+  simp only [ZiskFv.Spec.Sub.sub_circuit_holds,
+             ZiskFv.Tactics.ALURTypeArchetype.alu_rtype_archetype_circuit_holds] at h_circuit
+  obtain ⟨_, _, _, _, h_match⟩ := h_circuit
+  simp only [matches_entry, opBus_row_Main] at h_match
+  obtain ⟨_, _, _, _, _, _, h_clo, h_chi, _, _, _, _⟩ := h_match
+  simp only [register_write_lanes_match] at h_lane_rd
+  obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
+  have h_byte_sum := byte_sum_from_lane_match m r_main bus_entry e2
+    (r1_val - r2_val)
+    h_clo h_chi h_lo_match h_hi_match
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_input_val
+  exact bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h_e2_0 h_e2_1 h_e2_2 h_e2_3
+    h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_byte_sum
 
-/-! ## SUBW (Tier 2 — Binary SM correctness deferred to Phase 4) -/
+/-! ## SUBW (Tier 1 — chunk-level trust boundary, m32=1) -/
 
-/-- **SUBW h_rd_val derivation (Tier 2).**
+/-- **SUBW h_rd_val derivation (Tier 1).**
+    Produces `U64.toBV #v[e2.x0, ..., e2.x7] = spec_val` from circuit
+    hypotheses and a chunk-level Binary SM correctness claim.
 
-    SUBW routes through `OP_SUB_W = 27` with `m32 = 1` via `RTypeWArchetype`.
-    Its result is the sign-extended 32-bit subtraction. Identical shape to
-    `h_rd_val_arith_addw`. -/
+    SUBW routes through `OP_SUB_W = 27` with `m32 = 1` via
+    `RTypeWArchetype`. Identical structure to `h_rd_val_arith_addw`
+    modulo the opcode and the spec conclusion.
+
+    **Residual `h_input_val`:** the bus chunk sum encodes the sign-extended
+    32-bit subtraction result. Phase 4 audit obligation. -/
 theorem h_rd_val_arith_subw
+    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (bus_entry : OperationBusEntry FGL)
     (e2 : MemoryBusEntry FGL)
     (spec_val : BitVec 64)
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256) (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256) (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
-    -- Residual: Binary SM internal correctness for SUBW (Phase 4 audit obligation).
-    (h_c_byte_sum :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-      = spec_val.toNat) :
+    -- Circuit hypothesis (subw_circuit_holds = rtypew_archetype_circuit_holds at OP_SUB_W)
+    (h_circuit : ZiskFv.Spec.Subw.subw_circuit_holds m r_main bus_entry)
+    -- Lane-match hypothesis for rd-write (K2, Layer 1 trust)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    -- Byte-range hypotheses for e2
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    -- Binary SM chunk correctness (Phase 4 audit obligation).
+    (h_input_val :
+      bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296 = spec_val.toNat) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
-      = spec_val :=
-  bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h0 h1 h2 h3 h4 h5 h6 h7 h_c_byte_sum
+      = spec_val := by
+  simp only [ZiskFv.Spec.Subw.subw_circuit_holds,
+             ZiskFv.Tactics.RTypeWArchetype.rtypew_archetype_circuit_holds] at h_circuit
+  obtain ⟨_, _, _, _, h_match⟩ := h_circuit
+  simp only [matches_entry, opBus_row_Main] at h_match
+  obtain ⟨_, _, _, _, _, _, h_clo, h_chi, _, _, _, _⟩ := h_match
+  simp only [register_write_lanes_match] at h_lane_rd
+  obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
+  have h_byte_sum := byte_sum_from_lane_match m r_main bus_entry e2 spec_val
+    h_clo h_chi h_lo_match h_hi_match
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_input_val
+  exact bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h_e2_0 h_e2_1 h_e2_2 h_e2_3
+    h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_byte_sum
 
-/-! ## SLT (Tier 2 — Binary SM correctness deferred to Phase 4) -/
+/-! ## SLT, SLTU, SLTI, SLTIU — out of scope for this branch
 
-/-- **SLT h_rd_val derivation (Tier 2).**
-
-    SLT routes through `OP_LT = 7` via `ALURTypeArchetype`. Its result is
-    the 64-bit value `1#64` if `r1_val.slt r2_val`, else `0#64`.
-
-    The Binary SM's internal correctness — that `c_lo = 1 ∧ c_hi = 0` iff
-    `r1 <ₛ r2`, and `c_lo = 0 ∧ c_hi = 0` otherwise — is the Phase 4
-    audit obligation.
-
-    `h_c_byte_sum` : the rd-write bytes' Nat sum equals
-    `(if r1_val.slt r2_val then 1#64 else 0#64).toNat`. -/
-theorem h_rd_val_arith_slt
-    (e2 : MemoryBusEntry FGL)
-    (r1_val r2_val : BitVec 64)
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256) (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256) (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
-    -- Residual: Binary SM internal correctness for SLT (Phase 4 audit obligation).
-    (h_c_byte_sum :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-      = (if r1_val.slt r2_val then (1 : BitVec 64) else 0).toNat) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
-      = if r1_val.slt r2_val then 1 else 0 :=
-  bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h0 h1 h2 h3 h4 h5 h6 h7 h_c_byte_sum
-
-/-! ## SLTU (Tier 2 — Binary SM correctness deferred to Phase 4) -/
-
-/-- **SLTU h_rd_val derivation (Tier 2).**
-
-    SLTU routes through `OP_LTU = 6` via `ALURTypeArchetype`. Its result is
-    `1#64` if `r1_val < r2_val` (unsigned), else `0#64`.
-
-    The Binary SM's unsigned-less-than internal correctness is the Phase 4
-    audit obligation. `h_c_byte_sum` carries the connection. -/
-theorem h_rd_val_arith_sltu
-    (e2 : MemoryBusEntry FGL)
-    (r1_val r2_val : BitVec 64)
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256) (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256) (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
-    -- Residual: Binary SM internal correctness for SLTU (Phase 4 audit obligation).
-    (h_c_byte_sum :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-      = (if r1_val < r2_val then (1 : BitVec 64) else 0).toNat) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
-      = if r1_val < r2_val then 1 else 0 :=
-  bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h0 h1 h2 h3 h4 h5 h6 h7 h_c_byte_sum
-
-/-! ## SLTI (Tier 2 — Binary SM correctness deferred to Phase 4) -/
-
-/-- **SLTI h_rd_val derivation (Tier 2).**
-
-    SLTI routes through `OP_LT = 7` (shared with SLT / BLT / BGE) via
-    `ALUITypeArchetype` at the immediate-form path. Its result is `1#64`
-    if `r1_val.slt (signExtend 64 imm)`, else `0#64`.
-
-    The Binary SM's signed-less-than internal correctness with an
-    immediate operand is the Phase 4 audit obligation. -/
-theorem h_rd_val_arith_slti
-    (e2 : MemoryBusEntry FGL)
-    (r1_val : BitVec 64) (imm : BitVec 12)
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256) (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256) (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
-    -- Residual: Binary SM internal correctness for SLTI (Phase 4 audit obligation).
-    (h_c_byte_sum :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-      = (if r1_val.slt (BitVec.signExtend 64 imm) then (1 : BitVec 64) else 0).toNat) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
-      = if r1_val.slt (BitVec.signExtend 64 imm) then 1 else 0 :=
-  bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h0 h1 h2 h3 h4 h5 h6 h7 h_c_byte_sum
-
-/-! ## SLTIU (Tier 2 — Binary SM correctness deferred to Phase 4) -/
-
-/-- **SLTIU h_rd_val derivation (Tier 2).**
-
-    SLTIU routes through `OP_LTU = 6` (shared with SLTU / BLTU / BGEU)
-    via `ALUITypeArchetype`. Its result is `1#64` if `r1_val <
-    signExtend 64 imm` (unsigned comparison), else `0#64`.
-
-    The Binary SM's unsigned-less-than-immediate internal correctness is
-    the Phase 4 audit obligation. -/
-theorem h_rd_val_arith_sltiu
-    (e2 : MemoryBusEntry FGL)
-    (r1_val : BitVec 64) (imm : BitVec 12)
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256) (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256) (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
-    -- Residual: Binary SM internal correctness for SLTIU (Phase 4 audit obligation).
-    (h_c_byte_sum :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-      = (if r1_val < BitVec.signExtend 64 imm then (1 : BitVec 64) else 0).toNat) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
-      = if r1_val < BitVec.signExtend 64 imm then 1 else 0 :=
-  bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h0 h1 h2 h3 h4 h5 h6 h7 h_c_byte_sum
+These four opcodes move to finishing2 alongside the Binary AIR
+row-constraint extraction needed for their Tier-1 derivation.
+They are NOT present in this file. -/
 
 end ZiskFv.Equivalence.RdValDerivation.Arith
