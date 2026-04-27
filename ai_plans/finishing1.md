@@ -6,21 +6,31 @@
 ## Goal
 
 Retire the `h_rd_val :` parameter on `Equivalence/X.lean` metaplan
-theorems for the **4 opcodes** whose `h_rd_val` is honestly
-dischargeable from circuit primitives within the infrastructure that
-exists at the start of this branch + one tiny Spec-lemma authoring
-step:
+theorems for the **3 opcodes** whose `h_rd_val` is honestly
+dischargeable from in-tree infrastructure plus one tiny Spec-lemma
+authoring step:
 
 | Opcode | Closure path |
 |---|---|
 | ADD | already Tier-1 (commit `be7264c`) |
 | LUI | already Tier-1 (commit `3dfaf88`) |
-| ADDI | needs `Spec/Addi::addi_compositional_with_binaryadd` (small, ~50 lines, analogue of `add_compositional`) |
-| SUB | needs `Spec/Sub::sub_compositional_with_binaryadd` (same shape) |
+| ADDI | needs `Spec/Addi::addi_compositional_with_binaryadd` (~30 lines, analogue of `add_compositional` with ADDI's `main_row_in_alu_itype_mode` substituted for ADD's `main_row_in_add_mode`; same proof body) |
 
-All four go through the **`store_pc = 0`** path (rd-write via Main's
-`c_0`/`c_1` lanes) and use the **additive carry chain** (BinaryAdd
-or analog). They are the only opcodes whose Tier-1 derivation is
+**SUB pulled out:** SUB has bus opcode `OP_SUB = 11` (distinct from
+ADD's `OP_ADD = 10`). BinaryAdd's PIL only handles `OP_ADD`
+(`vendor/zisk/state-machines/binary/pil/binary_add.pil:25` per
+`Airs/OperationBus.lean::opBus_row_BinaryAdd`'s docstring). So SUB
+routes through the **`Binary` AIR** (per Spec/Sub's docstring: "the
+Binary SM ..."), which is **not extracted in this branch** —
+SUB belongs in finishing2 alongside Logic/Shift/Compare. Moving it
+out lets finishing1 land cleanly on the 3 opcodes that share
+BinaryAdd.
+
+ADD, LUI, ADDI all go through the **`store_pc = 0`** path (rd-write
+via Main's `c_0`/`c_1` lanes); ADD and ADDI share BinaryAdd's
+**additive carry chain** (both bus `OP_ADD`); LUI's path is
+independent (the imm passes verbatim through `c_0`/`c_1` and
+`register_write_lanes_match` ties memory-bus bytes directly). They are the only opcodes whose Tier-1 derivation is
 feasible with:
 
 - Phase 1 keystones (K1-A, K2 Layer 1, K3, K4) — already shipped
@@ -31,6 +41,7 @@ Other archetypes have been pulled out into successor plans:
 
 | Originally proposed scope | Closure work | Now in |
 |---|---|---|
+| SUB (1) | needs `Binary` AIR extraction (different opcode literal `OP_SUB = 11` from BinaryAdd's `OP_ADD = 10`) | finishing2 |
 | ADDW, ADDIW, SUBW (3) | needs `BinaryExtension` AIR extraction | finishing2 |
 | SLT, SLTU, SLTI, SLTIU (4) | needs `Binary` AIR extraction | finishing2 |
 | Logic ops (AND/OR/XOR + I-immediates, 6) | needs `Binary` AIR | finishing2 |
@@ -113,11 +124,10 @@ with TDD discipline. Sufficient for the additive `store_pc = 0` path.
 
 ## Wave C — the only remaining work in this branch
 
-### C-1: author 2 small Spec lemmas (by hand, TDD)
+### C-1: author one small Spec lemma (by hand, TDD)
 
-Two new theorems, by close analogy with `Spec/Add::add_compositional`:
-
-#### `ZiskFv/ZiskFv/Spec/Addi.lean::addi_compositional_with_binaryadd`
+`ZiskFv/ZiskFv/Spec/Addi.lean::addi_compositional_with_binaryadd`,
+analogous to `Spec/Add::add_compositional`:
 
 ```lean
 theorem addi_compositional_with_binaryadd
@@ -129,60 +139,39 @@ theorem addi_compositional_with_binaryadd
         - b.cout_1 r_binary * (4294967296 * 4294967296)
 ```
 
-(or whatever the `Spec/Addi.lean` file's `addi_circuit_holds`
-already names — verify before authoring; the `_with_binaryadd`
-variant takes both Main and BinaryAdd hypothesis bundles.)
-
-The proof is a copy of `add_compositional`'s — ADDI's PIL row is
-ADD's row with the immediate folded into Main's `b` lanes upstream
-of BinaryAdd, so the carry-chain composition is identical.
-
-#### `ZiskFv/ZiskFv/Spec/Sub.lean::sub_compositional_with_binaryadd`
-
-Analogous shape; SUB routes through BinaryAdd just like ADD (per the
-Wave B.6 retry's escalation manifest in `docs/fv/track-n-traps.md`).
-
-The proof reuses the carry chain, accounting for SUB's negation of
-`b` upstream of BinaryAdd. Field-level identity unchanged from ADD's
-shape:
-
-```lean
-main_c_packed m r_main
-  = main_a_packed m r_main - main_b_packed m r_main
-    - b.cout_1 r_binary * (4294967296 * 4294967296)
-```
-
-(Verify the existing `Spec/Sub::sub_compositional` to see if the
-"with_binaryadd" variant is just a re-pluralization, or genuine new
-work. If the existing `sub_compositional` already takes a BinaryAdd
-parameter, no new authoring needed — the existing form may suffice.)
+ADDI shares ADD's bus opcode (`OP_ADD = 10`) so it routes through
+the same BinaryAdd carry chain. The Main-mode bundle differs from
+ADD's only in the unused fourth predicate (ADD pins `flag = 0`,
+ADDI pins `set_pc = 0`); the carry-chain proof discards both, so
+the proof body is a copy of `add_compositional`'s with the bundle
+predicate substituted.
 
 **Verification gate (C-1):**
 
 ```bash
 cd /home/cody/zisk-fv/.worktrees/track-n/ZiskFv
 lake build ZiskFv.Spec.Addi
-lake build ZiskFv.Spec.Sub
 lake build ZiskFv  # full
 # expected: 0 errors, 0 sorries
 ```
 
-### C-2: upgrade ADDI and SUB discharge lemmas to Tier-1
+### C-2: upgrade ADDI's discharge lemma to Tier-1
 
-Edit `Equivalence/RdValDerivation/Arith.lean` to replace ADDI's and
-SUB's existing Tier-1.5 form (with `h_input_val` parameter) with a
-real Tier-1 derivation that mirrors ADD's structure:
+Edit `Equivalence/RdValDerivation/Arith.lean` to replace ADDI's
+existing Tier-1.5 form (with `h_input_val` parameter) with a real
+Tier-1 derivation that mirrors ADD's structure:
 
-- Replace `bus_entry : OperationBusEntry FGL` parameter with a
-  `b : Valid_BinaryAdd C FGL FGL` parameter (or whichever shape the
-  new `_with_binaryadd` Spec hypothesis takes).
-- Take the new circuit-holds bundle as `h_circuit`.
+- Replace `bus_entry : OperationBusEntry FGL` parameter with
+  `b : Valid_BinaryAdd C FGL FGL` + `r_binary : ℕ`.
+- Take the new `addi_circuit_holds_with_binaryadd` bundle as `h_circuit`.
 - Take K2 `register_write_lanes_match` as `h_lane_rd`.
-- Take chunk ranges + byte ranges.
-- Take TRANSPILE-BRIDGE input hypotheses (r1_val and either r2_val or imm).
-- Inside the proof: invoke the new `_compositional_with_binaryadd`
-  + K1-A's `binary_add_chunks_eq_bv_add` + Wave B.5 toolkit; close as
-  ADD does.
+- Take chunk ranges + byte ranges (mirror ADD's parameters).
+- Take TRANSPILE-BRIDGE input hypotheses: `h_input_r1` (r1_val matches
+  BinaryAdd's a-side packing) + `h_input_r2_imm` (the immediate's
+  sign-extended BitVec value matches BinaryAdd's b-side packing).
+- Inside the proof: invoke `addi_compositional_with_binaryadd`
+  + K1-A's `binary_add_chunks_eq_bv_add` + Wave B.5 toolkit; close
+  as ADD does.
 
 **Verification gate (C-2):**
 
@@ -191,14 +180,14 @@ cd /home/cody/zisk-fv/.worktrees/track-n/ZiskFv
 lake build ZiskFv.Equivalence.RdValDerivation.Arith
 lake build ZiskFv  # full
 # Hard semantic gate — manual classification, not just grep:
-# every parameter on h_rd_val_arith_addi and h_rd_val_arith_sub must be
-# CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE, or TRANSPILE-BRIDGE (RHS depends
-# only on spec inputs).
+# every parameter on h_rd_val_arith_addi must be CIRCUIT-CONSTRAINT,
+# LANE-MATCH, RANGE, or TRANSPILE-BRIDGE (RHS depends only on
+# spec inputs).
 ```
 
-### C-3: Phase 3 — cleanup `Equivalence/{Add,Lui,Addi,Sub}.lean`
+### C-3: Phase 3 — cleanup `Equivalence/{Add,Lui,Addi}.lean`
 
-For each of the 4 opcode files:
+For each of the 3 opcode files:
 
 1. Remove `h_rd_val :` from the metaplan theorem signatures
    (`_metaplan`, `_metaplan_from_bus`, `_metaplan_bus_self`,
@@ -211,14 +200,14 @@ For each of the 4 opcode files:
 **Verification gate (C-3):**
 
 ```bash
-for op in Add Lui Addi Sub; do
+for op in Add Lui Addi; do
   echo -n "$op: " ; grep -c 'h_rd_val :' "ZiskFv/ZiskFv/Equivalence/${op}.lean" || echo 0
 done
 # expected: 0 for each
 cd ZiskFv && lake build
 ```
 
-## Trust state at end of branch (for the 4 in-scope opcodes)
+## Trust state at end of branch (for the 3 in-scope opcodes)
 
 | Trust item | Status | Closes in |
 |---|---|---|

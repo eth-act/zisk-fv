@@ -9,7 +9,8 @@ is **the missing `Binary` and/or `BinaryExtension` AIR extraction**.
 
 | Archetype | Opcodes (count) | Why deferred from finishing1 |
 |---|---|---|
-| ALU-W | ADDW, ADDIW, SUBW (3) | route through `BinaryExtension`'s additive path; need its row constraints |
+| ALU-Sub | SUB (1) | bus opcode `OP_SUB = 11` ≠ BinaryAdd's `OP_ADD = 10`; routes through `Binary` AIR's additive path |
+| ALU-W | ADDW, ADDIW, SUBW (3) | route through `BinaryExtension`'s additive path |
 | Logic | AND, ANDI, OR, ORI, XOR, XORI (6) | route through `Binary`'s logical-op path |
 | Shift | SLL, SLLI, SLLW, SLLIW, SRL, SRLI, SRLW, SRLIW, SRA, SRAI, SRAW, SRAIW (12) | route through `BinaryExtension`'s shift path |
 | Compare | SLT, SLTU, SLTI, SLTIU (4) | route through `Binary`'s compare-conclusion path |
@@ -23,7 +24,7 @@ the corresponding `_compositional_with_<X>` Spec lemmas;
 (d) Tier-1 discharge lemmas in `Equivalence/RdValDerivation/`;
 (e) Phase-3 cleanup; (f) K2 reads-side closure.
 
-**Total scope: 25 opcodes** (3 ALU-W + 6 Logic + 12 Shift + 4 Compare).
+**Total scope: 26 opcodes** (1 SUB + 3 ALU-W + 6 Logic + 12 Shift + 4 Compare).
 
 ## Scope items
 
@@ -140,9 +141,11 @@ parameter. Same pattern as `finishing1.md`'s Phase 2.5.
 
 | Archetype | File | Opcodes | Deps |
 |---|---|---|---|
+| N-ALU-Binary-Sub | `Equivalence/RdValDerivation/Arith.lean` (extends finishing1's file) | SUB (1) | K1-B subtractive path or analog Spec lemma against `Binary` AIR + K2 |
 | N-ALU-Binary-Logic | `Equivalence/RdValDerivation/BinaryLogic.lean` | AND, ANDI, OR, ORI, XOR, XORI (6) | K1-B (S1) + K2 reads (S3) + Spec field identity for AND/OR/XOR (author if not shipped) |
 | N-ALU-Binary-Shift | `Equivalence/RdValDerivation/BinaryShift.lean` | SLL, SLLI, SLLW, SLLIW, SRL, SRLI, SRLW, SRLIW, SRA, SRAI, SRAW, SRAIW (12) | K1-C (S2) + K2 |
 | N-ALU-Binary-Compare | `Equivalence/RdValDerivation/BinaryCompare.lean` | SLT, SLTU, SLTI, SLTIU (4) — **pulled from finishing1** | K1-B compare-conclusion path + K2; Spec field identity for compare |
+| N-ALU-Binary-W | `Equivalence/RdValDerivation/Arith.lean` (extends finishing1's file) | ADDW, ADDIW, SUBW (3) | K1-C additive path + K2 |
 
 **Note on SLT routing:** confirmed via `BusShape.lean::bus_shape_for_SLT`
 that SLT/SLTU dispatch on `op_lit = 7` (OP_LT) / `op_lit = 6`
