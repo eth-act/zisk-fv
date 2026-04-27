@@ -1,9 +1,13 @@
 # finishing3 — Loads / stores circuit-correctness (Mem + MemAlign extraction)
 
 **Branch:** TBD (likely `feature/zisk-fv-mem-closure`).
-**Predecessor:** `finishing2.md`. By the time this starts, all integer
-+ multiplicative + jump + U-type opcodes have full `h_rd_val`-retired
-equivalence proofs.
+**Predecessors:** `finishing1.md` (additive ALU), `finishing2.md`
+(Binary + BinaryExtension AIRs), `finishing4.md` (multiplicative
+MUL/DIV/REM), and `finishing5.md` (store_pc=1 JAL/JALR/AUIPC) cover
+all integer / multiplicative / jump / U-type Tier-1 retirement before
+this plan starts. This plan handles the load/store half — the only
+RV64IM opcodes whose `h_rd_val` analog (`h_bus_execute_matches_sail`)
+needs the `Mem` AIR.
 
 ## Goal
 
@@ -44,8 +48,8 @@ addresses are:
    (Standard pattern; same trust class as `opBus_row_Main`.)
 
 What this project *does not aim to close*:
-- PLONK / plookup / logUp / permutation soundness as Lean theorems
-  (would be `finishing4` if it existed; cut by trust scoping).
+- PLONK / plookup / logUp / permutation soundness as Lean theorems —
+  cut by trust scoping (CLAUDE.md says this layer is assumed).
 - Transpile contract `riscv2zisk_context.rs` ↔ `Fundamentals.Transpiler`.
   Per CLAUDE.md, this is **trusted surface**.
 - Top-level "ZisK execution ≅ Sail interpreter" theorem. The

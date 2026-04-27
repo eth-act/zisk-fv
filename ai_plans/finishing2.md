@@ -1,28 +1,29 @@
-# finishing2 — Unextracted-AIR follow-on (Binary, BinaryExtension, K2)
+# finishing2 — Binary + BinaryExtension AIR extraction; ALU/W/Logic/Shift Tier-1
 
-**Branch:** TBD (likely `feature/track-n2-unextracted-airs`).
-**Predecessor:** `finishing1.md` closes Track N for the 27 opcodes whose
-AIRs are already extracted; this plan handles everything that branch
-deferred.
+**Branch:** TBD (likely `feature/track-n2-binary-extension`).
+**Predecessor:** `finishing1.md` closes Track N for ADD, LUI, ADDI,
+SUB. This plan handles everything that branch deferred whose blocker
+is **the missing `Binary` and/or `BinaryExtension` AIR extraction**.
 
-## Goal
+## Goal — h_rd_val Tier-1 retirement for 25 opcodes
 
-Close the three trust / extraction gaps that block:
+| Archetype | Opcodes (count) | Why deferred from finishing1 |
+|---|---|---|
+| ALU-W | ADDW, ADDIW, SUBW (3) | route through `BinaryExtension`'s additive path; need its row constraints |
+| Logic | AND, ANDI, OR, ORI, XOR, XORI (6) | route through `Binary`'s logical-op path |
+| Shift | SLL, SLLI, SLLW, SLLIW, SRL, SRLI, SRLW, SRLIW, SRA, SRAI, SRAW, SRAIW (12) | route through `BinaryExtension`'s shift path |
+| Compare | SLT, SLTU, SLTI, SLTIU (4) | route through `Binary`'s compare-conclusion path |
 
-1. **Tier-1 derivation** (per `finishing1.md`'s revised goal — actual
-   trust retirement, not byte-sum rephrasing) for the remaining
-   17 RV64IM ALU opcodes whose secondary AIR isn't extracted yet.
-   This is **4 SLT-family** opcodes (pulled out of `finishing1` because
-   their Tier-1 needs `Binary`) plus ~13 Logic/Shift opcodes.
-2. K2's structurally-trivial form (Layer 1) → properly
-   slot-match-derived (Layer 2), reads-side only. Writes-side
-   continues to finishing3.
+Plus K2 reads-side Layer-2 closure (writes-side continues to
+finishing3 since it needs the `Mem` AIR).
 
-Work decomposes into: (a) extract the two missing AIRs (`Binary`,
-`BinaryExtension`); (b) ship K1-B / K1-C `PackedCorrect` lifts; (c)
-ship Tier-1 discharge lemmas in `Equivalence/RdValDerivation/`; (d)
-Phase-3 cleanup of the affected `Equivalence/<Op>.lean` files; (e)
-K2 reads-side closure.
+Work decomposes into: (a) extract `Binary` AIR; (b) extract
+`BinaryExtension` AIR; (c) author K1-B / K1-C `PackedCorrect` lifts +
+the corresponding `_compositional_with_<X>` Spec lemmas;
+(d) Tier-1 discharge lemmas in `Equivalence/RdValDerivation/`;
+(e) Phase-3 cleanup; (f) K2 reads-side closure.
+
+**Total scope: 25 opcodes** (3 ALU-W + 6 Logic + 12 Shift + 4 Compare).
 
 ## Scope items
 
