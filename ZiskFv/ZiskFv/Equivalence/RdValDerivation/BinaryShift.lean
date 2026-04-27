@@ -13,12 +13,13 @@ import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Equivalence.RdValDerivation.Arith
 
 /-!
-# RdValDerivation.BinaryShift — Tier-1 `h_rd_val` discharges for SLL/SLLI/SRL/SRLI
+# RdValDerivation.BinaryShift — Tier-1 `h_rd_val` discharges for SLL/SLLI/SRL/SRLI/SRA/SRAI/SRLW/SRLIW
 
-**finishing2.md S4 (N-ALU-Binary-Shift, basic 64-bit shifts).** Four
-Tier-1 lemmas covering the RV64I logical shift opcodes routed through
-ZisK's `BinaryExtension` AIR with full byte semantics in the trusted
-`BinaryExtensionTable.wf_SLL` / `wf_SRL` clauses.
+**finishing2.md S4 (N-ALU-Binary-Shift) plus finishing2.md G (W-mode
+shifts and arithmetic shifts).** Eight Tier-1 lemmas covering the RV64I
+logical/arithmetic shift opcodes routed through ZisK's `BinaryExtension`
+AIR with full byte semantics in the trusted `BinaryExtensionTable.wf_SLL`
+/ `wf_SRL` / `wf_SRA` / `wf_SRL_W` clauses.
 
 ## Architecture (Tier 1, fully circuit-derived)
 
@@ -630,5 +631,514 @@ theorem h_rd_val_shift_srli
     h_match_clo h_match_chi h_lane_rd
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
     h_input_r1 h_shift
+
+/-! ## SRA -/
+
+/-- **SRA `h_rd_val` derivation (Tier 1).** Same architecture as
+    `h_rd_val_shift_sll`/`_srl` but with `BitVec.sshiftRight`. Uses K1-C SRA
+    lift `binary_extension_sra_chunks_eq_bv_sshr`. RV64 SRA pre-masks the
+    rs2 register read to 6 bits. -/
+theorem h_rd_val_shift_sra
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (r_main r_binary : ℕ)
+    (e2 : MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (shift : ℕ)
+    (h_op : (v.op r_binary).val = OP_SRA)
+    (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_a_range : a_bytes_in_range v r_binary)
+    (hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
+    (hc_lo_1 : (v.free_in_c_1 r_binary).val < 4294967296)
+    (hc_lo_2 : (v.free_in_c_2 r_binary).val < 4294967296)
+    (hc_lo_3 : (v.free_in_c_3 r_binary).val < 4294967296)
+    (hc_lo_4 : (v.free_in_c_4 r_binary).val < 4294967296)
+    (hc_lo_5 : (v.free_in_c_5 r_binary).val < 4294967296)
+    (hc_lo_6 : (v.free_in_c_6 r_binary).val < 4294967296)
+    (hc_lo_7 : (v.free_in_c_7 r_binary).val < 4294967296)
+    (hc_hi_0 : (v.free_in_c_8 r_binary).val < 4294967296)
+    (hc_hi_1 : (v.free_in_c_9 r_binary).val < 4294967296)
+    (hc_hi_2 : (v.free_in_c_10 r_binary).val < 4294967296)
+    (hc_hi_3 : (v.free_in_c_11 r_binary).val < 4294967296)
+    (hc_hi_4 : (v.free_in_c_12 r_binary).val < 4294967296)
+    (hc_hi_5 : (v.free_in_c_13 r_binary).val < 4294967296)
+    (hc_hi_6 : (v.free_in_c_14 r_binary).val < 4294967296)
+    (hc_hi_7 : (v.free_in_c_15 r_binary).val < 4294967296)
+    (hc_lo_sum_lt : (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
+        + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
+        + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
+        + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val < 4294967296)
+    (hc_hi_sum_lt : (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
+        + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
+        + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
+        + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+    (h_match_clo : m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
+          + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
+          + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary)
+    (h_match_chi : m.c_1 r_main
+        = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
+          + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
+          + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_input_r1 : r1_val
+      = BitVec.ofNat 64
+          ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+            + (v.free_in_a_2 r_binary).val * 65536
+            + (v.free_in_a_3 r_binary).val * 16777216
+            + (v.free_in_a_4 r_binary).val * 4294967296
+            + (v.free_in_a_5 r_binary).val * 1099511627776
+            + (v.free_in_a_6 r_binary).val * 281474976710656
+            + (v.free_in_a_7 r_binary).val * 72057594037927936))
+    (h_shift : shift = (v.free_in_b r_binary).val % 64) :
+    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
+                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+      = BitVec.sshiftRight r1_val shift := by
+  have h_bv := binary_extension_sra_chunks_eq_bv_sshr v r_binary h_op h_bytes h_a_range
+  simp only [register_write_lanes_match] at h_lane_rd
+  obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
+  have h_lo_eq_fgl : memory_entry_lo e2
+      = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
+        + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
+        + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
+        + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary := by
+    rw [← h_lo_match, h_match_clo]
+  have h_hi_eq_fgl : memory_entry_hi e2
+      = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
+        + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
+        + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
+        + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary := by
+    rw [← h_hi_match, h_match_chi]
+  have h_lo_nat : (memory_entry_lo e2).val
+      = e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 := by
+    simp only [memory_entry_lo]
+    have h_cast : e2.x0 + e2.x1 * 256 + e2.x2 * 65536 + e2.x3 * 16777216
+        = (((e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536
+             + e2.x3.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt; omega
+  have h_hi_nat : (memory_entry_hi e2).val
+      = e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216 := by
+    simp only [memory_entry_hi]
+    have h_cast : e2.x4 + e2.x5 * 256 + e2.x6 * 65536 + e2.x7 * 16777216
+        = (((e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536
+             + e2.x7.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt; omega
+  have h_lo_bin_nat :
+      (v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
+       + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
+       + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
+       + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary : FGL).val
+      = (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
+        + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
+        + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
+        + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val := by
+    have h_cast :
+        v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
+        + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
+        + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
+        + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary
+        = ((((v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
+             + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
+             + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
+             + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt; show _ < 18446744069414584321; omega
+  have h_hi_bin_nat :
+      (v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
+       + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
+       + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
+       + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary : FGL).val
+      = (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
+        + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
+        + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
+        + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val := by
+    have h_cast :
+        v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
+        + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
+        + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
+        + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary
+        = ((((v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
+             + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
+             + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
+             + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt; show _ < 18446744069414584321; omega
+  have h_lo_val := congr_arg Fin.val h_lo_eq_fgl
+  have h_hi_val := congr_arg Fin.val h_hi_eq_fgl
+  rw [h_lo_nat, h_lo_bin_nat] at h_lo_val
+  rw [h_hi_nat, h_hi_bin_nat] at h_hi_val
+  have h_byte_sum_e2_to_c :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = ((v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
+          + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
+          + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
+          + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val)
+        + ((v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
+          + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
+          + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
+          + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val)
+          * 4294967296 := by
+    omega
+  have h_target :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (BitVec.sshiftRight r1_val shift).toNat := by
+    rw [h_byte_sum_e2_to_c]
+    rw [h_input_r1, h_shift]
+    rw [h_bv]
+    rw [BitVec.toNat_ofNat]
+    have h_lt : ((v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
+          + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
+          + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
+          + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val)
+        + ((v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
+          + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
+          + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
+          + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val) * 4294967296
+        < 2 ^ 64 := by show _ < 18446744073709551616; omega
+    rw [Nat.mod_eq_of_lt h_lt]
+  exact bv64_of_byte_sum (BitVec.sshiftRight r1_val shift)
+    e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
+
+/-! ## SRAI -/
+
+/-- **SRAI `h_rd_val` derivation (Tier 1).** Same shape as `h_rd_val_shift_sra`;
+    SRAI shares SRA's Zisk opcode (`OP_SRA = 35`) at the BinaryExtension SM.
+    The shift amount on the Sail side is the immediate (5/6-bit shamt) rather
+    than rs2; `h_shift` captures the transpile pin equating it to
+    `(v.free_in_b r_binary).val % 64`. -/
+theorem h_rd_val_shift_srai
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (r_main r_binary : ℕ)
+    (e2 : MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (shift : ℕ)
+    (h_op : (v.op r_binary).val = OP_SRA)
+    (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_a_range : a_bytes_in_range v r_binary)
+    (hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
+    (hc_lo_1 : (v.free_in_c_1 r_binary).val < 4294967296)
+    (hc_lo_2 : (v.free_in_c_2 r_binary).val < 4294967296)
+    (hc_lo_3 : (v.free_in_c_3 r_binary).val < 4294967296)
+    (hc_lo_4 : (v.free_in_c_4 r_binary).val < 4294967296)
+    (hc_lo_5 : (v.free_in_c_5 r_binary).val < 4294967296)
+    (hc_lo_6 : (v.free_in_c_6 r_binary).val < 4294967296)
+    (hc_lo_7 : (v.free_in_c_7 r_binary).val < 4294967296)
+    (hc_hi_0 : (v.free_in_c_8 r_binary).val < 4294967296)
+    (hc_hi_1 : (v.free_in_c_9 r_binary).val < 4294967296)
+    (hc_hi_2 : (v.free_in_c_10 r_binary).val < 4294967296)
+    (hc_hi_3 : (v.free_in_c_11 r_binary).val < 4294967296)
+    (hc_hi_4 : (v.free_in_c_12 r_binary).val < 4294967296)
+    (hc_hi_5 : (v.free_in_c_13 r_binary).val < 4294967296)
+    (hc_hi_6 : (v.free_in_c_14 r_binary).val < 4294967296)
+    (hc_hi_7 : (v.free_in_c_15 r_binary).val < 4294967296)
+    (hc_lo_sum_lt : (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
+        + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
+        + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
+        + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val < 4294967296)
+    (hc_hi_sum_lt : (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
+        + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
+        + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
+        + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+    (h_match_clo : m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
+          + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
+          + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary)
+    (h_match_chi : m.c_1 r_main
+        = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
+          + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
+          + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_input_r1 : r1_val
+      = BitVec.ofNat 64
+          ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+            + (v.free_in_a_2 r_binary).val * 65536
+            + (v.free_in_a_3 r_binary).val * 16777216
+            + (v.free_in_a_4 r_binary).val * 4294967296
+            + (v.free_in_a_5 r_binary).val * 1099511627776
+            + (v.free_in_a_6 r_binary).val * 281474976710656
+            + (v.free_in_a_7 r_binary).val * 72057594037927936))
+    (h_shift : shift = (v.free_in_b r_binary).val % 64) :
+    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
+                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+      = BitVec.sshiftRight r1_val shift := by
+  exact h_rd_val_shift_sra m v r_main r_binary e2 r1_val shift h_op h_bytes h_a_range
+    hc_lo_0 hc_lo_1 hc_lo_2 hc_lo_3 hc_lo_4 hc_lo_5 hc_lo_6 hc_lo_7
+    hc_hi_0 hc_hi_1 hc_hi_2 hc_hi_3 hc_hi_4 hc_hi_5 hc_hi_6 hc_hi_7
+    hc_lo_sum_lt hc_hi_sum_lt
+    h_match_clo h_match_chi h_lane_rd
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_input_r1 h_shift
+
+/-! ## SRLW -/
+
+/-- **SRLW `h_rd_val` derivation (Tier 1).** W-mode unsigned shift right:
+    take the low 32 bits of `r1_val`, shift right (logical) by the low 5
+    bits of `r2_val`, sign-extend the 32-bit result back to 64. Uses K1-C
+    SRLW lift `binary_extension_srlw_chunks_eq_bv_ushr_w`.
+
+    The lemma takes `r1_val_lo32 : BitVec 32` directly with a transpile
+    bridge to `BitVec.ofNat 32 (sum a_lo)`. The shift amount on the Sail
+    side equals `(v.free_in_b r_binary).val % 32` — RV64 SRLW pre-masks
+    the rs2 register read to 5 bits. -/
+theorem h_rd_val_shift_srlw
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (r_main r_binary : ℕ)
+    (e2 : MemoryBusEntry FGL)
+    (r1_val_lo32 : BitVec 32) (shift : ℕ)
+    (h_op : (v.op r_binary).val = OP_SRL_W)
+    (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_a_range : a_bytes_in_range v r_binary)
+    (hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
+    (hc_lo_1 : (v.free_in_c_1 r_binary).val < 4294967296)
+    (hc_lo_2 : (v.free_in_c_2 r_binary).val < 4294967296)
+    (hc_lo_3 : (v.free_in_c_3 r_binary).val < 4294967296)
+    (hc_lo_4 : (v.free_in_c_4 r_binary).val < 4294967296)
+    (hc_lo_5 : (v.free_in_c_5 r_binary).val < 4294967296)
+    (hc_lo_6 : (v.free_in_c_6 r_binary).val < 4294967296)
+    (hc_lo_7 : (v.free_in_c_7 r_binary).val < 4294967296)
+    (hc_hi_0 : (v.free_in_c_8 r_binary).val < 4294967296)
+    (hc_hi_1 : (v.free_in_c_9 r_binary).val < 4294967296)
+    (hc_hi_2 : (v.free_in_c_10 r_binary).val < 4294967296)
+    (hc_hi_3 : (v.free_in_c_11 r_binary).val < 4294967296)
+    (hc_hi_4 : (v.free_in_c_12 r_binary).val < 4294967296)
+    (hc_hi_5 : (v.free_in_c_13 r_binary).val < 4294967296)
+    (hc_hi_6 : (v.free_in_c_14 r_binary).val < 4294967296)
+    (hc_hi_7 : (v.free_in_c_15 r_binary).val < 4294967296)
+    (hc_lo_sum_lt : (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
+        + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
+        + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
+        + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val < 4294967296)
+    (hc_hi_sum_lt : (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
+        + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
+        + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
+        + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+    (h_match_clo : m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
+          + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
+          + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary)
+    (h_match_chi : m.c_1 r_main
+        = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
+          + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
+          + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    -- Transpile bridge (input side, low 32): `r1_val_lo32` matches the
+    -- BinaryExtension row's packed 4-byte low input.
+    (h_input_r1_lo32 : r1_val_lo32
+      = BitVec.ofNat 32
+          ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+            + (v.free_in_a_2 r_binary).val * 65536
+            + (v.free_in_a_3 r_binary).val * 16777216))
+    (h_shift : shift = (v.free_in_b r_binary).val % 32) :
+    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
+                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+      = BitVec.signExtend 64 (BitVec.ushiftRight r1_val_lo32 shift) := by
+  have h_bv := binary_extension_srlw_chunks_eq_bv_ushr_w v r_binary h_op h_bytes h_a_range
+  simp only [register_write_lanes_match] at h_lane_rd
+  obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
+  have h_lo_eq_fgl : memory_entry_lo e2
+      = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
+        + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
+        + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
+        + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary := by
+    rw [← h_lo_match, h_match_clo]
+  have h_hi_eq_fgl : memory_entry_hi e2
+      = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
+        + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
+        + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
+        + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary := by
+    rw [← h_hi_match, h_match_chi]
+  have h_lo_nat : (memory_entry_lo e2).val
+      = e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 := by
+    simp only [memory_entry_lo]
+    have h_cast : e2.x0 + e2.x1 * 256 + e2.x2 * 65536 + e2.x3 * 16777216
+        = (((e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536
+             + e2.x3.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt; omega
+  have h_hi_nat : (memory_entry_hi e2).val
+      = e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216 := by
+    simp only [memory_entry_hi]
+    have h_cast : e2.x4 + e2.x5 * 256 + e2.x6 * 65536 + e2.x7 * 16777216
+        = (((e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536
+             + e2.x7.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt; omega
+  have h_lo_bin_nat :
+      (v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
+       + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
+       + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
+       + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary : FGL).val
+      = (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
+        + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
+        + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
+        + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val := by
+    have h_cast :
+        v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
+        + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
+        + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
+        + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary
+        = ((((v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
+             + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
+             + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
+             + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt; show _ < 18446744069414584321; omega
+  have h_hi_bin_nat :
+      (v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
+       + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
+       + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
+       + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary : FGL).val
+      = (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
+        + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
+        + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
+        + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val := by
+    have h_cast :
+        v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
+        + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
+        + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
+        + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary
+        = ((((v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
+             + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
+             + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
+             + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt; show _ < 18446744069414584321; omega
+  have h_lo_val := congr_arg Fin.val h_lo_eq_fgl
+  have h_hi_val := congr_arg Fin.val h_hi_eq_fgl
+  rw [h_lo_nat, h_lo_bin_nat] at h_lo_val
+  rw [h_hi_nat, h_hi_bin_nat] at h_hi_val
+  have h_byte_sum_e2_to_c :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = ((v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
+          + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
+          + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
+          + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val)
+        + ((v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
+          + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
+          + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
+          + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val)
+          * 4294967296 := by
+    omega
+  have h_target :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (BitVec.signExtend 64 (BitVec.ushiftRight r1_val_lo32 shift)).toNat := by
+    rw [h_byte_sum_e2_to_c]
+    rw [h_input_r1_lo32, h_shift]
+    rw [h_bv]
+    rw [BitVec.toNat_ofNat]
+    have h_lt : ((v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
+          + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
+          + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
+          + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val)
+        + ((v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
+          + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
+          + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
+          + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val) * 4294967296
+        < 2 ^ 64 := by show _ < 18446744073709551616; omega
+    rw [Nat.mod_eq_of_lt h_lt]
+  exact bv64_of_byte_sum (BitVec.signExtend 64 (BitVec.ushiftRight r1_val_lo32 shift))
+    e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
+
+/-! ## SRLIW -/
+
+/-- **SRLIW `h_rd_val` derivation (Tier 1).** Same shape as `h_rd_val_shift_srlw`;
+    SRLIW shares SRLW's Zisk opcode (`OP_SRL_W = 37`) at the BinaryExtension SM.
+    The shift amount on the Sail side is the immediate (5-bit shamt) rather
+    than rs2; `h_shift` captures the transpile pin equating it to
+    `(v.free_in_b r_binary).val % 32`. -/
+theorem h_rd_val_shift_srliw
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (r_main r_binary : ℕ)
+    (e2 : MemoryBusEntry FGL)
+    (r1_val_lo32 : BitVec 32) (shift : ℕ)
+    (h_op : (v.op r_binary).val = OP_SRL_W)
+    (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_a_range : a_bytes_in_range v r_binary)
+    (hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
+    (hc_lo_1 : (v.free_in_c_1 r_binary).val < 4294967296)
+    (hc_lo_2 : (v.free_in_c_2 r_binary).val < 4294967296)
+    (hc_lo_3 : (v.free_in_c_3 r_binary).val < 4294967296)
+    (hc_lo_4 : (v.free_in_c_4 r_binary).val < 4294967296)
+    (hc_lo_5 : (v.free_in_c_5 r_binary).val < 4294967296)
+    (hc_lo_6 : (v.free_in_c_6 r_binary).val < 4294967296)
+    (hc_lo_7 : (v.free_in_c_7 r_binary).val < 4294967296)
+    (hc_hi_0 : (v.free_in_c_8 r_binary).val < 4294967296)
+    (hc_hi_1 : (v.free_in_c_9 r_binary).val < 4294967296)
+    (hc_hi_2 : (v.free_in_c_10 r_binary).val < 4294967296)
+    (hc_hi_3 : (v.free_in_c_11 r_binary).val < 4294967296)
+    (hc_hi_4 : (v.free_in_c_12 r_binary).val < 4294967296)
+    (hc_hi_5 : (v.free_in_c_13 r_binary).val < 4294967296)
+    (hc_hi_6 : (v.free_in_c_14 r_binary).val < 4294967296)
+    (hc_hi_7 : (v.free_in_c_15 r_binary).val < 4294967296)
+    (hc_lo_sum_lt : (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
+        + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
+        + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
+        + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val < 4294967296)
+    (hc_hi_sum_lt : (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
+        + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
+        + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
+        + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+    (h_match_clo : m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
+          + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
+          + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary)
+    (h_match_chi : m.c_1 r_main
+        = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
+          + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
+          + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_input_r1_lo32 : r1_val_lo32
+      = BitVec.ofNat 32
+          ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+            + (v.free_in_a_2 r_binary).val * 65536
+            + (v.free_in_a_3 r_binary).val * 16777216))
+    (h_shift : shift = (v.free_in_b r_binary).val % 32) :
+    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
+                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+      = BitVec.signExtend 64 (BitVec.ushiftRight r1_val_lo32 shift) := by
+  exact h_rd_val_shift_srlw m v r_main r_binary e2 r1_val_lo32 shift h_op h_bytes h_a_range
+    hc_lo_0 hc_lo_1 hc_lo_2 hc_lo_3 hc_lo_4 hc_lo_5 hc_lo_6 hc_lo_7
+    hc_hi_0 hc_hi_1 hc_hi_2 hc_hi_3 hc_hi_4 hc_hi_5 hc_hi_6 hc_hi_7
+    hc_lo_sum_lt hc_hi_sum_lt
+    h_match_clo h_match_chi h_lane_rd
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_input_r1_lo32 h_shift
 
 end ZiskFv.Equivalence.RdValDerivation.BinaryShift
