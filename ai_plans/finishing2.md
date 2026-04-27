@@ -269,3 +269,54 @@ cd ZiskFv && lake build
   unblocks everything). Then S1 + S2 in parallel (independent AIR
   extractions; both depend on S0). S3 in parallel with S1/S2 (different
   files entirely). Then S4 (gated on S1/S2/S3). Then S5 cleanup.
+
+## finishing2 status — CLOSED 2026-04-27
+
+**Scope:** 26 ops — 6 Logic + 12 Shift + 4 Compare + SUB + 3 ALU-W.
+
+**What shipped (in order):**
+
+| Commit | Subject |
+|---|---|
+| `6916c7c` | Plan: insert S0 (trusted lookup-table bus contracts) — pivot from "prove tables" to "trust tables" per openvm-fv pattern |
+| `63a94f3` | S0: `Airs/BinaryTable.lean` + `Airs/BinaryExtensionTable.lean` — 7-slot bus-entry structures + trusted `wf_properties` axioms (`bin_table_consumer_wf`, `bin_ext_table_consumer_wf`) |
+| `92570c1` | S1: `Valid_Binary` + 7 F-typed bridge lemmas + `BinaryPackedCorrect` (3 K1-B lifts: AND/OR/XOR → BitVec) |
+| `13b39ec` | S2: `Valid_BinaryExtension` (zero F-typed constraints) + `BinaryExtensionPackedCorrect` (2 K1-C lifts: SLL, SRL) |
+| `edf991a` | S3: K2 reads-side closure — `MemoryBusEntry6` 6-slot type + 3 slot-match theorems + Layer-2 `LaneMatch.lean` reads-side proofs |
+| `24de8f6` | S4: 10 Tier-1 derivations — Logic + basic Shift |
+| `04c4ba8` | S2 follow-on: SRA + W-variant byte semantics in `BinaryExtensionTable` + 4 K1-C lifts |
+| `0ca5efd` | D: strengthen `BinaryTable.wf_{LTU,LT,EQ,SUB,ADD,SEXT_00,SEXT_FF}` + byte-relation extractors |
+| `83eb586` | G: 4 Tier-1 derivations — SRA, SRAI, SRLW, SRLIW |
+| `0e590b2` | G2: 4 Tier-1 derivations — SLLW, SLLIW, SRAW, SRAIW |
+| `85f0d2d` | F: K1-C SLL_W + SRA_W lifts (`interval_cases sft` over 32 shift amounts; SRA-style nat-core/BitVec-wrapper split) |
+| `3e437f5` | E: K1-B chain lifts (LTU/LT/SUB/ADDW) — crack telescope OOM via 4-byte-half split + per-byte induction |
+| `092c09b` | J: Tier-1 derivations for SLT/SLTU/SLTI/SLTIU + SUB + ADDW/ADDIW/SUBW (+ new `binary_subw_chunks_eq_bv_sub_w` K1-B lift) |
+| `aef18ac` | S5 partial: 11 `equiv_<OP>_metaplan_tier1` companions (Logic + SLT-family + SUB) |
+| `287388d` | S5 final: `Equivalence/RdValDerivation/SailBridge.lean` (14 Sail bridges) + 15 remaining `_tier1` companions (ALU-W + all 12 Shifts) |
+
+**Result.** All 26 in-scope ops have `equiv_<OP>_metaplan_tier1`
+theorems. Trust class for each op: TRANSPILE-BRIDGE /
+CIRCUIT-CONSTRAINT / LANE-MATCH / TRANSPILE-PIN; no OUTPUT-EQ
+parameter survives.
+
+**Trusted-surface additions (added to CLAUDE.md ledger).**
+- `bin_table_consumer_wf` (`Airs/BinaryTable.lean`) — `bus_id=125`
+  truth-table semantics (AND/OR/XOR + LT/LTU/EQ + ADD/SUB chain +
+  SEXT_00/FF byte sign-extends).
+- `bin_ext_table_consumer_wf` (`Airs/BinaryExtensionTable.lean`) —
+  `bus_id=124` shift truth-table semantics (SLL/SRL/SRA + W-variants).
+
+Both mirror openvm-fv's `BitwiseBusEntryInstance.wf_properties`
+pattern: trusted at the bus-entry definition site. Future improvement
+(prove `wf_properties` from the PIL2 generator switch) is documented
+in the OOS table.
+
+**What was learned.** (a) `Binary` and `BinaryExtension` AIRs encode
+their byte-level semantics as **lookup arguments**, not as F-typed
+polynomial constraints — finishing2 originally assumed otherwise.
+The pivot to trust-the-table mirrors openvm-fv exactly. (b) The K1-B
+chain telescope (24-atom polynomial over 8 bytes + 7 carries) OOMs
+`linear_combination`/`omega`/explicit-rewrite at >40 GB RSS; solved
+by splitting into 4-byte halves (mirror `BinaryAddPackedCorrect`'s
+16-bit-chunk split). (c) `interval_cases sft` over 32 concrete shift
+amounts collapses the SLL_W disjointness blocker.

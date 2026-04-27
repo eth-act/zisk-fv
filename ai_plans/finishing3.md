@@ -316,3 +316,53 @@ consumers still take `register_write_lanes_match` as a `def`-level
 hypothesis. The S5 per-opcode cleanup (this plan) will rewire those
 call sites to use the Layer-2 derivation; that work is separate
 from this S4 closure.
+
+## finishing3 status — CLOSED 2026-04-27
+
+**Scope:** Mem AIR + MemAlign* extraction + memory-model bridge +
+K2 writes-side + per-opcode load/store cleanup (11 ops: LD/LW/LWU/
+LH/LHU/LB/LBU/SD/SW/SH/SB).
+
+**Pivotal scope decision (commit `e2f75f1`).** Unaligned access is
+**out of scope** — the Zicclsm extension is not in the Sail RV64IM
+model, so per-opcode load/store proofs assume aligned access. The
+`MemAlign*` extractions stay as soundness scaffolding only and are
+not invoked from the per-opcode proof path. If Zicclsm enters Sail
+later, the wrappers are ready.
+
+**What shipped (in order):**
+
+| Commit | Subject |
+|---|---|
+| `dd0812a` | S1: Mem AIR extraction + `Valid_Mem` named columns + 9 F-typed bridge lemmas |
+| `f8e60b6` | S2: `MemAlign` / `MemAlignByte` / `MemAlignReadByte` / `MemAlignWriteByte` extraction (45 F-typed bridges total; 8 forward-rotated continuity constraints in MemAlign deferred — extractor limitation) |
+| `e2f75f1` | Plan: Zicclsm out of scope (resolution above) |
+| `5692db5`, `757ec0f` | S3 + S4: `Spec/MemModel.lean` + `Airs/MemoryBus/MemBridge.lean` (mem-bus → Mem-row composition; `mem_load_correct`, `mem_store_correct`) — and rewrite `register_write_lanes_match_of_bus_emission` to Layer-2 (via Mem AIR multi-row argument). Concurrency-swapped commits: `5692db5` carries K's files, `757ec0f` carries L's `LaneMatch.lean` + docs. |
+| `094c6c3` | S5 (escalate): discharge lemmas produce per-byte predicates but metaplan theorems expect full `bus_effect ↔ Sail-do-block` equality — escalation manifest in `track-n-traps.md`. |
+| `8666f48` | S5a: 6 narrow-width `bus_effect_matches_sail_*byte_rrrw` reductions + 6 `mem_{load,store}_correct_<n>byte` companions (1/2/4-byte) |
+| `144fb1b` | S5b: 11 load/store metaplan rewires — drop `h_bus_execute_matches_sail` and `h_rd_val :` from all 11 files. Final grep gate returns 0 hits. |
+
+**Trusted-surface additions (added to CLAUDE.md ledger).**
+- `memory_bus_register_write_perm_sound` (MB-W) — register-write
+  permutation soundness on `bus_id=10`.
+- `lookup_consumer_matches_provider_load` / `_store` (MB-L / MB-S)
+  — memory-side load/store permutation soundness on `bus_id=10`.
+- `row_models_sail_state_load` / `_store` (MS-L / MS-S) — Sail-side
+  state-bridge: Mem AIR rows agree with `state.mem` byte-by-byte.
+
+The per-opcode M-family axioms (`M1`–`M11` in `trusted-base.md`) are
+no longer load-bearing on the metaplan parameter retirement; they
+were already promoted to theorems in Phase 3.5 (2026-04-22).
+
+**What was learned.** (a) The S3 bridge needs per-byte
+`state.mem[ptr+i]?` predicates, not the monolithic `bus_effect ↔
+Sail-do-block` form the metaplan theorems originally took. The
+narrow-width companions (S5a) were the missing intermediate layer.
+(b) For stores, the narrow collapse must run at the metaplan layer
+(via `Std.ExtHashMap.insert_eq_self`) rather than at the
+`BusEmission` layer — `bus_effect`'s `modify` lambda binds the
+post-`writeReg` state, blocking inner rewrites.
+
+**Result.** All 11 load/store ops have their `h_bus_execute_matches_sail`
+(and `h_rd_val :` for LoadD) parameters retired. Trust reduces to
+the 5 mem-bus axioms above plus the existing trusted surface.

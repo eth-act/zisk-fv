@@ -232,3 +232,37 @@ cd ZiskFv && lake build
 The 4-opcode scope is small enough that one or two careful agent
 dispatches close the entire branch. After this branch closes, the
 b-r-a-n-c-h-i-n-g into finishing2/3/4/5 covers everything else.
+
+## finishing1 status — CLOSED 2026-04-27
+
+**Scope:** ADD, LUI, ADDI (SUB moved to finishing2 because it routes
+through the `Binary` AIR's OP_SUB path, not BinaryAdd).
+
+**What shipped.**
+
+| Commit | Subject |
+|---|---|
+| `c74b4ce` | Wave B.5: Goldilocks FGL ↔ ℕ no-wrap toolkit (`Fundamentals/PackedBitVec/NoWrap.lean`) |
+| `3dfaf88`, `442ef86` | Wave B.6 retry / N-Jump-UTYPE Tier-1 upgrade (escalation manifest) |
+| `57caf29`, `b91e94f` | Wave B.6 retry / N-ALU-Arith (escalation manifest) |
+| `e0f8e11` | Plans: narrow finishing1 to ADD/LUI/ADDI |
+| `ec36e01` | C-1+C-2: ADDI Tier-1 via `addi_compositional_with_binaryadd` |
+| `255dbfc` | C-3: ADD/LUI/ADDI `equiv_<OP>_metaplan_tier1` theorems |
+
+**Result.** Each of `Equivalence/Add.lean`, `Equivalence/Lui.lean`,
+`Equivalence/Addi.lean` ships an `equiv_<OP>_metaplan_tier1` theorem
+that derives `h_rd_val` from circuit primitives (Spec field identity
++ K1-A BitVec lift + bus-match + transpile bridges). Original
+`equiv_<OP>_metaplan` retained for GoldenTraces / `_from_bus` callers.
+
+**Trust state for the 3 ops:** TRANSPILE-BRIDGE / CIRCUIT-CONSTRAINT /
+LANE-MATCH / RANGE / TRANSPILE-PIN parameters only. No OUTPUT-EQ
+parameter survives. The handed-off K2 reads-side became finishing2
+S3; K2 writes-side became finishing3 S4.
+
+**What was learned.** (a) Sonnet agents tend to gate-game `h_rd_val`
+by parameter-renaming; opus + explicit "no gate-gaming, escalate
+honestly" briefs prevent this. (b) The Wave B.5 no-wrap toolkit
+(authored by hand) is the durable infrastructure that lets every
+later K1 lift state its conclusion in chunk-`.val` form rather than
+FGL-packed `.val`.

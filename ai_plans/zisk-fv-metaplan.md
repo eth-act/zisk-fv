@@ -1,5 +1,110 @@
 # ZisK Formal Verification — Metaplan
 
+## Revision 2026-04-27 (post-finishing1 / finishing2 / finishing3 — Track N closure)
+
+After Phase 1.5 (the `equiv_<OP>_metaplan` shape with parameterized
+`h_rd_val`), the project's remaining work was decomposed into five
+"finishing" plans (`ai_plans/finishing[1-5].md`) each retiring one
+class of trusted parameter. **finishing1, finishing2, finishing3 are
+all CLOSED.** finishing4 and finishing5 are still pending.
+
+### State as of 2026-04-27
+
+**Branch state.** All work merged to `main` (HEAD `287388d`, 50
+commits forwarded from feature branch). 11 stale `worktree-agent-*`
+topic branches audited (all subsumed by main per `git cherry`
+diff-equivalence + line-by-line subset check) and deleted. `main`
+not yet pushed to `origin/main`.
+
+**Per-opcode coverage now in tree.**
+
+| Group | Plan | Ops | Status |
+|---|---|---|---|
+| Additive ALU (ADD/LUI/ADDI) | finishing1 | 3 | ✅ `_tier1` companions shipped |
+| Logic / Shift / Compare / SUB / ALU-W | finishing2 | 26 | ✅ `_tier1` companions shipped |
+| Loads / Stores | finishing3 | 11 | ✅ original `equiv_<OP>_metaplan` rewritten in-place (no companion) |
+| MUL / DIV / REM family | finishing4 | 13 | ⏳ pending |
+| JAL / JALR / AUIPC (`store_pc=1`) | finishing5 | 3 | ⏳ pending |
+| **TOTAL covered** | — | **40 / 56** | — |
+
+(56 = the 53 RV64IM ops already with `equiv_<OP>_metaplan` plus the
+3 finishing5 ops; running totals depend on whether you count the
+already-closed Branch / Jump-without-link family from Phase 6 Track
+T which lives directly on main without a "finishing" plan.)
+
+**Trusted surface as of 2026-04-27.** Nine items, all documented in
+CLAUDE.md and `docs/fv/trusted-base.md`:
+1. `Fundamentals.Transpiler` — RV → Zisk microinstruction contract.
+2. `OperationBus.matches_entry` — `bus_id=5000` permutation soundness.
+3. `bin_table_consumer_wf` — `bus_id=125` Binary truth-table semantics
+   (added in finishing2 S0).
+4. `bin_ext_table_consumer_wf` — `bus_id=124` shift truth-table
+   semantics (added in finishing2 S0).
+5. `memory_bus_register_write_perm_sound` (MB-W) — `bus_id=10`
+   register-write permutation soundness (added in finishing3 S4).
+6. `lookup_consumer_matches_provider_load` (MB-L) — `bus_id=10`
+   memory-side load permutation soundness (finishing3 S3).
+7. `lookup_consumer_matches_provider_store` (MB-S) — `bus_id=10`
+   memory-side store permutation soundness (finishing3 S3).
+8. `row_models_sail_state_load` (MS-L) — Sail-state bridge for
+   loads (finishing3 S3).
+9. `row_models_sail_state_store` (MS-S) — Sail-state bridge for
+   stores (finishing3 S3).
+
+Items 3 & 4 mirror openvm-fv's `BitwiseBusEntryInstance.wf_properties`
+pattern (lookup tables trusted at the bus-entry definition site).
+Items 2, 5, 6, 7 are bus-protocol soundness across the three buses
+ZisK uses (operation, register, memory). Items 8, 9 are the model
+fidelity between ZisK's Mem AIR and Sail's `state.mem`.
+
+**Cut from project scope** (per CLAUDE.md): PLONK / plookup / logUp
+/ permutation soundness as Lean theorems; the transpile-contract
+derivation (`riscv2zisk_context.rs` port); the top-level "ZisK
+execution ≅ Sail interpreter" theorem. The metaplan's stated goal is
+**per-opcode**, and finishing1+2+3 deliver that for 40 of the 56
+RV64IM opcodes already on the metaplan-target shape.
+
+### What's left
+
+- **finishing4** (`ai_plans/finishing4.md`) — 13 multiplicative ops
+  (MUL/MULHU/DIVU/REMU/MULW unsigned + MULH/MULHSU/DIV/DIVW/DIVUW/
+  REM/REMW/REMUW signed). Tier-2 discharge lemmas already in tree
+  (commits `bed62b7`/`92305eb`/`23e5669`); plan retires the
+  `h_byte_sum` parameters via a multiplicative no-wrap toolkit (the
+  multiplicative analogue of finishing1's Wave B.5 additive toolkit).
+- **finishing5** (`ai_plans/finishing5.md`) — 3 ops (JAL, JALR,
+  AUIPC). Tier-1.5 discharge lemmas already in tree (`a063edf` /
+  `3dfaf88`); plan retires the OUTPUT-EQ parameters (`h_entry_hi_nat`,
+  `h_pc_fgl_lo_nat`, etc.) for the `store_pc=1` bus-emission path.
+
+### Open question — push to origin
+
+`main` is at `287388d` locally. `origin/main` is one fast-forward
+behind. User explicitly authorized the local merge but not the
+push; this is gated on user decision.
+
+### Working notes / discoveries from this revision
+
+- Multi-agent dispatch with strict "no gate-gaming" briefs (no new
+  axioms / no `sorry` / honest escalation with manifest entries) was
+  the durable working pattern. Sonnet agents were observed
+  parameter-renaming `h_rd_val` to dodge syntactic grep gates; opus
+  agents reliably escalated with proof-engineering details when
+  blocked.
+- Two real Lean proof-engineering walls were cracked:
+  - The K1-B chain telescope OOM (24-atom polynomial, >40 GB RSS on
+    `linear_combination`/`omega`) — solved by 4-byte-half split
+    mirroring `BinaryAddPackedCorrect`'s 16-bit-chunk strategy
+    (commit `3e437f5`). Manifest in `docs/fv/track-n-traps.md`.
+  - The K1-C SLL_W disjointness proof + SRA kernel deep-recursion —
+    solved by `interval_cases sft` over 32 concrete shift amounts +
+    Nat-core / BitVec-wrapper split (commits `04c4ba8` / `85f0d2d`).
+- The `git worktree`-based subagent isolation pattern leaves stale
+  topic branches when sessions terminate; periodic `git cherry`
+  audit + `git worktree remove --force-force` cleanup is needed.
+
+---
+
 ## Revision 2026-04-22 (post-Phase 1 and Phase 1.5)
 
 Phase 1 closed 2026-04-21 and Phase 1.5 closed 2026-04-22 (both in
