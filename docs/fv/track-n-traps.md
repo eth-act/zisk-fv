@@ -820,3 +820,57 @@ strengthened `wf_*` infrastructure is already in tree, so when the
 telescope OOM is resolved, the four K1-B lifts can be authored
 against a stable trusted layer with no re-strengthening required.
 
+## E resolution: K1-B chain lifts shipped (2026-04-27 finishing2 E pass)
+
+D's OOM blocker was cracked. All four K1-B chain lifts now ship in
+`Airs/Binary/BinaryPackedCorrect.lean`:
+
+* `binary_sub_chunks_eq_bv_sub` — `BitVec.sub a64 b64 = c64`
+* `binary_ltu_chunks_eq_bv_ult` — `flags_7 % 2 = 1 ↔ a64 < b64` (unsigned)
+* `binary_lt_chunks_eq_bv_slt` — `flags_7 % 2 = 1 ↔ signed_lt_64' a64 b64`
+* `binary_addw_chunks_eq_bv_add_w` — `BitVec.signExtend 64 (a32 + b32) = c64`
+
+The build is 15s clean and the full project (`lake build ZiskFv`) is
+green.
+
+**The strategies that worked.**
+
+* **For SUB and the 4-byte LO half of ADDW:** the 4-byte half-split
+  (Strategy 1 from D's manifest). Each per-byte SUB equation lifts
+  to a uniform `a + 256·B = c + cin + b` (regardless of borrow case
+  via `omega` on the case-split). A 13-atom `linear_combination`
+  per half closes; the global identity is a 5-atom
+  `linear_combination` combining the two halves
+  (`sub_telescope_4byte`, `sub_telescope_8byte`,
+  `add_telescope_4byte`).
+* **For LTU/LT:** a per-byte induction-style `ltu_step` lemma was
+  composed sequentially 8 times. Each `ltu_step` produces
+  `cout_i = 1 ↔ Aprev_{i+1} < Bprev_{i+1}` from the previous-step
+  predicate plus the byte rule. No big polynomial materializes.
+  The LT byte-7 case combines the chain rule with the sign-byte
+  override via `lt_byte7_close`.
+* **For ADDW:** the SEXT-choice disjunction was passed through
+  the helper signature; the closer was split into
+  `addw_close_pos` and `addw_close_neg` to keep each kernel-checked
+  proof term small (an earlier monolithic `addw_close` hit kernel
+  deep recursion at the theorem signature).
+
+**Auxiliary helpers shipped.**
+
+* `byte_and_0x80_zero` / `byte_and_0x80_set` — `x &&& 0x80 = 0 ↔ x < 128`
+  and `= 0x80 ↔ x ≥ 128` for `x < 256` (used by LT's sign-byte
+  override).
+* `signed_lt_64'` — Nat-encoded two's-complement signed-LT predicate,
+  exposed publicly for downstream consumers.
+* Per-op chain extractors: `ltu_byte_chain`, `lt_byte_chain`,
+  `sub_byte_uniform_eq`, `sub_byte_nonfinal_eq`,
+  `add_byte_uniform_eq`, `add_byte_nonfinal_eq`,
+  `sext00_byte_eq`, `sextff_byte_eq`.
+
+The kernel "deep recursion" pitfall observed in early E iterations
+turned out to be (a) `set` in proof bodies producing nested `let`
+chains the kernel struggles to reduce, and (b) trying to discharge
+`omega` on goals that the prior `rw` already closed (constant
+folding by `Nat.reduceMod` etc. — fixed by removing the redundant
+`omega`).
+

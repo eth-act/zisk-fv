@@ -30,7 +30,7 @@ The byte reassembly is carried by a single `Nat`-level helper
 The three AND/OR/XOR theorems compose this with `Nat.testBit_and` /
 `Nat.testBit_or` / `Nat.testBit_xor` and `BitVec.toNat_and` etc. -/
 
-set_option maxHeartbeats 1200000
+set_option maxHeartbeats 4000000
 
 namespace ZiskFv.Airs.Binary
 
@@ -756,57 +756,1170 @@ private lemma byte_relation_ADD
   obtain ⟨_, _, _, _, _, _, _, h_add, _⟩ := wf
   exact h_add h_op
 
-/-! ## K1-B chain lifts (SUB / LTU / LT / ADDW) — TODO: blocked
+/-! ## K1-B chain lifts (SUB / LTU / LT / ADDW)
 
-The four chain-based K1-B lifts (`binary_sub_chunks_eq_bv_sub`,
-`binary_ltu_chunks_eq_bv_ult`, `binary_lt_chunks_eq_bv_slt`,
-`binary_addw_chunks_eq_bv_add_w`) all require composing 8 byte-level
-chain steps into a packed-Nat identity over 24 atoms (8 bytes a / b /
-c plus 7 chain-state values plus a top-level borrow indicator), then
-reducing modulo 2^64 to land on the BitVec arithmetic identity.
+These four lifts compose 8 per-byte chain hypotheses into the packed
+64-bit BitVec identity. The naive global-polynomial approach (single
+`linear_combination` over 24 atoms with 256^i coefficients) was tried
+in the 2026-04-27 D pass and exhausted local Lean memory (>40 GB RSS).
 
-**Empirical OOM blocker.** Multiple proof strategies were attempted
-(2026-04-27 D pass) and all exceeded the local Lean memory budget
-(>40 GB RSS, requiring kernel `kill -9`):
+The fix is the **4-byte half split** (mirroring
+`BinaryAddPackedCorrect`'s K1-A pattern): each lift first builds a
+13-atom polynomial identity for the LO half (bytes 0..3 → 32-bit
+identity), then a 13-atom identity for the HI half (bytes 4..7, with
+the LO half's final carry as input), then combines the two halves into
+the global identity via a small 5-atom `linear_combination`. Each step
+is well within `linear_combination`'s budget. -/
 
-* `linear_combination` over 8 chain hypotheses with `256^i` weights:
-  the polynomial-normalization step blows up.
-* `linear_combination` weighted-pairwise (build `h_pair01`, `h_pair23`
-  ... and combine): blows up at the final `4294967296 * h_global_norm`
-  step where the 24-atom polynomial gets normalized.
-* `omega` directly on the 8 chain hypotheses + bounds + `B7 ∈ {0,1}`:
-  also blows up; the linear-arithmetic search over 24 atoms with
-  large constants is intractable for `omega`'s current implementation.
+/-! ### SUB chain telescoping helpers
 
-**What ships in this commit (durable progress).**
+Per-byte SUB equation derives from `byte_relation_SUB` as a uniform
+`a_i + 256·B_i = c_i + cin_i + b_i` regardless of which case fires
+(borrow=0: `a ≥ cin+b ⇒ c = a-cin-b ⇒ a+0 = c+cin+b`;
+ borrow=1: `a < cin+b ⇒ c = 256+a-cin-b ⇒ a+256 = c+cin+b`).
 
-1. **Strengthened `wf_*` clauses in `Airs/BinaryTable.lean`:**
-   * `wf_LTU` — chain rule clarified as uniform across all bytes
-   * `wf_LT` — chain rule + final-byte sign-byte override
-   * `wf_EQ` — non-final + final-byte polarity flip
-   * `wf_ADD` — extended with cout (non-final / final) clauses
-   * `wf_SUB` — full borrow semantics (case-split byte equation +
-     non-final cout = borrow + final-byte cout = 0)
-   * `wf_SEXT_00` — `cout = cin`, `c = 0x00`
-   * `wf_SEXT_FF` — `cout = cin`, `c = 0xFF`
-   `wf_properties` extended to include `wf_SEXT_00` and `wf_SEXT_FF`.
+The borrow value `B_i ∈ {0,1}` plays the role of `cout`; for
+non-final bytes `B_i = flags_i % 2`; for the final byte the actual
+borrow is implicit (the table forces `flags_7 % 2 = 0` regardless,
+but the borrow used in the byte equation is the structural one). -/
 
-2. **Per-op byte-relation extractors** in this file:
-   `byte_relation_LTU`, `byte_relation_LT`, `byte_relation_SUB`,
-   `byte_relation_ADD`, `byte_relation_SEXT_00`, `byte_relation_SEXT_FF`.
-   Each cleanly extracts the per-byte semantic identity from
-   `bin_table_consumer_wf` for downstream consumers.
+/-- 4-byte SUB telescope (Nat). Each byte equation has the uniform shape
+    `a_i + 256·B_i = c_i + cin_i + b_i` (B_i ∈ {0,1}, cin_0 = init_cin,
+    cin_{i+1} = B_i). Concludes `A4 + 2^32·B3 = init_cin + B4 + C4`
+    where `A4 = a0 + a1·256 + a2·256² + a3·256³` etc. -/
+private lemma sub_telescope_4byte
+    (a0 a1 a2 a3 b0 b1 b2 b3 c0 c1 c2 c3 init_cin B0 B1 B2 B3 : ℕ)
+    (h0 : a0 + 256 * B0 = c0 + init_cin + b0)
+    (h1 : a1 + 256 * B1 = c1 + B0 + b1)
+    (h2 : a2 + 256 * B2 = c2 + B1 + b2)
+    (h3 : a3 + 256 * B3 = c3 + B2 + b3) :
+    (a0 + a1 * 256 + a2 * 65536 + a3 * 16777216) + 4294967296 * B3
+    = init_cin + (b0 + b1 * 256 + b2 * 65536 + b3 * 16777216)
+      + (c0 + c1 * 256 + c2 * 65536 + c3 * 16777216) := by
+  linear_combination h0 + 256 * h1 + 65536 * h2 + 16777216 * h3
 
-3. **`consumer_byte_match_chain`** predicate exposing all 6 byte-entry
-   slots (`a`, `b`, `c`, `cin`, `flags`, `pos_ind`) — the API the
-   chain lifts will consume once the proof-engineering blocker is
-   resolved.
+/-- 4-byte ADD telescope (Nat). Each byte: `a_i + b_i + cin_i = c_i + 256·B_i`,
+    chain links `cin_0 = init_cin, cin_{i+1} = B_i`.
+    Concludes `A4 + B4 + init_cin = C4 + 2^32·B3`. -/
+private lemma add_telescope_4byte
+    (a0 a1 a2 a3 b0 b1 b2 b3 c0 c1 c2 c3 init_cin B0 B1 B2 B3 : ℕ)
+    (h0 : a0 + b0 + init_cin = c0 + 256 * B0)
+    (h1 : a1 + b1 + B0 = c1 + 256 * B1)
+    (h2 : a2 + b2 + B1 = c2 + 256 * B2)
+    (h3 : a3 + b3 + B2 = c3 + 256 * B3) :
+    (a0 + a1 * 256 + a2 * 65536 + a3 * 16777216)
+      + (b0 + b1 * 256 + b2 * 65536 + b3 * 16777216) + init_cin
+    = (c0 + c1 * 256 + c2 * 65536 + c3 * 16777216) + 4294967296 * B3 := by
+  linear_combination h0 + 256 * h1 + 65536 * h2 + 16777216 * h3
 
-**Escalation.** A follow-on pass with sharper proof engineering
-(likely staging the chain telescope as a sequence of BitVec.add
-identities at byte-index granularity, avoiding the global Nat
-polynomial entirely) is needed. See `docs/fv/track-n-traps.md`'s
-"D escalation: K1-B chain lifts blocked on telescope OOM" entry. -/
+/-- Combined LO+HI half identity for SUB. Given two 4-byte telescopes
+    (LO with `init_cin = 0`, HI with `init_cin = B3`), concludes the full
+    8-byte identity `A8 + 2^64·B7 = B8 + C8`. -/
+private lemma sub_telescope_8byte
+    (a0 a1 a2 a3 a4 a5 a6 a7
+     b0 b1 b2 b3 b4 b5 b6 b7
+     c0 c1 c2 c3 c4 c5 c6 c7
+     B3 B7 : ℕ)
+    (h_lo :
+      (a0 + a1 * 256 + a2 * 65536 + a3 * 16777216) + 4294967296 * B3
+      = 0 + (b0 + b1 * 256 + b2 * 65536 + b3 * 16777216)
+        + (c0 + c1 * 256 + c2 * 65536 + c3 * 16777216))
+    (h_hi :
+      (a4 + a5 * 256 + a6 * 65536 + a7 * 16777216) + 4294967296 * B7
+      = B3 + (b4 + b5 * 256 + b6 * 65536 + b7 * 16777216)
+        + (c4 + c5 * 256 + c6 * 65536 + c7 * 16777216)) :
+    (a0 + a1 * 256 + a2 * 65536 + a3 * 16777216
+      + a4 * 4294967296 + a5 * 1099511627776
+      + a6 * 281474976710656 + a7 * 72057594037927936)
+      + 18446744073709551616 * B7
+    = (b0 + b1 * 256 + b2 * 65536 + b3 * 16777216
+      + b4 * 4294967296 + b5 * 1099511627776
+      + b6 * 281474976710656 + b7 * 72057594037927936)
+      + (c0 + c1 * 256 + c2 * 65536 + c3 * 16777216
+      + c4 * 4294967296 + c5 * 1099511627776
+      + c6 * 281474976710656 + c7 * 72057594037927936) := by
+  linear_combination h_lo + 4294967296 * h_hi
+
+/-- Combined LO+HI half identity for ADD. Given two 4-byte telescopes
+    (LO with `init_cin = 0`, HI with `init_cin = B3`), concludes
+    `A8 + B8 = C8 + 2^64·B7`. -/
+private lemma add_telescope_8byte
+    (a0 a1 a2 a3 a4 a5 a6 a7
+     b0 b1 b2 b3 b4 b5 b6 b7
+     c0 c1 c2 c3 c4 c5 c6 c7
+     B3 B7 : ℕ)
+    (h_lo :
+      (a0 + a1 * 256 + a2 * 65536 + a3 * 16777216)
+        + (b0 + b1 * 256 + b2 * 65536 + b3 * 16777216) + 0
+      = (c0 + c1 * 256 + c2 * 65536 + c3 * 16777216) + 4294967296 * B3)
+    (h_hi :
+      (a4 + a5 * 256 + a6 * 65536 + a7 * 16777216)
+        + (b4 + b5 * 256 + b6 * 65536 + b7 * 16777216) + B3
+      = (c4 + c5 * 256 + c6 * 65536 + c7 * 16777216) + 4294967296 * B7) :
+    (a0 + a1 * 256 + a2 * 65536 + a3 * 16777216
+      + a4 * 4294967296 + a5 * 1099511627776
+      + a6 * 281474976710656 + a7 * 72057594037927936)
+    + (b0 + b1 * 256 + b2 * 65536 + b3 * 16777216
+      + b4 * 4294967296 + b5 * 1099511627776
+      + b6 * 281474976710656 + b7 * 72057594037927936)
+    = (c0 + c1 * 256 + c2 * 65536 + c3 * 16777216
+      + c4 * 4294967296 + c5 * 1099511627776
+      + c6 * 281474976710656 + c7 * 72057594037927936)
+      + 18446744073709551616 * B7 := by
+  linear_combination h_lo + 4294967296 * h_hi
+
+/-! ### Sign-bit helpers (bit 7 of a byte) -/
+
+/-- For `x < 256`, `x &&& 0x80 = 0` iff `x < 128`. -/
+private lemma byte_and_0x80_zero (x : ℕ) (hx : x < 256) :
+    x &&& 0x80 = 0 ↔ x < 128 := by
+  constructor
+  · intro h
+    -- x = sum of bits 0..7 each scaled. h means bit 7 is 0. So x < 128.
+    by_contra h_ge
+    push_neg at h_ge
+    have h_bit_7 : x.testBit 7 = true := by
+      -- x ≥ 128 = 2^7, x < 256 = 2^8 → bit 7 set.
+      rcases Nat.lt_or_ge x 256 with hlt | hge
+      · -- x < 256
+        have : x.testBit 7 = decide (128 ≤ x % 256) := by
+          rw [show (128 : ℕ) = 2 ^ 7 by norm_num]
+          rw [Nat.testBit_eq_decide_div_mod_eq]
+          have h_div : x / 2 ^ 7 = x / 128 := by norm_num
+          rw [h_div]
+          have h_mod : (x / 128) % 2 = if 128 ≤ x % 256 then 1 else 0 := by
+            have h_x_lt : x / 128 < 2 := by omega
+            rcases Nat.lt_or_ge (x / 128) 1 with hd | hd
+            · -- x / 128 = 0 → x < 128 → 128 ≤ x % 256 false
+              have : x / 128 = 0 := by omega
+              rw [this]; simp
+              have : x % 256 = x := Nat.mod_eq_of_lt (by omega)
+              rw [this]; omega
+            · -- x / 128 = 1 → x ≥ 128 ∧ x < 256 → x % 256 = x ≥ 128
+              have hd1 : x / 128 = 1 := by omega
+              rw [hd1]; simp
+              have : x % 256 = x := Nat.mod_eq_of_lt (by omega)
+              rw [this]; exact h_ge
+          rw [h_mod]
+          rcases Nat.lt_or_ge 128 (x % 256 + 1) with hp | hp
+          · simp [show (128 : ℕ) ≤ x % 256 from by omega]
+          · simp [show ¬ (128 : ℕ) ≤ x % 256 from by omega]
+        rw [this]; simp
+        have : x % 256 = x := Nat.mod_eq_of_lt hx
+        rw [this]; exact h_ge
+      · omega
+    have h_and_bit_7 : (x &&& 0x80).testBit 7 = true := by
+      rw [Nat.testBit_and]
+      rw [h_bit_7]
+      decide +revert
+    rw [h] at h_and_bit_7
+    simp at h_and_bit_7
+  · intro hlt
+    -- x < 128 → bit 7 of x is 0 → (x &&& 0x80) = 0
+    apply Nat.eq_of_testBit_eq
+    intro j
+    rw [Nat.testBit_and]
+    simp only [Nat.zero_testBit, Bool.and_false]
+    rcases eq_or_ne j 7 with hj | hj
+    · subst hj
+      -- bit 7 of x is 0 since x < 128
+      have : x.testBit 7 = false := by
+        rw [show (7 : ℕ) = (Nat.log2 128) by decide]
+        rcases Nat.lt_or_ge x 128 with hlt' | hge'
+        · -- explicit
+          have h_div_zero : x / 2 ^ 7 = 0 := by
+            rw [show (2 : ℕ) ^ 7 = 128 by norm_num]
+            exact Nat.div_eq_zero_iff.mpr (Or.inr hlt')
+          rw [Nat.testBit_eq_decide_div_mod_eq]
+          rw [show (Nat.log2 128 : ℕ) = 7 by decide]
+          rw [h_div_zero]; decide
+        · omega
+      rw [this]; simp
+    · -- bit j of 0x80 = 0 for j ≠ 7
+      have : (0x80 : ℕ).testBit j = false := by
+        rcases Nat.lt_or_ge j 7 with hj' | hj'
+        · interval_cases j <;> decide
+        · have : j ≥ 8 := by omega
+          have h1 : (0x80 : ℕ) < 2 ^ j := by
+            calc (0x80 : ℕ) = 2^7 := by norm_num
+              _ < 2^j := Nat.pow_lt_pow_right (by norm_num) (by omega)
+          exact Nat.testBit_lt_two_pow h1
+      rw [this]; simp
+
+/-- For `x < 256`, `x &&& 0x80 = 0x80` iff `x ≥ 128`. -/
+private lemma byte_and_0x80_set (x : ℕ) (hx : x < 256) :
+    x &&& 0x80 = 0x80 ↔ x ≥ 128 := by
+  have h_le : x &&& 0x80 ≤ 0x80 := Nat.and_le_right
+  have h_iff_zero := byte_and_0x80_zero x hx
+  constructor
+  · intro h
+    by_contra h_lt
+    push_neg at h_lt
+    have h_zero := h_iff_zero.mpr h_lt
+    rw [h_zero] at h
+    norm_num at h
+  · intro h
+    have h_not_zero : x &&& 0x80 ≠ 0 := by
+      intro h_zero
+      have := h_iff_zero.mp h_zero
+      omega
+    -- x &&& 0x80 ∈ ℕ, ≤ 0x80, ≠ 0 → either it's 0x80 or some other value. But the only nonzero
+    -- values it can take are 0x80 (only bit 7 can survive).
+    -- Use Nat.eq_of_testBit_eq.
+    apply Nat.eq_of_testBit_eq
+    intro j
+    rw [Nat.testBit_and]
+    rcases eq_or_ne j 7 with hj | hj
+    · subst hj
+      have : x.testBit 7 = true := by
+        rcases Nat.lt_or_ge x 128 with h_lt' | h_ge'
+        · have := h_iff_zero.mpr h_lt'; contradiction
+        · -- x ≥ 128 ∧ x < 256 → bit 7 set
+          rw [Nat.testBit_eq_decide_div_mod_eq]
+          rw [show (2 : ℕ) ^ 7 = 128 by norm_num]
+          have h_div_eq_one : x / 128 = 1 := by omega
+          rw [h_div_eq_one]; decide
+      rw [this]; decide
+    · have : (0x80 : ℕ).testBit j = false := by
+        rcases Nat.lt_or_ge j 7 with hj' | hj'
+        · interval_cases j <;> decide
+        · have h1 : (0x80 : ℕ) < 2 ^ j := by
+            calc (0x80 : ℕ) = 2^7 := by norm_num
+              _ < 2^j := Nat.pow_lt_pow_right (by norm_num) (by omega)
+          exact Nat.testBit_lt_two_pow h1
+      rw [this]; simp
+
+/-! ### LTU/LT chain step lemmas (compositional comparison) -/
+
+/-- One step of the LTU chain. From the per-byte comparison rule and
+    the inductive predicate `cin = 1 ↔ Aprev < Bprev` (where `Aprev`,
+    `Bprev` are the packed sums of bytes processed so far, `< W` per
+    byte width), conclude `cout = 1 ↔ A_{i} < B_{i}` where the new
+    packed sums are `Aprev + a*W` and `Bprev + b*W`.
+
+    `W` is the place-value weight `256^i`. -/
+private lemma ltu_step
+    (cin a_byte b_byte cout Aprev Bprev W : ℕ)
+    (hW : W ≥ 1) (hPa : Aprev < W) (hPb : Bprev < W)
+    (_hcin_le : cin ≤ 1) (_hcout_le : cout ≤ 1)
+    (h_chain_lt : a_byte < b_byte → cout = 1)
+    (h_chain_eq : a_byte = b_byte → cout = cin)
+    (h_chain_gt : a_byte > b_byte → cout = 0)
+    (h_cin_iff : cin = 1 ↔ Aprev < Bprev) :
+    cout = 1 ↔ Aprev + a_byte * W < Bprev + b_byte * W := by
+  rcases lt_trichotomy a_byte b_byte with hab | hab | hab
+  · -- a < b → cout = 1; goal: 1 = 1 ↔ Aprev + a·W < Bprev + b·W.
+    have hc1 : cout = 1 := h_chain_lt hab
+    rw [hc1]
+    constructor
+    · intro _
+      -- a ≤ b - 1, so Aprev + a·W ≤ a·W + (W-1) = (a+1)·W - 1 ≤ b·W - 1 ≤ Bprev + b·W - 1 < Bprev + b·W (since Bprev ≥ 0)
+      have h_a_succ : a_byte + 1 ≤ b_byte := hab
+      have hLHS_lt_aW : Aprev + a_byte * W ≤ a_byte * W + W - 1 := by
+        have : Aprev ≤ W - 1 := by omega
+        omega
+      have h_b_W_le : a_byte * W + W ≤ b_byte * W := by
+        have : (a_byte + 1) * W ≤ b_byte * W := Nat.mul_le_mul_right W h_a_succ
+        nlinarith [this]
+      have : a_byte * W + W ≤ Bprev + b_byte * W := by omega
+      omega
+    · intro _; rfl
+  · -- a = b → cout = cin
+    have hcc : cout = cin := h_chain_eq hab
+    rw [hcc]
+    constructor
+    · intro h1
+      have hPlt : Aprev < Bprev := h_cin_iff.mp h1
+      subst hab
+      omega
+    · intro h2
+      subst hab
+      have : Aprev < Bprev := by
+        -- Aprev + a·W < Bprev + a·W ↔ Aprev < Bprev
+        exact (Nat.add_lt_add_iff_right).mp h2
+      exact h_cin_iff.mpr this
+  · -- a > b → cout = 0
+    have hc0 : cout = 0 := h_chain_gt hab
+    rw [hc0]
+    constructor
+    · intro h; exact absurd h (by norm_num)
+    · -- Goal becomes 0 = 1 (false), but premise gives a contradiction
+      intro h_lt
+      -- a > b, so a ≥ b+1, so a·W ≥ (b+1)·W = b·W + W > Bprev + b·W
+      have h_a_ge : b_byte + 1 ≤ a_byte := hab
+      have h_aW : (b_byte + 1) * W ≤ a_byte * W := Nat.mul_le_mul_right W h_a_ge
+      have h_aW_expand : b_byte * W + W ≤ a_byte * W := by nlinarith
+      have : Bprev + b_byte * W < a_byte * W := by omega
+      have : Bprev + b_byte * W < Aprev + a_byte * W := by omega
+      omega
+
+/-! ### Modular-arithmetic finishers (avoid `omega` on 2^64 constants) -/
+
+/-- SUB closing identity: from `A + N·B = X + Y` with `B ∈ {0,1}`,
+    `X < N`, `Y < N`, conclude `(N - X + A) % N = Y`. -/
+private lemma sub_close_modular
+    (A X Y N B : ℕ) (hB : B ≤ 1) (hX : X < N) (hY : Y < N)
+    (h : A + N * B = X + Y) :
+    (N - X + A) % N = Y := by
+  interval_cases B
+  · -- B = 0
+    simp at h
+    -- h : A = X + Y
+    -- Goal: (N - X + A) % N = Y
+    have h_eq : N - X + A = N + Y := by omega
+    rw [h_eq]
+    rw [Nat.add_mod_left, Nat.mod_eq_of_lt hY]
+  · -- B = 1
+    simp at h
+    -- h : A + N = X + Y
+    have h_eq : N - X + A = Y := by omega
+    rw [h_eq]
+    exact Nat.mod_eq_of_lt hY
+
+/-- ADD closing identity: from `A + B + C·N·_... ` hmm let me just write the
+    direct one: from `A + B = C + N·K` with `K ∈ {0,1}`, `A < N`, `B < N`,
+    `C < N`, conclude `(A + B) % N = C`. -/
+private lemma add_close_modular
+    (A B C N K : ℕ) (_hK : K ≤ 1) (hC : C < N)
+    (h : A + B = C + N * K) :
+    (A + B) % N = C := by
+  rw [h]
+  rw [Nat.add_mul_mod_self_left]
+  exact Nat.mod_eq_of_lt hC
+
+/-! ### Per-byte uniform equations from chain matches
+
+Each of these helpers consumes a `consumer_byte_match_chain` for the
+relevant op (with `cin`/`flags`/`pos_ind` slots) and the structural
+`a/b/c < 256` ranges, and produces a single uniform byte equation
+suitable for telescoping. -/
+
+/-- Uniform per-byte SUB equation. From a SUB chain match, produce
+    `a + 256·B = c + cin + b` for some `B ∈ {0,1}` (the structural
+    borrow). Returns the borrow `B` existentially packaged as
+    `∃ B, B ≤ 1 ∧ ...`. -/
+private lemma sub_byte_uniform_eq
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain OP_SUB a b c cin_cell flags_cell pos_cell)
+    (ha : a.val < 256) (hb : b.val < 256)
+    (h_cin : cin_cell.val < 2) :
+    ∃ B : ℕ, B ≤ 1 ∧
+      a.val + 256 * B = c.val + cin_cell.val + b.val := by
+  obtain ⟨e, h_mult, h_op, h_a, h_b, h_c, h_cin_eq, _, _⟩ := h
+  have hrel := byte_relation_SUB e h_mult h_op
+  -- Substitute the row cells into hrel's a/b/c/cin slots.
+  rw [h_a, h_b, h_c, h_cin_eq] at hrel
+  obtain ⟨h_case0, h_case1, _, _⟩ := hrel
+  -- Case split on the borrow.
+  by_cases h_borrow : a.val ≥ cin_cell.val + b.val
+  · refine ⟨0, by omega, ?_⟩
+    have := h_case0 h_borrow
+    -- this : c.val = a.val - cin_cell.val - b.val
+    omega
+  · push_neg at h_borrow
+    refine ⟨1, by omega, ?_⟩
+    have := h_case1 h_borrow
+    -- this : c.val = 256 + a.val - cin_cell.val - b.val
+    omega
+
+/-- Per-byte SUB equation that **also** asserts that for non-final
+    bytes, the borrow `B` matches `flags_cell.val % 2`. -/
+private lemma sub_byte_nonfinal_eq
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain OP_SUB a b c cin_cell flags_cell pos_cell)
+    (ha : a.val < 256) (hb : b.val < 256)
+    (h_cin : cin_cell.val < 2)
+    (h_pos : pos_cell.val ≠ 1) :
+    a.val + 256 * (flags_cell.val % 2) = c.val + cin_cell.val + b.val ∧
+    flags_cell.val % 2 ≤ 1 := by
+  obtain ⟨e, h_mult, h_op, h_a, h_b, h_c, h_cin_eq, h_flags, h_pos_eq⟩ := h
+  have hrel := byte_relation_SUB e h_mult h_op
+  rw [h_a, h_b, h_c, h_cin_eq, h_flags, h_pos_eq] at hrel
+  obtain ⟨h_case0, h_case1, h_nonfinal, _⟩ := hrel
+  obtain ⟨h_nf0, h_nf1⟩ := h_nonfinal h_pos
+  have hflags_le : flags_cell.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  refine ⟨?_, hflags_le⟩
+  by_cases h_borrow : a.val ≥ cin_cell.val + b.val
+  · have h_c_eq := h_case0 h_borrow
+    have h_flags_eq := h_nf0 h_borrow
+    omega
+  · push_neg at h_borrow
+    have h_c_eq := h_case1 h_borrow
+    have h_flags_eq := h_nf1 h_borrow
+    omega
+
+/-- Uniform per-byte ADD equation. -/
+private lemma add_byte_uniform_eq
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain OP_ADD a b c cin_cell flags_cell pos_cell)
+    (ha : a.val < 256) (hb : b.val < 256)
+    (h_cin : cin_cell.val < 2) :
+    ∃ B : ℕ, B ≤ 1 ∧
+      a.val + b.val + cin_cell.val = c.val + 256 * B := by
+  obtain ⟨e, h_mult, h_op, h_a, h_b, h_c, h_cin_eq, _, _⟩ := h
+  have hrel := byte_relation_ADD e h_mult h_op
+  rw [h_a, h_b, h_c, h_cin_eq] at hrel
+  obtain ⟨h_c_eq, _, _⟩ := hrel
+  -- h_c_eq : c.val = (cin + a + b) % 256
+  -- Use B = (cin + a + b) / 256.  Since a, b < 256 and cin < 2, B ≤ 1.
+  refine ⟨(cin_cell.val + a.val + b.val) / 256, ?_, ?_⟩
+  · -- (cin + a + b) ≤ 1 + 255 + 255 = 511 < 512, so /256 ≤ 1
+    have : cin_cell.val + a.val + b.val ≤ 511 := by omega
+    omega
+  · -- a + b + cin = c + 256·((cin+a+b)/256) follows from h_c_eq and div_add_mod
+    have hdm := Nat.div_add_mod (cin_cell.val + a.val + b.val) 256
+    omega
+
+/-- Per-byte ADD equation for non-final bytes (cout = flags % 2). -/
+private lemma add_byte_nonfinal_eq
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain OP_ADD a b c cin_cell flags_cell pos_cell)
+    (_ha : a.val < 256) (_hb : b.val < 256)
+    (_h_cin : cin_cell.val < 2)
+    (h_pos : pos_cell.val ≠ 1) :
+    a.val + b.val + cin_cell.val
+      = c.val + 256 * (flags_cell.val % 2) ∧
+    flags_cell.val % 2 ≤ 1 := by
+  obtain ⟨e, h_mult, h_op, h_a, h_b, h_c, h_cin_eq, h_flags, h_pos_eq⟩ := h
+  have hrel := byte_relation_ADD e h_mult h_op
+  rw [h_a, h_b, h_c, h_cin_eq, h_flags, h_pos_eq] at hrel
+  obtain ⟨h_c_eq, h_nonfinal, _⟩ := hrel
+  have h_flags_eq := h_nonfinal h_pos
+  -- h_c_eq : c.val = (cin + a + b) % 256
+  -- h_flags_eq : flags % 2 = (cin + a + b) / 256
+  have hdm := Nat.div_add_mod (cin_cell.val + a.val + b.val) 256
+  have hflags_le : flags_cell.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  refine ⟨by omega, hflags_le⟩
+
+/-- Per-byte SEXT_00 equation: `c = 0` and `flags % 2 = cin`. -/
+private lemma sext00_byte_eq
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain OP_SEXT_00 a b c cin_cell flags_cell pos_cell) :
+    c.val = 0 ∧ flags_cell.val % 2 = cin_cell.val := by
+  obtain ⟨e, h_mult, h_op, _, _, h_c, h_cin_eq, h_flags, _⟩ := h
+  have hrel := byte_relation_SEXT_00 e h_mult h_op
+  rw [h_c, h_cin_eq, h_flags] at hrel
+  exact hrel
+
+/-- Per-byte LTU chain rule. Extracts the three case implications from
+    a chain match. Bytes must be in `[0, 256)`. -/
+private lemma ltu_byte_chain
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain OP_LTU a b c cin_cell flags_cell pos_cell) :
+    c.val = 0 ∧
+    (a.val < b.val → flags_cell.val % 2 = 1) ∧
+    (a.val = b.val → flags_cell.val % 2 = cin_cell.val) ∧
+    (a.val > b.val → flags_cell.val % 2 = 0) := by
+  obtain ⟨e, h_mult, h_op, h_a, h_b, h_c, h_cin_eq, h_flags, _⟩ := h
+  have hrel := byte_relation_LTU e h_mult h_op
+  rw [h_a, h_b, h_c, h_cin_eq, h_flags] at hrel
+  exact hrel
+
+/-- Per-byte LT chain rule. Same as LTU plus the final-byte sign-byte
+    override. -/
+private lemma lt_byte_chain
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain OP_LT a b c cin_cell flags_cell pos_cell) :
+    c.val = 0 ∧
+    (a.val < b.val → flags_cell.val % 2 = 1) ∧
+    (a.val = b.val → flags_cell.val % 2 = cin_cell.val) ∧
+    (a.val > b.val → flags_cell.val % 2 = 0) ∧
+    (pos_cell.val = 1 →
+      (a.val &&& 0x80) ≠ (b.val &&& 0x80) →
+      flags_cell.val % 2 = (if (a.val &&& 0x80) ≠ 0 then 1 else 0)) := by
+  obtain ⟨e, h_mult, h_op, h_a, h_b, h_c, h_cin_eq, h_flags, h_pos⟩ := h
+  have hrel := byte_relation_LT e h_mult h_op
+  rw [h_a, h_b, h_c, h_cin_eq, h_flags, h_pos] at hrel
+  exact hrel
+
+/-- Per-byte SEXT_FF equation: `c = 0xFF` and `flags % 2 = cin`. -/
+private lemma sextff_byte_eq
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain OP_SEXT_FF a b c cin_cell flags_cell pos_cell) :
+    c.val = 0xFF ∧ flags_cell.val % 2 = cin_cell.val := by
+  obtain ⟨e, h_mult, h_op, _, _, h_c, h_cin_eq, h_flags, _⟩ := h
+  have hrel := byte_relation_SEXT_FF e h_mult h_op
+  rw [h_c, h_cin_eq, h_flags] at hrel
+  exact hrel
+
+/-! ## K1-B chain lift: SUB
+
+Given 8 SUB byte matches with chain links and ranges, prove the 64-bit
+BitVec subtraction identity. -/
+
+/-- **K1-B for SUB.** 64-bit unsigned subtraction modulo 2^64.
+
+    Each byte slot 0..6 is non-final (`pos_ind ≠ 1`); slot 7 is final
+    (`pos_ind = 1`). Chain links: `cin_0 = 0`, `cin_{i+1} = flags_i % 2`
+    for i = 0..6. The conclusion is the algebraic identity
+    `a64 - b64 = c64` modulo `2^64` (cast as `BitVec.add` of `c64` and
+    `b64` equals `a64`, which is `BitVec.sub`'s defining identity). -/
+theorem binary_sub_chunks_eq_bv_sub
+    (a0 a1 a2 a3 a4 a5 a6 a7
+     b0 b1 b2 b3 b4 b5 b6 b7
+     c0 c1 c2 c3 c4 c5 c6 c7
+     cin0 cin1 cin2 cin3 cin4 cin5 cin6 cin7
+     fl0 fl1 fl2 fl3 fl4 fl5 fl6 fl7
+     pi0 pi1 pi2 pi3 pi4 pi5 pi6 pi7 : FGL)
+    (h_byte_0 : consumer_byte_match_chain OP_SUB a0 b0 c0 cin0 fl0 pi0)
+    (h_byte_1 : consumer_byte_match_chain OP_SUB a1 b1 c1 cin1 fl1 pi1)
+    (h_byte_2 : consumer_byte_match_chain OP_SUB a2 b2 c2 cin2 fl2 pi2)
+    (h_byte_3 : consumer_byte_match_chain OP_SUB a3 b3 c3 cin3 fl3 pi3)
+    (h_byte_4 : consumer_byte_match_chain OP_SUB a4 b4 c4 cin4 fl4 pi4)
+    (h_byte_5 : consumer_byte_match_chain OP_SUB a5 b5 c5 cin5 fl5 pi5)
+    (h_byte_6 : consumer_byte_match_chain OP_SUB a6 b6 c6 cin6 fl6 pi6)
+    (h_byte_7 : consumer_byte_match_chain OP_SUB a7 b7 c7 cin7 fl7 pi7)
+    (ha0 : a0.val < 256) (ha1 : a1.val < 256) (ha2 : a2.val < 256) (ha3 : a3.val < 256)
+    (ha4 : a4.val < 256) (ha5 : a5.val < 256) (ha6 : a6.val < 256) (ha7 : a7.val < 256)
+    (hb0 : b0.val < 256) (hb1 : b1.val < 256) (hb2 : b2.val < 256) (hb3 : b3.val < 256)
+    (hb4 : b4.val < 256) (hb5 : b5.val < 256) (hb6 : b6.val < 256) (hb7 : b7.val < 256)
+    (hc0 : c0.val < 256) (hc1 : c1.val < 256) (hc2 : c2.val < 256) (hc3 : c3.val < 256)
+    (hc4 : c4.val < 256) (hc5 : c5.val < 256) (hc6 : c6.val < 256) (hc7 : c7.val < 256)
+    (h_cin0 : cin0.val = 0)
+    (h_cin1 : cin1.val = fl0.val % 2)
+    (h_cin2 : cin2.val = fl1.val % 2)
+    (h_cin3 : cin3.val = fl2.val % 2)
+    (h_cin4 : cin4.val = fl3.val % 2)
+    (h_cin5 : cin5.val = fl4.val % 2)
+    (h_cin6 : cin6.val = fl5.val % 2)
+    (h_cin7 : cin7.val = fl6.val % 2)
+    (h_pi0 : pi0.val ≠ 1) (h_pi1 : pi1.val ≠ 1) (h_pi2 : pi2.val ≠ 1)
+    (h_pi3 : pi3.val ≠ 1) (h_pi4 : pi4.val ≠ 1) (h_pi5 : pi5.val ≠ 1)
+    (h_pi6 : pi6.val ≠ 1)
+    (_h_pi7 : pi7.val = 1) :
+    BitVec.ofNat 64
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+        + a4.val * 4294967296 + a5.val * 1099511627776
+        + a6.val * 281474976710656 + a7.val * 72057594037927936)
+    -
+    BitVec.ofNat 64
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+        + b4.val * 4294967296 + b5.val * 1099511627776
+        + b6.val * 281474976710656 + b7.val * 72057594037927936)
+    =
+    BitVec.ofNat 64
+      (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+        + c4.val * 4294967296 + c5.val * 1099511627776
+        + c6.val * 281474976710656 + c7.val * 72057594037927936) := by
+  -- All cin values are in {0,1} from the chain links.
+  have h_cin0_lt : cin0.val < 2 := by omega
+  have h_cin1_lt : cin1.val < 2 := by
+    have : fl0.val % 2 < 2 := Nat.mod_lt _ (by norm_num)
+    omega
+  have h_cin2_lt : cin2.val < 2 := by
+    have : fl1.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin3_lt : cin3.val < 2 := by
+    have : fl2.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin4_lt : cin4.val < 2 := by
+    have : fl3.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin5_lt : cin5.val < 2 := by
+    have : fl4.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin6_lt : cin6.val < 2 := by
+    have : fl5.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin7_lt : cin7.val < 2 := by
+    have : fl6.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  -- Per-byte uniform equations for non-final bytes (0..6) — borrow = flags % 2.
+  obtain ⟨he0, hB0_le⟩ := sub_byte_nonfinal_eq _ _ _ _ _ _ h_byte_0 ha0 hb0 h_cin0_lt h_pi0
+  obtain ⟨he1, hB1_le⟩ := sub_byte_nonfinal_eq _ _ _ _ _ _ h_byte_1 ha1 hb1 h_cin1_lt h_pi1
+  obtain ⟨he2, hB2_le⟩ := sub_byte_nonfinal_eq _ _ _ _ _ _ h_byte_2 ha2 hb2 h_cin2_lt h_pi2
+  obtain ⟨he3, hB3_le⟩ := sub_byte_nonfinal_eq _ _ _ _ _ _ h_byte_3 ha3 hb3 h_cin3_lt h_pi3
+  obtain ⟨he4, hB4_le⟩ := sub_byte_nonfinal_eq _ _ _ _ _ _ h_byte_4 ha4 hb4 h_cin4_lt h_pi4
+  obtain ⟨he5, hB5_le⟩ := sub_byte_nonfinal_eq _ _ _ _ _ _ h_byte_5 ha5 hb5 h_cin5_lt h_pi5
+  obtain ⟨he6, hB6_le⟩ := sub_byte_nonfinal_eq _ _ _ _ _ _ h_byte_6 ha6 hb6 h_cin6_lt h_pi6
+  -- Final byte: structural borrow only.
+  obtain ⟨B7, hB7_le, he7⟩ := sub_byte_uniform_eq _ _ _ _ _ _ h_byte_7 ha7 hb7 h_cin7_lt
+  -- Substitute cin links so each byte equation matches the telescope shape.
+  -- LO half: cin0 = 0, cin1 = fl0%2, cin2 = fl1%2, cin3 = fl2%2.
+  rw [h_cin0] at he0
+  rw [h_cin1] at he1
+  rw [h_cin2] at he2
+  rw [h_cin3] at he3
+  rw [h_cin4] at he4
+  rw [h_cin5] at he5
+  rw [h_cin6] at he6
+  rw [h_cin7] at he7
+  -- LO 4-byte telescope.
+  have h_lo := sub_telescope_4byte
+    a0.val a1.val a2.val a3.val
+    b0.val b1.val b2.val b3.val
+    c0.val c1.val c2.val c3.val
+    0 (fl0.val % 2) (fl1.val % 2) (fl2.val % 2) (fl3.val % 2)
+    he0 he1 he2 he3
+  -- HI 4-byte telescope (init_cin = fl3.val % 2).
+  have h_hi := sub_telescope_4byte
+    a4.val a5.val a6.val a7.val
+    b4.val b5.val b6.val b7.val
+    c4.val c5.val c6.val c7.val
+    (fl3.val % 2) (fl4.val % 2) (fl5.val % 2) (fl6.val % 2) B7
+    he4 he5 he6 he7
+  -- Combine LO + HI.
+  have h_combined := sub_telescope_8byte
+    a0.val a1.val a2.val a3.val a4.val a5.val a6.val a7.val
+    b0.val b1.val b2.val b3.val b4.val b5.val b6.val b7.val
+    c0.val c1.val c2.val c3.val c4.val c5.val c6.val c7.val
+    (fl3.val % 2) B7 h_lo h_hi
+  -- Convert to BitVec identity.
+  set Asum := a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+                + a4.val * 4294967296 + a5.val * 1099511627776
+                + a6.val * 281474976710656 + a7.val * 72057594037927936 with hAsum
+  set Bsum := b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+                + b4.val * 4294967296 + b5.val * 1099511627776
+                + b6.val * 281474976710656 + b7.val * 72057594037927936 with hBsum
+  set Csum := c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+                + c4.val * 4294967296 + c5.val * 1099511627776
+                + c6.val * 281474976710656 + c7.val * 72057594037927936 with hCsum
+  -- h_combined : Asum + 18446744073709551616 * B7 = Bsum + Csum
+  have hA_lt : Asum < 2 ^ 64 := by
+    rw [hAsum]; exact byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
+  have hB_lt : Bsum < 2 ^ 64 := by
+    rw [hBsum]; exact byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
+  have hC_lt : Csum < 2 ^ 64 := by
+    rw [hCsum]; exact byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
+  have h2_64_eq : (2 : ℕ) ^ 64 = 18446744073709551616 := by norm_num
+  have hA_lt' : Asum < 18446744073709551616 := h2_64_eq ▸ hA_lt
+  have hB_lt' : Bsum < 18446744073709551616 := h2_64_eq ▸ hB_lt
+  have hC_lt' : Csum < 18446744073709551616 := h2_64_eq ▸ hC_lt
+  -- BitVec.sub goal: Asum - Bsum mod 2^64 = Csum (as BitVec).
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt hA_lt, Nat.mod_eq_of_lt hB_lt, Nat.mod_eq_of_lt hC_lt]
+  show (2 ^ 64 - Bsum + Asum) % 2 ^ 64 = Csum
+  rw [h2_64_eq]
+  -- Apply sub_close_modular with N = 18446744073709551616, X = Bsum, Y = Csum, A = Asum, B = B7
+  exact sub_close_modular Asum Bsum Csum 18446744073709551616 B7 hB7_le hB_lt' hC_lt' h_combined
+
+/-! ## K1-B chain lift: LTU
+
+64-bit unsigned less-than via the byte chain. Output is `flags_7 % 2`,
+which equals 1 iff `a64 < b64` (unsigned). -/
+
+/-- **K1-B for LTU.** The LTU chain at byte 7 produces flags_7 % 2 = 1
+    iff `a64 < b64` (unsigned 64-bit). All bytes use OP_LTU; chain
+    links: `cin_0 = 0`, `cin_{i+1} = flags_i % 2`. -/
+theorem binary_ltu_chunks_eq_bv_ult
+    (a0 a1 a2 a3 a4 a5 a6 a7
+     b0 b1 b2 b3 b4 b5 b6 b7
+     c0 c1 c2 c3 c4 c5 c6 c7
+     cin0 cin1 cin2 cin3 cin4 cin5 cin6 cin7
+     fl0 fl1 fl2 fl3 fl4 fl5 fl6 fl7
+     pi0 pi1 pi2 pi3 pi4 pi5 pi6 pi7 : FGL)
+    (h_byte_0 : consumer_byte_match_chain OP_LTU a0 b0 c0 cin0 fl0 pi0)
+    (h_byte_1 : consumer_byte_match_chain OP_LTU a1 b1 c1 cin1 fl1 pi1)
+    (h_byte_2 : consumer_byte_match_chain OP_LTU a2 b2 c2 cin2 fl2 pi2)
+    (h_byte_3 : consumer_byte_match_chain OP_LTU a3 b3 c3 cin3 fl3 pi3)
+    (h_byte_4 : consumer_byte_match_chain OP_LTU a4 b4 c4 cin4 fl4 pi4)
+    (h_byte_5 : consumer_byte_match_chain OP_LTU a5 b5 c5 cin5 fl5 pi5)
+    (h_byte_6 : consumer_byte_match_chain OP_LTU a6 b6 c6 cin6 fl6 pi6)
+    (h_byte_7 : consumer_byte_match_chain OP_LTU a7 b7 c7 cin7 fl7 pi7)
+    (ha0 : a0.val < 256) (ha1 : a1.val < 256) (ha2 : a2.val < 256) (ha3 : a3.val < 256)
+    (ha4 : a4.val < 256) (ha5 : a5.val < 256) (ha6 : a6.val < 256) (ha7 : a7.val < 256)
+    (hb0 : b0.val < 256) (hb1 : b1.val < 256) (hb2 : b2.val < 256) (hb3 : b3.val < 256)
+    (hb4 : b4.val < 256) (hb5 : b5.val < 256) (hb6 : b6.val < 256) (hb7 : b7.val < 256)
+    (h_cin0 : cin0.val = 0)
+    (h_cin1 : cin1.val = fl0.val % 2)
+    (h_cin2 : cin2.val = fl1.val % 2)
+    (h_cin3 : cin3.val = fl2.val % 2)
+    (h_cin4 : cin4.val = fl3.val % 2)
+    (h_cin5 : cin5.val = fl4.val % 2)
+    (h_cin6 : cin6.val = fl5.val % 2)
+    (h_cin7 : cin7.val = fl6.val % 2) :
+    (fl7.val % 2 = 1 ↔
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+        + a4.val * 4294967296 + a5.val * 1099511627776
+        + a6.val * 281474976710656 + a7.val * 72057594037927936)
+      <
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+        + b4.val * 4294967296 + b5.val * 1099511627776
+        + b6.val * 281474976710656 + b7.val * 72057594037927936)) := by
+  -- Extract the per-byte chain implications.
+  obtain ⟨_hc0, h0_lt, h0_eq, h0_gt⟩ := ltu_byte_chain _ _ _ _ _ _ h_byte_0
+  obtain ⟨_hc1, h1_lt, h1_eq, h1_gt⟩ := ltu_byte_chain _ _ _ _ _ _ h_byte_1
+  obtain ⟨_hc2, h2_lt, h2_eq, h2_gt⟩ := ltu_byte_chain _ _ _ _ _ _ h_byte_2
+  obtain ⟨_hc3, h3_lt, h3_eq, h3_gt⟩ := ltu_byte_chain _ _ _ _ _ _ h_byte_3
+  obtain ⟨_hc4, h4_lt, h4_eq, h4_gt⟩ := ltu_byte_chain _ _ _ _ _ _ h_byte_4
+  obtain ⟨_hc5, h5_lt, h5_eq, h5_gt⟩ := ltu_byte_chain _ _ _ _ _ _ h_byte_5
+  obtain ⟨_hc6, h6_lt, h6_eq, h6_gt⟩ := ltu_byte_chain _ _ _ _ _ _ h_byte_6
+  obtain ⟨_hc7, h7_lt, h7_eq, h7_gt⟩ := ltu_byte_chain _ _ _ _ _ _ h_byte_7
+  -- Don't rewrite h_i_eq — ltu_step takes cin_cell.val as explicit arg.
+  -- Bool bounds for cin/flags.
+  have hf0 : fl0.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf1 : fl1.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf2 : fl2.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf3 : fl3.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf4 : fl4.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf5 : fl5.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf6 : fl6.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf7 : fl7.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  -- Initial step: byte 0, with Aprev = 0, Bprev = 0, W = 1.
+  -- The "cin" here is 0 (cin_0 = 0). Predicate cin = 1 ↔ 0 < 0 is False ↔ False, vacuous.
+  have h_init : cin0.val = 1 ↔ (0 : ℕ) < 0 := by rw [h_cin0]; simp
+  -- step 0: cout_0 = 1 ↔ Aprev_1 < Bprev_1 where Aprev_1 = a_0·1 = a_0, etc.
+  have step0 := ltu_step cin0.val a0.val b0.val (fl0.val % 2)
+    0 0 1 (by norm_num) (by norm_num) (by norm_num)
+    (by rw [h_cin0]; norm_num) hf0 h0_lt h0_eq h0_gt h_init
+  simp only [Nat.mul_one, Nat.zero_add] at step0
+  -- step0 : fl0.val % 2 = 1 ↔ a0.val < b0.val
+  -- step 1: W = 256, Aprev = a0, Bprev = b0.
+  have step1 := ltu_step cin1.val a1.val b1.val (fl1.val % 2)
+    a0.val b0.val 256 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin1]; exact hf0) hf1 h1_lt h1_eq h1_gt
+    (by rw [h_cin1]; exact step0)
+  -- step1 : fl1.val % 2 = 1 ↔ a0.val + a1.val * 256 < b0.val + b1.val * 256
+  have step2 := ltu_step cin2.val a2.val b2.val (fl2.val % 2)
+    (a0.val + a1.val * 256) (b0.val + b1.val * 256) 65536
+    (by norm_num) (by omega) (by omega)
+    (by rw [h_cin2]; exact hf1) hf2 h2_lt h2_eq h2_gt
+    (by rw [h_cin2]; exact step1)
+  have step3 := ltu_step cin3.val a3.val b3.val (fl3.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536) (b0.val + b1.val * 256 + b2.val * 65536)
+    16777216 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin3]; exact hf2) hf3 h3_lt h3_eq h3_gt
+    (by rw [h_cin3]; exact step2)
+  have step4 := ltu_step cin4.val a4.val b4.val (fl4.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216)
+    4294967296 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin4]; exact hf3) hf4 h4_lt h4_eq h4_gt
+    (by rw [h_cin4]; exact step3)
+  have step5 := ltu_step cin5.val a5.val b5.val (fl5.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216 + a4.val * 4294967296)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216 + b4.val * 4294967296)
+    1099511627776 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin5]; exact hf4) hf5 h5_lt h5_eq h5_gt
+    (by rw [h_cin5]; exact step4)
+  have step6 := ltu_step cin6.val a6.val b6.val (fl6.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296 + a5.val * 1099511627776)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+      + b4.val * 4294967296 + b5.val * 1099511627776)
+    281474976710656 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin6]; exact hf5) hf6 h6_lt h6_eq h6_gt
+    (by rw [h_cin6]; exact step5)
+  have step7 := ltu_step cin7.val a7.val b7.val (fl7.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296 + a5.val * 1099511627776 + a6.val * 281474976710656)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+      + b4.val * 4294967296 + b5.val * 1099511627776 + b6.val * 281474976710656)
+    72057594037927936 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin7]; exact hf6) hf7 h7_lt h7_eq h7_gt
+    (by rw [h_cin7]; exact step6)
+  exact step7
+
+/-! ## K1-B chain lift: LT (signed)
+
+Same chain rule as LTU for bytes 0..6; at byte 7 the sign-byte
+override fires when bit 7 of `a_7` and `b_7` differ. The conclusion
+expresses the signed-LT relation on the 64-bit packed sums via
+two's-complement Nat semantics. -/
+
+/-- Two's-complement signed-LT on Nat-encoded 64-bit values.
+    With sign(a)=1 meaning a is negative (high bit set, i.e., a ≥ 2^63):
+    * sa = sb (sign bits match): unsigned and signed compare agree.
+    * sa ≠ sb: a < b signed iff sign(a) = 1 (negative is less than non-negative). -/
+def signed_lt_64' (a b : ℕ) : Prop :=
+  let sa : Bool := decide (a ≥ 9223372036854775808)
+  let sb : Bool := decide (b ≥ 9223372036854775808)
+  if sa = sb then a < b else sa = true
+
+/-- LT byte-7 closer. Takes the bytes-0..6 LTU answer (`step6_iff`),
+    range bounds, byte-7 a, b values, the LT chain rule clauses, and
+    the LT byte-7 override clause; produces the signed-LT conclusion. -/
+private lemma lt_byte7_close
+    (Alow Blow a7 b7 fl6_val cin7_val fl7_val : ℕ)
+    (hAlow_lt : Alow < 72057594037927936)
+    (hBlow_lt : Blow < 72057594037927936)
+    (ha7 : a7 < 256) (hb7 : b7 < 256)
+    (h_cin7 : cin7_val = fl6_val % 2)
+    (hf6_le : fl6_val % 2 ≤ 1) (hf7_le : fl7_val % 2 ≤ 1)
+    (step6_iff : fl6_val % 2 = 1 ↔ Alow < Blow)
+    (h7_lt : a7 < b7 → fl7_val % 2 = 1)
+    (h7_eq : a7 = b7 → fl7_val % 2 = cin7_val)
+    (h7_gt : a7 > b7 → fl7_val % 2 = 0)
+    (h7_override : (a7 &&& 0x80) ≠ (b7 &&& 0x80) →
+      fl7_val % 2 = (if (a7 &&& 0x80) ≠ 0 then 1 else 0)) :
+    (fl7_val % 2 = 1 ↔ signed_lt_64'
+      (Alow + a7 * 72057594037927936)
+      (Blow + b7 * 72057594037927936)) := by
+  -- LTU step (chain rule) gives the unsigned answer.
+  have step7 := ltu_step cin7_val a7 b7 (fl7_val % 2)
+    Alow Blow 72057594037927936
+    (by norm_num) hAlow_lt hBlow_lt
+    (by rw [h_cin7]; exact hf6_le) hf7_le h7_lt h7_eq h7_gt
+    (by rw [h_cin7]; exact step6_iff)
+  -- Goal: fl7 % 2 = 1 ↔ signed_lt_64' (Alow + a7·W) (Blow + b7·W)
+  unfold signed_lt_64'
+  -- Auxiliary: the Asum/Bsum sign bit is determined by a7 ≥ 128 / b7 ≥ 128.
+  have hA_sign : (Alow + a7 * 72057594037927936 ≥ 9223372036854775808) ↔ a7 ≥ 128 := by
+    constructor
+    · intro h
+      by_contra h_lt
+      push_neg at h_lt
+      have hub : a7 * 72057594037927936 ≤ 127 * 72057594037927936 :=
+        Nat.mul_le_mul_right _ (by omega)
+      omega
+    · intro h
+      have hlb : 128 * 72057594037927936 ≤ a7 * 72057594037927936 :=
+        Nat.mul_le_mul_right _ h
+      omega
+  have hB_sign : (Blow + b7 * 72057594037927936 ≥ 9223372036854775808) ↔ b7 ≥ 128 := by
+    constructor
+    · intro h
+      by_contra h_lt
+      push_neg at h_lt
+      have hub : b7 * 72057594037927936 ≤ 127 * 72057594037927936 :=
+        Nat.mul_le_mul_right _ (by omega)
+      omega
+    · intro h
+      have hlb : 128 * 72057594037927936 ≤ b7 * 72057594037927936 :=
+        Nat.mul_le_mul_right _ h
+      omega
+  -- Now case-split on a7's sign vs b7's sign.
+  by_cases h_sign_eq : (a7 &&& 0x80) = (b7 &&& 0x80)
+  · -- Sign bits match → signed = unsigned (override doesn't fire).
+    have h_signs : (a7 ≥ 128 ↔ b7 ≥ 128) := by
+      have ha_set := byte_and_0x80_set _ ha7
+      have hb_set := byte_and_0x80_set _ hb7
+      rw [← ha_set, ← hb_set]
+      rw [h_sign_eq]
+    -- decide on each case
+    rcases Nat.lt_or_ge a7 128 with ha_lo | ha_hi
+    · have hb_lo : b7 < 128 := by
+        by_contra h
+        push_neg at h
+        exact absurd (h_signs.mpr h) (by omega)
+      have h_dA : decide (Alow + a7 * 72057594037927936 ≥ 9223372036854775808) = false := by
+        rw [decide_eq_false_iff_not, hA_sign]; omega
+      have h_dB : decide (Blow + b7 * 72057594037927936 ≥ 9223372036854775808) = false := by
+        rw [decide_eq_false_iff_not, hB_sign]; omega
+      rw [h_dA, h_dB]
+      simp
+      exact step7
+    · have hb_hi : b7 ≥ 128 := h_signs.mp ha_hi
+      have h_dA : decide (Alow + a7 * 72057594037927936 ≥ 9223372036854775808) = true := by
+        rw [decide_eq_true_iff, hA_sign]; exact ha_hi
+      have h_dB : decide (Blow + b7 * 72057594037927936 ≥ 9223372036854775808) = true := by
+        rw [decide_eq_true_iff, hB_sign]; exact hb_hi
+      rw [h_dA, h_dB]
+      simp
+      exact step7
+  · -- Sign bits differ → override fires.
+    have h_or := h7_override h_sign_eq
+    -- Determine sign of a7 (and b7 is opposite).
+    rcases Nat.lt_or_ge a7 128 with ha_lo | ha_hi
+    · -- a7 < 128, sign(a7) = 0. b7 must have sign 1 (≥ 128).
+      have ha_zero : a7 &&& 0x80 = 0 := (byte_and_0x80_zero _ ha7).mpr ha_lo
+      have hb_set_ne : b7 &&& 0x80 ≠ 0 := by
+        intro h; rw [ha_zero, h] at h_sign_eq; exact h_sign_eq rfl
+      have hb_hi : b7 ≥ 128 := by
+        by_contra h
+        push_neg at h
+        have := (byte_and_0x80_zero _ hb7).mpr h
+        exact hb_set_ne this
+      rw [ha_zero] at h_or
+      simp at h_or
+      -- h_or : fl7_val % 2 = 0
+      have h_dA : decide (Alow + a7 * 72057594037927936 ≥ 9223372036854775808) = false := by
+        rw [decide_eq_false_iff_not, hA_sign]; omega
+      have h_dB : decide (Blow + b7 * 72057594037927936 ≥ 9223372036854775808) = true := by
+        rw [decide_eq_true_iff, hB_sign]; exact hb_hi
+      rw [h_dA, h_dB]
+      simp
+      omega
+    · -- a7 ≥ 128, sign(a7) = 1. b7 must have sign 0 (< 128).
+      have ha_set : a7 &&& 0x80 = 0x80 := (byte_and_0x80_set _ ha7).mpr ha_hi
+      have hb_zero_ne : b7 &&& 0x80 ≠ 0x80 := by
+        intro h; rw [ha_set, h] at h_sign_eq; exact h_sign_eq rfl
+      have hb_lo : b7 < 128 := by
+        by_contra h
+        push_neg at h
+        have := (byte_and_0x80_set _ hb7).mpr h
+        exact hb_zero_ne this
+      rw [ha_set] at h_or
+      have h_norm : ((0x80 : ℕ) ≠ 0) := by decide
+      simp [h_norm] at h_or
+      -- h_or : fl7_val % 2 = 1
+      have h_dA : decide (Alow + a7 * 72057594037927936 ≥ 9223372036854775808) = true := by
+        rw [decide_eq_true_iff, hA_sign]; exact ha_hi
+      have h_dB : decide (Blow + b7 * 72057594037927936 ≥ 9223372036854775808) = false := by
+        rw [decide_eq_false_iff_not, hB_sign]; omega
+      rw [h_dA, h_dB]
+      simp
+      omega
+
+/-- **K1-B for LT.** Bytes 0..6 use OP_LT (chain rule = LTU); byte 7
+    uses OP_LT with the sign-byte override at `pos_ind = 1`. Output
+    is `flags_7 % 2 = 1` iff signed-LT holds on the 64-bit packed
+    sums. -/
+theorem binary_lt_chunks_eq_bv_slt
+    (a0 a1 a2 a3 a4 a5 a6 a7
+     b0 b1 b2 b3 b4 b5 b6 b7
+     c0 c1 c2 c3 c4 c5 c6 c7
+     cin0 cin1 cin2 cin3 cin4 cin5 cin6 cin7
+     fl0 fl1 fl2 fl3 fl4 fl5 fl6 fl7
+     pi0 pi1 pi2 pi3 pi4 pi5 pi6 pi7 : FGL)
+    (h_byte_0 : consumer_byte_match_chain OP_LT a0 b0 c0 cin0 fl0 pi0)
+    (h_byte_1 : consumer_byte_match_chain OP_LT a1 b1 c1 cin1 fl1 pi1)
+    (h_byte_2 : consumer_byte_match_chain OP_LT a2 b2 c2 cin2 fl2 pi2)
+    (h_byte_3 : consumer_byte_match_chain OP_LT a3 b3 c3 cin3 fl3 pi3)
+    (h_byte_4 : consumer_byte_match_chain OP_LT a4 b4 c4 cin4 fl4 pi4)
+    (h_byte_5 : consumer_byte_match_chain OP_LT a5 b5 c5 cin5 fl5 pi5)
+    (h_byte_6 : consumer_byte_match_chain OP_LT a6 b6 c6 cin6 fl6 pi6)
+    (h_byte_7 : consumer_byte_match_chain OP_LT a7 b7 c7 cin7 fl7 pi7)
+    (ha0 : a0.val < 256) (ha1 : a1.val < 256) (ha2 : a2.val < 256) (ha3 : a3.val < 256)
+    (ha4 : a4.val < 256) (ha5 : a5.val < 256) (ha6 : a6.val < 256) (ha7 : a7.val < 256)
+    (hb0 : b0.val < 256) (hb1 : b1.val < 256) (hb2 : b2.val < 256) (hb3 : b3.val < 256)
+    (hb4 : b4.val < 256) (hb5 : b5.val < 256) (hb6 : b6.val < 256) (hb7 : b7.val < 256)
+    (h_cin0 : cin0.val = 0)
+    (h_cin1 : cin1.val = fl0.val % 2)
+    (h_cin2 : cin2.val = fl1.val % 2)
+    (h_cin3 : cin3.val = fl2.val % 2)
+    (h_cin4 : cin4.val = fl3.val % 2)
+    (h_cin5 : cin5.val = fl4.val % 2)
+    (h_cin6 : cin6.val = fl5.val % 2)
+    (h_cin7 : cin7.val = fl6.val % 2)
+    (h_pi7 : pi7.val = 1) :
+    (fl7.val % 2 = 1 ↔ signed_lt_64'
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+        + a4.val * 4294967296 + a5.val * 1099511627776
+        + a6.val * 281474976710656 + a7.val * 72057594037927936)
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+        + b4.val * 4294967296 + b5.val * 1099511627776
+        + b6.val * 281474976710656 + b7.val * 72057594037927936)) := by
+  -- LT byte chain extracts: chain rule (same as LTU) + override at pos_ind = 1.
+  obtain ⟨_hc0, h0_lt, h0_eq, h0_gt, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_0
+  obtain ⟨_hc1, h1_lt, h1_eq, h1_gt, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_1
+  obtain ⟨_hc2, h2_lt, h2_eq, h2_gt, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_2
+  obtain ⟨_hc3, h3_lt, h3_eq, h3_gt, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_3
+  obtain ⟨_hc4, h4_lt, h4_eq, h4_gt, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_4
+  obtain ⟨_hc5, h5_lt, h5_eq, h5_gt, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_5
+  obtain ⟨_hc6, h6_lt, h6_eq, h6_gt, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_6
+  obtain ⟨_hc7, h7_lt, h7_eq, h7_gt, h7_override⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_7
+  have hf0 : fl0.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf1 : fl1.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf2 : fl2.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf3 : fl3.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf4 : fl4.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf5 : fl5.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf6 : fl6.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf7 : fl7.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  -- Bytes 0..6 use the LTU-style step. Apply ltu_step sequentially.
+  have h_init : cin0.val = 1 ↔ (0 : ℕ) < 0 := by rw [h_cin0]; simp
+  have step0 := ltu_step cin0.val a0.val b0.val (fl0.val % 2)
+    0 0 1 (by norm_num) (by norm_num) (by norm_num)
+    (by rw [h_cin0]; norm_num) hf0 h0_lt h0_eq h0_gt h_init
+  simp only [Nat.mul_one, Nat.zero_add] at step0
+  have step1 := ltu_step cin1.val a1.val b1.val (fl1.val % 2)
+    a0.val b0.val 256 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin1]; exact hf0) hf1 h1_lt h1_eq h1_gt
+    (by rw [h_cin1]; exact step0)
+  have step2 := ltu_step cin2.val a2.val b2.val (fl2.val % 2)
+    (a0.val + a1.val * 256) (b0.val + b1.val * 256) 65536
+    (by norm_num) (by omega) (by omega)
+    (by rw [h_cin2]; exact hf1) hf2 h2_lt h2_eq h2_gt
+    (by rw [h_cin2]; exact step1)
+  have step3 := ltu_step cin3.val a3.val b3.val (fl3.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536) (b0.val + b1.val * 256 + b2.val * 65536)
+    16777216 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin3]; exact hf2) hf3 h3_lt h3_eq h3_gt
+    (by rw [h_cin3]; exact step2)
+  have step4 := ltu_step cin4.val a4.val b4.val (fl4.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216)
+    4294967296 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin4]; exact hf3) hf4 h4_lt h4_eq h4_gt
+    (by rw [h_cin4]; exact step3)
+  have step5 := ltu_step cin5.val a5.val b5.val (fl5.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216 + a4.val * 4294967296)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216 + b4.val * 4294967296)
+    1099511627776 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin5]; exact hf4) hf5 h5_lt h5_eq h5_gt
+    (by rw [h_cin5]; exact step4)
+  have step6 := ltu_step cin6.val a6.val b6.val (fl6.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296 + a5.val * 1099511627776)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+      + b4.val * 4294967296 + b5.val * 1099511627776)
+    281474976710656 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin6]; exact hf5) hf6 h6_lt h6_eq h6_gt
+    (by rw [h_cin6]; exact step5)
+  -- Byte 7: combine the chain rule (LTU answer for the LO-byte 6 step) and the override.
+  -- We prove the LT-specific conclusion via a separate Nat helper (lt_byte7_close).
+  -- Set up: Alow, Blow, and step6 says fl6 % 2 = 1 ↔ Alow < Blow.
+  -- Apply lt_byte7_close.
+  exact lt_byte7_close
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296 + a5.val * 1099511627776
+      + a6.val * 281474976710656)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+      + b4.val * 4294967296 + b5.val * 1099511627776
+      + b6.val * 281474976710656)
+    a7.val b7.val fl6.val cin7.val fl7.val
+    (by omega) (by omega) ha7 hb7
+    (by rw [h_cin7]) hf6 hf7 step6
+    h7_lt h7_eq h7_gt (h7_override h_pi7)
+
+/-! ## K1-B chain lift: ADDW
+
+W-mode addition: bytes 0..3 use OP_ADD, bytes 4..7 use OP_SEXT_00 or
+OP_SEXT_FF based on the sign of c_3 (low-half result's high byte).
+The conclusion is `BitVec.signExtend 64 (a32 + b32) = c64`.
+
+We prove this via a direct closer that takes the LO-half ADD identity
+plus the SEXT case-disjunction. -/
+
+/-- ADDW positive-half finisher (Clo < 2^31, sext_00 high bytes). -/
+private lemma addw_close_pos
+    (Alo Blo Clo : ℕ)
+    (hAlo_lt : Alo < 4294967296) (hBlo_lt : Blo < 4294967296)
+    (hClo_lt_32 : Clo < 4294967296)
+    (h_lo_mod : (Alo + Blo) % 4294967296 = Clo)
+    (hClo_pos : Clo < 2147483648) :
+    BitVec.signExtend 64 (BitVec.ofNat 32 Alo + BitVec.ofNat 32 Blo) = BitVec.ofNat 64 Clo := by
+  apply BitVec.eq_of_toNat_eq
+  have h_sum_toNat : (BitVec.ofNat 32 Alo + BitVec.ofNat 32 Blo).toNat = Clo := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+        Nat.mod_eq_of_lt hAlo_lt, Nat.mod_eq_of_lt hBlo_lt]
+    exact h_lo_mod
+  rw [BitVec.toNat_signExtend, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
+      BitVec.msb_eq_decide, h_sum_toNat]
+  have h2_64 : (2^64 : ℕ) = 18446744073709551616 := by norm_num
+  have h_clo_mod_64 : Clo % 2^64 = Clo := Nat.mod_eq_of_lt (by omega)
+  rw [h_clo_mod_64]
+  -- Goal: Clo + (if decide (2^(32-1) ≤ Clo) then 2^64 - 2^32 else 0) = Clo
+  have h_pow : (2 ^ (32 - 1) : ℕ) = 2147483648 := by norm_num
+  rw [h_pow]
+  rw [show decide (2147483648 ≤ Clo) = false from by
+    rw [decide_eq_false_iff_not]; omega]
+  rw [if_neg (by simp)]
+  exact (Nat.add_zero _).symm
+
+/-- ADDW negative-half finisher (Clo ≥ 2^31, sext_FF high bytes). -/
+private lemma addw_close_neg
+    (Alo Blo Clo : ℕ)
+    (hAlo_lt : Alo < 4294967296) (hBlo_lt : Blo < 4294967296)
+    (hClo_lt_32 : Clo < 4294967296)
+    (h_lo_mod : (Alo + Blo) % 4294967296 = Clo)
+    (hClo_neg : Clo ≥ 2147483648) :
+    BitVec.signExtend 64 (BitVec.ofNat 32 Alo + BitVec.ofNat 32 Blo)
+    = BitVec.ofNat 64 (Clo + 18446744069414584320) := by
+  apply BitVec.eq_of_toNat_eq
+  have h_sum_toNat : (BitVec.ofNat 32 Alo + BitVec.ofNat 32 Blo).toNat = Clo := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+        Nat.mod_eq_of_lt hAlo_lt, Nat.mod_eq_of_lt hBlo_lt]
+    exact h_lo_mod
+  rw [BitVec.toNat_signExtend, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
+      BitVec.msb_eq_decide, h_sum_toNat]
+  have h2_64 : (2^64 : ℕ) = 18446744073709551616 := by norm_num
+  have h_clo_mod_64 : Clo % 2^64 = Clo := Nat.mod_eq_of_lt (by omega)
+  rw [h_clo_mod_64]
+  have h_pow : (2 ^ (32 - 1) : ℕ) = 2147483648 := by norm_num
+  rw [h_pow]
+  rw [show decide (2147483648 ≤ Clo) = true from by
+    rw [decide_eq_true_iff]; exact hClo_neg]
+  rw [if_pos rfl]
+  -- Goal: Clo + (2^64 - 2^32) = (Clo + 18446744069414584320) % 2^64
+  have h_rhs_lt : Clo + 18446744069414584320 < 2^64 := by omega
+  rw [Nat.mod_eq_of_lt h_rhs_lt]
+
+/-- **K1-B for ADDW.** Bytes 0..3 form an OP_ADD chain (with byte 3
+    as plast, forcing flags_3 % 2 = 0). Bytes 4..7 are sign-extension:
+    SEXT_00 when the low-32 result has high bit clear, SEXT_FF otherwise.
+
+    The hypothesis `h_sext_choice` selects which case obtains, encoded
+    as: high bytes are all 0 with low-32 result < 2^31 (positive) OR
+    all 0xFF with low-32 result ≥ 2^31 (negative). -/
+theorem binary_addw_chunks_eq_bv_add_w
+    (a0 a1 a2 a3 b0 b1 b2 b3
+     c0 c1 c2 c3 c4 c5 c6 c7
+     cin0 cin1 cin2 cin3
+     fl0 fl1 fl2 fl3
+     pi0 pi1 pi2 pi3 : FGL)
+    (h_byte_0 : consumer_byte_match_chain OP_ADD a0 b0 c0 cin0 fl0 pi0)
+    (h_byte_1 : consumer_byte_match_chain OP_ADD a1 b1 c1 cin1 fl1 pi1)
+    (h_byte_2 : consumer_byte_match_chain OP_ADD a2 b2 c2 cin2 fl2 pi2)
+    (h_byte_3 : consumer_byte_match_chain OP_ADD a3 b3 c3 cin3 fl3 pi3)
+    (ha0 : a0.val < 256) (ha1 : a1.val < 256) (ha2 : a2.val < 256) (ha3 : a3.val < 256)
+    (hb0 : b0.val < 256) (hb1 : b1.val < 256) (hb2 : b2.val < 256) (hb3 : b3.val < 256)
+    (hc0 : c0.val < 256) (hc1 : c1.val < 256) (hc2 : c2.val < 256) (hc3 : c3.val < 256)
+    (h_cin0 : cin0.val = 0)
+    (h_cin1 : cin1.val = fl0.val % 2)
+    (h_cin2 : cin2.val = fl1.val % 2)
+    (h_cin3 : cin3.val = fl2.val % 2)
+    (h_pi0 : pi0.val ≠ 1) (h_pi1 : pi1.val ≠ 1) (h_pi2 : pi2.val ≠ 1)
+    (_h_pi3 : pi3.val = 1)
+    (h_sext_choice :
+      ((c4.val = 0 ∧ c5.val = 0 ∧ c6.val = 0 ∧ c7.val = 0) ∧
+        c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216 < 2147483648) ∨
+      ((c4.val = 255 ∧ c5.val = 255 ∧ c6.val = 255 ∧ c7.val = 255) ∧
+        c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216 ≥ 2147483648)) :
+    BitVec.signExtend 64 (
+      BitVec.ofNat 32 (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+      +
+      BitVec.ofNat 32 (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216))
+    = BitVec.ofNat 64
+      (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+        + c4.val * 4294967296 + c5.val * 1099511627776
+        + c6.val * 281474976710656 + c7.val * 72057594037927936) := by
+  have h_cin0_lt : cin0.val < 2 := by omega
+  have h_cin1_lt : cin1.val < 2 := by
+    rw [h_cin1]; exact Nat.mod_lt _ (by norm_num)
+  have h_cin2_lt : cin2.val < 2 := by
+    rw [h_cin2]; exact Nat.mod_lt _ (by norm_num)
+  have h_cin3_lt : cin3.val < 2 := by
+    rw [h_cin3]; exact Nat.mod_lt _ (by norm_num)
+  obtain ⟨he0, _hB0_le⟩ := add_byte_nonfinal_eq _ _ _ _ _ _ h_byte_0 ha0 hb0 h_cin0_lt h_pi0
+  obtain ⟨he1, _hB1_le⟩ := add_byte_nonfinal_eq _ _ _ _ _ _ h_byte_1 ha1 hb1 h_cin1_lt h_pi1
+  obtain ⟨he2, _hB2_le⟩ := add_byte_nonfinal_eq _ _ _ _ _ _ h_byte_2 ha2 hb2 h_cin2_lt h_pi2
+  obtain ⟨B3, _hB3_le, he3⟩ := add_byte_uniform_eq _ _ _ _ _ _ h_byte_3 ha3 hb3 h_cin3_lt
+  rw [h_cin0] at he0
+  rw [h_cin1] at he1
+  rw [h_cin2] at he2
+  rw [h_cin3] at he3
+  have h_telescope := add_telescope_4byte
+    a0.val a1.val a2.val a3.val
+    b0.val b1.val b2.val b3.val
+    c0.val c1.val c2.val c3.val
+    0 (fl0.val % 2) (fl1.val % 2) (fl2.val % 2) B3
+    he0 he1 he2 he3
+  -- Compute the low-32 mod identity from telescope.
+  -- h_telescope : (a-sum) + (b-sum) + 0 = (c-sum) + 4294967296 * B3
+  -- Drop the +0 first.
+  rw [Nat.add_zero] at h_telescope
+  have h_lo_mod :
+      ((a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+        + (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216))
+      % 4294967296
+      = (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216) := by
+    rw [h_telescope, Nat.add_mul_mod_self_left]
+    exact Nat.mod_eq_of_lt (by omega)
+  -- Apply addw_close (split on h_sext_choice).
+  rcases h_sext_choice with ⟨⟨hc4, hc5, hc6, hc7⟩, hClo_pos⟩ |
+                            ⟨⟨hc4, hc5, hc6, hc7⟩, hClo_neg⟩
+  · -- Positive: c4..c7 = 0, low-32 result < 2^31.
+    rw [hc4, hc5, hc6, hc7]
+    have h_rhs : c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+                + 0 * 4294967296 + 0 * 1099511627776
+                + 0 * 281474976710656 + 0 * 72057594037927936
+              = c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216 := by ring
+    rw [h_rhs]
+    exact addw_close_pos
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216)
+      (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216)
+      (by omega) (by omega) (by omega) h_lo_mod hClo_pos
+  · -- Negative: c4..c7 = 255, low-32 result ≥ 2^31.
+    rw [hc4, hc5, hc6, hc7]
+    have h_rhs : c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+                + 255 * 4294967296 + 255 * 1099511627776
+                + 255 * 281474976710656 + 255 * 72057594037927936
+              = (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216)
+                + 18446744069414584320 := by omega
+    rw [h_rhs]
+    exact addw_close_neg
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216)
+      (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216)
+      (by omega) (by omega) (by omega) h_lo_mod hClo_neg
 
 end ZiskFv.Airs.Binary
 
