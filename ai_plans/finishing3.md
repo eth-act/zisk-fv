@@ -11,8 +11,17 @@ Retire the trusted memory-model axioms (`M1`, `M2`, `M4`, `M10`, …
 catalogued in `docs/fv/trusted-base.md`) from per-opcode load / store
 equivalence theorems by extracting and bridging the `Mem` AIR + the
 `MemAlign*` family, producing per-opcode load / store proofs whose
-trusted base reduces to the same shape as ALU proofs (transpile
-contract + PIL↔Lean model fidelity).
+trust reduces to the same shape as ALU proofs (transpile contract +
+PIL↔Lean model fidelity).
+
+**Per the Tier-1 discipline applied in finishing1/2:** load/store
+discharge lemmas must derive `h_rd_val` (or its load/store analogue)
+from circuit primitives, not parameterize a byte-sum equality.
+Concretely: the Sail memory-monad value is recovered via the Mem
+AIR's row constraints (a chain of read/write entries with consistent
+`prev_value` fields) composed with K2 lane-match (writes-side closes
+in S4 of this plan). No `h_byte_sum`-shaped parameters survive on
+final metaplan theorems.
 
 ## Trust scoping (project-wide)
 
