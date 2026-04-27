@@ -2,7 +2,6 @@ import Mathlib
 
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.PackedBitVec
-import ZiskFv.Fundamentals.PackedBitVec.NoWrap
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Binary.BinaryAdd
@@ -33,50 +32,92 @@ row-constraint extraction required; out of scope here).
 
 | Opcode | Tier | Status |
 |--------|------|--------|
-| ADD    | 1    | Fully derived (no Phase-4 residual) |
-| ADDI   | 1    | Fully derived via compositional theorem + no-wrap toolkit |
-| ADDW   | 1    | Fully derived via compositional theorem + no-wrap toolkit |
-| ADDIW  | 1    | Fully derived via compositional theorem + no-wrap toolkit |
-| SUB    | 1    | Fully derived via compositional theorem + no-wrap toolkit |
-| SUBW   | 1    | Fully derived via compositional theorem + no-wrap toolkit |
+| ADD    | 1    | Fully circuit-derived (no Phase-4 residual) |
+| ADDI   | 1.5  | OUTPUT-EQ residual `h_input_val` (DONE_WITH_CONCERNS) |
+| ADDW   | 1.5  | OUTPUT-EQ residual `h_input_val` (DONE_WITH_CONCERNS) |
+| ADDIW  | 1.5  | OUTPUT-EQ residual `h_input_val` (DONE_WITH_CONCERNS) |
+| SUB    | 1.5  | OUTPUT-EQ residual `h_input_val` (DONE_WITH_CONCERNS) |
+| SUBW   | 1.5  | OUTPUT-EQ residual `h_input_val` (DONE_WITH_CONCERNS) |
 
 ## Architecture
 
-**Tier 1 — fully circuit-derived (ADD).** Uses `Valid_BinaryAdd` +
-`binary_add_chunks_eq_bv_add` (K1-A). No residual hypothesis.
+**Tier 1 — fully circuit-derived (ADD).** `Spec/Add::add_compositional`
+takes a `Valid_BinaryAdd b` parameter, ties `m.c_0`/`m.c_1` directly
+to `b.c_chunks_*` via a bus-row match between Main and BinaryAdd, and
+the K1-A theorem `binary_add_chunks_eq_bv_add` lifts the chunk-level
+carry chain to a `BitVec 64` addition identity. No OUTPUT-EQ
+parameter is needed; ADD is the *only* opcode in this file that
+reaches genuine Tier 1.
 
-**Tier 1 — lo/hi halves as trust boundary (ADDI, ADDW, ADDIW, SUB, SUBW).**
-These opcodes route through the Binary SM via an abstract `OperationBusEntry`.
-The compositional spec (`Spec/<Op>::<op>_compositional`) gives the FGL identity
-`main_c_packed m r_main = bus_entry.c_lo + bus_entry.c_hi * 4294967296`.
+**Tier 1.5 — abstract `OperationBusEntry` (ADDI, ADDW, ADDIW, SUB, SUBW).**
+The corresponding `Spec/<Op>::<op>_compositional` theorems take an
+**abstract** `bus_entry : OperationBusEntry FGL` (no `Valid_BinaryAdd`
+or `Valid_BinaryExtension` parameter). They prove only
 
-Each lemma takes:
+```
+  main_c_packed m r_main = bus_entry.c_lo + bus_entry.c_hi * 2^32
+```
+
+— i.e. Main's `c` lanes equal the abstract bus entry's `c` lanes.
+There is **no** Spec theorem in tree that ties
+`bus_entry.c_lo + bus_entry.c_hi * 2^32` to `(<inputs>).toNat` for
+these opcodes. That equality is the **Phase 4 Binary-SM audit
+obligation**; supplying it as `h_input_val` to the lemmas below is
+a genuine OUTPUT-EQ trust gap, not a derivable consequence of the
+extracted constraints. See `docs/fv/track-n-traps.md` § "ALU-Arith
+abstract bus-entry gap" for the escalation manifest (what new
+infrastructure would be required to retire `h_input_val`).
+
+The body of each non-ADD lemma still does real work:
 * `h_circuit` — bundles mode witnesses + bus-match;
 * `h_lane_rd` — K2 register-write lane match (Layer 1 trust);
 * `h_e2_0..h_e2_7` — per-byte range bounds;
-* `h_c_lo_val : bus_entry.c_lo.val = spec_val.toNat % 4294967296`
-  — lo half of the Binary SM's chunk-level correctness (Phase 4 audit obligation);
-* `h_c_hi_val : bus_entry.c_hi.val = spec_val.toNat / 4294967296`
-  — hi half of the Binary SM's chunk-level correctness (Phase 4 audit obligation).
+* `h_input_val : bus_entry.c_lo.val + bus_entry.c_hi.val * 2^32 = spec_val.toNat`
+  — Binary SM chunk correctness (OUTPUT-EQ; named, not derived).
 
-From these, `h_input_val` is derived internally via the no-wrap toolkit
-(`fgl_packed_2_lanes_natCast` + `fgl_eq_to_nat_eq` applied to each half
-independently, then combined via `omega`). The byte-sum equality
-`e2.x0.val + ... + e2.x7.val * 2^56 = spec_val.toNat` is derived internally
-(via the lane-match chain + byte ranges), and `bv64_of_byte_sum` closes the
-conclusion.
-
-The lo/hi split avoids the GL_prime wrapping issue: `bus_entry.c_lo.val =
-spec_val.toNat % 2^32 < 2^32 < GL_prime`, and similarly for the hi half.
-Each side is independently within the no-wrap toolkit's range.
+From these, the byte-sum Nat equality is derived **internally**
+(`byte_sum_from_lane_match`) and `bv64_of_byte_sum` closes the
+conclusion. The byte-decomposition layer is real Tier-1 work; only
+the chunk-level `h_input_val` is the residual gap.
 
 ## Trust summary
 
 | Residual parameter | Level | Closes in |
 |--------------------|-------|-----------|
 | ADD: none          | —     | ✅ |
-| Others: `h_c_lo_val` / `h_c_hi_val` | chunk (lo/hi halves of Binary SM output) | Phase 4 |
+| Others: `h_input_val` | chunk OUTPUT-EQ (Binary SM result claim) | future infra phase |
 | `h_lane_rd` (K2)  | Layer 1 structural | finishing2/3 |
+
+## Why `h_input_val` cannot be retired with the in-tree infrastructure
+
+The Wave B.6 retry attempted a Tier-1 derivation mirroring ADD's
+chain. It found that none of ADDI/ADDW/ADDIW/SUB/SUBW have a Spec
+theorem of the right shape. ADD's success rests on three pieces:
+
+1. The `Valid_BinaryAdd` named-column AIR
+   (`Airs/Binary/BinaryAdd.lean`) extracted from the BinaryAdd PIL
+   AIR (#11), exposing `a_0`/`a_1`/`b_0`/`b_1`/`c_chunks_*`/`cout_*`
+   columns as field accessors.
+2. `Spec/Add::add_compositional` taking that AIR as a hypothesis and
+   matching its bus row against Main's bus row, yielding the FGL
+   identity `main_c_packed = main_a_packed + main_b_packed -
+   cout_1 * 2^64`.
+3. K1-A `binary_add_chunks_eq_bv_add` lifting the FGL identity to
+   `BitVec 64`.
+
+For ADDI/SUB the missing piece is (2): no
+`addi_compositional_with_binaryadd` / `sub_compositional_with_binaryadd`
+exists in `Spec/`, and authoring one is out of scope for this Wave
+(the user explicitly forbids new theorems in `Spec/<X>.lean`).
+
+For ADDW/ADDIW/SUBW the missing piece is *both* (1) and (2): the
+W-variant Binary-SM is `BinaryExtension` (PIL AIR #12), which is
+**not extracted** at all (`docs/fv/air-inventory.md` lists it as
+"❌ row-constraints missing"). No `Valid_BinaryExtension` AIR
+exists in the Lean tree.
+
+See `docs/fv/track-n-traps.md` § "ALU-Arith abstract bus-entry gap"
+for the full escalation manifest.
 -/
 
 set_option maxHeartbeats 800000
@@ -92,7 +133,6 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.MemoryBus.LaneMatch
 open ZiskFv.Spec.Add
 open ZiskFv.PackedBitVec
-open ZiskFv.PackedBitVec.NoWrap
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -156,7 +196,7 @@ private lemma byte_sum_from_lane_match
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
     (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
     (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    (h_chunk_sum :
+    (h_input_val :
       bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296 = spec_val.toNat) :
     e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
     + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
@@ -188,32 +228,14 @@ private lemma byte_sum_from_lane_match
     rw [h_cast, Fin.val_natCast]
     apply Nat.mod_eq_of_lt; omega
   -- Step 4: rewrite c_lo.val and c_hi.val via the entry equalities
-  rw [h_lo_eq] at h_chunk_sum
-  rw [h_hi_eq] at h_chunk_sum
-  rw [h_lo_nat, h_hi_nat] at h_chunk_sum
-  -- h_chunk_sum now:
+  rw [h_lo_eq] at h_input_val
+  rw [h_hi_eq] at h_input_val
+  rw [h_lo_nat, h_hi_nat] at h_input_val
+  -- h_input_val now:
   --   (x0.val + x1.val*256 + x2.val*65536 + x3.val*16777216)
   --   + (x4.val + x5.val*256 + x6.val*65536 + x7.val*16777216) * 4294967296
   --   = spec_val.toNat
   -- Step 5: omega closes the rearrangement to the byte-sum form
-  omega
-
-/-! ## Shared private helper: derive h_input_val from lo/hi split params
-
-For non-ADD opcodes, `h_c_lo_val` and `h_c_hi_val` together imply
-`h_input_val` by the Nat identity `(n % 2^32) + (n / 2^32) * 2^32 = n`
-(for any `n < 2^64`). This helper factors the derivation. -/
-
-/-- **h_input_val from lo/hi split.** Derives
-    `bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296 = spec_val.toNat`
-    from the two split hypotheses `h_c_lo_val` and `h_c_hi_val`. -/
-private lemma input_val_from_lo_hi
-    (bus_entry : OperationBusEntry FGL)
-    (spec_val : BitVec 64)
-    (h_c_lo_val : bus_entry.c_lo.val = spec_val.toNat % 4294967296)
-    (h_c_hi_val : bus_entry.c_hi.val = spec_val.toNat / 4294967296) :
-    bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296 = spec_val.toNat := by
-  have h_bound := spec_val.isLt
   omega
 
 /-! ## ADD (Tier 1 — fully derived from circuit constraints) -/
@@ -336,20 +358,23 @@ theorem h_rd_val_arith_add
     omega
   omega
 
-/-! ## ADDI (Tier 1 — lo/hi halves as trust boundary) -/
+/-! ## ADDI (Tier 1 — chunk-level trust boundary) -/
 
 /-- **ADDI h_rd_val derivation (Tier 1).**
     Produces `U64.toBV #v[e2.x0, ..., e2.x7] = r1_val + BitVec.signExtend 64 imm`
-    from circuit hypotheses and lo/hi Binary SM correctness claims.
+    from circuit hypotheses and a chunk-level Binary SM correctness claim.
+
+    **Residual hypothesis `h_input_val`:** the Binary SM's output chunk
+    `bus_entry.c_lo.val + bus_entry.c_hi.val * 2^32` equals
+    `(r1_val + BitVec.signExtend 64 imm).toNat`. This is the Phase 4 audit
+    obligation: the Binary SM carry chain for OP_ADD (shared with ADD / ADDI)
+    correctly computes the ADDI result.
 
     **Proof chain:**
-    1. Use `addi_compositional` to obtain the FGL identity
-       `main_c_packed m r_main = bus_entry.c_lo + bus_entry.c_hi * 2^32`.
-    2. Extract `m.c_0 = bus_entry.c_lo`, `m.c_1 = bus_entry.c_hi` from `h_circuit`.
-    3. Extract `m.c_0 = memory_entry_lo e2`, `m.c_1 = memory_entry_hi e2` from `h_lane_rd`.
-    4. Derive `h_input_val` internally from `h_c_lo_val` + `h_c_hi_val` via `omega`.
-    5. `byte_sum_from_lane_match` derives the byte-sum Nat equality.
-    6. `bv64_of_byte_sum` closes. -/
+    1. Extract `m.c_0 = bus_entry.c_lo`, `m.c_1 = bus_entry.c_hi` from `h_circuit`.
+    2. Extract `m.c_0 = memory_entry_lo e2`, `m.c_1 = memory_entry_hi e2` from `h_lane_rd`.
+    3. `byte_sum_from_lane_match` derives the byte-sum Nat equality from these + byte ranges + `h_input_val`.
+    4. `bv64_of_byte_sum` closes. -/
 theorem h_rd_val_arith_addi
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -364,20 +389,14 @@ theorem h_rd_val_arith_addi
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
     (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
     (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    -- Binary SM chunk correctness, lo half (Phase 4 audit obligation):
-    -- the bus c_lo chunk encodes the low 32 bits of the ADDI result.
-    (h_c_lo_val : bus_entry.c_lo.val
-        = (r1_val + BitVec.signExtend 64 imm).toNat % 4294967296)
-    -- Binary SM chunk correctness, hi half (Phase 4 audit obligation):
-    -- the bus c_hi chunk encodes the high 32 bits of the ADDI result.
-    (h_c_hi_val : bus_entry.c_hi.val
-        = (r1_val + BitVec.signExtend 64 imm).toNat / 4294967296) :
+    -- Binary SM chunk correctness (Phase 4 audit obligation):
+    -- the bus c-lane chunk sum encodes the ADDI result.
+    (h_input_val :
+      bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296
+        = (r1_val + BitVec.signExtend 64 imm).toNat) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = r1_val + BitVec.signExtend 64 imm := by
-  -- Derive h_input_val internally from the lo/hi split.
-  have h_input_val := input_val_from_lo_hi bus_entry (r1_val + BitVec.signExtend 64 imm)
-    h_c_lo_val h_c_hi_val
   -- Extract c-lane bus-match from h_circuit.
   simp only [ZiskFv.Spec.Addi.addi_circuit_holds,
              ZiskFv.Tactics.ALUITypeArchetype.alu_itype_archetype_circuit_holds,
@@ -397,21 +416,21 @@ theorem h_rd_val_arith_addi
   exact bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h_e2_0 h_e2_1 h_e2_2 h_e2_3
     h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_byte_sum
 
-/-! ## ADDW (Tier 1 — lo/hi halves as trust boundary, m32=1) -/
+/-! ## ADDW (Tier 1 — chunk-level trust boundary, m32=1) -/
 
 /-- **ADDW h_rd_val derivation (Tier 1).**
     Produces `U64.toBV #v[e2.x0, ..., e2.x7] = spec_val` from circuit
-    hypotheses and lo/hi Binary SM correctness claims.
+    hypotheses and a chunk-level Binary SM correctness claim.
 
     ADDW routes through `OP_ADD_W = 26` with `m32 = 1`. The `RTypeWArchetype`
     compositional spec gives `main_c_packed m r_main = bus_entry.c_lo +
     bus_entry.c_hi * 2^32`. The Binary SM's internal correctness (that the
     bus c-lanes encode the sign-extended 32-bit sum) is the Phase 4 audit
-    obligation expressed via `h_c_lo_val` / `h_c_hi_val` at the half-chunk level.
+    obligation expressed via `h_input_val` at the chunk level.
 
-    **Trust boundary:** `h_c_lo_val` and `h_c_hi_val` split the chunk-level
-    claim into lo and hi halves, each staying within `GL_prime`. `h_input_val`
-    is derived internally via `input_val_from_lo_hi`. -/
+    **Residual `h_input_val`:** `bus_entry.c_lo.val + bus_entry.c_hi.val * 2^32
+    = spec_val.toNat`. Tier-1 upgrade: the byte-sum equality is now derived
+    internally (not supplied as `h_c_byte_sum`). -/
 theorem h_rd_val_arith_addw
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -426,14 +445,12 @@ theorem h_rd_val_arith_addw
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
     (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
     (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    -- Binary SM chunk correctness, lo half (Phase 4 audit obligation).
-    (h_c_lo_val : bus_entry.c_lo.val = spec_val.toNat % 4294967296)
-    -- Binary SM chunk correctness, hi half (Phase 4 audit obligation).
-    (h_c_hi_val : bus_entry.c_hi.val = spec_val.toNat / 4294967296) :
+    -- Binary SM chunk correctness (Phase 4 audit obligation).
+    (h_input_val :
+      bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296 = spec_val.toNat) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = spec_val := by
-  have h_input_val := input_val_from_lo_hi bus_entry spec_val h_c_lo_val h_c_hi_val
   simp only [ZiskFv.Spec.Addw.addw_circuit_holds,
              ZiskFv.Tactics.RTypeWArchetype.rtypew_archetype_circuit_holds] at h_circuit
   obtain ⟨_, _, _, _, h_match⟩ := h_circuit
@@ -448,19 +465,19 @@ theorem h_rd_val_arith_addw
   exact bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h_e2_0 h_e2_1 h_e2_2 h_e2_3
     h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_byte_sum
 
-/-! ## ADDIW (Tier 1 — lo/hi halves as trust boundary, m32=1) -/
+/-! ## ADDIW (Tier 1 — chunk-level trust boundary, m32=1) -/
 
 /-- **ADDIW h_rd_val derivation (Tier 1).**
     Produces `U64.toBV #v[e2.x0, ..., e2.x7] = spec_val` from circuit
-    hypotheses and lo/hi Binary SM correctness claims.
+    hypotheses and a chunk-level Binary SM correctness claim.
 
     ADDIW routes through the same ZisK opcode as ADDW (`OP_ADD_W = 26`,
     `m32 = 1`). The difference from ADDW is on the Sail/transpiler side
     (immediate source vs. register source); the circuit-level `c`-lane
     bus-match identity is the same. Identical structure to `h_rd_val_arith_addw`.
 
-    **Trust boundary:** `h_c_lo_val` and `h_c_hi_val` split the chunk-level
-    claim; `h_input_val` is derived internally via `input_val_from_lo_hi`. -/
+    **Residual `h_input_val`:** the bus chunk sum encodes the sign-extended
+    32-bit add-immediate result. Phase 4 audit obligation. -/
 theorem h_rd_val_arith_addiw
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -475,14 +492,12 @@ theorem h_rd_val_arith_addiw
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
     (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
     (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    -- Binary SM chunk correctness, lo half (Phase 4 audit obligation).
-    (h_c_lo_val : bus_entry.c_lo.val = spec_val.toNat % 4294967296)
-    -- Binary SM chunk correctness, hi half (Phase 4 audit obligation).
-    (h_c_hi_val : bus_entry.c_hi.val = spec_val.toNat / 4294967296) :
+    -- Binary SM chunk correctness (Phase 4 audit obligation).
+    (h_input_val :
+      bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296 = spec_val.toNat) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = spec_val := by
-  have h_input_val := input_val_from_lo_hi bus_entry spec_val h_c_lo_val h_c_hi_val
   simp only [ZiskFv.Spec.Addiw.addiw_circuit_holds,
              ZiskFv.Tactics.RTypeWArchetype.rtypew_archetype_circuit_holds] at h_circuit
   obtain ⟨_, _, _, _, h_match⟩ := h_circuit
@@ -497,18 +512,20 @@ theorem h_rd_val_arith_addiw
   exact bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h_e2_0 h_e2_1 h_e2_2 h_e2_3
     h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_byte_sum
 
-/-! ## SUB (Tier 1 — lo/hi halves as trust boundary) -/
+/-! ## SUB (Tier 1 — chunk-level trust boundary) -/
 
 /-- **SUB h_rd_val derivation (Tier 1).**
     Produces `U64.toBV #v[e2.x0, ..., e2.x7] = r1_val - r2_val` from
-    circuit hypotheses and lo/hi Binary SM correctness claims.
+    circuit hypotheses and a chunk-level Binary SM correctness claim.
 
     SUB routes through `OP_SUB = 11` via `ALURTypeArchetype`. ZisK SUB
     passes `a = rs1`, `b = rs2` (no sign negation upstream of the Binary SM;
     the SM handles subtraction internally via its carry chain).
 
-    **Trust boundary:** `h_c_lo_val` and `h_c_hi_val` split the Binary SM's
-    chunk-level correctness for SUB. `h_input_val` is derived internally. -/
+    **Residual `h_input_val`:** the bus `c_lo.val + c_hi.val * 2^32` equals
+    `(r1_val - r2_val).toNat`. This is the Binary SM carry-chain correctness
+    for SUB — the Phase 4 audit obligation. The byte-sum derivation is now
+    internal (Tier-1 upgrade from the former `h_c_byte_sum` parameter). -/
 theorem h_rd_val_arith_sub
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -523,14 +540,13 @@ theorem h_rd_val_arith_sub
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
     (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
     (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    -- Binary SM chunk correctness, lo half (Phase 4 audit obligation).
-    (h_c_lo_val : bus_entry.c_lo.val = (r1_val - r2_val).toNat % 4294967296)
-    -- Binary SM chunk correctness, hi half (Phase 4 audit obligation).
-    (h_c_hi_val : bus_entry.c_hi.val = (r1_val - r2_val).toNat / 4294967296) :
+    -- Binary SM chunk correctness (Phase 4 audit obligation).
+    (h_input_val :
+      bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296
+        = (r1_val - r2_val).toNat) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = r1_val - r2_val := by
-  have h_input_val := input_val_from_lo_hi bus_entry (r1_val - r2_val) h_c_lo_val h_c_hi_val
   simp only [ZiskFv.Spec.Sub.sub_circuit_holds,
              ZiskFv.Tactics.ALURTypeArchetype.alu_rtype_archetype_circuit_holds] at h_circuit
   obtain ⟨_, _, _, _, h_match⟩ := h_circuit
@@ -546,18 +562,18 @@ theorem h_rd_val_arith_sub
   exact bv64_of_byte_sum _ _ _ _ _ _ _ _ _ h_e2_0 h_e2_1 h_e2_2 h_e2_3
     h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_byte_sum
 
-/-! ## SUBW (Tier 1 — lo/hi halves as trust boundary, m32=1) -/
+/-! ## SUBW (Tier 1 — chunk-level trust boundary, m32=1) -/
 
 /-- **SUBW h_rd_val derivation (Tier 1).**
     Produces `U64.toBV #v[e2.x0, ..., e2.x7] = spec_val` from circuit
-    hypotheses and lo/hi Binary SM correctness claims.
+    hypotheses and a chunk-level Binary SM correctness claim.
 
     SUBW routes through `OP_SUB_W = 27` with `m32 = 1` via
     `RTypeWArchetype`. Identical structure to `h_rd_val_arith_addw`
     modulo the opcode and the spec conclusion.
 
-    **Trust boundary:** `h_c_lo_val` and `h_c_hi_val` split the Binary SM's
-    chunk-level correctness for SUBW. `h_input_val` is derived internally. -/
+    **Residual `h_input_val`:** the bus chunk sum encodes the sign-extended
+    32-bit subtraction result. Phase 4 audit obligation. -/
 theorem h_rd_val_arith_subw
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -572,14 +588,12 @@ theorem h_rd_val_arith_subw
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
     (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
     (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    -- Binary SM chunk correctness, lo half (Phase 4 audit obligation).
-    (h_c_lo_val : bus_entry.c_lo.val = spec_val.toNat % 4294967296)
-    -- Binary SM chunk correctness, hi half (Phase 4 audit obligation).
-    (h_c_hi_val : bus_entry.c_hi.val = spec_val.toNat / 4294967296) :
+    -- Binary SM chunk correctness (Phase 4 audit obligation).
+    (h_input_val :
+      bus_entry.c_lo.val + bus_entry.c_hi.val * 4294967296 = spec_val.toNat) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = spec_val := by
-  have h_input_val := input_val_from_lo_hi bus_entry spec_val h_c_lo_val h_c_hi_val
   simp only [ZiskFv.Spec.Subw.subw_circuit_holds,
              ZiskFv.Tactics.RTypeWArchetype.rtypew_archetype_circuit_holds] at h_circuit
   obtain ⟨_, _, _, _, h_match⟩ := h_circuit

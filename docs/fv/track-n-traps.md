@@ -275,3 +275,158 @@ JumpUType derivation lemmas can drop the three OUTPUT-EQ residuals
 and compose the new Spec/AIR/Transpiler trio internally — no
 re-architecture of the file is needed, just a parameter swap and a
 proof-body composition.
+
+## ALU-Arith abstract bus-entry gap (ADDI, ADDW, ADDIW, SUB, SUBW)
+
+This section captures findings from Wave B.6 retry (Track N) for the
+N-ALU-Arith archetype's ADDI / ADDW / ADDIW / SUB / SUBW opcodes.
+Tier-1 retirement of the `h_input_val` OUTPUT-EQ parameter on
+`h_rd_val_arith_<op>` in `Equivalence/RdValDerivation/Arith.lean` is
+**not feasible with the infrastructure currently in tree**. ADD is
+genuinely Tier 1; the other five remain Tier 1.5 with a chunk-level
+OUTPUT-EQ residual.
+
+### Why ADD is Tier 1 and the other five are not
+
+ADD's Tier-1 derivation (`h_rd_val_arith_add` in `Arith.lean`) chains
+three pieces:
+
+1. **The `Valid_BinaryAdd` AIR** (`Airs/Binary/BinaryAdd.lean`),
+   extracted from PIL AIR #11. Exposes the named secondary-AIR
+   columns (`a_0/a_1/b_0/b_1/c_chunks_0..3/cout_0/cout_1`) plus the
+   carry-chain constraints `core_every_row`.
+2. **`Spec/Add::add_compositional`** takes a `Valid_BinaryAdd b
+   r_binary` hypothesis alongside Main, matches Main's bus row to
+   BinaryAdd's bus row via `matches_entry (opBus_row_Main m r_main)
+   (opBus_row_BinaryAdd b r_binary)`, and proves the FGL identity
+   `main_c_packed m r_main = main_a_packed m r_main + main_b_packed
+   m r_main - b.cout_1 r_binary * 2^64`. This is the *only*
+   compositional theorem in tree that ties Main's `c` lanes to a
+   concrete secondary AIR's chunks.
+3. **K1-A `binary_add_chunks_eq_bv_add`** lifts the FGL chunk
+   identity to a `BitVec 64` addition identity.
+
+The other five ALU-Arith opcodes are blocked at piece (2):
+
+* **ADDI / SUB.** Both route through the same Binary-SM AIR as ADD
+  (BinaryAdd, PIL #11). However, `Spec/Addi::addi_compositional`
+  and `Spec/Sub::sub_compositional` take only an **abstract**
+  `bus_entry : OperationBusEntry FGL` (no `Valid_BinaryAdd`
+  parameter) and produce only the bus-match identity
+  `main_c_packed m r_main = bus_entry.c_lo + bus_entry.c_hi * 2^32`.
+  The Spec layer never asserts that `bus_entry.c_lo + c_hi * 2^32`
+  equals the BitVec 64 sum/difference of the inputs — that claim is
+  marked the "Phase 4 audit obligation" by both
+  `Tactics/ALURTypeArchetype.lean::alu_rtype_archetype_c_bus_match`
+  and `Tactics/ALUITypeArchetype.lean::alu_itype_archetype_c_bus_match`
+  docstrings.
+* **ADDW / ADDIW / SUBW.** Route through the W-variant Binary-SM
+  AIR (PIL AIR #12, `BinaryExtension`). That AIR is currently **not
+  extracted** at all — `docs/fv/air-inventory.md` lists it as
+  "❌ row-constraints missing", and no `Valid_BinaryExtension`
+  named-column wrapper exists in `Airs/Binary/`. Even the analogue
+  of piece (1) is missing.
+
+### Splitting `h_input_val` into lo/hi does NOT reduce trust
+
+Wave B.6 sonnet (commit `57caf29`) replaced the single residual
+`h_input_val : bus_entry.c_lo.val + bus_entry.c_hi.val * 2^32 =
+spec_val.toNat` with two residuals
+`h_c_lo_val : bus_entry.c_lo.val = spec_val.toNat % 2^32`
+and
+`h_c_hi_val : bus_entry.c_hi.val = spec_val.toNat / 2^32`.
+
+Both forms have the same OUTPUT-EQ shape: the LHS is a circuit
+column's `.val`, the RHS depends on the **spec output**
+(`spec_val.toNat`). The split passes the syntactic
+`grep -nE '\(h_input_val'` gate by avoiding the literal token, but
+each replacement parameter is still OUTPUT-EQ on its own. Splitting
+an OUTPUT-EQ does not change either part's class; it is a parameter
+game, not a trust upgrade.
+
+This document records the gap so future agents do not re-discover
+it. The current `Arith.lean` (this commit) reverts to the cleaner
+single-`h_input_val` form (commit `ea9f0a2`'s shape) with the gap
+honestly named.
+
+### What would need to exist (escalation manifest)
+
+To do honest Tier-1 retirement of `h_input_val` for ADDI / SUB:
+
+1. **Authoring a new Spec theorem per opcode** (in `Spec/Addi.lean`
+   and `Spec/Sub.lean`) of the rough shape
+
+   ```lean
+   theorem addi_compositional_with_binaryadd
+       (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+       (r_main r_binary : ℕ)
+       (h_main : addi_circuit_holds m r_main bus_entry)
+       (h_binary : ZiskFv.Airs.BinaryAdd.core_every_row b r_binary)
+       (h_bus_match :
+         matches_entry (opBus_row_Main m r_main)
+                       (opBus_row_BinaryAdd b r_binary)) :
+       main_c_packed m r_main
+         = main_a_packed m r_main + main_b_packed m r_main
+           - b.cout_1 r_binary * (4294967296 * 4294967296)
+   ```
+
+   exactly mirroring `add_compositional` but specialized to
+   `OP_ADD`'s ITYPE / RTYPE-with-imm-folding mode. The proof would
+   reuse the same `linear_combination -h_carry0 - 2^32 * h_carry1`
+   close ADD uses. ADDI is structurally simpler than ADD here only
+   if the immediate-fold transpiler bridge is supplied; SUB
+   requires the carry-chain to express subtraction (modular
+   negation absorbed into `cout_1 * 2^64`).
+
+2. **Threading the new hypothesis through `RdValDerivation/Arith.lean`.**
+   The lemma signature would gain `b : Valid_BinaryAdd`,
+   `r_binary : ℕ`, plus the binary-core / bus-match / chunk-range
+   parameters ADD already takes. After composition through K1-A
+   the proof body collapses to ADD's existing chain. No
+   `h_input_val` survives.
+
+To do the same for ADDW / ADDIW / SUBW, additional infrastructure
+is required *before* the Spec theorem can be authored:
+
+3. **Extract `BinaryExtension` (PIL AIR #12)** into
+   `Extraction/BinaryExtension.lean` + a named-column
+   `Airs/Binary/BinaryExtension.lean` wrapper, mirroring the
+   existing `BinaryAdd` extraction. `tools/zisk-pil-extract/` does
+   not need new tooling; the PIL constraints are tractable
+   (8 constraints, 830 exprs per `air-inventory.md`).
+
+4. **Author the K1-A analogue** for `BinaryExtension`'s W-variant
+   carry chain — i.e. a `binary_extension_chunks_eq_bv_addw_truncated`
+   theorem proving the chunk-level identity for the 32-bit truncated
+   add lifts to a `BitVec 64` value matching the W-variant spec
+   (zero-extension on the high half, sign-extension if applicable).
+
+5. **Author `addw_compositional_with_binaryextension` /
+   `addiw_compositional_with_binaryextension` /
+   `subw_compositional_with_binaryextension`** in `Spec/<Op>.lean`,
+   analogous to step (1) but binding `Valid_BinaryExtension`
+   instead of `Valid_BinaryAdd`.
+
+The total scope for the W-variants is comparable to a fresh
+Phase-1 keystone: an AIR-extraction layer + a packed-correctness
+keystone + Spec theorems. The non-W ADDI/SUB upgrade is smaller
+(one Spec theorem each) but still requires authoring new Spec
+content, which is forbidden by the Wave B.6 retry scope.
+
+### What is currently OK to ship
+
+The current `Arith.lean` (this commit) is **Tier 1** for ADD and
+**Tier 1.5** for ADDI/ADDW/ADDIW/SUB/SUBW: the residual OUTPUT-EQ
+parameter `h_input_val` is honestly named and documented as the
+Phase-4 Binary-SM audit obligation — i.e. the trust gap is named
+even though it is not yet derived. The byte-decomposition layer
+(lane-match + byte ranges → byte-sum Nat equality →
+`U64.toBV = spec_val`) is real Tier-1 work and stays in place;
+only the chunk-level claim about Binary SM correctness remains as
+a hypothesis.
+
+When the user dispatches the future infrastructure phase, the
+ALU-Arith derivation lemmas can drop `h_input_val` and compose
+the new Spec / AIR theorems internally — no re-architecture of
+this file is needed, just a parameter swap and a proof-body
+composition.
