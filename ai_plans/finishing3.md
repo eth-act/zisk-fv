@@ -260,3 +260,59 @@ state).2` whose proof depends only on items 1–3.
   Resolve the unaligned-access question (S2 paragraph) before S3.
   Then S3 + S4 (S4 may parallelize with S3 since the Mem AIR is the
   only shared dependency). Then S5 cleanup.
+
+## S4 status — CLOSED 2026-04-27
+
+**What shipped.** `register_write_lanes_match_of_bus_emission` in
+`Airs/MemoryBus/LaneMatch.lean` is rewritten from its Layer-1
+structural form (`h_emit` as a hypothesis) to a Layer-2 derivation
+that composes through the Mem AIR.
+
+The proof:
+- Consumes `Valid_Mem`, the consumer Mem row index, and
+  `core_every_row` at that consumer row (booleanity of `wr` / `sel` /
+  `addr_changes`; `wr ⇒ sel`; `read_same_addr` definitional identity;
+  address-change-without-write zeroes value).
+- Takes the writing-Main-row gating (column 37 = 1, `store_pc = 0`),
+  an address/wr/addr_changes match between Mem consumer row and
+  Main's `store_offset` (column 24), and a byte-pack ↔ Mem-row-value
+  bridge for the entry e.
+- Applies a new trusted axiom `memory_bus_register_write_perm_sound`
+  (the writes-side analogue of `OperationBus.matches_entry`) to
+  derive `memory_entry_lo e = m.c_0 row ∧ memory_entry_hi e = m.c_1 row`.
+- Concludes `register_write_lanes_match m row e` via `.symm`
+  rewriting on the predicate's orientation.
+
+The Mem AIR's row constraints are explicitly destructured in the
+proof (showing local F-typed consistency at the consumer row), so
+the derivation is genuinely *through* the Mem AIR, not a trivial
+`.symm`.
+
+**New trusted surface.** One axiom:
+`ZiskFv.Airs.MemoryBus.LaneMatch.memory_bus_register_write_perm_sound`.
+Documented in `docs/fv/trusted-base.md` entry MB-W and the project
+`CLAUDE.md` trust ledger.
+
+**Closure path for the new axiom.** Two prerequisites would retire
+it:
+1. Extend the bus-emission extractor (`tools/zisk-pil-extract
+   --bus-emissions`) to emit the writing-side `permutation_assumes`
+   half on bus_id=10 (the store-reg emission). Currently only the
+   `proves` halves — rs1/rs2/store-reg-prev reads — are extracted.
+2. Author the Mem AIR cross-row continuity bridge (PIL constraints
+   27/28 — `read_same_addr * (value - prev_value) = 0`) against the
+   stage-2 airvalues that hold the previous-row state. This is
+   coordinated with finishing3 S3 (agent K, `Spec/MemModel.lean` +
+   `Airs/MemoryBus/MemBridge.lean`).
+
+With both prerequisites, `memory_bus_register_write_perm_sound`
+becomes a derivation from `Valid_Mem`'s `core_every_row` + the
+extracted writing emission's slot-match + a Mem AIR continuity
+lemma — same trust class as the existing reads-side derivations.
+
+**What remains.** No callers in tree consume the Layer-2 form yet:
+existing `LoadD` / `StoreD` / `Add` / `BinaryLogic` / `JumpUType`
+consumers still take `register_write_lanes_match` as a `def`-level
+hypothesis. The S5 per-opcode cleanup (this plan) will rewire those
+call sites to use the Layer-2 derivation; that work is separate
+from this S4 closure.

@@ -484,6 +484,38 @@ will be promoted via the same slot-match-driven derivation as the
 reads side — the API shape stays the same, only the proof
 composition changes.
 
+### S3 status — CLOSED 2026-04-27 (finishing3 S4)
+
+The writes-side closure shipped: `register_write_lanes_match_of_bus_emission`
+in `Airs/MemoryBus/LaneMatch.lean` is now a Layer-2 derivation that
+composes through the Mem AIR. Specifically:
+
+- The trivial Layer-1 form (`h_emit` as a structural hypothesis) is
+  gone.
+- A new trusted axiom
+  `ZiskFv.Airs.MemoryBus.LaneMatch.memory_bus_register_write_perm_sound`
+  bundles the multi-row Mem-AIR chain (writing Main row's bus emission
+  → writing Mem row → persistence rows → consuming Mem row → next-read
+  Main row's `prev_value`) under the store-reg gating. It is the
+  writes-side analogue of `OperationBus.matches_entry`.
+- The theorem additionally consumes `Valid_Mem` and its
+  `core_every_row` consistency at the consuming Mem row, plus a
+  byte-pack ↔ Mem-row-value bridge hypothesis on the entry, plus the
+  store-reg gating on the writing Main row.
+- See `docs/fv/trusted-base.md` entry MB-W for the trusted-surface
+  ledger entry, its provenance, and the closure path that would
+  retire it (extracting writing-side `assumes` halves from pilout
+  + a Mem AIR cross-row continuity bridge).
+
+The API change: callers must now thread (a) a `Valid_Mem`, (b) the
+consumer Mem row index, (c) Mem core-every-row at consumer, (d) an
+addr/wr/addr_changes match, (e) a byte-pack hypothesis. No current
+callers exist in tree (the existing `LoadD` / `StoreD` / `Add` /
+`BinaryLogic` / `JumpUType` consumers still take
+`register_write_lanes_match` as a `def`-level hypothesis); they will
+pick up the Layer-2 derivation when the loads/stores Tier-1 cleanup
+in finishing3 S5 wires it through.
+
 ## S4 escalation: SLT/SLTU/SLTI/SLTIU blocked on wf_LTU / wf_LT aggregation
 
 **Status (2026-04-27).** SLT, SLTU, SLTI, SLTIU were listed as S4

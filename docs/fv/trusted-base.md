@@ -1585,3 +1585,155 @@ count unchanged. The 60 `h_rd_val` parameters in
 obligations. The Track P witness theorems shipped in commit `ab9c0f9`
 remain ready to consume as soon as the bus-emission and field-BV-mul
 prerequisites land.
+
+## Memory-bus permutation soundness — register writes (finishing3 S4 — 2026-04-27)
+
+### Entry MB-W: `ZiskFv.Airs.MemoryBus.LaneMatch.memory_bus_register_write_perm_sound`
+
+- **File:** `ZiskFv/ZiskFv/Airs/MemoryBus/LaneMatch.lean`.
+- **Statement:** for every Main row `row` with `assumes_store_reg = 1`
+  (column 37) and `store_pc = 0`, every consuming `MemoryBusEntry e`
+  paired through the memory bus's permutation argument satisfies
+  `memory_entry_lo e = m.c_0 row ∧ memory_entry_hi e = m.c_1 row`,
+  given a Mem AIR consumer row at the matching `(addr=store_offset,
+  wr=0, addr_changes=0)` whose value lanes byte-decompose to e's
+  packed lo/hi halves.
+- **Consumers:** `register_write_lanes_match_of_bus_emission` (the
+  K2 writes-side closure at the LaneMatch layer). Ultimately
+  consumed downstream by load/store metaplan theorems via
+  `register_write_lanes_match`.
+- **Provenance:** `vendor/zisk/state-machines/main/pil/main.pil:316-328`
+  (the `reg_pre_store` + `mem_op` for store-reg) +
+  `vendor/zisk/state-machines/mem/pil/mem.pil:436` (the Mem AIR's
+  `permutation_proves` half on `bus_id = MEMORY_ID = 10`).
+- **Trust class:** memory-bus permutation soundness. This is the
+  writes-side analogue of the operation-bus axiom
+  `OperationBus.matches_entry`, in the same trust class as the
+  project's "proving-system correctness" scope (`CLAUDE.md` trust
+  ledger). The PLONK / logUp permutation argument over `bus_id = 10`
+  delivers multiset equality of emit/consume sites; this axiom
+  bundles the soundness conclusion under the writing-emission gating
+  + consuming-Mem-row hypotheses.
+- **Why it cannot currently be derived in tree:**
+  1. The writing-side bus emission for stores is not extracted as
+     a separate `bus_emission_Main_mem_*` (the F-typed `proves`
+     halves shipped in `Extraction/MemoryBuses.lean` are the rs1 /
+     rs2 / store-reg-prev *reads*, not the stores). A future
+     extractor extension could emit the writing-side `assumes` half
+     on bus_id=10.
+  2. The cross-row "value persists across same-addr no-write reads"
+     chain in the Mem AIR (PIL constraints 27/28 — `read_same_addr
+     * (value - prev_value) = 0`) is in the F/ExtF stub bucket of
+     `Airs/Mem.lean`: `read_same_addr` is F-typed but `previous_value`
+     references either an airvalue (stage-2) on the first row or
+     `'value` (rotation = -1) on subsequent rows, mixing F with
+     ExtF challenge randomness on the bus-protocol path.
+- **Closure path if promoted to theorem:** extend the bus-emission
+  extractor (`tools/zisk-pil-extract --bus-emissions`) to emit the
+  writing-side `permutation_assumes` halves, write the Mem AIR
+  cross-row continuity bridge against the airvalue-typed previous
+  row state, and combine to derive the soundness statement from
+  in-tree pieces. Estimated several hundred lines split across the
+  Rust extractor, `Extraction/MemoryBuses.lean`, and a new
+  `Airs/MemoryBus/MemBridge.lean` (which agent K is concurrently
+  authoring as part of finishing3 S3). Once that bridge ships, this
+  axiom retires in favor of a derivation from the Mem AIR's
+  `Valid_Mem` consistency + PLONK-protocol primitives.
+- **Audit scope:** any change to ZisK's memory-bus PIL macros
+  (`mem_op`, `reg_pre_store`, `permutation_proves` on `bus_id =
+  MEMORY_ID`) requires re-signing this axiom. The selector column
+  (37, `assumes_store_reg`) and the store-offset column (24,
+  `store_offset`) are pinned to PIL columns; if the PIL layout
+  changes those, this axiom's column references must update too.
+
+## Memory-model bridge — load / store paths (finishing3 S3 — 2026-04-27)
+
+The S3 closure in `ZiskFv/Spec/MemModel.lean` and
+`ZiskFv/Airs/MemoryBus/MemBridge.lean` introduces **four** new axioms
+to package the memory-bus / Sail-state correspondence. Together they
+replace the per-opcode M-family `h_bus_execute_matches_sail` parameter
+on load / store metaplan theorems with a single chain whose only trust
+inputs are these axioms (plus the always-trusted bus-effect /
+chip_bus_hyps machinery already in tree).
+
+### Entry MB-L: `ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load`
+
+- **File:** `ZiskFv/ZiskFv/Airs/MemoryBus/MemBridge.lean`.
+- **Statement:** for every Main row `r_main` whose memory-bus emission
+  is a load (`b_0 = lo(e), b_1 = hi(e), as = 2, multiplicity = -1`),
+  there exists a Mem AIR row `r_mem` whose
+  `(addr, step, value_0, value_1, wr)` projection matches the entry
+  `(ptr, timestamp, lo, hi, 0)`.
+- **Consumers:** `memory_load_lanes_match_of_mem_row` and
+  `Spec.MemModel.mem_load_correct`.
+- **Provenance:** `vendor/zisk/state-machines/mem/pil/mem.pil:526` —
+  the memory bus's `permutation_assumes` half pulls from the Mem AIR's
+  per-row state. Trust class: PLONK / logUp / permutation-argument
+  soundness, project-trusted (`CLAUDE.md` "Trust scoping").
+- **Why axiomatic:** PLONK-style multiset equality for `bus_id = 10`
+  is project-trusted; this axiom bundles the soundness conclusion
+  in a structurally usable form.
+- **Mirrors:** the operation-bus pattern at `bus_id = 5000`
+  (`OperationBus.matches_entry`).
+
+### Entry MB-S: `ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_store`
+
+- **File:** `ZiskFv/ZiskFv/Airs/MemoryBus/MemBridge.lean`.
+- **Statement:** dual of MB-L for stores: for every Main row whose
+  emission is a store (`c_0 = lo(e), c_1 = hi(e), as = 2,
+  multiplicity = 1`), there exists a Mem AIR row matching the entry
+  with `wr = 1`.
+- **Consumers:** `memory_store_lanes_match_of_mem_row` and
+  `Spec.MemModel.mem_store_correct`.
+- **Provenance:** same memory-bus permutation soundness as MB-L,
+  store-side; `vendor/zisk/state-machines/mem/pil/mem.pil:527`.
+- **Note vs MB-W:** MB-W (declared by agent L in `LaneMatch.lean`) is
+  scoped to the *register-write* path on the memory bus — i.e. the
+  `as = 3` register-side write that is consistency-checked via the
+  Mem AIR's `prev_value` chain. MB-S is the *memory-write* path
+  (`as = 2`) used by SD/SW/SH/SB. The two address-space sides differ
+  in the value-carrying convention (register: 32-bit lanes; memory:
+  byte decomposition); we keep them as separate axioms because the
+  PIL macros they correspond to are also separate.
+
+### Entry MS-L: `ZiskFv.Spec.MemModel.row_models_sail_state_load`
+
+- **File:** `ZiskFv/ZiskFv/Spec/MemModel.lean`.
+- **Statement:** given a Mem AIR row `r_mem` matching a load-side bus
+  entry `e` with `wr = 0` and `sel = 1`, the Sail state's memory at
+  `e.ptr.toNat + i` agrees with `e.x_i` for each of the eight byte
+  lanes.
+- **Consumers:** `Spec.MemModel.mem_load_correct` (the M*-axiom
+  replacement at the metaplan layer).
+- **Provenance:** the Sail RV64IM memory model (`LeanRV64D`'s
+  `state.mem`) and the ZisK Mem AIR's read protocol
+  (`mem.pil:524-527`). Trust class: implementation-models-spec
+  faithfulness — the Mem state-machine's view of memory must agree
+  with Sail's at this point in execution.
+- **Why axiomatic:** this is the irreducible correspondence between
+  ZisK's memory state-machine model (a multiset of address-step-value
+  rows enforced by permutation soundness) and Sail's memory model
+  (a `Std.HashMap Nat (BitVec 8)`). Closing it would require a
+  whole-trace argument that ZisK's Mem AIR is a correct refinement
+  of Sail's `state.mem`. Out of per-opcode scope.
+
+### Entry MS-S: `ZiskFv.Spec.MemModel.row_models_sail_state_store`
+
+- **File:** `ZiskFv/ZiskFv/Spec/MemModel.lean`.
+- **Statement:** given a Mem AIR row in write mode (`wr = 1, sel = 1`)
+  matching a store bus entry, the post-store Sail state's `state.mem`
+  agrees byte-by-byte with the entry's lanes (in the same eight
+  `mem.insert` chain shape `bus_effect`'s store branch produces).
+- **Consumers:** `Spec.MemModel.mem_store_correct`.
+- **Provenance:** dual to MS-L, store-side. Same trust class.
+- **Why axiomatic:** same reason as MS-L: irreducible
+  implementation-models-spec correspondence between ZisK's Mem AIR
+  and Sail's memory model on the write side.
+
+### M-family retirement scoping
+
+The four axioms above (MB-L, MB-S, MS-L, MS-S) are designed to
+**replace** per-opcode `h_bus_execute_matches_sail` hypotheses on the
+load / store metaplan theorems. Per-opcode rewiring (S5 of
+`finishing3.md`) is left to follow-up commits — the bridge lemmas
+shipped here unblock that work without performing it.

@@ -78,6 +78,33 @@ reduction and is welcome but out of scope for current phases.
 - `ZiskFv.Airs.BinaryExtensionTable` (added in `finishing2.md` S0) — the
   shift lookup table at `bus_id=124` carries per-byte shift semantics
   from `binary_extension_table.pil` (SLL/SRL/SRA byte-level views).
+- `ZiskFv.Airs.MemoryBus.LaneMatch.memory_bus_register_write_perm_sound`
+  (added in `finishing3.md` S4) — memory-bus permutation soundness for
+  register writes (`bus_id=10`): bundles the multi-row Mem-AIR chain
+  (writing Main row's emission ↔ writing Mem row ↔ persistence rows ↔
+  consuming Mem row ↔ next-read Main row's `prev_value`) under the
+  store-reg gating, in the same shape as `OperationBus.matches_entry`.
+  Closes the K2 writes-side lane match. See
+  `docs/fv/trusted-base.md`'s entry MB-W for the full provenance and
+  closure path.
+- `ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load`
+  / `..._store` (added in `finishing3.md` S3) — memory-bus permutation
+  soundness for the *memory-side* (`as=2`) load / store paths used by
+  LD / SD / LW / SW / LH / SH / LB / SB. Pair Main's load/store
+  emission with a Mem AIR row carrying the same
+  `(addr, step, value_0, value_1)` projection. Same trust class as
+  MB-W (logUp / permutation argument over `bus_id=10`); separate
+  axioms because they operate on the memory-side address space rather
+  than the register-side. Entries MB-L / MB-S in
+  `docs/fv/trusted-base.md`.
+- `ZiskFv.Spec.MemModel.row_models_sail_state_load` / `..._store`
+  (added in `finishing3.md` S3) — Sail-side state-bridge: a Mem AIR
+  row matching a memory bus entry agrees with `state.mem` byte-by-byte
+  (load: pre-state matches; store: post-state matches). Replaces the
+  per-opcode M-family `*_pure_equiv_axiom` parameters at the metaplan
+  layer. Trust class: implementation-models-spec faithfulness between
+  ZisK's Mem state-machine and Sail's memory model. Entries MS-L /
+  MS-S in `docs/fv/trusted-base.md`.
 
 ## Working conventions
 
