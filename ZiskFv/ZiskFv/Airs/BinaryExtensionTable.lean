@@ -96,30 +96,89 @@ def wf_SRL (e : BinaryExtensionTableEntry FGL) : Prop :=
     e.c_hi_byte.val = shifted / (2 ^ 32) ∧
     e.op_is_shift.val = 1
 
-/-- Shift-right arithmetic: as SRL but for the highest byte
-    (`byte_index = 7`), if the sign bit is set, the high bits become 1.
-    The full sign-aware semantics is deferred until the downstream
-    consumer needs it; this stub captures the basic shape. -/
+/-- Shift-right arithmetic: as SRL but at `byte_index = 7` with the
+    high bit of `a_byte` set, the output gains the sign-extension mask
+    `MASK_64 << (64 - s) % 2^64 = 2^64 - 2^(64 - s)`.
+
+    Reference: `vendor/zisk/state-machines/binary/pil/binary_extension_table.pil`,
+    `case OP_SRA`. The PIL's `out | (MASK_64 << (64 - _b))` expression,
+    once truncated to 64 bits via the `c0 = out & MASK_32; c1 = (out >> 32) & MASK_32`
+    extraction, is equivalent to adding `2^64 - 2^(64 - s)` to the
+    base shifted value (because the sign-extension mask occupies the
+    high bits `[64-s, 64)` and the base shifted value occupies bits
+    `[56-s, 64-s)` — disjoint, so OR = +). For `s = 0` the mask
+    `2^64 - 2^64 = 0` collapses, matching Rust's `b_low != 0` guard. -/
 def wf_SRA (e : BinaryExtensionTableEntry FGL) : Prop :=
   e.op.val = OP_SRA →
+    let s : ℕ := e.shift_amount.val % 64
+    let positioned : ℕ := e.a_byte.val * (256 ^ e.byte_index.val)
+    let base : ℕ := positioned >>> s
+    let ext : ℕ :=
+      if e.byte_index.val = 7 ∧ e.a_byte.val ≥ 128
+      then 2 ^ 64 - 2 ^ (64 - s)
+      else 0
+    let full : ℕ := base + ext
+    e.c_lo_byte.val = full % (2 ^ 32) ∧
+    e.c_hi_byte.val = full / (2 ^ 32) ∧
     e.op_is_shift.val = 1
-    -- (sign-extension semantics deferred)
 
 /-- 32-bit shift-left logical (word-mode). For `byte_index ≥ 4` the
-    contribution is 0; otherwise the low-32 result is sign-extended. -/
+    contribution is 0. Otherwise, let `s = shift_amount % 32` and
+    `inner = (a_byte * 256^byte_index * 2^s) % 2^32` (the byte's
+    contribution to the low-32 word-sized result). The byte's
+    high-32 output is `2^32 - 1` if `inner ≥ 2^31` (sign bit set),
+    else 0 — encoding the per-byte share of the W-mode sign extension.
+
+    Reference: `case OP_SLL_W` in `binary_extension_table.pil` /
+    `binary_extension.rs`. -/
 def wf_SLL_W (e : BinaryExtensionTableEntry FGL) : Prop :=
   e.op.val = OP_SLL_W →
+    let s : ℕ := e.shift_amount.val % 32
+    let positioned : ℕ := e.a_byte.val * (256 ^ e.byte_index.val)
+    let inner : ℕ :=
+      if e.byte_index.val < 4 then (positioned <<< s) % (2 ^ 32) else 0
+    e.c_lo_byte.val = inner ∧
+    e.c_hi_byte.val = (if inner ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0) ∧
     e.op_is_shift.val = 1
-    -- (W-mode semantics deferred)
 
-/-- 32-bit shift-right logical (word-mode). -/
+/-- 32-bit shift-right logical (word-mode). For `byte_index ≥ 4` the
+    contribution is 0. Otherwise, let `s = shift_amount % 32` and
+    `inner = (a_byte * 256^byte_index) >>> s` (the byte's contribution
+    to the low-32 word-sized result; this fits in 32 bits because
+    `byte_index < 4` and `a_byte < 256`). The byte's high-32 output
+    is `2^32 - 1` if `inner ≥ 2^31`, else 0.
+
+    Reference: `case OP_SRL_W`. -/
 def wf_SRL_W (e : BinaryExtensionTableEntry FGL) : Prop :=
   e.op.val = OP_SRL_W →
+    let s : ℕ := e.shift_amount.val % 32
+    let positioned : ℕ := e.a_byte.val * (256 ^ e.byte_index.val)
+    let inner : ℕ :=
+      if e.byte_index.val < 4 then positioned >>> s else 0
+    e.c_lo_byte.val = inner ∧
+    e.c_hi_byte.val = (if inner ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0) ∧
     e.op_is_shift.val = 1
 
-/-- 32-bit shift-right arithmetic (word-mode). -/
+/-- 32-bit shift-right arithmetic (word-mode). For `byte_index ≥ 4`
+    the contribution is 0. Otherwise, let `s = shift_amount % 32`,
+    `base = (a_byte * 256^byte_index) >>> s`. At `byte_index = 3` with
+    high bit of `a_byte` set, the byte additionally contributes the
+    sign-extension mask `MASK_64 << (32 - s) % 2^64 = 2^64 - 2^(32 - s)`.
+
+    Reference: `case OP_SRA_W`. -/
 def wf_SRA_W (e : BinaryExtensionTableEntry FGL) : Prop :=
   e.op.val = OP_SRA_W →
+    let s : ℕ := e.shift_amount.val % 32
+    let positioned : ℕ := e.a_byte.val * (256 ^ e.byte_index.val)
+    let base : ℕ :=
+      if e.byte_index.val < 4 then positioned >>> s else 0
+    let ext : ℕ :=
+      if e.byte_index.val = 3 ∧ e.a_byte.val ≥ 128
+      then 2 ^ 64 - 2 ^ (32 - s)
+      else 0
+    let full : ℕ := base + ext
+    e.c_lo_byte.val = full % (2 ^ 32) ∧
+    e.c_hi_byte.val = full / (2 ^ 32) ∧
     e.op_is_shift.val = 1
 
 /-- The full trusted per-row well-formedness. Mirror of

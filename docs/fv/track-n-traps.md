@@ -626,3 +626,90 @@ file is **not extended** by S4 — its existing 6-opcode coverage
 ADDI) / Tier-1.5 (rest) classification as it shipped from
 finishing1.
 
+## finishing2 S2 follow-on findings (BinaryExtensionPackedCorrect)
+
+### 1. `2 ^ (32 - 1)` does not reduce inside `decide`
+
+When applying `BitVec.msb_eq_decide` to a `BitVec 32`, the result is
+`decide (2 ^ (32 - 1) ≤ x.toNat)`. Lean v4.26 will **not** reduce
+`32 - 1` to `31` inside the `decide` operand, even with `dsimp`,
+`norm_num`, `rw [show 2^(32-1) = 2^31 from rfl]`, or `rfl` after
+`congr 1`. Multiple workarounds tried:
+- `rfl` directly — fails (msb LHS uses `≤`, RHS uses `≥`).
+- `simp [ge_iff_le]` — does not enter `decide`.
+- `decide_eq_decide` rewrite — pattern doesn't unify the asymmetric
+  shape `decide (2^(32-1) ≤ ...) = decide (... ≥ 2^31)`.
+
+**Workaround that works.** State the conclusion as an `Iff` rather
+than as a `decide = decide` equality, then proceed via
+`decide_eq_true_iff`:
+
+```lean
+have h_msb_eq :
+    ((BitVec.ofNat 32 a32) >>> sft).msb = true ↔ a32 / 2^sft ≥ 2^31 := by
+  rw [BitVec.msb_eq_decide, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt h_a32_lt, Nat.shiftRight_eq_div_pow]
+  have hp : (2 : ℕ) ^ (32 - 1) = 2 ^ 31 := by norm_num
+  constructor
+  · intro h; have h' := decide_eq_true_iff.mp h; omega
+  · intro h; apply decide_eq_true_iff.mpr; omega
+```
+
+Then `simp only [h_msb_eq]` rewrites the `if msb then ... else ...`
+guard at the lift's main goal. Used in `srlw_bv_core`.
+
+### 2. Kernel deep recursion on the SRA lift
+
+The full `binary_extension_sra_chunks_eq_bv_sshr` proof, when written
+inline, hits "(kernel) deep recursion detected" at the theorem's
+toNat-level proof term. Even with `set_option maxRecDepth 4096` and
+`--tstack=400000`, the kernel cannot verify the complete term inline.
+
+**Workaround.** Extract three sub-lemmas:
+- `byte_split_div_8` — the 8-byte right-shift distribution
+  (`a64 / 2^sft = sum_i a_i * 256^i / 2^sft`), via 7 applications of
+  `byte_pair_div_pow_two`.
+- `sra_msb_true_identity` — the negative-arithmetic-shift identity
+  `2^64 - 1 - (2^64 - 1 - a) >>> s = a / 2^s + (2^64 - 2^(64-s))` for
+  `a < 2^64`, `s < 64`.
+- `sra_nat_core` — the Nat-level statement (Nat shape, no BitVec).
+  Then `sra_bv_core` is a thin BitVec wrapper over `sra_nat_core`.
+
+Each sub-lemma's body fits within kernel limits; the wrapper is small
+because each invocation is opaque to the kernel. Same pattern used for
+`srlw_bv_core` (extracted `byte_split_div_4`,
+`a32_div_ge_2_31_iff_byte3`, `srlw_nat_core` helpers).
+
+### 3. Status of SLL_W / SRA_W lifts
+
+S2 follow-on shipped `binary_extension_sra_chunks_eq_bv_sshr` (full
+SRA) and `binary_extension_srlw_chunks_eq_bv_ushr_w` (SRL_W). The
+remaining two lifts (`binary_extension_sllw_chunks_eq_bv_shl_w`,
+`binary_extension_sraw_chunks_eq_bv_sshr_w`) are **not yet authored**
+because they require an additional helper:
+
+- **SLL_W** needs a 4-byte left-shift modulus identity: for byte
+  contributions `cl_j = (a_j * 256^j * 2^s) % 2^32` with `j ∈ [0, 4)`,
+  show `sum cl_j = (a32 * 2^s) % 2^32` (i.e., the per-byte values
+  occupy disjoint bit positions modulo 32, so summing them equals the
+  total mod). The disjointness argument requires bit-level reasoning
+  (or a Nat.add_mod chain with the observation that each `cl_j < 2^32`
+  and the partial sums each fit because of disjointness — non-trivial
+  to verify without `omega` choking on division-by-pow-two).
+
+- **SRA_W** is structurally similar to SRL_W plus an additional sign
+  extension at byte 3 (analogous to SRA's byte-7 extension but at the
+  32-bit boundary). The `sraw_byte_eq` helper is already in place; the
+  lift body needs to mirror `binary_extension_sra_chunks_eq_bv_sshr`'s
+  case analysis but on a 4-byte (not 8-byte) operand.
+
+Both `wf_SLL_W` and `wf_SRA_W` clauses **are** strengthened with full
+byte-level semantics in `Airs/BinaryExtensionTable.lean` — the trusted
+contract carries the information needed; only the K1-C lift wrapping
+remains. Downstream consumers (RV64D / Spec / Equivalence) needing
+SLL_W or SRA_W can either:
+1. Wait for the lift to ship, or
+2. Use the strengthened `wf_*` clauses directly via the existing
+   `sllw_byte_eq` / `sraw_byte_eq` helpers (which are exposed at
+   private-but-in-namespace scope; promote to `theorem` if needed).
+
