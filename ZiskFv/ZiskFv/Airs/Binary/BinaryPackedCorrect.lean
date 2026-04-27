@@ -787,7 +787,7 @@ but the borrow used in the byte equation is the structural one). -/
     `a_i + 256·B_i = c_i + cin_i + b_i` (B_i ∈ {0,1}, cin_0 = init_cin,
     cin_{i+1} = B_i). Concludes `A4 + 2^32·B3 = init_cin + B4 + C4`
     where `A4 = a0 + a1·256 + a2·256² + a3·256³` etc. -/
-private lemma sub_telescope_4byte
+lemma sub_telescope_4byte
     (a0 a1 a2 a3 b0 b1 b2 b3 c0 c1 c2 c3 init_cin B0 B1 B2 B3 : ℕ)
     (h0 : a0 + 256 * B0 = c0 + init_cin + b0)
     (h1 : a1 + 256 * B1 = c1 + B0 + b1)
@@ -1098,7 +1098,7 @@ suitable for telescoping. -/
     `a + 256·B = c + cin + b` for some `B ∈ {0,1}` (the structural
     borrow). Returns the borrow `B` existentially packaged as
     `∃ B, B ≤ 1 ∧ ...`. -/
-private lemma sub_byte_uniform_eq
+lemma sub_byte_uniform_eq
     (a b c cin_cell flags_cell pos_cell : FGL)
     (h : consumer_byte_match_chain OP_SUB a b c cin_cell flags_cell pos_cell)
     (ha : a.val < 256) (hb : b.val < 256)
@@ -1124,7 +1124,7 @@ private lemma sub_byte_uniform_eq
 
 /-- Per-byte SUB equation that **also** asserts that for non-final
     bytes, the borrow `B` matches `flags_cell.val % 2`. -/
-private lemma sub_byte_nonfinal_eq
+lemma sub_byte_nonfinal_eq
     (a b c cin_cell flags_cell pos_cell : FGL)
     (h : consumer_byte_match_chain OP_SUB a b c cin_cell flags_cell pos_cell)
     (ha : a.val < 256) (hb : b.val < 256)
@@ -1920,6 +1920,190 @@ theorem binary_addw_chunks_eq_bv_add_w
       (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216)
       (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216)
       (by omega) (by omega) (by omega) h_lo_mod hClo_neg
+
+/-! ## K1-B chain lift: SUBW
+
+W-mode subtraction: bytes 0..3 use OP_SUB (with `pi3 = 1` plast), bytes 4..7
+use SEXT_00 (positive low-32 result) or SEXT_FF (negative). The conclusion
+is `BitVec.signExtend 64 (a32 - b32) = c64`.
+
+Mirrors `binary_addw_chunks_eq_bv_add_w`'s structure modulo OP_ADD vs
+OP_SUB and the carry vs borrow direction. -/
+
+/-- SUBW positive-half finisher (Csum < 2^31, sext_00 high bytes).
+    Given the SUB telescope `Asum + 2^32 * B3 = Bsum + Csum` with
+    `B3 ∈ {0, 1}` and `Csum < 2^31`, conclude
+    `BitVec.signExtend 64 (BitVec.ofNat 32 Asum - BitVec.ofNat 32 Bsum)
+     = BitVec.ofNat 64 Csum`. -/
+private lemma subw_close_pos
+    (Asum Bsum Csum B3 : ℕ)
+    (hA_lt : Asum < 4294967296) (hB_lt : Bsum < 4294967296)
+    (hC_lt : Csum < 4294967296)
+    (hB3_le : B3 ≤ 1)
+    (h_telescope : Asum + 4294967296 * B3 = Bsum + Csum)
+    (hCpos : Csum < 2147483648) :
+    BitVec.signExtend 64 (BitVec.ofNat 32 Asum - BitVec.ofNat 32 Bsum)
+      = BitVec.ofNat 64 Csum := by
+  apply BitVec.eq_of_toNat_eq
+  have h_sub_toNat :
+      (BitVec.ofNat 32 Asum - BitVec.ofNat 32 Bsum).toNat = Csum := by
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+        Nat.mod_eq_of_lt hA_lt, Nat.mod_eq_of_lt hB_lt]
+    show (2^32 - Bsum + Asum) % 2^32 = Csum
+    have h2_32 : (2^32 : ℕ) = 4294967296 := by norm_num
+    rw [h2_32]
+    interval_cases B3
+    · simp at h_telescope
+      have hBsum_le : Bsum ≤ Asum := by omega
+      have h_eq : (4294967296 - Bsum + Asum) = 4294967296 + Csum := by omega
+      rw [h_eq]
+      have h_eq2 : (4294967296 + Csum) % 4294967296 = Csum := by
+        rw [Nat.add_comm, Nat.add_mod, Nat.mod_self, Nat.add_zero, Nat.mod_mod,
+            Nat.mod_eq_of_lt hC_lt]
+      exact h_eq2
+    · simp at h_telescope
+      have h_eq : 4294967296 - Bsum + Asum = Csum := by omega
+      rw [h_eq]
+      exact Nat.mod_eq_of_lt hC_lt
+  rw [BitVec.toNat_signExtend, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
+      BitVec.msb_eq_decide, h_sub_toNat]
+  have h_clo_mod_64 : Csum % 2^64 = Csum := Nat.mod_eq_of_lt (by omega)
+  rw [h_clo_mod_64]
+  have h_pow : (2 ^ (32 - 1) : ℕ) = 2147483648 := by norm_num
+  rw [h_pow]
+  rw [show decide (2147483648 ≤ Csum) = false from by
+    rw [decide_eq_false_iff_not]; omega]
+  rw [if_neg (by simp)]
+  exact (Nat.add_zero _).symm
+
+/-- SUBW negative-half finisher (Csum ≥ 2^31, sext_FF high bytes). -/
+private lemma subw_close_neg
+    (Asum Bsum Csum B3 : ℕ)
+    (hA_lt : Asum < 4294967296) (hB_lt : Bsum < 4294967296)
+    (hC_lt : Csum < 4294967296)
+    (hB3_le : B3 ≤ 1)
+    (h_telescope : Asum + 4294967296 * B3 = Bsum + Csum)
+    (hCneg : Csum ≥ 2147483648) :
+    BitVec.signExtend 64 (BitVec.ofNat 32 Asum - BitVec.ofNat 32 Bsum)
+      = BitVec.ofNat 64 (Csum + 18446744069414584320) := by
+  apply BitVec.eq_of_toNat_eq
+  have h_sub_toNat :
+      (BitVec.ofNat 32 Asum - BitVec.ofNat 32 Bsum).toNat = Csum := by
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+        Nat.mod_eq_of_lt hA_lt, Nat.mod_eq_of_lt hB_lt]
+    show (2^32 - Bsum + Asum) % 2^32 = Csum
+    have h2_32 : (2^32 : ℕ) = 4294967296 := by norm_num
+    rw [h2_32]
+    interval_cases B3
+    · simp at h_telescope
+      have hBsum_le : Bsum ≤ Asum := by omega
+      have h_eq : (4294967296 - Bsum + Asum) = 4294967296 + Csum := by omega
+      rw [h_eq]
+      have h_eq2 : (4294967296 + Csum) % 4294967296 = Csum := by
+        rw [Nat.add_comm, Nat.add_mod, Nat.mod_self, Nat.add_zero, Nat.mod_mod,
+            Nat.mod_eq_of_lt hC_lt]
+      exact h_eq2
+    · simp at h_telescope
+      have h_eq : 4294967296 - Bsum + Asum = Csum := by omega
+      rw [h_eq]
+      exact Nat.mod_eq_of_lt hC_lt
+  rw [BitVec.toNat_signExtend, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
+      BitVec.msb_eq_decide, h_sub_toNat]
+  have h_clo_mod_64 : Csum % 2^64 = Csum := Nat.mod_eq_of_lt (by omega)
+  rw [h_clo_mod_64]
+  have h_pow : (2 ^ (32 - 1) : ℕ) = 2147483648 := by norm_num
+  rw [h_pow]
+  rw [show decide (2147483648 ≤ Csum) = true from by
+    rw [decide_eq_true_iff]; exact hCneg]
+  rw [if_pos rfl]
+  have h_rhs_lt : Csum + 18446744069414584320 < 2^64 := by omega
+  rw [Nat.mod_eq_of_lt h_rhs_lt]
+
+/-- **K1-B for SUBW.** Bytes 0..3 form an OP_SUB chain (with byte 3 as
+    plast, forcing `flags_3 % 2 = 0` although here we use the structural
+    borrow `B3`). Bytes 4..7 are sign-extension: SEXT_00 when the low-32
+    result has high bit clear, SEXT_FF otherwise.
+
+    Same shape as `binary_addw_chunks_eq_bv_add_w`. -/
+theorem binary_subw_chunks_eq_bv_sub_w
+    (a0 a1 a2 a3 b0 b1 b2 b3
+     c0 c1 c2 c3 c4 c5 c6 c7
+     cin0 cin1 cin2 cin3
+     fl0 fl1 fl2 fl3
+     pi0 pi1 pi2 pi3 : FGL)
+    (h_byte_0 : consumer_byte_match_chain OP_SUB a0 b0 c0 cin0 fl0 pi0)
+    (h_byte_1 : consumer_byte_match_chain OP_SUB a1 b1 c1 cin1 fl1 pi1)
+    (h_byte_2 : consumer_byte_match_chain OP_SUB a2 b2 c2 cin2 fl2 pi2)
+    (h_byte_3 : consumer_byte_match_chain OP_SUB a3 b3 c3 cin3 fl3 pi3)
+    (ha0 : a0.val < 256) (ha1 : a1.val < 256) (ha2 : a2.val < 256) (ha3 : a3.val < 256)
+    (hb0 : b0.val < 256) (hb1 : b1.val < 256) (hb2 : b2.val < 256) (hb3 : b3.val < 256)
+    (hc0 : c0.val < 256) (hc1 : c1.val < 256) (hc2 : c2.val < 256) (hc3 : c3.val < 256)
+    (h_cin0 : cin0.val = 0)
+    (h_cin1 : cin1.val = fl0.val % 2)
+    (h_cin2 : cin2.val = fl1.val % 2)
+    (h_cin3 : cin3.val = fl2.val % 2)
+    (h_pi0 : pi0.val ≠ 1) (h_pi1 : pi1.val ≠ 1) (h_pi2 : pi2.val ≠ 1)
+    (_h_pi3 : pi3.val = 1)
+    (h_sext_choice :
+      ((c4.val = 0 ∧ c5.val = 0 ∧ c6.val = 0 ∧ c7.val = 0) ∧
+        c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216 < 2147483648) ∨
+      ((c4.val = 255 ∧ c5.val = 255 ∧ c6.val = 255 ∧ c7.val = 255) ∧
+        c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216 ≥ 2147483648)) :
+    BitVec.signExtend 64 (
+      BitVec.ofNat 32 (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+      -
+      BitVec.ofNat 32 (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216))
+    = BitVec.ofNat 64
+      (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+        + c4.val * 4294967296 + c5.val * 1099511627776
+        + c6.val * 281474976710656 + c7.val * 72057594037927936) := by
+  have h_cin0_lt : cin0.val < 2 := by omega
+  have h_cin1_lt : cin1.val < 2 := by
+    rw [h_cin1]; exact Nat.mod_lt _ (by norm_num)
+  have h_cin2_lt : cin2.val < 2 := by
+    rw [h_cin2]; exact Nat.mod_lt _ (by norm_num)
+  have h_cin3_lt : cin3.val < 2 := by
+    rw [h_cin3]; exact Nat.mod_lt _ (by norm_num)
+  obtain ⟨he0, _hB0_le⟩ := sub_byte_nonfinal_eq _ _ _ _ _ _ h_byte_0 ha0 hb0 h_cin0_lt h_pi0
+  obtain ⟨he1, _hB1_le⟩ := sub_byte_nonfinal_eq _ _ _ _ _ _ h_byte_1 ha1 hb1 h_cin1_lt h_pi1
+  obtain ⟨he2, _hB2_le⟩ := sub_byte_nonfinal_eq _ _ _ _ _ _ h_byte_2 ha2 hb2 h_cin2_lt h_pi2
+  obtain ⟨B3, hB3_le, he3⟩ := sub_byte_uniform_eq _ _ _ _ _ _ h_byte_3 ha3 hb3 h_cin3_lt
+  rw [h_cin0] at he0
+  rw [h_cin1] at he1
+  rw [h_cin2] at he2
+  rw [h_cin3] at he3
+  have h_telescope := sub_telescope_4byte
+    a0.val a1.val a2.val a3.val
+    b0.val b1.val b2.val b3.val
+    c0.val c1.val c2.val c3.val
+    0 (fl0.val % 2) (fl1.val % 2) (fl2.val % 2) B3
+    he0 he1 he2 he3
+  rw [Nat.zero_add] at h_telescope
+  rcases h_sext_choice with ⟨⟨hc4, hc5, hc6, hc7⟩, hCpos⟩ |
+                            ⟨⟨hc4, hc5, hc6, hc7⟩, hCneg⟩
+  · rw [hc4, hc5, hc6, hc7]
+    have h_rhs : c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+                + 0 * 4294967296 + 0 * 1099511627776
+                + 0 * 281474976710656 + 0 * 72057594037927936
+              = c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216 := by ring
+    rw [h_rhs]
+    exact subw_close_pos
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216)
+      (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216)
+      B3 (by omega) (by omega) (by omega) hB3_le h_telescope hCpos
+  · rw [hc4, hc5, hc6, hc7]
+    have h_rhs : c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+                + 255 * 4294967296 + 255 * 1099511627776
+                + 255 * 281474976710656 + 255 * 72057594037927936
+              = (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216)
+                + 18446744069414584320 := by omega
+    rw [h_rhs]
+    exact subw_close_neg
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216)
+      (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216)
+      B3 (by omega) (by omega) (by omega) hB3_le h_telescope hCneg
 
 end ZiskFv.Airs.Binary
 
