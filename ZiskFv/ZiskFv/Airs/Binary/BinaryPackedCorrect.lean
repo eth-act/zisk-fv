@@ -651,5 +651,162 @@ theorem binary_xor_chunks_eq_bv_xor
   rw [Nat.mod_eq_of_lt hA, Nat.mod_eq_of_lt hB]
   exact (Nat.mod_eq_of_lt (Nat.xor_lt_two_pow hA hB)).symm
 
+/-! ## Chain ops (LTU / LT / SUB / SEXT) — richer per-byte hypothesis
+
+The chain operations need `cin`, `flags`, and `pos_ind` exposed at the
+byte level (in addition to `a_byte`, `b_byte`, `c_byte`). We define a
+richer per-byte match predicate carrying these slots, plus per-op byte
+relation extractors. -/
+
+/-- Extended one-byte-slot consumer hypothesis exposing chain-slot
+    fields. Says: there exists a `BinaryTableEntry` consumed at
+    multiplicity 1 with op `op_val`, byte slots `a, b, c`, carry slot
+    `cin`, flags slot `flags`, and position indicator `pos_ind`. -/
+def consumer_byte_match_chain
+    (op_val : ℕ) (a b c cin flags pos_ind : FGL) : Prop :=
+  ∃ e : BinaryTableEntry FGL,
+    e.multiplicity = 1 ∧
+    e.op.val = op_val ∧
+    e.a_byte = a ∧ e.b_byte = b ∧ e.c_byte = c ∧
+    e.cin = cin ∧ e.flags = flags ∧ e.pos_ind = pos_ind
+
+/-! ### LTU byte-relation extractor -/
+
+/-- LTU byte relation. Given the chain match at `op = OP_LTU`,
+    extract the chain rule on `flags % 2`, plus `c_byte = 0` and
+    range conditions. -/
+private lemma byte_relation_LTU
+    (e : BinaryTableEntry FGL)
+    (h_mult : e.multiplicity = 1)
+    (h_op : e.op.val = OP_LTU) :
+    e.c_byte.val = 0 ∧
+    (e.a_byte.val < e.b_byte.val → e.flags.val % 2 = 1) ∧
+    (e.a_byte.val = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
+    (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 0) := by
+  have wf := bin_table_consumer_wf e h_mult
+  obtain ⟨_, _, _, _, h_ltu, _⟩ := wf
+  exact h_ltu h_op
+
+/-- LT byte relation. Same as LTU plus the final-byte sign-byte
+    override clause. -/
+private lemma byte_relation_LT
+    (e : BinaryTableEntry FGL)
+    (h_mult : e.multiplicity = 1)
+    (h_op : e.op.val = OP_LT) :
+    e.c_byte.val = 0 ∧
+    (e.a_byte.val < e.b_byte.val → e.flags.val % 2 = 1) ∧
+    (e.a_byte.val = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
+    (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 0) ∧
+    (e.pos_ind.val = 1 →
+      (e.a_byte.val &&& 0x80) ≠ (e.b_byte.val &&& 0x80) →
+      e.flags.val % 2 = (if (e.a_byte.val &&& 0x80) ≠ 0 then 1 else 0)) := by
+  have wf := bin_table_consumer_wf e h_mult
+  obtain ⟨_, _, _, _, _, h_lt, _⟩ := wf
+  exact h_lt h_op
+
+/-- SUB byte relation. Carry-flip (borrow) byte equation from
+    `wf_SUB`. -/
+private lemma byte_relation_SUB
+    (e : BinaryTableEntry FGL)
+    (h_mult : e.multiplicity = 1)
+    (h_op : e.op.val = OP_SUB) :
+    (e.a_byte.val ≥ e.cin.val + e.b_byte.val →
+      e.c_byte.val = e.a_byte.val - e.cin.val - e.b_byte.val) ∧
+    (e.a_byte.val < e.cin.val + e.b_byte.val →
+      e.c_byte.val = 256 + e.a_byte.val - e.cin.val - e.b_byte.val) ∧
+    (e.pos_ind.val ≠ 1 →
+      (e.a_byte.val ≥ e.cin.val + e.b_byte.val → e.flags.val % 2 = 0) ∧
+      (e.a_byte.val < e.cin.val + e.b_byte.val → e.flags.val % 2 = 1)) ∧
+    (e.pos_ind.val = 1 → e.flags.val % 2 = 0) := by
+  have wf := bin_table_consumer_wf e h_mult
+  obtain ⟨_, _, _, _, _, _, _, _, h_sub, _⟩ := wf
+  exact h_sub h_op
+
+/-- SEXT_00 byte relation: `c = 0` and `cout = cin`. -/
+private lemma byte_relation_SEXT_00
+    (e : BinaryTableEntry FGL)
+    (h_mult : e.multiplicity = 1)
+    (h_op : e.op.val = OP_SEXT_00) :
+    e.c_byte.val = 0 ∧ e.flags.val % 2 = e.cin.val := by
+  have wf := bin_table_consumer_wf e h_mult
+  obtain ⟨_, _, _, _, _, _, _, _, _, h_sext00, _⟩ := wf
+  exact h_sext00 h_op
+
+/-- SEXT_FF byte relation: `c = 0xFF` and `cout = cin`. -/
+private lemma byte_relation_SEXT_FF
+    (e : BinaryTableEntry FGL)
+    (h_mult : e.multiplicity = 1)
+    (h_op : e.op.val = OP_SEXT_FF) :
+    e.c_byte.val = 0xFF ∧ e.flags.val % 2 = e.cin.val := by
+  have wf := bin_table_consumer_wf e h_mult
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, h_sextff⟩ := wf
+  exact h_sextff h_op
+
+/-- ADD byte relation. Carries the byte equation plus the cout
+    distinction between non-final / final positions. -/
+private lemma byte_relation_ADD
+    (e : BinaryTableEntry FGL)
+    (h_mult : e.multiplicity = 1)
+    (h_op : e.op.val = OP_ADD) :
+    e.c_byte.val = (e.cin.val + e.a_byte.val + e.b_byte.val) % 256 ∧
+    (e.pos_ind.val ≠ 1 →
+      e.flags.val % 2 = (e.cin.val + e.a_byte.val + e.b_byte.val) / 256) ∧
+    (e.pos_ind.val = 1 → e.flags.val % 2 = 0) := by
+  have wf := bin_table_consumer_wf e h_mult
+  obtain ⟨_, _, _, _, _, _, _, h_add, _⟩ := wf
+  exact h_add h_op
+
+/-! ## K1-B chain lifts (SUB / LTU / LT / ADDW) — TODO: blocked
+
+The four chain-based K1-B lifts (`binary_sub_chunks_eq_bv_sub`,
+`binary_ltu_chunks_eq_bv_ult`, `binary_lt_chunks_eq_bv_slt`,
+`binary_addw_chunks_eq_bv_add_w`) all require composing 8 byte-level
+chain steps into a packed-Nat identity over 24 atoms (8 bytes a / b /
+c plus 7 chain-state values plus a top-level borrow indicator), then
+reducing modulo 2^64 to land on the BitVec arithmetic identity.
+
+**Empirical OOM blocker.** Multiple proof strategies were attempted
+(2026-04-27 D pass) and all exceeded the local Lean memory budget
+(>40 GB RSS, requiring kernel `kill -9`):
+
+* `linear_combination` over 8 chain hypotheses with `256^i` weights:
+  the polynomial-normalization step blows up.
+* `linear_combination` weighted-pairwise (build `h_pair01`, `h_pair23`
+  ... and combine): blows up at the final `4294967296 * h_global_norm`
+  step where the 24-atom polynomial gets normalized.
+* `omega` directly on the 8 chain hypotheses + bounds + `B7 ∈ {0,1}`:
+  also blows up; the linear-arithmetic search over 24 atoms with
+  large constants is intractable for `omega`'s current implementation.
+
+**What ships in this commit (durable progress).**
+
+1. **Strengthened `wf_*` clauses in `Airs/BinaryTable.lean`:**
+   * `wf_LTU` — chain rule clarified as uniform across all bytes
+   * `wf_LT` — chain rule + final-byte sign-byte override
+   * `wf_EQ` — non-final + final-byte polarity flip
+   * `wf_ADD` — extended with cout (non-final / final) clauses
+   * `wf_SUB` — full borrow semantics (case-split byte equation +
+     non-final cout = borrow + final-byte cout = 0)
+   * `wf_SEXT_00` — `cout = cin`, `c = 0x00`
+   * `wf_SEXT_FF` — `cout = cin`, `c = 0xFF`
+   `wf_properties` extended to include `wf_SEXT_00` and `wf_SEXT_FF`.
+
+2. **Per-op byte-relation extractors** in this file:
+   `byte_relation_LTU`, `byte_relation_LT`, `byte_relation_SUB`,
+   `byte_relation_ADD`, `byte_relation_SEXT_00`, `byte_relation_SEXT_FF`.
+   Each cleanly extracts the per-byte semantic identity from
+   `bin_table_consumer_wf` for downstream consumers.
+
+3. **`consumer_byte_match_chain`** predicate exposing all 6 byte-entry
+   slots (`a`, `b`, `c`, `cin`, `flags`, `pos_ind`) — the API the
+   chain lifts will consume once the proof-engineering blocker is
+   resolved.
+
+**Escalation.** A follow-on pass with sharper proof engineering
+(likely staging the chain telescope as a sequence of BitVec.add
+identities at byte-index granularity, avoiding the global Nat
+polynomial entirely) is needed. See `docs/fv/track-n-traps.md`'s
+"D escalation: K1-B chain lifts blocked on telescope OOM" entry. -/
+
 end ZiskFv.Airs.Binary
 

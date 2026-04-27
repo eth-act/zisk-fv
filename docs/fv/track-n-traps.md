@@ -713,3 +713,95 @@ SLL_W or SRA_W can either:
    `sllw_byte_eq` / `sraw_byte_eq` helpers (which are exposed at
    private-but-in-namespace scope; promote to `theorem` if needed).
 
+## D escalation: K1-B chain lifts blocked on telescope OOM
+
+**Status (2026-04-27, finishing2 D pass).** The four chain-based
+K1-B lifts the C escalation was waiting on
+(`binary_ltu_chunks_eq_bv_ult`, `binary_lt_chunks_eq_bv_slt`,
+`binary_sub_chunks_eq_bv_sub`, `binary_addw_chunks_eq_bv_add_w`)
+were attempted in `Airs/Binary/BinaryPackedCorrect.lean` but **all
+four are blocked on a Lean proof-engineering OOM** at the chain
+telescope step. Multiple proof strategies were tried (each pegged
+local `lean` RSS to >40 GB before being killed by the agent-side
+memory monitor):
+
+* `linear_combination` over 8 byte-chain hypotheses with `256^i`
+  weights in a single call.
+* `linear_combination` weighted-pairwise (build per-pair
+  identities `h_pair01`, `h_pair23`, `h_pair45`, `h_pair67`, then
+  combine via two more pair-wise `linear_combination` calls). The
+  intermediate `h_quad03` / `h_quad47` pair built fine; the final
+  `4294967296 * h_global_norm` step pegged at >40 GB.
+* `omega` directly on the 8 chain hypotheses + bounds + `B7 ∈ {0,
+  1}` for the SUB conclusion's modular identity. Same OOM.
+* K1-A-style explicit `rw` chain with hand-stated `ring` auxiliaries
+  at each step. Same OOM at the final `linear_combination
+  h_global` (the polynomial it has to normalize is structurally the
+  full 24-atom system).
+
+The polynomial structurally has 24 atoms (8 a-bytes, 8 b-bytes,
+8 c-bytes, 7 carry slots, top-level borrow `B7`) with coefficients
+up to `2^56`. `linear_combination` calls `ring` for normalization
+and the resulting normal-form computation is what blows up.
+`omega` similarly cannot search the linear space efficiently with
+constants of this size.
+
+**What ships in D's commit (durable progress).**
+
+1. **Strengthened `Airs/BinaryTable.lean` `wf_*` clauses.** All five
+   chain ops were extended to carry the full byte-level semantics
+   from the PIL spec:
+   * `wf_LTU` — chain rule clarified as uniform across all bytes
+     (final-byte aggregation is implicit in the chain rule).
+   * `wf_LT` — chain rule + final-byte sign-byte override
+     (`pos_ind = 1 ∧ sign(a) ≠ sign(b) → cout = sign(a)`).
+   * `wf_EQ` — non-final byte rule + final-byte polarity flip
+     (`pos_ind = 1 → cout flips polarity`).
+   * `wf_ADD` — extended with cout (non-final = `(cin+a+b)/256`,
+     final = 0).
+   * `wf_SUB` — full borrow semantics: case-split byte equation
+     (`a ≥ cin+b ⇒ c = a-cin-b`; else `c = 256+a-cin-b`),
+     non-final cout = borrow, final cout = 0.
+   * `wf_SEXT_00` (NEW) — `cout = cin`, `c = 0x00`.
+   * `wf_SEXT_FF` (NEW) — `cout = cin`, `c = 0xFF`.
+   `wf_properties` extended to include the two new SEXT clauses.
+
+2. **Per-op byte-relation extractors** in
+   `Airs/Binary/BinaryPackedCorrect.lean`:
+   `byte_relation_LTU`, `byte_relation_LT`, `byte_relation_SUB`,
+   `byte_relation_ADD` (extended), `byte_relation_SEXT_00`,
+   `byte_relation_SEXT_FF`. Each is a small lemma that pulls the
+   per-op clause out of `bin_table_consumer_wf` cleanly.
+
+3. **`consumer_byte_match_chain`** predicate — the richer match
+   form exposing all six byte-entry slots (`a`, `b`, `c`, `cin`,
+   `flags`, `pos_ind`) that the four chain lifts will consume once
+   the OOM blocker is resolved.
+
+**What's needed to unblock.** A different proof strategy that
+avoids constructing the global 24-atom Nat polynomial. Plausible
+approaches (any one of which would unblock all four lifts):
+
+* **Stage the chain telescope as a sequence of BitVec.add identities
+  at byte-index granularity.** Build the packed sum byte by byte
+  via `BitVec.append` and `BitVec.add` without ever materializing a
+  global Nat polynomial. Each step is a small BitVec rewrite.
+* **Stronger `set`-aliasing.** Introduce abstract names for partial
+  packed sums (e.g. `lo_sum := a0 + a1·256 + a2·65536 + a3·256^3`)
+  so subsequent `linear_combination` / `omega` calls operate on
+  ~5-atom polynomials instead of 24-atom ones. This needs a
+  carefully staged proof outline where each cumulative
+  abstraction is introduced before the next telescope step.
+* **External proof artifact.** Generate the global-telescope
+  polynomial identity as a one-off proof artifact (e.g. via
+  `Mathlib`'s `Polynomial.eval` or a custom `decide`-based
+  computation), import as a lemma, and apply.
+
+**Per-op consumer impact.** The Tier-1 derivation lemmas in
+`Equivalence/RdValDerivation/BinaryCompare.lean` (SLT, SLTU, SLTI,
+SLTIU), `Equivalence/RdValDerivation/Arith.lean` (SUB, ADDW, ADDIW,
+SUBW Tier-1 retirements) remain escalated as before. The
+strengthened `wf_*` infrastructure is already in tree, so when the
+telescope OOM is resolved, the four K1-B lifts can be authored
+against a stable trusted layer with no re-strengthening required.
+

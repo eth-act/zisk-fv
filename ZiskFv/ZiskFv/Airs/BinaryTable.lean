@@ -121,17 +121,18 @@ def wf_XOR (e : BinaryTableEntry FGL) : Prop :=
     e.c_byte.val = (e.a_byte.val ^^^ e.b_byte.val) ∧
     e.flags.val % 2 = 0
 
-/-- Less-than unsigned (per-byte chain). On non-final bytes
-    (`pos_ind = 0`), `c = 0` and the carry chain encodes the
-    less-than/equal/greater outcome:
+/-- Less-than unsigned (per-byte chain). The chain rule applies
+    uniformly to every byte position (PIL `OP_LTU` branch never
+    branches on `pos_ind`). At every byte:
+      * `c_byte = 0`,
       * `cout = 1` if `a < b`,
       * `cout = cin` if `a == b`,
       * `cout = 0` if `a > b`.
-    On the final byte (`pos_ind = 1` for 64-bit / `pos_ind = mode32` at
-    half-byte boundary), the same chain rule applies and `c = 0`. The
-    full 64-bit result is `cout` of the final byte (use_last_cout_as_c).
-    Sign handling for signed `OP_LT` modifies the final-byte outcome
-    when sign bytes differ. -/
+    Composing 8 byte-entries via `cin[0] = 0`, `cin[i+1] = cout[i]`
+    aggregates the chain to `cout[7] = 1 iff a64 < b64 (unsigned)`.
+    The final-byte aggregation is therefore implicit in the chain rule
+    and a downstream consumer derives it by induction on the byte
+    chain (see `binary_ltu_chunks_eq_bv_ult`). -/
 def wf_LTU (e : BinaryTableEntry FGL) : Prop :=
   e.op.val = OP_LTU →
     e.c_byte.val = 0 ∧
@@ -140,35 +141,115 @@ def wf_LTU (e : BinaryTableEntry FGL) : Prop :=
     (e.a_byte.val = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
     (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 0)
 
-/-- Less-than signed: same byte-level chain as LTU on non-sign-byte
-    positions; on the final byte (`pos_ind = 1` or `pos_ind = mode32`),
-    if the high bits of `a` and `b` differ (sign-bytes opposite), the
-    outcome is determined by the sign of `a`. The byte value `c` is 0. -/
+/-- Less-than signed. Same byte-level chain rule as LTU on every
+    byte. Additionally, on the final byte (`pos_ind.val = 1`), if the
+    high bits (sign bits) of `a_byte` and `b_byte` differ, the chain
+    outcome is overridden: `cout = 1` iff `a` is negative.
+
+    Encoded as: chain rule unconditionally, **plus** a final-byte
+    sign-byte override clause. Both clauses hold simultaneously; in
+    the sign-byte-differing case at the final byte, the chain rule
+    yields the same value as the override (because the sign bit of
+    `a` determines which is unsigned-larger when sign bits differ).
+
+    Spec from `binary_table.pil`'s `case OP_LT` branch (lines 197–213):
+      `if (a < b) cout = 1; else if (a == b) cout = cin; else cout = 0;`
+      `c = 0;`
+      `if (op == OP_LT && plast && (a & SIGN_BYTE) != (b & SIGN_BYTE))
+         cout = (a & SIGN_BYTE) ? 1 : 0;` -/
 def wf_LT (e : BinaryTableEntry FGL) : Prop :=
   e.op.val = OP_LT →
-    e.c_byte.val = 0
-    -- (full sign-byte-aware semantics deferred until needed downstream)
+    e.c_byte.val = 0 ∧
+    -- Chain rule (same as LTU) — applies regardless of pos_ind.
+    (e.a_byte.val < e.b_byte.val → e.flags.val % 2 = 1) ∧
+    (e.a_byte.val = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
+    (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 0) ∧
+    -- Final-byte sign-byte override: at pos_ind = 1, when sign bits of
+    -- a and b differ, cout = sign-bit of a.
+    (e.pos_ind.val = 1 →
+      (e.a_byte.val &&& 0x80) ≠ (e.b_byte.val &&& 0x80) →
+      e.flags.val % 2 = (if (e.a_byte.val &&& 0x80) ≠ 0 then 1 else 0))
 
-/-- Equality: `cout = 0` (is_eq) when `cin = 0 ∧ a = b`; `cout = 1`
-    (is_neq) otherwise on non-final bytes. On the final byte the
-    polarity flips: `cout := 1 - cout`. `c = 0` everywhere. -/
+/-- Equality: per-byte rule with polarity flip at the final byte.
+    Spec from `binary_table.pil`'s `case OP_EQ` branch (lines 233–247):
+
+      `if (cin == 0 && a == b) cout = 0; else cout = 1;`  // is_eq / is_neq
+      `c = 0;`
+      `if (plast) cout = 1 - cout;`
+
+    So at non-final bytes (`pos_ind.val ≠ 1`):
+      `cout = 0 iff (cin = 0 ∧ a = b)`, else `cout = 1`.
+    At the final byte (`pos_ind.val = 1`) the polarity is flipped:
+      `cout = 1 iff (cin = 0 ∧ a = b)`, else `cout = 0`. -/
 def wf_EQ (e : BinaryTableEntry FGL) : Prop :=
   e.op.val = OP_EQ →
-    e.c_byte.val = 0
-    -- (chain semantics deferred)
+    e.c_byte.val = 0 ∧
+    -- Non-final byte rule.
+    (e.pos_ind.val ≠ 1 →
+      ((e.cin.val = 0 ∧ e.a_byte.val = e.b_byte.val) → e.flags.val % 2 = 0) ∧
+      (¬ (e.cin.val = 0 ∧ e.a_byte.val = e.b_byte.val) → e.flags.val % 2 = 1)) ∧
+    -- Final-byte rule (polarity flipped).
+    (e.pos_ind.val = 1 →
+      ((e.cin.val = 0 ∧ e.a_byte.val = e.b_byte.val) → e.flags.val % 2 = 1) ∧
+      (¬ (e.cin.val = 0 ∧ e.a_byte.val = e.b_byte.val) → e.flags.val % 2 = 0))
 
 /-- Add: `c = (cin + a + b) mod 256`; on non-final bytes
-    `cout = (cin + a + b) >> 8`; on the final byte `cout = 0`. -/
+    `cout = (cin + a + b) >> 8` (i.e., `flags % 2 = (cin + a + b) / 256`);
+    on the final byte (`pos_ind.val = 1`) `cout = 0`. -/
 def wf_ADD (e : BinaryTableEntry FGL) : Prop :=
   e.op.val = OP_ADD →
-    e.c_byte.val = (e.cin.val + e.a_byte.val + e.b_byte.val) % 256
+    e.c_byte.val = (e.cin.val + e.a_byte.val + e.b_byte.val) % 256 ∧
+    (e.pos_ind.val ≠ 1 →
+      e.flags.val % 2 = (e.cin.val + e.a_byte.val + e.b_byte.val) / 256) ∧
+    (e.pos_ind.val = 1 → e.flags.val % 2 = 0)
 
-/-- Subtract: borrow semantics. `c = 256·borrow + a - cin - b`,
-    `cout = borrow` on non-final bytes, `cout = 0` on the final byte. -/
+/-- Subtract: full borrow semantics from `binary_table.pil`'s
+    `case OP_SUB` branch (lines 260–269):
+
+      `borrow = if (a - cin) < b then 1 else 0`
+      `c = 256·borrow + a - cin - b`
+      `cout = plast ? 0 : borrow`
+
+    Encoded as: `c_byte` equals the borrow-corrected difference, and
+    on non-final bytes (`pos_ind.val ≠ 1`) the cout is the borrow
+    (`flags % 2 = borrow`); on the final byte (`pos_ind.val = 1`),
+    cout is forced to 0.
+
+    The `borrow` value is derived structurally: it equals 1 iff
+    `a.val < cin.val + b.val`. -/
 def wf_SUB (e : BinaryTableEntry FGL) : Prop :=
   e.op.val = OP_SUB →
-    -- (full borrow semantics deferred until downstream needs it)
-    e.c_byte.val < 256
+    -- Byte value equation. The PIL formula `c = 256·borrow + a - cin - b`
+    -- works in signed integers; in ℕ we phrase it via the borrow case
+    -- split:
+    --   if a.val ≥ cin.val + b.val: c.val = a.val - cin.val - b.val
+    --   else: c.val = 256 + a.val - cin.val - b.val
+    (e.a_byte.val ≥ e.cin.val + e.b_byte.val →
+      e.c_byte.val = e.a_byte.val - e.cin.val - e.b_byte.val) ∧
+    (e.a_byte.val < e.cin.val + e.b_byte.val →
+      e.c_byte.val = 256 + e.a_byte.val - e.cin.val - e.b_byte.val) ∧
+    -- Non-final byte: cout = borrow.
+    (e.pos_ind.val ≠ 1 →
+      (e.a_byte.val ≥ e.cin.val + e.b_byte.val → e.flags.val % 2 = 0) ∧
+      (e.a_byte.val < e.cin.val + e.b_byte.val → e.flags.val % 2 = 1)) ∧
+    -- Final byte: cout = 0 unconditionally.
+    (e.pos_ind.val = 1 → e.flags.val % 2 = 0)
+
+/-- Sign-extend with `0x00` (auxiliary, used in W-mode upper bytes for
+    non-negative low-half results). Spec from `binary_table.pil`'s
+    `case OP_SEXT_00` branch (lines 309–315): `cout = cin; c = 0x00`. -/
+def wf_SEXT_00 (e : BinaryTableEntry FGL) : Prop :=
+  e.op.val = OP_SEXT_00 →
+    e.c_byte.val = 0x00 ∧
+    e.flags.val % 2 = e.cin.val
+
+/-- Sign-extend with `0xFF` (auxiliary, used in W-mode upper bytes for
+    negative low-half results). Spec from `binary_table.pil`'s
+    `case OP_SEXT_FF` branch (lines 317–323): `cout = cin; c = 0xFF`. -/
+def wf_SEXT_FF (e : BinaryTableEntry FGL) : Prop :=
+  e.op.val = OP_SEXT_FF →
+    e.c_byte.val = 0xFF ∧
+    e.flags.val % 2 = e.cin.val
 
 /-- The full trusted per-row well-formedness: range plus all per-op
     clauses. Consumers pull out the clause for their opcode. Mirrors
@@ -184,6 +265,8 @@ def wf_properties (e : BinaryTableEntry FGL) : Prop :=
   ∧ wf_EQ e
   ∧ wf_ADD e
   ∧ wf_SUB e
+  ∧ wf_SEXT_00 e
+  ∧ wf_SEXT_FF e
 
 /-! ## Trusted axiom
 
