@@ -29,6 +29,19 @@ import ZiskFv.Airs.MemoryBus.LaneMatch
 -- bridge lemmas for the nine F-typed every-row constraints.
 import ZiskFv.Extraction.Mem
 import ZiskFv.Airs.Mem
+-- finishing3 S2: MemAlign family (pilout idx 5..8) — extractions plus
+-- named-column wrappers and bridge lemmas for the F-typed every-row
+-- constraints. The seven permutation interactions per AIR skip-stub at
+-- the extraction layer (mixed F/ExtF); they are picked up by the
+-- compositional bus model in S3.
+import ZiskFv.Extraction.MemAlign
+import ZiskFv.Extraction.MemAlignByte
+import ZiskFv.Extraction.MemAlignReadByte
+import ZiskFv.Extraction.MemAlignWriteByte
+import ZiskFv.Airs.MemAlign
+import ZiskFv.Airs.MemAlignByte
+import ZiskFv.Airs.MemAlignReadByte
+import ZiskFv.Airs.MemAlignWriteByte
 -- Track N K3: FGL → BitVec 64 arithmetic-extension lifts (h_rd_val bridges).
 import ZiskFv.Fundamentals.PackedBitVec.Extensions
 -- Track N B.5: Goldilocks no-wrap toolkit (additive packings).
