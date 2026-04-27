@@ -2013,4 +2013,792 @@ theorem binary_extension_srlw_chunks_eq_bv_ushr_w
     eq0 eq1 eq2 eq3 eq4 eq5 eq6 eq7
     ech0 ech1 ech2 ech3 ech4 ech5 ech6 ech7
 
+/-! ## SLL_W and SRA_W lifts
+
+The W-mode shift opcodes operate on the low 32 bits of the operand and
+sign-extend the 32-bit result to 64 bits. Per `wf_SLL_W` / `wf_SRA_W`
+(`Airs/BinaryExtensionTable.lean`), the byte-level table contract carries
+the full per-byte semantics:
+
+* For SLL_W: byte `i ∈ [0, 4)`'s `c_lo_byte` = `(a_byte * 256^i * 2^s) % 2^32`,
+  and `c_hi_byte = if c_lo_byte ≥ 2^31 then 2^32 - 1 else 0`. Bytes 4..7 are
+  zero. Each byte's `c_hi_byte` carries its share of the W-mode sign extension.
+* For SRA_W: byte `i ∈ [0, 4)`'s `c_lo_byte + c_hi_byte * 2^32` = `a_byte * 256^i / 2^s`
+  (no extension), except byte 3 with `a_byte ≥ 128` adds the sign-extension
+  term `2^64 - 2^(32 - s)`. Bytes 4..7 are zero.
+
+The disjointness of byte contributions modulo 32 (for SLL_W) is closed by
+`interval_cases sft` over the 32 possible shift amounts, with `omega`
+handling the per-shift arithmetic. -/
+
+/-- **Width-32 analog of `sra_msb_true_identity`.** The msb-true case of
+    a signed right shift at width 32: the bit-flip identity
+    `2^32 - 1 - (2^32 - 1 - a) >>> s = a/2^s + (2^32 - 2^(32-s))`. -/
+private lemma sra_msb_true_identity_32 (a s : ℕ)
+    (h_a : a < 2 ^ 32) (h_s : s < 32) :
+    2 ^ 32 - 1 - (2 ^ 32 - 1 - a) >>> s = a / 2 ^ s + (2 ^ 32 - 2 ^ (32 - s)) := by
+  rw [Nat.shiftRight_eq_div_pow]
+  set p := 2 ^ s with p_def
+  have hp_pos : 0 < p := Nat.two_pow_pos s
+  have h_pow_split : (2 : ℕ) ^ 32 = 2 ^ s * 2 ^ (32 - s) := by
+    rw [← Nat.pow_add]; congr 1; omega
+  have h_combine : (2 ^ s : ℕ) * (2 ^ (32 - s) - 1) = 2 ^ 32 - 2 ^ s := by
+    rw [Nat.mul_sub_one, h_pow_split]
+  have h2pow_s : (1 : ℕ) ≤ 2 ^ s := Nat.one_le_two_pow
+  have h2pow32 : (2 : ℕ) ^ s ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) (by omega)
+  have h_top_decomp : (2 ^ 32 - 1 : ℕ) = p * (2 ^ (32 - s) - 1) + (p - 1) := by
+    rw [p_def]; omega
+  have h_top_div : (2 ^ 32 - 1) / p = 2 ^ (32 - s) - 1 := by
+    rw [h_top_decomp,
+        show p * (2 ^ (32 - s) - 1) + (p - 1) = (p - 1) + (2 ^ (32 - s) - 1) * p from by ring,
+        Nat.add_mul_div_right _ _ hp_pos,
+        Nat.div_eq_of_lt (by omega)]
+    omega
+  have h_top_mod : (2 ^ 32 - 1) % p = p - 1 := by
+    rw [h_top_decomp,
+        show p * (2 ^ (32 - s) - 1) + (p - 1) = (p - 1) + (2 ^ (32 - s) - 1) * p from by ring,
+        Nat.add_mul_mod_self_right]
+    apply Nat.mod_eq_of_lt; omega
+  have ha_mod_lt : a % p < p := Nat.mod_lt _ hp_pos
+  have ha_mod_le : a % p ≤ p - 1 := by omega
+  have h_diff_mod : (2 ^ 32 - 1 - a) % p = (p - 1) - (a % p) := by
+    have h_reform : (2 ^ 32 - 1 - a)
+                  = p * ((2 ^ 32 - 1) / p - a / p) + ((p - 1) - a % p) := by
+      have ha : a = p * (a / p) + a % p := (Nat.div_add_mod a p).symm
+      have htop : 2 ^ 32 - 1 = p * ((2 ^ 32 - 1) / p) + (p - 1) := by
+        rw [h_top_mod.symm]; exact (Nat.div_add_mod _ p).symm
+      have h_a_div_le : a / p ≤ (2 ^ 32 - 1) / p := by
+        apply Nat.div_le_div_right; omega
+      rw [Nat.mul_sub _ _ _]
+      have hb : p * (a / p) ≤ p * ((2 ^ 32 - 1) / p) :=
+        Nat.mul_le_mul_left p h_a_div_le
+      omega
+    rw [h_reform,
+        show p * ((2 ^ 32 - 1) / p - a / p) + (p - 1 - a % p)
+           = (p - 1 - a % p) + ((2 ^ 32 - 1) / p - a / p) * p from by ring,
+        Nat.add_mul_mod_self_right]
+    apply Nat.mod_eq_of_lt; omega
+  have h_split : (2 ^ 32 - 1 - a) / p + a / p = 2 ^ (32 - s) - 1 := by
+    have h_a_le : a ≤ 2 ^ 32 - 1 := by omega
+    have h_b_eq : (2 ^ 32 - 1 - a) / p = (2 ^ 32 - 1) / p - a / p := by
+      have h_a_div_le : a / p ≤ (2 ^ 32 - 1) / p := Nat.div_le_div_right h_a_le
+      have h_reform : (2 ^ 32 - 1 - a)
+                    = p * ((2 ^ 32 - 1) / p - a / p) + ((p - 1) - a % p) := by
+        have ha : a = p * (a / p) + a % p := (Nat.div_add_mod a p).symm
+        have htop : 2 ^ 32 - 1 = p * ((2 ^ 32 - 1) / p) + (p - 1) := by
+          rw [h_top_mod.symm]; exact (Nat.div_add_mod _ p).symm
+        rw [Nat.mul_sub _ _ _]
+        have hb : p * (a / p) ≤ p * ((2 ^ 32 - 1) / p) :=
+          Nat.mul_le_mul_left p h_a_div_le
+        omega
+      rw [h_reform,
+          show p * ((2 ^ 32 - 1) / p - a / p) + (p - 1 - a % p)
+             = (p - 1 - a % p) + ((2 ^ 32 - 1) / p - a / p) * p from by ring,
+          Nat.add_mul_div_right _ _ hp_pos,
+          Nat.div_eq_of_lt (by omega)]
+      omega
+    rw [h_b_eq, h_top_div]
+    have h_a_div_le2 : a / p ≤ 2 ^ (32 - s) - 1 := by
+      calc a / p ≤ (2 ^ 32 - 1) / p := Nat.div_le_div_right h_a_le
+        _ = 2 ^ (32 - s) - 1 := h_top_div
+    set t : ℕ := 2 ^ (32 - s) with t_def
+    set q : ℕ := a / p with q_def
+    have h_t_pos : 1 ≤ t := Nat.one_le_two_pow
+    have h_q_le : q ≤ t - 1 := h_a_div_le2
+    omega
+  have hdiv_a : a / p ≤ 2 ^ (32 - s) - 1 := by
+    have h_a_le : a ≤ 2 ^ 32 - 1 := by omega
+    calc a / p ≤ (2 ^ 32 - 1) / p := Nat.div_le_div_right h_a_le
+      _ = 2 ^ (32 - s) - 1 := h_top_div
+  have h_b_eq : (2 ^ 32 - 1 - a) / p = 2 ^ (32 - s) - 1 - a / p := by
+    have h_apsum := h_split
+    have h_apdiv := hdiv_a
+    set X : ℕ := (2 ^ 32 - 1 - a) / p with X_def
+    set Y : ℕ := a / p with Y_def
+    set Z : ℕ := 2 ^ (32 - s) - 1 with Z_def
+    omega
+  rw [h_b_eq]
+  have h_t_pos : (1 : ℕ) ≤ 2 ^ (32 - s) := Nat.one_le_two_pow
+  have h_t_le : (2 : ℕ) ^ (32 - s) ≤ 2 ^ 32 := Nat.pow_le_pow_right (by decide) (by omega)
+  have h_succ : a / p + 1 ≤ 2 ^ (32 - s) := by
+    have h := hdiv_a
+    have : 2 ^ (32 - s) - 1 + 1 = 2 ^ (32 - s) := by omega
+    omega
+  generalize ha_div : a / p = q at h_succ hdiv_a ⊢
+  generalize ht : 2 ^ (32 - s) = t at h_t_pos h_t_le h_succ hdiv_a ⊢
+  omega
+
+/-! ## SLL_W lift -/
+
+/-- Pure-Nat statement of the SLL_W identity. -/
+private lemma sllw_nat_core
+    (a0v a1v a2v a3v : ℕ)
+    (cl0 cl1 cl2 cl3 cl4 cl5 cl6 cl7 : ℕ)
+    (ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch7 : ℕ)
+    (sft : ℕ)
+    (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (ha3r : a3v < 256)
+    (hsft_lt : sft < 32)
+    (eq0 : cl0 = (a0v * 1 * 2 ^ sft) % 2 ^ 32)
+    (eq1 : cl1 = (a1v * 256 * 2 ^ sft) % 2 ^ 32)
+    (eq2 : cl2 = (a2v * 65536 * 2 ^ sft) % 2 ^ 32)
+    (eq3 : cl3 = (a3v * 16777216 * 2 ^ sft) % 2 ^ 32)
+    (eq4 : cl4 = 0) (eq5 : cl5 = 0) (eq6 : cl6 = 0) (eq7 : cl7 = 0)
+    (ech0 : ch0 = if cl0 ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0)
+    (ech1 : ch1 = if cl1 ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0)
+    (ech2 : ch2 = if cl2 ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0)
+    (ech3 : ch3 = if cl3 ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0)
+    (ech4 : ch4 = 0) (ech5 : ch5 = 0) (ech6 : ch6 = 0) (ech7 : ch7 = 0) :
+    (cl0 + cl1 + cl2 + cl3 + cl4 + cl5 + cl6 + cl7)
+      + (ch0 + ch1 + ch2 + ch3 + ch4 + ch5 + ch6 + ch7) * 4294967296
+      = ((a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) * 2 ^ sft) % 2 ^ 32
+        + (if ((a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) * 2 ^ sft) % 2 ^ 32 ≥ 2 ^ 31
+           then 2 ^ 64 - 2 ^ 32 else 0) := by
+  subst eq0; subst eq1; subst eq2; subst eq3; subst eq4; subst eq5; subst eq6; subst eq7
+  subst ech4; subst ech5; subst ech6; subst ech7
+  by_cases hch0 : (a0v * 1 * 2 ^ sft) % 2 ^ 32 ≥ 2 ^ 31
+  <;> by_cases hch1 : (a1v * 256 * 2 ^ sft) % 2 ^ 32 ≥ 2 ^ 31
+  <;> by_cases hch2 : (a2v * 65536 * 2 ^ sft) % 2 ^ 32 ≥ 2 ^ 31
+  <;> by_cases hch3 : (a3v * 16777216 * 2 ^ sft) % 2 ^ 32 ≥ 2 ^ 31
+  <;> simp only [hch0, hch1, hch2, hch3, if_true, if_false] at ech0 ech1 ech2 ech3
+  <;> subst ech0 <;> subst ech1 <;> subst ech2 <;> subst ech3
+  <;> by_cases hsum : ((a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) * 2 ^ sft) % 2 ^ 32
+                      ≥ 2 ^ 31
+  <;> simp only [hsum, if_true, if_false]
+  <;> interval_cases sft <;> omega
+
+/-- BitVec wrapper around `sllw_nat_core`. The conclusion is the W-mode SLL,
+    sign-extended to 64 bits. -/
+private lemma sllw_bv_core
+    (a0v a1v a2v a3v a4v a5v a6v a7v : ℕ)
+    (cl0 cl1 cl2 cl3 cl4 cl5 cl6 cl7 : ℕ)
+    (ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch7 : ℕ)
+    (sft : ℕ)
+    (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (ha3r : a3v < 256)
+    (ha4r : a4v < 256) (ha5r : a5v < 256) (ha6r : a6v < 256) (ha7r : a7v < 256)
+    (hsft_lt : sft < 32)
+    (eq0 : cl0 = (a0v * 1 * 2 ^ sft) % 2 ^ 32)
+    (eq1 : cl1 = (a1v * 256 * 2 ^ sft) % 2 ^ 32)
+    (eq2 : cl2 = (a2v * 65536 * 2 ^ sft) % 2 ^ 32)
+    (eq3 : cl3 = (a3v * 16777216 * 2 ^ sft) % 2 ^ 32)
+    (eq4 : cl4 = 0) (eq5 : cl5 = 0) (eq6 : cl6 = 0) (eq7 : cl7 = 0)
+    (ech0 : ch0 = if cl0 ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0)
+    (ech1 : ch1 = if cl1 ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0)
+    (ech2 : ch2 = if cl2 ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0)
+    (ech3 : ch3 = if cl3 ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0)
+    (ech4 : ch4 = 0) (ech5 : ch5 = 0) (ech6 : ch6 = 0) (ech7 : ch7 = 0) :
+    BitVec.signExtend 64
+      (BitVec.shiftLeft (BitVec.ofNat 32
+        (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216)) sft)
+      = BitVec.ofNat 64
+          ((cl0 + cl1 + cl2 + cl3 + cl4 + cl5 + cl6 + cl7)
+            + (ch0 + ch1 + ch2 + ch3 + ch4 + ch5 + ch6 + ch7) * 4294967296) := by
+  have h_a32_lt : a0v + a1v * 256 + a2v * 65536 + a3v * 16777216 < 2 ^ 32 := by
+    show _ < 4294967296; omega
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.shiftLeft_eq, BitVec.toNat_signExtend, BitVec.toNat_setWidth,
+      BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h_a32_lt,
+      Nat.shiftLeft_eq, BitVec.toNat_ofNat]
+  -- Goal:
+  --   ((a32 * 2^sft) % 2^32) % 2^64
+  --     + (if ((BitVec.ofNat 32 a32) <<< sft).msb then 2^64 - 2^32 else 0)
+  --   = (cl_sum + ch_sum * 4294967296) % 2^64
+  -- Step 1: rewrite the inner msb to a Nat condition.
+  have h_inner_lt : (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) * 2 ^ sft % 2 ^ 32 < 2 ^ 32 :=
+    Nat.mod_lt _ (Nat.two_pow_pos 32)
+  have h_inner_lt_64 : (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) * 2 ^ sft % 2 ^ 32 < 2 ^ 64 := by
+    have : (2 : ℕ) ^ 32 ≤ 2 ^ 64 := Nat.pow_le_pow_right (by decide) (by omega)
+    omega
+  rw [Nat.mod_eq_of_lt h_inner_lt_64]
+  -- The msb of (BitVec.ofNat 32 a32) <<< sft is determined by the result's bit 31.
+  have h_msb_iff :
+      ((BitVec.ofNat 32 (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216)) <<< sft).msb = true
+      ↔ (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) * 2 ^ sft % 2 ^ 32 ≥ 2 ^ 31 := by
+    rw [BitVec.msb_eq_decide, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat,
+        Nat.mod_eq_of_lt h_a32_lt, Nat.shiftLeft_eq]
+    have hp : (2 : ℕ) ^ (32 - 1) = 2 ^ 31 := by norm_num
+    constructor
+    · intro h
+      have h' : (2 : ℕ) ^ (32 - 1) ≤ _ := decide_eq_true_iff.mp h
+      omega
+    · intro h
+      apply decide_eq_true_iff.mpr
+      omega
+  -- Apply nat-core.
+  have hcore := sllw_nat_core a0v a1v a2v a3v cl0 cl1 cl2 cl3 cl4 cl5 cl6 cl7
+                  ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch7 sft
+                  ha0r ha1r ha2r ha3r hsft_lt
+                  eq0 eq1 eq2 eq3 eq4 eq5 eq6 eq7
+                  ech0 ech1 ech2 ech3 ech4 ech5 ech6 ech7
+  -- Rewrite both ifs.
+  by_cases hbig : (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) * 2 ^ sft % 2 ^ 32 ≥ 2 ^ 31
+  · have h_msb_true :
+        ((BitVec.ofNat 32 (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216)) <<< sft).msb = true :=
+      h_msb_iff.mpr hbig
+    rw [if_pos h_msb_true]
+    rw [if_pos hbig] at hcore
+    rw [← hcore]
+    have h_csum_lt :
+        (cl0 + cl1 + cl2 + cl3 + cl4 + cl5 + cl6 + cl7)
+          + (ch0 + ch1 + ch2 + ch3 + ch4 + ch5 + ch6 + ch7) * 4294967296 < 2 ^ 64 := by
+      rw [hcore]
+      show _ < 18446744073709551616
+      have h_2pow64 : (2 ^ 64 : ℕ) = 18446744073709551616 := by norm_num
+      have h_2pow32 : (2 ^ 32 : ℕ) = 4294967296 := by norm_num
+      omega
+    rw [Nat.mod_eq_of_lt h_csum_lt]
+  · have h_msb_false :
+        ((BitVec.ofNat 32 (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216)) <<< sft).msb = false := by
+      rw [Bool.eq_false_iff]
+      intro h
+      exact hbig (h_msb_iff.mp h)
+    rw [if_neg (by simp [h_msb_false])]
+    rw [if_neg hbig, Nat.add_zero] at hcore
+    rw [Nat.add_zero, ← hcore]
+    have h_csum_lt :
+        (cl0 + cl1 + cl2 + cl3 + cl4 + cl5 + cl6 + cl7)
+          + (ch0 + ch1 + ch2 + ch3 + ch4 + ch5 + ch6 + ch7) * 4294967296 < 2 ^ 64 := by
+      rw [hcore]
+      have : (2 : ℕ) ^ 32 ≤ 2 ^ 64 := Nat.pow_le_pow_right (by decide) (by omega)
+      omega
+    rw [Nat.mod_eq_of_lt h_csum_lt]
+
+/-- **BinaryExtension SLL_W `BitVec 64` lift.**
+
+    Given the 8 byte-lookup hypotheses against the BinaryExtensionTable
+    (consumer at multiplicity 1, all with `op = OP_SLL_W`), and the
+    range-bound on each input byte, conclude that the BinaryExtension AIR
+    computes 32-bit shift-left (`BitVec.shiftLeft`) on the low 32 bits of
+    the operand, sign-extended to 64. -/
+theorem binary_extension_sllw_chunks_eq_bv_shl_w
+    (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
+    (h_op : (v.op row).val = OP_SLL_W)
+    (h_bytes : ByteLookupHypotheses v row)
+    (h_a_range : a_bytes_in_range v row) :
+    BitVec.signExtend 64
+      (BitVec.shiftLeft (BitVec.ofNat 32
+        ((v.free_in_a_0 row).val
+          + (v.free_in_a_1 row).val * 256
+          + (v.free_in_a_2 row).val * 65536
+          + (v.free_in_a_3 row).val * 16777216))
+        ((v.free_in_b row).val % 32))
+      = BitVec.ofNat 64
+          (((v.free_in_c_0 row).val
+              + (v.free_in_c_1 row).val
+              + (v.free_in_c_2 row).val
+              + (v.free_in_c_3 row).val
+              + (v.free_in_c_4 row).val
+              + (v.free_in_c_5 row).val
+              + (v.free_in_c_6 row).val
+              + (v.free_in_c_7 row).val)
+            + ((v.free_in_c_8 row).val
+              + (v.free_in_c_9 row).val
+              + (v.free_in_c_10 row).val
+              + (v.free_in_c_11 row).val
+              + (v.free_in_c_12 row).val
+              + (v.free_in_c_13 row).val
+              + (v.free_in_c_14 row).val
+              + (v.free_in_c_15 row).val) * 4294967296) := by
+  obtain ⟨e0, ⟨hm0, hop0, hbi0, ha0, hs0, hcl0, hch0⟩,
+         e1, ⟨hm1, hop1, hbi1, ha1, hs1, hcl1, hch1⟩,
+         e2, ⟨hm2, hop2, hbi2, ha2, hs2, hcl2, hch2⟩,
+         e3, ⟨hm3, hop3, hbi3, ha3, hs3, hcl3, hch3⟩,
+         e4, ⟨hm4, hop4, hbi4, ha4, hs4, hcl4, hch4⟩,
+         e5, ⟨hm5, hop5, hbi5, ha5, hs5, hcl5, hch5⟩,
+         e6, ⟨hm6, hop6, hbi6, ha6, hs6, hcl6, hch6⟩,
+         e7, ⟨hm7, hop7, hbi7, ha7, hs7, hcl7, hch7⟩⟩ := h_bytes
+  set sft : ℕ := (v.free_in_b row).val % 32 with sft_def
+  have hsft_lt : sft < 32 := Nat.mod_lt _ (by decide)
+  -- Bytes 0..3: cl_i = (a_i * 256^i * 2^sft) % 2^32.
+  -- Bytes 4..7: cl_i = 0.
+  have eq0 : (v.free_in_c_0 row).val = ((v.free_in_a_0 row).val * 1 * 2 ^ sft) % 2 ^ 32 := by
+    have ⟨h_lo, _⟩ := sllw_byte_eq e0 hm0 (by rw [hop0]; exact h_op)
+    rw [show e0.byte_index.val = 0 from by rw [hbi0]; rfl,
+        show e0.shift_amount.val = (v.free_in_b row).val from by rw [hs0],
+        show e0.a_byte.val = (v.free_in_a_0 row).val from by rw [ha0],
+        show e0.c_lo_byte.val = (v.free_in_c_0 row).val from by rw [hcl0]] at h_lo
+    have hp : (256 : ℕ) ^ 0 = 1 := by norm_num
+    rw [hp] at h_lo
+    simp only [show (0 : ℕ) < 4 from by decide, if_true] at h_lo
+    exact h_lo
+  have eq1 : (v.free_in_c_1 row).val = ((v.free_in_a_1 row).val * 256 * 2 ^ sft) % 2 ^ 32 := by
+    have ⟨h_lo, _⟩ := sllw_byte_eq e1 hm1 (by rw [hop1]; exact h_op)
+    rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
+        show e1.shift_amount.val = (v.free_in_b row).val from by rw [hs1],
+        show e1.a_byte.val = (v.free_in_a_1 row).val from by rw [ha1],
+        show e1.c_lo_byte.val = (v.free_in_c_1 row).val from by rw [hcl1]] at h_lo
+    have hp : (256 : ℕ) ^ 1 = 256 := by norm_num
+    rw [hp] at h_lo
+    simp only [show (1 : ℕ) < 4 from by decide, if_true] at h_lo
+    exact h_lo
+  have eq2 : (v.free_in_c_2 row).val = ((v.free_in_a_2 row).val * 65536 * 2 ^ sft) % 2 ^ 32 := by
+    have ⟨h_lo, _⟩ := sllw_byte_eq e2 hm2 (by rw [hop2]; exact h_op)
+    rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
+        show e2.shift_amount.val = (v.free_in_b row).val from by rw [hs2],
+        show e2.a_byte.val = (v.free_in_a_2 row).val from by rw [ha2],
+        show e2.c_lo_byte.val = (v.free_in_c_2 row).val from by rw [hcl2]] at h_lo
+    have hp : (256 : ℕ) ^ 2 = 65536 := by norm_num
+    rw [hp] at h_lo
+    simp only [show (2 : ℕ) < 4 from by decide, if_true] at h_lo
+    exact h_lo
+  have eq3 : (v.free_in_c_3 row).val = ((v.free_in_a_3 row).val * 16777216 * 2 ^ sft) % 2 ^ 32 := by
+    have ⟨h_lo, _⟩ := sllw_byte_eq e3 hm3 (by rw [hop3]; exact h_op)
+    rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
+        show e3.shift_amount.val = (v.free_in_b row).val from by rw [hs3],
+        show e3.a_byte.val = (v.free_in_a_3 row).val from by rw [ha3],
+        show e3.c_lo_byte.val = (v.free_in_c_3 row).val from by rw [hcl3]] at h_lo
+    have hp : (256 : ℕ) ^ 3 = 16777216 := by norm_num
+    rw [hp] at h_lo
+    simp only [show (3 : ℕ) < 4 from by decide, if_true] at h_lo
+    exact h_lo
+  have eq4 : (v.free_in_c_4 row).val = 0 := by
+    have ⟨h_lo, _⟩ := sllw_byte_eq e4 hm4 (by rw [hop4]; exact h_op)
+    rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
+        show e4.c_lo_byte.val = (v.free_in_c_4 row).val from by rw [hcl4]] at h_lo
+    simp only [show ¬ ((4 : ℕ) < 4) from by decide, if_false] at h_lo
+    exact h_lo
+  have eq5 : (v.free_in_c_5 row).val = 0 := by
+    have ⟨h_lo, _⟩ := sllw_byte_eq e5 hm5 (by rw [hop5]; exact h_op)
+    rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
+        show e5.c_lo_byte.val = (v.free_in_c_5 row).val from by rw [hcl5]] at h_lo
+    simp only [show ¬ ((5 : ℕ) < 4) from by decide, if_false] at h_lo
+    exact h_lo
+  have eq6 : (v.free_in_c_6 row).val = 0 := by
+    have ⟨h_lo, _⟩ := sllw_byte_eq e6 hm6 (by rw [hop6]; exact h_op)
+    rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
+        show e6.c_lo_byte.val = (v.free_in_c_6 row).val from by rw [hcl6]] at h_lo
+    simp only [show ¬ ((6 : ℕ) < 4) from by decide, if_false] at h_lo
+    exact h_lo
+  have eq7 : (v.free_in_c_7 row).val = 0 := by
+    have ⟨h_lo, _⟩ := sllw_byte_eq e7 hm7 (by rw [hop7]; exact h_op)
+    rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
+        show e7.c_lo_byte.val = (v.free_in_c_7 row).val from by rw [hcl7]] at h_lo
+    simp only [show ¬ ((7 : ℕ) < 4) from by decide, if_false] at h_lo
+    exact h_lo
+  -- ch values: by symmetry of wf_SLL_W.
+  have ech0 : (v.free_in_c_8 row).val
+            = if (v.free_in_c_0 row).val ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0 := by
+    have ⟨_, h_hi⟩ := sllw_byte_eq e0 hm0 (by rw [hop0]; exact h_op)
+    rw [show e0.byte_index.val = 0 from by rw [hbi0]; rfl,
+        show e0.shift_amount.val = (v.free_in_b row).val from by rw [hs0],
+        show e0.a_byte.val = (v.free_in_a_0 row).val from by rw [ha0],
+        show e0.c_hi_byte.val = (v.free_in_c_8 row).val from by rw [hch0]] at h_hi
+    have hp : (256 : ℕ) ^ 0 = 1 := by norm_num
+    rw [hp] at h_hi
+    simp only [show (0 : ℕ) < 4 from by decide, if_true] at h_hi
+    rw [h_hi, eq0]
+  have ech1 : (v.free_in_c_9 row).val
+            = if (v.free_in_c_1 row).val ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0 := by
+    have ⟨_, h_hi⟩ := sllw_byte_eq e1 hm1 (by rw [hop1]; exact h_op)
+    rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
+        show e1.shift_amount.val = (v.free_in_b row).val from by rw [hs1],
+        show e1.a_byte.val = (v.free_in_a_1 row).val from by rw [ha1],
+        show e1.c_hi_byte.val = (v.free_in_c_9 row).val from by rw [hch1]] at h_hi
+    have hp : (256 : ℕ) ^ 1 = 256 := by norm_num
+    rw [hp] at h_hi
+    simp only [show (1 : ℕ) < 4 from by decide, if_true] at h_hi
+    rw [h_hi, eq1]
+  have ech2 : (v.free_in_c_10 row).val
+            = if (v.free_in_c_2 row).val ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0 := by
+    have ⟨_, h_hi⟩ := sllw_byte_eq e2 hm2 (by rw [hop2]; exact h_op)
+    rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
+        show e2.shift_amount.val = (v.free_in_b row).val from by rw [hs2],
+        show e2.a_byte.val = (v.free_in_a_2 row).val from by rw [ha2],
+        show e2.c_hi_byte.val = (v.free_in_c_10 row).val from by rw [hch2]] at h_hi
+    have hp : (256 : ℕ) ^ 2 = 65536 := by norm_num
+    rw [hp] at h_hi
+    simp only [show (2 : ℕ) < 4 from by decide, if_true] at h_hi
+    rw [h_hi, eq2]
+  have ech3 : (v.free_in_c_11 row).val
+            = if (v.free_in_c_3 row).val ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0 := by
+    have ⟨_, h_hi⟩ := sllw_byte_eq e3 hm3 (by rw [hop3]; exact h_op)
+    rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
+        show e3.shift_amount.val = (v.free_in_b row).val from by rw [hs3],
+        show e3.a_byte.val = (v.free_in_a_3 row).val from by rw [ha3],
+        show e3.c_hi_byte.val = (v.free_in_c_11 row).val from by rw [hch3]] at h_hi
+    have hp : (256 : ℕ) ^ 3 = 16777216 := by norm_num
+    rw [hp] at h_hi
+    simp only [show (3 : ℕ) < 4 from by decide, if_true] at h_hi
+    rw [h_hi, eq3]
+  have ech4 : (v.free_in_c_12 row).val = 0 := by
+    have ⟨_, h_hi⟩ := sllw_byte_eq e4 hm4 (by rw [hop4]; exact h_op)
+    rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
+        show e4.c_hi_byte.val = (v.free_in_c_12 row).val from by rw [hch4]] at h_hi
+    simp only [show ¬ ((4 : ℕ) < 4) from by decide, if_false] at h_hi
+    rw [h_hi]
+    simp
+  have ech5 : (v.free_in_c_13 row).val = 0 := by
+    have ⟨_, h_hi⟩ := sllw_byte_eq e5 hm5 (by rw [hop5]; exact h_op)
+    rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
+        show e5.c_hi_byte.val = (v.free_in_c_13 row).val from by rw [hch5]] at h_hi
+    simp only [show ¬ ((5 : ℕ) < 4) from by decide, if_false] at h_hi
+    rw [h_hi]
+    simp
+  have ech6 : (v.free_in_c_14 row).val = 0 := by
+    have ⟨_, h_hi⟩ := sllw_byte_eq e6 hm6 (by rw [hop6]; exact h_op)
+    rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
+        show e6.c_hi_byte.val = (v.free_in_c_14 row).val from by rw [hch6]] at h_hi
+    simp only [show ¬ ((6 : ℕ) < 4) from by decide, if_false] at h_hi
+    rw [h_hi]
+    simp
+  have ech7 : (v.free_in_c_15 row).val = 0 := by
+    have ⟨_, h_hi⟩ := sllw_byte_eq e7 hm7 (by rw [hop7]; exact h_op)
+    rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
+        show e7.c_hi_byte.val = (v.free_in_c_15 row).val from by rw [hch7]] at h_hi
+    simp only [show ¬ ((7 : ℕ) < 4) from by decide, if_false] at h_hi
+    rw [h_hi]
+    simp
+  obtain ⟨ha0r, ha1r, ha2r, ha3r, ha4r, ha5r, ha6r, ha7r⟩ := h_a_range
+  exact sllw_bv_core
+    (v.free_in_a_0 row).val (v.free_in_a_1 row).val (v.free_in_a_2 row).val
+    (v.free_in_a_3 row).val (v.free_in_a_4 row).val (v.free_in_a_5 row).val
+    (v.free_in_a_6 row).val (v.free_in_a_7 row).val
+    (v.free_in_c_0 row).val (v.free_in_c_1 row).val (v.free_in_c_2 row).val
+    (v.free_in_c_3 row).val (v.free_in_c_4 row).val (v.free_in_c_5 row).val
+    (v.free_in_c_6 row).val (v.free_in_c_7 row).val
+    (v.free_in_c_8 row).val (v.free_in_c_9 row).val (v.free_in_c_10 row).val
+    (v.free_in_c_11 row).val (v.free_in_c_12 row).val (v.free_in_c_13 row).val
+    (v.free_in_c_14 row).val (v.free_in_c_15 row).val
+    sft
+    ha0r ha1r ha2r ha3r ha4r ha5r ha6r ha7r hsft_lt
+    eq0 eq1 eq2 eq3 eq4 eq5 eq6 eq7
+    ech0 ech1 ech2 ech3 ech4 ech5 ech6 ech7
+
+/-! ## SRA_W lift -/
+
+/-- Pure-Nat statement of the SRA_W identity. -/
+private lemma sraw_nat_core
+    (a0v a1v a2v a3v : ℕ)
+    (cl0 cl1 cl2 cl3 cl4 cl5 cl6 cl7 : ℕ)
+    (ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch7 : ℕ)
+    (sft : ℕ)
+    (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (ha3r : a3v < 256)
+    (hsft_lt : sft < 32)
+    (eq0 : cl0 + ch0 * 4294967296 = a0v * 1 / 2 ^ sft)
+    (eq1 : cl1 + ch1 * 4294967296 = a1v * 256 / 2 ^ sft)
+    (eq2 : cl2 + ch2 * 4294967296 = a2v * 65536 / 2 ^ sft)
+    (eq3 : cl3 + ch3 * 4294967296
+            = a3v * 16777216 / 2 ^ sft
+              + (if a3v ≥ 128 then 2 ^ 64 - 2 ^ (32 - sft) else 0))
+    (eq4 : cl4 + ch4 * 4294967296 = 0)
+    (eq5 : cl5 + ch5 * 4294967296 = 0)
+    (eq6 : cl6 + ch6 * 4294967296 = 0)
+    (eq7 : cl7 + ch7 * 4294967296 = 0) :
+    (cl0 + cl1 + cl2 + cl3 + cl4 + cl5 + cl6 + cl7)
+      + (ch0 + ch1 + ch2 + ch3 + ch4 + ch5 + ch6 + ch7) * 4294967296
+      = (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) / 2 ^ sft
+        + (if a3v ≥ 128 then 2 ^ 64 - 2 ^ (32 - sft) else 0) := by
+  -- The byte-split-div-4 lemma gives a32/2^sft = sum (a_i * 256^i / 2^sft).
+  have hbsplit := byte_split_div_4 a0v a1v a2v a3v sft ha0r ha1r ha2r ha3r
+  -- Sum the per-byte equations.
+  have h_lhs_eq :
+      (cl0 + cl1 + cl2 + cl3 + cl4 + cl5 + cl6 + cl7)
+        + (ch0 + ch1 + ch2 + ch3 + ch4 + ch5 + ch6 + ch7) * 4294967296
+      = (cl0 + ch0 * 4294967296) + (cl1 + ch1 * 4294967296)
+        + (cl2 + ch2 * 4294967296) + (cl3 + ch3 * 4294967296)
+        + (cl4 + ch4 * 4294967296) + (cl5 + ch5 * 4294967296)
+        + (cl6 + ch6 * 4294967296) + (cl7 + ch7 * 4294967296) := by ring
+  rw [h_lhs_eq, eq0, eq1, eq2, eq3, eq4, eq5, eq6, eq7]
+  -- a0v * 1 = a0v.
+  rw [hbsplit]
+  ring
+
+/-- Helper: the msb-true branch close for SRA_W. Extracted to keep the
+    kernel proof term small. -/
+private lemma sraw_bv_close_msb_true
+    (a0v a1v a2v a3v : ℕ)
+    (cl_sum ch_sum sft : ℕ)
+    (h_a32_lt : a0v + a1v * 256 + a2v * 65536 + a3v * 16777216 < 2 ^ 32)
+    (hsft_lt : sft < 32)
+    (h_a3 : a3v ≥ 128)
+    (hcore_pos :
+        cl_sum + ch_sum * 4294967296
+          = (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) / 2 ^ sft
+            + (2 ^ 64 - 2 ^ (32 - sft))) :
+    (2 ^ 32 - 1
+        - (2 ^ 32 - 1 - (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216)) >>> sft) % 2 ^ 64
+      + (2 ^ 64 - 2 ^ 32)
+      = (cl_sum + ch_sum * 4294967296) % 2 ^ 64 := by
+  have h_inner :
+      2 ^ 32 - 1 - (2 ^ 32 - 1 - (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216)) >>> sft
+      = (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) / 2 ^ sft
+        + (2 ^ 32 - 2 ^ (32 - sft)) :=
+    sra_msb_true_identity_32 _ sft h_a32_lt hsft_lt
+  rw [h_inner]
+  -- Clear h_inner from context to avoid omega confusion.
+  clear h_inner
+  have h_pow_le_32 : (2 : ℕ) ^ (32 - sft) ≤ 2 ^ 32 :=
+    Nat.pow_le_pow_right (by decide) (by omega)
+  have h_pow_le_64 : (2 : ℕ) ^ 32 ≤ 2 ^ 64 :=
+    Nat.pow_le_pow_right (by decide) (by omega)
+  have h_pow_le_64' : (2 : ℕ) ^ (32 - sft) ≤ 2 ^ 64 :=
+    Nat.pow_le_pow_right (by decide) (by omega)
+  have h_div_lt_32 : (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) / 2 ^ sft < 2 ^ 32 :=
+    lt_of_le_of_lt (Nat.div_le_self _ _) h_a32_lt
+  have h_inner_term_le : (2 : ℕ) ^ 32 - 2 ^ (32 - sft) ≤ 2 ^ 32 := Nat.sub_le _ _
+  have h_inner_lt_64 :
+      (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) / 2 ^ sft
+        + (2 ^ 32 - 2 ^ (32 - sft)) < 2 ^ 64 := by omega
+  rw [Nat.mod_eq_of_lt h_inner_lt_64]
+  have h_csum_lt :
+      (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) / 2 ^ sft
+        + (2 ^ 64 - 2 ^ (32 - sft)) < 2 ^ 64 := by
+    by_cases hsft0 : sft = 0
+    · rw [hsft0]
+      simp only [pow_zero, Nat.div_one, Nat.sub_zero]
+      have h2_64_eq : (2 : ℕ) ^ 64 = 18446744073709551616 := by norm_num
+      have h2_32_eq : (2 : ℕ) ^ 32 = 4294967296 := by norm_num
+      omega
+    · have hsft_pos : sft ≥ 1 := by omega
+      have h_div_bound :
+          (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) / 2 ^ sft < 2 ^ (32 - sft) := by
+        rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos sft), ← Nat.pow_add]
+        have : 32 - sft + sft = 32 := by omega
+        rw [this]; exact h_a32_lt
+      omega
+  rw [hcore_pos, Nat.mod_eq_of_lt h_csum_lt]
+  omega
+
+/-- BitVec wrapper around `sraw_nat_core`. The conclusion is the W-mode SRA
+    (signed shift right at width 32), sign-extended to 64 bits. -/
+private lemma sraw_bv_core
+    (a0v a1v a2v a3v a4v a5v a6v a7v : ℕ)
+    (cl0 cl1 cl2 cl3 cl4 cl5 cl6 cl7 : ℕ)
+    (ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch7 : ℕ)
+    (sft : ℕ)
+    (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (ha3r : a3v < 256)
+    (ha4r : a4v < 256) (ha5r : a5v < 256) (ha6r : a6v < 256) (ha7r : a7v < 256)
+    (hsft_lt : sft < 32)
+    (eq0 : cl0 + ch0 * 4294967296 = a0v * 1 / 2 ^ sft)
+    (eq1 : cl1 + ch1 * 4294967296 = a1v * 256 / 2 ^ sft)
+    (eq2 : cl2 + ch2 * 4294967296 = a2v * 65536 / 2 ^ sft)
+    (eq3 : cl3 + ch3 * 4294967296
+            = a3v * 16777216 / 2 ^ sft
+              + (if a3v ≥ 128 then 2 ^ 64 - 2 ^ (32 - sft) else 0))
+    (eq4 : cl4 + ch4 * 4294967296 = 0)
+    (eq5 : cl5 + ch5 * 4294967296 = 0)
+    (eq6 : cl6 + ch6 * 4294967296 = 0)
+    (eq7 : cl7 + ch7 * 4294967296 = 0) :
+    BitVec.signExtend 64
+      (BitVec.sshiftRight (BitVec.ofNat 32
+        (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216)) sft)
+      = BitVec.ofNat 64
+          ((cl0 + cl1 + cl2 + cl3 + cl4 + cl5 + cl6 + cl7)
+            + (ch0 + ch1 + ch2 + ch3 + ch4 + ch5 + ch6 + ch7) * 4294967296) := by
+  have h_a32_lt : a0v + a1v * 256 + a2v * 65536 + a3v * 16777216 < 2 ^ 32 := by
+    show _ < 4294967296; omega
+  have h_msb_iff :
+      (BitVec.ofNat 32 (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216)).msb = true
+      ↔ a3v ≥ 128 := by
+    rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h_a32_lt]
+    constructor
+    · intro h
+      have h' : (2 : ℕ) ^ (32 - 1) ≤ _ := decide_eq_true_iff.mp h
+      have hp : (2 : ℕ) ^ (32 - 1) = 2147483648 := by norm_num
+      rw [hp] at h'
+      omega
+    · intro h
+      apply decide_eq_true_iff.mpr
+      have hp : (2 : ℕ) ^ (32 - 1) = 2147483648 := by norm_num
+      rw [hp]
+      have ha3_ge : a3v * 16777216 ≥ 128 * 16777216 := by
+        apply Nat.mul_le_mul_right; exact h
+      have h128 : (128 : ℕ) * 16777216 = 2147483648 := by norm_num
+      omega
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_signExtend, BitVec.toNat_setWidth, BitVec.toNat_sshiftRight,
+      BitVec.msb_sshiftRight, BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt h_a32_lt]
+  -- Apply the nat-core to identify the final sum.
+  have hcore := sraw_nat_core a0v a1v a2v a3v cl0 cl1 cl2 cl3 cl4 cl5 cl6 cl7
+                  ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch7 sft
+                  ha0r ha1r ha2r ha3r hsft_lt
+                  eq0 eq1 eq2 eq3 eq4 eq5 eq6 eq7
+  rw [BitVec.toNat_ofNat]
+  by_cases h_a3 : a3v ≥ 128
+  · have h_msb_true : (BitVec.ofNat 32 (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216)).msb
+                      = true := h_msb_iff.mpr h_a3
+    rw [if_pos h_msb_true, if_pos h_msb_true]
+    have hcore_pos :
+        cl0 + cl1 + cl2 + cl3 + cl4 + cl5 + cl6 + cl7
+          + (ch0 + ch1 + ch2 + ch3 + ch4 + ch5 + ch6 + ch7) * 4294967296
+        = (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) / 2 ^ sft
+          + (2 ^ 64 - 2 ^ (32 - sft)) := by
+      rw [hcore, if_pos h_a3]
+    exact sraw_bv_close_msb_true a0v a1v a2v a3v
+            (cl0 + cl1 + cl2 + cl3 + cl4 + cl5 + cl6 + cl7)
+            (ch0 + ch1 + ch2 + ch3 + ch4 + ch5 + ch6 + ch7)
+            sft h_a32_lt hsft_lt h_a3 hcore_pos
+  · have h_msb_false : (BitVec.ofNat 32 (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216)).msb
+                      = false := by
+      rw [Bool.eq_false_iff]
+      intro h
+      exact h_a3 (h_msb_iff.mp h)
+    rw [if_neg (by simp [h_msb_false]), if_neg (by simp [h_msb_false])]
+    rw [Nat.shiftRight_eq_div_pow]
+    have h_div_lt_64 : (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) / 2 ^ sft < 2 ^ 64 := by
+      have : (2 : ℕ) ^ 32 ≤ 2 ^ 64 := Nat.pow_le_pow_right (by decide) (by omega)
+      have h_div_lt_32 : (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) / 2 ^ sft < 2 ^ 32 :=
+        lt_of_le_of_lt (Nat.div_le_self _ _) h_a32_lt
+      omega
+    rw [Nat.mod_eq_of_lt h_div_lt_64, Nat.add_zero]
+    rw [hcore, if_neg h_a3, Nat.add_zero]
+    rw [Nat.mod_eq_of_lt h_div_lt_64]
+
+/-- **BinaryExtension SRA_W `BitVec 64` lift.**
+
+    Given the 8 byte-lookup hypotheses against the BinaryExtensionTable
+    (consumer at multiplicity 1, all with `op = OP_SRA_W`), and the
+    range-bound on each input byte, conclude that the BinaryExtension AIR
+    computes 32-bit signed shift-right (`BitVec.sshiftRight`) on the low 32
+    bits of the operand, sign-extended to 64. -/
+theorem binary_extension_sraw_chunks_eq_bv_sshr_w
+    (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
+    (h_op : (v.op row).val = OP_SRA_W)
+    (h_bytes : ByteLookupHypotheses v row)
+    (h_a_range : a_bytes_in_range v row) :
+    BitVec.signExtend 64
+      (BitVec.sshiftRight (BitVec.ofNat 32
+        ((v.free_in_a_0 row).val
+          + (v.free_in_a_1 row).val * 256
+          + (v.free_in_a_2 row).val * 65536
+          + (v.free_in_a_3 row).val * 16777216))
+        ((v.free_in_b row).val % 32))
+      = BitVec.ofNat 64
+          (((v.free_in_c_0 row).val
+              + (v.free_in_c_1 row).val
+              + (v.free_in_c_2 row).val
+              + (v.free_in_c_3 row).val
+              + (v.free_in_c_4 row).val
+              + (v.free_in_c_5 row).val
+              + (v.free_in_c_6 row).val
+              + (v.free_in_c_7 row).val)
+            + ((v.free_in_c_8 row).val
+              + (v.free_in_c_9 row).val
+              + (v.free_in_c_10 row).val
+              + (v.free_in_c_11 row).val
+              + (v.free_in_c_12 row).val
+              + (v.free_in_c_13 row).val
+              + (v.free_in_c_14 row).val
+              + (v.free_in_c_15 row).val) * 4294967296) := by
+  obtain ⟨e0, ⟨hm0, hop0, hbi0, ha0, hs0, hcl0, hch0⟩,
+         e1, ⟨hm1, hop1, hbi1, ha1, hs1, hcl1, hch1⟩,
+         e2, ⟨hm2, hop2, hbi2, ha2, hs2, hcl2, hch2⟩,
+         e3, ⟨hm3, hop3, hbi3, ha3, hs3, hcl3, hch3⟩,
+         e4, ⟨hm4, hop4, hbi4, ha4, hs4, hcl4, hch4⟩,
+         e5, ⟨hm5, hop5, hbi5, ha5, hs5, hcl5, hch5⟩,
+         e6, ⟨hm6, hop6, hbi6, ha6, hs6, hcl6, hch6⟩,
+         e7, ⟨hm7, hop7, hbi7, ha7, hs7, hcl7, hch7⟩⟩ := h_bytes
+  set sft : ℕ := (v.free_in_b row).val % 32 with sft_def
+  have hsft_lt : sft < 32 := Nat.mod_lt _ (by decide)
+  -- Bytes 0..2: cl_i + ch_i * 2^32 = a_i * 256^i / 2^sft.
+  -- Byte 3: extra ext term when a_3 ≥ 128.
+  -- Bytes 4..7: 0.
+  have eq0 : (v.free_in_c_0 row).val + (v.free_in_c_8 row).val * 4294967296
+      = (v.free_in_a_0 row).val * 1 / 2 ^ sft := by
+    have h := sraw_byte_eq e0 hm0 (by rw [hop0]; exact h_op)
+    rw [show e0.byte_index.val = 0 from by rw [hbi0]; rfl,
+        show e0.shift_amount.val = (v.free_in_b row).val from by rw [hs0],
+        show e0.a_byte.val = (v.free_in_a_0 row).val from by rw [ha0],
+        show e0.c_lo_byte.val = (v.free_in_c_0 row).val from by rw [hcl0],
+        show e0.c_hi_byte.val = (v.free_in_c_8 row).val from by rw [hch0]] at h
+    have hp : (256 : ℕ) ^ 0 = 1 := by norm_num
+    rw [hp] at h
+    simp only [show (0 : ℕ) < 4 from by decide, if_true,
+               show ¬((0 : ℕ) = 3 ∧ (v.free_in_a_0 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h
+  have eq1 : (v.free_in_c_1 row).val + (v.free_in_c_9 row).val * 4294967296
+      = (v.free_in_a_1 row).val * 256 / 2 ^ sft := by
+    have h := sraw_byte_eq e1 hm1 (by rw [hop1]; exact h_op)
+    rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
+        show e1.shift_amount.val = (v.free_in_b row).val from by rw [hs1],
+        show e1.a_byte.val = (v.free_in_a_1 row).val from by rw [ha1],
+        show e1.c_lo_byte.val = (v.free_in_c_1 row).val from by rw [hcl1],
+        show e1.c_hi_byte.val = (v.free_in_c_9 row).val from by rw [hch1]] at h
+    have hp : (256 : ℕ) ^ 1 = 256 := by norm_num
+    rw [hp] at h
+    simp only [show (1 : ℕ) < 4 from by decide, if_true,
+               show ¬((1 : ℕ) = 3 ∧ (v.free_in_a_1 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h
+  have eq2 : (v.free_in_c_2 row).val + (v.free_in_c_10 row).val * 4294967296
+      = (v.free_in_a_2 row).val * 65536 / 2 ^ sft := by
+    have h := sraw_byte_eq e2 hm2 (by rw [hop2]; exact h_op)
+    rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
+        show e2.shift_amount.val = (v.free_in_b row).val from by rw [hs2],
+        show e2.a_byte.val = (v.free_in_a_2 row).val from by rw [ha2],
+        show e2.c_lo_byte.val = (v.free_in_c_2 row).val from by rw [hcl2],
+        show e2.c_hi_byte.val = (v.free_in_c_10 row).val from by rw [hch2]] at h
+    have hp : (256 : ℕ) ^ 2 = 65536 := by norm_num
+    rw [hp] at h
+    simp only [show (2 : ℕ) < 4 from by decide, if_true,
+               show ¬((2 : ℕ) = 3 ∧ (v.free_in_a_2 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h
+  have eq3 : (v.free_in_c_3 row).val + (v.free_in_c_11 row).val * 4294967296
+      = (v.free_in_a_3 row).val * 16777216 / 2 ^ sft
+        + (if (v.free_in_a_3 row).val ≥ 128 then 2 ^ 64 - 2 ^ (32 - sft) else 0) := by
+    have h := sraw_byte_eq e3 hm3 (by rw [hop3]; exact h_op)
+    rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
+        show e3.shift_amount.val = (v.free_in_b row).val from by rw [hs3],
+        show e3.a_byte.val = (v.free_in_a_3 row).val from by rw [ha3],
+        show e3.c_lo_byte.val = (v.free_in_c_3 row).val from by rw [hcl3],
+        show e3.c_hi_byte.val = (v.free_in_c_11 row).val from by rw [hch3]] at h
+    have hp : (256 : ℕ) ^ 3 = 16777216 := by norm_num
+    rw [hp] at h
+    simp only [show (3 : ℕ) < 4 from by decide, if_true, true_and] at h
+    show _ = _ + (if _ then 2 ^ 64 - 2 ^ (32 - sft) else 0)
+    rw [show sft = (v.free_in_b row).val % 32 from rfl]
+    exact h
+  have eq4 : (v.free_in_c_4 row).val + (v.free_in_c_12 row).val * 4294967296 = 0 := by
+    have h := sraw_byte_eq e4 hm4 (by rw [hop4]; exact h_op)
+    rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
+        show e4.c_lo_byte.val = (v.free_in_c_4 row).val from by rw [hcl4],
+        show e4.c_hi_byte.val = (v.free_in_c_12 row).val from by rw [hch4]] at h
+    simp only [show ¬ ((4 : ℕ) < 4) from by decide, if_false,
+               show ¬((4 : ℕ) = 3 ∧ e4.a_byte.val ≥ 128) from by omega,
+               Nat.add_zero] at h
+    exact h
+  have eq5 : (v.free_in_c_5 row).val + (v.free_in_c_13 row).val * 4294967296 = 0 := by
+    have h := sraw_byte_eq e5 hm5 (by rw [hop5]; exact h_op)
+    rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
+        show e5.c_lo_byte.val = (v.free_in_c_5 row).val from by rw [hcl5],
+        show e5.c_hi_byte.val = (v.free_in_c_13 row).val from by rw [hch5]] at h
+    simp only [show ¬ ((5 : ℕ) < 4) from by decide, if_false,
+               show ¬((5 : ℕ) = 3 ∧ e5.a_byte.val ≥ 128) from by omega,
+               Nat.add_zero] at h
+    exact h
+  have eq6 : (v.free_in_c_6 row).val + (v.free_in_c_14 row).val * 4294967296 = 0 := by
+    have h := sraw_byte_eq e6 hm6 (by rw [hop6]; exact h_op)
+    rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
+        show e6.c_lo_byte.val = (v.free_in_c_6 row).val from by rw [hcl6],
+        show e6.c_hi_byte.val = (v.free_in_c_14 row).val from by rw [hch6]] at h
+    simp only [show ¬ ((6 : ℕ) < 4) from by decide, if_false,
+               show ¬((6 : ℕ) = 3 ∧ e6.a_byte.val ≥ 128) from by omega,
+               Nat.add_zero] at h
+    exact h
+  have eq7 : (v.free_in_c_7 row).val + (v.free_in_c_15 row).val * 4294967296 = 0 := by
+    have h := sraw_byte_eq e7 hm7 (by rw [hop7]; exact h_op)
+    rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
+        show e7.c_lo_byte.val = (v.free_in_c_7 row).val from by rw [hcl7],
+        show e7.c_hi_byte.val = (v.free_in_c_15 row).val from by rw [hch7]] at h
+    simp only [show ¬ ((7 : ℕ) < 4) from by decide, if_false,
+               show ¬((7 : ℕ) = 3 ∧ e7.a_byte.val ≥ 128) from by omega,
+               Nat.add_zero] at h
+    exact h
+  obtain ⟨ha0r, ha1r, ha2r, ha3r, ha4r, ha5r, ha6r, ha7r⟩ := h_a_range
+  exact sraw_bv_core
+    (v.free_in_a_0 row).val (v.free_in_a_1 row).val (v.free_in_a_2 row).val
+    (v.free_in_a_3 row).val (v.free_in_a_4 row).val (v.free_in_a_5 row).val
+    (v.free_in_a_6 row).val (v.free_in_a_7 row).val
+    (v.free_in_c_0 row).val (v.free_in_c_1 row).val (v.free_in_c_2 row).val
+    (v.free_in_c_3 row).val (v.free_in_c_4 row).val (v.free_in_c_5 row).val
+    (v.free_in_c_6 row).val (v.free_in_c_7 row).val
+    (v.free_in_c_8 row).val (v.free_in_c_9 row).val (v.free_in_c_10 row).val
+    (v.free_in_c_11 row).val (v.free_in_c_12 row).val (v.free_in_c_13 row).val
+    (v.free_in_c_14 row).val (v.free_in_c_15 row).val
+    sft
+    ha0r ha1r ha2r ha3r ha4r ha5r ha6r ha7r hsft_lt
+    eq0 eq1 eq2 eq3 eq4 eq5 eq6 eq7
+
 end ZiskFv.Airs.BinaryExtension

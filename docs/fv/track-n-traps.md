@@ -683,35 +683,50 @@ because each invocation is opaque to the kernel. Same pattern used for
 ### 3. Status of SLL_W / SRA_W lifts
 
 S2 follow-on shipped `binary_extension_sra_chunks_eq_bv_sshr` (full
-SRA) and `binary_extension_srlw_chunks_eq_bv_ushr_w` (SRL_W). The
-remaining two lifts (`binary_extension_sllw_chunks_eq_bv_shl_w`,
-`binary_extension_sraw_chunks_eq_bv_sshr_w`) are **not yet authored**
-because they require an additional helper:
+SRA) and `binary_extension_srlw_chunks_eq_bv_ushr_w` (SRL_W).
 
-- **SLL_W** needs a 4-byte left-shift modulus identity: for byte
-  contributions `cl_j = (a_j * 256^j * 2^s) % 2^32` with `j ∈ [0, 4)`,
-  show `sum cl_j = (a32 * 2^s) % 2^32` (i.e., the per-byte values
-  occupy disjoint bit positions modulo 32, so summing them equals the
-  total mod). The disjointness argument requires bit-level reasoning
-  (or a Nat.add_mod chain with the observation that each `cl_j < 2^32`
-  and the partial sums each fit because of disjointness — non-trivial
-  to verify without `omega` choking on division-by-pow-two).
+**finishing2 F update (2026-04-27):** the remaining two lifts
+(`binary_extension_sllw_chunks_eq_bv_shl_w`,
+`binary_extension_sraw_chunks_eq_bv_sshr_w`) are now **shipped**.
+Strategy notes:
 
-- **SRA_W** is structurally similar to SRL_W plus an additional sign
-  extension at byte 3 (analogous to SRA's byte-7 extension but at the
-  32-bit boundary). The `sraw_byte_eq` helper is already in place; the
-  lift body needs to mirror `binary_extension_sra_chunks_eq_bv_sshr`'s
-  case analysis but on a 4-byte (not 8-byte) operand.
+- **SLL_W disjointness was solved by `interval_cases sft`.** The
+  4-byte left-shift modulus identity (per-byte contributions sum to
+  `(a32 * 2^s) % 2^32` modulo 32) is intractable for `omega` directly
+  because `2^(8i+s)` is variable in `s`. With `sft : ℕ` known to
+  satisfy `sft < 32`, `interval_cases sft` enumerates 32 concrete
+  shift amounts; within each case the per-byte equations reduce to
+  fixed numeric mod identities that `omega` closes immediately. The
+  `sllw_nat_core` helper handles this in ~25 seconds. The msb of
+  `(a32 << sft) % 2^32` is similarly handled by case-splitting on
+  whether each `cl_i ≥ 2^31` and on whether `low32 ≥ 2^31` before
+  `interval_cases`. See `Airs/Binary/BinaryExtensionPackedCorrect.lean`
+  `sllw_nat_core` / `sllw_bv_core` / main theorem.
 
-Both `wf_SLL_W` and `wf_SRA_W` clauses **are** strengthened with full
-byte-level semantics in `Airs/BinaryExtensionTable.lean` — the trusted
-contract carries the information needed; only the K1-C lift wrapping
-remains. Downstream consumers (RV64D / Spec / Equivalence) needing
-SLL_W or SRA_W can either:
-1. Wait for the lift to ship, or
-2. Use the strengthened `wf_*` clauses directly via the existing
-   `sllw_byte_eq` / `sraw_byte_eq` helpers (which are exposed at
-   private-but-in-namespace scope; promote to `theorem` if needed).
+- **SRA_W mirrors SRA's nat-core / BitVec-wrapper split**, but at
+  width 32 instead of 64. A new helper `sra_msb_true_identity_32`
+  duplicates the width-64 identity at width 32 (the proof is
+  structurally identical, just substituting 32 for 64). The
+  `sraw_nat_core` reduces to `byte_split_div_4` plus per-byte equation
+  summation (no `interval_cases` needed). The `sraw_bv_core` extracts
+  the msb-true close as a separate helper `sraw_bv_close_msb_true` to
+  keep the kernel proof term small (the inline form hit "(kernel)
+  deep recursion detected" — same trap as SRA's nat-core split).
+
+- **`>>>` vs `/` atomicity in omega**: when both forms appear in
+  `have`-hypotheses, omega may treat them as distinct atoms and fail.
+  Mitigation: `clear` the bridging `have` (e.g. `clear h_inner`) after
+  rewriting via it, so omega only sees the `/` form. Used in
+  `sraw_bv_close_msb_true`.
+
+- **`Nat.sub_le _ _` over `omega` for `2^a - 2^b ≤ 2^a`**: omega
+  doesn't recognize `2^32 - 2^(32-sft) ≤ 2^32` as a structural
+  consequence of Nat subtraction; use `Nat.sub_le` directly instead.
+
+Both `wf_SLL_W` and `wf_SRA_W` clauses already carried the full
+byte-level semantics in `Airs/BinaryExtensionTable.lean` from the S2
+follow-on commit (`04c4ba8`); finishing2 F just authored the K1-C
+wrapping.
 
 ## D escalation: K1-B chain lifts blocked on telescope OOM
 
