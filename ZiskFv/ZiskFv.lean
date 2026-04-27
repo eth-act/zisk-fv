@@ -169,4 +169,10 @@ import ZiskFv.RV64D.sltu
 import ZiskFv.RV64D.subw
 import ZiskFv.RV64D.xori
 
+-- Track N Phase 2: per-shape h_rd_val derivation lemmas.
+import ZiskFv.Equivalence.RdValDerivation.Arith
+import ZiskFv.Equivalence.RdValDerivation.JumpUType
+import ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned
+import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
+
 import ZiskFv.Spike
