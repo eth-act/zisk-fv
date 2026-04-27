@@ -25,6 +25,10 @@ import ZiskFv.Extraction.MemoryBuses
 import ZiskFv.Airs.MemoryBus.Projection
 import ZiskFv.Airs.MemoryBus.BusShape
 import ZiskFv.Airs.MemoryBus.LaneMatch
+-- finishing3 S1: Mem AIR (pilout idx 2) — named-column wrapper +
+-- bridge lemmas for the nine F-typed every-row constraints.
+import ZiskFv.Extraction.Mem
+import ZiskFv.Airs.Mem
 -- Track N K3: FGL → BitVec 64 arithmetic-extension lifts (h_rd_val bridges).
 import ZiskFv.Fundamentals.PackedBitVec.Extensions
 -- Track N B.5: Goldilocks no-wrap toolkit (additive packings).
