@@ -906,3 +906,208 @@ chains the kernel struggles to reduce, and (b) trying to discharge
 folding by `Nat.reduceMod` etc. — fixed by removing the redundant
 `omega`).
 
+## M escalation: load/store metaplan retirements blocked on missing bridges (finishing3 S5, 2026-04-27)
+
+The `finishing3` S5 cleanup task — drop `h_bus_execute_matches_sail`
+(and the decomposed `h_rd_val :` siblings for `LoadD`) from the 11
+load/store metaplan theorems — is **blocked across all 11 files**
+on infrastructure that K's S3 deliverable does not provide. The
+shape mismatch between K's discharge lemmas and the existing
+metaplan bodies is uniform and substantive; trying to wire any
+single file ends up needing the same missing primitives.
+
+### Files affected
+
+* `Equivalence/LoadD.lean` (LD)
+* `Equivalence/Lw.lean` (LW)
+* `Equivalence/LoadWU.lean` (LWU)
+* `Equivalence/Lh.lean` (LH)
+* `Equivalence/LoadHU.lean` (LHU)
+* `Equivalence/Lb.lean` (LB)
+* `Equivalence/LoadBU.lean` (LBU)
+* `Equivalence/StoreD.lean` (SD)
+* `Equivalence/StoreW.lean` (SW)
+* `Equivalence/StoreH.lean` (SH)
+* `Equivalence/StoreB.lean` (SB)
+
+### Shape mismatch
+
+K shipped (in commit `5692db5`):
+
+* `Spec/MemModel.lean::mem_load_correct` — given a Main row's load
+  emission shape (`b_0 = lo, b_1 = hi, as = 2, mult = -1`),
+  concludes the **per-byte Sail-state predicate**
+  `state.mem[e.ptr.toNat + i]? = .some e.x_i` for `i = 0..7`.
+* `Spec/MemModel.lean::mem_store_correct` — dual for stores; concludes
+  the post-store `state.mem` chain of inserts agrees byte-by-byte
+  with the bus entry.
+
+The existing 10 simple metaplan theorems (everything except `LoadD`)
+take a single `h_bus_execute_matches_sail` parameter of shape
+
+```
+(bus_effect exec_row mem_row state).2
+  = (let output := PureSpec.execute_<OP>_pure input
+     (do
+       Sail.writeReg Register.nextPC output.nextPC
+       <option-rd-write or memory-write>
+       pure (ExecutionResult.Retire_Success ())) state)
+```
+
+— a **full bus_effect ↔ Sail-do-block equality**. The body is
+`rw [equiv_<OP>_sail …]; exact h_bus_execute_matches_sail.symm`.
+
+`mem_load_correct` does not produce this conclusion; it produces a
+conjunction of per-byte memory predicates. To bridge from K's
+output to the metaplan target, the missing infrastructure is:
+
+1. **Per-width `bus_effect_matches_sail_*` reduction lemmas.**
+   `Airs/BusEmission.lean` ships `bus_effect_matches_sail_load_rrrw`
+   (8-byte loads) and `bus_effect_matches_sail_store_rrrw` (8-byte
+   stores) only. The narrow widths — 1-byte (LB / LBU / SB), 2-byte
+   (LH / LHU / SH), 4-byte (LW / LWU / SW) — have no corresponding
+   reduction lemma. Without them, `bus_effect`'s memory branches at
+   `BusEffect.lean:62-71` (load) and `BusEffect.lean:90-103` (store)
+   cannot be reduced symbolically against narrow-width `mem_row`
+   shapes.
+2. **Per-byte ↔ Sail-input-bytes bridge.** Even with a `*_rrrw`
+   lemma for the right width, `mem_load_correct`'s conclusion is
+   `state.mem[e.ptr.toNat + i]? = .some e.x_i` while
+   `<op>_state_assumptions` (e.g. `ld_state_assumptions`) gives
+   `state.mem[r1_val.toNat + (signExt imm).toNat + i]? = .some data_i`.
+   Bridging the two requires a **ptr-match hypothesis**
+   `e.ptr.toNat = r1_val.toNat + (BitVec.signExtend 64 imm).toNat`
+   — currently unsupplied; would have to be added either as a new
+   parameter (LANE-MATCH class) or derived from a Main-row
+   constraint plus `transpile_<OP>` (TRANSPILE-PIN class).
+3. **Memory-bus-entry ↔ rd-write-entry passthrough (loads only).**
+   For LD specifically, `h_rd_val` says
+   `U64.toBV #v[e2.x0..e2.x7] = ld_input.data7 ++ … ++ ld_input.data0`,
+   where `e2` is the **rd-write entry** but `mem_load_correct` is
+   stated about the **memory-read entry** (`e1` in LD's three-entry
+   memory bus). The chain `e1.x_i = e2.x_i` (the bytes flow from
+   memory-bus read to register-bus write through the same Main row)
+   is implicit in ZisK's bus protocol but has no Lean encoding —
+   no per-byte lane-match lemma ties `e1` and `e2`. Lifting the
+   `c_0 = b_0` / `c_1 = b_1` 32-bit chunk identity (which
+   `load_d_compositional` already ships) to per-byte equality
+   requires a byte-decomposition identity that pins `e1.x_i` and
+   `e2.x_i` against the same chunk via the byte-range bus.
+
+### What would need to exist (full closure manifest)
+
+To retire `h_bus_execute_matches_sail` from all 11 files without
+new axioms or `sorry`, the following infrastructure ships:
+
+1. **`Airs/BusEmission.lean`** — author 6 new `bus_effect_matches_sail_*`
+   reduction lemmas, mirrors of the existing 8-byte `_rrrw` shapes:
+
+   | Lemma | Shape | Width | Used by |
+   |---|---|---|---|
+   | `bus_effect_matches_sail_load_rrrw_4` | `[rs1_read, mem_read_4, rd_write]` | 4-byte | LW, LWU |
+   | `bus_effect_matches_sail_load_rrrw_2` | `[rs1_read, mem_read_2, rd_write]` | 2-byte | LH, LHU |
+   | `bus_effect_matches_sail_load_rrrw_1` | `[rs1_read, mem_read_1, rd_write]` | 1-byte | LB, LBU |
+   | `bus_effect_matches_sail_store_rrrw_4` | `[rs1_read, rs2_read, mem_write_4]` | 4-byte | SW |
+   | `bus_effect_matches_sail_store_rrrw_2` | `[rs1_read, rs2_read, mem_write_2]` | 2-byte | SH |
+   | `bus_effect_matches_sail_store_rrrw_1` | `[rs1_read, rs2_read, mem_write_1]` | 1-byte | SB |
+
+   Each lemma reduces `(bus_effect …).2` to a Sail `do`-block with
+   the appropriate width. `BusEffect.lean`'s memory-write branch
+   (`as = 2, mult = 1`) inserts 8 bytes unconditionally — this needs
+   either a width parameter on the bus protocol or a trailing-zero
+   convention on `e.x_i` for `i ≥ width`. Resolving the width axis
+   in `bus_effect`'s definition is itself a prerequisite.
+2. **`Spec/MemModel.lean`** — author per-width `mem_load_correct_<n>`
+   /  `mem_store_correct_<n>` for `n ∈ {1, 2, 4}` (or generalize the
+   existing 8-byte version to take a width parameter, with the
+   bytes beyond `width` being non-load-bearing).
+3. **Bridge from `mem_load_correct` to `<op>_state_assumptions`.**
+   For each load opcode, a small lemma:
+
+   ```
+   theorem entry_bytes_match_state_data_<OP>
+     (e : MemoryBusEntry FGL) (input : <Op>Input) (state : ...)
+     (h_mem : state.mem[e.ptr.toNat + i]? = .some e.x_i, for i = 0..n)
+     (h_state : <op>_state_assumptions input state)
+     (h_ptr_match : e.ptr.toNat = input.r1_val.toNat
+                    + (BitVec.signExtend 64 input.imm).toNat) :
+     ∀ i, e.x_i = input.data_i
+   ```
+
+   By `.some` injectivity on `Option`. Closes the per-byte equality
+   needed by the metaplan body's `rw [h_rd_val]`-equivalent step.
+4. **Mem-read-entry ↔ rd-write-entry byte-match (LD only).** A
+   structural lemma over the Main row's b/c chunks + byte-range
+   decomposition. Likely lives in `Airs/MemoryBus/MemBridge.lean`
+   alongside the lane-match lemmas. Pins `e1.x_i = e2.x_i` for the
+   load case via Main's `c_0 = b_0`, `c_1 = b_1` (constraint 9/16)
+   plus the byte-range bus's per-byte lookup.
+5. **Per-op metaplan rewrites.** With (1)-(4) in tree, each of the
+   11 metaplan theorems can drop `h_bus_execute_matches_sail` (LD
+   drops `h_rd_val`) and gain new parameters: `main : Valid_Main`,
+   `mem : Valid_Mem`, `r_main : ℕ`, `h_main_emit_<entry>`, the
+   `<op>_state_assumptions` (already present), and the ptr-match
+   hypothesis from (3).
+
+### What is currently OK to ship
+
+* K's `Spec/MemModel.lean` and `Airs/MemoryBus/MemBridge.lean`
+  remain in tree as **unused-but-correct** infrastructure for
+  future closure. They build clean and add 4 trusted-surface
+  axioms (MB-L, MB-S, MS-L, MS-S) that are documented in
+  `docs/fv/trusted-base.md` and `CLAUDE.md`'s trust ledger.
+* L's `register_write_lanes_match_of_bus_emission` (commit
+  `757ec0f`) similarly ships as Layer-2 infrastructure with no
+  consumers yet — that's the K2-writes-side closure for
+  `finishing2` S3.3.
+* The 11 metaplan theorems retain their current parameterized
+  `h_bus_execute_matches_sail` (and `h_rd_val :` for LoadD)
+  shapes. The M-family axioms in `docs/fv/trusted-base.md`
+  (M1-M4, M7, M9-M11) remain promoted to theorems via the
+  `@[simp high]` P1-P4 platform axioms (Phase 3.5 closure) —
+  they are *not* per-opcode `h_bus_execute_matches_sail`
+  parameters; that earlier framing in `finishing3.md` was
+  imprecise. The `*_pure_equiv_axiom` per-opcode axioms were
+  retired in Phase 3.5 (`2026-04-22`) and don't show up on the
+  per-opcode `#print axioms` outputs. The remaining trust gap
+  closed by `finishing3` S5 would be the *circuit-side*
+  closure of `h_bus_execute_matches_sail`, not a Sail-side
+  axiom.
+
+### Trust-base impact
+
+No change. The M-family entries in `docs/fv/trusted-base.md`
+already report the M1-M4, M7, M9-M11 axioms as **promoted to
+theorems 2026-04-22**. They are not load-bearing trust today;
+the load-bearing item per metaplan theorem is the parameterized
+`h_bus_execute_matches_sail` itself, which remains a caller
+obligation under this escalation.
+
+### Recommended re-spin
+
+Split S5 into two follow-ups:
+
+* **S5a** — author the 6 narrow-width `bus_effect_matches_sail_*`
+  reduction lemmas in `Airs/BusEmission.lean`, plus the per-width
+  `mem_load_correct_<n>` / `mem_store_correct_<n>` companions in
+  `Spec/MemModel.lean`. This is uniform copy-extend work over the
+  existing 8-byte versions; expect ~600 lines of new infra.
+* **S5b** — per-op metaplan rewires. With S5a in tree, each of
+  the 11 files becomes a self-contained ~30-line edit to drop
+  `h_bus_execute_matches_sail` and wire the new pieces. The LD
+  rewrite is the largest (drops `h_rd_val` + gains the
+  `e1 ↔ e2` byte-match handling).
+
+Total scope estimate: a ~2-day track for S5a + S5b combined,
+once the bus_effect width-parameterization design is settled.
+
+### Outcome of this attempt
+
+* No edits to the 11 metaplan files. They retain
+  `h_bus_execute_matches_sail` (and `h_rd_val :` for LoadD).
+* No edits to `docs/fv/trusted-base.md` (the M-family entries
+  were already theorems and weren't blocking the parameter
+  retirement).
+* This manifest entry serves as the per-file escalation called
+  for in the `finishing3.md` S5 hard constraints (item 7).
+
