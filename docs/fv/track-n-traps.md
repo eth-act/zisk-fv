@@ -430,3 +430,56 @@ ALU-Arith derivation lemmas can drop `h_input_val` and compose
 the new Spec / AIR theorems internally — no re-architecture of
 this file is needed, just a parameter swap and a proof-body
 composition.
+
+## S3 — register-write lane-match deferral (writes side)
+
+**Scope.** `finishing2.md` S3 closes the **reads-side** of K2 (rs1
+register-read, rs2 register-read, store-reg previous-value read) by
+composing through the auto-extracted memory-bus emissions
+`bus_emission_Main_mem_{0,2,4}` (`Extraction/MemoryBuses.lean`),
+the named-column projection
+`memBus_row_Main_register_read_{rs1,rs2,store_reg_prev}`
+(`Airs/MemoryBus/Projection.lean`), and the slot-match lemmas in
+`Airs/MemoryBus/BusShape.lean`. The reads-side `LaneMatch.lean`
+theorems `register_read_rs{1,2}_lanes_match_of_bus_emission` are no
+longer trivial `.symm` rewrites — they pass through the slot-match
+chain.
+
+**Writes-side gap.** `register_write_lanes_match_of_bus_emission`
+remains in its Layer-1 structural form (the entry's lo/hi halves
+equal Main's `c_0` / `c_1` columns, taken as a hypothesis). The
+reason: **no F-typed Main bus emission carries the register-write
+entry directly**. ZisK's memory protocol consistency-checks the
+destination write via the *next* read's `prev_value` slot — Main
+emits the *previous* state of the destination register on the bus
+(`bus_emission_Main_mem_4`'s `store_reg_prev_value[*]` columns), and
+the actual write is consumed by the Mem AIR's permutation `proves`
+side, which then re-emits the new value on the next row's read
+hint.
+
+**Why the writes-side can't ship in finishing2.** Closing the
+write requires:
+1. The Mem AIR's named-column projection (`Valid_Mem`) and its
+   per-row consistency constraints (the multi-row argument that
+   ties row `r`'s store to row `r+1`'s `prev_value` read).
+2. The `bus_emission_Mem_*` extraction at `bus_id = 10` (the
+   memory SM's permutation `proves` halves).
+3. A multi-row composition lemma ("if Main row `r` has selector
+   `assumes_store_reg = 1` and emits `(value_lo, value_hi)` as
+   `(c_0, c_1)`, then the Mem AIR's row at the matched `mem_step`
+   carries the same lo/hi") — this is the bus-permutation soundness
+   step over multiple rows.
+
+None of these are available in `finishing2`. They are explicitly
+scoped to **`finishing3.md` S4** (which lists the Mem AIR
+extraction + permutation soundness as one of its blocking
+prerequisites for the loads/stores `h_rd_val` retirement).
+
+**What ships in finishing2.** The reads-side closure means three of
+the four memory-bus paths the metaplan needs are no longer trivial.
+The writes-side stays at its existing Layer-1 form; consumers
+(LoadD, StoreD, etc.) continue to take `h_emit` as a structural
+hypothesis. When `finishing3` S4 lands, the writes-side theorem
+will be promoted via the same slot-match-driven derivation as the
+reads side — the API shape stays the same, only the proof
+composition changes.

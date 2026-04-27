@@ -19,6 +19,11 @@ import ZiskFv.Airs.BusShape
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 -- Track N K2: promoted lane-match theorems for register memory-bus entries.
+-- finishing2 S3 closes the reads-side via slot-match composition through
+-- the auto-extracted memory-bus emissions.
+import ZiskFv.Extraction.MemoryBuses
+import ZiskFv.Airs.MemoryBus.Projection
+import ZiskFv.Airs.MemoryBus.BusShape
 import ZiskFv.Airs.MemoryBus.LaneMatch
 -- Track N K3: FGL → BitVec 64 arithmetic-extension lifts (h_rd_val bridges).
 import ZiskFv.Fundamentals.PackedBitVec.Extensions
