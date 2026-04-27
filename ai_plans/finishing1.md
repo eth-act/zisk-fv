@@ -51,21 +51,37 @@ back to "Spec field identity + circuit constraints," parameterized
 only on K2 (Layer 1 today; closes in finishing2/3). After finishing2
 + finishing3, the chain is closed end-to-end for these opcodes.
 
-## Scope — 23 opcodes (revised down from 27)
+## Scope — 10 opcodes (revised down from 23 after Wave B reconnaissance)
 
-The four SLT family opcodes (SLT, SLTU, SLTI, SLTIU) **leave this
-branch** because their Tier-1 derivation requires the `Binary` AIR's
-row-constraint extraction, which is a finishing2 deliverable. They
-move to finishing2 alongside Logic/Shift.
+After Wave B's reconnaissance (commits `ea9f0a2`, `a063edf`,
+DONE_WITH_CONCERNS for both MDR archetypes), the multiplicative
+family — MUL, MULHU, DIVU, REMU, MULW, MULH, MULHSU, DIV, DIVW,
+DIVUW, REM, REMW, REMUW — **leaves this branch.** Their Tier-1
+upgrade requires a **multiplicative no-wrap toolkit** (lifting
+`a_packed * b_packed = c_packed + d_packed * 2^64` from FGL to a ℕ
+identity over chunk values up to `2^128`). That argument doesn't
+factor through a single packed-FGL-`.val` lemma — it requires
+chunk-level carry-chain reasoning over up to 16 chunks, plus the
+signed `BitVec.toInt` bridges for the signed half. That's a
+substantial second toolkit phase, scoped separately from this
+branch.
 
-Remaining 23, by archetype:
+The four SLT family opcodes (SLT, SLTU, SLTI, SLTIU) also stay
+out — Tier-1 needs the `Binary` AIR row-constraint extraction
+which is a finishing2 deliverable.
+
+Remaining 10, by archetype:
 
 | Archetype | Opcodes (count) |
 |---|---|
 | ALU-Arith | ADD, ADDI, ADDW, ADDIW, SUB, SUBW (6) |
 | Jump-UTYPE | JAL, JALR, LUI, AUIPC (4) |
-| MDR-unsigned | MUL, MULHU, DIVU, REMU, MULW (5) |
-| MDR-signed | MULH, MULHSU, DIV, DIVW, DIVUW, REM, REMW, REMUW (8) |
+
+Both archetypes are *additive* — the FGL identities they consume
+(`add_compositional`, `sub_compositional`, `jal_store_value`,
+`lui_store_value_*`, etc.) all factor through additions in FGL whose
+chunk-bounded forms stay within `GL_prime`. The toolkit phase below
+ships exactly the abstraction needed to close them.
 
 ## What shipped (Phase 1 — keystones)
 
@@ -97,105 +113,123 @@ Phase 2 deliverables are **kept** as the Tier-1 lemmas' final layer
 hypotheses on top. The byte-decomposition half is real work the
 Tier-1 lemmas need.
 
-## Phase 2.5 — Tier-1 upgrade
+## Phase 2.5 — Tier-1 upgrade (additive opcodes only)
 
-For each Tier-2 opcode (22 of them: 9 ALU-Arith + 4 Jump-UTYPE +
-4 MDR-unsigned + 8 MDR-signed; minus ADD, MULHU pending K3 extension)
-plus the **MULHU sorry fix**, ship a Tier-1 derivation that
-discharges `h_byte_sum` from circuit primitives.
+Discharges `h_byte_sum` (and the `h_input_val` chunk-equality residual
+from commit `ea9f0a2`/`a063edf`) from circuit primitives, for the 10
+additive opcodes in revised scope.
 
-### Pre-step: K3 high-half lift (fixes MULHU sorry)
+### Phase 2.5-pre — Goldilocks no-wrap toolkit (built by hand, TDD)
 
-Add to `Fundamentals/PackedBitVec/Extensions.lean`:
+Wave B's reconnaissance showed every blocked / partial agent hit the
+same missing abstraction: K1-A solves the FGL→ℕ no-wrap argument
+*bespoke* for `BinaryAdd`'s carry chain, but never factored it. So
+each per-archetype agent had to rebuild the same tactical chain
+(`push_cast; ring` → `congr_arg Fin.val` → `simp [Fin.val_natCast]` →
+`omega`) and gave up when the framing didn't fit cleanly.
 
-```lean
-lemma to_bits_truncate128_extractLsb_64_64
-    (n : ℕ) :
-    BitVec.extractLsb' 64 64 (to_bits_truncate (l := 128) n)
-      = BitVec.ofNat 64 (n / 2^64)
-```
+This sub-phase builds the abstraction once. Built **by hand, not via
+agent**, with **TDD discipline** (write lemma signatures + a worked
+example using them; verify the example compiles with `sorry` bodies;
+then close the proofs).
 
-Parallel to existing `to_bits_truncate128_setWidth64` (low-half).
-Then `execute_MUL_pure_hi_eq` closes without `sorry`.
+**Scope — additive only (multiplicative deferred):**
 
-### Per-archetype Tier-1 upgrade structure
+New file `ZiskFv/ZiskFv/Fundamentals/PackedBitVec/NoWrap.lean`. Three
+core lemmas:
 
-Each archetype-X agent rewrites the existing Tier-2 lemmas in
-`Equivalence/RdValDerivation/X.lean` so each `h_rd_val_<archetype>_<op>`
-now takes circuit hypotheses directly and discharges `h_byte_sum`
-internally. The lemma's **conclusion** is unchanged (Phase 3 still
-calls it the same way); only the **hypothesis interface** changes
-from "parameterized byte-sum" to "circuit constraints + lane-match +
-ranges + Sail-input bridges."
+1. `fgl_eq_to_nat_eq` — abstract no-wrap lift. Given two ℕ values
+   `lhs` and `rhs` with `((lhs : ℕ) : FGL) = ((rhs : ℕ) : FGL)` and
+   `lhs < GL_prime`, `rhs < GL_prime`, conclude `lhs = rhs`. Pure
+   no-wrap argument; closes via `congr_arg Fin.val` + `Fin.val_natCast`
+   + `omega`.
 
-### N-ALU-Arith — Tier-1 upgrade for 5 opcodes (ADD already Tier-1)
+2. `fgl_packed_2_lanes_natCast` — `l₀ + l₁ * 2^32 = ((l₀.val + l₁.val * 2^32 : ℕ) : FGL)`
+   in FGL. Trivial via `push_cast; ring`. Lets callers cast a
+   2-lane FGL packing into Nat-cast form for use with
+   `fgl_eq_to_nat_eq`.
 
-| Opcode | Field-level input | BitVec bridge | Notes |
-|---|---|---|---|
-| ADDI | `Spec/Addi::addi_compositional` (verify exists; if not, port from `Spec/Add`) | K1-A | imm folded into `b` lanes |
-| ADDW | `Spec/Addw::addw_compositional` | K1-A; m32=1 high-lane zero via `bus_shape_for_main_at_m32_one` | 32-bit; sign-extended low-32 |
-| ADDIW | `Spec/Addiw::addiw_compositional` | K1-A + m32=1 | imm + m32=1 |
-| SUB | `Spec/Sub::sub_compositional` | K1-A | check whether ZisK SUB negates `b` upstream of BinaryAdd or uses a separate carry chain |
-| SUBW | `Spec/Subw::subw_compositional` | K1-A + m32=1 | |
+3. `fgl_packed_4_chunks_natCast` — same shape for 4×16-bit chunks
+   (used by Arith / Main projections).
 
-Block any opcode whose `Spec/<X>::<X>_compositional` theorem is missing,
-report DONE_WITH_CONCERNS, and document.
+**Worked example (TDD test):** in the same file, demonstrate the
+toolkit by writing a 3-4 line proof of an additive carry-chain
+identity (e.g., re-derive `carry_chain_0_nat`'s body using the
+toolkit). This validates the abstraction is actually usable
+end-to-end before fan-out.
 
-### N-Jump-UTYPE — Tier-1 upgrade for 4 opcodes
-
-| Opcode | Field-level input | BitVec bridge |
-|---|---|---|
-| JAL | `Spec/Jal` (verify field-level identity exists; result = `pc + 4` field-level) | K3 `pc_plus4_bv64_of_bytes` |
-| JALR | `Spec/Jalr` | K3 `pc_plus4_bv64_of_bytes` |
-| LUI | `Spec/Lui` | K3 `u64_toBV_of_imm20_lanes` + `signExtend_imm20_nat_lanes` |
-| AUIPC | `Spec/Auipc` (also `Spec/AddUpperImmediatePC.lean` exists) | K3 byte-bridge + the imm-add field identity |
-
-### N-MDR-unsigned — Tier-1 upgrade for 5 opcodes (MULHU needs K3 ext first)
-
-| Opcode | Field-level input | BitVec bridge |
-|---|---|---|
-| MUL | `Spec/MulField::main_mul_unsigned_field_correct` (shipped) | K3 `mul_lo_bv64_of_byte_sum`, `execute_MUL_pure_lo_eq` |
-| MULHU | same field identity (high half via `d_chunks_packed`) | **K3 high-half lift (pre-step above)** |
-| DIVU | `Spec/DivFieldSigned::main_div_unsigned_field_correct` (shipped) | K3 unsigned-div byte bridge |
-| REMU | `Spec/DivFieldSigned::main_rem_unsigned_field_correct` (shipped) | same |
-| MULW | `Spec/MulField` low-half + 32-bit signExtend | K3 + sign-extension |
-
-### N-MDR-signed — Tier-1 upgrade for 8 opcodes
-
-All consume K4-shipped `Spec/MulFieldSigned` + `Spec/DivFieldSigned`
-+ `Fundamentals/PackedBitVec/Signed`. Per opcode:
-
-| Opcode | Field-level input | BitVec bridge |
-|---|---|---|
-| MULH | `main_mul_signed_field_correct` with `(na=1, nb=1, np=0)` | K4 high-half + sign-case lift |
-| MULHSU | same with Track P MULHSU witness disjunction | K4 + Track P case-split |
-| DIV | `main_div_signed_field_correct_main_level` | K4 signed-DIV; INT_MIN/-1 via `int_tdiv_overflow_case` |
-| DIVW | 32-bit signed; m32=1 path | K4 + 32-bit signExtend |
-| DIVUW | unsigned-cast signed-witness path; per agent's note, witnesses pin to zero via `arith_table_div_w_witnesses_from_data` | K4 unsigned route |
-| REM | `main_rem_signed_field_correct_main_level` | K4 signed-REM |
-| REMW | 32-bit signed | K4 + 32-bit signExtend |
-| REMUW | unsigned-cast 32-bit | K4 unsigned + signExtend |
-
-### Verification gate per archetype (Phase 2.5)
+**Verification gate (this sub-phase):**
 
 ```bash
 cd /home/cody/zisk-fv/.worktrees/track-n/ZiskFv
-# Existing Tier-2 build still passes; Tier-1 upgrade replaces it in-place.
-lake build ZiskFv.Equivalence.RdValDerivation.Arith
-lake build ZiskFv.Equivalence.RdValDerivation.JumpUType
-lake build ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned
-lake build ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
-# Final
-lake build ZiskFv
-# expected: 0 errors, 0 sorries, 0 new warnings
+lake build ZiskFv.Fundamentals.PackedBitVec.NoWrap
+lake build ZiskFv  # full
+# expected: 0 errors, 0 sorries
 ```
 
-The hard gate: **`grep -n 'h_byte_sum' ZiskFv/ZiskFv/Equivalence/RdValDerivation/*.lean`
-returns 0 hits** (the byte-sum equality is now a `have`, not a parameter).
+**Out of scope (deferred to a later branch):**
+- Multiplicative no-wrap toolkit (the FGL↔ℕ identity for
+  `a_packed * b_packed = c_packed + d_packed * 2^64`). Requires
+  carry-chain reasoning across up to 16 chunks and cannot be
+  abstracted as a single `.val` lemma.
+- Signed `BitVec.toInt` reductions (K4-extension territory).
+- 8-chunk and other packing arities not used by the 10 additive
+  opcodes in scope.
+
+### Per-archetype Tier-1 upgrade
+
+Two parallel agent dispatches (one per archetype). Each agent rewrites
+the existing Tier-2 (or Tier-1.5) form in `Equivalence/RdValDerivation/<X>.lean`
+so each `h_rd_val_<archetype>_<op>` takes circuit hypotheses directly
+and discharges `h_byte_sum` *and* `h_input_val` internally.
+
+#### N-ALU-Arith — Tier-1 upgrade for 5 opcodes (ADD already Tier-1)
+
+Existing form: `ea9f0a2` (Tier-1.5; ADDI/ADDW/ADDIW/SUB/SUBW each
+take an `h_input_val : bus_entry.c_lo.val + bus_entry.c_hi.val * 2^32 = spec_val.toNat`
+parameter). Upgrade replaces that parameter with composition through
+the corresponding `Spec/<X>::<X>_compositional` theorem + the no-wrap
+toolkit.
+
+| Opcode | Field-level input |
+|---|---|
+| ADDI | `Spec/Addi::addi_compositional` |
+| ADDW | `Spec/Addw::addw_compositional` |
+| ADDIW | `Spec/Addiw::addiw_compositional` |
+| SUB | `Spec/Sub::sub_compositional` |
+| SUBW | `Spec/Subw::subw_compositional` |
+
+#### N-Jump-UTYPE — Tier-1 upgrade for 4 opcodes
+
+Existing form: `a063edf` (Tier-1.5; each opcode takes `h_e2_*_val`,
+`h_pc_lo_val`, `h_b0_lo`, etc. parameters that should be derived
+from circuit + transpile bridges). Upgrade replaces those with
+internal composition.
+
+| Opcode | Field-level input |
+|---|---|
+| JAL | `Spec/Jal::jal_store_value` |
+| JALR | `Spec/Jalr::jalr_store_value` |
+| LUI | `Spec/LoadUpperImmediate::lui_store_value_lo/hi` |
+| AUIPC | `Spec/AddUpperImmediatePC::auipc_store_value_lo` |
+
+### Verification gate (Phase 2.5)
+
+```bash
+cd /home/cody/zisk-fv/.worktrees/track-n/ZiskFv
+lake build ZiskFv.Equivalence.RdValDerivation.Arith
+lake build ZiskFv.Equivalence.RdValDerivation.JumpUType
+lake build ZiskFv  # full
+```
+
+The hard gate: **`grep -nE '\(h_byte_sum|\(h_input_val|\(h_e2_lo|\(h_e2_hi_val|\(h_pc_lo_val|\(h_b0_lo|\(h_b1_hi' ZiskFv/ZiskFv/Equivalence/RdValDerivation/{Arith,JumpUType}.lean`
+returns 0 hits.** The trust gap on the BitVec rd-write equality is
+fully discharged from circuit primitives — no chunk-equality, byte-sum,
+or "circuit lane = spec half" parameter survives.
 
 ## Phase 3 — cleanup of `Equivalence/<Op>.lean`
 
-For each of the 23 in-scope opcodes:
+For each of the 10 in-scope opcodes:
 
 1. Remove `h_rd_val :` from each metaplan theorem signature
    (`_metaplan`, `_metaplan_from_bus`, `_metaplan_bus_self`,
@@ -214,11 +248,9 @@ edit disjoint file sets).
 ### Phase 3 verification gate
 
 ```bash
-# Per-archetype grep gate
+# Per-archetype grep gate (10 in-scope opcodes)
 for op in Add Addi Addiw Addw Sub Subw \
-          Jal Jalr Lui Auipc \
-          Mul MulHU Divu Remu MulW \
-          MulH MulHSU Div Divw Divuw Rem Remw Remuw; do
+          Jal Jalr Lui Auipc; do
   echo -n "$op: " ; grep -c 'h_rd_val :' "ZiskFv/ZiskFv/Equivalence/${op}.lean" 2>/dev/null || echo 0
 done
 # expected: 0 for each
@@ -228,7 +260,7 @@ cd ZiskFv && lake build
 # expected: 0 errors, 0 sorries
 ```
 
-## Trust state at end of branch (for the 23 in-scope opcodes)
+## Trust state at end of branch (for the 10 in-scope opcodes)
 
 After Phase 2.5 + Phase 3 close:
 
@@ -249,24 +281,37 @@ After Phase 2.5 + Phase 3 close:
 | K1-B (AND/OR/XOR PackedCorrect) | needs `Valid_Binary` | finishing2 |
 | K1-C (Shift PackedCorrect) | needs `Valid_BinaryExtension` | finishing2 |
 | N-ALU-Binary derivation | needs K1-B + K1-C | finishing2 |
+| MUL, MULHU, DIVU, REMU, MULW (5 unsigned) | Tier-1 needs multiplicative no-wrap toolkit | new follow-up; Tier-2 form remains in tree from `bed62b7` |
+| MULH, MULHSU, DIV, DIVW, DIVUW, REM, REMW, REMUW (8 signed) | needs multiplicative + signed `BitVec.toInt` toolkit | new follow-up; Tier-2 form remains in tree from `23e5669` |
 | K2 Layer-2 closure | needs F-typed memory-bus extraction (reads side) + Mem AIR (writes side) | finishing2/3 |
 | Loads / Stores `h_rd_val` retirement | needs Mem AIR | finishing3 |
 | Branches | don't write rd | n/a |
 
 ## Recommended dispatch (this branch)
 
-**Wave A — K3 extension fix** (single subagent, ~30 min):
-- Ship `to_bits_truncate128_extractLsb_64_64` in `Fundamentals/PackedBitVec/Extensions.lean`.
-- Discharge MULHU's sorry in `Equivalence/RdValDerivation/MulDivRemUnsigned.lean`.
+**Wave A — K3 high-half extension** ✅ shipped at `92305eb` (closed MULHU sorry).
 
-**Wave B — Phase 2.5 upgrade** (4 parallel subagents):
-- N-ALU-Arith Tier-1 (5 ops + ADD already done; agent verifies ADD still works).
-- N-Jump-UTYPE Tier-1 (4 ops).
-- N-MDR-unsigned Tier-1 (5 ops; gated on Wave A for MULHU).
-- N-MDR-signed Tier-1 (8 ops).
+**Wave B — Tier-2/Tier-1.5 reconnaissance** ✅ shipped at `ea9f0a2`
+(N-ALU-Arith Tier-1.5) and `a063edf` (N-Jump-UTYPE Tier-1.5). Two
+MDR archetypes escalated DONE_WITH_CONCERNS without commit; the
+common gap was the missing FGL→ℕ no-wrap abstraction. Tier-2 forms
+remain in tree for the 13 MDR opcodes.
 
-**Wave C — Phase 3 cleanup** (4 parallel subagents, gated on Wave B):
-- One per archetype, walking `Equivalence/<Op>.lean` files.
+**Wave B.5 — Goldilocks no-wrap toolkit** (built by hand, TDD discipline):
+- Ship `Fundamentals/PackedBitVec/NoWrap.lean` with three lemmas
+  (`fgl_eq_to_nat_eq`, `fgl_packed_2_lanes_natCast`,
+  `fgl_packed_4_chunks_natCast`) plus a worked-example test.
+- Verify full `lake build` clean.
+- **Multiplicative + signed toolkit explicitly out of scope** for
+  this sub-phase to prevent spiral.
+
+**Wave B.6 — Tier-1 upgrade** (2 parallel subagents, gated on Wave B.5):
+- N-ALU-Arith full Tier-1 (5 ops; ADD verifies unchanged).
+- N-Jump-UTYPE full Tier-1 (4 ops).
+
+**Wave C — Phase 3 cleanup** (2 parallel subagents, gated on Wave B.6):
+- ALU-Arith cleanup: 6 opcode files.
+- Jump-UTYPE cleanup: 4 opcode files.
 
 **Final wave:** verification gates run, branch closes.
 
@@ -275,5 +320,8 @@ After Phase 2.5 + Phase 3 close:
 - Phase 1 keystones complete.
 - Phase 2 Tier-2 wrappers complete (commits `be7264c`, `ec7dd8e`,
   `bed62b7`, `23e5669`, `86ec279`).
-- **Next step:** Wave A — dispatch K3 extension fix as a single
-  subagent. Then Wave B in parallel.
+- Wave A complete (`92305eb`).
+- Wave B partial: ALU-Arith and Jump-UTYPE at Tier-1.5 (`ea9f0a2`,
+  `a063edf`); MDR escalated.
+- **Next step:** Wave B.5 — build the no-wrap toolkit by hand with
+  TDD. Then Wave B.6 in parallel.
