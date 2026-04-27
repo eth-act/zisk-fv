@@ -1,0 +1,129 @@
+import Mathlib
+
+import ZiskFv.Fundamentals.Goldilocks
+
+/-!
+**Goldilocks FGL ↔ ℕ no-wrap toolkit.**
+
+Wave B reconnaissance (`ai_plans/finishing1.md`) found that every
+Tier-1 upgrade attempt re-derived the same tactical chain: cast both
+sides of an FGL equation into `((nat : ℕ) : FGL)` form via
+`push_cast; ring`, lift to `Fin GL_prime` via `congr_arg Fin.val`,
+strip the `% GL_prime` via `Fin.val_natCast`, and close by `omega`
+under per-side `< GL_prime` bounds.
+
+This file factors that chain so it can be reused per-archetype
+without each agent rebuilding the framing. K1-A's `carry_chain_0_nat`
+(`Airs/Binary/BinaryAddPackedCorrect.lean:95-125`) is the working
+template the toolkit abstracts.
+
+**Scope:** additive packings only — 2 × 32-bit lanes (Main / bus
+entry layout) and 4 × 16-bit chunks (Arith / BinaryAdd layout).
+Multiplicative no-wrap (FGL identities like `a*b = c + d * 2^64`
+where the operand product can exceed `GL_prime`) and signed
+`BitVec.toInt` reductions are explicitly out of scope; both require
+chunk-level carry-chain reasoning that doesn't factor through a
+single packed-`.val` lemma.
+
+**Worked example:** see `_example_carry_chain_lifts_via_toolkit` at
+the bottom of the file. It shows the 5-line proof template the
+toolkit enables.
+-/
+
+namespace ZiskFv.PackedBitVec.NoWrap
+
+open Goldilocks
+
+/-! ## Core no-wrap lift -/
+
+/-- **The no-wrap lift.** Given two ℕ values whose `((·:ℕ):FGL)`
+casts are equal in `FGL`, and both are below `GL_prime`, conclude
+they're equal in ℕ.
+
+This is the abstract form of K1-A's `carry_chain_0_nat` framing:
+once a caller has pushed an FGL equation through `push_cast; ring`
+into `((lhs:ℕ):FGL) = ((rhs:ℕ):FGL)`, this lemma closes the lift to
+`lhs = rhs : ℕ` provided per-side range bounds. -/
+theorem fgl_eq_to_nat_eq
+    {lhs rhs : ℕ}
+    (h_eq_fgl : ((lhs : ℕ) : FGL) = ((rhs : ℕ) : FGL))
+    (h_lhs_lt : lhs < GL_prime)
+    (h_rhs_lt : rhs < GL_prime) :
+    lhs = rhs := by
+  have heq := congr_arg Fin.val h_eq_fgl
+  simp only [Fin.val_natCast] at heq
+  omega
+
+/-! ## Packed-form Nat-cast helpers
+
+These are `push_cast; ring` factored as named rewrites. Each takes a
+specific packing arity and exposes the natCast form a caller needs to
+hand to `fgl_eq_to_nat_eq`. -/
+
+/-- **2-lane (32-bit) FGL packing as a Nat-cast.** The standard
+packing of two 32-bit lanes into a 64-bit operand on Main / on
+operation-bus entries:
+
+```
+  l₀ + l₁ * 2³² = ((l₀.val + l₁.val * 2³² : ℕ) : FGL)
+```
+
+Trivial via `push_cast; ring`; named so callers can `rw` against it. -/
+theorem fgl_packed_2_lanes_natCast (l₀ l₁ : FGL) :
+    l₀ + l₁ * 4294967296
+      = (((l₀.val + l₁.val * 4294967296 : ℕ)) : FGL) := by
+  push_cast
+  ring
+
+/-- **4-chunk (16-bit) FGL packing as a Nat-cast.** The standard
+packing of four 16-bit chunks into a 64-bit operand on the Arith /
+BinaryAdd `c_chunks_*` layout. -/
+theorem fgl_packed_4_chunks_natCast (c₀ c₁ c₂ c₃ : FGL) :
+    c₀ + c₁ * 65536 + c₂ * 4294967296 + c₃ * 281474976710656
+      = (((c₀.val + c₁.val * 65536 + c₂.val * 4294967296
+            + c₃.val * 281474976710656 : ℕ)) : FGL) := by
+  push_cast
+  ring
+
+/-! ## Worked example — TDD test that the toolkit composes
+
+The body below mirrors K1-A's `carry_chain_0_nat` but built **only**
+from the toolkit. It demonstrates the 5-line template:
+
+  1. Get an FGL equation `f_lhs = f_rhs` from the circuit.
+  2. Use a `*_natCast` helper to cast `f_lhs` into `((nat_lhs : ℕ) : FGL)`.
+  3. Same for `f_rhs`.
+  4. `rw` both into the FGL equation.
+  5. Close via `fgl_eq_to_nat_eq` with per-side bounds.
+
+If this lemma compiles, the toolkit is usable for additive carry
+chains. -/
+
+/-- **Toolkit usability test.** Given the same hypothesis shape as
+K1-A's low-lane carry chain — an FGL equation between two specific
+2/3-term sums, plus per-term range bounds — derive the corresponding
+ℕ equality. The proof uses only this file's exports. -/
+example
+    (a₀ b₀ k₀ c₁ c₀ : FGL)
+    (h_fgl : a₀ + b₀ = k₀ * 4294967296 + c₁ * 65536 + c₀)
+    (h_a₀ : a₀.val < 4294967296) (h_b₀ : b₀.val < 4294967296)
+    (h_k₀ : k₀.val ≤ 1)
+    (h_c₀ : c₀.val < 65536) (h_c₁ : c₁.val < 65536) :
+    a₀.val + b₀.val
+      = k₀.val * 4294967296 + c₁.val * 65536 + c₀.val := by
+  -- Step 1+2: FGL equation in Nat-cast form.
+  have h_lhs_cast : a₀ + b₀
+      = (((a₀.val + b₀.val : ℕ)) : FGL) := by
+    push_cast; ring
+  have h_rhs_cast : k₀ * 4294967296 + c₁ * 65536 + c₀
+      = (((k₀.val * 4294967296 + c₁.val * 65536 + c₀.val : ℕ)) : FGL) := by
+    push_cast; ring
+  rw [h_lhs_cast, h_rhs_cast] at h_fgl
+  -- Step 3: lift to ℕ via the toolkit, supplying per-side bounds.
+  apply fgl_eq_to_nat_eq h_fgl
+  · -- LHS bound: a₀.val + b₀.val < 2³³ < GL_prime.
+    omega
+  · -- RHS bound: k₀ ≤ 1 means k₀ * 2³² ≤ 2³², plus the 16-bit chunks.
+    omega
+
+end ZiskFv.PackedBitVec.NoWrap

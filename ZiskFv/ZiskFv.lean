@@ -22,6 +22,8 @@ import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus.LaneMatch
 -- Track N K3: FGL → BitVec 64 arithmetic-extension lifts (h_rd_val bridges).
 import ZiskFv.Fundamentals.PackedBitVec.Extensions
+-- Track N B.5: Goldilocks no-wrap toolkit (additive packings).
+import ZiskFv.Fundamentals.PackedBitVec.NoWrap
 import ZiskFv.Spec.Add
 import ZiskFv.Equivalence.Add
 import ZiskFv.GoldenTraces.Add
