@@ -1,8 +1,11 @@
 import Mathlib
 
 import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Fundamentals.PackedBitVec.WidePCNoWrap
 import ZiskFv.Airs.Main
+import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.OperationBus
 
 /-!
@@ -20,14 +23,34 @@ operation-bus hop is emitted.
 
 This is the A2 archetype spec. JALR will differ by `set_pc = 1` and
 `c[0]` (from rs1 via the operation bus) driving next-pc.
+
+## finishing5 S3 — bus-emission lo/hi BitVec bridges
+
+The two theorems `jal_store_value_lo_bv` / `jal_store_value_hi_bv`
+extend `jal_store_value` (which ties the Main columns
+`store_pc * (pc + jmp_offset2 - c_0) + c_0` to `pc + jmp_offset2`) to
+the **memory-bus entry** lanes via the `store_pc_lanes_match_*`
+predicates from `Airs/MemoryBus.lean`, composed with the wide-PC
+no-wrap toolkit (`Fundamentals/PackedBitVec/WidePCNoWrap.lean`) and
+the `transpile_PC_for_JAL` axiom (S1).
+
+The hi-half is structurally trivial under JAL's `store_pc = 1` mode:
+the PIL formula `(1 - store_pc) * c_1` collapses to `0`, so
+`memory_entry_hi e = 0`. To match the BitVec hi-half projection
+`(PC + 4).toNat / 2^32` the caller supplies a 32-bit bound on
+`(PC + 4).toNat` (immediate from the ROM `pc < 2^32` invariant for
+ELF-loaded programs).
 -/
 
 namespace ZiskFv.Spec.Jal
 
 open Goldilocks
+open Interaction
 open ZiskFv.Airs.Main
+open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
+open ZiskFv.PackedBitVec.WidePCNoWrap
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -94,5 +117,90 @@ theorem jal_store_value
     c_0_eq_zero_of_internal_op_zero m r_main h_ext h_op h8
   rw [h_c0, h_store_pc]
   ring
+
+/-! ## finishing5 S3 — bus-emission BitVec bridges -/
+
+/-- **JAL rd-write lo half (BitVec form).** The memory-bus entry's
+    lo-half lane carries `(PC + 4)` modulo `2^32`. Composed from:
+
+    1. `jal_store_value` — Main's `store_value[0]` formula collapses
+       to `pc + jmp_offset2`.
+    2. `store_pc_lanes_match_lo` — the bus entry's lo half equals the
+       same PIL expression `store_pc * (pc + jmp_offset2 - c_0) + c_0`.
+    3. `transpile_JAL`'s `jmp_offset2 = 4` pin.
+    4. `transpile_PC_for_JAL` — `(m.pc r).val = PC.toNat`.
+    5. `WidePCNoWrap.fgl_pc_plus_offset_val_eq_lo_strict` — under the
+       no-wrap hypothesis (PC trajectory bound) and the lo-half range
+       bound on the FGL sum, the FGL `(pc_fgl + 4).val` equals
+       `(PC + 4).toNat` modulo `2^32` directly (no outer-mod on LHS).
+
+    The strict form is the right shape for downstream consumers — it
+    matches `JumpUType.lean`'s `h_pc_fgl_lo_nat` parameter exactly. The
+    `h_lo_bound : (m.pc + 4).val < 2^32` hypothesis is realistic for
+    ELF-loaded ZisK programs (ROM `pc : bits(32)` invariant). -/
+theorem jal_store_value_lo_bv
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (PC : BitVec 64) (e : MemoryBusEntry FGL)
+    (h_circuit : jal_circuit_holds m r_main next_pc)
+    (h_jmp2 : m.jmp_offset2 r_main = 4)
+    (h_lane_lo : store_pc_lanes_match_lo m r_main e)
+    (h_pc_bridge : (m.pc r_main).val = PC.toNat)
+    (h_pc_bound : PC.toNat < GL_prime - 4)
+    (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296) :
+    (memory_entry_lo e).val = (PC + 4#64).toNat % 4294967296 := by
+  -- Combine `jal_store_value` and the lane-match predicate to derive
+  -- `memory_entry_lo e = m.pc r_main + m.jmp_offset2 r_main`.
+  have h_sv := jal_store_value m r_main next_pc h_circuit
+  -- `h_lane_lo` unfolds (via `@[simp]`) to the PIL expression equality.
+  simp only [store_pc_lanes_match_lo] at h_lane_lo
+  -- `h_lane_lo : memory_entry_lo e = store_pc * (pc + jmp_offset2 - c_0) + c_0`
+  -- `h_sv     : store_pc * (pc + jmp_offset2 - c_0) + c_0 = pc + jmp_offset2`
+  rw [h_sv] at h_lane_lo
+  -- `h_lane_lo : memory_entry_lo e = m.pc r_main + m.jmp_offset2 r_main`
+  rw [h_jmp2] at h_lane_lo
+  -- `h_lane_lo : memory_entry_lo e = m.pc r_main + 4`
+  -- Lift the FGL equality to `.val` and apply S2's wide-PC lo lemma.
+  rw [h_lane_lo]
+  -- Discharge the no-wrap hypothesis from the PC bound.
+  have h_no_wrap : (m.pc r_main).val + ((4 : FGL)).val < GL_prime := by
+    have h4 : ((4 : FGL)).val = 4 := by decide
+    rw [h_pc_bridge, h4]
+    omega
+  exact fgl_pc_plus_offset_val_eq_lo_strict
+    (m.pc r_main) (4 : FGL) PC 4#64
+    h_pc_bridge offset_4_bridge h_no_wrap h_lo_bound
+
+/-- **JAL rd-write hi half (BitVec form).** Under JAL's
+    `store_pc = 1` mode, the PIL `store_value[1] = (1 - store_pc) * c_1`
+    collapses to `0`, so the memory-bus entry's hi half is identically
+    zero. Matching the BitVec hi-half projection `(PC + 4).toNat / 2^32`
+    requires the caller to supply the 32-bit PC-plus-offset bound
+    (immediate from the ROM `pc < 2^32` invariant for ELF-loaded
+    programs).
+
+    This is the substantive bridge that S5 will plug into JumpUType's
+    `h_entry_hi_nat` parameter. -/
+theorem jal_store_value_hi_bv
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (PC : BitVec 64) (e : MemoryBusEntry FGL)
+    (h_circuit : jal_circuit_holds m r_main next_pc)
+    (h_lane_hi : store_pc_lanes_match_hi m r_main e)
+    (h_pc_offset_lt_2_32 : (PC + 4#64).toNat < 4294967296) :
+    (memory_entry_hi e).val = (PC + 4#64).toNat / 4294967296 := by
+  obtain ⟨_h_subset, h_mode⟩ := h_circuit
+  obtain ⟨_h_ext, _h_op, _h_m32, _h_set_pc, h_store_pc⟩ := h_mode
+  -- Unfold the hi-lane match predicate and apply `store_pc = 1` to
+  -- collapse `(1 - 1) * c_1` to `0`.
+  simp only [store_pc_lanes_match_hi, h_store_pc] at h_lane_hi
+  -- `h_lane_hi : memory_entry_hi e = (1 - 1) * c_1`
+  rw [h_lane_hi]
+  -- Goal: `((1 - 1) * c_1).val = (PC + 4#64).toNat / 2^32`
+  -- LHS = 0 by ring, RHS = 0 by the 32-bit bound.
+  have h_zero : ((1 - 1 : FGL) * m.c_1 r_main).val = 0 := by
+    have : (1 - 1 : FGL) * m.c_1 r_main = 0 := by ring
+    rw [this]
+    rfl
+  rw [h_zero]
+  exact (Nat.div_eq_zero_iff_lt (by decide)).mpr h_pc_offset_lt_2_32 |>.symm
 
 end ZiskFv.Spec.Jal
