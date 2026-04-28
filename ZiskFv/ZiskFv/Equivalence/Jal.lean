@@ -10,6 +10,9 @@ import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.jal
 import ZiskFv.RV64D.BusEffect
 import ZiskFv.Airs.BusHypotheses
+import ZiskFv.Airs.MemoryBus
+import ZiskFv.Airs.MemoryBus.LaneMatch
+import ZiskFv.Equivalence.RdValDerivation.JumpUType
 
 /-!
 End-to-end theorem for RV64 JAL. Combines:
@@ -229,6 +232,76 @@ theorem equiv_JAL_metaplan
   · simp only [h_rd_zero, decide_false, ↓reduceDIte, Bool.false_eq_true,
                if_false, ite_false, bind, pure, EStateM.bind, EStateM.pure]
     rw [h_rd_val]
+
+/-- **Tier-1 metaplan: JAL without `h_rd_val` parameter** (finishing5 S5+S6).
+
+    Companion to `equiv_JAL_metaplan` that drops the `h_rd_val :`
+    OUTPUT-EQ residual parameter. Internally derives the rd-write
+    equality `U64.toBV ... = jal_input.PC + 4` via
+    `RdValDerivation.JumpUType.h_rd_val_jut_jal`, which composes:
+
+    * `transpile_PC_for_JAL` (S1) — Sail-PC ↔ Main-pc-column bridge,
+    * `jal_store_value_lo_bv` / `_hi_bv` (S3) — bus-emission BitVec
+      bridges,
+    * `store_pc_lanes_match_{lo,hi}_of_bus_emission` (S4, callers
+      supply via the `h_lane_lo` / `h_lane_hi` LANE-MATCH parameters),
+    * `WidePCNoWrap.fgl_pc_plus_4_lo` / `_hi` (S2) — wide-PC no-wrap
+      arithmetic.
+
+    The new parameters all live in {CIRCUIT-CONSTRAINT, LANE-MATCH,
+    RANGE, TRANSPILE-PIN}. NO OUTPUT-EQ parameters survive. -/
+theorem equiv_JAL_metaplan_tier1
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (jal_input : PureSpec.JalInput)
+    (imm : BitVec 21)
+    (rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (nextPC_val : BitVec 64)
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (h_input_imm : jal_input.imm = imm)
+    (h_input_rd : jal_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some jal_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
+    (h_success : (PureSpec.execute_JAL_pure jal_input).success = true)
+    (h_nextPC_option :
+      (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val)
+    (h_rd_idx : jal_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    -- Tier-1 discharge parameters (replace h_rd_val).
+    (h_circuit : ZiskFv.Spec.Jal.jal_circuit_holds m r_main next_pc)
+    (h_jmp2 : m.jmp_offset2 r_main = 4)
+    (h_lane_lo : ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd)
+    (h_lane_hi : ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd)
+    (h_pc_bound : jal_input.PC.toNat < GL_prime - 4)
+    (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
+    (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296)
+    (h_e_rd_0 : e_rd.x0.val < 256) (h_e_rd_1 : e_rd.x1.val < 256)
+    (h_e_rd_2 : e_rd.x2.val < 256) (h_e_rd_3 : e_rd.x3.val < 256)
+    (h_e_rd_4 : e_rd.x4.val < 256) (h_e_rd_5 : e_rd.x5.val < 256)
+    (h_e_rd_6 : e_rd.x6.val < 256) (h_e_rd_7 : e_rd.x7.val < 256) :
+    execute_instruction (instruction.JAL (imm, rd)) state
+      = (bus_effect exec_row [e_rd] state).2 := by
+  have h_rd_val :=
+    ZiskFv.Equivalence.RdValDerivation.JumpUType.h_rd_val_jut_jal
+      jal_input.PC m r_main next_pc e_rd
+      h_circuit h_jmp2 h_lane_lo h_lane_hi
+      h_pc_bound h_lo_bound h_pc_offset_lt_2_32
+      h_e_rd_0 h_e_rd_1 h_e_rd_2 h_e_rd_3
+      h_e_rd_4 h_e_rd_5 h_e_rd_6 h_e_rd_7
+  exact equiv_JAL_metaplan state jal_input imm rd misa_val exec_row e_rd
+    nextPC_val h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_rd_mult h_rd_as
+    h_not_throws h_success h_nextPC_option h_rd_idx h_rd_val
 
 /-- **Phase 5 V12 companion for JAL.** Drops `h_input_pc` and
     `h_input_rd` in favor of `h_bus : (bus_effect exec_row [e_rd] state).1`

@@ -10,6 +10,10 @@ import ZiskFv.Airs.BusEmission
 import ZiskFv.RV64D.auipc
 import ZiskFv.RV64D.BusEffect
 import ZiskFv.Airs.BusHypotheses
+import ZiskFv.Airs.MemoryBus
+import ZiskFv.Airs.MemoryBus.LaneMatch
+import ZiskFv.Tactics.UTypeArchetype
+import ZiskFv.Equivalence.RdValDerivation.JumpUType
 
 /-!
 End-to-end theorem for RV64 AUIPC (Phase 3C Track T-U2). Combines:
@@ -157,6 +161,82 @@ theorem equiv_AUIPC_metaplan
   split_ifs with h_rd_zero
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
+
+/-- **Tier-1 metaplan: AUIPC without `h_rd_val` parameter** (finishing5 S5+S6).
+
+    Companion to `equiv_AUIPC_metaplan` that drops the `h_rd_val :`
+    OUTPUT-EQ residual parameter. Internally derives the rd-write
+    equality `U64.toBV ... = auipc_input.PC + signExtend 64 (imm ++ 0#12)`
+    via `RdValDerivation.JumpUType.h_rd_val_jut_auipc`, which composes:
+
+    * `transpile_PC_for_AUIPC` (S1) — Sail-PC ↔ Main-pc-column bridge,
+    * `auipc_store_value_lo_bv` / `_hi_bv` (S3) — bus-emission BitVec
+      bridges,
+    * `store_pc_lanes_match_{lo,hi}_of_bus_emission` (S4),
+    * `WidePCNoWrap.fgl_pc_plus_offset_val_eq_lo_strict` (S2) —
+      wide-PC no-wrap arithmetic for the imm-dependent offset.
+
+    Unlike JAL/JALR, AUIPC's offset is `signExtend 64 (imm ++ 0#12)`
+    rather than the constant 4. The transpile axiom `transpile_AUIPC`
+    pins `m.jmp_offset2 r = imm_offset` at the FGL level; the
+    BitVec-side lift requires a TRANSPILE-BRIDGE parameter
+    `h_offset_bridge`. The `h_no_wrap` parameter generalizes
+    `h_pc_bound` to admit the imm-sized offset. All parameters live
+    in {CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE, TRANSPILE-BRIDGE}. NO
+    OUTPUT-EQ parameters survive. -/
+theorem equiv_AUIPC_metaplan_tier1
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (auipc_input : PureSpec.AuipcInput)
+    (imm : BitVec 20)
+    (rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL)
+    (nextPC_val : BitVec 64)
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (h_input_imm : auipc_input.imm = imm)
+    (h_input_rd : auipc_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some auipc_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_nextPC_eq :
+      (PureSpec.execute_AUIPC_pure auipc_input).nextPC = nextPC_val)
+    (h_rd_idx : auipc_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    -- Tier-1 discharge parameters (replace h_rd_val).
+    (h_circuit :
+      ZiskFv.Tactics.UTypeArchetype.auipc_archetype_circuit_holds m r_main next_pc)
+    (h_offset_bridge : (m.jmp_offset2 r_main).val
+      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
+    (h_lane_lo : ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd)
+    (h_lane_hi : ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd)
+    (h_no_wrap : auipc_input.PC.toNat
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+        < GL_prime)
+    (h_lo_bound : (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296)
+    (h_pc_offset_lt_2_32 :
+      (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+        < 4294967296)
+    (h_e_rd_0 : e_rd.x0.val < 256) (h_e_rd_1 : e_rd.x1.val < 256)
+    (h_e_rd_2 : e_rd.x2.val < 256) (h_e_rd_3 : e_rd.x3.val < 256)
+    (h_e_rd_4 : e_rd.x4.val < 256) (h_e_rd_5 : e_rd.x5.val < 256)
+    (h_e_rd_6 : e_rd.x6.val < 256) (h_e_rd_7 : e_rd.x7.val < 256) :
+    execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
+      = (bus_effect exec_row [e_rd] state).2 := by
+  have h_rd_val :=
+    ZiskFv.Equivalence.RdValDerivation.JumpUType.h_rd_val_jut_auipc
+      auipc_input.PC auipc_input.imm m r_main next_pc e_rd
+      h_circuit h_offset_bridge h_lane_lo h_lane_hi
+      h_no_wrap h_lo_bound h_pc_offset_lt_2_32
+      h_e_rd_0 h_e_rd_1 h_e_rd_2 h_e_rd_3
+      h_e_rd_4 h_e_rd_5 h_e_rd_6 h_e_rd_7
+  exact equiv_AUIPC_metaplan state auipc_input imm rd exec_row e_rd
+    nextPC_val h_input_imm h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_rd_mult h_rd_as h_nextPC_eq h_rd_idx h_rd_val
 
 /-- **Phase 5 V12 companion for AUIPC.** Drops `h_input_pc` and
     `h_input_rd` via `chip_bus_hyps_jump_rrw` + `readReg_of_readReg_succ`. -/
