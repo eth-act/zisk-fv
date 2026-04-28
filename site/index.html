@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>zisk-fv — the trust boundary</title>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --bg-2: #11141c;
+    --surface: #161922;
+    --surface-2: #1d212c;
+    --border: #2a2f3d;
+    --border-2: #3a4153;
+    --text: #e7e9ee;
+    --muted: #9aa0ad;
+    --dim: #6b7080;
+    --proven: #6ee7b7;
+    --proven-bg: rgba(110,231,183,0.08);
+    --trusted: #fbbf24;
+    --trusted-bg: rgba(251,191,36,0.10);
+    --accent: #a78bfa;
+    --accent-bg: rgba(167,139,250,0.10);
+    --cyan: #67e8f9;
+    --code: #f8d2c9;
+    --max: 1180px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Helvetica Neue", sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace; }
+  code { color: var(--code); background: rgba(248,210,201,0.06); padding: 1px 6px; border-radius: 4px; font-size: 0.9em; }
+  a { color: var(--cyan); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  h1, h2, h3, h4 { letter-spacing: -0.01em; }
+  h2 { font-size: 1.6rem; margin: 0 0 0.4rem 0; }
+  h3 { font-size: 1.15rem; margin: 0 0 0.4rem 0; }
+
+  /* Layout */
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+  section { padding: 56px 0; border-top: 1px solid var(--border); }
+  section:first-of-type { border-top: 0; }
+  .section-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .section-lead {
+    color: var(--muted);
+    max-width: 760px;
+    font-size: 1.02rem;
+    margin: 4px 0 32px 0;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 80px 0 56px;
+    background:
+      radial-gradient(1200px 400px at 20% -100px, var(--accent-bg), transparent 60%),
+      radial-gradient(900px 300px at 90% 0px, rgba(103,232,249,0.06), transparent 60%);
+  }
+  .hero h1 {
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    line-height: 1.05;
+    margin: 0 0 20px;
+    font-weight: 700;
+  }
+  .hero h1 .accent { color: var(--accent); }
+  .hero .tagline {
+    font-size: 1.2rem;
+    color: var(--muted);
+    max-width: 720px;
+    margin: 0 0 28px;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-top: 28px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .stat .num {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--proven);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .lbl {
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin-top: 4px;
+  }
+
+  /* Cards & badges */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+  .b-trusted { color: var(--trusted); background: var(--trusted-bg); border-color: rgba(251,191,36,0.35); }
+  .b-proven { color: var(--proven); background: var(--proven-bg); border-color: rgba(110,231,183,0.30); }
+  .b-accent { color: var(--accent); background: var(--accent-bg); border-color: rgba(167,139,250,0.35); }
+
+  /* Diagram */
+  .diagram-wrap {
+    background:
+      linear-gradient(180deg, var(--surface), var(--bg-2));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    overflow-x: auto;
+  }
+  svg.pipeline { width: 100%; height: auto; min-width: 720px; display: block; }
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 18px; margin-top: 14px; color: var(--muted); font-size: 0.9rem;
+  }
+  .legend .swatch {
+    display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-right: 6px; vertical-align: -2px;
+  }
+
+  /* Trust ledger */
+  .ledger { display: grid; gap: 22px; }
+  .ledger-cat { padding: 22px; border-left: 3px solid var(--trusted); background: var(--surface); border-radius: 10px; }
+  .ledger-cat h3 { display: flex; align-items: baseline; gap: 12px; }
+  .ledger-cat h3 .count { color: var(--muted); font-weight: 400; font-size: 0.95rem; }
+  .ledger-cat .why { color: var(--muted); margin: 4px 0 14px; font-size: 0.95rem; max-width: 78ch; }
+  .ledger-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-top: 12px; }
+  .item {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .item .item-head {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
+  }
+  .item code { font-size: 0.82rem; color: var(--cyan); background: transparent; padding: 0; }
+  .item .id { color: var(--trusted); font-weight: 700; font-size: 0.78rem; letter-spacing: 0.04em; }
+  .item .desc { font-size: 0.92rem; color: var(--muted); }
+
+  /* Coverage matrix */
+  .ops-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+  .op-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .op-group .op-head {
+    display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px;
+  }
+  .op-group .op-head h4 { margin: 0; font-size: 0.95rem; }
+  .op-group .op-head .meta { color: var(--dim); font-size: 0.78rem; }
+  .op-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .op {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.78rem;
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: var(--proven-bg);
+    color: var(--proven);
+    border: 1px solid rgba(110,231,183,0.18);
+    letter-spacing: 0.02em;
+  }
+
+  /* Architecture */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 16px;
+  }
+  .arch-grid h3 { color: var(--accent); margin-bottom: 6px; }
+  .arch-grid .card { padding: 18px 20px; }
+
+  /* Footer */
+  footer {
+    color: var(--muted);
+    font-size: 0.92rem;
+    border-top: 1px solid var(--border);
+    padding: 32px 0 56px;
+  }
+  footer .links { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 12px; }
+
+  /* Mobile */
+  @media (max-width: 720px) {
+    section { padding: 40px 0; }
+    .hero { padding: 56px 0 40px; }
+  }
+
+  /* Inline KBD-ish chip */
+  .chip {
+    display: inline-block;
+    background: var(--surface-2);
+    border: 1px solid var(--border-2);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 1px 7px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.82rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="badge b-accent" style="margin-bottom: 22px;">project status · 2026-04-28</div>
+    <h1>zisk-fv: <span class="accent">a per-opcode trust boundary</span> for ZisK's RV64IM circuit</h1>
+    <p class="tagline">
+      A Lean&nbsp;4 formal-verification project that proves, for every RV64IM instruction, that ZisK's PIL2 circuit and the official Sail RISC-V specification compute the same thing — and makes the residual trust assumptions explicit and small.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="num">63 / 63</div><div class="lbl">RV64IM opcodes proven equivalent</div></div>
+      <div class="stat"><div class="num">13</div><div class="lbl">items on the trust ledger</div></div>
+      <div class="stat"><div class="num">0</div><div class="lbl"><code>sorry</code> in the proof tree</div></div>
+      <div class="stat"><div class="num">8181</div><div class="lbl">Lean build jobs, all green</div></div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="section-eyebrow">the question</div>
+    <h2>What are you trusting when a ZisK proof verifies?</h2>
+    <p class="section-lead">
+      A ZKVM proof says: "this RISC-V program ran correctly on this circuit." But the circuit is just polynomial constraints; "ran correctly" means "matches the RISC-V architectural spec." Without a formal proof tying the two together, the claim is a wish. <strong>zisk-fv</strong> is that proof — and this page lays out the small set of axioms it ultimately rests on.
+    </p>
+
+    <div class="diagram-wrap">
+      <svg class="pipeline" viewBox="0 0 1100 480" xmlns="http://www.w3.org/2000/svg" aria-label="Trust boundary diagram">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="8" markerHeight="8" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#9aa0ad"/>
+          </marker>
+          <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="strokeWidth" markerWidth="8" markerHeight="8" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#a78bfa"/>
+          </marker>
+          <pattern id="hatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(251,191,36,0.18)" stroke-width="3"/>
+          </pattern>
+        </defs>
+
+        <!-- left column: spec -->
+        <g>
+          <rect x="40" y="40" width="280" height="80" rx="10" fill="#161922" stroke="#fbbf24" stroke-width="1.5"/>
+          <text x="180" y="70" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="700">SAIL RISC-V SPEC (TRUSTED)</text>
+          <text x="180" y="92" text-anchor="middle" fill="#e7e9ee" font-size="13">NethermindEth/sail-riscv-lean</text>
+          <text x="180" y="108" text-anchor="middle" fill="#9aa0ad" font-size="11">official RISC-V architectural semantics</text>
+        </g>
+
+        <!-- right column: circuit -->
+        <g>
+          <rect x="780" y="40" width="280" height="80" rx="10" fill="#161922" stroke="#fbbf24" stroke-width="1.5"/>
+          <text x="920" y="70" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="700">ZISK PIL2 CIRCUIT (TRUSTED)</text>
+          <text x="920" y="92" text-anchor="middle" fill="#e7e9ee" font-size="13">vendor/zisk → zisk.pilout</text>
+          <text x="920" y="108" text-anchor="middle" fill="#9aa0ad" font-size="11">protobuf-compiled constraint system</text>
+        </g>
+
+        <!-- pure spec -->
+        <g>
+          <rect x="40" y="160" width="280" height="60" rx="8" fill="#11141c" stroke="#2a2f3d"/>
+          <text x="180" y="184" text-anchor="middle" fill="#e7e9ee" font-size="13">Lean pure spec per opcode</text>
+          <text x="180" y="204" text-anchor="middle" fill="#9aa0ad" font-size="11" font-family="JetBrains Mono, monospace">RV64D/&lt;op&gt;.lean (≡ Sail-Lean)</text>
+        </g>
+
+        <!-- extracted -->
+        <g>
+          <rect x="780" y="160" width="280" height="60" rx="8" fill="#11141c" stroke="#2a2f3d"/>
+          <text x="920" y="184" text-anchor="middle" fill="#e7e9ee" font-size="13">Lean named-column AIR layer</text>
+          <text x="920" y="204" text-anchor="middle" fill="#9aa0ad" font-size="11" font-family="JetBrains Mono, monospace">Extraction/ + Airs/</text>
+        </g>
+
+        <!-- trust boundary -->
+        <g>
+          <rect x="380" y="240" width="340" height="80" rx="10"
+                fill="url(#hatch)" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <text x="550" y="270" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="700">THE TRUST BOUNDARY</text>
+          <text x="550" y="290" text-anchor="middle" fill="#e7e9ee" font-size="12">13 axioms · 4 categories</text>
+          <text x="550" y="306" text-anchor="middle" fill="#9aa0ad" font-size="11">spec, transpiler, bus protocol, model fidelity</text>
+        </g>
+
+        <!-- center proof -->
+        <g>
+          <rect x="380" y="360" width="340" height="80" rx="10" fill="#161922" stroke="#6ee7b7" stroke-width="1.5"/>
+          <text x="550" y="388" text-anchor="middle" fill="#6ee7b7" font-size="13" font-weight="700">63 PROVEN OPCODE EQUIVALENCES</text>
+          <text x="550" y="408" text-anchor="middle" fill="#e7e9ee" font-size="12" font-family="JetBrains Mono, monospace">equiv_&lt;OP&gt;_metaplan_tier1</text>
+          <text x="550" y="424" text-anchor="middle" fill="#9aa0ad" font-size="11">Sail.execute = bus_effect ∘ circuit-witness</text>
+        </g>
+
+        <!-- arrows from spec -->
+        <line x1="180" y1="120" x2="180" y2="158" stroke="#9aa0ad" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <line x1="180" y1="222" x2="380" y2="400" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrow-purple)" stroke-dasharray="0"/>
+
+        <!-- arrows from circuit -->
+        <line x1="920" y1="120" x2="920" y2="158" stroke="#9aa0ad" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <line x1="920" y1="222" x2="720" y2="400" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrow-purple)" stroke-dasharray="0"/>
+
+        <!-- arrow from boundary -->
+        <line x1="550" y1="320" x2="550" y2="358" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+
+        <!-- side labels -->
+        <text x="180" y="148" text-anchor="middle" fill="#9aa0ad" font-size="10">port to RV64</text>
+        <text x="920" y="148" text-anchor="middle" fill="#9aa0ad" font-size="10">extract to Lean</text>
+      </svg>
+      <div class="legend">
+        <span><span class="swatch" style="background:#fbbf24;"></span>trusted (axiomatized)</span>
+        <span><span class="swatch" style="background:#6ee7b7;"></span>proven (zero <code style="background:transparent;color:inherit">sorry</code>)</span>
+        <span><span class="swatch" style="background:#a78bfa;"></span>composition</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-eyebrow">the trust ledger</div>
+    <h2>What we trust, exactly</h2>
+    <p class="section-lead">
+      Every per-opcode equivalence theorem ultimately depends on a small set of clearly-named axioms. They group into four categories. Anything outside this list is proven from scratch or follows from these.
+    </p>
+
+    <div class="ledger">
+
+      <div class="ledger-cat">
+        <h3><span class="badge b-trusted">Trusted spec</span> The RISC-V specification itself <span class="count">— 1 source</span></h3>
+        <p class="why">
+          We don't prove that the Sail-RISC-V model is correct — that's an <em>inherited</em> trust from the formally-developed Sail spec used by Nethermind / OpenLabs and the broader community. Every opcode's "intended behavior" is what the Sail model says it is. If you don't trust Sail, no per-opcode proof is meaningful.
+        </p>
+        <div class="ledger-items">
+          <div class="item">
+            <div class="item-head"><span class="id">SAIL</span></div>
+            <div><code>NethermindEth/sail-riscv-lean :: LeanRV64D</code></div>
+            <div class="desc">The translated Sail-RV64 architectural model. ZisK's RV64IM behavior must match this <span class="chip">execute_instruction</span> evaluation.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ledger-cat">
+        <h3><span class="badge b-trusted">Trusted contract</span> RISC-V&nbsp;→&nbsp;Zisk transpiler <span class="count">— ~63 axioms + 4 platform + 3 PC bridges</span></h3>
+        <p class="why">
+          ZisK doesn't run RV64 instructions directly. It compiles them into <em>Zisk microinstructions</em> via <code>core/src/riscv2zisk_context.rs</code> (a Rust program). We axiomatize that translation — for each RV opcode, "if Main's columns are configured this way, then the Zisk witness corresponds to this RV instruction." We do not prove the transpiler; we declare the contract it must keep. A Rust-side proof would close this gap.
+        </p>
+        <div class="ledger-items">
+          <div class="item">
+            <div class="item-head"><span class="id">~63 axioms</span></div>
+            <div><code>transpile_&lt;OP&gt;</code></div>
+            <div class="desc">One per RV opcode. Pins the Main-AIR mode flags (e.g. <span class="chip">op</span>, <span class="chip">store_pc</span>, <span class="chip">m32</span>, <span class="chip">jmp_offset2</span>) in terms of the RV instruction encoding.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">P1–P4</span></div>
+            <div><code>PlatformScope.{pmpCheck,within_clint,pmaCheck,update_elp}</code></div>
+            <div class="desc">Platform-feature assertions: the deployed ZisK runtime has no PMP/PMA filtering, no CLINT region in the address space, no extended-pointer state mutation. Only retire if the deployment changes.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">TP-JAL / TP-JALR / TP-AUIPC</span></div>
+            <div><code>transpile_PC_for_&lt;OP&gt;</code></div>
+            <div class="desc">For the three <span class="chip">store_pc=1</span> opcodes, asserts that Sail's program counter equals Main's <span class="chip">pc</span> column at the row index. Bridges the <em>runtime</em> PC value, not just the encoding.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ledger-cat">
+        <h3><span class="badge b-trusted">Trusted protocol</span> Bus permutation soundness <span class="count">— 7 axioms</span></h3>
+        <p class="why">
+          ZisK's circuit is a constellation of AIRs (Algebraic Intermediate Representations) glued together by lookup and permutation arguments over named "buses". Proving these arguments sound from first principles would mean formalizing the proving system — out of project scope. Instead, each bus's protocol is trusted via a single axiom that says "the rows on bus <em>X</em> match across providers and consumers." This is the same approach openvm-fv takes. Listed by bus ID:
+        </p>
+        <div class="ledger-items">
+          <div class="item">
+            <div class="item-head"><span class="id">bus 5000</span><span class="badge b-trusted" style="font-size:0.65rem">op</span></div>
+            <div><code>OperationBus.matches_entry</code></div>
+            <div class="desc">Operation bus connecting Main to secondary state machines (Arith, Binary, …). Multiplexed opcode dispatch.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">bus 125</span><span class="badge b-trusted" style="font-size:0.65rem">lookup</span></div>
+            <div><code>bin_table_consumer_wf</code></div>
+            <div class="desc">Binary lookup table (BT-B). Per-byte switch semantics for AND / OR / XOR / LT / LTU / EQ / GT / LE / LEU / MIN(U) / MAX(U) / ADD / SUB / SEXT.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">bus 124</span><span class="badge b-trusted" style="font-size:0.65rem">lookup</span></div>
+            <div><code>bin_ext_table_consumer_wf</code></div>
+            <div class="desc">Binary extension lookup table (BT-X). Per-byte shift semantics for SLL / SRL / SRA across 32- and 64-bit operands.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">bus 10</span><span class="badge b-trusted" style="font-size:0.65rem">memory</span></div>
+            <div><code>memory_bus_register_write_perm_sound</code></div>
+            <div class="desc">MB-W. Register-write permutation soundness for <span class="chip">store_pc = 0</span> opcodes (the standard rd-write path).</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">bus 10</span><span class="badge b-trusted" style="font-size:0.65rem">memory</span></div>
+            <div><code>memory_bus_register_write_perm_sound_store_pc</code></div>
+            <div class="desc">MB-W-PC. Companion to MB-W for <span class="chip">store_pc = 1</span> (JAL / JALR / AUIPC). Same trust class, different gating.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">bus 10</span><span class="badge b-trusted" style="font-size:0.65rem">memory</span></div>
+            <div><code>lookup_consumer_matches_provider_load</code></div>
+            <div class="desc">MB-L. Load-side permutation soundness: a memory-side bus row pairs with a Mem AIR row at <span class="chip">as = 2</span>.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">bus 10</span><span class="badge b-trusted" style="font-size:0.65rem">memory</span></div>
+            <div><code>lookup_consumer_matches_provider_store</code></div>
+            <div class="desc">MB-S. Store-side permutation soundness, parallel to MB-L for the write path.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ledger-cat">
+        <h3><span class="badge b-trusted">Trusted model fidelity</span> Mem AIR &harr; Sail <code>state.mem</code> <span class="count">— 2 axioms</span></h3>
+        <p class="why">
+          The bus protocol tells us that Mem AIR rows match memory-bus consumers; but it doesn't say what Mem AIR <em>is</em> in terms of the architectural memory. These two axioms close that gap by stating: a Mem AIR row that matches a memory-bus entry agrees with Sail's <span class="chip">state.mem</span> byte-by-byte. They sit at the boundary between ZisK's operational memory model and the Sail spec's logical memory.
+        </p>
+        <div class="ledger-items">
+          <div class="item">
+            <div class="item-head"><span class="id">MS-L</span></div>
+            <div><code>row_models_sail_state_load</code></div>
+            <div class="desc">Load: a Mem AIR row matching the load bus entry agrees with Sail's pre-state memory at the projected addresses.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">MS-S</span></div>
+            <div><code>row_models_sail_state_store</code></div>
+            <div class="desc">Store: same shape but for post-state. Closes the store side of the implementation-models-spec faithfulness gap.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="section-lead" style="margin-top: 26px;">
+      Everything else — ALU semantics, sign-extension boundaries, multiplicative carry chains, four-quadrant signed division overflow, byte-level arithmetic — is <strong>derived in Lean</strong> from these axioms plus Mathlib. No <code>sorry</code> stubs.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-eyebrow">what is proven</div>
+    <h2>63 of 63 RV64IM opcodes</h2>
+    <p class="section-lead">
+      For every RV64IM opcode ZisK implements, the project ships a theorem of the form
+      <code>execute_instruction OP state = (bus_effect exec_row mem_row state).2</code> &mdash; "if the circuit witness validates, the resulting state matches what the Sail spec says it should." Coverage is exhaustive over the IM subset.
+    </p>
+
+    <div class="ops-grid">
+
+      <div class="op-group">
+        <div class="op-head"><h4>ALU — register / immediate</h4><span class="meta">9 ops</span></div>
+        <div class="op-list">
+          <span class="op">ADD</span><span class="op">ADDI</span><span class="op">SUB</span>
+          <span class="op">AND</span><span class="op">ANDI</span>
+          <span class="op">OR</span><span class="op">ORI</span>
+          <span class="op">XOR</span><span class="op">XORI</span>
+        </div>
+      </div>
+
+      <div class="op-group">
+        <div class="op-head"><h4>Compares</h4><span class="meta">4 ops</span></div>
+        <div class="op-list">
+          <span class="op">SLT</span><span class="op">SLTI</span><span class="op">SLTU</span><span class="op">SLTIU</span>
+        </div>
+      </div>
+
+      <div class="op-group">
+        <div class="op-head"><h4>Shifts (64-bit)</h4><span class="meta">6 ops</span></div>
+        <div class="op-list">
+          <span class="op">SLL</span><span class="op">SLLI</span>
+          <span class="op">SRL</span><span class="op">SRLI</span>
+          <span class="op">SRA</span><span class="op">SRAI</span>
+        </div>
+      </div>
+
+      <div class="op-group">
+        <div class="op-head"><h4>ALU-W (32-bit, sign-extended)</h4><span class="meta">9 ops</span></div>
+        <div class="op-list">
+          <span class="op">ADDW</span><span class="op">ADDIW</span><span class="op">SUBW</span>
+          <span class="op">SLLW</span><span class="op">SLLIW</span>
+          <span class="op">SRLW</span><span class="op">SRLIW</span>
+          <span class="op">SRAW</span><span class="op">SRAIW</span>
+        </div>
+      </div>
+
+      <div class="op-group">
+        <div class="op-head"><h4>Multiplicative — unsigned</h4><span class="meta">5 ops</span></div>
+        <div class="op-list">
+          <span class="op">MUL</span><span class="op">MULHU</span>
+          <span class="op">DIVU</span><span class="op">REMU</span>
+          <span class="op">MULW</span>
+        </div>
+      </div>
+
+      <div class="op-group">
+        <div class="op-head"><h4>Multiplicative — signed</h4><span class="meta">8 ops</span></div>
+        <div class="op-list">
+          <span class="op">MULH</span><span class="op">MULHSU</span>
+          <span class="op">DIV</span><span class="op">REM</span>
+          <span class="op">DIVW</span><span class="op">DIVUW</span>
+          <span class="op">REMW</span><span class="op">REMUW</span>
+        </div>
+      </div>
+
+      <div class="op-group">
+        <div class="op-head"><h4>Loads</h4><span class="meta">7 ops</span></div>
+        <div class="op-list">
+          <span class="op">LD</span><span class="op">LW</span><span class="op">LWU</span>
+          <span class="op">LH</span><span class="op">LHU</span>
+          <span class="op">LB</span><span class="op">LBU</span>
+        </div>
+      </div>
+
+      <div class="op-group">
+        <div class="op-head"><h4>Stores</h4><span class="meta">4 ops</span></div>
+        <div class="op-list">
+          <span class="op">SD</span><span class="op">SW</span><span class="op">SH</span><span class="op">SB</span>
+        </div>
+      </div>
+
+      <div class="op-group">
+        <div class="op-head"><h4>Branches</h4><span class="meta">6 ops</span></div>
+        <div class="op-list">
+          <span class="op">BEQ</span><span class="op">BNE</span>
+          <span class="op">BLT</span><span class="op">BGE</span>
+          <span class="op">BLTU</span><span class="op">BGEU</span>
+        </div>
+      </div>
+
+      <div class="op-group">
+        <div class="op-head"><h4>Jumps + Upper-immediate</h4><span class="meta">4 ops</span></div>
+        <div class="op-list">
+          <span class="op">JAL</span><span class="op">JALR</span>
+          <span class="op">AUIPC</span><span class="op">LUI</span>
+        </div>
+      </div>
+
+      <div class="op-group">
+        <div class="op-head"><h4>Memory ordering</h4><span class="meta">1 op</span></div>
+        <div class="op-list">
+          <span class="op">FENCE</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-eyebrow">how the proof is structured</div>
+    <h2>Three layers, two languages, one theorem shape</h2>
+    <p class="section-lead">
+      Each per-opcode proof is a small composition: take the Sail pure spec, take the named-column AIR layer, plug them into the right bus model, and discharge the residual via a per-archetype <em>discharge lemma</em>. The toolkits below are what made the discharge mechanical.
+    </p>
+
+    <div class="arch-grid">
+      <div class="card">
+        <h3>Spec side</h3>
+        <p style="color:var(--muted);font-size:0.95rem;margin:0;">
+          <code>RV64D/&lt;op&gt;.lean</code> — pure Lean reformulation of each Sail-RV64 opcode (<code>execute_instruction</code> unfolded into a clean <code>BitVec 64</code> function). Every spec file ships an equivalence lemma <code>execute_&lt;OP&gt;_pure_correct</code> proving it equals the unfolded Sail body.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Circuit side</h3>
+        <p style="color:var(--muted);font-size:0.95rem;margin:0;">
+          <code>Extraction/</code> renders <code>zisk.pilout</code> into raw Lean constraint structures. <code>Airs/</code> wraps those into <code>Valid_&lt;AIR&gt;</code> records with named-column accessors and per-constraint bridge lemmas. The Main AIR multiplexes opcodes; secondary AIRs (Arith, Binary, Mem, MemAlign) handle heavy ops.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Composition</h3>
+        <p style="color:var(--muted);font-size:0.95rem;margin:0;">
+          <code>Spec/&lt;Op&gt;.lean</code> proves: "if the relevant AIR rows validate and the bus carries the right entry, the Sail spec output equals the bus-effect output." <code>Equivalence/&lt;Op&gt;.lean</code> wraps that into the metaplan target shape, with a Tier-1 companion that closes the rd-value derivation entirely from circuit constraints.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Toolkits (Lean infrastructure)</h3>
+        <p style="color:var(--muted);font-size:0.95rem;margin:0;">
+          <code>PackedBitVec/{NoWrap, MulNoWrap, SignedNoWrap, WidePCNoWrap, Extensions, Signed}.lean</code> — generic FGL ↔ <code>BitVec 64</code> lifts handling additive carry chains, multiplicative chunks, four-quadrant signed witnesses, and PC-wide values that exceed the Goldilocks prime. None of these are trust items; all are proven.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-eyebrow">a note on what could go wrong</div>
+    <h2>What this <em>doesn't</em> prove</h2>
+    <p class="section-lead">Honest scope. Three things this project deliberately doesn't cover, each with a reason.</p>
+    <div class="arch-grid">
+      <div class="card">
+        <h3>The proving system itself</h3>
+        <p style="color:var(--muted);font-size:0.95rem;margin:0;">PLONK / plookup / logUp / permutation argument soundness as Lean theorems is out of scope. The bus-protocol axioms (BT-B, BT-X, MB-*) trust this layer at the bus-entry level. Closing it would mean formalizing the proving system itself.</p>
+      </div>
+      <div class="card">
+        <h3>The transpiler implementation</h3>
+        <p style="color:var(--muted);font-size:0.95rem;margin:0;">We axiomatize the contract that <code>riscv2zisk_context.rs</code> obeys, but we don't prove the Rust code matches it. A separate Rust-side verification effort would close this gap.</p>
+      </div>
+      <div class="card">
+        <h3>The Sail spec's correctness</h3>
+        <p style="color:var(--muted);font-size:0.95rem;margin:0;">The Sail RISC-V model is taken as ground truth. If a bug exists in Sail, this project inherits it. Sail is widely audited by the RISC-V community, so this is the conventional bar.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="links">
+      <a href="https://github.com/0xPolygonHermez/zisk">ZisK source</a>
+      <a href="https://github.com/NethermindEth/sail-riscv-lean">Sail-Lean RISC-V</a>
+      <span style="color:var(--dim)">/</span>
+      <a href="../docs/fv/trusted-base.md">trusted-base.md</a>
+      <a href="../ai_plans/zisk-fv-metaplan.md">metaplan</a>
+    </div>
+    <div>zisk-fv · per-opcode formal verification · Lean 4 · 56 of 56 finishing-series ops + 7 prior · trust ledger 13 items · built 2026-04-28</div>
+  </div>
+</footer>
+
+</body>
+</html>
