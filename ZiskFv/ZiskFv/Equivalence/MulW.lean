@@ -15,6 +15,7 @@ import ZiskFv.RV64D.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
+import ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned
 
 /-!
 End-to-end theorem for RV64 MULW (Phase 3A M3). MULW is the 32-bit
@@ -150,8 +151,62 @@ theorem equiv_MULW_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
+/-- **Tier-1 metaplan: MULW without `h_rd_val` parameter** (finishing4 S4).
+    Derives `h_rd_val` internally via
+    `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mulw`, then forwards
+    to `equiv_MULW_metaplan`. The MULW Tier-1 lemma routes through a single
+    TRANSPILE-BRIDGE-shaped byte-sum hypothesis (the m32=1 mode arithmetic
+    is handled upstream by Track P's arith_table). -/
+theorem equiv_MULW_metaplan_tier1
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (mulw_input : PureSpec.MulwInput)
+    (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok mulw_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok mulw_input.r2_val state)
+    (h_input_rd : mulw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some mulw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_MULW_pure mulw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : mulw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    -- Tier-1 discharge parameters.
+    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
+    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
+    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
+    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
+    (h_byte_mulw :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+        + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+        + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (PureSpec.execute_MULW_pure_val mulw_input.r1_val mulw_input.r2_val).toNat) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MULW (r2, r1, rd))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  have h_rd_val :=
+    ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mulw
+      mulw_input.r1_val mulw_input.r2_val e2
+      h0 h1 h2 h3 h4 h5 h6 h7 h_byte_mulw
+  exact equiv_MULW_metaplan state mulw_input r1 r2 rd exec_row e0 e1 e2
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    h_rd_idx h_rd_val
 
-/-- **Phase 5 V12 companion.** Drops `h_input_r1` / `h_input_r2` / 
+
+/-- **Phase 5 V12 companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
     Delegates to `equiv_MULW_metaplan` after chip_bus_hyps + match composition.  -/
