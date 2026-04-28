@@ -48,6 +48,8 @@ import ZiskFv.Fundamentals.PackedBitVec.Extensions
 import ZiskFv.Fundamentals.PackedBitVec.NoWrap
 -- finishing4 S1: multiplicative no-wrap toolkit (8-chunk carry chains).
 import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
+-- finishing4 S2: signed BitVec.toInt extension (sign-witness pattern + INT_MIN/-1 overflow).
+import ZiskFv.Fundamentals.PackedBitVec.SignedNoWrap
 import ZiskFv.Spec.Add
 import ZiskFv.Equivalence.Add
 import ZiskFv.GoldenTraces.Add
