@@ -2075,9 +2075,21 @@ surface.
   composed with the existing `Spec/{MulField,MulFieldSigned,
   DivFieldSigned}` field identities and Track P arith_table layer.
   **No new trust axioms** — purely Lean-internal proof work.
+- **finishing5 (3 ops):** JAL, JALR, AUIPC — `equiv_<OP>_metaplan_tier1`
+  companions derive `h_rd_val` for the `store_pc=1` bus-emission path.
+  Required 3 new transpile-PC trust axioms (TP-JAL/TP-JALR/TP-AUIPC)
+  bridging Sail PC to Main's `pc` column, plus 1 new memory-bus
+  permutation soundness axiom (MB-W-PC, parallel to MB-W but for
+  `store_pc=1`). Wide-PC no-wrap toolkit
+  (`Fundamentals/PackedBitVec/WidePCNoWrap.lean`) handles FGL values
+  up to `2^64−1`. Per-opcode Spec hi/lo theorems in
+  `Spec/{Jal,Jalr,AddUpperImmediatePC}.lean`. Hi-half formula
+  `store_value[1] = (1 - store_pc) * c[1]` (verbatim from
+  `vendor/zisk/state-machines/main/pil/main.pil:312`) makes hi-half
+  identically zero when store_pc=1.
 
-53 of 56 RV64IM ops have metaplan parameter retirements landed.
-Only finishing5 (3 store_pc=1: JAL/JALR/AUIPC) remains.
+**56 of 56 RV64IM ops have metaplan parameter retirements landed.**
+The complete metaplan-target trust-reduction goal is achieved.
 
 ### Trust classification (2026-04-27)
 

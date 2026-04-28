@@ -1,20 +1,21 @@
 # ZisK Formal Verification — Metaplan
 
-## Revision 2026-04-28 (post-finishing4 — MDR family closure)
+## Revision 2026-04-28 (post-finishing5 — full closure)
 
 After Phase 1.5 (the `equiv_<OP>_metaplan` shape with parameterized
 `h_rd_val`), the project's remaining work was decomposed into five
 "finishing" plans (`ai_plans/finishing[1-5].md`) each retiring one
-class of trusted parameter. **finishing1–4 are all CLOSED.** Only
-finishing5 remains.
+class of trusted parameter. **All five are CLOSED.** The complete
+RV64IM trust-reduction goal stated in this metaplan is achieved for
+every opcode the metaplan targets.
 
-### State as of 2026-04-28
+### State as of 2026-04-28 (end of day)
 
-**Branch state.** All work merged to `main` (HEAD `852125e`).
-Finishing4 shipped in one session via 6 parallel Opus subagents over
-two waves (S1+S2, then S3 unsigned/signed, then S4 unsigned/signed).
-`origin/main` is several commits behind (last-pushed commit
-`287388d`); push gated on user decision.
+**Branch state.** All work merged to `main` (HEAD `a0ef835`).
+finishing4 + finishing5 shipped in one session via 11 Opus
+subagent dispatches across multiple waves. `origin/main` is ~24
+commits behind (last-pushed commit `287388d`); push gated on user
+decision.
 
 **Per-opcode coverage now in tree.**
 
@@ -24,8 +25,8 @@ two waves (S1+S2, then S3 unsigned/signed, then S4 unsigned/signed).
 | Logic / Shift / Compare / SUB / ALU-W | finishing2 | 26 | ✅ `_tier1` companions shipped |
 | Loads / Stores | finishing3 | 11 | ✅ original `equiv_<OP>_metaplan` rewritten in-place (no companion) |
 | MUL / DIV / REM family | finishing4 | 13 | ✅ `_tier1` companions shipped (2026-04-28) |
-| JAL / JALR / AUIPC (`store_pc=1`) | finishing5 | 3 | ⏳ pending |
-| **TOTAL covered** | — | **53 / 56** | — |
+| JAL / JALR / AUIPC (`store_pc=1`) | finishing5 | 3 | ✅ `_tier1` companions shipped (2026-04-28) |
+| **TOTAL covered** | — | **56 / 56** | — |
 
 (56 = the 53 RV64IM ops already with `equiv_<OP>_metaplan` plus the
 3 finishing5 ops; running totals depend on whether you count the
@@ -66,16 +67,22 @@ RV64IM opcodes already on the metaplan-target shape.
 
 ### What's left
 
-- **finishing5** (`ai_plans/finishing5.md`) — 3 ops (JAL, JALR,
-  AUIPC). Tier-1.5 discharge lemmas already in tree (`a063edf` /
-  `3dfaf88`); plan retires the OUTPUT-EQ parameters (`h_entry_hi_nat`,
-  `h_pc_fgl_lo_nat`, etc.) for the `store_pc=1` bus-emission path.
-  Architecturally distinct from finishing1–4: requires NEW trust
-  axioms (`transpile_PC_for_{JAL,JALR,AUIPC}` — Sail-PC ↔ Main-pc-
-  column bridge), a wide-PC no-wrap toolkit (PC values can exceed
-  `GL_prime`), and AIR-level bus-emission projections for the
-  `store_pc=1` path's hi-half (which Main does not expose as a
-  separate column).
+**Nothing in metaplan-target scope.** The five "finishing" plans
+retired every per-opcode OUTPUT-EQ trust parameter on the metaplan
+target shape (`equiv_<OP>_metaplan`). 56/56 RV64IM ops have either
+a `_tier1` companion (45 ops) or in-place rewrite (11 loads/stores).
+
+Out-of-scope work that could improve trust further (none required
+for the stated metaplan goal):
+- **Phase 6 retirement of the original `equiv_<OP>_metaplan` theorems**
+  (the non-`_tier1` versions). They're a stable interface; their
+  parameterized `h_rd_val` is preserved as a contract for any
+  consumer that wants to forward-prove against a derived rd value.
+- **Pushing `origin/main`** — gated on user decision.
+- **Finer-grained closure of project-trusted axioms**: cut from
+  CLAUDE.md-stated scope (plookup / logUp / permutation soundness
+  is project-trusted). The 13-item trust ledger is the durable
+  surface.
 
 ### finishing4 closure summary (2026-04-28)
 
@@ -98,11 +105,37 @@ Six parallel Opus subagents shipped four scope items:
 work — the 9-item trusted surface from the 2026-04-27 revision is
 unchanged. (finishing5 will add 3 new transpile-PC trust items.)
 
+### finishing5 closure summary (2026-04-28)
+
+Five Opus subagent dispatches across three waves shipped six scope items:
+- **W1 S1** (`ebe78b6`): `Fundamentals/Transpiler.lean` — 3 new
+  `transpile_PC_for_{JAL,JALR,AUIPC}` trusted axioms bridging Sail PC
+  to Main's `pc` column. Trust-base entries TP-JAL/TP-JALR/TP-AUIPC.
+- **W1 S2** (`b420da4`): `Fundamentals/PackedBitVec/WidePCNoWrap.lean`
+  — wide-PC no-wrap toolkit handling FGL values up to `2^64−1`.
+- **W1 S4** (`6e1b6f1`): `Airs/MemoryBus*` — `store_pc_lanes_match_*`
+  predicates + soundness theorems. Hi-half formula audited from
+  `main.pil:312`: `store_value[1] = (1 - store_pc) * c[1]`, so
+  hi-half is identically zero when store_pc=1. Added trust axiom
+  MB-W-PC (parallel to MB-W; same trust class).
+- **W2 S3** (`66a35a3`): `Spec/{Jal,Jalr,AddUpperImmediatePC}.lean`
+  — per-opcode hi/lo bus-emission theorems composing W1 toolkits.
+- **W3 S5+S6** (`a0ef835`): `Equivalence/RdValDerivation/JumpUType`
+  Tier-1 upgrade + 3 `_tier1` metaplan companions in
+  `Equivalence/{Jal,Jalr,Auipc}.lean`.
+- Plan close: finishing5.md CLOSED 2026-04-28 with full per-wave
+  summary and lessons learned.
+
+**Trust ledger delta**: 9 → 13 items. Net additions: TP-JAL,
+TP-JALR, TP-AUIPC (transpile-PC bridges) + MB-W-PC (memory-bus
+permutation soundness for store_pc=1). All four are same trust
+class as existing entries.
+
 ### Open question — push to origin
 
-`main` is at `852125e` locally; `origin/main` last pushed at
-`287388d`. User has authorized aggressive local work but not pushes;
-gated on user decision.
+`main` is at `a0ef835` locally; `origin/main` last pushed at
+`287388d`, ~24 commits behind. User has authorized aggressive local
+work but not pushes; gated on user decision.
 
 ### Working notes / discoveries from this revision
 

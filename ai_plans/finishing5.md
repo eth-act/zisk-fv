@@ -239,3 +239,75 @@ S5+S6: per-opcode upgrade + cleanup), not a single agent dispatch.
 The `docs/fv/track-n-traps.md` "store_pc=1 opcode rd-write: the
 hi-half infrastructure gap" section (commit `442ef86`) has additional
 detail on each piece.
+
+## finishing5 status — CLOSED 2026-04-28
+
+Closed in one session via 5 sequential Opus subagent dispatches
+across three waves. Final main HEAD: `a0ef835`. All scope items
+shipped clean.
+
+### What shipped
+
+| Wave | Commit | Lines | Deliverable |
+|---|---|---|---|
+| W1 S1 | `ebe78b6` | +326 | `Fundamentals/Transpiler.lean` + `TranspileConsumers.lean` — 3 new trusted axioms (`transpile_PC_for_{JAL,JALR,AUIPC}`) + 3 consumer lemmas. Bridges Sail PC value to Main's `pc` column. Trust-base entries TP-JAL / TP-JALR / TP-AUIPC documented. |
+| W1 S2 | `b420da4` | +458 | `Fundamentals/PackedBitVec/WidePCNoWrap.lean` — wide-PC no-wrap toolkit handling FGL values up to `2^64 − 1` (which exceed `GL_prime`). Case analysis on the narrow wrap window. |
+| W1 S4 | `6e1b6f1` | +330 | `Airs/MemoryBus.lean` + `Airs/MemoryBus/LaneMatch.lean` — `store_pc_lanes_match_{lo,hi}` predicates + bus-emission soundness theorems. **Discovery**: `store_value[1] = (1 - store_pc) * c[1]` (verbatim from `main.pil:312`), so hi-half is identically zero when store_pc=1. Added new trust axiom MB-W-PC (parallel to MB-W; same trust class but for store_pc=1). |
+| W2 S3 | `66a35a3` | +271 | `Spec/{Jal,Jalr,AddUpperImmediatePC}.lean` — per-opcode `<op>_store_value_{lo,hi}_bv` theorems composing W1 (S1+S2+S4) into byte-bridges JumpUType can consume. |
+| W3 S5+S6 | `a0ef835` | +423 / -117 | `Equivalence/RdValDerivation/JumpUType.lean` Tier-1 upgrade (drops `h_entry_lo_eq`, `h_entry_hi_nat`, `h_pc_fgl_lo_nat`, `h_pci_lo_val` from JAL/JALR/AUIPC discharge); 3 `equiv_<OP>_metaplan_tier1` companions in `Equivalence/{Jal,Jalr,Auipc}.lean`. |
+
+3/3 metaplan-`_tier1` coverage for store_pc=1 opcodes. Combined with
+finishing1+2+3+4 work, **56/56 RV64IM ops have `_tier1` companions
+or in-place metaplan upgrades**. 0 errors, 0 sorries, full
+`lake build` clean.
+
+### Hard semantic gate (achieved)
+
+For JAL, JALR, AUIPC, every parameter on the corresponding
+`h_rd_val_jut_<op>` discharge lemma is in the allowed set
+{CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE, TRANSPILE-BRIDGE,
+TRANSPILE-PIN}. **Zero OUTPUT-EQ parameters survive.** The
+opcodes' field-level identity now lives entirely inside the Tier-1
+discharge body via S1+S2+S3+S4 composition.
+
+### Trust ledger delta
+
+Trusted base went from 9 → 13 items in this session:
+- TP-JAL, TP-JALR, TP-AUIPC (S1) — Sail-PC ↔ Main-pc-column bridge
+- MB-W-PC (S4) — memory-bus permutation soundness for `store_pc=1`
+
+All four are **same trust class** as existing entries (Sail-spec ↔
+ZisK contract, plookup/permutation soundness — both explicitly
+project-trusted per CLAUDE.md). No new trust class introduced.
+
+### What was learned
+
+1. **PIL `store_value[1]` is a clean gate.** The hi-half formula
+   was originally feared (per the plan) to require carry-decomposed
+   chunk-level reasoning. In fact `main.pil:312` shows
+   `store_value[1] = (1 - store_pc) * c[1]`, which is just a gate
+   identity — when store_pc=1, hi-half is zero. The complexity the
+   plan anticipated turned out to live in the architectural
+   guarantee that `pc` is `bits(32)` (`main.pil:98`), enforced via
+   the runtime, not in the PIL formula.
+2. **`store_pc=1` requires its own MB-W-PC permutation axiom.** The
+   existing `memory_bus_register_write_perm_sound` is gated on
+   `store_pc=0`. Cleaner to ship a parallel `_store_pc` companion
+   axiom (same trust class, bare-minimum scope addition) than to
+   surgery the existing axiom. Documented as MB-W-PC.
+3. **Combined S5+S6 dispatch worked well.** Earlier waves (finishing4)
+   split S3-unsigned and S3-signed across two parallel agents; here
+   S5+S6 was a single agent because the JumpUType discharge upgrade
+   and the metaplan companion are tightly coupled per-opcode (each
+   companion's parameter list mirrors the upgraded discharge).
+
+### What remains
+
+- **Phase 5 retirement of original `equiv_<OP>_metaplan` theorems**
+  (the non-`_tier1` versions) is OUT OF SCOPE — stable interface,
+  preserved across all 56 ops.
+- `origin/main` not pushed (gated on user decision; was at
+  `287388d` as of session start; now ~24 commits ahead).
+- finishing4+5 closure means the **complete RV64IM trust-reduction
+  goal stated in the metaplan is achieved** for every opcode the
+  metaplan targets.
