@@ -271,7 +271,34 @@
     padding: 16px;
     overflow-x: auto;
     margin-top: 18px;
+    position: relative;
   }
+  /* Pinned bus-info panel — directly below the SVG, full width.
+     Keeps the diagram and the live info visible together. */
+  .arch-floater {
+    margin-top: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.86rem;
+    min-height: 56px;
+    transition: border-left-color 0.15s;
+  }
+  .arch-floater .ft-list {
+    display: flex; flex-direction: row; flex-wrap: wrap; gap: 14px;
+    margin-top: 4px;
+  }
+  .arch-floater .ft-list > div { white-space: nowrap; }
+  .arch-floater hr { display: none; }
+  .arch-floater .ft-bn { display: inline-block; }
+  .arch-floater .ft-kf { display: inline-block; }
+  .arch-floater .ft-empty { color: var(--muted); font-size: 0.86rem; }
+  .arch-floater .ft-bn { font-family: "JetBrains Mono", monospace; font-weight: 600; }
+  .arch-floater .ft-kf { color: var(--muted); font-size: 0.78rem; }
+  .arch-floater .ft-ds { color: var(--muted); font-size: 0.82rem; line-height: 1.5; margin-top: 4px; }
+  .arch-floater .ft-tr { color: var(--trusted); font-size: 0.78rem; }
   .arch-canvas svg { display: block; max-width: 100%; min-width: 880px; }
   .arch-canvas .tier-label {
     fill: var(--muted);
@@ -324,7 +351,10 @@
   .arch-canvas .air-node.highlighted .air-rect {
     filter: drop-shadow(0 0 7px var(--hl-color, var(--proven)));
   }
-  .arch-canvas .air-node { transition: opacity 0.15s; }
+  .arch-canvas .air-node { transition: opacity 0.15s; cursor: pointer; }
+  .arch-canvas .air-node:hover .air-rect {
+    filter: drop-shadow(0 0 5px var(--accent));
+  }
   .arch-canvas .bus-label {
     font-family: "JetBrains Mono", monospace;
     font-size: 10px;
@@ -899,6 +929,9 @@
     </p>
     <div class="arch-canvas">
       <svg id="zisk-arch" viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg" aria-label="ZisK architecture diagram"></svg>
+      <div class="arch-floater" id="zisk-arch-floater">
+        <div class="ft-empty">Hover any AIR, rail, or hairline above to see what it connects to.</div>
+      </div>
     </div>
     <div class="arch-legend">
       <span><span class="swatch sw-proven"></span>Proven (per-opcode equivalence reaches this AIR)</span>
@@ -1398,16 +1431,52 @@
     // ----- hover-to-highlight bus connectivity -----
     const railEls = svg.querySelectorAll('.bus-rail');
     const lineEls = svg.querySelectorAll('.bus-line');
+    const floater = document.getElementById('zisk-arch-floater');
 
     function connectedNodes(busKey) {
       const b = BUSES[busKey]; if (!b) return new Set();
       return new Set([...(b.senders || []), ...(b.receivers || [])]);
     }
+    function busesOfNode(nodeId) {
+      return Object.entries(BUSES).filter(([_, b]) =>
+        (b.senders || []).includes(nodeId) || (b.receivers || []).includes(nodeId)
+      ).map(([k, _]) => k);
+    }
+    function busCardHTML(busKey) {
+      const b = BUSES[busKey]; if (!b) return '';
+      return `<div><span class="ft-bn" style="color:${b.color}">${b.name}</span>` +
+        (b.id ? ` <span class="ft-kf">id=${b.id}</span>` : '') +
+        ` <span class="ft-kf">· ${b.type} · key <code>${b.keyFormat}</code></span></div>` +
+        `<div class="ft-ds">${b.desc}` +
+        (b.trusted ? ` <span class="ft-tr">Trusted via: <code>${b.trusted}</code></span>` : '') +
+        `</div>`;
+    }
+    function nodeFloaterHTML(nodeId) {
+      const n = findNode(nodeId); if (!n) return '';
+      const bs = busesOfNode(nodeId);
+      const KIND_LABEL = {
+        proven: 'Proven AIR',
+        table: 'Trusted lookup table',
+        outscope: 'Out of scope (precompile)'
+      };
+      const head = `<div><span class="ft-bn">${n.label}</span> ` +
+        `<span class="ft-kf">— ${KIND_LABEL[n.kind] || ''}</span></div>`;
+      if (!bs.length) return head + `<div class="ft-ds">Not connected to any bus.</div>`;
+      const items = bs.map(k => {
+        const b = BUSES[k];
+        const role = (b.senders || []).includes(nodeId) ? 'sends'
+                   : (b.receivers || []).includes(nodeId) ? 'receives' : '';
+        return `<div><span class="ft-bn" style="color:${b.color}">${b.name}</span> ` +
+          `<span class="ft-kf">— ${role}</span></div>`;
+      }).join('');
+      return head + `<div class="ft-list">${items}</div>`;
+    }
+    const EMPTY_HTML = `<div class="ft-empty">Hover any AIR, rail, or hairline above to see what it connects to.</div>`;
 
-    function highlight(busKey) {
+    function highlightBus(busKey) {
       const b = BUSES[busKey]; if (!b) return;
       const conn = connectedNodes(busKey);
-      // nodes
+      if (floater) floater.style.borderLeftColor = b.color;
       Object.entries(nodeEls).forEach(([id, g]) => {
         const inSet = conn.has(id);
         g.classList.toggle('dimmed', !inSet);
@@ -1415,23 +1484,48 @@
         if (inSet) g.style.setProperty('--hl-color', b.color);
         else g.style.removeProperty('--hl-color');
       });
-      // rails
       railEls.forEach(r => {
         const k = r.getAttribute('data-bus');
         r.classList.toggle('dimmed', k !== busKey);
         r.classList.toggle('highlighted', k === busKey);
       });
-      // lines
       lineEls.forEach(l => {
         const k = l.getAttribute('data-bus');
         l.classList.toggle('dimmed', k !== busKey);
         l.classList.toggle('highlighted', k === busKey);
       });
-      // cards
       Object.entries(cardEls).forEach(([k, c]) => {
         c.classList.toggle('dimmed', k !== busKey);
         c.classList.toggle('highlighted', k === busKey);
       });
+      if (floater) floater.innerHTML = busCardHTML(busKey);
+    }
+    function highlightNode(nodeId) {
+      const bs = busesOfNode(nodeId);
+      const reach = new Set([nodeId, ...bs.flatMap(k => [...connectedNodes(k)])]);
+      Object.entries(nodeEls).forEach(([id, g]) => {
+        const inSet = reach.has(id);
+        g.classList.toggle('dimmed', !inSet);
+        g.classList.toggle('highlighted', id === nodeId);
+        if (id === nodeId) g.style.setProperty('--hl-color', 'var(--accent)');
+        else g.style.removeProperty('--hl-color');
+      });
+      const bset = new Set(bs);
+      railEls.forEach(r => {
+        const k = r.getAttribute('data-bus');
+        r.classList.toggle('dimmed', !bset.has(k));
+        r.classList.toggle('highlighted', bset.has(k));
+      });
+      lineEls.forEach(l => {
+        const k = l.getAttribute('data-bus');
+        l.classList.toggle('dimmed', !bset.has(k));
+        l.classList.toggle('highlighted', bset.has(k));
+      });
+      Object.entries(cardEls).forEach(([k, c]) => {
+        c.classList.toggle('dimmed', !bset.has(k));
+        c.classList.toggle('highlighted', bset.has(k));
+      });
+      if (floater) floater.innerHTML = nodeFloaterHTML(nodeId);
     }
     function clearHl() {
       Object.values(nodeEls).forEach(g => {
@@ -1441,15 +1535,30 @@
       railEls.forEach(r => r.classList.remove('dimmed', 'highlighted'));
       lineEls.forEach(l => l.classList.remove('dimmed', 'highlighted'));
       Object.values(cardEls).forEach(c => c.classList.remove('dimmed', 'highlighted'));
+      if (floater) {
+        floater.innerHTML = EMPTY_HTML;
+        floater.style.borderLeftColor = 'var(--accent)';
+      }
     }
 
-    function bindHover(elt, busKey) {
-      elt.addEventListener('mouseenter', () => highlight(busKey));
-      elt.addEventListener('mouseleave', clearHl);
-    }
-    railEls.forEach(r => bindHover(r, r.getAttribute('data-bus')));
-    lineEls.forEach(l => bindHover(l, l.getAttribute('data-bus')));
-    Object.entries(cardEls).forEach(([k, c]) => bindHover(c, k));
+    railEls.forEach(r => {
+      const k = r.getAttribute('data-bus');
+      r.addEventListener('mouseenter', () => highlightBus(k));
+      r.addEventListener('mouseleave', clearHl);
+    });
+    lineEls.forEach(l => {
+      const k = l.getAttribute('data-bus');
+      l.addEventListener('mouseenter', () => highlightBus(k));
+      l.addEventListener('mouseleave', clearHl);
+    });
+    Object.entries(cardEls).forEach(([k, c]) => {
+      c.addEventListener('mouseenter', () => highlightBus(k));
+      c.addEventListener('mouseleave', clearHl);
+    });
+    Object.entries(nodeEls).forEach(([id, g]) => {
+      g.addEventListener('mouseenter', () => highlightNode(id));
+      g.addEventListener('mouseleave', clearHl);
+    });
   })();
 
   // ----- FV stack diagram -----
