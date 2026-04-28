@@ -45,6 +45,8 @@
 
   /* Layout */
   .wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+  /* Architecture tab needs the full viewport width for side-by-side layout */
+  #tab-arch .wrap { max-width: none; padding: 0 32px; }
   section { padding: 56px 0; border-top: 1px solid var(--border); }
   section:first-of-type { border-top: 0; }
   .section-eyebrow {
