@@ -46,6 +46,8 @@ import ZiskFv.Airs.MemAlignWriteByte
 import ZiskFv.Fundamentals.PackedBitVec.Extensions
 -- Track N B.5: Goldilocks no-wrap toolkit (additive packings).
 import ZiskFv.Fundamentals.PackedBitVec.NoWrap
+-- finishing4 S1: multiplicative no-wrap toolkit (8-chunk carry chains).
+import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
 import ZiskFv.Spec.Add
 import ZiskFv.Equivalence.Add
 import ZiskFv.GoldenTraces.Add
