@@ -15,6 +15,7 @@ import ZiskFv.RV64D.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
+import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
 
 /-!
 End-to-end theorem for RV64 MULHSU (Phase 3A M2). Mirrors
@@ -326,5 +327,63 @@ theorem equiv_MULHSU_metaplan_op_bus
       = EStateM.Result.ok mulhsu_input.r2_val state := by
     rw [h_b_match]; exact h_r2_read
   exact equiv_MULHSU_metaplan state mulhsu_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+
+/-- **Tier-1 metaplan: MULHSU without `h_rd_val` parameter** (finishing4 S4-signed).
+    Derives `h_rd_val` internally via
+    `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_mulhsu`. -/
+theorem equiv_MULHSU_metaplan_tier1
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (mulhsu_input : PureSpec.MulhsuInput)
+    (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok mulhsu_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok mulhsu_input.r2_val state)
+    (h_input_rd : mulhsu_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some mulhsu_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : mulhsu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    -- RANGE: byte-range bounds on rd-write entry's lanes.
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    -- CIRCUIT-CONSTRAINT: byte-sum equals operand-form mixed-sign high-half product.
+    (h_byte_sum_circuit :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+        + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+        + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (BitVec.ofInt 64
+          ((mulhsu_input.r1_val.toInt * (mulhsu_input.r2_val.toNat : ℤ)) / 2 ^ 64)).toNat) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MUL
+          (r2, r1, rd,
+           { result_part := VectorHalf.High
+             signed_rs1 := .Signed
+             signed_rs2 := .Unsigned }))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  have h_rd_val :=
+    ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_mulhsu
+      mulhsu_input.r1_val mulhsu_input.r2_val e2
+      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+      h_byte_sum_circuit
+  exact equiv_MULHSU_metaplan state mulhsu_input r1 r2 rd exec_row e0 e1 e2
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    h_rd_idx h_rd_val
 
 end ZiskFv.Equivalence.MulHSU

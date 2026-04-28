@@ -11,6 +11,7 @@ import ZiskFv.RV64D.remuw
 import ZiskFv.RV64D.BusEffect
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
+import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
 
 /-!
 End-to-end theorem for RV64M REMUW (unsigned 32-bit divide).
@@ -290,5 +291,63 @@ theorem equiv_REMUW_metaplan_op_bus
       = EStateM.Result.ok remuw_input.r2_val state := by
     rw [h_b_match]; exact h_r2_read
   exact equiv_REMUW_metaplan state remuw_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+
+/-- **Tier-1 metaplan: REMUW without `h_rd_val` parameter** (finishing4 S4-signed).
+    Derives `h_rd_val` internally via
+    `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_remuw`. -/
+theorem equiv_REMUW_metaplan_tier1
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (remuw_input : PureSpec.RemuwInput)
+    (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok remuw_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok remuw_input.r2_val state)
+    (h_input_rd : remuw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some remuw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : remuw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    -- RANGE: byte-range bounds on rd-write entry's lanes.
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    -- TRANSPILE-BRIDGE: byte-sum equals REMUW pure-function output (W-variant).
+    (h_byte_sum_circuit :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+        + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+        + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (let r1_lo32 : BitVec 32 := Sail.BitVec.extractLsb remuw_input.r1_val 31 0
+         let r2_lo32 : BitVec 32 := Sail.BitVec.extractLsb remuw_input.r2_val 31 0
+         let q32 : BitVec 32 :=
+           if r2_lo32 = 0#32
+             then r1_lo32
+             else BitVec.ofNat 32 (r1_lo32.toNat % r2_lo32.toNat)
+         BitVec.signExtend 64 q32).toNat) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, true))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  have h_rd_val :=
+    ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_remuw
+      remuw_input.r1_val remuw_input.r2_val e2
+      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+      h_byte_sum_circuit
+  exact equiv_REMUW_metaplan state remuw_input r1 r2 rd exec_row e0 e1 e2
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    h_rd_idx h_rd_val
 
 end ZiskFv.Equivalence.Remuw
