@@ -304,17 +304,35 @@
     fill: none;
     stroke-dasharray: 8 4;
     opacity: 0.85;
+    cursor: pointer;
+    transition: stroke-width 0.15s, opacity 0.15s;
   }
+  .arch-canvas .bus-rail:hover,
+  .arch-canvas .bus-rail.highlighted { stroke-width: 5; opacity: 1; }
   .arch-canvas .bus-line {
     stroke-width: 1.2;
     fill: none;
     opacity: 0.32;
+    cursor: pointer;
+    transition: stroke-width 0.15s, opacity 0.15s;
   }
+  .arch-canvas .bus-line:hover,
+  .arch-canvas .bus-line.highlighted { stroke-width: 2.6; opacity: 1; }
+  .arch-canvas .bus-rail.dimmed { opacity: 0.12; }
+  .arch-canvas .bus-line.dimmed  { opacity: 0.06; }
+  .arch-canvas .air-node.dimmed { opacity: 0.18; }
+  .arch-canvas .air-node.highlighted .air-rect {
+    filter: drop-shadow(0 0 7px var(--hl-color, var(--proven)));
+  }
+  .arch-canvas .air-node { transition: opacity 0.15s; }
   .arch-canvas .bus-label {
     font-family: "JetBrains Mono", monospace;
     font-size: 10px;
     font-weight: 600;
   }
+  .bus-card { cursor: pointer; transition: border-left-width 0.15s, transform 0.15s; }
+  .bus-card.highlighted { border-left-width: 6px; transform: translateX(2px); }
+  .bus-card.dimmed { opacity: 0.4; }
   .arch-canvas .boundary {
     fill: rgba(110, 231, 183, 0.04);
     stroke: var(--proven);
@@ -1149,37 +1167,45 @@
         name: 'OperationBus', id: 5000, color: '#a78bfa', type: 'Permutation',
         desc: 'Operation dispatch. Main emits one entry per opcode invocation; secondary state machines (Arith, Binary, BinaryExtension) consume.',
         keyFormat: '(op, a, b, c, …, m32)',
-        rail: true, trusted: 'OperationBus.matches_entry'
+        rail: true, trusted: 'OperationBus.matches_entry',
+        senders: ['Main'],
+        receivers: ['Arith', 'Binary', 'BinaryExtension', 'Keccak', 'SHA256']
       },
       memory: {
         name: 'MemoryBus', id: 10, color: '#4ade80', type: 'Permutation',
         desc: 'Register reads/writes + memory loads/stores. Main + Mem AIR provide entries; alignment helpers consume.',
         keyFormat: '(addr_space, addr, step, value_lo, value_hi)',
-        rail: true, trusted: 'MB-W, MB-W-PC, MB-L, MB-S'
+        rail: true, trusted: 'MB-W, MB-W-PC, MB-L, MB-S',
+        senders: ['Main', 'Arith'],
+        receivers: ['Mem', 'MemAlign', 'MemAlignByte', 'MemAlignReadByte', 'MemAlignWriteByte']
       },
       binTable: {
         name: 'BinaryTableBus', id: 125, color: '#fb923c', type: 'Lookup',
         desc: 'Per-byte bitwise / compare semantics: AND/OR/XOR/LT/LTU/EQ/GT/LE/LEU/MIN(U)/MAX(U)/ADD/SUB/SEXT.',
         keyFormat: '(op, a_byte, b_byte, c_byte, cin, fl, pi)',
-        trusted: 'BT-B'
+        trusted: 'BT-B',
+        senders: ['Binary'], receivers: ['BinaryTable']
       },
       binExtTable: {
         name: 'BinaryExtensionTableBus', id: 124, color: '#22d3ee', type: 'Lookup',
         desc: 'Per-byte shift semantics: SLL / SRL / SRA across 32- and 64-bit operand widths.',
         keyFormat: '(op, a_byte, shift_amt, m32, …)',
-        trusted: 'BT-X'
+        trusted: 'BT-X',
+        senders: ['BinaryExtension'], receivers: ['BinaryExtensionTable']
       },
       arithTable: {
         name: 'ArithTableBus', color: '#facc15', type: 'Lookup',
         desc: 'Per-row Arith state-machine semantics: signed/unsigned MUL/DIV/REM modes, sign-witness pattern (na, nb, np).',
         keyFormat: '(mode_flags, na, nb, np, …)',
-        trusted: 'arith_table_consumer_wf'
+        trusted: 'arith_table_consumer_wf',
+        senders: ['Arith'], receivers: ['ArithTable']
       },
       arithRangeTable: {
         name: 'ArithRangeTableBus', color: '#facc15', type: 'Lookup',
         desc: 'Range bounds on 16-bit Arith chunks (ensures chunk-level no-wrap for multiplicative carry chains).',
         keyFormat: '(chunk, max_val)',
-        trusted: 'arith_range_table_consumer_wf'
+        trusted: 'arith_range_table_consumer_wf',
+        senders: ['Arith'], receivers: ['ArithRangeTable']
       }
     };
 
@@ -1258,7 +1284,8 @@
       if (!b.rail) return;
       const ry = RAIL_Y[k];
       el('line', { x1: 60, y1: ry, x2: SVG_W - 60, y2: ry,
-                   stroke: b.color, class: 'bus-rail' }, svg);
+                   stroke: b.color, class: 'bus-rail',
+                   'data-bus': k }, svg);
       const lbl = el('text', { x: SVG_W - 70, y: ry - 8, fill: b.color,
                                class: 'bus-label' }, svg);
       lbl.setAttribute('text-anchor', 'end');
@@ -1276,7 +1303,8 @@
         x1: sp.cx, y1: sp.y + (sp.y < ry ? NODE_H : 0),
         x2: sp.cx, y2: ry,
         stroke: color, 'stroke-width': 1.5, 'stroke-opacity': opacity,
-        'stroke-dasharray': opts.outscope ? '4 4' : ''
+        'stroke-dasharray': opts.outscope ? '4 4' : '',
+        class: 'bus-line', 'data-bus': busKey
       }, svg);
     }
     // Operation bus
@@ -1303,7 +1331,7 @@
       const color = BUSES[busKey].color;
       el('line', {
         x1: fp.cx, y1: fp.y + NODE_H, x2: tp.cx, y2: tp.y,
-        stroke: color, class: 'bus-line'
+        stroke: color, class: 'bus-line', 'data-bus': busKey
       }, svg);
     }
     lookup('binTable', 'Binary', 'BinaryTable');
@@ -1317,9 +1345,13 @@
       table: 'trusted-table',
       outscope: 'outscope'
     };
+    const nodeEls = {};
     NODES.forEach(n => {
       const p = nodePos(n);
-      const g = el('g', { transform: `translate(${p.x}, ${p.y})` }, svg);
+      const g = el('g', {
+        transform: `translate(${p.x}, ${p.y})`,
+        class: 'air-node', 'data-node': n.id
+      }, svg);
       el('rect', {
         width: NODE_W, height: NODE_H, rx: 6,
         class: 'air-rect ' + KIND_CLASS[n.kind]
@@ -1339,14 +1371,17 @@
         }, g);
         s.textContent = n.sub;
       }
+      nodeEls[n.id] = g;
     });
 
     // bus info cards
     const info = document.getElementById('zisk-arch-buses');
+    const cardEls = {};
     if (info) {
-      Object.values(BUSES).forEach(b => {
+      Object.entries(BUSES).forEach(([k, b]) => {
         const c = document.createElement('div');
         c.className = 'bus-card';
+        c.dataset.bus = k;
         c.style.borderLeftColor = b.color;
         c.innerHTML =
           `<div class="bn" style="color:${b.color}">${b.name}` +
@@ -1356,8 +1391,65 @@
           (b.trusted ? `<br><span style="color:var(--trusted)">Trusted via:</span> <code>${b.trusted}</code>` : '') +
           `</div>`;
         info.appendChild(c);
+        cardEls[k] = c;
       });
     }
+
+    // ----- hover-to-highlight bus connectivity -----
+    const railEls = svg.querySelectorAll('.bus-rail');
+    const lineEls = svg.querySelectorAll('.bus-line');
+
+    function connectedNodes(busKey) {
+      const b = BUSES[busKey]; if (!b) return new Set();
+      return new Set([...(b.senders || []), ...(b.receivers || [])]);
+    }
+
+    function highlight(busKey) {
+      const b = BUSES[busKey]; if (!b) return;
+      const conn = connectedNodes(busKey);
+      // nodes
+      Object.entries(nodeEls).forEach(([id, g]) => {
+        const inSet = conn.has(id);
+        g.classList.toggle('dimmed', !inSet);
+        g.classList.toggle('highlighted', inSet);
+        if (inSet) g.style.setProperty('--hl-color', b.color);
+        else g.style.removeProperty('--hl-color');
+      });
+      // rails
+      railEls.forEach(r => {
+        const k = r.getAttribute('data-bus');
+        r.classList.toggle('dimmed', k !== busKey);
+        r.classList.toggle('highlighted', k === busKey);
+      });
+      // lines
+      lineEls.forEach(l => {
+        const k = l.getAttribute('data-bus');
+        l.classList.toggle('dimmed', k !== busKey);
+        l.classList.toggle('highlighted', k === busKey);
+      });
+      // cards
+      Object.entries(cardEls).forEach(([k, c]) => {
+        c.classList.toggle('dimmed', k !== busKey);
+        c.classList.toggle('highlighted', k === busKey);
+      });
+    }
+    function clearHl() {
+      Object.values(nodeEls).forEach(g => {
+        g.classList.remove('dimmed', 'highlighted');
+        g.style.removeProperty('--hl-color');
+      });
+      railEls.forEach(r => r.classList.remove('dimmed', 'highlighted'));
+      lineEls.forEach(l => l.classList.remove('dimmed', 'highlighted'));
+      Object.values(cardEls).forEach(c => c.classList.remove('dimmed', 'highlighted'));
+    }
+
+    function bindHover(elt, busKey) {
+      elt.addEventListener('mouseenter', () => highlight(busKey));
+      elt.addEventListener('mouseleave', clearHl);
+    }
+    railEls.forEach(r => bindHover(r, r.getAttribute('data-bus')));
+    lineEls.forEach(l => bindHover(l, l.getAttribute('data-bus')));
+    Object.entries(cardEls).forEach(([k, c]) => bindHover(c, k));
   })();
 
   // ----- FV stack diagram -----
