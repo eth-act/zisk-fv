@@ -228,6 +228,91 @@
     font-family: "JetBrains Mono", monospace;
     font-size: 0.82rem;
   }
+
+  /* Tabs */
+  .tabs-wrap {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(11,13,18,0.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .tabs {
+    display: flex; gap: 4px;
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 12px 24px 0;
+  }
+  .tab-btn {
+    appearance: none;
+    background: transparent;
+    color: var(--muted);
+    border: 0;
+    padding: 12px 18px;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    letter-spacing: 0.01em;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .tab-pane[hidden] { display: none; }
+
+  /* Comparison table */
+  .compare-table {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .compare-row {
+    display: grid;
+    grid-template-columns: 220px 1fr 1fr;
+    border-top: 1px solid var(--border);
+  }
+  .compare-row:first-child { border-top: 0; }
+  .compare-row.head {
+    background: var(--surface-2);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .compare-row > div {
+    padding: 14px 18px;
+    border-left: 1px solid var(--border);
+  }
+  .compare-row > div:first-child {
+    border-left: 0;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .compare-row .cell-content {
+    font-size: 0.93rem;
+    color: var(--text);
+  }
+  .compare-row .cell-content .sub {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 4px;
+    display: block;
+  }
+  .compare-row .col-zisk { background: rgba(167,139,250,0.04); }
+  @media (max-width: 820px) {
+    .compare-row { grid-template-columns: 1fr; }
+    .compare-row > div { border-left: 0; border-top: 1px solid var(--border); }
+    .compare-row > div:first-child {
+      background: var(--surface-2);
+      border-top: 1px solid var(--border-2);
+    }
+  }
 </style>
 </head>
 <body>
@@ -247,6 +332,15 @@
     </div>
   </div>
 </div>
+
+<div class="tabs-wrap">
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" data-tab="trust" role="tab">Trust boundary</button>
+    <button class="tab-btn" data-tab="compare" role="tab">vs openvm-fv</button>
+  </nav>
+</div>
+
+<div id="tab-trust" class="tab-pane">
 
 <section>
   <div class="wrap">
@@ -632,6 +726,195 @@
   </div>
 </section>
 
+</div><!-- /tab-trust -->
+
+<div id="tab-compare" class="tab-pane" hidden>
+
+<section>
+  <div class="wrap">
+    <div class="section-eyebrow">prior art &amp; lineage</div>
+    <h2>zisk-fv vs openvm-fv: same shape, different encoding</h2>
+    <p class="section-lead">
+      <a href="https://github.com/Nethermind-OpenLabs/openvm-fv">openvm-fv</a> (Nethermind / OpenLabs) is the closest prior art &mdash; per-opcode formal verification of a RISC-V ZKVM, in Lean 4, against the same Sail spec we use. We adopted its five-layer pipeline (<code>Extraction → Airs → Constraints → Spec → Equivalence</code>) and its proof patterns. The two projects target different VMs and structure their trust boundary differently in the same spirit.
+    </p>
+
+    <div class="compare-table">
+
+      <div class="compare-row head">
+        <div></div>
+        <div>openvm-fv</div>
+        <div class="col-zisk">zisk-fv</div>
+      </div>
+
+      <div class="compare-row">
+        <div>Target VM</div>
+        <div><div class="cell-content">OpenVM (Plonky3-based) <span class="sub">RV32IM</span></div></div>
+        <div class="col-zisk"><div class="cell-content">ZisK (PIL2 / Polygon Hermez) <span class="sub">RV64IM</span></div></div>
+      </div>
+
+      <div class="compare-row">
+        <div>Coverage</div>
+        <div><div class="cell-content">45 RV32IM opcodes</div></div>
+        <div class="col-zisk"><div class="cell-content">63 RV64IM opcodes</div></div>
+      </div>
+
+      <div class="compare-row">
+        <div>Field</div>
+        <div><div class="cell-content">BabyBear (~2³¹) <span class="sub">small prime, fits in u32 — chunk decomposition needed even for ADD</span></div></div>
+        <div class="col-zisk"><div class="cell-content">Goldilocks (≈ 2⁶⁴ − 2³² + 1) <span class="sub">large prime — additive proofs avoid wrap, multiplicative still needs chunks</span></div></div>
+      </div>
+
+      <div class="compare-row">
+        <div>Constraint language</div>
+        <div><div class="cell-content">Plonky3 <code>SymbolicConstraintsDag</code> <span class="sub">extracted via the openvm-fv <code>extractor/</code> Rust binary</span></div></div>
+        <div class="col-zisk"><div class="cell-content">PIL2 protobuf-compiled <code>.pilout</code> <span class="sub">extracted via <code>tools/zisk-pil-extract/</code> (built for this project)</span></div></div>
+      </div>
+
+      <div class="compare-row">
+        <div>Circuit architecture</div>
+        <div><div class="cell-content">One AIR per opcode family <span class="sub">e.g. <code>VmAirWrapper_mul</code>, <code>VmAirWrapper_loadstore</code></span></div></div>
+        <div class="col-zisk"><div class="cell-content">Monolithic Main AIR + secondary state machines <span class="sub">multiplexes opcodes via <span class="chip">op</span>/<span class="chip">m32</span> flags; delegates heavy ops via <code>OPERATION_BUS_ID = 5000</code></span></div></div>
+      </div>
+
+      <div class="compare-row">
+        <div>Sail spec</div>
+        <div><div class="cell-content"><code>LeanRV32D</code></div></div>
+        <div class="col-zisk"><div class="cell-content"><code>LeanRV64D</code></div></div>
+      </div>
+
+      <div class="compare-row">
+        <div>Pure-spec layout</div>
+        <div><div class="cell-content"><code>RV32D/&lt;op&gt;.lean</code></div></div>
+        <div class="col-zisk"><div class="cell-content"><code>RV64D/&lt;op&gt;.lean</code> <span class="sub">ported from RV32D, widened to 64-bit</span></div></div>
+      </div>
+
+      <div class="compare-row">
+        <div>Pipeline layers</div>
+        <div><div class="cell-content">Extraction → Airs → Constraints → Spec → Equivalence</div></div>
+        <div class="col-zisk"><div class="cell-content">Same five-layer template <span class="sub">we adopted this directly; it transferred cleanly</span></div></div>
+      </div>
+
+      <div class="compare-row">
+        <div>Project axiom count</div>
+        <div><div class="cell-content"><strong>0</strong> <code>axiom</code> declarations in the project tree <span class="sub"><code>#print axioms</code> shows only Lean kernel + Mathlib axioms</span></div></div>
+        <div class="col-zisk"><div class="cell-content"><strong>~89</strong> named axioms <span class="sub">~63 transpile + 4 platform + 7 bus protocol + 2 Sail-state + 3 PC bridges</span></div></div>
+      </div>
+
+      <div class="compare-row">
+        <div>Transpiler trust encoding</div>
+        <div><div class="cell-content">Hand-written Lean function <code>transpile_op</code> (7,470 lines of pattern-matching) <span class="sub">Theorems take a <code>wf_propertiesToAssumePerRow</code> hypothesis; the body derives <code>∃ instr, transpile_op instr ... = some(...)</code>. Forward direction "Rust transpiler obeys this Lean function" is implicit.</span></div></div>
+        <div class="col-zisk"><div class="cell-content">Per-opcode named axioms <code>transpile_&lt;OP&gt;</code> <span class="sub">Forward direction stated explicitly: "if Main columns are configured this way, treat it as RV instr X." Each axiom is greppable; <code>#print axioms</code> on a metaplan theorem lists every transpile axiom it depends on.</span></div></div>
+      </div>
+
+      <div class="compare-row">
+        <div>Bus-protocol soundness <span class="sub" style="color:var(--dim);font-weight:400;font-size:0.78rem">(plookup / permutation)</span></div>
+        <div><div class="cell-content">Encoded as <code>wf_propertiesToAssumePerRow</code> hypothesis on bus rows <span class="sub">e.g. <code>BitwiseBusEntryInstance.wf_properties</code> for XOR/AND. Caller discharges; not declared <code>axiom</code>.</span></div></div>
+        <div class="col-zisk"><div class="cell-content">Named ledger entries <span class="sub">BT-B, BT-X (lookups); MB-W, MB-W-PC, MB-L, MB-S (memory); <code>OperationBus.matches_entry</code> (op bus). Same trust class as openvm-fv's hypotheses, surfaced as named axioms.</span></div></div>
+      </div>
+
+      <div class="compare-row">
+        <div>Lookup tables (XOR / shifts)</div>
+        <div><div class="cell-content"><code>BitwiseBusEntry</code> typeclass instance carrying truth-table semantics</div></div>
+        <div class="col-zisk"><div class="cell-content">BT-B and BT-X axioms with the same content shape <span class="sub">we explicitly cited openvm-fv's pattern when authoring these</span></div></div>
+      </div>
+
+      <div class="compare-row">
+        <div>Memory model fidelity</div>
+        <div><div class="cell-content">Memory consistency proven within the AIR via <code>OpenvmFv/Fundamentals/MemoryConsistency.lean</code> + Plonky3 read/write argument soundness baked into <code>wf_propertiesToAssumePerRow</code></div></div>
+        <div class="col-zisk"><div class="cell-content">MS-L / MS-S axioms — Mem AIR row's <code>(addr, value, step)</code> agrees with Sail's <code>state.mem</code> byte-by-byte <span class="sub">two-axiom split because ZisK's Mem AIR is a separate compositional component, not in-place</span></div></div>
+      </div>
+
+      <div class="compare-row">
+        <div>Final theorem shape</div>
+        <div><div class="cell-content"><code>execute_instruction (.&lt;OP&gt; ...) state = bus_effect ...</code></div></div>
+        <div class="col-zisk"><div class="cell-content">Same shape <span class="sub">explicitly chosen to mirror openvm-fv's "metaplan target"</span></div></div>
+      </div>
+
+      <div class="compare-row">
+        <div>What's <em>not</em> proven (in either)</div>
+        <div><div class="cell-content">Rust transpiler ↔ Lean function agreement<br>Plonky3 / lookup soundness from first principles<br>Sail spec correctness</div></div>
+        <div class="col-zisk"><div class="cell-content"><code>riscv2zisk_context.rs</code> ↔ axiom contract agreement<br>PLONK / plookup / logUp / permutation soundness<br>Sail spec correctness</div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-eyebrow">two views of the same trust</div>
+    <h2>Why the encodings differ — and what that costs</h2>
+    <p class="section-lead">
+      Both projects ultimately trust the same kinds of things (Sail, the transpiler contract, the proving system's bus protocols). What's different is whether that trust is named and tallied, or absorbed into hypothesis structures.
+    </p>
+
+    <div class="arch-grid">
+      <div class="card">
+        <h3 style="color: var(--cyan);">openvm-fv's approach</h3>
+        <p style="color:var(--muted);font-size:0.95rem;">
+          <strong>Trust as hypotheses.</strong> Each theorem assumes <code>wf_propertiesToAssumePerRow</code>; the trust content lives inside that predicate's structure plus the body of the <code>transpile_op</code> Lean function.
+        </p>
+        <p style="color:var(--muted);font-size:0.95rem;margin-top:10px;">
+          <strong>Pro:</strong> <code>#print axioms</code> on any theorem returns only Lean kernel + Mathlib axioms. Visually clean. Reviewers see "zero project-specific axioms" and that's true at the language level.
+        </p>
+        <p style="color:var(--muted);font-size:0.95rem;margin-top:10px;">
+          <strong>Con:</strong> Trust is diffuse — it's distributed across hypothesis predicates and a 7,470-line Lean function. Auditing requires reading the structures and reasoning about whether the implicit forward contract matches the Rust transpiler.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3 style="color: var(--accent);">zisk-fv's approach</h3>
+        <p style="color:var(--muted);font-size:0.95rem;">
+          <strong>Trust as named ledger.</strong> Each trust assumption is an explicit <code>axiom</code> declaration with a docstring, an entry in <code>docs/fv/trusted-base.md</code>, and a reference in <code>CLAUDE.md</code>'s trusted-surface section.
+        </p>
+        <p style="color:var(--muted);font-size:0.95rem;margin-top:10px;">
+          <strong>Pro:</strong> Every trust item is greppable, individually auditable, and load-bearing (each has at least one consumer lemma so <code>#print axioms</code> on a metaplan theorem actually surfaces it). The 13-item trust ledger is the audit artifact.
+        </p>
+        <p style="color:var(--muted);font-size:0.95rem;margin-top:10px;">
+          <strong>Con:</strong> <code>#print axioms</code> on a final theorem prints a long list, including axioms that are structural (many of the per-opcode <code>transpile_&lt;OP&gt;</code> axioms). The trust ledger is more honest but also more verbose.
+        </p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 24px; border-left: 3px solid var(--accent);">
+      <h3>Practical takeaway</h3>
+      <p style="color:var(--muted);font-size:0.96rem; margin:6px 0 0;">
+        The two encodings carry roughly the same trust content. openvm-fv minimizes axiom count for review optics; zisk-fv maximizes ledger explicitness for trust auditing. Either project would close the gap by formally verifying its Rust transpiler against its Lean contract — that follow-on Rust-side proof is open in both.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-eyebrow">what we adopted directly</div>
+    <h2>From openvm-fv: patterns we kept</h2>
+    <p class="section-lead">
+      Building on openvm-fv was a deliberate choice; the two projects share more than they diverge on. Here's what transferred cleanly.
+    </p>
+    <div class="arch-grid">
+      <div class="card">
+        <h3>Five-layer pipeline</h3>
+        <p style="color:var(--muted);font-size:0.95rem;margin:0;"><code>Extraction/</code> (auto-generated raw constraints) → <code>Airs/</code> (named-column structures) → <code>Constraints/</code> (simp bridges) → <code>Spec/</code> (circuit→semantic theorems) → <code>Equivalence/</code> (per-opcode final theorem). Identical layout in both projects.</p>
+      </div>
+      <div class="card">
+        <h3>Final theorem shape</h3>
+        <p style="color:var(--muted);font-size:0.95rem;margin:0;"><code>execute_instruction OP state = (bus_effect exec_row mem_row state).2</code> — the metaplan target. Both projects converge here.</p>
+      </div>
+      <div class="card">
+        <h3>Lookup-table trust pattern</h3>
+        <p style="color:var(--muted);font-size:0.95rem;margin:0;">openvm-fv's <code>BitwiseBusEntryInstance.wf_properties</code> is the direct template for zisk-fv's BT-B / BT-X. Trust the lookup table at the bus-entry definition site, not in proofs of XOR / AND / shift correctness.</p>
+      </div>
+      <div class="card">
+        <h3>Per-opcode equivalence layout</h3>
+        <p style="color:var(--muted);font-size:0.95rem;margin:0;">One file per opcode under <code>Equivalence/&lt;Op&gt;.lean</code>; pure spec under <code>RV&lt;N&gt;D/&lt;op&gt;.lean</code>; circuit-correctness lemma under <code>Spec/&lt;Op&gt;.lean</code>. Same naming and same role-of-file.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /tab-compare -->
+
 <footer>
   <div class="wrap">
     <div class="links">
@@ -644,6 +927,25 @@
     <div>zisk-fv · per-opcode formal verification · Lean 4 · 56 of 56 finishing-series ops + 7 prior · trust ledger 13 items · built 2026-04-28</div>
   </div>
 </footer>
+
+<script>
+  (function () {
+    const buttons = document.querySelectorAll('.tab-btn');
+    const panes = {
+      trust: document.getElementById('tab-trust'),
+      compare: document.getElementById('tab-compare'),
+    };
+    function activate(name) {
+      if (!panes[name]) return;
+      buttons.forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+      Object.entries(panes).forEach(([k, el]) => { el.hidden = (k !== name); });
+      if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+    }
+    buttons.forEach(b => b.addEventListener('click', () => activate(b.dataset.tab)));
+    const initial = (location.hash || '').replace('#', '');
+    if (panes[initial]) activate(initial);
+  })();
+</script>
 
 </body>
 </html>
