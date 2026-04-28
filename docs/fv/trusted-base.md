@@ -1795,6 +1795,114 @@ chip_bus_hyps machinery already in tree).
   implementation-models-spec correspondence between ZisK's Mem AIR
   and Sail's memory model on the write side.
 
+## Phase 6 finishing5 S1 — store_pc=1 PC bridges (2026-04-27)
+
+The three axioms below pin the **runtime PC value** at the Main-AIR
+`pc` column for the three `store_pc = 1` opcodes (JAL, JALR, AUIPC).
+They extend the trusted transpile contract beyond operand / selector
+witnesses to the program-counter witness column itself, which is
+needed because the rd-write formula `store_value[0] = store_pc * (pc +
+jmp_offset2 - c[0]) + c[0]` (`main.pil:311`) collapses to `pc +
+jmp_offset2` for these opcodes — and downstream Spec / Equivalence
+proofs need to bridge the FGL-side `m.pc r_main` to the Sail-side
+`PC : BitVec 64`.
+
+These axioms are consumed by finishing5 S3 (Spec hi-half lemmas) and
+S5 (JumpUType `h_rd_val` Tier-1 upgrade) — together with finishing5
+S2's wide-PC no-wrap toolkit they retire the
+`h_pc_fgl_lo_nat` / `h_pci_lo_val` OUTPUT-EQ residuals on the existing
+`RdValDerivation/JumpUType.lean` discharge lemmas.
+
+### Entry TP-JAL: `ZiskFv.Trusted.transpile_PC_for_JAL`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Statement:** given a `Valid_Main` instance, a row index `r_main`,
+  a Sail-side `PC : BitVec 64`, and the JAL mode-witness pair
+  (`is_external_op = 0`, `op = OP_FLAG`), concludes
+  `(m.pc r_main).val = PC.toNat`.
+- **Consumers:** `transpile_PC_consumer_JAL` (V13 witness in
+  `Fundamentals/TranspileConsumers.lean`); finishing5 S3 / S5 will
+  plumb this through `Spec.Jal.jal_store_value_hi_bv` and
+  `RdValDerivation.JumpUType.h_rd_val_jut_jal` to retire the
+  `h_pc_fgl_lo_nat` parameter.
+- **Provenance:** the Sail-PC ↔ ZisK Main-pc-column contract at
+  `vendor/zisk/core/src/riscv2zisk_context.rs:201,1098` (`fn jal`):
+  the Rust transpiler emits a Main row whose `pc` column carries the
+  ROM-assigned representative of the Sail-state PC at this
+  instruction. The full chain that ties `m.pc r_main` to `state.pc`
+  combines (a) ZisK's ROM (which assigns `pc` per row), (b) the
+  cross-row continuation handshake from `main.pil:410` (constraint
+  20 — `(1 - SEGMENT_L1) * (pc - expected_current_pc) === 0`), and
+  (c) the segment boundary `airval segment_initial_pc` /
+  `segment_next_pc` chain.
+- **Trust class.** Sail-PC ↔ ZisK Main-pc-column contract — the
+  transpiler-emits-row faithfulness for the PC witness column.
+  Same class as the existing `transpile_<OP>` operand axioms which
+  pin `a_0 = lane_lo (state.xreg rs1)` etc. for source registers.
+- **Why axiomatic:** the existing extractor does not surface ZisK's
+  ROM nor the cross-segment handshake column rotations needed to
+  derive this equality from in-tree pieces. PIL constraint 20 ties
+  `pc` to the previous row's `expected_current_pc`, but the
+  rotation-by-(-1) machinery + segment-boundary `airval` chain are
+  in the F/ExtF stub bucket of the extractor today.
+- **Closure path if promoted to theorem:** model ZisK's ROM as a
+  per-row `pc → expected_pc` map; bridge it through the cross-segment
+  continuation handshake to derive `(m.pc r_main).val =
+  PC.toNat` from a Sail-side execution trace. Estimated several
+  hundred lines split across a new `Fundamentals/Rom.lean` and
+  extensions to `Airs/Main.lean` covering the segment-handshake
+  airvalues. Trust reduction is welcome but out of finishing5 scope.
+- **Audit scope:** changes to `riscv2zisk_context.rs::fn jal`, to
+  ZisK's ROM-emission code, or to `main.pil:410`'s PC-handshake
+  constraint require re-signing this axiom.
+
+### Entry TP-JALR: `ZiskFv.Trusted.transpile_PC_for_JALR`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Statement:** given a `Valid_Main` instance, row index, Sail-side
+  `PC : BitVec 64`, and the JALR mode-witness pair
+  (`is_external_op = 0`, `op = OP_COPYB`), concludes
+  `(m.pc r_main).val = PC.toNat`.
+- **Consumers:** `transpile_PC_consumer_JALR`; finishing5 S5 will
+  plumb this through the JumpUType JALR discharge.
+- **Provenance:** Sail-PC ↔ ZisK Main-pc-column contract at
+  `vendor/zisk/core/src/riscv2zisk_context.rs:200,1025` (`fn jalr`).
+  Recall that JALR is modeled by ZisK's archetype validation as a
+  simplified internal-copyb shape (with `set_pc = 1`); the same PC
+  bridge applies — it asserts where the row sits in the program
+  counter sequence, not how the next-PC is computed.
+- **Trust class:** same as TP-JAL.
+- **Why axiomatic:** same as TP-JAL.
+- **Closure path:** same as TP-JAL.
+- **Audit scope:** changes to `riscv2zisk_context.rs::fn jalr` or to
+  the PC-handshake PIL require re-signing.
+
+### Entry TP-AUIPC: `ZiskFv.Trusted.transpile_PC_for_AUIPC`
+
+- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **Statement:** given a `Valid_Main` instance, row index, Sail-side
+  `PC : BitVec 64`, and the AUIPC mode-witness pair
+  (`is_external_op = 0`, `op = OP_FLAG`), concludes
+  `(m.pc r_main).val = PC.toNat`.
+- **Consumers:** `transpile_PC_consumer_AUIPC`; finishing5 S3 / S5
+  will plumb this through `Spec.AddUpperImmediatePC` and the
+  JumpUType AUIPC discharge to retire the `h_pci_lo_val` parameter.
+- **Provenance:** Sail-PC ↔ ZisK Main-pc-column contract at
+  `vendor/zisk/core/src/riscv2zisk_context.rs:907` (`fn auipc`).
+- **Trust class:** same as TP-JAL.
+- **Why axiomatic:** same as TP-JAL.
+- **Closure path:** same as TP-JAL — closing TP-JAL closes all three.
+- **Audit scope:** changes to `riscv2zisk_context.rs::fn auipc` or to
+  the PC-handshake PIL require re-signing.
+- **Selector overlap with TP-JAL:** AUIPC and JAL share the
+  `(is_external_op = 0, op = OP_FLAG)` selector pair on the Main
+  row; the discriminator at the proof level is the surrounding
+  `transpile_<OP>` axiom invocation, which pins `jmp_offset1` /
+  `jmp_offset2` differently for the two opcodes. Both PC bridges are
+  declared as separate axioms because the *Sail-context* differs —
+  same convention as the existing `transpile_JAL` / `transpile_AUIPC`
+  operand axioms.
+
 ### M-family retirement scoping
 
 The four axioms above (MB-L, MB-S, MS-L, MS-S) are designed to

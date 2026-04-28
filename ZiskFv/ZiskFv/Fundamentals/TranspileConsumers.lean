@@ -593,4 +593,43 @@ theorem transpile_REM_consumer
   fun h_p1 h_p2 =>
     (transpile_REM m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
+/-! ## Phase 6 finishing5 S1 — store_pc=1 PC bridges (TP-JAL / TP-JALR / TP-AUIPC)
+
+    Each of the three `transpile_PC_consumer_<OP>` lemmas below makes
+    its corresponding `transpile_PC_for_<OP>` axiom load-bearing
+    (`#print axioms transpile_PC_consumer_<OP>` reports the axiom).
+    Unlike the operand-axiom consumers above, the PC axioms have a
+    single equality conclusion (not a conjunction), so the consumer
+    simply re-exposes the axiom under its mode-witness premises. -/
+
+/-- V13 consumer-witness for `transpile_PC_for_JAL`. Re-exposes the
+    PC bridge axiom under its mode-witness premises so that
+    `#print axioms transpile_PC_consumer_JAL` lists it as a
+    dependency. -/
+theorem transpile_PC_consumer_JAL
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64)
+    : m.is_external_op r_main = 0 → m.op r_main = OP_FLAG →
+      (m.pc r_main).val = PC.toNat :=
+  fun h_p1 h_p2 =>
+    transpile_PC_for_JAL m r_main PC h_p1 h_p2
+
+/-- V13 consumer-witness for `transpile_PC_for_JALR`. -/
+theorem transpile_PC_consumer_JALR
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64)
+    : m.is_external_op r_main = 0 → m.op r_main = OP_COPYB →
+      (m.pc r_main).val = PC.toNat :=
+  fun h_p1 h_p2 =>
+    transpile_PC_for_JALR m r_main PC h_p1 h_p2
+
+/-- V13 consumer-witness for `transpile_PC_for_AUIPC`. -/
+theorem transpile_PC_consumer_AUIPC
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64)
+    : m.is_external_op r_main = 0 → m.op r_main = OP_FLAG →
+      (m.pc r_main).val = PC.toNat :=
+  fun h_p1 h_p2 =>
+    transpile_PC_for_AUIPC m r_main PC h_p1 h_p2
+
 end ZiskFv.Trusted

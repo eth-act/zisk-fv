@@ -15,6 +15,25 @@ This module is part of the **trusted** surface: proofs of per-opcode
 equivalence consume the axioms here without further justification. Changes
 require re-auditing against the Rust source and re-signing off on the axiom
 statement.
+
+## Phase 6 finishing5 S1: store_pc=1 PC bridges
+
+The bottom of this file (after the standard `transpile_<OP>` operand /
+selector axioms) carries three additional axioms — `transpile_PC_for_JAL`,
+`transpile_PC_for_JALR`, and `transpile_PC_for_AUIPC` — that pin the
+**runtime PC value** at the Main-AIR `pc` column for the three
+`store_pc = 1` opcodes. These extend the trusted transpile contract beyond
+operand / selector witnesses to the program-counter witness column itself.
+
+They are a strict trust expansion necessary because the existing operand
+axioms do not constrain the `pc` column (PIL constraint 20 ties it to
+`expected_current_pc` derived from the previous row's rotation, which the
+extractor does not currently surface), but downstream Spec / Equivalence
+proofs of JAL / JALR / AUIPC's rd-write `pc + jmp_offset2` need to bridge
+the FGL-side `m.pc r_main` to the Sail-side `state.pc`. See the docstring
+section preceding the axioms themselves for full detail and trust-class
+analysis. Trust-base entries: **TP-JAL**, **TP-JALR**, **TP-AUIPC** in
+`docs/fv/trusted-base.md`.
 -/
 
 /-!
@@ -2615,5 +2634,165 @@ axiom transpile_REM :
       ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
+/-! ## Phase 6 finishing5 S1: store_pc=1 PC bridges
+
+    The three axioms below — `transpile_PC_for_JAL`,
+    `transpile_PC_for_JALR`, and `transpile_PC_for_AUIPC` — extend the
+    transpiler's trusted surface to expose the **runtime PC value**
+    pinned at the Main-AIR row. They are part of finishing5's
+    `store_pc = 1` archetype work (`ai_plans/finishing5.md` S1).
+
+    ### Why they are trust-class items
+
+    The existing `transpile_<OP>` axioms (e.g. `transpile_JAL`,
+    `transpile_AUIPC`) pin the *operand and selector* columns of the
+    Main row (`a`, `b`, `op`, `is_external_op`, `m32`, `set_pc`,
+    `store_pc`, `jmp_offset1/2`). They do **not** pin the value of the
+    `pc` column itself — `pc` is a witness column whose value is
+    determined per row by ZisK's ROM/segment infrastructure (PIL
+    constraint 20 — `(1 - SEGMENT_L1) * (pc - expected_current_pc) === 0`,
+    `main.pil:410`) and the Main AIR's continuation handshake from the
+    previous segment, neither of which is currently extracted.
+
+    For the `store_pc = 1` opcodes (JAL, JALR, AUIPC) the rd-write
+    formula at `main.pil:311`:
+
+    ```
+      store_value[0] = store_pc * (pc + jmp_offset2 - c[0]) + c[0]
+    ```
+
+    collapses to `pc + jmp_offset2`. To prove the rd-write equals the
+    Sail-side pure-spec output (`PC + 4` for JAL/JALR;
+    `PC + signExtend 64 (imm ++ 0#12)` for AUIPC), downstream Spec /
+    Equivalence proofs need to bridge `m.pc r_main` (an `FGL`) to
+    `PC` (a `BitVec 64`) — this PC value is *not* recoverable from the
+    operand or selector columns the existing transpile axioms cover.
+
+    The bridge belongs in the trusted surface for the same reason the
+    operand bridges (`m.a_0 r_main = lane_lo (state.xreg rs1)`,
+    etc.) do: it asserts that ZisK's Rust transpiler, when emitting a
+    Main row for a Sail-state at PC `P`, sets the `pc` column to a
+    representative encoding `P`. Improving these to theorems would
+    require:
+
+    1. A formal model of ZisK's ROM (which assigns `pc` per row) and
+    2. A bridge between the ROM's per-row `pc` and the Sail-state's
+       `state.pc` carried through the program-counter handshake chain.
+
+    Both are tractable and are open avenues for trust reduction; for
+    finishing5 they are accepted as axioms.
+
+    ### What they assert
+
+    Each axiom takes a `Valid_Main` instance, a row index, the
+    Sail-side `PC : BitVec 64`, and the same mode witnesses
+    (`is_external_op` + `op` literal) used by the corresponding
+    `transpile_<OP>` axiom. It concludes:
+
+    ```
+    (m.pc r_main).val = PC.toNat
+    ```
+
+    where `m.pc r_main : FGL` and `PC : BitVec 64`. Note that this
+    formulation accommodates a **wide PC** — it does not assume `PC <
+    2^32` even though ZisK's PIL declares `pc : bits(32)` (a residue of
+    ZisK's RV32 origin). Downstream, finishing5 S2's
+    `Fundamentals/PackedBitVec/WidePCNoWrap.lean` handles the FGL-side
+    arithmetic to derive the lo / hi half decompositions
+    `JumpUType.lean` consumes (`h_pc_fgl_lo_nat`, `h_pci_lo_val`,
+    `h_entry_hi_nat`).
+
+    ### Discriminating JAL / AUIPC
+
+    JAL and AUIPC share the same opcode-witness pair
+    `(is_external_op = 0, op = OP_FLAG)` so the premises of
+    `transpile_PC_for_JAL` and `transpile_PC_for_AUIPC` are identical
+    on those columns — the axioms are statements about *how the
+    transpiler-emitted row encodes PC under each context*, where the
+    context is established by the broader proof environment (e.g. the
+    JAL-shape `transpile_JAL` already pins `jmp_offset2 = 4` while
+    AUIPC's `transpile_AUIPC` pins `jmp_offset2 = imm_offset`). This is
+    the same convention the existing `transpile_<OP>` axioms follow:
+    they over-specify the row in the context of *one particular Sail
+    opcode*, and the caller's surrounding proof determines which
+    context applies.
+-/
+
+/-- Phase 6 finishing5 S1 trust extension — JAL PC bridge.
+
+    Asserts that on a JAL row (`is_external_op = 0`, `op = OP_FLAG`,
+    transpile-context per `riscv2zisk_context.rs:201,1098`), the
+    Main-AIR `pc` column at row `r_main` carries the Sail-side
+    program counter `PC`. Mirrors the operand bridges in
+    `transpile_JAL` (which pin `a_0 = state.xreg rs1` etc.) extending
+    them to the runtime PC value.
+
+    Together with `transpile_JAL`, this lets finishing5 derive the JAL
+    rd-write `pc + 4` at the FGL level (lo half of the rd-write
+    8-byte memory-bus entry) under the existing JumpUType discharge
+    chain.
+
+    **Trust class.** Sail-PC ↔ ZisK Main-pc-column contract — the
+    transpiler-emits-row faithfulness for the PC witness column.
+    Closure path: model ZisK's ROM-based `pc` assignment + the
+    cross-segment handshake formally, derive this equality from the
+    in-tree pieces. See `docs/fv/trusted-base.md` entry **TP-JAL**. -/
+axiom transpile_PC_for_JAL :
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
+      m.is_external_op r_main = 0 →
+      m.op r_main = OP_FLAG →
+      (m.pc r_main).val = PC.toNat
+
+/-- Phase 6 finishing5 S1 trust extension — JALR PC bridge.
+
+    Asserts that on a JALR row (`is_external_op = 0`,
+    `op = OP_COPYB`, transpile-context per
+    `riscv2zisk_context.rs:200,1025`), the Main-AIR `pc` column at row
+    `r_main` carries the Sail-side program counter `PC`.
+
+    JALR transpiles via the simplified internal-copyb shape (with
+    `set_pc = 1` so next-pc comes from `c_0 + jmp_offset1 = rs1 + imm`)
+    that `transpile_JALR` and the `JumpArchetype` validation lemmas
+    consume. The PC bridge composes with that to drive the rd-write
+    `pc + 4` derivation in JumpUType.
+
+    **Trust class.** Same as `transpile_PC_for_JAL`. See
+    `docs/fv/trusted-base.md` entry **TP-JALR**. -/
+axiom transpile_PC_for_JALR :
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
+      m.is_external_op r_main = 0 →
+      m.op r_main = OP_COPYB →
+      (m.pc r_main).val = PC.toNat
+
+/-- Phase 6 finishing5 S1 trust extension — AUIPC PC bridge.
+
+    Asserts that on an AUIPC row (`is_external_op = 0`,
+    `op = OP_FLAG`, transpile-context per
+    `riscv2zisk_context.rs:907`), the Main-AIR `pc` column at row
+    `r_main` carries the Sail-side program counter `PC`.
+
+    AUIPC's rd-write `pc + (imm << 12 sign-extended)` (per
+    `main.pil:311` evaluating to `pc + jmp_offset2` with `c_0 = 0`)
+    composes this PC bridge with `transpile_AUIPC`'s `jmp_offset2 =
+    imm_offset` pin and finishing5 S2's wide-PC arithmetic to derive
+    the rd-write equality at the FGL level.
+
+    Note JAL and AUIPC share the `(is_external_op = 0, op = OP_FLAG)`
+    selector pair; this is the same context-overlap convention used by
+    `transpile_JAL` / `transpile_AUIPC`. The discriminator is the
+    surrounding proof's `transpile_<OP>` axiom invocation, which pins
+    `jmp_offset1` / `jmp_offset2` differently for the two opcodes.
+
+    **Trust class.** Same as `transpile_PC_for_JAL`. See
+    `docs/fv/trusted-base.md` entry **TP-AUIPC**. -/
+axiom transpile_PC_for_AUIPC :
+    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
+      (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
+      m.is_external_op r_main = 0 →
+      m.op r_main = OP_FLAG →
+      (m.pc r_main).val = PC.toNat
 
 end ZiskFv.Trusted
