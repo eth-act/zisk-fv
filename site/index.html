@@ -676,7 +676,7 @@
       <div class="card">
         <h3>Spec side</h3>
         <p style="color:var(--muted);font-size:0.95rem;margin:0;">
-          <code>RV64D/&lt;op&gt;.lean</code> — pure Lean reformulation of each Sail-RV64 opcode (<code>execute_instruction</code> unfolded into a clean <code>BitVec 64</code> function). Every spec file ships an equivalence lemma <code>execute_&lt;OP&gt;_pure_correct</code> proving it equals the unfolded Sail body.
+          The Sail RV64 spec is mechanically translated to Lean by <code>NethermindEth/sail-riscv-lean</code>, producing the <code>LeanRV64D</code> module. <strong>RV64 is native there</strong> — we don't widen the spec ourselves. Our <code>ZiskFv/RV64D/&lt;op&gt;.lean</code> files are hand-written cleaner reformulations (<code>execute_&lt;OP&gt;_pure</code>) for proof ergonomics; each ships an equivalence lemma <code>execute_&lt;OP&gt;_pure_equiv</code> proving it equals <code>LeanRV64D.Functions.execute</code>. Any drift is a build failure — no untracked widening trust.
         </p>
       </div>
 
@@ -784,8 +784,8 @@
 
       <div class="compare-row">
         <div>Pure-spec layout</div>
-        <div><div class="cell-content"><code>RV32D/&lt;op&gt;.lean</code></div></div>
-        <div class="col-zisk"><div class="cell-content"><code>RV64D/&lt;op&gt;.lean</code> <span class="sub">ported from RV32D, widened to 64-bit</span></div></div>
+        <div><div class="cell-content"><code>OpenvmFv/RV32D/&lt;op&gt;.lean</code> <span class="sub">hand-written reformulations + Sail-equivalence lemmas, against <code>LeanRV32D</code></span></div></div>
+        <div class="col-zisk"><div class="cell-content"><code>ZiskFv/RV64D/&lt;op&gt;.lean</code> <span class="sub">same shape — hand-written reformulations + Sail-equivalence lemmas, against <code>LeanRV64D</code> (the Sail-translated RV64 module from <code>sail-riscv-lean</code>; RV64 is native there)</span></div></div>
       </div>
 
       <div class="compare-row">
