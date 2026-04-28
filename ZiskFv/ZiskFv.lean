@@ -50,6 +50,8 @@ import ZiskFv.Fundamentals.PackedBitVec.NoWrap
 import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
 -- finishing4 S2: signed BitVec.toInt extension (sign-witness pattern + INT_MIN/-1 overflow).
 import ZiskFv.Fundamentals.PackedBitVec.SignedNoWrap
+-- finishing5 S2: wide-PC no-wrap toolkit (PC values can exceed GL_prime).
+import ZiskFv.Fundamentals.PackedBitVec.WidePCNoWrap
 import ZiskFv.Spec.Add
 import ZiskFv.Equivalence.Add
 import ZiskFv.GoldenTraces.Add
