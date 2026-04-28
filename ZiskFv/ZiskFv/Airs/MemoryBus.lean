@@ -213,6 +213,80 @@ def register_read_rs2_lanes_match
   m.b_0 row = memory_entry_lo e
   ∧ m.b_1 row = memory_entry_hi e
 
+/-! ## store_pc=1 lane match (JAL / JALR / AUIPC)
+
+For `store_pc = 1` opcodes the destination register receives `pc +
+jmp_offset2` (the link register or AUIPC's `pc + imm`). The PIL
+`store_value` formula at `vendor/zisk/state-machines/main/pil/main.pil:311-312`
+is uniform across `store_pc`:
+
+```
+store_value[0] = store_pc * (pc + jmp_offset2 - c[0]) + c[0];
+store_value[1] = (1 - store_pc) * c[1];
+```
+
+When `store_pc = 1`, this collapses to `store_value[0] = pc +
+jmp_offset2` and `store_value[1] = 0`. When `store_pc = 0` it
+collapses to `store_value[0] = c[0]` and `store_value[1] = c[1]`,
+recovering `register_write_lanes_match`.
+
+The two predicates `store_pc_lanes_match_lo` / `_hi` encode the
+*uniform* PIL formulas — they are valid for any `store_pc ∈ {0,1}`,
+and so generalize `register_write_lanes_match` rather than parallel
+it. The hi-half formula `(1 - store_pc) * c[1]` is the verbatim PIL
+expression — there is no separate "hi-bytes projection" for
+`pc + jmp_offset2`; for `store_pc = 1`, the hi half is *zero* by PIL
+construction. (PC is a 32-bit column in Main; `pc + jmp_offset2` is
+a single FGL value carried entirely in the lo lane.) -/
+
+/-- **store_pc lo-lane match.** The memory-bus entry's lo half equals
+    the PIL `store_value[0]` formula `store_pc * (pc + jmp_offset2 - c_0)
+    + c_0`. Uniform in `store_pc`:
+
+    * `store_pc = 1` (JAL / JALR / AUIPC): collapses to
+      `memory_entry_lo e = pc + jmp_offset2`.
+    * `store_pc = 0`: collapses to `memory_entry_lo e = c_0` —
+      identical to `register_write_lanes_match`'s lo conjunct (with
+      sides flipped).
+
+    Trust class: same as `register_write_lanes_match` —
+    memory-bus permutation soundness. The store-side lane match for
+    register writes is derived in `LaneMatch.lean` from the
+    `memory_bus_register_write_perm_sound` axiom (and an extension for
+    the `store_pc = 1` case, see file). -/
+@[simp]
+def store_pc_lanes_match_lo
+    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (e : MemoryBusEntry FGL) : Prop :=
+  memory_entry_lo e =
+    m.store_pc row * (m.pc row + m.jmp_offset2 row - m.c_0 row) + m.c_0 row
+
+/-- **store_pc hi-lane match.** The memory-bus entry's hi half equals
+    the PIL `store_value[1]` formula `(1 - store_pc) * c_1`. Uniform
+    in `store_pc`:
+
+    * `store_pc = 1` (JAL / JALR / AUIPC): collapses to
+      `memory_entry_hi e = 0`. (The high 32 bits of the link-register
+      / AUIPC result are zero in ZisK because Main's `pc` is a
+      `bits(32)` column and `jmp_offset2` is added at the FGL level —
+      the PIL deliberately routes the entire `pc + jmp_offset2` sum
+      through the lo lane; the bus-bytes byte-decomposition handles
+      any boundary into the upper bytes.)
+    * `store_pc = 0`: collapses to `memory_entry_hi e = c_1` —
+      identical to `register_write_lanes_match`'s hi conjunct.
+
+    The hi-half formula is the verbatim PIL expression at
+    `main.pil:312` — there is no carry-decomposition because the PIL
+    does not split `pc + jmp_offset2` across hi/lo bytes; the lo
+    entry carries the full sum.
+
+    Trust class: same as `store_pc_lanes_match_lo`. -/
+@[simp]
+def store_pc_lanes_match_hi
+    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (e : MemoryBusEntry FGL) : Prop :=
+  memory_entry_hi e = (1 - m.store_pc row) * m.c_1 row
+
 /-! ## Bridge to `U64.toBV` for register-write values
 
 The Phase 4.5 A-rewire requires bridging from `memory_entry_toField`

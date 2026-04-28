@@ -324,20 +324,226 @@ theorem register_read_rs2_lanes_match_of_bus_emission
   · have h := h_s5.symm.trans h_slot_hi
     simpa [memBus_row_Main_register_read_rs2] using h
 
+/-! ## store_pc lane-match (JAL / JALR / AUIPC)
+
+For `store_pc = 1` opcodes (JAL, JALR, AUIPC), the destination
+register receives `pc + jmp_offset2` (the link register or AUIPC's
+`pc + imm`). The PIL `store_value` formulas are uniform in
+`store_pc` (`vendor/zisk/state-machines/main/pil/main.pil:311-312`):
+
+```
+store_value[0] = store_pc * (pc + jmp_offset2 - c[0]) + c[0];
+store_value[1] = (1 - store_pc) * c[1];
+```
+
+The soundness theorems below tie the memory-bus entry's lo / hi
+halves to these formulas. They split on the `store_pc` value:
+
+* When `store_pc = 0`, both formulas collapse to `c_0` / `c_1`, and
+  the existing `memory_bus_register_write_perm_sound` axiom delivers
+  the conclusion directly.
+* When `store_pc = 1`, the lo formula collapses to `pc + jmp_offset2`
+  and the hi formula collapses to `0`. This case is the
+  `store_pc = 1` analogue of MB-W; both sit in the same trust class
+  (memory-bus permutation soundness for register writes), and the new
+  axiom `memory_bus_register_write_perm_sound_store_pc` packages it.
+
+The two cases are merged into a single soundness statement via a
+case split on `store_pc` (which is boolean by Main constraint 102 at
+`main.pil:473`). -/
+
+/-- **Memory-bus permutation soundness for store_pc=1 register writes.**
+
+    Companion to `memory_bus_register_write_perm_sound` for the
+    JAL / JALR / AUIPC archetype. When Main row `row` is a
+    `store_pc = 1` register-write emission (`assumes_store_reg = 1`,
+    `store_pc = 1`), the PIL pins `store_value = (pc + jmp_offset2,
+    0)` (`main.pil:311-312` evaluated at `store_pc = 1`). The
+    consuming Mem AIR row's value lanes byte-decompose to those
+    halves through the memory-bus permutation argument.
+
+    This is the **store_pc = 1 analogue** of MB-W. Both axioms sit in
+    the same trust class (memory-bus permutation soundness on
+    `bus_id = 10` for register writes); they differ only in which
+    `store_value` formula applies. The split is structural — the PIL
+    formula uses `store_pc` as a multiplexer column, so the
+    soundness statement also splits.
+
+    See `docs/fv/trusted-base.md` (entry MB-W extension; the
+    finishing5 S4 closure introduces this companion). -/
+axiom memory_bus_register_write_perm_sound_store_pc
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (m : Valid_Main C FGL FGL) (mem : ZiskFv.Airs.Mem.Valid_Mem C FGL FGL)
+    (row : ℕ) (mem_consumer_row : ℕ) (e : Interaction.MemoryBusEntry FGL)
+    -- Main row R is a register-write emission with `store_pc = 1`,
+    -- so `store_value = (pc + jmp_offset2, 0)`.
+    (h_main_writing :
+      Circuit.main m.circuit (id := 1) (column := 37) (row := row) (rotation := 0) = 1
+      ∧ m.store_pc row = 1)
+    -- Consuming Mem row: same address as Main's `store_offset` (col 24),
+    -- with `wr = 0` (no-write read) and `addr_changes = 0` (same-addr).
+    (h_mem_consumer :
+      mem.addr mem_consumer_row =
+        Circuit.main m.circuit (id := 1) (column := 24) (row := row) (rotation := 0)
+      ∧ mem.wr mem_consumer_row = 0
+      ∧ mem.addr_changes mem_consumer_row = 0)
+    -- Byte-pack: e's lo/hi halves equal the consuming Mem row's
+    -- value_0 / value_1 lanes (the bus-id=10 entry's slot 4/5 ↔
+    -- entry.x{0..7} pack).
+    (h_byte_pack :
+      memory_entry_lo e = mem.value_0 mem_consumer_row
+      ∧ memory_entry_hi e = mem.value_1 mem_consumer_row) :
+    memory_entry_lo e = m.pc row + m.jmp_offset2 row
+    ∧ memory_entry_hi e = 0
+
+/-- **store_pc lo-lane match via memory-bus permutation soundness.**
+
+    Promotes `store_pc_lanes_match_lo m row e` from a Layer-1
+    structural hypothesis to a Layer-2 derivation that composes
+    through the Mem AIR.
+
+    The argument splits on `store_pc`:
+
+    * `store_pc = 0`: the existing MB-W axiom
+      (`memory_bus_register_write_perm_sound`) delivers
+      `memory_entry_lo e = m.c_0 row`. The PIL formula
+      `store_pc * (pc + jmp_offset2 - c_0) + c_0` collapses to `c_0`.
+    * `store_pc = 1`: the companion axiom
+      (`memory_bus_register_write_perm_sound_store_pc`) delivers
+      `memory_entry_lo e = m.pc row + m.jmp_offset2 row`. The PIL
+      formula collapses to `pc + jmp_offset2`.
+
+    Both branches close by `ring`-rewriting the predicate's RHS
+    (`store_pc * (...) + c_0`) with the case-specific value of
+    `store_pc`.
+
+    Booleanity of `store_pc` (PIL constraint 102 at `main.pil:473`)
+    is the case-split discriminant: callers establish `store_pc = 0`
+    or `store_pc = 1` via the appropriate `transpile_<op>` axiom. -/
+theorem store_pc_lanes_match_lo_of_bus_emission
+    (m : Valid_Main C FGL FGL) (mem : ZiskFv.Airs.Mem.Valid_Mem C FGL FGL)
+    (row : ℕ) (mem_consumer_row : ℕ) (e : Interaction.MemoryBusEntry FGL)
+    (h_main_writing_sel :
+      Circuit.main m.circuit (id := 1) (column := 37) (row := row) (rotation := 0) = 1)
+    (h_store_pc_bool : m.store_pc row = 0 ∨ m.store_pc row = 1)
+    (h_mem_consumer_core :
+      ZiskFv.Airs.Mem.core_every_row mem mem_consumer_row)
+    (h_addr_match :
+      mem.addr mem_consumer_row =
+        Circuit.main m.circuit (id := 1) (column := 24) (row := row) (rotation := 0)
+      ∧ mem.wr mem_consumer_row = 0
+      ∧ mem.addr_changes mem_consumer_row = 0)
+    (h_byte_pack :
+      memory_entry_lo e = mem.value_0 mem_consumer_row
+      ∧ memory_entry_hi e = mem.value_1 mem_consumer_row) :
+    store_pc_lanes_match_lo m row e := by
+  -- Local consistency check on the consumer Mem row (mirrors the
+  -- existing register_write_lanes_match_of_bus_emission proof).
+  obtain ⟨_h_bool_sel_dual, _h_sd_imp_sel, _h_bool_sel,
+          _h_bool_addr_ch, _h_bool_wr, _h_wr_imp_sel,
+          _h_rsa_def, _h_addr_ch_no_wr_v0, _h_addr_ch_no_wr_v1⟩ :=
+    h_mem_consumer_core
+  -- Case-split on the boolean store_pc column.
+  rcases h_store_pc_bool with h_spc0 | h_spc1
+  · -- store_pc = 0: reuse the existing MB-W axiom.
+    have h_perm :
+        memory_entry_lo e = m.c_0 row ∧ memory_entry_hi e = m.c_1 row :=
+      memory_bus_register_write_perm_sound m mem row mem_consumer_row e
+        ⟨h_main_writing_sel, h_spc0⟩ h_addr_match h_byte_pack
+    -- The PIL formula collapses to `c_0` under store_pc = 0.
+    simp only [store_pc_lanes_match_lo, h_spc0]
+    rw [h_perm.1]
+    ring
+  · -- store_pc = 1: use the companion axiom.
+    have h_perm :
+        memory_entry_lo e = m.pc row + m.jmp_offset2 row
+        ∧ memory_entry_hi e = 0 :=
+      memory_bus_register_write_perm_sound_store_pc m mem row mem_consumer_row e
+        ⟨h_main_writing_sel, h_spc1⟩ h_addr_match h_byte_pack
+    -- The PIL formula collapses to `pc + jmp_offset2` under store_pc = 1.
+    simp only [store_pc_lanes_match_lo, h_spc1]
+    rw [h_perm.1]
+    ring
+
+/-- **store_pc hi-lane match via memory-bus permutation soundness.**
+
+    Companion to `store_pc_lanes_match_lo_of_bus_emission` for the
+    hi half. Same case-split structure:
+
+    * `store_pc = 0`: existing MB-W axiom delivers
+      `memory_entry_hi e = m.c_1 row`. PIL formula
+      `(1 - store_pc) * c_1` collapses to `c_1`.
+    * `store_pc = 1`: companion axiom delivers
+      `memory_entry_hi e = 0`. PIL formula collapses to `0`.
+
+    Closes by `ring` on the predicate's RHS in each branch. -/
+theorem store_pc_lanes_match_hi_of_bus_emission
+    (m : Valid_Main C FGL FGL) (mem : ZiskFv.Airs.Mem.Valid_Mem C FGL FGL)
+    (row : ℕ) (mem_consumer_row : ℕ) (e : Interaction.MemoryBusEntry FGL)
+    (h_main_writing_sel :
+      Circuit.main m.circuit (id := 1) (column := 37) (row := row) (rotation := 0) = 1)
+    (h_store_pc_bool : m.store_pc row = 0 ∨ m.store_pc row = 1)
+    (h_mem_consumer_core :
+      ZiskFv.Airs.Mem.core_every_row mem mem_consumer_row)
+    (h_addr_match :
+      mem.addr mem_consumer_row =
+        Circuit.main m.circuit (id := 1) (column := 24) (row := row) (rotation := 0)
+      ∧ mem.wr mem_consumer_row = 0
+      ∧ mem.addr_changes mem_consumer_row = 0)
+    (h_byte_pack :
+      memory_entry_lo e = mem.value_0 mem_consumer_row
+      ∧ memory_entry_hi e = mem.value_1 mem_consumer_row) :
+    store_pc_lanes_match_hi m row e := by
+  obtain ⟨_h_bool_sel_dual, _h_sd_imp_sel, _h_bool_sel,
+          _h_bool_addr_ch, _h_bool_wr, _h_wr_imp_sel,
+          _h_rsa_def, _h_addr_ch_no_wr_v0, _h_addr_ch_no_wr_v1⟩ :=
+    h_mem_consumer_core
+  rcases h_store_pc_bool with h_spc0 | h_spc1
+  · -- store_pc = 0: existing MB-W axiom.
+    have h_perm :
+        memory_entry_lo e = m.c_0 row ∧ memory_entry_hi e = m.c_1 row :=
+      memory_bus_register_write_perm_sound m mem row mem_consumer_row e
+        ⟨h_main_writing_sel, h_spc0⟩ h_addr_match h_byte_pack
+    -- PIL formula `(1 - store_pc) * c_1` collapses to `c_1` under store_pc = 0.
+    simp only [store_pc_lanes_match_hi, h_spc0]
+    rw [h_perm.2]
+    ring
+  · -- store_pc = 1: companion axiom.
+    have h_perm :
+        memory_entry_lo e = m.pc row + m.jmp_offset2 row
+        ∧ memory_entry_hi e = 0 :=
+      memory_bus_register_write_perm_sound_store_pc m mem row mem_consumer_row e
+        ⟨h_main_writing_sel, h_spc1⟩ h_addr_match h_byte_pack
+    -- PIL formula `(1 - store_pc) * c_1` collapses to `0` under store_pc = 1.
+    simp only [store_pc_lanes_match_hi, h_spc1]
+    rw [h_perm.2]
+    ring
+
 -- Dependency / axiom audit. The reads-side theorems compose through
 -- the slot-match lemmas in `Airs/MemoryBus/BusShape.lean` (which use
 -- only Mathlib's standard built-in axioms). No ZisK trust-base axioms
 -- are introduced for the reads-side.
 --
 -- The writes-side theorem
--- `register_write_lanes_match_of_bus_emission` introduces one new
+-- `register_write_lanes_match_of_bus_emission` introduces one
 -- trusted axiom: `memory_bus_register_write_perm_sound`, the
 -- memory-bus permutation-soundness statement for register writes
 -- (the multi-row Mem AIR chain bundled into a single soundness
--- claim, in the same shape as `OperationBus.matches_entry`). See
--- `docs/fv/trusted-base.md` for the entry.
+-- claim, in the same shape as `OperationBus.matches_entry`).
+--
+-- The store_pc=1 lane-match theorems
+-- `store_pc_lanes_match_{lo,hi}_of_bus_emission` (finishing5 S4)
+-- introduce one additional trusted axiom in the same trust class:
+-- `memory_bus_register_write_perm_sound_store_pc` — the companion
+-- claim for `store_pc = 1` register writes (JAL / JALR / AUIPC). It
+-- mirrors MB-W's shape exactly, differing only in the conclusion
+-- (which evaluates the PIL `store_value` formulas at `store_pc = 1`).
+--
+-- See `docs/fv/trusted-base.md` for the trusted-base entries.
 #print axioms register_read_rs1_lanes_match_of_bus_emission
 #print axioms register_read_rs2_lanes_match_of_bus_emission
 #print axioms register_write_lanes_match_of_bus_emission
+#print axioms store_pc_lanes_match_lo_of_bus_emission
+#print axioms store_pc_lanes_match_hi_of_bus_emission
 
 end ZiskFv.Airs.MemoryBus.LaneMatch

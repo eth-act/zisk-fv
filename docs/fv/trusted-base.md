@@ -1711,6 +1711,53 @@ definition site**. openvm-fv never proves its bitwise / range-checker
   `store_offset`) are pinned to PIL columns; if the PIL layout
   changes those, this axiom's column references must update too.
 
+### Entry MB-W-PC: `ZiskFv.Airs.MemoryBus.LaneMatch.memory_bus_register_write_perm_sound_store_pc` (finishing5 S4 — 2026-04-27)
+
+- **File:** `ZiskFv/ZiskFv/Airs/MemoryBus/LaneMatch.lean`.
+- **Statement:** companion to MB-W for the `store_pc = 1` case (JAL,
+  JALR, AUIPC). When Main row `row` has `assumes_store_reg = 1`
+  (column 37) and `store_pc = 1`, the PIL pins `store_value =
+  (pc + jmp_offset2, 0)` (`main.pil:311-312` evaluated at
+  `store_pc = 1`). Every consuming `MemoryBusEntry e` paired through
+  the memory-bus permutation argument satisfies
+  `memory_entry_lo e = m.pc row + m.jmp_offset2 row` and
+  `memory_entry_hi e = 0`, given a Mem AIR consumer row at the
+  matching `(addr=store_offset, wr=0, addr_changes=0)` whose value
+  lanes byte-decompose to e's packed lo/hi halves.
+- **Consumers:** `store_pc_lanes_match_lo_of_bus_emission` and
+  `store_pc_lanes_match_hi_of_bus_emission` (the case-split soundness
+  theorems for `store_pc_lanes_match_lo` / `_hi`). Ultimately
+  consumed by JAL / JALR / AUIPC `h_rd_val` discharges in
+  `Equivalence/RdValDerivation/JumpUType.lean`.
+- **Provenance:** `vendor/zisk/state-machines/main/pil/main.pil:311-312`
+  (the `store_value[0]` and `store_value[1]` formulas) +
+  `vendor/zisk/state-machines/main/pil/main.pil:316-328` (the
+  `reg_pre_store` + `mem_op` for store-reg) +
+  `vendor/zisk/state-machines/mem/pil/mem.pil:436` (the Mem AIR's
+  `permutation_proves` half on `bus_id = MEMORY_ID = 10`).
+- **Trust class:** identical to MB-W — memory-bus permutation
+  soundness on `bus_id = 10` for register writes. Differs from MB-W
+  only in the conclusion's PIL-formula evaluation (at `store_pc = 1`
+  vs `store_pc = 0`); the underlying multi-row Mem AIR chain is the
+  same.
+- **Why it cannot currently be derived in tree:** identical reasoning
+  as MB-W. The writing-side bus emission for stores is not extracted
+  as a separate `bus_emission_Main_mem_*`; the cross-row "value
+  persists across same-addr no-write reads" chain is in the F/ExtF
+  stub bucket of `Airs/Mem.lean`.
+- **Closure path if promoted to theorem:** identical to MB-W.
+  Extending the bus-emission extractor to surface the writing-side
+  `permutation_assumes` half plus the Mem AIR cross-row continuity
+  bridge would let both MB-W and MB-W-PC retire together.
+- **Audit scope:** any change to the PIL `store_value` formulas at
+  `main.pil:311-312` or to the bus-protocol macros named in MB-W's
+  audit scope requires re-signing this axiom. The PIL formula
+  `store_pc * (pc + jmp_offset2 - c[0]) + c[0]` and
+  `(1 - store_pc) * c[1]` are pinned to specific Main columns
+  (7 = pc, 27 = jmp_offset2, 4 = c_0, 5 = c_1, 22 = store_pc); if
+  the PIL layout changes those, this axiom's column references in
+  `Valid_Main`'s `_def` lemmas must update too.
+
 ## Memory-model bridge — load / store paths (finishing3 S3 — 2026-04-27)
 
 The S3 closure in `ZiskFv/Spec/MemModel.lean` and
