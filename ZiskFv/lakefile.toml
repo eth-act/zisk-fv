@@ -19,8 +19,8 @@ rev = "v4.26.0"
 
 [[require]]
 name = "LeanRV"
-git = "https://github.com/codygunton/sail-riscv-lean"
-rev = "ext-zca-simp-lemmas"
+git = "https://github.com/NethermindEth/sail-riscv-lean"
+rev = "81c8c84f919b6b565790713e2049a88b88739cda"
 
 [[lean_lib]]
 name = "ZiskFv"

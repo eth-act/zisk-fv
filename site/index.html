@@ -448,18 +448,13 @@
       <div class="ledger-cat">
         <h3><span class="badge b-trusted">Trusted spec</span> The RISC-V specification itself <span class="count">— 1 source, machine-translated</span></h3>
         <p class="why">
-          We don't prove that the Sail-RISC-V model is correct — that's an <em>inherited</em> trust from the formally-developed Sail spec used by Nethermind / OpenLabs and the broader community. Every opcode's "intended behavior" is what the Sail model says it is. We use the <strong>stock <code>NethermindEth/sail-riscv-lean</code> transpiler output</strong>: the <code>LeanRV64D</code> Lean module is mechanically generated from the upstream Sail RV64 spec — RV64 is native there, no widening on our side. Our small fork only adds simp lemmas about a disabled extension (no spec content changed); see "stock + Zca lemmas only" below.
+          We don't prove that the Sail-RISC-V model is correct — that's an <em>inherited</em> trust from the formally-developed Sail spec used by Nethermind / OpenLabs and the broader community. Every opcode's "intended behavior" is what the Sail model says it is. We use the <strong>stock <code>NethermindEth/sail-riscv-lean</code> transpiler output</strong> unchanged: the <code>LeanRV64D</code> Lean module is mechanically generated from the upstream Sail RV64 spec — RV64 is native there, no widening on our side, no fork.
         </p>
         <div class="ledger-items">
           <div class="item">
             <div class="item-head"><span class="id">SAIL</span></div>
             <div><code>NethermindEth/sail-riscv-lean :: LeanRV64D</code></div>
-            <div class="desc">The Sail RV64 spec, mechanically translated to Lean by Sail's standard <span class="chip">sail_to_lean</span> pipeline. ZisK's RV64IM behavior must match its <span class="chip">execute_instruction</span> evaluation. RV64 is upstream-native; we don't extend the translator.</div>
-          </div>
-          <div class="item">
-            <div class="item-head"><span class="id">Stock + Zca lemmas only</span></div>
-            <div><code>codygunton/sail-riscv-lean@ext-zca-simp-lemmas</code></div>
-            <div class="desc">A tiny private fork of the stock Sail-Lean repo. <strong>Adds simp lemmas only — no spec content changes.</strong> The lemmas help <code>simp</code> reduce <code>currentlyEnabled Ext_Zca</code> to <code>false</code> under <code>misa[2] = 0</code> (the C/Zca compressed-instruction extension is disabled in our deployment). Drafted as an upstream PR follow-up. Without these, proofs that route through extension dispatch don't simp-close cleanly, but the <em>spec</em> is unchanged.</div>
+            <div class="desc">The Sail RV64 spec, mechanically translated to Lean by Sail's standard <span class="chip">sail_to_lean</span> pipeline. ZisK's RV64IM behavior must match its <span class="chip">execute_instruction</span> evaluation. RV64 is upstream-native; we depend on a pinned upstream commit and don't extend the translator. Simp-friendly reductions for <code>currentlyEnabled Ext_Zca</code> under the disabled-C profile live <em>locally</em> in <code>RV64D/Auxiliaries.lean</code> (mirroring openvm-fv's pattern), not in a fork.</div>
           </div>
         </div>
       </div>
@@ -725,7 +720,7 @@
       </div>
       <div class="card">
         <h3>The Sail spec's correctness</h3>
-        <p style="color:var(--muted);font-size:0.95rem;margin:0;">The Sail RISC-V model is taken as ground truth, and we use the stock <code>sail_to_lean</code> output (<code>NethermindEth/sail-riscv-lean :: LeanRV64D</code>) directly &mdash; no spec-modifying fork. If a bug exists in Sail or its Lean translation, this project inherits it. Sail is widely audited by the RISC-V community, so this is the conventional bar.</p>
+        <p style="color:var(--muted);font-size:0.95rem;margin:0;">The Sail RISC-V model is taken as ground truth, and we depend on the stock <code>sail_to_lean</code> output (<code>NethermindEth/sail-riscv-lean :: LeanRV64D</code>) at a pinned upstream commit &mdash; no fork. If a bug exists in Sail or its Lean translation, this project inherits it. Sail is widely audited by the RISC-V community, so this is the conventional bar.</p>
       </div>
     </div>
   </div>
@@ -783,8 +778,8 @@
 
       <div class="compare-row">
         <div>Sail spec</div>
-        <div><div class="cell-content"><code>LeanRV32D</code> <span class="sub">stock <code>NethermindEth/sail-riscv-lean</code> output</span></div></div>
-        <div class="col-zisk"><div class="cell-content"><code>LeanRV64D</code> <span class="sub">stock <code>NethermindEth/sail-riscv-lean</code> output (RV64 is native upstream); tiny fork adds <em>only</em> simp lemmas for the disabled <code>Ext_Zca</code> extension &mdash; no spec content changes</span></div></div>
+        <div><div class="cell-content"><code>LeanRV32D</code> <span class="sub">stock <code>NethermindEth/sail-riscv-lean</code>; <code>currentlyEnabled Ext_Zca</code> simp lemma authored locally in <code>RV32D/Auxiliaries.lean</code></span></div></div>
+        <div class="col-zisk"><div class="cell-content"><code>LeanRV64D</code> <span class="sub">stock <code>NethermindEth/sail-riscv-lean</code> (RV64 native upstream); same pattern — <code>currentlyEnabled Ext_Zca</code> simp lemma authored locally in <code>RV64D/Auxiliaries.lean</code> (mirrors openvm-fv exactly, no fork)</span></div></div>
       </div>
 
       <div class="compare-row">

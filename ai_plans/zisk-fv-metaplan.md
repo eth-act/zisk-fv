@@ -188,18 +188,18 @@ into account.
   `ZiskFv.Pratt.verify_correct` on a Lucas witness. The supporting
   `ZiskFv/Fundamentals/PrattCertificate.lean` is reusable for any
   future large prime needing fast-decide. No longer a CI concern.
-- **Sail-side simp gap discovered and partially addressed.**
-  `LeanRV64D.Functions.currentlyEnabled Ext_Zca` cannot simp-reduce
-  under a known `misa[2]=0` hypothesis in the raw upstream. Fix:
-  proven `bind_currentlyEnabled_*` lemma family shipped on
-  `codygunton/sail-riscv-lean@ext-zca-simp-lemmas` (a private fork
-  of `NethermindEth/sail-riscv-lean`). Our `ZiskFv/lakefile.toml`
-  pins that fork branch. Upstream issue body drafted at
-  `docs/fv/upstream-issues/sail-riscv-lean-ext-zca-simp.md`;
-  regression-test plan for openvm-fv at
-  `docs/fv/upstream-issues/openvm-fv-regression-test-plan.md`
-  (ran 2026-04-22, green). The upstream PR is a follow-up
-  coordination item, non-blocking for our work.
+- **Sail-side simp gap discovered and addressed locally** *(2026-04-28
+  revision)*. `LeanRV64D.Functions.currentlyEnabled Ext_Zca` cannot
+  simp-reduce under a known `misa[2]=0` hypothesis in the raw upstream.
+  Fix: project-local `@[simp high] currentlyEnabled_Zca_of_misa_val`
+  lemma in `ZiskFv/RV64D/Auxiliaries.lean`, mirroring openvm-fv's
+  pattern in `OpenvmFv/RV32D/Auxiliaries.lean`. The lakefile pins
+  stock `NethermindEth/sail-riscv-lean` at commit
+  `81c8c84f919b6b565790713e2049a88b88739cda` — **no fork**. Upstream
+  PR proposal still drafted at
+  `docs/fv/upstream-issues/sail-riscv-lean-ext-zca-simp.md` for any
+  consumer who wants to inherit the lemmas; not on the project critical
+  path.
 - **`RV64D/` is upstream-naming, not the RISC-V "D" extension.**
   `LeanRV64D` is the Sail-RV64 Lean translation. Our opcode
   coverage is RV64IM only (I + M). Zero F / D / C / V / atomic /

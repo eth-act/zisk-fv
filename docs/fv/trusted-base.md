@@ -138,7 +138,7 @@ declaration has been deleted from its RV64D/*.lean file, and the
   `ZiskFv/Equivalence/LoadD.lean::equiv_LD_sail`.
 - **Provenance:** `LeanRV64D/VmemUtils.lean::vmem_read_addr` +
   `LeanRV64D/InstsEnd.lean::execute_LOAD` (lines 251 and 67179 in the
-  vendored `sail-riscv-lean@ext-zca-simp-lemmas`).
+  vendored `sail-riscv-lean@81c8c84f`).
 
 ### Entry M2 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_STORED_pure_equiv_axiom`
 

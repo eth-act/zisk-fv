@@ -1,5 +1,4 @@
 import LeanRV64D
-import LeanRV64D.Lemmas
 import Mathlib
 
 namespace ExtDHashMap
@@ -676,17 +675,10 @@ section SimplerFunctions
       the upstream `LeanRV32D` `currentlyEnabled` definition for `Ext_Zca`
       ignores misa.  See `LeanRV64D/Types.lean` lines ~540-545.
 
-      **Phase 2 A1-CLEAN decision (2026-04-22): KEEP both lemmas.** The
-      upstream
-      `LeanRV64D.Lemmas.currentlyEnabled_Ext_Zca_eq_false_of_misa_bit_zero`
-      (from the `codygunton/sail-riscv-lean@ext-zca-simp-lemmas` fork,
-      not yet merged upstream) proves the same equation with the same
-      hypotheses. Both are visible to simp during `jump_to_equiv` and
-      the new `execute_BEQ_pure_equiv` proof. Retiring the local helper
-      would require promoting the upstream lemma to `@[simp high]`
-      priority, which is inappropriate at upstream's granularity. The
-      local one wins the simp race in practice; the upstream one is
-      cited as a regression anchor. -/
+      We carry this lemma locally (mirroring openvm-fv's
+      `OpenvmFv/RV32D/Auxiliaries.lean::currentlyEnabled_Zca_of_misa_val`
+      pattern). The dependency on `NethermindEth/sail-riscv-lean` is the
+      stock upstream — no fork. -/
   @[simp high]
   lemma currentlyEnabled_Zca_of_misa_val
     {misa_val : BitVec 64}
@@ -755,9 +747,8 @@ section ControlFlow
       2-byte alignment is allowed. ZisK targets RV64IM only, so the C extension
       is disabled, i.e. the caller must witness `misa[2] = 0`.
 
-      Closed via `LeanRV64D.Lemmas.bind_currentlyEnabled_Ext_Zca_of_misa_bit_zero`
-      (upstream proposal, currently on
-      `codygunton/sail-riscv-lean@ext-zca-simp-lemmas`). -/
+      Closure relies on the `@[simp high]` local lemma
+      `currentlyEnabled_Zca_of_misa_val` defined earlier in this file. -/
   lemma jump_to_equiv
     (h_misa : state.regs.get? Register.misa = .some misa_val)
     (h_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
@@ -769,21 +760,11 @@ section ControlFlow
           then EStateM.Result.ok (ExecutionResult.Memory_Exception ((virtaddr.Virtaddr target), (ExceptionType.E_Fetch_Addr_Align ()))) state
           else EStateM.Result.ok (ExecutionResult.Retire_Success ()) (write_reg_state state Register.nextPC target)
   := by
-    -- `jump_to` wraps its body in `SailME.run do ...`. Two lemmas here
-    -- reduce `currentlyEnabled Ext_Zca state` to `ok false state` under the
-    -- misa-bit-2-zero hypothesis:
-    --   * `currentlyEnabled_Zca_of_misa_val` (earlier in this file,
-    --     `@[simp high]`) fires implicitly via the simp-set;
-    --   * `LeanRV64D.Lemmas.currentlyEnabled_Ext_Zca_eq_false_of_misa_bit_zero`
-    --     (imported from the fork's upstream proposal, branch
-    --     `codygunton/sail-riscv-lean@ext-zca-simp-lemmas`) is the eventual
-    --     canonical lemma. We list it in the hint set as a regression
-    --     anchor; the `@[simp high]` local version currently wins the race
-    --     and reduces the goal. See `docs/fv/upstream-issues/...`.
+    -- `jump_to` wraps its body in `SailME.run do ...`. The local `@[simp high]`
+    -- lemma `currentlyEnabled_Zca_of_misa_val` reduces `currentlyEnabled Ext_Zca
+    -- state` to `ok false state` under the misa-bit-2-zero hypothesis and fires
+    -- implicitly via the simp-set.
     have h_c' : BitVec.extractLsb 2 2 misa_val = 0#1 := h_c
-    have _h_upstream :=
-      LeanRV64D.Lemmas.currentlyEnabled_Ext_Zca_eq_false_of_misa_bit_zero
-        state misa_val h_misa h_c
     simp [LeanRV64D.Functions.jump_to]
     by_cases h_bit_0 : BitVec.ofBool target[0] = 0#1 <;> simp [h_bit_0]
     . simp [readReg_succ h_misa, h_c']
