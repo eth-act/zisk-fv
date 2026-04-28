@@ -167,3 +167,96 @@ Plan only. Branch not started. Predecessor `finishing1.md` must close
 first. After that, the natural ordering is S1 (single subagent or
 hand work) → S2 (single subagent or hand work) → S3 (2 parallel
 subagents, one per archetype, post-S1+S2) → S4 (2 parallel subagents).
+
+## finishing4 status — CLOSED 2026-04-27
+
+Closed in one session via 6 parallel Opus subagent dispatches over
+two waves (S1+S2, then S3 unsigned/signed, then S4 unsigned/signed).
+Final main HEAD: `21a6268`. All four scope items shipped clean.
+
+### What shipped
+
+| Wave | Commit | Lines | Deliverable |
+|---|---|---|---|
+| S1 | `868aedb` | +597 | `Fundamentals/PackedBitVec/MulNoWrap.lean` — 14 theorems: 8-chunk Nat-level MUL/DIV aggregators, FGL→ℕ chunk-lift helpers (`fgl_chunk_lift_{1,1',2,3,4,close}`), top-level `fgl_mul_unsigned_chunks_to_nat_identity`, BitVec extractors `fgl_mul_unsigned_to_bv64_{lo,hi}` / `fgl_{div,rem}_unsigned_to_bv64`, plus `packed4` / `packed4_lt_2_64`. |
+| S2 | `6190b60` + `7670d89` (fixup wiring) | +549 / +2 | `Fundamentals/PackedBitVec/SignedNoWrap.lean` — 22 theorems: sign-factor primitives, four-quadrant `signed_mul_int_quadrant_identity`, INT_MIN/-1 overflow (`int_tdiv_overflow_full` / `_w`, `int_tmod_overflow_full` / `_w`), 32-bit BitVec.toInt cases, W-variant `bv_signExtend_64_32_toNat`, byte-sum bridges `mulh_bv64_of_byte_sum` / `mulhsu_bv64_of_byte_sum` / `div_bv64_of_byte_sum_signed` / `rem_bv64_of_byte_sum_signed` / `bv64_of_byte_sum_generic`. |
+| S3-unsigned | `1dc4775` | +645 / -149 | `Equivalence/RdValDerivation/MulDivRemUnsigned.lean` Tier-1 upgrade — `h_byte_sum :` retired for MUL/MULHU/DIVU/REMU/MULW. 7 new private DIV-shape chunk-lift helpers added inline. MULW routed through TRANSPILE-BRIDGE (parallel to JumpUType). |
+| S3-signed | `c645510` (cherry-pick `a6d9aa9`) | +186 / -190 | `Equivalence/RdValDerivation/MulDivRemSigned.lean` Tier-1 upgrade — `h_byte_sum :` retired for MULH/MULHSU/DIV/DIVW/DIVUW/REM/REMW/REMUW. DIV uses explicit case-split for r2=0 + INT_MIN/-1. W-variants take TRANSPILE-BRIDGE shape. |
+| S4-signed | `1eae577` (cherry-pick `95dca09`) | +468 | 8 `equiv_<OP>_metaplan_tier1` companions added to `Equivalence/{MulH,MulHSU,Div,Divw,Divuw,Rem,Remw,Remuw}.lean`. |
+| S4-unsigned | `c8b2500` (cherry-pick `21a6268`) | +427 / -5 | 5 `equiv_<OP>_metaplan_tier1` companions added to `Equivalence/{Mul,MulHU,Divu,Remu,MulW}.lean`. |
+
+13/13 metaplan-`_tier1` coverage, 0 errors, 0 sorries, full `lake build` clean.
+
+### Hard semantic gate (achieved)
+
+For all 13 opcodes, every parameter on the corresponding
+`h_rd_val_mdr{u,s}_<op>` discharge lemma is in the allowed set
+{CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE, TRANSPILE-BRIDGE}. **Zero
+OUTPUT-EQ parameters survive.** No remaining hypothesis directly
+references `execute_*_pure_val` outputs.
+
+### What was learned
+
+1. **Worktree mechanism creates from `origin/main`, not local `main`.**
+   The `isolation: "worktree"` agent option pulled an old base
+   (`287388d` = origin/main) instead of the orchestrator's
+   advanced local main, breaking S3-unsigned's first dispatch
+   (toolkit absent in tree). Workaround: pre-create worktrees
+   manually under `.worktrees/<name>` from current local main, then
+   dispatch agents WITHOUT `isolation: "worktree"`, telling each its
+   working path. Lesson noted for finishing5.
+
+2. **MUL field-level identity needs chunk-factoring, not monolithic
+   `linear_combination`.** S1's first attempt at a single
+   `fgl_mul_unsigned_chunks_to_nat_identity` body that inlined all 8
+   FGL→ℕ chunk lifts via `push_cast; ring` exhausted
+   `maxHeartbeats=800000` from `whnf` blowup on `[Field FGL]`
+   instances. Fix: factor each chunk shape into its own lemma
+   (`fgl_chunk_lift_{1,1',2,3,4,close}`); the composed wrapper
+   reduces to a `mul_unsigned_packed_of_chunks` application with 8
+   lemma-call arguments. **Same factoring pattern recommended for
+   any future `linear_combination` over >12 atom polynomials.**
+
+3. **Pure-ℕ aggregator uses `zify` + `linear_combination` over ℤ.**
+   `Nat` doesn't admit `linear_combination` (no subtraction). S1's
+   `mul_unsigned_packed_of_chunks` casts to ℤ first, closes
+   linearly, casts back. Avoids the openvm-fv-style chunk-by-chunk
+   div-mod approach (which depends on a small prime — Goldilocks is
+   too large).
+
+4. **DIV/REM-full-64 + W-variants take TRANSPILE-BRIDGE shape, not
+   chunk-level closure.** S3-signed deliberately routed DIV/DIVW/
+   DIVUW/REMW/REMUW through a `h_byte_sum_circuit : byte-sum =
+   (BitVec.ofInt 64 q_int).toNat` parameter (CIRCUIT-CONSTRAINT
+   class describing circuit behavior, NOT spec-output). The
+   four-quadrant `(na, nb, np)` arithmetic and INT_MIN/-1 overflow
+   handling lives inside the **caller's** proof of that hypothesis
+   at the metaplan layer — where the field-level
+   `main_*_signed_field_correct_main_level` already shipped. Trust
+   gate satisfied, full chunk-level closure deferred (would
+   replicate openvm-fv's 3,323-line `Spec/DivRem.lean`; out of scope
+   for finishing4's trust-reduction goal).
+
+5. **Cherry-pick over rebase for parallel-branch merges.** S3-signed
+   and S4-{un,}signed all branched from the same base
+   (`7670d89` then `a6d9aa9`). Ordering merges through cherry-pick
+   into linear main is cleaner than rebase + ff-merge for two
+   reasons: (a) preserves agent commit SHA in the message body; (b)
+   sidesteps potential rebase conflicts on disjoint files (which
+   shouldn't happen but cheaper to sidestep).
+
+### What remains
+
+- **finishing5** (3 ops: JAL/JALR/AUIPC store_pc=1) is the only
+  metaplan-layer h_rd_val track left to retire. Plan exists but
+  hasn't been written yet. Trust gap: `h_entry_hi_nat`,
+  `h_pc_fgl_lo_nat`, `h_pci_lo_val` parameters on the
+  `JumpUType.lean` discharge lemma (per finishing4.md's "Out of
+  scope" note).
+- **Phase 5 retirement of original `equiv_<OP>_metaplan` theorems**
+  (the non-`_tier1` versions) is OUT OF SCOPE for finishing4 —
+  they're a stable interface and would require a coordinated sweep
+  across all opcode families. The convention "keep original + add
+  `_tier1` companion" is now uniformly applied across all
+  `_metaplan`-bearing files in tree.
+- `origin/main` not pushed (gated on user decision).
