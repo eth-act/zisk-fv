@@ -263,6 +263,147 @@
   }
   .tab-pane[hidden] { display: none; }
 
+  /* Architecture diagrams */
+  .arch-canvas {
+    background: #0f1117;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    overflow-x: auto;
+    margin-top: 18px;
+  }
+  .arch-canvas svg { display: block; max-width: 100%; min-width: 880px; }
+  .arch-canvas .tier-label {
+    fill: var(--muted);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.8;
+  }
+  .arch-canvas .air-rect {
+    fill: #1a1d27;
+    stroke: var(--border-2);
+    stroke-width: 1.5;
+    transition: stroke 0.2s, filter 0.2s;
+  }
+  .arch-canvas .air-rect.proven { stroke: var(--proven); }
+  .arch-canvas .air-rect.trusted-table { stroke: var(--trusted); stroke-dasharray: 5 3; }
+  .arch-canvas .air-rect.trusted-bus { stroke: var(--trusted); }
+  .arch-canvas .air-rect.outscope { stroke: var(--dim); stroke-dasharray: 2 4; opacity: 0.55; }
+  .arch-canvas .air-text {
+    fill: var(--text);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+  .arch-canvas .air-text.outscope { fill: var(--dim); }
+  .arch-canvas .bus-rail {
+    stroke-width: 2.5;
+    fill: none;
+    stroke-dasharray: 8 4;
+    opacity: 0.85;
+  }
+  .arch-canvas .bus-line {
+    stroke-width: 1.2;
+    fill: none;
+    opacity: 0.32;
+  }
+  .arch-canvas .bus-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .arch-canvas .boundary {
+    fill: rgba(110, 231, 183, 0.04);
+    stroke: var(--proven);
+    stroke-width: 1.2;
+    stroke-dasharray: 6 5;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .arch-canvas .boundary-label {
+    fill: var(--proven);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .arch-legend {
+    display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px;
+    color: var(--muted); font-size: 0.85rem;
+  }
+  .arch-legend span.swatch {
+    display: inline-block; width: 14px; height: 8px; vertical-align: 1px; margin-right: 6px; border-radius: 2px;
+  }
+  .arch-legend .sw-proven { background: var(--proven); }
+  .arch-legend .sw-trusted { background: var(--trusted); }
+  .arch-legend .sw-table { background: transparent; border: 1px dashed var(--trusted); height: 8px; }
+  .arch-legend .sw-out { background: transparent; border: 1px dashed var(--dim); height: 8px; }
+
+  .bus-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .bus-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 0.86rem;
+  }
+  .bus-card .bn { font-weight: 600; font-family: "JetBrains Mono", monospace; }
+  .bus-card .bk { color: var(--muted); font-size: 0.78rem; margin: 4px 0; }
+  .bus-card .bd { color: var(--muted); font-size: 0.82rem; line-height: 1.5; }
+
+  /* FV stack diagram */
+  .stack-canvas {
+    background: #0f1117;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    overflow-x: auto;
+    margin-top: 18px;
+  }
+  .stack-canvas svg { display: block; max-width: 100%; min-width: 900px; }
+  .stack-canvas .layer-rect { fill: var(--surface); stroke-width: 1.5; }
+  .stack-canvas .layer-rect.trusted { stroke: var(--trusted); }
+  .stack-canvas .layer-rect.proven { stroke: var(--proven); }
+  .stack-canvas .layer-rect.tool { stroke: var(--accent); }
+  .stack-canvas .layer-text {
+    fill: var(--text);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+  .stack-canvas .layer-sub {
+    fill: var(--muted);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9px;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+  .stack-canvas .layer-arrow {
+    stroke: var(--muted);
+    stroke-width: 1.5;
+    fill: none;
+    opacity: 0.7;
+  }
+  .stack-canvas .col-label {
+    fill: var(--accent);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-anchor: middle;
+  }
+
   /* Comparison table */
   .compare-table {
     border: 1px solid var(--border);
@@ -336,6 +477,7 @@
 <div class="tabs-wrap">
   <nav class="tabs" role="tablist">
     <button class="tab-btn active" data-tab="trust" role="tab">Trust boundary</button>
+    <button class="tab-btn" data-tab="arch" role="tab">Architecture</button>
     <button class="tab-btn" data-tab="compare" role="tab">vs openvm-fv</button>
   </nav>
 </div>
@@ -728,6 +870,48 @@
 
 </div><!-- /tab-trust -->
 
+<div id="tab-arch" class="tab-pane" hidden>
+
+<section>
+  <div class="wrap">
+    <div class="section-eyebrow">system architecture</div>
+    <h2>ZisK's RV64IM AIRs and buses</h2>
+    <p class="section-lead">
+      A specialised view of the ZisK production architecture, restricted to the AIRs reachable by the 63 RV64IM opcodes. Precompiles (Keccak, SHA-256, modular arithmetic) are out of project scope and are shown in gray. Solid rails are <em>permutation</em> buses; hair-lines are <em>lookups</em>. The dashed green region marks the verification boundary — every AIR inside is wired into a per-opcode equivalence theorem.
+    </p>
+    <div class="arch-canvas">
+      <svg id="zisk-arch" viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg" aria-label="ZisK architecture diagram"></svg>
+    </div>
+    <div class="arch-legend">
+      <span><span class="swatch sw-proven"></span>Proven (per-opcode equivalence reaches this AIR)</span>
+      <span><span class="swatch sw-table"></span>Trusted lookup table (BT-B, BT-X, arith_table, arith_range_table)</span>
+      <span><span class="swatch sw-trusted"></span>Trusted bus protocol (5000, 10, 124, 125)</span>
+      <span><span class="swatch sw-out"></span>Out of project scope (precompiles)</span>
+    </div>
+    <div class="bus-info" id="zisk-arch-buses"></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-eyebrow">extraction &amp; FV stack</div>
+    <h2>How a per-opcode theorem is assembled</h2>
+    <p class="section-lead">
+      Two parallel pipelines &mdash; spec-side (Sail&nbsp;&rarr;&nbsp;Lean) and circuit-side (PIL2&nbsp;&rarr;&nbsp;Lean) &mdash; meet at the Spec layer where we prove their semantics agree, then converge in the Equivalence layer to ship one theorem per opcode. Each colored block is a directory in the repo; each amber block is a trusted external input.
+    </p>
+    <div class="stack-canvas">
+      <svg id="zisk-stack" viewBox="0 0 1200 700" xmlns="http://www.w3.org/2000/svg" aria-label="zisk-fv pipeline diagram"></svg>
+    </div>
+    <div class="arch-legend">
+      <span><span class="swatch sw-trusted"></span>Trusted external input</span>
+      <span><span class="swatch" style="background: var(--accent); height: 8px; border-radius: 2px;"></span>Tooling we built</span>
+      <span><span class="swatch sw-proven"></span>Proven Lean modules (zero <code>sorry</code>)</span>
+    </div>
+  </div>
+</section>
+
+</div><!-- /tab-arch -->
+
 <div id="tab-compare" class="tab-pane" hidden>
 
 <section>
@@ -929,10 +1113,12 @@
 </footer>
 
 <script>
+  // ----- tab switching -----
   (function () {
     const buttons = document.querySelectorAll('.tab-btn');
     const panes = {
       trust: document.getElementById('tab-trust'),
+      arch: document.getElementById('tab-arch'),
       compare: document.getElementById('tab-compare'),
     };
     function activate(name) {
@@ -944,6 +1130,329 @@
     buttons.forEach(b => b.addEventListener('click', () => activate(b.dataset.tab)));
     const initial = (location.hash || '').replace('#', '');
     if (panes[initial]) activate(initial);
+  })();
+
+  // ----- ZisK architecture diagram -----
+  (function () {
+    const svg = document.getElementById('zisk-arch');
+    if (!svg) return;
+    const ns = 'http://www.w3.org/2000/svg';
+    function el(tag, attrs, parent) {
+      const e = document.createElementNS(ns, tag);
+      for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
+      if (parent) parent.appendChild(e);
+      return e;
+    }
+
+    const BUSES = {
+      operation: {
+        name: 'OperationBus', id: 5000, color: '#a78bfa', type: 'Permutation',
+        desc: 'Operation dispatch. Main emits one entry per opcode invocation; secondary state machines (Arith, Binary, BinaryExtension) consume.',
+        keyFormat: '(op, a, b, c, …, m32)',
+        rail: true, trusted: 'OperationBus.matches_entry'
+      },
+      memory: {
+        name: 'MemoryBus', id: 10, color: '#4ade80', type: 'Permutation',
+        desc: 'Register reads/writes + memory loads/stores. Main + Mem AIR provide entries; alignment helpers consume.',
+        keyFormat: '(addr_space, addr, step, value_lo, value_hi)',
+        rail: true, trusted: 'MB-W, MB-W-PC, MB-L, MB-S'
+      },
+      binTable: {
+        name: 'BinaryTableBus', id: 125, color: '#fb923c', type: 'Lookup',
+        desc: 'Per-byte bitwise / compare semantics: AND/OR/XOR/LT/LTU/EQ/GT/LE/LEU/MIN(U)/MAX(U)/ADD/SUB/SEXT.',
+        keyFormat: '(op, a_byte, b_byte, c_byte, cin, fl, pi)',
+        trusted: 'BT-B'
+      },
+      binExtTable: {
+        name: 'BinaryExtensionTableBus', id: 124, color: '#22d3ee', type: 'Lookup',
+        desc: 'Per-byte shift semantics: SLL / SRL / SRA across 32- and 64-bit operand widths.',
+        keyFormat: '(op, a_byte, shift_amt, m32, …)',
+        trusted: 'BT-X'
+      },
+      arithTable: {
+        name: 'ArithTableBus', color: '#facc15', type: 'Lookup',
+        desc: 'Per-row Arith state-machine semantics: signed/unsigned MUL/DIV/REM modes, sign-witness pattern (na, nb, np).',
+        keyFormat: '(mode_flags, na, nb, np, …)',
+        trusted: 'arith_table_consumer_wf'
+      },
+      arithRangeTable: {
+        name: 'ArithRangeTableBus', color: '#facc15', type: 'Lookup',
+        desc: 'Range bounds on 16-bit Arith chunks (ensures chunk-level no-wrap for multiplicative carry chains).',
+        keyFormat: '(chunk, max_val)',
+        trusted: 'arith_range_table_consumer_wf'
+      }
+    };
+
+    const NODES = [
+      // Tier 1 - System Core
+      { id: 'Main', tier: 1, col: 0, label: 'Main', kind: 'proven',
+        sub: 'monolithic + opcode multiplexer' },
+      // Tier 2 - Compute SMs
+      { id: 'Arith',            tier: 2, row: 0, col: 0, label: 'Arith',           kind: 'proven' },
+      { id: 'Binary',           tier: 2, row: 0, col: 1, label: 'Binary',          kind: 'proven' },
+      { id: 'BinaryExtension',  tier: 2, row: 0, col: 2, label: 'BinaryExtension', kind: 'proven' },
+      { id: 'Keccak',           tier: 2, row: 0, col: 3, label: 'Keccak',          kind: 'outscope' },
+      { id: 'SHA256',           tier: 2, row: 0, col: 4, label: 'SHA-256',         kind: 'outscope' },
+      // Tier 3 - Memory
+      { id: 'Mem',              tier: 3, col: 0, label: 'Mem',              kind: 'proven' },
+      { id: 'MemAlign',         tier: 3, col: 1, label: 'MemAlign',         kind: 'proven' },
+      { id: 'MemAlignByte',     tier: 3, col: 2, label: 'MemAlignByte',     kind: 'proven' },
+      { id: 'MemAlignReadByte', tier: 3, col: 3, label: 'MemAlignReadByte', kind: 'proven' },
+      { id: 'MemAlignWriteByte',tier: 3, col: 4, label: 'MemAlignWriteByte',kind: 'proven' },
+      // Tier 4 - Lookup tables (trusted via axiom)
+      { id: 'BinaryTable',          tier: 4, col: 0, label: 'BinaryTable (BT-B)',           kind: 'table' },
+      { id: 'BinaryExtensionTable', tier: 4, col: 1, label: 'BinaryExtensionTable (BT-X)',  kind: 'table' },
+      { id: 'ArithTable',           tier: 4, col: 2, label: 'arith_table',                  kind: 'table' },
+      { id: 'ArithRangeTable',      tier: 4, col: 3, label: 'arith_range_table',            kind: 'table' },
+    ];
+
+    const SVG_W = 1200;
+    const NODE_W = 168, NODE_H = 36;
+    const TIER_Y = { 1: 70, 2: 200, 3: 380, 4: 560 };
+    const RAIL_Y = { operation: 152, memory: 480 };
+
+    function nodePos(n) {
+      let cols, gap = 22, totalW, startX, x, y = TIER_Y[n.tier];
+      if (n.tier === 1) {
+        cols = 1; totalW = NODE_W;
+        startX = (SVG_W - totalW) / 2;
+        x = startX;
+      } else if (n.tier === 2) {
+        cols = 5; totalW = cols * NODE_W + (cols - 1) * gap;
+        startX = (SVG_W - totalW) / 2;
+        x = startX + n.col * (NODE_W + gap);
+      } else if (n.tier === 3) {
+        cols = 5; totalW = cols * NODE_W + (cols - 1) * gap;
+        startX = (SVG_W - totalW) / 2;
+        x = startX + n.col * (NODE_W + gap);
+      } else {
+        cols = 4; totalW = cols * NODE_W + (cols - 1) * gap;
+        startX = (SVG_W - totalW) / 2;
+        x = startX + n.col * (NODE_W + gap);
+      }
+      return { x, y, cx: x + NODE_W / 2, cy: y + NODE_H / 2 };
+    }
+    function findNode(id) { return NODES.find(n => n.id === id); }
+
+    // tier labels
+    [{y: TIER_Y[1] - 18, t: 'System Core'},
+     {y: TIER_Y[2] - 18, t: 'Compute State Machines'},
+     {y: TIER_Y[3] - 18, t: 'Memory System'},
+     {y: TIER_Y[4] - 18, t: 'Lookup Tables  (trusted via axiom)'}
+    ].forEach(({y, t}) => {
+      const tx = el('text', { x: 24, y, class: 'tier-label' }, svg);
+      tx.textContent = t;
+    });
+
+    // verification boundary
+    el('rect', {
+      x: 18, y: TIER_Y[1] - 36,
+      width: SVG_W - 36, height: TIER_Y[4] + NODE_H + 30 - (TIER_Y[1] - 36),
+      rx: 12, class: 'boundary'
+    }, svg);
+    const bLabel = el('text', { x: 30, y: TIER_Y[1] - 50, class: 'boundary-label' }, svg);
+    bLabel.textContent = '— verification boundary (zisk-fv) —';
+
+    // permutation rails
+    Object.entries(BUSES).forEach(([k, b]) => {
+      if (!b.rail) return;
+      const ry = RAIL_Y[k];
+      el('line', { x1: 60, y1: ry, x2: SVG_W - 60, y2: ry,
+                   stroke: b.color, class: 'bus-rail' }, svg);
+      const lbl = el('text', { x: SVG_W - 70, y: ry - 8, fill: b.color,
+                               class: 'bus-label' }, svg);
+      lbl.setAttribute('text-anchor', 'end');
+      lbl.textContent = b.name + ' (id=' + b.id + ')';
+    });
+
+    // operation-bus connectors: Main -> Arith/Binary/BinaryExtension/(out: Keccak/SHA)
+    function rail(busKey, srcId, opts = {}) {
+      const src = findNode(srcId); if (!src) return;
+      const sp = nodePos(src);
+      const ry = RAIL_Y[busKey];
+      const color = BUSES[busKey].color;
+      const opacity = opts.outscope ? 0.25 : 0.85;
+      el('line', {
+        x1: sp.cx, y1: sp.y + (sp.y < ry ? NODE_H : 0),
+        x2: sp.cx, y2: ry,
+        stroke: color, 'stroke-width': 1.5, 'stroke-opacity': opacity,
+        'stroke-dasharray': opts.outscope ? '4 4' : ''
+      }, svg);
+    }
+    // Operation bus
+    rail('operation', 'Main');
+    rail('operation', 'Arith');
+    rail('operation', 'Binary');
+    rail('operation', 'BinaryExtension');
+    rail('operation', 'Keccak', {outscope: true});
+    rail('operation', 'SHA256', {outscope: true});
+    // Memory bus
+    rail('memory', 'Main');
+    rail('memory', 'Arith');
+    rail('memory', 'Mem');
+    rail('memory', 'MemAlign');
+    rail('memory', 'MemAlignByte');
+    rail('memory', 'MemAlignReadByte');
+    rail('memory', 'MemAlignWriteByte');
+
+    // lookup connectors
+    function lookup(busKey, fromId, toId) {
+      const f = findNode(fromId), t = findNode(toId);
+      if (!f || !t) return;
+      const fp = nodePos(f), tp = nodePos(t);
+      const color = BUSES[busKey].color;
+      el('line', {
+        x1: fp.cx, y1: fp.y + NODE_H, x2: tp.cx, y2: tp.y,
+        stroke: color, class: 'bus-line'
+      }, svg);
+    }
+    lookup('binTable', 'Binary', 'BinaryTable');
+    lookup('binExtTable', 'BinaryExtension', 'BinaryExtensionTable');
+    lookup('arithTable', 'Arith', 'ArithTable');
+    lookup('arithRangeTable', 'Arith', 'ArithRangeTable');
+
+    // nodes
+    const KIND_CLASS = {
+      proven: 'proven',
+      table: 'trusted-table',
+      outscope: 'outscope'
+    };
+    NODES.forEach(n => {
+      const p = nodePos(n);
+      const g = el('g', { transform: `translate(${p.x}, ${p.y})` }, svg);
+      el('rect', {
+        width: NODE_W, height: NODE_H, rx: 6,
+        class: 'air-rect ' + KIND_CLASS[n.kind]
+      }, g);
+      const t = el('text', {
+        x: NODE_W / 2, y: NODE_H / 2,
+        class: 'air-text' + (n.kind === 'outscope' ? ' outscope' : '')
+      }, g);
+      t.textContent = n.label;
+      if (n.sub) {
+        const s = el('text', {
+          x: NODE_W / 2, y: NODE_H + 12,
+          fill: 'var(--muted)',
+          'font-family': 'JetBrains Mono, monospace',
+          'font-size': 9,
+          'text-anchor': 'middle'
+        }, g);
+        s.textContent = n.sub;
+      }
+    });
+
+    // bus info cards
+    const info = document.getElementById('zisk-arch-buses');
+    if (info) {
+      Object.values(BUSES).forEach(b => {
+        const c = document.createElement('div');
+        c.className = 'bus-card';
+        c.style.borderLeftColor = b.color;
+        c.innerHTML =
+          `<div class="bn" style="color:${b.color}">${b.name}` +
+          (b.id ? ` <span class="bk" style="font-weight:400">id=${b.id}</span>` : '') + `</div>` +
+          `<div class="bk">${b.type} · key: <code>${b.keyFormat}</code></div>` +
+          `<div class="bd">${b.desc}` +
+          (b.trusted ? `<br><span style="color:var(--trusted)">Trusted via:</span> <code>${b.trusted}</code>` : '') +
+          `</div>`;
+        info.appendChild(c);
+      });
+    }
+  })();
+
+  // ----- FV stack diagram -----
+  (function () {
+    const svg = document.getElementById('zisk-stack');
+    if (!svg) return;
+    const ns = 'http://www.w3.org/2000/svg';
+    function el(tag, attrs, parent) {
+      const e = document.createElementNS(ns, tag);
+      for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
+      if (parent) parent.appendChild(e);
+      return e;
+    }
+
+    // Two columns: Spec side (left) and Circuit side (right), converging at Spec then Equivalence
+    const COLS = {
+      sail: { x: 130, label: 'SPEC SIDE  ·  Sail → Lean' },
+      circuit: { x: 870, label: 'CIRCUIT SIDE  ·  PIL2 → Lean' },
+      mid: { x: 500, label: 'CONVERGENCE' }
+    };
+
+    const W = 1200, H = 700;
+    const BOX_W = 250, BOX_H = 50;
+
+    // column labels
+    el('text', { x: COLS.sail.x, y: 24, class: 'col-label' }, svg).textContent = COLS.sail.label;
+    el('text', { x: COLS.circuit.x, y: 24, class: 'col-label' }, svg).textContent = COLS.circuit.label;
+    el('text', { x: COLS.mid.x, y: 24, class: 'col-label' }, svg).textContent = COLS.mid.label;
+
+    // box helper
+    function box(x, y, label, sub, kind) {
+      const g = el('g', { transform: `translate(${x - BOX_W / 2}, ${y})` }, svg);
+      el('rect', {
+        width: BOX_W, height: BOX_H, rx: 8,
+        class: 'layer-rect ' + kind
+      }, g);
+      el('text', { x: BOX_W / 2, y: 18, class: 'layer-text' }, g).textContent = label;
+      if (sub) {
+        el('text', { x: BOX_W / 2, y: 36, class: 'layer-sub' }, g).textContent = sub;
+      }
+      return { x, y, w: BOX_W, h: BOX_H, cy: y + BOX_H / 2 };
+    }
+    function arrow(x1, y1, x2, y2) {
+      el('path', {
+        d: `M ${x1} ${y1} L ${x2} ${y2}`,
+        class: 'layer-arrow', 'marker-end': 'url(#stack-arrow)'
+      }, svg);
+    }
+    // arrow marker
+    const defs = el('defs', {}, svg);
+    const m = el('marker', {
+      id: 'stack-arrow', viewBox: '0 0 10 10', refX: 9, refY: 5,
+      markerWidth: 7, markerHeight: 7, orient: 'auto'
+    }, defs);
+    el('path', { d: 'M0,0 L10,5 L0,10 z', fill: 'var(--muted)' }, m);
+
+    // SAIL side — top to bottom
+    const sail1 = box(COLS.sail.x, 50, 'Sail RV64 spec', '/sail-riscv (.sail source)', 'trusted');
+    const sail2 = box(COLS.sail.x, 130, 'sail_to_lean', 'mechanical translator (upstream)', 'tool');
+    const sail3 = box(COLS.sail.x, 210, 'LeanRV64D', 'NethermindEth/sail-riscv-lean (pinned)', 'trusted');
+    const sail4 = box(COLS.sail.x, 290, 'ZiskFv/RV64D/<op>.lean', 'hand-written cleaner pure spec', 'proven');
+    const sail5 = box(COLS.sail.x, 370, 'execute_<OP>_pure_equiv', 'proves RV64D ≡ LeanRV64D', 'proven');
+    arrow(COLS.sail.x, sail1.y + BOX_H, COLS.sail.x, sail2.y);
+    arrow(COLS.sail.x, sail2.y + BOX_H, COLS.sail.x, sail3.y);
+    arrow(COLS.sail.x, sail3.y + BOX_H, COLS.sail.x, sail4.y);
+    arrow(COLS.sail.x, sail4.y + BOX_H, COLS.sail.x, sail5.y);
+
+    // CIRCUIT side
+    const c1 = box(COLS.circuit.x, 50, 'ZisK PIL2 source', 'vendor/zisk/state-machines/...', 'trusted');
+    const c2 = box(COLS.circuit.x, 130, 'pil2-compile', 'Polygon Hermez compiler', 'tool');
+    const c3 = box(COLS.circuit.x, 210, 'zisk.pilout', 'protobuf-compiled artifact', 'trusted');
+    const c4 = box(COLS.circuit.x, 290, 'tools/zisk-pil-extract', 'our Rust extractor → Lean', 'tool');
+    const c5 = box(COLS.circuit.x, 370, 'ZiskFv/Extraction/', 'raw constraint structures', 'proven');
+    const c6 = box(COLS.circuit.x, 450, 'ZiskFv/Airs/', 'named-column wrappers + bridges', 'proven');
+    arrow(COLS.circuit.x, c1.y + BOX_H, COLS.circuit.x, c2.y);
+    arrow(COLS.circuit.x, c2.y + BOX_H, COLS.circuit.x, c3.y);
+    arrow(COLS.circuit.x, c3.y + BOX_H, COLS.circuit.x, c4.y);
+    arrow(COLS.circuit.x, c4.y + BOX_H, COLS.circuit.x, c5.y);
+    arrow(COLS.circuit.x, c5.y + BOX_H, COLS.circuit.x, c6.y);
+
+    // CONVERGENCE
+    const m1 = box(COLS.mid.x, 470, 'ZiskFv/Spec/<Op>.lean', 'circuit-witness ≡ spec output', 'proven');
+    const m2 = box(COLS.mid.x, 560, 'ZiskFv/Equivalence/<Op>.lean', 'equiv_<OP>_metaplan_tier1', 'proven');
+    arrow(COLS.mid.x, m1.y + BOX_H, COLS.mid.x, m2.y);
+
+    // arrows from each side into Spec
+    arrow(COLS.sail.x, sail5.y + BOX_H, COLS.mid.x - BOX_W / 2, m1.y + BOX_H / 2);
+    arrow(COLS.circuit.x, c6.y + BOX_H, COLS.mid.x + BOX_W / 2, m1.y + BOX_H / 2);
+
+    // SUPPORTING toolkits column (bottom-left)
+    el('text', { x: 130, y: 470, class: 'col-label' }, svg).textContent = 'PROOF TOOLKITS';
+    const t1 = box(130, 500, 'PackedBitVec/*.lean', 'NoWrap, MulNoWrap, SignedNoWrap,…', 'proven');
+    const t2 = box(130, 580, 'Airs/{OperationBus, MemoryBus}', 'compositional bus models', 'proven');
+    arrow(130, t1.y + BOX_H, 130, t2.y);
+    arrow(130 + BOX_W / 2, t2.y + BOX_H / 2, COLS.mid.x - BOX_W / 2 - 6, m2.y + BOX_H / 2);
   })();
 </script>
 
