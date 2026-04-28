@@ -1898,7 +1898,7 @@ remain in this document as an audit trail of the Phase 3.5 promotion
 work; they are no longer part of the active load-bearing trust
 surface.
 
-### Per-opcode coverage (2026-04-27)
+### Per-opcode coverage (2026-04-28)
 
 - **finishing1 (3 ops):** ADD, LUI, ADDI — `equiv_<OP>_metaplan_tier1`
   derives `h_rd_val` from BT-B + circuit primitives. Original
@@ -1911,9 +1911,18 @@ surface.
   in-place from the existing metaplan; replaced by MB-L/MB-S/MS-L/MS-S
   composed through narrow-width `mem_{load,store}_correct_<n>byte`
   bridges. Final grep gate over the 11 files: 0 hits.
+- **finishing4 (13 ops):** MUL/MULHU/DIVU/REMU/MULW (5 unsigned) +
+  MULH/MULHSU/DIV/DIVW/DIVUW/REM/REMW/REMUW (8 signed) —
+  `equiv_<OP>_metaplan_tier1` companions derive `h_rd_val` via two
+  new toolkit files (`Fundamentals/PackedBitVec/MulNoWrap.lean` —
+  14 theorems for chunk-level MUL/DIV no-wrap; `SignedNoWrap.lean` —
+  22 theorems for four-quadrant sign-witness BitVec.toInt extension)
+  composed with the existing `Spec/{MulField,MulFieldSigned,
+  DivFieldSigned}` field identities and Track P arith_table layer.
+  **No new trust axioms** — purely Lean-internal proof work.
 
-40 of 56 RV64IM ops have metaplan parameter retirements landed.
-finishing4 (13 multiplicative) and finishing5 (3 store_pc=1) remain.
+53 of 56 RV64IM ops have metaplan parameter retirements landed.
+Only finishing5 (3 store_pc=1: JAL/JALR/AUIPC) remains.
 
 ### Trust classification (2026-04-27)
 

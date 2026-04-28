@@ -1,20 +1,20 @@
 # ZisK Formal Verification — Metaplan
 
-## Revision 2026-04-27 (post-finishing1 / finishing2 / finishing3 — Track N closure)
+## Revision 2026-04-28 (post-finishing4 — MDR family closure)
 
 After Phase 1.5 (the `equiv_<OP>_metaplan` shape with parameterized
 `h_rd_val`), the project's remaining work was decomposed into five
 "finishing" plans (`ai_plans/finishing[1-5].md`) each retiring one
-class of trusted parameter. **finishing1, finishing2, finishing3 are
-all CLOSED.** finishing4 and finishing5 are still pending.
+class of trusted parameter. **finishing1–4 are all CLOSED.** Only
+finishing5 remains.
 
-### State as of 2026-04-27
+### State as of 2026-04-28
 
-**Branch state.** All work merged to `main` (HEAD `287388d`, 50
-commits forwarded from feature branch). 11 stale `worktree-agent-*`
-topic branches audited (all subsumed by main per `git cherry`
-diff-equivalence + line-by-line subset check) and deleted. `main`
-not yet pushed to `origin/main`.
+**Branch state.** All work merged to `main` (HEAD `852125e`).
+Finishing4 shipped in one session via 6 parallel Opus subagents over
+two waves (S1+S2, then S3 unsigned/signed, then S4 unsigned/signed).
+`origin/main` is several commits behind (last-pushed commit
+`287388d`); push gated on user decision.
 
 **Per-opcode coverage now in tree.**
 
@@ -23,9 +23,9 @@ not yet pushed to `origin/main`.
 | Additive ALU (ADD/LUI/ADDI) | finishing1 | 3 | ✅ `_tier1` companions shipped |
 | Logic / Shift / Compare / SUB / ALU-W | finishing2 | 26 | ✅ `_tier1` companions shipped |
 | Loads / Stores | finishing3 | 11 | ✅ original `equiv_<OP>_metaplan` rewritten in-place (no companion) |
-| MUL / DIV / REM family | finishing4 | 13 | ⏳ pending |
+| MUL / DIV / REM family | finishing4 | 13 | ✅ `_tier1` companions shipped (2026-04-28) |
 | JAL / JALR / AUIPC (`store_pc=1`) | finishing5 | 3 | ⏳ pending |
-| **TOTAL covered** | — | **40 / 56** | — |
+| **TOTAL covered** | — | **53 / 56** | — |
 
 (56 = the 53 RV64IM ops already with `equiv_<OP>_metaplan` plus the
 3 finishing5 ops; running totals depend on whether you count the
@@ -66,22 +66,43 @@ RV64IM opcodes already on the metaplan-target shape.
 
 ### What's left
 
-- **finishing4** (`ai_plans/finishing4.md`) — 13 multiplicative ops
-  (MUL/MULHU/DIVU/REMU/MULW unsigned + MULH/MULHSU/DIV/DIVW/DIVUW/
-  REM/REMW/REMUW signed). Tier-2 discharge lemmas already in tree
-  (commits `bed62b7`/`92305eb`/`23e5669`); plan retires the
-  `h_byte_sum` parameters via a multiplicative no-wrap toolkit (the
-  multiplicative analogue of finishing1's Wave B.5 additive toolkit).
 - **finishing5** (`ai_plans/finishing5.md`) — 3 ops (JAL, JALR,
   AUIPC). Tier-1.5 discharge lemmas already in tree (`a063edf` /
   `3dfaf88`); plan retires the OUTPUT-EQ parameters (`h_entry_hi_nat`,
   `h_pc_fgl_lo_nat`, etc.) for the `store_pc=1` bus-emission path.
+  Architecturally distinct from finishing1–4: requires NEW trust
+  axioms (`transpile_PC_for_{JAL,JALR,AUIPC}` — Sail-PC ↔ Main-pc-
+  column bridge), a wide-PC no-wrap toolkit (PC values can exceed
+  `GL_prime`), and AIR-level bus-emission projections for the
+  `store_pc=1` path's hi-half (which Main does not expose as a
+  separate column).
+
+### finishing4 closure summary (2026-04-28)
+
+Six parallel Opus subagents shipped four scope items:
+- **S1** (commit `868aedb`): `Fundamentals/PackedBitVec/MulNoWrap.lean`
+  — 14-theorem multiplicative no-wrap toolkit (8-chunk MUL/DIV
+  aggregators + per-chunk FGL→ℕ lifts + BitVec extractors).
+- **S2** (`6190b60` + `7670d89` fixup): `SignedNoWrap.lean` — 22-theorem
+  signed BitVec.toInt extension (four-quadrant sign-witness pattern,
+  INT_MIN/-1 overflow, byte-sum bridges).
+- **S3-unsigned** (`1dc4775`): MUL/MULHU/DIVU/REMU/MULW Tier-1 discharge.
+- **S3-signed** (`a6d9aa9`): MULH/MULHSU/DIV/DIVW/DIVUW/REM/REMW/REMUW
+  Tier-1 discharge.
+- **S4-signed** (`95dca09`) + **S4-unsigned** (`21a6268`): 13 `_tier1`
+  metaplan companions added across all 13 MDR Equivalence files.
+- Plan close (`852125e`): finishing4.md CLOSED 2026-04-28 with full
+  per-wave summary, lessons learned, and remaining-work breakdown.
+
+**No new trust axioms.** finishing4 is purely Lean-internal proof
+work — the 9-item trusted surface from the 2026-04-27 revision is
+unchanged. (finishing5 will add 3 new transpile-PC trust items.)
 
 ### Open question — push to origin
 
-`main` is at `287388d` locally. `origin/main` is one fast-forward
-behind. User explicitly authorized the local merge but not the
-push; this is gated on user decision.
+`main` is at `852125e` locally; `origin/main` last pushed at
+`287388d`. User has authorized aggressive local work but not pushes;
+gated on user decision.
 
 ### Working notes / discoveries from this revision
 
