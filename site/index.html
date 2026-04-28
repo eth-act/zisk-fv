@@ -269,32 +269,50 @@
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 16px;
-    overflow-x: auto;
+    overflow: visible;
     margin-top: 18px;
     position: relative;
   }
-  /* Pinned bus-info panel — directly below the SVG, full width.
-     Keeps the diagram and the live info visible together. */
-  .arch-floater {
-    margin-top: 12px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 0.86rem;
-    min-height: 56px;
-    transition: border-left-color 0.15s;
+  .arch-layout {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
   }
-  .arch-floater .ft-list {
-    display: flex; flex-direction: row; flex-wrap: wrap; gap: 14px;
-    margin-top: 4px;
+  .arch-cards-col {
+    flex: 0 0 290px;
+    max-width: 290px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: sticky;
+    top: 80px;
+    align-self: flex-start;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
   }
-  .arch-floater .ft-list > div { white-space: nowrap; }
-  .arch-floater hr { display: none; }
-  .arch-floater .ft-bn { display: inline-block; }
-  .arch-floater .ft-kf { display: inline-block; }
-  .arch-floater .ft-empty { color: var(--muted); font-size: 0.86rem; }
+  .arch-cards-col::-webkit-scrollbar { width: 4px; }
+  .arch-cards-col::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+  .arch-svg-wrap {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow-x: auto;
+  }
+  .arch-cards-col .ft-empty {
+    color: var(--muted);
+    font-size: 0.78rem;
+    padding: 6px 10px;
+    border: 1px dashed var(--border-2);
+    border-radius: 6px;
+    text-align: center;
+  }
+  @media (max-width: 920px) {
+    .arch-layout { flex-direction: column; }
+    .arch-cards-col {
+      flex: 1; max-width: 100%; position: static;
+      flex-direction: row; flex-wrap: wrap; max-height: none;
+    }
+    .arch-cards-col .bus-card { flex: 1 1 240px; }
+  }
   .arch-floater .ft-bn { font-family: "JetBrains Mono", monospace; font-weight: 600; }
   .arch-floater .ft-kf { color: var(--muted); font-size: 0.78rem; }
   .arch-floater .ft-ds { color: var(--muted); font-size: 0.82rem; line-height: 1.5; margin-top: 4px; }
@@ -360,9 +378,20 @@
     font-size: 10px;
     font-weight: 600;
   }
-  .bus-card { cursor: pointer; transition: border-left-width 0.15s, transform 0.15s; }
-  .bus-card.highlighted { border-left-width: 6px; transform: translateX(2px); }
-  .bus-card.dimmed { opacity: 0.4; }
+  .bus-card {
+    cursor: pointer;
+    order: 1;
+    transition: border-left-width 0.15s, transform 0.18s, box-shadow 0.18s, opacity 0.15s;
+  }
+  .bus-card.highlighted {
+    order: 0;
+    border-left-width: 6px;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.5),
+                0 0 0 1px var(--bus-color, var(--accent)) inset;
+  }
+  .bus-card.dimmed { opacity: 0.35; }
+  .bus-card .bn { font-family: "JetBrains Mono", monospace; font-weight: 600; }
   .arch-canvas .boundary {
     fill: rgba(110, 231, 183, 0.04);
     stroke: var(--proven);
@@ -928,9 +957,13 @@
       A specialised view of the ZisK production architecture, restricted to the AIRs reachable by the 63 RV64IM opcodes. Precompiles (Keccak, SHA-256, modular arithmetic) are out of project scope and are shown in gray. Solid rails are <em>permutation</em> buses; hair-lines are <em>lookups</em>. The dashed green region marks the verification boundary — every AIR inside is wired into a per-opcode equivalence theorem.
     </p>
     <div class="arch-canvas">
-      <svg id="zisk-arch" viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg" aria-label="ZisK architecture diagram"></svg>
-      <div class="arch-floater" id="zisk-arch-floater">
-        <div class="ft-empty">Hover any AIR, rail, or hairline above to see what it connects to.</div>
+      <div class="arch-layout">
+        <div class="arch-cards-col" id="zisk-arch-cards">
+          <div class="ft-empty" id="zisk-arch-prompt">Hover any AIR, rail, or hairline → its bus card jumps to the top.</div>
+        </div>
+        <div class="arch-svg-wrap">
+          <svg id="zisk-arch" viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg" aria-label="ZisK architecture diagram"></svg>
+        </div>
       </div>
     </div>
     <div class="arch-legend">
@@ -939,7 +972,6 @@
       <span><span class="swatch sw-trusted"></span>Trusted bus protocol (5000, 10, 124, 125)</span>
       <span><span class="swatch sw-out"></span>Out of project scope (precompiles)</span>
     </div>
-    <div class="bus-info" id="zisk-arch-buses"></div>
   </div>
 </section>
 
@@ -1407,15 +1439,17 @@
       nodeEls[n.id] = g;
     });
 
-    // bus info cards
-    const info = document.getElementById('zisk-arch-buses');
+    // bus info cards — side stack to the left of the SVG
+    const cardsCol = document.getElementById('zisk-arch-cards');
+    const prompt = document.getElementById('zisk-arch-prompt');
     const cardEls = {};
-    if (info) {
+    if (cardsCol) {
       Object.entries(BUSES).forEach(([k, b]) => {
         const c = document.createElement('div');
         c.className = 'bus-card';
         c.dataset.bus = k;
         c.style.borderLeftColor = b.color;
+        c.style.setProperty('--bus-color', b.color);
         c.innerHTML =
           `<div class="bn" style="color:${b.color}">${b.name}` +
           (b.id ? ` <span class="bk" style="font-weight:400">id=${b.id}</span>` : '') + `</div>` +
@@ -1423,7 +1457,7 @@
           `<div class="bd">${b.desc}` +
           (b.trusted ? `<br><span style="color:var(--trusted)">Trusted via:</span> <code>${b.trusted}</code>` : '') +
           `</div>`;
-        info.appendChild(c);
+        cardsCol.appendChild(c);
         cardEls[k] = c;
       });
     }
@@ -1431,7 +1465,6 @@
     // ----- hover-to-highlight bus connectivity -----
     const railEls = svg.querySelectorAll('.bus-rail');
     const lineEls = svg.querySelectorAll('.bus-line');
-    const floater = document.getElementById('zisk-arch-floater');
 
     function connectedNodes(busKey) {
       const b = BUSES[busKey]; if (!b) return new Set();
@@ -1442,41 +1475,19 @@
         (b.senders || []).includes(nodeId) || (b.receivers || []).includes(nodeId)
       ).map(([k, _]) => k);
     }
-    function busCardHTML(busKey) {
-      const b = BUSES[busKey]; if (!b) return '';
-      return `<div><span class="ft-bn" style="color:${b.color}">${b.name}</span>` +
-        (b.id ? ` <span class="ft-kf">id=${b.id}</span>` : '') +
-        ` <span class="ft-kf">· ${b.type} · key <code>${b.keyFormat}</code></span></div>` +
-        `<div class="ft-ds">${b.desc}` +
-        (b.trusted ? ` <span class="ft-tr">Trusted via: <code>${b.trusted}</code></span>` : '') +
-        `</div>`;
+    function setActive(busKeysSet) {
+      // Cards: highlight (and reorder to top via CSS order:0) the active set; dim the rest.
+      Object.entries(cardEls).forEach(([k, c]) => {
+        const active = busKeysSet.has(k);
+        c.classList.toggle('highlighted', active);
+        c.classList.toggle('dimmed', !active);
+      });
+      if (prompt) prompt.style.display = busKeysSet.size ? 'none' : '';
     }
-    function nodeFloaterHTML(nodeId) {
-      const n = findNode(nodeId); if (!n) return '';
-      const bs = busesOfNode(nodeId);
-      const KIND_LABEL = {
-        proven: 'Proven AIR',
-        table: 'Trusted lookup table',
-        outscope: 'Out of scope (precompile)'
-      };
-      const head = `<div><span class="ft-bn">${n.label}</span> ` +
-        `<span class="ft-kf">— ${KIND_LABEL[n.kind] || ''}</span></div>`;
-      if (!bs.length) return head + `<div class="ft-ds">Not connected to any bus.</div>`;
-      const items = bs.map(k => {
-        const b = BUSES[k];
-        const role = (b.senders || []).includes(nodeId) ? 'sends'
-                   : (b.receivers || []).includes(nodeId) ? 'receives' : '';
-        return `<div><span class="ft-bn" style="color:${b.color}">${b.name}</span> ` +
-          `<span class="ft-kf">— ${role}</span></div>`;
-      }).join('');
-      return head + `<div class="ft-list">${items}</div>`;
-    }
-    const EMPTY_HTML = `<div class="ft-empty">Hover any AIR, rail, or hairline above to see what it connects to.</div>`;
 
     function highlightBus(busKey) {
       const b = BUSES[busKey]; if (!b) return;
       const conn = connectedNodes(busKey);
-      if (floater) floater.style.borderLeftColor = b.color;
       Object.entries(nodeEls).forEach(([id, g]) => {
         const inSet = conn.has(id);
         g.classList.toggle('dimmed', !inSet);
@@ -1494,11 +1505,7 @@
         l.classList.toggle('dimmed', k !== busKey);
         l.classList.toggle('highlighted', k === busKey);
       });
-      Object.entries(cardEls).forEach(([k, c]) => {
-        c.classList.toggle('dimmed', k !== busKey);
-        c.classList.toggle('highlighted', k === busKey);
-      });
-      if (floater) floater.innerHTML = busCardHTML(busKey);
+      setActive(new Set([busKey]));
     }
     function highlightNode(nodeId) {
       const bs = busesOfNode(nodeId);
@@ -1521,11 +1528,7 @@
         l.classList.toggle('dimmed', !bset.has(k));
         l.classList.toggle('highlighted', bset.has(k));
       });
-      Object.entries(cardEls).forEach(([k, c]) => {
-        c.classList.toggle('dimmed', !bset.has(k));
-        c.classList.toggle('highlighted', bset.has(k));
-      });
-      if (floater) floater.innerHTML = nodeFloaterHTML(nodeId);
+      setActive(bset);
     }
     function clearHl() {
       Object.values(nodeEls).forEach(g => {
@@ -1535,10 +1538,7 @@
       railEls.forEach(r => r.classList.remove('dimmed', 'highlighted'));
       lineEls.forEach(l => l.classList.remove('dimmed', 'highlighted'));
       Object.values(cardEls).forEach(c => c.classList.remove('dimmed', 'highlighted'));
-      if (floater) {
-        floater.innerHTML = EMPTY_HTML;
-        floater.style.borderLeftColor = 'var(--accent)';
-      }
+      if (prompt) prompt.style.display = '';
     }
 
     railEls.forEach(r => {
