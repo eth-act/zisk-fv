@@ -11,8 +11,11 @@
 
 # Local-dev convenience symlink (see CLAUDE.md). Points outside the repo;
 # do not commit.
-/openvm-fv
 .claude/
 
 # Git worktrees for isolated agent work.
 .worktrees/
+
+site/*.png
+
+.playwright-mcp
