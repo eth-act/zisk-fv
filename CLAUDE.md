@@ -2,309 +2,175 @@
 
 ## Goal
 
-Formally verify, in Lean 4, that [ZisK](https://github.com/0xPolygonHermez/zisk)'s
-zkVM circuit implementation matches the official Sail RISC-V specification,
-per-opcode, restricted to RV64IM. The goal is per-opcode theorems of the shape
+Lean 4 formal verification of [ZisK](https://github.com/0xPolygonHermez/zisk)'s
+zkVM circuit against the official [Sail RISC-V specification](https://github.com/riscv/sail-riscv),
+per-opcode, restricted to RV64IM. Each opcode gets a theorem of the
+canonical shape:
 
 ```
-execute_instruction (.RTYPE rs2 rs1 rd rop.ADD) state = (bus_effect exec_row mem_row state).2
+execute_instruction (.RTYPE rs2 rs1 rd rop.ADD) state
+  = (bus_effect exec_row mem_row state).2
 ```
 
-where the LHS is the Sail spec (the `LeanRV64D` Lean translation of
-the official RISC-V Sail model, **built locally from primary source**
-via `just build-sail-lean` into `build/sail-lean/`; the lakefile reads
-that directly via a path-based require — no pre-built dep is pulled)
-and the RHS is ZisK's Goldilocks-valued circuit constraints composed
-with the operation-bus model.
+- **LHS** = Sail spec, built locally from primary source into
+  `build/sail-lean/` (Sail compiler + sail-riscv compiled into Lean).
+  The lakefile points at `build/sail-lean/` via a path-based require —
+  no pre-built dep is pulled.
+- **RHS** = ZisK's Goldilocks-valued circuit constraints composed
+  with the operation-bus model.
 
-Zicclsm, precompiles (Keccak, SHA256, …), and ZisK's custom internal ops
-are **out of scope** for the initial effort.
+**Out of scope:** Zicclsm, precompiles (Keccak / SHA256 / big-int /
+DMA / etc.), ECALL/EBREAK, ZisK's custom internal ops.
 
-## Template: openvm-fv
+**Status:** all 63 RV64IM opcodes proved (0 sorries; 82 trusted
+axioms across 13 ledger classes; 45 of the 63 also have `_tier1`
+companions with the OUTPUT-EQ retirement — see
+`docs/fv/trusted-base.md`).
 
-We are adapting the **openvm-fv** Lean project (Nethermind / OpenLabs,
-45 RV32IM opcodes verified). It is the closest prior art — same Lean
-toolchain, same `LeanZKCircuit` dependency, same pipeline shape. We
-studied it first and we are explicitly following its pattern.
+## Pipeline
 
-- Local symlink: `/home/cody/openvm-fv` (read-only reference; don't
-  modify it). A gitignored convenience symlink also exists at
-  `/home/cody/zisk-fv/openvm-fv → /home/cody/openvm-fv` so paths
-  relative to this repo resolve.
-- Pipeline stages we mirror:
-  `Extraction/` (auto-generated raw constraints) →
-  `Airs/` (named-column `Valid_<AIR>` structures) →
-  `Constraints/` (simp-lemma bridges, inlined into `Airs/` for Phase 1) →
-  `RV<N>D/<opcode>.lean` (pure spec + Sail equivalence) →
-  `Spec/<family>.lean` (circuit-correctness theorem) →
-  `Equivalence/<family>.lean` (final per-opcode theorem).
+```
+build/zisk.pilout             ← docker/build-zisk-lean.sh   (Docker → ZisK fork v0.15.0+ pilout)
+        │
+        │ tools/pil-extract
+        ▼
+ZiskFv/Extraction/<AIR>.lean  ← auto-generated; gitignored except 2 hand-written files
+        │
+        │ named-column wrappers
+        ▼
+ZiskFv/Airs/Valid_<AIR>       ← human-readable column accessors + simp lemmas
+        │
+        │ circuit-correctness theorems
+        ▼
+ZiskFv/Spec/<family>          ← circuit semantics in BitVec / FGL
+        │
+        │ + LHS bridge to Sail spec
+        ▼
+ZiskFv/Equivalence/<OP>       ← equiv_<OP>_metaplan : Sail.execute = bus_effect.2
+```
 
-## Substantive differences from openvm-fv
+## Build / verify / test
 
-ZisK is architected differently from OpenVM, so the template adapts —
-it doesn't transfer directly:
+Bootstrap (run once after a fresh clone, ~11 min cold; both writable
+to `build/` and the second one also to `ZiskFv/Extraction/`):
 
-- **Field:** Goldilocks (`2^64 − 2^32 + 1`), not BabyBear.
-- **Constraint language:** PIL2 + compiled `.pilout` protobuf, not a
-  Plonky3 `SymbolicConstraintsDag`. The `openvm-fv/extractor/` binary is
-  **not reusable** — we built `tools/pil-extract/` to walk pilout.
-- **Execution model:** one monolithic Main AIR over "Zisk instructions"
-  (a microinstruction IR) that multiplexes opcodes via flags and
-  delegates heavy ops to secondary state machines (arith, binary,
-  precompiles) via the operation bus (`OPERATION_BUS_ID=5000`). Contrast
-  with OpenVM's one-AIR-per-opcode-family layout. This means ZisK FV
-  proofs are always compositional (Main + secondary + bus), never
-  self-contained in a single AIR.
-- **RISC-V transpilation:** ZisK's `core/src/riscv2zisk_context.rs` maps
-  one RV instruction to 1+ Zisk microinstructions. We axiomatize that
-  contract (see `ZiskFv.Fundamentals.Transpiler`) — it's part of the
-  **trusted** surface.
+```bash
+docker/build-sail-lean.sh    # → build/sail-lean/        (~5 min)
+docker/build-zisk-lean.sh    # → build/zisk.pilout +     (~6 min)
+                             #   ZiskFv/Extraction/*.lean
+```
 
-## Trusted surface
+Day-to-day:
 
-**Single source of truth: `trust/baseline-axioms.txt`** — auto-generated
-from the `*.lean` files listed in `trust/allowed-axiom-files.txt`. The
-list below is human-readable narrative; the baseline file is the
-machine-readable enforcement target. CI (`.github/workflows/trust-gate.yml`)
-runs `trust/scripts/check-all.sh` on every PR; if the live tree's trust
-surface diverges from the baseline, the build fails and the diff
-becomes the audit surface for review.
+```bash
+lake build       # the FV check — every per-opcode theorem typechecks
+bin/test.sh      # full suite: cargo + lake + trust gate + repro hashes
+```
 
-**To add a trust-surface item** (high bar — see below for what counts):
+There is no `justfile` and no Make. Three shell scripts (the two
+Docker builds + `bin/test.sh`) plus `lake build` are the entry points.
+`lake build` succeeding **is** the formal-verification claim;
+everything else is auxiliary scaffolding.
 
-1. Add the `axiom` declaration to one of the files in
-   `trust/allowed-axiom-files.txt` (or update that allowlist with
-   explicit reviewer ack — both files are CODEOWNER-protected).
-2. Run `trust/scripts/regenerate.sh` to refresh `trust/baseline-axioms.txt`.
-3. Add a corresponding entry to `docs/fv/trusted-base.md` describing
-   the trust class + closure path.
-4. Commit the axiom + the new baseline + the docs entry in the same PR.
-5. CODEOWNER review of the `trust/baseline-axioms.txt` diff is the
-   audit step. The hash that appears in that file is over the
-   axiom's source-text statement, so a subtle weakening of an
-   existing axiom shows as a hash change — reviewers see exactly
-   what changed semantically.
+## Trust gate (READ THIS — agents must respect it)
 
-**The Lean trust-leak shapes the gate watches** (any of these counts as
-trust): `axiom`, `opaque`, `constant`, `unsafe def`, `partial def`,
-`@[extern]`, `@[implemented_by]`. Don't reach for any of them outside
-the allowlisted files. If a proof feels like it needs one, the right
-move is almost always to find an existing axiom that covers the gap or
-to escalate explicitly rather than adding a new one.
-
-Items below are accepted as axioms; downstream theorems compose on top
-of them. Improving any of them to a proven theorem is a strict trust
-reduction and is welcome but out of scope for current phases.
-
-- `ZiskFv.Fundamentals.Transpiler` — the RV→Zisk microinstruction
-  contract from `core/src/riscv2zisk_context.rs`.
-- `ZiskFv.Airs.OperationBus.matches_entry` — operation-bus protocol
-  soundness (`bus_id=5000`): a Main row's emission equals the matched
-  secondary AIR's row.
-- `ZiskFv.Airs.BinaryTable` (added in `finishing2.md` S0) — the binary
-  lookup table at `bus_id=125` carries the per-byte switch semantics
-  defined by `zisk/state-machines/binary/pil/binary_table.pil`
-  (AND/OR/XOR bitwise ops; LT/LTU/EQ/GT/LE/LEU/LT*ABS*\*/MIN(U)/MAX(U)
-  comparison ops; ADD/SUB carry semantics; SEXT_00/FF byte sign-extends).
-  Mirrors openvm-fv's `Fundamentals/Interaction.lean::BitwiseBusEntry`
-  (whose XOR semantics is similarly trusted at the bus-entry definition).
-- `ZiskFv.Airs.BinaryExtensionTable` (added in `finishing2.md` S0) — the
-  shift lookup table at `bus_id=124` carries per-byte shift semantics
-  from `binary_extension_table.pil` (SLL/SRL/SRA byte-level views).
-- `ZiskFv.Airs.MemoryBus.LaneMatch.memory_bus_register_write_perm_sound`
-  (added in `finishing3.md` S4) — memory-bus permutation soundness for
-  register writes (`bus_id=10`): bundles the multi-row Mem-AIR chain
-  (writing Main row's emission ↔ writing Mem row ↔ persistence rows ↔
-  consuming Mem row ↔ next-read Main row's `prev_value`) under the
-  store-reg gating, in the same shape as `OperationBus.matches_entry`.
-  Closes the K2 writes-side lane match. See
-  `docs/fv/trusted-base.md`'s entry MB-W for the full provenance and
-  closure path.
-- `ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load`
-  / `..._store` (added in `finishing3.md` S3) — memory-bus permutation
-  soundness for the _memory-side_ (`as=2`) load / store paths used by
-  LD / SD / LW / SW / LH / SH / LB / SB. Pair Main's load/store
-  emission with a Mem AIR row carrying the same
-  `(addr, step, value_0, value_1)` projection. Same trust class as
-  MB-W (logUp / permutation argument over `bus_id=10`); separate
-  axioms because they operate on the memory-side address space rather
-  than the register-side. Entries MB-L / MB-S in
-  `docs/fv/trusted-base.md`.
-- `ZiskFv.Spec.MemModel.row_models_sail_state_load` / `..._store`
-  (added in `finishing3.md` S3) — Sail-side state-bridge: a Mem AIR
-  row matching a memory bus entry agrees with `state.mem` byte-by-byte
-  (load: pre-state matches; store: post-state matches). Replaces the
-  per-opcode M-family `*_pure_equiv_axiom` parameters at the metaplan
-  layer. Trust class: implementation-models-spec faithfulness between
-  ZisK's Mem state-machine and Sail's memory model. Entries MS-L /
-  MS-S in `docs/fv/trusted-base.md`.
-
-## Working conventions
-
-### Past work removed from the tree
-
-Two earlier folders (`ai_plans/` and most of `docs/fv/`) accumulated
-phase-by-phase planning notes and library-reference reflections through
-finishing5. They were removed once the trust gate became the system of
-record for current state. To recover any of that history:
-
-- **`ai_plans/` removal:** commit `ac2d5e4` (`remote ai_plans to reduce
-grep noise`). Contained `zisk-fv-metaplan.md`, per-phase plans
-  (Phase 0 / 1 / finishing1-5) with their CLOSED retrospectives, and
-  feasibility / handoff notes. Each phase plan is reachable via
-  `git show ac2d5e4^:ai_plans/<file>`.
-- **`docs/fv/` purge:** commit `661fe36` (`archive docs/fv: prune
-historical phase notes; keep live references only`). The commit
-  message itself enumerates each removed file and what it contained,
-  so it doubles as the recovery index.
-
-If a future task needs context from those removed docs, `git show
-<commit>:<path>` produces them on demand. They are not loaded into
-your normal grep / read scope — that's intentional.
-
-### Documentation split (live)
-
-- **`docs/fv/`** — three library-reference notes that ARE load-bearing:
-  - `trusted-base.md` — the human-readable trust ledger; pairs with
-    `trust/baseline-axioms.txt`. Edit this when you legitimately add
-    or remove an axiom (see "Trusted surface" above).
-  - `extractor-notes.md` — durable contract / pilout structure /
-    oracle rules for `tools/pil-extract/`. Read first when
-    extending the extractor.
-  - `air-inventory.md` — 22-AIR table (which are extracted into
-    Lean, which have named wrappers, which are absorbed into trust).
-- **`trust/`** — baselines and enforcement scripts; see
-  `trust/README.md`.
-- **`docker/`** — Docker builds for the two artifacts the proofs
-  depend on (`build/zisk.pilout` and `build/sail-lean/`). Both are
-  built locally from primary source — neither is checked in.
-  See `docker/README.md`. Pinned upstream versions live in
-  `docker/versions.txt`.
-- **memory** — agent-private notes at
-  `/home/cody/.claude/projects/-home-cody-zisk-fv/memory/`. Project
-  facts that persist across conversations; update when current state
-  changes.
-
-### Traps captured during early phases (don't re-discover these)
-
-The phase-1 detailed write-up lives at `ai_plans/zisk-fv-phase-1.md`
-in the pre-`ac2d5e4` tree (`git show ac2d5e4^:ai_plans/zisk-fv-phase-1.md`).
-Short list of the highest-impact traps:
-
-1. **Never shadow `[Field FGL]` as a proof-local variable** — it creates
-   a dummy instance that defeats `ring`. Declare Field once globally in
-   `Fundamentals/Goldilocks.lean` and never re-quantify. A guard comment
-   lives in Goldilocks.lean.
-2. **`ring` treats `4294967296 * 4294967296` and `18446744073709551616`
-   as different polynomial atoms** (same number, different literal
-   form). When a theorem statement needs `linear_combination` to close
-   against carry-chain coefficients, write the factored form.
-3. **`(1 - 0) * x` over `Fin p` doesn't reduce via `simp` / `ring_nf` /
-   `decide`-based rewriting.** Phase 1 sidesteps by specializing
-   `opBus_row_Main` to `m32 = 0`; generalizing this is Phase 1.5 work.
-4. **The permutation-argument constraints (mixed `F`/`ExtF`) skip-stub
-   at the extraction layer.** `LeanZKCircuit.Interactions` is **not**
-   needed for compositional proofs — the `Airs/OperationBus.lean`
-   `matches_entry` predicate replaces them cleanly.
-
-### Build and verification
-
-- **Bootstrap (run once after a fresh clone):**
-  - `docker/build-sail-lean.sh` (~5 min) — builds `build/sail-lean/`,
-    the Sail-Lean RV64D spec from primary source.
-  - `docker/build-zisk-lean.sh` (~6 min cold) — builds `build/zisk.pilout`
-    and `ZiskFv/Extraction/*.lean` (auto-generated constraint
-    definitions; gitignored — local build IS the source of truth).
-- **The FV check is `lake build`.** Every per-opcode equivalence
-  theorem typechecks; that's the formal-verification claim.
-- **Full test suite is `bin/test.sh`** — runs cargo unit tests, lake
-  build, the trust gate (locality + baseline + forbidden tier1
-  params + floors + zero sorry + uniformity), and repro-hash
-  verification for both build artifacts.
-- There is no `justfile`. The four shell scripts (`docker/build-*.sh`,
-  `bin/test.sh`, `trust/scripts/check-all.sh`) are the entry points.
-- Do NOT use destructive git commands (reset --hard, force push, branch
-  -D) without explicit permission. Build and test before claiming
-  completion.
-- `native_decide` on Goldilocks primality takes ~386s cold. Mathlib's
-  Azure cache via `lake exe cache get` handles the rest.
-
-### Trust-gate workflow (READ THIS — agents must respect it)
-
-Before merging, CI runs `trust/scripts/check-all.sh`. It enforces four
-things; an agent who breaks any of them will fail the gate:
+CI runs `trust/scripts/check-all.sh` on every PR. It enforces six
+things; if you break any of them, the build fails:
 
 1. **Locality.** Lean trust-leak constructs (`axiom`, `opaque`,
    `constant`, `unsafe def`, `partial def`, `@[extern]`,
-   `@[implemented_by]`) may appear ONLY in the files listed in
-   `trust/allowed-axiom-files.txt`. Adding a new such file requires
-   editing the allowlist AND a CODEOWNER reviewer ack — these files
-   are protected by `.github/CODEOWNERS`.
+   `@[implemented_by]`) may appear ONLY in files listed in
+   `trust/allowed-axiom-files.txt`. Adding a file to that list
+   needs CODEOWNER review (see `.github/CODEOWNERS`).
 2. **Baseline freshness.** `trust/baseline-axioms.txt` records every
-   axiom's source-text hash. If you add, rename, remove, or
-   subtly weaken any axiom, you must run `trust/scripts/regenerate.sh`
-   and commit the updated baseline; CI fails otherwise. The hash
-   change shows up in the PR diff and is the audit surface.
-3. **Forbidden tier1 parameters.** Hypotheses on
-   `equiv_<OP>_metaplan_tier1` theorems may not include the named
-   parameters retired by the finishing series (`h_rd_val`,
-   `h_byte_sum`, `h_bus_execute_matches_sail`,
-   `h_entry_hi_nat`, `h_pc_fgl_lo_nat`, `h_pci_lo_val`,
-   `h_entry_lo_eq`). Pattern list:
+   axiom's source-text hash. Adding / renaming / removing / subtly
+   weakening any axiom → run `trust/scripts/regenerate.sh` and commit
+   the updated baseline. The hash diff IS the audit surface for review.
+3. **Forbidden tier1 parameters.** `equiv_<OP>_metaplan_tier1`
+   theorems may not include the named parameters retired by the
+   finishing series (`h_rd_val`, `h_byte_sum`,
+   `h_bus_execute_matches_sail`, `h_entry_hi_nat`, `h_pc_fgl_lo_nat`,
+   `h_pci_lo_val`, `h_entry_lo_eq`). Pattern list:
    `trust/forbidden-param-shapes.txt`.
-4. **Floors.** ≥80 axioms in baseline, ≥40 tier1 theorems, plus a
-   cross-witness check that catches a sabotaged regenerate.py or
-   an emptied allowlist.
+4. **Floors.** ≥80 axioms in baseline, ≥40 `_tier1` theorems, plus a
+   cross-witness check that the parser hasn't been sabotaged.
+5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,Spec,Equivalence,Tactics,RV64D,GoldenTraces}`.
+6. **Uniformity.** Every one of 63 RV64IM opcodes has a canonical
+   `equiv_<OP>_metaplan` theorem.
 
-**Run the gate locally before pushing:** `trust/scripts/check-all.sh`.
+**Run `trust/scripts/check-all.sh` locally before pushing** (it
+takes seconds — none of these checks need `lake build`).
 
-**To legitimately extend the TCB** (high bar — most "fixes" should
-not need new axioms): see "Trusted surface" section above for the
-five-step process. **Adding a new trust item without those five
-steps will fail CI.** Don't try to bypass the gate by editing
-`trust/forbidden-param-shapes.txt` or `trust/allowed-axiom-files.txt`
-without CODEOWNER review — those changes themselves are gated.
+**To extend the TCB** (high bar — most "fixes" should not need a new
+axiom):
 
-When the gate fails locally, the script names which check failed and
-points at the file/line. The `trust/README.md` has the full reference.
+1. Add the axiom to one of the files in `trust/allowed-axiom-files.txt`.
+2. Run `trust/scripts/regenerate.sh` to refresh the baseline.
+3. Add a `docs/fv/trusted-base.md` entry describing the trust class +
+   closure path.
+4. Commit axiom + baseline + ledger entry in the same PR.
+5. CODEOWNER review of the `trust/baseline-axioms.txt` diff is the
+   audit step.
 
-## Layout quick-reference
+Don't try to bypass the gate by editing `trust/forbidden-param-shapes.txt`
+or `trust/allowed-axiom-files.txt` directly — both are CODEOWNER-protected.
 
-```
-/home/cody/zisk-fv/
-├── CLAUDE.md                           # you are here
-├── README.md
-├── trust/                              # TCB baselines + CI gate scripts
-│   ├── README.md
-│   ├── baseline-axioms.txt             # source of truth (auto-generated)
-│   ├── allowed-axiom-files.txt
-│   ├── forbidden-param-shapes.txt
-│   └── scripts/                        # check-{locality,baseline,no-output-eq,floor,all}.sh
-├── docs/fv/                            # 3 live library-reference notes
-│   ├── trusted-base.md                 # trust ledger; pairs with trust/baseline-axioms.txt
-│   ├── extractor-notes.md              # tools/pil-extract contract
-│   └── air-inventory.md                # 22-AIR extraction status
-├── lakefile.toml                       # Lake 4 package config (mathlib + LeanZKCircuit + LeanRV)
-├── lake-manifest.json                  # Lake-pinned dep manifest
-├── lean-toolchain                      # Lean version pin
-├── ZiskFv.lean                         # entry point (imports below)
-├── ZiskFv/                             # Lean source
-│   ├── Fundamentals/                   # Goldilocks, Transpiler
-│   ├── Extraction/                     # auto-generated from pilout
-│   ├── Airs/                           # named-column Valid_<AIR> + constraint bridges
-│   ├── RV64D/                          # Track A: ported openvm-fv RV32D → RV64
-│   ├── Spec/                           # circuit → semantic theorems
-│   ├── Equivalence/                    # final per-opcode equivalence
-│   └── GoldenTraces/                   # concrete witness fixtures
-├── tools/
-│   ├── pil-extract/               # pilout → Lean CLI (19 unit tests)
-│   └── golden-traces/                # fixture emitter
-├── docker/                              # Docker reproducibility containers
-├── build/                              # Generated artifacts (gitignored)
-│   └── zisk.pilout                     # produced by just build-pilout
-├── zisk/                        # git submodule pinned at 48cf7ccef
-├── docker/                             # Docker-based artifact builds + versions.txt
-└── bin/test.sh                         # full test entry point (cargo + lake + trust gate)
-```
+## Traps to avoid (don't re-discover these)
 
-Phase plans and metaplan documents were removed from the tree (commit `ac2d5e4`); recover via `git show ac2d5e4^:ai_plans/<file>`.
+1. **Never shadow `[Field FGL]` as a proof-local variable** — it
+   creates a dummy instance that defeats `ring`. The Field instance
+   is declared once globally in `Fundamentals/Goldilocks.lean`; a
+   guard comment lives there.
+2. **`ring` treats `4294967296 * 4294967296` and
+   `18446744073709551616` as distinct polynomial atoms** (same
+   number, different literal form). When `linear_combination` needs
+   to close against carry-chain coefficients, write the factored form.
+3. **`(1 - 0) * x` over `Fin p` does not reduce via `simp` /
+   `ring_nf` / `decide`.** Phase 1 sidesteps by specializing
+   `opBus_row_Main` to `m32 = 0`.
+4. **`LeanZKCircuit.Interactions` is NOT needed for compositional
+   proofs.** The `Airs/OperationBus.lean::matches_entry` predicate
+   replaces them — use that.
+
+## Documentation map
+
+| Where | What |
+|---|---|
+| `docs/fv/trusted-base.md` | Human-readable trust ledger. Pairs with `trust/baseline-axioms.txt`. Edit when you legitimately add/remove an axiom. |
+| `docs/fv/extractor-notes.md` | Durable contract for `tools/pil-extract`. Read first when extending the extractor. |
+| `docs/fv/air-inventory.md` | 22-AIR table: which are extracted, which have named wrappers, which are absorbed into trust. |
+| `trust/README.md` | Full reference for the gate scripts + baseline files. |
+| `docker/README.md` | What each Docker build produces, pinned upstream versions (and why those versions). |
+| `docs/site/index.html` | Public-facing single-page explainer (run `docs/site/serve.sh`, port 4044). |
+| **agent memory** | `/home/cody/.claude/projects/-home-cody-zisk-fv/memory/` — facts that persist across conversations; update when current state changes. |
+
+## Past work removed from the tree
+
+Two folders were removed once the trust gate became the system of
+record. Recover via `git show`:
+
+- **`ai_plans/`** — commit `ac2d5e4`. Contained the metaplan, per-phase
+  plans (Phase 0 / 1 / finishing1-5) with CLOSED retrospectives.
+  Recover with `git show ac2d5e4^:ai_plans/<file>`.
+- **`docs/fv/`** purge — commit `661fe36`. Commit message lists each
+  removed file and what it covered, so it doubles as the recovery index.
+
+## Conventions
+
+- **Always build and test before claiming completion.** Minimum is
+  `lake build`; ideally `bin/test.sh`.
+- **Do not use destructive git commands** (`reset --hard`, force push,
+  `branch -D`) without explicit permission.
+- The `zisk/` submodule is a **citation surface** for `transpile_*`
+  axiom rationales, NOT the source of `build/zisk.pilout`. The pilout
+  is built from a personal fork (zksyncos branch on top of v0.15.0);
+  see `docker/README.md` for why.
+- `ZiskFv/Extraction/` is mixed: 11 files are gitignored
+  auto-generated build outputs (`docker/build-zisk-lean.sh`
+  regenerates them); 2 stay tracked because they're hand-written:
+  - `ArithTable.lean` — hand-transcribed from
+    `zisk/state-machines/arith/src/arith_table_data.rs`.
+  - `MemoryBuses.lean` — hand-curated subset of memory-bus emissions
+    with documentation.
+- `native_decide` on Goldilocks primality takes ~6 min cold. Mathlib's
+  Azure cache via `lake exe cache get` handles the rest.
