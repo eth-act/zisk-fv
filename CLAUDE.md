@@ -138,41 +138,50 @@ reduction and is welcome but out of scope for current phases.
 
 ## Working conventions
 
-### Metaplan + prompted phases
+### Past work removed from the tree
 
-Work proceeds under **`ai_plans/zisk-fv-metaplan.md`**, which defines the
-phase sequence and scope. The user manually prompts the agent to begin
-each phase (e.g. "execute Phase 1"). The agent does **not** self-dispatch
-the next phase — between phases there are usually architectural
-decisions or memory updates the user wants to review first.
+Two earlier folders (`ai_plans/` and most of `docs/fv/`) accumulated
+phase-by-phase planning notes and library-reference reflections through
+finishing5. They were removed once the trust gate became the system of
+record for current state. To recover any of that history:
 
-Each phase has a `ai_plans/zisk-fv-phase-N.md` plan:
-- Pre-execution sections (Context, Reconnaissance, Scope, Execution
-  order, Verification) are written before work starts.
-- When the phase finishes, append a **"Phase N status — CLOSED <date>"**
-  section containing: what shipped, what was learned, what remains. Do
-  not create separate handoff files — append in-place so each plan is a
-  self-contained historical record.
+- **`ai_plans/` removal:** commit `ac2d5e4` (`remote ai_plans to reduce
+  grep noise`). Contained `zisk-fv-metaplan.md`, per-phase plans
+  (Phase 0 / 1 / finishing1-5) with their CLOSED retrospectives, and
+  feasibility / handoff notes. Each phase plan is reachable via
+  `git show ac2d5e4^:ai_plans/<file>`.
+- **`docs/fv/` purge:** commit `661fe36` (`archive docs/fv: prune
+  historical phase notes; keep live references only`). The commit
+  message itself enumerates each removed file and what it contained,
+  so it doubles as the recovery index.
 
-### Documentation split
+If a future task needs context from those removed docs, `git show
+<commit>:<path>` produces them on demand. They are not loaded into
+your normal grep / read scope — that's intentional.
 
-- **`ai_plans/`** — planning docs. One per phase. Append-only after
-  execution (CLOSED sections).
-- **`docs/fv/`** — *library reference* notes. These should explain
-  durable facts about the library (contracts, invariants, known quirks)
-  that future agents need to understand the code. **Not** transient
-  phase handoffs or task lists. Current contents:
-  `extractor-notes.md` (contract / pilout structure / oracle rules for
-  `tools/zisk-pil-extract/`).
+### Documentation split (live)
+
+- **`docs/fv/`** — three library-reference notes that ARE load-bearing:
+  - `trusted-base.md` — the human-readable trust ledger; pairs with
+    `trust/baseline-axioms.txt`. Edit this when you legitimately add
+    or remove an axiom (see "Trusted surface" above).
+  - `extractor-notes.md` — durable contract / pilout structure /
+    oracle rules for `tools/zisk-pil-extract/`. Read first when
+    extending the extractor.
+  - `air-inventory.md` — 22-AIR table (which are extracted into
+    Lean, which have named wrappers, which are absorbed into trust).
+- **`trust/`** — baselines and enforcement scripts; see
+  `trust/README.md`.
 - **memory** — agent-private notes at
-  `/home/cody/.claude/projects/-home-cody-zisk/memory/`. Project-level
-  facts that persist across conversations; update in lockstep with
-  CLOSED sections.
+  `/home/cody/.claude/projects/-home-cody-zisk-fv/memory/`. Project
+  facts that persist across conversations; update when current state
+  changes.
 
-### Traps captured during Phase 1 (don't re-discover these)
+### Traps captured during early phases (don't re-discover these)
 
-See `ai_plans/zisk-fv-phase-1.md` "What was learned" for details.
-Short list:
+The phase-1 detailed write-up lives at `ai_plans/zisk-fv-phase-1.md`
+in the pre-`ac2d5e4` tree (`git show ac2d5e4^:ai_plans/zisk-fv-phase-1.md`).
+Short list of the highest-impact traps:
 
 1. **Never shadow `[Field FGL]` as a proof-local variable** — it creates
    a dummy instance that defeats `ring`. Declare Field once globally in
@@ -247,13 +256,16 @@ points at the file/line. The `trust/README.md` has the full reference.
 /home/cody/zisk-fv/
 ├── CLAUDE.md                           # you are here
 ├── README.md
-├── ai_plans/                           # metaplan + per-phase plans (append-only)
-│   ├── zisk-fv-metaplan.md
-│   ├── zisk-fv-feasibility.md
-│   ├── zisk-fv-phase-0.md              # CLOSED
-│   └── zisk-fv-phase-1.md              # CLOSED
-├── docs/fv/                            # library-reference notes only
-│   └── extractor-notes.md
+├── trust/                              # TCB baselines + CI gate scripts
+│   ├── README.md
+│   ├── baseline-axioms.txt             # source of truth (auto-generated)
+│   ├── allowed-axiom-files.txt
+│   ├── forbidden-param-shapes.txt
+│   └── scripts/                        # check-{locality,baseline,no-output-eq,floor,all}.sh
+├── docs/fv/                            # 3 live library-reference notes
+│   ├── trusted-base.md                 # trust ledger; pairs with trust/baseline-axioms.txt
+│   ├── extractor-notes.md              # tools/zisk-pil-extract contract
+│   └── air-inventory.md                # 22-AIR extraction status
 ├── ZiskFv/                             # Lake 4 package (mathlib + LeanZKCircuit + LeanRV)
 │   └── ZiskFv/
 │       ├── Fundamentals/               # Goldilocks, Transpiler

@@ -14,16 +14,15 @@ with Main-AIR extraction, the harness-emitted golden-trace fixture, and a
 full lake build covering the compositional ADD spec
 (`ZiskFv.Spec.Add.add_compositional`) and final equivalence
 (`ZiskFv.Equivalence.Add.equiv_ADD`) — both with zero `sorry`. See the
-"Phase 1 status — CLOSED" section at the end of
-`ai_plans/zisk-fv-phase-1.md` for the post-execution learnings, and
-`ai_plans/zisk-fv-metaplan.md` for the overall plan.
+phase plans and metaplan documents have been removed from the tree
+(commit `ac2d5e4`); recover any of them via
+`git show ac2d5e4^:ai_plans/<file>` if needed.
 
 ## Layout
 
 | Path | Purpose |
 |------|---------|
-| `ai_plans/` | Metaplan + per-phase planning documents |
-| `docs/fv/` | Extractor contract, oracle provenance, phase handoff notes |
+| `docs/fv/` | Live library-reference notes: trust ledger, extractor contract, AIR inventory |
 | `tools/zisk-pil-extract/` | Rust CLI: decodes `.pilout` protobuf → Lean constraint definitions |
 | `tools/zisk-fv-harness/` | Rust CLI: emits a golden-trace fixture (`ZiskFv/GoldenTraces/Add.lean`) |
 | `ZiskFv/` | Lake 4 package (mathlib + LeanZKCircuit + LeanRV, toolchain v4.26.0) |
@@ -74,8 +73,7 @@ just verify-phase0
 ```
 
 First cold build takes roughly 10 minutes, dominated by `native_decide` on
-Goldilocks primality (see `ai_plans/zisk-fv-phase-0.md` "What was learned"
-section for why).
+Goldilocks primality.
 
 Requires `cargo`, `just`, and the Lean toolchain (`elan`). The Lake package
 pulls `mathlib` + `LeanZKCircuit` on first `lake update` (run automatically by
