@@ -23,5 +23,5 @@ docs/site/*.png
 # Build artifacts (pilout from Docker, sail-lean tree, etc.)
 /build/
 
-# Legacy output dir from earlier repro builds
+# Legacy output dir from earlier docker builds (root-owned, leftover)
 /out/

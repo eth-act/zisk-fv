@@ -1,8 +1,8 @@
-# `repro/` — Docker-based artifact builds
+# `docker/` — Docker-based artifact builds
 
 zisk-fv's proofs read two artifacts that aren't checked into the repo
 as source. This directory holds the Dockerfiles + scripts that build
-them from primary upstream source. **Run `repro/build-pilout.sh` once
+them from primary upstream source. **Run `just build-pilout` once
 after cloning the repo** — without it, `just verify-phase*` fails
 fast with a pointer to the script.
 
@@ -41,8 +41,8 @@ of the pilout — it's a separate citation surface used by
 ## Running
 
 ```bash
-repro/build-pilout.sh        # ~6 min cold; seconds when image is cached
-repro/build-sail-lean.sh     # ~5 min cold; seconds warm
+just build-pilout        # ~6 min cold; seconds when image is cached
+just build-sail-lean     # ~5 min cold; seconds warm
 ```
 
 Outputs land in `build/`. The Docker image layers cache so subsequent

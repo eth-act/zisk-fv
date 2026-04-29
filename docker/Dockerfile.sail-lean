@@ -1,6 +1,6 @@
 # Reproducibility container for the Sail-Lean RV64D model.
 #
-# Pinned versions (see repro/versions.txt):
+# Pinned versions (see docker/versions.txt):
 #   - rems-project/sail        277470b2ab472af8064e1295be5573845239c96b  (sail2 branch, 2025-12-22 14:21 UTC)
 #   - riscv/sail-riscv         04e595954b2af7fa9e18f2519e4ae4bba72b2701  (master,         2025-12-24 03:41 UTC)
 #   - OCaml                    5.2.1                                     (matches NethermindEth/sail-riscv-lean CI)
@@ -11,8 +11,8 @@
 #
 # Recipe sourced from .lake/packages/LeanRV/.github/workflows/update-sail-build.yml.
 #
-# Build:   docker build -t zisk-fv-sail-lean:repro -f repro/Dockerfile.sail-lean repro/
-# Run:     docker run --rm -v "$PWD/out/repro/sail-lean:/output" zisk-fv-sail-lean:repro
+# Build:   docker build -t zisk-fv-sail-lean -f docker/Dockerfile.sail-lean docker/
+# Run:     docker run --rm -v "$PWD/out/docker/sail-lean:/output" zisk-fv-sail-lean
 #          → /output/  (mirror of sail-riscv/build/model/Lean_RV64D/)
 
 FROM ubuntu:24.04

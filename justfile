@@ -3,21 +3,72 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 pilout    := "build/zisk.pilout"
 extracted := "ZiskFv/Extraction/BinaryAdd.lean"
 
-# Helper: assert the pilout has been built locally. The pilout is no
-# longer vendored — it is a Docker-built artifact (see repro/README.md).
-# First-time setup: `repro/build-pilout.sh` (~6 min, persists in build/).
+# Build the pilout via Docker. The pilout is not vendored — this is
+# the canonical way to produce it. Run once after cloning (~6 min
+# cold; subsequent calls hit the Docker layer cache and are fast).
+# Output: build/zisk.pilout. See docker/README.md.
+build-pilout:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p build
+    echo "▶ docker build (cold: ~5 min Rust + Node compile; warm: cached)…"
+    docker build -t zisk-fv-pilout -f docker/Dockerfile.pilout docker/
+    echo "▶ docker run (in-container PIL compile, ~6 min cold)…"
+    docker run --rm -v "$PWD/build:/output" zisk-fv-pilout
+    if [ ! -f build/zisk.pilout ]; then
+        echo "❌ build/zisk.pilout was not produced" >&2
+        exit 1
+    fi
+    sha256sum build/zisk.pilout
+    echo "✅ Pilout built. Continue with: just verify-phase0"
+
+# Build the Sail-Lean RV64D model from primary source via Docker, then
+# tree-diff against the Lake-resolved LeanRV @ 81c8c84f. ~5 min cold.
+build-sail-lean:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p build/sail-lean
+    echo "▶ docker build (cold: ~30-60 min OCaml + Sail + sail-riscv; warm: cached)…"
+    docker build -t zisk-fv-sail-lean -f docker/Dockerfile.sail-lean docker/
+    echo "▶ docker run…"
+    docker run --rm -v "$PWD/build/sail-lean:/output" zisk-fv-sail-lean
+    LEAN_RV_DIR=.lake/packages/LeanRV
+    if [ ! -d "$LEAN_RV_DIR" ]; then
+        echo "  Lake hasn't resolved LeanRV yet. Run \`lake update\` first."
+        exit 1
+    fi
+    hash_tree () {
+        (cd "$1" && find . -type f -name '*.lean' ! -path './.lake/*' \
+            -print0 | sort -z | xargs -0 sha256sum) | sha256sum | awk '{print $1}'
+    }
+    local_hash=$(hash_tree build/sail-lean)
+    lake_hash=$(hash_tree "$LEAN_RV_DIR")
+    echo "  reproduced:     $local_hash"
+    echo "  Lake-resolved:  $lake_hash"
+    if [ "$local_hash" = "$lake_hash" ]; then
+        echo "  ✅ TREE-IDENTICAL (Lean source files)"
+    else
+        echo "  ⚠ DIFFER. Per-file diff:"
+        diff -ruq build/sail-lean "$LEAN_RV_DIR" \
+          | grep -v '/.lake' | grep -v 'README.md\|report.py\|build_log.txt' \
+          | head -30
+        exit 1
+    fi
+
+# Helper: assert the pilout has been built. Used as a dependency by
+# verify-phase* recipes so they fail fast with a friendly pointer.
 _assert_pilout:
     #!/usr/bin/env bash
     set -euo pipefail
     if [ ! -f "{{pilout}}" ]; then
         echo "❌ {{pilout}} not found." >&2
         echo "" >&2
-        echo "The pilout is no longer vendored in the repo — it is a" >&2
-        echo "Docker-built artifact. Run once before any verify-phase*:" >&2
+        echo "The pilout is not vendored in the repo — it is a Docker-built" >&2
+        echo "artifact. Run once before any verify-phase*:" >&2
         echo "" >&2
-        echo "    repro/build-pilout.sh" >&2
+        echo "    just build-pilout" >&2
         echo "" >&2
-        echo "Takes ~6 min, persists in build/. See repro/README.md." >&2
+        echo "Takes ~6 min cold, persists in build/. See docker/README.md." >&2
         exit 1
     fi
 oracle    := "ZiskFv/Extraction/BinaryAdd.hand.lean"

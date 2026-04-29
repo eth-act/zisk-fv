@@ -28,8 +28,8 @@ phase plans and metaplan documents have been removed from the tree
 | `ZiskFv/` | Lake 4 package (mathlib + LeanZKCircuit + LeanRV, toolchain v4.26.0) |
 | `zisk/` | ZisK source tree (git submodule, pinned at `48cf7ccef`) |
 | `trust/` | Trust-boundary baselines + enforcement scripts. See `trust/README.md`. |
-| `repro/` | Docker container that builds the pilout + Sail-Lean spec from upstream source. See `repro/README.md`. |
-| `build/` | Generated artifacts (`build/zisk.pilout`, `build/sail-lean/`). Gitignored — produced by `repro/`. |
+| `docker/` | Docker container that builds the pilout + Sail-Lean spec from upstream source. See `docker/README.md`. |
+| `build/` | Generated artifacts (`build/zisk.pilout`, `build/sail-lean/`). Gitignored — produced by `docker/`. |
 | `site/` | Single-page trust-boundary explainer (run `site/serve.sh`, port 4044). |
 | `justfile` | `verify-phase0` / `verify-phase1` gates |
 
@@ -66,25 +66,25 @@ read at build time. **It is not vendored in the repo** — produce it
 once via Docker before running any `verify-phase*`:
 
 ```bash
-repro/build-pilout.sh        # ~6 min cold; persists in build/
+just build-pilout        # ~6 min cold; persists in build/
 ```
 
 After that the pilout sticks around in `build/` and is reused on
-every subsequent run. Re-run only when `repro/versions.txt` or
-`repro/Dockerfile.pilout` changes.
+every subsequent run. Re-run only when `docker/versions.txt` or
+`docker/Dockerfile.pilout` changes.
 
 ## Reproducibility
 
 The pilout and the `LeanRV` Lake dependency (Sail RISC-V semantics
 translated into Lean) are both **built from primary source via
-Docker**. See `repro/` for the containers:
+Docker**. See `docker/` for the containers:
 
 ```bash
-repro/build-pilout.sh        # → build/zisk.pilout
-repro/build-sail-lean.sh     # → build/sail-lean/, tree-diffs against Lake-resolved
+just build-pilout        # → build/zisk.pilout
+just build-sail-lean     # → build/sail-lean/, tree-diffs against Lake-resolved
 ```
 
-Pinned upstream versions live in `repro/versions.txt`. Cold pilout
+Pinned upstream versions live in `docker/versions.txt`. Cold pilout
 build is ~6 min; cold sail-lean build is ~5 min. Warm Docker layers
 make subsequent runs nearly instant.
 
@@ -96,7 +96,7 @@ from 0xPolygonHermez/develop`). Clone with
 `git clone --recurse-submodules` or run `git submodule update --init`
 after cloning. The submodule is the source-text reference for
 `transpile_*` axiom rationales; it is **not** the source of the
-pilout (see `repro/README.md` — the pilout is built from a personal
+pilout (see `docker/README.md` — the pilout is built from a personal
 fork that adds the U256Delegation precompile).
 
 ## Getting started

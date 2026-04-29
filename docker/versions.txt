@@ -8,7 +8,7 @@
 # from transpile_* axiom rationales).
 zisk-submodule-commit      = 48cf7ccefb5ed62261abf6bfb007b5be8a23c547
 
-# Pilout build inputs (used by repro/Dockerfile.pilout).
+# Pilout build inputs (used by docker/Dockerfile.pilout).
 # These are the actual versions that produced the vendored
 # pil/zisk.pilout — forensically reconstructed from the host
 # /home/cody/zisk reflog and confirmed by structural-fingerprint
@@ -19,7 +19,7 @@ pilout-zisk-commit         = 0bfdc9582a485ab82df4f085817c7f1c05e686a4
 pil2-compiler-tag          = v0.8.0
 pil2-proofman-tag          = v0.15.0
 
-# Sail-Lean toolchain (used by repro/Dockerfile.sail-lean).
+# Sail-Lean toolchain (used by docker/Dockerfile.sail-lean).
 # rems-project/sail and riscv/sail-riscv at HEAD on 2025-12-26 06:18 UTC,
 # the timestamp at which NethermindEth/sail-riscv-lean cron-regenerated
 # commit 81c8c84f. NethermindEth's CI does not pin its upstreams, so we

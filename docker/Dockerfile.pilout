@@ -16,8 +16,8 @@
 # vendored pilout was actually built from a fork. This container
 # reproduces the artifact you have, not the submodule HEAD.
 #
-# Build:   docker build -t zisk-fv-pilout:repro -f repro/Dockerfile.pilout repro/
-# Run:     docker run --rm -v "$PWD/out/repro:/output" zisk-fv-pilout:repro
+# Build:   docker build -t zisk-fv-pilout -f docker/Dockerfile.pilout docker/
+# Run:     docker run --rm -v "$PWD/out/repro:/output" zisk-fv-pilout
 #          → /output/zisk.pilout
 
 FROM ubuntu:22.04

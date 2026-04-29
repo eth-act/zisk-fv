@@ -172,10 +172,10 @@ your normal grep / read scope — that's intentional.
     Lean, which have named wrappers, which are absorbed into trust).
 - **`trust/`** — baselines and enforcement scripts; see
   `trust/README.md`.
-- **`repro/`** — Docker-based reproducibility for the two
+- **`docker/`** — Docker-based reproducibility for the two
   trusted artifacts (`build/zisk.pilout` and the `LeanRV` Lake dep).
-  See `repro/README.md`. Pinned upstream versions live in
-  `repro/versions.txt`.
+  See `docker/README.md`. Pinned upstream versions live in
+  `docker/versions.txt`.
 - **memory** — agent-private notes at
   `/home/cody/.claude/projects/-home-cody-zisk-fv/memory/`. Project
   facts that persist across conversations; update when current state
@@ -285,9 +285,9 @@ points at the file/line. The `trust/README.md` has the full reference.
 ├── tools/
 │   ├── pil-extract/               # pilout → Lean CLI (19 unit tests)
 │   └── golden-traces/                # fixture emitter
-├── repro/                              # Docker reproducibility containers
+├── docker/                              # Docker reproducibility containers
 ├── build/                              # Generated artifacts (gitignored)
-│   └── zisk.pilout                     # produced by repro/build-pilout.sh
+│   └── zisk.pilout                     # produced by just build-pilout
 ├── zisk/                        # git submodule pinned at 48cf7ccef
 └── justfile                            # verify-phase0 / verify-phase1
 ```
