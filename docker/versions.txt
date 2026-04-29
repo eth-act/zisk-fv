@@ -37,3 +37,7 @@ leanzkcircuit-commit       = 8631b11de51c68288b519e8032019524b84a365f
 # Verified by `just build-sail-lean`. Update when upstream pins
 # (sail-commit, sail-riscv-commit) change.
 expected-sail-lean-tree-sha256 = aabc5b9fc6bb9b58433c919dee5f0fd72f70fd9a999c5d79fe75a8384b49ac83
+
+# Pilout AIR-list structural fingerprint (sha256 of `pil-extract --list`).
+# Verified by bin/test.sh.
+expected-zisk-pilout-fingerprint = 52f5ee8edc8d19b86f795bb1a64b082775a4c6cceda9c4a4bea4e7c13cf19105

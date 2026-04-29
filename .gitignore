@@ -23,5 +23,15 @@ docs/site/*.png
 # Build artifacts (pilout from Docker, sail-lean tree, etc.)
 /build/
 
+# Auto-generated Lean extraction files. These are produced by
+# docker/build-zisk-lean.sh from the pilout — the local build IS the
+# source of truth. Two .lean files in this directory are NOT
+# regenerated and stay tracked:
+#   - ArithTable.lean    (hand-transcribed from arith_table_data.rs)
+#   - MemoryBuses.lean   (hand-curated subset of memory-bus emissions)
+ZiskFv/Extraction/*.lean
+!ZiskFv/Extraction/ArithTable.lean
+!ZiskFv/Extraction/MemoryBuses.lean
+
 # Legacy output dir from earlier docker builds (root-owned, leftover)
 /out/

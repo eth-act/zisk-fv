@@ -5,18 +5,12 @@ zkVM against the [Sail RISC-V specification](https://github.com/rems-project/sai
 via [`sail-riscv-lean`](https://github.com/NethermindEth/sail-riscv-lean)'s
 `LeanRV64D` module.
 
-**Phase 0 status:** CLOSED. `just verify-phase0` regenerates the BinaryAdd
-pilout extraction, diffs it against the hand oracle, typechecks the Lean
-package, and runs extractor unit tests.
-
-**Phase 1 status:** CLOSED. `just verify-phase1` extends the Phase 0 gate
-with Main-AIR extraction, the harness-emitted golden-trace fixture, and a
-full lake build covering the compositional ADD spec
-(`ZiskFv.Spec.Add.add_compositional`) and final equivalence
-(`ZiskFv.Equivalence.Add.equiv_ADD`) — both with zero `sorry`. See the
-phase plans and metaplan documents have been removed from the tree
-(commit `ac2d5e4`); recover any of them via
-`git show ac2d5e4^:ai_plans/<file>` if needed.
+**Status:** all 56 RV64IM opcodes proved equivalent to the Sail spec
+(0 sorries, 82 trusted axioms — see `docs/fv/trusted-base.md`). The
+load-bearing claim is `lake build`: every per-opcode equivalence theorem
+typechecks. Run `bin/test.sh` for the full suite (cargo + lake + trust
+gate + repro hashes). Phase plans and metaplan documents were removed
+from the tree (commit `ac2d5e4`); recover via `git show ac2d5e4^:ai_plans/<file>`.
 
 ## Layout
 
@@ -30,8 +24,8 @@ phase plans and metaplan documents have been removed from the tree
 | `trust/` | Trust-boundary baselines + enforcement scripts. See `trust/README.md`. |
 | `docker/` | Docker container that builds the pilout + Sail-Lean spec from upstream source. See `docker/README.md`. |
 | `build/` | Generated artifacts (`build/zisk.pilout`, `build/sail-lean/`). Gitignored — produced by `docker/`. |
-| `site/` | Single-page trust-boundary explainer (run `site/serve.sh`, port 4044). |
-| `justfile` | `verify-phase0` / `verify-phase1` gates |
+| `bin/` | Test entry point: `bin/test.sh` runs the full suite. |
+| `docs/site/` | Single-page trust-boundary explainer (run `docs/site/serve.sh`, port 4044). |
 
 ## Trust gate (CI)
 
@@ -70,13 +64,15 @@ Docker** — nothing is pulled pre-built. Run these two commands once
 after cloning, in either order:
 
 ```bash
-just build-sail-lean     # ~5 min cold; produces build/sail-lean/
-just build-pilout        # ~6 min cold; produces build/zisk.pilout
+docker/build-sail-lean.sh    # ~5 min cold; produces build/sail-lean/
+docker/build-zisk-lean.sh    # ~6 min cold; produces build/zisk.pilout AND
+                             # ZiskFv/Extraction/*.lean (gitignored — these
+                             # are pilout → Lean constraint definitions)
 ```
 
-After that, both artifacts persist under `build/` and are reused on
-every subsequent `just verify-phase*` or `lake build`. Re-run only
-when `docker/versions.txt` or `docker/Dockerfile.*` changes.
+After that, the artifacts persist under `build/` and `ZiskFv/Extraction/`,
+reused on every subsequent `lake build`. Re-run only when
+`docker/versions.txt` or `docker/Dockerfile.*` changes.
 
 The lakefile points at `build/sail-lean/` via a path-based require,
 so `lake build` reads the locally-built spec — there is no upstream
@@ -97,13 +93,18 @@ fork that adds the U256Delegation precompile).
 
 ## Getting started
 
+After the first-time Docker builds (above), three commands cover everything:
+
 ```bash
-just verify-phase0
+docker/build-zisk-lean.sh    # regenerates ZiskFv/Extraction/*.lean from build/zisk.pilout (~seconds)
+lake build                   # the FV check — every per-opcode equivalence theorem typechecks
+bin/test.sh                  # full test suite: cargo + lake + trust gate + repro hashes
 ```
 
-First cold build takes roughly 10 minutes, dominated by `native_decide` on
-Goldilocks primality.
+`lake build` succeeding **is** the formal-verification claim. Everything
+in `bin/test.sh` past `lake build` (cargo unit tests, trust gate, repro
+hashes) is auxiliary scaffolding around that core proof check.
 
-Requires `cargo`, `just`, and the Lean toolchain (`elan`). The Lake package
-pulls `mathlib` + `LeanZKCircuit` on first `lake update` (run automatically by
-the `verify-phase0` target if absent).
+First cold `lake build` takes roughly 10 minutes, dominated by
+`native_decide` on Goldilocks primality. Requires `cargo` and the Lean
+toolchain (`elan`); no other build-system dependency.

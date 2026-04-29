@@ -2,22 +2,32 @@
 
 zisk-fv's proofs read two artifacts that aren't checked into the repo
 as source. This directory holds the Dockerfiles + scripts that build
-them from primary upstream source. **Run `just build-pilout` once
-after cloning the repo** — without it, `just verify-phase*` fails
-fast with a pointer to the script.
+them from primary upstream source. **Run both build scripts once
+after cloning the repo** — without them, `lake build` and
+`bin/test.sh` will fail fast with a pointer here.
 
 ## What runs
 
-| Just recipe                | Builds                                    | Output (gitignored) |
-|----------------------------|-------------------------------------------|---------------------|
-| `just build-pilout`        | The compiled ZisK constraint set          | `build/zisk.pilout` |
-| `just build-sail-lean`     | The Sail-Lean RV64D spec tree             | `build/sail-lean/`  |
+| Script                            | Builds                                                                     | Outputs (gitignored)                          |
+|-----------------------------------|----------------------------------------------------------------------------|-----------------------------------------------|
+| `docker/build-sail-lean.sh`       | The Sail-Lean RV64D spec tree (Sail compiler + sail-riscv → Lean)          | `build/sail-lean/`                            |
+| `docker/build-zisk-lean.sh`       | The ZisK pilout + auto-generated Lean constraint definitions               | `build/zisk.pilout`, `ZiskFv/Extraction/*.lean` |
 
 The lakefile points at `build/sail-lean/` via a path-based `require`,
 so `lake build` reads the locally-built spec directly. There is no
-upstream pre-built Lean dep for the spec.
+pre-built Lean dep pulled from upstream — the spec is the local build.
 
-Both recipes wrap a Docker container build (`Dockerfile.pilout`,
+`docker/build-zisk-lean.sh` runs the pilout build first (calling
+`docker/build-pilout.sh` if `build/zisk.pilout` is missing) and then
+runs `tools/pil-extract` over each AIR to produce the `*.lean`
+constraint definitions in `ZiskFv/Extraction/`. Two files in that
+directory are NOT regenerated and stay tracked:
+- `ArithTable.lean` — hand-transcribed from
+  `zisk/state-machines/arith/src/arith_table_data.rs`.
+- `MemoryBuses.lean` — hand-curated subset of memory-bus emissions
+  with hand-written documentation.
+
+Both scripts wrap a Docker container build (`Dockerfile.pilout`,
 `Dockerfile.sail-lean`). The pinned upstream versions live in
 `versions.txt`; they're forensically derived from the local host's
 reflogs and confirmed by structural-fingerprint match against the
@@ -45,8 +55,8 @@ of the pilout — it's a separate citation surface used by
 ## Running
 
 ```bash
-just build-pilout        # ~6 min cold; seconds when image is cached
-just build-sail-lean     # ~5 min cold; seconds warm
+docker/build-zisk-lean.sh        # ~6 min cold; seconds when image is cached
+docker/build-sail-lean.sh     # ~5 min cold; seconds warm
 ```
 
 Outputs land in `build/`. The Docker image layers cache so subsequent

@@ -209,10 +209,20 @@ Short list of the highest-impact traps:
 
 ### Build and verification
 
-- The project gate is `just verify-phase<N>` (or `just verify-phase1`
-  for the current state of the art). It regenerates extractions, diffs
-  them against hand oracles, emits fixtures, runs cargo tests, and
-  builds the full Lean package.
+- **Bootstrap (run once after a fresh clone):**
+  - `docker/build-sail-lean.sh` (~5 min) — builds `build/sail-lean/`,
+    the Sail-Lean RV64D spec from primary source.
+  - `docker/build-zisk-lean.sh` (~6 min cold) — builds `build/zisk.pilout`
+    and `ZiskFv/Extraction/*.lean` (auto-generated constraint
+    definitions; gitignored — local build IS the source of truth).
+- **The FV check is `lake build`.** Every per-opcode equivalence
+  theorem typechecks; that's the formal-verification claim.
+- **Full test suite is `bin/test.sh`** — runs cargo unit tests, lake
+  build, the trust gate (locality + baseline + forbidden tier1
+  params + floors + zero sorry + uniformity), and repro-hash
+  verification for both build artifacts.
+- There is no `justfile`. The four shell scripts (`docker/build-*.sh`,
+  `bin/test.sh`, `trust/scripts/check-all.sh`) are the entry points.
 - Do NOT use destructive git commands (reset --hard, force push, branch
   -D) without explicit permission. Build and test before claiming
   completion.
@@ -293,5 +303,6 @@ points at the file/line. The `trust/README.md` has the full reference.
 ├── build/                              # Generated artifacts (gitignored)
 │   └── zisk.pilout                     # produced by just build-pilout
 ├── zisk/                        # git submodule pinned at 48cf7ccef
-└── justfile                            # verify-phase0 / verify-phase1
+├── docker/                             # Docker-based artifact builds + versions.txt
+└── bin/test.sh                         # full test entry point (cargo + lake + trust gate)
 ```
