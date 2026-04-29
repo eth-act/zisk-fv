@@ -56,20 +56,20 @@ namespace Arith.extraction
 --   stage 1 col 42: range_ab
 --   stage 1 col 43: range_cd
 --   stage 2 col 0: gsum
---   stage 2 col 1: im[0]
---   stage 2 col 2: im[1]
---   stage 2 col 3: im[2]
---   stage 2 col 4: im[3]
---   stage 2 col 5: im[4]
---   stage 2 col 6: im[5]
---   stage 2 col 7: im[6]
---   stage 2 col 8: im[7]
---   stage 2 col 9: im[8]
---   stage 2 col 10: im[9]
---   stage 2 col 11: im[10]
---   stage 2 col 12: im_extra
---   stage 2 col 13: im_high_degree[0]
---   stage 2 col 14: im_high_degree[1]
+--   stage 2 col 1: im_cluster
+--   stage 2 col 2: im_cluster
+--   stage 2 col 3: im_cluster
+--   stage 2 col 4: im_cluster
+--   stage 2 col 5: im_cluster
+--   stage 2 col 6: im_cluster
+--   stage 2 col 7: im_cluster
+--   stage 2 col 8: im_cluster
+--   stage 2 col 9: im_cluster
+--   stage 2 col 10: im_cluster
+--   stage 2 col 11: im_cluster
+--   stage 2 col 12: im_single
+--   stage 2 col 13: im_single
+--   stage 2 col 14: im_single
 
   @[simp]
   def constraint_2_every_row {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=

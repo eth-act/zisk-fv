@@ -22,8 +22,8 @@ namespace BinaryAdd.extraction
 --   stage 1 col 8: cout[0]
 --   stage 1 col 9: cout[1]
 --   stage 2 col 0: gsum
---   stage 2 col 1: im[0]
---   stage 2 col 2: im[1]
+--   stage 2 col 1: im_cluster
+--   stage 2 col 2: im_cluster
 
   @[simp]
   def constraint_0_every_row {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=

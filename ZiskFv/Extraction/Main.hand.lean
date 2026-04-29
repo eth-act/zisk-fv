@@ -50,13 +50,13 @@ namespace Main.extraction
 --   stage 1 col 36: b_src_reg
 --   stage 1 col 37: store_reg
 --   stage 2 col 0: gsum
---   stage 2 col 1: im[0]
---   stage 2 col 2: im[1]
---   stage 2 col 3: im[2]
---   stage 2 col 4: im_extra
---   stage 2 col 5: im_high_degree[0]
---   stage 2 col 6: im_high_degree[1]
---   stage 2 col 7: im_high_degree[2]
+--   stage 2 col 1: im_cluster
+--   stage 2 col 2: im_cluster
+--   stage 2 col 3: im_cluster
+--   stage 2 col 4: im_single
+--   stage 2 col 5: im_single
+--   stage 2 col 6: im_single
+--   stage 2 col 7: im_single
 
   @[simp]
   def constraint_8_every_row {C : Type → Type → Type} {F ExtF : Type} [Field F] [Field ExtF] [Circuit F ExtF C] (c : C F ExtF) (row: ℕ) :=

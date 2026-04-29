@@ -19,4 +19,9 @@
 site/*.png
 
 .playwright-mcp
-out/
+
+# Build artifacts (pilout from Docker, sail-lean tree, etc.)
+/build/
+
+# Legacy output dir from earlier repro builds
+/out/

@@ -29,7 +29,8 @@ phase plans and metaplan documents have been removed from the tree
 | `pil/zisk.pilout` | Vendored ZisK pilout (input to the extractor) |
 | `vendor/zisk/` | ZisK source tree (git submodule, pinned at `48cf7ccef`) |
 | `trust/` | Trust-boundary baselines + enforcement scripts. See `trust/README.md`. |
-| `repro/` | Docker-based reproducibility for `pil/zisk.pilout` + Sail-Lean spec. See `repro/README.md`. |
+| `repro/` | Docker container that builds the pilout + Sail-Lean spec from upstream source. See `repro/README.md`. |
+| `build/` | Generated artifacts (`build/zisk.pilout`, `build/sail-lean/`). Gitignored — produced by `repro/`. |
 | `site/` | Single-page trust-boundary explainer (run `site/serve.sh`, port 4044). |
 | `justfile` | `verify-phase0` / `verify-phase1` gates |
 
@@ -59,34 +60,45 @@ contributing to this repo.
 
 Run `trust/scripts/check-all.sh` locally to see what CI will check.
 
-## Reproducibility
+## First-time setup — build the pilout
 
-`pil/zisk.pilout` and the `LeanRV` Lake dependency (Sail RISC-V
-semantics translated into Lean) are both **rebuildable from primary
-source via Docker**. See `repro/` for the containers + verifiers:
+`build/zisk.pilout` is the compiled ZisK constraint set the proofs
+read at build time. **It is not vendored in the repo** — produce it
+once via Docker before running any `verify-phase*`:
 
 ```bash
-repro/build-pilout.sh        # rebuilds pil/zisk.pilout, structural diff against vendored
-repro/build-sail-lean.sh     # rebuilds the Sail-Lean tree, file-level diff against Lake-resolved
+repro/build-pilout.sh        # ~6 min cold; persists in build/
 ```
 
-Pinned upstream versions live in `repro/versions.txt`. Cold builds
-take ~10 min (pilout) and ~5 min (sail-lean); warm Docker layers
-make subsequent runs nearly instant. The pilout build matches the
-vendored copy structurally (every AIR — name, columns, constraints —
-is byte-for-byte identical via `tools/zisk-pil-extract` fingerprint;
-~13 KB residual binary delta is source-line-number annotations from
-pil2-proofman's std/pil library, never read by the proofs). The
-sail-lean build is tree-identical to the Lake-resolved
-`NethermindEth/sail-riscv-lean@81c8c84f`.
+After that the pilout sticks around in `build/` and is reused on
+every subsequent run. Re-run only when `repro/versions.txt` or
+`repro/Dockerfile.pilout` changes.
+
+## Reproducibility
+
+The pilout and the `LeanRV` Lake dependency (Sail RISC-V semantics
+translated into Lean) are both **built from primary source via
+Docker**. See `repro/` for the containers:
+
+```bash
+repro/build-pilout.sh        # → build/zisk.pilout
+repro/build-sail-lean.sh     # → build/sail-lean/, tree-diffs against Lake-resolved
+```
+
+Pinned upstream versions live in `repro/versions.txt`. Cold pilout
+build is ~6 min; cold sail-lean build is ~5 min. Warm Docker layers
+make subsequent runs nearly instant.
 
 ## Vendored ZisK inputs
 
-`pil/zisk.pilout` (7 MB) is vendored directly (the upstream tree gitignores
-it). The rest of the ZisK tree is pulled in as a git submodule at
-`vendor/zisk/`, pinned to `0xPolygonHermez/zisk@48cf7ccef` (`Merge pull request
-#875 from 0xPolygonHermez/develop`). Clone with `git clone --recurse-submodules`
-or run `git submodule update --init` after cloning.
+The ZisK tree is pulled in as a git submodule at `vendor/zisk/`,
+pinned to `0xPolygonHermez/zisk@48cf7ccef` (`Merge pull request #875
+from 0xPolygonHermez/develop`). Clone with
+`git clone --recurse-submodules` or run `git submodule update --init`
+after cloning. The submodule is the source-text reference for
+`transpile_*` axiom rationales; it is **not** the source of the
+pilout (see `repro/README.md` — the pilout is built from a personal
+fork that adds the U256Delegation precompile).
 
 ## Getting started
 

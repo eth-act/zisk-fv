@@ -1,7 +1,25 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
-pilout    := "pil/zisk.pilout"
+pilout    := "build/zisk.pilout"
 extracted := "ZiskFv/Extraction/BinaryAdd.lean"
+
+# Helper: assert the pilout has been built locally. The pilout is no
+# longer vendored — it is a Docker-built artifact (see repro/README.md).
+# First-time setup: `repro/build-pilout.sh` (~6 min, persists in build/).
+_assert_pilout:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ ! -f "{{pilout}}" ]; then
+        echo "❌ {{pilout}} not found." >&2
+        echo "" >&2
+        echo "The pilout is no longer vendored in the repo — it is a" >&2
+        echo "Docker-built artifact. Run once before any verify-phase*:" >&2
+        echo "" >&2
+        echo "    repro/build-pilout.sh" >&2
+        echo "" >&2
+        echo "Takes ~6 min, persists in build/. See repro/README.md." >&2
+        exit 1
+    fi
 oracle    := "ZiskFv/Extraction/BinaryAdd.hand.lean"
 main_extr := "ZiskFv/Extraction/Main.lean"
 main_orcl := "ZiskFv/Extraction/Main.hand.lean"
@@ -23,7 +41,7 @@ sllw_doc  := "docs/fv/archetype-shift.md"
 
 # Phase 0 gate: regenerate the BinaryAdd extraction, diff vs. the hand-written
 # oracle, then typecheck the Lean package end-to-end.
-verify-phase0:
+verify-phase0: _assert_pilout
     cargo test --manifest-path tools/zisk-pil-extract/Cargo.toml
     cargo run --manifest-path tools/zisk-pil-extract/Cargo.toml -- \
         --pilout {{pilout}} --air BinaryAdd --skip-unsupported \
@@ -34,7 +52,7 @@ verify-phase0:
 # Phase 1 gate: extends Phase 0 with Main-AIR extraction (ADD-relevant
 # subset), the harness-emitted golden-trace fixture, and a full lake build
 # including the compositional ADD spec + final equivalence theorem.
-verify-phase1:
+verify-phase1: _assert_pilout
     # Extractor unit tests (constraint kinds, operand kinds).
     cargo test --manifest-path tools/zisk-pil-extract/Cargo.toml
     cargo test --manifest-path tools/zisk-fv-harness/Cargo.toml

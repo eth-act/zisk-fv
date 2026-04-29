@@ -173,7 +173,7 @@ your normal grep / read scope — that's intentional.
 - **`trust/`** — baselines and enforcement scripts; see
   `trust/README.md`.
 - **`repro/`** — Docker-based reproducibility for the two
-  trusted artifacts (`pil/zisk.pilout` and the `LeanRV` Lake dep).
+  trusted artifacts (`build/zisk.pilout` and the `LeanRV` Lake dep).
   See `repro/README.md`. Pinned upstream versions live in
   `repro/versions.txt`.
 - **memory** — agent-private notes at
@@ -285,7 +285,9 @@ points at the file/line. The `trust/README.md` has the full reference.
 ├── tools/
 │   ├── zisk-pil-extract/               # pilout → Lean CLI (19 unit tests)
 │   └── zisk-fv-harness/                # fixture emitter
-├── pil/zisk.pilout                     # vendored 7MB artifact (gitignored upstream)
+├── repro/                              # Docker reproducibility containers
+├── build/                              # Generated artifacts (gitignored)
+│   └── zisk.pilout                     # produced by repro/build-pilout.sh
 ├── vendor/zisk/                        # git submodule pinned at 48cf7ccef
 └── justfile                            # verify-phase0 / verify-phase1
 ```

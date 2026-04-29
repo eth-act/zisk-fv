@@ -2,7 +2,7 @@
 //! ZisK pilout. Run with:
 //!
 //!   cargo run --release --example probe_buses --
-//!     /home/cody/zisk-fv/pil/zisk.pilout
+//!     /home/cody/zisk-fv/build/zisk.pilout
 //!
 //! Dumps top-level hints, focusing on those with air_id matching the Main
 //! AIR (idx 0). Shows hint name, field names, and operand kinds. Used to
@@ -107,7 +107,7 @@ fn describe_field(field: &HintField, indent: usize) {
 fn main() {
     let path = env::args()
         .nth(1)
-        .unwrap_or_else(|| "/home/cody/zisk-fv/pil/zisk.pilout".to_string());
+        .unwrap_or_else(|| "/home/cody/zisk-fv/build/zisk.pilout".to_string());
     let bytes = fs::read(&path).expect("read pilout");
     let p = PilOut::decode(bytes.as_slice()).expect("decode pilout");
 
