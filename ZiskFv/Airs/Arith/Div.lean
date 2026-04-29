@@ -290,7 +290,7 @@ open ZiskFv.Airs.OperationBus
     primary (`main_div = 1`) vs. secondary (`secondary = 1`) mode.
 
     Mirrors the `proves_operation(op:, a:, b:, c:, flag:, mul:)` call at
-    `vendor/zisk/state-machines/arith/pil/arith.pil:269-270`. The bus
+    `zisk/state-machines/arith/pil/arith.pil:269-270`. The bus
     `a` / `b` / `c` lanes project through:
 
     * `bus_a0` = `div * (c[0] + c[1] * 2^16) + (1 - div) * (a[0] + a[1] * 2^16)`

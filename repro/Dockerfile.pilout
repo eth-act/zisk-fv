@@ -11,7 +11,7 @@
 #   - 0xPolygonHermez/pil2-compiler tag v0.8.0
 #   - 0xPolygonHermez/pil2-proofman tag v0.15.0
 #
-# NOTE: zisk-fv's submodule (vendor/zisk) is pinned at 48cf7ccef for
+# NOTE: zisk-fv's submodule (zisk) is pinned at 48cf7ccef for
 # source references in the proofs (transpile_* axiom citations); the
 # vendored pilout was actually built from a fork. This container
 # reproduces the artifact you have, not the submodule HEAD.
@@ -24,10 +24,10 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# System deps. Subset of vendor/zisk/tools/test-env/install_deps.sh —
+# System deps. Subset of zisk/tools/test-env/install_deps.sh —
 # we only need what's required to build the 3 fixed_gen Cargo binaries
 # and run pil2-compiler. No CUDA, no proving stack, no MPI.
-# Apt list mirrors vendor/zisk/tools/test-env/install_deps.sh's
+# Apt list mirrors zisk/tools/test-env/install_deps.sh's
 # install_dependencies_linux exactly, minus:
 #   - CUDA  (ZisK only installs it under --gpu; the prover stack we
 #            don't need uses GPU optionally)
@@ -50,7 +50,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
  && apt-get install -y nodejs && rm -rf /var/lib/apt/lists/*
 
-# Rust toolchain (pinned via vendor/zisk/rust-toolchain.toml at run time;
+# Rust toolchain (pinned via zisk/rust-toolchain.toml at run time;
 # rustup will honour it when invoked inside /zisk).
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- \
       -y --default-toolchain stable --profile minimal

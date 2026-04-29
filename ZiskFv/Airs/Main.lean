@@ -173,7 +173,7 @@ def add_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
                          + (1 - 'set_pc) * ('pc + 'jmp_offset2)
                          + 'flag * ('jmp_offset1 - 'jmp_offset2)`.
 
-    Phase 2.5 D2 closed this form: `zisk-pil-extract` now handles the
+    Phase 2.5 D2 closed this form: `pil-extract` now handles the
     `'`-prefix (negative row rotation) by rewriting `row_offset = -1`
     to `(row := row - 1) (rotation := 0)`. `Circuit.main`'s rotation is
     `ℕ`, so at row 0 the `row - 1` subterm saturates to 0 — but the

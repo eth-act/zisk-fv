@@ -8,11 +8,11 @@ import ZiskFv.Airs.Binary.BinaryAdd
 /-!
 ZisK operation-bus schema and Main↔BinaryAdd projection.
 
-The operation bus carries 11 fields per row, defined in `vendor/zisk/pil/operations.pil:144`:
+The operation bus carries 11 fields per row, defined in `zisk/pil/operations.pil:144`:
 
   `[op, a_lo, a_hi, b_lo, b_hi, c_lo, c_hi, flag, main_step, extended_arg, extra_args_0]`
 
-Identifier `OPERATION_BUS_ID = 5000` (`vendor/zisk/pil/opids.pil:2`). Mirrors
+Identifier `OPERATION_BUS_ID = 5000` (`zisk/pil/opids.pil:2`). Mirrors
 the `ExecutionBusEntry`/`MemoryBusEntry` shape in
 `openvm-fv/OpenvmFv/Fundamentals/Interaction.lean:63-150`.
 -/
@@ -44,7 +44,7 @@ structure OperationBusEntry (F : Type) [Field F] where
 
 /-- Main AIR's operation-bus emission for a given row. Mirrors the
     `assumes_operation(...)` call at
-    `vendor/zisk/state-machines/main/pil/main.pil:367-374`. PIL-faithful:
+    `zisk/state-machines/main/pil/main.pil:367-374`. PIL-faithful:
     the `a_hi` and `b_hi` lanes carry the `(1 - m32) *` factor from PIL so
     that 32-bit opcodes (`m32 = 1`) zero their high halves on the bus,
     while 64-bit opcodes (`m32 = 0`) pass them through. Callers supply the
@@ -112,7 +112,7 @@ lemma one_sub_m32_mul_of_eq_one {F : Type} [Field F]
 
 /-- BinaryAdd's operation-bus emission for a given row. Mirrors the
     `proves_operation(op: OP_ADD, a:, b:, c:)` call at
-    `vendor/zisk/state-machines/binary/pil/binary_add.pil:25`. Multiplicity
+    `zisk/state-machines/binary/pil/binary_add.pil:25`. Multiplicity
     is `1` (the implicit `mul:1` default). `c` is reassembled from
     `c_chunks` per the per-lane recombination
     `c[i] := c_chunks[2i+1] * 2^16 + c_chunks[2i]`. -/
@@ -121,7 +121,7 @@ def opBus_row_BinaryAdd {C : Type → Type → Type} {F ExtF : Type}
     [Field F] [Field ExtF] [Circuit F ExtF C]
     (b : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd C F ExtF) (row : ℕ) : OperationBusEntry F :=
   { multiplicity := 1
-    -- Opcode literal `0x0A` per `vendor/zisk/pil/opids.pil`. The bus entry
+    -- Opcode literal `0x0A` per `zisk/pil/opids.pil`. The bus entry
     -- is parametric in F, so we use the natural literal directly rather
     -- than `ZiskFv.Trusted.OP_ADD` (which is fixed to `FGL`).
     op := 10

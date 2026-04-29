@@ -35,7 +35,7 @@ specification.
 
 ## Background on the memory bus
 
-ZisK's memory bus (bus_id = 10, `vendor/zisk/pil/opids.pil:12`) carries
+ZisK's memory bus (bus_id = 10, `zisk/pil/opids.pil:12`) carries
 6-tuple permutation entries `[as, ptr, mem_step, bytes, value_lo,
 value_hi]` for register reads (`as = 3`) and 12-byte tuples for memory
 reads/writes (`as = 2`, byte-decomposed). Register-side payloads (the
@@ -329,7 +329,7 @@ theorem register_read_rs2_lanes_match_of_bus_emission
 For `store_pc = 1` opcodes (JAL, JALR, AUIPC), the destination
 register receives `pc + jmp_offset2` (the link register or AUIPC's
 `pc + imm`). The PIL `store_value` formulas are uniform in
-`store_pc` (`vendor/zisk/state-machines/main/pil/main.pil:311-312`):
+`store_pc` (`zisk/state-machines/main/pil/main.pil:311-312`):
 
 ```
 store_value[0] = store_pc * (pc + jmp_offset2 - c[0]) + c[0];

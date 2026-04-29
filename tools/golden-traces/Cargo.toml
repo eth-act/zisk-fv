@@ -1,5 +1,5 @@
 [package]
-name = "zisk-fv-harness"
+name = "golden-traces"
 version = "0.1.0"
 edition = "2021"
 publish = false
@@ -36,8 +36,8 @@ tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 
 # Live SDK wiring — only pulled in under `--features live`. The path-deps
 # mirror the Phase 1.5 plan in `ai_plans/zisk-fv-phase-1.md`.
-zisk-sdk = { path = "../../vendor/zisk/sdk", optional = true }
-zisk-common = { path = "../../vendor/zisk/common", optional = true }
+zisk-sdk = { path = "../../zisk/sdk", optional = true }
+zisk-common = { path = "../../zisk/common", optional = true }
 proofman-common = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.16.1", optional = true }
 
 [features]
@@ -45,5 +45,5 @@ default = []
 live = ["dep:zisk-sdk", "dep:zisk-common", "dep:proofman-common"]
 
 [[bin]]
-name = "zisk-fv-harness"
+name = "golden-traces"
 path = "src/main.rs"

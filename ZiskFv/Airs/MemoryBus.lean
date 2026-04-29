@@ -9,7 +9,7 @@ import ZiskFv.Airs.Main
 /-!
 ZisK memory-bus schema and Main ↔ memory-bus projection for loads.
 
-The Memory bus (identifier `MEMORY_ID = 10`, `vendor/zisk/pil/opids.pil:12`)
+The Memory bus (identifier `MEMORY_ID = 10`, `zisk/pil/opids.pil:12`)
 carries permutation entries of shape `[op, addr, mem_step, bytes, ...value]`
 (`state-machines/mem/pil/mem.pil:524-527`). Main emits one entry per
 source-b memory read (`main.pil:300`) and one per destination-c store
@@ -217,7 +217,7 @@ def register_read_rs2_lanes_match
 
 For `store_pc = 1` opcodes the destination register receives `pc +
 jmp_offset2` (the link register or AUIPC's `pc + imm`). The PIL
-`store_value` formula at `vendor/zisk/state-machines/main/pil/main.pil:311-312`
+`store_value` formula at `zisk/state-machines/main/pil/main.pil:311-312`
 is uniform across `store_pc`:
 
 ```

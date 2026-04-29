@@ -10,7 +10,7 @@ Named-column mirror of the extracted ZisK `MemAlignReadByte` AIR (pilout idx 7).
 The `MemAlignReadByte` AIR is the read-only specialization of the
 unaligned-access shim — it proves that a single-byte load decomposes
 into one aligned 8-byte memory read plus a byte-level extraction. See
-`vendor/zisk/state-machines/mem/pil/mem_align_byte.pil` (the `read==1,
+`zisk/state-machines/mem/pil/mem_align_byte.pil` (the `read==1,
 write==0` branch).
 
 Stage-1 columns (10 total):

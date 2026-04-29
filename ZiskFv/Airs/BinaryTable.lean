@@ -13,7 +13,7 @@ The `Binary` AIR (pilout idx 10) emits one 7-tuple per byte against
 
 where `flags = cout + 2·result_is_a + 4·use_first_byte + 8·c_is_signed_byte`.
 The provider side is the fixed virtual table defined by
-`vendor/zisk/state-machines/binary/pil/binary_table.pil`'s deterministic
+`zisk/state-machines/binary/pil/binary_table.pil`'s deterministic
 `for` loop (a switch on `op` enumerating per-byte semantics for AND/OR/XOR,
 LT/LTU/GT/EQ/LE/LEU/MIN(U)/MAX(U)/LT_ABS_*, ADD/SUB, SEXT_00/SEXT_FF).
 
@@ -31,7 +31,7 @@ namespace ZiskFv.Airs.BinaryTable
 
 open Goldilocks
 
-/-! ## Op literals (from `vendor/zisk/pil/operations.pil`) -/
+/-! ## Op literals (from `zisk/pil/operations.pil`) -/
 
 /-- Less-than unsigned. -/
 def OP_LTU : ℕ := 0x06

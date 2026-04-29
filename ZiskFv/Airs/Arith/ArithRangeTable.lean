@@ -41,7 +41,7 @@ variable {C : Type → Type → Type} {F ExtF : Type}
 variable [Field F] [Field ExtF] [Circuit F ExtF C]
 
 /-- The `range_cd` column on a `Valid_ArithDiv` row. ZisK's PIL
-    `vendor/zisk/state-machines/arith/pil/arith.pil:Constraint46`
+    `zisk/state-machines/arith/pil/arith.pil:Constraint46`
     range-checks this column against `arith_range_table` (a 16-bit
     fixed table 0..2^16 - 1). The constraint enforces `|d| < |b|`
     for signed DIV/REM (where `d` is the remainder column and `b`
@@ -67,7 +67,7 @@ axiom arith_range_cd_sound :
     ∀ (v : Valid_ArithDiv C F ExtF) (row : ℕ),
       ∃ n : ℕ, n < 2^16 ∧ (range_cd_value v row = (Nat.cast n : F))
 
-/-- The `inv_sum_all_bs` column witness. `vendor/zisk/state-machines/
+/-- The `inv_sum_all_bs` column witness. `zisk/state-machines/
     arith/pil/arith.pil:Constraint(stage1 col 38)` per
     `Extraction/Arith.lean:52`. The constraint is structurally
     `inv_sum_all_bs * (Σᵢ b_i) = 1` on rows where the b operand is

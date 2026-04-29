@@ -1,6 +1,6 @@
 #!/bin/bash
 # Runs inside the zisk-fv-pilout:repro container.
-# Mirrors vendor/zisk/tools/test-env/build_setup.sh lines 71-80 — the
+# Mirrors zisk/tools/test-env/build_setup.sh lines 71-80 — the
 # generative-pilout step only, no proving setup.
 set -euo pipefail
 cd /zisk

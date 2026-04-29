@@ -16,7 +16,7 @@
 # Git worktrees for isolated agent work.
 .worktrees/
 
-site/*.png
+docs/site/*.png
 
 .playwright-mcp
 

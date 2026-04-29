@@ -11,7 +11,7 @@ import ZiskFv.Extraction.ArithTable
 
 The ZisK Arith state machine pipes every active row through a fixed lookup
 table `arith_table` (see
-`vendor/zisk/state-machines/arith/pil/arith_table.pil`) that deterministically
+`zisk/state-machines/arith/pil/arith_table.pil`) that deterministically
 maps an opcode / mode pair to sign / parity witnesses
 `(na, nb, np, nr)`.
 

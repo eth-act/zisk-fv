@@ -12,7 +12,7 @@ The `MemAlignWriteByte` AIR is the write-only specialization of the
 unaligned-access shim — it proves that a single-byte store decomposes
 into one aligned 8-byte memory read followed by an aligned 8-byte
 memory write that updates only the targeted byte. See
-`vendor/zisk/state-machines/mem/pil/mem_align_byte.pil` (the `read==0,
+`zisk/state-machines/mem/pil/mem_align_byte.pil` (the `read==0,
 write==1` branch).
 
 Stage-1 columns (14 total):

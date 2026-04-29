@@ -11,7 +11,7 @@ import ZiskFv.Airs.Arith.Div
 
 Arith's `bus_res1` (stage-1 column 40) is the range-checked high-32
 witness column emitted on the operation bus. PIL constraint 46
-(`vendor/zisk/state-machines/arith/pil/arith.pil:263`, extracted at
+(`zisk/state-machines/arith/pil/arith.pil:263`, extracted at
 `Extraction/Arith.lean:165-167`) pins its value via
 
 ```

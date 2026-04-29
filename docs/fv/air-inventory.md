@@ -1,7 +1,7 @@
 # ZisK AIR inventory and Lean extraction status
 
-Source-of-truth artifact: `pil/zisk.pilout` (vendored 7 MB protobuf).
-Tool: `tools/zisk-pil-extract/ -- --pilout pil/zisk.pilout --list`.
+Source-of-truth artifact: `build/zisk.pilout` (Docker-built; see repro/).
+Tool: `tools/pil-extract/ -- --pilout pil/zisk.pilout --list`.
 
 The pilout contains **22 AIRs**. This table tracks which are extracted
 into the `ZiskFv/Extraction/` Lean layer, which have named-column
@@ -35,7 +35,7 @@ trusted base.
 | 20 | VirtualTable0 | 6 | 455 | yes | ❌ | ❌ | internal lookup table; trusted today |
 | 21 | VirtualTable1 | 6 | 628 | yes | ❌ | ❌ | internal lookup table; trusted today |
 
-(Row count uses `tools/zisk-pil-extract -- --list` output formatting:
+(Row count uses `tools/pil-extract -- --list` output formatting:
 `rows=2^N, exprs=E, constraints=C`. Numbers verified at branch
 `feature/track-n-h-rd-val` HEAD.)
 
@@ -100,7 +100,7 @@ Of the 22 AIRs, only two are blocking immediate Track N work:
 
 Both extractions follow the same pattern as the existing
 `BinaryAdd.lean` (raw `Extraction/<X>.lean` + named-column
-`Airs/Binary/<X>.lean` wrapper); no new tooling needed — `tools/zisk-pil-extract/`
+`Airs/Binary/<X>.lean` wrapper); no new tooling needed — `tools/pil-extract/`
 already supports them. They are deferred from Track N proper into a
 Track N1.5 "Binary AIR extractions" follow-on phase.
 

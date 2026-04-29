@@ -8,7 +8,7 @@ import ZiskFv.Extraction.MemAlign
 Named-column mirror of the extracted ZisK `MemAlign` AIR (pilout idx 5).
 
 The `MemAlign` AIR handles unaligned memory accesses by spanning multiple
-aligned `Mem` rows. See `vendor/zisk/state-machines/mem/pil/mem_align.pil`
+aligned `Mem` rows. See `zisk/state-machines/mem/pil/mem_align.pil`
 for the underlying PIL source.
 
 Stage-1 columns (29 total):

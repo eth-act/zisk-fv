@@ -11,7 +11,7 @@ open ZiskFv.Extraction.Buses
 
 /-! Bus-emission specs auto-extracted from `gsum_debug_data` hints
 attached to AIR `Main` (group 0, air idx 0). Filter: bus_id = 10
-(`MEMORY_ID`, the memory bus, `vendor/zisk/pil/opids.pil:12`).
+(`MEMORY_ID`, the memory bus, `zisk/pil/opids.pil:12`).
 
 Each `BusEmissionSpec` mirrors one PIL2 `permutation_*` macro: the
 `multiplicity` is the gating selector (the per-emission `_in_use`-style

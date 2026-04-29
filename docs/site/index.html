@@ -597,7 +597,7 @@
         <g>
           <rect x="780" y="40" width="280" height="80" rx="10" fill="#161922" stroke="#fbbf24" stroke-width="1.5"/>
           <text x="920" y="70" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="700">ZISK PIL2 CIRCUIT (TRUSTED)</text>
-          <text x="920" y="92" text-anchor="middle" fill="#e7e9ee" font-size="13">vendor/zisk → zisk.pilout</text>
+          <text x="920" y="92" text-anchor="middle" fill="#e7e9ee" font-size="13">zisk → zisk.pilout</text>
           <text x="920" y="108" text-anchor="middle" fill="#9aa0ad" font-size="11">protobuf-compiled constraint system</text>
         </g>
 
@@ -1052,7 +1052,7 @@
       <div class="compare-row">
         <div>Constraint language</div>
         <div><div class="cell-content">Plonky3 <code>SymbolicConstraintsDag</code> <span class="sub">extracted via the openvm-fv <code>extractor/</code> Rust binary</span></div></div>
-        <div class="col-zisk"><div class="cell-content">PIL2 protobuf-compiled <code>.pilout</code> <span class="sub">extracted via <code>tools/zisk-pil-extract/</code> (built for this project)</span></div></div>
+        <div class="col-zisk"><div class="cell-content">PIL2 protobuf-compiled <code>.pilout</code> <span class="sub">extracted via <code>tools/pil-extract/</code> (built for this project)</span></div></div>
       </div>
 
       <div class="compare-row">
@@ -1645,10 +1645,10 @@
     arrow(COLS.sail.x, sail4.y + BOX_H, COLS.sail.x, sail5.y);
 
     // CIRCUIT side
-    const c1 = box(COLS.circuit.x, 50, 'ZisK PIL2 source', 'vendor/zisk/state-machines/...', 'trusted');
+    const c1 = box(COLS.circuit.x, 50, 'ZisK PIL2 source', 'zisk/state-machines/...', 'trusted');
     const c2 = box(COLS.circuit.x, 130, 'pil2-compile', 'Polygon Hermez compiler', 'tool');
     const c3 = box(COLS.circuit.x, 210, 'zisk.pilout', 'protobuf-compiled artifact', 'trusted');
-    const c4 = box(COLS.circuit.x, 290, 'tools/zisk-pil-extract', 'our Rust extractor → Lean', 'tool');
+    const c4 = box(COLS.circuit.x, 290, 'tools/pil-extract', 'our Rust extractor → Lean', 'tool');
     const c5 = box(COLS.circuit.x, 370, 'ZiskFv/Extraction/', 'raw constraint structures', 'proven');
     const c6 = box(COLS.circuit.x, 450, 'ZiskFv/Airs/', 'named-column wrappers + bridges', 'proven');
     arrow(COLS.circuit.x, c1.y + BOX_H, COLS.circuit.x, c2.y);

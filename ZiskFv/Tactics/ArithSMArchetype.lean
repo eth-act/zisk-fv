@@ -12,7 +12,7 @@ import ZiskFv.Spec.Mul
 
 The DIV family (DIV, DIVU, REM, REMU) all share the same Zisk
 microinstruction shape — `create_register_op(..., <op_str>, 4)` at
-`vendor/zisk/core/src/riscv2zisk_context.rs:248-253`. The only
+`zisk/core/src/riscv2zisk_context.rs:248-253`. The only
 per-opcode differences are:
 
 * The Zisk opcode literal:

@@ -18,7 +18,7 @@ use pilout::{
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "zisk-pil-extract",
+    name = "pil-extract",
     about = "Emit Lean4 constraint definitions for a single AIR from a ZisK pilout."
 )]
 struct Cli {
@@ -69,7 +69,7 @@ struct Cli {
     bus_emissions: bool,
 
     /// Bus ID filter for `--bus-emissions`. Defaults to ZisK's
-    /// `OPERATION_BUS_ID = 5000` (`vendor/zisk/pil/opids.pil:2`). Set to
+    /// `OPERATION_BUS_ID = 5000` (`zisk/pil/opids.pil:2`). Set to
     /// `0` to emit every gsum_debug_data hint for the AIR.
     #[arg(long, default_value_t = 5000)]
     bus_id: u64,
@@ -543,7 +543,7 @@ fn render_operand(pilout: &PilOut, air: &Air, operand: Option<&Operand>) -> Resu
         | OperandKind::ProofValue(_)
         | OperandKind::PublicValue(_)
         | OperandKind::CustomCol(_) => bail!(
-            "operand kind {:?} not yet supported by zisk-pil-extract",
+            "operand kind {:?} not yet supported by pil-extract",
             kind
         ),
     }

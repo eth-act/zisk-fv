@@ -1,3 +1,3 @@
-[submodule "vendor/zisk"]
-	path = vendor/zisk
+[submodule "zisk"]
+	path = zisk
 	url = https://github.com/0xPolygonHermez/zisk

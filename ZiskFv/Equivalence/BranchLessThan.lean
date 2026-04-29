@@ -301,7 +301,7 @@ proofs say nothing about that path.
 ### Bus-effect modeling gap
 
 ZisK's PIL emits **no fault-flag column** on the operation/execution
-bus (see `vendor/zisk/pil/zisk.pil` — no `fault`/`misalign`/`exception`
+bus (see `zisk/pil/zisk.pil` — no `fault`/`misalign`/`exception`
 identifiers anywhere in the column set). Consequently
 `bus_effect : List ExecutionBusEntry × List MemoryBusEntry × State →
 Prop × EStateM.Result` is **hardcoded** to return

@@ -34,7 +34,7 @@ See `versions.txt`. Briefly:
   regenerated commit `81c8c84f` (the commit Lake resolves to via the
   manifest in `lake-manifest.json`).
 
-The submodule pin at `vendor/zisk` (`48cf7ccef`) is **not** the source
+The submodule pin at `zisk` (`48cf7ccef`) is **not** the source
 of the pilout — it's a separate citation surface used by
 `transpile_*` axiom docstrings. Don't conflate the two.
 
@@ -54,7 +54,7 @@ inside the container; once the image is built, those don't re-run).
 The pilout build is **structurally** reproducible: every AIR — name,
 column count, and constraint count — is byte-identical to what the
 checked-in `Extraction/*.hand.lean` oracles were generated from. The
-extractor (`tools/zisk-pil-extract`) consumes only the AIR structure,
+extractor (`tools/pil-extract`) consumes only the AIR structure,
 never the embedded source-line annotations from pil2-proofman's
 std/pil library, so a structural fingerprint (sha256 of the
 `--list` output) is the load-bearing check.

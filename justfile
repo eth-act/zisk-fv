@@ -42,8 +42,8 @@ sllw_doc  := "docs/fv/archetype-shift.md"
 # Phase 0 gate: regenerate the BinaryAdd extraction, diff vs. the hand-written
 # oracle, then typecheck the Lean package end-to-end.
 verify-phase0: _assert_pilout
-    cargo test --manifest-path tools/zisk-pil-extract/Cargo.toml
-    cargo run --manifest-path tools/zisk-pil-extract/Cargo.toml -- \
+    cargo test --manifest-path tools/pil-extract/Cargo.toml
+    cargo run --manifest-path tools/pil-extract/Cargo.toml -- \
         --pilout {{pilout}} --air BinaryAdd --skip-unsupported \
         --output {{extracted}}
     diff -w {{extracted}} {{oracle}}
@@ -54,27 +54,27 @@ verify-phase0: _assert_pilout
 # including the compositional ADD spec + final equivalence theorem.
 verify-phase1: _assert_pilout
     # Extractor unit tests (constraint kinds, operand kinds).
-    cargo test --manifest-path tools/zisk-pil-extract/Cargo.toml
-    cargo test --manifest-path tools/zisk-fv-harness/Cargo.toml
+    cargo test --manifest-path tools/pil-extract/Cargo.toml
+    cargo test --manifest-path tools/golden-traces/Cargo.toml
     # Re-extract BinaryAdd (Phase 0 invariant).
-    cargo run --manifest-path tools/zisk-pil-extract/Cargo.toml -- \
+    cargo run --manifest-path tools/pil-extract/Cargo.toml -- \
         --pilout {{pilout}} --air BinaryAdd --skip-unsupported \
         --output {{extracted}}
     diff -w {{extracted}} {{oracle}}
     # Re-extract the ADD/branch/jump-relevant Main subset and diff against the
     # oracle. Constraint 20 (PC handshake) was added in Phase 2.5 D2 after
     # the extractor learned to handle PIL's negative row-rotation postfix.
-    cargo run --manifest-path tools/zisk-pil-extract/Cargo.toml -- \
+    cargo run --manifest-path tools/pil-extract/Cargo.toml -- \
         --pilout {{pilout}} --air Main --only 8,9,15,16,17,18,19,20,24,30 \
         --output {{main_extr}}
     diff -w {{main_extr}} {{main_orcl}}
     # Regenerate the golden-trace fixture (hard-coded 3 + 5 = 8).
-    cargo run --manifest-path tools/zisk-fv-harness/Cargo.toml -- \
+    cargo run --manifest-path tools/golden-traces/Cargo.toml -- \
         --mode golden --output {{fixture}}
     # Phase 1.5 Track H: opt-in live-mode regeneration + byte-diff against
     # the checked-in fixture. Gated by FV_LIVE=1 because it requires the
     # full ZisK proving stack + a pre-built probe ELF. See
-    # tools/zisk-fv-harness/Cargo.toml for environment prerequisites.
+    # tools/golden-traces/Cargo.toml for environment prerequisites.
     just _maybe_verify_live
     # Full Lean build: Goldilocks → Extraction → Airs → Spec → Equivalence
     # → GoldenTraces.
@@ -101,7 +101,7 @@ verify-phase2: verify-phase1
     test -f {{sd_doc}}
     # Phase 2 A5 deliverables (MUL): Arith extraction diff, fixture,
     # archetype doc exist.
-    cargo run --manifest-path tools/zisk-pil-extract/Cargo.toml -- \
+    cargo run --manifest-path tools/pil-extract/Cargo.toml -- \
         --pilout {{pilout}} --air Arith \
         --only 2,6,7,8,31,32,33,34,35,36,37,38,40,41,42,43,44,45,46 \
         --output {{arith_extr}}
@@ -166,7 +166,7 @@ verify-phase4: verify-phase2
         ZiskFv/GoldenTraces 2>/dev/null | \
         grep -v "^[^:]*:[^:]*:--" | grep -v "^[^:]*:[^:]*:///"
     # V8: uniformity lint (58 opcodes, all with canonical metaplan shape).
-    bash tools/zisk-fv-lint/uniformity-lint.sh > /dev/null
+    bash trust/scripts/check-uniformity.sh > /dev/null
 
 # Internal: run the harness in live mode when FV_LIVE=1 and diff against
 # the hard-coded fixture; no-op otherwise. Split out because just's `{{ }}`
@@ -176,7 +176,7 @@ _maybe_verify_live:
     set -euo pipefail
     if [ "${FV_LIVE:-0}" = "1" ]; then
         echo "FV_LIVE=1: running harness in live mode"
-        cargo run --manifest-path tools/zisk-fv-harness/Cargo.toml \
+        cargo run --manifest-path tools/golden-traces/Cargo.toml \
             --features live -- --mode live --output /tmp/Add.live.lean
         diff {{fixture}} /tmp/Add.live.lean
     fi

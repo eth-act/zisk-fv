@@ -4,7 +4,7 @@
 # chain depends on. Do NOT edit casually — these pins define what the
 # zisk-fv proofs are about. CI verifies the live tree matches.
 
-# ZisK source tree (vendored as git submodule at vendor/zisk; cited
+# ZisK source tree (vendored as git submodule at zisk; cited
 # from transpile_* axiom rationales).
 zisk-submodule-commit      = 48cf7ccefb5ed62261abf6bfb007b5be8a23c547
 

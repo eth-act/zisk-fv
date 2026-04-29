@@ -519,9 +519,9 @@ the Binary SM writes the comparison verdict into it.
 - **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Sub.equiv_SUB_metaplan` (indirect,
   via bus-match + `Spec.Sub.sub_compositional`).
-- **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:134`
+- **Provenance:** `zisk/core/src/riscv2zisk_context.rs:134`
   (`"sub" → create_register_op(..., "sub", 4)`) +
-  `vendor/zisk/core/src/zisk_ops.rs:393` (opcode `0x0b = 11`).
+  `zisk/core/src/zisk_ops.rs:393` (opcode `0x0b = 11`).
 - **Closure path:** trusted (transpiler-contract axiom; not a proof
   obligation). Retires only if ZisK's Rust transpiler is replaced.
 
@@ -585,9 +585,9 @@ the operation-bus layer; the only difference is the source-b routing
 - **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Addw.equiv_ADDW_metaplan` (indirect,
   via bus-match + `Spec.Addw.addw_compositional`).
-- **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:153`
+- **Provenance:** `zisk/core/src/riscv2zisk_context.rs:153`
   (`"addw" → create_register_op(..., "add_w", 4)`) +
-  `vendor/zisk/core/src/zisk_ops.rs:408` (opcode `0x1a = 26`, type
+  `zisk/core/src/zisk_ops.rs:408` (opcode `0x1a = 26`, type
   `Binary`).
 - **Closure path:** trusted (transpiler-contract axiom; not a proof
   obligation). Retires only if ZisK's Rust transpiler is replaced.
@@ -596,9 +596,9 @@ the operation-bus layer; the only difference is the source-b routing
 
 - **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Subw.equiv_SUBW_metaplan`.
-- **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:154`
+- **Provenance:** `zisk/core/src/riscv2zisk_context.rs:154`
   (`"subw" → create_register_op(..., "sub_w", 4)`) +
-  `vendor/zisk/core/src/zisk_ops.rs:409` (opcode `0x1b = 27`, type
+  `zisk/core/src/zisk_ops.rs:409` (opcode `0x1b = 27`, type
   `Binary`).
 - **Closure path:** trusted.
 
@@ -606,9 +606,9 @@ the operation-bus layer; the only difference is the source-b routing
 
 - **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Addiw.equiv_ADDIW_metaplan`.
-- **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:184-194`
+- **Provenance:** `zisk/core/src/riscv2zisk_context.rs:184-194`
   (`"addiw" → immediate_op(..., "add_w", 4)`, line 192) +
-  `vendor/zisk/core/src/zisk_ops.rs:408` (opcode `OP_ADD_W = 0x1a =
+  `zisk/core/src/zisk_ops.rs:408` (opcode `OP_ADD_W = 0x1a =
   26`, shared with ADDW). **Routing note.** Per `create_imm_op`
   inspection, ADDIW emits `OP_ADD_W + m32 = 1` (not `OP_ADD + m32 =
   1`); this pins the T-W pre-flight finding. A degenerate
@@ -644,9 +644,9 @@ under Track T-W).
 
 - **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Addi.equiv_ADDI_metaplan`.
-- **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:160-174`
+- **Provenance:** `zisk/core/src/riscv2zisk_context.rs:160-174`
   (`"addi" → immediate_op_or_x0_copyb(..., "add", 4)` on the
-  non-degenerate path) + `vendor/zisk/core/src/zisk_ops.rs` opcode
+  non-degenerate path) + `zisk/core/src/zisk_ops.rs` opcode
   `OP_ADD = 10` (shared with ADD).
 - **Closure path:** trusted (transpiler-contract axiom; not a proof
   obligation). Retires only if ZisK's Rust transpiler is replaced.
@@ -731,9 +731,9 @@ via the transpile axioms that reference them (same treatment as
 - **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Lw.equiv_LW_metaplan` (indirect,
   via bus-match + `Spec.LoadWord.lw_compositional`).
-- **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:214`
+- **Provenance:** `zisk/core/src/riscv2zisk_context.rs:214`
   (`"lw" → load_op(..., "signextend_w", 4, 4)`) +
-  `vendor/zisk/core/src/zisk_ops.rs:421` (opcode `0x29 = 41`).
+  `zisk/core/src/zisk_ops.rs:421` (opcode `0x29 = 41`).
 - **Closure path:** trusted (transpiler-contract axiom; not a proof
   obligation). Retires only if ZisK's Rust transpiler is replaced.
 
@@ -781,9 +781,9 @@ contract (Phase 4 audit handles the div-by-zero path).
 - **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Divu.equiv_DIVU_metaplan`
   (indirect, via bus-match + `Spec.Divu.divu_compositional`).
-- **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:249`
+- **Provenance:** `zisk/core/src/riscv2zisk_context.rs:249`
   (`"divu" → create_register_op(..., "divu", 4)`) +
-  `vendor/zisk/core/src/zisk_ops.rs:430` (opcode `0xb8 = 184`).
+  `zisk/core/src/zisk_ops.rs:430` (opcode `0xb8 = 184`).
 - **Closure path:** trusted (transpiler-contract axiom). Retires only
   if ZisK's Rust transpiler is replaced.
 
@@ -918,7 +918,7 @@ When accepting a new trusted axiom:
     jmp_offset2 = 4, a_lo = a_hi = 0, b_lo = imm_lo,
     b_hi = imm_hi`. **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
     **Consumer:** `ZiskFv.Equivalence.Lui.equiv_LUI_metaplan`.
-    **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:1009`
+    **Provenance:** `zisk/core/src/riscv2zisk_context.rs:1009`
     (`fn lui`). **Closure path:** trusted spec of Rust transpiler;
     audit scope — any change to `fn lui` requires re-signing this
     axiom against the Rust source.
@@ -927,7 +927,7 @@ When accepting a new trusted axiom:
     jmp_offset2 = imm_offset, a_lo = a_hi = b_lo = b_hi = 0`.
     **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
     **Consumer:** `ZiskFv.Equivalence.Auipc.equiv_AUIPC_metaplan`.
-    **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:907`
+    **Provenance:** `zisk/core/src/riscv2zisk_context.rs:907`
     (`fn auipc`). **Closure path:** trusted spec of Rust transpiler;
     audit scope.
 - **2026-04-22 — Phase 3C T-RT.** Six transpile axioms shipped for
@@ -1105,7 +1105,7 @@ by inspection / extraction. Not yet shipped.
 ### Category 1 — transpile axioms (the elephant)
 
 63 axioms, one per RV64IM opcode. Each says "the Rust function in
-`vendor/zisk/core/src/riscv2zisk_context.rs` for this opcode emits
+`zisk/core/src/riscv2zisk_context.rs` for this opcode emits
 a Main AIR row with these specific column values."
 
 **These are unverified against the Rust source.** A mismatch
@@ -1198,7 +1198,7 @@ soundness).
 ### Priority list for retirement to maximize confidence in "ZisK ↔ RV64IM"
 
 1. **Audit the 63 transpile axioms** against
-   `vendor/zisk/core/src/riscv2zisk_context.rs`. Biggest unverified
+   `zisk/core/src/riscv2zisk_context.rs`. Biggest unverified
    surface; outside Lean. ~weeks of careful reading.
 2. **Compose `h_rd_val` derivation** for each opcode via the
    existing `<op>_compositional` + `matches_entry` + Phase 4.5
@@ -1233,7 +1233,7 @@ table data), Q (op-bus effect), R (Sail-eq retirement), T
 ### Track P shipped (2026-04-25, commit `597c6f7`)
 
 **P1.** Extracted 74-row arith_table data from
-`vendor/zisk/state-machines/arith/src/arith_table_data.rs::ARITH_TABLE`
+`zisk/state-machines/arith/src/arith_table_data.rs::ARITH_TABLE`
 into `ZiskFv/Extraction/ArithTable.lean`. Each row decoded with the
 12-bit FLAGS column unpacked per `arith_table.pil:209-211`
 (m32, div, na, nb, np, nr, sext, div_by_zero, div_overflow,
@@ -1301,7 +1301,7 @@ worktree-isolated subagents. All build green; zero new project-level
 axioms across the three.
 
 **Track O — PIL bus-emission extraction** (commit `d0ab622`).
-- Extended `tools/zisk-pil-extract/` with `--bus-emissions` mode
+- Extended `tools/pil-extract/` with `--bus-emissions` mode
   (~450 lines + 5 unit tests, 28/28 passing). Walks pilout's
   `gsum_debug_data` Hint payloads to extract bus-emission tuple
   shapes (bus id, multiplicity expression, per-slot named expressions).
@@ -1352,7 +1352,7 @@ axioms across the three.
 - Zero new axioms.
 - **Critical finding (documented in theorem docstring, lines
   237-322).** ZisK's PIL emits **no fault-flag column** anywhere
-  on the bus (verified by grep over `vendor/zisk/pil/zisk.pil`).
+  on the bus (verified by grep over `zisk/pil/zisk.pil`).
   `RV64D/BusEffect.lean:115-121` hardcodes the post-fold result to
   `EStateM.Result.ok (Retire_Success ()) state'`. So the
   metaplan-shape equation `LHS = (bus_effect …).2` is **literally
@@ -1415,7 +1415,7 @@ fault-flag column" extension to mirror the Sail-side misaligned-target
 companions. Investigation closes this as architecturally absent rather
 than unfinished work:
 
-- ZisK's PIL (`vendor/zisk/state-machines/main/pil/main.pil`) emits no
+- ZisK's PIL (`zisk/state-machines/main/pil/main.pil`) emits no
   fault-flag column. `OperationBusEntry` has no fault field, and
   `bus_effect.2` returns `Retire_Success` unconditionally.
 - This is by design: ZisK's circuit constrains *valid execution
@@ -1605,7 +1605,7 @@ definition site**. openvm-fv never proves its bitwise / range-checker
   `bus_id = 125` (multiplicity = 1) satisfies `wf_properties`. The
   `wf_properties` predicate is the conjunction of per-op clauses
   encoding the byte-level switch from
-  `vendor/zisk/state-machines/binary/pil/binary_table.pil`'s `for`
+  `zisk/state-machines/binary/pil/binary_table.pil`'s `for`
   loop: AND/OR/XOR bitwise ops, LT/LTU/EQ/GT/LE/LEU comparison
   byte-chain rules, ADD/SUB carry/borrow byte semantics, and
   SEXT_00/FF byte sign-extends.
@@ -1634,7 +1634,7 @@ definition site**. openvm-fv never proves its bitwise / range-checker
 - **Statement:** every entry the BinaryExtension AIR consumes against
   `bus_id = 124` satisfies `wf_properties`. The predicate's per-op
   clauses encode the byte-level shift semantics from
-  `vendor/zisk/state-machines/binary/pil/binary_extension_table.pil`'s
+  `zisk/state-machines/binary/pil/binary_extension_table.pil`'s
   for-loop switch: SLL/SRL/SRA 64-bit shifts and SLL_W/SRL_W/SRA_W
   32-bit-word shifts (with sign-extension to 64).
 - **Consumers:** all 6 K1-C BitVec lifts in
@@ -1667,9 +1667,9 @@ definition site**. openvm-fv never proves its bitwise / range-checker
   K2 writes-side closure at the LaneMatch layer). Ultimately
   consumed downstream by load/store metaplan theorems via
   `register_write_lanes_match`.
-- **Provenance:** `vendor/zisk/state-machines/main/pil/main.pil:316-328`
+- **Provenance:** `zisk/state-machines/main/pil/main.pil:316-328`
   (the `reg_pre_store` + `mem_op` for store-reg) +
-  `vendor/zisk/state-machines/mem/pil/mem.pil:436` (the Mem AIR's
+  `zisk/state-machines/mem/pil/mem.pil:436` (the Mem AIR's
   `permutation_proves` half on `bus_id = MEMORY_ID = 10`).
 - **Trust class:** memory-bus permutation soundness. This is the
   writes-side analogue of the operation-bus axiom
@@ -1694,7 +1694,7 @@ definition site**. openvm-fv never proves its bitwise / range-checker
      `'value` (rotation = -1) on subsequent rows, mixing F with
      ExtF challenge randomness on the bus-protocol path.
 - **Closure path if promoted to theorem:** extend the bus-emission
-  extractor (`tools/zisk-pil-extract --bus-emissions`) to emit the
+  extractor (`tools/pil-extract --bus-emissions`) to emit the
   writing-side `permutation_assumes` halves, write the Mem AIR
   cross-row continuity bridge against the airvalue-typed previous
   row state, and combine to derive the soundness statement from
@@ -1729,11 +1729,11 @@ definition site**. openvm-fv never proves its bitwise / range-checker
   theorems for `store_pc_lanes_match_lo` / `_hi`). Ultimately
   consumed by JAL / JALR / AUIPC `h_rd_val` discharges in
   `Equivalence/RdValDerivation/JumpUType.lean`.
-- **Provenance:** `vendor/zisk/state-machines/main/pil/main.pil:311-312`
+- **Provenance:** `zisk/state-machines/main/pil/main.pil:311-312`
   (the `store_value[0]` and `store_value[1]` formulas) +
-  `vendor/zisk/state-machines/main/pil/main.pil:316-328` (the
+  `zisk/state-machines/main/pil/main.pil:316-328` (the
   `reg_pre_store` + `mem_op` for store-reg) +
-  `vendor/zisk/state-machines/mem/pil/mem.pil:436` (the Mem AIR's
+  `zisk/state-machines/mem/pil/mem.pil:436` (the Mem AIR's
   `permutation_proves` half on `bus_id = MEMORY_ID = 10`).
 - **Trust class:** identical to MB-W — memory-bus permutation
   soundness on `bus_id = 10` for register writes. Differs from MB-W
@@ -1778,7 +1778,7 @@ chip_bus_hyps machinery already in tree).
   `(ptr, timestamp, lo, hi, 0)`.
 - **Consumers:** `memory_load_lanes_match_of_mem_row` and
   `Spec.MemModel.mem_load_correct`.
-- **Provenance:** `vendor/zisk/state-machines/mem/pil/mem.pil:526` —
+- **Provenance:** `zisk/state-machines/mem/pil/mem.pil:526` —
   the memory bus's `permutation_assumes` half pulls from the Mem AIR's
   per-row state. Trust class: PLONK / logUp / permutation-argument
   soundness, project-trusted (`CLAUDE.md` "Trust scoping").
@@ -1798,7 +1798,7 @@ chip_bus_hyps machinery already in tree).
 - **Consumers:** `memory_store_lanes_match_of_mem_row` and
   `Spec.MemModel.mem_store_correct`.
 - **Provenance:** same memory-bus permutation soundness as MB-L,
-  store-side; `vendor/zisk/state-machines/mem/pil/mem.pil:527`.
+  store-side; `zisk/state-machines/mem/pil/mem.pil:527`.
 - **Note vs MB-W:** MB-W (declared by agent L in `LaneMatch.lean`) is
   scoped to the *register-write* path on the memory bus — i.e. the
   `as = 3` register-side write that is consistency-checked via the
@@ -1873,7 +1873,7 @@ S2's wide-PC no-wrap toolkit they retire the
   `RdValDerivation.JumpUType.h_rd_val_jut_jal` to retire the
   `h_pc_fgl_lo_nat` parameter.
 - **Provenance:** the Sail-PC ↔ ZisK Main-pc-column contract at
-  `vendor/zisk/core/src/riscv2zisk_context.rs:201,1098` (`fn jal`):
+  `zisk/core/src/riscv2zisk_context.rs:201,1098` (`fn jal`):
   the Rust transpiler emits a Main row whose `pc` column carries the
   ROM-assigned representative of the Sail-state PC at this
   instruction. The full chain that ties `m.pc r_main` to `state.pc`
@@ -1913,7 +1913,7 @@ S2's wide-PC no-wrap toolkit they retire the
 - **Consumers:** `transpile_PC_consumer_JALR`; finishing5 S5 will
   plumb this through the JumpUType JALR discharge.
 - **Provenance:** Sail-PC ↔ ZisK Main-pc-column contract at
-  `vendor/zisk/core/src/riscv2zisk_context.rs:200,1025` (`fn jalr`).
+  `zisk/core/src/riscv2zisk_context.rs:200,1025` (`fn jalr`).
   Recall that JALR is modeled by ZisK's archetype validation as a
   simplified internal-copyb shape (with `set_pc = 1`); the same PC
   bridge applies — it asserts where the row sits in the program
@@ -1935,7 +1935,7 @@ S2's wide-PC no-wrap toolkit they retire the
   will plumb this through `Spec.AddUpperImmediatePC` and the
   JumpUType AUIPC discharge to retire the `h_pci_lo_val` parameter.
 - **Provenance:** Sail-PC ↔ ZisK Main-pc-column contract at
-  `vendor/zisk/core/src/riscv2zisk_context.rs:907` (`fn auipc`).
+  `zisk/core/src/riscv2zisk_context.rs:907` (`fn auipc`).
 - **Trust class:** same as TP-JAL.
 - **Why axiomatic:** same as TP-JAL.
 - **Closure path:** same as TP-JAL — closing TP-JAL closes all three.
@@ -2085,7 +2085,7 @@ surface.
   up to `2^64−1`. Per-opcode Spec hi/lo theorems in
   `Spec/{Jal,Jalr,AddUpperImmediatePC}.lean`. Hi-half formula
   `store_value[1] = (1 - store_pc) * c[1]` (verbatim from
-  `vendor/zisk/state-machines/main/pil/main.pil:312`) makes hi-half
+  `zisk/state-machines/main/pil/main.pil:312`) makes hi-half
   identically zero when store_pc=1.
 
 **56 of 56 RV64IM ops have metaplan parameter retirements landed.**

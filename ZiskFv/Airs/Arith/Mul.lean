@@ -10,7 +10,7 @@ import ZiskFv.Airs.Arith.CarryChain
 Named-column mirror of the ZisK `Arith` AIR, restricted to the MUL subset.
 
 The Arith state machine is the heavy-weight multiplier behind RV64 MUL/MULH
-family. Its PIL lives at `vendor/zisk/state-machines/arith/pil/arith.pil`. Unlike
+family. Its PIL lives at `zisk/state-machines/arith/pil/arith.pil`. Unlike
 `BinaryAdd` (which is a narrow carry-chain AIR with 9 constraints, 4 core),
 Arith carries 65 constraints spanning the 8-chunk carry chains for a full 64×64
 multiply-divide, sign-extension witnesses, and the arith_table / arith_range_table
@@ -257,7 +257,7 @@ open ZiskFv.Airs.OperationBus
     path (`main_mul = 1`, `main_div = 0`, `div = 0`, `sext = 0`).
 
     Mirrors the `proves_operation(op:, a:, b:, c:, flag:, mul:)` call at
-    `vendor/zisk/state-machines/arith/pil/arith.pil:269-270`, specialized
+    `zisk/state-machines/arith/pil/arith.pil:269-270`, specialized
     to the MUL selector. Concretely:
 
     * `multiplicity` = `multiplicity` witness column (col 41). On active

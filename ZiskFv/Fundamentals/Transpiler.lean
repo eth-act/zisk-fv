@@ -7,7 +7,7 @@ import ZiskFv.Airs.Main
 RV64 → Zisk-instruction transpilation contract (axiomatized).
 
 Phase 1 axiomatizes the ADD case only; Phase 2+ extends with other opcodes. The
-axioms mirror `vendor/zisk/core/src/riscv2zisk_context.rs::create_register_op`
+axioms mirror `zisk/core/src/riscv2zisk_context.rs::create_register_op`
 at commit `48cf7ccef`. Any deviation between this file and the transpiler
 implementation is a trust-model break — see `docs/fv/extractor-notes.md`.
 
@@ -106,31 +106,31 @@ structure ZiskInstructionRow where
       JAL) to the destination register. Pinned to 0 for ADD/BEQ; 1 for JAL. -/
   store_pc : FGL
 
-/-- Goldilocks literal for the ADD opcode. `0x0A` per `vendor/zisk/pil/opids.pil`. -/
+/-- Goldilocks literal for the ADD opcode. `0x0A` per `zisk/pil/opids.pil`. -/
 @[simp] def OP_ADD : FGL := 10
 
 /-- Goldilocks literal for the EQ opcode. `0x09` per
-    `vendor/zisk/core/src/zisk_ops.rs:391`. Used by RV64 branch opcodes
+    `zisk/core/src/zisk_ops.rs:391`. Used by RV64 branch opcodes
     (BEQ/BNE) which transpile to Zisk `eq` via `create_branch_op`
     (`riscv2zisk_context.rs:202,203`). -/
 @[simp] def OP_EQ : FGL := 9
 
 /-- Goldilocks literal for the LT opcode. `0x07` per
-    `vendor/zisk/core/src/zisk_ops.rs:389`. Signed less-than comparator
+    `zisk/core/src/zisk_ops.rs:389`. Signed less-than comparator
     used by RV64 branch opcodes BLT / BGE via `create_branch_op`
     (`riscv2zisk_context.rs:204,205`). Dispatched to the Binary state
     machine via the operation bus (same routing as OP_EQ). -/
 @[simp] def OP_LT : FGL := 7
 
 /-- Goldilocks literal for the LTU opcode. `0x06` per
-    `vendor/zisk/core/src/zisk_ops.rs:388`. Unsigned less-than
+    `zisk/core/src/zisk_ops.rs:388`. Unsigned less-than
     comparator used by RV64 branch opcodes BLTU / BGEU via
     `create_branch_op` (`riscv2zisk_context.rs:206,207`). Dispatched to
     the Binary state machine via the operation bus. -/
 @[simp] def OP_LTU : FGL := 6
 
 /-- Goldilocks literal for the FLAG opcode. `0x00` per
-    `vendor/zisk/core/src/zisk_ops.rs:382`. Internal op whose
+    `zisk/core/src/zisk_ops.rs:382`. Internal op whose
     `op_flag(a, b) = (0, true)` semantics give `c = 0, flag = 1`.
     Used by RV64 JAL (`riscv2zisk_context.rs:1098`, `zib.op("flag")`)
     as the microinstruction op — the actual PC+4 value written to rd
@@ -139,7 +139,7 @@ structure ZiskInstructionRow where
 @[simp] def OP_FLAG : FGL := 0
 
 /-- Goldilocks literal for the CopyB opcode. `0x01` per
-    `vendor/zisk/core/src/zisk_ops.rs:383`. Used by unsigned-width RV64
+    `zisk/core/src/zisk_ops.rs:383`. Used by unsigned-width RV64
     load opcodes (LD/LWU/LHU/LBU) which transpile via `load_op` with
     `op = "copyb"` (`riscv2zisk_context.rs:211-216`). `OpType::Internal`,
     so `is_external_op = 0`: Main constraint 9 forces `c = b` directly,
@@ -149,52 +149,52 @@ structure ZiskInstructionRow where
 @[simp] def OP_COPYB : FGL := 1
 
 /-- Goldilocks literal for the 32-bit shift-left-word opcode.
-    `0x24` per `vendor/zisk/pil/operations.pil:62` and
-    `vendor/zisk/core/src/zisk_ops.rs:416`. Used by RV64 SLLW
+    `0x24` per `zisk/pil/operations.pil:62` and
+    `zisk/core/src/zisk_ops.rs:416`. Used by RV64 SLLW
     (`riscv2zisk_context.rs:155`, `create_register_op(..., "sll_w", 4)`)
     and SLLIW (`riscv2zisk_context.rs:195`, `immediate_op(..., "sll_w", 4)`).
     Type `BinaryE` — handled by the `BinaryExtension` SM (not `BinaryAdd`). -/
 @[simp] def OP_SLL_W : FGL := 36
 
 /-- Goldilocks literal for the 64-bit shift-left opcode.
-    `0x21` per `vendor/zisk/core/src/zisk_ops.rs:413`. Used by RV64 SLL
+    `0x21` per `zisk/core/src/zisk_ops.rs:413`. Used by RV64 SLL
     (`riscv2zisk_context.rs:135`, `create_register_op(..., "sll", 4)`)
     and SLLI (`riscv2zisk_context.rs:175`, `immediate_op(..., "sll", 4)`).
     Type `BinaryE` — handled by the `BinaryExtension` SM. -/
 @[simp] def OP_SLL : FGL := 33
 
 /-- Goldilocks literal for the 64-bit shift-right-logical opcode.
-    `0x22` per `vendor/zisk/core/src/zisk_ops.rs:414`. Used by RV64 SRL
+    `0x22` per `zisk/core/src/zisk_ops.rs:414`. Used by RV64 SRL
     (`riscv2zisk_context.rs:139`, `create_register_op(..., "srl", 4)`)
     and SRLI (`riscv2zisk_context.rs:179`, `immediate_op(..., "srl", 4)`).
     Type `BinaryE` — handled by the `BinaryExtension` SM. -/
 @[simp] def OP_SRL : FGL := 34
 
 /-- Goldilocks literal for the 64-bit shift-right-arithmetic opcode.
-    `0x23` per `vendor/zisk/core/src/zisk_ops.rs:415`. Used by RV64 SRA
+    `0x23` per `zisk/core/src/zisk_ops.rs:415`. Used by RV64 SRA
     (`riscv2zisk_context.rs:140`, `create_register_op(..., "sra", 4)`)
     and SRAI (`riscv2zisk_context.rs:180`, `immediate_op(..., "sra", 4)`).
     Type `BinaryE` — handled by the `BinaryExtension` SM. -/
 @[simp] def OP_SRA : FGL := 35
 
 /-- Goldilocks literal for the 32-bit shift-right-logical-word opcode.
-    `0x25` per `vendor/zisk/pil/operations.pil` and
-    `vendor/zisk/core/src/zisk_ops.rs:417`. Used by RV64 SRLW
+    `0x25` per `zisk/pil/operations.pil` and
+    `zisk/core/src/zisk_ops.rs:417`. Used by RV64 SRLW
     (`riscv2zisk_context.rs:156`, `create_register_op(..., "srl_w", 4)`)
     and SRLIW (`riscv2zisk_context.rs:196`, `immediate_op(..., "srl_w", 4)`).
     Type `BinaryE` — handled by the `BinaryExtension` SM. -/
 @[simp] def OP_SRL_W : FGL := 37
 
 /-- Goldilocks literal for the 32-bit shift-right-arithmetic-word opcode.
-    `0x26` per `vendor/zisk/pil/operations.pil` and
-    `vendor/zisk/core/src/zisk_ops.rs:418`. Used by RV64 SRAW
+    `0x26` per `zisk/pil/operations.pil` and
+    `zisk/core/src/zisk_ops.rs:418`. Used by RV64 SRAW
     (`riscv2zisk_context.rs:157`, `create_register_op(..., "sra_w", 4)`)
     and SRAIW (`riscv2zisk_context.rs:197`, `immediate_op(..., "sra_w", 4)`).
     Type `BinaryE` — handled by the `BinaryExtension` SM. -/
 @[simp] def OP_SRA_W : FGL := 38
 
 /-- Goldilocks literal for the 32-bit add-word opcode.
-    `0x1a = 26` per `vendor/zisk/core/src/zisk_ops.rs:408`
+    `0x1a = 26` per `zisk/core/src/zisk_ops.rs:408`
     (`(AddW, "add_w", Binary, …, 0x1a, …)`). Used by RV64 ADDW
     (`riscv2zisk_context.rs:153`, `create_register_op(..., "add_w", 4)`)
     and ADDIW (`riscv2zisk_context.rs:192`,
@@ -205,7 +205,7 @@ structure ZiskInstructionRow where
 @[simp] def OP_ADD_W : FGL := 26
 
 /-- Goldilocks literal for the 32-bit sub-word opcode.
-    `0x1b = 27` per `vendor/zisk/core/src/zisk_ops.rs:409`
+    `0x1b = 27` per `zisk/core/src/zisk_ops.rs:409`
     (`(SubW, "sub_w", Binary, …, 0x1b, …)`). Used by RV64 SUBW
     (`riscv2zisk_context.rs:154`, `create_register_op(..., "sub_w", 4)`).
     Type `Binary`. Behaviour: `op_sub_w(a, b) =
@@ -214,7 +214,7 @@ structure ZiskInstructionRow where
 @[simp] def OP_SUB_W : FGL := 27
 
 
-/-- Goldilocks literal for OPERATION_BUS_ID. Per `vendor/zisk/pil/opids.pil:2`. -/
+/-- Goldilocks literal for OPERATION_BUS_ID. Per `zisk/pil/opids.pil:2`. -/
 @[simp] def OPERATION_BUS_ID : FGL := 5000
 
 /-- Abstract RV64 state, indexed access to integer registers via `Fin 32`. In
@@ -226,7 +226,7 @@ structure RV64State where
   pc : BitVec 64
 
 /-- Split a `BitVec 64` into (low 32, high 32) lanes as Goldilocks elements.
-    Matches how `vendor/zisk/core/src/riscv2zisk_context.rs::create_register_op`
+    Matches how `zisk/core/src/riscv2zisk_context.rs::create_register_op`
     populates `a`/`b`/`c`. -/
 def lane_lo (v : BitVec 64) : FGL :=
   ⟨(v.toNat) % 4294967296, by
@@ -245,7 +245,7 @@ def lane_hi (v : BitVec 64) : FGL :=
     the Main row's `a`/`b` lanes equal the split lanes of `state.xreg rs1` and
     `state.xreg rs2`, and the mode selectors (`m32`, `set_pc`, `store_pc`,
     `jmp_offset1/2`) take the values emitted by the Rust transpiler's ADD arm
-    at `vendor/zisk/core/src/riscv2zisk_context.rs::create_register_op`
+    at `zisk/core/src/riscv2zisk_context.rs::create_register_op`
     (called from the `"add"` arm at line 100).
 
     **Trust basis.** Pure spec of the Rust transpiler's ADD branch, restated in
@@ -272,7 +272,7 @@ axiom transpile_ADD :
 
 /-- The axiomatic RV64 → Zisk row contract for BEQ.
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:202` an RV64 BEQ
+    Per `zisk/core/src/riscv2zisk_context.rs:202` an RV64 BEQ
     `rs1, rs2, imm` transpiles via `create_branch_op(instr, "eq", false, 4)`
     (line 740) to exactly one Zisk microinstruction. Concretely the emitted
     Main-AIR row has:
@@ -311,7 +311,7 @@ axiom transpile_BEQ :
 
 /-- The axiomatic RV64 → Zisk row contract for BNE (Phase 2.5 D4a).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:203` an RV64 BNE
+    Per `zisk/core/src/riscv2zisk_context.rs:203` an RV64 BNE
     `rs1, rs2, imm` transpiles via `create_branch_op(instr, "eq", true, 4)`
     — **same helper as BEQ, same `"eq"` op string, but `neg = true`**.
     The `neg` flag flips `jmp_offset1` and `jmp_offset2` inside
@@ -363,7 +363,7 @@ axiom transpile_BNE :
 
 /-- The axiomatic RV64 → Zisk row contract for JAL.
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:201,1098` an RV64 JAL
+    Per `zisk/core/src/riscv2zisk_context.rs:201,1098` an RV64 JAL
     `rd, imm` transpiles via `self.jal(i, 4)` to exactly one Zisk
     microinstruction emitted by `ZiskInstBuilder`:
     * `zib.src_a("imm", 0, false)` — `a` lanes are 0,
@@ -403,7 +403,7 @@ axiom transpile_JAL :
 /-- The axiomatic RV64 → Zisk row contract for FENCE (Phase 5
     follow-on Track J1).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:228` an RV64 FENCE
+    Per `zisk/core/src/riscv2zisk_context.rs:228` an RV64 FENCE
     transpiles via `self.nop(...)` (line 772) — the same routing as a
     pseudo-NOP. The emitted Zisk microinstruction sets:
 
@@ -441,7 +441,7 @@ axiom transpile_FENCE :
 /-- The axiomatic RV64 → Zisk row contract for JALR (jump-and-link-register,
     Phase 2.5 D4 archetype validation).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:200,1025` an RV64 JALR
+    Per `zisk/core/src/riscv2zisk_context.rs:200,1025` an RV64 JALR
     `rd, rs1, imm12` transpiles via `self.jalr(i, 4)`. The archetype-
     validation contract below captures the simplified "internal-copyb"
     shape the `JumpArchetype.jalr_archetype_*` lemmas consume:
@@ -489,7 +489,7 @@ axiom transpile_JALR :
 
 /-- The axiomatic RV64 → Zisk row contract for LD (load doubleword).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:216` an RV64 LD
+    Per `zisk/core/src/riscv2zisk_context.rs:216` an RV64 LD
     `rd, imm(rs1)` transpiles via `self.load_op(i, "copyb", 8, 4)`
     (line 803) to exactly one Zisk microinstruction emitted by
     `ZiskInstBuilder`:
@@ -536,7 +536,7 @@ axiom transpile_LD :
 /-- The axiomatic RV64 → Zisk row contract for LWU (Phase 2.5 D4c —
     `LoadArchetype` sibling validation of LD).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:211` an RV64 LWU
+    Per `zisk/core/src/riscv2zisk_context.rs:211` an RV64 LWU
     `rd, imm(rs1)` transpiles via `self.load_op(i, "copyb", 4, 4)`
     (line 803) to exactly one Zisk microinstruction. The row shape is
     identical to LD's modulo the `ind_width` (4 vs 8), which does not
@@ -579,7 +579,7 @@ axiom transpile_LWU :
 /-- The axiomatic RV64 → Zisk row contract for LHU (Phase 3A L3 —
     `LoadArchetype` sibling of LWU/LD).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:213` an RV64 LHU
+    Per `zisk/core/src/riscv2zisk_context.rs:213` an RV64 LHU
     `rd, imm(rs1)` transpiles via `self.load_op(i, "copyb", 2, 4)`
     (line 803) to exactly one Zisk microinstruction. The row shape is
     identical to LD's / LWU's modulo the `ind_width` (2 vs 4 vs 8),
@@ -623,7 +623,7 @@ axiom transpile_LHU :
 /-- The axiomatic RV64 → Zisk row contract for LBU (Phase 3A L5 —
     `LoadArchetype` sibling of LWU/LD, narrowest width).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:212` an RV64 LBU
+    Per `zisk/core/src/riscv2zisk_context.rs:212` an RV64 LBU
     `rd, imm(rs1)` transpiles via `self.load_op(i, "copyb", 1, 4)`
     (line 803) to exactly one Zisk microinstruction. The row shape is
     identical to the other zero-extension loads modulo `ind_width`
@@ -657,7 +657,7 @@ axiom transpile_LBU :
 
 /-- The axiomatic RV64 → Zisk row contract for SD (store doubleword).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:223` an RV64 SD
+    Per `zisk/core/src/riscv2zisk_context.rs:223` an RV64 SD
     `rs2, imm(rs1)` transpiles via `self.store_op(i, "copyb", 8, 4)`
     (line 828) to exactly one Zisk microinstruction emitted by
     `ZiskInstBuilder`:
@@ -705,7 +705,7 @@ axiom transpile_SD :
 
 /-- The axiomatic RV64 → Zisk row contract for SW (store word — Phase 2.5 D4d).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:222` an RV64 SW
+    Per `zisk/core/src/riscv2zisk_context.rs:222` an RV64 SW
     `rs2, imm(rs1)` transpiles via `self.store_op(i, "copyb", 4, 4)`
     (line 828) to exactly one Zisk microinstruction emitted by
     `ZiskInstBuilder`:
@@ -754,7 +754,7 @@ axiom transpile_SW :
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
 /-- Goldilocks literal for the MUL opcode. `0xb4 = 180` per
-    `vendor/zisk/core/src/zisk_ops.rs:427`. Signed × signed multiplication,
+    `zisk/core/src/zisk_ops.rs:427`. Signed × signed multiplication,
     low 64 bits (`result_part = Low`). Dispatched to the Arith state
     machine via the operation bus. Used by RV64 MUL
     (`riscv2zisk_context.rs:243`, `create_register_op(..., "mul", 4)`). -/
@@ -792,7 +792,7 @@ axiom transpile_SW :
 
 /-- The axiomatic RV64 → Zisk row contract for MUL (Archetype A5).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:243` an RV64 MUL
+    Per `zisk/core/src/riscv2zisk_context.rs:243` an RV64 MUL
     `rd, rs1, rs2` transpiles via `create_register_op(..., "mul", 4)`
     (line 631) — the exact helper ADD uses. One Main-AIR row with:
     * `op = OP_MUL = 180`;
@@ -832,7 +832,7 @@ axiom transpile_MUL :
 
 /-- The axiomatic RV64 → Zisk row contract for MULH (Phase 2.5 D4e).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:244` an RV64 MULH
+    Per `zisk/core/src/riscv2zisk_context.rs:244` an RV64 MULH
     `rd, rs1, rs2` transpiles via `create_register_op(..., "mulh", 4)`
     — the identical helper MUL uses, only the opcode string changes. One
     Main-AIR row with:
@@ -867,7 +867,7 @@ axiom transpile_MULH :
 
 /-- The axiomatic RV64 → Zisk row contract for SLLW (Archetype A6).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:155` an RV64 SLLW
+    Per `zisk/core/src/riscv2zisk_context.rs:155` an RV64 SLLW
     `rd, rs1, rs2` transpiles via `create_register_op(instr, "sll_w", 4)`
     (line 631) to exactly one Zisk microinstruction:
     * `op = OP_SLL_W = 0x24 = 36` (`zisk_ops.rs:416`, type `BinaryE`);
@@ -912,7 +912,7 @@ axiom transpile_SLLW :
 
 /-- The axiomatic RV64 → Zisk row contract for BLT (Phase 3A B1).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:204` an RV64 BLT
+    Per `zisk/core/src/riscv2zisk_context.rs:204` an RV64 BLT
     `rs1, rs2, imm` transpiles via `create_branch_op(instr, "lt", false, 4)`
     — the same `create_branch_op` helper BEQ uses, with `op = "lt"` and
     `neg = false` (BEQ polarity). The emitted Main-AIR row has:
@@ -948,7 +948,7 @@ axiom transpile_BLT :
 
 /-- The axiomatic RV64 → Zisk row contract for BGE (Phase 3A B2).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:205` an RV64 BGE
+    Per `zisk/core/src/riscv2zisk_context.rs:205` an RV64 BGE
     transpiles via `create_branch_op(instr, "lt", true, 4)` — **same
     `"lt"` op string as BLT, but `neg = true`**. The `neg` flag swaps
     `jmp_offset1`/`jmp_offset2` (BNE polarity):
@@ -986,7 +986,7 @@ axiom transpile_BGE :
 
 /-- The axiomatic RV64 → Zisk row contract for BLTU (Phase 3A B3).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:206` an RV64 BLTU
+    Per `zisk/core/src/riscv2zisk_context.rs:206` an RV64 BLTU
     transpiles via `create_branch_op(instr, "ltu", false, 4)` — BEQ
     polarity, unsigned comparator. The emitted row:
 
@@ -1015,7 +1015,7 @@ axiom transpile_BLTU :
 
 /-- The axiomatic RV64 → Zisk row contract for BGEU (Phase 3A B4).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:207` an RV64 BGEU
+    Per `zisk/core/src/riscv2zisk_context.rs:207` an RV64 BGEU
     transpiles via `create_branch_op(instr, "ltu", true, 4)` — BNE
     polarity, unsigned comparator. The emitted row:
 
@@ -1044,7 +1044,7 @@ axiom transpile_BGEU :
 
 /-- The axiomatic RV64 → Zisk row contract for SH (store halfword — Phase 3A S1).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:221` an RV64 SH
+    Per `zisk/core/src/riscv2zisk_context.rs:221` an RV64 SH
     `rs2, imm(rs1)` transpiles via `self.store_op(i, "copyb", 2, 4)`
     (line 828) to exactly one Zisk microinstruction. The row shape is
     identical to `transpile_SW` / `transpile_SD` at the Main-AIR columns
@@ -1086,7 +1086,7 @@ axiom transpile_SH :
 
 /-- The axiomatic RV64 → Zisk row contract for SB (store byte — Phase 3A S2).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:220` an RV64 SB
+    Per `zisk/core/src/riscv2zisk_context.rs:220` an RV64 SB
     `rs2, imm(rs1)` transpiles via `self.store_op(i, "copyb", 1, 4)`
     (line 828) to exactly one Zisk microinstruction. Main-AIR row shape
     identical to SH/SW/SD modulo the `ind_width = 1` fact that surfaces
@@ -1121,7 +1121,7 @@ axiom transpile_SB :
 
 /-- The axiomatic RV64 → Zisk row contract for SLL (Phase 3A H1).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:135` an RV64 SLL
+    Per `zisk/core/src/riscv2zisk_context.rs:135` an RV64 SLL
     `rd, rs1, rs2` transpiles via `create_register_op(instr, "sll", 4)`
     (line 631) to exactly one Zisk microinstruction:
     * `op = OP_SLL = 0x21 = 33` (`zisk_ops.rs:413`, type `BinaryE`);
@@ -1153,7 +1153,7 @@ axiom transpile_SLL :
 
 /-- The axiomatic RV64 → Zisk row contract for SRL (Phase 3A H2).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:139` an RV64 SRL
+    Per `zisk/core/src/riscv2zisk_context.rs:139` an RV64 SRL
     transpiles via `create_register_op(instr, "srl", 4)`. Emitted row
     mirrors SLL with `op = OP_SRL = 0x22 = 34` (`zisk_ops.rs:414`).
     The direction of the shift (logical-right) is dispatched inside the
@@ -1179,7 +1179,7 @@ axiom transpile_SRL :
 
 /-- The axiomatic RV64 → Zisk row contract for SRA (Phase 3A H3).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:140` an RV64 SRA
+    Per `zisk/core/src/riscv2zisk_context.rs:140` an RV64 SRA
     transpiles via `create_register_op(instr, "sra", 4)`. Emitted row
     mirrors SLL with `op = OP_SRA = 0x23 = 35` (`zisk_ops.rs:415`).
     The direction of the shift (arithmetic-right) is dispatched inside
@@ -1206,7 +1206,7 @@ axiom transpile_SRA :
 /-- Zisk-side representation of a 6-bit shift-amount immediate.
 
     The transpiler helper `immediate_op` at
-    `vendor/zisk/core/src/riscv2zisk_context.rs:853-864` emits
+    `zisk/core/src/riscv2zisk_context.rs:853-864` emits
     `zib.src_b("imm", i.imm as u64, false)`. For SLLI/SRLI/SRAI
     `i.imm` is the 6-bit shamt (RV64 shift amounts are `log2(XLEN) = 6`
     bits); as a u64 this is just `shamt.toNat` with zero high bits.
@@ -1221,7 +1221,7 @@ def shamt_b_lo (shamt : BitVec 6) : FGL :=
 
 /-- The axiomatic RV64 → Zisk row contract for SLLI (Phase 3A H4).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:175` an RV64 SLLI
+    Per `zisk/core/src/riscv2zisk_context.rs:175` an RV64 SLLI
     `rd, rs1, shamt` transpiles via `immediate_op(instr, "sll", 4)`
     (line 853) to exactly one Zisk microinstruction:
     * `op = OP_SLL = 33` — **same op-string as SLL** (the
@@ -1260,7 +1260,7 @@ axiom transpile_SLLI :
 
 /-- The axiomatic RV64 → Zisk row contract for SRLI (Phase 3A H5).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:179`. Same shape
+    Per `zisk/core/src/riscv2zisk_context.rs:179`. Same shape
     as `transpile_SLLI` with `OP_SLL → OP_SRL`. -/
 axiom transpile_SRLI :
     ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -1280,7 +1280,7 @@ axiom transpile_SRLI :
 
 /-- The axiomatic RV64 → Zisk row contract for SRAI (Phase 3A H6).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:180`. Same shape
+    Per `zisk/core/src/riscv2zisk_context.rs:180`. Same shape
     as `transpile_SLLI` with `OP_SLL → OP_SRA`. -/
 axiom transpile_SRAI :
     ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -1301,7 +1301,7 @@ axiom transpile_SRAI :
 /-- The axiomatic RV64 → Zisk row contract for SRLW (Phase 3A H2 —
     `ShiftArchetype` sibling of SLLW, register variant).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:156` an RV64 SRLW
+    Per `zisk/core/src/riscv2zisk_context.rs:156` an RV64 SRLW
     `rd, rs1, rs2` transpiles via `create_register_op(instr, "srl_w", 4)`.
     Emitted row mirrors SLLW with `op = OP_SRL_W = 37` (`zisk_ops.rs:417`).
     The direction of the shift (logical-right) is dispatched inside the
@@ -1328,7 +1328,7 @@ axiom transpile_SRLW :
 /-- The axiomatic RV64 → Zisk row contract for SRAW (Phase 3A H2a —
     `ShiftArchetype` sibling of SLLW/SRLW, register variant).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:157` an RV64 SRAW
+    Per `zisk/core/src/riscv2zisk_context.rs:157` an RV64 SRAW
     `rd, rs1, rs2` transpiles via `create_register_op(instr, "sra_w", 4)`.
     Emitted row mirrors SLLW/SRLW with `op = OP_SRA_W = 38`
     (`zisk_ops.rs:418`). The direction of the shift
@@ -1357,7 +1357,7 @@ axiom transpile_SRAW :
 /-- Zisk-side representation of a 5-bit W-variant shift-amount immediate.
 
     The transpiler helper `immediate_op` at
-    `vendor/zisk/core/src/riscv2zisk_context.rs:853-864` emits
+    `zisk/core/src/riscv2zisk_context.rs:853-864` emits
     `zib.src_b("imm", i.imm as u64, false)` — the `imm` field of the
     RISC-V I-type encoding is parsed as a `u64`. For the W-variant
     immediate shifts (SLLIW, SRLIW, SRAIW) the shift amount is a
@@ -1376,7 +1376,7 @@ def shamt_w_b_lo (shamt : BitVec 5) : FGL :=
 /-- The axiomatic RV64 → Zisk row contract for SLLIW (Phase 3A H2b —
     `ShiftArchetype` sibling, W-variant immediate).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:195` an RV64 SLLIW
+    Per `zisk/core/src/riscv2zisk_context.rs:195` an RV64 SLLIW
     `rd, rs1, shamt` transpiles via `immediate_op(instr, "sll_w", 4)`
     (line 853) to exactly one Zisk microinstruction:
     * `op = OP_SLL_W = 36` (type `BinaryE`);
@@ -1410,7 +1410,7 @@ axiom transpile_SLLIW :
 
 /-- The axiomatic RV64 → Zisk row contract for SRLIW (Phase 3A H2c).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:196`. Same shape as
+    Per `zisk/core/src/riscv2zisk_context.rs:196`. Same shape as
     `transpile_SLLIW` with `OP_SLL_W → OP_SRL_W`. -/
 axiom transpile_SRLIW :
     ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -1430,7 +1430,7 @@ axiom transpile_SRLIW :
 
 /-- The axiomatic RV64 → Zisk row contract for SRAIW (Phase 3A H2d).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:197`. Same shape as
+    Per `zisk/core/src/riscv2zisk_context.rs:197`. Same shape as
     `transpile_SLLIW` with `OP_SLL_W → OP_SRA_W`. -/
 axiom transpile_SRAIW :
     ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -1450,7 +1450,7 @@ axiom transpile_SRAIW :
 
 /-- The axiomatic RV64 → Zisk row contract for MULHU (Phase 3A M1).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:246` an RV64 MULHU
+    Per `zisk/core/src/riscv2zisk_context.rs:246` an RV64 MULHU
     `rd, rs1, rs2` transpiles via
     `create_register_op(..., "muluh", 4)` — note the string rename
     (`"mulhu" → "muluh"`). Differs from `transpile_MULH` only in the
@@ -1485,7 +1485,7 @@ axiom transpile_MULHU :
 
 /-- The axiomatic RV64 → Zisk row contract for MULHSU (Phase 3A M2).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:245` an RV64 MULHSU
+    Per `zisk/core/src/riscv2zisk_context.rs:245` an RV64 MULHSU
     `rd, rs1, rs2` transpiles via
     `create_register_op(..., "mulsuh", 4)` — note the string rename
     (`"mulhsu" → "mulsuh"`). Differs from `transpile_MULH` only in the
@@ -1519,7 +1519,7 @@ axiom transpile_MULHSU :
 
 /-- The axiomatic RV64 → Zisk row contract for MULW (Phase 3A M3).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:247` an RV64 MULW
+    Per `zisk/core/src/riscv2zisk_context.rs:247` an RV64 MULW
     `rd, rs1, rs2` transpiles via
     `create_register_op(..., "mul_w", 4)`. Unlike MUL / MULH / MULHU /
     MULHSU (all `m32 = 0`, 64-bit operand form), MULW is the 32-bit
@@ -1563,7 +1563,7 @@ axiom transpile_MULW :
 /-- The axiomatic RV64 → Zisk row contract for LUI (load-upper-immediate,
     Phase 3C Track T-U).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:1009` an RV64 LUI
+    Per `zisk/core/src/riscv2zisk_context.rs:1009` an RV64 LUI
     `rd, imm` transpiles via `self.lui(i, 4)` to exactly one Zisk
     microinstruction emitted by `ZiskInstBuilder`:
     * `zib.src_a("imm", 0, false)` — `a` lanes are 0;
@@ -1608,7 +1608,7 @@ axiom transpile_LUI :
 /-- The axiomatic RV64 → Zisk row contract for AUIPC (add-upper-immediate-PC,
     Phase 3C Track T-U).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:907` an RV64 AUIPC
+    Per `zisk/core/src/riscv2zisk_context.rs:907` an RV64 AUIPC
     `rd, imm` transpiles via `self.auipc(i)` to exactly one Zisk
     microinstruction emitted by `ZiskInstBuilder`:
     * `zib.src_a("imm", 0, false)` — `a` lanes are 0;
@@ -1662,7 +1662,7 @@ axiom transpile_AUIPC :
     `flag` output carries the comparison verdict. -/
 
 /-- Goldilocks literal for the SUB opcode. `0x0b = 11` per
-    `vendor/zisk/core/src/zisk_ops.rs:393` (`"sub"`, Binary type).
+    `zisk/core/src/zisk_ops.rs:393` (`"sub"`, Binary type).
     Used by RV64 SUB (`riscv2zisk_context.rs:134`,
     `create_register_op(..., "sub", 4)`). -/
 @[simp] def OP_SUB : FGL := 11
@@ -1671,13 +1671,13 @@ axiom transpile_AUIPC :
 -- BLTU / BGEU branches share them). SLT / SLTU reuse those literals.
 
 /-- Goldilocks literal for the AND opcode. `0x0e = 14` per
-    `vendor/zisk/core/src/zisk_ops.rs:396` (`"and"`, Binary type).
+    `zisk/core/src/zisk_ops.rs:396` (`"and"`, Binary type).
     Used by RV64 AND (`riscv2zisk_context.rs:152`,
     `create_register_op(..., "and", 4)`) and ANDI (line 182). -/
 @[simp] def OP_AND : FGL := 14
 
 /-- Goldilocks literal for the OR opcode. `0x0f = 15` per
-    `vendor/zisk/core/src/zisk_ops.rs:397` (`"or"`, Binary type).
+    `zisk/core/src/zisk_ops.rs:397` (`"or"`, Binary type).
     Used by RV64 OR (`riscv2zisk_context.rs:149`,
     `create_register_op(..., "or", 4)` — inside the `"or"` arm's
     enclosing block at lines 141-150, whose terminal statement is
@@ -1685,14 +1685,14 @@ axiom transpile_AUIPC :
 @[simp] def OP_OR : FGL := 15
 
 /-- Goldilocks literal for the XOR opcode. `0x10 = 16` per
-    `vendor/zisk/core/src/zisk_ops.rs:398` (`"xor"`, Binary type).
+    `zisk/core/src/zisk_ops.rs:398` (`"xor"`, Binary type).
     Used by RV64 XOR (`riscv2zisk_context.rs:138`,
     `create_register_op(..., "xor", 4)`) and XORI (line 178). -/
 @[simp] def OP_XOR : FGL := 16
 
 /-- The axiomatic RV64 → Zisk row contract for SUB (Phase 3C T-RT).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:134` an RV64 SUB
+    Per `zisk/core/src/riscv2zisk_context.rs:134` an RV64 SUB
     `rd, rs1, rs2` transpiles via `create_register_op(..., "sub", 4)`
     — the identical helper ADD uses. Row shape mirrors
     `transpile_ADD` with the opcode literal changed:
@@ -1727,7 +1727,7 @@ axiom transpile_SUB :
 
 /-- The axiomatic RV64 → Zisk row contract for AND (Phase 3C T-RT).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:152` an RV64 AND
+    Per `zisk/core/src/riscv2zisk_context.rs:152` an RV64 AND
     `rd, rs1, rs2` transpiles via `create_register_op(..., "and", 4)`.
     Shape identical to `transpile_SUB` modulo opcode literal.
 
@@ -1755,7 +1755,7 @@ axiom transpile_AND :
 
 /-- The axiomatic RV64 → Zisk row contract for OR (Phase 3C T-RT).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:141-150` an RV64 OR
+    Per `zisk/core/src/riscv2zisk_context.rs:141-150` an RV64 OR
     `rd, rs1, rs2` transpiles via `create_register_op(..., "or", 4)`.
     The `"or"` arm in Rust has an outer block that is purely
     organizational; the terminal microinstruction emission (line 149)
@@ -1785,7 +1785,7 @@ axiom transpile_OR :
 
 /-- The axiomatic RV64 → Zisk row contract for XOR (Phase 3C T-RT).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:138` an RV64 XOR
+    Per `zisk/core/src/riscv2zisk_context.rs:138` an RV64 XOR
     `rd, rs1, rs2` transpiles via `create_register_op(..., "xor", 4)`.
     Shape identical to `transpile_SUB` modulo opcode literal.
 
@@ -1813,7 +1813,7 @@ axiom transpile_XOR :
 
 /-- The axiomatic RV64 → Zisk row contract for SLT (Phase 3C T-RT).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:136` an RV64 SLT
+    Per `zisk/core/src/riscv2zisk_context.rs:136` an RV64 SLT
     `rd, rs1, rs2` transpiles via `create_register_op(..., "lt", 4)`
     — the Rust string `"lt"` routes through the shared `OP_LT = 7`
     opcode (`zisk_ops.rs:389`), the **same** opcode used by BLT / BGE.
@@ -1850,7 +1850,7 @@ axiom transpile_SLT :
 
 /-- The axiomatic RV64 → Zisk row contract for SLTU (Phase 3C T-RT).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:137` an RV64 SLTU
+    Per `zisk/core/src/riscv2zisk_context.rs:137` an RV64 SLTU
     `rd, rs1, rs2` transpiles via `create_register_op(..., "ltu", 4)`.
     Shape identical to `transpile_SLT` modulo opcode literal
     (`OP_LT → OP_LTU`).
@@ -1906,7 +1906,7 @@ axiom transpile_SLTU :
 
 /-- The axiomatic RV64 → Zisk row contract for ADDI (Phase 3C T-IT).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:160-174` an RV64
+    Per `zisk/core/src/riscv2zisk_context.rs:160-174` an RV64
     ADDI `rd, rs1, imm` transpiles (on the non-degenerate path,
     `rd ≠ 0 ∧ ¬(imm = 0 ∧ rs1 ≠ 0)`) via
     `immediate_op_or_x0_copyb(..., "add", 4)` — reusing **`OP_ADD`**
@@ -1952,7 +1952,7 @@ axiom transpile_ADDI :
 
 /-- The axiomatic RV64 → Zisk row contract for ANDI (Phase 3C T-IT).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:182` an RV64 ANDI
+    Per `zisk/core/src/riscv2zisk_context.rs:182` an RV64 ANDI
     `rd, rs1, imm` transpiles via `immediate_op(..., "and", 4)` —
     reusing `OP_AND = 14` (shared with AND). Shape identical to
     `transpile_ADDI` modulo opcode literal.
@@ -1980,7 +1980,7 @@ axiom transpile_ANDI :
 
 /-- The axiomatic RV64 → Zisk row contract for ORI (Phase 3C T-IT).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:181` an RV64 ORI
+    Per `zisk/core/src/riscv2zisk_context.rs:181` an RV64 ORI
     `rd, rs1, imm` transpiles via
     `immediate_op_or_x0_copyb(..., "or", 4)` — reusing `OP_OR = 15`
     (shared with OR). Shape identical to `transpile_ADDI` modulo
@@ -2009,7 +2009,7 @@ axiom transpile_ORI :
 
 /-- The axiomatic RV64 → Zisk row contract for XORI (Phase 3C T-IT).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:178` an RV64 XORI
+    Per `zisk/core/src/riscv2zisk_context.rs:178` an RV64 XORI
     `rd, rs1, imm` transpiles via
     `immediate_op_or_x0_copyb(..., "xor", 4)` — reusing `OP_XOR = 16`
     (shared with XOR). Shape identical to `transpile_ADDI` modulo
@@ -2038,7 +2038,7 @@ axiom transpile_XORI :
 
 /-- The axiomatic RV64 → Zisk row contract for SLTI (Phase 3C T-IT).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:176` an RV64 SLTI
+    Per `zisk/core/src/riscv2zisk_context.rs:176` an RV64 SLTI
     `rd, rs1, imm` transpiles via `immediate_op(..., "lt", 4)` —
     reusing `OP_LT = 7` (shared with BLT / BGE / SLT). Like SLT, the
     Binary-SM's `flag` output carries the signed comparison verdict
@@ -2070,7 +2070,7 @@ axiom transpile_SLTI :
 
 /-- The axiomatic RV64 → Zisk row contract for SLTIU (Phase 3C T-IT).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:177` an RV64 SLTIU
+    Per `zisk/core/src/riscv2zisk_context.rs:177` an RV64 SLTIU
     `rd, rs1, imm` transpiles via `immediate_op(..., "ltu", 4)` —
     reusing `OP_LTU = 6` (shared with BLTU / BGEU / SLTU). Shape
     identical to `transpile_SLTI` modulo `OP_LT → OP_LTU`. Note that
@@ -2105,7 +2105,7 @@ archetype (SLLW / SRLW / SRAW), except they dispatch to the
 immediate-vs-register b-source (immediate form — `b_lo`/`b_hi` carry
 the sign-extended 12-bit immediate lanes).
 
-**ADDIW routing finding.** `vendor/zisk/core/src/riscv2zisk_context.rs:184-194`:
+**ADDIW routing finding.** `zisk/core/src/riscv2zisk_context.rs:184-194`:
 the `"addiw"` arm calls `immediate_op(..., "add_w", 4)` (line 192) —
 i.e. **OP_ADD_W + m32 = 1**, *not* `OP_ADD` with `m32 = 1`. (The
 preceding `if rd == 0 && rs1 == 0 && imm == 0` branch emits a nop;
@@ -2115,7 +2115,7 @@ shape.) -/
 
 /-- The axiomatic RV64 → Zisk row contract for ADDW (Phase 3C T-W).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:153` an RV64 ADDW
+    Per `zisk/core/src/riscv2zisk_context.rs:153` an RV64 ADDW
     `rd, rs1, rs2` transpiles via `create_register_op(..., "add_w", 4)`
     — the identical helper ADD / SUB use. Row shape mirrors
     `transpile_ADD` / `transpile_SUB` with:
@@ -2153,7 +2153,7 @@ axiom transpile_ADDW :
 
 /-- The axiomatic RV64 → Zisk row contract for SUBW (Phase 3C T-W).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:154` an RV64 SUBW
+    Per `zisk/core/src/riscv2zisk_context.rs:154` an RV64 SUBW
     `rd, rs1, rs2` transpiles via `create_register_op(..., "sub_w", 4)`.
     Row shape mirrors `transpile_ADDW` with the opcode literal
     changed:
@@ -2183,7 +2183,7 @@ axiom transpile_SUBW :
 
 /-- The axiomatic RV64 → Zisk row contract for ADDIW (Phase 3C T-W).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:184-194` an RV64
+    Per `zisk/core/src/riscv2zisk_context.rs:184-194` an RV64
     ADDIW `rd, rs1, imm` transpiles via `immediate_op(..., "add_w", 4)`
     (line 192) — **OP_ADD_W with m32 = 1**, distinct from ADDI's
     OP_ADD-with-m32=0 routing. The degenerate `rd=0, rs1=0, imm=0`
@@ -2228,7 +2228,7 @@ axiom transpile_ADDIW :
       ∧ m.b_1 r_main = imm_hi
 
 /-- Zisk `signextend_b` opcode (0x27 = 39). `BinaryE` external op
-    (`vendor/zisk/core/src/zisk_ops.rs:419`). Routes through the
+    (`zisk/core/src/zisk_ops.rs:419`). Routes through the
     BinaryExtension SM via the operation bus; populates `c` with
     `sign_extend 8 → 64` of the low byte of `b`. Consumed by LB and
     (out-of-scope here) the sign-extend step of AMO byte-ops. -/
@@ -2236,19 +2236,19 @@ axiom transpile_ADDIW :
 
 /-- Zisk `signextend_h` opcode (0x28 = 40). Same SM / bus shape as
     `OP_SIGNEXTEND_B`, with the sign-extension source width bumped to
-    16 bits (`vendor/zisk/core/src/zisk_ops.rs:420`). Consumed by LH. -/
+    16 bits (`zisk/core/src/zisk_ops.rs:420`). Consumed by LH. -/
 @[simp] def OP_SIGNEXTEND_H : FGL := 40
 
 /-- Zisk `signextend_w` opcode (0x29 = 41). Same SM / bus shape as
     `OP_SIGNEXTEND_B` / `OP_SIGNEXTEND_H` with the source width at
-    32 bits (`vendor/zisk/core/src/zisk_ops.rs:421`). Consumed by LW
+    32 bits (`zisk/core/src/zisk_ops.rs:421`). Consumed by LW
     (and, out of scope, several atomic-memory ops). -/
 @[simp] def OP_SIGNEXTEND_W : FGL := 41
 
 /-- The axiomatic RV64 → Zisk row contract for LW (Phase 3C T-SL —
     pilot of the `SignExtendLoadArchetype`).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:214` an RV64 LW
+    Per `zisk/core/src/riscv2zisk_context.rs:214` an RV64 LW
     `rd, imm(rs1)` transpiles via `self.load_op(i, "signextend_w", 4, 4)`
     (line 803) to exactly one Zisk microinstruction. Unlike the
     zero-extension loads (LD/LWU/LHU/LBU — `"copyb"`), LW uses the
@@ -2293,7 +2293,7 @@ axiom transpile_LW :
 /-- The axiomatic RV64 → Zisk row contract for LH (Phase 3C T-SL —
     sibling of `transpile_LW`, narrower width).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:212` an RV64 LH
+    Per `zisk/core/src/riscv2zisk_context.rs:212` an RV64 LH
     `rd, imm(rs1)` transpiles via `self.load_op(i, "signextend_h", 2, 4)`
     (line 803) to exactly one Zisk microinstruction:
     * `op = OP_SIGNEXTEND_H = 40` (`zisk_ops.rs:420`, type `BinaryE`);
@@ -2322,7 +2322,7 @@ axiom transpile_LH :
 /-- The axiomatic RV64 → Zisk row contract for LB (Phase 3C T-SL —
     sibling of `transpile_LW`, narrowest width).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:210` an RV64 LB
+    Per `zisk/core/src/riscv2zisk_context.rs:210` an RV64 LB
     `rd, imm(rs1)` transpiles via `self.load_op(i, "signextend_b", 1, 4)`
     (line 803) to exactly one Zisk microinstruction:
     * `op = OP_SIGNEXTEND_B = 39` (`zisk_ops.rs:419`, type `BinaryE`);
@@ -2355,18 +2355,18 @@ axiom transpile_LB :
    The DIV subfamily (DIV, DIVU, REM, REMU) all dispatch through the
    Arith state machine via the operation bus, sharing the Zisk
    microinstruction shape `create_register_op(..., <op_str>, 4)` at
-   `vendor/zisk/core/src/riscv2zisk_context.rs:248-253`:
+   `zisk/core/src/riscv2zisk_context.rs:248-253`:
 
      "div"  → create_register_op(i, "div",  4)  -- line 248
      "divu" → create_register_op(i, "divu", 4)  -- line 249
      "rem"  → create_register_op(i, "rem",  4)  -- line 252
      "remu" → create_register_op(i, "remu", 4)  -- line 253
 
-   Opcode literals from `vendor/zisk/core/src/zisk_ops.rs:430-433`.
+   Opcode literals from `zisk/core/src/zisk_ops.rs:430-433`.
 -/
 
 /-- Goldilocks literal for the DIVU opcode. `0xb8 = 184` per
-    `vendor/zisk/core/src/zisk_ops.rs:430`. Unsigned integer division,
+    `zisk/core/src/zisk_ops.rs:430`. Unsigned integer division,
     64-bit operands, quotient output (low 64 bits). Dispatched to the
     Arith state machine via the operation bus as the **primary**
     result on a DIV-family Arith row (`main_div = 1`). Used by RV64
@@ -2395,27 +2395,27 @@ axiom transpile_LB :
 @[simp] def OP_REM : FGL := 187
 
 /-- Goldilocks literal for the unsigned 32-bit divide opcode.
-    `0xbc = 188` per `vendor/zisk/core/src/zisk_ops.rs:434`. Used by
+    `0xbc = 188` per `zisk/core/src/zisk_ops.rs:434`. Used by
     RV64 DIVUW (`riscv2zisk_context.rs:251`,
     `create_register_op(..., "divu_w", 4)`). Type `ArithA32` — handled
     by the Arith state machine with `m32 = 1`. -/
 @[simp] def OP_DIVU_W : FGL := 188
 
 /-- Goldilocks literal for the unsigned 32-bit remainder opcode.
-    `0xbd = 189` per `vendor/zisk/core/src/zisk_ops.rs:435`. Used by
+    `0xbd = 189` per `zisk/core/src/zisk_ops.rs:435`. Used by
     RV64 REMUW (`riscv2zisk_context.rs:255`). Type `ArithA32`,
     secondary lane on the same Arith row that produces the quotient. -/
 @[simp] def OP_REMU_W : FGL := 189
 
 /-- Goldilocks literal for the signed 32-bit divide opcode.
-    `0xbe = 190` per `vendor/zisk/core/src/zisk_ops.rs:436`. Used by
+    `0xbe = 190` per `zisk/core/src/zisk_ops.rs:436`. Used by
     RV64 DIVW (`riscv2zisk_context.rs:250`,
     `create_register_op(..., "div_w", 4)`). Type `ArithA32` — handled
     by the Arith state machine with `m32 = 1, sa = sb = 1`. -/
 @[simp] def OP_DIV_W : FGL := 190
 
 /-- Goldilocks literal for the signed 32-bit remainder opcode.
-    `0xbf = 191` per `vendor/zisk/core/src/zisk_ops.rs:437`. Used by
+    `0xbf = 191` per `zisk/core/src/zisk_ops.rs:437`. Used by
     RV64 REMW (`riscv2zisk_context.rs:254`). Type `ArithA32`,
     secondary lane on the same Arith row that produces the
     quotient. -/
@@ -2493,7 +2493,7 @@ axiom transpile_REMW :
 
 /-- The axiomatic RV64 → Zisk row contract for DIVU (Phase 3C T-D).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:249` an RV64 DIVU
+    Per `zisk/core/src/riscv2zisk_context.rs:249` an RV64 DIVU
     `rd, rs1, rs2` transpiles via `create_register_op(..., "divu", 4)`
     — the identical helper MUL / DIV / REM use, only the opcode string
     changes. One Main-AIR row with:
@@ -2530,7 +2530,7 @@ axiom transpile_DIVU :
 
 /-- The axiomatic RV64 → Zisk row contract for REMU (Phase 3C T-D).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:253` an RV64 REMU
+    Per `zisk/core/src/riscv2zisk_context.rs:253` an RV64 REMU
     `rd, rs1, rs2` transpiles via `create_register_op(..., "remu", 4)`.
     One Main-AIR row with:
 
@@ -2565,7 +2565,7 @@ axiom transpile_REMU :
 
 /-- The axiomatic RV64 → Zisk row contract for DIV (Phase 3C T-D).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:248` an RV64 DIV
+    Per `zisk/core/src/riscv2zisk_context.rs:248` an RV64 DIV
     `rd, rs1, rs2` transpiles via `create_register_op(..., "div", 4)`.
     One Main-AIR row with:
 
@@ -2603,7 +2603,7 @@ axiom transpile_DIV :
 
 /-- The axiomatic RV64 → Zisk row contract for REM (Phase 3C T-D).
 
-    Per `vendor/zisk/core/src/riscv2zisk_context.rs:252` an RV64 REM
+    Per `zisk/core/src/riscv2zisk_context.rs:252` an RV64 REM
     `rd, rs1, rs2` transpiles via `create_register_op(..., "rem", 4)`.
     One Main-AIR row with:
 

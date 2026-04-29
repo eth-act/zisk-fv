@@ -44,7 +44,7 @@ it doesn't transfer directly:
 - **Field:** Goldilocks (`2^64 − 2^32 + 1`), not BabyBear.
 - **Constraint language:** PIL2 + compiled `.pilout` protobuf, not a
   Plonky3 `SymbolicConstraintsDag`. The `openvm-fv/extractor/` binary is
-  **not reusable** — we built `tools/zisk-pil-extract/` to walk pilout.
+  **not reusable** — we built `tools/pil-extract/` to walk pilout.
 - **Execution model:** one monolithic Main AIR over "Zisk instructions"
   (a microinstruction IR) that multiplexes opcodes via flags and
   delegates heavy ops to secondary state machines (arith, binary,
@@ -100,7 +100,7 @@ reduction and is welcome but out of scope for current phases.
   secondary AIR's row.
 - `ZiskFv.Airs.BinaryTable` (added in `finishing2.md` S0) — the binary
   lookup table at `bus_id=125` carries the per-byte switch semantics
-  defined by `vendor/zisk/state-machines/binary/pil/binary_table.pil`
+  defined by `zisk/state-machines/binary/pil/binary_table.pil`
   (AND/OR/XOR bitwise ops; LT/LTU/EQ/GT/LE/LEU/LT_ABS_*/MIN(U)/MAX(U)
   comparison ops; ADD/SUB carry semantics; SEXT_00/FF byte sign-extends).
   Mirrors openvm-fv's `Fundamentals/Interaction.lean::BitwiseBusEntry`
@@ -166,7 +166,7 @@ your normal grep / read scope — that's intentional.
     `trust/baseline-axioms.txt`. Edit this when you legitimately add
     or remove an axiom (see "Trusted surface" above).
   - `extractor-notes.md` — durable contract / pilout structure /
-    oracle rules for `tools/zisk-pil-extract/`. Read first when
+    oracle rules for `tools/pil-extract/`. Read first when
     extending the extractor.
   - `air-inventory.md` — 22-AIR table (which are extracted into
     Lean, which have named wrappers, which are absorbed into trust).
@@ -268,7 +268,7 @@ points at the file/line. The `trust/README.md` has the full reference.
 │   └── scripts/                        # check-{locality,baseline,no-output-eq,floor,all}.sh
 ├── docs/fv/                            # 3 live library-reference notes
 │   ├── trusted-base.md                 # trust ledger; pairs with trust/baseline-axioms.txt
-│   ├── extractor-notes.md              # tools/zisk-pil-extract contract
+│   ├── extractor-notes.md              # tools/pil-extract contract
 │   └── air-inventory.md                # 22-AIR extraction status
 ├── lakefile.toml                       # Lake 4 package config (mathlib + LeanZKCircuit + LeanRV)
 ├── lake-manifest.json                  # Lake-pinned dep manifest
@@ -283,11 +283,11 @@ points at the file/line. The `trust/README.md` has the full reference.
 │   ├── Equivalence/                    # final per-opcode equivalence
 │   └── GoldenTraces/                   # concrete witness fixtures
 ├── tools/
-│   ├── zisk-pil-extract/               # pilout → Lean CLI (19 unit tests)
-│   └── zisk-fv-harness/                # fixture emitter
+│   ├── pil-extract/               # pilout → Lean CLI (19 unit tests)
+│   └── golden-traces/                # fixture emitter
 ├── repro/                              # Docker reproducibility containers
 ├── build/                              # Generated artifacts (gitignored)
 │   └── zisk.pilout                     # produced by repro/build-pilout.sh
-├── vendor/zisk/                        # git submodule pinned at 48cf7ccef
+├── zisk/                        # git submodule pinned at 48cf7ccef
 └── justfile                            # verify-phase0 / verify-phase1
 ```

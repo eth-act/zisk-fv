@@ -23,11 +23,10 @@ phase plans and metaplan documents have been removed from the tree
 | Path | Purpose |
 |------|---------|
 | `docs/fv/` | Live library-reference notes: trust ledger, extractor contract, AIR inventory |
-| `tools/zisk-pil-extract/` | Rust CLI: decodes `.pilout` protobuf → Lean constraint definitions |
-| `tools/zisk-fv-harness/` | Rust CLI: emits a golden-trace fixture (`ZiskFv/GoldenTraces/Add.lean`) |
+| `tools/pil-extract/` | Rust CLI: decodes `.pilout` protobuf → Lean constraint definitions |
+| `tools/golden-traces/` | Rust CLI: emits a golden-trace fixture (`ZiskFv/GoldenTraces/Add.lean`) |
 | `ZiskFv/` | Lake 4 package (mathlib + LeanZKCircuit + LeanRV, toolchain v4.26.0) |
-| `pil/zisk.pilout` | Vendored ZisK pilout (input to the extractor) |
-| `vendor/zisk/` | ZisK source tree (git submodule, pinned at `48cf7ccef`) |
+| `zisk/` | ZisK source tree (git submodule, pinned at `48cf7ccef`) |
 | `trust/` | Trust-boundary baselines + enforcement scripts. See `trust/README.md`. |
 | `repro/` | Docker container that builds the pilout + Sail-Lean spec from upstream source. See `repro/README.md`. |
 | `build/` | Generated artifacts (`build/zisk.pilout`, `build/sail-lean/`). Gitignored — produced by `repro/`. |
@@ -91,7 +90,7 @@ make subsequent runs nearly instant.
 
 ## Vendored ZisK inputs
 
-The ZisK tree is pulled in as a git submodule at `vendor/zisk/`,
+The ZisK tree is pulled in as a git submodule at `zisk/`,
 pinned to `0xPolygonHermez/zisk@48cf7ccef` (`Merge pull request #875
 from 0xPolygonHermez/develop`). Clone with
 `git clone --recurse-submodules` or run `git submodule update --init`

@@ -11,7 +11,7 @@ The PIL-level memory bus (`bus_id = 10`) emits register-side entries as
 6-tuples `[as, ptr, mem_step, bytes, value_lo, value_hi]`, where the
 value carried is a 64-bit register split into two 32-bit lanes (PIL
 source: `state-machines/main/pil/main.pil:300-328`,
-`vendor/zisk/state-machines/mem/pil/mem.pil:524-527`). This is *narrower*
+`zisk/state-machines/mem/pil/mem.pil:524-527`). This is *narrower*
 than the 12-slot byte-form `Interaction.MemoryBusEntry` used downstream
 by memory-load / memory-store paths through MemAlign — those byte-level
 paths will be exercised by `finishing3.md` for the Mem AIR closure.

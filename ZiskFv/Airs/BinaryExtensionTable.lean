@@ -12,7 +12,7 @@ against `BINARY_EXTENSION_TABLE_ID = 124`:
   `[op, byte_index, a_byte, shift_amount, c_lo_byte, c_hi_byte, op_is_shift]`
 
 The provider side is the fixed virtual table defined by
-`vendor/zisk/state-machines/binary/pil/binary_extension_table.pil`'s
+`zisk/state-machines/binary/pil/binary_extension_table.pil`'s
 deterministic `for` loop, switching on the shift opcode (SLL, SRL, SRA,
 SLL_W, SRL_W, SRA_W, SEXT_B, SEXT_H, SEXT_W). Each lookup pulls the full
 64-bit *contribution* of one input byte at its given byte position to the
@@ -26,7 +26,7 @@ namespace ZiskFv.Airs.BinaryExtensionTable
 
 open Goldilocks
 
-/-! ## Op literals (from `vendor/zisk/pil/operations.pil`) -/
+/-! ## Op literals (from `zisk/pil/operations.pil`) -/
 
 /-- Shift-left logical (64-bit). -/
 def OP_SLL    : ℕ := 0x21
@@ -100,7 +100,7 @@ def wf_SRL (e : BinaryExtensionTableEntry FGL) : Prop :=
     high bit of `a_byte` set, the output gains the sign-extension mask
     `MASK_64 << (64 - s) % 2^64 = 2^64 - 2^(64 - s)`.
 
-    Reference: `vendor/zisk/state-machines/binary/pil/binary_extension_table.pil`,
+    Reference: `zisk/state-machines/binary/pil/binary_extension_table.pil`,
     `case OP_SRA`. The PIL's `out | (MASK_64 << (64 - _b))` expression,
     once truncated to 64 bits via the `c0 = out & MASK_32; c1 = (out >> 32) & MASK_32`
     extraction, is equivalent to adding `2^64 - 2^(64 - s)` to the

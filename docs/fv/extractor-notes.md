@@ -1,19 +1,19 @@
-# zisk-pil-extract — extractor notes
+# pil-extract — extractor notes
 
 Contract, pilout structure observations, and known limitations for the Phase 0
-extractor at `tools/zisk-pil-extract/`.
+extractor at `tools/pil-extract/`.
 
 ## Contract
 
 ```
-zisk-pil-extract --pilout <path> --air <needle>
+pil-extract --pilout <path> --air <needle>
                  [--output <path>] [--list]
                  [--skip-unsupported] [--only <i>[,<j>…]]
                  [--bus-emissions [--bus-id <N>]]
 ```
 
 - `--pilout`: path to a compiled `.pilout` (protobuf, schema vendored at
-  `tools/zisk-pil-extract/proto/pilout.proto`).
+  `tools/pil-extract/proto/pilout.proto`).
 - `--air`: substring matched against each AIR's `name` (case-sensitive). Must
   resolve to exactly one AIR; otherwise the tool errors with the list of
   conflicting matches.
@@ -38,7 +38,7 @@ zisk-pil-extract --pilout <path> --air <needle>
   and constants all type cleanly over `F` (no `ExtF` mixing — operation-bus
   tuples reference only stage-1 cells).
 - `--bus-id <N>`: bus-id filter for `--bus-emissions` mode. Defaults to
-  `5000 = OPERATION_BUS_ID` (`vendor/zisk/pil/opids.pil:2`). Set to `0` to
+  `5000 = OPERATION_BUS_ID` (`zisk/pil/opids.pil:2`). Set to `0` to
   emit every `gsum_debug_data` hint for the AIR (useful for memory-bus
   exploration).
 
@@ -136,7 +136,7 @@ oracle for the `BinaryAdd` extraction; `just verify-phase0` diffs the generated
 file against it (whitespace-normalized) and fails on drift.
 
 **Provenance.** The oracle was written by hand from the
-`vendor/zisk/state-machines/binary/pil/binary_add.pil` source, applying the
+`zisk/state-machines/binary/pil/binary_add.pil` source, applying the
 rendering rules described in the "Contract" and "Pilout structure observations"
 sections above — not by copying generator output. Metadata lines are
 pass-through, not
