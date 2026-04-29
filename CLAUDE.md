@@ -172,6 +172,10 @@ your normal grep / read scope — that's intentional.
     Lean, which have named wrappers, which are absorbed into trust).
 - **`trust/`** — baselines and enforcement scripts; see
   `trust/README.md`.
+- **`repro/`** — Docker-based reproducibility for the two
+  trusted artifacts (`pil/zisk.pilout` and the `LeanRV` Lake dep).
+  See `repro/README.md`. Pinned upstream versions live in
+  `repro/versions.txt`.
 - **memory** — agent-private notes at
   `/home/cody/.claude/projects/-home-cody-zisk-fv/memory/`. Project
   facts that persist across conversations; update when current state
