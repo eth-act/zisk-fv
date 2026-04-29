@@ -32,3 +32,8 @@ ocaml-version              = 5.2.1
 # these are tracked here so a one-shot grep finds them).
 lean-rv-commit             = 81c8c84f919b6b565790713e2049a88b88739cda
 leanzkcircuit-commit       = 8631b11de51c68288b519e8032019524b84a365f
+
+# Sail-Lean RV64D tree hash (sha256 of sorted *.lean file sha256s).
+# Verified by `just build-sail-lean`. Update when upstream pins
+# (sail-commit, sail-riscv-commit) change.
+expected-sail-lean-tree-sha256 = aabc5b9fc6bb9b58433c919dee5f0fd72f70fd9a999c5d79fe75a8384b49ac83

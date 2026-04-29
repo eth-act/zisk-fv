@@ -22,8 +22,11 @@ build-pilout:
     sha256sum build/zisk.pilout
     echo "✅ Pilout built. Continue with: just verify-phase0"
 
-# Build the Sail-Lean RV64D model from primary source via Docker, then
-# tree-diff against the Lake-resolved LeanRV @ 81c8c84f. ~5 min cold.
+# Build the Sail-Lean RV64D model from primary source via Docker.
+# This is the spec our proofs are about — Lake reads from
+# build/sail-lean/ via a path-based require in lakefile.toml. Run
+# once after cloning; takes ~5 min cold (Docker layers cache after
+# that). The expected tree hash is pinned in docker/versions.txt.
 build-sail-lean:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -32,31 +35,29 @@ build-sail-lean:
     docker build -t zisk-fv-sail-lean -f docker/Dockerfile.sail-lean docker/
     echo "▶ docker run…"
     docker run --rm -v "$PWD/build/sail-lean:/output" zisk-fv-sail-lean
-    LEAN_RV_DIR=.lake/packages/LeanRV
-    if [ ! -d "$LEAN_RV_DIR" ]; then
-        echo "  Lake hasn't resolved LeanRV yet. Run \`lake update\` first."
+    if [ ! -f build/sail-lean/lakefile.toml ]; then
+        echo "❌ build/sail-lean/lakefile.toml was not produced" >&2
         exit 1
     fi
-    hash_tree () {
-        (cd "$1" && find . -type f -name '*.lean' ! -path './.lake/*' \
-            -print0 | sort -z | xargs -0 sha256sum) | sha256sum | awk '{print $1}'
-    }
-    local_hash=$(hash_tree build/sail-lean)
-    lake_hash=$(hash_tree "$LEAN_RV_DIR")
-    echo "  reproduced:     $local_hash"
-    echo "  Lake-resolved:  $lake_hash"
-    if [ "$local_hash" = "$lake_hash" ]; then
-        echo "  ✅ TREE-IDENTICAL (Lean source files)"
+    # Verify the tree hash matches what we pinned. The expected hash
+    # is the sha256 of the sorted sha256s of every *.lean file (not
+    # counting .lake/ build cache).
+    expected=$(grep '^expected-sail-lean-tree-sha256' docker/versions.txt | awk -F'= *' '{print $2}')
+    actual=$( (cd build/sail-lean && find . -type f -name '*.lean' ! -path './.lake/*' \
+              -print0 | sort -z | xargs -0 sha256sum) | sha256sum | awk '{print $1}')
+    echo "  expected:  $expected"
+    echo "  actual:    $actual"
+    if [ "$expected" = "$actual" ]; then
+        echo "  ✅ tree hash matches docker/versions.txt"
     else
-        echo "  ⚠ DIFFER. Per-file diff:"
-        diff -ruq build/sail-lean "$LEAN_RV_DIR" \
-          | grep -v '/.lake' | grep -v 'README.md\|report.py\|build_log.txt' \
-          | head -30
+        echo "  ❌ tree hash mismatch — Sail-Lean spec drifted from pin." >&2
+        echo "     If this is intentional, update expected-sail-lean-tree-sha256" >&2
+        echo "     in docker/versions.txt." >&2
         exit 1
     fi
 
-# Helper: assert the pilout has been built. Used as a dependency by
-# verify-phase* recipes so they fail fast with a friendly pointer.
+# Helpers: assert that build artifacts exist before verify-phase*
+# recipes call into them. Friendly fast-fail with bootstrap pointer.
 _assert_pilout:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -69,6 +70,23 @@ _assert_pilout:
         echo "    just build-pilout" >&2
         echo "" >&2
         echo "Takes ~6 min cold, persists in build/. See docker/README.md." >&2
+        exit 1
+    fi
+
+_assert_sail_lean:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ ! -f build/sail-lean/lakefile.toml ]; then
+        echo "❌ build/sail-lean/ not found." >&2
+        echo "" >&2
+        echo "The Sail-Lean RV64D spec is not vendored in the repo — it is" >&2
+        echo "built locally from primary source via Docker. Run once before" >&2
+        echo "any verify-phase* or lake build:" >&2
+        echo "" >&2
+        echo "    just build-sail-lean" >&2
+        echo "" >&2
+        echo "Takes ~5 min cold, persists in build/sail-lean/. The lakefile" >&2
+        echo "reads from there (path = \"build/sail-lean\"). See docker/README.md." >&2
         exit 1
     fi
 oracle    := "ZiskFv/Extraction/BinaryAdd.hand.lean"
@@ -92,7 +110,7 @@ sllw_doc  := "docs/fv/archetype-shift.md"
 
 # Phase 0 gate: regenerate the BinaryAdd extraction, diff vs. the hand-written
 # oracle, then typecheck the Lean package end-to-end.
-verify-phase0: _assert_pilout
+verify-phase0: _assert_pilout _assert_sail_lean
     cargo test --manifest-path tools/pil-extract/Cargo.toml
     cargo run --manifest-path tools/pil-extract/Cargo.toml -- \
         --pilout {{pilout}} --air BinaryAdd --skip-unsupported \
@@ -103,7 +121,7 @@ verify-phase0: _assert_pilout
 # Phase 1 gate: extends Phase 0 with Main-AIR extraction (ADD-relevant
 # subset), the harness-emitted golden-trace fixture, and a full lake build
 # including the compositional ADD spec + final equivalence theorem.
-verify-phase1: _assert_pilout
+verify-phase1: _assert_pilout _assert_sail_lean
     # Extractor unit tests (constraint kinds, operand kinds).
     cargo test --manifest-path tools/pil-extract/Cargo.toml
     cargo test --manifest-path tools/golden-traces/Cargo.toml

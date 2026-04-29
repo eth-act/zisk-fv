@@ -59,34 +59,30 @@ contributing to this repo.
 
 Run `trust/scripts/check-all.sh` locally to see what CI will check.
 
-## First-time setup — build the pilout
+## First-time setup — build the spec + pilout
 
-`build/zisk.pilout` is the compiled ZisK constraint set the proofs
-read at build time. **It is not vendored in the repo** — produce it
-once via Docker before running any `verify-phase*`:
-
-```bash
-just build-pilout        # ~6 min cold; persists in build/
-```
-
-After that the pilout sticks around in `build/` and is reused on
-every subsequent run. Re-run only when `docker/versions.txt` or
-`docker/Dockerfile.pilout` changes.
-
-## Reproducibility
-
-The pilout and the `LeanRV` Lake dependency (Sail RISC-V semantics
-translated into Lean) are both **built from primary source via
-Docker**. See `docker/` for the containers:
+zisk-fv reads two artifacts that aren't checked into the repo: the
+Sail-Lean RV64D **spec** (the Lean translation of the official Sail
+RISC-V specification, which is what the proofs are *about*) and the
+ZisK pilout (compiled constraint set, which is what the proofs are
+*checked against*). **Both are built locally from primary source via
+Docker** — nothing is pulled pre-built. Run these two commands once
+after cloning, in either order:
 
 ```bash
-just build-pilout        # → build/zisk.pilout
-just build-sail-lean     # → build/sail-lean/, tree-diffs against Lake-resolved
+just build-sail-lean     # ~5 min cold; produces build/sail-lean/
+just build-pilout        # ~6 min cold; produces build/zisk.pilout
 ```
 
-Pinned upstream versions live in `docker/versions.txt`. Cold pilout
-build is ~6 min; cold sail-lean build is ~5 min. Warm Docker layers
-make subsequent runs nearly instant.
+After that, both artifacts persist under `build/` and are reused on
+every subsequent `just verify-phase*` or `lake build`. Re-run only
+when `docker/versions.txt` or `docker/Dockerfile.*` changes.
+
+The lakefile points at `build/sail-lean/` via a path-based require,
+so `lake build` reads the locally-built spec — there is no upstream
+git dep for the spec to drift against. Pinned upstream versions live
+in `docker/versions.txt`; the expected sha256 of the produced
+sail-lean tree is verified there too.
 
 ## Vendored ZisK inputs
 

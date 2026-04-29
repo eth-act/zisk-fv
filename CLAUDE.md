@@ -10,9 +10,12 @@ per-opcode, restricted to RV64IM. The goal is per-opcode theorems of the shape
 execute_instruction (.RTYPE rs2 rs1 rd rop.ADD) state = (bus_effect exec_row mem_row state).2
 ```
 
-where the LHS is the Sail spec (via `NethermindEth/sail-riscv-lean`'s
-`LeanRV64D` module) and the RHS is ZisK's Goldilocks-valued circuit
-constraints composed with the operation-bus model.
+where the LHS is the Sail spec (the `LeanRV64D` Lean translation of
+the official RISC-V Sail model, **built locally from primary source**
+via `just build-sail-lean` into `build/sail-lean/`; the lakefile reads
+that directly via a path-based require — no pre-built dep is pulled)
+and the RHS is ZisK's Goldilocks-valued circuit constraints composed
+with the operation-bus model.
 
 Zicclsm, precompiles (Keccak, SHA256, …), and ZisK's custom internal ops
 are **out of scope** for the initial effort.
@@ -172,8 +175,9 @@ your normal grep / read scope — that's intentional.
     Lean, which have named wrappers, which are absorbed into trust).
 - **`trust/`** — baselines and enforcement scripts; see
   `trust/README.md`.
-- **`docker/`** — Docker-based reproducibility for the two
-  trusted artifacts (`build/zisk.pilout` and the `LeanRV` Lake dep).
+- **`docker/`** — Docker builds for the two artifacts the proofs
+  depend on (`build/zisk.pilout` and `build/sail-lean/`). Both are
+  built locally from primary source — neither is checked in.
   See `docker/README.md`. Pinned upstream versions live in
   `docker/versions.txt`.
 - **memory** — agent-private notes at

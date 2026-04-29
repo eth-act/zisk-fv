@@ -8,12 +8,16 @@ fast with a pointer to the script.
 
 ## What runs
 
-| Script                     | Builds                                    | Output (gitignored) |
+| Just recipe                | Builds                                    | Output (gitignored) |
 |----------------------------|-------------------------------------------|---------------------|
-| `build-pilout.sh`          | The compiled ZisK constraint set          | `build/zisk.pilout` |
-| `build-sail-lean.sh`       | The `LeanRV` Lake dep (Sail-Lean tree)    | `build/sail-lean/`  |
+| `just build-pilout`        | The compiled ZisK constraint set          | `build/zisk.pilout` |
+| `just build-sail-lean`     | The Sail-Lean RV64D spec tree             | `build/sail-lean/`  |
 
-Both wrap a Docker container build (`Dockerfile.pilout`,
+The lakefile points at `build/sail-lean/` via a path-based `require`,
+so `lake build` reads the locally-built spec directly. There is no
+upstream pre-built Lean dep for the spec.
+
+Both recipes wrap a Docker container build (`Dockerfile.pilout`,
 `Dockerfile.sail-lean`). The pinned upstream versions live in
 `versions.txt`; they're forensically derived from the local host's
 reflogs and confirmed by structural-fingerprint match against the
@@ -59,8 +63,13 @@ never the embedded source-line annotations from pil2-proofman's
 std/pil library, so a structural fingerprint (sha256 of the
 `--list` output) is the load-bearing check.
 
-The Sail-Lean build is **tree-identical**: every `.lean` file matches
-the Lake-resolved `LeanRV @ 81c8c84f` byte-for-byte.
+The Sail-Lean build is **tree-identical** to the recorded reference:
+every `.lean` file matches the sha256 pinned in
+`versions.txt::expected-sail-lean-tree-sha256`. That hash was
+calibrated against `NethermindEth/sail-riscv-lean @ 81c8c84f`
+(the cron-regen of the same upstream pins on 2025-12-26 06:18 UTC),
+but Lake never reads from there — it reads from `build/sail-lean/`
+directly.
 
 ## Why some pins are weird
 
