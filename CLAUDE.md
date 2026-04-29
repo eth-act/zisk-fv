@@ -104,7 +104,7 @@ reduction and is welcome but out of scope for current phases.
 - `ZiskFv.Airs.BinaryTable` (added in `finishing2.md` S0) — the binary
   lookup table at `bus_id=125` carries the per-byte switch semantics
   defined by `zisk/state-machines/binary/pil/binary_table.pil`
-  (AND/OR/XOR bitwise ops; LT/LTU/EQ/GT/LE/LEU/LT_ABS_*/MIN(U)/MAX(U)
+  (AND/OR/XOR bitwise ops; LT/LTU/EQ/GT/LE/LEU/LT*ABS*\*/MIN(U)/MAX(U)
   comparison ops; ADD/SUB carry semantics; SEXT_00/FF byte sign-extends).
   Mirrors openvm-fv's `Fundamentals/Interaction.lean::BitwiseBusEntry`
   (whose XOR semantics is similarly trusted at the bus-entry definition).
@@ -122,7 +122,7 @@ reduction and is welcome but out of scope for current phases.
   closure path.
 - `ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load`
   / `..._store` (added in `finishing3.md` S3) — memory-bus permutation
-  soundness for the *memory-side* (`as=2`) load / store paths used by
+  soundness for the _memory-side_ (`as=2`) load / store paths used by
   LD / SD / LW / SW / LH / SH / LB / SB. Pair Main's load/store
   emission with a Mem AIR row carrying the same
   `(addr, step, value_0, value_1)` projection. Same trust class as
@@ -149,12 +149,12 @@ finishing5. They were removed once the trust gate became the system of
 record for current state. To recover any of that history:
 
 - **`ai_plans/` removal:** commit `ac2d5e4` (`remote ai_plans to reduce
-  grep noise`). Contained `zisk-fv-metaplan.md`, per-phase plans
+grep noise`). Contained `zisk-fv-metaplan.md`, per-phase plans
   (Phase 0 / 1 / finishing1-5) with their CLOSED retrospectives, and
   feasibility / handoff notes. Each phase plan is reachable via
   `git show ac2d5e4^:ai_plans/<file>`.
 - **`docs/fv/` purge:** commit `661fe36` (`archive docs/fv: prune
-  historical phase notes; keep live references only`). The commit
+historical phase notes; keep live references only`). The commit
   message itself enumerates each removed file and what it contained,
   so it doubles as the recovery index.
 
@@ -306,3 +306,5 @@ points at the file/line. The `trust/README.md` has the full reference.
 ├── docker/                             # Docker-based artifact builds + versions.txt
 └── bin/test.sh                         # full test entry point (cargo + lake + trust gate)
 ```
+
+Phase plans and metaplan documents were removed from the tree (commit `ac2d5e4`); recover via `git show ac2d5e4^:ai_plans/<file>`.

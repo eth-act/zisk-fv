@@ -5,27 +5,26 @@ zkVM against the [Sail RISC-V specification](https://github.com/rems-project/sai
 via [`sail-riscv-lean`](https://github.com/NethermindEth/sail-riscv-lean)'s
 `LeanRV64D` module.
 
-**Status:** all 56 RV64IM opcodes proved equivalent to the Sail spec
+**Status:** all 63 RV64IM opcodes proved equivalent to the Sail spec
 (0 sorries, 82 trusted axioms — see `docs/fv/trusted-base.md`). The
 load-bearing claim is `lake build`: every per-opcode equivalence theorem
 typechecks. Run `bin/test.sh` for the full suite (cargo + lake + trust
-gate + repro hashes). Phase plans and metaplan documents were removed
-from the tree (commit `ac2d5e4`); recover via `git show ac2d5e4^:ai_plans/<file>`.
+gate + repro hashes).
 
 ## Layout
 
-| Path | Purpose |
-|------|---------|
-| `docs/fv/` | Live library-reference notes: trust ledger, extractor contract, AIR inventory |
-| `tools/pil-extract/` | Rust CLI: decodes `.pilout` protobuf → Lean constraint definitions |
-| `tools/golden-traces/` | Rust CLI: emits a golden-trace fixture (`ZiskFv/GoldenTraces/Add.lean`) |
-| `ZiskFv/` | Lake 4 package (mathlib + LeanZKCircuit + LeanRV, toolchain v4.26.0) |
-| `zisk/` | ZisK source tree (git submodule, pinned at `48cf7ccef`) |
-| `trust/` | Trust-boundary baselines + enforcement scripts. See `trust/README.md`. |
-| `docker/` | Docker container that builds the pilout + Sail-Lean spec from upstream source. See `docker/README.md`. |
-| `build/` | Generated artifacts (`build/zisk.pilout`, `build/sail-lean/`). Gitignored — produced by `docker/`. |
-| `bin/` | Test entry point: `bin/test.sh` runs the full suite. |
-| `docs/site/` | Single-page trust-boundary explainer (run `docs/site/serve.sh`, port 4044). |
+| Path                   | Purpose                                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ |
+| `docs/fv/`             | Live library-reference notes: trust ledger, extractor contract, AIR inventory                          |
+| `tools/pil-extract/`   | Rust CLI: decodes `.pilout` protobuf → Lean constraint definitions                                     |
+| `tools/golden-traces/` | Rust CLI: emits a golden-trace fixture (`ZiskFv/GoldenTraces/Add.lean`)                                |
+| `ZiskFv/`              | Lake 4 package (mathlib + LeanZKCircuit + LeanRV, toolchain v4.26.0)                                   |
+| `zisk/`                | ZisK source tree (git submodule, pinned at `48cf7ccef`)                                                |
+| `trust/`               | Trust-boundary baselines + enforcement scripts. See `trust/README.md`.                                 |
+| `docker/`              | Docker container that builds the pilout + Sail-Lean spec from upstream source. See `docker/README.md`. |
+| `build/`               | Generated artifacts (`build/zisk.pilout`, `build/sail-lean/`). Gitignored — produced by `docker/`.     |
+| `bin/`                 | Test entry point: `bin/test.sh` runs the full suite.                                                   |
+| `docs/site/`           | Single-page trust-boundary explainer (run `docs/site/serve.sh`, port 4044).                            |
 
 ## Trust gate (CI)
 
@@ -57,9 +56,9 @@ Run `trust/scripts/check-all.sh` locally to see what CI will check.
 
 zisk-fv reads two artifacts that aren't checked into the repo: the
 Sail-Lean RV64D **spec** (the Lean translation of the official Sail
-RISC-V specification, which is what the proofs are *about*) and the
+RISC-V specification, which is what the proofs are _about_) and the
 ZisK pilout (compiled constraint set, which is what the proofs are
-*checked against*). **Both are built locally from primary source via
+_checked against_). **Both are built locally from primary source via
 Docker** — nothing is pulled pre-built. Run these two commands once
 after cloning, in either order:
 
