@@ -772,6 +772,22 @@
     <p class="section-lead" style="margin-top: 26px;">
       Everything else — ALU semantics, sign-extension boundaries, multiplicative carry chains, four-quadrant signed division overflow, byte-level arithmetic — is <strong>derived in Lean</strong> from these axioms plus Mathlib. No <code>sorry</code> stubs.
     </p>
+
+    <div class="card" style="margin-top: 26px; border-left: 3px solid var(--proven);">
+      <h3 style="color: var(--proven);">CI-enforced — drift is mechanically caught</h3>
+      <p style="color:var(--muted);font-size:0.96rem; margin: 6px 0 0;">
+        The trust ledger isn't just documentation: every PR runs <code>trust/scripts/check-all.sh</code> via <code>.github/workflows/trust-gate.yml</code>. The gate enforces four things:
+      </p>
+      <ul style="color:var(--muted);font-size:0.94rem;margin: 10px 0 0 24px; line-height:1.6;">
+        <li><strong>Locality.</strong> Every <code>axiom</code> / <code>opaque</code> / <code>constant</code> / <code>unsafe def</code> / <code>partial def</code> / <code>@[extern]</code> / <code>@[implemented_by]</code> must live in <code>trust/allowed-axiom-files.txt</code>.</li>
+        <li><strong>Baseline integrity.</strong> Every axiom's name, location, and source-text statement is hashed into <code>trust/baseline-axioms.txt</code>. Any add, remove, rename, or subtle weakening shows up as a diff there.</li>
+        <li><strong>No OUTPUT-EQ leak.</strong> No <code>equiv_&lt;OP&gt;_metaplan_tier1</code> theorem may take an <code>h_rd_val</code>, <code>h_byte_sum</code>, <code>h_bus_execute_matches_sail</code>, or other named-retired hypothesis as a parameter.</li>
+        <li><strong>Floors.</strong> ≥ 80 axioms in the baseline, ≥ 40 tier1 theorems, plus a Python-parser cross-witness that catches a sabotaged regenerate or an emptied allowlist.</li>
+      </ul>
+      <p style="color:var(--muted);font-size:0.92rem; margin-top: 12px;">
+        Files that hold the trust surface and the gate's own configuration are listed in <code>.github/CODEOWNERS</code>; merging changes to any of them requires a CODEOWNER review. The <code>trust/baseline-axioms.txt</code> diff IS the audit surface — a reviewer reads it directly to see what changed.
+      </p>
+    </div>
   </div>
 </section>
 

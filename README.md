@@ -29,7 +29,35 @@ full lake build covering the compositional ADD spec
 | `ZiskFv/` | Lake 4 package (mathlib + LeanZKCircuit + LeanRV, toolchain v4.26.0) |
 | `pil/zisk.pilout` | Vendored ZisK pilout (input to the extractor) |
 | `vendor/zisk/` | ZisK source tree (git submodule, pinned at `48cf7ccef`) |
+| `trust/` | Trust-boundary baselines + enforcement scripts. See `trust/README.md`. |
+| `site/` | Single-page trust-boundary explainer (run `site/serve.sh`, port 4044). |
 | `justfile` | `verify-phase0` / `verify-phase1` gates |
+
+## Trust gate (CI)
+
+The trust boundary is **mechanically enforced** on every PR via
+`.github/workflows/trust-gate.yml`, which runs
+`trust/scripts/check-all.sh`. The gate ensures:
+
+- All `axiom` / `opaque` / `constant` / `unsafe def` / `partial def`
+  / `@[extern]` / `@[implemented_by]` declarations live in one of the
+  files listed in `trust/allowed-axiom-files.txt`.
+- The hash + name + location of every project axiom matches
+  `trust/baseline-axioms.txt`. Any add, remove, rename, or subtle
+  weakening of an axiom shows up as a diff on this file.
+- No `equiv_<OP>_metaplan_tier1` theorem accepts a forbidden hypothesis
+  parameter (the named parameters retired by the finishing series:
+  `h_rd_val`, `h_byte_sum`, etc. — see `trust/forbidden-param-shapes.txt`).
+- Sanity floors on axiom count and tier1 theorem count.
+
+To legitimately extend the trust surface, edit the relevant allowlisted
+file, run `trust/scripts/regenerate.sh`, commit the updated baseline,
+and have a CODEOWNER review the `trust/baseline-axioms.txt` diff (these
+files are protected by `.github/CODEOWNERS`). See `trust/README.md`
+for the full process and `CLAUDE.md` for guidance to AI agents
+contributing to this repo.
+
+Run `trust/scripts/check-all.sh` locally to see what CI will check.
 
 ## Vendored ZisK inputs
 

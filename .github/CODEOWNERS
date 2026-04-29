@@ -1,0 +1,32 @@
+# CODEOWNERS — files that REQUIRE explicit reviewer ack to change.
+# Format: <path-pattern>  <github-username-or-team>
+#
+# Replace `@codygunton` below with the actual maintainer handle(s) for
+# this repo, or with a GitHub team like `@org/zisk-fv-maintainers`.
+# Until that placeholder is replaced, branch protection rules will not
+# enforce review-on-merge for these paths.
+
+# The trust gate itself: scripts, baselines, and the policy doc.
+/trust/                        @codygunton
+
+# CI workflow that enforces the gate. Editing this is editing the
+# enforcement, so it requires the same scrutiny as a trust-surface change.
+/.github/workflows/             @codygunton
+/.github/CODEOWNERS             @codygunton
+
+# Files that hold the trust-surface declarations themselves. Each
+# axiom/opaque/constant in these files is part of the TCB, so any
+# change requires explicit reviewer ack.
+/ZiskFv/ZiskFv/Fundamentals/Transpiler.lean             @codygunton
+/ZiskFv/ZiskFv/Airs/MemoryBus/LaneMatch.lean            @codygunton
+/ZiskFv/ZiskFv/Airs/MemoryBus/MemBridge.lean            @codygunton
+/ZiskFv/ZiskFv/Airs/BinaryTable.lean                    @codygunton
+/ZiskFv/ZiskFv/Airs/BinaryExtensionTable.lean           @codygunton
+/ZiskFv/ZiskFv/Airs/Arith/ArithTable.lean               @codygunton
+/ZiskFv/ZiskFv/Airs/Arith/ArithRangeTable.lean          @codygunton
+/ZiskFv/ZiskFv/Spec/MemModel.lean                       @codygunton
+/ZiskFv/ZiskFv/RV64D/Auxiliaries.lean                   @codygunton
+
+# The trusted-base documentation should track the live ledger; changes
+# here are paired with axiom changes and must be reviewed together.
+/docs/fv/trusted-base.md       @codygunton

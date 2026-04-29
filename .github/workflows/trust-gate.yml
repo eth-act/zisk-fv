@@ -1,0 +1,41 @@
+name: trust gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel in-progress runs on the same branch when a new commit lands.
+concurrency:
+  group: trust-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  trust-gate:
+    name: trust-gate (locality + baseline + tier1 params + floors)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run trust gate
+        run: trust/scripts/check-all.sh
+
+      - name: On failure — show next-step pointers
+        if: failure()
+        run: |
+          echo "::error::trust gate failed. See above. Documentation:"
+          echo "  - trust/README.md  (overview of the gate)"
+          echo "  - docs/fv/trusted-base.md  (the trust ledger)"
+          echo "  - CLAUDE.md  (working conventions for agents)"
+          echo ""
+          echo "If the change to the trust surface is intentional:"
+          echo "  trust/scripts/regenerate.sh  &&  git add trust/"
+          echo "...and ensure a CODEOWNER reviews the diff."

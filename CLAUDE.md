@@ -59,6 +59,36 @@ it doesn't transfer directly:
 
 ## Trusted surface
 
+**Single source of truth: `trust/baseline-axioms.txt`** — auto-generated
+from the `*.lean` files listed in `trust/allowed-axiom-files.txt`. The
+list below is human-readable narrative; the baseline file is the
+machine-readable enforcement target. CI (`.github/workflows/trust-gate.yml`)
+runs `trust/scripts/check-all.sh` on every PR; if the live tree's trust
+surface diverges from the baseline, the build fails and the diff
+becomes the audit surface for review.
+
+**To add a trust-surface item** (high bar — see below for what counts):
+
+1. Add the `axiom` declaration to one of the files in
+   `trust/allowed-axiom-files.txt` (or update that allowlist with
+   explicit reviewer ack — both files are CODEOWNER-protected).
+2. Run `trust/scripts/regenerate.sh` to refresh `trust/baseline-axioms.txt`.
+3. Add a corresponding entry to `docs/fv/trusted-base.md` describing
+   the trust class + closure path.
+4. Commit the axiom + the new baseline + the docs entry in the same PR.
+5. CODEOWNER review of the `trust/baseline-axioms.txt` diff is the
+   audit step. The hash that appears in that file is over the
+   axiom's source-text statement, so a subtle weakening of an
+   existing axiom shows as a hash change — reviewers see exactly
+   what changed semantically.
+
+**The Lean trust-leak shapes the gate watches** (any of these counts as
+trust): `axiom`, `opaque`, `constant`, `unsafe def`, `partial def`,
+`@[extern]`, `@[implemented_by]`. Don't reach for any of them outside
+the allowlisted files. If a proof feels like it needs one, the right
+move is almost always to find an existing axiom that covers the gap or
+to escalate explicitly rather than adding a new one.
+
 Items below are accepted as axioms; downstream theorems compose on top
 of them. Improving any of them to a proven theorem is a strict trust
 reduction and is welcome but out of scope for current phases.
@@ -171,6 +201,45 @@ Short list:
   completion.
 - `native_decide` on Goldilocks primality takes ~386s cold. Mathlib's
   Azure cache via `lake exe cache get` handles the rest.
+
+### Trust-gate workflow (READ THIS — agents must respect it)
+
+Before merging, CI runs `trust/scripts/check-all.sh`. It enforces four
+things; an agent who breaks any of them will fail the gate:
+
+1. **Locality.** Lean trust-leak constructs (`axiom`, `opaque`,
+   `constant`, `unsafe def`, `partial def`, `@[extern]`,
+   `@[implemented_by]`) may appear ONLY in the files listed in
+   `trust/allowed-axiom-files.txt`. Adding a new such file requires
+   editing the allowlist AND a CODEOWNER reviewer ack — these files
+   are protected by `.github/CODEOWNERS`.
+2. **Baseline freshness.** `trust/baseline-axioms.txt` records every
+   axiom's source-text hash. If you add, rename, remove, or
+   subtly weaken any axiom, you must run `trust/scripts/regenerate.sh`
+   and commit the updated baseline; CI fails otherwise. The hash
+   change shows up in the PR diff and is the audit surface.
+3. **Forbidden tier1 parameters.** Hypotheses on
+   `equiv_<OP>_metaplan_tier1` theorems may not include the named
+   parameters retired by the finishing series (`h_rd_val`,
+   `h_byte_sum`, `h_bus_execute_matches_sail`,
+   `h_entry_hi_nat`, `h_pc_fgl_lo_nat`, `h_pci_lo_val`,
+   `h_entry_lo_eq`). Pattern list:
+   `trust/forbidden-param-shapes.txt`.
+4. **Floors.** ≥80 axioms in baseline, ≥40 tier1 theorems, plus a
+   cross-witness check that catches a sabotaged regenerate.py or
+   an emptied allowlist.
+
+**Run the gate locally before pushing:** `trust/scripts/check-all.sh`.
+
+**To legitimately extend the TCB** (high bar — most "fixes" should
+not need new axioms): see "Trusted surface" section above for the
+five-step process. **Adding a new trust item without those five
+steps will fail CI.** Don't try to bypass the gate by editing
+`trust/forbidden-param-shapes.txt` or `trust/allowed-axiom-files.txt`
+without CODEOWNER review — those changes themselves are gated.
+
+When the gate fails locally, the script names which check failed and
+points at the file/line. The `trust/README.md` has the full reference.
 
 ## Layout quick-reference
 

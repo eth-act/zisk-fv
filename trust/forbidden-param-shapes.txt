@@ -1,0 +1,36 @@
+# Forbidden parameter shapes for `equiv_<OP>_metaplan_tier1` theorems.
+#
+# Each line is a Python-regex pattern (no flags). The check script
+# extracts every tier1 theorem **parameter list only** (NOT the
+# conclusion type) and fails if any of these patterns matches.
+#
+# These patterns enumerate the OUTPUT-EQ class the finishing series
+# retired: NAMED hypotheses that handed their conclusion to the proof
+# as an assumption instead of deriving it from circuit constraints
+# plus the trusted bus protocol.
+#
+# Why **only named hypotheses** (not broad symbol references)?
+# Some tier1 theorems (JAL / JALR / AUIPC / LUI / MULW) legitimately
+# carry TRANSPILE-PIN-class parameters of the form
+# `(h_success : (PureSpec.execute_JAL_pure jal_input).success = true)`
+# — these pin properties of the spec evaluation that ZisK's runtime
+# guarantees, not the OUTPUT-EQ trust class the gate retires. A broad
+# `PureSpec.execute_*_pure` regex would flag those falsely. The
+# named-hypothesis patterns below are unambiguous regression markers.
+#
+# V1 (this file): regex over the parameter substring. Bypassable
+# only by renaming a hypothesis to skirt the named pattern; the
+# axiom-list and baseline-axioms files catch the corresponding
+# proof-side regressions. V2 (Lake exe) will walk elaborated
+# parameter types semantically; see trust/README.md.
+
+# Specific named hypotheses retired by the finishing series. If any
+# of these ever shows up as a parameter on a `_tier1` theorem, the
+# tier1 invariant has been broken.
+\(h_rd_val\s*:
+\(h_byte_sum\s*:
+\(h_bus_execute_matches_sail\s*:
+\(h_entry_hi_nat\s*:
+\(h_pc_fgl_lo_nat\s*:
+\(h_pci_lo_val\s*:
+\(h_entry_lo_eq\s*:
