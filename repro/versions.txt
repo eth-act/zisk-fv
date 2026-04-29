@@ -1,0 +1,34 @@
+# Pinned versions for reproducibility builds.
+#
+# Each entry is the exact commit hash or release tag that the trust
+# chain depends on. Do NOT edit casually — these pins define what the
+# zisk-fv proofs are about. CI verifies the live tree matches.
+
+# ZisK source tree (vendored as git submodule at vendor/zisk; cited
+# from transpile_* axiom rationales).
+zisk-submodule-commit      = 48cf7ccefb5ed62261abf6bfb007b5be8a23c547
+
+# Pilout build inputs (used by repro/Dockerfile.pilout).
+# These are the actual versions that produced the vendored
+# pil/zisk.pilout — forensically reconstructed from the host
+# /home/cody/zisk reflog and confirmed by structural-fingerprint
+# match.  ZisK source is the user's personal fork (zksyncos branch)
+# that adds a u256_delegation precompile on top of upstream v0.15.0.
+pilout-zisk-repo           = https://github.com/codygunton/zisk.git
+pilout-zisk-commit         = 0bfdc9582a485ab82df4f085817c7f1c05e686a4
+pil2-compiler-tag          = v0.8.0
+pil2-proofman-tag          = v0.15.0
+
+# Sail-Lean toolchain (used by repro/Dockerfile.sail-lean).
+# rems-project/sail and riscv/sail-riscv at HEAD on 2025-12-26 06:18 UTC,
+# the timestamp at which NethermindEth/sail-riscv-lean cron-regenerated
+# commit 81c8c84f. NethermindEth's CI does not pin its upstreams, so we
+# pin them here for reproducibility.
+sail-commit                = 277470b2ab472af8064e1295be5573845239c96b
+sail-riscv-commit          = 04e595954b2af7fa9e18f2519e4ae4bba72b2701
+ocaml-version              = 5.2.1
+
+# Resolved Lean dependencies (Lake manifest is the source of truth;
+# these are tracked here so a one-shot grep finds them).
+lean-rv-commit             = 81c8c84f919b6b565790713e2049a88b88739cda
+leanzkcircuit-commit       = 8631b11de51c68288b519e8032019524b84a365f

@@ -1,0 +1,68 @@
+# Reproducibility container for the Sail-Lean RV64D model.
+#
+# Pinned versions (see repro/versions.txt):
+#   - rems-project/sail        277470b2ab472af8064e1295be5573845239c96b  (sail2 branch, 2025-12-22 14:21 UTC)
+#   - riscv/sail-riscv         04e595954b2af7fa9e18f2519e4ae4bba72b2701  (master,         2025-12-24 03:41 UTC)
+#   - OCaml                    5.2.1                                     (matches NethermindEth/sail-riscv-lean CI)
+#
+# The output of this build should match `NethermindEth/sail-riscv-lean`
+# at commit `81c8c84f919b6b565790713e2049a88b88739cda` (regen run at
+# 2025-12-26 06:18:14 UTC, against HEAD of the two upstreams above).
+#
+# Recipe sourced from .lake/packages/LeanRV/.github/workflows/update-sail-build.yml.
+#
+# Build:   docker build -t zisk-fv-sail-lean:repro -f repro/Dockerfile.sail-lean repro/
+# Run:     docker run --rm -v "$PWD/out/repro/sail-lean:/output" zisk-fv-sail-lean:repro
+#          → /output/  (mirror of sail-riscv/build/model/Lean_RV64D/)
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# System deps.  Minimal set to bootstrap OCaml + Sail + sail-riscv's
+# CMake build for the Lean target.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential pkg-config libgmp-dev cmake z3 cvc4 opam curl bash wget git ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+# Pinned upstreams.
+ARG SAIL_COMMIT=277470b2ab472af8064e1295be5573845239c96b
+ARG SAIL_RISCV_COMMIT=04e595954b2af7fa9e18f2519e4ae4bba72b2701
+ARG OCAML_VERSION=5.2.1
+
+# OCaml + dune via opam (sandboxing requires bubblewrap which isn't in
+# the apt base; CI workflow disables it likewise via container).
+RUN opam init --yes --no-setup --disable-sandboxing --shell=sh \
+      --compiler=${OCAML_VERSION} \
+ && opam install -y dune \
+ && opam clean -a -c -s --logs
+
+# Sail compiler.
+RUN git clone https://github.com/rems-project/sail.git /sail \
+ && cd /sail && git checkout ${SAIL_COMMIT}
+
+# Install Sail's deps and build it. opam-eval in a single shell so the
+# environment carries through.
+RUN bash -lc 'eval "$(opam env)"; \
+              cd /sail && opam install -y sail --deps-only && make install'
+
+# sail-riscv source.
+RUN git clone https://github.com/riscv/sail-riscv.git /sail-riscv \
+ && cd /sail-riscv && git checkout ${SAIL_RISCV_COMMIT}
+
+# Build the Lean RV64D target.
+RUN bash -lc 'eval "$(opam env)"; \
+              cd /sail-riscv && \
+              cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo && \
+              cmake --build build/ --target generated_lean_rv64d'
+
+RUN mkdir -p /output
+VOLUME /output
+
+# Copy the generated tree to /output on run, then hash it.
+ENTRYPOINT ["bash", "-c", "set -euo pipefail; \
+  cp -r /sail-riscv/build/model/Lean_RV64D/. /output/ && \
+  echo '▶ Tree contents (top level):' && ls /output && \
+  echo '▶ tree hash (sorted file content sha256):' && \
+  (cd /output && find . -type f ! -path './.lake/*' -print0 | sort -z | xargs -0 sha256sum) > /output/manifest.sha256 && \
+  sha256sum /output/manifest.sha256 | tee /output/tree.sha256"]
