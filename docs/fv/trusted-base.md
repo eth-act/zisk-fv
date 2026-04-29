@@ -43,7 +43,7 @@ openvm-fv's RV32D JALR proof.
 
 ### Entry P1: `ZiskFv.PlatformScope.pmpCheck_is_pure_none`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/Auxiliaries.lean`
+- **File:** `ZiskFv/RV64D/Auxiliaries.lean`
 - **Statement:** `∀ addr width acc priv state,
   pmpCheck addr width acc priv state = EStateM.Result.ok none state`.
 - **Consumers:** `vmem_read_addr_aligned_equiv`,
@@ -62,7 +62,7 @@ openvm-fv's RV32D JALR proof.
 
 ### Entry P2: `ZiskFv.PlatformScope.within_clint_is_false`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/Auxiliaries.lean`
+- **File:** `ZiskFv/RV64D/Auxiliaries.lean`
 - **Statement:** `∀ addr width state,
   within_clint addr width state = EStateM.Result.ok false state`.
 - **Consumers:** `vmem_read_addr_aligned_equiv`,
@@ -78,7 +78,7 @@ openvm-fv's RV32D JALR proof.
 
 ### Entry P3: `ZiskFv.PlatformScope.pmaCheck_is_pure_none`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/Auxiliaries.lean`
+- **File:** `ZiskFv/RV64D/Auxiliaries.lean`
 - **Statement:** `∀ paddr width acc rc state,
   pmaCheck paddr width acc rc state = EStateM.Result.ok none state`.
 - **Consumers:** `vmem_read_addr_aligned_equiv`,
@@ -97,7 +97,7 @@ openvm-fv's RV32D JALR proof.
 
 ### Entry P4: `ZiskFv.PlatformScope.update_elp_state_is_pure_unit`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/Auxiliaries.lean`
+- **File:** `ZiskFv/RV64D/Auxiliaries.lean`
 - **Statement:** `∀ rs1,
   update_elp_state rs1 = (pure () : SailM Unit)` — in monadic form.
 - **Consumers:** `PureSpec.execute_JALR_pure_equiv` (jalr.lean).
@@ -125,7 +125,7 @@ declaration has been deleted from its RV64D/*.lean file, and the
 
 ### Entry M1 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_LOADD_pure_equiv_axiom`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/ld.lean`
+- **File:** `ZiskFv/RV64D/ld.lean`
 - **Statement (informal):** under `RISC_V_assumptions` +
   `ld_state_assumptions` (eight `state.mem[addr+i]? = .some data_i`
   facts, address below `2^29`, 8-byte alignment), the Sail
@@ -142,7 +142,7 @@ declaration has been deleted from its RV64D/*.lean file, and the
 
 ### Entry M2 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_STORED_pure_equiv_axiom`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/sd.lean`
+- **File:** `ZiskFv/RV64D/sd.lean`
 - **Statement (informal):** symmetric to M1 for
   `execute_STORE imm rs2 rs1 8`. Under `RISC_V_assumptions` +
   `sd_state_assumptions`, reduces to: `+4` to PC; the eight
@@ -155,7 +155,7 @@ declaration has been deleted from its RV64D/*.lean file, and the
 
 ### Entry M3 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_LOADWU_pure_equiv_axiom`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/lwu.lean`
+- **File:** `ZiskFv/RV64D/lwu.lean`
 - **Statement (informal):** narrow companion of M1 for
   `execute_LOAD imm rs1 rd true 4` (width 4, `is_unsigned = true`).
   Under `RISC_V_assumptions` + `lwu_state_assumptions` (four source
@@ -169,7 +169,7 @@ declaration has been deleted from its RV64D/*.lean file, and the
 
 ### Entry M4 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_STOREW_pure_equiv_axiom`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/sw.lean`
+- **File:** `ZiskFv/RV64D/sw.lean`
 - **Statement (informal):** narrow companion of M2 for
   `execute_STORE imm rs2 rs1 4`. Under `RISC_V_assumptions` +
   `sw_state_assumptions`, reduces to `+4` to PC; four
@@ -219,7 +219,7 @@ closable with M1-M4 under the same PMP/CLINT extension to
 
 ### Entry M10 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_STOREH_pure_equiv_axiom`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/sh.lean`
+- **File:** `ZiskFv/RV64D/sh.lean`
 - **Statement (informal):** narrow companion of M2/M4 for
   `execute_STORE imm rs2 rs1 2` (width 2). Under `RISC_V_assumptions`
   + `sh_state_assumptions` (rs1/rs2 readable, PC readable, address
@@ -234,7 +234,7 @@ closable with M1-M4 under the same PMP/CLINT extension to
 
 ### Entry M11 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_STOREB_pure_equiv_axiom`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/sb.lean`
+- **File:** `ZiskFv/RV64D/sb.lean`
 - **Statement (informal):** narrowest of the store family; companion
   of M2/M4/M10 for `execute_STORE imm rs2 rs1 1` (width 1). Under
   `RISC_V_assumptions` + `sb_state_assumptions` (rs1/rs2 readable,
@@ -270,7 +270,7 @@ the memory-model extension catalogued in "Why M1-M4 exist".
 
 ### Entry C1 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_JALR_pure_equiv_axiom`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/jalr.lean`
+- **File:** `ZiskFv/RV64D/jalr.lean`
 - **Statement (informal):** under the standard register-state
   hypotheses (imm/rs1/rd alignment, PC readable, misa readable,
   machine privilege, mseccfg readable), the Sail
@@ -344,7 +344,7 @@ M5 / M6 / M8 are reserved but not yet introduced.
 
 ### Entry M7 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_LOADHU_pure_equiv_axiom`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/lhu.lean`
+- **File:** `ZiskFv/RV64D/lhu.lean`
 - **Statement (informal):** narrow companion of M1 / M3 for
   `execute_LOAD imm rs1 rd true 2` (width 2, `is_unsigned = true`).
   Under `RISC_V_assumptions` + `lhu_state_assumptions` (two source
@@ -359,7 +359,7 @@ M5 / M6 / M8 are reserved but not yet introduced.
 
 ### Entry M9 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_LOADBU_pure_equiv_axiom`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/lbu.lean`
+- **File:** `ZiskFv/RV64D/lbu.lean`
 - **Statement (informal):** narrowest companion of M1 / M3 / M7 for
   `execute_LOAD imm rs1 rd true 1` (width 1, `is_unsigned = true`).
   Under `RISC_V_assumptions` + `lbu_state_assumptions` (one source
@@ -422,7 +422,7 @@ alongside the ALU-ITYPE / DIV / UTYPE archetype work.
 
 ### Entry C3a *(promoted to theorem 2026-04-22)*: `PureSpec.execute_SHIFTIWOP_slliw_pure_equiv_axiom`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/slliw.lean`
+- **File:** `ZiskFv/RV64D/slliw.lean`
 - **Statement (informal):** under the standard register-state
   hypotheses (r1 readable, rd mapping, PC readable), the Sail
   `execute_instruction (.SHIFTIWOP (shamt, r1, rd, sopw.SLLIW))`
@@ -437,7 +437,7 @@ alongside the ALU-ITYPE / DIV / UTYPE archetype work.
 
 ### Entry C3b *(promoted to theorem 2026-04-22)*: `PureSpec.execute_SHIFTIWOP_srliw_pure_equiv_axiom`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/srliw.lean`
+- **File:** `ZiskFv/RV64D/srliw.lean`
 - **Statement (informal):** same as C3a with `sopw.SLLIW → sopw.SRLIW`
   and `shift_bits_left → shift_bits_right`.
 - **Consumers:** `PureSpec.execute_SHIFTIWOP_srliw_pure_equiv`;
@@ -446,7 +446,7 @@ alongside the ALU-ITYPE / DIV / UTYPE archetype work.
 
 ### Entry C3c *(promoted to theorem 2026-04-22)*: `PureSpec.execute_SHIFTIWOP_sraiw_pure_equiv_axiom`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/sraiw.lean`
+- **File:** `ZiskFv/RV64D/sraiw.lean`
 - **Statement (informal):** same as C3a with `sopw.SLLIW → sopw.SRAIW`
   and `shift_bits_left → shift_bits_right_arith`.
 - **Consumers:** `PureSpec.execute_SHIFTIWOP_sraiw_pure_equiv`;
@@ -478,7 +478,7 @@ opcodes — same shape as the openvm-fv SLLI/SRLI/SRAI proofs.
 
 ### Entry C4 *(promoted to theorem 2026-04-22)*: `PureSpec.execute_MULW_pure_equiv_axiom`
 
-- **File:** `ZiskFv/ZiskFv/RV64D/mulw.lean`
+- **File:** `ZiskFv/RV64D/mulw.lean`
 - **Statement (informal):** under the standard register-state
   hypotheses (r1/r2 readable, rd mapping, PC readable), the Sail
   `execute_instruction (.MULW (r2, r1, rd))` threaded through the
@@ -516,7 +516,7 @@ the Binary SM writes the comparison verdict into it.
 
 ### Entry T-RT transpile row: `transpile_SUB`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Sub.equiv_SUB_metaplan` (indirect,
   via bus-match + `Spec.Sub.sub_compositional`).
 - **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:134`
@@ -527,7 +527,7 @@ the Binary SM writes the comparison verdict into it.
 
 ### Entry T-RT transpile row: `transpile_AND`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.And.equiv_AND_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:152` +
   `zisk_ops.rs:396` (opcode `0x0e = 14`).
@@ -535,7 +535,7 @@ the Binary SM writes the comparison verdict into it.
 
 ### Entry T-RT transpile row: `transpile_OR`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Or.equiv_OR_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:141-150` +
   `zisk_ops.rs:397` (opcode `0x0f = 15`).
@@ -543,7 +543,7 @@ the Binary SM writes the comparison verdict into it.
 
 ### Entry T-RT transpile row: `transpile_XOR`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Xor.equiv_XOR_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:138` +
   `zisk_ops.rs:398` (opcode `0x10 = 16`).
@@ -551,7 +551,7 @@ the Binary SM writes the comparison verdict into it.
 
 ### Entry T-RT transpile row: `transpile_SLT`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Slt.equiv_SLT_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:136` +
   `zisk_ops.rs:389` (opcode `0x07 = 7`, shared with BLT / BGE).
@@ -561,7 +561,7 @@ the Binary SM writes the comparison verdict into it.
 
 ### Entry T-RT transpile row: `transpile_SLTU`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Sltu.equiv_SLTU_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:137` +
   `zisk_ops.rs:388` (opcode `0x06 = 6`, shared with BLTU / BGEU).
@@ -582,7 +582,7 @@ the operation-bus layer; the only difference is the source-b routing
 
 ### Entry T-W transpile row: `transpile_ADDW`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Addw.equiv_ADDW_metaplan` (indirect,
   via bus-match + `Spec.Addw.addw_compositional`).
 - **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:153`
@@ -594,7 +594,7 @@ the operation-bus layer; the only difference is the source-b routing
 
 ### Entry T-W transpile row: `transpile_SUBW`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Subw.equiv_SUBW_metaplan`.
 - **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:154`
   (`"subw" → create_register_op(..., "sub_w", 4)`) +
@@ -604,7 +604,7 @@ the operation-bus layer; the only difference is the source-b routing
 
 ### Entry T-W transpile row: `transpile_ADDIW`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Addiw.equiv_ADDIW_metaplan`.
 - **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:184-194`
   (`"addiw" → immediate_op(..., "add_w", 4)`, line 192) +
@@ -642,7 +642,7 @@ under Track T-W).
 
 ### Entry T-IT transpile row: `transpile_ADDI`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Addi.equiv_ADDI_metaplan`.
 - **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:160-174`
   (`"addi" → immediate_op_or_x0_copyb(..., "add", 4)` on the
@@ -653,7 +653,7 @@ under Track T-W).
 
 ### Entry T-IT transpile row: `transpile_ANDI`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Andi.equiv_ANDI_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:182`
   (`"andi" → immediate_op(..., "and", 4)`) + `OP_AND = 14` (shared
@@ -662,7 +662,7 @@ under Track T-W).
 
 ### Entry T-IT transpile row: `transpile_ORI`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Ori.equiv_ORI_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:181`
   (`"ori" → immediate_op_or_x0_copyb(..., "or", 4)` non-degenerate
@@ -671,7 +671,7 @@ under Track T-W).
 
 ### Entry T-IT transpile row: `transpile_XORI`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Xori.equiv_XORI_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:178`
   (`"xori" → immediate_op_or_x0_copyb(..., "xor", 4)` non-degenerate
@@ -680,7 +680,7 @@ under Track T-W).
 
 ### Entry T-IT transpile row: `transpile_SLTI`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Slti.equiv_SLTI_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:176`
   (`"slti" → immediate_op(..., "lt", 4)`) + `OP_LT = 7` (shared with
@@ -690,7 +690,7 @@ under Track T-W).
 
 ### Entry T-IT transpile row: `transpile_SLTIU`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Sltiu.equiv_SLTIU_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:177`
   (`"sltiu" → immediate_op(..., "ltu", 4)`) + `OP_LTU = 6` (shared
@@ -728,7 +728,7 @@ via the transpile axioms that reference them (same treatment as
 
 ### Entry T-SL transpile row: `transpile_LW`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Lw.equiv_LW_metaplan` (indirect,
   via bus-match + `Spec.LoadWord.lw_compositional`).
 - **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:214`
@@ -739,7 +739,7 @@ via the transpile axioms that reference them (same treatment as
 
 ### Entry T-SL transpile row: `transpile_LH`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Lh.equiv_LH_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:212` + `zisk_ops.rs:420`
   (opcode `0x28 = 40`).
@@ -747,7 +747,7 @@ via the transpile axioms that reference them (same treatment as
 
 ### Entry T-SL transpile row: `transpile_LB`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Lb.equiv_LB_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:210` + `zisk_ops.rs:419`
   (opcode `0x27 = 39`).
@@ -778,7 +778,7 @@ contract (Phase 4 audit handles the div-by-zero path).
 
 ### Entry T-D transpile row: `transpile_DIVU`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Divu.equiv_DIVU_metaplan`
   (indirect, via bus-match + `Spec.Divu.divu_compositional`).
 - **Provenance:** `vendor/zisk/core/src/riscv2zisk_context.rs:249`
@@ -789,7 +789,7 @@ contract (Phase 4 audit handles the div-by-zero path).
 
 ### Entry T-D transpile row: `transpile_REMU`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Remu.equiv_REMU_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:253` +
   `zisk_ops.rs:431` (opcode `0xb9 = 185`).
@@ -797,7 +797,7 @@ contract (Phase 4 audit handles the div-by-zero path).
 
 ### Entry T-D transpile row: `transpile_DIV`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Div.equiv_DIV_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:248` +
   `zisk_ops.rs:432` (opcode `0xba = 186`).
@@ -807,7 +807,7 @@ contract (Phase 4 audit handles the div-by-zero path).
 
 ### Entry T-D transpile row: `transpile_REM`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Consumer:** `ZiskFv.Equivalence.Rem.equiv_REM_metaplan`.
 - **Provenance:** `riscv2zisk_context.rs:252` +
   `zisk_ops.rs:433` (opcode `0xbb = 187`).
@@ -970,7 +970,7 @@ When accepting a new trusted axiom:
   (`execute_DIVREM_{div,divu,rem,remu}_pure_equiv`) closed directly
   against `LeanRV64D.Functions.execute_DIV'` / `execute_REM'` with
   no obstruction. Archetype macros live in
-  `ZiskFv/ZiskFv/Tactics/ArithSMArchetype.lean` (new for T-D,
+  `ZiskFv/Tactics/ArithSMArchetype.lean` (new for T-D,
   mirroring `MulArchetype`): two archetype lemmas —
   `arith_archetype_div_bus_match` (primary, quotient in `a[]`) and
   `arith_archetype_rem_bus_match` (secondary, remainder in `d[]`).
@@ -1023,7 +1023,7 @@ trust each item embodies.
 Full list via:
 
 ```
-grep -rh "^\s*axiom " ZiskFv/ZiskFv/ --include="*.lean" \
+grep -rh "^\s*axiom " ZiskFv/ --include="*.lean" \
   | grep -v "axiom itself" | awk '{print $2}' | sort -u
 ```
 
@@ -1600,7 +1600,7 @@ definition site**. openvm-fv never proves its bitwise / range-checker
 
 ### Entry BT-B: `ZiskFv.Airs.BinaryTable.bin_table_consumer_wf`
 
-- **File:** `ZiskFv/ZiskFv/Airs/BinaryTable.lean`.
+- **File:** `ZiskFv/Airs/BinaryTable.lean`.
 - **Statement:** every entry the Binary AIR consumes against
   `bus_id = 125` (multiplicity = 1) satisfies `wf_properties`. The
   `wf_properties` predicate is the conjunction of per-op clauses
@@ -1630,7 +1630,7 @@ definition site**. openvm-fv never proves its bitwise / range-checker
 
 ### Entry BT-X: `ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf`
 
-- **File:** `ZiskFv/ZiskFv/Airs/BinaryExtensionTable.lean`.
+- **File:** `ZiskFv/Airs/BinaryExtensionTable.lean`.
 - **Statement:** every entry the BinaryExtension AIR consumes against
   `bus_id = 124` satisfies `wf_properties`. The predicate's per-op
   clauses encode the byte-level shift semantics from
@@ -1655,7 +1655,7 @@ definition site**. openvm-fv never proves its bitwise / range-checker
 
 ### Entry MB-W: `ZiskFv.Airs.MemoryBus.LaneMatch.memory_bus_register_write_perm_sound`
 
-- **File:** `ZiskFv/ZiskFv/Airs/MemoryBus/LaneMatch.lean`.
+- **File:** `ZiskFv/Airs/MemoryBus/LaneMatch.lean`.
 - **Statement:** for every Main row `row` with `assumes_store_reg = 1`
   (column 37) and `store_pc = 0`, every consuming `MemoryBusEntry e`
   paired through the memory bus's permutation argument satisfies
@@ -1713,7 +1713,7 @@ definition site**. openvm-fv never proves its bitwise / range-checker
 
 ### Entry MB-W-PC: `ZiskFv.Airs.MemoryBus.LaneMatch.memory_bus_register_write_perm_sound_store_pc` (finishing5 S4 — 2026-04-27)
 
-- **File:** `ZiskFv/ZiskFv/Airs/MemoryBus/LaneMatch.lean`.
+- **File:** `ZiskFv/Airs/MemoryBus/LaneMatch.lean`.
 - **Statement:** companion to MB-W for the `store_pc = 1` case (JAL,
   JALR, AUIPC). When Main row `row` has `assumes_store_reg = 1`
   (column 37) and `store_pc = 1`, the PIL pins `store_value =
@@ -1770,7 +1770,7 @@ chip_bus_hyps machinery already in tree).
 
 ### Entry MB-L: `ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load`
 
-- **File:** `ZiskFv/ZiskFv/Airs/MemoryBus/MemBridge.lean`.
+- **File:** `ZiskFv/Airs/MemoryBus/MemBridge.lean`.
 - **Statement:** for every Main row `r_main` whose memory-bus emission
   is a load (`b_0 = lo(e), b_1 = hi(e), as = 2, multiplicity = -1`),
   there exists a Mem AIR row `r_mem` whose
@@ -1790,7 +1790,7 @@ chip_bus_hyps machinery already in tree).
 
 ### Entry MB-S: `ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_store`
 
-- **File:** `ZiskFv/ZiskFv/Airs/MemoryBus/MemBridge.lean`.
+- **File:** `ZiskFv/Airs/MemoryBus/MemBridge.lean`.
 - **Statement:** dual of MB-L for stores: for every Main row whose
   emission is a store (`c_0 = lo(e), c_1 = hi(e), as = 2,
   multiplicity = 1`), there exists a Mem AIR row matching the entry
@@ -1810,7 +1810,7 @@ chip_bus_hyps machinery already in tree).
 
 ### Entry MS-L: `ZiskFv.Spec.MemModel.row_models_sail_state_load`
 
-- **File:** `ZiskFv/ZiskFv/Spec/MemModel.lean`.
+- **File:** `ZiskFv/Spec/MemModel.lean`.
 - **Statement:** given a Mem AIR row `r_mem` matching a load-side bus
   entry `e` with `wr = 0` and `sel = 1`, the Sail state's memory at
   `e.ptr.toNat + i` agrees with `e.x_i` for each of the eight byte
@@ -1831,7 +1831,7 @@ chip_bus_hyps machinery already in tree).
 
 ### Entry MS-S: `ZiskFv.Spec.MemModel.row_models_sail_state_store`
 
-- **File:** `ZiskFv/ZiskFv/Spec/MemModel.lean`.
+- **File:** `ZiskFv/Spec/MemModel.lean`.
 - **Statement:** given a Mem AIR row in write mode (`wr = 1, sel = 1`)
   matching a store bus entry, the post-store Sail state's `state.mem`
   agrees byte-by-byte with the entry's lanes (in the same eight
@@ -1862,7 +1862,7 @@ S2's wide-PC no-wrap toolkit they retire the
 
 ### Entry TP-JAL: `ZiskFv.Trusted.transpile_PC_for_JAL`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Statement:** given a `Valid_Main` instance, a row index `r_main`,
   a Sail-side `PC : BitVec 64`, and the JAL mode-witness pair
   (`is_external_op = 0`, `op = OP_FLAG`), concludes
@@ -1905,7 +1905,7 @@ S2's wide-PC no-wrap toolkit they retire the
 
 ### Entry TP-JALR: `ZiskFv.Trusted.transpile_PC_for_JALR`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Statement:** given a `Valid_Main` instance, row index, Sail-side
   `PC : BitVec 64`, and the JALR mode-witness pair
   (`is_external_op = 0`, `op = OP_COPYB`), concludes
@@ -1926,7 +1926,7 @@ S2's wide-PC no-wrap toolkit they retire the
 
 ### Entry TP-AUIPC: `ZiskFv.Trusted.transpile_PC_for_AUIPC`
 
-- **File:** `ZiskFv/ZiskFv/Fundamentals/Transpiler.lean`.
+- **File:** `ZiskFv/Fundamentals/Transpiler.lean`.
 - **Statement:** given a `Valid_Main` instance, row index, Sail-side
   `PC : BitVec 64`, and the AUIPC mode-witness pair
   (`is_external_op = 0`, `op = OP_FLAG`), concludes
@@ -2013,7 +2013,7 @@ classes that the broader project plan is auditing separately.
 
 ### Current axiom count
 
-`grep -rh "^\s*axiom " ZiskFv/ZiskFv/ --include="*.lean" | awk '{print $2}' | sort -u | wc -l`
+`grep -rh "^\s*axiom " ZiskFv/ --include="*.lean" | awk '{print $2}' | sort -u | wc -l`
 returns **82** as of HEAD `cde0d6f` on `main`.
 
 Net delta from the 2026-04-25 snapshot (76):

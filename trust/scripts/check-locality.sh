@@ -19,7 +19,7 @@ allowed=$(grep -v '^[[:space:]]*#' "$ALLOWLIST" | grep -v '^[[:space:]]*$' | sor
 LEAK_RX='^[[:space:]]*(axiom|opaque|constant)[[:space:]]+[A-Za-z_]|^[[:space:]]*(unsafe|partial)[[:space:]]+def[[:space:]]+[A-Za-z_]|^[[:space:]]*@\[(extern|implemented_by)'
 
 # Find every .lean file that declares a trust-leak shape.
-hits=$(find ZiskFv/ZiskFv -name '*.lean' \
+hits=$(find ZiskFv -name '*.lean' \
   -exec grep -lE "$LEAK_RX" {} +)
 
 fail=0

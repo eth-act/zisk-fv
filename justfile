@@ -1,24 +1,24 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
 pilout    := "pil/zisk.pilout"
-extracted := "ZiskFv/ZiskFv/Extraction/BinaryAdd.lean"
-oracle    := "ZiskFv/ZiskFv/Extraction/BinaryAdd.hand.lean"
-main_extr := "ZiskFv/ZiskFv/Extraction/Main.lean"
-main_orcl := "ZiskFv/ZiskFv/Extraction/Main.hand.lean"
-fixture   := "ZiskFv/ZiskFv/GoldenTraces/Add.lean"
-beq_fix   := "ZiskFv/ZiskFv/GoldenTraces/BEQ.lean"
+extracted := "ZiskFv/Extraction/BinaryAdd.lean"
+oracle    := "ZiskFv/Extraction/BinaryAdd.hand.lean"
+main_extr := "ZiskFv/Extraction/Main.lean"
+main_orcl := "ZiskFv/Extraction/Main.hand.lean"
+fixture   := "ZiskFv/GoldenTraces/Add.lean"
+beq_fix   := "ZiskFv/GoldenTraces/BEQ.lean"
 beq_doc   := "docs/fv/archetype-branch.md"
-jal_fix   := "ZiskFv/ZiskFv/GoldenTraces/JAL.lean"
+jal_fix   := "ZiskFv/GoldenTraces/JAL.lean"
 jal_doc   := "docs/fv/archetype-jump.md"
-ld_fix    := "ZiskFv/ZiskFv/GoldenTraces/LD.lean"
+ld_fix    := "ZiskFv/GoldenTraces/LD.lean"
 ld_doc    := "docs/fv/archetype-load.md"
-sd_fix    := "ZiskFv/ZiskFv/GoldenTraces/SD.lean"
+sd_fix    := "ZiskFv/GoldenTraces/SD.lean"
 sd_doc    := "docs/fv/archetype-store.md"
-arith_extr := "ZiskFv/ZiskFv/Extraction/Arith.lean"
-arith_orcl := "ZiskFv/ZiskFv/Extraction/Arith.hand.lean"
-mul_fix   := "ZiskFv/ZiskFv/GoldenTraces/MUL.lean"
+arith_extr := "ZiskFv/Extraction/Arith.lean"
+arith_orcl := "ZiskFv/Extraction/Arith.hand.lean"
+mul_fix   := "ZiskFv/GoldenTraces/MUL.lean"
 mul_doc   := "docs/fv/archetype-arith.md"
-sllw_fix  := "ZiskFv/ZiskFv/GoldenTraces/SLLW.lean"
+sllw_fix  := "ZiskFv/GoldenTraces/SLLW.lean"
 sllw_doc  := "docs/fv/archetype-shift.md"
 
 # Phase 0 gate: regenerate the BinaryAdd extraction, diff vs. the hand-written
@@ -29,7 +29,7 @@ verify-phase0:
         --pilout {{pilout}} --air BinaryAdd --skip-unsupported \
         --output {{extracted}}
     diff -w {{extracted}} {{oracle}}
-    cd ZiskFv && lake build
+    lake build
 
 # Phase 1 gate: extends Phase 0 with Main-AIR extraction (ADD-relevant
 # subset), the harness-emitted golden-trace fixture, and a full lake build
@@ -60,7 +60,7 @@ verify-phase1:
     just _maybe_verify_live
     # Full Lean build: Goldilocks → Extraction → Airs → Spec → Equivalence
     # → GoldenTraces.
-    cd ZiskFv && lake build
+    lake build
 
 # Phase 2 gate: extends Phase 1 with the branch archetype (A1 = BEQ).
 # Runs verify-phase1 first as a regression gate, then asserts the
@@ -97,7 +97,7 @@ verify-phase2: verify-phase1
     # (verify-phase1's `lake build` already covers the full package, but
     # being explicit guards against accidental module-drop regressions
     # in refactors).
-    cd ZiskFv && lake build \
+    lake build \
         ZiskFv.Spec.BranchEqual \
         ZiskFv.Equivalence.BranchEqual \
         ZiskFv.Tactics.BranchArchetype \
@@ -130,7 +130,7 @@ verify-phase2: verify-phase1
 # verify-phase2 first as a regression gate, then asserts:
 #
 #   V1. `lake build` of the full package is green (inherited from
-#       verify-phase2's `cd ZiskFv && lake build`).
+#       verify-phase2's `lake build`).
 #   V3. Zero sorry in ZiskFv (excluding auto-generated Extraction which
 #       intentionally stubs permutation-argument columns).
 #   V8. Uniformity lint passes: 58 opcodes with `equiv_<OP>_metaplan`
@@ -143,9 +143,9 @@ verify-phase4: verify-phase2
     # V3: zero sorry in Fundamentals/Airs/Spec/Equivalence/GoldenTraces.
     # (Extraction/ is auto-generated and stubs permutation-argument
     # columns; those stubs are not called by the compositional proofs.)
-    ! grep -rn "sorry" ZiskFv/ZiskFv/Fundamentals ZiskFv/ZiskFv/Airs \
-        ZiskFv/ZiskFv/Spec ZiskFv/ZiskFv/Equivalence \
-        ZiskFv/ZiskFv/GoldenTraces 2>/dev/null | \
+    ! grep -rn "sorry" ZiskFv/Fundamentals ZiskFv/Airs \
+        ZiskFv/Spec ZiskFv/Equivalence \
+        ZiskFv/GoldenTraces 2>/dev/null | \
         grep -v "^[^:]*:[^:]*:--" | grep -v "^[^:]*:[^:]*:///"
     # V8: uniformity lint (58 opcodes, all with canonical metaplan shape).
     bash tools/zisk-fv-lint/uniformity-lint.sh > /dev/null

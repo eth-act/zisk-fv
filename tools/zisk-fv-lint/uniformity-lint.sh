@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-ROOT="${1:-$(git rev-parse --show-toplevel)/ZiskFv/ZiskFv/Equivalence}"
+ROOT="${1:-$(git rev-parse --show-toplevel)/ZiskFv/Equivalence}"
 FAIL=0
 echo "# Phase 4 opcode roster (machine-readable). Generated from $ROOT."
 echo "opcodes:"

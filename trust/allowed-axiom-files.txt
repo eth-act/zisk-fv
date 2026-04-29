@@ -2,7 +2,7 @@
 #
 # Trust-surface constructs are: axiom, opaque, constant, unsafe def,
 # partial def, @[extern], @[implemented_by]. None of these may appear
-# in any *.lean file under ZiskFv/ZiskFv/ that is not on this list.
+# in any *.lean file under ZiskFv/ that is not on this list.
 #
 # `trust/scripts/check-locality.sh` enforces this. To add a file here
 # requires explicit reviewer ack (this file is CODEOWNER-protected).
@@ -12,23 +12,23 @@
 
 # Transpiler trust-surface — RV→Zisk microinstruction contract,
 # platform assumptions (P1-P4), and store_pc=1 PC bridges (TP-*).
-ZiskFv/ZiskFv/Fundamentals/Transpiler.lean
+ZiskFv/Fundamentals/Transpiler.lean
 
 # Bus-protocol soundness for bus_id=10 (memory bus).
-ZiskFv/ZiskFv/Airs/MemoryBus/LaneMatch.lean
-ZiskFv/ZiskFv/Airs/MemoryBus/MemBridge.lean
+ZiskFv/Airs/MemoryBus/LaneMatch.lean
+ZiskFv/Airs/MemoryBus/MemBridge.lean
 
 # Lookup-table content for bus_id=125 / 124.
-ZiskFv/ZiskFv/Airs/BinaryTable.lean
-ZiskFv/ZiskFv/Airs/BinaryExtensionTable.lean
+ZiskFv/Airs/BinaryTable.lean
+ZiskFv/Airs/BinaryExtensionTable.lean
 
 # Lookup-table content for the Arith state machine (table + range table).
-ZiskFv/ZiskFv/Airs/Arith/ArithTable.lean
-ZiskFv/ZiskFv/Airs/Arith/ArithRangeTable.lean
+ZiskFv/Airs/Arith/ArithTable.lean
+ZiskFv/Airs/Arith/ArithRangeTable.lean
 
 # Sail-state ↔ Mem AIR fidelity (MS-L / MS-S).
-ZiskFv/ZiskFv/Spec/MemModel.lean
+ZiskFv/Spec/MemModel.lean
 
 # Small Sail-side simp helpers (locally proven; mirrors openvm-fv's
 # RV32D/Auxiliaries.lean pattern).
-ZiskFv/ZiskFv/RV64D/Auxiliaries.lean
+ZiskFv/RV64D/Auxiliaries.lean

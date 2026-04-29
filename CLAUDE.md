@@ -270,15 +270,18 @@ points at the file/line. The `trust/README.md` has the full reference.
 │   ├── trusted-base.md                 # trust ledger; pairs with trust/baseline-axioms.txt
 │   ├── extractor-notes.md              # tools/zisk-pil-extract contract
 │   └── air-inventory.md                # 22-AIR extraction status
-├── ZiskFv/                             # Lake 4 package (mathlib + LeanZKCircuit + LeanRV)
-│   └── ZiskFv/
-│       ├── Fundamentals/               # Goldilocks, Transpiler
-│       ├── Extraction/                 # auto-generated from pilout
-│       ├── Airs/                       # named-column Valid_<AIR> + constraint bridges
-│       ├── RV64D/                      # Track A: ported openvm-fv RV32D → RV64
-│       ├── Spec/                       # circuit → semantic theorems
-│       ├── Equivalence/                # final per-opcode equivalence
-│       └── GoldenTraces/               # concrete witness fixtures
+├── lakefile.toml                       # Lake 4 package config (mathlib + LeanZKCircuit + LeanRV)
+├── lake-manifest.json                  # Lake-pinned dep manifest
+├── lean-toolchain                      # Lean version pin
+├── ZiskFv.lean                         # entry point (imports below)
+├── ZiskFv/                             # Lean source
+│   ├── Fundamentals/                   # Goldilocks, Transpiler
+│   ├── Extraction/                     # auto-generated from pilout
+│   ├── Airs/                           # named-column Valid_<AIR> + constraint bridges
+│   ├── RV64D/                          # Track A: ported openvm-fv RV32D → RV64
+│   ├── Spec/                           # circuit → semantic theorems
+│   ├── Equivalence/                    # final per-opcode equivalence
+│   └── GoldenTraces/                   # concrete witness fixtures
 ├── tools/
 │   ├── zisk-pil-extract/               # pilout → Lean CLI (19 unit tests)
 │   └── zisk-fv-harness/                # fixture emitter

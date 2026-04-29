@@ -23,10 +23,10 @@ Lean file to spot one. Drift is caught mechanically.
 
 | Script | What it does |
 |--------|--------------|
-| `scripts/check-locality.sh` | Greps every `*.lean` under `ZiskFv/ZiskFv/` for trust-leak constructs and ensures they live only in `allowed-axiom-files.txt`. Pure shell + grep. |
+| `scripts/check-locality.sh` | Greps every `*.lean` under `ZiskFv/` for trust-leak constructs and ensures they live only in `allowed-axiom-files.txt`. Pure shell + grep. |
 | `scripts/check-baseline.sh` | Re-runs `regenerate.py` into a temp file and `diff`s against `baseline-axioms.txt`. Any unack'd add / remove / rename / statement-hash change fails. |
 | `scripts/check-no-output-eq.sh` | Extracts every `equiv_<OP>_metaplan_tier1` signature and greps it for the patterns in `forbidden-param-shapes.txt`. V1 is a regex over source text. (V2 will use a Lean meta-program to walk elaborated types and resist `abbrev` / `def` aliasing — see [Future work](#future-work).) |
-| `scripts/check-floor.sh` | Sanity-checks that the whole pipeline isn't silently producing empty output: minimum counts of axioms (≥ 90) and tier1 theorems (≥ 56). Catches a sabotaged `regenerate.py`. |
+| `scripts/check-floor.sh` | Sanity-checks that the whole pipeline isn't silently producing empty output: minimum counts of axioms (≥ 80) and tier1 theorems (≥ 40). Catches a sabotaged `regenerate.py`. |
 | `scripts/check-all.sh` | Runs all of the above. CI invokes this. |
 | `scripts/regenerate.py` | Walks the allowed files, parses every axiom block, hashes it, writes the sorted baseline. Run after a legitimate trust change, then commit the new baseline. |
 

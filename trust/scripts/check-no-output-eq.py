@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
-EQUIV_DIR = ROOT / "ZiskFv/ZiskFv/Equivalence"
+EQUIV_DIR = ROOT / "ZiskFv/Equivalence"
 PATTERNS_FILE = ROOT / "trust/forbidden-param-shapes.txt"
 
 THEOREM_HEAD = re.compile(

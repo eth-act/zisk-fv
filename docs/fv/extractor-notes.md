@@ -131,7 +131,7 @@ and will need to distinguish `firstRow` / `lastRow` / `everyFrame` from
 
 ## Oracle (`BinaryAdd.hand.lean`)
 
-`ZiskFv/ZiskFv/Extraction/BinaryAdd.hand.lean` is the differential-testing
+`ZiskFv/Extraction/BinaryAdd.hand.lean` is the differential-testing
 oracle for the `BinaryAdd` extraction; `just verify-phase0` diffs the generated
 file against it (whitespace-normalized) and fails on drift.
 

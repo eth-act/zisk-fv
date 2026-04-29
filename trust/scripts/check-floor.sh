@@ -20,7 +20,7 @@ fi
 # Catches a sweep that accidentally dropped tier1 companions.
 MIN_TIER1=40
 tier1_count=$(grep -rhE '^[[:space:]]*theorem[[:space:]]+equiv_[A-Z][A-Z0-9_]*_metaplan_tier1' \
-              ZiskFv/ZiskFv/Equivalence | wc -l)
+              ZiskFv/Equivalence | wc -l)
 if [ "$tier1_count" -lt "$MIN_TIER1" ]; then
   echo "trust-gate: FLOOR FAILURE — only $tier1_count tier1 theorems found (expected >= $MIN_TIER1)."
   echo "  This can happen if a sweep accidentally dropped tier1 companions."
@@ -39,7 +39,7 @@ import importlib.util
 spec = importlib.util.spec_from_file_location('regen', 'trust/scripts/regenerate.py')
 m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
 total = 0
-for f in Path('ZiskFv/ZiskFv').rglob('*.lean'):
+for f in Path('ZiskFv').rglob('*.lean'):
     for _ in m.parse_blocks(f):
         total += 1
 print(total)
