@@ -17,7 +17,6 @@ gate + repro hashes).
 | ---------------------- | ------------------------------------------------------------------------------------------------------ |
 | `docs/fv/`             | Live library-reference notes: trust ledger, extractor contract, AIR inventory                          |
 | `tools/pil-extract/`   | Rust CLI: decodes `.pilout` protobuf → Lean constraint definitions                                     |
-| `tools/golden-traces/` | Rust CLI: emits a golden-trace fixture (`ZiskFv/GoldenTraces/Add.lean`)                                |
 | `ZiskFv/`              | Lake 4 package (mathlib + LeanZKCircuit + LeanRV, toolchain v4.26.0)                                   |
 | `zisk/`                | ZisK source tree (git submodule, pinned at `48cf7ccef`)                                                |
 | `trust/`               | Trust-boundary baselines + enforcement scripts. See `trust/README.md`.                                 |

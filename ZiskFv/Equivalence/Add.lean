@@ -217,9 +217,8 @@ theorem equiv_ADD_metaplan
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} —
     no parameter mentions the spec output `r1_val + r2_val`.
 
-    The original `equiv_ADD_metaplan` is preserved (above) for the
-    GoldenTraces fixtures and other callers that already construct
-    `h_rd_val` from concrete witnesses. -/
+    The original `equiv_ADD_metaplan` is preserved (above) for callers
+    that already construct `h_rd_val` from concrete witnesses. -/
 theorem equiv_ADD_metaplan_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)

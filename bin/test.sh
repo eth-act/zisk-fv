@@ -24,10 +24,9 @@ run() {
     echo
 }
 
-# 1. Tool unit tests (extractor + golden-trace harness).
+# 1. Tool unit tests (extractor).
 run "1/4 cargo test"           bash -c '
-    cargo test --manifest-path tools/pil-extract/Cargo.toml --quiet \
- && cargo test --manifest-path tools/golden-traces/Cargo.toml --quiet
+    cargo test --manifest-path tools/pil-extract/Cargo.toml --quiet
 '
 
 # 2. Lake build — the FV check. Every theorem typechecks. This is

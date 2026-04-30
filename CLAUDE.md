@@ -94,7 +94,7 @@ things; if you break any of them, the build fails:
    `trust/forbidden-param-shapes.txt`.
 4. **Floors.** ≥80 axioms in baseline, ≥40 `_tier1` theorems, plus a
    cross-witness check that the parser hasn't been sabotaged.
-5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,Spec,Equivalence,Tactics,RV64D,GoldenTraces}`.
+5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,Spec,Equivalence,Tactics,RV64D}`.
 6. **Uniformity.** Every one of 63 RV64IM opcodes has a canonical
    `equiv_<OP>_metaplan` theorem.
 
