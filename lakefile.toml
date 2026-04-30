@@ -18,9 +18,9 @@ git = "https://github.com/NethermindEth/leanzkcircuit.git"
 rev = "v4.26.0"
 
 # Sail-Lean RV64D spec is built locally from primary source via
-# Docker (`just build-sail-lean`). Lake reads from the local
+# Docker (`docker/build-sail-lean.sh`). Lake reads from the local
 # build/sail-lean/ tree — the spec is NOT pulled pre-built. Run
-# `just build-sail-lean` once before `lake build`. See docker/README.md.
+# `docker/build-sail-lean.sh` once before `lake build`. See docker/README.md.
 [[require]]
 name = "LeanRV"
 path = "build/sail-lean"

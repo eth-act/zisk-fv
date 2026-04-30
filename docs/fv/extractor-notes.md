@@ -129,30 +129,21 @@ Phase 1 must add `FixedCol`, `Challenge`, `AirValue` to render the Main AIR,
 and will need to distinguish `firstRow` / `lastRow` / `everyFrame` from
 `everyRow` at the Lean level.
 
-## Oracle (`BinaryAdd.hand.lean`)
+## Reproducibility check
 
-`ZiskFv/Extraction/BinaryAdd.hand.lean` is the differential-testing
-oracle for the `BinaryAdd` extraction; `just verify-phase0` diffs the generated
-file against it (whitespace-normalized) and fails on drift.
+The historical per-AIR `*.hand.lean` oracles were retired in favour of a
+structural fingerprint: `sha256` of `pil-extract --list <pilout>`. The
+expected fingerprint is pinned in `docker/versions.txt`
+(`expected-zisk-pilout-fingerprint`) and verified by
+`docker/build-zisk-lean.sh`. See `docker/README.md` for why structural
+(not byte) reproducibility is the load-bearing claim.
 
-**Provenance.** The oracle was written by hand from the
-`zisk/state-machines/binary/pil/binary_add.pil` source, applying the
-rendering rules described in the "Contract" and "Pilout structure observations"
-sections above — not by copying generator output. Metadata lines are
-pass-through, not
-translation:
-- the `-- airgroup: …` line and the `-- witness column names:` block are
-  derived from the pilout symbol table;
-- per-constraint `-- binary/pil/binary_add.pil:…` debug comments are pilout
-  `debug_line` strings;
-- `-- constraint_N skipped: …` stubs report extractor coverage, not
-  translations of skipped constraints.
-
-If the diff gate ever fails, investigate before "fixing" it. Genuine causes:
+If the fingerprint diverges, investigate before "fixing" it. Genuine causes:
 (a) extractor output changed (flags, new operand kinds, different
-parenthesization) — update the oracle to match and note the change here;
-(b) extractor regressed — fix the extractor, not the oracle; (c) the `.pil`
-source changed — re-translate the oracle from the new source.
+parenthesization) — update the pin and note the change here;
+(b) extractor regressed — fix the extractor, not the pin;
+(c) the upstream `.pil` source changed — rebuild the pilout from the
+new source and re-pin.
 
 ## Negative row rotations (Phase 2.5 D2)
 
