@@ -1,24 +1,18 @@
-# Reproducibility container for pil/zisk.pilout
+# Reproducibility container for build/zisk.pilout.
 #
-# Pinned versions match what produced the vendored pil/zisk.pilout
-# (forensically reconstructed from /home/cody/zisk reflog + AIR-set
-# diff + protobuf string-table inspection):
-#   - codygunton/zisk@zksyncos      0bfdc9582a485ab82df4f085817c7f1c05e686a4
-#                                   (forks from upstream v0.15.0; adds the
-#                                   u256_delegation precompile, which is
-#                                   why the vendored has a U256Delegation
-#                                   AIR that upstream v0.15.0 doesn't)
+# Pinned versions (see docker/versions.txt):
+#   - 0xPolygonHermez/zisk          v0.15.0 (b3ca745b...)
 #   - 0xPolygonHermez/pil2-compiler tag v0.8.0
 #   - 0xPolygonHermez/pil2-proofman tag v0.15.0
 #
-# NOTE: zisk-fv's submodule (zisk) is pinned at 48cf7ccef for
-# source references in the proofs (transpile_* axiom citations); the
-# vendored pilout was actually built from a fork. This container
-# reproduces the artifact you have, not the submodule HEAD.
+# NOTE: zisk-fv's submodule (zisk) is pinned at 48cf7ccef for source
+# references in the proofs (transpile_* axiom citations). That commit
+# is independent of this build; the submodule is just a citation
+# surface. This container reproduces the artifact at build/zisk.pilout
+# from stock upstream sources.
 #
-# Build:   docker build -t zisk-fv-pilout -f docker/Dockerfile.pilout docker/
-# Run:     docker run --rm -v "$PWD/out/repro:/output" zisk-fv-pilout
-#          → /output/zisk.pilout
+# Build + run via docker/build-pilout.sh — that wrapper handles the
+# `docker build` + `docker run -v $PWD/build:/output` invocations.
 
 FROM ubuntu:22.04
 
@@ -66,11 +60,10 @@ RUN git clone --depth 1 --branch ${PIL2_COMPILER_TAG} \
 RUN git clone --depth 1 --branch ${PIL2_PROOFMAN_TAG} \
       https://github.com/0xPolygonHermez/pil2-proofman.git /opt/pil2-proofman
 
-# ZisK source — codygunton/zisk@0bfdc9582 (zksyncos branch).
-# Forks from upstream v0.15.0 with a custom u256_delegation precompile
-# crate added. Pinned by full SHA so branch-head moves don't drift.
-ARG ZISK_REPO=https://github.com/codygunton/zisk.git
-ARG ZISK_COMMIT=0bfdc9582a485ab82df4f085817c7f1c05e686a4
+# ZisK source — stock 0xPolygonHermez/zisk @ v0.15.0 (b3ca745b...).
+# Pinned by full SHA so tag-move on the upstream side cannot drift.
+ARG ZISK_REPO=https://github.com/0xPolygonHermez/zisk.git
+ARG ZISK_COMMIT=b3ca745b80423c8123dc24f19039865a5bc8b074
 RUN git clone ${ZISK_REPO} /zisk \
  && cd /zisk && git checkout ${ZISK_COMMIT}
 

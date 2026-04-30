@@ -9,13 +9,15 @@
 zisk-submodule-commit      = 48cf7ccefb5ed62261abf6bfb007b5be8a23c547
 
 # Pilout build inputs (used by docker/Dockerfile.pilout).
-# These are the actual versions that produced the vendored
-# pil/zisk.pilout — forensically reconstructed from the host
-# /home/cody/zisk reflog and confirmed by structural-fingerprint
-# match.  ZisK source is the user's personal fork (zksyncos branch)
-# that adds a u256_delegation precompile on top of upstream v0.15.0.
-pilout-zisk-repo           = https://github.com/codygunton/zisk.git
-pilout-zisk-commit         = 0bfdc9582a485ab82df4f085817c7f1c05e686a4
+# Stock upstream 0xPolygonHermez/zisk at the v0.15.0 release tag
+# (commit b3ca745b...). The pil2-compiler / pil2-proofman tags are
+# the toolchain versions v0.15.0 was authored against. Earlier
+# revisions of this file pinned a personal fork that added a
+# `u256_delegation` precompile (visible as the U256Delegation AIR);
+# we switched to stock v0.15.0 to validate the reproducibility
+# pipeline against unmodified upstream sources.
+pilout-zisk-repo           = https://github.com/0xPolygonHermez/zisk.git
+pilout-zisk-commit         = b3ca745b80423c8123dc24f19039865a5bc8b074
 pil2-compiler-tag          = v0.8.0
 pil2-proofman-tag          = v0.15.0
 
@@ -34,10 +36,10 @@ lean-rv-commit             = 81c8c84f919b6b565790713e2049a88b88739cda
 leanzkcircuit-commit       = 8631b11de51c68288b519e8032019524b84a365f
 
 # Sail-Lean RV64D tree hash (sha256 of sorted *.lean file sha256s).
-# Verified by `just build-sail-lean`. Update when upstream pins
+# Verified by `docker/build-sail-lean.sh`. Update when upstream pins
 # (sail-commit, sail-riscv-commit) change.
 expected-sail-lean-tree-sha256 = aabc5b9fc6bb9b58433c919dee5f0fd72f70fd9a999c5d79fe75a8384b49ac83
 
 # Pilout AIR-list structural fingerprint (sha256 of `pil-extract --list`).
 # Verified by bin/test.sh.
-expected-zisk-pilout-fingerprint = 52f5ee8edc8d19b86f795bb1a64b082775a4c6cceda9c4a4bea4e7c13cf19105
+expected-zisk-pilout-fingerprint = 504c8583295f3ccfec28eac70bba4c990cd1bd6679faafb4bed8018e860877bd
