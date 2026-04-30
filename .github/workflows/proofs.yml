@@ -25,13 +25,14 @@ concurrency:
 jobs:
   lake-build:
     name: lake build (full FV check)
-    runs-on: ubuntu-latest
-    # Cold runs (no cache) need to build two Docker images and run a
-    # single-threaded Node PIL compile; on a 4-vCPU runner that's
-    # comfortably under 90 min but can graze 60 min. Steady-state runs
-    # (cache hit on docker outputs + .lake) finish in ~10 min, so the
-    # higher ceiling only ever applies when versions.txt or a Dockerfile
-    # changes.
+    # GitHub-hosted XL runner (~16 vCPU / 64 GB RAM). The default
+    # `ubuntu-latest` runner has 4 vCPU / 16 GB RAM, which OOMs during
+    # the pilout build because pil2-compiler's Node process is
+    # launched with `--max-old-space-size=16384` (full 16 GB) and
+    # there's no headroom left for the Docker daemon, the runner
+    # agent, or the kernel. Same label used by
+    # `eth-act/zkevm-test-monitor`'s nightly zkVM update workflows.
+    runs-on: ["self-hosted-ghr", "size-xl-x64"]
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
