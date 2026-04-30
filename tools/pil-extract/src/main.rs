@@ -1452,4 +1452,763 @@ mod tests {
         h.name = "im_col".into();
         assert!(parse_bus_emission(&PilOut::default(), &Air::default(), &h).is_err());
     }
+
+    // ============================================================
+    // Expression / operand rendering — full coverage of ExprOp and
+    // OperandKind variants. The pre-existing tests cover only Add +
+    // WitnessCol/Constant; the additions below exercise Sub, Mul, Neg,
+    // and the FixedCol/AirValue/AirGroupValue/Challenge/Expression
+    // operand kinds the real pilout uses.
+    // ============================================================
+
+    fn witness_operand(stage: u32, col_idx: u32, row_offset: i32) -> Operand {
+        Operand {
+            operand: Some(OperandKind::WitnessCol(pilout::operand::WitnessCol {
+                stage,
+                col_idx,
+                row_offset,
+            })),
+        }
+    }
+
+    fn fixed_col_operand(idx: u32, row_offset: i32) -> Operand {
+        Operand {
+            operand: Some(OperandKind::FixedCol(pilout::operand::FixedCol {
+                idx,
+                row_offset,
+            })),
+        }
+    }
+
+    fn challenge_operand(stage: u32, idx: u32) -> Operand {
+        Operand {
+            operand: Some(OperandKind::Challenge(pilout::operand::Challenge { stage, idx })),
+        }
+    }
+
+    fn air_value_operand(idx: u32) -> Operand {
+        Operand {
+            operand: Some(OperandKind::AirValue(pilout::operand::AirValue { idx })),
+        }
+    }
+
+    fn air_group_value_operand(idx: u32) -> Operand {
+        Operand {
+            operand: Some(OperandKind::AirGroupValue(pilout::operand::AirGroupValue {
+                idx,
+            })),
+        }
+    }
+
+    fn expr_ref_operand(idx: u32) -> Operand {
+        Operand {
+            operand: Some(OperandKind::Expression(pilout::operand::Expression { idx })),
+        }
+    }
+
+    fn add_expr(lhs: Operand, rhs: Operand) -> Expression {
+        Expression {
+            operation: Some(ExprOp::Add(pilout::expression::Add {
+                lhs: Some(lhs),
+                rhs: Some(rhs),
+            })),
+        }
+    }
+
+    fn sub_expr(lhs: Operand, rhs: Operand) -> Expression {
+        Expression {
+            operation: Some(ExprOp::Sub(pilout::expression::Sub {
+                lhs: Some(lhs),
+                rhs: Some(rhs),
+            })),
+        }
+    }
+
+    fn mul_expr(lhs: Operand, rhs: Operand) -> Expression {
+        Expression {
+            operation: Some(ExprOp::Mul(pilout::expression::Mul {
+                lhs: Some(lhs),
+                rhs: Some(rhs),
+            })),
+        }
+    }
+
+    fn neg_expr(value: Operand) -> Expression {
+        Expression {
+            operation: Some(ExprOp::Neg(pilout::expression::Neg {
+                value: Some(value),
+            })),
+        }
+    }
+
+    fn every_row_constraint(idx: u32) -> Constraint {
+        Constraint {
+            constraint: Some(ConstraintKind::EveryRow(pilout::constraint::EveryRow {
+                expression_idx: Some(pilout::operand::Expression { idx }),
+                debug_line: None,
+            })),
+        }
+    }
+
+    #[test]
+    fn render_expr_sub_emits_subtraction() {
+        let air = Air {
+            expressions: vec![sub_expr(
+                witness_operand(1, 0, 0),
+                witness_operand(1, 1, 0),
+            )],
+            ..Default::default()
+        };
+        let r = render_expr_by_idx(&PilOut::default(), &air, 0).expect("render");
+        assert_eq!(
+            r,
+            "((Circuit.main c (id := 1) (column := 0) (row := row) (rotation := 0)) - (Circuit.main c (id := 1) (column := 1) (row := row) (rotation := 0)))"
+        );
+    }
+
+    #[test]
+    fn render_expr_mul_emits_multiplication() {
+        let air = Air {
+            expressions: vec![mul_expr(
+                const_operand(vec![3]),
+                witness_operand(1, 7, 0),
+            )],
+            ..Default::default()
+        };
+        let r = render_expr_by_idx(&PilOut::default(), &air, 0).expect("render");
+        assert_eq!(
+            r,
+            "(3 * (Circuit.main c (id := 1) (column := 7) (row := row) (rotation := 0)))"
+        );
+    }
+
+    #[test]
+    fn render_expr_neg_emits_negation() {
+        let air = Air {
+            expressions: vec![neg_expr(witness_operand(1, 4, 0))],
+            ..Default::default()
+        };
+        let r = render_expr_by_idx(&PilOut::default(), &air, 0).expect("render");
+        assert_eq!(
+            r,
+            "(-(Circuit.main c (id := 1) (column := 4) (row := row) (rotation := 0)))"
+        );
+    }
+
+    #[test]
+    fn render_expr_nested_via_expression_pool() {
+        // expr 0 = a + b, expr 1 = (expr 0) * c. Tests that an `Expression`
+        // operand kind chains back into the pool and renders the referenced
+        // sub-tree in place.
+        let air = Air {
+            expressions: vec![
+                add_expr(witness_operand(1, 0, 0), witness_operand(1, 1, 0)),
+                mul_expr(expr_ref_operand(0), witness_operand(1, 2, 0)),
+            ],
+            ..Default::default()
+        };
+        let r = render_expr_by_idx(&PilOut::default(), &air, 1).expect("render");
+        assert_eq!(
+            r,
+            "(((Circuit.main c (id := 1) (column := 0) (row := row) (rotation := 0)) + (Circuit.main c (id := 1) (column := 1) (row := row) (rotation := 0))) * (Circuit.main c (id := 1) (column := 2) (row := row) (rotation := 0)))"
+        );
+    }
+
+    #[test]
+    fn render_operand_fixed_col_zero_offset() {
+        let air = Air {
+            expressions: vec![add_expr(fixed_col_operand(3, 0), const_operand(vec![]))],
+            ..Default::default()
+        };
+        let r = render_expr_by_idx(&PilOut::default(), &air, 0).expect("render");
+        assert!(
+            r.contains("(Circuit.preprocessed c (column := 3) (row := row) (rotation := 0))"),
+            "unexpected render: {}",
+            r
+        );
+    }
+
+    #[test]
+    fn render_operand_fixed_col_negative_offset_rewrites_row_sub_k() {
+        // Same `'`-postfix → `row - k` rewrite as WitnessCol — covers the
+        // SEGMENT_L1-gated soundness case for fixed columns.
+        let air = Air {
+            expressions: vec![add_expr(fixed_col_operand(3, -2), const_operand(vec![]))],
+            ..Default::default()
+        };
+        let r = render_expr_by_idx(&PilOut::default(), &air, 0).expect("render");
+        assert!(
+            r.contains("(Circuit.preprocessed c (column := 3) (row := row - 2) (rotation := 0))"),
+            "unexpected render: {}",
+            r
+        );
+    }
+
+    #[test]
+    fn render_operand_fixed_col_positive_offset_errors() {
+        let air = Air {
+            expressions: vec![add_expr(fixed_col_operand(3, 1), const_operand(vec![]))],
+            ..Default::default()
+        };
+        assert!(render_expr_by_idx(&PilOut::default(), &air, 0).is_err());
+    }
+
+    #[test]
+    fn render_operand_air_value_emits_exposed() {
+        let air = Air {
+            expressions: vec![add_expr(air_value_operand(7), const_operand(vec![]))],
+            ..Default::default()
+        };
+        let r = render_expr_by_idx(&PilOut::default(), &air, 0).expect("render");
+        assert!(
+            r.contains("(Circuit.exposed c (index := 7))"),
+            "unexpected render: {}",
+            r
+        );
+    }
+
+    #[test]
+    fn render_operand_air_group_value_shares_exposed_accessor() {
+        // AirGroupValue and AirValue share `Circuit.exposed`. The named-
+        // constraint layer is responsible for distinguishing them — the
+        // extractor treats them identically by design.
+        let av_air = Air {
+            expressions: vec![add_expr(air_value_operand(11), const_operand(vec![]))],
+            ..Default::default()
+        };
+        let agv_air = Air {
+            expressions: vec![add_expr(air_group_value_operand(11), const_operand(vec![]))],
+            ..Default::default()
+        };
+        let av = render_expr_by_idx(&PilOut::default(), &av_air, 0).unwrap();
+        let agv = render_expr_by_idx(&PilOut::default(), &agv_air, 0).unwrap();
+        assert_eq!(av, agv, "AirValue and AirGroupValue should render identically");
+    }
+
+    #[test]
+    fn render_operand_challenge_uses_flat_index() {
+        // num_challenges = [2, 3] → stage-1 challenges 0..1 (flat 0..1),
+        // stage-2 challenges 0..2 (flat 2..4). Challenge { stage=2, idx=1 }
+        // flattens to base 2 + 1 = 3.
+        let pilout = PilOut {
+            num_challenges: vec![2, 3],
+            ..Default::default()
+        };
+        let air = Air {
+            expressions: vec![add_expr(challenge_operand(2, 1), const_operand(vec![]))],
+            ..Default::default()
+        };
+        let r = render_expr_by_idx(&pilout, &air, 0).expect("render");
+        assert!(
+            r.contains("(Circuit.challenge c (index := 3))"),
+            "unexpected render: {}",
+            r
+        );
+    }
+
+    #[test]
+    fn render_operand_periodic_col_unsupported_errors() {
+        let pc = Operand {
+            operand: Some(OperandKind::PeriodicCol(pilout::operand::PeriodicCol {
+                idx: 0,
+                row_offset: 0,
+            })),
+        };
+        let air = Air {
+            expressions: vec![add_expr(pc, const_operand(vec![]))],
+            ..Default::default()
+        };
+        // PeriodicCol/ProofValue/PublicValue/CustomCol fall through to the
+        // explicit `bail!` arm. ZisK's pilout doesn't use them; if it ever
+        // does, this test fails loudly so the extractor gets explicit
+        // support rather than silently producing junk Lean.
+        assert!(render_expr_by_idx(&PilOut::default(), &air, 0).is_err());
+    }
+
+    #[test]
+    fn expr_uses_extf_pure_witness_arithmetic_is_false() {
+        let air = Air {
+            expressions: vec![mul_expr(
+                witness_operand(1, 0, 0),
+                witness_operand(1, 1, 0),
+            )],
+            ..Default::default()
+        };
+        assert!(!expr_uses_extf(&PilOut::default(), &air, 0).unwrap());
+    }
+
+    #[test]
+    fn expr_uses_extf_challenge_in_subexpression_bubbles_up() {
+        // expr 0 references a challenge; expr 1 wraps expr 0 inside an Add.
+        // The walker must recurse into the Expression-pool reference and see
+        // the Challenge — otherwise it would emit a constraint that mixes
+        // F (witness) with ExtF (challenge), which Lean cannot typecheck.
+        let pilout = PilOut {
+            num_challenges: vec![1],
+            ..Default::default()
+        };
+        let air = Air {
+            expressions: vec![
+                mul_expr(challenge_operand(1, 0), witness_operand(1, 0, 0)),
+                add_expr(witness_operand(1, 1, 0), expr_ref_operand(0)),
+            ],
+            ..Default::default()
+        };
+        assert!(
+            expr_uses_extf(&pilout, &air, 1).unwrap(),
+            "challenge inside a referenced sub-expression should bubble up"
+        );
+    }
+
+    #[test]
+    fn expr_uses_extf_air_value_is_true() {
+        let air = Air {
+            expressions: vec![add_expr(air_value_operand(0), witness_operand(1, 0, 0))],
+            ..Default::default()
+        };
+        assert!(expr_uses_extf(&PilOut::default(), &air, 0).unwrap());
+    }
+
+    #[test]
+    fn witness_column_names_scalar_symbol_maps_stage_id_to_name() {
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                airs: vec![Air {
+                    name: Some("Demo".into()),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            symbols: vec![pilout::Symbol {
+                name: "carry_chain_0".to_string(),
+                air_group_id: Some(0),
+                air_id: Some(0),
+                r#type: SymbolType::WitnessCol as i32,
+                id: 5,
+                stage: Some(1),
+                dim: 0,
+                lengths: vec![],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let hit = find_air(&pilout, "Demo").unwrap();
+        let m = witness_column_names(&pilout, &hit);
+        assert_eq!(m.get(&(1, 5)), Some(&"carry_chain_0".to_string()));
+        assert_eq!(m.len(), 1, "scalar symbol should map exactly one cell");
+    }
+
+    #[test]
+    fn witness_column_names_array_symbol_expands_indexed() {
+        // dim=1, lengths=[3], base id=10 → chunk[0..2] at ids 10..12.
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                airs: vec![Air {
+                    name: Some("Demo".into()),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            symbols: vec![pilout::Symbol {
+                name: "chunk".to_string(),
+                air_group_id: Some(0),
+                air_id: Some(0),
+                r#type: SymbolType::WitnessCol as i32,
+                id: 10,
+                stage: Some(1),
+                dim: 1,
+                lengths: vec![3],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let hit = find_air(&pilout, "Demo").unwrap();
+        let m = witness_column_names(&pilout, &hit);
+        assert_eq!(m.get(&(1, 10)), Some(&"chunk[0]".to_string()));
+        assert_eq!(m.get(&(1, 11)), Some(&"chunk[1]".to_string()));
+        assert_eq!(m.get(&(1, 12)), Some(&"chunk[2]".to_string()));
+        assert_eq!(m.len(), 3);
+    }
+
+    #[test]
+    fn witness_column_names_skips_other_air_symbols() {
+        // A symbol bound to (group 0, air 1) must not appear in the names
+        // for (group 0, air 0). Caught a real issue in early development
+        // where the extractor leaked sibling-AIR column names into Demo's
+        // header.
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                airs: vec![
+                    Air {
+                        name: Some("Demo".into()),
+                        ..Default::default()
+                    },
+                    Air {
+                        name: Some("Other".into()),
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            }],
+            symbols: vec![pilout::Symbol {
+                name: "should_not_appear".to_string(),
+                air_group_id: Some(0),
+                air_id: Some(1),
+                r#type: SymbolType::WitnessCol as i32,
+                id: 0,
+                stage: Some(1),
+                dim: 0,
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let hit = find_air(&pilout, "Demo").unwrap();
+        assert!(witness_column_names(&pilout, &hit).is_empty());
+    }
+
+    #[test]
+    fn find_air_no_match_errors_with_helpful_message() {
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                airs: vec![Air {
+                    name: Some("Foo".into()),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let err = find_air(&pilout, "Bar")
+            .err()
+            .expect("expected no-match error")
+            .to_string();
+        assert!(err.contains("no AIR matches"), "got: {}", err);
+        assert!(err.contains("--list"), "should suggest --list, got: {}", err);
+    }
+
+    #[test]
+    fn find_air_ambiguous_substring_no_exact_match_errors() {
+        // "Mem" is a substring of two AIR names but not exactly any one.
+        // Without an exact-match shortcut, the substring search returns 2
+        // and aborts.
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                airs: vec![
+                    Air {
+                        name: Some("MemAlign".into()),
+                        ..Default::default()
+                    },
+                    Air {
+                        name: Some("MemAlignByte".into()),
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let err = find_air(&pilout, "Mem")
+            .err()
+            .expect("expected ambiguity error")
+            .to_string();
+        assert!(err.contains("2 AIRs match"), "got: {}", err);
+    }
+
+    #[test]
+    fn find_air_substring_with_no_exact_returns_unique_match() {
+        // Substring with exactly one hit (and no exact) succeeds.
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                airs: vec![Air {
+                    name: Some("BinaryAdd".into()),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let hit = find_air(&pilout, "Add").expect("substring 'Add' should hit BinaryAdd");
+        assert_eq!(hit.air.name.as_deref(), Some("BinaryAdd"));
+    }
+
+    // ============================================================
+    // End-to-end render_air snapshot tests on synthetic AIRs. These
+    // catch silent mistranslations that are well-typed Lean but
+    // structurally wrong (a missing constraint, a reordered operand,
+    // a header that doesn't match the witness layout) — a class of
+    // bug that neither `lake build` nor the `--list` fingerprint
+    // would catch.
+    // ============================================================
+
+    #[test]
+    fn render_air_minimal_constraint_snapshot() {
+        // Boolean constraint `x * (1 - x) = 0` on a single witness column.
+        // expr 0 holds the `(1 - x)` sub-tree; expr 1 is the top-level
+        // `x * (expr 0)`. The constraint targets expr 1.
+        let air = Air {
+            name: Some("Demo".into()),
+            expressions: vec![
+                sub_expr(const_operand(vec![1]), witness_operand(1, 0, 0)),
+                mul_expr(witness_operand(1, 0, 0), expr_ref_operand(0)),
+            ],
+            constraints: vec![every_row_constraint(1)],
+            num_rows: Some(8),
+            ..Default::default()
+        };
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                name: Some("Zisk".into()),
+                airs: vec![air],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let hit = find_air(&pilout, "Demo").unwrap();
+        let opts = RenderOpts {
+            skip_unsupported: false,
+            only: None,
+        };
+        let out = render_air(&pilout, hit, &opts).expect("render");
+
+        assert!(out.starts_with("import Mathlib\n"));
+        assert!(out.contains("import LeanZKCircuit.OpenVM.Circuit"));
+        assert!(out.contains("namespace Demo.extraction"));
+        assert!(
+            out.contains("-- airgroup: Zisk (id 0)  air: Demo (id 0)"),
+            "header missing airgroup/air metadata:\n{}",
+            out
+        );
+        assert!(out.contains("def constraint_0_every_row"));
+        // The boolean shape `x * (1 - x) = 0` should appear with the witness
+        // cell on both sides of the multiplication.
+        assert!(
+            out.matches("(column := 0)").count() >= 2,
+            "expected witness column 0 to appear twice (once each side of `x * (1-x)`):\n{}",
+            out
+        );
+        assert!(out.contains(") = 0\n"));
+        assert!(out.trim_end().ends_with("end Demo.extraction"));
+    }
+
+    #[test]
+    fn render_air_skip_unsupported_emits_stub_for_extf_constraint() {
+        // A constraint mixing a witness cell with a Challenge is ExtF-
+        // typed; without --skip-unsupported the renderer aborts. With it,
+        // a comment stub replaces the def — the named-constraint layer
+        // takes over for these.
+        let pilout = PilOut {
+            num_challenges: vec![1],
+            air_groups: vec![pilout::AirGroup {
+                name: Some("Zisk".into()),
+                airs: vec![Air {
+                    name: Some("Demo".into()),
+                    expressions: vec![mul_expr(
+                        witness_operand(1, 0, 0),
+                        challenge_operand(1, 0),
+                    )],
+                    constraints: vec![every_row_constraint(0)],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+
+        // First confirm the strict path aborts:
+        {
+            let hit = find_air(&pilout, "Demo").unwrap();
+            let strict = RenderOpts {
+                skip_unsupported: false,
+                only: None,
+            };
+            assert!(render_air(&pilout, hit, &strict).is_err());
+        }
+
+        // Then confirm the lenient path emits a stub instead:
+        let hit = find_air(&pilout, "Demo").unwrap();
+        let lenient = RenderOpts {
+            skip_unsupported: true,
+            only: None,
+        };
+        let out = render_air(&pilout, hit, &lenient).expect("should not abort under skip");
+        assert!(
+            out.contains("constraint_0_every_row skipped:"),
+            "expected skip stub for ExtF constraint, got:\n{}",
+            out
+        );
+        assert!(
+            !out.contains("def constraint_0_every_row"),
+            "skipped constraint should not emit a def"
+        );
+    }
+
+    #[test]
+    fn render_air_only_filter_drops_excluded_constraints() {
+        // --only [0] keeps constraint 0 and silently drops constraint 1.
+        let air = Air {
+            name: Some("Demo".into()),
+            expressions: vec![
+                add_expr(witness_operand(1, 0, 0), const_operand(vec![])),
+                add_expr(witness_operand(1, 1, 0), const_operand(vec![])),
+            ],
+            constraints: vec![every_row_constraint(0), every_row_constraint(1)],
+            ..Default::default()
+        };
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                name: Some("Zisk".into()),
+                airs: vec![air],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let hit = find_air(&pilout, "Demo").unwrap();
+        let opts = RenderOpts {
+            skip_unsupported: false,
+            only: Some(std::collections::BTreeSet::from([0])),
+        };
+        let out = render_air(&pilout, hit, &opts).expect("render");
+        assert!(out.contains("def constraint_0_every_row"));
+        assert!(
+            !out.contains("def constraint_1_every_row"),
+            "constraint 1 should be filtered by --only [0], got:\n{}",
+            out
+        );
+    }
+
+    #[test]
+    fn render_air_includes_witness_column_name_header() {
+        // When pilout symbols name the witness columns, render_air emits a
+        // sorted `-- stage S col C: name` block. The named-constraint
+        // layer reads these to bind human-readable accessors.
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                name: Some("Zisk".into()),
+                airs: vec![Air {
+                    name: Some("Demo".into()),
+                    expressions: vec![add_expr(witness_operand(1, 0, 0), const_operand(vec![]))],
+                    constraints: vec![every_row_constraint(0)],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            symbols: vec![pilout::Symbol {
+                name: "x".to_string(),
+                air_group_id: Some(0),
+                air_id: Some(0),
+                r#type: SymbolType::WitnessCol as i32,
+                id: 0,
+                stage: Some(1),
+                dim: 0,
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let hit = find_air(&pilout, "Demo").unwrap();
+        let opts = RenderOpts {
+            skip_unsupported: false,
+            only: None,
+        };
+        let out = render_air(&pilout, hit, &opts).expect("render");
+        assert!(
+            out.contains("-- witness column names:")
+                && out.contains("--   stage 1 col 0: x"),
+            "header missing column-name block:\n{}",
+            out
+        );
+    }
+
+    #[test]
+    fn render_air_sanitizes_air_name_for_namespace() {
+        // PIL2 lets AIR names contain `::` and other punctuation. The
+        // sanitizer maps them to `_` so the output is a valid Lean
+        // namespace + register_simp_attr identifier.
+        let pilout = PilOut {
+            air_groups: vec![pilout::AirGroup {
+                name: Some("Zisk".into()),
+                airs: vec![Air {
+                    name: Some("Foo::Bar".into()),
+                    expressions: vec![add_expr(witness_operand(1, 0, 0), const_operand(vec![]))],
+                    constraints: vec![every_row_constraint(0)],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let hit = find_air(&pilout, "Foo::Bar").unwrap();
+        let opts = RenderOpts {
+            skip_unsupported: false,
+            only: None,
+        };
+        let out = render_air(&pilout, hit, &opts).expect("render");
+        assert!(out.contains("namespace Foo__Bar.extraction"));
+        assert!(out.contains("register_simp_attr Foo__Bar_air_simplification"));
+        // The original name still appears verbatim in the metadata comment.
+        assert!(out.contains("air: Foo::Bar"));
+    }
+
+    // ============================================================
+    // format_basefield property check: cross-validate against u128
+    // for byte vectors fitting in 16 bytes (u128 covers the entire
+    // domain of any single Goldilocks limb plus headroom). Hand-
+    // picked critical patterns plus 200 LCG-deterministic random
+    // vectors. Extends the original 7 hand-coded cases.
+    // ============================================================
+
+    #[test]
+    fn format_basefield_matches_u128_decimal_for_bytes_up_to_16() {
+        fn check(bytes: &[u8]) {
+            assert!(bytes.len() <= 16);
+            let mut padded = [0u8; 16];
+            padded[16 - bytes.len()..].copy_from_slice(bytes);
+            let n = u128::from_be_bytes(padded);
+            let got = format_basefield(bytes);
+            assert_eq!(
+                got,
+                n.to_string(),
+                "format_basefield({:?}) = {:?}; u128 BE decode = {}",
+                bytes,
+                got,
+                n
+            );
+        }
+
+        let critical: &[&[u8]] = &[
+            &[],
+            &[0],
+            &[0, 0, 0],
+            &[1],
+            &[0xFF],
+            &[0xFF, 0xFF],
+            &[1, 0, 0, 0],
+            &[1, 0, 0, 0, 0],
+            &[1, 0, 0, 0, 0, 0, 0, 0],
+            &[0xFF; 8],
+            &[1, 0, 0, 0, 0, 0, 0, 0, 0],
+            &[0xFF; 16],
+            &[0, 0, 1, 2, 3, 4, 5, 6, 7],
+            &[0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0],
+        ];
+        for b in critical {
+            check(b);
+        }
+
+        // Deterministic LCG (no `rand` dep). Constants from Knuth's MMIX.
+        let mut state: u64 = 0xdead_beef_cafe_f00d;
+        let mut next = || {
+            state = state
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            state
+        };
+        for _ in 0..200 {
+            let len = (next() >> 56) as usize % 17; // 0..=16
+            let mut bytes = vec![0u8; len];
+            for b in &mut bytes {
+                *b = (next() >> 56) as u8;
+            }
+            check(&bytes);
+        }
+    }
 }
