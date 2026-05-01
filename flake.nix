@@ -52,6 +52,11 @@
           pil2-compiler = self.packages.${system}.pil2-compiler;
         };
 
+        packages.extracted-lean = pkgs.callPackage ./nix/extracted-lean.nix {
+          pil-extract = self.packages.${system}.pil-extract;
+          zisk-pilout = self.packages.${system}.zisk-pilout;
+        };
+
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             elan         # Lean toolchain manager
