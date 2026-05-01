@@ -57,6 +57,15 @@
           zisk-pilout = self.packages.${system}.zisk-pilout;
         };
 
+        apps.populate = {
+          type = "app";
+          program = "${pkgs.callPackage ./nix/populate.nix {
+            sail-lean-tree = self.packages.${system}.sail-lean-tree;
+            zisk-pilout = self.packages.${system}.zisk-pilout;
+            extracted-lean = self.packages.${system}.extracted-lean;
+          }}/bin/populate";
+        };
+
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             elan         # Lean toolchain manager
