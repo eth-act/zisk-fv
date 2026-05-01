@@ -9,7 +9,7 @@ via [`sail-riscv-lean`](https://github.com/NethermindEth/sail-riscv-lean)'s
 (0 sorries, 82 trusted axioms — see `docs/fv/trusted-base.md`). The
 load-bearing claim is `lake build`: every per-opcode equivalence theorem
 typechecks. Run `bin/test.sh` for the full suite (cargo + lake + trust
-gate + repro hashes).
+gate + flake repro check).
 
 ## Layout
 
@@ -20,8 +20,8 @@ gate + repro hashes).
 | `ZiskFv/`              | Lake 4 package (mathlib + LeanZKCircuit + LeanRV, toolchain v4.26.0)                                   |
 | `zisk/`                | ZisK source tree (git submodule, pinned at `48cf7ccef`)                                                |
 | `trust/`               | Trust-boundary baselines + enforcement scripts. See `trust/README.md`.                                 |
-| `docker/`              | Docker container that builds the pilout + Sail-Lean spec from upstream source. See `docker/README.md`. |
-| `build/`               | Generated artifacts (`build/zisk.pilout`, `build/sail-lean/`). Gitignored — produced by `docker/`.     |
+| `flake.nix`, `nix/`    | Nix flake that builds the pilout + Sail-Lean spec + extracted Lean reproducibly. See `nix/README.md`.  |
+| `build/`               | Generated artifacts (`build/zisk.pilout`, `build/sail-lean/`). Gitignored — produced by `nix run .#populate`. |
 | `bin/`                 | Test entry point: `bin/test.sh` runs the full suite.                                                   |
 | `docs/site/`           | Single-page trust-boundary explainer (run `docs/site/serve.sh`, port 4044).                            |
 
@@ -58,25 +58,33 @@ Sail-Lean RV64D **spec** (the Lean translation of the official Sail
 RISC-V specification, which is what the proofs are _about_) and the
 ZisK pilout (compiled constraint set, which is what the proofs are
 _checked against_). **Both are built locally from primary source via
-Docker** — nothing is pulled pre-built. Run these two commands once
-after cloning, in either order:
+Nix** — nothing is pulled pre-built. Requires Nix with flakes
+enabled; one-time install:
 
 ```bash
-docker/build-sail-lean.sh    # ~5 min cold; produces build/sail-lean/
-docker/build-zisk-lean.sh    # ~6 min cold; produces build/zisk.pilout AND
-                             # ZiskFv/Extraction/*.lean (gitignored — these
-                             # are pilout → Lean constraint definitions)
+curl --proto '=https' --tlsv1.2 -sSf -L \
+  https://install.determinate.systems/nix | sh -s -- install
 ```
 
-After that, the artifacts persist under `build/` and `ZiskFv/Extraction/`,
-reused on every subsequent `lake build`. Re-run only when
-`docker/versions.txt` or `docker/Dockerfile.*` changes.
+Then, once after cloning:
+
+```bash
+nix run .#populate    # ~30 min cold; ~seconds warm via Nix store cache
+                       # produces build/sail-lean/, build/zisk.pilout,
+                       # and ZiskFv/Extraction/*.lean
+```
+
+The artifacts persist under `build/` and `ZiskFv/Extraction/`, reused
+on every subsequent `lake build`. Re-run only when `flake.lock` or any
+`nix/*.nix` file changes (in which case the rebuild is incremental
+via the Nix store).
 
 The lakefile points at `build/sail-lean/` via a path-based require,
 so `lake build` reads the locally-built spec — there is no upstream
-git dep for the spec to drift against. Pinned upstream versions live
-in `docker/versions.txt`; the expected sha256 of the produced
-sail-lean tree is verified there too.
+git dep for the spec to drift against. The audit surface for build
+inputs is **`flake.lock`**: it pins every transitive dependency
+(sail/sail-riscv/zisk/pil2-* sources + nixpkgs revision) by content
+hash, so the build is deterministic across machines.
 
 ## Vendored ZisK inputs
 
@@ -85,24 +93,36 @@ pinned to `0xPolygonHermez/zisk@48cf7ccef` (`Merge pull request #875
 from 0xPolygonHermez/develop`). Clone with
 `git clone --recurse-submodules` or run `git submodule update --init`
 after cloning. The submodule is the source-text reference for
-`transpile_*` axiom rationales; it is **not** the source of the
-pilout (see `docker/README.md` — the pilout is built from a personal
-fork that adds the U256Delegation precompile).
+`transpile_*` axiom rationales; the pilout itself is built by the
+flake from a separate pinned commit of upstream zisk (see
+`flake.nix::inputs.zisk-src`).
 
 ## Getting started
 
-After the first-time Docker builds (above), three commands cover everything:
+After the first-time `nix run .#populate` (above), three commands cover
+everything:
 
 ```bash
-docker/build-zisk-lean.sh    # regenerates ZiskFv/Extraction/*.lean from build/zisk.pilout (~seconds)
-lake build                   # the FV check — every per-opcode equivalence theorem typechecks
-bin/test.sh                  # full test suite: cargo + lake + trust gate + repro hashes
+nix run .#populate    # refresh artifacts (cached after first build)
+nix develop --command lake build       # the FV check
+nix develop --command bin/test.sh      # full test suite
+```
+
+Or enter the devshell once and run commands without the `nix develop`
+prefix:
+
+```bash
+nix develop
+lake build
+bin/test.sh
 ```
 
 `lake build` succeeding **is** the formal-verification claim. Everything
-in `bin/test.sh` past `lake build` (cargo unit tests, trust gate, repro
-hashes) is auxiliary scaffolding around that core proof check.
+in `bin/test.sh` past `lake build` (cargo unit tests, trust gate,
+flake repro check) is auxiliary scaffolding around that core proof
+check.
 
 First cold `lake build` takes roughly 10 minutes, dominated by
-`native_decide` on Goldilocks primality. Requires `cargo` and the Lean
-toolchain (`elan`); no other build-system dependency.
+`native_decide` on Goldilocks primality. The devshell provides
+`cargo`, the Lean toolchain (`elan`), python3, and jq — everything
+`bin/test.sh` needs.
