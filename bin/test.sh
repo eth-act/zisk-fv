@@ -32,13 +32,14 @@ run "1/4 cargo test"           bash -c '
 # the load-bearing claim: if `lake build` is green, every per-opcode
 # equivalence theorem (Sail spec = ZisK circuit + bus model) holds.
 #
-# Lake doesn't accept a `-j`/jobs flag at this version (5.0.0); its
-# parallelism is implicit and full. The OOM risk on the XL runner
-# (64 GB total RAM) is real for the native_decide-heavy files. The
-# stacked `nix-lake-build` PR moves this whole step into a Nix
-# derivation cached via cachix, side-stepping the OOM problem;
-# until then we just accept the parallelism.
-run "2/4 lake build"           lake build
+# Lake at 5.0 has no `-j`/jobs flag, but its async build jobs run on
+# Lean's runtime task scheduler, which honors `LEAN_NUM_THREADS`.
+# Capping at 4 keeps peak memory tractable on the 64 GB XL runner —
+# native_decide-heavy files (Goldilocks primality, RV64D opcodes)
+# can each consume 8–12 GB at peak, so 16 concurrent leans OOM-kill.
+# 4× headroom is the safe cap. Override with LEAN_NUM_THREADS=N at
+# call site for a different cap.
+run "2/4 lake build"           env LEAN_NUM_THREADS="${LEAN_NUM_THREADS:-4}" lake build
 
 # 3. Trust gate (locality + baseline + forbidden tier1 params +
 # floors + zero-sorry + uniformity lint). See trust/README.md.
