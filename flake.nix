@@ -2,7 +2,9 @@
   description = "zisk-fv: Lean 4 formal verification of ZisK against Sail RISC-V";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    # nixos-unstable for sail 0.20+ (25.05 ships sail 0.19, which our
+    # pinned sail-riscv source rejects). flake.lock pins the exact rev.
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
 
     # Pinned upstream sources. Same commits/tags as the deleted
@@ -36,6 +38,10 @@
         pkgs = import nixpkgs { inherit system; };
       in {
         packages.pil-extract = pkgs.callPackage ./nix/pil-extract.nix { };
+
+        packages.sail-lean-tree = pkgs.callPackage ./nix/sail-lean-tree.nix {
+          inherit sail-riscv-src;
+        };
 
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
