@@ -20,11 +20,12 @@ docs/site/*.png
 
 .playwright-mcp
 
-# Build artifacts (pilout from Docker, sail-lean tree, etc.)
+# Build artifacts produced by `nix run .#populate` (sail-lean tree
+# + pilout). Reproducible from the flake — never commit.
 /build/
 
 # Auto-generated Lean extraction files. These are produced by
-# docker/build-zisk-lean.sh from the pilout — the local build IS the
+# `nix run .#populate` from the pilout — the local build IS the
 # source of truth. Two .lean files in this directory are NOT
 # regenerated and stay tracked:
 #   - ArithTable.lean    (hand-transcribed from arith_table_data.rs)
@@ -33,5 +34,9 @@ ZiskFv/Extraction/*.lean
 !ZiskFv/Extraction/ArithTable.lean
 !ZiskFv/Extraction/MemoryBuses.lean
 
-# Legacy output dir from earlier docker builds (root-owned, leftover)
+# Nix flake build outputs (symlinks)
+/result
+/result-*
+
+# Legacy leftover from the deleted docker pipeline (root-owned, harmless)
 /out/

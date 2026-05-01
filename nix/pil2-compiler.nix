@@ -15,7 +15,7 @@ buildNpmPackage {
 
   # First build will fail with a hash mismatch error; nix will print
   # the correct value to paste back in here.
-  npmDepsHash = lib.fakeHash;
+  npmDepsHash = "sha256-3gLeKYDIh95ugrPxlIi4pw0eCDburdZZctdMSRc5qsE=";
 
   dontNpmBuild = true;
   dontFixup = true;
