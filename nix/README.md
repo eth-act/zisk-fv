@@ -48,10 +48,31 @@ content-addressed by Lake's own cache. Going to a fully-Nix Lean
 build would lose the mathlib azure cache (~10 min per cold compile)
 for marginal repro gain on a graph that's already deterministic.
 
-## Adding a remote cache (future)
+## Remote cache (Cachix)
 
-If CI cold builds become painful, set up a binary cache (cachix or
-attic) and configure CI to push/pull. The flake is shaped so a
-remote cache would Just Work — every derivation is pure and
-content-addressed. We deliberately deferred this in the migration
-PR to keep scope tight.
+Pre-built derivation outputs live at
+[`zisk-fv.cachix.org`](https://zisk-fv.cachix.org). The
+`.github/workflows/proofs.yml` workflow pulls cached store paths
+before any build step, so steady-state CI runs in ~3 min instead of
+~30 min cold. After a successful build, the workflow pushes new
+outputs back to the cache.
+
+Public read access is on by default — contributors who run
+`nix run .#populate` after cloning will hit the cache on first build
+without needing any auth setup. Authenticated push uses the
+`CACHIX_AUTH_TOKEN` GitHub secret on the repo.
+
+To populate the cache from a local build (e.g. when seeding after a
+`flake.lock` change):
+
+```bash
+nix-env -iA cachix -f https://cachix.org/api/v1/install
+cachix authtoken                       # paste account-scope token
+nix run .#populate                     # builds locally
+for drv in sail-lean-tree zisk-pilout extracted-lean; do
+  nix build .#$drv && cachix push zisk-fv ./result
+done
+```
+
+Public key (for trust verification):
+`zisk-fv.cachix.org-1:hyAMf+R99XtroAcQmwqdHUlpTJdViLVC6xA4KMXxlIE=`

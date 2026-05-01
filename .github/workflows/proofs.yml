@@ -37,6 +37,18 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@v2
 
       # ----------------------------------------------------------------
+      # Cachix binary cache for Nix derivations. After the first run
+      # populates the cache (or you `cachix push zisk-fv` locally),
+      # subsequent runs pull pre-built `sail-lean-tree` /
+      # `zisk-pilout` / `extracted-lean` outputs in seconds instead
+      # of the ~30 min cold build. Public read; authenticated push.
+      # ----------------------------------------------------------------
+      - uses: cachix/cachix-action@v15
+        with:
+          name: zisk-fv
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+      # ----------------------------------------------------------------
       # Cache .lake (Mathlib + project build). Mathlib oleans come from
       # mathlib's azure cache via `lake exe cache get`; we persist the
       # full .lake/ across runs to avoid the ~10-minute cold compile.
