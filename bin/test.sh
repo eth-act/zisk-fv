@@ -32,12 +32,13 @@ run "1/4 cargo test"           bash -c '
 # the load-bearing claim: if `lake build` is green, every per-opcode
 # equivalence theorem (Sail spec = ZisK circuit + bus model) holds.
 #
-# `-j 4` caps concurrent Lean processes. The native_decide-heavy
-# files (Goldilocks primality, certain RV64D opcodes like sd) can
-# each consume 8–12 GB at peak; running 16 of them concurrently on
-# a 64 GB runner OOM-kills. 4× headroom is a safe cap. LAKE_NUM_JOBS
-# env var works too if you'd rather override per-environment.
-run "2/4 lake build"           lake build -j "${LAKE_NUM_JOBS:-4}"
+# Lake doesn't accept a `-j`/jobs flag at this version (5.0.0); its
+# parallelism is implicit and full. The OOM risk on the XL runner
+# (64 GB total RAM) is real for the native_decide-heavy files. The
+# stacked `nix-lake-build` PR moves this whole step into a Nix
+# derivation cached via cachix, side-stepping the OOM problem;
+# until then we just accept the parallelism.
+run "2/4 lake build"           lake build
 
 # 3. Trust gate (locality + baseline + forbidden tier1 params +
 # floors + zero-sorry + uniformity lint). See trust/README.md.

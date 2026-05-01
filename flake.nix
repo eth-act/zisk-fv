@@ -71,6 +71,7 @@
             elan         # Lean toolchain manager
             cargo
             rustc
+            protobuf     # protoc, used by tools/pil-extract's build.rs
             python3
             jq
             git
