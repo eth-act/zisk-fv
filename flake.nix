@@ -35,6 +35,8 @@
       let
         pkgs = import nixpkgs { inherit system; };
       in {
+        packages.pil-extract = pkgs.callPackage ./nix/pil-extract.nix { };
+
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             elan         # Lean toolchain manager
