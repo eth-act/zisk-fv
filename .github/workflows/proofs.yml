@@ -39,8 +39,13 @@ jobs:
           # axiom rationales; the build does not read it.
           submodules: false
 
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v2
+      # cachix/install-nix-action (rather than DeterminateSystems') —
+      # cachix-action assumes paths set up by this installer; using
+      # the DS installer breaks `which cachix` lookup post-install.
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
 
       # ----------------------------------------------------------------
       # Cachix binary cache for Nix derivations. After the first run
@@ -53,12 +58,6 @@ jobs:
         with:
           name: zisk-fv
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-          # DeterminateSystems' nix-installer-action puts the nix
-          # profile in a path that confuses cachix-action's default
-          # `nix-env -iA cachix` install — `which cachix` fails after.
-          # `nix profile install` from nixpkgs works correctly with
-          # DeterminateSystems' installer.
-          installCommand: nix profile install --accept-flake-config nixpkgs#cachix
 
       # ----------------------------------------------------------------
       # Cache .lake (Mathlib + project build). Mathlib oleans come from
