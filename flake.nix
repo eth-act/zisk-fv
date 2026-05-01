@@ -43,6 +43,15 @@
           inherit sail-riscv-src;
         };
 
+        packages.pil2-compiler = pkgs.callPackage ./nix/pil2-compiler.nix {
+          inherit pil2-compiler-src;
+        };
+
+        packages.zisk-pilout = pkgs.callPackage ./nix/zisk-pilout.nix {
+          inherit zisk-src pil2-proofman-src;
+          pil2-compiler = self.packages.${system}.pil2-compiler;
+        };
+
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             elan         # Lean toolchain manager
