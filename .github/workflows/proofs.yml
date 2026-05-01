@@ -47,6 +47,12 @@ jobs:
         with:
           name: zisk-fv
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          # DeterminateSystems' nix-installer-action puts the nix
+          # profile in a path that confuses cachix-action's default
+          # `nix-env -iA cachix` install — `which cachix` fails after.
+          # `nix profile install` from nixpkgs works correctly with
+          # DeterminateSystems' installer.
+          installCommand: nix profile install --accept-flake-config nixpkgs#cachix
 
       # ----------------------------------------------------------------
       # Cache .lake (Mathlib + project build). Mathlib oleans come from
