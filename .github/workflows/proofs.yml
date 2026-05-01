@@ -25,7 +25,13 @@ jobs:
     # GitHub Hosted XL runner (~16 vCPU / 64 GB RAM). Same labels used
     # by eth-act/zkevm-test-monitor's nightly zkVM update workflows.
     runs-on: ["self-hosted-ghr", "size-xl-x64"]
-    timeout-minutes: 120
+    # Cold first run: ~30 min nix populate + ~90 min lake build (the
+    # runner's single-thread perf is significantly slower than typical
+    # dev boxes; per-file compile of native_decide-heavy files runs
+    # 30–60× slower than local). Subsequent runs hit the cachix cache
+    # for nix outputs and the actions/cache for .lake — finish in
+    # ~10 min. The high ceiling only applies to first/cold runs.
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
         with:
