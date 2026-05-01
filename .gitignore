@@ -38,5 +38,10 @@ ZiskFv/Extraction/*.lean
 /result
 /result-*
 
+# Cachix auth tokens (write-scoped, must never be committed)
+/.zisk-rw-token
+/.cachix-token
+/*.cachix-token
+
 # Legacy leftover from the deleted docker pipeline (root-owned, harmless)
 /out/
