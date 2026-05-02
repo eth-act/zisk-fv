@@ -84,7 +84,57 @@ jobs:
         run: nix develop --command bash -c 'lake exe cache get || true'
 
       - name: bin/test.sh (cargo + lake + trust gate + flake check)
-        run: nix develop --command bin/test.sh
+        env:
+          LEAN_NUM_THREADS: "2"
+        run: |
+          # Memory + lean-process sidecar. Run 25230110804 died with no
+          # step log content preserved → strong signal the runner host
+          # itself crashed (probably kernel OOM-kill of the runner agent
+          # rather than just lake's lean subprocesses). This sidecar
+          # streams to stdout every 10s so GitHub captures real-time
+          # samples even if the agent dies later, and persists to a
+          # file uploaded as artifact for post-mortem.
+          mkdir -p /tmp/proofs-debug
+          TRACE=/tmp/proofs-debug/mem-trace.log
+          : > "$TRACE"
+          (
+            while true; do
+              ts=$(date -u +%H:%M:%S)
+              mem=$(awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} END{printf "tot=%.1fG avail=%.1fG used=%.1fG", t/1048576, a/1048576, (t-a)/1048576}' /proc/meminfo)
+              leans=$(pgrep -c '^lean$' || echo 0)
+              lean_rss=$(awk '$2 == "lean" {sum += $1} END {printf "%.1fG", sum/1048576}' <(ps -eo rss,comm))
+              load=$(awk '{print $1}' /proc/loadavg)
+              line="[mem $ts] $mem leans=$leans lean_rss=$lean_rss load=$load"
+              echo "$line"
+              echo "$line" >> "$TRACE"
+              sleep 10
+            done
+          ) &
+          SIDECAR_PID=$!
+          trap 'kill $SIDECAR_PID 2>/dev/null || true' EXIT
+          echo "::group::env (LEAN_NUM_THREADS visibility)"
+          echo "LEAN_NUM_THREADS=$LEAN_NUM_THREADS"
+          nproc
+          free -m
+          echo "::endgroup::"
+          set +e
+          nix develop --command bin/test.sh
+          EXIT=$?
+          set -e
+          kill $SIDECAR_PID 2>/dev/null || true
+          echo "::group::dmesg tail (OOM-killer evidence)"
+          dmesg | tail -200 || sudo dmesg | tail -200 || echo "dmesg unavailable"
+          echo "::endgroup::"
+          exit $EXIT
+
+      - name: Upload mem-trace artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mem-trace
+          path: /tmp/proofs-debug/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: On failure — show next-step pointers
         if: failure()
