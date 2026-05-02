@@ -85,7 +85,12 @@ jobs:
 
       - name: bin/test.sh (cargo + lake + trust gate + flake check)
         env:
-          LEAN_NUM_THREADS: "2"
+          # threads=2 still OOM'd: a single lean compiling RV64D.sd
+          # peaks at ~25 GB, and the 32 GB runner couldn't fit two
+          # leans simultaneously when sd was one of them. Drop to 1
+          # for a definitive answer on whether the heaviest file
+          # itself fits. Run 25249689278 trace shows the OOM event.
+          LEAN_NUM_THREADS: "1"
         run: |
           # Memory + lean-process sidecar. Run 25230110804 died with no
           # step log content preserved → strong signal the runner host
