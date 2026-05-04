@@ -51,12 +51,16 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install protoc (prost-build dep for tools/pil-extract)
-        run: |
-          # tools/pil-extract uses prost-build, which shells out to protoc
-          # at compile time to regenerate Rust bindings from pilout.proto.
-          # The eth-act runner image doesn't have protoc preinstalled.
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends protobuf-compiler
+        # tools/pil-extract uses prost-build, which shells out to protoc
+        # at compile time to regenerate Rust bindings from pilout.proto.
+        # Use the action over `apt-get install protobuf-compiler` because
+        # eth-act runners route apt through an internal cache proxy that
+        # has been observed to 500 on .deb fetches; this action pulls
+        # the protoc binary straight from protobuf-compiler's GitHub
+        # releases and is independent of the apt path.
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install elan (Lean toolchain manager)
         run: |
