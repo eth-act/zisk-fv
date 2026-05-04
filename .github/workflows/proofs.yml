@@ -51,16 +51,22 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install protoc (prost-build dep for tools/pil-extract)
-        # tools/pil-extract uses prost-build, which shells out to protoc
-        # at compile time to regenerate Rust bindings from pilout.proto.
-        # Use the action over `apt-get install protobuf-compiler` because
-        # eth-act runners route apt through an internal cache proxy that
-        # has been observed to 500 on .deb fetches; this action pulls
-        # the protoc binary straight from protobuf-compiler's GitHub
-        # releases and is independent of the apt path.
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+        # Custom install: pull the protoc-linux-x86_64 zip from
+        # protobuf-compiler's GitHub release and extract via python's
+        # stdlib zipfile (the eth-act L runner image doesn't have
+        # `unzip` and the apt-cache proxy 500s on .deb fetches, so
+        # neither apt-get install protobuf-compiler nor
+        # arduino/setup-protoc work directly).
+        run: |
+          set -euo pipefail
+          PROTOC_VERSION=27.4
+          curl -fsSLo /tmp/protoc.zip \
+            "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+          mkdir -p "$HOME/.local/protoc"
+          python3 -m zipfile -e /tmp/protoc.zip "$HOME/.local/protoc"
+          chmod +x "$HOME/.local/protoc/bin/protoc"
+          echo "$HOME/.local/protoc/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/protoc/bin/protoc" --version
 
       - name: Install elan (Lean toolchain manager)
         run: |
