@@ -25,14 +25,15 @@ concurrency:
 jobs:
   lake-build:
     name: lake build (full FV check)
-    # GitHub-hosted XL runner (~16 vCPU / 64 GB RAM). The default
-    # `ubuntu-latest` runner has 4 vCPU / 16 GB RAM, which OOMs during
-    # the pilout build because pil2-compiler's Node process is
-    # launched with `--max-old-space-size=16384` (full 16 GB) and
-    # there's no headroom left for the Docker daemon, the runner
-    # agent, or the kernel. Same label used by
-    # `eth-act/zkevm-test-monitor`'s nightly zkVM update workflows.
-    runs-on: ["self-hosted-ghr", "size-xl-x64"]
+    # eth-act self-hosted L runner (8 vCPU / 16 GB RAM). With the sd.lean
+    # memory fix landed (PR #4), per-file lean peaks at ~9 GiB and the
+    # `LEAN_NUM_THREADS=2` cap in bin/test.sh keeps total parallel pressure
+    # at ~10-11 GiB — fits 16 GB with ~5 GiB headroom for OS + docker daemon.
+    # The pilout build's Node process (`--max-old-space-size=16384`)
+    # technically requests the whole 16 GB but in practice tops out far
+    # below that on the v0.15.0 pilout. Cheaper than the XL while we
+    # validate; bump back to size-xl-x64 if anything OOMs.
+    runs-on: ["self-hosted-ghr", "size-l-x64"]
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
