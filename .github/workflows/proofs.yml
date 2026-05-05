@@ -25,15 +25,14 @@ concurrency:
 jobs:
   lake-build:
     name: lake build (full FV check)
-    # eth-act self-hosted L runner (8 vCPU / 16 GB RAM). With the sd.lean
-    # memory fix landed (PR #4), per-file lean peaks at ~9 GiB and the
-    # `LEAN_NUM_THREADS=2` cap in bin/test.sh keeps total parallel pressure
-    # at ~10-11 GiB — fits 16 GB with ~5 GiB headroom for OS + docker daemon.
-    # The pilout build's Node process (`--max-old-space-size=16384`)
-    # technically requests the whole 16 GB but in practice tops out far
-    # below that on the v0.15.0 pilout. Cheaper than the XL while we
-    # validate; bump back to size-xl-x64 if anything OOMs.
-    runs-on: ["self-hosted-ghr", "size-l-x64"]
+    # eth-act self-hosted XL runner (16 vCPU / 32 GB RAM). The XL is
+    # required for the pilout build, not the lake build: pil2-compiler
+    # launches `node --max-old-space-size=16384` (a 16 GB heap), which
+    # OOM-kills on the 16 GB L runner (run 25348554671 confirmed exit
+    # 137 there). With the sd.lean memory fix in PR #4, the lake-build
+    # step itself fits comfortably on either size — the constraint is
+    # the pilout step's node memory.
+    runs-on: ["self-hosted-ghr", "size-xl-x64"]
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
