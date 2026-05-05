@@ -3,15 +3,15 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.Mul
-import ZiskFv.Spec.MulHU
+import ZiskFv.Circuit.Mul
+import ZiskFv.Circuit.MulHU
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.mul
-import ZiskFv.RV64D.mulhu
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.mul
+import ZiskFv.Sail.mulhu
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
@@ -46,8 +46,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.Mul
-open ZiskFv.Spec.MulHU
+open ZiskFv.Circuit.Mul
+open ZiskFv.Circuit.MulHU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

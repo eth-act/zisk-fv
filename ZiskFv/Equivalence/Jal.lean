@@ -3,12 +3,12 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.Jal
+import ZiskFv.Circuit.Jal
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.jal
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.jal
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
@@ -19,7 +19,7 @@ End-to-end theorem for RV64 JAL. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_JAL`),
-* the compositional JAL spec (`ZiskFv.Spec.Jal.jal_pc_advance`),
+* the compositional JAL spec (`ZiskFv.Circuit.Jal.jal_pc_advance`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_JAL_pure_equiv`, newly closed Phase 2 A2
   thanks to `jump_to_equiv`),
@@ -44,7 +44,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.Jal
+open ZiskFv.Circuit.Jal
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -278,7 +278,7 @@ theorem equiv_JAL_metaplan_tier1
       (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val)
     (h_rd_idx : jal_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
     -- Tier-1 discharge parameters (replace h_rd_val).
-    (h_circuit : ZiskFv.Spec.Jal.jal_circuit_holds m r_main next_pc)
+    (h_circuit : ZiskFv.Circuit.Jal.jal_circuit_holds m r_main next_pc)
     (h_jmp2 : m.jmp_offset2 r_main = 4)
     (h_lane_lo : ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd)
     (h_lane_hi : ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd)

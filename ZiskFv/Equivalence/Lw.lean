@@ -3,15 +3,15 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.LoadWord
-import ZiskFv.Spec.MemModel
+import ZiskFv.Circuit.LoadWord
+import ZiskFv.Circuit.MemModel
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.lw
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.lw
+import ZiskFv.Sail.BusEffect
 
 /-!
 End-to-end theorem for RV64 LW (load word, signed / sign-extended).
@@ -38,7 +38,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.LoadWord
+open ZiskFv.Circuit.LoadWord
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -170,7 +170,7 @@ theorem equiv_LW_metaplan
   -- Derive the per-byte data ↔ e1.x_i agreement via mem_load_correct_4byte
   -- + lw_state_assumptions + h_ptr_match.
   have h_mem :=
-    ZiskFv.Spec.MemModel.mem_load_correct_4byte
+    ZiskFv.Circuit.MemModel.mem_load_correct_4byte
       main mem r_main e1 state h_main_emit_b
   obtain ⟨_h_pc, _h_r1_read,
           h_d0, h_d1, h_d2, h_d3,

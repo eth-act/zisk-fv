@@ -22,8 +22,8 @@ cd "$(git rev-parse --show-toplevel)"
 #   - `"sorry"`              (string literals)
 hits=$(grep -rnE '(^|[^a-zA-Z_`])sorry([^a-zA-Z_`]|$)' \
   --include='*.lean' \
-  ZiskFv/Fundamentals ZiskFv/Airs ZiskFv/Spec ZiskFv/Equivalence \
-  ZiskFv/Tactics ZiskFv/RV64D 2>/dev/null \
+  ZiskFv/Fundamentals ZiskFv/Airs ZiskFv/Circuit ZiskFv/Equivalence \
+  ZiskFv/Tactics ZiskFv/Sail 2>/dev/null \
   | grep -v ':[[:space:]]*--' \
   | grep -v ':[[:space:]]*///' \
   | grep -v '"sorry"' \
@@ -35,4 +35,4 @@ if [ -n "$hits" ]; then
   exit 1
 fi
 
-echo "trust-gate: zero sorry — every proof in Fundamentals/Airs/Spec/Equivalence/Tactics/RV64D is complete."
+echo "trust-gate: zero sorry — every proof in Fundamentals/Airs/Circuit/Equivalence/Tactics/Sail is complete."

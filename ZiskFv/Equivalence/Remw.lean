@@ -7,8 +7,8 @@ import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
 import ZiskFv.Airs.BusHypotheses
-import ZiskFv.RV64D.remw
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.remw
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned

@@ -3,8 +3,8 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.RV64D.Auxiliaries
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.Auxiliaries
+import ZiskFv.Sail.BusEffect
 
 /-!
 # BusHypotheses — Sail-side input-state derivation (Phase 5 Track G)

@@ -3,12 +3,12 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.BranchEqual
+import ZiskFv.Circuit.BranchEqual
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.beq
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.beq
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
@@ -18,7 +18,7 @@ End-to-end theorem for RV64 BEQ. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_BEQ`),
-* the compositional BEQ spec (`ZiskFv.Spec.BranchEqual.branch_eq_compositional`),
+* the compositional BEQ spec (`ZiskFv.Circuit.BranchEqual.branch_eq_compositional`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_BEQ_pure_equiv`, newly closed Phase 2 A1
   thanks to `jump_to_equiv`),
@@ -40,7 +40,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.BranchEqual
+open ZiskFv.Circuit.BranchEqual
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

@@ -3,12 +3,12 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.AddUpperImmediatePC
+import ZiskFv.Circuit.AddUpperImmediatePC
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.auipc
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.auipc
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
@@ -21,7 +21,7 @@ End-to-end theorem for RV64 AUIPC (Phase 3C Track T-U2). Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_AUIPC`),
 * the compositional AUIPC spec
-  (`ZiskFv.Spec.AddUpperImmediatePC.auipc_pc_advance` +
+  (`ZiskFv.Circuit.AddUpperImmediatePC.auipc_pc_advance` +
   `auipc_store_value_lo`/`_hi`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_AUIPC_pure_equiv`, closed Phase 3B via
@@ -52,7 +52,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.AddUpperImmediatePC
+open ZiskFv.Circuit.AddUpperImmediatePC
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

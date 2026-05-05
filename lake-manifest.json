@@ -3,6 +3,13 @@
  "packages":
  [{"type": "path",
    "scope": "",
+   "name": "Extraction",
+   "manifestFile": "lake-manifest.json",
+   "inherited": false,
+   "dir": "build/extraction",
+   "configFile": "lakefile.toml"},
+  {"type": "path",
+   "scope": "",
    "name": "LeanRV",
    "manifestFile": "lake-manifest.json",
    "inherited": false,

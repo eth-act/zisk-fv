@@ -2,7 +2,7 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Extraction.Binary
+import Extraction.Binary
 
 /-!
 Named-column mirror of the extracted ZisK `Binary` AIR (pilout idx 10),

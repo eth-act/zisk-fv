@@ -1,0 +1,61 @@
+import Mathlib
+
+import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Airs.Main
+import ZiskFv.Airs.OperationBus
+import ZiskFv.Tactics.ShiftArchetype
+
+/-!
+Compositional SRLIW spec (Phase 3A H2c — `ShiftArchetype` sibling,
+W-variant immediate).
+
+SRLIW's Main-AIR row mirrors SRLW's exactly (same `op = OP_SRL_W = 37`,
+same `m32 = 1` bus path); the only difference vs SRLW is the source of
+`b_lo` (immediate vs register). The `ShiftArchetype` m32=1 macro is
+`b_lo`-source-agnostic, so the same instantiation closes SRLIW.
+-/
+
+namespace ZiskFv.Circuit.ShiftRLI
+
+open Goldilocks
+open ZiskFv.Airs.Main
+open ZiskFv.Airs.OperationBus
+open ZiskFv.Trusted
+open ZiskFv.Tactics.ShiftArchetype
+
+variable {C : Type → Type → Type} [Circuit FGL FGL C]
+
+/-- The Main row at `r_main` is in SRLIW-execution mode. Identical to
+    SRLW mode. -/
+@[simp]
+def main_row_in_srliw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+  m.is_external_op r_main = 1
+  ∧ m.op r_main = (37 : FGL)
+  ∧ m.m32 r_main = 1
+  ∧ m.flag r_main = 0
+  ∧ m.set_pc r_main = 0
+
+@[simp]
+def srliw_circuit_holds
+    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (bus_entry : OperationBusEntry FGL) : Prop :=
+  flag_boolean m r_main
+  ∧ is_external_op_boolean m r_main
+  ∧ flag_set_pc_disjoint m r_main
+  ∧ main_row_in_srliw_mode m r_main
+  ∧ matches_entry (opBus_row_Main m r_main) bus_entry
+
+/-- **Compositional SRLIW theorem.** Instantiation of the
+    `ShiftArchetype` m32=1 archetype macro at `opcode_lit = OP_SRL_W`. -/
+theorem srliw_compositional
+    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (bus_entry : OperationBusEntry FGL)
+    (h : srliw_circuit_holds m r_main bus_entry) :
+    bus_entry.a_hi = 0 ∧ bus_entry.b_hi = 0 := by
+  obtain ⟨h1, h2, h3, h_mode, h_match⟩ := h
+  obtain ⟨h_iext, h_op, h_m32, h_flag, h_spc⟩ := h_mode
+  exact shift_archetype_m32_one_zeros_bus m r_main bus_entry OP_SRL_W
+    ⟨h1, h2, h3, ⟨h_iext, h_op, h_m32, h_flag, h_spc⟩, h_match⟩
+
+end ZiskFv.Circuit.ShiftRLI

@@ -4,7 +4,7 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Spec.Shift
+import ZiskFv.Circuit.Shift
 
 /-!
 **Shift archetype macros / generic lemmas** (Phase 2 A6-M).
@@ -70,7 +70,7 @@ open Goldilocks
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
-open ZiskFv.Spec.Shift
+open ZiskFv.Circuit.Shift
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

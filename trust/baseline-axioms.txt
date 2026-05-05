@@ -14,6 +14,8 @@ a06d1b9f33582391  ZiskFv/Airs/Arith/ArithTable.lean:130  axiom     arith_table_l
 f82c9c2d6803aee8  ZiskFv/Airs/MemoryBus/LaneMatch.lean:374  axiom     memory_bus_register_write_perm_sound_store_pc
 2a92e6d678fb5c0f  ZiskFv/Airs/MemoryBus/MemBridge.lean:134  axiom     lookup_consumer_matches_provider_load
 4685f64456e292e7  ZiskFv/Airs/MemoryBus/MemBridge.lean:150  axiom     lookup_consumer_matches_provider_store
+0cd0f525da3c690b  ZiskFv/Circuit/MemModel.lean:127  axiom     row_models_sail_state_load
+2e7c53e620fb9d59  ZiskFv/Circuit/MemModel.lean:152  axiom     row_models_sail_state_store
 fcf669a1c7c11ee9  ZiskFv/Fundamentals/Transpiler.lean:257  axiom     transpile_ADD
 d5253fb3afda91e9  ZiskFv/Fundamentals/Transpiler.lean:297  axiom     transpile_BEQ
 27cb790bea641c55  ZiskFv/Fundamentals/Transpiler.lean:349  axiom     transpile_BNE
@@ -80,9 +82,7 @@ a13c84f5210e3af7  ZiskFv/Fundamentals/Transpiler.lean:2516  axiom     transpile_
 5dc6f2cc8f953778  ZiskFv/Fundamentals/Transpiler.lean:2741  axiom     transpile_PC_for_JAL
 34d4b0ef4514a3d6  ZiskFv/Fundamentals/Transpiler.lean:2763  axiom     transpile_PC_for_JALR
 ef9cc1e07a8c7f50  ZiskFv/Fundamentals/Transpiler.lean:2791  axiom     transpile_PC_for_AUIPC
-a00b854e10ea3d18  ZiskFv/RV64D/Auxiliaries.lean:794  axiom     pmpCheck_is_pure_none
-1f6fb25749dc02ac  ZiskFv/RV64D/Auxiliaries.lean:816  axiom     within_clint_is_false
-52c0bbafc03c9989  ZiskFv/RV64D/Auxiliaries.lean:830  axiom     pmaCheck_is_pure_none
-724bd1dd06f6384f  ZiskFv/RV64D/Auxiliaries.lean:849  axiom     update_elp_state_is_pure_unit
-0cd0f525da3c690b  ZiskFv/Spec/MemModel.lean:127  axiom     row_models_sail_state_load
-2e7c53e620fb9d59  ZiskFv/Spec/MemModel.lean:152  axiom     row_models_sail_state_store
+a00b854e10ea3d18  ZiskFv/Sail/Auxiliaries.lean:794  axiom     pmpCheck_is_pure_none
+1f6fb25749dc02ac  ZiskFv/Sail/Auxiliaries.lean:816  axiom     within_clint_is_false
+52c0bbafc03c9989  ZiskFv/Sail/Auxiliaries.lean:830  axiom     pmaCheck_is_pure_none
+724bd1dd06f6384f  ZiskFv/Sail/Auxiliaries.lean:849  axiom     update_elp_state_is_pure_unit

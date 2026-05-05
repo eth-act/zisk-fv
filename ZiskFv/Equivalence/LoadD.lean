@@ -3,15 +3,15 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.LoadD
-import ZiskFv.Spec.MemModel
+import ZiskFv.Circuit.LoadD
+import ZiskFv.Circuit.MemModel
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.ld
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.ld
+import ZiskFv.Sail.BusEffect
 
 /-!
 End-to-end theorem for RV64 LD (load doubleword). Combines:
@@ -19,7 +19,7 @@ End-to-end theorem for RV64 LD (load doubleword). Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_LD`),
 * the compositional LD spec
-  (`ZiskFv.Spec.LoadD.load_d_compositional`),
+  (`ZiskFv.Circuit.LoadD.load_d_compositional`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_LOADD_pure_equiv`; closed via the trusted
   memory-model axiom `execute_LOADD_pure_equiv_axiom` — see
@@ -51,7 +51,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Spec.LoadD
+open ZiskFv.Circuit.LoadD
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -199,7 +199,7 @@ theorem equiv_LD_metaplan
   -- Step 3. Derive the per-byte data ↔ e1.x_i agreement via mem_load_correct
   -- + the load-side state.mem assumptions + ptr-match.
   have h_mem :=
-    ZiskFv.Spec.MemModel.mem_load_correct
+    ZiskFv.Circuit.MemModel.mem_load_correct
       main mem r_main e1 state h_main_emit_b
   -- Unpack ld_state_assumptions: data0..data7 are at successive
   -- state.mem keys starting at r1_val + signExt(imm).

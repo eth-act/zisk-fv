@@ -2,7 +2,7 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Extraction.Buses
+import Extraction.Buses
 import ZiskFv.Extraction.MemoryBuses
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.BusShape
@@ -41,7 +41,7 @@ compositional path through the extraction layer.
 namespace ZiskFv.Airs.MemoryBus.BusShape
 
 open Goldilocks
-open ZiskFv.Extraction.Buses
+open Extraction.Buses
 open ZiskFv.Extraction.MemoryBuses
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BusShape (slotValue)

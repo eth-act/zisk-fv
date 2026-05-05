@@ -1,13 +1,13 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Extraction.Buses
+import Extraction.Buses
 
 set_option linter.all false
 
 namespace ZiskFv.Extraction.OperationBuses
 
-open ZiskFv.Extraction.Buses
+open Extraction.Buses
 
 /-! Hand-written bus-emission spec for the operation bus emitted by
 AIR `Main`. Filter: bus_id = 5000 (`OPERATION_BUS_ID`,
@@ -24,7 +24,7 @@ to a `proves_operation(...)` macro that expands into a permutation
 argument involving challenge cells. The new form mixes `F` (witness)
 with `ExtF` (challenges), which `tools/pil-extract`'s V1 renderer
 cannot emit without a coercion — so the auto-extracted
-`ZiskFv.Extraction.Buses.bus_emission_Main_0` is now a multiplicity-0
+`Extraction.Buses.bus_emission_Main_0` is now a multiplicity-0
 placeholder stub.
 
 The operation-bus *tuple* itself is unchanged across the v0.15.0 →

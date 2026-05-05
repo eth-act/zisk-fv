@@ -25,5 +25,12 @@ rev = "v4.26.0"
 name = "LeanRV"
 path = "build/sail-lean"
 
+# Auto-generated PIL2 extraction (per-AIR Lean files emitted by
+# `tools/pil-extract` from `build/zisk.pilout`). Populated by
+# `nix run .#populate` — never committed.
+[[require]]
+name = "Extraction"
+path = "build/extraction"
+
 [[lean_lib]]
 name = "ZiskFv"

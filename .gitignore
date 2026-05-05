@@ -20,20 +20,13 @@ docs/site/*.png
 
 .playwright-mcp
 
-# Build artifacts produced by `nix run .#populate` (sail-lean tree
-# + pilout). Reproducible from the flake — never commit.
+# Build artifacts produced by `nix run .#populate` — sail-lean tree,
+# pilout, and the auto-generated PIL2 extraction under
+# build/extraction/Extraction/. Reproducible from the flake — never
+# commit. The hand-written extraction-layer files (ArithTable.lean,
+# MemoryBuses.lean, OperationBuses.lean) live tracked under
+# ZiskFv/Extraction/.
 /build/
-
-# Auto-generated Lean extraction files. These are produced by
-# `nix run .#populate` from the pilout — the local build IS the
-# source of truth. Two .lean files in this directory are NOT
-# regenerated and stay tracked:
-#   - ArithTable.lean    (hand-transcribed from arith_table_data.rs)
-#   - MemoryBuses.lean   (hand-curated subset of memory-bus emissions)
-ZiskFv/Extraction/*.lean
-!ZiskFv/Extraction/ArithTable.lean
-!ZiskFv/Extraction/MemoryBuses.lean
-!ZiskFv/Extraction/OperationBuses.lean
 
 # Nix flake build outputs (symlinks)
 /result

@@ -2,7 +2,7 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Extraction.Arith
+import Extraction.Arith
 
 /-!
 **Arith carry-chain identity (Phase 4 Package C).**

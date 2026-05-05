@@ -2,7 +2,7 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Extraction.MemAlignReadByte
+import Extraction.MemAlignReadByte
 
 /-!
 Named-column mirror of the extracted ZisK `MemAlignReadByte` AIR (pilout idx 7).

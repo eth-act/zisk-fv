@@ -5,7 +5,7 @@ import ZiskFv.Fundamentals.Goldilocks
 /-!
 Minimal ZisK port of `OpenvmFv/Fundamentals/Interaction.lean`.
 
-This file provides the two bus-entry structures that `ZiskFv.RV64D.BusEffect`
+This file provides the two bus-entry structures that `ZiskFv.Sail.BusEffect`
 needs to model the effect of the Main/memory bus on RISC-V state:
 
 * `Interaction.ExecutionBusEntry F` — parametric, one row = (multiplicity, pc,

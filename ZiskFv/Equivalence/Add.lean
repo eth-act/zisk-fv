@@ -4,13 +4,13 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.GoldilocksBridge
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.Add
+import ZiskFv.Circuit.Add
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.add
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.add
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
@@ -22,7 +22,7 @@ End-to-end theorem for RV64 ADD. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_ADD`),
-* the compositional ADD spec (`ZiskFv.Spec.Add.add_compositional`),
+* the compositional ADD spec (`ZiskFv.Circuit.Add.add_compositional`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_RTYPE_add_pure_equiv`, now buildable thanks to
   Phase 1.5 `Fundamentals/Execution.lean`),
@@ -44,7 +44,7 @@ shape is
 execute_instruction (.RTYPE rs2 rs1 rd rop.ADD) state = (bus_effect exec_row mem_row state).2
 ```
 
-with `bus_effect` defined in `ZiskFv.RV64D.BusEffect`. The final chain
+with `bus_effect` defined in `ZiskFv.Sail.BusEffect`. The final chain
 requires: (1) promoting `BusEffect.lean` from its RV32-shaped 4-byte
 memory-bus entries to 8-byte entries (documented TODO in that file),
 and (2) a bridging lemma that identifies the Goldilocks-field `c_packed`
@@ -60,7 +60,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.Add
+open ZiskFv.Circuit.Add
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

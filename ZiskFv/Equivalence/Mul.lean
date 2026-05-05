@@ -3,13 +3,13 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.Mul
+import ZiskFv.Circuit.Mul
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.mul
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.mul
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
@@ -20,7 +20,7 @@ End-to-end theorem for RV64 MUL (archetype A5). Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_MUL`),
-* the compositional MUL spec (`ZiskFv.Spec.Mul.mul_compositional`),
+* the compositional MUL spec (`ZiskFv.Circuit.Mul.mul_compositional`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_MULH_mul_pure_equiv`, newly closed Phase 2 A5),
 
@@ -47,7 +47,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.Mul
+open ZiskFv.Circuit.Mul
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

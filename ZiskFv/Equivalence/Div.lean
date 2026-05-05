@@ -3,13 +3,13 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.Div
+import ZiskFv.Circuit.Div
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.div
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.div
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
@@ -20,7 +20,7 @@ End-to-end theorem for RV64 **DIV** (Phase 3C T-D). Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_DIV`),
-* the compositional DIV spec (`ZiskFv.Spec.Div.div_compositional`),
+* the compositional DIV spec (`ZiskFv.Circuit.Div.div_compositional`),
 * the Sail pure-function equivalence (`PureSpec.execute_DIVREM_div_pure_equiv`
   from Phase 3B `RV64D/div.lean`),
 
@@ -47,8 +47,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithDiv
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.Mul
-open ZiskFv.Spec.Div
+open ZiskFv.Circuit.Mul
+open ZiskFv.Circuit.Div
 open ZiskFv.Tactics.ArithSMArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
