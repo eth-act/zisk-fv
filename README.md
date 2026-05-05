@@ -3,7 +3,7 @@
 Lean 4 formal verification of the [ZisK](https://github.com/0xPolygonHermez/zisk)
 zkVM against the [Sail RISC-V specification](https://github.com/rems-project/sail-riscv),
 via [`sail-riscv-lean`](https://github.com/NethermindEth/sail-riscv-lean)'s
-`LeanRV64D` module.
+`LeanRV64D` module. This effort follows the pattern established by [openvm-fv](https://github.com/openvm-org/openvm-fv), and we are grateful to the authors of that library for their excellent work.
 
 **Status:** all 63 RV64IM opcodes proved equivalent to the Sail spec
 (0 sorries, 82 trusted axioms — see `docs/fv/trusted-base.md`). The
