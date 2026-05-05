@@ -77,6 +77,28 @@ everything else is auxiliary scaffolding. The audit surface for build
 inputs is `flake.lock` — a single committed file pinning every
 transitive dep by content hash.
 
+## Resource requirements (cold)
+
+Costs that matter when `flake.lock` changes (cachix miss) or when
+running on a fresh machine:
+
+- `.#zisk-pilout` rebuild: **~17 GiB peak / ~24 min wall**.
+  `pil2-compiler` (Node, V8 heap capped at 12 GiB in
+  `nix/zisk-pilout.nix:142`) composes every AIR's algebraic
+  constraints in one process; total RSS hits ~16 GiB plus OS overhead.
+  This is the hard ceiling for the whole pipeline.
+- `lake build` worst process: **~8 GiB RSS / ~7 GiB PSS** during
+  `RV64D/sd.lean` elaboration (post the PR #4 layered `dsimp`+`rw`
+  refactor — was 42 GiB before). Other files stay below 5 GiB.
+
+CI runner: needs ≥32 GiB (`size-xl-x64`). 16 GiB OOMs on cold pilout.
+Warm runs (cachix hit) are seconds — once an input is in the cache,
+downstream PRs reuse it. Upstream does not publish the raw `.pilout`
+protobuf, so we self-host via cachix; checked
+`storage.googleapis.com/zisk-setup/` and the GitHub releases — only
+proving-key derivatives and circom verifiers are published, not the
+input we need.
+
 ## Trust gate (READ THIS — agents must respect it)
 
 CI runs `trust/scripts/check-all.sh` on every PR. It enforces six

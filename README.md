@@ -126,3 +126,25 @@ First cold `lake build` takes roughly 10 minutes, dominated by
 `native_decide` on Goldilocks primality. The devshell provides
 `cargo`, the Lean toolchain (`elan`), python3, and jq — everything
 `bin/test.sh` needs.
+
+## Resource requirements
+
+Cold first-time `nix run .#populate` (no Cachix hits, empty Nix
+store) is bounded by the pilout build:
+
+| Step                              | Peak RAM   | Wall time  |
+|-----------------------------------|------------|------------|
+| `.#zisk-pilout` (cold rebuild)    | ~17 GiB    | ~24 min    |
+| `lake build` worst process (`RV64D/sd.lean`) | ~8 GiB RSS / ~7 GiB PSS | (subset of total `lake build`) |
+| Everything else                   | < 5 GiB    | minutes    |
+
+The pilout build dominates because `pil2-compiler` (Node, V8 heap
+capped at 12 GiB) composes every AIR's algebraic constraints in one
+process; total RSS hits ~16 GiB plus OS overhead. **A 16 GiB machine
+cannot run the cold pilout build** — 32 GiB is the practical minimum.
+CI runs on `size-xl-x64` (32 GiB).
+
+Once the pilout is in the local Nix store or Cachix, every subsequent
+`nix run .#populate` is a few-second cached download (~5 MB) with
+trivial RAM cost. The 17 GiB ceiling only matters when a `flake.lock`
+input changes (i.e. an upstream version bump).
