@@ -164,10 +164,39 @@ namespace PureSpec
     simp at h_opcode_assumptions
     simp [LeanRV64D.Functions.execute_STORE, LeanRV64D.Functions.vmem_write, EStateM.map, *]
     simp [LeanRV64D.Functions.vmem_write_addr, ExceptT.run, *]
-    rw [if_pos (by omega)]; simp [*]
+    rw [if_pos (by omega)]
+    -- Layered structural normalization (replaces a `simp [*]` here that
+    -- peaked at ~42 GiB on a 32 GiB CI runner — see commit message).
+    --
+    -- The original `simp [*]` had to traverse the entire untilFuelM body
+    -- inline, building Eq.trans proof-term chains for every rewrite as it
+    -- went. The 33 GiB blowup came from this monolithic pass.
+    --
+    -- Strategy:
+    --   (1) `dsimp only` over the monadic-bind primitives — pure
+    --       definitional unfolding, no proof-term construction.
+    --   (2) `unfold untilFuelM.go` to expose the 1-iteration loop body.
+    --   (3) Peel one readReg/CSR layer at a time with `rw [hyp]; try dsimp`.
+    --       Each step is O(1) memory; the .ok-constructor match resolves
+    --       definitionally without simp's caching overhead.
+    --   (4) Once enough layers are peeled, the residual goal is small
+    --       enough that the closing `simp [*]` runs at low cost.
+    --
+    -- Final peak: ~9 GiB (vs 42 GiB before) — fits comfortably in CI.
+    dsimp only [bind, EStateM.bind, EStateM.pure, pure, EStateM.modifyGet, modify, modifyGet,
+                PreSail.PreSailM, ExceptT.bind, ExceptT.pure, ExceptT.run, ExceptT.mk]
+    unfold untilFuelM.go
+    dsimp only [Int.toNat, bind, EStateM.bind, EStateM.pure, pure, ExceptT.bind, ExceptT.pure,
+                ExceptT.run, ExceptT.mk]
+    rw [h_mprv.1]; try dsimp only [bind, EStateM.bind, ExceptT.bind, EStateM.pure, ExceptT.pure, pure]
+    rw [h_priv];   try dsimp only [bind, EStateM.bind, ExceptT.bind, EStateM.pure, ExceptT.pure, pure]
+    rw [h_mprv.2]; try dsimp only [bind, EStateM.bind, ExceptT.bind, EStateM.pure, ExceptT.pure, pure]
+    simp only [show ¬ ((0#1 : BitVec 1) = (1#1 : BitVec 1)) from by decide,
+               and_false, if_false]
+    try dsimp only [bind, EStateM.bind, ExceptT.bind, EStateM.pure, ExceptT.pure, pure]
+    simp [*]
 
     simp [execute_STORED_pure, EStateM.set, modify_memory_8,
-          BitVec.extractLsb, BitVec.extractLsb', *]
-    repeat rw [Nat.mod_eq_of_lt (b := 18446744073709551616) (by omega)]
+          BitVec.extractLsb, BitVec.extractLsb']
 
 end PureSpec
