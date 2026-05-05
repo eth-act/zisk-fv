@@ -1,0 +1,151 @@
+{
+  "nodes": {
+    "flake-utils": {
+      "inputs": {
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1777268161,
+        "narHash": "sha256-bxrdOn8SCOv8tN4JbTF/TXq7kjo9ag4M+C8yzzIRYbE=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "1c3fe55ad329cbcb28471bb30f05c9827f724c76",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "pil2-compiler-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1761656030,
+        "narHash": "sha256-ExwQkVkrYM2JmQQnuTa7SaKEePjsbpgj6cC4kzBMLF4=",
+        "owner": "0xPolygonHermez",
+        "repo": "pil2-compiler",
+        "rev": "bb07cb415b11002a5e754776f570c88e6e08c56e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "0xPolygonHermez",
+        "ref": "v0.8.0",
+        "repo": "pil2-compiler",
+        "type": "github"
+      }
+    },
+    "pil2-proofman-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1766157330,
+        "narHash": "sha256-rmx/j9vFvEMMDA3S8C/pHRaCjBI1/H+D41/FWn93oFI=",
+        "owner": "0xPolygonHermez",
+        "repo": "pil2-proofman",
+        "rev": "78497c5a05ea316df2188f98c1df66bffb80192f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "0xPolygonHermez",
+        "ref": "v0.15.0",
+        "repo": "pil2-proofman",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "nixpkgs": "nixpkgs",
+        "pil2-compiler-src": "pil2-compiler-src",
+        "pil2-proofman-src": "pil2-proofman-src",
+        "sail-riscv-src": "sail-riscv-src",
+        "sail-src": "sail-src",
+        "zisk-src": "zisk-src"
+      }
+    },
+    "sail-riscv-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1766547678,
+        "narHash": "sha256-Z6tUnNsDEaUoidIM4sdEfeaI35Nv6jQPLOuWLZ4ClBA=",
+        "owner": "riscv",
+        "repo": "sail-riscv",
+        "rev": "04e595954b2af7fa9e18f2519e4ae4bba72b2701",
+        "type": "github"
+      },
+      "original": {
+        "owner": "riscv",
+        "repo": "sail-riscv",
+        "rev": "04e595954b2af7fa9e18f2519e4ae4bba72b2701",
+        "type": "github"
+      }
+    },
+    "sail-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1766413305,
+        "narHash": "sha256-p/pVfyFBbs6B7hyUMx9Nh6P1hvRAIvI5nZtUbR3DRz0=",
+        "owner": "rems-project",
+        "repo": "sail",
+        "rev": "277470b2ab472af8064e1295be5573845239c96b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rems-project",
+        "repo": "sail",
+        "rev": "277470b2ab472af8064e1295be5573845239c96b",
+        "type": "github"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
+    "zisk-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1766163698,
+        "narHash": "sha256-hzV4NedLnKV1JN497S7iiUq91NQltyx3M1W33SKWkeE=",
+        "owner": "0xPolygonHermez",
+        "repo": "zisk",
+        "rev": "b3ca745b80423c8123dc24f19039865a5bc8b074",
+        "type": "github"
+      },
+      "original": {
+        "owner": "0xPolygonHermez",
+        "repo": "zisk",
+        "rev": "b3ca745b80423c8123dc24f19039865a5bc8b074",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

@@ -1,161 +1,224 @@
 name: proofs
 
 # Build the proofs from scratch and run the full test suite (cargo +
-# lake + trust gate + repro hashes). This is the load-bearing CI: a
-# green run is the formal-verification claim that every per-opcode
-# equivalence theorem typechecks against the pinned upstream artifacts.
+# lake + trust gate + nix flake check). A green run is the formal-
+# verification claim that every per-opcode equivalence theorem
+# typechecks against the pinned upstream artifacts.
 #
-# Cost: ~10 min steady-state (mathlib + docker outputs cached); ~25 min
-# cold or when docker/versions.txt changes (full pilout + sail-lean
-# rebuild via Docker). The trust-gate.yml workflow runs the cheap
-# trust-only checks separately and is expected to give faster feedback
-# on trust-surface regressions.
+# Cost: ~30 min cold (no Nix store cache), ~5 min warm. flake.lock
+# pins every build input (sail/sail-riscv/zisk/pil2-* sources +
+# nixpkgs rev) by content hash, so the same build runs across machines.
 
 on:
-  pull_request:
-    branches: [main]
+  # Run only on push to main (post-merge), not on PRs. The full
+  # pipeline is ~50 min cold / ~10 min warm; running it on every PR
+  # commit dominates self-hosted runner time. Trade-off: PR breakage
+  # is caught post-merge instead of pre-merge. Mitigation: the cheap
+  # trust-gate.yml workflow still runs on every PR, catching the
+  # axiom/baseline/sorry/uniformity regressions that account for
+  # most accidental breakage.
+  #
+  # Path filter restricts even pushes to main to changes that can
+  # alter the proof outcome (skipping pure-doc commits).
   push:
     branches: [main]
+    paths:
+      - 'ZiskFv/**'
+      - 'tools/pil-extract/**'
+      - 'lake-manifest.json'
+      - 'lakefile.toml'
+      - 'lean-toolchain'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'nix/**'
+      - 'bin/test.sh'
+      - 'trust/**'
+      - '.github/workflows/proofs.yml'
+  workflow_dispatch:
 
-# Cancel in-progress runs on the same branch when a new commit lands.
 concurrency:
   group: proofs-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  lake-build:
-    name: lake build (full FV check)
-    # eth-act self-hosted XL runner (16 vCPU / 32 GB RAM). The XL is
-    # required for the pilout build, not the lake build: pil2-compiler
-    # launches `node --max-old-space-size=16384` (a 16 GB heap), which
-    # OOM-kills on the 16 GB L runner (run 25348554671 confirmed exit
-    # 137 there). With the sd.lean memory fix in PR #4, the lake-build
-    # step itself fits comfortably on either size — the constraint is
-    # the pilout step's node memory.
-    runs-on: ["self-hosted-ghr", "size-xl-x64"]
-    timeout-minutes: 120
+  pick-runner:
+    # Pre-flight on a free GitHub-hosted runner: evaluate the pilout
+    # derivation's output store path, ask cachix whether it's already
+    # cached, and pick a runner size accordingly. The pilout build
+    # peaks at ~17 GiB total RSS (pil2-compiler's V8 heap + mmap'd
+    # fixed-table pages); only the cold path needs the 32 GiB XL
+    # runner. Lake build itself peaks at ~9 GiB system used (run
+    # 25371352799), which fits comfortably on the 16 GiB L runner.
+    # Net effect: warm PRs (~99% of them) pay the cheaper L runner.
+    name: pick runner based on cachix state
+    runs-on: ubuntu-latest
+    outputs:
+      runner: ${{ steps.pick.outputs.runner }}
     steps:
       - uses: actions/checkout@v4
         with:
-          # The zisk/ submodule is a citation surface for `transpile_*`
-          # axiom rationales (see CLAUDE.md); the build does not read it.
           submodules: false
 
-      - name: Set up Python (trust-gate scripts use Python 3)
-        uses: actions/setup-python@v5
+      - uses: cachix/install-nix-action@v27
         with:
-          python-version: '3.x'
+          extra_nix_config: |
+            experimental-features = nix-command flakes
 
-      - name: Set up Rust toolchain (for tools/pil-extract)
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install protoc (prost-build dep for tools/pil-extract)
-        # Custom install: pull the protoc-linux-x86_64 zip from
-        # protobuf-compiler's GitHub release and extract via python's
-        # stdlib zipfile (the eth-act L runner image doesn't have
-        # `unzip` and the apt-cache proxy 500s on .deb fetches, so
-        # neither apt-get install protobuf-compiler nor
-        # arduino/setup-protoc work directly).
+      - name: Resolve pilout derivation output hash
+        id: eval
         run: |
           set -euo pipefail
-          PROTOC_VERSION=27.4
-          curl -fsSLo /tmp/protoc.zip \
-            "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
-          mkdir -p "$HOME/.local/protoc"
-          python3 -m zipfile -e /tmp/protoc.zip "$HOME/.local/protoc"
-          chmod +x "$HOME/.local/protoc/bin/protoc"
-          echo "$HOME/.local/protoc/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/protoc/bin/protoc" --version
+          path=$(nix eval --raw .#zisk-pilout.outPath)
+          hash=$(basename "$path" | cut -d- -f1)
+          echo "path=$path"
+          echo "hash=$hash"
+          echo "hash=$hash" >> "$GITHUB_OUTPUT"
 
-      - name: Install elan (Lean toolchain manager)
+      - name: Probe zisk-fv.cachix.org for pilout
+        id: pick
         run: |
-          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
-            | sh -s -- -y --default-toolchain none
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          set -uo pipefail
+          hash="${{ steps.eval.outputs.hash }}"
+          status=$(curl -sIo /dev/null -w "%{http_code}" \
+            "https://zisk-fv.cachix.org/${hash}.narinfo" || echo "000")
+          echo "narinfo HTTP $status for $hash"
+          if [ "$status" = "200" ]; then
+            echo "→ pilout cached; routing to size-l-x64"
+            echo "runner=size-l-x64" >> "$GITHUB_OUTPUT"
+          else
+            echo "→ pilout NOT cached; routing to size-xl-x64 for cold build"
+            echo "runner=size-xl-x64" >> "$GITHUB_OUTPUT"
+          fi
 
-      # ----------------------------------------------------------------
-      # Docker-built artifacts: build/sail-lean/ and build/zisk.pilout +
-      # ZiskFv/Extraction/*.lean. These are deterministic functions of
-      # docker/versions.txt and the corresponding Dockerfile, so we cache
-      # them between runs. On cache miss we rebuild via Docker (~10 min).
-      # ----------------------------------------------------------------
-
-      - name: Cache build/sail-lean/
-        id: cache-sail-lean
-        uses: actions/cache@v4
+  lake-build:
+    name: lake build (full FV check)
+    needs: pick-runner
+    # Runner size is chosen at runtime by the pick-runner job above:
+    # XL (32 GiB) only when the cold pilout rebuild is needed (its
+    # ~17 GiB peak exceeds L), L (16 GiB) otherwise. Lake build
+    # itself peaks ~9 GiB system used (run 25371352799), so warm-
+    # cachix PRs fit L with 7 GiB headroom. Cold first run: ~30 min
+    # nix populate + ~90 min lake build (single-thread perf on the
+    # self-hosted runners is much slower than typical dev boxes).
+    # Subsequent runs hit the cachix cache for nix outputs and the
+    # actions/cache for .lake — finish in ~10 min.
+    runs-on: ["self-hosted-ghr", "${{ needs.pick-runner.outputs.runner }}"]
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
         with:
-          path: build/sail-lean
-          key: sail-lean-${{ hashFiles('docker/versions.txt', 'docker/Dockerfile.sail-lean', 'docker/build-sail-lean.sh') }}
+          # zisk/ submodule is a citation surface for transpile_*
+          # axiom rationales; the build does not read it.
+          submodules: false
 
-      - name: Build Sail-Lean spec (cache miss only)
-        if: steps.cache-sail-lean.outputs.cache-hit != 'true'
-        run: |
-          docker/build-sail-lean.sh
-          # Docker run produces root-owned files in build/; reclaim them
-          # so subsequent steps (cache save, lake build) read freely.
-          sudo chown -R "$(id -u):$(id -g)" build/sail-lean
-
-      - name: Cache build/zisk.pilout + ZiskFv/Extraction/
-        id: cache-pilout
-        uses: actions/cache@v4
+      # cachix/install-nix-action (rather than DeterminateSystems') —
+      # cachix-action assumes paths set up by this installer; using
+      # the DS installer breaks `which cachix` lookup post-install.
+      - uses: cachix/install-nix-action@v27
         with:
-          path: |
-            build/zisk.pilout
-            ZiskFv/Extraction
-          # The extractor is a static dependency of the rendered Lean,
-          # so its source is part of the cache key.
-          key: zisk-pilout-${{ hashFiles('docker/versions.txt', 'docker/Dockerfile.pilout', 'docker/build-zisk-lean.sh', 'docker/build-pilout.sh', 'docker/build-pilout-inside.sh', 'tools/pil-extract/src/**', 'tools/pil-extract/proto/**', 'tools/pil-extract/Cargo.toml') }}
-
-      - name: Build pilout + extract Lean (cache miss only)
-        if: steps.cache-pilout.outputs.cache-hit != 'true'
-        run: |
-          docker/build-zisk-lean.sh
-          # Same root-ownership reclaim as for sail-lean.
-          sudo chown -R "$(id -u):$(id -g)" build ZiskFv/Extraction
+          extra_nix_config: |
+            experimental-features = nix-command flakes
 
       # ----------------------------------------------------------------
-      # Lake build cache. The .lake directory holds Mathlib's compiled
-      # olean files, downloaded from Mathlib's azure cache by
-      # `lake exe cache get`. Caching across runs avoids the ~10-minute
-      # mathlib + Goldilocks-primality cold compile.
+      # Cachix binary cache for Nix derivations. After the first run
+      # populates the cache (or you `cachix push zisk-fv` locally),
+      # subsequent runs pull pre-built `sail-lean-tree` /
+      # `zisk-pilout` / `extracted-lean` outputs in seconds instead
+      # of the ~30 min cold build. Public read; authenticated push.
       # ----------------------------------------------------------------
+      - uses: cachix/cachix-action@v15
+        with:
+          name: zisk-fv
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-      - name: Cache .lake (Mathlib + project build)
+      # ----------------------------------------------------------------
+      # Cache .lake (Mathlib + project build). Mathlib oleans come from
+      # mathlib's azure cache via `lake exe cache get`; we persist the
+      # full .lake/ across runs to avoid the ~10-minute cold compile.
+      # ----------------------------------------------------------------
+      - name: Cache .lake
         uses: actions/cache@v4
         with:
           path: .lake
-          # Bust the cache when the Lake manifest, lakefile, or
-          # locally-built sail-lean tree changes (the latter changes the
-          # path-required LeanRV dep's build inputs).
-          key: lake-${{ hashFiles('lake-manifest.json', 'lakefile.toml', 'lean-toolchain') }}-${{ hashFiles('build/sail-lean/**/*.lean') }}
+          key: lake-${{ hashFiles('lake-manifest.json', 'lakefile.toml', 'lean-toolchain') }}-${{ hashFiles('flake.lock') }}
           restore-keys: |
             lake-${{ hashFiles('lake-manifest.json', 'lakefile.toml', 'lean-toolchain') }}-
 
-      - name: Pull mathlib oleans from upstream cache
+      # ----------------------------------------------------------------
+      # The actual build. `nix run .#populate` builds the three Nix
+      # derivations (sail-lean-tree, zisk-pilout, extracted-lean) in
+      # parallel and copies their outputs into build/ + ZiskFv/Extraction/.
+      # ----------------------------------------------------------------
+      - name: Populate build/ + ZiskFv/Extraction/ from flake
+        run: nix run .#populate
+
+      - name: Pull mathlib oleans
+        run: nix develop --command bash -c 'lake exe cache get || true'
+
+      - name: bin/test.sh (cargo + lake + trust gate + flake check)
+        env:
+          # Trying threads=4 in CI based on the threads=2 mem-trace
+          # from run 25367633312: peak `MemTotal - MemAvailable` was
+          # 5.2 GiB and peak summed `lean` RSS was 14 GiB, leaving
+          # ~27 GiB of headroom on the 32 GiB XL runner. Doubling to
+          # threads=4 should still leave comfortable margin (`used`
+          # scales sub-linearly because lean workers share olean
+          # mmaps). bin/test.sh stays at 2 until we confirm CI green.
+          LEAN_NUM_THREADS: "4"
         run: |
-          lake exe cache get || true
+          # Memory + lean-process sidecar. Run 25230110804 died with no
+          # step log content preserved → strong signal the runner host
+          # itself crashed (probably kernel OOM-kill of the runner agent
+          # rather than just lake's lean subprocesses). This sidecar
+          # streams to stdout every 10s so GitHub captures real-time
+          # samples even if the agent dies later, and persists to a
+          # file uploaded as artifact for post-mortem.
+          mkdir -p /tmp/proofs-debug
+          TRACE=/tmp/proofs-debug/mem-trace.log
+          : > "$TRACE"
+          (
+            while true; do
+              ts=$(date -u +%H:%M:%S)
+              mem=$(awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} END{printf "tot=%.1fG avail=%.1fG used=%.1fG", t/1048576, a/1048576, (t-a)/1048576}' /proc/meminfo)
+              leans=$(pgrep -c '^lean$' || echo 0)
+              lean_rss=$(awk '$2 == "lean" {sum += $1} END {printf "%.1fG", sum/1048576}' <(ps -eo rss,comm))
+              load=$(awk '{print $1}' /proc/loadavg)
+              line="[mem $ts] $mem leans=$leans lean_rss=$lean_rss load=$load"
+              echo "$line"
+              echo "$line" >> "$TRACE"
+              sleep 10
+            done
+          ) &
+          SIDECAR_PID=$!
+          trap 'kill $SIDECAR_PID 2>/dev/null || true' EXIT
+          echo "::group::env (LEAN_NUM_THREADS visibility)"
+          echo "LEAN_NUM_THREADS=$LEAN_NUM_THREADS"
+          nproc
+          free -m
+          echo "::endgroup::"
+          set +e
+          nix develop --command bin/test.sh
+          EXIT=$?
+          set -e
+          kill $SIDECAR_PID 2>/dev/null || true
+          echo "::group::dmesg tail (OOM-killer evidence)"
+          dmesg | tail -200 || sudo dmesg | tail -200 || echo "dmesg unavailable"
+          echo "::endgroup::"
+          exit $EXIT
 
-      # ----------------------------------------------------------------
-      # The actual FV check.
-      # ----------------------------------------------------------------
-
-      - name: Run bin/test.sh (cargo + lake + trust gate + repro hashes)
-        run: bin/test.sh
+      - name: Upload mem-trace artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mem-trace
+          path: /tmp/proofs-debug/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: On failure — show next-step pointers
         if: failure()
         run: |
-          echo "::error::FV check failed. See above. Documentation:"
+          echo "::error::FV check failed. Documentation:"
           echo "  - CLAUDE.md  (working conventions for agents)"
           echo "  - trust/README.md  (overview of the trust gate)"
-          echo "  - docker/README.md  (Docker artifact pinning + repro hashes)"
-          echo ""
-          echo "Common failure modes:"
-          echo "  - Repro-hash mismatch: docker/versions.txt's"
-          echo "    expected-zisk-pilout-fingerprint or"
-          echo "    expected-sail-lean-tree-sha256 has drifted from the"
-          echo "    rebuilt artifact. Update the pin if intentional."
-          echo "  - lake build typecheck failure: a proof broke; see the"
-          echo "    Lean error pointer for the offending file."
-          echo "  - Trust-gate failure: see trust-gate.yml's separate"
-          echo "    workflow output for the per-check breakdown."
+          echo "  - flake.lock  (the audit surface for build-input changes)"

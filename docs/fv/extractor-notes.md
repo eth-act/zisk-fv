@@ -131,12 +131,20 @@ and will need to distinguish `firstRow` / `lastRow` / `everyFrame` from
 
 ## Reproducibility check
 
-The historical per-AIR `*.hand.lean` oracles were retired in favour of a
-structural fingerprint: `sha256` of `pil-extract --list <pilout>`. The
-expected fingerprint is pinned in `docker/versions.txt`
-(`expected-zisk-pilout-fingerprint`) and verified by
-`docker/build-zisk-lean.sh`. See `docker/README.md` for why structural
-(not byte) reproducibility is the load-bearing claim.
+Reproducibility is now anchored by **`flake.lock`** at the repo root.
+Every transitive build input — the sail compiler, the sail-riscv
+source, the ZisK source, pil2-compiler, pil2-proofman, the nixpkgs
+revision — is content-addressed by narHash. Changing any input edits
+the lock file, which becomes the audit surface for build-input
+changes.
+
+The flake derivations (`sail-lean-tree`, `zisk-pilout`,
+`extracted-lean`) are deterministic functions of the lock. Their
+outputs reproduce bit-identically across machines. The historical
+per-AIR `*.hand.lean` oracles and the explicit `pil-extract --list`
+fingerprint pin (formerly in `docker/versions.txt`, removed when the
+docker pipeline was retired) are subsumed by Nix's content-addressed
+build graph.
 
 If the fingerprint diverges, investigate before "fixing" it. Genuine causes:
 (a) extractor output changed (flags, new operand kinds, different

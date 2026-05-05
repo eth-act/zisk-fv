@@ -30,9 +30,15 @@ companions with the OUTPUT-EQ retirement — see
 ## Pipeline
 
 ```
-build/zisk.pilout             ← docker/build-zisk-lean.sh   (Docker → ZisK fork v0.15.0+ pilout)
+flake.nix inputs (sail, sail-riscv, zisk, pil2-* sources, nixpkgs)
+        │ pinned by content hash in flake.lock
+        ▼
+nix run .#populate            ← single command; builds and copies into the repo
         │
-        │ tools/pil-extract
+        ▼
+build/sail-lean/, build/zisk.pilout, ZiskFv/Extraction/*.lean
+        │
+        │ tools/pil-extract (run inside the flake)
         ▼
 ZiskFv/Extraction/<AIR>.lean  ← auto-generated; gitignored except 2 hand-written files
         │
@@ -51,26 +57,47 @@ ZiskFv/Equivalence/<OP>       ← equiv_<OP>_metaplan : Sail.execute = bus_effec
 
 ## Build / verify / test
 
-Bootstrap (run once after a fresh clone, ~11 min cold; both writable
-to `build/` and the second one also to `ZiskFv/Extraction/`):
+Bootstrap (run once after a fresh clone, ~30 min cold; ~seconds warm):
 
 ```bash
-docker/build-sail-lean.sh    # → build/sail-lean/        (~5 min)
-docker/build-zisk-lean.sh    # → build/zisk.pilout +     (~6 min)
-                             #   ZiskFv/Extraction/*.lean
+nix run .#populate    # → build/sail-lean/, build/zisk.pilout,
+                       #   ZiskFv/Extraction/*.lean
 ```
 
-Day-to-day:
+Day-to-day (inside `nix develop` shell, or prefix each command with
+`nix develop --command`):
 
 ```bash
 lake build       # the FV check — every per-opcode theorem typechecks
-bin/test.sh      # full suite: cargo + lake + trust gate + repro hashes
+bin/test.sh      # full suite: cargo + lake + trust gate + flake check
 ```
 
-There is no `justfile` and no Make. Three shell scripts (the two
-Docker builds + `bin/test.sh`) plus `lake build` are the entry points.
 `lake build` succeeding **is** the formal-verification claim;
-everything else is auxiliary scaffolding.
+everything else is auxiliary scaffolding. The audit surface for build
+inputs is `flake.lock` — a single committed file pinning every
+transitive dep by content hash.
+
+## Resource requirements (cold)
+
+Costs that matter when `flake.lock` changes (cachix miss) or when
+running on a fresh machine:
+
+- `.#zisk-pilout` rebuild: **~17 GiB peak / ~24 min wall**.
+  `pil2-compiler` (Node, V8 heap capped at 12 GiB in
+  `nix/zisk-pilout.nix:142`) composes every AIR's algebraic
+  constraints in one process; total RSS hits ~16 GiB plus OS overhead.
+  This is the hard ceiling for the whole pipeline.
+- `lake build` worst process: **~8 GiB RSS / ~7 GiB PSS** during
+  `RV64D/sd.lean` elaboration (post the PR #4 layered `dsimp`+`rw`
+  refactor — was 42 GiB before). Other files stay below 5 GiB.
+
+CI runner: needs ≥32 GiB (`size-xl-x64`). 16 GiB OOMs on cold pilout.
+Warm runs (cachix hit) are seconds — once an input is in the cache,
+downstream PRs reuse it. Upstream does not publish the raw `.pilout`
+protobuf, so we self-host via cachix; checked
+`storage.googleapis.com/zisk-setup/` and the GitHub releases — only
+proving-key derivatives and circom verifiers are published, not the
+input we need.
 
 ## Trust gate (READ THIS — agents must respect it)
 
@@ -140,20 +167,25 @@ or `trust/allowed-axiom-files.txt` directly — both are CODEOWNER-protected.
 | `docs/fv/extractor-notes.md` | Durable contract for `tools/pil-extract`. Read first when extending the extractor. |
 | `docs/fv/air-inventory.md` | 22-AIR table: which are extracted, which have named wrappers, which are absorbed into trust. |
 | `trust/README.md` | Full reference for the gate scripts + baseline files. |
-| `docker/README.md` | What each Docker build produces, pinned upstream versions (and why those versions). |
+| `nix/README.md` | Flake-level docs: what each derivation produces, why we use Nix. |
 | `docs/site/index.html` | Public-facing single-page explainer (run `docs/site/serve.sh`, port 4044). |
 | **agent memory** | `/home/cody/.claude/projects/-home-cody-zisk-fv/memory/` — facts that persist across conversations; update when current state changes. |
 
 ## Past work removed from the tree
 
-Two folders were removed once the trust gate became the system of
-record. Recover via `git show`:
+Recover via `git show`:
 
 - **`ai_plans/`** — commit `ac2d5e4`. Contained the metaplan, per-phase
   plans (Phase 0 / 1 / finishing1-5) with CLOSED retrospectives.
   Recover with `git show ac2d5e4^:ai_plans/<file>`.
 - **`docs/fv/`** purge — commit `661fe36`. Commit message lists each
   removed file and what it covered, so it doubles as the recovery index.
+- **`docker/`** — commit `cd4e4d9` ("chore: delete docker pipeline
+  (replaced by flake)"). The Dockerfiles, build scripts, and
+  `docker/versions.txt` (per-artifact fingerprint pins) are all
+  superseded by the Nix flake; `flake.lock` is the new audit surface
+  for build inputs. Recover the old pipeline with
+  `git show cd4e4d9^:docker/<file>`.
 
 ## Conventions
 
@@ -163,10 +195,10 @@ record. Recover via `git show`:
   `branch -D`) without explicit permission.
 - The `zisk/` submodule is a **citation surface** for `transpile_*`
   axiom rationales, NOT the source of `build/zisk.pilout`. The pilout
-  is built from a personal fork (zksyncos branch on top of v0.15.0);
-  see `docker/README.md` for why.
-- `ZiskFv/Extraction/` is mixed: 11 files are gitignored
-  auto-generated build outputs (`docker/build-zisk-lean.sh`
+  is built by the flake from `flake.nix::inputs.zisk-src` (a separate
+  pinned commit of upstream zisk).
+- `ZiskFv/Extraction/` is mixed: most files are gitignored
+  auto-generated build outputs (`nix run .#populate`
   regenerates them); 2 stay tracked because they're hand-written:
   - `ArithTable.lean` — hand-transcribed from
     `zisk/state-machines/arith/src/arith_table_data.rs`.
