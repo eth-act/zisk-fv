@@ -18,7 +18,7 @@
       flake = false;
     };
     zisk-src = {
-      url = "github:0xPolygonHermez/zisk/48cf7ccefb5ed62261abf6bfb007b5be8a23c547";
+      url = "github:0xPolygonHermez/zisk/v0.17.0";
       flake = false;
     };
     pil2-compiler-src = {
@@ -26,7 +26,7 @@
       flake = false;
     };
     pil2-proofman-src = {
-      url = "github:0xPolygonHermez/pil2-proofman/v0.16.1";
+      url = "github:0xPolygonHermez/pil2-proofman/v0.17.0";
       flake = false;
     };
   };
