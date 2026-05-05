@@ -148,3 +148,48 @@ Once the pilout is in the local Nix store or Cachix, every subsequent
 `nix run .#populate` is a few-second cached download (~5 MB) with
 trivial RAM cost. The 17 GiB ceiling only matters when a `flake.lock`
 input changes (i.e. an upstream version bump).
+
+## Build cache architecture
+
+Three independent cache layers, each with a different scope:
+
+| Layer                         | Caches                              | Scope                                                                   | Eviction                                  |
+| ----------------------------- | ----------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------- |
+| **Cachix** (`zisk-fv.cachix.org`) | Nix derivations: `sail-lean-tree`, `zisk-pilout`, `extracted-lean` | Content-addressed; visible to every machine + CI run                    | Manual; near-permanent in practice         |
+| **GitHub Actions cache**      | `.lake/` (compiled oleans for ZiskFv) | Per `refs/<branch-or-PR>/` ref; PR runs read their own ref + `main`'s | 7 days idle; 10 GB total per repo         |
+| **Lake's Azure cache**        | Mathlib oleans (via `lake exe cache get`) | Public; content-addressed by Mathlib commit                             | Effectively never                          |
+
+Together these mean a steady-state PR run sees: cachix HIT on all
+flake outputs (no pilout rebuild), GitHub-cache HIT on `.lake` (no
+ZiskFv re-elaboration), Azure HIT on mathlib (no Mathlib compile).
+Cold cost is paid only when a flake input changes (cachix miss) or
+when no PR has touched main in over a week (GitHub-cache miss).
+
+### Why not a Nix-cached `lake build`?
+
+The community project [`lean4-nix`](https://github.com/lenianiva/lean4-nix)
+provides `lake2nix.mkPackage`, which builds Lake projects as content-
+addressed Nix derivations and pushes results to Cachix. This would
+replace the GitHub-Actions `.lake` cache with a per-content-hash one
+(no 7-day eviction, no per-ref scoping). We considered it and
+deliberately stayed with stock Lake. Two reasons:
+
+1. **It would lose Mathlib's Azure cache.** `lake exe cache get`
+   pulls Mathlib's oleans (multi-GB) directly from Mathlib's CI cache;
+   under `lean4-nix` we'd either have to package Mathlib as a Nix
+   derivation (full rebuild on every Mathlib bump, hours) or skip the
+   cache and accept ~10 min cold compile per Mathlib update. The lake
+   side is the part of our pipeline that already has a working
+   community cache; trading it for our own cache is net negative.
+2. **Granularity.** A single `mkPackage` derivation hashes over the
+   entire ZiskFv source tree, so any source edit invalidates the
+   whole derivation. To approach Lake's per-file incremental rebuild,
+   we'd have to split ZiskFv into many derivations and hand-encode
+   the import graph — duplicating Lake's bookkeeping in Nix for
+   marginal benefit over what we already have.
+
+If we ever do hit real friction (e.g. CI gaps long enough that
+`.lake` evicts every time), a much smaller move is to keep stock Lake
+and just relocate the `.lake` cache off GitHub Actions to S3/GCS keyed
+by `(lake-manifest, lakefile, toolchain, flake.lock)` hashes —
+preserves Mathlib's Azure cache, no per-ref scoping, ~30 LoC of glue.
