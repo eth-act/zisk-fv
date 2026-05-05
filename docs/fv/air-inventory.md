@@ -1,6 +1,7 @@
 # ZisK AIR inventory and Lean extraction status
 
-Source-of-truth artifact: `build/zisk.pilout` (Docker-built; see docker/).
+Source-of-truth artifact: `build/zisk.pilout` (built by the flake;
+see `nix/` and `nix run .#populate`).
 Tool: `tools/pil-extract/ -- --pilout pil/zisk.pilout --list`.
 
 The pilout contains **22 AIRs**. This table tracks which are extracted

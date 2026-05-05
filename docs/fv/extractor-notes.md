@@ -142,8 +142,9 @@ The flake derivations (`sail-lean-tree`, `zisk-pilout`,
 `extracted-lean`) are deterministic functions of the lock. Their
 outputs reproduce bit-identically across machines. The historical
 per-AIR `*.hand.lean` oracles and the explicit `pil-extract --list`
-fingerprint pin in `docker/versions.txt` are subsumed by Nix's
-content-addressed build graph.
+fingerprint pin (formerly in `docker/versions.txt`, removed when the
+docker pipeline was retired) are subsumed by Nix's content-addressed
+build graph.
 
 If the fingerprint diverges, investigate before "fixing" it. Genuine causes:
 (a) extractor output changed (flags, new operand kinds, different

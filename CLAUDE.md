@@ -33,7 +33,7 @@ companions with the OUTPUT-EQ retirement — see
 flake.nix inputs (sail, sail-riscv, zisk, pil2-* sources, nixpkgs)
         │ pinned by content hash in flake.lock
         ▼
-nix run .#populate            ← single command; replaces docker/build-*.sh
+nix run .#populate            ← single command; builds and copies into the repo
         │
         ▼
 build/sail-lean/, build/zisk.pilout, ZiskFv/Extraction/*.lean
@@ -173,14 +173,19 @@ or `trust/allowed-axiom-files.txt` directly — both are CODEOWNER-protected.
 
 ## Past work removed from the tree
 
-Two folders were removed once the trust gate became the system of
-record. Recover via `git show`:
+Recover via `git show`:
 
 - **`ai_plans/`** — commit `ac2d5e4`. Contained the metaplan, per-phase
   plans (Phase 0 / 1 / finishing1-5) with CLOSED retrospectives.
   Recover with `git show ac2d5e4^:ai_plans/<file>`.
 - **`docs/fv/`** purge — commit `661fe36`. Commit message lists each
   removed file and what it covered, so it doubles as the recovery index.
+- **`docker/`** — commit `cd4e4d9` ("chore: delete docker pipeline
+  (replaced by flake)"). The Dockerfiles, build scripts, and
+  `docker/versions.txt` (per-artifact fingerprint pins) are all
+  superseded by the Nix flake; `flake.lock` is the new audit surface
+  for build inputs. Recover the old pipeline with
+  `git show cd4e4d9^:docker/<file>`.
 
 ## Conventions
 
