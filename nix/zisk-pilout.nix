@@ -139,7 +139,7 @@ rustPlatform.buildRustPackage {
     # -i $PWD sets inputDir to the absolute source root so extern_fixed_file
     # paths (e.g. state-machines/arith/src/arith_frops_fixed.bin) are resolved
     # relative to the directory where the fixed_gen bins wrote them.
-    node --max-old-space-size=12288 \
+    node --max-old-space-size=16384 \
       ${pil2-compiler}/src/pil.js pil/zisk.pil \
       -I pil,${pil2-proofman-src}/pil2-components/lib/std/pil,state-machines,precompiles \
       -i "$PWD" \

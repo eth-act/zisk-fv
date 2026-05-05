@@ -31,11 +31,12 @@ stdenv.mkDerivation {
         --output "$out/$air.lean"
     done
 
-    # Subset extractions for Main and Arith. Constraint indices were
-    # picked when the proofs were written against v0.15.0; they're
-    # what Airs/Main.lean::extraction_bridge addresses.
+    # Subset extractions for Main and Arith. Indices match
+    # `Airs/Main.lean::extraction_bridge`; they shifted from the
+    # v0.15.0 set (8,9,15,16,17,18,19,20,24,30) when ZisK reorganised
+    # operation-bus emissions in v0.16.0+.
     ${pil-extract}/bin/pil-extract --pilout ${zisk-pilout} --air Main \
-      --only 8,9,15,16,17,18,19,20,24,30 \
+      --only 7,8,13,14,15,16,17,18,22,28 \
       --output $out/Main.lean
 
     ${pil-extract}/bin/pil-extract --pilout ${zisk-pilout} --air Arith \
