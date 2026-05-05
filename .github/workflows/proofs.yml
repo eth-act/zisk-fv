@@ -10,27 +10,16 @@ name: proofs
 # nixpkgs rev) by content hash, so the same build runs across machines.
 
 on:
-  # Only fire when files that can actually change the proof outcome are
-  # touched — ZiskFv source, the extractor, lake / nix build inputs, the
-  # trust baselines, bin/test.sh, or this workflow itself. Pure-doc
-  # commits (README, CLAUDE.md, docs/, site assets) are skipped, since
-  # the full pipeline is ~50 min and they cannot affect what the proofs
-  # mean. Mixed PRs that touch both proof and doc files still trigger,
-  # because GitHub OR's the path patterns: any match runs the workflow.
-  pull_request:
-    branches: [main]
-    paths:
-      - 'ZiskFv/**'
-      - 'tools/pil-extract/**'
-      - 'lake-manifest.json'
-      - 'lakefile.toml'
-      - 'lean-toolchain'
-      - 'flake.nix'
-      - 'flake.lock'
-      - 'nix/**'
-      - 'bin/test.sh'
-      - 'trust/**'
-      - '.github/workflows/proofs.yml'
+  # Run only on push to main (post-merge), not on PRs. The full
+  # pipeline is ~50 min cold / ~10 min warm; running it on every PR
+  # commit dominates self-hosted runner time. Trade-off: PR breakage
+  # is caught post-merge instead of pre-merge. Mitigation: the cheap
+  # trust-gate.yml workflow still runs on every PR, catching the
+  # axiom/baseline/sorry/uniformity regressions that account for
+  # most accidental breakage.
+  #
+  # Path filter restricts even pushes to main to changes that can
+  # alter the proof outcome (skipping pure-doc commits).
   push:
     branches: [main]
     paths:
@@ -45,6 +34,7 @@ on:
       - 'bin/test.sh'
       - 'trust/**'
       - '.github/workflows/proofs.yml'
+  workflow_dispatch:
 
 concurrency:
   group: proofs-${{ github.ref }}
