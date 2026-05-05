@@ -40,7 +40,7 @@ build/sail-lean/, build/zisk.pilout, ZiskFv/Extraction/*.lean
         │
         │ tools/pil-extract (run inside the flake)
         ▼
-ZiskFv/Extraction/<AIR>.lean  ← auto-generated; gitignored except 2 hand-written files
+ZiskFv/Extraction/<AIR>.lean  ← auto-generated; gitignored except 3 hand-written files
         │
         │ named-column wrappers
         ▼
@@ -199,10 +199,15 @@ Recover via `git show`:
   pinned commit of upstream zisk).
 - `ZiskFv/Extraction/` is mixed: most files are gitignored
   auto-generated build outputs (`nix run .#populate`
-  regenerates them); 2 stay tracked because they're hand-written:
+  regenerates them); 3 stay tracked because they're hand-written:
   - `ArithTable.lean` — hand-transcribed from
     `zisk/state-machines/arith/src/arith_table_data.rs`.
   - `MemoryBuses.lean` — hand-curated subset of memory-bus emissions
     with documentation.
+  - `OperationBuses.lean` — hand-written operation-bus emission for
+    Main. The auto-extracted `Buses.lean::bus_emission_Main_0` became
+    a multiplicity-0 stub starting v0.16.0 (the new `proves_operation`
+    macro emits ExtF-typed challenge cells the V1 extractor can't
+    render). The hand-written replacement lives here.
 - `native_decide` on Goldilocks primality takes ~6 min cold. Mathlib's
   Azure cache via `lake exe cache get` handles the rest.

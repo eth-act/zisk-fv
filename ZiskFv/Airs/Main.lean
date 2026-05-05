@@ -39,7 +39,7 @@ structure Valid_Main (C : Type → Type → Type) (F ExtF : Type)
   op : ℕ → F
   m32 : ℕ → F
   /-- `set_pc` selector (column 25). Constrained to be disjoint from `flag`
-      via `constraint_19_every_row`. -/
+      via `constraint_17_every_row`. -/
   set_pc : ℕ → F
   /-- `jmp_offset1` (column 26). Branch-taken offset (per
       `main.pil:151` and `create_branch_op` in
@@ -179,7 +179,7 @@ def add_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
     `ℕ`, so at row 0 the `row - 1` subterm saturates to 0 — but the
     `(1 - SEGMENT_L1)` gate evaluates to `0` at row 0 (`SEGMENT_L1 = 1`
     there by definition), so the misaligned subterm is multiplied out.
-    See `Extraction/Main.hand.lean`'s `constraint_20_every_row` and the
+    See `Extraction/Main.lean`'s `constraint_18_every_row` and the
     extractor-notes for the full argument.
 
     Callers who need the classical "next_pc" formulation (at some row
@@ -338,56 +338,56 @@ def jump_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Prop
 section extraction_bridge
 
 @[simp]
-lemma constraint_8_of_extraction
+lemma constraint_7_of_extraction
     (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_8_every_row v.circuit row ↔ internal_op0_zeroes_c0 v row := by
-  unfold constraint_8_every_row internal_op0_zeroes_c0
+    constraint_7_every_row v.circuit row ↔ internal_op0_zeroes_c0 v row := by
+  unfold constraint_7_every_row internal_op0_zeroes_c0
   rw [v.is_external_op_def, v.op_def, v.c_0_def]
 
 @[simp]
-lemma constraint_9_of_extraction
+lemma constraint_8_of_extraction
     (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_9_every_row v.circuit row ↔ internal_op1_copies_b0 v row := by
-  unfold constraint_9_every_row internal_op1_copies_b0
+    constraint_8_every_row v.circuit row ↔ internal_op1_copies_b0 v row := by
+  unfold constraint_8_every_row internal_op1_copies_b0
   rw [v.is_external_op_def, v.op_def, v.b_0_def, v.c_0_def]
+
+@[simp]
+lemma constraint_13_of_extraction
+    (v : Valid_Main C F ExtF) (row : ℕ) :
+    constraint_13_every_row v.circuit row ↔ internal_op0_zeroes_c1 v row := by
+  unfold constraint_13_every_row internal_op0_zeroes_c1
+  rw [v.is_external_op_def, v.op_def, v.c_1_def]
+
+@[simp]
+lemma constraint_14_of_extraction
+    (v : Valid_Main C F ExtF) (row : ℕ) :
+    constraint_14_every_row v.circuit row ↔ internal_op1_copies_b1 v row := by
+  unfold constraint_14_every_row internal_op1_copies_b1
+  rw [v.is_external_op_def, v.op_def, v.b_1_def, v.c_1_def]
 
 @[simp]
 lemma constraint_15_of_extraction
     (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_15_every_row v.circuit row ↔ internal_op0_zeroes_c1 v row := by
-  unfold constraint_15_every_row internal_op0_zeroes_c1
-  rw [v.is_external_op_def, v.op_def, v.c_1_def]
+    constraint_15_every_row v.circuit row ↔ internal_op0_sets_flag v row := by
+  unfold constraint_15_every_row internal_op0_sets_flag
+  rw [v.is_external_op_def, v.op_def, v.flag_def]
 
 @[simp]
 lemma constraint_16_of_extraction
     (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_16_every_row v.circuit row ↔ internal_op1_copies_b1 v row := by
-  unfold constraint_16_every_row internal_op1_copies_b1
-  rw [v.is_external_op_def, v.op_def, v.b_1_def, v.c_1_def]
+    constraint_16_every_row v.circuit row ↔ internal_op1_clears_flag v row := by
+  unfold constraint_16_every_row internal_op1_clears_flag
+  rw [v.is_external_op_def, v.op_def, v.flag_def]
 
 @[simp]
 lemma constraint_17_of_extraction
     (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_17_every_row v.circuit row ↔ internal_op0_sets_flag v row := by
-  unfold constraint_17_every_row internal_op0_sets_flag
-  rw [v.is_external_op_def, v.op_def, v.flag_def]
-
-@[simp]
-lemma constraint_18_of_extraction
-    (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_18_every_row v.circuit row ↔ internal_op1_clears_flag v row := by
-  unfold constraint_18_every_row internal_op1_clears_flag
-  rw [v.is_external_op_def, v.op_def, v.flag_def]
-
-@[simp]
-lemma constraint_19_of_extraction
-    (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_19_every_row v.circuit row ↔ flag_set_pc_disjoint v row := by
-  unfold constraint_19_every_row flag_set_pc_disjoint
+    constraint_17_every_row v.circuit row ↔ flag_set_pc_disjoint v row := by
+  unfold constraint_17_every_row flag_set_pc_disjoint
   rw [v.flag_def, v.set_pc_def]
 
-/-- **Constraint 20 (PC handshake) bridge.** The raw extracted
-    `constraint_20_every_row` — `(1 - SEGMENT_L1) * (pc - expected) = 0`
+/-- **Constraint 18 (PC handshake) bridge.** The raw extracted
+    `constraint_18_every_row` — `(1 - SEGMENT_L1) * (pc - expected) = 0`
     with all primed cells rendered at `(row := row - 1) (rotation := 0)`
     by the extractor — is definitionally the named closed-form
     `pc_handshake`. Bridge via `unfold` + the per-column
@@ -397,25 +397,25 @@ lemma constraint_19_of_extraction
     the `(1 - SEGMENT_L1)` gate makes the `row = 0` case vacuous, so
     the bridge is sound. -/
 @[simp]
-lemma constraint_20_of_extraction
+lemma constraint_18_of_extraction
     (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_20_every_row v.circuit row ↔ pc_handshake v row := by
-  unfold constraint_20_every_row pc_handshake
+    constraint_18_every_row v.circuit row ↔ pc_handshake v row := by
+  unfold constraint_18_every_row pc_handshake
   simp only [v.segment_l1_def, v.pc_def, v.set_pc_def, v.c_0_def,
              v.jmp_offset1_def, v.jmp_offset2_def, v.flag_def]
 
 @[simp]
-lemma constraint_24_of_extraction
+lemma constraint_22_of_extraction
     (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_24_every_row v.circuit row ↔ flag_boolean v row := by
-  unfold constraint_24_every_row flag_boolean
+    constraint_22_every_row v.circuit row ↔ flag_boolean v row := by
+  unfold constraint_22_every_row flag_boolean
   rw [v.flag_def]
 
 @[simp]
-lemma constraint_30_of_extraction
+lemma constraint_28_of_extraction
     (v : Valid_Main C F ExtF) (row : ℕ) :
-    constraint_30_every_row v.circuit row ↔ is_external_op_boolean v row := by
-  unfold constraint_30_every_row is_external_op_boolean
+    constraint_28_every_row v.circuit row ↔ is_external_op_boolean v row := by
+  unfold constraint_28_every_row is_external_op_boolean
   rw [v.is_external_op_def]
 
 end extraction_bridge
