@@ -9,13 +9,13 @@
 # skips that.
 buildNpmPackage {
   pname = "pil2-compiler";
-  version = "0.8.0";  # tag we pin (package.json's internal version is 0.7.0)
+  version = "0.9.0";  # tag we pin
 
   src = pil2-compiler-src;
 
   # First build will fail with a hash mismatch error; nix will print
   # the correct value to paste back in here.
-  npmDepsHash = "sha256-3gLeKYDIh95ugrPxlIi4pw0eCDburdZZctdMSRc5qsE=";
+  npmDepsHash = "sha256-Ugdu3E/USOPR7gBtj6MClx80PfShSR6Yqsj96BsFFHk=";
 
   dontNpmBuild = true;
   dontFixup = true;

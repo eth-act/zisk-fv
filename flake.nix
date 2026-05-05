@@ -18,15 +18,15 @@
       flake = false;
     };
     zisk-src = {
-      url = "github:0xPolygonHermez/zisk/b3ca745b80423c8123dc24f19039865a5bc8b074";
+      url = "github:0xPolygonHermez/zisk/48cf7ccefb5ed62261abf6bfb007b5be8a23c547";
       flake = false;
     };
     pil2-compiler-src = {
-      url = "github:0xPolygonHermez/pil2-compiler/v0.8.0";
+      url = "github:0xPolygonHermez/pil2-compiler/v0.9.0";
       flake = false;
     };
     pil2-proofman-src = {
-      url = "github:0xPolygonHermez/pil2-proofman/v0.15.0";
+      url = "github:0xPolygonHermez/pil2-proofman/v0.16.1";
       flake = false;
     };
   };
