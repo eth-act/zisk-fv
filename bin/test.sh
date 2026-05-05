@@ -41,7 +41,7 @@ run "3/4 trust gate"           trust/scripts/check-all.sh
 # 4. Repro hashes for the two artifacts. Verifies build/zisk.pilout
 # and build/sail-lean/ haven't drifted from the pinned versions.
 run "4/4 repro hashes"         bash -c '
-    EXTRACT=tools/pil-extract/target/release/zisk-pil-extract
+    EXTRACT=tools/pil-extract/target/release/pil-extract
     expected_pilout=$(grep "^expected-zisk-pilout-fingerprint" docker/versions.txt 2>/dev/null | awk -F"= *" "{print \$2}")
     actual_pilout=$($EXTRACT --pilout build/zisk.pilout --list 2>/dev/null | sha256sum | awk "{print \$1}")
     if [ -n "$expected_pilout" ] && [ "$expected_pilout" != "$actual_pilout" ]; then

@@ -38,7 +38,7 @@ leanzkcircuit-commit       = 8631b11de51c68288b519e8032019524b84a365f
 # Sail-Lean RV64D tree hash (sha256 of sorted *.lean file sha256s).
 # Verified by `docker/build-sail-lean.sh`. Update when upstream pins
 # (sail-commit, sail-riscv-commit) change.
-expected-sail-lean-tree-sha256 = aabc5b9fc6bb9b58433c919dee5f0fd72f70fd9a999c5d79fe75a8384b49ac83
+expected-sail-lean-tree-sha256 = 9a6cd3b7eb80574e31084d13e406ec63fe9334635d297ae87e30f6c3e3340da0
 
 # Pilout AIR-list structural fingerprint (sha256 of `pil-extract --list`).
 # Verified by bin/test.sh.

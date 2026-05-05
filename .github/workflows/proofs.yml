@@ -1,0 +1,161 @@
+name: proofs
+
+# Build the proofs from scratch and run the full test suite (cargo +
+# lake + trust gate + repro hashes). This is the load-bearing CI: a
+# green run is the formal-verification claim that every per-opcode
+# equivalence theorem typechecks against the pinned upstream artifacts.
+#
+# Cost: ~10 min steady-state (mathlib + docker outputs cached); ~25 min
+# cold or when docker/versions.txt changes (full pilout + sail-lean
+# rebuild via Docker). The trust-gate.yml workflow runs the cheap
+# trust-only checks separately and is expected to give faster feedback
+# on trust-surface regressions.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel in-progress runs on the same branch when a new commit lands.
+concurrency:
+  group: proofs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lake-build:
+    name: lake build (full FV check)
+    # eth-act self-hosted XL runner (16 vCPU / 32 GB RAM). The XL is
+    # required for the pilout build, not the lake build: pil2-compiler
+    # launches `node --max-old-space-size=16384` (a 16 GB heap), which
+    # OOM-kills on the 16 GB L runner (run 25348554671 confirmed exit
+    # 137 there). With the sd.lean memory fix in PR #4, the lake-build
+    # step itself fits comfortably on either size — the constraint is
+    # the pilout step's node memory.
+    runs-on: ["self-hosted-ghr", "size-xl-x64"]
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The zisk/ submodule is a citation surface for `transpile_*`
+          # axiom rationales (see CLAUDE.md); the build does not read it.
+          submodules: false
+
+      - name: Set up Python (trust-gate scripts use Python 3)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Set up Rust toolchain (for tools/pil-extract)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install protoc (prost-build dep for tools/pil-extract)
+        # Custom install: pull the protoc-linux-x86_64 zip from
+        # protobuf-compiler's GitHub release and extract via python's
+        # stdlib zipfile (the eth-act L runner image doesn't have
+        # `unzip` and the apt-cache proxy 500s on .deb fetches, so
+        # neither apt-get install protobuf-compiler nor
+        # arduino/setup-protoc work directly).
+        run: |
+          set -euo pipefail
+          PROTOC_VERSION=27.4
+          curl -fsSLo /tmp/protoc.zip \
+            "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
+          mkdir -p "$HOME/.local/protoc"
+          python3 -m zipfile -e /tmp/protoc.zip "$HOME/.local/protoc"
+          chmod +x "$HOME/.local/protoc/bin/protoc"
+          echo "$HOME/.local/protoc/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/protoc/bin/protoc" --version
+
+      - name: Install elan (Lean toolchain manager)
+        run: |
+          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      # ----------------------------------------------------------------
+      # Docker-built artifacts: build/sail-lean/ and build/zisk.pilout +
+      # ZiskFv/Extraction/*.lean. These are deterministic functions of
+      # docker/versions.txt and the corresponding Dockerfile, so we cache
+      # them between runs. On cache miss we rebuild via Docker (~10 min).
+      # ----------------------------------------------------------------
+
+      - name: Cache build/sail-lean/
+        id: cache-sail-lean
+        uses: actions/cache@v4
+        with:
+          path: build/sail-lean
+          key: sail-lean-${{ hashFiles('docker/versions.txt', 'docker/Dockerfile.sail-lean', 'docker/build-sail-lean.sh') }}
+
+      - name: Build Sail-Lean spec (cache miss only)
+        if: steps.cache-sail-lean.outputs.cache-hit != 'true'
+        run: |
+          docker/build-sail-lean.sh
+          # Docker run produces root-owned files in build/; reclaim them
+          # so subsequent steps (cache save, lake build) read freely.
+          sudo chown -R "$(id -u):$(id -g)" build/sail-lean
+
+      - name: Cache build/zisk.pilout + ZiskFv/Extraction/
+        id: cache-pilout
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/zisk.pilout
+            ZiskFv/Extraction
+          # The extractor is a static dependency of the rendered Lean,
+          # so its source is part of the cache key.
+          key: zisk-pilout-${{ hashFiles('docker/versions.txt', 'docker/Dockerfile.pilout', 'docker/build-zisk-lean.sh', 'docker/build-pilout.sh', 'docker/build-pilout-inside.sh', 'tools/pil-extract/src/**', 'tools/pil-extract/proto/**', 'tools/pil-extract/Cargo.toml') }}
+
+      - name: Build pilout + extract Lean (cache miss only)
+        if: steps.cache-pilout.outputs.cache-hit != 'true'
+        run: |
+          docker/build-zisk-lean.sh
+          # Same root-ownership reclaim as for sail-lean.
+          sudo chown -R "$(id -u):$(id -g)" build ZiskFv/Extraction
+
+      # ----------------------------------------------------------------
+      # Lake build cache. The .lake directory holds Mathlib's compiled
+      # olean files, downloaded from Mathlib's azure cache by
+      # `lake exe cache get`. Caching across runs avoids the ~10-minute
+      # mathlib + Goldilocks-primality cold compile.
+      # ----------------------------------------------------------------
+
+      - name: Cache .lake (Mathlib + project build)
+        uses: actions/cache@v4
+        with:
+          path: .lake
+          # Bust the cache when the Lake manifest, lakefile, or
+          # locally-built sail-lean tree changes (the latter changes the
+          # path-required LeanRV dep's build inputs).
+          key: lake-${{ hashFiles('lake-manifest.json', 'lakefile.toml', 'lean-toolchain') }}-${{ hashFiles('build/sail-lean/**/*.lean') }}
+          restore-keys: |
+            lake-${{ hashFiles('lake-manifest.json', 'lakefile.toml', 'lean-toolchain') }}-
+
+      - name: Pull mathlib oleans from upstream cache
+        run: |
+          lake exe cache get || true
+
+      # ----------------------------------------------------------------
+      # The actual FV check.
+      # ----------------------------------------------------------------
+
+      - name: Run bin/test.sh (cargo + lake + trust gate + repro hashes)
+        run: bin/test.sh
+
+      - name: On failure — show next-step pointers
+        if: failure()
+        run: |
+          echo "::error::FV check failed. See above. Documentation:"
+          echo "  - CLAUDE.md  (working conventions for agents)"
+          echo "  - trust/README.md  (overview of the trust gate)"
+          echo "  - docker/README.md  (Docker artifact pinning + repro hashes)"
+          echo ""
+          echo "Common failure modes:"
+          echo "  - Repro-hash mismatch: docker/versions.txt's"
+          echo "    expected-zisk-pilout-fingerprint or"
+          echo "    expected-sail-lean-tree-sha256 has drifted from the"
+          echo "    rebuilt artifact. Update the pin if intentional."
+          echo "  - lake build typecheck failure: a proof broke; see the"
+          echo "    Lean error pointer for the offending file."
+          echo "  - Trust-gate failure: see trust-gate.yml's separate"
+          echo "    workflow output for the per-check breakdown."
