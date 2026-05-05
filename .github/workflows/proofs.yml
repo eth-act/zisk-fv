@@ -51,21 +51,68 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  pick-runner:
+    # Pre-flight on a free GitHub-hosted runner: evaluate the pilout
+    # derivation's output store path, ask cachix whether it's already
+    # cached, and pick a runner size accordingly. The pilout build
+    # peaks at ~17 GiB total RSS (pil2-compiler's V8 heap + mmap'd
+    # fixed-table pages); only the cold path needs the 32 GiB XL
+    # runner. Lake build itself peaks at ~9 GiB system used (run
+    # 25371352799), which fits comfortably on the 16 GiB L runner.
+    # Net effect: warm PRs (~99% of them) pay the cheaper L runner.
+    name: pick runner based on cachix state
+    runs-on: ubuntu-latest
+    outputs:
+      runner: ${{ steps.pick.outputs.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Resolve pilout derivation output hash
+        id: eval
+        run: |
+          set -euo pipefail
+          path=$(nix eval --raw .#zisk-pilout.outPath)
+          hash=$(basename "$path" | cut -d- -f1)
+          echo "path=$path"
+          echo "hash=$hash"
+          echo "hash=$hash" >> "$GITHUB_OUTPUT"
+
+      - name: Probe zisk-fv.cachix.org for pilout
+        id: pick
+        run: |
+          set -uo pipefail
+          hash="${{ steps.eval.outputs.hash }}"
+          status=$(curl -sIo /dev/null -w "%{http_code}" \
+            "https://zisk-fv.cachix.org/${hash}.narinfo" || echo "000")
+          echo "narinfo HTTP $status for $hash"
+          if [ "$status" = "200" ]; then
+            echo "→ pilout cached; routing to size-l-x64"
+            echo "runner=size-l-x64" >> "$GITHUB_OUTPUT"
+          else
+            echo "→ pilout NOT cached; routing to size-xl-x64 for cold build"
+            echo "runner=size-xl-x64" >> "$GITHUB_OUTPUT"
+          fi
+
   lake-build:
     name: lake build (full FV check)
-    # eth-act self-hosted XL runner (16 vCPU / 32 GB RAM). XL is
-    # required for the cold pilout build, not for lake build:
-    # pil2-compiler launches `node --max-old-space-size=12288` which
-    # peaks ~17 GiB total RSS. The 16 GB L runner OOM-kills there
-    # (run 25348554671 confirmed exit 137). On warm cachix runs the
-    # pilout output is fetched in seconds and lake fits anywhere.
-    runs-on: ["self-hosted-ghr", "size-xl-x64"]
-    # Cold first run: ~30 min nix populate + ~90 min lake build (the
-    # runner's single-thread perf is significantly slower than typical
-    # dev boxes; per-file compile of native_decide-heavy files runs
-    # 30–60× slower than local). Subsequent runs hit the cachix cache
-    # for nix outputs and the actions/cache for .lake — finish in
-    # ~10 min. The high ceiling only applies to first/cold runs.
+    needs: pick-runner
+    # Runner size is chosen at runtime by the pick-runner job above:
+    # XL (32 GiB) only when the cold pilout rebuild is needed (its
+    # ~17 GiB peak exceeds L), L (16 GiB) otherwise. Lake build
+    # itself peaks ~9 GiB system used (run 25371352799), so warm-
+    # cachix PRs fit L with 7 GiB headroom. Cold first run: ~30 min
+    # nix populate + ~90 min lake build (single-thread perf on the
+    # self-hosted runners is much slower than typical dev boxes).
+    # Subsequent runs hit the cachix cache for nix outputs and the
+    # actions/cache for .lake — finish in ~10 min.
+    runs-on: ["self-hosted-ghr", "${{ needs.pick-runner.outputs.runner }}"]
     timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
