@@ -89,12 +89,14 @@ jobs:
 
       - name: bin/test.sh (cargo + lake + trust gate + flake check)
         env:
-          # threads=2 leaves comfortable headroom on the 32 GB XL
-          # runner: post the PR #4 sd refactor the worst lean process
-          # peaks at ~8 GiB RSS / ~7 GiB PSS, so two concurrent leans
-          # fit with margin even on the heaviest pair. Bumping further
-          # is plausible but unverified — keep matched with bin/test.sh.
-          LEAN_NUM_THREADS: "2"
+          # Trying threads=4 in CI based on the threads=2 mem-trace
+          # from run 25367633312: peak `MemTotal - MemAvailable` was
+          # 5.2 GiB and peak summed `lean` RSS was 14 GiB, leaving
+          # ~27 GiB of headroom on the 32 GiB XL runner. Doubling to
+          # threads=4 should still leave comfortable margin (`used`
+          # scales sub-linearly because lean workers share olean
+          # mmaps). bin/test.sh stays at 2 until we confirm CI green.
+          LEAN_NUM_THREADS: "4"
         run: |
           # Memory + lean-process sidecar. Run 25230110804 died with no
           # step log content preserved → strong signal the runner host
