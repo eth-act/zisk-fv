@@ -17,13 +17,201 @@ gate + flake repro check).
 | ---------------------- | ------------------------------------------------------------------------------------------------------ |
 | `docs/fv/`             | Live library-reference notes: trust ledger, extractor contract, AIR inventory                          |
 | `tools/pil-extract/`   | Rust CLI: decodes `.pilout` protobuf → Lean constraint definitions                                     |
-| `ZiskFv/`              | Lake 4 package (mathlib + LeanZKCircuit + LeanRV, toolchain v4.26.0)                                   |
+| `ZiskFv/`              | Lake 4 package (mathlib + LeanZKCircuit + LeanRV, toolchain v4.26.0). See [Inside `ZiskFv/`](#inside-ziskfv) below. |
 | `zisk/`                | ZisK source tree (git submodule, pinned at `48cf7ccef`)                                                |
 | `trust/`               | Trust-boundary baselines + enforcement scripts. See `trust/README.md`.                                 |
 | `flake.nix`, `nix/`    | Nix flake that builds the pilout + Sail-Lean spec + extracted Lean reproducibly. See `nix/README.md`.  |
-| `build/`               | Generated artifacts (`build/zisk.pilout`, `build/sail-lean/`). Gitignored — produced by `nix run .#populate`. |
+| `build/`               | Generated artifacts. Gitignored — produced by `nix run .#populate`. See [Inside `build/`](#inside-build) below. |
 | `bin/`                 | Test entry point: `bin/test.sh` runs the full suite.                                                   |
 | `docs/site/`           | Single-page trust-boundary explainer (run `docs/site/serve.sh`, port 4044).                            |
+
+## Inside `ZiskFv/`
+
+The Lake 4 package. Subdirectories track the proof's data flow: foundations
+→ extraction → per-AIR named layer → per-opcode lifted semantics → Sail-side
+mirror → equivalence theorems.
+
+```
+ZiskFv/
+├── Fundamentals/   foundations: Goldilocks field, BitVec/U64 lemmas, transpiler axioms
+├── Extraction/     3 hand-written extraction-layer files (auto-generated set lives in build/extraction/)
+├── Airs/           per-AIR named-column wrappers + single-AIR correctness theorems
+├── Circuit/        per-opcode lifted circuit semantics — one .lean per RV64IM opcode
+├── Sail/           per-opcode Sail-side mirrors with equivalence-to-LeanRV64D lemmas
+├── Tactics/        instruction-shape archetype tactics that drive the per-opcode proofs
+├── Equivalence/    the final per-opcode theorems: equiv_<OP>_metaplan + _tier1 companions
+└── ZiskFv.lean     root module — imports the whole tree
+```
+
+### `ZiskFv/Fundamentals/`
+
+Foundational definitions and lemmas the rest of the tree builds on.
+`Goldilocks.lean` defines `FGL := Fin (2^64 - 2^32 + 1)` and the canonical
+`[Field FGL]` instance — declared once globally and never shadowed
+(shadowing it as a proof-local variable defeats `ring`).
+`PrattCertificate.lean` proves the prime is prime via `native_decide`
+(~6 min cold; the slowest single proof in the build). `U64.lean` and the
+`PackedBitVec/` subdirectory hold the fixed-width arithmetic lemmas needed
+for carry-free decompositions across packed lanes. `Transpiler.lean` and
+`TranspileConsumers.lean` declare the `transpile_*` axioms that bridge
+RISC-V instruction encoding to ZisK's microinstruction format (the
+trust-base entries 1–9 in `docs/fv/trusted-base.md`). `Execution.lean` and
+`Interaction.lean` define generic execution-trace and bus-interaction
+structures shared across all AIRs.
+
+### `ZiskFv/Extraction/`
+
+Three hand-written extraction-layer files that supplement the auto-generated
+set under `build/extraction/Extraction/`:
+
+- `ArithTable.lean` — hand-transcribed from
+  `zisk/state-machines/arith/src/arith_table_data.rs::ARITH_TABLE` (74 rows).
+  The Rust constant is itself generated from PIL with `generate_table = 1`;
+  we transcribe rather than extending the Rust extractor.
+- `MemoryBuses.lean` — hand-curated subset of memory-bus emissions
+  (bus_id = 10) extracted from PIL2 `gsum_debug_data` hints.
+- `OperationBuses.lean` — hand-written operation-bus emission for the Main
+  AIR (bus_id = 5000); needed because the auto-extracted form became a
+  multiplicity-0 stub starting v0.16.0.
+
+### `ZiskFv/Airs/`
+
+The per-AIR layer. For each ZisK AIR (`Main`, `Binary`, `BinaryAdd`,
+`BinaryExtension`, `Arith`, `Mem`, `MemAlign{,Byte,ReadByte,WriteByte}`)
+this layer provides:
+
+- a `Valid_<AIR>` structure naming each column (so `m.cout_1 row` instead of
+  `Circuit.main circ (column := 9) (row := row) (rotation := 0)`), with
+  `_def` lemmas tying the names back to the underlying anonymous accessors;
+- iff-bridges that turn each anonymous `constraint_N_every_row` into a
+  meaningfully-named predicate (e.g. `core_every_row` for BinaryAdd's carry
+  chain);
+- **single-AIR correctness theorems** — proofs that one AIR's constraints,
+  in isolation, imply the BitVec relation they claim. These are the heaviest
+  files in the layer: `BinaryPackedCorrect.lean` is 2,109 lines,
+  `BinaryExtensionPackedCorrect.lean` is 2,804;
+- bus-protocol machinery (`OperationBus.lean`, `OpBusEffect.lean`,
+  `BusEmission.lean`, …) and lookup-table soundness (`BinaryTable.lean`,
+  `BinaryExtensionTable.lean`, plus `Arith/ArithTable.lean` for the
+  table-soundness theorem that consumes `Extraction/ArithTable.lean`'s
+  table data).
+
+Files are organized **by ZisK constraint table**, not by RISC-V instruction
+— a single AIR (e.g. Binary) covers many opcodes (ADD, SUB, AND, OR, XOR,
+all branches, …).
+
+### `ZiskFv/Circuit/`
+
+Per-opcode lifted circuit semantics — one file per RV64IM opcode (62
+files total, including shared infrastructure like `MemModel.lean`,
+`MulField.lean`, `DivFieldSigned.lean`). Each file composes the relevant `Airs/` pieces via
+the operation-bus abstraction (`Airs/OperationBus.lean::matches_entry`) and
+concludes that the involved AIR rows together produce `f(inputs)` for some
+BitVec function `f`. The math stays in `Fin p` (Goldilocks); the BitVec lift
+itself happens in `Equivalence/`. Files are organized **by RISC-V opcode**,
+not by AIR — `Circuit/Add.lean` projects out the Add behaviour from
+`Airs/Main.lean` + `Airs/Binary/BinaryAdd.lean`, both joined by their
+matching bus row.
+
+### `ZiskFv/Sail/`
+
+Per-opcode Sail-side mirrors (lowercase, one per opcode: `add.lean`,
+`lw.lean`, …, 65 files total = 63 opcodes + `Auxiliaries.lean` +
+`BusEffect.lean`). Each
+opcode file does two jobs:
+
+1. **Defines a pure version** in `PureSpec` namespace — the Sail-extracted
+   `execute_instruction` rewritten in clean BitVec/Option terms, monad
+   stripped, decoder dispatch removed, ZisK-irrelevant trap arms eliminated
+   via the four platform axioms in `Auxiliaries.lean` (PMP/CLINT/PMA inert,
+   Zicfilp disabled — all scope-honest for ZisK's RV64IM target, ledger
+   entries 10–13).
+2. **Proves an equivalence lemma**
+   `execute_<OP>_pure_equiv : LeanRV64D.Functions.execute (.<shape> …) state = … = PureSpec.execute_<shape>_<op>_pure …`.
+   The lemma is what keeps the pure form honest — drift between
+   `build/sail-lean/` and the pure form is a build failure, not a silent
+   trust extension.
+
+`BusEffect.lean` defines the `bus_effect` function that produces a
+Sail-shaped state update from circuit-side rows — this is the RHS of every
+equivalence theorem.
+
+### `ZiskFv/Tactics/`
+
+Archetype tactics: instruction-shape templates that drive the per-opcode
+proofs. The 12 archetypes (`ALURTypeArchetype`, `ALUITypeArchetype`,
+`BranchArchetype`, `LoadArchetype`, `StoreArchetype`, `JumpArchetype`,
+`MulArchetype`, `ShiftArchetype`, `SignExtendLoadArchetype`,
+`RTypeWArchetype`, `UTypeArchetype`, `ArithSMArchetype`) each package the
+standard simp/rewrite cascade for one instruction shape. Per-opcode files
+under `Equivalence/` mostly instantiate the relevant archetype with the
+opcode's specific Sail-side rewrite and `Circuit/` compositional theorem;
+this is what makes 63 individual proofs feasible without 63 bespoke proof
+scripts.
+
+### `ZiskFv/Equivalence/`
+
+The top-level FV theorems — one file per opcode, each containing:
+
+- `equiv_<OP>_metaplan : execute_instruction (.<shape> …) state = (bus_effect exec_row mem_row state).2`
+  — the canonical metaplan target. Both sides live in Sail's state space:
+  the LHS is Sail's `execute`; the RHS comes from `Sail/BusEffect.lean`.
+- A `_tier1` companion (45 of 63 opcodes) that closes the rd-value derivation
+  entirely from circuit constraints, removing parameters retired by the
+  finishing series (`h_rd_val`, `h_byte_sum`, etc. — see
+  `trust/forbidden-param-shapes.txt`).
+
+Subdirectory `RdValDerivation/` factors out shared rd-value lemmas across
+opcodes that share a derivation pattern (Arith, BinaryCompare, JumpUType,
+MulDivRemUnsigned). **`lake build` succeeding on `Equivalence/` IS the
+formal-verification claim** — everything else in the tree is scaffolding
+toward this point. All 63 RV64IM opcodes covered, 0 sorries.
+
+## Inside `build/`
+
+```
+build/
+├── sail-lean/      Sail RV64 spec compiled to Lean (LeanRV64D module). 149 generated files.
+├── extraction/     Lake lib `Extraction` — auto-generated PIL2 extraction (11 per-AIR files).
+└── zisk.pilout     Compiled ZisK constraint set (protobuf). The pil-extract input.
+```
+
+Everything under `/build/` is regenerated by `nix run .#populate` from
+flake-pinned inputs and is gitignored. The audit surface for these
+artifacts is `flake.lock` (content-hashed pins of the Sail compiler,
+sail-riscv source, ZisK source, and `pil2-*` toolchain), not the files
+themselves.
+
+### `build/sail-lean/`
+
+The Sail RV64 spec mechanically compiled to Lean by
+[`NethermindEth/sail-riscv-lean`](https://github.com/NethermindEth/sail-riscv-lean)
+(149 files). Defines `LeanRV64D.Functions.execute`, the monadic decoder
+that pattern-matches every RV64GD instruction, plus all supporting types
+(registers, memory model, traps, PMP, CLINT, …). This is the **trusted
+source of truth** for the LHS of every equivalence theorem; per-opcode
+ergonomic mirrors live in `ZiskFv/Sail/`.
+
+### `build/extraction/`
+
+A standalone Lake library named `Extraction`, required by the root
+`lakefile.toml` via `[[require]] path = "build/extraction"`. Contains the
+11 auto-generated per-AIR `.lean` files emitted by `tools/pil-extract`
+from `build/zisk.pilout` (`Arith`, `Binary`, `BinaryAdd`, `BinaryExtension`,
+`Buses`, `Main`, `Mem`, `MemAlign`, `MemAlignByte`, `MemAlignReadByte`,
+`MemAlignWriteByte`). Each file defines anonymous `constraint_N_every_row`
+predicates directly over witness columns; the human-readable named bridges
+live in `ZiskFv/Airs/`. The static `lakefile.toml` and root `Extraction.lean`
+are written into the directory by `nix/populate.nix` (they aren't part of
+any Nix derivation), so wiping `build/` and re-running populate restores
+the full lib.
+
+### `build/zisk.pilout`
+
+The ZisK PIL2 constraint set in protobuf form, the output of `pil2-compile`
+applied to ZisK's `.pil` source tree. Input to `tools/pil-extract` (which
+produces `build/extraction/Extraction/*.lean`). At ~17 GiB peak / ~24 min
+wall on cold rebuild, this is the dominant cost in the `populate` pipeline.
 
 ## Trust gate (CI)
 
