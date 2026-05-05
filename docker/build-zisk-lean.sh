@@ -25,7 +25,7 @@ fi
 mkdir -p ZiskFv/Extraction
 echo "▶ Building tools/pil-extract…"
 (cd tools/pil-extract && cargo build --release --quiet)
-EXTRACT=tools/pil-extract/target/release/zisk-pil-extract
+EXTRACT=tools/pil-extract/target/release/pil-extract
 
 # --- Step 3: extract per-AIR Lean files ---
 echo "▶ Extracting AIR constraints to ZiskFv/Extraction/…"
