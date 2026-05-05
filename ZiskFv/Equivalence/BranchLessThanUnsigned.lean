@@ -3,12 +3,12 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.BranchLessThanUnsigned
+import ZiskFv.Circuit.BranchLessThanUnsigned
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.bltu
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.bltu
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
@@ -17,7 +17,7 @@ import ZiskFv.Airs.OpBusHypotheses
 End-to-end theorem for RV64 BLTU (Phase 3A B3). Combines:
 
 * `ZiskFv.Trusted.transpile_BLTU`,
-* `ZiskFv.Spec.BranchLessThanUnsigned.branch_ltu_compositional`
+* `ZiskFv.Circuit.BranchLessThanUnsigned.branch_ltu_compositional`
   (archetype at `opcode_lit = OP_LTU`),
 * `PureSpec.execute_BLTU_pure_equiv` (direct proof — Phase 4
   retired C2c).
@@ -31,7 +31,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.BranchLessThanUnsigned
+open ZiskFv.Circuit.BranchLessThanUnsigned
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

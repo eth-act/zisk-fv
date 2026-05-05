@@ -71,10 +71,10 @@ Then, once after cloning:
 ```bash
 nix run .#populate    # ~30 min cold; ~seconds warm via Nix store cache
                        # produces build/sail-lean/, build/zisk.pilout,
-                       # and ZiskFv/Extraction/*.lean
+                       # and build/extraction/Extraction/*.lean
 ```
 
-The artifacts persist under `build/` and `ZiskFv/Extraction/`, reused
+The artifacts persist under `build/`, reused
 on every subsequent `lake build`. Re-run only when `flake.lock` or any
 `nix/*.nix` file changes (in which case the rebuild is incremental
 via the Nix store).
@@ -135,7 +135,7 @@ store) is bounded by the pilout build:
 | Step                              | Peak RAM   | Wall time  |
 |-----------------------------------|------------|------------|
 | `.#zisk-pilout` (cold rebuild)    | ~17 GiB    | ~24 min    |
-| `lake build` worst process (`RV64D/sd.lean`) | ~8 GiB RSS / ~7 GiB PSS | (subset of total `lake build`) |
+| `lake build` worst process (`Sail/sd.lean`) | ~8 GiB RSS / ~7 GiB PSS | (subset of total `lake build`) |
 | Everything else                   | < 5 GiB    | minutes    |
 
 The pilout build dominates because `pil2-compiler` (Node, V8 heap

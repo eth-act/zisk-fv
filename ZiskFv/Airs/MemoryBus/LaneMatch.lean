@@ -94,7 +94,7 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.MemoryBus.BusShape
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BusShape (slotValue)
-open ZiskFv.Extraction.Buses
+open Extraction.Buses
 open ZiskFv.Extraction.MemoryBuses
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]

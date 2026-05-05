@@ -605,7 +605,7 @@
         <g>
           <rect x="40" y="160" width="280" height="60" rx="8" fill="#11141c" stroke="#2a2f3d"/>
           <text x="180" y="184" text-anchor="middle" fill="#e7e9ee" font-size="13">Lean pure spec per opcode</text>
-          <text x="180" y="204" text-anchor="middle" fill="#9aa0ad" font-size="11" font-family="JetBrains Mono, monospace">RV64D/&lt;op&gt;.lean (≡ Sail-Lean)</text>
+          <text x="180" y="204" text-anchor="middle" fill="#9aa0ad" font-size="11" font-family="JetBrains Mono, monospace">Sail/&lt;op&gt;.lean (≡ Sail-Lean)</text>
         </g>
 
         <!-- extracted -->
@@ -927,7 +927,7 @@
       <div class="card">
         <h3>Composition</h3>
         <p style="color:var(--muted);font-size:0.95rem;margin:0;">
-          <code>Spec/&lt;Op&gt;.lean</code> proves: "if the relevant AIR rows validate and the bus carries the right entry, the Sail spec output equals the bus-effect output." <code>Equivalence/&lt;Op&gt;.lean</code> wraps that into the metaplan target shape, with a Tier-1 companion that closes the rd-value derivation entirely from circuit constraints.
+          <code>Circuit/&lt;Op&gt;.lean</code> proves: "if the relevant AIR rows validate and the bus carries the right entry, the Sail spec output equals the bus-effect output." <code>Equivalence/&lt;Op&gt;.lean</code> wraps that into the metaplan target shape, with a Tier-1 companion that closes the rd-value derivation entirely from circuit constraints.
         </p>
       </div>
 
@@ -1180,7 +1180,7 @@
     <div class="arch-grid">
       <div class="card">
         <h3>Five-layer pipeline</h3>
-        <p style="color:var(--muted);font-size:0.95rem;margin:0;"><code>Extraction/</code> (auto-generated raw constraints) → <code>Airs/</code> (named-column structures) → <code>Constraints/</code> (simp bridges) → <code>Spec/</code> (circuit→semantic theorems) → <code>Equivalence/</code> (per-opcode final theorem). Identical layout in both projects.</p>
+        <p style="color:var(--muted);font-size:0.95rem;margin:0;"><code>Extraction/</code> (auto-generated raw constraints) → <code>Airs/</code> (named-column structures) → <code>Constraints/</code> (simp bridges) → <code>Circuit/</code> (circuit→semantic theorems; <code>Spec/</code> in openvm-fv) → <code>Equivalence/</code> (per-opcode final theorem).</p>
       </div>
       <div class="card">
         <h3>Final theorem shape</h3>
@@ -1192,7 +1192,7 @@
       </div>
       <div class="card">
         <h3>Per-opcode equivalence layout</h3>
-        <p style="color:var(--muted);font-size:0.95rem;margin:0;">One file per opcode under <code>Equivalence/&lt;Op&gt;.lean</code>; pure spec under <code>RV&lt;N&gt;D/&lt;op&gt;.lean</code>; circuit-correctness lemma under <code>Spec/&lt;Op&gt;.lean</code>. Same naming and same role-of-file.</p>
+        <p style="color:var(--muted);font-size:0.95rem;margin:0;">One file per opcode under <code>Equivalence/&lt;Op&gt;.lean</code>; pure Sail spec under <code>Sail/&lt;op&gt;.lean</code> (openvm-fv: <code>RV32D/&lt;op&gt;.lean</code>); circuit-correctness lemma under <code>Circuit/&lt;Op&gt;.lean</code> (openvm-fv: <code>Spec/&lt;Op&gt;.lean</code>). Same role-of-file.</p>
       </div>
     </div>
   </div>
@@ -1637,8 +1637,8 @@
     const sail1 = box(COLS.sail.x, 50, 'Sail RV64 spec', '/sail-riscv (.sail source)', 'trusted');
     const sail2 = box(COLS.sail.x, 130, 'sail_to_lean', 'mechanical translator (upstream)', 'tool');
     const sail3 = box(COLS.sail.x, 210, 'LeanRV64D', 'NethermindEth/sail-riscv-lean (pinned)', 'trusted');
-    const sail4 = box(COLS.sail.x, 290, 'ZiskFv/RV64D/<op>.lean', 'hand-written cleaner pure spec', 'proven');
-    const sail5 = box(COLS.sail.x, 370, 'execute_<OP>_pure_equiv', 'proves RV64D ≡ LeanRV64D', 'proven');
+    const sail4 = box(COLS.sail.x, 290, 'ZiskFv/Sail/<op>.lean', 'hand-written cleaner pure spec', 'proven');
+    const sail5 = box(COLS.sail.x, 370, 'execute_<OP>_pure_equiv', 'proves Sail ≡ LeanRV64D', 'proven');
     arrow(COLS.sail.x, sail1.y + BOX_H, COLS.sail.x, sail2.y);
     arrow(COLS.sail.x, sail2.y + BOX_H, COLS.sail.x, sail3.y);
     arrow(COLS.sail.x, sail3.y + BOX_H, COLS.sail.x, sail4.y);
@@ -1658,7 +1658,7 @@
     arrow(COLS.circuit.x, c5.y + BOX_H, COLS.circuit.x, c6.y);
 
     // CONVERGENCE
-    const m1 = box(COLS.mid.x, 470, 'ZiskFv/Spec/<Op>.lean', 'circuit-witness ≡ spec output', 'proven');
+    const m1 = box(COLS.mid.x, 470, 'ZiskFv/Circuit/<Op>.lean', 'circuit-witness ≡ spec output', 'proven');
     const m2 = box(COLS.mid.x, 560, 'ZiskFv/Equivalence/<Op>.lean', 'equiv_<OP>_metaplan_tier1', 'proven');
     arrow(COLS.mid.x, m1.y + BOX_H, COLS.mid.x, m2.y);
 

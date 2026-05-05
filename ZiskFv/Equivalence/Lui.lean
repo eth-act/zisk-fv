@@ -3,13 +3,13 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.LoadUpperImmediate
+import ZiskFv.Circuit.LoadUpperImmediate
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.lui
+import ZiskFv.Sail.lui
 import ZiskFv.Airs.BusHypotheses
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.RdValDerivation.JumpUType
 
@@ -19,7 +19,7 @@ End-to-end theorem for RV64 LUI (Phase 3C Track T-U1). Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_LUI`),
 * the compositional LUI spec
-  (`ZiskFv.Spec.LoadUpperImmediate.lui_pc_advance` +
+  (`ZiskFv.Circuit.LoadUpperImmediate.lui_pc_advance` +
   `lui_store_value_lo`/`_hi`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_LUI_pure_equiv`, closed Phase 3B),
@@ -43,7 +43,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.LoadUpperImmediate
+open ZiskFv.Circuit.LoadUpperImmediate
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

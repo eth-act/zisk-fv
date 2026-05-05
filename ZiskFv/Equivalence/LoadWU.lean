@@ -3,14 +3,14 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.LoadWU
-import ZiskFv.Spec.MemModel
+import ZiskFv.Circuit.LoadWU
+import ZiskFv.Circuit.MemModel
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.lwu
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.lwu
+import ZiskFv.Sail.BusEffect
 
 /-!
 End-to-end theorem for RV64 LWU (load word, unsigned / zero-extended).
@@ -30,8 +30,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Spec.LoadD
-open ZiskFv.Spec.LoadWU
+open ZiskFv.Circuit.LoadD
+open ZiskFv.Circuit.LoadWU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -135,7 +135,7 @@ theorem equiv_LWU_metaplan
         risc_v_assumptions h_opcode_assumptions]
   symm
   have h_mem :=
-    ZiskFv.Spec.MemModel.mem_load_correct_4byte
+    ZiskFv.Circuit.MemModel.mem_load_correct_4byte
       main mem r_main e1 state h_main_emit_b
   obtain ⟨_h_pc, _h_r1_read,
           h_d0, h_d1, h_d2, h_d3,

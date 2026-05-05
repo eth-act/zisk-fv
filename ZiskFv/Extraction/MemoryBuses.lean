@@ -1,13 +1,13 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Extraction.Buses
+import Extraction.Buses
 
 set_option linter.all false
 
 namespace ZiskFv.Extraction.MemoryBuses
 
-open ZiskFv.Extraction.Buses
+open Extraction.Buses
 
 /-! Bus-emission specs auto-extracted from `gsum_debug_data` hints
 attached to AIR `Main` (group 0, air idx 0). Filter: bus_id = 10

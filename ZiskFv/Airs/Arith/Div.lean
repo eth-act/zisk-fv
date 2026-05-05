@@ -2,7 +2,7 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Extraction.Arith
+import Extraction.Arith
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.Arith.CarryChain
 

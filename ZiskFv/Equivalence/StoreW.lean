@@ -3,15 +3,15 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.StoreD
-import ZiskFv.Spec.StoreW
-import ZiskFv.Spec.MemModel
+import ZiskFv.Circuit.StoreD
+import ZiskFv.Circuit.StoreW
+import ZiskFv.Circuit.MemModel
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.sw
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.sw
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Tactics.StoreArchetype
 
 /-!
@@ -34,8 +34,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Spec.StoreD
-open ZiskFv.Spec.StoreW
+open ZiskFv.Circuit.StoreD
+open ZiskFv.Circuit.StoreW
 open ZiskFv.Tactics.StoreArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]

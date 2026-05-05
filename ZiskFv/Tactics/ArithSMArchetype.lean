@@ -5,7 +5,7 @@ import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Spec.Mul
+import ZiskFv.Circuit.Mul
 
 /-!
 **Arith state-machine archetype — DIV/REM subfamily** (Phase 3C T-D).
@@ -54,7 +54,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithDiv
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
-open ZiskFv.Spec.Mul
+open ZiskFv.Circuit.Mul
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

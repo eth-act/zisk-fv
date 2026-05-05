@@ -4,7 +4,7 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Spec.BranchEqual
+import ZiskFv.Circuit.BranchEqual
 
 /-!
 **Branch archetype macros / generic lemmas** (Phase 2 A1-M).

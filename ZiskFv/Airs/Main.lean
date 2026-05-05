@@ -2,7 +2,7 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Extraction.Main
+import Extraction.Main
 
 /-!
 Named-column mirror of the ADD subset of ZisK's `Main` AIR, plus the

@@ -7,7 +7,7 @@ import ZiskFv.Fundamentals.PackedBitVec.Extensions
 import ZiskFv.Fundamentals.PackedBitVec.NoWrap
 import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
 import ZiskFv.Fundamentals.Execution
-import ZiskFv.RV64D.mulw
+import ZiskFv.Sail.mulw
 
 /-!
 # RdValDerivation.MulDivRemUnsigned — `h_rd_val` discharge lemmas for MUL/MULHU/DIVU/REMU/MULW

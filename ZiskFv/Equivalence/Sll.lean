@@ -4,12 +4,12 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Fundamentals.Execution
-import ZiskFv.Spec.Sll
+import ZiskFv.Circuit.Sll
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.sll
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.sll
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
@@ -42,7 +42,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.Sll
+open ZiskFv.Circuit.Sll
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

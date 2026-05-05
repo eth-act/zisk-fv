@@ -10,10 +10,10 @@ import ZiskFv.Airs.BinaryTable
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
-import ZiskFv.Spec.Slt
-import ZiskFv.Spec.Sltu
-import ZiskFv.Spec.Slti
-import ZiskFv.Spec.Sltiu
+import ZiskFv.Circuit.Slt
+import ZiskFv.Circuit.Sltu
+import ZiskFv.Circuit.Slti
+import ZiskFv.Circuit.Sltiu
 import ZiskFv.Equivalence.RdValDerivation.Arith
 
 /-!

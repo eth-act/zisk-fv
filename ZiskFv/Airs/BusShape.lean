@@ -2,7 +2,7 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Extraction.Buses
+import Extraction.Buses
 import ZiskFv.Extraction.OperationBuses
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
@@ -10,7 +10,7 @@ import ZiskFv.Airs.OperationBus
 /-!
 # BusShape — derivation lemmas linking extracted bus specs to hand-written `OperationBusEntry`s
 
-`ZiskFv.Extraction.Buses` is auto-generated from the pilout's
+`Extraction.Buses` is auto-generated from the pilout's
 `gsum_debug_data` hints (Track O POC). It mirrors the PIL2 macros'
 runtime view of bus emissions: a `BusEmissionSpec` carries the bus id,
 the multiplicity expression, and a tuple of named slots whose values are
@@ -37,7 +37,7 @@ itself — it's a pure `def`.
 namespace ZiskFv.Airs.BusShape
 
 open Goldilocks
-open ZiskFv.Extraction.Buses
+open Extraction.Buses
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 

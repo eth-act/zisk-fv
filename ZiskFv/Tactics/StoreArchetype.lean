@@ -5,7 +5,7 @@ import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Spec.StoreD
+import ZiskFv.Circuit.StoreD
 
 /-!
 **Store archetype macros / generic lemmas** (Phase 2 A4-M).
@@ -67,7 +67,7 @@ open Goldilocks
 open Interaction
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Spec.StoreD
+open ZiskFv.Circuit.StoreD
 open ZiskFv.Trusted
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]

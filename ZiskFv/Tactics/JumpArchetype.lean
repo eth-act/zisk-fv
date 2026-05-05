@@ -4,7 +4,7 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Spec.Jal
+import ZiskFv.Circuit.Jal
 
 /-!
 **Jump archetype macros / generic lemmas** (Phase 2 A2-M).

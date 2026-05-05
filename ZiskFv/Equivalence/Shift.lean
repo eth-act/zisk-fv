@@ -4,12 +4,12 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Fundamentals.Execution
-import ZiskFv.Spec.Shift
+import ZiskFv.Circuit.Shift
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.sllw
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.sllw
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
@@ -26,7 +26,7 @@ Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_SLLW`, `m32 = 1`);
 * the compositional SLLW Main-row spec
-  (`ZiskFv.Spec.Shift.sllw_compositional` — high bus lanes zero);
+  (`ZiskFv.Circuit.Shift.sllw_compositional` — high bus lanes zero);
 * the Sail pure-function equivalence
   (`PureSpec.execute_RTYPE_sllw_pure_equiv`).
 
@@ -51,7 +51,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.Shift
+open ZiskFv.Circuit.Shift
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

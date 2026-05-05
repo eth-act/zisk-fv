@@ -2,7 +2,7 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Extraction.Mem
+import Extraction.Mem
 
 /-!
 Named-column mirror of the extracted ZisK `Mem` AIR (pilout idx 2),

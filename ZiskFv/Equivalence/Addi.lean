@@ -3,12 +3,12 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.Addi
+import ZiskFv.Circuit.Addi
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.addi
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.addi
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.Binary.BinaryAdd
@@ -39,7 +39,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.Addi
+open ZiskFv.Circuit.Addi
 open ZiskFv.Tactics.ALURTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.Airs.BinaryAdd
@@ -165,7 +165,7 @@ theorem equiv_ADDI_metaplan_tier1
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : addi_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     -- Tier-1 discharge parameters (replacing the OUTPUT-EQ h_rd_val)
-    (h_circuit : ZiskFv.Spec.Addi.addi_circuit_holds_with_binaryadd m b r_main r_binary)
+    (h_circuit : ZiskFv.Circuit.Addi.addi_circuit_holds_with_binaryadd m b r_main r_binary)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
     (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)

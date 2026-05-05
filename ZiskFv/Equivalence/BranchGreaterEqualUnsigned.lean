@@ -3,12 +3,12 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.BranchGreaterEqualUnsigned
+import ZiskFv.Circuit.BranchGreaterEqualUnsigned
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.bgeu
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.bgeu
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
@@ -17,7 +17,7 @@ import ZiskFv.Airs.OpBusHypotheses
 End-to-end theorem for RV64 BGEU (Phase 3A B4). Combines:
 
 * `ZiskFv.Trusted.transpile_BGEU`,
-* `ZiskFv.Spec.BranchGreaterEqualUnsigned.branch_geu_compositional`
+* `ZiskFv.Circuit.BranchGreaterEqualUnsigned.branch_geu_compositional`
   (archetype at `opcode_lit = OP_LTU`),
 * `PureSpec.execute_BGEU_pure_equiv` (direct proof — Phase 4
   retired C2d).
@@ -31,7 +31,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.BranchGreaterEqualUnsigned
+open ZiskFv.Circuit.BranchGreaterEqualUnsigned
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

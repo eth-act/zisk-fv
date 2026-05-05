@@ -3,12 +3,12 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Spec.Sub
+import ZiskFv.Circuit.Sub
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
-import ZiskFv.RV64D.sub
-import ZiskFv.RV64D.BusEffect
+import ZiskFv.Sail.sub
+import ZiskFv.Sail.BusEffect
 import ZiskFv.Tactics.ALURTypeArchetype
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
@@ -42,7 +42,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Spec.Sub
+open ZiskFv.Circuit.Sub
 open ZiskFv.Tactics.ALURTypeArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]

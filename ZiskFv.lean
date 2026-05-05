@@ -6,13 +6,13 @@ import ZiskFv.Airs.Arith.ArithTable
 import ZiskFv.Airs.Arith.ArithRangeTable
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.GoldilocksBridge
-import ZiskFv.RV64D.BusEffect
-import ZiskFv.Extraction.BinaryAdd
-import ZiskFv.Extraction.Main
+import ZiskFv.Sail.BusEffect
+import Extraction.BinaryAdd
+import Extraction.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Extraction.Buses
+import Extraction.Buses
 import ZiskFv.Extraction.OperationBuses
 import ZiskFv.Airs.BusShape
 import ZiskFv.Airs.OpBusEffect
@@ -21,12 +21,12 @@ import ZiskFv.Extraction.MemoryBuses
 import ZiskFv.Airs.MemoryBus.Projection
 import ZiskFv.Airs.MemoryBus.BusShape
 import ZiskFv.Airs.MemoryBus.LaneMatch
-import ZiskFv.Extraction.Mem
+import Extraction.Mem
 import ZiskFv.Airs.Mem
-import ZiskFv.Extraction.MemAlign
-import ZiskFv.Extraction.MemAlignByte
-import ZiskFv.Extraction.MemAlignReadByte
-import ZiskFv.Extraction.MemAlignWriteByte
+import Extraction.MemAlign
+import Extraction.MemAlignByte
+import Extraction.MemAlignReadByte
+import Extraction.MemAlignWriteByte
 import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
@@ -41,7 +41,7 @@ import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
 import ZiskFv.Fundamentals.PackedBitVec.SignedNoWrap
 -- finishing5 S2: wide-PC no-wrap toolkit (PC values can exceed GL_prime).
 import ZiskFv.Fundamentals.PackedBitVec.WidePCNoWrap
-import ZiskFv.Spec.Add
+import ZiskFv.Circuit.Add
 import ZiskFv.Equivalence.Add
 -- Phase 4 T-LINT re-export audit: missing direct imports for older opcodes
 -- whose equivalence theorems shipped before the coverage-gate discipline.
@@ -109,8 +109,8 @@ import ZiskFv.Equivalence.Lh
 import ZiskFv.Equivalence.Lb
 -- Track N K4 — Signed-case PackedBitVec + MulFieldSigned + DivFieldSigned
 import ZiskFv.Fundamentals.PackedBitVec.Signed
-import ZiskFv.Spec.MulFieldSigned
-import ZiskFv.Spec.DivFieldSigned
+import ZiskFv.Circuit.MulFieldSigned
+import ZiskFv.Circuit.DivFieldSigned
 -- Phase 3C T-D — DIV/REM
 import ZiskFv.Equivalence.Div
 import ZiskFv.Equivalence.Divu
@@ -120,25 +120,25 @@ import ZiskFv.Equivalence.Remu
 -- pure-spec file, even those whose Equivalence file hasn't landed yet.
 -- Any RV64D file not yet pulled in by an Equivalence module goes here
 -- so regressions surface at build time.
-import ZiskFv.RV64D.Auxiliaries
-import ZiskFv.RV64D.addi
-import ZiskFv.RV64D.addiw
-import ZiskFv.RV64D.addw
-import ZiskFv.RV64D.andi
-import ZiskFv.RV64D.div
-import ZiskFv.RV64D.divu
-import ZiskFv.RV64D.lb
-import ZiskFv.RV64D.lh
-import ZiskFv.RV64D.lw
-import ZiskFv.RV64D.ori
-import ZiskFv.RV64D.rem
-import ZiskFv.RV64D.remu
-import ZiskFv.RV64D.slt
-import ZiskFv.RV64D.slti
-import ZiskFv.RV64D.sltiu
-import ZiskFv.RV64D.sltu
-import ZiskFv.RV64D.subw
-import ZiskFv.RV64D.xori
+import ZiskFv.Sail.Auxiliaries
+import ZiskFv.Sail.addi
+import ZiskFv.Sail.addiw
+import ZiskFv.Sail.addw
+import ZiskFv.Sail.andi
+import ZiskFv.Sail.div
+import ZiskFv.Sail.divu
+import ZiskFv.Sail.lb
+import ZiskFv.Sail.lh
+import ZiskFv.Sail.lw
+import ZiskFv.Sail.ori
+import ZiskFv.Sail.rem
+import ZiskFv.Sail.remu
+import ZiskFv.Sail.slt
+import ZiskFv.Sail.slti
+import ZiskFv.Sail.sltiu
+import ZiskFv.Sail.sltu
+import ZiskFv.Sail.subw
+import ZiskFv.Sail.xori
 
 -- Track N Phase 2: per-shape h_rd_val derivation lemmas.
 import ZiskFv.Equivalence.RdValDerivation.Arith

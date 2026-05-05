@@ -27,8 +27,8 @@ ZiskFv/Airs/Arith/ArithTable.lean
 ZiskFv/Airs/Arith/ArithRangeTable.lean
 
 # Sail-state ↔ Mem AIR fidelity (MS-L / MS-S).
-ZiskFv/Spec/MemModel.lean
+ZiskFv/Circuit/MemModel.lean
 
 # Small Sail-side simp helpers (locally proven; mirrors openvm-fv's
 # RV32D/Auxiliaries.lean pattern).
-ZiskFv/RV64D/Auxiliaries.lean
+ZiskFv/Sail/Auxiliaries.lean
