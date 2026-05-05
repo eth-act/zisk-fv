@@ -10,16 +10,29 @@ name: proofs
 # nixpkgs rev) by content hash, so the same build runs across machines.
 
 on:
-  # Run only on push to main (post-merge), not on PRs. The full
-  # pipeline is ~50 min cold / ~10 min warm; running it on every PR
-  # commit dominates self-hosted runner time. Trade-off: PR breakage
-  # is caught post-merge instead of pre-merge. Mitigation: the cheap
-  # trust-gate.yml workflow still runs on every PR, catching the
-  # axiom/baseline/sorry/uniformity regressions that account for
-  # most accidental breakage.
-  #
-  # Path filter restricts even pushes to main to changes that can
-  # alter the proof outcome (skipping pure-doc commits).
+  # On PRs the workflow is opt-in: it only runs when the `run-ci` label
+  # is present. Labels require Triage role or higher to apply, so an
+  # external contributor cannot self-trigger a ~30–50 min CI run from a
+  # fork. The job-level `if:` enforces the gate; `types: [labeled,
+  # synchronize]` re-triggers on label apply and on subsequent pushes
+  # to an already-labeled PR. Path filters still apply as a secondary
+  # gate so pure-doc commits on a labeled PR don't burn runner time.
+  # Push to main and manual `workflow_dispatch` are unaffected.
+  pull_request:
+    types: [labeled, synchronize]
+    branches: [main]
+    paths:
+      - 'ZiskFv/**'
+      - 'tools/pil-extract/**'
+      - 'lake-manifest.json'
+      - 'lakefile.toml'
+      - 'lean-toolchain'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'nix/**'
+      - 'bin/test.sh'
+      - 'trust/**'
+      - '.github/workflows/proofs.yml'
   push:
     branches: [main]
     paths:
@@ -51,6 +64,9 @@ jobs:
     # 25371352799), which fits comfortably on the 16 GiB L runner.
     # Net effect: warm PRs (~99% of them) pay the cheaper L runner.
     name: pick runner based on cachix state
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'run-ci')
     runs-on: ubuntu-latest
     outputs:
       runner: ${{ steps.pick.outputs.runner }}

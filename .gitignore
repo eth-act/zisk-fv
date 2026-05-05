@@ -33,6 +33,7 @@ docs/site/*.png
 ZiskFv/Extraction/*.lean
 !ZiskFv/Extraction/ArithTable.lean
 !ZiskFv/Extraction/MemoryBuses.lean
+!ZiskFv/Extraction/OperationBuses.lean
 
 # Nix flake build outputs (symlinks)
 /result

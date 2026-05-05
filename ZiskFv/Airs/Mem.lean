@@ -36,8 +36,8 @@ Column layout taken from the witness-column header in
 * 7: `value[1]`
 * 8: `wr`
 * 9: `previous_step`
-* 10: `increment[0]`
-* 11: `increment[1]`
+* 10: `l_increment` (named `increment[0]` pre-v0.16.0, when bit-width was 18+18 → 22+16)
+* 11: `h_increment` (named `increment[1]` pre-v0.16.0)
 * 12: `read_same_addr`
 Stage-2 columns:
 * 0: `gsum`
