@@ -22,8 +22,12 @@ concurrency:
 jobs:
   lake-build:
     name: lake build (full FV check)
-    # GitHub Hosted XL runner (~16 vCPU / 64 GB RAM). Same labels used
-    # by eth-act/zkevm-test-monitor's nightly zkVM update workflows.
+    # eth-act self-hosted XL runner (16 vCPU / 32 GB RAM). XL is
+    # required for the cold pilout build, not for lake build:
+    # pil2-compiler launches `node --max-old-space-size=12288` which
+    # peaks ~17 GiB total RSS. The 16 GB L runner OOM-kills there
+    # (run 25348554671 confirmed exit 137). On warm cachix runs the
+    # pilout output is fetched in seconds and lake fits anywhere.
     runs-on: ["self-hosted-ghr", "size-xl-x64"]
     # Cold first run: ~30 min nix populate + ~90 min lake build (the
     # runner's single-thread perf is significantly slower than typical
@@ -85,12 +89,12 @@ jobs:
 
       - name: bin/test.sh (cargo + lake + trust gate + flake check)
         env:
-          # threads=2 still OOM'd: a single lean compiling RV64D.sd
-          # peaks at ~25 GB, and the 32 GB runner couldn't fit two
-          # leans simultaneously when sd was one of them. Drop to 1
-          # for a definitive answer on whether the heaviest file
-          # itself fits. Run 25249689278 trace shows the OOM event.
-          LEAN_NUM_THREADS: "1"
+          # threads=2 leaves comfortable headroom on the 32 GB XL
+          # runner: post the PR #4 sd refactor the worst lean process
+          # peaks at ~8 GiB RSS / ~7 GiB PSS, so two concurrent leans
+          # fit with margin even on the heaviest pair. Bumping further
+          # is plausible but unverified — keep matched with bin/test.sh.
+          LEAN_NUM_THREADS: "2"
         run: |
           # Memory + lean-process sidecar. Run 25230110804 died with no
           # step log content preserved → strong signal the runner host
