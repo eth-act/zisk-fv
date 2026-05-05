@@ -54,16 +54,16 @@
     "pil2-proofman-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1773934051,
-        "narHash": "sha256-M4sf0WLF3d8DmtiWArarfZS78OLqj6geSI43J5jWfBA=",
+        "lastModified": 1777581721,
+        "narHash": "sha256-d96RLAolTCoP2zs6R+Q6Zi/JpmvyJApgijZ5eoVVVNU=",
         "owner": "0xPolygonHermez",
         "repo": "pil2-proofman",
-        "rev": "971209423e8fa53fa32dc747744d68c65aafa6c7",
+        "rev": "ff0e33a9b40f2467b35ef26aa2aabb4a624dfed3",
         "type": "github"
       },
       "original": {
         "owner": "0xPolygonHermez",
-        "ref": "v0.16.1",
+        "ref": "v0.17.0",
         "repo": "pil2-proofman",
         "type": "github"
       }
@@ -131,17 +131,17 @@
     "zisk-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1774024716,
-        "narHash": "sha256-4LG9R9CpsP4kLJ6Cvk8Afu7wGYjxTl1ZLIrgFPdTdAM=",
+        "lastModified": 1777619881,
+        "narHash": "sha256-ZVlMF3EUzk1kajzXwnW7+Tj1Ms9p6bFGGZPKx7v1nZo=",
         "owner": "0xPolygonHermez",
         "repo": "zisk",
-        "rev": "48cf7ccefb5ed62261abf6bfb007b5be8a23c547",
+        "rev": "b63274507a040bf9e09d22214df43066e8f80cb7",
         "type": "github"
       },
       "original": {
         "owner": "0xPolygonHermez",
+        "ref": "v0.17.0",
         "repo": "zisk",
-        "rev": "48cf7ccefb5ed62261abf6bfb007b5be8a23c547",
         "type": "github"
       }
     }
