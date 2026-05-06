@@ -23,7 +23,7 @@ End-to-end theorem for RV64 LUI. Combines:
   `lui_store_value_lo`/`_hi`),
 * the Sail pure-function equivalence (`PureSpec.execute_LUI_pure_equiv`),
 
-into a metaplan-shaped theorem:
+into a canonical theorem:
 
 * `equiv_LUI_metaplan` — the metaplan target shape:
   `execute_instruction (.UTYPE (imm, rd, uop.LUI)) state
@@ -137,7 +137,7 @@ theorem equiv_LUI_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: LUI without `h_rd_val` parameter.**
+/-- **Tier-1: LUI without `h_rd_val` parameter.**
 
     Same conclusion as `equiv_LUI_metaplan`, but the `h_rd_val`
     OUTPUT-EQ parameter is **derived internally** via the
@@ -186,7 +186,7 @@ theorem equiv_LUI_metaplan_tier1
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
   -- Need lui_input.imm = imm to thread the conclusion shape.
   rw [← h_input_imm] at h_rd_val
-  -- Delegate to the parametric metaplan with the derived h_rd_val.
+  -- Delegate to the parametric theorem with the derived h_rd_val.
   exact equiv_LUI_metaplan state lui_input imm rd exec_row e_rd nextPC_val
     h_input_imm h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

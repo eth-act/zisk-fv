@@ -139,7 +139,7 @@ theorem equiv_MULHU_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: MULHU without `h_rd_val` parameter.**
+/-- **Tier-1: MULHU without `h_rd_val` parameter.**
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mulhu`, then forwards
     to `equiv_MULHU_metaplan`. -/

@@ -26,7 +26,7 @@ End-to-end theorem for RV64 SUB. Mirrors
 * `sub_compositional` (the archetype specialization at `OP_SUB`) in
   place of `add_compositional`.
 
-Three metaplan-shaped theorems:
+Three canonical theorems:
 
 * `equiv_SUB` — circuit-level: Main's packed `c` equals the bus
   entry's packed `c`.
@@ -136,7 +136,7 @@ theorem equiv_SUB_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: SUB without `h_rd_val` parameter**. -/
+/-- **Tier-1: SUB without `h_rd_val` parameter**. -/
 theorem equiv_SUB_metaplan_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sub_input : PureSpec.SubInput)

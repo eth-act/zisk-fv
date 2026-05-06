@@ -14,7 +14,7 @@ Sibling of LW / LH under `SignExtendLoadArchetype`. Uses
 Bus-passthrough behaviour identical to LH.
 
 See `Spec/LoadWord.lean` for the compositional rationale. The
-Sail-level companion and metaplan theorem live in
+Sail-level companion and equivalence theorem live in
 `Equivalence/Lb.lean`.
 -/
 

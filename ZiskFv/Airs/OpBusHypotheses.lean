@@ -16,7 +16,7 @@ analogous equalities from the operation-bus precondition for the branch
 shape, where the Main memory bus is empty and rs1/rs2 reads route
 through the Binary state machine via the operation bus.
 
-Branch-family metaplan theorems consume a single
+Branch-family equivalence theorems consume a single
 `h_op_bus : (op_bus_effect ...).1` hypothesis instead of separate
 `h_input_r1` / `h_input_r2` parameters.
 -/

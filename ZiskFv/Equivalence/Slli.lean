@@ -27,7 +27,7 @@ swapped for `instruction.SHIFTIOP (shamt, r1, rd, sop.SLLI)`.
 **Note on bus shape.** Sail's `execute_SHIFTIOP` has a single register
 read (of `rs1`) whereas the Main-AIR emission pattern used by
 `bus_effect_matches_sail_alu_rrw` supplies three memory-bus entries
-(two reads + one write). The metaplan theorem here reuses the
+(two reads + one write). The equivalence theorem here reuses the
 three-entry interface: the caller supplies `[e0, e1, e2]` and the
 downstream bus-emission audit must justify the second read
 (`e1`) as a redundant re-read of `rs1` (or prove the actual Zisk
@@ -124,7 +124,7 @@ theorem equiv_SLLI_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: SLLI without `h_rd_val` parameter**. -/
+/-- **Tier-1: SLLI without `h_rd_val` parameter**. -/
 theorem equiv_SLLI_metaplan_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slli_input : PureSpec.SlliInput)

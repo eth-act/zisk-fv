@@ -24,7 +24,7 @@ End-to-end theorem for RV64 MUL. Combines:
 * the Sail pure-function equivalence
   (`PureSpec.execute_MULH_mul_pure_equiv`),
 
-into three metaplan-shaped theorems:
+into three canonical theorems:
 
 * `equiv_MUL` — circuit-level. Main's packed `c` equals Arith's packed
   result lanes, given the bus match.
@@ -156,7 +156,7 @@ theorem equiv_MUL_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: MUL without `h_rd_val` parameter.**
+/-- **Tier-1: MUL without `h_rd_val` parameter.**
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mul` from
     circuit-shaped primitives (chunks, ranges, chunk equations, byte-pack

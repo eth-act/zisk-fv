@@ -760,12 +760,12 @@ lemmas below ship as **named wrappers** of the 8-byte
 (8-insert chain in the modify lambda).
 
 The actual narrow-width collapse — replacing the 8-insert chain with
-an N-insert chain — happens at the metaplan caller via
+an N-insert chain — happens at the equivalence-layer caller via
 `Spec.MemModel.mem_store_correct_<n>byte` plus
 `Std.ExtHashMap.insert_eq_self`-style elimination of the trailing
 inserts under the byte-bus high-lane-match witnesses.
 
-The named wrappers exist so per-op metaplan files can reference
+The named wrappers exist so per-op equivalence files can reference
 their target lemma directly (`bus_effect_matches_sail_store_4byte_rrrw`
 for SW) without having to pick the 8-byte one and document why. -/
 

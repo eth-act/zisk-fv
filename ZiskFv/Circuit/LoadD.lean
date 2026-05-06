@@ -21,7 +21,7 @@ yield:
 * `next_pc = pc + 4`                       — PC advances by 4.
 
 This is the **A3 archetype** circuit-side spec. The Sail-level companion
-and metaplan theorem live in `Equivalence/LoadD.lean`.
+and equivalence theorem live in `Equivalence/LoadD.lean`.
 
 Unlike `Spec.Add`, LD does *not* use the operation bus — copyb is
 `OpType::Internal`, so Main constraint 9 discharges the `c = b` identity

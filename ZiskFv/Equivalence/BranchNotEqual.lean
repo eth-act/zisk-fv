@@ -36,7 +36,7 @@ into three theorems mirroring `Equivalence/BranchEqual.lean`:
     = (bus_effect exec_row mem_row state).2`.
 
 **Hypothesis-free bus side.** BEQ and BNE share shape (b) so the
-metaplan theorem reuses `bus_effect_matches_sail_beq` — the shape
+equivalence theorem reuses `bus_effect_matches_sail_beq` — the shape
 lemma is opcode-agnostic within shape (b).
 -/
 

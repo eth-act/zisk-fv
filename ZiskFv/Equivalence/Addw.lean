@@ -27,7 +27,7 @@ of `Equivalence.Sub` / `Equivalence.MulW` with:
 * `addw_compositional` (the RTypeWArchetype specialization at
   `OP_ADD_W`).
 
-Three metaplan-shaped theorems:
+Three canonical theorems:
 
 * `equiv_ADDW` — circuit-level: Main's packed `c` equals the bus
   entry's packed `c`.
@@ -140,14 +140,14 @@ theorem equiv_ADDW_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: ADDW without `h_rd_val` parameter.**
+/-- **Tier-1: ADDW without `h_rd_val` parameter.**
 
     Same conclusion as `equiv_ADDW_metaplan`, but the `h_rd_val` OUTPUT-EQ
     parameter is **derived internally** from circuit primitives via
     `RdValDerivation.Arith.h_rd_val_arith_addw` plus the
     `RdValDerivation.SailBridge.sail_addw_bridge` to translate from the
     discharge's `BitVec.signExtend 64 (BitVec.ofNat 32 a32sum + ...)` form
-    to the metaplan's `execute_RTYPEW_pure r1 r2 ropw.ADDW` form. -/
+    to the canonical `execute_RTYPEW_pure r1 r2 ropw.ADDW` form. -/
 theorem equiv_ADDW_metaplan_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addw_input : PureSpec.AddwInput)

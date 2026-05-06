@@ -17,7 +17,7 @@ passthrough factor.
 
 See `Spec/LoadWord.lean` for the compositional rationale (why signed
 loads use the bus-entry side rather than the memory-bus / `c_packed`
-side). The Sail-level companion and metaplan theorem live in
+side). The Sail-level companion and equivalence theorem live in
 `Equivalence/Lh.lean`.
 -/
 

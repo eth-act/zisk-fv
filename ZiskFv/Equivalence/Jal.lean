@@ -22,7 +22,7 @@ End-to-end theorem for RV64 JAL. Combines:
 * the compositional JAL spec (`ZiskFv.Circuit.Jal.jal_pc_advance`),
 * the Sail pure-function equivalence (`PureSpec.execute_JAL_pure_equiv`),
 
-into a metaplan-shaped theorem:
+into a canonical theorem:
 
 * `equiv_JAL_metaplan` — the metaplan target shape:
   `execute_instruction (.JAL (imm, rd)) state
@@ -213,7 +213,7 @@ theorem equiv_JAL_metaplan
                if_false, ite_false, bind, pure, EStateM.bind, EStateM.pure]
     rw [h_rd_val]
 
-/-- **Tier-1 metaplan: JAL without `h_rd_val` parameter.**
+/-- **Tier-1: JAL without `h_rd_val` parameter.**
 
     Companion to `equiv_JAL_metaplan` that drops the `h_rd_val :`
     OUTPUT-EQ residual parameter. Internally derives the rd-write
@@ -400,7 +400,7 @@ nextPC = .some (PC + 4) → Sail emits `Memory_Exception` (E_Fetch_Addr_Align).
 Misaligned-bit-0 case (bit0=1): throws=true → Sail throws Assertion. -/
 
 /-- **Misaligned-target companion (bit-1 case): Sail-side reduction.**
-    Mirrors `RV64D/jal.lean` lines 125-132 lifted to the metaplan
+    Mirrors `RV64D/jal.lean` lines 125-132 lifted to the equivalence
     surface. `rd` write is suppressed by `!bit1_valid` triggering the
     `.none` arm of the dite. -/
 theorem equiv_JAL_metaplan_misaligned

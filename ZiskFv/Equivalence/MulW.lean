@@ -127,7 +127,7 @@ theorem equiv_MULW_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: MULW without `h_rd_val` parameter.**
+/-- **Tier-1: MULW without `h_rd_val` parameter.**
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mulw`, then forwards
     to `equiv_MULW_metaplan`. The MULW Tier-1 lemma routes through a single

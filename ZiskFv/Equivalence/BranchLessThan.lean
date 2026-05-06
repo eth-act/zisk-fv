@@ -36,7 +36,7 @@ into three theorems mirroring `Equivalence/BranchEqual.lean` /
     = (bus_effect exec_row mem_row state).2`.
 
 **Hypothesis-free bus side.** BLT shares shape (b) with BEQ/BNE so
-the metaplan theorem reuses `bus_effect_matches_sail_beq` directly.
+the equivalence theorem reuses `bus_effect_matches_sail_beq` directly.
 -/
 
 namespace ZiskFv.Equivalence.BranchLessThan
@@ -307,7 +307,7 @@ Prop × EStateM.Result` is **hardcoded** to return
 execution-bus shape (length 2 + multiplicities ±1) is well-formed
 (`RV64D/BusEffect.lean:115-121`). It cannot model `Memory_Exception`.
 
-So the metaplan-shape equation
+So the canonical equation
 `execute_instruction (.BTYPE …) state = (bus_effect exec_row [] state).2`
 is **literally false** in the misaligned-success-fail case: the LHS
 returns `.ok (Memory_Exception …) state'` while the RHS returns

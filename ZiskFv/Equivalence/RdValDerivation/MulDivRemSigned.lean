@@ -250,7 +250,7 @@ overflow (`INT32_MIN`) special cases.
 
 The byte-sum is supplied directly (TRANSPILE-BRIDGE form, mirroring the
 unsigned MULW pattern). The `let` shape inlines `r1_lo32`, `r2_lo32`, `q32`
-to match the metaplan caller's signature.
+to match the caller's signature.
 -/
 
 /-- **`h_rd_val` discharge for DIVW (Tier 1).** -/

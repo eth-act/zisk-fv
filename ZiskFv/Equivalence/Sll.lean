@@ -131,7 +131,7 @@ theorem equiv_SLL_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: SLL without `h_rd_val` parameter**.
+/-- **Tier-1: SLL without `h_rd_val` parameter**.
 
     Derives `h_rd_val` internally via
     `RdValDerivation.BinaryShift.h_rd_val_shift_sll` plus

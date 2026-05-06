@@ -107,7 +107,7 @@ theorem equiv_SRLIW_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: SRLIW without `h_rd_val` parameter**. -/
+/-- **Tier-1: SRLIW without `h_rd_val` parameter**. -/
 theorem equiv_SRLIW_metaplan_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srliw_input : PureSpec.SrliwInput)

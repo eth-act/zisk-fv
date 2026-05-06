@@ -32,7 +32,7 @@ With the zeroing hypothesis, `memory_entry_toField entry` collapses to
 `entry.x0` — the single loaded byte — matching Sail's zero-extension
 semantics for LBU.
 
-The Sail-level companion and metaplan theorem live in
+The Sail-level companion and equivalence theorem live in
 `Equivalence/LoadBU.lean`; the `LoadArchetype` macro is consumed to
 discharge the c-packed equation.
 -/

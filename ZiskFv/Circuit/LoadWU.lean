@@ -34,7 +34,7 @@ With the zeroing hypothesis, `memory_entry_toField entry = memory_entry_lo entry
 loaded value directly — matching Sail's `zero_extend 64` semantics for
 LWU.
 
-The Sail-level companion and metaplan theorem live in
+The Sail-level companion and equivalence theorem live in
 `Equivalence/LoadWU.lean`; the `LoadArchetype` macro is consumed to
 discharge the c-packed equation.
 -/

@@ -30,7 +30,7 @@ conclusion at the Equivalence layer composes this with an
 audit-deferred `h_bus_execute_matches_sail` hypothesis tying the
 circuit's bus effect to the Sail execution.
 
-The Sail-level companion and metaplan theorem live in
+The Sail-level companion and equivalence theorem live in
 `Equivalence/Lw.lean`; the `SignExtendLoadArchetype` macro is consumed
 to discharge the `a_hi = b_hi = 0` bus-zeroing corollary.
 -/

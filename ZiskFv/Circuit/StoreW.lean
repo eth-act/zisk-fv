@@ -87,7 +87,7 @@ theorem store_w_compositional
     conclusion as `store_d_compositional`: `c_packed = memory_entry_toField
     entry`. With the high-byte zeroing witness the RHS equals
     `memory_entry_lo entry`, but we expose the general form too so SW
-    composes uniformly with SD at the metaplan layer. -/
+    composes uniformly with SD at the equivalence layer. -/
 theorem store_w_compositional_general
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)

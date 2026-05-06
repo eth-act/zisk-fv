@@ -112,7 +112,7 @@ theorem equiv_SLTIU_metaplan
   · simp only [h_rd_zero, ↓reduceDIte]
     rw [h_rd_val]
 
-/-- **Tier-1 metaplan: SLTIU without `h_rd_val` parameter**. -/
+/-- **Tier-1: SLTIU without `h_rd_val` parameter**. -/
 theorem equiv_SLTIU_metaplan_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sltiu_input : PureSpec.SltiuInput)

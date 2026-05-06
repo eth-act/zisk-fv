@@ -25,7 +25,7 @@ End-to-end theorem for RV64 BGE. Combines:
 * the Sail pure-function equivalence (`PureSpec.execute_BGE_pure_equiv`).
 
 **Hypothesis-free bus side.** BGE shares shape (b) with BEQ/BNE so the
-metaplan reuses `bus_effect_matches_sail_beq`.
+equivalence theorem reuses `bus_effect_matches_sail_beq`.
 -/
 
 namespace ZiskFv.Equivalence.BranchGreaterEqual

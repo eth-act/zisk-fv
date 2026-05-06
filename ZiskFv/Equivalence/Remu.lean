@@ -23,7 +23,7 @@ End-to-end theorem for RV64 **REMU**. REMU is the
 spec (`execute_DIVREM_remu_pure` / `_equiv`), and the Sail instruction
 payload (`instruction.REM (r2, r1, rd, true)`).
 
-Three metaplan-shaped theorems: `equiv_REMU`, `equiv_REMU_sail`,
+Three canonical theorems: `equiv_REMU`, `equiv_REMU_sail`,
 `equiv_REMU_metaplan`. Arith-internal correctness (carry chains →
 unsigned 64-bit remainder) is delegated to future audit.
 -/
@@ -129,7 +129,7 @@ theorem equiv_REMU_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: REMU without `h_rd_val` parameter**.
+/-- **Tier-1: REMU without `h_rd_val` parameter**.
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_remu`, then forwards
     to `equiv_REMU_metaplan`. -/

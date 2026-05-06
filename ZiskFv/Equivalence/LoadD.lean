@@ -31,7 +31,7 @@ into three companion theorems paralleling the ADD and BEQ archetypes:
   lanes (as FGL) equal the 8-byte memory-bus entry's packed value,
   given the constraint-set + mode + memory-match hypotheses.
 * `equiv_LD_sail` — Sail-level. Wraps `execute_LOADD_pure_equiv`.
-* `equiv_LD_metaplan` — the metaplan-shaped theorem
+* `equiv_LD_metaplan` — the canonical theorem
   `execute_instruction (.LOAD …) = (bus_effect …).2`.
 
 The per-byte rd-write-value parameter `h_rd_val` is derived from

@@ -21,7 +21,7 @@ premise that ties Sail's narrow `modify_memory_4` 4-insert post-state
 to the bus's 8-insert update. The bridging premise factors out the
 per-byte work (ptr-match, low-byte match, high-byte no-op match) into
 a single caller obligation; it is decomposable into the smaller
-circuit-level facts but tractably composable at the metaplan layer.
+circuit-level facts but tractably composable at the equivalence layer.
 -/
 
 namespace ZiskFv.Equivalence.StoreW

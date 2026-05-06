@@ -70,7 +70,7 @@ We don't re-derive it here — `mem_load_correct` consumes it directly.
 
 ## Note on M-axiom retirement
 
-The current per-opcode load/store metaplan theorems (e.g.
+The current per-opcode load/store equivalence theorems (e.g.
 `equiv_LD_metaplan` in `Equivalence/LoadD.lean`) take an
 `h_bus_execute_matches_sail`-style hypothesis that ties the bus-effect's
 output state to Sail's pure-spec result. Under the bridge here, that

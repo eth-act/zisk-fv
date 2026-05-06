@@ -4,7 +4,7 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 
 /-!
-Field → `BitVec 64` lift used by the MUL / MULHU / MULW metaplan
+Field → `BitVec 64` lift used by the MUL / MULHU / MULW equivalence
 theorems to express the 8-byte register-write value
 `U64.toBV #v[e.x0, ..., e.x7]` in terms of an `FGL`-packed byte
 expression `x0 + x1*256 + … + x7*256^7`.

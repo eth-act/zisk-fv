@@ -25,7 +25,7 @@ read_xreg (wrap_to_regidx e_read.ptr) state
   = .ok (U64.toBV #v[e_read.x0, …, e_read.x7]) state
 ```
 
-The `chip_bus_hyps_<SHAPE>` lemmas let metaplan theorems consume a
+The `chip_bus_hyps_<SHAPE>` lemmas let equivalence theorems consume a
 single `h_bus_cond : (bus_effect exec_row mem_row state).1` hypothesis
 plus structural bus properties and split it into the individual read
 equalities.
@@ -46,7 +46,7 @@ open Goldilocks
 open Interaction
 
 /-- Inversion of `readReg_succ`: from a successful-read equation we can
-    recover the `state.regs.get?` equality. Used by metaplan theorems to
+    recover the `state.regs.get?` equality. Used by equivalence theorems to
     derive `h_input_pc` from the PC-read component of `bus_effect.1`. -/
 theorem readReg_of_readReg_succ
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}

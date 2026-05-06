@@ -114,7 +114,7 @@ theorem equiv_SLTU_metaplan
   · simp only [h_rd_zero, ↓reduceDIte]
     rw [h_rd_val]
 
-/-- **Tier-1 metaplan: SLTU without `h_rd_val` parameter**. -/
+/-- **Tier-1: SLTU without `h_rd_val` parameter**. -/
 theorem equiv_SLTU_metaplan_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sltu_input : PureSpec.SltuInput)
@@ -211,7 +211,7 @@ theorem equiv_SLTU_metaplan_tier1
       h_match_clo h_match_chi h_lane_rd
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_fl7_lt_2 h_input_r1_circuit h_input_r2_circuit
-  -- Bridge `BitVec.ult` (in the discharge lemma) to the metaplan's `<`.
+  -- Bridge `BitVec.ult` (in the discharge lemma) to the canonical `<`.
   have h_iff : (sltu_input.r1_val.ult sltu_input.r2_val = true)
       ↔ (sltu_input.r1_val < sltu_input.r2_val) := by
     constructor

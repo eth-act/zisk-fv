@@ -21,7 +21,7 @@ End-to-end theorem for RV64 BEQ. Combines:
 * the compositional BEQ spec (`ZiskFv.Circuit.BranchEqual.branch_eq_compositional`),
 * the Sail pure-function equivalence (`PureSpec.execute_BEQ_pure_equiv`),
 
-into a metaplan-shaped theorem:
+into a canonical theorem:
 
 * `equiv_BEQ_metaplan` — the metaplan target shape:
   `execute_instruction (.BTYPE (imm, r2, r1, BEQ)) state

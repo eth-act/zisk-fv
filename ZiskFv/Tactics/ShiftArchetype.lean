@@ -36,7 +36,7 @@ SRA can fan out from a single parametric proof skeleton.
 * `opcode_lit : FGL` — `OP_SLL_W = 36`, `OP_SRL_W = 37`, etc.
 * `m32_val : FGL` — `1` for `_w` variants, `0` otherwise. The
   archetype lemmas fire for both values; callers pin one at the
-  metaplan theorem layer.
+  equivalence theorem layer.
 
 ## Usage pattern
 

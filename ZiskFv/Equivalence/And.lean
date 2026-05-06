@@ -113,7 +113,7 @@ theorem equiv_AND_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: AND without `h_rd_val` parameter.**
+/-- **Tier-1: AND without `h_rd_val` parameter.**
 
     Same conclusion as `equiv_AND_metaplan`, but the `h_rd_val` OUTPUT-EQ
     parameter is **derived internally** from circuit primitives via the

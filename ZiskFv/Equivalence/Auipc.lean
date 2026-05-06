@@ -25,7 +25,7 @@ End-to-end theorem for RV64 AUIPC. Combines:
   `auipc_store_value_lo`/`_hi`),
 * the Sail pure-function equivalence (`PureSpec.execute_AUIPC_pure_equiv`),
 
-into a metaplan-shaped theorem:
+into a canonical theorem:
 
 * `equiv_AUIPC_metaplan` — the metaplan target shape:
   `execute_instruction (.UTYPE (imm, rd, uop.AUIPC)) state
@@ -146,7 +146,7 @@ theorem equiv_AUIPC_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: AUIPC without `h_rd_val` parameter.**
+/-- **Tier-1: AUIPC without `h_rd_val` parameter.**
 
     Companion to `equiv_AUIPC_metaplan` that drops the `h_rd_val :`
     OUTPUT-EQ residual parameter. Internally derives the rd-write

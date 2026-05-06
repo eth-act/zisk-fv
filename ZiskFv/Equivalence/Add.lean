@@ -165,12 +165,12 @@ theorem equiv_ADD_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: ADD without `h_rd_val` parameter.**
+/-- **Tier-1: ADD without `h_rd_val` parameter.**
 
     Same conclusion as `equiv_ADD_metaplan`, but the `h_rd_val` OUTPUT-EQ
     parameter is **derived internally** from circuit primitives via the
     `RdValDerivation.Arith.h_rd_val_arith_add` discharge lemma rather
-    than supplied by the caller. This is the honest Tier-1 metaplan
+    than supplied by the caller. This is the honest Tier-1
     closure: every parameter classifies as one of {CIRCUIT-CONSTRAINT,
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} —
     no parameter mentions the spec output `r1_val + r2_val`.
@@ -227,7 +227,7 @@ theorem equiv_ADD_metaplan_tier1
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_a_range h_b_range h_c_range
       h_input_r1_circuit h_input_r2_circuit
-  -- Delegate to the parametric metaplan with the derived h_rd_val.
+  -- Delegate to the parametric theorem with the derived h_rd_val.
   exact equiv_ADD_metaplan state add_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -247,7 +247,7 @@ theorem equiv_ADD_metaplan_tier1
     - `h_input_rd` comes from `h_rd_ptr` (ptr match) + `h_rd_idx`.
 
     Establishes `chip_bus_hyps_alu_rrw` and `readReg_of_readReg_succ` as
-    load-bearing for the ADD metaplan path. -/
+    load-bearing for the ADD equivalence path. -/
 theorem equiv_ADD_metaplan_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)

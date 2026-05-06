@@ -23,7 +23,7 @@ spec (`execute_DIVREM_divu_pure` / `_equiv`), and the Sail instruction
 payload (`instruction.DIV (r2, r1, rd, true)` — the boolean selector
 picks unsigned).
 
-Three metaplan-shaped theorems:
+Three canonical theorems:
 * `equiv_DIVU` — circuit-level, wraps `Spec.Divu.divu_compositional`.
 * `equiv_DIVU_sail` — Sail-level, wraps
   `PureSpec.execute_DIVREM_divu_pure_equiv`.
@@ -133,7 +133,7 @@ theorem equiv_DIVU_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: DIVU without `h_rd_val` parameter.**
+/-- **Tier-1: DIVU without `h_rd_val` parameter.**
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_divu`, then forwards
     to `equiv_DIVU_metaplan`. -/

@@ -2193,7 +2193,7 @@ axiom transpile_SUBW :
     the `b_lo`/`b_hi` decomposition (12-bit signed imm vs. 5-bit
     unsigned shamt). The correspondence between `(imm_lo, imm_hi)`
     and the Sail-side `BitVec.signExtend 64 imm` is discharged by
-    the Sail-level metaplan proof (`equiv_ADDIW_sail`), not by this
+    the Sail-level proof (`equiv_ADDIW_sail`), not by this
     axiom. -/
 axiom transpile_ADDIW :
     ∀ {C : Type → Type → Type} [Circuit FGL FGL C]

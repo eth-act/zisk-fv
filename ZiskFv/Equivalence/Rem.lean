@@ -26,7 +26,7 @@ End-to-end theorem for RV64 **REM**. REM is the
   `arith_archetype_rem_bus_match` at `OP_REM`),
 * `PureSpec.execute_DIVREM_rem_pure_equiv`.
 
-Three metaplan-shaped theorems:
+Three canonical theorems:
 * `equiv_REM` — circuit-level: Main's packed `c` = Arith's packed
   remainder (`d[]`).
 * `equiv_REM_sail` — Sail-level: `execute_instruction` on an RV64 REM
@@ -303,7 +303,7 @@ theorem equiv_REM_metaplan_op_bus
     rw [h_b_match]; exact h_r2_read
   exact equiv_REM_metaplan state rem_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
-/-- **Tier-1 metaplan: REM without `h_rd_val` parameter**.
+/-- **Tier-1: REM without `h_rd_val` parameter**.
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_rem`. -/
 theorem equiv_REM_metaplan_tier1

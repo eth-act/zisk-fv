@@ -24,7 +24,7 @@ on the circuit side. ADDI shares `OP_ADD` with ADD — the piggyback
 is transpiler-internal; the Main-AIR row carries the sign-extended
 12-bit immediate through `(b_lo, b_hi)` rather than from `xreg(rs2)`.
 
-**Bus-shape note (inherited from SLLI precedent).** The metaplan
+**Bus-shape note (inherited from SLLI precedent).** The equivalence
 hypotheses still take three memory-bus entries `[e0, e1, e2]` even
 though an ITYPE microinstruction reads only one register, to keep
 the `bus_effect_matches_sail_alu_rrw` interface uniform for all
@@ -130,7 +130,7 @@ theorem equiv_ADDI_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: ADDI without `h_rd_val` parameter.**
+/-- **Tier-1: ADDI without `h_rd_val` parameter.**
 
     Same conclusion as `equiv_ADDI_metaplan`, but the `h_rd_val`
     OUTPUT-EQ parameter is **derived internally** via the
@@ -190,7 +190,7 @@ theorem equiv_ADDI_metaplan_tier1
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_a_range h_b_range h_c_range
       h_input_r1_circuit h_input_imm_circuit
-  -- Delegate to the parametric metaplan with the derived h_rd_val.
+  -- Delegate to the parametric theorem with the derived h_rd_val.
   exact equiv_ADDI_metaplan state addi_input r1 rd imm exec_row e0 e1 e2
     h_input_r1 h_input_imm h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

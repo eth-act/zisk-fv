@@ -319,7 +319,7 @@ theorem equiv_MULH_metaplan_op_bus
     rw [h_b_match]; exact h_r2_read
   exact equiv_MULH_metaplan state mulh_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
-/-- **Tier-1 metaplan: MULH without `h_rd_val` parameter.**
+/-- **Tier-1: MULH without `h_rd_val` parameter.**
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_mulh`. -/
 theorem equiv_MULH_metaplan_tier1

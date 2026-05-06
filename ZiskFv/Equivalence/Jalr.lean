@@ -27,13 +27,13 @@ End-to-end theorem for RV64 JALR. Combines:
   `execute_JALR_pure_equiv_axiom` at `ZiskFv/RV64D/jalr.lean:67` —
   see `docs/fv/trusted-base.md` for the closure path),
 
-into a metaplan-shaped theorem:
+into a canonical theorem:
 
-* `equiv_JALR_metaplan` — the metaplan target shape:
+* `equiv_JALR_metaplan` — the canonical target shape:
   `execute_instruction (.JALR (imm, rs1, rd)) state
     = (bus_effect exec_row mem_row state).2`.
 
-Like JAL's metaplan (shape (c)), the bus-matching is discharged
+Like JAL (shape (c)), the bus-matching is discharged
 internally via `bus_effect_matches_sail_jump_rrw`, which handles any
 "two-exec-entry + one-rd-write-mem-entry" shape. JALR emits exactly
 that shape under the archetype-validation contract in `transpile_JALR`
@@ -104,7 +104,7 @@ theorem equiv_JALR_closed
 
     Wraps `PureSpec.execute_JALR_pure_equiv`, which is closed via the
     trusted `execute_JALR_pure_equiv_axiom` (see `trusted-base.md`).
-    The metaplan theorem below composes this with the shape-(c)
+    The equivalence theorem below composes this with the shape-(c)
     bus-matching lemma. -/
 theorem equiv_JALR_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -230,7 +230,7 @@ theorem equiv_JALR_metaplan
                bind, pure, EStateM.bind, EStateM.pure]
     rw [h_rd_val]
 
-/-- **Tier-1 metaplan: JALR without `h_rd_val` parameter.**
+/-- **Tier-1: JALR without `h_rd_val` parameter.**
 
     Companion to `equiv_JALR_metaplan` that drops the `h_rd_val :`
     OUTPUT-EQ residual parameter. Internally derives the rd-write

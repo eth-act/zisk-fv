@@ -35,14 +35,14 @@ bus-emission corollaries (`a_hi = b_hi = 0` when `m32 = 1`;
 pass-through when `m32 = 0`). The `a` lanes are not pinned by the
 transpile contract to a specific register-read here because the
 archetype focuses on the bus match rather than the full address
-chain; concrete opcodes pin `a` lanes at the metaplan layer.
+chain; concrete opcodes pin `a` lanes at the equivalence layer.
 
 ## Parameterization
 
 * `opcode_lit : FGL` — `OP_SIGNEXTEND_W = 41` (LW),
   `OP_SIGNEXTEND_H = 40` (LH), `OP_SIGNEXTEND_B = 39` (LB).
 * `m32_val : FGL` — `1` for LW, `0` for LH / LB. The archetype lemmas
-  fire for either value; callers pin one at the metaplan theorem
+  fire for either value; callers pin one at the equivalence theorem
   layer via the `transpile_L{W,H,B}` axiom witnesses.
 
 ## Usage pattern
@@ -159,7 +159,7 @@ theorem sign_extend_load_archetype_m32_zero_passthrough_bus
 
 /-- **Archetype multiplicity passthrough.** The bus entry's
     multiplicity matches the Main row's `is_external_op` — = 1 for
-    signed loads. Useful at the metaplan layer for tying the Main
+    signed loads. Useful at the equivalence layer for tying the Main
     bus emission to the BinaryExtension SM's bus pop. -/
 theorem sign_extend_load_archetype_multiplicity_one
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
