@@ -23,9 +23,11 @@ execute_instruction (.RTYPE rs2 rs1 rd rop.ADD) state
 DMA / etc.), ECALL/EBREAK, ZisK's custom internal ops.
 
 **Status:** all 63 RV64IM opcodes proved (0 sorries; 82 trusted
-axioms across 13 ledger classes; 45 of the 63 also have `_tier1`
-companions with the OUTPUT-EQ retirement — see
-`docs/fv/trusted-base.md`).
+axioms across 13 ledger classes; 56 of the 63 canonical `equiv_<OP>`
+theorems are OUTPUT-EQ-free, mechanically enforced by
+`trust/scripts/check-no-output-eq.sh` against
+`trust/forbidden-param-shapes.txt`. The 7 loads remain on a
+follow-up — see `docs/fv/trusted-base.md`).
 
 ## Pipeline
 
@@ -116,14 +118,17 @@ things; if you break any of them, the build fails:
    axiom's source-text hash. Adding / renaming / removing / subtly
    weakening any axiom → run `trust/scripts/regenerate.sh` and commit
    the updated baseline. The hash diff IS the audit surface for review.
-3. **Forbidden tier1 parameters.** `equiv_<OP>_tier1` theorems may
-   not include the retired OUTPUT-EQ named parameters (`h_rd_val`,
-   `h_byte_sum`,
-   `h_bus_execute_matches_sail`, `h_entry_hi_nat`, `h_pc_fgl_lo_nat`,
-   `h_pci_lo_val`, `h_entry_lo_eq`). Pattern list:
-   `trust/forbidden-param-shapes.txt`.
-4. **Floors.** ≥80 axioms in baseline, ≥40 `_tier1` theorems, plus a
-   cross-witness check that the parser hasn't been sabotaged.
+3. **Forbidden OUTPUT-EQ parameters.** Canonical `equiv_<OP>`
+   theorems may not include the retired OUTPUT-EQ named parameters
+   (`h_rd_val`, `h_byte_sum`, `h_bus_execute_matches_sail`,
+   `h_entry_hi_nat`, `h_pc_fgl_lo_nat`, `h_pci_lo_val`,
+   `h_entry_lo_eq`). Pattern list: `trust/forbidden-param-shapes.txt`.
+   The 7 load opcodes (LB, LH, LBU, LD, LHU, LWU, LW) are exempt
+   pending a follow-up that derives byte-decomposition from circuit
+   witnesses.
+4. **Floors.** ≥80 axioms in baseline, ≥56 canonical `equiv_<OP>`
+   theorems, plus a cross-witness check that the parser hasn't been
+   sabotaged.
 5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,Spec,Equivalence,Tactics,RV64D}`.
 6. **Uniformity.** Every one of 63 RV64IM opcodes has a canonical
    `equiv_<OP>` theorem.

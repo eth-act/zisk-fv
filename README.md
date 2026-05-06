@@ -38,7 +38,7 @@ ZiskFv/
 ├── Circuit/        per-opcode lifted circuit semantics — one .lean per RV64IM opcode
 ├── Sail/           per-opcode Sail-side mirrors with equivalence-to-LeanRV64D lemmas
 ├── Tactics/        instruction-shape archetype tactics that drive the per-opcode proofs
-├── Equivalence/    the final per-opcode theorems: equiv_<OP> + _tier1 companions
+├── Equivalence/    the final per-opcode theorems: canonical equiv_<OP> + bus-precondition variants
 └── ZiskFv.lean     root module — imports the whole tree
 ```
 
@@ -155,9 +155,18 @@ The top-level FV theorems — one file per opcode, each containing:
 - `equiv_<OP> : execute_instruction (.<shape> …) state = (bus_effect exec_row mem_row state).2`
   — the canonical equivalence. Both sides live in Sail's state space:
   the LHS is Sail's `execute`; the RHS comes from `Sail/BusEffect.lean`.
-- A `_tier1` companion (45 of 63 opcodes) that closes the rd-value derivation
-  entirely from circuit constraints, without the retired OUTPUT-EQ parameters
-  (`h_rd_val`, `h_byte_sum`, etc. — see `trust/forbidden-param-shapes.txt`).
+  Every parameter is in one of the safe trust classes
+  ({CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE, TRANSPILE-BRIDGE,
+  TRANSPILE-PIN}); the rd-value derivation runs internally via
+  `RdValDerivation/`. The trust gate's `check-no-output-eq.sh`
+  mechanically rejects any signature that reintroduces a retired
+  OUTPUT-EQ parameter (`h_rd_val`, `h_byte_sum`, etc. — see
+  `trust/forbidden-param-shapes.txt`). The 7 load opcodes are
+  exempt pending a follow-up that derives byte-decomposition from
+  circuit witnesses.
+- Bus-precondition variants (`equiv_<OP>_from_bus`,
+  `equiv_<OP>_bus_self`, `equiv_<OP>_op_bus`) bridge alternate
+  precondition shapes into the same canonical conclusion.
 
 Subdirectory `RdValDerivation/` factors out shared rd-value lemmas across
 opcodes that share a derivation pattern (Arith, BinaryCompare, JumpUType,
@@ -223,10 +232,11 @@ The trust boundary is **mechanically enforced** on every PR via
 - The hash + name + location of every project axiom matches
   `trust/baseline-axioms.txt`. Any add, remove, rename, or subtle
   weakening of an axiom shows up as a diff on this file.
-- No `equiv_<OP>_tier1` theorem accepts a retired OUTPUT-EQ hypothesis
-  parameter (`h_rd_val`, `h_byte_sum`, etc. — see
-  `trust/forbidden-param-shapes.txt`).
-- Sanity floors on axiom count and tier1 theorem count.
+- No canonical `equiv_<OP>` theorem accepts a retired OUTPUT-EQ
+  hypothesis parameter (`h_rd_val`, `h_byte_sum`, etc. — see
+  `trust/forbidden-param-shapes.txt`). The 7 load opcodes are
+  exempt pending a follow-up.
+- Sanity floors on axiom count and canonical-theorem count.
 
 To legitimately extend the trust surface, edit the relevant allowlisted
 file, run `trust/scripts/regenerate.sh`, commit the updated baseline,

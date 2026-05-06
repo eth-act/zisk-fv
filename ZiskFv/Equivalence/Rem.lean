@@ -90,11 +90,16 @@ theorem equiv_REM_sail
   PureSpec.execute_DIVREM_rem_pure_equiv
     rem_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
-/-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64 REM
-    equals `(bus_effect exec_row mem_row state).2`. Composes
-    `equiv_REM_sail` with `bus_effect_matches_sail_alu_rrw` (shape
-    (a), RRW). Structural bus hypotheses are parameterized
-    audit derives them. -/
+/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64
+    REM equals the state computed by applying `bus_effect` to the
+    circuit's execution and memory bus rows.
+
+    Every parameter classifies as one of {CIRCUIT-CONSTRAINT,
+    LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
+    asserts the spec output (`execute_DIV_REM_pure ... .DRS`) directly;
+    that equation is derived internally from circuit witnesses via
+    the `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_rem` discharge
+    lemma. -/
 theorem equiv_REM
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rem_input : PureSpec.RemInput)
@@ -117,15 +122,27 @@ theorem equiv_REM
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : rem_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = (execute_DIV_REM_pure rem_input.r1_val rem_input.r2_val .DRS).2) :
+    -- RANGE: byte-range bounds on rd-write entry's lanes.
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    -- CIRCUIT-CONSTRAINT: byte-sum equals operand-form signed 64-bit REM remainder.
+    (h_byte_sum_circuit :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+        + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+        + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (BitVec.ofInt 64 (Int.tmod rem_input.r1_val.toInt rem_input.r2_val.toInt)).toNat) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  have h_rd_val :=
+    ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_rem
+      rem_input.r1_val rem_input.r2_val e2
+      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+      h_byte_sum_circuit
   rw [equiv_REM_sail state rem_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm
@@ -171,10 +188,16 @@ theorem equiv_REM_from_bus
     (h_pc : rem_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_idx : rem_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = (execute_DIV_REM_pure rem_input.r1_val rem_input.r2_val .DRS).2) :
+    -- Discharge parameters (replacing h_rd_val).
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_byte_sum_circuit :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+        + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+        + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (BitVec.ofInt 64 (Int.tmod rem_input.r1_val.toInt rem_input.r2_val.toInt)).toNat) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -200,7 +223,13 @@ theorem equiv_REM_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some rem_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_REM state rem_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_REM state rem_input r1 r2 rd exec_row e0 e1 e2
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    h_rd_idx
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_byte_sum_circuit
 
 
 /-- Constructor: build a `PureSpec.RemInput` from bus entries. -/
@@ -234,10 +263,18 @@ theorem equiv_REM_bus_self
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r2_ptr : regidx_to_fin r2 = Transpiler.wrap_to_regidx e1.ptr)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = (execute_DIV_REM_pure (RemInput_of_bus e0 e1 e2 exec_row).r1_val (RemInput_of_bus e0 e1 e2 exec_row).r2_val .DRS).2) :
+    -- Discharge parameters (replacing h_rd_val).
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_byte_sum_circuit :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+        + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+        + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (BitVec.ofInt 64
+          (Int.tmod (RemInput_of_bus e0 e1 e2 exec_row).r1_val.toInt
+            (RemInput_of_bus e0 e1 e2 exec_row).r2_val.toInt)).toNat) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -251,7 +288,9 @@ theorem equiv_REM_bus_self
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
     h_bus h_r1_ptr rfl h_r2_ptr rfl rfl h_rd_ptr
-    rfl h_rd_val
+    rfl
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_byte_sum_circuit
 
 /-- **Op-bus companion for REM.** Op-bus companion to
     `equiv_REM`: drops `h_input_r1` / `h_input_r2` in
@@ -283,10 +322,16 @@ theorem equiv_REM_op_bus
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : rem_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = (execute_DIV_REM_pure rem_input.r1_val rem_input.r2_val .DRS).2) :
+    -- Discharge parameters (replacing h_rd_val).
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_byte_sum_circuit :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+        + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+        + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (BitVec.ofInt 64 (Int.tmod rem_input.r1_val.toInt rem_input.r2_val.toInt)).toNat) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -301,58 +346,12 @@ theorem equiv_REM_op_bus
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok rem_input.r2_val state := by
     rw [h_b_match]; exact h_r2_read
-  exact equiv_REM state rem_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
-
-/-- **Tier-1: REM without `h_rd_val` parameter**.
-    Derives `h_rd_val` internally via
-    `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_rem`. -/
-theorem equiv_REM_tier1
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (rem_input : PureSpec.RemInput)
-    (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok rem_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok rem_input.r2_val state)
-    (h_input_rd : rem_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some rem_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : rem_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- RANGE: byte-range bounds on rd-write entry's lanes.
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    -- CIRCUIT-CONSTRAINT: byte-sum equals operand-form signed 64-bit REM remainder.
-    (h_byte_sum_circuit :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-        + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-        + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-      = (BitVec.ofInt 64 (Int.tmod rem_input.r1_val.toInt rem_input.r2_val.toInt)).toNat) :
-    (do
-      Sail.writeReg Register.nextPC
-        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_rem
-      rem_input.r1_val rem_input.r2_val e2
-      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
-      h_byte_sum_circuit
   exact equiv_REM state rem_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
-    h_rd_idx h_rd_val
+    h_rd_idx
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_byte_sum_circuit
 
 end ZiskFv.Equivalence.Rem

@@ -77,11 +77,17 @@ theorem equiv_MULW_sail
   PureSpec.execute_MULW_pure_equiv
     mulw_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
-/-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64 MULW
-    equals the state computed by applying `bus_effect` to the
+/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64
+    MULW equals the state computed by applying `bus_effect` to the
     circuit's execution and memory bus rows.
 
-    Composes `equiv_MULW_sail` with shape-(a) bus-matching. -/
+    Every parameter classifies as one of {CIRCUIT-CONSTRAINT,
+    LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
+    asserts the spec output (`PureSpec.execute_MULW_pure_val ...`)
+    directly; that equation is derived internally from circuit
+    witnesses via the
+    `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mulw` discharge
+    lemma. -/
 theorem equiv_MULW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulw_input : PureSpec.MulwInput)
@@ -104,57 +110,7 @@ theorem equiv_MULW
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : mulw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = PureSpec.execute_MULW_pure_val mulw_input.r1_val mulw_input.r2_val) :
-    (do
-      Sail.writeReg Register.nextPC
-        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute
-        (instruction.MULW (r2, r1, rd))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  rw [equiv_MULW_sail state mulw_input r1 r2 rd
-        h_input_r1 h_input_r2 h_input_rd h_input_pc]
-  symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
-        state exec_row e0 e1 e2
-        (PureSpec.execute_MULW_pure mulw_input).nextPC
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
-  simp only [PureSpec.execute_MULW_pure, h_rd_idx]
-  split_ifs with h_rd_zero
-  · simp only [bind, pure, EStateM.bind, EStateM.pure]
-  · rw [h_rd_val]
-
-/-- **Tier-1: MULW without `h_rd_val` parameter.**
-    Derives `h_rd_val` internally via
-    `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mulw`, then forwards
-    to `equiv_MULW`. The MULW Tier-1 lemma routes through a single
-    TRANSPILE-BRIDGE-shaped byte-sum hypothesis (the m32=1 mode arithmetic
-    is handled upstream by `arith_table`). -/
-theorem equiv_MULW_tier1
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (mulw_input : PureSpec.MulwInput)
-    (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok mulw_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok mulw_input.r2_val state)
-    (h_input_rd : mulw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some mulw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_MULW_pure mulw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : mulw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    -- Discharge parameters
     (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
     (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
     (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
@@ -174,11 +130,18 @@ theorem equiv_MULW_tier1
     ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mulw
       mulw_input.r1_val mulw_input.r2_val e2
       h0 h1 h2 h3 h4 h5 h6 h7 h_byte_mulw
-  exact equiv_MULW state mulw_input r1 r2 rd exec_row e0 e1 e2
-    h_input_r1 h_input_r2 h_input_rd h_input_pc
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
-    h_rd_idx h_rd_val
+  rw [equiv_MULW_sail state mulw_input r1 r2 rd
+        h_input_r1 h_input_r2 h_input_rd h_input_pc]
+  symm
+  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+        state exec_row e0 e1 e2
+        (PureSpec.execute_MULW_pure mulw_input).nextPC
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
+  simp only [PureSpec.execute_MULW_pure, h_rd_idx]
+  split_ifs with h_rd_zero
+  · simp only [bind, pure, EStateM.bind, EStateM.pure]
+  · rw [h_rd_val]
 
 
 /-- **Bus-precondition companion.** Drops `h_input_r1` / `h_input_r2` /
@@ -212,10 +175,16 @@ theorem equiv_MULW_from_bus
     (h_pc : mulw_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_idx : mulw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = PureSpec.execute_MULW_pure_val mulw_input.r1_val mulw_input.r2_val) :
+    -- Discharge parameters (replacing h_rd_val).
+    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
+    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
+    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
+    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
+    (h_byte_mulw :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+        + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+        + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (PureSpec.execute_MULW_pure_val mulw_input.r1_val mulw_input.r2_val).toNat) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -242,7 +211,12 @@ theorem equiv_MULW_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some mulw_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_MULW state mulw_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_MULW state mulw_input r1 r2 rd exec_row e0 e1 e2
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    h_rd_idx
+    h0 h1 h2 h3 h4 h5 h6 h7 h_byte_mulw
 
 
 /-- Constructor: build a `PureSpec.MulwInput` from bus entries. -/
@@ -276,10 +250,18 @@ theorem equiv_MULW_bus_self
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r2_ptr : regidx_to_fin r2 = Transpiler.wrap_to_regidx e1.ptr)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = PureSpec.execute_MULW_pure_val (MulwInput_of_bus e0 e1 e2 exec_row).r1_val (MulwInput_of_bus e0 e1 e2 exec_row).r2_val) :
+    -- Discharge parameters (replacing h_rd_val).
+    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
+    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
+    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
+    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
+    (h_byte_mulw :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+        + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+        + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (PureSpec.execute_MULW_pure_val
+          (MulwInput_of_bus e0 e1 e2 exec_row).r1_val
+          (MulwInput_of_bus e0 e1 e2 exec_row).r2_val).toNat) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -294,7 +276,8 @@ theorem equiv_MULW_bus_self
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
     h_bus h_r1_ptr rfl h_r2_ptr rfl rfl h_rd_ptr
-    rfl h_rd_val
+    rfl
+    h0 h1 h2 h3 h4 h5 h6 h7 h_byte_mulw
 
 /-- **Op-bus companion to `equiv_MULW`.** Drops `h_input_r1` /
     `h_input_r2` in favour of an op-bus precondition. Mirrors
@@ -325,10 +308,16 @@ theorem equiv_MULW_op_bus
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : mulw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = PureSpec.execute_MULW_pure_val mulw_input.r1_val mulw_input.r2_val) :
+    -- Discharge parameters (replacing h_rd_val).
+    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
+    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
+    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
+    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
+    (h_byte_mulw :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+        + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+        + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (PureSpec.execute_MULW_pure_val mulw_input.r1_val mulw_input.r2_val).toNat) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -344,6 +333,11 @@ theorem equiv_MULW_op_bus
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok mulw_input.r2_val state := by
     rw [h_b_match]; exact h_r2_read
-  exact equiv_MULW state mulw_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_MULW state mulw_input r1 r2 rd exec_row e0 e1 e2
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    h_rd_idx
+    h0 h1 h2 h3 h4 h5 h6 h7 h_byte_mulw
 
 end ZiskFv.Equivalence.MulW

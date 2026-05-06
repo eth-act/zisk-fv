@@ -628,7 +628,7 @@
         <g>
           <rect x="380" y="360" width="340" height="80" rx="10" fill="#161922" stroke="#6ee7b7" stroke-width="1.5"/>
           <text x="550" y="388" text-anchor="middle" fill="#6ee7b7" font-size="13" font-weight="700">63 PROVEN OPCODE EQUIVALENCES</text>
-          <text x="550" y="408" text-anchor="middle" fill="#e7e9ee" font-size="12" font-family="JetBrains Mono, monospace">equiv_&lt;OP&gt;_tier1</text>
+          <text x="550" y="408" text-anchor="middle" fill="#e7e9ee" font-size="12" font-family="JetBrains Mono, monospace">equiv_&lt;OP&gt;</text>
           <text x="550" y="424" text-anchor="middle" fill="#9aa0ad" font-size="11">Sail.execute = bus_effect ∘ circuit-witness</text>
         </g>
 
@@ -781,8 +781,8 @@
       <ul style="color:var(--muted);font-size:0.94rem;margin: 10px 0 0 24px; line-height:1.6;">
         <li><strong>Locality.</strong> Every <code>axiom</code> / <code>opaque</code> / <code>constant</code> / <code>unsafe def</code> / <code>partial def</code> / <code>@[extern]</code> / <code>@[implemented_by]</code> must live in <code>trust/allowed-axiom-files.txt</code>.</li>
         <li><strong>Baseline integrity.</strong> Every axiom's name, location, and source-text statement is hashed into <code>trust/baseline-axioms.txt</code>. Any add, remove, rename, or subtle weakening shows up as a diff there.</li>
-        <li><strong>No OUTPUT-EQ leak.</strong> No <code>equiv_&lt;OP&gt;_tier1</code> theorem may take an <code>h_rd_val</code>, <code>h_byte_sum</code>, <code>h_bus_execute_matches_sail</code>, or other named-retired hypothesis as a parameter.</li>
-        <li><strong>Floors.</strong> ≥ 80 axioms in the baseline, ≥ 40 tier1 theorems, plus a Python-parser cross-witness that catches a sabotaged regenerate or an emptied allowlist.</li>
+        <li><strong>No OUTPUT-EQ leak.</strong> No canonical <code>equiv_&lt;OP&gt;</code> theorem may take an <code>h_rd_val</code>, <code>h_byte_sum</code>, <code>h_bus_execute_matches_sail</code>, or other named-retired hypothesis as a parameter. The 7 load opcodes are exempt pending a follow-up.</li>
+        <li><strong>Floors.</strong> ≥ 80 axioms in the baseline, ≥ 56 canonical equiv_&lt;OP&gt; theorems, plus a Python-parser cross-witness that catches a sabotaged regenerate or an emptied allowlist.</li>
       </ul>
       <p style="color:var(--muted);font-size:0.92rem; margin-top: 12px;">
         Files that hold the trust surface and the gate's own configuration are listed in <code>.github/CODEOWNERS</code>; merging changes to any of them requires a CODEOWNER review. The <code>trust/baseline-axioms.txt</code> diff IS the audit surface — a reviewer reads it directly to see what changed.
@@ -1659,7 +1659,7 @@
 
     // CONVERGENCE
     const m1 = box(COLS.mid.x, 470, 'ZiskFv/Circuit/<Op>.lean', 'circuit-witness ≡ spec output', 'proven');
-    const m2 = box(COLS.mid.x, 560, 'ZiskFv/Equivalence/<Op>.lean', 'equiv_<OP>_tier1', 'proven');
+    const m2 = box(COLS.mid.x, 560, 'ZiskFv/Equivalence/<Op>.lean', 'equiv_<OP>', 'proven');
     arrow(COLS.mid.x, m1.y + BOX_H, COLS.mid.x, m2.y);
 
     // arrows from each side into Spec

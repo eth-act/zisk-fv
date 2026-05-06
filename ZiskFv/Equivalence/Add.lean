@@ -108,76 +108,16 @@ theorem equiv_ADD_sail
   PureSpec.execute_RTYPE_add_pure_equiv
     add_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
-/-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64 ADD
-    equals the state computed by applying `bus_effect` to the circuit's
-    execution and memory bus rows.
+/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64
+    ADD equals the state computed by applying `bus_effect` to the
+    circuit's execution and memory bus rows.
 
-    Discharged internally via the shape-(a) bus-emission lemma
-    `ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw`.
-
-    **Proof closure.** Composes:
-    * `equiv_ADD_sail` — reduces LHS to the Sail `do` block,
-    * `bus_effect_matches_sail_alu_rrw` — reduces RHS to the shape-(a)
-      `do` block (register-write commutation against nextPC),
-    * `h_rd_match` — bridges the `if h :` and `match .rd` dispatches. -/
+    Every parameter classifies as one of {CIRCUIT-CONSTRAINT,
+    LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
+    asserts the spec output (`r1_val + r2_val`) directly; that
+    equation is derived internally from circuit witnesses via the
+    `RdValDerivation.Arith.h_rd_val_arith_add` discharge lemma. -/
 theorem equiv_ADD
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (add_input : PureSpec.AddInput)
-    (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok add_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok add_input.r2_val state)
-    (h_input_rd : add_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some add_input.PC)
-    -- Structural bus hypotheses. The execution bus carries the PC
-    -- read + nextPC write; the memory bus carries rs1_read, rs2_read,
-    -- rd_write as three entries matching shape (a).
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_add_pure add_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Decomposed rd-match hypotheses (see equiv_MUL).
-    (h_rd_idx : add_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = add_input.r1_val + add_input.r2_val) :
-    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  rw [equiv_ADD_sail state add_input r1 r2 rd
-        h_input_r1 h_input_r2 h_input_rd h_input_pc]
-  symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
-        state exec_row e0 e1 e2
-        (PureSpec.execute_RTYPE_add_pure add_input).nextPC
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
-  simp only [PureSpec.execute_RTYPE_add_pure, h_rd_idx]
-  split_ifs with h_rd_zero
-  · simp only [bind, pure, EStateM.bind, EStateM.pure]
-  · rw [h_rd_val]
-
-/-- **Tier-1: ADD without `h_rd_val` parameter.**
-
-    Same conclusion as `equiv_ADD`, but the `h_rd_val` OUTPUT-EQ
-    parameter is **derived internally** from circuit primitives via the
-    `RdValDerivation.Arith.h_rd_val_arith_add` discharge lemma rather
-    than supplied by the caller. This is the honest Tier-1
-    closure: every parameter classifies as one of {CIRCUIT-CONSTRAINT,
-    LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} —
-    no parameter mentions the spec output `r1_val + r2_val`.
-
-    The original `equiv_ADD` is preserved (above) for callers
-    that already construct `h_rd_val` from concrete witnesses. -/
-theorem equiv_ADD_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
@@ -203,7 +143,7 @@ theorem equiv_ADD_tier1
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : add_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Tier-1 discharge parameters (replacing the OUTPUT-EQ h_rd_val)
+    -- Discharge parameters
     (h_circuit : add_circuit_holds m b r_main r_binary)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
     (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
@@ -219,7 +159,6 @@ theorem equiv_ADD_tier1
       = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  -- Derive h_rd_val internally via the discharge lemma.
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_add
       m b r_main r_binary e2 add_input
@@ -227,12 +166,18 @@ theorem equiv_ADD_tier1
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_a_range h_b_range h_c_range
       h_input_r1_circuit h_input_r2_circuit
-  -- Delegate to the parametric theorem with the derived h_rd_val.
-  exact equiv_ADD state add_input r1 r2 rd exec_row e0 e1 e2
-    h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
-    h_rd_idx h_rd_val
+  rw [equiv_ADD_sail state add_input r1 r2 rd
+        h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc]
+  symm
+  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+        state exec_row e0 e1 e2
+        (PureSpec.execute_RTYPE_add_pure add_input).nextPC
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
+  simp only [PureSpec.execute_RTYPE_add_pure, h_rd_idx]
+  split_ifs with h_rd_zero
+  · simp only [bind, pure, EStateM.bind, EStateM.pure]
+  · rw [h_rd_val]
 
 /-- **Track-G companion — full V12.** Same conclusion as
     `equiv_ADD`, but derives all four `h_input_*` parameters
@@ -252,6 +197,8 @@ theorem equiv_ADD_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (r_main r_binary : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (h_exec_len : exec_row.length = 2)
@@ -277,22 +224,29 @@ theorem equiv_ADD_from_bus
                     e1.x4, e1.x5, e1.x6, e1.x7])
     (h_pc : add_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Remaining bus/rd value hypotheses (unchanged):
     (h_rd_idx : add_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = add_input.r1_val + add_input.r2_val) :
+    -- Discharge parameters (replacing h_rd_val).
+    (h_circuit : add_circuit_holds m b r_main r_binary)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_a_range : a_chunks_in_range b r_binary)
+    (h_b_range : b_chunks_in_range b r_binary)
+    (h_c_range : c_chunks_in_range b r_binary)
+    (h_input_r1_circuit : add_input.r1_val
+      = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296))
+    (h_input_r2_circuit : add_input.r2_val
+      = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  -- Split h_bus via chip_bus_hyps_alu_rrw.
   obtain ⟨h_pc_read, h_rs1_read, h_rs2_read⟩ :=
     ZiskFv.Airs.BusHypotheses.chip_bus_hyps_alu_rrw
       state exec_row e0 e1 e2
       h_exec_len h_e0_mult h_e1_mult
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
       h_bus
-  -- Derive the four h_input_* hypotheses.
   have h_input_r1 :
       read_xreg (regidx_to_fin r1) state
         = EStateM.Result.ok add_input.r1_val state := by
@@ -306,11 +260,15 @@ theorem equiv_ADD_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some add_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_ADD state add_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_ADD state add_input r1 r2 rd m b r_main r_binary exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
-    h_rd_idx h_rd_val
+    h_rd_idx
+    h_circuit h_lane_rd
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_a_range h_b_range h_c_range
+    h_input_r1_circuit h_input_r2_circuit
 
 /-- **AddInput constructor from bus fields.** Mirrors openvm-fv's
     `MulInput_of_MUL_instruction_fields` pattern: assembles an
@@ -352,6 +310,8 @@ def AddInput_of_bus
 theorem equiv_ADD_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (r_main r_binary : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (h_exec_len : exec_row.length = 2)
@@ -371,27 +331,34 @@ theorem equiv_ADD_bus_self
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r2_ptr : regidx_to_fin r2 = Transpiler.wrap_to_regidx e1.ptr)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = U64.toBV #v[e0.x0, e0.x1, e0.x2, e0.x3,
-                    e0.x4, e0.x5, e0.x6, e0.x7]
-      + U64.toBV #v[e1.x0, e1.x1, e1.x2, e1.x3,
-                    e1.x4, e1.x5, e1.x6, e1.x7]) :
+    -- Discharge parameters (replacing h_rd_val).
+    (h_circuit : add_circuit_holds m b r_main r_binary)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_a_range : a_chunks_in_range b r_binary)
+    (h_b_range : b_chunks_in_range b r_binary)
+    (h_c_range : c_chunks_in_range b r_binary)
+    (h_input_r1_circuit : (AddInput_of_bus e0 e1 e2 exec_row).r1_val
+      = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296))
+    (h_input_r2_circuit : (AddInput_of_bus e0 e1 e2 exec_row).r2_val
+      = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  -- Delegate to equiv_ADD_from_bus with the bus-derived input.
-  -- Value-level match hypotheses (h_r1_val, h_r2_val, h_pc) become rfl
-  -- because AddInput_of_bus's fields are those exact expressions.
   exact equiv_ADD_from_bus state
-    (AddInput_of_bus e0 e1 e2 exec_row) r1 r2 rd exec_row e0 e1 e2
+    (AddInput_of_bus e0 e1 e2 exec_row) r1 r2 rd m b r_main r_binary exec_row e0 e1 e2
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
     h_bus
     h_r1_ptr rfl h_r2_ptr rfl rfl h_rd_ptr
     (show (AddInput_of_bus e0 e1 e2 exec_row).rd
           = Transpiler.wrap_to_regidx e2.ptr from rfl)
-    h_rd_val
+    h_circuit h_lane_rd
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_a_range h_b_range h_c_range
+    h_input_r1_circuit h_input_r2_circuit
 
 /-- **Track Q ALU fan-out for ADD.** Operation-bus companion to
     `equiv_ADD`: drops the scenario-binding `h_input_r1` /
@@ -406,6 +373,8 @@ theorem equiv_ADD_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (r_main r_binary : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (op_entry : OperationBusEntry FGL)
@@ -429,10 +398,20 @@ theorem equiv_ADD_op_bus
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : add_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = add_input.r1_val + add_input.r2_val) :
+    -- Discharge parameters (replacing h_rd_val).
+    (h_circuit : add_circuit_holds m b r_main r_binary)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_a_range : a_chunks_in_range b r_binary)
+    (h_b_range : b_chunks_in_range b r_binary)
+    (h_c_range : c_chunks_in_range b r_binary)
+    (h_input_r1_circuit : add_input.r1_val
+      = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296))
+    (h_input_r2_circuit : add_input.r2_val
+      = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
   obtain ⟨h_r1_read, h_r2_read⟩ :=
@@ -444,10 +423,14 @@ theorem equiv_ADD_op_bus
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok add_input.r2_val state := by
     rw [h_b_match]; exact h_r2_read
-  exact equiv_ADD state add_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_ADD state add_input r1 r2 rd m b r_main r_binary exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
-    h_rd_idx h_rd_val
+    h_rd_idx
+    h_circuit h_lane_rd
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_a_range h_b_range h_c_range
+    h_input_r1_circuit h_input_r2_circuit
 
 end ZiskFv.Equivalence.Add
