@@ -29,14 +29,6 @@ open ZiskFv.Circuit.LoadBU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_LBU_circuit
-    (_rs1 _rd : Fin 32) (_state : RV64State)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (entry : MemoryBusEntry FGL)
-    (h_circuit : load_bu_circuit_holds m r_main next_pc entry) :
-    main_c_packed m r_main = memory_entry_byte entry :=
-  load_bu_compositional m r_main next_pc entry h_circuit
-
 theorem equiv_LBU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lbu_input : PureSpec.LbuInput)

@@ -32,15 +32,6 @@ open ZiskFv.Tactics.StoreArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_SH_circuit
-    (_rs1 _rs2 : Fin 32) (_state : RV64State)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (entry : MemoryBusEntry FGL)
-    (h_circuit : store_archetype_copyb_circuit_holds m r_main next_pc entry)
-    (h_zero : sh_high_bytes_zero entry) :
-    main_c_packed m r_main = memory_entry_lo_16 entry :=
-  store_h_compositional m r_main next_pc entry h_circuit h_zero
-
 theorem equiv_SH_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sh_input : PureSpec.ShInput)

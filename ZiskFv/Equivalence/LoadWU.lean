@@ -31,21 +31,6 @@ open ZiskFv.Circuit.LoadWU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Circuit-level LWU theorem.** With the LD-shape load hypotheses
-    plus the memory-bus entry's high 4 byte lanes zeroed (the `ind_width
-    = 4` bus-side zero-pad), the Main row's packed `c` cell encodes the
-    32-bit loaded value (equal to `memory_entry_lo entry`).
-
-    LWU-analogue of `equiv_LD_circuit`, narrowed via
-    `load_wu_compositional`. -/
-theorem equiv_LWU_circuit
-    (_rs1 _rd : Fin 32) (_state : RV64State)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (entry : MemoryBusEntry FGL)
-    (h_circuit : load_wu_circuit_holds m r_main next_pc entry) :
-    main_c_packed m r_main = memory_entry_lo entry :=
-  load_wu_compositional m r_main next_pc entry h_circuit
-
 /-- **Sail-level companion.** Wraps `PureSpec.execute_LOADWU_pure_equiv`. -/
 theorem equiv_LWU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

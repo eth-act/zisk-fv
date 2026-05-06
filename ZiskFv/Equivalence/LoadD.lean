@@ -54,23 +54,6 @@ open ZiskFv.Circuit.LoadD
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Circuit-level LD theorem.** Given the load-subset Main
-    constraints plus the mode witnesses from `transpile_LD` plus the
-    memory-bus matching hypothesis, the Main row's packed `c` cell
-    encodes the 8-byte loaded value packed from the memory-bus entry's
-    byte lanes.
-
-    This is the LD-analogue of `equiv_ADD_circuit` (for ADD) and
-    `equiv_BEQ_circuit` (for BEQ): a single field equation at the circuit
-    level, parameterized on the trace the caller supplies. -/
-theorem equiv_LD_circuit
-    (_rs1 _rd : Fin 32) (_state : RV64State)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (entry : MemoryBusEntry FGL)
-    (h_circuit : load_d_circuit_holds m r_main next_pc entry) :
-    main_c_packed m r_main = memory_entry_toField entry :=
-  load_d_compositional m r_main next_pc entry h_circuit
-
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 LD (`.LOAD (imm, rs1, rd, false, 8)`) reduces to the
     pure-function block supplied by `PureSpec.execute_LOADD_pure`,

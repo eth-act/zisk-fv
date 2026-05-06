@@ -39,21 +39,6 @@ open ZiskFv.Circuit.LoadWord
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Circuit-level LW theorem.** With the LW-shape Main constraints
-    (`is_external_op = 1`, `op = OP_SIGNEXTEND_W`, `m32 = 1`, `flag = 0`,
-    `set_pc = 0`) plus a bus-match to a secondary entry, the entry
-    carries zeroed high `a` / `b` lanes: `a_hi = 0 ∧ b_hi = 0`. The
-    32-bit source operand is conveyed via the low lanes; the
-    BinaryExtension SM is responsible for the sign-extension
-    computation which feeds back via the bus's `c` lanes. -/
-theorem equiv_LW_circuit
-    (_rs1 _rd : Fin 32) (_state : RV64State)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (bus_entry : OperationBusEntry FGL)
-    (h_circuit : lw_circuit_holds m r_main bus_entry) :
-    bus_entry.a_hi = 0 ∧ bus_entry.b_hi = 0 :=
-  lw_compositional m r_main bus_entry h_circuit
-
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 LW-shape LOAD reduces to the pure-function block supplied by
     `PureSpec.execute_LOADW_pure`, given the standard register/PC/memory
