@@ -20,7 +20,7 @@ writeShellApplication {
   runtimeInputs = [ elan cargo rustc protobuf python3 jq git ];
 
   text = ''
-    cd "$(git rev-parse --show-toplevel)"
+    cd "$(git rev-parse --show-toplevel)" || exit 1
 
     overall=0
 
