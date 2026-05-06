@@ -36,9 +36,9 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     = 4` bus-side zero-pad), the Main row's packed `c` cell encodes the
     32-bit loaded value (equal to `memory_entry_lo entry`).
 
-    LWU-analogue of `equiv_LD`, narrowed via
+    LWU-analogue of `equiv_LD_circuit`, narrowed via
     `load_wu_compositional`. -/
-theorem equiv_LWU
+theorem equiv_LWU_circuit
     (_rs1 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
@@ -77,7 +77,7 @@ theorem equiv_LWU_sail
 
 /-- **Metaplan theorem.** Uses structural bus hypotheses + a
     memory-model bridge with a zero-extension witness on the high bytes. -/
-theorem equiv_LWU_metaplan
+theorem equiv_LWU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lwu_input : PureSpec.LwuInput)
     (mstatus : RegisterType Register.mstatus)

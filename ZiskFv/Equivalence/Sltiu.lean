@@ -33,7 +33,7 @@ open ZiskFv.Tactics.ALUITypeArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_SLTIU
+theorem equiv_SLTIU_circuit
     (_rs1 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -66,7 +66,7 @@ theorem equiv_SLTIU_sail
   PureSpec.execute_ITYPE_sltiu_pure_equiv (state := state) (imm := imm)
     sltiu_input r1 rd h_input_r1 h_input_imm h_input_rd h_input_pc
 
-theorem equiv_SLTIU_metaplan
+theorem equiv_SLTIU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sltiu_input : PureSpec.SltiuInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -113,7 +113,7 @@ theorem equiv_SLTIU_metaplan
     rw [h_rd_val]
 
 /-- **Tier-1: SLTIU without `h_rd_val` parameter**. -/
-theorem equiv_SLTIU_metaplan_tier1
+theorem equiv_SLTIU_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sltiu_input : PureSpec.SltiuInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -229,7 +229,7 @@ theorem equiv_SLTIU_metaplan_tier1
     · exact absurd (h_iff.mp h₁) h₂
     · exact absurd (h_iff.mpr h₂) h₁
     · rfl
-  exact equiv_SLTIU_metaplan state sltiu_input r1 rd imm exec_row e0 e1 e2
+  exact equiv_SLTIU state sltiu_input r1 rd imm exec_row e0 e1 e2
     h_input_r1 h_input_imm h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -239,8 +239,8 @@ theorem equiv_SLTIU_metaplan_tier1
 /-- **Bus-precondition companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
-    Delegates to `equiv_SLTIU_metaplan` after chip_bus_hyps + match composition.  -/
-theorem equiv_SLTIU_metaplan_from_bus
+    Delegates to `equiv_SLTIU` after chip_bus_hyps + match composition.  -/
+theorem equiv_SLTIU_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sltiu_input : PureSpec.SltiuInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -291,7 +291,7 @@ theorem equiv_SLTIU_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some sltiu_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_SLTIU_metaplan state sltiu_input r1 rd imm exec_row e0 e1 e2 h_input_r1 h_input_imm h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_SLTIU state sltiu_input r1 rd imm exec_row e0 e1 e2 h_input_r1 h_input_imm h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 
 /-- Constructor: build a `PureSpec.SltiuInput` from bus entries + imm. -/
@@ -307,7 +307,7 @@ def SltiuInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Bus-self form for SLTIU.** Eliminates value-level match hyps via `SltiuInput_of_bus`. -/
-theorem equiv_SLTIU_metaplan_bus_self
+theorem equiv_SLTIU_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 rd : regidx) (imm : BitVec 12)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -337,7 +337,7 @@ theorem equiv_SLTIU_metaplan_bus_self
       = (bus_effect exec_row [e0, e1, e2] state).2
 
     := by
-  exact equiv_SLTIU_metaplan_from_bus state
+  exact equiv_SLTIU_from_bus state
     (SltiuInput_of_bus e0 e2 exec_row imm)
     r1 rd imm exec_row e0 e1 e2
     rfl
@@ -347,9 +347,9 @@ theorem equiv_SLTIU_metaplan_bus_self
     rfl h_rd_val
 
 /-- **Op-bus companion for SLTIU.** Op-bus companion to
-    `equiv_SLTIU_metaplan`: drops `h_input_r1` in favour of an op-bus
-    precondition. Mirrors `equiv_ADD_metaplan_op_bus`. -/
-theorem equiv_SLTIU_metaplan_op_bus
+    `equiv_SLTIU`: drops `h_input_r1` in favour of an op-bus
+    precondition. Mirrors `equiv_ADD_op_bus`. -/
+theorem equiv_SLTIU_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sltiu_input : PureSpec.SltiuInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -390,6 +390,6 @@ theorem equiv_SLTIU_metaplan_op_bus
   have h_input_r1 : read_xreg (regidx_to_fin r1) state
       = EStateM.Result.ok sltiu_input.r1_val state := by
     rw [h_a_match]; exact h_r1_read
-  exact equiv_SLTIU_metaplan state sltiu_input r1 rd imm exec_row e0 e1 e2 h_input_r1 h_input_imm h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_SLTIU state sltiu_input r1 rd imm exec_row e0 e1 e2 h_input_r1 h_input_imm h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 end ZiskFv.Equivalence.Sltiu

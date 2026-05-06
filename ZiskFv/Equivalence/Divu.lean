@@ -24,10 +24,10 @@ payload (`instruction.DIV (r2, r1, rd, true)` — the boolean selector
 picks unsigned).
 
 Three canonical theorems:
-* `equiv_DIVU` — circuit-level, wraps `Spec.Divu.divu_compositional`.
+* `equiv_DIVU_circuit` — circuit-level, wraps `Spec.Divu.divu_compositional`.
 * `equiv_DIVU_sail` — Sail-level, wraps
   `PureSpec.execute_DIVREM_divu_pure_equiv`.
-* `equiv_DIVU_metaplan` — metaplan target shape, discharged via shape-
+* `equiv_DIVU` — canonical shape, discharged via shape-
   (a) `bus_effect_matches_sail_alu_rrw` (RRW).
 -/
 
@@ -47,7 +47,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- **Circuit-level DIVU theorem.** Main's packed `c` equals Arith's
     packed quotient lane under the DIVU circuit-holds hypothesis.
     Wraps `Spec.Divu.divu_compositional`. -/
-theorem equiv_DIVU
+theorem equiv_DIVU_circuit
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
     (r_main r_arith : ℕ)
@@ -87,7 +87,7 @@ theorem equiv_DIVU_sail
     equals `(bus_effect exec_row mem_row state).2`. Composes
     `equiv_DIVU_sail` with `bus_effect_matches_sail_alu_rrw` (shape
     (a), RRW). -/
-theorem equiv_DIVU_metaplan
+theorem equiv_DIVU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divu_input : PureSpec.DivuInput)
     (r1 r2 rd : regidx)
@@ -109,7 +109,7 @@ theorem equiv_DIVU_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     (h_rd_idx : divu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -136,8 +136,8 @@ theorem equiv_DIVU_metaplan
 /-- **Tier-1: DIVU without `h_rd_val` parameter.**
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_divu`, then forwards
-    to `equiv_DIVU_metaplan`. -/
-theorem equiv_DIVU_metaplan_tier1
+    to `equiv_DIVU`. -/
+theorem equiv_DIVU_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divu_input : PureSpec.DivuInput)
     (r1 r2 rd : regidx)
@@ -217,7 +217,7 @@ theorem equiv_DIVU_metaplan_tier1
       h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
       hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
       h_byte_lo h_byte_hi h_op1 h_op2 h_op2_ne h_d_lt_b
-  exact equiv_DIVU_metaplan state divu_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_DIVU state divu_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -227,8 +227,8 @@ theorem equiv_DIVU_metaplan_tier1
 /-- **Bus-driven companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
-    Delegates to `equiv_DIVU_metaplan` after chip_bus_hyps + match composition.  -/
-theorem equiv_DIVU_metaplan_from_bus
+    Delegates to `equiv_DIVU` after chip_bus_hyps + match composition.  -/
+theorem equiv_DIVU_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divu_input : PureSpec.DivuInput)
     (r1 r2 rd : regidx)
@@ -256,7 +256,7 @@ theorem equiv_DIVU_metaplan_from_bus
                     e1.x4, e1.x5, e1.x6, e1.x7])
     (h_pc : divu_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     (h_rd_idx : divu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -287,7 +287,7 @@ theorem equiv_DIVU_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some divu_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_DIVU_metaplan state divu_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_DIVU state divu_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 
 /-- Constructor: build a `PureSpec.DivuInput` from bus entries. -/
@@ -304,7 +304,7 @@ def DivuInput_of_bus
 
 /-- **Item 4 closure for DIVU.** Bus-derived input form: 
     eliminates value-level match hyps via `DivuInput_of_bus`. -/
-theorem equiv_DIVU_metaplan_bus_self
+theorem equiv_DIVU_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -324,7 +324,7 @@ theorem equiv_DIVU_metaplan_bus_self
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r2_ptr : regidx_to_fin r2 = Transpiler.wrap_to_regidx e1.ptr)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]
@@ -336,7 +336,7 @@ theorem equiv_DIVU_metaplan_bus_self
       = (bus_effect exec_row [e0, e1, e2] state).2
 
     := by
-  exact equiv_DIVU_metaplan_from_bus state
+  exact equiv_DIVU_from_bus state
     (DivuInput_of_bus e0 e1 e2 exec_row) r1 r2 rd
     exec_row e0 e1 e2
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -345,10 +345,10 @@ theorem equiv_DIVU_metaplan_bus_self
     rfl h_rd_val
 
 /-- **Track Q ALU/MUL/DIV fan-out for DIVU.** Op-bus companion to
-    `equiv_DIVU_metaplan`: drops `h_input_r1` / `h_input_r2` in
+    `equiv_DIVU`: drops `h_input_r1` / `h_input_r2` in
     favour of an op-bus precondition. Mirrors
-    `equiv_ADD_metaplan_op_bus`. -/
-theorem equiv_DIVU_metaplan_op_bus
+    `equiv_ADD_op_bus`. -/
+theorem equiv_DIVU_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divu_input : PureSpec.DivuInput)
     (r1 r2 rd : regidx)
@@ -374,7 +374,7 @@ theorem equiv_DIVU_metaplan_op_bus
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     (h_rd_idx : divu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -394,6 +394,6 @@ theorem equiv_DIVU_metaplan_op_bus
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok divu_input.r2_val state := by
     rw [h_b_match]; exact h_r2_read
-  exact equiv_DIVU_metaplan state divu_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_DIVU state divu_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 end ZiskFv.Equivalence.Divu

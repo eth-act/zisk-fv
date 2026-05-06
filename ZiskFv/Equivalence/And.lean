@@ -33,7 +33,7 @@ open ZiskFv.Tactics.ALURTypeArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_AND
+theorem equiv_AND_circuit
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -67,7 +67,7 @@ theorem equiv_AND_sail
   PureSpec.execute_RTYPE_and_pure_equiv
     and_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
-theorem equiv_AND_metaplan
+theorem equiv_AND
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (and_input : PureSpec.AndInput)
     (r1 r2 rd : regidx)
@@ -88,7 +88,7 @@ theorem equiv_AND_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     (h_rd_idx : and_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -115,12 +115,12 @@ theorem equiv_AND_metaplan
 
 /-- **Tier-1: AND without `h_rd_val` parameter.**
 
-    Same conclusion as `equiv_AND_metaplan`, but the `h_rd_val` OUTPUT-EQ
+    Same conclusion as `equiv_AND`, but the `h_rd_val` OUTPUT-EQ
     parameter is **derived internally** from circuit primitives via the
     `RdValDerivation.BinaryLogic.h_rd_val_logic_and` discharge lemma rather
-    than supplied by the caller. Mirrors `equiv_ADD_metaplan_tier1`
+    than supplied by the caller. Mirrors `equiv_ADD_tier1`
     extended to the `Binary` AIR's logical-op path. -/
-theorem equiv_AND_metaplan_tier1
+theorem equiv_AND_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (and_input : PureSpec.AndInput)
     (r1 r2 rd : regidx)
@@ -226,7 +226,7 @@ theorem equiv_AND_metaplan_tier1
       h_match_clo h_match_chi h_lane_rd
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_input_r1_circuit h_input_r2_circuit
-  exact equiv_AND_metaplan state and_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_AND state and_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -236,8 +236,8 @@ theorem equiv_AND_metaplan_tier1
 /-- **Bus-driven companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
-    Delegates to `equiv_AND_metaplan` after chip_bus_hyps + match composition.  -/
-theorem equiv_AND_metaplan_from_bus
+    Delegates to `equiv_AND` after chip_bus_hyps + match composition.  -/
+theorem equiv_AND_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (and_input : PureSpec.AndInput)
     (r1 r2 rd : regidx)
@@ -264,7 +264,7 @@ theorem equiv_AND_metaplan_from_bus
                     e1.x4, e1.x5, e1.x6, e1.x7])
     (h_pc : and_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     (h_rd_idx : and_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -296,7 +296,7 @@ theorem equiv_AND_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some and_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_AND_metaplan state and_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_AND state and_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 
 /-- Constructor: build a `PureSpec.AndInput` from bus entries. -/
@@ -313,7 +313,7 @@ def AndInput_of_bus
 
 /-- **Item 4 closure for AND.** Bus-derived input form: 
     eliminates value-level match hyps via `AndInput_of_bus`. -/
-theorem equiv_AND_metaplan_bus_self
+theorem equiv_AND_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -332,7 +332,7 @@ theorem equiv_AND_metaplan_bus_self
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r2_ptr : regidx_to_fin r2 = Transpiler.wrap_to_regidx e1.ptr)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]
@@ -345,7 +345,7 @@ theorem equiv_AND_metaplan_bus_self
       = (bus_effect exec_row [e0, e1, e2] state).2
 
     := by
-  exact equiv_AND_metaplan_from_bus state
+  exact equiv_AND_from_bus state
     (AndInput_of_bus e0 e1 e2 exec_row) r1 r2 rd
     exec_row e0 e1 e2
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -354,9 +354,9 @@ theorem equiv_AND_metaplan_bus_self
     rfl h_rd_val
 
 /-- **Track Q ALU fan-out for AND.** Op-bus companion to
-    `equiv_AND_metaplan`: drops `h_input_r1` / `h_input_r2` in favour
-    of a single op-bus precondition. Mirrors `equiv_ADD_metaplan_op_bus`. -/
-theorem equiv_AND_metaplan_op_bus
+    `equiv_AND`: drops `h_input_r1` / `h_input_r2` in favour
+    of a single op-bus precondition. Mirrors `equiv_ADD_op_bus`. -/
+theorem equiv_AND_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (and_input : PureSpec.AndInput)
     (r1 r2 rd : regidx)
@@ -401,7 +401,7 @@ theorem equiv_AND_metaplan_op_bus
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok and_input.r2_val state := by
     rw [h_b_match]; exact h_r2_read
-  exact equiv_AND_metaplan state and_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_AND state and_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as

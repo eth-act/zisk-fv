@@ -27,7 +27,7 @@ End-to-end theorem for RV64 AUIPC. Combines:
 
 into a canonical theorem:
 
-* `equiv_AUIPC_metaplan` — the metaplan target shape:
+* `equiv_AUIPC` — the canonical shape:
   `execute_instruction (.UTYPE (imm, rd, uop.AUIPC)) state
     = (bus_effect exec_row mem_row state).2`.
 
@@ -59,7 +59,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `pc + jmp_offset2 = pc + imm`.
 
     This is the circuit-level companion to `equiv_AUIPC_sail` below. -/
-theorem equiv_AUIPC
+theorem equiv_AUIPC_circuit
     (_rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_circuit :
@@ -103,7 +103,7 @@ theorem equiv_AUIPC_sail
     `bus_effect_matches_sail_jump_rrw`. Like LUI, AUIPC has no
     throw/success branching — the pure spec unconditionally writes rd
     (or skips for rd = x0) and advances PC. -/
-theorem equiv_AUIPC_metaplan
+theorem equiv_AUIPC
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (auipc_input : PureSpec.AuipcInput)
     (imm : BitVec 20)
@@ -124,7 +124,7 @@ theorem equiv_AUIPC_metaplan
     (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
     (h_nextPC_eq :
       (PureSpec.execute_AUIPC_pure auipc_input).nextPC = nextPC_val)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     (h_rd_idx : auipc_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
     (h_rd_val :
       U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
@@ -148,7 +148,7 @@ theorem equiv_AUIPC_metaplan
 
 /-- **Tier-1: AUIPC without `h_rd_val` parameter.**
 
-    Companion to `equiv_AUIPC_metaplan` that drops the `h_rd_val :`
+    Companion to `equiv_AUIPC` that drops the `h_rd_val :`
     OUTPUT-EQ residual parameter. Internally derives the rd-write
     equality `U64.toBV ... = auipc_input.PC + signExtend 64 (imm ++ 0#12)`
     via `RdValDerivation.JumpUType.h_rd_val_jut_auipc`, which composes:
@@ -168,7 +168,7 @@ theorem equiv_AUIPC_metaplan
     `h_pc_bound` to admit the imm-sized offset. All parameters live
     in {CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE, TRANSPILE-BRIDGE}. NO
     OUTPUT-EQ parameters survive. -/
-theorem equiv_AUIPC_metaplan_tier1
+theorem equiv_AUIPC_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (auipc_input : PureSpec.AuipcInput)
     (imm : BitVec 20)
@@ -217,14 +217,14 @@ theorem equiv_AUIPC_metaplan_tier1
       h_no_wrap h_lo_bound h_pc_offset_lt_2_32
       h_e_rd_0 h_e_rd_1 h_e_rd_2 h_e_rd_3
       h_e_rd_4 h_e_rd_5 h_e_rd_6 h_e_rd_7
-  exact equiv_AUIPC_metaplan state auipc_input imm rd exec_row e_rd
+  exact equiv_AUIPC state auipc_input imm rd exec_row e_rd
     nextPC_val h_input_imm h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_rd_mult h_rd_as h_nextPC_eq h_rd_idx h_rd_val
 
 /-- **Bus-driven companion for AUIPC.** Drops `h_input_pc` and
     `h_input_rd` via `chip_bus_hyps_jump_rrw` + `readReg_of_readReg_succ`. -/
-theorem equiv_AUIPC_metaplan_from_bus
+theorem equiv_AUIPC_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (auipc_input : PureSpec.AuipcInput)
     (imm : BitVec 20)
@@ -261,7 +261,7 @@ theorem equiv_AUIPC_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some auipc_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_AUIPC_metaplan state auipc_input imm rd exec_row e_rd
+  exact equiv_AUIPC state auipc_input imm rd exec_row e_rd
     nextPC_val h_input_imm h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_rd_mult h_rd_as h_nextPC_eq h_rd_idx h_rd_val
@@ -276,7 +276,7 @@ def AuipcInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Item 4 closure for AUIPC.** Bus-derived input form. -/
-theorem equiv_AUIPC_metaplan_bus_self
+theorem equiv_AUIPC_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (imm : BitVec 20)
     (rd : regidx)
@@ -301,7 +301,7 @@ theorem equiv_AUIPC_metaplan_bus_self
         + BitVec.signExtend 64 ((AuipcInput_of_bus e_rd exec_row imm).imm ++ 0#12)) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
       = (bus_effect exec_row [e_rd] state).2 := by
-  exact equiv_AUIPC_metaplan_from_bus state
+  exact equiv_AUIPC_from_bus state
     (AuipcInput_of_bus e_rd exec_row imm) imm rd
     exec_row e_rd nextPC_val
     rfl

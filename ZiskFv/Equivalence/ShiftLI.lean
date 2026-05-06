@@ -59,7 +59,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     constraints (including `m32 = 1`) and the bus-match to a secondary
     entry, the entry carries zero high lanes. Direct instantiation of
     `ShiftArchetype`'s m32=1 macro at `OP_SLL_W`. -/
-theorem equiv_SLLIW
+theorem equiv_SLLIW_circuit
     (_rs1 : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -97,7 +97,7 @@ theorem equiv_SLLIW_sail
     Same bus-shape as SLLW (shape (a) — `bus_effect_matches_sail_alu_rrw`):
     two-entry exec bus + three-entry memory bus `[source, source, dst]`.
     No `h_bus_execute_matches_sail` parameter remains. -/
-theorem equiv_SLLIW_metaplan
+theorem equiv_SLLIW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slliw_input : PureSpec.SlliwInput)
     (r1 rd : regidx)
@@ -140,7 +140,7 @@ theorem equiv_SLLIW_metaplan
   · rw [h_rd_val]
 
 /-- **Tier-1: SLLIW without `h_rd_val` parameter**. -/
-theorem equiv_SLLIW_metaplan_tier1
+theorem equiv_SLLIW_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slliw_input : PureSpec.SlliwInput)
     (r1 rd : regidx)
@@ -248,7 +248,7 @@ theorem equiv_SLLIW_metaplan_tier1
         (BitVec.shiftLeft (Sail.BitVec.extractLsb slliw_input.r1_val 31 0) shift)
       = BitVec.signExtend 64
         (BitVec.shiftLeft (BitVec.ofNat 32 a4sum) shift)).trans h_bridge)
-  exact equiv_SLLIW_metaplan state slliw_input r1 rd exec_row e0 e1 e2
+  exact equiv_SLLIW state slliw_input r1 rd exec_row e0 e1 e2
     h_input_r1 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -258,8 +258,8 @@ theorem equiv_SLLIW_metaplan_tier1
 /-- **Bus-precondition companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
-    Delegates to `equiv_SLLIW_metaplan` after chip_bus_hyps + match composition.  -/
-theorem equiv_SLLIW_metaplan_from_bus
+    Delegates to `equiv_SLLIW` after chip_bus_hyps + match composition.  -/
+theorem equiv_SLLIW_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slliw_input : PureSpec.SlliwInput)
     (r1 rd : regidx)
@@ -307,7 +307,7 @@ theorem equiv_SLLIW_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some slliw_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_SLLIW_metaplan state slliw_input r1 rd exec_row e0 e1 e2 h_input_r1 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_SLLIW state slliw_input r1 rd exec_row e0 e1 e2 h_input_r1 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 
 /-- Constructor: build a `PureSpec.SlliwInput` from bus + shamt. -/
@@ -323,7 +323,7 @@ def SlliwInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Bus-self form for SLLIW.** Bus-derived input form. -/
-theorem equiv_SLLIW_metaplan_bus_self
+theorem equiv_SLLIW_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 rd : regidx)
     (shamt : BitVec 5)
@@ -352,7 +352,7 @@ theorem equiv_SLLIW_metaplan_bus_self
       = (bus_effect exec_row [e0, e1, e2] state).2
 
     := by
-  exact equiv_SLLIW_metaplan_from_bus state
+  exact equiv_SLLIW_from_bus state
     (SlliwInput_of_bus e0 e2 exec_row shamt) r1 rd exec_row e0 e1 e2
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as

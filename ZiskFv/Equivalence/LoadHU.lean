@@ -32,7 +32,7 @@ open ZiskFv.Circuit.LoadHU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_LHU
+theorem equiv_LHU_circuit
     (_rs1 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
@@ -69,7 +69,7 @@ theorem equiv_LHU_sail
     lhu_input risc_v_assumptions h_opcode_assumptions
 
 /-- **Metaplan theorem.** -/
-theorem equiv_LHU_metaplan
+theorem equiv_LHU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lhu_input : PureSpec.LhuInput)
     (mstatus : RegisterType Register.mstatus)

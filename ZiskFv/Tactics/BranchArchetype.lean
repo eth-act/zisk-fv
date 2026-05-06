@@ -38,7 +38,7 @@ BLTU/BGEU call `branch_archetype_pc_dispatch` with their own
 
 ```
 -- BNE case (op = OP_EQ, taken = neg of flag):
-theorem equiv_BNE_metaplan (...) := by
+theorem equiv_BNE (...) := by
   have h_next_pc :=
     branch_archetype_pc_dispatch m r next_pc h_circuit_bne
   ...

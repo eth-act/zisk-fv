@@ -27,11 +27,11 @@ End-to-end theorem for RV64 LD (load doubleword). Combines:
 
 into three companion theorems paralleling the ADD and BEQ archetypes:
 
-* `equiv_LD` — circuit-level. States that the Main row's packed `c`
+* `equiv_LD_circuit` — circuit-level. States that the Main row's packed `c`
   lanes (as FGL) equal the 8-byte memory-bus entry's packed value,
   given the constraint-set + mode + memory-match hypotheses.
 * `equiv_LD_sail` — Sail-level. Wraps `execute_LOADD_pure_equiv`.
-* `equiv_LD_metaplan` — the canonical theorem
+* `equiv_LD` — the canonical theorem
   `execute_instruction (.LOAD …) = (bus_effect …).2`.
 
 The per-byte rd-write-value parameter `h_rd_val` is derived from
@@ -60,10 +60,10 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     encodes the 8-byte loaded value packed from the memory-bus entry's
     byte lanes.
 
-    This is the LD-analogue of `equiv_ADD` (for ADD) and
-    `equiv_BEQ` (for BEQ): a single field equation at the circuit
+    This is the LD-analogue of `equiv_ADD_circuit` (for ADD) and
+    `equiv_BEQ_circuit` (for BEQ): a single field equation at the circuit
     level, parameterized on the trace the caller supplies. -/
-theorem equiv_LD
+theorem equiv_LD_circuit
     (_rs1 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
@@ -117,7 +117,7 @@ theorem equiv_LD_sail
     `h_e1_e2_bytes`). The `h_rd_zero_iff` and `h_rd_idx` hypotheses are
     scenario-binding ptr-match facts (Sail's `rd` operand vs the bus's
     `e2.ptr`) that cannot be derived from circuit content alone. -/
-theorem equiv_LD_metaplan
+theorem equiv_LD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)
     (mstatus : RegisterType Register.mstatus)

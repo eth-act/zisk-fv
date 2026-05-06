@@ -32,7 +32,7 @@ open ZiskFv.Circuit.LoadByte
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_LB
+theorem equiv_LB_circuit
     (_rs1 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -72,7 +72,7 @@ theorem equiv_LB_sail
     lb_input risc_v_assumptions h_opcode_assumptions
 
 /-- **Metaplan theorem.** -/
-theorem equiv_LB_metaplan
+theorem equiv_LB
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lb_input : PureSpec.LbInput)
     (mstatus : RegisterType Register.mstatus)

@@ -29,10 +29,10 @@ verbatim to the `BinaryExtension` SM rather than being zeroed.
 
 Emits three theorems matching the SLLW trio:
 
-* `equiv_SLL` — circuit-level: bus `a_hi = m.a_1` and `b_hi = m.b_1`.
+* `equiv_SLL_circuit` — circuit-level: bus `a_hi = m.a_1` and `b_hi = m.b_1`.
 * `equiv_SLL_sail` — Sail-level: `execute_instruction` on a SLL RTYPE
   reduces to the pure spec block.
-* `equiv_SLL_metaplan` — metaplan target. Uses shape (a) bus-effect
+* `equiv_SLL` — canonical target. Uses shape (a) bus-effect
   (`bus_effect_matches_sail_alu_rrw`, hypothesis-free).
 -/
 
@@ -51,7 +51,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     entry's `a_hi` / `b_hi` fields carry the full 64-bit high lanes
     (passthrough). Direct instantiation of `ShiftArchetype`'s m32=0
     macro at `OP_SLL`. -/
-theorem equiv_SLL
+theorem equiv_SLL_circuit
     (_rs1 _rs2 : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -90,7 +90,7 @@ theorem equiv_SLL_sail
     Shape (a) — register-read + register-read + register-write,
     discharged via `bus_effect_matches_sail_alu_rrw`. No
     `h_bus_execute_matches_sail` parameter remains. -/
-theorem equiv_SLL_metaplan
+theorem equiv_SLL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)
     (r1 r2 rd : regidx)
@@ -136,7 +136,7 @@ theorem equiv_SLL_metaplan
     Derives `h_rd_val` internally via
     `RdValDerivation.BinaryShift.h_rd_val_shift_sll` plus
     `RdValDerivation.SailBridge.sail_sll_bridge`. -/
-theorem equiv_SLL_metaplan_tier1
+theorem equiv_SLL_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)
     (r1 r2 rd : regidx)
@@ -236,7 +236,7 @@ theorem equiv_SLL_metaplan_tier1
                               e2.x4, e2.x5, e2.x6, e2.x7]
       = execute_RTYPE_pure sll_input.r1_val sll_input.r2_val rop.SLL := by
     rw [h_discharge, h_bridge]
-  exact equiv_SLL_metaplan state sll_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_SLL state sll_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -246,8 +246,8 @@ theorem equiv_SLL_metaplan_tier1
 /-- **Bus-precondition companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
-    Delegates to `equiv_SLL_metaplan` after chip_bus_hyps + match composition.  -/
-theorem equiv_SLL_metaplan_from_bus
+    Delegates to `equiv_SLL` after chip_bus_hyps + match composition.  -/
+theorem equiv_SLL_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)
     (r1 r2 rd : regidx)
@@ -300,7 +300,7 @@ theorem equiv_SLL_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some sll_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_SLL_metaplan state sll_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_SLL state sll_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 
 /-- Constructor: build a `PureSpec.SllInput` from bus entries. -/
@@ -316,7 +316,7 @@ def SllInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Bus-self form for SLL.** Eliminates value-level match hyps via `SllInput_of_bus`. -/
-theorem equiv_SLL_metaplan_bus_self
+theorem equiv_SLL_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -342,7 +342,7 @@ theorem equiv_SLL_metaplan_bus_self
       = (bus_effect exec_row [e0, e1, e2] state).2
 
     := by
-  exact equiv_SLL_metaplan_from_bus state
+  exact equiv_SLL_from_bus state
     (SllInput_of_bus e0 e1 e2 exec_row) r1 r2 rd
     exec_row e0 e1 e2
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -351,9 +351,9 @@ theorem equiv_SLL_metaplan_bus_self
     rfl h_rd_val
 
 /-- **Op-bus companion for SLL.** Op-bus companion to
-    `equiv_SLL_metaplan`: drops `h_input_r1` / `h_input_r2` in favour
-    of a single op-bus precondition. Mirrors `equiv_ADD_metaplan_op_bus`. -/
-theorem equiv_SLL_metaplan_op_bus
+    `equiv_SLL`: drops `h_input_r1` / `h_input_r2` in favour
+    of a single op-bus precondition. Mirrors `equiv_ADD_op_bus`. -/
+theorem equiv_SLL_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)
     (r1 r2 rd : regidx)
@@ -394,7 +394,7 @@ theorem equiv_SLL_metaplan_op_bus
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok sll_input.r2_val state := by
     rw [h_b_match]; exact h_r2_read
-  exact equiv_SLL_metaplan state sll_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_SLL state sll_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as

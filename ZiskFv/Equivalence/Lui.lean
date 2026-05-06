@@ -25,7 +25,7 @@ End-to-end theorem for RV64 LUI. Combines:
 
 into a canonical theorem:
 
-* `equiv_LUI_metaplan` — the metaplan target shape:
+* `equiv_LUI` — the canonical shape:
   `execute_instruction (.UTYPE (imm, rd, uop.LUI)) state
     = (bus_effect exec_row mem_row state).2`.
 
@@ -51,7 +51,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     advances by `jmp_offset2` and the rd lanes equal `(b_0, b_1)`.
 
     This is the circuit-level companion to `equiv_LUI_sail` below. -/
-theorem equiv_LUI
+theorem equiv_LUI_circuit
     (_rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_circuit :
@@ -94,7 +94,7 @@ theorem equiv_LUI_sail
     `bus_effect_matches_sail_jump_rrw`. LUI has no throw/success
     branching — the pure spec unconditionally writes rd (or skips for
     rd = x0) and advances PC. -/
-theorem equiv_LUI_metaplan
+theorem equiv_LUI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)
@@ -115,7 +115,7 @@ theorem equiv_LUI_metaplan
     (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
     (h_nextPC_eq :
       (PureSpec.execute_LUI_pure lui_input).nextPC = nextPC_val)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     (h_rd_idx : lui_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
     (h_rd_val :
       U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
@@ -139,10 +139,10 @@ theorem equiv_LUI_metaplan
 
 /-- **Tier-1: LUI without `h_rd_val` parameter.**
 
-    Same conclusion as `equiv_LUI_metaplan`, but the `h_rd_val`
+    Same conclusion as `equiv_LUI`, but the `h_rd_val`
     OUTPUT-EQ parameter is **derived internally** via the
     `RdValDerivation.JumpUType.h_rd_val_jut_lui` discharge lemma. -/
-theorem equiv_LUI_metaplan_tier1
+theorem equiv_LUI_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)
@@ -187,7 +187,7 @@ theorem equiv_LUI_metaplan_tier1
   -- Need lui_input.imm = imm to thread the conclusion shape.
   rw [← h_input_imm] at h_rd_val
   -- Delegate to the parametric theorem with the derived h_rd_val.
-  exact equiv_LUI_metaplan state lui_input imm rd exec_row e_rd nextPC_val
+  exact equiv_LUI state lui_input imm rd exec_row e_rd nextPC_val
     h_input_imm h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_rd_mult h_rd_as h_nextPC_eq h_rd_idx h_rd_val
@@ -195,7 +195,7 @@ theorem equiv_LUI_metaplan_tier1
 /-- **Bus-driven companion for LUI.** Drops `h_input_pc` and
     `h_input_rd` via `chip_bus_hyps_jump_rrw` + `readReg_of_readReg_succ`.
     `h_input_imm` stays (not bus-derivable). -/
-theorem equiv_LUI_metaplan_from_bus
+theorem equiv_LUI_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)
@@ -232,7 +232,7 @@ theorem equiv_LUI_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some lui_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_LUI_metaplan state lui_input imm rd exec_row e_rd
+  exact equiv_LUI state lui_input imm rd exec_row e_rd
     nextPC_val h_input_imm h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_rd_mult h_rd_as h_nextPC_eq h_rd_idx h_rd_val
@@ -247,7 +247,7 @@ def LuiInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Item 4 closure for LUI.** Bus-derived input form. -/
-theorem equiv_LUI_metaplan_bus_self
+theorem equiv_LUI_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (imm : BitVec 20)
     (rd : regidx)
@@ -271,7 +271,7 @@ theorem equiv_LUI_metaplan_bus_self
       = BitVec.signExtend 64 ((LuiInput_of_bus e_rd exec_row imm).imm ++ 0#12)) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
       = (bus_effect exec_row [e_rd] state).2 := by
-  exact equiv_LUI_metaplan_from_bus state
+  exact equiv_LUI_from_bus state
     (LuiInput_of_bus e_rd exec_row imm) imm rd
     exec_row e_rd nextPC_val
     rfl

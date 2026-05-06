@@ -36,12 +36,12 @@ individually because their proof obligations differ:
 
 ```
 -- LUI:
-theorem equiv_LUI_metaplan (...) := by
+theorem equiv_LUI (...) := by
   have h_rd_value :=
     UTypeArchetype.lui_archetype_store_value m r_main h_circuit
   -- ...
 -- AUIPC:
-theorem equiv_AUIPC_metaplan (...) := by
+theorem equiv_AUIPC (...) := by
   have h_rd_value :=
     UTypeArchetype.auipc_archetype_store_value m r_main h_circuit
   -- ...

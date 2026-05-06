@@ -22,7 +22,7 @@ run "2/6 baseline freshness"     "$dir/check-baseline.sh"
 run "3/6 forbidden param shapes" "$dir/check-no-output-eq.sh"
 run "4/6 floors + cross-witness" "$dir/check-floor.sh"
 run "5/6 zero sorry"             "$dir/check-no-sorry.sh"
-run "6/6 uniformity (canonical metaplan shape)" "$dir/check-uniformity.sh"
+run "6/6 uniformity (canonical equivalence shape)" "$dir/check-uniformity.sh"
 
 if [ $overall -eq 0 ]; then
   echo "trust-gate: ALL CHECKS PASSED."

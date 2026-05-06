@@ -73,7 +73,7 @@ open LeanRV64D.Functions
     Produces:
     `U64.toBV #v[e.x0, ..., e.x7] = execute_MUL_pure r1_val r2_val .MULH`
 
-    matching the `h_rd_val` parameter in `Equivalence.MulH.equiv_MULH_metaplan`.
+    matching the `h_rd_val` parameter in `Equivalence.MulH.equiv_MULH`.
 
     Internal composition: applies S2's `mulh_bv64_of_byte_sum`, which
     rewrites the spec output via `execute_MUL_pure_mulh_eq` and discharges

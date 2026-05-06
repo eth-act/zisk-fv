@@ -38,7 +38,7 @@ open ZiskFv.Tactics.StoreArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_SW
+theorem equiv_SW_circuit
     (_rs1 _rs2 : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
@@ -73,7 +73,7 @@ theorem equiv_SW_sail
     sw_input risc_v_assumptions h_opcode_assumptions
 
 /-- **Metaplan theorem.** -/
-theorem equiv_SW_metaplan
+theorem equiv_SW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sw_input : PureSpec.SwInput)
     (mstatus : RegisterType Register.mstatus)

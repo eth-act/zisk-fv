@@ -22,14 +22,14 @@ both call `execute_REMW` with `is_unsigned = true`.
 
 Three theorems mirroring the DIVU pattern (shape-(a) — ALU/Arith bus):
 
-* `equiv_REMW` — circuit-level (defined in terms of m.a/b lanes via
+* `equiv_REMW_circuit` — circuit-level (defined in terms of m.a/b lanes via
   `transpile_REMW`).
 * `equiv_REMW_sail` — Sail-level wrapper for
   `execute_DIVREM_remw_pure_equiv`.
-* `equiv_REMW_metaplan` — metaplan-target shape composing
+* `equiv_REMW` — canonical shape composing
   Sail + bus-effect via `bus_effect_matches_sail_alu_rrw`.
 
-Plus V12 companion `equiv_REMW_metaplan_from_bus`.
+Plus V12 companion `equiv_REMW_from_bus`.
 -/
 
 namespace ZiskFv.Equivalence.Remw
@@ -65,7 +65,7 @@ theorem equiv_REMW_sail
     remw_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
 /-- **Metaplan theorem.** Shape (a) ALU/Arith. -/
-theorem equiv_REMW_metaplan
+theorem equiv_REMW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remw_input : PureSpec.RemwInput)
     (r1 r2 rd : regidx)
@@ -119,7 +119,7 @@ theorem equiv_REMW_metaplan
     rw [h_rd_val]
 
 /-- **V12 companion.** Drops `h_input_*` via chip_bus_hyps_alu_rrw. -/
-theorem equiv_REMW_metaplan_from_bus
+theorem equiv_REMW_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remw_input : PureSpec.RemwInput)
     (r1 r2 rd : regidx)
@@ -176,7 +176,7 @@ theorem equiv_REMW_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some remw_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_REMW_metaplan state remw_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_REMW state remw_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -196,7 +196,7 @@ def RemwInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Bus-self form for REMW.** Eliminates value-level match hyps via `RemwInput_of_bus`. -/
-theorem equiv_REMW_metaplan_bus_self
+theorem equiv_REMW_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -232,7 +232,7 @@ theorem equiv_REMW_metaplan_bus_self
       LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, false))) state
       = (bus_effect exec_row [e0, e1, e2] state).2
     := by
-  exact equiv_REMW_metaplan_from_bus state
+  exact equiv_REMW_from_bus state
     (RemwInput_of_bus e0 e1 e2 exec_row) r1 r2 rd
     exec_row e0 e1 e2
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -241,10 +241,10 @@ theorem equiv_REMW_metaplan_bus_self
     rfl h_rd_val
 
 /-- **Op-bus companion for REMW.** Op-bus companion to
-    `equiv_REMW_metaplan`: drops `h_input_r1` / `h_input_r2` in
+    `equiv_REMW`: drops `h_input_r1` / `h_input_r2` in
     favour of an op-bus precondition. Mirrors
-    `equiv_ADD_metaplan_op_bus`. -/
-theorem equiv_REMW_metaplan_op_bus
+    `equiv_ADD_op_bus`. -/
+theorem equiv_REMW_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remw_input : PureSpec.RemwInput)
     (r1 r2 rd : regidx)
@@ -296,12 +296,12 @@ theorem equiv_REMW_metaplan_op_bus
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok remw_input.r2_val state := by
     rw [h_b_match]; exact h_r2_read
-  exact equiv_REMW_metaplan state remw_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_REMW state remw_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 /-- **Tier-1: REMW without `h_rd_val` parameter**.
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_remw`. -/
-theorem equiv_REMW_metaplan_tier1
+theorem equiv_REMW_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remw_input : PureSpec.RemwInput)
     (r1 r2 rd : regidx)
@@ -352,7 +352,7 @@ theorem equiv_REMW_metaplan_tier1
       remw_input.r1_val remw_input.r2_val e2
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_byte_sum_circuit
-  exact equiv_REMW_metaplan state remw_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_REMW state remw_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as

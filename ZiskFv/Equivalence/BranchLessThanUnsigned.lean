@@ -35,7 +35,7 @@ open ZiskFv.Circuit.BranchLessThanUnsigned
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Circuit-level BLTU theorem.** -/
-theorem equiv_BLTU
+theorem equiv_BLTU_circuit
     (_rs1 _rs2 : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_circuit : branch_ltu_circuit_holds m r_main next_pc) :
@@ -77,7 +77,7 @@ theorem equiv_BLTU_sail
     h_input_pc h_input_misa h_misa_c
 
 /-- **Metaplan theorem.** -/
-theorem equiv_BLTU_metaplan
+theorem equiv_BLTU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bltu_input : PureSpec.BltuInput)
     (imm : BitVec 13)
@@ -118,7 +118,7 @@ theorem equiv_BLTU_metaplan
     `chip_bus_hyps_branch_rrw` + `readReg_of_readReg_succ`. Other
     `h_input_*` stay — branch memory bus is empty, so rs1/rs2
     reads go via operation bus (not derivable from `h_bus` here). -/
-theorem equiv_BLTU_metaplan_from_bus
+theorem equiv_BLTU_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bltu_input : PureSpec.BltuInput)
     (imm : BitVec 13)
@@ -151,7 +151,7 @@ theorem equiv_BLTU_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some bltu_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_BLTU_metaplan state bltu_input imm r1 r2 misa_val exec_row h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
+  exact equiv_BLTU state bltu_input imm r1 r2 misa_val exec_row h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
 
 /-- Constructor: build a `PureSpec.BltuInput` from exec_row PC + free operand values. -/
@@ -166,7 +166,7 @@ def BltuInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Item 4 closure for BLTU.** Bus-derived input form. -/
-theorem equiv_BLTU_metaplan_bus_self
+theorem equiv_BLTU_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (imm : BitVec 13)
     (r1 r2 : regidx)
@@ -193,7 +193,7 @@ theorem equiv_BLTU_metaplan_bus_self
       = (bus_effect exec_row [] state).2
 
     := by
-  exact equiv_BLTU_metaplan_from_bus state
+  exact equiv_BLTU_from_bus state
     (BltuInput_of_bus exec_row imm r1_val r2_val) imm r1 r2 misa_val exec_row
     rfl h_input_r1 h_input_r2
     h_input_misa h_misa_c 
@@ -202,8 +202,8 @@ theorem equiv_BLTU_metaplan_bus_self
     h_not_throws h_success
 
 /-- **Track Q POC for BLTU.** Operation-bus companion to
-    `equiv_BLTU_metaplan_from_bus`. Mirrors `equiv_BEQ_metaplan_op_bus`. -/
-theorem equiv_BLTU_metaplan_op_bus
+    `equiv_BLTU_from_bus`. Mirrors `equiv_BEQ_op_bus`. -/
+theorem equiv_BLTU_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bltu_input : PureSpec.BltuInput)
     (imm : BitVec 13)
@@ -240,7 +240,7 @@ theorem equiv_BLTU_metaplan_op_bus
       = EStateM.Result.ok bltu_input.r1_val state := by rw [h_a_match]; exact h_r1_read
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok bltu_input.r2_val state := by rw [h_b_match]; exact h_r2_read
-  exact equiv_BLTU_metaplan_from_bus state bltu_input imm r1 r2 misa_val exec_row
+  exact equiv_BLTU_from_bus state bltu_input imm r1 r2 misa_val exec_row
     h_input_imm h_input_r1 h_input_r2 h_input_misa h_misa_c
     h_bus h_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
@@ -251,7 +251,7 @@ Same shape as BLT; case-split predicate is `h_taken : r1.toNat < r2.toNat`
 (BLTU taken on unsigned less-than). -/
 
 /-- **Misaligned-target companion (bit-1 case): Sail-side reduction.** -/
-theorem equiv_BLTU_metaplan_misaligned
+theorem equiv_BLTU_misaligned
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bltu_input : PureSpec.BltuInput)
     (imm : BitVec 13)
@@ -286,7 +286,7 @@ theorem equiv_BLTU_metaplan_misaligned
         EStateM.bind, EStateM.pure, write_reg_state]
 
 /-- **Misaligned-target companion (bit-0 case): Sail-side reduction.** -/
-theorem equiv_BLTU_metaplan_misaligned_bit0
+theorem equiv_BLTU_misaligned_bit0
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bltu_input : PureSpec.BltuInput)
     (imm : BitVec 13)

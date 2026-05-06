@@ -36,7 +36,7 @@ instead of `pc + jmp_offset1`.
 ## Usage pattern
 
 ```
-theorem equiv_<JumpLike>_metaplan (...) := by
+theorem equiv_<JumpLike> (...) := by
   have h_next_pc :=
     jump_archetype_pc_advance m r next_pc h_circuit_jal
   -- ...

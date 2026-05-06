@@ -49,7 +49,7 @@ chain; concrete opcodes pin `a` lanes at the equivalence layer.
 
 ```lean
 -- LW case:
-theorem equiv_LW (...) := by
+theorem equiv_LW_circuit (...) := by
   have := sign_extend_load_archetype_m32_one_zeros_bus m r_main bus_entry
     (opcode_lit := OP_SIGNEXTEND_W) h_circuit_lw
   ...

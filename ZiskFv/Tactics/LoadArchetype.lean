@@ -33,7 +33,7 @@ zeroing-of-high-bytes assumption on the memory-bus entry.
 
 ```lean
 -- LWU case (width = 4, op = OP_COPYB = 1):
-theorem equiv_LWU_metaplan (...) := by
+theorem equiv_LWU (...) := by
   have := load_archetype_c_packed m r next_pc entry h_circuit
   -- apply `memory_entry_toField` lemmas specialized to width = 4
   ...

@@ -42,7 +42,7 @@ SRA can fan out from a single parametric proof skeleton.
 
 ```
 -- SRLW case:
-theorem equiv_SRLW_metaplan (...) := by
+theorem equiv_SRLW (...) := by
   have h_high_zero :=
     shift_archetype_m32_one_zeros_bus m r_main bus_entry
       (opcode_lit := OP_SRL_W) h_circuit_srlw
@@ -50,7 +50,7 @@ theorem equiv_SRLW_metaplan (...) := by
 ```
 
 See `Spec/Shift.lean::sllw_compositional` for the SLLW specialization
-that the concrete `equiv_SLLW` theorem consumes; the
+that the concrete `equiv_SLLW_circuit` theorem consumes; the
 `shift_archetype_m32_one_zeros_bus` macro-theorem below is its
 parametric twin. SLL/SRL/SRA (64-bit siblings) invoke
 `shift_archetype_m32_zero_passthrough_bus` for the symmetric

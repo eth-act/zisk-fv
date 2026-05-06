@@ -32,7 +32,7 @@ folds them harmlessly into `memory_entry_toField`.
 
 ```lean
 -- SW case (width = 4, op = OP_COPYB = 1):
-theorem equiv_SW_metaplan (...) := by
+theorem equiv_SW (...) := by
   have := store_archetype_c_packed m r next_pc entry h_circuit
   -- apply `memory_entry_toField` lemmas specialized to width = 4
   ...

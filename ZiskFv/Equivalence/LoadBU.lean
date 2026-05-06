@@ -29,7 +29,7 @@ open ZiskFv.Circuit.LoadBU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_LBU
+theorem equiv_LBU_circuit
     (_rs1 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
@@ -66,7 +66,7 @@ theorem equiv_LBU_sail
     lbu_input risc_v_assumptions h_opcode_assumptions
 
 /-- **Metaplan theorem.** -/
-theorem equiv_LBU_metaplan
+theorem equiv_LBU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lbu_input : PureSpec.LbuInput)
     (mstatus : RegisterType Register.mstatus)

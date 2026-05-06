@@ -55,7 +55,7 @@ ZiskFv/Circuit/<family>       ← circuit semantics in BitVec / FGL
         │
         │ + LHS bridge to Sail spec
         ▼
-ZiskFv/Equivalence/<OP>       ← equiv_<OP>_metaplan : Sail.execute = bus_effect.2
+ZiskFv/Equivalence/<OP>       ← equiv_<OP> : Sail.execute = bus_effect.2
 ```
 
 ## Build / verify / test
@@ -116,9 +116,9 @@ things; if you break any of them, the build fails:
    axiom's source-text hash. Adding / renaming / removing / subtly
    weakening any axiom → run `trust/scripts/regenerate.sh` and commit
    the updated baseline. The hash diff IS the audit surface for review.
-3. **Forbidden tier1 parameters.** `equiv_<OP>_metaplan_tier1`
-   theorems may not include the named parameters retired by the
-   finishing series (`h_rd_val`, `h_byte_sum`,
+3. **Forbidden tier1 parameters.** `equiv_<OP>_tier1` theorems may
+   not include the retired OUTPUT-EQ named parameters (`h_rd_val`,
+   `h_byte_sum`,
    `h_bus_execute_matches_sail`, `h_entry_hi_nat`, `h_pc_fgl_lo_nat`,
    `h_pci_lo_val`, `h_entry_lo_eq`). Pattern list:
    `trust/forbidden-param-shapes.txt`.
@@ -126,7 +126,7 @@ things; if you break any of them, the build fails:
    cross-witness check that the parser hasn't been sabotaged.
 5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,Spec,Equivalence,Tactics,RV64D}`.
 6. **Uniformity.** Every one of 63 RV64IM opcodes has a canonical
-   `equiv_<OP>_metaplan` theorem.
+   `equiv_<OP>` theorem.
 
 **Run `trust/scripts/check-all.sh` locally before pushing** (it
 takes seconds — none of these checks need `lake build`).
@@ -178,9 +178,9 @@ or `trust/allowed-axiom-files.txt` directly — both are CODEOWNER-protected.
 
 Recover via `git show`:
 
-- **`ai_plans/`** — commit `ac2d5e4`. Contained the metaplan, per-phase
-  plans (Phase 0 / 1 / finishing1-5) with CLOSED retrospectives.
-  Recover with `git show ac2d5e4^:ai_plans/<file>`.
+- **`ai_plans/`** — commit `ac2d5e4`. The pre-completion planning
+  tree (overall plan + per-phase plans, all CLOSED with
+  retrospectives). Recover with `git show ac2d5e4^:ai_plans/<file>`.
 - **`docs/fv/`** purge — commit `661fe36`. Commit message lists each
   removed file and what it covered, so it doubles as the recovery index.
 - **`docker/`** — commit `cd4e4d9` ("chore: delete docker pipeline

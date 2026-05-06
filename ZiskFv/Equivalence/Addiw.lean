@@ -48,7 +48,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- **Circuit-level ADDIW theorem.** Main's packed
     `c` equals the bus entry's packed `c` lanes. Wraps
     `Spec.Addiw.addiw_compositional`. -/
-theorem equiv_ADDIW
+theorem equiv_ADDIW_circuit
     (_rs1 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -87,7 +87,7 @@ theorem equiv_ADDIW_sail
 /-- **Metaplan theorem.** Sail's `execute_instruction`
     on an RV64 ADDIW equals `(bus_effect exec_row mem_row state).2`.
     Shape (a) — same bus skeleton as SLLIW. -/
-theorem equiv_ADDIW_metaplan
+theorem equiv_ADDIW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addiw_input : PureSpec.AddiwInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -107,7 +107,7 @@ theorem equiv_ADDIW_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     (h_rd_idx : addiw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -133,7 +133,7 @@ theorem equiv_ADDIW_metaplan
   · rw [h_rd_val]
 
 /-- **Tier-1: ADDIW without `h_rd_val` parameter.** -/
-theorem equiv_ADDIW_metaplan_tier1
+theorem equiv_ADDIW_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addiw_input : PureSpec.AddiwInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -228,7 +228,7 @@ theorem equiv_ADDIW_metaplan_tier1
                               e2.x4, e2.x5, e2.x6, e2.x7]
       = execute_ADDIW_pure addiw_input.imm addiw_input.r1_val := by
     rw [h_discharge, h_input_imm, h_bridge]
-  exact equiv_ADDIW_metaplan state addiw_input r1 rd imm exec_row e0 e1 e2
+  exact equiv_ADDIW state addiw_input r1 rd imm exec_row e0 e1 e2
     h_input_r1 h_input_imm h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -238,8 +238,8 @@ theorem equiv_ADDIW_metaplan_tier1
 /-- **Bus-driven companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
-    Delegates to `equiv_ADDIW_metaplan` after chip_bus_hyps + match composition.  -/
-theorem equiv_ADDIW_metaplan_from_bus
+    Delegates to `equiv_ADDIW` after chip_bus_hyps + match composition.  -/
+theorem equiv_ADDIW_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addiw_input : PureSpec.AddiwInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -263,7 +263,7 @@ theorem equiv_ADDIW_metaplan_from_bus
                     e0.x4, e0.x5, e0.x6, e0.x7])
     (h_pc : addiw_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     (h_rd_idx : addiw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -291,7 +291,7 @@ theorem equiv_ADDIW_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some addiw_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_ADDIW_metaplan state addiw_input r1 rd imm exec_row e0 e1 e2 h_input_r1 h_input_imm h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_ADDIW state addiw_input r1 rd imm exec_row e0 e1 e2 h_input_r1 h_input_imm h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 
 /-- Constructor: build a `PureSpec.AddiwInput` from bus entries + imm. -/
@@ -308,7 +308,7 @@ def AddiwInput_of_bus
 
 /-- **Item 4 closure for ADDIW.** Bus-derived input form: 
     eliminates value-level match hyps via `AddiwInput_of_bus`. -/
-theorem equiv_ADDIW_metaplan_bus_self
+theorem equiv_ADDIW_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 rd : regidx) (imm : BitVec 12)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -326,7 +326,7 @@ theorem equiv_ADDIW_metaplan_bus_self
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]
@@ -339,7 +339,7 @@ theorem equiv_ADDIW_metaplan_bus_self
       = (bus_effect exec_row [e0, e1, e2] state).2
 
     := by
-  exact equiv_ADDIW_metaplan_from_bus state
+  exact equiv_ADDIW_from_bus state
     (AddiwInput_of_bus e0 e2 exec_row imm)
     r1 rd imm exec_row e0 e1 e2
     rfl
@@ -349,9 +349,9 @@ theorem equiv_ADDIW_metaplan_bus_self
     rfl h_rd_val
 
 /-- **Track Q ALU fan-out for ADDIW.** Op-bus companion to
-    `equiv_ADDIW_metaplan`: drops `h_input_r1` in favour of an op-bus
-    precondition. Mirrors `equiv_ADD_metaplan_op_bus`. -/
-theorem equiv_ADDIW_metaplan_op_bus
+    `equiv_ADDIW`: drops `h_input_r1` in favour of an op-bus
+    precondition. Mirrors `equiv_ADD_op_bus`. -/
+theorem equiv_ADDIW_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addiw_input : PureSpec.AddiwInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -375,7 +375,7 @@ theorem equiv_ADDIW_metaplan_op_bus
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     (h_rd_idx : addiw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -392,6 +392,6 @@ theorem equiv_ADDIW_metaplan_op_bus
   have h_input_r1 : read_xreg (regidx_to_fin r1) state
       = EStateM.Result.ok addiw_input.r1_val state := by
     rw [h_a_match]; exact h_r1_read
-  exact equiv_ADDIW_metaplan state addiw_input r1 rd imm exec_row e0 e1 e2 h_input_r1 h_input_imm h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_ADDIW state addiw_input r1 rd imm exec_row e0 e1 e2 h_input_r1 h_input_imm h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 end ZiskFv.Equivalence.Addiw

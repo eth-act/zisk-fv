@@ -22,14 +22,14 @@ both call `execute_DIVW` with `is_unsigned = true`.
 
 Three theorems mirroring the DIVU pattern (shape-(a) — ALU/Arith bus):
 
-* `equiv_DIVUW` — circuit-level (defined in terms of m.a/b lanes via
+* `equiv_DIVUW_circuit` — circuit-level (defined in terms of m.a/b lanes via
   `transpile_DIVUW`).
 * `equiv_DIVUW_sail` — Sail-level wrapper for
   `execute_DIVREM_divuw_pure_equiv`.
-* `equiv_DIVUW_metaplan` — metaplan-target shape composing
+* `equiv_DIVUW` — canonical shape composing
   Sail + bus-effect via `bus_effect_matches_sail_alu_rrw`.
 
-Plus bus-driven companion `equiv_DIVUW_metaplan_from_bus`.
+Plus bus-driven companion `equiv_DIVUW_from_bus`.
 -/
 
 namespace ZiskFv.Equivalence.Divuw
@@ -65,7 +65,7 @@ theorem equiv_DIVUW_sail
     divuw_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
 /-- **Metaplan theorem.** Shape (a) ALU/Arith. -/
-theorem equiv_DIVUW_metaplan
+theorem equiv_DIVUW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divuw_input : PureSpec.DivuwInput)
     (r1 r2 rd : regidx)
@@ -117,7 +117,7 @@ theorem equiv_DIVUW_metaplan
     rw [h_rd_val]
 
 /-- **V12 companion.** Drops `h_input_*` via chip_bus_hyps_alu_rrw. -/
-theorem equiv_DIVUW_metaplan_from_bus
+theorem equiv_DIVUW_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divuw_input : PureSpec.DivuwInput)
     (r1 r2 rd : regidx)
@@ -172,7 +172,7 @@ theorem equiv_DIVUW_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some divuw_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_DIVUW_metaplan state divuw_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_DIVUW state divuw_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -193,7 +193,7 @@ def DivuwInput_of_bus
 
 /-- **Item 4 closure for DIVUW.** Bus-derived input form: 
     eliminates value-level match hyps via `DivuwInput_of_bus`. -/
-theorem equiv_DIVUW_metaplan_bus_self
+theorem equiv_DIVUW_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -227,7 +227,7 @@ theorem equiv_DIVUW_metaplan_bus_self
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, true))) state
       = (bus_effect exec_row [e0, e1, e2] state).2
     := by
-  exact equiv_DIVUW_metaplan_from_bus state
+  exact equiv_DIVUW_from_bus state
     (DivuwInput_of_bus e0 e1 e2 exec_row) r1 r2 rd
     exec_row e0 e1 e2
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -236,10 +236,10 @@ theorem equiv_DIVUW_metaplan_bus_self
     rfl h_rd_val
 
 /-- **Track Q ALU/MUL/DIV fan-out for DIVUW.** Op-bus companion to
-    `equiv_DIVUW_metaplan`: drops `h_input_r1` / `h_input_r2` in
+    `equiv_DIVUW`: drops `h_input_r1` / `h_input_r2` in
     favour of an op-bus precondition. Mirrors
-    `equiv_ADD_metaplan_op_bus`. -/
-theorem equiv_DIVUW_metaplan_op_bus
+    `equiv_ADD_op_bus`. -/
+theorem equiv_DIVUW_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divuw_input : PureSpec.DivuwInput)
     (r1 r2 rd : regidx)
@@ -289,12 +289,12 @@ theorem equiv_DIVUW_metaplan_op_bus
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok divuw_input.r2_val state := by
     rw [h_b_match]; exact h_r2_read
-  exact equiv_DIVUW_metaplan state divuw_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_DIVUW state divuw_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 /-- **Tier-1: DIVUW without `h_rd_val` parameter.**
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_divuw`. -/
-theorem equiv_DIVUW_metaplan_tier1
+theorem equiv_DIVUW_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divuw_input : PureSpec.DivuwInput)
     (r1 r2 rd : regidx)
@@ -343,7 +343,7 @@ theorem equiv_DIVUW_metaplan_tier1
       divuw_input.r1_val divuw_input.r2_val e2
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_byte_sum_circuit
-  exact equiv_DIVUW_metaplan state divuw_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_DIVUW state divuw_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as

@@ -37,7 +37,7 @@ open ZiskFv.Circuit.ShiftRLI
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_SRLIW
+theorem equiv_SRLIW_circuit
     (_rs1 : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -65,7 +65,7 @@ theorem equiv_SRLIW_sail
   PureSpec.execute_SHIFTIWOP_srliw_pure_equiv
     srliw_input r1 rd h_input_r1 h_input_rd h_input_pc
 
-theorem equiv_SRLIW_metaplan
+theorem equiv_SRLIW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srliw_input : PureSpec.SrliwInput)
     (r1 rd : regidx)
@@ -108,7 +108,7 @@ theorem equiv_SRLIW_metaplan
   · rw [h_rd_val]
 
 /-- **Tier-1: SRLIW without `h_rd_val` parameter**. -/
-theorem equiv_SRLIW_metaplan_tier1
+theorem equiv_SRLIW_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srliw_input : PureSpec.SrliwInput)
     (r1 rd : regidx)
@@ -216,7 +216,7 @@ theorem equiv_SRLIW_metaplan_tier1
         (BitVec.ushiftRight (Sail.BitVec.extractLsb srliw_input.r1_val 31 0) shift)
       = BitVec.signExtend 64
         (BitVec.ushiftRight (BitVec.ofNat 32 a4sum) shift)).trans h_bridge)
-  exact equiv_SRLIW_metaplan state srliw_input r1 rd exec_row e0 e1 e2
+  exact equiv_SRLIW state srliw_input r1 rd exec_row e0 e1 e2
     h_input_r1 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -226,8 +226,8 @@ theorem equiv_SRLIW_metaplan_tier1
 /-- **Bus-precondition companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
-    Delegates to `equiv_SRLIW_metaplan` after chip_bus_hyps + match composition.  -/
-theorem equiv_SRLIW_metaplan_from_bus
+    Delegates to `equiv_SRLIW` after chip_bus_hyps + match composition.  -/
+theorem equiv_SRLIW_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srliw_input : PureSpec.SrliwInput)
     (r1 rd : regidx)
@@ -275,7 +275,7 @@ theorem equiv_SRLIW_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some srliw_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_SRLIW_metaplan state srliw_input r1 rd exec_row e0 e1 e2 h_input_r1 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_SRLIW state srliw_input r1 rd exec_row e0 e1 e2 h_input_r1 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 
 /-- Constructor: build a `PureSpec.SrliwInput` from bus + shamt. -/
@@ -291,7 +291,7 @@ def SrliwInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Bus-self form for SRLIW.** Bus-derived input form. -/
-theorem equiv_SRLIW_metaplan_bus_self
+theorem equiv_SRLIW_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 rd : regidx)
     (shamt : BitVec 5)
@@ -320,7 +320,7 @@ theorem equiv_SRLIW_metaplan_bus_self
       = (bus_effect exec_row [e0, e1, e2] state).2
 
     := by
-  exact equiv_SRLIW_metaplan_from_bus state
+  exact equiv_SRLIW_from_bus state
     (SrliwInput_of_bus e0 e2 exec_row shamt) r1 rd exec_row e0 e1 e2
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -328,9 +328,9 @@ theorem equiv_SRLIW_metaplan_bus_self
     rfl h_rd_val
 
 /-- **Op-bus companion for SRLIW.** Op-bus companion to
-    `equiv_SRLIW_metaplan`: drops `h_input_r1` in favour of an op-bus
-    precondition. Mirrors `equiv_ADD_metaplan_op_bus`. -/
-theorem equiv_SRLIW_metaplan_op_bus
+    `equiv_SRLIW`: drops `h_input_r1` in favour of an op-bus
+    precondition. Mirrors `equiv_ADD_op_bus`. -/
+theorem equiv_SRLIW_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srliw_input : PureSpec.SrliwInput)
     (r1 rd : regidx)
@@ -368,6 +368,6 @@ theorem equiv_SRLIW_metaplan_op_bus
   have h_input_r1 : read_xreg (regidx_to_fin r1) state
       = EStateM.Result.ok srliw_input.r1_val state := by
     rw [h_a_match]; exact h_r1_read
-  exact equiv_SRLIW_metaplan state srliw_input r1 rd exec_row e0 e1 e2 h_input_r1 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_SRLIW state srliw_input r1 rd exec_row e0 e1 e2 h_input_r1 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 end ZiskFv.Equivalence.ShiftRLI

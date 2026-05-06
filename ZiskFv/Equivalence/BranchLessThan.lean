@@ -29,9 +29,9 @@ End-to-end theorem for RV64 BLT. Combines:
 into three theorems mirroring `Equivalence/BranchEqual.lean` /
 `Equivalence/BranchNotEqual.lean`:
 
-* `equiv_BLT` — circuit-level flag-dispatched next-pc formula;
+* `equiv_BLT_circuit` — circuit-level flag-dispatched next-pc formula;
 * `equiv_BLT_sail` — Sail reduction to `PureSpec.execute_BLT_pure`;
-* `equiv_BLT_metaplan` — the metaplan target:
+* `equiv_BLT` — the canonical target:
   `execute_instruction (.BTYPE (imm, r2, r1, BLT)) state
     = (bus_effect exec_row mem_row state).2`.
 
@@ -52,9 +52,9 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- **Circuit-level BLT theorem.** Given the branch-subset Main
     constraints plus the mode witnesses from `transpile_BLT`, the
     next-pc cell satisfies the flag-dispatched handshake formula.
-    Identical in shape to `equiv_BEQ`/`equiv_BNE` — the opcode literal
+    Identical in shape to `equiv_BEQ_circuit`/`equiv_BNE_circuit` — the opcode literal
     only surfaces at the bus-flag-correctness layer. -/
-theorem equiv_BLT
+theorem equiv_BLT_circuit
     (_rs1 _rs2 : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_circuit : branch_lt_circuit_holds m r_main next_pc) :
@@ -105,7 +105,7 @@ theorem equiv_BLT_sail
     `execute_instruction` on an RV64 BLT equals the state computed by
     applying `bus_effect` to the circuit's execution and memory bus rows.
     Reuses `bus_effect_matches_sail_beq` (shape (b), branch-shape). -/
-theorem equiv_BLT_metaplan
+theorem equiv_BLT
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (blt_input : PureSpec.BltInput)
     (imm : BitVec 13)
@@ -149,7 +149,7 @@ theorem equiv_BLT_metaplan
     `chip_bus_hyps_branch_rrw` + `readReg_of_readReg_succ`. Other
     `h_input_*` stay — branch memory bus is empty, so rs1/rs2
     reads go via operation bus (not derivable from `h_bus` here). -/
-theorem equiv_BLT_metaplan_from_bus
+theorem equiv_BLT_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (blt_input : PureSpec.BltInput)
     (imm : BitVec 13)
@@ -183,7 +183,7 @@ theorem equiv_BLT_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some blt_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_BLT_metaplan state blt_input imm r1 r2 misa_val exec_row h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
+  exact equiv_BLT state blt_input imm r1 r2 misa_val exec_row h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
 
 /-- Constructor: build a `PureSpec.BltInput` from exec_row PC + free operand values. -/
@@ -198,7 +198,7 @@ def BltInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Item 4 closure for BLT.** Bus-derived input form. -/
-theorem equiv_BLT_metaplan_bus_self
+theorem equiv_BLT_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (imm : BitVec 13)
     (r1 r2 : regidx)
@@ -226,7 +226,7 @@ theorem equiv_BLT_metaplan_bus_self
       = (bus_effect exec_row [] state).2
 
     := by
-  exact equiv_BLT_metaplan_from_bus state
+  exact equiv_BLT_from_bus state
     (BltInput_of_bus exec_row imm r1_val r2_val) imm r1 r2 misa_val exec_row
     rfl h_input_r1 h_input_r2
     h_input_misa h_misa_c 
@@ -235,11 +235,11 @@ theorem equiv_BLT_metaplan_bus_self
     h_not_throws h_success
 
 /-- **Track Q POC for BLT.** Operation-bus companion to
-    `equiv_BLT_metaplan_from_bus`: drops the scenario-binding
+    `equiv_BLT_from_bus`: drops the scenario-binding
     `h_input_r1` / `h_input_r2` parameters in favour of a single
     `h_op_bus : (op_bus_effect [op_entry] state rs1 rs2).1`
-    precondition. Mirrors `equiv_BEQ_metaplan_op_bus`. -/
-theorem equiv_BLT_metaplan_op_bus
+    precondition. Mirrors `equiv_BEQ_op_bus`. -/
+theorem equiv_BLT_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (blt_input : PureSpec.BltInput)
     (imm : BitVec 13)
@@ -276,15 +276,15 @@ theorem equiv_BLT_metaplan_op_bus
       = EStateM.Result.ok blt_input.r1_val state := by rw [h_a_match]; exact h_r1_read
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok blt_input.r2_val state := by rw [h_b_match]; exact h_r2_read
-  exact equiv_BLT_metaplan_from_bus state blt_input imm r1 r2 misa_val exec_row
+  exact equiv_BLT_from_bus state blt_input imm r1 r2 misa_val exec_row
     h_input_imm h_input_r1 h_input_r2 h_input_misa h_misa_c
     h_bus h_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
 /-! ## Misaligned-target companion
 
-The metaplan theorems above (`equiv_BLT_metaplan`,
-`equiv_BLT_metaplan_from_bus`, `equiv_BLT_metaplan_bus_self`) cover
+The canonical theorems above (`equiv_BLT`,
+`equiv_BLT_from_bus`, `equiv_BLT_bus_self`) cover
 **only the happy path** where the branch target is 4-byte aligned
 (both bit-0 and bit-1 of `PC + sext imm` are 0). The hypotheses
 `h_not_throws : (...).throws = false` and
@@ -338,7 +338,7 @@ Closing this gap requires one of:
 
 ### Theorem
 
-`equiv_BLT_metaplan_misaligned` characterises the bit-1-misaligned
+`equiv_BLT_misaligned` characterises the bit-1-misaligned
 case (target's bit-1 = 1, bit-0 = 0): under taken (`r1 < r2` signed)
 and the misalignment hypothesis, `execute_instruction (.BTYPE …)`
 yields `EStateM.Result.ok (Memory_Exception (Virtaddr (PC + sext imm),
@@ -346,7 +346,7 @@ E_Fetch_Addr_Align ())) state'` where `state'` is `state` with
 `Register.nextPC` set to `PC + 4` (the pure-spec-mandated fall-through).
 
 The bit-0-misaligned case is documented in a sibling theorem
-`equiv_BLT_metaplan_misaligned_bit0` at the end of this file: that one
+`equiv_BLT_misaligned_bit0` at the end of this file: that one
 yields `EStateM.Result.error (Sail.Error.Assertion …) state'` (a Sail
 assertion failure rather than `Memory_Exception`), reflecting the
 RVA/RVI distinction in `LeanRV64D.Functions.jump_to`.
@@ -368,7 +368,7 @@ output. -/
     `(bus_effect exec_row [] state).2` cannot be reached today.
 
     Reuses `equiv_BLT_sail` (no new axiom). -/
-theorem equiv_BLT_metaplan_misaligned
+theorem equiv_BLT_misaligned
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (blt_input : PureSpec.BltInput)
     (imm : BitVec 13)
@@ -417,7 +417,7 @@ theorem equiv_BLT_metaplan_misaligned
 
     Like the bit-1 case, no bus-effect equation: `bus_effect` cannot
     return `EStateM.Result.error`. -/
-theorem equiv_BLT_metaplan_misaligned_bit0
+theorem equiv_BLT_misaligned_bit0
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (blt_input : PureSpec.BltInput)
     (imm : BitVec 13)

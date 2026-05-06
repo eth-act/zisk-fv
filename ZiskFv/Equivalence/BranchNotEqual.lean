@@ -27,11 +27,11 @@ End-to-end theorem for RV64 BNE. Combines:
 
 into three theorems mirroring `Equivalence/BranchEqual.lean`:
 
-* `equiv_BNE` — the circuit-level flag-dispatched next-pc formula
-  (same shape as `equiv_BEQ`; the polarity flip only shows up after
+* `equiv_BNE_circuit` — the circuit-level flag-dispatched next-pc formula
+  (same shape as `equiv_BEQ_circuit`; the polarity flip only shows up after
   composing with `transpile_BNE`'s `jmp_offset1`/`jmp_offset2` swap),
 * `equiv_BNE_sail` — the Sail reduction to `PureSpec.execute_BNE_pure`,
-* `equiv_BNE_metaplan` — the metaplan's target shape:
+* `equiv_BNE` — the canonical shape:
   `execute_instruction (.BTYPE (imm, r2, r1, BNE)) state
     = (bus_effect exec_row mem_row state).2`.
 
@@ -57,7 +57,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     emerges after composing with `transpile_BNE`'s
     `jmp_offset1 = 4, jmp_offset2 = imm` assignment — at the Main-AIR
     level, the formula is literally the same as BEQ's. -/
-theorem equiv_BNE
+theorem equiv_BNE_circuit
     (_rs1 _rs2 : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_circuit : branch_ne_circuit_holds m r_main next_pc) :
@@ -110,7 +110,7 @@ theorem equiv_BNE_sail
     BEQ and BNE share shape (b) — two execution-bus entries (pc read,
     nextpc write), empty memory bus — so this theorem reuses
     `bus_effect_matches_sail_beq` directly. -/
-theorem equiv_BNE_metaplan
+theorem equiv_BNE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bne_input : PureSpec.BneInput)
     (imm : BitVec 13)
@@ -154,7 +154,7 @@ theorem equiv_BNE_metaplan
     `chip_bus_hyps_branch_rrw` + `readReg_of_readReg_succ`. Other
     `h_input_*` stay — branch memory bus is empty, so rs1/rs2
     reads go via operation bus (not derivable from `h_bus` here). -/
-theorem equiv_BNE_metaplan_from_bus
+theorem equiv_BNE_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bne_input : PureSpec.BneInput)
     (imm : BitVec 13)
@@ -188,7 +188,7 @@ theorem equiv_BNE_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some bne_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_BNE_metaplan state bne_input imm r1 r2 misa_val exec_row h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
+  exact equiv_BNE state bne_input imm r1 r2 misa_val exec_row h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
 
 /-- Constructor: build a `PureSpec.BneInput` from exec_row PC + free operand values. -/
@@ -203,7 +203,7 @@ def BneInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Item 4 closure for BNE.** Bus-derived input form. -/
-theorem equiv_BNE_metaplan_bus_self
+theorem equiv_BNE_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (imm : BitVec 13)
     (r1 r2 : regidx)
@@ -231,7 +231,7 @@ theorem equiv_BNE_metaplan_bus_self
       = (bus_effect exec_row [] state).2
 
     := by
-  exact equiv_BNE_metaplan_from_bus state
+  exact equiv_BNE_from_bus state
     (BneInput_of_bus exec_row imm r1_val r2_val) imm r1 r2 misa_val exec_row
     rfl h_input_r1 h_input_r2
     h_input_misa h_misa_c
@@ -240,15 +240,15 @@ theorem equiv_BNE_metaplan_bus_self
     h_not_throws h_success
 
 /-- **Track Q POC for BNE.** Operation-bus companion to
-    `equiv_BNE_metaplan_from_bus`: drops the scenario-binding
+    `equiv_BNE_from_bus`: drops the scenario-binding
     `h_input_r1` / `h_input_r2` parameters in favour of a single
     `h_op_bus : (op_bus_effect [op_entry] state rs1 rs2).1`
     precondition.
 
-    Mirrors `equiv_BEQ_metaplan_op_bus` shape-for-shape; only the
+    Mirrors `equiv_BEQ_op_bus` shape-for-shape; only the
     opcode literal (`bop.BNE`) and pure-spec name (`execute_BNE_pure`)
     change. -/
-theorem equiv_BNE_metaplan_op_bus
+theorem equiv_BNE_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bne_input : PureSpec.BneInput)
     (imm : BitVec 13)
@@ -288,7 +288,7 @@ theorem equiv_BNE_metaplan_op_bus
       = EStateM.Result.ok bne_input.r1_val state := by rw [h_a_match]; exact h_r1_read
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok bne_input.r2_val state := by rw [h_b_match]; exact h_r2_read
-  exact equiv_BNE_metaplan_from_bus state bne_input imm r1 r2 misa_val exec_row
+  exact equiv_BNE_from_bus state bne_input imm r1 r2 misa_val exec_row
     h_input_imm h_input_r1 h_input_r2 h_input_misa h_misa_c
     h_bus h_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
@@ -299,7 +299,7 @@ Same shape as BEQ; case-split predicate is `h_taken : r1_val ≠ r2_val`
 (BNE taken on NOT-EQUAL — `skip = !(r1 != r2) = (r1 == r2) = false`). -/
 
 /-- **Misaligned-target companion (bit-1 case): Sail-side reduction.** -/
-theorem equiv_BNE_metaplan_misaligned
+theorem equiv_BNE_misaligned
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bne_input : PureSpec.BneInput)
     (imm : BitVec 13)
@@ -334,7 +334,7 @@ theorem equiv_BNE_metaplan_misaligned
         EStateM.bind, EStateM.pure, write_reg_state]
 
 /-- **Misaligned-target companion (bit-0 case): Sail-side reduction.** -/
-theorem equiv_BNE_metaplan_misaligned_bit0
+theorem equiv_BNE_misaligned_bit0
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bne_input : PureSpec.BneInput)
     (imm : BitVec 13)

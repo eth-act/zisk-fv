@@ -28,7 +28,7 @@ End-to-end theorem for RV64 ADD. Combines:
 
 into two companion theorems:
 
-* `equiv_ADD` — circuit-level. States the Goldilocks `c`-packed value
+* `equiv_ADD_circuit` — circuit-level. States the Goldilocks `c`-packed value
   equals the field sum of source-register lanes (mod carry-out).
 * `equiv_ADD_sail` — Sail-level. States `LeanRV64D.execute_instruction`
   on an RV64 ADD reduces to a concrete monadic block writing
@@ -47,7 +47,7 @@ open ZiskFv.Circuit.Add
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **equiv_ADD.** For an RV64 ADD instruction `rd, rs1, rs2`
+/-- **equiv_ADD_circuit.** For an RV64 ADD instruction `rd, rs1, rs2`
     executed on `state`, *if* the Main/BinaryAdd rows produced by the
     ZisK execution satisfy the ADD-subset constraints and match on the
     operation bus, *then* the Goldilocks-packed `c` lanes encode
@@ -60,7 +60,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
     Coefficient `4294967296 * 4294967296 = 2^64` written in factored form
     so `ring` can match it against the carry-chain coefficient. -/
-theorem equiv_ADD
+theorem equiv_ADD_circuit
     (rs1 rs2 : Fin 32) (state : RV64State)
     (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
     (r_main r_binary : ℕ)
@@ -85,7 +85,7 @@ theorem equiv_ADD
     block supplied by `PureSpec.execute_RTYPE_add_pure`, given that the
     source registers are readable and the PC is known. Wraps
     `PureSpec.execute_RTYPE_add_pure_equiv` to expose the Sail chain at
-    this module's export surface — pairs with `equiv_ADD` above to
+    this module's export surface — pairs with `equiv_ADD_circuit` above to
     connect circuit constraints to Sail semantics. -/
 theorem equiv_ADD_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -120,7 +120,7 @@ theorem equiv_ADD_sail
     * `bus_effect_matches_sail_alu_rrw` — reduces RHS to the shape-(a)
       `do` block (register-write commutation against nextPC),
     * `h_rd_match` — bridges the `if h :` and `match .rd` dispatches. -/
-theorem equiv_ADD_metaplan
+theorem equiv_ADD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
@@ -144,7 +144,7 @@ theorem equiv_ADD_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     (h_rd_idx : add_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -167,7 +167,7 @@ theorem equiv_ADD_metaplan
 
 /-- **Tier-1: ADD without `h_rd_val` parameter.**
 
-    Same conclusion as `equiv_ADD_metaplan`, but the `h_rd_val` OUTPUT-EQ
+    Same conclusion as `equiv_ADD`, but the `h_rd_val` OUTPUT-EQ
     parameter is **derived internally** from circuit primitives via the
     `RdValDerivation.Arith.h_rd_val_arith_add` discharge lemma rather
     than supplied by the caller. This is the honest Tier-1
@@ -175,9 +175,9 @@ theorem equiv_ADD_metaplan
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} —
     no parameter mentions the spec output `r1_val + r2_val`.
 
-    The original `equiv_ADD_metaplan` is preserved (above) for callers
+    The original `equiv_ADD` is preserved (above) for callers
     that already construct `h_rd_val` from concrete witnesses. -/
-theorem equiv_ADD_metaplan_tier1
+theorem equiv_ADD_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
@@ -228,14 +228,14 @@ theorem equiv_ADD_metaplan_tier1
       h_a_range h_b_range h_c_range
       h_input_r1_circuit h_input_r2_circuit
   -- Delegate to the parametric theorem with the derived h_rd_val.
-  exact equiv_ADD_metaplan state add_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_ADD state add_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
     h_rd_idx h_rd_val
 
 /-- **Track-G companion — full V12.** Same conclusion as
-    `equiv_ADD_metaplan`, but derives all four `h_input_*` parameters
+    `equiv_ADD`, but derives all four `h_input_*` parameters
     internally from a single `h_bus : (bus_effect ...).1` plus ptr/value
     match hypotheses that tie bus entries to Sail-input fields.
 
@@ -248,7 +248,7 @@ theorem equiv_ADD_metaplan_tier1
 
     Establishes `chip_bus_hyps_alu_rrw` and `readReg_of_readReg_succ` as
     load-bearing for the ADD equivalence path. -/
-theorem equiv_ADD_metaplan_from_bus
+theorem equiv_ADD_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
@@ -306,7 +306,7 @@ theorem equiv_ADD_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some add_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_ADD_metaplan state add_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_ADD state add_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -315,7 +315,7 @@ theorem equiv_ADD_metaplan_from_bus
 /-- **AddInput constructor from bus fields.** Mirrors openvm-fv's
     `MulInput_of_MUL_instruction_fields` pattern: assembles an
     `AddInput` whose fields are directly the bus entries' byte-packed
-    values and pointers. Used by `equiv_ADD_metaplan_bus_self` to
+    values and pointers. Used by `equiv_ADD_bus_self` to
     eliminate the match hypotheses (they become rfl). -/
 def AddInput_of_bus
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
@@ -328,7 +328,7 @@ def AddInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Item 4 closure for ADD — bus-derived input.** Eliminates the
-    five match hypotheses of `equiv_ADD_metaplan_from_bus` by
+    five match hypotheses of `equiv_ADD_from_bus` by
     constructing the `AddInput` directly from the bus entries. The
     match hyps become `rfl` and drop out of the signature.
 
@@ -344,12 +344,12 @@ def AddInput_of_bus
     - `h_rd_idx`: ties the pure-spec's rd to bus e2.ptr. With bus-derived
       input this becomes the trivial `wrap_to_regidx e2.ptr = wrap_to_regidx e2.ptr`.
     - `h_rd_val`: the Arith/Binary packed-correct identity (derivable
-      from `equiv_ADD`'s compositional result + bus match on c-lanes
+      from `equiv_ADD_circuit`'s compositional result + bus match on c-lanes
       — left as a parameter here pending full derivation composition).
     - Structural bus hypotheses: `h_exec_len`, `h_e*_mult`, `h_m*_*`,
       `h_nextPC_matches` — shape claims that are PIL-level (out of
       our derivation path). -/
-theorem equiv_ADD_metaplan_bus_self
+theorem equiv_ADD_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -380,10 +380,10 @@ theorem equiv_ADD_metaplan_bus_self
                     e1.x4, e1.x5, e1.x6, e1.x7]) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  -- Delegate to equiv_ADD_metaplan_from_bus with the bus-derived input.
+  -- Delegate to equiv_ADD_from_bus with the bus-derived input.
   -- Value-level match hypotheses (h_r1_val, h_r2_val, h_pc) become rfl
   -- because AddInput_of_bus's fields are those exact expressions.
-  exact equiv_ADD_metaplan_from_bus state
+  exact equiv_ADD_from_bus state
     (AddInput_of_bus e0 e1 e2 exec_row) r1 r2 rd exec_row e0 e1 e2
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -394,15 +394,15 @@ theorem equiv_ADD_metaplan_bus_self
     h_rd_val
 
 /-- **Track Q ALU fan-out for ADD.** Operation-bus companion to
-    `equiv_ADD_metaplan`: drops the scenario-binding `h_input_r1` /
+    `equiv_ADD`: drops the scenario-binding `h_input_r1` /
     `h_input_r2` parameters in favour of a single op-bus precondition.
 
-    Mirrors `equiv_BEQ_metaplan_op_bus` extended to the ALU shape: the
+    Mirrors `equiv_BEQ_op_bus` extended to the ALU shape: the
     rd write still goes via the memory bus (`e2` entry), so the
     structural memory-bus hypotheses are unchanged. Only the rs1/rs2
     *read* equalities are re-derived from the op-bus, freeing the
     caller from supplying them as scenario-binding inputs. -/
-theorem equiv_ADD_metaplan_op_bus
+theorem equiv_ADD_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
@@ -444,7 +444,7 @@ theorem equiv_ADD_metaplan_op_bus
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok add_input.r2_val state := by
     rw [h_b_match]; exact h_r2_read
-  exact equiv_ADD_metaplan state add_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_ADD state add_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as

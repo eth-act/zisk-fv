@@ -41,7 +41,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Circuit-level MULHSU theorem.** Main's packed `c` equals Arith's
     packed result lanes. Wraps `Spec.MulHSU.mulhsu_compositional`. -/
-theorem equiv_MULHSU
+theorem equiv_MULHSU_circuit
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
     (r_main r_arith : ℕ)
@@ -86,7 +86,7 @@ theorem equiv_MULHSU_sail
     circuit's execution and memory bus rows.
 
     Composes `equiv_MULHSU_sail` with shape-(a) bus-matching. -/
-theorem equiv_MULHSU_metaplan
+theorem equiv_MULHSU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhsu_input : PureSpec.MulhsuInput)
     (r1 r2 rd : regidx)
@@ -139,8 +139,8 @@ theorem equiv_MULHSU_metaplan
 /-- **Bus-precondition companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
-    Delegates to `equiv_MULHSU_metaplan` after chip_bus_hyps + match composition. -/
-theorem equiv_MULHSU_metaplan_from_bus
+    Delegates to `equiv_MULHSU` after chip_bus_hyps + match composition. -/
+theorem equiv_MULHSU_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhsu_input : PureSpec.MulhsuInput)
     (r1 r2 rd : regidx)
@@ -201,7 +201,7 @@ theorem equiv_MULHSU_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some mulhsu_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_MULHSU_metaplan state mulhsu_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_MULHSU state mulhsu_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 
 /-- Constructor: build a `PureSpec.MulhsuInput` from bus entries. -/
@@ -217,7 +217,7 @@ def MulhsuInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- Bus-derived input form, eliminating value-level match hyps via `MulhsuInput_of_bus`. -/
-theorem equiv_MULHSU_metaplan_bus_self
+theorem equiv_MULHSU_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -251,7 +251,7 @@ theorem equiv_MULHSU_metaplan_bus_self
       = (bus_effect exec_row [e0, e1, e2] state).2
 
     := by
-  exact equiv_MULHSU_metaplan_from_bus state
+  exact equiv_MULHSU_from_bus state
     (MulhsuInput_of_bus e0 e1 e2 exec_row) r1 r2 rd
     exec_row e0 e1 e2
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -259,10 +259,10 @@ theorem equiv_MULHSU_metaplan_bus_self
     h_bus h_r1_ptr rfl h_r2_ptr rfl rfl h_rd_ptr
     rfl h_rd_val
 
-/-- **Op-bus companion to `equiv_MULHSU_metaplan`.** Drops `h_input_r1` /
+/-- **Op-bus companion to `equiv_MULHSU`.** Drops `h_input_r1` /
     `h_input_r2` in favour of an op-bus precondition. Mirrors
-    `equiv_ADD_metaplan_op_bus`. -/
-theorem equiv_MULHSU_metaplan_op_bus
+    `equiv_ADD_op_bus`. -/
+theorem equiv_MULHSU_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhsu_input : PureSpec.MulhsuInput)
     (r1 r2 rd : regidx)
@@ -311,12 +311,12 @@ theorem equiv_MULHSU_metaplan_op_bus
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok mulhsu_input.r2_val state := by
     rw [h_b_match]; exact h_r2_read
-  exact equiv_MULHSU_metaplan state mulhsu_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_MULHSU state mulhsu_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 /-- **Tier-1: MULHSU without `h_rd_val` parameter.**
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_mulhsu`. -/
-theorem equiv_MULHSU_metaplan_tier1
+theorem equiv_MULHSU_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhsu_input : PureSpec.MulhsuInput)
     (r1 r2 rd : regidx)
@@ -365,7 +365,7 @@ theorem equiv_MULHSU_metaplan_tier1
       mulhsu_input.r1_val mulhsu_input.r2_val e2
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_byte_sum_circuit
-  exact equiv_MULHSU_metaplan state mulhsu_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_MULHSU state mulhsu_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as

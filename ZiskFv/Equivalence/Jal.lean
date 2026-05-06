@@ -24,7 +24,7 @@ End-to-end theorem for RV64 JAL. Combines:
 
 into a canonical theorem:
 
-* `equiv_JAL_metaplan` — the metaplan target shape:
+* `equiv_JAL` — the canonical shape:
   `execute_instruction (.JAL (imm, rd)) state
     = (bus_effect exec_row mem_row state).2`.
 
@@ -48,10 +48,10 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `next_pc = pc + jmp_offset1`.
 
     This is the circuit-level companion to `equiv_JAL_sail` below —
-    together they form the analogue of `equiv_ADD` + `equiv_ADD_sail`
+    together they form the analogue of `equiv_ADD_circuit` + `equiv_ADD_sail`
     from the ADD archetype. Uses the transpile axiom's pinning of
     `jmp_offset1` to relate the field-level offset to the RV64 `imm`. -/
-theorem equiv_JAL
+theorem equiv_JAL_circuit
     (_rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_circuit : jal_circuit_holds m r_main next_pc) :
@@ -138,7 +138,7 @@ theorem equiv_JAL_sail
     Unlike BEQ, JAL *does* populate a memory-bus entry (the rd write via
     `store_pc`); the operation-bus is inactive because
     `is_external_op = 0`. -/
-theorem equiv_JAL_metaplan
+theorem equiv_JAL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21)
@@ -166,7 +166,7 @@ theorem equiv_JAL_metaplan
     (h_success : (PureSpec.execute_JAL_pure jal_input).success = true)
     (h_nextPC_option :
       (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val)
-    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL).
     -- `h_rd_idx` ties the circuit rd-pointer to the Sail rd; `h_rd_val`
     -- ties the 8 byte lanes to the pure-spec written value (`PC + 4`).
     -- JAL's rd dite has a compound condition (bit0/bit1/rd=0), so we go
@@ -215,7 +215,7 @@ theorem equiv_JAL_metaplan
 
 /-- **Tier-1: JAL without `h_rd_val` parameter.**
 
-    Companion to `equiv_JAL_metaplan` that drops the `h_rd_val :`
+    Companion to `equiv_JAL` that drops the `h_rd_val :`
     OUTPUT-EQ residual parameter. Internally derives the rd-write
     equality `U64.toBV ... = jal_input.PC + 4` via
     `RdValDerivation.JumpUType.h_rd_val_jut_jal`, which composes:
@@ -230,7 +230,7 @@ theorem equiv_JAL_metaplan
 
     The new parameters all live in {CIRCUIT-CONSTRAINT, LANE-MATCH,
     RANGE, TRANSPILE-PIN}. NO OUTPUT-EQ parameters survive. -/
-theorem equiv_JAL_metaplan_tier1
+theorem equiv_JAL_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21)
@@ -278,7 +278,7 @@ theorem equiv_JAL_metaplan_tier1
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
       h_e_rd_0 h_e_rd_1 h_e_rd_2 h_e_rd_3
       h_e_rd_4 h_e_rd_5 h_e_rd_6 h_e_rd_7
-  exact equiv_JAL_metaplan state jal_input imm rd misa_val exec_row e_rd
+  exact equiv_JAL state jal_input imm rd misa_val exec_row e_rd
     nextPC_val h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_rd_mult h_rd_as
     h_not_throws h_success h_nextPC_option h_rd_idx h_rd_val
@@ -291,7 +291,7 @@ theorem equiv_JAL_metaplan_tier1
     `h_input_imm`, `h_input_misa`, `h_misa_c` stay as parameters —
     they live in different shapes than chip_bus_hyps provides (immediate
     value, privileged-register state, misa-bit witness). -/
-theorem equiv_JAL_metaplan_from_bus
+theorem equiv_JAL_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21)
@@ -333,7 +333,7 @@ theorem equiv_JAL_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some jal_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_JAL_metaplan state jal_input imm rd misa_val exec_row e_rd
+  exact equiv_JAL state jal_input imm rd misa_val exec_row e_rd
     nextPC_val h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_rd_mult h_rd_as
     h_not_throws h_success h_nextPC_option h_rd_idx h_rd_val
@@ -349,7 +349,7 @@ def JalInput_of_bus
 
 /-- **Item 4 closure for JAL.** Bus-derived input form: drops
     `h_input_imm`, `h_pc`, `h_rd_idx` to `rfl`. -/
-theorem equiv_JAL_metaplan_bus_self
+theorem equiv_JAL_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (imm : BitVec 21)
     (rd : regidx)
@@ -378,7 +378,7 @@ theorem equiv_JAL_metaplan_bus_self
       = (JalInput_of_bus e_rd exec_row imm).PC + 4) :
     execute_instruction (instruction.JAL (imm, rd)) state
       = (bus_effect exec_row [e_rd] state).2 := by
-  exact equiv_JAL_metaplan_from_bus state
+  exact equiv_JAL_from_bus state
     (JalInput_of_bus e_rd exec_row imm) imm rd misa_val
     exec_row e_rd nextPC_val
     rfl h_input_misa h_misa_c
@@ -403,7 +403,7 @@ Misaligned-bit-0 case (bit0=1): throws=true → Sail throws Assertion. -/
     Mirrors `RV64D/jal.lean` lines 125-132 lifted to the equivalence
     surface. `rd` write is suppressed by `!bit1_valid` triggering the
     `.none` arm of the dite. -/
-theorem equiv_JAL_metaplan_misaligned
+theorem equiv_JAL_misaligned
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21)
@@ -434,7 +434,7 @@ theorem equiv_JAL_metaplan_misaligned
 /-- **Misaligned-target companion (bit-0 case): Sail-side reduction.**
     Mirrors `RV64D/jal.lean` lines 173-176. `throws = !bit0_valid` is
     true, so Sail emits an Assertion error. -/
-theorem equiv_JAL_metaplan_misaligned_bit0
+theorem equiv_JAL_misaligned_bit0
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21)

@@ -1,4 +1,4 @@
-# Forbidden parameter shapes for `equiv_<OP>_metaplan_tier1` theorems.
+# Forbidden parameter shapes for `equiv_<OP>_tier1` theorems.
 #
 # Each line is a Python-regex pattern (no flags). The check script
 # extracts every tier1 theorem **parameter list only** (NOT the

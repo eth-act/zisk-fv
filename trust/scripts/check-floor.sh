@@ -16,10 +16,10 @@ if [ "$axiom_count" -lt "$MIN_AXIOMS" ]; then
   exit 1
 fi
 
-# Floor 2: count `_metaplan_tier1` theorems. Must be >= MIN_TIER1.
+# Floor 2: count `_tier1` theorems. Must be >= MIN_TIER1.
 # Catches a sweep that accidentally dropped tier1 companions.
 MIN_TIER1=40
-tier1_count=$(grep -rhE '^[[:space:]]*theorem[[:space:]]+equiv_[A-Z][A-Z0-9_]*_metaplan_tier1' \
+tier1_count=$(grep -rhE '^[[:space:]]*theorem[[:space:]]+equiv_[A-Z][A-Z0-9_]*_tier1' \
               ZiskFv/Equivalence | wc -l)
 if [ "$tier1_count" -lt "$MIN_TIER1" ]; then
   echo "trust-gate: FLOOR FAILURE — only $tier1_count tier1 theorems found (expected >= $MIN_TIER1)."

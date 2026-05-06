@@ -33,7 +33,7 @@ open ZiskFv.Circuit.LoadHalf
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_LH
+theorem equiv_LH_circuit
     (_rs1 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -73,7 +73,7 @@ theorem equiv_LH_sail
     lh_input risc_v_assumptions h_opcode_assumptions
 
 /-- **Metaplan theorem.** -/
-theorem equiv_LH_metaplan
+theorem equiv_LH
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lh_input : PureSpec.LhInput)
     (mstatus : RegisterType Register.mstatus)

@@ -45,7 +45,7 @@ MUL currently uses `Spec.Mul.mul_compositional` directly; MULH / MULHU
 
 ```
 -- MULH case (op = OP_MULH = 181):
-theorem equiv_MULH_metaplan (...) := by
+theorem equiv_MULH (...) := by
   have h_bus_match :=
     mul_archetype_bus_match m v r_main r_arith OP_MULH h_circuit_mulh
   ...

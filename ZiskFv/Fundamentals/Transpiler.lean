@@ -460,7 +460,7 @@ axiom transpile_FENCE :
     architectural behavior (`rd ← pc + 4`, `nextPC ← (rs1 + imm) &
     mask`). We model JALR here as internal-copyb for archetype-macro
     validation; closing the full Rust contract (with the Binary-SM
-    bus hop) requires the `equiv_AND`/`equiv_ADD_IMM` external-op
+    bus hop) requires the `equiv_AND_circuit`/`equiv_ADD_IMM` external-op
     infrastructure.
 
     **Trust basis.** Simplified spec of `fn jalr` in

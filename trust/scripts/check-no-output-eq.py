@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail if any `equiv_<OP>_metaplan_tier1` theorem signature contains a
+"""Fail if any `equiv_<OP>_tier1` theorem signature contains a
 forbidden parameter shape from `trust/forbidden-param-shapes.txt`.
 
 V1: textual regex over the **signature substring** only (start of the
@@ -17,7 +17,7 @@ EQUIV_DIR = ROOT / "ZiskFv/Equivalence"
 PATTERNS_FILE = ROOT / "trust/forbidden-param-shapes.txt"
 
 THEOREM_HEAD = re.compile(
-    r"^(?P<indent>\s*)theorem\s+(?P<name>equiv_[A-Z][A-Z0-9_]*_metaplan_tier1)\b"
+    r"^(?P<indent>\s*)theorem\s+(?P<name>equiv_[A-Z][A-Z0-9_]*_tier1)\b"
 )
 # Lines that signal the END of a theorem signature (proof body starts).
 SIG_END = re.compile(r"^\s*:=\s*by\b|^\s*:=\s*$|^\s+by\s*$")
@@ -75,7 +75,7 @@ def extract_tier1_signatures(path: Path):
     """Yield (theorem_name, start_line, params_text) per tier1 in path.
 
     Only the parameter list is returned — conclusion is stripped via
-    `split_params_and_conclusion`. The metaplan target shape requires
+    `split_params_and_conclusion`. The canonical target shape requires
     `LeanRV64D.Functions.execute` in the conclusion; the gate must
     not flag that.
     """

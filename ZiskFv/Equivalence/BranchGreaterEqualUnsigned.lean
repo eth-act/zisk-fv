@@ -35,7 +35,7 @@ open ZiskFv.Circuit.BranchGreaterEqualUnsigned
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Circuit-level BGEU theorem.** -/
-theorem equiv_BGEU
+theorem equiv_BGEU_circuit
     (_rs1 _rs2 : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_circuit : branch_geu_circuit_holds m r_main next_pc) :
@@ -77,7 +77,7 @@ theorem equiv_BGEU_sail
     h_input_pc h_input_misa h_misa_c
 
 /-- **Metaplan theorem.** -/
-theorem equiv_BGEU_metaplan
+theorem equiv_BGEU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bgeu_input : PureSpec.BgeuInput)
     (imm : BitVec 13)
@@ -118,7 +118,7 @@ theorem equiv_BGEU_metaplan
     `chip_bus_hyps_branch_rrw` + `readReg_of_readReg_succ`. Other
     `h_input_*` stay — branch memory bus is empty, so rs1/rs2
     reads go via operation bus (not derivable from `h_bus` here). -/
-theorem equiv_BGEU_metaplan_from_bus
+theorem equiv_BGEU_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bgeu_input : PureSpec.BgeuInput)
     (imm : BitVec 13)
@@ -151,7 +151,7 @@ theorem equiv_BGEU_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some bgeu_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_BGEU_metaplan state bgeu_input imm r1 r2 misa_val exec_row h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
+  exact equiv_BGEU state bgeu_input imm r1 r2 misa_val exec_row h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
 
 /-- Constructor: build a `PureSpec.BgeuInput` from exec_row PC + free operand values. -/
@@ -166,7 +166,7 @@ def BgeuInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Item 4 closure for BGEU.** Bus-derived input form. -/
-theorem equiv_BGEU_metaplan_bus_self
+theorem equiv_BGEU_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (imm : BitVec 13)
     (r1 r2 : regidx)
@@ -193,7 +193,7 @@ theorem equiv_BGEU_metaplan_bus_self
       = (bus_effect exec_row [] state).2
 
     := by
-  exact equiv_BGEU_metaplan_from_bus state
+  exact equiv_BGEU_from_bus state
     (BgeuInput_of_bus exec_row imm r1_val r2_val) imm r1 r2 misa_val exec_row
     rfl h_input_r1 h_input_r2
     h_input_misa h_misa_c 
@@ -202,8 +202,8 @@ theorem equiv_BGEU_metaplan_bus_self
     h_not_throws h_success
 
 /-- **Track Q POC for BGEU.** Operation-bus companion to
-    `equiv_BGEU_metaplan_from_bus`. Mirrors `equiv_BEQ_metaplan_op_bus`. -/
-theorem equiv_BGEU_metaplan_op_bus
+    `equiv_BGEU_from_bus`. Mirrors `equiv_BEQ_op_bus`. -/
+theorem equiv_BGEU_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bgeu_input : PureSpec.BgeuInput)
     (imm : BitVec 13)
@@ -240,7 +240,7 @@ theorem equiv_BGEU_metaplan_op_bus
       = EStateM.Result.ok bgeu_input.r1_val state := by rw [h_a_match]; exact h_r1_read
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok bgeu_input.r2_val state := by rw [h_b_match]; exact h_r2_read
-  exact equiv_BGEU_metaplan_from_bus state bgeu_input imm r1 r2 misa_val exec_row
+  exact equiv_BGEU_from_bus state bgeu_input imm r1 r2 misa_val exec_row
     h_input_imm h_input_r1 h_input_r2 h_input_misa h_misa_c
     h_bus h_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
@@ -251,7 +251,7 @@ Same shape as BGE; case-split predicate is `h_taken : r1.toNat ≥ r2.toNat`
 (BGEU taken on unsigned greater-equal). -/
 
 /-- **Misaligned-target companion (bit-1 case): Sail-side reduction.** -/
-theorem equiv_BGEU_metaplan_misaligned
+theorem equiv_BGEU_misaligned
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bgeu_input : PureSpec.BgeuInput)
     (imm : BitVec 13)
@@ -286,7 +286,7 @@ theorem equiv_BGEU_metaplan_misaligned
         EStateM.bind, EStateM.pure, write_reg_state]
 
 /-- **Misaligned-target companion (bit-0 case): Sail-side reduction.** -/
-theorem equiv_BGEU_metaplan_misaligned_bit0
+theorem equiv_BGEU_misaligned_bit0
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bgeu_input : PureSpec.BgeuInput)
     (imm : BitVec 13)

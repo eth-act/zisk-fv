@@ -35,7 +35,7 @@ open ZiskFv.Circuit.Srl
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Circuit-level SRL theorem.** Passthrough under `m32 = 0`. -/
-theorem equiv_SRL
+theorem equiv_SRL_circuit
     (_rs1 _rs2 : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -67,7 +67,7 @@ theorem equiv_SRL_sail
     srl_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
 /-- **Metaplan theorem.** Shape (a) bus-effect, hypothesis-free. -/
-theorem equiv_SRL_metaplan
+theorem equiv_SRL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srl_input : PureSpec.SrlInput)
     (r1 r2 rd : regidx)
@@ -109,7 +109,7 @@ theorem equiv_SRL_metaplan
   · rw [h_rd_val]
 
 /-- **Tier-1: SRL without `h_rd_val` parameter**. -/
-theorem equiv_SRL_metaplan_tier1
+theorem equiv_SRL_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srl_input : PureSpec.SrlInput)
     (r1 r2 rd : regidx)
@@ -207,7 +207,7 @@ theorem equiv_SRL_metaplan_tier1
                               e2.x4, e2.x5, e2.x6, e2.x7]
       = execute_RTYPE_pure srl_input.r1_val srl_input.r2_val rop.SRL := by
     rw [h_discharge, h_bridge]
-  exact equiv_SRL_metaplan state srl_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_SRL state srl_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -217,8 +217,8 @@ theorem equiv_SRL_metaplan_tier1
 /-- **Bus-precondition companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
-    Delegates to `equiv_SRL_metaplan` after chip_bus_hyps + match composition.  -/
-theorem equiv_SRL_metaplan_from_bus
+    Delegates to `equiv_SRL` after chip_bus_hyps + match composition.  -/
+theorem equiv_SRL_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srl_input : PureSpec.SrlInput)
     (r1 r2 rd : regidx)
@@ -271,7 +271,7 @@ theorem equiv_SRL_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some srl_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_SRL_metaplan state srl_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_SRL state srl_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 
 /-- Constructor: build a `PureSpec.SrlInput` from bus entries. -/
@@ -287,7 +287,7 @@ def SrlInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Bus-self form for SRL.** Eliminates value-level match hyps via `SrlInput_of_bus`. -/
-theorem equiv_SRL_metaplan_bus_self
+theorem equiv_SRL_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -313,7 +313,7 @@ theorem equiv_SRL_metaplan_bus_self
       = (bus_effect exec_row [e0, e1, e2] state).2
 
     := by
-  exact equiv_SRL_metaplan_from_bus state
+  exact equiv_SRL_from_bus state
     (SrlInput_of_bus e0 e1 e2 exec_row) r1 r2 rd
     exec_row e0 e1 e2
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

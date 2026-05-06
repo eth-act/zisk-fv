@@ -46,7 +46,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     32-bit source operand is conveyed via the low lanes; the
     BinaryExtension SM is responsible for the sign-extension
     computation which feeds back via the bus's `c` lanes. -/
-theorem equiv_LW
+theorem equiv_LW_circuit
     (_rs1 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -101,7 +101,7 @@ theorem equiv_LW_sail
     witness (`h_high_bytes_signext`) supplied by the caller as a
     LANE-MATCH-class fact about the high bytes of the rd-write
     entry. -/
-theorem equiv_LW_metaplan
+theorem equiv_LW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lw_input : PureSpec.LwInput)
     (mstatus : RegisterType Register.mstatus)

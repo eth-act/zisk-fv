@@ -23,8 +23,8 @@ End-to-end theorem for RV64 **REMU**. REMU is the
 spec (`execute_DIVREM_remu_pure` / `_equiv`), and the Sail instruction
 payload (`instruction.REM (r2, r1, rd, true)`).
 
-Three canonical theorems: `equiv_REMU`, `equiv_REMU_sail`,
-`equiv_REMU_metaplan`. Arith-internal correctness (carry chains →
+Three canonical theorems: `equiv_REMU_circuit`, `equiv_REMU_sail`,
+`equiv_REMU`. Arith-internal correctness (carry chains →
 unsigned 64-bit remainder) is delegated to future audit.
 -/
 
@@ -44,7 +44,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- **Circuit-level REMU theorem.** Main's packed `c` equals Arith's
     packed remainder (`d[]`) under the REMU circuit-holds hypothesis.
     Wraps `Spec.Remu.remu_compositional`. -/
-theorem equiv_REMU
+theorem equiv_REMU_circuit
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
     (r_main r_arith : ℕ)
@@ -85,7 +85,7 @@ theorem equiv_REMU_sail
     `equiv_REMU_sail` with `bus_effect_matches_sail_alu_rrw` (shape
     (a), RRW). Structural bus hypotheses are parameterized
     audit derives them. -/
-theorem equiv_REMU_metaplan
+theorem equiv_REMU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remu_input : PureSpec.RemuInput)
     (r1 r2 rd : regidx)
@@ -132,8 +132,8 @@ theorem equiv_REMU_metaplan
 /-- **Tier-1: REMU without `h_rd_val` parameter**.
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_remu`, then forwards
-    to `equiv_REMU_metaplan`. -/
-theorem equiv_REMU_metaplan_tier1
+    to `equiv_REMU`. -/
+theorem equiv_REMU_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remu_input : PureSpec.RemuInput)
     (r1 r2 rd : regidx)
@@ -213,7 +213,7 @@ theorem equiv_REMU_metaplan_tier1
       h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
       hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
       h_byte_lo h_byte_hi h_op1 h_op2 h_op2_ne h_d_lt_b
-  exact equiv_REMU_metaplan state remu_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_REMU state remu_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -223,8 +223,8 @@ theorem equiv_REMU_metaplan_tier1
 /-- **Bus-precondition companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
-    Delegates to `equiv_REMU_metaplan` after chip_bus_hyps + match composition.  -/
-theorem equiv_REMU_metaplan_from_bus
+    Delegates to `equiv_REMU` after chip_bus_hyps + match composition.  -/
+theorem equiv_REMU_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remu_input : PureSpec.RemuInput)
     (r1 r2 rd : regidx)
@@ -280,7 +280,7 @@ theorem equiv_REMU_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some remu_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_REMU_metaplan state remu_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_REMU state remu_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 
 /-- Constructor: build a `PureSpec.RemuInput` from bus entries. -/
@@ -296,7 +296,7 @@ def RemuInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Bus-self form for REMU.** Eliminates value-level match hyps via `RemuInput_of_bus`. -/
-theorem equiv_REMU_metaplan_bus_self
+theorem equiv_REMU_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -325,7 +325,7 @@ theorem equiv_REMU_metaplan_bus_self
       = (bus_effect exec_row [e0, e1, e2] state).2
 
     := by
-  exact equiv_REMU_metaplan_from_bus state
+  exact equiv_REMU_from_bus state
     (RemuInput_of_bus e0 e1 e2 exec_row) r1 r2 rd
     exec_row e0 e1 e2
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -334,10 +334,10 @@ theorem equiv_REMU_metaplan_bus_self
     rfl h_rd_val
 
 /-- **Op-bus companion for REMU.** Op-bus companion to
-    `equiv_REMU_metaplan`: drops `h_input_r1` / `h_input_r2` in
+    `equiv_REMU`: drops `h_input_r1` / `h_input_r2` in
     favour of an op-bus precondition. Mirrors
-    `equiv_ADD_metaplan_op_bus`. -/
-theorem equiv_REMU_metaplan_op_bus
+    `equiv_ADD_op_bus`. -/
+theorem equiv_REMU_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remu_input : PureSpec.RemuInput)
     (r1 r2 rd : regidx)
@@ -381,6 +381,6 @@ theorem equiv_REMU_metaplan_op_bus
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok remu_input.r2_val state := by
     rw [h_b_match]; exact h_r2_read
-  exact equiv_REMU_metaplan state remu_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_REMU state remu_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 end ZiskFv.Equivalence.Remu

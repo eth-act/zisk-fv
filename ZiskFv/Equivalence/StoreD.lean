@@ -14,7 +14,7 @@ import ZiskFv.Sail.BusEffect
 
 /-!
 End-to-end theorem for RV64 SD (store doubleword). The
-`equiv_SD_metaplan` discharges via structural bus hypotheses
+`equiv_SD` discharges via structural bus hypotheses
 (`bus_effect_matches_sail_store_rrrw`) plus a ptr-match between the
 bus's mem-write entry pointer and Sail's `r1_val + signExtend imm`,
 plus per-byte byte-match between the bus entry's lanes and the
@@ -32,7 +32,7 @@ open ZiskFv.Circuit.StoreD
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_SD
+theorem equiv_SD_circuit
     (_rs1 _rs2 : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
@@ -68,7 +68,7 @@ theorem equiv_SD_sail
 /-- **Metaplan theorem.** Discharges via structural bus hypotheses
     plus ptr/byte match parameters that bridge the bus's mem-write
     entry to Sail's `modify_memory_8` shape. -/
-theorem equiv_SD_metaplan
+theorem equiv_SD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sd_input : PureSpec.SdInput)
     (mstatus : RegisterType Register.mstatus)

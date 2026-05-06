@@ -35,7 +35,7 @@ open ZiskFv.Circuit.Sra
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Circuit-level SRA theorem.** Passthrough under `m32 = 0`. -/
-theorem equiv_SRA
+theorem equiv_SRA_circuit
     (_rs1 _rs2 : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -67,7 +67,7 @@ theorem equiv_SRA_sail
     sra_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
 /-- **Metaplan theorem.** Shape (a) bus-effect, hypothesis-free. -/
-theorem equiv_SRA_metaplan
+theorem equiv_SRA
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sra_input : PureSpec.SraInput)
     (r1 r2 rd : regidx)
@@ -109,7 +109,7 @@ theorem equiv_SRA_metaplan
   · rw [h_rd_val]
 
 /-- **Tier-1: SRA without `h_rd_val` parameter**. -/
-theorem equiv_SRA_metaplan_tier1
+theorem equiv_SRA_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sra_input : PureSpec.SraInput)
     (r1 r2 rd : regidx)
@@ -207,7 +207,7 @@ theorem equiv_SRA_metaplan_tier1
                               e2.x4, e2.x5, e2.x6, e2.x7]
       = execute_RTYPE_pure sra_input.r1_val sra_input.r2_val rop.SRA := by
     rw [h_discharge, h_bridge]
-  exact equiv_SRA_metaplan state sra_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_SRA state sra_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -217,8 +217,8 @@ theorem equiv_SRA_metaplan_tier1
 /-- **Bus-precondition companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
-    Delegates to `equiv_SRA_metaplan` after chip_bus_hyps + match composition.  -/
-theorem equiv_SRA_metaplan_from_bus
+    Delegates to `equiv_SRA` after chip_bus_hyps + match composition.  -/
+theorem equiv_SRA_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sra_input : PureSpec.SraInput)
     (r1 r2 rd : regidx)
@@ -271,7 +271,7 @@ theorem equiv_SRA_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some sra_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_SRA_metaplan state sra_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_SRA state sra_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 
 /-- Constructor: build a `PureSpec.SraInput` from bus entries. -/
@@ -287,7 +287,7 @@ def SraInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Bus-self form for SRA.** Eliminates value-level match hyps via `SraInput_of_bus`. -/
-theorem equiv_SRA_metaplan_bus_self
+theorem equiv_SRA_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -313,7 +313,7 @@ theorem equiv_SRA_metaplan_bus_self
       = (bus_effect exec_row [e0, e1, e2] state).2
 
     := by
-  exact equiv_SRA_metaplan_from_bus state
+  exact equiv_SRA_from_bus state
     (SraInput_of_bus e0 e1 e2 exec_row) r1 r2 rd
     exec_row e0 e1 e2
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

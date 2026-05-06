@@ -28,11 +28,11 @@ End-to-end theorem for RV64 SUB. Mirrors
 
 Three canonical theorems:
 
-* `equiv_SUB` — circuit-level: Main's packed `c` equals the bus
+* `equiv_SUB_circuit` — circuit-level: Main's packed `c` equals the bus
   entry's packed `c`.
 * `equiv_SUB_sail` — Sail-level: `execute_instruction` reduces to the
   pure-spec block.
-* `equiv_SUB_metaplan` — metaplan target shape, discharged via shape
+* `equiv_SUB` — canonical shape, discharged via shape
   (a) bus-emission (`bus_effect_matches_sail_alu_rrw`).
 -/
 
@@ -50,7 +50,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- **Circuit-level SUB theorem.** Main's packed `c`
     equals the bus entry's packed `c` lanes. Wraps
     `Spec.Sub.sub_compositional`. -/
-theorem equiv_SUB
+theorem equiv_SUB_circuit
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
@@ -90,7 +90,7 @@ theorem equiv_SUB_sail
 /-- **Metaplan theorem.** Sail's `execute_instruction`
     on an RV64 SUB equals `(bus_effect exec_row mem_row state).2`.
     Shape (a) — register-read + register-read + register-write. -/
-theorem equiv_SUB_metaplan
+theorem equiv_SUB
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sub_input : PureSpec.SubInput)
     (r1 r2 rd : regidx)
@@ -137,7 +137,7 @@ theorem equiv_SUB_metaplan
   · rw [h_rd_val]
 
 /-- **Tier-1: SUB without `h_rd_val` parameter**. -/
-theorem equiv_SUB_metaplan_tier1
+theorem equiv_SUB_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sub_input : PureSpec.SubInput)
     (r1 r2 rd : regidx)
@@ -239,7 +239,7 @@ theorem equiv_SUB_metaplan_tier1
       h_match_clo h_match_chi h_lane_rd
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_input_r1_circuit h_input_r2_circuit
-  exact equiv_SUB_metaplan state sub_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_SUB state sub_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
@@ -249,8 +249,8 @@ theorem equiv_SUB_metaplan_tier1
 /-- **Bus-precondition companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
-    Delegates to `equiv_SUB_metaplan` after chip_bus_hyps + match composition.  -/
-theorem equiv_SUB_metaplan_from_bus
+    Delegates to `equiv_SUB` after chip_bus_hyps + match composition.  -/
+theorem equiv_SUB_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sub_input : PureSpec.SubInput)
     (r1 r2 rd : regidx)
@@ -308,7 +308,7 @@ theorem equiv_SUB_metaplan_from_bus
   have h_input_pc : state.regs.get? Register.PC = .some sub_input.PC := by
     rw [h_pc]
     exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_SUB_metaplan state sub_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
+  exact equiv_SUB state sub_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
 
 /-- Constructor: build a `PureSpec.SubInput` from bus entries. -/
@@ -324,7 +324,7 @@ def SubInput_of_bus
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
 /-- **Bus-self form for SUB.** Eliminates value-level match hyps via `SubInput_of_bus`. -/
-theorem equiv_SUB_metaplan_bus_self
+theorem equiv_SUB_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -355,7 +355,7 @@ theorem equiv_SUB_metaplan_bus_self
       = (bus_effect exec_row [e0, e1, e2] state).2
 
     := by
-  exact equiv_SUB_metaplan_from_bus state
+  exact equiv_SUB_from_bus state
     (SubInput_of_bus e0 e1 e2 exec_row) r1 r2 rd
     exec_row e0 e1 e2
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -364,9 +364,9 @@ theorem equiv_SUB_metaplan_bus_self
     rfl h_rd_val
 
 /-- **Op-bus companion for SUB.** Op-bus companion to
-    `equiv_SUB_metaplan`: drops `h_input_r1` / `h_input_r2` in favour
-    of an op-bus precondition. Mirrors `equiv_ADD_metaplan_op_bus`. -/
-theorem equiv_SUB_metaplan_op_bus
+    `equiv_SUB`: drops `h_input_r1` / `h_input_r2` in favour
+    of an op-bus precondition. Mirrors `equiv_ADD_op_bus`. -/
+theorem equiv_SUB_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sub_input : PureSpec.SubInput)
     (r1 r2 rd : regidx)
@@ -411,7 +411,7 @@ theorem equiv_SUB_metaplan_op_bus
   have h_input_r2 : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok sub_input.r2_val state := by
     rw [h_b_match]; exact h_r2_read
-  exact equiv_SUB_metaplan state sub_input r1 r2 rd exec_row e0 e1 e2
+  exact equiv_SUB state sub_input r1 r2 rd exec_row e0 e1 e2
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
