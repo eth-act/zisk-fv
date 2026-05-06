@@ -77,7 +77,7 @@ def main_row_in_store_mode
   ∧ m.set_pc r_main = 0
 
 /-- **Archetype circuit-holds (copyb stores).** Parametric version of
-    `Spec.StoreD.store_d_circuit_holds`. Covers the entire integer
+    `Circuit.StoreD.store_d_circuit_holds`. Covers the entire integer
     store family (SD/SW/SH/SB) since all share `OP_COPYB`. -/
 @[simp]
 def store_archetype_copyb_circuit_holds
@@ -88,7 +88,7 @@ def store_archetype_copyb_circuit_holds
   ∧ memory_store_lanes_match m r_main entry
 
 /-- **Archetype theorem (copyb stores, c-packed).** Same shape as
-    `Spec.StoreD.store_d_compositional` but expressed in the
+    `Circuit.StoreD.store_d_compositional` but expressed in the
     parametric `store_archetype_copyb_circuit_holds` form. SW/SH/SB
     close via instantiation + a width-specific zeroing-of-high-bytes
     assumption on the memory-bus write entry. -/
@@ -104,7 +104,7 @@ theorem store_archetype_copyb_c_packed
   exact ⟨h_ext, h_op, h_m32, h_setpc⟩
 
 /-- **Archetype next-PC (copyb stores).** Same shape as
-    `Spec.StoreD.store_d_next_pc_concrete`: when `jmp_offset1 =
+    `Circuit.StoreD.store_d_next_pc_concrete`: when `jmp_offset1 =
     jmp_offset2 = 4`, the next-pc is `pc + 4`. Holds uniformly for
     SD/SW/SH/SB since they all use `j(4, 4)` in the Zisk
     transpiler. -/

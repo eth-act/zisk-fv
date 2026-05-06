@@ -96,8 +96,8 @@ def rtypew_archetype_circuit_holds
   ∧ matches_entry (opBus_row_Main m r_main) bus_entry
 
 /-- The 64-bit value packed into Main's `(c_0, c_1)` lanes.
-    Redeclared here (instead of importing `Spec.Add.main_c_packed`)
-    so the archetype module has no dependency on `Spec.Add`. -/
+    Redeclared here (instead of importing `Circuit.Add.main_c_packed`)
+    so the archetype module has no dependency on `Circuit.Add`. -/
 @[simp]
 def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
   m.c_0 r + m.c_1 r * 4294967296

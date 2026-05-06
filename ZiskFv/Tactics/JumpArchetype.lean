@@ -68,7 +68,7 @@ def main_row_in_jump_mode
   ∧ m.store_pc r_main = 1
 
 /-- **Archetype circuit-holds.** Parametric version of
-    `Spec.Jal.jal_circuit_holds` over the opcode literal. For JAL
+    `Circuit.Jal.jal_circuit_holds` over the opcode literal. For JAL
     specifically, `opcode_lit = 0 = OP_FLAG`; the constraint 17
     conclusion (`flag = 1`) depends on `opcode_lit = 0`, so instantiation
     with any other literal breaks the downstream `flag_eq_one_of_internal_op_zero`
@@ -81,7 +81,7 @@ def jump_archetype_circuit_holds
   ∧ main_row_in_jump_mode m r_main opcode_lit
 
 /-- **Archetype PC-advance theorem.** Same shape as
-    `Spec.Jal.jal_pc_advance` but parametric over the Zisk opcode
+    `Circuit.Jal.jal_pc_advance` but parametric over the Zisk opcode
     literal. Proves the `next_pc = pc + jmp_offset1` formula from the
     jump-subset constraints + mode witnesses **when `opcode_lit = 0`**
     (the internal-op-zero case that forces `flag = 1` via constraint 17).
@@ -104,7 +104,7 @@ theorem jump_archetype_pc_advance
 /-- **Archetype store-value theorem.** The `store_value[0]` expression
     (`main.pil:311`) evaluates to `pc + jmp_offset2` when the row is in
     jump-mode with `opcode_lit = 0` (JAL). Parametric version of
-    `Spec.Jal.jal_store_value`. -/
+    `Circuit.Jal.jal_store_value`. -/
 theorem jump_archetype_store_value
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jump_archetype_circuit_holds m r_main next_pc (0 : FGL)) :

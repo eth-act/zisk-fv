@@ -41,7 +41,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Circuit-level MULH theorem.** Main's packed `c` equals Arith's
     packed result lanes, given the MULH circuit-holds hypothesis.
-    Wraps `Spec.MulH.mulh_compositional`. -/
+    Wraps `Circuit.MulH.mulh_compositional`. -/
 theorem equiv_MULH_circuit
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)

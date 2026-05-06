@@ -83,7 +83,7 @@ def main_row_in_shift_mode
   ∧ m.set_pc r_main = 0
 
 /-- **Archetype circuit-holds.** Parametric version of
-    `Spec.Shift.sllw_circuit_holds` over opcode literal and `m32`. -/
+    `Circuit.Shift.sllw_circuit_holds` over opcode literal and `m32`. -/
 @[simp]
 def shift_archetype_circuit_holds
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
@@ -98,7 +98,7 @@ def shift_archetype_circuit_holds
 /-- **Archetype m32 = 1 bus-zeroing theorem.** For any shift opcode
     emitted in `m32 = 1` mode (SLLW/SRLW/SRAW), the secondary SM's
     bus entry has `a_hi = b_hi = 0`. Mirrors
-    `Spec.Shift.sllw_compositional` but parametric over the opcode
+    `Circuit.Shift.sllw_compositional` but parametric over the opcode
     literal. -/
 theorem shift_archetype_m32_one_zeros_bus
     (m : Valid_Main C FGL FGL) (r_main : ℕ)

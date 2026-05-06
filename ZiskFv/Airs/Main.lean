@@ -192,7 +192,7 @@ def pc_handshake (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
 
 /-- **Specialization form** of the PC handshake, parameterized on the
     *next-row* pc cell. Callers that already carry a `next_pc : F` (e.g.
-    `Spec.BranchEqual`, `Spec.Jal`, `Spec.LoadD`) consume this form
+    `Circuit.BranchEqual`, `Circuit.Jal`, `Circuit.LoadD`) consume this form
     directly; bridge from the closed form via `pc_handshake_to_next_pc`.
 
     At row `r` with `set_pc = 0`, this reduces to
@@ -251,7 +251,7 @@ variable {C' : Type → Type → Type} [Circuit FGL FGL C']
 /-- From the three `jump_subset_holds` ingredients (`is_external_op = 0`,
     `op = 0`, constraint 17 — `internal_op0_sets_flag`), we can derive
     `flag = 1`. Specialized to `FGL` so `linear_combination` sees a
-    commutative-ring. Used by `Spec.Jal`. -/
+    commutative-ring. Used by `Circuit.Jal`. -/
 lemma flag_eq_one_of_internal_op_zero
     (v : Valid_Main C' FGL FGL) (row : ℕ)
     (h_ext : v.is_external_op row = 0)
@@ -289,7 +289,7 @@ lemma c_1_eq_zero_of_internal_op_zero
 
 /-- Specialized PC handshake for **unconditional jump** (JAL): `set_pc = 0`
     and `flag = 1`. The handshake collapses to `next_pc = pc + jmp_offset1`
-    (the taken-offset path). Used by `Spec.Jal.jal_pc_advance`. -/
+    (the taken-offset path). Used by `Circuit.Jal.jal_pc_advance`. -/
 lemma pc_handshake_jump
     (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F)
     (h_set_pc : v.set_pc row = 0)
@@ -317,7 +317,7 @@ def branch_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Pr
     `is_external_op = 0` with `op = OP_FLAG = 0`, so constraints 8 + 15
     (internal-op=0 zeroes c) and constraint 17 (internal-op=0 sets flag)
     are non-trivial — they force `c = 0, flag = 1`. This is the
-    constraint bundle consumed by `Spec.Jal.jal_pc_advance` to establish
+    constraint bundle consumed by `Circuit.Jal.jal_pc_advance` to establish
     `next_pc = pc + jmp_offset1`. -/
 @[simp]
 def jump_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Prop :=

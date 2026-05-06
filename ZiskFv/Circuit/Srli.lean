@@ -8,7 +8,7 @@ import ZiskFv.Tactics.ShiftArchetype
 
 /-!
 Compositional SRLI spec — `ShiftArchetype` m32=0 immediate sibling
-of SRL. Structurally identical to `Spec.Srl`; see `Spec.Slli` for
+of SRL. Structurally identical to `Circuit.Srl`; see `Circuit.Slli` for
 why SLL and SLLI share their Zisk opcode.
 -/
 
@@ -23,7 +23,7 @@ open ZiskFv.Tactics.ShiftArchetype
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in SRLI-execution mode. Same as
-    `Spec.Srl.main_row_in_srl_mode` — SRL and SRLI map to the same
+    `Circuit.Srl.main_row_in_srl_mode` — SRL and SRLI map to the same
     Zisk opcode (`OP_SRL = 34`, `m32 = 0`). -/
 @[simp]
 def main_row_in_srli_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=

@@ -22,7 +22,7 @@ End-to-end theorem for RV64 **REM**. REM is the
 `secondary = 1`). Combines:
 
 * `ZiskFv.Trusted.transpile_REM` (opcode 187),
-* `Spec.Rem.rem_compositional` (instantiates
+* `Circuit.Rem.rem_compositional` (instantiates
   `arith_archetype_rem_bus_match` at `OP_REM`),
 * `PureSpec.execute_DIVREM_rem_pure_equiv`.
 
@@ -53,7 +53,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Circuit-level REM theorem.** Main's packed `c` equals Arith's
     packed remainder (`d[]`) under the REM circuit-holds hypothesis.
-    Wraps `Spec.Rem.rem_compositional`. -/
+    Wraps `Circuit.Rem.rem_compositional`. -/
 theorem equiv_REM_circuit
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)

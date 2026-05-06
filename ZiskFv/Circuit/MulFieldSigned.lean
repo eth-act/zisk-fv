@@ -112,9 +112,9 @@ theorem main_mul_signed_field_correct
     (h : mul_signed_field_circuit_holds m v r_main r_arith)
     (h_nr : v.nr r_arith = 0) :
     (1 - 2 * v.na r_arith - 2 * v.nb r_arith + 4 * v.na r_arith * v.nb r_arith)
-        * Spec.Add.main_a_packed m r_main * Spec.Add.main_b_packed m r_main
-      + (v.nb r_arith * (1 - 2 * v.na r_arith) * Spec.Add.main_a_packed m r_main
-          + v.na r_arith * (1 - 2 * v.nb r_arith) * Spec.Add.main_b_packed m r_main)
+        * Circuit.Add.main_a_packed m r_main * Circuit.Add.main_b_packed m r_main
+      + (v.nb r_arith * (1 - 2 * v.na r_arith) * Circuit.Add.main_a_packed m r_main
+          + v.na r_arith * (1 - 2 * v.nb r_arith) * Circuit.Add.main_b_packed m r_main)
           * (65536 * 65536 * 65536 * 65536)
       + (v.na r_arith * v.nb r_arith - v.np r_arith)
           * (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536)

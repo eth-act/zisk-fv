@@ -24,7 +24,7 @@ payload (`instruction.DIV (r2, r1, rd, true)` — the boolean selector
 picks unsigned).
 
 Three canonical theorems:
-* `equiv_DIVU_circuit` — circuit-level, wraps `Spec.Divu.divu_compositional`.
+* `equiv_DIVU_circuit` — circuit-level, wraps `Circuit.Divu.divu_compositional`.
 * `equiv_DIVU_sail` — Sail-level, wraps
   `PureSpec.execute_DIVREM_divu_pure_equiv`.
 * `equiv_DIVU` — canonical shape, discharged via shape-
@@ -46,7 +46,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Circuit-level DIVU theorem.** Main's packed `c` equals Arith's
     packed quotient lane under the DIVU circuit-holds hypothesis.
-    Wraps `Spec.Divu.divu_compositional`. -/
+    Wraps `Circuit.Divu.divu_compositional`. -/
 theorem equiv_DIVU_circuit
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)

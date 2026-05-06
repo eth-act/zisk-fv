@@ -66,7 +66,7 @@ def main_row_in_load_mode
   ∧ m.set_pc r_main = 0
 
 /-- **Archetype circuit-holds (zero-extension loads).** Parametric
-    version of `Spec.LoadD.load_d_circuit_holds`. Only for the
+    version of `Circuit.LoadD.load_d_circuit_holds`. Only for the
     `OP_COPYB` sub-family (`is_external_op = 0`); sign-extension loads
     need a different subset (constraint 10 plus an operation-bus hop).
 
@@ -82,7 +82,7 @@ def load_archetype_copyb_circuit_holds
   ∧ memory_load_lanes_match m r_main entry
 
 /-- **Archetype theorem (zero-extension loads, c-packed).**
-    Same shape as `Spec.LoadD.load_d_compositional` but expressed in
+    Same shape as `Circuit.LoadD.load_d_compositional` but expressed in
     the parametric `load_archetype_copyb_circuit_holds` form. LWU /
     LHU / LBU close via instantiation + a width-specific
     zeroing-of-high-bytes assumption on the memory-bus entry. -/
@@ -98,7 +98,7 @@ theorem load_archetype_copyb_c_packed
   exact ⟨h_ext, h_op, h_m32, h_setpc⟩
 
 /-- **Archetype next-PC (zero-extension loads).** Same shape as
-    `Spec.LoadD.load_d_next_pc_concrete`: when `jmp_offset1 =
+    `Circuit.LoadD.load_d_next_pc_concrete`: when `jmp_offset1 =
     jmp_offset2 = 4`, the next-pc is `pc + 4`. Holds uniformly for
     LD/LWU/LHU/LBU since they all use `j(4, 4)` in the Zisk
     transpiler. -/

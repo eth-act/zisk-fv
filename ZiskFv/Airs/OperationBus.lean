@@ -49,7 +49,7 @@ structure OperationBusEntry (F : Type) [Field F] where
     that 32-bit opcodes (`m32 = 1`) zero their high halves on the bus,
     while 64-bit opcodes (`m32 = 0`) pass them through. Callers supply the
     `m32` value via a constraint hypothesis (see
-    `Spec.Add.main_row_in_add_mode`, which pins `m32 = 0` for ADD);
+    `Circuit.Add.main_row_in_add_mode`, which pins `m32 = 0` for ADD);
     downstream `simp` closes `(1 - 0) * x = x` via `one_sub_zero_mul` /
     `Goldilocks.one_sub_m32_mul_of_eq_zero` below. The `c` lanes are
     forwarded verbatim; `main_step`/`extended_arg` derive from precompile
@@ -135,8 +135,8 @@ def opBus_row_BinaryAdd {C : Type → Type → Type} {F ExtF : Type}
     extra_args_0 := 0 }
 
 /-- Two `OperationBusEntry`s match when every field agrees. The proof of
-    Spec.Add reduces to: Main's bus row at `r_main` matches BinaryAdd's bus
-    row at `r_binary`. -/
+    `Circuit.Add` reduces to: Main's bus row at `r_main` matches BinaryAdd's
+    bus row at `r_binary`. -/
 @[simp]
 def matches_entry {F : Type} [Field F]
     (a b : OperationBusEntry F) : Prop :=

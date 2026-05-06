@@ -37,7 +37,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- The Main row at `r_main` is in SLL-execution mode: external op with
     opcode literal 33 (`OP_SLL`), full 64-bit width (`m32 = 0`),
     `set_pc = 0`, and `flag = 0`. Identical shape to
-    `Spec.Shift.main_row_in_sllw_mode` modulo `m32 = 0` and the op
+    `Circuit.Shift.main_row_in_sllw_mode` modulo `m32 = 0` and the op
     literal. -/
 @[simp]
 def main_row_in_sll_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
@@ -48,7 +48,7 @@ def main_row_in_sll_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
   ∧ m.set_pc r_main = 0
 
 /-- Main-side hypotheses for the SLL archetype. Same shape as
-    `Spec.ShiftR.srlw_circuit_holds` modulo opcode literal and
+    `Circuit.ShiftR.srlw_circuit_holds` modulo opcode literal and
     `m32 = 0`. -/
 @[simp]
 def sll_circuit_holds

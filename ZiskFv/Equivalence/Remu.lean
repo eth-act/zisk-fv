@@ -43,7 +43,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Circuit-level REMU theorem.** Main's packed `c` equals Arith's
     packed remainder (`d[]`) under the REMU circuit-holds hypothesis.
-    Wraps `Spec.Remu.remu_compositional`. -/
+    Wraps `Circuit.Remu.remu_compositional`. -/
 theorem equiv_REMU_circuit
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)

@@ -47,7 +47,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Circuit-level ADDIW theorem.** Main's packed
     `c` equals the bus entry's packed `c` lanes. Wraps
-    `Spec.Addiw.addiw_compositional`. -/
+    `Circuit.Addiw.addiw_compositional`. -/
 theorem equiv_ADDIW_circuit
     (_rs1 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)

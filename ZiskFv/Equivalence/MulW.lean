@@ -21,7 +21,7 @@ import ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned
 End-to-end theorem for RV64 MULW. MULW is the 32-bit word variant of
 MUL — `m32 = 1` on both Main and Arith — which means the Main spec
 must be authored with a MULW-specific mode predicate (the archetype
-macro hardcodes `m32 = 0`). See `Spec.MulW` for the compositional
+macro hardcodes `m32 = 0`). See `Circuit.MulW` for the compositional
 statement.
 -/
 
@@ -39,7 +39,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Circuit-level MULW theorem.** Main's packed `c` equals Arith's
     packed result lanes, given the MULW circuit-holds hypothesis.
-    Wraps `Spec.MulW.mulw_compositional`. -/
+    Wraps `Circuit.MulW.mulw_compositional`. -/
 theorem equiv_MULW_circuit
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)

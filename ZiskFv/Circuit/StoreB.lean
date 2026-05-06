@@ -10,7 +10,7 @@ import ZiskFv.Tactics.StoreArchetype
 
 /-!
 Compositional SB (store byte) spec — narrowest sibling of
-`Spec.StoreH` / `Spec.StoreW` / `Spec.StoreD`. SB writes the **low
+`Circuit.StoreH` / `Circuit.StoreW` / `Circuit.StoreD`. SB writes the **low
 1 byte** of `rs2` to memory while SH writes the low 2,
 SW the low 4, and SD all 8.
 

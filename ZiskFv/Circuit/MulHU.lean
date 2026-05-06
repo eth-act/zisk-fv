@@ -19,7 +19,7 @@ Compositional MULHU spec. MULHU differs from MUL only in:
 
 This module instantiates `Tactics.MulArchetype.mul_archetype_bus_match` at
 `opcode_lit = OP_MULUH`, producing an opcode-specialized
-`mulhu_compositional` that mirrors `Spec.MulH.mulh_compositional` verbatim
+`mulhu_compositional` that mirrors `Circuit.MulH.mulh_compositional` verbatim
 from the compositional proof's perspective. As with MUL/MULH, the Arith-
 internal correctness (carry chains → `BitVec 64` high half of the
 unsigned product) is delegated to the audit.

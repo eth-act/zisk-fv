@@ -28,7 +28,7 @@ SLLW archetype:
   witnesses + PIL-faithful `opBus_row_Main`, the emitted bus entry's
   `a_hi` and `b_hi` fields are `0` (the `m32 = 1` zeroing).
 
-Like `Spec.BranchEqual` for BEQ, the bus-emission match to the
+Like `Circuit.BranchEqual` for BEQ, the bus-emission match to the
 concrete `BinaryExtension` AIR is **parameterized** (deferred to
 the audit). The caller supplies the match hypothesis; we provide
 the Main-side shape reasoning.
@@ -51,7 +51,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- The Main row at `r_main` is in SLLW-execution mode: external op
     with opcode literal 36 (`OP_SLL_W`), 32-bit width (`m32 = 1`),
     `set_pc = 0`, and `flag = 0`. Shape mirrors
-    `Spec.Add.main_row_in_add_mode`, with the key difference that
+    `Circuit.Add.main_row_in_add_mode`, with the key difference that
     `m32 = 1` here (vs. 0 for ADD/BEQ/JAL/MUL/LD). -/
 @[simp]
 def main_row_in_sllw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=

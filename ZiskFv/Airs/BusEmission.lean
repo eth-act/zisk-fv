@@ -761,7 +761,7 @@ lemmas below ship as **named wrappers** of the 8-byte
 
 The actual narrow-width collapse — replacing the 8-insert chain with
 an N-insert chain — happens at the equivalence-layer caller via
-`Spec.MemModel.mem_store_correct_<n>byte` plus
+`Circuit.MemModel.mem_store_correct_<n>byte` plus
 `Std.ExtHashMap.insert_eq_self`-style elimination of the trailing
 inserts under the byte-bus high-lane-match witnesses.
 

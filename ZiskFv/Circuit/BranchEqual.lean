@@ -19,7 +19,7 @@ This is the A1 archetype spec. BNE/BGE/BGEU/BLT/BLTU will reuse the
 same theorem with different `h_flag_correct` hypotheses (and `OP_EQ`
 swapped for the appropriate opcode in the bus-emission).
 
-Unlike `Spec.Add`, BEQ does *not* touch `c_lo/c_hi` for its RV64
+Unlike `Circuit.Add`, BEQ does *not* touch `c_lo/c_hi` for its RV64
 semantics (branches don't write to a destination register); the only
 circuit-side output is the PC advance. The compositional theorem
 isolates the PC-advance direction.

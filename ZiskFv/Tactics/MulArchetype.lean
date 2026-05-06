@@ -38,7 +38,7 @@ per-opcode differences are:
 
 This module packages the reusable circuit-side piece as an archetype
 lemma (`mul_archetype_bus_match`) parameterized by an `opcode_lit : FGL`.
-MUL currently uses `Spec.Mul.mul_compositional` directly; MULH / MULHU
+MUL currently uses `Circuit.Mul.mul_compositional` directly; MULH / MULHU
 / MULHSU call `mul_archetype_bus_match` with their own `opcode_lit`.
 
 ## Usage pattern
@@ -85,7 +85,7 @@ def main_row_in_mul_archetype_mode
 
 /-- **Archetype circuit-holds (parametric over opcode).** Packs the
     ADD-subset Main constraints + Arith MUL-mode booleans + bus match
-    + Main mode witnesses + Arith mode witnesses. `Spec.Mul.mul_circuit_holds`
+    + Main mode witnesses + Arith mode witnesses. `Circuit.Mul.mul_circuit_holds`
     is a specialization at `opcode_lit = OP_MUL`. -/
 @[simp]
 def mul_archetype_circuit_holds
@@ -98,7 +98,7 @@ def mul_archetype_circuit_holds
   ∧ arith_row_in_mul_mode v r_arith
 
 /-- **Archetype bus-match theorem.** Parametric version of
-    `Spec.Mul.mul_compositional`. Same proof skeleton: destruct the
+    `Circuit.Mul.mul_compositional`. Same proof skeleton: destruct the
     bus-match equalities, substitute into Main's packed `c`, close.
 
     Result: Main's packed `c` equals Arith's packed result lanes,

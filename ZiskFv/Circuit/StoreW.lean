@@ -10,7 +10,7 @@ import ZiskFv.Tactics.StoreArchetype
 
 /-!
 Compositional SW (store word) spec — narrow sibling of
-`Spec.StoreD`. SW writes the **low 4 bytes** of `rs2`
+`Circuit.StoreD`. SW writes the **low 4 bytes** of `rs2`
 to memory while SD writes all 8.
 
 At the Main-AIR level the SW row is indistinguishable from SD (both

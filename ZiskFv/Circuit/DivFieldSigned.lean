@@ -128,14 +128,14 @@ lemma main_dividend_eq_chunks_div
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : div_primary_circuit_holds m v r_main r_arith opcode_lit) :
-    Spec.Add.main_a_packed m r_main = c_chunks_packed_div v r_arith := by
+    Circuit.Add.main_a_packed m r_main = c_chunks_packed_div v r_arith := by
   obtain ⟨_, _, h_bus, h_mode, h_arith_mode⟩ := h
   obtain ⟨_, _, h_match_alo, h_match_ahi, _, _, _, _, _, _, _, _⟩ := h_bus
   obtain ⟨_, _, h_m32, _, _⟩ := h_mode
   simp only [opBus_row_Main, opBus_row_ArithDiv] at h_match_alo h_match_ahi
   rw [h_m32] at h_match_ahi
   simp only [one_sub_zero_mul] at h_match_ahi
-  unfold Spec.Add.main_a_packed c_chunks_packed_div
+  unfold Circuit.Add.main_a_packed c_chunks_packed_div
   rw [h_match_alo, h_match_ahi]
   ring
 
@@ -144,14 +144,14 @@ lemma main_divisor_eq_chunks_div
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : div_primary_circuit_holds m v r_main r_arith opcode_lit) :
-    Spec.Add.main_b_packed m r_main = b_chunks_packed_div v r_arith := by
+    Circuit.Add.main_b_packed m r_main = b_chunks_packed_div v r_arith := by
   obtain ⟨_, _, h_bus, h_mode, _⟩ := h
   obtain ⟨_, _, _, _, h_match_blo, h_match_bhi, _, _, _, _, _, _⟩ := h_bus
   obtain ⟨_, _, h_m32, _, _⟩ := h_mode
   simp only [opBus_row_Main, opBus_row_ArithDiv] at h_match_blo h_match_bhi
   rw [h_m32] at h_match_bhi
   simp only [one_sub_zero_mul] at h_match_bhi
-  unfold Spec.Add.main_b_packed b_chunks_packed_div
+  unfold Circuit.Add.main_b_packed b_chunks_packed_div
   rw [h_match_blo, h_match_bhi]
   ring
 
@@ -191,14 +191,14 @@ lemma main_dividend_eq_chunks_rem
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : rem_secondary_circuit_holds m v r_main r_arith opcode_lit) :
-    Spec.Add.main_a_packed m r_main = c_chunks_packed_div v r_arith := by
+    Circuit.Add.main_a_packed m r_main = c_chunks_packed_div v r_arith := by
   obtain ⟨_, _, h_bus, h_mode, _⟩ := h
   obtain ⟨_, _, h_match_alo, h_match_ahi, _, _, _, _, _, _, _, _⟩ := h_bus
   obtain ⟨_, _, h_m32, _, _⟩ := h_mode
   simp only [opBus_row_Main, opBus_row_ArithDivSecondary] at h_match_alo h_match_ahi
   rw [h_m32] at h_match_ahi
   simp only [one_sub_zero_mul] at h_match_ahi
-  unfold Spec.Add.main_a_packed c_chunks_packed_div
+  unfold Circuit.Add.main_a_packed c_chunks_packed_div
   rw [h_match_alo, h_match_ahi]
   ring
 
@@ -207,14 +207,14 @@ lemma main_divisor_eq_chunks_rem
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : rem_secondary_circuit_holds m v r_main r_arith opcode_lit) :
-    Spec.Add.main_b_packed m r_main = b_chunks_packed_div v r_arith := by
+    Circuit.Add.main_b_packed m r_main = b_chunks_packed_div v r_arith := by
   obtain ⟨_, _, h_bus, h_mode, _⟩ := h
   obtain ⟨_, _, _, _, h_match_blo, h_match_bhi, _, _, _, _, _, _⟩ := h_bus
   obtain ⟨_, _, h_m32, _, _⟩ := h_mode
   simp only [opBus_row_Main, opBus_row_ArithDivSecondary] at h_match_blo h_match_bhi
   rw [h_m32] at h_match_bhi
   simp only [one_sub_zero_mul] at h_match_bhi
-  unfold Spec.Add.main_b_packed b_chunks_packed_div
+  unfold Circuit.Add.main_b_packed b_chunks_packed_div
   rw [h_match_blo, h_match_bhi]
   ring
 
@@ -260,9 +260,9 @@ theorem main_div_unsigned_field_correct
     (h : div_field_circuit_holds m v r_main r_arith opcode_lit)
     (h_na : v.na r_arith = 0) (h_nb : v.nb r_arith = 0)
     (h_np : v.np r_arith = 0) (h_nr : v.nr r_arith = 0) :
-    main_c_packed m r_main * Spec.Add.main_b_packed m r_main
+    main_c_packed m r_main * Circuit.Add.main_b_packed m r_main
       + d_chunks_packed_div v r_arith
-      = Spec.Add.main_a_packed m r_main := by
+      = Circuit.Add.main_a_packed m r_main := by
   -- Establish bridge equalities
   have h_a_eq := main_dividend_eq_chunks_div m v r_main r_arith opcode_lit h.1
   have h_b_eq := main_divisor_eq_chunks_div m v r_main r_arith opcode_lit h.1
@@ -347,15 +347,15 @@ theorem main_div_signed_field_correct_main_level
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : div_field_circuit_holds m v r_main r_arith opcode_lit) :
     (1 - 2 * v.na r_arith - 2 * v.nb r_arith + 4 * v.na r_arith * v.nb r_arith)
-        * main_c_packed m r_main * Spec.Add.main_b_packed m r_main
+        * main_c_packed m r_main * Circuit.Add.main_b_packed m r_main
       + (1 - 2 * v.nr r_arith) * d_chunks_packed_div v r_arith
       + (v.nb r_arith * (1 - 2 * v.na r_arith) * main_c_packed m r_main
-          + v.na r_arith * (1 - 2 * v.nb r_arith) * Spec.Add.main_b_packed m r_main)
+          + v.na r_arith * (1 - 2 * v.nb r_arith) * Circuit.Add.main_b_packed m r_main)
           * (65536 * 65536 * 65536 * 65536)
       + (v.nr r_arith - v.np r_arith) * (65536 * 65536 * 65536 * 65536)
       + v.na r_arith * v.nb r_arith
           * (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536)
-      = (1 - 2 * v.np r_arith) * Spec.Add.main_a_packed m r_main := by
+      = (1 - 2 * v.np r_arith) * Circuit.Add.main_a_packed m r_main := by
   -- Bridge 2: main_a = dividend chunks, main_b = divisor chunks, main_c = quotient chunks
   have h_a_eq := main_dividend_eq_chunks_div m v r_main r_arith opcode_lit h.1
   have h_b_eq := main_divisor_eq_chunks_div m v r_main r_arith opcode_lit h.1
@@ -442,15 +442,15 @@ theorem main_rem_signed_field_correct_main_level
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : rem_field_circuit_holds m v r_main r_arith opcode_lit) :
     (1 - 2 * v.na r_arith - 2 * v.nb r_arith + 4 * v.na r_arith * v.nb r_arith)
-        * a_chunks_packed_div v r_arith * Spec.Add.main_b_packed m r_main
+        * a_chunks_packed_div v r_arith * Circuit.Add.main_b_packed m r_main
       + (1 - 2 * v.nr r_arith) * main_c_packed m r_main
       + (v.nb r_arith * (1 - 2 * v.na r_arith) * a_chunks_packed_div v r_arith
-          + v.na r_arith * (1 - 2 * v.nb r_arith) * Spec.Add.main_b_packed m r_main)
+          + v.na r_arith * (1 - 2 * v.nb r_arith) * Circuit.Add.main_b_packed m r_main)
           * (65536 * 65536 * 65536 * 65536)
       + (v.nr r_arith - v.np r_arith) * (65536 * 65536 * 65536 * 65536)
       + v.na r_arith * v.nb r_arith
           * (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536)
-      = (1 - 2 * v.np r_arith) * Spec.Add.main_a_packed m r_main := by
+      = (1 - 2 * v.np r_arith) * Circuit.Add.main_a_packed m r_main := by
   -- Bridge 2: main_a = dividend = c_chunks, main_b = divisor = b_chunks,
   --           main_c = remainder = d_chunks
   have h_a_eq := main_dividend_eq_chunks_rem m v r_main r_arith opcode_lit h.1

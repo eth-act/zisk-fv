@@ -13,8 +13,8 @@ predicates as ADD), the named Arith-subset mul-mode booleans, and the
 operation-bus matching between the two rows, Main's `(c_lo, c_hi)` lanes
 equal Arith's packed result lanes (`c[0] + c[1]*2^16`, `bus_res1`).
 
-**Parameterization.** Unlike `Spec.Add`, which derives Main's
-packed `c` from BinaryAdd's carry chain, `Spec.Mul` **does not derive**
+**Parameterization.** Unlike `Circuit.Add`, which derives Main's
+packed `c` from BinaryAdd's carry chain, `Circuit.Mul` **does not derive**
 the multiplication from Arith's carry chains (constraints 31–38). That
 derivation — which would unfold the 8-chunk byte-level decomposition to
 `BitVec 128` arithmetic — is delegated to the audit. Instead we

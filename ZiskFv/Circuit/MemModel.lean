@@ -11,10 +11,10 @@ import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.BusHypotheses
 
 /-!
-# Spec.MemModel — memory-model bridge
+# Circuit.MemModel — memory-model bridge
 
 Composes the Mem AIR's row constraints with Sail's memory-monad
-semantics. Where `Spec/<opcode>.lean` provides a per-opcode
+semantics. Where `Circuit/<opcode>.lean` provides a per-opcode
 *circuit-side* spec relating Main's column accessors to a Sail-side
 intermediate, this module provides the **memory bridge** lemmas: given a
 Mem AIR row + the Main-side memory-bus emission + the structural
@@ -399,7 +399,7 @@ trust-base axioms beyond Mathlib's kernel:
 * `MemoryBus.MemBridge.lookup_consumer_matches_provider_{load,store}`
   — bus-permutation soundness (project-trusted; PLONK / logUp /
   permutation argument scope per CLAUDE.md "Trust scoping").
-* `Spec.MemModel.row_models_sail_state_{load,store}` — Sail-side
+* `Circuit.MemModel.row_models_sail_state_{load,store}` — Sail-side
   state-bridge: ZisK's Mem AIR models Sail's `state.mem` faithfully on
   aligned reads/writes.
 

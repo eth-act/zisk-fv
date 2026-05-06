@@ -49,7 +49,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Circuit-level SUB theorem.** Main's packed `c`
     equals the bus entry's packed `c` lanes. Wraps
-    `Spec.Sub.sub_compositional`. -/
+    `Circuit.Sub.sub_compositional`. -/
 theorem equiv_SUB_circuit
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)

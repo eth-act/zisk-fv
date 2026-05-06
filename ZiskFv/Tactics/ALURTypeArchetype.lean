@@ -98,15 +98,15 @@ def alu_rtype_archetype_circuit_holds
   ∧ matches_entry (opBus_row_Main m r_main) bus_entry
 
 /-- The 64-bit value packed into Main's `(c_0, c_1)` lanes. Redeclared
-    here (instead of importing `Spec.Add.main_c_packed`) so the
-    archetype module has no dependency on `Spec.Add`; downstream
+    here (instead of importing `Circuit.Add.main_c_packed`) so the
+    archetype module has no dependency on `Circuit.Add`; downstream
     ALU-RTYPE opcodes are identical to ADD in this packing. -/
 @[simp]
 def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
   m.c_0 r + m.c_1 r * 4294967296
 
 /-- **Archetype bus-match theorem.** Parametric version of
-    `Spec.Mul.mul_compositional`'s bus-match identity, adapted to an
+    `Circuit.Mul.mul_compositional`'s bus-match identity, adapted to an
     abstract bus entry (as in `Tactics/ShiftArchetype.lean`).
 
     Under ALU-RTYPE mode witnesses + bus-match, Main's packed `c`

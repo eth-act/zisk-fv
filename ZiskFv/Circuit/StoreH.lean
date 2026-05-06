@@ -10,7 +10,7 @@ import ZiskFv.Tactics.StoreArchetype
 
 /-!
 Compositional SH (store halfword) spec — narrow sibling of
-`Spec.StoreW` / `Spec.StoreD`. SH writes the **low 2 bytes** of
+`Circuit.StoreW` / `Circuit.StoreD`. SH writes the **low 2 bytes** of
 `rs2` to memory while SW writes the low 4 and SD writes all 8.
 
 At the Main-AIR level the SH row is indistinguishable from SW/SD (all

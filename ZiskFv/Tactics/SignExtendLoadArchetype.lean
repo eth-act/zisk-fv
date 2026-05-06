@@ -113,7 +113,7 @@ def sign_extend_load_archetype_circuit_holds
 
 /-- **Archetype m32 = 1 bus-zeroing theorem.** For the LW case
     (`m32 = 1`), the bus entry has `a_hi = b_hi = 0`. This mirrors
-    `Spec.Shift.sllw_compositional` and the
+    `Circuit.Shift.sllw_compositional` and the
     `shift_archetype_m32_one_zeros_bus` theorem. -/
 theorem sign_extend_load_archetype_m32_one_zeros_bus
     (m : Valid_Main C FGL FGL) (r_main : ℕ)

@@ -17,7 +17,7 @@ expression, and a tuple of named slots whose values are
 `C F ExtF → ℕ → F` thunks rendered straight from the pilout.
 
 `ZiskFv.Airs.OperationBus.opBus_row_Main` is the hand-written
-named-column version that downstream proofs (`Spec.Add`, etc.) consume.
+named-column version that downstream proofs (`Circuit.Add`, etc.) consume.
 It exposes the same eight tuple slots through `Valid_Main`'s named
 accessors.
 
@@ -28,7 +28,7 @@ This file proves the two are pointwise equal:
 * `bus_shape_for_ADD` specialises the slot-equalities to a row where
   `op = OP_ADD ∧ is_external_op = 1 ∧ m32 = 0`, deriving the fully
   resolved 8-tuple shape needed by the operation-bus matcher in
-  `Spec.Add`.
+  `Circuit.Add`.
 -/
 
 namespace ZiskFv.Airs.BusShape
@@ -98,11 +98,11 @@ theorem bus_emission_main_slots_match_opBus_row_Main
 
 /-- **Bus-shape derivation for ADD.** Given a row of `Valid_Main`
     constrained to be in ADD mode (`op = OP_ADD`, `is_external_op = 1`,
-    `m32 = 0` — see `Spec.Add.main_row_in_add_mode`), the operation-bus
+    `m32 = 0` — see `Circuit.Add.main_row_in_add_mode`), the operation-bus
     tuple emitted by Main on that row reduces to the fully-resolved shape
     `[10, a_lo, a_hi, b_lo, b_hi, c_lo, c_hi, flag]` with multiplicity 1.
 
-    Composed with `Spec.Add.main_row_in_add_mode`'s field equalities, this
+    Composed with `Circuit.Add.main_row_in_add_mode`'s field equalities, this
     yields `opBus_row_Main`'s ADD-mode shape — the form a downstream
     caller can rewrite the bus-matcher predicate against. -/
 theorem bus_shape_for_ADD

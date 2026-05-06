@@ -22,7 +22,7 @@ Pilot of the `SignExtendLoadArchetype`; consumes
 Parallels the LHU / LBU equivalence structure (same trio of theorems).
 Uses structural bus hypotheses (shape (d) reduction
 `bus_effect_matches_sail_load_4byte_rrrw`) plus a memory-model bridge
-(`Spec.MemModel.mem_load_correct_4byte`) that derives the bus-side
+(`Circuit.MemModel.mem_load_correct_4byte`) that derives the bus-side
 rd-write byte equalities from circuit primitives.
 -/
 

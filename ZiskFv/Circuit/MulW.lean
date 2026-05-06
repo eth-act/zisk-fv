@@ -18,7 +18,7 @@ two mode bits flipped: `m32 = 1` (32-bit operand width) and `sext = 1`
 Unlike MULHU / MULHSU (siblings that reuse `Tactics.MulArchetype` at a
 different opcode literal), MULW **cannot instantiate the macro**: the
 archetype's `main_row_in_mul_archetype_mode` predicate hardcodes
-`m32 = 0`. We take the same Option-(a) path `Spec.Shift` took for SLLW
+`m32 = 0`. We take the same Option-(a) path `Circuit.Shift` took for SLLW
 (which was the first `m32 = 1` opcode): inline the compositional
 derivation with MULW-specific mode predicates.
 
@@ -90,7 +90,7 @@ def mulw_circuit_holds
 /-- **Compositional MULW theorem.** If the MULW circuit-holds predicate
     holds, then Main's packed `c` lanes equal Arith's packed result lanes.
 
-    Same proof skeleton as `Spec.Mul.mul_compositional` — the `m32 = 1`
+    Same proof skeleton as `Circuit.Mul.mul_compositional` — the `m32 = 1`
     bit does not affect the `c` bus lanes, only the `a_hi`/`b_hi`
     operand-bus zeroing (which is irrelevant to this `c`-projection
     identity). The Arith-internal correctness (MULW carry chains →

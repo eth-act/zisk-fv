@@ -40,7 +40,7 @@ open ZiskFv.Circuit.MulHSU
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Circuit-level MULHSU theorem.** Main's packed `c` equals Arith's
-    packed result lanes. Wraps `Spec.MulHSU.mulhsu_compositional`. -/
+    packed result lanes. Wraps `Circuit.MulHSU.mulhsu_compositional`. -/
 theorem equiv_MULHSU_circuit
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)

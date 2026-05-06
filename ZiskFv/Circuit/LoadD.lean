@@ -23,7 +23,7 @@ yield:
 This is the **A3 archetype** circuit-side spec. The Sail-level companion
 and equivalence theorem live in `Equivalence/LoadD.lean`.
 
-Unlike `Spec.Add`, LD does *not* use the operation bus — copyb is
+Unlike `Circuit.Add`, LD does *not* use the operation bus — copyb is
 `OpType::Internal`, so Main constraint 9 discharges the `c = b` identity
 directly. The novel infrastructure is the **memory-bus** matching predicate
 `memory_load_lanes_match` imported from `Airs/MemoryBus.lean`.
@@ -85,7 +85,7 @@ def load_d_circuit_holds
   ∧ memory_load_lanes_match m r_main entry
 
 /-- The 64-bit value packed into the Main row's `(c_0, c_1)` lanes,
-    as a single Goldilocks element. Same shape as `Spec.Add.main_c_packed`. -/
+    as a single Goldilocks element. Same shape as `Circuit.Add.main_c_packed`. -/
 @[simp]
 def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
   m.c_0 r + m.c_1 r * 4294967296

@@ -112,7 +112,7 @@ theorem equiv_LD_sail
     execution + memory bus rows.
 
     The per-byte rd-write-value equality is **derived internally** from
-    `Spec.MemModel.mem_load_correct` plus circuit hypotheses
+    `Circuit.MemModel.mem_load_correct` plus circuit hypotheses
     (`main`, `mem`, `r_main`, `h_main_emit_b`, `h_ptr_match`,
     `h_e1_e2_bytes`). The `h_rd_zero_iff` and `h_rd_idx` hypotheses are
     scenario-binding ptr-match facts (Sail's `rd` operand vs the bus's

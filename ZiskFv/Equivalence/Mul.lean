@@ -52,7 +52,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
     `main_c_packed = arith_c_packed = (c[0] + c[1]*2^16) + bus_res1 * 2^32`.
 
-    Wraps `Spec.Mul.mul_compositional`. -/
+    Wraps `Circuit.Mul.mul_compositional`. -/
 theorem equiv_MUL_circuit
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)

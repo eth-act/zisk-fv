@@ -51,7 +51,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Circuit-level DIV theorem.** Main's packed `c` equals Arith's
     packed quotient lane under the DIV circuit-holds hypothesis. Wraps
-    `Spec.Div.div_compositional`. -/
+    `Circuit.Div.div_compositional`. -/
 theorem equiv_DIV_circuit
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
