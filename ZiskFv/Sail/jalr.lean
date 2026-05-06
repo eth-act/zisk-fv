@@ -53,8 +53,8 @@ namespace PureSpec
     (h_input_pc: state.regs.get? Register.PC = .some input.PC)
     (h_input_misa: state.regs.get? Register.misa = .some misa)
     (h_misa_c: Sail.BitVec.extractLsb misa 2 2 = 0#1)
-    (h_cur_privilege : Sail.readReg Register.cur_privilege state = EStateM.Result.ok Privilege.Machine state)
-    (h_mseccfg : Sail.readReg Register.mseccfg state = EStateM.Result.ok mseccfg state)
+    (_h_cur_privilege : Sail.readReg Register.cur_privilege state = EStateM.Result.ok Privilege.Machine state)
+    (_h_mseccfg : Sail.readReg Register.mseccfg state = EStateM.Result.ok mseccfg state)
   :
     (
       do
@@ -88,7 +88,6 @@ namespace PureSpec
       LeanRV64D.Functions.execute_JALR,
       LeanRV64D.Functions.get_next_pc,
       readReg_succ (writeReg_read_same _),
-      readReg_succ (writeReg_read_diff h_input_pc (show Register.PC ≠ Register.nextPC by grind)),
     ]
     -- Step 2: read rs1_val from the mutated state.
     obtain ⟨⟨rs1_fin: Fin 32⟩⟩ := rs1
@@ -127,13 +126,12 @@ namespace PureSpec
       simp [h_bit1, execute_JALR_pure, h_input_imm]
       -- The virtaddr in Sail is `Sail.BitVec.update (...) 0 0#1`; pure-spec writes
       -- `0xFFFFFFFFFFFFFFFE &&& (...)`. These are equal.
-      congr 2
       simp [Sail.BitVec.update, Sail.BitVec.updateSubrange']
     . -- Aligned: Retire_Success, write nextPC := masked target, optional
       -- link-address write to rd.
       have h_bit1_zero : BitVec.ofBool (input.rs1_val + BitVec.signExtend 64 imm)[1] = 0#1 := by
         grind
-      simp [h_bit1, h_bit1_zero, execute_JALR_pure, h_input_imm]
+      simp [h_bit1_zero, execute_JALR_pure, h_input_imm]
       -- Bridge the write_reg_state nextPC with the masked target.
       have h_mask_eq :
         Sail.BitVec.update (input.rs1_val + BitVec.signExtend 64 imm) 0 0#1 =

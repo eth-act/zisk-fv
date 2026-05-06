@@ -223,10 +223,10 @@ theorem equiv_JALR
   simp only [PureSpec.execute_JALR_pure, h_rd_idx, h_bit1_neg]
   by_cases h_rd_zero : Transpiler.wrap_to_regidx e_rd.ptr = 0
   · simp only [h_rd_zero, decide_true, Bool.false_or, ↓reduceDIte,
-               Bool.false_eq_true, if_false, ite_false,
+               Bool.false_eq_true, if_false,
                bind, pure, EStateM.bind, EStateM.pure]
   · simp only [h_rd_zero, decide_false, Bool.or_false, ↓reduceDIte,
-               Bool.false_eq_true, if_false, ite_false,
+               Bool.false_eq_true, if_false,
                bind, pure, EStateM.bind, EStateM.pure]
     rw [h_rd_val]
 

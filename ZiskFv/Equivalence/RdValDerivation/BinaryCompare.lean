@@ -162,7 +162,7 @@ private lemma signed_lt_64'_iff_bv_slt (a b : BitVec 64) :
       rw [if_neg hA', if_neg hB']
       have hAd : decide (a.toNat ≥ 9223372036854775808) = true := decide_eq_true hA
       have hBd : decide (b.toNat ≥ 9223372036854775808) = true := decide_eq_true hB
-      simp only [hAd, hBd, decide_eq_true_eq, if_true]
+      simp only [hAd, hBd, if_true]
       omega
     · -- a negative, b non-negative: a < b signed (true)
       have hA' : ¬ (2 * a.toNat < 2^64) := by rw [h2_64]; omega
@@ -201,7 +201,7 @@ private lemma signed_lt_64'_iff_bv_slt (a b : BitVec 64) :
         decide_eq_false hA.not_ge
       have hBd : decide (b.toNat ≥ 9223372036854775808) = false :=
         decide_eq_false hB.not_ge
-      simp only [hAd, hBd, decide_eq_true_eq, if_true]
+      simp only [hAd, hBd, if_true]
       omega
 
 /-! ## SLT / SLTU shared internal kernel

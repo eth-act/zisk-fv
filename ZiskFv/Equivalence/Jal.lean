@@ -208,9 +208,9 @@ theorem equiv_JAL
   simp only [PureSpec.execute_JAL_pure, h_rd_idx, h_bit0_neg, h_bit1_neg, Bool.false_or]
   by_cases h_rd_zero : Transpiler.wrap_to_regidx e_rd.ptr = 0
   · simp only [h_rd_zero, decide_true, ↓reduceDIte, Bool.false_eq_true,
-               if_false, ite_false, bind, pure, EStateM.bind, EStateM.pure]
+               if_false, bind, pure, EStateM.bind, EStateM.pure]
   · simp only [h_rd_zero, decide_false, ↓reduceDIte, Bool.false_eq_true,
-               if_false, ite_false, bind, pure, EStateM.bind, EStateM.pure]
+               if_false, bind, pure, EStateM.bind, EStateM.pure]
     rw [h_rd_val]
 
 /-- **Tier-1: JAL without `h_rd_val` parameter.**

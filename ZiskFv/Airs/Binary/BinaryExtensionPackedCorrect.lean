@@ -1040,7 +1040,7 @@ SRA case analysis. -/
 private lemma byte_split_div_8
     (a0v a1v a2v a3v a4v a5v a6v a7v sft : ℕ)
     (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (ha3r : a3v < 256)
-    (ha4r : a4v < 256) (ha5r : a5v < 256) (ha6r : a6v < 256) (ha7r : a7v < 256) :
+    (ha4r : a4v < 256) (ha5r : a5v < 256) (ha6r : a6v < 256) (_ha7r : a7v < 256) :
     (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216
         + a4v * 4294967296 + a5v * 1099511627776
         + a6v * 281474976710656 + a7v * 72057594037927936) / 2 ^ sft
@@ -1544,7 +1544,7 @@ per-byte contributions `(a_i * 256^i) / 2^sft`. -/
 
 private lemma byte_split_div_4
     (a0v a1v a2v a3v sft : ℕ)
-    (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (ha3r : a3v < 256) :
+    (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (_ha3r : a3v < 256) :
     (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) / 2 ^ sft
       = a0v * 1 / 2 ^ sft + a1v * 256 / 2 ^ sft
         + a2v * 65536 / 2 ^ sft + a3v * 16777216 / 2 ^ sft := by
@@ -1666,7 +1666,7 @@ private lemma a32_div_ge_2_31_iff_byte3
 
 /-- Pure-Nat statement of the SRL_W identity. -/
 private lemma srlw_nat_core
-    (a0v a1v a2v a3v a4v a5v a6v a7v : ℕ)
+    (a0v a1v a2v a3v _a4v _a5v _a6v _a7v : ℕ)
     (cl0 cl1 cl2 cl3 cl4 cl5 cl6 cl7 : ℕ)
     (ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch7 : ℕ)
     (sft : ℕ)
@@ -1737,7 +1737,7 @@ private lemma srlw_bv_core
     (ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch7 : ℕ)
     (sft : ℕ)
     (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (ha3r : a3v < 256)
-    (ha4r : a4v < 256) (ha5r : a5v < 256) (ha6r : a6v < 256) (ha7r : a7v < 256)
+    (_ha4r : a4v < 256) (_ha5r : a5v < 256) (_ha6r : a6v < 256) (_ha7r : a7v < 256)
     (eq0 : cl0 = a0v * 1 / 2 ^ sft)
     (eq1 : cl1 = a1v * 256 / 2 ^ sft)
     (eq2 : cl2 = a2v * 65536 / 2 ^ sft)
@@ -1973,28 +1973,28 @@ theorem binary_extension_srlw_chunks_eq_bv_ushr_w
     simp only [show ¬ ((4 : ℕ) < 4) from by decide, if_false] at h_hi
     -- h_hi : (free_in_c_12 row).val = if 0 ≥ 2^31 then 2^32-1 else 0
     rw [h_hi]
-    simp [show ¬ ((0 : ℕ) ≥ 2 ^ 31) from by decide]
+    simp
   have ech5 : (v.free_in_c_13 row).val = 0 := by
     have ⟨_, h_hi⟩ := srlw_byte_eq e5 hm5 (by rw [hop5]; exact h_op)
     rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
         show e5.c_hi_byte.val = (v.free_in_c_13 row).val from by rw [hch5]] at h_hi
     simp only [show ¬ ((5 : ℕ) < 4) from by decide, if_false] at h_hi
     rw [h_hi]
-    simp [show ¬ ((0 : ℕ) ≥ 2 ^ 31) from by decide]
+    simp
   have ech6 : (v.free_in_c_14 row).val = 0 := by
     have ⟨_, h_hi⟩ := srlw_byte_eq e6 hm6 (by rw [hop6]; exact h_op)
     rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
         show e6.c_hi_byte.val = (v.free_in_c_14 row).val from by rw [hch6]] at h_hi
     simp only [show ¬ ((6 : ℕ) < 4) from by decide, if_false] at h_hi
     rw [h_hi]
-    simp [show ¬ ((0 : ℕ) ≥ 2 ^ 31) from by decide]
+    simp
   have ech7 : (v.free_in_c_15 row).val = 0 := by
     have ⟨_, h_hi⟩ := srlw_byte_eq e7 hm7 (by rw [hop7]; exact h_op)
     rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
         show e7.c_hi_byte.val = (v.free_in_c_15 row).val from by rw [hch7]] at h_hi
     simp only [show ¬ ((7 : ℕ) < 4) from by decide, if_false] at h_hi
     rw [h_hi]
-    simp [show ¬ ((0 : ℕ) ≥ 2 ^ 31) from by decide]
+    simp
   -- Range bounds.
   obtain ⟨ha0r, ha1r, ha2r, ha3r, ha4r, ha5r, ha6r, ha7r⟩ := h_a_range
   -- Apply the BitVec wrapper.
@@ -2136,7 +2136,7 @@ private lemma sllw_nat_core
     (cl0 cl1 cl2 cl3 cl4 cl5 cl6 cl7 : ℕ)
     (ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch7 : ℕ)
     (sft : ℕ)
-    (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (ha3r : a3v < 256)
+    (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (_ha3r : a3v < 256)
     (hsft_lt : sft < 32)
     (eq0 : cl0 = (a0v * 1 * 2 ^ sft) % 2 ^ 32)
     (eq1 : cl1 = (a1v * 256 * 2 ^ sft) % 2 ^ 32)
@@ -2174,7 +2174,7 @@ private lemma sllw_bv_core
     (ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch7 : ℕ)
     (sft : ℕ)
     (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (ha3r : a3v < 256)
-    (ha4r : a4v < 256) (ha5r : a5v < 256) (ha6r : a6v < 256) (ha7r : a7v < 256)
+    (_ha4r : a4v < 256) (_ha5r : a5v < 256) (_ha6r : a6v < 256) (_ha7r : a7v < 256)
     (hsft_lt : sft < 32)
     (eq0 : cl0 = (a0v * 1 * 2 ^ sft) % 2 ^ 32)
     (eq1 : cl1 = (a1v * 256 * 2 ^ sft) % 2 ^ 32)
@@ -2472,7 +2472,7 @@ private lemma sraw_nat_core
     (ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch7 : ℕ)
     (sft : ℕ)
     (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (ha3r : a3v < 256)
-    (hsft_lt : sft < 32)
+    (_hsft_lt : sft < 32)
     (eq0 : cl0 + ch0 * 4294967296 = a0v * 1 / 2 ^ sft)
     (eq1 : cl1 + ch1 * 4294967296 = a1v * 256 / 2 ^ sft)
     (eq2 : cl2 + ch2 * 4294967296 = a2v * 65536 / 2 ^ sft)
@@ -2509,7 +2509,7 @@ private lemma sraw_bv_close_msb_true
     (cl_sum ch_sum sft : ℕ)
     (h_a32_lt : a0v + a1v * 256 + a2v * 65536 + a3v * 16777216 < 2 ^ 32)
     (hsft_lt : sft < 32)
-    (h_a3 : a3v ≥ 128)
+    (_h_a3 : a3v ≥ 128)
     (hcore_pos :
         cl_sum + ch_sum * 4294967296
           = (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) / 2 ^ sft
@@ -2566,7 +2566,7 @@ private lemma sraw_bv_core
     (ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch7 : ℕ)
     (sft : ℕ)
     (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (ha3r : a3v < 256)
-    (ha4r : a4v < 256) (ha5r : a5v < 256) (ha6r : a6v < 256) (ha7r : a7v < 256)
+    (_ha4r : a4v < 256) (_ha5r : a5v < 256) (_ha6r : a6v < 256) (_ha7r : a7v < 256)
     (hsft_lt : sft < 32)
     (eq0 : cl0 + ch0 * 4294967296 = a0v * 1 / 2 ^ sft)
     (eq1 : cl1 + ch1 * 4294967296 = a1v * 256 / 2 ^ sft)

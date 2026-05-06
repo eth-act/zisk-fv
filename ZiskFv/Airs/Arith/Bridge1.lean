@@ -68,7 +68,7 @@ lemma mul_bus_res1_eq_c_hi
              ← v.d_2_def, ← v.d_3_def] at h_c46
   -- Substitute the MUL-mode witnesses.
   simp only [h_sext, h_m32, h_main_mul, h_main_div,
-             zero_mul, mul_zero, one_mul, mul_one,
+             zero_mul, one_mul,
              sub_zero, add_zero, zero_add, sub_self] at h_c46
   -- Close via linear_combination over the residual equation.
   linear_combination h_c46
@@ -89,7 +89,7 @@ lemma div_bus_res1_eq_a_hi
              ← v.a_2_def, ← v.a_3_def,
              ← v.d_2_def, ← v.d_3_def] at h_c46
   simp only [h_sext, h_m32, h_main_mul, h_main_div,
-             zero_mul, mul_zero, one_mul, mul_one,
+             zero_mul, one_mul,
              sub_zero, add_zero, zero_add, sub_self] at h_c46
   linear_combination h_c46
 
@@ -110,8 +110,8 @@ lemma rem_bus_res1_eq_d_hi
              ← v.a_2_def, ← v.a_3_def,
              ← v.d_2_def, ← v.d_3_def] at h_c46
   simp only [h_sext, h_m32, h_main_mul, h_main_div,
-             zero_mul, mul_zero, one_mul, mul_one,
-             sub_zero, add_zero, zero_add, sub_self] at h_c46
+             zero_mul, one_mul,
+             sub_zero, add_zero, zero_add] at h_c46
   linear_combination h_c46
 
 end ZiskFv.Airs.ArithBridge1

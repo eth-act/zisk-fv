@@ -77,15 +77,14 @@ namespace PureSpec
     · -- b = 0 branch
       subst hb
       simp only [Sail.BitVec.toNatInt, BitVec.toNat_ofNat, Nat.zero_mod,
-                 Int.ofNat_zero, beq_self_eq_true, if_true, if_pos, ↓reduceIte]
+                 ↓reduceIte]
       apply BitVec.eq_of_toNat_eq
       simp [BitVec.allOnes]
     · -- b ≠ 0 branch
       have hb' : b.toNat ≠ 0 := by
         intro h; apply hb; apply BitVec.eq_of_toNat_eq; simp [h]
       have hbz : ((b.toNat : ℤ) ≠ 0) := by exact_mod_cast hb'
-      simp only [Sail.BitVec.toNatInt, beq_iff_eq, Int.ofNat_eq_zero, hb',
-                 if_false, ↓reduceIte]
+      simp only [Sail.BitVec.toNatInt, beq_iff_eq]
       rw [if_neg hb]
       apply BitVec.eq_of_toNat_eq
       -- LHS: ((BitVec.ofInt 32 (Int.tdiv (a.toNat : ℤ) (b.toNat : ℤ))).toNat
@@ -93,7 +92,6 @@ namespace PureSpec
       -- Both reduce to (a.toNat / b.toNat) % 2^32
       conv_lhs => simp [BitVec.toNat_ofInt, Int.natCast_tdiv_eq_ediv]
       conv_rhs => simp [BitVec.toNat_ofNat]
-      push_cast
       omega
 
   set_option maxHeartbeats 800000 in

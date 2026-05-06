@@ -138,7 +138,7 @@ theorem equiv_LW
     (h_ptr_match :
       e1.ptr.toNat
         = lw_input.r1_val.toNat + (BitVec.signExtend 64 lw_input.imm).toNat)
-    (h_e1_e2_bytes :
+    (_h_e1_e2_bytes :
       (e2.x0 : BitVec 8) = e1.x0
       ∧ (e2.x1 : BitVec 8) = e1.x1
       ∧ (e2.x2 : BitVec 8) = e1.x2

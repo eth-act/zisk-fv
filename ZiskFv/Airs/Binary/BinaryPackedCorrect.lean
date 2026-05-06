@@ -915,7 +915,7 @@ private lemma byte_and_0x80_zero (x : ℕ) (hx : x < 256) :
     apply Nat.eq_of_testBit_eq
     intro j
     rw [Nat.testBit_and]
-    simp only [Nat.zero_testBit, Bool.and_false]
+    simp only [Nat.zero_testBit]
     rcases eq_or_ne j 7 with hj | hj
     · subst hj
       -- bit 7 of x is 0 since x < 128
@@ -1408,9 +1408,9 @@ theorem binary_ltu_chunks_eq_bv_ult
     (h_byte_6 : consumer_byte_match_chain OP_LTU a6 b6 c6 cin6 fl6 pi6)
     (h_byte_7 : consumer_byte_match_chain OP_LTU a7 b7 c7 cin7 fl7 pi7)
     (ha0 : a0.val < 256) (ha1 : a1.val < 256) (ha2 : a2.val < 256) (ha3 : a3.val < 256)
-    (ha4 : a4.val < 256) (ha5 : a5.val < 256) (ha6 : a6.val < 256) (ha7 : a7.val < 256)
+    (ha4 : a4.val < 256) (ha5 : a5.val < 256) (ha6 : a6.val < 256) (_ha7 : a7.val < 256)
     (hb0 : b0.val < 256) (hb1 : b1.val < 256) (hb2 : b2.val < 256) (hb3 : b3.val < 256)
-    (hb4 : b4.val < 256) (hb5 : b5.val < 256) (hb6 : b6.val < 256) (hb7 : b7.val < 256)
+    (hb4 : b4.val < 256) (hb5 : b5.val < 256) (hb6 : b6.val < 256) (_hb7 : b7.val < 256)
     (h_cin0 : cin0.val = 0)
     (h_cin1 : cin1.val = fl0.val % 2)
     (h_cin2 : cin2.val = fl1.val % 2)

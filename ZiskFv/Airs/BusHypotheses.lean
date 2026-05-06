@@ -61,7 +61,7 @@ theorem readReg_of_readReg_succ
   cases h_get : state.regs.get? reg with
   | none =>
     rw [h_get] at h
-    simp [pure, EStateM.pure, throw, EStateM.throw, throwThe,
+    simp [throw, EStateM.throw, throwThe,
           MonadExceptOf.throw] at h
   | some w =>
     rw [h_get] at h
@@ -116,7 +116,7 @@ theorem chip_bus_hyps_alu_rrw
   simp only [h_exec_len, h_e0_mult, h_e1_mult, and_self, if_true,
              List.foldl_cons, List.foldl_nil] at h_bus
   simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
-             fgl_neg_one_self, fgl_one_ne_neg_one, fgl_one_self,
+             fgl_one_ne_neg_one,
              if_true, if_false] at h_bus
   -- The write branch (e2) keeps `.1` unchanged; case-split on whether
   -- rd is x0 (no-op) or a real register — both paths leave `.1` the
@@ -175,7 +175,7 @@ theorem chip_bus_hyps_jump_rrw
   simp only [h_exec_len, h_e0_mult, h_e1_mult, and_self, if_true,
              List.foldl_cons, List.foldl_nil] at h_bus
   simp only [h_m2_mult, h_m2_as,
-             fgl_one_ne_neg_one, fgl_one_self,
+             fgl_one_ne_neg_one,
              if_true, if_false] at h_bus
   by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
   · simp only [h_rd_zero, dite_true] at h_bus
@@ -232,8 +232,8 @@ theorem chip_bus_hyps_load_rrrw
   have h_m1_as_eq_two : (e1.as.val = 2) = True := by rw [h_m1_as]; decide
   simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as_ne_one, h_m1_as_eq_two,
              h_m2_mult, h_m2_as,
-             fgl_neg_one_self, fgl_one_ne_neg_one, fgl_one_self,
-             if_true, if_false, if_false_left, if_false_right] at h_bus
+             fgl_one_ne_neg_one,
+             if_true, if_false] at h_bus
   by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
   · simp only [h_rd_zero, dite_true] at h_bus
     -- h_bus has shape `((pc ∧ rs1) ∧ (mem[0] ∧ mem[1] ∧ … ∧ mem[7]))`.
@@ -289,11 +289,9 @@ theorem chip_bus_hyps_store_rrrw
   simp only [h_exec_len, h_e0_mult, h_e1_mult, and_self, if_true,
              List.foldl_cons, List.foldl_nil] at h_bus
   -- e2.as = 2 ≠ 1, so it takes the memory-write branch.
-  have h_m2_as_ne_one : (e2.as.val = 1) = False := by rw [h_m2_as]; decide
   simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
-             h_m2_as_ne_one,
-             fgl_neg_one_self, fgl_one_ne_neg_one, fgl_one_self,
-             if_true, if_false, if_false_left, if_false_right] at h_bus
+             fgl_one_ne_neg_one,
+             if_true, if_false] at h_bus
   obtain ⟨⟨hA, hB⟩, hC⟩ := h_bus
   exact ⟨hA, hB, hC⟩
 

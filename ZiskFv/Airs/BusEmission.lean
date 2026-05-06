@@ -219,8 +219,8 @@ theorem bus_effect_matches_sail_alu_rrw
              List.foldl_cons, List.foldl_nil]
   -- Reduce the first two reads (no state change) and the write-branch dispatch.
   simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
-             fgl_neg_one_self, fgl_one_ne_neg_one, fgl_one_self,
-             if_true, if_false, if_false_left, if_false_right]
+             fgl_one_ne_neg_one,
+             if_true, if_false]
   -- Branch on whether the rd-write is to x0 (no-op) or a real register.
   by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
   · -- rd = x0 case: no state change from the memory fold.
@@ -238,7 +238,7 @@ theorem bus_effect_matches_sail_alu_rrw
     -- Strip the monadic bind/pure machinery on the RHS.
     simp [Sail.writeReg, PreSail.writeReg, modify, modifyGet,
           MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
-          EStateM.bind, EStateM.pure, EStateM.Result.map]
+          EStateM.bind, EStateM.pure]
     -- The goal is now an equality between two states that differ only
     -- in the order of two distinct `write_reg_state` calls
     -- (`reg_of_fin rd` vs. `Register.nextPC`). Close via commutation.
@@ -280,8 +280,8 @@ theorem bus_effect_matches_sail_jump_rrw
   simp only [h_exec_len, h_e0_mult, h_e1_mult, and_self, if_true,
              List.foldl_cons, List.foldl_nil]
   simp only [h_rd_mult, h_rd_as,
-             fgl_one_ne_neg_one, fgl_one_self,
-             if_true, if_false, if_false_left, if_false_right]
+             fgl_one_ne_neg_one,
+             if_true, if_false]
   by_cases h_rd_zero : Transpiler.wrap_to_regidx e_rd.ptr = 0
   · simp only [h_rd_zero, dite_true]
     simp only [h_nextPC_matches]
@@ -293,7 +293,7 @@ theorem bus_effect_matches_sail_jump_rrw
     simp only [write_xreg, writeReg_state_success, EStateM.Result.map]
     simp [Sail.writeReg, PreSail.writeReg, modify, modifyGet,
           MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
-          EStateM.bind, EStateM.pure, EStateM.Result.map]
+          EStateM.bind, EStateM.pure]
     exact write_reg_state_comm _ _ _ _ _ reg_of_fin_neq_nextPC
 
 /-! ## Shapes (d) and (e) — memory-bus loads and stores
@@ -368,12 +368,10 @@ theorem bus_effect_matches_sail_load_rrrw
   -- e0 (reg-read, as=1): no state change; e1 (mem-read, as=2): no
   -- state change (the as=2 branch adds to `cond` but leaves `result`);
   -- e2 (reg-write, as=1): writes rd.
-  have h_m1_as_ne_one : (e1.as.val = 1) = False := by
-    rw [h_m1_as]; decide
-  simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m1_as_ne_one,
+  simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as,
              h_m2_mult, h_m2_as,
-             fgl_neg_one_self, fgl_one_ne_neg_one, fgl_one_self,
-             if_true, if_false, if_false_left, if_false_right]
+             fgl_one_ne_neg_one,
+             if_true, if_false]
   -- Branch on whether the rd-write is to x0 (no-op) or a real register.
   by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
   · simp only [h_rd_zero, dite_true]
@@ -386,7 +384,7 @@ theorem bus_effect_matches_sail_load_rrrw
     simp only [write_xreg, writeReg_state_success, EStateM.Result.map]
     simp [Sail.writeReg, PreSail.writeReg, modify, modifyGet,
           MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
-          EStateM.bind, EStateM.pure, EStateM.Result.map]
+          EStateM.bind, EStateM.pure]
     exact write_reg_state_comm _ _ _ _ _ reg_of_fin_neq_nextPC
 
 /-- **Shape (e): SD — store doubleword.**
@@ -449,12 +447,9 @@ theorem bus_effect_matches_sail_store_rrrw
   -- e0 and e1 are register reads (as=1, mult=-1): no state change.
   -- e2 is a memory write (as=2, mult=1): inserts 8 bytes and returns
   -- Retire_Success. Reduce dispatch on each entry.
-  have h_m2_as_ne_one : (e2.as.val = 1) = False := by
-    rw [h_m2_as]; decide
   simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
-             h_m2_as_ne_one,
-             fgl_neg_one_self, fgl_one_ne_neg_one, fgl_one_self,
-             if_true, if_false, if_false_left, if_false_right]
+             fgl_one_ne_neg_one,
+             if_true, if_false]
   -- Now the LHS is:
   --   EStateM.Result.map (...) (Sail.writeReg Register.nextPC nextPC_val
   --     { state with mem := <8 inserts> })
@@ -462,9 +457,8 @@ theorem bus_effect_matches_sail_store_rrrw
   -- machinery on both sides.
   simp only [h_nextPC_matches]
   simp [Sail.writeReg, PreSail.writeReg, modify, modifyGet,
-        MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure, set,
-        MonadStateOf.set, EStateM.set, EStateM.bind, EStateM.pure, get,
-        MonadState.get, getThe, MonadStateOf.get, EStateM.get,
+        MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
+        EStateM.bind, EStateM.pure,
         EStateM.Result.map]
 
 /-! ## Narrow-width load/store companions

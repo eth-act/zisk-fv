@@ -144,8 +144,8 @@ theorem equiv_SW
         MonadStateOf.modifyGet, EStateM.modifyGet, set,
         MonadStateOf.set, EStateM.set, get, MonadState.get, getThe,
         MonadStateOf.get, EStateM.get,
-        Sail.writeReg, PreSail.writeReg, EStateM.Result.map,
-        write_reg_state, PureSpec.modify_memory_4]
+        Sail.writeReg, PreSail.writeReg,
+        PureSpec.modify_memory_4]
   -- Goal: bus 8-insert chain on state.mem = Sail 4-insert chain on
   -- state.mem. Close via the bridging premise.
   exact h_mem_eq

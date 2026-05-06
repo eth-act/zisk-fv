@@ -119,8 +119,8 @@ theorem equiv_SB
         MonadStateOf.modifyGet, EStateM.modifyGet, set,
         MonadStateOf.set, EStateM.set, get, MonadState.get, getThe,
         MonadStateOf.get, EStateM.get,
-        Sail.writeReg, PreSail.writeReg, EStateM.Result.map,
-        write_reg_state, PureSpec.modify_memory_1]
+        Sail.writeReg, PreSail.writeReg,
+        PureSpec.modify_memory_1]
   exact h_mem_eq
 
 end ZiskFv.Equivalence.StoreB

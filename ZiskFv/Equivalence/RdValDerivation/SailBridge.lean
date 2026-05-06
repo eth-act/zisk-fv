@@ -187,12 +187,12 @@ private theorem shift_right_arith_eq_sshiftRight
   -- The goal has compounded boolean terms; use omega + decide reductions.
   rcases Nat.lt_or_ge (shift + i) 64 with h_si | h_si
   · -- shift + i < 64
-    have h_le_63 : i ≤ 63 := by omega
-    simp [hi, h_si, h_le_63, h_not_64_i, h_lt_64_shift]
+    have _h_le_63 : i ≤ 63 := by omega
+    simp [hi, h_si, h_not_64_i, h_lt_64_shift]
   · -- shift + i ≥ 64
     have h_si' : ¬ (shift + i < 64) := Nat.not_lt_of_ge h_si
-    have h_le_63 : i ≤ 63 := by omega
-    simp [hi, h_si', h_le_63, h_not_64_i, h_lt_64_shift,
+    have _h_le_63 : i ≤ 63 := by omega
+    simp [hi, h_si', h_not_64_i, h_lt_64_shift,
           BitVec.msb_eq_getLsbD_last,
           show (64 : ℕ) - 1 = 63 from by omega]
 
@@ -355,11 +355,11 @@ private theorem shift_right_arith_eq_sshiftRight_32
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb,
              BitVec.getLsbD_sshiftRight, BitVec.getLsbD_signExtend]
   rcases Nat.lt_or_ge (shift + i) 32 with h_si | h_si
-  · have h_le_31 : i ≤ 31 := by omega
-    simp [hi, h_si, h_le_31, h_not_32_i, h_lt_32_shift]
+  · have _h_le_31 : i ≤ 31 := by omega
+    simp [hi, h_si, h_not_32_i, h_lt_32_shift]
   · have h_si' : ¬ (shift + i < 32) := Nat.not_lt_of_ge h_si
-    have h_le_31 : i ≤ 31 := by omega
-    simp [hi, h_si', h_le_31, h_not_32_i, h_lt_32_shift,
+    have _h_le_31 : i ≤ 31 := by omega
+    simp [hi, h_si', h_not_32_i, h_lt_32_shift,
           BitVec.msb_eq_getLsbD_last,
           show (32 : ℕ) - 1 = 31 from by omega]
 

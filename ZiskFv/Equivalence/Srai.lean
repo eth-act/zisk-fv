@@ -279,7 +279,7 @@ theorem equiv_SRAI_bus_self
     (r1 rd : regidx) (shamt : BitVec 6)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_shamt : (SraiInput_of_bus e0 e2 exec_row shamt).shamt = shamt)
+    (_h_input_shamt : (SraiInput_of_bus e0 e2 exec_row shamt).shamt = shamt)
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)

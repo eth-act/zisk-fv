@@ -129,6 +129,6 @@ theorem equiv_SD
         MonadStateOf.modifyGet, EStateM.modifyGet, set,
         MonadStateOf.set, EStateM.set, get, MonadState.get, getThe,
         MonadStateOf.get, EStateM.get,
-        Sail.writeReg, PreSail.writeReg, EStateM.Result.map]
+        Sail.writeReg, PreSail.writeReg]
 
 end ZiskFv.Equivalence.StoreD

@@ -120,7 +120,6 @@ namespace PureSpec
         rw [if_pos hb, if_pos hb']
         apply BitVec.eq_of_toNat_eq
         simp [BitVec.toNat_ofInt]
-        push_cast
         omega
       · have hb' : remuw_input.r2_val.toNat % 4294967296 ≠ 0 :=
           fun h => hb ((h_extract_eq_zero _).mpr h)
@@ -143,7 +142,7 @@ namespace PureSpec
         push_cast
         omega
     -- Now bridge using h_inner_eq
-    simp only [Sail.BitVec.toNatInt, beq_iff_eq, Int.ofNat_eq_zero]
+    simp only []
     rw [h_inner_eq]
     simp [execute_DIVREM_remuw_pure]
     obtain ⟨rd⟩ := rd

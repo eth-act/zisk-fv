@@ -132,7 +132,6 @@ namespace PureSpec
 
     simp [execute_STOREW_pure, EStateM.set, modify_memory_4,
           BitVec.extractLsb, BitVec.extractLsb', *]
-    repeat rw [Nat.mod_eq_of_lt (b := 18446744073709551616) (by omega)]
     -- Normalize `r2_val.toNat % 2^32 >>> k` = `r2_val.toNat >>> k` for
     -- k ∈ {0, 8, 16, 24}, and `setWidth 8 r2_val = ofNat 8 (r2_val.toNat % 2^32)`.
     have h_eq0 : BitVec.ofNat 8 (input.r2_val.toNat % 4294967296) =
