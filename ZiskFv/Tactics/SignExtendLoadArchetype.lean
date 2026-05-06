@@ -6,7 +6,7 @@ import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 
 /-!
-**Sign-extend load archetype macros / generic lemmas** (Phase 3C T-SL).
+**Sign-extend load archetype macros / generic lemmas.**
 
 The three RV64 signed loads (LW / LH / LB) share a single ZisK
 microinstruction shape under `fn load_op` with an external-op opcode:
@@ -25,7 +25,7 @@ AIR's `c` lanes are populated by the BinaryExtension SM's bus push.
 As a consequence the compositional spec exposes a `matches_entry`
 hypothesis tying a Main-emitted `OperationBusEntry` to a secondary
 entry supplied by the caller — the BinaryExtension-side emission is
-deferred to Phase 4 (same decision as SLLW / MULW).
+a separate audit obligation (same decision as SLLW / MULW).
 
 Structurally this archetype is the load-family analogue of
 `Tactics/ShiftArchetype.lean`: it parameterizes over the opcode
@@ -69,11 +69,9 @@ paths (internal vs. external) in the `c_packed` conclusion, which
 does not generalize cleanly: for internal ops the conclusion is
 `c_packed = memory_entry_toField entry`; for external ops the `c`
 lanes are populated by the BinaryExtension SM's bus push, not the
-memory-bus entry. Per Phase 3 master-plan fragility note #1 and the
-general read-only policy on existing `Tactics/*.lean`, duplication
-into a sibling archetype is the preferred path. The two archetypes
-share the Main-row mode / PC-handshake structure but diverge in the
-`c`-populating mechanism.
+memory-bus entry. Duplication into a sibling archetype is the
+preferred path; the two archetypes share the Main-row mode /
+PC-handshake structure but diverge in the `c`-populating mechanism.
 -/
 
 namespace ZiskFv.Tactics.SignExtendLoadArchetype

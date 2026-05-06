@@ -14,7 +14,7 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 
 /-!
-End-to-end theorem for RV64 BLT (Phase 3A B1). Combines:
+End-to-end theorem for RV64 BLT. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_BLT`),
@@ -22,10 +22,9 @@ End-to-end theorem for RV64 BLT (Phase 3A B1). Combines:
   (`ZiskFv.Circuit.BranchLessThan.branch_lt_compositional`, a thin
   wrapper over `BranchArchetype.branch_archetype_pc_dispatch` at
   `opcode_lit = OP_LT`),
-* the Sail pure-function equivalence
-  (`PureSpec.execute_BLT_pure_equiv`, a direct proof port of
-  `execute_BNE_pure_equiv` with `h_lt : r1.toInt < r2.toInt` as the
-  case-split predicate — Phase 4 retired C2a),
+* the Sail pure-function equivalence (`PureSpec.execute_BLT_pure_equiv`,
+  a direct proof port of `execute_BNE_pure_equiv` with
+  `h_lt : r1.toInt < r2.toInt` as the case-split predicate),
 
 into three theorems mirroring `Equivalence/BranchEqual.lean` /
 `Equivalence/BranchNotEqual.lean`:
@@ -36,8 +35,7 @@ into three theorems mirroring `Equivalence/BranchEqual.lean` /
   `execute_instruction (.BTYPE (imm, r2, r1, BLT)) state
     = (bus_effect exec_row mem_row state).2`.
 
-**Hypothesis-free bus side.** D3 closed bus-emission for shape (b)
-(externally-routed branches); BLT shares shape (b) with BEQ/BNE so
+**Hypothesis-free bus side.** BLT shares shape (b) with BEQ/BNE so
 the metaplan theorem reuses `bus_effect_matches_sail_beq` directly.
 -/
 
@@ -102,7 +100,7 @@ theorem equiv_BLT_sail
   PureSpec.execute_BLT_pure_equiv blt_input imm r1 r2 h_input_imm h_input_r1 h_input_r2
     h_input_pc h_input_misa h_misa_c
 
-/-- **Metaplan theorem (Phase 3A B1).**
+/-- **Metaplan theorem.**
 
     `execute_instruction` on an RV64 BLT equals the state computed by
     applying `bus_effect` to the circuit's execution and memory bus rows.
@@ -122,7 +120,7 @@ theorem equiv_BLT_metaplan
     (h_input_pc : state.regs.get? Register.PC = .some blt_input.PC)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Structural bus hypotheses (Phase 2.5 D3 shape (b)).
+    -- Structural bus hypotheses (shape (b)).
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -147,7 +145,7 @@ theorem equiv_BLT_metaplan
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
 
-/-- **Phase 5 V12 companion for BLT.** Drops `h_input_pc` via
+/-- **Bus-driven companion for BLT.** Drops `h_input_pc` via
     `chip_bus_hyps_branch_rrw` + `readReg_of_readReg_succ`. Other
     `h_input_*` stay — branch memory bus is empty, so rs1/rs2
     reads go via operation bus (not derivable from `h_bus` here). -/
@@ -165,10 +163,10 @@ theorem equiv_BLT_metaplan_from_bus
       = EStateM.Result.ok blt_input.r2_val state)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Phase 5 V12: bus precondition + PC match (replaces h_input_pc).
+    -- Bus precondition + PC match (replaces h_input_pc).
     (h_bus : (bus_effect exec_row [] state).1)
     (h_pc : blt_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
-    -- Structural bus hypotheses (Phase 2.5 D3 shape (b)).
+    -- Structural bus hypotheses (shape (b)).
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -213,9 +211,9 @@ theorem equiv_BLT_metaplan_bus_self
       = EStateM.Result.ok (BltInput_of_bus exec_row imm r1_val r2_val).r2_val state)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Phase 5 V12: bus precondition + PC match (replaces h_input_pc).
+    -- Bus precondition + PC match (replaces h_input_pc).
     (h_bus : (bus_effect exec_row [] state).1)
-    -- Structural bus hypotheses (Phase 2.5 D3 shape (b)).
+    -- Structural bus hypotheses (shape (b)).
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -283,7 +281,7 @@ theorem equiv_BLT_metaplan_op_bus
     h_bus h_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
-/-! ## Phase 6 Track T POC: misaligned-target companion
+/-! ## Misaligned-target companion
 
 The metaplan theorems above (`equiv_BLT_metaplan`,
 `equiv_BLT_metaplan_from_bus`, `equiv_BLT_metaplan_bus_self`) cover
@@ -322,8 +320,7 @@ Closing this gap requires one of:
 
 1. **Extend `bus_effect`** to emit `Memory_Exception` when a future
    PIL fault-flag column is asserted. This needs new ZisK PIL columns
-   (Track T's circuit-side prerequisite — out of scope for the FV-only
-   POC), then a Phase 4-shape extension to `RV64D/BusEffect.lean`'s
+   (out of scope here), then an extension to `RV64D/BusEffect.lean`'s
    final `match post_memory.2 with` block to dispatch on the new flag.
 
 2. **Project the comparison to states only.** Prove
@@ -337,7 +334,7 @@ Closing this gap requires one of:
    that under misaligned-target hypotheses the LHS reduces to a
    concrete `Memory_Exception` form, leaving the bus-side equation
    for option (1)/(2) once infrastructure exists. **This is what the
-   POC below ships.**
+   companion below ships.**
 
 ### Theorem
 

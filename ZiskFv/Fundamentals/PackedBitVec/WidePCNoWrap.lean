@@ -4,9 +4,9 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.PackedBitVec.NoWrap
 
 /-!
-**finishing5 S2 — Wide-PC no-wrap toolkit (companion to B.5 `NoWrap.lean`).**
+**Wide-PC no-wrap toolkit (companion to `NoWrap.lean`).**
 
-The B.5 `Fundamentals/PackedBitVec/NoWrap.lean` toolkit factors the
+The `Fundamentals/PackedBitVec/NoWrap.lean` toolkit factors the
 additive carry-chain lift `((nat:ℕ):FGL) = ((nat:ℕ):FGL)` → `nat = nat`
 under the assumption that **both sides are `< GL_prime`**.  That suffices
 for the bus-effect / register-write payload (32-bit lanes packed two-up
@@ -43,8 +43,8 @@ lo / hi 32-bit projections.
 ## What this toolkit does NOT do
 
 * It does not derive `pc_fgl.val = PC.toNat` from circuit constraints —
-  that's the trusted-surface `transpile_PC_for_<op>` axiom (S1 in
-  `finishing5.md`).  The toolkit takes that as input.
+  that's the trusted-surface `transpile_PC_for_<op>` axiom.  The
+  toolkit takes that as input.
 * It does not handle the doubly-wrapped case where `pc_fgl + offset_fgl`
   exceeds `2 * GL_prime`.  The hypothesis `pc_fgl.val + offset_fgl.val
   < GL_prime` rules that out.
@@ -68,7 +68,7 @@ open ZiskFv.PackedBitVec.NoWrap
 /-- `GL_prime = 2^64 - 2^32 + 1`.  Pinned in factored form so the
 toolkit's wrap analysis can reason about the relationship to the
 power-of-two moduli `2^32` and `2^64` without `omega` tripping over
-the literal-vs-power-of-two atom split (a Phase 1 trap; cf. `CLAUDE.md`). -/
+the literal-vs-power-of-two atom split (cf. `CLAUDE.md` trap #2). -/
 lemma GL_prime_eq_pow_form :
     GL_prime = 18446744073709551616 - 4294967296 + 1 := by
   rfl

@@ -13,7 +13,7 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 
 /-!
-End-to-end theorem for RV64I FENCE (Phase 5 follow-on Track J1).
+End-to-end theorem for RV64I FENCE.
 
 FENCE is a memory-ordering hint that, on ZisK's single-threaded
 zkVM, reduces to "advance PC by 4." The Sail body

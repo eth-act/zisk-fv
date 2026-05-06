@@ -12,12 +12,9 @@ import ZiskFv.Sail.mulw
 /-!
 # RdValDerivation.MulDivRemUnsigned — `h_rd_val` discharge lemmas for MUL/MULHU/DIVU/REMU/MULW
 
-**Phase 2 N-MDR-unsigned derivation, finishing4 S3 Tier-1 upgrade.**
-
 Each lemma in this file is **Tier 1**: it derives the `h_rd_val` conclusion
-from circuit-constraint-shaped primitives directly. The earlier `h_byte_sum`
-parameter (which was OUTPUT-EQ-shaped — tying the byte assembly to the
-opcode's pure-spec output) has been retired in favor of:
+from circuit-constraint-shaped primitives directly. The OUTPUT-EQ-shaped
+`h_byte_sum` parameter is retired in favor of:
 
 * The 8 **mode-pinned FGL chunk equations** of the Arith carry chain
   (CIRCUIT-CONSTRAINT). These come directly from `Airs/Arith/Mul.lean` /

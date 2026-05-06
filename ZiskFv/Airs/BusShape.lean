@@ -11,27 +11,24 @@ import ZiskFv.Airs.OperationBus
 # BusShape — derivation lemmas linking extracted bus specs to hand-written `OperationBusEntry`s
 
 `Extraction.Buses` is auto-generated from the pilout's
-`gsum_debug_data` hints (Track O POC). It mirrors the PIL2 macros'
-runtime view of bus emissions: a `BusEmissionSpec` carries the bus id,
-the multiplicity expression, and a tuple of named slots whose values are
+`gsum_debug_data` hints. It mirrors the PIL2 macros' runtime view of
+bus emissions: a `BusEmissionSpec` carries the bus id, the multiplicity
+expression, and a tuple of named slots whose values are
 `C F ExtF → ℕ → F` thunks rendered straight from the pilout.
 
-`ZiskFv.Airs.OperationBus.opBus_row_Main` is the hand-written named-column
-version that downstream proofs (`Spec.Add`, etc.) consume. It exposes the
-same eight tuple slots through `Valid_Main`'s named accessors.
+`ZiskFv.Airs.OperationBus.opBus_row_Main` is the hand-written
+named-column version that downstream proofs (`Spec.Add`, etc.) consume.
+It exposes the same eight tuple slots through `Valid_Main`'s named
+accessors.
 
-This file proves the two are pointwise equal. Concretely:
+This file proves the two are pointwise equal:
 * `bus_emission_main_slots_match_opBus_row_Main` shows that for every row,
   applying each extracted slot's `value` thunk to `m.circuit` produces
   the same field element as the corresponding `opBus_row_Main` field;
 * `bus_shape_for_ADD` specialises the slot-equalities to a row where
-  `op = OP_ADD ∧ is_external_op = 1 ∧ m32 = 0`, deriving a fully
-  resolved 8-tuple shape (the form needed by the operation-bus matcher
-  in `Spec.Add`).
-
-`#print axioms bus_shape_for_ADD` after this file builds confirms the
-lemma uses no axioms beyond Mathlib's. The extracted spec adds no axioms
-itself — it's a pure `def`.
+  `op = OP_ADD ∧ is_external_op = 1 ∧ m32 = 0`, deriving the fully
+  resolved 8-tuple shape needed by the operation-bus matcher in
+  `Spec.Add`.
 -/
 
 namespace ZiskFv.Airs.BusShape
@@ -99,18 +96,15 @@ theorem bus_emission_main_slots_match_opBus_row_Main
                      m.m32_def]
       try ring
 
-/-- **Bus-shape derivation for ADD** — the POC payoff. Given a row of
-    `Valid_Main` constrained to be in ADD mode (`op = OP_ADD`,
-    `is_external_op = 1`, `m32 = 0` — all three are constraint
-    consequences for the ADD opcode, see `Spec.Add.main_row_in_add_mode`),
-    the operation-bus tuple emitted by Main on that row reduces to the
-    fully-resolved shape:
+/-- **Bus-shape derivation for ADD.** Given a row of `Valid_Main`
+    constrained to be in ADD mode (`op = OP_ADD`, `is_external_op = 1`,
+    `m32 = 0` — see `Spec.Add.main_row_in_add_mode`), the operation-bus
+    tuple emitted by Main on that row reduces to the fully-resolved shape
     `[10, a_lo, a_hi, b_lo, b_hi, c_lo, c_hi, flag]` with multiplicity 1.
 
-    This packages the extracted spec's pointwise slot equalities into a
-    form a downstream caller can rewrite the bus-matcher predicate
-    against. Composed with `Spec.Add.main_row_in_add_mode`'s field
-    equalities, it yields exactly `opBus_row_Main`'s ADD-mode shape. -/
+    Composed with `Spec.Add.main_row_in_add_mode`'s field equalities, this
+    yields `opBus_row_Main`'s ADD-mode shape — the form a downstream
+    caller can rewrite the bus-matcher predicate against. -/
 theorem bus_shape_for_ADD
     (m : Valid_Main C F ExtF) (row : ℕ)
     (h_op : m.op row = 10)
@@ -278,7 +272,7 @@ The three groups correspond to the two parametric shapes above:
   out on the bus.
 
 Per-opcode aliases drop the `op_lit` parameter by pinning it to the
-matching `OP_*` constant, mirroring the ADD POC.
+matching `OP_*` constant.
 -/
 
 section PerOpcode
@@ -788,13 +782,9 @@ theorem bus_shape_for_REMUW
 
 end PerOpcode
 
--- Dependency / axiom audit. The output messages confirm both lemmas
--- depend only on the standard built-in axioms `propext`,
--- `Classical.choice`, `Quot.sound` (Mathlib base) — no ZisK trust-base
--- axioms. The hand-written `bus_emission_Main_op_0` is a pure `def`,
--- and `bus_shape_for_ADD` is closed by `ring` over field laws and the
--- named-column `_def` equalities (also `def`-defined by the
--- `Valid_Main` structure).
+-- Axiom audit: confirm these lemmas depend only on Lean/Mathlib base
+-- axioms (`propext`, `Classical.choice`, `Quot.sound`) — no ZisK
+-- trust-base axioms.
 #print axioms bus_shape_for_ADD
 #print axioms bus_emission_main_slots_match_opBus_row_Main
 #print axioms bus_shape_for_main_at_m32_zero

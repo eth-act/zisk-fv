@@ -17,9 +17,8 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.RdValDerivation.BinaryCompare
 
 /-!
-End-to-end theorem for RV64 SLTI (Phase 3C T-IT). Consumes
+End-to-end theorem for RV64 SLTI. Consumes
 `PureSpec.execute_ITYPE_slti_pure_equiv` directly (C7 retired by
-Phase 4 T-SLT).
 -/
 
 namespace ZiskFv.Equivalence.Slti
@@ -87,7 +86,6 @@ theorem equiv_SLTI_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : slti_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -114,7 +112,7 @@ theorem equiv_SLTI_metaplan
   · simp only [h_rd_zero, ↓reduceDIte]
     rw [h_rd_val]
 
-/-- **Tier-1 metaplan: SLTI without `h_rd_val` parameter** (finishing2 S5). -/
+/-- **Tier-1 metaplan: SLTI without `h_rd_val` parameter**. -/
 theorem equiv_SLTI_metaplan_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slti_input : PureSpec.SltiInput)
@@ -218,7 +216,7 @@ theorem equiv_SLTI_metaplan_tier1
     h_rd_idx h_rd_val
 
 
-/-- **Phase 5 V12 companion.** Drops `h_input_r1` / `h_input_r2` /
+/-- **Bus-precondition companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
     Delegates to `equiv_SLTI_metaplan` after chip_bus_hyps + match composition.  -/
@@ -238,7 +236,6 @@ theorem equiv_SLTI_metaplan_from_bus
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/pc/rd).
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r1_val : slti_input.r1_val
@@ -246,7 +243,6 @@ theorem equiv_SLTI_metaplan_from_bus
                     e0.x4, e0.x5, e0.x6, e0.x7])
     (h_pc : slti_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : slti_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -290,8 +286,7 @@ def SltiInput_of_bus
     rd := Transpiler.wrap_to_regidx e2.ptr
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
-/-- **Item 4 closure for SLTI.** Bus-derived input form: 
-    eliminates value-level match hyps via `SltiInput_of_bus`. -/
+/-- **Bus-self form for SLTI.** Eliminates value-level match hyps via `SltiInput_of_bus`. -/
 theorem equiv_SLTI_metaplan_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -306,11 +301,9 @@ theorem equiv_SLTI_metaplan_bus_self
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/pc/rd).
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]
@@ -333,7 +326,7 @@ theorem equiv_SLTI_metaplan_bus_self
     h_bus h_r1_ptr rfl rfl h_rd_ptr
     rfl h_rd_val
 
-/-- **Track Q ALU fan-out for SLTI.** Op-bus companion to
+/-- **Op-bus companion for SLTI.** Op-bus companion to
     `equiv_SLTI_metaplan`: drops `h_input_r1` in favour of an op-bus
     precondition. Mirrors `equiv_ADD_metaplan_op_bus`. -/
 theorem equiv_SLTI_metaplan_op_bus
@@ -360,7 +353,6 @@ theorem equiv_SLTI_metaplan_op_bus
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : slti_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,

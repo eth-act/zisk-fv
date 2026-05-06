@@ -18,7 +18,7 @@ JALR-subset Main constraints and the mode witnesses supplied by
 expression evaluates to `pc + jmp_offset2` (= `pc + 4` — the link
 address written to rd).
 
-Phase 2.5 D4: JALR is the sibling of JAL for the jump archetype macro
+JALR is the sibling of JAL for the jump archetype macro
 (`ZiskFv.Tactics.JumpArchetype`). Unlike JAL which uses the internal-
 op-0 (`flag`) constraints 8/15/17 to pin `flag = 1`, JALR uses the
 internal-op-1 (`copyb`) constraints 9/16/18 to pin `flag = 0` and
@@ -103,7 +103,7 @@ theorem jalr_store_value
   obtain ⟨h_subset, h_mode⟩ := h
   exact jalr_archetype_store_value m r_main next_pc ⟨h_subset, h_mode⟩
 
-/-! ## finishing5 S3 — bus-emission BitVec bridges
+/-! ## Bus-emission BitVec bridges
 
 Same shape as JAL's `jal_store_value_lo_bv` / `jal_store_value_hi_bv`.
 JALR's link address is also `pc + 4` (the `jmp_offset2 = 4` pin in
@@ -111,7 +111,7 @@ JALR's link address is also `pc + 4` (the `jmp_offset2 = 4` pin in
 half. The Spec lemmas only differ in their input `*_circuit_holds`
 predicate (`jalr_circuit_holds` here vs `jal_circuit_holds`); the PC
 bridge `h_pc_bridge : (m.pc r).val = PC.toNat` is supplied by the
-caller from `transpile_PC_for_JALR` (S1). -/
+caller from `transpile_PC_for_JALR`. -/
 
 /-- **JALR rd-write lo half (BitVec form).** Identical shape to
     `jal_store_value_lo_bv` modulo the JALR-specific circuit

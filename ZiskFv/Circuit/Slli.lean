@@ -7,8 +7,8 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ShiftArchetype
 
 /-!
-Compositional SLLI spec (Phase 3A H4 — `ShiftArchetype` m32=0
-instantiation, immediate-variant sibling of SLL).
+Compositional SLLI spec — `ShiftArchetype` m32=0 instantiation,
+immediate-variant sibling of SLL.
 
 SLLI shares SLL's Zisk opcode literal (`OP_SLL = 33`) and `m32 = 0`
 Main-AIR mode — the only difference between SLL and SLLI at the

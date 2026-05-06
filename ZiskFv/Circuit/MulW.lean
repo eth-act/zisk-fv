@@ -8,7 +8,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Circuit.Mul
 
 /-!
-Compositional MULW spec (Phase 3A M3). MULW is the 32-bit word variant of
+Compositional MULW spec. MULW is the 32-bit word variant of
 MUL: low 32 bits of each source are multiplied as 32-bit operands, the
 low 32 bits of the product are sign-extended to 64. The Zisk side wires
 this through the **same Arith SM** as MUL (not BinaryExtension) but with
@@ -35,7 +35,7 @@ use.
 
 The Arith-internal claim — that for MULW Arith's `c[]` + `bus_res1`
 packs `sign_extend_32_to_64 (low32 a * low32 b)` — is (as always)
-delegated to Phase 4 audit.
+delegated to the audit.
 -/
 
 namespace ZiskFv.Circuit.MulW
@@ -94,7 +94,7 @@ def mulw_circuit_holds
     bit does not affect the `c` bus lanes, only the `a_hi`/`b_hi`
     operand-bus zeroing (which is irrelevant to this `c`-projection
     identity). The Arith-internal correctness (MULW carry chains →
-    sign-extended 32-bit product) is delegated to Phase 4. -/
+    sign-extended 32-bit product) is delegated to the audit. -/
 theorem mulw_compositional
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
     (r_main r_arith : ℕ)

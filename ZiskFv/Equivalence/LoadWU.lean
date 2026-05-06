@@ -14,12 +14,8 @@ import ZiskFv.Sail.BusEffect
 
 /-!
 End-to-end theorem for RV64 LWU (load word, unsigned / zero-extended).
-Phase 2.5 D4c sibling of `Equivalence/LoadD.lean`. `finishing3` S5b
-retired the the bus-execute-matches-sail premise parameter from
-`equiv_LWU_metaplan` (see `LoadD` for the analogous LD-side
-retirement; LWU follows the same shape with
-`bus_effect_matches_sail_loadu_4byte_rrrw` and
-`mem_load_correct_4byte`).
+Sibling of `Equivalence/LoadD.lean`; uses
+`bus_effect_matches_sail_loadu_4byte_rrrw` and `mem_load_correct_4byte`.
 -/
 
 namespace ZiskFv.Equivalence.LoadWU
@@ -79,10 +75,8 @@ theorem equiv_LWU_sail
   PureSpec.execute_LOADWU_pure_equiv
     lwu_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** `finishing3` S5b: retired
-    the bus-execute-matches-sail premise in favour of structural bus
-    hypotheses + a memory-model bridge with a zero-extension witness on
-    the high bytes. -/
+/-- **Metaplan theorem.** Uses structural bus hypotheses + a
+    memory-model bridge with a zero-extension witness on the high bytes. -/
 theorem equiv_LWU_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lwu_input : PureSpec.LwuInput)
@@ -108,7 +102,7 @@ theorem equiv_LWU_metaplan
     (h_rd_zero_iff :
       Transpiler.wrap_to_regidx e2.ptr = 0 ↔ lwu_input.rd = 0)
     (h_rd_idx : lwu_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val)
-    -- Memory-bridge premises (S5b).
+    -- Memory-bridge premises.
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
     (h_main_emit_b :
       main.b_0 r_main = memory_entry_lo e1

@@ -70,8 +70,7 @@ the two are syntactically distinct to Lean's elaborator.
 
 ## Usage
 
-Phase 2 N-MDR-signed derivation lemmas for DIV, REM consume these
-theorems plus:
+Downstream derivation lemmas for DIV, REM consume these theorems plus:
 - `arith_table_lookup_sound_div` (for sign-witness pinning)
 - `Fundamentals/PackedBitVec/Signed.lean` (for BitVec.toInt lift)
 - `Fundamentals/PackedBitVec.lean` (for byte-sum bridge)
@@ -400,8 +399,8 @@ theorem main_rem_unsigned_field_correct
     identity at the Arith chunk level. Same identity as DIV-signed
     (both use the same Arith row), just presenting it for the REM context.
 
-    For Phase 2 N-MDR-signed: this theorem plus `main_remainder_eq_chunks_rem`
-    gives `main_c_packed = d_chunks_packed_div` and the Euclidean signed
+    Combined with `main_remainder_eq_chunks_rem`, this gives
+    `main_c_packed = d_chunks_packed_div` and the Euclidean signed
     identity for the remainder. -/
 theorem main_rem_signed_field_correct
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)

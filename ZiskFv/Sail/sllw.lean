@@ -2,7 +2,7 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Fundamentals.Execution
 
 /-!
-RV64 SLLW (shift-left-word). Phase 2 A6 archetype.
+RV64 SLLW (shift-left-word).
 
 Takes the low 32 bits of `rs1`, shifts left by the low 5 bits of `rs2`,
 sign-extends the 32-bit result back to 64 bits. No PC jump; write to

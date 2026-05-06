@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ShiftArchetype
 
 /-!
-Compositional SRL spec (Phase 3A H2 — `ShiftArchetype` m32=0 sibling of SLL).
+Compositional SRL spec — `ShiftArchetype` m32=0 sibling of SLL.
 
 SRL mirrors SLL's Main-AIR row exactly (same `m32 = 0` passthrough
 bus path, same `is_external_op = 1` to the `BinaryExtension` SM) —

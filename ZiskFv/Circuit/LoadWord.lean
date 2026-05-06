@@ -9,8 +9,8 @@ import ZiskFv.Tactics.SignExtendLoadArchetype
 /-!
 Compositional LW (load word, signed / sign-extended) spec.
 
-Phase 3C T-SL0 — pilot of the **SignExtendLoadArchetype**. LW differs
-structurally from the zero-extension loads (LD/LWU/LHU/LBU) in the
+Pilot of the **`SignExtendLoadArchetype`**. LW differs structurally
+from the zero-extension loads (LD/LWU/LHU/LBU) in the
 `c`-population mechanism:
 
 * Zero-extension loads (`OP_COPYB = 1`, `is_external_op = 0`): Main
@@ -26,8 +26,8 @@ Consequently LW's compositional theorem lives on the **bus-entry**
 side: the Main-emitted `OperationBusEntry` matches the
 BinaryExtension SM's entry in shape, with the `m32 = 1` zeroing of
 the high `a` / `b` lanes (since the source is 32-bit). The final
-conclusion at the Equivalence layer composes this with a
-Phase-4-deferred `h_bus_execute_matches_sail` hypothesis tying the
+conclusion at the Equivalence layer composes this with an
+audit-deferred `h_bus_execute_matches_sail` hypothesis tying the
 circuit's bus effect to the Sail execution.
 
 The Sail-level companion and metaplan theorem live in

@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ALUITypeArchetype
 
 /-!
-Compositional ORI spec (Phase 3C T-IT). Thin specialization of
+Compositional ORI spec. Thin specialization of
 `Tactics.ALUITypeArchetype` at `opcode_lit = OP_OR = 15`.
 -/
 

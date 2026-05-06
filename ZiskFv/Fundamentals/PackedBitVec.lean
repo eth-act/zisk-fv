@@ -4,43 +4,23 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 
 /-!
-**Phase 4.5 Package C — Bridge 3: field → `BitVec 64` lift.**
+Field → `BitVec 64` lift used by the MUL / MULHU / MULW metaplan
+theorems to express the 8-byte register-write value
+`U64.toBV #v[e.x0, ..., e.x7]` in terms of an `FGL`-packed byte
+expression `x0 + x1*256 + … + x7*256^7`.
 
-The Arith carry-chain closure in `Airs/Arith/Mul.lean` gives us the
-field-level identity
+Provided lemmas:
 
-```
-a_chunks_packed * b_chunks_packed
-  = c_chunks_packed + d_chunks_packed * 2^64    (over FGL)
-```
-
-The MUL / MULHU / MULW metaplan theorems need the corresponding
-`BitVec 64` identity, which expresses the 8-byte register-write value
-`U64.toBV #v[e.x0, ..., e.x7]` in terms of the low 64 bits of the
-128-bit product.
-
-This file is the *field-to-BitVec* plumbing bridge. It provides:
-
-1. `u64_toBV_toNat` — mirrors openvm-fv's `U64.toBV_toNat`
-   (`OpenvmFv/Fundamentals/U32.lean:195`). `(U64.toBV v).toNat` equals
-   the little-endian byte-sum of `v[0].toNat + v[1].toNat*256 + …`.
-
-2. `fgl_byte_coe_toBV8_toNat` — under a byte range `x.val < 256`, the
-   `FGL → BitVec 8` coercion is a no-op at the `.toNat` level.
-
-3. `u64_toBV_of_bytes_toNat_eq` — composes 1 and 2: given byte ranges,
-   `(U64.toBV #v[x0..x7] : BitVec 64).toNat` equals the Nat-level
-   little-endian byte-sum.
-
-4. `fgl_packed_bytes_nat_cast` — the packed FGL expression
-   `x0 + x1*256 + … + x7*256^7` equals `((∑ xᵢ.val * 256^i : ℕ) : FGL)`
-   as a field identity. Used by callers to swap between field-level and
-   Nat-level packings.
-
-The final `h_rd_match` discharge in A-rewire pairs these lemmas with
-the Bridge 2 field identity from `Spec/MulField.lean` and the
-operand-bus-emission hypotheses (which supply the byte ranges and the
-`.val` no-wraparound bound that connects the product to the 8 bytes).
+1. `u64_toBV_toNat` — `(U64.toBV v).toNat` as the little-endian
+   byte-sum (mirrors openvm-fv's `U32.toBV_toNat`).
+2. `fgl_byte_coe_toBV8_toNat` — under `x.val < 256`, the
+   `FGL → BitVec 8` coercion is a no-op at `.toNat`.
+3. `u64_toBV_of_bytes_toNat` — composition of 1 and 2.
+4. `fgl_packed_bytes_nat_cast` — the packed FGL expression equals
+   the Nat byte-sum cast to FGL.
+5. `fgl_packed_bytes_val_of_lt_prime` — under a no-wraparound bound,
+   `.val` equals the Nat byte-sum exactly.
+6. `u64_toBV_eq_ofNat_fgl_val` — final bridge composing the above.
 -/
 
 set_option maxHeartbeats 800000
@@ -147,8 +127,7 @@ lemma fgl_packed_bytes_nat_cast
 /-! ## Part 5 — BitVec from FGL, under no-wraparound bound
 
 When the byte-sum is below `GL_prime`, `(fgl_packed : FGL).val` equals
-the Nat byte-sum exactly (no mod-p wrap). This is the "no wraparound"
-form A-rewire consumes to get `U64.toBV = BitVec.ofNat 64 fgl.val`. -/
+the Nat byte-sum exactly (no mod-p wrap). -/
 
 /-- **FGL-packed value equals Nat sum (no wraparound).** When the Nat
     byte-sum is below `GL_prime`, the `.val` of the FGL-packed

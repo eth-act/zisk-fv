@@ -1,6 +1,6 @@
 -- RV64 opcode `sw`: store 32-bit word (lower 4 bytes of rs2) to memory.
 -- Sail-side pure equivalence. Mirror of `sd.lean` narrowed from 8-byte
--- to 4-byte store (Phase 2.5 D4d).
+-- to 4-byte store.
 import ZiskFv.Sail.Auxiliaries
 
 namespace PureSpec
@@ -84,9 +84,8 @@ namespace PureSpec
   -- `state.mem` at successive addresses starting at `rs1 + sign_extend imm`;
   -- retire success).
   --
-  -- Phase 3.5 promotion: direct port of SD narrowed to width = 4.
-  -- The `@[simp high]` P1-P3 platform axioms discharge the PMP/CLINT/PMA
-  -- chain.
+  -- Direct port of SD narrowed to width = 4. The `@[simp high]` platform
+  -- axioms discharge the PMP/CLINT/PMA chain.
   set_option maxHeartbeats 0 in
   lemma execute_STOREW_pure_equiv
     (input : SwInput)

@@ -268,7 +268,7 @@ us the load-side memory predicate directly.
 Composition with `chip_bus_hyps_load_rrrw` is left to per-opcode
 `Equivalence/<Op>.lean` callers. -/
 
-/-! ## Narrow-width companions (S5a)
+/-! ## Narrow-width companions
 
 Per-width projections of `mem_load_correct` / `mem_store_correct` for
 1-byte (LB/LBU/SB), 2-byte (LH/LHU/SH), and 4-byte (LW/LWU/SW) memory

@@ -9,7 +9,7 @@ import ZiskFv.Circuit.Mul
 import ZiskFv.Tactics.ArithSMArchetype
 
 /-!
-Compositional **DIV** spec (Phase 3C T-D). DIV is the **primary** lane
+Compositional **DIV** spec. DIV is the **primary** lane
 on a signed-DIV Arith row (`main_div = 1`, quotient emitted from `a[]`).
 
 Instantiates `Tactics.ArithSMArchetype.arith_archetype_div_bus_match`
@@ -18,8 +18,8 @@ at `opcode_lit = OP_DIV`, producing an opcode-specialized
 quotient lane.
 
 As with MUL/MULH, the Arith-internal correctness (carry chains →
-signed BitVec 64 quotient) is delegated to Phase 4. This module only
-establishes the bus-match identity.
+signed BitVec 64 quotient) is delegated to the audit. This module
+only establishes the bus-match identity.
 -/
 
 namespace ZiskFv.Circuit.Div

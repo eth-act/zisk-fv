@@ -14,7 +14,7 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 
 /-!
-End-to-end theorem for RV64 BGE (Phase 3A B2). Combines:
+End-to-end theorem for RV64 BGE. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_BGE`),
@@ -22,13 +22,10 @@ End-to-end theorem for RV64 BGE (Phase 3A B2). Combines:
   (`ZiskFv.Circuit.BranchGreaterEqual.branch_ge_compositional`, a thin
   wrapper over `BranchArchetype.branch_archetype_pc_dispatch` at
   `opcode_lit = OP_LT`),
-* the Sail pure-function equivalence
-  (`PureSpec.execute_BGE_pure_equiv`, direct proof — Phase 4 retired
-  C2b).
+* the Sail pure-function equivalence (`PureSpec.execute_BGE_pure_equiv`).
 
-**Hypothesis-free bus side.** D3 closed bus-emission for shape (b);
-BGE shares shape (b) with BEQ/BNE so the metaplan reuses
-`bus_effect_matches_sail_beq`.
+**Hypothesis-free bus side.** BGE shares shape (b) with BEQ/BNE so the
+metaplan reuses `bus_effect_matches_sail_beq`.
 -/
 
 namespace ZiskFv.Equivalence.BranchGreaterEqual
@@ -89,7 +86,7 @@ theorem equiv_BGE_sail
   PureSpec.execute_BGE_pure_equiv bge_input imm r1 r2 h_input_imm h_input_r1 h_input_r2
     h_input_pc h_input_misa h_misa_c
 
-/-- **Metaplan theorem (Phase 3A B2).** Shape (b) bus reuse. -/
+/-- **Metaplan theorem.** Shape (b) bus reuse. -/
 theorem equiv_BGE_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bge_input : PureSpec.BgeInput)
@@ -127,7 +124,7 @@ theorem equiv_BGE_metaplan
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
 
-/-- **Phase 5 V12 companion for BGE.** Drops `h_input_pc` via
+/-- **Bus-driven companion for BGE.** Drops `h_input_pc` via
     `chip_bus_hyps_branch_rrw` + `readReg_of_readReg_succ`. Other
     `h_input_*` stay — branch memory bus is empty, so rs1/rs2
     reads go via operation bus (not derivable from `h_bus` here). -/
@@ -145,7 +142,7 @@ theorem equiv_BGE_metaplan_from_bus
       = EStateM.Result.ok bge_input.r2_val state)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Phase 5 V12: bus precondition + PC match (replaces h_input_pc).
+    -- Bus precondition + PC match (replaces h_input_pc).
     (h_bus : (bus_effect exec_row [] state).1)
     (h_pc : bge_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_exec_len : exec_row.length = 2)
@@ -192,7 +189,7 @@ theorem equiv_BGE_metaplan_bus_self
       = EStateM.Result.ok (BgeInput_of_bus exec_row imm r1_val r2_val).r2_val state)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Phase 5 V12: bus precondition + PC match (replaces h_input_pc).
+    -- Bus precondition + PC match (replaces h_input_pc).
     (h_bus : (bus_effect exec_row [] state).1)
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
@@ -258,10 +255,9 @@ theorem equiv_BGE_metaplan_op_bus
     h_bus h_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
-/-! ## Phase 6 Track T fan-out: misaligned-target companions
+/-! ## Misaligned-target companions
 
-BGE fan-out of the BLT misaligned-target POC (commit 9345092). Same
-shape as BLT; case-split predicate is `h_taken : r1.toInt ≥ r2.toInt`
+Same shape as BLT; case-split predicate is `h_taken : r1.toInt ≥ r2.toInt`
 (BGE taken on signed greater-equal). -/
 
 /-- **Misaligned-target companion (bit-1 case): Sail-side reduction.** -/

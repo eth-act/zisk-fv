@@ -19,19 +19,13 @@ End-to-end theorem for RV64 BEQ. Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_BEQ`),
 * the compositional BEQ spec (`ZiskFv.Circuit.BranchEqual.branch_eq_compositional`),
-* the Sail pure-function equivalence
-  (`PureSpec.execute_BEQ_pure_equiv`, newly closed Phase 2 A1
-  thanks to `jump_to_equiv`),
+* the Sail pure-function equivalence (`PureSpec.execute_BEQ_pure_equiv`),
 
 into a metaplan-shaped theorem:
 
 * `equiv_BEQ_metaplan` — the metaplan target shape:
   `execute_instruction (.BTYPE (imm, r2, r1, BEQ)) state
     = (bus_effect exec_row mem_row state).2`.
-
-As with `equiv_ADD_metaplan`, the bus-emission correctness hypothesis
-`h_bus_execute_matches_sail` is parameterized — Phase 4 audit derives
-it from a PIL-level bus-emission spec.
 -/
 
 namespace ZiskFv.Equivalence.BranchEqual
@@ -61,8 +55,8 @@ theorem equiv_BEQ
             + m.flag r_main * (m.jmp_offset1 r_main - m.jmp_offset2 r_main) :=
   branch_eq_compositional m r_main next_pc h_circuit
 
-/-- **Closed-form circuit-level BEQ theorem.** Phase 2.5 D2 eliminated
-    the `next_pc : FGL` parameter by deriving it from the extracted
+/-- **Closed-form circuit-level BEQ theorem.** Eliminates the
+    `next_pc : FGL` parameter by deriving it from the extracted
     closed-form `pc_handshake` (Main constraint 20) via
     `pc_handshake_to_next_pc`. The caller supplies instead:
 
@@ -130,25 +124,10 @@ theorem equiv_BEQ_sail
   PureSpec.execute_BEQ_pure_equiv beq_input imm h_input_imm h_input_r1 h_input_r2
     h_input_pc h_input_misa h_misa_c
 
-/-- **Metaplan theorem.** The shape the original metaplan targets for
-    RV64 BEQ: Sail's `execute_instruction` on an RV64 BEQ equals the
-    state computed by applying `bus_effect` to the circuit's execution
-    and memory bus rows.
-
-    Composes `equiv_BEQ_sail` with the bus-matching hypothesis
-    `h_bus_execute_matches_sail`. As in `equiv_ADD_metaplan`, the
-    bus-emission-correctness obligation is parameterized; Phase 4 audit
-    derives it from PIL-level bus emission.
-
-    **Hypotheses.**
-    * Sail side (from `equiv_BEQ_sail`): register readability
-      (`h_input_r1`, `h_input_r2`), PC (`h_input_pc`), misa (`h_input_misa`),
-      and ZisK `misa[C] = 0` (`h_misa_c`).
-    * Bus side: `h_bus_execute_matches_sail` asserts that the two-entry
-      execution bus (read PC, write nextPC) fed through `bus_effect`
-      returns the same `EStateM.Result` as the concrete Sail monadic
-      block in `equiv_BEQ_sail`'s conclusion. The memory-bus component
-      is empty for BEQ (no register write, no memory access). -/
+/-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64 BEQ
+    equals the state computed by applying `bus_effect` to the circuit's
+    execution and memory bus rows. The memory-bus component is empty
+    for BEQ (no register write, no memory access). -/
 theorem equiv_BEQ_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (beq_input : PureSpec.BeqInput)
@@ -164,8 +143,7 @@ theorem equiv_BEQ_metaplan
     (h_input_pc : state.regs.get? Register.PC = .some beq_input.PC)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Structural bus hypotheses (Phase 2.5 D3): derived from a PIL-level
-    -- bus-emission spec in Phase 4.
+    -- Structural bus hypotheses.
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -189,7 +167,7 @@ theorem equiv_BEQ_metaplan
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
 
-/-- **Phase 5 V12 companion for BEQ.** Drops `h_input_pc` via
+/-- **Bus-driven companion for BEQ.** Drops `h_input_pc` via
     `chip_bus_hyps_branch_rrw` + `readReg_of_readReg_succ`. Other
     `h_input_*` stay — branch memory bus is empty, so rs1/rs2
     reads go via operation bus (not derivable from `h_bus` here). -/
@@ -207,11 +185,10 @@ theorem equiv_BEQ_metaplan_from_bus
       = EStateM.Result.ok beq_input.r2_val state)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Phase 5 V12: bus precondition + PC match (replaces h_input_pc).
+    -- Bus precondition + PC match (replaces h_input_pc).
     (h_bus : (bus_effect exec_row [] state).1)
     (h_pc : beq_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
-    -- Structural bus hypotheses (Phase 2.5 D3): derived from a PIL-level
-    -- bus-emission spec in Phase 4.
+    -- Structural bus hypotheses.
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -256,10 +233,9 @@ theorem equiv_BEQ_metaplan_bus_self
       = EStateM.Result.ok (BeqInput_of_bus exec_row imm r1_val r2_val).r2_val state)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Phase 5 V12: bus precondition + PC match (replaces h_input_pc).
+    -- Bus precondition + PC match (replaces h_input_pc).
     (h_bus : (bus_effect exec_row [] state).1)
-    -- Structural bus hypotheses (Phase 2.5 D3): derived from a PIL-level
-    -- bus-emission spec in Phase 4.
+    -- Structural bus hypotheses.
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -319,7 +295,7 @@ theorem equiv_BEQ_metaplan_op_bus
     -- Memory-bus precondition (PC read).
     (h_bus : (bus_effect exec_row [] state).1)
     (h_pc : beq_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
-    -- Structural bus hypotheses (Phase 2.5 D3).
+    -- Structural bus hypotheses.
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -345,10 +321,9 @@ theorem equiv_BEQ_metaplan_op_bus
     h_bus h_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
-/-! ## Phase 6 Track T fan-out: misaligned-target companions
+/-! ## Misaligned-target companions
 
-Fan-out of the BLT misaligned-target POC (commit 9345092) to BEQ. Same
-shape: two Sail-side-only theorems characterising the
+Two Sail-side-only theorems characterising the
 `success = false` ∨ `throws = true` partition of `execute_BEQ_pure`'s
 output. No bus-effect equation — see the docstring on
 `equiv_BLT_metaplan_misaligned` for the modeling-gap analysis.

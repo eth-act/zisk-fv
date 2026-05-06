@@ -2,7 +2,7 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Fundamentals.Execution
 
 /-!
-RV64 SLLIW (shift-left-immediate-word). Phase 3A H2b sibling of SLLW.
+RV64 SLLIW (shift-left-immediate-word). Sibling of SLLW.
 
 Takes the low 32 bits of `rs1`, shifts left by a 5-bit immediate `shamt`,
 sign-extends the 32-bit result back to 64 bits. No PC jump; write to
@@ -14,16 +14,6 @@ The pure spec mirrors LeanRV64D's `execute_SHIFTIWOP` for `sopw.SLLIW`
 `sign_extend (m := 64)`. Unlike the register-variant SLLW, the shift
 amount is a 5-bit immediate (not read from a register), so there is no
 `r2` read step in the proof.
-
-Trusted-axiom policy: since `Fundamentals/Execution.lean` does not yet
-define an `execute_SHIFTIWOP_pure` + `execute_SHIFTIWOP'` refactor pair
-(analogous to `execute_RTYPEW_pure` / `execute_RTYPEW'`), we axiomatize
-the Sail-side equivalence per the D4b-patch pattern. The axiom
-catalogues as **C3a** in `docs/fv/trusted-base.md`. Closure path: add
-`execute_SHIFTIWOP_pure` + `_eq_` lemma to `Fundamentals/Execution.lean`
-(mechanical port of the `execute_RTYPEW_pure` / `_eq_` pair with
-signature `shamt : BitVec 5`, opcode `sopw` instead of `ropw`), then
-drop the axiom.
 -/
 
 namespace PureSpec
@@ -59,10 +49,10 @@ namespace PureSpec
     : SlliwOutput
   }
 
-  /-- **SLLIW Sail-equivalence.** Phase 3.5 promotion: direct port of
+  /-- **SLLIW Sail-equivalence.** Direct port of
       `sllw.lean::execute_RTYPE_sllw_pure_equiv` with the `r2`
       register-read step dropped (shamt is a 5-bit immediate), using the
-      new `execute_SHIFTIWOP'` refactor triple in Execution.lean. -/
+      `execute_SHIFTIWOP'` refactor triple in `Execution.lean`. -/
   lemma execute_SHIFTIWOP_slliw_pure_equiv
     (slliw_input : SlliwInput)
     (r1 rd : regidx)

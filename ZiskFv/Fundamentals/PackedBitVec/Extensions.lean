@@ -5,38 +5,14 @@ import ZiskFv.Fundamentals.PackedBitVec
 import ZiskFv.Fundamentals.Execution
 
 /-!
-**K3 — FGL → BitVec 64 arithmetic-extension lifts.**
+FGL → BitVec 64 arithmetic-extension lifts.
 
-Phase 1 keystone of Track N (`h_rd_val` retirement). Extends
-`Fundamentals/PackedBitVec.lean` with three families of lemmas that
-Phase 2 derivations consume to discharge the `h_rd_val` parameters in
-the Equivalence files.
-
-## Deviation from plan's sketch signatures
-
-The plan sketched lemma statements using `(imm_lo + imm_hi * 2^32 : FGL).val`
-and similar FGL-packed `.val` forms. K1-A established that this form is
-**wrong** in general (FGL mod-wrap at `GL_prime < 2^64`). All three lemmas
-here are stated in **chunk-`.val` form** — individual chunk `.val`s combined
-at the ℕ level — matching K1-A's mitigation.
-
-## Lemma inventory (5 total — plan expected 3)
-
-The plan's "three lemmas" split into five because:
-- `mul_field_to_bv64_lo_hi` splits into a low-half lemma
-  (`mul_lo_bv64_of_byte_sum`) and a `toNat` unfolding helper
-  (`execute_MUL_pure_lo_eq`). The high-half form is deferred — it
-  requires a separate signed-product unfolding that depends on which
-  MULH variant is in use (MULHU/MULH/MULHSU have different sign
-  interpretations at the field level).
-- `imm_lo_hi_signExtend_eq` becomes `signExtend_imm20_of_lanes_nat`
-  (a pure BitVec identity) plus `u64_toBV_of_imm20_lanes` (the
-  byte-level bridge). Composing them is the caller's job.
-- `pc_succ4_field_to_bv64` becomes `pc_plus4_bv64_of_bytes`.
-
-The controller should note: plan said 3 lemmas, K3 ships 5.
-
-## Critical: factored form for 2^64
+Extends `Fundamentals/PackedBitVec.lean` with byte-bridge lemmas used
+to discharge `h_rd_val` parameters in MUL-family / LUI / AUIPC /
+JAL / JALR equivalence theorems. Lemmas are stated in
+**chunk-`.val` form** (individual chunk `.val`s combined at the ℕ
+level) to avoid the FGL mod-wrap at `GL_prime < 2^64` that breaks the
+naïve `(imm_lo + imm_hi * 2^32 : FGL).val` form.
 
 Per CLAUDE.md trap #2, `ring` treats `4294967296 * 4294967296` and
 `18446744073709551616` as different polynomial atoms. All occurrences
@@ -103,9 +79,9 @@ private lemma to_bits_truncate128_setWidth64 (x : ℤ) :
     result equals the low 64 bits of the unsigned product, expressed as
     `BitVec.ofNat 64 ((op1.toNat * op2.toNat) % 2^64)`.
 
-    This is the factored form Phase 2 derivation lemmas consume when
-    bridging from the field-level carry-chain product identity to the
-    Sail `execute_MUL_pure ... .MUL` conclusion. -/
+    This is the factored form derivation lemmas consume when bridging
+    from the field-level carry-chain product identity to the Sail
+    `execute_MUL_pure ... .MUL` conclusion. -/
 lemma execute_MUL_pure_lo_eq (op1 op2 : BitVec 64) :
     execute_MUL_pure op1 op2 .MUL
       = BitVec.ofNat 64 ((op1.toNat * op2.toNat) % 2 ^ 64) := by
@@ -136,8 +112,8 @@ lemma execute_MUL_pure_lo_eq (op1 op2 : BitVec 64) :
     `U64.toBV [bytes]` equals `execute_MUL_pure op1 op2 .MUL`.
 
     This is the terminal discharge lemma for `h_rd_val` in MUL-family
-    equivalence theorems when the Phase 2 derivation has already
-    established the byte-sum identity. -/
+    equivalence theorems once the byte-sum identity has been
+    established. -/
 lemma mul_lo_bv64_of_byte_sum
     (op1 op2 : BitVec 64)
     (x0 x1 x2 x3 x4 x5 x6 x7 : FGL)
@@ -318,7 +294,7 @@ lemma signExtend_imm20_nat_lanes
     hypotheses `h_lo_val`, `h_hi_val`, and a no-wraparound bound on the
     byte-sum, `U64.toBV [bytes]` equals `BitVec.signExtend 64 (imm ++ 0#12)`.
 
-    Phase 2 calls this after establishing:
+    Callers establish:
     - `e_rd.x0..x3` byte-decompose `b_0` (the lo lane from the transpiler contract)
     - `e_rd.x4..x7` byte-decompose `b_1` (the hi lane / sign-extension word)
     - The byte-sum matches the Nat lanes. -/
@@ -359,9 +335,9 @@ leg (the byte-sum is directly the `BitVec 64` `.toNat`).
     `(PC + 4).toNat`, `U64.toBV [bytes]` equals the `BitVec 64` value
     `PC + 4`.
 
-    Phase 2 calls this after establishing that the bus bytes decompose
-    the ZisK-emitted `store_pc` value (which the transpiler contract pins
-    to `(pc + 4 : FGL)` in 32-bit lane form). -/
+    Callers invoke this after establishing that the bus bytes
+    decompose the ZisK-emitted `store_pc` value (which the transpiler
+    contract pins to `(pc + 4 : FGL)` in 32-bit lane form). -/
 lemma pc_plus4_bv64_of_bytes
     (PC : BitVec 64)
     (x0 x1 x2 x3 x4 x5 x6 x7 : FGL)

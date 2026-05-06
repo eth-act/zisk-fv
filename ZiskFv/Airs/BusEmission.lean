@@ -7,42 +7,32 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Sail.BusEffect
 
 /-!
-# BusEmission — shape lemmas for `bus_effect` reduction (Phase 2.5 D3)
+# BusEmission — shape lemmas for `bus_effect` reduction
 
-This module closes the `h_bus_execute_matches_sail` obligations that all
-archetype `equiv_*_metaplan` theorems inherited as parameters from
-Phase 1.5. For each of the ≤5 concrete bus-entry shapes ZisK's Main AIR
-emits, we prove a reusable lemma that reduces
-`(bus_effect exec_row mem_row state).2` to the Sail monadic block the
-pure-spec side produces — under **structural** hypotheses about the bus
-rows (length, multiplicities, address spaces, pc values) that the caller
-can always discharge from a PIL bus-emission spec.
+For each of the ≤5 concrete bus-entry shapes ZisK's Main AIR emits, we
+prove a reusable lemma reducing `(bus_effect exec_row mem_row state).2`
+to the Sail monadic block the pure-spec side produces, under structural
+hypotheses about the bus rows (length, multiplicities, address spaces,
+pc values).
 
 The shapes observed across ZisK's RV64IM archetypes:
 
 * **Shape (b) — externally-routed branch (BEQ).** Two execution-bus
   entries (pc read, nextpc write). Empty memory bus (register-read
-  semantics are delegated to the Binary SM — they don't appear on the
-  Main memory bus). Sail branches on `success`/`throws`, so the matching
-  hypothesis requires those booleans.
-
+  semantics delegated to the Binary SM). Sail branches on
+  `success`/`throws`, so the matching hypothesis requires those booleans.
 * **Shape (c-jal) — JAL.** Same execution-bus shape as BEQ. Memory bus
   carries exactly one register-write entry (the rd store-PC-plus-4).
-
 * **Shape (a) — arithmetic (ADD, MUL, SLLW).** Execution-bus carries
-  pc+nextpc. Memory bus carries three entries: register-read rs1,
-  register-read rs2, register-write rd.
-
-* **Shape (d) — LD.** Memory bus: register-read rs1, memory-read 8 bytes,
-  register-write rd. Deferred to Phase 4 (requires D1-authored
-  `vmem_read_aligned_equiv` and an 8-byte memory-bus fold reduction).
-
+  pc+nextpc. Memory bus: register-read rs1, register-read rs2,
+  register-write rd.
+* **Shape (d) — LD.** Memory bus: register-read rs1, memory-read 8
+  bytes, register-write rd.
 * **Shape (e) — SD.** Memory bus: register-read rs1, register-read rs2,
-  memory-write 8 bytes. Deferred to Phase 4 (requires D1-authored
-  `vmem_write_aligned_equiv`).
+  memory-write 8 bytes.
 
 The heart of shapes (a) and (c) is a **register-write commutation**: the
-memory-bus fold writes `rd` *before* the execution-bus writes `nextPC`,
+memory-bus fold writes `rd` before the execution-bus writes `nextPC`,
 whereas the Sail pure spec writes `nextPC` first. The two compositions
 produce equal states because `reg_of_fin r ≠ Register.nextPC` for every
 `r : Fin 32` (per `reg_of_fin_neq_nextPC`), so the underlying
@@ -306,7 +296,7 @@ theorem bus_effect_matches_sail_jump_rrw
           EStateM.bind, EStateM.pure, EStateM.Result.map]
     exact write_reg_state_comm _ _ _ _ _ reg_of_fin_neq_nextPC
 
-/-! ## Shapes (d) and (e) — memory-bus loads and stores (Phase 4.5 Track C)
+/-! ## Shapes (d) and (e) — memory-bus loads and stores
 
 Shapes (d) LD and (e) SD extend the `[rs1, rs2, rd]` three-entry
 memory-bus fold by routing one of the entries through the `as = 2`
@@ -477,7 +467,7 @@ theorem bus_effect_matches_sail_store_rrrw
         MonadState.get, getThe, MonadStateOf.get, EStateM.get,
         EStateM.Result.map]
 
-/-! ## Narrow-width load/store companions (S5a)
+/-! ## Narrow-width load/store companions
 
 `bus_effect`'s memory branches (`as = 2`) always process eight byte
 lanes. ZisK's narrow-width load/store opcodes (LW/LWU/SW: 4 bytes;

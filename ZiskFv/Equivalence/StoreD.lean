@@ -13,12 +13,10 @@ import ZiskFv.Sail.sd
 import ZiskFv.Sail.BusEffect
 
 /-!
-End-to-end theorem for RV64 SD (store doubleword). `finishing3` S5b
-retired the the bus-execute-matches-sail premise parameter from
-`equiv_SD_metaplan` in favour of structural bus hypotheses
-(`bus_effect_matches_sail_store_rrrw`) plus a memory-bridge premise
-(`mem_store_correct`'s premise shape) plus a ptr-match between
-the bus's mem-write entry pointer and Sail's `r1_val + signExtend imm`,
+End-to-end theorem for RV64 SD (store doubleword). The
+`equiv_SD_metaplan` discharges via structural bus hypotheses
+(`bus_effect_matches_sail_store_rrrw`) plus a ptr-match between the
+bus's mem-write entry pointer and Sail's `r1_val + signExtend imm`,
 plus per-byte byte-match between the bus entry's lanes and the
 extracted bytes of `r2_val`. -/
 
@@ -67,10 +65,9 @@ theorem equiv_SD_sail
   PureSpec.execute_STORED_pure_equiv
     sd_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** `finishing3` S5b: retired
-    the bus-execute-matches-sail premise in favour of structural bus
-    hypotheses + ptr/byte match parameters that bridge the bus's
-    mem-write entry to Sail's `modify_memory_8` shape. -/
+/-- **Metaplan theorem.** Discharges via structural bus hypotheses
+    plus ptr/byte match parameters that bridge the bus's mem-write
+    entry to Sail's `modify_memory_8` shape. -/
 theorem equiv_SD_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sd_input : PureSpec.SdInput)
@@ -93,7 +90,6 @@ theorem equiv_SD_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 2)
-    -- finishing3 S5b: ptr-match + per-byte byte-match.
     (h_ptr_match :
       e2.ptr.toNat
         = (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat)

@@ -19,13 +19,9 @@ import ZiskFv.Tactics.UTypeArchetype
 /-!
 # RdValDerivation.JumpUType — `h_rd_val` discharge lemmas for JAL/JALR/LUI/AUIPC
 
-**Phase 2.5 N-Jump-UTYPE Tier-1 derivation (finishing1.md Phase 2.5), Wave B.6.**
-
 Each lemma in this file is **Tier 1**: it derives the `h_rd_val` conclusion
 from circuit primitives directly. No output-equality residuals survive in any
-parameter list. Parameters whose names previously appeared in the Wave B.5 grep
-gate have been either retired (pure math facts derived internally) or renamed to
-reflect their trust class:
+parameter list. Parameter trust classes:
 
 * For **JAL/JALR**: `jal_circuit_holds` / `jalr_circuit_holds` (field-level
   `store_value = pc + jmp_offset2`) + transpiler pin `jmp_offset2 = 4` +
@@ -58,10 +54,9 @@ reflect their trust class:
 These lemmas accept structured hypotheses derivable from circuit constraints
 and the PIL bus-emission contract. The FGL store_value-to-entry-lo hypotheses
 (`h_entry_lo_eq`) are the interface point between Main's internal circuit
-constraints and the memory bus's byte emission — Phase 4 audit derives these
-from the PIL memory-bus permutation-proves emission spec. The Nat hi-half
-hypotheses (`h_entry_hi_nat`) capture the high 4 bytes of the 64-bit value;
-the transpiler b-lane Nat pins (`h_imm_lo_nat`, `h_imm_hi_nat`) tie Sail's
+constraints and the memory bus's byte emission. The Nat hi-half hypotheses
+(`h_entry_hi_nat`) capture the high 4 bytes of the 64-bit value; the
+transpiler b-lane Nat pins (`h_imm_lo_nat`, `h_imm_hi_nat`) tie Sail's
 `imm : BitVec 20` to Main's `b` columns (transpile-trusted surface).
 -/
 
@@ -168,14 +163,11 @@ private lemma byte_sum_from_lo_hi
 
 /-! ## JAL: rd ← PC + 4 -/
 
-/-- **`h_rd_val` discharge for JAL (Tier 1, finishing5 S5).**
+/-- **`h_rd_val` discharge for JAL (Tier 1).**
 
     Derives `U64.toBV #v[e2.x0, ..., e2.x7] = PC + 4` from circuit
-    primitives. Compared to the previous Tier-1 statement (which still
-    accepted three OUTPUT-EQ residual parameters
-    `h_entry_hi_nat`, `h_pc_fgl_lo_nat`, `h_entry_lo_eq`), this version
-    composes the new Wave 1+2 toolkits and exposes only
-    {CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE, TRANSPILE-PIN} parameters.
+    primitives. Exposes only {CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE,
+    TRANSPILE-PIN} parameters — no OUTPUT-EQ residuals.
 
     **Parameters and trust class.**
 
@@ -268,7 +260,7 @@ theorem h_rd_val_jut_jal
 
 /-! ## JALR: rd ← PC + 4 -/
 
-/-- **`h_rd_val` discharge for JALR (Tier 1, finishing5 S5).**
+/-- **`h_rd_val` discharge for JALR (Tier 1).**
 
     Identical shape to JAL — JALR also writes `PC + 4` as the link
     value; only the underlying circuit-hypothesis predicate differs
@@ -428,7 +420,7 @@ theorem h_rd_val_jut_lui
 
 /-! ## AUIPC: rd ← PC + BitVec.signExtend 64 (imm ++ 0#12) -/
 
-/-- **`h_rd_val` discharge for AUIPC (Tier 1, finishing5 S5).**
+/-- **`h_rd_val` discharge for AUIPC (Tier 1).**
 
     Derives `U64.toBV #v[e2.x0, ..., e2.x7] = PC + signExtend 64 (imm ++ 0#12)`
     from circuit primitives. AUIPC differs from JAL/JALR in two ways:

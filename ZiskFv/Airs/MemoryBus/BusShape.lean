@@ -128,10 +128,7 @@ theorem bus_emission_main_slots_match_memBus_row_Main_store_reg_prev
                  List.getElem?_cons_zero, List.getElem?_cons_succ]
       try ring
 
--- Dependency / axiom audit. Each lemma reduces a chain of `Circuit.main`
--- thunks against the named-column projection's `Circuit.main` references
--- — closed by `ring` over field laws plus the `_def` accessor rewrites
--- where applicable. No ZisK trust-base axioms are introduced.
+-- Axiom audit: confirm no ZisK trust-base axioms are introduced.
 #print axioms bus_emission_main_slots_match_memBus_row_Main_register_read_rs1
 #print axioms bus_emission_main_slots_match_memBus_row_Main_register_read_rs2
 #print axioms bus_emission_main_slots_match_memBus_row_Main_store_reg_prev

@@ -4,9 +4,8 @@ import ZiskFv.Fundamentals.PrattCertificate
 /-!
 Goldilocks field scaffold for ZisK circuits: `p = 2^64 - 2^32 + 1`.
 
-Minimum required to instantiate extracted constraints and bridge to the
-compositional ADD proof — parallels `OpenvmFv/Fundamentals/BabyBear.lean`.
-Extend with additional inverses as later opcodes (shifts, mul, etc.) need them.
+Parallels `OpenvmFv/Fundamentals/BabyBear.lean`. Provides the `Field FGL`
+instance plus `BitVec`/`Fin` coercions and the U64 lane/chunk helpers.
 -/
 
 notation "GL_prime" => 18446744069414584321
@@ -112,7 +111,7 @@ end U64
 /-- Sanity check: basic ring identities should close in `FGL`. The Field
     instance reaches `ring` via the global instance — do NOT shadow it with
     a `[Field FGL]` variable in any downstream proof, or `ring` will see a
-    dummy instance and fail (a trap that bit `Spec.Add` once during Phase 1). -/
+    dummy instance and fail. -/
 example (a b c : FGL) : (a + b) * c = a * c + b * c := by ring
 
 end Goldilocks

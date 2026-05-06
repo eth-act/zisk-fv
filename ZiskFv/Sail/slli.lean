@@ -2,7 +2,7 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Fundamentals.Execution
 
 /-!
-RV64 SLLI (shift-left-immediate). Phase 3A H4 sibling of SLL.
+RV64 SLLI (shift-left-immediate). Sibling of SLL.
 
 Full 64-bit shift-left by a 6-bit immediate shamt. No PC jump; write to
 `rd`; advance PC by 4. The pure spec mirrors LeanRV64D's

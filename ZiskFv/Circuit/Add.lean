@@ -13,11 +13,9 @@ between the two rows, the Main row's `c` lanes equal the 64-bit sum of its
 `a` and `b` lanes (as Goldilocks-field arithmetic, modulo a multiple of
 2^64 absorbed by the carry-out).
 
-This is the **first compositional proof** in the codebase — Spec.Add is the
-place where Phase 1 either succeeds or surfaces a missing primitive in
-`LeanZKCircuit.Interactions`. The proof here uses only field arithmetic (no
-permutation-argument primitive), thanks to the named-constraint layer
-abstracting the bus interaction into `matches_entry`.
+The proof uses only field arithmetic (no permutation-argument primitive),
+thanks to the named-constraint layer abstracting the bus interaction into
+`matches_entry`.
 -/
 
 namespace ZiskFv.Circuit.Add

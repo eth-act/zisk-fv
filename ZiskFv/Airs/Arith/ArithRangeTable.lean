@@ -5,10 +5,10 @@ import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
 
 /-!
-# Arith range-table + inverse-witness lookup soundness (Phase 5 K2/K3)
+# Arith range-table + inverse-witness lookup soundness
 
 Sister module to `Airs/Arith/ArithTable.lean` (which covers the
-opcode/sign-witness mapping). This module shipsthe soundness axioms
+opcode/sign-witness mapping). This module ships the soundness axioms
 for the two remaining Arith-state-machine permutation lookups:
 
 - **range_cd** (constraint 46): 16-bit range check enforcing
@@ -20,16 +20,8 @@ for the two remaining Arith-state-machine permutation lookups:
 
 Both axioms encode the lookup-argument soundness (grand-product /
 Plookup correctness) at the abstraction level, paralleling
-`arith_table_row_witness_unsigned` from `ArithTable.lean`. Replicating
-the underlying ZK soundness proof is a separate substantial
-undertaking; axiomatizing keeps the residuals closed at the
-trust-base level.
-
-## Trust-base impact
-
-+2 axioms (`arith_range_cd_sound`, `arith_inv_sum_nonzero_sound`).
-Each retires a per-theorem scope-honest hypothesis that previously
-appeared on the signed Div/Rem compositional lemmas.
+`arith_table_lookup_sound_*` in `ArithTable.lean`. Replicating the
+underlying ZK soundness proof is out of scope.
 -/
 
 namespace ZiskFv.Airs.Arith.ArithRangeTable

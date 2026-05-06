@@ -38,8 +38,7 @@ to `BitVec 64` `% 2^64` / `/ 2^64` extraction.
   `c_nat / b_nat = a_nat` under `b_nat ≠ 0` and `d_nat < b_nat`.
 
 Signed BitVec.toInt lifts and four-quadrant `(na, nb, np)` adjustments
-are out of scope here — they live in the planned
-`PackedBitVec/SignedNoWrap.lean` (finishing4 S2).
+are out of scope here — they live in `PackedBitVec/SignedNoWrap.lean`.
 
 **Pattern.**
 
@@ -332,9 +331,7 @@ The MUL/DIV chunk equations come in two shapes:
   C38 of MUL, with `carry = d₃`).
 
 Per-chunk lifts are factored as separate lemmas to keep elaboration
-budgets small.  The mega-wrapper that composed all 8 lifts inline
-exhausted `maxHeartbeats`; splitting per-chunk respects each
-elaboration budget. -/
+budgets small. A monolithic 8-lift wrapper exhausts `maxHeartbeats`. -/
 
 /-- Per-chunk FGL → ℕ lift for a 1-product chunk **without** carry-in
     (`a * b = c + cy * 65536`).  Used at C31' (the chain's opening). -/

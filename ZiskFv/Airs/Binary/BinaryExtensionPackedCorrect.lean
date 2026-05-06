@@ -6,7 +6,7 @@ import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.BinaryExtensionTable
 
 /-!
-**K1-C: BinaryExtension byte-level lookups → `BitVec 64` shift identities.**
+**BinaryExtension byte-level lookups → `BitVec 64` shift identities.**
 
 The `BinaryExtension` AIR has zero F-typed constraints; its semantics is
 carried entirely by 8 lookup arguments against the

@@ -22,9 +22,7 @@ So the entire body reduces to `pure RETIRE_SUCCESS`. Combined with
 `execute_instruction`'s leading `writeReg nextPC (PC + 4)`, the full
 Sail block is `do writeReg nextPC (PC + 4); pure RETIRE_SUCCESS`.
 
-**Track R retirement:** the previous trust axiom
-`execute_FENCE_pure_equiv_axiom` is now `theorem
-execute_FENCE_pure_equiv`, proved under the M-mode privilege
+`execute_FENCE_pure_equiv` is proved under the M-mode privilege
 assumption (consistent with `RISC_V_assumptions` A1.1 — ZisK targets
 RV64IM Machine-mode only). The proof unfolds `is_fiom_active` via
 the privilege hypothesis, simplifies `effective_fence_set _ false`

@@ -7,58 +7,33 @@ import ZiskFv.Airs.Arith.Div
 import ZiskFv.Extraction.ArithTable
 
 /-!
-# arith_table permutation-lookup soundness (Phase 5 item 2 + Phase 6 Track P)
+# arith_table permutation-lookup soundness
 
-The ZisK Arith state machine pipes every active row through a fixed lookup
-table `arith_table` (see
+The ZisK Arith state machine pipes every active row through a fixed
+lookup table `arith_table` (see
 `zisk/state-machines/arith/pil/arith_table.pil`) that deterministically
 maps an opcode / mode pair to sign / parity witnesses
 `(na, nb, np, nr)`.
 
-## Phase 5 item 2 (original ship)
+## Architecture
 
-Phase 5 ship (commits `70c5a1f`, …) closed the residual hypothesis
-layer with two specialized axioms (`arith_table_row_witness_unsigned`
-and `_unsigned_div`) plus per-opcode specialization theorems. Each
-axiom directly asserted the `(op, m32) → (na, nb, np, nr)` mapping
-for the unsigned cases.
-
-## Phase 6 Track P (factorization)
-
-Phase 6 Track P (commits `597c6f7`, `0fa7042`) factored the ship
-into:
+The trust surface here factors into two layers:
 
 1. **Plookup soundness** — one axiom per AIR variant
    (`arith_table_lookup_sound_mul`, `_div`) saying every row's
    `(op, m32, na, nb, np, nr)` tuple matches some row in
    `Extraction.ArithTable.arith_table` (the 74-row hand-extracted
-   constant). This is the irreducible plookup-protocol soundness.
-2. **Witness-mapping theorems** (no longer axioms) of the shape
-   `arith_table_<op>_witnesses_from_data` that case-analyze the
-   table data to derive specific `(op, m32) → (na, nb, np, nr)`
-   mappings for each unsigned opcode.
-
-## Phase 6 Track P fan-out (this commit)
-
-Completes the migration begun in `0fa7042`:
-
-- Adds `_from_data` theorems for the remaining 4 unsigned opcodes:
-  `OP_MULUH`, `OP_MUL_W`, `OP_DIVU`, `OP_REMU` (`OP_MULU` was the
-  POC).
-- Converts the 2 deprecated `arith_table_row_witness_*` axioms into
-  *theorems* delegating to the new `_from_data` lemmas.
-- Re-derives the Phase-5 specializations
-  (`arith_table_<op>_witnesses`) directly from `_from_data`,
-  bypassing the now-theorem shims.
-
-**Trust-base impact.** -2 axioms net (the two specialized witness
-axioms retired; the two plookup axioms were already added in the
-Track P POC). 78 → 76.
+   constant). This is the irreducible plookup-protocol soundness;
+   formalizing the underlying ZK protocol in Lean is out of scope.
+2. **Witness-mapping theorems** of the shape
+   `arith_table_<op>_witnesses_from_data` that case-analyze the table
+   data (via `decide` over the concrete 74-row list) to derive specific
+   `(op, m32) → (na, nb, np, nr)` mappings for each unsigned opcode.
 
 ## Scope of the plookup axioms
 
-`arith_table_lookup_sound_mul/_div` pin every row's tuple as
-matching some row in the extracted table. The specific table data
+`arith_table_lookup_sound_mul/_div` pin every row's tuple as matching
+some row in the extracted table. The specific table data
 (`Extraction.ArithTable.arith_table`) matches `arith_table.pil`'s
 74-row table for the RV64IM subset:
 
@@ -70,17 +45,8 @@ matching some row in the extracted table. The specific table data
 - `(OP_MUL_W, m32=1)` → `(0, 0, 0, 0)` — RV64 MULW
 
 The `_from_data` theorems below cover only the unsigned cases (where
-the quadruple is constant zero). The signed cases are still
-conditional (na = a.3, nb = b.3, np = d.3) and require bit-extraction
-lemmas — out of scope for the Track P fan-out.
-
-## Retired scope-honest parameters
-
-After this module, the four `(h_na, h_nb, h_np, h_nr)` parameters on
-the unsigned-mode Arith lemmas become derivable from the row's
-`(op, m32)` hypotheses. Signed-mode variants still take sign witnesses
-as parameters (they're conditional on operand bit-31 values, not
-universal constants).
+the quadruple is constant zero). Signed cases remain conditional
+(na = a.3, nb = b.3, np = d.3) and require bit-extraction lemmas.
 -/
 
 namespace ZiskFv.Airs.Arith.ArithTable
@@ -93,7 +59,7 @@ open ZiskFv.Airs.ArithDiv
 variable {C : Type → Type → Type} {F ExtF : Type}
 variable [Field F] [Field ExtF] [Circuit F ExtF C]
 
-/-! ## Phase 6 Track P — plookup-soundness axioms
+/-! ## Plookup-soundness axioms
 
 The two irreducible plookup-soundness axioms. Each says every active
 row's tuple matches some row in the extracted `arith_table`. Standard
@@ -143,7 +109,7 @@ axiom arith_table_lookup_sound_div
 For each unsigned RV64IM opcode, a private `_witnesses_zero` lemma
 (by `decide` over the 74-row table) plus a `_from_data` theorem
 deriving the witness mapping from `arith_table_lookup_sound_mul/_div`
-+ that lemma. No new axioms.
++ that lemma.
 -/
 
 /-- Helper: every row of `arith_table` whose `op` field equals
@@ -156,12 +122,9 @@ private lemma arith_table_op_mulu_witnesses_zero :
       ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0 := by
   decide
 
-/-- **Witness mapping theorem (Phase 6 Track P/P3) — OP_MULU.**
+/-- **Witness mapping theorem — OP_MULU.**
     Derived from `arith_table_lookup_sound_mul` + case analysis on
-    the extracted `arith_table`. Replaces the deprecated
-    `arith_table_row_witness_unsigned`'s OP_MULU branch — the
-    witness mapping is now provable from data + 1 plookup axiom,
-    rather than directly axiomatized. -/
+    the extracted `arith_table`. -/
 theorem arith_table_mulu_witnesses_from_data
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (v : Valid_ArithMul C FGL FGL) (row : ℕ)
@@ -187,7 +150,7 @@ private lemma arith_table_op_muluh_witnesses_zero :
       ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0 := by
   decide
 
-/-- **Witness mapping theorem (Phase 6 Track P fan-out) — OP_MULUH.** -/
+/-- **Witness mapping theorem — OP_MULUH.** -/
 theorem arith_table_muluh_witnesses_from_data
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (v : Valid_ArithMul C FGL FGL) (row : ℕ)
@@ -213,7 +176,7 @@ private lemma arith_table_op_mulw_witnesses_zero :
       ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0 := by
   decide
 
-/-- **Witness mapping theorem (Phase 6 Track P fan-out) — OP_MUL_W.** -/
+/-- **Witness mapping theorem — OP_MUL_W.** -/
 theorem arith_table_mulw_witnesses_from_data
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (v : Valid_ArithMul C FGL FGL) (row : ℕ)
@@ -239,7 +202,7 @@ private lemma arith_table_op_divu_witnesses_zero :
       ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0 := by
   decide
 
-/-- **Witness mapping theorem (Phase 6 Track P fan-out) — OP_DIVU.** -/
+/-- **Witness mapping theorem — OP_DIVU.** -/
 theorem arith_table_divu_witnesses_from_data
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (v : Valid_ArithDiv C FGL FGL) (row : ℕ)
@@ -265,7 +228,7 @@ private lemma arith_table_op_remu_witnesses_zero :
       ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0 := by
   decide
 
-/-- **Witness mapping theorem (Phase 6 Track P fan-out) — OP_REMU.** -/
+/-- **Witness mapping theorem — OP_REMU.** -/
 theorem arith_table_remu_witnesses_from_data
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (v : Valid_ArithDiv C FGL FGL) (row : ℕ)
@@ -282,28 +245,20 @@ theorem arith_table_remu_witnesses_from_data
   · rw [h_np_eq, hnp]; rfl
   · rw [h_nr_eq, hnr]; rfl
 
-/-! ## Phase-5 specializations and deprecated lookup-axiom shims
+/-! ## Per-opcode specializations and bundling shims
 
-Each Phase-5 specialization (`arith_table_<op>_witnesses`) and the
-two deprecated bundling axioms (`arith_table_row_witness_unsigned`
-and `_unsigned_div`) are now **theorems** delegating to the
-corresponding `_from_data` lemma. The `h_m32` hypothesis on the
-specializations is retained for signature stability but is unused
-(the witness mapping is determined by `op` alone for unsigned ops).
-
-Trust-base impact: -2 axioms (the two former specialized witness
-axioms retired). -/
+The per-opcode `arith_table_<op>_witnesses` specialization theorems
+delegate to the corresponding `_from_data` lemma. The `h_m32`
+hypothesis is retained for signature stability but is unused (the
+witness mapping is determined by `op` alone for unsigned ops). The
+two `arith_table_row_witness_unsigned` / `_unsigned_div` bundlers
+exist for caller compatibility. -/
 
 /-- **Specialization — OP_MULU unsigned.** The arith_table forces
     `(na, nb, np, nr) = (0, 0, 0, 0)` for an unsigned 64-bit MUL row.
 
-    Retires the `(h_na, h_nb, h_np, h_nr)` parameters on
-    `arith_mul_unsigned_packed_correct` (the compositional lemma for
-    MULU/MULHU rows).
-
-    *Phase 6 Track P fan-out: now a theorem derived from
-    `arith_table_mulu_witnesses_from_data`; the `h_m32` hypothesis is
-    retained for signature stability but unused.* -/
+    Derived from `arith_table_mulu_witnesses_from_data`; `h_m32` is
+    retained for signature stability but unused. -/
 theorem arith_table_mulu_witnesses
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (v : Valid_ArithMul C FGL FGL) (row : ℕ)
@@ -313,11 +268,7 @@ theorem arith_table_mulu_witnesses
 
 /-- **Specialization — OP_MULUH unsigned high.** The arith_table
     forces `(na, nb, np, nr) = (0, 0, 0, 0)` for an unsigned 64-bit
-    MUL-high row.
-
-    *Phase 6 Track P fan-out: derived from `_from_data`. New
-    specialization theorem — Phase-5 didn't ship a separate one for
-    MULUH because it shared the OP_MULU axiom branch in spirit.* -/
+    MUL-high row. Derived from `_from_data`. -/
 theorem arith_table_muluh_witnesses
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (v : Valid_ArithMul C FGL FGL) (row : ℕ)
@@ -326,9 +277,7 @@ theorem arith_table_muluh_witnesses
   arith_table_muluh_witnesses_from_data v row h_op
 
 /-- **Specialization — OP_MUL_W 32-bit.** The arith_table forces
-    `(na, nb, np, nr) = (0, 0, 0, 0)` for a 32-bit MULW row.
-
-    *Phase 6 Track P fan-out: derived from `_from_data`.* -/
+    `(na, nb, np, nr) = (0, 0, 0, 0)` for a 32-bit MULW row. -/
 theorem arith_table_mulw_witnesses
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (v : Valid_ArithMul C FGL FGL) (row : ℕ)
@@ -337,9 +286,7 @@ theorem arith_table_mulw_witnesses
   arith_table_mulw_witnesses_from_data v row h_op
 
 /-- **Specialization — OP_DIVU primary.** The arith_table forces
-    `(na, nb, np, nr) = (0, 0, 0, 0)` for an unsigned 64-bit DIVU row.
-
-    *Phase 6 Track P fan-out: derived from `_from_data`.* -/
+    `(na, nb, np, nr) = (0, 0, 0, 0)` for an unsigned 64-bit DIVU row. -/
 theorem arith_table_divu_witnesses
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (v : Valid_ArithDiv C FGL FGL) (row : ℕ)
@@ -348,9 +295,7 @@ theorem arith_table_divu_witnesses
   arith_table_divu_witnesses_from_data v row h_op
 
 /-- **Specialization — OP_REMU secondary.** The arith_table forces
-    `(na, nb, np, nr) = (0, 0, 0, 0)` for an unsigned 64-bit REMU row.
-
-    *Phase 6 Track P fan-out: derived from `_from_data`.* -/
+    `(na, nb, np, nr) = (0, 0, 0, 0)` for an unsigned 64-bit REMU row. -/
 theorem arith_table_remu_witnesses
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (v : Valid_ArithDiv C FGL FGL) (row : ℕ)
@@ -358,10 +303,9 @@ theorem arith_table_remu_witnesses
     v.na row = 0 ∧ v.nb row = 0 ∧ v.np row = 0 ∧ v.nr row = 0 :=
   arith_table_remu_witnesses_from_data v row h_op
 
-/-- **Deprecated (Phase 6 Track P fan-out).** Compatibility shim for
-    the Phase-5 `arith_table_row_witness_unsigned` axiom. Now a
-    theorem derived from the `_from_data` lemmas. New code should use
-    the per-opcode `arith_table_<op>_witnesses_from_data` directly. -/
+/-- **Bundling shim.** Compatibility wrapper around the per-opcode
+    `_from_data` lemmas. New code should use
+    `arith_table_<op>_witnesses_from_data` directly. -/
 theorem arith_table_row_witness_unsigned
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (v : Valid_ArithMul C FGL FGL) (row : ℕ) :
@@ -372,9 +316,8 @@ theorem arith_table_row_witness_unsigned
   ⟨fun h_op _ => arith_table_mulu_witnesses_from_data v row h_op,
    fun h_op _ => arith_table_mulw_witnesses_from_data v row h_op⟩
 
-/-- **Deprecated (Phase 6 Track P fan-out).** Compatibility shim for
-    the Phase-5 `arith_table_row_witness_unsigned_div` axiom. Now a
-    theorem derived from the `_from_data` lemmas. -/
+/-- **Bundling shim.** Compatibility wrapper around the per-opcode
+    `_from_data` lemmas (DIVU / REMU). -/
 theorem arith_table_row_witness_unsigned_div
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (v : Valid_ArithDiv C FGL FGL) (row : ℕ) :
@@ -385,7 +328,7 @@ theorem arith_table_row_witness_unsigned_div
   ⟨fun h_op _ => arith_table_divu_witnesses_from_data v row h_op,
    fun h_op _ => arith_table_remu_witnesses_from_data v row h_op⟩
 
-/-! ## Phase 6 Track P signed fan-out — `_from_data` theorems
+/-! ## Signed `_from_data` theorems
 
 For each signed RV64IM opcode, a private `_witnesses_disj` lemma (by
 `decide` over the 74-row table) plus a `_from_data` theorem deriving
@@ -414,7 +357,7 @@ private lemma arith_table_op_mulsuh_witnesses_disj :
       ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0) := by
   decide
 
-/-- **Witness mapping theorem (Phase 6 Track P signed fan-out) — OP_MULSUH.**
+/-- **Witness mapping theorem — OP_MULSUH.**
     Disjunction over the 3 distinct `(na, nb, np, nr)` patterns that
     `OP_MULSUH` rows take in the extracted `arith_table`. -/
 theorem arith_table_mulsuh_witnesses_from_data
@@ -458,7 +401,7 @@ private lemma arith_table_op_mul_witnesses_disj :
       ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0) := by
   decide
 
-/-- **Witness mapping theorem (Phase 6 Track P signed fan-out) — OP_MUL.**
+/-- **Witness mapping theorem — OP_MUL.**
     Disjunction over the 6 distinct `(na, nb, np, nr)` patterns that
     `OP_MUL` rows take in the extracted `arith_table`. -/
 theorem arith_table_mul_witnesses_from_data
@@ -513,7 +456,7 @@ private lemma arith_table_op_mulh_witnesses_disj :
       ∨ (tbl_row.na = 0 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0) := by
   decide
 
-/-- **Witness mapping theorem (Phase 6 Track P signed fan-out) — OP_MULH.**
+/-- **Witness mapping theorem — OP_MULH.**
     Same disjunction shape as `OP_MUL` (the two opcodes share their
     sign-witness patterns). -/
 theorem arith_table_mulh_witnesses_from_data
@@ -570,7 +513,7 @@ private lemma arith_table_op_div_witnesses_disj :
       ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0) := by
   decide
 
-/-- **Witness mapping theorem (Phase 6 Track P signed fan-out) — OP_DIV.**
+/-- **Witness mapping theorem — OP_DIV.**
     Disjunction over the 10 distinct `(na, nb, np, nr)` patterns. -/
 theorem arith_table_div_witnesses_from_data
     {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -640,7 +583,7 @@ private lemma arith_table_op_rem_witnesses_disj :
       ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0) := by
   decide
 
-/-- **Witness mapping theorem (Phase 6 Track P signed fan-out) — OP_REM.**
+/-- **Witness mapping theorem — OP_REM.**
     Same disjunction shape as `OP_DIV`. -/
 theorem arith_table_rem_witnesses_from_data
     {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -712,7 +655,7 @@ private lemma arith_table_op_div_w_witnesses_disj :
       ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0) := by
   decide
 
-/-- **Witness mapping theorem (Phase 6 Track P signed fan-out) — OP_DIV_W.**
+/-- **Witness mapping theorem — OP_DIV_W.**
     Same disjunction shape as `OP_DIV`. -/
 theorem arith_table_div_w_witnesses_from_data
     {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -782,7 +725,7 @@ private lemma arith_table_op_rem_w_witnesses_disj :
       ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 1 ∧ tbl_row.np = 1 ∧ tbl_row.nr = 0) := by
   decide
 
-/-- **Witness mapping theorem (Phase 6 Track P signed fan-out) — OP_REM_W.**
+/-- **Witness mapping theorem — OP_REM_W.**
     Same disjunction shape as `OP_DIV_W`. -/
 theorem arith_table_rem_w_witnesses_from_data
     {C : Type → Type → Type} [Circuit FGL FGL C]

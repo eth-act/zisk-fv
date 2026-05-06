@@ -2,7 +2,7 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Fundamentals.Execution
 
 /-!
-RV64 SRA (shift-right-arithmetic, register variant). Phase 3A H3 sibling.
+RV64 SRA (shift-right-arithmetic, register variant).
 
 Full 64-bit arithmetic right shift: takes `rs1`, shifts right by the
 low 6 bits of `rs2`, sign-fills on the left with bit 63. No PC jump;

@@ -91,13 +91,11 @@ lemma one_sub_m32_mul_of_eq_zero {F : Type} [Field F]
   subst h; ring
 
 /-- `(1 - 1) * x = 0` — the mirror of `one_sub_zero_mul` for the
-    `m32 = 1` path. Added in Phase 2 A6 (SLLW) to collapse the
-    `(1 - m32) * a_hi` / `(1 - m32) * b_hi` factors on the bus entry
-    when the opcode is a 32-bit word variant (`m32 = 1`). Fires after
-    `rw [h_m32]` rewrites `m.m32 row = 1` into the `OperationBusEntry`.
-    Without this lemma `simp` leaves `(1 - 1) * x` unreduced under the
-    named-column accessors, mirroring the same pitfall
-    `one_sub_zero_mul` documents for the `m32 = 0` case. -/
+    `m32 = 1` path. Collapses the `(1 - m32) * a_hi` / `(1 - m32) * b_hi`
+    factors on the bus entry for 32-bit word variants. Fires after
+    `rw [h_m32]` rewrites `m.m32 row = 1` into the `OperationBusEntry`;
+    without this lemma `simp` leaves `(1 - 1) * x` unreduced under the
+    named-column accessors. -/
 @[simp]
 lemma one_sub_one_mul {F : Type} [Field F] (x : F) :
     (1 - (1 : F)) * x = 0 := by ring

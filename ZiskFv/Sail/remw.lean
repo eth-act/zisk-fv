@@ -5,7 +5,7 @@ import ZiskFv.Sail.divw  -- for to_bits_truncate_32_eq_ofInt_divw
 open LeanRV64D.Functions
 
 /-!
-## RV64M REMW — pure spec + Sail equivalence (Track J4)
+## RV64M REMW — pure spec + Sail equivalence
 
 REMW is the signed 32-bit remainder. Per `riscv2zisk_context.rs:250`,
 RV64 `remw` transpiles via `create_register_op(..., "div_w", 4)`,
@@ -20,9 +20,8 @@ to 64 bits. Special cases per RV64 spec:
 Note: REMW does NOT have an explicit overflow patch in the Sail
 body. `Int.tmod (-2^31) (-1) = 0` natively, and 0 fits in 32 bits.
 
-Phase 6 Track R: equivalence is now *proved* using the
-`execute_REMW'` refactor in `Fundamentals/Execution.lean`. No
-remaining axioms.
+Equivalence is proved using the `execute_REMW'` refactor in
+`Fundamentals/Execution.lean`.
 
 The proof reuses helpers from `divw.lean`:
 - `to_bits_truncate_32_eq_ofInt_divw` (renamed for clarity below)

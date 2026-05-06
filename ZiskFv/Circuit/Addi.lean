@@ -9,12 +9,11 @@ import ZiskFv.Circuit.Add
 import ZiskFv.Tactics.ALUITypeArchetype
 
 /-!
-Compositional ADDI spec (Phase 3C T-IT).
+Compositional ADDI spec.
 
 Thin specialization of `Tactics.ALUITypeArchetype` at
 `opcode_lit = OP_ADD = 10` (shared with ADD — the Binary SM cannot
 distinguish ADD from ADDI; they share the same Zisk opcode literal).
-Identical structure to `Spec/Sub.lean`.
 
 The `addi_compositional_with_binaryadd` theorem at the bottom is the
 Tier-1 form: it bundles BinaryAdd's carry chain explicitly, mirroring

@@ -9,7 +9,7 @@ import ZiskFv.Circuit.Mul
 import ZiskFv.Tactics.ArithSMArchetype
 
 /-!
-Compositional **REMU** spec (Phase 3C T-D). REMU is the **secondary**
+Compositional **REMU** spec. REMU is the **secondary**
 lane on an unsigned-DIV Arith row (`main_mul = main_div = 0`,
 remainder emitted from `d[]`). Differs from REM only in the opcode
 literal (185 vs. 187).

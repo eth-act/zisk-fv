@@ -7,8 +7,8 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ShiftArchetype
 
 /-!
-Compositional SRLIW spec (Phase 3A H2c — `ShiftArchetype` sibling,
-W-variant immediate).
+Compositional SRLIW spec — `ShiftArchetype` sibling, W-variant
+immediate.
 
 SRLIW's Main-AIR row mirrors SRLW's exactly (same `op = OP_SRL_W = 37`,
 same `m32 = 1` bus path); the only difference vs SRLW is the source of

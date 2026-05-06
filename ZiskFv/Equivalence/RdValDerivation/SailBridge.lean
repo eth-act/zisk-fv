@@ -5,9 +5,8 @@ import ZiskFv.Fundamentals.Execution
 /-!
 # RdValDerivation.SailBridge — bridges between Tier-1 discharge outputs and metaplan h_rd_val shapes
 
-**finishing2 S5 follow-on.** The Tier-1 discharge lemmas in
-`Arith.lean` / `BinaryShift.lean` for ALU-W and shift opcodes produce
-conclusions in BitVec primitives:
+The Tier-1 discharge lemmas in `Arith.lean` / `BinaryShift.lean` for
+ALU-W and shift opcodes produce conclusions in BitVec primitives:
 
 * ADDW/SUBW/ADDIW: `BitVec.signExtend 64 (BitVec.ofNat 32 a32sum + BitVec.ofNat 32 b32sum)`
 * SLL/SLLI/SRL/SRLI/SRA/SRAI: `BitVec.shiftLeft r1_val shift` / `BitVec.ushiftRight` / `BitVec.sshiftRight`

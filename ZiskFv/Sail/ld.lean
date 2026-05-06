@@ -81,9 +81,9 @@ namespace PureSpec
   -- little-endian concatenation of `data7..data0` to `rd`; retire
   -- success).
   --
-  -- Phase 3.5 promotion: direct port of the LWU proof widened to
-  -- 8 bytes. The `@[simp high]` P1-P3 platform axioms in
-  -- `ZiskFv.PlatformScope` discharge the PMP/CLINT/PMA chain.
+  -- Direct port of the LWU proof widened to 8 bytes. The
+  -- `@[simp high]` platform axioms in `ZiskFv.PlatformScope` discharge
+  -- the PMP/CLINT/PMA chain.
   set_option maxHeartbeats 0 in
   lemma execute_LOADD_pure_equiv
     (input : LdInput)

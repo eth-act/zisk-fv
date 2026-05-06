@@ -44,9 +44,9 @@ at `na = nb = np = nr = 0`. The signed theorem takes `na`, `nb`, `np` as
 `arith_table` permutation lookup, which the caller supplies via an opcode
 hypothesis. `nr` is zero for MUL (it is nonzero only for DIV).
 
-## Usage by Phase 2 N-MDR-signed
+## Usage
 
-Phase 2 derivation lemmas for MULH, MUL (signed), MULHSU will consume this
+Downstream derivation lemmas for MULH, MUL (signed), MULHSU consume this
 theorem plus:
 - `arith_table_lookup_sound_mul` (for the signed sign-witness pinning)
 - `Fundamentals/PackedBitVec/Signed.lean` (for the BitVec.toInt lift)

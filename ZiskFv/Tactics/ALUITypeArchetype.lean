@@ -7,28 +7,22 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ALURTypeArchetype
 
 /-!
-**ALU ITYPE archetype** (Phase 3C Track T-IT).
+**ALU ITYPE archetype.**
 
-The six Phase 3C ALU-ITYPE opcodes (ADDI, ANDI, ORI, XORI, SLTI,
-SLTIU) share a ZisK microinstruction shape that differs from their
-RTYPE siblings only in the `b` lane source — `immediate_op` emits
-`src_b("imm", i.imm as u64, false)` rather than `src_b("reg", rs2,
-false)`. The Main-AIR constraint conjunction the archetype relies on
-is **b-source-agnostic**: the `matches_entry` bus-match predicate and
+The six ALU-ITYPE opcodes (ADDI, ANDI, ORI, XORI, SLTI, SLTIU) share
+a ZisK microinstruction shape that differs from their RTYPE siblings
+only in the `b` lane source — `immediate_op` emits `src_b("imm",
+i.imm as u64, false)` rather than `src_b("reg", rs2, false)`. The
+Main-AIR constraint conjunction the archetype relies on is
+**b-source-agnostic**: the `matches_entry` bus-match predicate and
 the boolean / disjointness flags only constrain `is_external_op`,
-`op`, `m32`, `set_pc`, and the `c_lo`/`c_hi` lanes. The `a`/`b` lanes
-enter only through the bus entry the caller supplies, which this
-module does not inspect.
+`op`, `m32`, `set_pc`, and the `c_lo`/`c_hi` lanes.
 
-Concretely the ALU-ITYPE and ALU-RTYPE archetypes share an identical
+The ALU-ITYPE and ALU-RTYPE archetypes share an identical
 **circuit-level** identity: `main_c_packed = bus_entry.c_lo +
-bus_entry.c_hi * 2^32`. We therefore **re-use**
-`Tactics.ALURTypeArchetype`'s primitives verbatim here, exporting a
-shallow rebranded alias. This keeps the track-T-RT and track-T-IT
-consumer sites textually symmetric while sidestepping the Phase 3
-plan's Fragility #1 risk — mutating `ALURTypeArchetype` to generalize
-over b-source would be invasive; duplication via alias costs <30
-lines.
+bus_entry.c_hi * 2^32`. We therefore re-use
+`Tactics.ALURTypeArchetype`'s primitives verbatim here as a shallow
+rebranded alias.
 
 ## Parameterization
 
@@ -89,7 +83,7 @@ def alu_itype_archetype_circuit_holds
     `ALURTypeArchetype.alu_rtype_archetype_c_bus_match` — the proof is
     bit-for-bit identical. The Binary SM's internal correctness (that
     `c_lo`/`c_hi` pack the signed/unsigned/logical opcode's result on
-    the `a`/`b` lanes the transpile axiom pinned) is the Phase 4 audit
+    the `a`/`b` lanes the transpile axiom pinned) is a separate audit
     obligation. -/
 theorem alu_itype_archetype_c_bus_match
     (m : Valid_Main C FGL FGL) (r_main : ℕ)

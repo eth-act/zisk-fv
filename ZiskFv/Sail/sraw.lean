@@ -2,7 +2,7 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Fundamentals.Execution
 
 /-!
-RV64 SRAW (shift-right-arithmetic-word). Phase 3A H2a sibling of SLLW/SRLW.
+RV64 SRAW (shift-right-arithmetic-word). Sibling of SLLW/SRLW.
 
 Takes the low 32 bits of `rs1`, shifts right (arithmetic, preserving the
 sign bit) by the low 5 bits of `rs2`, then sign-extends the 32-bit result

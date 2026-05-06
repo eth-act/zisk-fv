@@ -119,9 +119,9 @@ namespace PureSpec
   -- `state.mem` at successive addresses starting at `rs1 + sign_extend imm`;
   -- retire success).
   --
-  -- Phase 3.5 promotion: direct port of openvm-fv's RV32 SW proof,
-  -- widened to 8 bytes. The `@[simp high]` P1-P3 platform axioms in
-  -- `ZiskFv.PlatformScope` discharge the PMP/CLINT/PMA chain.
+  -- Direct port of openvm-fv's RV32 SW proof, widened to 8 bytes. The
+  -- `@[simp high]` platform axioms in `ZiskFv.PlatformScope` discharge
+  -- the PMP/CLINT/PMA chain.
   set_option maxHeartbeats 0 in
   lemma execute_STORED_pure_equiv
     (input : SdInput)

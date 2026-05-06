@@ -9,7 +9,7 @@ import ZiskFv.Tactics.BranchArchetype
 /-!
 Compositional BLTU (branch-if-less-than, unsigned) spec —
 **instantiation of the `BranchArchetype` macro** at
-`opcode_lit = OP_LTU` (Phase 3A B3).
+`opcode_lit = OP_LTU`.
 
 BLTU shares BEQ polarity (neg = false) — the `jmp_offset1 = imm`
 taken offset is at `flag = 1`. It differs from BLT only in the Zisk

@@ -20,9 +20,7 @@ End-to-end theorem for RV64 JAL. Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_JAL`),
 * the compositional JAL spec (`ZiskFv.Circuit.Jal.jal_pc_advance`),
-* the Sail pure-function equivalence
-  (`PureSpec.execute_JAL_pure_equiv`, newly closed Phase 2 A2
-  thanks to `jump_to_equiv`),
+* the Sail pure-function equivalence (`PureSpec.execute_JAL_pure_equiv`),
 
 into a metaplan-shaped theorem:
 
@@ -30,11 +28,7 @@ into a metaplan-shaped theorem:
   `execute_instruction (.JAL (imm, rd)) state
     = (bus_effect exec_row mem_row state).2`.
 
-As with `equiv_ADD_metaplan` / `equiv_BEQ_metaplan`, the bus-emission
-correctness hypothesis `h_bus_execute_matches_sail` is parameterized —
-Phase 4 audit derives it from a PIL-level bus-emission spec. For JAL the
-operation bus is inactive (`is_external_op = 0`), so that parameter is
-strictly simpler than BEQ's (no Binary-SM delegation to model); only
+For JAL the operation bus is inactive (`is_external_op = 0`); only
 the execution + memory bus entries matter.
 -/
 
@@ -64,8 +58,8 @@ theorem equiv_JAL
     next_pc = m.pc r_main + m.jmp_offset1 r_main :=
   jal_pc_advance m r_main next_pc h_circuit
 
-/-- **Closed-form circuit-level JAL theorem.** Phase 2.5 D2 eliminated
-    the `next_pc : FGL` parameter by deriving it from the extracted
+/-- **Closed-form circuit-level JAL theorem.** Eliminates the
+    `next_pc : FGL` parameter by deriving it from the extracted
     closed-form `pc_handshake` (Main constraint 20) via
     `pc_handshake_to_next_pc`. The caller supplies instead:
 
@@ -137,27 +131,13 @@ theorem equiv_JAL_sail
   PureSpec.execute_JAL_pure_equiv jal_input imm rd
     h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c
 
-/-- **Metaplan theorem.** The shape the original metaplan targets for
-    RV64 JAL: Sail's `execute_instruction` on an RV64 JAL equals the
-    state computed by applying `bus_effect` to the circuit's execution
-    and memory bus rows.
+/-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64 JAL
+    equals the state computed by applying `bus_effect` to the circuit's
+    execution and memory bus rows.
 
-    Composes `equiv_JAL_sail` with the bus-matching hypothesis
-    `h_bus_execute_matches_sail`. As in `equiv_ADD_metaplan` /
-    `equiv_BEQ_metaplan`, the bus-emission-correctness obligation is
-    parameterized; Phase 4 audit derives it from PIL-level bus emission.
-
-    **Hypotheses.**
-    * Sail side (from `equiv_JAL_sail`): register readability
-      (`h_input_rd`), PC (`h_input_pc`), misa (`h_input_misa`), and
-      ZisK `misa[C] = 0` (`h_misa_c`).
-    * Bus side: `h_bus_execute_matches_sail` asserts that the
-      execution-bus entries (read PC, write nextPC) together with the
-      memory-bus entry for the rd write match the Sail pure-spec
-      monadic block in `equiv_JAL_sail`'s conclusion. Unlike BEQ, JAL
-      *does* populate a memory-bus entry (the rd write via
-      `store_pc`); the operation-bus is inactive because
-      `is_external_op = 0`. -/
+    Unlike BEQ, JAL *does* populate a memory-bus entry (the rd write via
+    `store_pc`); the operation-bus is inactive because
+    `is_external_op = 0`. -/
 theorem equiv_JAL_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jal_input : PureSpec.JalInput)
@@ -172,7 +152,7 @@ theorem equiv_JAL_metaplan
     (h_input_pc : state.regs.get? Register.PC = .some jal_input.PC)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Phase 2.5 D3: structural bus hypotheses (Phase-4 derivable).
+    -- Structural bus hypotheses.
     -- JAL has a single memory-bus write entry (rd ← PC+4 via `store_pc`).
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
@@ -186,7 +166,7 @@ theorem equiv_JAL_metaplan
     (h_success : (PureSpec.execute_JAL_pure jal_input).success = true)
     (h_nextPC_option :
       (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     -- `h_rd_idx` ties the circuit rd-pointer to the Sail rd; `h_rd_val`
     -- ties the 8 byte lanes to the pure-spec written value (`PC + 4`).
     -- JAL's rd dite has a compound condition (bit0/bit1/rd=0), so we go
@@ -233,7 +213,7 @@ theorem equiv_JAL_metaplan
                if_false, ite_false, bind, pure, EStateM.bind, EStateM.pure]
     rw [h_rd_val]
 
-/-- **Tier-1 metaplan: JAL without `h_rd_val` parameter** (finishing5 S5+S6).
+/-- **Tier-1 metaplan: JAL without `h_rd_val` parameter.**
 
     Companion to `equiv_JAL_metaplan` that drops the `h_rd_val :`
     OUTPUT-EQ residual parameter. Internally derives the rd-write
@@ -303,7 +283,7 @@ theorem equiv_JAL_metaplan_tier1
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_rd_mult h_rd_as
     h_not_throws h_success h_nextPC_option h_rd_idx h_rd_val
 
-/-- **Phase 5 V12 companion for JAL.** Drops `h_input_pc` and
+/-- **Bus-driven companion for JAL.** Drops `h_input_pc` and
     `h_input_rd` in favor of `h_bus : (bus_effect exec_row [e_rd] state).1`
     plus match hypotheses `h_pc` and `h_rd_ptr`. Uses
     `chip_bus_hyps_jump_rrw` + `readReg_of_readReg_succ`.
@@ -334,7 +314,7 @@ theorem equiv_JAL_metaplan_from_bus
     (h_success : (PureSpec.execute_JAL_pure jal_input).success = true)
     (h_nextPC_option :
       (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_pc, h_input_rd).
+    -- Bus precondition + ptr/value match (replaces h_input_pc, h_input_rd).
     (h_bus : (bus_effect exec_row [e_rd] state).1)
     (h_pc : jal_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e_rd.ptr)
@@ -406,10 +386,9 @@ theorem equiv_JAL_metaplan_bus_self
     h_rd_mult h_rd_as h_not_throws h_success h_nextPC_option
     h_bus rfl h_rd_ptr rfl h_rd_val
 
-/-! ## Phase 6 Track T fan-out: misaligned-target companions
+/-! ## Misaligned-target companions
 
-JAL fan-out of the BLT misaligned-target POC (commit 9345092). JAL is
-unconditional (no taken/not-taken case-split), so the misaligned cases
+JAL is unconditional (no taken/not-taken case-split), so the misaligned cases
 fire purely on the bits of `PC + sext imm`. Pure-spec encoding:
 * `bit0_valid := (...[0]! == 0#1)`, `bit1_valid := (...[1]! == 0#1)`.
 * `success := bit0_valid && bit1_valid`, `throws := !bit0_valid`.

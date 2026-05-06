@@ -15,8 +15,7 @@ import ZiskFv.Sail.BusEffect
 import ZiskFv.Tactics.StoreArchetype
 
 /-!
-End-to-end theorem for RV64 SB (store byte). `finishing3` S5b retired
-the the bus-execute-matches-sail premise parameter (mirror of SW/SH).
+End-to-end theorem for RV64 SB (store byte).
 -/
 
 namespace ZiskFv.Equivalence.StoreB
@@ -67,7 +66,7 @@ theorem equiv_SB_sail
   PureSpec.execute_STOREB_pure_equiv
     sb_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** `finishing3` S5b. -/
+/-- **Metaplan theorem.** -/
 theorem equiv_SB_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sb_input : PureSpec.SbInput)

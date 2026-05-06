@@ -7,7 +7,7 @@ import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Airs.Main
 
 /-!
-ZisK memory-bus schema and Main ↔ memory-bus projection for loads.
+ZisK memory-bus schema and Main ↔ memory-bus projections for loads/stores.
 
 The Memory bus (identifier `MEMORY_ID = 10`, `zisk/pil/opids.pil:12`)
 carries permutation entries of shape `[op, addr, mem_step, bytes, ...value]`
@@ -15,34 +15,9 @@ carries permutation entries of shape `[op, addr, mem_step, bytes, ...value]`
 source-b memory read (`main.pil:300`) and one per destination-c store
 (`main.pil:323`).
 
-For the first archetype that exercises this infrastructure — LD (A3) —
-we need to project the Main AIR's memory-read row into a
-`Interaction.MemoryBusEntry` and match against `bus_effect`'s memory-read
-branch at `BusEffect.lean:47-62`.
-
-**Scope note.** This module is the **A3 analogue** of
-`Airs/OperationBus.lean` (which handles the operation-bus match for
-ADD). It is intentionally lean: only the predicates the LD spec needs.
-A4 (SD) will extend it with a store-side `matches_memory_entry_store`
-symmetric projection. Full permutation-argument soundness is Phase 4 scope.
-
-**PIL-faithfulness.** The projection `memBus_row_Main_load_b` pins the
-`as`/`ptr`/`bytes` fields to the values the PIL constraint forces:
-
-* `as = 2` (memory) when `b_src_ind = 1` — per `main.pil:300-305` the
-  entry goes to the memory side (`as = 2`) when `b_src_ind` is set;
-* `ptr = b_offset_imm0 + b_src_ind * a[0]` — i.e. `addr1` from
-  `main.pil:192`. For LD, `b_offset_imm0 = imm` and `b_src_ind = 1`,
-  so `ptr = imm + a[0]`;
-* `bytes = 8` when `ind_width = 8` — per `main.pil:303`,
-  `bytes = b_src_ind * (ind_width - 8) + 8`. For LD's `ind_width = 8`,
-  this collapses to `8`;
-* `multiplicity = -1` — the read side (assume); Sail's state.mem
-  provides the value, ZisK's Main row pulls it.
-* Byte lanes `x0..x7` map to the Main row's `b[0]`/`b[1]` lanes via
-  their 8 constituent bytes. For compositional A3 we expose both
-  directly (the packed lemma in `Spec/LoadD.lean` bridges the 8-byte
-  lanes to `main_b_packed = b_0 + b_1 * 2^32`).
+This module projects the Main AIR's memory-read/write row into a
+`Interaction.MemoryBusEntry` and provides the predicates used to match
+against `bus_effect`'s memory branches (`BusEffect.lean:47-62`).
 -/
 
 namespace ZiskFv.Airs.MemoryBus
@@ -115,12 +90,8 @@ def matches_memory_entry (a b : MemoryBusEntry FGL) : Prop :=
 
     This is the compositional hypothesis that the ZisK PIL memory-bus
     `permutation_assumes` discharges (`state-machines/mem/pil/mem.pil:526`):
-    it asserts Main's `b[0]`/`b[1]` are the two 32-bit halves of the
-    `[op=LOAD, addr, mem_step, bytes=8, ...value]` entry on the bus.
-
-    For A3 we take this as a compositional hypothesis (same stance as
-    `matches_entry` for ADD in `Airs/OperationBus.lean`). Phase 4's
-    audit task is to derive it from a PIL-level bus-emission spec. -/
+    Main's `b[0]`/`b[1]` are the two 32-bit halves of the
+    `[op=LOAD, addr, mem_step, bytes=8, ...value]` entry on the bus. -/
 @[simp]
 def memory_load_lanes_match
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
@@ -130,12 +101,8 @@ def memory_load_lanes_match
 
 /-- **Register-write-back lane hypothesis for LD.** The Main row's
     `c` lanes are what the memory-bus register-write entry carries —
-    i.e. Main writes the loaded doubleword to register `rd` via
-    `store_reg` (`main.pil:316-319,323-328`).
-
-    For compositional A3 we pair this with the register-read hypothesis
-    from Sail (the caller supplies both ends). Phase 4 derives from the
-    memory SM's permutation-proves side. -/
+    Main writes the loaded doubleword to register `rd` via `store_reg`
+    (`main.pil:316-319,323-328`). -/
 @[simp]
 def register_write_lanes_match
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
@@ -143,7 +110,7 @@ def register_write_lanes_match
   m.c_0 row = memory_entry_lo e
   ∧ m.c_1 row = memory_entry_hi e
 
-/-! ## Store-side (A4 SD) projections.
+/-! ## Store-side (SD) projections.
 
 These predicates are the write-side mirror of `memory_load_lanes_match`.
 SD reads `b` from register rs2 (the value) and writes it to memory via
@@ -159,17 +126,12 @@ against `b` or `c`. We expose the `c`-side form (symmetric with LD's
     equal the low/high halves of the memory-bus *write* entry's packed
     8-byte store value.
 
-    This is the A4 symmetric analogue of `memory_load_lanes_match`:
+    Symmetric analogue of `memory_load_lanes_match`:
     * LD reads the memory entry (`mult = -1, as = 2`) and matches it
       against `b`;
     * SD writes the memory entry (`mult = 1, as = 2`) with the same
       lane-packing, matched against `c` (equivalently `b`, via
-      constraint 9/16).
-
-    For compositional A4 we take this as a hypothesis — the caller
-    supplies a `MemoryBusEntry` whose bytes spell the store value, and
-    we verify `c`'s lanes agree. Phase 4's audit task is to derive it
-    from the PIL memory-SM `permutation_proves` side. -/
+      constraint 9/16). -/
 @[simp]
 def memory_store_lanes_match
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
@@ -184,11 +146,10 @@ def memory_store_lanes_match
     predicate for the `b` lanes and is the direct analogue for instructions
     (e.g. LD, SD, JALR) that read rs1 from `a[0]`/`a[1]`.
 
-    For compositional proofs this is a hypothesis supplied by the Sail
-    side (Sail evaluates `rX_bits rs1` giving the 8-byte bus value);
     `register_read_rs1_lanes_match_of_bus_emission` in
-    `Airs/MemoryBus/LaneMatch.lean` promotes it to a theorem derived
-    from the structural bus-entry predicate `matches_memory_entry`. -/
+    `Airs/MemoryBus/LaneMatch.lean` promotes this from a hypothesis to
+    a theorem derived from the structural bus-entry predicate
+    `matches_memory_entry`. -/
 @[simp]
 def register_read_rs1_lanes_match
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
@@ -201,11 +162,7 @@ def register_read_rs1_lanes_match
     entry that provides the SD store value (`ptr = 4 * rs2,
     multiplicity = -1, as = 1`). Symmetric to LD's register-read-of-rs1;
     the load fetched *memory* into `b`, the store fetches *register rs2*
-    into `b`.
-
-    For compositional A4 this is a hypothesis supplied by the Sail
-    side (Sail evaluates `rX_bits rs2` giving the same 8 bytes); Phase
-    4 derives from PIL bus emission. -/
+    into `b`. -/
 @[simp]
 def register_read_rs2_lanes_match
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
@@ -289,19 +246,14 @@ def store_pc_lanes_match_hi
 
 /-! ## Bridge to `U64.toBV` for register-write values
 
-The Phase 4.5 A-rewire requires bridging from `memory_entry_toField`
-(field-level byte pack) to `U64.toBV` (`BitVec 64` register-write
-value). Under per-byte range hypotheses and a no-wrap bound, this is
-a direct consequence of `Fundamentals/PackedBitVec.lean`'s
-`u64_toBV_eq_ofNat_fgl_val`.
-
-Exposed here as the consumable form for A-rewire:
-`memory_entry_toField_eq_toBV_toNat` reduces the entry bytes'
-`U64.toBV` to `BitVec.ofNat 64 (memory_entry_toField e).val`. -/
+`memory_entry_toField_eq_toBV_toNat` bridges from
+`memory_entry_toField` (field-level byte pack) to `U64.toBV`
+(`BitVec 64` register-write value) under per-byte range hypotheses and
+a no-wrap bound. Direct consequence of
+`Fundamentals/PackedBitVec.lean`'s `u64_toBV_eq_ofNat_fgl_val`. -/
 
 /-- **Entry byte ranges.** Each of the 8 byte lanes of a memory-bus
-    entry has `.val < 256`. Phase 4 / the PIL range-checker bus
-    discharges this. -/
+    entry has `.val < 256` (discharged by the PIL range-check bus). -/
 @[simp]
 def memory_entry_bytes_in_range (e : MemoryBusEntry FGL) : Prop :=
   e.x0.val < 256 ∧ e.x1.val < 256 ∧ e.x2.val < 256 ∧ e.x3.val < 256
@@ -327,10 +279,7 @@ def memory_entry_packed_no_wrap (e : MemoryBusEntry FGL) : Prop :=
     `U64.toBV` (which coerces each `FGL` byte to `BitVec 8` via the
     `mod 256` instance) — produce the same `BitVec 64` as
     `BitVec.ofNat 64` applied to the field-level packed byte-sum's
-    `.val`.
-
-    This is the direct Phase 4.5 Bridge 3 application expressed at
-    the memory-bus-entry level. Consumed by A-rewire. -/
+    `.val`. -/
 lemma memory_entry_toField_eq_toBV_toNat
     (e : MemoryBusEntry FGL)
     (h_range : memory_entry_bytes_in_range e)

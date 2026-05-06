@@ -18,10 +18,10 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.RdValDerivation.BinaryCompare
 
 /-!
-End-to-end theorem for RV64 SLT (Phase 3C T-RT4). Mirrors
+End-to-end theorem for RV64 SLT. Mirrors
 `Equivalence.Sub` shape with `OP_SUB → OP_LT` and `rop.SUB → rop.SLT`.
 Consumes `PureSpec.execute_RTYPE_slt_pure_equiv` directly (C5 retired
-by Phase 4 T-SLT).
+by a future audit).
 -/
 
 namespace ZiskFv.Equivalence.Slt
@@ -90,7 +90,6 @@ theorem equiv_SLT_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : slt_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -116,7 +115,7 @@ theorem equiv_SLT_metaplan
   · simp only [h_rd_zero, ↓reduceDIte]
     rw [h_rd_val]
 
-/-- **Tier-1 metaplan: SLT without `h_rd_val` parameter** (finishing2 S5). -/
+/-- **Tier-1 metaplan: SLT without `h_rd_val` parameter**. -/
 theorem equiv_SLT_metaplan_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slt_input : PureSpec.SltInput)
@@ -222,7 +221,7 @@ theorem equiv_SLT_metaplan_tier1
     h_rd_idx h_rd_val
 
 
-/-- **Phase 5 V12 companion.** Drops `h_input_r1` / `h_input_r2` /
+/-- **Bus-precondition companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
     Delegates to `equiv_SLT_metaplan` after chip_bus_hyps + match composition.  -/
@@ -241,7 +240,6 @@ theorem equiv_SLT_metaplan_from_bus
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/r2/pc/rd).
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r1_val : slt_input.r1_val
@@ -253,7 +251,6 @@ theorem equiv_SLT_metaplan_from_bus
                     e1.x4, e1.x5, e1.x6, e1.x7])
     (h_pc : slt_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : slt_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -300,8 +297,7 @@ def SltInput_of_bus
     rd := Transpiler.wrap_to_regidx e2.ptr
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
-/-- **Item 4 closure for SLT.** Bus-derived input form: 
-    eliminates value-level match hyps via `SltInput_of_bus`. -/
+/-- **Bus-self form for SLT.** Eliminates value-level match hyps via `SltInput_of_bus`. -/
 theorem equiv_SLT_metaplan_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
@@ -316,12 +312,10 @@ theorem equiv_SLT_metaplan_bus_self
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/r2/pc/rd).
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r2_ptr : regidx_to_fin r2 = Transpiler.wrap_to_regidx e1.ptr)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]
@@ -342,7 +336,7 @@ theorem equiv_SLT_metaplan_bus_self
     h_bus h_r1_ptr rfl h_r2_ptr rfl rfl h_rd_ptr
     rfl h_rd_val
 
-/-- **Track Q ALU fan-out for SLT.** Op-bus companion to
+/-- **Op-bus companion for SLT.** Op-bus companion to
     `equiv_SLT_metaplan`: drops `h_input_r1` / `h_input_r2` in favour
     of a single op-bus precondition. Mirrors `equiv_ADD_metaplan_op_bus`. -/
 theorem equiv_SLT_metaplan_op_bus

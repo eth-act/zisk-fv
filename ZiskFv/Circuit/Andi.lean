@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ALUITypeArchetype
 
 /-!
-Compositional ANDI spec (Phase 3C T-IT). Thin specialization of
+Compositional ANDI spec. Thin specialization of
 `Tactics.ALUITypeArchetype` at `opcode_lit = OP_AND = 14`.
 -/
 

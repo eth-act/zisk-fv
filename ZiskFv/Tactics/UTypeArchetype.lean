@@ -6,7 +6,7 @@ import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 
 /-!
-**UTYPE archetype macros / generic lemmas** (Phase 3C Track T-U).
+**UTYPE archetype macros / generic lemmas.**
 
 Both RV64 UTYPE opcodes — LUI and AUIPC — are realized by a single
 Zisk microinstruction that is *internal* (`is_external_op = 0`), so
@@ -32,7 +32,7 @@ individually because their proof obligations differ:
   `next_pc = pc + jmp_offset2 + (jmp_offset1 - jmp_offset2)
          = pc + jmp_offset1 = pc + 4`.
 
-## Usage pattern (Phase 3C Track T-U1 / T-U2)
+## Usage pattern
 
 ```
 -- LUI:
@@ -47,8 +47,7 @@ theorem equiv_AUIPC_metaplan (...) := by
   -- ...
 ```
 
-No secondary-SM hypothesis is needed (no bus hop), which makes this
-archetype the simplest of the Phase 3C introductions. The store-value
+No secondary-SM hypothesis is needed (no bus hop). The store-value
 lemma is the load-bearing result: it gives the rd-write identity
 (`store_value[0] = imm` for LUI; `= pc + imm` for AUIPC) that the
 `Spec/LoadUpperImmediate.lean` / `Spec/AddUpperImmediatePC.lean`

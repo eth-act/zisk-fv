@@ -74,8 +74,8 @@ def load_subset_holds (m : Valid_Main C FGL FGL) (row : ℕ) (next_pc : FGL) : P
       halves of the 8-byte load-value entry).
 
     The caller supplies `entry` — the memory-bus entry for the LD's
-    memory read. Phase 2 parameterizes the existence of this entry;
-    Phase 4 audit derives it from the PIL memory-SM permutation. -/
+    memory read. Existence of this entry is parameterized; the audit
+    derives it from the PIL memory-SM permutation. -/
 @[simp]
 def load_d_circuit_holds
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)

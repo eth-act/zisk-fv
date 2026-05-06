@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ALUITypeArchetype
 
 /-!
-Compositional SLTI spec (Phase 3C T-IT). Thin specialization of
+Compositional SLTI spec. Thin specialization of
 `Tactics.ALUITypeArchetype` at `opcode_lit = OP_LT = 7` (shared with
 BLT / BGE / SLT; the same Binary-SM opcode computes signed `a < b`,
 with SLTI materializing the verdict into `c` via an immediate-form

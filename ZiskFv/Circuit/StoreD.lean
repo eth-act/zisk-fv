@@ -76,9 +76,9 @@ def main_row_in_sd_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
       low/high halves of the 8-byte store-value entry).
 
     The caller supplies `entry` — the memory-bus *write* entry for the
-    SD's memory write. Phase 2 parameterizes the existence of this
-    entry; Phase 4 audit derives it from the PIL memory-SM
-    `permutation_proves` side. -/
+    SD's memory write. Existence of this entry is parameterized; the
+    audit derives it from the PIL memory-SM `permutation_proves`
+    side. -/
 @[simp]
 def store_d_circuit_holds
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)

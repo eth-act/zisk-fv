@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ShiftArchetype
 
 /-!
-Compositional SRLW spec (Phase 2.5 D4f — `ShiftArchetype` validation).
+Compositional SRLW spec — `ShiftArchetype` instantiation.
 
 SRLW mirrors SLLW's Main-AIR row exactly (same `m32 = 1` bus path, same
 `is_external_op = 1` to the `BinaryExtension` SM) — only the `op` literal

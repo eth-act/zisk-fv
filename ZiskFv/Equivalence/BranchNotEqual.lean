@@ -14,7 +14,7 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 
 /-!
-End-to-end theorem for RV64 BNE (Phase 2.5 D4a). Combines:
+End-to-end theorem for RV64 BNE. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_BNE`),
@@ -22,9 +22,8 @@ End-to-end theorem for RV64 BNE (Phase 2.5 D4a). Combines:
   (`ZiskFv.Circuit.BranchNotEqual.branch_ne_compositional`, which is
   a thin wrapper over the archetype macro
   `BranchArchetype.branch_archetype_pc_dispatch` at `opcode_lit = OP_EQ`),
-* the Sail pure-function equivalence
-  (`PureSpec.execute_BNE_pure_equiv`, closed in `RV64D/bne.lean`
-  alongside the D4a instantiation),
+* the Sail pure-function equivalence (`PureSpec.execute_BNE_pure_equiv`,
+  closed in `RV64D/bne.lean`),
 
 into three theorems mirroring `Equivalence/BranchEqual.lean`:
 
@@ -36,12 +35,9 @@ into three theorems mirroring `Equivalence/BranchEqual.lean`:
   `execute_instruction (.BTYPE (imm, r2, r1, BNE)) state
     = (bus_effect exec_row mem_row state).2`.
 
-**Hypothesis-free bus side.** D3 closed bus-emission for shape (b) —
-externally-routed branches (BEQ and BNE share this shape). The metaplan
-theorem therefore does **not** require an `h_bus_execute_matches_sail`
-hypothesis; it discharges `bus_effect`'s reduction via
-`ZiskFv.Airs.BusEmission.bus_effect_matches_sail_beq` (reused verbatim
-— the shape lemma is opcode-agnostic within shape (b)).
+**Hypothesis-free bus side.** BEQ and BNE share shape (b) so the
+metaplan theorem reuses `bus_effect_matches_sail_beq` — the shape
+lemma is opcode-agnostic within shape (b).
 -/
 
 namespace ZiskFv.Equivalence.BranchNotEqual
@@ -107,25 +103,13 @@ theorem equiv_BNE_sail
   PureSpec.execute_BNE_pure_equiv bne_input imm r1 r2 h_input_imm h_input_r1 h_input_r2
     h_input_pc h_input_misa h_misa_c
 
-/-- **Metaplan theorem (Phase 2.5 D4a, D3 closed).**
+/-- **Metaplan theorem.**
 
     `execute_instruction` on an RV64 BNE equals the state computed by
     applying `bus_effect` to the circuit's execution and memory bus rows.
-
-    **D3 closed the bus-emission obligation for shape (b).** BEQ and
-    BNE share shape (b) — two execution-bus entries (pc read, nextpc
-    write), empty memory bus — so this theorem reuses
-    `bus_effect_matches_sail_beq` directly. No `h_bus_execute_matches_sail`
-    hypothesis.
-
-    **Hypotheses.**
-    * Sail side (from `equiv_BNE_sail`): register readability
-      (`h_input_r1`, `h_input_r2`), PC (`h_input_pc`), misa
-      (`h_input_misa`), and ZisK `misa[C] = 0` (`h_misa_c`).
-    * Bus structural: `h_exec_len`, multiplicities, pc match, and the
-      pure-spec's `throws = false` + `success = true` discharges. All
-      derivable from the PIL bus-emission spec; Phase 4 audit will
-      fold these into a single derivation. -/
+    BEQ and BNE share shape (b) — two execution-bus entries (pc read,
+    nextpc write), empty memory bus — so this theorem reuses
+    `bus_effect_matches_sail_beq` directly. -/
 theorem equiv_BNE_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bne_input : PureSpec.BneInput)
@@ -141,7 +125,7 @@ theorem equiv_BNE_metaplan
     (h_input_pc : state.regs.get? Register.PC = .some bne_input.PC)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Structural bus hypotheses (Phase 2.5 D3 shape (b)).
+    -- Structural bus hypotheses (shape (b)).
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -166,7 +150,7 @@ theorem equiv_BNE_metaplan
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
 
-/-- **Phase 5 V12 companion for BNE.** Drops `h_input_pc` via
+/-- **Bus-driven companion for BNE.** Drops `h_input_pc` via
     `chip_bus_hyps_branch_rrw` + `readReg_of_readReg_succ`. Other
     `h_input_*` stay — branch memory bus is empty, so rs1/rs2
     reads go via operation bus (not derivable from `h_bus` here). -/
@@ -184,10 +168,10 @@ theorem equiv_BNE_metaplan_from_bus
       = EStateM.Result.ok bne_input.r2_val state)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Phase 5 V12: bus precondition + PC match (replaces h_input_pc).
+    -- Bus precondition + PC match (replaces h_input_pc).
     (h_bus : (bus_effect exec_row [] state).1)
     (h_pc : bne_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
-    -- Structural bus hypotheses (Phase 2.5 D3 shape (b)).
+    -- Structural bus hypotheses (shape (b)).
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -232,9 +216,9 @@ theorem equiv_BNE_metaplan_bus_self
       = EStateM.Result.ok (BneInput_of_bus exec_row imm r1_val r2_val).r2_val state)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Phase 5 V12: bus precondition + PC match (replaces h_input_pc).
+    -- Bus precondition + PC match (replaces h_input_pc).
     (h_bus : (bus_effect exec_row [] state).1)
-    -- Structural bus hypotheses (Phase 2.5 D3 shape (b)).
+    -- Structural bus hypotheses (shape (b)).
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -286,7 +270,7 @@ theorem equiv_BNE_metaplan_op_bus
     -- Memory-bus precondition (PC read).
     (h_bus : (bus_effect exec_row [] state).1)
     (h_pc : bne_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
-    -- Structural bus hypotheses (Phase 2.5 D3 shape (b)).
+    -- Structural bus hypotheses (shape (b)).
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -309,10 +293,9 @@ theorem equiv_BNE_metaplan_op_bus
     h_bus h_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
-/-! ## Phase 6 Track T fan-out: misaligned-target companions
+/-! ## Misaligned-target companions
 
-BNE fan-out of the BLT misaligned-target POC (commit 9345092). Same
-shape as BEQ; case-split predicate is `h_taken : r1_val ≠ r2_val`
+Same shape as BEQ; case-split predicate is `h_taken : r1_val ≠ r2_val`
 (BNE taken on NOT-EQUAL — `skip = !(r1 != r2) = (r1 == r2) = false`). -/
 
 /-- **Misaligned-target companion (bit-1 case): Sail-side reduction.** -/

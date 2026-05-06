@@ -48,7 +48,7 @@ def main_row_in_beq_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     does not emit a `Valid_BinaryAdd` row — the bus hop goes to the
     full Binary SM for `eq`. We abstract the SM's flag-correctness
     guarantee as an externally-supplied hypothesis (`h_flag_correct`),
-    deferring the PIL-level derivation to Phase 4 audit. -/
+    deferring the PIL-level derivation to the audit. -/
 @[simp]
 def branch_eq_circuit_holds
     (m : Valid_Main C FGL FGL)

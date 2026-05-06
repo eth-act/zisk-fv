@@ -8,7 +8,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Circuit.Mul
 
 /-!
-**Arith archetype macros / generic lemmas** (Phase 2 A5-M).
+**Arith archetype macros / generic lemmas — MUL family.**
 
 The MUL family (MUL, MULH, MULHU, MULHSU) all share the same Zisk
 microinstruction shape — `create_register_op(..., <op_str>, 4)` at
@@ -28,8 +28,8 @@ per-opcode differences are:
   carry-chain constraints consume. From the compositional proof's
   perspective these are all uniform: the bus match + mode witnesses
   give Main's `c` = Arith's packed result; the Arith-internal
-  correctness (low vs. high half, signed vs. unsigned) is delegated to
-  Phase 4.
+  correctness (low vs. high half, signed vs. unsigned) is a separate
+  audit obligation.
 * The Sail-side `execute_MUL` match arm: RV64's `instruction.MUL`
   discriminant carries the `result_part` and `signed_rs1`/`signed_rs2`
   fields that dispatch in `execute_MUL_pure`. Per-opcode equivalence
@@ -41,7 +41,7 @@ lemma (`mul_archetype_bus_match`) parameterized by an `opcode_lit : FGL`.
 MUL currently uses `Spec.Mul.mul_compositional` directly; MULH / MULHU
 / MULHSU call `mul_archetype_bus_match` with their own `opcode_lit`.
 
-## Usage pattern for Phase 3 fan-out
+## Usage pattern
 
 ```
 -- MULH case (op = OP_MULH = 181):
@@ -53,16 +53,7 @@ theorem equiv_MULH_metaplan (...) := by
 
 The `mul_archetype_proof` tactic macro below is a convenience wrapper
 that produces the bus-match identity given a
-`mul_archetype_circuit_holds`-shaped hypothesis in scope, mirroring
-openvm-fv's `mul_proof` convenience and ZiskFv's `branch_archetype_proof`.
-
-## Minimalism note (same pattern as A1-M)
-
-Phase 2 A5 closes MUL with `Spec.Mul.mul_compositional` directly (no
-macro call). The macro here is the *delivery* of the archetype — it's
-what Phase 3's MULH / MULHU / MULHSU proofs consume. Keeping MUL's
-proof concrete while providing the macro at the same surface lets
-reviewers diff the two and confirm the macro generalizes correctly.
+`mul_archetype_circuit_holds`-shaped hypothesis in scope.
 -/
 
 namespace ZiskFv.Tactics.MulArchetype

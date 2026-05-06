@@ -12,7 +12,7 @@ import ZiskFv.Circuit.Add
 import ZiskFv.Circuit.Mul
 
 /-!
-**Phase 4.5 Package C — Bridge 2: Main ↔ Arith operand field composition.**
+**Bridge 2: Main ↔ Arith operand field composition.**
 
 Composes the bus-match (provided by `mul_circuit_holds`), Bridge 1
 (`Airs/Arith/Bridge1.lean`), and the carry-chain packed identity
@@ -33,8 +33,8 @@ lift, which is handled by Bridge 3 in `Fundamentals/PackedBitVec.lean`.
 This file is called "MulField" rather than extending `Spec.Mul` because
 it consumes circuit hypotheses that `Spec.Mul.mul_compositional`
 didn't: specifically the carry-chain constraints (6-8, 31-38) and
-constraint 46. Composing Phase 4.5 Bridges 1 + 2 is additive on top
-of the existing `mul_compositional` theorem.
+constraint 46. Composing Bridges 1 + 2 is additive on top of the
+existing `mul_compositional` theorem.
 
 DIV/REM analogues for `div_unsigned_field_correct` and
 `rem_unsigned_field_correct` are authored in-file — they follow the
@@ -147,7 +147,7 @@ lemma main_c_eq_chunks_mul
     MULHSU / signed MUL. For the unsigned-MUL opcodes (MULU, MULHU
     selected via opcode literal 0xb0/0xb1) these four witnesses are
     pinned to zero by the transpile contract and the `arith_table`
-    lookup; Phase 4.5 takes them as explicit proof inputs. -/
+    lookup; we take them as explicit proof inputs. -/
 theorem main_mul_unsigned_field_correct
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
     (r_main r_arith : ℕ)

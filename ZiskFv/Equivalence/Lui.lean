@@ -14,15 +14,14 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.RdValDerivation.JumpUType
 
 /-!
-End-to-end theorem for RV64 LUI (Phase 3C Track T-U1). Combines:
+End-to-end theorem for RV64 LUI. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_LUI`),
 * the compositional LUI spec
   (`ZiskFv.Circuit.LoadUpperImmediate.lui_pc_advance` +
   `lui_store_value_lo`/`_hi`),
-* the Sail pure-function equivalence
-  (`PureSpec.execute_LUI_pure_equiv`, closed Phase 3B),
+* the Sail pure-function equivalence (`PureSpec.execute_LUI_pure_equiv`),
 
 into a metaplan-shaped theorem:
 
@@ -87,27 +86,14 @@ theorem equiv_LUI_sail
   PureSpec.execute_LUI_pure_equiv lui_input imm rd
     h_input_imm h_input_rd h_input_pc
 
-/-- **Metaplan theorem.** The shape the original metaplan targets for
-    RV64 LUI: Sail's `execute_instruction` on an RV64 LUI equals the
-    state computed by applying `bus_effect` to the circuit's execution
-    and memory bus rows.
+/-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64 LUI
+    equals the state computed by applying `bus_effect` to the circuit's
+    execution and memory bus rows.
 
     Composes `equiv_LUI_sail` with the shape-(c) bus-matching lemma
-    `bus_effect_matches_sail_jump_rrw` (Phase 2.5 D3). LUI has no
-    throw/success branching — the pure spec unconditionally writes rd
-    (or skips for rd = x0) and advances PC — so no `h_success` /
-    `h_not_throws` hypotheses are needed.
-
-    **Hypotheses.**
-    * Sail side (from `equiv_LUI_sail`): PC readability (`h_input_pc`)
-      and input alignment (`h_input_imm`, `h_input_rd`).
-    * Bus side (structural, Phase-4-derivable): exec_row has two
-      entries (pc-read + nextPC-write) with the appropriate
-      multiplicities; `e_rd` is the single register-write entry for rd.
-    * `h_nextPC_option` pins the Sail pure-spec's `nextPC` output to
-      `nextPC_val`.
-    * `h_rd_match`: bridges the shape-(c) `if h :` output to the Sail
-      pure-spec `match rd`. -/
+    `bus_effect_matches_sail_jump_rrw`. LUI has no throw/success
+    branching — the pure spec unconditionally writes rd (or skips for
+    rd = x0) and advances PC. -/
 theorem equiv_LUI_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)
@@ -119,7 +105,7 @@ theorem equiv_LUI_metaplan
     (h_input_imm : lui_input.imm = imm)
     (h_input_rd : lui_input.rd = regidx_to_fin rd)
     (h_input_pc : state.regs.get? Register.PC = .some lui_input.PC)
-    -- Phase 2.5 D3: shape-(c) structural bus hypotheses.
+    -- Shape-(c) structural bus hypotheses.
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -129,7 +115,7 @@ theorem equiv_LUI_metaplan
     (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
     (h_nextPC_eq :
       (PureSpec.execute_LUI_pure lui_input).nextPC = nextPC_val)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : lui_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
     (h_rd_val :
       U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
@@ -206,7 +192,7 @@ theorem equiv_LUI_metaplan_tier1
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_rd_mult h_rd_as h_nextPC_eq h_rd_idx h_rd_val
 
-/-- **Phase 5 V12 companion for LUI.** Drops `h_input_pc` and
+/-- **Bus-driven companion for LUI.** Drops `h_input_pc` and
     `h_input_rd` via `chip_bus_hyps_jump_rrw` + `readReg_of_readReg_succ`.
     `h_input_imm` stays (not bus-derivable). -/
 theorem equiv_LUI_metaplan_from_bus
@@ -227,7 +213,7 @@ theorem equiv_LUI_metaplan_from_bus
     (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
     (h_nextPC_eq :
       (PureSpec.execute_LUI_pure lui_input).nextPC = nextPC_val)
-    -- Phase 5 V12: bus precondition + ptr/value match.
+    -- Bus precondition + ptr/value match.
     (h_bus : (bus_effect exec_row [e_rd] state).1)
     (h_pc : lui_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e_rd.ptr)

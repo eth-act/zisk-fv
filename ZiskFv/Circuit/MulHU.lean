@@ -9,7 +9,7 @@ import ZiskFv.Circuit.Mul
 import ZiskFv.Tactics.MulArchetype
 
 /-!
-Compositional MULHU spec (Phase 3A M1). MULHU differs from MUL only in:
+Compositional MULHU spec. MULHU differs from MUL only in:
 
 * the Zisk opcode literal (`OP_MULUH = 177` vs. `OP_MUL = 180`),
 * the Arith-side output lane (high 64 bits vs. low 64 bits of the 128-bit
@@ -22,7 +22,7 @@ This module instantiates `Tactics.MulArchetype.mul_archetype_bus_match` at
 `mulhu_compositional` that mirrors `Spec.MulH.mulh_compositional` verbatim
 from the compositional proof's perspective. As with MUL/MULH, the Arith-
 internal correctness (carry chains → `BitVec 64` high half of the
-unsigned product) is delegated to Phase 4.
+unsigned product) is delegated to the audit.
 -/
 
 namespace ZiskFv.Circuit.MulHU

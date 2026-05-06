@@ -15,11 +15,10 @@ import ZiskFv.Equivalence.RdValDerivation.Arith
 /-!
 # RdValDerivation.BinaryShift — Tier-1 `h_rd_val` discharges for SLL/SLLI/SRL/SRLI/SRA/SRAI/SRLW/SRLIW/SLLW/SLLIW/SRAW/SRAIW
 
-**finishing2.md S4 (N-ALU-Binary-Shift) plus finishing2.md G/G2 (W-mode
-shifts and arithmetic shifts).** Twelve Tier-1 lemmas covering the RV64I
-logical/arithmetic shift opcodes routed through ZisK's `BinaryExtension`
-AIR with full byte semantics in the trusted `BinaryExtensionTable.wf_SLL`
-/ `wf_SRL` / `wf_SRA` / `wf_SRL_W` / `wf_SLL_W` / `wf_SRA_W` clauses.
+Twelve Tier-1 lemmas covering the RV64I logical/arithmetic shift
+opcodes routed through ZisK's `BinaryExtension` AIR with full byte
+semantics in the trusted `BinaryExtensionTable.wf_SLL` / `wf_SRL` /
+`wf_SRA` / `wf_SRL_W` / `wf_SLL_W` / `wf_SRA_W` clauses.
 
 ## Architecture (Tier 1, fully circuit-derived)
 

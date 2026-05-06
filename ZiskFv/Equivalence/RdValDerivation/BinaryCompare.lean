@@ -19,9 +19,9 @@ import ZiskFv.Equivalence.RdValDerivation.Arith
 /-!
 # RdValDerivation.BinaryCompare — Tier-1 `h_rd_val` discharges for SLT/SLTU/SLTI/SLTIU
 
-**finishing2.md J (N-ALU-Binary-Compare).** Four Tier-1 lemmas covering
-the RV64I signed/unsigned compare opcodes routed through ZisK's `Binary`
-AIR with `OP_LT` (signed) or `OP_LTU` (unsigned).
+Four Tier-1 lemmas covering the RV64I signed/unsigned compare opcodes
+routed through ZisK's `Binary` AIR with `OP_LT` (signed) or `OP_LTU`
+(unsigned).
 
 ## Architecture (Tier 1, fully circuit-derived)
 

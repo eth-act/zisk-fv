@@ -16,7 +16,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.RdValDerivation.Arith
 
 /-!
-End-to-end theorem for RV64 ADDI (Phase 3C T-IT).
+End-to-end theorem for RV64 ADDI.
 
 Mirrors `Equivalence.Sub` / `Equivalence.And` shape with
 `rop.<OP> → iop.ADDI` on the Sail side and `OP_SUB/AND → OP_ADD`
@@ -26,11 +26,9 @@ is transpiler-internal; the Main-AIR row carries the sign-extended
 
 **Bus-shape note (inherited from SLLI precedent).** The metaplan
 hypotheses still take three memory-bus entries `[e0, e1, e2]` even
-though an ITYPE microinstruction reads only one register. The
-Phase 3A H-track chose to keep the `bus_effect_matches_sail_alu_rrw`
-interface uniform for all register-write ALU ops; a Phase 4 audit
-either justifies the second read as redundant or introduces a
-dedicated 1-read-1-write bus-emission lemma.
+though an ITYPE microinstruction reads only one register, to keep
+the `bus_effect_matches_sail_alu_rrw` interface uniform for all
+register-write ALU ops.
 -/
 
 namespace ZiskFv.Equivalence.Addi
@@ -107,7 +105,7 @@ theorem equiv_ADDI_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : addi_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -138,7 +136,7 @@ theorem equiv_ADDI_metaplan
     OUTPUT-EQ parameter is **derived internally** via the
     `RdValDerivation.Arith.h_rd_val_arith_addi` discharge lemma, which
     composes `Spec/Addi::addi_compositional_with_binaryadd` with K1-A's
-    `binary_add_chunks_eq_bv_add` + the Wave B.5 toolkit. -/
+    `binary_add_chunks_eq_bv_add`. -/
 theorem equiv_ADDI_metaplan_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addi_input : PureSpec.AddiInput)
@@ -200,7 +198,7 @@ theorem equiv_ADDI_metaplan_tier1
     h_rd_idx h_rd_val
 
 
-/-- **Phase 5 V12 companion.** Drops `h_input_r1` / `h_input_r2` /
+/-- **Bus-driven companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
     Delegates to `equiv_ADDI_metaplan` after chip_bus_hyps + match composition.  -/
@@ -220,7 +218,7 @@ theorem equiv_ADDI_metaplan_from_bus
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/pc/rd).
+    -- Bus precondition + ptr/value match (replaces h_input_r1/pc/rd).
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r1_val : addi_input.r1_val
@@ -228,7 +226,7 @@ theorem equiv_ADDI_metaplan_from_bus
                     e0.x4, e0.x5, e0.x6, e0.x7])
     (h_pc : addi_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : addi_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -287,11 +285,11 @@ theorem equiv_ADDI_metaplan_bus_self
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/pc/rd).
+    -- Bus precondition + ptr/value match (replaces h_input_r1/pc/rd).
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]

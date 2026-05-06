@@ -14,13 +14,12 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 
 /-!
-End-to-end theorem for RV64 BLTU (Phase 3A B3). Combines:
+End-to-end theorem for RV64 BLTU. Combines:
 
 * `ZiskFv.Trusted.transpile_BLTU`,
 * `ZiskFv.Circuit.BranchLessThanUnsigned.branch_ltu_compositional`
   (archetype at `opcode_lit = OP_LTU`),
-* `PureSpec.execute_BLTU_pure_equiv` (direct proof — Phase 4
-  retired C2c).
+* `PureSpec.execute_BLTU_pure_equiv`.
 
 Shape (b) bus — reuses `bus_effect_matches_sail_beq`.
 -/
@@ -77,7 +76,7 @@ theorem equiv_BLTU_sail
   PureSpec.execute_BLTU_pure_equiv bltu_input imm r1 r2 h_input_imm h_input_r1 h_input_r2
     h_input_pc h_input_misa h_misa_c
 
-/-- **Metaplan theorem (Phase 3A B3).** -/
+/-- **Metaplan theorem.** -/
 theorem equiv_BLTU_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bltu_input : PureSpec.BltuInput)
@@ -115,7 +114,7 @@ theorem equiv_BLTU_metaplan
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
 
-/-- **Phase 5 V12 companion for BLTU.** Drops `h_input_pc` via
+/-- **Bus-driven companion for BLTU.** Drops `h_input_pc` via
     `chip_bus_hyps_branch_rrw` + `readReg_of_readReg_succ`. Other
     `h_input_*` stay — branch memory bus is empty, so rs1/rs2
     reads go via operation bus (not derivable from `h_bus` here). -/
@@ -133,7 +132,7 @@ theorem equiv_BLTU_metaplan_from_bus
       = EStateM.Result.ok bltu_input.r2_val state)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Phase 5 V12: bus precondition + PC match (replaces h_input_pc).
+    -- Bus precondition + PC match (replaces h_input_pc).
     (h_bus : (bus_effect exec_row [] state).1)
     (h_pc : bltu_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_exec_len : exec_row.length = 2)
@@ -180,7 +179,7 @@ theorem equiv_BLTU_metaplan_bus_self
       = EStateM.Result.ok (BltuInput_of_bus exec_row imm r1_val r2_val).r2_val state)
     (h_input_misa : state.regs.get? Register.misa = .some misa_val)
     (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Phase 5 V12: bus precondition + PC match (replaces h_input_pc).
+    -- Bus precondition + PC match (replaces h_input_pc).
     (h_bus : (bus_effect exec_row [] state).1)
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
@@ -246,10 +245,9 @@ theorem equiv_BLTU_metaplan_op_bus
     h_bus h_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success
 
-/-! ## Phase 6 Track T fan-out: misaligned-target companions
+/-! ## Misaligned-target companions
 
-BLTU fan-out of the BLT misaligned-target POC (commit 9345092). Same
-shape as BLT; case-split predicate is `h_taken : r1.toNat < r2.toNat`
+Same shape as BLT; case-split predicate is `h_taken : r1.toNat < r2.toNat`
 (BLTU taken on unsigned less-than). -/
 
 /-- **Misaligned-target companion (bit-1 case): Sail-side reduction.** -/

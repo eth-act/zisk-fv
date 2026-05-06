@@ -11,9 +11,9 @@ import ZiskFv.Tactics.LoadArchetype
 /-!
 Compositional LHU (load halfword, unsigned / zero-extended) spec.
 
-Phase 3A L3 — sibling validation of the **A3 LoadArchetype** on LHU
-(the 2-byte zero-extension load). Shares nearly all infrastructure with
-LD (`Spec/LoadD.lean`) and LWU (`Spec/LoadWU.lean`):
+Sibling of LD / LWU under the **`LoadArchetype`** macro for LHU
+(the 2-byte zero-extension load). Shares nearly all infrastructure
+with LD (`Spec/LoadD.lean`) and LWU (`Spec/LoadWU.lean`):
 
 * Same Main-row mode (`is_external_op = 0, op = OP_COPYB = 1, m32 = 0,
   set_pc = 0, store_pc = 0`) — LHU uses the same ZisK `copyb` internal
@@ -27,7 +27,7 @@ The LHU-specific addition is **`memory_entry_high_bytes_zero_hu`**: a
 hypothesis that the memory-bus entry's high 6 byte lanes (x2..x7) are
 zero. ZisK's Memory SM pads the unused high bytes with zero when
 `ind_width < 8`; we take this as a compositional hypothesis here (the
-Phase 3+ audit will derive it from the memory-SM permutation-proves).
+audit derives it from the memory-SM permutation-proves).
 
 With the zeroing hypothesis, `memory_entry_toField entry` collapses to
 the 16-bit value at x0/x1, matching Sail's zero-extension semantics for
@@ -54,8 +54,8 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     for any `ind_width = 2` load (LHU) because ZisK's Memory SM zero-pads
     the unused high bytes of the 8-byte memory-bus entry.
 
-    Phase 3+ derives this from the memory-SM `permutation_proves`; here
-    it is a compositional hypothesis. -/
+    The audit derives this from the memory-SM `permutation_proves`;
+    here it is a compositional hypothesis. -/
 @[simp]
 def memory_entry_high_bytes_zero_hu (e : MemoryBusEntry FGL) : Prop :=
   e.x2 = 0 ∧ e.x3 = 0 ∧ e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0

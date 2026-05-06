@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.UTypeArchetype
 
 /-!
-Compositional LUI spec (Phase 3C Track T-U1).
+Compositional LUI spec.
 
 LUI has no secondary state-machine hop — the whole microinstruction is
 handled by the Main AIR alone (internal `copyb` routing). Given the
@@ -18,8 +18,7 @@ equals `pc + jmp_offset2 = pc + 4`, and the store-value (rd) lanes
 equal `(b_0, b_1) = (imm_lo, imm_hi)`.
 
 This module wraps `Tactics.UTypeArchetype.lui_archetype_*` at the
-`Spec/<Family>.lean` convention so reviewers see the archetype applied
-at the same per-opcode layer that Phase 1's Spec files occupy.
+per-opcode layer so reviewers see the archetype applied here.
 -/
 
 namespace ZiskFv.Circuit.LoadUpperImmediate

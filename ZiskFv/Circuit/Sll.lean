@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ShiftArchetype
 
 /-!
-Compositional SLL spec (Phase 3A H1 — `ShiftArchetype` m32=0 instantiation).
+Compositional SLL spec — `ShiftArchetype` m32=0 instantiation.
 
 SLL is the 64-bit sibling of SLLW. They differ only in:
 * the Zisk opcode literal (`OP_SLL = 33` vs `OP_SLL_W = 36`);

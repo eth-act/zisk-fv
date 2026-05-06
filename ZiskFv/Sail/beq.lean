@@ -51,9 +51,9 @@ namespace PureSpec
       `nextPC`, (b) raises `Assertion`/`Memory_Exception` on misaligned
       targets, and (c) retires otherwise.
 
-      Closed via `jump_to_equiv` (now available post-Phase 1.5: the
-      `misa[C] = 0` hypothesis is threaded from the `h_input_misa`
-      assumption). The structure follows the RV32 sibling
+      Closed via `jump_to_equiv`: the `misa[C] = 0` hypothesis is
+      threaded from the `h_input_misa` assumption. The structure follows
+      the RV32 sibling
       `OpenvmFv/RV32D/beq.lean` one-for-one, with the RV32→RV64 width
       adjustments (`signExtend 32 → signExtend 64`). -/
   lemma execute_BEQ_pure_equiv

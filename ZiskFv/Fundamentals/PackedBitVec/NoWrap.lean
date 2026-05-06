@@ -5,17 +5,11 @@ import ZiskFv.Fundamentals.Goldilocks
 /-!
 **Goldilocks FGL ↔ ℕ no-wrap toolkit.**
 
-Wave B reconnaissance (`ai_plans/finishing1.md`) found that every
-Tier-1 upgrade attempt re-derived the same tactical chain: cast both
-sides of an FGL equation into `((nat : ℕ) : FGL)` form via
-`push_cast; ring`, lift to `Fin GL_prime` via `congr_arg Fin.val`,
-strip the `% GL_prime` via `Fin.val_natCast`, and close by `omega`
-under per-side `< GL_prime` bounds.
-
-This file factors that chain so it can be reused per-archetype
-without each agent rebuilding the framing. K1-A's `carry_chain_0_nat`
-(`Airs/Binary/BinaryAddPackedCorrect.lean:95-125`) is the working
-template the toolkit abstracts.
+Factors the recurring tactical chain: cast both sides of an FGL
+equation into `((nat : ℕ) : FGL)` form via `push_cast; ring`, lift to
+`Fin GL_prime` via `congr_arg Fin.val`, strip the `% GL_prime` via
+`Fin.val_natCast`, and close by `omega` under per-side `< GL_prime`
+bounds.
 
 **Scope:** additive packings only — 2 × 32-bit lanes (Main / bus
 entry layout) and 4 × 16-bit chunks (Arith / BinaryAdd layout).
@@ -25,9 +19,9 @@ where the operand product can exceed `GL_prime`) and signed
 chunk-level carry-chain reasoning that doesn't factor through a
 single packed-`.val` lemma.
 
-**Worked example:** see `_example_carry_chain_lifts_via_toolkit` at
-the bottom of the file. It shows the 5-line proof template the
-toolkit enables.
+The example at the bottom of the file demonstrates the canonical
+5-line template (`push_cast; ring` casts, `rw`, `fgl_eq_to_nat_eq`,
+omega).
 -/
 
 namespace ZiskFv.PackedBitVec.NoWrap
@@ -40,8 +34,7 @@ open Goldilocks
 casts are equal in `FGL`, and both are below `GL_prime`, conclude
 they're equal in ℕ.
 
-This is the abstract form of K1-A's `carry_chain_0_nat` framing:
-once a caller has pushed an FGL equation through `push_cast; ring`
+Once a caller has pushed an FGL equation through `push_cast; ring`
 into `((lhs:ℕ):FGL) = ((rhs:ℕ):FGL)`, this lemma closes the lift to
 `lhs = rhs : ℕ` provided per-side range bounds. -/
 theorem fgl_eq_to_nat_eq
@@ -85,24 +78,19 @@ theorem fgl_packed_4_chunks_natCast (c₀ c₁ c₂ c₃ : FGL) :
   push_cast
   ring
 
-/-! ## Worked example — TDD test that the toolkit composes
+/-! ## Worked example — toolkit usability check
 
-The body below mirrors K1-A's `carry_chain_0_nat` but built **only**
-from the toolkit. It demonstrates the 5-line template:
+Demonstrates the 5-line template:
 
   1. Get an FGL equation `f_lhs = f_rhs` from the circuit.
   2. Use a `*_natCast` helper to cast `f_lhs` into `((nat_lhs : ℕ) : FGL)`.
   3. Same for `f_rhs`.
   4. `rw` both into the FGL equation.
-  5. Close via `fgl_eq_to_nat_eq` with per-side bounds.
+  5. Close via `fgl_eq_to_nat_eq` with per-side bounds. -/
 
-If this lemma compiles, the toolkit is usable for additive carry
-chains. -/
-
-/-- **Toolkit usability test.** Given the same hypothesis shape as
-K1-A's low-lane carry chain — an FGL equation between two specific
-2/3-term sums, plus per-term range bounds — derive the corresponding
-ℕ equality. The proof uses only this file's exports. -/
+/-- **Toolkit usability test.** Given an FGL equation between two
+specific 2/3-term sums plus per-term range bounds, derive the
+corresponding ℕ equality. -/
 example
     (a₀ b₀ k₀ c₁ c₀ : FGL)
     (h_fgl : a₀ + b₀ = k₀ * 4294967296 + c₁ * 65536 + c₀)

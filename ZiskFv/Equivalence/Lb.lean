@@ -15,8 +15,8 @@ import ZiskFv.Sail.BusEffect
 
 /-!
 End-to-end theorem for RV64 LB (load byte, signed / sign-extended).
-`finishing3` S5b retired the the bus-execute-matches-sail premise parameter
-in favour of structural bus hypotheses + `mem_load_correct_1byte`.
+Uses structural bus hypotheses + `mem_load_correct_1byte` rather than
+a monolithic bus-execute-matches-sail premise.
 -/
 
 namespace ZiskFv.Equivalence.Lb
@@ -71,7 +71,7 @@ theorem equiv_LB_sail
   PureSpec.execute_LOADB_pure_equiv
     lb_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** `finishing3` S5b. -/
+/-- **Metaplan theorem.** -/
 theorem equiv_LB_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lb_input : PureSpec.LbInput)

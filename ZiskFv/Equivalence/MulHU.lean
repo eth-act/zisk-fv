@@ -18,25 +18,13 @@ import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned
 
 /-!
-End-to-end theorem for RV64 MULHU (Phase 3A M1). Mirrors
-`Equivalence.MulH` with:
+End-to-end theorem for RV64 MULHU. Mirrors `Equivalence.MulH` with:
 
 * `transpile_MULHU` (opcode 177) in place of `transpile_MULH` (opcode 181);
 * `PureSpec.execute_MULH_mulhu_pure` / `execute_MULH_mulhu_pure_equiv`
-  in place of their MULH (`_mulh_`) counterparts — MULHU's Sail-pure
-  output is `execute_MUL_pure r1 r2 .MULHU` (unsigned × unsigned, high
-  64 bits);
-* `mulhu_compositional` (MULHU's instantiation of the archetype
-  bus-match) in place of `mulh_compositional`.
-
-Three metaplan-shaped theorems as per the MULH template:
-
-* `equiv_MULHU` — circuit-level.
-* `equiv_MULHU_sail` — Sail-level.
-* `equiv_MULHU_metaplan` — metaplan target shape, discharged via
-  `bus_effect_matches_sail_alu_rrw` (shape (a), RTYPE — MULHU reuses
-  this shape verbatim from MUL/MULH; D3 closed `h_bus_execute_matches_
-  sail` for shape (a), so it is **not** a hypothesis here).
+  in place of their MULH counterparts — MULHU's Sail-pure output is
+  `execute_MUL_pure r1 r2 .MULHU` (unsigned × unsigned, high 64 bits);
+* `mulhu_compositional` in place of `mulh_compositional`.
 -/
 
 namespace ZiskFv.Equivalence.MulHU
@@ -51,13 +39,9 @@ open ZiskFv.Circuit.MulHU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Circuit-level MULHU theorem (Phase 3A M1).** Main's packed `c`
-    equals Arith's packed result lanes, given the MULHU circuit-holds
-    hypothesis. Wraps `Spec.MulHU.mulhu_compositional`. The lifting
-    from this field identity to `BitVec 64` MULHU semantics is
-    parameterized in `equiv_MULHU_metaplan` via structural bus
-    hypotheses and an Arith-correctness obligation delegated to
-    Phase 4. -/
+/-- **Circuit-level MULHU theorem.** Main's packed `c` equals Arith's
+    packed result lanes, given the MULHU circuit-holds hypothesis.
+    Wraps `Spec.MulHU.mulhu_compositional`. -/
 theorem equiv_MULHU
     (_rs1 _rs2 _rd : Fin 32) (_state : RV64State)
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
@@ -100,14 +84,12 @@ theorem equiv_MULHU_sail
   PureSpec.execute_MULH_mulhu_pure_equiv
     mulhu_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
-/-- **Metaplan theorem (Phase 3A M1).** Sail's `execute_instruction` on
-    an RV64 MULHU equals the state computed by applying `bus_effect` to
-    the circuit's execution and memory bus rows.
+/-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64 MULHU
+    equals the state computed by applying `bus_effect` to the
+    circuit's execution and memory bus rows.
 
     Composes `equiv_MULHU_sail` with shape-(a) bus-matching. MULHU
-    reuses MUL's register-read + register-read + register-write shape,
-    so this theorem **does not** carry an `h_bus_execute_matches_sail`
-    hypothesis (Phase 2.5 D3 closed shape (a)). -/
+    reuses MUL's register-read + register-read + register-write shape. -/
 theorem equiv_MULHU_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhu_input : PureSpec.MulhuInput)
@@ -120,7 +102,6 @@ theorem equiv_MULHU_metaplan
       = EStateM.Result.ok mulhu_input.r2_val state)
     (h_input_rd : mulhu_input.rd = regidx_to_fin rd)
     (h_input_pc : state.regs.get? Register.PC = .some mulhu_input.PC)
-    -- Phase 2.5 D3: structural bus hypotheses (Phase-4 derivable).
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -130,7 +111,6 @@ theorem equiv_MULHU_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : mulhu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -159,7 +139,7 @@ theorem equiv_MULHU_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: MULHU without `h_rd_val` parameter** (finishing4 S4).
+/-- **Tier-1 metaplan: MULHU without `h_rd_val` parameter.**
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mulhu`, then forwards
     to `equiv_MULHU_metaplan`. -/
@@ -185,7 +165,6 @@ theorem equiv_MULHU_metaplan_tier1
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : mulhu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Tier-1 discharge parameters.
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL)
     (cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
     (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
@@ -250,17 +229,16 @@ theorem equiv_MULHU_metaplan_tier1
     h_rd_idx h_rd_val
 
 
-/-- **Phase 5 V12 companion.** Drops `h_input_r1` / `h_input_r2` /
+/-- **Bus-precondition companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
-    Delegates to `equiv_MULHU_metaplan` after chip_bus_hyps + match composition.  -/
+    Delegates to `equiv_MULHU_metaplan` after chip_bus_hyps + match composition. -/
 theorem equiv_MULHU_metaplan_from_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhu_input : PureSpec.MulhuInput)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    -- Phase 2.5 D3: structural bus hypotheses (Phase-4 derivable).
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -270,7 +248,6 @@ theorem equiv_MULHU_metaplan_from_bus
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/r2/pc/rd).
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r1_val : mulhu_input.r1_val
@@ -282,7 +259,6 @@ theorem equiv_MULHU_metaplan_from_bus
                     e1.x4, e1.x5, e1.x6, e1.x7])
     (h_pc : mulhu_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : mulhu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -333,14 +309,12 @@ def MulhuInput_of_bus
     rd := Transpiler.wrap_to_regidx e2.ptr
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
-/-- **Item 4 closure for MULHU.** Bus-derived input form: 
-    eliminates value-level match hyps via `MulhuInput_of_bus`. -/
+/-- Bus-derived input form, eliminating value-level match hyps via `MulhuInput_of_bus`. -/
 theorem equiv_MULHU_metaplan_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    -- Phase 2.5 D3: structural bus hypotheses (Phase-4 derivable).
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -350,12 +324,10 @@ theorem equiv_MULHU_metaplan_bus_self
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/r2/pc/rd).
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r2_ptr : regidx_to_fin r2 = Transpiler.wrap_to_regidx e1.ptr)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]
@@ -380,9 +352,8 @@ theorem equiv_MULHU_metaplan_bus_self
     h_bus h_r1_ptr rfl h_r2_ptr rfl rfl h_rd_ptr
     rfl h_rd_val
 
-/-- **Track Q ALU/MUL/DIV fan-out for MULHU.** Op-bus companion to
-    `equiv_MULHU_metaplan`: drops `h_input_r1` / `h_input_r2` in
-    favour of an op-bus precondition. Mirrors
+/-- **Op-bus companion to `equiv_MULHU_metaplan`.** Drops `h_input_r1` /
+    `h_input_r2` in favour of an op-bus precondition. Mirrors
     `equiv_ADD_metaplan_op_bus`. -/
 theorem equiv_MULHU_metaplan_op_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -400,7 +371,6 @@ theorem equiv_MULHU_metaplan_op_bus
       mulhu_input.r2_val = Goldilocks.lanes_to_bv64 op_entry.b_lo op_entry.b_hi)
     (h_input_rd : mulhu_input.rd = regidx_to_fin rd)
     (h_input_pc : state.regs.get? Register.PC = .some mulhu_input.PC)
-    -- Phase 2.5 D3: structural bus hypotheses (Phase-4 derivable).
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -410,7 +380,6 @@ theorem equiv_MULHU_metaplan_op_bus
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : mulhu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,

@@ -15,7 +15,6 @@ import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
 
 /-!
 End-to-end theorem for RV64M REMUW (unsigned 32-bit divide).
-Phase 5 follow-on Track J2.
 
 REMUW is the W-variant sibling of DIVU. Both transpile through
 `create_register_op` with `m32 = 1` for the 32-bit width. Sail-side,
@@ -24,7 +23,7 @@ both call `execute_REMW` with `is_unsigned = true`.
 Three theorems mirroring the DIVU pattern (shape-(a) — ALU/Arith bus):
 
 * `equiv_REMUW` — circuit-level (defined in terms of m.a/b lanes via
-  `transpile_REMUW` per the Phase 5 axiom shape).
+  `transpile_REMUW`).
 * `equiv_REMUW_sail` — Sail-level wrapper for
   `execute_DIVREM_remuw_pure_equiv`.
 * `equiv_REMUW_metaplan` — metaplan-target shape composing
@@ -192,8 +191,7 @@ def RemuwInput_of_bus
     rd := Transpiler.wrap_to_regidx e2.ptr
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
-/-- **Item 4 closure for REMUW.** Bus-derived input form: 
-    eliminates value-level match hyps via `RemuwInput_of_bus`. -/
+/-- **Bus-self form for REMUW.** Eliminates value-level match hyps via `RemuwInput_of_bus`. -/
 theorem equiv_REMUW_metaplan_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
@@ -236,7 +234,7 @@ theorem equiv_REMUW_metaplan_bus_self
     h_bus h_r1_ptr rfl h_r2_ptr rfl rfl h_rd_ptr
     rfl h_rd_val
 
-/-- **Track Q ALU/MUL/DIV fan-out for REMUW.** Op-bus companion to
+/-- **Op-bus companion for REMUW.** Op-bus companion to
     `equiv_REMUW_metaplan`: drops `h_input_r1` / `h_input_r2` in
     favour of an op-bus precondition. Mirrors
     `equiv_ADD_metaplan_op_bus`. -/
@@ -292,7 +290,7 @@ theorem equiv_REMUW_metaplan_op_bus
     rw [h_b_match]; exact h_r2_read
   exact equiv_REMUW_metaplan state remuw_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
-/-- **Tier-1 metaplan: REMUW without `h_rd_val` parameter** (finishing4 S4-signed).
+/-- **Tier-1 metaplan: REMUW without `h_rd_val` parameter**.
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_remuw`. -/
 theorem equiv_REMUW_metaplan_tier1

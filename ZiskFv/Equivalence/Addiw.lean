@@ -19,7 +19,7 @@ import ZiskFv.Equivalence.RdValDerivation.Arith
 import ZiskFv.Equivalence.RdValDerivation.SailBridge
 
 /-!
-End-to-end theorem for RV64 ADDIW (Phase 3C T-W). Sibling of
+End-to-end theorem for RV64 ADDIW. Sibling of
 `Equivalence.Addw` for the immediate-source variant.
 
 Mirrors `Equivalence.ShiftLI` for SLLIW's single-reg-plus-imm shape,
@@ -45,7 +45,7 @@ open ZiskFv.Tactics.RTypeWArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Circuit-level ADDIW theorem (Phase 3C T-W).** Main's packed
+/-- **Circuit-level ADDIW theorem.** Main's packed
     `c` equals the bus entry's packed `c` lanes. Wraps
     `Spec.Addiw.addiw_compositional`. -/
 theorem equiv_ADDIW
@@ -84,7 +84,7 @@ theorem equiv_ADDIW_sail
   PureSpec.execute_ITYPE_addiw_pure_equiv
     addiw_input r1 rd h_input_r1 h_input_imm h_input_rd h_input_pc
 
-/-- **Metaplan theorem (Phase 3C T-W).** Sail's `execute_instruction`
+/-- **Metaplan theorem.** Sail's `execute_instruction`
     on an RV64 ADDIW equals `(bus_effect exec_row mem_row state).2`.
     Shape (a) — same bus skeleton as SLLIW. -/
 theorem equiv_ADDIW_metaplan
@@ -107,7 +107,7 @@ theorem equiv_ADDIW_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : addiw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -132,7 +132,7 @@ theorem equiv_ADDIW_metaplan
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- **Tier-1 metaplan: ADDIW without `h_rd_val` parameter** (finishing2 S5). -/
+/-- **Tier-1 metaplan: ADDIW without `h_rd_val` parameter.** -/
 theorem equiv_ADDIW_metaplan_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addiw_input : PureSpec.AddiwInput)
@@ -235,7 +235,7 @@ theorem equiv_ADDIW_metaplan_tier1
     h_rd_idx h_rd_val
 
 
-/-- **Phase 5 V12 companion.** Drops `h_input_r1` / `h_input_r2` /
+/-- **Bus-driven companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
     Delegates to `equiv_ADDIW_metaplan` after chip_bus_hyps + match composition.  -/
@@ -255,7 +255,7 @@ theorem equiv_ADDIW_metaplan_from_bus
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/pc/rd).
+    -- Bus precondition + ptr/value match (replaces h_input_r1/pc/rd).
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r1_val : addiw_input.r1_val
@@ -263,7 +263,7 @@ theorem equiv_ADDIW_metaplan_from_bus
                     e0.x4, e0.x5, e0.x6, e0.x7])
     (h_pc : addiw_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : addiw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -322,11 +322,11 @@ theorem equiv_ADDIW_metaplan_bus_self
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/pc/rd).
+    -- Bus precondition + ptr/value match (replaces h_input_r1/pc/rd).
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]
@@ -375,7 +375,7 @@ theorem equiv_ADDIW_metaplan_op_bus
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : addiw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,

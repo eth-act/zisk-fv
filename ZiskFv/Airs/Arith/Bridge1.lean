@@ -7,7 +7,7 @@ import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
 
 /-!
-**Phase 4.5 Package C — Bridge 1: constraint-46 normalization.**
+**Bridge 1: constraint-46 normalization.**
 
 Arith's `bus_res1` (stage-1 column 40) is the range-checked high-32
 witness column emitted on the operation bus. PIL constraint 46
@@ -21,7 +21,7 @@ bus_res1 = sext * 0xFFFF_FFFF
                         + main_div                   * (a[2] + a[3]*65536) )
 ```
 
-For the three unsigned modes of Phase 4.5 Track A interest:
+For the three unsigned modes:
 
 * **MUL-unsigned** (`sext = 0, m32 = 0, main_mul = 1, main_div = 0`):
   `bus_res1 = c[2] + c[3] * 65536` — the high 16 + 16 bits of the
@@ -35,14 +35,12 @@ For the three unsigned modes of Phase 4.5 Track A interest:
   so `secondary = 1`): `bus_res1 = d[2] + d[3] * 65536` — the high
   half of the remainder.
 
-These three specializations, combined with the carry-chain identity
-in `Airs/Arith/CarryChain.lean` and the packed-correct theorems in
+These specializations, combined with the carry-chain identity in
+`Airs/Arith/CarryChain.lean` and the packed-correct theorems in
 `Airs/Arith/{Mul,Div}.lean`, let us rewrite `arith_c_packed` from
-`Spec/Mul.lean` (and the DIV/REM analogues in `Spec/{Div,Divu,Rem,
-Remu}.lean`) as the named-chunk packing `c_chunks_packed`, bridging
-the "bus-projection" form to the "polynomial-identity" form. This is
-Bridge 1 of three in the Package C closure roadmap at
-`docs/fv/package-c-residuals.md`.
+`Spec/Mul.lean` (and the DIV/REM analogues) as the named-chunk packing
+`c_chunks_packed`, bridging the "bus-projection" form to the
+"polynomial-identity" form.
 -/
 
 namespace ZiskFv.Airs.ArithBridge1

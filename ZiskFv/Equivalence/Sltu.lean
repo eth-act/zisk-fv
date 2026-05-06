@@ -17,10 +17,10 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.RdValDerivation.BinaryCompare
 
 /-!
-End-to-end theorem for RV64 SLTU (Phase 3C T-RT5). Mirrors
+End-to-end theorem for RV64 SLTU. Mirrors
 `Equivalence.Slt` with `OP_LT → OP_LTU` and `rop.SLT → rop.SLTU`.
 Consumes `PureSpec.execute_RTYPE_sltu_pure_equiv` directly (C6
-retired by Phase 4 T-SLT).
+retired by a future audit).
 -/
 
 namespace ZiskFv.Equivalence.Sltu
@@ -89,7 +89,6 @@ theorem equiv_SLTU_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : sltu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -115,7 +114,7 @@ theorem equiv_SLTU_metaplan
   · simp only [h_rd_zero, ↓reduceDIte]
     rw [h_rd_val]
 
-/-- **Tier-1 metaplan: SLTU without `h_rd_val` parameter** (finishing2 S5). -/
+/-- **Tier-1 metaplan: SLTU without `h_rd_val` parameter**. -/
 theorem equiv_SLTU_metaplan_tier1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sltu_input : PureSpec.SltuInput)
@@ -239,7 +238,7 @@ theorem equiv_SLTU_metaplan_tier1
     h_rd_idx h_rd_val
 
 
-/-- **Phase 5 V12 companion.** Drops `h_input_r1` / `h_input_r2` /
+/-- **Bus-precondition companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
     Delegates to `equiv_SLTU_metaplan` after chip_bus_hyps + match composition.  -/
@@ -258,7 +257,6 @@ theorem equiv_SLTU_metaplan_from_bus
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/r2/pc/rd).
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r1_val : sltu_input.r1_val
@@ -270,7 +268,6 @@ theorem equiv_SLTU_metaplan_from_bus
                     e1.x4, e1.x5, e1.x6, e1.x7])
     (h_pc : sltu_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : sltu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -317,8 +314,7 @@ def SltuInput_of_bus
     rd := Transpiler.wrap_to_regidx e2.ptr
     PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
 
-/-- **Item 4 closure for SLTU.** Bus-derived input form: 
-    eliminates value-level match hyps via `SltuInput_of_bus`. -/
+/-- **Bus-self form for SLTU.** Eliminates value-level match hyps via `SltuInput_of_bus`. -/
 theorem equiv_SLTU_metaplan_bus_self
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1 r2 rd : regidx)
@@ -333,12 +329,10 @@ theorem equiv_SLTU_metaplan_bus_self
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/r2/pc/rd).
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r2_ptr : regidx_to_fin r2 = Transpiler.wrap_to_regidx e1.ptr)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]
@@ -359,7 +353,7 @@ theorem equiv_SLTU_metaplan_bus_self
     h_bus h_r1_ptr rfl h_r2_ptr rfl rfl h_rd_ptr
     rfl h_rd_val
 
-/-- **Track Q ALU fan-out for SLTU.** Op-bus companion to
+/-- **Op-bus companion for SLTU.** Op-bus companion to
     `equiv_SLTU_metaplan`: drops `h_input_r1` / `h_input_r2` in favour
     of a single op-bus precondition. Mirrors `equiv_ADD_metaplan_op_bus`. -/
 theorem equiv_SLTU_metaplan_op_bus

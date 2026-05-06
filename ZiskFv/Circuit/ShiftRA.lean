@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ShiftArchetype
 
 /-!
-Compositional SRAW spec (Phase 3A H2a — `ShiftArchetype` sibling of SLLW/SRLW).
+Compositional SRAW spec — `ShiftArchetype` sibling of SLLW/SRLW.
 
 SRAW mirrors SLLW/SRLW's Main-AIR row exactly (same `m32 = 1` bus path, same
 `is_external_op = 1` to the `BinaryExtension` SM) — only the `op` literal

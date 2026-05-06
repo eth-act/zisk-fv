@@ -6,13 +6,8 @@ import Extraction.BinaryAdd
 
 /-!
 Named-column mirror of the extracted ZisK `BinaryAdd` AIR, plus
-`constraint_N_of_extraction` iff-lemmas bridging each named predicate back to
-`BinaryAdd.extraction.constraint_N_every_row`.
-
-Mirrors `openvm-fv/OpenvmFv/Airs/Alu/BaseAluCoreAir.lean`. We write the
-structure by hand rather than via `#define_subair` because Phase 1 only needs
-the projection layer — not the full AIR-instance machinery that the macro
-builds out.
+`constraint_N_of_extraction` iff-lemmas bridging each named predicate
+back to `BinaryAdd.extraction.constraint_N_every_row`.
 -/
 
 namespace ZiskFv.Airs.BinaryAdd

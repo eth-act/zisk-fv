@@ -51,8 +51,7 @@ namespace PureSpec
     i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat < OpenVM_address_space_size ∧
     (2 : ℤ) ∣ i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat
 
-  -- LHU Sail-equivalence. Phase 3.5 promotion via P1-P3. Sibling of M3
-  -- (LWU) narrowed to width = 2.
+  -- LHU Sail-equivalence. Sibling of LWU narrowed to width = 2.
   set_option maxHeartbeats 0 in
   lemma execute_LOADHU_pure_equiv
     (input : LhuInput)

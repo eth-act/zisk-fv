@@ -16,9 +16,8 @@ true)` extracts low 32 bits of `rs1`/`rs2`, treats them as unsigned,
 divides (with `-1` on zero-divisor), then sign-extends the 32-bit
 quotient to 64 bits (per RV64 spec for the *W variants).
 
-The Sail equivalence is now *proved* (Phase 6 Track R) using the
-`execute_DIVW'` refactor in `Fundamentals/Execution.lean`. No
-remaining axioms.
+The Sail equivalence is proved using the `execute_DIVW'` refactor in
+`Fundamentals/Execution.lean`.
 -/
 
 namespace PureSpec

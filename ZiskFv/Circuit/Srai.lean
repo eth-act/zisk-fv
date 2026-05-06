@@ -7,9 +7,9 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ShiftArchetype
 
 /-!
-Compositional SRAI spec (Phase 3A H6 — `ShiftArchetype` m32=0
-immediate sibling of SRA). Structurally identical to `Spec.Sra`;
-see `Spec.Slli` for why SRA and SRAI share their Zisk opcode.
+Compositional SRAI spec — `ShiftArchetype` m32=0 immediate sibling
+of SRA. Structurally identical to `Spec.Sra`; see `Spec.Slli` for
+why SRA and SRAI share their Zisk opcode.
 -/
 
 namespace ZiskFv.Circuit.Srai

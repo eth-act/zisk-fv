@@ -8,7 +8,7 @@ import ZiskFv.Tactics.BranchArchetype
 
 /-!
 Compositional BLT (branch-if-less-than, signed) spec — **instantiation
-of the `BranchArchetype` macro** at `opcode_lit = OP_LT` (Phase 3A B1).
+of the `BranchArchetype` macro** at `opcode_lit = OP_LT`.
 
 BLT differs from BEQ only in the Zisk opcode literal: BLT uses
 `OP_LT = 7` (signed less-than), BEQ uses `OP_EQ = 9` (equality). At

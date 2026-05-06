@@ -8,7 +8,7 @@ import ZiskFv.Tactics.BranchArchetype
 
 /-!
 Compositional BNE (branch-not-equal) spec — **instantiation of the
-`BranchArchetype` macro** (Phase 2.5 D4a).
+`BranchArchetype` macro**.
 
 BNE differs from BEQ only in the flag-dispatch polarity. At the ZisK
 microinstruction level, BNE uses the *same* Zisk opcode as BEQ

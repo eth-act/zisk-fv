@@ -21,10 +21,10 @@ constraints 8/15 (internal-op=0 zeroes c) and 17 (internal-op=0 sets
 flag) are non-trivial and together force `flag = 1` and `c = 0`. No
 operation-bus hop is emitted.
 
-This is the A2 archetype spec. JALR will differ by `set_pc = 1` and
+This is the A2 archetype spec. JALR differs by `set_pc = 1` and
 `c[0]` (from rs1 via the operation bus) driving next-pc.
 
-## finishing5 S3 — bus-emission lo/hi BitVec bridges
+## Bus-emission lo/hi BitVec bridges
 
 The two theorems `jal_store_value_lo_bv` / `jal_store_value_hi_bv`
 extend `jal_store_value` (which ties the Main columns
@@ -32,7 +32,7 @@ extend `jal_store_value` (which ties the Main columns
 the **memory-bus entry** lanes via the `store_pc_lanes_match_*`
 predicates from `Airs/MemoryBus.lean`, composed with the wide-PC
 no-wrap toolkit (`Fundamentals/PackedBitVec/WidePCNoWrap.lean`) and
-the `transpile_PC_for_JAL` axiom (S1).
+the `transpile_PC_for_JAL` axiom.
 
 The hi-half is structurally trivial under JAL's `store_pc = 1` mode:
 the PIL formula `(1 - store_pc) * c_1` collapses to `0`, so
@@ -118,7 +118,7 @@ theorem jal_store_value
   rw [h_c0, h_store_pc]
   ring
 
-/-! ## finishing5 S3 — bus-emission BitVec bridges -/
+/-! ## Bus-emission BitVec bridges -/
 
 /-- **JAL rd-write lo half (BitVec form).** The memory-bus entry's
     lo-half lane carries `(PC + 4)` modulo `2^32`. Composed from:
@@ -134,8 +134,8 @@ theorem jal_store_value
        bound on the FGL sum, the FGL `(pc_fgl + 4).val` equals
        `(PC + 4).toNat` modulo `2^32` directly (no outer-mod on LHS).
 
-    The strict form is the right shape for downstream consumers — it
-    matches `JumpUType.lean`'s `h_pc_fgl_lo_nat` parameter exactly. The
+    The strict form matches the downstream consumer
+    (`JumpUType.lean`'s lo-half input) directly. The
     `h_lo_bound : (m.pc + 4).val < 2^32` hypothesis is realistic for
     ELF-loaded ZisK programs (ROM `pc : bits(32)` invariant). -/
 theorem jal_store_value_lo_bv
@@ -178,8 +178,7 @@ theorem jal_store_value_lo_bv
     (immediate from the ROM `pc < 2^32` invariant for ELF-loaded
     programs).
 
-    This is the substantive bridge that S5 will plug into JumpUType's
-    `h_entry_hi_nat` parameter. -/
+    Plugged into JumpUType's hi-entry input by the equivalence layer. -/
 theorem jal_store_value_hi_bv
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (PC : BitVec 64) (e : MemoryBusEntry FGL)

@@ -15,7 +15,6 @@ import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
 
 /-!
 End-to-end theorem for RV64M DIVUW (unsigned 32-bit divide).
-Phase 5 follow-on Track J2.
 
 DIVUW is the W-variant sibling of DIVU. Both transpile through
 `create_register_op` with `m32 = 1` for the 32-bit width. Sail-side,
@@ -24,13 +23,13 @@ both call `execute_DIVW` with `is_unsigned = true`.
 Three theorems mirroring the DIVU pattern (shape-(a) — ALU/Arith bus):
 
 * `equiv_DIVUW` — circuit-level (defined in terms of m.a/b lanes via
-  `transpile_DIVUW` per the Phase 5 axiom shape).
+  `transpile_DIVUW`).
 * `equiv_DIVUW_sail` — Sail-level wrapper for
   `execute_DIVREM_divuw_pure_equiv`.
 * `equiv_DIVUW_metaplan` — metaplan-target shape composing
   Sail + bus-effect via `bus_effect_matches_sail_alu_rrw`.
 
-Plus V12 companion `equiv_DIVUW_metaplan_from_bus`.
+Plus bus-driven companion `equiv_DIVUW_metaplan_from_bus`.
 -/
 
 namespace ZiskFv.Equivalence.Divuw
@@ -292,7 +291,7 @@ theorem equiv_DIVUW_metaplan_op_bus
     rw [h_b_match]; exact h_r2_read
   exact equiv_DIVUW_metaplan state divuw_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
-/-- **Tier-1 metaplan: DIVUW without `h_rd_val` parameter** (finishing4 S4-signed).
+/-- **Tier-1 metaplan: DIVUW without `h_rd_val` parameter.**
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_divuw`. -/
 theorem equiv_DIVUW_metaplan_tier1

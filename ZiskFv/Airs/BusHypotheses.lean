@@ -7,18 +7,17 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Sail.BusEffect
 
 /-!
-# BusHypotheses — Sail-side input-state derivation (Phase 5 Track G)
+# BusHypotheses — Sail-side input-state derivation
 
-Partner module to `Airs/BusEmission.lean`. Where `BusEmission.lean` reduces
-the `bus_effect`'s **output state** (`.2`) to the Sail monadic block the
-pure-spec writes, this module extracts the `bus_effect`'s **precondition**
-(`.1`) — a conjunction of `read_xreg` / `Sail.readReg` equalities about
-the Sail state.
+Partner module to `Airs/BusEmission.lean`. Where `BusEmission.lean`
+reduces `bus_effect`'s **output state** (`.2`) to the Sail monadic block
+the pure-spec writes, this module extracts `bus_effect`'s
+**precondition** (`.1`) — a conjunction of `read_xreg` / `Sail.readReg`
+equalities about the Sail state.
 
-The key observation: looking at `bus_effect`'s definition in
-`RV64D/BusEffect.lean`, when the execution bus has the standard two-entry
-shape and the memory bus carries ordered register / memory reads, the
-`.1` field accumulates exactly the equalities
+When the execution bus has the standard two-entry shape and the memory
+bus carries ordered register/memory reads, the `.1` field accumulates
+exactly the equalities
 
 ```
 Sail.readReg Register.PC state = .ok <pc from exec_row[0]> state
@@ -26,16 +25,10 @@ read_xreg (wrap_to_regidx e_read.ptr) state
   = .ok (U64.toBV #v[e_read.x0, …, e_read.x7]) state
 ```
 
-These are exactly the `h_input_r1`/`h_input_r2`/`h_input_pc` parameters
-every `equiv_<OP>_metaplan` theorem inherits from Phase 1.5. The `chip_bus_hyps_<SHAPE>`
-lemmas below let metaplan theorems drop those as separate
-parameters: a single `h_bus_cond : (bus_effect exec_row mem_row state).1`
-hypothesis plus the structural bus properties split into the individual
-read equalities.
-
-This is the openvm-fv Gap 1 closure: their `Equivalence/Mul.lean:492-537`
-`chip_bus_hypotheses` plays the identical role against
-`Valid_VmAirWrapper`'s `bus_effect`.
+The `chip_bus_hyps_<SHAPE>` lemmas let metaplan theorems consume a
+single `h_bus_cond : (bus_effect exec_row mem_row state).1` hypothesis
+plus structural bus properties and split it into the individual read
+equalities.
 
 Five lemmas, one per bus-entry shape ZisK's Main AIR emits:
 

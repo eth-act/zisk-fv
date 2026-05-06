@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.RTypeWArchetype
 
 /-!
-Compositional ADDIW spec (Phase 3C T-W).
+Compositional ADDIW spec.
 
 Thin specialization of `Tactics.RTypeWArchetype` at
 `opcode_lit = OP_ADD_W = 26`, `m32 = 1` — the **same** bus-literal

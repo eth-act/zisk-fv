@@ -6,13 +6,13 @@ import ZiskFv.Fundamentals.PackedBitVec.Signed
 import ZiskFv.Fundamentals.Execution
 
 /-!
-**finishing4 S2 — Signed BitVec.toInt no-wrap toolkit (companion to S1).**
+**Signed BitVec.toInt no-wrap toolkit.**
 
-This file is the **byte-level signed bridge** that composes with:
+Byte-level signed bridge that composes with:
 
-* `Fundamentals/PackedBitVec/Signed.lean` (K4) — sign-bit case analysis
+* `Fundamentals/PackedBitVec/Signed.lean` — sign-bit case analysis
   for `BitVec.toInt`, the chunk decomposition, and `int_tdiv_overflow_case`.
-* `Fundamentals/PackedBitVec/MulNoWrap.lean` (S1, parallel author) —
+* `Fundamentals/PackedBitVec/MulNoWrap.lean` —
   multiplicative ℕ-level chunk-pack / no-wrap identities.
 
 to give Tier-1 discharge of `h_byte_sum` parameters in
@@ -26,8 +26,8 @@ The signed multiplicative archetype lives at the intersection of:
 1. **Field-level identity** (`Spec/MulFieldSigned`, `Spec/DivFieldSigned`):
    four-quadrant signed identity in FGL.
 2. **Sign witnesses** (`na, nb, np, nr : FGL` ∈ {0, 1}) — pinned to
-   operand sign bits by Track P's `arith_table` permutation lookup.
-3. **ℕ-level identity** (S1's `MulNoWrap`): no-wrap lift of the FGL
+   operand sign bits by the `arith_table` permutation lookup.
+3. **ℕ-level identity** (`MulNoWrap`): no-wrap lift of the FGL
    carry chain to ℕ.
 4. **Sign lift** (this file): from `(1 - 2 * na) * a_abs` over ℕ to
    `BitVec.toInt`-form signed multiplication; INT_MIN / -1 overflow.
@@ -38,8 +38,7 @@ The signed multiplicative archetype lives at the intersection of:
   - `int_sign_of_bool` — `(1 - 2 * (b : ℤ)) ∈ {-1, +1}` for `b ∈ {0, 1}`.
   - `fgl_sign_witness_int_cast` — `na : FGL` with `na ∈ {0, 1}` casts
     to `(na.val : ℤ) ∈ {0, 1}`.
-* **High-half MUL Sail unfoldings** (parallel to K3's
-  `execute_MUL_pure_lo_eq` / `execute_MUL_pure_hi_eq`):
+* **High-half MUL Sail unfoldings**:
   - `execute_MUL_pure_mulh_eq` — `.MULH` as `BitVec.ofInt 64 ((toInt * toInt) >> 64)`-style.
   - `execute_MUL_pure_mulhsu_eq` — `.MULHSU` as the mixed signed/unsigned form.
 * **INT_MIN / -1 overflow**:
@@ -69,19 +68,6 @@ The signed multiplicative archetype lives at the intersection of:
 These are all **pure-math** lemmas (no AIR-specific assumptions). They
 trust only `Fundamentals/Execution.lean`'s definitions of
 `execute_MUL_pure` and `execute_DIV_REM_pure`.
-
-## Worked example — composing with S1
-
-The Tier-1 caller's pattern for MULH:
-
-```
-  -- 1) From Spec/MulFieldSigned + arith_table_*: signed FGL identity holds.
-  -- 2) From S1's MulNoWrap: lift to ℕ identity:
-  --      (a_signed_abs : ℕ) * (b_signed_abs : ℕ)
-  --      = (c_lo_nat : ℕ) + (d_hi_nat : ℕ) * 2^64
-  -- 3) From this file's `mulh_bv64_of_byte_sum`: discharge
-  --      U64.toBV [bytes] = execute_MUL_pure r1 r2 .MULH
-```
 -/
 
 set_option maxHeartbeats 800000
@@ -127,8 +113,8 @@ lemma fgl_sign_witness_int_cast {na : FGL} (h : na = 0 ∨ na = 1) :
 
 /-! ## Part 2 — high-half MUL Sail unfoldings (signed variants)
 
-Parallel to K3's `execute_MUL_pure_lo_eq` / `execute_MUL_pure_hi_eq`,
-but for the signed Sail flavors:
+Parallel to `Extensions.lean`'s `execute_MUL_pure_lo_eq` /
+`execute_MUL_pure_hi_eq`, but for the signed Sail flavors:
 
 * `.MULH`   — `(toInt * toInt) >> 64`
 * `.MULHSU` — `(toInt * toNat) >> 64`
@@ -354,7 +340,7 @@ lemma bv_signExtend_64_32_toNat (v : BitVec 32) :
 
 /-! ## Part 6 — signed multiplicative ℕ → BitVec.toInt lift
 
-The Tier-1 caller has, post S1, a ℕ-level identity of the shape
+The Tier-1 caller has a ℕ-level identity of the shape
 `(c_lo_nat : ℕ) + (d_hi_nat : ℕ) * 2^64 = a_abs_nat * b_abs_nat`
 where `a_abs_nat = if a.msb then 2^64 - a.toNat else a.toNat` and
 similarly for `b_abs_nat`. The signed identity lifts this to
@@ -408,7 +394,7 @@ Final discharge lemmas: given byte ranges + a byte-sum hypothesis
 matching the BitVec.toInt-form high-half, conclude the BitVec equality
 matching `execute_MUL_pure ... .MULH` / `.MULHSU`.
 
-The shape mirrors K3's `mul_lo_bv64_of_byte_sum` /
+The shape mirrors `Extensions.lean`'s `mul_lo_bv64_of_byte_sum` /
 `mul_hi_bv64_of_byte_sum` but uses `BitVec.ofInt` modular reduction.
 -/
 
@@ -416,7 +402,7 @@ The shape mirrors K3's `mul_lo_bv64_of_byte_sum` /
     equals `((op1.toInt * op2.toInt) / 2^64).toNat % 2^64`, the
     `U64.toBV [bytes]` equals `execute_MUL_pure op1 op2 .MULH`.
 
-    Caller pattern: post-S1, the sign-witness arithmetic gives an ℤ
+    Caller pattern: the sign-witness arithmetic gives an ℤ
     identity. Convert to the modular ℕ form via
     `(Int.toNat ∘ Int.emod ∘ ...)` and feed into `h_byte_sum`. -/
 theorem mulh_bv64_of_byte_sum

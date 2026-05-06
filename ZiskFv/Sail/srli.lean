@@ -2,7 +2,7 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Fundamentals.Execution
 
 /-!
-RV64 SRLI (shift-right-logical-immediate). Phase 3A H5 sibling of SRL.
+RV64 SRLI (shift-right-logical-immediate). Sibling of SRL.
 
 Full 64-bit logical right shift by a 6-bit immediate shamt. Proof
 shape identical to SLLI with `sop.SLLI` swapped for `sop.SRLI`.

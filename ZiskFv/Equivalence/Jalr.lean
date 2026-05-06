@@ -17,8 +17,7 @@ import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Equivalence.RdValDerivation.JumpUType
 
 /-!
-End-to-end theorem for RV64 JALR (Phase 2.5 D4 archetype-macro
-validation). Combines:
+End-to-end theorem for RV64 JALR. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_JALR`),
@@ -34,12 +33,10 @@ into a metaplan-shaped theorem:
   `execute_instruction (.JALR (imm, rs1, rd)) state
     = (bus_effect exec_row mem_row state).2`.
 
-Like JAL's metaplan (Phase 2.5 D3 shape (c)), the JALR metaplan
-theorem is **not** parameterized on `h_bus_execute_matches_sail` — the
-bus-matching hypothesis is discharged internally via
-`bus_effect_matches_sail_jump_rrw`, which handles any "two-exec-entry
-+ one-rd-write-mem-entry" shape. JALR emits exactly that shape under
-the archetype-validation contract in `transpile_JALR`
+Like JAL's metaplan (shape (c)), the bus-matching is discharged
+internally via `bus_effect_matches_sail_jump_rrw`, which handles any
+"two-exec-entry + one-rd-write-mem-entry" shape. JALR emits exactly
+that shape under the archetype-validation contract in `transpile_JALR`
 (internal-copyb, `store_pc = 1`, no operation-bus hop).
 -/
 
@@ -69,8 +66,8 @@ theorem equiv_JALR
     next_pc = m.b_0 r_main + m.jmp_offset1 r_main :=
   jalr_pc_advance m r_main next_pc h_circuit
 
-/-- **Closed-form circuit-level JALR theorem.** Phase 2.5 D2 eliminated
-    the `next_pc : FGL` parameter by deriving it from the extracted
+/-- **Closed-form circuit-level JALR theorem.** Eliminates the
+    `next_pc : FGL` parameter by deriving it from the extracted
     closed-form `pc_handshake` (Main constraint 20) via
     `pc_handshake_to_next_pc`. The caller supplies instead:
 
@@ -152,28 +149,15 @@ theorem equiv_JALR_sail
     h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
     h_cur_privilege h_mseccfg
 
-/-- **Metaplan theorem.** The shape the original metaplan targets for
-    RV64 JALR: Sail's `execute_instruction` on an RV64 JALR equals the
-    state computed by applying `bus_effect` to the circuit's execution
-    and memory bus rows.
+/-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64 JALR
+    equals the state computed by applying `bus_effect` to the circuit's
+    execution and memory bus rows.
 
     Composes `equiv_JALR_sail` with the shape-(c) bus-matching lemma
-    `bus_effect_matches_sail_jump_rrw` (Phase 2.5 D3). Unlike JAL, JALR
-    does **not** raise `Assertion` on a misaligned target (its jump
-    argument is pre-masked), so the `throws = false` path is trivially
-    inhabited — no `h_not_throws` hypothesis is needed.
-
-    **Hypotheses.**
-    * Sail side (from `equiv_JALR_sail`): register readability for rs1
-      (`h_input_rs1`), PC (`h_input_pc`), misa (`h_input_misa`), and
-      privilege/mseccfg witnesses.
-    * Bus side (structural, Phase-4-derivable): exec_row has two
-      entries (pc-read + nextPC-write) with the appropriate
-      multiplicities; `e_rd` is the single register-write entry for rd.
-    * Happy-path witness: `h_success` (no JALR alignment fault).
-    * `h_nextPC_option` / `h_rd_match`: relate the Sail pure-spec's
-      rd/nextPC outputs to the bus-emitted values (shape-(c) closes
-      these assuming a PIL bus-emission spec). -/
+    `bus_effect_matches_sail_jump_rrw`. Unlike JAL, JALR does **not**
+    raise `Assertion` on a misaligned target (its jump argument is
+    pre-masked), so the `throws = false` path is trivially inhabited —
+    no `h_not_throws` hypothesis is needed. -/
 theorem equiv_JALR_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jalr_input : PureSpec.JalrInput)
@@ -195,7 +179,7 @@ theorem equiv_JALR_metaplan
       = EStateM.Result.ok Privilege.Machine state)
     (h_mseccfg : Sail.readReg Register.mseccfg state
       = EStateM.Result.ok mseccfg state)
-    -- Phase 2.5 D3: shape-(c) structural bus hypotheses.
+    -- Shape-(c) structural bus hypotheses.
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -208,7 +192,7 @@ theorem equiv_JALR_metaplan
     (h_success : (PureSpec.execute_JALR_pure jalr_input).success = true)
     (h_nextPC_option :
       (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     -- JALR's rd dite has a compound condition (bit1/rd=0), so we bridge
     -- the bit-validity disjunct via the happy-path `h_success` hypothesis.
     (h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
@@ -246,7 +230,7 @@ theorem equiv_JALR_metaplan
                bind, pure, EStateM.bind, EStateM.pure]
     rw [h_rd_val]
 
-/-- **Tier-1 metaplan: JALR without `h_rd_val` parameter** (finishing5 S5+S6).
+/-- **Tier-1 metaplan: JALR without `h_rd_val` parameter.**
 
     Companion to `equiv_JALR_metaplan` that drops the `h_rd_val :`
     OUTPUT-EQ residual parameter. Internally derives the rd-write
@@ -320,7 +304,7 @@ theorem equiv_JALR_metaplan_tier1
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_rd_mult h_rd_as h_success h_nextPC_option h_rd_idx h_rd_val
 
-/-- **Phase 5 V12 companion for JALR.** Drops `h_input_pc` and
+/-- **Bus-driven companion for JALR.** Drops `h_input_pc` and
     `h_input_rd` via `chip_bus_hyps_jump_rrw` + `readReg_of_readReg_succ`.
     `h_input_rs1` stays (rs1 read is routed via operation bus for JALR,
     not the memory bus). Other stateful hyps (misa, cur_privilege,
@@ -355,7 +339,7 @@ theorem equiv_JALR_metaplan_from_bus
     (h_success : (PureSpec.execute_JALR_pure jalr_input).success = true)
     (h_nextPC_option :
       (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_pc, h_input_rd).
+    -- Bus precondition + ptr/value match (replaces h_input_pc, h_input_rd).
     (h_bus : (bus_effect exec_row [e_rd] state).1)
     (h_pc : jalr_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e_rd.ptr)
@@ -521,10 +505,9 @@ theorem equiv_JALR_metaplan_op_bus
     h_rd_mult h_rd_as h_success h_nextPC_option
     h_bus h_pc h_rd_ptr h_rd_idx h_rd_val
 
-/-! ## Phase 6 Track T fan-out: misaligned-target companion
+/-! ## Misaligned-target companion
 
-JALR fan-out of the BLT misaligned-target POC (commit 9345092). JALR
-differs from JAL at the alignment-check boundary: its jump argument
+JALR differs from JAL at the alignment-check boundary: its jump argument
 is pre-masked via `Sail.BitVec.update target 0 0#1`, which clears
 bit-0 silently. Hence:
 

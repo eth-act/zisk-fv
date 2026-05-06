@@ -10,12 +10,9 @@ import ZiskFv.Fundamentals.Execution
 /-!
 # RdValDerivation.MulDivRemSigned — `h_rd_val` discharge lemmas (signed MUL/DIV/REM)
 
-**finishing4 S3 Tier-1 upgrade.**
-
 Each lemma in this file is **Tier 1**: it derives the `h_rd_val` conclusion
-from circuit-constraint-shaped primitives. The earlier Tier-2 `h_byte_sum`
-parameter (an OUTPUT-EQ shape — `byte-sum = (execute_*_pure ...).toNat`)
-has been retired in favor of:
+from circuit-constraint-shaped primitives. The Tier-2 `h_byte_sum`
+OUTPUT-EQ parameter is retired in favor of:
 
 * **MULH / MULHSU** — operand-arithmetic byte-sum hypotheses tying the
   bus entry's bytes to `(BitVec.ofInt 64 ((op1.toInt * op2.toInt) / 2^64)).toNat`

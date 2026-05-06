@@ -6,16 +6,15 @@ import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 
 /-!
-Compositional shift archetype spec (Phase 2 A6 — SLLW).
+Compositional shift archetype spec — SLLW.
 
-SLLW is the first Phase 2 opcode to exercise the `m32 = 1` bus path
-that Phase 1.5 Track M generalized. The PIL `assumes_operation(...)`
-at `main.pil:367-374` emits the operation-bus entry with
-`a = [a[0], (1 - m32) * a[1]]` and `b = [b[0], (1 - m32) * b[1]]`.
-Under `m32 = 1` the high lanes zero out: the downstream
-`BinaryExtension` state machine sees a 32-bit operand. The
-`one_sub_one_mul` simp lemma added in Phase 2 A6 collapses that
-factor post-`rw [h_m32]`.
+SLLW exercises the `m32 = 1` bus path. The PIL
+`assumes_operation(...)` at `main.pil:367-374` emits the
+operation-bus entry with `a = [a[0], (1 - m32) * a[1]]` and
+`b = [b[0], (1 - m32) * b[1]]`. Under `m32 = 1` the high lanes zero
+out: the downstream `BinaryExtension` state machine sees a 32-bit
+operand. The `one_sub_one_mul` simp lemma collapses the
+`(1 - 1) * x` factor post-`rw [h_m32]`.
 
 This module packages the **Main-side** compositional theorem for the
 SLLW archetype:
@@ -30,9 +29,9 @@ SLLW archetype:
   `a_hi` and `b_hi` fields are `0` (the `m32 = 1` zeroing).
 
 Like `Spec.BranchEqual` for BEQ, the bus-emission match to the
-concrete `BinaryExtension` AIR is **parameterized** (DEFERRED to
-Phase 4). The caller supplies the match hypothesis; we provide the
-Main-side shape reasoning.
+concrete `BinaryExtension` AIR is **parameterized** (deferred to
+the audit). The caller supplies the match hypothesis; we provide
+the Main-side shape reasoning.
 
 The actual SLLW compute semantics — 32-bit shift then sign-extend to
 64 — lives on the Sail side (`Fundamentals/Execution.lean::
@@ -66,7 +65,7 @@ def main_row_in_sllw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     `BinaryExtension` SM is parameterized via `h_bus_match`: caller
     supplies an `OperationBusEntry` they claim the secondary SM
     emits, and asserts it matches the Main row's `opBus_row_Main`.
-    Phase 4 audit will derive this from a PIL-level
+    The audit derives this from a PIL-level
     `Valid_BinaryExtension` AIR. -/
 @[simp]
 def sllw_circuit_holds
@@ -81,8 +80,7 @@ def sllw_circuit_holds
 /-- **Compositional SLLW bus-lane lemma.** Under SLLW mode witnesses
     (especially `m32 = 1`), the Main row's emitted bus entry has
     `a_hi = 0` and `b_hi = 0` — the PIL `(1 - m32) * a[1]` factor
-    collapses. This is the proof that the `m32 = 1` path works as
-    Phase 1.5 Track M intended: high lanes vanish on the bus.
+    collapses: under `m32 = 1` the high lanes vanish on the bus.
 
     The `(1 - m32) * x ↦ 0` collapse fires via `one_sub_one_mul`
     (the @[simp] lemma added alongside this module). -/
@@ -100,9 +98,9 @@ theorem sllw_bus_high_lanes_zero
 /-- **Compositional SLLW theorem.** Given the Main-side circuit
     constraints plus the bus-match to the (caller-supplied) secondary
     entry, the `a_hi` and `b_hi` fields carried on that secondary
-    entry are also `0`. Phase 4 audit instantiates this with the
-    `BinaryExtension` AIR's own `opBus_row_BinaryExtension`; for
-    Phase 2 it's a parameterized statement that the `m32 = 1` path
+    entry are also `0`. The audit instantiates this with the
+    `BinaryExtension` AIR's own `opBus_row_BinaryExtension`; here
+    it remains a parameterized statement that the `m32 = 1` path
     zeroes the high lanes end-to-end. -/
 theorem sllw_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)

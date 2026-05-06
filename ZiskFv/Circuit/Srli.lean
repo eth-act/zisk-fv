@@ -7,9 +7,9 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ShiftArchetype
 
 /-!
-Compositional SRLI spec (Phase 3A H5 — `ShiftArchetype` m32=0
-immediate sibling of SRL). Structurally identical to `Spec.Srl`;
-see `Spec.Slli` for why SLL and SLLI share their Zisk opcode.
+Compositional SRLI spec — `ShiftArchetype` m32=0 immediate sibling
+of SRL. Structurally identical to `Spec.Srl`; see `Spec.Slli` for
+why SLL and SLLI share their Zisk opcode.
 -/
 
 namespace ZiskFv.Circuit.Srli

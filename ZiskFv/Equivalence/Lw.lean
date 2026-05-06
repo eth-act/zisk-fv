@@ -15,15 +15,12 @@ import ZiskFv.Sail.BusEffect
 
 /-!
 End-to-end theorem for RV64 LW (load word, signed / sign-extended).
-Phase 3C T-SL0 — pilot of the `SignExtendLoadArchetype`. Consumes
-`PureSpec.execute_LOADW_pure_equiv` directly (C9 retired by Phase 4
-T-LW; also fixed a Phase 3B statement bug that passed
-`is_unsigned = true` — correct for RV64 LW is `false`).
+Pilot of the `SignExtendLoadArchetype`; consumes
+`PureSpec.execute_LOADW_pure_equiv` directly (RV64 LW is signed —
+`is_unsigned = false`).
 
-Parallels the Phase 3A LHU / LBU equivalence structure (same trio
-of theorems). `finishing3` S5b retired the the bus-execute-matches-sail premise
-parameter from `equiv_LW_metaplan` in favour of structural bus
-hypotheses (Phase 4.5 Track C shape (d) reduction
+Parallels the LHU / LBU equivalence structure (same trio of theorems).
+Uses structural bus hypotheses (shape (d) reduction
 `bus_effect_matches_sail_load_4byte_rrrw`) plus a memory-model bridge
 (`Spec.MemModel.mem_load_correct_4byte`) that derives the bus-side
 rd-write byte equalities from circuit primitives.
@@ -97,12 +94,10 @@ theorem equiv_LW_sail
     equals the state computed by applying `bus_effect` to the circuit's
     execution + memory bus rows.
 
-    `finishing3` S5b: replaced the previous monolithic
-    the bus-execute-matches-sail premise parameter with structural bus
-    hypotheses + a memory-model bridge (Mem AIR + ptr-match + per-byte
-    e1↔e2 passthrough). The Sail-side rd-write value
-    `BitVec.signExtend 64 (data3 ++ data2 ++ data1 ++ data0)` is
-    derived from `mem_load_correct_4byte` plus a sign-extension
+    Uses structural bus hypotheses + a memory-model bridge (Mem AIR
+    + ptr-match + per-byte e1↔e2 passthrough). The Sail-side rd-write
+    value `BitVec.signExtend 64 (data3 ++ data2 ++ data1 ++ data0)`
+    is derived from `mem_load_correct_4byte` plus a sign-extension
     witness (`h_high_bytes_signext`) supplied by the caller as a
     LANE-MATCH-class fact about the high bytes of the rd-write
     entry. -/
@@ -119,7 +114,7 @@ theorem equiv_LW_metaplan
       RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
     (h_opcode_assumptions :
       PureSpec.lw_state_assumptions lw_input state)
-    -- Structural bus hypotheses (Phase 4.5 Track C, shape d-4-signed).
+    -- Structural bus hypotheses (shape d-4-signed).
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -133,7 +128,7 @@ theorem equiv_LW_metaplan
     (h_rd_zero_iff :
       Transpiler.wrap_to_regidx e2.ptr = 0 ↔ lw_input.rd = 0)
     (h_rd_idx : lw_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val)
-    -- finishing3 S5b: circuit-level memory bridge + lane match.
+    -- Circuit-level memory bridge + lane match.
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
     (h_main_emit_b :
       main.b_0 r_main = memory_entry_lo e1

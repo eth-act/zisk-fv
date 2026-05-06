@@ -15,8 +15,8 @@ Sail (`InstsEnd.lean:65921`): `execute_REMW (...) (is_unsigned :=
 true)` — analogous to DIVW with remainder semantics. Sign-extends
 32-bit remainder to 64 bits.
 
-Phase 6 Track R: equivalence is now *proved* using `execute_REMW'` in
-`Fundamentals/Execution.lean`. No remaining axioms.
+Equivalence is proved using `execute_REMW'` in
+`Fundamentals/Execution.lean`.
 -/
 
 namespace PureSpec

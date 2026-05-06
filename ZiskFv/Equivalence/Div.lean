@@ -16,13 +16,12 @@ import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
 
 /-!
-End-to-end theorem for RV64 **DIV** (Phase 3C T-D). Combines:
+End-to-end theorem for RV64 **DIV**. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_DIV`),
 * the compositional DIV spec (`ZiskFv.Circuit.Div.div_compositional`),
-* the Sail pure-function equivalence (`PureSpec.execute_DIVREM_div_pure_equiv`
-  from Phase 3B `RV64D/div.lean`),
+* the Sail pure-function equivalence (`PureSpec.execute_DIVREM_div_pure_equiv`),
 
 into three metaplan-shaped theorems:
 
@@ -33,11 +32,8 @@ into three metaplan-shaped theorems:
 * `equiv_DIV_metaplan` — metaplan target shape: Sail's
   `execute_instruction` equals `(bus_effect exec_row mem_row state).2`.
 
-As with MUL/MULHU/MULHSU, the Arith-internal correctness (carry
-chains → signed BitVec 64 quotient) is parameterized — Phase 4 audit
-derives it. Shape (a) (RTYPE RRW — register read + register read +
-register write) is reused from MUL, so bus matching uses
-`bus_effect_matches_sail_alu_rrw`.
+Shape (a) (RTYPE RRW — register read + register read + register write)
+is reused from MUL, so bus matching uses `bus_effect_matches_sail_alu_rrw`.
 -/
 
 namespace ZiskFv.Equivalence.Div
@@ -95,8 +91,7 @@ theorem equiv_DIV_sail
 /-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64 DIV
     equals `(bus_effect exec_row mem_row state).2`. Composes
     `equiv_DIV_sail` with `bus_effect_matches_sail_alu_rrw` (shape (a),
-    RTYPE RRW). Structural bus hypotheses are parameterized — Phase 4
-    audit derives them from PIL bus emission. -/
+    RTYPE RRW). -/
 theorem equiv_DIV_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (div_input : PureSpec.DivInput)
@@ -109,7 +104,7 @@ theorem equiv_DIV_metaplan
       = EStateM.Result.ok div_input.r2_val state)
     (h_input_rd : div_input.rd = regidx_to_fin rd)
     (h_input_pc : state.regs.get? Register.PC = .some div_input.PC)
-    -- Structural bus hypotheses (Phase-4 derivable).
+    -- Structural bus hypotheses.
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -119,7 +114,7 @@ theorem equiv_DIV_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : div_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -144,7 +139,7 @@ theorem equiv_DIV_metaplan
   · rw [h_rd_val]
 
 
-/-- **Phase 5 V12 companion.** Drops `h_input_r1` / `h_input_r2` / 
+/-- **Bus-driven companion.** Drops `h_input_r1` / `h_input_r2` /
     `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
     (bus_effect ...).1` plus ptr/value match hypotheses.
     Delegates to `equiv_DIV_metaplan` after chip_bus_hyps + match composition.  -/
@@ -154,7 +149,7 @@ theorem equiv_DIV_metaplan_from_bus
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    -- Structural bus hypotheses (Phase-4 derivable).
+    -- Structural bus hypotheses.
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -164,7 +159,7 @@ theorem equiv_DIV_metaplan_from_bus
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/r2/pc/rd).
+    -- Bus precondition + ptr/value match (replaces h_input_r1/r2/pc/rd).
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r1_val : div_input.r1_val
@@ -176,7 +171,7 @@ theorem equiv_DIV_metaplan_from_bus
                     e1.x4, e1.x5, e1.x6, e1.x7])
     (h_pc : div_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : div_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -229,7 +224,7 @@ theorem equiv_DIV_metaplan_bus_self
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    -- Structural bus hypotheses (Phase-4 derivable).
+    -- Structural bus hypotheses.
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -239,12 +234,12 @@ theorem equiv_DIV_metaplan_bus_self
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/r2/pc/rd).
+    -- Bus precondition + ptr/value match (replaces h_input_r1/r2/pc/rd).
     (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
     (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
     (h_r2_ptr : regidx_to_fin r2 = Transpiler.wrap_to_regidx e1.ptr)
     (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]
@@ -284,7 +279,7 @@ theorem equiv_DIV_metaplan_op_bus
       div_input.r2_val = Goldilocks.lanes_to_bv64 op_entry.b_lo op_entry.b_hi)
     (h_input_rd : div_input.rd = regidx_to_fin rd)
     (h_input_pc : state.regs.get? Register.PC = .some div_input.PC)
-    -- Structural bus hypotheses (Phase-4 derivable).
+    -- Structural bus hypotheses.
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -294,7 +289,7 @@ theorem equiv_DIV_metaplan_op_bus
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
+    -- Decomposed rd-match hypotheses (see equiv_MUL_metaplan).
     (h_rd_idx : div_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     (h_rd_val :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
@@ -316,7 +311,7 @@ theorem equiv_DIV_metaplan_op_bus
     rw [h_b_match]; exact h_r2_read
   exact equiv_DIV_metaplan state div_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
 
-/-- **Tier-1 metaplan: DIV without `h_rd_val` parameter** (finishing4 S4-signed).
+/-- **Tier-1 metaplan: DIV without `h_rd_val` parameter.**
     Derives `h_rd_val` internally via
     `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_div`. -/
 theorem equiv_DIV_metaplan_tier1

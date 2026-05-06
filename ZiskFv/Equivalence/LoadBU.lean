@@ -14,7 +14,6 @@ import ZiskFv.Sail.BusEffect
 
 /-!
 End-to-end theorem for RV64 LBU (load byte, unsigned / zero-extended).
-`finishing3` S5b retired the the bus-execute-matches-sail premise parameter.
 -/
 
 namespace ZiskFv.Equivalence.LoadBU
@@ -66,7 +65,7 @@ theorem equiv_LBU_sail
   PureSpec.execute_LOADBU_pure_equiv
     lbu_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** `finishing3` S5b. -/
+/-- **Metaplan theorem.** -/
 theorem equiv_LBU_metaplan
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lbu_input : PureSpec.LbuInput)

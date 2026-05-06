@@ -8,7 +8,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Circuit.Mul
 
 /-!
-**Arith state-machine archetype — DIV/REM subfamily** (Phase 3C T-D).
+**Arith state-machine archetype — DIV/REM subfamily.**
 
 The DIV family (DIV, DIVU, REM, REMU) all share the same Zisk
 microinstruction shape — `create_register_op(..., <op_str>, 4)` at
@@ -33,7 +33,7 @@ per-opcode differences are:
 
 As with MUL archetype, the Arith-internal correctness — "the `a[]` /
 `d[]` chunks are the correct quotient/remainder of `a*b + d = c` with
-the division carry chains — is **delegated to Phase 4 audit** and
+the division carry chains" — is a separate audit obligation; it
 enters the end-to-end proof as an axiomatic hypothesis. This archetype
 only proves the bus-match identity.
 

@@ -36,10 +36,10 @@ namespace PureSpec
       success := (bit1_valid)
     }
 
-  -- JALR Sail-equivalence. Phase 3.5 promotion: direct port of the
-  -- `execute_JAL_pure_equiv` proof shape, adapted for JALR's pre-masked
-  -- target (`BitVec.update target 0 0#1` clears bit 0, so the
-  -- bit-0-Assertion branch never fires). The `@[simp high]` P4 platform
+  -- JALR Sail-equivalence. Direct port of the `execute_JAL_pure_equiv`
+  -- proof shape, adapted for JALR's pre-masked target
+  -- (`BitVec.update target 0 0#1` clears bit 0, so the
+  -- bit-0-Assertion branch never fires). The `@[simp high]` platform
   -- axiom `ZiskFv.PlatformScope.update_elp_state_is_pure_unit` collapses
   -- the Zicfilp guard that RV64 otherwise consults.
   set_option maxHeartbeats 0 in
