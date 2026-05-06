@@ -8,7 +8,7 @@ via [`sail-riscv-lean`](https://github.com/NethermindEth/sail-riscv-lean)'s
 **Status:** all 63 RV64IM opcodes proved equivalent to the Sail spec
 (0 sorries, 82 trusted axioms — see `docs/fv/trusted-base.md`). The
 load-bearing claim is `lake build`: every per-opcode equivalence theorem
-typechecks. Run `bin/test.sh` for the full suite (cargo + lake + trust
+typechecks. Run `nix run .#test` for the full suite (cargo + lake + trust
 gate + flake repro check).
 
 ## Layout
@@ -22,7 +22,6 @@ gate + flake repro check).
 | `trust/`               | Trust-boundary baselines + enforcement scripts. See `trust/README.md`.                                 |
 | `flake.nix`, `nix/`    | Nix flake that builds the pilout + Sail-Lean spec + extracted Lean reproducibly. See `nix/README.md`.  |
 | `build/`               | Generated artifacts. Gitignored — produced by `nix run .#populate`. See [Inside `build/`](#inside-build) below. |
-| `bin/`                 | Test entry point: `bin/test.sh` runs the full suite.                                                   |
 | `docs/site/`           | Single-page trust-boundary explainer (run `docs/site/serve.sh`, port 4044).                            |
 
 ## Inside `ZiskFv/`
@@ -290,29 +289,28 @@ After the first-time `nix run .#populate` (above), three commands cover
 everything:
 
 ```bash
-nix run .#populate    # refresh artifacts (cached after first build)
-nix develop --command lake build       # the FV check
-nix develop --command bin/test.sh      # full test suite
+nix run .#populate                # refresh artifacts (cached after first build)
+nix develop --command lake build  # the FV check
+nix run .#test                    # full test suite
 ```
 
-Or enter the devshell once and run commands without the `nix develop`
-prefix:
+Or enter the devshell once and run `lake build` without the `nix
+develop` prefix:
 
 ```bash
 nix develop
 lake build
-bin/test.sh
 ```
 
 `lake build` succeeding **is** the formal-verification claim. Everything
-in `bin/test.sh` past `lake build` (cargo unit tests, trust gate,
+in `nix run .#test` past `lake build` (cargo unit tests, trust gate,
 flake repro check) is auxiliary scaffolding around that core proof
 check.
 
 First cold `lake build` takes roughly 10 minutes, dominated by
 `native_decide` on Goldilocks primality. The devshell provides
-`cargo`, the Lean toolchain (`elan`), python3, and jq — everything
-`bin/test.sh` needs.
+`cargo`, the Lean toolchain (`elan`), python3, and jq — the same
+toolchain `nix run .#test` bundles.
 
 ## Resource requirements
 

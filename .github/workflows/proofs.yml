@@ -30,7 +30,6 @@ on:
       - 'flake.nix'
       - 'flake.lock'
       - 'nix/**'
-      - 'bin/test.sh'
       - 'trust/**'
       - '.github/workflows/proofs.yml'
   push:
@@ -44,7 +43,6 @@ on:
       - 'flake.nix'
       - 'flake.lock'
       - 'nix/**'
-      - 'bin/test.sh'
       - 'trust/**'
       - '.github/workflows/proofs.yml'
   workflow_dispatch:
@@ -171,7 +169,7 @@ jobs:
       - name: Pull mathlib oleans
         run: nix develop --command bash -c 'lake exe cache get || true'
 
-      - name: bin/test.sh (cargo + lake + trust gate + flake check)
+      - name: nix run .#test (cargo + lake + trust gate + flake check)
         env:
           # Trying threads=4 in CI based on the threads=2 mem-trace
           # from run 25367633312: peak `MemTotal - MemAvailable` was
@@ -179,7 +177,8 @@ jobs:
           # ~27 GiB of headroom on the 32 GiB XL runner. Doubling to
           # threads=4 should still leave comfortable margin (`used`
           # scales sub-linearly because lean workers share olean
-          # mmaps). bin/test.sh stays at 2 until we confirm CI green.
+          # mmaps). The default in nix/test.nix stays at 2 until we
+          # confirm CI green.
           LEAN_NUM_THREADS: "4"
         run: |
           # Memory + lean-process sidecar. Run 25230110804 died with no
@@ -213,7 +212,7 @@ jobs:
           free -m
           echo "::endgroup::"
           set +e
-          nix develop --command bin/test.sh
+          nix run .#test
           EXIT=$?
           set -e
           kill $SIDECAR_PID 2>/dev/null || true

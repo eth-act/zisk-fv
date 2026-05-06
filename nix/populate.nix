@@ -12,7 +12,7 @@
 #                                            OperationBuses.lean stay
 #                                            tracked under ZiskFv/Extraction/).
 #
-# After this, `lake build` and `bin/test.sh` work the same as they
+# After this, `lake build` and `nix run .#test` work the same as they
 # did under the old Docker pipeline.
 
 writeShellApplication {

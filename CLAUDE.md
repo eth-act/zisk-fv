@@ -72,7 +72,7 @@ Day-to-day (inside `nix develop` shell, or prefix each command with
 
 ```bash
 lake build       # the FV check — every per-opcode theorem typechecks
-bin/test.sh      # full suite: cargo + lake + trust gate + flake check
+nix run .#test  # full suite: cargo + lake + trust gate + flake check
 ```
 
 `lake build` succeeding **is** the formal-verification claim;
@@ -193,7 +193,7 @@ Recover via `git show`:
 ## Conventions
 
 - **Always build and test before claiming completion.** Minimum is
-  `lake build`; ideally `bin/test.sh`.
+  `lake build`; ideally `nix run .#test`.
 - **Do not use destructive git commands** (`reset --hard`, force push,
   `branch -D`) without explicit permission.
 - The `zisk/` submodule is a **citation surface** for `transpile_*`

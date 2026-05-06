@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # check-all.sh — run every check the trust gate enforces. Used by CI
-# and by bin/test.sh. Exit code is the OR of the individual checks
+# and by `nix run .#test`. Exit code is the OR of the individual checks
 # (so all failures are reported in a single run, not just the first).
 set -u
 cd "$(git rev-parse --show-toplevel)"

@@ -66,6 +66,11 @@
           }}/bin/populate";
         };
 
+        apps.test = {
+          type = "app";
+          program = "${pkgs.callPackage ./nix/test.nix { }}/bin/test";
+        };
+
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             elan         # Lean toolchain manager
