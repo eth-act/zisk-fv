@@ -9,12 +9,11 @@ Named-column mirror of the extracted ZisK `Mem` AIR (pilout idx 2),
 plus `constraint_N_of_extraction` iff-lemmas bridging each named
 predicate back to `Mem.extraction.constraint_N_every_row`.
 
-Mirrors `Airs/Binary/BinaryAdd.lean`. Only the nine F-typed constraints
-(3, 4, 5, 6, 7, 8, 18, 21, 23) are bridged here; constraints 0–2,
-9–17, 19, 20, 22, 24–33 are skipped at the extraction layer because
-they mix `F` (witness cells) with `ExtF` (challenges / airvalues /
-permutation accumulators) and are handled compositionally via the
-memory-bus / continuation models (`Airs/MemoryBus.lean` and friends).
+Only the nine F-typed constraints (3, 4, 5, 6, 7, 8, 18, 21, 23) are
+bridged here; the rest mix `F` (witness cells) with `ExtF` (challenges /
+airvalues / permutation accumulators) and are handled compositionally
+via the memory-bus / continuation models (`Airs/MemoryBus.lean` and
+friends).
 
 The F-typed surface bridged here covers the per-row local invariants
 of the `Mem` AIR's primary witness columns: booleanity of `sel`,
@@ -36,8 +35,8 @@ Column layout taken from the witness-column header in
 * 7: `value[1]`
 * 8: `wr`
 * 9: `previous_step`
-* 10: `l_increment` (named `increment[0]` pre-v0.16.0, when bit-width was 18+18 → 22+16)
-* 11: `h_increment` (named `increment[1]` pre-v0.16.0)
+* 10: `l_increment`
+* 11: `h_increment`
 * 12: `read_same_addr`
 Stage-2 columns:
 * 0: `gsum`

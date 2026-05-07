@@ -19,7 +19,7 @@ import ZiskFv.Equivalence.RdValDerivation.BinaryShift
 import ZiskFv.Equivalence.RdValDerivation.SailBridge
 
 /-!
-End-to-end theorem for RV64 SLL (Phase 3A H1 — 64-bit sibling of SLLW).
+End-to-end theorem for RV64 SLL (64-bit sibling of SLLW).
 
 Mirrors `Equivalence.Shift` (SLLW), with the direction unchanged but
 the width flag flipped: `m32 = 0` here instead of `m32 = 1`. The
@@ -29,11 +29,12 @@ verbatim to the `BinaryExtension` SM rather than being zeroed.
 
 Emits three theorems matching the SLLW trio:
 
-* `equiv_SLL` — circuit-level: bus `a_hi = m.a_1` and `b_hi = m.b_1`.
+* `equiv_SLL_circuit` — circuit-level: bus `a_hi = m.a_1` and `b_hi = m.b_1`.
 * `equiv_SLL_sail` — Sail-level: `execute_instruction` on a SLL RTYPE
   reduces to the pure spec block.
-* `equiv_SLL_metaplan` — metaplan target. Uses shape (a) bus-effect
-  (`bus_effect_matches_sail_alu_rrw`, hypothesis-free) from Phase 2.5 D3.
+* `equiv_SLL` — canonical fused theorem. Derives `h_rd_val`
+  internally via `RdValDerivation.BinaryShift.h_rd_val_shift_sll`
+  + `RdValDerivation.SailBridge.sail_sll_bridge`.
 -/
 
 namespace ZiskFv.Equivalence.Sll
@@ -45,19 +46,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Circuit.Sll
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
-
-/-- **Circuit-level SLL theorem.** Given the SLL-mode Main constraints
-    (including `m32 = 0`) and the bus-match to a secondary entry, the
-    entry's `a_hi` / `b_hi` fields carry the full 64-bit high lanes
-    (passthrough). Direct instantiation of `ShiftArchetype`'s m32=0
-    macro at `OP_SLL`. -/
-theorem equiv_SLL
-    (_rs1 _rs2 : Fin 32) (_state : RV64State)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (bus_entry : OperationBusEntry FGL)
-    (h_circuit : sll_circuit_holds m r_main bus_entry) :
-    bus_entry.a_hi = m.a_1 r_main ∧ bus_entry.b_hi = m.b_1 r_main :=
-  sll_compositional m r_main bus_entry h_circuit
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 SLL reduces to the pure-function block. Wraps
@@ -83,62 +71,16 @@ theorem equiv_SLL_sail
   PureSpec.execute_RTYPE_sll_pure_equiv
     sll_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
-/-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64 SLL
-    equals the state computed by applying `bus_effect` to the
-    circuit's execution + memory bus rows.
+/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64
+    SLL equals the state computed by applying `bus_effect` to the
+    circuit's execution and memory bus rows.
 
-    Shape (a) — register-read + register-read + register-write,
-    discharged via `bus_effect_matches_sail_alu_rrw`. No
-    `h_bus_execute_matches_sail` parameter remains. -/
-theorem equiv_SLL_metaplan
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (sll_input : PureSpec.SllInput)
-    (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok sll_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok sll_input.r2_val state)
-    (h_input_rd : sll_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some sll_input.PC)
-    -- Phase 2.5 D3 structural bus hypotheses (Phase-4 derivable).
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
-    (h_rd_idx : sll_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = execute_RTYPE_pure sll_input.r1_val sll_input.r2_val rop.SLL) :
-    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  rw [equiv_SLL_sail state sll_input r1 r2 rd
-        h_input_r1 h_input_r2 h_input_rd h_input_pc]
-  symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
-        state exec_row e0 e1 e2
-        (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
-  simp only [PureSpec.execute_RTYPE_sll_pure, h_rd_idx]
-  split_ifs with h_rd_zero
-  · simp only [bind, pure, EStateM.bind, EStateM.pure]
-  · rw [h_rd_val]
-
-/-- **Tier-1 metaplan: SLL without `h_rd_val` parameter** (finishing2 S5).
-
-    Derives `h_rd_val` internally via
-    `RdValDerivation.BinaryShift.h_rd_val_shift_sll` plus
-    `RdValDerivation.SailBridge.sail_sll_bridge`. -/
-theorem equiv_SLL_metaplan_tier1
+    Every parameter classifies as one of {CIRCUIT-CONSTRAINT,
+    LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
+    asserts the spec output directly; that equation is derived
+    internally from circuit witnesses via the
+    `RdValDerivation.BinaryShift.h_rd_val_shift_sll` discharge lemma. -/
+theorem equiv_SLL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)
     (r1 r2 rd : regidx)
@@ -147,9 +89,9 @@ theorem equiv_SLL_metaplan_tier1
     (r_main r_binary : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
       = EStateM.Result.ok sll_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
       = EStateM.Result.ok sll_input.r2_val state)
     (h_input_rd : sll_input.rd = regidx_to_fin rd)
     (h_input_pc : state.regs.get? Register.PC = .some sll_input.PC)
@@ -163,7 +105,7 @@ theorem equiv_SLL_metaplan_tier1
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : sll_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Tier-1 discharge inputs: BinaryExtension SLL row witness.
+    -- Discharge parameters
     (h_op : (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SLL)
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
     (h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary)
@@ -238,175 +180,17 @@ theorem equiv_SLL_metaplan_tier1
                               e2.x4, e2.x5, e2.x6, e2.x7]
       = execute_RTYPE_pure sll_input.r1_val sll_input.r2_val rop.SLL := by
     rw [h_discharge, h_bridge]
-  exact equiv_SLL_metaplan state sll_input r1 r2 rd exec_row e0 e1 e2
-    h_input_r1 h_input_r2 h_input_rd h_input_pc
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
-    h_rd_idx h_rd_val
-
-
-/-- **Phase 5 V12 companion.** Drops `h_input_r1` / `h_input_r2` /
-    `h_input_pc` / `h_input_rd` in favor of a single `h_bus :
-    (bus_effect ...).1` plus ptr/value match hypotheses.
-    Delegates to `equiv_SLL_metaplan` after chip_bus_hyps + match composition.  -/
-theorem equiv_SLL_metaplan_from_bus
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (sll_input : PureSpec.SllInput)
-    (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    -- Phase 2.5 D3 structural bus hypotheses (Phase-4 derivable).
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/r2/pc/rd).
-    (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
-    (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
-    (h_r1_val : sll_input.r1_val
-      = U64.toBV #v[e0.x0, e0.x1, e0.x2, e0.x3,
-                    e0.x4, e0.x5, e0.x6, e0.x7])
-    (h_r2_ptr : regidx_to_fin r2 = Transpiler.wrap_to_regidx e1.ptr)
-    (h_r2_val : sll_input.r2_val
-      = U64.toBV #v[e1.x0, e1.x1, e1.x2, e1.x3,
-                    e1.x4, e1.x5, e1.x6, e1.x7])
-    (h_pc : sll_input.PC = BitVec.ofNat 64 (exec_row[0]!.pc).val)
-    (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
-    (h_rd_idx : sll_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = execute_RTYPE_pure sll_input.r1_val sll_input.r2_val rop.SLL) :
-    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
-      = (bus_effect exec_row [e0, e1, e2] state).2
-    := by
-  obtain ⟨h_pc_read, h_rs1_read, h_rs2_read⟩ :=
-    ZiskFv.Airs.BusHypotheses.chip_bus_hyps_alu_rrw
-      state exec_row e0 e1 e2
-      h_exec_len h_e0_mult h_e1_mult
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
-      h_bus
-  have h_input_r1 :
-      read_xreg (regidx_to_fin r1) state
-        = EStateM.Result.ok sll_input.r1_val state := by
-    rw [h_r1_ptr, h_r1_val]; exact h_rs1_read
-  have h_input_r2 :
-      read_xreg (regidx_to_fin r2) state
-        = EStateM.Result.ok sll_input.r2_val state := by
-    rw [h_r2_ptr, h_r2_val]; exact h_rs2_read
-  have h_input_rd : sll_input.rd = regidx_to_fin rd := by
-    rw [h_rd_ptr]; exact h_rd_idx
-  have h_input_pc : state.regs.get? Register.PC = .some sll_input.PC := by
-    rw [h_pc]
-    exact ZiskFv.Airs.BusHypotheses.readReg_of_readReg_succ h_pc_read
-  exact equiv_SLL_metaplan state sll_input r1 r2 rd exec_row e0 e1 e2 h_input_r1 h_input_r2 h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx h_rd_val
-
-
-/-- Constructor: build a `PureSpec.SllInput` from bus entries. -/
-def SllInput_of_bus
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL)) :
-    PureSpec.SllInput :=
-  { r1_val := U64.toBV #v[e0.x0, e0.x1, e0.x2, e0.x3,
-                          e0.x4, e0.x5, e0.x6, e0.x7]
-    r2_val := U64.toBV #v[e1.x0, e1.x1, e1.x2, e1.x3,
-                          e1.x4, e1.x5, e1.x6, e1.x7]
-    rd := Transpiler.wrap_to_regidx e2.ptr
-    PC := BitVec.ofNat 64 (exec_row[0]!.pc).val }
-
-/-- **Item 4 closure for SLL.** Bus-derived input form: 
-    eliminates value-level match hyps via `SllInput_of_bus`. -/
-theorem equiv_SLL_metaplan_bus_self
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    -- Phase 2.5 D3 structural bus hypotheses (Phase-4 derivable).
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_sll_pure (SllInput_of_bus e0 e1 e2 exec_row)).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    -- Phase 5 V12: bus precondition + ptr/value match (replaces h_input_r1/r2/pc/rd).
-    (h_bus : (bus_effect exec_row [e0, e1, e2] state).1)
-    (h_r1_ptr : regidx_to_fin r1 = Transpiler.wrap_to_regidx e0.ptr)
-    (h_r2_ptr : regidx_to_fin r2 = Transpiler.wrap_to_regidx e1.ptr)
-    (h_rd_ptr : regidx_to_fin rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (see equiv_MUL_metaplan).
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = execute_RTYPE_pure (SllInput_of_bus e0 e1 e2 exec_row).r1_val (SllInput_of_bus e0 e1 e2 exec_row).r2_val rop.SLL) :
-    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
-      = (bus_effect exec_row [e0, e1, e2] state).2
-
-    := by
-  exact equiv_SLL_metaplan_from_bus state
-    (SllInput_of_bus e0 e1 e2 exec_row) r1 r2 rd
-    exec_row e0 e1 e2
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
-    h_bus h_r1_ptr rfl h_r2_ptr rfl rfl h_rd_ptr
-    rfl h_rd_val
-
-/-- **Track Q ALU fan-out for SLL.** Op-bus companion to
-    `equiv_SLL_metaplan`: drops `h_input_r1` / `h_input_r2` in favour
-    of a single op-bus precondition. Mirrors `equiv_ADD_metaplan_op_bus`. -/
-theorem equiv_SLL_metaplan_op_bus
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (sll_input : PureSpec.SllInput)
-    (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (op_entry : OperationBusEntry FGL)
-    (h_op_mult : op_entry.multiplicity = 1)
-    (h_op_bus : (ZiskFv.Airs.OpBusEffect.op_bus_effect [op_entry] state
-                  (regidx_to_fin r1) (regidx_to_fin r2)).1)
-    (h_a_match :
-      sll_input.r1_val = Goldilocks.lanes_to_bv64 op_entry.a_lo op_entry.a_hi)
-    (h_b_match :
-      sll_input.r2_val = Goldilocks.lanes_to_bv64 op_entry.b_lo op_entry.b_hi)
-    (h_input_rd : sll_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some sll_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : sll_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_rd_val :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-      = execute_RTYPE_pure sll_input.r1_val sll_input.r2_val rop.SLL) :
-    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  obtain ⟨h_r1_read, h_r2_read⟩ :=
-    ZiskFv.Airs.OpBusHypotheses.chip_op_bus_hyps_alu
-      state op_entry (regidx_to_fin r1) (regidx_to_fin r2) h_op_mult h_op_bus
-  have h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok sll_input.r1_val state := by
-    rw [h_a_match]; exact h_r1_read
-  have h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok sll_input.r2_val state := by
-    rw [h_b_match]; exact h_r2_read
-  exact equiv_SLL_metaplan state sll_input r1 r2 rd exec_row e0 e1 e2
-    h_input_r1 h_input_r2 h_input_rd h_input_pc
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
-    h_rd_idx h_rd_val
+  rw [equiv_SLL_sail state sll_input r1 r2 rd
+        h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc]
+  symm
+  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+        state exec_row e0 e1 e2
+        (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
+  simp only [PureSpec.execute_RTYPE_sll_pure, h_rd_idx]
+  split_ifs with h_rd_zero
+  · simp only [bind, pure, EStateM.bind, EStateM.pure]
+  · rw [h_rd_val]
 
 end ZiskFv.Equivalence.Sll

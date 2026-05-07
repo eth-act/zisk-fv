@@ -6,7 +6,7 @@ import ZiskFv.Fundamentals.Transpiler
 /-!
 Goldilocks ↔ `BitVec 64` bridge lemmas.
 
-Composes `equiv_ADD` (Goldilocks field arithmetic on 32-bit lanes) with
+Composes `equiv_ADD_circuit` (Goldilocks field arithmetic on 32-bit lanes) with
 `equiv_ADD_sail` (`BitVec 64` arithmetic) via:
 
 * `lane_lo_lane_hi_recombine_eq_toNat` — the two 32-bit lanes of a `BitVec 64`,
@@ -104,7 +104,7 @@ def add_carry_out (a b : BitVec 64) : FGL :=
     where `cout = 1` iff `a.toNat + b.toNat ≥ 2^64`, else `0`.
 
     The factored `4294967296 * 4294967296` (rather than `18446744073709551616`)
-    is deliberate: it matches the carry-chain coefficient in `equiv_ADD` and
+    is deliberate: it matches the carry-chain coefficient in `equiv_ADD_circuit` and
     lets `linear_combination` close the composition in `Equivalence/Add.lean`
     (see CLAUDE.md trap 2: `ring` treats the two literal forms as distinct
     polynomial atoms). -/

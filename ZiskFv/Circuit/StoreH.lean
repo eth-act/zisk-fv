@@ -9,9 +9,9 @@ import ZiskFv.Circuit.StoreD
 import ZiskFv.Tactics.StoreArchetype
 
 /-!
-Compositional SH (store halfword) spec — Phase 3A S1 sibling of
-`Spec.StoreW` / `Spec.StoreD`. Narrow variant: SH writes the **low 2
-bytes** of `rs2` to memory while SW writes the low 4 and SD writes all 8.
+Compositional SH (store halfword) spec — narrow sibling of
+`Circuit.StoreW` / `Circuit.StoreD`. SH writes the **low 2 bytes** of
+`rs2` to memory while SW writes the low 4 and SD writes all 8.
 
 At the Main-AIR level the SH row is indistinguishable from SW/SD (all
 use `OP_COPYB = 1`, `is_external_op = 0`, `m32 = 0`, `set_pc = 0`,
@@ -56,8 +56,8 @@ def memory_entry_lo_16 (e : MemoryBusEntry FGL) : FGL :=
     `c` cell to the memory-bus entry; the remaining lanes are witnessed
     as zero by the PIL circuit.
 
-    Supplied by the caller (Phase 4 audit derives it from the PIL
-    memory-SM `permutation_proves` side + the `ind_width` selector). -/
+    Supplied by the caller; the audit derives it from the PIL
+    memory-SM `permutation_proves` side + the `ind_width` selector. -/
 @[simp]
 def sh_high_bytes_zero (entry : MemoryBusEntry FGL) : Prop :=
   entry.x2 = 0 ∧ entry.x3 = 0 ∧ entry.x4 = 0 ∧ entry.x5 = 0
@@ -95,7 +95,7 @@ theorem store_h_compositional
     conclusion as `store_d_compositional` — `c_packed = memory_entry_toField
     entry`. With the high-byte zeroing witness the RHS equals
     `memory_entry_lo_16 entry`, but we expose the general form too so SH
-    composes uniformly with SD/SW at the metaplan layer. -/
+    composes uniformly with SD/SW at the equivalence layer. -/
 theorem store_h_compositional_general
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)

@@ -18,6 +18,8 @@
 
 docs/site/*.png
 
+docs/superpowers/
+
 .playwright-mcp
 
 # Build artifacts produced by `nix run .#populate` — sail-lean tree,

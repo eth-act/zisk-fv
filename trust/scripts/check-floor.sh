@@ -16,14 +16,17 @@ if [ "$axiom_count" -lt "$MIN_AXIOMS" ]; then
   exit 1
 fi
 
-# Floor 2: count `_metaplan_tier1` theorems. Must be >= MIN_TIER1.
-# Catches a sweep that accidentally dropped tier1 companions.
-MIN_TIER1=40
-tier1_count=$(grep -rhE '^[[:space:]]*theorem[[:space:]]+equiv_[A-Z][A-Z0-9_]*_metaplan_tier1' \
+# Floor 2: count canonical bare `equiv_<OP>` theorems (no underscore-suffix).
+# Must be >= MIN_CANONICAL. After fusion the bare equiv_<OP> is the strong
+# form for 56 of 63 opcodes (45 fused tier1 + 11 already-clean); the 7
+# loads remain on a follow-up. Catches a sweep that accidentally dropped
+# the canonical strong forms.
+MIN_CANONICAL=56
+canonical_count=$(grep -rhE '^theorem[[:space:]]+equiv_[A-Z][A-Z0-9]*[[:space:]]*$|^theorem[[:space:]]+equiv_[A-Z][A-Z0-9]*[[:space:]]+\(' \
               ZiskFv/Equivalence | wc -l)
-if [ "$tier1_count" -lt "$MIN_TIER1" ]; then
-  echo "trust-gate: FLOOR FAILURE — only $tier1_count tier1 theorems found (expected >= $MIN_TIER1)."
-  echo "  This can happen if a sweep accidentally dropped tier1 companions."
+if [ "$canonical_count" -lt "$MIN_CANONICAL" ]; then
+  echo "trust-gate: FLOOR FAILURE — only $canonical_count canonical equiv_<OP> theorems found (expected >= $MIN_CANONICAL)."
+  echo "  This can happen if a sweep accidentally dropped canonical equivalence theorems."
   exit 1
 fi
 
@@ -52,4 +55,4 @@ if [ "$tree_count" -ne "$axiom_count" ]; then
   exit 1
 fi
 
-echo "trust-gate: floors OK — $axiom_count axioms / $tier1_count tier1 theorems / cross-witness matches."
+echo "trust-gate: floors OK — $axiom_count axioms / $canonical_count canonical equiv_<OP> theorems / cross-witness matches."

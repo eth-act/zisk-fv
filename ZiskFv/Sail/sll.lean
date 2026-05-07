@@ -2,7 +2,7 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Fundamentals.Execution
 
 /-!
-RV64 SLL (shift-left, register variant). Phase 3A H1 sibling of SLLW.
+RV64 SLL (shift-left, register variant). Sibling of SLLW.
 
 Full 64-bit shift: takes `rs1`, shifts left by the low 6 bits of `rs2`,
 stores the 64-bit result. No PC jump; write to `rd`; advance PC by 4.

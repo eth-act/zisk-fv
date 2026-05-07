@@ -7,11 +7,11 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.Arith.CarryChain
 
 /-!
-Named-column mirror of the ZisK `Arith` AIR, restricted to the **DIV/REM
-subset** (Phase 3C Track T-D). Clone of `Airs/Arith/Mul.lean`, specialized
-to the division rows that serve RV64 DIV, DIVU, REM, REMU.
+Named-column mirror of the ZisK `Arith` AIR, restricted to the
+**DIV/REM subset** (clone of `Airs/Arith/Mul.lean` for RV64 DIV / DIVU
+/ REM / REMU rows).
 
-The Arith state machine is the same AIR used for MUL, but a *single row*
+The Arith state machine is the same AIR used for MUL, but a single row
 serves a pair of opcodes dispatched through the `div` / `main_div` /
 `main_mul` selectors:
 
@@ -26,8 +26,8 @@ serves a pair of opcodes dispatched through the `div` / `main_div` /
 Each "DIV family" Arith row has `div = 1`. The bus-result lane is
 selected per opcode:
 
-* **DIV / DIVU (primary, `main_div = 1`, `main_mul = 0`):** bus emits the
-  *quotient*, packed into the Arith column `a[0..3]`:
+* **DIV / DIVU (primary, `main_div = 1`, `main_mul = 0`):** bus emits
+  the *quotient*, packed into the Arith column `a[0..3]`:
     * `bus_res0 = a[0] + a[1] * 2^16`
     * `bus_res1_64 = a[2] + a[3] * 2^16`
   (arith.pil:253-259 — `main_div * (a[0] + a[1] * CHUNK_SIZE)` summand).
@@ -43,15 +43,8 @@ division rows — per `bus_a0 = div * (c[0] + c[1]*CHUNK_SIZE) + (1 - div)
 * (a[0] + a[1]*CHUNK_SIZE)` at arith.pil:247: on DIV rows (`div = 1`),
 the bus `a` lane comes from `c[]`.
 
-As with `Valid_ArithMul`, the A5 archetype **does not derive** the
-division carry-chain correctness (constraints 31–38 interpreted with
-`div = 1`) — that's Phase 4 audit work. The compositional proof only
-consumes the bus-match identity.
-
-Mirrors `Airs/Arith/Mul.lean` — named columns + `constraint_N_of_extraction`
-bridges for the shared booleans. The column indices are the same (the
-Arith AIR is a single schema; DIV-family rows just set different
-selectors).
+The column indices are identical to `Valid_ArithMul` (Arith is a single
+schema; DIV-family rows just set different selectors).
 -/
 
 namespace ZiskFv.Airs.ArithDiv
@@ -217,8 +210,7 @@ def boolean_sext (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
     subset the MUL-family compositional proof relies on — these
     constraints are AIR-global, not mode-specific. The carry-chain
     constraints (31–38), specialized to `div = 1`, remain reachable
-    via the raw extraction bridges but are carried through to Phase-4
-    audit. -/
+    via the raw extraction bridges. -/
 @[simp]
 def div_mode_booleans (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
   main_mul_div_disjoint v row
@@ -317,11 +309,11 @@ open ZiskFv.Airs.OperationBus
     `c_hi` differs.
 
     On DIV rows we also have `flag = div_by_zero`; for our compositional
-    archetype this sits as a free field on the bus entry (it's a Phase-4
-    concern — we leave `flag = 0` here, matching the semantics that a
-    non-div-by-zero divide emits `flag = 0` and the Sail side never
-    observes the flag directly; div-by-zero is handled by the PIL +
-    arith_table assumption network). -/
+    archetype this sits as a free field on the bus entry. We leave
+    `flag = 0` here, matching the semantics that a non-div-by-zero
+    divide emits `flag = 0` and the Sail side never observes the flag
+    directly; div-by-zero is handled by the PIL + arith_table
+    assumption network. -/
 @[simp]
 def opBus_row_ArithDiv {C : Type → Type → Type} {F ExtF : Type}
     [Field F] [Field ExtF] [Circuit F ExtF C]
@@ -370,20 +362,20 @@ def opBus_row_ArithDivSecondary {C : Type → Type → Type} {F ExtF : Type}
 end BusEmission
 
 /-!
-## Phase 4 Package C — carry-chain specialization (DIV-unsigned)
+## Carry-chain specialization (DIV-unsigned)
 
 Connects the raw extraction constraints 31-38 at `v.circuit` to the
-pure-field DIV carry-chain identity in `Airs/Arith/CarryChain.lean`, yielding
-the packed identity
+pure-field DIV carry-chain identity in `Airs/Arith/CarryChain.lean`,
+yielding the packed identity
 
     a_packed * b_packed + d_packed = c_packed
 
-for the DIVU/REMU mode (`fab = 1`, `na = nb = np = nr = sext = m32 = 0`,
-`div = 1`). Here `a` holds the quotient, `b` the divisor, `c` the dividend,
-and `d` the remainder.
+for the DIVU/REMU mode (`fab = 1`,
+`na = nb = np = nr = sext = m32 = 0`, `div = 1`). Here `a` holds the
+quotient, `b` the divisor, `c` the dividend, and `d` the remainder.
 
-This is the Phase 4 moral mirror of `arith_mul_unsigned_packed_correct`
-in `Airs/Arith/Mul.lean`, specialized to DIV mode (`div = 1` instead of 0).
+Mirrors `arith_mul_unsigned_packed_correct` from `Mul.lean`, specialized
+to DIV mode (`div = 1` instead of 0).
 -/
 
 section CarryChain
@@ -446,11 +438,7 @@ def d_chunks_packed_div (v : Valid_ArithDiv C F ExtF) (r : ℕ) : F :=
 
     (quotient × divisor + remainder = dividend).
 
-    Direct consequence of `CarryChain.arith_div_unsigned_carry_identity`.
-    This is the **Phase 4 Package C deliverable** for the DIV family —
-    what was previously threaded as an Arith-internal correctness
-    assumption through the compositional DIV/REM proofs is now
-    derived directly from the PIL carry chain. -/
+    Direct consequence of `CarryChain.arith_div_unsigned_carry_identity`. -/
 lemma arith_div_unsigned_packed_correct
     (v : Valid_ArithDiv C F ExtF) (row : ℕ)
     (h6 : constraint_6_every_row v.circuit row)

@@ -11,64 +11,50 @@ import ZiskFv.Airs.MemoryBus.BusShape
 import ZiskFv.Extraction.MemoryBuses
 
 /-!
-# MemoryBus.LaneMatch — promoted lane-match theorems for register bus entries
+# MemoryBus.LaneMatch — lane-match theorems for register bus entries
 
-This module promotes three previously-axiomatized `def` predicates in
-`Airs/MemoryBus.lean` to **theorems** derived through the extraction
-layer. For each of the three reads-side memory-bus emissions
+For each of the three reads-side memory-bus emissions
 (`bus_emission_Main_mem_{0,2,4}`), we compose:
 
 1. The slot-match lemma in `Airs/MemoryBus/BusShape.lean` (extracted
    spec's `slotValue` equals the named-column projection's slot field).
 2. A structural hypothesis `h_slot` tying the bus-protocol entry's
    packed `memory_entry_lo` / `memory_entry_hi` halves to the same
-   `slotValue` thunks (this is the PIL-level emission contract, which
-   the bus protocol pins; phase-3 callers establish it from the opcode's
-   transpile axiom plus the bus-emission spec).
+   `slotValue` thunks (the PIL-level emission contract, established by
+   callers from the opcode's transpile axiom plus the bus-emission
+   spec).
 3. Pointwise equality through the chain to derive the lane-match
    conclusion.
 
-The reads-side proofs are no longer trivial `.symm` rewrites of an
-abstract `h_emit` — they pass through the extracted slot thunks, making
-the derivation self-evidently sound against the auto-extracted bus
-specification.
-
 ## Background on the memory bus
 
-ZisK's memory bus (bus_id = 10, `zisk/pil/opids.pil:12`) carries
-6-tuple permutation entries `[as, ptr, mem_step, bytes, value_lo,
-value_hi]` for register reads (`as = 3`) and 12-byte tuples for memory
-reads/writes (`as = 2`, byte-decomposed). Register-side payloads (the
-ones this file handles) carry the value as a pair of 32-bit lanes;
-4-byte byte decomposition isn't part of the register-bus contract.
+ZisK's memory bus (bus_id = 10, `zisk/pil/opids.pil:12`) carries 6-tuple
+permutation entries `[as, ptr, mem_step, bytes, value_lo, value_hi]`
+for register reads (`as = 3`) and 12-byte tuples for memory reads/writes
+(`as = 2`, byte-decomposed). Register-side payloads (the ones this file
+handles) carry the value as a pair of 32-bit lanes.
 
-For consumer-side compatibility with downstream byte-level memory paths
-(LoadD / StoreD etc.), the lane-match theorems still take a 12-slot
+For consumer-side compatibility with downstream byte-level memory paths,
+the lane-match theorems still take a 12-slot
 `Interaction.MemoryBusEntry FGL`; the bridge from the entry's packed
 `memory_entry_lo` / `memory_entry_hi` halves to the bus's 32-bit lane
-fields is the natural identity (no byte-range dispatch needed).
+fields is the natural identity.
 
 ## Memory-bus extraction status
 
 * **Reads-side** (rs1, rs2, store-reg prev-value reads) — the three
   permutation `proves` halves are extracted in
   `Extraction/MemoryBuses.lean` as `bus_emission_Main_mem_{0,2,4}`,
-  each carrying its 6-slot tuple verbatim from the PIL macro. The
-  slot-match lemmas `bus_emission_main_slots_match_memBus_row_Main_*`
-  in `Airs/MemoryBus/BusShape.lean` give us the bridge from the
-  extracted spec's thunks to the named-column projection.
+  each carrying its 6-slot tuple verbatim from the PIL macro.
 * **Writes-side** (`register_write_lanes_match` for the destination-c
-  register write) — closed in **`finishing3.md` S4** via a multi-row
-  Mem AIR argument. The PIL pattern is: a Main row's row-write is
-  consistency-checked against the *next* read's `prev_value` field
-  through the memory bus's permutation argument. The closure here
-  introduces a single trusted memory-bus permutation-soundness axiom
-  (`memory_bus_register_write_perm_sound`) — analogous in shape to
-  `OperationBus.matches_entry` — and composes it with `Valid_Mem`'s
-  per-row consistency constraints (`core_every_row`) at the consuming
-  Mem row to derive the lane match. See the trusted-base ledger entry
-  for the axiom's scope. The previous Layer-1 structural form
-  (`h_emit` as a hypothesis) is gone.
+  register write) — closed via a multi-row Mem AIR argument. A Main
+  row's row-write is consistency-checked against the *next* read's
+  `prev_value` field through the memory bus's permutation argument.
+  The closure introduces one trusted memory-bus permutation-soundness
+  axiom (`memory_bus_register_write_perm_sound`) and composes it with
+  `Valid_Mem`'s per-row consistency constraints (`core_every_row`) at
+  the consuming Mem row to derive the lane match. See
+  `docs/fv/trusted-base.md` for the axiom's scope.
 
 ## h_slot parameter shape (reads-side)
 
@@ -78,11 +64,10 @@ equalities of the form
   `slotValue spec 4 m.circuit row = memory_entry_lo e`
   `slotValue spec 5 m.circuit row = memory_entry_hi e`
 
-where `spec` is the relevant extracted bus emission. This is the
-*structural* condition the PIL memory-bus protocol pins for register
-reads: the entry's value lo/hi halves are the bus's 32-bit lane
-fields. Phase 3 callers establish this from the opcode-specific
-transpile axiom (e.g. `transpile_LD` pins `a_0 = lo(xreg rs1)`,
+This is the structural condition the PIL memory-bus protocol pins for
+register reads: the entry's value lo/hi halves are the bus's 32-bit
+lane fields. Callers establish this from the opcode-specific transpile
+axiom (e.g. `transpile_LD` pins `a_0 = lo(xreg rs1)`,
 `a_1 = hi(xreg rs1)`) combined with the byte-level entry decomposition
 that ties `memory_entry_lo e` to the value's low half.
 -/
@@ -101,38 +86,24 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Memory-bus permutation soundness for register writes
 
-The reads-side derivations above compose against the F-typed extracted
-Main memory-bus emissions (`bus_emission_Main_mem_{0,2,4}` for rs1,
-rs2, store-reg-prev). For the writes-side there is **no F-typed
-counterpart**: ZisK's memory protocol does not emit the new write
-value as a standalone F-typed Main bus entry — the write is carried
-implicitly via the bus permutation argument that pairs Main's
-"store-reg" emission (selector column 37, `assumes_store_reg = 1`,
-`store_pc = 0`) with the *next* read's `prev_value` consume on the
-matching `(addr=store_offset, mem_step=store_mem_step)` slot.
+For the writes-side there is no F-typed Main bus entry: ZisK's memory
+protocol carries the write implicitly via the bus permutation argument
+that pairs Main's "store-reg" emission (selector column 37,
+`assumes_store_reg = 1`, `store_pc = 0`) with the next read's
+`prev_value` consume on the matching `(addr=store_offset,
+mem_step=store_mem_step)` slot.
 
-The full closure is therefore a multi-row argument over the Mem AIR:
-the writing Main row's emission lands at some Mem AIR row at the
-matched `(addr, mem_step)` with `wr = 1, sel = 1`; subsequent Mem
-rows at the same address (`addr_changes = 0`) preserve the value
-across `read_same_addr` reads; the consuming Main row reads the same
-value back via its `prev_value` slot, which the downstream
-`MemoryBusEntry e` byte-decomposes as `memory_entry_lo`/`memory_entry_hi`.
+The full closure is a multi-row argument over the Mem AIR: the writing
+Main row's emission lands at some Mem AIR row at the matched
+`(addr, mem_step)` with `wr = 1, sel = 1`; subsequent Mem rows at the
+same address (`addr_changes = 0`) preserve the value across
+`read_same_addr` reads; the consuming Main row reads the same value
+back via its `prev_value` slot, which `MemoryBusEntry e` byte-decomposes
+as `memory_entry_lo`/`memory_entry_hi`.
 
 We axiomatize this multi-row chain at the layer of bus-permutation
-soundness, in the same shape as `OperationBus.matches_entry`. The
-axiom is a soundness lemma the PLONK / logUp permutation argument
-delivers under the project's "proving-system correctness" trust
-scope — see `CLAUDE.md` (trust ledger) and `docs/fv/trusted-base.md`
-(memory-bus permutation entry).
-
-Concretely, the axiom states: for every Main row `row` whose Mem-bus
-register-write emission is in use (i.e., `assumes_store_reg = 1` and
-`store_pc = 0`, so `store_value = (c_0, c_1)`), and every consuming
-`MemoryBusEntry e` pulled by the bus permutation argument from this
-emission, the entry's packed lo/hi halves equal Main's `(c_0, c_1)`.
-This is a direct instance of the operation-bus pattern, lifted to
-the memory bus. -/
+soundness, in the same shape as `OperationBus.matches_entry`. See
+`docs/fv/trusted-base.md` (memory-bus permutation entry). -/
 
 /-- **Memory-bus permutation soundness for register writes.** The
     trusted soundness statement that the PLONK / logUp permutation
@@ -194,36 +165,27 @@ axiom memory_bus_register_write_perm_sound
     memory_entry_lo e = m.c_0 row ∧ memory_entry_hi e = m.c_1 row
 
 /-- **Register-write lane match via Mem AIR multi-row argument.**
-    Promotes `register_write_lanes_match_of_bus_emission` from its
-    earlier Layer-1 structural form (`h_emit` taken as a hypothesis)
-    to a proper Layer-2 derivation that composes through the Mem AIR.
-
-    **Argument shape.** The conclusion `register_write_lanes_match
-    m row e` is `m.c_0 row = memory_entry_lo e ∧ m.c_1 row =
-    memory_entry_hi e`. The proof:
+    The conclusion `register_write_lanes_match m row e` is
+    `m.c_0 row = memory_entry_lo e ∧ m.c_1 row = memory_entry_hi e`.
+    The proof:
 
     1. The trusted axiom `memory_bus_register_write_perm_sound`
-       delivers `memory_entry_lo e = m.c_0 row ∧ memory_entry_hi e =
-       m.c_1 row` from the multi-row Mem AIR chain — the writing
-       Main-row emission lands in some Mem row, the bus permutation
-       argument propagates through (`read_same_addr` chain rows), and
-       the consuming row's `value_0`/`value_1` byte-decompose to e's
-       lo/hi halves.
-    2. Locally, we confirm the consuming Mem row passes Mem's
-       `core_every_row` constraints (the F-typed every-row invariants
-       in `Airs/Mem.lean`) — booleanity of `wr`, `sel`,
-       `addr_changes`; `wr ⇒ sel`; `read_same_addr` definitional
-       identity; address-change-without-write zeroes value. This
-       shows the Mem AIR is locally consistent at the consumer row,
-       so the axiom's "consumer Mem row" hypothesis is satisfied.
-    3. Conclude via `.symm` rewriting on the axiom's output (the
-       predicate's lo/hi halves are flipped on the LHS vs the axiom).
+       delivers the lo/hi equalities from the multi-row Mem AIR chain
+       — the writing Main-row emission lands in some Mem row, the bus
+       permutation argument propagates through (`read_same_addr` chain
+       rows), and the consuming row's `value_0`/`value_1` byte-decompose
+       to e's lo/hi halves.
+    2. We confirm the consuming Mem row passes Mem's `core_every_row`
+       constraints (booleanity of `wr`, `sel`, `addr_changes`;
+       `wr ⇒ sel`; `read_same_addr` definitional identity;
+       address-change-without-write zeroes value), so the axiom's
+       "consumer Mem row" hypothesis is satisfied.
+    3. Conclude via `.symm` rewriting on the axiom's output.
 
-    This composes through the Mem AIR — not the trivial `.symm`. The
-    F/ExtF cross-row chain (PIL constraints 27/28: `read_same_addr *
-    (value - prev_value) = 0`) is bundled into the trusted axiom (it
+    The F/ExtF cross-row chain (PIL constraints 27/28: `read_same_addr *
+    (value - prev_value) = 0`) is bundled into the trusted axiom — it
     is in the stub bucket of `Airs/Mem.lean` because it mixes F with
-    challenge randomness). -/
+    challenge randomness. -/
 theorem register_write_lanes_match_of_bus_emission
     (m : Valid_Main C FGL FGL) (mem : ZiskFv.Airs.Mem.Valid_Mem C FGL FGL)
     (row : ℕ) (mem_consumer_row : ℕ) (e : Interaction.MemoryBusEntry FGL)
@@ -277,11 +239,11 @@ theorem register_write_lanes_match_of_bus_emission
     projection's corresponding field — concretely, `slotValue 4 = m.a_0
     row` and `slotValue 5 = m.a_1 row`.
 
-    Phase 3 callers establish `h_slot_lo` / `h_slot_hi` from the
-    PIL-level bus-emission spec (the auto-extracted thunks reference
-    the very columns Main constrains to carry the rs1 value's 32-bit
-    lanes; the entry-side equality is the bus protocol's
-    `permutation_assumes` contract). -/
+    Callers establish `h_slot_lo` / `h_slot_hi` from the PIL-level
+    bus-emission spec (the auto-extracted thunks reference the very
+    columns Main constrains to carry the rs1 value's 32-bit lanes; the
+    entry-side equality is the bus protocol's `permutation_assumes`
+    contract). -/
 theorem register_read_rs1_lanes_match_of_bus_emission
     (m : Valid_Main C FGL FGL) (row : ℕ) (e : Interaction.MemoryBusEntry FGL)
     (h_slot_lo : slotValue (@bus_emission_Main_mem_0 C FGL FGL _ _ _) 4
@@ -340,17 +302,14 @@ The soundness theorems below tie the memory-bus entry's lo / hi
 halves to these formulas. They split on the `store_pc` value:
 
 * When `store_pc = 0`, both formulas collapse to `c_0` / `c_1`, and
-  the existing `memory_bus_register_write_perm_sound` axiom delivers
-  the conclusion directly.
+  `memory_bus_register_write_perm_sound` delivers the conclusion
+  directly.
 * When `store_pc = 1`, the lo formula collapses to `pc + jmp_offset2`
-  and the hi formula collapses to `0`. This case is the
-  `store_pc = 1` analogue of MB-W; both sit in the same trust class
-  (memory-bus permutation soundness for register writes), and the new
-  axiom `memory_bus_register_write_perm_sound_store_pc` packages it.
+  and the hi formula collapses to `0`; the companion axiom
+  `memory_bus_register_write_perm_sound_store_pc` (same trust class)
+  delivers this case.
 
-The two cases are merged into a single soundness statement via a
-case split on `store_pc` (which is boolean by Main constraint 102 at
-`main.pil:473`). -/
+`store_pc` is boolean by Main constraint 102 at `main.pil:473`. -/
 
 /-- **Memory-bus permutation soundness for store_pc=1 register writes.**
 
@@ -362,15 +321,11 @@ case split on `store_pc` (which is boolean by Main constraint 102 at
     consuming Mem AIR row's value lanes byte-decompose to those
     halves through the memory-bus permutation argument.
 
-    This is the **store_pc = 1 analogue** of MB-W. Both axioms sit in
-    the same trust class (memory-bus permutation soundness on
-    `bus_id = 10` for register writes); they differ only in which
-    `store_value` formula applies. The split is structural — the PIL
-    formula uses `store_pc` as a multiplexer column, so the
-    soundness statement also splits.
+    Same trust class as `memory_bus_register_write_perm_sound`
+    (memory-bus permutation soundness on `bus_id = 10` for register
+    writes); differs only in which `store_value` formula applies.
 
-    See `docs/fv/trusted-base.md` (entry MB-W extension; the
-    finishing5 S4 closure introduces this companion). -/
+    See `docs/fv/trusted-base.md` (memory-bus permutation entry). -/
 axiom memory_bus_register_write_perm_sound_store_pc
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (mem : ZiskFv.Airs.Mem.Valid_Mem C FGL FGL)
@@ -397,29 +352,18 @@ axiom memory_bus_register_write_perm_sound_store_pc
     ∧ memory_entry_hi e = 0
 
 /-- **store_pc lo-lane match via memory-bus permutation soundness.**
+    Splits on `store_pc`:
 
-    Promotes `store_pc_lanes_match_lo m row e` from a Layer-1
-    structural hypothesis to a Layer-2 derivation that composes
-    through the Mem AIR.
-
-    The argument splits on `store_pc`:
-
-    * `store_pc = 0`: the existing MB-W axiom
-      (`memory_bus_register_write_perm_sound`) delivers
+    * `store_pc = 0`: `memory_bus_register_write_perm_sound` delivers
       `memory_entry_lo e = m.c_0 row`. The PIL formula
       `store_pc * (pc + jmp_offset2 - c_0) + c_0` collapses to `c_0`.
-    * `store_pc = 1`: the companion axiom
-      (`memory_bus_register_write_perm_sound_store_pc`) delivers
-      `memory_entry_lo e = m.pc row + m.jmp_offset2 row`. The PIL
-      formula collapses to `pc + jmp_offset2`.
+    * `store_pc = 1`: `memory_bus_register_write_perm_sound_store_pc`
+      delivers `memory_entry_lo e = m.pc row + m.jmp_offset2 row`. The
+      PIL formula collapses to `pc + jmp_offset2`.
 
-    Both branches close by `ring`-rewriting the predicate's RHS
-    (`store_pc * (...) + c_0`) with the case-specific value of
-    `store_pc`.
-
-    Booleanity of `store_pc` (PIL constraint 102 at `main.pil:473`)
-    is the case-split discriminant: callers establish `store_pc = 0`
-    or `store_pc = 1` via the appropriate `transpile_<op>` axiom. -/
+    Booleanity of `store_pc` (PIL constraint 102 at `main.pil:473`) is
+    the case-split discriminant; callers establish `store_pc = 0` or
+    `store_pc = 1` via the appropriate `transpile_<op>` axiom. -/
 theorem store_pc_lanes_match_lo_of_bus_emission
     (m : Valid_Main C FGL FGL) (mem : ZiskFv.Airs.Mem.Valid_Mem C FGL FGL)
     (row : ℕ) (mem_consumer_row : ℕ) (e : Interaction.MemoryBusEntry FGL)
@@ -519,27 +463,10 @@ theorem store_pc_lanes_match_hi_of_bus_emission
     rw [h_perm.2]
     ring
 
--- Dependency / axiom audit. The reads-side theorems compose through
--- the slot-match lemmas in `Airs/MemoryBus/BusShape.lean` (which use
--- only Mathlib's standard built-in axioms). No ZisK trust-base axioms
--- are introduced for the reads-side.
---
--- The writes-side theorem
--- `register_write_lanes_match_of_bus_emission` introduces one
--- trusted axiom: `memory_bus_register_write_perm_sound`, the
--- memory-bus permutation-soundness statement for register writes
--- (the multi-row Mem AIR chain bundled into a single soundness
--- claim, in the same shape as `OperationBus.matches_entry`).
---
--- The store_pc=1 lane-match theorems
--- `store_pc_lanes_match_{lo,hi}_of_bus_emission` (finishing5 S4)
--- introduce one additional trusted axiom in the same trust class:
--- `memory_bus_register_write_perm_sound_store_pc` — the companion
--- claim for `store_pc = 1` register writes (JAL / JALR / AUIPC). It
--- mirrors MB-W's shape exactly, differing only in the conclusion
--- (which evaluates the PIL `store_value` formulas at `store_pc = 1`).
---
--- See `docs/fv/trusted-base.md` for the trusted-base entries.
+-- Axiom audit: confirm the reads-side theorems introduce no trust-base
+-- axioms; the writes-side theorems use exactly the two memory-bus
+-- permutation-soundness axioms declared above.
+-- See `docs/fv/trusted-base.md`.
 #print axioms register_read_rs1_lanes_match_of_bus_emission
 #print axioms register_read_rs2_lanes_match_of_bus_emission
 #print axioms register_write_lanes_match_of_bus_emission

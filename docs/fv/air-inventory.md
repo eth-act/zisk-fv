@@ -80,7 +80,7 @@ constraints (which would *enforce* that) are not modeled.
 `Rom`, `RomData`, `InputData`. These would matter for a top-level
 soundness theorem ("ZisK's full program execution from initial
 state + public input matches Sail's interpreter"). The current
-metaplan only proves per-opcode equivalence given a *decoded*
+equivalence proof only relates per-opcode execution given a *decoded*
 instruction (`add_input`, `ld_input`, etc.) — it doesn't reason about
 how that instruction got there. Extracting Rom/RomData/InputData would
 be needed for a top-level theorem; for per-opcode work it's not

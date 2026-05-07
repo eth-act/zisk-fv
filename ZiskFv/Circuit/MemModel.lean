@@ -11,10 +11,10 @@ import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.BusHypotheses
 
 /-!
-# Spec.MemModel — memory-model bridge
+# Circuit.MemModel — memory-model bridge
 
 Composes the Mem AIR's row constraints with Sail's memory-monad
-semantics. Where `Spec/<opcode>.lean` provides a per-opcode
+semantics. Where `Circuit/<opcode>.lean` provides a per-opcode
 *circuit-side* spec relating Main's column accessors to a Sail-side
 intermediate, this module provides the **memory bridge** lemmas: given a
 Mem AIR row + the Main-side memory-bus emission + the structural
@@ -70,8 +70,8 @@ We don't re-derive it here — `mem_load_correct` consumes it directly.
 
 ## Note on M-axiom retirement
 
-The current per-opcode load/store metaplan theorems (e.g.
-`equiv_LD_metaplan` in `Equivalence/LoadD.lean`) take an
+The current per-opcode load/store equivalence theorems (e.g.
+`equiv_LD` in `Equivalence/LoadD.lean`) take an
 `h_bus_execute_matches_sail`-style hypothesis that ties the bus-effect's
 output state to Sail's pure-spec result. Under the bridge here, that
 hypothesis is replaced by:
@@ -268,7 +268,7 @@ us the load-side memory predicate directly.
 Composition with `chip_bus_hyps_load_rrrw` is left to per-opcode
 `Equivalence/<Op>.lean` callers. -/
 
-/-! ## Narrow-width companions (S5a)
+/-! ## Narrow-width companions
 
 Per-width projections of `mem_load_correct` / `mem_store_correct` for
 1-byte (LB/LBU/SB), 2-byte (LH/LHU/SH), and 4-byte (LW/LWU/SW) memory
@@ -399,7 +399,7 @@ trust-base axioms beyond Mathlib's kernel:
 * `MemoryBus.MemBridge.lookup_consumer_matches_provider_{load,store}`
   — bus-permutation soundness (project-trusted; PLONK / logUp /
   permutation argument scope per CLAUDE.md "Trust scoping").
-* `Spec.MemModel.row_models_sail_state_{load,store}` — Sail-side
+* `Circuit.MemModel.row_models_sail_state_{load,store}` — Sail-side
   state-bridge: ZisK's Mem AIR models Sail's `state.mem` faithfully on
   aligned reads/writes.
 

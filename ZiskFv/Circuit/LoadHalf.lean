@@ -9,7 +9,7 @@ import ZiskFv.Tactics.SignExtendLoadArchetype
 /-!
 Compositional LH (load halfword, signed / sign-extended) spec.
 
-Phase 3C T-SL1 — sibling of LW under `SignExtendLoadArchetype`. Uses
+Sibling of LW under `SignExtendLoadArchetype`. Uses
 `OP_SIGNEXTEND_H = 40`, `m32 = 0` (the `"signextend_h"` string does
 not contain `"_w"`). Unlike LW the 32-bit bus-zeroing is not active;
 the bus carries `a[1]` / `b[1]` verbatim via the `(1 - m32) = 1`
@@ -17,7 +17,7 @@ passthrough factor.
 
 See `Spec/LoadWord.lean` for the compositional rationale (why signed
 loads use the bus-entry side rather than the memory-bus / `c_packed`
-side). The Sail-level companion and metaplan theorem live in
+side). The Sail-level companion and equivalence theorem live in
 `Equivalence/Lh.lean`.
 -/
 

@@ -23,24 +23,21 @@ import ZiskFv.Sail.add
 /-!
 # RdValDerivation.Arith — `h_rd_val` discharge lemmas for ALU-Arith opcodes
 
-**Phase 2.5 N-ALU-Arith** of Track N (`h_rd_val` retirement).
-
 Provides one discharge lemma per opcode for the following 6 opcodes:
 ADD, ADDI, ADDW, ADDIW, SUB, SUBW.
 
-SLT, SLTU, SLTI, SLTIU leave this file for finishing2 (Binary AIR
-row-constraint extraction required; out of scope here).
+SLT, SLTU, SLTI, SLTIU live in `BinaryCompare.lean`.
 
 ## Tier classification
 
 | Opcode | Tier | Status |
 |--------|------|--------|
-| ADD    | 1    | Fully circuit-derived (no Phase-4 residual) |
-| ADDI   | 1.5  | OUTPUT-EQ residual `h_input_val` (DONE_WITH_CONCERNS) |
-| ADDW   | 1.5  | OUTPUT-EQ residual `h_input_val` (DONE_WITH_CONCERNS) |
-| ADDIW  | 1.5  | OUTPUT-EQ residual `h_input_val` (DONE_WITH_CONCERNS) |
-| SUB    | 1.5  | OUTPUT-EQ residual `h_input_val` (DONE_WITH_CONCERNS) |
-| SUBW   | 1.5  | OUTPUT-EQ residual `h_input_val` (DONE_WITH_CONCERNS) |
+| ADD    | 1    | Fully circuit-derived (no residual)              |
+| ADDI   | 1.5  | OUTPUT-EQ residual `h_input_val`                 |
+| ADDW   | 1.5  | OUTPUT-EQ residual `h_input_val`                 |
+| ADDIW  | 1.5  | OUTPUT-EQ residual `h_input_val`                 |
+| SUB    | 1.5  | OUTPUT-EQ residual `h_input_val`                 |
+| SUBW   | 1.5  | OUTPUT-EQ residual `h_input_val`                 |
 
 ## Architecture
 
@@ -64,12 +61,8 @@ or `Valid_BinaryExtension` parameter). They prove only
 — i.e. Main's `c` lanes equal the abstract bus entry's `c` lanes.
 There is **no** Spec theorem in tree that ties
 `bus_entry.c_lo + bus_entry.c_hi * 2^32` to `(<inputs>).toNat` for
-these opcodes. That equality is the **Phase 4 Binary-SM audit
-obligation**; supplying it as `h_input_val` to the lemmas below is
-a genuine OUTPUT-EQ trust gap, not a derivable consequence of the
-extracted constraints. See `docs/fv/track-n-traps.md` § "ALU-Arith
-abstract bus-entry gap" for the escalation manifest (what new
-infrastructure would be required to retire `h_input_val`).
+these opcodes. Supplying it as `h_input_val` to the lemmas below is a
+genuine OUTPUT-EQ trust gap.
 
 The body of each non-ADD lemma still does real work:
 * `h_circuit` — bundles mode witnesses + bus-match;
@@ -83,19 +76,9 @@ From these, the byte-sum Nat equality is derived **internally**
 conclusion. The byte-decomposition layer is real Tier-1 work; only
 the chunk-level `h_input_val` is the residual gap.
 
-## Trust summary
-
-| Residual parameter | Level | Closes in |
-|--------------------|-------|-----------|
-| ADD: none          | —     | ✅ |
-| Others: `h_input_val` | chunk OUTPUT-EQ (Binary SM result claim) | future infra phase |
-| `h_lane_rd` (K2)  | Layer 1 structural | finishing2/3 |
-
 ## Why `h_input_val` cannot be retired with the in-tree infrastructure
 
-The Wave B.6 retry attempted a Tier-1 derivation mirroring ADD's
-chain. It found that none of ADDI/ADDW/ADDIW/SUB/SUBW have a Spec
-theorem of the right shape. ADD's success rests on three pieces:
+ADD's success rests on three pieces:
 
 1. The `Valid_BinaryAdd` named-column AIR
    (`Airs/Binary/BinaryAdd.lean`) extracted from the BinaryAdd PIL
@@ -110,17 +93,13 @@ theorem of the right shape. ADD's success rests on three pieces:
 
 For ADDI/SUB the missing piece is (2): no
 `addi_compositional_with_binaryadd` / `sub_compositional_with_binaryadd`
-exists in `Spec/`, and authoring one is out of scope for this Wave
-(the user explicitly forbids new theorems in `Spec/<X>.lean`).
+exists in `Spec/`.
 
 For ADDW/ADDIW/SUBW the missing piece is *both* (1) and (2): the
 W-variant Binary-SM is `BinaryExtension` (PIL AIR #12), which is
 **not extracted** at all (`docs/fv/air-inventory.md` lists it as
 "❌ row-constraints missing"). No `Valid_BinaryExtension` AIR
 exists in the Lean tree.
-
-See `docs/fv/track-n-traps.md` § "ALU-Arith abstract bus-entry gap"
-for the full escalation manifest.
 -/
 
 set_option maxHeartbeats 2400000

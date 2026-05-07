@@ -10,30 +10,15 @@ import ZiskFv.Airs.OpBusEffect
 # OpBusHypotheses — Sail-state register-read derivation from the op-bus
 
 Partner module to `Airs/BusHypotheses.lean`. Where `BusHypotheses.lean`
-extracts `read_xreg`-equalities from the **memory-bus** precondition for
-the standard ALU/jump/load/store shapes (where the Main memory bus
-carries register and memory reads), this module extracts the analogous
-equalities from the **operation-bus** precondition for the branch shape
-(where the Main memory bus is empty and rs1/rs2 reads route through the
-Binary state machine via the operation bus).
+extracts `read_xreg`-equalities from the memory-bus precondition for
+the standard ALU/jump/load/store shapes, this module extracts the
+analogous equalities from the operation-bus precondition for the branch
+shape, where the Main memory bus is empty and rs1/rs2 reads route
+through the Binary state machine via the operation bus.
 
-This is the Track Q POC closure: the branch-family metaplan theorems
-can now drop their scenario-binding `h_input_r1` / `h_input_r2`
-parameters in favour of a single `h_op_bus : (op_bus_effect ...).1`
-hypothesis.
-
-Only the **branch** shape ships here (one Main-emitted op-bus entry,
-multiplicity = 1, lanes carry `xreg rs1` / `xreg rs2`). Future tracks
-can extend with shapes for jump-pseudo-NOP routing or mul/div op-bus
-hops; the same pattern applies.
-
-**Axiom budget.** No new project-level axioms (no new
-`transpile_<OP>` or trust-base entries). The `chip_op_bus_hyps_branch`
-proof transitively pulls in `Lean.ofReduceBool` and `Lean.trustCompiler`
-beyond the `_from_bus` set — both are standard Lean kernel axioms used
-by `DecidableEq (Fin GL_prime)` instance-resolution when the proof
-rewrites the `if entry.multiplicity = (1 : FGL)` conditional via
-`if_pos`. They are *not* part of the project's trust base.
+Branch-family equivalence theorems consume a single
+`h_op_bus : (op_bus_effect ...).1` hypothesis instead of separate
+`h_input_r1` / `h_input_r2` parameters.
 -/
 
 namespace ZiskFv.Airs.OpBusHypotheses
@@ -80,17 +65,13 @@ theorem chip_op_bus_hyps_branch
   rw [List.foldl_cons, List.foldl_nil, if_pos h_mult] at h_op_bus
   exact ⟨h_op_bus.2.1, h_op_bus.2.2⟩
 
-/-- **ALU shape — single op-bus entry.** Identical extraction to
-    `chip_op_bus_hyps_branch`: the ALU family (RTYPE/ITYPE/RTYPEW +
-    ADDIW) emits a single Main↔Binary or Main↔Arith op-bus entry with
-    `multiplicity = 1` (`is_external_op = 1` for ALU rows per
-    `transpile_ADD` and friends), with rs1 on the `a` lanes and rs2 on
-    the `b` lanes — the same lane convention as the branch shape. The
-    rd write happens via the *memory* bus, not the op bus, so this
-    lemma only extracts the input-read equalities (rs1, rs2).
-    Provided as a name-aliased re-export of `chip_op_bus_hyps_branch`
-    so callers in the ADD / SUB / AND / … fan-out can read the proof
-    documentation as ALU-specific. -/
+/-- **ALU shape — single op-bus entry.** Same extraction as
+    `chip_op_bus_hyps_branch`. The ALU family (RTYPE/ITYPE/RTYPEW +
+    ADDIW) emits a Main↔Binary/Main↔Arith op-bus entry with rs1 on the
+    `a` lanes and rs2 on the `b` lanes; rd writes go through the memory
+    bus, so this lemma extracts only the input-read equalities.
+    Name-aliased re-export of `chip_op_bus_hyps_branch` so ALU callers
+    can read the proof documentation as ALU-specific. -/
 theorem chip_op_bus_hyps_alu
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (entry : OperationBusEntry FGL)
@@ -126,21 +107,13 @@ theorem chip_op_bus_hyps_load
   (chip_op_bus_hyps_branch state entry rs1 rs1 h_mult h_op_bus).1
 
 /-- **Store shape — single op-bus entry, two reads (rs1 + rs2).**
-    SD/SB/SH/SW emit a Main↔internal-copyb microinstruction with
-    `is_external_op = 0` — meaning **the op-bus emission for stores has
-    multiplicity 0**, not 1. The transpile axioms (`transpile_SD` and
-    siblings) confirm this: stores route their rs1/rs2 reads via the
-    *memory bus* exclusively (shape (e) `chip_bus_hyps_store_rrrw`),
-    not the operation bus.
-    Provided here as a documentation-only stub: the *signature* mirrors
-    `chip_op_bus_hyps_alu` so callers can pattern-match on the same
-    shape, but in practice store-family equiv theorems should derive
-    rs1/rs2 reads from the memory bus rather than the op-bus. The
-    op-bus precondition for stores collapses to the trivial `True`
-    (multiplicity-0 entries are no-ops in `op_bus_effect`); this lemma
-    therefore re-states `chip_op_bus_hyps_alu` for the rare case a
-    caller wants to ride a `multiplicity = 1` op-bus entry alongside
-    a store row. -/
+    Note: SD/SB/SH/SW emit a Main↔internal-copyb microinstruction with
+    `is_external_op = 0`, so in practice the op-bus emission for stores
+    has multiplicity 0 — stores route rs1/rs2 reads through the memory
+    bus (shape (e) `chip_bus_hyps_store_rrrw`), not the operation bus.
+    This lemma is a re-export of `chip_op_bus_hyps_alu` for the rare
+    case a caller wants to ride a `multiplicity = 1` op-bus entry
+    alongside a store row. -/
 theorem chip_op_bus_hyps_store
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (entry : OperationBusEntry FGL)

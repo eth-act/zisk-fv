@@ -119,8 +119,8 @@ attribute [simp]
   LeanRV64D.Functions.not
   LeanRV64D.Functions.phys_access_check
   LeanRV64D.Functions.plat_enable_misaligned_access
-  -- pmaCheck: closed via ZiskFv.PlatformScope.pmaCheck_is_pure_none (Phase 3.5 P3).
-  -- pmpCheck: closed via ZiskFv.PlatformScope.pmpCheck_is_pure_none (Phase 3.5 P1).
+  -- pmaCheck: closed via ZiskFv.PlatformScope.pmaCheck_is_pure_none.
+  -- pmpCheck: closed via ZiskFv.PlatformScope.pmpCheck_is_pure_none.
   LeanRV64D.Functions.range_subset
   LeanRV64D.Functions.read_kind_of_flags
   LeanRV64D.Functions.read_ram
@@ -138,7 +138,7 @@ attribute [simp]
   LeanRV64D.Functions.to_bits
   LeanRV64D.Functions.to_bits_checked
   LeanRV64D.Functions.translateAddr
-  -- within_clint: closed via ZiskFv.PlatformScope.within_clint_is_false (Phase 3.5 P2).
+  -- within_clint: closed via ZiskFv.PlatformScope.within_clint_is_false.
   LeanRV64D.Functions.within_htif_readable
   LeanRV64D.Functions.within_htif_writable
   LeanRV64D.Functions.within_mmio_readable
@@ -776,7 +776,7 @@ end ControlFlow
 
 namespace ZiskFv.PlatformScope
 
-  /-- **Phase 3.5 P1 (platform-feature axiom).** PMP is disabled in the
+  /-- **Platform-feature axiom (PMP off).** PMP is disabled in the
       RV64IM scope ZisK targets: no `pmpcfg_n` entry has its `A` field set
       to anything other than `OFF`, so the 16-entry match loop in
       `LeanRV64D.Functions.pmpCheck` never yields `PMP_Match` /
@@ -797,7 +797,7 @@ namespace ZiskFv.PlatformScope
   : LeanRV64D.Functions.pmpCheck addr width acc priv
       = (pure none : SailM (Option ExceptionType))
 
-  /-- **Phase 3.5 P2 (platform-feature axiom).** The CLINT MMIO region is
+  /-- **Platform-feature axiom (CLINT disjoint).** The CLINT MMIO region is
       never addressed by ZisK-generated code: user programs access only
       flat program memory. Under this scope commitment
       `LeanRV64D.Functions.within_clint` is a pure identity: it returns
@@ -811,14 +811,15 @@ namespace ZiskFv.PlatformScope
       stronger, scope-honest, and avoids threading per-opcode disjointness
       hypotheses.
 
-      Stated in monadic (uncurried) form for the same reason as P1. -/
+      Stated in monadic (uncurried) form for the same reason as
+      `pmpCheck_is_pure_none`. -/
   @[simp high]
   axiom within_clint_is_false
     (addr : physaddr) (width : Nat)
   : LeanRV64D.Functions.within_clint addr width
       = (pure false : SailM Bool)
 
-  /-- **Phase 3.5 P3 (platform-feature axiom).** The PMA check is inert
+  /-- **Platform-feature axiom (PMA inert).** The PMA check is inert
       when the single-region / readable / writable / `AlignmentFault`
       hypotheses already recorded in `RISC_V_assumptions` hold. Rather
       than threading those fields through `matching_pma` + the
@@ -833,7 +834,7 @@ namespace ZiskFv.PlatformScope
   : LeanRV64D.Functions.pmaCheck paddr width acc res_or_con
       = (pure none : SailM (Option ExceptionType))
 
-  /-- **Phase 3.5 P4 (platform-feature axiom).** The Zicfilp landing-pad
+  /-- **Platform-feature axiom (Zicfilp disabled).** The Zicfilp landing-pad
       extension is disabled in ZisK's RV64IM target. Under this scope
       `LeanRV64D.Functions.update_elp_state` (ZicfilpRegs.lean:224) is a
       no-op: its `currentlyEnabled Ext_Zicfilp` guard is always false,
@@ -891,10 +892,10 @@ section Spec
     state.regs.get? Register.misa = .some misa ∧
     -- Assumption A4.2: mseccfg register exists
     Sail.readReg Register.mseccfg state = EStateM.Result.ok mseccfg state ∧
-    -- Phase 3.5 platform-scope tags (descriptive — discharged by the
-    -- universal axioms in `ZiskFv.PlatformScope`). These document the
-    -- RV64IM scope commitment in the assumption bundle and simultaneously
-    -- give downstream proofs direct state-level access to each axiom's
+    -- Platform-scope tags (descriptive — discharged by the universal
+    -- axioms in `ZiskFv.PlatformScope`). These document the RV64IM
+    -- scope commitment in the assumption bundle and simultaneously give
+    -- downstream proofs direct state-level access to each axiom's
     -- conclusion via simp-rewrite.
     -- A5.1 : PMP entries are all OFF (pmp_all_off).
     (∀ (addr : physaddr) (width : Nat) (acc : MemoryAccessType Unit) (priv : Privilege),

@@ -64,6 +64,17 @@
             zisk-pilout = self.packages.${system}.zisk-pilout;
             extracted-lean = self.packages.${system}.extracted-lean;
           }}/bin/populate";
+          meta = {
+            description = "Build and copy the Sail-Lean spec, ZisK pilout, and extracted Lean into build/.";
+          };
+        };
+
+        apps.test = {
+          type = "app";
+          program = "${pkgs.callPackage ./nix/test.nix { }}/bin/test";
+          meta = {
+            description = "Run the full FV check: cargo + lake build + trust gate + flake repro.";
+          };
         };
 
         devShells.default = pkgs.mkShell {

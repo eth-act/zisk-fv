@@ -14,12 +14,8 @@ import ZiskFv.Sail.BusEffect
 
 /-!
 End-to-end theorem for RV64 LWU (load word, unsigned / zero-extended).
-Phase 2.5 D4c sibling of `Equivalence/LoadD.lean`. `finishing3` S5b
-retired the the bus-execute-matches-sail premise parameter from
-`equiv_LWU_metaplan` (see `LoadD` for the analogous LD-side
-retirement; LWU follows the same shape with
-`bus_effect_matches_sail_loadu_4byte_rrrw` and
-`mem_load_correct_4byte`).
+Sibling of `Equivalence/LoadD.lean`; uses
+`bus_effect_matches_sail_loadu_4byte_rrrw` and `mem_load_correct_4byte`.
 -/
 
 namespace ZiskFv.Equivalence.LoadWU
@@ -34,21 +30,6 @@ open ZiskFv.Circuit.LoadD
 open ZiskFv.Circuit.LoadWU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
-
-/-- **Circuit-level LWU theorem.** With the LD-shape load hypotheses
-    plus the memory-bus entry's high 4 byte lanes zeroed (the `ind_width
-    = 4` bus-side zero-pad), the Main row's packed `c` cell encodes the
-    32-bit loaded value (equal to `memory_entry_lo entry`).
-
-    LWU-analogue of `equiv_LD`, narrowed via
-    `load_wu_compositional`. -/
-theorem equiv_LWU
-    (_rs1 _rd : Fin 32) (_state : RV64State)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (entry : MemoryBusEntry FGL)
-    (h_circuit : load_wu_circuit_holds m r_main next_pc entry) :
-    main_c_packed m r_main = memory_entry_lo entry :=
-  load_wu_compositional m r_main next_pc entry h_circuit
 
 /-- **Sail-level companion.** Wraps `PureSpec.execute_LOADWU_pure_equiv`. -/
 theorem equiv_LWU_sail
@@ -79,11 +60,9 @@ theorem equiv_LWU_sail
   PureSpec.execute_LOADWU_pure_equiv
     lwu_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** `finishing3` S5b: retired
-    the bus-execute-matches-sail premise in favour of structural bus
-    hypotheses + a memory-model bridge with a zero-extension witness on
-    the high bytes. -/
-theorem equiv_LWU_metaplan
+/-- **Metaplan theorem.** Uses structural bus hypotheses + a
+    memory-model bridge with a zero-extension witness on the high bytes. -/
+theorem equiv_LWU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lwu_input : PureSpec.LwuInput)
     (mstatus : RegisterType Register.mstatus)
@@ -108,7 +87,7 @@ theorem equiv_LWU_metaplan
     (h_rd_zero_iff :
       Transpiler.wrap_to_regidx e2.ptr = 0 ↔ lwu_input.rd = 0)
     (h_rd_idx : lwu_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val)
-    -- Memory-bridge premises (S5b).
+    -- Memory-bridge premises.
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
     (h_main_emit_b :
       main.b_0 r_main = memory_entry_lo e1

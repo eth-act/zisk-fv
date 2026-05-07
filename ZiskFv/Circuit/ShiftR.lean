@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ShiftArchetype
 
 /-!
-Compositional SRLW spec (Phase 2.5 D4f — `ShiftArchetype` validation).
+Compositional SRLW spec — `ShiftArchetype` instantiation.
 
 SRLW mirrors SLLW's Main-AIR row exactly (same `m32 = 1` bus path, same
 `is_external_op = 1` to the `BinaryExtension` SM) — only the `op` literal
@@ -15,7 +15,7 @@ differs (`OP_SRL_W = 37` vs `OP_SLL_W = 36`). The direction of the shift
 lives on the downstream SM side, not in the Main AIR.
 
 This module instantiates `Tactics.ShiftArchetype` for the SRLW opcode,
-producing the analogue of `Spec.Shift.sllw_compositional` via the
+producing the analogue of `Circuit.Shift.sllw_compositional` via the
 `shift_archetype_m32_one_zeros_bus` macro-theorem.
 -/
 
@@ -32,7 +32,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- The Main row at `r_main` is in SRLW-execution mode: external op with
     opcode literal 37 (`OP_SRL_W`), 32-bit width (`m32 = 1`),
     `set_pc = 0`, and `flag = 0`. Identical shape to
-    `Spec.Shift.main_row_in_sllw_mode` modulo the op literal. -/
+    `Circuit.Shift.main_row_in_sllw_mode` modulo the op literal. -/
 @[simp]
 def main_row_in_srlw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
@@ -42,7 +42,7 @@ def main_row_in_srlw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
   ∧ m.set_pc r_main = 0
 
 /-- Main-side hypotheses for the SRLW archetype. Shape identical to
-    `Spec.Shift.sllw_circuit_holds` modulo opcode literal. -/
+    `Circuit.Shift.sllw_circuit_holds` modulo opcode literal. -/
 @[simp]
 def srlw_circuit_holds
     (m : Valid_Main C FGL FGL) (r_main : ℕ)

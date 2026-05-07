@@ -7,8 +7,8 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ShiftArchetype
 
 /-!
-Compositional SLLIW spec (Phase 3A H2b — `ShiftArchetype` sibling,
-W-variant immediate).
+Compositional SLLIW spec — `ShiftArchetype` sibling, W-variant
+immediate.
 
 SLLIW's Main-AIR row mirrors SLLW's exactly (same `op = OP_SLL_W = 36`,
 same `m32 = 1` bus path, same `is_external_op = 1` to the
@@ -23,7 +23,7 @@ SLLIW with no macro changes.
 
 This module instantiates `Tactics.ShiftArchetype` for SLLIW at
 `opcode_lit = OP_SLL_W`, producing the analogue of
-`Spec.Shift.sllw_compositional`.
+`Circuit.Shift.sllw_compositional`.
 -/
 
 namespace ZiskFv.Circuit.ShiftLI
@@ -49,7 +49,7 @@ def main_row_in_slliw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
   ∧ m.set_pc r_main = 0
 
 /-- Main-side hypotheses for the SLLIW archetype. Shape identical to
-    `Spec.Shift.sllw_circuit_holds` modulo the mode-predicate name. -/
+    `Circuit.Shift.sllw_circuit_holds` modulo the mode-predicate name. -/
 @[simp]
 def slliw_circuit_holds
     (m : Valid_Main C FGL FGL) (r_main : ℕ)

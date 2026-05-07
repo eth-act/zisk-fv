@@ -2,8 +2,7 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Fundamentals.Execution
 
 /-!
-RV64 SRLIW (shift-right-logical-immediate-word). Phase 3A H2c sibling
-of SLLIW.
+RV64 SRLIW (shift-right-logical-immediate-word). Sibling of SLLIW.
 
 Takes the low 32 bits of `rs1`, shifts right (logical) by a 5-bit
 immediate `shamt`, sign-extends the 32-bit result back to 64 bits. No
@@ -14,10 +13,6 @@ the 32-bit result is `Sail.shift_bits_right rs1_val shamt` and gets
 sign-extended to 64 via `sign_extend (m := 64)`. Proof shape is
 identical to `slliw.lean::execute_SHIFTIWOP_slliw_pure_equiv`, swapping
 `sopw.SLLIW` for `sopw.SRLIW`.
-
-Trusted-axiom policy: axiomatized per the D4b-patch pattern (see
-`slliw.lean` docstring). Catalogues as **C3b** in
-`docs/fv/trusted-base.md`.
 -/
 
 namespace PureSpec
@@ -51,8 +46,8 @@ namespace PureSpec
     : SrliwOutput
   }
 
-  /-- **SRLIW Sail-equivalence.** Phase 3.5 promotion: direct analogue
-      of `execute_SHIFTIWOP_slliw_pure_equiv` with
+  /-- **SRLIW Sail-equivalence.** Direct analogue of
+      `execute_SHIFTIWOP_slliw_pure_equiv` with
       `sopw.SLLIW → sopw.SRLIW`. -/
   lemma execute_SHIFTIWOP_srliw_pure_equiv
     (srliw_input : SrliwInput)

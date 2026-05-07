@@ -8,7 +8,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Circuit.StoreD
 
 /-!
-**Store archetype macros / generic lemmas** (Phase 2 A4-M).
+**Store archetype macros / generic lemmas.**
 
 Write-side mirror of `Tactics/LoadArchetype.lean`. The four RV64IM
 integer stores (SD/SW/SH/SB) share a single ZisK transpilation shape:
@@ -18,36 +18,25 @@ one microinstruction with `src_a = reg(rs1)`, `src_b = reg(rs2)`
 `is_external_op = 0`. **All four stores share `op = "copyb"`** —
 there's no signed/unsigned split for stores (the value bytes are
 just written verbatim), so unlike loads there is no sign-extension
-sub-family for Phase 3.
+sub-family.
 
-A4 closes SD (width = 8). SW/SH/SB fall out by instantiation with
-a width-specific "high-byte zeroing" assumption on the memory-bus
+The archetype closes SD (width = 8). SW/SH/SB fall out by
+instantiation with a width-specific "high-byte zeroing" assumption on
+the memory-bus
 write entry (SW zeros x4..x7, SH zeros x2..x7, SB zeros x1..x7) —
 i.e. the unused bytes of the 8-lane `MemoryBusEntry` are zeroed
 from the Main row's byte-emission side, and the spec-side packing
 folds them harmlessly into `memory_entry_toField`.
 
-## Usage pattern (Phase 3 fan-out)
+## Usage pattern
 
 ```lean
 -- SW case (width = 4, op = OP_COPYB = 1):
-theorem equiv_SW_metaplan (...) := by
+theorem equiv_SW (...) := by
   have := store_archetype_c_packed m r next_pc entry h_circuit
   -- apply `memory_entry_toField` lemmas specialized to width = 4
   ...
 ```
-
-Phase 3 will add per-width bridging lemmas (`memory_entry_width_*`,
-shared with loads), but A4 only exposes the width-independent archetype
-(packed 64-bit c-cell = packed bus-entry value).
-
-## Minimalism note
-
-Phase 2 A4 closes SD with `Spec.StoreD.store_d_compositional` directly
-(no macro call). The macro here is the *delivery* of the archetype —
-what Phase 3's SW/SH/SB proofs consume. Keeping SD's proof concrete
-while providing the macro at the same surface lets reviewers diff the
-load and store macros side-by-side and confirm the symmetry.
 
 ## Why a separate module (vs extending LoadArchetype)
 
@@ -88,7 +77,7 @@ def main_row_in_store_mode
   ∧ m.set_pc r_main = 0
 
 /-- **Archetype circuit-holds (copyb stores).** Parametric version of
-    `Spec.StoreD.store_d_circuit_holds`. Covers the entire integer
+    `Circuit.StoreD.store_d_circuit_holds`. Covers the entire integer
     store family (SD/SW/SH/SB) since all share `OP_COPYB`. -/
 @[simp]
 def store_archetype_copyb_circuit_holds
@@ -99,7 +88,7 @@ def store_archetype_copyb_circuit_holds
   ∧ memory_store_lanes_match m r_main entry
 
 /-- **Archetype theorem (copyb stores, c-packed).** Same shape as
-    `Spec.StoreD.store_d_compositional` but expressed in the
+    `Circuit.StoreD.store_d_compositional` but expressed in the
     parametric `store_archetype_copyb_circuit_holds` form. SW/SH/SB
     close via instantiation + a width-specific zeroing-of-high-bytes
     assumption on the memory-bus write entry. -/
@@ -115,7 +104,7 @@ theorem store_archetype_copyb_c_packed
   exact ⟨h_ext, h_op, h_m32, h_setpc⟩
 
 /-- **Archetype next-PC (copyb stores).** Same shape as
-    `Spec.StoreD.store_d_next_pc_concrete`: when `jmp_offset1 =
+    `Circuit.StoreD.store_d_next_pc_concrete`: when `jmp_offset1 =
     jmp_offset2 = 4`, the next-pc is `pc + 4`. Holds uniformly for
     SD/SW/SH/SB since they all use `j(4, 4)` in the Zisk
     transpiler. -/

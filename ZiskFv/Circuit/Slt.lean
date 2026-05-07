@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ALURTypeArchetype
 
 /-!
-Compositional SLT spec (Phase 3C T-RT4).
+Compositional SLT spec.
 
 Thin specialization of `Tactics.ALURTypeArchetype` at
 `opcode_lit = OP_LT = 7` (shared with BLT / BGE — the same Binary-SM
@@ -15,8 +15,7 @@ opcode computes the boolean `a < b` (signed); SLT materializes it into
 `c`, while branches route it into PC dispatch).
 
 The Binary-SM-internal correctness (that `bus_entry.c_lo / c_hi` pack
-a 64-bit 0/1 matching Sail's `BitVec.slt`) is the Phase 4 audit
-obligation.
+a 64-bit 0/1 matching Sail's `BitVec.slt`) is delegated to the audit.
 -/
 
 namespace ZiskFv.Circuit.Slt

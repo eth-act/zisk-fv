@@ -7,8 +7,8 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ShiftArchetype
 
 /-!
-Compositional SRAIW spec (Phase 3A H2d — `ShiftArchetype` sibling,
-W-variant immediate).
+Compositional SRAIW spec — `ShiftArchetype` sibling, W-variant
+immediate.
 
 SRAIW's Main-AIR row mirrors SRAW's exactly (same `op = OP_SRA_W = 38`,
 same `m32 = 1` bus path); the only difference vs SRAW is the source of

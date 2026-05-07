@@ -49,7 +49,7 @@ structure OperationBusEntry (F : Type) [Field F] where
     that 32-bit opcodes (`m32 = 1`) zero their high halves on the bus,
     while 64-bit opcodes (`m32 = 0`) pass them through. Callers supply the
     `m32` value via a constraint hypothesis (see
-    `Spec.Add.main_row_in_add_mode`, which pins `m32 = 0` for ADD);
+    `Circuit.Add.main_row_in_add_mode`, which pins `m32 = 0` for ADD);
     downstream `simp` closes `(1 - 0) * x = x` via `one_sub_zero_mul` /
     `Goldilocks.one_sub_m32_mul_of_eq_zero` below. The `c` lanes are
     forwarded verbatim; `main_step`/`extended_arg` derive from precompile
@@ -91,13 +91,11 @@ lemma one_sub_m32_mul_of_eq_zero {F : Type} [Field F]
   subst h; ring
 
 /-- `(1 - 1) * x = 0` — the mirror of `one_sub_zero_mul` for the
-    `m32 = 1` path. Added in Phase 2 A6 (SLLW) to collapse the
-    `(1 - m32) * a_hi` / `(1 - m32) * b_hi` factors on the bus entry
-    when the opcode is a 32-bit word variant (`m32 = 1`). Fires after
-    `rw [h_m32]` rewrites `m.m32 row = 1` into the `OperationBusEntry`.
-    Without this lemma `simp` leaves `(1 - 1) * x` unreduced under the
-    named-column accessors, mirroring the same pitfall
-    `one_sub_zero_mul` documents for the `m32 = 0` case. -/
+    `m32 = 1` path. Collapses the `(1 - m32) * a_hi` / `(1 - m32) * b_hi`
+    factors on the bus entry for 32-bit word variants. Fires after
+    `rw [h_m32]` rewrites `m.m32 row = 1` into the `OperationBusEntry`;
+    without this lemma `simp` leaves `(1 - 1) * x` unreduced under the
+    named-column accessors. -/
 @[simp]
 lemma one_sub_one_mul {F : Type} [Field F] (x : F) :
     (1 - (1 : F)) * x = 0 := by ring
@@ -137,8 +135,8 @@ def opBus_row_BinaryAdd {C : Type → Type → Type} {F ExtF : Type}
     extra_args_0 := 0 }
 
 /-- Two `OperationBusEntry`s match when every field agrees. The proof of
-    Spec.Add reduces to: Main's bus row at `r_main` matches BinaryAdd's bus
-    row at `r_binary`. -/
+    `Circuit.Add` reduces to: Main's bus row at `r_main` matches BinaryAdd's
+    bus row at `r_binary`. -/
 @[simp]
 def matches_entry {F : Type} [Field F]
     (a b : OperationBusEntry F) : Prop :=

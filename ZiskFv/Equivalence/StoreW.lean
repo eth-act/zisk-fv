@@ -15,15 +15,13 @@ import ZiskFv.Sail.BusEffect
 import ZiskFv.Tactics.StoreArchetype
 
 /-!
-End-to-end theorem for RV64 SW (store word). `finishing3` S5b retired
-the the bus-execute-matches-sail premise parameter from `equiv_SW_metaplan`.
-The 4-byte narrow store closes via `bus_effect_matches_sail_store_rrrw`
-plus a single bridging premise `h_modify_eq_bus_inserts` that ties
-Sail's narrow `modify_memory_4` 4-insert post-state to the bus's
-8-insert update. The bridging premise factors out the per-byte work
-(ptr-match, low-byte match, high-byte no-op match) into a single
-caller obligation; it is decomposable into the smaller circuit-level
-facts but tractably composable at the metaplan layer.
+End-to-end theorem for RV64 SW (store word). The 4-byte narrow store
+closes via `bus_effect_matches_sail_store_rrrw` plus a single bridging
+premise that ties Sail's narrow `modify_memory_4` 4-insert post-state
+to the bus's 8-insert update. The bridging premise factors out the
+per-byte work (ptr-match, low-byte match, high-byte no-op match) into
+a single caller obligation; it is decomposable into the smaller
+circuit-level facts but tractably composable at the equivalence layer.
 -/
 
 namespace ZiskFv.Equivalence.StoreW
@@ -39,15 +37,6 @@ open ZiskFv.Circuit.StoreW
 open ZiskFv.Tactics.StoreArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
-
-theorem equiv_SW
-    (_rs1 _rs2 : Fin 32) (_state : RV64State)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (entry : MemoryBusEntry FGL)
-    (h_circuit : store_archetype_copyb_circuit_holds m r_main next_pc entry)
-    (h_zero : sw_high_bytes_zero entry) :
-    main_c_packed m r_main = memory_entry_lo entry :=
-  store_w_compositional m r_main next_pc entry h_circuit h_zero
 
 theorem equiv_SW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -74,8 +63,8 @@ theorem equiv_SW_sail
   PureSpec.execute_STOREW_pure_equiv
     sw_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** `finishing3` S5b. -/
-theorem equiv_SW_metaplan
+/-- **Metaplan theorem.** -/
+theorem equiv_SW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sw_input : PureSpec.SwInput)
     (mstatus : RegisterType Register.mstatus)
@@ -97,18 +86,11 @@ theorem equiv_SW_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 2)
-    -- finishing3 S5b: bridging premise — circuit-level fact about
-    -- the post-writeReg state's memory map. Bundles ptr-match +
-    -- low-byte match + high-byte no-op match. Caller establishes via
-    -- the byte-bus high-zero witnesses + ptr-match against `transpile_SW`.
-    -- Bridging premise: the Sail-side post-modify state's `mem`
-    -- field equals the bus-side 8-insert chain on `state.mem`. (Both
-    -- sides agree on the other state fields by construction.)
     -- Bridging premise: bus side's 8-insert chain on `state.mem`
     -- equals Sail's 4-insert chain (via `modify_memory_4` data
-    -- fields). This is the post-stripping mem-equality the bus and
-    -- Sail sides reduce to. Caller establishes via byte-bus
-    -- high-zero witnesses + ptr-match.
+    -- fields). Bundles ptr-match + low-byte match + high-byte no-op
+    -- match. Caller establishes via byte-bus high-zero witnesses +
+    -- ptr-match against `transpile_SW`.
     (h_mem_eq :
       (((((((state.mem.insert e2.ptr.toNat e2.x0
           ).insert (e2.ptr.toNat + 1) e2.x1
@@ -153,8 +135,8 @@ theorem equiv_SW_metaplan
         MonadStateOf.modifyGet, EStateM.modifyGet, set,
         MonadStateOf.set, EStateM.set, get, MonadState.get, getThe,
         MonadStateOf.get, EStateM.get,
-        Sail.writeReg, PreSail.writeReg, EStateM.Result.map,
-        write_reg_state, PureSpec.modify_memory_4]
+        Sail.writeReg, PreSail.writeReg,
+        PureSpec.modify_memory_4]
   -- Goal: bus 8-insert chain on state.mem = Sail 4-insert chain on
   -- state.mem. Close via the bridging premise.
   exact h_mem_eq

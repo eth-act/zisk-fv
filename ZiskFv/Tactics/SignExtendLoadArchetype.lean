@@ -6,7 +6,7 @@ import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 
 /-!
-**Sign-extend load archetype macros / generic lemmas** (Phase 3C T-SL).
+**Sign-extend load archetype macros / generic lemmas.**
 
 The three RV64 signed loads (LW / LH / LB) share a single ZisK
 microinstruction shape under `fn load_op` with an external-op opcode:
@@ -25,7 +25,7 @@ AIR's `c` lanes are populated by the BinaryExtension SM's bus push.
 As a consequence the compositional spec exposes a `matches_entry`
 hypothesis tying a Main-emitted `OperationBusEntry` to a secondary
 entry supplied by the caller — the BinaryExtension-side emission is
-deferred to Phase 4 (same decision as SLLW / MULW).
+a separate audit obligation (same decision as SLLW / MULW).
 
 Structurally this archetype is the load-family analogue of
 `Tactics/ShiftArchetype.lean`: it parameterizes over the opcode
@@ -35,21 +35,21 @@ bus-emission corollaries (`a_hi = b_hi = 0` when `m32 = 1`;
 pass-through when `m32 = 0`). The `a` lanes are not pinned by the
 transpile contract to a specific register-read here because the
 archetype focuses on the bus match rather than the full address
-chain; concrete opcodes pin `a` lanes at the metaplan layer.
+chain; concrete opcodes pin `a` lanes at the equivalence layer.
 
 ## Parameterization
 
 * `opcode_lit : FGL` — `OP_SIGNEXTEND_W = 41` (LW),
   `OP_SIGNEXTEND_H = 40` (LH), `OP_SIGNEXTEND_B = 39` (LB).
 * `m32_val : FGL` — `1` for LW, `0` for LH / LB. The archetype lemmas
-  fire for either value; callers pin one at the metaplan theorem
+  fire for either value; callers pin one at the equivalence theorem
   layer via the `transpile_L{W,H,B}` axiom witnesses.
 
 ## Usage pattern
 
 ```lean
 -- LW case:
-theorem equiv_LW (...) := by
+theorem equiv_LW_circuit (...) := by
   have := sign_extend_load_archetype_m32_one_zeros_bus m r_main bus_entry
     (opcode_lit := OP_SIGNEXTEND_W) h_circuit_lw
   ...
@@ -69,11 +69,9 @@ paths (internal vs. external) in the `c_packed` conclusion, which
 does not generalize cleanly: for internal ops the conclusion is
 `c_packed = memory_entry_toField entry`; for external ops the `c`
 lanes are populated by the BinaryExtension SM's bus push, not the
-memory-bus entry. Per Phase 3 master-plan fragility note #1 and the
-general read-only policy on existing `Tactics/*.lean`, duplication
-into a sibling archetype is the preferred path. The two archetypes
-share the Main-row mode / PC-handshake structure but diverge in the
-`c`-populating mechanism.
+memory-bus entry. Duplication into a sibling archetype is the
+preferred path; the two archetypes share the Main-row mode /
+PC-handshake structure but diverge in the `c`-populating mechanism.
 -/
 
 namespace ZiskFv.Tactics.SignExtendLoadArchetype
@@ -115,7 +113,7 @@ def sign_extend_load_archetype_circuit_holds
 
 /-- **Archetype m32 = 1 bus-zeroing theorem.** For the LW case
     (`m32 = 1`), the bus entry has `a_hi = b_hi = 0`. This mirrors
-    `Spec.Shift.sllw_compositional` and the
+    `Circuit.Shift.sllw_compositional` and the
     `shift_archetype_m32_one_zeros_bus` theorem. -/
 theorem sign_extend_load_archetype_m32_one_zeros_bus
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
@@ -161,7 +159,7 @@ theorem sign_extend_load_archetype_m32_zero_passthrough_bus
 
 /-- **Archetype multiplicity passthrough.** The bus entry's
     multiplicity matches the Main row's `is_external_op` — = 1 for
-    signed loads. Useful at the metaplan layer for tying the Main
+    signed loads. Useful at the equivalence layer for tying the Main
     bus emission to the BinaryExtension SM's bus pop. -/
 theorem sign_extend_load_archetype_multiplicity_one
     (m : Valid_Main C FGL FGL) (r_main : ℕ)

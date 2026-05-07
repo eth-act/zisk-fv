@@ -2,7 +2,7 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Fundamentals.Execution
 
 /-!
-RV64 SRAI (shift-right-arithmetic-immediate). Phase 3A H6 sibling of SRA.
+RV64 SRAI (shift-right-arithmetic-immediate). Sibling of SRA.
 
 Full 64-bit arithmetic right shift by a 6-bit immediate shamt. Proof
 shape identical to SLLI with `sop.SLLI` swapped for `sop.SRAI`.

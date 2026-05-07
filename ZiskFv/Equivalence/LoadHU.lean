@@ -14,8 +14,7 @@ import ZiskFv.Sail.BusEffect
 
 /-!
 End-to-end theorem for RV64 LHU (load halfword, unsigned / zero-extended).
-`finishing3` S5b retired the the bus-execute-matches-sail premise parameter
-in favour of structural bus hypotheses + `mem_load_correct_2byte`.
+Uses structural bus hypotheses + `mem_load_correct_2byte`.
 LHU's pure-spec uses `BitVec.setWidth 32` (zero-extend to 32 bits) on
 the 16-bit halfword.
 -/
@@ -32,14 +31,6 @@ open ZiskFv.Circuit.LoadD
 open ZiskFv.Circuit.LoadHU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
-
-theorem equiv_LHU
-    (_rs1 _rd : Fin 32) (_state : RV64State)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (entry : MemoryBusEntry FGL)
-    (h_circuit : load_hu_circuit_holds m r_main next_pc entry) :
-    main_c_packed m r_main = memory_entry_half entry :=
-  load_hu_compositional m r_main next_pc entry h_circuit
 
 theorem equiv_LHU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -69,9 +60,8 @@ theorem equiv_LHU_sail
   PureSpec.execute_LOADHU_pure_equiv
     lhu_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** `finishing3` S5b: retired
-    the bus-execute-matches-sail premise. -/
-theorem equiv_LHU_metaplan
+/-- **Metaplan theorem.** -/
+theorem equiv_LHU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lhu_input : PureSpec.LhuInput)
     (mstatus : RegisterType Register.mstatus)

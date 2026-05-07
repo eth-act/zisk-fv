@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ALURTypeArchetype
 
 /-!
-Compositional XOR spec (Phase 3C T-RT3).
+Compositional XOR spec.
 
 Thin specialization of `Tactics.ALURTypeArchetype` at
 `opcode_lit = OP_XOR = 16`. Identical structure to `Spec/Sub.lean`.

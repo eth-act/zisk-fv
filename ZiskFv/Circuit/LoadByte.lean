@@ -9,12 +9,12 @@ import ZiskFv.Tactics.SignExtendLoadArchetype
 /-!
 Compositional LB (load byte, signed / sign-extended) spec.
 
-Phase 3C T-SL2 — sibling of LW / LH under `SignExtendLoadArchetype`.
-Uses `OP_SIGNEXTEND_B = 39`, `m32 = 0` (narrowest source width).
+Sibling of LW / LH under `SignExtendLoadArchetype`. Uses
+`OP_SIGNEXTEND_B = 39`, `m32 = 0` (narrowest source width).
 Bus-passthrough behaviour identical to LH.
 
 See `Spec/LoadWord.lean` for the compositional rationale. The
-Sail-level companion and metaplan theorem live in
+Sail-level companion and equivalence theorem live in
 `Equivalence/Lb.lean`.
 -/
 

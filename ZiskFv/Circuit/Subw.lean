@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.RTypeWArchetype
 
 /-!
-Compositional SUBW spec (Phase 3C T-W).
+Compositional SUBW spec.
 
 Thin specialization of `Tactics.RTypeWArchetype` at
 `opcode_lit = OP_SUB_W = 27`, `m32 = 1`. Identical structure to

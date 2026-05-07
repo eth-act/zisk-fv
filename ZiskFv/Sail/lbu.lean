@@ -48,8 +48,8 @@ namespace PureSpec
     state.mem[i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat]? = .some i.data0 ∧
     i.r1_val.toNat + (BitVec.signExtend 64 i.imm).toNat < OpenVM_address_space_size
 
-  -- LBU Sail-equivalence. Phase 3.5 promotion via P1-P3. Sibling of M3
-  -- (LWU) / M7 (LHU) narrowed to width = 1 (alignment vacuous).
+  -- LBU Sail-equivalence. Sibling of LWU / LHU narrowed to width = 1
+  -- (alignment vacuous).
   set_option maxHeartbeats 0 in
   lemma execute_LOADBU_pure_equiv
     (input : LbuInput)

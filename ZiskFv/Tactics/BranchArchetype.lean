@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Circuit.BranchEqual
 
 /-!
-**Branch archetype macros / generic lemmas** (Phase 2 A1-M).
+**Branch archetype macros / generic lemmas.**
 
 Branches in RV64IM (BEQ, BNE, BLT, BGE, BLTU, BGEU) share a single
 ZisK microinstruction shape: `op = OP_<cmp>`, `is_external_op = 1`,
@@ -30,15 +30,15 @@ This module packages the reusable circuit-side piece as three
 archetype lemmas (`branch_archetype_pc_dispatch`, `branch_archetype_taken`,
 `branch_archetype_not_taken`) parameterized by an `opcode_lit : FGL`
 and the Main row's mode witnesses. BEQ currently uses
-`Spec.BranchEqual.branch_eq_compositional` directly; BNE/BLT/BGE/
+`Circuit.BranchEqual.branch_eq_compositional` directly; BNE/BLT/BGE/
 BLTU/BGEU call `branch_archetype_pc_dispatch` with their own
 `opcode_lit` and transpile-axiom instantiation.
 
-## Usage pattern for Phase 3 fan-out
+## Usage pattern
 
 ```
 -- BNE case (op = OP_EQ, taken = neg of flag):
-theorem equiv_BNE_metaplan (...) := by
+theorem equiv_BNE (...) := by
   have h_next_pc :=
     branch_archetype_pc_dispatch m r next_pc h_circuit_bne
   ...
@@ -48,15 +48,8 @@ The `branch_archetype_proof` tactic macro below is a convenience
 wrapper: it produces the next-pc dispatch equation given a
 `branch_eq_circuit_holds`-shaped hypothesis in scope, mirroring
 openvm-fv's `alu_non_imm_proof`/`lt_non_imm_proof` conveniences.
-
-## Minimalism note
-
-Phase 2 A1 closes BEQ with `Spec.BranchEqual.branch_eq_compositional`
-directly (no macro call). The macro here is the *delivery* of the
-archetype — it's what Phase 3's BNE/BLT/BGE/BLTU/BGEU proofs consume.
-Keeping BEQ's proof concrete while providing the macro at the same
-surface lets reviewers diff the two and confirm the macro generalizes
-correctly.
+BEQ closes its proof with `Circuit.BranchEqual.branch_eq_compositional`
+directly; BNE/BLT/BGE/BLTU/BGEU consume this archetype.
 -/
 
 namespace ZiskFv.Tactics.BranchArchetype
@@ -83,7 +76,7 @@ def main_row_in_branch_mode
   ∧ m.set_pc r_main = 0
 
 /-- **Archetype circuit-holds.** Parametric version of
-    `Spec.BranchEqual.branch_eq_circuit_holds` over the opcode literal. -/
+    `Circuit.BranchEqual.branch_eq_circuit_holds` over the opcode literal. -/
 @[simp]
 def branch_archetype_circuit_holds
     (m : Valid_Main C FGL FGL)
@@ -92,7 +85,7 @@ def branch_archetype_circuit_holds
   ∧ main_row_in_branch_mode m r_main opcode_lit
 
 /-- **Archetype PC-dispatch theorem.** Same shape as
-    `Spec.BranchEqual.branch_eq_compositional` but parametric over
+    `Circuit.BranchEqual.branch_eq_compositional` but parametric over
     the Zisk opcode literal. Proves the flag-dispatched next-pc
     formula from the branch-subset constraints + mode witnesses. -/
 theorem branch_archetype_pc_dispatch

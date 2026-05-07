@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.RTypeWArchetype
 
 /-!
-Compositional ADDW spec (Phase 3C T-W).
+Compositional ADDW spec.
 
 Thin specialization of `Tactics.RTypeWArchetype` at
 `opcode_lit = OP_ADD_W = 26`, `m32 = 1`. Given the Main-side
@@ -17,9 +17,9 @@ the bus entry's packed `c` lanes.
 
 The Binary-SM-internal correctness (that `bus_entry.c_lo + c_hi *
 2^32` equals `sign_extend 64 ((low32 rs1 + low32 rs2) as i32)`) is
-the Phase 4 audit obligation — same treatment MULW gives to the
-Arith-SM carry chains, SLLW to the BinaryExtension bus, and the
-T-RT ALU RTYPE siblings (SUB/AND/OR/XOR) give to their Binary SMs.
+delegated to the audit (same as MULW for the Arith-SM carry chains,
+SLLW for the BinaryExtension bus, and the T-RT ALU RTYPE siblings
+SUB/AND/OR/XOR for their Binary SMs).
 -/
 
 namespace ZiskFv.Circuit.Addw

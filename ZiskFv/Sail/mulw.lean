@@ -2,7 +2,7 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Fundamentals.Execution
 
 /-!
-RV64 MULW (32-bit multiply). Phase 3A M3.
+RV64 MULW (32-bit multiply).
 
 Takes the low 32 bits of `rs1` and `rs2` as signed 32-bit integers,
 multiplies them, truncates the product to 32 bits, and sign-extends
@@ -11,12 +11,6 @@ by 4.
 
 The pure spec mirrors LeanRV64D's `execute_MULW`
 (`InstsEnd.lean:66799-66806`) with the obvious let-bindings inlined.
-`execute_MULW_pure_equiv` is axiomatized per the Phase 3A C3-style
-precedent: there is no `execute_MULW'` refactor triple in
-`Fundamentals/Execution.lean` (and that file is read-only in Phase 3A),
-so the Sail-side equivalence is trusted pending a future
-`execute_MULW_pure`/`'`/`_eq_` refactor. See `docs/fv/trusted-base.md`
-entry C4.
 -/
 
 namespace PureSpec
@@ -59,9 +53,9 @@ namespace PureSpec
     : MulwOutput
   }
 
-  /-- **MULW Sail-equivalence.** Phase 3.5 promotion: direct port of
-      `sllw.lean::execute_RTYPE_sllw_pure_equiv`, using the new
-      `execute_MULW'` refactor triple in Execution.lean. -/
+  /-- **MULW Sail-equivalence.** Direct port of
+      `sllw.lean::execute_RTYPE_sllw_pure_equiv`, using the
+      `execute_MULW'` refactor triple in `Execution.lean`. -/
   lemma execute_MULW_pure_equiv
     (mulw_input : MulwInput)
     (r1 r2 rd : regidx)

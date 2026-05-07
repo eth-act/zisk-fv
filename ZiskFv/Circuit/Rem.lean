@@ -9,7 +9,7 @@ import ZiskFv.Circuit.Mul
 import ZiskFv.Tactics.ArithSMArchetype
 
 /-!
-Compositional **REM** spec (Phase 3C T-D). REM is the **secondary**
+Compositional **REM** spec. REM is the **secondary**
 lane on a signed-DIV Arith row (`main_mul = main_div = 0`, remainder
 emitted from `d[]`).
 

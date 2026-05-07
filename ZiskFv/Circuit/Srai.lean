@@ -7,9 +7,9 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ShiftArchetype
 
 /-!
-Compositional SRAI spec (Phase 3A H6 — `ShiftArchetype` m32=0
-immediate sibling of SRA). Structurally identical to `Spec.Sra`;
-see `Spec.Slli` for why SRA and SRAI share their Zisk opcode.
+Compositional SRAI spec — `ShiftArchetype` m32=0 immediate sibling
+of SRA. Structurally identical to `Circuit.Sra`; see `Circuit.Slli` for
+why SRA and SRAI share their Zisk opcode.
 -/
 
 namespace ZiskFv.Circuit.Srai
@@ -23,7 +23,7 @@ open ZiskFv.Tactics.ShiftArchetype
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in SRAI-execution mode. Same as
-    `Spec.Sra.main_row_in_sra_mode` — SRA and SRAI map to the same
+    `Circuit.Sra.main_row_in_sra_mode` — SRA and SRAI map to the same
     Zisk opcode (`OP_SRA = 35`, `m32 = 0`). -/
 @[simp]
 def main_row_in_srai_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=

@@ -30,7 +30,7 @@ namespace PureSpec
     : MulhsuOutput
   }
 
-  /-- RV64 MULHSU Sail-equivalence (Phase 3A M2).
+  /-- RV64 MULHSU Sail-equivalence.
 
       Mirrors `execute_MULH_mulh_pure_equiv` for the signed × unsigned
       High-half case. `result_part = .High`, `signed_rs1 = .Signed`,

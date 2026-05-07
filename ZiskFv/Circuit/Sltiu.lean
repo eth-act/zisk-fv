@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ALUITypeArchetype
 
 /-!
-Compositional SLTIU spec (Phase 3C T-IT). Thin specialization of
+Compositional SLTIU spec. Thin specialization of
 `Tactics.ALUITypeArchetype` at `opcode_lit = OP_LTU = 6` (shared with
 BLTU / BGEU / SLTU).
 -/

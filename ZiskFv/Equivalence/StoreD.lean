@@ -13,12 +13,10 @@ import ZiskFv.Sail.sd
 import ZiskFv.Sail.BusEffect
 
 /-!
-End-to-end theorem for RV64 SD (store doubleword). `finishing3` S5b
-retired the the bus-execute-matches-sail premise parameter from
-`equiv_SD_metaplan` in favour of structural bus hypotheses
-(`bus_effect_matches_sail_store_rrrw`) plus a memory-bridge premise
-(`mem_store_correct`'s premise shape) plus a ptr-match between
-the bus's mem-write entry pointer and Sail's `r1_val + signExtend imm`,
+End-to-end theorem for RV64 SD (store doubleword). The
+`equiv_SD` discharges via structural bus hypotheses
+(`bus_effect_matches_sail_store_rrrw`) plus a ptr-match between the
+bus's mem-write entry pointer and Sail's `r1_val + signExtend imm`,
 plus per-byte byte-match between the bus entry's lanes and the
 extracted bytes of `r2_val`. -/
 
@@ -33,14 +31,6 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.Circuit.StoreD
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
-
-theorem equiv_SD
-    (_rs1 _rs2 : Fin 32) (_state : RV64State)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (entry : MemoryBusEntry FGL)
-    (h_circuit : store_d_circuit_holds m r_main next_pc entry) :
-    main_c_packed m r_main = memory_entry_toField entry :=
-  store_d_compositional m r_main next_pc entry h_circuit
 
 theorem equiv_SD_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -67,11 +57,10 @@ theorem equiv_SD_sail
   PureSpec.execute_STORED_pure_equiv
     sd_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** `finishing3` S5b: retired
-    the bus-execute-matches-sail premise in favour of structural bus
-    hypotheses + ptr/byte match parameters that bridge the bus's
-    mem-write entry to Sail's `modify_memory_8` shape. -/
-theorem equiv_SD_metaplan
+/-- **Metaplan theorem.** Discharges via structural bus hypotheses
+    plus ptr/byte match parameters that bridge the bus's mem-write
+    entry to Sail's `modify_memory_8` shape. -/
+theorem equiv_SD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sd_input : PureSpec.SdInput)
     (mstatus : RegisterType Register.mstatus)
@@ -93,7 +82,6 @@ theorem equiv_SD_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 2)
-    -- finishing3 S5b: ptr-match + per-byte byte-match.
     (h_ptr_match :
       e2.ptr.toNat
         = (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat)
@@ -133,6 +121,6 @@ theorem equiv_SD_metaplan
         MonadStateOf.modifyGet, EStateM.modifyGet, set,
         MonadStateOf.set, EStateM.set, get, MonadState.get, getThe,
         MonadStateOf.get, EStateM.get,
-        Sail.writeReg, PreSail.writeReg, EStateM.Result.map]
+        Sail.writeReg, PreSail.writeReg]
 
 end ZiskFv.Equivalence.StoreD

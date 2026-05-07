@@ -7,42 +7,32 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Sail.BusEffect
 
 /-!
-# BusEmission — shape lemmas for `bus_effect` reduction (Phase 2.5 D3)
+# BusEmission — shape lemmas for `bus_effect` reduction
 
-This module closes the `h_bus_execute_matches_sail` obligations that all
-archetype `equiv_*_metaplan` theorems inherited as parameters from
-Phase 1.5. For each of the ≤5 concrete bus-entry shapes ZisK's Main AIR
-emits, we prove a reusable lemma that reduces
-`(bus_effect exec_row mem_row state).2` to the Sail monadic block the
-pure-spec side produces — under **structural** hypotheses about the bus
-rows (length, multiplicities, address spaces, pc values) that the caller
-can always discharge from a PIL bus-emission spec.
+For each of the ≤5 concrete bus-entry shapes ZisK's Main AIR emits, we
+prove a reusable lemma reducing `(bus_effect exec_row mem_row state).2`
+to the Sail monadic block the pure-spec side produces, under structural
+hypotheses about the bus rows (length, multiplicities, address spaces,
+pc values).
 
 The shapes observed across ZisK's RV64IM archetypes:
 
 * **Shape (b) — externally-routed branch (BEQ).** Two execution-bus
   entries (pc read, nextpc write). Empty memory bus (register-read
-  semantics are delegated to the Binary SM — they don't appear on the
-  Main memory bus). Sail branches on `success`/`throws`, so the matching
-  hypothesis requires those booleans.
-
+  semantics delegated to the Binary SM). Sail branches on
+  `success`/`throws`, so the matching hypothesis requires those booleans.
 * **Shape (c-jal) — JAL.** Same execution-bus shape as BEQ. Memory bus
   carries exactly one register-write entry (the rd store-PC-plus-4).
-
 * **Shape (a) — arithmetic (ADD, MUL, SLLW).** Execution-bus carries
-  pc+nextpc. Memory bus carries three entries: register-read rs1,
-  register-read rs2, register-write rd.
-
-* **Shape (d) — LD.** Memory bus: register-read rs1, memory-read 8 bytes,
-  register-write rd. Deferred to Phase 4 (requires D1-authored
-  `vmem_read_aligned_equiv` and an 8-byte memory-bus fold reduction).
-
+  pc+nextpc. Memory bus: register-read rs1, register-read rs2,
+  register-write rd.
+* **Shape (d) — LD.** Memory bus: register-read rs1, memory-read 8
+  bytes, register-write rd.
 * **Shape (e) — SD.** Memory bus: register-read rs1, register-read rs2,
-  memory-write 8 bytes. Deferred to Phase 4 (requires D1-authored
-  `vmem_write_aligned_equiv`).
+  memory-write 8 bytes.
 
 The heart of shapes (a) and (c) is a **register-write commutation**: the
-memory-bus fold writes `rd` *before* the execution-bus writes `nextPC`,
+memory-bus fold writes `rd` before the execution-bus writes `nextPC`,
 whereas the Sail pure spec writes `nextPC` first. The two compositions
 produce equal states because `reg_of_fin r ≠ Register.nextPC` for every
 `r : Fin 32` (per `reg_of_fin_neq_nextPC`), so the underlying
@@ -229,8 +219,8 @@ theorem bus_effect_matches_sail_alu_rrw
              List.foldl_cons, List.foldl_nil]
   -- Reduce the first two reads (no state change) and the write-branch dispatch.
   simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
-             fgl_neg_one_self, fgl_one_ne_neg_one, fgl_one_self,
-             if_true, if_false, if_false_left, if_false_right]
+             fgl_one_ne_neg_one,
+             if_true, if_false]
   -- Branch on whether the rd-write is to x0 (no-op) or a real register.
   by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
   · -- rd = x0 case: no state change from the memory fold.
@@ -248,7 +238,7 @@ theorem bus_effect_matches_sail_alu_rrw
     -- Strip the monadic bind/pure machinery on the RHS.
     simp [Sail.writeReg, PreSail.writeReg, modify, modifyGet,
           MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
-          EStateM.bind, EStateM.pure, EStateM.Result.map]
+          EStateM.bind, EStateM.pure]
     -- The goal is now an equality between two states that differ only
     -- in the order of two distinct `write_reg_state` calls
     -- (`reg_of_fin rd` vs. `Register.nextPC`). Close via commutation.
@@ -290,8 +280,8 @@ theorem bus_effect_matches_sail_jump_rrw
   simp only [h_exec_len, h_e0_mult, h_e1_mult, and_self, if_true,
              List.foldl_cons, List.foldl_nil]
   simp only [h_rd_mult, h_rd_as,
-             fgl_one_ne_neg_one, fgl_one_self,
-             if_true, if_false, if_false_left, if_false_right]
+             fgl_one_ne_neg_one,
+             if_true, if_false]
   by_cases h_rd_zero : Transpiler.wrap_to_regidx e_rd.ptr = 0
   · simp only [h_rd_zero, dite_true]
     simp only [h_nextPC_matches]
@@ -303,10 +293,10 @@ theorem bus_effect_matches_sail_jump_rrw
     simp only [write_xreg, writeReg_state_success, EStateM.Result.map]
     simp [Sail.writeReg, PreSail.writeReg, modify, modifyGet,
           MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
-          EStateM.bind, EStateM.pure, EStateM.Result.map]
+          EStateM.bind, EStateM.pure]
     exact write_reg_state_comm _ _ _ _ _ reg_of_fin_neq_nextPC
 
-/-! ## Shapes (d) and (e) — memory-bus loads and stores (Phase 4.5 Track C)
+/-! ## Shapes (d) and (e) — memory-bus loads and stores
 
 Shapes (d) LD and (e) SD extend the `[rs1, rs2, rd]` three-entry
 memory-bus fold by routing one of the entries through the `as = 2`
@@ -378,12 +368,10 @@ theorem bus_effect_matches_sail_load_rrrw
   -- e0 (reg-read, as=1): no state change; e1 (mem-read, as=2): no
   -- state change (the as=2 branch adds to `cond` but leaves `result`);
   -- e2 (reg-write, as=1): writes rd.
-  have h_m1_as_ne_one : (e1.as.val = 1) = False := by
-    rw [h_m1_as]; decide
-  simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m1_as_ne_one,
+  simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as,
              h_m2_mult, h_m2_as,
-             fgl_neg_one_self, fgl_one_ne_neg_one, fgl_one_self,
-             if_true, if_false, if_false_left, if_false_right]
+             fgl_one_ne_neg_one,
+             if_true, if_false]
   -- Branch on whether the rd-write is to x0 (no-op) or a real register.
   by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
   · simp only [h_rd_zero, dite_true]
@@ -396,7 +384,7 @@ theorem bus_effect_matches_sail_load_rrrw
     simp only [write_xreg, writeReg_state_success, EStateM.Result.map]
     simp [Sail.writeReg, PreSail.writeReg, modify, modifyGet,
           MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
-          EStateM.bind, EStateM.pure, EStateM.Result.map]
+          EStateM.bind, EStateM.pure]
     exact write_reg_state_comm _ _ _ _ _ reg_of_fin_neq_nextPC
 
 /-- **Shape (e): SD — store doubleword.**
@@ -459,12 +447,9 @@ theorem bus_effect_matches_sail_store_rrrw
   -- e0 and e1 are register reads (as=1, mult=-1): no state change.
   -- e2 is a memory write (as=2, mult=1): inserts 8 bytes and returns
   -- Retire_Success. Reduce dispatch on each entry.
-  have h_m2_as_ne_one : (e2.as.val = 1) = False := by
-    rw [h_m2_as]; decide
   simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
-             h_m2_as_ne_one,
-             fgl_neg_one_self, fgl_one_ne_neg_one, fgl_one_self,
-             if_true, if_false, if_false_left, if_false_right]
+             fgl_one_ne_neg_one,
+             if_true, if_false]
   -- Now the LHS is:
   --   EStateM.Result.map (...) (Sail.writeReg Register.nextPC nextPC_val
   --     { state with mem := <8 inserts> })
@@ -472,12 +457,11 @@ theorem bus_effect_matches_sail_store_rrrw
   -- machinery on both sides.
   simp only [h_nextPC_matches]
   simp [Sail.writeReg, PreSail.writeReg, modify, modifyGet,
-        MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure, set,
-        MonadStateOf.set, EStateM.set, EStateM.bind, EStateM.pure, get,
-        MonadState.get, getThe, MonadStateOf.get, EStateM.get,
+        MonadStateOf.modifyGet, EStateM.modifyGet, bind, pure,
+        EStateM.bind, EStateM.pure,
         EStateM.Result.map]
 
-/-! ## Narrow-width load/store companions (S5a)
+/-! ## Narrow-width load/store companions
 
 `bus_effect`'s memory branches (`as = 2`) always process eight byte
 lanes. ZisK's narrow-width load/store opcodes (LW/LWU/SW: 4 bytes;
@@ -770,12 +754,12 @@ lemmas below ship as **named wrappers** of the 8-byte
 (8-insert chain in the modify lambda).
 
 The actual narrow-width collapse — replacing the 8-insert chain with
-an N-insert chain — happens at the metaplan caller via
-`Spec.MemModel.mem_store_correct_<n>byte` plus
+an N-insert chain — happens at the equivalence-layer caller via
+`Circuit.MemModel.mem_store_correct_<n>byte` plus
 `Std.ExtHashMap.insert_eq_self`-style elimination of the trailing
 inserts under the byte-bus high-lane-match witnesses.
 
-The named wrappers exist so per-op metaplan files can reference
+The named wrappers exist so per-op equivalence files can reference
 their target lemma directly (`bus_effect_matches_sail_store_4byte_rrrw`
 for SW) without having to pick the 8-byte one and document why. -/
 

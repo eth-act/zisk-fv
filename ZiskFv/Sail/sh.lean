@@ -64,9 +64,8 @@ namespace PureSpec
     (i.r1_val + (BitVec.signExtend 64 i.imm)).toNat < OpenVM_address_space_size ∧
     (2 : ℤ) ∣ (i.r1_val + (BitVec.signExtend 64 i.imm)).toNat
 
-  -- SH Sail-equivalence. Phase 3.5 promotion: direct port of SW narrowed
-  -- to width = 2. The `@[simp high]` P1-P3 platform axioms discharge
-  -- the PMP/CLINT/PMA chain.
+  -- SH Sail-equivalence. Direct port of SW narrowed to width = 2. The
+  -- `@[simp high]` platform axioms discharge the PMP/CLINT/PMA chain.
   set_option maxHeartbeats 0 in
   lemma execute_STOREH_pure_equiv
     (input : ShInput)

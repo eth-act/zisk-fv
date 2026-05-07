@@ -9,8 +9,8 @@ import ZiskFv.Circuit.StoreD
 import ZiskFv.Tactics.StoreArchetype
 
 /-!
-Compositional SW (store word) spec — Phase 2.5 D4d sibling of
-`Spec.StoreD`. Narrow variant: SW writes the **low 4 bytes** of `rs2`
+Compositional SW (store word) spec — narrow sibling of
+`Circuit.StoreD`. SW writes the **low 4 bytes** of `rs2`
 to memory while SD writes all 8.
 
 At the Main-AIR level the SW row is indistinguishable from SD (both
@@ -27,10 +27,8 @@ Accordingly, SW's circuit-holds is SD's circuit-holds plus a
 `memory_entry_toField` reduces to `memory_entry_lo` — i.e. the packed
 `c` cell equals just the low 32 bits of the store value.
 
-This module is the **first sibling instantiation of the store
-archetype macro** (`Tactics.StoreArchetype`). It validates that the
-archetype theorems parameterize correctly on opcode width without
-requiring any adjustment to the macro infrastructure.
+Sibling instantiation of the store archetype macro
+(`Tactics.StoreArchetype`).
 -/
 
 namespace ZiskFv.Circuit.StoreW
@@ -51,8 +49,8 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `c` cell to the memory-bus entry; the remaining lanes are witnessed
     as zero by the PIL circuit.
 
-    Supplied by the caller (Phase 4 audit derives it from the PIL
-    memory-SM `permutation_proves` side + the `ind_width` selector). -/
+    Supplied by the caller; the audit derives it from the PIL
+    memory-SM `permutation_proves` side + the `ind_width` selector. -/
 @[simp]
 def sw_high_bytes_zero (entry : MemoryBusEntry FGL) : Prop :=
   entry.x4 = 0 ∧ entry.x5 = 0 ∧ entry.x6 = 0 ∧ entry.x7 = 0
@@ -89,7 +87,7 @@ theorem store_w_compositional
     conclusion as `store_d_compositional`: `c_packed = memory_entry_toField
     entry`. With the high-byte zeroing witness the RHS equals
     `memory_entry_lo entry`, but we expose the general form too so SW
-    composes uniformly with SD at the metaplan layer. -/
+    composes uniformly with SD at the equivalence layer. -/
 theorem store_w_compositional_general
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)

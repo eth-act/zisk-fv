@@ -57,9 +57,9 @@ namespace PureSpec
     LeanRV64D.Functions.rX_bits (regidx.Regidx i.r2) state = EStateM.Result.ok i.r2_val state ∧
     (i.r1_val + (BitVec.signExtend 64 i.imm)).toNat < OpenVM_address_space_size
 
-  -- SB Sail-equivalence. Phase 3.5 promotion: direct port of SH narrowed
-  -- to width = 1 (alignment vacuous). The `@[simp high]` P1-P3 platform
-  -- axioms discharge the PMP/CLINT/PMA chain.
+  -- SB Sail-equivalence. Direct port of SH narrowed to width = 1
+  -- (alignment vacuous). The `@[simp high]` platform axioms discharge
+  -- the PMP/CLINT/PMA chain.
   set_option maxHeartbeats 0 in
   lemma execute_STOREB_pure_equiv
     (input : SbInput)

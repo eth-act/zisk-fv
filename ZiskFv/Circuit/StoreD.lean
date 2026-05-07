@@ -9,7 +9,7 @@ import ZiskFv.Circuit.LoadD
 
 /-!
 Compositional SD (store doubleword) spec — the A4 write-side mirror
-of `Spec.LoadD`.
+of `Circuit.LoadD`.
 
 Given the Main-AIR row in SD-mode (`is_external_op = 0`, `op = OP_COPYB = 1`,
 `m32 = 0`, `set_pc = 0`, `store_pc = 0` — identical to LD), the named Main
@@ -51,7 +51,7 @@ open ZiskFv.Trusted
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Store-subset Main constraints.** Definitionally equal to
-    `Spec.LoadD.load_subset_holds` — both LD and SD sit in the
+    `Circuit.LoadD.load_subset_holds` — both LD and SD sit in the
     internal-op=1 mode so the same Main constraints fire. We expose
     this alias for spec-consumer readability. -/
 @[simp]
@@ -76,9 +76,9 @@ def main_row_in_sd_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
       low/high halves of the 8-byte store-value entry).
 
     The caller supplies `entry` — the memory-bus *write* entry for the
-    SD's memory write. Phase 2 parameterizes the existence of this
-    entry; Phase 4 audit derives it from the PIL memory-SM
-    `permutation_proves` side. -/
+    SD's memory write. Existence of this entry is parameterized; the
+    audit derives it from the PIL memory-SM `permutation_proves`
+    side. -/
 @[simp]
 def store_d_circuit_holds
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
@@ -89,8 +89,8 @@ def store_d_circuit_holds
 
 /-- The 64-bit value packed into the Main row's `(c_0, c_1)` lanes,
     as a single Goldilocks element. Identical to
-    `Spec.LoadD.main_c_packed` — we re-export so the SD consumer
-    doesn't need to import `Spec.LoadD` alongside `Spec.StoreD`. -/
+    `Circuit.LoadD.main_c_packed` — we re-export so the SD consumer
+    doesn't need to import `Circuit.LoadD` alongside `Circuit.StoreD`. -/
 @[simp]
 def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
   m.c_0 r + m.c_1 r * 4294967296

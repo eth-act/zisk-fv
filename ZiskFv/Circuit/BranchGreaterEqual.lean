@@ -9,7 +9,7 @@ import ZiskFv.Tactics.BranchArchetype
 /-!
 Compositional BGE (branch-if-greater-or-equal, signed) spec —
 **instantiation of the `BranchArchetype` macro** at
-`opcode_lit = OP_LT` (Phase 3A B2).
+`opcode_lit = OP_LT`.
 
 BGE uses the same Zisk opcode as BLT (`OP_LT = 7`, Binary-SM signed
 less-than) — the transpiler's `create_branch_op` helper takes a

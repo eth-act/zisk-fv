@@ -15,8 +15,7 @@ import ZiskFv.Sail.BusEffect
 import ZiskFv.Tactics.StoreArchetype
 
 /-!
-End-to-end theorem for RV64 SB (store byte). `finishing3` S5b retired
-the the bus-execute-matches-sail premise parameter (mirror of SW/SH).
+End-to-end theorem for RV64 SB (store byte).
 -/
 
 namespace ZiskFv.Equivalence.StoreB
@@ -32,15 +31,6 @@ open ZiskFv.Circuit.StoreB
 open ZiskFv.Tactics.StoreArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
-
-theorem equiv_SB
-    (_rs1 _rs2 : Fin 32) (_state : RV64State)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (entry : MemoryBusEntry FGL)
-    (h_circuit : store_archetype_copyb_circuit_holds m r_main next_pc entry)
-    (h_zero : sb_high_bytes_zero entry) :
-    main_c_packed m r_main = memory_entry_lo_8 entry :=
-  store_b_compositional m r_main next_pc entry h_circuit h_zero
 
 theorem equiv_SB_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -67,8 +57,8 @@ theorem equiv_SB_sail
   PureSpec.execute_STOREB_pure_equiv
     sb_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** `finishing3` S5b. -/
-theorem equiv_SB_metaplan
+/-- **Metaplan theorem.** -/
+theorem equiv_SB
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sb_input : PureSpec.SbInput)
     (mstatus : RegisterType Register.mstatus)
@@ -120,8 +110,8 @@ theorem equiv_SB_metaplan
         MonadStateOf.modifyGet, EStateM.modifyGet, set,
         MonadStateOf.set, EStateM.set, get, MonadState.get, getThe,
         MonadStateOf.get, EStateM.get,
-        Sail.writeReg, PreSail.writeReg, EStateM.Result.map,
-        write_reg_state, PureSpec.modify_memory_1]
+        Sail.writeReg, PreSail.writeReg,
+        PureSpec.modify_memory_1]
   exact h_mem_eq
 
 end ZiskFv.Equivalence.StoreB

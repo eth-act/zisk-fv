@@ -6,9 +6,8 @@ import ZiskFv.Airs.Main
 /-!
 RV64 → Zisk-instruction transpilation contract (axiomatized).
 
-Phase 1 axiomatizes the ADD case only; Phase 2+ extends with other opcodes. The
-axioms mirror `zisk/core/src/riscv2zisk_context.rs::create_register_op`
-at commit `48cf7ccef`. Any deviation between this file and the transpiler
+The axioms mirror `zisk/core/src/riscv2zisk_context.rs::create_register_op`
+(and friends). Any deviation between this file and the transpiler
 implementation is a trust-model break — see `docs/fv/extractor-notes.md`.
 
 This module is part of the **trusted** surface: proofs of per-opcode
@@ -16,7 +15,7 @@ equivalence consume the axioms here without further justification. Changes
 require re-auditing against the Rust source and re-signing off on the axiom
 statement.
 
-## Phase 6 finishing5 S1: store_pc=1 PC bridges
+## store_pc=1 PC bridges
 
 The bottom of this file (after the standard `transpile_<OP>` operand /
 selector axioms) carries three additional axioms — `transpile_PC_for_JAL`,
@@ -30,9 +29,8 @@ axioms do not constrain the `pc` column (PIL constraint 20 ties it to
 `expected_current_pc` derived from the previous row's rotation, which the
 extractor does not currently surface), but downstream Spec / Equivalence
 proofs of JAL / JALR / AUIPC's rd-write `pc + jmp_offset2` need to bridge
-the FGL-side `m.pc r_main` to the Sail-side `state.pc`. See the docstring
-section preceding the axioms themselves for full detail and trust-class
-analysis. Trust-base entries: **TP-JAL**, **TP-JALR**, **TP-AUIPC** in
+the FGL-side `m.pc r_main` to the Sail-side `state.pc`. Trust-base
+entries: **TP-JAL**, **TP-JALR**, **TP-AUIPC** in
 `docs/fv/trusted-base.md`.
 -/
 
@@ -65,7 +63,7 @@ open ZiskFv.Airs.Main
 
 /-- Subset of the Zisk-instruction row populated by a single Main-AIR row.
     Mirrors the witness columns relevant to ADD correctness + branch-relevant
-    `jmp_offset1`/`jmp_offset2`/`set_pc` (Phase 2 archetype A1):
+    `jmp_offset1`/`jmp_offset2`/`set_pc`:
 
     | field | Main AIR column (stage-1) | reference |
     |-------|---------------------------|-----------|
@@ -217,9 +215,8 @@ structure ZiskInstructionRow where
 /-- Goldilocks literal for OPERATION_BUS_ID. Per `zisk/pil/opids.pil:2`. -/
 @[simp] def OPERATION_BUS_ID : FGL := 5000
 
-/-- Abstract RV64 state, indexed access to integer registers via `Fin 32`. In
-    Phase 1 this is a black-box; Phase 3 wires it to `LeanRV64D.RegFile` via
-    a coercion. The `xreg` accessor returns a `BitVec 64`; splitting into two
+/-- Abstract RV64 state, indexed access to integer registers via `Fin 32`.
+    The `xreg` accessor returns a `BitVec 64`; splitting into two
     `BitVec 32` lanes happens in the Main AIR row. -/
 structure RV64State where
   xreg : Fin 32 → BitVec 64
@@ -238,7 +235,7 @@ def lane_hi (v : BitVec 64) : FGL :=
     have := Nat.mod_lt (v.toNat / 4294967296) (by decide : 0 < 4294967296)
     omega⟩
 
-/-- The axiomatic RV64 → Zisk row contract for ADD, Phase-5 `Valid_Main`-form.
+/-- The axiomatic RV64 → Zisk row contract for ADD, in `Valid_Main`-row form.
 
     Given a Main AIR instance, a row index, RV64 state, and source registers,
     whenever the row is an active ADD row (`is_external_op = 1`, `op = OP_ADD`),
@@ -248,11 +245,9 @@ def lane_hi (v : BitVec 64) : FGL :=
     at `zisk/core/src/riscv2zisk_context.rs::create_register_op`
     (called from the `"add"` arm at line 100).
 
-    **Trust basis.** Pure spec of the Rust transpiler's ADD branch, restated in
-    direct `Valid_Main`-row form (Phase 5 Track H): the axiom pins the named
-    columns of the Main AIR at index `r_main` rather than quantifying over an
-    abstract `ZiskInstructionRow` with no connection to a concrete AIR row.
-    If ZisK's transpiler changes (new opcode encoding, different source
+    **Trust basis.** Pure spec of the Rust transpiler's ADD branch: the
+    axiom pins the named columns of the Main AIR at index `r_main`. If
+    ZisK's transpiler changes (new opcode encoding, different source
     routing), this axiom must change in lockstep. -/
 axiom transpile_ADD :
     ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -309,7 +304,7 @@ axiom transpile_BEQ :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for BNE (Phase 2.5 D4a).
+/-- The axiomatic RV64 → Zisk row contract for BNE.
 
     Per `zisk/core/src/riscv2zisk_context.rs:203` an RV64 BNE
     `rs1, rs2, imm` transpiles via `create_branch_op(instr, "eq", true, 4)`
@@ -400,8 +395,7 @@ axiom transpile_JAL :
       ∧ m.b_0 r_main = 0
       ∧ m.b_1 r_main = 0
 
-/-- The axiomatic RV64 → Zisk row contract for FENCE (Phase 5
-    follow-on Track J1).
+/-- The axiomatic RV64 → Zisk row contract for FENCE.
 
     Per `zisk/core/src/riscv2zisk_context.rs:228` an RV64 FENCE
     transpiles via `self.nop(...)` (line 772) — the same routing as a
@@ -438,8 +432,7 @@ axiom transpile_FENCE :
       ∧ m.b_0 r_main = 0
       ∧ m.b_1 r_main = 0
 
-/-- The axiomatic RV64 → Zisk row contract for JALR (jump-and-link-register,
-    Phase 2.5 D4 archetype validation).
+/-- The axiomatic RV64 → Zisk row contract for JALR (jump-and-link-register).
 
     Per `zisk/core/src/riscv2zisk_context.rs:200,1025` an RV64 JALR
     `rd, rs1, imm12` transpiles via `self.jalr(i, 4)`. The archetype-
@@ -465,11 +458,10 @@ axiom transpile_FENCE :
     (external op), and for misaligned immediates a two-instruction
     `add`+`and` sequence. Both paths ultimately produce the same
     architectural behavior (`rd ← pc + 4`, `nextPC ← (rs1 + imm) &
-    mask`). The Phase 2.5 D4 task models JALR as internal-copyb for
-    archetype-macro validation; closing the full Rust contract (with
-    the Binary-SM bus hop) is scheduled for Phase 3 when the
-    `equiv_AND`/`equiv_ADD_IMM` archetype work lands the necessary
-    external-op infrastructure.
+    mask`). We model JALR here as internal-copyb for archetype-macro
+    validation; closing the full Rust contract (with the Binary-SM
+    bus hop) requires the `equiv_AND_circuit`/`equiv_ADD_IMM` external-op
+    infrastructure.
 
     **Trust basis.** Simplified spec of `fn jalr` in
     `riscv2zisk_context.rs:1025`, targeting the Main AIR row observables
@@ -533,8 +525,8 @@ axiom transpile_LD :
       ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
       ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
 
-/-- The axiomatic RV64 → Zisk row contract for LWU (Phase 2.5 D4c —
-    `LoadArchetype` sibling validation of LD).
+/-- The axiomatic RV64 → Zisk row contract for LWU
+    (`LoadArchetype` sibling of LD).
 
     Per `zisk/core/src/riscv2zisk_context.rs:211` an RV64 LWU
     `rd, imm(rs1)` transpiles via `self.load_op(i, "copyb", 4, 4)`
@@ -550,8 +542,7 @@ axiom transpile_LD :
       4-byte load (ZisK's memory SM emits zero in those lanes when
       `bytes < 8`). This zeroing is a **bus-side** condition the
       archetype carries as an explicit hypothesis (`h_bus_bytes_zero`
-      in `Spec/LoadWU.lean`) until Phase 3+ derives it from the
-      memory-SM permutation;
+      in `Spec/LoadWU.lean`);
     * `zib.src_a("reg", rs1, false)`, `zib.src_b("ind", imm, false)`,
       `zib.store("reg", rd, false, false)`, `zib.j(4, 4)` — all
       identical to LD.
@@ -576,8 +567,8 @@ axiom transpile_LWU :
       ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
       ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
 
-/-- The axiomatic RV64 → Zisk row contract for LHU (Phase 3A L3 —
-    `LoadArchetype` sibling of LWU/LD).
+/-- The axiomatic RV64 → Zisk row contract for LHU
+    (`LoadArchetype` sibling of LWU/LD).
 
     Per `zisk/core/src/riscv2zisk_context.rs:213` an RV64 LHU
     `rd, imm(rs1)` transpiles via `self.load_op(i, "copyb", 2, 4)`
@@ -620,8 +611,8 @@ axiom transpile_LHU :
       ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
       ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
 
-/-- The axiomatic RV64 → Zisk row contract for LBU (Phase 3A L5 —
-    `LoadArchetype` sibling of LWU/LD, narrowest width).
+/-- The axiomatic RV64 → Zisk row contract for LBU
+    (`LoadArchetype` sibling of LWU/LD, narrowest width).
 
     Per `zisk/core/src/riscv2zisk_context.rs:212` an RV64 LBU
     `rd, imm(rs1)` transpiles via `self.load_op(i, "copyb", 1, 4)`
@@ -703,7 +694,7 @@ axiom transpile_SD :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for SW (store word — Phase 2.5 D4d).
+/-- The axiomatic RV64 → Zisk row contract for SW (store word).
 
     Per `zisk/core/src/riscv2zisk_context.rs:222` an RV64 SW
     `rs2, imm(rs1)` transpiles via `self.store_op(i, "copyb", 4, 4)`
@@ -790,7 +781,7 @@ axiom transpile_SW :
     `riscv2zisk_context.rs:247`. `m32 = 1` on the Main row. -/
 @[simp] def OP_MUL_W : FGL := 182
 
-/-- The axiomatic RV64 → Zisk row contract for MUL (Archetype A5).
+/-- The axiomatic RV64 → Zisk row contract for MUL.
 
     Per `zisk/core/src/riscv2zisk_context.rs:243` an RV64 MUL
     `rd, rs1, rs2` transpiles via `create_register_op(..., "mul", 4)`
@@ -804,7 +795,7 @@ axiom transpile_SW :
       the flag output (MUL's bus flag is `div_by_zero`, fixed to 0 for
       multiplications);
     * `m32 = 0` — MUL is the 64-bit operand form; MULW (`OP_MUL_W`)
-      sets `m32 = 1` instead (out of A5 scope);
+      sets `m32 = 1` instead;
     * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)` same as ADD;
     * `flag` is left as an output (populated by the Arith bus-pop with
       `div_by_zero = 0`). Not constrained by the transpile contract.
@@ -830,7 +821,7 @@ axiom transpile_MUL :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for MULH (Phase 2.5 D4e).
+/-- The axiomatic RV64 → Zisk row contract for MULH.
 
     Per `zisk/core/src/riscv2zisk_context.rs:244` an RV64 MULH
     `rd, rs1, rs2` transpiles via `create_register_op(..., "mulh", 4)`
@@ -865,7 +856,7 @@ axiom transpile_MULH :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for SLLW (Archetype A6).
+/-- The axiomatic RV64 → Zisk row contract for SLLW.
 
     Per `zisk/core/src/riscv2zisk_context.rs:155` an RV64 SLLW
     `rd, rs1, rs2` transpiles via `create_register_op(instr, "sll_w", 4)`
@@ -875,9 +866,8 @@ axiom transpile_MULH :
       (`zisk_inst_builder.rs:203`); the bus hop goes to the
       `BinaryExtension` SM, not `BinaryAdd`;
     * `m32 = 1` — `"sll_w".contains("_w")` is `true`
-      (`zisk_inst_builder.rs:206`). **This is the only Phase 2
-      archetype with `m32 = 1`;** it exercises the `(1 - m32) * x`
-      bus-zeroing path that Phase 1.5 Track M generalized;
+      (`zisk_inst_builder.rs:206`). Exercises the `(1 - m32) * x`
+      bus-zeroing path on the operation bus;
     * `set_pc = 0`, `store_pc = 0` — register-op, not PC-mutating;
     * `jmp_offset1 = jmp_offset2 = 4` — no branch, fall-through advance;
     * `flag = 0` — `op_sll_w`'s `flag` return is always `false`
@@ -910,7 +900,7 @@ axiom transpile_SLLW :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for BLT (Phase 3A B1).
+/-- The axiomatic RV64 → Zisk row contract for BLT.
 
     Per `zisk/core/src/riscv2zisk_context.rs:204` an RV64 BLT
     `rs1, rs2, imm` transpiles via `create_branch_op(instr, "lt", false, 4)`
@@ -946,7 +936,7 @@ axiom transpile_BLT :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for BGE (Phase 3A B2).
+/-- The axiomatic RV64 → Zisk row contract for BGE.
 
     Per `zisk/core/src/riscv2zisk_context.rs:205` an RV64 BGE
     transpiles via `create_branch_op(instr, "lt", true, 4)` — **same
@@ -984,7 +974,7 @@ axiom transpile_BGE :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for BLTU (Phase 3A B3).
+/-- The axiomatic RV64 → Zisk row contract for BLTU.
 
     Per `zisk/core/src/riscv2zisk_context.rs:206` an RV64 BLTU
     transpiles via `create_branch_op(instr, "ltu", false, 4)` — BEQ
@@ -1013,7 +1003,7 @@ axiom transpile_BLTU :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for BGEU (Phase 3A B4).
+/-- The axiomatic RV64 → Zisk row contract for BGEU.
 
     Per `zisk/core/src/riscv2zisk_context.rs:207` an RV64 BGEU
     transpiles via `create_branch_op(instr, "ltu", true, 4)` — BNE
@@ -1042,7 +1032,7 @@ axiom transpile_BGEU :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for SH (store halfword — Phase 3A S1).
+/-- The axiomatic RV64 → Zisk row contract for SH (store halfword).
 
     Per `zisk/core/src/riscv2zisk_context.rs:221` an RV64 SH
     `rs2, imm(rs1)` transpiles via `self.store_op(i, "copyb", 2, 4)`
@@ -1084,7 +1074,7 @@ axiom transpile_SH :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for SB (store byte — Phase 3A S2).
+/-- The axiomatic RV64 → Zisk row contract for SB (store byte).
 
     Per `zisk/core/src/riscv2zisk_context.rs:220` an RV64 SB
     `rs2, imm(rs1)` transpiles via `self.store_op(i, "copyb", 1, 4)`
@@ -1119,7 +1109,7 @@ axiom transpile_SB :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for SLL (Phase 3A H1).
+/-- The axiomatic RV64 → Zisk row contract for SLL.
 
     Per `zisk/core/src/riscv2zisk_context.rs:135` an RV64 SLL
     `rd, rs1, rs2` transpiles via `create_register_op(instr, "sll", 4)`
@@ -1151,7 +1141,7 @@ axiom transpile_SLL :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for SRL (Phase 3A H2).
+/-- The axiomatic RV64 → Zisk row contract for SRL.
 
     Per `zisk/core/src/riscv2zisk_context.rs:139` an RV64 SRL
     transpiles via `create_register_op(instr, "srl", 4)`. Emitted row
@@ -1177,7 +1167,7 @@ axiom transpile_SRL :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for SRA (Phase 3A H3).
+/-- The axiomatic RV64 → Zisk row contract for SRA.
 
     Per `zisk/core/src/riscv2zisk_context.rs:140` an RV64 SRA
     transpiles via `create_register_op(instr, "sra", 4)`. Emitted row
@@ -1219,7 +1209,7 @@ def shamt_b_lo (shamt : BitVec 6) : FGL :=
     have : shamt.toNat < 64 := shamt.isLt
     omega⟩
 
-/-- The axiomatic RV64 → Zisk row contract for SLLI (Phase 3A H4).
+/-- The axiomatic RV64 → Zisk row contract for SLLI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:175` an RV64 SLLI
     `rd, rs1, shamt` transpiles via `immediate_op(instr, "sll", 4)`
@@ -1258,7 +1248,7 @@ axiom transpile_SLLI :
       ∧ m.b_0 r_main = shamt_b_lo shamt
       ∧ m.b_1 r_main = 0
 
-/-- The axiomatic RV64 → Zisk row contract for SRLI (Phase 3A H5).
+/-- The axiomatic RV64 → Zisk row contract for SRLI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:179`. Same shape
     as `transpile_SLLI` with `OP_SLL → OP_SRL`. -/
@@ -1278,7 +1268,7 @@ axiom transpile_SRLI :
       ∧ m.b_0 r_main = shamt_b_lo shamt
       ∧ m.b_1 r_main = 0
 
-/-- The axiomatic RV64 → Zisk row contract for SRAI (Phase 3A H6).
+/-- The axiomatic RV64 → Zisk row contract for SRAI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:180`. Same shape
     as `transpile_SLLI` with `OP_SLL → OP_SRA`. -/
@@ -1298,8 +1288,8 @@ axiom transpile_SRAI :
       ∧ m.b_0 r_main = shamt_b_lo shamt
       ∧ m.b_1 r_main = 0
 
-/-- The axiomatic RV64 → Zisk row contract for SRLW (Phase 3A H2 —
-    `ShiftArchetype` sibling of SLLW, register variant).
+/-- The axiomatic RV64 → Zisk row contract for SRLW
+    (`ShiftArchetype` sibling of SLLW, register variant).
 
     Per `zisk/core/src/riscv2zisk_context.rs:156` an RV64 SRLW
     `rd, rs1, rs2` transpiles via `create_register_op(instr, "srl_w", 4)`.
@@ -1325,8 +1315,8 @@ axiom transpile_SRLW :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for SRAW (Phase 3A H2a —
-    `ShiftArchetype` sibling of SLLW/SRLW, register variant).
+/-- The axiomatic RV64 → Zisk row contract for SRAW
+    (`ShiftArchetype` sibling of SLLW/SRLW, register variant).
 
     Per `zisk/core/src/riscv2zisk_context.rs:157` an RV64 SRAW
     `rd, rs1, rs2` transpiles via `create_register_op(instr, "sra_w", 4)`.
@@ -1373,8 +1363,8 @@ def shamt_w_b_lo (shamt : BitVec 5) : FGL :=
     have : shamt.toNat < 32 := shamt.isLt
     omega⟩
 
-/-- The axiomatic RV64 → Zisk row contract for SLLIW (Phase 3A H2b —
-    `ShiftArchetype` sibling, W-variant immediate).
+/-- The axiomatic RV64 → Zisk row contract for SLLIW
+    (`ShiftArchetype` sibling, W-variant immediate).
 
     Per `zisk/core/src/riscv2zisk_context.rs:195` an RV64 SLLIW
     `rd, rs1, shamt` transpiles via `immediate_op(instr, "sll_w", 4)`
@@ -1408,7 +1398,7 @@ axiom transpile_SLLIW :
       ∧ m.b_0 r_main = shamt_w_b_lo shamt
       ∧ m.b_1 r_main = 0
 
-/-- The axiomatic RV64 → Zisk row contract for SRLIW (Phase 3A H2c).
+/-- The axiomatic RV64 → Zisk row contract for SRLIW.
 
     Per `zisk/core/src/riscv2zisk_context.rs:196`. Same shape as
     `transpile_SLLIW` with `OP_SLL_W → OP_SRL_W`. -/
@@ -1428,7 +1418,7 @@ axiom transpile_SRLIW :
       ∧ m.b_0 r_main = shamt_w_b_lo shamt
       ∧ m.b_1 r_main = 0
 
-/-- The axiomatic RV64 → Zisk row contract for SRAIW (Phase 3A H2d).
+/-- The axiomatic RV64 → Zisk row contract for SRAIW.
 
     Per `zisk/core/src/riscv2zisk_context.rs:197`. Same shape as
     `transpile_SLLIW` with `OP_SLL_W → OP_SRA_W`. -/
@@ -1448,7 +1438,7 @@ axiom transpile_SRAIW :
       ∧ m.b_0 r_main = shamt_w_b_lo shamt
       ∧ m.b_1 r_main = 0
 
-/-- The axiomatic RV64 → Zisk row contract for MULHU (Phase 3A M1).
+/-- The axiomatic RV64 → Zisk row contract for MULHU.
 
     Per `zisk/core/src/riscv2zisk_context.rs:246` an RV64 MULHU
     `rd, rs1, rs2` transpiles via
@@ -1483,7 +1473,7 @@ axiom transpile_MULHU :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for MULHSU (Phase 3A M2).
+/-- The axiomatic RV64 → Zisk row contract for MULHSU.
 
     Per `zisk/core/src/riscv2zisk_context.rs:245` an RV64 MULHSU
     `rd, rs1, rs2` transpiles via
@@ -1517,7 +1507,7 @@ axiom transpile_MULHSU :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for MULW (Phase 3A M3).
+/-- The axiomatic RV64 → Zisk row contract for MULW.
 
     Per `zisk/core/src/riscv2zisk_context.rs:247` an RV64 MULW
     `rd, rs1, rs2` transpiles via
@@ -1560,8 +1550,7 @@ axiom transpile_MULW :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for LUI (load-upper-immediate,
-    Phase 3C Track T-U).
+/-- The axiomatic RV64 → Zisk row contract for LUI (load-upper-immediate).
 
     Per `zisk/core/src/riscv2zisk_context.rs:1009` an RV64 LUI
     `rd, imm` transpiles via `self.lui(i, 4)` to exactly one Zisk
@@ -1605,8 +1594,7 @@ axiom transpile_LUI :
       ∧ m.b_0 r_main = imm_lo
       ∧ m.b_1 r_main = imm_hi
 
-/-- The axiomatic RV64 → Zisk row contract for AUIPC (add-upper-immediate-PC,
-    Phase 3C Track T-U).
+/-- The axiomatic RV64 → Zisk row contract for AUIPC (add-upper-immediate-PC).
 
     Per `zisk/core/src/riscv2zisk_context.rs:907` an RV64 AUIPC
     `rd, imm` transpiles via `self.auipc(i)` to exactly one Zisk
@@ -1652,10 +1640,10 @@ axiom transpile_AUIPC :
       ∧ m.b_0 r_main = 0
       ∧ m.b_1 r_main = 0
 
-/-! ## Phase 3C T-RT — ALU RTYPE opcodes
+/-! ## ALU RTYPE opcodes
 
-    Six transpile axioms for the Phase 3C ALU-RTYPE fan-out: SUB, AND,
-    OR, XOR, SLT, SLTU. All six route through `create_register_op`
+    Six transpile axioms for the ALU-RTYPE fan-out: SUB, AND, OR, XOR,
+    SLT, SLTU. All six route through `create_register_op`
     (`riscv2zisk_context.rs:134-152`), so the row shape is identical to
     `transpile_ADD` modulo the Zisk opcode literal. SLT / SLTU
     additionally leave `flag` unconstrained because the Binary SM's
@@ -1690,7 +1678,7 @@ axiom transpile_AUIPC :
     `create_register_op(..., "xor", 4)`) and XORI (line 178). -/
 @[simp] def OP_XOR : FGL := 16
 
-/-- The axiomatic RV64 → Zisk row contract for SUB (Phase 3C T-RT).
+/-- The axiomatic RV64 → Zisk row contract for SUB.
 
     Per `zisk/core/src/riscv2zisk_context.rs:134` an RV64 SUB
     `rd, rs1, rs2` transpiles via `create_register_op(..., "sub", 4)`
@@ -1725,7 +1713,7 @@ axiom transpile_SUB :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for AND (Phase 3C T-RT).
+/-- The axiomatic RV64 → Zisk row contract for AND.
 
     Per `zisk/core/src/riscv2zisk_context.rs:152` an RV64 AND
     `rd, rs1, rs2` transpiles via `create_register_op(..., "and", 4)`.
@@ -1753,7 +1741,7 @@ axiom transpile_AND :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for OR (Phase 3C T-RT).
+/-- The axiomatic RV64 → Zisk row contract for OR.
 
     Per `zisk/core/src/riscv2zisk_context.rs:141-150` an RV64 OR
     `rd, rs1, rs2` transpiles via `create_register_op(..., "or", 4)`.
@@ -1783,7 +1771,7 @@ axiom transpile_OR :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for XOR (Phase 3C T-RT).
+/-- The axiomatic RV64 → Zisk row contract for XOR.
 
     Per `zisk/core/src/riscv2zisk_context.rs:138` an RV64 XOR
     `rd, rs1, rs2` transpiles via `create_register_op(..., "xor", 4)`.
@@ -1811,7 +1799,7 @@ axiom transpile_XOR :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for SLT (Phase 3C T-RT).
+/-- The axiomatic RV64 → Zisk row contract for SLT.
 
     Per `zisk/core/src/riscv2zisk_context.rs:136` an RV64 SLT
     `rd, rs1, rs2` transpiles via `create_register_op(..., "lt", 4)`
@@ -1826,8 +1814,7 @@ axiom transpile_XOR :
     * `m32 = 0`;
     * **`flag` is left unconstrained** — `op_lt` returns `(1, true)`
       when `a < b` and `(0, false)` otherwise (`zisk_ops.rs:741`), so
-      the flag is an *output* the Binary SM writes via the bus. Phase 4
-      audit ties `flag` to the SLT verdict;
+      the flag is an *output* the Binary SM writes via the bus;
     * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`;
     * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)`.
 
@@ -1848,7 +1835,7 @@ axiom transpile_SLT :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for SLTU (Phase 3C T-RT).
+/-- The axiomatic RV64 → Zisk row contract for SLTU.
 
     Per `zisk/core/src/riscv2zisk_context.rs:137` an RV64 SLTU
     `rd, rs1, rs2` transpiles via `create_register_op(..., "ltu", 4)`.
@@ -1875,9 +1862,9 @@ axiom transpile_SLTU :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-! ## Phase 3C T-IT — ALU ITYPE opcodes
+/-! ## ALU ITYPE opcodes
 
-    Six transpile axioms for the Phase 3C ALU-ITYPE fan-out: ADDI,
+    Six transpile axioms for the ALU-ITYPE fan-out: ADDI,
     ANDI, ORI, XORI, SLTI, SLTIU. All six route through either
     `immediate_op` (SLLI-style) or `immediate_op_or_x0_copyb` (ADDI,
     XORI, ORI — which collapse to `copyb` when `rs1 = x0`). The
@@ -1898,13 +1885,12 @@ axiom transpile_SLTU :
 
     **Scope note.** These axioms cover only the non-degenerate
     (`rs1 ≠ x0`) path of `immediate_op_or_x0_copyb`. The `rs1 = x0`
-    path rewrites to `copyb` and changes the emitted opcode; Phase 3C
-    does not exercise this since the Sail pure specs for ADDI / ORI /
-    XORI unify it via the same arithmetic identity on `x0`. Should a
-    future phase need it, a distinct `transpile_ADDI_x0` axiom mirrors
-    `transpile_LUI`. -/
+    path rewrites to `copyb` and changes the emitted opcode; we do not
+    exercise it since the Sail pure specs for ADDI / ORI / XORI unify
+    it via the same arithmetic identity on `x0`. If needed, a distinct
+    `transpile_ADDI_x0` axiom would mirror `transpile_LUI`. -/
 
-/-- The axiomatic RV64 → Zisk row contract for ADDI (Phase 3C T-IT).
+/-- The axiomatic RV64 → Zisk row contract for ADDI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:160-174` an RV64
     ADDI `rd, rs1, imm` transpiles (on the non-degenerate path,
@@ -1916,8 +1902,7 @@ axiom transpile_SLTU :
     * `op = OP_ADD = 10`;
     * `is_external_op = 1` — dispatch to Binary SM via operation bus;
     * `flag = 0` — `op_add` always returns `(_, false)`;
-    * `m32 = 0` — 64-bit ADD (ADDIW uses `OP_ADD_W`, separate axiom in
-      Track T-W);
+    * `m32 = 0` — 64-bit ADD (ADDIW uses `OP_ADD_W`, separate axiom);
     * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`;
     * `a_lo = lane_lo (xreg rs1)`, `a_hi = lane_hi (xreg rs1)`;
     * `b_lo = imm_b_lo`, `b_hi = imm_b_hi` — caller-supplied
@@ -1950,7 +1935,7 @@ axiom transpile_ADDI :
       ∧ m.b_0 r_main = imm_b_lo
       ∧ m.b_1 r_main = imm_b_hi
 
-/-- The axiomatic RV64 → Zisk row contract for ANDI (Phase 3C T-IT).
+/-- The axiomatic RV64 → Zisk row contract for ANDI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:182` an RV64 ANDI
     `rd, rs1, imm` transpiles via `immediate_op(..., "and", 4)` —
@@ -1978,7 +1963,7 @@ axiom transpile_ANDI :
       ∧ m.b_0 r_main = imm_b_lo
       ∧ m.b_1 r_main = imm_b_hi
 
-/-- The axiomatic RV64 → Zisk row contract for ORI (Phase 3C T-IT).
+/-- The axiomatic RV64 → Zisk row contract for ORI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:181` an RV64 ORI
     `rd, rs1, imm` transpiles via
@@ -2007,7 +1992,7 @@ axiom transpile_ORI :
       ∧ m.b_0 r_main = imm_b_lo
       ∧ m.b_1 r_main = imm_b_hi
 
-/-- The axiomatic RV64 → Zisk row contract for XORI (Phase 3C T-IT).
+/-- The axiomatic RV64 → Zisk row contract for XORI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:178` an RV64 XORI
     `rd, rs1, imm` transpiles via
@@ -2036,7 +2021,7 @@ axiom transpile_XORI :
       ∧ m.b_0 r_main = imm_b_lo
       ∧ m.b_1 r_main = imm_b_hi
 
-/-- The axiomatic RV64 → Zisk row contract for SLTI (Phase 3C T-IT).
+/-- The axiomatic RV64 → Zisk row contract for SLTI.
 
     Per `zisk/core/src/riscv2zisk_context.rs:176` an RV64 SLTI
     `rd, rs1, imm` transpiles via `immediate_op(..., "lt", 4)` —
@@ -2068,7 +2053,7 @@ axiom transpile_SLTI :
       ∧ m.b_0 r_main = imm_b_lo
       ∧ m.b_1 r_main = imm_b_hi
 
-/-- The axiomatic RV64 → Zisk row contract for SLTIU (Phase 3C T-IT).
+/-- The axiomatic RV64 → Zisk row contract for SLTIU.
 
     Per `zisk/core/src/riscv2zisk_context.rs:177` an RV64 SLTIU
     `rd, rs1, imm` transpiles via `immediate_op(..., "ltu", 4)` —
@@ -2095,7 +2080,7 @@ axiom transpile_SLTIU :
       ∧ m.b_0 r_main = imm_b_lo
       ∧ m.b_1 r_main = imm_b_hi
 
-/-! ## Phase 3C Track T-W — RTYPEW / ADDIW transpile axioms
+/-! ## RTYPEW / ADDIW transpile axioms
 
 Three transpile axioms for the 32-bit-word ALU opcodes ADDW, SUBW,
 and ADDIW. All three mirror the `m32 = 1` path taken by the shift
@@ -2109,11 +2094,10 @@ the sign-extended 12-bit immediate lanes).
 the `"addiw"` arm calls `immediate_op(..., "add_w", 4)` (line 192) —
 i.e. **OP_ADD_W + m32 = 1**, *not* `OP_ADD` with `m32 = 1`. (The
 preceding `if rd == 0 && rs1 == 0 && imm == 0` branch emits a nop;
-that degenerate instance is outside the per-opcode metaplan axiom's
-scope — `transpile_ADDIW` quantifies over the nominal register/imm
-shape.) -/
+that degenerate instance is outside the per-opcode axiom's scope —
+`transpile_ADDIW` quantifies over the nominal register/imm shape.) -/
 
-/-- The axiomatic RV64 → Zisk row contract for ADDW (Phase 3C T-W).
+/-- The axiomatic RV64 → Zisk row contract for ADDW.
 
     Per `zisk/core/src/riscv2zisk_context.rs:153` an RV64 ADDW
     `rd, rs1, rs2` transpiles via `create_register_op(..., "add_w", 4)`
@@ -2151,7 +2135,7 @@ axiom transpile_ADDW :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for SUBW (Phase 3C T-W).
+/-- The axiomatic RV64 → Zisk row contract for SUBW.
 
     Per `zisk/core/src/riscv2zisk_context.rs:154` an RV64 SUBW
     `rd, rs1, rs2` transpiles via `create_register_op(..., "sub_w", 4)`.
@@ -2181,7 +2165,7 @@ axiom transpile_SUBW :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for ADDIW (Phase 3C T-W).
+/-- The axiomatic RV64 → Zisk row contract for ADDIW.
 
     Per `zisk/core/src/riscv2zisk_context.rs:184-194` an RV64
     ADDIW `rd, rs1, imm` transpiles via `immediate_op(..., "add_w", 4)`
@@ -2209,7 +2193,7 @@ axiom transpile_SUBW :
     the `b_lo`/`b_hi` decomposition (12-bit signed imm vs. 5-bit
     unsigned shamt). The correspondence between `(imm_lo, imm_hi)`
     and the Sail-side `BitVec.signExtend 64 imm` is discharged by
-    the Sail-level metaplan proof (`equiv_ADDIW_sail`), not by this
+    the Sail-level proof (`equiv_ADDIW_sail`), not by this
     axiom. -/
 axiom transpile_ADDIW :
     ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -2245,8 +2229,8 @@ axiom transpile_ADDIW :
     (and, out of scope, several atomic-memory ops). -/
 @[simp] def OP_SIGNEXTEND_W : FGL := 41
 
-/-- The axiomatic RV64 → Zisk row contract for LW (Phase 3C T-SL —
-    pilot of the `SignExtendLoadArchetype`).
+/-- The axiomatic RV64 → Zisk row contract for LW
+    (pilot of the `SignExtendLoadArchetype`).
 
     Per `zisk/core/src/riscv2zisk_context.rs:214` an RV64 LW
     `rd, imm(rs1)` transpiles via `self.load_op(i, "signextend_w", 4, 4)`
@@ -2290,8 +2274,8 @@ axiom transpile_LW :
       ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
       ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
 
-/-- The axiomatic RV64 → Zisk row contract for LH (Phase 3C T-SL —
-    sibling of `transpile_LW`, narrower width).
+/-- The axiomatic RV64 → Zisk row contract for LH
+    (sibling of `transpile_LW`, narrower width).
 
     Per `zisk/core/src/riscv2zisk_context.rs:212` an RV64 LH
     `rd, imm(rs1)` transpiles via `self.load_op(i, "signextend_h", 2, 4)`
@@ -2319,8 +2303,8 @@ axiom transpile_LH :
       ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
       ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
 
-/-- The axiomatic RV64 → Zisk row contract for LB (Phase 3C T-SL —
-    sibling of `transpile_LW`, narrowest width).
+/-- The axiomatic RV64 → Zisk row contract for LB
+    (sibling of `transpile_LW`, narrowest width).
 
     Per `zisk/core/src/riscv2zisk_context.rs:210` an RV64 LB
     `rd, imm(rs1)` transpiles via `self.load_op(i, "signextend_b", 1, 4)`
@@ -2349,7 +2333,7 @@ axiom transpile_LB :
       ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
 
 /- ============================================================
-   Phase 3C Track T-D — DIV / REM family
+   DIV / REM family
    ============================================================
 
    The DIV subfamily (DIV, DIVU, REM, REMU) all dispatch through the
@@ -2421,7 +2405,7 @@ axiom transpile_LB :
     quotient. -/
 @[simp] def OP_REM_W : FGL := 191
 
-/-- Transpile contract for RV64M DIVUW (Phase 5 follow-on Track J2).
+/-- Transpile contract for RV64M DIVUW.
     Mirrors `transpile_DIVU` modulo opcode = `OP_DIVU_W` and
     `m32 = 1`. -/
 axiom transpile_DIVUW :
@@ -2439,7 +2423,7 @@ axiom transpile_DIVUW :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- Transpile contract for RV64M REMUW (Phase 5 follow-on Track J3).
+/-- Transpile contract for RV64M REMUW.
     Mirrors `transpile_REMU` modulo opcode = `OP_REMU_W` and
     `m32 = 1`. -/
 axiom transpile_REMUW :
@@ -2457,8 +2441,7 @@ axiom transpile_REMUW :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- Transpile contract for RV64M DIVW (Phase 5 follow-on Track J4).
-    Signed 32-bit divide. -/
+/-- Transpile contract for RV64M DIVW. Signed 32-bit divide. -/
 axiom transpile_DIVW :
     ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
       (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
@@ -2474,8 +2457,7 @@ axiom transpile_DIVW :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- Transpile contract for RV64M REMW (Phase 5 follow-on Track J5).
-    Signed 32-bit remainder. -/
+/-- Transpile contract for RV64M REMW. Signed 32-bit remainder. -/
 axiom transpile_REMW :
     ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
       (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
@@ -2491,7 +2473,7 @@ axiom transpile_REMW :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for DIVU (Phase 3C T-D).
+/-- The axiomatic RV64 → Zisk row contract for DIVU.
 
     Per `zisk/core/src/riscv2zisk_context.rs:249` an RV64 DIVU
     `rd, rs1, rs2` transpiles via `create_register_op(..., "divu", 4)`
@@ -2507,8 +2489,7 @@ axiom transpile_REMW :
     * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)` same as MUL;
     * `flag` is populated by the Arith bus-pop — `flag = div_by_zero`.
       On DIV-family rows the flag is non-trivial (it fires when the
-      divisor is 0), but the transpile contract does not pin it — the
-      Phase 4 audit will discharge the div-by-zero semantics.
+      divisor is 0), but the transpile contract does not pin it.
 
     **Trust basis.** Pure spec of the `"divu"` arm in
     `riscv2zisk_context.rs:249`. Differs from `transpile_MUL` only in
@@ -2528,7 +2509,7 @@ axiom transpile_DIVU :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for REMU (Phase 3C T-D).
+/-- The axiomatic RV64 → Zisk row contract for REMU.
 
     Per `zisk/core/src/riscv2zisk_context.rs:253` an RV64 REMU
     `rd, rs1, rs2` transpiles via `create_register_op(..., "remu", 4)`.
@@ -2563,7 +2544,7 @@ axiom transpile_REMU :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for DIV (Phase 3C T-D).
+/-- The axiomatic RV64 → Zisk row contract for DIV.
 
     Per `zisk/core/src/riscv2zisk_context.rs:248` an RV64 DIV
     `rd, rs1, rs2` transpiles via `create_register_op(..., "div", 4)`.
@@ -2601,7 +2582,7 @@ axiom transpile_DIV :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for REM (Phase 3C T-D).
+/-- The axiomatic RV64 → Zisk row contract for REM.
 
     Per `zisk/core/src/riscv2zisk_context.rs:252` an RV64 REM
     `rd, rs1, rs2` transpiles via `create_register_op(..., "rem", 4)`.
@@ -2635,13 +2616,12 @@ axiom transpile_REM :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-! ## Phase 6 finishing5 S1: store_pc=1 PC bridges
+/-! ## store_pc=1 PC bridges
 
     The three axioms below — `transpile_PC_for_JAL`,
     `transpile_PC_for_JALR`, and `transpile_PC_for_AUIPC` — extend the
     transpiler's trusted surface to expose the **runtime PC value**
-    pinned at the Main-AIR row. They are part of finishing5's
-    `store_pc = 1` archetype work (`ai_plans/finishing5.md` S1).
+    pinned at the Main-AIR row, supporting the `store_pc = 1` archetype.
 
     ### Why they are trust-class items
 
@@ -2681,7 +2661,7 @@ axiom transpile_REM :
        `state.pc` carried through the program-counter handshake chain.
 
     Both are tractable and are open avenues for trust reduction; for
-    finishing5 they are accepted as axioms.
+    now they are accepted as axioms.
 
     ### What they assert
 
@@ -2697,11 +2677,10 @@ axiom transpile_REM :
     where `m.pc r_main : FGL` and `PC : BitVec 64`. Note that this
     formulation accommodates a **wide PC** — it does not assume `PC <
     2^32` even though ZisK's PIL declares `pc : bits(32)` (a residue of
-    ZisK's RV32 origin). Downstream, finishing5 S2's
+    ZisK's RV32 origin). Downstream,
     `Fundamentals/PackedBitVec/WidePCNoWrap.lean` handles the FGL-side
-    arithmetic to derive the lo / hi half decompositions
-    `JumpUType.lean` consumes (`h_pc_fgl_lo_nat`, `h_pci_lo_val`,
-    `h_entry_hi_nat`).
+    arithmetic to derive the lo / hi half decompositions consumed by
+    `JumpUType.lean`.
 
     ### Discriminating JAL / AUIPC
 
@@ -2719,7 +2698,7 @@ axiom transpile_REM :
     context applies.
 -/
 
-/-- Phase 6 finishing5 S1 trust extension — JAL PC bridge.
+/-- JAL PC bridge.
 
     Asserts that on a JAL row (`is_external_op = 0`, `op = OP_FLAG`,
     transpile-context per `riscv2zisk_context.rs:201,1098`), the
@@ -2728,10 +2707,9 @@ axiom transpile_REM :
     `transpile_JAL` (which pin `a_0 = state.xreg rs1` etc.) extending
     them to the runtime PC value.
 
-    Together with `transpile_JAL`, this lets finishing5 derive the JAL
-    rd-write `pc + 4` at the FGL level (lo half of the rd-write
-    8-byte memory-bus entry) under the existing JumpUType discharge
-    chain.
+    Together with `transpile_JAL`, this drives the JAL rd-write
+    `pc + 4` at the FGL level (lo half of the rd-write 8-byte
+    memory-bus entry) under the existing JumpUType discharge chain.
 
     **Trust class.** Sail-PC ↔ ZisK Main-pc-column contract — the
     transpiler-emits-row faithfulness for the PC witness column.
@@ -2745,7 +2723,7 @@ axiom transpile_PC_for_JAL :
       m.op r_main = OP_FLAG →
       (m.pc r_main).val = PC.toNat
 
-/-- Phase 6 finishing5 S1 trust extension — JALR PC bridge.
+/-- JALR PC bridge.
 
     Asserts that on a JALR row (`is_external_op = 0`,
     `op = OP_COPYB`, transpile-context per
@@ -2767,7 +2745,7 @@ axiom transpile_PC_for_JALR :
       m.op r_main = OP_COPYB →
       (m.pc r_main).val = PC.toNat
 
-/-- Phase 6 finishing5 S1 trust extension — AUIPC PC bridge.
+/-- AUIPC PC bridge.
 
     Asserts that on an AUIPC row (`is_external_op = 0`,
     `op = OP_FLAG`, transpile-context per
@@ -2777,8 +2755,9 @@ axiom transpile_PC_for_JALR :
     AUIPC's rd-write `pc + (imm << 12 sign-extended)` (per
     `main.pil:311` evaluating to `pc + jmp_offset2` with `c_0 = 0`)
     composes this PC bridge with `transpile_AUIPC`'s `jmp_offset2 =
-    imm_offset` pin and finishing5 S2's wide-PC arithmetic to derive
-    the rd-write equality at the FGL level.
+    imm_offset` pin and the wide-PC arithmetic in
+    `Fundamentals/PackedBitVec/WidePCNoWrap.lean` to derive the
+    rd-write equality at the FGL level.
 
     Note JAL and AUIPC share the `(is_external_op = 0, op = OP_FLAG)`
     selector pair; this is the same context-overlap convention used by

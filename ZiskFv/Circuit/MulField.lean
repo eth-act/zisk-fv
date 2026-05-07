@@ -12,7 +12,7 @@ import ZiskFv.Circuit.Add
 import ZiskFv.Circuit.Mul
 
 /-!
-**Phase 4.5 Package C — Bridge 2: Main ↔ Arith operand field composition.**
+**Bridge 2: Main ↔ Arith operand field composition.**
 
 Composes the bus-match (provided by `mul_circuit_holds`), Bridge 1
 (`Airs/Arith/Bridge1.lean`), and the carry-chain packed identity
@@ -30,11 +30,11 @@ i.e. Main's packed `c` holds the low 64 bits of the 128-bit product
 field-level statement of RV64 MUL correctness modulo the `BitVec 64`
 lift, which is handled by Bridge 3 in `Fundamentals/PackedBitVec.lean`.
 
-This file is called "MulField" rather than extending `Spec.Mul` because
-it consumes circuit hypotheses that `Spec.Mul.mul_compositional`
+This file is called "MulField" rather than extending `Circuit.Mul` because
+it consumes circuit hypotheses that `Circuit.Mul.mul_compositional`
 didn't: specifically the carry-chain constraints (6-8, 31-38) and
-constraint 46. Composing Phase 4.5 Bridges 1 + 2 is additive on top
-of the existing `mul_compositional` theorem.
+constraint 46. Composing Bridges 1 + 2 is additive on top of the
+existing `mul_compositional` theorem.
 
 DIV/REM analogues for `div_unsigned_field_correct` and
 `rem_unsigned_field_correct` are authored in-file — they follow the
@@ -77,14 +77,14 @@ lemma main_a_eq_chunks_mul
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
     (r_main r_arith : ℕ)
     (h : mul_circuit_holds m v r_main r_arith) :
-    Spec.Add.main_a_packed m r_main = a_chunks_packed v r_arith := by
+    Circuit.Add.main_a_packed m r_main = a_chunks_packed v r_arith := by
   obtain ⟨_, _, h_bus, h_mode, _⟩ := h
   obtain ⟨_, _, h_match_alo, h_match_ahi, _, _, _, _, _, _, _, _⟩ := h_bus
   obtain ⟨_, _, h_m32, _, _⟩ := h_mode
   simp only [opBus_row_Main, opBus_row_Arith] at h_match_alo h_match_ahi
   rw [h_m32] at h_match_ahi
   simp only [one_sub_zero_mul] at h_match_ahi
-  unfold Spec.Add.main_a_packed a_chunks_packed
+  unfold Circuit.Add.main_a_packed a_chunks_packed
   rw [h_match_alo, h_match_ahi]
   ring
 
@@ -93,14 +93,14 @@ lemma main_b_eq_chunks_mul
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
     (r_main r_arith : ℕ)
     (h : mul_circuit_holds m v r_main r_arith) :
-    Spec.Add.main_b_packed m r_main = b_chunks_packed v r_arith := by
+    Circuit.Add.main_b_packed m r_main = b_chunks_packed v r_arith := by
   obtain ⟨_, _, h_bus, h_mode, _⟩ := h
   obtain ⟨_, _, _, _, h_match_blo, h_match_bhi, _, _, _, _, _, _⟩ := h_bus
   obtain ⟨_, _, h_m32, _, _⟩ := h_mode
   simp only [opBus_row_Main, opBus_row_Arith] at h_match_blo h_match_bhi
   rw [h_m32] at h_match_bhi
   simp only [one_sub_zero_mul] at h_match_bhi
-  unfold Spec.Add.main_b_packed b_chunks_packed
+  unfold Circuit.Add.main_b_packed b_chunks_packed
   rw [h_match_blo, h_match_bhi]
   ring
 
@@ -147,14 +147,14 @@ lemma main_c_eq_chunks_mul
     MULHSU / signed MUL. For the unsigned-MUL opcodes (MULU, MULHU
     selected via opcode literal 0xb0/0xb1) these four witnesses are
     pinned to zero by the transpile contract and the `arith_table`
-    lookup; Phase 4.5 takes them as explicit proof inputs. -/
+    lookup; we take them as explicit proof inputs. -/
 theorem main_mul_unsigned_field_correct
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
     (r_main r_arith : ℕ)
     (h : mul_field_circuit_holds m v r_main r_arith)
     (h_na : v.na r_arith = 0) (h_nb : v.nb r_arith = 0)
     (h_np : v.np r_arith = 0) (h_nr : v.nr r_arith = 0) :
-    Spec.Add.main_a_packed m r_main * Spec.Add.main_b_packed m r_main
+    Circuit.Add.main_a_packed m r_main * Circuit.Add.main_b_packed m r_main
       = main_c_packed m r_main
         + d_chunks_packed v r_arith * (65536 * 65536 * 65536 * 65536) := by
   have h_circuit := h.1

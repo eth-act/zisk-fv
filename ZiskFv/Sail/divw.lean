@@ -4,7 +4,7 @@ import ZiskFv.Fundamentals.Execution
 open LeanRV64D.Functions
 
 /-!
-## RV64M DIVW — pure spec + Sail equivalence (Track J4)
+## RV64M DIVW — pure spec + Sail equivalence
 
 DIVW is the signed 32-bit divide. Per `riscv2zisk_context.rs:250`,
 RV64 `divw` transpiles via `create_register_op(..., "div_w", 4)`,
@@ -16,9 +16,8 @@ to 64 bits. Special cases per RV64 spec:
   - rs2 = 0           → -1 (all bits set)
   - rs1 = INT32_MIN, rs2 = -1 → INT32_MIN (signed overflow)
 
-Phase 6 Track R: equivalence is now *proved* using the
-`execute_DIVW'` refactor in `Fundamentals/Execution.lean`. No
-remaining axioms.
+Equivalence is proved using the `execute_DIVW'` refactor in
+`Fundamentals/Execution.lean`.
 -/
 
 namespace PureSpec

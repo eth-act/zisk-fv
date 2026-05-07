@@ -3,22 +3,19 @@ import Mathlib
 import ZiskFv.Fundamentals.Transpiler
 
 /-!
-# Transpile-axiom consumers — V13 closure (Phase 5 Track G extension)
+# Transpile-axiom consumers
 
-One trivial `theorem transpile_<OP>_consumer` per transpile axiom. Each
-invokes its axiom under the two mode-witness premises (`is_external_op`,
-`op`) and extracts the first conjunct of the resulting conjunction.
+One trivial `theorem transpile_<OP>_consumer` per transpile axiom.
+Each invokes its axiom under the two mode-witness premises
+(`is_external_op`, `op`) and extracts the first conjunct of the
+resulting conjunction.
 
-The point of this module is mechanical: ensure every one of the 58
-`transpile_<OP>` axioms has at least one proof-level consumer (V13) so
-that `#print axioms transpile_<OP>_consumer` reports the axiom as a
-dependency. Without this module, the 57 non-ADD axioms are declared-
-but-unused (Gap 3 residue).
-
-These consumers are not individually load-bearing for any downstream
-equivalence proof — they are witnesses that the axiom shape is
-*consumable*. Phase 5.1 will wire the axioms into the metaplan-
-theorem path via `chip_bus_hyps_*` or similar.
+The point of this module is mechanical: ensure that each
+`transpile_<OP>` axiom has at least one proof-level consumer, so
+`#print axioms transpile_<OP>_consumer` reports the axiom as a
+dependency. These consumers are not individually load-bearing for any
+downstream equivalence proof — they are witnesses that the axiom shape
+is *consumable*.
 -/
 
 namespace ZiskFv.Trusted
@@ -26,8 +23,7 @@ namespace ZiskFv.Trusted
 open Goldilocks
 open ZiskFv.Airs.Main
 
-/-- V13 consumer-witness for `transpile_ADD`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_ADD`. -/
 theorem transpile_ADD_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (state : RV64State) (rs1 rs2 : Fin 32)
@@ -35,8 +31,7 @@ theorem transpile_ADD_consumer
   fun h_p1 h_p2 =>
     (transpile_ADD m r_main state rs1 rs2 h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_BEQ`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_BEQ`. -/
 theorem transpile_BEQ_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State)
@@ -44,8 +39,7 @@ theorem transpile_BEQ_consumer
   fun h_p1 h_p2 =>
     (transpile_BEQ m r_main rs1 rs2 imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_BNE`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_BNE`. -/
 theorem transpile_BNE_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State)
@@ -53,8 +47,7 @@ theorem transpile_BNE_consumer
   fun h_p1 h_p2 =>
     (transpile_BNE m r_main rs1 rs2 imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_JAL`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_JAL`. -/
 theorem transpile_JAL_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State)
@@ -62,8 +55,7 @@ theorem transpile_JAL_consumer
   fun h_p1 h_p2 =>
     (transpile_JAL m r_main _rd imm_offset _state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_FENCE`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_FENCE`. -/
 theorem transpile_FENCE_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (_state : RV64State)
@@ -71,8 +63,7 @@ theorem transpile_FENCE_consumer
   fun h_p1 h_p2 =>
     (transpile_FENCE m r_main _state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_JALR`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_JALR`. -/
 theorem transpile_JALR_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_offset : FGL) (state : RV64State)
@@ -80,8 +71,7 @@ theorem transpile_JALR_consumer
   fun h_p1 h_p2 =>
     (transpile_JALR m r_main rs1 _rd imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_LD`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_LD`. -/
 theorem transpile_LD_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State)
@@ -89,8 +79,7 @@ theorem transpile_LD_consumer
   fun h_p1 h_p2 =>
     (transpile_LD m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_LWU`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_LWU`. -/
 theorem transpile_LWU_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State)
@@ -98,8 +87,7 @@ theorem transpile_LWU_consumer
   fun h_p1 h_p2 =>
     (transpile_LWU m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_LHU`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_LHU`. -/
 theorem transpile_LHU_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State)
@@ -107,8 +95,7 @@ theorem transpile_LHU_consumer
   fun h_p1 h_p2 =>
     (transpile_LHU m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_LBU`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_LBU`. -/
 theorem transpile_LBU_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State)
@@ -116,8 +103,7 @@ theorem transpile_LBU_consumer
   fun h_p1 h_p2 =>
     (transpile_LBU m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SD`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SD`. -/
 theorem transpile_SD_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State)
@@ -125,8 +111,7 @@ theorem transpile_SD_consumer
   fun h_p1 h_p2 =>
     (transpile_SD m r_main rs1 rs2 _imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SW`. -/
 theorem transpile_SW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State)
@@ -134,8 +119,7 @@ theorem transpile_SW_consumer
   fun h_p1 h_p2 =>
     (transpile_SW m r_main rs1 rs2 _imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_MUL`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_MUL`. -/
 theorem transpile_MUL_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -143,8 +127,7 @@ theorem transpile_MUL_consumer
   fun h_p1 h_p2 =>
     (transpile_MUL m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_MULH`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_MULH`. -/
 theorem transpile_MULH_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -152,8 +135,7 @@ theorem transpile_MULH_consumer
   fun h_p1 h_p2 =>
     (transpile_MULH m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SLLW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SLLW`. -/
 theorem transpile_SLLW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -161,8 +143,7 @@ theorem transpile_SLLW_consumer
   fun h_p1 h_p2 =>
     (transpile_SLLW m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_BLT`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_BLT`. -/
 theorem transpile_BLT_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State)
@@ -170,8 +151,7 @@ theorem transpile_BLT_consumer
   fun h_p1 h_p2 =>
     (transpile_BLT m r_main rs1 rs2 imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_BGE`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_BGE`. -/
 theorem transpile_BGE_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State)
@@ -179,8 +159,7 @@ theorem transpile_BGE_consumer
   fun h_p1 h_p2 =>
     (transpile_BGE m r_main rs1 rs2 imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_BLTU`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_BLTU`. -/
 theorem transpile_BLTU_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State)
@@ -188,8 +167,7 @@ theorem transpile_BLTU_consumer
   fun h_p1 h_p2 =>
     (transpile_BLTU m r_main rs1 rs2 imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_BGEU`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_BGEU`. -/
 theorem transpile_BGEU_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State)
@@ -197,8 +175,7 @@ theorem transpile_BGEU_consumer
   fun h_p1 h_p2 =>
     (transpile_BGEU m r_main rs1 rs2 imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SH`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SH`. -/
 theorem transpile_SH_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State)
@@ -206,8 +183,7 @@ theorem transpile_SH_consumer
   fun h_p1 h_p2 =>
     (transpile_SH m r_main rs1 rs2 _imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SB`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SB`. -/
 theorem transpile_SB_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State)
@@ -215,8 +191,7 @@ theorem transpile_SB_consumer
   fun h_p1 h_p2 =>
     (transpile_SB m r_main rs1 rs2 _imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SLL`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SLL`. -/
 theorem transpile_SLL_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -224,8 +199,7 @@ theorem transpile_SLL_consumer
   fun h_p1 h_p2 =>
     (transpile_SLL m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SRL`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SRL`. -/
 theorem transpile_SRL_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -233,8 +207,7 @@ theorem transpile_SRL_consumer
   fun h_p1 h_p2 =>
     (transpile_SRL m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SRA`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SRA`. -/
 theorem transpile_SRA_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -242,8 +215,7 @@ theorem transpile_SRA_consumer
   fun h_p1 h_p2 =>
     (transpile_SRA m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SLLI`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SLLI`. -/
 theorem transpile_SLLI_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State)
@@ -251,8 +223,7 @@ theorem transpile_SLLI_consumer
   fun h_p1 h_p2 =>
     (transpile_SLLI m r_main rs1 _rd shamt state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SRLI`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SRLI`. -/
 theorem transpile_SRLI_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State)
@@ -260,8 +231,7 @@ theorem transpile_SRLI_consumer
   fun h_p1 h_p2 =>
     (transpile_SRLI m r_main rs1 _rd shamt state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SRAI`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SRAI`. -/
 theorem transpile_SRAI_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State)
@@ -269,8 +239,7 @@ theorem transpile_SRAI_consumer
   fun h_p1 h_p2 =>
     (transpile_SRAI m r_main rs1 _rd shamt state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SRLW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SRLW`. -/
 theorem transpile_SRLW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -278,8 +247,7 @@ theorem transpile_SRLW_consumer
   fun h_p1 h_p2 =>
     (transpile_SRLW m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SRAW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SRAW`. -/
 theorem transpile_SRAW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -287,8 +255,7 @@ theorem transpile_SRAW_consumer
   fun h_p1 h_p2 =>
     (transpile_SRAW m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SLLIW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SLLIW`. -/
 theorem transpile_SLLIW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State)
@@ -296,8 +263,7 @@ theorem transpile_SLLIW_consumer
   fun h_p1 h_p2 =>
     (transpile_SLLIW m r_main rs1 _rd shamt state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SRLIW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SRLIW`. -/
 theorem transpile_SRLIW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State)
@@ -305,8 +271,7 @@ theorem transpile_SRLIW_consumer
   fun h_p1 h_p2 =>
     (transpile_SRLIW m r_main rs1 _rd shamt state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SRAIW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SRAIW`. -/
 theorem transpile_SRAIW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State)
@@ -314,8 +279,7 @@ theorem transpile_SRAIW_consumer
   fun h_p1 h_p2 =>
     (transpile_SRAIW m r_main rs1 _rd shamt state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_MULHU`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_MULHU`. -/
 theorem transpile_MULHU_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -323,8 +287,7 @@ theorem transpile_MULHU_consumer
   fun h_p1 h_p2 =>
     (transpile_MULHU m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_MULHSU`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_MULHSU`. -/
 theorem transpile_MULHSU_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -332,8 +295,7 @@ theorem transpile_MULHSU_consumer
   fun h_p1 h_p2 =>
     (transpile_MULHSU m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_MULW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_MULW`. -/
 theorem transpile_MULW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -341,8 +303,7 @@ theorem transpile_MULW_consumer
   fun h_p1 h_p2 =>
     (transpile_MULW m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_LUI`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_LUI`. -/
 theorem transpile_LUI_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_lo imm_hi : FGL) (_state : RV64State)
@@ -350,8 +311,7 @@ theorem transpile_LUI_consumer
   fun h_p1 h_p2 =>
     (transpile_LUI m r_main _rd imm_lo imm_hi _state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_AUIPC`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_AUIPC`. -/
 theorem transpile_AUIPC_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State)
@@ -359,8 +319,7 @@ theorem transpile_AUIPC_consumer
   fun h_p1 h_p2 =>
     (transpile_AUIPC m r_main _rd imm_offset _state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SUB`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SUB`. -/
 theorem transpile_SUB_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -368,8 +327,7 @@ theorem transpile_SUB_consumer
   fun h_p1 h_p2 =>
     (transpile_SUB m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_AND`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_AND`. -/
 theorem transpile_AND_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -377,8 +335,7 @@ theorem transpile_AND_consumer
   fun h_p1 h_p2 =>
     (transpile_AND m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_OR`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_OR`. -/
 theorem transpile_OR_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -386,8 +343,7 @@ theorem transpile_OR_consumer
   fun h_p1 h_p2 =>
     (transpile_OR m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_XOR`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_XOR`. -/
 theorem transpile_XOR_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -395,8 +351,7 @@ theorem transpile_XOR_consumer
   fun h_p1 h_p2 =>
     (transpile_XOR m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SLT`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SLT`. -/
 theorem transpile_SLT_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -404,8 +359,7 @@ theorem transpile_SLT_consumer
   fun h_p1 h_p2 =>
     (transpile_SLT m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SLTU`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SLTU`. -/
 theorem transpile_SLTU_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -413,8 +367,7 @@ theorem transpile_SLTU_consumer
   fun h_p1 h_p2 =>
     (transpile_SLTU m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_ADDI`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_ADDI`. -/
 theorem transpile_ADDI_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State)
@@ -422,8 +375,7 @@ theorem transpile_ADDI_consumer
   fun h_p1 h_p2 =>
     (transpile_ADDI m r_main rs1 _rd imm_b_lo imm_b_hi state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_ANDI`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_ANDI`. -/
 theorem transpile_ANDI_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State)
@@ -431,8 +383,7 @@ theorem transpile_ANDI_consumer
   fun h_p1 h_p2 =>
     (transpile_ANDI m r_main rs1 _rd imm_b_lo imm_b_hi state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_ORI`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_ORI`. -/
 theorem transpile_ORI_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State)
@@ -440,8 +391,7 @@ theorem transpile_ORI_consumer
   fun h_p1 h_p2 =>
     (transpile_ORI m r_main rs1 _rd imm_b_lo imm_b_hi state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_XORI`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_XORI`. -/
 theorem transpile_XORI_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State)
@@ -449,8 +399,7 @@ theorem transpile_XORI_consumer
   fun h_p1 h_p2 =>
     (transpile_XORI m r_main rs1 _rd imm_b_lo imm_b_hi state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SLTI`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SLTI`. -/
 theorem transpile_SLTI_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State)
@@ -458,8 +407,7 @@ theorem transpile_SLTI_consumer
   fun h_p1 h_p2 =>
     (transpile_SLTI m r_main rs1 _rd imm_b_lo imm_b_hi state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SLTIU`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SLTIU`. -/
 theorem transpile_SLTIU_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State)
@@ -467,8 +415,7 @@ theorem transpile_SLTIU_consumer
   fun h_p1 h_p2 =>
     (transpile_SLTIU m r_main rs1 _rd imm_b_lo imm_b_hi state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_ADDW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_ADDW`. -/
 theorem transpile_ADDW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -476,8 +423,7 @@ theorem transpile_ADDW_consumer
   fun h_p1 h_p2 =>
     (transpile_ADDW m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_SUBW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_SUBW`. -/
 theorem transpile_SUBW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -485,8 +431,7 @@ theorem transpile_SUBW_consumer
   fun h_p1 h_p2 =>
     (transpile_SUBW m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_ADDIW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_ADDIW`. -/
 theorem transpile_ADDIW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_lo imm_hi : FGL) (state : RV64State)
@@ -494,8 +439,7 @@ theorem transpile_ADDIW_consumer
   fun h_p1 h_p2 =>
     (transpile_ADDIW m r_main rs1 _rd imm_lo imm_hi state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_LW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_LW`. -/
 theorem transpile_LW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State)
@@ -503,8 +447,7 @@ theorem transpile_LW_consumer
   fun h_p1 h_p2 =>
     (transpile_LW m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_LH`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_LH`. -/
 theorem transpile_LH_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State)
@@ -512,8 +455,7 @@ theorem transpile_LH_consumer
   fun h_p1 h_p2 =>
     (transpile_LH m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_LB`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_LB`. -/
 theorem transpile_LB_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State)
@@ -521,8 +463,7 @@ theorem transpile_LB_consumer
   fun h_p1 h_p2 =>
     (transpile_LB m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_DIVUW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_DIVUW`. -/
 theorem transpile_DIVUW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -530,8 +471,7 @@ theorem transpile_DIVUW_consumer
   fun h_p1 h_p2 =>
     (transpile_DIVUW m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_REMUW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_REMUW`. -/
 theorem transpile_REMUW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -539,8 +479,7 @@ theorem transpile_REMUW_consumer
   fun h_p1 h_p2 =>
     (transpile_REMUW m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_DIVW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_DIVW`. -/
 theorem transpile_DIVW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -548,8 +487,7 @@ theorem transpile_DIVW_consumer
   fun h_p1 h_p2 =>
     (transpile_DIVW m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_REMW`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_REMW`. -/
 theorem transpile_REMW_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -557,8 +495,7 @@ theorem transpile_REMW_consumer
   fun h_p1 h_p2 =>
     (transpile_REMW m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_DIVU`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_DIVU`. -/
 theorem transpile_DIVU_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -566,8 +503,7 @@ theorem transpile_DIVU_consumer
   fun h_p1 h_p2 =>
     (transpile_DIVU m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_REMU`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_REMU`. -/
 theorem transpile_REMU_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -575,8 +511,7 @@ theorem transpile_REMU_consumer
   fun h_p1 h_p2 =>
     (transpile_REMU m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_DIV`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_DIV`. -/
 theorem transpile_DIV_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -584,8 +519,7 @@ theorem transpile_DIV_consumer
   fun h_p1 h_p2 =>
     (transpile_DIV m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-- V13 consumer-witness for `transpile_REM`. Axiom-load-bearing via
-    first-conjunct extraction. -/
+/-- Consumer-witness for `transpile_REM`. -/
 theorem transpile_REM_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
@@ -593,19 +527,15 @@ theorem transpile_REM_consumer
   fun h_p1 h_p2 =>
     (transpile_REM m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
-/-! ## Phase 6 finishing5 S1 — store_pc=1 PC bridges (TP-JAL / TP-JALR / TP-AUIPC)
+/-! ## store_pc=1 PC bridges (TP-JAL / TP-JALR / TP-AUIPC)
 
-    Each of the three `transpile_PC_consumer_<OP>` lemmas below makes
-    its corresponding `transpile_PC_for_<OP>` axiom load-bearing
-    (`#print axioms transpile_PC_consumer_<OP>` reports the axiom).
-    Unlike the operand-axiom consumers above, the PC axioms have a
-    single equality conclusion (not a conjunction), so the consumer
-    simply re-exposes the axiom under its mode-witness premises. -/
+    Each `transpile_PC_consumer_<OP>` lemma makes its corresponding
+    `transpile_PC_for_<OP>` axiom load-bearing. Unlike the operand-axiom
+    consumers above, the PC axioms have a single equality conclusion
+    (not a conjunction), so the consumer simply re-exposes the axiom
+    under its mode-witness premises. -/
 
-/-- V13 consumer-witness for `transpile_PC_for_JAL`. Re-exposes the
-    PC bridge axiom under its mode-witness premises so that
-    `#print axioms transpile_PC_consumer_JAL` lists it as a
-    dependency. -/
+/-- Consumer-witness for `transpile_PC_for_JAL`. -/
 theorem transpile_PC_consumer_JAL
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64)
@@ -614,7 +544,7 @@ theorem transpile_PC_consumer_JAL
   fun h_p1 h_p2 =>
     transpile_PC_for_JAL m r_main PC h_p1 h_p2
 
-/-- V13 consumer-witness for `transpile_PC_for_JALR`. -/
+/-- Consumer-witness for `transpile_PC_for_JALR`. -/
 theorem transpile_PC_consumer_JALR
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64)
@@ -623,7 +553,7 @@ theorem transpile_PC_consumer_JALR
   fun h_p1 h_p2 =>
     transpile_PC_for_JALR m r_main PC h_p1 h_p2
 
-/-- V13 consumer-witness for `transpile_PC_for_AUIPC`. -/
+/-- Consumer-witness for `transpile_PC_for_AUIPC`. -/
 theorem transpile_PC_consumer_AUIPC
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64)

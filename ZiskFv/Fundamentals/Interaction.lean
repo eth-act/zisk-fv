@@ -18,8 +18,7 @@ We deliberately omit the `BusEntry` typeclass, the `RangeCheckerBus`,
 `ProgramBus`, `BitwiseBus`, `RangeTupleCheckerBus`, and the 1200 lines of
 balanced-bus permutation theory from the openvm-fv file. None of those are
 referenced by `BusEffect.lean` or by the compositional proofs at the
-`Equivalence/<opcode>` level. Phase 2 (full permutation-argument soundness)
-can port them on demand.
+`Equivalence/<opcode>` level.
 
 Coercions `BitVec 8 ↔ FGL` are defined in `Fundamentals/Goldilocks.lean`, so
 memory bytes read back from `state.mem` can be compared against entry lanes

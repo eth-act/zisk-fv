@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ALURTypeArchetype
 
 /-!
-Compositional AND spec (Phase 3C T-RT1).
+Compositional AND spec.
 
 Thin specialization of `Tactics.ALURTypeArchetype` at
 `opcode_lit = OP_AND = 14`. Identical structure to `Spec/Sub.lean`.

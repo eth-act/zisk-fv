@@ -11,8 +11,8 @@ import ZiskFv.Tactics.LoadArchetype
 /-!
 Compositional LWU (load word, unsigned / zero-extended) spec.
 
-Phase 2.5 D4c — sibling validation of the **A3 LoadArchetype** on LWU
-(the 4-byte zero-extension load). Shares nearly all infrastructure with
+Sibling of LD under the **`LoadArchetype`** macro for LWU (the
+4-byte zero-extension load). Shares nearly all infrastructure with
 LD (`Spec/LoadD.lean`):
 
 * Same Main-row mode (`is_external_op = 0, op = OP_COPYB = 1, m32 = 0,
@@ -27,14 +27,14 @@ The only LWU-specific addition is **`memory_entry_high_bytes_zero`**:
 a hypothesis that the memory-bus entry's high 4 byte lanes (x4..x7) are
 zero. ZisK's Memory SM pads the unused high bytes with zero when
 `ind_width < 8`; we take this as a compositional hypothesis here (the
-Phase 3+ audit will derive it from the memory-SM permutation-proves).
+audit derives it from the memory-SM permutation-proves).
 
 With the zeroing hypothesis, `memory_entry_toField entry = memory_entry_lo entry`
 (bits 32..63 vanish), so the Main row's `c_packed` equals the 32-bit
 loaded value directly — matching Sail's `zero_extend 64` semantics for
 LWU.
 
-The Sail-level companion and metaplan theorem live in
+The Sail-level companion and equivalence theorem live in
 `Equivalence/LoadWU.lean`; the `LoadArchetype` macro is consumed to
 discharge the c-packed equation.
 -/
@@ -55,8 +55,8 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `ind_width = 4` load (LWU) because ZisK's Memory SM zero-pads the
     unused high bytes of the 8-byte memory-bus entry.
 
-    Phase 3+ derives this from the memory-SM `permutation_proves`; here
-    it is a compositional hypothesis. -/
+    The audit derives this from the memory-SM `permutation_proves`;
+    here it is a compositional hypothesis. -/
 @[simp]
 def memory_entry_high_bytes_zero (e : MemoryBusEntry FGL) : Prop :=
   e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0

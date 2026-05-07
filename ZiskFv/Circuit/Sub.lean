@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ALURTypeArchetype
 
 /-!
-Compositional SUB spec (Phase 3C T-RT0).
+Compositional SUB spec.
 
 Thin specialization of `Tactics.ALURTypeArchetype` at
 `opcode_lit = OP_SUB = 11`. Given the Main-side boolean/disjointness
@@ -15,9 +15,9 @@ constraints + mode witnesses + bus-match to an abstract bus entry,
 Main's packed `c` lanes equal the bus entry's packed `c` lanes.
 
 The Binary-SM-internal correctness (that `bus_entry.c_lo + c_hi * 2^32`
-equals `rs1 - rs2` as `BitVec 64`) is the Phase 4 audit obligation —
+equals `rs1 - rs2` as `BitVec 64`) is delegated to the audit —
 identical treatment to how MULH / MULHU / MULHSU defer the high-half
-selection to Phase 4.
+selection.
 -/
 
 namespace ZiskFv.Circuit.Sub

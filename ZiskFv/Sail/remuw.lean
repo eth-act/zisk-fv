@@ -15,8 +15,8 @@ Sail (`InstsEnd.lean:65921`): `execute_REMW (...) (is_unsigned :=
 true)` — analogous to DIVW with remainder semantics. Sign-extends
 32-bit remainder to 64 bits.
 
-Phase 6 Track R: equivalence is now *proved* using `execute_REMW'` in
-`Fundamentals/Execution.lean`. No remaining axioms.
+Equivalence is proved using `execute_REMW'` in
+`Fundamentals/Execution.lean`.
 -/
 
 namespace PureSpec
@@ -120,7 +120,6 @@ namespace PureSpec
         rw [if_pos hb, if_pos hb']
         apply BitVec.eq_of_toNat_eq
         simp [BitVec.toNat_ofInt]
-        push_cast
         omega
       · have hb' : remuw_input.r2_val.toNat % 4294967296 ≠ 0 :=
           fun h => hb ((h_extract_eq_zero _).mpr h)
@@ -143,7 +142,7 @@ namespace PureSpec
         push_cast
         omega
     -- Now bridge using h_inner_eq
-    simp only [Sail.BitVec.toNatInt, beq_iff_eq, Int.ofNat_eq_zero]
+    simp only []
     rw [h_inner_eq]
     simp [execute_DIVREM_remuw_pure]
     obtain ⟨rd⟩ := rd

@@ -10,7 +10,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.UTypeArchetype
 
 /-!
-Compositional AUIPC spec (Phase 3C Track T-U2).
+Compositional AUIPC spec.
 
 AUIPC has no secondary state-machine hop — the whole microinstruction
 is handled by the Main AIR alone (internal `flag` routing). Given the
@@ -78,7 +78,7 @@ theorem auipc_store_value_hi
     (1 - m.store_pc r_main) * m.c_1 r_main = 0 :=
   auipc_archetype_store_value_hi m r_main next_pc h
 
-/-! ## finishing5 S3 — bus-emission BitVec bridges
+/-! ## Bus-emission BitVec bridges
 
 AUIPC writes `pc + signExtend 64 (imm ++ 0#12)` to rd. Unlike JAL/JALR
 the offset is a sign-extended 32-bit immediate, not a constant 4. The
@@ -113,8 +113,8 @@ PC-plus-offset Sail sum. -/
        no-wrap and lo-half range bounds, the FGL `(pc + offset).val`
        equals the BitVec `(PC + offset_bv).toNat % 2^32`.
 
-    The strict form matches `JumpUType.lean`'s `h_pci_lo_val`
-    parameter exactly. -/
+    The strict form matches `JumpUType.lean`'s lo-half input
+    directly. -/
 theorem auipc_store_value_lo_bv
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (PC offset_bv : BitVec 64) (e : MemoryBusEntry FGL)

@@ -30,7 +30,7 @@ namespace PureSpec
     : MulOutput
   }
 
-  /-- RV64 MUL Sail-equivalence (Phase 2 A5-RV64D).
+  /-- RV64 MUL Sail-equivalence.
 
       Mirrors the RV64 `execute_RTYPE_add_pure_equiv` proof shape: strip the
       monadic bindings via the register-read lemmas (`rX_read_xreg_equiv`,

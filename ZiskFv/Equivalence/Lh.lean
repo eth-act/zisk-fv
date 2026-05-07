@@ -15,10 +15,9 @@ import ZiskFv.Sail.BusEffect
 
 /-!
 End-to-end theorem for RV64 LH (load halfword, signed / sign-extended).
-`finishing3` S5b retired the the bus-execute-matches-sail premise parameter
-from `equiv_LH_metaplan` in favour of structural bus hypotheses
-(shape (d-2-signed)) plus a memory-model bridge
-(`mem_load_correct_2byte`).
+Uses structural bus hypotheses (shape (d-2-signed)) plus a memory-model
+bridge (`mem_load_correct_2byte`) instead of a monolithic
+bus-execute-matches-sail premise.
 -/
 
 namespace ZiskFv.Equivalence.Lh
@@ -33,14 +32,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Circuit.LoadHalf
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
-
-theorem equiv_LH
-    (_rs1 _rd : Fin 32) (_state : RV64State)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (bus_entry : OperationBusEntry FGL)
-    (h_circuit : lh_circuit_holds m r_main bus_entry) :
-    bus_entry.a_hi = m.a_1 r_main ∧ bus_entry.b_hi = m.b_1 r_main :=
-  lh_compositional m r_main bus_entry h_circuit
 
 theorem equiv_LH_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -73,9 +64,8 @@ theorem equiv_LH_sail
   PureSpec.execute_LOADH_pure_equiv
     lh_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** `finishing3` S5b: retired
-    the bus-execute-matches-sail premise. -/
-theorem equiv_LH_metaplan
+/-- **Metaplan theorem.** -/
+theorem equiv_LH
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lh_input : PureSpec.LhInput)
     (mstatus : RegisterType Register.mstatus)

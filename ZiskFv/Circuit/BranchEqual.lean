@@ -19,7 +19,7 @@ This is the A1 archetype spec. BNE/BGE/BGEU/BLT/BLTU will reuse the
 same theorem with different `h_flag_correct` hypotheses (and `OP_EQ`
 swapped for the appropriate opcode in the bus-emission).
 
-Unlike `Spec.Add`, BEQ does *not* touch `c_lo/c_hi` for its RV64
+Unlike `Circuit.Add`, BEQ does *not* touch `c_lo/c_hi` for its RV64
 semantics (branches don't write to a destination register); the only
 circuit-side output is the PC advance. The compositional theorem
 isolates the PC-advance direction.
@@ -48,7 +48,7 @@ def main_row_in_beq_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     does not emit a `Valid_BinaryAdd` row — the bus hop goes to the
     full Binary SM for `eq`. We abstract the SM's flag-correctness
     guarantee as an externally-supplied hypothesis (`h_flag_correct`),
-    deferring the PIL-level derivation to Phase 4 audit. -/
+    deferring the PIL-level derivation to the audit. -/
 @[simp]
 def branch_eq_circuit_holds
     (m : Valid_Main C FGL FGL)

@@ -7,18 +7,17 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Sail.BusEffect
 
 /-!
-# BusHypotheses — Sail-side input-state derivation (Phase 5 Track G)
+# BusHypotheses — Sail-side input-state derivation
 
-Partner module to `Airs/BusEmission.lean`. Where `BusEmission.lean` reduces
-the `bus_effect`'s **output state** (`.2`) to the Sail monadic block the
-pure-spec writes, this module extracts the `bus_effect`'s **precondition**
-(`.1`) — a conjunction of `read_xreg` / `Sail.readReg` equalities about
-the Sail state.
+Partner module to `Airs/BusEmission.lean`. Where `BusEmission.lean`
+reduces `bus_effect`'s **output state** (`.2`) to the Sail monadic block
+the pure-spec writes, this module extracts `bus_effect`'s
+**precondition** (`.1`) — a conjunction of `read_xreg` / `Sail.readReg`
+equalities about the Sail state.
 
-The key observation: looking at `bus_effect`'s definition in
-`RV64D/BusEffect.lean`, when the execution bus has the standard two-entry
-shape and the memory bus carries ordered register / memory reads, the
-`.1` field accumulates exactly the equalities
+When the execution bus has the standard two-entry shape and the memory
+bus carries ordered register/memory reads, the `.1` field accumulates
+exactly the equalities
 
 ```
 Sail.readReg Register.PC state = .ok <pc from exec_row[0]> state
@@ -26,16 +25,10 @@ read_xreg (wrap_to_regidx e_read.ptr) state
   = .ok (U64.toBV #v[e_read.x0, …, e_read.x7]) state
 ```
 
-These are exactly the `h_input_r1`/`h_input_r2`/`h_input_pc` parameters
-every `equiv_<OP>_metaplan` theorem inherits from Phase 1.5. The `chip_bus_hyps_<SHAPE>`
-lemmas below let metaplan theorems drop those as separate
-parameters: a single `h_bus_cond : (bus_effect exec_row mem_row state).1`
-hypothesis plus the structural bus properties split into the individual
-read equalities.
-
-This is the openvm-fv Gap 1 closure: their `Equivalence/Mul.lean:492-537`
-`chip_bus_hypotheses` plays the identical role against
-`Valid_VmAirWrapper`'s `bus_effect`.
+The `chip_bus_hyps_<SHAPE>` lemmas let equivalence theorems consume a
+single `h_bus_cond : (bus_effect exec_row mem_row state).1` hypothesis
+plus structural bus properties and split it into the individual read
+equalities.
 
 Five lemmas, one per bus-entry shape ZisK's Main AIR emits:
 
@@ -53,7 +46,7 @@ open Goldilocks
 open Interaction
 
 /-- Inversion of `readReg_succ`: from a successful-read equation we can
-    recover the `state.regs.get?` equality. Used by metaplan theorems to
+    recover the `state.regs.get?` equality. Used by equivalence theorems to
     derive `h_input_pc` from the PC-read component of `bus_effect.1`. -/
 theorem readReg_of_readReg_succ
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
@@ -68,7 +61,7 @@ theorem readReg_of_readReg_succ
   cases h_get : state.regs.get? reg with
   | none =>
     rw [h_get] at h
-    simp [pure, EStateM.pure, throw, EStateM.throw, throwThe,
+    simp [throw, EStateM.throw, throwThe,
           MonadExceptOf.throw] at h
   | some w =>
     rw [h_get] at h
@@ -123,7 +116,7 @@ theorem chip_bus_hyps_alu_rrw
   simp only [h_exec_len, h_e0_mult, h_e1_mult, and_self, if_true,
              List.foldl_cons, List.foldl_nil] at h_bus
   simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
-             fgl_neg_one_self, fgl_one_ne_neg_one, fgl_one_self,
+             fgl_one_ne_neg_one,
              if_true, if_false] at h_bus
   -- The write branch (e2) keeps `.1` unchanged; case-split on whether
   -- rd is x0 (no-op) or a real register — both paths leave `.1` the
@@ -182,7 +175,7 @@ theorem chip_bus_hyps_jump_rrw
   simp only [h_exec_len, h_e0_mult, h_e1_mult, and_self, if_true,
              List.foldl_cons, List.foldl_nil] at h_bus
   simp only [h_m2_mult, h_m2_as,
-             fgl_one_ne_neg_one, fgl_one_self,
+             fgl_one_ne_neg_one,
              if_true, if_false] at h_bus
   by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
   · simp only [h_rd_zero, dite_true] at h_bus
@@ -239,8 +232,8 @@ theorem chip_bus_hyps_load_rrrw
   have h_m1_as_eq_two : (e1.as.val = 2) = True := by rw [h_m1_as]; decide
   simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as_ne_one, h_m1_as_eq_two,
              h_m2_mult, h_m2_as,
-             fgl_neg_one_self, fgl_one_ne_neg_one, fgl_one_self,
-             if_true, if_false, if_false_left, if_false_right] at h_bus
+             fgl_one_ne_neg_one,
+             if_true, if_false] at h_bus
   by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
   · simp only [h_rd_zero, dite_true] at h_bus
     -- h_bus has shape `((pc ∧ rs1) ∧ (mem[0] ∧ mem[1] ∧ … ∧ mem[7]))`.
@@ -296,11 +289,9 @@ theorem chip_bus_hyps_store_rrrw
   simp only [h_exec_len, h_e0_mult, h_e1_mult, and_self, if_true,
              List.foldl_cons, List.foldl_nil] at h_bus
   -- e2.as = 2 ≠ 1, so it takes the memory-write branch.
-  have h_m2_as_ne_one : (e2.as.val = 1) = False := by rw [h_m2_as]; decide
   simp only [h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
-             h_m2_as_ne_one,
-             fgl_neg_one_self, fgl_one_ne_neg_one, fgl_one_self,
-             if_true, if_false, if_false_left, if_false_right] at h_bus
+             fgl_one_ne_neg_one,
+             if_true, if_false] at h_bus
   obtain ⟨⟨hA, hB⟩, hC⟩ := h_bus
   exact ⟨hA, hB, hC⟩
 

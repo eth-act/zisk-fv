@@ -15,8 +15,8 @@ import ZiskFv.Sail.BusEffect
 
 /-!
 End-to-end theorem for RV64 LB (load byte, signed / sign-extended).
-`finishing3` S5b retired the the bus-execute-matches-sail premise parameter
-in favour of structural bus hypotheses + `mem_load_correct_1byte`.
+Uses structural bus hypotheses + `mem_load_correct_1byte` rather than
+a monolithic bus-execute-matches-sail premise.
 -/
 
 namespace ZiskFv.Equivalence.Lb
@@ -31,14 +31,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Circuit.LoadByte
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
-
-theorem equiv_LB
-    (_rs1 _rd : Fin 32) (_state : RV64State)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (bus_entry : OperationBusEntry FGL)
-    (h_circuit : lb_circuit_holds m r_main bus_entry) :
-    bus_entry.a_hi = m.a_1 r_main ∧ bus_entry.b_hi = m.b_1 r_main :=
-  lb_compositional m r_main bus_entry h_circuit
 
 theorem equiv_LB_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -71,8 +63,8 @@ theorem equiv_LB_sail
   PureSpec.execute_LOADB_pure_equiv
     lb_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** `finishing3` S5b. -/
-theorem equiv_LB_metaplan
+/-- **Metaplan theorem.** -/
+theorem equiv_LB
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lb_input : PureSpec.LbInput)
     (mstatus : RegisterType Register.mstatus)

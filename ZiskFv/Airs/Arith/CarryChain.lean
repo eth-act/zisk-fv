@@ -5,12 +5,12 @@ import ZiskFv.Fundamentals.Goldilocks
 import Extraction.Arith
 
 /-!
-**Arith carry-chain identity (Phase 4 Package C).**
+**Arith carry-chain identity.**
 
-Pure-field theorem that the 8-chunk × 16-bit carry chain (constraints 31-38
-in `Extraction/Arith.lean`), specialized to the MUL-unsigned mode
-(`fab = 1`, all of `na, nb, np, nr, sext, m32, div = 0`, hence
-`na_fb = nb_fa = 0`) implies the packed identity
+Pure-field theorem that the 8-chunk × 16-bit carry chain
+(constraints 31-38 in `Extraction/Arith.lean`), specialized to the
+MUL-unsigned mode (`fab = 1`, all of `na, nb, np, nr, sext, m32,
+div = 0`, hence `na_fb = nb_fa = 0`), implies the packed identity
 
 ```
 (a[0] + a[1]*B + a[2]*B^2 + a[3]*B^3) * (b[0] + b[1]*B + b[2]*B^2 + b[3]*B^3)
@@ -18,31 +18,24 @@ in `Extraction/Arith.lean`), specialized to the MUL-unsigned mode
   + (d[0] + d[1]*B + d[2]*B^2 + d[3]*B^3) * B^4
 ```
 
-where `B = 65536`.
+where `B = 65536`. The closure is a `linear_combination` with
+coefficients `B^0, B^1, ..., B^7` on constraints C31..C38.
 
-This is the Phase 4 moral analogue of `Spec.Add.add_compositional`'s
-`linear_combination` closure, scaled from 2 chunks to 8. The coefficients
-on constraints C31..C38 are `B^0, B^1, ..., B^7`.
+**Ring-atom trap (CLAUDE.md).** `ring` and `linear_combination` treat
+`4294967296 * 4294967296` and `18446744073709551616` as distinct
+polynomial atoms. Arith's radix is `65536`; coefficients are written in
+factored `65536 * 65536 * ...` form rather than as decimal expansions.
 
-**Ring-atom trap (CLAUDE.md Phase 1).** `ring` and `linear_combination`
-treat `4294967296 * 4294967296` and `18446744073709551616` as distinct
-polynomial atoms. Arith's radix is `65536`; coefficients must therefore be
-written in factored `65536 * 65536 * ...` form, not as decimal expansions.
-The core identity here uses powers `65536^k`, which `ring_nf` expands to
-iterated multiplications — consistent across all goals.
+**Mode specializations.** Two flavours:
 
-**Mode specializations.** The identity is presented in three flavours:
+* `arith_mul_unsigned_carry_identity` — MUL/MULHU mode. Unsigned 64×64
+  = 128-bit multiplication.
+* `arith_div_unsigned_carry_identity` — DIVU/REMU mode. Same 8-chunk
+  carry chain with roles swapped: `a` is quotient, `c` is dividend,
+  `b` is divisor. Rearranges to `a * b + d = c`.
 
-* `arith_mul_unsigned_carry_identity` — MUL/MULHU mode. Unsigned 64×64 =
-  128-bit multiplication. All sign witnesses zero.
-* `arith_div_unsigned_carry_identity` — DIVU/REMU mode. Same 8-chunk carry
-  chain with roles swapped: `a` is quotient, `c` is dividend, `b` is
-  divisor. Rearranges to `a * b + d = c`.
-
-Signed MUL/DIV modes factor the sign-preprocessing through the `np`/`nr`
-selectors and are more intricate — their closure requires a case-split on
-`(na, nb) ∈ {0,1}²` together with the sign-extension witness bounds. Those
-are delegated to per-family theorems in `Airs/Arith/{Mul,Div}.lean`.
+Signed MUL/DIV modes are delegated to per-family theorems in
+`Airs/Arith/{Mul,Div}.lean`.
 -/
 
 namespace ZiskFv.Airs.ArithCarryChain

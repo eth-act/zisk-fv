@@ -2,7 +2,7 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Fundamentals.Execution
 
 /-!
-RV64 SRLW (shift-right-logical-word). Phase 2.5 D4f sibling of SLLW.
+RV64 SRLW (shift-right-logical-word). Sibling of SLLW.
 
 Takes the low 32 bits of `rs1`, shifts right (logical, no sign-extend of the
 shift itself) by the low 5 bits of `rs2`, then sign-extends the 32-bit

@@ -7,44 +7,35 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Airs.OperationBus
 
 /-!
-# OpBusEffect — operation-bus precondition model (Track Q POC, branch shape)
+# OpBusEffect — operation-bus precondition model (branch shape)
 
-Partner module to `RV64D/BusEffect.lean`. Where `bus_effect` captures the
-**memory-bus** precondition (`.1`) and post-state (`.2`) for the
-`[exec_pc_read, exec_nextpc_write]`-shaped execution bus paired with a
-list of memory-bus entries, this module captures the **operation-bus**
-precondition for branches (BEQ family).
+Partner module to `RV64D/BusEffect.lean`. Where `bus_effect` captures
+the **memory-bus** precondition (`.1`) and post-state (`.2`), this
+module captures the **operation-bus** precondition for branches
+(BEQ family).
 
-For branch shapes (Track L), the Main AIR's *memory* bus is empty —
+For branch shapes the Main AIR's memory bus is empty —
 `bus_effect exec_row [] state` carries only the PC read in `.1`. The
-register reads of `rs1`/`rs2` route instead through the *operation* bus
+register reads of `rs1`/`rs2` route instead through the operation bus
 to the Binary state machine (via `OP_EQ`). The op-bus carries the
 *values* of `rs1`/`rs2` directly (in the `a_lo`/`a_hi`/`b_lo`/`b_hi`
-lanes), not pointer-indexed register-byte payloads as the memory bus
-does for ALU/STORE shapes.
+lanes), not the pointer-indexed register-byte payloads the memory bus
+uses for ALU/STORE shapes.
 
 `op_bus_effect`'s `.1` therefore encodes a pair of register-read
 equalities relating the bus's lane fields to `read_xreg rs1 / rs2 state`,
-where the `BitVec 64` value is reassembled from the lanes via
-`Goldilocks.lanes_to_bv64`.
-
-This is the operation-bus analogue the Track Q POC requires: it lets a
-branch metaplan theorem replace its scenario-binding `h_input_r1` /
-`h_input_r2` parameters with a single `h_op_bus` precondition.
+where the `BitVec 64` value is reassembled via `Goldilocks.lanes_to_bv64`.
 
 **Multiplicity convention.** Following `Airs/OperationBus.lean`: Main
-emits with `multiplicity := is_external_op` (= 1 for an active
-branch row). `op_bus_effect` treats `multiplicity = 1` as the
-"assume-side" emission whose `.1` precondition fires; entries with
-`multiplicity = 0` contribute no precondition; other multiplicities are
-"impossible" (the precondition is `True`, the result is the
-unreachable error).
+emits with `multiplicity := is_external_op` (= 1 for an active branch
+row). `op_bus_effect` treats `multiplicity = 1` as the "assume-side"
+emission whose `.1` precondition fires; entries with `multiplicity = 0`
+contribute no precondition; other multiplicities are illegal (the
+precondition is `False`, so any downstream proof closes vacuously).
 
-**Scope.** This module ships only the *branch* shape (no `c`-write,
-empty memory bus). ALU shapes (which already carry their rs1/rs2 via
-the memory bus, see `chip_bus_hyps_alu_rrw`) do not need an op-bus
-analogue at this layer — their op-bus interaction is the Main↔BinaryAdd
-permutation which the existing `matches_entry` machinery handles.
+**Scope.** This module ships only the branch shape (no `c`-write, empty
+memory bus). ALU shapes carry their rs1/rs2 via the memory bus (see
+`chip_bus_hyps_alu_rrw`) and don't need an op-bus analogue here.
 -/
 
 namespace ZiskFv.Airs.OpBusEffect

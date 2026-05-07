@@ -31,20 +31,18 @@ import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemAlignWriteByte
--- Track N K3: FGL → BitVec 64 arithmetic-extension lifts (h_rd_val bridges).
+-- FGL → BitVec 64 arithmetic-extension lifts (h_rd_val bridges).
 import ZiskFv.Fundamentals.PackedBitVec.Extensions
--- Track N B.5: Goldilocks no-wrap toolkit (additive packings).
+-- Goldilocks no-wrap toolkit (additive packings).
 import ZiskFv.Fundamentals.PackedBitVec.NoWrap
--- finishing4 S1: multiplicative no-wrap toolkit (8-chunk carry chains).
+-- Multiplicative no-wrap toolkit (8-chunk carry chains).
 import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
--- finishing4 S2: signed BitVec.toInt extension (sign-witness pattern + INT_MIN/-1 overflow).
+-- Signed BitVec.toInt extension (sign-witness pattern + INT_MIN/-1 overflow).
 import ZiskFv.Fundamentals.PackedBitVec.SignedNoWrap
--- finishing5 S2: wide-PC no-wrap toolkit (PC values can exceed GL_prime).
+-- Wide-PC no-wrap toolkit (PC values can exceed GL_prime).
 import ZiskFv.Fundamentals.PackedBitVec.WidePCNoWrap
 import ZiskFv.Circuit.Add
 import ZiskFv.Equivalence.Add
--- Phase 4 T-LINT re-export audit: missing direct imports for older opcodes
--- whose equivalence theorems shipped before the coverage-gate discipline.
 import ZiskFv.Equivalence.BranchEqual
 import ZiskFv.Equivalence.BranchNotEqual
 import ZiskFv.Equivalence.Jal
@@ -85,41 +83,39 @@ import ZiskFv.Equivalence.ShiftRAI
 import ZiskFv.Equivalence.MulHU
 import ZiskFv.Equivalence.MulHSU
 import ZiskFv.Equivalence.MulW
--- Phase 3C T-RT — ALU RTYPE opcodes (SUB, AND, OR, XOR, SLT, SLTU)
+-- ALU RTYPE opcodes (SUB, AND, OR, XOR, SLT, SLTU)
 import ZiskFv.Equivalence.And
 import ZiskFv.Equivalence.Or
 import ZiskFv.Equivalence.Slt
 import ZiskFv.Equivalence.Sltu
 import ZiskFv.Equivalence.Sub
 import ZiskFv.Equivalence.Xor
--- Phase 3C T-IT — ALU ITYPE opcodes (ADDI, ANDI, ORI, XORI, SLTI, SLTIU)
+-- ALU ITYPE opcodes (ADDI, ANDI, ORI, XORI, SLTI, SLTIU)
 import ZiskFv.Equivalence.Addi
 import ZiskFv.Equivalence.Andi
 import ZiskFv.Equivalence.Ori
 import ZiskFv.Equivalence.Xori
 import ZiskFv.Equivalence.Slti
 import ZiskFv.Equivalence.Sltiu
--- Phase 3C T-W — RTYPEW + ADDIW (ADDW, SUBW, ADDIW)
+-- RTYPEW + ADDIW (ADDW, SUBW, ADDIW)
 import ZiskFv.Equivalence.Addw
 import ZiskFv.Equivalence.Subw
 import ZiskFv.Equivalence.Addiw
--- Phase 3C T-SL — signed loads (LW, LH, LB)
+-- Signed loads (LW, LH, LB)
 import ZiskFv.Equivalence.Lw
 import ZiskFv.Equivalence.Lh
 import ZiskFv.Equivalence.Lb
--- Track N K4 — Signed-case PackedBitVec + MulFieldSigned + DivFieldSigned
+-- Signed-case PackedBitVec + MulFieldSigned + DivFieldSigned
 import ZiskFv.Fundamentals.PackedBitVec.Signed
 import ZiskFv.Circuit.MulFieldSigned
 import ZiskFv.Circuit.DivFieldSigned
--- Phase 3C T-D — DIV/REM
+-- DIV/REM
 import ZiskFv.Equivalence.Div
 import ZiskFv.Equivalence.Divu
 import ZiskFv.Equivalence.Rem
 import ZiskFv.Equivalence.Remu
--- RV64D coverage gate: force `lake build` to compile every Phase 3B
--- pure-spec file, even those whose Equivalence file hasn't landed yet.
--- Any RV64D file not yet pulled in by an Equivalence module goes here
--- so regressions surface at build time.
+-- Sail-side pure-spec files not pulled in transitively by any Equivalence
+-- module above; imported here so regressions surface at build time.
 import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Sail.addi
 import ZiskFv.Sail.addiw
@@ -140,7 +136,7 @@ import ZiskFv.Sail.sltu
 import ZiskFv.Sail.subw
 import ZiskFv.Sail.xori
 
--- Track N Phase 2: per-shape h_rd_val derivation lemmas.
+-- Per-shape h_rd_val derivation lemmas.
 import ZiskFv.Equivalence.RdValDerivation.Arith
 import ZiskFv.Equivalence.RdValDerivation.JumpUType
 import ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned

@@ -27,20 +27,19 @@ End-to-end theorem for RV64 LD (load doubleword). Combines:
 
 into three companion theorems paralleling the ADD and BEQ archetypes:
 
-* `equiv_LD` — circuit-level. States that the Main row's packed `c`
+* `equiv_LD_circuit` — circuit-level. States that the Main row's packed `c`
   lanes (as FGL) equal the 8-byte memory-bus entry's packed value,
   given the constraint-set + mode + memory-match hypotheses.
 * `equiv_LD_sail` — Sail-level. Wraps `execute_LOADD_pure_equiv`.
-* `equiv_LD_metaplan` — the metaplan-shaped theorem
+* `equiv_LD` — the canonical theorem
   `execute_instruction (.LOAD …) = (bus_effect …).2`.
 
-`finishing3` S5b: the per-byte rd-write-value parameter `h_rd_val` was
-retired here in favour of a derivation from `mem_load_correct` (see
-`Spec/MemModel.lean`) plus a new ptr-match hypothesis tying the
-memory-read entry's pointer to Sail's `r1_val + signExtend imm` and a
-per-byte mem-read-entry ↔ rd-write-entry passthrough hypothesis. The
-new parameters carry circuit content (Mem AIR witness + Main AIR
-witness + bus emission shape), not Sail-spec output content.
+The per-byte rd-write-value parameter `h_rd_val` is derived from
+`mem_load_correct` (see `Spec/MemModel.lean`) plus a ptr-match
+hypothesis tying the memory-read entry's pointer to Sail's
+`r1_val + signExtend imm` and a per-byte mem-read-entry ↔ rd-write-entry
+passthrough hypothesis. These carry circuit content (Mem AIR witness +
+Main AIR witness + bus emission shape), not Sail-spec output content.
 -/
 
 namespace ZiskFv.Equivalence.LoadD
@@ -55,31 +54,14 @@ open ZiskFv.Circuit.LoadD
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Circuit-level LD theorem.** Given the load-subset Main
-    constraints plus the mode witnesses from `transpile_LD` plus the
-    memory-bus matching hypothesis, the Main row's packed `c` cell
-    encodes the 8-byte loaded value packed from the memory-bus entry's
-    byte lanes.
-
-    This is the LD-analogue of `equiv_ADD` (for ADD) and
-    `equiv_BEQ` (for BEQ): a single field equation at the circuit
-    level, parameterized on the trace the caller supplies. -/
-theorem equiv_LD
-    (_rs1 _rd : Fin 32) (_state : RV64State)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (entry : MemoryBusEntry FGL)
-    (h_circuit : load_d_circuit_holds m r_main next_pc entry) :
-    main_c_packed m r_main = memory_entry_toField entry :=
-  load_d_compositional m r_main next_pc entry h_circuit
-
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 LD (`.LOAD (imm, rs1, rd, false, 8)`) reduces to the
     pure-function block supplied by `PureSpec.execute_LOADD_pure`,
     given the register/PC/memory/alignment assumptions.
 
     Wraps `PureSpec.execute_LOADD_pure_equiv`, which delegates to the
-    trusted `execute_LOADD_pure_equiv_axiom` (Phase 2.5 D1; see
-    `RV64D/ld.lean` and `docs/fv/trusted-base.md` M1). -/
+    trusted `execute_LOADD_pure_equiv_axiom` (see `RV64D/ld.lean` and
+    `docs/fv/trusted-base.md`). -/
 theorem equiv_LD_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)
@@ -108,31 +90,17 @@ theorem equiv_LD_sail
   PureSpec.execute_LOADD_pure_equiv
     ld_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** The metaplan-target shape for RV64 LD: Sail's
-    `execute_instruction` on an LD equals the state computed by applying
-    `bus_effect` to the circuit's execution + memory bus rows.
+/-- **Metaplan theorem.** Sail's `execute_instruction` on an LD equals
+    the state computed by applying `bus_effect` to the circuit's
+    execution + memory bus rows.
 
-    `finishing3` S5b: the previous decomposed `h_rd_val` parameter
-    (an output-equality stating `U64.toBV #v[e2.x0..e2.x7] = data7 ++
-    ... ++ data0`) is **derived internally** from
-    `Spec.MemModel.mem_load_correct` plus the new circuit hypotheses
+    The per-byte rd-write-value equality is **derived internally** from
+    `Circuit.MemModel.mem_load_correct` plus circuit hypotheses
     (`main`, `mem`, `r_main`, `h_main_emit_b`, `h_ptr_match`,
     `h_e1_e2_bytes`). The `h_rd_zero_iff` and `h_rd_idx` hypotheses are
-    retained — they are scenario-binding ptr-match facts (Sail's `rd`
-    operand vs the bus's `e2.ptr`) that cannot be derived from circuit
-    content alone.
-
-    **Hypotheses.**
-    * Sail side (from `equiv_LD_sail`): full `RISC_V_assumptions` +
-      per-input `ld_state_assumptions`.
-    * Bus side (Phase 4.5 Track C): structural multiplicities +
-      address-spaces on the two-entry execution bus and the
-      three-entry memory bus (rs1_read, mem_read_8, rd_write).
-    * **New (S5b):** `Valid_Main` + `Valid_Mem` witnesses, the load-side
-      memory bus emission `h_main_emit_b`, the ptr-match
-      `h_ptr_match`, and the per-byte mem-read ↔ rd-write entry
-      passthrough `h_e1_e2_bytes`. -/
-theorem equiv_LD_metaplan
+    scenario-binding ptr-match facts (Sail's `rd` operand vs the bus's
+    `e2.ptr`) that cannot be derived from circuit content alone. -/
+theorem equiv_LD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)
     (mstatus : RegisterType Register.mstatus)
@@ -145,7 +113,7 @@ theorem equiv_LD_metaplan
       RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
     (h_opcode_assumptions :
       PureSpec.ld_state_assumptions ld_input state)
-    -- Phase 4.5 Track C: structural bus hypotheses (shape d — LD).
+    -- Structural bus hypotheses (shape d — LD).
     (h_exec_len : exec_row.length = 2)
     (h_e0_mult : exec_row[0]!.multiplicity = -1)
     (h_e1_mult : exec_row[1]!.multiplicity = 1)
@@ -155,12 +123,12 @@ theorem equiv_LD_metaplan
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
     (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1)
-    -- Phase 4.5 A-rewire: decomposed rd-match hypotheses (retained;
+    -- Decomposed rd-match hypotheses (retained;
     -- ptr-match between Sail's rd and bus e2.ptr is not circuit-derivable).
     (h_rd_zero_iff :
       Transpiler.wrap_to_regidx e2.ptr = 0 ↔ ld_input.rd = 0)
     (h_rd_idx : ld_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val)
-    -- finishing3 S5b: new circuit-level parameters that supplant `h_rd_val`.
+    -- Circuit-level parameters that supplant `h_rd_val`.
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
     (h_main_emit_b :
       main.b_0 r_main = memory_entry_lo e1

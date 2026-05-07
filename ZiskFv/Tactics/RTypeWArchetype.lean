@@ -6,9 +6,9 @@ import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 
 /-!
-**RTYPEW archetype macros / generic lemmas** (Phase 3C Track T-W).
+**RTYPEW archetype macros / generic lemmas.**
 
-The two Phase 3C Binary-SM RTYPEW opcodes (ADDW, SUBW) and the
+The two Binary-SM RTYPEW opcodes (ADDW, SUBW) and the
 immediate sibling ADDIW share the `m32 = 1` variant of the
 `ALURTypeArchetype` pattern:
 
@@ -24,16 +24,16 @@ immediate sibling ADDIW share the `m32 = 1` variant of the
 * `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`.
 
 This module is the `m32 = 1` twin of
-`Tactics/ALURTypeArchetype.lean`. Per Phase 3C Known-fragility #1 we
-duplicate rather than mutate the shared macro — the m32-0 archetype's
-mode predicate hardcodes `m32 = 0`, and fighting the parameterization
-carries more risk than copying the five-line bus-match skeleton.
+`Tactics/ALURTypeArchetype.lean`. We duplicate rather than mutate the
+shared macro — the m32-0 archetype's mode predicate hardcodes
+`m32 = 0`, and fighting the parameterization carries more risk than
+copying the five-line bus-match skeleton.
 
-As with the m32-0 sibling the core identity is bus-passthrough on the
-`c` lanes: Main's packed `c` equals the bus entry's packed `c`
-(`c_lo + c_hi * 2^32`), independent of `m32`. The `m32 = 1` bit
-affects only the operand-side (`a_hi` / `b_hi`) bus zeroing, which is
-the Phase 4 Binary-SM audit obligation's concern, not this file's.
+The core identity is bus-passthrough on the `c` lanes: Main's packed
+`c` equals the bus entry's packed `c` (`c_lo + c_hi * 2^32`),
+independent of `m32`. The `m32 = 1` bit affects only the operand-side
+(`a_hi` / `b_hi`) bus zeroing, which is a separate Binary-SM audit
+obligation's concern.
 
 ## Parameterization
 
@@ -83,8 +83,7 @@ def main_row_in_rtypew_mode
 /-- **Archetype circuit-holds.** Packs the Main AIR's boolean /
     disjointness booleans + bus-match to an abstract entry + mode
     witnesses. Parametric over the Zisk opcode literal. The
-    bus-match hypothesis is the Phase-4-derivable link to a concrete
-    Binary-SM row. -/
+    bus-match hypothesis is the link to a concrete Binary-SM row. -/
 @[simp]
 def rtypew_archetype_circuit_holds
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
@@ -97,8 +96,8 @@ def rtypew_archetype_circuit_holds
   ∧ matches_entry (opBus_row_Main m r_main) bus_entry
 
 /-- The 64-bit value packed into Main's `(c_0, c_1)` lanes.
-    Redeclared here (instead of importing `Spec.Add.main_c_packed`)
-    so the archetype module has no dependency on `Spec.Add`. -/
+    Redeclared here (instead of importing `Circuit.Add.main_c_packed`)
+    so the archetype module has no dependency on `Circuit.Add`. -/
 @[simp]
 def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
   m.c_0 r + m.c_1 r * 4294967296
@@ -111,8 +110,8 @@ def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     lanes (`c_lo` = low 32 = sign-extended 32-bit op result low 32,
     `c_hi` = high 32 = sign-extension of bit 31). The Binary SM's
     internal correctness (that `c_lo`/`c_hi` decode to
-    `sign_extend_32_to_64 (op_32 (low32 a) (low32 b))`) is the
-    Phase 4 audit obligation. -/
+    `sign_extend_32_to_64 (op_32 (low32 a) (low32 b))`) is a
+    separate audit obligation. -/
 theorem rtypew_archetype_c_bus_match
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)

@@ -5,12 +5,9 @@ import ZiskFv.Fundamentals.Goldilocks
 import Extraction.Main
 
 /-!
-Named-column mirror of the ADD subset of ZisK's `Main` AIR, plus the
-`constraint_N_of_extraction` iff-bridges.
-
-Only the columns and constraints that participate in the ADD proof are
-exposed as named predicates. The full 146-constraint Main AIR is out of
-scope for Phase 1; other constraints remain reachable via raw `Circuit.main`
+Named-column mirror of the subset of ZisK's `Main` AIR consumed by the
+per-opcode equivalence proofs, plus the `constraint_N_of_extraction`
+iff-bridges. Other constraints remain reachable via raw `Circuit.main`
 on the underlying circuit handle.
 -/
 
@@ -161,7 +158,7 @@ def add_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
   ∧ flag_boolean v row
   ∧ is_external_op_boolean v row
 
-/-- **PC handshake** (`main.pil:410`) — the *closed form* of the PIL
+/-- **PC handshake** (`main.pil:410`) — the closed form of the PIL
     constraint:
 
     `(1 - SEGMENT_L1 row) * (pc row - expected_current_pc(row - 1)) = 0`
@@ -173,19 +170,18 @@ def add_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
                          + (1 - 'set_pc) * ('pc + 'jmp_offset2)
                          + 'flag * ('jmp_offset1 - 'jmp_offset2)`.
 
-    Phase 2.5 D2 closed this form: `pil-extract` now handles the
-    `'`-prefix (negative row rotation) by rewriting `row_offset = -1`
-    to `(row := row - 1) (rotation := 0)`. `Circuit.main`'s rotation is
-    `ℕ`, so at row 0 the `row - 1` subterm saturates to 0 — but the
-    `(1 - SEGMENT_L1)` gate evaluates to `0` at row 0 (`SEGMENT_L1 = 1`
-    there by definition), so the misaligned subterm is multiplied out.
-    See `Extraction/Main.lean`'s `constraint_18_every_row` and the
-    extractor-notes for the full argument.
+    The extractor renders the `'`-prefix (negative row rotation) by
+    rewriting `row_offset = -1` to `(row := row - 1) (rotation := 0)`.
+    `Circuit.main`'s rotation is `ℕ`, so at row 0 the `row - 1` subterm
+    saturates to 0 — but the `(1 - SEGMENT_L1)` gate evaluates to `0`
+    at row 0 (`SEGMENT_L1 = 1` there by definition), so the misaligned
+    subterm is multiplied out. See `docs/fv/extractor-notes.md` for the
+    full soundness argument.
 
-    Callers who need the classical "next_pc" formulation (at some row
-    `r`, the next-row pc equals the current-row formula) should use
-    `pc_handshake_with_next_pc` below (derived from this via
-    `pc_handshake_to_next_pc` when the row is not a segment boundary). -/
+    Callers who need the "next_pc" formulation (at row `r`, the next-row
+    pc equals the current-row formula) should use
+    `pc_handshake_with_next_pc` below, derived from this via
+    `pc_handshake_to_next_pc` when the row is not a segment boundary. -/
 @[simp]
 def pc_handshake (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
   (1 - v.segment_l1 row) *
@@ -195,11 +191,9 @@ def pc_handshake (v : Valid_Main C F ExtF) (row : ℕ) : Prop :=
         + v.flag (row - 1) * (v.jmp_offset1 (row - 1) - v.jmp_offset2 (row - 1)))) = 0
 
 /-- **Specialization form** of the PC handshake, parameterized on the
-    *next-row* pc cell. Historically this was `pc_handshake`; Phase 2.5
-    demoted it to a specialization once the extractor handled the
-    closed form. Callers that already carry a `next_pc : F` (e.g.
-    `Spec.BranchEqual`, `Spec.Jal`, `Spec.LoadD`) use this form directly
-    — they can port to the closed form via `pc_handshake_to_next_pc`.
+    *next-row* pc cell. Callers that already carry a `next_pc : F` (e.g.
+    `Circuit.BranchEqual`, `Circuit.Jal`, `Circuit.LoadD`) consume this form
+    directly; bridge from the closed form via `pc_handshake_to_next_pc`.
 
     At row `r` with `set_pc = 0`, this reduces to
     `next_pc = pc r + jmp_offset2 r + flag r * (jmp_offset1 r - jmp_offset2 r)`.
@@ -257,7 +251,7 @@ variable {C' : Type → Type → Type} [Circuit FGL FGL C']
 /-- From the three `jump_subset_holds` ingredients (`is_external_op = 0`,
     `op = 0`, constraint 17 — `internal_op0_sets_flag`), we can derive
     `flag = 1`. Specialized to `FGL` so `linear_combination` sees a
-    commutative-ring. Used by `Spec.Jal`. -/
+    commutative-ring. Used by `Circuit.Jal`. -/
 lemma flag_eq_one_of_internal_op_zero
     (v : Valid_Main C' FGL FGL) (row : ℕ)
     (h_ext : v.is_external_op row = 0)
@@ -295,7 +289,7 @@ lemma c_1_eq_zero_of_internal_op_zero
 
 /-- Specialized PC handshake for **unconditional jump** (JAL): `set_pc = 0`
     and `flag = 1`. The handshake collapses to `next_pc = pc + jmp_offset1`
-    (the taken-offset path). Used by `Spec.Jal.jal_pc_advance`. -/
+    (the taken-offset path). Used by `Circuit.Jal.jal_pc_advance`. -/
 lemma pc_handshake_jump
     (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F)
     (h_set_pc : v.set_pc row = 0)
@@ -323,7 +317,7 @@ def branch_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Pr
     `is_external_op = 0` with `op = OP_FLAG = 0`, so constraints 8 + 15
     (internal-op=0 zeroes c) and constraint 17 (internal-op=0 sets flag)
     are non-trivial — they force `c = 0, flag = 1`. This is the
-    constraint bundle consumed by `Spec.Jal.jal_pc_advance` to establish
+    constraint bundle consumed by `Circuit.Jal.jal_pc_advance` to establish
     `next_pc = pc + jmp_offset1`. -/
 @[simp]
 def jump_subset_holds (v : Valid_Main C F ExtF) (row : ℕ) (next_pc : F) : Prop :=

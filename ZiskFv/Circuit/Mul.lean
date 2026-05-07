@@ -13,21 +13,21 @@ predicates as ADD), the named Arith-subset mul-mode booleans, and the
 operation-bus matching between the two rows, Main's `(c_lo, c_hi)` lanes
 equal Arith's packed result lanes (`c[0] + c[1]*2^16`, `bus_res1`).
 
-**Parameterization (A5 design).** Unlike `Spec.Add`, which derives Main's
-packed `c` from BinaryAdd's carry chain, `Spec.Mul` **does not derive**
+**Parameterization.** Unlike `Circuit.Add`, which derives Main's
+packed `c` from BinaryAdd's carry chain, `Circuit.Mul` **does not derive**
 the multiplication from Arith's carry chains (constraints 31–38). That
 derivation — which would unfold the 8-chunk byte-level decomposition to
-`BitVec 128` arithmetic — is delegated to Phase 4 audit. Instead we
+`BitVec 128` arithmetic — is delegated to the audit. Instead we
 parameterize on the bus-match hypothesis: the proof states that *if*
 Main and Arith emit matching bus entries, then Main's `c` lanes are
 exactly Arith's packed result. The separate Arith-correctness claim
 (Arith's `c[]` = low 64 bits of `a*b` for MUL) is an unresolved
-obligation the Phase 4 audit closes by proving the carry chains entail
-multiplication.
+obligation discharged by the audit (the carry chains entail
+multiplication).
 
-This mirrors BEQ's treatment of the Binary SM's `flag` bit (deferred to
-Phase 4) — both archetypes exercise a secondary state machine whose
-internal correctness is proved *outside* the archetype's scope.
+This mirrors BEQ's treatment of the Binary SM's `flag` bit — both
+archetypes exercise a secondary state machine whose internal
+correctness is proved *outside* the archetype's scope.
 -/
 
 namespace ZiskFv.Circuit.Mul
@@ -100,7 +100,7 @@ def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     This is the Main↔Arith bus-projection identity for MUL. The lifting
     from this field-level identity to the `BitVec 64` semantics of RV64
     MUL happens in `Equivalence.Mul`, which parameterizes on an Arith-
-    correctness hypothesis (left to Phase 4 audit). -/
+    correctness hypothesis (left to the audit). -/
 theorem mul_compositional
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
     (r_main r_arith : ℕ)

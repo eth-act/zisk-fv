@@ -3,18 +3,17 @@ import LeanRV64D
 import ZiskFv.Fundamentals.Execution
 
 /-!
-# RdValDerivation.SailBridge — bridges between Tier-1 discharge outputs and metaplan h_rd_val shapes
+# RdValDerivation.SailBridge — bridges between Tier-1 discharge outputs and h_rd_val shapes
 
-**finishing2 S5 follow-on.** The Tier-1 discharge lemmas in
-`Arith.lean` / `BinaryShift.lean` for ALU-W and shift opcodes produce
-conclusions in BitVec primitives:
+The Tier-1 discharge lemmas in `Arith.lean` / `BinaryShift.lean` for
+ALU-W and shift opcodes produce conclusions in BitVec primitives:
 
 * ADDW/SUBW/ADDIW: `BitVec.signExtend 64 (BitVec.ofNat 32 a32sum + BitVec.ofNat 32 b32sum)`
 * SLL/SLLI/SRL/SRLI/SRA/SRAI: `BitVec.shiftLeft r1_val shift` / `BitVec.ushiftRight` / `BitVec.sshiftRight`
 * SLLW/SLLIW/SRLW/SRLIW/SRAW/SRAIW: `BitVec.signExtend 64 (BitVec.shiftLeft (BitVec.ofNat 32 a4sum) shift)`
   / `BitVec.ushiftRight` / `BitVec.sshiftRight` analogues.
 
-The corresponding metaplan `h_rd_val` parameters use the Sail-style
+The corresponding `h_rd_val` parameters use the Sail-style
 expressions:
 
 * ALU-W: `execute_RTYPEW_pure r1_val r2_val ropw.ADDW` etc.
@@ -29,7 +28,7 @@ These bridges show the two forms equal under transpile pin hypotheses
 and the Sail prelude `simp_sail` lemmas. **No new axioms.**
 
 Each bridge has the symmetric direction stated as `lhs = rhs` so it
-can be `rw`'d into a discharge output to produce the metaplan target.
+can be `rw`'d into a discharge output to produce the canonical target.
 -/
 
 namespace ZiskFv.Equivalence.RdValDerivation.SailBridge
@@ -44,10 +43,10 @@ open LeanRV64D.Functions
 
     The Tier-1 ADDW discharge produces
     `BitVec.signExtend 64 (BitVec.ofNat 32 a32sum + BitVec.ofNat 32 b32sum)`.
-    The metaplan `h_rd_val` parameter expects
+    The `h_rd_val` parameter expects
     `execute_RTYPEW_pure r1 r2 ropw.ADDW`. Given the transpile pins
     relating the byte sums to the Sail-side `extractLsb r 31 0`, this
-    bridge produces the metaplan-shape rewrite. -/
+    bridge produces the canonical rewrite. -/
 theorem sail_addw_bridge
     (r1 r2 : BitVec 64) (a32sum b32sum : ℕ)
     (h_a : (Sail.BitVec.extractLsb r1 31 0).toNat = a32sum % 2^32)
@@ -63,7 +62,7 @@ theorem sail_addw_bridge
 
 /-- **Sail ↔ discharge bridge for ADDIW.**
 
-    ADDIW's metaplan h_rd_val uses `execute_ADDIW_pure imm r1`
+    ADDIW's h_rd_val uses `execute_ADDIW_pure imm r1`
     which unfolds to
     `BitVec.signExtend 64 (BitVec.setWidth 32 (r1 + BitVec.signExtend 64 imm))`.
     The discharge produces
@@ -120,7 +119,7 @@ theorem sail_subw_bridge
 /-- **Sail ↔ discharge bridge for SLL.**
 
     The Tier-1 SLL discharge produces `BitVec.shiftLeft r1 shift`.
-    The metaplan `h_rd_val` expects `execute_RTYPE_pure r1 r2 rop.SLL`,
+    The `h_rd_val` expects `execute_RTYPE_pure r1 r2 rop.SLL`,
     which unfolds to `Sail.shift_bits_left r1 (Sail.BitVec.extractLsb r2 5 0)`.
     Bridge identifies `shift` with the low 6 bits of `r2` viewed as a
     natural number. -/
@@ -188,12 +187,12 @@ private theorem shift_right_arith_eq_sshiftRight
   -- The goal has compounded boolean terms; use omega + decide reductions.
   rcases Nat.lt_or_ge (shift + i) 64 with h_si | h_si
   · -- shift + i < 64
-    have h_le_63 : i ≤ 63 := by omega
-    simp [hi, h_si, h_le_63, h_not_64_i, h_lt_64_shift]
+    have _h_le_63 : i ≤ 63 := by omega
+    simp [hi, h_si, h_not_64_i, h_lt_64_shift]
   · -- shift + i ≥ 64
     have h_si' : ¬ (shift + i < 64) := Nat.not_lt_of_ge h_si
-    have h_le_63 : i ≤ 63 := by omega
-    simp [hi, h_si', h_le_63, h_not_64_i, h_lt_64_shift,
+    have _h_le_63 : i ≤ 63 := by omega
+    simp [hi, h_si', h_not_64_i, h_lt_64_shift,
           BitVec.msb_eq_getLsbD_last,
           show (64 : ℕ) - 1 = 63 from by omega]
 
@@ -274,7 +273,7 @@ private theorem extractLsb_31_0_eq_of_toNat
 
     The discharge produces
     `BitVec.signExtend 64 (BitVec.shiftLeft (BitVec.ofNat 32 a4sum) shift)`.
-    The Sail-side metaplan target is
+    The Sail-side target is
     `execute_RTYPEW_pure r1 r2 ropw.SLLW`
     which unfolds to
     `sign_extend (m:=64) (Sail.shift_bits_left (extractLsb r1 31 0) (extractLsb (extractLsb r2 31 0) 4 0))`.
@@ -356,11 +355,11 @@ private theorem shift_right_arith_eq_sshiftRight_32
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb,
              BitVec.getLsbD_sshiftRight, BitVec.getLsbD_signExtend]
   rcases Nat.lt_or_ge (shift + i) 32 with h_si | h_si
-  · have h_le_31 : i ≤ 31 := by omega
-    simp [hi, h_si, h_le_31, h_not_32_i, h_lt_32_shift]
+  · have _h_le_31 : i ≤ 31 := by omega
+    simp [hi, h_si, h_not_32_i, h_lt_32_shift]
   · have h_si' : ¬ (shift + i < 32) := Nat.not_lt_of_ge h_si
-    have h_le_31 : i ≤ 31 := by omega
-    simp [hi, h_si', h_le_31, h_not_32_i, h_lt_32_shift,
+    have _h_le_31 : i ≤ 31 := by omega
+    simp [hi, h_si', h_not_32_i, h_lt_32_shift,
           BitVec.msb_eq_getLsbD_last,
           show (32 : ℕ) - 1 = 31 from by omega]
 
@@ -396,7 +395,7 @@ theorem sail_sraw_bridge
 
     The discharge produces
     `BitVec.signExtend 64 (BitVec.shiftLeft (BitVec.ofNat 32 a4sum) shift)`.
-    The metaplan `h_rd_val` for SLLIW directly uses Sail-form
+    The `h_rd_val` for SLLIW directly uses Sail-form
     `sign_extend (m:=64) (Sail.shift_bits_left (extractLsb r1 31 0) shamt)`. -/
 theorem sail_slliw_bridge
     (r1 : BitVec 64) (shamt : BitVec 5) (a4sum shift : ℕ)

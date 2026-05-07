@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Circuit.Jal
 
 /-!
-**Jump archetype macros / generic lemmas** (Phase 2 A2-M).
+**Jump archetype macros / generic lemmas.**
 
 Unconditional jumps in RV64IM (JAL, and the `set_pc = 0` half of the
 compressed `C_JAL`/`C_J` family — out of scope for RV64IM) share a
@@ -25,7 +25,7 @@ Main constraints 8/15 (internal op=0 zeroes c) + constraint 17
 (internal op=0 sets flag) together with the PC handshake yield
 `next_pc = pc + jmp_offset1` and `store_value[0] = pc + jmp_offset2`.
 
-Phase 2.5 D4 added a **second** sub-archetype for JALR, below.
+A **second** sub-archetype below covers JALR.
 JALR has `set_pc = 1`, `op = OP_COPYB`, `b` routed from rs1, and uses
 `c[0] = b[0]` (forced by constraint 9) as the next-pc source via the
 `set_pc = 1` handshake branch. The `jalr_*` lemmas mirror the `jump_*`
@@ -33,23 +33,14 @@ ones but exchange constraint 17 (`flag = 1`) for constraint 18
 (`flag = 0`) and route the next-pc through `c[0] + jmp_offset1`
 instead of `pc + jmp_offset1`.
 
-## Usage pattern for Phase 3 fan-out
+## Usage pattern
 
 ```
-theorem equiv_<JumpLike>_metaplan (...) := by
+theorem equiv_<JumpLike> (...) := by
   have h_next_pc :=
     jump_archetype_pc_advance m r next_pc h_circuit_jal
   -- ...
 ```
-
-## Minimalism note
-
-Phase 2 A2 closes JAL with `Spec.Jal.jal_pc_advance` directly. The
-macro here is the *delivery* of the archetype — Phase 3 / later
-fan-out (e.g. C_JAL if compressed-ext support is added) consumes it.
-Keeping JAL's proof concrete while providing the macro at the same
-surface lets reviewers diff the two and confirm the macro generalizes
-correctly.
 -/
 
 namespace ZiskFv.Tactics.JumpArchetype
@@ -77,7 +68,7 @@ def main_row_in_jump_mode
   ∧ m.store_pc r_main = 1
 
 /-- **Archetype circuit-holds.** Parametric version of
-    `Spec.Jal.jal_circuit_holds` over the opcode literal. For JAL
+    `Circuit.Jal.jal_circuit_holds` over the opcode literal. For JAL
     specifically, `opcode_lit = 0 = OP_FLAG`; the constraint 17
     conclusion (`flag = 1`) depends on `opcode_lit = 0`, so instantiation
     with any other literal breaks the downstream `flag_eq_one_of_internal_op_zero`
@@ -90,7 +81,7 @@ def jump_archetype_circuit_holds
   ∧ main_row_in_jump_mode m r_main opcode_lit
 
 /-- **Archetype PC-advance theorem.** Same shape as
-    `Spec.Jal.jal_pc_advance` but parametric over the Zisk opcode
+    `Circuit.Jal.jal_pc_advance` but parametric over the Zisk opcode
     literal. Proves the `next_pc = pc + jmp_offset1` formula from the
     jump-subset constraints + mode witnesses **when `opcode_lit = 0`**
     (the internal-op-zero case that forces `flag = 1` via constraint 17).
@@ -113,7 +104,7 @@ theorem jump_archetype_pc_advance
 /-- **Archetype store-value theorem.** The `store_value[0]` expression
     (`main.pil:311`) evaluates to `pc + jmp_offset2` when the row is in
     jump-mode with `opcode_lit = 0` (JAL). Parametric version of
-    `Spec.Jal.jal_store_value`. -/
+    `Circuit.Jal.jal_store_value`. -/
 theorem jump_archetype_store_value
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jump_archetype_circuit_holds m r_main next_pc (0 : FGL)) :
@@ -146,7 +137,7 @@ macro "jump_archetype_proof" : tactic => `(tactic| (
 ))
 
 /-!
-## JALR sub-archetype (Phase 2.5 D4)
+## JALR sub-archetype
 
 JALR shares JAL's store-value shape (`store_pc = 1`, rd ← `pc + 4`) but
 routes the next-pc through the `set_pc = 1` handshake branch:
@@ -162,9 +153,9 @@ The circuit-side constraints differ from JAL:
 * The `flag * set_pc = 0` disjointness (constraint 19) is consistent
   with `flag = 0`.
 
-Calling from Phase 3 / sibling opcodes: any `copyb`-based register-
-relative jump (future C_JR/C_JALR if RV64C is added) can reuse these
-lemmas by calling `jalr_archetype_pc_advance` / `jalr_archetype_store_value`
+Sibling opcodes — any `copyb`-based register-relative jump (e.g.
+future C_JR/C_JALR if RV64C is added) — can reuse these lemmas by
+calling `jalr_archetype_pc_advance` / `jalr_archetype_store_value`
 directly.
 -/
 

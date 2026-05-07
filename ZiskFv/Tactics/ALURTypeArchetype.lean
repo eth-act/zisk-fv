@@ -6,9 +6,9 @@ import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 
 /-!
-**ALU RTYPE archetype macros / generic lemmas** (Phase 3C Track T-RT).
+**ALU RTYPE archetype macros / generic lemmas.**
 
-The six Phase 3C ALU-RTYPE opcodes (SUB, AND, OR, XOR, SLT, SLTU) share a
+The six ALU-RTYPE opcodes (SUB, AND, OR, XOR, SLT, SLTU) share a
 single ZisK microinstruction shape under `create_register_op`:
 
 * `op` = one of `OP_SUB`/`OP_AND`/`OP_OR`/`OP_XOR`/`OP_LT`/`OP_LTU`
@@ -16,28 +16,17 @@ single ZisK microinstruction shape under `create_register_op`:
 * `is_external_op = 1`, type `Binary` — dispatched to the Binary SM
   via the operation bus;
 * `m32 = 0` — these are all 64-bit variants;
-* `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4` — no
-  branching;
+* `set_pc = 0`, `store_pc = 0`, `jmp_offset1 = jmp_offset2 = 4`;
 * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)`.
 
-Unlike ADD (which has an extracted `Valid_BinaryAdd` AIR in
-`ZiskFv/Airs/Binary/BinaryAdd.lean`), the other Binary-SM AIRs
-(`BinarySub`, `BinaryLogic`, etc.) are **not extracted** yet. Phase 3C
-closes these six opcodes by parameterizing the archetype over an
+Unlike ADD (which has an extracted `Valid_BinaryAdd` AIR), the other
+Binary-SM AIRs (`BinarySub`, `BinaryLogic`, etc.) are **not extracted**.
+We close these six opcodes by parameterizing the archetype over an
 abstract `OperationBusEntry FGL` — exactly the pattern
 `Tactics/ShiftArchetype.lean` uses for SLLW / SRLW / SRAW. The
-secondary SM's internal correctness (that the bus entry's `c_lo`, `c_hi`
-correctly encode the opcode's semantics on the input `a`, `b` lanes) is
-the Phase 4 audit obligation.
-
-This module packages the reusable pieces:
-
-* `main_row_in_alu_rtype_mode` — parametric mode predicate (over
-  `opcode_lit : FGL`).
-* `alu_rtype_archetype_circuit_holds` — the full Main-side + bus-match
-  hypothesis bundle.
-* `alu_rtype_archetype_c_bus_match` — Main's packed `c` equals the bus
-  entry's packed `c` lanes.
+secondary SM's internal correctness (that the bus entry's `c_lo`,
+`c_hi` correctly encode the opcode's semantics on the input `a`, `b`
+lanes) is a separate audit obligation.
 
 ## Parameterization
 
@@ -45,7 +34,7 @@ This module packages the reusable pieces:
   `OP_SUB = 11`, `OP_AND = 14`, `OP_OR = 15`, `OP_XOR = 16`,
   `OP_LT = 7` (reused from BLT), `OP_LTU = 6` (reused from BLTU).
 
-## Usage pattern (Phase 3C fan-out)
+## Usage pattern
 
 ```
 theorem sub_compositional
@@ -59,14 +48,11 @@ theorem sub_compositional
 
 ## Minimalism note
 
-Phase 3C Known-fragility #1 warns that factoring `Spec/Add.lean` into
-an `ALURTypeArchetype` may resist refactor because ADD's
-`Valid_BinaryAdd`-dependent carry-chain identity does **not**
+ADD's `Valid_BinaryAdd`-dependent carry-chain identity does **not**
 generalize — SUB/AND/OR/XOR/SLT/SLTU have no analogous extracted AIR.
-We therefore keep `Spec/Add.lean` untouched and define a narrower
-archetype here that stops at the bus-match identity (Main's `c` lanes
-equal the bus entry's `c` lanes). Phase 4 extends this with per-SM
-correctness claims.
+We keep `Spec/Add.lean` untouched and define a narrower archetype here
+that stops at the bus-match identity (Main's `c` lanes equal the bus
+entry's `c` lanes).
 -/
 
 namespace ZiskFv.Tactics.ALURTypeArchetype
@@ -99,8 +85,7 @@ def main_row_in_alu_rtype_mode
 /-- **Archetype circuit-holds.** Packs the Main AIR's boolean /
     disjointness booleans + bus-match to an abstract entry + mode
     witnesses. Parametric over the Zisk opcode literal. The bus-match
-    hypothesis is the Phase-4-derivable link to a concrete Binary-SM
-    row. -/
+    hypothesis is the link to a concrete Binary-SM row. -/
 @[simp]
 def alu_rtype_archetype_circuit_holds
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
@@ -113,15 +98,15 @@ def alu_rtype_archetype_circuit_holds
   ∧ matches_entry (opBus_row_Main m r_main) bus_entry
 
 /-- The 64-bit value packed into Main's `(c_0, c_1)` lanes. Redeclared
-    here (instead of importing `Spec.Add.main_c_packed`) so the
-    archetype module has no dependency on `Spec.Add`; downstream
+    here (instead of importing `Circuit.Add.main_c_packed`) so the
+    archetype module has no dependency on `Circuit.Add`; downstream
     ALU-RTYPE opcodes are identical to ADD in this packing. -/
 @[simp]
 def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
   m.c_0 r + m.c_1 r * 4294967296
 
 /-- **Archetype bus-match theorem.** Parametric version of
-    `Spec.Mul.mul_compositional`'s bus-match identity, adapted to an
+    `Circuit.Mul.mul_compositional`'s bus-match identity, adapted to an
     abstract bus entry (as in `Tactics/ShiftArchetype.lean`).
 
     Under ALU-RTYPE mode witnesses + bus-match, Main's packed `c`
@@ -129,7 +114,7 @@ def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     faithfully carries the Binary-SM's packed 64-bit output on the
     two `c` lanes. The Binary SM's internal correctness (that
     `c_lo`/`c_hi` decode to the opcode's semantics on `a`/`b`) is
-    the Phase 4 audit obligation. -/
+    a separate audit obligation. -/
 theorem alu_rtype_archetype_c_bus_match
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)

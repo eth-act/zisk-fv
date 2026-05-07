@@ -4,7 +4,7 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.PackedBitVec
 
 /-!
-**Track N K4 — Signed BitVec.toInt bridge.**
+**Signed BitVec.toInt bridge.**
 
 Pure `BitVec.toInt` / `Int.tdiv` lifts for the signed MUL/DIV/REM family.
 No AIR-specific material here — this file is the pure-math layer that

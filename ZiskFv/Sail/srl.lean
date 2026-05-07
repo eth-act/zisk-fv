@@ -2,7 +2,7 @@ import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Fundamentals.Execution
 
 /-!
-RV64 SRL (shift-right-logical, register variant). Phase 3A H2 sibling.
+RV64 SRL (shift-right-logical, register variant).
 
 Full 64-bit logical right shift: takes `rs1`, shifts right by the low
 6 bits of `rs2`, zero-fills on the left. No PC jump; write to `rd`;

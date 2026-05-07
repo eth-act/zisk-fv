@@ -10,12 +10,9 @@ import ZiskFv.Fundamentals.Execution
 /-!
 # RdValDerivation.MulDivRemSigned — `h_rd_val` discharge lemmas (signed MUL/DIV/REM)
 
-**finishing4 S3 Tier-1 upgrade.**
-
 Each lemma in this file is **Tier 1**: it derives the `h_rd_val` conclusion
-from circuit-constraint-shaped primitives. The earlier Tier-2 `h_byte_sum`
-parameter (an OUTPUT-EQ shape — `byte-sum = (execute_*_pure ...).toNat`)
-has been retired in favor of:
+from circuit-constraint-shaped primitives. The Tier-2 `h_byte_sum`
+OUTPUT-EQ parameter is retired in favor of:
 
 * **MULH / MULHSU** — operand-arithmetic byte-sum hypotheses tying the
   bus entry's bytes to `(BitVec.ofInt 64 ((op1.toInt * op2.toInt) / 2^64)).toNat`
@@ -76,7 +73,7 @@ open LeanRV64D.Functions
     Produces:
     `U64.toBV #v[e.x0, ..., e.x7] = execute_MUL_pure r1_val r2_val .MULH`
 
-    matching the `h_rd_val` parameter in `Equivalence.MulH.equiv_MULH_metaplan`.
+    matching the `h_rd_val` parameter in `Equivalence.MulH.equiv_MULH`.
 
     Internal composition: applies S2's `mulh_bv64_of_byte_sum`, which
     rewrites the spec output via `execute_MUL_pure_mulh_eq` and discharges
@@ -253,7 +250,7 @@ overflow (`INT32_MIN`) special cases.
 
 The byte-sum is supplied directly (TRANSPILE-BRIDGE form, mirroring the
 unsigned MULW pattern). The `let` shape inlines `r1_lo32`, `r2_lo32`, `q32`
-to match the metaplan caller's signature.
+to match the caller's signature.
 -/
 
 /-- **`h_rd_val` discharge for DIVW (Tier 1).** -/

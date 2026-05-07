@@ -7,7 +7,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Circuit.Shift
 
 /-!
-**Shift archetype macros / generic lemmas** (Phase 2 A6-M).
+**Shift archetype macros / generic lemmas.**
 
 The six RV64IM shift opcodes (SLL / SRL / SRA — 64-bit —
 and SLLW / SRLW / SRAW — 32-bit-then-sign-extend) share a single
@@ -28,21 +28,21 @@ six — the only parameters are the Zisk opcode literal and the
 right) lives entirely on the Sail side (`execute_RTYPE` /
 `execute_RTYPEW` dispatch on the `rop`/`ropw` enum).
 
-This module packages the reusable pieces so Phase 3 can fan out SRLW,
-SRAW, SLL, SRL, SRA with a single parametric proof skeleton.
+This module packages the reusable pieces so SRLW, SRAW, SLL, SRL,
+SRA can fan out from a single parametric proof skeleton.
 
 ## Parameterization
 
 * `opcode_lit : FGL` — `OP_SLL_W = 36`, `OP_SRL_W = 37`, etc.
 * `m32_val : FGL` — `1` for `_w` variants, `0` otherwise. The
   archetype lemmas fire for both values; callers pin one at the
-  metaplan theorem layer.
+  equivalence theorem layer.
 
-## Usage pattern for Phase 3 fan-out
+## Usage pattern
 
 ```
 -- SRLW case:
-theorem equiv_SRLW_metaplan (...) := by
+theorem equiv_SRLW (...) := by
   have h_high_zero :=
     shift_archetype_m32_one_zeros_bus m r_main bus_entry
       (opcode_lit := OP_SRL_W) h_circuit_srlw
@@ -50,16 +50,9 @@ theorem equiv_SRLW_metaplan (...) := by
 ```
 
 See `Spec/Shift.lean::sllw_compositional` for the SLLW specialization
-that the concrete `equiv_SLLW` theorem consumes. The
+that the concrete `equiv_SLLW_circuit` theorem consumes; the
 `shift_archetype_m32_one_zeros_bus` macro-theorem below is its
-parametric twin.
-
-## Minimalism note
-
-As with the branch archetype macro, A6 keeps SLLW's concrete proof
-distinct so reviewers can diff the two instantiations. Phase 3's
-SRLW/SRAW prove via `shift_archetype_m32_one_zeros_bus` directly.
-SLL/SRL/SRA (64-bit siblings) invoke
+parametric twin. SLL/SRL/SRA (64-bit siblings) invoke
 `shift_archetype_m32_zero_passthrough_bus` for the symmetric
 passthrough.
 -/
@@ -90,7 +83,7 @@ def main_row_in_shift_mode
   ∧ m.set_pc r_main = 0
 
 /-- **Archetype circuit-holds.** Parametric version of
-    `Spec.Shift.sllw_circuit_holds` over opcode literal and `m32`. -/
+    `Circuit.Shift.sllw_circuit_holds` over opcode literal and `m32`. -/
 @[simp]
 def shift_archetype_circuit_holds
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
@@ -105,7 +98,7 @@ def shift_archetype_circuit_holds
 /-- **Archetype m32 = 1 bus-zeroing theorem.** For any shift opcode
     emitted in `m32 = 1` mode (SLLW/SRLW/SRAW), the secondary SM's
     bus entry has `a_hi = b_hi = 0`. Mirrors
-    `Spec.Shift.sllw_compositional` but parametric over the opcode
+    `Circuit.Shift.sllw_compositional` but parametric over the opcode
     literal. -/
 theorem shift_archetype_m32_one_zeros_bus
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
@@ -128,9 +121,8 @@ theorem shift_archetype_m32_one_zeros_bus
     opcode emitted in `m32 = 0` mode (SLL/SRL/SRA), the secondary
     SM's bus entry carries the Main row's `a[1]`/`b[1]` lanes
     verbatim (the `(1 - m32) = 1` factor leaves them unchanged).
-    Phase 3's SLL/SRL/SRA proofs chain this with a
-    `Valid_BinaryExtension` bus-emission once Phase 4 audit derives
-    it; for now the theorem states the Main-side half only. -/
+    SLL/SRL/SRA proofs chain this with a `Valid_BinaryExtension`
+    bus-emission; this theorem states the Main-side half only. -/
 theorem shift_archetype_m32_zero_passthrough_bus
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)

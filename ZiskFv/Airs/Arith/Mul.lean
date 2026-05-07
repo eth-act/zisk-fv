@@ -9,25 +9,15 @@ import ZiskFv.Airs.Arith.CarryChain
 /-!
 Named-column mirror of the ZisK `Arith` AIR, restricted to the MUL subset.
 
-The Arith state machine is the heavy-weight multiplier behind RV64 MUL/MULH
-family. Its PIL lives at `zisk/state-machines/arith/pil/arith.pil`. Unlike
-`BinaryAdd` (which is a narrow carry-chain AIR with 9 constraints, 4 core),
-Arith carries 65 constraints spanning the 8-chunk carry chains for a full 64×64
-multiply-divide, sign-extension witnesses, and the arith_table / arith_range_table
-lookups.
+The Arith state machine is the multiplier behind the RV64 MUL/MULH family
+(PIL: `zisk/state-machines/arith/pil/arith.pil`). It carries 65
+constraints spanning 8-chunk carry chains for full 64×64 multiply-divide,
+sign-extension witnesses, and the arith_table / arith_range_table lookups.
 
-Phase 2 archetype A5 **does not derive** Arith's correctness from the carry
-chains — that proof would require lifting the 8-chunk byte-level decomposition
-to `BitVec 128` arithmetic (roughly what openvm-fv's `Spec/Mul.lean` does for
-4-byte MUL over BabyBear, scaled up 4× and over Goldilocks). Instead we follow
-the BEQ pattern: model the AIR's bus-emission projection as a named
-`OperationBusEntry`, and parameterize the compositional theorem on "Arith's
-`c` lanes encode `a * b`". That hypothesis is delegated to Phase 4 audit.
-
-Mirrors `Airs/Binary/BinaryAdd.lean` in structure — named columns for the
-cells the bus-emission uses, plus `constraint_N_of_extraction` bridges for the
-MUL-subset constraints (`main_mul * main_div = 0`, the binary selectors, and
-the carry-chain equations that a Phase 4 auditor will unfold).
+This file exposes named columns for the cells the bus-emission uses, plus
+`constraint_N_of_extraction` bridges for the MUL-subset constraints
+(`main_mul * main_div = 0`, the binary selectors, and the carry-chain
+equations).
 -/
 
 namespace ZiskFv.Airs.ArithMul
@@ -181,11 +171,9 @@ def boolean_np (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
 def boolean_sext (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
   v.sext row * (1 - v.sext row) = 0
 
-/-- **MUL-subset mode predicates bundled.** The boolean-selector subset the
-    compositional MUL proof relies on. The carry-chain constraints (31–38)
-    remain reachable via the raw extraction bridges below; they are carried
-    through to the Phase-4 audit but not consumed by the Phase-2 archetype
-    proof (which parameterizes over the resulting `c = a * b` property). -/
+/-- **MUL-subset mode predicates bundled.** The boolean-selector subset
+    the compositional MUL proof relies on. The carry-chain constraints
+    (31–38) remain reachable via the raw extraction bridges below. -/
 @[simp]
 def mul_mode_booleans (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
   main_mul_div_disjoint v row
@@ -303,27 +291,25 @@ def opBus_row_Arith {C : Type → Type → Type} {F ExtF : Type}
 end BusEmission
 
 /-!
-## Phase 4 Package C — carry-chain specialization (MUL-unsigned)
+## Carry-chain specialization (MUL-unsigned)
 
 Connects the raw extraction constraints 31-38 at `v.circuit` to the
-pure-field carry-chain identity in `Airs/Arith/CarryChain.lean`, yielding
-the packed 128-bit product identity
+pure-field carry-chain identity in `Airs/Arith/CarryChain.lean`,
+yielding the packed 128-bit product identity
 
     a_packed * b_packed = c_packed + d_packed * 2^64
 
-for the MUL-unsigned mode (`fab = 1`, `na = nb = np = nr = sext = m32 = div = 0`).
+for the MUL-unsigned mode (`fab = 1`,
+`na = nb = np = nr = sext = m32 = div = 0`).
 
-The theorem extracts the seven carry witnesses directly from the circuit
-projection at columns 0-6, unfolds the raw constraints, and applies
-`ZiskFv.Airs.ArithCarryChain.arith_mul_unsigned_carry_identity`.
+The theorem extracts the seven carry witnesses directly from the
+circuit projection at columns 0-6, unfolds the raw constraints, and
+applies `ZiskFv.Airs.ArithCarryChain.arith_mul_unsigned_carry_identity`.
 
-**Note on scope.** The unsigned specialization is authored in-place;
-signed-MUL modes (`na` or `nb` = 1) require a case-split on
-`(na, nb) ∈ {0,1}²` that sign-adjusts the operands through the `np`/`nr`
-selectors — they are out of scope for this file (flagged in the
-Phase 4 CLOSED section). Unsigned already covers MUL/MULHU/MULW
-(which use `m32 = 1` but `na = nb = 0` for the truncation case) so this
-lemma is the primary Phase 4 deliverable.
+Unsigned mode covers MUL/MULHU/MULW (which use `m32 = 1` but
+`na = nb = 0` for the truncation case). Signed-MUL modes (`na` or
+`nb` = 1) require a case-split on `(na, nb) ∈ {0,1}²` that sign-adjusts
+the operands through the `np`/`nr` selectors and are out of scope here.
 -/
 
 section CarryChain
@@ -390,12 +376,7 @@ def b_chunks_packed (v : Valid_ArithMul C F ExtF) (r : ℕ) : F :=
     Direct consequence of `CarryChain.arith_mul_unsigned_carry_identity`:
     after the mode witnesses zero out every selector, constraints 6-8
     pin `fab = 1, na_fb = 0, nb_fa = 0`, and the carry equations reduce
-    to exactly the 8-chunk pure-field form the carry-chain lemma closes.
-
-    This is the **core Phase 4 Package C deliverable** for the MUL
-    family — what was previously threaded as an Arith-internal
-    correctness assumption through the compositional MUL proofs is now
-    derived directly from the PIL carry chain. -/
+    to exactly the 8-chunk pure-field form the carry-chain lemma closes. -/
 lemma arith_mul_unsigned_packed_correct
     (v : Valid_ArithMul C F ExtF) (row : ℕ)
     (h6 : constraint_6_every_row v.circuit row)
@@ -488,16 +469,10 @@ lemma arith_mul_unsigned_packed_correct
     unsigned specialization (`na = nb = np = 0`) reduces the LHS to
     `a_packed * b_packed` and the RHS to `c_packed + d_packed * B^4`.
 
-    **Scope note — arith_table.** The 9-opcode mapping
-    `(opcode, m32) ↦ (na, nb, np, nr)` is enforced by the arith_table
-    permutation lookup, which we treat scope-honestly — this theorem
-    takes the sign witnesses as explicit hypotheses, not derived from
-    the table.
-
-    The `np` witness is left free (only asserted boolean via
-    `constraint_44`'s simp form) because the MUL primary/secondary row
-    pattern in `arith.pil:222-227` couples `np` to the top nibble of
-    `d[3]` via the arith_table — again scope-honest. -/
+    The arith_table permutation lookup enforces the 9-opcode mapping
+    `(opcode, m32) ↦ (na, nb, np, nr)`. This theorem takes the sign
+    witnesses as explicit hypotheses; callers derive them from the
+    table via `Airs/Arith/ArithTable.lean`. -/
 lemma arith_mul_signed_packed_correct
     (v : Valid_ArithMul C F ExtF) (row : ℕ)
     (h6 : constraint_6_every_row v.circuit row)

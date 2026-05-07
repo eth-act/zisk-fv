@@ -9,7 +9,7 @@ import ZiskFv.Circuit.Mul
 import ZiskFv.Tactics.ArithSMArchetype
 
 /-!
-Compositional **DIVU** spec (Phase 3C T-D). DIVU is the **primary**
+Compositional **DIVU** spec. DIVU is the **primary**
 lane on an unsigned-DIV Arith row (`main_div = 1`, quotient emitted
 from `a[]`). Differs from DIV only in the opcode literal (184 vs.
 186) and the sign witness columns (na/nb/np/nr all zero on unsigned

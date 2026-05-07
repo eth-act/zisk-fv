@@ -15,8 +15,8 @@ import ZiskFv.Equivalence.RdValDerivation.Arith
 /-!
 # RdValDerivation.BinaryLogic — Tier-1 `h_rd_val` discharges for AND/ANDI/OR/ORI/XOR/XORI
 
-**finishing2.md S4 (N-ALU-Binary-Logic).** Six Tier-1 lemmas covering the
-RV64I bitwise opcodes routed through ZisK's `Binary` AIR.
+Six Tier-1 lemmas covering the RV64I bitwise opcodes routed through
+ZisK's `Binary` AIR.
 
 ## Architecture (Tier 1, fully circuit-derived)
 

@@ -9,7 +9,7 @@ import ZiskFv.Tactics.BranchArchetype
 /-!
 Compositional BGEU (branch-if-greater-or-equal, unsigned) spec —
 **instantiation of the `BranchArchetype` macro** at
-`opcode_lit = OP_LTU` (Phase 3A B4).
+`opcode_lit = OP_LTU`.
 
 BGEU uses the same Zisk opcode as BLTU (`OP_LTU = 6`), with
 `neg = true` swapping `jmp_offset1`/`jmp_offset2`:

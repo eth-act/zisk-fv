@@ -5,7 +5,7 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Airs.Binary.BinaryAdd
 
 /-!
-**K1-A: BinaryAdd carry-chain → `BitVec 64` lift.**
+**BinaryAdd carry-chain → `BitVec 64` lift.**
 
 Lifts ZisK's `BinaryAdd` carry-chain constraints (field-level) to the
 semantic 64-bit unsigned addition identity:

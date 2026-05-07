@@ -19,9 +19,9 @@ import ZiskFv.Equivalence.RdValDerivation.Arith
 /-!
 # RdValDerivation.BinaryCompare — Tier-1 `h_rd_val` discharges for SLT/SLTU/SLTI/SLTIU
 
-**finishing2.md J (N-ALU-Binary-Compare).** Four Tier-1 lemmas covering
-the RV64I signed/unsigned compare opcodes routed through ZisK's `Binary`
-AIR with `OP_LT` (signed) or `OP_LTU` (unsigned).
+Four Tier-1 lemmas covering the RV64I signed/unsigned compare opcodes
+routed through ZisK's `Binary` AIR with `OP_LT` (signed) or `OP_LTU`
+(unsigned).
 
 ## Architecture (Tier 1, fully circuit-derived)
 
@@ -162,7 +162,7 @@ private lemma signed_lt_64'_iff_bv_slt (a b : BitVec 64) :
       rw [if_neg hA', if_neg hB']
       have hAd : decide (a.toNat ≥ 9223372036854775808) = true := decide_eq_true hA
       have hBd : decide (b.toNat ≥ 9223372036854775808) = true := decide_eq_true hB
-      simp only [hAd, hBd, decide_eq_true_eq, if_true]
+      simp only [hAd, hBd, if_true]
       omega
     · -- a negative, b non-negative: a < b signed (true)
       have hA' : ¬ (2 * a.toNat < 2^64) := by rw [h2_64]; omega
@@ -201,7 +201,7 @@ private lemma signed_lt_64'_iff_bv_slt (a b : BitVec 64) :
         decide_eq_false hA.not_ge
       have hBd : decide (b.toNat ≥ 9223372036854775808) = false :=
         decide_eq_false hB.not_ge
-      simp only [hAd, hBd, decide_eq_true_eq, if_true]
+      simp only [hAd, hBd, if_true]
       omega
 
 /-! ## SLT / SLTU shared internal kernel

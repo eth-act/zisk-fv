@@ -6,7 +6,7 @@ import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.BinaryTable
 
 /-!
-**K1-B: Binary AIR (AND/OR/XOR) byte-level lookups → `BitVec 64` lift.**
+**Binary AIR (AND/OR/XOR) byte-level lookups → `BitVec 64` lift.**
 
 For each of `OP_AND`, `OP_OR`, `OP_XOR`, the Binary AIR consumes 8
 lookup entries against `BinaryTable` (one per byte at `multiplicity = 1`)
@@ -20,10 +20,6 @@ BitVec.and (BitVec.ofNat 64 (∑ a_i · 256^i))
            (BitVec.ofNat 64 (∑ b_i · 256^i))
   = BitVec.ofNat 64 (∑ c_i · 256^i)
 ```
-
-Mirrors `BinaryAddPackedCorrect.lean`'s K1-A shape; the assumption
-shape uses one `BinaryTableEntry` per byte instead of carry-chain
-constraints.
 
 The byte reassembly is carried by a single `Nat`-level helper
 `testBit_byte_sum` proved via iterated `Nat.testBit_two_pow_mul_add`.
@@ -358,7 +354,7 @@ private lemma byte_relation_XOR
   obtain ⟨_, _, _, h_xor, _⟩ := wf
   exact (h_xor h_op).1
 
-/-! ## Main K1-B theorems: BitVec lifts for AND / OR / XOR
+/-! ## Main theorems: BitVec lifts for AND / OR / XOR
 
 The eight per-byte hypotheses `h_byte_i` have shape "there exists a
 `BinaryTableEntry` consumed at this row's i-th byte slot with
@@ -411,7 +407,7 @@ private lemma byte_eq_XOR_of_consumer_match
   rw [h_a, h_b, h_c] at h_eq
   exact h_eq
 
-/-- **K1-B for AND.** Given the Binary AIR's row constraints and 8
+/-- **Lift for AND.** Given the Binary AIR's row constraints and 8
     consumed lookup entries (one per byte) at multiplicity 1, all with
     `op = OP_AND` and matching a/b/c bytes, conclude the 64-bit
     `BitVec.and` identity on the packed byte sums. -/
@@ -495,7 +491,7 @@ theorem binary_and_chunks_eq_bv_and
   rw [Nat.mod_eq_of_lt hA, Nat.mod_eq_of_lt hB]
   exact (Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt Nat.and_le_left hA)).symm
 
-/-- **K1-B for OR.** Same shape as `binary_and_chunks_eq_bv_and`, with
+/-- **Lift for OR.** Same shape as `binary_and_chunks_eq_bv_and`, with
     `OP_OR` and `BitVec.or`. -/
 theorem binary_or_chunks_eq_bv_or
     (v : Valid_Binary C FGL FGL) (row : ℕ)
@@ -573,7 +569,7 @@ theorem binary_or_chunks_eq_bv_or
   rw [Nat.mod_eq_of_lt hA, Nat.mod_eq_of_lt hB]
   exact (Nat.mod_eq_of_lt (Nat.or_lt_two_pow hA hB)).symm
 
-/-- **K1-B for XOR.** Same shape as the AND/OR theorems with
+/-- **Lift for XOR.** Same shape as the AND/OR theorems with
     `OP_XOR` and `BitVec.xor`. -/
 theorem binary_xor_chunks_eq_bv_xor
     (v : Valid_Binary C FGL FGL) (row : ℕ)
@@ -756,7 +752,7 @@ private lemma byte_relation_ADD
   obtain ⟨_, _, _, _, _, _, _, h_add, _⟩ := wf
   exact h_add h_op
 
-/-! ## K1-B chain lifts (SUB / LTU / LT / ADDW)
+/-! ## Chain lifts (SUB / LTU / LT / ADDW)
 
 These four lifts compose 8 per-byte chain hypotheses into the packed
 64-bit BitVec identity. The naive global-polynomial approach (single
@@ -764,7 +760,7 @@ These four lifts compose 8 per-byte chain hypotheses into the packed
 in the 2026-04-27 D pass and exhausted local Lean memory (>40 GB RSS).
 
 The fix is the **4-byte half split** (mirroring
-`BinaryAddPackedCorrect`'s K1-A pattern): each lift first builds a
+`BinaryAddPackedCorrect`'s pattern): each lift first builds a
 13-atom polynomial identity for the LO half (bytes 0..3 → 32-bit
 identity), then a 13-atom identity for the HI half (bytes 4..7, with
 the LO half's final carry as input), then combines the two halves into
@@ -919,7 +915,7 @@ private lemma byte_and_0x80_zero (x : ℕ) (hx : x < 256) :
     apply Nat.eq_of_testBit_eq
     intro j
     rw [Nat.testBit_and]
-    simp only [Nat.zero_testBit, Bool.and_false]
+    simp only [Nat.zero_testBit]
     rcases eq_or_ne j 7 with hj | hj
     · subst hj
       -- bit 7 of x is 0 since x < 128
@@ -1242,12 +1238,12 @@ private lemma sextff_byte_eq
   rw [h_c, h_cin_eq, h_flags] at hrel
   exact hrel
 
-/-! ## K1-B chain lift: SUB
+/-! ## Chain lift: SUB
 
 Given 8 SUB byte matches with chain links and ranges, prove the 64-bit
 BitVec subtraction identity. -/
 
-/-- **K1-B for SUB.** 64-bit unsigned subtraction modulo 2^64.
+/-- **Lift for SUB.** 64-bit unsigned subtraction modulo 2^64.
 
     Each byte slot 0..6 is non-final (`pos_ind ≠ 1`); slot 7 is final
     (`pos_ind = 1`). Chain links: `cin_0 = 0`, `cin_{i+1} = flags_i % 2`
@@ -1388,12 +1384,12 @@ theorem binary_sub_chunks_eq_bv_sub
   -- Apply sub_close_modular with N = 18446744073709551616, X = Bsum, Y = Csum, A = Asum, B = B7
   exact sub_close_modular Asum Bsum Csum 18446744073709551616 B7 hB7_le hB_lt' hC_lt' h_combined
 
-/-! ## K1-B chain lift: LTU
+/-! ## Chain lift: LTU
 
 64-bit unsigned less-than via the byte chain. Output is `flags_7 % 2`,
 which equals 1 iff `a64 < b64` (unsigned). -/
 
-/-- **K1-B for LTU.** The LTU chain at byte 7 produces flags_7 % 2 = 1
+/-- **Lift for LTU.** The LTU chain at byte 7 produces flags_7 % 2 = 1
     iff `a64 < b64` (unsigned 64-bit). All bytes use OP_LTU; chain
     links: `cin_0 = 0`, `cin_{i+1} = flags_i % 2`. -/
 theorem binary_ltu_chunks_eq_bv_ult
@@ -1412,9 +1408,9 @@ theorem binary_ltu_chunks_eq_bv_ult
     (h_byte_6 : consumer_byte_match_chain OP_LTU a6 b6 c6 cin6 fl6 pi6)
     (h_byte_7 : consumer_byte_match_chain OP_LTU a7 b7 c7 cin7 fl7 pi7)
     (ha0 : a0.val < 256) (ha1 : a1.val < 256) (ha2 : a2.val < 256) (ha3 : a3.val < 256)
-    (ha4 : a4.val < 256) (ha5 : a5.val < 256) (ha6 : a6.val < 256) (ha7 : a7.val < 256)
+    (ha4 : a4.val < 256) (ha5 : a5.val < 256) (ha6 : a6.val < 256) (_ha7 : a7.val < 256)
     (hb0 : b0.val < 256) (hb1 : b1.val < 256) (hb2 : b2.val < 256) (hb3 : b3.val < 256)
-    (hb4 : b4.val < 256) (hb5 : b5.val < 256) (hb6 : b6.val < 256) (hb7 : b7.val < 256)
+    (hb4 : b4.val < 256) (hb5 : b5.val < 256) (hb6 : b6.val < 256) (_hb7 : b7.val < 256)
     (h_cin0 : cin0.val = 0)
     (h_cin1 : cin1.val = fl0.val % 2)
     (h_cin2 : cin2.val = fl1.val % 2)
@@ -1505,7 +1501,7 @@ theorem binary_ltu_chunks_eq_bv_ult
     (by rw [h_cin7]; exact step6)
   exact step7
 
-/-! ## K1-B chain lift: LT (signed)
+/-! ## Chain lift: LT (signed)
 
 Same chain rule as LTU for bytes 0..6; at byte 7 the sign-byte
 override fires when bit 7 of `a_7` and `b_7` differ. The conclusion
@@ -1646,7 +1642,7 @@ private lemma lt_byte7_close
       simp
       omega
 
-/-- **K1-B for LT.** Bytes 0..6 use OP_LT (chain rule = LTU); byte 7
+/-- **Lift for LT.** Bytes 0..6 use OP_LT (chain rule = LTU); byte 7
     uses OP_LT with the sign-byte override at `pos_ind = 1`. Output
     is `flags_7 % 2 = 1` iff signed-LT holds on the 64-bit packed
     sums. -/
@@ -1758,7 +1754,7 @@ theorem binary_lt_chunks_eq_bv_slt
     (by rw [h_cin7]) hf6 hf7 step6
     h7_lt h7_eq h7_gt (h7_override h_pi7)
 
-/-! ## K1-B chain lift: ADDW
+/-! ## Chain lift: ADDW
 
 W-mode addition: bytes 0..3 use OP_ADD, bytes 4..7 use OP_SEXT_00 or
 OP_SEXT_FF based on the sign of c_3 (low-half result's high byte).
@@ -1821,7 +1817,7 @@ private lemma addw_close_neg
   have h_rhs_lt : Clo + 18446744069414584320 < 2^64 := by omega
   rw [Nat.mod_eq_of_lt h_rhs_lt]
 
-/-- **K1-B for ADDW.** Bytes 0..3 form an OP_ADD chain (with byte 3
+/-- **Lift for ADDW.** Bytes 0..3 form an OP_ADD chain (with byte 3
     as plast, forcing flags_3 % 2 = 0). Bytes 4..7 are sign-extension:
     SEXT_00 when the low-32 result has high bit clear, SEXT_FF otherwise.
 
@@ -1921,7 +1917,7 @@ theorem binary_addw_chunks_eq_bv_add_w
       (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216)
       (by omega) (by omega) (by omega) h_lo_mod hClo_neg
 
-/-! ## K1-B chain lift: SUBW
+/-! ## Chain lift: SUBW
 
 W-mode subtraction: bytes 0..3 use OP_SUB (with `pi3 = 1` plast), bytes 4..7
 use SEXT_00 (positive low-32 result) or SEXT_FF (negative). The conclusion
@@ -2019,7 +2015,7 @@ private lemma subw_close_neg
   have h_rhs_lt : Csum + 18446744069414584320 < 2^64 := by omega
   rw [Nat.mod_eq_of_lt h_rhs_lt]
 
-/-- **K1-B for SUBW.** Bytes 0..3 form an OP_SUB chain (with byte 3 as
+/-- **Lift for SUBW.** Bytes 0..3 form an OP_SUB chain (with byte 3 as
     plast, forcing `flags_3 % 2 = 0` although here we use the structural
     borrow `B3`). Bytes 4..7 are sign-extension: SEXT_00 when the low-32
     result has high bit clear, SEXT_FF otherwise.

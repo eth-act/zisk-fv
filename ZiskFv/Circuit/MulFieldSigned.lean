@@ -44,9 +44,9 @@ at `na = nb = np = nr = 0`. The signed theorem takes `na`, `nb`, `np` as
 `arith_table` permutation lookup, which the caller supplies via an opcode
 hypothesis. `nr` is zero for MUL (it is nonzero only for DIV).
 
-## Usage by Phase 2 N-MDR-signed
+## Usage
 
-Phase 2 derivation lemmas for MULH, MUL (signed), MULHSU will consume this
+Downstream derivation lemmas for MULH, MUL (signed), MULHSU consume this
 theorem plus:
 - `arith_table_lookup_sound_mul` (for the signed sign-witness pinning)
 - `Fundamentals/PackedBitVec/Signed.lean` (for the BitVec.toInt lift)
@@ -112,9 +112,9 @@ theorem main_mul_signed_field_correct
     (h : mul_signed_field_circuit_holds m v r_main r_arith)
     (h_nr : v.nr r_arith = 0) :
     (1 - 2 * v.na r_arith - 2 * v.nb r_arith + 4 * v.na r_arith * v.nb r_arith)
-        * Spec.Add.main_a_packed m r_main * Spec.Add.main_b_packed m r_main
-      + (v.nb r_arith * (1 - 2 * v.na r_arith) * Spec.Add.main_a_packed m r_main
-          + v.na r_arith * (1 - 2 * v.nb r_arith) * Spec.Add.main_b_packed m r_main)
+        * Circuit.Add.main_a_packed m r_main * Circuit.Add.main_b_packed m r_main
+      + (v.nb r_arith * (1 - 2 * v.na r_arith) * Circuit.Add.main_a_packed m r_main
+          + v.na r_arith * (1 - 2 * v.nb r_arith) * Circuit.Add.main_b_packed m r_main)
           * (65536 * 65536 * 65536 * 65536)
       + (v.na r_arith * v.nb r_arith - v.np r_arith)
           * (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536)

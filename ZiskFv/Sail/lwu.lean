@@ -72,11 +72,10 @@ namespace PureSpec
   -- concatenated in little-endian and zero-extended to 64 bits to `rd`;
   -- retire success).
   --
-  -- Phase 3.5 promotion: direct port of openvm-fv's RV32 LW proof, with
-  -- the `@[simp high]` P1-P3 platform axioms in
-  -- `ZiskFv.PlatformScope` discharging the 16-entry PMP loop / CLINT MMIO
-  -- check / PMA alignment chain that RV32 closed for free (where
-  -- `sys_pmp_count = 0`). Width = 4, `is_unsigned = true`.
+  -- Direct port of openvm-fv's RV32 LW proof, with the `@[simp high]`
+  -- platform axioms in `ZiskFv.PlatformScope` discharging the 16-entry
+  -- PMP loop / CLINT MMIO check / PMA alignment chain that RV32 closed
+  -- for free (where `sys_pmp_count = 0`). Width = 4, `is_unsigned = true`.
   set_option maxHeartbeats 0 in
   lemma execute_LOADWU_pure_equiv
     (input : LwuInput)

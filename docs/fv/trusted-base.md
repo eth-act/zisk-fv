@@ -3,7 +3,7 @@
 ## The claim
 
 The per-opcode equivalence proofs (`ZiskFv/Equivalence/<OP>.lean`,
-shape `equiv_<OP>_metaplan : Sail.execute = (bus_effect …).2`) rest on
+shape `equiv_<OP> : Sail.execute = (bus_effect …).2`) rest on
 **exactly 82 axioms**. Together with Lean 4's kernel and the
 LeanRV64D Sail-translated specification (the LHS of every
 equivalence theorem), this list **is** the trusted computing base
@@ -77,7 +77,7 @@ here:
 
 - **Lean 4's kernel and Mathlib.** Standard for any Lean 4 development.
 - **The LeanRV64D Sail translation.** The LHS of every
-  `equiv_<OP>_metaplan` is `LeanRV64D.Functions.execute_*`; we trust
+  `equiv_<OP>` is `LeanRV64D.Functions.execute_*`; we trust
   that this module faithfully reflects upstream `riscv/sail-riscv`
   semantics. The Sail compiler + sail-riscv source pin live in
   `flake.lock` (`sail-src`, `sail-riscv-src`); the build is

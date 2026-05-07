@@ -7,15 +7,15 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Tactics.ShiftArchetype
 
 /-!
-Compositional SLLI spec (Phase 3A H4 — `ShiftArchetype` m32=0
-instantiation, immediate-variant sibling of SLL).
+Compositional SLLI spec — `ShiftArchetype` m32=0 instantiation,
+immediate-variant sibling of SLL.
 
 SLLI shares SLL's Zisk opcode literal (`OP_SLL = 33`) and `m32 = 0`
 Main-AIR mode — the only difference between SLL and SLLI at the
 transpile layer is the `b` source (register read vs immediate-u64),
 which the Main-AIR bus emission is agnostic to (it treats `b_lo`/`b_hi`
 as data regardless of provenance). Consequently the compositional
-Spec body is structurally identical to `Spec.Sll`; we duplicate the
+Spec body is structurally identical to `Circuit.Sll`; we duplicate the
 file only to keep the per-opcode namespace clean for downstream
 consumers.
 -/
@@ -31,7 +31,7 @@ open ZiskFv.Tactics.ShiftArchetype
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in SLLI-execution mode. Same as
-    `Spec.Sll.main_row_in_sll_mode` — SLL and SLLI map to the same
+    `Circuit.Sll.main_row_in_sll_mode` — SLL and SLLI map to the same
     Zisk opcode (`OP_SLL = 33`, `m32 = 0`). -/
 @[simp]
 def main_row_in_slli_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=

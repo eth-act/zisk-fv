@@ -9,9 +9,9 @@ import ZiskFv.Circuit.StoreD
 import ZiskFv.Tactics.StoreArchetype
 
 /-!
-Compositional SB (store byte) spec — Phase 3A S2 sibling of
-`Spec.StoreH` / `Spec.StoreW` / `Spec.StoreD`. Narrowest variant: SB
-writes the **low 1 byte** of `rs2` to memory while SH writes the low 2,
+Compositional SB (store byte) spec — narrowest sibling of
+`Circuit.StoreH` / `Circuit.StoreW` / `Circuit.StoreD`. SB writes the **low
+1 byte** of `rs2` to memory while SH writes the low 2,
 SW the low 4, and SD all 8.
 
 At the Main-AIR level the SB row is indistinguishable from SH/SW/SD
@@ -57,8 +57,8 @@ def memory_entry_lo_8 (e : MemoryBusEntry FGL) : FGL :=
     `c` cell to the memory-bus entry; the remaining lanes are witnessed
     as zero by the PIL circuit.
 
-    Supplied by the caller (Phase 4 audit derives it from the PIL
-    memory-SM `permutation_proves` side + the `ind_width` selector). -/
+    Supplied by the caller; the audit derives it from the PIL
+    memory-SM `permutation_proves` side + the `ind_width` selector. -/
 @[simp]
 def sb_high_bytes_zero (entry : MemoryBusEntry FGL) : Prop :=
   entry.x1 = 0 ∧ entry.x2 = 0 ∧ entry.x3 = 0 ∧ entry.x4 = 0
@@ -97,7 +97,7 @@ theorem store_b_compositional
     conclusion as `store_d_compositional` — `c_packed = memory_entry_toField
     entry`. With the high-byte zeroing witness the RHS equals
     `memory_entry_lo_8 entry`, but we expose the general form too so SB
-    composes uniformly with SD/SW/SH at the metaplan layer. -/
+    composes uniformly with SD/SW/SH at the equivalence layer. -/
 theorem store_b_compositional_general
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
