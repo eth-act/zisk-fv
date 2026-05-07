@@ -8,13 +8,13 @@ import ZiskFv.Airs.BusShape
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.Projection
 import ZiskFv.Airs.MemoryBus.BusShape
-import ZiskFv.Extraction.MemoryBuses
+import Extraction.MemoryBuses
 
 /-!
 # MemoryBus.LaneMatch — lane-match theorems for register bus entries
 
 For each of the three reads-side memory-bus emissions
-(`bus_emission_Main_mem_{0,2,4}`), we compose:
+(`bus_emission_Main_{0,2,4}`), we compose:
 
 1. The slot-match lemma in `Airs/MemoryBus/BusShape.lean` (extracted
    spec's `slotValue` equals the named-column projection's slot field).
@@ -44,7 +44,7 @@ fields is the natural identity.
 
 * **Reads-side** (rs1, rs2, store-reg prev-value reads) — the three
   permutation `proves` halves are extracted in
-  `Extraction/MemoryBuses.lean` as `bus_emission_Main_mem_{0,2,4}`,
+  `Extraction/MemoryBuses.lean` as `bus_emission_Main_{0,2,4}`,
   each carrying its 6-slot tuple verbatim from the PIL macro.
 * **Writes-side** (`register_write_lanes_match` for the destination-c
   register write) — closed via a multi-row Mem AIR argument. A Main
@@ -80,7 +80,7 @@ open ZiskFv.Airs.MemoryBus.BusShape
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BusShape (slotValue)
 open Extraction.Buses
-open ZiskFv.Extraction.MemoryBuses
+
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -119,7 +119,7 @@ soundness, in the same shape as `OperationBus.matches_entry`. See
 
     This is the writes-side analogue of `OperationBus.matches_entry`
     for the operation bus, and the writes-side analogue of the
-    reads-side `bus_emission_Main_mem_{0,2}` slot-match path. Both
+    reads-side `bus_emission_Main_{0,2}` slot-match path. Both
     paths are in the same trust class: the PIL bus protocol's
     permutation argument is taken as soundness-correct (per the
     project's trust scoping for proving-system correctness; see
@@ -142,7 +142,7 @@ axiom memory_bus_register_write_perm_sound
     -- Main row R is a register-write emission: `assumes_store_reg = 1`
     -- with `store_pc = 0`, so `store_value = (c_0, c_1)`. (We pin the
     -- selector value via the column 37 reference that
-    -- `bus_emission_Main_mem_4`'s multiplicity points to: when this is
+    -- `bus_emission_Main_4`'s multiplicity points to: when this is
     -- 1, Main's PIL pins `store_value` to (c_0, c_1).)
     (h_main_writing :
       Circuit.main m.circuit (id := 1) (column := 37) (row := row) (rotation := 0) = 1
@@ -246,9 +246,9 @@ theorem register_write_lanes_match_of_bus_emission
     contract). -/
 theorem register_read_rs1_lanes_match_of_bus_emission
     (m : Valid_Main C FGL FGL) (row : ℕ) (e : Interaction.MemoryBusEntry FGL)
-    (h_slot_lo : slotValue (@bus_emission_Main_mem_0 C FGL FGL _ _ _) 4
+    (h_slot_lo : slotValue (@Extraction.MemoryBuses.bus_emission_Main_0 C FGL FGL _ _ _) 4
                    m.circuit row = memory_entry_lo e)
-    (h_slot_hi : slotValue (@bus_emission_Main_mem_0 C FGL FGL _ _ _) 5
+    (h_slot_hi : slotValue (@Extraction.MemoryBuses.bus_emission_Main_0 C FGL FGL _ _ _) 5
                    m.circuit row = memory_entry_hi e) :
     register_read_rs1_lanes_match m row e := by
   obtain ⟨_, _, _, _, _, h_s4, h_s5⟩ :=
@@ -267,14 +267,14 @@ theorem register_read_rs1_lanes_match_of_bus_emission
 
 /-- **Register-read (rs2 / b-lanes) lane match via slot-match
     composition.** Mirrors the rs1 variant for the b-lane register-read
-    bus emission `bus_emission_Main_mem_2`. The slot-match composes
+    bus emission `bus_emission_Main_2`. The slot-match composes
     against `m.b_0 row` / `m.b_1 row` via the
     `memBus_row_Main_register_read_rs2` projection. -/
 theorem register_read_rs2_lanes_match_of_bus_emission
     (m : Valid_Main C FGL FGL) (row : ℕ) (e : Interaction.MemoryBusEntry FGL)
-    (h_slot_lo : slotValue (@bus_emission_Main_mem_2 C FGL FGL _ _ _) 4
+    (h_slot_lo : slotValue (@Extraction.MemoryBuses.bus_emission_Main_2 C FGL FGL _ _ _) 4
                    m.circuit row = memory_entry_lo e)
-    (h_slot_hi : slotValue (@bus_emission_Main_mem_2 C FGL FGL _ _ _) 5
+    (h_slot_hi : slotValue (@Extraction.MemoryBuses.bus_emission_Main_2 C FGL FGL _ _ _) 5
                    m.circuit row = memory_entry_hi e) :
     register_read_rs2_lanes_match m row e := by
   obtain ⟨_, _, _, _, _, h_s4, h_s5⟩ :=

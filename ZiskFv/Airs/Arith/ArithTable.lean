@@ -4,7 +4,7 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
-import ZiskFv.Extraction.ArithTable
+import Extraction.ArithTable
 
 /-!
 # arith_table permutation-lookup soundness
@@ -67,7 +67,7 @@ ZK literature result (Plookup / logUp grand-product soundness);
 re-formalizing the protocol in Lean is out of scope.
 -/
 
-open ZiskFv.Extraction.ArithTable in
+open Extraction.ArithTable in
 /-- **Plookup-soundness axiom for the Arith MUL state machine.** Says:
     every `Valid_ArithMul` row's `(op, m32, na, nb, np, nr)` tuple
     matches some row in `arith_table` (the 74-row extracted lookup
@@ -84,7 +84,7 @@ open ZiskFv.Extraction.ArithTable in
 axiom arith_table_lookup_sound_mul
     {C : Type → Type → Type} [Circuit FGL FGL C] :
     ∀ (v : Valid_ArithMul C FGL FGL) (row : ℕ),
-      ∃ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+      ∃ tbl_row ∈ Extraction.ArithTable.arith_table,
         v.op row = tbl_row.op
       ∧ v.m32 row = (Nat.cast tbl_row.m32 : FGL)
       ∧ v.na row = (Nat.cast tbl_row.na : FGL)
@@ -96,7 +96,7 @@ axiom arith_table_lookup_sound_mul
 axiom arith_table_lookup_sound_div
     {C : Type → Type → Type} [Circuit FGL FGL C] :
     ∀ (v : Valid_ArithDiv C FGL FGL) (row : ℕ),
-      ∃ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+      ∃ tbl_row ∈ Extraction.ArithTable.arith_table,
         v.op row = tbl_row.op
       ∧ v.m32 row = (Nat.cast tbl_row.m32 : FGL)
       ∧ v.na row = (Nat.cast tbl_row.na : FGL)
@@ -116,7 +116,7 @@ deriving the witness mapping from `arith_table_lookup_sound_mul/_div`
     `OP_MULU` has all four sign-witness fields equal to zero (as
     `Nat`). Proven by `decide` over the 74-row concrete list. -/
 private lemma arith_table_op_mulu_witnesses_zero :
-    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+    ∀ tbl_row ∈ Extraction.ArithTable.arith_table,
       tbl_row.op = OP_MULU →
       tbl_row.na = 0 ∧ tbl_row.nb = 0
       ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0 := by
@@ -144,7 +144,7 @@ theorem arith_table_mulu_witnesses_from_data
 /-- Helper: every row of `arith_table` whose `op` field equals
     `OP_MULUH` has all four sign-witness fields equal to zero. -/
 private lemma arith_table_op_muluh_witnesses_zero :
-    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+    ∀ tbl_row ∈ Extraction.ArithTable.arith_table,
       tbl_row.op = OP_MULUH →
       tbl_row.na = 0 ∧ tbl_row.nb = 0
       ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0 := by
@@ -170,7 +170,7 @@ theorem arith_table_muluh_witnesses_from_data
 /-- Helper: every row of `arith_table` whose `op` field equals
     `OP_MUL_W` has all four sign-witness fields equal to zero. -/
 private lemma arith_table_op_mulw_witnesses_zero :
-    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+    ∀ tbl_row ∈ Extraction.ArithTable.arith_table,
       tbl_row.op = OP_MUL_W →
       tbl_row.na = 0 ∧ tbl_row.nb = 0
       ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0 := by
@@ -196,7 +196,7 @@ theorem arith_table_mulw_witnesses_from_data
 /-- Helper: every row of `arith_table` whose `op` field equals
     `OP_DIVU` has all four sign-witness fields equal to zero. -/
 private lemma arith_table_op_divu_witnesses_zero :
-    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+    ∀ tbl_row ∈ Extraction.ArithTable.arith_table,
       tbl_row.op = OP_DIVU →
       tbl_row.na = 0 ∧ tbl_row.nb = 0
       ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0 := by
@@ -222,7 +222,7 @@ theorem arith_table_divu_witnesses_from_data
 /-- Helper: every row of `arith_table` whose `op` field equals
     `OP_REMU` has all four sign-witness fields equal to zero. -/
 private lemma arith_table_op_remu_witnesses_zero :
-    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+    ∀ tbl_row ∈ Extraction.ArithTable.arith_table,
       tbl_row.op = OP_REMU →
       tbl_row.na = 0 ∧ tbl_row.nb = 0
       ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0 := by
@@ -350,7 +350,7 @@ table is a concrete 74-row constant.
     `OP_MULSUH` has its `(na, nb, np, nr)` field tuple matching one
     of the 3 patterns. -/
 private lemma arith_table_op_mulsuh_witnesses_disj :
-    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+    ∀ tbl_row ∈ Extraction.ArithTable.arith_table,
       tbl_row.op = OP_MULSUH →
       (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
       ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
@@ -391,7 +391,7 @@ theorem arith_table_mulsuh_witnesses_from_data
     the 6 patterns (`nr = 0` always; `(na, nb, np)` ranges over a
     6-element subset of `{0,1}^3`). -/
 private lemma arith_table_op_mul_witnesses_disj :
-    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+    ∀ tbl_row ∈ Extraction.ArithTable.arith_table,
       tbl_row.op = OP_MUL →
       (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
       ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
@@ -446,7 +446,7 @@ theorem arith_table_mul_witnesses_from_data
     on different `range_ab/range_cd` rows but the sign witnesses
     coincide). -/
 private lemma arith_table_op_mulh_witnesses_disj :
-    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+    ∀ tbl_row ∈ Extraction.ArithTable.arith_table,
       tbl_row.op = OP_MULH →
       (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
       ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
@@ -499,7 +499,7 @@ theorem arith_table_mulh_witnesses_from_data
     the 10 distinct patterns. (The table has 11 rows for OP_DIV but
     two share their sign-witness pattern, so 10 distinct tuples.) -/
 private lemma arith_table_op_div_witnesses_disj :
-    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+    ∀ tbl_row ∈ Extraction.ArithTable.arith_table,
       tbl_row.op = OP_DIV →
       (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
       ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
@@ -569,7 +569,7 @@ theorem arith_table_div_witnesses_from_data
     `OP_REM` has its `(na, nb, np, nr)` field tuple matching one of
     the 10 distinct patterns. Same patterns as `OP_DIV`. -/
 private lemma arith_table_op_rem_witnesses_disj :
-    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+    ∀ tbl_row ∈ Extraction.ArithTable.arith_table,
       tbl_row.op = OP_REM →
       (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
       ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
@@ -641,7 +641,7 @@ theorem arith_table_rem_witnesses_from_data
     variant uses the 32-bit range tables but the sign-witness columns
     match.) -/
 private lemma arith_table_op_div_w_witnesses_disj :
-    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+    ∀ tbl_row ∈ Extraction.ArithTable.arith_table,
       tbl_row.op = OP_DIV_W →
       (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
       ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
@@ -711,7 +711,7 @@ theorem arith_table_div_w_witnesses_from_data
     `OP_REM_W` has its `(na, nb, np, nr)` field tuple matching one of
     the 10 distinct patterns. Same pattern set as `OP_DIV_W`. -/
 private lemma arith_table_op_rem_w_witnesses_disj :
-    ∀ tbl_row ∈ ZiskFv.Extraction.ArithTable.arith_table,
+    ∀ tbl_row ∈ Extraction.ArithTable.arith_table,
       tbl_row.op = OP_REM_W →
       (tbl_row.na = 0 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)
       ∨ (tbl_row.na = 1 ∧ tbl_row.nb = 0 ∧ tbl_row.np = 0 ∧ tbl_row.nr = 0)

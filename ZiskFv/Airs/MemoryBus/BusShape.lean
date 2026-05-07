@@ -3,7 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
 import Extraction.Buses
-import ZiskFv.Extraction.MemoryBuses
+import Extraction.MemoryBuses
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.BusShape
 import ZiskFv.Airs.MemoryBus.Projection
@@ -18,13 +18,13 @@ store-reg previous-value read at #38), the auto-extracted spec's slot
 thunks are pointwise equal to the named-column projection's fields:
 
 * `bus_emission_main_slots_match_memBus_row_Main_register_read_rs1` —
-  `bus_emission_Main_mem_0`'s slot tuple equals
+  `bus_emission_Main_0`'s slot tuple equals
   `memBus_row_Main_register_read_rs1 m row`'s 6 fields.
 * `bus_emission_main_slots_match_memBus_row_Main_register_read_rs2` —
-  `bus_emission_Main_mem_2`'s slots equal
+  `bus_emission_Main_2`'s slots equal
   `memBus_row_Main_register_read_rs2 m row`.
 * `bus_emission_main_slots_match_memBus_row_Main_store_reg_prev` —
-  `bus_emission_Main_mem_4`'s slots equal
+  `bus_emission_Main_4`'s slots equal
   `memBus_row_Main_store_reg_prev m row`.
 
 The memory-bus emissions use 6 slots (vs. the operation bus's 8): the
@@ -42,7 +42,7 @@ namespace ZiskFv.Airs.MemoryBus.BusShape
 
 open Goldilocks
 open Extraction.Buses
-open ZiskFv.Extraction.MemoryBuses
+
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BusShape (slotValue)
 open ZiskFv.Airs.MemoryBus
@@ -51,7 +51,7 @@ variable {C : Type → Type → Type} {F ExtF : Type}
   [Field F] [Field ExtF] [Circuit F ExtF C]
 
 /-- **Slot-match for rs1 register-read.** The extracted memory-bus
-    emission `bus_emission_Main_mem_0` (the rs1 register-read at PIL
+    emission `bus_emission_Main_0` (the rs1 register-read at PIL
     debug index #34) has its 6 slot thunks pointwise equal to the
     `memBus_row_Main_register_read_rs1` projection's fields, plus
     a multiplicity equality.
@@ -65,7 +65,7 @@ variable {C : Type → Type → Type} {F ExtF : Type}
     `ring` (for the trailing `+ 0`) closes each conjunct. -/
 theorem bus_emission_main_slots_match_memBus_row_Main_register_read_rs1
     (m : Valid_Main C F ExtF) (row : ℕ) :
-    let spec := @bus_emission_Main_mem_0 C F ExtF _ _ _
+    let spec := @Extraction.MemoryBuses.bus_emission_Main_0 C F ExtF _ _ _
     let entry := memBus_row_Main_register_read_rs1 m row
     spec.multiplicity m.circuit row =
       Circuit.main m.circuit (id := 1) (column := 35) (row := row) (rotation := 0) ∧
@@ -76,19 +76,19 @@ theorem bus_emission_main_slots_match_memBus_row_Main_register_read_rs1
     slotValue spec 4 m.circuit row = entry.value_lo ∧
     slotValue spec 5 m.circuit row = entry.value_hi := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    · simp only [bus_emission_Main_mem_0, slotValue, memBus_row_Main_register_read_rs1,
+    · simp only [Extraction.MemoryBuses.bus_emission_Main_0, slotValue, memBus_row_Main_register_read_rs1,
                  List.getElem?_cons_zero, List.getElem?_cons_succ]
       try simp only [m.a_0_def, m.a_1_def]
       try ring
 
 /-- **Slot-match for rs2 register-read.** The extracted memory-bus
-    emission `bus_emission_Main_mem_2` (the rs2 register-read at PIL
+    emission `bus_emission_Main_2` (the rs2 register-read at PIL
     debug index #36) has its 6 slot thunks pointwise equal to the
     `memBus_row_Main_register_read_rs2` projection's fields. Same proof
     skeleton as the rs1 variant. -/
 theorem bus_emission_main_slots_match_memBus_row_Main_register_read_rs2
     (m : Valid_Main C F ExtF) (row : ℕ) :
-    let spec := @bus_emission_Main_mem_2 C F ExtF _ _ _
+    let spec := @Extraction.MemoryBuses.bus_emission_Main_2 C F ExtF _ _ _
     let entry := memBus_row_Main_register_read_rs2 m row
     spec.multiplicity m.circuit row =
       Circuit.main m.circuit (id := 1) (column := 36) (row := row) (rotation := 0) ∧
@@ -99,13 +99,13 @@ theorem bus_emission_main_slots_match_memBus_row_Main_register_read_rs2
     slotValue spec 4 m.circuit row = entry.value_lo ∧
     slotValue spec 5 m.circuit row = entry.value_hi := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    · simp only [bus_emission_Main_mem_2, slotValue, memBus_row_Main_register_read_rs2,
+    · simp only [Extraction.MemoryBuses.bus_emission_Main_2, slotValue, memBus_row_Main_register_read_rs2,
                  List.getElem?_cons_zero, List.getElem?_cons_succ]
       try simp only [m.b_0_def, m.b_1_def]
       try ring
 
 /-- **Slot-match for store-reg previous-value read.** The extracted
-    memory-bus emission `bus_emission_Main_mem_4` (the store-reg
+    memory-bus emission `bus_emission_Main_4` (the store-reg
     prev-value read at PIL debug index #38) has its 6 slot thunks
     pointwise equal to the `memBus_row_Main_store_reg_prev` projection's
     fields. Same proof skeleton as the rs1/rs2 variants — but the value
@@ -113,7 +113,7 @@ theorem bus_emission_main_slots_match_memBus_row_Main_register_read_rs2
     rewrites apply; the slots reduce directly via `ring`. -/
 theorem bus_emission_main_slots_match_memBus_row_Main_store_reg_prev
     (m : Valid_Main C F ExtF) (row : ℕ) :
-    let spec := @bus_emission_Main_mem_4 C F ExtF _ _ _
+    let spec := @Extraction.MemoryBuses.bus_emission_Main_4 C F ExtF _ _ _
     let entry := memBus_row_Main_store_reg_prev m row
     spec.multiplicity m.circuit row =
       Circuit.main m.circuit (id := 1) (column := 37) (row := row) (rotation := 0) ∧
@@ -124,7 +124,7 @@ theorem bus_emission_main_slots_match_memBus_row_Main_store_reg_prev
     slotValue spec 4 m.circuit row = entry.value_lo ∧
     slotValue spec 5 m.circuit row = entry.value_hi := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    · simp only [bus_emission_Main_mem_4, slotValue, memBus_row_Main_store_reg_prev,
+    · simp only [Extraction.MemoryBuses.bus_emission_Main_4, slotValue, memBus_row_Main_store_reg_prev,
                  List.getElem?_cons_zero, List.getElem?_cons_succ]
       try ring
 

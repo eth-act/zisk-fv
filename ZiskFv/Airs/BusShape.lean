@@ -3,7 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
 import Extraction.Buses
-import ZiskFv.Extraction.OperationBuses
+
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 
@@ -62,7 +62,7 @@ def slotValue (spec : @BusEmissionSpec C F ExtF _ _ _) (i : ℕ)
     equalities and the multiplicity equality here. -/
 theorem bus_emission_main_slots_match_opBus_row_Main
     (m : Valid_Main C F ExtF) (row : ℕ) :
-    let spec := @ZiskFv.Extraction.OperationBuses.bus_emission_Main_op_0 C F ExtF _ _ _
+    let spec := @Extraction.Buses.bus_emission_Main_0 C F ExtF _ _ _
     let entry := opBus_row_Main m row
     spec.multiplicity m.circuit row = entry.multiplicity ∧
     slotValue spec 0 m.circuit row = entry.op ∧
@@ -89,7 +89,7 @@ theorem bus_emission_main_slots_match_opBus_row_Main
   -- (which also handles `... + 0 = ...` from the extractor's `Add(x, 0)`
   -- representation of unary expressions).
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    · simp only [ZiskFv.Extraction.OperationBuses.bus_emission_Main_op_0, slotValue, opBus_row_Main,
+    · simp only [Extraction.Buses.bus_emission_Main_0, slotValue, opBus_row_Main,
                  List.getElem?_cons_zero, List.getElem?_cons_succ]
       try simp only [m.is_external_op_def, m.op_def, m.a_0_def, m.a_1_def,
                      m.b_0_def, m.b_1_def, m.c_0_def, m.c_1_def, m.flag_def,
@@ -110,7 +110,7 @@ theorem bus_shape_for_ADD
     (h_op : m.op row = 10)
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
-    let spec := @ZiskFv.Extraction.OperationBuses.bus_emission_Main_op_0 C F ExtF _ _ _
+    let spec := @Extraction.Buses.bus_emission_Main_0 C F ExtF _ _ _
     let entry := opBus_row_Main m row
     spec.multiplicity m.circuit row = 1
     ∧ slotValue spec 0 m.circuit row = 10
@@ -162,7 +162,7 @@ theorem bus_shape_for_main_at_m32_zero
     (h_op : m.op row = op_lit)
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
-    let spec := @ZiskFv.Extraction.OperationBuses.bus_emission_Main_op_0 C F ExtF _ _ _
+    let spec := @Extraction.Buses.bus_emission_Main_0 C F ExtF _ _ _
     let entry := opBus_row_Main m row
     spec.multiplicity m.circuit row = 1
     ∧ slotValue spec 0 m.circuit row = op_lit
@@ -196,7 +196,7 @@ theorem bus_shape_for_main_at_m32_one
     (h_op : m.op row = op_lit)
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
-    let spec := @ZiskFv.Extraction.OperationBuses.bus_emission_Main_op_0 C F ExtF _ _ _
+    let spec := @Extraction.Buses.bus_emission_Main_0 C F ExtF _ _ _
     let entry := opBus_row_Main m row
     spec.multiplicity m.circuit row = 1
     ∧ slotValue spec 0 m.circuit row = op_lit
@@ -228,7 +228,7 @@ theorem bus_shape_for_main_at_m32_one
 @[simp]
 def bus_shape_main_at_m32_zero_conclusion
     (m : Valid_Main C F ExtF) (row : ℕ) (op_lit : F) : Prop :=
-  let spec := @ZiskFv.Extraction.OperationBuses.bus_emission_Main_op_0 C F ExtF _ _ _
+  let spec := @Extraction.Buses.bus_emission_Main_0 C F ExtF _ _ _
   let entry := opBus_row_Main m row
   spec.multiplicity m.circuit row = 1
   ∧ slotValue spec 0 m.circuit row = op_lit
@@ -245,7 +245,7 @@ def bus_shape_main_at_m32_zero_conclusion
 @[simp]
 def bus_shape_main_at_m32_one_conclusion
     (m : Valid_Main C F ExtF) (row : ℕ) (op_lit : F) : Prop :=
-  let spec := @ZiskFv.Extraction.OperationBuses.bus_emission_Main_op_0 C F ExtF _ _ _
+  let spec := @Extraction.Buses.bus_emission_Main_0 C F ExtF _ _ _
   let entry := opBus_row_Main m row
   spec.multiplicity m.circuit row = 1
   ∧ slotValue spec 0 m.circuit row = op_lit

@@ -53,6 +53,7 @@
         };
 
         packages.extracted-lean = pkgs.callPackage ./nix/extracted-lean.nix {
+          inherit zisk-src;
           pil-extract = self.packages.${system}.pil-extract;
           zisk-pilout = self.packages.${system}.zisk-pilout;
         };

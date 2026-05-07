@@ -335,6 +335,7 @@ dependencies = [
  "clap",
  "prost",
  "prost-build",
+ "regex",
  "tracing",
  "tracing-subscriber",
 ]

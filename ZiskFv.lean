@@ -1,7 +1,7 @@
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Fundamentals.TranspileConsumers
-import ZiskFv.Extraction.ArithTable
+import Extraction.ArithTable
 import ZiskFv.Airs.Arith.ArithTable
 import ZiskFv.Airs.Arith.ArithRangeTable
 import ZiskFv.Fundamentals.Interaction
@@ -13,11 +13,11 @@ import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import Extraction.Buses
-import ZiskFv.Extraction.OperationBuses
+
 import ZiskFv.Airs.BusShape
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.Extraction.MemoryBuses
+import Extraction.MemoryBuses
 import ZiskFv.Airs.MemoryBus.Projection
 import ZiskFv.Airs.MemoryBus.BusShape
 import ZiskFv.Airs.MemoryBus.LaneMatch
