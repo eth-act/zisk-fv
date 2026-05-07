@@ -83,7 +83,7 @@ variable {C : Type → Type → Type} {F ExtF : Type}
     (`a_reg_prev_mem_step`).
 
     The `Circuit.main` references for the auxiliary columns mirror the
-    extracted `bus_emission_Main_mem_0` thunks verbatim — these columns
+    extracted `bus_emission_Main_0` thunks verbatim — these columns
     are not yet exposed as named accessors on `Valid_Main`, but we
     reference them positionally so the slot-match lemma in
     `Airs/MemoryBus/BusShape.lean` reduces to a pointwise identity. -/

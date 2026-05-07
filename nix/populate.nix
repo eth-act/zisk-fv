@@ -6,11 +6,7 @@
 #
 #   build/sail-lean/                       ← sail-lean-tree
 #   build/zisk.pilout                      ← zisk-pilout
-#   build/extraction/Extraction/*.lean     ← extracted-lean (auto-extracted
-#                                            set only; ArithTable.lean,
-#                                            MemoryBuses.lean, and
-#                                            OperationBuses.lean stay
-#                                            tracked under ZiskFv/Extraction/).
+#   build/extraction/Extraction/*.lean     ← extracted-lean.
 #
 # After this, `lake build` and `nix run .#test` work the same as they
 # did under the old Docker pipeline.
