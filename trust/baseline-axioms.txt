@@ -2,14 +2,13 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 84
+# Total entries: 83
 #
 cd20cd6aae807f15  ZiskFv/Airs/Arith/ArithRangeTable.lean:58  axiom     arith_range_cd_sound
 e4482ff6946017c2  ZiskFv/Airs/Arith/ArithRangeTable.lean:79  axiom     arith_inv_sum_nonzero_sound
 94e9f4e8a05b0559  ZiskFv/Airs/Arith/ArithTable.lean:84  axiom     arith_table_lookup_sound_mul
 cdab320e9c0b09a9  ZiskFv/Airs/Arith/ArithTable.lean:96  axiom     arith_table_lookup_sound_div
-7fccc882b9a79e6a  ZiskFv/Airs/BinaryExtensionTable.lean:202  axiom     bin_ext_table_consumer_wf
-1350105503c8c1c4  ZiskFv/Airs/BinaryExtensionTable.lean:269  axiom     signextend_load_c_packed
+7fccc882b9a79e6a  ZiskFv/Airs/BinaryExtensionTable.lean:262  axiom     bin_ext_table_consumer_wf
 4d9e296fb3ead091  ZiskFv/Airs/BinaryTable.lean:281  axiom     bin_table_consumer_wf
 6d0d9a4079c535b8  ZiskFv/Airs/MemoryBus/LaneMatch.lean:138  axiom     memory_bus_register_write_perm_sound
 f82c9c2d6803aee8  ZiskFv/Airs/MemoryBus/LaneMatch.lean:329  axiom     memory_bus_register_write_perm_sound_store_pc

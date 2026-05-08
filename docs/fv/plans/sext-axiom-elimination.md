@@ -13,10 +13,16 @@
   `binary_extension_sext_{b,h,w}_chunks_eq_signextend_nat`. Each
   composes 8 per-byte equations into a Nat identity for the packed
   c-output.
-- **Step 3 (TODO):** Bridge theorem + LB/LH/LW refactor.
-- **Step 4 (TODO):** Convert `axiom signextend_load_c_packed` →
-  `theorem`; update baselines.
-- **Step 5 (TODO):** Verify end-to-end.
+- **Step 3 (DONE):** `Circuit/SextLoadBridge.lean` provides
+  `load_{byte,half,word}_c_packed`; LB/LH/LW refactored to consume
+  them with the BinaryExtension AIR connection witnesses.
+- **Step 4 (DONE):** `axiom signextend_load_c_packed` deleted from
+  `Airs/BinaryExtensionTable.lean`; baseline shrinks 84→83;
+  `MIN_AXIOMS` floor lowered; `docs/fv/trusted-base.md` ledger entry
+  for class #9 updated (1 axiom → no closure axiom; only
+  `bin_ext_table_consumer_wf` remains in that class).
+- **Step 5 (DONE):** `lake build`, V1 + V2 gates, and `nix run .#test`
+  all pass.
 
 ## Step 3 design
 
