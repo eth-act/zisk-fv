@@ -1,5 +1,7 @@
 # zisk-fv
 
+⚠️This code has is currently undergoing quality control. It should not be regarded as showing that any version of ZisK's circuits correctly implement the RISC-V ISA standard. ⚠️
+
 Lean 4 formal verification of the [ZisK](https://github.com/0xPolygonHermez/zisk)
 zkVM against the [Sail RISC-V specification](https://github.com/rems-project/sail-riscv),
 via [`sail-riscv-lean`](https://github.com/NethermindEth/sail-riscv-lean)'s
