@@ -1008,7 +1008,7 @@ private lemma sraw_byte_eq
            then 2 ^ 64 - 2 ^ (32 - e.shift_amount.val % 32)
            else 0) := by
   have h_wf := bin_ext_table_consumer_wf e h_mult
-  have h_sraw : wf_SRA_W e := h_wf.2.2.2.2.2.2
+  have h_sraw : wf_SRA_W e := h_wf.2.2.2.2.2.2.1
   have ⟨h_lo, h_hi, _⟩ := h_sraw h_op_val
   rw [h_lo, h_hi]
   have h_pow : (4294967296 : ℕ) = 2 ^ 32 := by norm_num
