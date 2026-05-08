@@ -294,4 +294,49 @@ hypotheses. The Mem-row local lemmas
 #print axioms mem_read_addr_change_value_0_zero
 #print axioms mem_read_addr_change_value_1_zero
 
+/-! ## MemAlign zero-padding for sub-doubleword loads
+
+For loads narrower than 8 bytes (LBU=1, LHU=2, LWU=4), ZisK's MemAlign
+state machine zero-pads the unused high byte lanes of the memory-bus
+entry. The constraint is enforced via the MemAlign-side permutation
+argument tying the Main row's `ind_width` selector to the MemAlign*
+AIR's emitted entry; the unused-byte-lanes-zero invariant is bundled
+into that permutation soundness statement at the bus-emission layer.
+
+Trust class: memory-bus permutation soundness — same scope as
+`lookup_consumer_matches_provider_load` (project-trusted under the
+PLONK / plookup / logUp arithmetic protocol). Citations:
+* `zisk/state-machines/mem/pil/mem_align_byte.pil` (MemAlignByte AIR
+  — read-byte selector + zero-padding of byte lanes 1..7).
+* `zisk/state-machines/mem/pil/mem_align_read_byte.pil`
+  (MemAlignReadByte — composed-value byte recombination).
+-/
+
+/-- Width-conditional zero-padding predicate. Asserts that the high
+    bytes of `e` (those above the load width) are zero, parameterized
+    on the FGL-valued width column. The axiom below proves this for
+    `width ∈ {1, 2, 4}`; widths 8 (LD) leaves all lanes meaningful so
+    the predicate is vacuous in that case. -/
+@[simp]
+def high_bytes_zero_for_width (e : MemoryBusEntry FGL) (width : FGL) : Prop :=
+  (width = 1 → e.x1 = 0 ∧ e.x2 = 0 ∧ e.x3 = 0
+              ∧ e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0)
+  ∧ (width = 2 → e.x2 = 0 ∧ e.x3 = 0
+                ∧ e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0)
+  ∧ (width = 4 → e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0)
+
+/-- **Trusted axiom: MemAlign zero-padding soundness.** A bus entry
+    `e` consumed by a Main-side load emission with `ind_width`
+    pinning the load width is zero-padded above the width.
+
+    This replaces the previously-unproven
+    `memory_entry_high_bytes_zero_*` hypotheses on LBU/LHU/LWU
+    canonical equivalence theorems. -/
+axiom memalign_load_high_bytes_zero
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (e : MemoryBusEntry FGL)
+    (h_emit : m.b_0 r_main = memory_entry_lo e
+              ∧ m.b_1 r_main = memory_entry_hi e
+              ∧ e.as = 2 ∧ e.multiplicity = -1) :
+    high_bytes_zero_for_width e (m.ind_width r_main)
+
 end ZiskFv.Airs.MemoryBus.MemBridge

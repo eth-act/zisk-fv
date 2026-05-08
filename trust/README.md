@@ -17,7 +17,7 @@ Lean file to spot one. Drift is caught mechanically.
 | ---------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `allowed-axiom-files.txt`    | hand-edited             | An axiom (or `opaque` / `constant` / `unsafe def` / `partial def` / `@[extern]` / `@[implemented_by]`) declared outside this list of files.                                                                                            |
 | `baseline-axioms.txt`        | `scripts/regenerate.py` | Adding, removing, renaming, or **subtly weakening** any axiom (each entry is `<sha256-prefix> <file>:<line> <kind> <name>` — both name _and_ statement hash).                                                                          |
-| `forbidden-param-shapes.txt` | hand-edited             | Hypothesis parameters on the canonical `equiv_<OP>` theorems that would re-introduce the OUTPUT-EQ class retired during finishing (`h_rd_val`, `h_byte_sum`, `h_bus_execute_matches_sail`, raw `execute_<OP>_pure_*` symbols, …). The 7 load opcodes are exempt pending a follow-up that derives byte-decomposition from circuit witnesses. |
+| `forbidden-param-shapes.txt` | hand-edited             | Hypothesis parameters on the canonical `equiv_<OP>` theorems that would re-introduce the OUTPUT-EQ class retired during finishing (`h_rd_val`, `h_byte_sum`, `h_bus_execute_matches_sail`, `h_high_bytes_signext`, `h_high_bytes_zeroext`, `h_e1_e2_bytes`, …). Enforced uniformly across all 63 opcodes (no exemptions). |
 
 ## Scripts
 
@@ -42,10 +42,10 @@ section at the bottom of this file tracks the V2 hardening.
 | New `axiom`, `opaque`, `constant`, `unsafe def`, `partial def`, `@[extern]`, or `@[implemented_by]` declared in a file not in `allowed-axiom-files.txt`.   | `check-locality.sh`             | Greps the entire `ZiskFv/` tree for those constructs and fails on any hit outside the allowlist.                                                                                 |
 | Existing axiom edited in place — statement weakened, a hypothesis dropped, a conclusion strengthened, or even just renamed.                                | `check-baseline.sh`             | `regenerate.py` re-hashes every axiom block (sha256 of source text). Diff against `baseline-axioms.txt` exposes the change; the diff is the audit surface.                       |
 | New `axiom`-allowed file added to `allowed-axiom-files.txt` to launder a new axiom past locality.                                                          | `.github/CODEOWNERS`            | `allowed-axiom-files.txt` and `baseline-axioms.txt` are CODEOWNER-protected; the PR cannot land without explicit reviewer ack.                                                   |
-| Canonical `equiv_<OP>` accepts a retired OUTPUT-EQ hypothesis as a parameter (`h_rd_val`, `h_byte_sum`, `h_bus_execute_matches_sail`, etc.).      | `check-no-output-eq.sh`         | Paren-depth-aware Python parser extracts each canonical parameter list (excluding companions like `_from_bus`) and matches against `forbidden-param-shapes.txt`. The 7 load files are exempt.                                                             |
+| Canonical `equiv_<OP>` accepts a retired OUTPUT-EQ hypothesis as a parameter (`h_rd_val`, `h_byte_sum`, `h_bus_execute_matches_sail`, `h_high_bytes_*`, `h_e1_e2_bytes`, etc.).      | `check-no-output-eq.sh`         | Paren-depth-aware Python parser extracts each canonical parameter list (excluding companions like `_from_bus`) and matches against `forbidden-param-shapes.txt`. Enforced uniformly across all 63 opcodes.                                                             |
 | Same scenario, but laundered behind `abbrev SilentSpec := PureSpec.execute_X_pure` to dodge the regex.                                                     | **Not V1; V2 future work.**     | V1 is textual. The aliasing dodge is a known V2 gap — see *Future work* below. Mitigated in practice by reviewer attention on the `baseline-axioms.txt` diff.                    |
-| `regenerate.py` quietly sabotaged to emit nothing, or `allowed-axiom-files.txt` emptied so the parser walks zero files.                                    | `check-floor.sh` Floor 1        | `MIN_AXIOMS=80` floor on baseline rows. Empty output trips it.                                                                                                                   |
-| A sweep across `ZiskFv/Equivalence/` accidentally drops canonical equivalence theorems.                                                                      | `check-floor.sh` Floor 2        | `MIN_CANONICAL=56` floor on the count of bare `equiv_<OP>` theorems (no underscore-suffix).                                                                                                          |
+| `regenerate.py` quietly sabotaged to emit nothing, or `allowed-axiom-files.txt` emptied so the parser walks zero files.                                    | `check-floor.sh` Floor 1        | `MIN_AXIOMS=82` floor on baseline rows. Empty output trips it.                                                                                                                   |
+| A sweep across `ZiskFv/Equivalence/` accidentally drops canonical equivalence theorems.                                                                      | `check-floor.sh` Floor 2        | `MIN_CANONICAL=63` floor on the count of bare `equiv_<OP>` theorems (no underscore-suffix).                                                                                                          |
 | Allowlist edited to *exclude* a file that still contains trust-leak constructs (so `check-locality` would still pass against the smaller set).             | `check-floor.sh` cross-witness  | Re-runs the parser against the *entire* tree (not just allowlisted files); fails when the tree-wide count exceeds the baseline count.                                            |
 | Naked `sorry` slipped into `Fundamentals/`, `Airs/`, `Circuit/`, `Equivalence/`, `Tactics/`, or `Sail/`.                                                     | `check-no-sorry.sh`             | Greps for unparenthesized `sorry` (excluding line/doc comments and prose mentions like `` `sorry` ``).                                                                           |
 | New RV64IM opcode added without a canonical `equiv_<OP>` theorem — or an existing one renamed past the canonical shape.                           | `check-uniformity.sh`           | Enumerates `equiv_*` against the 63-opcode list; missing or shape-deviant entries fail.                                                                                 |
@@ -96,24 +96,59 @@ see `docs/fv/trusted-base.md` for what the existing items are and why):
 5. The PR review process treats the `baseline-axioms.txt` diff as the
    audit surface — reviewers see exactly what was added.
 
-## Future work — V2 hardening
+## V2 — semantic checks (`bin/TrustGate/`, requires `lake build`)
 
-V1 is the textual / regex layer. The known weaknesses:
+V1 (above) is the textual layer. V2 adds two semantic checks
+implemented as a Lake exe at `bin/TrustGate/`. They run *after*
+`lake build` — they consume oleans and walk the elaborated
+environment.
 
-- **`forbidden-param-shapes.txt` is grepped over source text.** An
-  agent could `abbrev SilentSpec := PureSpec.execute_RTYPE_add_pure`
-  to launder a forbidden symbol past the regex. V2 should ship a Lake
-  executable using `Lean.Environment.constants` + recursive
-  `whnf`-style unfolding to walk _elaborated_ parameter types.
-- **`baseline-axioms.txt` hashes the source-text axiom block,** not
-  the elaborated type. Whitespace-only edits change the hash; that's
-  a feature for review (you see the diff) but slightly noisy. V2
-  could hash the canonicalised elaborated type via a Lake exe.
-- **Per-theorem axiom-closure baseline
-  (`baseline-equiv-axiom-deps.txt`) is not yet shipped.** That
-  requires `Lean.collectAxioms` from a Lake executable. Stub for
-  now; see issue tracker for V2 scope.
+### V2 files
 
-V1 catches the majority of accidental drift; V2 closes the remaining
-adversarial-aliasing holes. Both layers reinforce each other rather
-than replace each other.
+| File                                   | Generated by                         | Catches                                                                                                                                                                                                                                                |
+| -------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `forbidden-types.txt`                  | hand-edited                           | Forbidden Lean `Name`s in canonical-theorem parameter binder types (after `whnfR` unfolding of `abbrev` / `@[reducible] def` chains).                                                                                                                  |
+| `baseline-equiv-axiom-deps.txt`        | `lake exe trust-gate regenerate-deps` | Per-theorem transitive non-kernel axiom closure (via `Lean.collectAxioms`). Any silent growth or shrinkage of a single theorem's trust footprint surfaces here, even when the global axiom count is unchanged.                                         |
+
+### V2 scripts
+
+| Script                              | What it does                                                                                                                                                                                                          |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/check-axiom-deps.sh`       | Wraps `lake exe trust-gate check-deps`. Re-runs `regenerate-deps` into memory and `diff`s against `baseline-equiv-axiom-deps.txt`.                                                                                    |
+| `scripts/check-no-output-eq-v2.sh`  | Wraps `lake exe trust-gate check-no-output-eq-v2`. `forallTelescope`s each canonical `equiv_<OP>`, walks each binder type after reducible-transparency unfolding, fails on any forbidden Name from `forbidden-types.txt`. |
+| `scripts/check-all-semantic.sh`     | Runs the two V2 checks in sequence. CI invokes this *after* `lake build`; `nix run .#test` runs `check-all.sh` (V1) then `check-all-semantic.sh` (V2).                                                                |
+
+### Scenarios V2 catches that V1 misses
+
+| Scenario                                                                                          | V1 result                                       | V2 result                                                                       |
+| ------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------- |
+| Renamed hypothesis with same OUTPUT-EQ-shaped type                                                | passes                                          | fails — `check-no-output-eq-v2` matches the binder type, not the name.          |
+| `abbrev SilentSpec := LeanRV64D.Functions.execute` aliasing the Sail entry point past V1's regex | passes                                          | fails — `whnfR` unfolds the `abbrev` so the underlying Name surfaces.           |
+| Equivalence proof silently picks up an additional axiom already in the baseline                   | passes (global count unchanged)                 | fails — `check-axiom-deps.sh` sees the per-theorem dep change.                   |
+| Equivalence proof's deps shrink (axiom retired) without acknowledgement                           | passes silently                                 | fails — deps changed; explicit ack via baseline diff is required.                |
+
+V2 strengthens the gate against alias-laundering and silent dep
+growth. It does NOT replace V1; both layers run, and the V1 layer
+remains the fast path that catches the bulk of accidental drift.
+
+### Adding to `forbidden-types.txt`
+
+CODEOWNER-protected (see `.github/CODEOWNERS` — covered by `/trust/`).
+Each line is a fully-qualified `Name`. Be conservative: prefer Names
+that should *never* appear in a parameter type of a canonical
+theorem. Names that legitimately surface as TRANSPILE-PIN-class
+hypotheses (e.g.
+`(h_success : (PureSpec.execute_JAL_pure jal_input).success = true)`)
+should NOT be added — V2 catches OUTPUT-EQ regressions, not
+legitimate spec preconditions.
+
+### Refreshing `baseline-equiv-axiom-deps.txt`
+
+```
+lake build
+lake exe trust-gate regenerate-deps > trust/baseline-equiv-axiom-deps.txt
+git diff trust/baseline-equiv-axiom-deps.txt    # AUDIT this diff
+```
+
+The diff IS the audit surface — a CODEOWNER reviews exactly which
+theorems gained or lost which axiom dependencies.

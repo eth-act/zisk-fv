@@ -55,12 +55,18 @@ writeShellApplication {
 
     # 3. Trust gate (locality + baseline + forbidden tier1 params +
     # floors + zero-sorry + uniformity lint). See trust/README.md.
-    run "3/4 trust gate" trust/scripts/check-all.sh
+    run "3/5 trust gate (V1 syntactic)" trust/scripts/check-all.sh
 
-    # 4. Reproducibility check. The flake.lock pins every input
+    # 4. V2 trust-gate semantic checks. Walks the elaborated
+    # environment via `lake exe trust-gate`: per-theorem axiom-closure
+    # baseline + binder-type forbidden-Names walk. Requires the lake
+    # build above to have populated oleans.
+    run "4/5 trust gate (V2 semantic)" trust/scripts/check-all-semantic.sh
+
+    # 5. Reproducibility check. The flake.lock pins every input
     # (sail/sail-riscv/zisk/pil2-* sources, nixpkgs revision) by content
     # hash; `nix flake check` verifies the lock matches the flake.
-    run "4/4 flake repro" nix flake check --no-build
+    run "5/5 flake repro" nix flake check --no-build
 
     if [ $overall -eq 0 ]; then
       echo "================================"

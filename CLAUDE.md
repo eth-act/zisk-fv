@@ -22,12 +22,15 @@ execute_instruction (.RTYPE rs2 rs1 rd rop.ADD) state
 **Out of scope:** Zicclsm, precompiles (Keccak / SHA256 / big-int /
 DMA / etc.), ECALL/EBREAK, ZisK's custom internal ops.
 
-**Status:** all 63 RV64IM opcodes proved (0 sorries; 82 trusted
-axioms across 13 ledger classes; 56 of the 63 canonical `equiv_<OP>`
-theorems are OUTPUT-EQ-free, mechanically enforced by
+**Status:** all 63 RV64IM opcodes proved (0 sorries; 84 trusted
+axioms across 13 ledger classes; **all 63** canonical `equiv_<OP>`
+theorems are OUTPUT-EQ-free, mechanically enforced uniformly by
 `trust/scripts/check-no-output-eq.sh` against
-`trust/forbidden-param-shapes.txt`. The 7 loads remain on a
-follow-up — see `docs/fv/trusted-base.md`).
+`trust/forbidden-param-shapes.txt`. The 7 loads were closed by
+deriving their cross-entry rd-value byte equations from circuit
+witnesses — see `ZiskFv/Circuit/LoadDerivation.lean` plus the
+bus-permutation closure axioms `memalign_load_high_bytes_zero`
+and `signextend_load_c_packed`).
 
 ## Pipeline
 
@@ -103,8 +106,13 @@ input we need.
 
 ## Trust gate (READ THIS — agents must respect it)
 
-CI runs `trust/scripts/check-all.sh` on every PR. It enforces six
-things; if you break any of them, the build fails:
+The gate runs in two layers. Layer 1 is syntactic and runs in seconds
+without `lake build`; layer 2 is semantic and consumes oleans (so
+runs after `lake build`). Both must pass.
+
+### Layer 1 — V1 syntactic (`trust/scripts/check-all.sh`, no build)
+
+Six checks; if you break any, CI fails:
 
 1. **Locality.** Lean trust-leak constructs (`axiom`, `opaque`,
    `constant`, `unsafe def`, `partial def`, `@[extern]`,
@@ -119,19 +127,37 @@ things; if you break any of them, the build fails:
    theorems may not include the retired OUTPUT-EQ named parameters
    (`h_rd_val`, `h_byte_sum`, `h_bus_execute_matches_sail`,
    `h_entry_hi_nat`, `h_pc_fgl_lo_nat`, `h_pci_lo_val`,
-   `h_entry_lo_eq`). Pattern list: `trust/forbidden-param-shapes.txt`.
-   The 7 load opcodes (LB, LH, LBU, LD, LHU, LWU, LW) are exempt
-   pending a follow-up that derives byte-decomposition from circuit
-   witnesses.
-4. **Floors.** ≥80 axioms in baseline, ≥56 canonical `equiv_<OP>`
+   `h_entry_lo_eq`, `h_high_bytes_signext`, `h_high_bytes_zeroext`,
+   `h_e1_e2_bytes`). Pattern list: `trust/forbidden-param-shapes.txt`.
+   Enforced uniformly across all 63 opcodes (no exemptions).
+4. **Floors.** ≥82 axioms in baseline, ≥63 canonical `equiv_<OP>`
    theorems, plus a cross-witness check that the parser hasn't been
    sabotaged.
-5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,Spec,Equivalence,Tactics,RV64D}`.
+5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,Circuit,Equivalence,Tactics,Sail}`.
 6. **Uniformity.** Every one of 63 RV64IM opcodes has a canonical
    `equiv_<OP>` theorem.
 
-**Run `trust/scripts/check-all.sh` locally before pushing** (it
-takes seconds — none of these checks need `lake build`).
+### Layer 2 — V2 semantic (`trust/scripts/check-all-semantic.sh`, requires `lake build`)
+
+Two checks; runs via the `lake exe trust-gate` Lake exe at
+`bin/TrustGate/`:
+
+7. **Per-theorem axiom-closure baseline.**
+   `trust/baseline-equiv-axiom-deps.txt` records the transitive
+   non-kernel axiom dependencies of each canonical `equiv_<OP>`
+   theorem (computed via `Lean.collectAxioms`). Any silent change
+   to a theorem's trust footprint — additions OR removals — fails
+   the gate. Run `trust/scripts/regenerate.sh` (with oleans
+   present) and review the diff before committing.
+8. **Forbidden binder types.** Walks each canonical theorem's
+   parameter binders via `forallTelescope` + `whnfR` (which unfolds
+   `abbrev` / `@[reducible] def` chains) and fails on any reference
+   to Names listed in `trust/forbidden-types.txt`. Closes the
+   `abbrev`-aliasing dodge that V1's textual regex cannot see.
+
+**Run `trust/scripts/check-all.sh` locally before pushing** (V1,
+seconds, no build). Run `trust/scripts/check-all-semantic.sh` after
+`lake build` — `nix run .#test` runs both in sequence.
 
 **To extend the TCB** (high bar — most "fixes" should not need a new
 axiom):

@@ -5,6 +5,7 @@ import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Circuit.LoadByte
 import ZiskFv.Circuit.MemModel
+import ZiskFv.Airs.BinaryExtensionTable
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
@@ -95,13 +96,14 @@ theorem equiv_LB
       ∧ main.b_1 r_main = memory_entry_hi e1
       ∧ e1.as = 2
       ∧ e1.multiplicity = -1)
+    (h_main_emit_c :
+      main.c_0 r_main = memory_entry_lo e2
+      ∧ main.c_1 r_main = memory_entry_hi e2)
     (h_ptr_match :
       e1.ptr.toNat
         = lb_input.r1_val.toNat + (BitVec.signExtend 64 lb_input.imm).toNat)
-    (h_high_bytes_signext :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-        = BitVec.signExtend 64 (e1.x0 : BitVec 8)) :
+    (h_ext : main.is_external_op r_main = 1)
+    (h_op : main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_B) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -124,11 +126,15 @@ theorem equiv_LB
   rw [h_ptr_match] at h_mem
   have hd0 : (e1.x0 : BitVec 8) = lb_input.data0 := by
     rw [h_d0] at h_mem; exact (Option.some.inj h_mem).symm
+  have h_signext :=
+    ZiskFv.Airs.BinaryExtensionTable.signextend_load_c_packed
+      main r_main e1 e2 h_main_emit_b h_main_emit_c h_ext
+  have h_lb_packed := h_signext.1 h_op
   have h_rd_val_derived :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]
         = BitVec.signExtend 64 lb_input.data0 := by
-    rw [h_high_bytes_signext, hd0]
+    rw [h_lb_packed, hd0]
   rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_load_1byte_rrrw
         state exec_row e0 e1 e2
         (PureSpec.execute_LOADB_pure lb_input).nextPC

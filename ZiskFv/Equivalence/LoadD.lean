@@ -4,6 +4,7 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Circuit.LoadD
+import ZiskFv.Circuit.LoadDerivation
 import ZiskFv.Circuit.MemModel
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
@@ -135,18 +136,21 @@ theorem equiv_LD
       ∧ main.b_1 r_main = memory_entry_hi e1
       ∧ e1.as = 2
       ∧ e1.multiplicity = -1)
+    (h_main_emit_c :
+      main.c_0 r_main = memory_entry_lo e2
+      ∧ main.c_1 r_main = memory_entry_hi e2)
     (h_ptr_match :
       e1.ptr.toNat
         = ld_input.r1_val.toNat + (BitVec.signExtend 64 ld_input.imm).toNat)
-    (h_e1_e2_bytes :
-      (e2.x0 : BitVec 8) = e1.x0
-      ∧ (e2.x1 : BitVec 8) = e1.x1
-      ∧ (e2.x2 : BitVec 8) = e1.x2
-      ∧ (e2.x3 : BitVec 8) = e1.x3
-      ∧ (e2.x4 : BitVec 8) = e1.x4
-      ∧ (e2.x5 : BitVec 8) = e1.x5
-      ∧ (e2.x6 : BitVec 8) = e1.x6
-      ∧ (e2.x7 : BitVec 8) = e1.x7) :
+    -- Circuit constraints (CIRCUIT-CONSTRAINT class) — caller supplies
+    -- from the Main AIR's every-row constraint set.
+    (h_copy0 : internal_op1_copies_b0 main r_main)
+    (h_copy1 : internal_op1_copies_b1 main r_main)
+    (h_ext : main.is_external_op r_main = 0)
+    (h_op : main.op r_main = (1 : FGL))
+    -- Byte ranges (RANGE class) — discharged by the byte-bus lookup.
+    (h_e1_range : memory_entry_bytes_in_range e1)
+    (h_e2_range : memory_entry_bytes_in_range e2) :
     execute_instruction (instruction.LOAD (
       ld_input.imm,
       regidx.Regidx ld_input.r1,
@@ -198,9 +202,16 @@ theorem equiv_LD
     rw [h_d6] at he6; exact (Option.some.inj he6).symm
   have hd7 : (e1.x7 : BitVec 8) = ld_input.data7 := by
     rw [h_d7] at he7; exact (Option.some.inj he7).symm
-  -- Compose with h_e1_e2_bytes to get (e2.x_i : BitVec 8) = data_i.
+  -- Derive (e2.x_i : BitVec 8) = (e1.x_i : BitVec 8) from circuit witnesses
+  -- via copyb passthrough (Main constraints 9/16) plus byte ranges.
+  have h_emit_b_lo_hi :
+      main.b_0 r_main = memory_entry_lo e1
+      ∧ main.b_1 r_main = memory_entry_hi e1 :=
+    ⟨h_main_emit_b.1, h_main_emit_b.2.1⟩
   obtain ⟨h12_0, h12_1, h12_2, h12_3, h12_4, h12_5, h12_6, h12_7⟩ :=
-    h_e1_e2_bytes
+    ZiskFv.Circuit.LoadDerivation.load_copyb_e1_e2_bytes_eq_bv
+      main r_main e1 e2 h_copy0 h_copy1 h_ext h_op
+      h_emit_b_lo_hi h_main_emit_c h_e1_range h_e2_range
   have hd2_0 : (e2.x0 : BitVec 8) = ld_input.data0 := h12_0.trans hd0
   have hd2_1 : (e2.x1 : BitVec 8) = ld_input.data1 := h12_1.trans hd1
   have hd2_2 : (e2.x2 : BitVec 8) = ld_input.data2 := h12_2.trans hd2

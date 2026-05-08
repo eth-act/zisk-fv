@@ -34,3 +34,20 @@ path = "build/extraction"
 
 [[lean_lib]]
 name = "ZiskFv"
+
+# V2 trust gate: a Lake exe that consumes oleans, walks elaborated theorem
+# types via `forallTelescope` + reducible-transparency unfolding, and emits
+# a per-theorem axiom-closure baseline via `Lean.collectAxioms`. Run via
+# `lake exe trust-gate <subcommand>` after `lake build`.
+#
+# Library half: holds the TrustGate.* metaprogramming modules so Lake
+# knows to build them as oleans before linking the exe.
+[[lean_lib]]
+name = "TrustGate"
+srcDir = "bin"
+
+[[lean_exe]]
+name = "trust-gate"
+srcDir = "bin"
+root = "TrustGate.Main"
+supportInterpreter = true

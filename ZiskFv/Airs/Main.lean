@@ -35,6 +35,11 @@ structure Valid_Main (C : Type → Type → Type) (F ExtF : Type)
   is_external_op : ℕ → F
   op : ℕ → F
   m32 : ℕ → F
+  /-- `ind_width` (column 18). Memory operand width in bytes — pinned
+      by `transpile_<load>` axioms (1 for LB/LBU, 2 for LH/LHU,
+      4 for LW/LWU, 8 for LD). Consumed by the MemAlign zero-padding
+      and BinaryExtension sign-extension closure axioms. -/
+  ind_width : ℕ → F
   /-- `set_pc` selector (column 25). Constrained to be disjoint from `flag`
       via `constraint_17_every_row`. -/
   set_pc : ℕ → F
@@ -82,6 +87,8 @@ structure Valid_Main (C : Type → Type → Type) (F ExtF : Type)
     op row = Circuit.main circuit (id := 1) (column := 20) (row := row) (rotation := 0)
   m32_def : ∀ row,
     m32 row = Circuit.main circuit (id := 1) (column := 28) (row := row) (rotation := 0)
+  ind_width_def : ∀ row,
+    ind_width row = Circuit.main circuit (id := 1) (column := 18) (row := row) (rotation := 0)
   set_pc_def : ∀ row,
     set_pc row = Circuit.main circuit (id := 1) (column := 25) (row := row) (rotation := 0)
   jmp_offset1_def : ∀ row,

@@ -8,7 +8,7 @@ cd "$(git rev-parse --show-toplevel)"
 # Floor 1: total number of axiom/opaque/constant declarations in the
 # baseline must be >= MIN_AXIOMS. Catches a sabotaged regenerate.py
 # that produces empty output, or an allowlist edited to empty.
-MIN_AXIOMS=80
+MIN_AXIOMS=82
 axiom_count=$(grep -cE '^[0-9a-f]{16}  ' trust/baseline-axioms.txt 2>/dev/null || echo 0)
 if [ "$axiom_count" -lt "$MIN_AXIOMS" ]; then
   echo "trust-gate: FLOOR FAILURE — only $axiom_count axioms in baseline (expected >= $MIN_AXIOMS)."
@@ -17,11 +17,14 @@ if [ "$axiom_count" -lt "$MIN_AXIOMS" ]; then
 fi
 
 # Floor 2: count canonical bare `equiv_<OP>` theorems (no underscore-suffix).
-# Must be >= MIN_CANONICAL. After fusion the bare equiv_<OP> is the strong
-# form for 56 of 63 opcodes (45 fused tier1 + 11 already-clean); the 7
-# loads remain on a follow-up. Catches a sweep that accidentally dropped
-# the canonical strong forms.
-MIN_CANONICAL=56
+# Must be >= MIN_CANONICAL. The bare equiv_<OP> is the strong form for
+# all 63 opcodes — the 7 loads were rewritten to derive their
+# cross-entry rd-value equations from circuit witnesses (see
+# `ZiskFv/Circuit/LoadDerivation.lean` and the corresponding closure
+# axioms in `Airs/MemoryBus/MemBridge.lean` and
+# `Airs/BinaryExtensionTable.lean`). Catches a sweep that accidentally
+# dropped the canonical strong forms.
+MIN_CANONICAL=63
 canonical_count=$(grep -rhE '^theorem[[:space:]]+equiv_[A-Z][A-Z0-9]*[[:space:]]*$|^theorem[[:space:]]+equiv_[A-Z][A-Z0-9]*[[:space:]]+\(' \
               ZiskFv/Equivalence | wc -l)
 if [ "$canonical_count" -lt "$MIN_CANONICAL" ]; then
