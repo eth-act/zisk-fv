@@ -44,13 +44,16 @@ stdenv.mkDerivation {
       --bus-id 5000 \
       --output $out/Buses.lean
 
-    # Memory-bus emissions (id=10) for AIR Main. The 3 reads-side
-    # `proves` halves emit non-zero multiplicity; assumes-side mirrors
-    # are stubbed (they reference ExtF challenge cells that the V1
-    # renderer does not lift — see `tools/pil-extract/src/main.rs`'s
-    # `hint_uses_extf` gate).
+    # Memory-bus emissions (id=10) for Main + the 4 MemAlign* provider
+    # AIRs. Main's reads-side `proves` halves emit non-zero multiplicity;
+    # assumes-side mirrors are stubbed where they reference ExtF challenge
+    # cells that the V1 renderer does not lift (see `hint_uses_extf` gate
+    # in tools/pil-extract/src/main.rs). The MemAlign* AIRs supply the
+    # provider tuples for sub-doubleword loads (LBU/LHU/LWU); their bus
+    # emissions feed `Airs/MemoryBus/MemAlignBridge.lean`'s perm-soundness
+    # axiom.
     ${pil-extract}/bin/pil-extract bus-emissions --pilout ${zisk-pilout} \
-      --airs Main \
+      --airs Main,MemAlign,MemAlignByte,MemAlignReadByte,MemAlignWriteByte \
       --bus-id 10 \
       --output $out/MemoryBuses.lean
 
