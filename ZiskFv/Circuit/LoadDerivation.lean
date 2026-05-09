@@ -3,8 +3,13 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Airs.Main
+import ZiskFv.Airs.Mem
+import ZiskFv.Airs.MemAlign
+import ZiskFv.Airs.MemAlignByte
+import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
+import ZiskFv.Airs.MemoryBus.MemAlignBridge
 import ZiskFv.Circuit.LoadD
 import ZiskFv.Tactics.LoadArchetype
 
@@ -43,6 +48,7 @@ namespace ZiskFv.Circuit.LoadDerivation
 open Goldilocks
 open Interaction
 open ZiskFv.Airs.Main
+open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.MemoryBus.MemBridge
 open ZiskFv.Circuit.LoadD
@@ -201,9 +207,9 @@ theorem load_copyb_e1_e2_bytes_eq_bv
 /-! ## Family A + C — zero-extension load c-packed forms
 
 For LBU/LHU/LWU, Family A passthrough plus the MemAlign zero-padding
-axiom (`memalign_load_high_bytes_zero`) compose into the `U64.toBV`
-equation each canonical equivalence proof expects. These BitVec
-shapes — `(setWidth 32 b).setWidth 64`, etc. — match the
+conjunct of `lookup_consumer_matches_provider_load` compose into the
+`U64.toBV` equation each canonical equivalence proof expects. These
+BitVec shapes — `(setWidth 32 b).setWidth 64`, etc. — match the
 `bus_effect_matches_sail_loadu_<n>byte_rrrw` consumer side. -/
 
 /-- BitVec helper: a `U64.toBV` whose top 7 byte lanes are zero
@@ -238,9 +244,14 @@ lemma fgl_zero_to_bitvec8 : ((0 : FGL) : BitVec 8) = 0#8 := by
   decide
 
 /-- **LBU c-packed.** From Family A passthrough plus MemAlign
-    zero-padding, derive the LBU U64.toBV form. -/
+    zero-padding (derived in
+    `Airs/MemoryBus/MemAlignBridge.lean`), derive the LBU U64.toBV
+    form. -/
 theorem load_lbu_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)
     (h_copy1 : internal_op1_copies_b1 m r_main)
@@ -255,7 +266,8 @@ theorem load_lbu_c_packed
       m.c_0 r_main = memory_entry_lo e2
       ∧ m.c_1 r_main = memory_entry_hi e2)
     (h_e1_range : memory_entry_bytes_in_range e1)
-    (h_e2_range : memory_entry_bytes_in_range e2) :
+    (h_e2_range : memory_entry_bytes_in_range e2)
+    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8),
                 (e2.x3 : BitVec 8), (e2.x4 : BitVec 8), (e2.x5 : BitVec 8),
                 (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
@@ -265,8 +277,9 @@ theorem load_lbu_c_packed
     load_copyb_e1_e2_bytes_eq_bv m r_main e1 e2
       h_copy0 h_copy1 h_ext h_op
       ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c h_e1_range h_e2_range
-  -- MemAlign zero-padding for ind_width = 1.
-  have h_zero_pad := memalign_load_high_bytes_zero m r_main e1 h_emit_b
+  have h_zero_pad :=
+    ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
+      m mab marb ma r_main e1 h_emit_b (Or.inl h_width) h_e1_range h_low
   obtain ⟨z1, z2, z3, z4, z5, z6, z7⟩ := h_zero_pad.1 h_width
   rw [h0, h1, h2, h3, h4, h5, h6, h7]
   rw [z1, z2, z3, z4, z5, z6, z7]
@@ -274,9 +287,13 @@ theorem load_lbu_c_packed
   exact u64_toBV_low_byte_only _
 
 /-- **LHU c-packed.** From Family A passthrough plus MemAlign
-    zero-padding, derive the LHU U64.toBV form. -/
+    zero-padding (derived in `MemAlignBridge.lean`), derive the LHU
+    U64.toBV form. -/
 theorem load_lhu_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)
     (h_copy1 : internal_op1_copies_b1 m r_main)
@@ -291,7 +308,8 @@ theorem load_lhu_c_packed
       m.c_0 r_main = memory_entry_lo e2
       ∧ m.c_1 r_main = memory_entry_hi e2)
     (h_e1_range : memory_entry_bytes_in_range e1)
-    (h_e2_range : memory_entry_bytes_in_range e2) :
+    (h_e2_range : memory_entry_bytes_in_range e2)
+    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8),
                 (e2.x3 : BitVec 8), (e2.x4 : BitVec 8), (e2.x5 : BitVec 8),
                 (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
@@ -301,7 +319,9 @@ theorem load_lhu_c_packed
     load_copyb_e1_e2_bytes_eq_bv m r_main e1 e2
       h_copy0 h_copy1 h_ext h_op
       ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c h_e1_range h_e2_range
-  have h_zero_pad := memalign_load_high_bytes_zero m r_main e1 h_emit_b
+  have h_zero_pad :=
+    ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
+      m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inl h_width)) h_e1_range h_low
   obtain ⟨z2, z3, z4, z5, z6, z7⟩ := h_zero_pad.2.1 h_width
   rw [h0, h1, h2, h3, h4, h5, h6, h7]
   rw [z2, z3, z4, z5, z6, z7]
@@ -309,9 +329,13 @@ theorem load_lhu_c_packed
   exact u64_toBV_low_2bytes_only _ _
 
 /-- **LWU c-packed.** From Family A passthrough plus MemAlign
-    zero-padding, derive the LWU U64.toBV form. -/
+    zero-padding (derived in `MemAlignBridge.lean`), derive the LWU
+    U64.toBV form. -/
 theorem load_lwu_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)
     (h_copy1 : internal_op1_copies_b1 m r_main)
@@ -326,7 +350,8 @@ theorem load_lwu_c_packed
       m.c_0 r_main = memory_entry_lo e2
       ∧ m.c_1 r_main = memory_entry_hi e2)
     (h_e1_range : memory_entry_bytes_in_range e1)
-    (h_e2_range : memory_entry_bytes_in_range e2) :
+    (h_e2_range : memory_entry_bytes_in_range e2)
+    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8),
                 (e2.x3 : BitVec 8), (e2.x4 : BitVec 8), (e2.x5 : BitVec 8),
                 (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
@@ -337,7 +362,9 @@ theorem load_lwu_c_packed
     load_copyb_e1_e2_bytes_eq_bv m r_main e1 e2
       h_copy0 h_copy1 h_ext h_op
       ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c h_e1_range h_e2_range
-  have h_zero_pad := memalign_load_high_bytes_zero m r_main e1 h_emit_b
+  have h_zero_pad :=
+    ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
+      m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inr h_width)) h_e1_range h_low
   obtain ⟨z4, z5, z6, z7⟩ := h_zero_pad.2.2 h_width
   rw [h0, h1, h2, h3, h4, h5, h6, h7]
   rw [z4, z5, z6, z7]

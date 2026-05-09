@@ -35,9 +35,11 @@ NEXT_DECL = re.compile(
 # carve-out was retired once the load equivalence proofs were rewritten
 # to derive their cross-entry rd-value byte equations from circuit
 # witnesses (Family A — `ZiskFv/Circuit/LoadDerivation.lean`) plus the
-# bus-permutation closure axioms `memalign_load_high_bytes_zero` and
-# `signextend_load_c_packed` (memory-bus and BinaryExtension trust
-# classes — see `docs/fv/trusted-base.md`).
+# BinaryExtension chain (`ZiskFv/Circuit/SextLoadBridge.lean`) plus the
+# MemAlign chain (`ZiskFv/Airs/MemoryBus/MemAlignBridge.lean`,
+# `memalign_subdoubleword_load_high_bytes_zero` derived from a generic
+# permutation-soundness axiom + a narrow MemAlignRom lookup-soundness
+# axiom — see `docs/fv/trusted-base.md` class #4).
 EXEMPT_STEMS: set[str] = set()
 
 

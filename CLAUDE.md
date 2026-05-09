@@ -22,7 +22,7 @@ execute_instruction (.RTYPE rs2 rs1 rd rop.ADD) state
 **Out of scope:** Zicclsm, precompiles (Keccak / SHA256 / big-int /
 DMA / etc.), ECALL/EBREAK, ZisK's custom internal ops.
 
-**Status:** all 63 RV64IM opcodes proved (0 sorries; 83 trusted
+**Status:** all 63 RV64IM opcodes proved (0 sorries; 84 trusted
 axioms across 13 ledger classes; **all 63** canonical `equiv_<OP>`
 theorems are OUTPUT-EQ-free, mechanically enforced uniformly by
 `trust/scripts/check-no-output-eq.sh` against
@@ -31,8 +31,13 @@ deriving their cross-entry rd-value byte equations from circuit
 witnesses — see `ZiskFv/Circuit/LoadDerivation.lean` for the
 copyb / MemAlign families and `ZiskFv/Circuit/SextLoadBridge.lean`
 for the LB/LH/LW signed-load chain (`bin_ext_table_consumer_wf` +
-`binary_extension_sext_{b,h,w}_chunks_eq_signextend_nat`); plus the
-bus-permutation closure axiom `memalign_load_high_bytes_zero`).
+`binary_extension_sext_{b,h,w}_chunks_eq_signextend_nat`). The
+LBU/LHU/LWU zero-pad is itself a derived theorem
+(`memalign_subdoubleword_load_high_bytes_zero` in
+`Airs/MemoryBus/MemAlignBridge.lean`) consuming a generic
+permutation-soundness axiom for the MemAlign* providers plus
+`mem_align_rom_subdoubleword_load_value_1_zero` (a narrow
+ROM-lookup axiom).
 
 ## Pipeline
 
