@@ -1,8 +1,6 @@
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Fundamentals.TranspileConsumers
-import Extraction.ArithTable
-import ZiskFv.Airs.Arith.ArithTable
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.GoldilocksBridge
 import ZiskFv.Sail.BusEffect
@@ -25,11 +23,9 @@ import ZiskFv.Airs.Mem
 import Extraction.MemAlign
 import Extraction.MemAlignByte
 import Extraction.MemAlignReadByte
-import Extraction.MemAlignWriteByte
 import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
-import ZiskFv.Airs.MemAlignWriteByte
 -- FGL → BitVec 64 arithmetic-extension lifts (h_rd_val bridges).
 import ZiskFv.Fundamentals.PackedBitVec.Extensions
 -- Goldilocks no-wrap toolkit (additive packings).
@@ -104,10 +100,8 @@ import ZiskFv.Equivalence.Addiw
 import ZiskFv.Equivalence.Lw
 import ZiskFv.Equivalence.Lh
 import ZiskFv.Equivalence.Lb
--- Signed-case PackedBitVec + MulFieldSigned + DivFieldSigned
+-- Signed-case PackedBitVec
 import ZiskFv.Fundamentals.PackedBitVec.Signed
-import ZiskFv.Circuit.MulFieldSigned
-import ZiskFv.Circuit.DivFieldSigned
 -- DIV/REM
 import ZiskFv.Equivalence.Div
 import ZiskFv.Equivalence.Divu

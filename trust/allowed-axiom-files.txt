@@ -23,9 +23,6 @@ ZiskFv/Airs/MemoryBus/MemAlignBridge.lean
 ZiskFv/Airs/BinaryTable.lean
 ZiskFv/Airs/BinaryExtensionTable.lean
 
-# Lookup-table content for the Arith state machine.
-ZiskFv/Airs/Arith/ArithTable.lean
-
 # Sail-state ↔ Mem AIR fidelity (MS-L / MS-S).
 ZiskFv/Circuit/MemModel.lean
 
