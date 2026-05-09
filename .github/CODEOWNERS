@@ -29,7 +29,6 @@
 /ZiskFv/ZiskFv/Airs/BinaryTable.lean                    @codygunton
 /ZiskFv/ZiskFv/Airs/BinaryExtensionTable.lean           @codygunton
 /ZiskFv/ZiskFv/Airs/Arith/ArithTable.lean               @codygunton
-/ZiskFv/ZiskFv/Airs/Arith/ArithRangeTable.lean          @codygunton
 /ZiskFv/ZiskFv/Spec/MemModel.lean                       @codygunton
 /ZiskFv/ZiskFv/RV64D/Auxiliaries.lean                   @codygunton
 
