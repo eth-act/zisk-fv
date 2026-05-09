@@ -17,6 +17,7 @@ ZiskFv/Fundamentals/Transpiler.lean
 # Bus-protocol soundness for bus_id=10 (memory bus).
 ZiskFv/Airs/MemoryBus/LaneMatch.lean
 ZiskFv/Airs/MemoryBus/MemBridge.lean
+ZiskFv/Airs/MemoryBus/MemAlignBridge.lean
 
 # Lookup-table content for bus_id=125 / 124.
 ZiskFv/Airs/BinaryTable.lean

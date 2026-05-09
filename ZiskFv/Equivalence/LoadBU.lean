@@ -8,7 +8,11 @@ import ZiskFv.Circuit.LoadDerivation
 import ZiskFv.Circuit.MemModel
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
+import ZiskFv.Airs.MemAlign
+import ZiskFv.Airs.MemAlignByte
+import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Airs.MemoryBus.MemAlignBridge
 import ZiskFv.Airs.BusEmission
 import ZiskFv.Sail.lbu
 import ZiskFv.Sail.BusEffect
@@ -85,6 +89,12 @@ theorem equiv_LBU
       Transpiler.wrap_to_regidx e2.ptr = 0 ↔ lbu_input.rd = 0)
     (h_rd_idx : lbu_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val)
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
+    -- MemAlign* providers for the sub-doubleword load (Phase F+ refactor).
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
+    (h_low :
+      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma)
     (h_main_emit_b :
       main.b_0 r_main = memory_entry_lo e1
       ∧ main.b_1 r_main = memory_entry_hi e1
@@ -126,8 +136,8 @@ theorem equiv_LBU
     rw [h_d0] at h_mem; exact (Option.some.inj h_mem).symm
   have h_lbu_packed :=
     ZiskFv.Circuit.LoadDerivation.load_lbu_c_packed
-      main r_main e1 e2 h_copy0 h_copy1 h_ext h_op h_width
-      h_main_emit_b h_main_emit_c h_e1_range h_e2_range
+      main r_main mab marb ma e1 e2 h_copy0 h_copy1 h_ext h_op h_width
+      h_main_emit_b h_main_emit_c h_e1_range h_e2_range h_low
   have h_rd_val_derived :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]
