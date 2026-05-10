@@ -37,12 +37,42 @@ open BinaryExtension.extraction
 
 /-- Named accessors for one row of ZisK's `BinaryExtension` AIR.
 
-    The `free_in_c` array is split logically into a low half (indices
-    0..7) and a high half (indices 8..15), where `free_in_c_<i>` is the
-    byte-`i` low-32-bit contribution to the 64-bit shift result and
-    `free_in_c_<i+8>` is its high-32-bit contribution. (See
-    `BinaryExtensionTableEntry.c_lo_byte` / `c_hi_byte` in
-    `Airs/BinaryExtensionTable.lean`.) -/
+    PIL declares `col witness bits(32) free_in_c[BYTES][2]` (a 16-cell
+    2-D witness array). `pil2-compiler` flattens this **row-major** so
+    that `free_in_c[j][k]` lands at flat index `2 * j + k`. Concretely:
+
+    | flat | PIL 2-D index | semantic |
+    |--|--|--|
+    | `free_in_c_0`  | `free_in_c[0][0]` | byte 0's low-32-bit contribution |
+    | `free_in_c_1`  | `free_in_c[0][1]` | byte 0's high-32-bit contribution |
+    | `free_in_c_2`  | `free_in_c[1][0]` | byte 1's low-32-bit contribution |
+    | `free_in_c_3`  | `free_in_c[1][1]` | byte 1's high-32-bit contribution |
+    | …              | …                 | … |
+    | `free_in_c_14` | `free_in_c[7][0]` | byte 7's low-32-bit contribution |
+    | `free_in_c_15` | `free_in_c[7][1]` | byte 7's high-32-bit contribution |
+
+    Therefore the operation-bus emission's `c_lo` / `c_hi` slots are:
+
+    ```
+    c_lo = free_in_c_0 + free_in_c_2 + free_in_c_4 + free_in_c_6
+         + free_in_c_8 + free_in_c_10 + free_in_c_12 + free_in_c_14
+    c_hi = free_in_c_1 + free_in_c_3 + free_in_c_5 + free_in_c_7
+         + free_in_c_9 + free_in_c_11 + free_in_c_13 + free_in_c_15
+    ```
+
+    Cross-checked against `build/extraction/Extraction/Buses.lean::bus_emission_BinaryExtension_0`
+    (slot names and column references). The corresponding consumers in
+    `BinaryExtensionTable.lean::BinaryExtensionTableEntry`
+    (`c_lo_byte` / `c_hi_byte`) are per-byte fields; the byte-`j` lookup
+    pairs them with `free_in_c_<2*j>` (lo) and `free_in_c_<2*j+1>` (hi).
+
+    See `docs/fv/binext-layout-resolution.md` for the full investigation
+    record. The downstream consumers in
+    `BinaryExtensionPackedCorrect.lean`, `RdValDerivation/BinaryShift.lean`,
+    and the per-shift / per-load `equiv_<OP>` files currently encode a
+    column-major reading of `free_in_c_<i>` (low half = 0..7, high half
+    = 8..15) which is **wrong** and is being tracked as a follow-up
+    cascade fix (see the "Cascade fix plan" section in that document). -/
 structure Valid_BinaryExtension (C : Type → Type → Type) (F ExtF : Type)
     [Field F] [Field ExtF] [Circuit F ExtF C] where
   circuit : C F ExtF
