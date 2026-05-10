@@ -119,6 +119,30 @@ Lookup-protocol soundness — assumed, not proven, per
 permutation arguments.
 -/
 
+/-- Width-conditional zero-padding predicate. Asserts that the high
+    bytes of `e` (those above the load width) are zero, parameterized
+    on the FGL-valued width column. The load axiom below pins this for
+    `width ∈ {1, 2, 4}`; width 8 (LD) leaves all lanes meaningful so
+    the predicate is vacuous in that case.
+
+    For loads narrower than 8 bytes (LBU=1, LHU=2, LWU=4), ZisK's
+    MemAlign state machines zero-pad the unused high byte lanes of
+    the memory-bus entry. The constraint is enforced via the
+    MemAlign-side permutation argument tying the Main row's
+    `ind_width` selector to the MemAlign* AIR's emitted entry.
+    Citations:
+    * `zisk/state-machines/mem/pil/mem_align_byte.pil:96-101`
+      (MemAlignByte: read-byte selector, value[1] = 0).
+    * `zisk/state-machines/mem/pil/mem_align.pil:189` (MemAlign:
+      sub-doubleword prove side, prove_val[1] = 0). -/
+@[simp]
+def high_bytes_zero_for_width (e : MemoryBusEntry FGL) (width : FGL) : Prop :=
+  (width = 1 → e.x1 = 0 ∧ e.x2 = 0 ∧ e.x3 = 0
+              ∧ e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0)
+  ∧ (width = 2 → e.x2 = 0 ∧ e.x3 = 0
+                ∧ e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0)
+  ∧ (width = 4 → e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0)
+
 /-- **Memory-bus permutation soundness — load side.** Given a Main row
     `r_main` whose memory-bus emission carries the load entry `e`
     (`as = 2`, `multiplicity = -1` — the consumer / "assumes" side at
@@ -126,11 +150,14 @@ permutation arguments.
     `r_mem` whose `(addr, step, value_0, value_1, wr)` projection
     matches `e`'s `(ptr, timestamp, lo, hi, 0)`.
 
-    This is the natural statement of permutation-argument soundness for
-    `bus_id = 10` on the load side: an entry consumed by Main is
-    provided by the Mem AIR. PLONK-style permutation soundness for the
-    arithmetic protocol is project-trusted (see CLAUDE.md "Trust
-    scoping"). -/
+    This axiom delivers ONLY the Mem-AIR side of the handshake. Sub-
+    doubleword loads (LBU/LHU/LWU) are also provided by MemAlign\*
+    AIRs — that side of the bus is covered by
+    `Airs/MemoryBus/MemAlignBridge.lean::memalign_load_perm_sound`,
+    a separate axiom of the same trust class.
+
+    PLONK-style permutation soundness for the arithmetic protocol is
+    project-trusted (see CLAUDE.md "Trust scoping"). -/
 axiom lookup_consumer_matches_provider_load
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
@@ -293,50 +320,5 @@ hypotheses. The Mem-row local lemmas
 #print axioms memory_store_lanes_match_of_mem_row
 #print axioms mem_read_addr_change_value_0_zero
 #print axioms mem_read_addr_change_value_1_zero
-
-/-! ## MemAlign zero-padding for sub-doubleword loads
-
-For loads narrower than 8 bytes (LBU=1, LHU=2, LWU=4), ZisK's MemAlign
-state machine zero-pads the unused high byte lanes of the memory-bus
-entry. The constraint is enforced via the MemAlign-side permutation
-argument tying the Main row's `ind_width` selector to the MemAlign*
-AIR's emitted entry; the unused-byte-lanes-zero invariant is bundled
-into that permutation soundness statement at the bus-emission layer.
-
-Trust class: memory-bus permutation soundness — same scope as
-`lookup_consumer_matches_provider_load` (project-trusted under the
-PLONK / plookup / logUp arithmetic protocol). Citations:
-* `zisk/state-machines/mem/pil/mem_align_byte.pil` (MemAlignByte AIR
-  — read-byte selector + zero-padding of byte lanes 1..7).
-* `zisk/state-machines/mem/pil/mem_align_read_byte.pil`
-  (MemAlignReadByte — composed-value byte recombination).
--/
-
-/-- Width-conditional zero-padding predicate. Asserts that the high
-    bytes of `e` (those above the load width) are zero, parameterized
-    on the FGL-valued width column. The axiom below proves this for
-    `width ∈ {1, 2, 4}`; widths 8 (LD) leaves all lanes meaningful so
-    the predicate is vacuous in that case. -/
-@[simp]
-def high_bytes_zero_for_width (e : MemoryBusEntry FGL) (width : FGL) : Prop :=
-  (width = 1 → e.x1 = 0 ∧ e.x2 = 0 ∧ e.x3 = 0
-              ∧ e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0)
-  ∧ (width = 2 → e.x2 = 0 ∧ e.x3 = 0
-                ∧ e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0)
-  ∧ (width = 4 → e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0)
-
-/-- **Trusted axiom: MemAlign zero-padding soundness.** A bus entry
-    `e` consumed by a Main-side load emission with `ind_width`
-    pinning the load width is zero-padded above the width.
-
-    This replaces the previously-unproven
-    `memory_entry_high_bytes_zero_*` hypotheses on LBU/LHU/LWU
-    canonical equivalence theorems. -/
-axiom memalign_load_high_bytes_zero
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (e : MemoryBusEntry FGL)
-    (h_emit : m.b_0 r_main = memory_entry_lo e
-              ∧ m.b_1 r_main = memory_entry_hi e
-              ∧ e.as = 2 ∧ e.multiplicity = -1) :
-    high_bytes_zero_for_width e (m.ind_width r_main)
 
 end ZiskFv.Airs.MemoryBus.MemBridge

@@ -182,4 +182,98 @@ lemma u64_toBV_eq_ofNat_fgl_val
   -- Close `sum = sum % 2^64`; sum < GL_prime < 2^64.
   rw [Nat.mod_eq_of_lt (by omega)]
 
+/-! ## Part 7 — 4-byte specializations
+
+Restricted-half companions of `fgl_packed_bytes_val_of_lt_prime`.
+Used by `Circuit/LoadDerivation.lean` (originally inlined as
+`fgl_packed_4bytes_val_of_byte_range` / `four_bytes_eq_of_packed_eq`)
+and by `Airs/MemoryBus/MemAlignBridge.lean`. -/
+
+/-- 4-byte specialization of `fgl_packed_bytes_val_of_lt_prime`: the
+    `.val` of an FGL 4-byte packed sum equals the Nat byte sum when
+    each byte is `< 256` (sum bounded by `2^32 - 1 < GL_prime`). -/
+lemma fgl_packed_4bytes_val_of_byte_range
+    (x0 x1 x2 x3 : FGL)
+    (h0 : x0.val < 256) (h1 : x1.val < 256)
+    (h2 : x2.val < 256) (h3 : x3.val < 256) :
+    (x0 + x1 * 256 + x2 * 65536 + x3 * 16777216 : FGL).val
+    = x0.val + x1.val * 256 + x2.val * 65536 + x3.val * 16777216 := by
+  have h_cast :
+      (x0 + x1 * 256 + x2 * 65536 + x3 * 16777216 : FGL)
+      = ((x0.val + x1.val * 256 + x2.val * 65536
+            + x3.val * 16777216 : ℕ) : FGL) := by
+    push_cast
+    rfl
+  rw [h_cast, Fin.val_natCast]
+  apply Nat.mod_eq_of_lt
+  omega
+
+/-- Per-byte FGL equality from packed FGL equality on a 4-byte half. -/
+lemma four_bytes_eq_of_packed_eq
+    (a0 a1 a2 a3 b0 b1 b2 b3 : FGL)
+    (ha0 : a0.val < 256) (ha1 : a1.val < 256)
+    (ha2 : a2.val < 256) (ha3 : a3.val < 256)
+    (hb0 : b0.val < 256) (hb1 : b1.val < 256)
+    (hb2 : b2.val < 256) (hb3 : b3.val < 256)
+    (h_eq : a0 + a1 * 256 + a2 * 65536 + a3 * 16777216
+          = b0 + b1 * 256 + b2 * 65536 + b3 * 16777216) :
+    a0 = b0 ∧ a1 = b1 ∧ a2 = b2 ∧ a3 = b3 := by
+  have h_val_a := fgl_packed_4bytes_val_of_byte_range a0 a1 a2 a3 ha0 ha1 ha2 ha3
+  have h_val_b := fgl_packed_4bytes_val_of_byte_range b0 b1 b2 b3 hb0 hb1 hb2 hb3
+  have h_val_eq :
+      a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      = b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216 := by
+    rw [← h_val_a, ← h_val_b, h_eq]
+  clear h_eq h_val_a h_val_b
+  have hE0 : a0.val = b0.val := by omega
+  have hE1 : a1.val = b1.val := by omega
+  have hE2 : a2.val = b2.val := by omega
+  have hE3 : a3.val = b3.val := by omega
+  exact ⟨Fin.ext hE0, Fin.ext hE1, Fin.ext hE2, Fin.ext hE3⟩
+
+/-- Specialization: 4-byte packed sum equals zero iff each byte is zero
+    (under byte ranges). -/
+lemma four_bytes_zero_of_packed_zero
+    (x0 x1 x2 x3 : FGL)
+    (h0 : x0.val < 256) (h1 : x1.val < 256)
+    (h2 : x2.val < 256) (h3 : x3.val < 256)
+    (h_zero : x0 + x1 * 256 + x2 * 65536 + x3 * 16777216 = 0) :
+    x0 = 0 ∧ x1 = 0 ∧ x2 = 0 ∧ x3 = 0 := by
+  have h_packed :
+      x0 + x1 * 256 + x2 * 65536 + x3 * 16777216
+      = (0 : FGL) + 0 * 256 + 0 * 65536 + 0 * 16777216 := by
+    rw [h_zero]; ring
+  have z0 : (0 : FGL).val < 256 := by decide
+  have := four_bytes_eq_of_packed_eq
+    x0 x1 x2 x3 0 0 0 0 h0 h1 h2 h3 z0 z0 z0 z0 h_packed
+  exact this
+
+/-- Specialization: a 4-byte packed value `< 256` forces high 3 bytes
+    to zero. Used to discharge "low byte only" constraints on a 32-bit
+    value (e.g. MemAlignByte's bus_byte slot < 256 ⇒ e.x1..3 = 0). -/
+lemma four_bytes_high_three_zero_of_packed_lt_256
+    (x0 x1 x2 x3 : FGL)
+    (h0 : x0.val < 256) (h1 : x1.val < 256)
+    (h2 : x2.val < 256) (h3 : x3.val < 256)
+    (h_lt : (x0 + x1 * 256 + x2 * 65536 + x3 * 16777216 : FGL).val < 256) :
+    x1 = 0 ∧ x2 = 0 ∧ x3 = 0 := by
+  rw [fgl_packed_4bytes_val_of_byte_range _ _ _ _ h0 h1 h2 h3] at h_lt
+  have hE1 : x1.val = 0 := by omega
+  have hE2 : x2.val = 0 := by omega
+  have hE3 : x3.val = 0 := by omega
+  exact ⟨Fin.ext hE1, Fin.ext hE2, Fin.ext hE3⟩
+
+/-- Specialization: a 4-byte packed value `< 65536` forces high 2 bytes
+    to zero. Used for MemAlign's value_0 < 2^16 (width=2) case. -/
+lemma four_bytes_high_two_zero_of_packed_lt_65536
+    (x0 x1 x2 x3 : FGL)
+    (h0 : x0.val < 256) (h1 : x1.val < 256)
+    (h2 : x2.val < 256) (h3 : x3.val < 256)
+    (h_lt : (x0 + x1 * 256 + x2 * 65536 + x3 * 16777216 : FGL).val < 65536) :
+    x2 = 0 ∧ x3 = 0 := by
+  rw [fgl_packed_4bytes_val_of_byte_range _ _ _ _ h0 h1 h2 h3] at h_lt
+  have hE2 : x2.val = 0 := by omega
+  have hE3 : x3.val = 0 := by omega
+  exact ⟨Fin.ext hE2, Fin.ext hE3⟩
+
 end ZiskFv.PackedBitVec
