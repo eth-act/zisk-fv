@@ -2,10 +2,11 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 80
+# Total entries: 81
 #
 7fccc882b9a79e6a  ZiskFv/Airs/BinaryExtensionTable.lean:262  axiom     bin_ext_table_consumer_wf
 4d9e296fb3ead091  ZiskFv/Airs/BinaryTable.lean:281  axiom     bin_table_consumer_wf
+219730a67e1235f3  ZiskFv/Airs/Main/Ranges.lean:67  axiom     main_columns_in_range
 6d0d9a4079c535b8  ZiskFv/Airs/MemoryBus/LaneMatch.lean:138  axiom     memory_bus_register_write_perm_sound
 f82c9c2d6803aee8  ZiskFv/Airs/MemoryBus/LaneMatch.lean:329  axiom     memory_bus_register_write_perm_sound_store_pc
 8c04bbb28c410ebd  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:135  axiom     memalign_load_perm_sound
