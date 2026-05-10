@@ -152,3 +152,22 @@ git diff trust/baseline-equiv-axiom-deps.txt    # AUDIT this diff
 
 The diff IS the audit surface — a CODEOWNER reviews exactly which
 theorems gained or lost which axiom dependencies.
+
+## Known gap — promise hypotheses in canonical equiv theorems
+
+The OUTPUT-EQ retirement (`forbidden-param-shapes.txt`,
+`forbidden-types.txt`) catches the 10 most extreme hypothesis
+names/shapes — those that literally state the conclusion as an
+assumption. **It does not catch the broader promise-hypothesis
+pattern** that 62 of 63 canonical `equiv_<OP>` theorems still rely
+on: user-supplied algebraic equations linking Main columns,
+provider columns, loose field elements, and Sail input/output
+values, **without those equations being derived from the bus
+protocol or transpile contract**.
+
+Both V1 and V2 gates pass cleanly today; the residual gap is
+semantic, not syntactic, and is the project's principal open
+soundness item. See [`docs/fv/known-gaps.md`](../docs/fv/known-gaps.md)
+for the full survey, the three tiers of detachment, the
+implications for the global compliance theorem, and the immediate
+TODO.

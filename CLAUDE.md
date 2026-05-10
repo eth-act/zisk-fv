@@ -39,6 +39,23 @@ permutation-soundness axiom for the MemAlign* providers plus
 `mem_align_rom_subdoubleword_load_value_1_zero` (a narrow
 ROM-lookup axiom).
 
+**⚠️ Open soundness gap — read before claiming end-to-end
+verification.** The OUTPUT-EQ-free claim above is *narrow*: it
+applies only to the 10 retired hypothesis names listed in
+`trust/forbidden-param-shapes.txt`. 62 of 63 canonical theorems
+still carry **promise hypotheses** (`h_match_clo`,
+`h_input_r1_circuit`, the loose `a₀..a₃ b₀..b₃ … hC*` bundles in
+MUL/DIV, etc.) that assert algebraic relationships not derived
+from the bus protocol or transpile contract. The proofs are
+**conditionally** sound — *if* a caller can supply consistent
+witnesses for those hypotheses, the conclusions follow — but no
+caller (no global compliance theorem) currently exists to discharge
+them, and for many opcodes the hypotheses are unfulfillable from
+the actual circuit without substantial new derivation
+infrastructure. See [`docs/fv/known-gaps.md`](docs/fv/known-gaps.md)
+for the full survey, the three tiers of detachment, and the
+immediate TODO.
+
 ## Pipeline
 
 ```
