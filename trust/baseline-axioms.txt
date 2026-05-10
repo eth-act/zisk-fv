@@ -2,16 +2,24 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 80
+# Total entries: 88
 #
+08d74d52fabb3c51  ZiskFv/Airs/Binary/BinaryAddRanges.lean:59  axiom     binary_add_columns_in_range
 7fccc882b9a79e6a  ZiskFv/Airs/BinaryExtensionTable.lean:262  axiom     bin_ext_table_consumer_wf
 4d9e296fb3ead091  ZiskFv/Airs/BinaryTable.lean:281  axiom     bin_table_consumer_wf
+219730a67e1235f3  ZiskFv/Airs/Main/Ranges.lean:67  axiom     main_columns_in_range
 6d0d9a4079c535b8  ZiskFv/Airs/MemoryBus/LaneMatch.lean:138  axiom     memory_bus_register_write_perm_sound
 f82c9c2d6803aee8  ZiskFv/Airs/MemoryBus/LaneMatch.lean:329  axiom     memory_bus_register_write_perm_sound_store_pc
 8c04bbb28c410ebd  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:135  axiom     memalign_load_perm_sound
 ddbca43a3ae7757a  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:168  axiom     mem_align_rom_subdoubleword_load_value_1_zero
 2a92e6d678fb5c0f  ZiskFv/Airs/MemoryBus/MemBridge.lean:161  axiom     lookup_consumer_matches_provider_load
 4685f64456e292e7  ZiskFv/Airs/MemoryBus/MemBridge.lean:177  axiom     lookup_consumer_matches_provider_store
+67ed8e590d7f0792  ZiskFv/Airs/OperationBus/Bridge.lean:54  axiom     op_bus_perm_sound_BinaryAdd
+d9d7d2422146a7dd  ZiskFv/Airs/OperationBus/Bridge.lean:77  axiom     op_bus_perm_sound_Binary
+f0f2b4a2aaab18ee  ZiskFv/Airs/OperationBus/Bridge.lean:101  axiom     op_bus_perm_sound_BinaryExtension
+d77e927acc98525b  ZiskFv/Airs/OperationBus/Bridge.lean:118  axiom     op_bus_perm_sound_ArithMul
+1d8b7b0883527de6  ZiskFv/Airs/OperationBus/Bridge.lean:140  axiom     op_bus_perm_sound_ArithDiv
+1d8b13196c7b8933  ZiskFv/Airs/OperationBus/Bridge.lean:155  axiom     op_bus_perm_sound_ArithDivSecondary
 0cd0f525da3c690b  ZiskFv/Circuit/MemModel.lean:127  axiom     row_models_sail_state_load
 2e7c53e620fb9d59  ZiskFv/Circuit/MemModel.lean:152  axiom     row_models_sail_state_store
 fcf669a1c7c11ee9  ZiskFv/Fundamentals/Transpiler.lean:252  axiom     transpile_ADD

@@ -23,6 +23,15 @@ ZiskFv/Airs/MemoryBus/MemAlignBridge.lean
 ZiskFv/Airs/BinaryTable.lean
 ZiskFv/Airs/BinaryExtensionTable.lean
 
+# Bus-protocol soundness for bus_id=5000 (operation bus).
+ZiskFv/Airs/OperationBus/Bridge.lean
+
+# Range-checker bus lookup soundness on Main's bits(N)-annotated columns.
+ZiskFv/Airs/Main/Ranges.lean
+
+# Range-checker bus lookup soundness on BinaryAdd's bits(N)-annotated columns.
+ZiskFv/Airs/Binary/BinaryAddRanges.lean
+
 # Sail-state ↔ Mem AIR fidelity (MS-L / MS-S).
 ZiskFv/Circuit/MemModel.lean
 

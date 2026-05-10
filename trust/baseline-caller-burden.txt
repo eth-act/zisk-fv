@@ -12,16 +12,16 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 3474
+# Total rows: 3472
 # Category bridge: 75
 # Category bus_shape: 516
 # Category byte_chain: 115
 # Category entry: 67
 # Category loose: 544
 # Category match: 82
-# Category other: 604
+# Category other: 603
 # Category range: 943
-# Category row: 62
+# Category row: 61
 # Category state: 217
 # Category transpile: 171
 # Category validator: 78
@@ -34,43 +34,41 @@ ZiskFv.Equivalence.Add.equiv_ADD 004 rd [other] regidx
 ZiskFv.Equivalence.Add.equiv_ADD 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.Add.equiv_ADD 006 b [validator] Valid_BinaryAdd C FGL FGL
 ZiskFv.Equivalence.Add.equiv_ADD 007 r_main [row] ℕ
-ZiskFv.Equivalence.Add.equiv_ADD 008 r_binary [row] ℕ
-ZiskFv.Equivalence.Add.equiv_ADD 009 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Equivalence.Add.equiv_ADD 010 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Add.equiv_ADD 011 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Add.equiv_ADD 012 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Add.equiv_ADD 013 _ [other] TRANSPILE-BRIDGE class
-ZiskFv.Equivalence.Add.equiv_ADD 014 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok add_input.r1_val state
-ZiskFv.Equivalence.Add.equiv_ADD 015 h_input_r2_sail [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok add_input.r2_val state
-ZiskFv.Equivalence.Add.equiv_ADD 016 h_input_rd [transpile] add_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.Add.equiv_ADD 017 h_input_pc [state] state.regs.get? Register.PC = .some add_input.PC
-ZiskFv.Equivalence.Add.equiv_ADD 018 _ [other] CIRCUIT-CONSTRAINT class
-ZiskFv.Equivalence.Add.equiv_ADD 019 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.Add.equiv_ADD 020 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.Add.equiv_ADD 021 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.Add.equiv_ADD 022 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.Add.equiv_ADD 023 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.Add.equiv_ADD 024 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.Add.equiv_ADD 025 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.Add.equiv_ADD 026 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.Add.equiv_ADD 027 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.Add.equiv_ADD 028 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.Add.equiv_ADD 029 h_rd_idx [transpile] add_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Add.equiv_ADD 030 h_circuit [other] add_circuit_holds m b r_main r_binary
-ZiskFv.Equivalence.Add.equiv_ADD 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Add.equiv_ADD 032 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 033 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 034 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 035 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 036 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 037 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 038 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 039 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 040 h_a_range [other] a_chunks_in_range b r_binary
-ZiskFv.Equivalence.Add.equiv_ADD 041 h_b_range [other] b_chunks_in_range b r_binary
-ZiskFv.Equivalence.Add.equiv_ADD 042 h_c_range [other] c_chunks_in_range b r_binary
-ZiskFv.Equivalence.Add.equiv_ADD 043 h_input_r1_circuit [bridge] add_input.r1_val = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val 
-ZiskFv.Equivalence.Add.equiv_ADD 044 h_input_r2_circuit [bridge] add_input.r2_val = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val 
+ZiskFv.Equivalence.Add.equiv_ADD 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
+ZiskFv.Equivalence.Add.equiv_ADD 009 e0 [loose] Interaction.MemoryBusEntry FGL
+ZiskFv.Equivalence.Add.equiv_ADD 010 e1 [loose] Interaction.MemoryBusEntry FGL
+ZiskFv.Equivalence.Add.equiv_ADD 011 e2 [loose] Interaction.MemoryBusEntry FGL
+ZiskFv.Equivalence.Add.equiv_ADD 012 _ [other] TRANSPILE-BRIDGE class
+ZiskFv.Equivalence.Add.equiv_ADD 013 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok add_input.r1_val state
+ZiskFv.Equivalence.Add.equiv_ADD 014 h_input_r2_sail [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok add_input.r2_val state
+ZiskFv.Equivalence.Add.equiv_ADD 015 h_input_rd [transpile] add_input.rd = regidx_to_fin rd
+ZiskFv.Equivalence.Add.equiv_ADD 016 h_input_pc [state] state.regs.get? Register.PC = .some add_input.PC
+ZiskFv.Equivalence.Add.equiv_ADD 017 _ [other] CIRCUIT-CONSTRAINT class
+ZiskFv.Equivalence.Add.equiv_ADD 018 h_exec_len [bus_shape] exec_row.length = 2
+ZiskFv.Equivalence.Add.equiv_ADD 019 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
+ZiskFv.Equivalence.Add.equiv_ADD 020 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
+ZiskFv.Equivalence.Add.equiv_ADD 021 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
+ZiskFv.Equivalence.Add.equiv_ADD 022 h_m0_mult [bus_shape] e0.multiplicity = -1
+ZiskFv.Equivalence.Add.equiv_ADD 023 h_m0_as [bus_shape] e0.as.val = 1
+ZiskFv.Equivalence.Add.equiv_ADD 024 h_m1_mult [bus_shape] e1.multiplicity = -1
+ZiskFv.Equivalence.Add.equiv_ADD 025 h_m1_as [bus_shape] e1.as.val = 1
+ZiskFv.Equivalence.Add.equiv_ADD 026 h_m2_mult [bus_shape] e2.multiplicity = 1
+ZiskFv.Equivalence.Add.equiv_ADD 027 h_m2_as [bus_shape] e2.as.val = 1
+ZiskFv.Equivalence.Add.equiv_ADD 028 h_rd_idx [transpile] add_input.rd = Transpiler.wrap_to_regidx e2.ptr
+ZiskFv.Equivalence.Add.equiv_ADD 029 h_main_subset [other] add_subset_holds m r_main
+ZiskFv.Equivalence.Add.equiv_ADD 030 h_main_mode [other] main_row_in_add_mode m r_main
+ZiskFv.Equivalence.Add.equiv_ADD 031 h_b_core [other] ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r
+ZiskFv.Equivalence.Add.equiv_ADD 032 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Add.equiv_ADD 033 h_e2_0 [range] e2.x0.val < 256
+ZiskFv.Equivalence.Add.equiv_ADD 034 h_e2_1 [range] e2.x1.val < 256
+ZiskFv.Equivalence.Add.equiv_ADD 035 h_e2_2 [range] e2.x2.val < 256
+ZiskFv.Equivalence.Add.equiv_ADD 036 h_e2_3 [range] e2.x3.val < 256
+ZiskFv.Equivalence.Add.equiv_ADD 037 h_e2_4 [range] e2.x4.val < 256
+ZiskFv.Equivalence.Add.equiv_ADD 038 h_e2_5 [range] e2.x5.val < 256
+ZiskFv.Equivalence.Add.equiv_ADD 039 h_e2_6 [range] e2.x6.val < 256
+ZiskFv.Equivalence.Add.equiv_ADD 040 h_e2_7 [range] e2.x7.val < 256
+ZiskFv.Equivalence.Add.equiv_ADD 041 h_input_r1_main [bridge] add_input.r1_val = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 42
+ZiskFv.Equivalence.Add.equiv_ADD 042 h_input_r2_main [bridge] add_input.r2_val = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 42
 ZiskFv.Equivalence.Addi.equiv_ADDI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Addi.equiv_ADDI 001 addi_input [other] PureSpec.AddiInput
 ZiskFv.Equivalence.Addi.equiv_ADDI 002 r1 [other] regidx
