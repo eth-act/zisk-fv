@@ -4,6 +4,7 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Circuit.LoadWU
+import ZiskFv.Circuit.LoadDerivation
 import ZiskFv.Circuit.MemModel
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
@@ -94,15 +95,19 @@ theorem equiv_LWU
       ∧ main.b_1 r_main = memory_entry_hi e1
       ∧ e1.as = 2
       ∧ e1.multiplicity = -1)
+    (h_main_emit_c :
+      main.c_0 r_main = memory_entry_lo e2
+      ∧ main.c_1 r_main = memory_entry_hi e2)
     (h_ptr_match :
       e1.ptr.toNat
         = lwu_input.r1_val.toNat + (BitVec.signExtend 64 lwu_input.imm).toNat)
-    (h_high_bytes_zeroext :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-        = BitVec.zeroExtend 64
-            ((e1.x3 : BitVec 8) ++ (e1.x2 : BitVec 8)
-             ++ (e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8))) :
+    (h_copy0 : internal_op1_copies_b0 main r_main)
+    (h_copy1 : internal_op1_copies_b1 main r_main)
+    (h_ext : main.is_external_op r_main = 0)
+    (h_op : main.op r_main = (1 : FGL))
+    (h_width : main.ind_width r_main = (4 : FGL))
+    (h_e1_range : memory_entry_bytes_in_range e1)
+    (h_e2_range : memory_entry_bytes_in_range e2) :
     execute_instruction (instruction.LOAD (
       lwu_input.imm,
       regidx.Regidx lwu_input.r1,
@@ -129,13 +134,17 @@ theorem equiv_LWU
     rw [h_d2] at he2; exact (Option.some.inj he2).symm
   have hd3 : (e1.x3 : BitVec 8) = lwu_input.data3 := by
     rw [h_d3] at he3; exact (Option.some.inj he3).symm
+  have h_lwu_packed :=
+    ZiskFv.Circuit.LoadDerivation.load_lwu_c_packed
+      main r_main e1 e2 h_copy0 h_copy1 h_ext h_op h_width
+      h_main_emit_b h_main_emit_c h_e1_range h_e2_range
   have h_rd_val_derived :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]
         = BitVec.zeroExtend 64
             (lwu_input.data3 ++ lwu_input.data2
              ++ lwu_input.data1 ++ lwu_input.data0) := by
-    rw [h_high_bytes_zeroext, hd0, hd1, hd2, hd3]
+    rw [h_lwu_packed, hd0, hd1, hd2, hd3]
   rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_loadu_4byte_rrrw
         state exec_row e0 e1 e2
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC

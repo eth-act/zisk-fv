@@ -1,0 +1,63 @@
+ZiskFv.Equivalence.Add.equiv_ADD: 
+ZiskFv.Equivalence.Addi.equiv_ADDI: 
+ZiskFv.Equivalence.Addiw.equiv_ADDIW: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Addw.equiv_ADDW: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.And.equiv_AND: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Andi.equiv_ANDI: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Auipc.equiv_AUIPC: ZiskFv.Trusted.transpile_PC_for_AUIPC
+ZiskFv.Equivalence.BranchEqual.equiv_BEQ: 
+ZiskFv.Equivalence.BranchGreaterEqual.equiv_BGE: 
+ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU: 
+ZiskFv.Equivalence.BranchLessThan.equiv_BLT: 
+ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU: 
+ZiskFv.Equivalence.BranchNotEqual.equiv_BNE: 
+ZiskFv.Equivalence.Div.equiv_DIV: 
+ZiskFv.Equivalence.Divu.equiv_DIVU: 
+ZiskFv.Equivalence.Divuw.equiv_DIVUW: 
+ZiskFv.Equivalence.Divw.equiv_DIVW: 
+ZiskFv.Equivalence.Fence.equiv_FENCE: 
+ZiskFv.Equivalence.Jal.equiv_JAL: ZiskFv.Trusted.transpile_PC_for_JAL
+ZiskFv.Equivalence.Jalr.equiv_JALR: ZiskFv.PlatformScope.update_elp_state_is_pure_unit, ZiskFv.Trusted.transpile_PC_for_JALR
+ZiskFv.Equivalence.Lb.equiv_LB: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf, ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Equivalence.Lh.equiv_LH: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf, ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Equivalence.LoadBU.equiv_LBU: ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Airs.MemoryBus.MemBridge.memalign_load_high_bytes_zero, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Equivalence.LoadD.equiv_LD: ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Equivalence.LoadHU.equiv_LHU: ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Airs.MemoryBus.MemBridge.memalign_load_high_bytes_zero, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Equivalence.LoadWU.equiv_LWU: ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Airs.MemoryBus.MemBridge.memalign_load_high_bytes_zero, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Equivalence.Lui.equiv_LUI: 
+ZiskFv.Equivalence.Lw.equiv_LW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf, ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Equivalence.Mul.equiv_MUL: 
+ZiskFv.Equivalence.MulH.equiv_MULH: 
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU: 
+ZiskFv.Equivalence.MulHU.equiv_MULHU: 
+ZiskFv.Equivalence.MulW.equiv_MULW: 
+ZiskFv.Equivalence.Or.equiv_OR: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Ori.equiv_ORI: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Rem.equiv_REM: 
+ZiskFv.Equivalence.Remu.equiv_REMU: 
+ZiskFv.Equivalence.Remuw.equiv_REMUW: 
+ZiskFv.Equivalence.Remw.equiv_REMW: 
+ZiskFv.Equivalence.Shift.equiv_SLLW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.ShiftR.equiv_SRLW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.Sll.equiv_SLL: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.Slli.equiv_SLLI: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.Slt.equiv_SLT: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Slti.equiv_SLTI: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Sltiu.equiv_SLTIU: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Sltu.equiv_SLTU: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Sra.equiv_SRA: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.Srai.equiv_SRAI: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.Srl.equiv_SRL: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.Srli.equiv_SRLI: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.StoreB.equiv_SB: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Equivalence.StoreD.equiv_SD: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Equivalence.StoreH.equiv_SH: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Equivalence.StoreW.equiv_SW: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Equivalence.Sub.equiv_SUB: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Subw.equiv_SUBW: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Xor.equiv_XOR: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Xori.equiv_XORI: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf

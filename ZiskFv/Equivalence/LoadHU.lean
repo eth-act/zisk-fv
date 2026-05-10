@@ -4,6 +4,7 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Circuit.LoadHU
+import ZiskFv.Circuit.LoadDerivation
 import ZiskFv.Circuit.MemModel
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
@@ -92,16 +93,19 @@ theorem equiv_LHU
       ∧ main.b_1 r_main = memory_entry_hi e1
       ∧ e1.as = 2
       ∧ e1.multiplicity = -1)
+    (h_main_emit_c :
+      main.c_0 r_main = memory_entry_lo e2
+      ∧ main.c_1 r_main = memory_entry_hi e2)
     (h_ptr_match :
       e1.ptr.toNat
         = lhu_input.r1_val.toNat + (BitVec.signExtend 64 lhu_input.imm).toNat)
-    -- LHU rd value: setWidth 32 (zero-extend) of the 16-bit halfword,
-    -- then writeReg pads to 64 bits.
-    (h_high_bytes_zeroext :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-        = (BitVec.setWidth 32
-            ((e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8))).setWidth 64) :
+    (h_copy0 : internal_op1_copies_b0 main r_main)
+    (h_copy1 : internal_op1_copies_b1 main r_main)
+    (h_ext : main.is_external_op r_main = 0)
+    (h_op : main.op r_main = (1 : FGL))
+    (h_width : main.ind_width r_main = (2 : FGL))
+    (h_e1_range : memory_entry_bytes_in_range e1)
+    (h_e2_range : memory_entry_bytes_in_range e2) :
     execute_instruction (instruction.LOAD (
       lhu_input.imm,
       regidx.Regidx lhu_input.r1,
@@ -124,16 +128,16 @@ theorem equiv_LHU
     rw [h_d0] at he0; exact (Option.some.inj he0).symm
   have hd1 : (e1.x1 : BitVec 8) = lhu_input.data1 := by
     rw [h_d1] at he1; exact (Option.some.inj he1).symm
-  -- `BitVec.setWidth 32 ... |>.setWidth 64` is the "zero-extend the
-  -- LHU rd value (a 32-bit setWidth) up to 64 bits for register write".
-  -- The Sail `match output.rd` writes a 64-bit value; the underlying
-  -- 32-bit setWidth comes from the LHU pure-spec.
+  have h_lhu_packed :=
+    ZiskFv.Circuit.LoadDerivation.load_lhu_c_packed
+      main r_main e1 e2 h_copy0 h_copy1 h_ext h_op h_width
+      h_main_emit_b h_main_emit_c h_e1_range h_e2_range
   have h_rd_val_derived :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]
         = (BitVec.setWidth 32
             (lhu_input.data1 ++ lhu_input.data0)).setWidth 64 := by
-    rw [h_high_bytes_zeroext, hd0, hd1]
+    rw [h_lhu_packed, hd0, hd1]
   -- The narrow loadu_2byte_rrrw lemma takes rd_val as `BitVec 64`,
   -- so we use the setWidth-64'd LHU value as our rd_val.
   rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_loadu_2byte_rrrw

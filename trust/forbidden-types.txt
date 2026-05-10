@@ -1,0 +1,34 @@
+# Forbidden Names in canonical `equiv_<OP>` theorem PARAMETER types.
+#
+# Each non-comment line is a fully-qualified Lean `Name` that, if it
+# appears (after reducible-transparency unfolding) in the type of a
+# parameter binder of a canonical `equiv_<OP>` theorem, indicates the
+# OUTPUT-EQ trust class has leaked back in.
+#
+# This is the V2 hardening of `forbidden-param-shapes.txt`. V1 greps
+# named-hypothesis substrings; V2 walks the elaborated binder type
+# tree, unfolds `abbrev` / `@[reducible] def` chains, and matches
+# `Name`s. An aliasing dodge like `abbrev S := ...` is closed by the
+# `whnfR` step in `bin/TrustGate/TypeWalk.lean::unfoldReducible`.
+#
+# Adding to this catalog is CODEOWNER-protected (see
+# `.github/CODEOWNERS`).
+#
+# CONSERVATIVE policy: list only Names that should NEVER appear in a
+# parameter type of a canonical theorem. Names that legitimately
+# surface as TRANSPILE-PIN-class hypotheses (e.g.
+# `(h_success : (PureSpec.execute_JAL_pure jal_input).success = true)`)
+# are NOT included — V2 catches OUTPUT-EQ regressions, not legitimate
+# spec preconditions.
+#
+# Catalog scope: the Sail entry points. These are the LHS of every
+# canonical `equiv_<OP>` theorem (the conclusion). If they show up in
+# a parameter, it means a hypothesis is being given the spec's output
+# directly — that IS the OUTPUT-EQ class.
+#
+# (`forallTelescope` separates parameters from the conclusion, so the
+# canonical theorem's CONCLUSION is fine to reference these.)
+
+execute_instruction
+LeanRV64D.Functions.execute
+LeanRV64D.execute_instruction

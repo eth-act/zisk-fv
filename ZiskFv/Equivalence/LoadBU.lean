@@ -4,6 +4,7 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Circuit.LoadBU
+import ZiskFv.Circuit.LoadDerivation
 import ZiskFv.Circuit.MemModel
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
@@ -89,13 +90,21 @@ theorem equiv_LBU
       ∧ main.b_1 r_main = memory_entry_hi e1
       ∧ e1.as = 2
       ∧ e1.multiplicity = -1)
+    (h_main_emit_c :
+      main.c_0 r_main = memory_entry_lo e2
+      ∧ main.c_1 r_main = memory_entry_hi e2)
     (h_ptr_match :
       e1.ptr.toNat
         = lbu_input.r1_val.toNat + (BitVec.signExtend 64 lbu_input.imm).toNat)
-    (h_high_bytes_zeroext :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
-        = (BitVec.setWidth 32 (e1.x0 : BitVec 8)).setWidth 64) :
+    -- Circuit constraint witnesses (CIRCUIT-CONSTRAINT class).
+    (h_copy0 : internal_op1_copies_b0 main r_main)
+    (h_copy1 : internal_op1_copies_b1 main r_main)
+    (h_ext : main.is_external_op r_main = 0)
+    (h_op : main.op r_main = (1 : FGL))
+    (h_width : main.ind_width r_main = (1 : FGL))
+    -- Byte ranges (RANGE class) — discharged by the byte-bus lookup.
+    (h_e1_range : memory_entry_bytes_in_range e1)
+    (h_e2_range : memory_entry_bytes_in_range e2) :
     execute_instruction (instruction.LOAD (
       lbu_input.imm,
       regidx.Regidx lbu_input.r1,
@@ -115,11 +124,15 @@ theorem equiv_LBU
   rw [h_ptr_match] at h_mem
   have hd0 : (e1.x0 : BitVec 8) = lbu_input.data0 := by
     rw [h_d0] at h_mem; exact (Option.some.inj h_mem).symm
+  have h_lbu_packed :=
+    ZiskFv.Circuit.LoadDerivation.load_lbu_c_packed
+      main r_main e1 e2 h_copy0 h_copy1 h_ext h_op h_width
+      h_main_emit_b h_main_emit_c h_e1_range h_e2_range
   have h_rd_val_derived :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]
         = (BitVec.setWidth 32 lbu_input.data0).setWidth 64 := by
-    rw [h_high_bytes_zeroext, hd0]
+    rw [h_lbu_packed, hd0]
   rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_loadu_1byte_rrrw
         state exec_row e0 e1 e2
         (PureSpec.execute_LOADBU_pure lbu_input).nextPC

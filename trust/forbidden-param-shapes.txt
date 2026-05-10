@@ -38,3 +38,11 @@
 \(h_pc_fgl_lo_nat\s*:
 \(h_pci_lo_val\s*:
 \(h_entry_lo_eq\s*:
+# Load-specific OUTPUT-EQ hypotheses retired by the load-derivation
+# rewrite. The cross-entry rd-value byte equations are now derived
+# from `Circuit/LoadDerivation.lean` plus the bus-permutation
+# closure axioms in `Airs/MemoryBus/MemBridge.lean` and
+# `Airs/BinaryExtensionTable.lean`.
+\(h_high_bytes_signext\s*:
+\(h_high_bytes_zeroext\s*:
+\(h_e1_e2_bytes\s*:

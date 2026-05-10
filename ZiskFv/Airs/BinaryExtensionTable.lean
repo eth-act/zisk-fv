@@ -2,6 +2,10 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Fundamentals.Interaction
+import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Airs.Main
+import ZiskFv.Airs.MemoryBus
 
 /-!
 ZisK binary-extension lookup table (`bus_id = 124`).
@@ -181,6 +185,63 @@ def wf_SRA_W (e : BinaryExtensionTableEntry FGL) : Prop :=
     e.c_hi_byte.val = full / (2 ^ 32) ∧
     e.op_is_shift.val = 1
 
+/-- Sign-extend byte (RV64 SEXT.B): byte_index 0 is the byte being
+    sign-extended, byte_indices 1..7 contribute zero. The sign-extension
+    mask `SE_MASK_8 = 0xFFFFFFFFFFFFFF00 = 2^64 - 256` applies when
+    `a_byte ≥ 128` at byte_index 0.
+
+    Reference: `case OP_SEXT_B` in `binary_extension_table.pil:149-160`. -/
+def wf_SEXT_B (e : BinaryExtensionTableEntry FGL) : Prop :=
+  e.op.val = OP_SEXT_B →
+    let out : ℕ :=
+      if e.byte_index.val = 0 then
+        if e.a_byte.val ≥ 128
+        then e.a_byte.val + (2 ^ 64 - 256)
+        else e.a_byte.val
+      else 0
+    e.c_lo_byte.val = out % (2 ^ 32) ∧
+    e.c_hi_byte.val = out / (2 ^ 32) ∧
+    e.op_is_shift.val = 0
+
+/-- Sign-extend halfword (RV64 SEXT.H): byte_index 0 contributes
+    the low byte unmodified; byte_index 1 contributes the high byte
+    of the halfword and, when `a_byte ≥ 128`, the sign-extension mask
+    `SE_MASK_16 = 0xFFFFFFFFFFFF0000 = 2^64 - 2^16`. byte_indices ≥ 2
+    contribute zero.
+
+    Reference: `case OP_SEXT_H` in `binary_extension_table.pil:162-175`. -/
+def wf_SEXT_H (e : BinaryExtensionTableEntry FGL) : Prop :=
+  e.op.val = OP_SEXT_H →
+    let out : ℕ :=
+      if e.byte_index.val = 0 then e.a_byte.val
+      else if e.byte_index.val = 1 then
+        let a_pos := e.a_byte.val * 256
+        if e.a_byte.val ≥ 128 then a_pos + (2 ^ 64 - 2 ^ 16) else a_pos
+      else 0
+    e.c_lo_byte.val = out % (2 ^ 32) ∧
+    e.c_hi_byte.val = out / (2 ^ 32) ∧
+    e.op_is_shift.val = 0
+
+/-- Sign-extend word (RV64 SEXT.W): byte_indices 0..3 contribute
+    `a_byte * 256^byte_index` (their natural placement in the
+    32-bit word); byte_index 3 additionally contributes the
+    sign-extension mask `SE_MASK_32 = 0xFFFFFFFF00000000 = 2^64 - 2^32`
+    when `a_byte ≥ 128`. byte_indices ≥ 4 contribute zero.
+
+    Reference: `case OP_SEXT_W` in `binary_extension_table.pil:177-189`. -/
+def wf_SEXT_W (e : BinaryExtensionTableEntry FGL) : Prop :=
+  e.op.val = OP_SEXT_W →
+    let out : ℕ :=
+      if e.byte_index.val < 4 then
+        let a_pos := e.a_byte.val * (256 ^ e.byte_index.val)
+        if e.byte_index.val = 3 ∧ e.a_byte.val ≥ 128
+        then a_pos + (2 ^ 64 - 2 ^ 32)
+        else a_pos
+      else 0
+    e.c_lo_byte.val = out % (2 ^ 32) ∧
+    e.c_hi_byte.val = out / (2 ^ 32) ∧
+    e.op_is_shift.val = 0
+
 /-- The full trusted per-row well-formedness. Mirror of
     `BinaryTable.wf_properties`. -/
 def wf_properties (e : BinaryExtensionTableEntry FGL) : Prop :=
@@ -191,6 +252,9 @@ def wf_properties (e : BinaryExtensionTableEntry FGL) : Prop :=
   ∧ wf_SLL_W e
   ∧ wf_SRL_W e
   ∧ wf_SRA_W e
+  ∧ wf_SEXT_B e
+  ∧ wf_SEXT_H e
+  ∧ wf_SEXT_W e
 
 /-- **Trusted axiom (consumer-side).** Every entry the BinaryExtension AIR
     consumes against the binary-extension table satisfies `wf_properties`.

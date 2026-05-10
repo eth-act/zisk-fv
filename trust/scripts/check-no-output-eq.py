@@ -31,11 +31,14 @@ NEXT_DECL = re.compile(
     r"structure|inductive|@\[|axiom|opaque|constant)"
 )
 
-# Files exempt from the check. The 7 load opcodes don't yet have
-# discharge proofs for byte-decomposition; their canonical equiv_<OP>
-# legitimately accepts h_rd_val today. Tracked for follow-up tier1
-# work (see /home/cody/.claude/plans/make-a-plan-to-serene-wigderson.md).
-EXEMPT_STEMS = {"Lb", "Lh", "LoadBU", "LoadD", "LoadHU", "LoadWU", "Lw"}
+# All 63 RV64IM opcodes are policed uniformly. The previous 7-load
+# carve-out was retired once the load equivalence proofs were rewritten
+# to derive their cross-entry rd-value byte equations from circuit
+# witnesses (Family A — `ZiskFv/Circuit/LoadDerivation.lean`) plus the
+# bus-permutation closure axioms `memalign_load_high_bytes_zero` and
+# `signextend_load_c_packed` (memory-bus and BinaryExtension trust
+# classes — see `docs/fv/trusted-base.md`).
+EXEMPT_STEMS: set[str] = set()
 
 
 def load_patterns() -> list[re.Pattern]:

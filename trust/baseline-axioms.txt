@@ -2,18 +2,19 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 82
+# Total entries: 83
 #
 cd20cd6aae807f15  ZiskFv/Airs/Arith/ArithRangeTable.lean:58  axiom     arith_range_cd_sound
 e4482ff6946017c2  ZiskFv/Airs/Arith/ArithRangeTable.lean:79  axiom     arith_inv_sum_nonzero_sound
 94e9f4e8a05b0559  ZiskFv/Airs/Arith/ArithTable.lean:84  axiom     arith_table_lookup_sound_mul
 cdab320e9c0b09a9  ZiskFv/Airs/Arith/ArithTable.lean:96  axiom     arith_table_lookup_sound_div
-7fccc882b9a79e6a  ZiskFv/Airs/BinaryExtensionTable.lean:198  axiom     bin_ext_table_consumer_wf
+7fccc882b9a79e6a  ZiskFv/Airs/BinaryExtensionTable.lean:262  axiom     bin_ext_table_consumer_wf
 4d9e296fb3ead091  ZiskFv/Airs/BinaryTable.lean:281  axiom     bin_table_consumer_wf
 6d0d9a4079c535b8  ZiskFv/Airs/MemoryBus/LaneMatch.lean:138  axiom     memory_bus_register_write_perm_sound
 f82c9c2d6803aee8  ZiskFv/Airs/MemoryBus/LaneMatch.lean:329  axiom     memory_bus_register_write_perm_sound_store_pc
 2a92e6d678fb5c0f  ZiskFv/Airs/MemoryBus/MemBridge.lean:134  axiom     lookup_consumer_matches_provider_load
 4685f64456e292e7  ZiskFv/Airs/MemoryBus/MemBridge.lean:150  axiom     lookup_consumer_matches_provider_store
+0d9ffc23d5998913  ZiskFv/Airs/MemoryBus/MemBridge.lean:335  axiom     memalign_load_high_bytes_zero
 0cd0f525da3c690b  ZiskFv/Circuit/MemModel.lean:127  axiom     row_models_sail_state_load
 2e7c53e620fb9d59  ZiskFv/Circuit/MemModel.lean:152  axiom     row_models_sail_state_store
 fcf669a1c7c11ee9  ZiskFv/Fundamentals/Transpiler.lean:252  axiom     transpile_ADD
