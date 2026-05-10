@@ -9,6 +9,24 @@
 > is the **immediate TODO** before a global compliance theorem can
 > close.
 
+## Glossary (canonical terminology)
+
+Plans, PRs, commit messages, and agent prompts touching this work
+**must** use the terms below as defined here. Off-cuff synonyms
+("dischargeable preconditions", "spurious assumptions", "moving
+hypotheses around") fragment the audit trail; the canonical terms
+keep the discussion checkable against this document.
+
+| Term                    | Definition |
+|-------------------------|------------|
+| **promise hypothesis**  | A caller-supplied parameter on a canonical `equiv_<OP>` theorem that asserts an algebraic or structural relationship the theorem could derive from the trust ledger but currently does not. The proof body substitutes the hypothesis without deriving it. Example: `h_match_clo : m.c_0 r_main = v.free_in_c_0 r_binary + … + v.free_in_c_7 r_binary`. The full audit is in this document; the cross-AIR matching family, the Sail-input bridge family, the per-byte range/chain family, the BinaryExtension specifics family, and the Tier-1 loose-element-algebra family are all promise hypotheses. |
+| **promise discharge**   | The work of replacing a promise hypothesis with a derivation from the trust ledger (transpile axioms, bus permutation axioms, lookup-soundness axioms, range-check axioms, AIR-validity structures). The result: the theorem still typechecks, but the hypothesis is no longer caller-supplied — it is internally derived from axioms already on the books. **Real promise discharge reduces the trust surface; renaming or splitting a hypothesis without deriving it is laundering, not discharge** (see CLAUDE.md "Anti-laundering principle"). |
+| **discharge bridge**    | A Lean file under `ZiskFv/Equivalence/Bridge/<Shape>.lean` that exposes a uniform discharge API for one provider-AIR shape. Consumes the trust-ledger axioms relevant to that shape; produces the per-byte / per-chunk / cross-AIR equations the per-opcode `equiv_<OP>` theorems for that shape need. Step 2 of `/home/cody/.claude/plans/plan-to-completely-resolve-wild-lynx.md`. |
+| **trust ledger**        | The 87 axioms in `trust/baseline-axioms.txt`, organized by class in `docs/fv/trusted-base.md`. The project's named, audited trust surface. **Promise discharge does not extend the trust ledger** (modulo small bus-protocol additions like Phase A's OpBus axioms, which fit existing classes). |
+| **caller-burden ledger** | `trust/baseline-caller-burden.txt`, the corresponding ledger of every parameter binder on every canonical `equiv_<OP>`. Promise discharge **shrinks** this ledger. The diff IS the audit surface for whether a refactor accomplished real discharge or just laundering (see CLAUDE.md V1 check #8). |
+| **anti-laundering metric** | The pair of gates `check-hypothesis-count.sh` (V1 #7) and `check-caller-burden.sh` (V1 #8). Operational meaning of "real promise discharge": every plan PR must reduce or hold both columns of `trust/baseline-hypothesis-count.txt` and show net REMOVALS (not renamings) in `trust/baseline-caller-burden.txt`. |
+| **constructibility (separate gap)** | Whether a `Valid_<AIR>` instance can actually be constructed from a real ZisK trace. If `Valid_<AIR>`'s declared constraints are stronger than the actual circuit, the equivalence theorems are vacuous. Not addressed by promise discharge; tracked as a separate concern in CLAUDE.md "Anti-laundering principle" item 4. |
+
 ## TL;DR
 
 62 of 63 canonical `equiv_<OP>` theorems carry **promise hypotheses**
