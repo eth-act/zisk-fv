@@ -4,6 +4,8 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Binary.BinaryAdd
+import ZiskFv.Airs.Binary.Binary
+import ZiskFv.Airs.Binary.BinaryExtension
 
 /-!
 ZisK operation-bus schema and Main↔BinaryAdd projection.
@@ -129,6 +131,82 @@ def opBus_row_BinaryAdd {C : Type → Type → Type} {F ExtF : Type}
     b_hi := b.b_1 row
     c_lo := b.c_chunks_1 row * 65536 + b.c_chunks_0 row
     c_hi := b.c_chunks_3 row * 65536 + b.c_chunks_2 row
+    flag := 0
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
+/-- Binary's operation-bus emission for a given row. Mirrors the
+    `proves_operation(op: b_op + 0x10 * mode32, a:, b:, c:, flag:cout)` call
+    at `zisk/state-machines/binary/pil/binary.pil:156`. The `a`/`b`/`c`
+    chunks are reassembled from per-byte witnesses via the standard
+    base-256 weights (4 bytes per 32-bit chunk). The `c_lo` lane carries
+    an additional `+ carry_7` summand from the `c[0] += cout` rebase
+    line at `binary.pil:154`. Multiplicity is `1` (the implicit
+    `mul:1` default for `proves_operation`).
+
+    Cross-checked against the extracted spec
+    `bus_emission_Binary_0` at
+    `build/extraction/Extraction/Buses.lean` (gsum debug #1178). -/
+@[simp]
+def opBus_row_Binary {C : Type → Type → Type} {F ExtF : Type}
+    [Field F] [Field ExtF] [Circuit F ExtF C]
+    (b : ZiskFv.Airs.Binary.Valid_Binary C F ExtF) (row : ℕ) : OperationBusEntry F :=
+  { multiplicity := 1
+    op := b.b_op row + 16 * b.mode32 row
+    a_lo := b.free_in_a_0 row + 256 * b.free_in_a_1 row
+            + 65536 * b.free_in_a_2 row + 16777216 * b.free_in_a_3 row
+    a_hi := b.free_in_a_4 row + 256 * b.free_in_a_5 row
+            + 65536 * b.free_in_a_6 row + 16777216 * b.free_in_a_7 row
+    b_lo := b.free_in_b_0 row + 256 * b.free_in_b_1 row
+            + 65536 * b.free_in_b_2 row + 16777216 * b.free_in_b_3 row
+    b_hi := b.free_in_b_4 row + 256 * b.free_in_b_5 row
+            + 65536 * b.free_in_b_6 row + 16777216 * b.free_in_b_7 row
+    c_lo := b.free_in_c_0 row + 256 * b.free_in_c_1 row
+            + 65536 * b.free_in_c_2 row + 16777216 * b.free_in_c_3 row
+            + b.carry_7 row
+    c_hi := b.free_in_c_4 row + 256 * b.free_in_c_5 row
+            + 65536 * b.free_in_c_6 row + 16777216 * b.free_in_c_7 row
+    flag := b.carry_7 row
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
+/-- BinaryExtension's operation-bus emission for a given row. Mirrors the
+    `proves_operation` call at
+    `zisk/state-machines/binary/pil/binary_extension.pil:118`. The `op_is_shift`
+    selector chooses between two routings:
+    * shift family (`op_is_shift = 1`): `a := free_in_a` (assembled from per-byte
+      columns), `b_lo := free_in_b + 256 * b_aux_0`, `b_hi := b_aux_1`;
+    * sign-extend family (`op_is_shift = 0`): `a := b_aux`, `b := free_in_a`.
+    The two `c` lanes are sums of the per-byte `free_in_c[*][0|1]` columns;
+    in this AIR the `[j][0]` half is flattened to `free_in_c_(2j)` and the
+    `[j][1]` half to `free_in_c_(2j+1)`. Multiplicity is `1`.
+
+    Cross-checked against the extracted spec
+    `bus_emission_BinaryExtension_0` at
+    `build/extraction/Extraction/Buses.lean` (gsum debug #1220). -/
+@[simp]
+def opBus_row_BinaryExtension {C : Type → Type → Type} {F ExtF : Type}
+    [Field F] [Field ExtF] [Circuit F ExtF C]
+    (e : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C F ExtF)
+    (row : ℕ) : OperationBusEntry F :=
+  let a0 := e.free_in_a_0 row + 256 * e.free_in_a_1 row
+            + 65536 * e.free_in_a_2 row + 16777216 * e.free_in_a_3 row
+  let a1 := e.free_in_a_4 row + 256 * e.free_in_a_5 row
+            + 65536 * e.free_in_a_6 row + 16777216 * e.free_in_a_7 row
+  { multiplicity := 1
+    op := e.op row
+    a_lo := e.op_is_shift row * (a0 - e.b_0 row) + e.b_0 row
+    a_hi := e.op_is_shift row * (a1 - e.b_1 row) + e.b_1 row
+    b_lo := e.op_is_shift row * (e.free_in_b row + 256 * e.b_0 row - a0) + a0
+    b_hi := e.op_is_shift row * (e.b_1 row - a1) + a1
+    c_lo := e.free_in_c_0 row + e.free_in_c_2 row + e.free_in_c_4 row
+            + e.free_in_c_6 row + e.free_in_c_8 row + e.free_in_c_10 row
+            + e.free_in_c_12 row + e.free_in_c_14 row
+    c_hi := e.free_in_c_1 row + e.free_in_c_3 row + e.free_in_c_5 row
+            + e.free_in_c_7 row + e.free_in_c_9 row + e.free_in_c_11 row
+            + e.free_in_c_13 row + e.free_in_c_15 row
     flag := 0
     main_step := 0
     extended_arg := 0

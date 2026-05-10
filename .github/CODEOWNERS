@@ -26,6 +26,7 @@
 /ZiskFv/ZiskFv/Fundamentals/Transpiler.lean             @codygunton
 /ZiskFv/ZiskFv/Airs/MemoryBus/LaneMatch.lean            @codygunton
 /ZiskFv/ZiskFv/Airs/MemoryBus/MemBridge.lean            @codygunton
+/ZiskFv/ZiskFv/Airs/OperationBus/Bridge.lean            @codygunton
 /ZiskFv/ZiskFv/Airs/BinaryTable.lean                    @codygunton
 /ZiskFv/ZiskFv/Airs/BinaryExtensionTable.lean           @codygunton
 /ZiskFv/ZiskFv/Spec/MemModel.lean                       @codygunton
