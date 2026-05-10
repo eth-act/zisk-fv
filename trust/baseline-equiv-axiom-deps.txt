@@ -1,4 +1,4 @@
-ZiskFv.Equivalence.Add.equiv_ADD: 
+ZiskFv.Equivalence.Add.equiv_ADD: ZiskFv.Airs.OperationBus.op_bus_perm_sound_BinaryAdd
 ZiskFv.Equivalence.Addi.equiv_ADDI: 
 ZiskFv.Equivalence.Addiw.equiv_ADDIW: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
 ZiskFv.Equivalence.Addw.equiv_ADDW: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf

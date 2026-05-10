@@ -8,6 +8,7 @@ import ZiskFv.Circuit.Add
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.BusEmission
 import ZiskFv.Sail.add
 import ZiskFv.Sail.BusEffect
@@ -79,17 +80,27 @@ theorem equiv_ADD_sail
     ADD equals the state computed by applying `bus_effect` to the
     circuit's execution and memory bus rows.
 
+    The cross-AIR consistency conjunct `matches_entry` is no longer a
+    user-supplied hypothesis — it is delivered by the trusted
+    `op_bus_perm_sound_BinaryAdd` axiom in
+    `Airs/OperationBus/Bridge.lean`, which packages PLONK / logUp
+    permutation-argument soundness on `OPERATION_BUS_ID = 5000`. The
+    BinaryAdd row index `r_binary` becomes the existential witness of
+    that axiom, so all `b`-indexed hypotheses are taken either
+    universally over rows (range / `core_every_row`) or in
+    `Main`-indexed form (the input-value transpile bridges, which we
+    propagate to the `b`-side using the matching tuple's lane
+    equalities).
+
     Every parameter classifies as one of {CIRCUIT-CONSTRAINT,
-    LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
-    asserts the spec output (`r1_val + r2_val`) directly; that
-    equation is derived internally from circuit witnesses via the
-    `RdValDerivation.Arith.h_rd_val_arith_add` discharge lemma. -/
+    LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN}; no parameter
+    asserts the spec output (`r1_val + r2_val`) directly. -/
 theorem equiv_ADD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
-    (r_main r_binary : ℕ)
+    (r_main : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     -- Sail-state Sail-input bridges (TRANSPILE-BRIDGE class)
@@ -110,28 +121,72 @@ theorem equiv_ADD
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : add_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Discharge parameters
-    (h_circuit : add_circuit_holds m b r_main r_binary)
+    -- Discharge parameters — Main side
+    (h_main_subset : add_subset_holds m r_main)
+    (h_main_mode : main_row_in_add_mode m r_main)
+    -- Discharge parameters — BinaryAdd side, taken universally over rows
+    -- so they apply to the `r_binary` witness produced by the OpBus axiom.
+    (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
+    (h_a_range : ∀ r, a_chunks_in_range b r)
+    (h_b_range : ∀ r, b_chunks_in_range b r)
+    (h_c_range : ∀ r, c_chunks_in_range b r)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
     (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
     (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
     (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    (h_a_range : a_chunks_in_range b r_binary)
-    (h_b_range : b_chunks_in_range b r_binary)
-    (h_c_range : c_chunks_in_range b r_binary)
-    (h_input_r1_circuit : add_input.r1_val
-      = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296))
-    (h_input_r2_circuit : add_input.r2_val
-      = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)) :
+    -- Input-value transpile bridges, expressed in Main-row terms
+    -- (the BinaryAdd-row form is derived from these via the OpBus
+    -- matching tuple's a_lo/a_hi/b_lo/b_hi conjuncts).
+    (h_input_r1_main : add_input.r1_val
+      = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296))
+    (h_input_r2_main : add_input.r2_val
+      = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296)) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- Step 1: derive r_binary + the matching tuple from the OpBus axiom.
+  -- (Project the components of `h_main_mode` non-destructively so the
+  -- bundled hypothesis can still be passed to `add_circuit_holds` below.)
+  have h_active : m.is_external_op r_main = 1 := h_main_mode.1
+  have h_op    : m.op r_main = 10            := h_main_mode.2.1
+  have h_m32   : m.m32 r_main = 0            := h_main_mode.2.2.1
+  obtain ⟨r_binary, h_match⟩ :=
+    op_bus_perm_sound_BinaryAdd m b r_main h_active h_op
+  -- Step 2: reconstruct add_circuit_holds at the existential row.
+  have h_circuit : add_circuit_holds m b r_main r_binary :=
+    ⟨h_main_subset, h_b_core r_binary, h_match, h_main_mode⟩
+  -- Step 3: derive the BinaryAdd-row input-value bridges from the
+  -- Main-row ones via the matching tuple's lane equalities. With
+  -- m32 = 0 (pinned by `main_row_in_add_mode`), the `(1 - m32) *`
+  -- factor on `a_hi`/`b_hi` collapses (`one_sub_zero_mul`).
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryAdd] at h_lane_eqs
+  obtain ⟨_, _, h_a_lo, h_a_hi, h_b_lo, h_b_hi, _, _, _, _, _, _⟩ := h_lane_eqs
+  rw [h_m32] at h_a_hi h_b_hi
+  simp only [one_sub_zero_mul] at h_a_hi h_b_hi
+  have h_a0_val : (m.a_0 r_main).val = (b.a_0 r_binary).val :=
+    congrArg Fin.val h_a_lo
+  have h_a1_val : (m.a_1 r_main).val = (b.a_1 r_binary).val :=
+    congrArg Fin.val h_a_hi
+  have h_b0_val : (m.b_0 r_main).val = (b.b_0 r_binary).val :=
+    congrArg Fin.val h_b_lo
+  have h_b1_val : (m.b_1 r_main).val = (b.b_1 r_binary).val :=
+    congrArg Fin.val h_b_hi
+  have h_input_r1_circuit : add_input.r1_val
+      = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296) := by
+    rw [h_input_r1_main, h_a0_val, h_a1_val]
+  have h_input_r2_circuit : add_input.r2_val
+      = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296) := by
+    rw [h_input_r2_main, h_b0_val, h_b1_val]
+  -- Step 4: discharge the rd-write byte-sum equation as before, now
+  -- with the existential `r_binary` and the derived BinaryAdd-row
+  -- bridges.
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_add
       m b r_main r_binary e2 add_input
       h_circuit h_lane_rd
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
-      h_a_range h_b_range h_c_range
+      (h_a_range r_binary) (h_b_range r_binary) (h_c_range r_binary)
       h_input_r1_circuit h_input_r2_circuit
   rw [equiv_ADD_sail state add_input r1 r2 rd
         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc]
