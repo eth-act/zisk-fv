@@ -131,19 +131,19 @@ theorem equiv_ADD
     (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
     (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    (h_input_r1_main : add_input.r1_val
-      = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296))
-    (h_input_r2_main : add_input.r2_val
-      = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296)) :
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  -- *Promise discharge* via the BinaryAdd bridge.
+  -- *Promise discharge* via the BinaryAdd bridge (with Step 1.7b's
+  -- SailStateBridge deriving the input bridges from the Sail-form
+  -- `read_xreg` facts that `equiv_ADD_sail` consumes).
   obtain ⟨r_binary, h_circuit, h_a_range, h_b_range, h_c_range,
           h_input_r1_circuit, h_input_r2_circuit⟩ :=
     ZiskFv.Equivalence.Bridge.BinaryAdd.add_discharge
-      m b r_main h_main_subset h_main_mode h_b_core add_input
-      h_input_r1_main h_input_r2_main
+      m b r_main h_main_subset h_main_mode h_b_core
+      state (regidx_to_fin r1) (regidx_to_fin r2)
+      add_input.r1_val add_input.r2_val
+      h_input_r1_sail h_input_r2_sail
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_add
       m b r_main r_binary e2 add_input

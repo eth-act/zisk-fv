@@ -10,6 +10,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Circuit.Add
 import ZiskFv.Sail.add
+import ZiskFv.Equivalence.Bridge.SailStateBridge
 
 /-!
 # BinaryAdd discharge bridge
@@ -18,30 +19,33 @@ Implements *promise discharge* for the BinaryAdd-using opcode shape.
 
 This bridge consumes pieces of the *trust ledger* — Phase A's
 `op_bus_perm_sound_BinaryAdd` (PLONK soundness on
-`OPERATION_BUS_ID = 5000`) and Step 1.5's `binary_add_columns_in_range`
-(range-check bus soundness on BinaryAdd's `bits(N)` columns) — to
+`OPERATION_BUS_ID = 5000`), Step 1.5's `binary_add_columns_in_range`
+(range-check bus soundness on BinaryAdd's `bits(N)` columns), and
+the `transpile_ADD` row contract (via Step 1.7b's
+`Bridge.SailStateBridge.add_input_bridges_of_read_xreg`) — to
 derive the `add_circuit_holds` + range facts + per-byte input
 bridges that pre-pilot `equiv_ADD` accepted as **promise
 hypotheses**. The result is a single existential delivering exactly
 what the downstream `RdValDerivation.Arith.h_rd_val_arith_add`
 discharge lemma needs.
 
-Per-opcode net effect (caller-burden ledger):
+Per-opcode net effect (caller-burden ledger), measured against the
+origin/main pre-pilot:
 
 * drops `r_binary` (1)
 * drops `h_circuit` (1) — split into 3 simpler pieces inside the
   bridge
 * drops `h_a_range`, `h_b_range`, `h_c_range` (3) — derived from
   `binary_add_columns_in_range`
-* swaps `h_input_r{1,2}_circuit` (per-`r_binary` form) → `h_input_r{1,2}_main`
-  (per-`r_main` form), 0 net
+* drops `h_input_r{1,2}_main` (2) — derived inside the bridge from
+  the caller's Sail-form `h_read_r{1,2}` facts via
+  `transpile_ADD` (`SailStateBridge.add_input_bridges_of_read_xreg`).
+  The Sail facts are already present at the canonical-theorem
+  level for the `equiv_<OP>_sail` companion, so no new caller
+  burden is introduced.
 * adds `h_main_subset`, `h_main_mode`, `h_b_core` (3)
 
-Net: −2 binders per BinaryAdd-shape opcode (this *promise discharge*
-is conservative; deriving `h_input_r{1,2}_main` from `transpile_ADD`
-+ a state-bridge would save 2 more, and universalizing
-`add_subset_holds`/`main_row_in_add_mode` would save more — staged
-for follow-up PRs).
+Net: −4 binders per BinaryAdd-shape opcode (post Step 1.7b).
 
 Per `docs/fv/known-gaps.md`'s Glossary and `CLAUDE.md`'s
 *anti-laundering principle*: this bridge produces actual reduction
@@ -87,19 +91,18 @@ theorem add_discharge
     (h_main_subset : add_subset_holds m r_main)
     (h_main_mode : main_row_in_add_mode m r_main)
     (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
-    (add_input : PureSpec.AddInput)
-    (h_input_r1_main : add_input.r1_val
-      = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296))
-    (h_input_r2_main : add_input.r2_val
-      = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296)) :
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (rs1 rs2 : Fin 32) (r1_val r2_val : BitVec 64)
+    (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
+    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state) :
     ∃ r_binary,
       add_circuit_holds m b r_main r_binary
       ∧ a_chunks_in_range b r_binary
       ∧ b_chunks_in_range b r_binary
       ∧ c_chunks_in_range b r_binary
-      ∧ add_input.r1_val
+      ∧ r1_val
         = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296)
-      ∧ add_input.r2_val
+      ∧ r2_val
         = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296) := by
   -- Project main_row_in_add_mode for the OpBus axiom call.
   have h_active : m.is_external_op r_main = 1 := h_main_mode.1
@@ -140,11 +143,18 @@ theorem add_discharge
     congrArg Fin.val h_b_lo
   have h_b1_val : (m.b_1 r_main).val = (b.b_1 r_binary).val :=
     congrArg Fin.val h_b_hi
+  -- Derive Main-form input bridges from transpile_ADD via Step 1.7b's
+  -- SailStateBridge. The Sail-form `read_xreg` facts the caller
+  -- supplies (already present in every `equiv_<OP>` for the
+  -- `equiv_<OP>_sail` companion) are sufficient.
+  obtain ⟨h_input_r1_main, h_input_r2_main⟩ :=
+    ZiskFv.Equivalence.Bridge.SailStateBridge.add_input_bridges_of_read_xreg
+      m r_main state rs1 rs2 r1_val r2_val h_active h_op h_read_r1 h_read_r2
   -- Translate the Main-form input bridges to BinaryAdd-row form.
-  have h_input_r1_circuit : add_input.r1_val
+  have h_input_r1_circuit : r1_val
       = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296) := by
     rw [h_input_r1_main, h_a0_val, h_a1_val]
-  have h_input_r2_circuit : add_input.r2_val
+  have h_input_r2_circuit : r2_val
       = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296) := by
     rw [h_input_r2_main, h_b0_val, h_b1_val]
   exact ⟨r_binary, h_circuit, h_a_range, h_b_range, h_c_range,

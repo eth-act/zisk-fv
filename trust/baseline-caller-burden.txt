@@ -12,8 +12,8 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 3325
-# Category bridge: 75
+# Total rows: 3323
+# Category bridge: 73
 # Category bus_shape: 516
 # Category byte_chain: 115
 # Category entry: 67
@@ -67,8 +67,6 @@ ZiskFv.Equivalence.Add.equiv_ADD 037 h_e2_4 [range] e2.x4.val < 256
 ZiskFv.Equivalence.Add.equiv_ADD 038 h_e2_5 [range] e2.x5.val < 256
 ZiskFv.Equivalence.Add.equiv_ADD 039 h_e2_6 [range] e2.x6.val < 256
 ZiskFv.Equivalence.Add.equiv_ADD 040 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 041 h_input_r1_main [bridge] add_input.r1_val = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 42
-ZiskFv.Equivalence.Add.equiv_ADD 042 h_input_r2_main [bridge] add_input.r2_val = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 42
 ZiskFv.Equivalence.Addi.equiv_ADDI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Addi.equiv_ADDI 001 addi_input [other] PureSpec.AddiInput
 ZiskFv.Equivalence.Addi.equiv_ADDI 002 r1 [other] regidx
