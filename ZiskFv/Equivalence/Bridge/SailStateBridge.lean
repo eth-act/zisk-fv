@@ -103,7 +103,7 @@ theorem packed_lane_eq_of_read_xreg
     application — consumed by `Bridge.BinaryAdd.add_discharge` to
     replace its two caller-supplied `h_input_r{1,2}_main` *promise
     hypotheses* with the Sail-form `read_xreg` facts that
-    `equiv_ADD` / `equiv_ADDI` already carry. -/
+    `equiv_ADD` already carries. -/
 theorem add_input_bridges_of_read_xreg
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (r_main : ℕ)
@@ -124,5 +124,31 @@ theorem add_input_bridges_of_read_xreg
       (m.a_0 r_main) (m.a_1 r_main) h_a_lo h_a_hi h_read_r1
   · exact packed_lane_eq_of_read_xreg state rs2 r2_val
       (m.b_0 r_main) (m.b_1 r_main) h_b_lo h_b_hi h_read_r2
+
+/-- **ADDI-shape r1 input bridge.** Specializes
+    `packed_lane_eq_of_read_xreg` to the `transpile_ADDI` row contract
+    — single register read (`rs1`), with the b-lanes carrying an
+    immediate the axiom leaves caller-routed. Consumed by
+    `equiv_ADDI` to discharge `h_input_r1_circuit` after translating
+    Main lanes to BinaryAdd-row lanes via the existing
+    `matches_entry` projection inside `addi_circuit_holds_with_binaryadd`. -/
+theorem addi_input_r1_main_eq_of_read_xreg
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (r_main : ℕ)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (rs1 rd_dummy : Fin 32) (r1_val : BitVec 64)
+    (h_active : m.is_external_op r_main = 1)
+    (h_op : m.op r_main = OP_ADD)
+    (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state) :
+    r1_val
+      = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296) := by
+  -- `transpile_ADDI`'s `imm_b_lo`/`imm_b_hi` are caller-routed; we
+  -- instantiate them to `m.b_0`/`m.b_1` so the unused b-conjuncts
+  -- become reflexive and we extract only the a-lane facts.
+  obtain ⟨_, _, _, _, _, _, h_a_lo, h_a_hi, _, _⟩ :=
+    transpile_ADDI m r_main rs1 rd_dummy
+      (m.b_0 r_main) (m.b_1 r_main) (sail_to_rv64 state) h_active h_op
+  exact packed_lane_eq_of_read_xreg state rs1 r1_val
+    (m.a_0 r_main) (m.a_1 r_main) h_a_lo h_a_hi h_read_r1
 
 end ZiskFv.Equivalence.Bridge.SailStateBridge

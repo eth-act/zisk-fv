@@ -7,6 +7,7 @@ import ZiskFv.Circuit.Addi
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Equivalence.Bridge.BinaryAdd
+import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.BusEmission
 import ZiskFv.Sail.addi
 import ZiskFv.Sail.BusEffect
@@ -113,8 +114,6 @@ theorem equiv_ADDI
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
     (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
     (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    (h_input_r1_circuit : addi_input.r1_val
-      = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296))
     (h_input_imm_circuit : BitVec.signExtend 64 addi_input.imm
       = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)) :
     (do
@@ -125,6 +124,37 @@ theorem equiv_ADDI
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
   obtain ⟨h_a_range, h_b_range, h_c_range⟩ :=
     ZiskFv.Equivalence.Bridge.BinaryAdd.chunk_ranges_at_holds b r_binary
+  -- *Promise discharge* of `h_input_r1_circuit` via Step 1.7b's
+  -- SailStateBridge: derive the Main-form input bridge from
+  -- `transpile_ADDI` + the Sail-state `read_xreg` fact, then
+  -- translate Main→BinaryAdd-row via `matches_entry`'s a-lane
+  -- conjuncts (projected from `h_circuit` without destructuring it).
+  have h_match : matches_entry (opBus_row_Main m r_main)
+                                (opBus_row_BinaryAdd b r_binary) := h_circuit.2.2.1
+  have h_mode : main_row_in_addi_mode m r_main := h_circuit.2.2.2
+  have h_active : m.is_external_op r_main = 1 := h_mode.1
+  have h_op : m.op r_main = (10 : FGL) := h_mode.2.1
+  have h_m32 : m.m32 r_main = 0 := h_mode.2.2.1
+  have h_input_r1_main :=
+    ZiskFv.Equivalence.Bridge.SailStateBridge.addi_input_r1_main_eq_of_read_xreg
+      m r_main state (regidx_to_fin r1) (regidx_to_fin rd)
+      addi_input.r1_val h_active h_op h_input_r1
+  -- Translate the Main-form input bridge to BinaryAdd-row form via
+  -- the a-lane conjuncts of `matches_entry` (the (1 - m32) factor on
+  -- the high lane collapses once `h_m32 : m32 = 0` is rewritten in).
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryAdd]
+    at h_lane_eqs
+  obtain ⟨_, _, h_a_lo, h_a_hi, _, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  rw [h_m32] at h_a_hi
+  simp only [one_sub_zero_mul] at h_a_hi
+  have h_a0_val : (m.a_0 r_main).val = (b.a_0 r_binary).val :=
+    congrArg Fin.val h_a_lo
+  have h_a1_val : (m.a_1 r_main).val = (b.a_1 r_binary).val :=
+    congrArg Fin.val h_a_hi
+  have h_input_r1_circuit : addi_input.r1_val
+      = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296) := by
+    rw [h_input_r1_main, h_a0_val, h_a1_val]
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_addi
       m b r_main r_binary e2 addi_input.r1_val addi_input.imm

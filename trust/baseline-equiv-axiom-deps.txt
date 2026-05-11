@@ -1,5 +1,5 @@
 ZiskFv.Equivalence.Add.equiv_ADD: ZiskFv.Airs.BinaryAdd.binary_add_columns_in_range, ZiskFv.Airs.OperationBus.op_bus_perm_sound_BinaryAdd, ZiskFv.Trusted.transpile_ADD
-ZiskFv.Equivalence.Addi.equiv_ADDI: ZiskFv.Airs.BinaryAdd.binary_add_columns_in_range
+ZiskFv.Equivalence.Addi.equiv_ADDI: ZiskFv.Airs.BinaryAdd.binary_add_columns_in_range, ZiskFv.Trusted.transpile_ADDI
 ZiskFv.Equivalence.Addiw.equiv_ADDIW: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
 ZiskFv.Equivalence.Addw.equiv_ADDW: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
 ZiskFv.Equivalence.And.equiv_AND: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
