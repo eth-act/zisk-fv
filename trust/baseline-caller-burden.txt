@@ -12,19 +12,19 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 3322
-# Category bridge: 72
+# Total rows: 3256
+# Category bridge: 65
 # Category bus_shape: 516
 # Category byte_chain: 115
 # Category entry: 67
-# Category loose: 544
-# Category match: 82
-# Category other: 600
-# Category range: 799
-# Category row: 61
+# Category loose: 504
+# Category match: 90
+# Category other: 605
+# Category range: 759
+# Category row: 65
 # Category state: 217
 # Category transpile: 171
-# Category validator: 78
+# Category validator: 82
 #
 ZiskFv.Equivalence.Add.equiv_ADD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Add.equiv_ADD 001 add_input [other] PureSpec.AddInput
@@ -132,77 +132,64 @@ ZiskFv.Equivalence.Addiw.equiv_ADDIW 022 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 023 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 024 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 025 h_rd_idx [transpile] addiw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 026 a0 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 027 a1 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 028 a2 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 029 a3 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 030 b0 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 031 b1 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 032 b2 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 033 b3 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 034 c0 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 035 c1 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 036 c2 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 037 c3 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 038 c4 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 039 c5 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 040 c6 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 041 c7 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 042 cin0 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 043 cin1 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 044 cin2 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 045 cin3 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 046 fl0 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 047 fl1 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 048 fl2 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 049 fl3 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 050 pi0 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 051 pi1 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 052 pi2 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 053 pi3 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 054 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD a0 b
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 055 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD a1 b
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 056 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD a2 b
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 057 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD a3 b
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 058 ha0 [range] a0.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 059 ha1 [range] a1.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 060 ha2 [range] a2.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 061 ha3 [range] a3.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 062 hb0 [range] b0.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 063 hb1 [range] b1.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 064 hb2 [range] b2.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 065 hb3 [range] b3.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 066 hc0 [range] c0.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 067 hc1 [range] c1.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 068 hc2 [range] c2.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 069 hc3 [range] c3.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 070 hc4 [range] c4.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 071 hc5 [range] c5.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 072 hc6 [range] c6.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 073 hc7 [range] c7.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 074 h_cin0 [other] cin0.val = 0
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 075 h_cin1 [other] cin1.val = fl0.val % 2
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 076 h_cin2 [other] cin2.val = fl1.val % 2
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 077 h_cin3 [other] cin3.val = fl2.val % 2
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 078 h_pi0 [other] pi0.val ≠ 1
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 079 h_pi1 [other] pi1.val ≠ 1
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 080 h_pi2 [other] pi2.val ≠ 1
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 081 h_pi3 [other] pi3.val = 1
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 082 h_sext_choice [other] ((c4.val = 0 ∧ c5.val = 0 ∧ c6.val = 0 ∧ c7.val = 0) ∧ c0.val + c1.val * 256 + c
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 083 h_match_clo [match] m.c_0 r_main = c0 + c1 * 256 + c2 * 65536 + c3 * 16777216
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 084 h_match_chi [match] m.c_1 r_main = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 085 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 086 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 087 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 088 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 089 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 090 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 091 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 092 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 093 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 094 _ [other] CIRCUIT-CONSTRAINT class
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 095 h_input_r1_extract [bridge] (Sail.BitVec.extractLsb addiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat = (
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 096 h_input_imm_extract [other] (Sail.BitVec.extractLsb (BitVec.signExtend 64 imm : BitVec 64) 31 0 : BitVec (31
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 026 v [validator] ZiskFv.Airs.Binary.Valid_Binary C FGL FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 027 r_binary [row] ℕ
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 028 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 029 h_main_op_addiw [match] m.op r_main = OP_ADD_W
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 030 h_match [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 031 c0 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 032 c1 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 033 c2 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 034 c3 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 035 c4 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 036 c5 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 037 c6 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 038 c7 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 039 cin0 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 040 cin1 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 041 cin2 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 042 cin3 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 043 fl0 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 044 fl1 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 045 fl2 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 046 fl3 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 047 pi0 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 048 pi1 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 049 pi2 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 050 pi3 [loose] FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 051 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 052 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 053 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 054 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 055 hc0 [range] c0.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 056 hc1 [range] c1.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 057 hc2 [range] c2.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 058 hc3 [range] c3.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 059 hc4 [range] c4.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 060 hc5 [range] c5.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 061 hc6 [range] c6.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 062 hc7 [range] c7.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 063 h_cin0 [other] cin0.val = 0
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 064 h_cin1 [other] cin1.val = fl0.val % 2
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 065 h_cin2 [other] cin2.val = fl1.val % 2
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 066 h_cin3 [other] cin3.val = fl2.val % 2
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 067 h_pi0 [other] pi0.val ≠ 1
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 068 h_pi1 [other] pi1.val ≠ 1
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 069 h_pi2 [other] pi2.val ≠ 1
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 070 h_pi3 [other] pi3.val = 1
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 071 h_sext_choice [other] ((c4.val = 0 ∧ c5.val = 0 ∧ c6.val = 0 ∧ c7.val = 0) ∧ c0.val + c1.val * 256 + c
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 072 h_match_clo [match] m.c_0 r_main = c0 + c1 * 256 + c2 * 65536 + c3 * 16777216
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 073 h_match_chi [match] m.c_1 r_main = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 074 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 075 h_e2_0 [range] e2.x0.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 076 h_e2_1 [range] e2.x1.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 077 h_e2_2 [range] e2.x2.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 078 h_e2_3 [range] e2.x3.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 079 h_e2_4 [range] e2.x4.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 080 h_e2_5 [range] e2.x5.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 081 h_e2_6 [range] e2.x6.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 082 h_e2_7 [range] e2.x7.val < 256
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 083 h_input_imm_extract [other] (Sail.BitVec.extractLsb (BitVec.signExtend 64 imm : BitVec 64) 31 0 : BitVec (31
 ZiskFv.Equivalence.Addw.equiv_ADDW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Addw.equiv_ADDW 001 addw_input [other] PureSpec.AddwInput
 ZiskFv.Equivalence.Addw.equiv_ADDW 002 r1 [other] regidx
@@ -229,76 +216,64 @@ ZiskFv.Equivalence.Addw.equiv_ADDW 022 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Addw.equiv_ADDW 023 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Addw.equiv_ADDW 024 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Addw.equiv_ADDW 025 h_rd_idx [transpile] addw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Addw.equiv_ADDW 026 a0 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 027 a1 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 028 a2 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 029 a3 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 030 b0 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 031 b1 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 032 b2 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 033 b3 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 034 c0 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 035 c1 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 036 c2 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 037 c3 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 038 c4 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 039 c5 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 040 c6 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 041 c7 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 042 cin0 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 043 cin1 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 044 cin2 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 045 cin3 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 046 fl0 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 047 fl1 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 048 fl2 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 049 fl3 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 050 pi0 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 051 pi1 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 052 pi2 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 053 pi3 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 054 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD a0 b
-ZiskFv.Equivalence.Addw.equiv_ADDW 055 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD a1 b
-ZiskFv.Equivalence.Addw.equiv_ADDW 056 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD a2 b
-ZiskFv.Equivalence.Addw.equiv_ADDW 057 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD a3 b
-ZiskFv.Equivalence.Addw.equiv_ADDW 058 ha0 [range] a0.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 059 ha1 [range] a1.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 060 ha2 [range] a2.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 061 ha3 [range] a3.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 062 hb0 [range] b0.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 063 hb1 [range] b1.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 064 hb2 [range] b2.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 065 hb3 [range] b3.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 066 hc0 [range] c0.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 067 hc1 [range] c1.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 068 hc2 [range] c2.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 069 hc3 [range] c3.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 070 hc4 [range] c4.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 071 hc5 [range] c5.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 072 hc6 [range] c6.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 073 hc7 [range] c7.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 074 h_cin0 [other] cin0.val = 0
-ZiskFv.Equivalence.Addw.equiv_ADDW 075 h_cin1 [other] cin1.val = fl0.val % 2
-ZiskFv.Equivalence.Addw.equiv_ADDW 076 h_cin2 [other] cin2.val = fl1.val % 2
-ZiskFv.Equivalence.Addw.equiv_ADDW 077 h_cin3 [other] cin3.val = fl2.val % 2
-ZiskFv.Equivalence.Addw.equiv_ADDW 078 h_pi0 [other] pi0.val ≠ 1
-ZiskFv.Equivalence.Addw.equiv_ADDW 079 h_pi1 [other] pi1.val ≠ 1
-ZiskFv.Equivalence.Addw.equiv_ADDW 080 h_pi2 [other] pi2.val ≠ 1
-ZiskFv.Equivalence.Addw.equiv_ADDW 081 h_pi3 [other] pi3.val = 1
-ZiskFv.Equivalence.Addw.equiv_ADDW 082 h_sext_choice [other] ((c4.val = 0 ∧ c5.val = 0 ∧ c6.val = 0 ∧ c7.val = 0) ∧ c0.val + c1.val * 256 + c
-ZiskFv.Equivalence.Addw.equiv_ADDW 083 h_match_clo [match] m.c_0 r_main = c0 + c1 * 256 + c2 * 65536 + c3 * 16777216
-ZiskFv.Equivalence.Addw.equiv_ADDW 084 h_match_chi [match] m.c_1 r_main = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216
-ZiskFv.Equivalence.Addw.equiv_ADDW 085 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Addw.equiv_ADDW 086 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 087 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 088 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 089 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 090 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 091 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 092 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 093 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Addw.equiv_ADDW 094 h_input_r1_extract [bridge] (Sail.BitVec.extractLsb addw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat = (a
-ZiskFv.Equivalence.Addw.equiv_ADDW 095 h_input_r2_extract [bridge] (Sail.BitVec.extractLsb addw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat = (b
+ZiskFv.Equivalence.Addw.equiv_ADDW 026 _ [other] ha0..ha3, hb0..hb3
+ZiskFv.Equivalence.Addw.equiv_ADDW 027 v [validator] ZiskFv.Airs.Binary.Valid_Binary C FGL FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 028 r_binary [row] ℕ
+ZiskFv.Equivalence.Addw.equiv_ADDW 029 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Addw.equiv_ADDW 030 h_main_op_addw [match] m.op r_main = OP_ADD_W
+ZiskFv.Equivalence.Addw.equiv_ADDW 031 h_match [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)
+ZiskFv.Equivalence.Addw.equiv_ADDW 032 c0 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 033 c1 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 034 c2 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 035 c3 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 036 c4 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 037 c5 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 038 c6 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 039 c7 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 040 cin0 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 041 cin1 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 042 cin2 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 043 cin3 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 044 fl0 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 045 fl1 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 046 fl2 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 047 fl3 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 048 pi0 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 049 pi1 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 050 pi2 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 051 pi3 [loose] FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 052 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
+ZiskFv.Equivalence.Addw.equiv_ADDW 053 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
+ZiskFv.Equivalence.Addw.equiv_ADDW 054 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
+ZiskFv.Equivalence.Addw.equiv_ADDW 055 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
+ZiskFv.Equivalence.Addw.equiv_ADDW 056 hc0 [range] c0.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 057 hc1 [range] c1.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 058 hc2 [range] c2.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 059 hc3 [range] c3.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 060 hc4 [range] c4.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 061 hc5 [range] c5.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 062 hc6 [range] c6.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 063 hc7 [range] c7.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 064 h_cin0 [other] cin0.val = 0
+ZiskFv.Equivalence.Addw.equiv_ADDW 065 h_cin1 [other] cin1.val = fl0.val % 2
+ZiskFv.Equivalence.Addw.equiv_ADDW 066 h_cin2 [other] cin2.val = fl1.val % 2
+ZiskFv.Equivalence.Addw.equiv_ADDW 067 h_cin3 [other] cin3.val = fl2.val % 2
+ZiskFv.Equivalence.Addw.equiv_ADDW 068 h_pi0 [other] pi0.val ≠ 1
+ZiskFv.Equivalence.Addw.equiv_ADDW 069 h_pi1 [other] pi1.val ≠ 1
+ZiskFv.Equivalence.Addw.equiv_ADDW 070 h_pi2 [other] pi2.val ≠ 1
+ZiskFv.Equivalence.Addw.equiv_ADDW 071 h_pi3 [other] pi3.val = 1
+ZiskFv.Equivalence.Addw.equiv_ADDW 072 h_sext_choice [other] ((c4.val = 0 ∧ c5.val = 0 ∧ c6.val = 0 ∧ c7.val = 0) ∧ c0.val + c1.val * 256 + c
+ZiskFv.Equivalence.Addw.equiv_ADDW 073 h_match_clo [match] m.c_0 r_main = c0 + c1 * 256 + c2 * 65536 + c3 * 16777216
+ZiskFv.Equivalence.Addw.equiv_ADDW 074 h_match_chi [match] m.c_1 r_main = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216
+ZiskFv.Equivalence.Addw.equiv_ADDW 075 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Addw.equiv_ADDW 076 h_e2_0 [range] e2.x0.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 077 h_e2_1 [range] e2.x1.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 078 h_e2_2 [range] e2.x2.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 079 h_e2_3 [range] e2.x3.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 080 h_e2_4 [range] e2.x4.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 081 h_e2_5 [range] e2.x5.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 082 h_e2_6 [range] e2.x6.val < 256
+ZiskFv.Equivalence.Addw.equiv_ADDW 083 h_e2_7 [range] e2.x7.val < 256
 ZiskFv.Equivalence.And.equiv_AND 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.And.equiv_AND 001 and_input [other] PureSpec.AndInput
 ZiskFv.Equivalence.And.equiv_AND 002 r1 [other] regidx
@@ -3045,115 +3020,86 @@ ZiskFv.Equivalence.Sub.equiv_SUB 022 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Sub.equiv_SUB 023 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Sub.equiv_SUB 024 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Sub.equiv_SUB 025 h_rd_idx [transpile] sub_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Sub.equiv_SUB 026 a0 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 027 a1 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 028 a2 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 029 a3 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 030 a4 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 031 a5 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 032 a6 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 033 a7 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 034 b0 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 035 b1 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 036 b2 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 037 b3 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 038 b4 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 039 b5 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 040 b6 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 041 b7 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 042 c0 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 043 c1 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 044 c2 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 045 c3 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 046 c4 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 047 c5 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 048 c6 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 049 c7 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 050 cin0 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 051 cin1 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 052 cin2 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 053 cin3 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 054 cin4 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 055 cin5 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 056 cin6 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 057 cin7 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 058 fl0 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 059 fl1 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 060 fl2 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 061 fl3 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 062 fl4 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 063 fl5 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 064 fl6 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 065 fl7 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 066 pi0 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 067 pi1 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 068 pi2 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 069 pi3 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 070 pi4 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 071 pi5 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 072 pi6 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 073 pi7 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 074 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB a0 b
-ZiskFv.Equivalence.Sub.equiv_SUB 075 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB a1 b
-ZiskFv.Equivalence.Sub.equiv_SUB 076 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB a2 b
-ZiskFv.Equivalence.Sub.equiv_SUB 077 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB a3 b
-ZiskFv.Equivalence.Sub.equiv_SUB 078 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB a4 b
-ZiskFv.Equivalence.Sub.equiv_SUB 079 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB a5 b
-ZiskFv.Equivalence.Sub.equiv_SUB 080 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB a6 b
-ZiskFv.Equivalence.Sub.equiv_SUB 081 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB a7 b
-ZiskFv.Equivalence.Sub.equiv_SUB 082 ha0 [range] a0.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 083 ha1 [range] a1.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 084 ha2 [range] a2.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 085 ha3 [range] a3.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 086 ha4 [range] a4.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 087 ha5 [range] a5.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 088 ha6 [range] a6.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 089 ha7 [range] a7.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 090 hb0 [range] b0.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 091 hb1 [range] b1.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 092 hb2 [range] b2.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 093 hb3 [range] b3.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 094 hb4 [range] b4.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 095 hb5 [range] b5.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 096 hb6 [range] b6.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 097 hb7 [range] b7.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 098 hc0 [range] c0.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 099 hc1 [range] c1.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 100 hc2 [range] c2.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 101 hc3 [range] c3.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 102 hc4 [range] c4.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 103 hc5 [range] c5.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 104 hc6 [range] c6.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 105 hc7 [range] c7.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 106 h_cin0 [other] cin0.val = 0
-ZiskFv.Equivalence.Sub.equiv_SUB 107 h_cin1 [other] cin1.val = fl0.val % 2
-ZiskFv.Equivalence.Sub.equiv_SUB 108 h_cin2 [other] cin2.val = fl1.val % 2
-ZiskFv.Equivalence.Sub.equiv_SUB 109 h_cin3 [other] cin3.val = fl2.val % 2
-ZiskFv.Equivalence.Sub.equiv_SUB 110 h_cin4 [other] cin4.val = fl3.val % 2
-ZiskFv.Equivalence.Sub.equiv_SUB 111 h_cin5 [other] cin5.val = fl4.val % 2
-ZiskFv.Equivalence.Sub.equiv_SUB 112 h_cin6 [other] cin6.val = fl5.val % 2
-ZiskFv.Equivalence.Sub.equiv_SUB 113 h_cin7 [other] cin7.val = fl6.val % 2
-ZiskFv.Equivalence.Sub.equiv_SUB 114 h_pi0 [other] pi0.val ≠ 1
-ZiskFv.Equivalence.Sub.equiv_SUB 115 h_pi1 [other] pi1.val ≠ 1
-ZiskFv.Equivalence.Sub.equiv_SUB 116 h_pi2 [other] pi2.val ≠ 1
-ZiskFv.Equivalence.Sub.equiv_SUB 117 h_pi3 [other] pi3.val ≠ 1
-ZiskFv.Equivalence.Sub.equiv_SUB 118 h_pi4 [other] pi4.val ≠ 1
-ZiskFv.Equivalence.Sub.equiv_SUB 119 h_pi5 [other] pi5.val ≠ 1
-ZiskFv.Equivalence.Sub.equiv_SUB 120 h_pi6 [other] pi6.val ≠ 1
-ZiskFv.Equivalence.Sub.equiv_SUB 121 h_pi7 [other] pi7.val = 1
-ZiskFv.Equivalence.Sub.equiv_SUB 122 h_match_clo [match] m.c_0 r_main = c0 + c1 * 256 + c2 * 65536 + c3 * 16777216
-ZiskFv.Equivalence.Sub.equiv_SUB 123 h_match_chi [match] m.c_1 r_main = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216
-ZiskFv.Equivalence.Sub.equiv_SUB 124 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Sub.equiv_SUB 125 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 126 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 127 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 128 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 129 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 130 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 131 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 132 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Sub.equiv_SUB 133 h_input_r1_circuit [bridge] sub_input.r1_val = BitVec.ofNat 64 (a0.val + a1.val * 256 + a2.val * 65536 + a3.
-ZiskFv.Equivalence.Sub.equiv_SUB 134 h_input_r2_circuit [bridge] sub_input.r2_val = BitVec.ofNat 64 (b0.val + b1.val * 256 + b2.val * 65536 + b3.
+ZiskFv.Equivalence.Sub.equiv_SUB 026 v [validator] ZiskFv.Airs.Binary.Valid_Binary C FGL FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 027 r_binary [row] ℕ
+ZiskFv.Equivalence.Sub.equiv_SUB 028 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Sub.equiv_SUB 029 h_main_op_sub [match] m.op r_main = OP_SUB
+ZiskFv.Equivalence.Sub.equiv_SUB 030 h_match [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)
+ZiskFv.Equivalence.Sub.equiv_SUB 031 c0 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 032 c1 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 033 c2 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 034 c3 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 035 c4 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 036 c5 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 037 c6 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 038 c7 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 039 cin0 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 040 cin1 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 041 cin2 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 042 cin3 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 043 cin4 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 044 cin5 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 045 cin6 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 046 cin7 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 047 fl0 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 048 fl1 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 049 fl2 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 050 fl3 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 051 fl4 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 052 fl5 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 053 fl6 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 054 fl7 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 055 pi0 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 056 pi1 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 057 pi2 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 058 pi3 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 059 pi4 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 060 pi5 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 061 pi6 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 062 pi7 [loose] FGL
+ZiskFv.Equivalence.Sub.equiv_SUB 063 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
+ZiskFv.Equivalence.Sub.equiv_SUB 064 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
+ZiskFv.Equivalence.Sub.equiv_SUB 065 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
+ZiskFv.Equivalence.Sub.equiv_SUB 066 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
+ZiskFv.Equivalence.Sub.equiv_SUB 067 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
+ZiskFv.Equivalence.Sub.equiv_SUB 068 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
+ZiskFv.Equivalence.Sub.equiv_SUB 069 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
+ZiskFv.Equivalence.Sub.equiv_SUB 070 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
+ZiskFv.Equivalence.Sub.equiv_SUB 071 hc0 [range] c0.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 072 hc1 [range] c1.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 073 hc2 [range] c2.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 074 hc3 [range] c3.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 075 hc4 [range] c4.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 076 hc5 [range] c5.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 077 hc6 [range] c6.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 078 hc7 [range] c7.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 079 h_cin0 [other] cin0.val = 0
+ZiskFv.Equivalence.Sub.equiv_SUB 080 h_cin1 [other] cin1.val = fl0.val % 2
+ZiskFv.Equivalence.Sub.equiv_SUB 081 h_cin2 [other] cin2.val = fl1.val % 2
+ZiskFv.Equivalence.Sub.equiv_SUB 082 h_cin3 [other] cin3.val = fl2.val % 2
+ZiskFv.Equivalence.Sub.equiv_SUB 083 h_cin4 [other] cin4.val = fl3.val % 2
+ZiskFv.Equivalence.Sub.equiv_SUB 084 h_cin5 [other] cin5.val = fl4.val % 2
+ZiskFv.Equivalence.Sub.equiv_SUB 085 h_cin6 [other] cin6.val = fl5.val % 2
+ZiskFv.Equivalence.Sub.equiv_SUB 086 h_cin7 [other] cin7.val = fl6.val % 2
+ZiskFv.Equivalence.Sub.equiv_SUB 087 h_pi0 [other] pi0.val ≠ 1
+ZiskFv.Equivalence.Sub.equiv_SUB 088 h_pi1 [other] pi1.val ≠ 1
+ZiskFv.Equivalence.Sub.equiv_SUB 089 h_pi2 [other] pi2.val ≠ 1
+ZiskFv.Equivalence.Sub.equiv_SUB 090 h_pi3 [other] pi3.val ≠ 1
+ZiskFv.Equivalence.Sub.equiv_SUB 091 h_pi4 [other] pi4.val ≠ 1
+ZiskFv.Equivalence.Sub.equiv_SUB 092 h_pi5 [other] pi5.val ≠ 1
+ZiskFv.Equivalence.Sub.equiv_SUB 093 h_pi6 [other] pi6.val ≠ 1
+ZiskFv.Equivalence.Sub.equiv_SUB 094 h_pi7 [other] pi7.val = 1
+ZiskFv.Equivalence.Sub.equiv_SUB 095 h_match_clo [match] m.c_0 r_main = c0 + c1 * 256 + c2 * 65536 + c3 * 16777216
+ZiskFv.Equivalence.Sub.equiv_SUB 096 h_match_chi [match] m.c_1 r_main = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216
+ZiskFv.Equivalence.Sub.equiv_SUB 097 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Sub.equiv_SUB 098 h_e2_0 [range] e2.x0.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 099 h_e2_1 [range] e2.x1.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 100 h_e2_2 [range] e2.x2.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 101 h_e2_3 [range] e2.x3.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 102 h_e2_4 [range] e2.x4.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 103 h_e2_5 [range] e2.x5.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 104 h_e2_6 [range] e2.x6.val < 256
+ZiskFv.Equivalence.Sub.equiv_SUB 105 h_e2_7 [range] e2.x7.val < 256
 ZiskFv.Equivalence.Subw.equiv_SUBW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Subw.equiv_SUBW 001 subw_input [other] PureSpec.SubwInput
 ZiskFv.Equivalence.Subw.equiv_SUBW 002 r1 [other] regidx
@@ -3180,76 +3126,64 @@ ZiskFv.Equivalence.Subw.equiv_SUBW 022 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Subw.equiv_SUBW 023 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Subw.equiv_SUBW 024 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Subw.equiv_SUBW 025 h_rd_idx [transpile] subw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Subw.equiv_SUBW 026 a0 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 027 a1 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 028 a2 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 029 a3 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 030 b0 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 031 b1 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 032 b2 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 033 b3 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 034 c0 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 035 c1 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 036 c2 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 037 c3 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 038 c4 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 039 c5 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 040 c6 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 041 c7 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 042 cin0 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 043 cin1 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 044 cin2 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 045 cin3 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 046 fl0 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 047 fl1 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 048 fl2 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 049 fl3 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 050 pi0 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 051 pi1 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 052 pi2 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 053 pi3 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 054 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB a0 b
-ZiskFv.Equivalence.Subw.equiv_SUBW 055 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB a1 b
-ZiskFv.Equivalence.Subw.equiv_SUBW 056 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB a2 b
-ZiskFv.Equivalence.Subw.equiv_SUBW 057 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB a3 b
-ZiskFv.Equivalence.Subw.equiv_SUBW 058 ha0 [range] a0.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 059 ha1 [range] a1.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 060 ha2 [range] a2.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 061 ha3 [range] a3.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 062 hb0 [range] b0.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 063 hb1 [range] b1.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 064 hb2 [range] b2.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 065 hb3 [range] b3.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 066 hc0 [range] c0.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 067 hc1 [range] c1.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 068 hc2 [range] c2.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 069 hc3 [range] c3.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 070 hc4 [range] c4.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 071 hc5 [range] c5.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 072 hc6 [range] c6.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 073 hc7 [range] c7.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 074 h_cin0 [other] cin0.val = 0
-ZiskFv.Equivalence.Subw.equiv_SUBW 075 h_cin1 [other] cin1.val = fl0.val % 2
-ZiskFv.Equivalence.Subw.equiv_SUBW 076 h_cin2 [other] cin2.val = fl1.val % 2
-ZiskFv.Equivalence.Subw.equiv_SUBW 077 h_cin3 [other] cin3.val = fl2.val % 2
-ZiskFv.Equivalence.Subw.equiv_SUBW 078 h_pi0 [other] pi0.val ≠ 1
-ZiskFv.Equivalence.Subw.equiv_SUBW 079 h_pi1 [other] pi1.val ≠ 1
-ZiskFv.Equivalence.Subw.equiv_SUBW 080 h_pi2 [other] pi2.val ≠ 1
-ZiskFv.Equivalence.Subw.equiv_SUBW 081 h_pi3 [other] pi3.val = 1
-ZiskFv.Equivalence.Subw.equiv_SUBW 082 h_sext_choice [other] ((c4.val = 0 ∧ c5.val = 0 ∧ c6.val = 0 ∧ c7.val = 0) ∧ c0.val + c1.val * 256 + c
-ZiskFv.Equivalence.Subw.equiv_SUBW 083 h_match_clo [match] m.c_0 r_main = c0 + c1 * 256 + c2 * 65536 + c3 * 16777216
-ZiskFv.Equivalence.Subw.equiv_SUBW 084 h_match_chi [match] m.c_1 r_main = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216
-ZiskFv.Equivalence.Subw.equiv_SUBW 085 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Subw.equiv_SUBW 086 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 087 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 088 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 089 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 090 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 091 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 092 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 093 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Subw.equiv_SUBW 094 h_input_r1_extract [bridge] (Sail.BitVec.extractLsb subw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat = (a
-ZiskFv.Equivalence.Subw.equiv_SUBW 095 h_input_r2_extract [bridge] (Sail.BitVec.extractLsb subw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat = (b
+ZiskFv.Equivalence.Subw.equiv_SUBW 026 _ [other] ha0..ha3, hb0..hb3
+ZiskFv.Equivalence.Subw.equiv_SUBW 027 v [validator] ZiskFv.Airs.Binary.Valid_Binary C FGL FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 028 r_binary [row] ℕ
+ZiskFv.Equivalence.Subw.equiv_SUBW 029 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Subw.equiv_SUBW 030 h_main_op_subw [match] m.op r_main = OP_SUB_W
+ZiskFv.Equivalence.Subw.equiv_SUBW 031 h_match [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)
+ZiskFv.Equivalence.Subw.equiv_SUBW 032 c0 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 033 c1 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 034 c2 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 035 c3 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 036 c4 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 037 c5 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 038 c6 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 039 c7 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 040 cin0 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 041 cin1 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 042 cin2 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 043 cin3 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 044 fl0 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 045 fl1 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 046 fl2 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 047 fl3 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 048 pi0 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 049 pi1 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 050 pi2 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 051 pi3 [loose] FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 052 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
+ZiskFv.Equivalence.Subw.equiv_SUBW 053 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
+ZiskFv.Equivalence.Subw.equiv_SUBW 054 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
+ZiskFv.Equivalence.Subw.equiv_SUBW 055 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
+ZiskFv.Equivalence.Subw.equiv_SUBW 056 hc0 [range] c0.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 057 hc1 [range] c1.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 058 hc2 [range] c2.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 059 hc3 [range] c3.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 060 hc4 [range] c4.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 061 hc5 [range] c5.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 062 hc6 [range] c6.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 063 hc7 [range] c7.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 064 h_cin0 [other] cin0.val = 0
+ZiskFv.Equivalence.Subw.equiv_SUBW 065 h_cin1 [other] cin1.val = fl0.val % 2
+ZiskFv.Equivalence.Subw.equiv_SUBW 066 h_cin2 [other] cin2.val = fl1.val % 2
+ZiskFv.Equivalence.Subw.equiv_SUBW 067 h_cin3 [other] cin3.val = fl2.val % 2
+ZiskFv.Equivalence.Subw.equiv_SUBW 068 h_pi0 [other] pi0.val ≠ 1
+ZiskFv.Equivalence.Subw.equiv_SUBW 069 h_pi1 [other] pi1.val ≠ 1
+ZiskFv.Equivalence.Subw.equiv_SUBW 070 h_pi2 [other] pi2.val ≠ 1
+ZiskFv.Equivalence.Subw.equiv_SUBW 071 h_pi3 [other] pi3.val = 1
+ZiskFv.Equivalence.Subw.equiv_SUBW 072 h_sext_choice [other] ((c4.val = 0 ∧ c5.val = 0 ∧ c6.val = 0 ∧ c7.val = 0) ∧ c0.val + c1.val * 256 + c
+ZiskFv.Equivalence.Subw.equiv_SUBW 073 h_match_clo [match] m.c_0 r_main = c0 + c1 * 256 + c2 * 65536 + c3 * 16777216
+ZiskFv.Equivalence.Subw.equiv_SUBW 074 h_match_chi [match] m.c_1 r_main = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216
+ZiskFv.Equivalence.Subw.equiv_SUBW 075 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Subw.equiv_SUBW 076 h_e2_0 [range] e2.x0.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 077 h_e2_1 [range] e2.x1.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 078 h_e2_2 [range] e2.x2.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 079 h_e2_3 [range] e2.x3.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 080 h_e2_4 [range] e2.x4.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 081 h_e2_5 [range] e2.x5.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 082 h_e2_6 [range] e2.x6.val < 256
+ZiskFv.Equivalence.Subw.equiv_SUBW 083 h_e2_7 [range] e2.x7.val < 256
 ZiskFv.Equivalence.Xor.equiv_XOR 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Xor.equiv_XOR 001 xor_input [other] PureSpec.XorInput
 ZiskFv.Equivalence.Xor.equiv_XOR 002 r1 [other] regidx

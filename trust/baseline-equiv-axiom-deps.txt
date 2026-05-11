@@ -1,7 +1,7 @@
 ZiskFv.Equivalence.Add.equiv_ADD: ZiskFv.Airs.BinaryAdd.binary_add_columns_in_range, ZiskFv.Airs.OperationBus.op_bus_perm_sound_BinaryAdd, ZiskFv.Trusted.transpile_ADD
 ZiskFv.Equivalence.Addi.equiv_ADDI: ZiskFv.Airs.BinaryAdd.binary_add_columns_in_range, ZiskFv.Trusted.transpile_ADDI
-ZiskFv.Equivalence.Addiw.equiv_ADDIW: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
-ZiskFv.Equivalence.Addw.equiv_ADDW: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Addiw.equiv_ADDIW: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_ADDIW
+ZiskFv.Equivalence.Addw.equiv_ADDW: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_ADDW
 ZiskFv.Equivalence.And.equiv_AND: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
 ZiskFv.Equivalence.Andi.equiv_ANDI: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
 ZiskFv.Equivalence.Auipc.equiv_AUIPC: ZiskFv.Trusted.transpile_PC_for_AUIPC
@@ -57,7 +57,7 @@ ZiskFv.Equivalence.StoreB.equiv_SB: ZiskFv.PlatformScope.pmaCheck_is_pure_none, 
 ZiskFv.Equivalence.StoreD.equiv_SD: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
 ZiskFv.Equivalence.StoreH.equiv_SH: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
 ZiskFv.Equivalence.StoreW.equiv_SW: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
-ZiskFv.Equivalence.Sub.equiv_SUB: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
-ZiskFv.Equivalence.Subw.equiv_SUBW: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Sub.equiv_SUB: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_SUB
+ZiskFv.Equivalence.Subw.equiv_SUBW: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_SUBW
 ZiskFv.Equivalence.Xor.equiv_XOR: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
 ZiskFv.Equivalence.Xori.equiv_XORI: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
