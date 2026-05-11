@@ -150,4 +150,25 @@ theorem add_discharge
   exact ⟨r_binary, h_circuit, h_a_range, h_b_range, h_c_range,
          h_input_r1_circuit, h_input_r2_circuit⟩
 
+/-! ## Narrow helper for the conservative-refactor path (keeps `r_binary`
+    as caller-supplied) — analogue of `Bridge.Binary.byte_ranges_at_holds`
+
+The 3 BinaryAdd chunk-range predicates (`a_chunks_in_range`,
+`b_chunks_in_range`, `c_chunks_in_range`) at any caller-supplied
+`r_binary` are all derivable from `binary_add_columns_in_range`
+(Step 1.5 axiom). This helper packages exactly that for the
+conservative discharge of ADDI and other BinaryAdd-shape opcodes
+that retain `r_binary` as a parameter.
+-/
+
+/-- Discharge the 3 BinaryAdd chunk-range *promise hypotheses* at any
+    caller-supplied row. Pure derivation from
+    `binary_add_columns_in_range`; no caller hypothesis needed. -/
+theorem chunk_ranges_at_holds (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
+    a_chunks_in_range b r ∧ b_chunks_in_range b r ∧ c_chunks_in_range b r :=
+  ⟨⟨ba_a_lo_lt_2_32 b r, ba_a_hi_lt_2_32 b r⟩,
+   ⟨ba_b_lo_lt_2_32 b r, ba_b_hi_lt_2_32 b r⟩,
+   ⟨ba_c_chunk_0_lt_2_16 b r, ba_c_chunk_1_lt_2_16 b r,
+    ba_c_chunk_2_lt_2_16 b r, ba_c_chunk_3_lt_2_16 b r⟩⟩
+
 end ZiskFv.Equivalence.Bridge.BinaryAdd

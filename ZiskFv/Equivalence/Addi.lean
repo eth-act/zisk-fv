@@ -6,6 +6,7 @@ import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Circuit.Addi
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
+import ZiskFv.Equivalence.Bridge.BinaryAdd
 import ZiskFv.Airs.BusEmission
 import ZiskFv.Sail.addi
 import ZiskFv.Sail.BusEffect
@@ -112,9 +113,6 @@ theorem equiv_ADDI
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
     (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
     (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    (h_a_range : ZiskFv.Airs.BinaryAdd.a_chunks_in_range b r_binary)
-    (h_b_range : ZiskFv.Airs.BinaryAdd.b_chunks_in_range b r_binary)
-    (h_c_range : ZiskFv.Airs.BinaryAdd.c_chunks_in_range b r_binary)
     (h_input_r1_circuit : addi_input.r1_val
       = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296))
     (h_input_imm_circuit : BitVec.signExtend 64 addi_input.imm
@@ -125,6 +123,8 @@ theorem equiv_ADDI
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_a_range, h_b_range, h_c_range⟩ :=
+    ZiskFv.Equivalence.Bridge.BinaryAdd.chunk_ranges_at_holds b r_binary
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_addi
       m b r_main r_binary e2 addi_input.r1_val addi_input.imm
