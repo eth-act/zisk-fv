@@ -6,6 +6,7 @@ import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Circuit.Andi
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
+import ZiskFv.Equivalence.Bridge.Binary
 import ZiskFv.Airs.BusEmission
 import ZiskFv.Sail.andi
 import ZiskFv.Sail.BusEffect
@@ -116,18 +117,6 @@ theorem equiv_ANDI
     (h_byte_7 : ZiskFv.Airs.Binary.consumer_byte_match
       ZiskFv.Airs.BinaryTable.OP_AND
       (v.free_in_a_7 r_binary) (v.free_in_b_7 r_binary) (v.free_in_c_7 r_binary))
-    (ha0 : (v.free_in_a_0 r_binary).val < 256) (ha1 : (v.free_in_a_1 r_binary).val < 256)
-    (ha2 : (v.free_in_a_2 r_binary).val < 256) (ha3 : (v.free_in_a_3 r_binary).val < 256)
-    (ha4 : (v.free_in_a_4 r_binary).val < 256) (ha5 : (v.free_in_a_5 r_binary).val < 256)
-    (ha6 : (v.free_in_a_6 r_binary).val < 256) (ha7 : (v.free_in_a_7 r_binary).val < 256)
-    (hb0 : (v.free_in_b_0 r_binary).val < 256) (hb1 : (v.free_in_b_1 r_binary).val < 256)
-    (hb2 : (v.free_in_b_2 r_binary).val < 256) (hb3 : (v.free_in_b_3 r_binary).val < 256)
-    (hb4 : (v.free_in_b_4 r_binary).val < 256) (hb5 : (v.free_in_b_5 r_binary).val < 256)
-    (hb6 : (v.free_in_b_6 r_binary).val < 256) (hb7 : (v.free_in_b_7 r_binary).val < 256)
-    (hc0 : (v.free_in_c_0 r_binary).val < 256) (hc1 : (v.free_in_c_1 r_binary).val < 256)
-    (hc2 : (v.free_in_c_2 r_binary).val < 256) (hc3 : (v.free_in_c_3 r_binary).val < 256)
-    (hc4 : (v.free_in_c_4 r_binary).val < 256) (hc5 : (v.free_in_c_5 r_binary).val < 256)
-    (hc6 : (v.free_in_c_6 r_binary).val < 256) (hc7 : (v.free_in_c_7 r_binary).val < 256)
     (h_match_clo : m.c_0 r_main
         = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
           + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216)
@@ -163,6 +152,13 @@ theorem equiv_ANDI
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.ANDI))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- 24 byte-range *promise hypotheses* discharged via Step 2b's
+  -- `byte_ranges_at_holds` helper (consumes `binary_columns_in_range`
+  -- range-check soundness axiom; no caller hypothesis needed).
+  obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7,
+          hb0, hb1, hb2, hb3, hb4, hb5, hb6, hb7,
+          hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7⟩ :=
+    ZiskFv.Equivalence.Bridge.Binary.byte_ranges_at_holds v r_binary
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.BinaryLogic.h_rd_val_logic_andi
       m v r_main r_binary e2 andi_input.r1_val andi_input.imm

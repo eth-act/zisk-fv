@@ -12,7 +12,7 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 3448
+# Total rows: 3328
 # Category bridge: 75
 # Category bus_shape: 516
 # Category byte_chain: 115
@@ -20,7 +20,7 @@
 # Category loose: 544
 # Category match: 82
 # Category other: 603
-# Category range: 919
+# Category range: 799
 # Category row: 61
 # Category state: 217
 # Category transpile: 171
@@ -390,43 +390,19 @@ ZiskFv.Equivalence.Andi.equiv_ANDI 032 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.
 ZiskFv.Equivalence.Andi.equiv_ANDI 033 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_AND (v.free_in
 ZiskFv.Equivalence.Andi.equiv_ANDI 034 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_AND (v.free_in
 ZiskFv.Equivalence.Andi.equiv_ANDI 035 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_AND (v.free_in
-ZiskFv.Equivalence.Andi.equiv_ANDI 036 ha0 [range] (v.free_in_a_0 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 037 ha1 [range] (v.free_in_a_1 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 038 ha2 [range] (v.free_in_a_2 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 039 ha3 [range] (v.free_in_a_3 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 040 ha4 [range] (v.free_in_a_4 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 041 ha5 [range] (v.free_in_a_5 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 042 ha6 [range] (v.free_in_a_6 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 043 ha7 [range] (v.free_in_a_7 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 044 hb0 [range] (v.free_in_b_0 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 045 hb1 [range] (v.free_in_b_1 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 046 hb2 [range] (v.free_in_b_2 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 047 hb3 [range] (v.free_in_b_3 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 048 hb4 [range] (v.free_in_b_4 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 049 hb5 [range] (v.free_in_b_5 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 050 hb6 [range] (v.free_in_b_6 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 051 hb7 [range] (v.free_in_b_7 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 052 hc0 [range] (v.free_in_c_0 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 053 hc1 [range] (v.free_in_c_1 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 054 hc2 [range] (v.free_in_c_2 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 055 hc3 [range] (v.free_in_c_3 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 056 hc4 [range] (v.free_in_c_4 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 057 hc5 [range] (v.free_in_c_5 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 058 hc6 [range] (v.free_in_c_6 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 059 hc7 [range] (v.free_in_c_7 r_binary).val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 060 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Andi.equiv_ANDI 061 h_match_chi [match] m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Andi.equiv_ANDI 062 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Andi.equiv_ANDI 063 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 064 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 065 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 066 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 067 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 068 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 069 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 070 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Andi.equiv_ANDI 071 h_input_r1_circuit [bridge] andi_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a
-ZiskFv.Equivalence.Andi.equiv_ANDI 072 h_input_imm_circuit [other] BitVec.signExtend 64 andi_input.imm = BitVec.ofNat 64 ((v.free_in_b_0 r_binary).
+ZiskFv.Equivalence.Andi.equiv_ANDI 036 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256 + v.free_in
+ZiskFv.Equivalence.Andi.equiv_ANDI 037 h_match_chi [match] m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256 + v.free_in
+ZiskFv.Equivalence.Andi.equiv_ANDI 038 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Andi.equiv_ANDI 039 h_e2_0 [range] e2.x0.val < 256
+ZiskFv.Equivalence.Andi.equiv_ANDI 040 h_e2_1 [range] e2.x1.val < 256
+ZiskFv.Equivalence.Andi.equiv_ANDI 041 h_e2_2 [range] e2.x2.val < 256
+ZiskFv.Equivalence.Andi.equiv_ANDI 042 h_e2_3 [range] e2.x3.val < 256
+ZiskFv.Equivalence.Andi.equiv_ANDI 043 h_e2_4 [range] e2.x4.val < 256
+ZiskFv.Equivalence.Andi.equiv_ANDI 044 h_e2_5 [range] e2.x5.val < 256
+ZiskFv.Equivalence.Andi.equiv_ANDI 045 h_e2_6 [range] e2.x6.val < 256
+ZiskFv.Equivalence.Andi.equiv_ANDI 046 h_e2_7 [range] e2.x7.val < 256
+ZiskFv.Equivalence.Andi.equiv_ANDI 047 h_input_r1_circuit [bridge] andi_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a
+ZiskFv.Equivalence.Andi.equiv_ANDI 048 h_input_imm_circuit [other] BitVec.signExtend 64 andi_input.imm = BitVec.ofNat 64 ((v.free_in_b_0 r_binary).
 ZiskFv.Equivalence.Auipc.equiv_AUIPC 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Auipc.equiv_AUIPC 001 auipc_input [other] PureSpec.AuipcInput
 ZiskFv.Equivalence.Auipc.equiv_AUIPC 002 imm [other] BitVec 20
@@ -1486,43 +1462,19 @@ ZiskFv.Equivalence.Or.equiv_OR 032 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.cons
 ZiskFv.Equivalence.Or.equiv_OR 033 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_OR (v.free_in_
 ZiskFv.Equivalence.Or.equiv_OR 034 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_OR (v.free_in_
 ZiskFv.Equivalence.Or.equiv_OR 035 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_OR (v.free_in_
-ZiskFv.Equivalence.Or.equiv_OR 036 ha0 [range] (v.free_in_a_0 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 037 ha1 [range] (v.free_in_a_1 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 038 ha2 [range] (v.free_in_a_2 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 039 ha3 [range] (v.free_in_a_3 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 040 ha4 [range] (v.free_in_a_4 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 041 ha5 [range] (v.free_in_a_5 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 042 ha6 [range] (v.free_in_a_6 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 043 ha7 [range] (v.free_in_a_7 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 044 hb0 [range] (v.free_in_b_0 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 045 hb1 [range] (v.free_in_b_1 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 046 hb2 [range] (v.free_in_b_2 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 047 hb3 [range] (v.free_in_b_3 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 048 hb4 [range] (v.free_in_b_4 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 049 hb5 [range] (v.free_in_b_5 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 050 hb6 [range] (v.free_in_b_6 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 051 hb7 [range] (v.free_in_b_7 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 052 hc0 [range] (v.free_in_c_0 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 053 hc1 [range] (v.free_in_c_1 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 054 hc2 [range] (v.free_in_c_2 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 055 hc3 [range] (v.free_in_c_3 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 056 hc4 [range] (v.free_in_c_4 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 057 hc5 [range] (v.free_in_c_5 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 058 hc6 [range] (v.free_in_c_6 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 059 hc7 [range] (v.free_in_c_7 r_binary).val < 256
-ZiskFv.Equivalence.Or.equiv_OR 060 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Or.equiv_OR 061 h_match_chi [match] m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Or.equiv_OR 062 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Or.equiv_OR 063 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Or.equiv_OR 064 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Or.equiv_OR 065 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Or.equiv_OR 066 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Or.equiv_OR 067 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Or.equiv_OR 068 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Or.equiv_OR 069 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Or.equiv_OR 070 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Or.equiv_OR 071 h_input_r1_circuit [bridge] or_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a_1
-ZiskFv.Equivalence.Or.equiv_OR 072 h_input_r2_circuit [bridge] or_input.r2_val = BitVec.ofNat 64 ((v.free_in_b_0 r_binary).val + (v.free_in_b_1
+ZiskFv.Equivalence.Or.equiv_OR 036 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256 + v.free_in
+ZiskFv.Equivalence.Or.equiv_OR 037 h_match_chi [match] m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256 + v.free_in
+ZiskFv.Equivalence.Or.equiv_OR 038 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Or.equiv_OR 039 h_e2_0 [range] e2.x0.val < 256
+ZiskFv.Equivalence.Or.equiv_OR 040 h_e2_1 [range] e2.x1.val < 256
+ZiskFv.Equivalence.Or.equiv_OR 041 h_e2_2 [range] e2.x2.val < 256
+ZiskFv.Equivalence.Or.equiv_OR 042 h_e2_3 [range] e2.x3.val < 256
+ZiskFv.Equivalence.Or.equiv_OR 043 h_e2_4 [range] e2.x4.val < 256
+ZiskFv.Equivalence.Or.equiv_OR 044 h_e2_5 [range] e2.x5.val < 256
+ZiskFv.Equivalence.Or.equiv_OR 045 h_e2_6 [range] e2.x6.val < 256
+ZiskFv.Equivalence.Or.equiv_OR 046 h_e2_7 [range] e2.x7.val < 256
+ZiskFv.Equivalence.Or.equiv_OR 047 h_input_r1_circuit [bridge] or_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a_1
+ZiskFv.Equivalence.Or.equiv_OR 048 h_input_r2_circuit [bridge] or_input.r2_val = BitVec.ofNat 64 ((v.free_in_b_0 r_binary).val + (v.free_in_b_1
 ZiskFv.Equivalence.Ori.equiv_ORI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Ori.equiv_ORI 001 ori_input [other] PureSpec.OriInput
 ZiskFv.Equivalence.Ori.equiv_ORI 002 r1 [other] regidx
@@ -1559,43 +1511,19 @@ ZiskFv.Equivalence.Ori.equiv_ORI 032 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.co
 ZiskFv.Equivalence.Ori.equiv_ORI 033 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_OR (v.free_in_
 ZiskFv.Equivalence.Ori.equiv_ORI 034 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_OR (v.free_in_
 ZiskFv.Equivalence.Ori.equiv_ORI 035 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_OR (v.free_in_
-ZiskFv.Equivalence.Ori.equiv_ORI 036 ha0 [range] (v.free_in_a_0 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 037 ha1 [range] (v.free_in_a_1 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 038 ha2 [range] (v.free_in_a_2 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 039 ha3 [range] (v.free_in_a_3 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 040 ha4 [range] (v.free_in_a_4 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 041 ha5 [range] (v.free_in_a_5 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 042 ha6 [range] (v.free_in_a_6 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 043 ha7 [range] (v.free_in_a_7 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 044 hb0 [range] (v.free_in_b_0 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 045 hb1 [range] (v.free_in_b_1 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 046 hb2 [range] (v.free_in_b_2 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 047 hb3 [range] (v.free_in_b_3 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 048 hb4 [range] (v.free_in_b_4 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 049 hb5 [range] (v.free_in_b_5 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 050 hb6 [range] (v.free_in_b_6 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 051 hb7 [range] (v.free_in_b_7 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 052 hc0 [range] (v.free_in_c_0 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 053 hc1 [range] (v.free_in_c_1 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 054 hc2 [range] (v.free_in_c_2 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 055 hc3 [range] (v.free_in_c_3 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 056 hc4 [range] (v.free_in_c_4 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 057 hc5 [range] (v.free_in_c_5 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 058 hc6 [range] (v.free_in_c_6 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 059 hc7 [range] (v.free_in_c_7 r_binary).val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 060 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Ori.equiv_ORI 061 h_match_chi [match] m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Ori.equiv_ORI 062 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Ori.equiv_ORI 063 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 064 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 065 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 066 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 067 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 068 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 069 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 070 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Ori.equiv_ORI 071 h_input_r1_circuit [bridge] ori_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a_
-ZiskFv.Equivalence.Ori.equiv_ORI 072 h_input_imm_circuit [other] BitVec.signExtend 64 ori_input.imm = BitVec.ofNat 64 ((v.free_in_b_0 r_binary).v
+ZiskFv.Equivalence.Ori.equiv_ORI 036 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256 + v.free_in
+ZiskFv.Equivalence.Ori.equiv_ORI 037 h_match_chi [match] m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256 + v.free_in
+ZiskFv.Equivalence.Ori.equiv_ORI 038 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Ori.equiv_ORI 039 h_e2_0 [range] e2.x0.val < 256
+ZiskFv.Equivalence.Ori.equiv_ORI 040 h_e2_1 [range] e2.x1.val < 256
+ZiskFv.Equivalence.Ori.equiv_ORI 041 h_e2_2 [range] e2.x2.val < 256
+ZiskFv.Equivalence.Ori.equiv_ORI 042 h_e2_3 [range] e2.x3.val < 256
+ZiskFv.Equivalence.Ori.equiv_ORI 043 h_e2_4 [range] e2.x4.val < 256
+ZiskFv.Equivalence.Ori.equiv_ORI 044 h_e2_5 [range] e2.x5.val < 256
+ZiskFv.Equivalence.Ori.equiv_ORI 045 h_e2_6 [range] e2.x6.val < 256
+ZiskFv.Equivalence.Ori.equiv_ORI 046 h_e2_7 [range] e2.x7.val < 256
+ZiskFv.Equivalence.Ori.equiv_ORI 047 h_input_r1_circuit [bridge] ori_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a_
+ZiskFv.Equivalence.Ori.equiv_ORI 048 h_input_imm_circuit [other] BitVec.signExtend 64 ori_input.imm = BitVec.ofNat 64 ((v.free_in_b_0 r_binary).v
 ZiskFv.Equivalence.Rem.equiv_REM 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Rem.equiv_REM 001 rem_input [other] PureSpec.RemInput
 ZiskFv.Equivalence.Rem.equiv_REM 002 r1 [other] regidx
@@ -3364,43 +3292,19 @@ ZiskFv.Equivalence.Xor.equiv_XOR 032 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.co
 ZiskFv.Equivalence.Xor.equiv_XOR 033 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_XOR (v.free_in
 ZiskFv.Equivalence.Xor.equiv_XOR 034 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_XOR (v.free_in
 ZiskFv.Equivalence.Xor.equiv_XOR 035 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_XOR (v.free_in
-ZiskFv.Equivalence.Xor.equiv_XOR 036 ha0 [range] (v.free_in_a_0 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 037 ha1 [range] (v.free_in_a_1 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 038 ha2 [range] (v.free_in_a_2 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 039 ha3 [range] (v.free_in_a_3 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 040 ha4 [range] (v.free_in_a_4 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 041 ha5 [range] (v.free_in_a_5 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 042 ha6 [range] (v.free_in_a_6 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 043 ha7 [range] (v.free_in_a_7 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 044 hb0 [range] (v.free_in_b_0 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 045 hb1 [range] (v.free_in_b_1 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 046 hb2 [range] (v.free_in_b_2 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 047 hb3 [range] (v.free_in_b_3 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 048 hb4 [range] (v.free_in_b_4 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 049 hb5 [range] (v.free_in_b_5 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 050 hb6 [range] (v.free_in_b_6 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 051 hb7 [range] (v.free_in_b_7 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 052 hc0 [range] (v.free_in_c_0 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 053 hc1 [range] (v.free_in_c_1 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 054 hc2 [range] (v.free_in_c_2 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 055 hc3 [range] (v.free_in_c_3 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 056 hc4 [range] (v.free_in_c_4 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 057 hc5 [range] (v.free_in_c_5 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 058 hc6 [range] (v.free_in_c_6 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 059 hc7 [range] (v.free_in_c_7 r_binary).val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 060 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Xor.equiv_XOR 061 h_match_chi [match] m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Xor.equiv_XOR 062 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Xor.equiv_XOR 063 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 064 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 065 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 066 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 067 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 068 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 069 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 070 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Xor.equiv_XOR 071 h_input_r1_circuit [bridge] xor_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a_
-ZiskFv.Equivalence.Xor.equiv_XOR 072 h_input_r2_circuit [bridge] xor_input.r2_val = BitVec.ofNat 64 ((v.free_in_b_0 r_binary).val + (v.free_in_b_
+ZiskFv.Equivalence.Xor.equiv_XOR 036 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256 + v.free_in
+ZiskFv.Equivalence.Xor.equiv_XOR 037 h_match_chi [match] m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256 + v.free_in
+ZiskFv.Equivalence.Xor.equiv_XOR 038 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Xor.equiv_XOR 039 h_e2_0 [range] e2.x0.val < 256
+ZiskFv.Equivalence.Xor.equiv_XOR 040 h_e2_1 [range] e2.x1.val < 256
+ZiskFv.Equivalence.Xor.equiv_XOR 041 h_e2_2 [range] e2.x2.val < 256
+ZiskFv.Equivalence.Xor.equiv_XOR 042 h_e2_3 [range] e2.x3.val < 256
+ZiskFv.Equivalence.Xor.equiv_XOR 043 h_e2_4 [range] e2.x4.val < 256
+ZiskFv.Equivalence.Xor.equiv_XOR 044 h_e2_5 [range] e2.x5.val < 256
+ZiskFv.Equivalence.Xor.equiv_XOR 045 h_e2_6 [range] e2.x6.val < 256
+ZiskFv.Equivalence.Xor.equiv_XOR 046 h_e2_7 [range] e2.x7.val < 256
+ZiskFv.Equivalence.Xor.equiv_XOR 047 h_input_r1_circuit [bridge] xor_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a_
+ZiskFv.Equivalence.Xor.equiv_XOR 048 h_input_r2_circuit [bridge] xor_input.r2_val = BitVec.ofNat 64 ((v.free_in_b_0 r_binary).val + (v.free_in_b_
 ZiskFv.Equivalence.Xori.equiv_XORI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Xori.equiv_XORI 001 xori_input [other] PureSpec.XoriInput
 ZiskFv.Equivalence.Xori.equiv_XORI 002 r1 [other] regidx
@@ -3437,40 +3341,16 @@ ZiskFv.Equivalence.Xori.equiv_XORI 032 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.
 ZiskFv.Equivalence.Xori.equiv_XORI 033 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_XOR (v.free_in
 ZiskFv.Equivalence.Xori.equiv_XORI 034 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_XOR (v.free_in
 ZiskFv.Equivalence.Xori.equiv_XORI 035 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match ZiskFv.Airs.BinaryTable.OP_XOR (v.free_in
-ZiskFv.Equivalence.Xori.equiv_XORI 036 ha0 [range] (v.free_in_a_0 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 037 ha1 [range] (v.free_in_a_1 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 038 ha2 [range] (v.free_in_a_2 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 039 ha3 [range] (v.free_in_a_3 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 040 ha4 [range] (v.free_in_a_4 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 041 ha5 [range] (v.free_in_a_5 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 042 ha6 [range] (v.free_in_a_6 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 043 ha7 [range] (v.free_in_a_7 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 044 hb0 [range] (v.free_in_b_0 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 045 hb1 [range] (v.free_in_b_1 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 046 hb2 [range] (v.free_in_b_2 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 047 hb3 [range] (v.free_in_b_3 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 048 hb4 [range] (v.free_in_b_4 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 049 hb5 [range] (v.free_in_b_5 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 050 hb6 [range] (v.free_in_b_6 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 051 hb7 [range] (v.free_in_b_7 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 052 hc0 [range] (v.free_in_c_0 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 053 hc1 [range] (v.free_in_c_1 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 054 hc2 [range] (v.free_in_c_2 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 055 hc3 [range] (v.free_in_c_3 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 056 hc4 [range] (v.free_in_c_4 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 057 hc5 [range] (v.free_in_c_5 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 058 hc6 [range] (v.free_in_c_6 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 059 hc7 [range] (v.free_in_c_7 r_binary).val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 060 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Xori.equiv_XORI 061 h_match_chi [match] m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Xori.equiv_XORI 062 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Xori.equiv_XORI 063 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 064 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 065 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 066 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 067 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 068 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 069 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 070 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Xori.equiv_XORI 071 h_input_r1_circuit [bridge] xori_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a
-ZiskFv.Equivalence.Xori.equiv_XORI 072 h_input_imm_circuit [other] BitVec.signExtend 64 xori_input.imm = BitVec.ofNat 64 ((v.free_in_b_0 r_binary).
+ZiskFv.Equivalence.Xori.equiv_XORI 036 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256 + v.free_in
+ZiskFv.Equivalence.Xori.equiv_XORI 037 h_match_chi [match] m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256 + v.free_in
+ZiskFv.Equivalence.Xori.equiv_XORI 038 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Xori.equiv_XORI 039 h_e2_0 [range] e2.x0.val < 256
+ZiskFv.Equivalence.Xori.equiv_XORI 040 h_e2_1 [range] e2.x1.val < 256
+ZiskFv.Equivalence.Xori.equiv_XORI 041 h_e2_2 [range] e2.x2.val < 256
+ZiskFv.Equivalence.Xori.equiv_XORI 042 h_e2_3 [range] e2.x3.val < 256
+ZiskFv.Equivalence.Xori.equiv_XORI 043 h_e2_4 [range] e2.x4.val < 256
+ZiskFv.Equivalence.Xori.equiv_XORI 044 h_e2_5 [range] e2.x5.val < 256
+ZiskFv.Equivalence.Xori.equiv_XORI 045 h_e2_6 [range] e2.x6.val < 256
+ZiskFv.Equivalence.Xori.equiv_XORI 046 h_e2_7 [range] e2.x7.val < 256
+ZiskFv.Equivalence.Xori.equiv_XORI 047 h_input_r1_circuit [bridge] xori_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a
+ZiskFv.Equivalence.Xori.equiv_XORI 048 h_input_imm_circuit [other] BitVec.signExtend 64 xori_input.imm = BitVec.ofNat 64 ((v.free_in_b_0 r_binary).
