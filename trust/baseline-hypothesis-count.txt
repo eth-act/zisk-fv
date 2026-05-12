@@ -8,8 +8,8 @@
 # requires explicit reviewer ack via a baseline diff.
 #
 # Total theorems: 63
-# Aggregate total binders: 2790
-# Aggregate hypothesis binders: 1786
+# Aggregate total binders: 2719
+# Aggregate hypothesis binders: 1715
 #
 ZiskFv.Equivalence.Add.equiv_ADD total=41 hypothesis=27
 ZiskFv.Equivalence.Addi.equiv_ADDI total=39 hypothesis=26
@@ -26,30 +26,30 @@ ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU total=19 hypothesis=12
 ZiskFv.Equivalence.BranchNotEqual.equiv_BNE total=20 hypothesis=12
 ZiskFv.Equivalence.Div.equiv_DIV total=24 hypothesis=15
 ZiskFv.Equivalence.Divu.equiv_DIVU total=62 hypothesis=44
-ZiskFv.Equivalence.Divuw.equiv_DIVUW total=33 hypothesis=24
-ZiskFv.Equivalence.Divw.equiv_DIVW total=33 hypothesis=24
+ZiskFv.Equivalence.Divuw.equiv_DIVUW total=25 hypothesis=16
+ZiskFv.Equivalence.Divw.equiv_DIVW total=25 hypothesis=16
 ZiskFv.Equivalence.Fence.equiv_FENCE total=14 hypothesis=6
 ZiskFv.Equivalence.Jal.equiv_JAL total=23 hypothesis=11
 ZiskFv.Equivalence.Jalr.equiv_JALR total=28 hypothesis=14
-ZiskFv.Equivalence.Lb.equiv_LB total=51 hypothesis=34
-ZiskFv.Equivalence.Lh.equiv_LH total=52 hypothesis=36
+ZiskFv.Equivalence.Lb.equiv_LB total=42 hypothesis=25
+ZiskFv.Equivalence.Lh.equiv_LH total=42 hypothesis=26
 ZiskFv.Equivalence.LoadBU.equiv_LBU total=41 hypothesis=22
 ZiskFv.Equivalence.LoadD.equiv_LD total=37 hypothesis=20
 ZiskFv.Equivalence.LoadHU.equiv_LHU total=39 hypothesis=22
 ZiskFv.Equivalence.LoadWU.equiv_LWU total=39 hypothesis=22
 ZiskFv.Equivalence.Lui.equiv_LUI total=25 hypothesis=15
-ZiskFv.Equivalence.Lw.equiv_LW total=57 hypothesis=40
+ZiskFv.Equivalence.Lw.equiv_LW total=45 hypothesis=28
 ZiskFv.Equivalence.Mul.equiv_MUL total=62 hypothesis=42
 ZiskFv.Equivalence.MulH.equiv_MULH total=24 hypothesis=15
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU total=24 hypothesis=15
 ZiskFv.Equivalence.MulHU.equiv_MULHU total=60 hypothesis=42
-ZiskFv.Equivalence.MulW.equiv_MULW total=33 hypothesis=24
+ZiskFv.Equivalence.MulW.equiv_MULW total=25 hypothesis=16
 ZiskFv.Equivalence.Or.equiv_OR total=49 hypothesis=36
 ZiskFv.Equivalence.Ori.equiv_ORI total=49 hypothesis=36
 ZiskFv.Equivalence.Rem.equiv_REM total=24 hypothesis=15
 ZiskFv.Equivalence.Remu.equiv_REMU total=62 hypothesis=44
-ZiskFv.Equivalence.Remuw.equiv_REMUW total=33 hypothesis=24
-ZiskFv.Equivalence.Remw.equiv_REMW total=33 hypothesis=24
+ZiskFv.Equivalence.Remuw.equiv_REMUW total=25 hypothesis=16
+ZiskFv.Equivalence.Remw.equiv_REMW total=25 hypothesis=16
 ZiskFv.Equivalence.Shift.equiv_SLLW total=45 hypothesis=32
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW total=43 hypothesis=31
 ZiskFv.Equivalence.ShiftR.equiv_SRLW total=45 hypothesis=32

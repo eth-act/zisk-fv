@@ -11,6 +11,7 @@ import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
 import ZiskFv.Sail.lh
@@ -133,12 +134,7 @@ theorem equiv_LH
           + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
           + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_a0_match : (v.free_in_a_0 r_binary).val = e1.x0.val)
-    (h_a1_match : (v.free_in_a_1 r_binary).val = e1.x1.val)
-    (h_e1_x0 : e1.x0.val < 256) (h_e1_x1 : e1.x1.val < 256)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256) :
+    (h_a1_match : (v.free_in_a_1 r_binary).val = e1.x1.val) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -164,13 +160,17 @@ theorem equiv_LH
     rw [h_d0] at he0; exact (Option.some.inj he0).symm
   have hd1 : (e1.x1 : BitVec 8) = lh_input.data1 := by
     rw [h_d1] at he1; exact (Option.some.inj he1).symm
+  have h_e1_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e1
+  have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_lh_packed :=
     ZiskFv.Circuit.SextLoadBridge.load_half_c_packed
       main r_main v r_binary e1 e2
       h_op_binary h_bytes hc_lo_sum_lt hc_hi_sum_lt
       h_match_clo h_match_chi h_main_emit_c
-      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
-      h_a0_match h_a1_match h_e1_x0 h_e1_x1
+      h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
+      h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
+      h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
+      h_a0_match h_a1_match h_e1_range.1 h_e1_range.2.1
   have h_rd_val_derived :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]

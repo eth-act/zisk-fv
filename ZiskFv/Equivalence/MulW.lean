@@ -10,6 +10,7 @@ import ZiskFv.Airs.Main
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Sail.mulw
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
@@ -100,10 +101,6 @@ theorem equiv_MULW
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : mulw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     -- Discharge parameters
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
-    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
-    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
     (h_byte_mulw :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
         + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
@@ -115,10 +112,14 @@ theorem equiv_MULW
       LeanRV64D.Functions.execute
         (instruction.MULW (r2, r1, rd))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mulw
       mulw_input.r1_val mulw_input.r2_val e2
-      h0 h1 h2 h3 h4 h5 h6 h7 h_byte_mulw
+      h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
+      h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
+      h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
+      h_byte_mulw
   rw [equiv_MULW_sail state mulw_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm
