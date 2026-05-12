@@ -363,13 +363,13 @@ Status / commit reference per exemplar:
 
 | Shape | Canonical exemplar | Status | Commit |
 |--|--|--|--|
-| BinaryExtension | SLL | **landed** — 17 binders dropped (h_a_range + 16 c-byte 32-bit ranges) via `binary_extension_columns_in_range`; smoke-tests Step 0b cascade | (this commit) |
-| Arith Mul | MUL | _pending 3.alpha.2_ | — |
-| Arith Div | DIVU | _pending 3.alpha.2_ | — |
-| Mem load | LD | _pending 3.alpha.2_ | — |
-| Mem store | SD | _pending 3.alpha.2_ | — |
-| ControlFlow (branch) | BEQ | _pending 3.alpha.2_ | — |
-| ControlFlow (non-branch) | AUIPC + JAL | _pending 3.alpha.2_ | — |
+| BinaryExtension | SLL | **landed** — 17 binders dropped (h_a_range + 16 c-byte 32-bit ranges) via `binary_extension_columns_in_range`; smoke-tests Step 0b cascade | `3687a2d` |
+| Arith Mul | MUL | _pending_ — heavier refactor (Tier-2 → Tier-3 promotion: add `Valid_ArithMul` param, drop 16 loose chunks + 23 range hyps + 8 carry-chain hyps; consume `arith_mul_chunk_ranges_at_holds` + `mul_unsigned_packed`) | — |
+| Arith Div | DIVU | _pending_ — mirror of MUL pattern (`Valid_ArithDiv` + `arith_div_chunk_ranges_at_holds` + `div_unsigned_packed`) | — |
+| Mem load | LD | _pending_ — consume `load_discharge` + project register-write lane match | — |
+| Mem store | SD | _pending_ — consume `store_discharge` + project store entry | — |
+| ControlFlow (branch) | BEQ | _pending_ — consume `branch_input_bridges_of_read_xreg`; replaces `h_input_r1_circuit` + `h_input_r2_circuit` with packed-lane derivations from `read_xreg` + transpile_BEQ | — |
+| ControlFlow (non-branch) | AUIPC + JAL | _deferred_ — no clear discharge targets from current infrastructure (no MemoryBus byte-range axiom for register-write entries; arithmetic carry hyps are specific to imm values). May not yield a useful exemplar without new axioms. |  — |
 
 Each exemplar MUST:
 1. Pass `lake build` and V1 + V2 trust gates.
