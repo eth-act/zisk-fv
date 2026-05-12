@@ -150,34 +150,34 @@ axiom binary_per_byte_lookup_witness (v : Valid_Binary C FGL FGL) (r : ℕ) :
     (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_0 r ∧ e.b_byte = v.free_in_b_0 r
-        ∧ e.c_byte = v.free_in_c_0 r)
+        ∧ e.c_byte = v.free_in_c_0 r ∧ e.flags = v.carry_0 r)
   ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_1 r ∧ e.b_byte = v.free_in_b_1 r
-        ∧ e.c_byte = v.free_in_c_1 r)
+        ∧ e.c_byte = v.free_in_c_1 r ∧ e.flags = v.carry_1 r)
   ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_2 r ∧ e.b_byte = v.free_in_b_2 r
-        ∧ e.c_byte = v.free_in_c_2 r)
+        ∧ e.c_byte = v.free_in_c_2 r ∧ e.flags = v.carry_2 r)
   ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_3 r ∧ e.b_byte = v.free_in_b_3 r
-        ∧ e.c_byte = v.free_in_c_3 r)
+        ∧ e.c_byte = v.free_in_c_3 r ∧ e.flags = v.carry_3 r)
   ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_4 r ∧ e.b_byte = v.free_in_b_4 r
-        ∧ e.c_byte = v.free_in_c_4 r)
+        ∧ e.c_byte = v.free_in_c_4 r ∧ e.flags = v.carry_4 r)
   ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_5 r ∧ e.b_byte = v.free_in_b_5 r
-        ∧ e.c_byte = v.free_in_c_5 r)
+        ∧ e.c_byte = v.free_in_c_5 r ∧ e.flags = v.carry_5 r)
   ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_6 r ∧ e.b_byte = v.free_in_b_6 r
-        ∧ e.c_byte = v.free_in_c_6 r)
+        ∧ e.c_byte = v.free_in_c_6 r ∧ e.flags = v.carry_6 r)
   ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_7 r ∧ e.b_byte = v.free_in_b_7 r
-        ∧ e.c_byte = v.free_in_c_7 r)
+        ∧ e.c_byte = v.free_in_c_7 r ∧ e.flags = v.carry_7 r)
 
 end ZiskFv.Airs.Binary

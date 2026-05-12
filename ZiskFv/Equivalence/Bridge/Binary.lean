@@ -183,7 +183,7 @@ theorem byte_chain_match_0_holds
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_0 r) (v.free_in_b_0 r) (v.free_in_c_0 r) := by
-  obtain ⟨⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩, _⟩ :=
+  obtain ⟨⟨e, h_mult, h_op_eq, h_a, h_b, h_c, _⟩, _⟩ :=
     binary_per_byte_lookup_witness v r
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
@@ -193,7 +193,7 @@ theorem byte_chain_match_1_holds
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_1 r) (v.free_in_b_1 r) (v.free_in_c_1 r) := by
-  obtain ⟨_, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩, _⟩ :=
+  obtain ⟨_, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c, _⟩, _⟩ :=
     binary_per_byte_lookup_witness v r
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
@@ -203,7 +203,7 @@ theorem byte_chain_match_2_holds
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_2 r) (v.free_in_b_2 r) (v.free_in_c_2 r) := by
-  obtain ⟨_, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩, _⟩ :=
+  obtain ⟨_, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c, _⟩, _⟩ :=
     binary_per_byte_lookup_witness v r
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
@@ -213,7 +213,7 @@ theorem byte_chain_match_3_holds
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_3 r) (v.free_in_b_3 r) (v.free_in_c_3 r) := by
-  obtain ⟨_, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩, _⟩ :=
+  obtain ⟨_, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c, _⟩, _⟩ :=
     binary_per_byte_lookup_witness v r
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
@@ -223,7 +223,7 @@ theorem byte_chain_match_4_holds
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_4 r) (v.free_in_b_4 r) (v.free_in_c_4 r) := by
-  obtain ⟨_, _, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩, _⟩ :=
+  obtain ⟨_, _, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c, _⟩, _⟩ :=
     binary_per_byte_lookup_witness v r
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
@@ -233,7 +233,7 @@ theorem byte_chain_match_5_holds
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_5 r) (v.free_in_b_5 r) (v.free_in_c_5 r) := by
-  obtain ⟨_, _, _, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩, _⟩ :=
+  obtain ⟨_, _, _, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c, _⟩, _⟩ :=
     binary_per_byte_lookup_witness v r
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
@@ -243,7 +243,7 @@ theorem byte_chain_match_6_holds
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_6 r) (v.free_in_b_6 r) (v.free_in_c_6 r) := by
-  obtain ⟨_, _, _, _, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩, _⟩ :=
+  obtain ⟨_, _, _, _, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c, _⟩, _⟩ :=
     binary_per_byte_lookup_witness v r
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
@@ -253,9 +253,92 @@ theorem byte_chain_match_7_holds
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_7 r) (v.free_in_b_7 r) (v.free_in_c_7 r) := by
-  obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩⟩ :=
+  obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c, _⟩⟩ :=
     binary_per_byte_lookup_witness v r
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
+
+/-! ## carry_7 = 0 for AND / OR / XOR rows (Step 2b match_clo discharge)
+
+For the byte-local logic ops (AND/OR/XOR), `wf_AND` / `wf_OR` /
+`wf_XOR` (from `BinaryTable`) pin the per-byte entry's flags
+low-bit to 0 (no cout). Combined with the forward-direction
+lookup axiom binding `e.flags = v.carry_7 r` for byte 7 and
+`Valid_Binary`'s boolean_carry_7 constraint
+(`v.carry_7 ∈ {0, 1}`), this lets downstream consumers derive
+`v.carry_7 r = 0` — the missing ingredient to discharge
+`h_match_clo` / `h_match_chi` from `matches_entry`'s c_lo / c_hi
+conjuncts (which include a `+ v.carry_7 r` term that vanishes
+when carry_7 = 0).
+
+This helper covers AND/OR/XOR/ANDI/ORI/XORI uniformly: each
+takes its row's `b_op_or_sext = OP_<AND,OR,XOR>` mode pin and
+the row's `boolean_carry_7` constraint, and produces
+`v.carry_7 r = 0`. -/
+
+open ZiskFv.Airs.Binary in
+private lemma boolean_carry_implies_eq_zero {x : FGL}
+    (h_bool : x * (1 - x) = 0) (h_mod : x.val % 2 = 0) :
+    x = 0 := by
+  -- x ∈ {0, 1} from h_bool, plus x.val % 2 = 0 forces x = 0.
+  have h_or : x = 0 ∨ x = 1 := by
+    rcases mul_eq_zero.mp h_bool with h | h
+    · exact Or.inl h
+    · -- 1 - x = 0 → 1 = x → x = 1.
+      exact Or.inr (sub_eq_zero.mp h).symm
+  rcases h_or with h | h
+  · exact h
+  · exfalso
+    have hval : x.val = 1 := by rw [h]; rfl
+    omega
+
+/-- **carry_7 = 0 for AND rows.** -/
+theorem carry_7_zero_AND
+    (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (h_op_AND : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_AND)
+    (h_bool_c7 : ZiskFv.Airs.Binary.boolean_carry_7 v r) :
+    v.carry_7 r = 0 := by
+  obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
+    binary_per_byte_lookup_witness v r
+  have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e h_mult
+  obtain ⟨_, h_AND, _⟩ := h_wf
+  have h_e_op : e.op.val = ZiskFv.Airs.BinaryTable.OP_AND := by
+    rw [h_op_eq]; exact h_op_AND
+  have h_cout_zero : e.flags.val % 2 = 0 := (h_AND h_e_op).2
+  -- e.flags = v.carry_7 r, so v.carry_7 r .val % 2 = 0.
+  rw [h_flags] at h_cout_zero
+  exact boolean_carry_implies_eq_zero h_bool_c7 h_cout_zero
+
+/-- **carry_7 = 0 for OR rows.** -/
+theorem carry_7_zero_OR
+    (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (h_op_OR : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_OR)
+    (h_bool_c7 : ZiskFv.Airs.Binary.boolean_carry_7 v r) :
+    v.carry_7 r = 0 := by
+  obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
+    binary_per_byte_lookup_witness v r
+  have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e h_mult
+  obtain ⟨_, _, h_OR, _⟩ := h_wf
+  have h_e_op : e.op.val = ZiskFv.Airs.BinaryTable.OP_OR := by
+    rw [h_op_eq]; exact h_op_OR
+  have h_cout_zero : e.flags.val % 2 = 0 := (h_OR h_e_op).2
+  rw [h_flags] at h_cout_zero
+  exact boolean_carry_implies_eq_zero h_bool_c7 h_cout_zero
+
+/-- **carry_7 = 0 for XOR rows.** -/
+theorem carry_7_zero_XOR
+    (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (h_op_XOR : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_XOR)
+    (h_bool_c7 : ZiskFv.Airs.Binary.boolean_carry_7 v r) :
+    v.carry_7 r = 0 := by
+  obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
+    binary_per_byte_lookup_witness v r
+  have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e h_mult
+  obtain ⟨_, _, _, h_XOR, _⟩ := h_wf
+  have h_e_op : e.op.val = ZiskFv.Airs.BinaryTable.OP_XOR := by
+    rw [h_op_eq]; exact h_op_XOR
+  have h_cout_zero : e.flags.val % 2 = 0 := (h_XOR h_e_op).2
+  rw [h_flags] at h_cout_zero
+  exact boolean_carry_implies_eq_zero h_bool_c7 h_cout_zero
 
 end ZiskFv.Equivalence.Bridge.Binary
