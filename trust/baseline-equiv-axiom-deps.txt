@@ -29,12 +29,12 @@ ZiskFv.Equivalence.Lw.equiv_LW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_c
 ZiskFv.Equivalence.Mul.equiv_MUL: ZiskFv.Airs.Arith.arith_mul_columns_in_range
 ZiskFv.Equivalence.MulH.equiv_MULH: 
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU: 
-ZiskFv.Equivalence.MulHU.equiv_MULHU: 
+ZiskFv.Equivalence.MulHU.equiv_MULHU: ZiskFv.Airs.Arith.arith_mul_columns_in_range
 ZiskFv.Equivalence.MulW.equiv_MULW: 
 ZiskFv.Equivalence.Or.equiv_OR: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
 ZiskFv.Equivalence.Ori.equiv_ORI: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
 ZiskFv.Equivalence.Rem.equiv_REM: 
-ZiskFv.Equivalence.Remu.equiv_REMU: 
+ZiskFv.Equivalence.Remu.equiv_REMU: ZiskFv.Airs.Arith.arith_div_columns_in_range
 ZiskFv.Equivalence.Remuw.equiv_REMUW: 
 ZiskFv.Equivalence.Remw.equiv_REMW: 
 ZiskFv.Equivalence.Shift.equiv_SLLW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
