@@ -12,7 +12,7 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 2790
+# Total rows: 2719
 # Category bridge: 59
 # Category bus_shape: 516
 # Category byte_chain: 115
@@ -20,7 +20,7 @@
 # Category loose: 376
 # Category match: 98
 # Category other: 589
-# Category range: 423
+# Category range: 352
 # Category row: 69
 # Category state: 217
 # Category transpile: 171
@@ -626,15 +626,7 @@ ZiskFv.Equivalence.Divuw.equiv_DIVUW 020 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 021 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 022 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 023 h_rd_idx [transpile] divuw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 024 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 025 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 026 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 027 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 028 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 029 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 030 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 031 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 032 h_byte_sum_circuit [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
+ZiskFv.Equivalence.Divuw.equiv_DIVUW 024 h_byte_sum_circuit [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
 ZiskFv.Equivalence.Divw.equiv_DIVW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Divw.equiv_DIVW 001 divw_input [other] PureSpec.DivwInput
 ZiskFv.Equivalence.Divw.equiv_DIVW 002 r1 [other] regidx
@@ -659,15 +651,7 @@ ZiskFv.Equivalence.Divw.equiv_DIVW 020 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Divw.equiv_DIVW 021 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Divw.equiv_DIVW 022 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Divw.equiv_DIVW 023 h_rd_idx [transpile] divw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Divw.equiv_DIVW 024 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Divw.equiv_DIVW 025 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Divw.equiv_DIVW 026 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Divw.equiv_DIVW 027 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Divw.equiv_DIVW 028 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Divw.equiv_DIVW 029 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Divw.equiv_DIVW 030 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Divw.equiv_DIVW 031 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Divw.equiv_DIVW 032 h_byte_sum_circuit [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
+ZiskFv.Equivalence.Divw.equiv_DIVW 024 h_byte_sum_circuit [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
 ZiskFv.Equivalence.Fence.equiv_FENCE 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Fence.equiv_FENCE 001 fence_input [other] PureSpec.FenceInput
 ZiskFv.Equivalence.Fence.equiv_FENCE 002 fm [other] BitVec 4
@@ -775,15 +759,6 @@ ZiskFv.Equivalence.Lb.equiv_LB 038 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary)
 ZiskFv.Equivalence.Lb.equiv_LB 039 h_match_clo [match] main.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_
 ZiskFv.Equivalence.Lb.equiv_LB 040 h_match_chi [match] main.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_
 ZiskFv.Equivalence.Lb.equiv_LB 041 h_a0_match [other] (v.free_in_a_0 r_binary).val = e1.x0.val
-ZiskFv.Equivalence.Lb.equiv_LB 042 h_e1_x0 [range] e1.x0.val < 256
-ZiskFv.Equivalence.Lb.equiv_LB 043 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Lb.equiv_LB 044 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Lb.equiv_LB 045 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Lb.equiv_LB 046 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Lb.equiv_LB 047 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Lb.equiv_LB 048 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Lb.equiv_LB 049 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Lb.equiv_LB 050 h_e2_7 [range] e2.x7.val < 256
 ZiskFv.Equivalence.Lh.equiv_LH 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lh.equiv_LH 001 lh_input [other] PureSpec.LhInput
 ZiskFv.Equivalence.Lh.equiv_LH 002 mstatus [other] RegisterType Register.mstatus
@@ -826,16 +801,6 @@ ZiskFv.Equivalence.Lh.equiv_LH 038 h_match_clo [match] main.c_0 r_main = v.free_
 ZiskFv.Equivalence.Lh.equiv_LH 039 h_match_chi [match] main.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_
 ZiskFv.Equivalence.Lh.equiv_LH 040 h_a0_match [other] (v.free_in_a_0 r_binary).val = e1.x0.val
 ZiskFv.Equivalence.Lh.equiv_LH 041 h_a1_match [other] (v.free_in_a_1 r_binary).val = e1.x1.val
-ZiskFv.Equivalence.Lh.equiv_LH 042 h_e1_x0 [range] e1.x0.val < 256
-ZiskFv.Equivalence.Lh.equiv_LH 043 h_e1_x1 [range] e1.x1.val < 256
-ZiskFv.Equivalence.Lh.equiv_LH 044 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Lh.equiv_LH 045 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Lh.equiv_LH 046 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Lh.equiv_LH 047 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Lh.equiv_LH 048 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Lh.equiv_LH 049 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Lh.equiv_LH 050 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Lh.equiv_LH 051 h_e2_7 [range] e2.x7.val < 256
 ZiskFv.Equivalence.LoadBU.equiv_LBU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.LoadBU.equiv_LBU 001 lbu_input [other] PureSpec.LbuInput
 ZiskFv.Equivalence.LoadBU.equiv_LBU 002 mstatus [other] RegisterType Register.mstatus
@@ -1062,18 +1027,6 @@ ZiskFv.Equivalence.Lw.equiv_LW 041 h_a0_match [other] (v.free_in_a_0 r_binary).v
 ZiskFv.Equivalence.Lw.equiv_LW 042 h_a1_match [other] (v.free_in_a_1 r_binary).val = e1.x1.val
 ZiskFv.Equivalence.Lw.equiv_LW 043 h_a2_match [other] (v.free_in_a_2 r_binary).val = e1.x2.val
 ZiskFv.Equivalence.Lw.equiv_LW 044 h_a3_match [other] (v.free_in_a_3 r_binary).val = e1.x3.val
-ZiskFv.Equivalence.Lw.equiv_LW 045 h_e1_x0 [range] e1.x0.val < 256
-ZiskFv.Equivalence.Lw.equiv_LW 046 h_e1_x1 [range] e1.x1.val < 256
-ZiskFv.Equivalence.Lw.equiv_LW 047 h_e1_x2 [range] e1.x2.val < 256
-ZiskFv.Equivalence.Lw.equiv_LW 048 h_e1_x3 [range] e1.x3.val < 256
-ZiskFv.Equivalence.Lw.equiv_LW 049 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Lw.equiv_LW 050 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Lw.equiv_LW 051 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Lw.equiv_LW 052 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Lw.equiv_LW 053 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Lw.equiv_LW 054 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Lw.equiv_LW 055 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Lw.equiv_LW 056 h_e2_7 [range] e2.x7.val < 256
 ZiskFv.Equivalence.Mul.equiv_MUL 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Mul.equiv_MUL 001 mul_input [other] PureSpec.MulInput
 ZiskFv.Equivalence.Mul.equiv_MUL 002 r1 [other] regidx
@@ -1268,15 +1221,7 @@ ZiskFv.Equivalence.MulW.equiv_MULW 020 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.MulW.equiv_MULW 021 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.MulW.equiv_MULW 022 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.MulW.equiv_MULW 023 h_rd_idx [transpile] mulw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.MulW.equiv_MULW 024 h0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.MulW.equiv_MULW 025 h1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.MulW.equiv_MULW 026 h2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.MulW.equiv_MULW 027 h3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.MulW.equiv_MULW 028 h4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.MulW.equiv_MULW 029 h5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.MulW.equiv_MULW 030 h6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.MulW.equiv_MULW 031 h7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.MulW.equiv_MULW 032 h_byte_mulw [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
+ZiskFv.Equivalence.MulW.equiv_MULW 024 h_byte_mulw [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
 ZiskFv.Equivalence.Or.equiv_OR 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Or.equiv_OR 001 or_input [other] PureSpec.OrInput
 ZiskFv.Equivalence.Or.equiv_OR 002 r1 [other] regidx
@@ -1485,15 +1430,7 @@ ZiskFv.Equivalence.Remuw.equiv_REMUW 020 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Remuw.equiv_REMUW 021 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Remuw.equiv_REMUW 022 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Remuw.equiv_REMUW 023 h_rd_idx [transpile] remuw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Remuw.equiv_REMUW 024 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Remuw.equiv_REMUW 025 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Remuw.equiv_REMUW 026 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Remuw.equiv_REMUW 027 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Remuw.equiv_REMUW 028 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Remuw.equiv_REMUW 029 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Remuw.equiv_REMUW 030 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Remuw.equiv_REMUW 031 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Remuw.equiv_REMUW 032 h_byte_sum_circuit [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
+ZiskFv.Equivalence.Remuw.equiv_REMUW 024 h_byte_sum_circuit [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
 ZiskFv.Equivalence.Remw.equiv_REMW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Remw.equiv_REMW 001 remw_input [other] PureSpec.RemwInput
 ZiskFv.Equivalence.Remw.equiv_REMW 002 r1 [other] regidx
@@ -1518,15 +1455,7 @@ ZiskFv.Equivalence.Remw.equiv_REMW 020 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Remw.equiv_REMW 021 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Remw.equiv_REMW 022 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Remw.equiv_REMW 023 h_rd_idx [transpile] remw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Remw.equiv_REMW 024 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Remw.equiv_REMW 025 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Remw.equiv_REMW 026 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Remw.equiv_REMW 027 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Remw.equiv_REMW 028 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Remw.equiv_REMW 029 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Remw.equiv_REMW 030 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Remw.equiv_REMW 031 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Remw.equiv_REMW 032 h_byte_sum_circuit [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
+ZiskFv.Equivalence.Remw.equiv_REMW 024 h_byte_sum_circuit [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
 ZiskFv.Equivalence.Shift.equiv_SLLW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Shift.equiv_SLLW 001 sllw_input [other] PureSpec.SllwInput
 ZiskFv.Equivalence.Shift.equiv_SLLW 002 r1 [other] regidx

@@ -11,32 +11,32 @@ ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU:
 ZiskFv.Equivalence.BranchLessThan.equiv_BLT: 
 ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU: 
 ZiskFv.Equivalence.BranchNotEqual.equiv_BNE: 
-ZiskFv.Equivalence.Div.equiv_DIV: 
+ZiskFv.Equivalence.Div.equiv_DIV: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
 ZiskFv.Equivalence.Divu.equiv_DIVU: ZiskFv.Airs.Arith.arith_div_columns_in_range
-ZiskFv.Equivalence.Divuw.equiv_DIVUW: 
-ZiskFv.Equivalence.Divw.equiv_DIVW: 
+ZiskFv.Equivalence.Divuw.equiv_DIVUW: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
+ZiskFv.Equivalence.Divw.equiv_DIVW: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
 ZiskFv.Equivalence.Fence.equiv_FENCE: 
 ZiskFv.Equivalence.Jal.equiv_JAL: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound, ZiskFv.Trusted.transpile_PC_for_JAL
 ZiskFv.Equivalence.Jalr.equiv_JALR: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound, ZiskFv.PlatformScope.update_elp_state_is_pure_unit, ZiskFv.Trusted.transpile_PC_for_JALR
-ZiskFv.Equivalence.Lb.equiv_LB: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf, ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
-ZiskFv.Equivalence.Lh.equiv_LH: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf, ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Equivalence.Lb.equiv_LB: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf, ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Equivalence.Lh.equiv_LH: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf, ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
 ZiskFv.Equivalence.LoadBU.equiv_LBU: ZiskFv.Airs.MemoryBus.MemAlignBridge.mem_align_rom_subdoubleword_load_value_1_zero, ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_load_perm_sound, ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
 ZiskFv.Equivalence.LoadD.equiv_LD: ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
 ZiskFv.Equivalence.LoadHU.equiv_LHU: ZiskFv.Airs.MemoryBus.MemAlignBridge.mem_align_rom_subdoubleword_load_value_1_zero, ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_load_perm_sound, ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
 ZiskFv.Equivalence.LoadWU.equiv_LWU: ZiskFv.Airs.MemoryBus.MemAlignBridge.mem_align_rom_subdoubleword_load_value_1_zero, ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_load_perm_sound, ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
 ZiskFv.Equivalence.Lui.equiv_LUI: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
-ZiskFv.Equivalence.Lw.equiv_LW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf, ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Equivalence.Lw.equiv_LW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf, ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound, ZiskFv.Circuit.MemModel.row_models_sail_state_load, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
 ZiskFv.Equivalence.Mul.equiv_MUL: ZiskFv.Airs.Arith.arith_mul_columns_in_range
-ZiskFv.Equivalence.MulH.equiv_MULH: 
-ZiskFv.Equivalence.MulHSU.equiv_MULHSU: 
+ZiskFv.Equivalence.MulH.equiv_MULH: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
 ZiskFv.Equivalence.MulHU.equiv_MULHU: ZiskFv.Airs.Arith.arith_mul_columns_in_range
-ZiskFv.Equivalence.MulW.equiv_MULW: 
+ZiskFv.Equivalence.MulW.equiv_MULW: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
 ZiskFv.Equivalence.Or.equiv_OR: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
 ZiskFv.Equivalence.Ori.equiv_ORI: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
-ZiskFv.Equivalence.Rem.equiv_REM: 
+ZiskFv.Equivalence.Rem.equiv_REM: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
 ZiskFv.Equivalence.Remu.equiv_REMU: ZiskFv.Airs.Arith.arith_div_columns_in_range
-ZiskFv.Equivalence.Remuw.equiv_REMUW: 
-ZiskFv.Equivalence.Remw.equiv_REMW: 
+ZiskFv.Equivalence.Remuw.equiv_REMUW: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
+ZiskFv.Equivalence.Remw.equiv_REMW: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
 ZiskFv.Equivalence.Shift.equiv_SLLW: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Equivalence.ShiftR.equiv_SRLW: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
