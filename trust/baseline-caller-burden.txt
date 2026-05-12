@@ -810,10 +810,10 @@ ZiskFv.Equivalence.Lb.equiv_LB 033 v [validator] ZiskFv.Airs.BinaryExtension.Val
 ZiskFv.Equivalence.Lb.equiv_LB 034 r_binary [row] ℕ
 ZiskFv.Equivalence.Lb.equiv_LB 035 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SEXT_B
 ZiskFv.Equivalence.Lb.equiv_LB 036 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.Lb.equiv_LB 037 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.Lb.equiv_LB 038 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.Lb.equiv_LB 039 h_match_clo [match] main.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_
-ZiskFv.Equivalence.Lb.equiv_LB 040 h_match_chi [match] main.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_
+ZiskFv.Equivalence.Lb.equiv_LB 037 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.Lb.equiv_LB 038 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.Lb.equiv_LB 039 h_match_clo [match] main.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_
+ZiskFv.Equivalence.Lb.equiv_LB 040 h_match_chi [match] main.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_
 ZiskFv.Equivalence.Lb.equiv_LB 041 h_a0_match [other] (v.free_in_a_0 r_binary).val = e1.x0.val
 ZiskFv.Equivalence.Lb.equiv_LB 042 h_e1_x0 [range] e1.x0.val < 256
 ZiskFv.Equivalence.Lb.equiv_LB 043 h_e2_0 [range] e2.x0.val < 256
@@ -860,10 +860,10 @@ ZiskFv.Equivalence.Lh.equiv_LH 032 v [validator] ZiskFv.Airs.BinaryExtension.Val
 ZiskFv.Equivalence.Lh.equiv_LH 033 r_binary [row] ℕ
 ZiskFv.Equivalence.Lh.equiv_LH 034 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SEXT_H
 ZiskFv.Equivalence.Lh.equiv_LH 035 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.Lh.equiv_LH 036 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.Lh.equiv_LH 037 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.Lh.equiv_LH 038 h_match_clo [match] main.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_
-ZiskFv.Equivalence.Lh.equiv_LH 039 h_match_chi [match] main.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_
+ZiskFv.Equivalence.Lh.equiv_LH 036 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.Lh.equiv_LH 037 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.Lh.equiv_LH 038 h_match_clo [match] main.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_
+ZiskFv.Equivalence.Lh.equiv_LH 039 h_match_chi [match] main.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_
 ZiskFv.Equivalence.Lh.equiv_LH 040 h_a0_match [other] (v.free_in_a_0 r_binary).val = e1.x0.val
 ZiskFv.Equivalence.Lh.equiv_LH 041 h_a1_match [other] (v.free_in_a_1 r_binary).val = e1.x1.val
 ZiskFv.Equivalence.Lh.equiv_LH 042 h_e1_x0 [range] e1.x0.val < 256
@@ -1112,10 +1112,10 @@ ZiskFv.Equivalence.Lw.equiv_LW 033 v [validator] ZiskFv.Airs.BinaryExtension.Val
 ZiskFv.Equivalence.Lw.equiv_LW 034 r_binary [row] ℕ
 ZiskFv.Equivalence.Lw.equiv_LW 035 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SEXT_W
 ZiskFv.Equivalence.Lw.equiv_LW 036 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.Lw.equiv_LW 037 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.Lw.equiv_LW 038 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.Lw.equiv_LW 039 h_match_clo [match] main.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_
-ZiskFv.Equivalence.Lw.equiv_LW 040 h_match_chi [match] main.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_
+ZiskFv.Equivalence.Lw.equiv_LW 037 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.Lw.equiv_LW 038 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.Lw.equiv_LW 039 h_match_clo [match] main.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_
+ZiskFv.Equivalence.Lw.equiv_LW 040 h_match_chi [match] main.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_
 ZiskFv.Equivalence.Lw.equiv_LW 041 h_a0_match [other] (v.free_in_a_0 r_binary).val = e1.x0.val
 ZiskFv.Equivalence.Lw.equiv_LW 042 h_a1_match [other] (v.free_in_a_1 r_binary).val = e1.x1.val
 ZiskFv.Equivalence.Lw.equiv_LW 043 h_a2_match [other] (v.free_in_a_2 r_binary).val = e1.x2.val
@@ -1709,25 +1709,25 @@ ZiskFv.Equivalence.Shift.equiv_SLLW 028 h_op [other] (v.op r_binary).val = ZiskF
 ZiskFv.Equivalence.Shift.equiv_SLLW 029 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.Shift.equiv_SLLW 030 h_a_range [other] ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary
 ZiskFv.Equivalence.Shift.equiv_SLLW 031 hc_lo_0 [range] (v.free_in_c_0 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 032 hc_lo_1 [range] (v.free_in_c_1 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 033 hc_lo_2 [range] (v.free_in_c_2 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 034 hc_lo_3 [range] (v.free_in_c_3 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 035 hc_lo_4 [range] (v.free_in_c_4 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 036 hc_lo_5 [range] (v.free_in_c_5 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 037 hc_lo_6 [range] (v.free_in_c_6 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 038 hc_lo_7 [range] (v.free_in_c_7 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 039 hc_hi_0 [range] (v.free_in_c_8 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 040 hc_hi_1 [range] (v.free_in_c_9 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 041 hc_hi_2 [range] (v.free_in_c_10 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 042 hc_hi_3 [range] (v.free_in_c_11 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 043 hc_hi_4 [range] (v.free_in_c_12 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 044 hc_hi_5 [range] (v.free_in_c_13 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 045 hc_hi_6 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.Shift.equiv_SLLW 032 hc_lo_1 [range] (v.free_in_c_2 r_binary).val < 4294967296
+ZiskFv.Equivalence.Shift.equiv_SLLW 033 hc_lo_2 [range] (v.free_in_c_4 r_binary).val < 4294967296
+ZiskFv.Equivalence.Shift.equiv_SLLW 034 hc_lo_3 [range] (v.free_in_c_6 r_binary).val < 4294967296
+ZiskFv.Equivalence.Shift.equiv_SLLW 035 hc_lo_4 [range] (v.free_in_c_8 r_binary).val < 4294967296
+ZiskFv.Equivalence.Shift.equiv_SLLW 036 hc_lo_5 [range] (v.free_in_c_10 r_binary).val < 4294967296
+ZiskFv.Equivalence.Shift.equiv_SLLW 037 hc_lo_6 [range] (v.free_in_c_12 r_binary).val < 4294967296
+ZiskFv.Equivalence.Shift.equiv_SLLW 038 hc_lo_7 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.Shift.equiv_SLLW 039 hc_hi_0 [range] (v.free_in_c_1 r_binary).val < 4294967296
+ZiskFv.Equivalence.Shift.equiv_SLLW 040 hc_hi_1 [range] (v.free_in_c_3 r_binary).val < 4294967296
+ZiskFv.Equivalence.Shift.equiv_SLLW 041 hc_hi_2 [range] (v.free_in_c_5 r_binary).val < 4294967296
+ZiskFv.Equivalence.Shift.equiv_SLLW 042 hc_hi_3 [range] (v.free_in_c_7 r_binary).val < 4294967296
+ZiskFv.Equivalence.Shift.equiv_SLLW 043 hc_hi_4 [range] (v.free_in_c_9 r_binary).val < 4294967296
+ZiskFv.Equivalence.Shift.equiv_SLLW 044 hc_hi_5 [range] (v.free_in_c_11 r_binary).val < 4294967296
+ZiskFv.Equivalence.Shift.equiv_SLLW 045 hc_hi_6 [range] (v.free_in_c_13 r_binary).val < 4294967296
 ZiskFv.Equivalence.Shift.equiv_SLLW 046 hc_hi_7 [range] (v.free_in_c_15 r_binary).val < 4294967296
-ZiskFv.Equivalence.Shift.equiv_SLLW 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.Shift.equiv_SLLW 048 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.Shift.equiv_SLLW 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_2 r
-ZiskFv.Equivalence.Shift.equiv_SLLW 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_10 
+ZiskFv.Equivalence.Shift.equiv_SLLW 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.Shift.equiv_SLLW 048 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.Shift.equiv_SLLW 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r
+ZiskFv.Equivalence.Shift.equiv_SLLW 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r
 ZiskFv.Equivalence.Shift.equiv_SLLW 051 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Shift.equiv_SLLW 052 h_e2_0 [range] e2.x0.val < 256
 ZiskFv.Equivalence.Shift.equiv_SLLW 053 h_e2_1 [range] e2.x1.val < 256
@@ -1769,25 +1769,25 @@ ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 026 h_op [other] (v.op r_binary).val = Zi
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 027 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 028 h_a_range [other] ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 029 hc_lo_0 [range] (v.free_in_c_0 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 030 hc_lo_1 [range] (v.free_in_c_1 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 031 hc_lo_2 [range] (v.free_in_c_2 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 032 hc_lo_3 [range] (v.free_in_c_3 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 033 hc_lo_4 [range] (v.free_in_c_4 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 034 hc_lo_5 [range] (v.free_in_c_5 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 035 hc_lo_6 [range] (v.free_in_c_6 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 036 hc_lo_7 [range] (v.free_in_c_7 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 037 hc_hi_0 [range] (v.free_in_c_8 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 038 hc_hi_1 [range] (v.free_in_c_9 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 039 hc_hi_2 [range] (v.free_in_c_10 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 040 hc_hi_3 [range] (v.free_in_c_11 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 041 hc_hi_4 [range] (v.free_in_c_12 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 042 hc_hi_5 [range] (v.free_in_c_13 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 043 hc_hi_6 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 030 hc_lo_1 [range] (v.free_in_c_2 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 031 hc_lo_2 [range] (v.free_in_c_4 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 032 hc_lo_3 [range] (v.free_in_c_6 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 033 hc_lo_4 [range] (v.free_in_c_8 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 034 hc_lo_5 [range] (v.free_in_c_10 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 035 hc_lo_6 [range] (v.free_in_c_12 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 036 hc_lo_7 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 037 hc_hi_0 [range] (v.free_in_c_1 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 038 hc_hi_1 [range] (v.free_in_c_3 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 039 hc_hi_2 [range] (v.free_in_c_5 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 040 hc_hi_3 [range] (v.free_in_c_7 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 041 hc_hi_4 [range] (v.free_in_c_9 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 042 hc_hi_5 [range] (v.free_in_c_11 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 043 hc_hi_6 [range] (v.free_in_c_13 r_binary).val < 4294967296
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 044 hc_hi_7 [range] (v.free_in_c_15 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 045 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 046 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 047 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_2 r
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 048 h_match_chi [match] m.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_10 
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 045 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 046 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 047 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 048 h_match_chi [match] m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 049 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 050 h_e2_0 [range] e2.x0.val < 256
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 051 h_e2_1 [range] e2.x1.val < 256
@@ -1831,25 +1831,25 @@ ZiskFv.Equivalence.ShiftR.equiv_SRLW 028 h_op [other] (v.op r_binary).val = Zisk
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 029 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 030 h_a_range [other] ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 031 hc_lo_0 [range] (v.free_in_c_0 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 032 hc_lo_1 [range] (v.free_in_c_1 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 033 hc_lo_2 [range] (v.free_in_c_2 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 034 hc_lo_3 [range] (v.free_in_c_3 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 035 hc_lo_4 [range] (v.free_in_c_4 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 036 hc_lo_5 [range] (v.free_in_c_5 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 037 hc_lo_6 [range] (v.free_in_c_6 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 038 hc_lo_7 [range] (v.free_in_c_7 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 039 hc_hi_0 [range] (v.free_in_c_8 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 040 hc_hi_1 [range] (v.free_in_c_9 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 041 hc_hi_2 [range] (v.free_in_c_10 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 042 hc_hi_3 [range] (v.free_in_c_11 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 043 hc_hi_4 [range] (v.free_in_c_12 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 044 hc_hi_5 [range] (v.free_in_c_13 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 045 hc_hi_6 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 032 hc_lo_1 [range] (v.free_in_c_2 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 033 hc_lo_2 [range] (v.free_in_c_4 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 034 hc_lo_3 [range] (v.free_in_c_6 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 035 hc_lo_4 [range] (v.free_in_c_8 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 036 hc_lo_5 [range] (v.free_in_c_10 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 037 hc_lo_6 [range] (v.free_in_c_12 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 038 hc_lo_7 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 039 hc_hi_0 [range] (v.free_in_c_1 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 040 hc_hi_1 [range] (v.free_in_c_3 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 041 hc_hi_2 [range] (v.free_in_c_5 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 042 hc_hi_3 [range] (v.free_in_c_7 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 043 hc_hi_4 [range] (v.free_in_c_9 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 044 hc_hi_5 [range] (v.free_in_c_11 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 045 hc_hi_6 [range] (v.free_in_c_13 r_binary).val < 4294967296
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 046 hc_hi_7 [range] (v.free_in_c_15 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 048 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_2 r
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_10 
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 048 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 051 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 052 h_e2_0 [range] e2.x0.val < 256
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 053 h_e2_1 [range] e2.x1.val < 256
@@ -1893,25 +1893,25 @@ ZiskFv.Equivalence.ShiftRA.equiv_SRAW 028 h_op [other] (v.op r_binary).val = Zis
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 029 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 030 h_a_range [other] ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 031 hc_lo_0 [range] (v.free_in_c_0 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 032 hc_lo_1 [range] (v.free_in_c_1 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 033 hc_lo_2 [range] (v.free_in_c_2 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 034 hc_lo_3 [range] (v.free_in_c_3 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 035 hc_lo_4 [range] (v.free_in_c_4 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 036 hc_lo_5 [range] (v.free_in_c_5 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 037 hc_lo_6 [range] (v.free_in_c_6 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 038 hc_lo_7 [range] (v.free_in_c_7 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 039 hc_hi_0 [range] (v.free_in_c_8 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 040 hc_hi_1 [range] (v.free_in_c_9 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 041 hc_hi_2 [range] (v.free_in_c_10 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 042 hc_hi_3 [range] (v.free_in_c_11 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 043 hc_hi_4 [range] (v.free_in_c_12 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 044 hc_hi_5 [range] (v.free_in_c_13 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 045 hc_hi_6 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 032 hc_lo_1 [range] (v.free_in_c_2 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 033 hc_lo_2 [range] (v.free_in_c_4 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 034 hc_lo_3 [range] (v.free_in_c_6 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 035 hc_lo_4 [range] (v.free_in_c_8 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 036 hc_lo_5 [range] (v.free_in_c_10 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 037 hc_lo_6 [range] (v.free_in_c_12 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 038 hc_lo_7 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 039 hc_hi_0 [range] (v.free_in_c_1 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 040 hc_hi_1 [range] (v.free_in_c_3 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 041 hc_hi_2 [range] (v.free_in_c_5 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 042 hc_hi_3 [range] (v.free_in_c_7 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 043 hc_hi_4 [range] (v.free_in_c_9 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 044 hc_hi_5 [range] (v.free_in_c_11 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 045 hc_hi_6 [range] (v.free_in_c_13 r_binary).val < 4294967296
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 046 hc_hi_7 [range] (v.free_in_c_15 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 048 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_2 r
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_10 
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 048 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 051 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 052 h_e2_0 [range] e2.x0.val < 256
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 053 h_e2_1 [range] e2.x1.val < 256
@@ -1953,25 +1953,25 @@ ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 026 h_op [other] (v.op r_binary).val = Z
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 027 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 028 h_a_range [other] ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 029 hc_lo_0 [range] (v.free_in_c_0 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 030 hc_lo_1 [range] (v.free_in_c_1 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 031 hc_lo_2 [range] (v.free_in_c_2 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 032 hc_lo_3 [range] (v.free_in_c_3 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 033 hc_lo_4 [range] (v.free_in_c_4 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 034 hc_lo_5 [range] (v.free_in_c_5 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 035 hc_lo_6 [range] (v.free_in_c_6 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 036 hc_lo_7 [range] (v.free_in_c_7 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 037 hc_hi_0 [range] (v.free_in_c_8 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 038 hc_hi_1 [range] (v.free_in_c_9 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 039 hc_hi_2 [range] (v.free_in_c_10 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 040 hc_hi_3 [range] (v.free_in_c_11 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 041 hc_hi_4 [range] (v.free_in_c_12 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 042 hc_hi_5 [range] (v.free_in_c_13 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 043 hc_hi_6 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 030 hc_lo_1 [range] (v.free_in_c_2 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 031 hc_lo_2 [range] (v.free_in_c_4 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 032 hc_lo_3 [range] (v.free_in_c_6 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 033 hc_lo_4 [range] (v.free_in_c_8 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 034 hc_lo_5 [range] (v.free_in_c_10 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 035 hc_lo_6 [range] (v.free_in_c_12 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 036 hc_lo_7 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 037 hc_hi_0 [range] (v.free_in_c_1 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 038 hc_hi_1 [range] (v.free_in_c_3 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 039 hc_hi_2 [range] (v.free_in_c_5 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 040 hc_hi_3 [range] (v.free_in_c_7 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 041 hc_hi_4 [range] (v.free_in_c_9 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 042 hc_hi_5 [range] (v.free_in_c_11 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 043 hc_hi_6 [range] (v.free_in_c_13 r_binary).val < 4294967296
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 044 hc_hi_7 [range] (v.free_in_c_15 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 045 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 046 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 047 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_2 r
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 048 h_match_chi [match] m.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_10 
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 045 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 046 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 047 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 048 h_match_chi [match] m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 049 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 050 h_e2_0 [range] e2.x0.val < 256
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 051 h_e2_1 [range] e2.x1.val < 256
@@ -2013,25 +2013,25 @@ ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 026 h_op [other] (v.op r_binary).val = Z
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 027 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 028 h_a_range [other] ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 029 hc_lo_0 [range] (v.free_in_c_0 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 030 hc_lo_1 [range] (v.free_in_c_1 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 031 hc_lo_2 [range] (v.free_in_c_2 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 032 hc_lo_3 [range] (v.free_in_c_3 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 033 hc_lo_4 [range] (v.free_in_c_4 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 034 hc_lo_5 [range] (v.free_in_c_5 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 035 hc_lo_6 [range] (v.free_in_c_6 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 036 hc_lo_7 [range] (v.free_in_c_7 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 037 hc_hi_0 [range] (v.free_in_c_8 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 038 hc_hi_1 [range] (v.free_in_c_9 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 039 hc_hi_2 [range] (v.free_in_c_10 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 040 hc_hi_3 [range] (v.free_in_c_11 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 041 hc_hi_4 [range] (v.free_in_c_12 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 042 hc_hi_5 [range] (v.free_in_c_13 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 043 hc_hi_6 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 030 hc_lo_1 [range] (v.free_in_c_2 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 031 hc_lo_2 [range] (v.free_in_c_4 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 032 hc_lo_3 [range] (v.free_in_c_6 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 033 hc_lo_4 [range] (v.free_in_c_8 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 034 hc_lo_5 [range] (v.free_in_c_10 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 035 hc_lo_6 [range] (v.free_in_c_12 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 036 hc_lo_7 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 037 hc_hi_0 [range] (v.free_in_c_1 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 038 hc_hi_1 [range] (v.free_in_c_3 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 039 hc_hi_2 [range] (v.free_in_c_5 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 040 hc_hi_3 [range] (v.free_in_c_7 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 041 hc_hi_4 [range] (v.free_in_c_9 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 042 hc_hi_5 [range] (v.free_in_c_11 r_binary).val < 4294967296
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 043 hc_hi_6 [range] (v.free_in_c_13 r_binary).val < 4294967296
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 044 hc_hi_7 [range] (v.free_in_c_15 r_binary).val < 4294967296
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 045 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 046 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 047 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_2 r
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 048 h_match_chi [match] m.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_10 
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 045 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 046 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 047 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 048 h_match_chi [match] m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 049 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 050 h_e2_0 [range] e2.x0.val < 256
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 051 h_e2_1 [range] e2.x1.val < 256
@@ -2075,25 +2075,25 @@ ZiskFv.Equivalence.Sll.equiv_SLL 028 h_op [other] (v.op r_binary).val = ZiskFv.A
 ZiskFv.Equivalence.Sll.equiv_SLL 029 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.Sll.equiv_SLL 030 h_a_range [other] ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary
 ZiskFv.Equivalence.Sll.equiv_SLL 031 hc_lo_0 [range] (v.free_in_c_0 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 032 hc_lo_1 [range] (v.free_in_c_1 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 033 hc_lo_2 [range] (v.free_in_c_2 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 034 hc_lo_3 [range] (v.free_in_c_3 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 035 hc_lo_4 [range] (v.free_in_c_4 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 036 hc_lo_5 [range] (v.free_in_c_5 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 037 hc_lo_6 [range] (v.free_in_c_6 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 038 hc_lo_7 [range] (v.free_in_c_7 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 039 hc_hi_0 [range] (v.free_in_c_8 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 040 hc_hi_1 [range] (v.free_in_c_9 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 041 hc_hi_2 [range] (v.free_in_c_10 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 042 hc_hi_3 [range] (v.free_in_c_11 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 043 hc_hi_4 [range] (v.free_in_c_12 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 044 hc_hi_5 [range] (v.free_in_c_13 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 045 hc_hi_6 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sll.equiv_SLL 032 hc_lo_1 [range] (v.free_in_c_2 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sll.equiv_SLL 033 hc_lo_2 [range] (v.free_in_c_4 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sll.equiv_SLL 034 hc_lo_3 [range] (v.free_in_c_6 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sll.equiv_SLL 035 hc_lo_4 [range] (v.free_in_c_8 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sll.equiv_SLL 036 hc_lo_5 [range] (v.free_in_c_10 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sll.equiv_SLL 037 hc_lo_6 [range] (v.free_in_c_12 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sll.equiv_SLL 038 hc_lo_7 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sll.equiv_SLL 039 hc_hi_0 [range] (v.free_in_c_1 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sll.equiv_SLL 040 hc_hi_1 [range] (v.free_in_c_3 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sll.equiv_SLL 041 hc_hi_2 [range] (v.free_in_c_5 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sll.equiv_SLL 042 hc_hi_3 [range] (v.free_in_c_7 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sll.equiv_SLL 043 hc_hi_4 [range] (v.free_in_c_9 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sll.equiv_SLL 044 hc_hi_5 [range] (v.free_in_c_11 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sll.equiv_SLL 045 hc_hi_6 [range] (v.free_in_c_13 r_binary).val < 4294967296
 ZiskFv.Equivalence.Sll.equiv_SLL 046 hc_hi_7 [range] (v.free_in_c_15 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.Sll.equiv_SLL 048 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.Sll.equiv_SLL 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_2 r
-ZiskFv.Equivalence.Sll.equiv_SLL 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_10 
+ZiskFv.Equivalence.Sll.equiv_SLL 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.Sll.equiv_SLL 048 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.Sll.equiv_SLL 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r
+ZiskFv.Equivalence.Sll.equiv_SLL 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r
 ZiskFv.Equivalence.Sll.equiv_SLL 051 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Sll.equiv_SLL 052 h_e2_0 [range] e2.x0.val < 256
 ZiskFv.Equivalence.Sll.equiv_SLL 053 h_e2_1 [range] e2.x1.val < 256
@@ -2136,25 +2136,25 @@ ZiskFv.Equivalence.Slli.equiv_SLLI 028 h_op [other] (v.op r_binary).val = ZiskFv
 ZiskFv.Equivalence.Slli.equiv_SLLI 029 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.Slli.equiv_SLLI 030 h_a_range [other] ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary
 ZiskFv.Equivalence.Slli.equiv_SLLI 031 hc_lo_0 [range] (v.free_in_c_0 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 032 hc_lo_1 [range] (v.free_in_c_1 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 033 hc_lo_2 [range] (v.free_in_c_2 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 034 hc_lo_3 [range] (v.free_in_c_3 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 035 hc_lo_4 [range] (v.free_in_c_4 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 036 hc_lo_5 [range] (v.free_in_c_5 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 037 hc_lo_6 [range] (v.free_in_c_6 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 038 hc_lo_7 [range] (v.free_in_c_7 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 039 hc_hi_0 [range] (v.free_in_c_8 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 040 hc_hi_1 [range] (v.free_in_c_9 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 041 hc_hi_2 [range] (v.free_in_c_10 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 042 hc_hi_3 [range] (v.free_in_c_11 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 043 hc_hi_4 [range] (v.free_in_c_12 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 044 hc_hi_5 [range] (v.free_in_c_13 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 045 hc_hi_6 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.Slli.equiv_SLLI 032 hc_lo_1 [range] (v.free_in_c_2 r_binary).val < 4294967296
+ZiskFv.Equivalence.Slli.equiv_SLLI 033 hc_lo_2 [range] (v.free_in_c_4 r_binary).val < 4294967296
+ZiskFv.Equivalence.Slli.equiv_SLLI 034 hc_lo_3 [range] (v.free_in_c_6 r_binary).val < 4294967296
+ZiskFv.Equivalence.Slli.equiv_SLLI 035 hc_lo_4 [range] (v.free_in_c_8 r_binary).val < 4294967296
+ZiskFv.Equivalence.Slli.equiv_SLLI 036 hc_lo_5 [range] (v.free_in_c_10 r_binary).val < 4294967296
+ZiskFv.Equivalence.Slli.equiv_SLLI 037 hc_lo_6 [range] (v.free_in_c_12 r_binary).val < 4294967296
+ZiskFv.Equivalence.Slli.equiv_SLLI 038 hc_lo_7 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.Slli.equiv_SLLI 039 hc_hi_0 [range] (v.free_in_c_1 r_binary).val < 4294967296
+ZiskFv.Equivalence.Slli.equiv_SLLI 040 hc_hi_1 [range] (v.free_in_c_3 r_binary).val < 4294967296
+ZiskFv.Equivalence.Slli.equiv_SLLI 041 hc_hi_2 [range] (v.free_in_c_5 r_binary).val < 4294967296
+ZiskFv.Equivalence.Slli.equiv_SLLI 042 hc_hi_3 [range] (v.free_in_c_7 r_binary).val < 4294967296
+ZiskFv.Equivalence.Slli.equiv_SLLI 043 hc_hi_4 [range] (v.free_in_c_9 r_binary).val < 4294967296
+ZiskFv.Equivalence.Slli.equiv_SLLI 044 hc_hi_5 [range] (v.free_in_c_11 r_binary).val < 4294967296
+ZiskFv.Equivalence.Slli.equiv_SLLI 045 hc_hi_6 [range] (v.free_in_c_13 r_binary).val < 4294967296
 ZiskFv.Equivalence.Slli.equiv_SLLI 046 hc_hi_7 [range] (v.free_in_c_15 r_binary).val < 4294967296
-ZiskFv.Equivalence.Slli.equiv_SLLI 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.Slli.equiv_SLLI 048 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.Slli.equiv_SLLI 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_2 r
-ZiskFv.Equivalence.Slli.equiv_SLLI 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_10 
+ZiskFv.Equivalence.Slli.equiv_SLLI 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.Slli.equiv_SLLI 048 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.Slli.equiv_SLLI 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r
+ZiskFv.Equivalence.Slli.equiv_SLLI 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r
 ZiskFv.Equivalence.Slli.equiv_SLLI 051 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Slli.equiv_SLLI 052 h_e2_0 [range] e2.x0.val < 256
 ZiskFv.Equivalence.Slli.equiv_SLLI 053 h_e2_1 [range] e2.x1.val < 256
@@ -2680,25 +2680,25 @@ ZiskFv.Equivalence.Sra.equiv_SRA 028 h_op [other] (v.op r_binary).val = ZiskFv.A
 ZiskFv.Equivalence.Sra.equiv_SRA 029 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.Sra.equiv_SRA 030 h_a_range [other] ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary
 ZiskFv.Equivalence.Sra.equiv_SRA 031 hc_lo_0 [range] (v.free_in_c_0 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 032 hc_lo_1 [range] (v.free_in_c_1 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 033 hc_lo_2 [range] (v.free_in_c_2 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 034 hc_lo_3 [range] (v.free_in_c_3 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 035 hc_lo_4 [range] (v.free_in_c_4 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 036 hc_lo_5 [range] (v.free_in_c_5 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 037 hc_lo_6 [range] (v.free_in_c_6 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 038 hc_lo_7 [range] (v.free_in_c_7 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 039 hc_hi_0 [range] (v.free_in_c_8 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 040 hc_hi_1 [range] (v.free_in_c_9 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 041 hc_hi_2 [range] (v.free_in_c_10 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 042 hc_hi_3 [range] (v.free_in_c_11 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 043 hc_hi_4 [range] (v.free_in_c_12 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 044 hc_hi_5 [range] (v.free_in_c_13 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 045 hc_hi_6 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sra.equiv_SRA 032 hc_lo_1 [range] (v.free_in_c_2 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sra.equiv_SRA 033 hc_lo_2 [range] (v.free_in_c_4 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sra.equiv_SRA 034 hc_lo_3 [range] (v.free_in_c_6 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sra.equiv_SRA 035 hc_lo_4 [range] (v.free_in_c_8 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sra.equiv_SRA 036 hc_lo_5 [range] (v.free_in_c_10 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sra.equiv_SRA 037 hc_lo_6 [range] (v.free_in_c_12 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sra.equiv_SRA 038 hc_lo_7 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sra.equiv_SRA 039 hc_hi_0 [range] (v.free_in_c_1 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sra.equiv_SRA 040 hc_hi_1 [range] (v.free_in_c_3 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sra.equiv_SRA 041 hc_hi_2 [range] (v.free_in_c_5 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sra.equiv_SRA 042 hc_hi_3 [range] (v.free_in_c_7 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sra.equiv_SRA 043 hc_hi_4 [range] (v.free_in_c_9 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sra.equiv_SRA 044 hc_hi_5 [range] (v.free_in_c_11 r_binary).val < 4294967296
+ZiskFv.Equivalence.Sra.equiv_SRA 045 hc_hi_6 [range] (v.free_in_c_13 r_binary).val < 4294967296
 ZiskFv.Equivalence.Sra.equiv_SRA 046 hc_hi_7 [range] (v.free_in_c_15 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sra.equiv_SRA 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.Sra.equiv_SRA 048 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.Sra.equiv_SRA 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_2 r
-ZiskFv.Equivalence.Sra.equiv_SRA 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_10 
+ZiskFv.Equivalence.Sra.equiv_SRA 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.Sra.equiv_SRA 048 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.Sra.equiv_SRA 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r
+ZiskFv.Equivalence.Sra.equiv_SRA 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r
 ZiskFv.Equivalence.Sra.equiv_SRA 051 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Sra.equiv_SRA 052 h_e2_0 [range] e2.x0.val < 256
 ZiskFv.Equivalence.Sra.equiv_SRA 053 h_e2_1 [range] e2.x1.val < 256
@@ -2742,25 +2742,25 @@ ZiskFv.Equivalence.Srai.equiv_SRAI 028 h_op [other] (v.op r_binary).val = ZiskFv
 ZiskFv.Equivalence.Srai.equiv_SRAI 029 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.Srai.equiv_SRAI 030 h_a_range [other] ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary
 ZiskFv.Equivalence.Srai.equiv_SRAI 031 hc_lo_0 [range] (v.free_in_c_0 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 032 hc_lo_1 [range] (v.free_in_c_1 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 033 hc_lo_2 [range] (v.free_in_c_2 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 034 hc_lo_3 [range] (v.free_in_c_3 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 035 hc_lo_4 [range] (v.free_in_c_4 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 036 hc_lo_5 [range] (v.free_in_c_5 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 037 hc_lo_6 [range] (v.free_in_c_6 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 038 hc_lo_7 [range] (v.free_in_c_7 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 039 hc_hi_0 [range] (v.free_in_c_8 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 040 hc_hi_1 [range] (v.free_in_c_9 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 041 hc_hi_2 [range] (v.free_in_c_10 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 042 hc_hi_3 [range] (v.free_in_c_11 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 043 hc_hi_4 [range] (v.free_in_c_12 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 044 hc_hi_5 [range] (v.free_in_c_13 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 045 hc_hi_6 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srai.equiv_SRAI 032 hc_lo_1 [range] (v.free_in_c_2 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srai.equiv_SRAI 033 hc_lo_2 [range] (v.free_in_c_4 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srai.equiv_SRAI 034 hc_lo_3 [range] (v.free_in_c_6 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srai.equiv_SRAI 035 hc_lo_4 [range] (v.free_in_c_8 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srai.equiv_SRAI 036 hc_lo_5 [range] (v.free_in_c_10 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srai.equiv_SRAI 037 hc_lo_6 [range] (v.free_in_c_12 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srai.equiv_SRAI 038 hc_lo_7 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srai.equiv_SRAI 039 hc_hi_0 [range] (v.free_in_c_1 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srai.equiv_SRAI 040 hc_hi_1 [range] (v.free_in_c_3 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srai.equiv_SRAI 041 hc_hi_2 [range] (v.free_in_c_5 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srai.equiv_SRAI 042 hc_hi_3 [range] (v.free_in_c_7 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srai.equiv_SRAI 043 hc_hi_4 [range] (v.free_in_c_9 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srai.equiv_SRAI 044 hc_hi_5 [range] (v.free_in_c_11 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srai.equiv_SRAI 045 hc_hi_6 [range] (v.free_in_c_13 r_binary).val < 4294967296
 ZiskFv.Equivalence.Srai.equiv_SRAI 046 hc_hi_7 [range] (v.free_in_c_15 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srai.equiv_SRAI 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.Srai.equiv_SRAI 048 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.Srai.equiv_SRAI 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_2 r
-ZiskFv.Equivalence.Srai.equiv_SRAI 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_10 
+ZiskFv.Equivalence.Srai.equiv_SRAI 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.Srai.equiv_SRAI 048 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.Srai.equiv_SRAI 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r
+ZiskFv.Equivalence.Srai.equiv_SRAI 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r
 ZiskFv.Equivalence.Srai.equiv_SRAI 051 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Srai.equiv_SRAI 052 h_e2_0 [range] e2.x0.val < 256
 ZiskFv.Equivalence.Srai.equiv_SRAI 053 h_e2_1 [range] e2.x1.val < 256
@@ -2804,25 +2804,25 @@ ZiskFv.Equivalence.Srl.equiv_SRL 028 h_op [other] (v.op r_binary).val = ZiskFv.A
 ZiskFv.Equivalence.Srl.equiv_SRL 029 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.Srl.equiv_SRL 030 h_a_range [other] ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary
 ZiskFv.Equivalence.Srl.equiv_SRL 031 hc_lo_0 [range] (v.free_in_c_0 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 032 hc_lo_1 [range] (v.free_in_c_1 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 033 hc_lo_2 [range] (v.free_in_c_2 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 034 hc_lo_3 [range] (v.free_in_c_3 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 035 hc_lo_4 [range] (v.free_in_c_4 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 036 hc_lo_5 [range] (v.free_in_c_5 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 037 hc_lo_6 [range] (v.free_in_c_6 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 038 hc_lo_7 [range] (v.free_in_c_7 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 039 hc_hi_0 [range] (v.free_in_c_8 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 040 hc_hi_1 [range] (v.free_in_c_9 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 041 hc_hi_2 [range] (v.free_in_c_10 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 042 hc_hi_3 [range] (v.free_in_c_11 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 043 hc_hi_4 [range] (v.free_in_c_12 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 044 hc_hi_5 [range] (v.free_in_c_13 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 045 hc_hi_6 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srl.equiv_SRL 032 hc_lo_1 [range] (v.free_in_c_2 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srl.equiv_SRL 033 hc_lo_2 [range] (v.free_in_c_4 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srl.equiv_SRL 034 hc_lo_3 [range] (v.free_in_c_6 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srl.equiv_SRL 035 hc_lo_4 [range] (v.free_in_c_8 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srl.equiv_SRL 036 hc_lo_5 [range] (v.free_in_c_10 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srl.equiv_SRL 037 hc_lo_6 [range] (v.free_in_c_12 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srl.equiv_SRL 038 hc_lo_7 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srl.equiv_SRL 039 hc_hi_0 [range] (v.free_in_c_1 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srl.equiv_SRL 040 hc_hi_1 [range] (v.free_in_c_3 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srl.equiv_SRL 041 hc_hi_2 [range] (v.free_in_c_5 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srl.equiv_SRL 042 hc_hi_3 [range] (v.free_in_c_7 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srl.equiv_SRL 043 hc_hi_4 [range] (v.free_in_c_9 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srl.equiv_SRL 044 hc_hi_5 [range] (v.free_in_c_11 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srl.equiv_SRL 045 hc_hi_6 [range] (v.free_in_c_13 r_binary).val < 4294967296
 ZiskFv.Equivalence.Srl.equiv_SRL 046 hc_hi_7 [range] (v.free_in_c_15 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srl.equiv_SRL 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.Srl.equiv_SRL 048 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.Srl.equiv_SRL 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_2 r
-ZiskFv.Equivalence.Srl.equiv_SRL 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_10 
+ZiskFv.Equivalence.Srl.equiv_SRL 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.Srl.equiv_SRL 048 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.Srl.equiv_SRL 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r
+ZiskFv.Equivalence.Srl.equiv_SRL 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r
 ZiskFv.Equivalence.Srl.equiv_SRL 051 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Srl.equiv_SRL 052 h_e2_0 [range] e2.x0.val < 256
 ZiskFv.Equivalence.Srl.equiv_SRL 053 h_e2_1 [range] e2.x1.val < 256
@@ -2866,25 +2866,25 @@ ZiskFv.Equivalence.Srli.equiv_SRLI 028 h_op [other] (v.op r_binary).val = ZiskFv
 ZiskFv.Equivalence.Srli.equiv_SRLI 029 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.Srli.equiv_SRLI 030 h_a_range [other] ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary
 ZiskFv.Equivalence.Srli.equiv_SRLI 031 hc_lo_0 [range] (v.free_in_c_0 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 032 hc_lo_1 [range] (v.free_in_c_1 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 033 hc_lo_2 [range] (v.free_in_c_2 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 034 hc_lo_3 [range] (v.free_in_c_3 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 035 hc_lo_4 [range] (v.free_in_c_4 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 036 hc_lo_5 [range] (v.free_in_c_5 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 037 hc_lo_6 [range] (v.free_in_c_6 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 038 hc_lo_7 [range] (v.free_in_c_7 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 039 hc_hi_0 [range] (v.free_in_c_8 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 040 hc_hi_1 [range] (v.free_in_c_9 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 041 hc_hi_2 [range] (v.free_in_c_10 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 042 hc_hi_3 [range] (v.free_in_c_11 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 043 hc_hi_4 [range] (v.free_in_c_12 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 044 hc_hi_5 [range] (v.free_in_c_13 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 045 hc_hi_6 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srli.equiv_SRLI 032 hc_lo_1 [range] (v.free_in_c_2 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srli.equiv_SRLI 033 hc_lo_2 [range] (v.free_in_c_4 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srli.equiv_SRLI 034 hc_lo_3 [range] (v.free_in_c_6 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srli.equiv_SRLI 035 hc_lo_4 [range] (v.free_in_c_8 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srli.equiv_SRLI 036 hc_lo_5 [range] (v.free_in_c_10 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srli.equiv_SRLI 037 hc_lo_6 [range] (v.free_in_c_12 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srli.equiv_SRLI 038 hc_lo_7 [range] (v.free_in_c_14 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srli.equiv_SRLI 039 hc_hi_0 [range] (v.free_in_c_1 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srli.equiv_SRLI 040 hc_hi_1 [range] (v.free_in_c_3 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srli.equiv_SRLI 041 hc_hi_2 [range] (v.free_in_c_5 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srli.equiv_SRLI 042 hc_hi_3 [range] (v.free_in_c_7 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srli.equiv_SRLI 043 hc_hi_4 [range] (v.free_in_c_9 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srli.equiv_SRLI 044 hc_hi_5 [range] (v.free_in_c_11 r_binary).val < 4294967296
+ZiskFv.Equivalence.Srli.equiv_SRLI 045 hc_hi_6 [range] (v.free_in_c_13 r_binary).val < 4294967296
 ZiskFv.Equivalence.Srli.equiv_SRLI 046 hc_hi_7 [range] (v.free_in_c_15 r_binary).val < 4294967296
-ZiskFv.Equivalence.Srli.equiv_SRLI 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val + (v.free_in_c_2 r_b
-ZiskFv.Equivalence.Srli.equiv_SRLI 048 hc_hi_sum_lt [range] (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val + (v.free_in_c_10 r_
-ZiskFv.Equivalence.Srli.equiv_SRLI 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary + v.free_in_c_2 r
-ZiskFv.Equivalence.Srli.equiv_SRLI 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary + v.free_in_c_10 
+ZiskFv.Equivalence.Srli.equiv_SRLI 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.Srli.equiv_SRLI 048 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.Srli.equiv_SRLI 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r
+ZiskFv.Equivalence.Srli.equiv_SRLI 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r
 ZiskFv.Equivalence.Srli.equiv_SRLI 051 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Srli.equiv_SRLI 052 h_e2_0 [range] e2.x0.val < 256
 ZiskFv.Equivalence.Srli.equiv_SRLI 053 h_e2_1 [range] e2.x1.val < 256

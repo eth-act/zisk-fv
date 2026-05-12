@@ -119,39 +119,39 @@ theorem equiv_SLLW
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
     (h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary)
     (hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
-    (hc_lo_1 : (v.free_in_c_1 r_binary).val < 4294967296)
-    (hc_lo_2 : (v.free_in_c_2 r_binary).val < 4294967296)
-    (hc_lo_3 : (v.free_in_c_3 r_binary).val < 4294967296)
-    (hc_lo_4 : (v.free_in_c_4 r_binary).val < 4294967296)
-    (hc_lo_5 : (v.free_in_c_5 r_binary).val < 4294967296)
-    (hc_lo_6 : (v.free_in_c_6 r_binary).val < 4294967296)
-    (hc_lo_7 : (v.free_in_c_7 r_binary).val < 4294967296)
-    (hc_hi_0 : (v.free_in_c_8 r_binary).val < 4294967296)
-    (hc_hi_1 : (v.free_in_c_9 r_binary).val < 4294967296)
-    (hc_hi_2 : (v.free_in_c_10 r_binary).val < 4294967296)
-    (hc_hi_3 : (v.free_in_c_11 r_binary).val < 4294967296)
-    (hc_hi_4 : (v.free_in_c_12 r_binary).val < 4294967296)
-    (hc_hi_5 : (v.free_in_c_13 r_binary).val < 4294967296)
-    (hc_hi_6 : (v.free_in_c_14 r_binary).val < 4294967296)
+    (hc_lo_1 : (v.free_in_c_2 r_binary).val < 4294967296)
+    (hc_lo_2 : (v.free_in_c_4 r_binary).val < 4294967296)
+    (hc_lo_3 : (v.free_in_c_6 r_binary).val < 4294967296)
+    (hc_lo_4 : (v.free_in_c_8 r_binary).val < 4294967296)
+    (hc_lo_5 : (v.free_in_c_10 r_binary).val < 4294967296)
+    (hc_lo_6 : (v.free_in_c_12 r_binary).val < 4294967296)
+    (hc_lo_7 : (v.free_in_c_14 r_binary).val < 4294967296)
+    (hc_hi_0 : (v.free_in_c_1 r_binary).val < 4294967296)
+    (hc_hi_1 : (v.free_in_c_3 r_binary).val < 4294967296)
+    (hc_hi_2 : (v.free_in_c_5 r_binary).val < 4294967296)
+    (hc_hi_3 : (v.free_in_c_7 r_binary).val < 4294967296)
+    (hc_hi_4 : (v.free_in_c_9 r_binary).val < 4294967296)
+    (hc_hi_5 : (v.free_in_c_11 r_binary).val < 4294967296)
+    (hc_hi_6 : (v.free_in_c_13 r_binary).val < 4294967296)
     (hc_hi_7 : (v.free_in_c_15 r_binary).val < 4294967296)
-    (hc_lo_sum_lt : (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
-        + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
-        + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
-        + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val < 4294967296)
-    (hc_hi_sum_lt : (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
-        + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
-        + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
-        + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+    (hc_lo_sum_lt : (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+        + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+        + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+        + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
+    (hc_hi_sum_lt : (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+        + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+        + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+        + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
     (h_match_clo : m.c_0 r_main
-        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
-          + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
-          + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
-          + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary)
+        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
     (h_match_chi : m.c_1 r_main
-        = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
-          + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
-          + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
-          + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary)
+        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
     (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)

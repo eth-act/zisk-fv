@@ -137,25 +137,25 @@ theorem equiv_LW
       (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SEXT_W)
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
     (hc_lo_sum_lt :
-      (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
-      + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
-      + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
-      + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val < 4294967296)
+      (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+      + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+      + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+      + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
     (hc_hi_sum_lt :
-      (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
-      + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
-      + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
-      + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+      (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+      + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+      + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+      + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
     (h_match_clo : main.c_0 r_main
-        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
-          + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
-          + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
-          + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary)
+        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
     (h_match_chi : main.c_1 r_main
-        = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
-          + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
-          + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
-          + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary)
+        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_a0_match : (v.free_in_a_0 r_binary).val = e1.x0.val)
     (h_a1_match : (v.free_in_a_1 r_binary).val = e1.x1.val)
     (h_a2_match : (v.free_in_a_2 r_binary).val = e1.x2.val)
