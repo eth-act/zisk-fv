@@ -14,6 +14,7 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
+import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.RdValDerivation.JumpUType
 
 /-!
@@ -160,11 +161,7 @@ theorem equiv_JALR
     (h_lane_hi : ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd)
     (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
     (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
-    (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296)
-    (h_e_rd_0 : e_rd.x0.val < 256) (h_e_rd_1 : e_rd.x1.val < 256)
-    (h_e_rd_2 : e_rd.x2.val < 256) (h_e_rd_3 : e_rd.x3.val < 256)
-    (h_e_rd_4 : e_rd.x4.val < 256) (h_e_rd_5 : e_rd.x5.val < 256)
-    (h_e_rd_6 : e_rd.x6.val < 256) (h_e_rd_7 : e_rd.x7.val < 256) :
+    (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) :
     (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
@@ -174,8 +171,14 @@ theorem equiv_JALR
       jalr_input.PC m r_main next_pc e_rd
       h_circuit h_jmp2 h_lane_lo h_lane_hi
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
-      h_e_rd_0 h_e_rd_1 h_e_rd_2 h_e_rd_3
-      h_e_rd_4 h_e_rd_5 h_e_rd_6 h_e_rd_7
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.2.2
   rw [equiv_JALR_sail state jalr_input imm rs1 rd misa_val mseccfg
         h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
         h_cur_privilege h_mseccfg]
