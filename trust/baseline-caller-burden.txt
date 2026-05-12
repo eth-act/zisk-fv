@@ -12,15 +12,15 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 3054
+# Total rows: 3039
 # Category bridge: 59
 # Category bus_shape: 516
 # Category byte_chain: 115
 # Category entry: 67
 # Category loose: 408
 # Category match: 98
-# Category other: 607
-# Category range: 639
+# Category other: 600
+# Category range: 631
 # Category row: 69
 # Category state: 217
 # Category transpile: 171
@@ -877,9 +877,6 @@ ZiskFv.Equivalence.LoadBU.equiv_LBU 037 h_copy1 [other] internal_op1_copies_b1 m
 ZiskFv.Equivalence.LoadBU.equiv_LBU 038 h_ext [match] main.is_external_op r_main = 0
 ZiskFv.Equivalence.LoadBU.equiv_LBU 039 h_op [match] main.op r_main = (1 : FGL)
 ZiskFv.Equivalence.LoadBU.equiv_LBU 040 h_width [match] main.ind_width r_main = (1 : FGL)
-ZiskFv.Equivalence.LoadBU.equiv_LBU 041 _ [other] RANGE class
-ZiskFv.Equivalence.LoadBU.equiv_LBU 042 h_e1_range [other] memory_entry_bytes_in_range e1
-ZiskFv.Equivalence.LoadBU.equiv_LBU 043 h_e2_range [other] memory_entry_bytes_in_range e2
 ZiskFv.Equivalence.LoadD.equiv_LD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.LoadD.equiv_LD 001 ld_input [other] PureSpec.LdInput
 ZiskFv.Equivalence.LoadD.equiv_LD 002 mstatus [other] RegisterType Register.mstatus
@@ -956,8 +953,6 @@ ZiskFv.Equivalence.LoadHU.equiv_LHU 035 h_copy1 [other] internal_op1_copies_b1 m
 ZiskFv.Equivalence.LoadHU.equiv_LHU 036 h_ext [match] main.is_external_op r_main = 0
 ZiskFv.Equivalence.LoadHU.equiv_LHU 037 h_op [match] main.op r_main = (1 : FGL)
 ZiskFv.Equivalence.LoadHU.equiv_LHU 038 h_width [match] main.ind_width r_main = (2 : FGL)
-ZiskFv.Equivalence.LoadHU.equiv_LHU 039 h_e1_range [other] memory_entry_bytes_in_range e1
-ZiskFv.Equivalence.LoadHU.equiv_LHU 040 h_e2_range [other] memory_entry_bytes_in_range e2
 ZiskFv.Equivalence.LoadWU.equiv_LWU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.LoadWU.equiv_LWU 001 lwu_input [other] PureSpec.LwuInput
 ZiskFv.Equivalence.LoadWU.equiv_LWU 002 mstatus [other] RegisterType Register.mstatus
@@ -997,8 +992,6 @@ ZiskFv.Equivalence.LoadWU.equiv_LWU 035 h_copy1 [other] internal_op1_copies_b1 m
 ZiskFv.Equivalence.LoadWU.equiv_LWU 036 h_ext [match] main.is_external_op r_main = 0
 ZiskFv.Equivalence.LoadWU.equiv_LWU 037 h_op [match] main.op r_main = (1 : FGL)
 ZiskFv.Equivalence.LoadWU.equiv_LWU 038 h_width [match] main.ind_width r_main = (4 : FGL)
-ZiskFv.Equivalence.LoadWU.equiv_LWU 039 h_e1_range [other] memory_entry_bytes_in_range e1
-ZiskFv.Equivalence.LoadWU.equiv_LWU 040 h_e2_range [other] memory_entry_bytes_in_range e2
 ZiskFv.Equivalence.Lui.equiv_LUI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lui.equiv_LUI 001 lui_input [other] PureSpec.LuiInput
 ZiskFv.Equivalence.Lui.equiv_LUI 002 imm [other] BitVec 20
@@ -1024,14 +1017,6 @@ ZiskFv.Equivalence.Lui.equiv_LUI 021 h_circuit [other] ZiskFv.Tactics.UTypeArche
 ZiskFv.Equivalence.Lui.equiv_LUI 022 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e_rd
 ZiskFv.Equivalence.Lui.equiv_LUI 023 h_imm_lo_nat [other] (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat
 ZiskFv.Equivalence.Lui.equiv_LUI 024 h_imm_hi_nat [other] (m.b_1 r_main).val = (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat / 429
-ZiskFv.Equivalence.Lui.equiv_LUI 025 h_e2_0 [range] e_rd.x0.val < 256
-ZiskFv.Equivalence.Lui.equiv_LUI 026 h_e2_1 [range] e_rd.x1.val < 256
-ZiskFv.Equivalence.Lui.equiv_LUI 027 h_e2_2 [range] e_rd.x2.val < 256
-ZiskFv.Equivalence.Lui.equiv_LUI 028 h_e2_3 [range] e_rd.x3.val < 256
-ZiskFv.Equivalence.Lui.equiv_LUI 029 h_e2_4 [range] e_rd.x4.val < 256
-ZiskFv.Equivalence.Lui.equiv_LUI 030 h_e2_5 [range] e_rd.x5.val < 256
-ZiskFv.Equivalence.Lui.equiv_LUI 031 h_e2_6 [range] e_rd.x6.val < 256
-ZiskFv.Equivalence.Lui.equiv_LUI 032 h_e2_7 [range] e_rd.x7.val < 256
 ZiskFv.Equivalence.Lw.equiv_LW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lw.equiv_LW 001 lw_input [other] PureSpec.LwInput
 ZiskFv.Equivalence.Lw.equiv_LW 002 mstatus [other] RegisterType Register.mstatus
