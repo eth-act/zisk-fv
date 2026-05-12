@@ -5,6 +5,8 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
+import ZiskFv.Airs.Arith.Ranges
+import ZiskFv.Airs.Arith.CarryChain
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 
@@ -110,5 +112,64 @@ theorem arith_div_secondary_discharge_conservative
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary a r_a) :=
   op_bus_perm_sound_ArithDivSecondary m a r_main h_main_active h_main_op
+
+/-- **ArithMul chunk-range discharge at any row.** All 16 chunks
+    (`a_0..a_3`, `b_0..b_3`, `c_0..c_3`, `d_0..d_3`) are < 2^16.
+    Pure consequence of `arith_mul_columns_in_range`. -/
+theorem arith_mul_chunk_ranges_at_holds
+    (a : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ) :
+    (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
+  ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
+  ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
+  ∧ (a.b_2 r).val < 65536 ∧ (a.b_3 r).val < 65536
+  ∧ (a.c_0 r).val < 65536 ∧ (a.c_1 r).val < 65536
+  ∧ (a.c_2 r).val < 65536 ∧ (a.c_3 r).val < 65536
+  ∧ (a.d_0 r).val < 65536 ∧ (a.d_1 r).val < 65536
+  ∧ (a.d_2 r).val < 65536 ∧ (a.d_3 r).val < 65536 :=
+  ZiskFv.Airs.Arith.arith_mul_columns_in_range a r
+
+/-- **ArithDiv chunk-range discharge at any row.** Mirror of
+    `arith_mul_chunk_ranges_at_holds` for the Div view. -/
+theorem arith_div_chunk_ranges_at_holds
+    (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ) :
+    (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
+  ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
+  ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
+  ∧ (a.b_2 r).val < 65536 ∧ (a.b_3 r).val < 65536
+  ∧ (a.c_0 r).val < 65536 ∧ (a.c_1 r).val < 65536
+  ∧ (a.c_2 r).val < 65536 ∧ (a.c_3 r).val < 65536
+  ∧ (a.d_0 r).val < 65536 ∧ (a.d_1 r).val < 65536
+  ∧ (a.d_2 r).val < 65536 ∧ (a.d_3 r).val < 65536 :=
+  ZiskFv.Airs.Arith.arith_div_columns_in_range a r
+
+/-! ## CarryChain re-exports — packed multiplication / division
+    identities derived from the per-row carry-chain constraints.
+
+    Re-exports of the `arith_{mul,div}_{un,}signed_packed_correct_bundled`
+    lemmas from `Airs/Arith/{Mul,Div}.lean` under the Bridge namespace
+    so downstream `equiv_<OP>` consumers (Step 3) discharge the
+    `hC31..hC38` and friends caller hypotheses through a single Bridge
+    import path. The underlying derivation is `CarryChain.lean`'s
+    `arith_{mul,div}_{un,}signed_carry_identity`. -/
+
+/-- **MUL-unsigned packed correctness (bundled).** Re-export of
+    `ZiskFv.Airs.ArithMul.arith_mul_unsigned_packed_correct_bundled`. -/
+abbrev mul_unsigned_packed :=
+  @ZiskFv.Airs.ArithMul.arith_mul_unsigned_packed_correct_bundled
+
+/-- **MUL-signed packed correctness.** Re-export of
+    `ZiskFv.Airs.ArithMul.arith_mul_signed_packed_correct`. -/
+abbrev mul_signed_packed :=
+  @ZiskFv.Airs.ArithMul.arith_mul_signed_packed_correct
+
+/-- **DIV-unsigned packed correctness (bundled).** Re-export of
+    `ZiskFv.Airs.ArithDiv.arith_div_unsigned_packed_correct_bundled`. -/
+abbrev div_unsigned_packed :=
+  @ZiskFv.Airs.ArithDiv.arith_div_unsigned_packed_correct_bundled
+
+/-- **DIV-signed packed correctness.** Re-export of
+    `ZiskFv.Airs.ArithDiv.arith_div_signed_packed_correct`. -/
+abbrev div_signed_packed :=
+  @ZiskFv.Airs.ArithDiv.arith_div_signed_packed_correct
 
 end ZiskFv.Equivalence.Bridge.Arith

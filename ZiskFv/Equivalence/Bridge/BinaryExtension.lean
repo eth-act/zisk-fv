@@ -4,6 +4,7 @@ import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 
@@ -77,5 +78,21 @@ theorem binext_discharge_conservative
     ∃ r_e,
       matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryExtension e r_e) :=
   op_bus_perm_sound_BinaryExtension m e r_main h_main_active h_main_op
+
+/-- **BinaryExtension byte-range discharge at a specific row.**
+    Derived from `binary_extension_columns_in_range` — no caller
+    hypothesis needed. Mirrors `Bridge.Binary.byte_ranges_at_holds`.
+    Consumed by downstream `equiv_<OP>` proofs that have already
+    obtained a concrete `r_e` row index from `binext_discharge_conservative`
+    (or from caller-supplied existential witnessing). -/
+theorem byte_ranges_at_holds (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+    (e.free_in_a_0 r).val < 256 ∧ (e.free_in_a_1 r).val < 256
+  ∧ (e.free_in_a_2 r).val < 256 ∧ (e.free_in_a_3 r).val < 256
+  ∧ (e.free_in_a_4 r).val < 256 ∧ (e.free_in_a_5 r).val < 256
+  ∧ (e.free_in_a_6 r).val < 256 ∧ (e.free_in_a_7 r).val < 256
+  ∧ (e.free_in_b r).val < 256 :=
+  ⟨be_a_0_lt_256 e r, be_a_1_lt_256 e r, be_a_2_lt_256 e r, be_a_3_lt_256 e r,
+   be_a_4_lt_256 e r, be_a_5_lt_256 e r, be_a_6_lt_256 e r, be_a_7_lt_256 e r,
+   be_b_lt_256 e r⟩
 
 end ZiskFv.Equivalence.Bridge.BinaryExtension
