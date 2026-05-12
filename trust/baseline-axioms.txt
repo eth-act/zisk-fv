@@ -2,13 +2,14 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 92
+# Total entries: 93
 #
 39b9f47eebdda4ca  ZiskFv/Airs/Arith/Ranges.lean:42  axiom     arith_mul_columns_in_range
 c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:54  axiom     arith_div_columns_in_range
 08d74d52fabb3c51  ZiskFv/Airs/Binary/BinaryAddRanges.lean:59  axiom     binary_add_columns_in_range
 feafd4d75a95e2ad  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:51  axiom     binary_extension_columns_in_range
-81896805d93d6948  ZiskFv/Airs/Binary/BinaryRanges.lean:55  axiom     binary_columns_in_range
+81896805d93d6948  ZiskFv/Airs/Binary/BinaryRanges.lean:56  axiom     binary_columns_in_range
+3ba7c1606ba5b3ef  ZiskFv/Airs/Binary/BinaryRanges.lean:149  axiom     binary_per_byte_lookup_witness
 7fccc882b9a79e6a  ZiskFv/Airs/BinaryExtensionTable.lean:262  axiom     bin_ext_table_consumer_wf
 4d9e296fb3ead091  ZiskFv/Airs/BinaryTable.lean:281  axiom     bin_table_consumer_wf
 219730a67e1235f3  ZiskFv/Airs/Main/Ranges.lean:67  axiom     main_columns_in_range

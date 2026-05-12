@@ -3,6 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Airs.Binary.Binary
+import ZiskFv.Airs.BinaryTable
 
 /-!
 # Binary AIR — universal column-range theorems
@@ -118,5 +119,65 @@ theorem bin_c_6_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_6 r
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 theorem bin_c_7_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_7 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+
+/-! ## Forward-direction lookup-protocol axiom
+
+`bin_table_consumer_wf` (in `Airs/BinaryTable.lean`) is the
+*backward* direction: "for any entry the Binary AIR consumes via
+the `bus_id = 125` lookup, `wf_properties` holds." The companion
+*forward* direction below states that the Binary AIR's per-byte
+lookup interactions are realized as consumed entries — i.e., for
+every row and every byte slot, there exists a consumed
+`BinaryTableEntry` whose a/b/c bytes match the row's columns and
+whose op matches the row's `b_op_or_sext`.
+
+This is the same protocol-soundness trust class as
+`bin_table_consumer_wf`; the two together are the standard
+"lookup is bidirectional" trust assumption that the PLONK / logUp
+permutation argument formalizes. Cited at
+`zisk/state-machines/binary/pil/binary.pil:131-148` (the
+`lookup_assumes(BINARY_TABLE_ID, ...)` calls in the `proves_*`
+loops).
+-/
+
+/-- **Forward-direction Binary lookup soundness.** For every Binary
+    AIR row and every byte slot `i ∈ {0..7}`, there exists a
+    `BinaryTableEntry` consumed (multiplicity = 1) against the
+    BinaryTable bus, whose `op` matches the row's `b_op_or_sext`
+    and whose `a_byte`/`b_byte`/`c_byte` match the row's per-byte
+    columns at that slot. Companion to `bin_table_consumer_wf`. -/
+axiom binary_per_byte_lookup_witness (v : Valid_Binary C FGL FGL) (r : ℕ) :
+    (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
+        ∧ e.a_byte = v.free_in_a_0 r ∧ e.b_byte = v.free_in_b_0 r
+        ∧ e.c_byte = v.free_in_c_0 r)
+  ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
+        ∧ e.a_byte = v.free_in_a_1 r ∧ e.b_byte = v.free_in_b_1 r
+        ∧ e.c_byte = v.free_in_c_1 r)
+  ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
+        ∧ e.a_byte = v.free_in_a_2 r ∧ e.b_byte = v.free_in_b_2 r
+        ∧ e.c_byte = v.free_in_c_2 r)
+  ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
+        ∧ e.a_byte = v.free_in_a_3 r ∧ e.b_byte = v.free_in_b_3 r
+        ∧ e.c_byte = v.free_in_c_3 r)
+  ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
+        ∧ e.a_byte = v.free_in_a_4 r ∧ e.b_byte = v.free_in_b_4 r
+        ∧ e.c_byte = v.free_in_c_4 r)
+  ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
+        ∧ e.a_byte = v.free_in_a_5 r ∧ e.b_byte = v.free_in_b_5 r
+        ∧ e.c_byte = v.free_in_c_5 r)
+  ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
+        ∧ e.a_byte = v.free_in_a_6 r ∧ e.b_byte = v.free_in_b_6 r
+        ∧ e.c_byte = v.free_in_c_6 r)
+  ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
+        ∧ e.a_byte = v.free_in_a_7 r ∧ e.b_byte = v.free_in_b_7 r
+        ∧ e.c_byte = v.free_in_c_7 r)
 
 end ZiskFv.Airs.Binary

@@ -5,6 +5,7 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
+import ZiskFv.Airs.Binary.BinaryPackedCorrect
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 
@@ -156,5 +157,105 @@ theorem byte_ranges_at_holds (v : Valid_Binary C FGL FGL) (r : ℕ) :
    bin_c_2_lt_256 v r, bin_c_3_lt_256 v r,
    bin_c_4_lt_256 v r, bin_c_5_lt_256 v r,
    bin_c_6_lt_256 v r, bin_c_7_lt_256 v r⟩
+
+/-! ## Byte-chain discharge (Step 2b full)
+
+`consumer_byte_match`-style discharge for the 6 byte-local logic
+opcodes (AND/ANDI/OR/ORI/XOR/XORI). Uses the forward-direction
+lookup axiom `binary_per_byte_lookup_witness` (in
+`BinaryRanges.lean`) — for each byte slot, that axiom gives an
+existential `BinaryTableEntry` consumed at that slot whose
+columns match Valid_Binary's row. Combined with the row's
+`b_op_or_sext = OP_<X>` mode pin, we can build the per-byte
+`consumer_byte_match` predicate directly.
+-/
+
+open ZiskFv.Airs.Binary in
+/-- **Byte-i consumer match from `Valid_Binary`.** Given Binary's
+    forward-direction lookup witness and the mode-pin
+    `v.b_op_or_sext r = op_val`, produce
+    `consumer_byte_match op_val (v.free_in_a_i r) (v.free_in_b_i r)
+    (v.free_in_c_i r)` for byte 0. The other 7 byte specializations
+    follow the same shape with `binary_per_byte_lookup_witness`'s
+    other 7 conjuncts. -/
+theorem byte_chain_match_0_holds
+    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (h_op_val : (v.b_op_or_sext r).val = op_val) :
+    ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_0 r) (v.free_in_b_0 r) (v.free_in_c_0 r) := by
+  obtain ⟨⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩, _⟩ :=
+    binary_per_byte_lookup_witness v r
+  refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
+  rw [h_op_eq]; exact h_op_val
+
+theorem byte_chain_match_1_holds
+    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (h_op_val : (v.b_op_or_sext r).val = op_val) :
+    ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_1 r) (v.free_in_b_1 r) (v.free_in_c_1 r) := by
+  obtain ⟨_, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩, _⟩ :=
+    binary_per_byte_lookup_witness v r
+  refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
+  rw [h_op_eq]; exact h_op_val
+
+theorem byte_chain_match_2_holds
+    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (h_op_val : (v.b_op_or_sext r).val = op_val) :
+    ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_2 r) (v.free_in_b_2 r) (v.free_in_c_2 r) := by
+  obtain ⟨_, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩, _⟩ :=
+    binary_per_byte_lookup_witness v r
+  refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
+  rw [h_op_eq]; exact h_op_val
+
+theorem byte_chain_match_3_holds
+    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (h_op_val : (v.b_op_or_sext r).val = op_val) :
+    ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_3 r) (v.free_in_b_3 r) (v.free_in_c_3 r) := by
+  obtain ⟨_, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩, _⟩ :=
+    binary_per_byte_lookup_witness v r
+  refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
+  rw [h_op_eq]; exact h_op_val
+
+theorem byte_chain_match_4_holds
+    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (h_op_val : (v.b_op_or_sext r).val = op_val) :
+    ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_4 r) (v.free_in_b_4 r) (v.free_in_c_4 r) := by
+  obtain ⟨_, _, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩, _⟩ :=
+    binary_per_byte_lookup_witness v r
+  refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
+  rw [h_op_eq]; exact h_op_val
+
+theorem byte_chain_match_5_holds
+    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (h_op_val : (v.b_op_or_sext r).val = op_val) :
+    ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_5 r) (v.free_in_b_5 r) (v.free_in_c_5 r) := by
+  obtain ⟨_, _, _, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩, _⟩ :=
+    binary_per_byte_lookup_witness v r
+  refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
+  rw [h_op_eq]; exact h_op_val
+
+theorem byte_chain_match_6_holds
+    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (h_op_val : (v.b_op_or_sext r).val = op_val) :
+    ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_6 r) (v.free_in_b_6 r) (v.free_in_c_6 r) := by
+  obtain ⟨_, _, _, _, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩, _⟩ :=
+    binary_per_byte_lookup_witness v r
+  refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
+  rw [h_op_eq]; exact h_op_val
+
+theorem byte_chain_match_7_holds
+    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (h_op_val : (v.b_op_or_sext r).val = op_val) :
+    ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_7 r) (v.free_in_b_7 r) (v.free_in_c_7 r) := by
+  obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, h_a, h_b, h_c⟩⟩ :=
+    binary_per_byte_lookup_witness v r
+  refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
+  rw [h_op_eq]; exact h_op_val
 
 end ZiskFv.Equivalence.Bridge.Binary
