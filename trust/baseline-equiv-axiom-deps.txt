@@ -37,22 +37,22 @@ ZiskFv.Equivalence.Rem.equiv_REM:
 ZiskFv.Equivalence.Remu.equiv_REMU: 
 ZiskFv.Equivalence.Remuw.equiv_REMUW: 
 ZiskFv.Equivalence.Remw.equiv_REMW: 
-ZiskFv.Equivalence.Shift.equiv_SLLW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
-ZiskFv.Equivalence.ShiftR.equiv_SRLW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.Shift.equiv_SLLW: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.ShiftR.equiv_SRLW: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Equivalence.Sll.equiv_SLL: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
-ZiskFv.Equivalence.Slli.equiv_SLLI: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.Slli.equiv_SLLI: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Equivalence.Slt.equiv_SLT: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_SLT
 ZiskFv.Equivalence.Slti.equiv_SLTI: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_SLTI
 ZiskFv.Equivalence.Sltiu.equiv_SLTIU: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_SLTIU
 ZiskFv.Equivalence.Sltu.equiv_SLTU: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_SLTU
-ZiskFv.Equivalence.Sra.equiv_SRA: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
-ZiskFv.Equivalence.Srai.equiv_SRAI: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
-ZiskFv.Equivalence.Srl.equiv_SRL: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
-ZiskFv.Equivalence.Srli.equiv_SRLI: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.Sra.equiv_SRA: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.Srai.equiv_SRAI: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.Srl.equiv_SRL: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Equivalence.Srli.equiv_SRLI: ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range, ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Equivalence.StoreB.equiv_SB: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
 ZiskFv.Equivalence.StoreD.equiv_SD: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
 ZiskFv.Equivalence.StoreH.equiv_SH: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
