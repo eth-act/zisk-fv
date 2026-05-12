@@ -12,19 +12,19 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 3256
-# Category bridge: 65
+# Total rows: 3227
+# Category bridge: 63
 # Category bus_shape: 516
 # Category byte_chain: 115
 # Category entry: 67
-# Category loose: 504
-# Category match: 90
-# Category other: 605
-# Category range: 759
-# Category row: 65
+# Category loose: 488
+# Category match: 92
+# Category other: 606
+# Category range: 743
+# Category row: 66
 # Category state: 217
 # Category transpile: 171
-# Category validator: 82
+# Category validator: 83
 #
 ZiskFv.Equivalence.Add.equiv_ADD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Add.equiv_ADD 001 add_input [other] PureSpec.AddInput
@@ -2191,102 +2191,73 @@ ZiskFv.Equivalence.Slt.equiv_SLT 022 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Slt.equiv_SLT 023 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Slt.equiv_SLT 024 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Slt.equiv_SLT 025 h_rd_idx [transpile] slt_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Slt.equiv_SLT 026 _ [other] replacing the OUTPUT-EQ h_rd_val
-ZiskFv.Equivalence.Slt.equiv_SLT 027 a0 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 028 a1 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 029 a2 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 030 a3 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 031 a4 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 032 a5 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 033 a6 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 034 a7 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 035 b0 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 036 b1 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 037 b2 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 038 b3 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 039 b4 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 040 b5 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 041 b6 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 042 b7 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 043 c0 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 044 c1 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 045 c2 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 046 c3 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 047 c4 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 048 c5 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 049 c6 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 050 c7 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 051 cin0 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 052 cin1 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 053 cin2 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 054 cin3 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 055 cin4 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 056 cin5 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 057 cin6 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 058 cin7 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 059 fl0 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 060 fl1 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 061 fl2 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 062 fl3 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 063 fl4 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 064 fl5 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 065 fl6 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 066 fl7 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 067 pi0 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 068 pi1 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 069 pi2 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 070 pi3 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 071 pi4 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 072 pi5 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 073 pi6 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 074 pi7 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 075 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT a0 b0
-ZiskFv.Equivalence.Slt.equiv_SLT 076 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT a1 b1
-ZiskFv.Equivalence.Slt.equiv_SLT 077 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT a2 b2
-ZiskFv.Equivalence.Slt.equiv_SLT 078 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT a3 b3
-ZiskFv.Equivalence.Slt.equiv_SLT 079 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT a4 b4
-ZiskFv.Equivalence.Slt.equiv_SLT 080 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT a5 b5
-ZiskFv.Equivalence.Slt.equiv_SLT 081 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT a6 b6
-ZiskFv.Equivalence.Slt.equiv_SLT 082 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT a7 b7
-ZiskFv.Equivalence.Slt.equiv_SLT 083 ha0 [range] a0.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 084 ha1 [range] a1.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 085 ha2 [range] a2.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 086 ha3 [range] a3.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 087 ha4 [range] a4.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 088 ha5 [range] a5.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 089 ha6 [range] a6.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 090 ha7 [range] a7.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 091 hb0 [range] b0.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 092 hb1 [range] b1.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 093 hb2 [range] b2.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 094 hb3 [range] b3.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 095 hb4 [range] b4.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 096 hb5 [range] b5.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 097 hb6 [range] b6.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 098 hb7 [range] b7.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 099 h_cin0 [other] cin0.val = 0
-ZiskFv.Equivalence.Slt.equiv_SLT 100 h_cin1 [other] cin1.val = fl0.val % 2
-ZiskFv.Equivalence.Slt.equiv_SLT 101 h_cin2 [other] cin2.val = fl1.val % 2
-ZiskFv.Equivalence.Slt.equiv_SLT 102 h_cin3 [other] cin3.val = fl2.val % 2
-ZiskFv.Equivalence.Slt.equiv_SLT 103 h_cin4 [other] cin4.val = fl3.val % 2
-ZiskFv.Equivalence.Slt.equiv_SLT 104 h_cin5 [other] cin5.val = fl4.val % 2
-ZiskFv.Equivalence.Slt.equiv_SLT 105 h_cin6 [other] cin6.val = fl5.val % 2
-ZiskFv.Equivalence.Slt.equiv_SLT 106 h_cin7 [other] cin7.val = fl6.val % 2
-ZiskFv.Equivalence.Slt.equiv_SLT 107 h_pi7 [other] pi7.val = 1
-ZiskFv.Equivalence.Slt.equiv_SLT 108 h_match_clo [match] m.c_0 r_main = fl7
-ZiskFv.Equivalence.Slt.equiv_SLT 109 h_match_chi [match] m.c_1 r_main = 0
-ZiskFv.Equivalence.Slt.equiv_SLT 110 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Slt.equiv_SLT 111 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 112 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 113 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 114 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 115 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 116 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 117 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 118 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Slt.equiv_SLT 119 h_fl7_lt_2 [range] fl7.val < 2
-ZiskFv.Equivalence.Slt.equiv_SLT 120 h_input_r1_circuit [bridge] slt_input.r1_val = BitVec.ofNat 64 (a0.val + a1.val * 256 + a2.val * 65536 + a3.
-ZiskFv.Equivalence.Slt.equiv_SLT 121 h_input_r2_circuit [bridge] slt_input.r2_val = BitVec.ofNat 64 (b0.val + b1.val * 256 + b2.val * 65536 + b3.
+ZiskFv.Equivalence.Slt.equiv_SLT 026 _ [other] replaces 16 loose a_i/b_i quantifiers + 16 byte ranges + -- 2 input-bridge promi
+ZiskFv.Equivalence.Slt.equiv_SLT 027 v [validator] ZiskFv.Airs.Binary.Valid_Binary C FGL FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 028 r_binary [row] ℕ
+ZiskFv.Equivalence.Slt.equiv_SLT 029 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Slt.equiv_SLT 030 h_main_op_slt [match] m.op r_main = OP_LT
+ZiskFv.Equivalence.Slt.equiv_SLT 031 h_match [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)
+ZiskFv.Equivalence.Slt.equiv_SLT 032 c0 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 033 c1 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 034 c2 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 035 c3 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 036 c4 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 037 c5 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 038 c6 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 039 c7 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 040 cin0 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 041 cin1 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 042 cin2 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 043 cin3 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 044 cin4 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 045 cin5 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 046 cin6 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 047 cin7 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 048 fl0 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 049 fl1 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 050 fl2 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 051 fl3 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 052 fl4 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 053 fl5 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 054 fl6 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 055 fl7 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 056 pi0 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 057 pi1 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 058 pi2 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 059 pi3 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 060 pi4 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 061 pi5 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 062 pi6 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 063 pi7 [loose] FGL
+ZiskFv.Equivalence.Slt.equiv_SLT 064 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
+ZiskFv.Equivalence.Slt.equiv_SLT 065 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
+ZiskFv.Equivalence.Slt.equiv_SLT 066 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
+ZiskFv.Equivalence.Slt.equiv_SLT 067 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
+ZiskFv.Equivalence.Slt.equiv_SLT 068 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
+ZiskFv.Equivalence.Slt.equiv_SLT 069 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
+ZiskFv.Equivalence.Slt.equiv_SLT 070 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
+ZiskFv.Equivalence.Slt.equiv_SLT 071 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
+ZiskFv.Equivalence.Slt.equiv_SLT 072 h_cin0 [other] cin0.val = 0
+ZiskFv.Equivalence.Slt.equiv_SLT 073 h_cin1 [other] cin1.val = fl0.val % 2
+ZiskFv.Equivalence.Slt.equiv_SLT 074 h_cin2 [other] cin2.val = fl1.val % 2
+ZiskFv.Equivalence.Slt.equiv_SLT 075 h_cin3 [other] cin3.val = fl2.val % 2
+ZiskFv.Equivalence.Slt.equiv_SLT 076 h_cin4 [other] cin4.val = fl3.val % 2
+ZiskFv.Equivalence.Slt.equiv_SLT 077 h_cin5 [other] cin5.val = fl4.val % 2
+ZiskFv.Equivalence.Slt.equiv_SLT 078 h_cin6 [other] cin6.val = fl5.val % 2
+ZiskFv.Equivalence.Slt.equiv_SLT 079 h_cin7 [other] cin7.val = fl6.val % 2
+ZiskFv.Equivalence.Slt.equiv_SLT 080 h_pi7 [other] pi7.val = 1
+ZiskFv.Equivalence.Slt.equiv_SLT 081 h_match_clo [match] m.c_0 r_main = fl7
+ZiskFv.Equivalence.Slt.equiv_SLT 082 h_match_chi [match] m.c_1 r_main = 0
+ZiskFv.Equivalence.Slt.equiv_SLT 083 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Slt.equiv_SLT 084 h_e2_0 [range] e2.x0.val < 256
+ZiskFv.Equivalence.Slt.equiv_SLT 085 h_e2_1 [range] e2.x1.val < 256
+ZiskFv.Equivalence.Slt.equiv_SLT 086 h_e2_2 [range] e2.x2.val < 256
+ZiskFv.Equivalence.Slt.equiv_SLT 087 h_e2_3 [range] e2.x3.val < 256
+ZiskFv.Equivalence.Slt.equiv_SLT 088 h_e2_4 [range] e2.x4.val < 256
+ZiskFv.Equivalence.Slt.equiv_SLT 089 h_e2_5 [range] e2.x5.val < 256
+ZiskFv.Equivalence.Slt.equiv_SLT 090 h_e2_6 [range] e2.x6.val < 256
+ZiskFv.Equivalence.Slt.equiv_SLT 091 h_e2_7 [range] e2.x7.val < 256
+ZiskFv.Equivalence.Slt.equiv_SLT 092 h_fl7_lt_2 [range] fl7.val < 2
 ZiskFv.Equivalence.Slti.equiv_SLTI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Slti.equiv_SLTI 001 slti_input [other] PureSpec.SltiInput
 ZiskFv.Equivalence.Slti.equiv_SLTI 002 r1 [other] regidx
