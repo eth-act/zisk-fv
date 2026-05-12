@@ -12,15 +12,15 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 3144
+# Total rows: 3127
 # Category bridge: 59
 # Category bus_shape: 516
 # Category byte_chain: 115
 # Category entry: 67
 # Category loose: 440
 # Category match: 98
-# Category other: 611
-# Category range: 695
+# Category other: 610
+# Category range: 679
 # Category row: 69
 # Category state: 217
 # Category transpile: 171
@@ -2073,37 +2073,20 @@ ZiskFv.Equivalence.Sll.equiv_SLL 026 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Sll.equiv_SLL 027 h_rd_idx [transpile] sll_input.rd = Transpiler.wrap_to_regidx e2.ptr
 ZiskFv.Equivalence.Sll.equiv_SLL 028 h_op [other] (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SLL
 ZiskFv.Equivalence.Sll.equiv_SLL 029 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.Sll.equiv_SLL 030 h_a_range [other] ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary
-ZiskFv.Equivalence.Sll.equiv_SLL 031 hc_lo_0 [range] (v.free_in_c_0 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 032 hc_lo_1 [range] (v.free_in_c_2 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 033 hc_lo_2 [range] (v.free_in_c_4 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 034 hc_lo_3 [range] (v.free_in_c_6 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 035 hc_lo_4 [range] (v.free_in_c_8 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 036 hc_lo_5 [range] (v.free_in_c_10 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 037 hc_lo_6 [range] (v.free_in_c_12 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 038 hc_lo_7 [range] (v.free_in_c_14 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 039 hc_hi_0 [range] (v.free_in_c_1 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 040 hc_hi_1 [range] (v.free_in_c_3 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 041 hc_hi_2 [range] (v.free_in_c_5 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 042 hc_hi_3 [range] (v.free_in_c_7 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 043 hc_hi_4 [range] (v.free_in_c_9 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 044 hc_hi_5 [range] (v.free_in_c_11 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 045 hc_hi_6 [range] (v.free_in_c_13 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 046 hc_hi_7 [range] (v.free_in_c_15 r_binary).val < 4294967296
-ZiskFv.Equivalence.Sll.equiv_SLL 047 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.Sll.equiv_SLL 048 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.Sll.equiv_SLL 049 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r
-ZiskFv.Equivalence.Sll.equiv_SLL 050 h_match_chi [match] m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r
-ZiskFv.Equivalence.Sll.equiv_SLL 051 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Sll.equiv_SLL 052 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Sll.equiv_SLL 053 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Sll.equiv_SLL 054 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Sll.equiv_SLL 055 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Sll.equiv_SLL 056 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Sll.equiv_SLL 057 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Sll.equiv_SLL 058 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Sll.equiv_SLL 059 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Sll.equiv_SLL 060 h_input_r1_circuit [bridge] sll_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a_
+ZiskFv.Equivalence.Sll.equiv_SLL 030 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.Sll.equiv_SLL 031 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.Sll.equiv_SLL 032 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r
+ZiskFv.Equivalence.Sll.equiv_SLL 033 h_match_chi [match] m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r
+ZiskFv.Equivalence.Sll.equiv_SLL 034 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Sll.equiv_SLL 035 h_e2_0 [range] e2.x0.val < 256
+ZiskFv.Equivalence.Sll.equiv_SLL 036 h_e2_1 [range] e2.x1.val < 256
+ZiskFv.Equivalence.Sll.equiv_SLL 037 h_e2_2 [range] e2.x2.val < 256
+ZiskFv.Equivalence.Sll.equiv_SLL 038 h_e2_3 [range] e2.x3.val < 256
+ZiskFv.Equivalence.Sll.equiv_SLL 039 h_e2_4 [range] e2.x4.val < 256
+ZiskFv.Equivalence.Sll.equiv_SLL 040 h_e2_5 [range] e2.x5.val < 256
+ZiskFv.Equivalence.Sll.equiv_SLL 041 h_e2_6 [range] e2.x6.val < 256
+ZiskFv.Equivalence.Sll.equiv_SLL 042 h_e2_7 [range] e2.x7.val < 256
+ZiskFv.Equivalence.Sll.equiv_SLL 043 h_input_r1_circuit [bridge] sll_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a_
 ZiskFv.Equivalence.Slli.equiv_SLLI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Slli.equiv_SLLI 001 slli_input [other] PureSpec.SlliInput
 ZiskFv.Equivalence.Slli.equiv_SLLI 002 r1 [other] regidx

@@ -15,6 +15,8 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.Airs.Binary.BinaryExtensionRanges
+import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
 import ZiskFv.Equivalence.RdValDerivation.BinaryShift
 import ZiskFv.Equivalence.RdValDerivation.SailBridge
 
@@ -79,7 +81,19 @@ theorem equiv_SLL_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
-    `RdValDerivation.BinaryShift.h_rd_val_shift_sll` discharge lemma. -/
+    `RdValDerivation.BinaryShift.h_rd_val_shift_sll` discharge lemma.
+
+    **Step 3.alpha.2 canonical exemplar for the BinaryExtension shape.**
+    17 *promise hypotheses* dropped from caller burden — `h_a_range`
+    (8 a-byte ranges, as a single bundled struct binder) + 16 c-byte
+    32-bit range hypotheses (`hc_lo_0..7`, `hc_hi_0..7`) — all derived
+    inside the proof from
+    `ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range`
+    (BinaryExtension AIR's range-check soundness axiom). Sum bounds
+    `hc_{lo,hi}_sum_lt` are genuinely stronger than per-byte ranges
+    (sum of 8×32-bit can overflow 2^32) and remain caller-supplied
+    until a follow-up consumes `h_match_clo`/`h_match_chi` +
+    `main_columns_in_range`. Net: 17 binders removed, none added. -/
 theorem equiv_SLL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)
@@ -105,26 +119,8 @@ theorem equiv_SLL
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : sll_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Discharge parameters
     (h_op : (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SLL)
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
-    (h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary)
-    (hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
-    (hc_lo_1 : (v.free_in_c_2 r_binary).val < 4294967296)
-    (hc_lo_2 : (v.free_in_c_4 r_binary).val < 4294967296)
-    (hc_lo_3 : (v.free_in_c_6 r_binary).val < 4294967296)
-    (hc_lo_4 : (v.free_in_c_8 r_binary).val < 4294967296)
-    (hc_lo_5 : (v.free_in_c_10 r_binary).val < 4294967296)
-    (hc_lo_6 : (v.free_in_c_12 r_binary).val < 4294967296)
-    (hc_lo_7 : (v.free_in_c_14 r_binary).val < 4294967296)
-    (hc_hi_0 : (v.free_in_c_1 r_binary).val < 4294967296)
-    (hc_hi_1 : (v.free_in_c_3 r_binary).val < 4294967296)
-    (hc_hi_2 : (v.free_in_c_5 r_binary).val < 4294967296)
-    (hc_hi_3 : (v.free_in_c_7 r_binary).val < 4294967296)
-    (hc_hi_4 : (v.free_in_c_9 r_binary).val < 4294967296)
-    (hc_hi_5 : (v.free_in_c_11 r_binary).val < 4294967296)
-    (hc_hi_6 : (v.free_in_c_13 r_binary).val < 4294967296)
-    (hc_hi_7 : (v.free_in_c_15 r_binary).val < 4294967296)
     (hc_lo_sum_lt : (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
         + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
         + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
@@ -162,12 +158,21 @@ theorem equiv_SLL
       sll_input.r2_val.toNat % 64 = (v.free_in_b r_binary).val % 64) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- Derive the 8 a-byte ranges + 16 c-byte 32-bit ranges from
+  -- `binary_extension_columns_in_range`. This discharges the 17
+  -- per-byte *promise hypotheses* without any caller obligation.
+  obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7, _hb,
+          hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
+          hc8, hc9, hc10, hc11, hc12, hc13, hc14, hc15, _, _⟩ :=
+    ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range v r_binary
+  have h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary :=
+    ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7⟩
   set shift : ℕ := sll_input.r2_val.toNat % 64 with h_shift_def
   have h_discharge :=
     ZiskFv.Equivalence.RdValDerivation.BinaryShift.h_rd_val_shift_sll
       m v r_main r_binary e2 sll_input.r1_val shift h_op h_bytes h_a_range
-      hc_lo_0 hc_lo_1 hc_lo_2 hc_lo_3 hc_lo_4 hc_lo_5 hc_lo_6 hc_lo_7
-      hc_hi_0 hc_hi_1 hc_hi_2 hc_hi_3 hc_hi_4 hc_hi_5 hc_hi_6 hc_hi_7
+      hc0 hc2 hc4 hc6 hc8 hc10 hc12 hc14
+      hc1 hc3 hc5 hc7 hc9 hc11 hc13 hc15
       hc_lo_sum_lt hc_hi_sum_lt
       h_match_clo h_match_chi h_lane_rd
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7

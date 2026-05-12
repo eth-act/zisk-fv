@@ -324,6 +324,154 @@ theorem (Step 4) and trust-gate V3 + transparency artifacts (Steps
 5–6). All previously-blocking infrastructure (Steps 0–2) is now
 in place.
 
+## Step 3.alpha — pre-fan-out artifacts (parallelization unblockers)
+
+Step 3 (per-opcode *promise discharge* refactors across ~47
+opcodes in 5 shapes) cannot safely parallelize until three
+unblockers land: per-shape *target trust footprint*, per-shape
+canonical exemplars, and baseline-contention / worktree mechanics.
+This section is the canonical record of all three.
+
+### 3.alpha.1 — per-shape target trust footprint
+
+What each Step 2 bridge **discharges** vs. **accepts as caller-burden**,
+and the trust-ledger decision frozen for each shape before Step 3
+fans out. Reviewers and agents should consult this row before
+authoring a refactor in the shape — divergence from the row is a
+laundering risk and should be challenged.
+
+| Shape | Bridge file | Discharges (caller burden REMOVED) | Accepts (caller burden RETAINED) | Decision for fan-out |
+|--|--|--|--|--|
+| **BinaryAdd** | `Bridge/BinaryAdd.lean` | `r_binary` existential, `matches_entry`, chunk-range hypotheses | (none material) | **Done** — ADD/ADDI already refactored. Not in remaining fan-out. |
+| **Binary** | `Bridge/Binary.lean` | `r_binary` existential, `matches_entry`, 24 byte ranges (a/b/c × 0..7) | 8 per-byte `consumer_byte_match` hypotheses, `h_match_clo`/`chi` (carry_7 form), per-byte `h_input_r{1,2}` bridges | **Done conservatively** — 14 Binary-shape opcodes already refactored against the conservative bridge. Deeper discharge (the 6-field `consumer_byte_match_chain` with `cin`/`flags`/`pos_ind` for SUB/SLT-shape chain projection) is deferred to a Step-3-followup PR; **not blocking** fan-out because the 14 Binary opcodes are already done. |
+| **Arith** | `Bridge/Arith.lean` | `r_a` existential, `matches_entry` (mul / div primary / div secondary), 16 chunk ranges (a/b/c/d × 0..3), packed-correctness re-exports (`mul_{un,}signed_packed`, `div_{un,}signed_packed`) | `hC31..hC38` carry-chain hypotheses per opcode | **Accept duplication** — packed-correctness re-exports are one-liners; each MUL/DIV equiv consumes the matching re-export directly. Carry-chain orientation differs by signed/unsigned axis so per-opcode wiring is cleaner than bridge lifting. No further bridge work needed before fan-out. |
+| **BinaryExtension** | `Bridge/BinaryExtension.lean` | `r_e` existential, `matches_entry`, 9 byte ranges (`free_in_a_0..7` + `free_in_b`) | per-byte `consumer_byte_match` for BinaryExtension table, shift-amount + signed/unsigned mode pins (projected from `matches_entry` at the equiv) | **Smoke-test via SLL exemplar in 3.alpha.2.** Bridge is layout-agnostic (delivers `matches_entry` opaquely); the Step 0b cascade fix only matters at the *projection* step inside each equiv. If SLL exemplar typechecks against the post-cascade column convention, the bridge is good for the 15 BinaryExtension opcodes. |
+| **Mem** | `Bridge/Mem.lean` | `load_discharge` (lane match + ∃ r_mem with `wr=0`), `store_discharge` (lane match + ∃ r_mem with `wr=1`) | per-opcode address packing + value packing (consumed at equiv-site against Sail spec) | **As-is sufficient.** LBU/LHU/LWU high-byte-zero is already exposed via `MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero` (imported by `Bridge/Mem.lean`). LB/LH/LW sign-extension chains through `Circuit/SextLoadBridge.lean` directly at the equiv — this is a circuit module, not a bridge concern; no double-batching conflict. Bridge does not need extension before fan-out. |
+| **ControlFlow** | `Bridge/ControlFlow.lean` | `branch_input_bridges_of_read_xreg` (r1 + r2 packed lanes for all 6 branches via shared helper); JALR r1 packed lane via direct use of Step 1.7b `SailStateBridge` | `h_input_imm_*` (linking Main's `imm_b_lo`/`imm_b_hi` columns to Sail spec's `<op>_input.imm` field) for AUIPC / LUI / JAL / JALR + the 6 branches' imm projection | **Accept imm caller-burden** in this fan-out pass. Adding a `transpile_imm_lo_hi` axiom would close it cleanly but triggers a new trust class + CODEOWNER review. Documented as a Step-3-followup; not blocking fan-out. |
+
+**Rule of thumb for parallel agents.** If a refactor wants to
+discharge a hypothesis the row above marks as "RETAINED" for the
+shape, that's out of scope for this fan-out pass — the
+hypothesis stays. If a refactor doesn't discharge a hypothesis
+the row marks as "REMOVED", it's incomplete — fix before merge.
+
+### 3.alpha.2 — canonical per-shape exemplars
+
+Each remaining shape gets one canonical refactored equiv on this
+branch, *before fan-out*, so each parallel agent has a template.
+Status / commit reference per exemplar:
+
+| Shape | Canonical exemplar | Status | Commit |
+|--|--|--|--|
+| BinaryExtension | SLL | **landed** — 17 binders dropped (h_a_range + 16 c-byte 32-bit ranges) via `binary_extension_columns_in_range`; smoke-tests Step 0b cascade | (this commit) |
+| Arith Mul | MUL | _pending 3.alpha.2_ | — |
+| Arith Div | DIVU | _pending 3.alpha.2_ | — |
+| Mem load | LD | _pending 3.alpha.2_ | — |
+| Mem store | SD | _pending 3.alpha.2_ | — |
+| ControlFlow (branch) | BEQ | _pending 3.alpha.2_ | — |
+| ControlFlow (non-branch) | AUIPC + JAL | _pending 3.alpha.2_ | — |
+
+Each exemplar MUST:
+1. Pass `lake build` and V1 + V2 trust gates.
+2. Show a **net REDUCTION** in `trust/baseline-caller-burden.txt`
+   for its opcode (lines removed > lines added).
+3. Show a **non-increase** in
+   `trust/baseline-hypothesis-count.txt`'s per-opcode `total=` and
+   `hypothesis=`.
+
+The exemplar's diff IS the template for the rest of the shape's
+opcodes. Agents authoring follow-on opcodes in a shape are
+expected to read the exemplar's diff first.
+
+### 3.alpha.3 — parallelization appendix
+
+#### Baseline-contention strategy
+
+Step 3 sub-PRs all regenerate four shared files:
+* `trust/baseline-equiv-axiom-deps.txt`
+* `trust/baseline-caller-burden.txt`
+* `trust/baseline-hypothesis-count.txt`
+* `trust/baseline-axioms.txt` (only if shape adds an axiom)
+
+**Chosen: Option A — serialize regenerate as last commit of each PR.**
+
+Mechanics:
+1. Each parallel agent works in its own worktree on its shape's opcodes.
+2. Body work (per-opcode refactors, exemplar consumption) is parallel
+   across worktrees.
+3. The baseline-regen step (`trust/scripts/regenerate.sh` +
+   `regenerate-caller-burden.py`) is the **last commit** of each PR.
+4. PRs land sequentially in merge order; later PRs rebase on
+   whatever landed before, then re-run the regen step as a final
+   commit to refresh the baselines against the post-rebase state.
+
+Rationale: cheap to set up; merge friction is bounded to one rebase
+per PR. If friction is bad after the first 2-3 shapes land,
+switch to Option B (per-AIR baseline split) before Arith batch.
+
+#### Worktree mechanics checklist (per agent)
+
+Before launching an agent for a shape's parallel batch:
+
+1. **Create worktree from current branch tip** (NOT via `isolation:"worktree"`,
+   which creates from `origin/main` → stale base). Example:
+   ```bash
+   git worktree add ../zisk-fv-step3-<SHAPE> <current-branch>
+   ```
+2. **Symlink `.lake/packages`** to the canonical copy to avoid
+   ~10 GiB per worktree:
+   ```bash
+   cd ../zisk-fv-step3-<SHAPE>/.lake
+   rm -rf packages
+   ln -s /home/cody/zisk-fv/.lake/packages packages
+   ```
+3. **Run `lake exe cache get`** immediately — DO NOT skip
+   (mathlib cache; ~30 min penalty if skipped). The post-update
+   hook side-effect is not reliable.
+4. Verify `lake build` succeeds before delegating.
+
+#### Agent prompt template (per parallel batch)
+
+When launching a shape's parallel batch, the agent prompt MUST
+include all of the following:
+
+```
+Read these files first, in this order:
+1. /home/cody/zisk-fv/CLAUDE.md (project context + anti-laundering principle)
+2. /home/cody/zisk-fv/docs/fv/known-gaps.md (glossary + Step 3.alpha per-shape target trust footprint)
+3. /home/cody/zisk-fv/ZiskFv/Equivalence/<EXEMPLAR>.lean (the canonical template for shape <SHAPE>)
+4. /home/cody/zisk-fv/ZiskFv/Equivalence/Bridge/<SHAPE>.lean (the discharge bridge you will consume)
+
+Your task: refactor <LIST OF OPCODE FILES> following the <EXEMPLAR>
+template. For each opcode:
+* Drop the hypotheses the shape's footprint row marks as REMOVED.
+* Retain (do NOT discharge) the hypotheses marked RETAINED — those
+  are out of scope for this fan-out pass.
+* Internally consume Bridge/<SHAPE>.lean's discharge API exactly
+  as <EXEMPLAR> does.
+
+Constraints (NON-NEGOTIABLE):
+* Anti-laundering metric must shrink: per-opcode `total=` /
+  `hypothesis=` in trust/baseline-hypothesis-count.txt may not grow,
+  and caller-burden diff for the opcode must have more removed lines
+  than added.
+* No new axioms. If you find one is needed, STOP and report — that
+  requires a separate trust-ledger PR.
+* No new top-level `def`s without marking @[reducible].
+* Use the canonical vocabulary (promise hypothesis / promise discharge
+  / discharge bridge / trust ledger / caller-burden ledger / anti-
+  laundering metric / constructibility) — no ad-hoc synonyms.
+
+Last commit of your PR must be the regenerate-baselines step:
+  trust/scripts/regenerate.sh
+  python3 trust/scripts/regenerate-caller-burden.py > trust/baseline-caller-burden.txt
+Then run trust/scripts/check-all.sh and confirm green before pushing.
+```
+
+The bracketed `<…>` slots are the only per-batch customization.
+Anything else added to the prompt is at the launcher's discretion;
+nothing in the template above may be omitted.
+
 ## References
 
 * `trust/forbidden-param-shapes.txt` — the 10 OUTPUT-EQ-class names
