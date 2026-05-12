@@ -46,9 +46,9 @@ ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW: ZiskFv.Airs.BinaryExtensionTable.bin_ex
 ZiskFv.Equivalence.Sll.equiv_SLL: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Equivalence.Slli.equiv_SLLI: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Equivalence.Slt.equiv_SLT: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_SLT
-ZiskFv.Equivalence.Slti.equiv_SLTI: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
-ZiskFv.Equivalence.Sltiu.equiv_SLTIU: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
-ZiskFv.Equivalence.Sltu.equiv_SLTU: ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Equivalence.Slti.equiv_SLTI: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_SLTI
+ZiskFv.Equivalence.Sltiu.equiv_SLTIU: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_SLTIU
+ZiskFv.Equivalence.Sltu.equiv_SLTU: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_SLTU
 ZiskFv.Equivalence.Sra.equiv_SRA: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Equivalence.Srai.equiv_SRAI: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Equivalence.Srl.equiv_SRL: ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
