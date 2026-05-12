@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 93
+# Total entries: 94
 #
 39b9f47eebdda4ca  ZiskFv/Airs/Arith/Ranges.lean:42  axiom     arith_mul_columns_in_range
 c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:54  axiom     arith_div_columns_in_range
@@ -13,6 +13,7 @@ feafd4d75a95e2ad  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:51  axiom     bi
 7fccc882b9a79e6a  ZiskFv/Airs/BinaryExtensionTable.lean:262  axiom     bin_ext_table_consumer_wf
 4d9e296fb3ead091  ZiskFv/Airs/BinaryTable.lean:281  axiom     bin_table_consumer_wf
 219730a67e1235f3  ZiskFv/Airs/Main/Ranges.lean:67  axiom     main_columns_in_range
+e6a596bef7ff88cb  ZiskFv/Airs/MemoryBus/EntryRanges.lean:52  axiom     memory_bus_entry_byte_range_perm_sound
 6d0d9a4079c535b8  ZiskFv/Airs/MemoryBus/LaneMatch.lean:138  axiom     memory_bus_register_write_perm_sound
 f82c9c2d6803aee8  ZiskFv/Airs/MemoryBus/LaneMatch.lean:329  axiom     memory_bus_register_write_perm_sound_store_pc
 8c04bbb28c410ebd  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:135  axiom     memalign_load_perm_sound

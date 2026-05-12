@@ -18,6 +18,7 @@ ZiskFv/Fundamentals/Transpiler.lean
 ZiskFv/Airs/MemoryBus/LaneMatch.lean
 ZiskFv/Airs/MemoryBus/MemBridge.lean
 ZiskFv/Airs/MemoryBus/MemAlignBridge.lean
+ZiskFv/Airs/MemoryBus/EntryRanges.lean
 
 # Lookup-table content for bus_id=125 / 124.
 ZiskFv/Airs/BinaryTable.lean

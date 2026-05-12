@@ -12,6 +12,7 @@ import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
+import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Equivalence.RdValDerivation.JumpUType
 
@@ -125,10 +126,7 @@ theorem equiv_AUIPC
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296)
-    (h_e_rd_0 : e_rd.x0.val < 256) (h_e_rd_1 : e_rd.x1.val < 256)
-    (h_e_rd_2 : e_rd.x2.val < 256) (h_e_rd_3 : e_rd.x3.val < 256)
-    (h_e_rd_4 : e_rd.x4.val < 256) (h_e_rd_5 : e_rd.x5.val < 256)
-    (h_e_rd_6 : e_rd.x6.val < 256) (h_e_rd_7 : e_rd.x7.val < 256) :
+     :
     execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
       = (bus_effect exec_row [e_rd] state).2 := by
   have h_rd_val :
@@ -139,8 +137,14 @@ theorem equiv_AUIPC
       auipc_input.PC auipc_input.imm m r_main next_pc e_rd
       h_circuit h_offset_bridge h_lane_lo h_lane_hi
       h_no_wrap h_lo_bound h_pc_offset_lt_2_32
-      h_e_rd_0 h_e_rd_1 h_e_rd_2 h_e_rd_3
-      h_e_rd_4 h_e_rd_5 h_e_rd_6 h_e_rd_7
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.2.2
   rw [equiv_AUIPC_sail state auipc_input imm rd
         h_input_imm h_input_rd h_input_pc]
   symm

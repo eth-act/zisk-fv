@@ -10,6 +10,7 @@ import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
+import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Airs.BusEmission
 import ZiskFv.Sail.ld
 import ZiskFv.Sail.BusEffect
@@ -147,10 +148,7 @@ theorem equiv_LD
     (h_copy0 : internal_op1_copies_b0 main r_main)
     (h_copy1 : internal_op1_copies_b1 main r_main)
     (h_ext : main.is_external_op r_main = 0)
-    (h_op : main.op r_main = (1 : FGL))
-    -- Byte ranges (RANGE class) — discharged by the byte-bus lookup.
-    (h_e1_range : memory_entry_bytes_in_range e1)
-    (h_e2_range : memory_entry_bytes_in_range e2) :
+    (h_op : main.op r_main = (1 : FGL)) :
     execute_instruction (instruction.LOAD (
       ld_input.imm,
       regidx.Regidx ld_input.r1,
@@ -208,6 +206,12 @@ theorem equiv_LD
       main.b_0 r_main = memory_entry_lo e1
       ∧ main.b_1 r_main = memory_entry_hi e1 :=
     ⟨h_main_emit_b.1, h_main_emit_b.2.1⟩
+  -- Memory-bus entry byte ranges discharged via the byte-range bus
+  -- protocol axiom (`memory_bus_entry_byte_range_perm_sound`).
+  have h_e1_range : memory_entry_bytes_in_range e1 :=
+    memory_bus_entry_byte_range_perm_sound e1
+  have h_e2_range : memory_entry_bytes_in_range e2 :=
+    memory_bus_entry_byte_range_perm_sound e2
   obtain ⟨h12_0, h12_1, h12_2, h12_3, h12_4, h12_5, h12_6, h12_7⟩ :=
     ZiskFv.Circuit.LoadDerivation.load_copyb_e1_e2_bytes_eq_bv
       main r_main e1 e2 h_copy0 h_copy1 h_ext h_op
