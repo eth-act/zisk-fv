@@ -363,13 +363,54 @@ Status / commit reference per exemplar:
 
 | Shape | Canonical exemplar | Status | Commit |
 |--|--|--|--|
-| BinaryExtension | SLL | **landed** — 17 binders dropped (h_a_range + 16 c-byte 32-bit ranges) via `binary_extension_columns_in_range`; smoke-tests Step 0b cascade | `3687a2d` |
-| Arith Mul | MUL | _pending_ — heavier refactor (Tier-2 → Tier-3 promotion: add `Valid_ArithMul` param, drop 16 loose chunks + 23 range hyps + 8 carry-chain hyps; consume `arith_mul_chunk_ranges_at_holds` + `mul_unsigned_packed`) | — |
-| Arith Div | DIVU | _pending_ — mirror of MUL pattern (`Valid_ArithDiv` + `arith_div_chunk_ranges_at_holds` + `div_unsigned_packed`) | — |
-| Mem load | LD | _pending_ — consume `load_discharge` + project register-write lane match | — |
-| Mem store | SD | _pending_ — consume `store_discharge` + project store entry | — |
-| ControlFlow (branch) | BEQ | _pending_ — consume `branch_input_bridges_of_read_xreg`; replaces `h_input_r1_circuit` + `h_input_r2_circuit` with packed-lane derivations from `read_xreg` + transpile_BEQ | — |
-| ControlFlow (non-branch) | AUIPC + JAL | _deferred_ — no clear discharge targets from current infrastructure (no MemoryBus byte-range axiom for register-write entries; arithmetic carry hyps are specific to imm values). May not yield a useful exemplar without new axioms. |  — |
+| BinaryExtension | SLL | **landed** — 17 binders dropped (`h_a_range` + 16 c-byte 32-bit ranges) via `binary_extension_columns_in_range`; smoke-tests Step 0b cascade | `3687a2d` |
+| ControlFlow (branch) | BEQ | **N/A** — `equiv_BEQ` currently has NO promise hypotheses (state inputs + bus shape only). Branch shape is already at minimum trust footprint; no exemplar needed. The existing `equiv_BEQ` IS the canonical form. | (existing) |
+| Arith Mul | MUL | **blocked on Tier-2 → Tier-3 promotion** — current `equiv_MUL` accepts 16 loose FGL chunks (`a₀..d₃`) + 7 carry FGL values + 23 chunk-range hyps + 7 carry-range hyps + 8 carry-chain identities. To discharge these, the loose elements must be promoted to columns of a `Valid_ArithMul` parameter (consume `arith_mul_chunk_ranges_at_holds` + `mul_unsigned_packed`). This requires (1) confirming `Valid_ArithMul` carries the right column shape, (2) authoring new axioms `arith_mul_carry_chain_at_row` + `arith_mul_carry_ranges_at_row` (current trust ledger has none), (3) re-proving the rd-value derivation chain against the promoted parameter. Substantial work; **out of scope for 3.alpha**, scheduled as its own Step-3 follow-up before Arith Mul fan-out. | — |
+| Arith Div | DIVU | **blocked on Tier-2 → Tier-3 promotion** — exact mirror of MUL above. Same blocker, same out-of-scope ruling, same prerequisite (own follow-up step before Arith Div fan-out). | — |
+| Mem load / store | LD, SD | **blocked on missing memory-bus byte-range axiom** — `equiv_LD` / `equiv_SD` carry `h_e1_range`, `h_e2_range` (bundled 8-byte range predicates on memory-bus entries). The MemoryBus trust ledger has no `memory_bus_byte_range_perm_sound` axiom (only `lookup_consumer_matches_provider_{load,store}` for the bus protocol). Adding a memory-bus byte-range axiom is a new trust class requiring `docs/fv/trusted-base.md` entry + CODEOWNER review. **Out of scope for 3.alpha**, scheduled as its own Step-1-style trust-ledger PR before Mem fan-out. | — |
+| ControlFlow (non-branch) | AUIPC + JAL | **blocked on same axiom as Mem** — `equiv_AUIPC` / `equiv_JAL` carry per-byte ranges on the register-write entry (`h_e_rd_0..7` etc.). Same `memory_bus_byte_range_perm_sound` axiom would unblock. The arithmetic carry hypotheses (`h_lo_bound`, `h_no_wrap`, `h_pc_offset_lt_2_32`) are imm-specific and likely not dischargeable from per-row infrastructure — those stay as accepted caller-burden permanently. | — |
+
+#### 3.alpha.2 exit-criterion analysis
+
+The original 3.alpha exit gate required "five exemplars committed and
+tagged" before any Step 3 fan-out. The honest accounting after this
+analysis is:
+
+* **One shape unblocked for fan-out: BinaryExtension** (SLL exemplar
+  landed; smoke-tested Step 0b cascade). 15 opcodes (SLL/SLLI/SRL/SRLI/
+  SRA/SRAI/Shift/ShiftLI/ShiftR/ShiftRA/ShiftRAI/ShiftRLI/Lb/Lh/Lw)
+  ready for parallel agent batches following the SLL template.
+* **One shape needs no exemplar: ControlFlow branches** (BEQ already
+  minimal; the 5 other branches BNE/BLT/BLTU/BGE/BGEU follow the same
+  shape and likely already in similar minimal form — confirm before
+  fan-out).
+* **Three shapes have hard prerequisites that fall outside 3.alpha**:
+  Arith Mul (Tier-2 → Tier-3 promotion), Arith Div (same), Mem (new
+  memory-bus byte-range axiom), ControlFlow non-branch (same memory
+  axiom).
+
+These prerequisites are now visible work. They should land as their
+own PRs *before* the corresponding shapes' fan-out, not as part of
+the fan-out itself. This means the 3.alpha unblocker for fan-out
+applies on a **per-shape basis**: BinaryExtension is unblocked now;
+the others unblock as their prerequisite PRs land.
+
+Recommended sequencing now:
+
+1. **Immediate**: Step 3 BinaryExtension fan-out (parallel agents on
+   the 15 BinaryExtension-shape opcodes using SLL template).
+2. **Confirm branches**: read BNE/BLT/BLTU/BGE/BGEU; if they all
+   match the BEQ minimal form, mark ControlFlow-branch shape as
+   already-fan-out-complete (no agents needed).
+3. **Arith prerequisite PR**: design + author the Tier-2 → Tier-3
+   promotion infrastructure (Valid_<AIR> column shape audit + 2 new
+   carry-related axioms + ledger entries). Then MUL exemplar lands
+   on this branch; then Arith Mul fan-out (5 opcodes); then Arith
+   Div fan-out (8 opcodes).
+4. **Mem prerequisite PR**: design + author `memory_bus_byte_range_perm_sound`
+   axiom + trusted-base.md ledger entry + CODEOWNER review. Then
+   LD / SD exemplars; then Mem fan-out (8 opcodes); then AUIPC / JAL
+   refactors (parallel with Mem since same blocker).
 
 Each exemplar MUST:
 1. Pass `lake build` and V1 + V2 trust gates.
