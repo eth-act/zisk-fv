@@ -7,6 +7,7 @@ import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
 import ZiskFv.Airs.BusHypotheses
+import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Sail.divw
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.OpBusEffect
@@ -97,10 +98,6 @@ theorem equiv_DIVW
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : divw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     -- Discharge parameters
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
     (h_byte_sum_circuit :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
         + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
@@ -119,10 +116,13 @@ theorem equiv_DIVW
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_divw
       divw_input.r1_val divw_input.r2_val e2
-      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+      h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
+      h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
+      h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
       h_byte_sum_circuit
   rw [equiv_DIVW_sail state divw_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
