@@ -239,6 +239,91 @@ demonstrates the chain end-to-end.
    axiom's conclusion. This is V3-class enforcement; the design
    discussion needs to start.
 
+## Discharge-able vs structural caller burden (snapshot 2026-05-12)
+
+`trust/baseline-caller-burden.txt` records every parameter binder
+on every canonical `equiv_<OP>` theorem along with a category tag
+(`validator | state | entry | range | match | bridge | bus_shape |
+transpile | byte_chain | loose | row | instance | other`).
+
+The aggregate breakdown post the Step 1.7b + Step 0b + Step 2c-f
++ Step 2b SLT-family completion work is:
+
+| Category | Count | Discharge-able? | Notes |
+|---|---:|---|---|
+| `range` | 695 | **YES** | Derive from `*_columns_in_range` axioms (Main / Binary / BinaryAdd / BinaryExtension / Arith). |
+| `other` | 611 | no | Structural Sail/state plumbing (`h_input_rd`, `h_rd_idx`, output equation shapes). |
+| `bus_shape` | 516 | no | Bus-protocol shape commitments (`h_exec_len`, `multiplicity` pins, `as` pins). Caller-side. |
+| `loose` | 440 | **YES** | Loose FGL quantifiers — promote to `Valid_<AIR>` columns at the existential row. |
+| `state` | 217 | no | Sail `PreSail.SequentialState` parameters. |
+| `transpile` | 171 | no | Per-opcode `transpile_<OP>` axioms threaded as the trust article itself. |
+| `byte_chain` | 115 | **YES** | `consumer_byte_match` — derived via `binary_per_byte_lookup_witness` + `bin_table_consumer_wf`. |
+| `match` | 98 | **YES** | `h_match_clo`/`chi` — derived via `matches_entry` (Op-Bus perm soundness) + carry_7=0 for AND/OR/XOR rows. |
+| `validator` | 86 | no | `Valid_<AIR>` instance parameters. |
+| `row` | 69 | **YES** | `r_binary` / `r_arith` / `r_e` — make existential via bridges. |
+| `entry` | 67 | no | `MemoryBusEntry` parameters. |
+| `bridge` | 59 | **YES** | Input bridges (`h_input_r{1,2}_circuit`, `h_input_r1_extract`) — derive via `SailStateBridge` + transpile axioms + matches_entry. |
+| **Total** | **3144** | | of which **~1,476** discharge-able, **~1,668** structural. |
+
+### Why this matters
+
+A naive "aggregate hypothesis binders: 2,078" framing overstates
+the remaining work by ~2×. The structural categories
+(`state`/`entry`/`validator`/`bus_shape`/`transpile`/`other`) will
+not shrink: they're how a caller plumbs the per-opcode theorem
+into a concrete context. The discharge surface is the ~1,476
+binders in the `range`/`loose`/`byte_chain`/`match`/`row`/`bridge`
+classes.
+
+### Per-opcode discharge yield (observed)
+
+From the Step 1.7b / 2b refactors already landed in this branch:
+
+| Refactor shape | Opcodes done | Per-opcode savings |
+|---|---|---|
+| BinaryAdd (ADD, ADDI) | 2 | 10–12 binders |
+| Binary loose-promote (SUB/SUBW/ADDW/ADDIW/SLT/SLTI/SLTU/SLTIU) | 8 | 27–30 binders |
+| Binary byte-range only (AND/ANDI/OR/ORI/XOR/XORI) | 6 | ~24 binders |
+
+### Projected Step 3 yield
+
+For the remaining 49 opcodes:
+
+| Shape | # opcodes | Expected per-opcode | Projected total |
+|---|---:|---|---|
+| BinaryExtension (unblocked by Step 0b cascade) | 15 | 15–25 | 225–375 |
+| Arith Mul | 5 | 30–40 | 150–200 |
+| Arith Div | 8 | 30–40 | 240–320 |
+| Mem loads/stores | 8 | 15–20 | 120–160 |
+| ControlFlow | 11 | 5–15 | 55–165 |
+| FENCE / etc. | 2 | small | ~10 |
+| **Total** | **49** | | **800–1,230 binders** |
+
+That shrinks the discharge-able surface from ~1,476 to ~250–675.
+The residual ~250–675 are structurally hard:
+
+* Full 6-field byte-chain witnesses (`consumer_byte_match_chain`
+  with `cin`/`flags`/`pos_ind`) for the SUB/SLT-family Tier-2 chain
+  ops — `binary_per_byte_lookup_witness` covers 3-field
+  `consumer_byte_match` for AND/OR/XOR but not the chain version.
+* Per-opcode carry-chain wiring for Arith (hC31..hC38) — CarryChain
+  re-exports are in `Bridge.Arith` but the per-equiv projection is
+  real work.
+* `h_input_imm_*` on ITYPE / U-type / shift-immediate opcodes — the
+  immediate value is caller-routed via `transpile_<OP>`'s
+  `imm_b_lo`/`imm_b_hi` parameters; no Sail-side axiom links
+  `imm_b_lo` to the Sail spec's `<op>_input.imm`, so these stay
+  caller-supplied unless we add a separate axiom.
+
+### Bottom line
+
+The remaining work is **bounded** — not "3000 hypotheses to
+discharge one by one." It is ~49 opcode refactors averaging ~20
+binders each (Step 3), plus ~500–1k LOC for the global compliance
+theorem (Step 4) and trust-gate V3 + transparency artifacts (Steps
+5–6). All previously-blocking infrastructure (Steps 0–2) is now
+in place.
+
 ## References
 
 * `trust/forbidden-param-shapes.txt` — the 10 OUTPUT-EQ-class names
