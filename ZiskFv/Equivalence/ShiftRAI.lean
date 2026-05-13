@@ -17,6 +17,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
+import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.RdValDerivation.BinaryShift
 import ZiskFv.Equivalence.RdValDerivation.SailBridge
 
@@ -112,10 +113,6 @@ theorem equiv_SRAIW
           + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
           + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
     (h_input_r1_extract :
       (Sail.BitVec.extractLsb sraiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
       = ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
@@ -125,6 +122,9 @@ theorem equiv_SRAIW
     execute_instruction
       (instruction.SHIFTIWOP (sraiw_input.shamt, r1, rd, sopw.SRAIW)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- Derive 8 e2 byte ranges from `memory_bus_entry_byte_range_perm_sound`.
+  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
+    ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   -- Derive the 8 a-byte ranges + 16 c-byte 32-bit ranges from
   -- `binary_extension_columns_in_range` (BinaryExtension AIR's
   -- range-check soundness axiom on the trust ledger). This discharges
