@@ -69,28 +69,46 @@
 OPCODE: ZiskFv.Equivalence.MulH.equiv_MULH
 DROPPED: h_byte_sum_circuit
 ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
+       h_na_bool, h_nb_bool, h_np_xor,
        h_byte_lo, h_byte_hi, h_op1, h_op2
-       (Option-1: full Tier-3 promotion consuming the signed ℤ
-        chunk-lift toolkit Phase 4.alpha.A.0 lands as foundation.
-        Per-opcode metric grows by ~+13 binders; reviewer accepts
+       (Option-1: full Tier-3 promotion. h_na_bool/h_nb_bool/h_np_xor
+        are booleanity + XOR-encoding witnesses for the sign-witness
+        columns — derivable from constraints 41/42/44 + arith_table
+        lookup but kept as separate ADDED binders for clarity.
+        h_op1/h_op2 carry the signed toInt-form operand packing
+        (NOT toNat-form), bridging Sail r1.toInt / r2.toInt to the
+        signed AIR chunks.
+        Per-opcode metric grows by ~+16 binders; reviewer accepts
         per structural-unpacking exception.)
 
 OPCODE: ZiskFv.Equivalence.MulHSU.equiv_MULHSU
 DROPPED: h_byte_sum_circuit
 ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
+       h_na_bool, h_nb_bool, h_np_xor,
        h_byte_lo, h_byte_hi, h_op1, h_op2
-       (Option-1: full Tier-3 promotion consuming the signed ℤ
-        chunk-lift toolkit Phase 4.alpha.A.0 lands as foundation.
-        Per-opcode metric grows by ~+13 binders; reviewer accepts
+       (Option-1: full Tier-3 promotion. h_na_bool/h_nb_bool/h_np_xor
+        are booleanity + XOR-encoding witnesses for the sign-witness
+        columns — derivable from constraints 41/42/44 + arith_table
+        lookup but kept as separate ADDED binders for clarity.
+        h_op1/h_op2 carry the signed toInt-form operand packing
+        (NOT toNat-form), bridging Sail r1.toInt / r2.toInt to the
+        signed AIR chunks.
+        Per-opcode metric grows by ~+16 binders; reviewer accepts
         per structural-unpacking exception.)
 
 OPCODE: ZiskFv.Equivalence.MulW.equiv_MULW
 DROPPED: h_byte_sum_circuit
 ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
+       h_na_bool, h_nb_bool, h_np_xor,
        h_byte_lo, h_byte_hi, h_op1, h_op2
-       (Option-1: full Tier-3 promotion consuming the signed ℤ
-        chunk-lift toolkit Phase 4.alpha.A.0 lands as foundation.
-        Per-opcode metric grows by ~+13 binders; reviewer accepts
+       (Option-1: full Tier-3 promotion. h_na_bool/h_nb_bool/h_np_xor
+        are booleanity + XOR-encoding witnesses for the sign-witness
+        columns — derivable from constraints 41/42/44 + arith_table
+        lookup but kept as separate ADDED binders for clarity.
+        h_op1/h_op2 carry the signed toInt-form operand packing
+        (NOT toNat-form), bridging Sail r1.toInt / r2.toInt to the
+        signed AIR chunks.
+        Per-opcode metric grows by ~+16 binders; reviewer accepts
         per structural-unpacking exception.)
 
 OPCODE: ZiskFv.Equivalence.Div.equiv_DIV
