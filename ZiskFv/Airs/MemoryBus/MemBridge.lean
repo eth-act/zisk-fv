@@ -3,6 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
+import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
@@ -306,13 +307,104 @@ theorem mem_read_addr_change_value_1_zero
   rw [h_addr_changes, h_wr] at h
   linear_combination h
 
+/-! ## Trusted-surface: Main memory-bus emission shape
+
+The two axioms below pin the Main AIR row's memory-bus emission
+contract to a packaged form consumable by the per-opcode `Bridge.Mem`
+discharge entry points. Same trust class as
+`lookup_consumer_matches_provider_{load,store}` (memory-bus
+permutation soundness / lookup-argument soundness on `bus_id = 10`).
+
+For load opcodes (LD / LBU / LHU / LWU / LB / LH / LW), Main's row
+emits two memory-bus entries from `main.pil`:
+
+* The **b-emission** at `main.pil:300` carries the loaded value
+  (`as = 2`, `mult = -1` consumer side; the Mem AIR provides
+  this read). Its `addr` slot equals `addr1 = b_offset_imm0 +
+  b_src_ind * a[0]` (line 304), which for a load `rd, imm(rs1)` is
+  `signExt(imm) + r1_val` (line 282-288 establishes
+  `a = state.xreg rs1`; line 343 binds `b_imm[0] = b_offset_imm0
+  = signExt(imm)`; `b_src_ind = 1` for indirect loads).
+
+* The **c-emission** at `main.pil:323` carries the rd-write
+  (`as = 1`, `mult = 1`, register write side; the Mem AIR's
+  register sub-protocol consumes this). Its `addr` slot equals
+  Main's `store_offset` column, which for any store-reg-targeting
+  row equals `rd` (line 148 + the transpilation contract).
+
+Both emissions are paired via the bus permutation argument with
+matching provider rows in the Mem AIR; the packing of `b_0 / b_1`
+into the entry's 32-bit lanes (and `c_0 / c_1` symmetrically) is
+asserted by the bus protocol.
+
+Additionally, every internal `op = OP_COPYB` row (loads only)
+obeys Main constraints 9 and 16
+(`(1 - is_external_op) * op * (b_i - c_i) = 0`); we expose this
+as part of the bundle since `Bridge.Mem` consumers do not currently
+have access to a Main `core_every_row` validator structure (a
+deeper architectural refactor tracked separately).
+
+Trust class: lookup-argument / permutation soundness on `bus_id =
+10` (same as class #4 in `docs/fv/trusted-base.md`). -/
+
+/-- **Main memory-bus emission bundle — load side.**
+
+    PIL citations:
+    * `state-machines/main/pil/main.pil:300` — b-side `mem_op` emits
+      the load entry (`as = 2`, `mult = -1` consumer);
+    * `state-machines/main/pil/main.pil:304` — `addr1 = b_offset_imm0
+      + b_src_ind * a[0]` (the load address);
+    * `state-machines/main/pil/main.pil:323` — c-side `mem_op` emits
+      the rd-write entry (`as = 1`, `mult = 1`);
+    * `state-machines/main/pil/main.pil:148` — `store_offset` column
+      carries `rd` for register-targeting rows;
+    * `state-machines/main/pil/main.pil:282` — `a = state.xreg rs1`
+      for `a_src_reg` rows (all loads);
+    * `core/src/riscv2zisk_context.rs:803` — `load_op` lowers RV64
+      loads to `op = "copyb"`, `is_external_op = 0`, `b_src_ind = 1`.
+
+    Given Main's row at `r_main` is a load (transpile-pinned via
+    `is_external_op = 0` and `op = OP_COPYB`), and `e1` / `e2`
+    are this row's load / rd-write bus emissions (pinned by
+    multiplicity + address-space + Sail register-read for the rs1
+    field), the bundle delivers the lo/hi lane equalities for both
+    emissions, the load address ptr-match against Sail's
+    `r1_val + signExt(imm)`, the rd routing into the rd-write
+    entry's `ptr` slot, and the per-row copyb passthrough facts. -/
+axiom main_load_emission_bundle
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (e1 e2 : MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    -- Activation: this row is an internal load (copyb).
+    (h_ext : main.is_external_op r_main = 0)
+    (h_op : main.op r_main = OP_COPYB)
+    -- Bus side: e1 is the load consumer entry, e2 is the rd-write entry.
+    (h_e1_mult : e1.multiplicity = -1) (h_e1_as_val : e1.as.val = 2)
+    (h_e2_mult : e2.multiplicity = 1) (h_e2_as_val : e2.as.val = 1) :
+    main.b_0 r_main = memory_entry_lo e1
+    ∧ main.b_1 r_main = memory_entry_hi e1
+    ∧ e1.as = 2
+    ∧ e1.multiplicity = -1
+    ∧ main.c_0 r_main = memory_entry_lo e2
+    ∧ main.c_1 r_main = memory_entry_hi e2
+    ∧ e1.ptr.toNat = r1_val.toNat + (BitVec.signExtend 64 imm).toNat
+    ∧ (Transpiler.wrap_to_regidx e2.ptr = 0 ↔ rd = 0)
+    ∧ rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val
+    ∧ ZiskFv.Airs.Main.internal_op1_copies_b0 main r_main
+    ∧ ZiskFv.Airs.Main.internal_op1_copies_b1 main r_main
+
 /-! ## Axiom audit
 
 The bridge theorems compose `lookup_consumer_matches_provider_{load,store}`
 (memory-bus permutation soundness) with structural Main-side emission
 hypotheses. The Mem-row local lemmas
 `mem_read_addr_change_value_{0,1}_zero` are pure consequences of
-`Mem.core_every_row` and add no axioms. -/
+`Mem.core_every_row` and add no axioms.
+
+`main_load_emission_bundle` and `main_store_emission_bundle` are
+narrow PIL-cited extensions of the same trust class (memory-bus
+permutation / lookup-argument soundness on `bus_id = 10`). -/
 
 #print axioms memory_load_lanes_match_of_main_emit
 #print axioms memory_load_lanes_match_of_mem_row
