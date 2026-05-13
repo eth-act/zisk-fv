@@ -305,6 +305,169 @@ theorem h_rd_val_mdrs_mulhsu
     e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum_circuit
 
+/-- **`h_rd_val` discharge for MULHSU — chunked form (Tier 3).**
+
+    Mirrors `h_rd_val_mdrs_mulh_chunked` but for the mixed signed/
+    unsigned product. The AIR pins `nb = 0` for the MULHSU rows of
+    `arith_table` (opcode `OP_MULSUH = 179`), so `np = na`. The
+    operand-bridge for `r2_val` is the unsigned `(r2_val.toNat : ℤ) = B`
+    rather than the signed `r2_val.toInt = B - nb * 2^64`.
+
+    Discharge chain:
+    1. `mul_signed_chain_witnesses` (Layer A.4) → simplified ℤ chunk identity.
+    2. `fgl_mul_signed_unsigned_to_bv64_hi` (Layer A.1, MULHSU variant) →
+       `BitVec.ofNat 64 D.toNat = execute_MUL_pure r1 r2 .MULHSU`.
+    3. Byte-sum bridge → final K3 form. -/
+theorem h_rd_val_mdrs_mulhsu_chunked
+    (r1_val r2_val : BitVec 64)
+    (e : Interaction.MemoryBusEntry FGL)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    -- Per-byte range bounds (RANGE).
+    (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
+    (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
+    (h4 : e.x4.val < 256) (h5 : e.x5.val < 256)
+    (h6 : e.x6.val < 256) (h7 : e.x7.val < 256)
+    -- Row-level carry-chain constraint set.
+    (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a)
+    -- Mode pins (TRANSPILE-PIN).
+    (_h_na : v.na r_a = v.na r_a)
+    (h_nb : v.nb r_a = 0)
+    (_h_np : v.np r_a = v.np r_a)
+    (h_nr : v.nr r_a = 0)
+    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 0)
+    -- Booleanity + XOR.
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    -- Byte-pack lane match (LANE-MATCH): bytes pack d-chunks (high half).
+    (h_byte_lo :
+      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+        = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
+    (h_byte_hi :
+      e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
+        = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536)
+    -- Operand TRANSPILE-BRIDGE.
+    -- `h_op1`: signed (toInt-form) for rs1.
+    (h_op1 :
+      r1_val.toInt
+        = (packed4 (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val : ℤ)
+            - (v.na r_a).val * (2:ℤ)^64)
+    -- `h_op2`: unsigned (toNat-form) for rs2.
+    (h_op2 :
+      (r2_val.toNat : ℤ)
+        = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)) :
+    U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
+                (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
+      = execute_MUL_pure r1_val r2_val .MULHSU := by
+  -- Step 1: chunk ranges.
+  obtain ⟨h_a0, h_a1, h_a2, h_a3,
+          h_b0, h_b1, h_b2, h_b3,
+          h_c0, h_c1, h_c2, h_c3,
+          h_d0, h_d1, h_d2, h_d3⟩ :=
+    ZiskFv.Equivalence.Bridge.Arith.arith_mul_chunk_ranges_at_holds v r_a
+  -- Step 2: invoke the chain witnesses.
+  have h_chunk_ident :=
+    ZiskFv.Equivalence.Bridge.Arith.mul_signed_chain_witnesses
+      v r_a h_chain h_nr h_sext h_m32 h_div h_na_bool h_nb_bool h_np_xor
+  -- Step 3: build ℤ packings A, B, C, D.
+  set A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
+            + toIntZ (v.a_2 r_a) * (65536 * 65536)
+            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536) with hA_def
+  set B := toIntZ (v.b_0 r_a) + toIntZ (v.b_1 r_a) * 65536
+            + toIntZ (v.b_2 r_a) * (65536 * 65536)
+            + toIntZ (v.b_3 r_a) * (65536 * 65536 * 65536) with hB_def
+  set Cz := toIntZ (v.c_0 r_a) + toIntZ (v.c_1 r_a) * 65536
+            + toIntZ (v.c_2 r_a) * (65536 * 65536)
+            + toIntZ (v.c_3 r_a) * (65536 * 65536 * 65536) with hCz_def
+  set D := toIntZ (v.d_0 r_a) + toIntZ (v.d_1 r_a) * 65536
+            + toIntZ (v.d_2 r_a) * (65536 * 65536)
+            + toIntZ (v.d_3 r_a) * (65536 * 65536 * 65536) with hD_def
+  -- Step 4: C, D bounds.
+  have h_CD_bounds :=
+    fgl_signed_C_D_chunk_packing_nonneg h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
+  have ⟨h_C_lb, h_C_ub⟩ := h_CD_bounds.1
+  have ⟨h_D_lb, h_D_ub⟩ := h_CD_bounds.2
+  -- Step 5: convert toIntZ chunk identities to .val identities.
+  have h_a0_val : toIntZ (v.a_0 r_a) = (v.a_0 r_a).val := toIntZ_eq_val_of_lt h_a0 (by decide)
+  have h_a1_val : toIntZ (v.a_1 r_a) = (v.a_1 r_a).val := toIntZ_eq_val_of_lt h_a1 (by decide)
+  have h_a2_val : toIntZ (v.a_2 r_a) = (v.a_2 r_a).val := toIntZ_eq_val_of_lt h_a2 (by decide)
+  have h_a3_val : toIntZ (v.a_3 r_a) = (v.a_3 r_a).val := toIntZ_eq_val_of_lt h_a3 (by decide)
+  have h_b0_val : toIntZ (v.b_0 r_a) = (v.b_0 r_a).val := toIntZ_eq_val_of_lt h_b0 (by decide)
+  have h_b1_val : toIntZ (v.b_1 r_a) = (v.b_1 r_a).val := toIntZ_eq_val_of_lt h_b1 (by decide)
+  have h_b2_val : toIntZ (v.b_2 r_a) = (v.b_2 r_a).val := toIntZ_eq_val_of_lt h_b2 (by decide)
+  have h_b3_val : toIntZ (v.b_3 r_a) = (v.b_3 r_a).val := toIntZ_eq_val_of_lt h_b3 (by decide)
+  have h_d0_val : toIntZ (v.d_0 r_a) = (v.d_0 r_a).val := toIntZ_eq_val_of_lt h_d0 (by decide)
+  have h_d1_val : toIntZ (v.d_1 r_a) = (v.d_1 r_a).val := toIntZ_eq_val_of_lt h_d1 (by decide)
+  have h_d2_val : toIntZ (v.d_2 r_a) = (v.d_2 r_a).val := toIntZ_eq_val_of_lt h_d2 (by decide)
+  have h_d3_val : toIntZ (v.d_3 r_a) = (v.d_3 r_a).val := toIntZ_eq_val_of_lt h_d3 (by decide)
+  -- Step 6: na_int = (v.na r_a).val. For nb, we pin via h_nb : v.nb r_a = 0, so toIntZ = 0.
+  have h_na_int_val : toIntZ (v.na r_a) = (v.na r_a).val := by
+    rcases h_na_bool with h | h
+    · rw [h]; decide
+    · rw [h]; decide
+  have h_nb_int_zero : toIntZ (v.nb r_a) = 0 := by rw [h_nb]; decide
+  -- And np = na from h_np_xor with nb=0.
+  have h_np_int_eq_na : toIntZ (v.np r_a) = toIntZ (v.na r_a) := by
+    rw [h_np_xor, h_nb_int_zero]; ring
+  -- Step 7: convert h_op1, h_op2 to A - na*2^64 / (r2.toNat : ℤ) = B form.
+  have h_A_eq : A = (packed4 (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val : ℤ) := by
+    rw [hA_def, h_a0_val, h_a1_val, h_a2_val, h_a3_val]
+    unfold packed4; push_cast; ring
+  have h_B_eq : B = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ) := by
+    rw [hB_def, h_b0_val, h_b1_val, h_b2_val, h_b3_val]
+    unfold packed4; push_cast; ring
+  have h_r1 : r1_val.toInt = A - toIntZ (v.na r_a) * 2^64 := by
+    rw [h_op1, h_A_eq, h_na_int_val]
+  have h_r2 : (r2_val.toNat : ℤ) = B := by rw [h_op2, h_B_eq]
+  -- Step 8: apply MULHSU specialization of A.1.
+  -- The chain identity in h_chunk_ident has `toIntZ (v.np r_a)` in place
+  -- of `na`. Rewrite to use `na` via h_np_int_eq_na, and substitute
+  -- `toIntZ (v.nb r_a) = 0`.
+  have h_chunk_ident' :
+      (1 - 2 * toIntZ (v.na r_a)) * A * B
+        + (0 * (1 - 2 * toIntZ (v.na r_a)) * A
+            + toIntZ (v.na r_a) * (1 - 2 * 0) * B) * 2^64
+        + (toIntZ (v.na r_a) * 0 - toIntZ (v.na r_a)) * 2^128
+      = (1 - 2 * toIntZ (v.na r_a)) * (Cz + D * 2^64) := by
+    have := h_chunk_ident
+    rw [h_np_int_eq_na, h_nb_int_zero] at this
+    -- After rewrites, `this` already matches the goal.
+    convert this using 2
+  have h_bv64 := fgl_mul_signed_unsigned_to_bv64_hi
+    r1_val r2_val A B Cz D (toIntZ (v.na r_a))
+    (by rcases h_na_bool with h | h <;> rw [h] <;> first | (left; decide) | (right; decide))
+    h_r1 h_r2 h_C_lb h_C_ub h_D_lb h_D_ub h_chunk_ident'
+  -- Step 9: U64.toBV bridge. byte_sum = packed4 d_vals.
+  have h_byte_eq_packed :
+      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
+        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      = packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val :=
+    byte_sum_eq_packed4_sig e _ _ _ _ h_byte_lo h_byte_hi
+  -- Step 10: D.toNat = packed4 d_vals.
+  have h_D_eq_packed :
+      D = (packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ) := by
+    rw [hD_def, h_d0_val, h_d1_val, h_d2_val, h_d3_val]
+    unfold packed4; push_cast; ring
+  have h_D_toNat :
+      D.toNat = packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val := by
+    rw [h_D_eq_packed]
+    exact Int.toNat_natCast _
+  -- Step 11: close by chaining.
+  apply BitVec.eq_of_toNat_eq
+  rw [u64_toBV_of_bytes_toNat e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
+        h0 h1 h2 h3 h4 h5 h6 h7]
+  rw [h_byte_eq_packed, ← h_D_toNat]
+  rw [← h_bv64]
+  simp [BitVec.toNat_ofNat]
+  have h_D_nat_lt : D.toNat < 2^64 := by
+    have : D < ((2^64 : ℕ) : ℤ) := by exact_mod_cast h_D_ub
+    omega
+  exact (Nat.mod_eq_of_lt h_D_nat_lt).symm
+
 /-! ## DIV: rd ← signed 64-bit quotient
 
 The signed DIV pure-function output is `BitVec.ofInt 64 q_int`, where:
