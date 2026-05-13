@@ -455,6 +455,58 @@ axiom main_sext_load_emission_bundle
     ∧ (Transpiler.wrap_to_regidx e2.ptr = 0 ↔ rd = 0)
     ∧ rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val
 
+/-- **Main memory-bus emission bundle — store_pc=1 register write.**
+
+    For the JAL / JALR / AUIPC archetypes, Main's row emits a single
+    memory-bus register-write entry (`as = 1`, `mult = 1`,
+    `store_pc = 1`, `store_reg = 1`). The PIL `store_value` formula
+    at `main.pil:311-312` collapses under `store_pc = 1` to
+    `(pc + jmp_offset2, 0)`; equivalently, the uniform
+    `store_pc_lanes_match_{lo,hi}` predicates (formulas
+    `store_pc * (pc + jmp_offset2 - c_0) + c_0` and
+    `(1 - store_pc) * c_1`) hold for both `store_pc = 0` and
+    `store_pc = 1` rows.
+
+    The activation pins are parameterized via an `op_code` operand:
+    JAL / AUIPC have `op = OP_FLAG` (`is_external_op = 0`); JALR has
+    `op = OP_COPYB` (`is_external_op = 0`). This is the only
+    `store_pc = 1` family in RV64IM (the only callers of the
+    `store_pc_lanes_match_*` predicates), so the bundle's
+    `op_code ∈ {OP_FLAG, OP_COPYB}` disjunct covers it.
+
+    PIL citations:
+    * `state-machines/main/pil/main.pil:311-312` — `store_value[0/1]`
+      formulas in terms of `store_pc`, `pc`, `jmp_offset2`, `c_0`, `c_1`;
+    * `state-machines/main/pil/main.pil:323` — c-side `mem_op` emits
+      the rd-write entry under `store_reg = 1`;
+    * `state-machines/main/pil/main.pil:148` — `store_offset = rd`
+      for register-targeting rows;
+    * `state-machines/main/pil/main.pil:473` — `store_pc * (1 - store_pc) = 0`
+      (booleanity of `store_pc`).
+
+    Trust class #4 (memory-bus permutation / lookup-argument
+    soundness on `bus_id = 10`) — same class as
+    `main_load_emission_bundle`, `main_sext_load_emission_bundle`,
+    and the `memory_bus_register_write_perm_sound{,_store_pc}`
+    axioms in `LaneMatch.lean`. The bundle differs only in
+    skipping the Mem-side consumer-row machinery: callers
+    (the `Bridge.ControlFlow.{jal,jalr,auipc}_discharge_lanes`
+    entry points) consume the lane equalities directly. -/
+axiom main_store_pc_emission_bundle
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (e_rd : MemoryBusEntry FGL)
+    (op_code : FGL)
+    -- Activation: this row is an internal `store_pc = 1` register-write
+    -- (JAL / AUIPC `op = OP_FLAG`, or JALR `op = OP_COPYB`).
+    (h_ext : main.is_external_op r_main = 0)
+    (h_op : main.op r_main = op_code)
+    (h_op_disj : op_code = ZiskFv.Trusted.OP_FLAG ∨ op_code = ZiskFv.Trusted.OP_COPYB)
+    -- Bus side: e_rd is the rd-write entry.
+    (h_e_rd_mult : e_rd.multiplicity = 1) (h_e_rd_as_val : e_rd.as.val = 1) :
+    ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo main r_main e_rd
+    ∧ ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi main r_main e_rd
+
 /-! ## Axiom audit
 
 The bridge theorems compose `lookup_consumer_matches_provider_{load,store}`

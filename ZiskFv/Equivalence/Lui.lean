@@ -108,14 +108,18 @@ theorem equiv_LUI
       (PureSpec.execute_LUI_pure lui_input).nextPC = nextPC_val)
     (h_rd_idx : lui_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
     -- Discharge parameters
-    (h_circuit : ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e_rd) :
+    (h_circuit : ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
       = (bus_effect exec_row [e_rd] state).2 := by
   -- Discharge `h_imm_lo_nat` / `h_imm_hi_nat` via `transpile_LUI` (class #1).
   obtain ⟨h_imm_lo_nat, h_imm_hi_nat⟩ :=
     ZiskFv.Equivalence.Bridge.ControlFlow.lui_discharge_full
       m r_main next_pc imm h_circuit
+  -- Discharge `h_lane_rd` via `main_store_pc_emission_bundle` (trust
+  -- class #4).
+  have h_lane_rd :=
+    ZiskFv.Equivalence.Bridge.ControlFlow.lui_discharge_lanes
+      m r_main next_pc e_rd h_circuit h_rd_mult h_rd_as
   have h_rd_val :
       U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
                   e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
