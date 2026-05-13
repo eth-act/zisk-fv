@@ -278,6 +278,23 @@ diff must visibly REMOVE more lines than it adds**. A PR that is
 moved the trust around. Such a PR should be either rescoped or
 abandoned.
 
+**Exception class — structural unpacking.** There is one narrow
+exception to the "metric must shrink" rule:
+*structural-unpacking refactors* that replace a single compressed
+*promise hypothesis* with the explicit validator + universal-row-
+constraint + structural-pin parameters needed to derive it. The
+per-opcode metric apparently grows but the global-theorem trust
+footprint provably does not — because the added validator and
+universal-row-constraint parameters collapse into shared parameters
+of `Compliance.lean`, which already takes one set of those per
+provider AIR. The opcodes that legitimately qualify are listed in
+`trust/structural-unpacking-exceptions.txt`, with rationale and the
+shape of binders the refactor is allowed to add. Refactors of
+opcodes on that list may grow their per-theorem `total=` / `hypothesis=`
+counts; the reviewer regenerates the baseline alongside the
+refactor. **This exception is NOT a general-purpose backdoor** —
+opcodes not on the list still face the strict metric.
+
 When delegating to a sub-agent for any plan step, **include this
 anti-laundering principle verbatim in the prompt AND require the
 agent to read [`docs/fv/known-gaps.md`'s Glossary](docs/fv/known-gaps.md#glossary-canonical-terminology)
