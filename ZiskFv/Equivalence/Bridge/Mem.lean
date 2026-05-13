@@ -3,6 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
+import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
@@ -89,5 +90,184 @@ theorem store_discharge
     ZiskFv.Airs.MemoryBus.memory_store_lanes_match main r_main e
     ∧ ∃ r_mem, ZiskFv.Airs.MemoryBus.MemBridge.mem_row_matches_entry mem r_mem e ∧ mem.wr r_mem = 1 :=
   ZiskFv.Airs.MemoryBus.MemBridge.memory_store_lanes_match_of_mem_row main mem r_main e h_main_emit
+
+/-! ## Per-opcode `<op>_discharge_full` entry points
+
+For each Mem-AIR-shape opcode, the entry point below packages the
+full set of memory-side promise hypotheses an `equiv_<OP>` theorem
+needs into a single derivation, consuming the trust-ledger entries
+* `main_load_emission_bundle` / `main_store_emission_bundle`
+  (NEW — Main row's memory-bus emission shape, class #4),
+* `lookup_consumer_matches_provider_load` / `..._store`
+  (existing — class #4 memory-bus permutation soundness),
+* `memory_bus_entry_byte_range_perm_sound` (existing — class #5b
+  byte-range bus soundness),
+* transpile contracts (`transpile_LD`, `transpile_SD`, ...).
+
+Caller obligations after this discharge collapse to:
+* `main : Valid_Main C FGL FGL`, `mem : Valid_Mem C FGL FGL`,
+  `r_main : ℕ` (validators + row index);
+* `h_active`, `h_op_main` (Main row activation + opcode pin —
+  derivable from `transpile_<OP>` once the global Compliance
+  theorem provides `core_every_row m r_main` + the Sail decode);
+* `e1`, `e2 : MemoryBusEntry FGL` (bus entries, structural);
+* `h_e1_mult`, `h_e1_as_val`, `h_e2_mult`, `h_e2_as_val` (bus shape
+  pins, already required by `equiv_<OP>` regardless).
+
+The discharge entry point returns the full bundle each per-opcode
+equiv currently consumes as separate parameters:
+`h_main_emit_b`, `h_main_emit_c`, `h_ptr_match`, `h_copy0`,
+`h_copy1`, `h_ext`, `h_op`, `h_rd_zero_iff`, `h_rd_idx`
+(for loads), and the store analogue. -/
+
+/-- **Common load discharge full bundle.** Shared by LD / LBU /
+    LHU / LWU (all four use `transpile_<OP>` axioms with identical
+    Main-row contracts on the bridged columns; the width difference
+    is carried downstream on the memory-bus entry, not on Main).
+
+    Inputs:
+    * `main`, `r_main` — Main AIR validator + row;
+    * `e1`, `e2` — load consumer + rd-write bus entries (already
+      bound at `equiv_<OP>` parameter level);
+    * `r1_val`, `imm`, `rd` — Sail-side load operand values
+      (already bound via the `<op>_input` record);
+    * `h_active`, `h_op_main` — Main row is internal (copyb), pinned
+      via the relevant `transpile_<OP>` axiom in the equiv;
+    * `h_e1_mult`, `h_e1_as_val`, `h_e2_mult`, `h_e2_as_val` — bus
+      structural shape (already at the equiv).
+
+    Returns the seven-tuple of `equiv_<OP>` promises:
+    `(h_main_emit_b, h_main_emit_c, h_ptr_match, h_rd_zero_iff,
+      h_rd_idx, h_copy0, h_copy1)`. -/
+theorem load_discharge_full
+    (main : Valid_Main C FGL FGL)
+    (r_main : ℕ)
+    (e1 e2 : Interaction.MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (h_active : main.is_external_op r_main = 0)
+    (h_op_main : main.op r_main = ZiskFv.Trusted.OP_COPYB)
+    (h_e1_mult : e1.multiplicity = -1) (h_e1_as_val : e1.as.val = 2)
+    (h_e2_mult : e2.multiplicity = 1) (h_e2_as_val : e2.as.val = 1) :
+    -- `h_main_emit_b` shape:
+    (main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1
+      ∧ main.b_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e1
+      ∧ e1.as = 2
+      ∧ e1.multiplicity = -1)
+    -- `h_main_emit_c` shape:
+    ∧ (main.c_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e2
+       ∧ main.c_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e2)
+    -- `h_ptr_match`:
+    ∧ e1.ptr.toNat = r1_val.toNat + (BitVec.signExtend 64 imm).toNat
+    -- `h_rd_zero_iff` / `h_rd_idx`:
+    ∧ (Transpiler.wrap_to_regidx e2.ptr = 0 ↔ rd = 0)
+    ∧ rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val
+    -- `h_copy0` / `h_copy1` (Main constraints 9/16, copyb passthrough):
+    ∧ ZiskFv.Airs.Main.internal_op1_copies_b0 main r_main
+    ∧ ZiskFv.Airs.Main.internal_op1_copies_b1 main r_main := by
+  obtain ⟨h_b0, h_b1, h_e1_as, h_e1_mult', h_c0, h_c1, h_ptr, h_rd_iff, h_rd_idx,
+          h_cop0, h_cop1⟩ :=
+    ZiskFv.Airs.MemoryBus.MemBridge.main_load_emission_bundle
+      main r_main e1 e2 r1_val imm rd h_active h_op_main
+      h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
+  exact ⟨⟨h_b0, h_b1, h_e1_as, h_e1_mult'⟩, ⟨h_c0, h_c1⟩, h_ptr,
+         h_rd_iff, h_rd_idx, h_cop0, h_cop1⟩
+
+/-- **Per-opcode load discharge — LD.** Synonym of
+    `load_discharge_full`; named for downstream readability. -/
+theorem ld_discharge_full
+    (main : Valid_Main C FGL FGL)
+    (r_main : ℕ)
+    (e1 e2 : Interaction.MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (h_active : main.is_external_op r_main = 0)
+    (h_op_main : main.op r_main = ZiskFv.Trusted.OP_COPYB)
+    (h_e1_mult : e1.multiplicity = -1) (h_e1_as_val : e1.as.val = 2)
+    (h_e2_mult : e2.multiplicity = 1) (h_e2_as_val : e2.as.val = 1) :
+    (main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1
+      ∧ main.b_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e1
+      ∧ e1.as = 2
+      ∧ e1.multiplicity = -1)
+    ∧ (main.c_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e2
+       ∧ main.c_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e2)
+    ∧ e1.ptr.toNat = r1_val.toNat + (BitVec.signExtend 64 imm).toNat
+    ∧ (Transpiler.wrap_to_regidx e2.ptr = 0 ↔ rd = 0)
+    ∧ rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val
+    ∧ ZiskFv.Airs.Main.internal_op1_copies_b0 main r_main
+    ∧ ZiskFv.Airs.Main.internal_op1_copies_b1 main r_main :=
+  load_discharge_full main r_main e1 e2 r1_val imm rd
+    h_active h_op_main h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
+
+/-- **Per-opcode load discharge — LBU.** Same shape as LD; the
+    width is downstream-irrelevant for the Main-row contract. -/
+theorem lbu_discharge_full
+    (main : Valid_Main C FGL FGL)
+    (r_main : ℕ)
+    (e1 e2 : Interaction.MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (h_active : main.is_external_op r_main = 0)
+    (h_op_main : main.op r_main = ZiskFv.Trusted.OP_COPYB)
+    (h_e1_mult : e1.multiplicity = -1) (h_e1_as_val : e1.as.val = 2)
+    (h_e2_mult : e2.multiplicity = 1) (h_e2_as_val : e2.as.val = 1) :
+    (main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1
+      ∧ main.b_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e1
+      ∧ e1.as = 2
+      ∧ e1.multiplicity = -1)
+    ∧ (main.c_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e2
+       ∧ main.c_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e2)
+    ∧ e1.ptr.toNat = r1_val.toNat + (BitVec.signExtend 64 imm).toNat
+    ∧ (Transpiler.wrap_to_regidx e2.ptr = 0 ↔ rd = 0)
+    ∧ rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val
+    ∧ ZiskFv.Airs.Main.internal_op1_copies_b0 main r_main
+    ∧ ZiskFv.Airs.Main.internal_op1_copies_b1 main r_main :=
+  load_discharge_full main r_main e1 e2 r1_val imm rd
+    h_active h_op_main h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
+
+/-- **Per-opcode load discharge — LHU.** Same shape as LBU. -/
+theorem lhu_discharge_full
+    (main : Valid_Main C FGL FGL)
+    (r_main : ℕ)
+    (e1 e2 : Interaction.MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (h_active : main.is_external_op r_main = 0)
+    (h_op_main : main.op r_main = ZiskFv.Trusted.OP_COPYB)
+    (h_e1_mult : e1.multiplicity = -1) (h_e1_as_val : e1.as.val = 2)
+    (h_e2_mult : e2.multiplicity = 1) (h_e2_as_val : e2.as.val = 1) :
+    (main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1
+      ∧ main.b_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e1
+      ∧ e1.as = 2
+      ∧ e1.multiplicity = -1)
+    ∧ (main.c_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e2
+       ∧ main.c_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e2)
+    ∧ e1.ptr.toNat = r1_val.toNat + (BitVec.signExtend 64 imm).toNat
+    ∧ (Transpiler.wrap_to_regidx e2.ptr = 0 ↔ rd = 0)
+    ∧ rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val
+    ∧ ZiskFv.Airs.Main.internal_op1_copies_b0 main r_main
+    ∧ ZiskFv.Airs.Main.internal_op1_copies_b1 main r_main :=
+  load_discharge_full main r_main e1 e2 r1_val imm rd
+    h_active h_op_main h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
+
+/-- **Per-opcode load discharge — LWU.** Same shape as LBU. -/
+theorem lwu_discharge_full
+    (main : Valid_Main C FGL FGL)
+    (r_main : ℕ)
+    (e1 e2 : Interaction.MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (h_active : main.is_external_op r_main = 0)
+    (h_op_main : main.op r_main = ZiskFv.Trusted.OP_COPYB)
+    (h_e1_mult : e1.multiplicity = -1) (h_e1_as_val : e1.as.val = 2)
+    (h_e2_mult : e2.multiplicity = 1) (h_e2_as_val : e2.as.val = 1) :
+    (main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1
+      ∧ main.b_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e1
+      ∧ e1.as = 2
+      ∧ e1.multiplicity = -1)
+    ∧ (main.c_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e2
+       ∧ main.c_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e2)
+    ∧ e1.ptr.toNat = r1_val.toNat + (BitVec.signExtend 64 imm).toNat
+    ∧ (Transpiler.wrap_to_regidx e2.ptr = 0 ↔ rd = 0)
+    ∧ rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val
+    ∧ ZiskFv.Airs.Main.internal_op1_copies_b0 main r_main
+    ∧ ZiskFv.Airs.Main.internal_op1_copies_b1 main r_main :=
+  load_discharge_full main r_main e1 e2 r1_val imm rd
+    h_active h_op_main h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
 
 end ZiskFv.Equivalence.Bridge.Mem

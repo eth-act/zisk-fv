@@ -15,6 +15,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Airs.BusEmission
+import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.Sail.lwu
 import ZiskFv.Sail.BusEffect
 
@@ -90,9 +91,6 @@ theorem equiv_LWU
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
     (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1)
-    (h_rd_zero_iff :
-      Transpiler.wrap_to_regidx e2.ptr = 0 ↔ lwu_input.rd = 0)
-    (h_rd_idx : lwu_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val)
     -- Memory-bridge premises.
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
     (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
@@ -100,19 +98,6 @@ theorem equiv_LWU
     (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
     (h_low :
       ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma)
-    (h_main_emit_b :
-      main.b_0 r_main = memory_entry_lo e1
-      ∧ main.b_1 r_main = memory_entry_hi e1
-      ∧ e1.as = 2
-      ∧ e1.multiplicity = -1)
-    (h_main_emit_c :
-      main.c_0 r_main = memory_entry_lo e2
-      ∧ main.c_1 r_main = memory_entry_hi e2)
-    (h_ptr_match :
-      e1.ptr.toNat
-        = lwu_input.r1_val.toNat + (BitVec.signExtend 64 lwu_input.imm).toNat)
-    (h_copy0 : internal_op1_copies_b0 main r_main)
-    (h_copy1 : internal_op1_copies_b1 main r_main)
     (h_ext : main.is_external_op r_main = 0)
     (h_op : main.op r_main = (1 : FGL))
     (h_width : main.ind_width r_main = (4 : FGL)) :
@@ -123,6 +108,11 @@ theorem equiv_LWU
       true,
       4
     )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match,
+          h_rd_zero_iff, h_rd_idx, h_copy0, h_copy1⟩ :=
+    ZiskFv.Equivalence.Bridge.Mem.lwu_discharge_full
+      main r_main e1 e2 lwu_input.r1_val lwu_input.imm lwu_input.rd
+      h_ext h_op h_m1_mult h_m1_as h_m2_mult h_m2_as
   rw [equiv_LWU_sail state lwu_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
   symm

@@ -196,15 +196,56 @@ Apply analogously for SRL/SRA/SLLI/SRLI/SRAI/SLLW/SLLIW/SRLW/SRAW/SRAIW/SRLIW.
 - LD: e1/e2 byte ranges
 - LBU/LHU/LWU: e1/e2 byte ranges
 - LB/LH/LW: byte ranges
+- **Mem lift iteration (this PR, branch `lift-mem-discharge`):**
+  LD / LBU / LHU / LWU each dropped 7 promise hypotheses
+  (`h_main_emit_b`, `h_main_emit_c`, `h_ptr_match`, `h_rd_zero_iff`,
+  `h_rd_idx`, `h_copy0`, `h_copy1`) via the new
+  `ZiskFv.Equivalence.Bridge.Mem.{ld,lbu,lhu,lwu}_discharge_full`
+  entry points consuming the new `main_load_emission_bundle` axiom
+  (class #4, PIL-cited; `Airs/MemoryBus/MemBridge.lean`). Net
+  metric change per opcode: total −7 / hypothesis −7 (LD); total
+  −7 / hypothesis −7 (LBU / LHU / LWU). Anti-laundering metric
+  strictly shrinks; trust ledger gains 1 axiom (84 → 96 active
+  baseline entries after composing prior iterations and this one's
+  addition).
 
-**Residual caller-burden:**
+**Residual caller-burden (after Mem-lift iteration):**
+
+For LD / LBU / LHU / LWU — `h_main_emit_b`, `h_main_emit_c`,
+`h_ptr_match`, `h_copy0`, `h_copy1`, `h_rd_zero_iff`, `h_rd_idx`
+are all discharged via the new `main_load_emission_bundle` axiom
+(class #4). `h_ext` and `h_op` remain at the canonical theorem
+because they are the transpile-pinned activation hypotheses the
+discharge consumes; they are derivable from `transpile_<OP>` once
+`Compliance.lean` provides the Sail decode + the universal Main
+row constraint set.
+
+For LB / LH / LW — **NOT lifted** in this iteration. These signed
+loads route through `Circuit/SextLoadBridge.lean` and the
+BinaryExtension AIR (not copyb / Mem AIR), so the
+`main_load_emission_bundle` axiom does not apply. A separate
+`main_sext_load_emission_bundle` axiom (or a wider transpile
+contract for `OP_SIGNEXTEND_{B,H,W}`) would be needed; tracked
+as a follow-up IOU.
+
+For SB / SH / SW / SD — **NOT lifted** in this iteration. The
+store equivs accept simpler bridging premises (`h_mem_eq` for
+SB/SH/SW; per-byte `h_byte_i` for SD) without a Main / Mem
+validator binder, so introducing the validator + discharge call
+would INFLATE the anti-laundering metric without a matching
+discharge of the byte hypotheses. A discharge that ALSO retires
+the byte hypotheses would require either a per-byte store-emission
+axiom or a deeper byte-bus closure; tracked as a follow-up IOU.
+
+Original (pre-lift) table preserved for reference:
+
 | Binder | Discharge mechanism |
 |---|---|
 | `risc_v_assumptions` + `h_opcode_assumptions` | Platform inerts (already in trust ledger as classes 7-10); these are caller obligations on `state`, not promises about circuit |
-| `h_main_emit_b`, `h_main_emit_c` (Main row emission of memory entries) | Project from Main's row-level structural constraints — needs `Main/<load,store>EmissionShape.lean` axiom (NEW trust class: Main's memory-bus emission column shape) OR derivable from existing `lookup_consumer_matches_provider_load/store` + the bus-protocol matching |
-| `h_ptr_match` (e1.ptr ↔ r1 + signExt(imm)) | Sail-side address computation; derivable from `transpile_<load,store>` axiom + Sail state |
-| `h_copy0`, `h_copy1`, `h_ext`, `h_op` (copyb / op pins for Main row) | Main row-level constraints — derivable from `core_every_row m`'s constraint 9/16 + `transpile_<OP>` |
-| `h_rd_zero_iff`, `h_rd_idx` (Sail rd ↔ bus e2.ptr) | `transpile_<OP>` pins for rd routing |
+| `h_main_emit_b`, `h_main_emit_c` (Main row emission of memory entries) | **DONE for loads** — `main_load_emission_bundle` axiom. **TODO for stores / signed loads** — analogous axioms. |
+| `h_ptr_match` (e1.ptr ↔ r1 + signExt(imm)) | **DONE for loads.** Same axiom. |
+| `h_copy0`, `h_copy1`, `h_ext`, `h_op` (copyb / op pins for Main row) | **DONE for loads** — `h_copy0/1` via the bundle; `h_ext/h_op` retained as transpile-pinned activation. |
+| `h_rd_zero_iff`, `h_rd_idx` (Sail rd ↔ bus e2.ptr) | **DONE for loads.** Same axiom. |
 
 ### ControlFlow non-branch (6 ops: AUIPC, JAL, JALR, LUI, FENCE)
 
