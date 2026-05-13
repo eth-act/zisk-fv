@@ -92,31 +92,12 @@ theorem equiv_AND
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : and_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Discharge parameters
-    (h_byte_0 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_AND
-      (v.free_in_a_0 r_binary) (v.free_in_b_0 r_binary) (v.free_in_c_0 r_binary))
-    (h_byte_1 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_AND
-      (v.free_in_a_1 r_binary) (v.free_in_b_1 r_binary) (v.free_in_c_1 r_binary))
-    (h_byte_2 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_AND
-      (v.free_in_a_2 r_binary) (v.free_in_b_2 r_binary) (v.free_in_c_2 r_binary))
-    (h_byte_3 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_AND
-      (v.free_in_a_3 r_binary) (v.free_in_b_3 r_binary) (v.free_in_c_3 r_binary))
-    (h_byte_4 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_AND
-      (v.free_in_a_4 r_binary) (v.free_in_b_4 r_binary) (v.free_in_c_4 r_binary))
-    (h_byte_5 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_AND
-      (v.free_in_a_5 r_binary) (v.free_in_b_5 r_binary) (v.free_in_c_5 r_binary))
-    (h_byte_6 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_AND
-      (v.free_in_a_6 r_binary) (v.free_in_b_6 r_binary) (v.free_in_c_6 r_binary))
-    (h_byte_7 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_AND
-      (v.free_in_a_7 r_binary) (v.free_in_b_7 r_binary) (v.free_in_c_7 r_binary))
+    -- Mode pin: `b_op_or_sext` row column is OP_AND (when `mode32 = 0`
+    -- and `c_is_signed = 0`, the PIL `b_op_or_sext` def collapses to
+    -- `b_op`; for AND this is `OP_AND = 14`). Replaces the 8
+    -- `h_byte_<i>` *promise hypotheses* — those now derive uniformly
+    -- via `Bridge.Binary.byte_chain_discharge_logic`. -/
+    (h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_AND)
     (h_match_clo : m.c_0 r_main
         = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
           + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216)
@@ -124,10 +105,6 @@ theorem equiv_AND
         = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256
           + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
     (h_input_r1_circuit : and_input.r1_val
       = BitVec.ofNat 64
           ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
@@ -152,13 +129,26 @@ theorem equiv_AND
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.AND))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  -- 24 byte-range *promise hypotheses* discharged via Step 2b's
-  -- `byte_ranges_at_holds` helper (consumes `binary_columns_in_range`
-  -- range-check soundness axiom; no caller hypothesis needed).
+  -- 24 byte-range *promise hypotheses* on Binary AIR columns
+  -- discharged via Step 2b's `byte_ranges_at_holds` helper.
   obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7,
           hb0, hb1, hb2, hb3, hb4, hb5, hb6, hb7,
           hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7⟩ :=
     ZiskFv.Equivalence.Bridge.Binary.byte_ranges_at_holds v r_binary
+  -- 8 e2 memory-bus byte-range *promise hypotheses* discharged
+  -- via `e2_byte_ranges_discharge` (memory-bus
+  -- `memory_bus_entry_byte_range_perm_sound` axiom).
+  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3,
+          h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
+    ZiskFv.Equivalence.Bridge.Binary.e2_byte_ranges_discharge e2
+  -- 8 per-byte `consumer_byte_match` *promise hypotheses* discharged
+  -- from the row's `b_op_or_sext = OP_AND` mode pin via
+  -- `byte_chain_discharge_logic` (forward-direction Binary-table
+  -- lookup soundness `binary_per_byte_lookup_witness`).
+  obtain ⟨h_byte_0, h_byte_1, h_byte_2, h_byte_3,
+          h_byte_4, h_byte_5, h_byte_6, h_byte_7⟩ :=
+    ZiskFv.Equivalence.Bridge.Binary.byte_chain_discharge_logic
+      v r_binary _ h_bop_or_sext
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.BinaryLogic.h_rd_val_logic_and
       m v r_main r_binary e2 and_input.r1_val and_input.r2_val

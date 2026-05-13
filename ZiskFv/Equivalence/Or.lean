@@ -92,30 +92,8 @@ theorem equiv_OR
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : or_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_byte_0 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_OR
-      (v.free_in_a_0 r_binary) (v.free_in_b_0 r_binary) (v.free_in_c_0 r_binary))
-    (h_byte_1 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_OR
-      (v.free_in_a_1 r_binary) (v.free_in_b_1 r_binary) (v.free_in_c_1 r_binary))
-    (h_byte_2 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_OR
-      (v.free_in_a_2 r_binary) (v.free_in_b_2 r_binary) (v.free_in_c_2 r_binary))
-    (h_byte_3 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_OR
-      (v.free_in_a_3 r_binary) (v.free_in_b_3 r_binary) (v.free_in_c_3 r_binary))
-    (h_byte_4 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_OR
-      (v.free_in_a_4 r_binary) (v.free_in_b_4 r_binary) (v.free_in_c_4 r_binary))
-    (h_byte_5 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_OR
-      (v.free_in_a_5 r_binary) (v.free_in_b_5 r_binary) (v.free_in_c_5 r_binary))
-    (h_byte_6 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_OR
-      (v.free_in_a_6 r_binary) (v.free_in_b_6 r_binary) (v.free_in_c_6 r_binary))
-    (h_byte_7 : ZiskFv.Airs.Binary.consumer_byte_match
-      ZiskFv.Airs.BinaryTable.OP_OR
-      (v.free_in_a_7 r_binary) (v.free_in_b_7 r_binary) (v.free_in_c_7 r_binary))
+    -- Mode pin replaces 8 byte_chain *promise hypotheses*.
+    (h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_OR)
     (h_match_clo : m.c_0 r_main
         = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
           + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216)
@@ -123,10 +101,6 @@ theorem equiv_OR
         = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256
           + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
     (h_input_r1_circuit : or_input.r1_val
       = BitVec.ofNat 64
           ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
@@ -151,13 +125,17 @@ theorem equiv_OR
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.OR))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  -- 24 byte-range *promise hypotheses* discharged via Step 2b's
-  -- `byte_ranges_at_holds` helper (consumes `binary_columns_in_range`
-  -- range-check soundness axiom; no caller hypothesis needed).
   obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7,
           hb0, hb1, hb2, hb3, hb4, hb5, hb6, hb7,
           hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7⟩ :=
     ZiskFv.Equivalence.Bridge.Binary.byte_ranges_at_holds v r_binary
+  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3,
+          h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
+    ZiskFv.Equivalence.Bridge.Binary.e2_byte_ranges_discharge e2
+  obtain ⟨h_byte_0, h_byte_1, h_byte_2, h_byte_3,
+          h_byte_4, h_byte_5, h_byte_6, h_byte_7⟩ :=
+    ZiskFv.Equivalence.Bridge.Binary.byte_chain_discharge_logic
+      v r_binary _ h_bop_or_sext
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.BinaryLogic.h_rd_val_logic_or
       m v r_main r_binary e2 or_input.r1_val or_input.r2_val
