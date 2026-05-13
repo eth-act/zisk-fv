@@ -556,6 +556,32 @@ lemma arith_mul_unsigned_packed_correct_bundled
   exact arith_mul_unsigned_packed_correct v row h6 h7 h8 h31 h32 h33 h34 h35 h36 h37 h38
     h_na h_nb h_np h_nr h_sext h_m32 h_div
 
+/-- **MUL-signed carry-chain specialization (bundled form).** Same as
+    `arith_mul_signed_packed_correct` but consuming the bundled
+    `mul_carry_chain_holds` predicate. Used by the Step 4.alpha.A
+    bridge `mul_signed_chain_witnesses` to extract per-chunk identities
+    over named columns for downstream consumption by the signed ℤ
+    aggregator. -/
+lemma arith_mul_signed_packed_correct_bundled
+    (v : Valid_ArithMul C F ExtF) (row : ℕ)
+    (h_chain : mul_carry_chain_holds v row)
+    (h_nr : v.nr row = 0)
+    (h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
+    (h_div : v.div row = 0) :
+    (1 - 2 * v.na row - 2 * v.nb row + 4 * v.na row * v.nb row)
+        * a_chunks_packed v row * b_chunks_packed v row
+      + (v.nb row * (1 - 2 * v.na row) * a_chunks_packed v row
+          + v.na row * (1 - 2 * v.nb row) * b_chunks_packed v row)
+          * (65536 * 65536 * 65536 * 65536)
+      + (v.na row * v.nb row - v.np row)
+          * (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536)
+      = (1 - 2 * v.np row)
+          * (c_chunks_packed v row
+            + d_chunks_packed v row * (65536 * 65536 * 65536 * 65536)) := by
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  exact arith_mul_signed_packed_correct v row h6 h7 h8 h31 h32 h33 h34 h35 h36 h37 h38
+    h_nr h_sext h_m32 h_div
+
 end CarryChain
 
 end ZiskFv.Airs.ArithMul
