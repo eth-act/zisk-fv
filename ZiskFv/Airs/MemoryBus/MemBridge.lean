@@ -394,6 +394,67 @@ axiom main_load_emission_bundle
     ∧ ZiskFv.Airs.Main.internal_op1_copies_b0 main r_main
     ∧ ZiskFv.Airs.Main.internal_op1_copies_b1 main r_main
 
+/-- **Main memory-bus emission bundle — signed-load side.**
+
+    Same emission shape as `main_load_emission_bundle`, but for the
+    sign-extended-load family (LB / LH / LW). The activation pin is
+    different: these rows are *external* (`is_external_op = 1`) and
+    carry `op ∈ {OP_SIGNEXTEND_B, OP_SIGNEXTEND_H, OP_SIGNEXTEND_W}`
+    rather than `op = OP_COPYB`. The Main row still emits the same
+    pair of memory-bus entries — `b`-side load consumer (`as = 2`,
+    `mult = -1`) and `c`-side rd-write (`as = 1`, `mult = 1`) — so
+    the lane equalities, ptr-match against `r1_val + signExt(imm)`,
+    and rd routing are identical in shape to the copyb load case.
+
+    The copyb passthrough facts (`internal_op1_copies_b{0,1}`,
+    constraints 9 / 16) are absent here: those are conditioned on
+    `(1 - is_external_op) * op = 1`, which is zero for sext-load rows
+    (`is_external_op = 1`). The rd value is grounded downstream via
+    the BinaryExtension AIR's per-byte lookups
+    (`Circuit/SextLoadBridge.lean`), not via Main's b → c copy.
+
+    PIL citations (same as `main_load_emission_bundle`):
+    * `state-machines/main/pil/main.pil:300` — b-side `mem_op`;
+    * `state-machines/main/pil/main.pil:181` — `addr1 =
+      b_offset_imm0 + b_src_ind * a[0]` for external rows;
+    * `state-machines/main/pil/main.pil:323` — c-side `mem_op`;
+    * `state-machines/main/pil/main.pil:148` — `store_offset = rd`;
+    * `state-machines/main/pil/main.pil:344` — `b_imm[0] =
+      b_offset_imm0`;
+    * `core/src/riscv2zisk_context.rs` — `load_op` for LB / LH / LW
+      lowers to `op = "signextend_{b,h,w}"`, `is_external_op = 1`,
+      `b_src_ind = 1` (analogous to the copyb load path but routed
+      through BinaryExtension for sign-extension).
+
+    Trust class #4 (memory-bus permutation / lookup-argument
+    soundness on `bus_id = 10`) — same class as
+    `main_load_emission_bundle` and
+    `lookup_consumer_matches_provider_{load,store}`. -/
+axiom main_sext_load_emission_bundle
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (e1 e2 : MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (op_code : FGL)
+    -- Activation: this row is an external sext-load row.
+    (h_ext : main.is_external_op r_main = 1)
+    (h_op : main.op r_main = op_code)
+    (h_op_sext : op_code = OP_SIGNEXTEND_B
+                  ∨ op_code = OP_SIGNEXTEND_H
+                  ∨ op_code = OP_SIGNEXTEND_W)
+    -- Bus side: e1 is the load consumer entry, e2 is the rd-write entry.
+    (h_e1_mult : e1.multiplicity = -1) (h_e1_as_val : e1.as.val = 2)
+    (h_e2_mult : e2.multiplicity = 1) (h_e2_as_val : e2.as.val = 1) :
+    main.b_0 r_main = memory_entry_lo e1
+    ∧ main.b_1 r_main = memory_entry_hi e1
+    ∧ e1.as = 2
+    ∧ e1.multiplicity = -1
+    ∧ main.c_0 r_main = memory_entry_lo e2
+    ∧ main.c_1 r_main = memory_entry_hi e2
+    ∧ e1.ptr.toNat = r1_val.toNat + (BitVec.signExtend 64 imm).toNat
+    ∧ (Transpiler.wrap_to_regidx e2.ptr = 0 ↔ rd = 0)
+    ∧ rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val
+
 /-! ## Axiom audit
 
 The bridge theorems compose `lookup_consumer_matches_provider_{load,store}`
@@ -402,8 +463,8 @@ hypotheses. The Mem-row local lemmas
 `mem_read_addr_change_value_{0,1}_zero` are pure consequences of
 `Mem.core_every_row` and add no axioms.
 
-`main_load_emission_bundle` and `main_store_emission_bundle` are
-narrow PIL-cited extensions of the same trust class (memory-bus
+`main_load_emission_bundle` and `main_sext_load_emission_bundle`
+are narrow PIL-cited extensions of the same trust class (memory-bus
 permutation / lookup-argument soundness on `bus_id = 10`). -/
 
 #print axioms memory_load_lanes_match_of_main_emit

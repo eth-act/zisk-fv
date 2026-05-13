@@ -14,6 +14,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
+import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.Sail.lw
 import ZiskFv.Sail.BusEffect
 
@@ -113,23 +114,8 @@ theorem equiv_LW
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
     (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1)
-    -- Decomposed rd-match hypotheses.
-    (h_rd_zero_iff :
-      Transpiler.wrap_to_regidx e2.ptr = 0 ↔ lw_input.rd = 0)
-    (h_rd_idx : lw_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val)
     -- Circuit-level memory bridge + lane match.
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
-    (h_main_emit_b :
-      main.b_0 r_main = memory_entry_lo e1
-      ∧ main.b_1 r_main = memory_entry_hi e1
-      ∧ e1.as = 2
-      ∧ e1.multiplicity = -1)
-    (h_main_emit_c :
-      main.c_0 r_main = memory_entry_lo e2
-      ∧ main.c_1 r_main = memory_entry_hi e2)
-    (h_ptr_match :
-      e1.ptr.toNat
-        = lw_input.r1_val.toNat + (BitVec.signExtend 64 lw_input.imm).toNat)
     (h_ext : main.is_external_op r_main = 1)
     (h_op : main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_W)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
@@ -171,6 +157,11 @@ theorem equiv_LW
         false,
         4
       ))) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match,
+          h_rd_zero_iff, h_rd_idx⟩ :=
+    ZiskFv.Equivalence.Bridge.Mem.lw_discharge_full
+      main r_main e1 e2 lw_input.r1_val lw_input.imm lw_input.rd
+      h_ext h_op h_m1_mult h_m1_as h_m2_mult h_m2_as
   rw [equiv_LW_sail state lw_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
   symm
