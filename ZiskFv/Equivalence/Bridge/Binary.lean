@@ -11,6 +11,8 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Equivalence.Bridge.SailStateBridge
+import ZiskFv.Fundamentals.Transpiler
 
 /-!
 # Binary AIR discharge bridge
@@ -50,6 +52,7 @@ once Step 3 lands their refactors.
 namespace ZiskFv.Equivalence.Bridge.Binary
 
 open Goldilocks
+open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.OperationBus
@@ -295,6 +298,53 @@ private lemma boolean_carry_implies_eq_zero {x : FGL}
     have hval : x.val = 1 := by rw [h]; rfl
     omega
 
+/-- **carry_7 = 0 for AND rows (caller-friendly variant).** Drops the
+    `boolean_carry_7` hypothesis by deriving it from
+    `bin_carry_7_is_boolean` (in `BinaryRanges.lean`). -/
+theorem carry_7_zero_AND_pure
+    (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (h_op_AND : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_AND) :
+    v.carry_7 r = 0 := by
+  obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
+    binary_per_byte_lookup_witness v r
+  have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e h_mult
+  obtain ⟨_, h_AND, _⟩ := h_wf
+  have h_e_op : e.op.val = ZiskFv.Airs.BinaryTable.OP_AND := by
+    rw [h_op_eq]; exact h_op_AND
+  have h_cout_zero : e.flags.val % 2 = 0 := (h_AND h_e_op).2
+  rw [h_flags] at h_cout_zero
+  exact boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
+
+/-- **carry_7 = 0 for OR rows (caller-friendly variant).** -/
+theorem carry_7_zero_OR_pure
+    (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (h_op_OR : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_OR) :
+    v.carry_7 r = 0 := by
+  obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
+    binary_per_byte_lookup_witness v r
+  have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e h_mult
+  obtain ⟨_, _, h_OR, _⟩ := h_wf
+  have h_e_op : e.op.val = ZiskFv.Airs.BinaryTable.OP_OR := by
+    rw [h_op_eq]; exact h_op_OR
+  have h_cout_zero : e.flags.val % 2 = 0 := (h_OR h_e_op).2
+  rw [h_flags] at h_cout_zero
+  exact boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
+
+/-- **carry_7 = 0 for XOR rows (caller-friendly variant).** -/
+theorem carry_7_zero_XOR_pure
+    (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (h_op_XOR : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_XOR) :
+    v.carry_7 r = 0 := by
+  obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
+    binary_per_byte_lookup_witness v r
+  have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e h_mult
+  obtain ⟨_, _, _, h_XOR, _⟩ := h_wf
+  have h_e_op : e.op.val = ZiskFv.Airs.BinaryTable.OP_XOR := by
+    rw [h_op_eq]; exact h_op_XOR
+  have h_cout_zero : e.flags.val % 2 = 0 := (h_XOR h_e_op).2
+  rw [h_flags] at h_cout_zero
+  exact boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
+
 /-- **carry_7 = 0 for AND rows.** -/
 theorem carry_7_zero_AND
     (v : Valid_Binary C FGL FGL) (r : ℕ)
@@ -418,5 +468,250 @@ theorem byte_chain_discharge_logic
   · exact byte_chain_match_5_holds v r op_val h_op_val
   · exact byte_chain_match_6_holds v r op_val h_op_val
   · exact byte_chain_match_7_holds v r op_val h_op_val
+
+/-! ## Sail r1/r2 ↔ packed a/b byte sum bridges (Round-3 lift)
+
+These helpers package the input-bridge derivation pattern shared by
+all Binary-shape opcodes:
+  (1) consume `transpile_<OP>` to get `m.a_0/1 ↔ lane_lo/hi (state.xreg rs1)`
+      + `m.m32 = 0`;
+  (2) consume `matches_entry`'s a_lo/a_hi conjuncts after unfolding
+      `opBus_row_*` with `m32 = 0` to bridge `m.a_0/1 ↔ packed Binary a-bytes`;
+  (3) compose with `SailStateBridge.packed_lane_eq_of_read_xreg` to
+      bridge the resulting `Sail r1_val ↔ packed a-bytes`.
+
+Each per-opcode equiv calls one of these with its own `transpile_<OP>` to
+discharge `h_input_r1_circuit` / `h_input_r2_circuit` without inlining
+the ~50-line derivation. -/
+
+open ZiskFv.Equivalence.Bridge.SailStateBridge in
+/-- **Sail r1_val ↔ packed Binary a-byte sum bridge.** Given the
+    transpile axiom's a-lane conjuncts + `m32 = 0`, `matches_entry`
+    on Main/Binary bus rows, and the Sail `read_xreg` reduction,
+    derive the standard `r1_val = BitVec.ofNat 64 (Σ free_in_a_i * 256^i)`
+    equation. Uniformly applicable across AND/ANDI/OR/ORI/XOR/XORI/
+    SLT/SLTI/SLTU/SLTIU/SUB chain ops. The 8 byte ranges on `v.free_in_a_*`
+    are consumed internally — derived from `binary_columns_in_range`. -/
+theorem input_r1_packed_a
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
+    (h_m32 : m.m32 r_main = 0)
+    (h_a_lo_t : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
+    (h_a_hi_t : m.a_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs1))
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                             (opBus_row_Binary v r_binary))
+    (h_input_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state) :
+    r1_val = BitVec.ofNat 64
+        ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+          + (v.free_in_a_2 r_binary).val * 65536
+          + (v.free_in_a_3 r_binary).val * 16777216
+          + (v.free_in_a_4 r_binary).val * 4294967296
+          + (v.free_in_a_5 r_binary).val * 1099511627776
+          + (v.free_in_a_6 r_binary).val * 281474976710656
+          + (v.free_in_a_7 r_binary).val * 72057594037927936) := by
+  have ha0 := bin_a_0_lt_256 v r_binary
+  have ha1 := bin_a_1_lt_256 v r_binary
+  have ha2 := bin_a_2_lt_256 v r_binary
+  have ha3 := bin_a_3_lt_256 v r_binary
+  have ha4 := bin_a_4_lt_256 v r_binary
+  have ha5 := bin_a_5_lt_256 v r_binary
+  have ha6 := bin_a_6_lt_256 v r_binary
+  have ha7 := bin_a_7_lt_256 v r_binary
+  have h_r1_main :=
+    packed_lane_eq_of_read_xreg state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main)
+      h_a_lo_t h_a_hi_t h_input_r1
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match
+  obtain ⟨_, _, h_a_lo_m, h_a_hi_m, _, _, _, _, _, _, _, _⟩ := h_match
+  rw [h_m32] at h_a_hi_m
+  simp only [one_sub_zero_mul] at h_a_hi_m
+  have h_a0_val : (m.a_0 r_main).val =
+      (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+      + (v.free_in_a_2 r_binary).val * 65536
+      + (v.free_in_a_3 r_binary).val * 16777216 := by
+    rw [h_a_lo_m]
+    have h_cast :
+        v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
+          + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary
+        = ((((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+              + (v.free_in_a_2 r_binary).val * 65536
+              + (v.free_in_a_3 r_binary).val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
+    omega
+  have h_a1_val : (m.a_1 r_main).val =
+      (v.free_in_a_4 r_binary).val + (v.free_in_a_5 r_binary).val * 256
+      + (v.free_in_a_6 r_binary).val * 65536
+      + (v.free_in_a_7 r_binary).val * 16777216 := by
+    rw [h_a_hi_m]
+    have h_cast :
+        v.free_in_a_4 r_binary + 256 * v.free_in_a_5 r_binary
+          + 65536 * v.free_in_a_6 r_binary + 16777216 * v.free_in_a_7 r_binary
+        = ((((v.free_in_a_4 r_binary).val + (v.free_in_a_5 r_binary).val * 256
+              + (v.free_in_a_6 r_binary).val * 65536
+              + (v.free_in_a_7 r_binary).val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
+    omega
+  rw [h_r1_main]
+  apply congrArg (BitVec.ofNat 64)
+  rw [h_a0_val, h_a1_val]
+  ring
+
+open ZiskFv.Equivalence.Bridge.SailStateBridge in
+/-- **Sail r2_val ↔ packed Binary b-byte sum bridge.** Mirror of
+    `input_r1_packed_a` for the b-lane (`m.b_0/1` ↔ `state.xreg rs2`). -/
+theorem input_r2_packed_b
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
+    (h_m32 : m.m32 r_main = 0)
+    (h_b_lo_t : m.b_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs2))
+    (h_b_hi_t : m.b_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs2))
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                             (opBus_row_Binary v r_binary))
+    (h_input_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state) :
+    r2_val = BitVec.ofNat 64
+        ((v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
+          + (v.free_in_b_2 r_binary).val * 65536
+          + (v.free_in_b_3 r_binary).val * 16777216
+          + (v.free_in_b_4 r_binary).val * 4294967296
+          + (v.free_in_b_5 r_binary).val * 1099511627776
+          + (v.free_in_b_6 r_binary).val * 281474976710656
+          + (v.free_in_b_7 r_binary).val * 72057594037927936) := by
+  have hb0 := bin_b_0_lt_256 v r_binary
+  have hb1 := bin_b_1_lt_256 v r_binary
+  have hb2 := bin_b_2_lt_256 v r_binary
+  have hb3 := bin_b_3_lt_256 v r_binary
+  have hb4 := bin_b_4_lt_256 v r_binary
+  have hb5 := bin_b_5_lt_256 v r_binary
+  have hb6 := bin_b_6_lt_256 v r_binary
+  have hb7 := bin_b_7_lt_256 v r_binary
+  have h_r2_main :=
+    packed_lane_eq_of_read_xreg state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main)
+      h_b_lo_t h_b_hi_t h_input_r2
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match
+  obtain ⟨_, _, _, _, h_b_lo_m, h_b_hi_m, _, _, _, _, _, _⟩ := h_match
+  rw [h_m32] at h_b_hi_m
+  simp only [one_sub_zero_mul] at h_b_hi_m
+  have h_b0_val : (m.b_0 r_main).val =
+      (v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
+      + (v.free_in_b_2 r_binary).val * 65536
+      + (v.free_in_b_3 r_binary).val * 16777216 := by
+    rw [h_b_lo_m]
+    have h_cast :
+        v.free_in_b_0 r_binary + 256 * v.free_in_b_1 r_binary
+          + 65536 * v.free_in_b_2 r_binary + 16777216 * v.free_in_b_3 r_binary
+        = ((((v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
+              + (v.free_in_b_2 r_binary).val * 65536
+              + (v.free_in_b_3 r_binary).val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
+    omega
+  have h_b1_val : (m.b_1 r_main).val =
+      (v.free_in_b_4 r_binary).val + (v.free_in_b_5 r_binary).val * 256
+      + (v.free_in_b_6 r_binary).val * 65536
+      + (v.free_in_b_7 r_binary).val * 16777216 := by
+    rw [h_b_hi_m]
+    have h_cast :
+        v.free_in_b_4 r_binary + 256 * v.free_in_b_5 r_binary
+          + 65536 * v.free_in_b_6 r_binary + 16777216 * v.free_in_b_7 r_binary
+        = ((((v.free_in_b_4 r_binary).val + (v.free_in_b_5 r_binary).val * 256
+              + (v.free_in_b_6 r_binary).val * 65536
+              + (v.free_in_b_7 r_binary).val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
+    omega
+  rw [h_r2_main]
+  apply congrArg (BitVec.ofNat 64)
+  rw [h_b0_val, h_b1_val]
+  ring
+
+/-! ## c-lane match discharge for AND / OR / XOR rows (Round-3 lift)
+
+Combines the existing `carry_7_zero_<X>_pure` helpers with
+`matches_entry`'s c_lo / c_hi conjuncts to discharge the
+`h_match_clo` / `h_match_chi` *promise hypotheses* on the
+6 byte-local logic opcodes (AND / ANDI / OR / ORI / XOR / XORI).
+
+Inputs: `h_match : matches_entry (opBus_row_Main m r_main)
+                                 (opBus_row_Binary v r_binary)`
+        + the row's `b_op_or_sext = OP_<X>` mode pin.
+Outputs: the standard 4-byte packed c-lane match equations in the
+shape the rd-value derivation lemmas consume. -/
+
+private lemma match_clo_chi_logic_core
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (r_main r_binary : ℕ)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                             (opBus_row_Binary v r_binary))
+    (h_c7 : v.carry_7 r_binary = 0) :
+    (m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
+          + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216)
+  ∧ (m.c_1 r_main
+        = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256
+          + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216) := by
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match
+  obtain ⟨_, _, _, _, _, _, h_c_lo, h_c_hi, _, _, _, _⟩ := h_match
+  refine ⟨?_, ?_⟩
+  · rw [h_c_lo, h_c7]; ring
+  · rw [h_c_hi]; ring
+
+/-- **`h_match_clo`/`h_match_chi` discharge for AND-shape rows.** -/
+theorem match_clo_chi_AND
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (r_main r_binary : ℕ)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                             (opBus_row_Binary v r_binary))
+    (h_op_AND : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_AND) :
+    (m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
+          + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216)
+  ∧ (m.c_1 r_main
+        = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256
+          + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216) :=
+  match_clo_chi_logic_core m v r_main r_binary h_match
+    (carry_7_zero_AND_pure v r_binary h_op_AND)
+
+/-- **`h_match_clo`/`h_match_chi` discharge for OR-shape rows.** -/
+theorem match_clo_chi_OR
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (r_main r_binary : ℕ)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                             (opBus_row_Binary v r_binary))
+    (h_op_OR : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_OR) :
+    (m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
+          + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216)
+  ∧ (m.c_1 r_main
+        = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256
+          + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216) :=
+  match_clo_chi_logic_core m v r_main r_binary h_match
+    (carry_7_zero_OR_pure v r_binary h_op_OR)
+
+/-- **`h_match_clo`/`h_match_chi` discharge for XOR-shape rows.** -/
+theorem match_clo_chi_XOR
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (r_main r_binary : ℕ)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                             (opBus_row_Binary v r_binary))
+    (h_op_XOR : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_XOR) :
+    (m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
+          + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216)
+  ∧ (m.c_1 r_main
+        = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256
+          + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216) :=
+  match_clo_chi_logic_core m v r_main r_binary h_match
+    (carry_7_zero_XOR_pure v r_binary h_op_XOR)
 
 end ZiskFv.Equivalence.Bridge.Binary

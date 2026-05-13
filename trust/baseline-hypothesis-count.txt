@@ -8,8 +8,8 @@
 # requires explicit reviewer ack via a baseline diff.
 #
 # Total theorems: 63
-# Aggregate total binders: 2306
-# Aggregate hypothesis binders: 1328
+# Aggregate total binders: 2304
+# Aggregate hypothesis binders: 1326
 #
 ZiskFv.Equivalence.Add.equiv_ADD total=41 hypothesis=27
 ZiskFv.Equivalence.Addi.equiv_ADDI total=39 hypothesis=26
@@ -44,7 +44,7 @@ ZiskFv.Equivalence.MulH.equiv_MULH total=24 hypothesis=15
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU total=24 hypothesis=15
 ZiskFv.Equivalence.MulHU.equiv_MULHU total=47 hypothesis=35
 ZiskFv.Equivalence.MulW.equiv_MULW total=25 hypothesis=16
-ZiskFv.Equivalence.Or.equiv_OR total=34 hypothesis=21
+ZiskFv.Equivalence.Or.equiv_OR total=33 hypothesis=20
 ZiskFv.Equivalence.Ori.equiv_ORI total=34 hypothesis=21
 ZiskFv.Equivalence.Rem.equiv_REM total=24 hypothesis=15
 ZiskFv.Equivalence.Remu.equiv_REMU total=49 hypothesis=37
@@ -72,5 +72,5 @@ ZiskFv.Equivalence.StoreH.equiv_SH total=22 hypothesis=11
 ZiskFv.Equivalence.StoreW.equiv_SW total=22 hypothesis=11
 ZiskFv.Equivalence.Sub.equiv_SUB total=98 hypothesis=53
 ZiskFv.Equivalence.Subw.equiv_SUBW total=76 hypothesis=42
-ZiskFv.Equivalence.Xor.equiv_XOR total=34 hypothesis=21
+ZiskFv.Equivalence.Xor.equiv_XOR total=33 hypothesis=20
 ZiskFv.Equivalence.Xori.equiv_XORI total=34 hypothesis=21
