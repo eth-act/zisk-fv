@@ -241,6 +241,30 @@ axiom arith_table_op_div_rem_signed_d_sign_pin
       ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
           ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
 
+/-- **Arith-table signed-W DIV/REM remainder-sign pin (class #6).**
+    W-mode analog of `arith_table_op_div_rem_signed_d_sign_pin`. For every
+    `Valid_ArithDiv` row carrying signed-W-DIV/REM mode pins
+    (`sext = 0`, `m32 = 1`, `div = 1`) with `op ∈ {190 (DIVW), 191 (REMW)}`
+    — the signed 32-bit DIV/REM table rows (entries 51-72 in
+    `build/extraction/Extraction/ArithTable.lean`) — the sign-of-remainder
+    column `nr` matches the sign-of-dividend column `np`, **or** the four
+    chunks of the remainder column `d[]` are each zero. Same trust class
+    as the m32=0 sibling: lookup soundness on the `arith_table_assumes`
+    consumer-side bus row composed with the table content.
+
+    PIL citation: composition of `arith.pil:286-287` (the
+    `arith_table_assumes(op, m32, div, na, nb, np, nr, sext, ...)` lookup
+    on every Arith AIR row) with the table content at
+    `zisk/state-machines/arith/pil/arith_table.pil` for the signed-W
+    opcodes (op ∈ {190, 191}). -/
+axiom arith_table_op_div_rem_signed_w_d_sign_pin
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 1) (_h_div : v.div r_a = 1)
+    (_h_op : v.op r_a = 190 ∨ v.op r_a = 191) :
+    v.nr r_a = v.np r_a
+      ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
+          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+
 /-! ## Carry column range — W-mode (m32 = 1)
 
 In **W-variant mode** (`m32 = 1`, the 32-bit-truncated MUL/DIV

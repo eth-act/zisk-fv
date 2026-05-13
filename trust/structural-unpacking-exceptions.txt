@@ -154,12 +154,56 @@ ADDED: v, r_a, h_chain, h_na_bool, h_nb_bool, h_nr_bool, h_np_xor,
 
 OPCODE: ZiskFv.Equivalence.Divw.equiv_DIVW
 DROPPED: h_byte_sum_circuit
-ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2, h_op2_ne, h_d_lt_b
-       (Option-1: full Tier-3 promotion consuming the signed ℤ
-        chunk-lift toolkit Phase 4.alpha.A.0 lands as foundation.
-        Per-opcode metric grows by ~+15 binders; reviewer accepts
-        per structural-unpacking exception.)
+ADDED: v, r_a, h_chain, h_na_bool, h_nb_bool, h_nr_bool, h_np_xor,
+       h_sext, h_m32, h_div, h_op, h_op_signed, h_c23, h_byte_lo,
+       h_sext_choice, h_op1, h_op2, h_op2_ne, h_no_overflow,
+       h_r_abs, h_r_sign
+       (Phase 4.step4 full Tier-3 promotion mirroring the DIV signed
+        entry above but specialized for W-mode (`m32 = 1`). Differences:
+          (a) `h_m32 = 1` instead of `h_m32 = 0`. Consumes the
+              `div_w_chain_witnesses` Bridge lemma (W chain with
+              `(nr - np) * 2^32` cross-term — m32-gated) plus the
+              new Layer 1 wrapper `fgl_div_w_signed_to_bv64` which
+              handles the 3-branch boundary dispatch (zero divisor /
+              INT32_MIN over -1 / generic Int.tdiv).
+          (b) `h_op` (TRANSPILE-PIN) selects DIVW from the
+              {0x95, 0x96, 0x99, 0x9a} W-DIV family, dispatching the
+              `arith_table_op_divw_operand_pin` axiom which gives
+              `a_2 = a_3 = b_2 = b_3 = d_2 = d_3 = 0` (W operand
+              truncation).
+          (c) `h_op_signed` selects op ∈ {190, 191} (DIVW, REMW —
+              the canonical-numbering signed-W rows), dispatching the
+              new `arith_table_op_div_rem_signed_w_d_sign_pin` axiom
+              (W analog of the m32=0 sibling — same trust class
+              #6/#6b). Required because the m32=0 sign-of-D pin
+              doesn't cover the signed-W (m32=1) rows.
+          (d) `h_c23 : c_2 = c_3 = 0` (CIRCUIT-CONSTRAINT) captures
+              that the bus packs the W-mode dividend's 32-bit value
+              (sign-extension is carried by `np`, not by c_2 / c_3).
+          (e) `h_byte_lo` lane match ties bytes 0..3 to `a_0 + a_1*
+              65536` (low 32-bit quotient) only; bytes 4..7 are
+              sign-extension lookups.
+          (f) `h_sext_choice` is the disjunctive sign-extension
+              witness on bytes 4..7: SEXT_00 if q32 < 2^31, SEXT_FF
+              if q32 ≥ 2^31. Same trust class as ADDW's
+              `h_sext_choice`. No new axiom.
+          (g) `h_op1`/`h_op2` are 32-bit signed TRANSPILE-BRIDGE
+              equations `r1_lo32.toInt = c_packed - np*2^32` /
+              `r2_lo32.toInt = b_packed - nb*2^32` (sign-extended-32
+              form, not 64-bit form like DIV).
+          (h) `h_r_abs` / `h_r_sign` are the signed-Euclidean
+              magnitude + sign-correctness CIRCUIT-CONSTRAINTs
+              derivable from the AIR's `assumes_operation(|d| < |b|)`
+              lookup + sign-witness booleanity.
+          (i) `h_no_overflow` excludes the INT32_MIN / -1 boundary
+              (handled separately by the boundary-row dispatch).
+        Per-opcode metric grows by ~+20 binders; reviewer accepts
+        per structural-unpacking exception. Discharge composes Layer
+        1's `fgl_div_w_signed_to_bv64` with the W chain witnesses,
+        the new 32-bit `abs_euclidean_to_signed_euclidean_div_rem_w`
+        linker (SignedChunkLift Part 9.W), and `h_sext_choice` via
+        the `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_divw_chunked`
+        helper.)
 
 OPCODE: ZiskFv.Equivalence.Divuw.equiv_DIVUW
 DROPPED: h_byte_sum_circuit
