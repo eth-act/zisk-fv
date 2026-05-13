@@ -68,45 +68,78 @@
 
 OPCODE: ZiskFv.Equivalence.MulH.equiv_MULH
 DROPPED: h_byte_sum_circuit
-ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2
+ADDED: h_byte_sum_abs, h_na, h_nb, h_np, h_np_xor, h_no_wrap_quadrant
+       (Option-2 re-frame: keep abs-form intermediate `h_byte_sum_abs`
+        plus sign witnesses + quadrant-identity precondition. Full
+        chunk-form derivation of h_byte_sum_abs deferred to Phase
+        4.alpha.D — signed-ℤ chunk-lift toolkit.)
 
 OPCODE: ZiskFv.Equivalence.MulHSU.equiv_MULHSU
 DROPPED: h_byte_sum_circuit
-ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2
+ADDED: h_byte_sum_abs, h_na, h_nb, h_np, h_np_xor, h_no_wrap_quadrant
+       (Option-2 re-frame: keep abs-form intermediate `h_byte_sum_abs`
+        plus sign witnesses + quadrant-identity precondition. Full
+        chunk-form derivation of h_byte_sum_abs deferred to Phase
+        4.alpha.D — signed-ℤ chunk-lift toolkit.)
 
 OPCODE: ZiskFv.Equivalence.MulW.equiv_MULW
 DROPPED: h_byte_sum_circuit
-ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2
+ADDED: h_byte_sum_abs, h_na, h_nb, h_np, h_np_xor, h_no_wrap_quadrant
+       (Option-2 re-frame: keep abs-form intermediate `h_byte_sum_abs`
+        plus sign witnesses + quadrant-identity precondition. Full
+        chunk-form derivation of h_byte_sum_abs deferred to Phase
+        4.alpha.D — signed-ℤ chunk-lift toolkit.)
 
 OPCODE: ZiskFv.Equivalence.Div.equiv_DIV
 DROPPED: h_byte_sum_circuit
-ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2, h_op2_ne, h_d_lt_b
+ADDED: h_byte_sum_abs, h_na, h_nb, h_np, h_np_xor, h_no_wrap_quadrant,
+       h_op2_ne, h_d_lt_b
+       (Option-2 re-frame: keep abs-form intermediate `h_byte_sum_abs`
+        plus sign witnesses + quadrant-identity precondition. Full
+        chunk-form derivation of h_byte_sum_abs deferred to Phase
+        4.alpha.D — signed-ℤ chunk-lift toolkit.)
 
 OPCODE: ZiskFv.Equivalence.Divw.equiv_DIVW
 DROPPED: h_byte_sum_circuit
-ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2, h_op2_ne, h_d_lt_b
+ADDED: h_byte_sum_abs, h_na, h_nb, h_np, h_np_xor, h_no_wrap_quadrant,
+       h_op2_ne, h_d_lt_b
+       (Option-2 re-frame: keep abs-form intermediate `h_byte_sum_abs`
+        plus sign witnesses + quadrant-identity precondition. Full
+        chunk-form derivation of h_byte_sum_abs deferred to Phase
+        4.alpha.D — signed-ℤ chunk-lift toolkit.)
 
 OPCODE: ZiskFv.Equivalence.Divuw.equiv_DIVUW
 DROPPED: h_byte_sum_circuit
-ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2, h_op2_ne, h_d_lt_b
+ADDED: h_byte_sum_abs, h_na, h_nb, h_np, h_np_xor, h_no_wrap_quadrant,
+       h_op2_ne, h_d_lt_b
+       (Option-2 re-frame: keep abs-form intermediate `h_byte_sum_abs`
+        plus sign witnesses + quadrant-identity precondition. Full
+        chunk-form derivation of h_byte_sum_abs deferred to Phase
+        4.alpha.D — signed-ℤ chunk-lift toolkit.)
 
 OPCODE: ZiskFv.Equivalence.Rem.equiv_REM
 DROPPED: h_byte_sum_circuit
-ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2, h_op2_ne, h_d_lt_b
+ADDED: h_byte_sum_abs, h_na, h_nb, h_np, h_np_xor, h_no_wrap_quadrant,
+       h_op2_ne, h_d_lt_b
+       (Option-2 re-frame: keep abs-form intermediate `h_byte_sum_abs`
+        plus sign witnesses + quadrant-identity precondition. Full
+        chunk-form derivation of h_byte_sum_abs deferred to Phase
+        4.alpha.D — signed-ℤ chunk-lift toolkit.)
 
 OPCODE: ZiskFv.Equivalence.Remw.equiv_REMW
 DROPPED: h_byte_sum_circuit
-ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2, h_op2_ne, h_d_lt_b
+ADDED: h_byte_sum_abs, h_na, h_nb, h_np, h_np_xor, h_no_wrap_quadrant,
+       h_op2_ne, h_d_lt_b
+       (Option-2 re-frame: keep abs-form intermediate `h_byte_sum_abs`
+        plus sign witnesses + quadrant-identity precondition. Full
+        chunk-form derivation of h_byte_sum_abs deferred to Phase
+        4.alpha.D — signed-ℤ chunk-lift toolkit.)
 
 OPCODE: ZiskFv.Equivalence.Remuw.equiv_REMUW
 DROPPED: h_byte_sum_circuit
-ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2, h_op2_ne, h_d_lt_b
+ADDED: h_byte_sum_abs, h_na, h_nb, h_np, h_np_xor, h_no_wrap_quadrant,
+       h_op2_ne, h_d_lt_b
+       (Option-2 re-frame: keep abs-form intermediate `h_byte_sum_abs`
+        plus sign witnesses + quadrant-identity precondition. Full
+        chunk-form derivation of h_byte_sum_abs deferred to Phase
+        4.alpha.D — signed-ℤ chunk-lift toolkit.)
