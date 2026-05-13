@@ -1982,7 +1982,7 @@ lemma signed_tdiv_unique
     exact h_unique.1.symm
 
 /-- **Uniqueness of `Int.tmod` from a sign-correct Euclidean witness.** -/
-private lemma signed_tmod_unique
+lemma signed_tmod_unique
     (a b q r : ℤ) (hb : b ≠ 0)
     (h_euclid : a = q * b + r)
     (h_r_abs : r.natAbs < b.natAbs)
@@ -2218,6 +2218,7 @@ theorem abs_euclidean_to_signed_euclidean_div_rem
       nlinarith [h_chain, h_C_lb, h_C_ub, h_A_lb, h_A_ub, h_B_lb, h_B_ub,
                  h_AB_nn, h_AB_le, sq_nonneg (A - B), sq_nonneg (A + B - 2^64)]
 
+<<<<<<< HEAD
 /-! ## Part 9.W — Abs-Euclidean → signed-Euclidean linker (DIVW / REMW)
 
 W-mode variant of Part 9's `abs_euclidean_to_signed_euclidean_div_rem`.
@@ -2309,4 +2310,98 @@ theorem abs_euclidean_to_signed_euclidean_div_rem_w
       nlinarith [h_chain, h_C_lb, h_C_ub, h_A_lb, h_A_ub, h_B_lb, h_B_ub,
                  h_AB_nn, h_AB_le, sq_nonneg (A - B), sq_nonneg (A + B - 2^32)]
 
+||||||| b01cdb8
+=======
+/-! ## Part 9b — Abs-Euclidean → signed-Euclidean linker (DIVW / REMW, W-mode)
+
+W-variant of `abs_euclidean_to_signed_euclidean_div_rem` for the signed
+32-bit DIV/REM chain identity delivered by `div_w_chain_witnesses`
+(`Bridge/Arith.lean`, m32 = 1, div = 1). The chain identity has the
+same algebraic shape as the full-64 form but at half width — `2^64`
+replaced by `2^32` and `2^128` replaced by `2^64`. The 8 sign-witness
+case-split is structurally identical; only the range bounds shrink to
+[0, 2^32).
+-/
+
+/-- **W-mode abs-Euclidean chain identity → signed Euclidean identity (DIVW/REMW).**
+
+    W-variant of `abs_euclidean_to_signed_euclidean_div_rem`. Inputs
+    are the same shape but the chunk packings `A, B, C, D` are at
+    32-bit width (range `[0, 2^32)`), and the chain identity has
+    `2^32`/`2^64` in place of `2^64`/`2^128`.
+
+    `r1_lo32` and `r2_lo32` are the 32-bit slices of `r1`, `r2`
+    interpreted as signed via `BitVec.toInt`; the bridges
+    `r1_lo32.toInt = C - np*2^32` and `r2_lo32.toInt = B - nb*2^32`
+    are the W-mode TRANSPILE-BRIDGE shapes from `arith_table` pinning
+    the bus to the zero-extended low-32 bits with `np`/`nb` as the
+    sign witnesses.
+
+    Output: `r1_lo32.toInt = (A - na*2^32) * r2_lo32.toInt + (D - nr*2^32)`. -/
+theorem abs_euclidean_to_signed_euclidean_div_rem_w
+    (A B C D : ℤ) (na nb np nr : ℤ)
+    (r1_lo32 r2_lo32 : BitVec 32)
+    (h_na_bool : na = 0 ∨ na = 1) (h_nb_bool : nb = 0 ∨ nb = 1)
+    (_h_np_bool : np = 0 ∨ np = 1) (h_nr_bool : nr = 0 ∨ nr = 1)
+    (h_np_xor : np = na + nb - 2 * na * nb)
+    (h_nr_pin : nr = np ∨ D = 0)
+    (h_A_lb : 0 ≤ A) (h_A_ub : A < 2^32)
+    (h_B_lb : 0 ≤ B) (h_B_ub : B < 2^32)
+    (h_C_lb : 0 ≤ C) (h_C_ub : C < 2^32)
+    (h_D_lb : 0 ≤ D) (h_D_ub : D < 2^32)
+    (h_r1 : r1_lo32.toInt = C - np * 2^32)
+    (h_r2 : r2_lo32.toInt = B - nb * 2^32)
+    (h_chain :
+      (1 - 2*np)*A*B + (1 - 2*nr)*D
+        + (nb*(1-2*na)*A + na*(1-2*nb)*B)*2^32
+        + (nr - np)*2^32 + na*nb*2^64
+      = (1 - 2*np)*C) :
+    r1_lo32.toInt = (A - na*2^32) * r2_lo32.toInt + (D - nr*2^32) := by
+  rw [h_r1, h_r2]
+  subst h_np_xor
+  rcases h_na_bool with rfl | rfl <;>
+    rcases h_nb_bool with rfl | rfl <;>
+    rcases h_nr_bool with rfl | rfl <;>
+    ring_nf at h_chain ⊢
+  -- Case (na=0, nb=0, nr=0): np=0. Pin: nr=np ✓. Direct.
+  · linarith [h_chain]
+  -- Case (na=0, nb=0, nr=1): np=0. Pin: nr≠np ⟹ D=0. Chain: A*B + 2^32 = C, contradiction.
+  · rcases h_nr_pin with h | h_D
+    · norm_num at h
+    · subst h_D
+      exfalso
+      have h_AB_nn : 0 ≤ A * B := mul_nonneg h_A_lb h_B_lb
+      nlinarith [h_chain, h_C_ub, h_AB_nn]
+  -- Case (na=0, nb=1, nr=0): np=1. Pin: nr≠np ⟹ D=0.
+  · rcases h_nr_pin with h | h_D
+    · norm_num at h
+    · subst h_D
+      linear_combination h_chain
+  -- Case (na=0, nb=1, nr=1): np=1=nr. Direct.
+  · linarith [h_chain]
+  -- Case (na=1, nb=0, nr=0): np=1. Pin: nr≠np ⟹ D=0.
+  · rcases h_nr_pin with h | h_D
+    · norm_num at h
+    · subst h_D
+      linear_combination h_chain
+  -- Case (na=1, nb=0, nr=1): np=1=nr. Direct.
+  · linarith [h_chain]
+  -- Case (na=1, nb=1, nr=0): np=0=nr. Direct.
+  · linarith [h_chain]
+  -- Case (na=1, nb=1, nr=1): np=0. Pin: nr≠np ⟹ D=0.
+  · rcases h_nr_pin with h | h_D
+    · norm_num at h
+    · subst h_D
+      exfalso
+      have h_AB_nn : 0 ≤ A * B := mul_nonneg h_A_lb h_B_lb
+      have h_AB_ub : A * B < 2^32 * 2^32 :=
+        mul_lt_mul'' h_A_ub h_B_ub h_A_lb h_B_lb
+      have h_A_le : A ≤ 2^32 - 1 := by linarith
+      have h_B_le : B ≤ 2^32 - 1 := by linarith
+      have h_AB_le : A * B ≤ (2^32 - 1) * (2^32 - 1) :=
+        Int.mul_le_mul h_A_le h_B_le h_B_lb (by linarith)
+      nlinarith [h_chain, h_C_lb, h_C_ub, h_A_lb, h_A_ub, h_B_lb, h_B_ub,
+                 h_AB_nn, h_AB_le, sq_nonneg (A - B), sq_nonneg (A + B - 2^32)]
+
+>>>>>>> step4-remw
 end ZiskFv.PackedBitVec.SignedChunkLift

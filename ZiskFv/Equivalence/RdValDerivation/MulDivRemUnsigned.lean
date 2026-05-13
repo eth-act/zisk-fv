@@ -804,7 +804,7 @@ The closer lemmas below match the `addw_close_pos` / `addw_close_neg`
 pattern: given the low-32-bit value and the sext_choice disjunction,
 they produce `signExtend 64 (BV32 q_nat) = BV64 of bytes`. -/
 
-private lemma w_sext_close_pos
+lemma w_sext_close_pos
     (q_nat byte_sum : ℕ) (h_q_lt : q_nat < 4294967296)
     (h_byte_sum_lt : byte_sum < 18446744073709551616)
     (h_low : byte_sum = q_nat)
@@ -826,7 +826,7 @@ private lemma w_sext_close_pos
   rw [if_neg (by simp)]
   omega
 
-private lemma w_sext_close_neg
+lemma w_sext_close_neg
     (q_nat byte_sum : ℕ) (h_q_lt : q_nat < 4294967296)
     (h_byte_sum_lt : byte_sum < 18446744073709551616)
     (h_high : byte_sum = q_nat + 18446744069414584320)

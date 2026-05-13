@@ -356,4 +356,36 @@ axiom arith_table_op_divw_operand_pin
       ∧ (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0
       ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0
 
+/-! ## Arith-table row pin — signed DIVW/REMW sign-of-remainder
+
+W-variant analog of `arith_table_op_div_rem_signed_d_sign_pin` for the
+signed 32-bit DIV/REM rows (op ∈ {0x99, 0x9a} — DIVW, REMW;
+`m32 = 1`, `div = 1`, `sext = 0`). Same IEEE-754-truncated remainder
+sign convention: `nr = np` (remainder shares sign of dividend) or the
+remainder column `d[]` is all zero.
+
+PIL citation: composition of `arith.pil:286-287`
+(`arith_table_assumes` lookup on every Arith AIR row) with the table
+content at `zisk/state-machines/arith/pil/arith_table.pil` for the
+W-variant signed rows (entries with `op ∈ {0x99, 0x9a}`,
+`div_by_zero = 0`, `div_overflow = 0`).
+
+Trust class: same as `arith_table_op_div_rem_signed_d_sign_pin` —
+class #6 (lookup soundness on a small AIR table that pins a derived
+column). -/
+
+/-- **Arith-table signed DIVW/REMW remainder-sign pin (class #6).**
+    For every `Valid_ArithDiv` row carrying signed-DIVW/REMW mode pins
+    (`sext = 0`, `m32 = 1`, `div = 1`) with `op ∈ {0x99, 0x9a}`, the
+    sign-of-remainder column `nr` matches the sign-of-dividend column
+    `np`, **or** the four chunks of the remainder column `d[]` are
+    each zero. -/
+axiom arith_table_op_div_rem_signed_w_d_sign_pin
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 1) (_h_div : v.div r_a = 1)
+    (_h_op : v.op r_a = 0x99 ∨ v.op r_a = 0x9a) :
+    v.nr r_a = v.np r_a
+      ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
+          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+
 end ZiskFv.Airs.Arith
