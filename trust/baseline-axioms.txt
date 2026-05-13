@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 104
+# Total entries: 105
 #
 39b9f47eebdda4ca  ZiskFv/Airs/Arith/Ranges.lean:42  axiom     arith_mul_columns_in_range
 c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:54  axiom     arith_div_columns_in_range
@@ -10,6 +10,7 @@ c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:54  axiom     arith_div_columns_
 fff9bbcb53b2221a  ZiskFv/Airs/Arith/Ranges.lean:125  axiom     arith_div_carry_columns_in_range_unsigned
 daef860493492c00  ZiskFv/Airs/Arith/Ranges.lean:176  axiom     arith_mul_carry_columns_in_range_signed
 aa745f7df15d7c47  ZiskFv/Airs/Arith/Ranges.lean:192  axiom     arith_div_carry_columns_in_range_signed
+e5cf99524a631eec  ZiskFv/Airs/Arith/Ranges.lean:236  axiom     arith_table_op_div_rem_signed_d_sign_pin
 08d74d52fabb3c51  ZiskFv/Airs/Binary/BinaryAddRanges.lean:59  axiom     binary_add_columns_in_range
 feafd4d75a95e2ad  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:53  axiom     binary_extension_columns_in_range
 48b9f2f309f54d71  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:106  axiom     binary_extension_op_is_shift_pin

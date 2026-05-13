@@ -1954,4 +1954,129 @@ theorem fgl_rem_signed_to_bv64
   simp only [execute_DIV_REM_pure, execute_DIV_REM_pure_int]
   rw [h_r_eq]
 
+/-! ## Part 9 — Abs-Euclidean → signed-Euclidean linker (DIV / REM)
+
+The `div_signed_chain_witnesses` (`Bridge/Arith.lean`) delivers the
+simplified DIV-shape chunk identity over ℤ:
+
+```
+(1 - 2*np)*A*B + (1 - 2*nr)*D
+  + (nb*(1-2*na)*A + na*(1-2*nb)*B)*2^64
+  + (nr - np)*2^64 + na*nb*2^128
+= (1 - 2*np)*C
+```
+
+with `A, B, C, D` the toIntZ-lifted four-chunk packings (each in
+`[0, 2^64)`) and `na, nb, np, nr ∈ {0,1}` with `np = na XOR nb` and the
+DIV/REM table-row pin `nr = np ∨ D = 0` (the new
+`arith_table_op_div_rem_signed_d_sign_pin` axiom in `Airs/Arith/Ranges.lean`).
+
+This Part bridges that identity to the signed Euclidean form
+`r1.toInt = q_int * r2.toInt + r_int` (where `q_int = A - na*2^64`,
+`r_int = D - nr*2^64`, `r1.toInt = C - np*2^64`, `r2.toInt = B - nb*2^64`)
+which is the precondition shape that `fgl_div_signed_to_bv64` /
+`fgl_rem_signed_to_bv64` consume.
+
+The proof reduces to a per-boolean-combination case analysis: for each
+of the 16 `(na, nb, nr) × (D = 0 vs nr = np)` cases, the chain identity
++ the pin become a concrete ℤ-linear identity that closes via `linarith`
+or pure ring arithmetic.
+-/
+
+/-- **Abs-Euclidean chain identity → signed Euclidean identity (DIV/REM).**
+
+    Inputs: AIR-row chunk-aggregated chain identity (from
+    `div_signed_chain_witnesses`), sign-witness booleanity + XOR pin +
+    `nr = np ∨ D = 0` pin, four-chunk range bounds `A, B, C, D ∈ [0, 2^64)`,
+    and operand `toInt`-form bridges `r1.toInt = C - np*2^64`,
+    `r2.toInt = B - nb*2^64`.
+
+    Output: signed Euclidean `r1.toInt = q_int * r2.toInt + r_int` over ℤ,
+    where `q_int = A - na*2^64`, `r_int = D - nr*2^64`.
+
+    The proof case-analyses on `(na, nb, nr) ∈ {0,1}³` (8 cases). In each
+    case, `np` is determined by the XOR pin (`np = na + nb - 2*na*nb`).
+    When `nr = np` (`na = nb ∨ na ≠ nb` matches `nr`), `h_chain` directly
+    yields the goal via `linear_combination`. When `nr ≠ np`, the pin
+    forces `D = 0`, and the chain becomes an equation in `A, B, C` that
+    is **inconsistent** with the range bounds `0 ≤ A, B, C` and
+    `C < 2^64` — except in cases where the chain reduces to a clean
+    identity. We close via `nlinarith` with the range-bound hypotheses. -/
+theorem abs_euclidean_to_signed_euclidean_div_rem
+    (A B C D : ℤ) (na nb np nr : ℤ)
+    (r1 r2 : BitVec 64)
+    (h_na_bool : na = 0 ∨ na = 1) (h_nb_bool : nb = 0 ∨ nb = 1)
+    (_h_np_bool : np = 0 ∨ np = 1) (h_nr_bool : nr = 0 ∨ nr = 1)
+    (h_np_xor : np = na + nb - 2 * na * nb)
+    (h_nr_pin : nr = np ∨ D = 0)
+    (h_A_lb : 0 ≤ A) (h_A_ub : A < 2^64)
+    (h_B_lb : 0 ≤ B) (h_B_ub : B < 2^64)
+    (h_C_lb : 0 ≤ C) (h_C_ub : C < 2^64)
+    (h_D_lb : 0 ≤ D) (h_D_ub : D < 2^64)
+    (h_r1 : r1.toInt = C - np * 2^64)
+    (h_r2 : r2.toInt = B - nb * 2^64)
+    (h_chain :
+      (1 - 2*np)*A*B + (1 - 2*nr)*D
+        + (nb*(1-2*na)*A + na*(1-2*nb)*B)*2^64
+        + (nr - np)*2^64 + na*nb*2^128
+      = (1 - 2*np)*C) :
+    r1.toInt = (A - na*2^64) * r2.toInt + (D - nr*2^64) := by
+  rw [h_r1, h_r2]
+  -- Substitute np = XOR encoding in the chain identity AND in goal.
+  subst h_np_xor
+  -- Case-analyze on (na, nb, nr); normalize concrete polynomials.
+  rcases h_na_bool with rfl | rfl <;>
+    rcases h_nb_bool with rfl | rfl <;>
+    rcases h_nr_bool with rfl | rfl <;>
+    ring_nf at h_chain ⊢
+  -- Case (na=0, nb=0, nr=0): np=0. Pin: nr=np ✓. Direct.
+  · linarith [h_chain]
+  -- Case (na=0, nb=0, nr=1): np=0. Pin: nr≠np ⟹ D=0.
+  · rcases h_nr_pin with h | h_D
+    · norm_num at h
+    · subst h_D
+      -- Chain becomes: A*B + (-1)*0 + 0 + (1)*2^64 + 0 = C; i.e., A*B + 2^64 = C.
+      -- But C < 2^64, A,B ≥ 0 ⟹ A*B + 2^64 ≥ 2^64 > C. Contradiction.
+      exfalso
+      have h_AB_nn : 0 ≤ A * B := mul_nonneg h_A_lb h_B_lb
+      nlinarith [h_chain, h_C_ub, h_AB_nn]
+  -- Case (na=0, nb=1, nr=0): np=1. Pin: nr≠np ⟹ D=0.
+  · rcases h_nr_pin with h | h_D
+    · norm_num at h
+    · subst h_D
+      linear_combination h_chain
+  -- Case (na=0, nb=1, nr=1): np=1=nr. Direct.
+  · linarith [h_chain]
+  -- Case (na=1, nb=0, nr=0): np=1. Pin: nr≠np ⟹ D=0.
+  · rcases h_nr_pin with h | h_D
+    · norm_num at h
+    · subst h_D
+      linear_combination h_chain
+  -- Case (na=1, nb=0, nr=1): np=1=nr. Direct.
+  · linarith [h_chain]
+  -- Case (na=1, nb=1, nr=0): np=0=nr. Direct.
+  · linarith [h_chain]
+  -- Case (na=1, nb=1, nr=1): np=0. Pin: nr≠np ⟹ D=0.
+  -- Chain: A*B - (A+B)*2^64 + 2^64 + 2^128 = C; with A,B < 2^64 ⟹ C > 2^64. Contradiction.
+  · rcases h_nr_pin with h | h_D
+    · norm_num at h
+    · subst h_D
+      exfalso
+      have h_AB_nn : 0 ≤ A * B := mul_nonneg h_A_lb h_B_lb
+      have h_AB_ub : A * B < 2^64 * 2^64 :=
+        mul_lt_mul'' h_A_ub h_B_ub h_A_lb h_B_lb
+      have h_A_le : A ≤ 2^64 - 1 := by linarith
+      have h_B_le : B ≤ 2^64 - 1 := by linarith
+      have h_AB_le : A * B ≤ (2^64 - 1) * (2^64 - 1) :=
+        Int.mul_le_mul h_A_le h_B_le h_B_lb (by linarith)
+      -- After simp expansion, chain says:
+      --   2^128 - A*2^64 + A*B - B*2^64 + D = C
+      -- Substitute D = 0: 2^128 + A*B - (A+B)*2^64 = C
+      -- A*B ≤ (2^64-1)^2 = 2^128 - 2^65 + 1
+      -- So C ≤ 2^128 + 2^128 - 2^65 + 1 - 0*2^64 = 2*2^128 - 2^65 + 1 (assuming A+B ≥ 0).
+      -- And C ≥ 2^128 + 0 - (2*(2^64-1))*2^64 = 2^128 - 2^129 + 2^65.
+      -- With C < 2^64, we get a polynomial contradiction.
+      nlinarith [h_chain, h_C_lb, h_C_ub, h_A_lb, h_A_ub, h_B_lb, h_B_ub,
+                 h_AB_nn, h_AB_le, sq_nonneg (A - B), sq_nonneg (A + B - 2^64)]
+
 end ZiskFv.PackedBitVec.SignedChunkLift

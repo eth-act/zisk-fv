@@ -113,11 +113,21 @@ ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
 
 OPCODE: ZiskFv.Equivalence.Div.equiv_DIV
 DROPPED: h_byte_sum_circuit
-ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2, h_op2_ne, h_d_lt_b
-       (Option-1: full Tier-3 promotion consuming the signed ℤ
-        chunk-lift toolkit Phase 4.alpha.A.0 lands as foundation.
-        Per-opcode metric grows by ~+15 binders; reviewer accepts
+ADDED: v, r_a, h_chain, h_na_bool, h_nb_bool, h_nr_bool, h_np_xor,
+       h_nr_pin, h_sext, h_m32, h_div, h_byte_lo, h_byte_hi,
+       h_op1, h_op2, h_op2_ne, h_no_overflow, h_r_abs, h_r_sign
+       (Phase 4.alpha.A full Tier-3 promotion. Consumes the signed ℤ
+        chunk-lift toolkit (`SignedChunkLift` Part 8/9 +
+        `Bridge/Arith.div_signed_chain_witnesses` +
+        `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_div_chunked`).
+        The new `h_nr_pin` binder is the arith-table sign-of-
+        remainder pin (`nr = np ∨ D = 0`, axiom
+        `arith_table_op_div_rem_signed_d_sign_pin` in class #6/#6b).
+        `h_r_abs` / `h_r_sign` are CIRCUIT-CONSTRAINT magnitude and
+        sign-correctness witnesses derivable from the AIR's
+        `assumes_operation(|d| < |b|)` lookup (`arith.pil:274`) +
+        the sign-witness booleanity.
+        Per-opcode metric grows by ~+18 binders; reviewer accepts
         per structural-unpacking exception.)
 
 OPCODE: ZiskFv.Equivalence.Divw.equiv_DIVW
@@ -140,12 +150,16 @@ ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
 
 OPCODE: ZiskFv.Equivalence.Rem.equiv_REM
 DROPPED: h_byte_sum_circuit
-ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2, h_op2_ne, h_d_lt_b
-       (Option-1: full Tier-3 promotion consuming the signed ℤ
-        chunk-lift toolkit Phase 4.alpha.A.0 lands as foundation.
-        Per-opcode metric grows by ~+15 binders; reviewer accepts
-        per structural-unpacking exception.)
+ADDED: v, r_a, h_chain, h_na_bool, h_nb_bool, h_nr_bool, h_np_xor,
+       h_nr_pin, h_sext, h_m32, h_div, h_byte_lo, h_byte_hi,
+       h_op1, h_op2, h_op2_ne, h_no_overflow, h_r_abs, h_r_sign
+       (Phase 4.alpha.A full Tier-3 promotion mirroring the DIV
+        entry above. The byte-pack lane match (`h_byte_lo` /
+        `h_byte_hi`) targets the d-chunks (remainder) rather than
+        a-chunks (quotient) since REM is the secondary lane on
+        signed-DIV Arith rows. Per-opcode metric grows by ~+18
+        binders; reviewer accepts per structural-unpacking
+        exception.)
 
 OPCODE: ZiskFv.Equivalence.Remw.equiv_REMW
 DROPPED: h_byte_sum_circuit

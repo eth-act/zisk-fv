@@ -11,7 +11,7 @@ ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU:
 ZiskFv.Equivalence.BranchLessThan.equiv_BLT: 
 ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU: 
 ZiskFv.Equivalence.BranchNotEqual.equiv_BNE: 
-ZiskFv.Equivalence.Div.equiv_DIV: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
+ZiskFv.Equivalence.Div.equiv_DIV: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed, ZiskFv.Airs.Arith.arith_div_columns_in_range, ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
 ZiskFv.Equivalence.Divu.equiv_DIVU: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned, ZiskFv.Airs.Arith.arith_div_columns_in_range
 ZiskFv.Equivalence.Divuw.equiv_DIVUW: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
 ZiskFv.Equivalence.Divw.equiv_DIVW: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
@@ -33,7 +33,7 @@ ZiskFv.Equivalence.MulHU.equiv_MULHU: ZiskFv.Airs.Arith.arith_mul_carry_columns_
 ZiskFv.Equivalence.MulW.equiv_MULW: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
 ZiskFv.Equivalence.Or.equiv_OR: ZiskFv.Airs.Binary.binary_carry_bits_in_range, ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.Binary.binary_per_byte_lookup_witness, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf, ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound, ZiskFv.Trusted.transpile_OR
 ZiskFv.Equivalence.Ori.equiv_ORI: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.Binary.binary_per_byte_lookup_witness, ZiskFv.Airs.BinaryTable.bin_table_consumer_wf, ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
-ZiskFv.Equivalence.Rem.equiv_REM: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
+ZiskFv.Equivalence.Rem.equiv_REM: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed, ZiskFv.Airs.Arith.arith_div_columns_in_range, ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
 ZiskFv.Equivalence.Remu.equiv_REMU: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned, ZiskFv.Airs.Arith.arith_div_columns_in_range
 ZiskFv.Equivalence.Remuw.equiv_REMUW: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
 ZiskFv.Equivalence.Remw.equiv_REMW: ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
