@@ -12,15 +12,15 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 2352
-# Category bridge: 50
+# Total rows: 2306
+# Category bridge: 33
 # Category bus_shape: 509
-# Category byte_chain: 67
+# Category byte_chain: 55
 # Category entry: 67
 # Category loose: 376
-# Category match: 77
-# Category other: 557
-# Category range: 116
+# Category match: 89
+# Category other: 552
+# Category range: 92
 # Category row: 69
 # Category state: 217
 # Category transpile: 157
@@ -1303,14 +1303,10 @@ ZiskFv.Equivalence.Shift.equiv_SLLW 024 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Shift.equiv_SLLW 025 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Shift.equiv_SLLW 026 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Shift.equiv_SLLW 027 h_rd_idx [transpile] sllw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Shift.equiv_SLLW 028 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL_W
-ZiskFv.Equivalence.Shift.equiv_SLLW 029 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.Shift.equiv_SLLW 030 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.Shift.equiv_SLLW 031 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.Shift.equiv_SLLW 032 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.Shift.equiv_SLLW 033 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Shift.equiv_SLLW 034 h_input_r1_extract [bridge] (Sail.BitVec.extractLsb sllw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat = ((
-ZiskFv.Equivalence.Shift.equiv_SLLW 035 h_shift_pin [bridge] (Sail.BitVec.extractLsb sllw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat % 32
+ZiskFv.Equivalence.Shift.equiv_SLLW 028 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Shift.equiv_SLLW 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL_W
+ZiskFv.Equivalence.Shift.equiv_SLLW 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Shift.equiv_SLLW 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 001 slliw_input [other] PureSpec.SlliwInput
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 002 r1 [other] regidx
@@ -1337,14 +1333,10 @@ ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 022 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 023 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 024 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 025 h_rd_idx [transpile] slliw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 026 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL_W
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 027 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 028 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 029 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 030 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 032 h_input_r1_extract [bridge] (Sail.BitVec.extractLsb slliw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat = (
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 033 h_shift_pin [other] slliw_input.shamt.toNat = (v.free_in_b r_binary).val % 32
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 026 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 027 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL_W
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 028 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 029 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 001 srlw_input [other] PureSpec.SrlwInput
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 002 r1 [other] regidx
@@ -1373,14 +1365,10 @@ ZiskFv.Equivalence.ShiftR.equiv_SRLW 024 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 025 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 026 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 027 h_rd_idx [transpile] srlw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 028 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL_W
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 029 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 030 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 031 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 032 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 033 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 034 h_input_r1_extract [bridge] (Sail.BitVec.extractLsb srlw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat = ((
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 035 h_shift_pin [bridge] (Sail.BitVec.extractLsb srlw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat % 32
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 028 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL_W
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 001 sraw_input [other] PureSpec.SrawInput
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 002 r1 [other] regidx
@@ -1409,14 +1397,10 @@ ZiskFv.Equivalence.ShiftRA.equiv_SRAW 024 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 025 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 026 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 027 h_rd_idx [transpile] sraw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 028 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA_W
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 029 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 030 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 031 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 032 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 033 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 034 h_input_r1_extract [bridge] (Sail.BitVec.extractLsb sraw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat = ((
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 035 h_shift_pin [bridge] (Sail.BitVec.extractLsb sraw_input.r2_val 31 0 : BitVec (31 - 0 + 1)).toNat % 32
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 028 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA_W
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 001 sraiw_input [other] PureSpec.SraiwInput
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 002 r1 [other] regidx
@@ -1443,14 +1427,10 @@ ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 022 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 023 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 024 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 025 h_rd_idx [transpile] sraiw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 026 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA_W
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 027 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 028 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 029 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 030 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 032 h_input_r1_extract [bridge] (Sail.BitVec.extractLsb sraiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat = (
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 033 h_shift_pin [other] sraiw_input.shamt.toNat = (v.free_in_b r_binary).val % 32
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 026 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 027 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA_W
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 028 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 029 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 001 srliw_input [other] PureSpec.SrliwInput
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 002 r1 [other] regidx
@@ -1477,14 +1457,10 @@ ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 022 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 023 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 024 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 025 h_rd_idx [transpile] srliw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 026 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL_W
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 027 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 028 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 029 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 030 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 032 h_input_r1_extract [bridge] (Sail.BitVec.extractLsb srliw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat = (
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 033 h_shift_pin [other] srliw_input.shamt.toNat = (v.free_in_b r_binary).val % 32
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 026 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 027 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL_W
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 028 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 029 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Sll.equiv_SLL 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Sll.equiv_SLL 001 sll_input [other] PureSpec.SllInput
 ZiskFv.Equivalence.Sll.equiv_SLL 002 r1 [other] regidx
@@ -1513,13 +1489,10 @@ ZiskFv.Equivalence.Sll.equiv_SLL 024 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Sll.equiv_SLL 025 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Sll.equiv_SLL 026 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Sll.equiv_SLL 027 h_rd_idx [transpile] sll_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Sll.equiv_SLL 028 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL
-ZiskFv.Equivalence.Sll.equiv_SLL 029 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.Sll.equiv_SLL 030 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.Sll.equiv_SLL 031 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.Sll.equiv_SLL 032 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.Sll.equiv_SLL 033 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Sll.equiv_SLL 034 h_input_r1_circuit [bridge] sll_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a_
+ZiskFv.Equivalence.Sll.equiv_SLL 028 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Sll.equiv_SLL 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL
+ZiskFv.Equivalence.Sll.equiv_SLL 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Sll.equiv_SLL 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Slli.equiv_SLLI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Slli.equiv_SLLI 001 slli_input [other] PureSpec.SlliInput
 ZiskFv.Equivalence.Slli.equiv_SLLI 002 r1 [other] regidx
@@ -1548,13 +1521,10 @@ ZiskFv.Equivalence.Slli.equiv_SLLI 024 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Slli.equiv_SLLI 025 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Slli.equiv_SLLI 026 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Slli.equiv_SLLI 027 h_rd_idx [transpile] slli_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Slli.equiv_SLLI 028 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL
-ZiskFv.Equivalence.Slli.equiv_SLLI 029 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.Slli.equiv_SLLI 030 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.Slli.equiv_SLLI 031 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.Slli.equiv_SLLI 032 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.Slli.equiv_SLLI 033 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Slli.equiv_SLLI 034 h_input_r1_circuit [bridge] slli_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a
+ZiskFv.Equivalence.Slli.equiv_SLLI 028 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Slli.equiv_SLLI 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL
+ZiskFv.Equivalence.Slli.equiv_SLLI 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Slli.equiv_SLLI 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Slt.equiv_SLT 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Slt.equiv_SLT 001 slt_input [other] PureSpec.SltInput
 ZiskFv.Equivalence.Slt.equiv_SLT 002 r1 [other] regidx
@@ -1922,14 +1892,10 @@ ZiskFv.Equivalence.Sra.equiv_SRA 024 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Sra.equiv_SRA 025 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Sra.equiv_SRA 026 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Sra.equiv_SRA 027 h_rd_idx [transpile] sra_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Sra.equiv_SRA 028 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA
-ZiskFv.Equivalence.Sra.equiv_SRA 029 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.Sra.equiv_SRA 030 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.Sra.equiv_SRA 031 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.Sra.equiv_SRA 032 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.Sra.equiv_SRA 033 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Sra.equiv_SRA 034 h_input_r1_circuit [bridge] sra_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a_
-ZiskFv.Equivalence.Sra.equiv_SRA 035 h_shift_pin [bridge] sra_input.r2_val.toNat % 64 = (v.free_in_b r_binary).val % 64
+ZiskFv.Equivalence.Sra.equiv_SRA 028 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Sra.equiv_SRA 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA
+ZiskFv.Equivalence.Sra.equiv_SRA 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Sra.equiv_SRA 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Srai.equiv_SRAI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Srai.equiv_SRAI 001 srai_input [other] PureSpec.SraiInput
 ZiskFv.Equivalence.Srai.equiv_SRAI 002 r1 [other] regidx
@@ -1958,14 +1924,10 @@ ZiskFv.Equivalence.Srai.equiv_SRAI 024 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Srai.equiv_SRAI 025 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Srai.equiv_SRAI 026 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Srai.equiv_SRAI 027 h_rd_idx [transpile] srai_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Srai.equiv_SRAI 028 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA
-ZiskFv.Equivalence.Srai.equiv_SRAI 029 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.Srai.equiv_SRAI 030 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.Srai.equiv_SRAI 031 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.Srai.equiv_SRAI 032 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.Srai.equiv_SRAI 033 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Srai.equiv_SRAI 034 h_input_r1_circuit [bridge] srai_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a
-ZiskFv.Equivalence.Srai.equiv_SRAI 035 h_shift_pin [other] srai_input.shamt.toNat = (v.free_in_b r_binary).val % 64
+ZiskFv.Equivalence.Srai.equiv_SRAI 028 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Srai.equiv_SRAI 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA
+ZiskFv.Equivalence.Srai.equiv_SRAI 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Srai.equiv_SRAI 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Srl.equiv_SRL 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Srl.equiv_SRL 001 srl_input [other] PureSpec.SrlInput
 ZiskFv.Equivalence.Srl.equiv_SRL 002 r1 [other] regidx
@@ -1994,14 +1956,10 @@ ZiskFv.Equivalence.Srl.equiv_SRL 024 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Srl.equiv_SRL 025 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Srl.equiv_SRL 026 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Srl.equiv_SRL 027 h_rd_idx [transpile] srl_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Srl.equiv_SRL 028 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL
-ZiskFv.Equivalence.Srl.equiv_SRL 029 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.Srl.equiv_SRL 030 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.Srl.equiv_SRL 031 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.Srl.equiv_SRL 032 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.Srl.equiv_SRL 033 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Srl.equiv_SRL 034 h_input_r1_circuit [bridge] srl_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a_
-ZiskFv.Equivalence.Srl.equiv_SRL 035 h_shift_pin [bridge] srl_input.r2_val.toNat % 64 = (v.free_in_b r_binary).val % 64
+ZiskFv.Equivalence.Srl.equiv_SRL 028 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Srl.equiv_SRL 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL
+ZiskFv.Equivalence.Srl.equiv_SRL 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Srl.equiv_SRL 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Srli.equiv_SRLI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Srli.equiv_SRLI 001 srli_input [other] PureSpec.SrliInput
 ZiskFv.Equivalence.Srli.equiv_SRLI 002 r1 [other] regidx
@@ -2030,14 +1988,10 @@ ZiskFv.Equivalence.Srli.equiv_SRLI 024 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Srli.equiv_SRLI 025 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Srli.equiv_SRLI 026 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Srli.equiv_SRLI 027 h_rd_idx [transpile] srli_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Srli.equiv_SRLI 028 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL
-ZiskFv.Equivalence.Srli.equiv_SRLI 029 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.Srli.equiv_SRLI 030 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.Srli.equiv_SRLI 031 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.Srli.equiv_SRLI 032 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.Srli.equiv_SRLI 033 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Srli.equiv_SRLI 034 h_input_r1_circuit [bridge] srli_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a
-ZiskFv.Equivalence.Srli.equiv_SRLI 035 h_shift_pin [other] srli_input.shamt.toNat = (v.free_in_b r_binary).val % 64
+ZiskFv.Equivalence.Srli.equiv_SRLI 028 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Srli.equiv_SRLI 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL
+ZiskFv.Equivalence.Srli.equiv_SRLI 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Srli.equiv_SRLI 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.StoreB.equiv_SB 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.StoreB.equiv_SB 001 sb_input [other] PureSpec.SbInput
 ZiskFv.Equivalence.StoreB.equiv_SB 002 mstatus [other] RegisterType Register.mstatus
