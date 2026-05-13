@@ -307,4 +307,41 @@ theorem sraw_discharge_partial
 
 end perOpcodeDischarge
 
+/-! ## Per-row matches_entry → (op, c_lo, c_hi) projection helper
+
+A consumer of `op_bus_perm_sound_BinaryExtension` (or any equivalent
+delivery of a matches_entry conjunct) at a specific Main↔BinExt row
+pair `(r_main, r_binary)` can use the helper below to project the
+three specific equations its proof body needs (`h_op`, `h_match_clo`,
+`h_match_chi`) without re-deriving them per-call.
+
+Use this when the equiv keeps `r_binary` as a caller-supplied
+parameter and a single `h_match : matches_entry ...` precondition
+replaces three more-specific `h_op` / `h_match_clo` / `h_match_chi`
+parameters. The replacement is a net **−2 binders** per opcode.
+-/
+
+/-- Project a single `matches_entry` predicate into its `op` /
+    `c_lo` / `c_hi` conjuncts in the forms consumed by per-opcode
+    `equiv_<OP>` proofs. -/
+theorem project_match_op_clo_chi
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (r_main r_binary : ℕ)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary)) :
+    m.op r_main = v.op r_binary
+    ∧ m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+                     + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+                     + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+                     + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary
+    ∧ m.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+                     + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+                     + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+                     + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary := by
+  -- Unfold matches_entry + opBus_row_Main + opBus_row_BinaryExtension once
+  -- so the conjunctions are explicit, then project. Using `simp only` to
+  -- prevent runaway elaboration.
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_match
+  exact ⟨h_match.2.1, h_match.2.2.2.2.2.2.1, h_match.2.2.2.2.2.2.2.1⟩
+
 end ZiskFv.Equivalence.Bridge.BinaryExtension

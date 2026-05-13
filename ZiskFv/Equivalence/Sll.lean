@@ -120,7 +120,10 @@ theorem equiv_SLL
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : sll_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_op : (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SLL)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
     (hc_lo_sum_lt : (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
         + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
@@ -130,16 +133,6 @@ theorem equiv_SLL
         + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
         + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
         + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
-    (h_match_clo : m.c_0 r_main
-        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
-          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
-          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
-          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
-    (h_match_chi : m.c_1 r_main
-        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
-          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
-          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
-          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
     (h_input_r1_circuit : sll_input.r1_val
       = BitVec.ofNat 64
@@ -155,6 +148,14 @@ theorem equiv_SLL
       sll_input.r2_val.toNat % 64 = (v.free_in_b r_binary).val % 64) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- Project matches_entry into the (op, c_lo, c_hi) sub-facts the proof
+  -- body consumes. Net **−2 binders** vs the previous 3 specific
+  -- equations (h_op + h_match_clo + h_match_chi → h_match).
+  obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
+    ZiskFv.Equivalence.Bridge.BinaryExtension.project_match_op_clo_chi
+      m v r_main r_binary h_match
+  have h_op : (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SLL := by
+    rw [← h_op_fgl, h_main_op]; decide
   -- Derive 8 e2 byte ranges from `memory_bus_entry_byte_range_perm_sound`.
   -- Net **−8 binders** on `equiv_SLL` (h_e2_0..h_e2_7 removed; no new
   -- caller obligations added — the trust footprint shrinks).
