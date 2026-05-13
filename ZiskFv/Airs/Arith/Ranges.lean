@@ -241,4 +241,95 @@ axiom arith_table_op_div_rem_signed_d_sign_pin
       ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
           ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
 
+/-! ## Carry column range — W-mode (m32 = 1)
+
+In **W-variant mode** (`m32 = 1`, the 32-bit-truncated MUL/DIV
+opcodes: MULW/DIVW/DIVUW/REMW/REMUW), the carry-chain upper-half
+constraints C35-C38 collapse via the `(1 - m32) = 0` gate. The
+operative carry witnesses are still 7 (columns 0..6) but their
+operational range is the same as the unsigned 8-chunk case for
+`cy[0..3]` (per-chunk schoolbook products mod B), and the upper
+carries `cy[4..6]` are pure telescope variables zero-bounded.
+
+PIL: `arith.pil:280`
+(`arith_range_table_assumes(ARITH_RANGE_CARRY, carry[index])`)
+composed with the m32=1 specialization of the carry chain.
+
+Trust class: same as the existing
+`arith_{mul,div}_carry_columns_in_range_{unsigned,signed}` axioms —
+range-checker bus #6 / lookup-soundness on ARITH_RANGE_CARRY,
+conditioned by the m32=1 mode pin. -/
+
+/-- **ArithMul carry-column range (W-mode, m32 = 1).** Disjunctive
+    shape mirroring the signed-mode axiom: each carry witness is
+    bounded by `[-0xEFFFF..0xF0000]`, i.e.
+    `cy.val ∈ [0, 0xF0000] ∪ [GL_prime - 0xEFFFF, GL_prime - 1]`.
+
+    PIL citation: `arith.pil:280` (range table on carry columns)
+    composed with the W-mode (m32=1) specialization of the
+    `arith_mul_w_carry_identity`. -/
+axiom arith_mul_carry_columns_in_range_w
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ)
+    (_h_sext : v.sext r = 0) (_h_m32 : v.m32 r = 1) (_h_div : v.div r = 0) :
+    let cy_disj (col : ℕ) : Prop :=
+      (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val < 983041
+        ∨ GL_prime - 983040 ≤ (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val
+    cy_disj 0 ∧ cy_disj 1 ∧ cy_disj 2 ∧ cy_disj 3
+      ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6
+
+/-- **ArithDiv carry-column range (W-mode, m32 = 1).** Mirror of
+    `arith_mul_carry_columns_in_range_w` for the Div view of the
+    Arith AIR. Same physical columns; different named wrapper.
+
+    DIVW / DIVUW / REMW / REMUW rows are the consumers
+    (`m32 = 1`, `div = 1`, `sext = 0`). -/
+axiom arith_div_carry_columns_in_range_w
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ)
+    (_h_sext : v.sext r = 0) (_h_m32 : v.m32 r = 1) (_h_div : v.div r = 1) :
+    let cy_disj (col : ℕ) : Prop :=
+      (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val < 983041
+        ∨ GL_prime - 983040 ≤ (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val
+    cy_disj 0 ∧ cy_disj 1 ∧ cy_disj 2 ∧ cy_disj 3
+      ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6
+
+/-! ## Arith-table W-mode operand-input pin (m32 = 1)
+
+In W-variant mode the arith table pins the operand input chunks
+to their low 32 bits: `a_2 = a_3 = b_2 = b_3 = 0`. For DIVW/REMW
+the remainder column is similarly truncated: `d_2 = d_3 = 0`.
+
+PIL citation: composition of `arith.pil:286-287` (the
+`arith_table_assumes(op, m32, div, na, nb, np, nr, sext, ...)` lookup
+on every Arith AIR row) with the table content at
+`zisk/state-machines/arith/pil/arith_table.pil` for the W-variant
+opcodes (op ∈ {0x91, 0x95, 0x96, 0x99, 0x9a} — MULW, DIVW, DIVUW,
+REMW, REMUW in the canonical numbering).
+
+Trust class: same as `binary_extension_op_is_shift_pin` (class #6,
+lookup soundness on a small AIR table that pins input columns). -/
+
+/-- **Arith-table W-mode operand chunk pin for MUL family (class #6).**
+    For every `Valid_ArithMul` row carrying W-mode pins (`sext = 0`,
+    `m32 = 1`, `div = 0`) with `op = 0x91` (MULW), the upper operand
+    chunks are zero (32-bit operand restriction). -/
+axiom arith_table_op_mulw_operand_pin
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 1) (_h_div : v.div r_a = 0)
+    (_h_op : v.op r_a = 0x91) :
+    (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0
+      ∧ (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0
+
+/-- **Arith-table W-mode operand/remainder chunk pin for DIV family (class #6).**
+    For every `Valid_ArithDiv` row carrying W-mode pins (`sext = 0`,
+    `m32 = 1`, `div = 1`) with `op ∈ {0x95, 0x96, 0x99, 0x9a}` (DIVW,
+    DIVUW, REMW, REMUW), the upper operand chunks AND the upper
+    remainder chunks are zero. -/
+axiom arith_table_op_divw_operand_pin
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 1) (_h_div : v.div r_a = 1)
+    (_h_op : v.op r_a = 0x95 ∨ v.op r_a = 0x96 ∨ v.op r_a = 0x99 ∨ v.op r_a = 0x9a) :
+    (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0
+      ∧ (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0
+      ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0
+
 end ZiskFv.Airs.Arith
