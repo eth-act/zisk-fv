@@ -2,6 +2,7 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Airs.Binary.BinaryExtension
 
 /-!
@@ -84,5 +85,28 @@ theorem be_a_7_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
     (e.free_in_a_7 r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.2.2.2.2.1
 theorem be_b_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
     (e.free_in_b r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.2.2.2.2.2.1
+
+/-! ## op_is_shift linkage -/
+
+open ZiskFv.Trusted in
+/-- **BinaryExtension AIR op_is_shift linkage.** The `op_is_shift`
+    column is `bits(1)` (per `binary_extension.pil:88`: `col witness
+    bits(1) op_is_shift; // 1 if operation is in the shift family;
+    0 otherwise`) and the per-byte table lookup at
+    `binary_extension.pil:92` binds it to the table entry's
+    `op_is_shift` flag — so every row whose `op` is a shift literal
+    has `op_is_shift = 1`, and every row whose `op` is a SEXT literal
+    has `op_is_shift = 0`.
+
+    Trust class: lookup-soundness on the BinaryExtension table (same
+    class as `bin_ext_table_consumer_wf`, trusted-base.md class #6).
+    Cited PIL: `binary_extension.pil:88` (column declaration),
+    `binary_extension.pil:92` (table-lookup binding). -/
+axiom binary_extension_op_is_shift_pin (v : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+    ((v.op r = OP_SLL ∨ v.op r = OP_SRL ∨ v.op r = OP_SRA
+      ∨ v.op r = OP_SLL_W ∨ v.op r = OP_SRL_W ∨ v.op r = OP_SRA_W)
+        → v.op_is_shift r = 1)
+  ∧ ((v.op r = OP_SIGNEXTEND_B ∨ v.op r = OP_SIGNEXTEND_H ∨ v.op r = OP_SIGNEXTEND_W)
+        → v.op_is_shift r = 0)
 
 end ZiskFv.Airs.BinaryExtension
