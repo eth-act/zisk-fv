@@ -38,10 +38,57 @@ Equivalence/Compliance.lean               global theorem (dispatches to <OP>)
 Plus LB/LH/LW (3 ops) which use the BinaryExtension AIR through
 `Circuit/SextLoadBridge.lean` for sign extension.
 
-**Already discharged** (alpha + cleanup): 8 a-byte ranges, 16 c-byte
-32-bit ranges, 8 e2 byte ranges (via `memory_bus_entry_byte_range_perm_sound`
-for LB/LH/LW only — shifts still carry these), 9 (LB) / 10 (LH) / 12 (LW)
-e1+e2 byte ranges for signed loads.
+**Already discharged** (alpha + cleanup + first lift iteration): 8
+a-byte ranges, 16 c-byte 32-bit ranges, 8 e2 byte ranges (now via
+`memory_bus_entry_byte_range_perm_sound` for ALL 12 shifts plus LB/LH/LW),
+9 (LB) / 10 (LH) / 12 (LW) e1+e2 byte ranges for signed loads.
+
+**First lift iteration outcome (commits 6197b62, 1ab0abc):** 96
+binders dropped (8 e2 byte-ranges × 12 shifts). Bridge file
+extended with `binext_shift_discharge_partial` helper +
+per-opcode `<op>_discharge_partial` wrappers (SLL/SRL/SRA/SLLW/SRLW/SRAW).
+These wrappers are scaffolding for the next iteration; not yet consumed
+by equivs.
+
+**Blocker for deeper discharge (`h_op`, `h_match_clo`, `h_match_chi`,
+`h_bytes`, `h_input_r1_circuit`, `h_shift_pin`, `h_lane_rd`):** The
+discharge requires deriving `v.op_is_shift r_binary = 1` from
+`v.op r_binary = OP_<shift>`. Per PIL
+`binary_extension.pil:88` (`col witness bits(1) op_is_shift; // 1
+if operation is in the shift family; 0 otherwise`) and the table
+lookup at line 92, this linkage is enforced at the AIR row level
+but is NOT currently exposed in the Lean model — `ByteLookupHypotheses`
+in `BinaryExtensionPackedCorrect.lean` omits the `op_is_shift` field.
+To unblock:
+
+**REQUIRED NEXT IOU:** Add narrow axiom in
+`ZiskFv/Airs/Binary/BinaryExtensionRanges.lean` (or new
+`BinaryExtensionOpClassification.lean`):
+
+```lean
+/-- **BinaryExtension AIR op_is_shift linkage.** Per PIL
+    `binary_extension.pil:88` (`col witness bits(1) op_is_shift`) and
+    `binary_extension.pil:92` (the table lookup binding op_is_shift
+    to the table entry's flag), every row whose `op` column matches
+    a shift-family literal has `op_is_shift = 1`, and every row
+    matching a SEXT-family literal has `op_is_shift = 0`.
+
+    Trust class: lookup-soundness on the BinaryExtension table (same
+    class as `bin_ext_table_consumer_wf`). -/
+axiom binary_extension_op_is_shift_pin (v : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+    (v.op r = OP_SLL ∨ v.op r = OP_SRL ∨ v.op r = OP_SRA
+     ∨ v.op r = OP_SLL_W ∨ v.op r = OP_SRL_W ∨ v.op r = OP_SRA_W
+        → v.op_is_shift r = 1)
+  ∧ (v.op r = OP_SIGNEXTEND_B ∨ v.op r = OP_SIGNEXTEND_H ∨ v.op r = OP_SIGNEXTEND_W
+        → v.op_is_shift r = 0)
+```
+
+After this axiom lands (with ledger entry under existing class #6),
+the deeper BinExt discharge becomes mechanically derivable:
+- `h_input_r1_circuit`: `op_is_shift = 1` + matches_entry's `a_lo`
+  conjunct unfolds `opBus_row_BinaryExtension`'s `a_lo` formula to
+  the pure packed-a-byte form (without the `b_0` correction term).
+- `h_shift_pin`: same simplification for `b_lo`.
 
 **Residual caller-burden (still IOU):**
 
