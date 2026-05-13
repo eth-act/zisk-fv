@@ -20,6 +20,7 @@ import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.RdValDerivation.BinaryShift
 import ZiskFv.Equivalence.RdValDerivation.SailBridge
+import ZiskFv.Equivalence.Bridge.BinaryExtension
 
 /-!
 End-to-end theorem for RV64 SRAIW (`ShiftArchetype`
@@ -92,7 +93,10 @@ theorem equiv_SRAIW
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : sraiw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_op : (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SRA_W)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRA_W)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
     (hc_lo_sum_lt : (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
         + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
@@ -102,16 +106,6 @@ theorem equiv_SRAIW
         + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
         + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
         + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
-    (h_match_clo : m.c_0 r_main
-        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
-          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
-          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
-          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
-    (h_match_chi : m.c_1 r_main
-        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
-          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
-          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
-          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
     (h_input_r1_extract :
       (Sail.BitVec.extractLsb sraiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
@@ -122,6 +116,12 @@ theorem equiv_SRAIW
     execute_instruction
       (instruction.SHIFTIWOP (sraiw_input.shamt, r1, rd, sopw.SRAIW)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- Project matches_entry into (op, c_lo, c_hi) sub-facts.
+  obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
+    ZiskFv.Equivalence.Bridge.BinaryExtension.project_match_op_clo_chi
+      m v r_main r_binary h_match
+  have h_op : (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SRA_W := by
+    rw [← h_op_fgl, h_main_op]; decide
   -- Derive 8 e2 byte ranges from `memory_bus_entry_byte_range_perm_sound`.
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
     ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
