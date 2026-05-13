@@ -1,13 +1,23 @@
 # Known gaps in the per-opcode equivalence theorems
 
-> **Status:** open. This document flags a class of user-supplied
-> hypotheses in canonical `equiv_<OP>` theorems that are not derived
-> from circuit witnesses or trusted bus axioms, and that constitute
-> the practical residual gap between "the theorems typecheck" and
-> "ZisK is verified against Sail end-to-end." Removing these
-> hypotheses (or deriving them from existing trusted infrastructure)
-> is the **immediate TODO** before a global compliance theorem can
-> close.
+> **Status (2026-05-13 update):** the gap framing in this document
+> remains accurate as a *historical survey* of what the audit
+> surfaced, but the path forward has crystallized since this doc was
+> first written. The discharge is now a layered piece of work
+> tracked by Step 4 of
+> `/home/cody/.claude/plans/plan-to-completely-resolve-wild-lynx.md`:
+> per-opcode `equiv_<OP>_from_trust` wrappers (Layer 1) discharge
+> the promise hypotheses from the trust ledger; the
+> `Compliance.lean` dispatcher (Layer 2) dispatches the global
+> theorem through those wrappers. The DIV wrapper at commit
+> `83532d7` is the first canonical exemplar; see
+> `docs/fv/discharge-recipe.md` (the 5-category template) and
+> `docs/fv/per-air-axiom-map.md` (per-AIR axiom inventory +
+> per-shape gap predictions) for the practical authoring guide. The
+> original "Immediate TODO" list below is partially superseded —
+> items 1, 2, 3 are done; items 4 (trust gate V3) and the explicit
+> per-shape derivation strategies are now Step 4.1 and Step 5 in
+> the plan.
 
 ## Glossary (canonical terminology)
 
