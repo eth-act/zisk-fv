@@ -4,6 +4,7 @@ import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
 
 /-!
 # BinaryExtension AIR — universal column-range theorems
@@ -108,5 +109,31 @@ axiom binary_extension_op_is_shift_pin (v : Valid_BinaryExtension C FGL FGL) (r 
         → v.op_is_shift r = 1)
   ∧ ((v.op r = OP_SIGNEXTEND_B ∨ v.op r = OP_SIGNEXTEND_H ∨ v.op r = OP_SIGNEXTEND_W)
         → v.op_is_shift r = 0)
+
+end ZiskFv.Airs.BinaryExtension
+
+namespace ZiskFv.Airs.BinaryExtension
+
+variable {C : Type → Type → Type} [Circuit FGL FGL C]
+
+open ZiskFv.Airs.BinaryExtensionTable in
+/-- **BinaryExtension row → 8-byte table-entry witness.** For every row
+    `r` of a `Valid_BinaryExtension` AIR, the 8 per-byte lookups against
+    the `BinaryExtensionTable` (per PIL `binary_extension.pil:92`:
+    `lookup_assumes(BINARY_EXTENSION_TABLE_ID, [op, j, free_in_a[j],
+    free_in_b, free_in_c[j][0], free_in_c[j][1], op_is_shift])`) are
+    witnessed by 8 `BinaryExtensionTableEntry` consumers at multiplicity
+    1, one per byte slot j ∈ {0..7}.
+
+    The struct `ByteLookupHypotheses` (in
+    `Airs/Binary/BinaryExtensionPackedCorrect.lean`) packages these 8
+    table entries together with the row→entry projection equations.
+
+    Trust class: lookup-soundness on the BinaryExtension table (same
+    class as `bin_ext_table_consumer_wf`, trusted-base.md class #6).
+    Cited PIL: `binary_extension.pil:92` (the 8-byte lookup_assumes
+    declaration). -/
+axiom binary_extension_row_byte_lookups (v : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+    ByteLookupHypotheses v r
 
 end ZiskFv.Airs.BinaryExtension

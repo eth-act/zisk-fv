@@ -42,7 +42,7 @@ awk '$3=="axiom" {n=split($2,a,":"); print a[1]}' trust/baseline-axioms.txt \
 #   2 ZiskFv/Circuit/MemModel.lean              memory-state bridge
 #   1 ZiskFv/Airs/BinaryTable.lean              binary lookup soundness
 #   2 ZiskFv/Airs/BinaryExtensionTable.lean     binary-extension lookup soundness (incl. SEXT load closure)
-#   1 ZiskFv/Airs/Binary/BinaryExtensionRanges.lean  binary-extension op_is_shift pin (same trust class as #6)
+#   2 ZiskFv/Airs/Binary/BinaryExtensionRanges.lean  binary-extension op_is_shift pin + row→byte-lookups witness (same trust class as #6)
 ```
 
 `trust/scripts/check-locality.sh` enforces that no other file under
