@@ -12,18 +12,18 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 2304
-# Category bridge: 29
+# Total rows: 2339
+# Category bridge: 35
 # Category bus_shape: 509
 # Category byte_chain: 55
 # Category entry: 67
 # Category loose: 376
-# Category match: 89
-# Category other: 554
-# Category range: 92
+# Category match: 91
+# Category other: 569
+# Category range: 96
 # Category row: 69
 # Category state: 217
-# Category transpile: 157
+# Category transpile: 165
 # Category validator: 90
 #
 ZiskFv.Equivalence.Add.equiv_ADD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
@@ -286,6 +286,13 @@ ZiskFv.Equivalence.And.equiv_AND 024 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.And.equiv_AND 025 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.And.equiv_AND 026 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.And.equiv_AND 027 h_rd_idx [transpile] and_input.rd = Transpiler.wrap_to_regidx e2.ptr
+ZiskFv.Equivalence.And.equiv_AND 028 _ [other] when `mode32 = 0` -- and `c_is_signed = 0`, the PIL `b_op_or_sext` def collapses
+ZiskFv.Equivalence.And.equiv_AND 029 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_AND
+ZiskFv.Equivalence.And.equiv_AND 030 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256 + v.free_in
+ZiskFv.Equivalence.And.equiv_AND 031 h_match_chi [match] m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256 + v.free_in
+ZiskFv.Equivalence.And.equiv_AND 032 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.And.equiv_AND 033 h_input_r1_circuit [bridge] and_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a_
+ZiskFv.Equivalence.And.equiv_AND 034 h_input_r2_circuit [bridge] and_input.r2_val = BitVec.ofNat 64 ((v.free_in_b_0 r_binary).val + (v.free_in_b_
 ZiskFv.Equivalence.Andi.equiv_ANDI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Andi.equiv_ANDI 001 andi_input [other] PureSpec.AndiInput
 ZiskFv.Equivalence.Andi.equiv_ANDI 002 r1 [other] regidx
@@ -488,6 +495,7 @@ ZiskFv.Equivalence.Div.equiv_DIV 020 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Div.equiv_DIV 021 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Div.equiv_DIV 022 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Div.equiv_DIV 023 h_rd_idx [transpile] div_input.rd = Transpiler.wrap_to_regidx e2.ptr
+ZiskFv.Equivalence.Div.equiv_DIV 024 h_byte_sum_circuit [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
 ZiskFv.Equivalence.Divu.equiv_DIVU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Divu.equiv_DIVU 001 divu_input [other] PureSpec.DivuInput
 ZiskFv.Equivalence.Divu.equiv_DIVU 002 r1 [other] regidx
@@ -624,6 +632,16 @@ ZiskFv.Equivalence.Jal.equiv_JAL 019 h_e1_mult [bus_shape] exec_row[1]!.multipli
 ZiskFv.Equivalence.Jal.equiv_JAL 020 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = nextPC_val
 ZiskFv.Equivalence.Jal.equiv_JAL 021 h_rd_mult [bus_shape] e_rd.multiplicity = 1
 ZiskFv.Equivalence.Jal.equiv_JAL 022 h_rd_as [bus_shape] e_rd.as.val = 1
+ZiskFv.Equivalence.Jal.equiv_JAL 023 h_not_throws [other] (PureSpec.execute_JAL_pure jal_input).throws = false
+ZiskFv.Equivalence.Jal.equiv_JAL 024 h_success [other] (PureSpec.execute_JAL_pure jal_input).success = true
+ZiskFv.Equivalence.Jal.equiv_JAL 025 h_nextPC_option [transpile] (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val
+ZiskFv.Equivalence.Jal.equiv_JAL 026 h_rd_idx [transpile] jal_input.rd = Transpiler.wrap_to_regidx e_rd.ptr
+ZiskFv.Equivalence.Jal.equiv_JAL 027 h_circuit [other] ZiskFv.Circuit.Jal.jal_circuit_holds m r_main next_pc
+ZiskFv.Equivalence.Jal.equiv_JAL 028 h_lane_lo [transpile] ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd
+ZiskFv.Equivalence.Jal.equiv_JAL 029 h_lane_hi [transpile] ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd
+ZiskFv.Equivalence.Jal.equiv_JAL 030 h_pc_bound [other] jal_input.PC.toNat < GL_prime - 4
+ZiskFv.Equivalence.Jal.equiv_JAL 031 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
+ZiskFv.Equivalence.Jal.equiv_JAL 032 h_pc_offset_lt_2_32 [range] (jal_input.PC + 4#64).toNat < 4294967296
 ZiskFv.Equivalence.Jalr.equiv_JALR 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Jalr.equiv_JALR 001 jalr_input [other] PureSpec.JalrInput
 ZiskFv.Equivalence.Jalr.equiv_JALR 002 imm [other] BitVec 12
@@ -652,6 +670,16 @@ ZiskFv.Equivalence.Jalr.equiv_JALR 024 h_e1_mult [bus_shape] exec_row[1]!.multip
 ZiskFv.Equivalence.Jalr.equiv_JALR 025 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = nextPC_val
 ZiskFv.Equivalence.Jalr.equiv_JALR 026 h_rd_mult [bus_shape] e_rd.multiplicity = 1
 ZiskFv.Equivalence.Jalr.equiv_JALR 027 h_rd_as [bus_shape] e_rd.as.val = 1
+ZiskFv.Equivalence.Jalr.equiv_JALR 028 _ [other] ZisK enforces via -- the JALR_MASK operand in the transpiler
+ZiskFv.Equivalence.Jalr.equiv_JALR 029 h_success [other] (PureSpec.execute_JALR_pure jalr_input).success = true
+ZiskFv.Equivalence.Jalr.equiv_JALR 030 h_nextPC_option [transpile] (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val
+ZiskFv.Equivalence.Jalr.equiv_JALR 031 h_rd_idx [transpile] jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr
+ZiskFv.Equivalence.Jalr.equiv_JALR 032 h_circuit [other] ZiskFv.Circuit.Jalr.jalr_circuit_holds m r_main next_pc
+ZiskFv.Equivalence.Jalr.equiv_JALR 033 h_lane_lo [transpile] ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd
+ZiskFv.Equivalence.Jalr.equiv_JALR 034 h_lane_hi [transpile] ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd
+ZiskFv.Equivalence.Jalr.equiv_JALR 035 h_pc_bound [other] jalr_input.PC.toNat < GL_prime - 4
+ZiskFv.Equivalence.Jalr.equiv_JALR 036 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
+ZiskFv.Equivalence.Jalr.equiv_JALR 037 h_pc_offset_lt_2_32 [range] (jalr_input.PC + 4#64).toNat < 4294967296
 ZiskFv.Equivalence.Lb.equiv_LB 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lb.equiv_LB 001 lb_input [other] PureSpec.LbInput
 ZiskFv.Equivalence.Lb.equiv_LB 002 mstatus [other] RegisterType Register.mstatus
@@ -988,6 +1016,7 @@ ZiskFv.Equivalence.MulH.equiv_MULH 020 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.MulH.equiv_MULH 021 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.MulH.equiv_MULH 022 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.MulH.equiv_MULH 023 h_rd_idx [transpile] mulh_input.rd = Transpiler.wrap_to_regidx e2.ptr
+ZiskFv.Equivalence.MulH.equiv_MULH 024 h_byte_sum_circuit [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 001 mulhsu_input [other] PureSpec.MulhsuInput
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 002 r1 [other] regidx
@@ -1012,6 +1041,7 @@ ZiskFv.Equivalence.MulHSU.equiv_MULHSU 020 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 021 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 022 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 023 h_rd_idx [transpile] mulhsu_input.rd = Transpiler.wrap_to_regidx e2.ptr
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU 024 h_byte_sum_circuit [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
 ZiskFv.Equivalence.MulHU.equiv_MULHU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.MulHU.equiv_MULHU 001 mulhu_input [other] PureSpec.MulhuInput
 ZiskFv.Equivalence.MulHU.equiv_MULHU 002 r1 [other] regidx
@@ -1175,6 +1205,7 @@ ZiskFv.Equivalence.Rem.equiv_REM 020 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Rem.equiv_REM 021 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Rem.equiv_REM 022 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Rem.equiv_REM 023 h_rd_idx [transpile] rem_input.rd = Transpiler.wrap_to_regidx e2.ptr
+ZiskFv.Equivalence.Rem.equiv_REM 024 h_byte_sum_circuit [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
 ZiskFv.Equivalence.Remu.equiv_REMU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Remu.equiv_REMU 001 remu_input [other] PureSpec.RemuInput
 ZiskFv.Equivalence.Remu.equiv_REMU 002 r1 [other] regidx
@@ -2067,6 +2098,8 @@ ZiskFv.Equivalence.StoreH.equiv_SH 018 h_m1_mult [bus_shape] e1.multiplicity = -
 ZiskFv.Equivalence.StoreH.equiv_SH 019 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.StoreH.equiv_SH 020 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.StoreH.equiv_SH 021 h_m2_as [bus_shape] e2.as.val = 2
+ZiskFv.Equivalence.StoreH.equiv_SH 022 _ [other] via modify_memory_2 data fields
+ZiskFv.Equivalence.StoreH.equiv_SH 023 h_mem_eq [other] (((((((state.mem.insert e2.ptr.toNat e2.x0 ).insert (e2.ptr.toNat + 1) e2.x1 ).i
 ZiskFv.Equivalence.StoreW.equiv_SW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.StoreW.equiv_SW 001 sw_input [other] PureSpec.SwInput
 ZiskFv.Equivalence.StoreW.equiv_SW 002 mstatus [other] RegisterType Register.mstatus
@@ -2089,6 +2122,8 @@ ZiskFv.Equivalence.StoreW.equiv_SW 018 h_m1_mult [bus_shape] e1.multiplicity = -
 ZiskFv.Equivalence.StoreW.equiv_SW 019 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.StoreW.equiv_SW 020 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.StoreW.equiv_SW 021 h_m2_as [bus_shape] e2.as.val = 2
+ZiskFv.Equivalence.StoreW.equiv_SW 022 _ [other] via `modify_memory_4` data -- fields
+ZiskFv.Equivalence.StoreW.equiv_SW 023 h_mem_eq [other] (((((((state.mem.insert e2.ptr.toNat e2.x0 ).insert (e2.ptr.toNat + 1) e2.x1 ).i
 ZiskFv.Equivalence.Sub.equiv_SUB 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Sub.equiv_SUB 001 sub_input [other] PureSpec.SubInput
 ZiskFv.Equivalence.Sub.equiv_SUB 002 r1 [other] regidx
