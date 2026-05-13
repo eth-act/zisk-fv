@@ -338,6 +338,85 @@ theorem div_unsigned_chain_witnesses
   · linear_combination h37
   · linear_combination h38
 
+/-- **DIV-W-unsigned chain witnesses (existential bundle).**
+
+    Mirror of `div_unsigned_chain_witnesses` for the **W-variant**
+    DIVUW / REMUW rows. The mode pins are:
+    `na = nb = np = nr = 0`, `sext = 0`, `m32 = 1`, `div = 1`.
+
+    The carry-range axiom `arith_div_carry_columns_in_range_unsigned`
+    is reused — it only checks `na = nb = np = nr = 0` (not `m32`),
+    so it applies in W mode too.
+
+    The 8 chunk equations have the same shape as the m32=0 unsigned
+    case for chunks 31-34 (which don't reference m32 in any selector),
+    but chunks 35-38 collapse via `(1-m32) = 0`. Combined with na=nb=0,
+    they reduce to: `cy_3 = cy_4*65536`, `cy_4 = cy_5*65536`,
+    `cy_5 = cy_6*65536`, `cy_6 = 0`.
+
+    PIL: `arith.pil:205-209` (carry chain); selectors per
+    `arith_table.pil`'s `divu_w`/`remu_w` row. -/
+theorem div_w_unsigned_chain_witnesses
+    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (h_chain : div_carry_chain_holds v r_a)
+    (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
+    (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
+    (_h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1)
+    (h_div : v.div r_a = 1) :
+    ∃ cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL,
+      cy₀.val < 131072 ∧ cy₁.val < 131072 ∧ cy₂.val < 131072 ∧ cy₃.val < 131072
+    ∧ cy₄.val < 131072 ∧ cy₅.val < 131072 ∧ cy₆.val < 131072
+    ∧ (v.a_0 r_a * v.b_0 r_a + v.d_0 r_a = v.c_0 r_a + cy₀ * 65536)
+    ∧ (v.a_1 r_a * v.b_0 r_a + v.a_0 r_a * v.b_1 r_a + v.d_1 r_a + cy₀
+        = v.c_1 r_a + cy₁ * 65536)
+    ∧ (v.a_2 r_a * v.b_0 r_a + v.a_1 r_a * v.b_1 r_a + v.a_0 r_a * v.b_2 r_a
+        + v.d_2 r_a + cy₁
+        = v.c_2 r_a + cy₂ * 65536)
+    ∧ (v.a_3 r_a * v.b_0 r_a + v.a_2 r_a * v.b_1 r_a + v.a_1 r_a * v.b_2 r_a
+        + v.a_0 r_a * v.b_3 r_a + v.d_3 r_a + cy₂
+        = v.c_3 r_a + cy₃ * 65536)
+    ∧ (v.a_3 r_a * v.b_1 r_a + v.a_2 r_a * v.b_2 r_a + v.a_1 r_a * v.b_3 r_a + cy₃
+        = cy₄ * 65536)
+    ∧ (v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + cy₄ = cy₅ * 65536)
+    ∧ (v.a_3 r_a * v.b_3 r_a + cy₅ = cy₆ * 65536)
+    ∧ (cy₆ = 0) := by
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
+             ← v.na_def, ← v.nb_def] at h6 h7 h8
+  simp only [h_na, h_nb] at h6 h7 h8
+  have h_fab : Circuit.main v.circuit (id := 1) (column := 30) (row := r_a) (rotation := 0)
+    = (1 : FGL) := by linear_combination h6
+  have h_nafb : Circuit.main v.circuit (id := 1) (column := 31) (row := r_a) (rotation := 0)
+    = (0 : FGL) := by linear_combination h7
+  have h_nbfa : Circuit.main v.circuit (id := 1) (column := 32) (row := r_a) (rotation := 0)
+    = (0 : FGL) := by linear_combination h8
+  simp only [constraint_31_every_row, constraint_32_every_row,
+             constraint_33_every_row, constraint_34_every_row,
+             constraint_35_every_row, constraint_36_every_row,
+             constraint_37_every_row, constraint_38_every_row,
+             ← v.a_0_def, ← v.a_1_def, ← v.a_2_def, ← v.a_3_def,
+             ← v.b_0_def, ← v.b_1_def, ← v.b_2_def, ← v.b_3_def,
+             ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
+             ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
+             ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
+             ← v.m32_def, ← v.div_def]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  simp only [h_na, h_nb, h_np, h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
+             mul_zero, zero_mul, add_zero, sub_zero,
+             mul_one, one_mul, sub_self]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  obtain ⟨hr0, hr1, hr2, hr3, hr4, hr5, hr6⟩ :=
+    ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned v r_a h_na h_nb h_np h_nr
+  refine ⟨_, _, _, _, _, _, _, hr0, hr1, hr2, hr3, hr4, hr5, hr6, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · linear_combination h31
+  · linear_combination h32
+  · linear_combination h33
+  · linear_combination h34
+  · linear_combination h35
+  · linear_combination h36
+  · linear_combination h37
+  · linear_combination h38
+
 end UnsignedChainWitnesses
 
 /-! ## Per-opcode discharge helpers — signed-mode chain witnesses
