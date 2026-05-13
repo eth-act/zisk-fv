@@ -400,6 +400,31 @@ def div_carry_chain_holds (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
   ∧ constraint_37_every_row v.circuit row
   ∧ constraint_38_every_row v.circuit row
 
+/-- **Extended Arith DIV-mode row constraints — includes constraint 46.**
+    Same shape as `div_carry_chain_holds` but additionally pins
+    `constraint_46_every_row` (the `bus_res1` normalization at
+    `arith.pil:263`). Required by `equiv_DIV_from_trust` to discharge
+    the hi-lane byte-pack equation via `div_bus_res1_eq_a_hi`
+    (`Airs/Arith/Bridge1.lean`). Compliance.lean's downstream caller
+    will collapse this into the universal `∀ r, arith_div_row_well_formed`
+    parameter. -/
+@[simp]
+def div_row_constraints_with_c46 (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
+  div_carry_chain_holds v row
+  ∧ constraint_46_every_row v.circuit row
+
+/-- Project out the carry-chain bundle from the extended bundle. -/
+lemma div_carry_chain_holds_of_extended
+    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+    (h : div_row_constraints_with_c46 v row) :
+    div_carry_chain_holds v row := h.1
+
+/-- Project out constraint 46 from the extended bundle. -/
+lemma constraint_46_of_extended
+    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+    (h : div_row_constraints_with_c46 v row) :
+    constraint_46_every_row v.circuit row := h.2
+
 /-- Packed `a` over Div columns: `a[0] + a[1]*2^16 + a[2]*2^32 + a[3]*2^48`.
     For DIVU/DIV this is the quotient; for REMU/REM the quotient lane is
     still computed but unused by the bus emission. -/

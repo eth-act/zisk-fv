@@ -3,6 +3,7 @@ import Mathlib
 import ZiskFv.Equivalence.Div
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Airs.Arith.Ranges
+import ZiskFv.Airs.Arith.Bridge1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Fundamentals.PackedBitVec.SignedChunkLift
@@ -33,42 +34,56 @@ import ZiskFv.Fundamentals.PackedBitVec.SignedChunkLift
 > Closed gaps:
 > * **GAP-M** — `h_sext`/`h_m32`/`h_div` derived from
 >   `arith_table_op_div_rem_signed_mode_pin v r_a h_op_arith`.
-> * **GAP-O** — `v.op r_a = 186/187` derived from the `matches_entry`
->   op-slot equality plus `m.op r_main = OP_DIV/OP_REM` (the bus
->   opcode now equals the arith-table opcode after the literal
->   correction; both columns are the same column on the bus side).
+> * **GAP-O** — `v.op r_a = 186` derived from the `matches_entry`
+>   op-slot equality plus `m.op r_main = OP_DIV` (the bus opcode
+>   equals the arith-table opcode after the literal correction;
+>   both columns are the same column on the bus side).
 > * **GAP-C** — `h_r_abs`/`h_r_sign` derived from
 >   `arith_div_remainder_bound v r_a h_sext h_m32 h_div h_op_arith`
 >   composed with the operand TRANSPILE-BRIDGE equations
 >   `h_op1`/`h_op2`.
 > * **GAP-A (lo)** — `h_byte_lo` derived from
->   `main_external_arith_emission_bundle` (new class #4 axiom) composed
+>   `main_external_arith_emission_bundle` (class #4 axiom) composed
 >   with the `matches_entry` c_lo projection from `h_match_primary`
 >   (FGL → ℕ lift via the chunk-range axiom on `v.a_0`, `v.a_1`).
+> * **GAP-A (hi)** — `h_byte_hi` derived from
+>   `main_external_arith_emission_bundle` (c_hi byte pack →
+>   `m.c_1 r_main`) composed with the `matches_entry` c_hi
+>   projection (`m.c_1 r_main = v.bus_res1 r_a`) and the new
+>   `div_bus_res1_eq_a_hi` bridge (`bus_res1 = v.a_2 + v.a_3 * 65536`
+>   under DIV-primary mode pins). The required mode pins
+>   `main_div = 1`, `main_mul = 0` come from this branch's new
+>   class-#6b axiom `arith_table_op_div_rem_main_selector_pin`;
+>   `sext = 0`, `m32 = 0` from the existing mode-triple axiom.
+>   Constraint 46 is accepted as an explicit row-shape obligation
+>   (`h_c46`), in the same constructibility category as `h_chain`.
 >
 > Remaining caller obligations (NOT closed by this branch):
-> * **GAP-A (hi)** (`h_byte_hi`) — needs the additional bridge
->   `div_bus_res1_eq_a_hi` (`Airs/Arith/Bridge1.lean`) tying the
->   op-bus c_hi slot (`v.bus_res1 r_a`) to `v.a_2 + v.a_3 * 65536`.
->   That requires per-row constraint 46 access and `main_div = 1` /
->   `main_mul = 0` pins not delivered by the arith-table `(sext, m32,
->   div)` mode triple. Path is mechanical (no new axiom), surfaced
->   for follow-up.
 > * **GAP-B** (`h_op1` / `h_op2`) — connects Sail register reads
 >   (`r1_val`/`r2_val`) to ArithDiv's `c[] - np·2^64` /
 >   `b[] - nb·2^64` signed-packed columns. The unsigned form
 >   `r.toNat = packed4 c[]` follows from OpBus + `transpile_DIV` +
 >   `SailStateBridge.packed_lane_eq_of_read_xreg`; the signed lift
 >   requires linking the sign-witness `np`/`nb` to the MSB of `r1`/
->   `r2`. Pure-Lean bridge work — no new axiom — left as follow-up.
+>   `r2`. The prior pilot report's "pure-Lean bridge work — no new
+>   axiom" framing under-estimated this: `na = a[3].msb` is NOT a
+>   free-standing PIL constraint; it is implicit in the consistency
+>   of the carry-chain signed-DIV identity (derivable via Euclidean
+>   uniqueness on `div_signed_chain_witnesses`), or alternatively
+>   could be pinned by a new class-#6b axiom directly. Left as a
+>   follow-up that legitimately requires either route.
 >
-> Anti-laundering: this PR adds three class-#6 axioms in
-> `Airs/Arith/Ranges.lean` (all PIL-cited to `arith.pil:274`,
-> `arith.pil:286-287`), each pinning a single derived consequence of
-> the existing arith_table / arith_range_table lookup soundness on
-> existing columns. The OpBus literal correction is a bug fix that
-> changes only the opcode disjunction (the matched-entry consequence
-> is unchanged) — same trust kind, narrower covering set.
+> Anti-laundering: this PR adds ONE new class-#6b axiom in
+> `Airs/Arith/Ranges.lean` (`arith_table_op_div_rem_main_selector_pin`,
+> PIL-cited to `arith.pil:286-287` + the row-type table at
+> `arith.pil:222-234`), pinning the `main_mul`/`main_div` selector
+> columns from the `op` literal — same trust kind as the existing
+> mode-triple pin (`arith_table_op_div_rem_signed_mode_pin`),
+> narrower covering set (single column pair, single op-value
+> instance). Net change to the pilot's caller burden: drop
+> `h_byte_hi` (–1 promise hypothesis); add `h_c46` (+1
+> constructibility obligation, same category as `h_chain`).
+> Net –1 promise hypothesis on the trust-burden ledger.
 -/
 
 namespace ZiskFv.Equivalence.Compliance
@@ -123,11 +138,15 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     * `h_r_abs`, `h_r_sign` — from `arith_div_remainder_bound`
       (GAP-C) composed with `h_op1`/`h_op2`.
 
-    After this branch the wrapper carries 32 binders (vs. 43 on
-    `equiv_DIV`); 11 surfaced gaps are closed via the new
-    class #6 axioms, and the remaining 21 are honest
-    constructibility / SPEC-PRE / cross-AIR-bridge obligations
-    documented as GAP-A / GAP-B above. -/
+    After this branch the wrapper carries 37 binders / 24
+    hypotheses (vs. 38/25 at HEAD and 43/32 on `equiv_DIV`); the
+    GAP-A hi-lane promise is now discharged via the new class-#6b
+    selector-pin axiom + Bridge1; GAP-B (`h_op1`/`h_op2`) remains
+    the sole surfaced promise-hypothesis follow-up. The narrowing
+    of `h_main_op_div` to `OP_DIV` (was `OP_DIV ∨ OP_REM`)
+    eliminates the vestigial REM dispatch path; a parallel pilot
+    `equiv_REM_from_trust` is the proper future home for REM
+    discharge. -/
 theorem equiv_DIV_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (div_input : PureSpec.DivInput)
@@ -141,7 +160,7 @@ theorem equiv_DIV_from_trust
     (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     -- Activation / opcode pin on Main.
     (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_div : m.op r_main = OP_DIV ∨ m.op r_main = OP_REM)
+    (h_main_op_div : m.op r_main = OP_DIV)
     -- Cross-AIR row selection: the OpBus permutation gives an
     -- existential `r_a`; we accept it explicitly here so the bridge
     -- shape stays simple (Compliance.lean will obtain `r_a` via
@@ -172,9 +191,14 @@ theorem equiv_DIV_from_trust
     (h_no_overflow :
       ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
     -- ============ UNIVERSAL-PER-ROW VALIDITY (constructibility) ============
-    -- Per-row Arith-AIR constraints. Compliance.lean collapses these
-    -- into a single `∀ r, arith_div_row_well_formed v r` parameter.
-    (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
+    -- Per-row Arith-AIR constraints, EXTENDED bundle: the standard
+    -- carry-chain (constraints 6-8 + 31-38) PLUS constraint 46
+    -- (`bus_res1` normalization at `arith.pil:263`, required for
+    -- the GAP-A hi-lane discharge via `div_bus_res1_eq_a_hi`).
+    -- Compliance.lean collapses this into the universal
+    -- `∀ r, arith_div_row_well_formed v r` parameter.
+    (h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -183,16 +207,6 @@ theorem equiv_DIV_from_trust
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
     -- ============ REMAINING PROMISE HYPOTHESES ============
-    -- GAP-A (hi-lane only): the byte-pack-hi equation. Closing
-    -- requires `v.bus_res1 r_a = v.a_2 r_a + v.a_3 r_a * 65536`,
-    -- which is `div_bus_res1_eq_a_hi` (`Airs/Arith/Bridge1.lean:79`).
-    -- That lemma requires `main_div = 1, main_mul = 0` per-row pins
-    -- which the current class #6b axioms do not deliver from the
-    -- arith-table `(sext, m32, div)` mode triple. Path is mechanical
-    -- but out of scope for this PR — surfaced for follow-up.
-    (h_byte_hi :
-      e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
-        = (v.a_2 r_a).val + (v.a_3 r_a).val * 65536)
     -- GAP-B: signed Sail-state bridge — connects r1/r2 (Sail values)
     -- to `packed4 c[] - np·2^64` / `packed4 b[] - nb·2^64`. The
     -- unsigned form `r.toNat = packed4 c[]` follows from OpBus +
@@ -222,14 +236,23 @@ theorem equiv_DIV_from_trust
     have := h_match_primary
     simp only [matches_entry, opBus_row_Main, opBus_row_ArithDiv] at this
     exact this.2.1.symm
-  have h_op_arith : v.op r_a = 186 ∨ v.op r_a = 187 := by
-    rw [h_op_eq]
-    rcases h_main_op_div with h | h
-    · left; simp [h, OP_DIV]
-    · right; simp [h, OP_REM]
+  have h_op_arith_div : v.op r_a = 186 := by
+    rw [h_op_eq, h_main_op_div]; simp [OP_DIV]
+  have h_op_arith : v.op r_a = 186 ∨ v.op r_a = 187 := Or.inl h_op_arith_div
+  -- ============ Unpack extended row-constraint bundle ============
+  have h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a :=
+    ZiskFv.Airs.ArithDiv.div_carry_chain_holds_of_extended v r_a h_row_constraints
+  have h_c46 : Arith.extraction.constraint_46_every_row v.circuit r_a :=
+    ZiskFv.Airs.ArithDiv.constraint_46_of_extended v r_a h_row_constraints
   -- ============ DISCHARGE mode pins (GAP-M) ============
   obtain ⟨h_sext, h_m32, h_div⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_mode_pin v r_a h_op_arith
+  -- ============ DISCHARGE main_div/main_mul selector pins (GAP-A hi prep) ============
+  -- Class-#6b axiom: `op = 186 (DIV)` pins `main_div = 1, main_mul = 0`
+  -- on the same arith_table lookup as `arith_table_op_div_rem_signed_mode_pin`.
+  obtain ⟨h_main_div_one, h_main_mul_zero⟩ :=
+    (ZiskFv.Airs.Arith.arith_table_op_div_rem_main_selector_pin
+      v r_a h_op_arith).1 h_op_arith_div
   -- ============ DISCHARGE h_nr_pin (existing trust ledger) ============
   have h_nr_pin_fgl :=
     ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_d_sign_pin
@@ -245,71 +268,83 @@ theorem equiv_DIV_from_trust
     · left; rw [h_eq]
     · right
       refine ⟨by ring, hd0, hd1, hd2, hd3⟩
-  -- ============ DISCHARGE h_byte_lo (GAP-A, lo lane only) ============
-  -- Bundle delivers `e2.x0..x3` pack = `(m.c_0 r_main).val` in ℕ form.
-  -- Op-bus `matches_entry` gives FGL equality
-  -- `m.c_0 r_main = v.a_0 r_a + v.a_1 r_a * 65536` (the `c_lo` slot
-  -- of `opBus_row_ArithDiv` IS that pack). We lift to ℕ via the
-  -- chunk-range axiom on `v.a_*` (each < 2^16, so the rhs is < 2^32
-  -- < GL_prime — no modular reduction in `Fin.val`).
-  --
-  -- HI-lane caveat: `opBus_row_ArithDiv` emits `c_hi := v.bus_res1 r_a`,
-  -- not `v.a_2 + v.a_3 * 65536` directly; the equivalence
-  -- `bus_res1 = a_2 + a_3 * 65536` is `div_bus_res1_eq_a_hi`
-  -- (`Airs/Arith/Bridge1.lean:79`) and requires the per-row
-  -- `constraint_46_every_row` plus `main_div = 1, main_mul = 0` pins.
-  -- Those pins do not flow from the existing class #6b axioms on
-  -- `(sext, m32, div)` (the arith-table mode triple) — they require
-  -- a separate `main_div`/`main_mul` derivation. We leave
-  -- `h_byte_hi` as a remaining caller obligation pending that
-  -- follow-up (the path is mechanical, just out of scope here).
+  -- ============ DISCHARGE h_byte_lo / h_byte_hi (GAP-A) ============
+  -- Bundle delivers BOTH the `e2.x0..x3` (lo) pack and the
+  -- `e2.x4..x7` (hi) pack as ℕ-form equalities tied to Main's
+  -- `c_0`/`c_1` columns. Op-bus `matches_entry` gives FGL equalities
+  -- on the c_lo / c_hi slots of `opBus_row_ArithDiv`:
+  --   c_lo: m.c_0 r_main = v.a_0 r_a + v.a_1 r_a * 65536
+  --   c_hi: m.c_1 r_main = v.bus_res1 r_a
+  -- The lo side is direct. For the hi side we further apply
+  -- `div_bus_res1_eq_a_hi` (Bridge1) under the DIV-primary mode pins
+  -- (`main_div = 1`, `main_mul = 0`, plus `sext = 0`, `m32 = 0`,
+  -- plus per-row constraint 46) to get `v.bus_res1 = v.a_2 + v.a_3 * 65536`.
+  -- Both lanes lift FGL → ℕ via the chunk-range axiom on `v.a_*` (each
+  -- < 2^16, so the rhs is < 2^32 < GL_prime — no modular reduction).
   have h_bundle :=
     ZiskFv.Airs.MemoryBus.MemBridge.main_external_arith_emission_bundle
       m r_main e2 (0 : BitVec 5) (m.op r_main)
       h_main_active rfl
-      (by
-        -- Route via the DIV/REM disjunction.
-        rcases h_main_op_div with h | h
-        · -- OP_DIV
-          exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
-            (Or.inr (Or.inr (Or.inl h))))))))
-        · -- OP_REM
-          exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
-            (Or.inr (Or.inr (Or.inr (Or.inl h))))))))))
+      -- OP_DIV literal in the 16-way op-set disjunction.
+      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+        (Or.inr (Or.inr (Or.inl h_main_op_div)))))))))
       h_m2_mult (by rw [h_m2_as])
   have h_byte_lo_to_c0 : e2.x0.val + e2.x1.val * 256
       + e2.x2.val * 65536 + e2.x3.val * 16777216
       = (m.c_0 r_main).val := h_bundle.1
-  -- Extract op-bus's c_lo equality (FGL form).
+  have h_byte_hi_to_c1 : e2.x4.val + e2.x5.val * 256
+      + e2.x6.val * 65536 + e2.x7.val * 16777216
+      = (m.c_1 r_main).val := h_bundle.2.1
+  -- Extract op-bus's c_lo / c_hi equalities (FGL form).
   have h_c0_eq_FGL : m.c_0 r_main = v.a_0 r_a + v.a_1 r_a * 65536 := by
     have := h_match_primary
     simp only [matches_entry, opBus_row_Main, opBus_row_ArithDiv] at this
     exact this.2.2.2.2.2.2.1
-  -- Chunk-range bounds for v.a_0, v.a_1.
-  obtain ⟨h_a0_lt, h_a1_lt, _, _, _⟩ :=
+  have h_c1_eq_FGL : m.c_1 r_main = v.bus_res1 r_a := by
+    have := h_match_primary
+    simp only [matches_entry, opBus_row_Main, opBus_row_ArithDiv] at this
+    exact this.2.2.2.2.2.2.2.1
+  -- Chunk-range bounds for v.a_0..v.a_3.
+  obtain ⟨h_a0_lt, h_a1_lt, h_a2_lt, h_a3_lt, _, _, _, _, _, _, _, _, _, _, _, _⟩ :=
     ZiskFv.Airs.Arith.arith_div_columns_in_range v r_a
-  -- FGL → ℕ lift for c_0.
-  have h_c0_val_eq : (m.c_0 r_main).val
-      = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 := by
-    rw [h_c0_eq_FGL]
-    have h_cast : (v.a_0 r_a + v.a_1 r_a * 65536 : FGL)
-        = (((v.a_0 r_a).val + (v.a_1 r_a).val * 65536 : ℕ) : FGL) := by
+  -- Helper: FGL → ℕ lift for `x + y * 65536` when both are < 65536.
+  have h_pair_lift : ∀ (x y : FGL),
+      x.val < 65536 → y.val < 65536 →
+      (x + y * 65536 : FGL).val = x.val + y.val * 65536 := by
+    intro x y hx hy
+    have h_cast : (x + y * 65536 : FGL)
+        = (((x.val + y.val * 65536 : ℕ) : FGL)) := by
       push_cast; ring
     rw [h_cast, Fin.val_natCast]
     apply Nat.mod_eq_of_lt
-    -- v.a_0.val < 2^16 and v.a_1.val < 2^16, so sum < 2^32 < GL_prime.
-    have h_sum_bound : (v.a_0 r_a).val + (v.a_1 r_a).val * 65536
-        < 65536 + 65536 * 65536 := by
-      have h_a1_mul : (v.a_1 r_a).val * 65536 < 65536 * 65536 :=
-        (Nat.mul_lt_mul_right (by decide : (0:ℕ) < 65536)).mpr h_a1_lt
-      exact Nat.add_lt_add h_a0_lt h_a1_mul
+    have h_sum_bound : x.val + y.val * 65536 < 65536 + 65536 * 65536 := by
+      have h_y_mul : y.val * 65536 < 65536 * 65536 :=
+        (Nat.mul_lt_mul_right (by decide : (0:ℕ) < 65536)).mpr hy
+      exact Nat.add_lt_add hx h_y_mul
     have h_lt_prime : (65536 + 65536 * 65536 : ℕ) < GL_prime := by decide
     exact lt_trans h_sum_bound h_lt_prime
-  -- Compose: byte-lo-pack = (m.c_0).val = v.a_0.val + v.a_1.val * 65536.
+  -- FGL → ℕ lift for c_0.
+  have h_c0_val_eq : (m.c_0 r_main).val
+      = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 := by
+    rw [h_c0_eq_FGL]; exact h_pair_lift _ _ h_a0_lt h_a1_lt
+  -- Compose lo lane: byte-lo-pack = (m.c_0).val = v.a_0.val + v.a_1.val * 65536.
   have h_byte_lo :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
         = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 := by
     rw [h_byte_lo_to_c0, h_c0_val_eq]
+  -- ============ DISCHARGE h_byte_hi (GAP-A, hi lane) ============
+  -- `div_bus_res1_eq_a_hi` consumes constraint 46 + the four mode pins.
+  have h_bus_res1_eq : v.bus_res1 r_a = v.a_2 r_a + v.a_3 r_a * 65536 :=
+    ZiskFv.Airs.ArithBridge1.div_bus_res1_eq_a_hi v r_a h_c46
+      h_sext h_m32 h_main_mul_zero h_main_div_one
+  -- Compose: m.c_1 = bus_res1 = v.a_2 + v.a_3 * 65536, then lift FGL → ℕ.
+  have h_c1_val_eq : (m.c_1 r_main).val
+      = (v.a_2 r_a).val + (v.a_3 r_a).val * 65536 := by
+    rw [h_c1_eq_FGL, h_bus_res1_eq]; exact h_pair_lift _ _ h_a2_lt h_a3_lt
+  have h_byte_hi :
+      e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
+        = (v.a_2 r_a).val + (v.a_3 r_a).val * 65536 := by
+    rw [h_byte_hi_to_c1, h_c1_val_eq]
   -- ============ DISCHARGE h_r_abs, h_r_sign (GAP-C) ============
   -- `arith_div_remainder_bound` gives the bound in terms of the
   -- AIR's signed `b - nb·2^64` and `c - np·2^64` packings; we
@@ -327,47 +362,15 @@ theorem equiv_DIV_from_trust
             (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
             - (v.nr r_a).val * (2:ℤ)^64) * div_input.r1_val.toInt := by
     rw [h_op1]; exact h_r_sign_air
-  -- ============ Narrow h_main_op_div to OP_DIV for delegation ============
-  -- `equiv_DIV` handles the DIV opcode specifically. The pilot
-  -- accepts the DIV/REM disjunction so it can serve both, but the
-  -- delegation path is via `equiv_DIV` so we case-split.
-  rcases h_main_op_div with h_div_op | h_rem_op
-  · -- DIV path: delegate to `equiv_DIV`.
-    -- The Sail `instruction.DIV` LHS already matches, and all
-    -- derived hypotheses fit.
-    exact ZiskFv.Equivalence.Div.equiv_DIV
-      state div_input r1 r2 rd exec_row e0 e1 e2
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      v r_a h_chain h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
-      h_sext h_m32 h_div h_byte_lo h_byte_hi h_op1 h_op2
-      h_op2_ne h_no_overflow h_r_abs h_r_sign
-  · -- REM path: the pilot statement is fixed to `instruction.DIV`,
-    -- so the REM literal is vacuous against the wrapper's Sail-side
-    -- conclusion. A real Compliance.lean would dispatch by opcode
-    -- and route REM to `equiv_REM` instead. We keep the disjunction
-    -- in `h_main_op_div` to advertise the broader provider coverage
-    -- but route only the DIV branch through this wrapper.
-    -- Discharge: under the DIV-shape Sail conclusion, the REM
-    -- branch of the disjunction is a non-target; we still need to
-    -- close the goal, which is the same DIV-shape equality that the
-    -- DIV branch closes. We do so by invoking equiv_DIV with the
-    -- m.op = OP_DIV hypothesis IF we could; since here we have
-    -- OP_REM instead, the structural exec/mem rows would witness
-    -- the REM lane shape, not the DIV one, and any caller mixing
-    -- them is malformed. We propagate the same equiv_DIV call
-    -- regardless: the hypotheses are routed through `v r_a` and
-    -- the derived facts hold for both DIV and REM rows. The
-    -- exec/mem caller is responsible for ensuring the Sail-side
-    -- DIV vs REM matches.
-    exact ZiskFv.Equivalence.Div.equiv_DIV
-      state div_input r1 r2 rd exec_row e0 e1 e2
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      v r_a h_chain h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
-      h_sext h_m32 h_div h_byte_lo h_byte_hi h_op1 h_op2
-      h_op2_ne h_no_overflow h_r_abs h_r_sign
+  -- ============ Delegate to `equiv_DIV` ============
+  -- The Sail `instruction.DIV` LHS matches; all derived hypotheses fit.
+  exact ZiskFv.Equivalence.Div.equiv_DIV
+    state div_input r1 r2 rd exec_row e0 e1 e2
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    v r_a h_chain h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
+    h_sext h_m32 h_div h_byte_lo h_byte_hi h_op1 h_op2
+    h_op2_ne h_no_overflow h_r_abs h_r_sign
 
 end ZiskFv.Equivalence.Compliance

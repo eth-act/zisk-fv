@@ -388,6 +388,48 @@ axiom arith_table_op_div_rem_signed_mode_pin
     (_h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
     v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 1
 
+/-! ## Arith-table primary/secondary selector pin — signed DIV / REM (m32 = 0)
+
+Companion to `arith_table_op_div_rem_signed_mode_pin`. The arith_table
+lookup at `arith.pil:286-287` covers not just the `(sext, m32, div)`
+mode triple but also the **primary/secondary selectors** `main_mul`
+and `main_div` — see the explicit arguments on the
+`arith_table_assumes(op, m32, div, na, nb, np, nr, sext,
+div_by_zero, div_overflow, main_mul, main_div, signed,
+range_ab, range_cd)` call.
+
+Per the row-type table at `arith.pil:222-234`:
+
+* op = 186 (signed 64-bit DIV) — **primary row**: `main_div = 1`,
+  `main_mul = 0`. The bus emits the quotient lane (`a[]`).
+* op = 187 (signed 64-bit REM) — **secondary row**: `main_div = 0`,
+  `main_mul = 0` (`secondary = 1 - main_mul - main_div = 1`). The
+  bus emits the remainder lane (`d[]`).
+
+Trust class: same as `arith_table_op_div_rem_signed_mode_pin`
+(class #6b, lookup soundness on the consumer-side `arith_table_assumes`
+bus row composed with the arith_table content for signed 64-bit
+DIV/REM rows). Same kind, narrower covering set. -/
+
+/-- **Arith-table signed non-W DIV/REM primary/secondary selector pin (class #6b).**
+    For every `Valid_ArithDiv` row with `op = 186` (signed 64-bit DIV),
+    the arith_table lookup pins `main_div = 1`, `main_mul = 0`
+    (primary lane); for `op = 187` (signed 64-bit REM), it pins
+    `main_div = 0`, `main_mul = 0` (secondary lane). PIL citation:
+    composition of `arith.pil:286-287` (the `arith_table_assumes`
+    lookup, explicitly including `main_mul` and `main_div` columns)
+    with the row-type table at `arith.pil:222-234`.
+
+    Consumed by `equiv_DIV_from_trust` (`Compliance/DivPilot.lean`) to
+    derive the `main_div = 1`, `main_mul = 0` pins required by
+    `div_bus_res1_eq_a_hi` (`Airs/Arith/Bridge1.lean:79`) for the
+    GAP-A hi-lane discharge. -/
+axiom arith_table_op_div_rem_main_selector_pin
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
+    (v.op r_a = 186 → v.main_div r_a = 1 ∧ v.main_mul r_a = 0)
+  ∧ (v.op r_a = 187 → v.main_div r_a = 0 ∧ v.main_mul r_a = 0)
+
 /-! ## Euclidean-remainder bound — DIV/REM `assumes_operation(|d| < |b|)`
 
 The arith-PIL line `arith.pil:274` emits an `assumes_operation` lookup
