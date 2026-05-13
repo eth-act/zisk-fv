@@ -721,6 +721,42 @@ theorem fgl_mul_signed_to_bv64_hi
   rw [bv64_ofInt_d_minus_np_eq]
   rw [bv64_ofInt_eq_ofNat_of_nonneg_lt D h_D_lb h_D_ub]
 
+/-- **Final BV64 wrapper: MULHSU (mixed signed × unsigned).**
+
+    Specialization of `fgl_mul_signed_to_bv64_hi` for MULHSU: `r2` is
+    treated as **unsigned** (`r2.toNat`, not `r2.toInt`), and the AIR
+    pins `nb = 0` (so `np = na`). The chunk identity is the same shape
+    as MULH (same AIR), but with `nb = 0` substituted.
+
+    Concludes `BitVec.ofNat 64 D.toNat = execute_MUL_pure r1 r2 .MULHSU`. -/
+theorem fgl_mul_signed_unsigned_to_bv64_hi
+    (r1 r2 : BitVec 64)
+    (A B C D na : ℤ)
+    (h_na_bool : na = 0 ∨ na = 1)
+    (h_r1 : r1.toInt = A - na * 2^64)
+    (h_r2 : (r2.toNat : ℤ) = B)
+    (h_C_lb : 0 ≤ C) (h_C_ub : C < 2^64)
+    (h_D_lb : 0 ≤ D) (h_D_ub : D < 2^64)
+    (h_chunk :
+      (1 - 2 * na) * A * B
+        + (0 * (1 - 2 * na) * A + na * (1 - 2 * 0) * B) * 2^64
+        + (na * 0 - na) * 2^128
+      = (1 - 2 * na) * (C + D * 2^64)) :
+    BitVec.ofNat 64 D.toNat = execute_MUL_pure r1 r2 .MULHSU := by
+  rw [execute_MUL_pure_mulhsu_eq]
+  -- Specialize `signed_mul_int_product_eq` with `nb := 0`, `np := na`.
+  have h_r2' : (r2.toNat : ℤ) = B - 0 * 2^64 := by rw [h_r2]; ring
+  have h_np_xor : (na : ℤ) = na + 0 - 2 * na * 0 := by ring
+  have h_prod : r1.toInt * (r2.toNat : ℤ) = C + (D - na * 2^64) * 2^64 :=
+    signed_mul_int_product_eq A B C D na 0 na r1.toInt (r2.toNat : ℤ)
+      h_na_bool (by left; rfl) h_np_xor h_r1 h_r2' h_chunk
+  have h_high :
+      r1.toInt * (r2.toNat : ℤ) / 2^64 = D - na * 2^64 :=
+    signed_mul_high_half_eq r1.toInt (r2.toNat : ℤ) C D na h_C_lb h_C_ub h_prod
+  rw [h_high]
+  rw [bv64_ofInt_d_minus_np_eq]
+  rw [bv64_ofInt_eq_ofNat_of_nonneg_lt D h_D_lb h_D_ub]
+
 /-! ### DIV / REM bridges
 
 For DIV, A.0 delivers (after substituting `fab = 1-2*np`,

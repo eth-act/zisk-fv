@@ -3,6 +3,8 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Fundamentals.PackedBitVec.SignedChunkLift
+import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
 import ZiskFv.Circuit.Mul
 import ZiskFv.Circuit.MulHSU
 import ZiskFv.Airs.Main
@@ -80,12 +82,13 @@ theorem equiv_MULHSU_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output (`execute_MUL_pure ... .MULHSU`) directly;
     that equation is derived internally from circuit witnesses via the
-    `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_mulhsu` discharge
-    lemma. -/
+    `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_mulhsu_chunked`
+    discharge lemma. -/
 theorem equiv_MULHSU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhsu_input : PureSpec.MulhsuInput)
     (r1 r2 rd : regidx)
+    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (h_input_r1 : read_xreg (regidx_to_fin r1) state
@@ -104,13 +107,40 @@ theorem equiv_MULHSU
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : mulhsu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- CIRCUIT-CONSTRAINT: byte-sum equals operand-form mixed-sign high-half product.
-    (h_byte_sum_circuit :
+    -- Structural-unpacking ADDED binders per
+    -- `trust/structural-unpacking-exceptions.txt` MULHSU entry.
+    -- Note: `h_nb` is a real pin (`= 0`) rather than a placeholder —
+    -- the AIR's arith_table pins `nb = 0` for MULHSU rows
+    -- (`OP_MULSUH = 179`), since rs2 is interpreted as unsigned.
+    (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a)
+    (h_na : v.na r_a = v.na r_a)
+    (h_nb : v.nb r_a = 0)
+    (h_np : v.np r_a = v.np r_a)
+    (h_nr : v.nr r_a = 0)
+    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 0)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_np_xor :
+      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+        = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+            + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+            - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+                * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a))
+    (h_byte_lo :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-        + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-        + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-      = (BitVec.ofInt 64
-          ((mulhsu_input.r1_val.toInt * (mulhsu_input.r2_val.toNat : ℤ)) / 2 ^ 64)).toNat) :
+        = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
+    (h_byte_hi :
+      e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
+        = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536)
+    (h_op1 :
+      mulhsu_input.r1_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val : ℤ)
+            - (v.na r_a).val * (2:ℤ)^64)
+    (h_op2 :
+      (mulhsu_input.r2_val.toNat : ℤ)
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -123,12 +153,13 @@ theorem equiv_MULHSU
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_mulhsu
-      mulhsu_input.r1_val mulhsu_input.r2_val e2
+    ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_mulhsu_chunked
+      mulhsu_input.r1_val mulhsu_input.r2_val e2 v r_a
       h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
       h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
       h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
-      h_byte_sum_circuit
+      h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div
+      h_na_bool h_nb_bool h_np_xor h_byte_lo h_byte_hi h_op1 h_op2
   rw [equiv_MULHSU_sail state mulhsu_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

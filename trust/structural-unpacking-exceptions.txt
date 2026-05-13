@@ -86,15 +86,23 @@ DROPPED: h_byte_sum_circuit
 ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
        h_na_bool, h_nb_bool, h_np_xor,
        h_byte_lo, h_byte_hi, h_op1, h_op2
-       (Option-1: full Tier-3 promotion. h_na_bool/h_nb_bool/h_np_xor
-        are booleanity + XOR-encoding witnesses for the sign-witness
-        columns — derivable from constraints 41/42/44 + arith_table
-        lookup but kept as separate ADDED binders for clarity.
-        h_op1/h_op2 carry the signed toInt-form operand packing
-        (NOT toNat-form), bridging Sail r1.toInt / r2.toInt to the
-        signed AIR chunks.
-        Per-opcode metric grows by ~+16 binders; reviewer accepts
-        per structural-unpacking exception.)
+       (Phase 4.alpha.C Tier-3 promotion. Differs from MULH in two
+        MULHSU-specific points:
+          (a) `h_nb : v.nb r_a = 0` is a real TRANSPILE-PIN (not the
+              placeholder `v.nb r_a = v.nb r_a` used for MULH), since
+              arith_table pins `nb = 0` for opcode `OP_MULSUH = 179`
+              (rs2 is interpreted as unsigned).
+          (b) `h_op2` carries the **unsigned** (toNat-form) bridge
+              `(r2_val.toNat : ℤ) = packed4 b_chunks`, not the signed
+              (toInt-form) bridge used by MULH; this matches Sail's
+              `op1.toInt * (op2.toNat : ℤ)` for MULHSU.
+        Discharge composes `mul_signed_chain_witnesses` (shared with
+        MULH/DIV/REM) with `fgl_mul_signed_unsigned_to_bv64_hi`
+        (MULHSU-specific A.1 wrapper specializing
+        `fgl_mul_signed_to_bv64_hi` via `nb := 0`, `np := na`).
+        Per-opcode metric grows by ~+18 binders (1 more than MULH due
+        to the `h_nb = 0` pin replacing the MULH placeholder).
+        Reviewer accepts per structural-unpacking exception.)
 
 OPCODE: ZiskFv.Equivalence.MulW.equiv_MULW
 DROPPED: h_byte_sum_circuit
