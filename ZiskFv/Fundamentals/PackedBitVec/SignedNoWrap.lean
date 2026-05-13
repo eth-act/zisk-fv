@@ -532,4 +532,268 @@ theorem bv64_of_byte_sum_generic
         h0 h1 h2 h3 h4 h5 h6 h7]
   exact h_sum
 
+/-! ## Part 10 — Layer 1: chunk→abs-product bridge and BV64 wrappers (signed)
+
+Compose A.0's `fgl_mul_signed_chunks_to_int_identity` /
+`fgl_div_signed_chunks_to_int_identity` (in
+`SignedChunkLift.lean`) with the quadrant identity and the
+INT_MIN over minus-one overflow lemmas to deliver the BV64 result form.
+
+The key polynomial insight that makes the MUL bridge clean:
+
+```
+a_abs * b_abs = (1-2*np)*(C + D*2^64) + np*2^128            ... (♦)
+```
+
+where `a_abs = (1-2*na)*A + na*2^64` and `b_abs = (1-2*nb)*B + nb*2^64`
+are the absolute-value reconstructions. Provided `np = na + nb - 2*na*nb`
+(the XOR-as-arithmetic precondition), the identity reduces to a pure
+ring fact — no 4-quadrant case split is required.
+
+Multiplying (♦) by `(1-2*np)` (and using `(1-2*np)² = 1` for boolean
+np, plus `(1-2*np)*np = -np`):
+
+```
+r1.toInt * r2.toInt = (1-2*np) * a_abs * b_abs
+                    = C + D*2^64 - np * 2^128
+                    = C + (D - np * 2^64) * 2^64                ... (◊)
+```
+
+Given `0 ≤ C < 2^64`, Int.ediv yields directly:
+`(r1.toInt * r2.toInt) / 2^64 = D - np*2^64`, which is congruent to
+`D` mod 2^64. Hence `BitVec.ofInt 64 ((r1*r2)/2^64) = BitVec.ofNat 64 D_nat`.
+-/
+
+/-- **Chunk → abs-product (MUL, ℤ).**
+    Given the simplified A.0 signed-MUL identity (with
+    `fab = 1-2*np`, `nb_fa = nb*(1-2*na)`, `na_fb = na*(1-2*nb)`
+    already substituted) and `np = na + nb - 2*na*nb` (XOR), conclude
+    the abs-product form
+    `a_abs * b_abs = (1-2*np)*(C + D*2^64) + np*2^128`
+    where `a_abs := (1-2*na)*A + na*2^64`, `b_abs := (1-2*nb)*B + nb*2^64`.
+
+    Pure ring identity — no case split. The booleanity hypotheses on
+    `na, nb` are absorbed by the XOR relation. -/
+theorem signed_mul_chunks_to_abs_product
+    (A B C D na nb np : ℤ)
+    (h_np_xor : np = na + nb - 2 * na * nb)
+    (h_chunk :
+      (1 - 2 * np) * A * B
+        + (nb * (1 - 2 * na) * A + na * (1 - 2 * nb) * B) * 2^64
+        + (na * nb - np) * 2^128
+      = (1 - 2 * np) * (C + D * 2^64)) :
+    ((1 - 2 * na) * A + na * 2^64) * ((1 - 2 * nb) * B + nb * 2^64)
+      = (1 - 2 * np) * (C + D * 2^64) + np * 2^128 := by
+  -- Expand the LHS and substitute np = XOR(na, nb).
+  -- The residual after applying h_chunk is `2*A*B*(np + 2*na*nb - na - nb)`,
+  -- which is zero by h_np_xor.
+  linear_combination h_chunk + 2 * A * B * h_np_xor
+
+/-- **Signed product = packed-chunks (ℤ).**
+    Given the simplified A.0 MUL identity, `na, nb ∈ {0,1}` (boolean),
+    and `np = na + nb - 2*na*nb`, plus the operand-int relations
+    `r1_int = A - na*2^64` and `r2_int = B - nb*2^64`, conclude
+
+    ```
+    r1_int * r2_int = C + (D - np * 2^64) * 2^64
+    ```
+
+    This is the cleanest form — both `D - np*2^64` (the high-half int)
+    and `C` (the low-half nat) are directly readable from the AIR's
+    output chunks. Combined with `0 ≤ C < 2^64`, the high-half
+    extraction via `Int.ediv` is one line. -/
+theorem signed_mul_int_product_eq
+    (A B C D na nb np r1_int r2_int : ℤ)
+    (h_na_bool : na = 0 ∨ na = 1)
+    (h_nb_bool : nb = 0 ∨ nb = 1)
+    (h_np_xor : np = na + nb - 2 * na * nb)
+    (h_r1 : r1_int = A - na * 2^64)
+    (h_r2 : r2_int = B - nb * 2^64)
+    (h_chunk :
+      (1 - 2 * np) * A * B
+        + (nb * (1 - 2 * na) * A + na * (1 - 2 * nb) * B) * 2^64
+        + (na * nb - np) * 2^128
+      = (1 - 2 * np) * (C + D * 2^64)) :
+    r1_int * r2_int = C + (D - np * 2^64) * 2^64 := by
+  subst h_r1 h_r2 h_np_xor
+  rcases h_na_bool with rfl | rfl <;> rcases h_nb_bool with rfl | rfl
+  · -- (na, nb) = (0, 0); np = 0.
+    linear_combination h_chunk
+  · -- (na, nb) = (0, 1); np = 1.
+    linear_combination -h_chunk
+  · -- (na, nb) = (1, 0); np = 1.
+    linear_combination -h_chunk
+  · -- (na, nb) = (1, 1); np = 0.
+    linear_combination h_chunk
+
+/-- **MULH high-half extraction.**
+    Given (♦) (the bound on the integer product) and `0 ≤ C < 2^64`,
+    conclude that the high half equals `D - np*2^64`.
+
+    Used directly by `fgl_mul_signed_to_bv64_hi` to bridge to the
+    `BitVec.ofInt 64`-form expected by `execute_MUL_pure_mulh_eq`. -/
+theorem signed_mul_high_half_eq
+    (r1_int r2_int C D np : ℤ)
+    (h_C_lb : 0 ≤ C) (h_C_ub : C < 2^64)
+    (h_prod : r1_int * r2_int = C + (D - np * 2^64) * 2^64) :
+    r1_int * r2_int / 2^64 = D - np * 2^64 := by
+  rw [h_prod]
+  -- Reshape to `(D - np*2^64) * 2^64 + C` and apply standard Euclidean div.
+  have h_step : (C + (D - np * 2^64) * 2^64 : ℤ) / 2^64
+                  = (D - np * 2^64) + C / 2^64 := by
+    have := Int.add_mul_ediv_right C (D - np * 2^64) (by norm_num : (2 : ℤ)^64 ≠ 0)
+    linarith [this]
+  rw [h_step]
+  rw [Int.ediv_eq_zero_of_lt h_C_lb h_C_ub]
+  ring
+
+/-- **Modular equivalence: `D - np * 2^64 ≡ D (mod 2^64)`.** -/
+private lemma int_d_minus_np_mod_eq (D np : ℤ) :
+    (D - np * 2^64) % 2^64 = D % 2^64 := by
+  have h : (D - np * 2^64 : ℤ) = D + (-np) * 2^64 := by ring
+  rw [h, Int.add_mul_emod_self_right]
+
+/-- **`BitVec.ofInt 64 (D - np * 2^64) = BitVec.ofInt 64 D`.** -/
+lemma bv64_ofInt_d_minus_np_eq (D np : ℤ) :
+    BitVec.ofInt 64 (D - np * 2^64) = BitVec.ofInt 64 D := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ofInt]
+  congr 1
+  have h := int_d_minus_np_mod_eq D np
+  have h_cast : ((2^64 : ℕ) : ℤ) = (2^64 : ℤ) := by norm_num
+  rw [h_cast]
+  exact h
+
+/-- **`BitVec.ofInt 64 D = BitVec.ofNat 64 D.toNat` for `0 ≤ D < 2^64`.** -/
+lemma bv64_ofInt_eq_ofNat_of_nonneg_lt (D : ℤ)
+    (h_lb : 0 ≤ D) (h_ub : D < 2^64) :
+    BitVec.ofInt 64 D = BitVec.ofNat 64 D.toNat := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ofInt, BitVec.toNat_ofNat]
+  have h_d_nat : D.toNat < 2^64 := by
+    have : D < ((2^64 : ℕ) : ℤ) := by exact_mod_cast h_ub
+    omega
+  rw [Nat.mod_eq_of_lt h_d_nat]
+  have h_emod : D % ((2^64 : ℕ) : ℤ) = D :=
+    Int.emod_eq_of_lt h_lb (by exact_mod_cast h_ub)
+  rw [h_emod]
+
+/-- **Final BV64 wrapper: MULH.**
+
+    Composes `signed_mul_int_product_eq` + `signed_mul_high_half_eq` +
+    `bv64_ofInt_d_minus_np_eq` + `bv64_ofInt_eq_ofNat_of_nonneg_lt` +
+    `execute_MUL_pure_mulh_eq` to conclude:
+
+    ```
+    BitVec.ofNat 64 D.toNat = execute_MUL_pure r1 r2 .MULH
+    ```
+
+    where `D` is the high-half unsigned packing of the AIR's d-chunks.
+    Caller pattern (Layer 4+):
+    1. `r1_int = r1.toInt`, `r2_int = r2.toInt`.
+    2. `A = r1.toNat`, `B = r2.toNat` (with `na = r1.msb.toNat`, etc.).
+    3. `C, D` are the unsigned ℤ values of `packed4 c_chunks`, `packed4 d_chunks`.
+    4. The chunk identity comes from A.0 + AIR sign-witness pinning. -/
+theorem fgl_mul_signed_to_bv64_hi
+    (r1 r2 : BitVec 64)
+    (A B C D na nb np : ℤ)
+    (h_na_bool : na = 0 ∨ na = 1)
+    (h_nb_bool : nb = 0 ∨ nb = 1)
+    (h_np_xor : np = na + nb - 2 * na * nb)
+    (h_r1 : r1.toInt = A - na * 2^64) (h_r2 : r2.toInt = B - nb * 2^64)
+    (h_C_lb : 0 ≤ C) (h_C_ub : C < 2^64)
+    (h_D_lb : 0 ≤ D) (h_D_ub : D < 2^64)
+    (h_chunk :
+      (1 - 2 * np) * A * B
+        + (nb * (1 - 2 * na) * A + na * (1 - 2 * nb) * B) * 2^64
+        + (na * nb - np) * 2^128
+      = (1 - 2 * np) * (C + D * 2^64)) :
+    BitVec.ofNat 64 D.toNat = execute_MUL_pure r1 r2 .MULH := by
+  rw [execute_MUL_pure_mulh_eq]
+  -- Goal: BitVec.ofNat 64 D.toNat = BitVec.ofInt 64 ((r1.toInt * r2.toInt) / 2^64).
+  have h_prod : r1.toInt * r2.toInt = C + (D - np * 2^64) * 2^64 :=
+    signed_mul_int_product_eq A B C D na nb np r1.toInt r2.toInt
+      h_na_bool h_nb_bool h_np_xor h_r1 h_r2 h_chunk
+  have h_high :
+      r1.toInt * r2.toInt / 2^64 = D - np * 2^64 :=
+    signed_mul_high_half_eq r1.toInt r2.toInt C D np h_C_lb h_C_ub h_prod
+  rw [h_high]
+  rw [bv64_ofInt_d_minus_np_eq]
+  rw [bv64_ofInt_eq_ofNat_of_nonneg_lt D h_D_lb h_D_ub]
+
+/-! ### DIV / REM bridges
+
+For DIV, A.0 delivers (after substituting `fab = 1-2*np`,
+`nb_fa = nb*(1-2*na)`, `na_fb = na*(1-2*nb)`, and `np = na ⊕ nb`):
+
+```
+(1-2*np)*A*B + (1-2*nr)*D + (nb*(1-2*na)*A + na*(1-2*nb)*B)*2^64
+  + (nr - np) * 2^64 + na*nb * 2^128
+  = (1-2*np) * C
+```
+
+Define `a_abs, b_abs` as before, `c_abs := (1-2*np)*C + np*2^64`,
+`d_abs := (1-2*nr)*D + nr*2^64`. The Euclidean identity reads
+`c_abs = a_abs * b_abs + d_abs` (in the non-overflow case).
+
+For the DIV BV64 output: `r1.toInt /_t r2.toInt` (Lean's `Int.tdiv`)
+corresponds to the AIR's `c_abs` (modulo sign), modulo the
+INT_MIN / -1 overflow case absorbed by `na*nb*2^128`.
+
+The full chain is delivered via `int_tdiv_overflow_full` (for the
+boundary case) + the operand sign-witness machinery. -/
+
+/-- **Chunk → abs-Euclidean (DIV, ℤ).**
+    Pure ring derivation: from A.0's DIV identity, recover the
+    abs-form Euclidean identity
+    `a_abs * b_abs + d_abs = c_abs + na*nb*2^128 - (np*2^64 + na*nb*2^128 - np*2^64)`
+    which simplifies (using `np = XOR(na, nb)` => `na*nb*(1-np) = 0` mod
+    booleanity) but at the pure-ring level retains the full
+    `a_abs * b_abs + d_abs = c_abs + 2*na*nb*2^128 - np*2^64` form
+    before booleanity. The clean statement after booleanity collapse
+    is `a_abs * b_abs + d_abs = c_abs`, deferred to Layer 4 (which
+    has the AIR-side booleanity on `na, nb, nr`). -/
+theorem fgl_div_signed_chunks_to_abs
+    (A B C D na nb np nr : ℤ)
+    (h_np_xor : np = na + nb - 2 * na * nb)
+    (h_chunk :
+      (1 - 2 * np) * A * B
+        + (1 - 2 * nr) * D
+        + (nb * (1 - 2 * na) * A + na * (1 - 2 * nb) * B) * 2^64
+        + (nr - np) * 2^64
+        + na * nb * 2^128
+      = (1 - 2 * np) * C) :
+    ((1 - 2 * na) * A + na * 2^64) * ((1 - 2 * nb) * B + nb * 2^64)
+        + ((1 - 2 * nr) * D + nr * 2^64)
+      = ((1 - 2 * np) * C + np * 2^64) := by
+  linear_combination h_chunk + 2 * A * B * h_np_xor
+
+/-! ### Layer-1 DIV scope note
+
+The chunk → abs-Euclidean step (`fgl_div_signed_chunks_to_abs` above)
+delivers the pure-ring identity over the abs-form variables. Going
+further to the signed Euclidean `r1.toInt = q.toInt * r2.toInt + rem.toInt`
+form requires careful handling of two interacting boundary cases:
+
+1. **INT_MIN over minus-one overflow.** Architecturally `q = INT_MIN`
+   while mathematically `Int.tdiv` returns `2^63`. The AIR encodes the
+   correction via the `na*nb*2^128` slack — but realizing this in the
+   abs-form requires committing to particular sign-witness pinnings
+   that depend on the AIR-side `op` discriminator (`DIV` vs `DIVU`
+   vs `DIVW`...), not pure math.
+2. **Divisor zero.** The pure spec returns `-1` and `r1`; the AIR
+   handles this via the `b = 0` slot in `arith_table`, again an
+   AIR-side dispatch.
+
+Both case dispatches are part of Layer 4's per-opcode composition
+(see `Equivalence/RdValDerivation/MulDivRemSigned.lean`'s
+`h_rd_val_mdrs_div` for the existing OUTPUT-EQ-style discharge,
+which Layer 4 will replace by composing the bridges above with the
+operand-bus-pinned sign witnesses). Layer 1 delivers the abs-form
+identity; the dispatch logic stays at the per-opcode boundary.
+
+The `int_tdiv_overflow_full` and `int_tmod_overflow_full` lemmas
+above (Part 3) close the pure-math side of the overflow boundary
+when the dispatch fires. -/
+
 end ZiskFv.PackedBitVec.SignedNoWrap
