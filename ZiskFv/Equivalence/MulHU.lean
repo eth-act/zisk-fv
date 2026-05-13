@@ -108,29 +108,18 @@ theorem equiv_MULHU
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : mulhu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
     (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
     (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
     (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
     (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
-    (h_cy0 : cy₀.val < 131072) (h_cy1 : cy₁.val < 131072)
-    (h_cy2 : cy₂.val < 131072) (h_cy3 : cy₃.val < 131072)
-    (h_cy4 : cy₄.val < 131072) (h_cy5 : cy₅.val < 131072)
-    (h_cy6 : cy₆.val < 131072)
-    (hC31 : v.a_0 r_a * v.b_0 r_a = v.c_0 r_a + cy₀ * 65536)
-    (hC32 : v.a_1 r_a * v.b_0 r_a + v.a_0 r_a * v.b_1 r_a + cy₀
-              = v.c_1 r_a + cy₁ * 65536)
-    (hC33 : v.a_2 r_a * v.b_0 r_a + v.a_1 r_a * v.b_1 r_a + v.a_0 r_a * v.b_2 r_a + cy₁
-              = v.c_2 r_a + cy₂ * 65536)
-    (hC34 : v.a_3 r_a * v.b_0 r_a + v.a_2 r_a * v.b_1 r_a + v.a_1 r_a * v.b_2 r_a
-              + v.a_0 r_a * v.b_3 r_a + cy₂
-              = v.c_3 r_a + cy₃ * 65536)
-    (hC35 : v.a_3 r_a * v.b_1 r_a + v.a_2 r_a * v.b_2 r_a + v.a_1 r_a * v.b_3 r_a + cy₃
-              = v.d_0 r_a + cy₄ * 65536)
-    (hC36 : v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + cy₄
-              = v.d_1 r_a + cy₅ * 65536)
-    (hC37 : v.a_3 r_a * v.b_3 r_a + cy₅ = v.d_2 r_a + cy₆ * 65536)
-    (hC38 : cy₆ = v.d_3 r_a)
+    -- The 22 loose (cy, cy-range, hC) caller-burden binders are now
+    -- replaced by the row-level carry-chain constraint set + unsigned
+    -- mode pins, discharged via `Bridge.Arith.mul_unsigned_chain_witnesses`.
+    (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a)
+    (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
+    (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
+    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
+    (h_div : v.div r_a = 0)
     (h_byte_lo :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
         = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
@@ -158,6 +147,11 @@ theorem equiv_MULHU
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
     ZiskFv.Equivalence.Bridge.Arith.arith_mul_chunk_ranges_at_holds v r_a
+  obtain ⟨cy₀, cy₁, cy₂, cy₃, cy₄, cy₅, cy₆,
+          h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6,
+          hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ :=
+    ZiskFv.Equivalence.Bridge.Arith.mul_unsigned_chain_witnesses v r_a h_chain
+      h_na h_nb h_np h_nr h_sext h_m32 h_div
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mulhu
       mulhu_input.r1_val mulhu_input.r2_val e2

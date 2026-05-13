@@ -172,4 +172,169 @@ abbrev div_unsigned_packed :=
 abbrev div_signed_packed :=
   @ZiskFv.Airs.ArithDiv.arith_div_signed_packed_correct
 
+/-! ## Per-opcode discharge helpers — unsigned-mode carry-chain witnesses
+
+The MUL / MULHU / DIVU / REMU equivs currently take 22 loose carry-shape
+binders (7 cy witnesses + 7 cy range bounds + 8 hC equations). The
+helpers below consume the row-level `mul_carry_chain_holds` /
+`div_carry_chain_holds` predicate (from `Valid_<AIR>`-derived
+constraint extraction) plus the unsigned-mode pins, and deliver the
+witness pack as an existential. Trust footprint:
+`arith_{mul,div}_carry_columns_in_range_unsigned`.
+-/
+
+section UnsignedChainWitnesses
+
+open ZiskFv.Airs.ArithMul
+open ZiskFv.Airs.ArithDiv
+open Arith.extraction
+
+/-- **MUL-unsigned chain witnesses (existential bundle).**
+
+    Given the row-level carry-chain constraint set
+    (`mul_carry_chain_holds v r_a` = constraints 6/7/8 + 31..38) plus
+    the unsigned-mode pins (`na = nb = np = nr = sext = m32 = div = 0`),
+    deliver an existential pack of seven carry witnesses + their range
+    bounds + the eight named-column carry-chain identities in the form
+    consumed by the MUL / MULHU rd-value derivations.
+
+    Carry-range bounds are discharged by
+    `arith_mul_carry_columns_in_range_unsigned` (trust ledger).
+    Carry-chain identities are derived from constraints 31..38 by
+    rewriting selectors to mode-zero / fab-one / na_fb-nb_fa-zero
+    form (constraints 6/7/8 supply the last). -/
+theorem mul_unsigned_chain_witnesses
+    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (h_chain : mul_carry_chain_holds v r_a)
+    (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
+    (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
+    (_h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
+    (h_div : v.div r_a = 0) :
+    ∃ cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL,
+      cy₀.val < 131072 ∧ cy₁.val < 131072 ∧ cy₂.val < 131072 ∧ cy₃.val < 131072
+    ∧ cy₄.val < 131072 ∧ cy₅.val < 131072 ∧ cy₆.val < 131072
+    ∧ (v.a_0 r_a * v.b_0 r_a = v.c_0 r_a + cy₀ * 65536)
+    ∧ (v.a_1 r_a * v.b_0 r_a + v.a_0 r_a * v.b_1 r_a + cy₀ = v.c_1 r_a + cy₁ * 65536)
+    ∧ (v.a_2 r_a * v.b_0 r_a + v.a_1 r_a * v.b_1 r_a + v.a_0 r_a * v.b_2 r_a + cy₁
+        = v.c_2 r_a + cy₂ * 65536)
+    ∧ (v.a_3 r_a * v.b_0 r_a + v.a_2 r_a * v.b_1 r_a + v.a_1 r_a * v.b_2 r_a
+        + v.a_0 r_a * v.b_3 r_a + cy₂ = v.c_3 r_a + cy₃ * 65536)
+    ∧ (v.a_3 r_a * v.b_1 r_a + v.a_2 r_a * v.b_2 r_a + v.a_1 r_a * v.b_3 r_a + cy₃
+        = v.d_0 r_a + cy₄ * 65536)
+    ∧ (v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + cy₄
+        = v.d_1 r_a + cy₅ * 65536)
+    ∧ (v.a_3 r_a * v.b_3 r_a + cy₅ = v.d_2 r_a + cy₆ * 65536)
+    ∧ (cy₆ = v.d_3 r_a) := by
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  -- Extract fab = 1, na_fb = 0, nb_fa = 0 from constraints 6/7/8 + mode.
+  simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
+             ← v.na_def, ← v.nb_def] at h6 h7 h8
+  simp only [h_na, h_nb] at h6 h7 h8
+  have h_fab : Circuit.main v.circuit (id := 1) (column := 30) (row := r_a) (rotation := 0)
+    = (1 : FGL) := by linear_combination h6
+  have h_nafb : Circuit.main v.circuit (id := 1) (column := 31) (row := r_a) (rotation := 0)
+    = (0 : FGL) := by linear_combination h7
+  have h_nbfa : Circuit.main v.circuit (id := 1) (column := 32) (row := r_a) (rotation := 0)
+    = (0 : FGL) := by linear_combination h8
+  -- Unfold constraints 31..38 to named-column form + mode-zero substitution.
+  simp only [constraint_31_every_row, constraint_32_every_row,
+             constraint_33_every_row, constraint_34_every_row,
+             constraint_35_every_row, constraint_36_every_row,
+             constraint_37_every_row, constraint_38_every_row,
+             ← v.a_0_def, ← v.a_1_def, ← v.a_2_def, ← v.a_3_def,
+             ← v.b_0_def, ← v.b_1_def, ← v.b_2_def, ← v.b_3_def,
+             ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
+             ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
+             ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
+             ← v.m32_def, ← v.div_def]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  simp only [h_na, h_nb, h_np, h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
+             mul_zero, zero_mul, add_zero, sub_zero, zero_sub,
+             mul_one, one_mul]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  -- Carry range bounds (axiom).
+  obtain ⟨hr0, hr1, hr2, hr3, hr4, hr5, hr6⟩ :=
+    ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_unsigned v r_a h_na h_nb h_np h_nr
+  -- Package the existential witnesses (cy_i = Circuit.main at column i).
+  refine ⟨_, _, _, _, _, _, _, hr0, hr1, hr2, hr3, hr4, hr5, hr6, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · linear_combination h31
+  · linear_combination h32
+  · linear_combination h33
+  · linear_combination h34
+  · linear_combination h35
+  · linear_combination h36
+  · linear_combination h37
+  · linear_combination h38
+
+/-- **DIV-unsigned chain witnesses (existential bundle).**
+
+    Same as `mul_unsigned_chain_witnesses` but for the Div view: DIVU /
+    REMU rows have `div = 1` (instead of 0) so the `d_i` summands
+    appear additively in chunks 0..3 and the upper-half d-chunks vanish.
+
+    PIL: `arith.pil:205-209` (carry chain); selectors per
+    `arith_table.pil`'s `divu`/`remu` row. -/
+theorem div_unsigned_chain_witnesses
+    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (h_chain : div_carry_chain_holds v r_a)
+    (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
+    (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
+    (_h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
+    (h_div : v.div r_a = 1) :
+    ∃ cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL,
+      cy₀.val < 131072 ∧ cy₁.val < 131072 ∧ cy₂.val < 131072 ∧ cy₃.val < 131072
+    ∧ cy₄.val < 131072 ∧ cy₅.val < 131072 ∧ cy₆.val < 131072
+    ∧ (v.a_0 r_a * v.b_0 r_a + v.d_0 r_a = v.c_0 r_a + cy₀ * 65536)
+    ∧ (v.a_1 r_a * v.b_0 r_a + v.a_0 r_a * v.b_1 r_a + v.d_1 r_a + cy₀
+        = v.c_1 r_a + cy₁ * 65536)
+    ∧ (v.a_2 r_a * v.b_0 r_a + v.a_1 r_a * v.b_1 r_a + v.a_0 r_a * v.b_2 r_a
+        + v.d_2 r_a + cy₁
+        = v.c_2 r_a + cy₂ * 65536)
+    ∧ (v.a_3 r_a * v.b_0 r_a + v.a_2 r_a * v.b_1 r_a + v.a_1 r_a * v.b_2 r_a
+        + v.a_0 r_a * v.b_3 r_a + v.d_3 r_a + cy₂
+        = v.c_3 r_a + cy₃ * 65536)
+    ∧ (v.a_3 r_a * v.b_1 r_a + v.a_2 r_a * v.b_2 r_a + v.a_1 r_a * v.b_3 r_a + cy₃
+        = cy₄ * 65536)
+    ∧ (v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + cy₄ = cy₅ * 65536)
+    ∧ (v.a_3 r_a * v.b_3 r_a + cy₅ = cy₆ * 65536)
+    ∧ (cy₆ = 0) := by
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
+             ← v.na_def, ← v.nb_def] at h6 h7 h8
+  simp only [h_na, h_nb] at h6 h7 h8
+  have h_fab : Circuit.main v.circuit (id := 1) (column := 30) (row := r_a) (rotation := 0)
+    = (1 : FGL) := by linear_combination h6
+  have h_nafb : Circuit.main v.circuit (id := 1) (column := 31) (row := r_a) (rotation := 0)
+    = (0 : FGL) := by linear_combination h7
+  have h_nbfa : Circuit.main v.circuit (id := 1) (column := 32) (row := r_a) (rotation := 0)
+    = (0 : FGL) := by linear_combination h8
+  simp only [constraint_31_every_row, constraint_32_every_row,
+             constraint_33_every_row, constraint_34_every_row,
+             constraint_35_every_row, constraint_36_every_row,
+             constraint_37_every_row, constraint_38_every_row,
+             ← v.a_0_def, ← v.a_1_def, ← v.a_2_def, ← v.a_3_def,
+             ← v.b_0_def, ← v.b_1_def, ← v.b_2_def, ← v.b_3_def,
+             ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
+             ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
+             ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
+             ← v.m32_def, ← v.div_def]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  simp only [h_na, h_nb, h_np, h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
+             mul_zero, zero_mul, add_zero, sub_zero, zero_sub,
+             mul_one, one_mul]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  obtain ⟨hr0, hr1, hr2, hr3, hr4, hr5, hr6⟩ :=
+    ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned v r_a h_na h_nb h_np h_nr
+  refine ⟨_, _, _, _, _, _, _, hr0, hr1, hr2, hr3, hr4, hr5, hr6, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · linear_combination h31
+  · linear_combination h32
+  · linear_combination h33
+  · linear_combination h34
+  · linear_combination h35
+  · linear_combination h36
+  · linear_combination h37
+  · linear_combination h38
+
+end UnsignedChainWitnesses
+
 end ZiskFv.Equivalence.Bridge.Arith
