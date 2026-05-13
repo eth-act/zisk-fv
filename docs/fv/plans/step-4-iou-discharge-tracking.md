@@ -220,32 +220,51 @@ discharge consumes; they are derivable from `transpile_<OP>` once
 `Compliance.lean` provides the Sail decode + the universal Main
 row constraint set.
 
-For LB / LH / LW — **NOT lifted** in this iteration. These signed
-loads route through `Circuit/SextLoadBridge.lean` and the
-BinaryExtension AIR (not copyb / Mem AIR), so the
-`main_load_emission_bundle` axiom does not apply. A separate
-`main_sext_load_emission_bundle` axiom (or a wider transpile
-contract for `OP_SIGNEXTEND_{B,H,W}`) would be needed; tracked
-as a follow-up IOU.
+For LB / LH / LW — **lifted in round-3** (branch
+`lift-mem-2-discharge`). The signed loads also emit memory-bus
+entries through the same Main-row b/c-side `mem_op` calls as the
+copyb loads; only the activation pin differs
+(`is_external_op = 1`, `op = OP_SIGNEXTEND_{B,H,W}`). The new
+`main_sext_load_emission_bundle` axiom (class #4, PIL-cited;
+`Airs/MemoryBus/MemBridge.lean`) packages the same lane / ptr /
+rd-routing facts as `main_load_emission_bundle` minus the copyb
+passthrough (vacuous for external rows). The
+`Bridge.Mem.{lb,lh,lw}_discharge_full` entry points consume it
+to retire `h_main_emit_b`, `h_main_emit_c`, `h_ptr_match`,
+`h_rd_zero_iff`, `h_rd_idx` — five hypotheses per opcode. Net
+metric change: LB 42→37 (−5 total, hypothesis 25→20), LH 42→37
+(−5 total, hypothesis 26→21), LW 45→40 (−5 total, hypothesis
+28→23). Trust ledger gains 1 axiom (99 → 100 active baseline
+entries after this iteration).
 
-For SB / SH / SW / SD — **NOT lifted** in this iteration. The
+For SB / SH / SW / SD — **skipped (anti-laundering metric)**. The
 store equivs accept simpler bridging premises (`h_mem_eq` for
 SB/SH/SW; per-byte `h_byte_i` for SD) without a Main / Mem
-validator binder, so introducing the validator + discharge call
-would INFLATE the anti-laundering metric without a matching
-discharge of the byte hypotheses. A discharge that ALSO retires
-the byte hypotheses would require either a per-byte store-emission
-axiom or a deeper byte-bus closure; tracked as a follow-up IOU.
+validator binder. Introducing the validator + discharge call
+would inflate the anti-laundering metric: SB/SH/SW currently have
+1 bridge hypothesis (`h_mem_eq`); the round-3 attempt requires
+adding 9 binders (`main`, `mem`, `r_main`, `h_ext`, `h_op` +
+optional explicit bus-shape pins already present) to retire just
+that 1 hypothesis. SD has 9 bridge hypotheses (`h_ptr_match` +
+8 byte equalities), but the byte equalities tie to circuit
+witnesses that don't appear in any current bundle — discharging
+them would require either a per-byte store-emission axiom or a
+deeper byte-bus closure. Both store cases would require new
+discharge infrastructure not present in the load family; tracked
+as a follow-up IOU. (See the "Anti-laundering principle" in
+`CLAUDE.md`: per the operational metric, a refactor that holds
+or grows `total` / `hypothesis` columns is not progress; this
+attempt is paused until the byte-discharge primitive lands.)
 
 Original (pre-lift) table preserved for reference:
 
 | Binder | Discharge mechanism |
 |---|---|
 | `risc_v_assumptions` + `h_opcode_assumptions` | Platform inerts (already in trust ledger as classes 7-10); these are caller obligations on `state`, not promises about circuit |
-| `h_main_emit_b`, `h_main_emit_c` (Main row emission of memory entries) | **DONE for loads** — `main_load_emission_bundle` axiom. **TODO for stores / signed loads** — analogous axioms. |
-| `h_ptr_match` (e1.ptr ↔ r1 + signExt(imm)) | **DONE for loads.** Same axiom. |
-| `h_copy0`, `h_copy1`, `h_ext`, `h_op` (copyb / op pins for Main row) | **DONE for loads** — `h_copy0/1` via the bundle; `h_ext/h_op` retained as transpile-pinned activation. |
-| `h_rd_zero_iff`, `h_rd_idx` (Sail rd ↔ bus e2.ptr) | **DONE for loads.** Same axiom. |
+| `h_main_emit_b`, `h_main_emit_c` (Main row emission of memory entries) | **DONE for unsigned + signed loads** — `main_load_emission_bundle` (copyb) and `main_sext_load_emission_bundle` (LB/LH/LW). **TODO for stores** — analogous axiom, but anti-laundering metric currently blocks the round-3 attempt (see store IOU note above). |
+| `h_ptr_match` (e1.ptr ↔ r1 + signExt(imm)) | **DONE for all 7 loads.** Same axiom family. |
+| `h_copy0`, `h_copy1`, `h_ext`, `h_op` (copyb / op pins for Main row) | **DONE for loads** — `h_copy0/1` via the bundle (unsigned loads only — vacuous for signed loads with `is_external_op = 1`); `h_ext/h_op` retained as transpile-pinned activation. |
+| `h_rd_zero_iff`, `h_rd_idx` (Sail rd ↔ bus e2.ptr) | **DONE for all 7 loads.** Same axiom family. |
 
 ### ControlFlow non-branch (6 ops: AUIPC, JAL, JALR, LUI, FENCE)
 

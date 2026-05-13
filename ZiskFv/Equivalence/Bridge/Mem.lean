@@ -270,4 +270,125 @@ theorem lwu_discharge_full
   load_discharge_full main r_main e1 e2 r1_val imm rd
     h_active h_op_main h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
 
+/-! ## Signed-load discharge — LB / LH / LW
+
+The sext-load family routes through the BinaryExtension AIR for
+sign-extension (`is_external_op = 1`, `op = OP_SIGNEXTEND_{B,H,W}`)
+rather than the copyb passthrough used by LD / LBU / LHU / LWU. The
+Main row's memory-bus emission shape is identical (same b-side load
+consumer + c-side rd-write entries) so the discharge produces the
+same five lane / ptr / rd facts as the copyb loads, minus the
+copyb passthrough constraints (which are conditioned on
+`is_external_op = 0` and so vacuous here).
+
+Consumes `MemBridge.main_sext_load_emission_bundle` (class #4). -/
+
+/-- **Common signed-load discharge full bundle.** Shared by LB / LH
+    / LW. Caller supplies the activation pins (transpile-derived in
+    practice) and bus-shape pins; returns the lane / ptr / rd-routing
+    bundle. -/
+theorem sext_load_discharge_full
+    (main : Valid_Main C FGL FGL)
+    (r_main : ℕ)
+    (e1 e2 : Interaction.MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (op_code : FGL)
+    (h_ext : main.is_external_op r_main = 1)
+    (h_op : main.op r_main = op_code)
+    (h_op_sext : op_code = ZiskFv.Trusted.OP_SIGNEXTEND_B
+                  ∨ op_code = ZiskFv.Trusted.OP_SIGNEXTEND_H
+                  ∨ op_code = ZiskFv.Trusted.OP_SIGNEXTEND_W)
+    (h_e1_mult : e1.multiplicity = -1) (h_e1_as_val : e1.as.val = 2)
+    (h_e2_mult : e2.multiplicity = 1) (h_e2_as_val : e2.as.val = 1) :
+    -- `h_main_emit_b` shape:
+    (main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1
+      ∧ main.b_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e1
+      ∧ e1.as = 2
+      ∧ e1.multiplicity = -1)
+    -- `h_main_emit_c` shape:
+    ∧ (main.c_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e2
+       ∧ main.c_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e2)
+    -- `h_ptr_match`:
+    ∧ e1.ptr.toNat = r1_val.toNat + (BitVec.signExtend 64 imm).toNat
+    -- `h_rd_zero_iff` / `h_rd_idx`:
+    ∧ (Transpiler.wrap_to_regidx e2.ptr = 0 ↔ rd = 0)
+    ∧ rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val := by
+  obtain ⟨h_b0, h_b1, h_e1_as, h_e1_mult', h_c0, h_c1, h_ptr,
+          h_rd_iff, h_rd_idx⟩ :=
+    ZiskFv.Airs.MemoryBus.MemBridge.main_sext_load_emission_bundle
+      main r_main e1 e2 r1_val imm rd op_code
+      h_ext h_op h_op_sext
+      h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
+  exact ⟨⟨h_b0, h_b1, h_e1_as, h_e1_mult'⟩, ⟨h_c0, h_c1⟩, h_ptr,
+         h_rd_iff, h_rd_idx⟩
+
+/-- **Per-opcode signed-load discharge — LB.** -/
+theorem lb_discharge_full
+    (main : Valid_Main C FGL FGL)
+    (r_main : ℕ)
+    (e1 e2 : Interaction.MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (h_ext : main.is_external_op r_main = 1)
+    (h_op : main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_B)
+    (h_e1_mult : e1.multiplicity = -1) (h_e1_as_val : e1.as.val = 2)
+    (h_e2_mult : e2.multiplicity = 1) (h_e2_as_val : e2.as.val = 1) :
+    (main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1
+      ∧ main.b_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e1
+      ∧ e1.as = 2
+      ∧ e1.multiplicity = -1)
+    ∧ (main.c_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e2
+       ∧ main.c_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e2)
+    ∧ e1.ptr.toNat = r1_val.toNat + (BitVec.signExtend 64 imm).toNat
+    ∧ (Transpiler.wrap_to_regidx e2.ptr = 0 ↔ rd = 0)
+    ∧ rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val :=
+  sext_load_discharge_full main r_main e1 e2 r1_val imm rd
+    ZiskFv.Trusted.OP_SIGNEXTEND_B h_ext h_op (Or.inl rfl)
+    h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
+
+/-- **Per-opcode signed-load discharge — LH.** -/
+theorem lh_discharge_full
+    (main : Valid_Main C FGL FGL)
+    (r_main : ℕ)
+    (e1 e2 : Interaction.MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (h_ext : main.is_external_op r_main = 1)
+    (h_op : main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_H)
+    (h_e1_mult : e1.multiplicity = -1) (h_e1_as_val : e1.as.val = 2)
+    (h_e2_mult : e2.multiplicity = 1) (h_e2_as_val : e2.as.val = 1) :
+    (main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1
+      ∧ main.b_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e1
+      ∧ e1.as = 2
+      ∧ e1.multiplicity = -1)
+    ∧ (main.c_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e2
+       ∧ main.c_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e2)
+    ∧ e1.ptr.toNat = r1_val.toNat + (BitVec.signExtend 64 imm).toNat
+    ∧ (Transpiler.wrap_to_regidx e2.ptr = 0 ↔ rd = 0)
+    ∧ rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val :=
+  sext_load_discharge_full main r_main e1 e2 r1_val imm rd
+    ZiskFv.Trusted.OP_SIGNEXTEND_H h_ext h_op (Or.inr (Or.inl rfl))
+    h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
+
+/-- **Per-opcode signed-load discharge — LW.** -/
+theorem lw_discharge_full
+    (main : Valid_Main C FGL FGL)
+    (r_main : ℕ)
+    (e1 e2 : Interaction.MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (h_ext : main.is_external_op r_main = 1)
+    (h_op : main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_W)
+    (h_e1_mult : e1.multiplicity = -1) (h_e1_as_val : e1.as.val = 2)
+    (h_e2_mult : e2.multiplicity = 1) (h_e2_as_val : e2.as.val = 1) :
+    (main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1
+      ∧ main.b_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e1
+      ∧ e1.as = 2
+      ∧ e1.multiplicity = -1)
+    ∧ (main.c_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e2
+       ∧ main.c_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e2)
+    ∧ e1.ptr.toNat = r1_val.toNat + (BitVec.signExtend 64 imm).toNat
+    ∧ (Transpiler.wrap_to_regidx e2.ptr = 0 ↔ rd = 0)
+    ∧ rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val :=
+  sext_load_discharge_full main r_main e1 e2 r1_val imm rd
+    ZiskFv.Trusted.OP_SIGNEXTEND_W h_ext h_op (Or.inr (Or.inr rfl))
+    h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
+
 end ZiskFv.Equivalence.Bridge.Mem
