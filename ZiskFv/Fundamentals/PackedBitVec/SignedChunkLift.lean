@@ -1331,6 +1331,145 @@ theorem div_signed_packed_of_chunks_int
     + (65536 * 65536 * 65536 * 65536 * 65536 * 65536) * hC37
     + (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536) * hC38
 
+/-! ## Part 5b — W-mode (m32=1) 4-chunk aggregators over ℤ
+
+The Phase B W-mode chain identity (after operand-pin substitution
+`a₂ = a₃ = b₂ = b₃ = 0`, mode pins `m32 = 1, nr = 0, div = 0` for MUL
+and `m32 = 1, div = 1` for DIV, and the XOR pin `np = na ⊕ nb`) reduces
+the 8-chunk constraint set to a 4-chunk "low-half product / Euclidean"
+identity. The MUL W form drops all cross-products `a_i * b_j` for `i+j
+≥ 2`, leaving only the 32×32 schoolbook layout; the DIV W form adds
+`δ * d_i` terms to chunks 31-32 (since `d_2 = d_3 = 0` via the table
+pin, only the low-half `d` chunks carry information).
+
+These ℤ aggregators are pure `linear_combination` reductions of the W
+chain over a `CommRing` (specialised to ℤ here), telescoping cy[0..6]
+via the standard `65536^k` weighting. They form the W-mode analog of
+`mul_signed_packed_of_chunks_int` / `div_signed_packed_of_chunks_int`
+from Part 5. -/
+
+/-- **W-mode (m32=1) MUL chunk aggregator over ℤ (natural form).**
+
+    The W chunk constraints (after substituting m32=1, nr=0, div=0,
+    operand pin `a₂=a₃=b₂=b₃=0`) — derived directly from the raw PIL
+    constraints `constraint_31..38_every_row`:
+
+    * C31': `fab*a₀*b₀ - γ*c₀ - cy₀*65536 = 0`
+    * C32': `fab*(a₁*b₀+a₀*b₁) - γ*c₁ + cy₀ - cy₁*65536 = 0`
+    * C33': `fab*a₁*b₁ + a₀*nb_fa + b₀*na_fb - γ*c₂ + cy₁ - cy₂*65536 = 0`
+    * C34': `a₁*nb_fa + b₁*na_fb - γ*c₃ + cy₂ - cy₃*65536 = 0`
+    * C35': `na*nb - np - γ*d₀ + cy₃ - cy₄*65536 = 0`
+    * C36': `-γ*d₁ + cy₄ - cy₅*65536 = 0`
+    * C37': `-γ*d₂ + cy₅ - cy₆*65536 = 0`
+    * C38': `-γ*d₃ + cy₆ = 0`
+
+    The cross-terms `(a₀*nb_fa + b₀*na_fb)` in C33 and `(a₁*nb_fa +
+    b₁*na_fb)` in C34 migrate "down" from C35-C36 via the `m32`-gate of
+    the PIL constraints. The d-chunks survive in C35-C38 with `-γ`
+    weighting (gated by `(1-div)`, which is 1 for MUL).
+
+    Aggregate to the natural W identity:
+    `fab*A_32*B_32 + (nb_fa*A_32 + na_fb*B_32)*B² + (na*nb - np)*B⁴
+       = γ*(c_packed + d_packed*B⁴)`
+
+    For unsigned-W MUL (`na = nb = np = 0`) the cross-terms vanish and
+    d-chunks are 0, reducing to `fab*A_32*B_32 = γ*c_low32`. -/
+theorem mul_w_packed_of_chunks_int
+    (a₀ a₁ b₀ b₁ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
+     cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
+     fab na_fb nb_fa na nb np : ℤ)
+    (hC31 : fab * a₀ * b₀ - (1 - 2 * np) * c₀ - cy₀ * 65536 = 0)
+    (hC32 : fab * a₁ * b₀ + fab * a₀ * b₁ - (1 - 2 * np) * c₁
+              + cy₀ - cy₁ * 65536 = 0)
+    (hC33 : fab * a₁ * b₁ + a₀ * nb_fa + b₀ * na_fb - (1 - 2 * np) * c₂
+              + cy₁ - cy₂ * 65536 = 0)
+    (hC34 : a₁ * nb_fa + b₁ * na_fb - (1 - 2 * np) * c₃
+              + cy₂ - cy₃ * 65536 = 0)
+    (hC35 : na * nb - np - (1 - 2 * np) * d₀
+              + cy₃ - cy₄ * 65536 = 0)
+    (hC36 : -(1 - 2 * np) * d₁ + cy₄ - cy₅ * 65536 = 0)
+    (hC37 : -(1 - 2 * np) * d₂ + cy₅ - cy₆ * 65536 = 0)
+    (hC38 : -(1 - 2 * np) * d₃ + cy₆ = 0) :
+    fab * (a₀ + a₁ * 65536) * (b₀ + b₁ * 65536)
+      + (nb_fa * (a₀ + a₁ * 65536) + na_fb * (b₀ + b₁ * 65536))
+          * (65536 * 65536)
+      + (na * nb - np) * (65536 * 65536 * 65536 * 65536)
+      = (1 - 2 * np)
+          * ((c₀ + c₁ * 65536 + c₂ * (65536 * 65536)
+                + c₃ * (65536 * 65536 * 65536))
+             + (d₀ + d₁ * 65536 + d₂ * (65536 * 65536)
+                + d₃ * (65536 * 65536 * 65536))
+               * (65536 * 65536 * 65536 * 65536)) := by
+  linear_combination
+    hC31
+    + 65536 * hC32
+    + (65536 * 65536) * hC33
+    + (65536 * 65536 * 65536) * hC34
+    + (65536 * 65536 * 65536 * 65536) * hC35
+    + (65536 * 65536 * 65536 * 65536 * 65536) * hC36
+    + (65536 * 65536 * 65536 * 65536 * 65536 * 65536) * hC37
+    + (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536) * hC38
+
+/-- **W-mode (m32=1) DIV chunk aggregator over ℤ (natural form).**
+
+    The W chunk constraints for DIV (m32=1, div=1, operand+remainder pin
+    `a₂=a₃=b₂=b₃=d₂=d₃=0`):
+
+    * C31': `fab*a₀*b₀ + δ*d₀ - γ*c₀ - cy₀*65536 = 0`
+    * C32': `fab*(a₁*b₀+a₀*b₁) + δ*d₁ - γ*c₁ + cy₀ - cy₁*65536 = 0`
+    * C33': `fab*a₁*b₁ + a₀*nb_fa + b₀*na_fb + (nr - np) - γ*c₂ + cy₁ - cy₂*65536 = 0`
+    * C34': `a₁*nb_fa + b₁*na_fb - γ*c₃ + cy₂ - cy₃*65536 = 0`
+    * C35': `na*nb + cy₃ - cy₄*65536 = 0`
+    * C36'..C38': pure telescope
+
+    Note the `(nr - np)` term in C33 comes from the `m32`-gated
+    `-(np*div) + nr` term in the PIL constraint (with div=1, m32=1).
+    The d-chunk terms in C35-C38 vanish under `(1-div)=0` gating (DIV
+    mode), unlike MUL-W where they survive.
+
+    Aggregate to the natural DIV-W identity:
+    `fab*A_32*B_32 + (nb_fa*A_32 + na_fb*B_32)*B² + δ*D_32 + (nr-np)*B² + na*nb*B⁴
+       = γ*c_packed`
+
+    For unsigned-W DIV (`na=nb=np=nr=0`): cross-terms vanish, `(nr-np)=0`,
+    `na*nb=0`, reducing to `fab*A_32*B_32 + δ*D_32 = γ*c_packed`. -/
+theorem div_w_packed_of_chunks_int
+    (a₀ a₁ b₀ b₁ c₀ c₁ c₂ c₃ d₀ d₁
+     cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
+     fab na_fb nb_fa na nb np nr : ℤ)
+    (hC31 : fab * a₀ * b₀ + (1 - 2 * nr) * d₀ - (1 - 2 * np) * c₀
+              - cy₀ * 65536 = 0)
+    (hC32 : fab * a₁ * b₀ + fab * a₀ * b₁ + (1 - 2 * nr) * d₁
+              - (1 - 2 * np) * c₁
+              + cy₀ - cy₁ * 65536 = 0)
+    (hC33 : fab * a₁ * b₁ + a₀ * nb_fa + b₀ * na_fb + (nr - np)
+              - (1 - 2 * np) * c₂
+              + cy₁ - cy₂ * 65536 = 0)
+    (hC34 : a₁ * nb_fa + b₁ * na_fb - (1 - 2 * np) * c₃
+              + cy₂ - cy₃ * 65536 = 0)
+    (hC35 : na * nb + cy₃ - cy₄ * 65536 = 0)
+    (hC36 : cy₄ - cy₅ * 65536 = 0)
+    (hC37 : cy₅ - cy₆ * 65536 = 0)
+    (hC38 : cy₆ = 0) :
+    fab * (a₀ + a₁ * 65536) * (b₀ + b₁ * 65536)
+      + (nb_fa * (a₀ + a₁ * 65536) + na_fb * (b₀ + b₁ * 65536))
+          * (65536 * 65536)
+      + (1 - 2 * nr) * (d₀ + d₁ * 65536)
+      + (nr - np) * (65536 * 65536)
+      + na * nb * (65536 * 65536 * 65536 * 65536)
+      = (1 - 2 * np)
+          * (c₀ + c₁ * 65536 + c₂ * (65536 * 65536)
+              + c₃ * (65536 * 65536 * 65536)) := by
+  linear_combination
+    hC31
+    + 65536 * hC32
+    + (65536 * 65536) * hC33
+    + (65536 * 65536 * 65536) * hC34
+    + (65536 * 65536 * 65536 * 65536) * hC35
+    + (65536 * 65536 * 65536 * 65536 * 65536) * hC36
+    + (65536 * 65536 * 65536 * 65536 * 65536 * 65536) * hC37
+    + (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536) * hC38
+
 /-! ## Part 6 — FGL → ℤ entry-point aggregators -/
 
 /-- **FGL → ℤ entry-point: signed MUL.** -/
