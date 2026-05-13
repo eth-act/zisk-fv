@@ -8,8 +8,8 @@
 # requires explicit reviewer ack via a baseline diff.
 #
 # Total theorems: 63
-# Aggregate total binders: 2339
-# Aggregate hypothesis binders: 1357
+# Aggregate total binders: 2331
+# Aggregate hypothesis binders: 1349
 #
 ZiskFv.Equivalence.Add.equiv_ADD total=41 hypothesis=27
 ZiskFv.Equivalence.Addi.equiv_ADDI total=39 hypothesis=26
@@ -17,7 +17,7 @@ ZiskFv.Equivalence.Addiw.equiv_ADDIW total=76 hypothesis=43
 ZiskFv.Equivalence.Addw.equiv_ADDW total=76 hypothesis=42
 ZiskFv.Equivalence.And.equiv_AND total=35 hypothesis=21
 ZiskFv.Equivalence.Andi.equiv_ANDI total=34 hypothesis=21
-ZiskFv.Equivalence.Auipc.equiv_AUIPC total=28 hypothesis=18
+ZiskFv.Equivalence.Auipc.equiv_AUIPC total=25 hypothesis=15
 ZiskFv.Equivalence.BranchEqual.equiv_BEQ total=19 hypothesis=12
 ZiskFv.Equivalence.BranchGreaterEqual.equiv_BGE total=19 hypothesis=12
 ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU total=19 hypothesis=12
@@ -29,15 +29,15 @@ ZiskFv.Equivalence.Divu.equiv_DIVU total=49 hypothesis=37
 ZiskFv.Equivalence.Divuw.equiv_DIVUW total=25 hypothesis=16
 ZiskFv.Equivalence.Divw.equiv_DIVW total=25 hypothesis=16
 ZiskFv.Equivalence.Fence.equiv_FENCE total=14 hypothesis=6
-ZiskFv.Equivalence.Jal.equiv_JAL total=33 hypothesis=21
-ZiskFv.Equivalence.Jalr.equiv_JALR total=38 hypothesis=23
+ZiskFv.Equivalence.Jal.equiv_JAL total=31 hypothesis=19
+ZiskFv.Equivalence.Jalr.equiv_JALR total=36 hypothesis=21
 ZiskFv.Equivalence.Lb.equiv_LB total=37 hypothesis=20
 ZiskFv.Equivalence.Lh.equiv_LH total=37 hypothesis=21
 ZiskFv.Equivalence.LoadBU.equiv_LBU total=34 hypothesis=15
 ZiskFv.Equivalence.LoadD.equiv_LD total=28 hypothesis=13
 ZiskFv.Equivalence.LoadHU.equiv_LHU total=32 hypothesis=15
 ZiskFv.Equivalence.LoadWU.equiv_LWU total=32 hypothesis=15
-ZiskFv.Equivalence.Lui.equiv_LUI total=23 hypothesis=13
+ZiskFv.Equivalence.Lui.equiv_LUI total=22 hypothesis=12
 ZiskFv.Equivalence.Lw.equiv_LW total=40 hypothesis=23
 ZiskFv.Equivalence.Mul.equiv_MUL total=49 hypothesis=35
 ZiskFv.Equivalence.MulH.equiv_MULH total=25 hypothesis=16

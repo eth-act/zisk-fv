@@ -12,18 +12,18 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 2339
+# Total rows: 2331
 # Category bridge: 35
 # Category bus_shape: 509
 # Category byte_chain: 55
 # Category entry: 67
 # Category loose: 376
 # Category match: 91
-# Category other: 569
+# Category other: 568
 # Category range: 96
 # Category row: 69
 # Category state: 217
-# Category transpile: 165
+# Category transpile: 158
 # Category validator: 90
 #
 ZiskFv.Equivalence.Add.equiv_ADD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
@@ -349,12 +349,9 @@ ZiskFv.Equivalence.Auipc.equiv_AUIPC 018 h_rd_as [bus_shape] e_rd.as.val = 1
 ZiskFv.Equivalence.Auipc.equiv_AUIPC 019 h_nextPC_eq [transpile] (PureSpec.execute_AUIPC_pure auipc_input).nextPC = nextPC_val
 ZiskFv.Equivalence.Auipc.equiv_AUIPC 020 h_rd_idx [transpile] auipc_input.rd = Transpiler.wrap_to_regidx e_rd.ptr
 ZiskFv.Equivalence.Auipc.equiv_AUIPC 021 h_circuit [other] ZiskFv.Tactics.UTypeArchetype.auipc_archetype_circuit_holds m r_main next_pc
-ZiskFv.Equivalence.Auipc.equiv_AUIPC 022 h_offset_bridge [transpile] (m.jmp_offset2 r_main).val = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitV
-ZiskFv.Equivalence.Auipc.equiv_AUIPC 023 h_lane_lo [transpile] ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd
-ZiskFv.Equivalence.Auipc.equiv_AUIPC 024 h_lane_hi [transpile] ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd
-ZiskFv.Equivalence.Auipc.equiv_AUIPC 025 h_no_wrap [other] auipc_input.PC.toNat + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12)
-ZiskFv.Equivalence.Auipc.equiv_AUIPC 026 h_lo_bound [range] (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296
-ZiskFv.Equivalence.Auipc.equiv_AUIPC 027 h_pc_offset_lt_2_32 [range] (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toN
+ZiskFv.Equivalence.Auipc.equiv_AUIPC 022 h_no_wrap [other] auipc_input.PC.toNat + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12)
+ZiskFv.Equivalence.Auipc.equiv_AUIPC 023 h_lo_bound [range] (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296
+ZiskFv.Equivalence.Auipc.equiv_AUIPC 024 h_pc_offset_lt_2_32 [range] (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toN
 ZiskFv.Equivalence.BranchEqual.equiv_BEQ 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.BranchEqual.equiv_BEQ 001 beq_input [other] PureSpec.BeqInput
 ZiskFv.Equivalence.BranchEqual.equiv_BEQ 002 imm [other] BitVec 13
@@ -637,11 +634,9 @@ ZiskFv.Equivalence.Jal.equiv_JAL 024 h_success [other] (PureSpec.execute_JAL_pur
 ZiskFv.Equivalence.Jal.equiv_JAL 025 h_nextPC_option [transpile] (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val
 ZiskFv.Equivalence.Jal.equiv_JAL 026 h_rd_idx [transpile] jal_input.rd = Transpiler.wrap_to_regidx e_rd.ptr
 ZiskFv.Equivalence.Jal.equiv_JAL 027 h_circuit [other] ZiskFv.Circuit.Jal.jal_circuit_holds m r_main next_pc
-ZiskFv.Equivalence.Jal.equiv_JAL 028 h_lane_lo [transpile] ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd
-ZiskFv.Equivalence.Jal.equiv_JAL 029 h_lane_hi [transpile] ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd
-ZiskFv.Equivalence.Jal.equiv_JAL 030 h_pc_bound [other] jal_input.PC.toNat < GL_prime - 4
-ZiskFv.Equivalence.Jal.equiv_JAL 031 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
-ZiskFv.Equivalence.Jal.equiv_JAL 032 h_pc_offset_lt_2_32 [range] (jal_input.PC + 4#64).toNat < 4294967296
+ZiskFv.Equivalence.Jal.equiv_JAL 028 h_pc_bound [other] jal_input.PC.toNat < GL_prime - 4
+ZiskFv.Equivalence.Jal.equiv_JAL 029 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
+ZiskFv.Equivalence.Jal.equiv_JAL 030 h_pc_offset_lt_2_32 [range] (jal_input.PC + 4#64).toNat < 4294967296
 ZiskFv.Equivalence.Jalr.equiv_JALR 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Jalr.equiv_JALR 001 jalr_input [other] PureSpec.JalrInput
 ZiskFv.Equivalence.Jalr.equiv_JALR 002 imm [other] BitVec 12
@@ -675,11 +670,9 @@ ZiskFv.Equivalence.Jalr.equiv_JALR 029 h_success [other] (PureSpec.execute_JALR_
 ZiskFv.Equivalence.Jalr.equiv_JALR 030 h_nextPC_option [transpile] (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val
 ZiskFv.Equivalence.Jalr.equiv_JALR 031 h_rd_idx [transpile] jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr
 ZiskFv.Equivalence.Jalr.equiv_JALR 032 h_circuit [other] ZiskFv.Circuit.Jalr.jalr_circuit_holds m r_main next_pc
-ZiskFv.Equivalence.Jalr.equiv_JALR 033 h_lane_lo [transpile] ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd
-ZiskFv.Equivalence.Jalr.equiv_JALR 034 h_lane_hi [transpile] ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd
-ZiskFv.Equivalence.Jalr.equiv_JALR 035 h_pc_bound [other] jalr_input.PC.toNat < GL_prime - 4
-ZiskFv.Equivalence.Jalr.equiv_JALR 036 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
-ZiskFv.Equivalence.Jalr.equiv_JALR 037 h_pc_offset_lt_2_32 [range] (jalr_input.PC + 4#64).toNat < 4294967296
+ZiskFv.Equivalence.Jalr.equiv_JALR 033 h_pc_bound [other] jalr_input.PC.toNat < GL_prime - 4
+ZiskFv.Equivalence.Jalr.equiv_JALR 034 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
+ZiskFv.Equivalence.Jalr.equiv_JALR 035 h_pc_offset_lt_2_32 [range] (jalr_input.PC + 4#64).toNat < 4294967296
 ZiskFv.Equivalence.Lb.equiv_LB 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lb.equiv_LB 001 lb_input [other] PureSpec.LbInput
 ZiskFv.Equivalence.Lb.equiv_LB 002 mstatus [other] RegisterType Register.mstatus
@@ -902,7 +895,6 @@ ZiskFv.Equivalence.Lui.equiv_LUI 018 h_rd_as [bus_shape] e_rd.as.val = 1
 ZiskFv.Equivalence.Lui.equiv_LUI 019 h_nextPC_eq [transpile] (PureSpec.execute_LUI_pure lui_input).nextPC = nextPC_val
 ZiskFv.Equivalence.Lui.equiv_LUI 020 h_rd_idx [transpile] lui_input.rd = Transpiler.wrap_to_regidx e_rd.ptr
 ZiskFv.Equivalence.Lui.equiv_LUI 021 h_circuit [other] ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc
-ZiskFv.Equivalence.Lui.equiv_LUI 022 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e_rd
 ZiskFv.Equivalence.Lw.equiv_LW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lw.equiv_LW 001 lw_input [other] PureSpec.LwInput
 ZiskFv.Equivalence.Lw.equiv_LW 002 mstatus [other] RegisterType Register.mstatus
