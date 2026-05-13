@@ -1,0 +1,613 @@
+# Per-AIR axiom inventory and predicted-gap map
+
+> **Planning surface for Step 4 of `plan-to-completely-resolve-wild-lynx.md`.**
+> Companion to [`docs/fv/discharge-recipe.md`](discharge-recipe.md) (the
+> 5-category framework) and [`docs/fv/trusted-base.md`](trusted-base.md)
+> (the trust ledger source of truth). For each of the 7 *provider AIRs*
+> exposed by the per-opcode equivalence proofs, this doc enumerates the
+> trust-ledger axioms that already cover the AIR and predicts the
+> additional axiom surface the AIR's *discharge pilot* is expected to
+> need, by walking DIV's 5-category template against the AIR's
+> shape.
+
+## Scope and reading guide
+
+The 7 provider AIRs covered here are the AIRs whose discharge
+bridges live under `ZiskFv/Equivalence/Bridge/`. They are the
+provider side of the cross-AIR matching identities that every
+canonical `equiv_<OP>` theorem either consumes (Tier-3 shapes) or
+will consume after promise discharge (Tier-1 / Tier-2 shapes). See
+[`docs/fv/known-gaps.md`](known-gaps.md) for the tiering.
+
+**Snapshot.** This inventory is taken at commit `83532d7` — the
+state immediately after the DIV pilot closed (Step 4 of
+`plan-to-completely-resolve-wild-lynx.md`'s pilot phase). Trust
+ledger size at this commit: **116 axioms** across ~11 classes.
+
+**Categories from `discharge-recipe.md`.** Each "Predicted gaps"
+section walks five categories the DIV pilot established:
+
+1. **Lane-match** — the cross-AIR equation linking Main's emission
+   slots to the provider AIR's witness columns (op-bus
+   `matches_entry`, c-lane chain, etc.).
+2. **Mode pins** — table-lookup-pinned mode columns on the provider
+   AIR (`m32`, `sext`, `div`, etc.) that select the row's
+   constraint specialization.
+3. **Sign-witness pins** — table-lookup-pinned sign columns (`np`,
+   `nb`, `nr`, `na`) tying sign witnesses to MSBs of signed inputs.
+   Only relevant when the AIR has signed paths.
+4. **Range/bound** — range-checker bus soundness on chunk / carry /
+   byte columns (the `bits(K)` annotations in PIL) plus magnitude
+   bounds (e.g. DIV's Euclidean-remainder bound).
+5. **Operand bridges** — cross-shape equalities between the
+   provider AIR's input chunks and the operands the Sail spec
+   reads from registers (the `signed_packed_toInt_eq_of_read_xreg`
+   / `unsigned_packed_toNat_eq_of_read_xreg` bridges).
+
+For each AIR, the "Predicted gaps" section flags each category as:
+
+* **Discharged** — axiom already on the trust ledger.
+* **Bridge-only** — closed by a pure-Lean derivation under an
+  existing axiom (no new axiom needed).
+* **Predicted** — likely to need a new axiom; class and PIL
+  citation suggested.
+* **TBD** — to be determined by the AIR's pilot.
+
+## Trust-ledger snapshot by AIR
+
+| AIR | Provider axioms (this AIR's specific axioms) | Cross-AIR axioms consumed | Total fingerprint |
+|---|---|---|---|
+| **BinaryAdd** | 1 | 1 (op-bus) | 2 |
+| **Binary** | 3 + 1 (table) | 1 (op-bus) | 5 |
+| **BinaryExtension** | 3 + 1 (table) | 1 (op-bus) | 5 |
+| **ArithMul** | (see Arith Ranges, shared with ArithDiv) | 1 (op-bus) | shares 17 with ArithDiv |
+| **ArithDiv** | 17 in Arith Ranges (shared with ArithMul) | 2 (op-bus primary + secondary) | shares 17 with ArithMul |
+| **Mem** | 8 in MemBridge/MemAlignBridge + 2 (LaneMatch) + 1 (EntryRanges) + 2 (MemModel) | — | 13 |
+| **ControlFlow** | (none specific) | — | 0 (relies on Main range + transpile + memory-bus axioms when JAL/JALR/AUIPC store_pc fires) |
+
+Cross-cutting axioms NOT counted in any AIR's column (because they
+apply globally):
+
+* 66 transpile contracts in `Fundamentals/Transpiler.lean` — one
+  per RV64IM instruction kind, consumed by every per-opcode proof.
+* 4 platform-feature axioms in `Sail/Auxiliaries.lean` (PMP / CLINT
+  / PMA / Zicfilp).
+* 1 main-range axiom (`main_columns_in_range`) in
+  `Airs/Main/Ranges.lean`.
+
+Total: 13 + 0 + 5 + 5 + 17 (Arith shared) + 1 (BinaryAdd) + 66
+(transpile) + 4 (platform) + 1 (main range) + 2 (op-bus
+ArithMul/ArithDivSecondary not separately counted above) +
+remainder = 116. The "fingerprint" column above counts only the
+AIR-specific axioms most likely to dominate the AIR's discharge
+pilot, not the cross-cutting infrastructure.
+
+---
+
+## BinaryAdd (covers 2 opcodes: ADD, ADDI)
+
+**Validator:** `ZiskFv/Airs/Binary/BinaryAdd.lean::Valid_BinaryAdd`
+**Discharge bridge:** `ZiskFv/Equivalence/Bridge/BinaryAdd.lean`
+**Provider-bus axiom:** `op_bus_perm_sound_BinaryAdd` in
+`ZiskFv/Airs/OperationBus/Bridge.lean:54`
+
+### Trust-ledger axioms already in place
+
+| Axiom | Class | Source | Discharges |
+|---|---|---|---|
+| `op_bus_perm_sound_BinaryAdd` | #4 (op-bus perm) | `Airs/OperationBus/Bridge.lean:54` | cross-AIR matches_entry between Main's op-bus consumer and BinaryAdd's provider |
+| `binary_add_columns_in_range` | #5b (range-bus) | `Airs/Binary/BinaryAddRanges.lean:59` | chunk-range bounds on BinaryAdd's `bits(N)`-annotated columns |
+
+### Predicted gaps for the AIR's discharge pilot
+
+* **Lane-match:** Discharged. The op-bus axiom plus the lane-match
+  packaging in `Bridge/BinaryAdd.lean` already supplies the
+  Main↔BinaryAdd row-match identity. The remaining downstream work
+  (`RdValDerivation.Arith.h_rd_val_arith_add`) is pure Lean atop
+  these axioms.
+* **Mode pins:** N/A. BinaryAdd has no mode-selector columns —
+  ADD and ADDI share the same row shape.
+* **Sign-witness pins:** N/A. ADD/ADDI are unsigned add; there is
+  no MSB-tied sign witness column.
+* **Range/bound:** Discharged via `binary_add_columns_in_range`.
+* **Operand bridges:** Discharged via `Bridge/SailStateBridge.lean`'s
+  `add_input_bridges_of_read_xreg` (pure Lean; no axiom).
+
+### Pilot scope
+
+When ArithDiv's pilot ran (DIV), it added 6 axioms across classes 4
+and 6b. Expected for BinaryAdd: **0–1 new axioms**. The shape is
+the simplest of the seven — single bus, no mode/sign columns. Any
+new axiom would most likely sit in the lane-match category if the
+existing op-bus axiom's hypotheses prove insufficient for ADD's
+specific `Valid_Main`↔`Valid_BinaryAdd` row-shape bridge.
+
+---
+
+## Binary (covers 14 opcodes: AND, ANDI, OR, ORI, XOR, XORI, SLT, SLTI, SLTU, SLTIU, SUB, SUBW, ADDIW, ADDW)
+
+**Validator:** `ZiskFv/Airs/Binary/Binary.lean::Valid_Binary`
+**Discharge bridge:** `ZiskFv/Equivalence/Bridge/Binary.lean`
+**Provider-bus axiom:** `op_bus_perm_sound_Binary` in
+`ZiskFv/Airs/OperationBus/Bridge.lean:77`
+
+### Trust-ledger axioms already in place
+
+| Axiom | Class | Source | Discharges |
+|---|---|---|---|
+| `op_bus_perm_sound_Binary` | #4 (op-bus perm) | `Airs/OperationBus/Bridge.lean:77` | cross-AIR matches_entry for Binary-shape opcodes |
+| `binary_columns_in_range` | #6 (range-bus) | `Airs/Binary/BinaryRanges.lean:56` | chunk-range bounds on Binary's `bits(8)` byte columns |
+| `binary_per_byte_lookup_witness` | #6 (range-bus) | `Airs/Binary/BinaryRanges.lean:149` | per-byte BinaryTable lookup witness — links each row byte slot to a `consumer_byte_match_chain` instance |
+| `binary_carry_bits_in_range` | #6 (range-bus) | `Airs/Binary/BinaryRanges.lean:198` | `(v.carry_i r).val < 2` for the 8 `bits(1) carry[BYTES]` columns (`binary.pil:67`) — needed for AND/OR/XOR `c_7 = 0` derivation |
+| `bin_table_consumer_wf` | #6 (lookup-bus) | `Airs/BinaryTable.lean:281` | BinaryTable consumer rows (`multiplicity = 1`) satisfy `wf_properties` |
+
+### Predicted gaps for the AIR's discharge pilot
+
+* **Lane-match:** Discharged. Op-bus axiom plus the per-byte lookup
+  witness give the byte-level chain that downstream `equiv_<OP>`
+  theorems substitute into `h_match_clo` / `h_match_chi`.
+* **Mode pins:** **Predicted.** Binary covers 14 ops across several
+  sub-shapes (AND/OR/XOR byte-local logic; SUB/SUBW/SLT*/ADDIW/ADDW
+  with carry-chain). The PIL row at `binary.pil` discriminates
+  these via `op` literal and `m32` (W-mode). At least one mode-pin
+  axiom is likely needed to pin `m32 ∈ {0, 1}` from the op literal
+  (analogous to DIV's `arith_table_op_div_rem_signed_mode_pin`).
+  Class #6 (table-lookup soundness on the binary AIR's row-type
+  selector lookup).
+* **Sign-witness pins:** **Predicted.** SLT / SLTI involve signed
+  comparison; ADDIW / ADDW / SUBW involve 32-bit sign extension.
+  At minimum a sign-of-result / sign-of-operand pin will be needed
+  for SLT-family — likely class #6, analog to
+  `arith_div_np_eq_msb_of_dividend`. PIL cite: TBD — by inspection
+  of `binary.pil`'s signed-op rows.
+* **Range/bound:** Mostly discharged via `binary_columns_in_range`
+  + `binary_carry_bits_in_range`. **Bridge-only** for the
+  `carry_7 = 0` derivation for AND/OR/XOR (already done via
+  `Bridge.Binary.carry_7_zero_{AND,OR,XOR}_pure`).
+* **Operand bridges:** Discharged via `Bridge/SailStateBridge.lean`
+  per opcode shape. ADDIW / SUBW / ADDW will use a packed-nat lift
+  on 32-bit operands plus the `transpile_*W` axioms — pure Lean
+  atop existing axioms.
+
+### Pilot scope
+
+When ArithDiv's pilot ran, it added 6 axioms across classes 4 and
+6b. Expected for Binary: **~2–4 new axioms** spread across mode
+pins (1–2 axioms for `m32` and op-literal pinning) and sign-witness
+pins (1–2 axioms for SLT-family signed comparison). The byte-chain
+infrastructure is already in place; the gap is on mode/sign for the
+14-opcode coverage. Larger surface than BinaryAdd because of the
+op-class diversity.
+
+---
+
+## BinaryExtension (covers 15 opcodes: SLL, SLLI, SRL, SRLI, SRA, SRAI, SLLW, SRLW, SRAW, SLLIW, SRLIW, SRAIW, plus internal SEXT_B/SEXT_H/SEXT_W consumed by LB/LH/LW)
+
+**Validator:** `ZiskFv/Airs/Binary/BinaryExtension.lean::Valid_BinaryExtension`
+**Discharge bridge:** `ZiskFv/Equivalence/Bridge/BinaryExtension.lean`
+**Provider-bus axiom:** `op_bus_perm_sound_BinaryExtension` in
+`ZiskFv/Airs/OperationBus/Bridge.lean:101`
+
+### Trust-ledger axioms already in place
+
+| Axiom | Class | Source | Discharges |
+|---|---|---|---|
+| `op_bus_perm_sound_BinaryExtension` | #4 (op-bus perm) | `Airs/OperationBus/Bridge.lean:101` | cross-AIR matches_entry for BinaryExtension-shape opcodes |
+| `binary_extension_columns_in_range` | #6 (range-bus) | `Airs/Binary/BinaryExtensionRanges.lean:53` | chunk-range bounds on BinaryExtension's `bits(8)` byte columns |
+| `binary_extension_row_byte_lookups` | #6 (range-bus) | `Airs/Binary/BinaryExtensionRanges.lean:136` | per-byte BinaryExtensionTable lookup witness for each row's byte slots |
+| `binary_extension_op_is_shift_pin` | #6 (table-pin) | `Airs/Binary/BinaryExtensionRanges.lean:106` | pins `v.op_is_shift r = 1` for shift literals / 0 for SEXT literals (per `binary_extension.pil:88,92`) |
+| `bin_ext_table_consumer_wf` | #6 (lookup-bus) | `Airs/BinaryExtensionTable.lean:262` | BinaryExtensionTable consumer rows satisfy `wf_properties` (covers SEXT_B/H/W) |
+
+### Predicted gaps for the AIR's discharge pilot
+
+* **Lane-match:** Discharged. Op-bus + per-byte lookup witness give
+  the cross-AIR equations downstream shifts and SEXT loads
+  substitute into `h_match_clo` / `h_match_chi`.
+* **Mode pins:** Discharged for the shift/SEXT split via
+  `binary_extension_op_is_shift_pin`. Additional W-vs-non-W mode
+  pin **predicted** for the `*IW` family (SLLIW, SRLIW, SRAIW) —
+  the W variants restrict the shift count to `[0, 32)` vs `[0, 64)`
+  for the 64-bit shifts; a row-side pin on `m32` (or equivalent)
+  may be needed. PIL cite: `binary_extension.pil` W-rows; class #6.
+* **Sign-witness pins:** **Predicted.** SRA / SRAI / SRAW / SRAIW
+  perform arithmetic right shift — the sign-extension byte
+  inserted into the MSB must be pinned to MSB(input) on the
+  provider AIR side. Likely one new class-#6 axiom analog to
+  `arith_div_np_eq_msb_of_dividend`. PIL cite: `binary_extension.pil`
+  SRA/SRAI row signature.
+* **Range/bound:** Discharged via `binary_extension_columns_in_range`
+  + `binary_extension_row_byte_lookups`.
+* **Operand bridges:** Discharged via `Bridge/SailStateBridge.lean`
+  + `transpile_S{LL,RL,RA}*` axioms (already on the books for all
+  12 shift opcodes + 3 SEXT variants).
+
+### Pilot scope
+
+Expected for BinaryExtension: **~1–2 new axioms** — primarily the
+SRA-family sign-extension pin, possibly a W-mode mode-pin. Smaller
+surface than Binary's pilot because the AIR's row structure is more
+uniform (it's a pure shift / sign-extension AIR with no carry
+chain to discharge). The SEXT load path is already known to work
+(LB / LH / LW are closed via `Circuit/SextLoadBridge.lean` consuming
+`bin_ext_table_consumer_wf`); the pilot's job is to lift the same
+discharge to the 12 shift opcodes' `h_match_clo` / `h_match_chi`.
+
+---
+
+## ArithMul (covers 5 opcodes: MUL, MULH, MULHU, MULHSU, MULW)
+
+**Validator:** `ZiskFv/Airs/Arith/Mul.lean::Valid_ArithMul`
+**Discharge bridge:** `ZiskFv/Equivalence/Bridge/Arith.lean` —
+entry point `arith_mul_discharge_conservative`
+**Provider-bus axiom:** `op_bus_perm_sound_ArithMul` in
+`ZiskFv/Airs/OperationBus/Bridge.lean:120`
+
+ArithMul and ArithDiv share the Arith AIR's chunk / carry columns
+and the arith_table lookup. All "Arith Ranges" axioms listed here
+appear once in `ZiskFv/Airs/Arith/Ranges.lean` but cover both AIRs
+via separate signatures (`arith_mul_*` vs `arith_div_*`).
+
+### Trust-ledger axioms already in place (MUL-side)
+
+| Axiom | Class | Source | Discharges |
+|---|---|---|---|
+| `op_bus_perm_sound_ArithMul` | #4 (op-bus perm) | `Airs/OperationBus/Bridge.lean:120` | cross-AIR matches_entry for MUL-family opcodes |
+| `arith_mul_columns_in_range` | #6b (range-bus) | `Airs/Arith/Ranges.lean:43` | `bits(16)` chunk-range on a/b/c/d columns (PIL `arith.pil:17-20`) |
+| `arith_mul_carry_columns_in_range_unsigned` | #6b (range-bus) | `Airs/Arith/Ranges.lean:109` | 7-carry-witness range under unsigned mode (na=nb=np=nr=0) |
+| `arith_mul_carry_columns_in_range_signed` | #6b (range-bus) | `Airs/Arith/Ranges.lean:177` | signed-mode disjunctive carry-range (`arith.pil:280` + `arith_range_table.pil:69`) |
+| `arith_mul_carry_columns_in_range_w` | #6b (range-bus) | `Airs/Arith/Ranges.lean:296` | W-variant (m32=1) carry-range |
+| `arith_table_op_mulw_operand_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:340` | W-mode operand-chunk pin for MULW |
+| `main_external_arith_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:553` | rd-write entry byte-pack lanes equal Main's `c_0`/`c_1` for MUL/DIV-family rows (`is_external_op = 1`, `op ∈ 0xb0..0xbf`) — shared with ArithDiv |
+
+### Predicted gaps for the AIR's discharge pilot
+
+* **Lane-match:** Mostly discharged — op-bus axiom plus
+  `main_external_arith_emission_bundle` give the c_0/c_1 byte
+  lanes. **Predicted gap**: the MUL-family analog of DIV-pilot's
+  GAP-A hi-lane axiom `arith_table_op_div_rem_main_selector_pin`
+  is **missing** — there is no `arith_table_op_mul_main_selector_pin`
+  axiom on the books. Needed for MUL/MULH/MULHU/MULHSU to discharge
+  `h_byte_hi` via the `mul_bus_res1_eq_*` bridge analog (if such a
+  bridge exists in `Airs/Arith/Bridge1.lean` — TBD). Likely class
+  #6b. PIL cite: `arith.pil:286-287` + row-type table at
+  `arith.pil:222-234` (the `main_mul=1` rows for op = 0xb0..0xb3).
+* **Mode pins:** **Predicted.** MUL/MULH/MULHU/MULHSU each have
+  different signed-ness encodings (na, nb). The DIV-pilot mode-pin
+  axiom `arith_table_op_div_rem_signed_mode_pin` covers only signed
+  DIV/REM (`op ∈ {186, 187}`). A corresponding **MUL mode-pin axiom**
+  is **missing** — needs to pin `(na, nb, np, m32, sext)` for each
+  MUL variant. Estimate: 1 axiom (analogous to the DIV mode pin),
+  class #6b. PIL cite: `arith.pil:286-287` + MUL rows of
+  `arith_table.pil`.
+* **Sign-witness pins:** **Predicted.** MUL/MULH/MULHSU involve
+  signed inputs; the `na = MSB(A)` / `nb = MSB(B)` pins are
+  **missing** from the MUL side (DIV has them as
+  `arith_div_np_eq_msb_of_dividend` / `arith_div_nb_eq_msb_of_divisor`).
+  Estimate: 1–2 axioms, class #6b. PIL cite: same as DIV's
+  (`arith.pil:222-234` for row-type table + `arith.pil:286-287`).
+* **Range/bound:** Discharged for unsigned / signed / W carry
+  bounds. Magnitude bounds for the MUL result (analogous to DIV's
+  Euclidean-remainder bound) are **not predicted to be needed** —
+  MUL has no remainder; the product fits exactly in 2 × 64 bits and
+  is captured by the chunk-range axioms.
+* **Operand bridges:** Mostly discharged via existing transpile
+  axioms + chunk-range lifts. **Predicted gap** for MULHSU
+  specifically — the mixed signed × unsigned semantics may need a
+  bridge-only lemma combining `signed_packed_toInt_eq_of_read_xreg`
+  (for the signed operand) with `unsigned_packed_toNat_eq_of_read_xreg`
+  (for the unsigned operand). Likely no new axiom.
+
+### Pilot scope
+
+Expected for ArithMul: **~3–5 new axioms** — mode pin (1) + sign
+pins (1–2) + selector pin (1) + potentially a magnitude bound for
+the hi/lo lane split (1, low confidence). Slightly larger than the
+DIV pilot's 6-axiom delta because MUL has 5 sub-opcodes (vs DIV/REM's
+8 but with two unified pin axioms across them). The pilot will
+likely need a parallel `Compliance/MulPilot.lean` consuming both
+existing and new MUL-side axioms.
+
+---
+
+## ArithDiv (covers 8 opcodes: DIV, DIVU, DIVW, DIVUW, REM, REMU, REMW, REMUW)
+
+**Validator:** `ZiskFv/Airs/Arith/Div.lean::Valid_ArithDiv`
+**Discharge bridges:** `ZiskFv/Equivalence/Bridge/Arith.lean`
+(entry points `arith_div_discharge_conservative` and
+`arith_div_secondary_discharge_conservative`), plus the
+pilot wrapper `ZiskFv/Equivalence/Compliance/DivPilot.lean`.
+**Provider-bus axioms:**
+* `op_bus_perm_sound_ArithDiv` — `Airs/OperationBus/Bridge.lean:143`
+  (primary bus tuple, quotient lane)
+* `op_bus_perm_sound_ArithDivSecondary` — `Airs/OperationBus/Bridge.lean:159`
+  (companion remainder lane)
+
+### Trust-ledger axioms already in place (DIV-side)
+
+| Axiom | Class | Source | Discharges |
+|---|---|---|---|
+| `op_bus_perm_sound_ArithDiv` | #4 (op-bus perm) | `Airs/OperationBus/Bridge.lean:143` | DIV-primary cross-AIR matches_entry |
+| `op_bus_perm_sound_ArithDivSecondary` | #4 (op-bus perm) | `Airs/OperationBus/Bridge.lean:159` | DIV-secondary cross-AIR matches_entry |
+| `arith_div_columns_in_range` | #6b (range-bus) | `Airs/Arith/Ranges.lean:55` | `bits(16)` chunk-range on a/b/c/d (`arith.pil:17-20`) |
+| `arith_div_carry_columns_in_range_unsigned` | #6b (range-bus) | `Airs/Arith/Ranges.lean:126` | 7-carry-witness range under unsigned mode |
+| `arith_div_carry_columns_in_range_signed` | #6b (range-bus) | `Airs/Arith/Ranges.lean:193` | signed-mode disjunctive carry-range |
+| `arith_div_carry_columns_in_range_w` | #6b (range-bus) | `Airs/Arith/Ranges.lean:311` | W-variant carry-range |
+| `arith_table_op_div_rem_signed_d_sign_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:237` | for signed DIV/REM rows: `nr = np ∨ d[] = 0` |
+| `arith_table_op_div_rem_signed_w_d_sign_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:261` | W-mode analog of the above |
+| `arith_table_op_divw_operand_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:352` | W-mode operand-chunk pin for DIVW/REMW/DIVUW/REMUW |
+| `arith_table_op_div_rem_signed_mode_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:386` | DIV-pilot GAP-M: `sext=0, m32=0, div=1` for `op ∈ {186, 187}` |
+| `arith_table_op_div_rem_main_selector_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:427` | DIV-pilot GAP-A hi-lane: `main_div`/`main_mul` selector pin |
+| `arith_div_np_eq_msb_of_dividend` | #6b (table-pin) | `Airs/Arith/Ranges.lean:502` | DIV-pilot GAP-B: `np = MSB(C)` |
+| `arith_div_nb_eq_msb_of_divisor` | #6b (table-pin) | `Airs/Arith/Ranges.lean:530` | DIV-pilot GAP-B: `nb = MSB(B)` |
+| `arith_div_remainder_bound` | #6b (range-bus) | `Airs/Arith/Ranges.lean:602` | DIV-pilot GAP-C: Euclidean remainder magnitude/sign bound (`arith.pil:274`) |
+| `main_external_arith_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:553` | shared with ArithMul — rd-write byte-pack lanes |
+
+### Predicted gaps for the AIR's discharge pilot
+
+ArithDiv **is the piloted AIR** as of commit `83532d7`. The DIV
+pilot (`Compliance/DivPilot.lean`) closed all five categories for
+`equiv_DIV` end-to-end. Remaining items to lift the DIV pilot to
+the full 8-opcode DIV/REM family:
+
+* **Lane-match:** Discharged for DIV via `main_external_arith_emission_bundle`
+  + `arith_table_op_div_rem_main_selector_pin` + `div_bus_res1_eq_a_hi`.
+  Extension to REM (`op = 187`) reuses the same axioms (the selector
+  pin covers both `op = 186` and `op = 187`); REM-secondary uses
+  the secondary op-bus axiom. **Bridge-only** for DIVU/REMU
+  (unsigned analog using `arith_div_carry_columns_in_range_unsigned`).
+* **Mode pins:** Discharged for signed 64-bit (`op ∈ {186, 187}`)
+  via `arith_table_op_div_rem_signed_mode_pin`. Unsigned-mode and
+  W-mode mode pins are **partially predicted**: unsigned-mode pin
+  for `op ∈ {184, 185}` (DIVU/REMU) and W-mode pin for `op ∈ {0xba,
+  0xbb, 0xbc, 0xbd}` (DIVW/DIVUW/REMW/REMUW). Some of this is
+  already covered by `arith_table_op_divw_operand_pin` but a clean
+  mode-pin axiom for `(sext, m32, div) = (?, 1, 1)` may be needed.
+  Estimate: 1–2 new axioms, class #6b.
+* **Sign-witness pins:** Discharged for signed 64-bit DIV/REM via
+  the np/nb MSB pins. **Predicted gap** for signed W variants —
+  `arith_div_np_eq_msb_of_dividend_w` / analog needed if the W-mode
+  signed paths follow the same operand bridge. Estimate: 1–2
+  axioms, class #6b.
+* **Range/bound:** Discharged for signed 64-bit via
+  `arith_div_remainder_bound`. **Predicted gap** for the W-mode
+  Euclidean bound (32-bit magnitude). Estimate: 1 new axiom, class
+  #6b.
+* **Operand bridges:** Discharged for signed 64-bit via
+  `signed_packed_toInt_eq_of_read_xreg`. **Bridge-only** for
+  unsigned (analogous `unsigned_packed_toNat_eq_of_read_xreg`,
+  already in `SailStateBridge.lean`).
+
+### Pilot scope
+
+DIV pilot added 6 axioms across classes 4 and 6b (GAP-A, GAP-B,
+GAP-C, GAP-M, GAP-O — 4 class-#6b table/range pins + 2 class-#4
+op-bus literal corrections that were existing axioms with
+corrected statements, so net new = +6 since branch base).
+Extension to the remaining 7 DIV/REM opcodes (DIVU/DIVW/DIVUW/REMU/REMW/REMUW
++ REM via the secondary): expected **~2–4 additional axioms** for
+the W-mode and unsigned-mode mode/sign/range parallels. ArithDiv
+is the most axiom-heavy of the seven AIRs and will likely remain
+so post-discharge.
+
+---
+
+## Mem (covers 8 opcodes: LD, LBU, LHU, LWU, SB, SH, SW, SD — plus LB/LH/LW via the SEXT chain)
+
+The Mem provider is a **three-sub-provider** shape, all reachable
+through `Bridge/Mem.lean`:
+
+* **Mem core** (`Valid_Mem`) — aligned width-8 loads / stores.
+* **MemAlign** (`Valid_MemAlign`) — sub-doubleword (width 1/2/4)
+  read-aligned access for LBU / LHU / LWU.
+* **MemAlignByte / MemAlignReadByte** — narrower lookup paths used
+  by the MemAlign permutation closure.
+
+**Validator(s):** `ZiskFv/Airs/Mem.lean::Valid_Mem` plus the
+MemAlign* validators (not yet extracted as named-column wrappers at
+this commit — the AIR-inventory has them in Category B; the
+bridge axioms below absorb them).
+**Discharge bridge:** `ZiskFv/Equivalence/Bridge/Mem.lean`
+
+### Trust-ledger axioms already in place
+
+#### Mem core (aligned width-8)
+
+| Axiom | Class | Source | Discharges |
+|---|---|---|---|
+| `lookup_consumer_matches_provider_load` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:162` | Main-row load consumer (`b_*`, `as = 2`) is matched by a Mem-AIR row |
+| `lookup_consumer_matches_provider_store` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:178` | Main-row store consumer (`c_*`) is matched by a Mem-AIR row |
+| `main_load_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:374` | internal-copyb (load) Main-row b/c emission lane equalities — consumed by LD/LBU/LHU/LWU discharge |
+| `main_sext_load_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:433` | external-row analog of the above for signed loads (LB/LH/LW; `is_external_op = 1`, `op ∈ OP_SIGNEXTEND_*`) |
+| `main_store_pc_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:495` | rd-write entry lanes match `store_pc_lanes_match_{lo,hi}` for `is_external_op = 0`, `op ∈ {OP_FLAG, OP_COPYB}` — consumed by JAL/JALR/AUIPC/LUI |
+| `main_external_arith_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:553` | rd-write entry lanes for MUL/DIV-family rows — shared with ArithMul/ArithDiv |
+| `memory_bus_register_write_perm_sound` | #5 (memory-bus perm) | `Airs/MemoryBus/LaneMatch.lean:138` | Main rd-write entry pairs with a "next read" Mem row at same address |
+| `memory_bus_register_write_perm_sound_store_pc` | #5 (memory-bus perm) | `Airs/MemoryBus/LaneMatch.lean:329` | `store_pc = 1` variant of the above |
+| `memory_bus_entry_byte_range_perm_sound` | #5b (range-bus) | `Airs/MemoryBus/EntryRanges.lean:52` | every memory-bus entry's 8 `x0..x7` byte cells in `[0, 256)` |
+| `row_models_sail_state_load` | #2 (mem-state bridge) | `Circuit/MemModel.lean:127` | `wr=0` Mem row → Sail's `state.mem` agrees with the entry's bytes |
+| `row_models_sail_state_store` | #3 (mem-state bridge) | `Circuit/MemModel.lean:152` | `wr=1` Mem row → Sail's `state.mem` after store equals chained `insert` form |
+
+#### MemAlign / MemAlignByte / MemAlignReadByte (sub-doubleword loads)
+
+| Axiom | Class | Source | Discharges |
+|---|---|---|---|
+| `memalign_load_perm_sound` | #4 (memory-bus perm) | `Airs/MemoryBus/MemAlignBridge.lean:135` | sub-doubleword load consumers (`ind_width ∈ {1,2,4}`) are matched by a MemAlign / MemAlignByte / MemAlignReadByte row |
+| `mem_align_rom_subdoubleword_load_value_1_zero` | #4 (ROM-lookup) | `Airs/MemoryBus/MemAlignBridge.lean:168` | MemAlignRom pins `value_1 = 0` for sub-doubleword prove-side rows |
+
+### Predicted gaps for the AIR's discharge pilot
+
+* **Lane-match (Mem core):** Discharged for both loads and stores
+  via the `main_*_emission_bundle` family. Note this is heavier
+  than the Arith case — Mem has **five separate emission bundles**
+  (load, sext-load, store_pc, external_arith) because Main's
+  memory-bus emission shape varies with the op-class.
+* **Lane-match (MemAlign sub-doubleword):** Discharged for LBU /
+  LHU / LWU via `memalign_load_perm_sound` plus the derived
+  theorem `memalign_subdoubleword_load_high_bytes_zero` (in
+  `MemAlignBridge.lean`, pure Lean derivation).
+* **Mode pins:** N/A for Mem core in the usual sense (no
+  multi-mode rows). MemAlign has an `ind_width` selector that is
+  pinned by `mem_align_rom_subdoubleword_load_value_1_zero`'s ROM
+  lookup. **Predicted minor gap**: the MemAlign* validators are
+  not extracted as named-column wrappers yet (AIR inventory
+  Category B); a constructibility refactor will likely surface
+  small mode-pin equations as the named wrappers are stood up.
+* **Sign-witness pins:** N/A for Mem. Signed-load sign-extension
+  is handled by BinaryExtension (via the SEXT chain in
+  `Circuit/SextLoadBridge.lean`), not by Mem itself.
+* **Range/bound:** Discharged via `memory_bus_entry_byte_range_perm_sound`.
+* **Operand bridges:** Loads' read-address bridge and stores'
+  store-value bridge are discharged via pure-Lean derivations atop
+  the emission bundles + transpile axioms.
+
+### Constructibility note (Mem is special)
+
+Mem's discharge pilot — once the MemAlign* named-column wrappers
+are stood up — will likely **not need new trust-ledger axioms**.
+The axiom surface is the heaviest of any AIR (13 axioms) but the
+infrastructure is already in place. The next step for Mem is a
+**constructibility audit** (see CLAUDE.md's anti-laundering
+principle item 4): confirming each Mem / MemAlign* axiom's
+hypotheses are derivable from a real ZisK trace, NOT silently
+overstrong. This is a separate concern from "more axioms needed."
+
+### Pilot scope
+
+Expected for Mem (full pilot): **0–2 new axioms**, primarily for
+MemAlign* mode-pin closure if the named-column wrappers reveal
+gaps. Smallest projected delta of the seven AIRs — Mem was the
+first AIR to receive comprehensive axiom coverage (the
+load-output-eq-closure work in `docs/fv/plans/`) and its pilot is
+largely a packaging exercise atop existing axioms. The pilot will
+likely be a `Compliance/MemPilot.lean` consuming the 13 existing
+Mem axioms with no new additions.
+
+---
+
+## ControlFlow (covers 11 opcodes: AUIPC, BEQ, BGE, BGEU, BLT, BLTU, BNE, FENCE, JAL, JALR, LUI)
+
+ControlFlow is **not a provider AIR** in the same sense as the
+others — there is no `Valid_ControlFlow` (and no corresponding
+PIL AIR). These opcodes are **Main-only** — they consume from the
+Main AIR + the memory-bus (for rd-write on JAL/JALR/AUIPC/LUI),
+but not from a separate arithmetic provider AIR. The
+`Bridge/ControlFlow.lean` file packages these Main-only proofs.
+
+### Sub-shapes
+
+ControlFlow splits into three sub-shapes:
+
+1. **Branches** (`BEQ`, `BNE`, `BLT`, `BLTU`, `BGE`, `BGEU`,
+   `FENCE`) — no register write. Only the PC update matters.
+2. **U-type** (`AUIPC`, `LUI`) — rd-write of a PC-relative or
+   immediate constant.
+3. **Jumps** (`JAL`, `JALR`) — rd-write of return-address (PC + 4),
+   PC update to target.
+
+### Trust-ledger axioms already in place
+
+ControlFlow has **no AIR-specific axioms**. It consumes:
+
+| Axiom | Class | Source | When |
+|---|---|---|---|
+| `transpile_AUIPC`, `transpile_BEQ`, `transpile_BNE`, `transpile_JAL`, `transpile_JALR`, `transpile_FENCE`, `transpile_BLT`, `transpile_BGE`, `transpile_BLTU`, `transpile_BGEU`, `transpile_LUI` | #1 (transpile) | `Fundamentals/Transpiler.lean` | every opcode in the shape — Main column ↔ Sail-decoded `ast` |
+| `transpile_PC_for_JAL`, `transpile_PC_for_JALR`, `transpile_PC_for_AUIPC` | #1 (transpile) | `Fundamentals/Transpiler.lean:2719,2741,2770` | the PC-update half (separate axiom from the operand half) |
+| `main_columns_in_range` | #5b (range-bus) | `Airs/Main/Ranges.lean:67` | `bits(N)`-annotated Main column ranges |
+| `main_store_pc_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:495` | JAL/JALR/AUIPC/LUI rd-write entry lane equalities (`store_pc=0` or `store_pc=1` per op) |
+| `memory_bus_register_write_perm_sound{,_store_pc}` | #5 (memory-bus perm) | `Airs/MemoryBus/LaneMatch.lean:138,329` | rd-write entry pairs with Mem row (consumed by JAL/JALR/AUIPC/LUI) |
+| `memory_bus_entry_byte_range_perm_sound` | #5b (range-bus) | `Airs/MemoryBus/EntryRanges.lean:52` | register-write entry byte ranges (consumed by AUIPC, JAL) |
+
+### Predicted gaps for the AIR's discharge pilot
+
+* **Lane-match:**
+  * Branches: **Bridge-only.** No cross-AIR match — branches are
+    pure Main. The `r1_val` / `r2_val` packed-lane forms used by
+    BLT / BLTU / BGE / BGEU come from `Bridge/SailStateBridge.lean`
+    + transpile axioms; pure Lean.
+  * U-type: Discharged via `main_store_pc_emission_bundle`
+    (`store_pc = 0` specialization for LUI; `store_pc = 1` for
+    AUIPC).
+  * Jumps: Discharged via `main_store_pc_emission_bundle` +
+    transpile PC axioms.
+* **Mode pins:** N/A — these opcodes do not flow through a
+  provider AIR with mode columns.
+* **Sign-witness pins:** **Bridge-only.** BLT / BGE require signed
+  comparison; the sign of `r1_val.toInt - r2_val.toInt` is
+  computed in pure Lean from the packed-nat lift.
+* **Range/bound:** Discharged via `main_columns_in_range` +
+  `memory_bus_entry_byte_range_perm_sound`.
+* **Operand bridges:** Discharged via `Bridge/SailStateBridge.lean`
+  per opcode.
+
+### Pilot scope
+
+Expected for ControlFlow: **0 new axioms.** ControlFlow is the
+**only AIR with no AIR-specific axioms today** — it relies entirely
+on the transpile contracts (#1), main range (#5b), and memory-bus
+infrastructure (#4, #5, #5b) for rd-write. The pilot is a
+packaging exercise to demonstrate that the 11 ControlFlow opcodes'
+existing `equiv_<OP>` theorems can be lifted to a single
+`Compliance/ControlFlowPilot.lean` wrapper consuming only existing
+axioms. If new axioms surface during the pilot, the most likely
+candidates are constructibility-driven (a missing `transpile_*`
+contract for an edge case) — class #1. **Smallest predicted axiom
+delta of the seven AIRs.**
+
+---
+
+## Summary: per-AIR axiom counts and predicted deltas
+
+| AIR | Existing AIR-specific axioms | DIV-pilot template categories needing axioms | Predicted new axioms |
+|---|---|---|---|
+| BinaryAdd | 2 | none | 0–1 |
+| Binary | 5 | mode pins (1–2), sign-witness pins (1–2) | 2–4 |
+| BinaryExtension | 5 | sign-witness pins (1), possibly W mode pin (1) | 1–2 |
+| ArithMul | 6 (shares 11 of 17 with ArithDiv) | mode pin (1), sign pins (1–2), selector pin (1) | 3–5 |
+| ArithDiv (piloted) | 14 | W/unsigned extensions (mode + sign + range) | 2–4 (lift from DIV → 8 DIV/REM ops) |
+| Mem | 13 | constructibility-driven only | 0–2 |
+| ControlFlow | 0 (consumes #1, #4, #5, #5b) | none — Main-only shape | 0 |
+| **Total predicted** | **45** (excluding cross-cutting) | | **~8–18 new axioms** across remaining 6 pilots |
+
+Cross-cutting axioms NOT in the per-AIR tally above:
+
+* 66 transpile contracts (class #1)
+* 4 platform-feature axioms (classes #7–#10)
+* 1 `main_columns_in_range` (class #5b)
+* 6 op-bus permutation-soundness axioms (one per provider in
+  class #4)
+
+Grand total at this snapshot: **116 axioms** (matches
+`trust/baseline-axioms.txt`).
+
+### Where the surprise might come
+
+* **ArithMul** is the largest predicted delta — its pilot has to
+  re-do for MUL/MULH/MULHU/MULHSU/MULW most of what the DIV pilot
+  did for DIV/REM. Worth scoping carefully: 3–5 axioms is the
+  median estimate; the upper end (~5) lands if MULHSU's mixed-sign
+  operand bridge needs its own table-lookup pin.
+* **Binary** is wider in opcode coverage (14 ops) but most of the
+  per-op work is bridge-only after the mode-pin axiom lands. The
+  carry-7-zero AND/OR/XOR derivation is already in place
+  (`Bridge.Binary.carry_7_zero_*_pure`), which is the trickiest
+  part.
+* **ControlFlow** at zero new axioms is the most striking — but
+  validate with the pilot. If a JALR misaligned-target edge case
+  surfaces, a class-#1 transpile addendum could be needed.
+* **Mem** at 0–2 is contingent on the MemAlign* named-column
+  wrappers being clean. If extraction reveals gaps in MemAlignByte
+  / MemAlignReadByte, this could grow.
+
+### Flagged for review
+
+* **`main_external_arith_emission_bundle`** straddles ArithMul and
+  ArithDiv — it's counted under both in this document. The PIL
+  citation (`main.pil:311-312`) is identical for both consumers;
+  this is intentional (one bundle, two consumers).
+* **The op-bus axioms** are listed under each AIR's "provider-bus
+  axiom" header but counted only once in the totals
+  (`Airs/OperationBus/Bridge.lean` has 6 axioms total, one per
+  provider AIR). Total of 6 is consistent with the trust-ledger
+  snapshot.
+* **No axioms are currently uncategorizable** — every axiom in
+  `trust/baseline-axioms.txt` fits cleanly into one AIR's section
+  or one of the cross-cutting categories above.
