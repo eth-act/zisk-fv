@@ -204,22 +204,61 @@ EITHER:
    *kind*: this would assert spec equivalence, not row-level
    constraints).
 
-A parser-artifact note: `trust/scripts/check-no-output-eq.py`'s
-`split_params_and_conclusion` truncates the binder list at the first
-Lean line-comment (`--`) inside a binder gap, so `h_byte_sum_circuit`
-is **not** currently counted in `trust/baseline-hypothesis-count.txt`
-or `trust/baseline-caller-burden.txt` for any of the 9
-byte-sum-circuit ops. Removing it visibly does not move the metric;
-adding new binders does. This makes path (1) measurably regressive
-on the gate.
+A parser-artifact note (Round 3, now historical): the previous
+`trust/scripts/check-no-output-eq.py` `split_params_and_conclusion`
+truncated the binder list at the first Lean line-comment (`--`)
+inside a binder gap, so `h_byte_sum_circuit` was **not** counted in
+`trust/baseline-hypothesis-count.txt` or
+`trust/baseline-caller-burden.txt` for any of the 9
+byte-sum-circuit ops. The parser bug was fixed in commit `3800df2`
+and the baselines refreshed accordingly: each of the 9 ops now
+shows `total=25 hypothesis=16` (was 24/15) with
+`h_byte_sum_circuit` visible at index 024 in the caller-burden
+ledger.
 
-**Decision (Round 3):** all 9 byte-sum-circuit ops
-(MULH / MULHSU / MULW / DIV / DIVW / DIVUW / REM / REMW / REMUW) remain
-deferred until either the Tier-3 promotion is judged acceptable (with
-the metric refresh accompanying it) or a new trust class is escalated
-for arith-correctness axioms. Both routes are out of scope for the
-incremental lift series. Pre-existing skip rationale in
-commit `cf1900e` retained.
+**Round 3 re-attempt under fixed metric — still skipped.** With
+the parser fix in place, dropping `h_byte_sum_circuit` now scores
+as `−1 total / −1 hypothesis` per opcode. The two discharge
+routes (Tier-3 promotion, arith-correctness axiom) were
+re-evaluated against the corrected metric:
+
+* **Tier-3 promotion** still INFLATES. Concrete comparison: the
+  successful unsigned siblings `equiv_MUL` / `equiv_MULHU` /
+  `equiv_DIVU` / `equiv_REMU` carry `total=47..49 hypothesis=35..37`
+  — i.e. Tier-3 promotion costs ~24 binders per opcode (`v`,
+  `r_a`, 8 chunk ranges already absorbed into ranges discharge,
+  `h_chain`, 7 mode pins, `h_byte_lo`, `h_byte_hi`, `h_op1`,
+  `h_op2`, plus the carry-chain witness pack absorbed by the
+  Bridge helper). Net per-opcode metric: `−1 + 24 = +23 total` —
+  still strongly regressive.
+
+* **Narrow Arith-correctness axiom** would have to assert
+  `e2.bytes = operand-form spec output` (or an intermediate
+  equivalent tying e2 lanes directly to operand arithmetic).
+  Tracing the dependency chain in the constructive direction:
+  `e2.bytes → LaneMatch (Main.c lanes) → matches_entry (Arith
+  bus_res0/1) → Bridge1 (c_chunks_packed / a_chunks_packed /
+  d_chunks_packed) → carry chain (a_packed * b_packed) → operand
+  packing (r1_val / r2_val)`. To bypass this chain in a single
+  axiom requires asserting full Arith correctness at the bus
+  layer, which is **the spec equivalence itself** — a new trust
+  *kind* (output-form assertion), not range / lookup / permutation
+  soundness. Per `CLAUDE.md`'s anti-laundering principle, "every
+  new axiom must fit one of the 11+ trust classes already
+  documented … with a citation to a specific PIL line, Rust
+  function, or protocol-soundness theorem. New trust *kinds* are
+  a separate prior PR with explicit justification." Escalation
+  point reached; no axiom landed in this attempt.
+
+**Decision (Round 3, parser-fix-aware):** all 9 byte-sum-circuit
+ops (MULH / MULHSU / MULW / DIV / DIVW / DIVUW / REM / REMW /
+REMUW) remain deferred. Tier-3 promotion is mechanically possible
+but anti-laundering-regressive; a narrow arith-correctness axiom
+requires a new trust kind. Either route is a separate prior PR
+with explicit justification. Pre-existing skip rationale in
+commit `cf1900e` retained; this round's refresh adds no axioms,
+no binder drops, and no commits beyond the IOU-tracking
+documentation update.
 
 ### Arith Div (8 ops: DIV, DIVU, DIVW, DIVUW, REM, REMU, REMW, REMUW)
 
