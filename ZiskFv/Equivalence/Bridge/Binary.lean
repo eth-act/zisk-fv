@@ -2,12 +2,15 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Airs.Binary.BinaryPackedCorrect
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
+import ZiskFv.Airs.MemoryBus
+import ZiskFv.Airs.MemoryBus.EntryRanges
 
 /-!
 # Binary AIR discharge bridge
@@ -340,5 +343,80 @@ theorem carry_7_zero_XOR
   have h_cout_zero : e.flags.val % 2 = 0 := (h_XOR h_e_op).2
   rw [h_flags] at h_cout_zero
   exact boolean_carry_implies_eq_zero h_bool_c7 h_cout_zero
+
+/-! ## e2 byte-range discharge (Step 4 IOU)
+
+Every Binary-shape opcode currently takes 8 caller-supplied
+`h_e2_<i> : e2.x<i>.val < 256` *promise hypotheses* asserting that
+the destination memory-bus entry's 8 byte lanes lie in `[0, 256)`.
+These derive uniformly from
+`ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound`
+(memory-bus byte-range permutation-soundness axiom in the existing
+trust ledger).
+
+The helper below packages the 8-way conjunction as a single
+discharge that every Binary-shape equiv consumes in place of the
+8 individual binders. -/
+
+/-- **e2 byte-range discharge.** Every byte lane of a memory-bus
+    entry has `.val < 256` — direct projection of
+    `memory_bus_entry_byte_range_perm_sound`. Replaces the 8
+    `h_e2_<i>` *promise hypotheses* uniformly across all 14
+    Binary-shape opcodes. -/
+theorem e2_byte_ranges_discharge (e : Interaction.MemoryBusEntry FGL) :
+    e.x0.val < 256 ∧ e.x1.val < 256 ∧ e.x2.val < 256 ∧ e.x3.val < 256
+    ∧ e.x4.val < 256 ∧ e.x5.val < 256 ∧ e.x6.val < 256 ∧ e.x7.val < 256 :=
+  ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e
+
+/-! ## Byte-chain discharge for the 3-field family
+    (AND / ANDI / OR / ORI / XOR / XORI)
+
+For the byte-local logic ops, the 8 caller-supplied
+`h_byte_<i> : consumer_byte_match OP_<X> (a_i) (b_i) (c_i)`
+*promise hypotheses* derive from the row's `b_op_or_sext = OP_<X>`
+mode pin via `binary_per_byte_lookup_witness` (forward-direction
+Binary-table lookup soundness, already in the trust ledger). The
+bundled helper consumes one mode-pin hypothesis and delivers all
+8 byte matches. -/
+
+/-- The 8 per-byte `consumer_byte_match` predicates packaged as
+    a single conjunction at opcode `op_val`. -/
+@[simp]
+def all_byte_matches_at (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ) : Prop :=
+    ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_0 r) (v.free_in_b_0 r) (v.free_in_c_0 r)
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_1 r) (v.free_in_b_1 r) (v.free_in_c_1 r)
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_2 r) (v.free_in_b_2 r) (v.free_in_c_2 r)
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_3 r) (v.free_in_b_3 r) (v.free_in_c_3 r)
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_4 r) (v.free_in_b_4 r) (v.free_in_c_4 r)
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_5 r) (v.free_in_b_5 r) (v.free_in_c_5 r)
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_6 r) (v.free_in_b_6 r) (v.free_in_c_6 r)
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
+      (v.free_in_a_7 r) (v.free_in_b_7 r) (v.free_in_c_7 r)
+
+/-- **Byte-chain discharge for the 3-field family.** Given a row of
+    a valid `Binary` AIR plus the mode pin `b_op_or_sext = op_val`,
+    derive the 8 per-byte `consumer_byte_match` predicates. Replaces
+    the 8 `h_byte_<i>` *promise hypotheses* uniformly across the 6
+    logic opcodes (AND/ANDI/OR/ORI/XOR/XORI). -/
+theorem byte_chain_discharge_logic
+    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (h_op_val : (v.b_op_or_sext r).val = op_val) :
+    all_byte_matches_at v r op_val := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact byte_chain_match_0_holds v r op_val h_op_val
+  · exact byte_chain_match_1_holds v r op_val h_op_val
+  · exact byte_chain_match_2_holds v r op_val h_op_val
+  · exact byte_chain_match_3_holds v r op_val h_op_val
+  · exact byte_chain_match_4_holds v r op_val h_op_val
+  · exact byte_chain_match_5_holds v r op_val h_op_val
+  · exact byte_chain_match_6_holds v r op_val h_op_val
+  · exact byte_chain_match_7_holds v r op_val h_op_val
 
 end ZiskFv.Equivalence.Bridge.Binary

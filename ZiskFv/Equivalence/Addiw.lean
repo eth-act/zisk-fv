@@ -18,6 +18,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.RdValDerivation.Arith
 import ZiskFv.Equivalence.RdValDerivation.SailBridge
 import ZiskFv.Equivalence.Bridge.SailStateBridge
+import ZiskFv.Equivalence.Bridge.Binary
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
 
@@ -146,10 +147,6 @@ theorem equiv_ADDIW
     (h_match_clo : m.c_0 r_main = c0 + c1 * 256 + c2 * 65536 + c3 * 16777216)
     (h_match_chi : m.c_1 r_main = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
     -- Caller routes the immediate's byte decomposition. Cannot be derived
     -- without an axiom linking `transpile_ADDIW`'s caller-supplied
     -- `imm_lo`/`imm_hi` to the Sail-side `addiw_input.imm`.
@@ -165,6 +162,11 @@ theorem equiv_ADDIW
       LeanRV64D.Functions.execute
         (instruction.ADDIW (imm, r1, rd))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- 8 e2 byte-range *promise hypotheses* discharged via
+  -- `Bridge.Binary.e2_byte_ranges_discharge`.
+  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3,
+          h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
+    ZiskFv.Equivalence.Bridge.Binary.e2_byte_ranges_discharge e2
   have ha0 : (v.free_in_a_0 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_0_lt_256 v r_binary
   have ha1 : (v.free_in_a_1 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_1_lt_256 v r_binary
   have ha2 : (v.free_in_a_2 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_2_lt_256 v r_binary
