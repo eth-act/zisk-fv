@@ -12,14 +12,14 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 2354
+# Total rows: 2352
 # Category bridge: 50
 # Category bus_shape: 509
 # Category byte_chain: 67
 # Category entry: 67
 # Category loose: 376
 # Category match: 77
-# Category other: 559
+# Category other: 557
 # Category range: 116
 # Category row: 69
 # Category state: 217
@@ -875,8 +875,6 @@ ZiskFv.Equivalence.Lui.equiv_LUI 019 h_nextPC_eq [transpile] (PureSpec.execute_L
 ZiskFv.Equivalence.Lui.equiv_LUI 020 h_rd_idx [transpile] lui_input.rd = Transpiler.wrap_to_regidx e_rd.ptr
 ZiskFv.Equivalence.Lui.equiv_LUI 021 h_circuit [other] ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc
 ZiskFv.Equivalence.Lui.equiv_LUI 022 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e_rd
-ZiskFv.Equivalence.Lui.equiv_LUI 023 h_imm_lo_nat [other] (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat
-ZiskFv.Equivalence.Lui.equiv_LUI 024 h_imm_hi_nat [other] (m.b_1 r_main).val = (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat / 429
 ZiskFv.Equivalence.Lw.equiv_LW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lw.equiv_LW 001 lw_input [other] PureSpec.LwInput
 ZiskFv.Equivalence.Lw.equiv_LW 002 mstatus [other] RegisterType Register.mstatus
