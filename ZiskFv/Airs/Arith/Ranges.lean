@@ -430,6 +430,112 @@ axiom arith_table_op_div_rem_main_selector_pin
     (v.op r_a = 186 → v.main_div r_a = 1 ∧ v.main_mul r_a = 0)
   ∧ (v.op r_a = 187 → v.main_div r_a = 0 ∧ v.main_mul r_a = 0)
 
+/-! ## Arith-table signed DIV/REM sign-witness MSB pins — `np = MSB(C)`, `nb = MSB(B)`
+
+GAP-B for the DIV pilot. The arith_table lookup at `arith.pil:286-287`
+covers, among other columns, the sign-witness pair `(np, nb)`. The
+row-type table at `arith.pil:222-234` for signed 64-bit DIV/REM
+(`op ∈ {186, 187}`, line 232) reads:
+
+```
+//  1   0   1   1  div      rem        0xba 186  0xbb 187   a3   b3   c3   d3
+```
+
+— where the columns labeled `na`, `nb`, `np`, `nr` are set to `a3`,
+`b3`, `c3`, `d3` respectively. That notation (per the legend at
+`arith.pil:222-229`) means each sign-witness equals the MSB of the
+correspondingly-named input/output chunk. Concretely for signed DIV,
+`np = MSB(c[3])` (high bit of the dividend's top chunk = MSB of the
+64-bit dividend C) and `nb = MSB(b[3])` (MSB of divisor B). The lookup
+binds these as part of the row signature: every valid row in
+`arith_table_data.rs::ARITH_TABLE` for op ∈ {186, 187} (entries 23-44)
+sets the `np` / `nb` flag bits (positions 16 / 8 in the encoded flags
+field per `arith_table_helpers.rs:130-140`) to match this MSB
+convention.
+
+Equivalently in packed-chunk form: with
+`C := packed4 c[0..3]` and `B := packed4 b[0..3]`, the row admits
+`np = 1` iff `C ≥ 2^63` and `nb = 1` iff `B ≥ 2^63`. Any other choice
+of `np` / `nb` produces a row that's not in the lookup table.
+
+These two pins are not consequences of the carry-chain identity alone
+(it admits algebraic slack at degenerate inputs); they are
+**enforced** by the arith_table lookup. Naming them as narrow
+class-#6b axioms exposes the trust we already accept — same kind as
+the existing `arith_table_op_div_rem_signed_d_sign_pin` (which pins
+`nr` via the same lookup mechanism on the same rows) and
+`arith_table_op_div_rem_main_selector_pin` (which pins the
+`main_mul` / `main_div` columns via the same lookup).
+
+Consumed by `equiv_DIV_from_trust` (`Compliance/DivPilot.lean`) — in
+composition with the generic signed Sail-state bridge — to derive
+`h_op1` / `h_op2` (the signed packed-lane equations connecting
+`r1_val.toInt` / `r2_val.toInt` to the AIR's `C - np·2^64` /
+`B - nb·2^64` columns), closing GAP-B.
+
+Trust class: same as `arith_table_op_div_rem_signed_mode_pin` and
+`arith_table_op_div_rem_main_selector_pin` — class #6b, arith_table
+lookup soundness pinning derived consequences on existing witness
+columns. -/
+
+/-- **Arith-table signed DIV/REM `np = MSB(C)` pin (class #6b).**
+    For every `Valid_ArithDiv` row carrying signed 64-bit DIV/REM mode
+    pins (`sext = 0`, `m32 = 0`, `div = 1`) with `op ∈ {186, 187}`,
+    the sign-of-dividend witness `np` equals the MSB of the dividend
+    chunk packing `C := packed4 c[0..3]`:
+
+    ```
+    (np).val = if 2^63 ≤ packed4 c[0..3] then 1 else 0
+    ```
+
+    PIL citation: `arith.pil:286-287` (the
+    `arith_table_assumes(op, m32, div, na, nb, np, nr, sext, ...)`
+    lookup; `np` is an explicit column in the lookup tuple) composed
+    with the row-type table at `arith.pil:232` (signed 64-bit DIV/REM
+    row signature `na=a3, nb=b3, np=c3, nr=d3`) and the table data at
+    `zisk/state-machines/arith/src/arith_table_data.rs` rows 23-44
+    (op = 186/187 entries) whose flag-field encoding (`arith_table_helpers.rs:130-140`)
+    binds the `np` bit to the MSB convention.
+
+    Consumed by `equiv_DIV_from_trust` via
+    `signed_packed_toInt_eq_of_read_xreg` to derive `h_op1`. -/
+axiom arith_div_np_eq_msb_of_dividend
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 0) (_h_div : v.div r_a = 1)
+    (_h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
+    (v.np r_a).val =
+      (if 2^63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4
+                    (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val
+       then 1 else 0)
+
+/-- **Arith-table signed DIV/REM `nb = MSB(B)` pin (class #6b).**
+    For every `Valid_ArithDiv` row carrying signed 64-bit DIV/REM mode
+    pins (`sext = 0`, `m32 = 0`, `div = 1`) with `op ∈ {186, 187}`,
+    the sign-of-divisor witness `nb` equals the MSB of the divisor
+    chunk packing `B := packed4 b[0..3]`:
+
+    ```
+    (nb).val = if 2^63 ≤ packed4 b[0..3] then 1 else 0
+    ```
+
+    PIL citation: `arith.pil:286-287` composed with `arith.pil:232`
+    (signed 64-bit DIV/REM row signature `nb=b3`) and
+    `arith_table_data.rs` rows 23-44 (op = 186/187) whose
+    flag-field bit-3 encodes `nb` per
+    `arith_table_helpers.rs:130-140`.
+
+    Companion to `arith_div_np_eq_msb_of_dividend`; consumed by
+    `equiv_DIV_from_trust` via `signed_packed_toInt_eq_of_read_xreg`
+    to derive `h_op2`. -/
+axiom arith_div_nb_eq_msb_of_divisor
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 0) (_h_div : v.div r_a = 1)
+    (_h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
+    (v.nb r_a).val =
+      (if 2^63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4
+                    (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val
+       then 1 else 0)
+
 /-! ## Euclidean-remainder bound — DIV/REM `assumes_operation(|d| < |b|)`
 
 The arith-PIL line `arith.pil:274` emits an `assumes_operation` lookup

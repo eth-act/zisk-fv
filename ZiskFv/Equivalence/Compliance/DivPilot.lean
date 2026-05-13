@@ -2,6 +2,7 @@ import Mathlib
 
 import ZiskFv.Equivalence.Div
 import ZiskFv.Equivalence.Bridge.Arith
+import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.Bridge1
 import ZiskFv.Airs.OperationBus.Bridge
@@ -58,32 +59,34 @@ import ZiskFv.Fundamentals.PackedBitVec.SignedChunkLift
 >   Constraint 46 is accepted as an explicit row-shape obligation
 >   (`h_c46`), in the same constructibility category as `h_chain`.
 >
-> Remaining caller obligations (NOT closed by this branch):
-> * **GAP-B** (`h_op1` / `h_op2`) — connects Sail register reads
->   (`r1_val`/`r2_val`) to ArithDiv's `c[] - np·2^64` /
->   `b[] - nb·2^64` signed-packed columns. The unsigned form
->   `r.toNat = packed4 c[]` follows from OpBus + `transpile_DIV` +
->   `SailStateBridge.packed_lane_eq_of_read_xreg`; the signed lift
->   requires linking the sign-witness `np`/`nb` to the MSB of `r1`/
->   `r2`. The prior pilot report's "pure-Lean bridge work — no new
->   axiom" framing under-estimated this: `na = a[3].msb` is NOT a
->   free-standing PIL constraint; it is implicit in the consistency
->   of the carry-chain signed-DIV identity (derivable via Euclidean
->   uniqueness on `div_signed_chain_witnesses`), or alternatively
->   could be pinned by a new class-#6b axiom directly. Left as a
->   follow-up that legitimately requires either route.
+> * **GAP-B** — `h_op1` / `h_op2` derived from the signed Sail-state
+>   bridge `signed_packed_toInt_eq_of_read_xreg`
+>   (`Equivalence/Bridge/SailStateBridge.lean`) composed with the
+>   chunk-packed identity for `r1_val.toNat` / `r2_val.toNat` (from
+>   `transpile_DIV` + op-bus `matches_entry` + chunk-range bounds)
+>   and the new class-#6b sign-witness MSB pins
+>   `arith_div_np_eq_msb_of_dividend` /
+>   `arith_div_nb_eq_msb_of_divisor`. The MSB pins state, for signed
+>   64-bit DIV/REM rows, that `np = MSB(C)` and `nb = MSB(B)` —
+>   exactly the row-type table convention at `arith.pil:232`
+>   (`na=a3, nb=b3, np=c3, nr=d3` per the legend at
+>   `arith.pil:222-229`), enforced by the arith_table lookup at
+>   `arith.pil:286-287` against `arith_table_data.rs::ARITH_TABLE`
+>   rows 23-44 (op = 186/187).
 >
-> Anti-laundering: this PR adds ONE new class-#6b axiom in
-> `Airs/Arith/Ranges.lean` (`arith_table_op_div_rem_main_selector_pin`,
-> PIL-cited to `arith.pil:286-287` + the row-type table at
-> `arith.pil:222-234`), pinning the `main_mul`/`main_div` selector
-> columns from the `op` literal — same trust kind as the existing
-> mode-triple pin (`arith_table_op_div_rem_signed_mode_pin`),
-> narrower covering set (single column pair, single op-value
-> instance). Net change to the pilot's caller burden: drop
-> `h_byte_hi` (–1 promise hypothesis); add `h_c46` (+1
-> constructibility obligation, same category as `h_chain`).
-> Net –1 promise hypothesis on the trust-burden ledger.
+> Anti-laundering: this PR adds TWO new class-#6b axioms in
+> `Airs/Arith/Ranges.lean` (`arith_div_np_eq_msb_of_dividend` and
+> `arith_div_nb_eq_msb_of_divisor`, PIL-cited to `arith.pil:286-287`
+> + the row-type table at `arith.pil:222-234` + the table data at
+> `arith_table_data.rs`), pinning the `np`/`nb` sign-witness columns
+> to the MSBs of the corresponding chunk-packed input values —
+> same trust kind as the existing
+> `arith_table_op_div_rem_signed_d_sign_pin` (which already pins
+> `nr` via the same lookup), narrower scope (sign-witness =
+> MSB-of-input, no disjunctive boundary). Net change to the pilot's
+> caller burden: drop `h_op1` AND `h_op2` (–2 promise hypotheses);
+> no new constructibility obligations. Net –2 promise hypotheses on
+> the trust-burden ledger.
 -/
 
 namespace ZiskFv.Equivalence.Compliance
@@ -138,12 +141,13 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     * `h_r_abs`, `h_r_sign` — from `arith_div_remainder_bound`
       (GAP-C) composed with `h_op1`/`h_op2`.
 
-    After this branch the wrapper carries 37 binders / 24
-    hypotheses (vs. 38/25 at HEAD and 43/32 on `equiv_DIV`); the
-    GAP-A hi-lane promise is now discharged via the new class-#6b
-    selector-pin axiom + Bridge1; GAP-B (`h_op1`/`h_op2`) remains
-    the sole surfaced promise-hypothesis follow-up. The narrowing
-    of `h_main_op_div` to `OP_DIV` (was `OP_DIV ∨ OP_REM`)
+    After GAP-B closure the wrapper carries 35 binders / 22
+    hypotheses (vs. 37/24 pre-GAP-B and 43/32 on `equiv_DIV`); both
+    `h_op1` and `h_op2` are now derived internally via the new
+    class-#6b sign-witness MSB pins (`arith_div_np_eq_msb_of_dividend`
+    / `arith_div_nb_eq_msb_of_divisor`) composed with the generic
+    `signed_packed_toInt_eq_of_read_xreg` Sail-state bridge. The
+    narrowing of `h_main_op_div` to `OP_DIV` (was `OP_DIV ∨ OP_REM`)
     eliminates the vestigial REM dispatch path; a parallel pilot
     `equiv_REM_from_trust` is the proper future home for REM
     discharge. -/
@@ -206,23 +210,7 @@ theorem equiv_DIV_from_trust
       toIntZ (v.np r_a)
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
-    -- ============ REMAINING PROMISE HYPOTHESES ============
-    -- GAP-B: signed Sail-state bridge — connects r1/r2 (Sail values)
-    -- to `packed4 c[] - np·2^64` / `packed4 b[] - nb·2^64`. The
-    -- unsigned form `r.toNat = packed4 c[]` follows from OpBus +
-    -- `transpile_DIV` + `packed_lane_eq_of_read_xreg`; the signed
-    -- lift requires linking the sign witnesses to the BitVec MSB
-    -- (pure-Lean bridge — no new axiom). Surfaced for follow-up.
-    (h_op1 :
-      div_input.r1_val.toInt
-        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
-            (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
-            - (v.np r_a).val * (2:ℤ)^64)
-    (h_op2 :
-      div_input.r2_val.toInt
-        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
-            (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
-            - (v.nb r_a).val * (2:ℤ)^64) :
+    :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -304,8 +292,12 @@ theorem equiv_DIV_from_trust
     have := h_match_primary
     simp only [matches_entry, opBus_row_Main, opBus_row_ArithDiv] at this
     exact this.2.2.2.2.2.2.2.1
-  -- Chunk-range bounds for v.a_0..v.a_3.
-  obtain ⟨h_a0_lt, h_a1_lt, h_a2_lt, h_a3_lt, _, _, _, _, _, _, _, _, _, _, _, _⟩ :=
+  -- Chunk-range bounds for v.{a,b,c,d}_0..3 — extract all sixteen at once;
+  -- a_* used here for the GAP-A lo/hi lane discharge below, b_* / c_* below
+  -- for the GAP-B Sail-state bridge.
+  obtain ⟨h_a0_lt, h_a1_lt, h_a2_lt, h_a3_lt,
+          h_b0_lt, h_b1_lt, h_b2_lt, h_b3_lt,
+          h_c0_lt, h_c1_lt, h_c2_lt, h_c3_lt, _, _, _, _⟩ :=
     ZiskFv.Airs.Arith.arith_div_columns_in_range v r_a
   -- Helper: FGL → ℕ lift for `x + y * 65536` when both are < 65536.
   have h_pair_lift : ∀ (x y : FGL),
@@ -345,6 +337,149 @@ theorem equiv_DIV_from_trust
       e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
         = (v.a_2 r_a).val + (v.a_3 r_a).val * 65536 := by
     rw [h_byte_hi_to_c1, h_c1_val_eq]
+  -- ============ DISCHARGE h_op1 / h_op2 (GAP-B) ============
+  -- Combine `transpile_DIV` (Main lane equalities at `sail_to_rv64 state`),
+  -- the op-bus `matches_entry` (Main a/b lanes = ArithDiv c[] / b[] packings),
+  -- chunk-range bounds, the new MSB pins on `np` / `nb`, and the generic
+  -- signed Sail-state bridge to derive the signed packed-lane integer
+  -- equations for r1 / r2 that `equiv_DIV` consumes.
+  -- Step 1: transpile_DIV + packed_lane_eq_of_read_xreg → unsigned r_val packings.
+  obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
+         h_main_a_lo, h_main_a_hi, h_main_b_lo, h_main_b_hi⟩ :=
+    ZiskFv.Trusted.transpile_DIV
+      m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
+      (ZiskFv.Equivalence.Bridge.SailStateBridge.sail_to_rv64 state)
+      h_main_active h_main_op_div
+  have h_r1_packed_bv :
+      div_input.r1_val
+        = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296) :=
+    ZiskFv.Equivalence.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
+      state (regidx_to_fin r1) div_input.r1_val
+      (m.a_0 r_main) (m.a_1 r_main) h_main_a_lo h_main_a_hi h_input_r1
+  have h_r2_packed_bv :
+      div_input.r2_val
+        = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296) :=
+    ZiskFv.Equivalence.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
+      state (regidx_to_fin r2) div_input.r2_val
+      (m.b_0 r_main) (m.b_1 r_main) h_main_b_lo h_main_b_hi h_input_r2
+  -- Step 2: matches_entry projects to Main a/b lanes = ArithDiv c[]/b[] packings.
+  have h_a_lo_eq_FGL : m.a_0 r_main = v.c_0 r_a + v.c_1 r_a * 65536 := by
+    have := h_match_primary
+    simp only [matches_entry, opBus_row_Main, opBus_row_ArithDiv] at this
+    exact this.2.2.1
+  have h_a_hi_eq_FGL : (1 - m.m32 r_main) * m.a_1 r_main
+      = v.c_2 r_a + v.c_3 r_a * 65536 := by
+    have := h_match_primary
+    simp only [matches_entry, opBus_row_Main, opBus_row_ArithDiv] at this
+    exact this.2.2.2.1
+  have h_b_lo_eq_FGL : m.b_0 r_main = v.b_0 r_a + v.b_1 r_a * 65536 := by
+    have := h_match_primary
+    simp only [matches_entry, opBus_row_Main, opBus_row_ArithDiv] at this
+    exact this.2.2.2.2.1
+  have h_b_hi_eq_FGL : (1 - m.m32 r_main) * m.b_1 r_main
+      = v.b_2 r_a + v.b_3 r_a * 65536 := by
+    have := h_match_primary
+    simp only [matches_entry, opBus_row_Main, opBus_row_ArithDiv] at this
+    exact this.2.2.2.2.2.1
+  -- Collapse the `(1 - m.m32) *` factor using `transpile_DIV`'s `_h_m32_m : m.m32 = 0`.
+  have h_one_sub_m32 : (1 - m.m32 r_main : FGL) = 1 := by
+    rw [_h_m32_m]; ring
+  have h_a_hi_collapsed : m.a_1 r_main = v.c_2 r_a + v.c_3 r_a * 65536 := by
+    have := h_a_hi_eq_FGL
+    rw [h_one_sub_m32, one_mul] at this; exact this
+  have h_b_hi_collapsed : m.b_1 r_main = v.b_2 r_a + v.b_3 r_a * 65536 := by
+    have := h_b_hi_eq_FGL
+    rw [h_one_sub_m32, one_mul] at this; exact this
+  -- Step 3: FGL → ℕ lift on each chunk-pair (reuses h_pair_lift defined above).
+  have h_a0_val_eq : (m.a_0 r_main).val
+      = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 := by
+    rw [h_a_lo_eq_FGL]; exact h_pair_lift _ _ h_c0_lt h_c1_lt
+  have h_a1_val_eq : (m.a_1 r_main).val
+      = (v.c_2 r_a).val + (v.c_3 r_a).val * 65536 := by
+    rw [h_a_hi_collapsed]; exact h_pair_lift _ _ h_c2_lt h_c3_lt
+  have h_b0_val_eq : (m.b_0 r_main).val
+      = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536 := by
+    rw [h_b_lo_eq_FGL]; exact h_pair_lift _ _ h_b0_lt h_b1_lt
+  have h_b1_val_eq : (m.b_1 r_main).val
+      = (v.b_2 r_a).val + (v.b_3 r_a).val * 65536 := by
+    rw [h_b_hi_collapsed]; exact h_pair_lift _ _ h_b2_lt h_b3_lt
+  -- Step 4: r1_val.toNat / r2_val.toNat in packed4 form (each chunk < 2^16).
+  have h_r1_toNat :
+      div_input.r1_val.toNat
+        = ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val := by
+    rw [h_r1_packed_bv]
+    rw [BitVec.toNat_ofNat]
+    rw [h_a0_val_eq, h_a1_val_eq]
+    -- The result is `(c0 + c1*65536 + (c2 + c3*65536)*2^32) % 2^64 = packed4`.
+    -- packed4 = c0 + c1*65536 + c2*65536^2 + c3*65536^3 and 65536^2 = 2^32.
+    have h_lt_2_64 :
+        (v.c_0 r_a).val + (v.c_1 r_a).val * 65536
+          + ((v.c_2 r_a).val + (v.c_3 r_a).val * 65536) * 4294967296
+          < 18446744073709551616 := by
+      have h1 : (v.c_1 r_a).val * 65536 ≤ 65535 * 65536 :=
+        Nat.mul_le_mul_right 65536 (Nat.le_of_lt_succ h_c1_lt)
+      have h3 : (v.c_3 r_a).val * 65536 ≤ 65535 * 65536 :=
+        Nat.mul_le_mul_right 65536 (Nat.le_of_lt_succ h_c3_lt)
+      have h2 : (v.c_2 r_a).val + (v.c_3 r_a).val * 65536 < 4294967296 := by
+        have : (v.c_2 r_a).val ≤ 65535 := Nat.le_of_lt_succ h_c2_lt
+        omega
+      have : ((v.c_2 r_a).val + (v.c_3 r_a).val * 65536) * 4294967296
+          ≤ 4294967295 * 4294967296 := by
+        apply Nat.mul_le_mul_right
+        omega
+      have h0 : (v.c_0 r_a).val ≤ 65535 := Nat.le_of_lt_succ h_c0_lt
+      omega
+    rw [Nat.mod_eq_of_lt h_lt_2_64]
+    unfold ZiskFv.PackedBitVec.MulNoWrap.packed4
+    ring
+  have h_r2_toNat :
+      div_input.r2_val.toNat
+        = ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val := by
+    rw [h_r2_packed_bv]
+    rw [BitVec.toNat_ofNat]
+    rw [h_b0_val_eq, h_b1_val_eq]
+    have h_lt_2_64 :
+        (v.b_0 r_a).val + (v.b_1 r_a).val * 65536
+          + ((v.b_2 r_a).val + (v.b_3 r_a).val * 65536) * 4294967296
+          < 18446744073709551616 := by
+      have h1 : (v.b_1 r_a).val * 65536 ≤ 65535 * 65536 :=
+        Nat.mul_le_mul_right 65536 (Nat.le_of_lt_succ h_b1_lt)
+      have h3 : (v.b_3 r_a).val * 65536 ≤ 65535 * 65536 :=
+        Nat.mul_le_mul_right 65536 (Nat.le_of_lt_succ h_b3_lt)
+      have h2 : (v.b_2 r_a).val + (v.b_3 r_a).val * 65536 < 4294967296 := by
+        have : (v.b_2 r_a).val ≤ 65535 := Nat.le_of_lt_succ h_b2_lt
+        omega
+      have : ((v.b_2 r_a).val + (v.b_3 r_a).val * 65536) * 4294967296
+          ≤ 4294967295 * 4294967296 := by
+        apply Nat.mul_le_mul_right
+        omega
+      have h0 : (v.b_0 r_a).val ≤ 65535 := Nat.le_of_lt_succ h_b0_lt
+      omega
+    rw [Nat.mod_eq_of_lt h_lt_2_64]
+    unfold ZiskFv.PackedBitVec.MulNoWrap.packed4
+    ring
+  -- Step 5: MSB pins on np / nb (the new class-#6b axioms).
+  have h_np_msb := ZiskFv.Airs.Arith.arith_div_np_eq_msb_of_dividend
+    v r_a h_sext h_m32 h_div h_op_arith
+  have h_nb_msb := ZiskFv.Airs.Arith.arith_div_nb_eq_msb_of_divisor
+    v r_a h_sext h_m32 h_div h_op_arith
+  -- Step 6: signed-form bridge → h_op1 / h_op2.
+  have h_op1 :
+      div_input.r1_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
+            - (v.np r_a).val * (2:ℤ)^64 :=
+    ZiskFv.Equivalence.Bridge.SailStateBridge.signed_packed_toInt_eq_of_read_xreg
+      h_input_r1 h_r1_toNat ⟨h_c0_lt, h_c1_lt, h_c2_lt, h_c3_lt⟩ h_np_msb
+  have h_op2 :
+      div_input.r2_val.toInt
+        = (ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^64 :=
+    ZiskFv.Equivalence.Bridge.SailStateBridge.signed_packed_toInt_eq_of_read_xreg
+      h_input_r2 h_r2_toNat ⟨h_b0_lt, h_b1_lt, h_b2_lt, h_b3_lt⟩ h_nb_msb
   -- ============ DISCHARGE h_r_abs, h_r_sign (GAP-C) ============
   -- `arith_div_remainder_bound` gives the bound in terms of the
   -- AIR's signed `b - nb·2^64` and `c - np·2^64` packings; we

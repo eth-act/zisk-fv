@@ -3,6 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
 import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Equivalence.Bridge.StateBridge
 
@@ -150,5 +151,87 @@ theorem addi_input_r1_main_eq_of_read_xreg
       (m.b_0 r_main) (m.b_1 r_main) (sail_to_rv64 state) h_active h_op
   exact packed_lane_eq_of_read_xreg state rs1 r1_val
     (m.a_0 r_main) (m.a_1 r_main) h_a_lo h_a_hi h_read_r1
+
+/-! ## Signed-form Sail-state bridge
+
+Signed-form companion to `packed_lane_eq_of_read_xreg`. Where the
+unsigned form recovers `r_val = BitVec.ofNat 64 (a_lo.val + a_hi.val * 2^32)`,
+the signed form derives the integer-form lane equation
+`r_val.toInt = packed4 c0..c3 - sign * 2^64` from:
+
+* a Sail register read `read_xreg rs state = .ok r_val state`,
+* a chunk-packed nat identity `r_val.toNat = packed4 c0 c1 c2 c3` with each
+  `c_i < 2^16` (sourced from the unsigned form),
+* the sign-witness MSB equation `sign = if 2^63 ≤ packed4 c0 c1 c2 c3 then 1 else 0`
+  (sourced from the relevant class-#6b axiom — e.g.
+  `arith_div_np_eq_msb_of_dividend`).
+
+This bridge is **generic** — it has no Arith-specific hypotheses, no
+Valid_AIR records, no row indices. It composes the BitVec.toInt
+characterization (`Init.Data.BitVec.Lemmas.toInt_eq_toNat_cond`) with
+the caller-supplied chunk identities to land on the signed-form lane
+equation. Consumed by every signed/W discharge bridge (DIV, REM, MUL
+signed variants, and W-variants downstream). -/
+
+/-- **Signed packed-lane integer equation from a Sail register read.**
+    Given a Sail `read_xreg rs state = .ok r_val state` fact, a
+    chunk-packed identity `r_val.toNat = packed4 c0 c1 c2 c3` (with
+    each chunk `< 2^16`, ensuring `packed4 < 2^64`), and a
+    sign-witness MSB equation
+    `sign = if 2^63 ≤ packed4 c0 c1 c2 c3 then 1 else 0`, conclude
+
+    ```
+    r_val.toInt = (packed4 c0 c1 c2 c3 : ℤ) - sign * 2^64
+    ```
+
+    Pure arithmetic step combining `BitVec.toInt_eq_toNat_cond` with
+    the substitution of the chunk identity for `r_val.toNat` and the
+    case-split on the sign witness. No Arith-AIR dependencies. -/
+theorem signed_packed_toInt_eq_of_read_xreg
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    {rs : Fin 32} {r_val : BitVec 64}
+    (_h_read : read_xreg rs state = EStateM.Result.ok r_val state)
+    {c0 c1 c2 c3 : ℕ} {sign : ℕ}
+    (h_packed : r_val.toNat
+        = ZiskFv.PackedBitVec.MulNoWrap.packed4 c0 c1 c2 c3)
+    (h_chunks_bounded : c0 < 65536 ∧ c1 < 65536 ∧ c2 < 65536 ∧ c3 < 65536)
+    (h_sign_eq_msb : sign
+        = (if 2^63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 c0 c1 c2 c3 then 1 else 0)) :
+    r_val.toInt
+      = (ZiskFv.PackedBitVec.MulNoWrap.packed4 c0 c1 c2 c3 : ℤ)
+          - (sign : ℤ) * (2:ℤ)^64 := by
+  -- Unpack chunk bounds and derive packed4 < 2^64.
+  obtain ⟨h0, h1, h2, h3⟩ := h_chunks_bounded
+  have h_packed_lt : ZiskFv.PackedBitVec.MulNoWrap.packed4 c0 c1 c2 c3
+      < 18446744073709551616 :=
+    ZiskFv.PackedBitVec.MulNoWrap.packed4_lt_2_64 h0 h1 h2 h3
+  -- Characterize r_val.toInt via toInt_eq_toNat_cond, then substitute h_packed.
+  rw [BitVec.toInt_eq_toNat_cond, h_packed]
+  -- The condition `2 * packed4 < 2^64` collapses to `packed4 < 2^63`.
+  have hpow : (2 ^ 64 : ℕ) = 18446744073709551616 := by decide
+  -- Case split on whether the packed value is in the signed-negative half.
+  by_cases h_neg : 2 ^ 63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4 c0 c1 c2 c3
+  · -- `packed4 ≥ 2^63` → MSB is set → sign = 1 → toInt = toNat - 2^64.
+    have h_two_mul : ¬ 2 * ZiskFv.PackedBitVec.MulNoWrap.packed4 c0 c1 c2 c3 < 2 ^ 64 := by
+      rw [hpow]
+      have : (2 ^ 63 : ℕ) = 9223372036854775808 := by decide
+      omega
+    rw [if_neg h_two_mul]
+    rw [if_pos h_neg] at h_sign_eq_msb
+    subst h_sign_eq_msb
+    push_cast
+    ring
+  · -- `packed4 < 2^63` → MSB clear → sign = 0 → toInt = toNat.
+    have h_lt : ZiskFv.PackedBitVec.MulNoWrap.packed4 c0 c1 c2 c3 < 2 ^ 63 := by
+      omega
+    have h_two_mul : 2 * ZiskFv.PackedBitVec.MulNoWrap.packed4 c0 c1 c2 c3 < 2 ^ 64 := by
+      rw [hpow]
+      have : (2 ^ 63 : ℕ) = 9223372036854775808 := by decide
+      omega
+    rw [if_pos h_two_mul]
+    rw [if_neg h_neg] at h_sign_eq_msb
+    subst h_sign_eq_msb
+    push_cast
+    ring
 
 end ZiskFv.Equivalence.Bridge.SailStateBridge
