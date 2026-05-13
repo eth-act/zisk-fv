@@ -206,12 +206,68 @@ ADDED: v, r_a, h_chain, h_na_bool, h_nb_bool, h_nr_bool, h_np_xor,
 
 OPCODE: ZiskFv.Equivalence.Remw.equiv_REMW
 DROPPED: h_byte_sum_circuit
-ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2, h_op2_ne, h_d_lt_b
-       (Option-1: full Tier-3 promotion consuming the signed ℤ
-        chunk-lift toolkit Phase 4.alpha.A.0 lands as foundation.
-        Per-opcode metric grows by ~+15 binders; reviewer accepts
-        per structural-unpacking exception.)
+ADDED: v, r_a, h_chain, h_sext, h_m32, h_div, h_op, h_na_bool, h_nb_bool,
+       h_nr_bool, h_np_xor, h_c23, h_byte_lo, h_sext_choice, h_op1, h_op2,
+       h_op2_ne, h_no_overflow_w, h_r_abs, h_r_sign
+       (Phase step4-remw full Tier-3 promotion. Key differences from
+        REM (round-2 signed full-64):
+          (a) `h_m32 = 1` instead of `h_m32 = 0` (W-mode 32-bit width).
+              Consumes `div_w_chain_witnesses` (Bridge.Arith Phase B
+              foundation) which delivers the W-form chunk identity at
+              `2^32`/`2^64` widths.
+          (b) `h_op` (TRANSPILE-PIN) selects REMW = 0x9a from the
+              {0x99, 0x9a} signed-W DIV/REM family. Dispatches the new
+              `arith_table_op_div_rem_signed_w_d_sign_pin` axiom (class
+              #6, signed-W remainder-sign pin — sibling of
+              `arith_table_op_div_rem_signed_d_sign_pin` for full-64
+              signed). Also (via the broader `op_full` derivation
+              inside the chunked helper) the
+              `arith_table_op_divw_operand_pin` axiom pinning
+              `a_2 = a_3 = b_2 = b_3 = d_2 = d_3 = 0`.
+          (c) `h_c23 : c_2 = c_3 = 0` (CIRCUIT-CONSTRAINT) captures
+              that the bus passes the zero-extended r1_lo32 as the
+              dividend (the dividend is 32-bit, not 64-bit in W mode).
+              Class same as `arith_table_op_*_pin` axioms (#6 bus
+              encoding pin); axiomatization deferred — currently a
+              caller-burden binder.
+          (d) `h_byte_lo` lane match ties bytes 0..3 to
+              `d_0 + d_1 * 65536` (low 32 bits of remainder); bytes
+              4..7 are sign-extension lookups handled by
+              `h_sext_choice`.
+          (e) `h_sext_choice` is the disjunctive sign-extension
+              witness on bytes 4..7: SEXT_00 if remainder < 2^31,
+              SEXT_FF if ≥ 2^31. Same trust class as ADDW's
+              `h_sext_choice` (CIRCUIT-CONSTRAINT-shaped, discharged
+              inside the proof body via case-split. No new axiom).
+          (f) Sign-witness booleanity (`h_na_bool`, `h_nb_bool`,
+              `h_nr_bool`) and `h_np_xor` are CIRCUIT-CONSTRAINT-
+              shaped (derivable from constraints 41/42/44 +
+              arith_table lookup) — same shape as DIV/REM full-64.
+          (g) `h_op1`/`h_op2` are 32-bit signed TRANSPILE-BRIDGE
+              equations
+              `r1_lo32.toInt = (c_0 + c_1*65536) - np*2^32` /
+              `r2_lo32.toInt = (b_0 + b_1*65536) - nb*2^32`
+              (W-form with sign-witness extracted, sibling of the
+              full-64 DIV/REM `h_op1`/`h_op2` at `2^64`).
+          (h) `h_op2_ne`, `h_no_overflow_w` exclude the boundary
+              (divide-by-zero / INT32_MIN/-1 overflow) rows.
+              `h_r_abs`, `h_r_sign` are the standard Tier-3
+              magnitude + sign-correctness witnesses for the signed
+              Euclidean — derivable from the AIR's
+              `assumes_operation(|d|<|b|)` lookup (`arith.pil:274`)
+              + the sign-witness booleanity. Same trust class as
+              full-64 DIV/REM.
+        Per-opcode metric grows by ~+20 binders; reviewer accepts
+        per structural-unpacking exception. Discharge composes
+        Layer 1's `fgl_rem_w_signed_to_bv64` with the chain witnesses,
+        the new `abs_euclidean_to_signed_euclidean_div_rem_w` linker
+        (SignedChunkLift Part 9b), and `signed_tmod_unique` via the
+        `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_remw_chunked`
+        helper.
+        One new axiom: `arith_table_op_div_rem_signed_w_d_sign_pin`
+        (`Airs/Arith/Ranges.lean`, class #6 — narrow signed-W
+        remainder-sign pin; PIL citation `arith.pil:286-287`
+        composed with table content for op ∈ {0x99, 0x9a}).)
 
 OPCODE: ZiskFv.Equivalence.Remuw.equiv_REMUW
 DROPPED: h_byte_sum_circuit
