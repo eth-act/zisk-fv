@@ -198,4 +198,47 @@ axiom arith_div_carry_columns_in_range_signed
     cy_disj 0 ∧ cy_disj 1 ∧ cy_disj 2 ∧ cy_disj 3
       ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6
 
+/-! ## Arith-table row pin — signed DIV/REM sign-of-remainder
+
+Every valid `arith_table` row with `op ∈ {186 (DIV), 187 (REM)}`,
+`m32 = 0`, `div = 1`, `sext = 0` (the signed 64-bit DIV/REM rows;
+table entries 66-94 in `build/extraction/Extraction/ArithTable.lean`)
+satisfies the disjunction
+
+```
+nr = np   ∨   d_chunks are all zero (remainder = 0)
+```
+
+Semantics: in the IEEE-754-truncated signed division convention, the
+remainder must have the same sign as the dividend (`nr = np`) *or* be
+zero (`D = 0`). The four valid table rows where `nr ≠ np` are exactly
+the rows where the remainder column is forced to zero by the AIR's
+range-table constraints on `d[]`.
+
+PIL citation: composition of `arith.pil:286-287` (the
+`arith_table_assumes(op, m32, div, na, nb, np, nr, sext, ...)` lookup
+on every Arith AIR row) with the table content at
+`zisk/state-machines/arith/pil/arith_table.pil` and the data dump in
+`zisk/state-machines/arith/src/arith_table_data.rs::ARITH_TABLE` (74
+rows; entries 23-44 cover DIV/REM with `div_by_zero = 0` and
+`div_overflow = 0`, all satisfying the disjunction).
+
+Trust class: same as `binary_extension_op_is_shift_pin` (class #6, lookup
+soundness on a small AIR table that pins a derived column). -/
+
+/-- **Arith-table signed DIV/REM remainder-sign pin (class #6).**
+    For every `Valid_ArithDiv` row carrying signed-DIV/REM mode pins
+    (`sext = 0`, `m32 = 0`, `div = 1`) with `op ∈ {186, 187}`, the
+    sign-of-remainder column `nr` matches the sign-of-dividend column
+    `np`, **or** the four chunks of the remainder column `d[]` are
+    each zero. PIL: lookup soundness on the `arith_table_assumes`
+    consumer-side bus row composed with the table content. -/
+axiom arith_table_op_div_rem_signed_d_sign_pin
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 0) (_h_div : v.div r_a = 1)
+    (_h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
+    v.nr r_a = v.np r_a
+      ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0
+          ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
+
 end ZiskFv.Airs.Arith
