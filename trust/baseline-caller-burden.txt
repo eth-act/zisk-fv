@@ -12,19 +12,19 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 2329
-# Category bridge: 33
+# Total rows: 2345
+# Category bridge: 34
 # Category bus_shape: 509
 # Category byte_chain: 55
 # Category entry: 67
 # Category loose: 376
 # Category match: 91
-# Category other: 568
+# Category other: 582
 # Category range: 96
 # Category row: 69
 # Category state: 217
 # Category transpile: 158
-# Category validator: 90
+# Category validator: 91
 #
 ZiskFv.Equivalence.Add.equiv_ADD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Add.equiv_ADD 001 add_input [other] PureSpec.AddInput
@@ -987,26 +987,42 @@ ZiskFv.Equivalence.MulH.equiv_MULH 001 mulh_input [other] PureSpec.MulhInput
 ZiskFv.Equivalence.MulH.equiv_MULH 002 r1 [other] regidx
 ZiskFv.Equivalence.MulH.equiv_MULH 003 r2 [other] regidx
 ZiskFv.Equivalence.MulH.equiv_MULH 004 rd [other] regidx
-ZiskFv.Equivalence.MulH.equiv_MULH 005 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Equivalence.MulH.equiv_MULH 006 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.MulH.equiv_MULH 007 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.MulH.equiv_MULH 008 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.MulH.equiv_MULH 009 h_input_r1 [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok mulh_input.r1_val state
-ZiskFv.Equivalence.MulH.equiv_MULH 010 h_input_r2 [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok mulh_input.r2_val state
-ZiskFv.Equivalence.MulH.equiv_MULH 011 h_input_rd [transpile] mulh_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.MulH.equiv_MULH 012 h_input_pc [state] state.regs.get? Register.PC = .some mulh_input.PC
-ZiskFv.Equivalence.MulH.equiv_MULH 013 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.MulH.equiv_MULH 014 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.MulH.equiv_MULH 015 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.MulH.equiv_MULH 016 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.MulH.equiv_MULH 017 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.MulH.equiv_MULH 018 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.MulH.equiv_MULH 019 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.MulH.equiv_MULH 020 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.MulH.equiv_MULH 021 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.MulH.equiv_MULH 022 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.MulH.equiv_MULH 023 h_rd_idx [transpile] mulh_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.MulH.equiv_MULH 024 h_byte_sum_circuit [bridge] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 + e2.x4.v
+ZiskFv.Equivalence.MulH.equiv_MULH 005 v [validator] Valid_ArithMul C FGL FGL
+ZiskFv.Equivalence.MulH.equiv_MULH 006 r_a [other] ℕ
+ZiskFv.Equivalence.MulH.equiv_MULH 007 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
+ZiskFv.Equivalence.MulH.equiv_MULH 008 e0 [loose] Interaction.MemoryBusEntry FGL
+ZiskFv.Equivalence.MulH.equiv_MULH 009 e1 [loose] Interaction.MemoryBusEntry FGL
+ZiskFv.Equivalence.MulH.equiv_MULH 010 e2 [loose] Interaction.MemoryBusEntry FGL
+ZiskFv.Equivalence.MulH.equiv_MULH 011 h_input_r1 [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok mulh_input.r1_val state
+ZiskFv.Equivalence.MulH.equiv_MULH 012 h_input_r2 [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok mulh_input.r2_val state
+ZiskFv.Equivalence.MulH.equiv_MULH 013 h_input_rd [transpile] mulh_input.rd = regidx_to_fin rd
+ZiskFv.Equivalence.MulH.equiv_MULH 014 h_input_pc [state] state.regs.get? Register.PC = .some mulh_input.PC
+ZiskFv.Equivalence.MulH.equiv_MULH 015 h_exec_len [bus_shape] exec_row.length = 2
+ZiskFv.Equivalence.MulH.equiv_MULH 016 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
+ZiskFv.Equivalence.MulH.equiv_MULH 017 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
+ZiskFv.Equivalence.MulH.equiv_MULH 018 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
+ZiskFv.Equivalence.MulH.equiv_MULH 019 h_m0_mult [bus_shape] e0.multiplicity = -1
+ZiskFv.Equivalence.MulH.equiv_MULH 020 h_m0_as [bus_shape] e0.as.val = 1
+ZiskFv.Equivalence.MulH.equiv_MULH 021 h_m1_mult [bus_shape] e1.multiplicity = -1
+ZiskFv.Equivalence.MulH.equiv_MULH 022 h_m1_as [bus_shape] e1.as.val = 1
+ZiskFv.Equivalence.MulH.equiv_MULH 023 h_m2_mult [bus_shape] e2.multiplicity = 1
+ZiskFv.Equivalence.MulH.equiv_MULH 024 h_m2_as [bus_shape] e2.as.val = 1
+ZiskFv.Equivalence.MulH.equiv_MULH 025 h_rd_idx [transpile] mulh_input.rd = Transpiler.wrap_to_regidx e2.ptr
+ZiskFv.Equivalence.MulH.equiv_MULH 026 h_chain [other] ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a
+ZiskFv.Equivalence.MulH.equiv_MULH 027 h_na [other] v.na r_a = v.na r_a
+ZiskFv.Equivalence.MulH.equiv_MULH 028 h_nb [other] v.nb r_a = v.nb r_a
+ZiskFv.Equivalence.MulH.equiv_MULH 029 h_np [other] v.np r_a = v.np r_a
+ZiskFv.Equivalence.MulH.equiv_MULH 030 h_nr [other] v.nr r_a = 0
+ZiskFv.Equivalence.MulH.equiv_MULH 031 h_sext [other] v.sext r_a = 0
+ZiskFv.Equivalence.MulH.equiv_MULH 032 h_m32 [other] v.m32 r_a = 0
+ZiskFv.Equivalence.MulH.equiv_MULH 033 h_div [other] v.div r_a = 0
+ZiskFv.Equivalence.MulH.equiv_MULH 034 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a = 1
+ZiskFv.Equivalence.MulH.equiv_MULH 035 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
+ZiskFv.Equivalence.MulH.equiv_MULH 036 h_np_xor [other] ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a) = ZiskFv.PackedBitVec.Sign
+ZiskFv.Equivalence.MulH.equiv_MULH 037 h_byte_lo [other] e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 = (v.d_0 
+ZiskFv.Equivalence.MulH.equiv_MULH 038 h_byte_hi [other] e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216 = (v.d_2 
+ZiskFv.Equivalence.MulH.equiv_MULH 039 h_op1 [bridge] mulh_input.r1_val.toInt = (ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val
+ZiskFv.Equivalence.MulH.equiv_MULH 040 h_op2 [bridge] mulh_input.r2_val.toInt = (ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 001 mulhsu_input [other] PureSpec.MulhsuInput
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 002 r1 [other] regidx
