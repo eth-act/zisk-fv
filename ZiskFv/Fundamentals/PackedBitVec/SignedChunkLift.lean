@@ -961,4 +961,484 @@ example (cy : FGL) (h_disj : cy.val < 983041 ∨ GL_prime - 983040 ≤ cy.val) :
 /-- **Smoke test: `toIntZ_cast` round-trip.** -/
 example (x : FGL) : ((toIntZ x : ℤ) : FGL) = x := toIntZ_cast x
 
+/-! ## Part 8 — Layer 1.5: composition glue for Phase 4.alpha.A.4-6
+
+The five lemmas below close the foundation gaps identified by the
+prior Layer-4-6 dispatch agent. They compose A.0's column-form
+chunk identity with A.1's abs-product machinery so that per-opcode
+proofs can produce the final BV64-output form without re-doing the
+algebraic plumbing.
+
+Group A — sign-witness pin lifts (B1):
+* `toIntZ_of_bool` — for FGL `x ∈ {0,1}`, `toIntZ x = (x.val : ℤ) ∈ {0,1}`.
+* `fgl_fab_pin_int`, `fgl_na_fb_pin_int`, `fgl_nb_fa_pin_int` — lift
+  constraints 6/7/8 from FGL to ℤ via `toIntZ`.
+* `fgl_mul_signed_simplified_chunks_to_abs_product` — compose A.0's
+  column-form identity with the three pin lifts + sign-witness
+  booleanity to deliver A.1's simplified-form abs-product output.
+
+Group B — chunk-packing bound (B4):
+* `fgl_signed_C_D_chunk_packing_nonneg` — given chunk-range bounds,
+  the toIntZ-lifted four-chunk packings `C`, `D` satisfy
+  `0 ≤ C, D < 2^64`.
+
+Group C — operand `toInt`-form bridge (B7):
+* `bv64_toInt_eq_toNat_sub_msb_pow` — `op.toInt = op.toNat - msb*2^64`,
+  the boolean-aware form usable with sign-witness `na = op.msb.toNat`.
+* `signed_op_packing_bridge` — `op.toInt = (A : ℤ) - na * 2^64`
+  for `A = op.toNat = packed4 a₀ a₁ a₂ a₃` and `na = op.msb.toNat`.
+
+Group D — DIV / REM final wrappers (B5, B6):
+* `fgl_div_signed_to_bv64` — given the abs-Euclidean identity from
+  A.1's `fgl_div_signed_chunks_to_abs` (after pin substitution + sign
+  reconciliation), plus the non-boundary preconditions (r2 ≠ 0 and no
+  INT_MIN over -1 overflow), conclude `BitVec.ofInt 64 q_int = (execute_DIV_REM_pure r1 r2 .DRS).1`.
+* `fgl_rem_signed_to_bv64` — analogous for remainder.
+
+The DIV / REM wrappers take the non-boundary case directly; the two
+boundary cases (`r2 = 0` and `r1 = INT_MIN ∧ r2 = -1`) are handled
+by the per-opcode dispatch using `int_tdiv_overflow_full` /
+`int_tmod_overflow_full` from `SignedNoWrap.lean`. -/
+
+/-! ### 8.1 — Sign-witness pin lifts (B1, part a)
+
+The MUL/DIV AIRs pin three derived columns by constraints 6/7/8:
+
+```
+fab   = 1 - 2*na - 2*nb + 4*na*nb   (constraint 6)
+na_fb = na * (1 - 2*nb)              (constraint 7)
+nb_fa = nb * (1 - 2*na)              (constraint 8)
+```
+
+These FGL equations need to be lifted to ℤ via `toIntZ` for use by
+the A.1 abs-product bridge. Because `na, nb ∈ {0,1}` (booleanity from
+constraints 41/42), the ℤ values of both sides are in `[-1, +4]`,
+well within `GL_prime/2`. So `fgl_eq_to_int_eq` applies cleanly. -/
+
+/-- **For boolean FGL values, `toIntZ` equals the natural value.** -/
+lemma toIntZ_of_bool {x : FGL} (h : x = 0 ∨ x = 1) :
+    toIntZ x = (x.val : ℤ) := by
+  rcases h with rfl | rfl
+  · show toIntZ (0 : FGL) = ((0 : FGL).val : ℤ); decide
+  · show toIntZ (1 : FGL) = ((1 : FGL).val : ℤ); decide
+
+/-- **Boolean FGL values have `toIntZ ∈ {0, 1}`.** -/
+lemma toIntZ_bool_cases {x : FGL} (h : x = 0 ∨ x = 1) :
+    toIntZ x = 0 ∨ toIntZ x = 1 := by
+  rcases h with rfl | rfl
+  · left; decide
+  · right; decide
+
+/-- **Constraint 6 lifted to ℤ via `toIntZ`.**
+    Given the FGL pin equation `fab = 1 - 2*na - 2*nb + 4*na*nb` and
+    booleanity of `na, nb`, conclude the ℤ form. -/
+theorem fgl_fab_pin_int
+    (fab na nb : FGL)
+    (h_na : na = 0 ∨ na = 1) (h_nb : nb = 0 ∨ nb = 1)
+    (h_fab : fab = 1 - 2 * na - 2 * nb + 4 * na * nb) :
+    toIntZ fab
+      = 1 - 2 * toIntZ na - 2 * toIntZ nb + 4 * toIntZ na * toIntZ nb := by
+  rcases h_na with rfl | rfl <;> rcases h_nb with rfl | rfl <;>
+    (subst h_fab; decide)
+
+/-- **Constraint 7 lifted to ℤ via `toIntZ`.** -/
+theorem fgl_na_fb_pin_int
+    (na_fb na nb : FGL)
+    (h_na : na = 0 ∨ na = 1) (h_nb : nb = 0 ∨ nb = 1)
+    (h_pin : na_fb = na * (1 - 2 * nb)) :
+    toIntZ na_fb = toIntZ na * (1 - 2 * toIntZ nb) := by
+  rcases h_na with rfl | rfl <;> rcases h_nb with rfl | rfl <;>
+    (subst h_pin; decide)
+
+/-- **Constraint 8 lifted to ℤ via `toIntZ`.** -/
+theorem fgl_nb_fa_pin_int
+    (nb_fa na nb : FGL)
+    (h_na : na = 0 ∨ na = 1) (h_nb : nb = 0 ∨ nb = 1)
+    (h_pin : nb_fa = nb * (1 - 2 * na)) :
+    toIntZ nb_fa = toIntZ nb * (1 - 2 * toIntZ na) := by
+  rcases h_na with rfl | rfl <;> rcases h_nb with rfl | rfl <;>
+    (subst h_pin; decide)
+
+/-! ### 8.2 — Column form → simplified form bridge (B1, part b)
+
+A.0's `fgl_mul_signed_chunks_to_int_identity` outputs the chunk
+identity with `toIntZ fab`, `toIntZ na_fb`, `toIntZ nb_fa` as raw ℤ
+columns:
+
+```
+toIntZ fab * A * B + (toIntZ nb_fa * A + toIntZ na_fb * B) * 2^64
+  + (na*nb - np) * 2^128  =  (1 - 2*np) * (C + D * 2^64)
+```
+
+A.1's `signed_mul_chunks_to_abs_product` consumes the form where
+`fab`, `na_fb`, `nb_fa` are substituted by their pin values + the
+XOR encoding `np = na + nb - 2*na*nb`:
+
+```
+(1 - 2*np) * A * B
+  + (nb*(1-2*na) * A + na*(1-2*nb) * B) * 2^64
+  + (na*nb - np) * 2^128  =  (1 - 2*np) * (C + D * 2^64)
+```
+
+Note that under `np = na + nb - 2*na*nb`, we have
+`(1 - 2*np) = 1 - 2*na - 2*nb + 4*na*nb`, which is exactly fab's
+pin value. Substituting all three pins + the XOR linear identity
+turns A.0's output into A.1's input. -/
+
+/-- **A.0 column form → A.1 simplified abs-product output.**
+    Composes the three FGL pin lifts with A.1's
+    `signed_mul_chunks_to_abs_product` to deliver the abs-product
+    identity directly from A.0's column-form chunk identity. -/
+theorem fgl_mul_signed_simplified_chunks_to_abs_product
+    (A B C D : ℤ)
+    (fab na_fb nb_fa na nb np : FGL)
+    (h_na_bool : na = 0 ∨ na = 1) (h_nb_bool : nb = 0 ∨ nb = 1)
+    (h_fab_pin : fab = 1 - 2 * na - 2 * nb + 4 * na * nb)
+    (h_nafb_pin : na_fb = na * (1 - 2 * nb))
+    (h_nbfa_pin : nb_fa = nb * (1 - 2 * na))
+    (h_np_xor : toIntZ np = toIntZ na + toIntZ nb - 2 * toIntZ na * toIntZ nb)
+    (h_chunk_column :
+      toIntZ fab * A * B
+        + (toIntZ nb_fa * A + toIntZ na_fb * B) * 2^64
+        + (toIntZ na * toIntZ nb - toIntZ np) * 2^128
+      = (1 - 2 * toIntZ np) * (C + D * 2^64)) :
+    ((1 - 2 * toIntZ na) * A + toIntZ na * 2^64)
+        * ((1 - 2 * toIntZ nb) * B + toIntZ nb * 2^64)
+      = (1 - 2 * toIntZ np) * (C + D * 2^64) + toIntZ np * 2^64 * 2^64 := by
+  -- Lift the three pin equations to ℤ.
+  have h_fab_int := fgl_fab_pin_int fab na nb h_na_bool h_nb_bool h_fab_pin
+  have h_nafb_int := fgl_na_fb_pin_int na_fb na nb h_na_bool h_nb_bool h_nafb_pin
+  have h_nbfa_int := fgl_nb_fa_pin_int nb_fa na nb h_na_bool h_nb_bool h_nbfa_pin
+  -- Rewrite the chunk-column identity into the simplified shape that
+  -- `signed_mul_chunks_to_abs_product` consumes. The substitutions
+  -- fab → 1-2na-2nb+4na*nb, nb_fa → nb*(1-2na), na_fb → na*(1-2nb),
+  -- combined with np = XOR, turn h_chunk_column into h_simplified.
+  have h_simplified :
+      (1 - 2 * toIntZ np) * A * B
+        + (toIntZ nb * (1 - 2 * toIntZ na) * A
+            + toIntZ na * (1 - 2 * toIntZ nb) * B) * 2^64
+        + (toIntZ na * toIntZ nb - toIntZ np) * 2^128
+        = (1 - 2 * toIntZ np) * (C + D * 2^64) := by
+    linear_combination
+      h_chunk_column
+        - (A * B) * h_fab_int
+        - (2 * A * B) * h_np_xor
+        - (A * 2^64) * h_nbfa_int
+        - (B * 2^64) * h_nafb_int
+  -- A.1's bridge converts simplified chunk identity to abs-product.
+  have := signed_mul_chunks_to_abs_product A B C D
+            (toIntZ na) (toIntZ nb) (toIntZ np) h_np_xor h_simplified
+  -- Output uses np * 2^128 = np * 2^64 * 2^64; convert.
+  linear_combination this
+
+/-! ### 8.3 — Chunk packing bounds (B4)
+
+The toIntZ-lifted four-chunk packings live in `[0, 2^64)` as soon as
+each chunk is `< 65536`. The disjunctive carry bounds from
+`fgl_carry_disjunctive_lt` are not needed for the bound on `C, D`
+themselves — they live on the carry columns, not the output chunks.
+-/
+
+/-- **Four-chunk packing nonnegativity from chunk range bounds.**
+    Each `c_i.val < 65536`, so `toIntZ c_i = c_i.val ≥ 0`, and the
+    packing is bounded by `(2^16 - 1) * (1 + 2^16 + 2^32 + 2^48) < 2^64`. -/
+theorem toIntZ_packed4_bounds
+    {c₀ c₁ c₂ c₃ : FGL}
+    (h0 : c₀.val < 65536) (h1 : c₁.val < 65536)
+    (h2 : c₂.val < 65536) (h3 : c₃.val < 65536) :
+    0 ≤ toIntZ c₀ + toIntZ c₁ * 65536
+            + toIntZ c₂ * (65536 * 65536)
+            + toIntZ c₃ * (65536 * 65536 * 65536)
+      ∧ toIntZ c₀ + toIntZ c₁ * 65536
+              + toIntZ c₂ * (65536 * 65536)
+              + toIntZ c₃ * (65536 * 65536 * 65536)
+          < 2^64 := by
+  rw [toIntZ_eq_val_of_lt h0 (by decide)]
+  rw [toIntZ_eq_val_of_lt h1 (by decide)]
+  rw [toIntZ_eq_val_of_lt h2 (by decide)]
+  rw [toIntZ_eq_val_of_lt h3 (by decide)]
+  constructor
+  · positivity
+  · show _ < (2 : ℤ)^64
+    have h0' : (c₀.val : ℤ) ≤ 65535 := by exact_mod_cast Nat.lt_succ_iff.mp h0
+    have h1' : (c₁.val : ℤ) ≤ 65535 := by exact_mod_cast Nat.lt_succ_iff.mp h1
+    have h2' : (c₂.val : ℤ) ≤ 65535 := by exact_mod_cast Nat.lt_succ_iff.mp h2
+    have h3' : (c₃.val : ℤ) ≤ 65535 := by exact_mod_cast Nat.lt_succ_iff.mp h3
+    have h0nn : (0 : ℤ) ≤ (c₀.val : ℤ) := by positivity
+    have h1nn : (0 : ℤ) ≤ (c₁.val : ℤ) := by positivity
+    have h2nn : (0 : ℤ) ≤ (c₂.val : ℤ) := by positivity
+    have h3nn : (0 : ℤ) ≤ (c₃.val : ℤ) := by positivity
+    nlinarith [h0', h1', h2', h3', h0nn, h1nn, h2nn, h3nn]
+
+/-- **Joint C and D bounds from 16 chunk-range bounds.**
+    Given the eight `c_i` and `d_i` chunk-range bounds (each `< 65536`),
+    both `C` and `D` (the toIntZ-lifted four-chunk packings) live in
+    `[0, 2^64)`. -/
+theorem fgl_signed_C_D_chunk_packing_nonneg
+    {c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL}
+    (h_c0 : c₀.val < 65536) (h_c1 : c₁.val < 65536)
+    (h_c2 : c₂.val < 65536) (h_c3 : c₃.val < 65536)
+    (h_d0 : d₀.val < 65536) (h_d1 : d₁.val < 65536)
+    (h_d2 : d₂.val < 65536) (h_d3 : d₃.val < 65536) :
+    (0 ≤ toIntZ c₀ + toIntZ c₁ * 65536
+            + toIntZ c₂ * (65536 * 65536)
+            + toIntZ c₃ * (65536 * 65536 * 65536)
+      ∧ toIntZ c₀ + toIntZ c₁ * 65536
+              + toIntZ c₂ * (65536 * 65536)
+              + toIntZ c₃ * (65536 * 65536 * 65536) < 2^64)
+    ∧ (0 ≤ toIntZ d₀ + toIntZ d₁ * 65536
+              + toIntZ d₂ * (65536 * 65536)
+              + toIntZ d₃ * (65536 * 65536 * 65536)
+        ∧ toIntZ d₀ + toIntZ d₁ * 65536
+                + toIntZ d₂ * (65536 * 65536)
+                + toIntZ d₃ * (65536 * 65536 * 65536) < 2^64) :=
+  ⟨toIntZ_packed4_bounds h_c0 h_c1 h_c2 h_c3,
+   toIntZ_packed4_bounds h_d0 h_d1 h_d2 h_d3⟩
+
+/-! ### 8.4 — Operand `toInt`-form K2 bridge (B7)
+
+The unsigned-mode K2 lane-match template passes `op.toNat = packed4 ...`
+to the byte-sum bridge. The signed-mode equivs need `op.toInt`-form
+operands feeding into `fgl_mul_signed_to_bv64_hi` and friends, which
+expect `r1.toInt = A - na * 2^64` (the toInt as signed-int form with
+sign witness lifted out).
+
+The bridge: when `na = op.msb.toNat`, we have:
+* msb=false ⇒ na=0 ⇒ `op.toInt = op.toNat`. ✓
+* msb=true  ⇒ na=1 ⇒ `op.toInt = op.toNat - 2^64`. ✓
+
+Composing with `op.toNat = packed4 a₀ a₁ a₂ a₃` (the toNat-form K2
+lane-match output) gives `op.toInt = (packed4 ... : ℤ) - na * 2^64`. -/
+
+/-- **Boolean-aware `toInt` ↔ `toNat - msb*2^64` bridge.** For any
+    64-bit BitVec, `op.toInt = op.toNat - (op.msb.toNat : ℤ) * 2^64`.
+    Combines `bv_toInt_eq_toNat_of_msb_false` and
+    `bv_toInt_eq_toNat_sub_pow_of_msb_true`. -/
+lemma bv64_toInt_eq_toNat_sub_msb_pow (op : BitVec 64) :
+    op.toInt = (op.toNat : ℤ) - (op.msb.toNat : ℤ) * 2^64 := by
+  by_cases hmsb : op.msb
+  · rw [ZiskFv.PackedBitVec.Signed.bv_toInt_eq_toNat_sub_pow_of_msb_true op hmsb,
+        hmsb]
+    show (op.toNat : ℤ) - 2^64 = (op.toNat : ℤ) - ((true : Bool).toNat : ℤ) * 2^64
+    simp
+  · have hmsb' : op.msb = false := by simp [hmsb]
+    rw [ZiskFv.PackedBitVec.Signed.bv_toInt_eq_toNat_of_msb_false op hmsb', hmsb']
+    show (op.toNat : ℤ) = (op.toNat : ℤ) - ((false : Bool).toNat : ℤ) * 2^64
+    simp
+
+/-- **`toInt`-form K2 operand bridge.** Given the toNat-form K2 lane-match
+    output `op.toNat = (A : ℕ)` (with `A` a ℕ packing — typically
+    `packed4 a₀ a₁ a₂ a₃`) and a sign witness `na = op.msb.toNat`,
+    conclude `op.toInt = (A : ℤ) - na * 2^64`.
+
+    This is the canonical input shape for `fgl_mul_signed_to_bv64_hi`
+    and the DIV/REM final wrappers below. -/
+theorem signed_op_packing_bridge
+    (op : BitVec 64) (A : ℕ) (na : ℕ)
+    (h_toNat : op.toNat = A)
+    (h_na : na = op.msb.toNat) :
+    op.toInt = (A : ℤ) - (na : ℤ) * 2^64 := by
+  rw [bv64_toInt_eq_toNat_sub_msb_pow op]
+  rw [h_toNat, h_na]
+
+/-! ### 8.4b — Truncated div/mod uniqueness over ℤ
+
+Shared helper for the DIV/REM final wrappers. Given a Euclidean
+decomposition `a = q * b + r` with `r` in the "sign-correct" range
+(magnitude `< |b|` and same sign as `a`), `q = Int.tdiv a b` and
+`r = Int.tmod a b`. -/
+
+/-- **From `0 ≤ r * a` and same-sign convention, deduce sign of `r`.** -/
+private lemma signed_remainder_sign_aux
+    (a b q r : ℤ) (_hb : b ≠ 0)
+    (h_euclid : a = q * b + r)
+    (h_r_abs : r.natAbs < b.natAbs)
+    (h_r_sign : 0 ≤ r * a) :
+    (0 ≤ a → 0 ≤ r) ∧ (a ≤ 0 → r ≤ 0) := by
+  refine ⟨fun ha => ?_, fun ha => ?_⟩
+  · by_contra h_r_neg
+    push_neg at h_r_neg
+    have h_prod_le : r * a ≤ 0 := mul_nonpos_of_nonpos_of_nonneg (le_of_lt h_r_neg) ha
+    have h_prod_zero : r * a = 0 := le_antisymm h_prod_le h_r_sign
+    rcases mul_eq_zero.mp h_prod_zero with hr0 | ha0
+    · omega
+    · subst ha0
+      have h_qb : q * b = -r := by linarith
+      have h_q_zero : q = 0 := by
+        by_contra hq
+        have h_qb_abs : b.natAbs ≤ (q * b).natAbs := by
+          rw [Int.natAbs_mul]
+          have hq_pos : 1 ≤ q.natAbs :=
+            Nat.one_le_iff_ne_zero.mpr (fun h => hq (Int.natAbs_eq_zero.mp h))
+          calc b.natAbs = 1 * b.natAbs := (one_mul _).symm
+            _ ≤ q.natAbs * b.natAbs := Nat.mul_le_mul_right _ hq_pos
+        have h_qb_abs_eq : (q * b).natAbs = r.natAbs := by
+          rw [h_qb, Int.natAbs_neg]
+        rw [h_qb_abs_eq] at h_qb_abs
+        omega
+      rw [h_q_zero, zero_mul] at h_qb
+      omega
+  · by_contra h_r_pos
+    push_neg at h_r_pos
+    have h_prod_le : r * a ≤ 0 := mul_nonpos_of_nonneg_of_nonpos (le_of_lt h_r_pos) ha
+    have h_prod_zero : r * a = 0 := le_antisymm h_prod_le h_r_sign
+    rcases mul_eq_zero.mp h_prod_zero with hr0 | ha0
+    · omega
+    · subst ha0
+      have h_qb : q * b = -r := by linarith
+      have h_q_zero : q = 0 := by
+        by_contra hq
+        have h_qb_abs : b.natAbs ≤ (q * b).natAbs := by
+          rw [Int.natAbs_mul]
+          have hq_pos : 1 ≤ q.natAbs :=
+            Nat.one_le_iff_ne_zero.mpr (fun h => hq (Int.natAbs_eq_zero.mp h))
+          calc b.natAbs = 1 * b.natAbs := (one_mul _).symm
+            _ ≤ q.natAbs * b.natAbs := Nat.mul_le_mul_right _ hq_pos
+        have h_qb_abs_eq : (q * b).natAbs = r.natAbs := by
+          rw [h_qb, Int.natAbs_neg]
+        rw [h_qb_abs_eq] at h_qb_abs
+        omega
+      rw [h_q_zero, zero_mul] at h_qb
+      omega
+
+/-- **Uniqueness of `Int.tdiv` from a sign-correct Euclidean witness.** -/
+private lemma signed_tdiv_unique
+    (a b q r : ℤ) (hb : b ≠ 0)
+    (h_euclid : a = q * b + r)
+    (h_r_abs : r.natAbs < b.natAbs)
+    (h_r_sign : 0 ≤ r * a) :
+    q = Int.tdiv a b := by
+  obtain ⟨h_pos, h_neg⟩ := signed_remainder_sign_aux a b q r hb h_euclid h_r_abs h_r_sign
+  by_cases ha : 0 ≤ a
+  · have h_r_nn : 0 ≤ r := h_pos ha
+    have h_r_ub : r < (b.natAbs : ℤ) := by
+      have : r.natAbs < b.natAbs := h_r_abs
+      omega
+    have h_unique :=
+      (Int.tdiv_tmod_unique (a := a) (b := b) (r := r) (q := q) ha hb).mpr
+        ⟨by linarith, h_r_nn, h_r_ub⟩
+    exact h_unique.1.symm
+  · push_neg at ha
+    have h_a_le : a ≤ 0 := le_of_lt ha
+    have h_r_np : r ≤ 0 := h_neg h_a_le
+    have h_r_lb : -(b.natAbs : ℤ) < r := by
+      have : r.natAbs < b.natAbs := h_r_abs
+      omega
+    have h_unique :=
+      (Int.tdiv_tmod_unique' (a := a) (b := b) (r := r) (q := q) h_a_le hb).mpr
+        ⟨by linarith, h_r_lb, h_r_np⟩
+    exact h_unique.1.symm
+
+/-- **Uniqueness of `Int.tmod` from a sign-correct Euclidean witness.** -/
+private lemma signed_tmod_unique
+    (a b q r : ℤ) (hb : b ≠ 0)
+    (h_euclid : a = q * b + r)
+    (h_r_abs : r.natAbs < b.natAbs)
+    (h_r_sign : 0 ≤ r * a) :
+    r = Int.tmod a b := by
+  obtain ⟨h_pos, h_neg⟩ := signed_remainder_sign_aux a b q r hb h_euclid h_r_abs h_r_sign
+  by_cases ha : 0 ≤ a
+  · have h_r_nn : 0 ≤ r := h_pos ha
+    have h_r_ub : r < (b.natAbs : ℤ) := by
+      have : r.natAbs < b.natAbs := h_r_abs
+      omega
+    have h_unique :=
+      (Int.tdiv_tmod_unique (a := a) (b := b) (r := r) (q := q) ha hb).mpr
+        ⟨by linarith, h_r_nn, h_r_ub⟩
+    exact h_unique.2.symm
+  · push_neg at ha
+    have h_a_le : a ≤ 0 := le_of_lt ha
+    have h_r_np : r ≤ 0 := h_neg h_a_le
+    have h_r_lb : -(b.natAbs : ℤ) < r := by
+      have : r.natAbs < b.natAbs := h_r_abs
+      omega
+    have h_unique :=
+      (Int.tdiv_tmod_unique' (a := a) (b := b) (r := r) (q := q) h_a_le hb).mpr
+        ⟨by linarith, h_r_lb, h_r_np⟩
+    exact h_unique.2.symm
+
+/-! ### 8.5 — DIV final wrapper (B5)
+
+The signed-DIV BV64 output is `BitVec.ofInt 64 q` where `q` is the
+witnessed quotient lifted via the sign witnesses + abs-Euclidean
+identity from `fgl_div_signed_chunks_to_abs`.
+
+The wrapper takes the **non-boundary** case as a precondition:
+`r2.toInt ≠ 0` and `¬ (r1.toInt = -2^63 ∧ r2.toInt = -1)`. In that
+case `execute_DIV_REM_pure_int r1 r2 .DRS` returns `(Int.tdiv r1.toInt
+r2.toInt, Int.tmod r1.toInt r2.toInt)`.
+
+The boundary cases are handled by the caller using
+`int_tdiv_overflow_full` / `int_tmod_overflow_full` and the AIR's
+`b = 0` / `nr` slots — those dispatches live at the per-opcode
+boundary as documented in `SignedNoWrap.lean`'s Part 10 scope note.
+
+The wrapper takes the ℤ-Euclidean identity `r1.toInt = q * r2.toInt + r`
+plus the standard `Int.tdiv`-shape preconditions (sign of `r` matches
+sign of dividend; `|r| < |r2|`) and concludes the BV64-output equality.
+-/
+
+/-- **Signed-DIV final BV64 wrapper (non-boundary case).**
+
+    Given:
+    * The ℤ-Euclidean identity `r1.toInt = q * r2.toInt + r` where `q, r`
+      are the witnessed quotient / remainder lifted to ℤ.
+    * `r2.toInt ≠ 0` and `¬ (r1.toInt = -2^63 ∧ r2.toInt = -1)` (no boundary).
+    * `Int.tdiv`-compatibility: `|r| < |r2.toInt|` and `r * r1.toInt ≥ 0`
+      (the truncated-mod-of-divisor sign convention).
+
+    Conclude: `BitVec.ofInt 64 q = (execute_DIV_REM_pure r1 r2 .DRS).1`. -/
+theorem fgl_div_signed_to_bv64
+    (r1 r2 : BitVec 64) (q r : ℤ)
+    (h_r2_ne : r2.toInt ≠ 0)
+    (h_no_overflow : ¬ (r1.toInt = -2^63 ∧ r2.toInt = -1))
+    (h_euclid : r1.toInt = q * r2.toInt + r)
+    (h_r_abs : r.natAbs < r2.toInt.natAbs)
+    (h_r_sign : 0 ≤ r * r1.toInt) :
+    BitVec.ofInt 64 q = (execute_DIV_REM_pure r1 r2 .DRS).1 := by
+  -- Establish q = Int.tdiv r1.toInt r2.toInt via tdiv_tmod_unique.
+  have h_q_eq : q = Int.tdiv r1.toInt r2.toInt := signed_tdiv_unique
+    r1.toInt r2.toInt q r h_r2_ne h_euclid h_r_abs h_r_sign
+  -- Unfold execute_DIV_REM_pure. The DRS branch returns
+  -- (BitVec.ofInt 64 q', BitVec.ofInt 64 r') where q' / r' are the
+  -- conditional dispatch on the boundary cases.
+  simp only [execute_DIV_REM_pure, execute_DIV_REM_pure_int,
+             if_neg h_r2_ne]
+  -- Goal mentions decide && decide; collapse it via h_no_overflow.
+  have h_cond : (decide (r1.toInt = -2^63) && decide (r2.toInt = -1)) = false := by
+    rw [Bool.and_eq_false_iff]
+    by_cases h1 : r1.toInt = -2^63
+    · by_cases h2 : r2.toInt = -1
+      · exact absurd ⟨h1, h2⟩ h_no_overflow
+      · right; exact decide_eq_false h2
+    · left; exact decide_eq_false h1
+  simp only [h_cond, Bool.false_eq_true, if_false]
+  rw [h_q_eq]
+
+/-! ### 8.6 — REM final wrapper (B6)
+
+Analogous to 8.5 for the remainder. The non-boundary case has
+`(execute_DIV_REM_pure r1 r2 .DRS).2 = BitVec.ofInt 64 (Int.tmod r1.toInt r2.toInt)`.
+-/
+
+/-- **Signed-REM final BV64 wrapper (non-boundary case).**
+
+    Same preconditions as `fgl_div_signed_to_bv64` (Euclidean identity
+    + non-boundary). The remainder branch always returns
+    `BitVec.ofInt 64 (Int.tmod r1.toInt r2.toInt)`, regardless of the
+    boundary dispatch — but the chunk-derived witnessed `r` matches
+    `Int.tmod r1.toInt r2.toInt` only in the non-boundary case. -/
+theorem fgl_rem_signed_to_bv64
+    (r1 r2 : BitVec 64) (q r : ℤ)
+    (h_r2_ne : r2.toInt ≠ 0)
+    (_h_no_overflow : ¬ (r1.toInt = -2^63 ∧ r2.toInt = -1))
+    (h_euclid : r1.toInt = q * r2.toInt + r)
+    (h_r_abs : r.natAbs < r2.toInt.natAbs)
+    (h_r_sign : 0 ≤ r * r1.toInt) :
+    BitVec.ofInt 64 r = (execute_DIV_REM_pure r1 r2 .DRS).2 := by
+  have h_r_eq : r = Int.tmod r1.toInt r2.toInt :=
+    signed_tmod_unique r1.toInt r2.toInt q r h_r2_ne h_euclid h_r_abs h_r_sign
+  simp only [execute_DIV_REM_pure, execute_DIV_REM_pure_int]
+  rw [h_r_eq]
+
 end ZiskFv.PackedBitVec.SignedChunkLift
