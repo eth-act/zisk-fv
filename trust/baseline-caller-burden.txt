@@ -12,18 +12,18 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 2623
-# Category bridge: 59
-# Category bus_shape: 516
+# Total rows: 2593
+# Category bridge: 55
+# Category bus_shape: 512
 # Category byte_chain: 115
 # Category entry: 67
 # Category loose: 376
-# Category match: 98
-# Category other: 589
+# Category match: 94
+# Category other: 579
 # Category range: 256
 # Category row: 69
 # Category state: 217
-# Category transpile: 171
+# Category transpile: 163
 # Category validator: 90
 #
 ZiskFv.Equivalence.Add.equiv_ADD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
@@ -823,25 +823,18 @@ ZiskFv.Equivalence.LoadBU.equiv_LBU 018 h_m1_mult [bus_shape] e1.multiplicity = 
 ZiskFv.Equivalence.LoadBU.equiv_LBU 019 h_m1_as [bus_shape] e1.as.val = 2
 ZiskFv.Equivalence.LoadBU.equiv_LBU 020 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.LoadBU.equiv_LBU 021 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.LoadBU.equiv_LBU 022 h_rd_zero_iff [transpile] Transpiler.wrap_to_regidx e2.ptr = 0 ↔ lbu_input.rd = 0
-ZiskFv.Equivalence.LoadBU.equiv_LBU 023 h_rd_idx [transpile] lbu_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val
-ZiskFv.Equivalence.LoadBU.equiv_LBU 024 main [validator] Valid_Main C FGL FGL
-ZiskFv.Equivalence.LoadBU.equiv_LBU 025 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Equivalence.LoadBU.equiv_LBU 026 r_main [row] ℕ
-ZiskFv.Equivalence.LoadBU.equiv_LBU 027 _ [other] Phase F+ refactor
-ZiskFv.Equivalence.LoadBU.equiv_LBU 028 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
-ZiskFv.Equivalence.LoadBU.equiv_LBU 029 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
-ZiskFv.Equivalence.LoadBU.equiv_LBU 030 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
-ZiskFv.Equivalence.LoadBU.equiv_LBU 031 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
-ZiskFv.Equivalence.LoadBU.equiv_LBU 032 h_main_emit_b [bus_shape] main.b_0 r_main = memory_entry_lo e1 ∧ main.b_1 r_main = memory_entry_hi e1 ∧ e1
-ZiskFv.Equivalence.LoadBU.equiv_LBU 033 h_main_emit_c [match] main.c_0 r_main = memory_entry_lo e2 ∧ main.c_1 r_main = memory_entry_hi e2
-ZiskFv.Equivalence.LoadBU.equiv_LBU 034 h_ptr_match [bridge] e1.ptr.toNat = lbu_input.r1_val.toNat + (BitVec.signExtend 64 lbu_input.imm).toN
-ZiskFv.Equivalence.LoadBU.equiv_LBU 035 _ [other] CIRCUIT-CONSTRAINT class
-ZiskFv.Equivalence.LoadBU.equiv_LBU 036 h_copy0 [other] internal_op1_copies_b0 main r_main
-ZiskFv.Equivalence.LoadBU.equiv_LBU 037 h_copy1 [other] internal_op1_copies_b1 main r_main
-ZiskFv.Equivalence.LoadBU.equiv_LBU 038 h_ext [match] main.is_external_op r_main = 0
-ZiskFv.Equivalence.LoadBU.equiv_LBU 039 h_op [match] main.op r_main = (1 : FGL)
-ZiskFv.Equivalence.LoadBU.equiv_LBU 040 h_width [match] main.ind_width r_main = (1 : FGL)
+ZiskFv.Equivalence.LoadBU.equiv_LBU 022 main [validator] Valid_Main C FGL FGL
+ZiskFv.Equivalence.LoadBU.equiv_LBU 023 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Equivalence.LoadBU.equiv_LBU 024 r_main [row] ℕ
+ZiskFv.Equivalence.LoadBU.equiv_LBU 025 _ [other] Phase F+ refactor
+ZiskFv.Equivalence.LoadBU.equiv_LBU 026 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
+ZiskFv.Equivalence.LoadBU.equiv_LBU 027 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
+ZiskFv.Equivalence.LoadBU.equiv_LBU 028 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
+ZiskFv.Equivalence.LoadBU.equiv_LBU 029 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
+ZiskFv.Equivalence.LoadBU.equiv_LBU 030 _ [other] CIRCUIT-CONSTRAINT class
+ZiskFv.Equivalence.LoadBU.equiv_LBU 031 h_ext [match] main.is_external_op r_main = 0
+ZiskFv.Equivalence.LoadBU.equiv_LBU 032 h_op [match] main.op r_main = (1 : FGL)
+ZiskFv.Equivalence.LoadBU.equiv_LBU 033 h_width [match] main.ind_width r_main = (1 : FGL)
 ZiskFv.Equivalence.LoadD.equiv_LD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.LoadD.equiv_LD 001 ld_input [other] PureSpec.LdInput
 ZiskFv.Equivalence.LoadD.equiv_LD 002 mstatus [other] RegisterType Register.mstatus
@@ -865,20 +858,11 @@ ZiskFv.Equivalence.LoadD.equiv_LD 019 h_m1_mult [bus_shape] e1.multiplicity = -1
 ZiskFv.Equivalence.LoadD.equiv_LD 020 h_m1_as [bus_shape] e1.as.val = 2
 ZiskFv.Equivalence.LoadD.equiv_LD 021 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.LoadD.equiv_LD 022 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.LoadD.equiv_LD 023 _ [other] retained; -- ptr-match between Sail's rd and bus e2.ptr is not circuit-derivable
-ZiskFv.Equivalence.LoadD.equiv_LD 024 h_rd_zero_iff [transpile] Transpiler.wrap_to_regidx e2.ptr = 0 ↔ ld_input.rd = 0
-ZiskFv.Equivalence.LoadD.equiv_LD 025 h_rd_idx [transpile] ld_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val
-ZiskFv.Equivalence.LoadD.equiv_LD 026 main [validator] Valid_Main C FGL FGL
-ZiskFv.Equivalence.LoadD.equiv_LD 027 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Equivalence.LoadD.equiv_LD 028 r_main [row] ℕ
-ZiskFv.Equivalence.LoadD.equiv_LD 029 h_main_emit_b [bus_shape] main.b_0 r_main = memory_entry_lo e1 ∧ main.b_1 r_main = memory_entry_hi e1 ∧ e1
-ZiskFv.Equivalence.LoadD.equiv_LD 030 h_main_emit_c [match] main.c_0 r_main = memory_entry_lo e2 ∧ main.c_1 r_main = memory_entry_hi e2
-ZiskFv.Equivalence.LoadD.equiv_LD 031 h_ptr_match [bridge] e1.ptr.toNat = ld_input.r1_val.toNat + (BitVec.signExtend 64 ld_input.imm).toNat
-ZiskFv.Equivalence.LoadD.equiv_LD 032 _ [other] CIRCUIT-CONSTRAINT class
-ZiskFv.Equivalence.LoadD.equiv_LD 033 h_copy0 [other] internal_op1_copies_b0 main r_main
-ZiskFv.Equivalence.LoadD.equiv_LD 034 h_copy1 [other] internal_op1_copies_b1 main r_main
-ZiskFv.Equivalence.LoadD.equiv_LD 035 h_ext [match] main.is_external_op r_main = 0
-ZiskFv.Equivalence.LoadD.equiv_LD 036 h_op [match] main.op r_main = (1 : FGL)
+ZiskFv.Equivalence.LoadD.equiv_LD 023 main [validator] Valid_Main C FGL FGL
+ZiskFv.Equivalence.LoadD.equiv_LD 024 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Equivalence.LoadD.equiv_LD 025 r_main [row] ℕ
+ZiskFv.Equivalence.LoadD.equiv_LD 026 h_ext [match] main.is_external_op r_main = 0
+ZiskFv.Equivalence.LoadD.equiv_LD 027 h_op [match] main.op r_main = (1 : FGL)
 ZiskFv.Equivalence.LoadHU.equiv_LHU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.LoadHU.equiv_LHU 001 lhu_input [other] PureSpec.LhuInput
 ZiskFv.Equivalence.LoadHU.equiv_LHU 002 mstatus [other] RegisterType Register.mstatus
@@ -901,23 +885,16 @@ ZiskFv.Equivalence.LoadHU.equiv_LHU 018 h_m1_mult [bus_shape] e1.multiplicity = 
 ZiskFv.Equivalence.LoadHU.equiv_LHU 019 h_m1_as [bus_shape] e1.as.val = 2
 ZiskFv.Equivalence.LoadHU.equiv_LHU 020 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.LoadHU.equiv_LHU 021 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.LoadHU.equiv_LHU 022 h_rd_zero_iff [transpile] Transpiler.wrap_to_regidx e2.ptr = 0 ↔ lhu_input.rd = 0
-ZiskFv.Equivalence.LoadHU.equiv_LHU 023 h_rd_idx [transpile] lhu_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val
-ZiskFv.Equivalence.LoadHU.equiv_LHU 024 main [validator] Valid_Main C FGL FGL
-ZiskFv.Equivalence.LoadHU.equiv_LHU 025 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Equivalence.LoadHU.equiv_LHU 026 r_main [row] ℕ
-ZiskFv.Equivalence.LoadHU.equiv_LHU 027 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
-ZiskFv.Equivalence.LoadHU.equiv_LHU 028 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
-ZiskFv.Equivalence.LoadHU.equiv_LHU 029 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
-ZiskFv.Equivalence.LoadHU.equiv_LHU 030 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
-ZiskFv.Equivalence.LoadHU.equiv_LHU 031 h_main_emit_b [bus_shape] main.b_0 r_main = memory_entry_lo e1 ∧ main.b_1 r_main = memory_entry_hi e1 ∧ e1
-ZiskFv.Equivalence.LoadHU.equiv_LHU 032 h_main_emit_c [match] main.c_0 r_main = memory_entry_lo e2 ∧ main.c_1 r_main = memory_entry_hi e2
-ZiskFv.Equivalence.LoadHU.equiv_LHU 033 h_ptr_match [bridge] e1.ptr.toNat = lhu_input.r1_val.toNat + (BitVec.signExtend 64 lhu_input.imm).toN
-ZiskFv.Equivalence.LoadHU.equiv_LHU 034 h_copy0 [other] internal_op1_copies_b0 main r_main
-ZiskFv.Equivalence.LoadHU.equiv_LHU 035 h_copy1 [other] internal_op1_copies_b1 main r_main
-ZiskFv.Equivalence.LoadHU.equiv_LHU 036 h_ext [match] main.is_external_op r_main = 0
-ZiskFv.Equivalence.LoadHU.equiv_LHU 037 h_op [match] main.op r_main = (1 : FGL)
-ZiskFv.Equivalence.LoadHU.equiv_LHU 038 h_width [match] main.ind_width r_main = (2 : FGL)
+ZiskFv.Equivalence.LoadHU.equiv_LHU 022 main [validator] Valid_Main C FGL FGL
+ZiskFv.Equivalence.LoadHU.equiv_LHU 023 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Equivalence.LoadHU.equiv_LHU 024 r_main [row] ℕ
+ZiskFv.Equivalence.LoadHU.equiv_LHU 025 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
+ZiskFv.Equivalence.LoadHU.equiv_LHU 026 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
+ZiskFv.Equivalence.LoadHU.equiv_LHU 027 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
+ZiskFv.Equivalence.LoadHU.equiv_LHU 028 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
+ZiskFv.Equivalence.LoadHU.equiv_LHU 029 h_ext [match] main.is_external_op r_main = 0
+ZiskFv.Equivalence.LoadHU.equiv_LHU 030 h_op [match] main.op r_main = (1 : FGL)
+ZiskFv.Equivalence.LoadHU.equiv_LHU 031 h_width [match] main.ind_width r_main = (2 : FGL)
 ZiskFv.Equivalence.LoadWU.equiv_LWU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.LoadWU.equiv_LWU 001 lwu_input [other] PureSpec.LwuInput
 ZiskFv.Equivalence.LoadWU.equiv_LWU 002 mstatus [other] RegisterType Register.mstatus
@@ -940,23 +917,16 @@ ZiskFv.Equivalence.LoadWU.equiv_LWU 018 h_m1_mult [bus_shape] e1.multiplicity = 
 ZiskFv.Equivalence.LoadWU.equiv_LWU 019 h_m1_as [bus_shape] e1.as.val = 2
 ZiskFv.Equivalence.LoadWU.equiv_LWU 020 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.LoadWU.equiv_LWU 021 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.LoadWU.equiv_LWU 022 h_rd_zero_iff [transpile] Transpiler.wrap_to_regidx e2.ptr = 0 ↔ lwu_input.rd = 0
-ZiskFv.Equivalence.LoadWU.equiv_LWU 023 h_rd_idx [transpile] lwu_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val
-ZiskFv.Equivalence.LoadWU.equiv_LWU 024 main [validator] Valid_Main C FGL FGL
-ZiskFv.Equivalence.LoadWU.equiv_LWU 025 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Equivalence.LoadWU.equiv_LWU 026 r_main [row] ℕ
-ZiskFv.Equivalence.LoadWU.equiv_LWU 027 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
-ZiskFv.Equivalence.LoadWU.equiv_LWU 028 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
-ZiskFv.Equivalence.LoadWU.equiv_LWU 029 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
-ZiskFv.Equivalence.LoadWU.equiv_LWU 030 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
-ZiskFv.Equivalence.LoadWU.equiv_LWU 031 h_main_emit_b [bus_shape] main.b_0 r_main = memory_entry_lo e1 ∧ main.b_1 r_main = memory_entry_hi e1 ∧ e1
-ZiskFv.Equivalence.LoadWU.equiv_LWU 032 h_main_emit_c [match] main.c_0 r_main = memory_entry_lo e2 ∧ main.c_1 r_main = memory_entry_hi e2
-ZiskFv.Equivalence.LoadWU.equiv_LWU 033 h_ptr_match [bridge] e1.ptr.toNat = lwu_input.r1_val.toNat + (BitVec.signExtend 64 lwu_input.imm).toN
-ZiskFv.Equivalence.LoadWU.equiv_LWU 034 h_copy0 [other] internal_op1_copies_b0 main r_main
-ZiskFv.Equivalence.LoadWU.equiv_LWU 035 h_copy1 [other] internal_op1_copies_b1 main r_main
-ZiskFv.Equivalence.LoadWU.equiv_LWU 036 h_ext [match] main.is_external_op r_main = 0
-ZiskFv.Equivalence.LoadWU.equiv_LWU 037 h_op [match] main.op r_main = (1 : FGL)
-ZiskFv.Equivalence.LoadWU.equiv_LWU 038 h_width [match] main.ind_width r_main = (4 : FGL)
+ZiskFv.Equivalence.LoadWU.equiv_LWU 022 main [validator] Valid_Main C FGL FGL
+ZiskFv.Equivalence.LoadWU.equiv_LWU 023 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Equivalence.LoadWU.equiv_LWU 024 r_main [row] ℕ
+ZiskFv.Equivalence.LoadWU.equiv_LWU 025 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
+ZiskFv.Equivalence.LoadWU.equiv_LWU 026 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
+ZiskFv.Equivalence.LoadWU.equiv_LWU 027 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
+ZiskFv.Equivalence.LoadWU.equiv_LWU 028 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
+ZiskFv.Equivalence.LoadWU.equiv_LWU 029 h_ext [match] main.is_external_op r_main = 0
+ZiskFv.Equivalence.LoadWU.equiv_LWU 030 h_op [match] main.op r_main = (1 : FGL)
+ZiskFv.Equivalence.LoadWU.equiv_LWU 031 h_width [match] main.ind_width r_main = (4 : FGL)
 ZiskFv.Equivalence.Lui.equiv_LUI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lui.equiv_LUI 001 lui_input [other] PureSpec.LuiInput
 ZiskFv.Equivalence.Lui.equiv_LUI 002 imm [other] BitVec 20
