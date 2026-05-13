@@ -728,6 +728,519 @@ theorem fgl_chunk_lift_C38_int
     decide
   exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
 
+/-! ## Part 4b — Per-chunk DIV-shape signed-mode lifts to ℤ
+
+The DIV-shape per-row chunk constraints from
+`Airs/Arith/CarryChain.lean::arith_div_signed_carry_identity` (after
+substituting `m32 = 0`, `div = 1` so the selectors drop) differ from
+MUL by:
+
+* C31'..C34': add `+ (1 - 2*nr) * d_i` (a single extra term per chunk).
+* C35': drop `-γ * d_0`, replace by constant `+(nr - np)`.
+* C36'..C37': drop `-γ * d_i` (no replacement).
+* C38': drop both `-65536 * np` and `-γ * d_3`.
+
+`δ := 1 - 2*nr` has `|δ| ≤ 1` (booleanity of `nr`), so the extra
+`δ * d_i` term contributes at most `|δ| * |d_i| ≤ 1 * 65535 = 65535`
+to the magnitude — well within the safe slack on `GL_prime/2`. The
+`(nr - np)` constant in C35 contributes at most 2.
+
+Each lift mirrors its MUL twin but with adjusted polynomial shape and
+magnitude bound. -/
+
+/-- **C31' DIV-shape signed chunk lift (1-product + δ*d term, no carry-in).** -/
+theorem fgl_div_chunk_lift_C31_signed_int
+    (a₀ b₀ c₀ d₀ cy₀ fab γ δ : FGL)
+    (h_a0 : a₀.val < 65536) (h_b0 : b₀.val < 65536)
+    (h_c0 : c₀.val < 65536) (h_d0 : d₀.val < 65536)
+    (h_cy0_abs : |toIntZ cy₀| ≤ 983040)
+    (h_fab_abs : |toIntZ fab| ≤ 1) (h_γ_abs : |toIntZ γ| ≤ 1)
+    (h_δ_abs : |toIntZ δ| ≤ 1)
+    (h : fab * a₀ * b₀ + δ * d₀ - γ * c₀ - cy₀ * 65536 = 0) :
+    toIntZ fab * toIntZ a₀ * toIntZ b₀ + toIntZ δ * toIntZ d₀
+        - toIntZ γ * toIntZ c₀ - toIntZ cy₀ * 65536 = 0 := by
+  set L : ℤ := toIntZ fab * toIntZ a₀ * toIntZ b₀ + toIntZ δ * toIntZ d₀
+                - toIntZ γ * toIntZ c₀ - toIntZ cy₀ * 65536 with hL
+  have h_fgl : ((L : ℤ) : FGL) = 0 := by
+    rw [hL]; push_cast; repeat rw [toIntZ_cast]
+    linear_combination h
+  have ha0 := toIntZ_chunk_abs h_a0
+  have hb0 := toIntZ_chunk_abs h_b0
+  have hc0 := toIntZ_chunk_abs h_c0
+  have hd0 := toIntZ_chunk_abs h_d0
+  have h_t1 : |toIntZ fab * toIntZ a₀ * toIntZ b₀| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha0 hb0 (by norm_num) (by norm_num) (by norm_num)
+  have h_t1b : |toIntZ δ * toIntZ d₀| ≤ 1 * 65535 :=
+    abs_mul_le_of_abs_le h_δ_abs hd0 (by norm_num) (by norm_num)
+  have h_t2 : |toIntZ γ * toIntZ c₀| ≤ 1 * 65535 :=
+    abs_mul_le_of_abs_le h_γ_abs hc0 (by norm_num) (by norm_num)
+  have h_t3 : |toIntZ cy₀ * 65536| ≤ 983040 * 65536 :=
+    abs_mul_le_of_abs_le h_cy0_abs (by rw [abs_65536]) (by norm_num) (by norm_num)
+  have h_abs : |L| ≤ 1 * 65535 * 65535 + 1 * 65535 + 1 * 65535 + 983040 * 65536 := by
+    have hsplit : L = toIntZ fab * toIntZ a₀ * toIntZ b₀
+                      + toIntZ δ * toIntZ d₀
+                      + (- (toIntZ γ * toIntZ c₀))
+                      + (- (toIntZ cy₀ * 65536)) := by rw [hL]; ring
+    rw [hsplit]
+    have h_tri := abs_5sum_bound
+      (toIntZ fab * toIntZ a₀ * toIntZ b₀)
+      (toIntZ δ * toIntZ d₀)
+      (- (toIntZ γ * toIntZ c₀))
+      (0 : ℤ)
+      (- (toIntZ cy₀ * 65536))
+    -- Simplify the abs_5sum_bound by noting +0 doesn't change abs.
+    have h4 := abs_add_le ((toIntZ fab * toIntZ a₀ * toIntZ b₀) + (toIntZ δ * toIntZ d₀)
+                           + (- (toIntZ γ * toIntZ c₀))) (- (toIntZ cy₀ * 65536))
+    have h3 := abs_add_le ((toIntZ fab * toIntZ a₀ * toIntZ b₀) + (toIntZ δ * toIntZ d₀))
+                          (- (toIntZ γ * toIntZ c₀))
+    have h2 := abs_add_le (toIntZ fab * toIntZ a₀ * toIntZ b₀) (toIntZ δ * toIntZ d₀)
+    have hn1 : |- (toIntZ γ * toIntZ c₀)| = |toIntZ γ * toIntZ c₀| := abs_neg _
+    have hn2 : |- (toIntZ cy₀ * 65536)| = |toIntZ cy₀ * 65536| := abs_neg _
+    linarith
+  have h_safe : (1 * 65535 * 65535 + 1 * 65535 + 1 * 65535 + 983040 * 65536 : ℤ)
+                  ≤ (GL_prime : ℤ) / 2 := by
+    show _ ≤ 18446744069414584321 / 2
+    decide
+  exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
+
+/-- **C32' DIV-shape signed chunk lift (2-product + δ*d term).** -/
+theorem fgl_div_chunk_lift_C32_signed_int
+    (a₀ a₁ b₀ b₁ c₁ d₁ cy₀ cy₁ fab γ δ : FGL)
+    (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
+    (h_c1 : c₁.val < 65536) (h_d1 : d₁.val < 65536)
+    (h_cy0_abs : |toIntZ cy₀| ≤ 983040) (h_cy1_abs : |toIntZ cy₁| ≤ 983040)
+    (h_fab_abs : |toIntZ fab| ≤ 1) (h_γ_abs : |toIntZ γ| ≤ 1)
+    (h_δ_abs : |toIntZ δ| ≤ 1)
+    (h : fab * a₁ * b₀ + fab * a₀ * b₁ + δ * d₁ - γ * c₁
+            + cy₀ - cy₁ * 65536 = 0) :
+    toIntZ fab * toIntZ a₁ * toIntZ b₀ + toIntZ fab * toIntZ a₀ * toIntZ b₁
+        + toIntZ δ * toIntZ d₁
+        - toIntZ γ * toIntZ c₁ + toIntZ cy₀ - toIntZ cy₁ * 65536 = 0 := by
+  set L : ℤ := toIntZ fab * toIntZ a₁ * toIntZ b₀ + toIntZ fab * toIntZ a₀ * toIntZ b₁
+                + toIntZ δ * toIntZ d₁
+                - toIntZ γ * toIntZ c₁ + toIntZ cy₀ - toIntZ cy₁ * 65536 with hL
+  have h_fgl : ((L : ℤ) : FGL) = 0 := by
+    rw [hL]; push_cast; repeat rw [toIntZ_cast]
+    linear_combination h
+  have ha0 := toIntZ_chunk_abs h_a0
+  have ha1 := toIntZ_chunk_abs h_a1
+  have hb0 := toIntZ_chunk_abs h_b0
+  have hb1 := toIntZ_chunk_abs h_b1
+  have hc1 := toIntZ_chunk_abs h_c1
+  have hd1 := toIntZ_chunk_abs h_d1
+  have h_p1 : |toIntZ fab * toIntZ a₁ * toIntZ b₀| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha1 hb0 (by norm_num) (by norm_num) (by norm_num)
+  have h_p2 : |toIntZ fab * toIntZ a₀ * toIntZ b₁| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha0 hb1 (by norm_num) (by norm_num) (by norm_num)
+  have h_p2b : |toIntZ δ * toIntZ d₁| ≤ 1 * 65535 :=
+    abs_mul_le_of_abs_le h_δ_abs hd1 (by norm_num) (by norm_num)
+  have h_p3 : |toIntZ γ * toIntZ c₁| ≤ 1 * 65535 :=
+    abs_mul_le_of_abs_le h_γ_abs hc1 (by norm_num) (by norm_num)
+  have h_p4 : |toIntZ cy₁ * 65536| ≤ 983040 * 65536 :=
+    abs_mul_le_of_abs_le h_cy1_abs (by rw [abs_65536]) (by norm_num) (by norm_num)
+  have h_abs : |L| ≤ 2 * (1 * 65535 * 65535) + 1 * 65535 + 1 * 65535
+                      + 983040 + 983040 * 65536 := by
+    have hsplit : L = toIntZ fab * toIntZ a₁ * toIntZ b₀
+                      + toIntZ fab * toIntZ a₀ * toIntZ b₁
+                      + toIntZ δ * toIntZ d₁
+                      + (- (toIntZ γ * toIntZ c₁))
+                      + toIntZ cy₀
+                      + (- (toIntZ cy₁ * 65536)) := by rw [hL]; ring
+    rw [hsplit]
+    have h_tri := abs_6sum_bound
+      (toIntZ fab * toIntZ a₁ * toIntZ b₀)
+      (toIntZ fab * toIntZ a₀ * toIntZ b₁)
+      (toIntZ δ * toIntZ d₁)
+      (- (toIntZ γ * toIntZ c₁))
+      (toIntZ cy₀)
+      (- (toIntZ cy₁ * 65536))
+    have hn1 : |- (toIntZ γ * toIntZ c₁)| = |toIntZ γ * toIntZ c₁| := abs_neg _
+    have hn2 : |- (toIntZ cy₁ * 65536)| = |toIntZ cy₁ * 65536| := abs_neg _
+    linarith
+  have h_safe : (2 * (1 * 65535 * 65535) + 1 * 65535 + 1 * 65535
+                  + 983040 + 983040 * 65536 : ℤ) ≤ (GL_prime : ℤ) / 2 := by
+    show _ ≤ 18446744069414584321 / 2
+    decide
+  exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
+
+/-- **C33' DIV-shape signed chunk lift (3-product + δ*d term).** -/
+theorem fgl_div_chunk_lift_C33_signed_int
+    (a₀ a₁ a₂ b₀ b₁ b₂ c₂ d₂ cy₁ cy₂ fab γ δ : FGL)
+    (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536) (h_a2 : a₂.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536) (h_b2 : b₂.val < 65536)
+    (h_c2 : c₂.val < 65536) (h_d2 : d₂.val < 65536)
+    (h_cy1_abs : |toIntZ cy₁| ≤ 983040) (h_cy2_abs : |toIntZ cy₂| ≤ 983040)
+    (h_fab_abs : |toIntZ fab| ≤ 1) (h_γ_abs : |toIntZ γ| ≤ 1)
+    (h_δ_abs : |toIntZ δ| ≤ 1)
+    (h : fab * a₂ * b₀ + fab * a₁ * b₁ + fab * a₀ * b₂ + δ * d₂
+            - γ * c₂ + cy₁ - cy₂ * 65536 = 0) :
+    toIntZ fab * toIntZ a₂ * toIntZ b₀ + toIntZ fab * toIntZ a₁ * toIntZ b₁
+        + toIntZ fab * toIntZ a₀ * toIntZ b₂ + toIntZ δ * toIntZ d₂
+        - toIntZ γ * toIntZ c₂ + toIntZ cy₁ - toIntZ cy₂ * 65536 = 0 := by
+  set L : ℤ := toIntZ fab * toIntZ a₂ * toIntZ b₀ + toIntZ fab * toIntZ a₁ * toIntZ b₁
+                + toIntZ fab * toIntZ a₀ * toIntZ b₂ + toIntZ δ * toIntZ d₂
+                - toIntZ γ * toIntZ c₂ + toIntZ cy₁ - toIntZ cy₂ * 65536 with hL
+  have h_fgl : ((L : ℤ) : FGL) = 0 := by
+    rw [hL]; push_cast; repeat rw [toIntZ_cast]
+    linear_combination h
+  have ha0 := toIntZ_chunk_abs h_a0
+  have ha1 := toIntZ_chunk_abs h_a1
+  have ha2 := toIntZ_chunk_abs h_a2
+  have hb0 := toIntZ_chunk_abs h_b0
+  have hb1 := toIntZ_chunk_abs h_b1
+  have hb2 := toIntZ_chunk_abs h_b2
+  have hc2 := toIntZ_chunk_abs h_c2
+  have hd2 := toIntZ_chunk_abs h_d2
+  have h_p1 : |toIntZ fab * toIntZ a₂ * toIntZ b₀| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha2 hb0 (by norm_num) (by norm_num) (by norm_num)
+  have h_p2 : |toIntZ fab * toIntZ a₁ * toIntZ b₁| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha1 hb1 (by norm_num) (by norm_num) (by norm_num)
+  have h_p3 : |toIntZ fab * toIntZ a₀ * toIntZ b₂| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha0 hb2 (by norm_num) (by norm_num) (by norm_num)
+  have h_p3b : |toIntZ δ * toIntZ d₂| ≤ 1 * 65535 :=
+    abs_mul_le_of_abs_le h_δ_abs hd2 (by norm_num) (by norm_num)
+  have h_p4 : |toIntZ γ * toIntZ c₂| ≤ 1 * 65535 :=
+    abs_mul_le_of_abs_le h_γ_abs hc2 (by norm_num) (by norm_num)
+  have h_p5 : |toIntZ cy₂ * 65536| ≤ 983040 * 65536 :=
+    abs_mul_le_of_abs_le h_cy2_abs (by rw [abs_65536]) (by norm_num) (by norm_num)
+  have h_abs : |L| ≤ 3 * (1 * 65535 * 65535) + 1 * 65535 + 1 * 65535
+                      + 983040 + 983040 * 65536 := by
+    have hsplit : L = toIntZ fab * toIntZ a₂ * toIntZ b₀
+                      + toIntZ fab * toIntZ a₁ * toIntZ b₁
+                      + toIntZ fab * toIntZ a₀ * toIntZ b₂
+                      + toIntZ δ * toIntZ d₂
+                      + (- (toIntZ γ * toIntZ c₂)) + toIntZ cy₁
+                      + (- (toIntZ cy₂ * 65536)) := by rw [hL]; ring
+    rw [hsplit]
+    have h_tri := abs_7sum_bound
+      (toIntZ fab * toIntZ a₂ * toIntZ b₀)
+      (toIntZ fab * toIntZ a₁ * toIntZ b₁)
+      (toIntZ fab * toIntZ a₀ * toIntZ b₂)
+      (toIntZ δ * toIntZ d₂)
+      (- (toIntZ γ * toIntZ c₂))
+      (toIntZ cy₁)
+      (- (toIntZ cy₂ * 65536))
+    have hn1 : |- (toIntZ γ * toIntZ c₂)| = |toIntZ γ * toIntZ c₂| := abs_neg _
+    have hn2 : |- (toIntZ cy₂ * 65536)| = |toIntZ cy₂ * 65536| := abs_neg _
+    linarith
+  have h_safe : (3 * (1 * 65535 * 65535) + 1 * 65535 + 1 * 65535
+                  + 983040 + 983040 * 65536 : ℤ) ≤ (GL_prime : ℤ) / 2 := by
+    show _ ≤ 18446744069414584321 / 2
+    decide
+  exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
+
+/-- **C34' DIV-shape signed chunk lift (4-product + δ*d term).** -/
+theorem fgl_div_chunk_lift_C34_signed_int
+    (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₃ d₃ cy₂ cy₃ fab γ δ : FGL)
+    (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
+    (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
+    (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_c3 : c₃.val < 65536) (h_d3 : d₃.val < 65536)
+    (h_cy2_abs : |toIntZ cy₂| ≤ 983040) (h_cy3_abs : |toIntZ cy₃| ≤ 983040)
+    (h_fab_abs : |toIntZ fab| ≤ 1) (h_γ_abs : |toIntZ γ| ≤ 1)
+    (h_δ_abs : |toIntZ δ| ≤ 1)
+    (h : fab * a₃ * b₀ + fab * a₂ * b₁ + fab * a₁ * b₂ + fab * a₀ * b₃
+            + δ * d₃ - γ * c₃ + cy₂ - cy₃ * 65536 = 0) :
+    toIntZ fab * toIntZ a₃ * toIntZ b₀ + toIntZ fab * toIntZ a₂ * toIntZ b₁
+        + toIntZ fab * toIntZ a₁ * toIntZ b₂ + toIntZ fab * toIntZ a₀ * toIntZ b₃
+        + toIntZ δ * toIntZ d₃
+        - toIntZ γ * toIntZ c₃ + toIntZ cy₂ - toIntZ cy₃ * 65536 = 0 := by
+  set L : ℤ := toIntZ fab * toIntZ a₃ * toIntZ b₀ + toIntZ fab * toIntZ a₂ * toIntZ b₁
+                + toIntZ fab * toIntZ a₁ * toIntZ b₂ + toIntZ fab * toIntZ a₀ * toIntZ b₃
+                + toIntZ δ * toIntZ d₃
+                - toIntZ γ * toIntZ c₃ + toIntZ cy₂ - toIntZ cy₃ * 65536 with hL
+  have h_fgl : ((L : ℤ) : FGL) = 0 := by
+    rw [hL]; push_cast; repeat rw [toIntZ_cast]
+    linear_combination h
+  have ha0 := toIntZ_chunk_abs h_a0
+  have ha1 := toIntZ_chunk_abs h_a1
+  have ha2 := toIntZ_chunk_abs h_a2
+  have ha3 := toIntZ_chunk_abs h_a3
+  have hb0 := toIntZ_chunk_abs h_b0
+  have hb1 := toIntZ_chunk_abs h_b1
+  have hb2 := toIntZ_chunk_abs h_b2
+  have hb3 := toIntZ_chunk_abs h_b3
+  have hc3 := toIntZ_chunk_abs h_c3
+  have hd3 := toIntZ_chunk_abs h_d3
+  have h_p1 : |toIntZ fab * toIntZ a₃ * toIntZ b₀| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha3 hb0 (by norm_num) (by norm_num) (by norm_num)
+  have h_p2 : |toIntZ fab * toIntZ a₂ * toIntZ b₁| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha2 hb1 (by norm_num) (by norm_num) (by norm_num)
+  have h_p3 : |toIntZ fab * toIntZ a₁ * toIntZ b₂| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha1 hb2 (by norm_num) (by norm_num) (by norm_num)
+  have h_p4 : |toIntZ fab * toIntZ a₀ * toIntZ b₃| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha0 hb3 (by norm_num) (by norm_num) (by norm_num)
+  have h_p4b : |toIntZ δ * toIntZ d₃| ≤ 1 * 65535 :=
+    abs_mul_le_of_abs_le h_δ_abs hd3 (by norm_num) (by norm_num)
+  have h_p5 : |toIntZ γ * toIntZ c₃| ≤ 1 * 65535 :=
+    abs_mul_le_of_abs_le h_γ_abs hc3 (by norm_num) (by norm_num)
+  have h_p6 : |toIntZ cy₃ * 65536| ≤ 983040 * 65536 :=
+    abs_mul_le_of_abs_le h_cy3_abs (by rw [abs_65536]) (by norm_num) (by norm_num)
+  have h_abs : |L| ≤ 4 * (1 * 65535 * 65535) + 1 * 65535 + 1 * 65535
+                      + 983040 + 983040 * 65536 := by
+    have hsplit : L = toIntZ fab * toIntZ a₃ * toIntZ b₀
+                      + toIntZ fab * toIntZ a₂ * toIntZ b₁
+                      + toIntZ fab * toIntZ a₁ * toIntZ b₂
+                      + toIntZ fab * toIntZ a₀ * toIntZ b₃
+                      + toIntZ δ * toIntZ d₃
+                      + (- (toIntZ γ * toIntZ c₃)) + toIntZ cy₂
+                      + (- (toIntZ cy₃ * 65536)) := by rw [hL]; ring
+    rw [hsplit]
+    have h_tri := abs_8sum_bound
+      (toIntZ fab * toIntZ a₃ * toIntZ b₀)
+      (toIntZ fab * toIntZ a₂ * toIntZ b₁)
+      (toIntZ fab * toIntZ a₁ * toIntZ b₂)
+      (toIntZ fab * toIntZ a₀ * toIntZ b₃)
+      (toIntZ δ * toIntZ d₃)
+      (- (toIntZ γ * toIntZ c₃))
+      (toIntZ cy₂)
+      (- (toIntZ cy₃ * 65536))
+    have hn1 : |- (toIntZ γ * toIntZ c₃)| = |toIntZ γ * toIntZ c₃| := abs_neg _
+    have hn2 : |- (toIntZ cy₃ * 65536)| = |toIntZ cy₃ * 65536| := abs_neg _
+    linarith
+  have h_safe : (4 * (1 * 65535 * 65535) + 1 * 65535 + 1 * 65535
+                  + 983040 + 983040 * 65536 : ℤ) ≤ (GL_prime : ℤ) / 2 := by
+    show _ ≤ 18446744069414584321 / 2
+    decide
+  exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
+
+/-- **C35' DIV-shape signed chunk lift (3-product + 2 cross-terms + (nr-np) constant).**
+    No `-γ*d_0` term (compared to MUL's C35); instead a small constant
+    `+(toIntZ nr - toIntZ np)`. -/
+theorem fgl_div_chunk_lift_C35_signed_int
+    (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ cy₃ cy₄ fab na_fb nb_fa nr np : FGL)
+    (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
+    (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
+    (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_cy3_abs : |toIntZ cy₃| ≤ 983040) (h_cy4_abs : |toIntZ cy₄| ≤ 983040)
+    (h_fab_abs : |toIntZ fab| ≤ 1)
+    (h_nafb_abs : |toIntZ na_fb| ≤ 1) (h_nbfa_abs : |toIntZ nb_fa| ≤ 1)
+    (h_nr_abs : |toIntZ nr| ≤ 1) (h_np_abs : |toIntZ np| ≤ 1)
+    (h : fab * a₃ * b₁ + fab * a₂ * b₂ + fab * a₁ * b₃
+            + b₀ * na_fb + a₀ * nb_fa + (nr - np)
+            + cy₃ - cy₄ * 65536 = 0) :
+    toIntZ fab * toIntZ a₃ * toIntZ b₁ + toIntZ fab * toIntZ a₂ * toIntZ b₂
+        + toIntZ fab * toIntZ a₁ * toIntZ b₃
+        + toIntZ b₀ * toIntZ na_fb + toIntZ a₀ * toIntZ nb_fa
+        + (toIntZ nr - toIntZ np)
+        + toIntZ cy₃ - toIntZ cy₄ * 65536 = 0 := by
+  set L : ℤ := toIntZ fab * toIntZ a₃ * toIntZ b₁ + toIntZ fab * toIntZ a₂ * toIntZ b₂
+                + toIntZ fab * toIntZ a₁ * toIntZ b₃
+                + toIntZ b₀ * toIntZ na_fb + toIntZ a₀ * toIntZ nb_fa
+                + (toIntZ nr - toIntZ np)
+                + toIntZ cy₃ - toIntZ cy₄ * 65536 with hL
+  have h_fgl : ((L : ℤ) : FGL) = 0 := by
+    rw [hL]; push_cast; repeat rw [toIntZ_cast]
+    linear_combination h
+  have ha0 := toIntZ_chunk_abs h_a0
+  have ha1 := toIntZ_chunk_abs h_a1
+  have ha2 := toIntZ_chunk_abs h_a2
+  have ha3 := toIntZ_chunk_abs h_a3
+  have hb0 := toIntZ_chunk_abs h_b0
+  have hb1 := toIntZ_chunk_abs h_b1
+  have hb2 := toIntZ_chunk_abs h_b2
+  have hb3 := toIntZ_chunk_abs h_b3
+  have h_p1 : |toIntZ fab * toIntZ a₃ * toIntZ b₁| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha3 hb1 (by norm_num) (by norm_num) (by norm_num)
+  have h_p2 : |toIntZ fab * toIntZ a₂ * toIntZ b₂| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha2 hb2 (by norm_num) (by norm_num) (by norm_num)
+  have h_p3 : |toIntZ fab * toIntZ a₁ * toIntZ b₃| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha1 hb3 (by norm_num) (by norm_num) (by norm_num)
+  have h_p4 : |toIntZ b₀ * toIntZ na_fb| ≤ 65535 * 1 :=
+    abs_mul_le_of_abs_le hb0 h_nafb_abs (by norm_num) (by norm_num)
+  have h_p5 : |toIntZ a₀ * toIntZ nb_fa| ≤ 65535 * 1 :=
+    abs_mul_le_of_abs_le ha0 h_nbfa_abs (by norm_num) (by norm_num)
+  have h_p6 : |toIntZ nr - toIntZ np| ≤ 2 := by
+    have h := abs_sub (toIntZ nr) (toIntZ np)
+    linarith
+  have h_p7 : |toIntZ cy₄ * 65536| ≤ 983040 * 65536 :=
+    abs_mul_le_of_abs_le h_cy4_abs (by rw [abs_65536]) (by norm_num) (by norm_num)
+  have h_abs : |L| ≤ 3 * (1 * 65535 * 65535) + 2 * (65535 * 1) + 2
+                      + 983040 + 983040 * 65536 := by
+    have hsplit : L = toIntZ fab * toIntZ a₃ * toIntZ b₁
+                      + toIntZ fab * toIntZ a₂ * toIntZ b₂
+                      + toIntZ fab * toIntZ a₁ * toIntZ b₃
+                      + toIntZ b₀ * toIntZ na_fb
+                      + toIntZ a₀ * toIntZ nb_fa
+                      + (toIntZ nr - toIntZ np)
+                      + toIntZ cy₃
+                      + (- (toIntZ cy₄ * 65536)) := by rw [hL]; ring
+    rw [hsplit]
+    have h_tri := abs_8sum_bound
+      (toIntZ fab * toIntZ a₃ * toIntZ b₁)
+      (toIntZ fab * toIntZ a₂ * toIntZ b₂)
+      (toIntZ fab * toIntZ a₁ * toIntZ b₃)
+      (toIntZ b₀ * toIntZ na_fb)
+      (toIntZ a₀ * toIntZ nb_fa)
+      (toIntZ nr - toIntZ np)
+      (toIntZ cy₃)
+      (- (toIntZ cy₄ * 65536))
+    have hn2 : |- (toIntZ cy₄ * 65536)| = |toIntZ cy₄ * 65536| := abs_neg _
+    linarith
+  have h_safe : (3 * (1 * 65535 * 65535) + 2 * (65535 * 1) + 2
+                  + 983040 + 983040 * 65536 : ℤ) ≤ (GL_prime : ℤ) / 2 := by
+    show _ ≤ 18446744069414584321 / 2
+    decide
+  exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
+
+/-- **C36' DIV-shape signed chunk lift (drops `-γ*d_1`).** -/
+theorem fgl_div_chunk_lift_C36_signed_int
+    (a₁ a₂ a₃ b₁ b₂ b₃ cy₄ cy₅ fab na_fb nb_fa : FGL)
+    (h_a1 : a₁.val < 65536) (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
+    (h_b1 : b₁.val < 65536) (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_cy4_abs : |toIntZ cy₄| ≤ 983040) (h_cy5_abs : |toIntZ cy₅| ≤ 983040)
+    (h_fab_abs : |toIntZ fab| ≤ 1)
+    (h_nafb_abs : |toIntZ na_fb| ≤ 1) (h_nbfa_abs : |toIntZ nb_fa| ≤ 1)
+    (h : fab * a₃ * b₂ + fab * a₂ * b₃ + a₁ * nb_fa + b₁ * na_fb
+            + cy₄ - cy₅ * 65536 = 0) :
+    toIntZ fab * toIntZ a₃ * toIntZ b₂ + toIntZ fab * toIntZ a₂ * toIntZ b₃
+        + toIntZ a₁ * toIntZ nb_fa + toIntZ b₁ * toIntZ na_fb
+        + toIntZ cy₄ - toIntZ cy₅ * 65536 = 0 := by
+  set L : ℤ := toIntZ fab * toIntZ a₃ * toIntZ b₂ + toIntZ fab * toIntZ a₂ * toIntZ b₃
+                + toIntZ a₁ * toIntZ nb_fa + toIntZ b₁ * toIntZ na_fb
+                + toIntZ cy₄ - toIntZ cy₅ * 65536 with hL
+  have h_fgl : ((L : ℤ) : FGL) = 0 := by
+    rw [hL]; push_cast; repeat rw [toIntZ_cast]
+    linear_combination h
+  have ha1 := toIntZ_chunk_abs h_a1
+  have ha2 := toIntZ_chunk_abs h_a2
+  have ha3 := toIntZ_chunk_abs h_a3
+  have hb1 := toIntZ_chunk_abs h_b1
+  have hb2 := toIntZ_chunk_abs h_b2
+  have hb3 := toIntZ_chunk_abs h_b3
+  have h_p1 : |toIntZ fab * toIntZ a₃ * toIntZ b₂| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha3 hb2 (by norm_num) (by norm_num) (by norm_num)
+  have h_p2 : |toIntZ fab * toIntZ a₂ * toIntZ b₃| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha2 hb3 (by norm_num) (by norm_num) (by norm_num)
+  have h_p3 : |toIntZ a₁ * toIntZ nb_fa| ≤ 65535 * 1 :=
+    abs_mul_le_of_abs_le ha1 h_nbfa_abs (by norm_num) (by norm_num)
+  have h_p4 : |toIntZ b₁ * toIntZ na_fb| ≤ 65535 * 1 :=
+    abs_mul_le_of_abs_le hb1 h_nafb_abs (by norm_num) (by norm_num)
+  have h_p5 : |toIntZ cy₅ * 65536| ≤ 983040 * 65536 :=
+    abs_mul_le_of_abs_le h_cy5_abs (by rw [abs_65536]) (by norm_num) (by norm_num)
+  have h_abs : |L| ≤ 2 * (1 * 65535 * 65535) + 2 * (65535 * 1)
+                      + 983040 + 983040 * 65536 := by
+    have hsplit : L = toIntZ fab * toIntZ a₃ * toIntZ b₂
+                      + toIntZ fab * toIntZ a₂ * toIntZ b₃
+                      + toIntZ a₁ * toIntZ nb_fa
+                      + toIntZ b₁ * toIntZ na_fb
+                      + toIntZ cy₄
+                      + (- (toIntZ cy₅ * 65536)) := by rw [hL]; ring
+    rw [hsplit]
+    have h_tri := abs_6sum_bound
+      (toIntZ fab * toIntZ a₃ * toIntZ b₂)
+      (toIntZ fab * toIntZ a₂ * toIntZ b₃)
+      (toIntZ a₁ * toIntZ nb_fa)
+      (toIntZ b₁ * toIntZ na_fb)
+      (toIntZ cy₄)
+      (- (toIntZ cy₅ * 65536))
+    have hn2 : |- (toIntZ cy₅ * 65536)| = |toIntZ cy₅ * 65536| := abs_neg _
+    linarith
+  have h_safe : (2 * (1 * 65535 * 65535) + 2 * (65535 * 1)
+                  + 983040 + 983040 * 65536 : ℤ) ≤ (GL_prime : ℤ) / 2 := by
+    show _ ≤ 18446744069414584321 / 2
+    decide
+  exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
+
+/-- **C37' DIV-shape signed chunk lift (drops `-γ*d_2`).** -/
+theorem fgl_div_chunk_lift_C37_signed_int
+    (a₂ a₃ b₂ b₃ cy₅ cy₆ fab na_fb nb_fa : FGL)
+    (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
+    (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_cy5_abs : |toIntZ cy₅| ≤ 983040) (h_cy6_abs : |toIntZ cy₆| ≤ 983040)
+    (h_fab_abs : |toIntZ fab| ≤ 1)
+    (h_nafb_abs : |toIntZ na_fb| ≤ 1) (h_nbfa_abs : |toIntZ nb_fa| ≤ 1)
+    (h : fab * a₃ * b₃ + a₂ * nb_fa + b₂ * na_fb + cy₅ - cy₆ * 65536 = 0) :
+    toIntZ fab * toIntZ a₃ * toIntZ b₃
+        + toIntZ a₂ * toIntZ nb_fa + toIntZ b₂ * toIntZ na_fb
+        + toIntZ cy₅ - toIntZ cy₆ * 65536 = 0 := by
+  set L : ℤ := toIntZ fab * toIntZ a₃ * toIntZ b₃
+                + toIntZ a₂ * toIntZ nb_fa + toIntZ b₂ * toIntZ na_fb
+                + toIntZ cy₅ - toIntZ cy₆ * 65536 with hL
+  have h_fgl : ((L : ℤ) : FGL) = 0 := by
+    rw [hL]; push_cast; repeat rw [toIntZ_cast]
+    linear_combination h
+  have ha2 := toIntZ_chunk_abs h_a2
+  have ha3 := toIntZ_chunk_abs h_a3
+  have hb2 := toIntZ_chunk_abs h_b2
+  have hb3 := toIntZ_chunk_abs h_b3
+  have h_p1 : |toIntZ fab * toIntZ a₃ * toIntZ b₃| ≤ 1 * 65535 * 65535 :=
+    abs_mul_3_le_of_abs_le h_fab_abs ha3 hb3 (by norm_num) (by norm_num) (by norm_num)
+  have h_p2 : |toIntZ a₂ * toIntZ nb_fa| ≤ 65535 * 1 :=
+    abs_mul_le_of_abs_le ha2 h_nbfa_abs (by norm_num) (by norm_num)
+  have h_p3 : |toIntZ b₂ * toIntZ na_fb| ≤ 65535 * 1 :=
+    abs_mul_le_of_abs_le hb2 h_nafb_abs (by norm_num) (by norm_num)
+  have h_p4 : |toIntZ cy₆ * 65536| ≤ 983040 * 65536 :=
+    abs_mul_le_of_abs_le h_cy6_abs (by rw [abs_65536]) (by norm_num) (by norm_num)
+  have h_abs : |L| ≤ 1 * (1 * 65535 * 65535) + 2 * (65535 * 1)
+                      + 983040 + 983040 * 65536 := by
+    have hsplit : L = toIntZ fab * toIntZ a₃ * toIntZ b₃
+                      + toIntZ a₂ * toIntZ nb_fa
+                      + toIntZ b₂ * toIntZ na_fb
+                      + toIntZ cy₅
+                      + (- (toIntZ cy₆ * 65536)) := by rw [hL]; ring
+    rw [hsplit]
+    have h_tri := abs_5sum_bound
+      (toIntZ fab * toIntZ a₃ * toIntZ b₃)
+      (toIntZ a₂ * toIntZ nb_fa)
+      (toIntZ b₂ * toIntZ na_fb)
+      (toIntZ cy₅)
+      (- (toIntZ cy₆ * 65536))
+    have hn2 : |- (toIntZ cy₆ * 65536)| = |toIntZ cy₆ * 65536| := abs_neg _
+    linarith
+  have h_safe : (1 * (1 * 65535 * 65535) + 2 * (65535 * 1)
+                  + 983040 + 983040 * 65536 : ℤ) ≤ (GL_prime : ℤ) / 2 := by
+    show _ ≤ 18446744069414584321 / 2
+    decide
+  exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
+
+/-- **C38' DIV-shape signed chunk lift (drops `-65536*np` and `-γ*d_3`).** -/
+theorem fgl_div_chunk_lift_C38_signed_int
+    (a₃ b₃ cy₆ na nb na_fb nb_fa : FGL)
+    (h_a3 : a₃.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_cy6_abs : |toIntZ cy₆| ≤ 983040)
+    (h_nafb_abs : |toIntZ na_fb| ≤ 1) (h_nbfa_abs : |toIntZ nb_fa| ≤ 1)
+    (h_na_abs : |toIntZ na| ≤ 1) (h_nb_abs : |toIntZ nb| ≤ 1)
+    (h : 65536 * na * nb + a₃ * nb_fa + b₃ * na_fb + cy₆ = 0) :
+    65536 * toIntZ na * toIntZ nb
+        + toIntZ a₃ * toIntZ nb_fa + toIntZ b₃ * toIntZ na_fb
+        + toIntZ cy₆ = 0 := by
+  set L : ℤ := 65536 * toIntZ na * toIntZ nb
+                + toIntZ a₃ * toIntZ nb_fa + toIntZ b₃ * toIntZ na_fb
+                + toIntZ cy₆ with hL
+  have h_fgl : ((L : ℤ) : FGL) = 0 := by
+    rw [hL]; push_cast; repeat rw [toIntZ_cast]
+    linear_combination h
+  have ha3 := toIntZ_chunk_abs h_a3
+  have hb3 := toIntZ_chunk_abs h_b3
+  have h_p1 : |65536 * toIntZ na * toIntZ nb| ≤ 65536 * 1 * 1 :=
+    abs_mul_3_le_of_abs_le (by rw [abs_65536]) h_na_abs h_nb_abs
+      (by norm_num) (by norm_num) (by norm_num)
+  have h_p2 : |toIntZ a₃ * toIntZ nb_fa| ≤ 65535 * 1 :=
+    abs_mul_le_of_abs_le ha3 h_nbfa_abs (by norm_num) (by norm_num)
+  have h_p3 : |toIntZ b₃ * toIntZ na_fb| ≤ 65535 * 1 :=
+    abs_mul_le_of_abs_le hb3 h_nafb_abs (by norm_num) (by norm_num)
+  have h_abs : |L| ≤ 65536 * 1 * 1 + 2 * (65535 * 1) + 983040 := by
+    have hsplit : L = 65536 * toIntZ na * toIntZ nb
+                      + toIntZ a₃ * toIntZ nb_fa
+                      + toIntZ b₃ * toIntZ na_fb
+                      + toIntZ cy₆ := by rw [hL]
+    rw [hsplit]
+    have h_tri := abs_add_le ((65536 * toIntZ na * toIntZ nb)
+                              + (toIntZ a₃ * toIntZ nb_fa)
+                              + (toIntZ b₃ * toIntZ na_fb)) (toIntZ cy₆)
+    have h_tri2 := abs_add_le ((65536 * toIntZ na * toIntZ nb)
+                               + (toIntZ a₃ * toIntZ nb_fa)) (toIntZ b₃ * toIntZ na_fb)
+    have h_tri3 := abs_add_le (65536 * toIntZ na * toIntZ nb) (toIntZ a₃ * toIntZ nb_fa)
+    linarith
+  have h_safe : (65536 * 1 * 1 + 2 * (65535 * 1) + 983040 : ℤ) ≤ (GL_prime : ℤ) / 2 := by
+    show _ ≤ 18446744069414584321 / 2
+    decide
+  exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
+
 /-! ## Part 5 — Eight-chunk signed-mode aggregators (pure ℤ)
 
 Pure-ℤ analogues of `arith_mul_signed_carry_identity` and
