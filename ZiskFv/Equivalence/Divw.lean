@@ -124,9 +124,9 @@ theorem equiv_DIVW
             - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
                 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a))
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
-    -- Op-pin (TRANSPILE-PIN): DIVW is in {0x95, 0x96, 0x99, 0x9a}
+    -- Op-pin (TRANSPILE-PIN): DIVW is in {188, 189, 190, 191}
     -- (W-DIV family). For the signed sign-pin axiom (op ∈ {190, 191}).
-    (h_op : v.op r_a = 0x95 ∨ v.op r_a = 0x96 ∨ v.op r_a = 0x99 ∨ v.op r_a = 0x9a)
+    (h_op : v.op r_a = 188 ∨ v.op r_a = 189 ∨ v.op r_a = 190 ∨ v.op r_a = 191)
     (h_op_signed : v.op r_a = 190 ∨ v.op r_a = 191)
     -- Bus c-chunk W-pin (CIRCUIT-CONSTRAINT): dividend in W-mode is the
     -- sign-extended r1_lo32, but the c-chunk packing only consumes the

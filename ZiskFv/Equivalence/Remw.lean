@@ -122,8 +122,8 @@ theorem equiv_REMW
     -- Mode pins (TRANSPILE-PIN).
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1)
     (h_div : v.div r_a = 1)
-    -- Op-pin (TRANSPILE-PIN): REMW = 0x9a, in {0x99, 0x9a} signed-W family.
-    (h_op : v.op r_a = 0x99 ∨ v.op r_a = 0x9a)
+    -- Op-pin (TRANSPILE-PIN): REMW = 191, in {190, 191} signed-W family.
+    (h_op : v.op r_a = 190 ∨ v.op r_a = 191)
     -- Sign-witness booleanity + XOR (CIRCUIT-CONSTRAINT).
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
@@ -175,9 +175,9 @@ theorem equiv_REMW
       LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, false))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
-  -- Op-full for invoking the W operand pin (REMW ∈ {0x99, 0x9a} ⊆ {0x95, 0x96, 0x99, 0x9a}).
-  have h_op_full : v.op r_a = 0x95 ∨ v.op r_a = 0x96
-                    ∨ v.op r_a = 0x99 ∨ v.op r_a = 0x9a := by
+  -- Op-full for invoking the W operand pin (REMW ∈ {190, 191} ⊆ {188, 189, 190, 191}).
+  have h_op_full : v.op r_a = 188 ∨ v.op r_a = 189
+                    ∨ v.op r_a = 190 ∨ v.op r_a = 191 := by
     rcases h_op with h | h
     · right; right; left; exact h
     · right; right; right; exact h

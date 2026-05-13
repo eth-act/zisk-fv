@@ -102,7 +102,7 @@ theorem equiv_REMUW
     (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1)
     (h_div : v.div r_a = 1)
-    (h_op : v.op r_a = 0x95 ∨ v.op r_a = 0x96 ∨ v.op r_a = 0x99 ∨ v.op r_a = 0x9a)
+    (h_op : v.op r_a = 188 ∨ v.op r_a = 189 ∨ v.op r_a = 190 ∨ v.op r_a = 191)
     (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     -- W-mode byte-pack lane match: bytes 0..3 pack d_0 + d_1*65536 (remainder low).
     (h_byte_lo :
