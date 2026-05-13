@@ -4,6 +4,7 @@ import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
+import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
 
 /-!
 # Arith AIR — universal column-range theorems
@@ -355,5 +356,116 @@ axiom arith_table_op_divw_operand_pin
     (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0
       ∧ (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0
       ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0
+
+/-! ## Arith-table mode pin — signed non-W DIV/REM (m32 = 0)
+
+m32=0 sibling of `arith_table_op_divw_operand_pin`. For every
+`Valid_ArithDiv` row whose `op` column reads as 186 (signed DIV) or
+187 (signed REM) — i.e. the signed 64-bit DIV/REM rows in
+`arith_table_data.rs::ARITH_TABLE` (entries 23-33 per the dump in
+`build/extraction/Extraction/ArithTable.lean:66-76`) — the table
+lookup `arith_table_assumes(op, m32, div, ...)` at
+`arith.pil:286-287` pins the row's mode-selector columns to the
+signed-64-bit-DIV/REM mode: `sext = 0`, `m32 = 0`, `div = 1`.
+
+Trust class: same as `arith_table_op_divw_operand_pin` (class #6,
+lookup soundness on a small AIR table that pins mode-selector
+columns from the `op` literal). -/
+
+/-- **Arith-table signed non-W DIV/REM mode pin (class #6).**
+    For every `Valid_ArithDiv` row with `op ∈ {186, 187}` (signed
+    64-bit DIV / REM), the arith_table lookup pins
+    `sext = 0`, `m32 = 0`, `div = 1`. PIL citation: composition of
+    `arith.pil:286-287` (the `arith_table_assumes` lookup) with the
+    table content at `arith_table.pil` (signed 64-bit DIV/REM rows).
+
+    Consumed by `equiv_DIV_from_trust` (Compliance/DivPilot.lean) to
+    discharge the three mode pins `h_sext`/`h_m32`/`h_div` given the
+    arith-side opcode literal (which is itself a consequence of the
+    OpBus permutation matching `m.op r_main` to `v.op r_a`). -/
+axiom arith_table_op_div_rem_signed_mode_pin
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
+    v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 1
+
+/-! ## Euclidean-remainder bound — DIV/REM `assumes_operation(|d| < |b|)`
+
+The arith-PIL line `arith.pil:274` emits an `assumes_operation` lookup
+asserting `0 <= |d| < |b|` on every division row (non-div-by-zero).
+Concretely:
+
+```pil
+assumes_operation(op: (1 - nr) * (1 - nb) * OP_LTU + nr * (1 - nb) * OP_LT_ABS_NP
+                      + (1 - nr) * nb * OP_LT_ABS_PN + nr * nb * OP_GT,
+                  a: [(d[0] + CHUNK_SIZE * d[1]),
+                      (d[2] + CHUNK_SIZE * d[3]) + m32 * nr * 0xFFFFFFFF],
+                  b: [(b[0] + CHUNK_SIZE * b[1]),
+                      (b[2] + CHUNK_SIZE * b[3]) + m32 * nb * 0xFFFFFFFF],
+                  c: [1, 0], flag: 1, sel: div * (1 - div_by_zero));
+```
+
+The semantic content for the **non-W signed-DIV path** (`m32 = 0`,
+`div = 1`, `div_by_zero = 0`) is the Euclidean-remainder bound
+`|D - nr·2^64| < |B - nb·2^64|` plus the sign-correctness witness
+`0 ≤ (D - nr·2^64) · (C - np·2^64)` (the dividend sign), where
+`B`/`D` are the chunk packings of `b[]` / `d[]` and `np`/`nr`/`nb`
+are the sign-witness columns.
+
+The bound is exactly the two facts the `equiv_DIV` proof requires
+(`h_r_abs` + `h_r_sign` — see `Equivalence/Div.lean:157-164`); both
+are absent from today's trust ledger.
+
+Trust class: same as `arith_table_op_div_rem_signed_d_sign_pin`
+(class #6, lookup soundness on the consumer-side bus row composed
+with the binary AIR's LT* relation, restricted to the
+DIV/REM-emitting rows). -/
+
+/-- **Arith DIV/REM Euclidean-remainder bound (class #6).** For every
+    `Valid_ArithDiv` row in signed 64-bit DIV/REM mode
+    (`sext = 0`, `m32 = 0`, `div = 1`) with `op ∈ {186, 187}` — i.e.
+    the rows that `arith.pil:274`'s `assumes_operation` covers when
+    composed with the arith_table's signed-DIV-rows pin — the signed
+    remainder magnitude is strictly less than the signed divisor
+    magnitude, **and** the signed remainder times the signed dividend
+    is non-negative.
+
+    Concretely, with `D := packed4 d[0..3]`, `B := packed4 b[0..3]`,
+    `C := packed4 c[0..3]`, and sign witnesses `np`, `nb`, `nr`:
+
+    * `|D - nr·2^64| < |B - nb·2^64|` (Euclidean magnitude),
+    * `0 ≤ (D - nr·2^64) · (C - np·2^64)` (sign of remainder agrees
+      with sign of dividend; the "remainder = 0" case is covered by
+      the `0 ≤` boundary).
+
+    Caller routes the dividend / divisor signed value via the
+    operand TRANSPILE-BRIDGE hypotheses `h_op1`/`h_op2`, which
+    equate `r1.toInt`/`r2.toInt` with the same `C - np·2^64` /
+    `B - nb·2^64` expressions; under those equalities this axiom
+    delivers `(d_packed - nr·2^64).natAbs < r2.toInt.natAbs` and
+    `0 ≤ (d_packed - nr·2^64) * r1.toInt`.
+
+    PIL citation: `arith.pil:274` (`assumes_operation(op: …, a: [d…],
+    b: [b…], c: [1, 0], flag: 1, sel: div * (1 - div_by_zero))`)
+    composed with the binary AIR's OP_LTU / OP_LT_ABS_NP /
+    OP_LT_ABS_PN / OP_GT semantics. Restricted to non-boundary rows
+    (caller supplies `r2.toInt ≠ 0` and the INT_MIN / -1 exclusion to
+    align with the `(1 - div_by_zero) * (1 - div_overflow)` selector
+    in the arith_table). -/
+axiom arith_div_remainder_bound
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 0) (_h_div : v.div r_a = 1)
+    (_h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
+    ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+        (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+      - (v.nr r_a).val * (2:ℤ)^64).natAbs
+      < ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
+          - (v.nb r_a).val * (2:ℤ)^64).natAbs
+  ∧ 0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+          (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
+          - (v.nr r_a).val * (2:ℤ)^64)
+        * ((ZiskFv.PackedBitVec.MulNoWrap.packed4
+            (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
+            - (v.np r_a).val * (2:ℤ)^64)
 
 end ZiskFv.Airs.Arith

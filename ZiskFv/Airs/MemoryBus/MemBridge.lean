@@ -507,6 +507,89 @@ axiom main_store_pc_emission_bundle
     ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo main r_main e_rd
     ∧ ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi main r_main e_rd
 
+/-- **Main memory-bus emission bundle — external arithmetic rd-write.**
+
+    For every Main row in the MUL / DIV family
+    (`is_external_op = 1`, `op ∈ {OP_MULU..OP_MUL_W, OP_DIVU..OP_REM_W}`,
+    bus literals `0xb0..0xbf` per `zisk/pil/operations.pil:71-86`),
+    the rd-write memory-bus entry `e_rd` (`mult = 1`, `as = 1`)
+    satisfies the byte-pack lane equalities tying `e_rd`'s
+    byte-decomposition `x0..x7` to Main's `c_0` / `c_1` 32-bit lanes.
+
+    On these rows `store_pc = 0` (ZisK's ROM assigns `store_pc = 1`
+    only to JAL/JALR/AUIPC); the PIL `store_value` formula at
+    `main.pil:311-312` collapses under `store_pc = 0` to
+    `(c_0, c_1)`, so the rd-write entry's byte-decomposition packs
+    directly to `(c_0, c_1)`. Every byte cell carries `bits(8)`
+    (`main.pil:78`), so the byte-range bus discharges the per-byte
+    range and the pack equation lifts to `ℕ` cleanly.
+
+    PIL citations:
+    * `state-machines/main/pil/main.pil:311-312` — `store_value[0/1]`
+      formulas; for `store_pc = 0` they reduce to `c[0]` / `c[1]`;
+    * `state-machines/main/pil/main.pil:323` — c-side `mem_op` emits
+      the rd-write entry (`as = 1`, `mult = 1`);
+    * `state-machines/main/pil/main.pil:148` — `store_offset = rd`
+      for register-targeting rows;
+    * `state-machines/main/pil/main.pil:78` — `col witness bits(8)
+      x[BYTES]` (byte-range invariant on Main's emission lanes);
+    * `state-machines/main/pil/main.pil:473` — `store_pc` booleanity;
+    * ROM-side: ZisK's arithmetic opcodes (MUL/DIV family) are
+      assigned `store_pc = 0` / `store_reg = 1` (no PC-write side
+      effect; rd is a general-purpose register).
+
+    Conclusion shape: byte-pack lane equalities in **nat form**
+    (consumed directly by `equiv_DIV_from_trust` / `equiv_MUL` etc.
+    as the `h_byte_lo` / `h_byte_hi` promise hypotheses); plus the
+    rd-routing equation matching the existing `*_load_emission_bundle`
+    family. Byte ranges (each `e_rd.xi.val < 256`) are NOT included
+    here — callers obtain them from `memory_bus_entry_byte_range_perm_sound`
+    (class #5b) so the bundle stays factored.
+
+    Trust class #4 (memory-bus permutation / lookup-argument
+    soundness on `bus_id = 10`) — same class as
+    `main_load_emission_bundle`, `main_sext_load_emission_bundle`,
+    and `main_store_pc_emission_bundle`. -/
+axiom main_external_arith_emission_bundle
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (e_rd : MemoryBusEntry FGL)
+    (rd : BitVec 5)
+    (op_code : FGL)
+    -- Activation: external arithmetic (MUL / DIV family).
+    (h_ext : main.is_external_op r_main = 1)
+    (h_op : main.op r_main = op_code)
+    (h_op_arith : op_code = ZiskFv.Trusted.OP_MULU
+                  ∨ op_code = ZiskFv.Trusted.OP_MULUH
+                  ∨ op_code = ZiskFv.Trusted.OP_MULSUH
+                  ∨ op_code = ZiskFv.Trusted.OP_MUL
+                  ∨ op_code = ZiskFv.Trusted.OP_MULH
+                  ∨ op_code = ZiskFv.Trusted.OP_MUL_W
+                  ∨ op_code = ZiskFv.Trusted.OP_DIVU
+                  ∨ op_code = ZiskFv.Trusted.OP_REMU
+                  ∨ op_code = ZiskFv.Trusted.OP_DIV
+                  ∨ op_code = ZiskFv.Trusted.OP_REM
+                  ∨ op_code = ZiskFv.Trusted.OP_DIVU_W
+                  ∨ op_code = ZiskFv.Trusted.OP_REMU_W
+                  ∨ op_code = ZiskFv.Trusted.OP_DIV_W
+                  ∨ op_code = ZiskFv.Trusted.OP_REM_W)
+    -- Bus side: e_rd is the rd-write entry.
+    (h_e_rd_mult : e_rd.multiplicity = 1) (h_e_rd_as_val : e_rd.as.val = 1) :
+    -- Byte-pack lane equalities in nat form (the c_0 / c_1 Main
+    -- columns are < 2^32 by `bits(32)` register-bus annotation —
+    -- see `main.pil:73` `col witness bits(32) c[RC]` — so the
+    -- pack equation lifts to ℕ without modular reduction).
+    e_rd.x0.val + e_rd.x1.val * 256
+        + e_rd.x2.val * 65536 + e_rd.x3.val * 16777216
+      = (main.c_0 r_main).val
+    ∧ e_rd.x4.val + e_rd.x5.val * 256
+        + e_rd.x6.val * 65536 + e_rd.x7.val * 16777216
+      = (main.c_1 r_main).val
+    -- rd routing: `e_rd.ptr` is the destination register (PIL
+    -- `store_offset = rd` plus `store_offset → ptr` on `as = 1`).
+    ∧ (Transpiler.wrap_to_regidx e_rd.ptr = 0 ↔ rd = 0)
+    ∧ rd.toNat = (Transpiler.wrap_to_regidx e_rd.ptr).val
+
 /-! ## Axiom audit
 
 The bridge theorems compose `lookup_consumer_matches_provider_{load,store}`
@@ -515,9 +598,11 @@ hypotheses. The Mem-row local lemmas
 `mem_read_addr_change_value_{0,1}_zero` are pure consequences of
 `Mem.core_every_row` and add no axioms.
 
-`main_load_emission_bundle` and `main_sext_load_emission_bundle`
-are narrow PIL-cited extensions of the same trust class (memory-bus
-permutation / lookup-argument soundness on `bus_id = 10`). -/
+`main_load_emission_bundle`, `main_sext_load_emission_bundle`,
+`main_store_pc_emission_bundle`, and
+`main_external_arith_emission_bundle` are narrow PIL-cited
+extensions of the same trust class (memory-bus permutation /
+lookup-argument soundness on `bus_id = 10`). -/
 
 #print axioms memory_load_lanes_match_of_main_emit
 #print axioms memory_load_lanes_match_of_mem_row

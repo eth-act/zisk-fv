@@ -112,24 +112,27 @@ axiom op_bus_perm_sound_BinaryExtension
 /-- **OperationBus permutation soundness — ArithMul provider.**
     Provider AIR: `Arith` (`zisk/state-machines/arith/pil/arith.pil`),
     multiplication-mode rows (`main_mul = 1`, `main_div = 0`). Opcode
-    coverage per `state-machines/arith/src/arith_table_data.rs`:
-    MULU=0x90, MULUH=0x91, MULSUH=0x92, MUL_W=0xb0
-    (RV64IM mappings: MUL/MULH/MULHU/MULHSU/MULW). -/
+    coverage per `zisk/pil/operations.pil:71-78`:
+    MULU=0xb0, MULUH=0xb1, MULSUH=0xb3, MUL=0xb4, MULH=0xb5, MUL_W=0xb6.
+    (0xb2 and 0xb7 are reserved-but-unused holes in upstream
+    `operations.pil` and are excluded from the disjunction.)
+    RV64IM mappings: MUL=0xb4, MULH=0xb5, MULHU=0xb0, MULHSU=0xb3, MULW=0xb6. -/
 axiom op_bus_perm_sound_ArithMul
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL)
     (a : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL)
     (r_main : ℕ)
     (h_active : m.is_external_op r_main = 1)
-    (h_op : m.op r_main = 0x90 ∨ m.op r_main = 0x91 ∨ m.op r_main = 0x92
-          ∨ m.op r_main = 0xb0) :
+    (h_op : m.op r_main = 0xb0 ∨ m.op r_main = 0xb1 ∨ m.op r_main = 0xb3
+          ∨ m.op r_main = 0xb4 ∨ m.op r_main = 0xb5 ∨ m.op r_main = 0xb6) :
     ∃ r_a : ℕ,
       matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithMul.opBus_row_Arith a r_a)
 
 /-- **OperationBus permutation soundness — ArithDiv provider.**
     Provider AIR: `Arith` (`zisk/state-machines/arith/pil/arith.pil`),
-    division-mode rows (`main_div = 1`). Opcode coverage:
-    DIVU=0xa0, REMU=0xa1, DIV=0xa2, REM=0xa3, DIV_W=0xa4 .. REM_W=0xa7
-    plus the W-mode counterparts at 0xb*.
+    division-mode rows (`main_div = 1`). Opcode coverage per
+    `zisk/pil/operations.pil:79-86`:
+    DIVU=0xb8, REMU=0xb9, DIV=0xba, REM=0xbb,
+    DIVU_W=0xbc, REMU_W=0xbd, DIV_W=0xbe, REM_W=0xbf.
 
     Two emissions are involved per division: the primary tuple
     (modeled by `opBus_row_ArithDiv`) and the secondary remainder/
@@ -142,24 +145,25 @@ axiom op_bus_perm_sound_ArithDiv
     (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL)
     (r_main : ℕ)
     (h_active : m.is_external_op r_main = 1)
-    (h_op : m.op r_main = 0xa0 ∨ m.op r_main = 0xa1 ∨ m.op r_main = 0xa2
-          ∨ m.op r_main = 0xa3 ∨ m.op r_main = 0xa4 ∨ m.op r_main = 0xa5
-          ∨ m.op r_main = 0xa6 ∨ m.op r_main = 0xa7) :
+    (h_op : m.op r_main = 0xb8 ∨ m.op r_main = 0xb9 ∨ m.op r_main = 0xba
+          ∨ m.op r_main = 0xbb ∨ m.op r_main = 0xbc ∨ m.op r_main = 0xbd
+          ∨ m.op r_main = 0xbe ∨ m.op r_main = 0xbf) :
     ∃ r_a : ℕ,
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv a r_a)
 
 /-- **OperationBus permutation soundness — ArithDivSecondary provider.**
     Same provider AIR as `op_bus_perm_sound_ArithDiv`, but for the
-    secondary bus emission (remainder/quotient companion tuple). -/
+    secondary bus emission (remainder/quotient companion tuple).
+    Opcode coverage: same as `op_bus_perm_sound_ArithDiv`. -/
 axiom op_bus_perm_sound_ArithDivSecondary
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL)
     (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL)
     (r_main : ℕ)
     (h_active : m.is_external_op r_main = 1)
-    (h_op : m.op r_main = 0xa0 ∨ m.op r_main = 0xa1 ∨ m.op r_main = 0xa2
-          ∨ m.op r_main = 0xa3 ∨ m.op r_main = 0xa4 ∨ m.op r_main = 0xa5
-          ∨ m.op r_main = 0xa6 ∨ m.op r_main = 0xa7) :
+    (h_op : m.op r_main = 0xb8 ∨ m.op r_main = 0xb9 ∨ m.op r_main = 0xba
+          ∨ m.op r_main = 0xbb ∨ m.op r_main = 0xbc ∨ m.op r_main = 0xbd
+          ∨ m.op r_main = 0xbe ∨ m.op r_main = 0xbf) :
     ∃ r_a : ℕ,
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary a r_a)

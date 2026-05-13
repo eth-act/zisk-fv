@@ -2,20 +2,22 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 110
+# Total entries: 113
 #
-39b9f47eebdda4ca  ZiskFv/Airs/Arith/Ranges.lean:42  axiom     arith_mul_columns_in_range
-c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:54  axiom     arith_div_columns_in_range
-093ee5238cc93328  ZiskFv/Airs/Arith/Ranges.lean:108  axiom     arith_mul_carry_columns_in_range_unsigned
-fff9bbcb53b2221a  ZiskFv/Airs/Arith/Ranges.lean:125  axiom     arith_div_carry_columns_in_range_unsigned
-daef860493492c00  ZiskFv/Airs/Arith/Ranges.lean:176  axiom     arith_mul_carry_columns_in_range_signed
-aa745f7df15d7c47  ZiskFv/Airs/Arith/Ranges.lean:192  axiom     arith_div_carry_columns_in_range_signed
-e5cf99524a631eec  ZiskFv/Airs/Arith/Ranges.lean:236  axiom     arith_table_op_div_rem_signed_d_sign_pin
-2630dc8157a1ba6d  ZiskFv/Airs/Arith/Ranges.lean:260  axiom     arith_table_op_div_rem_signed_w_d_sign_pin
-3ea7c2c1004c8266  ZiskFv/Airs/Arith/Ranges.lean:295  axiom     arith_mul_carry_columns_in_range_w
-7765611bb2c7ec37  ZiskFv/Airs/Arith/Ranges.lean:310  axiom     arith_div_carry_columns_in_range_w
-0a2b2973bffc9f81  ZiskFv/Airs/Arith/Ranges.lean:339  axiom     arith_table_op_mulw_operand_pin
-f63a1490cde95404  ZiskFv/Airs/Arith/Ranges.lean:351  axiom     arith_table_op_divw_operand_pin
+39b9f47eebdda4ca  ZiskFv/Airs/Arith/Ranges.lean:43  axiom     arith_mul_columns_in_range
+c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:55  axiom     arith_div_columns_in_range
+093ee5238cc93328  ZiskFv/Airs/Arith/Ranges.lean:109  axiom     arith_mul_carry_columns_in_range_unsigned
+fff9bbcb53b2221a  ZiskFv/Airs/Arith/Ranges.lean:126  axiom     arith_div_carry_columns_in_range_unsigned
+daef860493492c00  ZiskFv/Airs/Arith/Ranges.lean:177  axiom     arith_mul_carry_columns_in_range_signed
+aa745f7df15d7c47  ZiskFv/Airs/Arith/Ranges.lean:193  axiom     arith_div_carry_columns_in_range_signed
+e5cf99524a631eec  ZiskFv/Airs/Arith/Ranges.lean:237  axiom     arith_table_op_div_rem_signed_d_sign_pin
+2630dc8157a1ba6d  ZiskFv/Airs/Arith/Ranges.lean:261  axiom     arith_table_op_div_rem_signed_w_d_sign_pin
+3ea7c2c1004c8266  ZiskFv/Airs/Arith/Ranges.lean:296  axiom     arith_mul_carry_columns_in_range_w
+7765611bb2c7ec37  ZiskFv/Airs/Arith/Ranges.lean:311  axiom     arith_div_carry_columns_in_range_w
+0a2b2973bffc9f81  ZiskFv/Airs/Arith/Ranges.lean:340  axiom     arith_table_op_mulw_operand_pin
+f63a1490cde95404  ZiskFv/Airs/Arith/Ranges.lean:352  axiom     arith_table_op_divw_operand_pin
+ccc5eb06cd12e719  ZiskFv/Airs/Arith/Ranges.lean:386  axiom     arith_table_op_div_rem_signed_mode_pin
+6b62373475e5f2b8  ZiskFv/Airs/Arith/Ranges.lean:454  axiom     arith_div_remainder_bound
 08d74d52fabb3c51  ZiskFv/Airs/Binary/BinaryAddRanges.lean:59  axiom     binary_add_columns_in_range
 feafd4d75a95e2ad  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:53  axiom     binary_extension_columns_in_range
 48b9f2f309f54d71  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:106  axiom     binary_extension_op_is_shift_pin
@@ -36,12 +38,13 @@ ddbca43a3ae7757a  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:168  axiom     mem_a
 df1bb212fcddf2a6  ZiskFv/Airs/MemoryBus/MemBridge.lean:374  axiom     main_load_emission_bundle
 24dd4ca3f75ffaf3  ZiskFv/Airs/MemoryBus/MemBridge.lean:433  axiom     main_sext_load_emission_bundle
 b7525f7cc15044c1  ZiskFv/Airs/MemoryBus/MemBridge.lean:495  axiom     main_store_pc_emission_bundle
+be9709898787174a  ZiskFv/Airs/MemoryBus/MemBridge.lean:553  axiom     main_external_arith_emission_bundle
 67ed8e590d7f0792  ZiskFv/Airs/OperationBus/Bridge.lean:54  axiom     op_bus_perm_sound_BinaryAdd
 d9d7d2422146a7dd  ZiskFv/Airs/OperationBus/Bridge.lean:77  axiom     op_bus_perm_sound_Binary
 f0f2b4a2aaab18ee  ZiskFv/Airs/OperationBus/Bridge.lean:101  axiom     op_bus_perm_sound_BinaryExtension
-d77e927acc98525b  ZiskFv/Airs/OperationBus/Bridge.lean:118  axiom     op_bus_perm_sound_ArithMul
-1d8b7b0883527de6  ZiskFv/Airs/OperationBus/Bridge.lean:140  axiom     op_bus_perm_sound_ArithDiv
-1d8b13196c7b8933  ZiskFv/Airs/OperationBus/Bridge.lean:155  axiom     op_bus_perm_sound_ArithDivSecondary
+e53fe69c657311e8  ZiskFv/Airs/OperationBus/Bridge.lean:120  axiom     op_bus_perm_sound_ArithMul
+0e6961ae978cb87a  ZiskFv/Airs/OperationBus/Bridge.lean:143  axiom     op_bus_perm_sound_ArithDiv
+a5f7533e757c9a63  ZiskFv/Airs/OperationBus/Bridge.lean:159  axiom     op_bus_perm_sound_ArithDivSecondary
 0cd0f525da3c690b  ZiskFv/Circuit/MemModel.lean:127  axiom     row_models_sail_state_load
 2e7c53e620fb9d59  ZiskFv/Circuit/MemModel.lean:152  axiom     row_models_sail_state_store
 fcf669a1c7c11ee9  ZiskFv/Fundamentals/Transpiler.lean:252  axiom     transpile_ADD

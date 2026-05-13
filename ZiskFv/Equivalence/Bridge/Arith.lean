@@ -70,16 +70,18 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
     Caller obligations after this discharge:
     * `h_main_active : m.is_external_op r_main = 1`
-    * `h_main_op_in_set` (the 4-way disjunction in the OpBus axiom;
-      each call site pins a specific MUL literal: 0x90/0x91/0x92/0xb0).
+    * `h_main_op_in_set` (the 6-way disjunction in the OpBus axiom;
+      each call site pins a specific MUL literal per
+      `zisk/pil/operations.pil:71-78`:
+      MULU=0xb0, MULUH=0xb1, MULSUH=0xb3, MUL=0xb4, MULH=0xb5, MUL_W=0xb6).
 
     Outputs: existential `r_a` + `matches_entry`. -/
 theorem arith_mul_discharge_conservative
     (m : Valid_Main C FGL FGL) (a : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op : m.op r_main = 0x90 ∨ m.op r_main = 0x91 ∨ m.op r_main = 0x92
-               ∨ m.op r_main = 0xb0) :
+    (h_main_op : m.op r_main = 0xb0 ∨ m.op r_main = 0xb1 ∨ m.op r_main = 0xb3
+               ∨ m.op r_main = 0xb4 ∨ m.op r_main = 0xb5 ∨ m.op r_main = 0xb6) :
     ∃ r_a,
       matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithMul.opBus_row_Arith a r_a) :=
   op_bus_perm_sound_ArithMul m a r_main h_main_active h_main_op
@@ -87,14 +89,15 @@ theorem arith_mul_discharge_conservative
 /-- **ArithDiv (primary) discharge bridge (conservative).** Replaces
     the per-opcode `r_a` + `h_match` for the primary division bus
     tuple. Each `equiv_<OP>` for the DIV family supplies the
-    8-way disjunction over `0xa0..0xa7`. -/
+    8-way disjunction over `0xb8..0xbf` (DIVU/REMU/DIV/REM and their
+    W counterparts; literals per `zisk/pil/operations.pil:79-86`). -/
 theorem arith_div_discharge_conservative
     (m : Valid_Main C FGL FGL) (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op : m.op r_main = 0xa0 ∨ m.op r_main = 0xa1 ∨ m.op r_main = 0xa2
-               ∨ m.op r_main = 0xa3 ∨ m.op r_main = 0xa4 ∨ m.op r_main = 0xa5
-               ∨ m.op r_main = 0xa6 ∨ m.op r_main = 0xa7) :
+    (h_main_op : m.op r_main = 0xb8 ∨ m.op r_main = 0xb9 ∨ m.op r_main = 0xba
+               ∨ m.op r_main = 0xbb ∨ m.op r_main = 0xbc ∨ m.op r_main = 0xbd
+               ∨ m.op r_main = 0xbe ∨ m.op r_main = 0xbf) :
     ∃ r_a,
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv a r_a) :=
@@ -103,14 +106,16 @@ theorem arith_div_discharge_conservative
 /-- **ArithDiv (secondary remainder/quotient) discharge bridge
     (conservative).** Each DIV-family `equiv_<OP>` needs both the
     primary and secondary handshakes for the bus protocol; this
-    entry point delivers the secondary's matches_entry conjunct. -/
+    entry point delivers the secondary's matches_entry conjunct.
+    Opcode coverage: same as `arith_div_discharge_conservative`
+    (literals per `zisk/pil/operations.pil:79-86`). -/
 theorem arith_div_secondary_discharge_conservative
     (m : Valid_Main C FGL FGL) (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op : m.op r_main = 0xa0 ∨ m.op r_main = 0xa1 ∨ m.op r_main = 0xa2
-               ∨ m.op r_main = 0xa3 ∨ m.op r_main = 0xa4 ∨ m.op r_main = 0xa5
-               ∨ m.op r_main = 0xa6 ∨ m.op r_main = 0xa7) :
+    (h_main_op : m.op r_main = 0xb8 ∨ m.op r_main = 0xb9 ∨ m.op r_main = 0xba
+               ∨ m.op r_main = 0xbb ∨ m.op r_main = 0xbc ∨ m.op r_main = 0xbd
+               ∨ m.op r_main = 0xbe ∨ m.op r_main = 0xbf) :
     ∃ r_a,
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary a r_a) :=
