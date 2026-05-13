@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 111
+# Total entries: 110
 #
 39b9f47eebdda4ca  ZiskFv/Airs/Arith/Ranges.lean:42  axiom     arith_mul_columns_in_range
 c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:54  axiom     arith_div_columns_in_range
@@ -14,9 +14,8 @@ e5cf99524a631eec  ZiskFv/Airs/Arith/Ranges.lean:236  axiom     arith_table_op_di
 2630dc8157a1ba6d  ZiskFv/Airs/Arith/Ranges.lean:260  axiom     arith_table_op_div_rem_signed_w_d_sign_pin
 3ea7c2c1004c8266  ZiskFv/Airs/Arith/Ranges.lean:295  axiom     arith_mul_carry_columns_in_range_w
 7765611bb2c7ec37  ZiskFv/Airs/Arith/Ranges.lean:310  axiom     arith_div_carry_columns_in_range_w
-3cf8694d912147f5  ZiskFv/Airs/Arith/Ranges.lean:339  axiom     arith_table_op_mulw_operand_pin
-f69cd4f8255869cb  ZiskFv/Airs/Arith/Ranges.lean:351  axiom     arith_table_op_divw_operand_pin
-41b2d71692dec33d  ZiskFv/Airs/Arith/Ranges.lean:383  axiom     arith_table_op_div_rem_signed_w_d_sign_pin
+0a2b2973bffc9f81  ZiskFv/Airs/Arith/Ranges.lean:339  axiom     arith_table_op_mulw_operand_pin
+f63a1490cde95404  ZiskFv/Airs/Arith/Ranges.lean:351  axiom     arith_table_op_divw_operand_pin
 08d74d52fabb3c51  ZiskFv/Airs/Binary/BinaryAddRanges.lean:59  axiom     binary_add_columns_in_range
 feafd4d75a95e2ad  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:53  axiom     binary_extension_columns_in_range
 48b9f2f309f54d71  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:106  axiom     binary_extension_op_is_shift_pin

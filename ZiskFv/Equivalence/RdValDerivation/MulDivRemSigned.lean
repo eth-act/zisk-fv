@@ -502,8 +502,8 @@ theorem h_rd_val_mdrs_mulw_chunked
     -- Mode pins (TRANSPILE-PIN).
     (h_nr : v.nr r_a = 0)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 0)
-    -- Op-pin for MULW (TRANSPILE-PIN): MULW = op 0x91.
-    (h_op : v.op r_a = 0x91)
+    -- Op-pin for MULW (TRANSPILE-PIN): MULW = op 182.
+    (h_op : v.op r_a = 182)
     -- Booleanity + XOR (CIRCUIT-CONSTRAINT, derivable from constraints 41/42/44 + arith_table).
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
@@ -1641,7 +1641,6 @@ theorem h_rd_val_mdrs_rem_chunked
     e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_eq_result
 
-<<<<<<< HEAD
 /-! ## W-mode sign-extension byte-sum closers
 
 Local copies of the private helpers in `MulDivRemUnsigned.lean` to avoid
@@ -2126,8 +2125,6 @@ theorem h_rd_val_mdrs_divw_chunked
     rw [BitVec.toNat_ofNat]
     exact (Nat.mod_eq_of_lt h_byte_sum_lt).symm
 
-||||||| b01cdb8
-=======
 /-! ## REMW chunked discharge (signed W remainder; non-boundary case)
 
 W-variant of `h_rd_val_mdrs_rem_chunked` consuming `div_w_chain_witnesses`
@@ -2174,10 +2171,10 @@ theorem h_rd_val_mdrs_remw_chunked
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     -- Mode pins (TRANSPILE-PIN).
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
-    -- Op-pin (TRANSPILE-PIN): REMW = op 0x9a, in {0x99, 0x9a}.
-    (h_op : v.op r_a = 0x99 ∨ v.op r_a = 0x9a)
-    (h_op_full : v.op r_a = 0x95 ∨ v.op r_a = 0x96
-                  ∨ v.op r_a = 0x99 ∨ v.op r_a = 0x9a)
+    -- Op-pin (TRANSPILE-PIN): REMW = op 191, in {190, 191}.
+    (h_op : v.op r_a = 190 ∨ v.op r_a = 191)
+    (h_op_full : v.op r_a = 188 ∨ v.op r_a = 189
+                  ∨ v.op r_a = 190 ∨ v.op r_a = 191)
     -- Sign-witness booleanity (CIRCUIT-CONSTRAINT).
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
@@ -2300,7 +2297,7 @@ theorem h_rd_val_mdrs_remw_chunked
     rcases h_np_bool_FGL with h | h
     · rw [h]; decide
     · rw [h]; decide
-  -- Step 7: invoke signed-W d-sign pin (REMW = op 0x9a).
+  -- Step 7: invoke signed-W d-sign pin (REMW = op 191).
   have h_nr_pin_raw :=
     ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin
       v r_a h_sext h_m32 h_div h_op
@@ -2550,5 +2547,4 @@ theorem h_rd_val_mdrs_remw_chunked
       exact (Nat.mod_eq_of_lt h_byte_sum_lt).symm
   rw [h_byte_sum_eq]
 
->>>>>>> step4-remw
 end ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned

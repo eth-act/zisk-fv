@@ -120,8 +120,8 @@ theorem equiv_MULW
     (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a)
     (h_nr : v.nr r_a = 0)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 0)
-    -- Op-pin for MULW: op = 0x91.
-    (h_op : v.op r_a = 0x91)
+    -- Op-pin for MULW: op = 182.
+    (h_op : v.op r_a = 182)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_np_xor :
