@@ -8,8 +8,8 @@
 # requires explicit reviewer ack via a baseline diff.
 #
 # Total theorems: 63
-# Aggregate total binders: 2369
-# Aggregate hypothesis binders: 1391
+# Aggregate total binders: 2367
+# Aggregate hypothesis binders: 1389
 #
 ZiskFv.Equivalence.Add.equiv_ADD total=41 hypothesis=27
 ZiskFv.Equivalence.Addi.equiv_ADDI total=39 hypothesis=26
@@ -37,7 +37,7 @@ ZiskFv.Equivalence.LoadBU.equiv_LBU total=34 hypothesis=15
 ZiskFv.Equivalence.LoadD.equiv_LD total=28 hypothesis=13
 ZiskFv.Equivalence.LoadHU.equiv_LHU total=32 hypothesis=15
 ZiskFv.Equivalence.LoadWU.equiv_LWU total=32 hypothesis=15
-ZiskFv.Equivalence.Lui.equiv_LUI total=25 hypothesis=15
+ZiskFv.Equivalence.Lui.equiv_LUI total=23 hypothesis=13
 ZiskFv.Equivalence.Lw.equiv_LW total=45 hypothesis=28
 ZiskFv.Equivalence.Mul.equiv_MUL total=49 hypothesis=35
 ZiskFv.Equivalence.MulH.equiv_MULH total=24 hypothesis=15
