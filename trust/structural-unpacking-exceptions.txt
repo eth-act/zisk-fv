@@ -105,18 +105,32 @@ ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
         Reviewer accepts per structural-unpacking exception.)
 
 OPCODE: ZiskFv.Equivalence.MulW.equiv_MULW
-DROPPED: h_byte_sum_circuit
-ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
+DROPPED: h_byte_mulw
+ADDED: v, r_a, h_chain, h_nr, h_sext, h_m32, h_div, h_op,
        h_na_bool, h_nb_bool, h_np_xor,
-       h_byte_lo, h_byte_hi, h_op1, h_op2
-       (Option-1: full Tier-3 promotion. h_na_bool/h_nb_bool/h_np_xor
-        are booleanity + XOR-encoding witnesses for the sign-witness
-        columns — derivable from constraints 41/42/44 + arith_table
-        lookup but kept as separate ADDED binders for clarity.
-        h_op1/h_op2 carry the signed toInt-form operand packing
-        (NOT toNat-form), bridging Sail r1.toInt / r2.toInt to the
-        signed AIR chunks.
-        Per-opcode metric grows by ~+16 binders; reviewer accepts
+       h_byte_lo, h_sext_choice, h_op1, h_op2
+       (Step 4 full Tier-3 promotion mirroring MULH with W-mode
+        specialization (`m32 = 1`, op = 0x91). Differences from
+        MULH:
+        * `h_op` (TRANSPILE-PIN to op = 0x91, MULW's arith_table row)
+          consumed by `arith_table_op_mulw_operand_pin` to pin
+          `a_2 = a_3 = b_2 = b_3 = 0`.
+        * `h_byte_lo` ties bytes 0..3 to `c_0 + c_1*65536` (the
+          low-32 product chunks) — not d-chunks like MULH (which is
+          a high-half product).
+        * `h_sext_choice` replaces `h_byte_hi`: a disjunctive
+          sign-extension witness over bytes 4..7 (SEXT_00 if low-32
+          MSB clear, SEXT_FF otherwise). Same trust class as ADDW's
+          `h_sext_choice` and DIVUW/REMUW's W-mode sign extension.
+        * `h_op1` / `h_op2` are 32-bit signed `toInt` form
+          (bridging `(r_lo32).toInt = A_32 - na * 2^32`) rather
+          than full 64-bit (because MULW operates on the low 32
+          bits sign-extended).
+        Discharge via `h_rd_val_mdrs_mulw_chunked` composing
+        `mul_w_chain_witnesses` (W chain) + `fgl_mul_w_signed_to_bv64`
+        (BV64 wrapper bridge) inline with per-quadrant
+        BitVec.ofInt 32 product-mod-2^32 congruence.
+        Per-opcode metric grows by 15 binders; reviewer accepts
         per structural-unpacking exception.)
 
 OPCODE: ZiskFv.Equivalence.Div.equiv_DIV
