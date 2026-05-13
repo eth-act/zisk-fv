@@ -2,6 +2,7 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Fundamentals.PackedBitVec.SignedChunkLift
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
@@ -50,6 +51,8 @@ is the worked example for ArithMul, and Binary's
 `binary_discharge_conservative` in `Bridge/Binary.lean` shows the
 conservative shape used here.)
 -/
+
+set_option maxHeartbeats 2000000
 
 namespace ZiskFv.Equivalence.Bridge.Arith
 
@@ -336,5 +339,345 @@ theorem div_unsigned_chain_witnesses
   · linear_combination h38
 
 end UnsignedChainWitnesses
+
+/-! ## Per-opcode discharge helpers — signed-mode chain witnesses
+
+For signed MUL family (MULH/MULHSU/MULW) and signed DIV/REM family,
+the chain witnesses produce the **simplified-form chunk identity in ℤ**
+that `fgl_mul_signed_to_bv64_hi` / the abs-Euclidean DIV bridge consume.
+
+Internally each helper:
+1. Extracts 8 named-column chunk equations from `mul_carry_chain_holds`
+   / `div_carry_chain_holds` (after substituting nr/m32/div pins).
+2. Lifts each chunk equation to ℤ via A.0's `fgl_chunk_lift_C3{1..8}_int`
+   using carry bounds from `arith_{mul,div}_carry_columns_in_range_signed`.
+3. Aggregates via A.0's `{mul,div}_signed_packed_of_chunks_int`.
+4. Composes with the pin equation `fab = 1 - 2*na - 2*nb + 4*na*nb` and
+   the XOR `np = na + nb - 2*na*nb` to produce the **simplified form**
+   `(1-2np) * A * B + ... = (1-2np) * (C + D * 2^64)`.
+
+Trust footprint: `arith_{mul,div}_carry_columns_in_range_signed` (Layer A.3
+axioms) + the per-chunk lift toolkit (Layer A.0, pure math).
+-/
+
+section SignedChainWitnesses
+
+open ZiskFv.Airs.ArithMul
+open ZiskFv.Airs.ArithDiv
+open Arith.extraction
+open ZiskFv.PackedBitVec.SignedChunkLift
+
+/-- **MUL-signed chain witnesses (simplified ℤ chunk identity).**
+
+    Given the row-level carry-chain constraint set plus the signed-MUL
+    mode pins (`nr = 0`, `sext = 0`, `m32 = 0`, `div = 0`), the boolean-
+    ity of the sign witnesses (`na, nb ∈ {0,1}`), and the XOR-as-
+    arithmetic relation `np = na + nb - 2*na*nb`, deliver the simplified-
+    form chunk identity over ℤ
+    `(1 - 2*np_int) * A * B + (nb_int*(1-2*na_int)*A + na_int*(1-2*nb_int)*B) * 2^64
+       + (na_int*nb_int - np_int) * 2^128 = (1 - 2*np_int) * (C + D * 2^64)`,
+    where `A, B, C, D, na_int, nb_int, np_int` are the toIntZ-lifted
+    chunk packings and sign witnesses.
+
+    This is the input shape for `fgl_mul_signed_to_bv64_hi` (Layer A.1).
+
+    Carry-range bounds discharged by
+    `arith_mul_carry_columns_in_range_signed` (trust ledger class #6b). -/
+theorem mul_signed_chain_witnesses
+    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (h_chain : mul_carry_chain_holds v r_a)
+    (h_nr : v.nr r_a = 0) (_h_sext : v.sext r_a = 0)
+    (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 0)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) :
+    let A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
+              + toIntZ (v.a_2 r_a) * (65536 * 65536)
+              + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536)
+    let B := toIntZ (v.b_0 r_a) + toIntZ (v.b_1 r_a) * 65536
+              + toIntZ (v.b_2 r_a) * (65536 * 65536)
+              + toIntZ (v.b_3 r_a) * (65536 * 65536 * 65536)
+    let C := toIntZ (v.c_0 r_a) + toIntZ (v.c_1 r_a) * 65536
+              + toIntZ (v.c_2 r_a) * (65536 * 65536)
+              + toIntZ (v.c_3 r_a) * (65536 * 65536 * 65536)
+    let D := toIntZ (v.d_0 r_a) + toIntZ (v.d_1 r_a) * 65536
+              + toIntZ (v.d_2 r_a) * (65536 * 65536)
+              + toIntZ (v.d_3 r_a) * (65536 * 65536 * 65536)
+    (1 - 2 * toIntZ (v.np r_a)) * A * B
+        + (toIntZ (v.nb r_a) * (1 - 2 * toIntZ (v.na r_a)) * A
+            + toIntZ (v.na r_a) * (1 - 2 * toIntZ (v.nb r_a)) * B) * 2^64
+        + (toIntZ (v.na r_a) * toIntZ (v.nb r_a) - toIntZ (v.np r_a)) * 2^128
+      = (1 - 2 * toIntZ (v.np r_a)) * (C + D * 2^64) := by
+  -- Step 1: extract raw constraints from chain.
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  -- Pin definitions for fab / na_fb / nb_fa from constraints 6/7/8.
+  simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
+             ← v.na_def, ← v.nb_def] at h6 h7 h8
+  -- Name the three pin columns.
+  set fab : FGL := Circuit.main v.circuit (id := 1) (column := 30) (row := r_a) (rotation := 0)
+    with h_fab_def
+  set na_fb : FGL := Circuit.main v.circuit (id := 1) (column := 31) (row := r_a) (rotation := 0)
+    with h_nafb_def
+  set nb_fa : FGL := Circuit.main v.circuit (id := 1) (column := 32) (row := r_a) (rotation := 0)
+    with h_nbfa_def
+  have h_fab : fab = 1 - 2 * v.na r_a - 2 * v.nb r_a + 4 * v.na r_a * v.nb r_a := by
+    linear_combination h6
+  have h_nafb : na_fb = v.na r_a * (1 - 2 * v.nb r_a) := by linear_combination h7
+  have h_nbfa : nb_fa = v.nb r_a * (1 - 2 * v.na r_a) := by linear_combination h8
+  -- Step 2: unfold the per-chunk constraints and substitute mode pins.
+  simp only [constraint_31_every_row, constraint_32_every_row,
+             constraint_33_every_row, constraint_34_every_row,
+             constraint_35_every_row, constraint_36_every_row,
+             constraint_37_every_row, constraint_38_every_row,
+             ← v.a_0_def, ← v.a_1_def, ← v.a_2_def, ← v.a_3_def,
+             ← v.b_0_def, ← v.b_1_def, ← v.b_2_def, ← v.b_3_def,
+             ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
+             ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
+             ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
+             ← v.m32_def, ← v.div_def,
+             ← h_fab_def, ← h_nafb_def, ← h_nbfa_def]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  -- Substitute m32 = 0, nr = 0, div = 0 (and rewrite (1-0) = 1).
+  simp only [h_nr, h_m32, h_div,
+             mul_zero, zero_mul, add_zero, sub_zero]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  -- Step 3: name `γ := 1 - 2*np`.
+  set γ : FGL := 1 - 2 * v.np r_a with hγ
+  -- Each h3k now has shape: fab * <prod> ± (γ-form) * c/d - cy*65536 = 0,
+  -- but in the unfolded form, `(1 - 2 * np) * c` appears as `- c + 2*np*c`.
+  -- Rewrite each hCxx to the canonical signed-form needed by chunk lifts.
+  have h_chunk_31 :
+      fab * v.a_0 r_a * v.b_0 r_a
+        - γ * v.c_0 r_a
+        - Circuit.main v.circuit (id := 1) (column := 0) (row := r_a) (rotation := 0) * 65536
+        = 0 := by linear_combination h31
+  have h_chunk_32 :
+      fab * v.a_1 r_a * v.b_0 r_a + fab * v.a_0 r_a * v.b_1 r_a
+        - γ * v.c_1 r_a
+        + Circuit.main v.circuit (id := 1) (column := 0) (row := r_a) (rotation := 0)
+        - Circuit.main v.circuit (id := 1) (column := 1) (row := r_a) (rotation := 0) * 65536
+        = 0 := by linear_combination h32
+  have h_chunk_33 :
+      fab * v.a_2 r_a * v.b_0 r_a + fab * v.a_1 r_a * v.b_1 r_a
+        + fab * v.a_0 r_a * v.b_2 r_a
+        - γ * v.c_2 r_a
+        + Circuit.main v.circuit (id := 1) (column := 1) (row := r_a) (rotation := 0)
+        - Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0) * 65536
+        = 0 := by linear_combination h33
+  have h_chunk_34 :
+      fab * v.a_3 r_a * v.b_0 r_a + fab * v.a_2 r_a * v.b_1 r_a
+        + fab * v.a_1 r_a * v.b_2 r_a + fab * v.a_0 r_a * v.b_3 r_a
+        - γ * v.c_3 r_a
+        + Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0)
+        - Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) * 65536
+        = 0 := by linear_combination h34
+  have h_chunk_35 :
+      fab * v.a_3 r_a * v.b_1 r_a + fab * v.a_2 r_a * v.b_2 r_a
+        + fab * v.a_1 r_a * v.b_3 r_a
+        + v.b_0 r_a * na_fb + v.a_0 r_a * nb_fa
+        - γ * v.d_0 r_a
+        + Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0)
+        - Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) * 65536
+        = 0 := by linear_combination h35
+  have h_chunk_36 :
+      fab * v.a_3 r_a * v.b_2 r_a + fab * v.a_2 r_a * v.b_3 r_a
+        + v.a_1 r_a * nb_fa + v.b_1 r_a * na_fb
+        - γ * v.d_1 r_a
+        + Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0)
+        - Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) * 65536
+        = 0 := by linear_combination h36
+  have h_chunk_37 :
+      fab * v.a_3 r_a * v.b_3 r_a
+        + v.a_2 r_a * nb_fa + v.b_2 r_a * na_fb
+        - γ * v.d_2 r_a
+        + Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0)
+        - Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) * 65536
+        = 0 := by linear_combination h37
+  have h_chunk_38 :
+      65536 * v.na r_a * v.nb r_a
+        + v.a_3 r_a * nb_fa + v.b_3 r_a * na_fb
+        - 65536 * v.np r_a
+        - γ * v.d_3 r_a
+        + Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0)
+        = 0 := by linear_combination h38
+  -- Step 4: chunk-range bounds from `arith_mul_columns_in_range`.
+  obtain ⟨h_a0, h_a1, h_a2, h_a3,
+          h_b0, h_b1, h_b2, h_b3,
+          h_c0, h_c1, h_c2, h_c3,
+          h_d0, h_d1, h_d2, h_d3⟩ :=
+    arith_mul_chunk_ranges_at_holds v r_a
+  -- Step 5: signed carry-range disjunctive bounds → |toIntZ cy| ≤ 983040.
+  obtain ⟨hcy0_disj, hcy1_disj, hcy2_disj, hcy3_disj,
+          hcy4_disj, hcy5_disj, hcy6_disj⟩ :=
+    ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_signed v r_a h_nr _h_sext h_m32 h_div
+  have hcy0_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 0) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+    have := fgl_carry_disjunctive_lt _ hcy0_disj
+    rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
+  have hcy1_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 1) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+    have := fgl_carry_disjunctive_lt _ hcy1_disj
+    rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
+  have hcy2_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+    have := fgl_carry_disjunctive_lt _ hcy2_disj
+    rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
+  have hcy3_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+    have := fgl_carry_disjunctive_lt _ hcy3_disj
+    rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
+  have hcy4_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+    have := fgl_carry_disjunctive_lt _ hcy4_disj
+    rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
+  have hcy5_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+    have := fgl_carry_disjunctive_lt _ hcy5_disj
+    rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
+  have hcy6_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+    have := fgl_carry_disjunctive_lt _ hcy6_disj
+    rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
+  -- Step 6: bound |toIntZ fab|, |toIntZ na_fb|, |toIntZ nb_fa|, |toIntZ γ|,
+  -- |toIntZ na|, |toIntZ nb|, |toIntZ np| from booleanity.
+  -- Booleanity for np follows from h_np_xor + booleanity of na, nb.
+  have h_na_abs : |toIntZ (v.na r_a)| ≤ 1 := by
+    rcases h_na_bool with h | h
+    · rw [h]; decide
+    · rw [h]; decide
+  have h_nb_abs : |toIntZ (v.nb r_a)| ≤ 1 := by
+    rcases h_nb_bool with h | h
+    · rw [h]; decide
+    · rw [h]; decide
+  -- Derive np ∈ {0,1} from h_np_xor + na, nb ∈ {0,1}, by round-trip.
+  have h_np_int_bool : toIntZ (v.np r_a) = 0 ∨ toIntZ (v.np r_a) = 1 := by
+    rw [h_np_xor]
+    rcases h_na_bool with h_na | h_na <;> rcases h_nb_bool with h_nb | h_nb
+    all_goals (rw [h_na, h_nb])
+    · left; decide
+    · right; decide
+    · right; decide
+    · left; decide
+  have h_np_bool : v.np r_a = 0 ∨ v.np r_a = 1 := by
+    have h_round_trip : ((toIntZ (v.np r_a) : ℤ) : FGL) = v.np r_a := toIntZ_cast _
+    rcases h_np_int_bool with h | h
+    · left; rw [← h_round_trip, h]; norm_cast
+    · right; rw [← h_round_trip, h]; norm_cast
+  have h_np_abs : |toIntZ (v.np r_a)| ≤ 1 := by
+    rcases h_np_int_bool with h | h
+    · rw [h]; decide
+    · rw [h]; decide
+  have h_fab_abs : |toIntZ fab| ≤ 1 := by
+    have h_eq := fgl_fab_pin_int fab (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_fab
+    rw [h_eq]
+    rcases h_na_bool with h_na | h_na <;> rcases h_nb_bool with h_nb | h_nb
+    all_goals (rw [h_na, h_nb])
+    all_goals decide
+  have h_nafb_abs : |toIntZ na_fb| ≤ 1 := by
+    have h_eq := fgl_na_fb_pin_int na_fb (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_nafb
+    rw [h_eq]
+    rcases h_na_bool with h_na | h_na <;> rcases h_nb_bool with h_nb | h_nb
+    all_goals (rw [h_na, h_nb])
+    all_goals decide
+  have h_nbfa_abs : |toIntZ nb_fa| ≤ 1 := by
+    have h_eq := fgl_nb_fa_pin_int nb_fa (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_nbfa
+    rw [h_eq]
+    rcases h_na_bool with h_na | h_na <;> rcases h_nb_bool with h_nb | h_nb
+    all_goals (rw [h_na, h_nb])
+    all_goals decide
+  have h_γ_abs : |toIntZ γ| ≤ 1 := by
+    rcases h_np_bool with h_np | h_np
+    · rw [hγ, h_np]; show |toIntZ ((1 : FGL) - 2 * 0)| ≤ 1
+      have : (1 : FGL) - 2 * 0 = 1 := by ring
+      rw [this]; decide
+    · rw [hγ, h_np]; show |toIntZ ((1 : FGL) - 2 * 1)| ≤ 1
+      have : (1 : FGL) - 2 * 1 = -1 := by ring
+      rw [this]; decide
+  -- Step 7: apply per-chunk ℤ lifts. Each produces a ℤ equation.
+  have hZ31 := fgl_chunk_lift_C31_int
+    (v.a_0 r_a) (v.b_0 r_a) (v.c_0 r_a) _
+    fab γ h_a0 h_b0 h_c0 hcy0_abs h_fab_abs h_γ_abs h_chunk_31
+  have hZ32 := fgl_chunk_lift_C32_int
+    (v.a_0 r_a) (v.a_1 r_a) (v.b_0 r_a) (v.b_1 r_a) (v.c_1 r_a)
+    _ _ fab γ h_a0 h_a1 h_b0 h_b1 h_c1 hcy0_abs hcy1_abs h_fab_abs h_γ_abs h_chunk_32
+  have hZ33 := fgl_chunk_lift_C33_int
+    (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a)
+    (v.c_2 r_a) _ _ fab γ
+    h_a0 h_a1 h_a2 h_b0 h_b1 h_b2 h_c2 hcy1_abs hcy2_abs h_fab_abs h_γ_abs h_chunk_33
+  have hZ34 := fgl_chunk_lift_C34_int
+    (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
+    (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)
+    (v.c_3 r_a) _ _ fab γ
+    h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3 h_c3 hcy2_abs hcy3_abs h_fab_abs h_γ_abs h_chunk_34
+  have hZ35 := fgl_chunk_lift_C35_int
+    (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
+    (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a) (v.d_0 r_a)
+    _ _ fab γ na_fb nb_fa
+    h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3 h_d0
+    hcy3_abs hcy4_abs h_fab_abs h_γ_abs h_nafb_abs h_nbfa_abs h_chunk_35
+  have hZ36 := fgl_chunk_lift_C36_int
+    (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
+    (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a) (v.d_1 r_a)
+    _ _ fab γ na_fb nb_fa
+    h_a1 h_a2 h_a3 h_b1 h_b2 h_b3 h_d1
+    hcy4_abs hcy5_abs h_fab_abs h_γ_abs h_nafb_abs h_nbfa_abs h_chunk_36
+  have hZ37 := fgl_chunk_lift_C37_int
+    (v.a_2 r_a) (v.a_3 r_a) (v.b_2 r_a) (v.b_3 r_a) (v.d_2 r_a)
+    _ _ fab γ na_fb nb_fa
+    h_a2 h_a3 h_b2 h_b3 h_d2
+    hcy5_abs hcy6_abs h_fab_abs h_γ_abs h_nafb_abs h_nbfa_abs h_chunk_37
+  have hZ38 := fgl_chunk_lift_C38_int
+    (v.a_3 r_a) (v.b_3 r_a) (v.d_3 r_a) _
+    fab γ na_fb nb_fa (v.na r_a) (v.nb r_a) (v.np r_a)
+    h_a3 h_b3 h_d3 hcy6_abs h_fab_abs h_γ_abs h_nafb_abs h_nbfa_abs
+    h_na_abs h_nb_abs h_np_abs h_chunk_38
+  -- Step 8: aggregate via A.0's pure-ℤ aggregator. The output uses
+  -- (toIntZ γ) in place of (1 - 2*toIntZ np). We then convert via
+  -- `γ = 1 - 2 * v.np r_a` lifted to ℤ.
+  -- First note: toIntZ γ = 1 - 2 * toIntZ np (provable from np ∈ {0,1}).
+  have h_γ_int : toIntZ γ = 1 - 2 * toIntZ (v.np r_a) := by
+    rcases h_np_bool with h | h
+    · rw [hγ, h]
+      have h_lhs : (1 : FGL) - 2 * 0 = 1 := by ring
+      rw [h_lhs]
+      decide
+    · rw [hγ, h]
+      have h_lhs : (1 : FGL) - 2 * 1 = -1 := by ring
+      rw [h_lhs]
+      decide
+  -- Also need toIntZ fab in terms of toIntZ na, nb (for A.1.5 bridge).
+  have h_fab_int := fgl_fab_pin_int fab (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_fab
+  have h_nafb_int := fgl_na_fb_pin_int na_fb (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_nafb
+  have h_nbfa_int := fgl_nb_fa_pin_int nb_fa (v.na r_a) (v.nb r_a) h_na_bool h_nb_bool h_nbfa
+  -- toIntZ fab in the chunk lift form (with γ-shape) is the same as 1-2*toIntZ np
+  -- by xor identity. Concretely:
+  have h_fab_eq_γ : toIntZ fab = 1 - 2 * toIntZ (v.np r_a) := by
+    rw [h_fab_int]; linarith [h_np_xor]
+  -- Rewrite each hZxx to use `(1 - 2 * toIntZ np)` in place of `toIntZ γ`.
+  rw [h_γ_int] at hZ31 hZ32 hZ33 hZ34 hZ35 hZ36 hZ37 hZ38
+  -- Aggregate the 8 chunk lifts.
+  have h_agg := mul_signed_packed_of_chunks_int
+    (toIntZ (v.a_0 r_a)) (toIntZ (v.a_1 r_a)) (toIntZ (v.a_2 r_a)) (toIntZ (v.a_3 r_a))
+    (toIntZ (v.b_0 r_a)) (toIntZ (v.b_1 r_a)) (toIntZ (v.b_2 r_a)) (toIntZ (v.b_3 r_a))
+    (toIntZ (v.c_0 r_a)) (toIntZ (v.c_1 r_a)) (toIntZ (v.c_2 r_a)) (toIntZ (v.c_3 r_a))
+    (toIntZ (v.d_0 r_a)) (toIntZ (v.d_1 r_a)) (toIntZ (v.d_2 r_a)) (toIntZ (v.d_3 r_a))
+    (toIntZ (Circuit.main v.circuit (id := 1) (column := 0) (row := r_a) (rotation := 0) : FGL))
+    (toIntZ (Circuit.main v.circuit (id := 1) (column := 1) (row := r_a) (rotation := 0) : FGL))
+    (toIntZ (Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0) : FGL))
+    (toIntZ (Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) : FGL))
+    (toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL))
+    (toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL))
+    (toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL))
+    (toIntZ fab) (toIntZ na_fb) (toIntZ nb_fa)
+    (toIntZ (v.na r_a)) (toIntZ (v.nb r_a)) (toIntZ (v.np r_a))
+    hZ31 hZ32 hZ33 hZ34 hZ35 hZ36 hZ37 hZ38
+  -- h_agg's conclusion replaces toIntZ fab. We want to recover the simplified
+  -- form with (1 - 2 * toIntZ np). Use h_fab_eq_γ to substitute.
+  -- Also substitute h_nafb_int = na * (1 - 2*nb) and h_nbfa_int = nb * (1 - 2*na).
+  -- After substitution the goal matches A.1.5's input form for the simplified bridge.
+  -- Substitute toIntZ fab, toIntZ na_fb, toIntZ nb_fa in h_agg via the pin lifts.
+  rw [h_fab_eq_γ, h_nafb_int, h_nbfa_int] at h_agg
+  -- Now h_agg has the right shape.
+  show _ = _
+  linear_combination h_agg
+
+
+end SignedChainWitnesses
 
 end ZiskFv.Equivalence.Bridge.Arith
