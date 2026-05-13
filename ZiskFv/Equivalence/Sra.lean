@@ -99,15 +99,6 @@ theorem equiv_SRA
     (h_match : ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
-    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
-    (hc_lo_sum_lt : (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
-        + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
-        + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
-        + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
-    (hc_hi_sum_lt : (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
-        + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
-        + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
-        + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
     (h_input_r1_circuit : sra_input.r1_val
       = BitVec.ofNat 64
@@ -128,6 +119,15 @@ theorem equiv_SRA
       m v r_main r_binary h_match
   have h_op : (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SRA := by
     rw [← h_op_fgl, h_main_op]; decide
+  -- Discharge c-lo/c-hi sum bounds + h_bytes from row-level axioms.
+  have hc_lo_sum_lt :=
+    ZiskFv.Equivalence.Bridge.BinaryExtension.hc_lo_sum_lt_of_match
+      m v r_main r_binary h_match_clo
+  have hc_hi_sum_lt :=
+    ZiskFv.Equivalence.Bridge.BinaryExtension.hc_hi_sum_lt_of_match
+      m v r_main r_binary h_match_chi
+  have h_bytes :=
+    ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v r_binary
   -- Derive 8 e2 byte ranges from `memory_bus_entry_byte_range_perm_sound`.
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
     ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2

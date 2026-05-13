@@ -4,6 +4,7 @@ import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Transpiler
 import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Ranges
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.BinaryExtensionTable
@@ -343,5 +344,148 @@ theorem project_match_op_clo_chi
   -- prevent runaway elaboration.
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_match
   exact ⟨h_match.2.1, h_match.2.2.2.2.2.2.1, h_match.2.2.2.2.2.2.2.1⟩
+
+/-! ## C-lane sum-bound discharge
+
+Drops the caller-supplied `hc_lo_sum_lt` / `hc_hi_sum_lt` *promise
+hypotheses* from per-opcode `equiv_<OP>` shifts. These bounds follow
+mechanically from:
+
+* `h_match_clo` / `h_match_chi` — the c-lane match equations
+  (delivered by `project_match_op_clo_chi`).
+* `main_columns_in_range` (trust ledger) — `(m.c_{0,1} r_main).val < 2^32`.
+* `binary_extension_columns_in_range` (trust ledger) — each
+  `free_in_c_{i} r_binary).val < 2^32` (the per-byte range gives the
+  total < 8 * 2^32 = 2^35 < GL_prime, so the FGL sum's `.val` equals
+  the Nat sum).
+
+No new trust-ledger axiom; helper is pure derivation.
+-/
+
+private theorem c_lo_sum_eq_nat_sum_of_match
+    (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
+    (hc0 hc2 hc4 hc6 hc8 hc10 hc12 hc14 : ℕ) -- spell out positional bounds
+    (h0 : (v.free_in_c_0  r_binary).val = hc0)
+    (h2 : (v.free_in_c_2  r_binary).val = hc2)
+    (h4 : (v.free_in_c_4  r_binary).val = hc4)
+    (h6 : (v.free_in_c_6  r_binary).val = hc6)
+    (h8 : (v.free_in_c_8  r_binary).val = hc8)
+    (h10 : (v.free_in_c_10 r_binary).val = hc10)
+    (h12 : (v.free_in_c_12 r_binary).val = hc12)
+    (h14 : (v.free_in_c_14 r_binary).val = hc14)
+    (hb0 : hc0 < 4294967296) (hb2 : hc2 < 4294967296)
+    (hb4 : hc4 < 4294967296) (hb6 : hc6 < 4294967296)
+    (hb8 : hc8 < 4294967296) (hb10 : hc10 < 4294967296)
+    (hb12 : hc12 < 4294967296) (hb14 : hc14 < 4294967296) :
+    (v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r_binary
+     + v.free_in_c_6 r_binary + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+     + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary : FGL).val
+      = hc0 + hc2 + hc4 + hc6 + hc8 + hc10 + hc12 + hc14 := by
+  have h_cast :
+      v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_4 r_binary
+       + v.free_in_c_6 r_binary + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+       + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary
+       = ((((v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+            + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+            + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+            + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val : ℕ) : FGL)) := by
+    push_cast; ring
+  rw [h_cast, Fin.val_natCast, h0, h2, h4, h6, h8, h10, h12, h14]
+  apply Nat.mod_eq_of_lt; show _ < 18446744069414584321; omega
+
+/-- **C-lo sum bound discharge.** From the c-lo bus-match equation
+    (delivered by `project_match_op_clo_chi`), the `main_columns_in_range`
+    bound on `m.c_0`, and the `binary_extension_columns_in_range` bounds
+    on each `free_in_c_{even}`, conclude the BinExt c-lo Nat sum is
+    `< 2^32`. -/
+theorem hc_lo_sum_lt_of_match
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (r_main r_binary : ℕ)
+    (h_match_clo : m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary) :
+    (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+      + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+      + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+      + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val
+      < 4294967296 := by
+  obtain ⟨_, _, _, _, _, _, _, _, _, hc0, _, hc2, _, hc4, _, hc6, _,
+          hc8, _, hc10, _, hc12, _, hc14, _, _, _⟩ :=
+    binary_extension_columns_in_range v r_binary
+  have h_main_clo : (m.c_0 r_main).val < 4294967296 :=
+    ZiskFv.Airs.Main.main_c_lo_lt_2_32 m r_main
+  have h_val := congr_arg Fin.val h_match_clo
+  have h_sum_eq :=
+    c_lo_sum_eq_nat_sum_of_match v r_binary
+      (v.free_in_c_0 r_binary).val (v.free_in_c_2 r_binary).val
+      (v.free_in_c_4 r_binary).val (v.free_in_c_6 r_binary).val
+      (v.free_in_c_8 r_binary).val (v.free_in_c_10 r_binary).val
+      (v.free_in_c_12 r_binary).val (v.free_in_c_14 r_binary).val
+      rfl rfl rfl rfl rfl rfl rfl rfl hc0 hc2 hc4 hc6 hc8 hc10 hc12 hc14
+  rw [h_sum_eq] at h_val
+  omega
+
+private theorem c_hi_sum_eq_nat_sum_of_match
+    (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
+    (hc1 hc3 hc5 hc7 hc9 hc11 hc13 hc15 : ℕ)
+    (h1 : (v.free_in_c_1  r_binary).val = hc1)
+    (h3 : (v.free_in_c_3  r_binary).val = hc3)
+    (h5 : (v.free_in_c_5  r_binary).val = hc5)
+    (h7 : (v.free_in_c_7  r_binary).val = hc7)
+    (h9 : (v.free_in_c_9  r_binary).val = hc9)
+    (h11 : (v.free_in_c_11 r_binary).val = hc11)
+    (h13 : (v.free_in_c_13 r_binary).val = hc13)
+    (h15 : (v.free_in_c_15 r_binary).val = hc15)
+    (hb1 : hc1 < 4294967296) (hb3 : hc3 < 4294967296)
+    (hb5 : hc5 < 4294967296) (hb7 : hc7 < 4294967296)
+    (hb9 : hc9 < 4294967296) (hb11 : hc11 < 4294967296)
+    (hb13 : hc13 < 4294967296) (hb15 : hc15 < 4294967296) :
+    (v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r_binary
+     + v.free_in_c_7 r_binary + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+     + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary : FGL).val
+      = hc1 + hc3 + hc5 + hc7 + hc9 + hc11 + hc13 + hc15 := by
+  have h_cast :
+      v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_5 r_binary
+       + v.free_in_c_7 r_binary + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+       + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary
+       = ((((v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+            + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+            + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+            + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val : ℕ) : FGL)) := by
+    push_cast; ring
+  rw [h_cast, Fin.val_natCast, h1, h3, h5, h7, h9, h11, h13, h15]
+  apply Nat.mod_eq_of_lt; show _ < 18446744069414584321; omega
+
+/-- **C-hi sum bound discharge.** Mirror of `hc_lo_sum_lt_of_match`. -/
+theorem hc_hi_sum_lt_of_match
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (r_main r_binary : ℕ)
+    (h_match_chi : m.c_1 r_main
+        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary) :
+    (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+      + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+      + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+      + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val
+      < 4294967296 := by
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, hc1, _, hc3, _, hc5, _, hc7,
+          _, hc9, _, hc11, _, hc13, _, hc15, _, _⟩ :=
+    binary_extension_columns_in_range v r_binary
+  have h_main_chi : (m.c_1 r_main).val < 4294967296 :=
+    ZiskFv.Airs.Main.main_c_hi_lt_2_32 m r_main
+  have h_val := congr_arg Fin.val h_match_chi
+  have h_sum_eq :=
+    c_hi_sum_eq_nat_sum_of_match v r_binary
+      (v.free_in_c_1 r_binary).val (v.free_in_c_3 r_binary).val
+      (v.free_in_c_5 r_binary).val (v.free_in_c_7 r_binary).val
+      (v.free_in_c_9 r_binary).val (v.free_in_c_11 r_binary).val
+      (v.free_in_c_13 r_binary).val (v.free_in_c_15 r_binary).val
+      rfl rfl rfl rfl rfl rfl rfl rfl hc1 hc3 hc5 hc7 hc9 hc11 hc13 hc15
+  rw [h_sum_eq] at h_val
+  omega
 
 end ZiskFv.Equivalence.Bridge.BinaryExtension

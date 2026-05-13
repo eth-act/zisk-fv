@@ -124,15 +124,6 @@ theorem equiv_SLL
     (h_match : ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
-    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
-    (hc_lo_sum_lt : (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
-        + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
-        + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
-        + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
-    (hc_hi_sum_lt : (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
-        + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
-        + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
-        + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
     (h_input_r1_circuit : sll_input.r1_val
       = BitVec.ofNat 64
@@ -149,13 +140,23 @@ theorem equiv_SLL
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
   -- Project matches_entry into the (op, c_lo, c_hi) sub-facts the proof
-  -- body consumes. Net **−2 binders** vs the previous 3 specific
-  -- equations (h_op + h_match_clo + h_match_chi → h_match).
+  -- body consumes.
   obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
     ZiskFv.Equivalence.Bridge.BinaryExtension.project_match_op_clo_chi
       m v r_main r_binary h_match
   have h_op : (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SLL := by
     rw [← h_op_fgl, h_main_op]; decide
+  -- Discharge c-lo/c-hi sum bounds from the projected match equations
+  -- plus `main_columns_in_range` + `binary_extension_columns_in_range`.
+  have hc_lo_sum_lt :=
+    ZiskFv.Equivalence.Bridge.BinaryExtension.hc_lo_sum_lt_of_match
+      m v r_main r_binary h_match_clo
+  have hc_hi_sum_lt :=
+    ZiskFv.Equivalence.Bridge.BinaryExtension.hc_hi_sum_lt_of_match
+      m v r_main r_binary h_match_chi
+  -- Discharge h_bytes via the BinaryExtension row → 8-byte table-entry axiom.
+  have h_bytes :=
+    ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v r_binary
   -- Derive 8 e2 byte ranges from `memory_bus_entry_byte_range_perm_sound`.
   -- Net **−8 binders** on `equiv_SLL` (h_e2_0..h_e2_7 removed; no new
   -- caller obligations added — the trust footprint shrinks).
