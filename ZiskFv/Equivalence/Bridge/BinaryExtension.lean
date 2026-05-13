@@ -11,6 +11,7 @@ import ZiskFv.Airs.BinaryExtensionTable
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Equivalence.Bridge.SailStateBridge
 
 /-!
 # BinaryExtension discharge bridge
@@ -55,6 +56,7 @@ consumer.)
 namespace ZiskFv.Equivalence.Bridge.BinaryExtension
 
 open Goldilocks
+open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.OperationBus
@@ -486,6 +488,433 @@ theorem hc_hi_sum_lt_of_match
       (v.free_in_c_13 r_binary).val (v.free_in_c_15 r_binary).val
       rfl rfl rfl rfl rfl rfl rfl rfl hc1 hc3 hc5 hc7 hc9 hc11 hc13 hc15
   rw [h_sum_eq] at h_val
+  omega
+
+/-! ## Input bridge / shift-pin discharge (shift family, m32 = 0)
+
+For the 64-bit register-variant shifts (SLL / SRL / SRA) and their
+immediate siblings (SLLI / SRLI / SRAI), all of which have m32 = 0 on
+the Main row, derive the packed-a-byte form of `r1_val` and the
+shift-pin `r2_val.toNat % 64 = (v.free_in_b).val % 64` (or the
+immediate analogue) from:
+
+* `transpile_<OP>`'s lane equalities (callable at `sail_to_rv64 state`).
+* `matches_entry` (caller-supplied or projected).
+* `binary_extension_op_is_shift_pin` (trust ledger) → `v.op_is_shift = 1`.
+* `binary_extension_columns_in_range` (trust ledger) → per-a-byte
+  ranges < 256, so the FGL packed 4-byte sum's `.val` equals the Nat
+  packed sum.
+
+No new trust-ledger axioms. -/
+
+private theorem packed_a_lo_val_eq_of_match
+    (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
+    (ha0 : (v.free_in_a_0 r_binary).val < 256)
+    (ha1 : (v.free_in_a_1 r_binary).val < 256)
+    (ha2 : (v.free_in_a_2 r_binary).val < 256)
+    (ha3 : (v.free_in_a_3 r_binary).val < 256) :
+    (v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
+      + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary : FGL).val
+      = (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+        + (v.free_in_a_2 r_binary).val * 65536 + (v.free_in_a_3 r_binary).val * 16777216 := by
+  have h_cast :
+      v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
+        + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary
+        = ((((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+              + (v.free_in_a_2 r_binary).val * 65536
+              + (v.free_in_a_3 r_binary).val * 16777216 : ℕ) : FGL)) := by
+    push_cast; ring
+  rw [h_cast, Fin.val_natCast]
+  apply Nat.mod_eq_of_lt
+  show _ < 18446744069414584321; omega
+
+private theorem packed_a_hi_val_eq_of_match
+    (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
+    (ha4 : (v.free_in_a_4 r_binary).val < 256)
+    (ha5 : (v.free_in_a_5 r_binary).val < 256)
+    (ha6 : (v.free_in_a_6 r_binary).val < 256)
+    (ha7 : (v.free_in_a_7 r_binary).val < 256) :
+    (v.free_in_a_4 r_binary + 256 * v.free_in_a_5 r_binary
+      + 65536 * v.free_in_a_6 r_binary + 16777216 * v.free_in_a_7 r_binary : FGL).val
+      = (v.free_in_a_4 r_binary).val + (v.free_in_a_5 r_binary).val * 256
+        + (v.free_in_a_6 r_binary).val * 65536 + (v.free_in_a_7 r_binary).val * 16777216 := by
+  have h_cast :
+      v.free_in_a_4 r_binary + 256 * v.free_in_a_5 r_binary
+        + 65536 * v.free_in_a_6 r_binary + 16777216 * v.free_in_a_7 r_binary
+        = ((((v.free_in_a_4 r_binary).val + (v.free_in_a_5 r_binary).val * 256
+              + (v.free_in_a_6 r_binary).val * 65536
+              + (v.free_in_a_7 r_binary).val * 16777216 : ℕ) : FGL)) := by
+    push_cast; ring
+  rw [h_cast, Fin.val_natCast]
+  apply Nat.mod_eq_of_lt
+  show _ < 18446744069414584321; omega
+
+/-- **Packed-a bridge for 64-bit shifts (m32 = 0).** Given the
+    `transpile_<OP>` lane equalities (`m.a_0 = lane_lo (state.xreg rs1)`
+    / `m.a_1 = lane_hi …`), the row-level `op_is_shift = 1` pin, the
+    Sail register read, and the matches_entry hypothesis, derive
+    `r1_val = BitVec.ofNat 64 (8-byte packed sum)`. The `m32` hypothesis
+    (with `m32 = 0`) collapses the `(1 - m32) * m.a_1` factor on the
+    matches_entry a_hi conjunct. -/
+theorem packed_a_eq_of_shift_match_m32_0
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
+    (h_m32 : m.m32 r_main = 0)
+    (h_a_lo_t : m.a_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs1))
+    (h_a_hi_t : m.a_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs1))
+    (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
+    (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary)) :
+    r1_val
+      = BitVec.ofNat 64
+          ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+            + (v.free_in_a_2 r_binary).val * 65536
+            + (v.free_in_a_3 r_binary).val * 16777216
+            + (v.free_in_a_4 r_binary).val * 4294967296
+            + (v.free_in_a_5 r_binary).val * 1099511627776
+            + (v.free_in_a_6 r_binary).val * 281474976710656
+            + (v.free_in_a_7 r_binary).val * 72057594037927936) := by
+  obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7, _, _, _, _, _, _, _, _, _,
+          _, _, _, _, _, _, _, _, _, _⟩ :=
+    binary_extension_columns_in_range v r_binary
+  -- Sail packed form from read_xreg + transpile lanes.
+  have h_r1_main :=
+    SailStateBridge.packed_lane_eq_of_read_xreg
+      state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main) h_a_lo_t h_a_hi_t h_read_r1
+  -- Project a-lane match equations.
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
+  obtain ⟨_, _, h_a_lo_m, h_a_hi_m, _, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  -- m32 = 0 collapses `(1 - m32) * m.a_1 = m.a_1`.
+  rw [h_m32] at h_a_hi_m
+  simp only [one_sub_zero_mul] at h_a_hi_m
+  -- op_is_shift = 1 collapses the a_lo/a_hi RHS to the packed form.
+  rw [h_op_is_shift] at h_a_lo_m h_a_hi_m
+  -- Simplify `1 * (x - y) + y = x`.
+  have h_a0_fgl : m.a_0 r_main
+      = v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
+        + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary := by
+    rw [h_a_lo_m]; ring
+  have h_a1_fgl : m.a_1 r_main
+      = v.free_in_a_4 r_binary + 256 * v.free_in_a_5 r_binary
+        + 65536 * v.free_in_a_6 r_binary + 16777216 * v.free_in_a_7 r_binary := by
+    rw [h_a_hi_m]; ring
+  have h_a0_val : (m.a_0 r_main).val =
+      (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+      + (v.free_in_a_2 r_binary).val * 65536 + (v.free_in_a_3 r_binary).val * 16777216 := by
+    rw [h_a0_fgl]
+    exact packed_a_lo_val_eq_of_match v r_binary ha0 ha1 ha2 ha3
+  have h_a1_val : (m.a_1 r_main).val =
+      (v.free_in_a_4 r_binary).val + (v.free_in_a_5 r_binary).val * 256
+      + (v.free_in_a_6 r_binary).val * 65536 + (v.free_in_a_7 r_binary).val * 16777216 := by
+    rw [h_a1_fgl]
+    exact packed_a_hi_val_eq_of_match v r_binary ha4 ha5 ha6 ha7
+  rw [h_r1_main]
+  apply congrArg (BitVec.ofNat 64)
+  rw [h_a0_val, h_a1_val]
+  ring
+
+/-- **Shift-pin bridge for 64-bit register shifts (SLL/SRL/SRA, m32 = 0).**
+    Derives `r2_val.toNat % 64 = (v.free_in_b r_binary).val % 64` from
+    transpile lanes (`m.b_0 = lane_lo (xreg rs2)`, `m.b_1 = lane_hi …`),
+    the Sail register read, `op_is_shift = 1`, and `matches_entry`.
+
+    Proof sketch: the packed-lane form `r2_val = BV.ofNat 64 ((m.b_0).val
+    + (m.b_1).val * 2^32)` gives `r2_val.toNat = (m.b_0).val + (m.b_1).val
+    * 2^32`. Since 2^32 ≡ 0 (mod 64), `r2_val.toNat % 64 = (m.b_0).val % 64`.
+    From `matches_entry`'s b_lo with `op_is_shift = 1` we get
+    `m.b_0 = e.free_in_b + 256 * e.b_0`. The free_in_b and b_0 byte ranges
+    bound the FGL sum's `.val` so it equals `(free_in_b).val + 256 *
+    (b_0).val`. Taking `% 64` and observing `256 ≡ 0 (mod 64)` finishes. -/
+theorem shift_pin_eq_of_shift_match_m32_0
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
+    (h_m32 : m.m32 r_main = 0)
+    (h_b_lo_t : m.b_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs2))
+    (h_b_hi_t : m.b_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs2))
+    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state)
+    (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary)) :
+    r2_val.toNat % 64 = (v.free_in_b r_binary).val % 64 := by
+  have h_b_main : (v.free_in_b r_binary).val < 256 := be_b_lt_256 v r_binary
+  have h_main_b0 : (m.b_0 r_main).val < 4294967296 :=
+    ZiskFv.Airs.Main.main_b_lo_lt_2_32 m r_main
+  -- Sail packed form from read_xreg + transpile lanes.
+  have h_r2_main :=
+    SailStateBridge.packed_lane_eq_of_read_xreg
+      state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main) h_b_lo_t h_b_hi_t h_read_r2
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
+  obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  -- op_is_shift = 1 collapses b_lo RHS.
+  rw [h_op_is_shift] at h_b_lo_m
+  -- Now h_b_lo_m: m.b_0 r_main = 1 * (free_in_b + 256*b_0 - a0) + a0.
+  -- Simplify to free_in_b + 256 * b_0.
+  have h_b0_fgl : m.b_0 r_main = v.free_in_b r_binary + 256 * v.b_0 r_binary := by
+    rw [h_b_lo_m]; ring
+  -- Take r2_val.toNat: from packed-lane equation r2_val = BV.ofNat 64 (m.b_0.val + m.b_1.val * 2^32).
+  rw [h_r2_main]
+  rw [BitVec.toNat_ofNat]
+  -- Goal: ((m.b_0).val + (m.b_1).val * 2^32) % 2^64 % 64 = (v.free_in_b r_binary).val % 64
+  -- 2^64 % 64 = 0 and 2^32 % 64 = 0, so the modular cascade reduces to (m.b_0).val % 64.
+  -- Cleanest: `Nat.mod_mod_of_dvd` (64 | 2^64).
+  rw [Nat.mod_mod_of_dvd _ (by decide : (64 : ℕ) ∣ 2^64)]
+  -- Now goal: ((m.b_0).val + (m.b_1).val * 2^32) % 64 = (v.free_in_b).val % 64.
+  -- 2^32 = 64 * 2^26, so (m.b_1).val * 2^32 ≡ 0 (mod 64); omega handles it.
+  have h_step : ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296) % 64
+              = (m.b_0 r_main).val % 64 := by omega
+  rw [h_step]
+  -- Now goal: (m.b_0 r_main).val % 64 = (v.free_in_b r_binary).val % 64.
+  -- From h_b0_fgl: m.b_0 r_main = free_in_b + 256 * b_0.
+  have h_b0_val : (m.b_0 r_main).val
+      = (v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val := by
+    rw [h_b0_fgl]
+    have h_cast : v.free_in_b r_binary + 256 * v.b_0 r_binary
+        = ((((v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    -- (free_in_b).val < 256, (b_0).val < 2^32 (from binary_extension_columns_in_range)
+    have h_b0_lt : (v.b_0 r_binary).val < 4294967296 := by
+      obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hb0, _⟩ :=
+        binary_extension_columns_in_range v r_binary
+      exact hb0
+    show _ < 18446744069414584321
+    -- (free_in_b).val < 256, (b_0).val < 2^32, so total < 256 + 256 * 2^32 < GL_prime
+    omega
+  rw [h_b0_val]
+  omega
+
+/-- **Shift-pin bridge for 64-bit immediate shifts (SLLI/SRLI/SRAI).**
+    Derives `shamt.toNat = (v.free_in_b r_binary).val % 64` from
+    `transpile_<OPI>`'s `m.b_0 = shamt_b_lo shamt`, op_is_shift = 1,
+    and `matches_entry`'s `b_lo` conjunct. The shamt is a 6-bit BitVec
+    so `shamt.toNat < 64`; the b_lo equation pins
+    `(v.free_in_b).val + 256 * (v.b_0).val = shamt.toNat`, which
+    bounds both addends and gives the mod-64 equation directly. -/
+theorem shift_pin_immediate_eq_of_shift_match
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (r_main r_binary : ℕ) (shamt : BitVec 6)
+    (h_b_lo_t : m.b_0 r_main = shamt_b_lo shamt)
+    (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary)) :
+    shamt.toNat = (v.free_in_b r_binary).val % 64 := by
+  have h_b_main : (v.free_in_b r_binary).val < 256 := be_b_lt_256 v r_binary
+  have h_b0_lt : (v.b_0 r_binary).val < 4294967296 := by
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hb0, _⟩ :=
+      binary_extension_columns_in_range v r_binary
+    exact hb0
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
+  obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  rw [h_op_is_shift] at h_b_lo_m
+  have h_b0_fgl : m.b_0 r_main = v.free_in_b r_binary + 256 * v.b_0 r_binary := by
+    rw [h_b_lo_m]; ring
+  -- Combine with transpile: shamt_b_lo shamt = free_in_b + 256 * b_0.
+  have h_shamt_eq : shamt_b_lo shamt = v.free_in_b r_binary + 256 * v.b_0 r_binary := by
+    rw [← h_b_lo_t, h_b0_fgl]
+  -- Take .val of both sides. `shamt_b_lo shamt = ⟨shamt.toNat, ...⟩`,
+  -- so `.val = shamt.toNat`. The RHS .val = (free_in_b).val + 256 * (b_0).val.
+  have h_lhs_val : (shamt_b_lo shamt : FGL).val = shamt.toNat := by
+    simp [shamt_b_lo]
+  have h_rhs_val : (v.free_in_b r_binary + 256 * v.b_0 r_binary : FGL).val
+      = (v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val := by
+    have h_cast : v.free_in_b r_binary + 256 * v.b_0 r_binary
+        = ((((v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    show _ < 18446744069414584321
+    omega
+  have h_shamt_val : shamt.toNat
+      = (v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val := by
+    have h := congr_arg Fin.val h_shamt_eq
+    rw [h_lhs_val, h_rhs_val] at h
+    exact h
+  -- shamt.toNat < 64, so % 64 is identity. RHS mod 64: 256 * b_0 ≡ 0.
+  have h_shamt_lt : shamt.toNat < 64 := shamt.isLt
+  have : shamt.toNat = shamt.toNat % 64 := (Nat.mod_eq_of_lt h_shamt_lt).symm
+  rw [this, h_shamt_val]
+  omega
+
+/-! ## Input bridge / shift-pin discharge (shift family, m32 = 1, W variants)
+
+For the 32-bit W-variant shifts (SLLW/SRLW/SRAW/SLLIW/SRLIW/SRAIW),
+m32 = 1 collapses `(1 - m32) * m.a_1` to 0 on the matches_entry a_hi
+conjunct, pinning `e.b_1 = 0` (since with op_is_shift = 1 the RHS is
+`a1`). The 4-byte lo-half packed form is what the W-variant equivs
+consume (as `h_input_r1_extract`). -/
+
+/-- **Packed-a 32-bit (extracted-lsb) bridge for W-variant shifts (m32 = 1).**
+    Given transpile lanes + read_xreg + op_is_shift = 1 + matches_entry,
+    derive `(extractLsb r1_val 31 0).toNat = (4 lo a-bytes packed) % 2^32`. -/
+theorem packed_a_lo32_eq_of_shift_match_m32_1
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
+    (h_m32 : m.m32 r_main = 1)
+    (h_a_lo_t : m.a_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs1))
+    (h_a_hi_t : m.a_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs1))
+    (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
+    (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary)) :
+    (Sail.BitVec.extractLsb r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+      = ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+          + (v.free_in_a_2 r_binary).val * 65536
+          + (v.free_in_a_3 r_binary).val * 16777216) % 2^32 := by
+  obtain ⟨ha0, ha1, ha2, ha3, _, _, _, _, _, _, _, _, _, _, _, _, _,
+          _, _, _, _, _, _, _, _, _, _⟩ :=
+    binary_extension_columns_in_range v r_binary
+  -- Sail packed form from read_xreg + transpile lanes.
+  have h_r1_main :=
+    SailStateBridge.packed_lane_eq_of_read_xreg
+      state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main) h_a_lo_t h_a_hi_t h_read_r1
+  -- Project a-lane match equations.
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
+  obtain ⟨_, _, h_a_lo_m, _, _, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  rw [h_op_is_shift] at h_a_lo_m
+  have h_a0_fgl : m.a_0 r_main
+      = v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
+        + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary := by
+    rw [h_a_lo_m]; ring
+  have h_a0_val : (m.a_0 r_main).val =
+      (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+      + (v.free_in_a_2 r_binary).val * 65536 + (v.free_in_a_3 r_binary).val * 16777216 := by
+    rw [h_a0_fgl]
+    exact packed_a_lo_val_eq_of_match v r_binary ha0 ha1 ha2 ha3
+  -- Now: extractLsb r1 31 0 toNat = r1_val.toNat % 2^32 = (m.a_0).val.
+  rw [h_r1_main]
+  -- (BitVec.ofNat 64 N).extractLsb 31 0 = BitVec.ofNat 32 (N % 2^32).
+  -- Actually: extractLsb _ 31 0 = ofNat 32 (toNat % 2^32) since width = 32.
+  -- And (ofNat 64 N).toNat = N % 2^64. So (extractLsb (ofNat 64 N) 31 0).toNat
+  -- = N % 2^64 % 2^32 = N % 2^32.
+  -- We just need N = a0_val + a1_val * 2^32 and then % 2^32 = a0_val % 2^32 = a0_val.
+  -- a0_val < 2^32 (from packed_a_lo_val_eq_of_match's image — 4 bytes < 2^32).
+  have h_extract_eq :
+      (Sail.BitVec.extractLsb
+        (BitVec.ofNat 64
+          ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296)) 31 0
+        : BitVec (31 - 0 + 1)).toNat
+      = ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296) % 2^32 := by
+    simp [Sail.BitVec.extractLsb, BitVec.extractLsb, BitVec.extractLsb',
+          BitVec.toNat_ofNat]
+  rw [h_extract_eq]
+  rw [h_a0_val]
+  -- The sum (m.a_1).val * 2^32 mod 2^32 = 0.
+  -- And ((a0_val) + (m.a_1).val * 2^32) % 2^32 = a0_val % 2^32 = a0_val (as a0_val < 2^32).
+  have h_a0_lt : (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+        + (v.free_in_a_2 r_binary).val * 65536 + (v.free_in_a_3 r_binary).val * 16777216
+        < 4294967296 := by omega
+  omega
+
+/-- **W-variant register shift-pin bridge.** Derives
+    `(extractLsb r2_val 31 0).toNat % 32 = (v.free_in_b).val % 32` from
+    transpile lanes (`m.b_0 = lane_lo (xreg rs2)`, …), read_xreg,
+    op_is_shift = 1, and matches_entry. Form consumed by SLLW/SRLW/SRAW
+    `equiv_<OP>` proofs as `h_shift_pin`. -/
+theorem shift_pin_w_eq_of_shift_match
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
+    (h_b_lo_t : m.b_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs2))
+    (h_b_hi_t : m.b_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs2))
+    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state)
+    (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary)) :
+    (Sail.BitVec.extractLsb r2_val 31 0 : BitVec (31 - 0 + 1)).toNat % 32
+      = (v.free_in_b r_binary).val % 32 := by
+  have h_b_main : (v.free_in_b r_binary).val < 256 := be_b_lt_256 v r_binary
+  have h_main_b0 : (m.b_0 r_main).val < 4294967296 :=
+    ZiskFv.Airs.Main.main_b_lo_lt_2_32 m r_main
+  have h_b0_lt : (v.b_0 r_binary).val < 4294967296 := by
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hb0, _⟩ :=
+      binary_extension_columns_in_range v r_binary
+    exact hb0
+  -- Sail packed form.
+  have h_r2_main :=
+    SailStateBridge.packed_lane_eq_of_read_xreg
+      state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main) h_b_lo_t h_b_hi_t h_read_r2
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
+  obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  rw [h_op_is_shift] at h_b_lo_m
+  have h_b0_fgl : m.b_0 r_main = v.free_in_b r_binary + 256 * v.b_0 r_binary := by
+    rw [h_b_lo_m]; ring
+  have h_b0_val : (m.b_0 r_main).val
+      = (v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val := by
+    rw [h_b0_fgl]
+    have h_cast : v.free_in_b r_binary + 256 * v.b_0 r_binary
+        = ((((v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    show _ < 18446744069414584321; omega
+  -- (extractLsb (ofNat 64 N) 31 0).toNat = N % 2^32.
+  rw [h_r2_main]
+  have h_extract_eq :
+      (Sail.BitVec.extractLsb
+        (BitVec.ofNat 64
+          ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296)) 31 0
+        : BitVec (31 - 0 + 1)).toNat
+      = ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296) % 2^32 := by
+    simp [Sail.BitVec.extractLsb, BitVec.extractLsb, BitVec.extractLsb',
+          BitVec.toNat_ofNat]
+  rw [h_extract_eq, h_b0_val]
+  -- ((free_in_b.val + 256 * b_0.val) + m.b_1.val * 2^32) % 2^32 % 32 = free_in_b.val % 32.
+  -- Both 256 * b_0.val and m.b_1.val * 2^32 are multiples of 32 (256 = 8*32).
+  omega
+
+/-- **W-variant immediate shift-pin bridge (SLLIW/SRLIW/SRAIW).**
+    Derives `shamt.toNat = (v.free_in_b).val % 32` where `shamt : BitVec 5`.
+    Mirrors `shift_pin_immediate_eq_of_shift_match` but for the 5-bit
+    immediate W-variants. -/
+theorem shift_pin_w_immediate_eq_of_shift_match
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (r_main r_binary : ℕ) (shamt : BitVec 5)
+    (h_b_lo_t : m.b_0 r_main = shamt_w_b_lo shamt)
+    (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary)) :
+    shamt.toNat = (v.free_in_b r_binary).val % 32 := by
+  have h_b_main : (v.free_in_b r_binary).val < 256 := be_b_lt_256 v r_binary
+  have h_b0_lt : (v.b_0 r_binary).val < 4294967296 := by
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hb0, _⟩ :=
+      binary_extension_columns_in_range v r_binary
+    exact hb0
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
+  obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  rw [h_op_is_shift] at h_b_lo_m
+  have h_b0_fgl : m.b_0 r_main = v.free_in_b r_binary + 256 * v.b_0 r_binary := by
+    rw [h_b_lo_m]; ring
+  have h_shamt_eq : shamt_w_b_lo shamt = v.free_in_b r_binary + 256 * v.b_0 r_binary := by
+    rw [← h_b_lo_t, h_b0_fgl]
+  have h_lhs_val : (shamt_w_b_lo shamt : FGL).val = shamt.toNat := by
+    simp [shamt_w_b_lo]
+  have h_rhs_val : (v.free_in_b r_binary + 256 * v.b_0 r_binary : FGL).val
+      = (v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val := by
+    have h_cast : v.free_in_b r_binary + 256 * v.b_0 r_binary
+        = ((((v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    show _ < 18446744069414584321; omega
+  have h_shamt_val : shamt.toNat
+      = (v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val := by
+    have h := congr_arg Fin.val h_shamt_eq
+    rw [h_lhs_val, h_rhs_val] at h
+    exact h
+  have h_shamt_lt : shamt.toNat < 32 := shamt.isLt
+  have : shamt.toNat = shamt.toNat % 32 := (Nat.mod_eq_of_lt h_shamt_lt).symm
+  rw [this, h_shamt_val]
   omega
 
 end ZiskFv.Equivalence.Bridge.BinaryExtension
