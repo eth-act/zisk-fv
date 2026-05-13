@@ -13,6 +13,7 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Equivalence.Bridge.ControlFlow
 import ZiskFv.Equivalence.RdValDerivation.JumpUType
 
 /-!
@@ -126,7 +127,6 @@ theorem equiv_JAL
     (h_rd_idx : jal_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
     -- Discharge parameters
     (h_circuit : ZiskFv.Circuit.Jal.jal_circuit_holds m r_main next_pc)
-    (h_jmp2 : m.jmp_offset2 r_main = 4)
     (h_lane_lo : ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd)
     (h_lane_hi : ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd)
     (h_pc_bound : jal_input.PC.toNat < GL_prime - 4)
@@ -135,6 +135,10 @@ theorem equiv_JAL
      :
     execute_instruction (instruction.JAL (imm, rd)) state
       = (bus_effect exec_row [e_rd] state).2 := by
+  -- Discharge `h_jmp2` via `transpile_JAL` (class #1).
+  have h_jmp2 : m.jmp_offset2 r_main = 4 :=
+    ZiskFv.Equivalence.Bridge.ControlFlow.jal_discharge_full
+      m r_main next_pc h_circuit
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.JumpUType.h_rd_val_jut_jal
       jal_input.PC m r_main next_pc e_rd
