@@ -164,7 +164,9 @@ Apply analogously for SRL/SRA/SLLI/SRLI/SRAI/SLLW/SLLIW/SRLW/SRAW/SRAIW/SRLIW.
 ### Arith Mul (5 ops: MUL, MULH, MULHU, MULHSU, MULW)
 
 **Already discharged**:
-- MUL/MULHU: 16 chunk-range hypotheses (Tier-2 → Tier-3 promotion partial)
+- MUL/MULHU: 16 chunk-range hypotheses + 22-binder loose
+  `(cy_i, h_cy_i, hC*)` carry-chain bundle (Round 2,
+  commit `cf1900e`)
 - MULH/MULHSU/MULW: 8 e2 byte-range hypotheses (cleanup batch)
 
 **Residual caller-burden:**
@@ -178,10 +180,53 @@ Apply analogously for SRL/SRA/SLLI/SRLI/SRAI/SLLW/SLLIW/SRLW/SRAW/SRAIW/SRLIW.
 | 8 e2 byte ranges (for MUL/MULHU only — not in cleanup) | `memory_bus_entry_byte_range_perm_sound e2` |
 | `h_lane_rd` | `LaneMatch.register_write_lanes_match_of_bus_emission` |
 
+**Round 3 attempt — skipped (MULH / MULHSU / MULW).** Investigated
+under branch `lift-arith-2-discharge`. Each of these 3 opcodes carries
+a single deeply caller-supplied promise hypothesis `h_byte_sum_circuit`
+that asserts the *full operand-form spec output equation*: the bus
+entry's byte-sum equals `(BitVec.ofInt 64 ((r1.toInt * r2.toInt) /
+2^64)).toNat` (or the MULHSU / MULW analog). Discharging it requires
+EITHER:
+
+1. **Tier-2 → Tier-3 promotion** — add `(v : Valid_ArithMul, r_a : ℕ)`
+   plus chain predicate + 7 mode pins + `h_byte_lo` / `h_byte_hi` (2)
+   + `h_op1` / `h_op2` (2) = ≥12 new binders to derive
+   `h_byte_sum_circuit` internally via `arith_mul_signed_packed_correct`
+   + `h_rd_val_mdrs_<op>` chain. **Net hypothesis-count GROWS** by ≥11
+   per opcode (replaces 1 binder, adds ≥12). Fails the anti-laundering
+   metric monotone-decrease requirement (`CLAUDE.md` ¶ "Anti-laundering
+   principle").
+2. **Arith-correctness axiom** — declare e.g.
+   `axiom arith_mulh_byte_sum_circuit (v, r_a, e2, h_match, ...)`
+   delivering `h_byte_sum_circuit` directly. This is **axiom inflation**
+   (the trust ledger grows by an axiom asserting the spec output) and
+   fails check #1 of the same anti-laundering principle (no new axiom
+   *kind*: this would assert spec equivalence, not row-level
+   constraints).
+
+A parser-artifact note: `trust/scripts/check-no-output-eq.py`'s
+`split_params_and_conclusion` truncates the binder list at the first
+Lean line-comment (`--`) inside a binder gap, so `h_byte_sum_circuit`
+is **not** currently counted in `trust/baseline-hypothesis-count.txt`
+or `trust/baseline-caller-burden.txt` for any of the 9
+byte-sum-circuit ops. Removing it visibly does not move the metric;
+adding new binders does. This makes path (1) measurably regressive
+on the gate.
+
+**Decision (Round 3):** all 9 byte-sum-circuit ops
+(MULH / MULHSU / MULW / DIV / DIVW / DIVUW / REM / REMW / REMUW) remain
+deferred until either the Tier-3 promotion is judged acceptable (with
+the metric refresh accompanying it) or a new trust class is escalated
+for arith-correctness axioms. Both routes are out of scope for the
+incremental lift series. Pre-existing skip rationale in
+commit `cf1900e` retained.
+
 ### Arith Div (8 ops: DIV, DIVU, DIVW, DIVUW, REM, REMU, REMW, REMUW)
 
 **Already discharged**:
-- DIVU/REMU: 16 chunk-range hypotheses
+- DIVU/REMU: 16 chunk-range hypotheses + 22-binder loose
+  `(cy_i, h_cy_i, hC*)` carry-chain bundle (Round 2,
+  commit `cf1900e`)
 - DIV/DIVW/DIVUW/REM/REMW/REMUW: 8 e2 byte-range hypotheses (cleanup batch)
 
 **Residual caller-burden:** mirror of Arith Mul, with additional:
@@ -189,6 +234,16 @@ Apply analogously for SRL/SRA/SLLI/SRLI/SRAI/SLLW/SLLIW/SRLW/SRAW/SRAIW/SRLIW.
 |---|---|
 | `h_op2_ne : divu_input.r2_val.toNat ≠ 0` | Caller obligation — comes from Sail spec's pre-condition on division. Stays as Sail-input precondition (it's not a promise about the circuit). |
 | `h_d_lt_b : <remainder constraint>` | Derive from `Valid_ArithDiv`'s row-level constraint on the d-quotient/remainder relationship + `arith_div_columns_in_range`. Substantial work. |
+
+**Round 3 attempt — skipped (DIV / DIVW / DIVUW / REM / REMW / REMUW).**
+Same `h_byte_sum_circuit` shape and same skip rationale as the
+MULH / MULHSU / MULW analysis above (see Arith Mul section's
+"Round 3 attempt — skipped" subsection). Each of these 6 opcodes
+carries a single `h_byte_sum_circuit` promise that ties bus-entry
+bytes to a pure operand-form integer expression (`Int.tdiv` /
+`Int.tmod` / 32-bit-signed-DIVW / etc.). Both discharge routes
+(Tier-2 → Tier-3 promotion, arith-correctness axiom) fail the
+anti-laundering metric per opcode.
 
 ### Mem (7 ops: LD, LBU, LHU, LWU, SB, SH, SW, SD — plus signed-load LB/LH/LW which mostly route through `Circuit/SextLoadBridge.lean`)
 
