@@ -150,11 +150,46 @@ ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
 OPCODE: ZiskFv.Equivalence.Divuw.equiv_DIVUW
 DROPPED: h_byte_sum_circuit
 ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2, h_op2_ne, h_d_lt_b
-       (Option-1: full Tier-3 promotion consuming the signed ℤ
-        chunk-lift toolkit Phase 4.alpha.A.0 lands as foundation.
-        Per-opcode metric grows by ~+15 binders; reviewer accepts
-        per structural-unpacking exception.)
+       h_op, h_c23, h_byte_lo, h_sext_choice, h_op1, h_op2, h_op2_ne,
+       h_d_lt_b
+       (Phase 4.alpha.B.uw2 full Tier-3 promotion. Key differences
+        from DIVU (round-2 unsigned):
+          (a) `h_m32 = 1` instead of `h_m32 = 0` (W-mode 32-bit width).
+              Consumes `div_w_unsigned_chain_witnesses` (Bridge.Arith)
+              which mirrors `div_unsigned_chain_witnesses` with the
+              `h_m32 = 1` substitution; carry-range axiom reused
+              (`arith_div_carry_columns_in_range_unsigned`, na=nb=np=
+              nr=0 sufficient — m32 not checked).
+          (b) `h_op` (TRANSPILE-PIN) selects DIVUW = 0x96 from the
+              {0x95, 0x96, 0x99, 0x9a} W-DIV family, dispatching the
+              `arith_table_op_divw_operand_pin` axiom which gives
+              `a_2 = a_3 = b_2 = b_3 = d_2 = d_3 = 0` (W operand
+              truncation).
+          (c) `h_c23 : c_2 = c_3 = 0` (CIRCUIT-CONSTRAINT) captures
+              that the bus passes the zero-extended r1_lo32 as the
+              dividend (the dividend is 32-bit, not 64-bit in W mode).
+              Class same as `arith_table_op_*_pin` axioms (#6 bus
+              encoding pin); axiomatization deferred — currently a
+              caller-burden binder.
+          (d) `h_byte_lo` lane match ties bytes 0..3 to `a_0 + a_1*
+              65536` (low 32-bit quotient) only; bytes 4..7 are
+              sign-extension lookups.
+          (e) `h_sext_choice` (the 17th ADDED binder, the
+              W-mode-specific addition) is the disjunctive sign-
+              extension witness on bytes 4..7: SEXT_00 if q32 < 2^31,
+              SEXT_FF if q32 ≥ 2^31. Same trust class as ADDW's
+              `h_sext_choice` (`Equivalence/RdValDerivation/Arith.lean
+              :579-583` — CIRCUIT-CONSTRAINT-shaped, discharged
+              inside the proof body via case-split. No new axiom.).
+          (f) `h_op1`/`h_op2` are 32-bit TRANSPILE-BRIDGE equations
+              `r1_lo32.toNat = c_0 + c_1*65536` / `r2_lo32.toNat =
+              b_0 + b_1*65536` (not 64-bit form like DIVU).
+        Per-opcode metric grows by ~+17 binders; reviewer accepts per
+        structural-unpacking exception. Discharge composes Layer 1's
+        `fgl_div_w_unsigned_to_bv64` with the chain witnesses and
+        `h_sext_choice` via the
+        `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_divuw_chunked`
+        helper.)
 
 OPCODE: ZiskFv.Equivalence.Rem.equiv_REM
 DROPPED: h_byte_sum_circuit
@@ -181,8 +216,14 @@ ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
 OPCODE: ZiskFv.Equivalence.Remuw.equiv_REMUW
 DROPPED: h_byte_sum_circuit
 ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
-       h_byte_lo, h_byte_hi, h_op1, h_op2, h_op2_ne, h_d_lt_b
-       (Option-1: full Tier-3 promotion consuming the signed ℤ
-        chunk-lift toolkit Phase 4.alpha.A.0 lands as foundation.
-        Per-opcode metric grows by ~+15 binders; reviewer accepts
-        per structural-unpacking exception.)
+       h_op, h_c23, h_byte_lo, h_sext_choice, h_op1, h_op2, h_op2_ne,
+       h_d_lt_b
+       (Phase 4.alpha.B.uw2 full Tier-3 promotion mirroring the
+        DIVUW entry above. The byte-pack lane match (`h_byte_lo`)
+        targets the d-chunks (remainder low 32 bits) rather than
+        a-chunks (quotient). `h_sext_choice` selects sign-extension
+        based on the top bit of the 32-bit remainder. Layer 1's
+        `fgl_rem_w_unsigned_to_bv64` extracts the remainder.
+        See DIVUW entry for the full per-binder rationale; the
+        17-binder count and trust classes are identical. No new
+        axiom.)
