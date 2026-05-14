@@ -34,6 +34,18 @@ import ZiskFv.Equivalence.Compliance.SltExemplar
 import ZiskFv.Equivalence.Compliance.SltuExemplar
 import ZiskFv.Equivalence.Compliance.SltiExemplar
 import ZiskFv.Equivalence.Compliance.SltiuExemplar
+import ZiskFv.Equivalence.Compliance.SllExemplar
+import ZiskFv.Equivalence.Compliance.SrlExemplar
+import ZiskFv.Equivalence.Compliance.SraExemplar
+import ZiskFv.Equivalence.Compliance.SlliExemplar
+import ZiskFv.Equivalence.Compliance.SrliExemplar
+import ZiskFv.Equivalence.Compliance.SraiExemplar
+import ZiskFv.Equivalence.Compliance.ShiftExemplar
+import ZiskFv.Equivalence.Compliance.ShiftLIExemplar
+import ZiskFv.Equivalence.Compliance.ShiftRExemplar
+import ZiskFv.Equivalence.Compliance.ShiftRLIExemplar
+import ZiskFv.Equivalence.Compliance.ShiftRAExemplar
+import ZiskFv.Equivalence.Compliance.ShiftRAIExemplar
 
 /-!
 # Compliance.lean — Global dispatcher (Step 4.3 of the wild-lynx plan)
@@ -138,6 +150,7 @@ open ZiskFv.Tactics.UTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.BinaryAdd
+open ZiskFv.Airs.BinaryExtension
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -1222,5 +1235,417 @@ theorem dispatch_SLTIU
     h_input_r1 h_input_imm h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+
+/-! ### BinaryExtension shift dispatchers (12 ops)
+
+64-bit: SLL, SRL, SRA + SLLI, SRLI, SRAI.
+32-bit (W): SLLW, SRLW, SRAW + SLLIW, SRLIW, SRAIW.
+
+All share the `Valid_Main + Valid_BinaryExtension` provider footprint
+and `e0/e1/e2` memory-bus row shape. The W-immediate wrappers
+(SLLIW/SRLIW/SRAIW) extract shamt from the input record directly
+(no separate `shamt` parameter), unlike the 64-bit immediates. -/
+
+/-- **Dispatcher for SLL.** -/
+theorem dispatch_SLL
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sll_input : PureSpec.SllInput) (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok sll_input.r1_val state)
+    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok sll_input.r2_val state)
+    (h_input_rd : sll_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some sll_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : sll_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SLL_from_trust state sll_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    h_main_active h_main_op h_lane_rd
+
+/-- **Dispatcher for SRL.** -/
+theorem dispatch_SRL
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (srl_input : PureSpec.SrlInput) (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok srl_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok srl_input.r2_val state)
+    (h_input_rd : srl_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some srl_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_srl_pure srl_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : srl_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRL)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRL)) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SRL_from_trust state srl_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    h_main_active h_main_op h_lane_rd
+
+/-- **Dispatcher for SRA.** -/
+theorem dispatch_SRA
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sra_input : PureSpec.SraInput) (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok sra_input.r1_val state)
+    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok sra_input.r2_val state)
+    (h_input_rd : sra_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some sra_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_sra_pure sra_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : sra_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRA)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRA)) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SRA_from_trust state sra_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    h_main_active h_main_op h_lane_rd
+
+/-- **Dispatcher for SLLI.** -/
+theorem dispatch_SLLI
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (slli_input : PureSpec.SlliInput) (r1 rd : regidx) (shamt : BitVec 6)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok slli_input.r1_val state)
+    (h_input_shamt : slli_input.shamt = shamt)
+    (h_input_rd : slli_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some slli_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : slli_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SLLI)) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SLLI_from_trust state slli_input r1 rd shamt m v r_main exec_row e0 e1 e2
+    h_input_r1_sail h_input_shamt h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    h_main_active h_main_op h_lane_rd
+
+/-- **Dispatcher for SRLI.** -/
+theorem dispatch_SRLI
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (srli_input : PureSpec.SrliInput) (r1 rd : regidx) (shamt : BitVec 6)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok srli_input.r1_val state)
+    (h_input_shamt : srli_input.shamt = shamt)
+    (h_input_rd : srli_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some srli_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_SHIFTIOP_srli_pure srli_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : srli_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRL)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SRLI)) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SRLI_from_trust state srli_input r1 rd shamt m v r_main exec_row e0 e1 e2
+    h_input_r1 h_input_shamt h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    h_main_active h_main_op h_lane_rd
+
+/-- **Dispatcher for SRAI.** -/
+theorem dispatch_SRAI
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (srai_input : PureSpec.SraiInput) (r1 rd : regidx) (shamt : BitVec 6)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok srai_input.r1_val state)
+    (h_input_shamt : srai_input.shamt = shamt)
+    (h_input_rd : srai_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some srai_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_SHIFTIOP_srai_pure srai_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : srai_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRA)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SRAI)) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SRAI_from_trust state srai_input r1 rd shamt m v r_main exec_row e0 e1 e2
+    h_input_r1 h_input_shamt h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    h_main_active h_main_op h_lane_rd
+
+/-- **Dispatcher for SLLW.** -/
+theorem dispatch_SLLW
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sllw_input : PureSpec.SllwInput) (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok sllw_input.r1_val state)
+    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok sllw_input.r2_val state)
+    (h_input_rd : sllw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some sllw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_sllw_pure sllw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : sllw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL_W)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SLLW)) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SLLW_from_trust state sllw_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    h_main_active h_main_op h_lane_rd
+
+/-- **Dispatcher for SRLW.** -/
+theorem dispatch_SRLW
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (srlw_input : PureSpec.SrlwInput) (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok srlw_input.r1_val state)
+    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok srlw_input.r2_val state)
+    (h_input_rd : srlw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some srlw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_srlw_pure srlw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : srlw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRL_W)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRLW)) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SRLW_from_trust state srlw_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    h_main_active h_main_op h_lane_rd
+
+/-- **Dispatcher for SRAW.** -/
+theorem dispatch_SRAW
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sraw_input : PureSpec.SrawInput) (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok sraw_input.r1_val state)
+    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok sraw_input.r2_val state)
+    (h_input_rd : sraw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some sraw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_sraw_pure sraw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : sraw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRA_W)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRAW)) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SRAW_from_trust state sraw_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    h_main_active h_main_op h_lane_rd
+
+/-- **Dispatcher for SLLIW.** -/
+theorem dispatch_SLLIW
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (slliw_input : PureSpec.SlliwInput) (r1 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok slliw_input.r1_val state)
+    (h_input_rd : slliw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some slliw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_SHIFTIWOP_slliw_pure slliw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : slliw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL_W)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    execute_instruction
+      (instruction.SHIFTIWOP (slliw_input.shamt, r1, rd, sopw.SLLIW)) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SLLIW_from_trust state slliw_input r1 rd m v r_main exec_row e0 e1 e2
+    h_input_r1_sail h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    h_main_active h_main_op h_lane_rd
+
+/-- **Dispatcher for SRLIW.** -/
+theorem dispatch_SRLIW
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (srliw_input : PureSpec.SrliwInput) (r1 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok srliw_input.r1_val state)
+    (h_input_rd : srliw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some srliw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_SHIFTIWOP_srliw_pure srliw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : srliw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRL_W)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    execute_instruction
+      (instruction.SHIFTIWOP (srliw_input.shamt, r1, rd, sopw.SRLIW)) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SRLIW_from_trust state srliw_input r1 rd m v r_main exec_row e0 e1 e2
+    h_input_r1_sail h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    h_main_active h_main_op h_lane_rd
+
+/-- **Dispatcher for SRAIW.** -/
+theorem dispatch_SRAIW
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sraiw_input : PureSpec.SraiwInput) (r1 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok sraiw_input.r1_val state)
+    (h_input_rd : sraiw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some sraiw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_SHIFTIWOP_sraiw_pure sraiw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : sraiw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRA_W)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    execute_instruction
+      (instruction.SHIFTIWOP (sraiw_input.shamt, r1, rd, sopw.SRAIW)) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SRAIW_from_trust state sraiw_input r1 rd m v r_main exec_row e0 e1 e2
+    h_input_r1_sail h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    h_main_active h_main_op h_lane_rd
 
 end ZiskFv.Equivalence.Compliance
