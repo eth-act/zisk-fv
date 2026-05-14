@@ -23,6 +23,17 @@ import ZiskFv.Equivalence.Compliance.AddiExemplar
 import ZiskFv.Equivalence.Compliance.AddwExemplar
 import ZiskFv.Equivalence.Compliance.SubwExemplar
 import ZiskFv.Equivalence.Compliance.AddiwExemplar
+import ZiskFv.Equivalence.Compliance.SubExemplar
+import ZiskFv.Equivalence.Compliance.AndExemplar
+import ZiskFv.Equivalence.Compliance.AndiExemplar
+import ZiskFv.Equivalence.Compliance.OrExemplar
+import ZiskFv.Equivalence.Compliance.OriExemplar
+import ZiskFv.Equivalence.Compliance.XorExemplar
+import ZiskFv.Equivalence.Compliance.XoriExemplar
+import ZiskFv.Equivalence.Compliance.SltExemplar
+import ZiskFv.Equivalence.Compliance.SltuExemplar
+import ZiskFv.Equivalence.Compliance.SltiExemplar
+import ZiskFv.Equivalence.Compliance.SltiuExemplar
 
 /-!
 # Compliance.lean — Global dispatcher (Step 4.3 of the wild-lynx plan)
@@ -782,6 +793,432 @@ theorem dispatch_ADDIW
       = (bus_effect exec_row [e0, e1, e2] state).2 :=
   equiv_ADDIW_from_trust state addiw_input r1 rd imm m v r_main exec_row e0 e1 e2
     h_main_active h_main_op_addiw h_addiw_subset h_lane_rd
+    h_input_r1 h_input_imm h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+
+/-! ### Binary dispatchers (SUB, AND, OR, XOR, SLT, SLTU + I-type variants)
+
+11 ops over the `Binary` shape: 6 R-type (SUB, AND, OR, XOR, SLT, SLTU)
+and 5 I-type (ANDI, ORI, XORI, SLTI, SLTIU). All share the same
+`Valid_Main + Valid_Binary` provider footprint and `e0/e1/e2`
+memory-bus row shape. Each dispatcher is a thin pass-through to its
+`equiv_<OP>_from_trust` wrapper. -/
+
+/-- **Dispatcher for SUB.** -/
+theorem dispatch_SUB
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sub_input : PureSpec.SubInput) (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_sub : m.op r_main = OP_SUB)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok sub_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok sub_input.r2_val state)
+    (h_input_rd : sub_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some sub_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : sub_input.rd = Transpiler.wrap_to_regidx e2.ptr) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (r2, r1, rd, rop.SUB))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SUB_from_trust state sub_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    h_main_active h_main_op_sub h_lane_rd
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+
+/-- **Dispatcher for AND.** -/
+theorem dispatch_AND
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (and_input : PureSpec.AndInput) (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_and : m.op r_main = OP_AND)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok and_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok and_input.r2_val state)
+    (h_input_rd : and_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some and_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_and_pure and_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : and_input.rd = Transpiler.wrap_to_regidx e2.ptr) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (r2, r1, rd, rop.AND))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_AND_from_trust state and_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    h_main_active h_main_op_and h_lane_rd
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+
+/-- **Dispatcher for OR.** -/
+theorem dispatch_OR
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (or_input : PureSpec.OrInput) (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_or : m.op r_main = OP_OR)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok or_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok or_input.r2_val state)
+    (h_input_rd : or_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some or_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_or_pure or_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : or_input.rd = Transpiler.wrap_to_regidx e2.ptr) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (r2, r1, rd, rop.OR))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_OR_from_trust state or_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    h_main_active h_main_op_or h_lane_rd
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+
+/-- **Dispatcher for XOR.** -/
+theorem dispatch_XOR
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (xor_input : PureSpec.XorInput) (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_xor : m.op r_main = OP_XOR)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok xor_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok xor_input.r2_val state)
+    (h_input_rd : xor_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some xor_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_xor_pure xor_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : xor_input.rd = Transpiler.wrap_to_regidx e2.ptr) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (r2, r1, rd, rop.XOR))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_XOR_from_trust state xor_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    h_main_active h_main_op_xor h_lane_rd
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+
+/-- **Dispatcher for SLT.** -/
+theorem dispatch_SLT
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (slt_input : PureSpec.SltInput) (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_slt : m.op r_main = OP_LT)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok slt_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok slt_input.r2_val state)
+    (h_input_rd : slt_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some slt_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_slt_pure slt_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : slt_input.rd = Transpiler.wrap_to_regidx e2.ptr) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (r2, r1, rd, rop.SLT))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SLT_from_trust state slt_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    h_main_active h_main_op_slt h_lane_rd
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+
+/-- **Dispatcher for SLTU.** -/
+theorem dispatch_SLTU
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sltu_input : PureSpec.SltuInput) (r1 r2 rd : regidx)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_sltu : m.op r_main = OP_LTU)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok sltu_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok sltu_input.r2_val state)
+    (h_input_rd : sltu_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some sltu_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_sltu_pure sltu_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : sltu_input.rd = Transpiler.wrap_to_regidx e2.ptr) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (r2, r1, rd, rop.SLTU))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SLTU_from_trust state sltu_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    h_main_active h_main_op_sltu h_lane_rd
+    h_input_r1 h_input_r2 h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+
+/-- **Dispatcher for ANDI.** -/
+theorem dispatch_ANDI
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (andi_input : PureSpec.AndiInput) (r1 rd : regidx) (imm : BitVec 12)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_andi : m.op r_main = OP_AND)
+    (h_andi_subset : itype_imm_subset_holds_main m r_main andi_input.imm)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok andi_input.r1_val state)
+    (h_input_imm : andi_input.imm = imm)
+    (h_input_rd : andi_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some andi_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_ITYPE_andi_pure andi_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : andi_input.rd = Transpiler.wrap_to_regidx e2.ptr) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (imm, r1, rd, iop.ANDI))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_ANDI_from_trust state andi_input r1 rd imm m v r_main exec_row e0 e1 e2
+    h_main_active h_main_op_andi h_andi_subset h_lane_rd
+    h_input_r1 h_input_imm h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+
+/-- **Dispatcher for ORI.** -/
+theorem dispatch_ORI
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (ori_input : PureSpec.OriInput) (r1 rd : regidx) (imm : BitVec 12)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_ori : m.op r_main = OP_OR)
+    (h_ori_subset : itype_imm_subset_holds_main m r_main ori_input.imm)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok ori_input.r1_val state)
+    (h_input_imm : ori_input.imm = imm)
+    (h_input_rd : ori_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some ori_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : ori_input.rd = Transpiler.wrap_to_regidx e2.ptr) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (imm, r1, rd, iop.ORI))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_ORI_from_trust state ori_input r1 rd imm m v r_main exec_row e0 e1 e2
+    h_main_active h_main_op_ori h_ori_subset h_lane_rd
+    h_input_r1 h_input_imm h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+
+/-- **Dispatcher for XORI.** -/
+theorem dispatch_XORI
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (xori_input : PureSpec.XoriInput) (r1 rd : regidx) (imm : BitVec 12)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_xori : m.op r_main = OP_XOR)
+    (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok xori_input.r1_val state)
+    (h_input_imm : xori_input.imm = imm)
+    (h_input_rd : xori_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some xori_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_ITYPE_xori_pure xori_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : xori_input.rd = Transpiler.wrap_to_regidx e2.ptr) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (imm, r1, rd, iop.XORI))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_XORI_from_trust state xori_input r1 rd imm m v r_main exec_row e0 e1 e2
+    h_main_active h_main_op_xori h_xori_subset h_lane_rd
+    h_input_r1 h_input_imm h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+
+/-- **Dispatcher for SLTI.** -/
+theorem dispatch_SLTI
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (slti_input : PureSpec.SltiInput) (r1 rd : regidx) (imm : BitVec 12)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_slti : m.op r_main = OP_LT)
+    (h_slti_subset : itype_imm_subset_holds_main m r_main slti_input.imm)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok slti_input.r1_val state)
+    (h_input_imm : slti_input.imm = imm)
+    (h_input_rd : slti_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some slti_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : slti_input.rd = Transpiler.wrap_to_regidx e2.ptr) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (imm, r1, rd, iop.SLTI))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SLTI_from_trust state slti_input r1 rd imm m v r_main exec_row e0 e1 e2
+    h_main_active h_main_op_slti h_slti_subset h_lane_rd
+    h_input_r1 h_input_imm h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+
+/-- **Dispatcher for SLTIU.** -/
+theorem dispatch_SLTIU
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sltiu_input : PureSpec.SltiuInput) (r1 rd : regidx) (imm : BitVec 12)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_sltiu : m.op r_main = OP_LTU)
+    (h_sltiu_subset : itype_imm_subset_holds_main m r_main sltiu_input.imm)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok sltiu_input.r1_val state)
+    (h_input_imm : sltiu_input.imm = imm)
+    (h_input_rd : sltiu_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some sltiu_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_ITYPE_sltiu_pure sltiu_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : sltiu_input.rd = Transpiler.wrap_to_regidx e2.ptr) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (imm, r1, rd, iop.SLTIU))) state
+      = (bus_effect exec_row [e0, e1, e2] state).2 :=
+  equiv_SLTIU_from_trust state sltiu_input r1 rd imm m v r_main exec_row e0 e1 e2
+    h_main_active h_main_op_sltiu h_sltiu_subset h_lane_rd
     h_input_r1 h_input_imm h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
