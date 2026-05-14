@@ -122,6 +122,60 @@ new axiom would most likely sit in the lane-match category if the
 existing op-bus axiom's hypotheses prove insufficient for ADD's
 specific `Valid_Main`↔`Valid_BinaryAdd` row-shape bridge.
 
+### Pilot status (Step 4.1.2 — ADD exemplar)
+
+**Actual: 0 new axioms** for the ADD exemplar
+(`ZiskFv/Equivalence/Compliance/AddExemplar.lean`,
+`equiv_ADD_from_trust`). Matches the prediction's lower bound (0–1).
+
+Composition: `transpile_ADD` (class #1) + `op_bus_perm_sound_BinaryAdd`
+(class #4) + `memory_bus_entry_byte_range_perm_sound` (class #5b) +
+`equiv_ADD`'s existing transitive closure
+(`binary_add_columns_in_range` class #5b). No category 1–5 work
+surfaced a new axiom:
+
+* **Lane-match (category 1)** is internalized by `equiv_ADD` via
+  `add_discharge` — no wrapper-level work.
+* **Mode pins (category 2)** N/A on the provider side; the Main-side
+  pins `m32 = 0` (from `transpile_ADD`) and `flag = 0` (from
+  `op_bus_perm_sound_BinaryAdd` → `matches_entry` flag-slot
+  projection) are derivations of existing axioms.
+* **Sign-witness pins (category 3)** N/A — ADD is unsigned.
+* **Range/bound (category 4)** internal chunk ranges discharged by
+  `equiv_ADD` via `binary_add_columns_in_range`; the 8 memory-bus
+  entry byte ranges (`h_e2_0..h_e2_7`) discharged uniformly via
+  `memory_bus_entry_byte_range_perm_sound`.
+* **Operand bridges (category 5)** internalized by `equiv_ADD` via
+  `add_input_bridges_of_read_xreg` — no wrapper-level work.
+
+Caller-burden (per discharge-recipe.md): 34 binders / 20 hypotheses
+on `equiv_ADD_from_trust` vs. 41 / 27 on `equiv_ADD`. **Net −7
+binders / −7 hypotheses**. Composition: drops `h_main_mode` (1) and
+`h_e2_0..h_e2_7` (8); adds `h_main_active`, `h_main_op_add` (2) —
+the activation/opcode pins from Compliance.lean's program-counter
+handshake.
+
+Cross-shape lessons:
+* **No new bridge added** to `Equivalence/Bridge/SailStateBridge.lean`
+  or `Equivalence/Bridge/BinaryAdd.lean`. The existing `add_discharge`
+  bridge already handles every category-1/4/5 promise internally;
+  the wrapper only repackages the structural Main-mode bundle
+  (`main_row_in_add_mode`) and the byte-range bulk.
+* **`flag = 0` projection from `matches_entry`** is a one-liner
+  reusable for BinaryAdd shape only (ADDI). Other provider AIRs
+  carry an output in the `flag` slot (Binary's `cout`, Arith's
+  comparison verdicts), so the projection stays in the BinaryAdd
+  exemplar file rather than being lifted to a generic bridge.
+* The discharge generalizes mechanically to ADDI in Step 4.2:
+  swap `transpile_ADD` for `transpile_ADDI` (and pin `m.op = OP_ADD`
+  per `Transpiler.lean:1898` — ADDI piggybacks on OP_ADD); the
+  matches_entry flag projection and byte-range discharge work
+  unchanged. **Predicted: still 0 new axioms for ADDI.**
+
+The trust-ledger size stays at 116 axioms across the BinaryAdd
+shape — confirming that BinaryAdd is the cleanest provider-AIR
+shape and that the per-AIR axiom map's 0–1 prediction was correct.
+
 ---
 
 ## Binary (covers 14 opcodes: AND, ANDI, OR, ORI, XOR, XORI, SLT, SLTI, SLTU, SLTIU, SUB, SUBW, ADDIW, ADDW)
