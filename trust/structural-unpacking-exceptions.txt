@@ -341,3 +341,57 @@ ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
         See DIVUW entry for the full per-binder rationale; the
         17-binder count and trust classes are identical. No new
         axiom.)
+
+# ============================================================
+# ITYPE constructibility-bundle ops (Step 4.2r3.I)
+# ============================================================
+#
+# The ITYPE opcodes (ADDI/ANDI/ORI/XORI — currently ADDI in this
+# round) each route a sign-extended 12-bit immediate onto Main's
+# `(b_0, b_1)` lanes via the transpiler. `transpile_<OP>I` witnesses
+# the routing column-by-column but leaves the immediate VALUE as a
+# caller-routed parameter (`imm_b_lo`/`imm_b_hi`) — the actual
+# Sail-level immediate is a program-level structural fact, not
+# something the transpile axiom can witness.
+#
+# The pre-refactor canonical ADDI accepted this fact as the loose
+# *promise hypothesis* `h_input_imm_circuit` in BinaryAdd-row form.
+# The refactor replaces this single loose binder with the
+# constructibility-bundle predicate
+# `itype_imm_subset_holds_main m r_main addi_input.imm` (Main-form,
+# opcode-agnostic), plus the universal-row Main and BinaryAdd
+# validity bundles (`h_main_subset`, `h_main_mode`, `h_b_core`)
+# that mirror the AddExemplar's structural-unpacking shape. The
+# canonical proof body internally translates the Main-form imm
+# bridge to BinaryAdd-row form via `matches_entry`'s `b`-lane
+# projection.
+#
+# Per-opcode metric grows by ~+1 binder per ITYPE op (drops:
+# `r_binary`, `h_circuit`, `h_input_imm_circuit` = 3; adds:
+# `h_main_subset`, `h_main_mode`, `h_b_core`, `h_addi_subset` = 4).
+# `Compliance.lean` collapses `(m, b, ∀ r, core_every_row b r)`
+# into shared parameters across all BinaryAdd-shape (and Binary-
+# shape, for ANDI/ORI/XORI) opcodes, and `h_addi_subset` is a
+# per-program structural pin shared across all ADDI rows.
+#
+# PIL-BASIS:
+#   * `transpile_ADDI` row contract — caller routes `imm_b_lo`/
+#     `imm_b_hi` (`Transpiler.lean:1922`).
+#   * `binary_add.pil:25` — `proves_operation(op: OP_ADD, ...)`
+#     pins the BinaryAdd opcode literal, justifying the
+#     `matches_entry` `b`-lane projection that translates Main→
+#     BinaryAdd row form.
+
+OPCODE: ZiskFv.Equivalence.Addi.equiv_ADDI
+DROPPED: r_binary, h_circuit, h_input_imm_circuit
+ADDED: h_main_subset, h_main_mode, h_b_core, h_addi_subset
+       (Step 4.2r3.I structural-unpacking refactor. `h_main_subset`
+        is `add_subset_holds m r_main` (universal-row ADD constraints,
+        shared with ADD); `h_main_mode` is `main_row_in_addi_mode m
+        r_main` (ITYPE mode pins: active=1, op=OP_ADD, m32=0,
+        set_pc=0); `h_b_core` is the universal BinaryAdd per-row
+        validity; `h_addi_subset` is the new
+        `itype_imm_subset_holds_main` constructibility bundle pinning
+        Main's `(b_0, b_1)` packing to `BitVec.signExtend 64
+        addi_input.imm`. Per-opcode metric grows by +1 binder;
+        reviewer accepts per structural-unpacking exception.)

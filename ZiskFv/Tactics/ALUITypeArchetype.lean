@@ -94,4 +94,41 @@ theorem alu_itype_archetype_c_bus_match
       = bus_entry.c_lo + bus_entry.c_hi * 4294967296 :=
   alu_rtype_archetype_c_bus_match m r_main bus_entry opcode_lit h
 
+/-! ## ITYPE immediate-routing constructibility bundles
+
+The four ITYPE opcodes (ADDI/ANDI/ORI/XORI) each carry an immediate
+operand whose 12-bit sign-extended value is routed onto Main's `b`
+lanes by the transpiler (`transpile_<OP>`'s `imm_b_lo`/`imm_b_hi`
+caller-routed columns). The `transpile` axiom witnesses the routing
+relationship but cannot witness *which* value the immediate carries —
+that is a program-level invariant.
+
+The per-op `<op>_subset_holds` predicates below pin Main's `b`-lane
+packing to the Sail-input immediate (`BitVec.signExtend 64 imm`).
+This is a **constructibility bundle** (per the
+`anti-laundering principle` in `CLAUDE.md`): it is the structural pin
+the eventual `Compliance.lean` will deliver as part of the per-row
+universal Main-AIR validity. It is **not** a new trust-ledger axiom.
+
+Per-op, the predicate is identical modulo the `imm` parameter type
+(all four ops use `BitVec 12`). We expose one shared definition
+parameterised by `imm` because the predicate body is opcode-agnostic.
+-/
+
+/-- **ITYPE immediate-routing pin (Main form).** The Main row at
+    `r_main` has its `b` lanes packed equal to the Sail input's
+    sign-extended 12-bit immediate value, as a 64-bit BitVec built
+    from the `(b_0, b_1)` Goldilocks witnesses.
+
+    This is the *constructibility-bundle* form of the
+    `h_input_imm_circuit` *promise hypothesis* the canonical
+    ITYPE equivs previously accepted in BinaryAdd / Binary row form.
+    Translating to the provider-AIR row form is internal to each
+    `equiv_<OP>` via the `matches_entry` b-lane projection. -/
+@[simp]
+def itype_imm_subset_holds_main
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (imm : BitVec 12) : Prop :=
+  BitVec.signExtend 64 imm
+    = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296)
+
 end ZiskFv.Tactics.ALUITypeArchetype
