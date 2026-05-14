@@ -13,14 +13,7 @@
   #controls button { background: #1c1f26; color: #d8dee9; border: 1px solid #303540; padding: 3px 8px; margin-right: 4px; cursor: pointer; font-family: inherit; font-size: 12px; }
   #controls button:hover { background: #2a2f3a; }
   #tooltip { position: absolute; pointer-events: none; background: rgba(15,17,21,0.95); border: 1px solid #4a5060; padding: 6px 8px; border-radius: 4px; font-size: 12px; max-width: 600px; word-break: break-all; z-index: 20; visibility: hidden; }
-  svg { width: 100vw; height: 100vh; display: block; }
-  .link { stroke: #3a4050; stroke-opacity: 0.4; stroke-width: 0.6px; fill: none; }
-  .link.highlight { stroke: #ebcb8b; stroke-opacity: 1; stroke-width: 1.5px; }
-  .node circle { stroke: #1a1c22; stroke-width: 0.5px; }
-  .node text { font-size: 9px; fill: #aab0bc; pointer-events: none; }
-  .node.highlight circle { stroke: #ebcb8b; stroke-width: 2px; }
-  .node.dim { opacity: 0.15; }
-  .link.dim { opacity: 0.05; }
+  canvas { display: block; position: absolute; top: 0; left: 0; }
 </style>
 </head>
 <body>
@@ -29,7 +22,7 @@
   <div class="row"><span class="sw" style="background:#a3be8c"></span>root (uber-theorem)</div>
   <div class="row"><span class="sw" style="background:#88c0d0"></span>project const</div>
   <div class="row"><span class="sw" style="background:#bf616a"></span>axiom (trust leaf)</div>
-  <div style="margin-top:6px;font-size:11px;color:#7a8090">drag · scroll to zoom · click node</div>
+  <div style="margin-top:6px;font-size:11px;color:#7a8090">scroll to zoom · drag to pan · hover/click node</div>
 </div>
 <div id="controls">
   <button onclick="resetView()">reset view</button>
@@ -38,7 +31,7 @@
   <span id="counts" style="color:#7a8090;margin-left:8px"></span>
 </div>
 <div id="tooltip"></div>
-<svg></svg>
+<canvas id="canvas"></canvas>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
 const ROOT = "ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus";
@@ -61,19 +54,38 @@ const shortName = (n) => {
   return parts[parts.length - 1];
 };
 
-const svg = d3.select("svg");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 const tooltip = d3.select("#tooltip");
 const status = d3.select("#status");
 
-let g, link, node, simulation, allNodes, allLinks, showLabels = false;
-let zoomBehavior;
+let width = 0, height = 0;
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);  // base DPR scale; zoom applies on top via ctx.save/translate/scale
+  if (allNodes) draw();
+}
+window.addEventListener("resize", resize);
+
+let allNodes = null, allLinks = null;
+let simulation = null;
+let transform = d3.zoomIdentity;
+let showLabels = false;
+let hoverNode = null;
+let quad = null;
+let zoomBehavior = null;
 
 async function load() {
   const text = await fetch("edges.tsv").then(r => r.text());
   const lines = text.trim().split("\n").slice(1);  // drop header
   const nodeMap = new Map();
   const links = [];
-  // Add root first so depth-0 BFS starts there.
   function ensureNode(name, kind) {
     if (!nodeMap.has(name)) {
       nodeMap.set(name, { id: name, kind, depth: Infinity });
@@ -114,114 +126,184 @@ async function load() {
   }
   allNodes = [...nodeMap.values()];
   allLinks = links;
+  // Precompute static visual props for each node (avoid per-frame recompute).
+  for (const n of allNodes) {
+    const isRoot = n.id === ROOT;
+    n.isRoot = isRoot;
+    n.r = radiusOf(n.kind, isRoot, n.depth);
+    n.color = colorOf(n.kind, isRoot);
+    n.short = shortName(n.id);
+    n.priority = isRoot || n.kind === "A";  // always-label set
+  }
   d3.select("#counts").text(`${allNodes.length} nodes · ${allLinks.length} edges`);
   status.text("");
-  render();
+  resize();
+  initSim();
+  initZoom();
 }
 
-function render() {
-  svg.selectAll("*").remove();
-  g = svg.append("g");
-
-  link = g.append("g").attr("class", "links").selectAll("line")
-    .data(allLinks).join("line").attr("class", "link");
-
-  node = g.append("g").attr("class", "nodes").selectAll("g")
-    .data(allNodes).join("g").attr("class", "node");
-
-  node.append("circle")
-    .attr("r", d => radiusOf(d.kind, d.id === ROOT, d.depth))
-    .attr("fill", d => colorOf(d.kind, d.id === ROOT))
-    .on("mouseover", function(event, d) {
-      tooltip.style("visibility", "visible")
-        .html(`<b>${shortName(d.id)}</b><br><span style="color:#888">${d.id}</span><br><span style="color:#888">kind: ${d.kind === "A" ? "axiom" : "project"} · depth: ${d.depth}</span>`);
-      highlightNeighborhood(d);
-    })
-    .on("mousemove", function(event) {
-      tooltip.style("left", (event.pageX + 12) + "px").style("top", (event.pageY + 12) + "px");
-    })
-    .on("mouseout", function() {
-      tooltip.style("visibility", "hidden");
-      clearHighlight();
-    })
-    .on("click", function(event, d) {
-      console.log(d.id);
-      navigator.clipboard?.writeText(d.id);
-    })
-    .call(d3.drag()
-      .on("start", (event, d) => { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on("drag",  (event, d) => { d.fx = event.x; d.fy = event.y; })
-      .on("end",   (event, d) => { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }));
-
-  // Labels: only root + axioms by default (they're the user-facing ends).
-  node.append("text")
-    .attr("dx", d => radiusOf(d.kind, d.id === ROOT, d.depth) + 2)
-    .attr("dy", 3)
-    .text(d => (d.id === ROOT || d.kind === "A") ? shortName(d.id) : "");
-
+function initSim() {
   simulation = d3.forceSimulation(allNodes)
     .force("link", d3.forceLink(allLinks).id(d => d.id).distance(20).strength(0.4))
     .force("charge", d3.forceManyBody().strength(-30).distanceMax(400))
-    .force("center", d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2))
-    .force("collide", d3.forceCollide().radius(d => radiusOf(d.kind, d.id === ROOT, d.depth) + 2))
-    .force("radial", d3.forceRadial(d => 80 + d.depth * 60, window.innerWidth / 2, window.innerHeight / 2).strength(0.15))
-    .on("tick", ticked);
-
-  zoomBehavior = d3.zoom().scaleExtent([0.05, 8]).on("zoom", (event) => {
-    g.attr("transform", event.transform);
-  });
-  svg.call(zoomBehavior);
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .force("collide", d3.forceCollide().radius(d => d.r + 2))
+    .force("radial", d3.forceRadial(d => 80 + d.depth * 60, width / 2, height / 2).strength(0.15))
+    .on("tick", onTick);
 }
 
-function ticked() {
-  link
-    .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
-    .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
-  node.attr("transform", d => `translate(${d.x},${d.y})`);
+function onTick() {
+  // Rebuild quadtree each tick for accurate hit-testing.
+  quad = d3.quadtree(allNodes, d => d.x, d => d.y);
+  draw();
 }
 
-// Neighborhood highlight: show only links incident to d.
-function highlightNeighborhood(d) {
-  const neighbors = new Set([d.id]);
-  for (const l of allLinks) {
-    const s = typeof l.source === "object" ? l.source.id : l.source;
-    const t = typeof l.target === "object" ? l.target.id : l.target;
-    if (s === d.id) neighbors.add(t);
-    if (t === d.id) neighbors.add(s);
+function draw() {
+  ctx.save();
+  ctx.clearRect(0, 0, width, height);
+  ctx.translate(transform.x, transform.y);
+  ctx.scale(transform.k, transform.k);
+
+  // Edges — single path batch.
+  ctx.beginPath();
+  for (const e of allLinks) {
+    if (e.source.x == null || e.target.x == null) continue;
+    ctx.moveTo(e.source.x, e.source.y);
+    ctx.lineTo(e.target.x, e.target.y);
   }
-  node.classed("dim", n => !neighbors.has(n.id));
-  node.classed("highlight", n => n.id === d.id);
-  link.classed("dim", l => {
-    const s = typeof l.source === "object" ? l.source.id : l.source;
-    const t = typeof l.target === "object" ? l.target.id : l.target;
-    return s !== d.id && t !== d.id;
+  ctx.lineWidth = 0.6 / transform.k;
+  ctx.strokeStyle = "rgba(58,64,80,0.4)";
+  ctx.stroke();
+
+  // Highlight edges if hovering.
+  if (hoverNode) {
+    ctx.beginPath();
+    for (const e of allLinks) {
+      if (e.source === hoverNode || e.target === hoverNode) {
+        ctx.moveTo(e.source.x, e.source.y);
+        ctx.lineTo(e.target.x, e.target.y);
+      }
+    }
+    ctx.lineWidth = 1.5 / transform.k;
+    ctx.strokeStyle = "#ebcb8b";
+    ctx.stroke();
+  }
+
+  // Nodes — group by fill color to minimize state changes.
+  // Three buckets: root green, axiom red, project blue.
+  const buckets = { "#a3be8c": [], "#bf616a": [], "#88c0d0": [] };
+  for (const n of allNodes) {
+    if (n.x == null) continue;
+    (buckets[n.color] || (buckets[n.color] = [])).push(n);
+  }
+  for (const color in buckets) {
+    const arr = buckets[color];
+    if (!arr.length) continue;
+    ctx.beginPath();
+    for (const n of arr) {
+      ctx.moveTo(n.x + n.r, n.y);
+      ctx.arc(n.x, n.y, n.r, 0, 2 * Math.PI);
+    }
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.lineWidth = 0.5 / transform.k;
+    ctx.strokeStyle = "#1a1c22";
+    ctx.stroke();
+  }
+
+  // Hover ring.
+  if (hoverNode && hoverNode.x != null) {
+    ctx.beginPath();
+    ctx.arc(hoverNode.x, hoverNode.y, hoverNode.r + 1.5, 0, 2 * Math.PI);
+    ctx.lineWidth = 2 / transform.k;
+    ctx.strokeStyle = "#ebcb8b";
+    ctx.stroke();
+  }
+
+  // Labels: always-on for root + axioms; everything else only when zoomed enough or toggle is on.
+  // Scale label font so text stays roughly fixed size on screen.
+  const labelPx = 9;
+  ctx.font = (labelPx / transform.k) + "px system-ui, sans-serif";
+  ctx.fillStyle = "#aab0bc";
+  ctx.textBaseline = "middle";
+  const showAll = showLabels || transform.k >= 0.5;
+  for (const n of allNodes) {
+    if (n.x == null) continue;
+    if (!showAll && !n.priority) continue;
+    ctx.fillText(n.short, n.x + n.r + 2 / transform.k, n.y);
+  }
+
+  ctx.restore();
+}
+
+function initZoom() {
+  zoomBehavior = d3.zoom()
+    .scaleExtent([0.05, 8])
+    .on("zoom", (event) => {
+      transform = event.transform;
+      draw();
+    });
+  d3.select(canvas).call(zoomBehavior);
+
+  canvas.addEventListener("mousemove", (evt) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (evt.clientX - rect.left - transform.x) / transform.k;
+    const y = (evt.clientY - rect.top - transform.y) / transform.k;
+    if (!quad) return;
+    // Search radius in data space: ~20px on screen, plus node radius slack.
+    const searchR = 20 / transform.k;
+    const hit = quad.find(x, y, searchR);
+    if (hit !== hoverNode) {
+      hoverNode = hit || null;
+      draw();
+    }
+    if (hoverNode) {
+      tooltip.style("visibility", "visible")
+        .style("left", (evt.clientX + 12) + "px")
+        .style("top", (evt.clientY + 12) + "px")
+        .html(
+          `<b>${escapeHtml(hoverNode.short)}</b><br>` +
+          `<span style="color:#888">${escapeHtml(hoverNode.id)}</span><br>` +
+          `<span style="color:#888">kind: ${hoverNode.kind === "A" ? "axiom" : "project"} · depth: ${hoverNode.depth}</span>`
+        );
+    } else {
+      tooltip.style("visibility", "hidden");
+    }
   });
-  link.classed("highlight", l => {
-    const s = typeof l.source === "object" ? l.source.id : l.source;
-    const t = typeof l.target === "object" ? l.target.id : l.target;
-    return s === d.id || t === d.id;
+
+  canvas.addEventListener("mouseleave", () => {
+    if (hoverNode) { hoverNode = null; draw(); }
+    tooltip.style("visibility", "hidden");
+  });
+
+  canvas.addEventListener("click", (evt) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (evt.clientX - rect.left - transform.x) / transform.k;
+    const y = (evt.clientY - rect.top - transform.y) / transform.k;
+    if (!quad) return;
+    const hit = quad.find(x, y, 20 / transform.k);
+    if (hit) {
+      console.log(hit.id);
+      navigator.clipboard?.writeText(hit.id);
+    }
   });
 }
 
-function clearHighlight() {
-  node.classed("dim", false).classed("highlight", false);
-  link.classed("dim", false).classed("highlight", false);
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 }
 
 function resetView() {
-  svg.transition().duration(500).call(zoomBehavior.transform, d3.zoomIdentity);
+  d3.select(canvas).transition().duration(500).call(zoomBehavior.transform, d3.zoomIdentity);
 }
 
 function toggleLabels() {
   showLabels = !showLabels;
-  node.selectAll("text").text(d => {
-    if (showLabels) return shortName(d.id);
-    return (d.id === ROOT || d.kind === "A") ? shortName(d.id) : "";
-  });
+  draw();
 }
 
 function restartSim() {
-  simulation.alpha(1).restart();
+  if (simulation) simulation.alpha(1).restart();
 }
 
 load();
