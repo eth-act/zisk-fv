@@ -70,7 +70,7 @@ apply globally):
 
 * 66 transpile contracts in `Fundamentals/Transpiler.lean` — one
   per RV64IM instruction kind, consumed by every per-opcode proof.
-* 4 platform-feature axioms in `Sail/Auxiliaries.lean` (PMP / CLINT
+* 4 platform-feature axioms in `SailSpec/Auxiliaries.lean` (PMP / CLINT
   / PMA / Zicfilp).
 * 1 main-range axiom (`main_columns_in_range`) in
   `Airs/Main/Ranges.lean`.
@@ -103,7 +103,7 @@ pilot, not the cross-cutting infrastructure.
 * **Lane-match:** Discharged. The op-bus axiom plus the lane-match
   packaging in `Bridge/BinaryAdd.lean` already supplies the
   Main↔BinaryAdd row-match identity. The remaining downstream work
-  (`RdValDerivation.Arith.h_rd_val_arith_add`) is pure Lean atop
+  (`WriteValueProofs.Arith.h_rd_val_arith_add`) is pure Lean atop
   these axioms.
 * **Mode pins:** N/A. BinaryAdd has no mode-selector columns —
   ADD and ADDI share the same row shape.
@@ -125,7 +125,7 @@ specific `Valid_Main`↔`Valid_BinaryAdd` row-shape bridge.
 ### Pilot status (Step 4.1.2 — ADD exemplar)
 
 **Actual: 0 new axioms** for the ADD exemplar
-(`ZiskFv/Equivalence/Compliance/AddExemplar.lean`,
+(`ZiskFv/Compliance/FromTrust/Add.lean`,
 `equiv_ADD_from_trust`). Matches the prediction's lower bound (0–1).
 
 Composition: `transpile_ADD` (class #1) + `op_bus_perm_sound_BinaryAdd`
@@ -386,7 +386,7 @@ via separate signatures (`arith_mul_*` vs `arith_div_*`).
 ### Pilot status — landed at Step 4.1.8
 
 The ArithMul shape exemplar `equiv_MUL_from_trust`
-(`ZiskFv/Equivalence/Compliance/MulExemplar.lean`) closes all five
+(`ZiskFv/Compliance/FromTrust/Mul.lean`) closes all five
 discharge categories for the low-half MUL opcode (OP_MUL = 180) end-to-end
 using **2 new class-#6b axioms** (the two pins listed above) — well
 within the 3-5 prediction.
@@ -447,10 +447,10 @@ wrappers, all sitting in class #6b alongside the MUL-pilot pair.
 
 All 4 within-shape wrappers landed:
 
-* `equiv_MULHU_from_trust` (`Compliance/MulHUExemplar.lean`) — Step 4.2 r2 Family A.
-* `equiv_MULH_from_trust` (`Compliance/MulHExemplar.lean`) — Step 4.2 r3.III.
-* `equiv_MULHSU_from_trust` (`Compliance/MulHSUExemplar.lean`) — Step 4.2 r3.III.
-* `equiv_MULW_from_trust` (`Compliance/MulWExemplar.lean`) — Step 4.2 r3.III.
+* `equiv_MULHU_from_trust` (`Compliance/FromTrust/MulHU.lean`) — Step 4.2 r2 Family A.
+* `equiv_MULH_from_trust` (`Compliance/FromTrust/MulH.lean`) — Step 4.2 r3.III.
+* `equiv_MULHSU_from_trust` (`Compliance/FromTrust/MulHSU.lean`) — Step 4.2 r3.III.
+* `equiv_MULW_from_trust` (`Compliance/FromTrust/MulW.lean`) — Step 4.2 r3.III.
 
 Total ArithMul axiom delta across the whole Step 4.2 effort (r2 + r3.III):
 * `arith_table_op_mul_mode_pin` + `arith_table_op_mul_main_selector_pin` (r1.8)
@@ -477,7 +477,7 @@ plus a signed-low-32 form of `signed_packed_toInt_eq_of_read_xreg`.
 **Discharge bridges:** `ZiskFv/Equivalence/Bridge/Arith.lean`
 (entry points `arith_div_discharge_conservative` and
 `arith_div_secondary_discharge_conservative`), plus the
-pilot wrapper `ZiskFv/Equivalence/Compliance/DivPilot.lean`.
+pilot wrapper `ZiskFv/Compliance/FromTrust/Div.lean`.
 **Provider-bus axioms:**
 * `op_bus_perm_sound_ArithDiv` — `Airs/OperationBus/Bridge.lean:143`
   (primary bus tuple, quotient lane)
@@ -507,7 +507,7 @@ pilot wrapper `ZiskFv/Equivalence/Compliance/DivPilot.lean`.
 ### Predicted gaps for the AIR's discharge pilot
 
 ArithDiv **is the piloted AIR** as of commit `83532d7`. The DIV
-pilot (`Compliance/DivPilot.lean`) closed all five categories for
+pilot (`Compliance/FromTrust/Div.lean`) closed all five categories for
 `equiv_DIV` end-to-end. Remaining items to lift the DIV pilot to
 the full 8-opcode DIV/REM family:
 
@@ -726,13 +726,13 @@ fully covered before this pilot:
 * `memory_bus_entry_byte_range_perm_sound` (class #5b) and
   `lookup_consumer_matches_provider_load` (class #4) are likewise
   consumed transitively via `equiv_LD`'s
-  `ZiskFv.Circuit.LoadDerivation.load_copyb_e1_e2_bytes_eq_bv` and
+  `ZiskFv.ZiskCircuit.LoadDerivation.load_copyb_e1_e2_bytes_eq_bv` and
   `Circuit.MemModel.mem_load_correct` chains.
 * `transpile_LD` (class #1) feeds the routing-pin derivations
   inside the canonical theorem.
 
 The `equiv_LD_from_trust` wrapper at
-`ZiskFv/Equivalence/Compliance/LdExemplar.lean` therefore consumes
+`ZiskFv/Compliance/FromTrust/Ld.lean` therefore consumes
 no per-AIR trust-ledger axiom beyond `equiv_LD`'s existing closure.
 The reduction in caller burden is small (−1 binder, 0 hypothesis
 delta) and is principally **canonical-naming**: `h_op : main.op
@@ -822,7 +822,7 @@ delta of the seven AIRs.**
 ### Pilot status (Step 4.1.1 — non-branch LUI exemplar)
 
 **Actual: 0 new axioms** for the LUI non-branch exemplar
-(`ZiskFv/Equivalence/Compliance/LuiExemplar.lean`,
+(`ZiskFv/Compliance/FromTrust/Lui.lean`,
 `equiv_LUI_from_trust`). Matches the prediction above.
 
 Composition: `transpile_LUI` (class #1) + `equiv_LUI`'s existing
@@ -867,7 +867,7 @@ plus `main_columns_in_range` (#5b) only.
 ### Pilot status (Step 4.1.7 — branches BEQ exemplar)
 
 **Actual: 0 new axioms** for the BEQ branch exemplar
-(`ZiskFv/Equivalence/Compliance/BeqExemplar.lean`,
+(`ZiskFv/Compliance/FromTrust/Beq.lean`,
 `equiv_BEQ_from_trust`). Matches the prediction (0 new axioms).
 
 Composition: `equiv_BEQ`'s existing transitive closure (which for

@@ -1,16 +1,16 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Circuit.StoreD
-import ZiskFv.Circuit.MemModel
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.ZiskCircuit.StoreD
+import ZiskFv.ZiskCircuit.MemModel
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.BusEmission
-import ZiskFv.Sail.sd
-import ZiskFv.Sail.BusEffect
+import ZiskFv.Airs.Bus.BusEmission
+import ZiskFv.SailSpec.sd
+import ZiskFv.SailSpec.BusEffect
 
 /-!
 End-to-end theorem for RV64 SD (store doubleword). The
@@ -28,7 +28,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Circuit.StoreD
+open ZiskFv.ZiskCircuit.StoreD
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -102,7 +102,7 @@ theorem equiv_SD
   rw [equiv_SD_sail state sd_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_store_rrrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_store_rrrw
         state exec_row e0 e1 e2
         (PureSpec.execute_STORED_pure sd_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

@@ -1,9 +1,9 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.BinaryTable
+import ZiskFv.Airs.Tables.BinaryTable
 
 /-!
 # Binary AIR — universal column-range theorems
@@ -147,35 +147,35 @@ loops).
     and whose `a_byte`/`b_byte`/`c_byte` match the row's per-byte
     columns at that slot. Companion to `bin_table_consumer_wf`. -/
 axiom binary_per_byte_lookup_witness (v : Valid_Binary C FGL FGL) (r : ℕ) :
-    (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+    (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_0 r ∧ e.b_byte = v.free_in_b_0 r
         ∧ e.c_byte = v.free_in_c_0 r ∧ e.flags = v.carry_0 r)
-  ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+  ∧ (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_1 r ∧ e.b_byte = v.free_in_b_1 r
         ∧ e.c_byte = v.free_in_c_1 r ∧ e.flags = v.carry_1 r)
-  ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+  ∧ (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_2 r ∧ e.b_byte = v.free_in_b_2 r
         ∧ e.c_byte = v.free_in_c_2 r ∧ e.flags = v.carry_2 r)
-  ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+  ∧ (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_3 r ∧ e.b_byte = v.free_in_b_3 r
         ∧ e.c_byte = v.free_in_c_3 r ∧ e.flags = v.carry_3 r)
-  ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+  ∧ (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_4 r ∧ e.b_byte = v.free_in_b_4 r
         ∧ e.c_byte = v.free_in_c_4 r ∧ e.flags = v.carry_4 r)
-  ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+  ∧ (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_5 r ∧ e.b_byte = v.free_in_b_5 r
         ∧ e.c_byte = v.free_in_c_5 r ∧ e.flags = v.carry_5 r)
-  ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+  ∧ (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_6 r ∧ e.b_byte = v.free_in_b_6 r
         ∧ e.c_byte = v.free_in_c_6 r ∧ e.flags = v.carry_6 r)
-  ∧ (∃ e : ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL,
+  ∧ (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
         e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
         ∧ e.a_byte = v.free_in_a_7 r ∧ e.b_byte = v.free_in_b_7 r
         ∧ e.c_byte = v.free_in_c_7 r ∧ e.flags = v.carry_7 r)
@@ -248,7 +248,7 @@ PIL citations:
 * `zisk/state-machines/binary/pil/binary.pil:156` — `proves_operation(op: b_op + 0x10 * mode32, …)`
 * `zisk/state-machines/binary/src/binary_table.rs` — BinaryTable assignment table
 
-Consumed by `equiv_OR_from_trust` (`Compliance/OrExemplar.lean`).
+Consumed by `equiv_OR_from_trust` (`Compliance/FromTrust/Or.lean`).
 -/
 
 /-- **Binary table-pin: `b_op_or_sext = OP_OR` for OR-tagged rows.**
@@ -262,7 +262,7 @@ Consumed by `equiv_OR_from_trust` (`Compliance/OrExemplar.lean`).
     `(b_op, mode32, c_is_signed)` triple to valid entries). -/
 axiom binary_b_op_or_sext_eq_OP_OR (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = 15) :
-    (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_OR
+    (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR
 
 /-- **Binary table-pin: `b_op_or_sext = OP_AND` for AND-tagged rows.**
     For every Binary AIR row whose op-bus emission `b_op + 16 * mode32`
@@ -274,10 +274,10 @@ axiom binary_b_op_or_sext_eq_OP_OR (v : Valid_Binary C FGL FGL) (r : ℕ)
     PIL: `binary.pil:104` (`b_op_or_sext` linear def) +
     `binary.pil:131-148` (per-byte BinaryTable lookup restricting the
     `(b_op, mode32, c_is_signed)` triple to valid entries). Consumed by
-    `equiv_AND_from_trust` (`Compliance/AndExemplar.lean`). -/
+    `equiv_AND_from_trust` (`Compliance/FromTrust/And.lean`). -/
 axiom binary_b_op_or_sext_eq_OP_AND (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = 14) :
-    (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_AND
+    (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND
 
 /-- **Binary table-pin: `b_op_or_sext = OP_XOR` for XOR-tagged rows.**
     For every Binary AIR row whose op-bus emission `b_op + 16 * mode32`
@@ -289,10 +289,10 @@ axiom binary_b_op_or_sext_eq_OP_AND (v : Valid_Binary C FGL FGL) (r : ℕ)
     PIL: `binary.pil:104` (`b_op_or_sext` linear def) +
     `binary.pil:131-148` (per-byte BinaryTable lookup restricting the
     `(b_op, mode32, c_is_signed)` triple to valid entries). Consumed by
-    `equiv_XOR_from_trust` (`Compliance/XorExemplar.lean`). -/
+    `equiv_XOR_from_trust` (`Compliance/FromTrust/Xor.lean`). -/
 axiom binary_b_op_or_sext_eq_OP_XOR (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = 16) :
-    (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_XOR
+    (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR
 
 /-! ## 6-field per-byte chain witness with `cin` / `pos_ind` exposed
 
@@ -399,7 +399,7 @@ axiom binary_consumer_byte_match_chain_pin
     (v : Valid_Binary C FGL FGL) (r : ℕ) (op_emit : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = (op_emit : FGL)) :
     ∃ (e_0 e_1 e_2 e_3 e_4 e_5 e_6 e_7 :
-        ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL),
+        ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL),
       -- Byte 0..3: a/b/c/flags bytes match the row's per-byte
       -- columns; op = b_op; for the 5 supported emissions, op.val
       -- is pinned to the canonical 64-bit opcode (OP_LTU / OP_LT /

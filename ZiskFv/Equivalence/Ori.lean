@@ -1,22 +1,22 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Circuit.Ori
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.ZiskCircuit.Ori
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Equivalence.Bridge.Binary
-import ZiskFv.Airs.BusEmission
-import ZiskFv.Sail.ori
-import ZiskFv.Sail.BusEffect
+import ZiskFv.Airs.Bus.BusEmission
+import ZiskFv.SailSpec.ori
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Equivalence.RdValDerivation.BinaryLogic
+import ZiskFv.Equivalence.WriteValueProofs.BinaryLogic
 
 /-!
 End-to-end theorem for RV64 ORI. Mirrors `Equivalence.Andi` with
@@ -29,7 +29,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Ori
+open ZiskFv.ZiskCircuit.Ori
 open ZiskFv.Tactics.ALURTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 
@@ -67,7 +67,7 @@ lemma equiv_ORI_sail
     Mirrors `equiv_ANDI` (Step 4.2r3.I) — see that theorem's docstring
     for the discharge chain. Differences from ANDI: `OP_AND → OP_OR`,
     `match_clo_chi_AND → match_clo_chi_OR`, `transpile_ANDI →
-    transpile_ORI`, `RdValDerivation.h_rd_val_logic_andi →
+    transpile_ORI`, `WriteValueProofs.h_rd_val_logic_andi →
     h_rd_val_logic_ori`. -/
 theorem equiv_ORI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -95,7 +95,7 @@ theorem equiv_ORI
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op_ori : m.op r_main = OP_OR)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
-    (h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_OR)
+    (h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
     (h_ori_subset :
       ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
@@ -132,7 +132,7 @@ theorem equiv_ORI
     ZiskFv.Equivalence.Bridge.Binary.itype_imm_subset_binary_row_of_main
       m v r_main r_binary ori_input.imm h_m32 h_match h_ori_subset
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.BinaryLogic.h_rd_val_logic_ori
+    ZiskFv.Equivalence.WriteValueProofs.BinaryLogic.h_rd_val_logic_ori
       m v r_main r_binary e2 ori_input.r1_val ori_input.imm
       h_byte_0 h_byte_1 h_byte_2 h_byte_3 h_byte_4 h_byte_5 h_byte_6 h_byte_7
       ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
@@ -144,7 +144,7 @@ theorem equiv_ORI
   rw [equiv_ORI_sail state ori_input r1 rd imm
         h_input_r1 h_input_imm h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

@@ -1,14 +1,14 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Circuit.BranchLessThanUnsigned
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
-import ZiskFv.Sail.bltu
-import ZiskFv.Sail.BusEffect
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.ZiskCircuit.BranchLessThanUnsigned
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.Bus.BusEmission
+import ZiskFv.SailSpec.bltu
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
@@ -17,7 +17,7 @@ import ZiskFv.Airs.OpBusHypotheses
 End-to-end theorem for RV64 BLTU. Combines:
 
 * `ZiskFv.Trusted.transpile_BLTU`,
-* `ZiskFv.Circuit.BranchLessThanUnsigned.branch_ltu_compositional`
+* `ZiskFv.ZiskCircuit.BranchLessThanUnsigned.branch_ltu_compositional`
   (archetype at `opcode_lit = OP_LTU`),
 * `PureSpec.execute_BLTU_pure_equiv`.
 
@@ -30,7 +30,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.BranchLessThanUnsigned
+open ZiskFv.ZiskCircuit.BranchLessThanUnsigned
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -96,7 +96,7 @@ theorem equiv_BLTU
   rw [equiv_BLTU_sail state bltu_input imm r1 r2 misa_val
         h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c]
   symm
-  exact ZiskFv.Airs.BusEmission.bus_effect_matches_sail_beq
+  exact ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_beq
     state exec_row
     (PureSpec.execute_BLTU_pure bltu_input).nextPC
     (PureSpec.execute_BLTU_pure bltu_input).throws

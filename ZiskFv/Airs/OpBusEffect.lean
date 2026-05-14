@@ -1,10 +1,10 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Sail.Auxiliaries
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.SailSpec.Auxiliaries
+import ZiskFv.Airs.OperationBus.OperationBus
 
 /-!
 # OpBusEffect — operation-bus precondition model (branch shape)

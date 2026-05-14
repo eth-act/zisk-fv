@@ -1,10 +1,10 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Field.Goldilocks
 import Extraction.Buses
 import Extraction.MemoryBuses
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.BusShape
 import ZiskFv.Airs.MemoryBus.Projection
 

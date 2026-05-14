@@ -1,11 +1,11 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Circuit.StoreD
+import ZiskFv.ZiskCircuit.StoreD
 
 /-!
 **Store archetype macros / generic lemmas.**
@@ -56,7 +56,7 @@ open Goldilocks
 open Interaction
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Circuit.StoreD
+open ZiskFv.ZiskCircuit.StoreD
 open ZiskFv.Trusted
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]

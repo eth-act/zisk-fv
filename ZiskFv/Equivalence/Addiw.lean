@@ -1,22 +1,22 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Fundamentals.Execution
-import ZiskFv.Circuit.Addiw
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
-import ZiskFv.Sail.addiw
-import ZiskFv.Sail.BusEffect
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Bits.Execution
+import ZiskFv.ZiskCircuit.Addiw
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.Bus.BusEmission
+import ZiskFv.SailSpec.addiw
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Tactics.RTypeWArchetype
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Equivalence.RdValDerivation.Arith
-import ZiskFv.Equivalence.RdValDerivation.SailBridge
+import ZiskFv.Equivalence.WriteValueProofs.Arith
+import ZiskFv.Equivalence.WriteValueProofs.SailBridge
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Equivalence.Bridge.Binary
 import ZiskFv.Airs.Binary.Binary
@@ -44,7 +44,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Addiw
+open ZiskFv.ZiskCircuit.Addiw
 open ZiskFv.Tactics.RTypeWArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -84,7 +84,7 @@ lemma equiv_ADDIW_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
-    `RdValDerivation.Arith.h_rd_val_arith_addiw` discharge lemma
+    `WriteValueProofs.Arith.h_rd_val_arith_addiw` discharge lemma
     composed with `SailBridge.sail_addiw_bridge`. -/
 theorem equiv_ADDIW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -120,16 +120,16 @@ theorem equiv_ADDIW
      fl0 fl1 fl2 fl3
      pi0 pi1 pi2 pi3 : FGL)
     (h_byte_0 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_ADD
+      ZiskFv.Airs.Tables.BinaryTable.OP_ADD
       (v.free_in_a_0 r_binary) (v.free_in_b_0 r_binary) c0 cin0 fl0 pi0)
     (h_byte_1 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_ADD
+      ZiskFv.Airs.Tables.BinaryTable.OP_ADD
       (v.free_in_a_1 r_binary) (v.free_in_b_1 r_binary) c1 cin1 fl1 pi1)
     (h_byte_2 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_ADD
+      ZiskFv.Airs.Tables.BinaryTable.OP_ADD
       (v.free_in_a_2 r_binary) (v.free_in_b_2 r_binary) c2 cin2 fl2 pi2)
     (h_byte_3 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_ADD
+      ZiskFv.Airs.Tables.BinaryTable.OP_ADD
       (v.free_in_a_3 r_binary) (v.free_in_b_3 r_binary) c3 cin3 fl3 pi3)
     (hc0 : c0.val < 256) (hc1 : c1.val < 256) (hc2 : c2.val < 256) (hc3 : c3.val < 256)
     (hc4 : c4.val < 256) (hc5 : c5.val < 256) (hc6 : c6.val < 256) (hc7 : c7.val < 256)
@@ -228,7 +228,7 @@ theorem equiv_ADDIW
                   + (v.free_in_b_2 r_binary).val * 65536
                   + (v.free_in_b_3 r_binary).val * 16777216 with h_b32_def
   have h_discharge :=
-    ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_addiw
+    ZiskFv.Equivalence.WriteValueProofs.Arith.h_rd_val_arith_addiw
       m r_main e2
       (v.free_in_a_0 r_binary) (v.free_in_a_1 r_binary)
       (v.free_in_a_2 r_binary) (v.free_in_a_3 r_binary)
@@ -245,7 +245,7 @@ theorem equiv_ADDIW
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       a32sum b32sum h_a32_def h_b32_def
   have h_bridge :=
-    ZiskFv.Equivalence.RdValDerivation.SailBridge.sail_addiw_bridge
+    ZiskFv.Equivalence.WriteValueProofs.SailBridge.sail_addiw_bridge
       addiw_input.r1_val imm a32sum b32sum
       (h_input_r1_extract.trans (by rw [h_a32_def]))
       (h_input_imm_extract.trans (by rw [h_b32_def]))
@@ -256,7 +256,7 @@ theorem equiv_ADDIW
   rw [equiv_ADDIW_sail state addiw_input r1 rd imm
         h_input_r1 h_input_imm h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_ITYPE_addiw_pure addiw_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

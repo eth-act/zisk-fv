@@ -1,0 +1,7 @@
+{
+  "paths": {
+    "ZiskFv/Airs/Main.lean": "ZiskFv/Airs/Main/Main.lean",
+    "ZiskFv/Airs/OperationBus.lean": "ZiskFv/Airs/OperationBus/OperationBus.lean"
+  },
+  "namespaces": {}
+}

@@ -539,16 +539,16 @@
 
 <div class="hero">
   <div class="wrap">
-    <div class="badge b-accent" style="margin-bottom: 22px;">project status · 2026-04-28</div>
-    <h1>zisk-fv: <span class="accent">a per-opcode trust boundary</span> for ZisK's RV64IM circuit</h1>
+    <div class="badge b-accent" style="margin-bottom: 22px;">project status · 2026-05-14</div>
+    <h1>zisk-fv: <span class="accent">one global compliance theorem</span> for ZisK's RV64IM circuit</h1>
     <p class="tagline">
-      A Lean&nbsp;4 formal-verification project that proves, for every RV64IM instruction, that ZisK's PIL2 circuit and the official Sail RISC-V specification compute the same thing — and makes the residual trust assumptions explicit and small.
+      A Lean&nbsp;4 formal-verification project whose verification claim is a single theorem — <code style="background:transparent;color:var(--cyan);padding:0;">zisk_riscv_compliant_program_bus</code> — dispatching all 63 RV64IM opcodes through a 35-arm <code style="background:transparent;color:var(--cyan);padding:0;">OpEnvelope</code> to the Sail RISC-V spec. Everything else on this page is a corollary or supporting infrastructure. The residual trust surface (122 axioms, 12 classes) is named, hashed, and mechanically asserted equal to the theorem's transitive axiom closure on every PR.
     </p>
     <div class="stats">
       <div class="stat"><div class="num">63 / 63</div><div class="lbl">RV64IM opcodes proven equivalent</div></div>
-      <div class="stat"><div class="num">13</div><div class="lbl">items on the trust ledger</div></div>
+      <div class="stat"><div class="num">122</div><div class="lbl">trusted axioms (12 classes)</div></div>
       <div class="stat"><div class="num">0</div><div class="lbl"><code>sorry</code> in the proof tree</div></div>
-      <div class="stat"><div class="num">8181</div><div class="lbl">Lean build jobs, all green</div></div>
+      <div class="stat"><div class="num">9 + 3</div><div class="lbl">V1 syntactic + V2 semantic gates</div></div>
     </div>
   </div>
 </div>
@@ -568,7 +568,7 @@
     <div class="section-eyebrow">the question</div>
     <h2>What are you trusting when a ZisK proof verifies?</h2>
     <p class="section-lead">
-      A ZKVM proof says: "this RISC-V program ran correctly on this circuit." But the circuit is just polynomial constraints; "ran correctly" means "matches the RISC-V architectural spec." Without a formal proof tying the two together, the claim is a wish. <strong>zisk-fv</strong> is that proof — and this page lays out the small set of axioms it ultimately rests on.
+      A ZKVM proof says: "this RISC-V program ran correctly on this circuit." But the circuit is just polynomial constraints; "ran correctly" means "matches the RISC-V architectural spec." Without a formal proof tying the two together, the claim is a wish. <strong>zisk-fv</strong> is that proof — the global theorem <code>ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus</code> dispatches all 63 RV64IM opcodes to the Sail spec, and its transitive axiom closure (122 axioms, 12 classes) is mechanically asserted equal to the ledger on every PR. This page lays out exactly what those axioms say.
     </p>
 
     <div class="diagram-wrap">
@@ -620,16 +620,16 @@
           <rect x="380" y="240" width="340" height="80" rx="10"
                 fill="url(#hatch)" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6 4"/>
           <text x="550" y="270" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="700">THE TRUST BOUNDARY</text>
-          <text x="550" y="290" text-anchor="middle" fill="#e7e9ee" font-size="12">13 axioms · 4 categories</text>
-          <text x="550" y="306" text-anchor="middle" fill="#9aa0ad" font-size="11">spec, transpiler, bus protocol, model fidelity</text>
+          <text x="550" y="290" text-anchor="middle" fill="#e7e9ee" font-size="12">122 axioms · 12 classes</text>
+          <text x="550" y="306" text-anchor="middle" fill="#9aa0ad" font-size="11">transpile, bus/lookup, arith pins, range, mem-state, platform</text>
         </g>
 
         <!-- center proof -->
         <g>
           <rect x="380" y="360" width="340" height="80" rx="10" fill="#161922" stroke="#6ee7b7" stroke-width="1.5"/>
-          <text x="550" y="388" text-anchor="middle" fill="#6ee7b7" font-size="13" font-weight="700">63 PROVEN OPCODE EQUIVALENCES</text>
-          <text x="550" y="408" text-anchor="middle" fill="#e7e9ee" font-size="12" font-family="JetBrains Mono, monospace">equiv_&lt;OP&gt;</text>
-          <text x="550" y="424" text-anchor="middle" fill="#9aa0ad" font-size="11">Sail.execute = bus_effect ∘ circuit-witness</text>
+          <text x="550" y="385" text-anchor="middle" fill="#6ee7b7" font-size="13" font-weight="700">GLOBAL COMPLIANCE THEOREM</text>
+          <text x="550" y="403" text-anchor="middle" fill="#e7e9ee" font-size="12" font-family="JetBrains Mono, monospace">zisk_riscv_compliant_program_bus</text>
+          <text x="550" y="419" text-anchor="middle" fill="#9aa0ad" font-size="11">63 opcodes · 35-arm OpEnvelope · 63 equiv_&lt;OP&gt;_from_trust wrappers</text>
         </g>
 
         <!-- arrows from spec -->
@@ -659,110 +659,191 @@
 <section>
   <div class="wrap">
     <div class="section-eyebrow">the trust ledger</div>
-    <h2>What we trust, exactly</h2>
+    <h2>What we trust, exactly — 122 axioms, 12 classes</h2>
     <p class="section-lead">
-      Every per-opcode equivalence theorem ultimately depends on a small set of clearly-named axioms. They group into four categories. Anything outside this list is proven from scratch or follows from these.
+      The global compliance theorem's transitive <code>#print axioms</code> closure (recorded in <code>trust/baseline-zisk-riscv-compliant.txt</code> and hashed line-by-line in <code>trust/baseline-axioms.txt</code>) <em>is</em> the trusted computing base. The V2 gate's <code>check-closure-vs-baseline</code> asserts they match exactly on every PR. Counts and locations refresh against the current ledger (<code>docs/fv/trusted-base.md</code>).
     </p>
 
     <div class="ledger">
 
       <div class="ledger-cat">
-        <h3><span class="badge b-trusted">Trusted spec</span> The RISC-V specification itself <span class="count">— 1 source, machine-translated</span></h3>
+        <h3><span class="badge b-trusted">Inherited</span> The RISC-V specification itself <span class="count">— 1 source, machine-translated, not counted in the 122</span></h3>
         <p class="why">
-          We don't prove that the Sail-RISC-V model is correct — that's an <em>inherited</em> trust from the formally-developed Sail spec used by Nethermind / OpenLabs and the broader community. Every opcode's "intended behavior" is what the Sail model says it is. We use the <strong>stock <code>NethermindEth/sail-riscv-lean</code> transpiler output</strong> unchanged: the <code>LeanRV64D</code> Lean module is mechanically generated from the upstream Sail RV64 spec — RV64 is native there, no widening on our side, no fork.
+          We don't prove that the Sail-RISC-V model is correct — that's an <em>inherited</em> trust from the formally-developed Sail spec used by Nethermind / OpenLabs and the broader community. Every opcode's "intended behavior" is what the Sail model says it is. We use the <strong>stock <code>NethermindEth/sail-riscv-lean</code> transpiler output</strong> unchanged: the <code>LeanRV64D</code> Lean module is mechanically generated from the upstream Sail RV64 spec — RV64 is native there, no widening on our side, no fork. The Sail compiler + sail-riscv source pin live in <code>flake.lock</code>; the build is reproduced by <code>nix build .#sail-lean-tree</code>.
         </p>
         <div class="ledger-items">
           <div class="item">
             <div class="item-head"><span class="id">SAIL</span></div>
             <div><code>NethermindEth/sail-riscv-lean :: LeanRV64D</code></div>
-            <div class="desc">The Sail RV64 spec, mechanically translated to Lean by Sail's standard <span class="chip">sail_to_lean</span> pipeline. ZisK's RV64IM behavior must match its <span class="chip">execute_instruction</span> evaluation. RV64 is upstream-native; we depend on a pinned upstream commit and don't extend the translator. Simp-friendly reductions for <code>currentlyEnabled Ext_Zca</code> under the disabled-C profile live <em>locally</em> in <code>RV64D/Auxiliaries.lean</code> (mirroring openvm-fv's pattern), not in a fork.</div>
+            <div class="desc">The Sail RV64 spec, mechanically translated to Lean by Sail's standard <span class="chip">sail_to_lean</span> pipeline. ZisK's RV64IM behavior must match its <span class="chip">execute_instruction</span> evaluation. RV64 is upstream-native; we depend on a pinned upstream commit and don't extend the translator.</div>
           </div>
         </div>
       </div>
 
       <div class="ledger-cat">
-        <h3><span class="badge b-trusted">Trusted contract</span> RISC-V&nbsp;→&nbsp;Zisk transpiler <span class="count">— ~63 axioms + 4 platform + 3 PC bridges</span></h3>
+        <h3><span class="badge b-trusted">Class #1</span> Transpile contracts <span class="count">— 51 axioms · <code>Fundamentals/Transpiler.lean</code></span></h3>
         <p class="why">
-          ZisK doesn't run RV64 instructions directly. It compiles them into <em>Zisk microinstructions</em> via <code>core/src/riscv2zisk_context.rs</code> (a Rust program). We axiomatize that translation — for each RV opcode, "if Main's columns are configured this way, then the Zisk witness corresponds to this RV instruction." We do not prove the transpiler; we declare the contract it must keep. A Rust-side proof would close this gap.
+          ZisK doesn't run RV64 instructions directly. It compiles them into <em>Zisk microinstructions</em> via <code>core/src/riscv2zisk_context.rs</code> (a Rust program). For each RV64IM instruction kind we axiomatize that translation — "if Main's columns are configured this way, then the Zisk witness corresponds to this RV instruction." Each axiom's docstring cites the exact upstream source line. We do not prove the transpiler; we declare the contract it must keep. A Rust-side proof would close this gap.
         </p>
         <div class="ledger-items">
           <div class="item">
-            <div class="item-head"><span class="id">~63 axioms</span></div>
-            <div><code>transpile_&lt;OP&gt;</code></div>
-            <div class="desc">One per RV opcode. Pins the Main-AIR mode flags (e.g. <span class="chip">op</span>, <span class="chip">store_pc</span>, <span class="chip">m32</span>, <span class="chip">jmp_offset2</span>) in terms of the RV instruction encoding.</div>
-          </div>
-          <div class="item">
-            <div class="item-head"><span class="id">P1–P4</span></div>
-            <div><code>PlatformScope.{pmpCheck,within_clint,pmaCheck,update_elp}</code></div>
-            <div class="desc">Platform-feature assertions: the deployed ZisK runtime has no PMP/PMA filtering, no CLINT region in the address space, no extended-pointer state mutation. Only retire if the deployment changes.</div>
-          </div>
-          <div class="item">
-            <div class="item-head"><span class="id">TP-JAL / TP-JALR / TP-AUIPC</span></div>
-            <div><code>transpile_PC_for_&lt;OP&gt;</code></div>
-            <div class="desc">For the three <span class="chip">store_pc=1</span> opcodes, asserts that Sail's program counter equals Main's <span class="chip">pc</span> column at the row index. Bridges the <em>runtime</em> PC value, not just the encoding.</div>
+            <div class="item-head"><span class="id">51 axioms</span></div>
+            <div><code>transpile_&lt;OP&gt;</code> + <code>transpile_PC_for_&lt;OP&gt;</code></div>
+            <div class="desc">One per RV64IM opcode kind, plus runtime-PC bridges for the three <span class="chip">store_pc=1</span> opcodes (JAL, JALR, AUIPC) tying Sail's program counter to Main's <span class="chip">pc</span> column. Pins Main-AIR mode flags (<span class="chip">op</span>, <span class="chip">store_pc</span>, <span class="chip">m32</span>, <span class="chip">jmp_offset2</span>, …) in terms of the RV instruction encoding.</div>
           </div>
         </div>
       </div>
 
       <div class="ledger-cat">
-        <h3><span class="badge b-trusted">Trusted protocol</span> Bus permutation soundness <span class="count">— 7 axioms</span></h3>
+        <h3><span class="badge b-trusted">Class #4</span> Bus / lookup soundness <span class="count">— 14 axioms · <code>OperationBus/Bridge.lean</code> (3) + <code>MemoryBus/{MemBridge,MemAlignBridge}.lean</code> (9 + 2)</span></h3>
         <p class="why">
-          ZisK's circuit is a constellation of AIRs (Algebraic Intermediate Representations) glued together by lookup and permutation arguments over named "buses". Proving these arguments sound from first principles would mean formalizing the proving system — out of project scope. Instead, each bus's protocol is trusted via a single axiom that says "the rows on bus <em>X</em> match across providers and consumers." This is the same approach openvm-fv takes. Listed by bus ID:
+          ZisK's circuit is a constellation of AIRs glued together by lookup and permutation arguments over named "buses". Proving these arguments sound from first principles would mean formalizing the proving system — out of project scope. Each bus's protocol is trusted via a small set of axioms that say "the rows on bus <em>X</em> match across providers and consumers." Each axiom's docstring cites the PIL line and Rust transpile function it mirrors. Same trust class as openvm-fv's bus hypotheses.
         </p>
         <div class="ledger-items">
           <div class="item">
-            <div class="item-head"><span class="id">bus 5000</span><span class="badge b-trusted" style="font-size:0.65rem">op</span></div>
-            <div><code>OperationBus.matches_entry</code></div>
-            <div class="desc">Operation bus connecting Main to secondary state machines (Arith, Binary, …). Multiplexed opcode dispatch.</div>
+            <div class="item-head"><span class="id">op-bus 5000</span></div>
+            <div><code>op_bus_perm_sound_{BinaryAdd,Binary,BinaryExtension}</code></div>
+            <div class="desc">Operation-bus permutation soundness: a Main-row consumer pairs with a row in the provider AIR (BinaryAdd / Binary / BinaryExtension).</div>
           </div>
           <div class="item">
-            <div class="item-head"><span class="id">bus 125</span><span class="badge b-trusted" style="font-size:0.65rem">lookup</span></div>
-            <div><code>bin_table_consumer_wf</code></div>
-            <div class="desc">Binary lookup table (BT-B). Per-byte switch semantics for AND / OR / XOR / LT / LTU / EQ / GT / LE / LEU / MIN(U) / MAX(U) / ADD / SUB / SEXT.</div>
-          </div>
-          <div class="item">
-            <div class="item-head"><span class="id">bus 124</span><span class="badge b-trusted" style="font-size:0.65rem">lookup</span></div>
-            <div><code>bin_ext_table_consumer_wf</code></div>
-            <div class="desc">Binary extension lookup table (BT-X). Per-byte shift semantics for SLL / SRL / SRA across 32- and 64-bit operands.</div>
-          </div>
-          <div class="item">
-            <div class="item-head"><span class="id">bus 10</span><span class="badge b-trusted" style="font-size:0.65rem">memory</span></div>
-            <div><code>memory_bus_register_write_perm_sound</code></div>
-            <div class="desc">MB-W. Register-write permutation soundness for <span class="chip">store_pc = 0</span> opcodes (the standard rd-write path).</div>
-          </div>
-          <div class="item">
-            <div class="item-head"><span class="id">bus 10</span><span class="badge b-trusted" style="font-size:0.65rem">memory</span></div>
-            <div><code>memory_bus_register_write_perm_sound_store_pc</code></div>
-            <div class="desc">MB-W-PC. Companion to MB-W for <span class="chip">store_pc = 1</span> (JAL / JALR / AUIPC). Same trust class, different gating.</div>
-          </div>
-          <div class="item">
-            <div class="item-head"><span class="id">bus 10</span><span class="badge b-trusted" style="font-size:0.65rem">memory</span></div>
+            <div class="item-head"><span class="id">mem-bus 10</span></div>
             <div><code>lookup_consumer_matches_provider_load</code></div>
-            <div class="desc">MB-L. Load-side permutation soundness: a memory-side bus row pairs with a Mem AIR row at <span class="chip">as = 2</span>.</div>
+            <div class="desc">Load consumer pairs with a Mem AIR row at <span class="chip">as = 2</span>.</div>
           </div>
           <div class="item">
-            <div class="item-head"><span class="id">bus 10</span><span class="badge b-trusted" style="font-size:0.65rem">memory</span></div>
-            <div><code>lookup_consumer_matches_provider_store</code></div>
-            <div class="desc">MB-S. Store-side permutation soundness, parallel to MB-L for the write path.</div>
+            <div class="item-head"><span class="id">mem-bus 10</span></div>
+            <div><code>main_{load,sext_load,external_arith,store_pc}_emission_bundle</code></div>
+            <div class="desc">Lane / ptr / rd-routing emission bundles on Main for load, signed-load, MUL/DIV rd-write, and <span class="chip">store_pc ∈ {0,1}</span> writes.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">mem-bus 10</span></div>
+            <div><code>main_store_emission_bundle_{sd,sb,sh,sw}</code></div>
+            <div class="desc">Byte-extract + ptr-match + RMW high-byte preservation for SD / SB / SH / SW.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">MemAlign</span></div>
+            <div><code>memalign_load_perm_sound</code></div>
+            <div class="desc">Sub-doubleword load consumer pairs with a MemAlign* provider row (MemAlignByte / MemAlignReadByte / MemAlign).</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">MemAlignRom</span></div>
+            <div><code>mem_align_rom_subdoubleword_load_value_1_zero</code></div>
+            <div class="desc">ROM-lookup soundness pinning <span class="chip">value_1 = 0</span> on MemAlign provider rows of sub-doubleword width. Together with the previous, derives the high-bytes-zero theorem for LBU/LHU/LWU as pure Lean.</div>
           </div>
         </div>
       </div>
 
       <div class="ledger-cat">
-        <h3><span class="badge b-trusted">Trusted model fidelity</span> Mem AIR &harr; Sail <code>state.mem</code> <span class="count">— 2 axioms</span></h3>
+        <h3><span class="badge b-trusted">Class #6</span> Binary / BinaryExtension lookup soundness <span class="count">— 14 axioms · <code>Airs/{Binary,BinaryExtension}Table.lean</code> + <code>Airs/Binary/{Binary,BinaryExtension}Ranges.lean</code></span></h3>
         <p class="why">
-          The bus protocol tells us that Mem AIR rows match memory-bus consumers; but it doesn't say what Mem AIR <em>is</em> in terms of the architectural memory. These two axioms close that gap by stating: a Mem AIR row that matches a memory-bus entry agrees with Sail's <span class="chip">state.mem</span> byte-by-byte. They sit at the boundary between ZisK's operational memory model and the Sail spec's logical memory.
+          Lookup-argument soundness on the Binary and BinaryExtension AIRs (same trust kind as #4), scoped to lookups against <code>binary_table.rs::ARITH_TABLE</code>'s row enumeration. Pins per-byte switch semantics for AND / OR / XOR / LT / LTU / EQ / GT / LE / LEU / MIN(U) / MAX(U) / ADD / SUB / SEXT (Binary) and SLL / SRL / SRA across 32- and 64-bit operand widths (BinaryExtension).
+        </p>
+        <div class="ledger-items">
+          <div class="item">
+            <div class="item-head"><span class="id">BT-B</span></div>
+            <div><code>bin_table_consumer_wf</code></div>
+            <div class="desc">Binary lookup table soundness. Plus 9 BinaryRanges entries: column / per-byte / carry / OR/AND/XOR / W-mode SEXT byte-choice + carry_7=0 / 6-field byte-match chain for SUB/SLT-family.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">BT-X</span></div>
+            <div><code>bin_ext_table_consumer_wf</code></div>
+            <div class="desc">BinaryExtension lookup table soundness. Plus 3 BinaryExtensionRanges entries: column-range pin, <span class="chip">op_is_shift</span> classification, row → per-byte lookup witness extraction.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ledger-cat">
+        <h3><span class="badge b-trusted">Class #6b</span> Arith range / table / Euclidean pins <span class="count">— 35 axioms · <code>Airs/Arith/Ranges.lean</code></span></h3>
+        <p class="why">
+          Range-checker bus lookups + arith_table-row sign / mode / operand / sign-witness pins + Euclidean-remainder bound, for the full MUL / DIV / REM family across signed/unsigned × 64/32 (W) modes + MULH-family high-half. Range-checker bus lookup soundness on the Arith AIR's <span class="chip">bits(16)</span>-annotated chunk columns; arith_table lookup soundness for per-row sign / mode / operand / sign-witness / selector pins; binary-bus lookup soundness on the Arith <code>assumes_operation(|d|&lt;|b|)</code> consumer for the Euclidean magnitude/sign bound.
+        </p>
+        <div class="ledger-items">
+          <div class="item">
+            <div class="item-head"><span class="id">range / carry</span></div>
+            <div><code>arith_{mul,div}_columns_in_range</code> + <code>arith_{mul,div}_carry_columns_in_range_{unsigned,signed,w}</code></div>
+            <div class="desc">Range-bus soundness on Arith's 16-bit chunks and W-mode carry chains.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">arith_table pins</span></div>
+            <div><code>arith_table_op_{div_rem,mul,mulh,mulhu,mulhsu,mulw,divw}_*</code></div>
+            <div class="desc">Per-row sign / mode / operand / sign-witness / main-selector pins for signed × unsigned × W × non-W × hi-half combinations.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">Euclidean bound</span></div>
+            <div><code>arith_div_remainder_bound{,_unsigned,_unsigned_w,_signed_w}</code></div>
+            <div class="desc">Magnitude / sign bound on <code>|d| &lt; |b|</code> for the Euclidean-remainder identity, gated via the binary-bus consumer.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">sign-witness MSBs</span></div>
+            <div><code>arith_{mul,div}_{na,nb,np}_eq_msb_of_*</code></div>
+            <div class="desc">Links the Arith AIR's <span class="chip">na</span> / <span class="chip">nb</span> / <span class="chip">np</span> sign-witness columns to the MSB of A / B / C on signed DIV / REM / MULH rows.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ledger-cat">
+        <h3><span class="badge b-trusted">Class #5b</span> Range-bus / byte-range soundness <span class="count">— 3 axioms · <code>MemoryBus/EntryRanges.lean</code> + <code>Binary/BinaryAddRanges.lean</code> + <code>Main/Ranges.lean</code></span></h3>
+        <p class="why">
+          Each participating AIR's <span class="chip">bits(8)</span> / <span class="chip">bits(N)</span>-annotated columns satisfy the byte-range bus. Lookup-argument soundness on the standard byte-range bus, restricted to participants annotated <span class="chip">bits(N)</span> in the PIL.
+        </p>
+        <div class="ledger-items">
+          <div class="item">
+            <div class="item-head"><span class="id">mem-bus bytes</span></div>
+            <div><code>memory_bus_entry_byte_range_perm_sound</code></div>
+            <div class="desc">Byte ranges on memory-bus entries — the 8-byte lanes are <span class="chip">bits(8)</span>.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">Main</span></div>
+            <div><code>main_columns_in_range</code></div>
+            <div class="desc">Range-check soundness on Main AIR's <span class="chip">bits(N)</span>-annotated columns.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">BinaryAdd</span></div>
+            <div><code>binary_add_columns_in_range</code></div>
+            <div class="desc">BinaryAdd-side column ranges (carry chain).</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ledger-cat">
+        <h3><span class="badge b-trusted">Class #2</span> Memory state bridge — load <span class="count">— 1 axiom · <code>Circuit/MemModel.lean</code></span></h3>
+        <p class="why">
+          Class #4 places a Mem AIR row on the memory bus; this axiom closes the bridge from Mem AIR's column language to Sail's byte-addressable <code>Std.HashMap</code> — a Mem-AIR row tagged <span class="chip">wr=0</span> matching a memory-bus entry implies Sail's <code>state.mem</code> agrees with the entry's eight bytes. Closes the load side of the implementation-models-spec faithfulness gap; the store side is currently absorbed into class #4's <code>main_store_emission_bundle_*</code> axioms.
         </p>
         <div class="ledger-items">
           <div class="item">
             <div class="item-head"><span class="id">MS-L</span></div>
             <div><code>row_models_sail_state_load</code></div>
-            <div class="desc">Load: a Mem AIR row matching the load bus entry agrees with Sail's pre-state memory at the projected addresses.</div>
+            <div class="desc">A Mem AIR row matching the load bus entry agrees with Sail's pre-state memory at the projected addresses.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ledger-cat">
+        <h3><span class="badge b-trusted">Classes #7–#10</span> Platform-feature scope <span class="count">— 4 axioms · <code>SailSpec/Auxiliaries.lean</code></span></h3>
+        <p class="why">
+          ZisK's RV64IM deployment has no PMP, no CLINT MMIO region, no PMA filtering, and disables the Zicfilp landing-pad extension. Axiomatising these as inert is strictly stronger than threading state-level disjointness through every load/store proof. Each is scope-honest for ZisK's target; would need revisiting only if the deployment changes.
+        </p>
+        <div class="ledger-items">
+          <div class="item">
+            <div class="item-head"><span class="id">P-PMP</span></div>
+            <div><code>LeanRV64D.Functions.pmpCheck _ _ _ _ = pure none</code></div>
+            <div class="desc">PMP inert — no permission filtering on ZisK's deployment.</div>
           </div>
           <div class="item">
-            <div class="item-head"><span class="id">MS-S</span></div>
-            <div><code>row_models_sail_state_store</code></div>
-            <div class="desc">Store: same shape but for post-state. Closes the store side of the implementation-models-spec faithfulness gap.</div>
+            <div class="item-head"><span class="id">P-CLINT</span></div>
+            <div><code>within_clint _ _ = pure false</code></div>
+            <div class="desc">CLINT MMIO region absent from ZisK's address space.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">P-PMA</span></div>
+            <div><code>pmaCheck _ _ _ _ = pure none</code></div>
+            <div class="desc">PMA inert; alignment-fault arm short-circuited.</div>
+          </div>
+          <div class="item">
+            <div class="item-head"><span class="id">P-ELP</span></div>
+            <div><code>update_elp_state _ = pure ()</code></div>
+            <div class="desc">Zicfilp disabled in ZisK's target; helper reduces to no-op.</div>
           </div>
         </div>
       </div>
@@ -773,18 +854,44 @@
       Everything else — ALU semantics, sign-extension boundaries, multiplicative carry chains, four-quadrant signed division overflow, byte-level arithmetic — is <strong>derived in Lean</strong> from these axioms plus Mathlib. No <code>sorry</code> stubs.
     </p>
 
-    <div class="card" style="margin-top: 26px; border-left: 3px solid var(--proven);">
-      <h3 style="color: var(--proven);">CI-enforced — drift is mechanically caught</h3>
+    <div class="card" style="margin-top: 26px; border-left: 3px solid var(--accent);">
+      <h3 style="color: var(--accent);">The uber theorem and its closure</h3>
       <p style="color:var(--muted);font-size:0.96rem; margin: 6px 0 0;">
-        The trust ledger isn't just documentation: every PR runs <code>trust/scripts/check-all.sh</code> via <code>.github/workflows/trust-gate.yml</code>. The gate enforces four things:
+        The verification claim is one Lean theorem in <code>ZiskFv/Equivalence/Compliance/Global.lean</code>:
       </p>
-      <ul style="color:var(--muted);font-size:0.94rem;margin: 10px 0 0 24px; line-height:1.6;">
+      <pre style="margin:12px 0 0; background:var(--bg-2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; overflow-x:auto; color:var(--text); font-size:0.86rem;"><code style="background:transparent; color:inherit; padding:0;">theorem zisk_riscv_compliant_program_bus :
+  ∀ (env : OpEnvelope) (state : SystemState),
+    (env-side circuit-witnessed bus_effect) = LeanRV64D.Functions.execute _ state</code></pre>
+      <p style="color:var(--muted);font-size:0.94rem; margin-top: 12px;">
+        It dispatches all 63 RV64IM opcodes through a 35-arm <code>OpEnvelope</code> sum type to the per-opcode <code>equiv_&lt;OP&gt;_from_trust</code> wrappers under <code>Compliance/&lt;Op&gt;Exemplar.lean</code> (plus <code>DivPilot.lean</code>); each wrapper discharges its canonical <code>equiv_&lt;OP&gt;</code> theorem's promise hypotheses from the trust ledger.
+      </p>
+      <p style="color:var(--muted);font-size:0.94rem; margin-top: 10px;">
+        The <strong>closure-vs-baseline gate</strong> (V2's <code>check-closure-vs-baseline</code>) computes the transitive <code>#print axioms</code> closure of <code>zisk_riscv_compliant_program_bus</code> at every CI run and asserts it equals the set of names in <code>trust/baseline-axioms.txt</code> exactly. Any addition (a proof silently picks up a new axiom) <em>or</em> removal (dead trust no longer reachable) fails the gate. This is what makes "122 axioms" not just a count but a mechanically-enforced equality.
+      </p>
+    </div>
+
+    <div class="card" style="margin-top: 18px; border-left: 3px solid var(--proven);">
+      <h3 style="color: var(--proven);">CI-enforced — drift is mechanically caught (9 V1 + 3 V2 gates)</h3>
+      <p style="color:var(--muted);font-size:0.96rem; margin: 6px 0 0;">
+        The trust ledger isn't just documentation: every PR runs both layers via <code>.github/workflows/trust-gate.yml</code>.
+      </p>
+      <p style="color:var(--muted);font-size:0.94rem; margin-top: 12px; margin-bottom:0;"><strong style="color:var(--text);">V1 — 9 syntactic checks (<code>check-all.sh</code>, no build):</strong></p>
+      <ul style="color:var(--muted);font-size:0.94rem;margin: 6px 0 0 24px; line-height:1.6;">
         <li><strong>Locality.</strong> Every <code>axiom</code> / <code>opaque</code> / <code>constant</code> / <code>unsafe def</code> / <code>partial def</code> / <code>@[extern]</code> / <code>@[implemented_by]</code> must live in <code>trust/allowed-axiom-files.txt</code>.</li>
-        <li><strong>Baseline integrity.</strong> Every axiom's name, location, and source-text statement is hashed into <code>trust/baseline-axioms.txt</code>. Any add, remove, rename, or subtle weakening shows up as a diff there.</li>
-        <li><strong>No OUTPUT-EQ leak.</strong> No canonical <code>equiv_&lt;OP&gt;</code> theorem may take an <code>h_rd_val</code>, <code>h_byte_sum</code>, <code>h_bus_execute_matches_sail</code>, or other named-retired hypothesis as a parameter. The 7 load opcodes are exempt pending a follow-up.</li>
-        <li><strong>Floors.</strong> ≥ 80 axioms in the baseline, ≥ 56 canonical equiv_&lt;OP&gt; theorems, plus a Python-parser cross-witness that catches a sabotaged regenerate or an emptied allowlist.</li>
+        <li><strong>Baseline integrity.</strong> Every axiom's name, location, and source-text statement is hashed into <code>trust/baseline-axioms.txt</code>. Any add, remove, rename, or weakening shows up as a diff.</li>
+        <li><strong>No OUTPUT-EQ leak.</strong> No canonical <code>equiv_&lt;OP&gt;</code> may take a retired hypothesis (<code>h_rd_val</code>, <code>h_byte_sum</code>, …). Enforced uniformly across all 63 opcodes; loads were closed by deriving their byte equations from circuit witnesses.</li>
+        <li><strong>Floors + cross-witness.</strong> ≥ 82 axioms in baseline, ≥ 63 canonical <code>equiv_&lt;OP&gt;</code>, plus a parser cross-witness that catches a sabotaged regenerate or an emptied allowlist.</li>
+        <li><strong>Zero <code>sorry</code>.</strong> Under <code>ZiskFv/{Fundamentals,Airs,Circuit,Equivalence,Tactics,Sail}</code>.</li>
+        <li><strong>Uniformity.</strong> All 63 RV64IM opcodes ship a canonical <code>equiv_&lt;OP&gt;</code>.</li>
+        <li><strong>Anti-laundering tripwires.</strong> Per-theorem hypothesis count + canonical caller-burden ledger + wrapper caller-burden ledger — three independent baselines, each refusing silent drift.</li>
       </ul>
-      <p style="color:var(--muted);font-size:0.92rem; margin-top: 12px;">
+      <p style="color:var(--muted);font-size:0.94rem; margin-top: 14px; margin-bottom:0;"><strong style="color:var(--text);">V2 — 3 semantic checks (<code>check-all-semantic.sh</code>, requires <code>lake build</code>):</strong></p>
+      <ul style="color:var(--muted);font-size:0.94rem;margin: 6px 0 0 24px; line-height:1.6;">
+        <li><strong>Per-theorem axiom closure.</strong> <code>baseline-equiv-axiom-deps.txt</code> records the transitive non-kernel axiom closure of every canonical <code>equiv_&lt;OP&gt;</code>; any silent change (additions OR removals) fails.</li>
+        <li><strong>Forbidden binder types.</strong> <code>forallTelescope</code> + <code>whnfR</code> walks each canonical theorem's binders; catches the <code>abbrev</code>-aliasing dodge V1's regex misses.</li>
+        <li><strong>Closure vs baseline.</strong> The uber theorem's transitive project-axiom closure must equal <code>baseline-axioms.txt</code> exactly — catches dead trust the per-theorem baseline cannot see.</li>
+      </ul>
+      <p style="color:var(--muted);font-size:0.92rem; margin-top: 14px;">
         Files that hold the trust surface and the gate's own configuration are listed in <code>.github/CODEOWNERS</code>; merging changes to any of them requires a CODEOWNER review. The <code>trust/baseline-axioms.txt</code> diff IS the audit surface — a reviewer reads it directly to see what changed.
       </p>
     </div>
@@ -927,7 +1034,7 @@
       <div class="card">
         <h3>Composition</h3>
         <p style="color:var(--muted);font-size:0.95rem;margin:0;">
-          <code>Circuit/&lt;Op&gt;.lean</code> proves: "if the relevant AIR rows validate and the bus carries the right entry, the Sail spec output equals the bus-effect output." <code>Equivalence/&lt;Op&gt;.lean</code> wraps that into the canonical equivalence shape, with a Tier-1 companion that closes the rd-value derivation entirely from circuit constraints.
+          <code>Circuit/&lt;Op&gt;.lean</code> proves: "if the relevant AIR rows validate and the bus carries the right entry, the Sail spec output equals the bus-effect output." <code>Equivalence/&lt;Op&gt;.lean</code> wraps that into the canonical <code>equiv_&lt;OP&gt;</code> shape; <code>Equivalence/Compliance/&lt;Op&gt;Exemplar.lean</code> wraps <em>that</em> into <code>equiv_&lt;OP&gt;_from_trust</code>, discharging promise hypotheses from the trust ledger; finally <code>Compliance/Global.lean</code> dispatches all 63 opcodes through a 35-arm <code>OpEnvelope</code> to produce the uber theorem.
         </p>
       </div>
 
@@ -1082,7 +1189,7 @@
       <div class="compare-row">
         <div>Project axiom count</div>
         <div><div class="cell-content"><strong>0</strong> <code>axiom</code> declarations in the project tree <span class="sub"><code>#print axioms</code> shows only Lean kernel + Mathlib axioms</span></div></div>
-        <div class="col-zisk"><div class="cell-content"><strong>~89</strong> named axioms <span class="sub">~63 transpile + 4 platform + 7 bus protocol + 2 Sail-state + 3 PC bridges</span></div></div>
+        <div class="col-zisk"><div class="cell-content"><strong>122</strong> named axioms <span class="sub">51 transpile + 14 bus/lookup + 35 Arith pins + 14 Binary/BinaryExt + 3 range-bus + 1 mem-state load bridge + 4 platform scope. Closure equality to <code>baseline-axioms.txt</code> mechanically enforced by V2 <code>check-closure-vs-baseline</code>.</span></div></div>
       </div>
 
       <div class="compare-row">
@@ -1094,7 +1201,7 @@
       <div class="compare-row">
         <div>Bus-protocol soundness <span class="sub" style="color:var(--dim);font-weight:400;font-size:0.78rem">(plookup / permutation)</span></div>
         <div><div class="cell-content">Encoded as <code>wf_propertiesToAssumePerRow</code> hypothesis on bus rows <span class="sub">e.g. <code>BitwiseBusEntryInstance.wf_properties</code> for XOR/AND. Caller discharges; not declared <code>axiom</code>.</span></div></div>
-        <div class="col-zisk"><div class="cell-content">Named ledger entries <span class="sub">BT-B, BT-X (lookups); MB-W, MB-W-PC, MB-L, MB-S (memory); <code>OperationBus.matches_entry</code> (op bus). Same trust class as openvm-fv's hypotheses, surfaced as named axioms.</span></div></div>
+        <div class="col-zisk"><div class="cell-content">Named ledger entries <span class="sub"><code>bin_table_consumer_wf</code> / <code>bin_ext_table_consumer_wf</code> (lookups); <code>lookup_consumer_matches_provider_load</code> + <code>memalign_load_perm_sound</code> + <code>main_*_emission_bundle*</code> (memory); <code>op_bus_perm_sound_*</code> (op bus); plus Arith / Binary range + table pins. Same trust class as openvm-fv's hypotheses, surfaced as named axioms.</span></div></div>
       </div>
 
       <div class="compare-row">
@@ -1153,7 +1260,7 @@
           <strong>Trust as named ledger.</strong> Each trust assumption is an explicit <code>axiom</code> declaration with a docstring, an entry in <code>docs/fv/trusted-base.md</code>, and a reference in <code>CLAUDE.md</code>'s trusted-surface section.
         </p>
         <p style="color:var(--muted);font-size:0.95rem;margin-top:10px;">
-          <strong>Pro:</strong> Every trust item is greppable, individually auditable, and load-bearing (each has at least one consumer lemma so <code>#print axioms</code> on an equivalence theorem actually surfaces it). The 13-item trust ledger is the audit artifact.
+          <strong>Pro:</strong> Every trust item is greppable, individually auditable, and load-bearing — the V2 <code>check-closure-vs-baseline</code> gate asserts the uber theorem's transitive axiom closure equals the ledger exactly, so dead trust is impossible by construction. The 122-axiom ledger (12 classes) is the audit artifact.
         </p>
         <p style="color:var(--muted);font-size:0.95rem;margin-top:10px;">
           <strong>Con:</strong> <code>#print axioms</code> on a final theorem prints a long list, including axioms that are structural (many of the per-opcode <code>transpile_&lt;OP&gt;</code> axioms). The trust ledger is more honest but also more verbose.
@@ -1164,7 +1271,7 @@
     <div class="card" style="margin-top: 24px; border-left: 3px solid var(--accent);">
       <h3>Practical takeaway</h3>
       <p style="color:var(--muted);font-size:0.96rem; margin:6px 0 0;">
-        The two encodings carry roughly the same trust content. openvm-fv minimizes axiom count for review optics; zisk-fv maximizes ledger explicitness for trust auditing. Either project would close the gap by formally verifying its Rust transpiler against its Lean contract — that follow-on Rust-side proof is open in both.
+        The two encodings carry roughly the same trust content. openvm-fv minimizes axiom count for review optics; zisk-fv maximizes ledger explicitness for trust auditing, and the V2 <code>check-closure-vs-baseline</code> gate raises that to a mechanical equality — the uber theorem's transitive axiom closure must equal the ledger exactly. Either project would close the remaining gap by formally verifying its Rust transpiler against its Lean contract — that follow-on Rust-side proof is open in both.
       </p>
     </div>
   </div>
@@ -1209,7 +1316,7 @@
       <a href="../docs/fv/trusted-base.md">trusted-base.md</a>
       <a href="../trust/baseline-axioms.txt">baseline-axioms.txt</a>
     </div>
-    <div>zisk-fv · per-opcode formal verification · Lean 4 · 63 RV64IM opcodes · 82 trusted axioms (13 ledger items) · built 2026-04-29</div>
+    <div>zisk-fv · global compliance theorem · Lean 4 · 63 RV64IM opcodes · 122 trusted axioms across 12 classes · built 2026-05-14</div>
   </div>
 </footer>
 
@@ -1637,7 +1744,7 @@
     const sail1 = box(COLS.sail.x, 50, 'Sail RV64 spec', '/sail-riscv (.sail source)', 'trusted');
     const sail2 = box(COLS.sail.x, 130, 'sail_to_lean', 'mechanical translator (upstream)', 'tool');
     const sail3 = box(COLS.sail.x, 210, 'LeanRV64D', 'NethermindEth/sail-riscv-lean (pinned)', 'trusted');
-    const sail4 = box(COLS.sail.x, 290, 'ZiskFv/Sail/<op>.lean', 'hand-written cleaner pure spec', 'proven');
+    const sail4 = box(COLS.sail.x, 290, 'ZiskFv/SailSpec/<op>.lean', 'hand-written cleaner pure spec', 'proven');
     const sail5 = box(COLS.sail.x, 370, 'execute_<OP>_pure_equiv', 'proves Sail ≡ LeanRV64D', 'proven');
     arrow(COLS.sail.x, sail1.y + BOX_H, COLS.sail.x, sail2.y);
     arrow(COLS.sail.x, sail2.y + BOX_H, COLS.sail.x, sail3.y);
@@ -1657,12 +1764,16 @@
     arrow(COLS.circuit.x, c4.y + BOX_H, COLS.circuit.x, c5.y);
     arrow(COLS.circuit.x, c5.y + BOX_H, COLS.circuit.x, c6.y);
 
-    // CONVERGENCE
-    const m1 = box(COLS.mid.x, 470, 'ZiskFv/Circuit/<Op>.lean', 'circuit-witness ≡ spec output', 'proven');
-    const m2 = box(COLS.mid.x, 560, 'ZiskFv/Equivalence/<Op>.lean', 'equiv_<OP>', 'proven');
+    // CONVERGENCE — three Equivalence layers ending in the uber theorem
+    const m1 = box(COLS.mid.x, 380, 'ZiskFv/ZiskCircuit/<Op>.lean', 'circuit-witness ≡ spec output', 'proven');
+    const m2 = box(COLS.mid.x, 460, 'ZiskFv/Equivalence/<Op>.lean', 'canonical equiv_<OP> (×63)', 'proven');
+    const m3 = box(COLS.mid.x, 540, 'Equivalence/Compliance/<Op>Exemplar.lean', 'equiv_<OP>_from_trust wrappers (×63)', 'proven');
+    const m4 = box(COLS.mid.x, 620, 'Equivalence/Compliance/Global.lean', 'zisk_riscv_compliant_program_bus (uber theorem)', 'proven');
     arrow(COLS.mid.x, m1.y + BOX_H, COLS.mid.x, m2.y);
+    arrow(COLS.mid.x, m2.y + BOX_H, COLS.mid.x, m3.y);
+    arrow(COLS.mid.x, m3.y + BOX_H, COLS.mid.x, m4.y);
 
-    // arrows from each side into Spec
+    // arrows from each side into Circuit/<Op>
     arrow(COLS.sail.x, sail5.y + BOX_H, COLS.mid.x - BOX_W / 2, m1.y + BOX_H / 2);
     arrow(COLS.circuit.x, c6.y + BOX_H, COLS.mid.x + BOX_W / 2, m1.y + BOX_H / 2);
 

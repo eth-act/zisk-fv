@@ -4,7 +4,7 @@
 # axioms and Sail-translated module axioms excluded) of the global
 # compliance theorem
 #
-#   ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus
+#   ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 #
 # IS the trusted computing base of zisk-fv. This file is a flat
 # enumeration of that closure for external auditors who want to inspect
@@ -19,7 +19,7 @@
 # How this file was generated:
 #
 #   lake exe trust-gate print-axiom-closure \
-#     ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus \
+#     ZiskFv.Compliance.zisk_riscv_compliant_program_bus \
 #     > trust/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
@@ -75,8 +75,6 @@ ZiskFv.Airs.BinaryAdd.binary_add_columns_in_range
 ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range
 ZiskFv.Airs.BinaryExtension.binary_extension_op_is_shift_pin
 ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups
-ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
-ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
 ZiskFv.Airs.Main.main_columns_in_range
 ZiskFv.Airs.MemoryBus.MemAlignBridge.mem_align_rom_subdoubleword_load_value_1_zero
 ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_load_perm_sound
@@ -93,7 +91,8 @@ ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
 ZiskFv.Airs.OperationBus.op_bus_perm_sound_Binary
 ZiskFv.Airs.OperationBus.op_bus_perm_sound_BinaryAdd
 ZiskFv.Airs.OperationBus.op_bus_perm_sound_BinaryExtension
-ZiskFv.Circuit.MemModel.row_models_sail_state_load
+ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf
 ZiskFv.PlatformScope.pmaCheck_is_pure_none
 ZiskFv.PlatformScope.pmpCheck_is_pure_none
 ZiskFv.PlatformScope.update_elp_state_is_pure_unit
@@ -149,3 +148,4 @@ ZiskFv.Trusted.transpile_SUBW
 ZiskFv.Trusted.transpile_SW
 ZiskFv.Trusted.transpile_XOR
 ZiskFv.Trusted.transpile_XORI
+ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load

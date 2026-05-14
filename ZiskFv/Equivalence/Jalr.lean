@@ -1,14 +1,14 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Circuit.Jalr
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
-import ZiskFv.Sail.jalr
-import ZiskFv.Sail.BusEffect
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.ZiskCircuit.Jalr
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.Bus.BusEmission
+import ZiskFv.SailSpec.jalr
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
@@ -16,14 +16,14 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.Bridge.ControlFlow
-import ZiskFv.Equivalence.RdValDerivation.JumpUType
+import ZiskFv.Equivalence.WriteValueProofs.JumpUType
 
 /-!
 End-to-end theorem for RV64 JALR. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_JALR`),
-* the compositional JALR spec (`ZiskFv.Circuit.Jalr.jalr_pc_advance`),
+* the compositional JALR spec (`ZiskFv.ZiskCircuit.Jalr.jalr_pc_advance`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_JALR_pure_equiv`, closed via the trusted
   `execute_JALR_pure_equiv_axiom` at `ZiskFv/RV64D/jalr.lean:67` —
@@ -48,7 +48,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Jalr
+open ZiskFv.ZiskCircuit.Jalr
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -112,7 +112,7 @@ lemma equiv_JALR_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output (`PC + 4`) directly; that equation is
     derived internally from circuit witnesses via the
-    `RdValDerivation.JumpUType.h_rd_val_jut_jalr` discharge lemma.
+    `WriteValueProofs.JumpUType.h_rd_val_jut_jalr` discharge lemma.
 
     Composes `equiv_JALR_sail` with the shape-(c) bus-matching lemma
     `bus_effect_matches_sail_jump_rrw`. Unlike JAL, JALR does **not**
@@ -156,7 +156,7 @@ theorem equiv_JALR
       (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val)
     (h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
     -- Discharge parameters
-    (h_circuit : ZiskFv.Circuit.Jalr.jalr_circuit_holds m r_main next_pc)
+    (h_circuit : ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc)
     (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
     (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) :
@@ -174,7 +174,7 @@ theorem equiv_JALR
     ZiskFv.Equivalence.Bridge.ControlFlow.jalr_discharge_lanes
       m r_main next_pc e_rd h_circuit h_rd_mult h_rd_as
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.JumpUType.h_rd_val_jut_jalr
+    ZiskFv.Equivalence.WriteValueProofs.JumpUType.h_rd_val_jut_jalr
       jalr_input.PC m r_main next_pc e_rd
       h_circuit h_jmp2 h_lane_lo h_lane_hi
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
@@ -190,7 +190,7 @@ theorem equiv_JALR
         h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
         h_cur_privilege h_mseccfg]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_jump_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_jump_rrw
         state exec_row e_rd nextPC_val
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_rd_mult h_rd_as]
   simp only [h_nextPC_option, h_success, Bool.not_true]

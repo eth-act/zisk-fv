@@ -1,15 +1,15 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.Binary.BinaryAddRanges
 import ZiskFv.Airs.Binary.BinaryAddPackedCorrect
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
-import ZiskFv.Circuit.Add
-import ZiskFv.Sail.add
+import ZiskFv.ZiskCircuit.Add
+import ZiskFv.SailSpec.add
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 
 /-!
@@ -26,7 +26,7 @@ the `transpile_ADD` row contract (via Step 1.7b's
 derive the `add_circuit_holds` + range facts + per-byte input
 bridges that pre-pilot `equiv_ADD` accepted as **promise
 hypotheses**. The result is a single existential delivering exactly
-what the downstream `RdValDerivation.Arith.h_rd_val_arith_add`
+what the downstream `WriteValueProofs.Arith.h_rd_val_arith_add`
 discharge lemma needs.
 
 Per-opcode net effect (caller-burden ledger), measured against the
@@ -61,7 +61,7 @@ open Goldilocks
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Add
+open ZiskFv.ZiskCircuit.Add
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

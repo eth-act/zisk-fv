@@ -1,0 +1,15 @@
+{
+  "paths": {
+    "ZiskFv/Equivalence/RdValDerivation/Arith.lean": "ZiskFv/Equivalence/WriteValueProofs/Arith.lean",
+    "ZiskFv/Equivalence/RdValDerivation/BinaryCompare.lean": "ZiskFv/Equivalence/WriteValueProofs/BinaryCompare.lean",
+    "ZiskFv/Equivalence/RdValDerivation/BinaryLogic.lean": "ZiskFv/Equivalence/WriteValueProofs/BinaryLogic.lean",
+    "ZiskFv/Equivalence/RdValDerivation/BinaryShift.lean": "ZiskFv/Equivalence/WriteValueProofs/BinaryShift.lean",
+    "ZiskFv/Equivalence/RdValDerivation/JumpUType.lean": "ZiskFv/Equivalence/WriteValueProofs/JumpUType.lean",
+    "ZiskFv/Equivalence/RdValDerivation/SailBridge.lean": "ZiskFv/Equivalence/WriteValueProofs/SailBridge.lean",
+    "ZiskFv/Equivalence/RdValDerivation/MulDivRemSigned.lean": "ZiskFv/Equivalence/WriteValueProofs/MulDivRemSigned.lean",
+    "ZiskFv/Equivalence/RdValDerivation/MulDivRemUnsigned.lean": "ZiskFv/Equivalence/WriteValueProofs/MulDivRemUnsigned.lean"
+  },
+  "namespaces": {
+    "ZiskFv.Equivalence.RdValDerivation": "ZiskFv.Equivalence.WriteValueProofs"
+  }
+}

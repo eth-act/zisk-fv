@@ -1,9 +1,9 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Sail.Auxiliaries
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.SailSpec.Auxiliaries
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OpBusEffect
 
 /-!

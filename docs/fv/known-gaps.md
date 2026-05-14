@@ -2,11 +2,10 @@
 
 > **Status (post-Step-6, 2026-05-14):** The principal promise-hypothesis
 > gap surveyed below is CLOSED by the uber theorem
-> `ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus`
+> `ZiskFv.Compliance.zisk_riscv_compliant_program_bus`
 > (Step 4) and the V3 trust gates (Step 5). All 63 RV64IM opcodes
 > are now covered by `equiv_<OP>_from_trust` wrappers under
-> `ZiskFv/Equivalence/Compliance/<Op>Exemplar.lean` (plus
-> `DivPilot.lean`), which discharge the promise hypotheses from
+> `ZiskFv/Compliance/FromTrust/<Op>.lean`, which discharge the promise hypotheses from
 > the trust ledger; the global theorem dispatches the 35-arm
 > `OpEnvelope` sum type through those wrappers. The trust closure
 > of the global theorem is captured in
@@ -120,7 +119,7 @@ in the theorem with no AIR backing:
  fl0 fl1 fl2 fl3 fl4 fl5 fl6 fl7
  pi0 pi1 pi2 pi3 pi4 pi5 pi6 pi7 : FGL)
 (h_byte_0 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-   ZiskFv.Airs.BinaryTable.OP_LT a0 b0 c0 cin0 fl0 pi0)
+   ZiskFv.Airs.Tables.BinaryTable.OP_LT a0 b0 c0 cin0 fl0 pi0)
 …
 (h_match_clo : m.c_0 r_main = fl7)
 (h_input_r1_circuit : slt_input.r1_val
@@ -258,7 +257,7 @@ closed; annotations below record the closing artefact.
 
    **DONE.** All three tiers' strategies are implemented as the
    per-opcode `equiv_<OP>_from_trust` wrappers under
-   `ZiskFv/Equivalence/Compliance/<Op>Exemplar.lean`; the OpBus
+   `ZiskFv/Compliance/FromTrust/<Op>.lean`; the OpBus
    permutation axioms landed as
    `op_bus_perm_sound_{BinaryAdd,Binary,BinaryExtension}` in
    `ZiskFv/Airs/OperationBus/Bridge.lean` (class #4 of

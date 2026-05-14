@@ -5,9 +5,9 @@
 # Mathlib but communicates "internal helper").
 #
 # Three groups, 128 names total:
-#   1. 2 global compliance theorems (ZiskFv/Equivalence/Compliance/Global.lean)
+#   1. 2 global compliance theorems (ZiskFv/Compliance.lean)
 #   2. 63 canonical per-opcode equivalences (ZiskFv/Equivalence/<Op>.lean)
-#   3. 63 trust-wrapper theorems (ZiskFv/Equivalence/Compliance/<Op>Exemplar.lean)
+#   3. 63 trust-wrapper theorems (ZiskFv/Compliance/FromTrust/<Op>.lean)
 #
 # The V1 uniformity gate (check 6) and V2 axiom-closure gate
 # require group-2 names to be `theorem`; flipping them would fail

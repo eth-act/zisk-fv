@@ -15,7 +15,7 @@ iff it is not in the resulting closure.
 
 The 190 entry points are:
 
-* `ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus` — the global compliance theorem dispatching all 63 RV64IM opcodes.
+* `ZiskFv.Compliance.zisk_riscv_compliant_program_bus` — the global compliance theorem dispatching all 63 RV64IM opcodes.
 * The 63 canonical `equiv_<OP>` theorems (one per opcode).
 * The 63 per-opcode `dispatch_<OP>` theorems (consumed by Global).
 * The 63 `equiv_<OP>_from_trust` Exemplar wrappers (the Compliance bridge).
@@ -29,7 +29,7 @@ candidates; a separate follow-up PR is required to delete anything.
 nix develop --command lake build
 # Part A: axioms reachable from the global theorem vs. baseline.
 nix develop --command lake exe trust-gate print-axiom-closure \
-    ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus \
+    ZiskFv.Compliance.zisk_riscv_compliant_program_bus \
     2>/dev/null > /tmp/global-axioms.txt
 # (baseline-axioms.txt records the unqualified suffix in column 4.)
 awk -F. '{print $NF}' /tmp/global-axioms.txt | sort -u > /tmp/global-shortnames.txt
@@ -86,21 +86,21 @@ of `zisk_riscv_compliant_program_bus` reaches **122**. The remaining
 
 | # | Axiom | File:Line | Classification |
 |--:|-------|-----------|----------------|
-| 1 | `transpile_BEQ` | `ZiskFv/Fundamentals/Transpiler.lean:292` | Genuinely dead — branch-family transpile contract |
-| 2 | `transpile_BNE` | `ZiskFv/Fundamentals/Transpiler.lean:344` | Genuinely dead — branch-family transpile contract |
-| 3 | `transpile_BLT` | `ZiskFv/Fundamentals/Transpiler.lean:924` | Genuinely dead — branch-family transpile contract |
-| 4 | `transpile_BGE` | `ZiskFv/Fundamentals/Transpiler.lean:962` | Genuinely dead — branch-family transpile contract |
-| 5 | `transpile_BLTU` | `ZiskFv/Fundamentals/Transpiler.lean:991` | Genuinely dead — branch-family transpile contract |
-| 6 | `transpile_BGEU` | `ZiskFv/Fundamentals/Transpiler.lean:1020` | Genuinely dead — branch-family transpile contract |
-| 7 | `transpile_FENCE` | `ZiskFv/Fundamentals/Transpiler.lean:420` | Genuinely dead — FENCE transpile contract |
-| 8 | `transpile_LB` | `ZiskFv/Fundamentals/Transpiler.lean:2321` | Genuinely dead — signed load transpile contract |
-| 9 | `transpile_LH` | `ZiskFv/Fundamentals/Transpiler.lean:2292` | Genuinely dead — signed load transpile contract |
-| 10 | `transpile_LW` | `ZiskFv/Fundamentals/Transpiler.lean:2263` | Genuinely dead — signed load transpile contract |
-| 11 | `transpile_LD` | `ZiskFv/Fundamentals/Transpiler.lean:515` | Genuinely dead — 64-bit load transpile contract |
-| 12 | `transpile_LBU` | `ZiskFv/Fundamentals/Transpiler.lean:636` | Genuinely dead — unsigned load transpile contract |
-| 13 | `transpile_LHU` | `ZiskFv/Fundamentals/Transpiler.lean:601` | Genuinely dead — unsigned load transpile contract |
-| 14 | `transpile_LWU` | `ZiskFv/Fundamentals/Transpiler.lean:557` | Genuinely dead — unsigned load transpile contract |
-| 15 | `transpile_MULW` | `ZiskFv/Fundamentals/Transpiler.lean:1538` | Genuinely dead — MULW transpile contract |
+| 1 | `transpile_BEQ` | `ZiskFv/Trusted/Transpiler.lean:292` | Genuinely dead — branch-family transpile contract |
+| 2 | `transpile_BNE` | `ZiskFv/Trusted/Transpiler.lean:344` | Genuinely dead — branch-family transpile contract |
+| 3 | `transpile_BLT` | `ZiskFv/Trusted/Transpiler.lean:924` | Genuinely dead — branch-family transpile contract |
+| 4 | `transpile_BGE` | `ZiskFv/Trusted/Transpiler.lean:962` | Genuinely dead — branch-family transpile contract |
+| 5 | `transpile_BLTU` | `ZiskFv/Trusted/Transpiler.lean:991` | Genuinely dead — branch-family transpile contract |
+| 6 | `transpile_BGEU` | `ZiskFv/Trusted/Transpiler.lean:1020` | Genuinely dead — branch-family transpile contract |
+| 7 | `transpile_FENCE` | `ZiskFv/Trusted/Transpiler.lean:420` | Genuinely dead — FENCE transpile contract |
+| 8 | `transpile_LB` | `ZiskFv/Trusted/Transpiler.lean:2321` | Genuinely dead — signed load transpile contract |
+| 9 | `transpile_LH` | `ZiskFv/Trusted/Transpiler.lean:2292` | Genuinely dead — signed load transpile contract |
+| 10 | `transpile_LW` | `ZiskFv/Trusted/Transpiler.lean:2263` | Genuinely dead — signed load transpile contract |
+| 11 | `transpile_LD` | `ZiskFv/Trusted/Transpiler.lean:515` | Genuinely dead — 64-bit load transpile contract |
+| 12 | `transpile_LBU` | `ZiskFv/Trusted/Transpiler.lean:636` | Genuinely dead — unsigned load transpile contract |
+| 13 | `transpile_LHU` | `ZiskFv/Trusted/Transpiler.lean:601` | Genuinely dead — unsigned load transpile contract |
+| 14 | `transpile_LWU` | `ZiskFv/Trusted/Transpiler.lean:557` | Genuinely dead — unsigned load transpile contract |
+| 15 | `transpile_MULW` | `ZiskFv/Trusted/Transpiler.lean:1538` | Genuinely dead — MULW transpile contract |
 | 16 | `op_bus_perm_sound_ArithMul` | `ZiskFv/Airs/OperationBus/Bridge.lean:120` | Genuinely dead — superseded op-bus perm-soundness axiom |
 | 17 | `op_bus_perm_sound_ArithMulSecondary` | `ZiskFv/Airs/OperationBus/Bridge.lean:158` | Genuinely dead — superseded op-bus perm-soundness axiom |
 | 18 | `op_bus_perm_sound_ArithDiv` | `ZiskFv/Airs/OperationBus/Bridge.lean:181` | Genuinely dead — superseded op-bus perm-soundness axiom |
@@ -108,7 +108,7 @@ of `zisk_riscv_compliant_program_bus` reaches **122**. The remaining
 | 20 | `memory_bus_register_write_perm_sound` | `ZiskFv/Airs/MemoryBus/LaneMatch.lean:138` | Genuinely dead — superseded mem-bus perm-soundness axiom |
 | 21 | `memory_bus_register_write_perm_sound_store_pc` | `ZiskFv/Airs/MemoryBus/LaneMatch.lean:329` | Genuinely dead — superseded mem-bus perm-soundness axiom |
 | 22 | `lookup_consumer_matches_provider_store` | `ZiskFv/Airs/MemoryBus/MemBridge.lean:179` | Genuinely dead — superseded store-side lookup bridge |
-| 23 | `row_models_sail_state_store` | `ZiskFv/Circuit/MemModel.lean:152` | Genuinely dead — superseded mem-state bridge for stores |
+| 23 | `row_models_sail_state_store` | `ZiskFv/ZiskCircuit/MemModel.lean:152` | Genuinely dead — superseded mem-state bridge for stores |
 | 24 | `arith_table_op_div_rem_signed_w_main_selector_pin` | `ZiskFv/Airs/Arith/Ranges.lean:898` | Genuinely dead — ArithTable W-mode selector pin |
 | 25 | `arith_table_op_div_rem_unsigned_w_main_selector_pin` | `ZiskFv/Airs/Arith/Ranges.lean:869` | Genuinely dead — ArithTable W-mode selector pin |
 
@@ -197,12 +197,12 @@ authored dead code"; see the breakdown below.
 
 | Module | Count | Notes |
 |--------|------:|-------|
-| `ZiskFv.Equivalence.Compliance.Global` | 384 | Inferred elaboration auxiliaries of the dispatching theorem; large because the global theorem unfolds 63 arms |
-| `ZiskFv.Equivalence.Compliance` | 152 | Auxiliary lemmas attached to the Exemplar bridge layer not consumed by Global directly |
+| `ZiskFv.Compliance` | 384 | Inferred elaboration auxiliaries of the dispatching theorem; large because the global theorem unfolds 63 arms |
+| `ZiskFv.Compliance` | 152 | Auxiliary lemmas attached to the Exemplar bridge layer not consumed by Global directly |
 | `ZiskFv.Airs.MemAlign` | 129 | MemAlign AIR — large state-machine, many per-column predicates only some of which are consumed |
 | `ZiskFv.Airs.Binary.Binary` | 78 | Binary AIR — similar pattern |
 | `ZiskFv.Airs.BusShape` | 74 | Bus-shape lemmas — generated en masse, only a slice reached |
-| `ZiskFv.Fundamentals.Transpiler` | 71 | Includes the 15 dead transpile axioms (Part A) + dead `transpile_*` consumers |
+| `ZiskFv.Trusted.Transpiler` | 71 | Includes the 15 dead transpile axioms (Part A) + dead `transpile_*` consumers |
 | `ZiskFv.Fundamentals.TranspileConsumers` | 66 | Consumer wrappers around the dead transpile axioms (chain-dead with Part A) |
 | `ZiskFv.Airs.MemAlignByte` | 62 | MemAlignByte AIR |
 | `ZiskFv.Airs.Mem` | 57 | Mem AIR |
@@ -211,7 +211,7 @@ authored dead code"; see the breakdown below.
 | `ZiskFv.Airs.Arith.Mul` | 42 | ArithMul AIR |
 | `ZiskFv.Airs.Arith.Div` | 42 | ArithDiv AIR |
 | `ZiskFv.Airs.MemAlignReadByte` | 36 | MemAlignReadByte AIR |
-| `ZiskFv.Fundamentals.PrattCertificate` | 30 | Pratt primality certificate auxiliaries |
+| `ZiskFv.Field.GoldilocksPrimality` | 30 | Pratt primality certificate auxiliaries |
 
 The 12 `ZiskFv.Tactics.*Archetype` modules account for ~110
 unreachable constants. These are tactic-archetype scaffolding
@@ -261,7 +261,7 @@ deletion candidates for follow-up cleanup.
 | 27 | `ZiskFv.Equivalence.Bridge.Arith.arith_mul_discharge_conservative` | Bridge wrapper around dead `op_bus_perm_sound_ArithMul` |
 | 28 | `ZiskFv.Equivalence.Bridge.Arith.arith_div_discharge_conservative` | Bridge wrapper around dead `op_bus_perm_sound_ArithDiv` |
 | 29 | `ZiskFv.Fundamentals.TranspileConsumers.transpile_BEQ_consumer` | Consumer wrapper around dead `transpile_BEQ` (representative; 14 more in the same module) |
-| 30 | `ZiskFv.Equivalence.Compliance.DivwExemplar` | Stale Exemplar — superseded by the in-line dispatch arm |
+| 30 | `ZiskFv.Compliance.FromTrust.Divw` | Stale Exemplar — superseded by the in-line dispatch arm |
 
 Full list: `/tmp/unreachable-constants.txt` after running
 `lake exe trust-gate find-unused trust/dead-code-entry-points.txt`.

@@ -1,14 +1,14 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Airs.BusHypotheses
-import ZiskFv.Sail.fence
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.fence
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 
@@ -89,7 +89,7 @@ theorem equiv_FENCE
   -- Use bus_effect_matches_sail_beq with throws=false, success=true.
   -- The beq_PC / beq_imm parameters are unused under those flags;
   -- pass dummies.
-  have h_bus_eq := ZiskFv.Airs.BusEmission.bus_effect_matches_sail_beq
+  have h_bus_eq := ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_beq
     (imm_width := 1)
     state exec_row
     (PureSpec.execute_FENCE_pure fence_input).nextPC

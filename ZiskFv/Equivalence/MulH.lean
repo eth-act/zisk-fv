@@ -1,24 +1,24 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Fundamentals.PackedBitVec.SignedChunkLift
-import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
-import ZiskFv.Circuit.Mul
-import ZiskFv.Circuit.MulH
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Bits.PackedBitVec.SignedChunkLift
+import ZiskFv.Bits.PackedBitVec.MulNoWrap
+import ZiskFv.ZiskCircuit.Mul
+import ZiskFv.ZiskCircuit.MulH
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Mul
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Airs.MemoryBus.EntryRanges
-import ZiskFv.Sail.mul
-import ZiskFv.Sail.mulh
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.mul
+import ZiskFv.SailSpec.mulh
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
+import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
 
 /-!
 End-to-end theorem for RV64 MULH. Mirrors `Equivalence.Mul` with:
@@ -37,8 +37,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Mul
-open ZiskFv.Circuit.MulH
+open ZiskFv.ZiskCircuit.Mul
+open ZiskFv.ZiskCircuit.MulH
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -85,7 +85,7 @@ lemma equiv_MULH_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output (`execute_MUL_pure ... .MULH`) directly;
     that equation is derived internally from circuit witnesses via the
-    `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_mulh` discharge
+    `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_mulh` discharge
     lemma. -/
 theorem equiv_MULH
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -153,7 +153,7 @@ theorem equiv_MULH
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_mulh_chunked
+    ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_mulh_chunked
       mulh_input.r1_val mulh_input.r2_val e2 v r_a
       h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
       h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
@@ -163,7 +163,7 @@ theorem equiv_MULH
   rw [equiv_MULH_sail state mulh_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

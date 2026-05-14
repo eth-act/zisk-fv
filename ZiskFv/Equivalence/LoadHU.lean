@@ -1,12 +1,12 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Circuit.LoadHU
-import ZiskFv.Circuit.LoadDerivation
-import ZiskFv.Circuit.MemModel
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.ZiskCircuit.LoadHU
+import ZiskFv.ZiskCircuit.LoadDerivation
+import ZiskFv.ZiskCircuit.MemModel
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemAlignByte
@@ -14,10 +14,10 @@ import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
 import ZiskFv.Airs.MemoryBus.EntryRanges
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Equivalence.Bridge.Mem
-import ZiskFv.Sail.lhu
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.lhu
+import ZiskFv.SailSpec.BusEffect
 
 /-!
 End-to-end theorem for RV64 LHU (load halfword, unsigned / zero-extended).
@@ -34,8 +34,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Circuit.LoadD
-open ZiskFv.Circuit.LoadHU
+open ZiskFv.ZiskCircuit.LoadD
+open ZiskFv.ZiskCircuit.LoadHU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -115,7 +115,7 @@ theorem equiv_LHU
         risc_v_assumptions h_opcode_assumptions]
   symm
   have h_mem :=
-    ZiskFv.Circuit.MemModel.mem_load_correct_2byte
+    ZiskFv.ZiskCircuit.MemModel.mem_load_correct_2byte
       main mem r_main e1 state h_main_emit_b
   obtain ⟨_h_pc, _h_r1_read,
           h_d0, h_d1,
@@ -133,7 +133,7 @@ theorem equiv_LHU
   have h_e2_range : memory_entry_bytes_in_range e2 :=
     memory_bus_entry_byte_range_perm_sound e2
   have h_lhu_packed :=
-    ZiskFv.Circuit.LoadDerivation.load_lhu_c_packed
+    ZiskFv.ZiskCircuit.LoadDerivation.load_lhu_c_packed
       main r_main mab marb ma e1 e2 h_copy0 h_copy1 h_ext h_op h_width
       h_main_emit_b h_main_emit_c h_e1_range h_e2_range h_low
   have h_rd_val_derived :
@@ -144,7 +144,7 @@ theorem equiv_LHU
     rw [h_lhu_packed, hd0, hd1]
   -- The narrow loadu_2byte_rrrw lemma takes rd_val as `BitVec 64`,
   -- so we use the setWidth-64'd LHU value as our rd_val.
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_loadu_2byte_rrrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_loadu_2byte_rrrw
         state exec_row e0 e1 e2
         (PureSpec.execute_LOADHU_pure lhu_input).nextPC
         ((BitVec.setWidth 32

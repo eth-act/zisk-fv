@@ -1,15 +1,15 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Fundamentals.Execution
-import ZiskFv.Circuit.Slli
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
-import ZiskFv.Sail.slli
-import ZiskFv.Sail.BusEffect
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Bits.Execution
+import ZiskFv.ZiskCircuit.Slli
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.Bus.BusEmission
+import ZiskFv.SailSpec.slli
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
@@ -18,8 +18,8 @@ import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
 import ZiskFv.Airs.MemoryBus.EntryRanges
-import ZiskFv.Equivalence.RdValDerivation.BinaryShift
-import ZiskFv.Equivalence.RdValDerivation.SailBridge
+import ZiskFv.Equivalence.WriteValueProofs.BinaryShift
+import ZiskFv.Equivalence.WriteValueProofs.SailBridge
 import ZiskFv.Equivalence.Bridge.BinaryExtension
 
 /-!
@@ -47,7 +47,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Slli
+open ZiskFv.ZiskCircuit.Slli
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -81,7 +81,7 @@ lemma equiv_SLLI_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
-    `RdValDerivation.BinaryShift.h_rd_val_shift_slli` discharge lemma. -/
+    `WriteValueProofs.BinaryShift.h_rd_val_shift_slli` discharge lemma. -/
 theorem equiv_SLLI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slli_input : PureSpec.SlliInput)
@@ -120,7 +120,7 @@ theorem equiv_SLLI
   obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
     ZiskFv.Equivalence.Bridge.BinaryExtension.project_match_op_clo_chi
       m v r_main r_binary h_match
-  have h_op : (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SLL := by
+  have h_op : (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL := by
     rw [← h_op_fgl, h_main_op]; decide
   -- Discharge c-lo/c-hi sum bounds + h_bytes from row-level axioms.
   have hc_lo_sum_lt :=
@@ -168,7 +168,7 @@ theorem equiv_SLLI
     ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7⟩
   set shift : ℕ := slli_input.shamt.toNat with h_shift_def
   have h_discharge :=
-    ZiskFv.Equivalence.RdValDerivation.BinaryShift.h_rd_val_shift_slli
+    ZiskFv.Equivalence.WriteValueProofs.BinaryShift.h_rd_val_shift_slli
       m v r_main r_binary e2 slli_input.r1_val shift h_op h_bytes h_a_range
       hc0 hc2 hc4 hc6 hc8 hc10 hc12 hc14
       hc1 hc3 hc5 hc7 hc9 hc11 hc13 hc15
@@ -178,7 +178,7 @@ theorem equiv_SLLI
       h_input_r1_circuit
       (by rw [h_shift_def]; exact h_shift_pin)
   have h_bridge :=
-    ZiskFv.Equivalence.RdValDerivation.SailBridge.sail_slli_bridge
+    ZiskFv.Equivalence.WriteValueProofs.SailBridge.sail_slli_bridge
       slli_input.r1_val slli_input.shamt shift h_shift_def
   have h_rd_val : U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                               e2.x4, e2.x5, e2.x6, e2.x7]
@@ -187,7 +187,7 @@ theorem equiv_SLLI
   rw [equiv_SLLI_sail state slli_input r1 rd shamt
         h_input_r1_sail h_input_shamt h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

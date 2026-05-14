@@ -1,22 +1,22 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Circuit.LoadWord
-import ZiskFv.Circuit.MemModel
-import ZiskFv.Circuit.SextLoadBridge
-import ZiskFv.Airs.BinaryExtensionTable
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.ZiskCircuit.LoadWord
+import ZiskFv.ZiskCircuit.MemModel
+import ZiskFv.ZiskCircuit.SextLoadBridge
+import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Airs.Binary.BinaryExtension
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Equivalence.Bridge.Mem
-import ZiskFv.Sail.lw
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.lw
+import ZiskFv.SailSpec.BusEffect
 
 /-!
 End-to-end theorem for RV64 LW (load word, signed / sign-extended).
@@ -40,7 +40,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.LoadWord
+open ZiskFv.ZiskCircuit.LoadWord
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -121,7 +121,7 @@ theorem equiv_LW
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
     (r_binary : ℕ)
     (h_op_binary :
-      (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SEXT_W)
+      (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W)
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
     (hc_lo_sum_lt :
       (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
@@ -168,7 +168,7 @@ theorem equiv_LW
   -- Derive the per-byte data ↔ e1.x_i agreement via mem_load_correct_4byte
   -- + lw_state_assumptions + h_ptr_match.
   have h_mem :=
-    ZiskFv.Circuit.MemModel.mem_load_correct_4byte
+    ZiskFv.ZiskCircuit.MemModel.mem_load_correct_4byte
       main mem r_main e1 state h_main_emit_b
   obtain ⟨_h_pc, _h_r1_read,
           h_d0, h_d1, h_d2, h_d3,
@@ -188,7 +188,7 @@ theorem equiv_LW
   have h_e1_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e1
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_lw_packed :=
-    ZiskFv.Circuit.SextLoadBridge.load_word_c_packed
+    ZiskFv.ZiskCircuit.SextLoadBridge.load_word_c_packed
       main r_main v r_binary e1 e2
       h_op_binary h_bytes hc_lo_sum_lt hc_hi_sum_lt
       h_match_clo h_match_chi h_main_emit_c
@@ -204,7 +204,7 @@ theorem equiv_LW
             (lw_input.data3 ++ lw_input.data2
              ++ lw_input.data1 ++ lw_input.data0) := by
     rw [h_lw_packed, hd0, hd1, hd2, hd3]
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_load_4byte_rrrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_load_4byte_rrrw
         state exec_row e0 e1 e2
         (PureSpec.execute_LOADW_pure lw_input).nextPC
         (BitVec.signExtend 64

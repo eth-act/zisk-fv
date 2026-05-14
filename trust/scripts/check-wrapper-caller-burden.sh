@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # check-wrapper-caller-burden.sh — anti-laundering gate for the
 # wrapper layer (`equiv_<OP>_from_trust` under
-# `ZiskFv/Equivalence/Compliance/*.lean`).
+# `ZiskFv/Compliance/FromTrust/*.lean`).
 #
 # Sibling of `check-caller-burden.sh`: that one tracks the 63
 # canonical `equiv_<OP>` theorems; this one tracks the 63 wrappers.
