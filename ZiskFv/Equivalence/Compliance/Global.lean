@@ -54,23 +54,24 @@ union of the 63 wrappers' footprints (147 axioms today).
 
 ## This file's deliverable
 
-A **representative slice** of the global theorem covering 7
-exemplar shapes:
+The **full global compliance theorem** over a 63-arm `OpEnvelope`,
+one constructor per RV64IM opcode in scope. Each arm:
 
-* `BEQ` — Branch (no mem entries, no provider AIR).
-* `FENCE` — ControlFlow no-mem.
-* `LUI` — ControlFlow single-mem (`[e_rd]`).
-* `ADD` — BinaryAdd shape (`[e0, e1, e2]`, R-type).
-* `ADDI` — BinaryAdd shape with `do`-block LHS.
-* `SUB` — Binary shape.
-* `SB` — Memory store (`Valid_Main` only).
+* Bundles the per-`dispatch_<OP>` inputs verbatim (modulo the
+  shared `state, m, r_main`).
+* Has a `kind` projection mapping to its representative
+  `mainOpKind` (the 6 branches collapse onto `.EQ` because the
+  dispatcher does not depend on `kind` for branches; this is a
+  routing-only choice with no soundness implication).
+* Has an `exec_eq` projection stating the dispatcher's conclusion.
+* Is discharged in `zisk_riscv_compliant_program_bus` by a
+  single `simp only [exec_eq]; exact dispatch_<OP> ...` cases arm.
 
-The full 63-arm `OpEnvelope` and its global dispatch is mechanical
-follow-up — it scales linearly with no architectural surprises, and
-the file's expected final size is ~1500–2000 LOC of pure plumbing.
-The pattern here is verbatim-extensible: each remaining op needs
-one constructor in `OpEnvelope`, one `kind` arm, one `exec_eq` arm,
-and one `match` arm in the global theorem.
+The 35-way figure in the older docstring referred to the
+`mainOpKind` enum's 35 distinct values; the actual envelope has
+one arm per opcode (63) since several opcodes share a kind (e.g.
+ADD/ADDI both → `.ADD`; LBU/LHU/LWU/SB/SH/SW/SD/LD/LUI/JALR all →
+`.COPYB`).
 
 ## Trust footprint
 
