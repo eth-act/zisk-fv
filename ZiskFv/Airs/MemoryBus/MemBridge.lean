@@ -1,4 +1,5 @@
 import Mathlib
+import LeanRV64D
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
@@ -699,6 +700,158 @@ axiom main_store_emission_bundle_sd
     ∧ (e_st.x5 : BitVec 8) = BitVec.extractLsb 47 40 r2_val
     ∧ (e_st.x6 : BitVec 8) = BitVec.extractLsb 55 48 r2_val
     ∧ (e_st.x7 : BitVec 8) = BitVec.extractLsb 63 56 r2_val
+
+/-! ## Narrow-store emission bundles — RMW high-byte preservation
+
+For sub-doubleword stores (SB / SH / SW), Main emits the same memory-bus
+entry shape as SD (`as = 2`, `mult = 1`, 8 byte cells `x0..x7`) but only
+the low `N` lanes are pinned to the store-value bytes — the high `8-N`
+lanes carry the **pre-existing memory contents** at those addresses,
+restored by the MemAlign read-modify-write protocol
+(`mem_align.pil:28-37` and `mem_align.pil:50-61` for the 2 RMW
+sub-programs; `mem_align.pil:189` for the bus permutation).
+
+The Main-side emission shape uses
+`bytes: store_ind * (ind_width - 8) + 8` (`main.pil:326`) to mark the
+live byte count; on the prove side the same `(ptr, x0..x7)` tuple is
+matched by a MemAlign row whose RMW protocol restores the high
+`8 - ind_width` bytes from the current memory word.
+
+Each width gets its own emission-bundle axiom delivering the **byte-level
+RMW promise**: ptr-match against `xreg rs1 + signExt(imm)`, low-N-byte
+equalities to `BitVec.extractLsb` of `r2_val`, and high-(8-N)-byte
+RMW preservations against the input Sail state's `state.mem`. The
+canonical `equiv_SB / SH / SW` use a single bundled `h_mem_eq`
+hypothesis; the byte-level form here lets the discharge wrapper
+derive `h_mem_eq` in pure Lean using HashMap insert-equals-self
+reasoning.
+
+PIL citations (shared across the 3 axioms):
+* `state-machines/main/pil/main.pil:323` — c-side `mem_op` emits
+  the store entry (`as = 2`, `mult = 1`);
+* `state-machines/main/pil/main.pil:311-312` — `store_value =
+  (c_0, c_1)` under `store_pc = 0`;
+* `state-machines/main/pil/main.pil:78` — `bits(8) x[BYTES]`
+  byte-range witnesses on the memory-bus emission lanes;
+* `state-machines/main/pil/main.pil:326` — `bytes: store_ind *
+  (ind_width - 8) + 8` pinning the live byte count to `ind_width`
+  on store rows (`store_ind = 1`);
+* `state-machines/mem/pil/mem_align.pil:28-37` — single-word RMW
+  write sub-program (sub-doubleword stores fall here);
+* `state-machines/mem/pil/mem_align.pil:189` — MemAlign
+  permutation-soundness against `bus_id = 10`;
+* `core/src/riscv2zisk_context.rs:828-845` — `fn store_op`
+  lowering RV64 SB/SH/SW with `op = "copyb"`, `ind_width ∈ {1, 2, 4}`,
+  `store_ind = 1`, `src_a = reg rs1`, `src_b = reg rs2`.
+
+Trust class **#4** (memory-bus permutation / lookup-argument
+soundness on `bus_id = 10`) — same class as
+`main_store_emission_bundle_sd` and the load-side family. The
+RMW preservation clause is grounded by the **MemAlign provider**'s
+write protocol (an `as = 2`, `mult = -1` consume against the same
+ptr/timestamp slot that re-emits the original high bytes); this is
+captured by the same permutation handshake (`bus_id = 10`) that
+delivers the SD bundle's lane equalities.
+-/
+
+/-- **Main memory-bus emission bundle — store side, SB width (1 byte).**
+
+    For every Main row in the SB store family (`is_external_op = 0`,
+    `op = OP_COPYB`, `ind_width = 1`, `store_ind = 1`), the store
+    memory-bus entry `e_st` (`as = 2`, `mult = 1`) carries:
+    * the **low byte** `x0` of `xreg rs2` at the store address,
+    * the **high 7 bytes** `x1..x7` are the **pre-existing memory
+      contents** at `ptr+1..ptr+7` (restored by the MemAlign RMW
+      protocol).
+
+    Trust class #4. Width specialization: SB only. -/
+axiom main_store_emission_bundle_sb
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (e_st : MemoryBusEntry FGL)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1_val r2_val : BitVec 64) (imm : BitVec 12)
+    -- Activation: internal store row (copyb passthrough).
+    (h_ext : main.is_external_op r_main = 0)
+    (h_op : main.op r_main = OP_COPYB)
+    -- Width pin: SB = 1-byte store.
+    (h_ind_width : main.ind_width r_main = 1)
+    -- Bus side: e_st is the store entry (`as = 2`, `mult = 1`).
+    (h_e_st_mult : e_st.multiplicity = 1) (h_e_st_as_val : e_st.as.val = 2)
+    -- Transpile-pinned Sail-state lane equalities (from `transpile_SB`).
+    (h_a_lo : main.a_0 r_main = ZiskFv.Trusted.lane_lo r1_val)
+    (h_a_hi : main.a_1 r_main = ZiskFv.Trusted.lane_hi r1_val)
+    (h_b_lo : main.b_0 r_main = ZiskFv.Trusted.lane_lo r2_val)
+    (h_b_hi : main.b_1 r_main = ZiskFv.Trusted.lane_hi r2_val) :
+    -- ptr-match: store address = xreg rs1 + signExt(imm).
+    e_st.ptr.toNat = (r1_val + BitVec.signExtend 64 imm).toNat
+    -- Low byte: e_st.x0 is the low byte of r2_val.
+    ∧ (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
+    -- High bytes: RMW preservation — bytes 1..7 equal pre-store memory.
+    ∧ state.mem[e_st.ptr.toNat + 1]? = some (e_st.x1 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 2]? = some (e_st.x2 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 3]? = some (e_st.x3 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 4]? = some (e_st.x4 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 5]? = some (e_st.x5 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 6]? = some (e_st.x6 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 7]? = some (e_st.x7 : BitVec 8)
+
+/-- **Main memory-bus emission bundle — store side, SH width (2 bytes).**
+
+    SH analog of `main_store_emission_bundle_sb`: 2 low bytes match
+    `r2_val`'s low 16 bits; 6 high bytes are RMW-preserved against
+    `state.mem`. Trust class #4. -/
+axiom main_store_emission_bundle_sh
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (e_st : MemoryBusEntry FGL)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1_val r2_val : BitVec 64) (imm : BitVec 12)
+    (h_ext : main.is_external_op r_main = 0)
+    (h_op : main.op r_main = OP_COPYB)
+    (h_ind_width : main.ind_width r_main = 2)
+    (h_e_st_mult : e_st.multiplicity = 1) (h_e_st_as_val : e_st.as.val = 2)
+    (h_a_lo : main.a_0 r_main = ZiskFv.Trusted.lane_lo r1_val)
+    (h_a_hi : main.a_1 r_main = ZiskFv.Trusted.lane_hi r1_val)
+    (h_b_lo : main.b_0 r_main = ZiskFv.Trusted.lane_lo r2_val)
+    (h_b_hi : main.b_1 r_main = ZiskFv.Trusted.lane_hi r2_val) :
+    e_st.ptr.toNat = (r1_val + BitVec.signExtend 64 imm).toNat
+    ∧ (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
+    ∧ (e_st.x1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val
+    ∧ state.mem[e_st.ptr.toNat + 2]? = some (e_st.x2 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 3]? = some (e_st.x3 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 4]? = some (e_st.x4 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 5]? = some (e_st.x5 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 6]? = some (e_st.x6 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 7]? = some (e_st.x7 : BitVec 8)
+
+/-- **Main memory-bus emission bundle — store side, SW width (4 bytes).**
+
+    SW analog: 4 low bytes match `r2_val`'s low 32 bits; 4 high bytes
+    are RMW-preserved against `state.mem`. Trust class #4. -/
+axiom main_store_emission_bundle_sw
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (e_st : MemoryBusEntry FGL)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1_val r2_val : BitVec 64) (imm : BitVec 12)
+    (h_ext : main.is_external_op r_main = 0)
+    (h_op : main.op r_main = OP_COPYB)
+    (h_ind_width : main.ind_width r_main = 4)
+    (h_e_st_mult : e_st.multiplicity = 1) (h_e_st_as_val : e_st.as.val = 2)
+    (h_a_lo : main.a_0 r_main = ZiskFv.Trusted.lane_lo r1_val)
+    (h_a_hi : main.a_1 r_main = ZiskFv.Trusted.lane_hi r1_val)
+    (h_b_lo : main.b_0 r_main = ZiskFv.Trusted.lane_lo r2_val)
+    (h_b_hi : main.b_1 r_main = ZiskFv.Trusted.lane_hi r2_val) :
+    e_st.ptr.toNat = (r1_val + BitVec.signExtend 64 imm).toNat
+    ∧ (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
+    ∧ (e_st.x1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val
+    ∧ (e_st.x2 : BitVec 8) = BitVec.extractLsb 23 16 r2_val
+    ∧ (e_st.x3 : BitVec 8) = BitVec.extractLsb 31 24 r2_val
+    ∧ state.mem[e_st.ptr.toNat + 4]? = some (e_st.x4 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 5]? = some (e_st.x5 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 6]? = some (e_st.x6 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 7]? = some (e_st.x7 : BitVec 8)
 
 /-! ## Axiom audit
 
