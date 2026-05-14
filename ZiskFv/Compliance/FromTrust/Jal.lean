@@ -97,13 +97,13 @@ theorem equiv_JAL_from_trust
     (0 : FGL) { xreg := fun _ => 0#64, pc := 0#64 } h_main_active h_main_op_jal
   obtain ⟨h_m32, h_set_pc, h_store_pc, _, _, _, _, _, _⟩ := h_tr
   -- ============ Assemble `main_row_in_jal_mode` ============
-  have h_jal_mode : ZiskFv.Circuit.Jal.main_row_in_jal_mode m r_main := by
+  have h_jal_mode : ZiskFv.ZiskCircuit.Jal.main_row_in_jal_mode m r_main := by
     refine ⟨h_main_active, ?_, h_m32, h_set_pc, h_store_pc⟩
     -- `OP_FLAG := 0` definitionally; the mode predicate expects
     -- `m.op r_main = (0 : FGL)`.
     rw [h_main_op_jal]; rfl
   -- ============ Assemble `jal_circuit_holds` ============
-  have h_circuit : ZiskFv.Circuit.Jal.jal_circuit_holds m r_main next_pc :=
+  have h_circuit : ZiskFv.ZiskCircuit.Jal.jal_circuit_holds m r_main next_pc :=
     ⟨h_jal_subset, h_jal_mode⟩
   -- ============ Delegate to canonical `equiv_JAL` ============
   exact ZiskFv.Equivalence.Jal.equiv_JAL state jal_input imm rd misa_val

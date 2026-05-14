@@ -108,7 +108,7 @@ of `zisk_riscv_compliant_program_bus` reaches **122**. The remaining
 | 20 | `memory_bus_register_write_perm_sound` | `ZiskFv/Airs/MemoryBus/LaneMatch.lean:138` | Genuinely dead — superseded mem-bus perm-soundness axiom |
 | 21 | `memory_bus_register_write_perm_sound_store_pc` | `ZiskFv/Airs/MemoryBus/LaneMatch.lean:329` | Genuinely dead — superseded mem-bus perm-soundness axiom |
 | 22 | `lookup_consumer_matches_provider_store` | `ZiskFv/Airs/MemoryBus/MemBridge.lean:179` | Genuinely dead — superseded store-side lookup bridge |
-| 23 | `row_models_sail_state_store` | `ZiskFv/Circuit/MemModel.lean:152` | Genuinely dead — superseded mem-state bridge for stores |
+| 23 | `row_models_sail_state_store` | `ZiskFv/ZiskCircuit/MemModel.lean:152` | Genuinely dead — superseded mem-state bridge for stores |
 | 24 | `arith_table_op_div_rem_signed_w_main_selector_pin` | `ZiskFv/Airs/Arith/Ranges.lean:898` | Genuinely dead — ArithTable W-mode selector pin |
 | 25 | `arith_table_op_div_rem_unsigned_w_main_selector_pin` | `ZiskFv/Airs/Arith/Ranges.lean:869` | Genuinely dead — ArithTable W-mode selector pin |
 

@@ -3,9 +3,9 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.LoadD
-import ZiskFv.Circuit.LoadDerivation
-import ZiskFv.Circuit.MemModel
+import ZiskFv.ZiskCircuit.LoadD
+import ZiskFv.ZiskCircuit.LoadDerivation
+import ZiskFv.ZiskCircuit.MemModel
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
@@ -22,7 +22,7 @@ End-to-end theorem for RV64 LD (load doubleword). Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_LD`),
 * the compositional LD spec
-  (`ZiskFv.Circuit.LoadD.load_d_compositional`),
+  (`ZiskFv.ZiskCircuit.LoadD.load_d_compositional`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_LOADD_pure_equiv`; closed via the trusted
   memory-model axiom `execute_LOADD_pure_equiv_axiom` — see
@@ -53,7 +53,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Circuit.LoadD
+open ZiskFv.ZiskCircuit.LoadD
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -159,7 +159,7 @@ theorem equiv_LD
   -- Step 3. Derive the per-byte data ↔ e1.x_i agreement via mem_load_correct
   -- + the load-side state.mem assumptions + ptr-match.
   have h_mem :=
-    ZiskFv.Circuit.MemModel.mem_load_correct
+    ZiskFv.ZiskCircuit.MemModel.mem_load_correct
       main mem r_main e1 state h_main_emit_b
   -- Unpack ld_state_assumptions: data0..data7 are at successive
   -- state.mem keys starting at r1_val + signExt(imm).
@@ -203,7 +203,7 @@ theorem equiv_LD
   have h_e2_range : memory_entry_bytes_in_range e2 :=
     memory_bus_entry_byte_range_perm_sound e2
   obtain ⟨h12_0, h12_1, h12_2, h12_3, h12_4, h12_5, h12_6, h12_7⟩ :=
-    ZiskFv.Circuit.LoadDerivation.load_copyb_e1_e2_bytes_eq_bv
+    ZiskFv.ZiskCircuit.LoadDerivation.load_copyb_e1_e2_bytes_eq_bv
       main r_main e1 e2 h_copy0 h_copy1 h_ext h_op
       h_emit_b_lo_hi h_main_emit_c h_e1_range h_e2_range
   have hd2_0 : (e2.x0 : BitVec 8) = ld_input.data0 := h12_0.trans hd0

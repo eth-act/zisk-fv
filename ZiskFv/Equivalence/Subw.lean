@@ -4,7 +4,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Bits.Execution
-import ZiskFv.Circuit.Subw
+import ZiskFv.ZiskCircuit.Subw
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
@@ -34,7 +34,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Subw
+open ZiskFv.ZiskCircuit.Subw
 open ZiskFv.Tactics.RTypeWArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]

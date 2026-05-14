@@ -5,8 +5,8 @@ import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
-import ZiskFv.Circuit.Mul
-import ZiskFv.Circuit.MulH
+import ZiskFv.ZiskCircuit.Mul
+import ZiskFv.ZiskCircuit.MulH
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -37,8 +37,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Mul
-open ZiskFv.Circuit.MulH
+open ZiskFv.ZiskCircuit.Mul
+open ZiskFv.ZiskCircuit.MulH
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

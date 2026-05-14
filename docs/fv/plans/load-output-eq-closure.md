@@ -64,12 +64,12 @@ Confirms whether step B's op-bus matches-provider and step C's MemAlign bus axio
 
 ### Step 1 — Gap A derivation (LD, LBU, LHU, LWU)
 
-**New file:** `ZiskFv/Circuit/LoadDerivation.lean`. Imports: `ZiskFv.Airs.Main`, `ZiskFv.Airs.Mem`, `ZiskFv.Airs.MemoryBus`, `ZiskFv.Airs.MemoryBus.MemBridge`, `ZiskFv.Circuit.MemModel`.
+**New file:** `ZiskFv/ZiskCircuit/LoadDerivation.lean`. Imports: `ZiskFv.Airs.Main`, `ZiskFv.Airs.Mem`, `ZiskFv.Airs.MemoryBus`, `ZiskFv.Airs.MemoryBus.MemBridge`, `ZiskFv.ZiskCircuit.MemModel`.
 
 Three lemmas:
 
 - `entry_bytes_eq_of_lo_hi_eq` — pure base-256 algebra. From `lo e1 = lo e2`, `hi e1 = hi e2`, and per-byte ranges (`x_i.val < 256` for both entries), conclude per-byte equality. Mirrors the technique already implicit in `MemBridge.lean::entry_packs_mem_row_value`.
-- `load_copyb_e1_e2_bytes_eq` — chains `lookup_consumer_matches_provider_load` (for `e1` byte ranges via the Mem AIR row), `lookup_consumer_matches_provider_store` (for `e2`), the named-column constraint-8/14 wrappers (`internal_op1_copies_b0` / `_b1`, already used by `ZiskFv/Circuit/LoadD.lean:121-124`), and the previous lemma. Output: 8 `e2.x_i = e1.x_i` equalities.
+- `load_copyb_e1_e2_bytes_eq` — chains `lookup_consumer_matches_provider_load` (for `e1` byte ranges via the Mem AIR row), `lookup_consumer_matches_provider_store` (for `e2`), the named-column constraint-8/14 wrappers (`internal_op1_copies_b0` / `_b1`, already used by `ZiskFv/ZiskCircuit/LoadD.lean:121-124`), and the previous lemma. Output: 8 `e2.x_i = e1.x_i` equalities.
 - `load_copyb_rd_value_eq_read` (LD-shape) and `load_copyb_rd_value_*_extended` (LBU/LHU/LWU-shapes, consume `memory_entry_high_bytes_zero_*` from step 3).
 
 ### Step 2 — Gap B derivation (LB, LH, LW)
@@ -136,7 +136,7 @@ Each must pass. Specifically:
 
 ## Critical files
 
-- **New:** `ZiskFv/Circuit/LoadDerivation.lean` (Gaps A, B, C derivation lemmas).
+- **New:** `ZiskFv/ZiskCircuit/LoadDerivation.lean` (Gaps A, B, C derivation lemmas).
 - **New (conditional):** `ZiskFv/Airs/OperationBus/Bridge.lean` (B-0, only if axiom missing).
 - **New (conditional):** `ZiskFv/Airs/MemAlign/HighBytesZero.lean` (C-1, +1 axiom max).
 - **Modified — axioms:** `ZiskFv/Airs/Tables/BinaryExtensionTable.lean` (extend `wf_properties`).
@@ -148,8 +148,8 @@ Each must pass. Specifically:
 ## Reusable existing infrastructure
 
 - `lookup_consumer_matches_provider_{load,store}` (`ZiskFv/Airs/MemoryBus/MemBridge.lean:134,150`) — Main bus emission ⇒ Mem AIR row + byte ranges.
-- `mem_load_correct{,_1byte,_2byte,_4byte}` (`ZiskFv/Circuit/MemModel.lean:203,290,307,320`) — byte-level state agreement on the read side.
-- `internal_op1_copies_b0` / `_b1` (already consumed by `ZiskFv/Circuit/LoadD.lean:121-124`) — F-typed constraint 8/14 wrappers.
+- `mem_load_correct{,_1byte,_2byte,_4byte}` (`ZiskFv/ZiskCircuit/MemModel.lean:203,290,307,320`) — byte-level state agreement on the read side.
+- `internal_op1_copies_b0` / `_b1` (already consumed by `ZiskFv/ZiskCircuit/LoadD.lean:121-124`) — F-typed constraint 8/14 wrappers.
 - `Valid_Main`, `Valid_Mem`, `Valid_BinaryExtension`, `Valid_MemAlign*` — named-column wrappers for the relevant AIRs.
 - `SignExtendLoadArchetype`, `LoadArchetype` (`ZiskFv/Tactics/`) — existing tactic infra for load Main-row archetypes.
 - `BinaryExtensionPackedCorrect` — pattern for `chunks_eq_bv_<op>` packed-correctness proofs (mirror it for SEXT).

@@ -4,7 +4,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
-import ZiskFv.Circuit.Div
+import ZiskFv.ZiskCircuit.Div
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -22,7 +22,7 @@ End-to-end theorem for RV64 **DIV**. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_DIV`),
-* the compositional DIV spec (`ZiskFv.Circuit.Div.div_compositional`),
+* the compositional DIV spec (`ZiskFv.ZiskCircuit.Div.div_compositional`),
 * the Sail pure-function equivalence (`PureSpec.execute_DIVREM_div_pure_equiv`),
 
 into three canonical theorems:
@@ -45,8 +45,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithDiv
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Mul
-open ZiskFv.Circuit.Div
+open ZiskFv.ZiskCircuit.Mul
+open ZiskFv.ZiskCircuit.Div
 open ZiskFv.Tactics.ArithSMArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]

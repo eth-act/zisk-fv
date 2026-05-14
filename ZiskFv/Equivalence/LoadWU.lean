@@ -3,9 +3,9 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.LoadWU
-import ZiskFv.Circuit.LoadDerivation
-import ZiskFv.Circuit.MemModel
+import ZiskFv.ZiskCircuit.LoadWU
+import ZiskFv.ZiskCircuit.LoadDerivation
+import ZiskFv.ZiskCircuit.MemModel
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemAlign
@@ -33,8 +33,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Circuit.LoadD
-open ZiskFv.Circuit.LoadWU
+open ZiskFv.ZiskCircuit.LoadD
+open ZiskFv.ZiskCircuit.LoadWU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -117,7 +117,7 @@ theorem equiv_LWU
         risc_v_assumptions h_opcode_assumptions]
   symm
   have h_mem :=
-    ZiskFv.Circuit.MemModel.mem_load_correct_4byte
+    ZiskFv.ZiskCircuit.MemModel.mem_load_correct_4byte
       main mem r_main e1 state h_main_emit_b
   obtain ⟨_h_pc, _h_r1_read,
           h_d0, h_d1, h_d2, h_d3,
@@ -139,7 +139,7 @@ theorem equiv_LWU
   have h_e2_range : memory_entry_bytes_in_range e2 :=
     memory_bus_entry_byte_range_perm_sound e2
   have h_lwu_packed :=
-    ZiskFv.Circuit.LoadDerivation.load_lwu_c_packed
+    ZiskFv.ZiskCircuit.LoadDerivation.load_lwu_c_packed
       main r_main mab marb ma e1 e2 h_copy0 h_copy1 h_ext h_op h_width
       h_main_emit_b h_main_emit_c h_e1_range h_e2_range h_low
   have h_rd_val_derived :

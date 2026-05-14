@@ -22,7 +22,7 @@ cd "$(git rev-parse --show-toplevel)"
 #   - `"sorry"`              (string literals)
 hits=$(grep -rnE '(^|[^a-zA-Z_`])sorry([^a-zA-Z_`]|$)' \
   --include='*.lean' \
-  ZiskFv/Fundamentals ZiskFv/Airs ZiskFv/Circuit ZiskFv/Equivalence \
+  ZiskFv/Fundamentals ZiskFv/Airs ZiskFv/ZiskCircuit ZiskFv/Equivalence \
   ZiskFv/Tactics ZiskFv/Sail 2>/dev/null \
   | grep -v ':[[:space:]]*--' \
   | grep -v ':[[:space:]]*///' \

@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.LoadUpperImmediate
+import ZiskFv.ZiskCircuit.LoadUpperImmediate
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
@@ -21,7 +21,7 @@ End-to-end theorem for RV64 LUI. Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_LUI`),
 * the compositional LUI spec
-  (`ZiskFv.Circuit.LoadUpperImmediate.lui_pc_advance` +
+  (`ZiskFv.ZiskCircuit.LoadUpperImmediate.lui_pc_advance` +
   `lui_store_value_lo`/`_hi`),
 * the Sail pure-function equivalence (`PureSpec.execute_LUI_pure_equiv`),
 
@@ -44,7 +44,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.LoadUpperImmediate
+open ZiskFv.ZiskCircuit.LoadUpperImmediate
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

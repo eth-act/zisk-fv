@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.Addi
+import ZiskFv.ZiskCircuit.Addi
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
@@ -40,7 +40,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Addi
+open ZiskFv.ZiskCircuit.Addi
 open ZiskFv.Tactics.ALURTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.Airs.BinaryAdd
@@ -162,7 +162,7 @@ theorem equiv_ADDI
     op_bus_perm_sound_BinaryAdd m b r_main h_active h_op
   -- Step 2: reconstruct the Tier-1 `addi_circuit_holds_with_binaryadd`
   -- bundle from the structural-unpacking parameters.
-  have h_circuit : ZiskFv.Circuit.Addi.addi_circuit_holds_with_binaryadd
+  have h_circuit : ZiskFv.ZiskCircuit.Addi.addi_circuit_holds_with_binaryadd
       m b r_main r_binary :=
     ⟨h_main_subset, h_b_core r_binary, h_match, h_main_mode⟩
   -- Step 3: chunk-range facts via `binary_add_columns_in_range` (no

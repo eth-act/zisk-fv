@@ -121,7 +121,7 @@ open Interaction
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Circuit.StoreD
+open ZiskFv.ZiskCircuit.StoreD
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

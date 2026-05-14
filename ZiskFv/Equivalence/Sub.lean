@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.Sub
+import ZiskFv.ZiskCircuit.Sub
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
@@ -46,7 +46,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Sub
+open ZiskFv.ZiskCircuit.Sub
 open ZiskFv.Tactics.ALURTypeArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]

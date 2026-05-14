@@ -3,9 +3,9 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.StoreD
-import ZiskFv.Circuit.StoreB
-import ZiskFv.Circuit.MemModel
+import ZiskFv.ZiskCircuit.StoreD
+import ZiskFv.ZiskCircuit.StoreB
+import ZiskFv.ZiskCircuit.MemModel
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
@@ -26,8 +26,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Circuit.StoreD
-open ZiskFv.Circuit.StoreB
+open ZiskFv.ZiskCircuit.StoreD
+open ZiskFv.ZiskCircuit.StoreB
 open ZiskFv.Tactics.StoreArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]

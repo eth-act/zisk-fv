@@ -35,7 +35,7 @@ import ZiskFv.Bits.PackedBitVec.MulNoWrap
 import ZiskFv.Bits.PackedBitVec.SignedNoWrap
 -- Wide-PC no-wrap toolkit (PC values can exceed GL_prime).
 import ZiskFv.Bits.PackedBitVec.WidePCNoWrap
-import ZiskFv.Circuit.Add
+import ZiskFv.ZiskCircuit.Add
 import ZiskFv.Equivalence.Add
 import ZiskFv.Equivalence.BranchEqual
 import ZiskFv.Equivalence.BranchNotEqual

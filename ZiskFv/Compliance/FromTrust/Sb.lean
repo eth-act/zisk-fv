@@ -45,8 +45,8 @@ open Interaction
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Circuit.StoreD
-open ZiskFv.Circuit.StoreB
+open ZiskFv.ZiskCircuit.StoreD
+open ZiskFv.ZiskCircuit.StoreB
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

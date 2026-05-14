@@ -27,7 +27,7 @@
 ## Step 3 design
 
 Add a bridge theorem in `ZiskFv/Airs/Tables/BinaryExtensionTable.lean`
-(or a new dedicated file like `ZiskFv/Circuit/SextLoadBridge.lean`)
+(or a new dedicated file like `ZiskFv/ZiskCircuit/SextLoadBridge.lean`)
 that takes the BinaryExtension AIR connection witnesses and derives
 the existing `signextend_c_packed_for_op` conclusion shape:
 

@@ -6,8 +6,8 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Tactics.UTypeArchetype
-import ZiskFv.Circuit.Jal
-import ZiskFv.Circuit.Jalr
+import ZiskFv.ZiskCircuit.Jal
+import ZiskFv.ZiskCircuit.Jalr
 import ZiskFv.Equivalence.Bridge.StateBridge
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.MemoryBus
@@ -196,7 +196,7 @@ lemma lui_discharge_full
     #1) — no new axiom. -/
 lemma jal_discharge_full
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (h_circuit : ZiskFv.Circuit.Jal.jal_circuit_holds m r_main next_pc) :
+    (h_circuit : ZiskFv.ZiskCircuit.Jal.jal_circuit_holds m r_main next_pc) :
     m.jmp_offset2 r_main = 4 := by
   obtain ⟨_h_subset, h_mode⟩ := h_circuit
   obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
@@ -214,7 +214,7 @@ lemma jal_discharge_full
     #1) — no new axiom. -/
 lemma jalr_discharge_full
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (h_circuit : ZiskFv.Circuit.Jalr.jalr_circuit_holds m r_main next_pc) :
+    (h_circuit : ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc) :
     m.jmp_offset2 r_main = 4 := by
   obtain ⟨_h_subset, h_mode⟩ := h_circuit
   obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
@@ -255,7 +255,7 @@ Trust ledger: +1 axiom (`main_store_pc_emission_bundle`) in class #4.
 lemma jal_discharge_lanes
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (e_rd : Interaction.MemoryBusEntry FGL)
-    (h_circuit : ZiskFv.Circuit.Jal.jal_circuit_holds m r_main next_pc)
+    (h_circuit : ZiskFv.ZiskCircuit.Jal.jal_circuit_holds m r_main next_pc)
     (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1) :
     ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd
     ∧ ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd := by
@@ -273,7 +273,7 @@ lemma jal_discharge_lanes
 lemma jalr_discharge_lanes
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (e_rd : Interaction.MemoryBusEntry FGL)
-    (h_circuit : ZiskFv.Circuit.Jalr.jalr_circuit_holds m r_main next_pc)
+    (h_circuit : ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc)
     (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1) :
     ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd
     ∧ ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd := by

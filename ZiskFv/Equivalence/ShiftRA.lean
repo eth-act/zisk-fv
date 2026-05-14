@@ -4,7 +4,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Bits.Execution
-import ZiskFv.Circuit.ShiftRA
+import ZiskFv.ZiskCircuit.ShiftRA
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
@@ -47,7 +47,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.ShiftRA
+open ZiskFv.ZiskCircuit.ShiftRA
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

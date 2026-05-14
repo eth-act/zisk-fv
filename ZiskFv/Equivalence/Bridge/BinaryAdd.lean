@@ -8,7 +8,7 @@ import ZiskFv.Airs.Binary.BinaryAddRanges
 import ZiskFv.Airs.Binary.BinaryAddPackedCorrect
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
-import ZiskFv.Circuit.Add
+import ZiskFv.ZiskCircuit.Add
 import ZiskFv.Sail.add
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 
@@ -61,7 +61,7 @@ open Goldilocks
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Add
+open ZiskFv.ZiskCircuit.Add
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

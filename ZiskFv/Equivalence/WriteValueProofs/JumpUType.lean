@@ -10,10 +10,10 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
-import ZiskFv.Circuit.Jal
-import ZiskFv.Circuit.Jalr
-import ZiskFv.Circuit.LoadUpperImmediate
-import ZiskFv.Circuit.AddUpperImmediatePC
+import ZiskFv.ZiskCircuit.Jal
+import ZiskFv.ZiskCircuit.Jalr
+import ZiskFv.ZiskCircuit.LoadUpperImmediate
+import ZiskFv.ZiskCircuit.AddUpperImmediatePC
 import ZiskFv.Tactics.UTypeArchetype
 
 /-!
@@ -69,10 +69,10 @@ open Interaction
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.MemoryBus.LaneMatch
-open ZiskFv.Circuit.Jal
-open ZiskFv.Circuit.Jalr
-open ZiskFv.Circuit.LoadUpperImmediate
-open ZiskFv.Circuit.AddUpperImmediatePC
+open ZiskFv.ZiskCircuit.Jal
+open ZiskFv.ZiskCircuit.Jalr
+open ZiskFv.ZiskCircuit.LoadUpperImmediate
+open ZiskFv.ZiskCircuit.AddUpperImmediatePC
 open ZiskFv.Tactics.UTypeArchetype
 open ZiskFv.PackedBitVec
 open ZiskFv.PackedBitVec.Extensions

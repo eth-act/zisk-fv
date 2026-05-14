@@ -4,8 +4,8 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Bits.Execution
-import ZiskFv.Circuit.Mul
-import ZiskFv.Circuit.MulW
+import ZiskFv.ZiskCircuit.Mul
+import ZiskFv.ZiskCircuit.MulW
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Ranges
@@ -42,8 +42,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Mul
-open ZiskFv.Circuit.MulW
+open ZiskFv.ZiskCircuit.Mul
+open ZiskFv.ZiskCircuit.MulW
 open ZiskFv.PackedBitVec.SignedChunkLift
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]

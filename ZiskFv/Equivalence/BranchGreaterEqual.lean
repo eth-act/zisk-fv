@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.BranchGreaterEqual
+import ZiskFv.ZiskCircuit.BranchGreaterEqual
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
@@ -19,7 +19,7 @@ End-to-end theorem for RV64 BGE. Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_BGE`),
 * the compositional BGE spec
-  (`ZiskFv.Circuit.BranchGreaterEqual.branch_ge_compositional`, a thin
+  (`ZiskFv.ZiskCircuit.BranchGreaterEqual.branch_ge_compositional`, a thin
   wrapper over `BranchArchetype.branch_archetype_pc_dispatch` at
   `opcode_lit = OP_LT`),
 * the Sail pure-function equivalence (`PureSpec.execute_BGE_pure_equiv`).
@@ -34,7 +34,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.BranchGreaterEqual
+open ZiskFv.ZiskCircuit.BranchGreaterEqual
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

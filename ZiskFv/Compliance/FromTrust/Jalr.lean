@@ -105,7 +105,7 @@ theorem equiv_JALR_from_trust
   -- the mode pins are `is_external_op = 0`, `op = 1`, `m32 = 0`,
   -- `set_pc = 1`, `store_pc = 1`. We have these from
   -- `h_main_active` + `h_main_op_jalr` + the transpile-derived ones.
-  have h_circuit : ZiskFv.Circuit.Jalr.jalr_circuit_holds m r_main next_pc := by
+  have h_circuit : ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc := by
     refine ⟨h_jalr_subset, ?_⟩
     refine ⟨h_main_active, ?_, h_m32, h_set_pc, h_store_pc⟩
     rw [h_main_op_jalr]; rfl

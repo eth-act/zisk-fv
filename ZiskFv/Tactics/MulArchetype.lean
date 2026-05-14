@@ -5,7 +5,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.OperationBus.OperationBus
-import ZiskFv.Circuit.Mul
+import ZiskFv.ZiskCircuit.Mul
 
 /-!
 **Arith archetype macros / generic lemmas — MUL family.**
@@ -63,7 +63,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
-open ZiskFv.Circuit.Mul
+open ZiskFv.ZiskCircuit.Mul
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

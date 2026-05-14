@@ -93,7 +93,6 @@ ZiskFv.Airs.OperationBus.op_bus_perm_sound_BinaryAdd
 ZiskFv.Airs.OperationBus.op_bus_perm_sound_BinaryExtension
 ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf
-ZiskFv.Circuit.MemModel.row_models_sail_state_load
 ZiskFv.PlatformScope.pmaCheck_is_pure_none
 ZiskFv.PlatformScope.pmpCheck_is_pure_none
 ZiskFv.PlatformScope.update_elp_state_is_pure_unit
@@ -149,3 +148,4 @@ ZiskFv.Trusted.transpile_SUBW
 ZiskFv.Trusted.transpile_SW
 ZiskFv.Trusted.transpile_XOR
 ZiskFv.Trusted.transpile_XORI
+ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load

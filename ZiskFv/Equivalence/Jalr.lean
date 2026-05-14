@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.Jalr
+import ZiskFv.ZiskCircuit.Jalr
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
@@ -23,7 +23,7 @@ End-to-end theorem for RV64 JALR. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_JALR`),
-* the compositional JALR spec (`ZiskFv.Circuit.Jalr.jalr_pc_advance`),
+* the compositional JALR spec (`ZiskFv.ZiskCircuit.Jalr.jalr_pc_advance`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_JALR_pure_equiv`, closed via the trusted
   `execute_JALR_pure_equiv_axiom` at `ZiskFv/RV64D/jalr.lean:67` —
@@ -48,7 +48,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Jalr
+open ZiskFv.ZiskCircuit.Jalr
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -156,7 +156,7 @@ theorem equiv_JALR
       (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val)
     (h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
     -- Discharge parameters
-    (h_circuit : ZiskFv.Circuit.Jalr.jalr_circuit_holds m r_main next_pc)
+    (h_circuit : ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc)
     (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
     (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) :

@@ -87,8 +87,8 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Circuit.Add
-open ZiskFv.Circuit.Addi
+open ZiskFv.ZiskCircuit.Add
+open ZiskFv.ZiskCircuit.Addi
 open ZiskFv.Tactics.ALUITypeArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]

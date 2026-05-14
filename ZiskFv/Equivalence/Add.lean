@@ -4,7 +4,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Field.GoldilocksBridge
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.Add
+import ZiskFv.ZiskCircuit.Add
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -23,7 +23,7 @@ End-to-end theorem for RV64 ADD. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_ADD`),
-* the compositional ADD spec (`ZiskFv.Circuit.Add.add_compositional`),
+* the compositional ADD spec (`ZiskFv.ZiskCircuit.Add.add_compositional`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_RTYPE_add_pure_equiv`),
 
@@ -44,7 +44,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Add
+open ZiskFv.ZiskCircuit.Add
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

@@ -3,8 +3,8 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.Mul
-import ZiskFv.Circuit.Remu
+import ZiskFv.ZiskCircuit.Mul
+import ZiskFv.ZiskCircuit.Remu
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Airs.Arith.Ranges
@@ -37,8 +37,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithDiv
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Mul
-open ZiskFv.Circuit.Remu
+open ZiskFv.ZiskCircuit.Mul
+open ZiskFv.ZiskCircuit.Remu
 open ZiskFv.Tactics.ArithSMArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]

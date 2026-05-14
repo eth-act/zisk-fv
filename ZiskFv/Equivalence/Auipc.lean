@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.AddUpperImmediatePC
+import ZiskFv.ZiskCircuit.AddUpperImmediatePC
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
@@ -23,7 +23,7 @@ End-to-end theorem for RV64 AUIPC. Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_AUIPC`),
 * the compositional AUIPC spec
-  (`ZiskFv.Circuit.AddUpperImmediatePC.auipc_pc_advance` +
+  (`ZiskFv.ZiskCircuit.AddUpperImmediatePC.auipc_pc_advance` +
   `auipc_store_value_lo`/`_hi`),
 * the Sail pure-function equivalence (`PureSpec.execute_AUIPC_pure_equiv`),
 
@@ -51,7 +51,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.AddUpperImmediatePC
+open ZiskFv.ZiskCircuit.AddUpperImmediatePC
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

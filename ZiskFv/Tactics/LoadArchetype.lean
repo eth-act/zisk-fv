@@ -5,7 +5,7 @@ import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Circuit.LoadD
+import ZiskFv.ZiskCircuit.LoadD
 
 /-!
 **Load archetype macros / generic lemmas.**
@@ -46,7 +46,7 @@ open Goldilocks
 open Interaction
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Circuit.LoadD
+open ZiskFv.ZiskCircuit.LoadD
 open ZiskFv.Trusted
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]

@@ -34,8 +34,8 @@ NEXT_DECL = re.compile(
 # All 63 RV64IM opcodes are policed uniformly. The previous 7-load
 # carve-out was retired once the load equivalence proofs were rewritten
 # to derive their cross-entry rd-value byte equations from circuit
-# witnesses (Family A — `ZiskFv/Circuit/LoadDerivation.lean`) plus the
-# BinaryExtension chain (`ZiskFv/Circuit/SextLoadBridge.lean`) plus the
+# witnesses (Family A — `ZiskFv/ZiskCircuit/LoadDerivation.lean`) plus the
+# BinaryExtension chain (`ZiskFv/ZiskCircuit/SextLoadBridge.lean`) plus the
 # MemAlign chain (`ZiskFv/Airs/MemoryBus/MemAlignBridge.lean`,
 # `memalign_subdoubleword_load_high_bytes_zero` derived from a generic
 # permutation-soundness axiom + a narrow MemAlignRom lookup-soundness

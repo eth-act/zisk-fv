@@ -54,7 +54,7 @@ sub-pattern.
   internalized by `equiv_LD` via
   `memory_bus_entry_byte_range_perm_sound` (class #5b) inside the
   copyb-passthrough derivation
-  (`ZiskFv.Circuit.LoadDerivation.load_copyb_e1_e2_bytes_eq_bv`).
+  (`ZiskFv.ZiskCircuit.LoadDerivation.load_copyb_e1_e2_bytes_eq_bv`).
   Pre-discharged on the canonical surface.
 * **Operand bridges.** `read_xreg rs1` (the load address base) is
   routed through `ld_state_assumptions` (SPEC-PRE) and consumed

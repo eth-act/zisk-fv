@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.BranchEqual
+import ZiskFv.ZiskCircuit.BranchEqual
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
@@ -18,7 +18,7 @@ End-to-end theorem for RV64 BEQ. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_BEQ`),
-* the compositional BEQ spec (`ZiskFv.Circuit.BranchEqual.branch_eq_compositional`),
+* the compositional BEQ spec (`ZiskFv.ZiskCircuit.BranchEqual.branch_eq_compositional`),
 * the Sail pure-function equivalence (`PureSpec.execute_BEQ_pure_equiv`),
 
 into a canonical theorem:
@@ -34,7 +34,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.BranchEqual
+open ZiskFv.ZiskCircuit.BranchEqual
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

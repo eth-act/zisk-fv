@@ -726,7 +726,7 @@ fully covered before this pilot:
 * `memory_bus_entry_byte_range_perm_sound` (class #5b) and
   `lookup_consumer_matches_provider_load` (class #4) are likewise
   consumed transitively via `equiv_LD`'s
-  `ZiskFv.Circuit.LoadDerivation.load_copyb_e1_e2_bytes_eq_bv` and
+  `ZiskFv.ZiskCircuit.LoadDerivation.load_copyb_e1_e2_bytes_eq_bv` and
   `Circuit.MemModel.mem_load_correct` chains.
 * `transpile_LD` (class #1) feeds the routing-pin derivations
   inside the canonical theorem.

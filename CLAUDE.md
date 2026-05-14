@@ -39,8 +39,8 @@ theorems remain OUTPUT-EQ-free, enforced uniformly by
 `trust/scripts/check-no-output-eq.sh` against
 `trust/forbidden-param-shapes.txt`. The 7 loads were closed by
 deriving their cross-entry rd-value byte equations from circuit
-witnesses — see `ZiskFv/Circuit/LoadDerivation.lean` for the
-copyb / MemAlign families and `ZiskFv/Circuit/SextLoadBridge.lean`
+witnesses — see `ZiskFv/ZiskCircuit/LoadDerivation.lean` for the
+copyb / MemAlign families and `ZiskFv/ZiskCircuit/SextLoadBridge.lean`
 for the LB/LH/LW signed-load chain
 (`bin_ext_table_consumer_wf` +
 `binary_extension_sext_{b,h,w}_chunks_eq_signextend_nat`). The
@@ -72,7 +72,7 @@ ZiskFv/Airs/Valid_<AIR>       ← human-readable column accessors + simp lemmas
         │
         │ circuit-correctness theorems
         ▼
-ZiskFv/Circuit/<family>       ← circuit semantics in BitVec / FGL
+ZiskFv/ZiskCircuit/<family>   ← circuit semantics in BitVec / FGL
         │
         │ + LHS bridge to Sail spec
         ▼
@@ -152,7 +152,7 @@ Eight checks; if you break any, CI fails:
 4. **Floors.** ≥82 axioms in baseline, ≥63 canonical `equiv_<OP>`
    theorems, plus a cross-witness check that the parser hasn't been
    sabotaged.
-5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,Circuit,Equivalence,Tactics,Sail}`.
+5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,ZiskCircuit,Equivalence,Tactics,Sail}`.
 6. **Uniformity.** Every one of 63 RV64IM opcodes has a canonical
    `equiv_<OP>` theorem.
 7. **Hypothesis-count anti-laundering metric.**

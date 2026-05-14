@@ -116,7 +116,7 @@ Files are organized **by ZisK constraint table**, not by RISC-V instruction
 — a single AIR (e.g. Binary) covers many opcodes (ADD, SUB, AND, OR, XOR,
 all branches, …).
 
-### `ZiskFv/Circuit/`
+### `ZiskFv/ZiskCircuit/`
 
 Per-opcode lifted circuit semantics — one file per RV64IM opcode (62
 files total, including shared infrastructure like `MemModel.lean`,

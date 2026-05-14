@@ -707,7 +707,7 @@ ZiskFv.Equivalence.Jal.equiv_JAL 023 h_not_throws [other] (PureSpec.execute_JAL_
 ZiskFv.Equivalence.Jal.equiv_JAL 024 h_success [other] (PureSpec.execute_JAL_pure jal_input).success = true
 ZiskFv.Equivalence.Jal.equiv_JAL 025 h_nextPC_option [transpile] (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val
 ZiskFv.Equivalence.Jal.equiv_JAL 026 h_rd_idx [transpile] jal_input.rd = Transpiler.wrap_to_regidx e_rd.ptr
-ZiskFv.Equivalence.Jal.equiv_JAL 027 h_circuit [other] ZiskFv.Circuit.Jal.jal_circuit_holds m r_main next_pc
+ZiskFv.Equivalence.Jal.equiv_JAL 027 h_circuit [other] ZiskFv.ZiskCircuit.Jal.jal_circuit_holds m r_main next_pc
 ZiskFv.Equivalence.Jal.equiv_JAL 028 h_pc_bound [other] jal_input.PC.toNat < GL_prime - 4
 ZiskFv.Equivalence.Jal.equiv_JAL 029 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
 ZiskFv.Equivalence.Jal.equiv_JAL 030 h_pc_offset_lt_2_32 [range] (jal_input.PC + 4#64).toNat < 4294967296
@@ -743,7 +743,7 @@ ZiskFv.Equivalence.Jalr.equiv_JALR 028 _ [other] ZisK enforces via -- the JALR_M
 ZiskFv.Equivalence.Jalr.equiv_JALR 029 h_success [other] (PureSpec.execute_JALR_pure jalr_input).success = true
 ZiskFv.Equivalence.Jalr.equiv_JALR 030 h_nextPC_option [transpile] (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val
 ZiskFv.Equivalence.Jalr.equiv_JALR 031 h_rd_idx [transpile] jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr
-ZiskFv.Equivalence.Jalr.equiv_JALR 032 h_circuit [other] ZiskFv.Circuit.Jalr.jalr_circuit_holds m r_main next_pc
+ZiskFv.Equivalence.Jalr.equiv_JALR 032 h_circuit [other] ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc
 ZiskFv.Equivalence.Jalr.equiv_JALR 033 h_pc_bound [other] jalr_input.PC.toNat < GL_prime - 4
 ZiskFv.Equivalence.Jalr.equiv_JALR 034 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
 ZiskFv.Equivalence.Jalr.equiv_JALR 035 h_pc_offset_lt_2_32 [range] (jalr_input.PC + 4#64).toNat < 4294967296

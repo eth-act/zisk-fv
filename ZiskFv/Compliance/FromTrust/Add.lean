@@ -156,7 +156,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Circuit.Add
+open ZiskFv.ZiskCircuit.Add
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

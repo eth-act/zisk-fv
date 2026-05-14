@@ -64,7 +64,7 @@ awk '$3=="axiom" {n=split($2,a,":"); print a[1]}' trust/baseline-axioms.txt \
 #   2 ZiskFv/Airs/MemoryBus/MemAlignBridge.lean     MemAlign permutation + ROM lookup (class #4)
 #   9 ZiskFv/Airs/MemoryBus/MemBridge.lean          memory-bus lookup soundness + emission bundles (class #4)
 #   3 ZiskFv/Airs/OperationBus/Bridge.lean          op-bus permutation soundness (class #4)
-#   1 ZiskFv/Circuit/MemModel.lean                  memory-state bridge — load (class #2)
+#   1 ZiskFv/ZiskCircuit/MemModel.lean                  memory-state bridge — load (class #2)
 #  51 ZiskFv/Trusted/Transpiler.lean           transpile contracts (class #1)
 #   4 ZiskFv/Sail/Auxiliaries.lean                  platform-feature scope (classes #7–#10)
 ```
@@ -117,7 +117,7 @@ entry's bytes to the Sail spec's loaded-data field. They were
 rewritten to derive these equations from circuit witnesses:
 
 * **Family A — copyb byte passthrough** (LD, LBU, LHU, LWU):
-  `ZiskFv/Circuit/LoadDerivation.lean::load_copyb_e1_e2_bytes_eq`
+  `ZiskFv/ZiskCircuit/LoadDerivation.lean::load_copyb_e1_e2_bytes_eq`
   derives per-byte equality between the read entry `e1` and the
   rd-write entry `e2` from Main constraints 9/16 (`(1 -
   is_external_op) * op * (b - c) = 0`) plus byte-range hypotheses on
@@ -151,7 +151,7 @@ rewritten to derive these equations from circuit witnesses:
 
 After this rewrite all 63 canonical `equiv_<OP>` theorems pass the
 `check-no-output-eq.sh` gate uniformly with no `EXEMPT_STEMS`
-carve-out. See `ZiskFv/Circuit/LoadDerivation.lean` for the proven
+carve-out. See `ZiskFv/ZiskCircuit/LoadDerivation.lean` for the proven
 derivation lemmas and the equivalence files
 (`ZiskFv/Equivalence/{Lb,Lh,Lw,LoadBU,LoadHU,LoadWU,LoadD}.lean`)
 for the rewritten canonical theorems.

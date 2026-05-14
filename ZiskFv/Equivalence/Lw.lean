@@ -3,9 +3,9 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.LoadWord
-import ZiskFv.Circuit.MemModel
-import ZiskFv.Circuit.SextLoadBridge
+import ZiskFv.ZiskCircuit.LoadWord
+import ZiskFv.ZiskCircuit.MemModel
+import ZiskFv.ZiskCircuit.SextLoadBridge
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Main.Main
@@ -40,7 +40,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.LoadWord
+open ZiskFv.ZiskCircuit.LoadWord
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -168,7 +168,7 @@ theorem equiv_LW
   -- Derive the per-byte data ↔ e1.x_i agreement via mem_load_correct_4byte
   -- + lw_state_assumptions + h_ptr_match.
   have h_mem :=
-    ZiskFv.Circuit.MemModel.mem_load_correct_4byte
+    ZiskFv.ZiskCircuit.MemModel.mem_load_correct_4byte
       main mem r_main e1 state h_main_emit_b
   obtain ⟨_h_pc, _h_r1_read,
           h_d0, h_d1, h_d2, h_d3,
@@ -188,7 +188,7 @@ theorem equiv_LW
   have h_e1_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e1
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_lw_packed :=
-    ZiskFv.Circuit.SextLoadBridge.load_word_c_packed
+    ZiskFv.ZiskCircuit.SextLoadBridge.load_word_c_packed
       main r_main v r_binary e1 e2
       h_op_binary h_bytes hc_lo_sum_lt hc_hi_sum_lt
       h_match_clo h_match_chi h_main_emit_c

@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.BranchLessThan
+import ZiskFv.ZiskCircuit.BranchLessThan
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
@@ -19,7 +19,7 @@ End-to-end theorem for RV64 BLT. Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_BLT`),
 * the compositional BLT spec
-  (`ZiskFv.Circuit.BranchLessThan.branch_lt_compositional`, a thin
+  (`ZiskFv.ZiskCircuit.BranchLessThan.branch_lt_compositional`, a thin
   wrapper over `BranchArchetype.branch_archetype_pc_dispatch` at
   `opcode_lit = OP_LT`),
 * the Sail pure-function equivalence (`PureSpec.execute_BLT_pure_equiv`,
@@ -45,7 +45,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.BranchLessThan
+open ZiskFv.ZiskCircuit.BranchLessThan
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

@@ -12,12 +12,12 @@ import ZiskFv.Airs.Tables.BinaryTable
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
-import ZiskFv.Circuit.Add
-import ZiskFv.Circuit.Addi
-import ZiskFv.Circuit.Addw
-import ZiskFv.Circuit.Addiw
-import ZiskFv.Circuit.Sub
-import ZiskFv.Circuit.Subw
+import ZiskFv.ZiskCircuit.Add
+import ZiskFv.ZiskCircuit.Addi
+import ZiskFv.ZiskCircuit.Addw
+import ZiskFv.ZiskCircuit.Addiw
+import ZiskFv.ZiskCircuit.Sub
+import ZiskFv.ZiskCircuit.Subw
 import ZiskFv.Sail.add
 
 /-!
@@ -115,7 +115,7 @@ open ZiskFv.Airs.Tables.BinaryTable
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.MemoryBus.LaneMatch
-open ZiskFv.Circuit.Add
+open ZiskFv.ZiskCircuit.Add
 open ZiskFv.PackedBitVec
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -369,7 +369,7 @@ lemma h_rd_val_arith_addi
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)
     -- Tier-1 circuit hypothesis (bundles Main + BinaryAdd + bus-match + ADDI mode)
-    (h_circuit : ZiskFv.Circuit.Addi.addi_circuit_holds_with_binaryadd m b r_main r_binary)
+    (h_circuit : ZiskFv.ZiskCircuit.Addi.addi_circuit_holds_with_binaryadd m b r_main r_binary)
     -- Lane-match hypothesis for rd-write (K2, Layer 1 trust)
     (h_lane_rd : register_write_lanes_match m r_main e2)
     -- Byte-range hypotheses for e2

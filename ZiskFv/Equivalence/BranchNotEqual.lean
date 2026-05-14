@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Circuit.BranchNotEqual
+import ZiskFv.ZiskCircuit.BranchNotEqual
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
@@ -19,7 +19,7 @@ End-to-end theorem for RV64 BNE. Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_BNE`),
 * the compositional BNE spec
-  (`ZiskFv.Circuit.BranchNotEqual.branch_ne_compositional`, which is
+  (`ZiskFv.ZiskCircuit.BranchNotEqual.branch_ne_compositional`, which is
   a thin wrapper over the archetype macro
   `BranchArchetype.branch_archetype_pc_dispatch` at `opcode_lit = OP_EQ`),
 * the Sail pure-function equivalence (`PureSpec.execute_BNE_pure_equiv`,
@@ -46,7 +46,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.BranchNotEqual
+open ZiskFv.ZiskCircuit.BranchNotEqual
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
