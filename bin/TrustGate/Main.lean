@@ -23,6 +23,7 @@ import Lean
 import TrustGate.CanonicalTheorems
 import TrustGate.AxiomClosure
 import TrustGate.TypeWalk
+import TrustGate.ConstantClosure
 
 open Lean
 
@@ -95,12 +96,86 @@ def runTypeWalk (env : Environment) (forbidden : NameSet) : IO UInt32 := do
   IO.eprintln s!"trust-gate (V2): {totalViols} forbidden-type hit(s) — FAIL."
   return 1
 
+/-- Parse an entry-points file (one fully-qualified Name per line;
+`#` comments and blank lines ignored). -/
+def loadEntryPoints (path : System.FilePath) : IO (List Name) := do
+  let content ← IO.FS.readFile path
+  let mut out : Array Name := #[]
+  for raw in content.splitOn "\n" do
+    let line := raw.trim
+    if line.isEmpty || line.startsWith "#" then continue
+    out := out.push line.toName
+  return out.toList
+
+/-- Report missing entry-point Names (so a typo in the config fails
+loudly instead of silently shrinking the reachable set). -/
+def warnMissingEntries (env : Environment) (entries : List Name) : IO Unit := do
+  let missing := entries.filter (fun n => (env.find? n).isNone)
+  if !missing.isEmpty then
+    IO.eprintln s!"WARNING: {missing.length} entry-point name(s) not found in environment:"
+    for n in missing do
+      IO.eprintln s!"  - {n}"
+
+/-- Subcommand: print every `ZiskFv.*` constant reachable from the
+entry-points file, sorted. -/
+def cmdPrintReachable (env : Environment) (path : String) : IO UInt32 := do
+  let entries ← loadEntryPoints path
+  warnMissingEntries env entries
+  let reach := ConstantClosure.transitiveClosure env entries
+  let proj := reach.toList.filter ConstantClosure.isAuditable
+  let sorted := proj.toArray.qsort (fun a b => a.toString < b.toString)
+  for n in sorted do
+    IO.println n.toString
+  return 0
+
+/-- Subcommand: enumerate every auditable `ZiskFv.*` const, subtract
+the reachable set, print the unreachable ones grouped by module. -/
+def cmdFindUnused (env : Environment) (path : String) : IO UInt32 := do
+  let entries ← loadEntryPoints path
+  warnMissingEntries env entries
+  let reach := ConstantClosure.transitiveClosure env entries
+  let all := ConstantClosure.allAuditableProjectConsts env
+  -- Group unreachable by module.
+  let mut byModule : Std.HashMap String (Array Name) := {}
+  let mut unreachableCount := 0
+  for n in all do
+    if !reach.contains n then
+      unreachableCount := unreachableCount + 1
+      let m := ConstantClosure.moduleOf env n
+      byModule := byModule.insert m ((byModule.getD m #[]).push n)
+  let modules := byModule.toList.toArray.qsort (fun a b => a.1 < b.1)
+  IO.println s!"# unreachable `ZiskFv.*` constants: {unreachableCount}"
+  IO.println s!"# total auditable `ZiskFv.*` constants: {all.size}"
+  IO.println s!"# entry points: {entries.length}"
+  IO.println ""
+  for (m, names) in modules do
+    IO.println s!"## {m} ({names.size})"
+    let sorted := names.qsort (fun a b => a.toString < b.toString)
+    for n in sorted do
+      let kindStr :=
+        match env.find? n with
+        | some (.thmInfo _)   => "theorem"
+        | some (.defnInfo _)  => "def    "
+        | some (.axiomInfo _) => "axiom  "
+        | some (.opaqueInfo _) => "opaque "
+        | some (.ctorInfo _)  => "ctor   "
+        | some (.inductInfo _) => "induct "
+        | some (.recInfo _)   => "rec    "
+        | some (.quotInfo _)  => "quot   "
+        | _                   => "???    "
+      IO.println s!"  {kindStr}  {n.toString}"
+    IO.println ""
+  return 0
+
 def usage : IO Unit := do
   IO.println "Usage: trust-gate <subcommand>"
-  IO.println "  regenerate-deps                regen baseline → stdout"
+  IO.println "  regenerate-deps                regen axiom-dep baseline → stdout"
   IO.println "  check-deps PATH                compare against PATH"
   IO.println "  check-no-output-eq-v2 PATH     type-walk against forbidden-Names PATH"
   IO.println "  all                            check-deps + check-no-output-eq-v2 against trust/* defaults"
+  IO.println "  print-axiom-closure NAME       print transitive ZiskFv-namespace axioms reachable from NAME"
+  IO.println "  print-reachable PATH           print every ZiskFv.* const reachable from entry-points in PATH"
+  IO.println "  find-unused PATH               enumerate ZiskFv.* consts not reachable from PATH entry points"
 
 def dispatch (env : Environment) (args : List String) : IO UInt32 := do
   match args with
@@ -113,6 +188,16 @@ def dispatch (env : Environment) (args : List String) : IO UInt32 := do
   | ["check-no-output-eq-v2", path] =>
     let forbidden ← loadForbiddenTypes path
     runTypeWalk env forbidden
+  | ["print-axiom-closure", nameStr] =>
+    let n := nameStr.toName
+    if (env.find? n).isNone then
+      IO.eprintln s!"unknown const: {nameStr}"
+      return 1
+    let deps := AxiomClosure.axiomDepsForTheorem env n
+    for d in deps do IO.println d.toString
+    return 0
+  | ["print-reachable", path] => cmdPrintReachable env path
+  | ["find-unused", path]     => cmdFindUnused env path
   | ["all"] =>
     let baseline ← IO.FS.readFile "trust/baseline-equiv-axiom-deps.txt"
     let r1 ← diffStrings (renderDepsBaseline env) baseline
