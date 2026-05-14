@@ -31,22 +31,6 @@ theorem transpile_ADD_consumer
   fun h_p1 h_p2 =>
     (transpile_ADD m r_main state rs1 rs2 h_p1 h_p2).1
 
-/-- Consumer-witness for `transpile_BEQ`. -/
-theorem transpile_BEQ_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State)
-    : m.is_external_op r_main = 1 → m.op r_main = OP_EQ → m.m32 r_main = 0 :=
-  fun h_p1 h_p2 =>
-    (transpile_BEQ m r_main rs1 rs2 imm_offset state h_p1 h_p2).1
-
-/-- Consumer-witness for `transpile_BNE`. -/
-theorem transpile_BNE_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State)
-    : m.is_external_op r_main = 1 → m.op r_main = OP_EQ → m.m32 r_main = 0 :=
-  fun h_p1 h_p2 =>
-    (transpile_BNE m r_main rs1 rs2 imm_offset state h_p1 h_p2).1
-
 /-- Consumer-witness for `transpile_JAL`. -/
 theorem transpile_JAL_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -55,14 +39,6 @@ theorem transpile_JAL_consumer
   fun h_p1 h_p2 =>
     (transpile_JAL m r_main _rd imm_offset _state h_p1 h_p2).1
 
-/-- Consumer-witness for `transpile_FENCE`. -/
-theorem transpile_FENCE_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (_state : RV64State)
-    : m.is_external_op r_main = 0 → m.op r_main = OP_FLAG → m.m32 r_main = 0 :=
-  fun h_p1 h_p2 =>
-    (transpile_FENCE m r_main _state h_p1 h_p2).1
-
 /-- Consumer-witness for `transpile_JALR`. -/
 theorem transpile_JALR_consumer
     {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -70,38 +46,6 @@ theorem transpile_JALR_consumer
     : m.is_external_op r_main = 0 → m.op r_main = OP_COPYB → m.m32 r_main = 0 :=
   fun h_p1 h_p2 =>
     (transpile_JALR m r_main rs1 _rd imm_offset state h_p1 h_p2).1
-
-/-- Consumer-witness for `transpile_LD`. -/
-theorem transpile_LD_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State)
-    : m.is_external_op r_main = 0 → m.op r_main = OP_COPYB → m.m32 r_main = 0 :=
-  fun h_p1 h_p2 =>
-    (transpile_LD m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
-
-/-- Consumer-witness for `transpile_LWU`. -/
-theorem transpile_LWU_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State)
-    : m.is_external_op r_main = 0 → m.op r_main = OP_COPYB → m.m32 r_main = 0 :=
-  fun h_p1 h_p2 =>
-    (transpile_LWU m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
-
-/-- Consumer-witness for `transpile_LHU`. -/
-theorem transpile_LHU_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State)
-    : m.is_external_op r_main = 0 → m.op r_main = OP_COPYB → m.m32 r_main = 0 :=
-  fun h_p1 h_p2 =>
-    (transpile_LHU m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
-
-/-- Consumer-witness for `transpile_LBU`. -/
-theorem transpile_LBU_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State)
-    : m.is_external_op r_main = 0 → m.op r_main = OP_COPYB → m.m32 r_main = 0 :=
-  fun h_p1 h_p2 =>
-    (transpile_LBU m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
 
 /-- Consumer-witness for `transpile_SD`. -/
 theorem transpile_SD_consumer
@@ -142,38 +86,6 @@ theorem transpile_SLLW_consumer
     : m.is_external_op r_main = 1 → m.op r_main = OP_SLL_W → m.flag r_main = 0 :=
   fun h_p1 h_p2 =>
     (transpile_SLLW m r_main rs1 rs2 _rd state h_p1 h_p2).1
-
-/-- Consumer-witness for `transpile_BLT`. -/
-theorem transpile_BLT_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State)
-    : m.is_external_op r_main = 1 → m.op r_main = OP_LT → m.m32 r_main = 0 :=
-  fun h_p1 h_p2 =>
-    (transpile_BLT m r_main rs1 rs2 imm_offset state h_p1 h_p2).1
-
-/-- Consumer-witness for `transpile_BGE`. -/
-theorem transpile_BGE_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State)
-    : m.is_external_op r_main = 1 → m.op r_main = OP_LT → m.m32 r_main = 0 :=
-  fun h_p1 h_p2 =>
-    (transpile_BGE m r_main rs1 rs2 imm_offset state h_p1 h_p2).1
-
-/-- Consumer-witness for `transpile_BLTU`. -/
-theorem transpile_BLTU_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State)
-    : m.is_external_op r_main = 1 → m.op r_main = OP_LTU → m.m32 r_main = 0 :=
-  fun h_p1 h_p2 =>
-    (transpile_BLTU m r_main rs1 rs2 imm_offset state h_p1 h_p2).1
-
-/-- Consumer-witness for `transpile_BGEU`. -/
-theorem transpile_BGEU_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (imm_offset : FGL) (state : RV64State)
-    : m.is_external_op r_main = 1 → m.op r_main = OP_LTU → m.m32 r_main = 0 :=
-  fun h_p1 h_p2 =>
-    (transpile_BGEU m r_main rs1 rs2 imm_offset state h_p1 h_p2).1
 
 /-- Consumer-witness for `transpile_SH`. -/
 theorem transpile_SH_consumer
@@ -294,14 +206,6 @@ theorem transpile_MULHSU_consumer
     : m.is_external_op r_main = 1 → m.op r_main = OP_MULSUH → m.m32 r_main = 0 :=
   fun h_p1 h_p2 =>
     (transpile_MULHSU m r_main rs1 rs2 _rd state h_p1 h_p2).1
-
-/-- Consumer-witness for `transpile_MULW`. -/
-theorem transpile_MULW_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State)
-    : m.is_external_op r_main = 1 → m.op r_main = OP_MUL_W → m.m32 r_main = 1 :=
-  fun h_p1 h_p2 =>
-    (transpile_MULW m r_main rs1 rs2 _rd state h_p1 h_p2).1
 
 /-- Consumer-witness for `transpile_LUI`. -/
 theorem transpile_LUI_consumer
@@ -438,30 +342,6 @@ theorem transpile_ADDIW_consumer
     : m.is_external_op r_main = 1 → m.op r_main = OP_ADD_W → m.flag r_main = 0 :=
   fun h_p1 h_p2 =>
     (transpile_ADDIW m r_main rs1 _rd imm_lo imm_hi state h_p1 h_p2).1
-
-/-- Consumer-witness for `transpile_LW`. -/
-theorem transpile_LW_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State)
-    : m.is_external_op r_main = 1 → m.op r_main = OP_SIGNEXTEND_W → m.m32 r_main = 1 :=
-  fun h_p1 h_p2 =>
-    (transpile_LW m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
-
-/-- Consumer-witness for `transpile_LH`. -/
-theorem transpile_LH_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State)
-    : m.is_external_op r_main = 1 → m.op r_main = OP_SIGNEXTEND_H → m.m32 r_main = 0 :=
-  fun h_p1 h_p2 =>
-    (transpile_LH m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
-
-/-- Consumer-witness for `transpile_LB`. -/
-theorem transpile_LB_consumer
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (_imm_offset : FGL) (state : RV64State)
-    : m.is_external_op r_main = 1 → m.op r_main = OP_SIGNEXTEND_B → m.m32 r_main = 0 :=
-  fun h_p1 h_p2 =>
-    (transpile_LB m r_main rs1 _rd _imm_offset state h_p1 h_p2).1
 
 /-- Consumer-witness for `transpile_DIVUW`. -/
 theorem transpile_DIVUW_consumer
