@@ -142,25 +142,4 @@ theorem shift_archetype_m32_zero_passthrough_bus
     rw [h_m32]
     ring
 
-/-- **Tactic macro `shift_archetype_m32_one_proof`.** Convenience
-    wrapper for proving the `a_hi = 0 ∧ b_hi = 0` theorem from a
-    hypothesis `h_circuit : shift_archetype_circuit_holds m r_main
-    bus_entry opcode_lit 1` in scope. Mirrors
-    `Tactics/BranchArchetype.lean::branch_archetype_proof`.
-
-    **Required hypotheses in the caller:**
-    * `m : Valid_Main C FGL FGL`,
-    * `r_main : ℕ`, `bus_entry : OperationBusEntry FGL`,
-      `opcode_lit : FGL`,
-    * `h_circuit : shift_archetype_circuit_holds m r_main bus_entry opcode_lit 1`. -/
-macro "shift_archetype_m32_one_proof" : tactic => `(tactic| (
-  exact shift_archetype_m32_one_zeros_bus m r_main bus_entry opcode_lit h_circuit
-))
-
-/-- **Tactic macro `shift_archetype_m32_zero_proof`.** Sibling of
-    the above, for the 64-bit shift variants. -/
-macro "shift_archetype_m32_zero_proof" : tactic => `(tactic| (
-  exact shift_archetype_m32_zero_passthrough_bus m r_main bus_entry opcode_lit h_circuit
-))
-
 end ZiskFv.Tactics.ShiftArchetype

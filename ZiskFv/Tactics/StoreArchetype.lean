@@ -120,20 +120,4 @@ theorem store_archetype_copyb_next_pc
   apply store_d_next_pc_concrete m r_main next_pc entry _ h_jmp1 h_jmp2
   exact ⟨h_subset, ⟨h_ext, h_op, h_m32, h_setpc⟩, h_mem⟩
 
-/-- **Tactic macro `store_archetype_proof`.** Convenience wrapper for
-    proving the packed-c formula from a hypothesis
-    `h_circuit : store_archetype_copyb_circuit_holds m r_main next_pc entry`
-    in scope.
-
-    **Expected goal shape:**
-    `main_c_packed m r_main = memory_entry_toField entry`.
-
-    **Required hypotheses (must be named literally in the caller):**
-    * `m : Valid_Main C FGL FGL`,
-    * `r_main : ℕ`, `next_pc : FGL`, `entry : MemoryBusEntry FGL`,
-    * `h_circuit : store_archetype_copyb_circuit_holds m r_main next_pc entry`. -/
-macro "store_archetype_proof" : tactic => `(tactic| (
-  exact store_archetype_copyb_c_packed m r_main next_pc entry h_circuit
-))
-
 end ZiskFv.Tactics.StoreArchetype

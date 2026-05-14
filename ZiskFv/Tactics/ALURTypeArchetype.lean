@@ -128,21 +128,4 @@ theorem alu_rtype_archetype_c_bus_match
   unfold main_c_packed
   rw [h_match_clo, h_match_chi]
 
-/-- **Tactic macro `alu_rtype_archetype_proof`.** Convenience wrapper
-    for proving the `main_c_packed = bus_entry.c_lo + bus_entry.c_hi *
-    2^32` identity from a hypothesis `h_circuit :
-    alu_rtype_archetype_circuit_holds m r_main bus_entry opcode_lit`
-    in scope. Mirrors
-    `Tactics/ShiftArchetype.lean::shift_archetype_m32_one_proof`.
-
-    **Required hypotheses in the caller:**
-    * `m : Valid_Main C FGL FGL`,
-    * `r_main : ℕ`, `bus_entry : OperationBusEntry FGL`,
-      `opcode_lit : FGL`,
-    * `h_circuit : alu_rtype_archetype_circuit_holds m r_main
-      bus_entry opcode_lit`. -/
-macro "alu_rtype_archetype_proof" : tactic => `(tactic| (
-  exact alu_rtype_archetype_c_bus_match m r_main bus_entry opcode_lit h_circuit
-))
-
 end ZiskFv.Tactics.ALURTypeArchetype
