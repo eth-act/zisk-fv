@@ -22,8 +22,10 @@ execute_instruction (.RTYPE rs2 rs1 rd rop.ADD) state
 **Out of scope:** Zicclsm, precompiles (Keccak / SHA256 / big-int /
 DMA / etc.), ECALL/EBREAK, ZisK's custom internal ops.
 
-**Status:** all 63 RV64IM opcodes proved (0 sorries; 80 trusted
-axioms across 10 ledger classes; **all 63** canonical `equiv_<OP>`
+**Status:** all 63 RV64IM opcodes proved (0 sorries; 122 trusted
+axioms across 10 ledger classes — ledger reduced from 147 to 122
+after the Step-4 dead-code cleanup removed 25 unreached axioms;
+**all 63** canonical `equiv_<OP>`
 theorems are OUTPUT-EQ-free, mechanically enforced uniformly by
 `trust/scripts/check-no-output-eq.sh` against
 `trust/forbidden-param-shapes.txt`. The 7 loads were closed by

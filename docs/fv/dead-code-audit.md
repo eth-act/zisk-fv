@@ -285,3 +285,20 @@ Full list: `/tmp/unreachable-constants.txt` after running
 
 Each PR should rerun `nix run .#test` (full gate) and commit the
 `trust/baseline-*.txt` diffs in the same commit as the deletion.
+
+## Cleanup landed
+
+The cleanup landed in commits `607c918` (Batch 1a — 15 transpile
+axioms + consumers), `b865710` (Batch 1b — 10 bus/store/ArithTable
+axioms + their consumer chains), and `5200d24` (Batch 2+3 —
+deleted `Fundamentals/TranspileConsumers.lean` in full plus the
+truly textually-dead Tactics archetype scaffolding identified after
+cross-checking the detector's reports against `grep -rn`).
+
+Final state: **122 axioms** in `trust/baseline-axioms.txt`,
+matching exactly the transitive closure of
+`zisk_riscv_compliant_program_bus`. Several Tactics archetype
+constants flagged "unreachable" by the detector turned out to be
+false positives — they ARE used through `open Foo + bare
+identifier` patterns the const-graph walker does not traverse.
+These remain in tree.
