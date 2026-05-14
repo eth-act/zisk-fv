@@ -917,4 +917,114 @@ theorem shift_pin_w_immediate_eq_of_shift_match
   rw [this, h_shamt_val]
   omega
 
+/-! ## SEXT-mode lane-match bridge (signed loads LB / LH / LW)
+
+For the three sign-extend opcodes `SEXT_B` / `SEXT_H` / `SEXT_W`
+consumed by the signed-load family, the BinaryExtension AIR has
+`op_is_shift = 0` (pinned by `binary_extension_op_is_shift_pin`).
+Under that flag, the BinExt bus row's `b_lo` lane reduces to
+`a0 = free_in_a_0 + 256 * free_in_a_1 + 65536 * free_in_a_2 + 16777216 *
+free_in_a_3` (per `opBus_row_BinaryExtension`'s definition).
+
+Composing with `main_sext_load_emission_bundle`'s
+`m.b_0 r_main = memory_entry_lo e1 = e1.x0 + 256 * e1.x1 + 65536 *
+e1.x2 + 16777216 * e1.x3`, the op-bus permutation handshake
+`m.b_0 r_main = BinExt.b_lo = a0_packed` yields the FGL equation
+`free_in_a_0 + 256*free_in_a_1 + 65536*free_in_a_2 + 16777216*free_in_a_3
+ = e1.x0 + 256*e1.x1 + 65536*e1.x2 + 16777216*e1.x3`.
+
+Both sides have all bytes < 256 (BinExt side from
+`binary_extension_columns_in_range`; e1 side from
+`memory_bus_entry_byte_range_perm_sound`), so the FGL equation lifts
+to ℕ, and base-256 uniqueness extracts the per-byte equalities
+`(v.free_in_a_i r_binary).val = e1.x_i.val` for i ∈ {0, 1, 2, 3} —
+the exact promise hypotheses (`h_a0_match`..`h_a3_match`) consumed
+by `equiv_LW`. LB consumes only `h_a0_match`; LH consumes `h_a0_match`
+and `h_a1_match`; LW consumes all four.
+
+No new trust-ledger axioms. Pure-Lean composition of:
+* `op_bus_perm_sound_BinaryExtension` (class #4)
+* `main_sext_load_emission_bundle` (class #4)
+* `binary_extension_op_is_shift_pin` (class #6)
+* `binary_extension_columns_in_range` (class #6)
+* `memory_bus_entry_byte_range_perm_sound` (class #5b).
+-/
+
+/-- **Base-256 four-byte uniqueness.** A Nat-valued base-256
+    pack-of-four uniquely decomposes when all eight bytes are
+    `< 256`. -/
+private theorem byte_pack4_inj
+    (a0 a1 a2 a3 b0 b1 b2 b3 : ℕ)
+    (ha0 : a0 < 256) (ha1 : a1 < 256) (ha2 : a2 < 256) (ha3 : a3 < 256)
+    (hb0 : b0 < 256) (hb1 : b1 < 256) (hb2 : b2 < 256) (hb3 : b3 < 256)
+    (h : a0 + a1 * 256 + a2 * 65536 + a3 * 16777216
+       = b0 + b1 * 256 + b2 * 65536 + b3 * 16777216) :
+    a0 = b0 ∧ a1 = b1 ∧ a2 = b2 ∧ a3 = b3 := by
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> omega
+
+/-- **SEXT-mode 4-byte lane-match bridge.** From the Main↔BinExt
+    op-bus handshake `h_match`, the Main b-lo bundle equation
+    `m.b_0 r_main = memory_entry_lo e1`, the SEXT-family flag
+    `v.op_is_shift r_binary = 0`, and byte ranges (derived
+    internally), produce the per-byte equalities
+    `(v.free_in_a_i r_binary).val = e1.x_i.val` for i ∈ {0, 1, 2, 3}. -/
+theorem sext_lane_match_bytes_eq_of_match
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (r_main r_binary : ℕ) (e1 : Interaction.MemoryBusEntry FGL)
+    (h_main_b0_eq : m.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1)
+    (h_op_is_shift_zero : v.op_is_shift r_binary = 0)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary)) :
+    (v.free_in_a_0 r_binary).val = e1.x0.val
+    ∧ (v.free_in_a_1 r_binary).val = e1.x1.val
+    ∧ (v.free_in_a_2 r_binary).val = e1.x2.val
+    ∧ (v.free_in_a_3 r_binary).val = e1.x3.val := by
+  -- Byte ranges (BinExt side).
+  obtain ⟨ha0, ha1, ha2, ha3, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _⟩ :=
+    binary_extension_columns_in_range v r_binary
+  -- Byte ranges (e1 side).
+  obtain ⟨he0, he1, he2, he3, _, _, _, _⟩ :=
+    ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e1
+  -- Project the b_lo conjunct from matches_entry.
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
+  obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  -- op_is_shift = 0 collapses the b_lo RHS to `a0 = packed4 a-bytes`.
+  rw [h_op_is_shift_zero] at h_b_lo_m
+  have h_b0_fgl : m.b_0 r_main
+      = v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
+        + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary := by
+    rw [h_b_lo_m]; ring
+  -- Combine: packed4 a-bytes = memory_entry_lo e1.
+  have h_eq_fgl :
+      (v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
+        + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary : FGL)
+      = e1.x0 + e1.x1 * 256 + e1.x2 * 65536 + e1.x3 * 16777216 := by
+    rw [← h_b0_fgl, h_main_b0_eq]
+    simp only [ZiskFv.Airs.MemoryBus.memory_entry_lo]
+  -- Take .val of both sides; both lift to ℕ since byte sums < 2^32 < GL_prime.
+  have h_lhs_val :
+      (v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
+        + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary : FGL).val
+      = (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+        + (v.free_in_a_2 r_binary).val * 65536
+        + (v.free_in_a_3 r_binary).val * 16777216 :=
+    packed_a_lo_val_eq_of_match v r_binary ha0 ha1 ha2 ha3
+  have h_rhs_val :
+      (e1.x0 + e1.x1 * 256 + e1.x2 * 65536 + e1.x3 * 16777216 : FGL).val
+      = e1.x0.val + e1.x1.val * 256 + e1.x2.val * 65536 + e1.x3.val * 16777216 := by
+    have h_cast :
+        e1.x0 + e1.x1 * 256 + e1.x2 * 65536 + e1.x3 * 16777216
+        = ((((e1.x0.val + e1.x1.val * 256 + e1.x2.val * 65536
+              + e1.x3.val * 16777216 : ℕ) : FGL))) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    show _ < 18446744069414584321; omega
+  -- Equate the Nat packs and apply base-256 uniqueness.
+  have h_val_eq := congr_arg Fin.val h_eq_fgl
+  rw [h_lhs_val, h_rhs_val] at h_val_eq
+  exact byte_pack4_inj _ _ _ _ _ _ _ _ ha0 ha1 ha2 ha3
+    he0 he1 he2 he3 h_val_eq
+
 end ZiskFv.Equivalence.Bridge.BinaryExtension
