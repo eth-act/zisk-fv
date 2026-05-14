@@ -481,4 +481,94 @@ axiom binary_consumer_byte_match_chain_pin
     ∧ ((op_emit = 0x1A ∨ op_emit = 0x1B) →
         e_3.pos_ind.val = 1)
 
+/-! ## W-mode SEXT-byte sign-extension choice
+
+The `binary_consumer_byte_match_chain_pin` axiom above pins
+`e_0..e_3.op.val` for W-mode (`op_emit ∈ {0x1A, 0x1B}`) to the
+32-bit-equivalent opcode (`0x0A` for `OP_ADD_W`, `0x0B` for
+`OP_SUB_W`) per PIL `binary.pil:118` (the `i < HALF_BYTES - 1`
+clause uses the literal `b_op`). For bytes 4..7 PIL line 122 uses
+`b_op_or_sext` instead, and PIL `binary.pil:111` defines
+`b_op_or_sext = mode32 * (c_is_signed * (OP_SEXT_FF - OP_SEXT_00)
++ OP_SEXT_00 - b_op) + b_op`. With `mode32 = 1`, this collapses to
+`OP_SEXT_00` when `c_is_signed = 0` and to `OP_SEXT_FF` when
+`c_is_signed = 1`. The BinaryTable's `wf_SEXT_{00,FF}` clauses
+then pin `c_byte = 0x00` or `c_byte = 0xFF` respectively.
+
+The `c_is_signed` column is itself constrained by the BinaryTable
+lookup at byte 3 (PIL `binary.pil:120`), which carries
+`8*mode32_and_c_is_signed` in the `cout + flags` slot. The
+`binary_table.rs::ARITH_TABLE` row-set for `OP_ADD`/`OP_SUB` with
+`mode32 = 1` enumerates two rows per `(a3, b3, cin, c3)` combination
+— one with `c_is_signed = 0` (consumed when `c3 < 0x80`, i.e. the
+low-32 result MSB is `0`) and one with `c_is_signed = 1` (consumed
+when `c3 ≥ 0x80`, i.e. the low-32 result MSB is `1`). This is the
+sign-extension regime: W-mode results sign-extend from the bit-31
+position. -/
+
+/-- **Binary W-mode SEXT-byte sign-extension choice.** For every
+    Binary AIR row whose op-bus emission `b_op + 16 * mode32` equals
+    a W-mode opcode (`0x1A = OP_ADD_W` or `0x1B = OP_SUB_W`), the
+    upper four `free_in_c` byte columns satisfy the canonical RV64
+    sign-extension disjunction: either all four are `0x00` and the
+    low-32-bit result (assembled from `free_in_c_0..3`) is in
+    `[0, 2^31)`, or all four are `0xFF` and the low-32-bit result is
+    in `[2^31, 2^32)`. The `v.carry_7 r = 0` conclusion follows from
+    `wf_SEXT_{00,FF}` chained against `wf_ADD/wf_SUB` at byte 3 (the
+    chain ends at `pos_ind = 1`), but it's bundled here so wrappers
+    don't need a separate carry-7-zero derivation.
+
+    Trust class: #6 (Binary AIR lookup soundness — W-mode SEXT-byte
+    sub-class). Same scope as `binary_consumer_byte_match_chain_pin`;
+    this axiom is the W-mode upper-byte refinement.
+
+    PIL citations:
+    * `zisk/state-machines/binary/pil/binary.pil:111` —
+      `b_op_or_sext = mode32 * (c_is_signed * (OP_SEXT_FF - OP_SEXT_00)
+      + OP_SEXT_00 - b_op) + b_op` (the linear definition that
+      collapses to `OP_SEXT_{00,FF}` in W-mode).
+    * `zisk/state-machines/binary/pil/binary.pil:115-125` — the 8
+      per-byte `lookup_assumes(BINARY_TABLE_ID, …)` calls (byte 3
+      lookup carries `8*mode32_and_c_is_signed`, pinning
+      `c_is_signed` to the low-32 result MSB; bytes 4..7 use
+      `b_op_or_sext` as the lookup opcode).
+    * `zisk/state-machines/binary/src/binary_table.rs` —
+      `BinaryTable` row enumeration: `OP_ADD`/`OP_SUB` with
+      `mode32 = 1` split on `c_is_signed ∈ {0, 1}` per the low-32
+      result MSB; `OP_SEXT_00` rows produce `c = 0x00`, `OP_SEXT_FF`
+      rows produce `c = 0xFF`.
+
+    Consumed by `equiv_SUBW_from_trust` / `equiv_ADDW_from_trust`. -/
+axiom binary_w_sext_choice_pin
+    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_emit : ℕ)
+    (h_emit_op : v.b_op r + 16 * v.mode32 r = (op_emit : FGL))
+    (h_op_w : op_emit = 0x1A ∨ op_emit = 0x1B) :
+    (((v.free_in_c_4 r).val = 0 ∧ (v.free_in_c_5 r).val = 0
+        ∧ (v.free_in_c_6 r).val = 0 ∧ (v.free_in_c_7 r).val = 0) ∧
+      (v.free_in_c_0 r).val + (v.free_in_c_1 r).val * 256
+        + (v.free_in_c_2 r).val * 65536
+        + (v.free_in_c_3 r).val * 16777216 < 2147483648)
+    ∨ (((v.free_in_c_4 r).val = 255 ∧ (v.free_in_c_5 r).val = 255
+        ∧ (v.free_in_c_6 r).val = 255 ∧ (v.free_in_c_7 r).val = 255) ∧
+      (v.free_in_c_0 r).val + (v.free_in_c_1 r).val * 256
+        + (v.free_in_c_2 r).val * 65536
+        + (v.free_in_c_3 r).val * 16777216 ≥ 2147483648)
+
+/-- **W-mode carry_7 = 0 corollary.** Bundled with
+    `binary_w_sext_choice_pin` because the same `wf_SEXT_{00,FF}`
+    semantics (`e.flags.val % 2 = e.cin.val`, chained against
+    `wf_ADD/wf_SUB` at byte 3 producing `flags.val % 2 = 0`)
+    pins `carry_7.val = 0`. Exposed as a separate axiom so wrappers
+    can consume just this fact without unpacking the SEXT disjunction.
+
+    Trust class: #6 (Binary AIR lookup soundness — W-mode chain-end
+    sub-class). PIL: same citations as `binary_w_sext_choice_pin`
+    (`binary.pil:115-125` per-byte lookups + `binary.pil:67`
+    `bits(1) carry[BYTES]`). -/
+axiom binary_w_mode_carry_7_zero
+    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_emit : ℕ)
+    (h_emit_op : v.b_op r + 16 * v.mode32 r = (op_emit : FGL))
+    (h_op_w : op_emit = 0x1A ∨ op_emit = 0x1B) :
+    v.carry_7 r = 0
+
 end ZiskFv.Airs.Binary
