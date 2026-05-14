@@ -590,6 +590,116 @@ axiom main_external_arith_emission_bundle
     ∧ (Transpiler.wrap_to_regidx e_rd.ptr = 0 ↔ rd = 0)
     ∧ rd.toNat = (Transpiler.wrap_to_regidx e_rd.ptr).val
 
+/-- **Main memory-bus emission bundle — store (`as = 2`) side, SD width.**
+
+    For every Main row in the SD family (`is_external_op = 0`,
+    `op = OP_COPYB`, `store_ind = 1`, `store_pc = 0`, `ind_width = 8`),
+    the store memory-bus entry `e_st` (`as = 2`, `mult = 1`)
+    carries `xreg rs2`'s 8 byte cells — and the store address slot
+    is `xreg rs1 + signExt(imm)`. The bundle exposes these in
+    byte-extracted (BitVec 8) form, paralleling how
+    `main_external_arith_emission_bundle` exposes the rd-write
+    entry's lanes in byte-packed nat form for MUL/DIV.
+
+    Derivation chain folded into the axiom (each step PIL-cited):
+
+    1. **Lane equality.** `main.pil:323` emits the store entry with
+       `value: store_value`; `main.pil:311-312` with `store_pc = 0`
+       collapses `store_value` to `(c_0, c_1)`. So
+       `memory_entry_lo e_st = c_0 r_main`,
+       `memory_entry_hi e_st = c_1 r_main`.
+    2. **Copyb passthrough.** Main constraints 9/16
+       (`(1 - is_external_op) * op * (b_i - c_i) = 0`) under
+       `is_external_op = 0, op = OP_COPYB = 1` force
+       `c_0 = b_0` and `c_1 = b_1`.
+    3. **Transpile.** `transpile_SD` (`Transpiler.lean:682`) pins
+       `m.b_0 = lane_lo r2_val`, `m.b_1 = lane_hi r2_val` on the
+       Sail-side state's `xreg rs2 = r2_val` register read.
+    4. **Byte-range bus.** `main.pil:78` declares
+       `col witness bits(8) x[BYTES]` on the memory-bus entry's
+       byte lanes, range-checking each to `[0, 256)`; this is the
+       same range bus exposed via
+       `memory_bus_entry_byte_range_perm_sound`.
+    5. **Base-256 unique decomposition.** With both halves'
+       packings equal (via 1+2+3) and per-byte ranges (via 4),
+       each `e_st.xi` is the corresponding byte slot of `r2_val`,
+       i.e. `(e_st.xi : BitVec 8) = BitVec.extractLsb (8(i+1)-1) (8i) r2_val`.
+    6. **Store address.** `main.pil:323`'s `addr: addr2` slot,
+       with `store_ind = 1` (from `riscv2zisk_context.rs:841`),
+       sets `addr2 = a_offset_imm0 + a_src_ind * a[0]` reducing
+       on `a_src_reg = 1` rows (the SD case per
+       `riscv2zisk_context.rs:837`) to
+       `a + signExt(imm) = xreg rs1 + signExt(imm)`. So
+       `e_st.ptr.toNat = r1_val.toNat + signExt(imm).toNat`.
+
+    The axiom requires the **transpile-derived lane equalities**
+    `main.b_0 = lane_lo r2_val ∧ main.b_1 = lane_hi r2_val` (and
+    similarly for `a_0/a_1 ↔ r1_val`) as **caller-supplied
+    hypotheses** rather than re-deriving them — keeping the trust
+    surface tied to the transpile axiom rather than duplicating
+    its content. The same applies to the copyb activation pins
+    (`is_external_op = 0`, `op = OP_COPYB`) which the caller pins
+    via `transpile_SD`'s preconditions.
+
+    PIL citations (consolidated):
+    * `state-machines/main/pil/main.pil:323` — c-side `mem_op`
+      emits the store entry (`as = 2`, `mult = 1`);
+    * `state-machines/main/pil/main.pil:311-312` — `store_value`
+      `(c_0, c_1)` under `store_pc = 0`;
+    * `state-machines/main/pil/main.pil:78` — `bits(8)` byte
+      witness on the memory-bus entry lanes;
+    * `state-machines/main/pil/main.pil:473` — `store_pc`
+      booleanity (pinning value collapse);
+    * Main constraints 9 / 16 (`internal_op1_copies_b{0,1}`)
+      — copyb passthrough;
+    * `core/src/riscv2zisk_context.rs:828-845` — `fn store_op`
+      with `op = "copyb"`, `ind_width = 8` for SD,
+      `store_ind = 1`, `src_a = reg rs1`, `src_b = reg rs2`.
+
+    Trust class #4 (memory-bus permutation / lookup-argument
+    soundness on `bus_id = 10`, packaged with byte-range bus
+    `bus_id` consequences) — same class as
+    `main_load_emission_bundle`, `main_sext_load_emission_bundle`,
+    `main_store_pc_emission_bundle`, and
+    `main_external_arith_emission_bundle`. The byte-form
+    conclusion is the only difference; the lane-form (`c_i =
+    memory_entry_*`) and ptr-form facts are the same as
+    `main_load_emission_bundle`'s for the b-side.
+
+    Width specialization: SD only (`ind_width = 8`, all 8 byte
+    lanes meaningful). SB/SH/SW will need their own width-specialized
+    bundles in `Compliance/SbExemplar.lean` / etc., as their high
+    byte lanes are zero-padded by the bus's `ind_width` selector. -/
+axiom main_store_emission_bundle_sd
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (e_st : MemoryBusEntry FGL)
+    (r1_val r2_val : BitVec 64) (imm : BitVec 12)
+    -- Activation: internal store row (copyb passthrough).
+    (h_ext : main.is_external_op r_main = 0)
+    (h_op : main.op r_main = OP_COPYB)
+    -- Bus side: e_st is the store entry (`as = 2`, `mult = 1`).
+    (h_e_st_mult : e_st.multiplicity = 1) (h_e_st_as_val : e_st.as.val = 2)
+    -- Transpile-pinned Sail-state lane equalities (from `transpile_SD`).
+    (h_a_lo : main.a_0 r_main = ZiskFv.Trusted.lane_lo r1_val)
+    (h_a_hi : main.a_1 r_main = ZiskFv.Trusted.lane_hi r1_val)
+    (h_b_lo : main.b_0 r_main = ZiskFv.Trusted.lane_lo r2_val)
+    (h_b_hi : main.b_1 r_main = ZiskFv.Trusted.lane_hi r2_val) :
+    -- ptr-match: store address = xreg rs1 + signExt(imm).
+    -- BitVec-sum form (matches `equiv_SD`'s `h_ptr_match`); the Sail
+    -- side's `sd_state_assumptions` pins the sum below the address
+    -- space size, so no wraparound at this level.
+    e_st.ptr.toNat = (r1_val + BitVec.signExtend 64 imm).toNat
+    -- 8 byte extracts: each e_st.xi is the i-th byte of r2_val.
+    ∧ (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
+    ∧ (e_st.x1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val
+    ∧ (e_st.x2 : BitVec 8) = BitVec.extractLsb 23 16 r2_val
+    ∧ (e_st.x3 : BitVec 8) = BitVec.extractLsb 31 24 r2_val
+    ∧ (e_st.x4 : BitVec 8) = BitVec.extractLsb 39 32 r2_val
+    ∧ (e_st.x5 : BitVec 8) = BitVec.extractLsb 47 40 r2_val
+    ∧ (e_st.x6 : BitVec 8) = BitVec.extractLsb 55 48 r2_val
+    ∧ (e_st.x7 : BitVec 8) = BitVec.extractLsb 63 56 r2_val
+
 /-! ## Axiom audit
 
 The bridge theorems compose `lookup_consumer_matches_provider_{load,store}`
@@ -599,8 +709,8 @@ hypotheses. The Mem-row local lemmas
 `Mem.core_every_row` and add no axioms.
 
 `main_load_emission_bundle`, `main_sext_load_emission_bundle`,
-`main_store_pc_emission_bundle`, and
-`main_external_arith_emission_bundle` are narrow PIL-cited
+`main_store_pc_emission_bundle`, `main_external_arith_emission_bundle`,
+and `main_store_emission_bundle_sd` are narrow PIL-cited
 extensions of the same trust class (memory-bus permutation /
 lookup-argument soundness on `bus_id = 10`). -/
 
