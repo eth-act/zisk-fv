@@ -18,6 +18,10 @@
 
 docs/site/*.png
 
+# Proof-tree visualizer regenerable artifact (1+ MB; rebuild with
+# `lake exe trust-gate print-tree-edges <root>`).
+docs/proof-tree/edges.tsv
+
 docs/superpowers/
 
 .playwright-mcp
@@ -41,3 +45,5 @@ docs/superpowers/
 
 # Legacy leftover from the deleted docker pipeline (root-owned, harmless)
 /out/
+
+.rgignore

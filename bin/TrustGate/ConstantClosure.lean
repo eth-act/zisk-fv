@@ -116,4 +116,91 @@ def moduleOf (env : Environment) (n : Name) : String :=
     | none   => "?"
   | none => "<current>"
 
+/-- A node-kind tag for the proof-tree visualizer. -/
+inductive NodeKind
+  | project    -- a ZiskFv.* const (theorem, def, etc.)
+  | axiom_     -- a ZiskFv.* axiom (trust-ledger leaf)
+  | external   -- non-ZiskFv const (mathlib / Sail / Lean core)
+  deriving Repr, BEq
+
+/-- Tag a Name with its NodeKind. -/
+def nodeKindOf (env : Environment) (n : Name) : NodeKind :=
+  if isProjectName n then
+    match env.find? n with
+    | some (.axiomInfo _) => NodeKind.axiom_
+    | _                   => NodeKind.project
+  else
+    NodeKind.external
+
+/-- True iff `n` is a Lean-internal Name we want to drop entirely
+from the proof tree (kernel `Eq.refl`, congr lemmas, propext, etc.
+appear thousands of times and add no signal). -/
+def isNoiseExternal (n : Name) : Bool :=
+  let s := n.toString
+  n == `Eq || n == `Eq.refl || n == `Eq.mpr || n == `Eq.mp ||
+  n == `HEq || n == `HEq.refl ||
+  n == `propext || n == `funext || n == `congrArg || n == `congr ||
+  n == `congrFun || n == `congrFun₂ || n == `congrFun₃ ||
+  n == `id || n == `id.def ||
+  n == `True || n == `True.intro || n == `False || n == `False.elim ||
+  n == `And || n == `And.intro || n == `Or ||
+  n == `Iff || n == `Iff.intro || n == `Iff.mp || n == `Iff.mpr ||
+  n == `Not || n == `decide ||
+  s.startsWith "Eq." || s.startsWith "HEq." ||
+  s.startsWith "Nat.rec" || s.startsWith "Bool.rec"
+
+/-- Render a NodeKind as a short string tag. -/
+def NodeKind.toTag : NodeKind → String
+  | .project  => "P"
+  | .axiom_   => "A"
+  | .external => "E"
+
+/-- BFS edge collection from `root`. Yields a sorted array of
+`(parent, child, parentKind, childKind)` quadruples for the proof-
+tree visualizer.
+
+Edge policy: we only emit edges whose CHILD is project-namespaced
+(project const or project axiom). External refs (mathlib, Sail,
+Lean core) would be tens of thousands of dangling leaves with no
+information for the user, so they are dropped at the edge stage.
+Project constants that reference no project children still appear
+implicitly as terminal nodes (they show up as the child of some
+parent's edge). The root is guaranteed to be present.
+
+We never recurse into external constants. -/
+def collectEdges (env : Environment) (root : Name) :
+    Array (Name × Name × NodeKind × NodeKind) := Id.run do
+  let mut visited : NameSet := NameSet.empty.insert root
+  let mut todo : Array Name := #[root]
+  let mut edges : Array (Name × Name × NodeKind × NodeKind) := #[]
+  while todo.size > 0 do
+    let n := todo.back!
+    todo := todo.pop
+    let pKind := nodeKindOf env n
+    -- Only recurse into project consts. External consts are leaves.
+    if pKind matches .external then continue
+    match env.find? n with
+    | none => continue
+    | some ci =>
+      let refs := referencedByCI ci
+      for c in refs.toList do
+        if c == n then continue
+        if isCompilerInternal c then continue
+        if isNoiseExternal c then continue
+        let cKind := nodeKindOf env c
+        -- Drop external children entirely — they are pure noise for
+        -- the visualizer.
+        if cKind matches .external then
+          if !visited.contains c then
+            visited := visited.insert c
+          continue
+        edges := edges.push (n, c, pKind, cKind)
+        if !visited.contains c then
+          visited := visited.insert c
+          todo := todo.push c
+  -- Sort edges deterministically.
+  edges.qsort (fun a b =>
+    if a.1.toString == b.1.toString then a.2.1.toString < b.2.1.toString
+    else a.1.toString < b.1.toString)
+
 end TrustGate.ConstantClosure
