@@ -22,17 +22,28 @@ execute_instruction (.RTYPE rs2 rs1 rd rop.ADD) state
 **Out of scope:** Zicclsm, precompiles (Keccak / SHA256 / big-int /
 DMA / etc.), ECALL/EBREAK, ZisK's custom internal ops.
 
-**Status:** all 63 RV64IM opcodes proved (0 sorries; 122 trusted
-axioms across 10 ledger classes — ledger reduced from 147 to 122
-after the Step-4 dead-code cleanup removed 25 unreached axioms;
-**all 63** canonical `equiv_<OP>`
-theorems are OUTPUT-EQ-free, mechanically enforced uniformly by
+**Status:** `zisk_riscv_compliant_program_bus` is proved
+(`ZiskFv/Equivalence/Compliance/Global.lean`); its trust closure
+is the **122 axioms** enumerated in
+`trust/baseline-zisk-riscv-compliant.txt` and documented per-class
+in `docs/fv/trusted-base.md`. All 63 RV64IM opcodes are covered as
+`equiv_<OP>_from_trust` wrappers under
+`ZiskFv/Equivalence/Compliance/<Op>Exemplar.lean` (plus
+`DivPilot.lean`), dispatched by the global theorem through a 35-arm
+`OpEnvelope` sum type. The principal "promise hypothesis"
+soundness gap surveyed in
+[`docs/fv/known-gaps.md`](docs/fv/known-gaps.md) is closed at the
+global theorem: V3 trust gates
+(`check-closure-vs-baseline` + wrapper caller-burden ledger)
+mechanically prevent regression. The 63 canonical `equiv_<OP>`
+theorems remain OUTPUT-EQ-free, enforced uniformly by
 `trust/scripts/check-no-output-eq.sh` against
 `trust/forbidden-param-shapes.txt`. The 7 loads were closed by
 deriving their cross-entry rd-value byte equations from circuit
 witnesses — see `ZiskFv/Circuit/LoadDerivation.lean` for the
 copyb / MemAlign families and `ZiskFv/Circuit/SextLoadBridge.lean`
-for the LB/LH/LW signed-load chain (`bin_ext_table_consumer_wf` +
+for the LB/LH/LW signed-load chain
+(`bin_ext_table_consumer_wf` +
 `binary_extension_sext_{b,h,w}_chunks_eq_signextend_nat`). The
 LBU/LHU/LWU zero-pad is itself a derived theorem
 (`memalign_subdoubleword_load_high_bytes_zero` in
@@ -40,23 +51,6 @@ LBU/LHU/LWU zero-pad is itself a derived theorem
 permutation-soundness axiom for the MemAlign* providers plus
 `mem_align_rom_subdoubleword_load_value_1_zero` (a narrow
 ROM-lookup axiom).
-
-**⚠️ Open soundness gap — read before claiming end-to-end
-verification.** The OUTPUT-EQ-free claim above is *narrow*: it
-applies only to the 10 retired hypothesis names listed in
-`trust/forbidden-param-shapes.txt`. 62 of 63 canonical theorems
-still carry **promise hypotheses** (`h_match_clo`,
-`h_input_r1_circuit`, the loose `a₀..a₃ b₀..b₃ … hC*` bundles in
-MUL/DIV, etc.) that assert algebraic relationships not derived
-from the bus protocol or transpile contract. The proofs are
-**conditionally** sound — *if* a caller can supply consistent
-witnesses for those hypotheses, the conclusions follow — but no
-caller (no global compliance theorem) currently exists to discharge
-them, and for many opcodes the hypotheses are unfulfillable from
-the actual circuit without substantial new derivation
-infrastructure. See [`docs/fv/known-gaps.md`](docs/fv/known-gaps.md)
-for the full survey, the three tiers of detachment, and the
-immediate TODO.
 
 ## Pipeline
 
