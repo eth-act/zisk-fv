@@ -45,13 +45,13 @@ writeShellApplication {
     #
     # Lake at 5.0 has no -j/jobs flag, but its async build jobs run on
     # Lean's runtime task scheduler, which honors LEAN_NUM_THREADS.
-    # Capping at 2 keeps peak memory tractable on the 64 GB XL runner.
-    # native_decide-heavy files (Goldilocks primality, RV64D opcodes —
-    # notably RV64D.sd, RV64D.jal) can each peak ~12-15 GB; threads=4
-    # OOM-killed at ZiskFv.Sail.sd. threads=2 leaves ~30 GB headroom
-    # even on the worst pair. Override with LEAN_NUM_THREADS=N at call
-    # site for a different cap.
-    run "2/4 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-2}" lake build
+    # threads=3 matches the 32 GB XL runner's budget given the
+    # 2026-05-14 fresh-build measurement of ~8 GB peak per `lean`
+    # process (3 * 8 ≈ 24 GB peak, ~8 GB headroom). Earlier caps:
+    # threads=2 was the original conservative default; threads=4
+    # OOM-killed at ZiskFv.Sail.sd. Override with LEAN_NUM_THREADS=N
+    # at call site for a different cap.
+    run "2/4 lake build" env LEAN_NUM_THREADS="''${LEAN_NUM_THREADS:-3}" lake build
 
     # 3. Trust gate (locality + baseline + forbidden tier1 params +
     # floors + zero-sorry + uniformity lint). See trust/README.md.
