@@ -575,7 +575,10 @@ bridge axioms below absorb them).
 |---|---|---|---|
 | `lookup_consumer_matches_provider_load` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:162` | Main-row load consumer (`b_*`, `as = 2`) is matched by a Mem-AIR row |
 | `lookup_consumer_matches_provider_store` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:178` | Main-row store consumer (`c_*`) is matched by a Mem-AIR row |
-| `main_store_emission_bundle_sd` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:672` | SD-pilot store emission — byte-extracted store entry contents + ptr-match for SD (`ind_width = 8`); consumed by `Bridge.Mem.sd_discharge_full` |
+| `main_store_emission_bundle_sd` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:673` | SD-pilot store emission — byte-extracted store entry contents + ptr-match for SD (`ind_width = 8`); consumed by `Bridge.Mem.sd_discharge_full` |
+| `main_store_emission_bundle_sb` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:768` | SB (1-byte) store emission — ptr-match + low byte + 7 RMW high-byte preservations; consumed by `Bridge.Mem.sb_discharge_full` |
+| `main_store_emission_bundle_sh` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:804` | SH (2-byte) store emission — ptr-match + 2 low bytes + 6 RMW high-byte preservations; consumed by `Bridge.Mem.sh_discharge_full` |
+| `main_store_emission_bundle_sw` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:832` | SW (4-byte) store emission — ptr-match + 4 low bytes + 4 RMW high-byte preservations; consumed by `Bridge.Mem.sw_discharge_full` |
 | `main_load_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:374` | internal-copyb (load) Main-row b/c emission lane equalities — consumed by LD/LBU/LHU/LWU discharge |
 | `main_sext_load_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:433` | external-row analog of the above for signed loads (LB/LH/LW; `is_external_op = 1`, `op ∈ OP_SIGNEXTEND_*`) |
 | `main_store_pc_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:495` | rd-write entry lanes match `store_pc_lanes_match_{lo,hi}` for `is_external_op = 0`, `op ∈ {OP_FLAG, OP_COPYB}` — consumed by JAL/JALR/AUIPC/LUI |
@@ -660,6 +663,52 @@ The `Bridge.Mem.sd_discharge_full` derivation theorem (pure Lean,
 no axiom) composes the new bundle with `transpile_SD` (class #1)
 and the Sail `read_xreg` bridge to deliver the 9-hypothesis
 promise bundle that `equiv_SD` consumes.
+
+### Actual delta (Step 4.2.r3.IV — SB/SH/SW narrow-store wrappers)
+
+**3 new axioms** added: `main_store_emission_bundle_{sb,sh,sw}`
+(class #4, `MemBridge.lean:768/804/832`). The narrow stores follow
+the same architectural pattern as SD: Main emits the same memory-bus
+entry shape (`as = 2`, `mult = 1`, 8 byte cells) but only the low
+`N ∈ {1, 2, 4}` byte lanes carry the store-value bytes; the high
+`8 - N` lanes are restored from the **pre-existing memory contents**
+by the MemAlign* RMW protocol (`mem_align.pil:28-37` and `:50-61`).
+
+Each axiom produces:
+1. **Ptr-match.** `e_st.ptr.toNat = (r1_val + signExt(imm)).toNat`.
+2. **Low-byte extracts.** `(e_st.x_i : BitVec 8) = BitVec.extractLsb _ _ r2_val`
+   for `i ∈ [0, N)`.
+3. **High-byte RMW preservations.** `state.mem[e_st.ptr.toNat + i]?
+   = some (e_st.x_i : BitVec 8)` for `i ∈ [N, 8)`.
+
+The canonical `equiv_SB / SH / SW` theorems carry a single bundled
+`h_mem_eq` hypothesis equating the bus side's 8-insert chain on
+`state.mem` with the Sail spec's `N`-insert chain (via
+`modify_memory_{1,2,4}`). The `Bridge.Mem.{sb,sh,sw}_discharge_full`
+helpers derive `h_mem_eq` from the new axiom + `transpile_{SB,SH,SW}` +
+a pure-Lean `Std.ExtHashMap.ext_getElem?` closure: each trailing
+insert at `ptr + i` (`i ≥ N`) is a no-op because (3) says memory
+already contains the inserted value at that key.
+
+**Design choice rationale.** The user-specified options were:
+* (a) New class-#4 axioms encoding the RMW protocol directly. ✅ CHOSEN.
+* (b) Pure-Lean composition with an existing memory-bus
+  permutation-soundness fact + at most one new class-#5 axiom.
+
+Option (b) is not feasible without 3 new axioms anyway: the
+existing `main_store_emission_bundle_sd` produces byte-extract
+equalities for **all 8 bytes** under the (wrong-for-narrow) `ind_width = 8`
+assumption; for SB/SH/SW only the low `N` byte extracts are valid,
+and the high `8 - N` lanes follow a different (RMW) protocol that
+must be axiomatized separately. The cleanest factoring is one
+narrow-width axiom per width, mirroring the SD bundle's shape on
+the low side and adding the RMW clause on the high side. All three
+axioms fit class #4 with the same PIL citation surface as SD plus
+the MemAlign write-protocol citations.
+
+Matches the upper half of the original Mem-shape 0-2 prediction
+(prediction was for the full pilot; this wraps up the
+narrow-stores sub-shape of the Mem family).
 
 ### Actual delta (Step 4.1.6 — LD exemplar, Mem-loads shape)
 

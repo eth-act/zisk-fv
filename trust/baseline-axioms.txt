@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 142
+# Total entries: 145
 #
 39b9f47eebdda4ca  ZiskFv/Airs/Arith/Ranges.lean:44  axiom     arith_mul_columns_in_range
 c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:56  axiom     arith_div_columns_in_range
@@ -60,13 +60,16 @@ e6a596bef7ff88cb  ZiskFv/Airs/MemoryBus/EntryRanges.lean:52  axiom     memory_bu
 f82c9c2d6803aee8  ZiskFv/Airs/MemoryBus/LaneMatch.lean:329  axiom     memory_bus_register_write_perm_sound_store_pc
 8c04bbb28c410ebd  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:135  axiom     memalign_load_perm_sound
 ddbca43a3ae7757a  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:168  axiom     mem_align_rom_subdoubleword_load_value_1_zero
-2a92e6d678fb5c0f  ZiskFv/Airs/MemoryBus/MemBridge.lean:162  axiom     lookup_consumer_matches_provider_load
-4685f64456e292e7  ZiskFv/Airs/MemoryBus/MemBridge.lean:178  axiom     lookup_consumer_matches_provider_store
-df1bb212fcddf2a6  ZiskFv/Airs/MemoryBus/MemBridge.lean:374  axiom     main_load_emission_bundle
-24dd4ca3f75ffaf3  ZiskFv/Airs/MemoryBus/MemBridge.lean:433  axiom     main_sext_load_emission_bundle
-b7525f7cc15044c1  ZiskFv/Airs/MemoryBus/MemBridge.lean:495  axiom     main_store_pc_emission_bundle
-be9709898787174a  ZiskFv/Airs/MemoryBus/MemBridge.lean:553  axiom     main_external_arith_emission_bundle
-93a53506ac1d3111  ZiskFv/Airs/MemoryBus/MemBridge.lean:673  axiom     main_store_emission_bundle_sd
+2a92e6d678fb5c0f  ZiskFv/Airs/MemoryBus/MemBridge.lean:163  axiom     lookup_consumer_matches_provider_load
+4685f64456e292e7  ZiskFv/Airs/MemoryBus/MemBridge.lean:179  axiom     lookup_consumer_matches_provider_store
+df1bb212fcddf2a6  ZiskFv/Airs/MemoryBus/MemBridge.lean:375  axiom     main_load_emission_bundle
+24dd4ca3f75ffaf3  ZiskFv/Airs/MemoryBus/MemBridge.lean:434  axiom     main_sext_load_emission_bundle
+b7525f7cc15044c1  ZiskFv/Airs/MemoryBus/MemBridge.lean:496  axiom     main_store_pc_emission_bundle
+be9709898787174a  ZiskFv/Airs/MemoryBus/MemBridge.lean:554  axiom     main_external_arith_emission_bundle
+93a53506ac1d3111  ZiskFv/Airs/MemoryBus/MemBridge.lean:674  axiom     main_store_emission_bundle_sd
+ad517419e27f4b60  ZiskFv/Airs/MemoryBus/MemBridge.lean:768  axiom     main_store_emission_bundle_sb
+6e2cbab0ad008e6c  ZiskFv/Airs/MemoryBus/MemBridge.lean:804  axiom     main_store_emission_bundle_sh
+8a4cf50573c92704  ZiskFv/Airs/MemoryBus/MemBridge.lean:832  axiom     main_store_emission_bundle_sw
 67ed8e590d7f0792  ZiskFv/Airs/OperationBus/Bridge.lean:54  axiom     op_bus_perm_sound_BinaryAdd
 d9d7d2422146a7dd  ZiskFv/Airs/OperationBus/Bridge.lean:77  axiom     op_bus_perm_sound_Binary
 f0f2b4a2aaab18ee  ZiskFv/Airs/OperationBus/Bridge.lean:101  axiom     op_bus_perm_sound_BinaryExtension
