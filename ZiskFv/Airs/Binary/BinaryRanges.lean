@@ -264,4 +264,34 @@ axiom binary_b_op_or_sext_eq_OP_OR (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = 15) :
     (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_OR
 
+/-- **Binary table-pin: `b_op_or_sext = OP_AND` for AND-tagged rows.**
+    For every Binary AIR row whose op-bus emission `b_op + 16 * mode32`
+    equals `14` (the on-bus literal `OP_AND`), the `b_op_or_sext` column
+    pins to `OP_AND` (`= 14`). AND uses `b_op = 14, mode32 = 0,
+    c_is_signed = 0`. Trust class: #6 (Binary AIR lookup soundness —
+    table-pin sub-class), parallel to `binary_b_op_or_sext_eq_OP_OR`.
+
+    PIL: `binary.pil:104` (`b_op_or_sext` linear def) +
+    `binary.pil:131-148` (per-byte BinaryTable lookup restricting the
+    `(b_op, mode32, c_is_signed)` triple to valid entries). Consumed by
+    `equiv_AND_from_trust` (`Compliance/AndExemplar.lean`). -/
+axiom binary_b_op_or_sext_eq_OP_AND (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (h_emit_op : v.b_op r + 16 * v.mode32 r = 14) :
+    (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_AND
+
+/-- **Binary table-pin: `b_op_or_sext = OP_XOR` for XOR-tagged rows.**
+    For every Binary AIR row whose op-bus emission `b_op + 16 * mode32`
+    equals `16` (the on-bus literal `OP_XOR`), the `b_op_or_sext` column
+    pins to `OP_XOR` (`= 16`). XOR uses `b_op = 16, mode32 = 0,
+    c_is_signed = 0`. Trust class: #6 (Binary AIR lookup soundness —
+    table-pin sub-class), parallel to `binary_b_op_or_sext_eq_OP_OR`.
+
+    PIL: `binary.pil:104` (`b_op_or_sext` linear def) +
+    `binary.pil:131-148` (per-byte BinaryTable lookup restricting the
+    `(b_op, mode32, c_is_signed)` triple to valid entries). Consumed by
+    `equiv_XOR_from_trust` (`Compliance/XorExemplar.lean`). -/
+axiom binary_b_op_or_sext_eq_OP_XOR (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (h_emit_op : v.b_op r + 16 * v.mode32 r = 16) :
+    (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_XOR
+
 end ZiskFv.Airs.Binary
