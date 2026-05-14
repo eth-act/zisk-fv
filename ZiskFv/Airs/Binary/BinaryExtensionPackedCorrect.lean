@@ -217,7 +217,7 @@ private lemma byte_pair_div_pow_two (a b s k : ℕ)
     (consumer at multiplicity 1, all with `op = OP_SLL`), and the
     range-bound on each input byte (`a_i.val < 256`), conclude that the
     BinaryExtension AIR computes 64-bit SLL. -/
-theorem binary_extension_sll_chunks_eq_bv_shl
+lemma binary_extension_sll_chunks_eq_bv_shl
     (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SLL)
     (h_bytes : ByteLookupHypotheses v row)
@@ -432,7 +432,7 @@ theorem binary_extension_sll_chunks_eq_bv_shl
     carries), giving the natural identity
     `(a64 >>> s) = sum_i ((a_i * 256^i) >>> s)`. This is iterated
     `byte_pair_div_pow_two` over the byte chain. -/
-theorem binary_extension_srl_chunks_eq_bv_ushr
+lemma binary_extension_srl_chunks_eq_bv_ushr
     (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SRL)
     (h_bytes : ByteLookupHypotheses v row)
@@ -1364,7 +1364,7 @@ private lemma sra_bv_core
     (consumer at multiplicity 1, all with `op = OP_SRA`), and the
     range-bound on each input byte, conclude that the BinaryExtension AIR
     computes 64-bit signed shift-right (`BitVec.sshiftRight`). -/
-theorem binary_extension_sra_chunks_eq_bv_sshr
+lemma binary_extension_sra_chunks_eq_bv_sshr
     (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SRA)
     (h_bytes : ByteLookupHypotheses v row)
@@ -1816,7 +1816,7 @@ private lemma srlw_bv_core
     range-bound on each input byte, conclude that the BinaryExtension AIR
     computes 32-bit unsigned shift-right (`BitVec.ushiftRight`) on the
     low 32 bits of the operand, sign-extended to 64. -/
-theorem binary_extension_srlw_chunks_eq_bv_ushr_w
+lemma binary_extension_srlw_chunks_eq_bv_ushr_w
     (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SRL_W)
     (h_bytes : ByteLookupHypotheses v row)
@@ -2269,7 +2269,7 @@ private lemma sllw_bv_core
     range-bound on each input byte, conclude that the BinaryExtension AIR
     computes 32-bit shift-left (`BitVec.shiftLeft`) on the low 32 bits of
     the operand, sign-extended to 64. -/
-theorem binary_extension_sllw_chunks_eq_bv_shl_w
+lemma binary_extension_sllw_chunks_eq_bv_shl_w
     (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SLL_W)
     (h_bytes : ByteLookupHypotheses v row)
@@ -2651,7 +2651,7 @@ private lemma sraw_bv_core
     range-bound on each input byte, conclude that the BinaryExtension AIR
     computes 32-bit signed shift-right (`BitVec.sshiftRight`) on the low 32
     bits of the operand, sign-extended to 64. -/
-theorem binary_extension_sraw_chunks_eq_bv_sshr_w
+lemma binary_extension_sraw_chunks_eq_bv_sshr_w
     (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SRA_W)
     (h_bytes : ByteLookupHypotheses v row)
@@ -2905,7 +2905,7 @@ lift happens at the canonical equiv site via
 /-- **SEXT_B packed-correctness (Nat form).** The packed BinaryExtension
     output equals `(BitVec.signExtend 64 (BitVec.ofNat 8 a_0)).toNat`,
     expressed as the if-then-else over the high-bit of `a_0`. -/
-theorem binary_extension_sext_b_chunks_eq_signextend_nat
+lemma binary_extension_sext_b_chunks_eq_signextend_nat
     (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SEXT_B)
     (h_bytes : ByteLookupHypotheses v row) :
@@ -2972,7 +2972,7 @@ theorem binary_extension_sext_b_chunks_eq_signextend_nat
   omega
 
 /-- **SEXT_H packed-correctness (Nat form).** -/
-theorem binary_extension_sext_h_chunks_eq_signextend_nat
+lemma binary_extension_sext_h_chunks_eq_signextend_nat
     (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SEXT_H)
     (h_bytes : ByteLookupHypotheses v row) :
@@ -3052,7 +3052,7 @@ theorem binary_extension_sext_h_chunks_eq_signextend_nat
     omega
 
 /-- **SEXT_W packed-correctness (Nat form).** -/
-theorem binary_extension_sext_w_chunks_eq_signextend_nat
+lemma binary_extension_sext_w_chunks_eq_signextend_nat
     (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SEXT_W)
     (h_bytes : ByteLookupHypotheses v row) :

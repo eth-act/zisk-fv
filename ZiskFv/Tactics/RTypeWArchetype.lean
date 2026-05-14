@@ -44,7 +44,7 @@ obligation's concern.
 ## Usage pattern
 
 ```
-theorem addw_compositional
+lemma addw_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : rtypew_archetype_circuit_holds m r_main bus_entry OP_ADD_W) :
@@ -112,7 +112,7 @@ def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     internal correctness (that `c_lo`/`c_hi` decode to
     `sign_extend_32_to_64 (op_32 (low32 a) (low32 b))`) is a
     separate audit obligation. -/
-theorem rtypew_archetype_c_bus_match
+lemma rtypew_archetype_c_bus_match
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL)

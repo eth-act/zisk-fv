@@ -48,7 +48,7 @@ def sub_circuit_holds
 /-- **Compositional SUB theorem.** Main's packed `c` equals the bus
     entry's packed `c` lanes. Instantiation of
     `alu_rtype_archetype_c_bus_match` at `OP_SUB`. -/
-theorem sub_compositional
+lemma sub_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : sub_circuit_holds m r_main bus_entry) :

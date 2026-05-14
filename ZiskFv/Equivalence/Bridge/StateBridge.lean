@@ -69,7 +69,7 @@ open ZiskFv.Trusted
     `lane_lo_val` / `lane_hi_val_eq_div` to express the lane `.val`s
     in terms of `bv.toNat`, then `Nat.mod_add_div` and modular
     arithmetic. -/
-theorem bv64_packed_eq_of_lanes
+lemma bv64_packed_eq_of_lanes
     {bv : BitVec 64} {a_lo a_hi : FGL}
     (h_lo : a_lo = lane_lo bv) (h_hi : a_hi = lane_hi bv) :
     bv = BitVec.ofNat 64 (a_lo.val + a_hi.val * 4294967296) := by

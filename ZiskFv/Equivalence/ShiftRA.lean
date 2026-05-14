@@ -55,7 +55,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     RV64 SRAW reduces to the pure-function block. Wraps
     `PureSpec.execute_RTYPE_sraw_pure_equiv` at this module's export
     surface. -/
-theorem equiv_SRAW_sail
+lemma equiv_SRAW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sraw_input : PureSpec.SrawInput)
     (r1 r2 rd : regidx)

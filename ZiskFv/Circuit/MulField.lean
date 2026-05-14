@@ -148,7 +148,7 @@ lemma main_c_eq_chunks_mul
     selected via opcode literal 0xb0/0xb1) these four witnesses are
     pinned to zero by the transpile contract and the `arith_table`
     lookup; we take them as explicit proof inputs. -/
-theorem main_mul_unsigned_field_correct
+lemma main_mul_unsigned_field_correct
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
     (r_main r_arith : ℕ)
     (h : mul_field_circuit_holds m v r_main r_arith)

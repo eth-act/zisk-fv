@@ -41,7 +41,7 @@ open ZiskFv.Circuit.ShiftRLI
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_SRLIW_sail
+lemma equiv_SRLIW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srliw_input : PureSpec.SrliwInput)
     (r1 rd : regidx)

@@ -59,7 +59,7 @@ def sraw_circuit_holds
     Under the SRAW-mode Main constraints, the secondary SM's bus entry
     carries zero high lanes — the `(1 - m32) * a[1]` / `(1 - m32) * b[1]`
     PIL emission collapses under `m32 = 1`. -/
-theorem sraw_compositional
+lemma sraw_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : sraw_circuit_holds m r_main bus_entry) :

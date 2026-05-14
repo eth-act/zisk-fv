@@ -37,7 +37,7 @@ lanes) is a separate audit obligation.
 ## Usage pattern
 
 ```
-theorem sub_compositional
+lemma sub_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : alu_rtype_archetype_circuit_holds m r_main bus_entry OP_SUB) :
@@ -115,7 +115,7 @@ def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     two `c` lanes. The Binary SM's internal correctness (that
     `c_lo`/`c_hi` decode to the opcode's semantics on `a`/`b`) is
     a separate audit obligation. -/
-theorem alu_rtype_archetype_c_bus_match
+lemma alu_rtype_archetype_c_bus_match
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL)

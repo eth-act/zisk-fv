@@ -45,7 +45,7 @@ open ZiskFv.Airs.OpBusEffect
     memory-bus `.1`; this lemma extracts the *register* reads from the
     op-bus `.1`. Together they cover the full register-state
     precondition the Sail-side spec needs. -/
-theorem chip_op_bus_hyps_branch
+lemma chip_op_bus_hyps_branch
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (entry : OperationBusEntry FGL)
     (rs1 rs2 : Fin 32)
@@ -72,7 +72,7 @@ theorem chip_op_bus_hyps_branch
     bus, so this lemma extracts only the input-read equalities.
     Name-aliased re-export of `chip_op_bus_hyps_branch` so ALU callers
     can read the proof documentation as ALU-specific. -/
-theorem chip_op_bus_hyps_alu
+lemma chip_op_bus_hyps_alu
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (entry : OperationBusEntry FGL)
     (rs1 rs2 : Fin 32)
@@ -95,7 +95,7 @@ theorem chip_op_bus_hyps_alu
     Caller convention: invoke with `rs1` supplied as both the `r1` and
     `r2` arguments to `op_bus_effect` (the `b`-side equality is
     discarded). Re-uses the existing branch-shape `op_bus_effect`. -/
-theorem chip_op_bus_hyps_load
+lemma chip_op_bus_hyps_load
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (entry : OperationBusEntry FGL)
     (rs1 : Fin 32)
@@ -114,7 +114,7 @@ theorem chip_op_bus_hyps_load
     This lemma is a re-export of `chip_op_bus_hyps_alu` for the rare
     case a caller wants to ride a `multiplicity = 1` op-bus entry
     alongside a store row. -/
-theorem chip_op_bus_hyps_store
+lemma chip_op_bus_hyps_store
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (entry : OperationBusEntry FGL)
     (rs1 rs2 : Fin 32)
@@ -146,7 +146,7 @@ theorem chip_op_bus_hyps_store
     The `BitVec 64` value on the right of the equality is reassembled
     from the bus's `b_lo`/`b_hi` lane fields via `lanes_to_bv64`,
     matching `transpile_JALR`'s `b_0`/`b_1` pinning. -/
-theorem chip_op_bus_hyps_jalr
+lemma chip_op_bus_hyps_jalr
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (entry : OperationBusEntry FGL)
     (rs1 : Fin 32)

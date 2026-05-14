@@ -65,7 +65,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     Wraps `PureSpec.execute_LOADD_pure_equiv`, which delegates to the
     trusted `execute_LOADD_pure_equiv_axiom` (see `RV64D/ld.lean` and
     `docs/fv/trusted-base.md`). -/
-theorem equiv_LD_sail
+lemma equiv_LD_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)
     (mstatus : RegisterType Register.mstatus)

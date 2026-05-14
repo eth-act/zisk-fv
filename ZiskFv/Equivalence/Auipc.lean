@@ -40,7 +40,7 @@ nextPC-write) and a single memory-bus rd-write entry.
 `get_arch_pc()`, which after the `nextPC` write still returns the
 original PC (`readReg_succ (writeReg_read_diff ...)` — PC and nextPC
 are distinct registers in the Sail state). The pure-spec equivalence
-theorem handles this bridge. The circuit side carries the PC via the
+lemma handles this bridge. The circuit side carries the PC via the
 `store_pc` mechanic (`store_value[0] = pc + jmp_offset2 = pc + imm`),
 which is captured by `auipc_store_value_lo`.
 -/
@@ -63,7 +63,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     Wraps `PureSpec.execute_AUIPC_pure_equiv`. The pure-spec theorem
     bridges the `get_arch_pc` read-after-write-nextPC via
     `readReg_succ (writeReg_read_diff ...)`. -/
-theorem equiv_AUIPC_sail
+lemma equiv_AUIPC_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (auipc_input : PureSpec.AuipcInput)
     (imm : BitVec 20)

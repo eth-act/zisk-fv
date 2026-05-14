@@ -268,7 +268,7 @@ file's module docstring.
 
     See the module docstring above for the full list of shape
     dispatchers that will land here as Step 4.3 progresses. -/
-theorem dispatch_LUI
+lemma dispatch_LUI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)
@@ -309,7 +309,7 @@ inputs differ — a single uniform-signature dispatcher across the
 shape would require Phase 3's shape-envelope abstraction. -/
 
 /-- **Dispatcher for AUIPC.** Pass-through to `equiv_AUIPC_from_trust`. -/
-theorem dispatch_AUIPC
+lemma dispatch_AUIPC
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (auipc_input : PureSpec.AuipcInput)
     (imm : BitVec 20) (rd : regidx)
@@ -349,7 +349,7 @@ theorem dispatch_AUIPC
     h_no_wrap h_lo_bound h_pc_offset_lt_2_32
 
 /-- **Dispatcher for JAL.** Pass-through to `equiv_JAL_from_trust`. -/
-theorem dispatch_JAL
+lemma dispatch_JAL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21) (rd : regidx)
@@ -390,7 +390,7 @@ theorem dispatch_JAL
     h_pc_bound h_lo_bound h_pc_offset_lt_2_32
 
 /-- **Dispatcher for JALR.** Pass-through to `equiv_JALR_from_trust`. -/
-theorem dispatch_JALR
+lemma dispatch_JALR
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jalr_input : PureSpec.JalrInput)
     (imm : BitVec 12) (rs1 rd : regidx)
@@ -442,7 +442,7 @@ theorem dispatch_JALR
     h_pc_bound h_lo_bound h_pc_offset_lt_2_32
 
 /-- **Dispatcher for FENCE.** Pass-through to `equiv_FENCE_from_trust`. -/
-theorem dispatch_FENCE
+lemma dispatch_FENCE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (fence_input : PureSpec.FenceInput)
     (fm pred succ : BitVec 4) (rs rd : regidx)
@@ -472,7 +472,7 @@ type/name renaming). Each dispatcher is a thin pass-through to
 its corresponding `equiv_<OP>_from_trust` wrapper. -/
 
 /-- **Dispatcher for BEQ.** Pass-through to `equiv_BEQ_from_trust`. -/
-theorem dispatch_BEQ
+lemma dispatch_BEQ
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (beq_input : PureSpec.BeqInput) (imm : BitVec 13) (r1 r2 : regidx)
     (misa_val : RegisterType Register.misa)
@@ -500,7 +500,7 @@ theorem dispatch_BEQ
     h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
 
 /-- **Dispatcher for BNE.** Pass-through to `equiv_BNE_from_trust`. -/
-theorem dispatch_BNE
+lemma dispatch_BNE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bne_input : PureSpec.BneInput) (imm : BitVec 13) (r1 r2 : regidx)
     (misa_val : RegisterType Register.misa)
@@ -528,7 +528,7 @@ theorem dispatch_BNE
     h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
 
 /-- **Dispatcher for BLT.** Pass-through to `equiv_BLT_from_trust`. -/
-theorem dispatch_BLT
+lemma dispatch_BLT
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (blt_input : PureSpec.BltInput) (imm : BitVec 13) (r1 r2 : regidx)
     (misa_val : RegisterType Register.misa)
@@ -556,7 +556,7 @@ theorem dispatch_BLT
     h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
 
 /-- **Dispatcher for BGE.** Pass-through to `equiv_BGE_from_trust`. -/
-theorem dispatch_BGE
+lemma dispatch_BGE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bge_input : PureSpec.BgeInput) (imm : BitVec 13) (r1 r2 : regidx)
     (misa_val : RegisterType Register.misa)
@@ -584,7 +584,7 @@ theorem dispatch_BGE
     h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
 
 /-- **Dispatcher for BLTU.** Pass-through to `equiv_BLTU_from_trust`. -/
-theorem dispatch_BLTU
+lemma dispatch_BLTU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bltu_input : PureSpec.BltuInput) (imm : BitVec 13) (r1 r2 : regidx)
     (misa_val : RegisterType Register.misa)
@@ -612,7 +612,7 @@ theorem dispatch_BLTU
     h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
 
 /-- **Dispatcher for BGEU.** Pass-through to `equiv_BGEU_from_trust`. -/
-theorem dispatch_BGEU
+lemma dispatch_BGEU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bgeu_input : PureSpec.BgeuInput) (imm : BitVec 13) (r1 r2 : regidx)
     (misa_val : RegisterType Register.misa)
@@ -642,7 +642,7 @@ theorem dispatch_BGEU
 /-! ### BinaryAdd dispatchers (ADD, ADDI) -/
 
 /-- **Dispatcher for ADD.** Pass-through to `equiv_ADD_from_trust`. -/
-theorem dispatch_ADD
+lemma dispatch_ADD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
@@ -679,7 +679,7 @@ theorem dispatch_ADD
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
 
 /-- **Dispatcher for ADDI.** Pass-through to `equiv_ADDI_from_trust`. -/
-theorem dispatch_ADDI
+lemma dispatch_ADDI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addi_input : PureSpec.AddiInput) (r1 rd : regidx) (imm : BitVec 12)
     (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
@@ -722,7 +722,7 @@ theorem dispatch_ADDI
 /-! ### BinaryAddW dispatchers (ADDW, SUBW, ADDIW) -/
 
 /-- **Dispatcher for ADDW.** Pass-through to `equiv_ADDW_from_trust`. -/
-theorem dispatch_ADDW
+lemma dispatch_ADDW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addw_input : PureSpec.AddwInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
@@ -761,7 +761,7 @@ theorem dispatch_ADDW
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
 
 /-- **Dispatcher for SUBW.** Pass-through to `equiv_SUBW_from_trust`. -/
-theorem dispatch_SUBW
+lemma dispatch_SUBW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (subw_input : PureSpec.SubwInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
@@ -800,7 +800,7 @@ theorem dispatch_SUBW
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
 
 /-- **Dispatcher for ADDIW.** Pass-through to `equiv_ADDIW_from_trust`. -/
-theorem dispatch_ADDIW
+lemma dispatch_ADDIW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addiw_input : PureSpec.AddiwInput)
     (r1 rd : regidx) (imm : BitVec 12)
@@ -848,7 +848,7 @@ memory-bus row shape. Each dispatcher is a thin pass-through to its
 `equiv_<OP>_from_trust` wrapper. -/
 
 /-- **Dispatcher for SUB.** -/
-theorem dispatch_SUB
+lemma dispatch_SUB
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sub_input : PureSpec.SubInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
@@ -886,7 +886,7 @@ theorem dispatch_SUB
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
 
 /-- **Dispatcher for AND.** -/
-theorem dispatch_AND
+lemma dispatch_AND
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (and_input : PureSpec.AndInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
@@ -924,7 +924,7 @@ theorem dispatch_AND
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
 
 /-- **Dispatcher for OR.** -/
-theorem dispatch_OR
+lemma dispatch_OR
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (or_input : PureSpec.OrInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
@@ -962,7 +962,7 @@ theorem dispatch_OR
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
 
 /-- **Dispatcher for XOR.** -/
-theorem dispatch_XOR
+lemma dispatch_XOR
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (xor_input : PureSpec.XorInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
@@ -1000,7 +1000,7 @@ theorem dispatch_XOR
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
 
 /-- **Dispatcher for SLT.** -/
-theorem dispatch_SLT
+lemma dispatch_SLT
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slt_input : PureSpec.SltInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
@@ -1038,7 +1038,7 @@ theorem dispatch_SLT
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
 
 /-- **Dispatcher for SLTU.** -/
-theorem dispatch_SLTU
+lemma dispatch_SLTU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sltu_input : PureSpec.SltuInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
@@ -1076,7 +1076,7 @@ theorem dispatch_SLTU
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
 
 /-- **Dispatcher for ANDI.** -/
-theorem dispatch_ANDI
+lemma dispatch_ANDI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (andi_input : PureSpec.AndiInput) (r1 rd : regidx) (imm : BitVec 12)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
@@ -1114,7 +1114,7 @@ theorem dispatch_ANDI
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
 
 /-- **Dispatcher for ORI.** -/
-theorem dispatch_ORI
+lemma dispatch_ORI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ori_input : PureSpec.OriInput) (r1 rd : regidx) (imm : BitVec 12)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
@@ -1152,7 +1152,7 @@ theorem dispatch_ORI
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
 
 /-- **Dispatcher for XORI.** -/
-theorem dispatch_XORI
+lemma dispatch_XORI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (xori_input : PureSpec.XoriInput) (r1 rd : regidx) (imm : BitVec 12)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
@@ -1190,7 +1190,7 @@ theorem dispatch_XORI
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
 
 /-- **Dispatcher for SLTI.** -/
-theorem dispatch_SLTI
+lemma dispatch_SLTI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slti_input : PureSpec.SltiInput) (r1 rd : regidx) (imm : BitVec 12)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
@@ -1228,7 +1228,7 @@ theorem dispatch_SLTI
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
 
 /-- **Dispatcher for SLTIU.** -/
-theorem dispatch_SLTIU
+lemma dispatch_SLTIU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sltiu_input : PureSpec.SltiuInput) (r1 rd : regidx) (imm : BitVec 12)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL) (r_main : ℕ)
@@ -1276,7 +1276,7 @@ and `e0/e1/e2` memory-bus row shape. The W-immediate wrappers
 (no separate `shamt` parameter), unlike the 64-bit immediates. -/
 
 /-- **Dispatcher for SLL.** -/
-theorem dispatch_SLL
+lemma dispatch_SLL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
@@ -1310,7 +1310,7 @@ theorem dispatch_SLL
     h_main_active h_main_op h_lane_rd
 
 /-- **Dispatcher for SRL.** -/
-theorem dispatch_SRL
+lemma dispatch_SRL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srl_input : PureSpec.SrlInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
@@ -1344,7 +1344,7 @@ theorem dispatch_SRL
     h_main_active h_main_op h_lane_rd
 
 /-- **Dispatcher for SRA.** -/
-theorem dispatch_SRA
+lemma dispatch_SRA
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sra_input : PureSpec.SraInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
@@ -1378,7 +1378,7 @@ theorem dispatch_SRA
     h_main_active h_main_op h_lane_rd
 
 /-- **Dispatcher for SLLI.** -/
-theorem dispatch_SLLI
+lemma dispatch_SLLI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slli_input : PureSpec.SlliInput) (r1 rd : regidx) (shamt : BitVec 6)
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
@@ -1411,7 +1411,7 @@ theorem dispatch_SLLI
     h_main_active h_main_op h_lane_rd
 
 /-- **Dispatcher for SRLI.** -/
-theorem dispatch_SRLI
+lemma dispatch_SRLI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srli_input : PureSpec.SrliInput) (r1 rd : regidx) (shamt : BitVec 6)
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
@@ -1444,7 +1444,7 @@ theorem dispatch_SRLI
     h_main_active h_main_op h_lane_rd
 
 /-- **Dispatcher for SRAI.** -/
-theorem dispatch_SRAI
+lemma dispatch_SRAI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srai_input : PureSpec.SraiInput) (r1 rd : regidx) (shamt : BitVec 6)
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
@@ -1477,7 +1477,7 @@ theorem dispatch_SRAI
     h_main_active h_main_op h_lane_rd
 
 /-- **Dispatcher for SLLW.** -/
-theorem dispatch_SLLW
+lemma dispatch_SLLW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sllw_input : PureSpec.SllwInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
@@ -1511,7 +1511,7 @@ theorem dispatch_SLLW
     h_main_active h_main_op h_lane_rd
 
 /-- **Dispatcher for SRLW.** -/
-theorem dispatch_SRLW
+lemma dispatch_SRLW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srlw_input : PureSpec.SrlwInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
@@ -1545,7 +1545,7 @@ theorem dispatch_SRLW
     h_main_active h_main_op h_lane_rd
 
 /-- **Dispatcher for SRAW.** -/
-theorem dispatch_SRAW
+lemma dispatch_SRAW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sraw_input : PureSpec.SrawInput) (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
@@ -1579,7 +1579,7 @@ theorem dispatch_SRAW
     h_main_active h_main_op h_lane_rd
 
 /-- **Dispatcher for SLLIW.** -/
-theorem dispatch_SLLIW
+lemma dispatch_SLLIW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slliw_input : PureSpec.SlliwInput) (r1 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
@@ -1612,7 +1612,7 @@ theorem dispatch_SLLIW
     h_main_active h_main_op h_lane_rd
 
 /-- **Dispatcher for SRLIW.** -/
-theorem dispatch_SRLIW
+lemma dispatch_SRLIW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srliw_input : PureSpec.SrliwInput) (r1 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
@@ -1645,7 +1645,7 @@ theorem dispatch_SRLIW
     h_main_active h_main_op h_lane_rd
 
 /-- **Dispatcher for SRAIW.** -/
-theorem dispatch_SRAIW
+lemma dispatch_SRAIW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sraiw_input : PureSpec.SraiwInput) (r1 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL) (r_main : ℕ)
@@ -1685,7 +1685,7 @@ byte ranges, W-form sign-extension); the dispatchers are pure
 pass-throughs. -/
 
 /-- **Dispatcher for MUL.** -/
-theorem dispatch_MUL
+lemma dispatch_MUL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mul_input : PureSpec.MulInput) (r1 r2 rd : regidx)
     (srs1 srs2 : Signedness)
@@ -1739,7 +1739,7 @@ theorem dispatch_MUL
     h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints
 
 /-- **Dispatcher for MULH.** -/
-theorem dispatch_MULH
+lemma dispatch_MULH
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulh_input : PureSpec.MulhInput) (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -1788,7 +1788,7 @@ theorem dispatch_MULH
     h_row_constraints
 
 /-- **Dispatcher for MULHU.** -/
-theorem dispatch_MULHU
+lemma dispatch_MULHU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhu_input : PureSpec.MulhuInput) (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -1841,7 +1841,7 @@ theorem dispatch_MULHU
     h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints
 
 /-- **Dispatcher for MULHSU.** -/
-theorem dispatch_MULHSU
+lemma dispatch_MULHSU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhsu_input : PureSpec.MulhsuInput) (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -1890,7 +1890,7 @@ theorem dispatch_MULHSU
     h_row_constraints
 
 /-- **Dispatcher for MULW.** -/
-theorem dispatch_MULW
+lemma dispatch_MULW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulw_input : PureSpec.MulwInput) (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -1954,7 +1954,7 @@ carry additional W-form operand bridges and sign-extension witnesses;
 the signed variants carry sign-witness booleans + XOR. -/
 
 /-- **Dispatcher for DIV.** -/
-theorem dispatch_DIV
+lemma dispatch_DIV
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (div_input : PureSpec.DivInput) (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -2007,7 +2007,7 @@ theorem dispatch_DIV
     h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
 
 /-- **Dispatcher for DIVU.** -/
-theorem dispatch_DIVU
+lemma dispatch_DIVU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divu_input : PureSpec.DivuInput) (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -2055,7 +2055,7 @@ theorem dispatch_DIVU
     h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne
 
 /-- **Dispatcher for DIVW.** -/
-theorem dispatch_DIVW
+lemma dispatch_DIVW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divw_input : PureSpec.DivwInput) (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -2123,7 +2123,7 @@ theorem dispatch_DIVW
     h_sext_choice h_op1 h_op2 h_op2_ne h_no_overflow
 
 /-- **Dispatcher for DIVUW.** -/
-theorem dispatch_DIVUW
+lemma dispatch_DIVUW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divuw_input : PureSpec.DivuwInput) (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -2176,7 +2176,7 @@ theorem dispatch_DIVUW
     h_row_constraints h_sext_choice h_op1 h_op2 h_op2_ne
 
 /-- **Dispatcher for REM.** -/
-theorem dispatch_REM
+lemma dispatch_REM
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rem_input : PureSpec.RemInput) (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -2229,7 +2229,7 @@ theorem dispatch_REM
     h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
 
 /-- **Dispatcher for REMU.** -/
-theorem dispatch_REMU
+lemma dispatch_REMU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remu_input : PureSpec.RemuInput) (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -2277,7 +2277,7 @@ theorem dispatch_REMU
     h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne
 
 /-- **Dispatcher for REMW.** -/
-theorem dispatch_REMW
+lemma dispatch_REMW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remw_input : PureSpec.RemwInput) (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -2345,7 +2345,7 @@ theorem dispatch_REMW
     h_sext_choice h_op1 h_op2 h_op2_ne h_no_overflow_w
 
 /-- **Dispatcher for REMUW.** -/
-theorem dispatch_REMUW
+lemma dispatch_REMUW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remuw_input : PureSpec.RemuwInput) (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
@@ -2409,7 +2409,7 @@ All seven share the `e0/e1/e2` memory-bus row shape with
 LBU/LHU/LWU likewise; LB/LH/LW use the `do; Sail.writeReg` form. -/
 
 /-- **Dispatcher for LD.** -/
-theorem dispatch_LD
+lemma dispatch_LD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)
     (mstatus : RegisterType Register.mstatus)
@@ -2448,7 +2448,7 @@ theorem dispatch_LD
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
 
 /-- **Dispatcher for LBU.** -/
-theorem dispatch_LBU
+lemma dispatch_LBU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lbu_input : PureSpec.LbuInput)
     (mstatus : RegisterType Register.mstatus)
@@ -2494,7 +2494,7 @@ theorem dispatch_LBU
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
 
 /-- **Dispatcher for LHU.** -/
-theorem dispatch_LHU
+lemma dispatch_LHU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lhu_input : PureSpec.LhuInput)
     (mstatus : RegisterType Register.mstatus)
@@ -2540,7 +2540,7 @@ theorem dispatch_LHU
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
 
 /-- **Dispatcher for LWU.** -/
-theorem dispatch_LWU
+lemma dispatch_LWU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lwu_input : PureSpec.LwuInput)
     (mstatus : RegisterType Register.mstatus)
@@ -2586,7 +2586,7 @@ theorem dispatch_LWU
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
 
 /-- **Dispatcher for LB.** -/
-theorem dispatch_LB
+lemma dispatch_LB
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lb_input : PureSpec.LbInput)
     (mstatus : RegisterType Register.mstatus)
@@ -2629,7 +2629,7 @@ theorem dispatch_LB
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
 
 /-- **Dispatcher for LH.** -/
-theorem dispatch_LH
+lemma dispatch_LH
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lh_input : PureSpec.LhInput)
     (mstatus : RegisterType Register.mstatus)
@@ -2672,7 +2672,7 @@ theorem dispatch_LH
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
 
 /-- **Dispatcher for LW.** -/
-theorem dispatch_LW
+lemma dispatch_LW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lw_input : PureSpec.LwInput)
     (mstatus : RegisterType Register.mstatus)
@@ -2721,7 +2721,7 @@ All four are Main-only stores (`Valid_Main`). They differ in
 same memory-bus row shape (`e2.as.val = 2` indicates memory write). -/
 
 /-- **Dispatcher for SB.** -/
-theorem dispatch_SB
+lemma dispatch_SB
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sb_input : PureSpec.SbInput)
     (mstatus : RegisterType Register.mstatus)
@@ -2761,7 +2761,7 @@ theorem dispatch_SB
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
 
 /-- **Dispatcher for SH.** -/
-theorem dispatch_SH
+lemma dispatch_SH
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sh_input : PureSpec.ShInput)
     (mstatus : RegisterType Register.mstatus)
@@ -2801,7 +2801,7 @@ theorem dispatch_SH
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
 
 /-- **Dispatcher for SW.** -/
-theorem dispatch_SW
+lemma dispatch_SW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sw_input : PureSpec.SwInput)
     (mstatus : RegisterType Register.mstatus)
@@ -2841,7 +2841,7 @@ theorem dispatch_SW
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
 
 /-- **Dispatcher for SD.** -/
-theorem dispatch_SD
+lemma dispatch_SD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sd_input : PureSpec.SdInput)
     (mstatus : RegisterType Register.mstatus)

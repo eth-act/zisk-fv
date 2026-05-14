@@ -73,7 +73,7 @@ lemma write_reg_state_comm
     The proof is a direct reduction of `bus_effect`'s foldl over an
     empty list, followed by collapsing the monadic block that matches
     on the two booleans. -/
-theorem bus_effect_matches_sail_beq
+lemma bus_effect_matches_sail_beq
     {imm_width : Nat}
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
@@ -115,7 +115,7 @@ theorem bus_effect_matches_sail_beq
     Kept as a reference simplification; real JAL has a memory-bus rd
     write entry and goes through `bus_effect_matches_sail_jump_rrw`
     when that shape closes. -/
-theorem bus_effect_matches_sail_jump_no_memory
+lemma bus_effect_matches_sail_jump_no_memory
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (nextPC_val : BitVec 64)
@@ -184,7 +184,7 @@ private lemma fgl_one_self : ((1 : FGL) = 1) = True := by decide
     concrete 3-element list, reduces the two register reads via the
     address-space-1 branch, then applies the register-write commutation
     (`write_reg_state_comm`) to swap the rd-write and nextPC-write. -/
-theorem bus_effect_matches_sail_alu_rrw
+lemma bus_effect_matches_sail_alu_rrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)
@@ -251,7 +251,7 @@ theorem bus_effect_matches_sail_alu_rrw
 
     Like shape (a), the proof rewrites `write_xreg` via
     `writeReg_state_success`, then commutes the rd and nextPC writes. -/
-theorem bus_effect_matches_sail_jump_rrw
+lemma bus_effect_matches_sail_jump_rrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e_rd : MemoryBusEntry FGL)
@@ -332,7 +332,7 @@ memory-bus fold by routing one of the entries through the `as = 2`
     The caller's `memory_load_lanes_match` + range hypotheses are
     separately responsible for connecting `e1.xᵢ` (the 8 memory bytes
     on the bus) to Sail's `data0..data7` fields. -/
-theorem bus_effect_matches_sail_load_rrrw
+lemma bus_effect_matches_sail_load_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)
@@ -408,7 +408,7 @@ theorem bus_effect_matches_sail_load_rrrw
     to Sail's `modify_memory_8 (← get) output` via the
     `memory_store_lanes_match` / address hypotheses that connect
     `entry` fields to `SdOutput` fields. -/
-theorem bus_effect_matches_sail_store_rrrw
+lemma bus_effect_matches_sail_store_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)
@@ -511,7 +511,7 @@ witnesses. -/
     The caller discharges this by witnessing `e2.x4..x7` as the
     sign-extension of `e2.x3` (i.e., `0` if `e2.x3.msb = false`,
     `0xff` if `true`). -/
-theorem bus_effect_matches_sail_load_4byte_rrrw
+lemma bus_effect_matches_sail_load_4byte_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)
@@ -552,7 +552,7 @@ theorem bus_effect_matches_sail_load_4byte_rrrw
     Same bus shape as LW; bridging hypothesis selects the
     zero-extend form (`BitVec.zeroExtend 64 (data3 ++ ... ++ data0)`).
     Caller discharges via `e2.x4 = e2.x5 = e2.x6 = e2.x7 = 0`. -/
-theorem bus_effect_matches_sail_loadu_4byte_rrrw
+lemma bus_effect_matches_sail_loadu_4byte_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)
@@ -589,7 +589,7 @@ theorem bus_effect_matches_sail_loadu_4byte_rrrw
   rw [h_rd_val_match]
 
 /-- **Shape (d-2-signed): LH — load halfword, sign-extended.** -/
-theorem bus_effect_matches_sail_load_2byte_rrrw
+lemma bus_effect_matches_sail_load_2byte_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)
@@ -626,7 +626,7 @@ theorem bus_effect_matches_sail_load_2byte_rrrw
   rw [h_rd_val_match]
 
 /-- **Shape (d-2-unsigned): LHU — load halfword, zero-extended.** -/
-theorem bus_effect_matches_sail_loadu_2byte_rrrw
+lemma bus_effect_matches_sail_loadu_2byte_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)
@@ -663,7 +663,7 @@ theorem bus_effect_matches_sail_loadu_2byte_rrrw
   rw [h_rd_val_match]
 
 /-- **Shape (d-1-signed): LB — load byte, sign-extended.** -/
-theorem bus_effect_matches_sail_load_1byte_rrrw
+lemma bus_effect_matches_sail_load_1byte_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)
@@ -700,7 +700,7 @@ theorem bus_effect_matches_sail_load_1byte_rrrw
   rw [h_rd_val_match]
 
 /-- **Shape (d-1-unsigned): LBU — load byte, zero-extended.** -/
-theorem bus_effect_matches_sail_loadu_1byte_rrrw
+lemma bus_effect_matches_sail_loadu_1byte_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)
@@ -765,7 +765,7 @@ for SW) without having to pick the 8-byte one and document why. -/
 
 /-- **Shape (e-4): SW — store word (4 bytes).** Named wrapper of
     `bus_effect_matches_sail_store_rrrw` for SW callers. -/
-theorem bus_effect_matches_sail_store_4byte_rrrw
+lemma bus_effect_matches_sail_store_4byte_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)
@@ -803,7 +803,7 @@ theorem bus_effect_matches_sail_store_4byte_rrrw
 
 /-- **Shape (e-2): SH — store halfword (2 bytes).** Named wrapper of
     `bus_effect_matches_sail_store_rrrw` for SH callers. -/
-theorem bus_effect_matches_sail_store_2byte_rrrw
+lemma bus_effect_matches_sail_store_2byte_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)
@@ -841,7 +841,7 @@ theorem bus_effect_matches_sail_store_2byte_rrrw
 
 /-- **Shape (e-1): SB — store byte (1 byte).** Named wrapper of
     `bus_effect_matches_sail_store_rrrw` for SB callers. -/
-theorem bus_effect_matches_sail_store_1byte_rrrw
+lemma bus_effect_matches_sail_store_1byte_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)

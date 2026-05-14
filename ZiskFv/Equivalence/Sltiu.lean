@@ -37,7 +37,7 @@ open ZiskFv.Tactics.ALUITypeArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_SLTIU_sail
+lemma equiv_SLTIU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sltiu_input : PureSpec.SltiuInput)
     (r1 rd : regidx) (imm : BitVec 12)

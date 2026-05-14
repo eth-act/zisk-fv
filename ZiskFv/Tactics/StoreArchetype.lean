@@ -92,7 +92,7 @@ def store_archetype_copyb_circuit_holds
     parametric `store_archetype_copyb_circuit_holds` form. SW/SH/SB
     close via instantiation + a width-specific zeroing-of-high-bytes
     assumption on the memory-bus write entry. -/
-theorem store_archetype_copyb_c_packed
+lemma store_archetype_copyb_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : store_archetype_copyb_circuit_holds m r_main next_pc entry) :
@@ -108,7 +108,7 @@ theorem store_archetype_copyb_c_packed
     jmp_offset2 = 4`, the next-pc is `pc + 4`. Holds uniformly for
     SD/SW/SH/SB since they all use `j(4, 4)` in the Zisk
     transpiler. -/
-theorem store_archetype_copyb_next_pc
+lemma store_archetype_copyb_next_pc
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : store_archetype_copyb_circuit_holds m r_main next_pc entry)

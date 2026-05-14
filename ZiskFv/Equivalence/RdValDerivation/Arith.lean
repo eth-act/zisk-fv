@@ -236,7 +236,7 @@ private lemma byte_sum_from_lane_match
     4. From lane match: `m.c_0/c_1` equal `memory_entry_lo/hi e2`.
     5. Byte ranges + c_chunks range bounds give the byte-sum identity.
     6. `bv64_of_byte_sum` closes. -/
-theorem h_rd_val_arith_add
+lemma h_rd_val_arith_add
     (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -363,7 +363,7 @@ theorem h_rd_val_arith_add
     3. From bus match: `m.c_0/c_1` equal BinaryAdd's c-chunk packings.
     4. From lane match: `m.c_0/c_1` equal `memory_entry_lo/hi e2`.
     5. Byte ranges + chunk ranges close the byte-sum identity. -/
-theorem h_rd_val_arith_addi
+lemma h_rd_val_arith_addi
     (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -550,7 +550,7 @@ private lemma byte_sum_from_chain_lane_match
     consumes 4 OP_ADD chains for bytes 0..3 (with `pi3 = 1` as plast)
     plus per-byte sign-extension lookups on bytes 4..7 (SEXT_00 if the
     low-32 result is non-negative, SEXT_FF otherwise). -/
-theorem h_rd_val_arith_addw
+lemma h_rd_val_arith_addw
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (a0 a1 a2 a3 b0 b1 b2 b3
@@ -647,7 +647,7 @@ theorem h_rd_val_arith_addw
     at the Binary SM. Differs only on the Sail side (immediate vs rs2);
     the circuit-level identity is the same. Forwards to
     `h_rd_val_arith_addw` with the Sail immediate-extended `b32sum`. -/
-theorem h_rd_val_arith_addiw
+lemma h_rd_val_arith_addiw
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (a0 a1 a2 a3 b0 b1 b2 b3
@@ -709,7 +709,7 @@ theorem h_rd_val_arith_addiw
     SUB routes through `OP_SUB = 11` via `ALURTypeArchetype` on the
     Main side; the Binary AIR consumes 8 byte-chains at `OP_SUB` with
     `pi7 = 1` (final byte) and per-byte cin links. -/
-theorem h_rd_val_arith_sub
+lemma h_rd_val_arith_sub
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
@@ -827,7 +827,7 @@ theorem h_rd_val_arith_sub
     structure as ADDW but with an inline SUBW K1-B-style lift combining the
     4-byte SUB chain (bytes 0..3 at OP_SUB, `pi3 = 1`) with the
     sign-extension byte lookups on bytes 4..7. -/
-theorem h_rd_val_arith_subw
+lemma h_rd_val_arith_subw
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (a0 a1 a2 a3 b0 b1 b2 b3

@@ -68,23 +68,23 @@ axiom binary_extension_columns_in_range (e : Valid_BinaryExtension C FGL FGL) (r
 
 /-! ## Specialized accessors -/
 
-theorem be_a_0_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_0_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
     (e.free_in_a_0 r).val < 256 := (binary_extension_columns_in_range e r).1
-theorem be_a_1_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_1_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
     (e.free_in_a_1 r).val < 256 := (binary_extension_columns_in_range e r).2.1
-theorem be_a_2_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_2_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
     (e.free_in_a_2 r).val < 256 := (binary_extension_columns_in_range e r).2.2.1
-theorem be_a_3_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_3_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
     (e.free_in_a_3 r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.1
-theorem be_a_4_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_4_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
     (e.free_in_a_4 r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.2.1
-theorem be_a_5_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_5_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
     (e.free_in_a_5 r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.2.2.1
-theorem be_a_6_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_6_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
     (e.free_in_a_6 r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.2.2.2.1
-theorem be_a_7_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_7_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
     (e.free_in_a_7 r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.2.2.2.2.1
-theorem be_b_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_b_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
     (e.free_in_b r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.2.2.2.2.2.1
 
 /-! ## op_is_shift linkage -/

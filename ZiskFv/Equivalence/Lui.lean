@@ -55,7 +55,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
     Wraps `PureSpec.execute_LUI_pure_equiv` to expose the Sail chain
     at this module's export surface. -/
-theorem equiv_LUI_sail
+lemma equiv_LUI_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)

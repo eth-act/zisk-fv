@@ -38,7 +38,7 @@ open ZiskFv.Circuit.Srai
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** -/
-theorem equiv_SRAI_sail
+lemma equiv_SRAI_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srai_input : PureSpec.SraiInput)
     (r1 rd : regidx) (shamt : BitVec 6)

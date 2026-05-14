@@ -49,7 +49,7 @@ def branch_ltu_circuit_holds
   ∧ main_row_in_bltu_mode m r_main
 
 /-- **Compositional BLTU PC-dispatch theorem (via `BranchArchetype`).** -/
-theorem branch_ltu_compositional
+lemma branch_ltu_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_ltu_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main
@@ -61,7 +61,7 @@ theorem branch_ltu_compositional
 
 /-- **BLTU taken case.** When `flag = 1` (`a <u b`), next-pc is
     `pc + jmp_offset1 = pc + imm` (BEQ polarity). -/
-theorem branch_ltu_taken
+lemma branch_ltu_taken
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_ltu_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 1) :
@@ -71,7 +71,7 @@ theorem branch_ltu_taken
 
 /-- **BLTU not-taken case.** When `flag = 0` (`a ≥u b`), next-pc is
     `pc + jmp_offset2 = pc + 4`. -/
-theorem branch_ltu_not_taken
+lemma branch_ltu_not_taken
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_ltu_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 0) :

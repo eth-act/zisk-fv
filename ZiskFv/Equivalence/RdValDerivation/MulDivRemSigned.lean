@@ -113,7 +113,7 @@ private lemma byte_sum_eq_packed4_sig
     The CIRCUIT-CONSTRAINT byte-sum is supplied by the caller via
     composing `main_mul_signed_field_correct` with S1's MulNoWrap toolkit
     and S2's `signed_mul_int_quadrant_identity`. -/
-theorem h_rd_val_mdrs_mulh
+lemma h_rd_val_mdrs_mulh
     (r1_val r2_val : BitVec 64)
     (e : MemoryBusEntry FGL)
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
@@ -142,7 +142,7 @@ theorem h_rd_val_mdrs_mulh
     1. `mul_signed_chain_witnesses` (Layer A.4) → simplified ℤ chunk identity.
     2. `fgl_mul_signed_to_bv64_hi` (Layer A.1) → `BitVec.ofNat 64 D.toNat = execute_MUL_pure r1 r2 .MULH`.
     3. Byte-sum bridge → final K3 form. -/
-theorem h_rd_val_mdrs_mulh_chunked
+lemma h_rd_val_mdrs_mulh_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
@@ -289,7 +289,7 @@ theorem h_rd_val_mdrs_mulh_chunked
     operand-arithmetic byte-sum uses `op1.toInt * (op2.toNat : ℤ)`.
 
     Internal composition delegates to S2's `mulhsu_bv64_of_byte_sum`. -/
-theorem h_rd_val_mdrs_mulhsu
+lemma h_rd_val_mdrs_mulhsu
     (r1_val r2_val : BitVec 64)
     (e : MemoryBusEntry FGL)
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
@@ -322,7 +322,7 @@ theorem h_rd_val_mdrs_mulhsu
     2. `fgl_mul_signed_unsigned_to_bv64_hi` (Layer A.1, MULHSU variant) →
        `BitVec.ofNat 64 D.toNat = execute_MUL_pure r1 r2 .MULHSU`.
     3. Byte-sum bridge → final K3 form. -/
-theorem h_rd_val_mdrs_mulhsu_chunked
+lemma h_rd_val_mdrs_mulhsu_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
@@ -488,7 +488,7 @@ theorem h_rd_val_mdrs_mulhsu_chunked
 
     The lo-product lane match `h_byte_lo` ties bytes 0..3 to
     `c_0 + c_1*65536` (the W product low-32 lanes). -/
-theorem h_rd_val_mdrs_mulw_chunked
+lemma h_rd_val_mdrs_mulw_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
@@ -900,7 +900,7 @@ which is CIRCUIT-CONSTRAINT (a pure function of the BitVec operands).
     Internal composition: rewrites `(execute_DIV_REM_pure r1 r2 .DRS).1`
     to its `BitVec.ofInt 64 q_int` form, then dispatches via the generic
     byte-sum bridge. -/
-theorem h_rd_val_mdrs_div
+lemma h_rd_val_mdrs_div
     (r1_val r2_val : BitVec 64)
     (e : MemoryBusEntry FGL)
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
@@ -959,7 +959,7 @@ convention) and INT_MIN / -1 overflow (gives `0`). -/
     Takes byte-range bounds and an operand-arithmetic byte-sum hypothesis
     tying the bytes to `BitVec.ofInt 64 (Int.tmod r1_int r2_int)`, the
     DIV/REM pure-function remainder. -/
-theorem h_rd_val_mdrs_rem
+lemma h_rd_val_mdrs_rem
     (r1_val r2_val : BitVec 64)
     (e : MemoryBusEntry FGL)
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
@@ -998,7 +998,7 @@ to match the caller's signature.
 -/
 
 /-- **`h_rd_val` discharge for DIVW (Tier 1).** -/
-theorem h_rd_val_mdrs_divw
+lemma h_rd_val_mdrs_divw
     (r1_val r2_val : BitVec 64)
     (e : MemoryBusEntry FGL)
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
@@ -1042,7 +1042,7 @@ operating on unsigned Nat division of the low 32 bits.
 -/
 
 /-- **`h_rd_val` discharge for DIVUW (Tier 1).** -/
-theorem h_rd_val_mdrs_divuw
+lemma h_rd_val_mdrs_divuw
     (r1_val r2_val : BitVec 64)
     (e : MemoryBusEntry FGL)
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
@@ -1078,7 +1078,7 @@ theorem h_rd_val_mdrs_divuw
 /-! ## REMW: rd ← sign_extend_64(signed 32-bit remainder) -/
 
 /-- **`h_rd_val` discharge for REMW (Tier 1).** -/
-theorem h_rd_val_mdrs_remw
+lemma h_rd_val_mdrs_remw
     (r1_val r2_val : BitVec 64)
     (e : MemoryBusEntry FGL)
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
@@ -1118,7 +1118,7 @@ theorem h_rd_val_mdrs_remw
 /-! ## REMUW: rd ← sign_extend_64(unsigned 32-bit remainder) -/
 
 /-- **`h_rd_val` discharge for REMUW (Tier 1).** -/
-theorem h_rd_val_mdrs_remuw
+lemma h_rd_val_mdrs_remuw
     (r1_val r2_val : BitVec 64)
     (e : MemoryBusEntry FGL)
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
@@ -1170,7 +1170,7 @@ theorem h_rd_val_mdrs_remuw
     Non-boundary case only: caller supplies `h_r2_ne` and
     `h_no_overflow` to exclude `r2 = 0` (div_by_zero) and
     `r1 = INT_MIN ∧ r2 = -1` (div_overflow). -/
-theorem h_rd_val_mdrs_div_chunked
+lemma h_rd_val_mdrs_div_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
@@ -1424,7 +1424,7 @@ theorem h_rd_val_mdrs_div_chunked
     remainder (signed-truncated mod) lane instead of the quotient.
     Bus entry's bytes pack the d-chunks (remainder). Same structural
     binders as the DIV variant. -/
-theorem h_rd_val_mdrs_rem_chunked
+lemma h_rd_val_mdrs_rem_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
@@ -1715,7 +1715,7 @@ Composes: W chain witnesses → 32-bit abs-Euclidean → `signed_tdiv_unique`
     W-mode signed-divide rd-value derivation. Combines the W-mode
     chunk-chain identity with the abs-Euclidean → signed-Euclidean
     linker (32-bit variant) to produce the BV64 sign-extended quotient. -/
-theorem h_rd_val_mdrs_divw_chunked
+lemma h_rd_val_mdrs_divw_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
@@ -2158,7 +2158,7 @@ linker `abs_euclidean_to_signed_euclidean_div_rem_w` from
     Non-boundary case only: caller supplies `h_op2_ne` (non-zero
     32-bit divisor) and `h_no_overflow_w` (no INT32_MIN / -1
     overflow). -/
-theorem h_rd_val_mdrs_remw_chunked
+lemma h_rd_val_mdrs_remw_chunked
     (r1 r2 : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)

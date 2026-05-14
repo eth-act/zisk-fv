@@ -53,7 +53,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 SLL reduces to the pure-function block. Wraps
     `PureSpec.execute_RTYPE_sll_pure_equiv`. -/
-theorem equiv_SLL_sail
+lemma equiv_SLL_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)
     (r1 r2 rd : regidx)

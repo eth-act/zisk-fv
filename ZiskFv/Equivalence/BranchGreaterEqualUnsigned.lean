@@ -35,7 +35,7 @@ open ZiskFv.Circuit.BranchGreaterEqualUnsigned
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** -/
-theorem equiv_BGEU_sail
+lemma equiv_BGEU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bgeu_input : PureSpec.BgeuInput)
     (imm : BitVec 13)

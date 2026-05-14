@@ -48,7 +48,7 @@ open Interaction
 /-- Inversion of `readReg_succ`: from a successful-read equation we can
     recover the `state.regs.get?` equality. Used by equivalence theorems to
     derive `h_input_pc` from the PC-read component of `bus_effect.1`. -/
-theorem readReg_of_readReg_succ
+lemma readReg_of_readReg_succ
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     {reg : Register} {v : RegisterType reg}
     (h : Sail.readReg reg state = EStateM.Result.ok v state) :
@@ -83,7 +83,7 @@ private lemma fgl_zero_ne_one : ((0 : FGL) = 1) = False := by decide
     The write entries (exec[1] and e2) contribute no precondition — only
     state transitions — and are handled by the partner lemma
     `bus_effect_matches_sail_alu_rrw` in `BusEmission.lean`. -/
-theorem chip_bus_hyps_alu_rrw
+lemma chip_bus_hyps_alu_rrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)
@@ -136,7 +136,7 @@ theorem chip_bus_hyps_alu_rrw
     reads via the operation bus).
 
     The `.1` precondition reduces to the single PC-read equality. -/
-theorem chip_bus_hyps_branch_rrw
+lemma chip_bus_hyps_branch_rrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (h_exec_len : exec_row.length = 2)
@@ -157,7 +157,7 @@ theorem chip_bus_hyps_branch_rrw
 
     The `.1` precondition reduces to the single PC-read equality — the
     write entry contributes only state transitions. -/
-theorem chip_bus_hyps_jump_rrw
+lemma chip_bus_hyps_jump_rrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e2 : MemoryBusEntry FGL)
@@ -193,7 +193,7 @@ theorem chip_bus_hyps_jump_rrw
 
     The `.1` precondition reduces to: PC read, rs1 register read, and
     the 8 memory bytes at `e1.ptr..e1.ptr+7` matching `e1.x0..x7`. -/
-theorem chip_bus_hyps_load_rrrw
+lemma chip_bus_hyps_load_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)
@@ -257,7 +257,7 @@ theorem chip_bus_hyps_load_rrrw
     register read. The memory-write entry contributes only state
     transitions (it's handled by partner `bus_effect_matches_sail_store_rrrw`
     in `BusEmission.lean`). -/
-theorem chip_bus_hyps_store_rrrw
+lemma chip_bus_hyps_store_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
     (e0 e1 e2 : MemoryBusEntry FGL)

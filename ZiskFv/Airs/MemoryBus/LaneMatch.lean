@@ -126,7 +126,7 @@ soundness, in the same shape as `OperationBus.matches_entry`. See
     columns Main constrains to carry the rs1 value's 32-bit lanes; the
     entry-side equality is the bus protocol's `permutation_assumes`
     contract). -/
-theorem register_read_rs1_lanes_match_of_bus_emission
+lemma register_read_rs1_lanes_match_of_bus_emission
     (m : Valid_Main C FGL FGL) (row : ℕ) (e : Interaction.MemoryBusEntry FGL)
     (h_slot_lo : slotValue (@Extraction.MemoryBuses.bus_emission_Main_0 C FGL FGL _ _ _) 4
                    m.circuit row = memory_entry_lo e)
@@ -152,7 +152,7 @@ theorem register_read_rs1_lanes_match_of_bus_emission
     bus emission `bus_emission_Main_2`. The slot-match composes
     against `m.b_0 row` / `m.b_1 row` via the
     `memBus_row_Main_register_read_rs2` projection. -/
-theorem register_read_rs2_lanes_match_of_bus_emission
+lemma register_read_rs2_lanes_match_of_bus_emission
     (m : Valid_Main C FGL FGL) (row : ℕ) (e : Interaction.MemoryBusEntry FGL)
     (h_slot_lo : slotValue (@Extraction.MemoryBuses.bus_emission_Main_2 C FGL FGL _ _ _) 4
                    m.circuit row = memory_entry_lo e)

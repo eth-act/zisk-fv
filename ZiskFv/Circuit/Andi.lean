@@ -32,7 +32,7 @@ def andi_circuit_holds
     (bus_entry : OperationBusEntry FGL) : Prop :=
   alu_itype_archetype_circuit_holds m r_main bus_entry OP_AND
 
-theorem andi_compositional
+lemma andi_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : andi_circuit_holds m r_main bus_entry) :

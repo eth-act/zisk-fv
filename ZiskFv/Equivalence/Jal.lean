@@ -52,7 +52,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
     Wraps `PureSpec.execute_JAL_pure_equiv` to expose the Sail chain at
     this module's export surface. -/
-theorem equiv_JAL_sail
+lemma equiv_JAL_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jal_input : PureSpec.JalInput)
     (imm : BitVec 21)

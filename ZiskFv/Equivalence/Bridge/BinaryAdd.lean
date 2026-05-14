@@ -85,7 +85,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
     Outputs an existential row witness `r_binary` for BinaryAdd plus
     the full equation bundle `h_rd_val_arith_add` consumes. -/
-theorem add_discharge
+lemma add_discharge
     (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
     (r_main : ℕ)
     (h_main_subset : add_subset_holds m r_main)
@@ -174,7 +174,7 @@ that retain `r_binary` as a parameter.
 /-- Discharge the 3 BinaryAdd chunk-range *promise hypotheses* at any
     caller-supplied row. Pure derivation from
     `binary_add_columns_in_range`; no caller hypothesis needed. -/
-theorem chunk_ranges_at_holds (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
+lemma chunk_ranges_at_holds (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
     a_chunks_in_range b r ∧ b_chunks_in_range b r ∧ c_chunks_in_range b r :=
   ⟨⟨ba_a_lo_lt_2_32 b r, ba_a_hi_lt_2_32 b r⟩,
    ⟨ba_b_lo_lt_2_32 b r, ba_b_hi_lt_2_32 b r⟩,

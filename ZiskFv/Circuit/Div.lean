@@ -67,7 +67,7 @@ def div_circuit_holds
     Proof is a direct instantiation of `arith_archetype_div_bus_match`
     at `opcode_lit = OP_DIV`: the archetype circuit-holds predicate
     definitionally coincides with `div_circuit_holds`. -/
-theorem div_compositional
+lemma div_compositional
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
     (r_main r_arith : ℕ)
     (h : div_circuit_holds m v r_main r_arith) :

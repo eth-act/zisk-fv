@@ -196,7 +196,7 @@ axiom lookup_consumer_matches_provider_load
     This lemma is structural; its job is to retire callers' direct
     `h_emit` hypotheses by exposing the same content under a uniform
     name aligned with the rest of the lane-match family. -/
-theorem memory_load_lanes_match_of_main_emit
+lemma memory_load_lanes_match_of_main_emit
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (e : MemoryBusEntry FGL)
     (h_main_emit : m.b_0 r_main = memory_entry_lo e
                    ∧ m.b_1 r_main = memory_entry_hi e
@@ -214,7 +214,7 @@ theorem memory_load_lanes_match_of_main_emit
     structural (from Main's emission); the witnessed Mem row is the
     object `Spec/MemModel.lean::mem_load_correct` consumes to derive the
     Sail-state predicate. -/
-theorem memory_load_lanes_match_of_mem_row
+lemma memory_load_lanes_match_of_mem_row
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (h_main_emit : main.b_0 r_main = memory_entry_lo e
@@ -239,7 +239,7 @@ them. -/
     Direct consequence of `addr_change_no_write_zeros_value_0`
     (extracted Mem constraint 21) under `addr_changes = 1` and
     `wr = 0`. -/
-theorem mem_read_addr_change_value_0_zero
+lemma mem_read_addr_change_value_0_zero
     (mem : Valid_Mem C FGL FGL) (r_mem : ℕ)
     (h_core : core_every_row mem r_mem)
     (h_addr_changes : mem.addr_changes r_mem = 1)
@@ -252,7 +252,7 @@ theorem mem_read_addr_change_value_0_zero
   linear_combination h
 
 /-- Companion of `mem_read_addr_change_value_0_zero` for the high chunk. -/
-theorem mem_read_addr_change_value_1_zero
+lemma mem_read_addr_change_value_1_zero
     (mem : Valid_Mem C FGL FGL) (r_mem : ℕ)
     (h_core : core_every_row mem r_mem)
     (h_addr_changes : mem.addr_changes r_mem = 1)

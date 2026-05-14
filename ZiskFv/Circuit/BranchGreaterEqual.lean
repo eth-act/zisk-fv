@@ -67,7 +67,7 @@ def branch_ge_circuit_holds
     BGE-specific polarity (flag=0 taken, flag=1 not-taken) emerges
     from composing with `transpile_BGE`'s `jmp_offset1 = 4,
     jmp_offset2 = imm` assignment. -/
-theorem branch_ge_compositional
+lemma branch_ge_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_ge_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main
@@ -84,7 +84,7 @@ theorem branch_ge_compositional
 
     Note the polarity inversion relative to `branch_lt_taken`:
     BGE-taken is `flag = 0`, not `flag = 1`. -/
-theorem branch_ge_taken
+lemma branch_ge_taken
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_ge_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 0) :
@@ -94,7 +94,7 @@ theorem branch_ge_taken
 
 /-- **BGE not-taken case.** When `flag = 1` (`a <s b`), the next-pc is
     `pc + jmp_offset1 = pc + 4` (from `transpile_BGE`'s swap). -/
-theorem branch_ge_not_taken
+lemma branch_ge_not_taken
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_ge_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 1) :

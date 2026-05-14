@@ -32,7 +32,7 @@ open ZiskFv.Circuit.StoreD
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_SD_sail
+lemma equiv_SD_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sd_input : PureSpec.SdInput)
     (mstatus : RegisterType Register.mstatus)

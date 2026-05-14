@@ -75,7 +75,7 @@ def mulhu_circuit_holds
     Proof is a direct instantiation of `mul_archetype_bus_match` at
     `opcode_lit = OP_MULUH`: the archetype circuit-holds predicate
     definitionally coincides with `mulhu_circuit_holds`. -/
-theorem mulhu_compositional
+lemma mulhu_compositional
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
     (r_main r_arith : ℕ)
     (h : mulhu_circuit_holds m v r_main r_arith) :

@@ -84,7 +84,7 @@ def sllw_circuit_holds
 
     The `(1 - m32) * x ↦ 0` collapse fires via `one_sub_one_mul`
     (the @[simp] lemma added alongside this module). -/
-theorem sllw_bus_high_lanes_zero
+lemma sllw_bus_high_lanes_zero
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (h_mode : main_row_in_sllw_mode m r_main) :
     (opBus_row_Main m r_main).a_hi = 0
@@ -102,7 +102,7 @@ theorem sllw_bus_high_lanes_zero
     `BinaryExtension` AIR's own `opBus_row_BinaryExtension`; here
     it remains a parameterized statement that the `m32 = 1` path
     zeroes the high lanes end-to-end. -/
-theorem sllw_compositional
+lemma sllw_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : sllw_circuit_holds m r_main bus_entry) :

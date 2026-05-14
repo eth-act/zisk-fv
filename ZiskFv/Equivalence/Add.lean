@@ -55,7 +55,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `PureSpec.execute_RTYPE_add_pure_equiv` to expose the Sail chain at
     this module's export surface — pairs with `equiv_ADD_circuit` above to
     connect circuit constraints to Sail semantics. -/
-theorem equiv_ADD_sail
+lemma equiv_ADD_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)

@@ -38,7 +38,7 @@ def slt_circuit_holds
     (bus_entry : OperationBusEntry FGL) : Prop :=
   alu_rtype_archetype_circuit_holds m r_main bus_entry OP_LT
 
-theorem slt_compositional
+lemma slt_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : slt_circuit_holds m r_main bus_entry) :

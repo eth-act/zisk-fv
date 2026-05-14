@@ -38,7 +38,7 @@ open ZiskFv.Tactics.StoreArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_SW_sail
+lemma equiv_SW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sw_input : PureSpec.SwInput)
     (mstatus : RegisterType Register.mstatus)

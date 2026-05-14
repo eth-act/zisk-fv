@@ -66,7 +66,7 @@ def sll_circuit_holds
     carries `a_hi = m.a_1 r_main` and `b_hi = m.b_1 r_main` — the
     `(1 - m32)` factor passes through under `m32 = 0`, so the high
     lanes flow verbatim to the `BinaryExtension` SM. -/
-theorem sll_compositional
+lemma sll_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : sll_circuit_holds m r_main bus_entry) :

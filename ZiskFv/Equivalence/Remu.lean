@@ -47,7 +47,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     RV64 REMU reduces to the pure-function block supplied by
     `PureSpec.execute_DIVREM_remu_pure`. Wraps
     `PureSpec.execute_DIVREM_remu_pure_equiv`. -/
-theorem equiv_REMU_sail
+lemma equiv_REMU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remu_input : PureSpec.RemuInput)
     (r1 r2 rd : regidx)

@@ -140,7 +140,7 @@ private lemma c_1_eq_b_1_of_internal_op_one
 /-- **LUI archetype PC-advance theorem.** The next-pc equals
     `pc + jmp_offset2`. Together with `transpile_LUI` pinning
     `jmp_offset2 = 4`, this gives `next_pc = pc + 4`. -/
-theorem lui_archetype_pc_advance
+lemma lui_archetype_pc_advance
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : lui_archetype_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main := by
@@ -157,7 +157,7 @@ theorem lui_archetype_pc_advance
 /-- **LUI archetype store-value (low lane).** With `store_pc = 0`,
     `store_value[0] = c_0`, and under internal-op-1 `c_0 = b_0`. So rd's
     low lane equals `b_0 = imm_lo` (pinned by `transpile_LUI`). -/
-theorem lui_archetype_store_value_lo
+lemma lui_archetype_store_value_lo
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : lui_archetype_circuit_holds m r_main next_pc) :
     m.store_pc r_main *
@@ -176,7 +176,7 @@ theorem lui_archetype_store_value_lo
 /-- **LUI archetype store-value (high lane).** With `store_pc = 0`,
     the high lane is `(1 - store_pc) * c_1 = c_1`. Under internal-op-1,
     `c_1 = b_1 = imm_hi` (pinned by `transpile_LUI`). -/
-theorem lui_archetype_store_value_hi
+lemma lui_archetype_store_value_hi
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : lui_archetype_circuit_holds m r_main next_pc) :
     (1 - m.store_pc r_main) * m.c_1 r_main = m.b_1 r_main := by
@@ -233,7 +233,7 @@ def auipc_archetype_circuit_holds
     `pc + jmp_offset1`. Under AUIPC's routing this is `pc + 4`. The
     handshake reasoning is the same as JAL: `set_pc = 0, flag = 1`
     collapses the formula to `pc + jmp_offset1`. -/
-theorem auipc_archetype_pc_advance
+lemma auipc_archetype_pc_advance
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : auipc_archetype_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset1 r_main := by
@@ -250,7 +250,7 @@ theorem auipc_archetype_pc_advance
     internal-op-0, `c_0 = 0`, so this reduces to `pc + jmp_offset2`,
     which is the `pc + imm` RV64 semantics expects (given
     `transpile_AUIPC` pins `jmp_offset2 = imm_offset`). -/
-theorem auipc_archetype_store_value_lo
+lemma auipc_archetype_store_value_lo
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : auipc_archetype_circuit_holds m r_main next_pc) :
     m.store_pc r_main *
@@ -275,7 +275,7 @@ theorem auipc_archetype_store_value_lo
     the add). The real circuit's rd high lane is `pc_hi + carry`; this
     is the downstream `Spec` file's job to bridge. Here we just prove
     `(1 - store_pc) * c_1 = 0`. -/
-theorem auipc_archetype_store_value_hi
+lemma auipc_archetype_store_value_hi
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : auipc_archetype_circuit_holds m r_main next_pc) :
     (1 - m.store_pc r_main) * m.c_1 r_main = 0 := by

@@ -63,7 +63,7 @@ variable {C : Type → Type → Type} {F ExtF : Type}
     which expand via `_def` to the same raw call). Both sides reduce to
     the same `Circuit.main` lookups; `simp` plus `_def` rewrites and
     `ring` (for the trailing `+ 0`) closes each conjunct. -/
-theorem bus_emission_main_slots_match_memBus_row_Main_register_read_rs1
+lemma bus_emission_main_slots_match_memBus_row_Main_register_read_rs1
     (m : Valid_Main C F ExtF) (row : ℕ) :
     let spec := @Extraction.MemoryBuses.bus_emission_Main_0 C F ExtF _ _ _
     let entry := memBus_row_Main_register_read_rs1 m row
@@ -86,7 +86,7 @@ theorem bus_emission_main_slots_match_memBus_row_Main_register_read_rs1
     debug index #36) has its 6 slot thunks pointwise equal to the
     `memBus_row_Main_register_read_rs2` projection's fields. Same proof
     skeleton as the rs1 variant. -/
-theorem bus_emission_main_slots_match_memBus_row_Main_register_read_rs2
+lemma bus_emission_main_slots_match_memBus_row_Main_register_read_rs2
     (m : Valid_Main C F ExtF) (row : ℕ) :
     let spec := @Extraction.MemoryBuses.bus_emission_Main_2 C F ExtF _ _ _
     let entry := memBus_row_Main_register_read_rs2 m row
@@ -111,7 +111,7 @@ theorem bus_emission_main_slots_match_memBus_row_Main_register_read_rs2
     fields. Same proof skeleton as the rs1/rs2 variants — but the value
     lanes are not aliased to named `Valid_Main` accessors, so no `_def`
     rewrites apply; the slots reduce directly via `ring`. -/
-theorem bus_emission_main_slots_match_memBus_row_Main_store_reg_prev
+lemma bus_emission_main_slots_match_memBus_row_Main_store_reg_prev
     (m : Valid_Main C F ExtF) (row : ℕ) :
     let spec := @Extraction.MemoryBuses.bus_emission_Main_4 C F ExtF _ _ _
     let entry := memBus_row_Main_store_reg_prev m row

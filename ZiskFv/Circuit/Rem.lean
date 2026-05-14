@@ -58,7 +58,7 @@ def rem_circuit_holds
     packed remainder (`d[]`) under the REM circuit-holds predicate.
     Direct instantiation of `arith_archetype_rem_bus_match` at
     `opcode_lit = OP_REM`. -/
-theorem rem_compositional
+lemma rem_compositional
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
     (r_main r_arith : ℕ)
     (h : rem_circuit_holds m v r_main r_arith) :

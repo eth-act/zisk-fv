@@ -60,7 +60,7 @@ def slotValue (spec : @BusEmissionSpec C F ExtF _ _ _) (i : ℕ)
     macro at compile time as zeros / the gating selector and don't
     appear as tuple slots in the hint. We prove all eight slot
     equalities and the multiplicity equality here. -/
-theorem bus_emission_main_slots_match_opBus_row_Main
+lemma bus_emission_main_slots_match_opBus_row_Main
     (m : Valid_Main C F ExtF) (row : ℕ) :
     let spec := @Extraction.Buses.bus_emission_Main_0 C F ExtF _ _ _
     let entry := opBus_row_Main m row
@@ -105,7 +105,7 @@ theorem bus_emission_main_slots_match_opBus_row_Main
     Composed with `Circuit.Add.main_row_in_add_mode`'s field equalities, this
     yields `opBus_row_Main`'s ADD-mode shape — the form a downstream
     caller can rewrite the bus-matcher predicate against. -/
-theorem bus_shape_for_ADD
+lemma bus_shape_for_ADD
     (m : Valid_Main C F ExtF) (row : ℕ)
     (h_op : m.op row = 10)
     (h_ext : m.is_external_op row = 1)
@@ -157,7 +157,7 @@ specialisations.
     collapse to `a_1`/`b_1` via `(1 - 0) * x = x`; slot 0 collapses to
     the opcode literal. Slots 1/3/5/6/7 are definitionally the
     corresponding `opBus_row_Main` field. -/
-theorem bus_shape_for_main_at_m32_zero
+lemma bus_shape_for_main_at_m32_zero
     (m : Valid_Main C F ExtF) (row : ℕ) (op_lit : F)
     (h_op : m.op row = op_lit)
     (h_ext : m.is_external_op row = 1)
@@ -191,7 +191,7 @@ theorem bus_shape_for_main_at_m32_zero
     `bus_shape_for_main_at_m32_zero` for the 32-bit ADDW/SUBW/SLLW/...
     archetype. Slots 2/4 collapse to `0` via `(1 - 1) * x = 0`, mirroring
     PIL's zero-out of the high lanes for word opcodes. -/
-theorem bus_shape_for_main_at_m32_one
+lemma bus_shape_for_main_at_m32_one
     (m : Valid_Main C F ExtF) (row : ℕ) (op_lit : F)
     (h_op : m.op row = op_lit)
     (h_ext : m.is_external_op row = 1)
@@ -280,7 +280,7 @@ section PerOpcode
 variable (m : Valid_Main C F ExtF) (row : ℕ)
 
 /-- ADD (RV32IM) — opcode literal 10, m32 = 0. -/
-theorem bus_shape_for_ADD'
+lemma bus_shape_for_ADD'
     (h_op : m.op row = (10 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -288,7 +288,7 @@ theorem bus_shape_for_ADD'
   exact bus_shape_for_main_at_m32_zero m row 10 h_op h_ext h_m32
 
 /-- SUB — opcode literal 11, m32 = 0. -/
-theorem bus_shape_for_SUB
+lemma bus_shape_for_SUB
     (h_op : m.op row = (11 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -296,7 +296,7 @@ theorem bus_shape_for_SUB
   exact bus_shape_for_main_at_m32_zero m row 11 h_op h_ext h_m32
 
 /-- AND — opcode literal 14, m32 = 0. -/
-theorem bus_shape_for_AND
+lemma bus_shape_for_AND
     (h_op : m.op row = (14 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -304,7 +304,7 @@ theorem bus_shape_for_AND
   exact bus_shape_for_main_at_m32_zero m row 14 h_op h_ext h_m32
 
 /-- OR — opcode literal 15, m32 = 0. -/
-theorem bus_shape_for_OR
+lemma bus_shape_for_OR
     (h_op : m.op row = (15 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -312,7 +312,7 @@ theorem bus_shape_for_OR
   exact bus_shape_for_main_at_m32_zero m row 15 h_op h_ext h_m32
 
 /-- XOR — opcode literal 16, m32 = 0. -/
-theorem bus_shape_for_XOR
+lemma bus_shape_for_XOR
     (h_op : m.op row = (16 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -320,7 +320,7 @@ theorem bus_shape_for_XOR
   exact bus_shape_for_main_at_m32_zero m row 16 h_op h_ext h_m32
 
 /-- SLT (signed less-than) — opcode literal 7 (OP_LT), m32 = 0. -/
-theorem bus_shape_for_SLT
+lemma bus_shape_for_SLT
     (h_op : m.op row = (7 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -328,7 +328,7 @@ theorem bus_shape_for_SLT
   exact bus_shape_for_main_at_m32_zero m row 7 h_op h_ext h_m32
 
 /-- SLTU (unsigned less-than) — opcode literal 6 (OP_LTU), m32 = 0. -/
-theorem bus_shape_for_SLTU
+lemma bus_shape_for_SLTU
     (h_op : m.op row = (6 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -337,7 +337,7 @@ theorem bus_shape_for_SLTU
 
 /-- ADDI — same as ADD; the I-type immediate is folded into `b` by the
     transpiler before the row reaches Main. -/
-theorem bus_shape_for_ADDI
+lemma bus_shape_for_ADDI
     (h_op : m.op row = (10 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -345,7 +345,7 @@ theorem bus_shape_for_ADDI
   exact bus_shape_for_main_at_m32_zero m row 10 h_op h_ext h_m32
 
 /-- ANDI — opcode 14, m32 = 0. -/
-theorem bus_shape_for_ANDI
+lemma bus_shape_for_ANDI
     (h_op : m.op row = (14 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -353,7 +353,7 @@ theorem bus_shape_for_ANDI
   exact bus_shape_for_main_at_m32_zero m row 14 h_op h_ext h_m32
 
 /-- ORI — opcode 15, m32 = 0. -/
-theorem bus_shape_for_ORI
+lemma bus_shape_for_ORI
     (h_op : m.op row = (15 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -361,7 +361,7 @@ theorem bus_shape_for_ORI
   exact bus_shape_for_main_at_m32_zero m row 15 h_op h_ext h_m32
 
 /-- XORI — opcode 16, m32 = 0. -/
-theorem bus_shape_for_XORI
+lemma bus_shape_for_XORI
     (h_op : m.op row = (16 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -369,7 +369,7 @@ theorem bus_shape_for_XORI
   exact bus_shape_for_main_at_m32_zero m row 16 h_op h_ext h_m32
 
 /-- SLTI — opcode 7, m32 = 0. -/
-theorem bus_shape_for_SLTI
+lemma bus_shape_for_SLTI
     (h_op : m.op row = (7 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -377,7 +377,7 @@ theorem bus_shape_for_SLTI
   exact bus_shape_for_main_at_m32_zero m row 7 h_op h_ext h_m32
 
 /-- SLTIU — opcode 6, m32 = 0. -/
-theorem bus_shape_for_SLTIU
+lemma bus_shape_for_SLTIU
     (h_op : m.op row = (6 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -385,7 +385,7 @@ theorem bus_shape_for_SLTIU
   exact bus_shape_for_main_at_m32_zero m row 6 h_op h_ext h_m32
 
 /-- BEQ (branch equal) — opcode 9 (OP_EQ), m32 = 0. -/
-theorem bus_shape_for_BEQ
+lemma bus_shape_for_BEQ
     (h_op : m.op row = (9 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -394,7 +394,7 @@ theorem bus_shape_for_BEQ
 
 /-- BNE (branch not equal) — opcode 9 (OP_EQ; ZisK encodes via `flag`
     inversion in the per-opcode mode predicate). -/
-theorem bus_shape_for_BNE
+lemma bus_shape_for_BNE
     (h_op : m.op row = (9 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -402,7 +402,7 @@ theorem bus_shape_for_BNE
   exact bus_shape_for_main_at_m32_zero m row 9 h_op h_ext h_m32
 
 /-- BLT (branch less-than signed) — opcode 7. -/
-theorem bus_shape_for_BLT
+lemma bus_shape_for_BLT
     (h_op : m.op row = (7 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -410,7 +410,7 @@ theorem bus_shape_for_BLT
   exact bus_shape_for_main_at_m32_zero m row 7 h_op h_ext h_m32
 
 /-- BLTU (branch less-than unsigned) — opcode 6. -/
-theorem bus_shape_for_BLTU
+lemma bus_shape_for_BLTU
     (h_op : m.op row = (6 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -418,7 +418,7 @@ theorem bus_shape_for_BLTU
   exact bus_shape_for_main_at_m32_zero m row 6 h_op h_ext h_m32
 
 /-- BGE — opcode 7 (OP_LT, ZisK negates via flag). -/
-theorem bus_shape_for_BGE
+lemma bus_shape_for_BGE
     (h_op : m.op row = (7 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -426,7 +426,7 @@ theorem bus_shape_for_BGE
   exact bus_shape_for_main_at_m32_zero m row 7 h_op h_ext h_m32
 
 /-- BGEU — opcode 6 (OP_LTU, ZisK negates via flag). -/
-theorem bus_shape_for_BGEU
+lemma bus_shape_for_BGEU
     (h_op : m.op row = (6 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -434,7 +434,7 @@ theorem bus_shape_for_BGEU
   exact bus_shape_for_main_at_m32_zero m row 6 h_op h_ext h_m32
 
 /-- MUL — opcode 180 (OP_MUL), m32 = 0. -/
-theorem bus_shape_for_MUL
+lemma bus_shape_for_MUL
     (h_op : m.op row = (180 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -442,7 +442,7 @@ theorem bus_shape_for_MUL
   exact bus_shape_for_main_at_m32_zero m row 180 h_op h_ext h_m32
 
 /-- MULH — opcode 181 (OP_MULH), m32 = 0. -/
-theorem bus_shape_for_MULH
+lemma bus_shape_for_MULH
     (h_op : m.op row = (181 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -450,7 +450,7 @@ theorem bus_shape_for_MULH
   exact bus_shape_for_main_at_m32_zero m row 181 h_op h_ext h_m32
 
 /-- MULHU — opcode 177 (OP_MULUH), m32 = 0. -/
-theorem bus_shape_for_MULHU
+lemma bus_shape_for_MULHU
     (h_op : m.op row = (177 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -458,7 +458,7 @@ theorem bus_shape_for_MULHU
   exact bus_shape_for_main_at_m32_zero m row 177 h_op h_ext h_m32
 
 /-- MULHSU — opcode 179 (OP_MULSUH), m32 = 0. -/
-theorem bus_shape_for_MULHSU
+lemma bus_shape_for_MULHSU
     (h_op : m.op row = (179 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -466,7 +466,7 @@ theorem bus_shape_for_MULHSU
   exact bus_shape_for_main_at_m32_zero m row 179 h_op h_ext h_m32
 
 /-- DIV — opcode 186 (OP_DIV), m32 = 0. -/
-theorem bus_shape_for_DIV
+lemma bus_shape_for_DIV
     (h_op : m.op row = (186 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -474,7 +474,7 @@ theorem bus_shape_for_DIV
   exact bus_shape_for_main_at_m32_zero m row 186 h_op h_ext h_m32
 
 /-- DIVU — opcode 184 (OP_DIVU), m32 = 0. -/
-theorem bus_shape_for_DIVU
+lemma bus_shape_for_DIVU
     (h_op : m.op row = (184 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -482,7 +482,7 @@ theorem bus_shape_for_DIVU
   exact bus_shape_for_main_at_m32_zero m row 184 h_op h_ext h_m32
 
 /-- REM — opcode 187 (OP_REM), m32 = 0. -/
-theorem bus_shape_for_REM
+lemma bus_shape_for_REM
     (h_op : m.op row = (187 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -490,7 +490,7 @@ theorem bus_shape_for_REM
   exact bus_shape_for_main_at_m32_zero m row 187 h_op h_ext h_m32
 
 /-- REMU — opcode 185 (OP_REMU), m32 = 0. -/
-theorem bus_shape_for_REMU
+lemma bus_shape_for_REMU
     (h_op : m.op row = (185 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -498,7 +498,7 @@ theorem bus_shape_for_REMU
   exact bus_shape_for_main_at_m32_zero m row 185 h_op h_ext h_m32
 
 /-- SLL — opcode 33, m32 = 0. -/
-theorem bus_shape_for_SLL
+lemma bus_shape_for_SLL
     (h_op : m.op row = (33 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -506,7 +506,7 @@ theorem bus_shape_for_SLL
   exact bus_shape_for_main_at_m32_zero m row 33 h_op h_ext h_m32
 
 /-- SRL — opcode 34, m32 = 0. -/
-theorem bus_shape_for_SRL
+lemma bus_shape_for_SRL
     (h_op : m.op row = (34 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -514,7 +514,7 @@ theorem bus_shape_for_SRL
   exact bus_shape_for_main_at_m32_zero m row 34 h_op h_ext h_m32
 
 /-- SRA — opcode 35, m32 = 0. -/
-theorem bus_shape_for_SRA
+lemma bus_shape_for_SRA
     (h_op : m.op row = (35 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -522,7 +522,7 @@ theorem bus_shape_for_SRA
   exact bus_shape_for_main_at_m32_zero m row 35 h_op h_ext h_m32
 
 /-- SLLI — opcode 33 (shares SLL's bus shape; immediate folded into `b`). -/
-theorem bus_shape_for_SLLI
+lemma bus_shape_for_SLLI
     (h_op : m.op row = (33 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -530,7 +530,7 @@ theorem bus_shape_for_SLLI
   exact bus_shape_for_main_at_m32_zero m row 33 h_op h_ext h_m32
 
 /-- SRLI — opcode 34. -/
-theorem bus_shape_for_SRLI
+lemma bus_shape_for_SRLI
     (h_op : m.op row = (34 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -538,7 +538,7 @@ theorem bus_shape_for_SRLI
   exact bus_shape_for_main_at_m32_zero m row 34 h_op h_ext h_m32
 
 /-- SRAI — opcode 35. -/
-theorem bus_shape_for_SRAI
+lemma bus_shape_for_SRAI
     (h_op : m.op row = (35 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -546,7 +546,7 @@ theorem bus_shape_for_SRAI
   exact bus_shape_for_main_at_m32_zero m row 35 h_op h_ext h_m32
 
 /-- LD (load doubleword) — opcode 1 (OP_COPYB) per the load archetype. -/
-theorem bus_shape_for_LD
+lemma bus_shape_for_LD
     (h_op : m.op row = (1 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -554,21 +554,21 @@ theorem bus_shape_for_LD
   exact bus_shape_for_main_at_m32_zero m row 1 h_op h_ext h_m32
 
 /-- LBU / LHU / LWU — share LD's bus shape (load archetype). -/
-theorem bus_shape_for_LBU
+lemma bus_shape_for_LBU
     (h_op : m.op row = (1 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
     bus_shape_main_at_m32_zero_conclusion m row 1 := by
   exact bus_shape_for_main_at_m32_zero m row 1 h_op h_ext h_m32
 
-theorem bus_shape_for_LHU
+lemma bus_shape_for_LHU
     (h_op : m.op row = (1 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
     bus_shape_main_at_m32_zero_conclusion m row 1 := by
   exact bus_shape_for_main_at_m32_zero m row 1 h_op h_ext h_m32
 
-theorem bus_shape_for_LWU
+lemma bus_shape_for_LWU
     (h_op : m.op row = (1 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -578,21 +578,21 @@ theorem bus_shape_for_LWU
 /-- LB / LH / LW — sign-extending loads share the byte-extend
     archetype's bus shape (m32 = 0; sign extension is downstream of
     the bus). -/
-theorem bus_shape_for_LB
+lemma bus_shape_for_LB
     (h_op : m.op row = (39 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
     bus_shape_main_at_m32_zero_conclusion m row 39 := by
   exact bus_shape_for_main_at_m32_zero m row 39 h_op h_ext h_m32
 
-theorem bus_shape_for_LH
+lemma bus_shape_for_LH
     (h_op : m.op row = (40 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
     bus_shape_main_at_m32_zero_conclusion m row 40 := by
   exact bus_shape_for_main_at_m32_zero m row 40 h_op h_ext h_m32
 
-theorem bus_shape_for_LW
+lemma bus_shape_for_LW
     (h_op : m.op row = (41 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -600,28 +600,28 @@ theorem bus_shape_for_LW
   exact bus_shape_for_main_at_m32_zero m row 41 h_op h_ext h_m32
 
 /-- SD/SB/SH/SW — store archetype, opcode 1 (OP_COPYB), m32 = 0. -/
-theorem bus_shape_for_SD
+lemma bus_shape_for_SD
     (h_op : m.op row = (1 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
     bus_shape_main_at_m32_zero_conclusion m row 1 := by
   exact bus_shape_for_main_at_m32_zero m row 1 h_op h_ext h_m32
 
-theorem bus_shape_for_SB
+lemma bus_shape_for_SB
     (h_op : m.op row = (1 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
     bus_shape_main_at_m32_zero_conclusion m row 1 := by
   exact bus_shape_for_main_at_m32_zero m row 1 h_op h_ext h_m32
 
-theorem bus_shape_for_SH
+lemma bus_shape_for_SH
     (h_op : m.op row = (1 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
     bus_shape_main_at_m32_zero_conclusion m row 1 := by
   exact bus_shape_for_main_at_m32_zero m row 1 h_op h_ext h_m32
 
-theorem bus_shape_for_SW
+lemma bus_shape_for_SW
     (h_op : m.op row = (1 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -629,14 +629,14 @@ theorem bus_shape_for_SW
   exact bus_shape_for_main_at_m32_zero m row 1 h_op h_ext h_m32
 
 /-- JAL/JALR — jump archetype, opcode 1 (OP_COPYB), m32 = 0. -/
-theorem bus_shape_for_JAL
+lemma bus_shape_for_JAL
     (h_op : m.op row = (1 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
     bus_shape_main_at_m32_zero_conclusion m row 1 := by
   exact bus_shape_for_main_at_m32_zero m row 1 h_op h_ext h_m32
 
-theorem bus_shape_for_JALR
+lemma bus_shape_for_JALR
     (h_op : m.op row = (1 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -644,14 +644,14 @@ theorem bus_shape_for_JALR
   exact bus_shape_for_main_at_m32_zero m row 1 h_op h_ext h_m32
 
 /-- LUI/AUIPC — U-type, opcode 0 (OP_FLAG) per the U-type archetype. -/
-theorem bus_shape_for_LUI
+lemma bus_shape_for_LUI
     (h_op : m.op row = (0 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
     bus_shape_main_at_m32_zero_conclusion m row 0 := by
   exact bus_shape_for_main_at_m32_zero m row 0 h_op h_ext h_m32
 
-theorem bus_shape_for_AUIPC
+lemma bus_shape_for_AUIPC
     (h_op : m.op row = (0 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -659,7 +659,7 @@ theorem bus_shape_for_AUIPC
   exact bus_shape_for_main_at_m32_zero m row 0 h_op h_ext h_m32
 
 /-- FENCE — same shape as a NOP-equivalent bus emission, opcode 0. -/
-theorem bus_shape_for_FENCE
+lemma bus_shape_for_FENCE
     (h_op : m.op row = (0 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -669,7 +669,7 @@ theorem bus_shape_for_FENCE
 /-! ### 32-bit word variants (m32 = 1) -/
 
 /-- ADDW — opcode 26 (OP_ADD_W), m32 = 1. -/
-theorem bus_shape_for_ADDW
+lemma bus_shape_for_ADDW
     (h_op : m.op row = (26 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
@@ -677,7 +677,7 @@ theorem bus_shape_for_ADDW
   exact bus_shape_for_main_at_m32_one m row 26 h_op h_ext h_m32
 
 /-- SUBW — opcode 27 (OP_SUB_W), m32 = 1. -/
-theorem bus_shape_for_SUBW
+lemma bus_shape_for_SUBW
     (h_op : m.op row = (27 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
@@ -685,7 +685,7 @@ theorem bus_shape_for_SUBW
   exact bus_shape_for_main_at_m32_one m row 27 h_op h_ext h_m32
 
 /-- ADDIW — opcode 26, m32 = 1. -/
-theorem bus_shape_for_ADDIW
+lemma bus_shape_for_ADDIW
     (h_op : m.op row = (26 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
@@ -693,7 +693,7 @@ theorem bus_shape_for_ADDIW
   exact bus_shape_for_main_at_m32_one m row 26 h_op h_ext h_m32
 
 /-- SLLW — opcode 36 (OP_SLL_W), m32 = 1. -/
-theorem bus_shape_for_SLLW
+lemma bus_shape_for_SLLW
     (h_op : m.op row = (36 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
@@ -701,7 +701,7 @@ theorem bus_shape_for_SLLW
   exact bus_shape_for_main_at_m32_one m row 36 h_op h_ext h_m32
 
 /-- SRLW — opcode 37 (OP_SRL_W), m32 = 1. -/
-theorem bus_shape_for_SRLW
+lemma bus_shape_for_SRLW
     (h_op : m.op row = (37 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
@@ -709,7 +709,7 @@ theorem bus_shape_for_SRLW
   exact bus_shape_for_main_at_m32_one m row 37 h_op h_ext h_m32
 
 /-- SRAW — opcode 38 (OP_SRA_W), m32 = 1. -/
-theorem bus_shape_for_SRAW
+lemma bus_shape_for_SRAW
     (h_op : m.op row = (38 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
@@ -717,7 +717,7 @@ theorem bus_shape_for_SRAW
   exact bus_shape_for_main_at_m32_one m row 38 h_op h_ext h_m32
 
 /-- SLLIW — same shape as SLLW. -/
-theorem bus_shape_for_SLLIW
+lemma bus_shape_for_SLLIW
     (h_op : m.op row = (36 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
@@ -725,7 +725,7 @@ theorem bus_shape_for_SLLIW
   exact bus_shape_for_main_at_m32_one m row 36 h_op h_ext h_m32
 
 /-- SRLIW. -/
-theorem bus_shape_for_SRLIW
+lemma bus_shape_for_SRLIW
     (h_op : m.op row = (37 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
@@ -733,7 +733,7 @@ theorem bus_shape_for_SRLIW
   exact bus_shape_for_main_at_m32_one m row 37 h_op h_ext h_m32
 
 /-- SRAIW. -/
-theorem bus_shape_for_SRAIW
+lemma bus_shape_for_SRAIW
     (h_op : m.op row = (38 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
@@ -741,7 +741,7 @@ theorem bus_shape_for_SRAIW
   exact bus_shape_for_main_at_m32_one m row 38 h_op h_ext h_m32
 
 /-- MULW — opcode 182 (OP_MUL_W), m32 = 1. -/
-theorem bus_shape_for_MULW
+lemma bus_shape_for_MULW
     (h_op : m.op row = (182 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
@@ -749,7 +749,7 @@ theorem bus_shape_for_MULW
   exact bus_shape_for_main_at_m32_one m row 182 h_op h_ext h_m32
 
 /-- DIVW — opcode 190. -/
-theorem bus_shape_for_DIVW
+lemma bus_shape_for_DIVW
     (h_op : m.op row = (190 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
@@ -757,7 +757,7 @@ theorem bus_shape_for_DIVW
   exact bus_shape_for_main_at_m32_one m row 190 h_op h_ext h_m32
 
 /-- DIVUW — opcode 188. -/
-theorem bus_shape_for_DIVUW
+lemma bus_shape_for_DIVUW
     (h_op : m.op row = (188 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
@@ -765,7 +765,7 @@ theorem bus_shape_for_DIVUW
   exact bus_shape_for_main_at_m32_one m row 188 h_op h_ext h_m32
 
 /-- REMW — opcode 191. -/
-theorem bus_shape_for_REMW
+lemma bus_shape_for_REMW
     (h_op : m.op row = (191 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
@@ -773,7 +773,7 @@ theorem bus_shape_for_REMW
   exact bus_shape_for_main_at_m32_one m row 191 h_op h_ext h_m32
 
 /-- REMUW — opcode 189. -/
-theorem bus_shape_for_REMUW
+lemma bus_shape_for_REMUW
     (h_op : m.op row = (189 : F))
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :

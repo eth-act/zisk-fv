@@ -50,7 +50,7 @@ def addw_circuit_holds
 /-- **Compositional ADDW theorem.** Main's packed `c` equals the
     bus entry's packed `c` lanes. Instantiation of
     `rtypew_archetype_c_bus_match` at `OP_ADD_W`. -/
-theorem addw_compositional
+lemma addw_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : addw_circuit_holds m r_main bus_entry) :

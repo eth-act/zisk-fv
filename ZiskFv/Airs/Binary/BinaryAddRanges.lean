@@ -72,35 +72,35 @@ axiom binary_add_columns_in_range (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
 
 Per-component projections of `binary_add_columns_in_range`. -/
 
-theorem ba_a_lo_lt_2_32 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
+lemma ba_a_lo_lt_2_32 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
     (b.a_0 r).val < 4294967296 :=
   (binary_add_columns_in_range b r).1
 
-theorem ba_a_hi_lt_2_32 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
+lemma ba_a_hi_lt_2_32 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
     (b.a_1 r).val < 4294967296 :=
   (binary_add_columns_in_range b r).2.1
 
-theorem ba_b_lo_lt_2_32 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
+lemma ba_b_lo_lt_2_32 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
     (b.b_0 r).val < 4294967296 :=
   (binary_add_columns_in_range b r).2.2.1
 
-theorem ba_b_hi_lt_2_32 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
+lemma ba_b_hi_lt_2_32 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
     (b.b_1 r).val < 4294967296 :=
   (binary_add_columns_in_range b r).2.2.2.1
 
-theorem ba_c_chunk_0_lt_2_16 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
+lemma ba_c_chunk_0_lt_2_16 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
     (b.c_chunks_0 r).val < 65536 :=
   (binary_add_columns_in_range b r).2.2.2.2.1
 
-theorem ba_c_chunk_1_lt_2_16 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
+lemma ba_c_chunk_1_lt_2_16 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
     (b.c_chunks_1 r).val < 65536 :=
   (binary_add_columns_in_range b r).2.2.2.2.2.1
 
-theorem ba_c_chunk_2_lt_2_16 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
+lemma ba_c_chunk_2_lt_2_16 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
     (b.c_chunks_2 r).val < 65536 :=
   (binary_add_columns_in_range b r).2.2.2.2.2.2.1
 
-theorem ba_c_chunk_3_lt_2_16 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
+lemma ba_c_chunk_3_lt_2_16 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
     (b.c_chunks_3 r).val < 65536 :=
   (binary_add_columns_in_range b r).2.2.2.2.2.2.2.1
 

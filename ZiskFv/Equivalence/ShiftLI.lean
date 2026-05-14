@@ -62,7 +62,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 SLLIW reduces to the pure-function block. Wraps
     `PureSpec.execute_SHIFTIWOP_slliw_pure_equiv`. -/
-theorem equiv_SLLIW_sail
+lemma equiv_SLLIW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slliw_input : PureSpec.SlliwInput)
     (r1 rd : regidx)

@@ -95,7 +95,7 @@ def mulw_circuit_holds
     operand-bus zeroing (which is irrelevant to this `c`-projection
     identity). The Arith-internal correctness (MULW carry chains →
     sign-extended 32-bit product) is delegated to the audit. -/
-theorem mulw_compositional
+lemma mulw_compositional
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
     (r_main r_arith : ℕ)
     (h : mulw_circuit_holds m v r_main r_arith) :

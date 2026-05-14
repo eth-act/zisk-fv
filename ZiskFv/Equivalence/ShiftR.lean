@@ -55,7 +55,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     RV64 SRLW reduces to the pure-function block. Wraps
     `PureSpec.execute_RTYPE_srlw_pure_equiv` at this module's export
     surface. -/
-theorem equiv_SRLW_sail
+lemma equiv_SRLW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srlw_input : PureSpec.SrlwInput)
     (r1 r2 rd : regidx)

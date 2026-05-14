@@ -70,7 +70,7 @@ noncomputable def sail_to_rv64
 /-- The `xreg rs` field of `sail_to_rv64 state` agrees with the value
     delivered by a successful `read_xreg rs state` call. The single
     rewrite consumed by every ALU-shape bridge's input-bridge step. -/
-theorem sail_to_rv64_xreg_eq_of_read_xreg
+lemma sail_to_rv64_xreg_eq_of_read_xreg
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rs : Fin 32) (r_val : BitVec 64)
     (h : read_xreg rs state = EStateM.Result.ok r_val state) :
@@ -87,7 +87,7 @@ theorem sail_to_rv64_xreg_eq_of_read_xreg
     `bv64_packed_eq_of_lanes` (Step 1.7a). Opcode-independent — every
     `transpile_<OP>` lane-equality pair has this shape after the rs
     is the right register. -/
-theorem packed_lane_eq_of_read_xreg
+lemma packed_lane_eq_of_read_xreg
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rs : Fin 32) (r_val : BitVec 64)
     (a_lo a_hi : FGL)
@@ -105,7 +105,7 @@ theorem packed_lane_eq_of_read_xreg
     replace its two caller-supplied `h_input_r{1,2}_main` *promise
     hypotheses* with the Sail-form `read_xreg` facts that
     `equiv_ADD` already carries. -/
-theorem add_input_bridges_of_read_xreg
+lemma add_input_bridges_of_read_xreg
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (r_main : ℕ)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -133,7 +133,7 @@ theorem add_input_bridges_of_read_xreg
     `equiv_ADDI` to discharge `h_input_r1_circuit` after translating
     Main lanes to BinaryAdd-row lanes via the existing
     `matches_entry` projection inside `addi_circuit_holds_with_binaryadd`. -/
-theorem addi_input_r1_main_eq_of_read_xreg
+lemma addi_input_r1_main_eq_of_read_xreg
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (r_main : ℕ)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -187,7 +187,7 @@ signed variants, and W-variants downstream). -/
     Pure arithmetic step combining `BitVec.toInt_eq_toNat_cond` with
     the substitution of the chunk identity for `r_val.toNat` and the
     case-split on the sign witness. No Arith-AIR dependencies. -/
-theorem signed_packed_toInt_eq_of_read_xreg
+lemma signed_packed_toInt_eq_of_read_xreg
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     {rs : Fin 32} {r_val : BitVec 64}
     (_h_read : read_xreg rs state = EStateM.Result.ok r_val state)

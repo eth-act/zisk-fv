@@ -181,7 +181,7 @@ decomposition: `Σ b_i · 256^i = 0` over `b_i ∈ [0, 256)` ⇒ all zero.
 
 /-- High-byte zeros for any LOAD-providing `MemAlignByte` row.
     Direct from `slot[5] = 0` ↔ `memory_entry_hi e = 0`. -/
-theorem memalign_byte_load_high_bytes_zero
+lemma memalign_byte_load_high_bytes_zero
     (v : Valid_MemAlignByte C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_byte_row_matches_load_entry v r e)
     (h_range : memory_entry_bytes_in_range e) :
@@ -203,7 +203,7 @@ theorem memalign_byte_load_high_bytes_zero
     provided here for completeness with the predicate. The width=1
     low-byte pinning consumes a separate hypothesis (the byte-bus
     range check on `bus_byte`) which is supplied at the call site. -/
-theorem memalign_byte_load_low_bytes_zero
+lemma memalign_byte_load_low_bytes_zero
     (v : Valid_MemAlignByte C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_byte_row_matches_load_entry v r e)
     (h_range : memory_entry_bytes_in_range e)
@@ -220,7 +220,7 @@ theorem memalign_byte_load_low_bytes_zero
 
 /-- High-byte zeros for any LOAD-providing `MemAlignReadByte` row.
     Same shape as the MemAlignByte case (slot[5] = literal 0). -/
-theorem memalign_read_byte_load_high_bytes_zero
+lemma memalign_read_byte_load_high_bytes_zero
     (v : Valid_MemAlignReadByte C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_read_byte_row_matches_load_entry v r e)
     (h_range : memory_entry_bytes_in_range e) :
@@ -233,7 +233,7 @@ theorem memalign_read_byte_load_high_bytes_zero
 
 /-- Width=1 lo-bytes pinning for `MemAlignReadByte`, analogous to the
     MemAlignByte version. -/
-theorem memalign_read_byte_load_low_bytes_zero
+lemma memalign_read_byte_load_low_bytes_zero
     (v : Valid_MemAlignReadByte C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_read_byte_row_matches_load_entry v r e)
     (h_range : memory_entry_bytes_in_range e)
@@ -250,7 +250,7 @@ theorem memalign_read_byte_load_low_bytes_zero
 /-- High-byte zeros for any LOAD-providing `MemAlign` row whose
     width is sub-doubleword. Combines the row-match's
     `value_1 = hi(e)` with the ROM-lookup axiom's `value_1 = 0`. -/
-theorem memalign_load_high_bytes_zero
+lemma memalign_load_high_bytes_zero
     (v : Valid_MemAlign C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_row_matches_load_entry v r e)
     (h_range : memory_entry_bytes_in_range e)
@@ -269,7 +269,7 @@ theorem memalign_load_high_bytes_zero
     The byte-range argument needs an explicit bound on `value_0`
     coming from the ROM/AIR-internal width pinning — supplied at the
     derivation site as `h_v0_lt`. -/
-theorem memalign_load_low_bytes_pinned_for_width_1
+lemma memalign_load_low_bytes_pinned_for_width_1
     (v : Valid_MemAlign C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_row_matches_load_entry v r e)
     (h_range : memory_entry_bytes_in_range e)
@@ -283,7 +283,7 @@ theorem memalign_load_low_bytes_pinned_for_width_1
   exact ZiskFv.PackedBitVec.four_bytes_high_three_zero_of_packed_lt_256
     e.x0 e.x1 e.x2 e.x3 h0 h1 h2 h3 h_lt
 
-theorem memalign_load_low_bytes_pinned_for_width_2
+lemma memalign_load_low_bytes_pinned_for_width_2
     (v : Valid_MemAlign C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_row_matches_load_entry v r e)
     (h_range : memory_entry_bytes_in_range e)
@@ -321,7 +321,7 @@ structure SubdoublewordLoadLowBytePinning
     the ROM axiom, plus byte-range hypotheses on `e` and width-conditional
     range pinning on the providers' lo-value columns, produce
     `high_bytes_zero_for_width e (main.ind_width r_main)`. -/
-theorem memalign_subdoubleword_load_high_bytes_zero
+lemma memalign_subdoubleword_load_high_bytes_zero
     (main : Valid_Main C FGL FGL)
     (mab : Valid_MemAlignByte C FGL FGL)
     (marb : Valid_MemAlignReadByte C FGL FGL)

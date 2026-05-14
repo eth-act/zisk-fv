@@ -69,55 +69,55 @@ axiom binary_columns_in_range (v : Valid_Binary C FGL FGL) (r : ℕ) :
 
 /-! ## Specialized accessors -/
 
-theorem bin_a_0_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_0 r).val < 256 :=
+lemma bin_a_0_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_0 r).val < 256 :=
   (binary_columns_in_range v r).1
-theorem bin_a_1_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_1 r).val < 256 :=
+lemma bin_a_1_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_1 r).val < 256 :=
   (binary_columns_in_range v r).2.1
-theorem bin_a_2_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_2 r).val < 256 :=
+lemma bin_a_2_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_2 r).val < 256 :=
   (binary_columns_in_range v r).2.2.1
-theorem bin_a_3_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_3 r).val < 256 :=
+lemma bin_a_3_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_3 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.1
-theorem bin_a_4_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_4 r).val < 256 :=
+lemma bin_a_4_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_4 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.1
-theorem bin_a_5_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_5 r).val < 256 :=
+lemma bin_a_5_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_5 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.1
-theorem bin_a_6_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_6 r).val < 256 :=
+lemma bin_a_6_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_6 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.1
-theorem bin_a_7_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_7 r).val < 256 :=
+lemma bin_a_7_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_a_7 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.1
 
-theorem bin_b_0_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_0 r).val < 256 :=
+lemma bin_b_0_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_0 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.1
-theorem bin_b_1_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_1 r).val < 256 :=
+lemma bin_b_1_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_1 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.1
-theorem bin_b_2_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_2 r).val < 256 :=
+lemma bin_b_2_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_2 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.1
-theorem bin_b_3_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_3 r).val < 256 :=
+lemma bin_b_3_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_3 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.1
-theorem bin_b_4_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_4 r).val < 256 :=
+lemma bin_b_4_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_4 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem bin_b_5_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_5 r).val < 256 :=
+lemma bin_b_5_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_5 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem bin_b_6_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_6 r).val < 256 :=
+lemma bin_b_6_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_6 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem bin_b_7_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_7 r).val < 256 :=
+lemma bin_b_7_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_b_7 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 
-theorem bin_c_0_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_0 r).val < 256 :=
+lemma bin_c_0_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_0 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem bin_c_1_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_1 r).val < 256 :=
+lemma bin_c_1_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_1 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem bin_c_2_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_2 r).val < 256 :=
+lemma bin_c_2_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_2 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem bin_c_3_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_3 r).val < 256 :=
+lemma bin_c_3_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_3 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem bin_c_4_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_4 r).val < 256 :=
+lemma bin_c_4_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_4 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem bin_c_5_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_5 r).val < 256 :=
+lemma bin_c_5_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_5 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem bin_c_6_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_6 r).val < 256 :=
+lemma bin_c_6_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_6 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-theorem bin_c_7_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_7 r).val < 256 :=
+lemma bin_c_7_lt_256 (v : Valid_Binary C FGL FGL) (r : ℕ) : (v.free_in_c_7 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
 
 /-! ## Forward-direction lookup-protocol axiom
@@ -201,13 +201,13 @@ axiom binary_carry_bits_in_range (v : Valid_Binary C FGL FGL) (r : ℕ) :
   ∧ (v.carry_4 r).val < 2 ∧ (v.carry_5 r).val < 2
   ∧ (v.carry_6 r).val < 2 ∧ (v.carry_7 r).val < 2
 
-theorem bin_carry_7_lt_2 (v : Valid_Binary C FGL FGL) (r : ℕ) :
+lemma bin_carry_7_lt_2 (v : Valid_Binary C FGL FGL) (r : ℕ) :
     (v.carry_7 r).val < 2 :=
   (binary_carry_bits_in_range v r).2.2.2.2.2.2.2
 
 /-- **carry_7 is boolean** in the Lean field sense: `x * (1 - x) = 0`.
     Derived from `bin_carry_7_lt_2` (range bound `< 2`). -/
-theorem bin_carry_7_is_boolean (v : Valid_Binary C FGL FGL) (r : ℕ) :
+lemma bin_carry_7_is_boolean (v : Valid_Binary C FGL FGL) (r : ℕ) :
     v.carry_7 r * (1 - v.carry_7 r) = 0 := by
   have h := bin_carry_7_lt_2 v r
   interval_cases h_val : (v.carry_7 r).val

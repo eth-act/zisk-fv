@@ -102,7 +102,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
     The shift amount is taken from `(v.free_in_b r_binary).val % 64` directly
     (RV64 SLL/SLLI mask the shift amount to its low 6 bits). -/
-theorem h_rd_val_shift_sll
+lemma h_rd_val_shift_sll
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -312,7 +312,7 @@ theorem h_rd_val_shift_sll
     The shift amount on the Sail side is the immediate (5/6-bit shamt) rather
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 64`. -/
-theorem h_rd_val_shift_slli
+lemma h_rd_val_shift_slli
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -385,7 +385,7 @@ theorem h_rd_val_shift_slli
 /-- **SRL `h_rd_val` derivation (Tier 1).** Same architecture as
     `h_rd_val_shift_sll` but with `BitVec.ushiftRight`. Uses K1-C SRL
     lift `binary_extension_srl_chunks_eq_bv_ushr`. -/
-theorem h_rd_val_shift_srl
+lemma h_rd_val_shift_srl
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -563,7 +563,7 @@ theorem h_rd_val_shift_srl
 
 /-- **SRLI `h_rd_val` derivation (Tier 1).** Same shape as `h_rd_val_shift_srl`;
     SRLI shares SRL's Zisk opcode (`OP_SRL = 34`) at the BinaryExtension SM. -/
-theorem h_rd_val_shift_srli
+lemma h_rd_val_shift_srli
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -637,7 +637,7 @@ theorem h_rd_val_shift_srli
     `h_rd_val_shift_sll`/`_srl` but with `BitVec.sshiftRight`. Uses K1-C SRA
     lift `binary_extension_sra_chunks_eq_bv_sshr`. RV64 SRA pre-masks the
     rs2 register read to 6 bits. -/
-theorem h_rd_val_shift_sra
+lemma h_rd_val_shift_sra
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -818,7 +818,7 @@ theorem h_rd_val_shift_sra
     The shift amount on the Sail side is the immediate (5/6-bit shamt) rather
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 64`. -/
-theorem h_rd_val_shift_srai
+lemma h_rd_val_shift_srai
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -897,7 +897,7 @@ theorem h_rd_val_shift_srai
     bridge to `BitVec.ofNat 32 (sum a_lo)`. The shift amount on the Sail
     side equals `(v.free_in_b r_binary).val % 32` — RV64 SRLW pre-masks
     the rs2 register read to 5 bits. -/
-theorem h_rd_val_shift_srlw
+lemma h_rd_val_shift_srlw
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -1076,7 +1076,7 @@ theorem h_rd_val_shift_srlw
     The shift amount on the Sail side is the immediate (5-bit shamt) rather
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 32`. -/
-theorem h_rd_val_shift_srliw
+lemma h_rd_val_shift_srliw
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -1151,7 +1151,7 @@ theorem h_rd_val_shift_srliw
     bridge to `BitVec.ofNat 32 (sum a_lo)`. The shift amount on the Sail
     side equals `(v.free_in_b r_binary).val % 32` — RV64 SLLW pre-masks
     the rs2 register read to 5 bits. -/
-theorem h_rd_val_shift_sllw
+lemma h_rd_val_shift_sllw
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -1330,7 +1330,7 @@ theorem h_rd_val_shift_sllw
     The shift amount on the Sail side is the immediate (5-bit shamt) rather
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 32`. -/
-theorem h_rd_val_shift_slliw
+lemma h_rd_val_shift_slliw
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -1405,7 +1405,7 @@ theorem h_rd_val_shift_slliw
     bridge to `BitVec.ofNat 32 (sum a_lo)`. The shift amount on the Sail
     side equals `(v.free_in_b r_binary).val % 32` — RV64 SRAW pre-masks
     the rs2 register read to 5 bits. -/
-theorem h_rd_val_shift_sraw
+lemma h_rd_val_shift_sraw
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -1584,7 +1584,7 @@ theorem h_rd_val_shift_sraw
     The shift amount on the Sail side is the immediate (5-bit shamt) rather
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 32`. -/
-theorem h_rd_val_shift_sraiw
+lemma h_rd_val_shift_sraiw
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)

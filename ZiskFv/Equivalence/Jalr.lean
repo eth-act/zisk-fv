@@ -61,7 +61,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     trusted `execute_JALR_pure_equiv_axiom` (see `trusted-base.md`).
     The equivalence theorem below composes this with the shape-(c)
     bus-matching lemma. -/
-theorem equiv_JALR_sail
+lemma equiv_JALR_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jalr_input : PureSpec.JalrInput)
     (imm : BitVec 12)

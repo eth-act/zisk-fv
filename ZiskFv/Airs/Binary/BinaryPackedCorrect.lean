@@ -411,7 +411,7 @@ private lemma byte_eq_XOR_of_consumer_match
     consumed lookup entries (one per byte) at multiplicity 1, all with
     `op = OP_AND` and matching a/b/c bytes, conclude the 64-bit
     `BitVec.and` identity on the packed byte sums. -/
-theorem binary_and_chunks_eq_bv_and
+lemma binary_and_chunks_eq_bv_and
     (v : Valid_Binary C FGL FGL) (row : ℕ)
     (h_byte_0 : consumer_byte_match OP_AND
       (v.free_in_a_0 row) (v.free_in_b_0 row) (v.free_in_c_0 row))
@@ -493,7 +493,7 @@ theorem binary_and_chunks_eq_bv_and
 
 /-- **Lift for OR.** Same shape as `binary_and_chunks_eq_bv_and`, with
     `OP_OR` and `BitVec.or`. -/
-theorem binary_or_chunks_eq_bv_or
+lemma binary_or_chunks_eq_bv_or
     (v : Valid_Binary C FGL FGL) (row : ℕ)
     (h_byte_0 : consumer_byte_match OP_OR
       (v.free_in_a_0 row) (v.free_in_b_0 row) (v.free_in_c_0 row))
@@ -571,7 +571,7 @@ theorem binary_or_chunks_eq_bv_or
 
 /-- **Lift for XOR.** Same shape as the AND/OR theorems with
     `OP_XOR` and `BitVec.xor`. -/
-theorem binary_xor_chunks_eq_bv_xor
+lemma binary_xor_chunks_eq_bv_xor
     (v : Valid_Binary C FGL FGL) (row : ℕ)
     (h_byte_0 : consumer_byte_match OP_XOR
       (v.free_in_a_0 row) (v.free_in_b_0 row) (v.free_in_c_0 row))
@@ -1250,7 +1250,7 @@ BitVec subtraction identity. -/
     for i = 0..6. The conclusion is the algebraic identity
     `a64 - b64 = c64` modulo `2^64` (cast as `BitVec.add` of `c64` and
     `b64` equals `a64`, which is `BitVec.sub`'s defining identity). -/
-theorem binary_sub_chunks_eq_bv_sub
+lemma binary_sub_chunks_eq_bv_sub
     (a0 a1 a2 a3 a4 a5 a6 a7
      b0 b1 b2 b3 b4 b5 b6 b7
      c0 c1 c2 c3 c4 c5 c6 c7
@@ -1392,7 +1392,7 @@ which equals 1 iff `a64 < b64` (unsigned). -/
 /-- **Lift for LTU.** The LTU chain at byte 7 produces flags_7 % 2 = 1
     iff `a64 < b64` (unsigned 64-bit). All bytes use OP_LTU; chain
     links: `cin_0 = 0`, `cin_{i+1} = flags_i % 2`. -/
-theorem binary_ltu_chunks_eq_bv_ult
+lemma binary_ltu_chunks_eq_bv_ult
     (a0 a1 a2 a3 a4 a5 a6 a7
      b0 b1 b2 b3 b4 b5 b6 b7
      c0 c1 c2 c3 c4 c5 c6 c7
@@ -1646,7 +1646,7 @@ private lemma lt_byte7_close
     uses OP_LT with the sign-byte override at `pos_ind = 1`. Output
     is `flags_7 % 2 = 1` iff signed-LT holds on the 64-bit packed
     sums. -/
-theorem binary_lt_chunks_eq_bv_slt
+lemma binary_lt_chunks_eq_bv_slt
     (a0 a1 a2 a3 a4 a5 a6 a7
      b0 b1 b2 b3 b4 b5 b6 b7
      c0 c1 c2 c3 c4 c5 c6 c7
@@ -1824,7 +1824,7 @@ private lemma addw_close_neg
     The hypothesis `h_sext_choice` selects which case obtains, encoded
     as: high bytes are all 0 with low-32 result < 2^31 (positive) OR
     all 0xFF with low-32 result ≥ 2^31 (negative). -/
-theorem binary_addw_chunks_eq_bv_add_w
+lemma binary_addw_chunks_eq_bv_add_w
     (a0 a1 a2 a3 b0 b1 b2 b3
      c0 c1 c2 c3 c4 c5 c6 c7
      cin0 cin1 cin2 cin3
@@ -2021,7 +2021,7 @@ private lemma subw_close_neg
     result has high bit clear, SEXT_FF otherwise.
 
     Same shape as `binary_addw_chunks_eq_bv_add_w`. -/
-theorem binary_subw_chunks_eq_bv_sub_w
+lemma binary_subw_chunks_eq_bv_sub_w
     (a0 a1 a2 a3 b0 b1 b2 b3
      c0 c1 c2 c3 c4 c5 c6 c7
      cin0 cin1 cin2 cin3

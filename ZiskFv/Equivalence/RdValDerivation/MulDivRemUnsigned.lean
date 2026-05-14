@@ -370,7 +370,7 @@ private theorem fgl_div_unsigned_chunks_to_nat_identity
 
     All parameters are CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE, or
     TRANSPILE-BRIDGE. -/
-theorem h_rd_val_mdru_mul
+lemma h_rd_val_mdru_mul
     (op1 op2 : BitVec 64)
     (e : MemoryBusEntry FGL)
     -- Chunks
@@ -453,7 +453,7 @@ theorem h_rd_val_mdru_mul
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
 
 /-- **`h_rd_val` discharge for MULHU (Tier 1).** -/
-theorem h_rd_val_mdru_mulhu
+lemma h_rd_val_mdru_mulhu
     (op1 op2 : BitVec 64)
     (e : MemoryBusEntry FGL)
     -- Chunks
@@ -538,7 +538,7 @@ theorem h_rd_val_mdru_mulhu
     The Euclidean identity `a*b + d = c` and the divisor-non-zero +
     remainder-bound CIRCUIT-CONSTRAINTS pin the quotient to
     `op1.toNat / op2.toNat`. -/
-theorem h_rd_val_mdru_divu
+lemma h_rd_val_mdru_divu
     (op1 op2 : BitVec 64)
     (e : MemoryBusEntry FGL)
     -- Chunks (DIV layout: a=quotient, b=divisor, c=dividend, d=remainder)
@@ -654,7 +654,7 @@ theorem h_rd_val_mdru_divu
 /-- **`h_rd_val` discharge for REMU (Tier 1).** Same shape as DIVU but
     extracts the remainder via `fgl_rem_unsigned_to_bv64`. The bus
     entry's bytes pack `d[]` chunks (the remainder lanes). -/
-theorem h_rd_val_mdru_remu
+lemma h_rd_val_mdru_remu
     (op1 op2 : BitVec 64)
     (e : MemoryBusEntry FGL)
     -- Chunks (DIV layout)
@@ -771,7 +771,7 @@ theorem h_rd_val_mdru_remu
     entry's bytes to a function of the spec inputs `op1`, `op2`, with
     no spec-output mention on the RHS — `execute_MULW_pure_val` is a
     *pure function* of the inputs). -/
-theorem h_rd_val_mdru_mulw
+lemma h_rd_val_mdru_mulw
     (op1 op2 : BitVec 64)
     (e : MemoryBusEntry FGL)
     -- Per-byte range bounds
@@ -874,7 +874,7 @@ via Layer 1's `fgl_div_w_unsigned_to_bv64` / `fgl_rem_w_unsigned_to_bv64`. -/
 
     The lo-quotient lane match `h_byte_lo` ties bytes 0..3 to
     `a_0 + a_1*65536` (the W quotient lanes). -/
-theorem h_rd_val_mdru_divuw_chunked
+lemma h_rd_val_mdru_divuw_chunked
     (r1 r2 : BitVec 64)
     (e : MemoryBusEntry FGL)
     -- Chunks (DIV layout: a=quotient, b=divisor, c=dividend, d=remainder)
@@ -1067,7 +1067,7 @@ theorem h_rd_val_mdru_divuw_chunked
     Bytes 0..3 pack `d_0 + d_1*65536` (remainder low 32) instead of
     `a_0 + a_1*65536` (quotient). Layer 1's `fgl_rem_w_unsigned_to_bv64`
     extracts the remainder. -/
-theorem h_rd_val_mdru_remuw_chunked
+lemma h_rd_val_mdru_remuw_chunked
     (r1 r2 : BitVec 64)
     (e : MemoryBusEntry FGL)
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL)

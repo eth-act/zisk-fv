@@ -49,7 +49,7 @@ chain; concrete opcodes pin `a` lanes at the equivalence layer.
 
 ```lean
 -- LW case:
-theorem equiv_LW_circuit (...) := by
+lemma equiv_LW_circuit (...) := by
   have := sign_extend_load_archetype_m32_one_zeros_bus m r_main bus_entry
     (opcode_lit := OP_SIGNEXTEND_W) h_circuit_lw
   ...
@@ -115,7 +115,7 @@ def sign_extend_load_archetype_circuit_holds
     (`m32 = 1`), the bus entry has `a_hi = b_hi = 0`. This mirrors
     `Circuit.Shift.sllw_compositional` and the
     `shift_archetype_m32_one_zeros_bus` theorem. -/
-theorem sign_extend_load_archetype_m32_one_zeros_bus
+lemma sign_extend_load_archetype_m32_one_zeros_bus
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL)
@@ -137,7 +137,7 @@ theorem sign_extend_load_archetype_m32_one_zeros_bus
     (`m32 = 0`), the bus carries `a[1]` / `b[1]` verbatim; the
     `(1 - m32) = 1` factor leaves them unchanged. Mirror of
     `shift_archetype_m32_zero_passthrough_bus`. -/
-theorem sign_extend_load_archetype_m32_zero_passthrough_bus
+lemma sign_extend_load_archetype_m32_zero_passthrough_bus
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL)
@@ -161,7 +161,7 @@ theorem sign_extend_load_archetype_m32_zero_passthrough_bus
     multiplicity matches the Main row's `is_external_op` — = 1 for
     signed loads. Useful at the equivalence layer for tying the Main
     bus emission to the BinaryExtension SM's bus pop. -/
-theorem sign_extend_load_archetype_multiplicity_one
+lemma sign_extend_load_archetype_multiplicity_one
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit m32_val : FGL)
@@ -177,7 +177,7 @@ theorem sign_extend_load_archetype_multiplicity_one
 
 /-- **Archetype op passthrough.** The bus entry's `op` field matches
     the Main row's `op` — = `opcode_lit` for signed loads. -/
-theorem sign_extend_load_archetype_op_passthrough
+lemma sign_extend_load_archetype_op_passthrough
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit m32_val : FGL)

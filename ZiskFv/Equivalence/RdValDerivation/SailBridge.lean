@@ -47,7 +47,7 @@ open LeanRV64D.Functions
     `execute_RTYPEW_pure r1 r2 ropw.ADDW`. Given the transpile pins
     relating the byte sums to the Sail-side `extractLsb r 31 0`, this
     bridge produces the canonical rewrite. -/
-theorem sail_addw_bridge
+lemma sail_addw_bridge
     (r1 r2 : BitVec 64) (a32sum b32sum : ℕ)
     (h_a : (Sail.BitVec.extractLsb r1 31 0).toNat = a32sum % 2^32)
     (h_b : (Sail.BitVec.extractLsb r2 31 0).toNat = b32sum % 2^32) :
@@ -70,7 +70,7 @@ theorem sail_addw_bridge
 
     Bridge: when `r1`'s low 32 bits are `a32sum` and the sign-extended
     immediate's low 32 bits are `b32sum`, both equal. -/
-theorem sail_addiw_bridge
+lemma sail_addiw_bridge
     (r1 : BitVec 64) (imm : BitVec 12) (a32sum b32sum : ℕ)
     (h_a : (Sail.BitVec.extractLsb r1 31 0 : BitVec (31 - 0 + 1)).toNat = a32sum % 2^32)
     (h_b : (Sail.BitVec.extractLsb (BitVec.signExtend 64 imm : BitVec 64) 31 0
@@ -101,7 +101,7 @@ theorem sail_addiw_bridge
   conv_rhs => rw [Nat.add_mod, h_a', h_b']
 
 /-- **Sail ↔ discharge bridge for SUBW.** -/
-theorem sail_subw_bridge
+lemma sail_subw_bridge
     (r1 r2 : BitVec 64) (a32sum b32sum : ℕ)
     (h_a : (Sail.BitVec.extractLsb r1 31 0).toNat = a32sum % 2^32)
     (h_b : (Sail.BitVec.extractLsb r2 31 0).toNat = b32sum % 2^32) :
@@ -123,7 +123,7 @@ theorem sail_subw_bridge
     which unfolds to `Sail.shift_bits_left r1 (Sail.BitVec.extractLsb r2 5 0)`.
     Bridge identifies `shift` with the low 6 bits of `r2` viewed as a
     natural number. -/
-theorem sail_sll_bridge
+lemma sail_sll_bridge
     (r1 r2 : BitVec 64) (shift : ℕ)
     (h_shift : shift = r2.toNat % 64) :
     BitVec.shiftLeft r1 shift
@@ -142,7 +142,7 @@ theorem sail_sll_bridge
   rfl
 
 /-- **Sail ↔ discharge bridge for SRL.** -/
-theorem sail_srl_bridge
+lemma sail_srl_bridge
     (r1 r2 : BitVec 64) (shift : ℕ)
     (h_shift : shift = r2.toNat % 64) :
     BitVec.ushiftRight r1 shift
@@ -202,7 +202,7 @@ private theorem shift_right_arith_eq_sshiftRight
     `shift_right_arith` taking a Nat shift amount. The Lean-side
     discharge uses `BitVec.sshiftRight`. The helper
     `shift_right_arith_eq_sshiftRight` provides the core identity. -/
-theorem sail_sra_bridge
+lemma sail_sra_bridge
     (r1 r2 : BitVec 64) (shift : ℕ)
     (h_shift : shift = r2.toNat % 64) :
     BitVec.sshiftRight r1 shift
@@ -224,7 +224,7 @@ theorem sail_sra_bridge
 
     Same as SLL but with the shift amount directly given as a `BitVec 6`
     `shamt` rather than the low 6 bits of `r2`. -/
-theorem sail_slli_bridge
+lemma sail_slli_bridge
     (r1 : BitVec 64) (shamt : BitVec 6) (shift : ℕ)
     (h_shift : shift = shamt.toNat) :
     BitVec.shiftLeft r1 shift
@@ -236,7 +236,7 @@ theorem sail_slli_bridge
   rfl
 
 /-- **Sail ↔ discharge bridge for SRLI.** -/
-theorem sail_srli_bridge
+lemma sail_srli_bridge
     (r1 : BitVec 64) (shamt : BitVec 6) (shift : ℕ)
     (h_shift : shift = shamt.toNat) :
     BitVec.ushiftRight r1 shift
@@ -248,7 +248,7 @@ theorem sail_srli_bridge
   rfl
 
 /-- **Sail ↔ discharge bridge for SRAI.** -/
-theorem sail_srai_bridge
+lemma sail_srai_bridge
     (r1 : BitVec 64) (shamt : BitVec 6) (shift : ℕ)
     (h_shift : shift = shamt.toNat) :
     BitVec.sshiftRight r1 shift
@@ -280,7 +280,7 @@ private theorem extractLsb_31_0_eq_of_toNat
 
     Pin hypotheses bridge `BitVec.ofNat 32 a4sum` to `extractLsb r1 31 0`
     and `shift` to the low 5 bits of `extractLsb r2 31 0`. -/
-theorem sail_sllw_bridge
+lemma sail_sllw_bridge
     (r1 r2 : BitVec 64) (a4sum shift : ℕ)
     (h_a4 : (Sail.BitVec.extractLsb r1 31 0 : BitVec (31 - 0 + 1)).toNat = a4sum % 2^32)
     (h_shift : shift = (Sail.BitVec.extractLsb r2 31 0 : BitVec (31 - 0 + 1)).toNat % 32) :
@@ -307,7 +307,7 @@ theorem sail_sllw_bridge
   rfl
 
 /-- **Sail ↔ discharge bridge for SRLW.** -/
-theorem sail_srlw_bridge
+lemma sail_srlw_bridge
     (r1 r2 : BitVec 64) (a4sum shift : ℕ)
     (h_a4 : (Sail.BitVec.extractLsb r1 31 0 : BitVec (31 - 0 + 1)).toNat = a4sum % 2^32)
     (h_shift : shift = (Sail.BitVec.extractLsb r2 31 0 : BitVec (31 - 0 + 1)).toNat % 32) :
@@ -364,7 +364,7 @@ private theorem shift_right_arith_eq_sshiftRight_32
           show (32 : ℕ) - 1 = 31 from by omega]
 
 /-- **Sail ↔ discharge bridge for SRAW.** -/
-theorem sail_sraw_bridge
+lemma sail_sraw_bridge
     (r1 r2 : BitVec 64) (a4sum shift : ℕ)
     (h_a4 : (Sail.BitVec.extractLsb r1 31 0 : BitVec (31 - 0 + 1)).toNat = a4sum % 2^32)
     (h_shift : shift = (Sail.BitVec.extractLsb r2 31 0 : BitVec (31 - 0 + 1)).toNat % 32) :
@@ -397,7 +397,7 @@ theorem sail_sraw_bridge
     `BitVec.signExtend 64 (BitVec.shiftLeft (BitVec.ofNat 32 a4sum) shift)`.
     The `h_rd_val` for SLLIW directly uses Sail-form
     `sign_extend (m:=64) (Sail.shift_bits_left (extractLsb r1 31 0) shamt)`. -/
-theorem sail_slliw_bridge
+lemma sail_slliw_bridge
     (r1 : BitVec 64) (shamt : BitVec 5) (a4sum shift : ℕ)
     (h_a4 : (Sail.BitVec.extractLsb r1 31 0 : BitVec (31 - 0 + 1)).toNat = a4sum % 2^32)
     (h_shift : shift = shamt.toNat) :
@@ -416,7 +416,7 @@ theorem sail_slliw_bridge
   rfl
 
 /-- **Sail ↔ discharge bridge for SRLIW.** -/
-theorem sail_srliw_bridge
+lemma sail_srliw_bridge
     (r1 : BitVec 64) (shamt : BitVec 5) (a4sum shift : ℕ)
     (h_a4 : (Sail.BitVec.extractLsb r1 31 0 : BitVec (31 - 0 + 1)).toNat = a4sum % 2^32)
     (h_shift : shift = shamt.toNat) :
@@ -435,7 +435,7 @@ theorem sail_srliw_bridge
   rfl
 
 /-- **Sail ↔ discharge bridge for SRAIW.** -/
-theorem sail_sraiw_bridge
+lemma sail_sraiw_bridge
     (r1 : BitVec 64) (shamt : BitVec 5) (a4sum shift : ℕ)
     (h_a4 : (Sail.BitVec.extractLsb r1 31 0 : BitVec (31 - 0 + 1)).toNat = a4sum % 2^32)
     (h_shift : shift = shamt.toNat) :

@@ -63,7 +63,7 @@ def branch_lt_circuit_holds
 /-- **Compositional BLT PC-dispatch theorem (via `BranchArchetype`).**
     Instantiates the archetype macro's `branch_archetype_pc_dispatch`
     at `opcode_lit = OP_LT`. -/
-theorem branch_lt_compositional
+lemma branch_lt_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_lt_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main
@@ -77,7 +77,7 @@ theorem branch_lt_compositional
     the next-pc is `pc + jmp_offset1`. For BLT, `jmp_offset1 = imm`
     (from `transpile_BLT`), so this is `pc + imm` — the taken branch
     (BEQ polarity). -/
-theorem branch_lt_taken
+lemma branch_lt_taken
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_lt_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 1) :
@@ -87,7 +87,7 @@ theorem branch_lt_taken
 
 /-- **BLT not-taken case.** When `flag = 0` (`a ≥s b`), the
     next-pc is `pc + jmp_offset2 = pc + 4`. -/
-theorem branch_lt_not_taken
+lemma branch_lt_not_taken
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_lt_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 0) :

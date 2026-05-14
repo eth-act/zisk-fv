@@ -82,47 +82,47 @@ Per-component projections of `main_columns_in_range`. Provided as
 destructuring the tuple. -/
 
 /-- `m.a_0 r < 2^32`. -/
-theorem main_a_lo_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_a_lo_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
     (m.a_0 r).val < 4294967296 :=
   (main_columns_in_range m r).1
 
 /-- `m.a_1 r < 2^32`. -/
-theorem main_a_hi_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_a_hi_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
     (m.a_1 r).val < 4294967296 :=
   (main_columns_in_range m r).2.1
 
 /-- `m.b_0 r < 2^32`. -/
-theorem main_b_lo_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_b_lo_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
     (m.b_0 r).val < 4294967296 :=
   (main_columns_in_range m r).2.2.1
 
 /-- `m.b_1 r < 2^32`. -/
-theorem main_b_hi_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_b_hi_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
     (m.b_1 r).val < 4294967296 :=
   (main_columns_in_range m r).2.2.2.1
 
 /-- `m.c_0 r < 2^32`. -/
-theorem main_c_lo_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_c_lo_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
     (m.c_0 r).val < 4294967296 :=
   (main_columns_in_range m r).2.2.2.2.1
 
 /-- `m.c_1 r < 2^32`. -/
-theorem main_c_hi_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_c_hi_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
     (m.c_1 r).val < 4294967296 :=
   (main_columns_in_range m r).2.2.2.2.2.1
 
 /-- `m.pc r < 2^32`. -/
-theorem main_pc_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_pc_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
     (m.pc r).val < 4294967296 :=
   (main_columns_in_range m r).2.2.2.2.2.2.1
 
 /-- `m.op r < 2^8`. -/
-theorem main_op_lt_2_8 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_op_lt_2_8 (m : Valid_Main C FGL FGL) (r : ℕ) :
     (m.op r).val < 256 :=
   (main_columns_in_range m r).2.2.2.2.2.2.2.1
 
 /-- `m.ind_width r < 2^4`. -/
-theorem main_ind_width_lt_2_4 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_ind_width_lt_2_4 (m : Valid_Main C FGL FGL) (r : ℕ) :
     (m.ind_width r).val < 16 :=
   (main_columns_in_range m r).2.2.2.2.2.2.2.2
 

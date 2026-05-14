@@ -46,7 +46,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     function block supplied by `PureSpec.execute_MULH_mulhu_pure`,
     given source-register readability and PC knowledge. Wraps
     `PureSpec.execute_MULH_mulhu_pure_equiv`. -/
-theorem equiv_MULHU_sail
+lemma equiv_MULHU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhu_input : PureSpec.MulhuInput)
     (r1 r2 rd : regidx)

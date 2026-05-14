@@ -41,7 +41,7 @@ def lb_circuit_holds
 /-- **Compositional LB theorem (bus-passthrough).** For an LB-shaped
     Main row (`m32 = 0`), the operation-bus entry's `a_hi` / `b_hi`
     lanes carry the Main row's `a_1` / `b_1` lanes verbatim. -/
-theorem lb_compositional
+lemma lb_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : lb_circuit_holds m r_main bus_entry) :
@@ -50,7 +50,7 @@ theorem lb_compositional
     OP_SIGNEXTEND_B h
 
 /-- **LB bus-entry op passthrough.** -/
-theorem lb_bus_op
+lemma lb_bus_op
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : lb_circuit_holds m r_main bus_entry) :
@@ -59,7 +59,7 @@ theorem lb_bus_op
     OP_SIGNEXTEND_B 0 h
 
 /-- **LB bus-entry multiplicity.** -/
-theorem lb_bus_multiplicity
+lemma lb_bus_multiplicity
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : lb_circuit_holds m r_main bus_entry) :

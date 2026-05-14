@@ -106,7 +106,7 @@ def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     `memory_entry_toField` packs them; `Equivalence/LoadD.lean` then
     bridges from `memory_entry_toField` to the `BitVec 64` produced
     by Sail's `vmem_read`. -/
-theorem load_d_compositional
+lemma load_d_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : load_d_circuit_holds m r_main next_pc entry) :
@@ -130,7 +130,7 @@ theorem load_d_compositional
     by the mode + constraint 18), the PC handshake gives
     `next_pc = pc + jmp_offset2`. For LD, `jmp_offset2 = 4` (from
     `transpile_LD`), so this is `pc + 4`. -/
-theorem load_d_next_pc
+lemma load_d_next_pc
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : load_d_circuit_holds m r_main next_pc entry) :
@@ -144,7 +144,7 @@ theorem load_d_next_pc
 /-- **Next-PC simplified for LD.** When `flag = 0` (forced by
     constraint 18) and `jmp_offset1 = jmp_offset2 = 4` (forced by
     `transpile_LD`), the handshake collapses to `next_pc = pc + 4`. -/
-theorem load_d_next_pc_concrete
+lemma load_d_next_pc_concrete
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : load_d_circuit_holds m r_main next_pc entry)

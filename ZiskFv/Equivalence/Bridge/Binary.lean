@@ -75,7 +75,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
     Outputs: existential `r_binary` + `matches_entry` + 24 byte-range
     facts. -/
-theorem binary_discharge_conservative
+lemma binary_discharge_conservative
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
@@ -150,7 +150,7 @@ def byte_ranges_at (v : Valid_Binary C FGL FGL) (r : ℕ) : Prop :=
 /-- Discharge the 24 byte-range *promise hypotheses* at any row of a
     valid `Binary` AIR. Pure derivation from
     `binary_columns_in_range`; no caller hypothesis needed. -/
-theorem byte_ranges_at_holds (v : Valid_Binary C FGL FGL) (r : ℕ) :
+lemma byte_ranges_at_holds (v : Valid_Binary C FGL FGL) (r : ℕ) :
     byte_ranges_at v r :=
   ⟨bin_a_0_lt_256 v r, bin_a_1_lt_256 v r,
    bin_a_2_lt_256 v r, bin_a_3_lt_256 v r,
@@ -185,7 +185,7 @@ open ZiskFv.Airs.Binary in
     (v.free_in_c_i r)` for byte 0. The other 7 byte specializations
     follow the same shape with `binary_per_byte_lookup_witness`'s
     other 7 conjuncts. -/
-theorem byte_chain_match_0_holds
+lemma byte_chain_match_0_holds
     (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
@@ -195,7 +195,7 @@ theorem byte_chain_match_0_holds
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
 
-theorem byte_chain_match_1_holds
+lemma byte_chain_match_1_holds
     (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
@@ -205,7 +205,7 @@ theorem byte_chain_match_1_holds
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
 
-theorem byte_chain_match_2_holds
+lemma byte_chain_match_2_holds
     (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
@@ -215,7 +215,7 @@ theorem byte_chain_match_2_holds
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
 
-theorem byte_chain_match_3_holds
+lemma byte_chain_match_3_holds
     (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
@@ -225,7 +225,7 @@ theorem byte_chain_match_3_holds
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
 
-theorem byte_chain_match_4_holds
+lemma byte_chain_match_4_holds
     (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
@@ -235,7 +235,7 @@ theorem byte_chain_match_4_holds
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
 
-theorem byte_chain_match_5_holds
+lemma byte_chain_match_5_holds
     (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
@@ -245,7 +245,7 @@ theorem byte_chain_match_5_holds
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
 
-theorem byte_chain_match_6_holds
+lemma byte_chain_match_6_holds
     (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
@@ -255,7 +255,7 @@ theorem byte_chain_match_6_holds
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
 
-theorem byte_chain_match_7_holds
+lemma byte_chain_match_7_holds
     (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
@@ -302,7 +302,7 @@ private lemma boolean_carry_implies_eq_zero {x : FGL}
 /-- **carry_7 = 0 for AND rows (caller-friendly variant).** Drops the
     `boolean_carry_7` hypothesis by deriving it from
     `bin_carry_7_is_boolean` (in `BinaryRanges.lean`). -/
-theorem carry_7_zero_AND_pure
+lemma carry_7_zero_AND_pure
     (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_op_AND : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_AND) :
     v.carry_7 r = 0 := by
@@ -317,7 +317,7 @@ theorem carry_7_zero_AND_pure
   exact boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
 
 /-- **carry_7 = 0 for OR rows (caller-friendly variant).** -/
-theorem carry_7_zero_OR_pure
+lemma carry_7_zero_OR_pure
     (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_op_OR : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_OR) :
     v.carry_7 r = 0 := by
@@ -332,7 +332,7 @@ theorem carry_7_zero_OR_pure
   exact boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
 
 /-- **carry_7 = 0 for XOR rows (caller-friendly variant).** -/
-theorem carry_7_zero_XOR_pure
+lemma carry_7_zero_XOR_pure
     (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_op_XOR : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_XOR) :
     v.carry_7 r = 0 := by
@@ -347,7 +347,7 @@ theorem carry_7_zero_XOR_pure
   exact boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
 
 /-- **carry_7 = 0 for AND rows.** -/
-theorem carry_7_zero_AND
+lemma carry_7_zero_AND
     (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_op_AND : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_AND)
     (h_bool_c7 : ZiskFv.Airs.Binary.boolean_carry_7 v r) :
@@ -364,7 +364,7 @@ theorem carry_7_zero_AND
   exact boolean_carry_implies_eq_zero h_bool_c7 h_cout_zero
 
 /-- **carry_7 = 0 for OR rows.** -/
-theorem carry_7_zero_OR
+lemma carry_7_zero_OR
     (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_op_OR : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_OR)
     (h_bool_c7 : ZiskFv.Airs.Binary.boolean_carry_7 v r) :
@@ -380,7 +380,7 @@ theorem carry_7_zero_OR
   exact boolean_carry_implies_eq_zero h_bool_c7 h_cout_zero
 
 /-- **carry_7 = 0 for XOR rows.** -/
-theorem carry_7_zero_XOR
+lemma carry_7_zero_XOR
     (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_op_XOR : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_XOR)
     (h_bool_c7 : ZiskFv.Airs.Binary.boolean_carry_7 v r) :
@@ -414,7 +414,7 @@ discharge that every Binary-shape equiv consumes in place of the
     `memory_bus_entry_byte_range_perm_sound`. Replaces the 8
     `h_e2_<i>` *promise hypotheses* uniformly across all 14
     Binary-shape opcodes. -/
-theorem e2_byte_ranges_discharge (e : Interaction.MemoryBusEntry FGL) :
+lemma e2_byte_ranges_discharge (e : Interaction.MemoryBusEntry FGL) :
     e.x0.val < 256 ∧ e.x1.val < 256 ∧ e.x2.val < 256 ∧ e.x3.val < 256
     ∧ e.x4.val < 256 ∧ e.x5.val < 256 ∧ e.x6.val < 256 ∧ e.x7.val < 256 :=
   ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e
@@ -456,7 +456,7 @@ def all_byte_matches_at (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ) : 
     derive the 8 per-byte `consumer_byte_match` predicates. Replaces
     the 8 `h_byte_<i>` *promise hypotheses* uniformly across the 6
     logic opcodes (AND/ANDI/OR/ORI/XOR/XORI). -/
-theorem byte_chain_discharge_logic
+lemma byte_chain_discharge_logic
     (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     all_byte_matches_at v r op_val := by
@@ -493,7 +493,7 @@ open ZiskFv.Equivalence.Bridge.SailStateBridge in
     equation. Uniformly applicable across AND/ANDI/OR/ORI/XOR/XORI/
     SLT/SLTI/SLTU/SLTIU/SUB chain ops. The 8 byte ranges on `v.free_in_a_*`
     are consumed internally — derived from `binary_columns_in_range`. -/
-theorem input_r1_packed_a
+lemma input_r1_packed_a
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
@@ -566,7 +566,7 @@ theorem input_r1_packed_a
 open ZiskFv.Equivalence.Bridge.SailStateBridge in
 /-- **Sail r2_val ↔ packed Binary b-byte sum bridge.** Mirror of
     `input_r1_packed_a` for the b-lane (`m.b_0/1` ↔ `state.xreg rs2`). -/
-theorem input_r2_packed_b
+lemma input_r2_packed_b
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
@@ -668,7 +668,7 @@ private lemma match_clo_chi_logic_core
   · rw [h_c_hi]; ring
 
 /-- **`h_match_clo`/`h_match_chi` discharge for AND-shape rows.** -/
-theorem match_clo_chi_AND
+lemma match_clo_chi_AND
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -684,7 +684,7 @@ theorem match_clo_chi_AND
     (carry_7_zero_AND_pure v r_binary h_op_AND)
 
 /-- **`h_match_clo`/`h_match_chi` discharge for OR-shape rows.** -/
-theorem match_clo_chi_OR
+lemma match_clo_chi_OR
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -700,7 +700,7 @@ theorem match_clo_chi_OR
     (carry_7_zero_OR_pure v r_binary h_op_OR)
 
 /-- **`h_match_clo`/`h_match_chi` discharge for XOR-shape rows.** -/
-theorem match_clo_chi_XOR
+lemma match_clo_chi_XOR
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -749,7 +749,7 @@ chain. -/
     ITYPE Binary-provider opcodes). The 8 byte ranges on
     `v.free_in_b_*` are consumed internally — derived from
     `binary_columns_in_range`. -/
-theorem itype_imm_subset_binary_row_of_main
+lemma itype_imm_subset_binary_row_of_main
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main r_binary : ℕ) (imm : BitVec 12)
     (h_m32 : m.m32 r_main = 0)

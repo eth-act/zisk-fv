@@ -65,7 +65,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- **ArithMul chunk-range discharge at any row.** All 16 chunks
     (`a_0..a_3`, `b_0..b_3`, `c_0..c_3`, `d_0..d_3`) are < 2^16.
     Pure consequence of `arith_mul_columns_in_range`. -/
-theorem arith_mul_chunk_ranges_at_holds
+lemma arith_mul_chunk_ranges_at_holds
     (a : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ) :
     (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
   ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
@@ -79,7 +79,7 @@ theorem arith_mul_chunk_ranges_at_holds
 
 /-- **ArithDiv chunk-range discharge at any row.** Mirror of
     `arith_mul_chunk_ranges_at_holds` for the Div view. -/
-theorem arith_div_chunk_ranges_at_holds
+lemma arith_div_chunk_ranges_at_holds
     (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ) :
     (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
   ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
@@ -152,7 +152,7 @@ open Arith.extraction
     Carry-chain identities are derived from constraints 31..38 by
     rewriting selectors to mode-zero / fab-one / na_fb-nb_fa-zero
     form (constraints 6/7/8 supply the last). -/
-theorem mul_unsigned_chain_witnesses
+lemma mul_unsigned_chain_witnesses
     (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
     (h_chain : mul_carry_chain_holds v r_a)
     (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
@@ -223,7 +223,7 @@ theorem mul_unsigned_chain_witnesses
 
     PIL: `arith.pil:205-209` (carry chain); selectors per
     `arith_table.pil`'s `divu`/`remu` row. -/
-theorem div_unsigned_chain_witnesses
+lemma div_unsigned_chain_witnesses
     (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (h_chain : div_carry_chain_holds v r_a)
     (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
@@ -302,7 +302,7 @@ theorem div_unsigned_chain_witnesses
 
     PIL: `arith.pil:205-209` (carry chain); selectors per
     `arith_table.pil`'s `divu_w`/`remu_w` row. -/
-theorem div_w_unsigned_chain_witnesses
+lemma div_w_unsigned_chain_witnesses
     (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (h_chain : div_carry_chain_holds v r_a)
     (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
@@ -408,7 +408,7 @@ open ZiskFv.PackedBitVec.SignedChunkLift
 
     Carry-range bounds discharged by
     `arith_mul_carry_columns_in_range_signed` (trust ledger class #6b). -/
-theorem mul_signed_chain_witnesses
+lemma mul_signed_chain_witnesses
     (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
     (h_chain : mul_carry_chain_holds v r_a)
     (h_nr : v.nr r_a = 0) (_h_sext : v.sext r_a = 0)
@@ -718,7 +718,7 @@ theorem mul_signed_chain_witnesses
 
     Carry-range bounds discharged by
     `arith_div_carry_columns_in_range_signed` (trust ledger). -/
-theorem div_signed_chain_witnesses
+lemma div_signed_chain_witnesses
     (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (h_chain : div_carry_chain_holds v r_a)
     (_h_sext : v.sext r_a = 0)
@@ -1070,7 +1070,7 @@ open ZiskFv.PackedBitVec.SignedChunkLift
     For unsigned-W consumers (the `na=nb=0` slice of MULW positive
     operands), the cross-term vanishes via the XOR pin
     (`na_fb = na*(1-2*nb) = 0`, `nb_fa = nb*(1-2*na) = 0`). -/
-theorem mul_w_chain_witnesses
+lemma mul_w_chain_witnesses
     (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
     (h_chain : mul_carry_chain_holds v r_a)
     (h_nr : v.nr r_a = 0) (_h_sext : v.sext r_a = 0)
@@ -1510,7 +1510,7 @@ theorem mul_w_chain_witnesses
     The downstream L1 wrappers (`fgl_div_w_signed_to_bv64`,
     `fgl_div_w_unsigned_to_bv64`, etc.) consume this identity after
     Layer 4 bridges the cross-term + sign-witness pin reasoning. -/
-theorem div_w_chain_witnesses
+lemma div_w_chain_witnesses
     (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (h_chain : div_carry_chain_holds v r_a)
     (_h_sext : v.sext r_a = 0)
