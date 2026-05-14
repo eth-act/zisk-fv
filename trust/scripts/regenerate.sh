@@ -2,11 +2,12 @@
 # Refresh the trust baseline files. Run this after a legitimate
 # trust-surface change, commit the updated baseline files alongside.
 #
-# Four baselines:
-#   trust/baseline-axioms.txt              — V1: source-text-hash per axiom
-#   trust/baseline-equiv-axiom-deps.txt    — V2: per-theorem axiom closure
-#   trust/baseline-hypothesis-count.txt    — anti-laundering: per-theorem binder counts
-#   trust/baseline-caller-burden.txt       — anti-laundering: per-binder ledger
+# Five baselines:
+#   trust/baseline-axioms.txt                  — V1: source-text-hash per axiom
+#   trust/baseline-equiv-axiom-deps.txt        — V2: per-theorem axiom closure
+#   trust/baseline-hypothesis-count.txt        — anti-laundering: per-theorem binder counts
+#   trust/baseline-caller-burden.txt           — anti-laundering: per-binder ledger (canonical)
+#   trust/baseline-wrapper-caller-burden.txt   — anti-laundering: per-binder ledger (wrappers)
 #
 # The V2 baseline requires `lake build` to have run (consumes oleans);
 # we skip it gracefully if the build artefact isn't present. The
@@ -23,6 +24,10 @@ echo "  → trust/baseline-hypothesis-count.txt"
 echo "Refreshing caller-burden baseline..."
 python3 trust/scripts/regenerate-caller-burden.py > trust/baseline-caller-burden.txt
 echo "  → trust/baseline-caller-burden.txt"
+
+echo "Refreshing wrapper caller-burden baseline..."
+python3 trust/scripts/regenerate-wrapper-caller-burden.py > trust/baseline-wrapper-caller-burden.txt
+echo "  → trust/baseline-wrapper-caller-burden.txt"
 
 if [ -d .lake/build ]; then
   echo "Refreshing V2 per-theorem axiom-dep baseline..."

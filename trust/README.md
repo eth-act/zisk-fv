@@ -20,6 +20,7 @@ Lean file to spot one. Drift is caught mechanically.
 | `forbidden-param-shapes.txt` | hand-edited             | Hypothesis parameters on the canonical `equiv_<OP>` theorems that would re-introduce the OUTPUT-EQ class retired during finishing (`h_rd_val`, `h_byte_sum`, `h_bus_execute_matches_sail`, `h_high_bytes_signext`, `h_high_bytes_zeroext`, `h_e1_e2_bytes`, …). Enforced uniformly across all 63 opcodes (no exemptions). |
 | `baseline-hypothesis-count.txt` | `scripts/count-hypotheses.py` | Anti-laundering metric: per-canonical-theorem `total=` and `hypothesis=` parameter-binder counts. A refactor that swaps one promise hypothesis for several smaller ones holds the count steady or grows it; the gate fails. |
 | `baseline-caller-burden.txt`  | `scripts/regenerate-caller-burden.py` | Anti-laundering ledger: one line per parameter binder on every canonical theorem (`name`, category, type snippet). Diff IS the audit surface — reviewers confirm a refactor SHRANK the trust surface (lines removed) rather than RENAMED it (lines added of the same shape). |
+| `baseline-wrapper-caller-burden.txt` | `scripts/regenerate-wrapper-caller-burden.py` | Same shape as `baseline-caller-burden.txt`, but for the 63 `equiv_<OP>_from_trust` wrappers under `ZiskFv/Equivalence/Compliance/*.lean`. Tracks the wrapper layer's caller burden separately so a refactor that "moves" binders between the canonical surface and the wrapper layer leaves a visible diff in at least one of the two ledgers. |
 
 ## Scripts
 
@@ -35,6 +36,8 @@ Lean file to spot one. Drift is caught mechanically.
 | `scripts/check-hypothesis-count.sh` | Diffs live count against baseline. Per-theorem `total=` / `hypothesis=` must match exactly; reductions ack'd by refreshing the baseline alongside the refactor; growth fails the gate. **Anti-laundering tripwire #1.**                                                            |
 | `scripts/regenerate-caller-burden.py` | One line per parameter binder on every canonical theorem with name, category, and type snippet. Output goes to `baseline-caller-burden.txt`.                                                                                                                                  |
 | `scripts/check-caller-burden.sh` | Diffs live ledger against baseline. The diff IS the audit surface — reviewers confirm net REMOVALS, not renamings. **Anti-laundering tripwire #2.**                                                                                                                                |
+| `scripts/regenerate-wrapper-caller-burden.py` | Sibling of `regenerate-caller-burden.py`; walks the 63 `equiv_<OP>_from_trust` wrappers under `ZiskFv/Equivalence/Compliance/*.lean`. Output goes to `baseline-wrapper-caller-burden.txt`. |
+| `scripts/check-wrapper-caller-burden.sh` | Diffs the live wrapper ledger against the baseline. Same refusal policy as `check-caller-burden.sh`. **Anti-laundering tripwire #3.** |
 
 ## Scenarios
 
@@ -115,6 +118,7 @@ environment.
 | -------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `forbidden-types.txt`                  | hand-edited                           | Forbidden Lean `Name`s in canonical-theorem parameter binder types (after `whnfR` unfolding of `abbrev` / `@[reducible] def` chains).                                                                                                                  |
 | `baseline-equiv-axiom-deps.txt`        | `lake exe trust-gate regenerate-deps` | Per-theorem transitive non-kernel axiom closure (via `Lean.collectAxioms`). Any silent growth or shrinkage of a single theorem's trust footprint surfaces here, even when the global axiom count is unchanged.                                         |
+| (no extra file)                        | `lake exe trust-gate check-closure-vs-baseline` | Transitive project-axiom closure of the uber-theorem (`Compliance.Global.zisk_riscv_compliant_program_bus`) must match the set of names in `baseline-axioms.txt` exactly. Catches **dead trust** — axioms that are hash-fresh in the ledger but no longer reachable from the global compliance statement. |
 
 ### V2 scripts
 
@@ -122,7 +126,8 @@ environment.
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `scripts/check-axiom-deps.sh`       | Wraps `lake exe trust-gate check-deps`. Re-runs `regenerate-deps` into memory and `diff`s against `baseline-equiv-axiom-deps.txt`.                                                                                    |
 | `scripts/check-no-output-eq-v2.sh`  | Wraps `lake exe trust-gate check-no-output-eq-v2`. `forallTelescope`s each canonical `equiv_<OP>`, walks each binder type after reducible-transparency unfolding, fails on any forbidden Name from `forbidden-types.txt`. |
-| `scripts/check-all-semantic.sh`     | Runs the two V2 checks in sequence. CI invokes this *after* `lake build`; `nix run .#test` runs `check-all.sh` (V1) then `check-all-semantic.sh` (V2).                                                                |
+| `scripts/check-closure-vs-baseline.sh` | Wraps `lake exe trust-gate check-closure-vs-baseline`. Asserts the uber-theorem's transitive project-axiom closure equals the names in `baseline-axioms.txt`. Catches dead trust the per-theorem axiom-deps baseline cannot see. |
+| `scripts/check-all-semantic.sh`     | Runs the three V2 checks in sequence. CI invokes this *after* `lake build`; `nix run .#test` runs `check-all.sh` (V1) then `check-all-semantic.sh` (V2).                                                                |
 
 ### Scenarios V2 catches that V1 misses
 
