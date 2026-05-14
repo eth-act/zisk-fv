@@ -4,7 +4,23 @@
 
 The per-opcode equivalence proofs (`ZiskFv/Equivalence/<OP>.lean`,
 shape `equiv_<OP> : Sail.execute = (bus_effect …).2`) rest on
-**exactly 118 axioms** (Step 4.1.4 — the Binary shape exemplar (OR) —
+**exactly 118 axioms** (Step 4.1.6 — the Mem-loads shape exemplar
+(LD) — adds **zero** new axioms; the load-side discharge was already
+fully covered before this pilot by `main_load_emission_bundle`
+(class #4), `memory_bus_entry_byte_range_perm_sound` (class #5b),
+`lookup_consumer_matches_provider_load` (class #4), and
+`transpile_LD` (class #1), all consumed transitively via
+`equiv_LD`'s `Bridge.Mem.ld_discharge_full`,
+`Circuit.LoadDerivation.load_copyb_e1_e2_bytes_eq_bv`, and
+`Circuit.MemModel.mem_load_correct` chains. The
+`equiv_LD_from_trust` wrapper in `Compliance/LdExemplar.lean` is a
+canonical-naming wrapper aligning `h_op : main.op r_main = (1 : FGL)`
+with the Compliance-handshake form `h_main_op_ld : main.op r_main
+= OP_COPYB`; LBU/LHU/LWU generalize mechanically through the
+pre-existing `memalign_subdoubleword_load_high_bytes_zero`
+pure-Lean derivation; signed LB/LH/LW take a separate sub-pattern
+through `Bridge.Mem.sext_load_discharge_full` and the
+BinaryExtension SEXT chain. Step 4.1.4 — the Binary shape exemplar (OR) —
 adds one class-#6 axiom, `binary_b_op_or_sext_eq_OP_OR`, the
 Binary AIR table-pin sub-class entry consumed by
 `equiv_OR_from_trust` in `Compliance/OrExemplar.lean`;
