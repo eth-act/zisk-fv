@@ -129,96 +129,96 @@ theorem equiv_SUB_from_trust
           h_byte6_op_64⟩ := h_byte6_struct
   obtain ⟨h_byte7_mult, h_byte7_a, h_byte7_b, h_byte7_c, h_byte7_flags,
           h_byte7_op_64⟩ := h_byte7_struct
-  have h_e0_op : e0'.op.val = ZiskFv.Airs.BinaryTable.OP_SUB :=
+  have h_e0_op : e0'.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB :=
     h_byte0_op_64 h_branch_sub
-  have h_e1_op : e1'.op.val = ZiskFv.Airs.BinaryTable.OP_SUB :=
+  have h_e1_op : e1'.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB :=
     h_byte1_op_64 h_branch_sub
-  have h_e2_op : e2'.op.val = ZiskFv.Airs.BinaryTable.OP_SUB :=
+  have h_e2_op : e2'.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB :=
     h_byte2_op_64 h_branch_sub
-  have h_e3_op : e3'.op.val = ZiskFv.Airs.BinaryTable.OP_SUB :=
+  have h_e3_op : e3'.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB :=
     h_byte3_op_64 h_branch_sub
-  have h_e4_op : e4'.op.val = ZiskFv.Airs.BinaryTable.OP_SUB :=
+  have h_e4_op : e4'.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB :=
     h_byte4_op_64 h_branch_sub
-  have h_e5_op : e5'.op.val = ZiskFv.Airs.BinaryTable.OP_SUB :=
+  have h_e5_op : e5'.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB :=
     h_byte5_op_64 h_branch_sub
-  have h_e6_op : e6'.op.val = ZiskFv.Airs.BinaryTable.OP_SUB :=
+  have h_e6_op : e6'.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB :=
     h_byte6_op_64 h_branch_sub
-  have h_e7_op : e7'.op.val = ZiskFv.Airs.BinaryTable.OP_SUB :=
+  have h_e7_op : e7'.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB :=
     h_byte7_op_64 h_branch_sub
   obtain ⟨h_pi3_ne, h_pi4_ne, h_pi5_ne, h_pi6_ne, h_pi7_eq⟩ :=
     h_pi_64 h_branch_sub
   -- ============ Build the 8 consumer_byte_match_chain witnesses ============
-  have h_byte_0 : consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB
+  have h_byte_0 : consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_SUB
       (v.free_in_a_0 r_binary) (v.free_in_b_0 r_binary)
       (v.free_in_c_0 r_binary) e0'.cin e0'.flags e0'.pos_ind :=
     ⟨e0', h_byte0_mult, h_e0_op, h_byte0_a, h_byte0_b, h_byte0_c,
       rfl, rfl, rfl⟩
-  have h_byte_1 : consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB
+  have h_byte_1 : consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_SUB
       (v.free_in_a_1 r_binary) (v.free_in_b_1 r_binary)
       (v.free_in_c_1 r_binary) e1'.cin e1'.flags e1'.pos_ind :=
     ⟨e1', h_byte1_mult, h_e1_op, h_byte1_a, h_byte1_b, h_byte1_c,
       rfl, rfl, rfl⟩
-  have h_byte_2 : consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB
+  have h_byte_2 : consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_SUB
       (v.free_in_a_2 r_binary) (v.free_in_b_2 r_binary)
       (v.free_in_c_2 r_binary) e2'.cin e2'.flags e2'.pos_ind :=
     ⟨e2', h_byte2_mult, h_e2_op, h_byte2_a, h_byte2_b, h_byte2_c,
       rfl, rfl, rfl⟩
-  have h_byte_3 : consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB
+  have h_byte_3 : consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_SUB
       (v.free_in_a_3 r_binary) (v.free_in_b_3 r_binary)
       (v.free_in_c_3 r_binary) e3'.cin e3'.flags e3'.pos_ind :=
     ⟨e3', h_byte3_mult, h_e3_op, h_byte3_a, h_byte3_b, h_byte3_c,
       rfl, rfl, rfl⟩
-  have h_byte_4 : consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB
+  have h_byte_4 : consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_SUB
       (v.free_in_a_4 r_binary) (v.free_in_b_4 r_binary)
       (v.free_in_c_4 r_binary) e4'.cin e4'.flags e4'.pos_ind :=
     ⟨e4', h_byte4_mult, h_e4_op, h_byte4_a, h_byte4_b, h_byte4_c,
       rfl, rfl, rfl⟩
-  have h_byte_5 : consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB
+  have h_byte_5 : consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_SUB
       (v.free_in_a_5 r_binary) (v.free_in_b_5 r_binary)
       (v.free_in_c_5 r_binary) e5'.cin e5'.flags e5'.pos_ind :=
     ⟨e5', h_byte5_mult, h_e5_op, h_byte5_a, h_byte5_b, h_byte5_c,
       rfl, rfl, rfl⟩
-  have h_byte_6 : consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB
+  have h_byte_6 : consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_SUB
       (v.free_in_a_6 r_binary) (v.free_in_b_6 r_binary)
       (v.free_in_c_6 r_binary) e6'.cin e6'.flags e6'.pos_ind :=
     ⟨e6', h_byte6_mult, h_e6_op, h_byte6_a, h_byte6_b, h_byte6_c,
       rfl, rfl, rfl⟩
-  have h_byte_7 : consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB
+  have h_byte_7 : consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_SUB
       (v.free_in_a_7 r_binary) (v.free_in_b_7 r_binary)
       (v.free_in_c_7 r_binary) e7'.cin e7'.flags e7'.pos_ind :=
     ⟨e7', h_byte7_mult, h_e7_op, h_byte7_a, h_byte7_b, h_byte7_c,
       rfl, rfl, rfl⟩
   -- ============ c_i.val < 256 from wf range_conditions ============
   have hc0 : (v.free_in_c_0 r_binary).val < 256 := by
-    have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e0' h_byte0_mult
+    have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e0' h_byte0_mult
     have := h_wf.1.2.2.1
     rwa [h_byte0_c] at this
   have hc1 : (v.free_in_c_1 r_binary).val < 256 := by
-    have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e1' h_byte1_mult
+    have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e1' h_byte1_mult
     have := h_wf.1.2.2.1
     rwa [h_byte1_c] at this
   have hc2 : (v.free_in_c_2 r_binary).val < 256 := by
-    have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e2' h_byte2_mult
+    have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e2' h_byte2_mult
     have := h_wf.1.2.2.1
     rwa [h_byte2_c] at this
   have hc3 : (v.free_in_c_3 r_binary).val < 256 := by
-    have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e3' h_byte3_mult
+    have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e3' h_byte3_mult
     have := h_wf.1.2.2.1
     rwa [h_byte3_c] at this
   have hc4 : (v.free_in_c_4 r_binary).val < 256 := by
-    have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e4' h_byte4_mult
+    have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e4' h_byte4_mult
     have := h_wf.1.2.2.1
     rwa [h_byte4_c] at this
   have hc5 : (v.free_in_c_5 r_binary).val < 256 := by
-    have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e5' h_byte5_mult
+    have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e5' h_byte5_mult
     have := h_wf.1.2.2.1
     rwa [h_byte5_c] at this
   have hc6 : (v.free_in_c_6 r_binary).val < 256 := by
-    have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e6' h_byte6_mult
+    have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e6' h_byte6_mult
     have := h_wf.1.2.2.1
     rwa [h_byte6_c] at this
   have hc7 : (v.free_in_c_7 r_binary).val < 256 := by
-    have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e7' h_byte7_mult
+    have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e7' h_byte7_mult
     have := h_wf.1.2.2.1
     rwa [h_byte7_c] at this
   -- ============ carry_7 = 0 from wf_SUB at pos_ind = 1 ============
@@ -227,7 +227,7 @@ theorem equiv_SUB_from_trust
   -- e7'.flags = v.carry_7 r_binary and boolean_carry_7, yields
   -- v.carry_7 r_binary = 0.
   have h_carry_7_zero : v.carry_7 r_binary = 0 := by
-    have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e7' h_byte7_mult
+    have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e7' h_byte7_mult
     obtain ⟨_, _, _, _, _, _, _, _, h_sub, _⟩ := h_wf
     have h_e7_pi : e7'.pos_ind.val = 1 := h_pi7_eq
     have h_e7_flags_mod : e7'.flags.val % 2 = 0 :=

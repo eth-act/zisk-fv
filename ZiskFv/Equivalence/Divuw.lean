@@ -8,7 +8,7 @@ import ZiskFv.Airs.Arith.Div
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Sail.divuw
@@ -192,7 +192,7 @@ theorem equiv_DIVUW
   rw [equiv_DIVUW_sail state divuw_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

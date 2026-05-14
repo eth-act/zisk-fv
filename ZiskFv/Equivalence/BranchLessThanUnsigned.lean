@@ -6,7 +6,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.BranchLessThanUnsigned
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Sail.bltu
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
@@ -96,7 +96,7 @@ theorem equiv_BLTU
   rw [equiv_BLTU_sail state bltu_input imm r1 r2 misa_val
         h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c]
   symm
-  exact ZiskFv.Airs.BusEmission.bus_effect_matches_sail_beq
+  exact ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_beq
     state exec_row
     (PureSpec.execute_BLTU_pure bltu_input).nextPC
     (PureSpec.execute_BLTU_pure bltu_input).throws

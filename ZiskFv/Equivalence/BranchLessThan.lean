@@ -6,7 +6,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.BranchLessThan
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Sail.blt
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
@@ -123,7 +123,7 @@ theorem equiv_BLT
   -- Discharge bus-side equation via the shape (b) lemma (shared across
   -- shape (b) branch opcodes: BEQ/BNE/BLT/BGE/BLTU/BGEU).
   symm
-  exact ZiskFv.Airs.BusEmission.bus_effect_matches_sail_beq
+  exact ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_beq
     state exec_row
     (PureSpec.execute_BLT_pure blt_input).nextPC
     (PureSpec.execute_BLT_pure blt_input).throws

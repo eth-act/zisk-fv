@@ -116,7 +116,7 @@ namespace ZiskFv.Airs.BinaryExtension
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-open ZiskFv.Airs.BinaryExtensionTable in
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
 /-- **BinaryExtension row → 8-byte table-entry witness.** For every row
     `r` of a `Valid_BinaryExtension` AIR, the 8 per-byte lookups against
     the `BinaryExtensionTable` (per PIL `binary_extension.pil:92`:

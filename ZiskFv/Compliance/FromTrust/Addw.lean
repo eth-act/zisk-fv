@@ -112,33 +112,33 @@ theorem equiv_ADDW_from_trust
           _h_byte2_op_64, h_byte2_op_AW, _h_byte2_op_SW⟩ := h_byte2_struct
   obtain ⟨h_byte3_mult, h_byte3_a, h_byte3_b, h_byte3_c, h_byte3_flags,
           _h_byte3_op_64, h_byte3_op_AW, _h_byte3_op_SW⟩ := h_byte3_struct
-  have h_e0_op : e0'.op.val = ZiskFv.Airs.BinaryTable.OP_ADD :=
+  have h_e0_op : e0'.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD :=
     h_byte0_op_AW h_branch_addw
-  have h_e1_op : e1'.op.val = ZiskFv.Airs.BinaryTable.OP_ADD :=
+  have h_e1_op : e1'.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD :=
     h_byte1_op_AW h_branch_addw
-  have h_e2_op : e2'.op.val = ZiskFv.Airs.BinaryTable.OP_ADD :=
+  have h_e2_op : e2'.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD :=
     h_byte2_op_AW h_branch_addw
-  have h_e3_op : e3'.op.val = ZiskFv.Airs.BinaryTable.OP_ADD :=
+  have h_e3_op : e3'.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD :=
     h_byte3_op_AW h_branch_addw
   -- W-mode pi3 = 1.
   have h_pi3_eq : e3'.pos_ind.val = 1 := h_pi_W (Or.inl rfl)
   -- ============ Build the 4 consumer_byte_match_chain witnesses ============
-  have h_byte_0 : consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD
+  have h_byte_0 : consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_ADD
       (v.free_in_a_0 r_binary) (v.free_in_b_0 r_binary)
       (v.free_in_c_0 r_binary) e0'.cin e0'.flags e0'.pos_ind :=
     ⟨e0', h_byte0_mult, h_e0_op, h_byte0_a, h_byte0_b, h_byte0_c,
       rfl, rfl, rfl⟩
-  have h_byte_1 : consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD
+  have h_byte_1 : consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_ADD
       (v.free_in_a_1 r_binary) (v.free_in_b_1 r_binary)
       (v.free_in_c_1 r_binary) e1'.cin e1'.flags e1'.pos_ind :=
     ⟨e1', h_byte1_mult, h_e1_op, h_byte1_a, h_byte1_b, h_byte1_c,
       rfl, rfl, rfl⟩
-  have h_byte_2 : consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD
+  have h_byte_2 : consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_ADD
       (v.free_in_a_2 r_binary) (v.free_in_b_2 r_binary)
       (v.free_in_c_2 r_binary) e2'.cin e2'.flags e2'.pos_ind :=
     ⟨e2', h_byte2_mult, h_e2_op, h_byte2_a, h_byte2_b, h_byte2_c,
       rfl, rfl, rfl⟩
-  have h_byte_3 : consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD
+  have h_byte_3 : consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_ADD
       (v.free_in_a_3 r_binary) (v.free_in_b_3 r_binary)
       (v.free_in_c_3 r_binary) e3'.cin e3'.flags e3'.pos_ind :=
     ⟨e3', h_byte3_mult, h_e3_op, h_byte3_a, h_byte3_b, h_byte3_c,

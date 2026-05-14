@@ -14,7 +14,7 @@ import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
 import ZiskFv.Airs.MemoryBus.EntryRanges
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.Sail.lhu
 import ZiskFv.Sail.BusEffect
@@ -144,7 +144,7 @@ theorem equiv_LHU
     rw [h_lhu_packed, hd0, hd1]
   -- The narrow loadu_2byte_rrrw lemma takes rd_val as `BitVec 64`,
   -- so we use the setWidth-64'd LHU value as our rd_val.
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_loadu_2byte_rrrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_loadu_2byte_rrrw
         state exec_row e0 e1 e2
         (PureSpec.execute_LOADHU_pure lhu_input).nextPC
         ((BitVec.setWidth 32

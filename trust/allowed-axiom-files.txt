@@ -21,8 +21,8 @@ ZiskFv/Airs/MemoryBus/MemAlignBridge.lean
 ZiskFv/Airs/MemoryBus/EntryRanges.lean
 
 # Lookup-table content for bus_id=125 / 124.
-ZiskFv/Airs/BinaryTable.lean
-ZiskFv/Airs/BinaryExtensionTable.lean
+ZiskFv/Airs/Tables/BinaryTable.lean
+ZiskFv/Airs/Tables/BinaryExtensionTable.lean
 
 # Bus-protocol soundness for bus_id=5000 (operation bus).
 ZiskFv/Airs/OperationBus/Bridge.lean

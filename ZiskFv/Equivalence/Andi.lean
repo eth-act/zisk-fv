@@ -7,7 +7,7 @@ import ZiskFv.Circuit.Andi
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Equivalence.Bridge.Binary
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Sail.andi
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Tactics.ALUITypeArchetype
@@ -113,7 +113,7 @@ theorem equiv_ANDI
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op_andi : m.op r_main = OP_AND)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
-    (h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_AND)
+    (h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
     (h_andi_subset :
       ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
@@ -164,7 +164,7 @@ theorem equiv_ANDI
   rw [equiv_ANDI_sail state andi_input r1 rd imm
         h_input_r1 h_input_imm h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_ITYPE_andi_pure andi_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

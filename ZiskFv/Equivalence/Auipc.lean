@@ -6,7 +6,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.AddUpperImmediatePC
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Sail.auipc
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
@@ -162,7 +162,7 @@ theorem equiv_AUIPC
   rw [equiv_AUIPC_sail state auipc_input imm rd
         h_input_imm h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_jump_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_jump_rrw
         state exec_row e_rd nextPC_val
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_rd_mult h_rd_as]
   simp only [h_nextPC_eq]

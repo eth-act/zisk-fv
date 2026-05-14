@@ -7,7 +7,7 @@ import ZiskFv.Bits.Execution
 import ZiskFv.Circuit.Subw
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Sail.subw
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Tactics.RTypeWArchetype
@@ -110,16 +110,16 @@ theorem equiv_SUBW
      fl0 fl1 fl2 fl3
      pi0 pi1 pi2 pi3 : FGL)
     (h_byte_0 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_SUB
+      ZiskFv.Airs.Tables.BinaryTable.OP_SUB
       (v.free_in_a_0 r_binary) (v.free_in_b_0 r_binary) c0 cin0 fl0 pi0)
     (h_byte_1 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_SUB
+      ZiskFv.Airs.Tables.BinaryTable.OP_SUB
       (v.free_in_a_1 r_binary) (v.free_in_b_1 r_binary) c1 cin1 fl1 pi1)
     (h_byte_2 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_SUB
+      ZiskFv.Airs.Tables.BinaryTable.OP_SUB
       (v.free_in_a_2 r_binary) (v.free_in_b_2 r_binary) c2 cin2 fl2 pi2)
     (h_byte_3 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_SUB
+      ZiskFv.Airs.Tables.BinaryTable.OP_SUB
       (v.free_in_a_3 r_binary) (v.free_in_b_3 r_binary) c3 cin3 fl3 pi3)
     (hc0 : c0.val < 256) (hc1 : c1.val < 256) (hc2 : c2.val < 256) (hc3 : c3.val < 256)
     (hc4 : c4.val < 256) (hc5 : c5.val < 256) (hc6 : c6.val < 256) (hc7 : c7.val < 256)
@@ -282,7 +282,7 @@ theorem equiv_SUBW
   rw [equiv_SUBW_sail state subw_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

@@ -9,7 +9,7 @@ import ZiskFv.Circuit.MemModel
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Sail.sw
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Tactics.StoreArchetype
@@ -121,7 +121,7 @@ theorem equiv_SW
   rw [equiv_SW_sail state sw_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_store_rrrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_store_rrrw
         state exec_row e0 e1 e2
         (PureSpec.execute_STOREW_pure sw_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

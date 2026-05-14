@@ -11,7 +11,7 @@ import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.MemoryBus.EntryRanges
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.Sail.ld
 import ZiskFv.Sail.BusEffect
@@ -151,7 +151,7 @@ theorem equiv_LD
         risc_v_assumptions h_opcode_assumptions]
   symm
   -- Step 2. Reduce RHS via the 8-byte load bus-effect lemma.
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_load_rrrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_load_rrrw
         state exec_row e0 e1 e2
         (PureSpec.execute_LOADD_pure ld_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

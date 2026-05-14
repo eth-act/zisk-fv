@@ -14,7 +14,7 @@ import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
 import ZiskFv.Airs.MemoryBus.EntryRanges
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.Sail.lwu
 import ZiskFv.Sail.BusEffect
@@ -149,7 +149,7 @@ theorem equiv_LWU
             (lwu_input.data3 ++ lwu_input.data2
              ++ lwu_input.data1 ++ lwu_input.data0) := by
     rw [h_lwu_packed, hd0, hd1, hd2, hd3]
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_loadu_4byte_rrrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_loadu_4byte_rrrw
         state exec_row e0 e1 e2
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
         (BitVec.zeroExtend 64

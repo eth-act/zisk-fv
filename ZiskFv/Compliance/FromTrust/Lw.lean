@@ -11,7 +11,7 @@ import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionRanges
-import ZiskFv.Airs.BinaryExtensionTable
+import ZiskFv.Airs.Tables.BinaryExtensionTable
 
 /-!
 # `equiv_LW` Compliance wrapper — signed-load BinExt SEXT_W chain (Step 4.2 round 4.C)
@@ -127,7 +127,7 @@ theorem equiv_LW_from_trust
     ZiskFv.Equivalence.Bridge.BinaryExtension.project_match_op_clo_chi
       main v r_main r_binary h_match
   have h_op_binary : (v.op r_binary).val
-      = ZiskFv.Airs.BinaryExtensionTable.OP_SEXT_W := by
+      = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W := by
     rw [← h_op_fgl, h_main_op]; decide
   -- ============ c-lane sum bounds via row-level discharge ============
   have hc_lo_sum_lt :=

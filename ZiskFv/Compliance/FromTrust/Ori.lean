@@ -85,7 +85,7 @@ theorem equiv_ORI_from_trust
     rw [h_main_op_ori] at h_op_match
     simp only [OP_OR] at h_op_match
     exact h_op_match.symm
-  have h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_OR :=
+  have h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR :=
     binary_b_op_or_sext_eq_OP_OR v r_binary h_emit_op
   exact ZiskFv.Equivalence.Ori.equiv_ORI
     state ori_input r1 rd imm m v r_main r_binary exec_row e0 e1 e2

@@ -119,7 +119,7 @@ in the theorem with no AIR backing:
  fl0 fl1 fl2 fl3 fl4 fl5 fl6 fl7
  pi0 pi1 pi2 pi3 pi4 pi5 pi6 pi7 : FGL)
 (h_byte_0 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-   ZiskFv.Airs.BinaryTable.OP_LT a0 b0 c0 cin0 fl0 pi0)
+   ZiskFv.Airs.Tables.BinaryTable.OP_LT a0 b0 c0 cin0 fl0 pi0)
 …
 (h_match_clo : m.c_0 r_main = fl7)
 (h_input_r1_circuit : slt_input.r1_val

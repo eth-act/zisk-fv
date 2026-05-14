@@ -40,7 +40,7 @@ produce equal states because `reg_of_fin r ≠ Register.nextPC` for every
 `RV64D/Auxiliaries.lean`).
 -/
 
-namespace ZiskFv.Airs.BusEmission
+namespace ZiskFv.Airs.Bus.BusEmission
 
 open Goldilocks
 open Interaction
@@ -877,4 +877,4 @@ lemma bus_effect_matches_sail_store_1byte_rrrw
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
 
-end ZiskFv.Airs.BusEmission
+end ZiskFv.Airs.Bus.BusEmission

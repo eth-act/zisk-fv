@@ -6,14 +6,14 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.LoadHalf
 import ZiskFv.Circuit.MemModel
 import ZiskFv.Circuit.SextLoadBridge
-import ZiskFv.Airs.BinaryExtensionTable
+import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.Sail.lh
 import ZiskFv.Sail.BusEffect
@@ -98,7 +98,7 @@ theorem equiv_LH
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
     (r_binary : ℕ)
     (h_op_binary :
-      (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SEXT_H)
+      (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H)
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
     (hc_lo_sum_lt :
       (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
@@ -168,7 +168,7 @@ theorem equiv_LH
                   e2.x4, e2.x5, e2.x6, e2.x7]
         = BitVec.signExtend 64 (lh_input.data1 ++ lh_input.data0) := by
     rw [h_lh_packed, hd0, hd1]
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_load_2byte_rrrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_load_2byte_rrrw
         state exec_row e0 e1 e2
         (PureSpec.execute_LOADH_pure lh_input).nextPC
         (BitVec.signExtend 64 (lh_input.data1 ++ lh_input.data0))

@@ -6,7 +6,7 @@ import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryPackedCorrect
-import ZiskFv.Airs.BinaryTable
+import ZiskFv.Airs.Tables.BinaryTable
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
@@ -72,7 +72,7 @@ open Goldilocks
 open Interaction
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Binary
-open ZiskFv.Airs.BinaryTable
+open ZiskFv.Airs.Tables.BinaryTable
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.MemoryBus.LaneMatch

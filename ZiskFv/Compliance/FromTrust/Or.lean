@@ -284,7 +284,7 @@ theorem equiv_OR_from_trust
     -- `OP_OR := (15 : FGL)`; unfold to land at the literal.
     simp only [OP_OR] at h_op_match
     exact h_op_match.symm
-  have h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_OR :=
+  have h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR :=
     binary_b_op_or_sext_eq_OP_OR v r_binary h_emit_op
   -- ============ Delegate to canonical `equiv_OR` ============
   exact ZiskFv.Equivalence.Or.equiv_OR

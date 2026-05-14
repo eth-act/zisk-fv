@@ -7,7 +7,7 @@ import ZiskFv.Bits.Execution
 import ZiskFv.Circuit.Slli
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Sail.slli
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
@@ -120,7 +120,7 @@ theorem equiv_SLLI
   obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
     ZiskFv.Equivalence.Bridge.BinaryExtension.project_match_op_clo_chi
       m v r_main r_binary h_match
-  have h_op : (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SLL := by
+  have h_op : (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL := by
     rw [← h_op_fgl, h_main_op]; decide
   -- Discharge c-lo/c-hi sum bounds + h_bytes from row-level axioms.
   have hc_lo_sum_lt :=
@@ -187,7 +187,7 @@ theorem equiv_SLLI
   rw [equiv_SLLI_sail state slli_input r1 rd shamt
         h_input_r1_sail h_input_shamt h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

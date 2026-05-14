@@ -6,7 +6,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.BranchEqual
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Sail.beq
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
@@ -112,7 +112,7 @@ theorem equiv_BEQ
         h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c]
   -- Discharge the bus-side equation via the shape lemma.
   symm
-  exact ZiskFv.Airs.BusEmission.bus_effect_matches_sail_beq
+  exact ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_beq
     state exec_row
     (PureSpec.execute_BEQ_pure beq_input).nextPC
     (PureSpec.execute_BEQ_pure beq_input).throws

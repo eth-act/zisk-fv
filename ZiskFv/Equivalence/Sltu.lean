@@ -6,7 +6,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.Sltu
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Sail.sltu
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Tactics.ALURTypeArchetype
@@ -108,28 +108,28 @@ theorem equiv_SLTU
      fl0 fl1 fl2 fl3 fl4 fl5 fl6 fl7
      pi0 pi1 pi2 pi3 pi4 pi5 pi6 pi7 : FGL)
     (h_byte_0 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_LTU
+      ZiskFv.Airs.Tables.BinaryTable.OP_LTU
       (v.free_in_a_0 r_binary) (v.free_in_b_0 r_binary) c0 cin0 fl0 pi0)
     (h_byte_1 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_LTU
+      ZiskFv.Airs.Tables.BinaryTable.OP_LTU
       (v.free_in_a_1 r_binary) (v.free_in_b_1 r_binary) c1 cin1 fl1 pi1)
     (h_byte_2 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_LTU
+      ZiskFv.Airs.Tables.BinaryTable.OP_LTU
       (v.free_in_a_2 r_binary) (v.free_in_b_2 r_binary) c2 cin2 fl2 pi2)
     (h_byte_3 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_LTU
+      ZiskFv.Airs.Tables.BinaryTable.OP_LTU
       (v.free_in_a_3 r_binary) (v.free_in_b_3 r_binary) c3 cin3 fl3 pi3)
     (h_byte_4 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_LTU
+      ZiskFv.Airs.Tables.BinaryTable.OP_LTU
       (v.free_in_a_4 r_binary) (v.free_in_b_4 r_binary) c4 cin4 fl4 pi4)
     (h_byte_5 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_LTU
+      ZiskFv.Airs.Tables.BinaryTable.OP_LTU
       (v.free_in_a_5 r_binary) (v.free_in_b_5 r_binary) c5 cin5 fl5 pi5)
     (h_byte_6 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_LTU
+      ZiskFv.Airs.Tables.BinaryTable.OP_LTU
       (v.free_in_a_6 r_binary) (v.free_in_b_6 r_binary) c6 cin6 fl6 pi6)
     (h_byte_7 : ZiskFv.Airs.Binary.consumer_byte_match_chain
-      ZiskFv.Airs.BinaryTable.OP_LTU
+      ZiskFv.Airs.Tables.BinaryTable.OP_LTU
       (v.free_in_a_7 r_binary) (v.free_in_b_7 r_binary) c7 cin7 fl7 pi7)
     (h_cin0 : cin0.val = 0)
     (h_cin1 : cin1.val = fl0.val % 2)
@@ -317,7 +317,7 @@ theorem equiv_SLTU
   rw [equiv_SLTU_sail state sltu_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_RTYPE_sltu_pure sltu_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

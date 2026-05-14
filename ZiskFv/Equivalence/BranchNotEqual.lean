@@ -6,7 +6,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.BranchNotEqual
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Sail.bne
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
@@ -126,7 +126,7 @@ theorem equiv_BNE
   -- Discharge the bus-side equation via the shape (b) lemma (shared
   -- with BEQ — shape (b) is the externally-routed branch shape).
   symm
-  exact ZiskFv.Airs.BusEmission.bus_effect_matches_sail_beq
+  exact ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_beq
     state exec_row
     (PureSpec.execute_BNE_pure bne_input).nextPC
     (PureSpec.execute_BNE_pure bne_input).throws

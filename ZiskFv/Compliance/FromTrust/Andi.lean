@@ -146,7 +146,7 @@ theorem equiv_ANDI_from_trust
     rw [h_main_op_andi] at h_op_match
     simp only [OP_AND] at h_op_match
     exact h_op_match.symm
-  have h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_AND :=
+  have h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND :=
     binary_b_op_or_sext_eq_OP_AND v r_binary h_emit_op
   -- ============ Delegate to canonical `equiv_ANDI` ============
   exact ZiskFv.Equivalence.Andi.equiv_ANDI

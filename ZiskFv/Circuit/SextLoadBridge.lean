@@ -5,7 +5,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Bits.PackedBitVec
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.BinaryExtensionTable
+import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
 import ZiskFv.Equivalence.WriteValueProofs.Arith
@@ -43,7 +43,7 @@ open Goldilocks
 open Interaction
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Airs.BinaryExtensionTable
+open ZiskFv.Airs.Tables.BinaryExtensionTable
 open ZiskFv.Airs.BinaryExtension
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]

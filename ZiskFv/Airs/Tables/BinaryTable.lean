@@ -27,7 +27,7 @@ trusted-surface ledger. Improving the trust by porting the PIL2 generator
 switch to a proven Lean theorem is welcome but out of scope.
 -/
 
-namespace ZiskFv.Airs.BinaryTable
+namespace ZiskFv.Airs.Tables.BinaryTable
 
 open Goldilocks
 
@@ -283,4 +283,4 @@ axiom bin_table_consumer_wf
     (h_consumer : e.multiplicity = 1) :
     wf_properties e
 
-end ZiskFv.Airs.BinaryTable
+end ZiskFv.Airs.Tables.BinaryTable

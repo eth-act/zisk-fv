@@ -304,13 +304,13 @@ private lemma boolean_carry_implies_eq_zero {x : FGL}
     `bin_carry_7_is_boolean` (in `BinaryRanges.lean`). -/
 lemma carry_7_zero_AND_pure
     (v : Valid_Binary C FGL FGL) (r : ℕ)
-    (h_op_AND : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_AND) :
+    (h_op_AND : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND) :
     v.carry_7 r = 0 := by
   obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
     binary_per_byte_lookup_witness v r
-  have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e h_mult
+  have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e h_mult
   obtain ⟨_, h_AND, _⟩ := h_wf
-  have h_e_op : e.op.val = ZiskFv.Airs.BinaryTable.OP_AND := by
+  have h_e_op : e.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_AND := by
     rw [h_op_eq]; exact h_op_AND
   have h_cout_zero : e.flags.val % 2 = 0 := (h_AND h_e_op).2
   rw [h_flags] at h_cout_zero
@@ -319,13 +319,13 @@ lemma carry_7_zero_AND_pure
 /-- **carry_7 = 0 for OR rows (caller-friendly variant).** -/
 lemma carry_7_zero_OR_pure
     (v : Valid_Binary C FGL FGL) (r : ℕ)
-    (h_op_OR : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_OR) :
+    (h_op_OR : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR) :
     v.carry_7 r = 0 := by
   obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
     binary_per_byte_lookup_witness v r
-  have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e h_mult
+  have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e h_mult
   obtain ⟨_, _, h_OR, _⟩ := h_wf
-  have h_e_op : e.op.val = ZiskFv.Airs.BinaryTable.OP_OR := by
+  have h_e_op : e.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_OR := by
     rw [h_op_eq]; exact h_op_OR
   have h_cout_zero : e.flags.val % 2 = 0 := (h_OR h_e_op).2
   rw [h_flags] at h_cout_zero
@@ -334,13 +334,13 @@ lemma carry_7_zero_OR_pure
 /-- **carry_7 = 0 for XOR rows (caller-friendly variant).** -/
 lemma carry_7_zero_XOR_pure
     (v : Valid_Binary C FGL FGL) (r : ℕ)
-    (h_op_XOR : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_XOR) :
+    (h_op_XOR : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR) :
     v.carry_7 r = 0 := by
   obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
     binary_per_byte_lookup_witness v r
-  have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e h_mult
+  have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e h_mult
   obtain ⟨_, _, _, h_XOR, _⟩ := h_wf
-  have h_e_op : e.op.val = ZiskFv.Airs.BinaryTable.OP_XOR := by
+  have h_e_op : e.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR := by
     rw [h_op_eq]; exact h_op_XOR
   have h_cout_zero : e.flags.val % 2 = 0 := (h_XOR h_e_op).2
   rw [h_flags] at h_cout_zero
@@ -349,14 +349,14 @@ lemma carry_7_zero_XOR_pure
 /-- **carry_7 = 0 for AND rows.** -/
 lemma carry_7_zero_AND
     (v : Valid_Binary C FGL FGL) (r : ℕ)
-    (h_op_AND : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_AND)
+    (h_op_AND : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND)
     (h_bool_c7 : ZiskFv.Airs.Binary.boolean_carry_7 v r) :
     v.carry_7 r = 0 := by
   obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
     binary_per_byte_lookup_witness v r
-  have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e h_mult
+  have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e h_mult
   obtain ⟨_, h_AND, _⟩ := h_wf
-  have h_e_op : e.op.val = ZiskFv.Airs.BinaryTable.OP_AND := by
+  have h_e_op : e.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_AND := by
     rw [h_op_eq]; exact h_op_AND
   have h_cout_zero : e.flags.val % 2 = 0 := (h_AND h_e_op).2
   -- e.flags = v.carry_7 r, so v.carry_7 r .val % 2 = 0.
@@ -366,14 +366,14 @@ lemma carry_7_zero_AND
 /-- **carry_7 = 0 for OR rows.** -/
 lemma carry_7_zero_OR
     (v : Valid_Binary C FGL FGL) (r : ℕ)
-    (h_op_OR : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_OR)
+    (h_op_OR : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR)
     (h_bool_c7 : ZiskFv.Airs.Binary.boolean_carry_7 v r) :
     v.carry_7 r = 0 := by
   obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
     binary_per_byte_lookup_witness v r
-  have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e h_mult
+  have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e h_mult
   obtain ⟨_, _, h_OR, _⟩ := h_wf
-  have h_e_op : e.op.val = ZiskFv.Airs.BinaryTable.OP_OR := by
+  have h_e_op : e.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_OR := by
     rw [h_op_eq]; exact h_op_OR
   have h_cout_zero : e.flags.val % 2 = 0 := (h_OR h_e_op).2
   rw [h_flags] at h_cout_zero
@@ -382,14 +382,14 @@ lemma carry_7_zero_OR
 /-- **carry_7 = 0 for XOR rows.** -/
 lemma carry_7_zero_XOR
     (v : Valid_Binary C FGL FGL) (r : ℕ)
-    (h_op_XOR : (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_XOR)
+    (h_op_XOR : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR)
     (h_bool_c7 : ZiskFv.Airs.Binary.boolean_carry_7 v r) :
     v.carry_7 r = 0 := by
   obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
     binary_per_byte_lookup_witness v r
-  have h_wf := ZiskFv.Airs.BinaryTable.bin_table_consumer_wf e h_mult
+  have h_wf := ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf e h_mult
   obtain ⟨_, _, _, h_XOR, _⟩ := h_wf
-  have h_e_op : e.op.val = ZiskFv.Airs.BinaryTable.OP_XOR := by
+  have h_e_op : e.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR := by
     rw [h_op_eq]; exact h_op_XOR
   have h_cout_zero : e.flags.val % 2 = 0 := (h_XOR h_e_op).2
   rw [h_flags] at h_cout_zero
@@ -673,7 +673,7 @@ lemma match_clo_chi_AND
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
-    (h_op_AND : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_AND) :
+    (h_op_AND : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND) :
     (m.c_0 r_main
         = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
           + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216)
@@ -689,7 +689,7 @@ lemma match_clo_chi_OR
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
-    (h_op_OR : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_OR) :
+    (h_op_OR : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR) :
     (m.c_0 r_main
         = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
           + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216)
@@ -705,7 +705,7 @@ lemma match_clo_chi_XOR
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
-    (h_op_XOR : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_XOR) :
+    (h_op_XOR : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR) :
     (m.c_0 r_main
         = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
           + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216)

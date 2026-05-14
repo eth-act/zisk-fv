@@ -26,7 +26,7 @@ Same architecture as `Airs.BinaryTable` — see that file's docstring and
 CLAUDE.md's trusted-surface ledger.
 -/
 
-namespace ZiskFv.Airs.BinaryExtensionTable
+namespace ZiskFv.Airs.Tables.BinaryExtensionTable
 
 open Goldilocks
 
@@ -264,4 +264,4 @@ axiom bin_ext_table_consumer_wf
     (h_consumer : e.multiplicity = 1) :
     wf_properties e
 
-end ZiskFv.Airs.BinaryExtensionTable
+end ZiskFv.Airs.Tables.BinaryExtensionTable

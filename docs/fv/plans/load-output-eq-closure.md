@@ -76,7 +76,7 @@ Three lemmas:
 
 **Step B-0:** Verify op-bus matches-provider availability (grep from step 0). If absent, add a single axiom in `ZiskFv/Airs/OperationBus/Bridge.lean` (new file; add to `trust/allowed-axiom-files.txt`) under trust class #4. Document in `docs/fv/trusted-base.md`.
 
-**Step B-1: extend `bin_ext_table_consumer_wf`'s `wf_properties`** in `ZiskFv/Airs/BinaryExtensionTable.lean`. Add `wf_SEXT_B`, `wf_SEXT_H`, `wf_SEXT_W` clauses mirroring `binary_extension_table.pil:149-189`. The axiom's source text expands; baseline hash diff is the audit trail.
+**Step B-1: extend `bin_ext_table_consumer_wf`'s `wf_properties`** in `ZiskFv/Airs/Tables/BinaryExtensionTable.lean`. Add `wf_SEXT_B`, `wf_SEXT_H`, `wf_SEXT_W` clauses mirroring `binary_extension_table.pil:149-189`. The axiom's source text expands; baseline hash diff is the audit trail.
 
 **Step B-2: packed-correctness theorems** in `ZiskFv/Airs/Binary/BinaryExtensionPackedCorrect.lean`. Three new theorems `binary_extension_sext_{b,h,w}_chunks_eq_bv_signExtend` mirroring the existing 6 shift-direction theorems. No new axioms.
 
@@ -139,7 +139,7 @@ Each must pass. Specifically:
 - **New:** `ZiskFv/Circuit/LoadDerivation.lean` (Gaps A, B, C derivation lemmas).
 - **New (conditional):** `ZiskFv/Airs/OperationBus/Bridge.lean` (B-0, only if axiom missing).
 - **New (conditional):** `ZiskFv/Airs/MemAlign/HighBytesZero.lean` (C-1, +1 axiom max).
-- **Modified — axioms:** `ZiskFv/Airs/BinaryExtensionTable.lean` (extend `wf_properties`).
+- **Modified — axioms:** `ZiskFv/Airs/Tables/BinaryExtensionTable.lean` (extend `wf_properties`).
 - **Modified — Lean theorems:** `ZiskFv/Airs/Binary/BinaryExtensionPackedCorrect.lean`, `ZiskFv/Tactics/SignExtendLoadArchetype.lean`.
 - **Modified — equivalence files (7):** `ZiskFv/Equivalence/{Lb,Lh,Lw,LoadBU,LoadHU,LoadWU,LoadD}.lean`.
 - **Modified — trust gate:** `trust/scripts/check-no-output-eq.py`, `trust/forbidden-param-shapes.txt`, `trust/scripts/check-floor.sh`.

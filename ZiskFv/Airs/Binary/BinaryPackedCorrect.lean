@@ -3,7 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Binary.Binary
-import ZiskFv.Airs.BinaryTable
+import ZiskFv.Airs.Tables.BinaryTable
 
 /-!
 **Binary AIR (AND/OR/XOR) byte-level lookups → `BitVec 64` lift.**
@@ -31,7 +31,7 @@ set_option maxHeartbeats 4000000
 namespace ZiskFv.Airs.Binary
 
 open Goldilocks
-open ZiskFv.Airs.BinaryTable
+open ZiskFv.Airs.Tables.BinaryTable
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
