@@ -100,7 +100,7 @@ def shift_archetype_circuit_holds
     bus entry has `a_hi = b_hi = 0`. Mirrors
     `Circuit.Shift.sllw_compositional` but parametric over the opcode
     literal. -/
-theorem shift_archetype_m32_one_zeros_bus
+lemma shift_archetype_m32_one_zeros_bus
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL)
@@ -123,7 +123,7 @@ theorem shift_archetype_m32_one_zeros_bus
     verbatim (the `(1 - m32) = 1` factor leaves them unchanged).
     SLL/SRL/SRA proofs chain this with a `Valid_BinaryExtension`
     bus-emission; this theorem states the Main-side half only. -/
-theorem shift_archetype_m32_zero_passthrough_bus
+lemma shift_archetype_m32_zero_passthrough_bus
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL)

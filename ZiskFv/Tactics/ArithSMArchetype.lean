@@ -153,7 +153,7 @@ def arith_remainder_packed (v : Valid_ArithDiv C FGL FGL) (r : ℕ) : FGL :=
     subfamily's primary path. Same proof skeleton as
     `Tactics.MulArchetype.mul_archetype_bus_match` — destruct the
     bus-match equalities, substitute into Main's packed `c`, close. -/
-theorem arith_archetype_div_bus_match
+lemma arith_archetype_div_bus_match
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : div_primary_circuit_holds m v r_main r_arith opcode_lit) :
@@ -167,7 +167,7 @@ theorem arith_archetype_div_bus_match
 /-- **Archetype bus-match theorem — secondary (REM/REMU).** Same proof
     skeleton as the primary theorem, but binds Main's packed `c` to
     the remainder lanes (Arith's `d[]`). -/
-theorem arith_archetype_rem_bus_match
+lemma arith_archetype_rem_bus_match
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : rem_secondary_circuit_holds m v r_main r_arith opcode_lit) :

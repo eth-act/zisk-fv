@@ -41,7 +41,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `execute_instruction` on an RV64 SUBW
     reduces to `PureSpec.execute_RTYPE_subw_pure`. -/
-theorem equiv_SUBW_sail
+lemma equiv_SUBW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (subw_input : PureSpec.SubwInput)
     (r1 r2 rd : regidx)

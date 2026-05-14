@@ -45,7 +45,7 @@ def addi_circuit_holds
     (bus_entry : OperationBusEntry FGL) : Prop :=
   alu_itype_archetype_circuit_holds m r_main bus_entry OP_ADD
 
-theorem addi_compositional
+lemma addi_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : addi_circuit_holds m r_main bus_entry) :
@@ -81,7 +81,7 @@ def addi_circuit_holds_with_binaryadd
     proves ADDI's bus emission identically to ADD's. The proof body
     is `add_compositional`'s with the unused fourth mode predicate
     substituted. -/
-theorem addi_compositional_with_binaryadd
+lemma addi_compositional_with_binaryadd
     (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
     (r_main r_binary : ℕ)
     (h : addi_circuit_holds_with_binaryadd m b r_main r_binary) :

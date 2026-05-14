@@ -99,7 +99,7 @@ def load_hu_circuit_holds
     Proof: apply the `LoadArchetype` macro to get
     `c_packed = memory_entry_toField entry`, then collapse the high
     54 bits to zero using `memory_entry_toField_eq_half`. -/
-theorem load_hu_compositional
+lemma load_hu_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : load_hu_circuit_holds m r_main next_pc entry) :
@@ -111,7 +111,7 @@ theorem load_hu_compositional
 /-- **Archetype-macro invocation.** Shows the `LoadArchetype` parametric
     lemma (`load_archetype_copyb_c_packed`) closes the LD-shape goal
     that underlies LHU; LHU then adds the high-bytes-zero step on top. -/
-theorem load_hu_compositional_via_archetype
+lemma load_hu_compositional_via_archetype
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : load_hu_circuit_holds m r_main next_pc entry) :
@@ -131,7 +131,7 @@ theorem load_hu_compositional_via_archetype
 /-- **Next-PC for LHU.** Identical derivation to LD / LWU — `jmp_offset1
     = jmp_offset2 = 4` (from `transpile_LHU`) + `flag = 0` (constraint
     18) collapses the PC handshake to `pc + 4`. -/
-theorem load_hu_next_pc_concrete
+lemma load_hu_next_pc_concrete
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : load_hu_circuit_holds m r_main next_pc entry)

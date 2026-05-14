@@ -48,7 +48,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     RV64 LW-shape LOAD reduces to the pure-function block supplied by
     `PureSpec.execute_LOADW_pure`, given the standard register/PC/memory
     assumptions. -/
-theorem equiv_LW_sail
+lemma equiv_LW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lw_input : PureSpec.LwInput)
     (mstatus : RegisterType Register.mstatus)

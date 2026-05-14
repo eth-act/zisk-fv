@@ -43,7 +43,7 @@ open ZiskFv.Airs.ArithDiv
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** Wraps `execute_DIVREM_remuw_pure_equiv`. -/
-theorem equiv_REMUW_sail
+lemma equiv_REMUW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remuw_input : PureSpec.RemuwInput)
     (r1 r2 rd : regidx)

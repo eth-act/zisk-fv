@@ -32,7 +32,7 @@ def xori_circuit_holds
     (bus_entry : OperationBusEntry FGL) : Prop :=
   alu_itype_archetype_circuit_holds m r_main bus_entry OP_XOR
 
-theorem xori_compositional
+lemma xori_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : xori_circuit_holds m r_main bus_entry) :

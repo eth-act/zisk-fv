@@ -33,7 +33,7 @@ def sltiu_circuit_holds
     (bus_entry : OperationBusEntry FGL) : Prop :=
   alu_itype_archetype_circuit_holds m r_main bus_entry OP_LTU
 
-theorem sltiu_compositional
+lemma sltiu_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : sltiu_circuit_holds m r_main bus_entry) :

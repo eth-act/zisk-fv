@@ -76,7 +76,7 @@ def main_b_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
 
     The lifting from this field-level identity to the RV64 `BitVec 64` ADD
     semantics happens in `Equivalence.Add`. -/
-theorem add_compositional
+lemma add_compositional
     (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
     (r_main r_binary : ℕ)
     (h : add_circuit_holds m b r_main r_binary) :

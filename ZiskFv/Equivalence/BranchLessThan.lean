@@ -55,7 +55,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     knowledge, and the ZisK `misa[C] = 0` witness.
 
     Wraps `PureSpec.execute_BLT_pure_equiv`. -/
-theorem equiv_BLT_sail
+lemma equiv_BLT_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (blt_input : PureSpec.BltInput)
     (imm : BitVec 13)

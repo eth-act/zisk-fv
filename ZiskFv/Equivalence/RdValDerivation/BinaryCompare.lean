@@ -274,7 +274,7 @@ private lemma compare_byte_sum_kernel
     where the c-bytes themselves are zero (per `wf_LTU`'s `c_byte = 0`):
     `m.c_0 r_main = flags_7` (the cout slot) and `m.c_1 r_main = 0`.
     -/
-theorem h_rd_val_compare_sltu
+lemma h_rd_val_compare_sltu
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
@@ -439,7 +439,7 @@ theorem h_rd_val_compare_sltu
     (`OP_LTU = 6`) at the Binary SM. The only difference is the source
     of `r2_val` on the Sail side (sign-extended immediate vs rs2
     register read), which lives in the transpile bridge `h_input_r2`. -/
-theorem h_rd_val_compare_sltiu
+lemma h_rd_val_compare_sltiu
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)
@@ -510,7 +510,7 @@ theorem h_rd_val_compare_sltiu
     Concludes `U64.toBV #v[e2.x0..7] = if r1_val.slt r2_val then 1#64 else 0#64`
     via the K1-B LT (signed) chain lift, which adds the final-byte
     sign-byte override clause to the LTU chain rule. -/
-theorem h_rd_val_compare_slt
+lemma h_rd_val_compare_slt
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
@@ -645,7 +645,7 @@ theorem h_rd_val_compare_slt
     `h_rd_val_compare_slt`; SLTI shares SLT's Zisk opcode (`OP_LT = 7`)
     at the Binary SM. Differs only in the source of `r2_val` on the
     Sail side. -/
-theorem h_rd_val_compare_slti
+lemma h_rd_val_compare_slti
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)

@@ -48,7 +48,7 @@ def sraiw_circuit_holds
 
 /-- **Compositional SRAIW theorem.** Instantiation of the
     `ShiftArchetype` m32=1 archetype macro at `opcode_lit = OP_SRA_W`. -/
-theorem sraiw_compositional
+lemma sraiw_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : sraiw_circuit_holds m r_main bus_entry) :

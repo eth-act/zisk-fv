@@ -48,7 +48,7 @@ def branch_geu_circuit_holds
   ∧ main_row_in_bgeu_mode m r_main
 
 /-- **Compositional BGEU PC-dispatch theorem (via `BranchArchetype`).** -/
-theorem branch_geu_compositional
+lemma branch_geu_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_geu_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main
@@ -60,7 +60,7 @@ theorem branch_geu_compositional
 
 /-- **BGEU taken case.** When `flag = 0` (`a ≥u b`), next-pc is
     `pc + jmp_offset2 = pc + imm` (BNE polarity). -/
-theorem branch_geu_taken
+lemma branch_geu_taken
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_geu_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 0) :
@@ -70,7 +70,7 @@ theorem branch_geu_taken
 
 /-- **BGEU not-taken case.** When `flag = 1` (`a <u b`), next-pc is
     `pc + jmp_offset1 = pc + 4`. -/
-theorem branch_geu_not_taken
+lemma branch_geu_not_taken
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_geu_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 1) :

@@ -106,7 +106,7 @@ def main_op_in_RV64IM_scope (m : Valid_Main C FGL FGL) (r : ℕ) : Prop :=
 
     The proof is a one-liner — no new trust is introduced; the trust
     *is* the universal hypothesis itself. -/
-theorem main_op_in_RV64IM_scope_of_universal
+lemma main_op_in_RV64IM_scope_of_universal
     (m : Valid_Main C FGL FGL)
     (h_scope : ∀ r, m.is_external_op r = 1 → main_op_in_RV64IM_scope m r)
     (r : ℕ) (h_active : m.is_external_op r = 1) :

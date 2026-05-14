@@ -121,7 +121,7 @@ lemma four_bytes_eq_of_packed_eq
     (`(1 - is_external_op) * op * (b - c) = 0`) collapse under the
     LD-mode witnesses (`is_external_op = 0, op = 1`); per-byte
     equality follows from `four_bytes_eq_of_packed_eq` on each half. -/
-theorem load_copyb_e1_e2_bytes_eq
+lemma load_copyb_e1_e2_bytes_eq
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)
@@ -171,7 +171,7 @@ lemma byte_bitvec_eq_of_fgl_eq {a b : FGL} (h : a = b) :
     ranges, deliver the eight `(e2.x_i : BitVec 8) = (e1.x_i : BitVec 8)`
     equations the `Equivalence/LoadD.lean` proof body needs in place
     of the retired `h_e1_e2_bytes` hypothesis. -/
-theorem load_copyb_e1_e2_bytes_eq_bv
+lemma load_copyb_e1_e2_bytes_eq_bv
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)
@@ -247,7 +247,7 @@ lemma fgl_zero_to_bitvec8 : ((0 : FGL) : BitVec 8) = 0#8 := by
     zero-padding (derived in
     `Airs/MemoryBus/MemAlignBridge.lean`), derive the LBU U64.toBV
     form. -/
-theorem load_lbu_c_packed
+lemma load_lbu_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
     (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
@@ -289,7 +289,7 @@ theorem load_lbu_c_packed
 /-- **LHU c-packed.** From Family A passthrough plus MemAlign
     zero-padding (derived in `MemAlignBridge.lean`), derive the LHU
     U64.toBV form. -/
-theorem load_lhu_c_packed
+lemma load_lhu_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
     (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
@@ -331,7 +331,7 @@ theorem load_lhu_c_packed
 /-- **LWU c-packed.** From Family A passthrough plus MemAlign
     zero-padding (derived in `MemAlignBridge.lean`), derive the LWU
     U64.toBV form. -/
-theorem load_lwu_c_packed
+lemma load_lwu_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
     (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)

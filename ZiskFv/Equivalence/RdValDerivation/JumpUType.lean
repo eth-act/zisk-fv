@@ -202,7 +202,7 @@ private lemma byte_sum_from_lo_hi
     The internal helpers `lo_bytes_from_fgl_eq` / `hi_bytes_from_fgl_eq`
     bridge to the byte-sum form, and `pc_plus4_bv64_of_bytes` (K3)
     closes the goal. -/
-theorem h_rd_val_jut_jal
+lemma h_rd_val_jut_jal
     (PC : BitVec 64)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (next_pc : FGL)
@@ -272,7 +272,7 @@ theorem h_rd_val_jut_jal
 
     Parameter classes match `h_rd_val_jut_jal` exactly:
     {CIRCUIT-CONSTRAINT, TRANSPILE-PIN, LANE-MATCH, RANGE}. -/
-theorem h_rd_val_jut_jalr
+lemma h_rd_val_jut_jalr
     (PC : BitVec 64)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (next_pc : FGL)
@@ -348,7 +348,7 @@ theorem h_rd_val_jut_jalr
     h_lane_rd → memory_entry_lo/hi = c_0/c_1 = b_0/b_1.
     h_imm_lo_nat/h_imm_hi_nat → Nat values. Internal derivation of low-half identity.
     K3 u64_toBV_of_imm20_lanes closes the goal. -/
-theorem h_rd_val_jut_lui
+lemma h_rd_val_jut_lui
     (imm : BitVec 20)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (next_pc : FGL)
@@ -439,7 +439,7 @@ theorem h_rd_val_jut_lui
     TRANSPILE-PIN here — for AUIPC the offset is `imm`-dependent and is
     routed through the `h_offset_bridge` TRANSPILE-BRIDGE parameter
     instead. -/
-theorem h_rd_val_jut_auipc
+lemma h_rd_val_jut_auipc
     (PC : BitVec 64)
     (imm : BitVec 20)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)

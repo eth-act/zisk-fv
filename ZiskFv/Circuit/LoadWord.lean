@@ -62,7 +62,7 @@ def lw_circuit_holds
     32-bit operand semantics.
 
     Proof: archetype invocation. -/
-theorem lw_compositional
+lemma lw_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : lw_circuit_holds m r_main bus_entry) :
@@ -73,7 +73,7 @@ theorem lw_compositional
 /-- **LW bus-entry op passthrough.** The bus entry's `op` field
     equals `OP_SIGNEXTEND_W` — mirrors Shift-family's op
     passthrough. -/
-theorem lw_bus_op
+lemma lw_bus_op
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : lw_circuit_holds m r_main bus_entry) :
@@ -83,7 +83,7 @@ theorem lw_bus_op
 
 /-- **LW bus-entry multiplicity.** The bus-entry multiplicity is
     `1` (the Main row pushes one entry per `is_external_op = 1`). -/
-theorem lw_bus_multiplicity
+lemma lw_bus_multiplicity
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : lw_circuit_holds m r_main bus_entry) :

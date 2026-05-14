@@ -50,7 +50,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     RV64 DIVU reduces to the pure-function block supplied by
     `PureSpec.execute_DIVREM_divu_pure`. Wraps
     `PureSpec.execute_DIVREM_divu_pure_equiv`. -/
-theorem equiv_DIVU_sail
+lemma equiv_DIVU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divu_input : PureSpec.DivuInput)
     (r1 r2 rd : regidx)

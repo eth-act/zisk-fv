@@ -64,7 +64,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     readability and PC knowledge. Wraps
     `PureSpec.execute_RTYPE_sllw_pure_equiv` to expose the Sail chain
     at this module's export surface. -/
-theorem equiv_SLLW_sail
+lemma equiv_SLLW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sllw_input : PureSpec.SllwInput)
     (r1 r2 rd : regidx)

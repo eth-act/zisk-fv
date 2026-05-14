@@ -195,7 +195,7 @@ private lemma byte_sum_from_binary_lane_match
     lift, the Main↔Binary bus c-lane match, the rd-write lane match, byte
     ranges, and transpile bridges identifying `r1_val`/`r2_val` with
     `Valid_Binary`'s packed `a`/`b` byte sums. -/
-theorem h_rd_val_logic_and
+lemma h_rd_val_logic_and
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -326,7 +326,7 @@ theorem h_rd_val_logic_and
     difference is the source of `r2_val` on the Sail side (sign-extended
     immediate vs rs2 register read), which lives in the transpile bridge
     `h_input_r2`. -/
-theorem h_rd_val_logic_andi
+lemma h_rd_val_logic_andi
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -404,7 +404,7 @@ theorem h_rd_val_logic_andi
 
 /-- **OR `h_rd_val` derivation (Tier 1).** Same architecture as
     `h_rd_val_logic_and`, with K1-B OR lift and `BitVec.or`. -/
-theorem h_rd_val_logic_or
+lemma h_rd_val_logic_or
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -507,7 +507,7 @@ theorem h_rd_val_logic_or
 
 /-- **ORI `h_rd_val` derivation (Tier 1).** Same as `h_rd_val_logic_or`
     with sign-extended-immediate input bridge. -/
-theorem h_rd_val_logic_ori
+lemma h_rd_val_logic_ori
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -585,7 +585,7 @@ theorem h_rd_val_logic_ori
 
 /-- **XOR `h_rd_val` derivation (Tier 1).** Same architecture as
     `h_rd_val_logic_and`, with K1-B XOR lift and `BitVec.xor`. -/
-theorem h_rd_val_logic_xor
+lemma h_rd_val_logic_xor
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -688,7 +688,7 @@ theorem h_rd_val_logic_xor
 
 /-- **XORI `h_rd_val` derivation (Tier 1).** Same as `h_rd_val_logic_xor`
     with sign-extended-immediate input bridge. -/
-theorem h_rd_val_logic_xori
+lemma h_rd_val_logic_xori
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)

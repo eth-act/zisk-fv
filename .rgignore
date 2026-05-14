@@ -1,0 +1,8 @@
+.claude/
+.git/
+.github/
+.lake/
+.worktrees/
+bin/
+build/
+

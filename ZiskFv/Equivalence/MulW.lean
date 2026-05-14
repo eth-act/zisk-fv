@@ -52,7 +52,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     RV64 MULW reduces to the pure-function block supplied by
     `PureSpec.execute_MULW_pure`, given source-register readability
     and PC knowledge. Wraps `PureSpec.execute_MULW_pure_equiv`. -/
-theorem equiv_MULW_sail
+lemma equiv_MULW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulw_input : PureSpec.MulwInput)
     (r1 r2 rd : regidx)

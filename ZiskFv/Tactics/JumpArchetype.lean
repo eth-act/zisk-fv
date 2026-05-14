@@ -36,7 +36,7 @@ instead of `pc + jmp_offset1`.
 ## Usage pattern
 
 ```
-theorem equiv_<JumpLike> (...) := by
+lemma equiv_<JumpLike> (...) := by
   have h_next_pc :=
     jump_archetype_pc_advance m r next_pc h_circuit_jal
   -- ...
@@ -148,7 +148,7 @@ private lemma c_0_eq_b_0_of_internal_op_one
     `next_pc = c_0 + jmp_offset1 + flag * (jmp_offset1 - jmp_offset2)`;
     constraint 18 forces `flag = 0`, collapsing it to `c_0 + jmp_offset1`;
     constraint 9 forces `c_0 = b_0`, giving the final form. -/
-theorem jalr_archetype_pc_advance
+lemma jalr_archetype_pc_advance
     (m : Valid_Main C' FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jalr_archetype_circuit_holds m r_main next_pc (1 : FGL)) :
     next_pc = m.b_0 r_main + m.jmp_offset1 r_main := by
@@ -169,7 +169,7 @@ theorem jalr_archetype_pc_advance
     store_value expression is `1 * (pc + jmp_offset2 - c_0) + c_0
     = pc + jmp_offset2`. For JALR's `jmp_offset2 = 4`, the rd receives
     `pc + 4` — the link address. -/
-theorem jalr_archetype_store_value
+lemma jalr_archetype_store_value
     (m : Valid_Main C' FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jalr_archetype_circuit_holds m r_main next_pc (1 : FGL)) :
     m.store_pc r_main * (m.pc r_main + m.jmp_offset2 r_main - m.c_0 r_main)

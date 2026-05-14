@@ -103,7 +103,7 @@ def mul_archetype_circuit_holds
 
     Result: Main's packed `c` equals Arith's packed result lanes,
     independent of which MUL-family opcode is on the Main row. -/
-theorem mul_archetype_bus_match
+lemma mul_archetype_bus_match
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : mul_archetype_circuit_holds m v r_main r_arith opcode_lit) :

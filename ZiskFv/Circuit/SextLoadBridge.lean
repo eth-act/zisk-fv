@@ -363,7 +363,7 @@ private lemma c_lift_to_byte_sum
 /-! ## LB bridge -/
 
 /-- **Proven c-packed identity for LB.** -/
-theorem load_byte_c_packed
+lemma load_byte_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
@@ -426,7 +426,7 @@ theorem load_byte_c_packed
 /-! ## LH bridge -/
 
 /-- **Proven c-packed identity for LH.** -/
-theorem load_half_c_packed
+lemma load_half_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
@@ -483,7 +483,7 @@ theorem load_half_c_packed
 /-! ## LW bridge -/
 
 /-- **Proven c-packed identity for LW.** -/
-theorem load_word_c_packed
+lemma load_word_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
     (e1 e2 : MemoryBusEntry FGL)

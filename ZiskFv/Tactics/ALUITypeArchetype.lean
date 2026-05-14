@@ -33,7 +33,7 @@ Identical to `ALURTypeArchetype`: `opcode_lit : FGL` — one of
 ## Usage pattern
 
 ```
-theorem addi_compositional
+lemma addi_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : alu_itype_archetype_circuit_holds m r_main bus_entry OP_ADD) :
@@ -85,7 +85,7 @@ def alu_itype_archetype_circuit_holds
     `c_lo`/`c_hi` pack the signed/unsigned/logical opcode's result on
     the `a`/`b` lanes the transpile axiom pinned) is a separate audit
     obligation. -/
-theorem alu_itype_archetype_c_bus_match
+lemma alu_itype_archetype_c_bus_match
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL)

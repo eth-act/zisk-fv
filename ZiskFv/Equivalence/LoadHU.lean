@@ -39,7 +39,7 @@ open ZiskFv.Circuit.LoadHU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_LHU_sail
+lemma equiv_LHU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lhu_input : PureSpec.LhuInput)
     (mstatus : RegisterType Register.mstatus)

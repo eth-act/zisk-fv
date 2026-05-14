@@ -85,7 +85,7 @@ def branch_ne_circuit_holds
     formula. Per-BNE polarity (flag=0 taken, flag=1 not-taken)
     emerges from composing this with `transpile_BNE`'s
     `jmp_offset1 = 4, jmp_offset2 = imm` assignment. -/
-theorem branch_ne_compositional
+lemma branch_ne_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_ne_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main
@@ -106,7 +106,7 @@ theorem branch_ne_compositional
     Note the polarity inversion relative to `branch_eq_taken`:
     BNE-taken is `flag = 0`, not `flag = 1`. This is the whole
     point of BNE's `neg = 1` transpile path. -/
-theorem branch_ne_taken
+lemma branch_ne_taken
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_ne_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 0) :
@@ -117,7 +117,7 @@ theorem branch_ne_taken
 /-- **BNE not-taken case.** When `flag = 1` (`a == b`), the
     next-pc is `pc + jmp_offset1 = pc + 4` (from `transpile_BNE`'s
     swap). -/
-theorem branch_ne_not_taken
+lemma branch_ne_not_taken
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_ne_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 1) :

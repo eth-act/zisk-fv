@@ -35,7 +35,7 @@ open ZiskFv.Circuit.BranchLessThanUnsigned
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** -/
-theorem equiv_BLTU_sail
+lemma equiv_BLTU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bltu_input : PureSpec.BltuInput)
     (imm : BitVec 13)

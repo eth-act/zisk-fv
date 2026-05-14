@@ -74,7 +74,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
       each call site pins a specific shift / sign-extend literal).
 
     Outputs: existential `r_e` + `matches_entry`. -/
-theorem binext_discharge_conservative
+lemma binext_discharge_conservative
     (m : Valid_Main C FGL FGL) (e : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
@@ -91,7 +91,7 @@ theorem binext_discharge_conservative
     Consumed by downstream `equiv_<OP>` proofs that have already
     obtained a concrete `r_e` row index from `binext_discharge_conservative`
     (or from caller-supplied existential witnessing). -/
-theorem byte_ranges_at_holds (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma byte_ranges_at_holds (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
     (e.free_in_a_0 r).val < 256 ∧ (e.free_in_a_1 r).val < 256
   ∧ (e.free_in_a_2 r).val < 256 ∧ (e.free_in_a_3 r).val < 256
   ∧ (e.free_in_a_4 r).val < 256 ∧ (e.free_in_a_5 r).val < 256
@@ -174,7 +174,7 @@ private theorem binext_shift_discharge_partial
     simpa using h
 
 /-- **SLL partial discharge.** `op = 0x21`. -/
-theorem sll_discharge_partial
+lemma sll_discharge_partial
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ) (e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
@@ -196,7 +196,7 @@ theorem sll_discharge_partial
     (by decide) h_main_active h_main_op (Or.inl h_main_op)
 
 /-- **SRL partial discharge.** `op = 0x22`. -/
-theorem srl_discharge_partial
+lemma srl_discharge_partial
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ) (e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
@@ -218,7 +218,7 @@ theorem srl_discharge_partial
     (by decide) h_main_active h_main_op (Or.inr (Or.inl h_main_op))
 
 /-- **SRA partial discharge.** `op = 0x23`. -/
-theorem sra_discharge_partial
+lemma sra_discharge_partial
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ) (e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
@@ -240,7 +240,7 @@ theorem sra_discharge_partial
     (by decide) h_main_active h_main_op (Or.inr (Or.inr (Or.inl h_main_op)))
 
 /-- **SLLW (SLL_W) partial discharge.** `op = 0x24`. -/
-theorem sllw_discharge_partial
+lemma sllw_discharge_partial
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ) (e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
@@ -263,7 +263,7 @@ theorem sllw_discharge_partial
     (Or.inr (Or.inr (Or.inr (Or.inl h_main_op))))
 
 /-- **SRLW (SRL_W) partial discharge.** `op = 0x25`. -/
-theorem srlw_discharge_partial
+lemma srlw_discharge_partial
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ) (e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
@@ -286,7 +286,7 @@ theorem srlw_discharge_partial
     (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_main_op)))))
 
 /-- **SRAW (SRA_W) partial discharge.** `op = 0x26`. -/
-theorem sraw_discharge_partial
+lemma sraw_discharge_partial
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ) (e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
@@ -327,7 +327,7 @@ parameters. The replacement is a net **−2 binders** per opcode.
 /-- Project a single `matches_entry` predicate into its `op` /
     `c_lo` / `c_hi` conjuncts in the forms consumed by per-opcode
     `equiv_<OP>` proofs. -/
-theorem project_match_op_clo_chi
+lemma project_match_op_clo_chi
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
@@ -400,7 +400,7 @@ private theorem c_lo_sum_eq_nat_sum_of_match
     bound on `m.c_0`, and the `binary_extension_columns_in_range` bounds
     on each `free_in_c_{even}`, conclude the BinExt c-lo Nat sum is
     `< 2^32`. -/
-theorem hc_lo_sum_lt_of_match
+lemma hc_lo_sum_lt_of_match
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (h_match_clo : m.c_0 r_main
@@ -461,7 +461,7 @@ private theorem c_hi_sum_eq_nat_sum_of_match
   apply Nat.mod_eq_of_lt; show _ < 18446744069414584321; omega
 
 /-- **C-hi sum bound discharge.** Mirror of `hc_lo_sum_lt_of_match`. -/
-theorem hc_hi_sum_lt_of_match
+lemma hc_hi_sum_lt_of_match
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
     (h_match_chi : m.c_1 r_main
@@ -556,7 +556,7 @@ private theorem packed_a_hi_val_eq_of_match
     `r1_val = BitVec.ofNat 64 (8-byte packed sum)`. The `m32` hypothesis
     (with `m32 = 0`) collapses the `(1 - m32) * m.a_1` factor on the
     matches_entry a_hi conjunct. -/
-theorem packed_a_eq_of_shift_match_m32_0
+lemma packed_a_eq_of_shift_match_m32_0
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
@@ -628,7 +628,7 @@ theorem packed_a_eq_of_shift_match_m32_0
     `m.b_0 = e.free_in_b + 256 * e.b_0`. The free_in_b and b_0 byte ranges
     bound the FGL sum's `.val` so it equals `(free_in_b).val + 256 *
     (b_0).val`. Taking `% 64` and observing `256 ≡ 0 (mod 64)` finishes. -/
-theorem shift_pin_eq_of_shift_match_m32_0
+lemma shift_pin_eq_of_shift_match_m32_0
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
@@ -696,7 +696,7 @@ theorem shift_pin_eq_of_shift_match_m32_0
     so `shamt.toNat < 64`; the b_lo equation pins
     `(v.free_in_b).val + 256 * (v.b_0).val = shamt.toNat`, which
     bounds both addends and gives the mod-64 equation directly. -/
-theorem shift_pin_immediate_eq_of_shift_match
+lemma shift_pin_immediate_eq_of_shift_match
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ) (shamt : BitVec 6)
     (h_b_lo_t : m.b_0 r_main = shamt_b_lo shamt)
@@ -753,7 +753,7 @@ consume (as `h_input_r1_extract`). -/
 /-- **Packed-a 32-bit (extracted-lsb) bridge for W-variant shifts (m32 = 1).**
     Given transpile lanes + read_xreg + op_is_shift = 1 + matches_entry,
     derive `(extractLsb r1_val 31 0).toNat = (4 lo a-bytes packed) % 2^32`. -/
-theorem packed_a_lo32_eq_of_shift_match_m32_1
+lemma packed_a_lo32_eq_of_shift_match_m32_1
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
@@ -819,7 +819,7 @@ theorem packed_a_lo32_eq_of_shift_match_m32_1
     transpile lanes (`m.b_0 = lane_lo (xreg rs2)`, …), read_xreg,
     op_is_shift = 1, and matches_entry. Form consumed by SLLW/SRLW/SRAW
     `equiv_<OP>` proofs as `h_shift_pin`. -/
-theorem shift_pin_w_eq_of_shift_match
+lemma shift_pin_w_eq_of_shift_match
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
@@ -876,7 +876,7 @@ theorem shift_pin_w_eq_of_shift_match
     Derives `shamt.toNat = (v.free_in_b).val % 32` where `shamt : BitVec 5`.
     Mirrors `shift_pin_immediate_eq_of_shift_match` but for the 5-bit
     immediate W-variants. -/
-theorem shift_pin_w_immediate_eq_of_shift_match
+lemma shift_pin_w_immediate_eq_of_shift_match
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ) (shamt : BitVec 5)
     (h_b_lo_t : m.b_0 r_main = shamt_w_b_lo shamt)
@@ -968,7 +968,7 @@ private theorem byte_pack4_inj
     `v.op_is_shift r_binary = 0`, and byte ranges (derived
     internally), produce the per-byte equalities
     `(v.free_in_a_i r_binary).val = e1.x_i.val` for i ∈ {0, 1, 2, 3}. -/
-theorem sext_lane_match_bytes_eq_of_match
+lemma sext_lane_match_bytes_eq_of_match
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ) (e1 : Interaction.MemoryBusEntry FGL)
     (h_main_b0_eq : m.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1)

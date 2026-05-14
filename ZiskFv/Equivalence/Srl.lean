@@ -40,7 +40,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** Wraps
     `PureSpec.execute_RTYPE_srl_pure_equiv`. -/
-theorem equiv_SRL_sail
+lemma equiv_SRL_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srl_input : PureSpec.SrlInput)
     (r1 r2 rd : regidx)

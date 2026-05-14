@@ -75,7 +75,7 @@ def branch_eq_circuit_holds
     Caller (`Equivalence.BranchEqual`) supplies `h_flag_correct`:
     `flag = 1 ↔ (a_lo, a_hi) = (b_lo, b_hi)` from the Binary-SM bus hop.
     That hypothesis is parameterized at the equivalence level, not here. -/
-theorem branch_eq_compositional
+lemma branch_eq_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_eq_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main
@@ -89,7 +89,7 @@ theorem branch_eq_compositional
     `a == b`), the next-pc is `pc + jmp_offset1`. For BEQ,
     `jmp_offset1 = imm` (from `transpile_BEQ`), so this corresponds
     to `pc + imm`. -/
-theorem branch_eq_taken
+lemma branch_eq_taken
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_eq_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 1) :
@@ -101,7 +101,7 @@ theorem branch_eq_taken
 /-- **Not-taken case.** When `flag = 0`, the next-pc is
     `pc + jmp_offset2 = pc + 4` (from `transpile_BEQ`'s
     `jmp_offset2 = 4`). -/
-theorem branch_eq_not_taken
+lemma branch_eq_not_taken
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_eq_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 0) :

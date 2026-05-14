@@ -47,7 +47,7 @@ open ZiskFv.Airs.Main
     `is_fiom_active` to the constant `false`. ZisK targets RV64IM
     Machine-mode only, so this is part of the trusted scope (see
     `RISC_V_assumptions` A1.1 in `RV64D/Auxiliaries.lean`). -/
-theorem equiv_FENCE_sail
+lemma equiv_FENCE_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (fence_input : PureSpec.FenceInput)
     (fm pred succ : BitVec 4) (rs rd : regidx)

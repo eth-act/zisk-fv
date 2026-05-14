@@ -56,7 +56,7 @@ def addiw_circuit_holds
     `addw_compositional`; the difference is which transpile axiom
     populated the Main row's `b` lanes (here: the sign-extended
     12-bit immediate). -/
-theorem addiw_compositional
+lemma addiw_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : addiw_circuit_holds m r_main bus_entry) :

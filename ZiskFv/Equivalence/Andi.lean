@@ -36,7 +36,7 @@ open ZiskFv.Tactics.ALUITypeArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_ANDI_sail
+lemma equiv_ANDI_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (andi_input : PureSpec.AndiInput)
     (r1 rd : regidx) (imm : BitVec 12)

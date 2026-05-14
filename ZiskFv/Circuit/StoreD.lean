@@ -108,7 +108,7 @@ def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     `memory_load_lanes_match` on `b`) because the store hypothesis is
     on `c` — the existing LD route asserted on `b` and derived `c` via
     constraint 9; here we take `c` directly. -/
-theorem store_d_compositional
+lemma store_d_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : store_d_circuit_holds m r_main next_pc entry) :
@@ -125,7 +125,7 @@ theorem store_d_compositional
     by the mode + constraint 18), the PC handshake gives
     `next_pc = pc + jmp_offset2`. For SD, `jmp_offset2 = 4` (from
     `transpile_SD`), so this is `pc + 4`. -/
-theorem store_d_next_pc
+lemma store_d_next_pc
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : store_d_circuit_holds m r_main next_pc entry) :
@@ -139,7 +139,7 @@ theorem store_d_next_pc
 /-- **Next-PC simplified for SD.** When `flag = 0` (forced by
     constraint 18) and `jmp_offset1 = jmp_offset2 = 4` (forced by
     `transpile_SD`), the handshake collapses to `next_pc = pc + 4`. -/
-theorem store_d_next_pc_concrete
+lemma store_d_next_pc_concrete
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : store_d_circuit_holds m r_main next_pc entry)

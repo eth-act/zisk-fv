@@ -81,7 +81,7 @@ def jalr_circuit_holds
     routing).
 
     Discharged via `jalr_archetype_pc_advance` with `opcode_lit = 1`. -/
-theorem jalr_pc_advance
+lemma jalr_pc_advance
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jalr_circuit_holds m r_main next_pc) :
     next_pc = m.b_0 r_main + m.jmp_offset1 r_main := by
@@ -94,7 +94,7 @@ theorem jalr_pc_advance
     (independent of `c_0` thanks to the `store_pc = 1` cancellation).
     With `transpile_JALR` pinning `jmp_offset2 = 4`, this is the
     `pc + 4` link address written to rd — same as JAL. -/
-theorem jalr_store_value
+lemma jalr_store_value
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jalr_circuit_holds m r_main next_pc) :
     m.store_pc r_main * (m.pc r_main + m.jmp_offset2 r_main - m.c_0 r_main)
@@ -117,7 +117,7 @@ caller from `transpile_PC_for_JALR`. -/
     `jal_store_value_lo_bv` modulo the JALR-specific circuit
     predicate. Composes `jalr_store_value` with
     `store_pc_lanes_match_lo` and S2's wide-PC strict lo lemma. -/
-theorem jalr_store_value_lo_bv
+lemma jalr_store_value_lo_bv
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (PC : BitVec 64) (e : MemoryBusEntry FGL)
     (h_circuit : jalr_circuit_holds m r_main next_pc)
@@ -145,7 +145,7 @@ theorem jalr_store_value_lo_bv
     PIL `(1 - store_pc) * c_1` collapses to `0`, so the hi half is
     zero. Matching the BitVec hi-half projection requires
     `(PC + 4).toNat < 2^32`. -/
-theorem jalr_store_value_hi_bv
+lemma jalr_store_value_hi_bv
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (PC : BitVec 64) (e : MemoryBusEntry FGL)
     (h_circuit : jalr_circuit_holds m r_main next_pc)

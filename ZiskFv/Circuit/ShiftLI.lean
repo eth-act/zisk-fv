@@ -64,7 +64,7 @@ def slliw_circuit_holds
     `ShiftArchetype` m32=1 archetype macro at `opcode_lit = OP_SLL_W`
     (same opcode as SLLW; the bus shape doesn't distinguish
     immediate-vs-register source). -/
-theorem slliw_compositional
+lemma slliw_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : slliw_circuit_holds m r_main bus_entry) :

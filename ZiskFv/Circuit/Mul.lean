@@ -101,7 +101,7 @@ def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     from this field-level identity to the `BitVec 64` semantics of RV64
     MUL happens in `Equivalence.Mul`, which parameterizes on an Arith-
     correctness hypothesis (left to the audit). -/
-theorem mul_compositional
+lemma mul_compositional
     (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
     (r_main r_arith : ℕ)
     (h : mul_circuit_holds m v r_main r_arith) :

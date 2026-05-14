@@ -40,7 +40,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** Wraps
     `PureSpec.execute_BGE_pure_equiv`. -/
-theorem equiv_BGE_sail
+lemma equiv_BGE_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bge_input : PureSpec.BgeInput)
     (imm : BitVec 13)

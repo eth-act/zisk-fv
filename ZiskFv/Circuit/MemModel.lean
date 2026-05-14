@@ -163,7 +163,7 @@ axiom row_models_sail_state_load
     No `wr = 0` axiom or other side conditions surface; the load
     `multiplicity = -1` plus the permutation handshake force the read
     side. -/
-theorem mem_load_correct
+lemma mem_load_correct
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -214,7 +214,7 @@ only the bytes the corresponding Sail spec writes/reads.
   the 8-byte version's structural-only content for narrow widths. -/
 
 /-- 4-byte projection of `mem_load_correct` for LW / LWU. -/
-theorem mem_load_correct_4byte
+lemma mem_load_correct_4byte
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -230,7 +230,7 @@ theorem mem_load_correct_4byte
   exact ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩
 
 /-- 2-byte projection of `mem_load_correct` for LH / LHU. -/
-theorem mem_load_correct_2byte
+lemma mem_load_correct_2byte
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -244,7 +244,7 @@ theorem mem_load_correct_2byte
   exact ⟨h.1, h.2.1⟩
 
 /-- 1-byte projection of `mem_load_correct` for LB / LBU. -/
-theorem mem_load_correct_1byte
+lemma mem_load_correct_1byte
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

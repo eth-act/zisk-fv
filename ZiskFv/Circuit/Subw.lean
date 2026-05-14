@@ -34,7 +34,7 @@ def subw_circuit_holds
     (bus_entry : OperationBusEntry FGL) : Prop :=
   rtypew_archetype_circuit_holds m r_main bus_entry OP_SUB_W
 
-theorem subw_compositional
+lemma subw_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : subw_circuit_holds m r_main bus_entry) :

@@ -175,7 +175,7 @@ lemma carry_chain_1_nat
 
     Combining with `cout_1.val ∈ {0,1}`, the `BitVec.toNat` form of the goal
     reduces to a modular-arithmetic statement that `omega` closes. -/
-theorem binary_add_chunks_eq_bv_add
+lemma binary_add_chunks_eq_bv_add
     (v : Valid_BinaryAdd C FGL FGL) (row : ℕ)
     (h_chain : core_every_row v row)
     (h_a_range : a_chunks_in_range v row)

@@ -48,7 +48,7 @@ def sra_circuit_holds
 
 /-- **Compositional SRA theorem.** Instantiation of the
     `ShiftArchetype` m32=0 archetype macro at `opcode_lit = OP_SRA`. -/
-theorem sra_compositional
+lemma sra_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : sra_circuit_holds m r_main bus_entry) :

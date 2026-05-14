@@ -71,7 +71,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     Internally calls `packed_lane_eq_of_read_xreg` once per
     register. No new axioms; pure composition of Step 1.7a + 1.7b
     infrastructure. -/
-theorem branch_input_bridges_of_read_xreg
+lemma branch_input_bridges_of_read_xreg
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rs1 rs2 : Fin 32) (r1_val r2_val : BitVec 64)
     (a_lo a_hi b_lo b_hi : FGL)
@@ -138,7 +138,7 @@ Anti-laundering metric:
 
     Trust footprint: pure composition of `transpile_LUI` (class
     #1) — no new axiom. -/
-theorem lui_discharge_full
+lemma lui_discharge_full
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (imm : BitVec 20)
     (h_circuit : ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc) :
@@ -194,7 +194,7 @@ theorem lui_discharge_full
 
     Trust footprint: pure composition of `transpile_JAL` (class
     #1) — no new axiom. -/
-theorem jal_discharge_full
+lemma jal_discharge_full
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_circuit : ZiskFv.Circuit.Jal.jal_circuit_holds m r_main next_pc) :
     m.jmp_offset2 r_main = 4 := by
@@ -212,7 +212,7 @@ theorem jal_discharge_full
 
     Trust footprint: pure composition of `transpile_JALR` (class
     #1) — no new axiom. -/
-theorem jalr_discharge_full
+lemma jalr_discharge_full
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_circuit : ZiskFv.Circuit.Jalr.jalr_circuit_holds m r_main next_pc) :
     m.jmp_offset2 r_main = 4 := by
@@ -252,7 +252,7 @@ Trust ledger: +1 axiom (`main_store_pc_emission_bundle`) in class #4.
 
     JAL's circuit mode pins `is_external_op = 0` and `op = OP_FLAG`,
     activating the bundle's `op_code = OP_FLAG` disjunct. -/
-theorem jal_discharge_lanes
+lemma jal_discharge_lanes
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (e_rd : Interaction.MemoryBusEntry FGL)
     (h_circuit : ZiskFv.Circuit.Jal.jal_circuit_holds m r_main next_pc)
@@ -270,7 +270,7 @@ theorem jal_discharge_lanes
 
     JALR's circuit mode pins `is_external_op = 0` and `op = OP_COPYB`,
     activating the bundle's `op_code = OP_COPYB` disjunct. -/
-theorem jalr_discharge_lanes
+lemma jalr_discharge_lanes
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (e_rd : Interaction.MemoryBusEntry FGL)
     (h_circuit : ZiskFv.Circuit.Jalr.jalr_circuit_holds m r_main next_pc)
@@ -297,7 +297,7 @@ theorem jalr_discharge_lanes
 
     Trust footprint: pure composition of `transpile_AUIPC` (class
     #1) — no new axiom. -/
-theorem auipc_offset_discharge
+lemma auipc_offset_discharge
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (imm : BitVec 20)
     (h_circuit :
@@ -325,7 +325,7 @@ theorem auipc_offset_discharge
     under LUI's `store_pc = 0` pin, the lo formula collapses to
     `memory_entry_lo e = c_0` and the hi formula to
     `memory_entry_hi e = c_1` — i.e. `register_write_lanes_match`. -/
-theorem lui_discharge_lanes
+lemma lui_discharge_lanes
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (e_rd : Interaction.MemoryBusEntry FGL)
     (h_circuit :
@@ -351,7 +351,7 @@ theorem lui_discharge_lanes
 
     AUIPC's circuit mode pins `is_external_op = 0` and `op = OP_FLAG`,
     activating the bundle's `op_code = OP_FLAG` disjunct. -/
-theorem auipc_discharge_lanes
+lemma auipc_discharge_lanes
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (e_rd : Interaction.MemoryBusEntry FGL)
     (h_circuit :

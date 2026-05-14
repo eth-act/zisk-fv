@@ -46,7 +46,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
     Wraps `PureSpec.execute_BEQ_pure_equiv` to expose the Sail chain at
     this module's export surface. -/
-theorem equiv_BEQ_sail
+lemma equiv_BEQ_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (beq_input : PureSpec.BeqInput)
     (imm : BitVec 13)

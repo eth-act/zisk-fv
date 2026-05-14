@@ -70,7 +70,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `equiv_LD` / `equiv_LBU` / `equiv_LHU` / `equiv_LWU` (and
     indirectly by `equiv_LB` / `equiv_LH` / `equiv_LW` after the
     sign-extension chain in `Circuit/SextLoadBridge.lean`). -/
-theorem load_discharge
+lemma load_discharge
     (main : Valid_Main C FGL FGL) (mem : ZiskFv.Airs.Mem.Valid_Mem C FGL FGL)
     (r_main : ℕ) (e : Interaction.MemoryBusEntry FGL)
     (h_main_emit : main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e
@@ -129,7 +129,7 @@ equiv currently consumes as separate parameters:
     Returns the seven-tuple of `equiv_<OP>` promises:
     `(h_main_emit_b, h_main_emit_c, h_ptr_match, h_rd_zero_iff,
       h_rd_idx, h_copy0, h_copy1)`. -/
-theorem load_discharge_full
+lemma load_discharge_full
     (main : Valid_Main C FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
@@ -164,7 +164,7 @@ theorem load_discharge_full
 
 /-- **Per-opcode load discharge — LD.** Synonym of
     `load_discharge_full`; named for downstream readability. -/
-theorem ld_discharge_full
+lemma ld_discharge_full
     (main : Valid_Main C FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
@@ -189,7 +189,7 @@ theorem ld_discharge_full
 
 /-- **Per-opcode load discharge — LBU.** Same shape as LD; the
     width is downstream-irrelevant for the Main-row contract. -/
-theorem lbu_discharge_full
+lemma lbu_discharge_full
     (main : Valid_Main C FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
@@ -213,7 +213,7 @@ theorem lbu_discharge_full
     h_active h_op_main h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
 
 /-- **Per-opcode load discharge — LHU.** Same shape as LBU. -/
-theorem lhu_discharge_full
+lemma lhu_discharge_full
     (main : Valid_Main C FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
@@ -237,7 +237,7 @@ theorem lhu_discharge_full
     h_active h_op_main h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
 
 /-- **Per-opcode load discharge — LWU.** Same shape as LBU. -/
-theorem lwu_discharge_full
+lemma lwu_discharge_full
     (main : Valid_Main C FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
@@ -277,7 +277,7 @@ Consumes `MemBridge.main_sext_load_emission_bundle` (class #4). -/
     / LW. Caller supplies the activation pins (transpile-derived in
     practice) and bus-shape pins; returns the lane / ptr / rd-routing
     bundle. -/
-theorem sext_load_discharge_full
+lemma sext_load_discharge_full
     (main : Valid_Main C FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
@@ -313,7 +313,7 @@ theorem sext_load_discharge_full
          h_rd_iff, h_rd_idx⟩
 
 /-- **Per-opcode signed-load discharge — LB.** -/
-theorem lb_discharge_full
+lemma lb_discharge_full
     (main : Valid_Main C FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
@@ -336,7 +336,7 @@ theorem lb_discharge_full
     h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
 
 /-- **Per-opcode signed-load discharge — LH.** -/
-theorem lh_discharge_full
+lemma lh_discharge_full
     (main : Valid_Main C FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
@@ -359,7 +359,7 @@ theorem lh_discharge_full
     h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
 
 /-- **Per-opcode signed-load discharge — LW.** -/
-theorem lw_discharge_full
+lemma lw_discharge_full
     (main : Valid_Main C FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
@@ -410,7 +410,7 @@ Caller obligations after this discharge collapse to:
     `h_a_lo/hi`, `h_b_lo/hi` parameters from a Sail register-read
     pair (via `Bridge.SailStateBridge.sail_to_rv64`'s materialization
     of the universal-state `transpile_SD` to the Sail state). -/
-theorem sd_discharge_full
+lemma sd_discharge_full
     (main : Valid_Main C FGL FGL)
     (r_main : ℕ)
     (e_st : Interaction.MemoryBusEntry FGL)
@@ -479,7 +479,7 @@ already-present `(k, v)` pair.
 
 /-- **SB-specific store discharge.** Returns `h_mem_eq` in the shape
     `equiv_SB` consumes (8-insert chain = 1-insert chain on `state.mem`). -/
-theorem sb_discharge_full
+lemma sb_discharge_full
     (main : Valid_Main C FGL FGL)
     (r_main : ℕ)
     (e_st : Interaction.MemoryBusEntry FGL)
@@ -559,7 +559,7 @@ theorem sb_discharge_full
   grind
 
 /-- **SH-specific store discharge.** Returns `h_mem_eq` for SH (2 bytes). -/
-theorem sh_discharge_full
+lemma sh_discharge_full
     (main : Valid_Main C FGL FGL)
     (r_main : ℕ)
     (e_st : Interaction.MemoryBusEntry FGL)
@@ -626,7 +626,7 @@ theorem sh_discharge_full
   grind
 
 /-- **SW-specific store discharge.** Returns `h_mem_eq` for SW (4 bytes). -/
-theorem sw_discharge_full
+lemma sw_discharge_full
     (main : Valid_Main C FGL FGL)
     (r_main : ℕ)
     (e_st : Interaction.MemoryBusEntry FGL)

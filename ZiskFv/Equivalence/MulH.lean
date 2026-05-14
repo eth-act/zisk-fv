@@ -48,7 +48,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     register readability and PC knowledge.
 
     Wraps `PureSpec.execute_MULH_mulh_pure_equiv`. -/
-theorem equiv_MULH_sail
+lemma equiv_MULH_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulh_input : PureSpec.MulhInput)
     (r1 r2 rd : regidx)

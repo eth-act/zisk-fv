@@ -57,7 +57,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     RV64 REM reduces to the pure-function block supplied by
     `PureSpec.execute_DIVREM_rem_pure`. Wraps
     `PureSpec.execute_DIVREM_rem_pure_equiv`. -/
-theorem equiv_REM_sail
+lemma equiv_REM_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rem_input : PureSpec.RemInput)
     (r1 r2 rd : regidx)

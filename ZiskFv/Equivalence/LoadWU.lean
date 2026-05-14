@@ -39,7 +39,7 @@ open ZiskFv.Circuit.LoadWU
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** Wraps `PureSpec.execute_LOADWU_pure_equiv`. -/
-theorem equiv_LWU_sail
+lemma equiv_LWU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lwu_input : PureSpec.LwuInput)
     (mstatus : RegisterType Register.mstatus)

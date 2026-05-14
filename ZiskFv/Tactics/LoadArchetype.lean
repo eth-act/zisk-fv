@@ -86,7 +86,7 @@ def load_archetype_copyb_circuit_holds
     the parametric `load_archetype_copyb_circuit_holds` form. LWU /
     LHU / LBU close via instantiation + a width-specific
     zeroing-of-high-bytes assumption on the memory-bus entry. -/
-theorem load_archetype_copyb_c_packed
+lemma load_archetype_copyb_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : load_archetype_copyb_circuit_holds m r_main next_pc entry) :

@@ -3,22 +3,22 @@ import ZiskFv.Equivalence.Compliance
 /-!
 # Compliance/Global.lean — Step 4.3 Phase 3 architectural validation
 
-This file lands the **global compliance theorem skeleton** on top of
-the 63 per-op `dispatch_<OP>` theorems in `Compliance.lean` (Phases 1
-+ 2).
+This file lands the **global compliance theorem**
+  theorem zisk_riscv_compliant_program_bus
+on top of the 63 per-op `dispatch_<OP>` theorems in `Compliance.lean`.
 
 ## The architectural finding (read this first)
 
-The 63 dispatcher signatures are genuinely heterogeneous:
+The 63 dispatcher signatures are genuinely heterogeneous :
 
 * They take different `PureSpec.<OP>Input` records (one per op).
-* They take different sets of provider-AIR validators (LUI: none;
-  ADD: BinaryAdd; LBU/LHU/LWU: Mem + MemAlignByte + MemAlignReadByte
+* They take different sets of provider-AIR validators (LUI : none;
+  ADD : BinaryAdd; LBU/LHU/LWU : Mem + MemAlignByte + MemAlignReadByte
   + MemAlign; etc).
-* Their *bus shapes* differ: branches end with `bus_effect exec_row
+* Their *bus shapes* differ : branches end with `bus_effect exec_row
   [] state`, LUI/AUIPC/JAL/JALR with `[e_rd]`, most arithmetic / mem
   with `[e0, e1, e2]`.
-* Their LHS conclusion forms differ: `execute_instruction (instruction
+* Their LHS conclusion forms differ : `execute_instruction (instruction
   …) state` vs. `(do; writeReg Register.nextPC; execute …) state`,
   the latter arising whenever a Sail wrapper unfolds to a writeReg
   prefix.
@@ -28,19 +28,19 @@ The 63 dispatcher signatures are genuinely heterogeneous:
 
 Consequently, there is *no* single uniform predicate that captures
 all 63 conclusions without case-splitting on the op-kind. The honest
-shape of the global theorem is therefore:
+shape of the global theorem is therefore :
 
 ```
 inductive OpEnvelope … where
-  | LUI  : <all dispatch_LUI inputs>  → OpEnvelope …
-  | ADD  : <all dispatch_ADD inputs>  → OpEnvelope …
-  | ...  -- 35 arms (one per `mainOpKind`); some arms further
+  | LUI : <all dispatch_LUI inputs> → OpEnvelope …
+  | ADD : <all dispatch_ADD inputs> → OpEnvelope …
+  | ... -- 35 arms (one per `mainOpKind`); some arms further
          -- discriminate on the R-vs-I split (ADD covers ADD/ADDI).
 ```
 
 Each arm bundles the per-dispatcher inputs, a `kind : mainOpKind`
 projection identifies the op, and a `exec_eq : Prop` projection
-states the dispatcher's conclusion. The global theorem then says:
+states the dispatcher's conclusion. The global theorem then says :
 
 ```
 theorem zisk_riscv_compliant_program_bus … :
@@ -55,7 +55,7 @@ union of the 63 wrappers' footprints (147 axioms today).
 ## This file's deliverable
 
 The **full global compliance theorem** over a 63-arm `OpEnvelope`,
-one constructor per RV64IM opcode in scope. Each arm:
+one constructor per RV64IM opcode in scope. Each arm :
 
 * Bundles the per-`dispatch_<OP>` inputs verbatim (modulo the
   shared `state, m, r_main`).
@@ -107,7 +107,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     happens at dispatch time, where the caller supplies operand
     witnesses (see `OpEnvelope` below).
 
-    This is a `Prop`-valued helper: it returns `some k` iff
+    This is a `Prop`-valued helper : it returns `some k` iff
     `m.op r_main = k.toFGL`. The companion lemma
     `decode_main_row_correct` shows that under the RV64IM scope
     assumption decoding always succeeds. -/
@@ -174,7 +174,7 @@ theorem decode_main_row_correct
 /-! ## The `OpEnvelope` sum type
 
 Bundles, per Zisk op-kind, the inputs the corresponding `dispatch_<OP>`
-theorem requires beyond `(state, m, r_main)`. Each arm's signature is
+lemma requires beyond `(state, m, r_main)`. Each arm's signature is
 verbatim from the dispatcher.
 
 This file lands seven representative arms covering the bus-shape
@@ -1189,7 +1189,7 @@ inductive OpEnvelope
         = (PureSpec.execute_STOREB_pure sb_input).nextPC)
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
   -- ============================ SH (store, Main-only) ===================
   | sh
     (sh_input : PureSpec.ShInput)
@@ -1214,7 +1214,7 @@ inductive OpEnvelope
         = (PureSpec.execute_STOREH_pure sh_input).nextPC)
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
   -- ============================ SW (store, Main-only) ===================
   | sw
     (sw_input : PureSpec.SwInput)
@@ -1239,7 +1239,7 @@ inductive OpEnvelope
         = (PureSpec.execute_STOREW_pure sw_input).nextPC)
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
   -- ============================ SD (store, Main-only) ===================
   | sd
     (sd_input : PureSpec.SdInput)
@@ -1263,7 +1263,7 @@ inductive OpEnvelope
         = (PureSpec.execute_STORED_pure sd_input).nextPC)
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
   -- ============================ LD (load doubleword) ====================
   | ld
     (ld_input : PureSpec.LdInput)
@@ -1288,7 +1288,7 @@ inductive OpEnvelope
         = (PureSpec.execute_LOADD_pure ld_input).nextPC)
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
   -- ============================ LBU =====================================
   | lbu
     (lbu_input : PureSpec.LbuInput)
@@ -1319,7 +1319,7 @@ inductive OpEnvelope
         = (PureSpec.execute_LOADBU_pure lbu_input).nextPC)
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
   -- ============================ LHU =====================================
   | lhu
     (lhu_input : PureSpec.LhuInput)
@@ -1350,7 +1350,7 @@ inductive OpEnvelope
         = (PureSpec.execute_LOADHU_pure lhu_input).nextPC)
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
   -- ============================ LWU =====================================
   | lwu
     (lwu_input : PureSpec.LwuInput)
@@ -1381,7 +1381,7 @@ inductive OpEnvelope
         = (PureSpec.execute_LOADWU_pure lwu_input).nextPC)
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
   -- ============================ LB (signed-byte load) ===================
   | lb
     (lb_input : PureSpec.LbInput)
@@ -1407,7 +1407,7 @@ inductive OpEnvelope
         = (PureSpec.execute_LOADB_pure lb_input).nextPC)
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
   -- ============================ LH ======================================
   | lh
     (lh_input : PureSpec.LhInput)
@@ -1433,7 +1433,7 @@ inductive OpEnvelope
         = (PureSpec.execute_LOADH_pure lh_input).nextPC)
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
   -- ============================ LW ======================================
   | lw
     (lw_input : PureSpec.LwInput)
@@ -1459,7 +1459,7 @@ inductive OpEnvelope
         = (PureSpec.execute_LOADW_pure lw_input).nextPC)
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
   -- ============================ MUL =====================================
   | mul
     (mul_input : PureSpec.MulInput) (r1 r2 rd : regidx)
@@ -1979,7 +1979,7 @@ variable
 
 /-- The op-kind this envelope corresponds to. -/
 def kind : OpEnvelope state m r_main → mainOpKind
-  | .beq ..  => .EQ      -- branches don't have a single mainOpKind arm;
+  | .beq .. => .EQ -- branches don't have a single mainOpKind arm;
                           -- but the dispatcher pins `m.op r_main` via
                           -- the wrapper rather than a kind hypothesis,
                           -- so we map all six branches to `.EQ` (Zisk
@@ -1989,68 +1989,68 @@ def kind : OpEnvelope state m r_main → mainOpKind
                           -- NOTE: this routing-only choice has no
                           -- soundness implication; the dispatcher's
                           -- conclusion does not depend on `kind`.
-  | .bne ..   => .EQ
-  | .blt ..   => .EQ
-  | .bge ..   => .EQ
-  | .bltu ..  => .EQ
-  | .bgeu ..  => .EQ
+  | .bne .. => .EQ
+  | .blt .. => .EQ
+  | .bge .. => .EQ
+  | .bltu .. => .EQ
+  | .bgeu .. => .EQ
   | .fence .. => .FLAG
-  | .lui ..   => .COPYB
+  | .lui .. => .COPYB
   | .auipc .. => .FLAG
-  | .jal ..   => .FLAG
-  | .jalr ..  => .COPYB
-  | .add ..   => .ADD
-  | .addi ..  => .ADD
-  | .addw ..  => .ADD_W
-  | .subw ..  => .SUB_W
+  | .jal .. => .FLAG
+  | .jalr .. => .COPYB
+  | .add .. => .ADD
+  | .addi .. => .ADD
+  | .addw .. => .ADD_W
+  | .subw .. => .SUB_W
   | .addiw .. => .ADD_W
-  | .sub ..   => .SUB
+  | .sub .. => .SUB
   | .and_op .. => .AND
-  | .or_op ..  => .OR
+  | .or_op .. => .OR
   | .xor_op .. => .XOR
-  | .slt ..    => .LT
-  | .sltu ..   => .LTU
-  | .andi ..   => .AND
-  | .ori ..    => .OR
-  | .xori ..   => .XOR
-  | .slti ..   => .LT
-  | .sltiu ..  => .LTU
-  | .sll ..    => .SLL
-  | .srl ..    => .SRL
-  | .sra ..    => .SRA
-  | .slli ..   => .SLL
-  | .srli ..   => .SRL
-  | .srai ..   => .SRA
-  | .sllw ..   => .SLL_W
-  | .srlw ..   => .SRL_W
-  | .sraw ..   => .SRA_W
-  | .slliw ..  => .SLL_W
-  | .srliw ..  => .SRL_W
-  | .sraiw ..  => .SRA_W
-  | .sb ..    => .COPYB
-  | .sh ..    => .COPYB
-  | .sw ..    => .COPYB
-  | .sd ..    => .COPYB
-  | .ld ..    => .COPYB
-  | .lbu ..   => .COPYB
-  | .lhu ..   => .COPYB
-  | .lwu ..   => .COPYB
-  | .lb ..    => .SIGNEXTEND_B
-  | .lh ..    => .SIGNEXTEND_H
-  | .lw ..    => .SIGNEXTEND_W
-  | .mul ..    => .MUL
-  | .mulh ..   => .MULH
-  | .mulhu ..  => .MULUH
+  | .slt .. => .LT
+  | .sltu .. => .LTU
+  | .andi .. => .AND
+  | .ori .. => .OR
+  | .xori .. => .XOR
+  | .slti .. => .LT
+  | .sltiu .. => .LTU
+  | .sll .. => .SLL
+  | .srl .. => .SRL
+  | .sra .. => .SRA
+  | .slli .. => .SLL
+  | .srli .. => .SRL
+  | .srai .. => .SRA
+  | .sllw .. => .SLL_W
+  | .srlw .. => .SRL_W
+  | .sraw .. => .SRA_W
+  | .slliw .. => .SLL_W
+  | .srliw .. => .SRL_W
+  | .sraiw .. => .SRA_W
+  | .sb .. => .COPYB
+  | .sh .. => .COPYB
+  | .sw .. => .COPYB
+  | .sd .. => .COPYB
+  | .ld .. => .COPYB
+  | .lbu .. => .COPYB
+  | .lhu .. => .COPYB
+  | .lwu .. => .COPYB
+  | .lb .. => .SIGNEXTEND_B
+  | .lh .. => .SIGNEXTEND_H
+  | .lw .. => .SIGNEXTEND_W
+  | .mul .. => .MUL
+  | .mulh .. => .MULH
+  | .mulhu .. => .MULUH
   | .mulhsu .. => .MULSUH
-  | .mulw ..   => .MUL_W
-  | .div ..    => .DIV
-  | .divu ..   => .DIVU
-  | .divw ..   => .DIV_W
-  | .divuw ..  => .DIVU_W
-  | .rem ..    => .REM
-  | .remu ..   => .REMU
-  | .remw ..   => .REM_W
-  | .remuw ..  => .REMU_W
+  | .mulw .. => .MUL_W
+  | .div .. => .DIV
+  | .divu .. => .DIVU
+  | .divw .. => .DIV_W
+  | .divuw .. => .DIVU_W
+  | .rem .. => .REM
+  | .remu .. => .REMU
+  | .remw .. => .REM_W
+  | .remuw .. => .REMU_W
 
 /-- The dispatcher's conclusion as a `Prop`. -/
 def exec_eq : OpEnvelope state m r_main → Prop

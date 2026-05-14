@@ -50,7 +50,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- **Sail-level companion.** `execute_instruction` on an RV64 ADDI
     reduces to `PureSpec.execute_ITYPE_addi_pure`. Wraps
     `PureSpec.execute_ITYPE_addi_pure_equiv`. -/
-theorem equiv_ADDI_sail
+lemma equiv_ADDI_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx) (imm : BitVec 12)

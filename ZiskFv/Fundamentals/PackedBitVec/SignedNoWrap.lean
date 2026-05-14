@@ -224,7 +224,7 @@ private lemma to_bits_truncate128_extractLsb_64_64_int (x : ℤ) :
     Parallel to `execute_MUL_pure_hi_eq` (`.MULHU`) in
     `Extensions.lean`, but with `BitVec.toInt` operands instead of
     `Sail.BitVec.toNatInt`. -/
-theorem execute_MUL_pure_mulh_eq (op1 op2 : BitVec 64) :
+lemma execute_MUL_pure_mulh_eq (op1 op2 : BitVec 64) :
     execute_MUL_pure op1 op2 .MULH
       = BitVec.ofInt 64 ((op1.toInt * op2.toInt) / 2 ^ 64) := by
   simp only [execute_MUL_pure, Sail.BitVec.extractLsb, BitVec.extractLsb]
@@ -236,7 +236,7 @@ theorem execute_MUL_pure_mulh_eq (op1 op2 : BitVec 64) :
 /-- **`execute_MUL_pure .MULHSU` as `BitVec.ofInt 64`.** High-half
     MULHSU (signed op1 × unsigned op2) result equals
     `BitVec.ofInt 64 ((op1.toInt * op2.toNat) / 2^64)`. -/
-theorem execute_MUL_pure_mulhsu_eq (op1 op2 : BitVec 64) :
+lemma execute_MUL_pure_mulhsu_eq (op1 op2 : BitVec 64) :
     execute_MUL_pure op1 op2 .MULHSU
       = BitVec.ofInt 64 ((op1.toInt * (op2.toNat : ℤ)) / 2 ^ 64) := by
   simp only [execute_MUL_pure, Sail.BitVec.toNatInt, Sail.BitVec.extractLsb,
@@ -260,25 +260,25 @@ identity uses `(na*nb - np) * 2^128` to absorb the difference.
     arithmetic returns the exact value; the hardware-level overflow back
     to `-(2^63)` is field-encoded via `(na*nb - np) * 2^128`. Alias of
     `Signed.int_tdiv_overflow_case`, named for downstream consumers. -/
-theorem int_tdiv_overflow_full :
+lemma int_tdiv_overflow_full :
     Int.tdiv (-(2 : ℤ)^63) (-(1 : ℤ)) = (2 : ℤ)^63 :=
   int_tdiv_overflow_case
 
 /-- **32-bit `INT_MIN / -1`.** `Int.tdiv (-(2^31)) (-1) = 2^31`. The
     W-variant (DIVW / REMW) boundary case, mirroring the full 64-bit
     `int_tdiv_overflow_full`. -/
-theorem int_tdiv_overflow_w :
+lemma int_tdiv_overflow_w :
     Int.tdiv (-(2 : ℤ)^31) (-(1 : ℤ)) = (2 : ℤ)^31 := by native_decide
 
 /-- **`Int.tmod` at INT_MIN / -1.** Lean's `Int.tmod` gives `0` at the
     overflow boundary (since the exact quotient is mathematically clean,
     even if hardware overflows). Used by REM/REMW callers to discharge
     the `r2 = -1 ∧ r1 = INT_MIN` branch. -/
-theorem int_tmod_overflow_full :
+lemma int_tmod_overflow_full :
     Int.tmod (-(2 : ℤ)^63) (-(1 : ℤ)) = 0 := by native_decide
 
 /-- **32-bit `Int.tmod` at INT_MIN / -1.** The W-variant analogue. -/
-theorem int_tmod_overflow_w :
+lemma int_tmod_overflow_w :
     Int.tmod (-(2 : ℤ)^31) (-(1 : ℤ)) = 0 := by native_decide
 
 /-! ## Part 4 — 32-bit BitVec.toInt sign cases (W-variants)
@@ -360,7 +360,7 @@ Below we factor the four-quadrant case analysis.
     when `(na, nb) = (1, 1)` and the result genuinely fits in 64 signed
     bits (overflow case), `np = 0` while `na*nb = 1`, contributing
     `+2^128` exactly cancelling the overflow. -/
-theorem signed_mul_int_quadrant_identity
+lemma signed_mul_int_quadrant_identity
     (a_abs b_abs lo hi : ℤ)
     (na nb np : ℤ)
     (_hna : na = 0 ∨ na = 1) (_hnb : nb = 0 ∨ nb = 1)
@@ -405,7 +405,7 @@ The shape mirrors `Extensions.lean`'s `mul_lo_bv64_of_byte_sum` /
     Caller pattern: the sign-witness arithmetic gives an ℤ
     identity. Convert to the modular ℕ form via
     `(Int.toNat ∘ Int.emod ∘ ...)` and feed into `h_byte_sum`. -/
-theorem mulh_bv64_of_byte_sum
+lemma mulh_bv64_of_byte_sum
     (op1 op2 : BitVec 64)
     (x0 x1 x2 x3 x4 x5 x6 x7 : FGL)
     (h0 : x0.val < 256) (h1 : x1.val < 256) (h2 : x2.val < 256) (h3 : x3.val < 256)
@@ -426,7 +426,7 @@ theorem mulh_bv64_of_byte_sum
 
 /-- **MULHSU high-half byte-sum bridge.** Same shape as
     `mulh_bv64_of_byte_sum` for the mixed signed/unsigned MULHSU. -/
-theorem mulhsu_bv64_of_byte_sum
+lemma mulhsu_bv64_of_byte_sum
     (op1 op2 : BitVec 64)
     (x0 x1 x2 x3 x4 x5 x6 x7 : FGL)
     (h0 : x0.val < 256) (h1 : x1.val < 256) (h2 : x2.val < 256) (h3 : x3.val < 256)
@@ -461,7 +461,7 @@ quadrant case analysis + INT_MIN / -1 overflow) is the caller's job.
     equals the DIV quotient. Same shape as the existing `h_byte_sum`
     parameter on `h_rd_val_mdrs_div`; provided here for symmetry with
     the MUL bridges. -/
-theorem div_bv64_of_byte_sum_signed
+lemma div_bv64_of_byte_sum_signed
     (op1 op2 : BitVec 64)
     (x0 x1 x2 x3 x4 x5 x6 x7 : FGL)
     (h0 : x0.val < 256) (h1 : x1.val < 256) (h2 : x2.val < 256) (h3 : x3.val < 256)
@@ -481,7 +481,7 @@ theorem div_bv64_of_byte_sum_signed
 
 /-- **REM-signed byte-sum bridge.** Companion to `div_bv64_of_byte_sum_signed`
     for the remainder. -/
-theorem rem_bv64_of_byte_sum_signed
+lemma rem_bv64_of_byte_sum_signed
     (op1 op2 : BitVec 64)
     (x0 x1 x2 x3 x4 x5 x6 x7 : FGL)
     (h0 : x0.val < 256) (h1 : x1.val < 256) (h2 : x2.val < 256) (h3 : x3.val < 256)
@@ -514,7 +514,7 @@ share the same byte-decomposition step.
     equals `result.toNat`, the assembled BitVec equals `result`. The
     most general form — works for any `BitVec 64` `result`, including
     the various `let`-form W-variant pure-spec outputs. -/
-theorem bv64_of_byte_sum_generic
+lemma bv64_of_byte_sum_generic
     (result : BitVec 64)
     (x0 x1 x2 x3 x4 x5 x6 x7 : FGL)
     (h0 : x0.val < 256) (h1 : x1.val < 256) (h2 : x2.val < 256) (h3 : x3.val < 256)
@@ -574,7 +574,7 @@ Given `0 ≤ C < 2^64`, Int.ediv yields directly:
 
     Pure ring identity — no case split. The booleanity hypotheses on
     `na, nb` are absorbed by the XOR relation. -/
-theorem signed_mul_chunks_to_abs_product
+lemma signed_mul_chunks_to_abs_product
     (A B C D na nb np : ℤ)
     (h_np_xor : np = na + nb - 2 * na * nb)
     (h_chunk :
@@ -602,7 +602,7 @@ theorem signed_mul_chunks_to_abs_product
     and `C` (the low-half nat) are directly readable from the AIR's
     output chunks. Combined with `0 ≤ C < 2^64`, the high-half
     extraction via `Int.ediv` is one line. -/
-theorem signed_mul_int_product_eq
+lemma signed_mul_int_product_eq
     (A B C D na nb np r1_int r2_int : ℤ)
     (h_na_bool : na = 0 ∨ na = 1)
     (h_nb_bool : nb = 0 ∨ nb = 1)
@@ -632,7 +632,7 @@ theorem signed_mul_int_product_eq
 
     Used directly by `fgl_mul_signed_to_bv64_hi` to bridge to the
     `BitVec.ofInt 64`-form expected by `execute_MUL_pure_mulh_eq`. -/
-theorem signed_mul_high_half_eq
+lemma signed_mul_high_half_eq
     (r1_int r2_int C D np : ℤ)
     (h_C_lb : 0 ≤ C) (h_C_ub : C < 2^64)
     (h_prod : r1_int * r2_int = C + (D - np * 2^64) * 2^64) :
@@ -694,7 +694,7 @@ lemma bv64_ofInt_eq_ofNat_of_nonneg_lt (D : ℤ)
     2. `A = r1.toNat`, `B = r2.toNat` (with `na = r1.msb.toNat`, etc.).
     3. `C, D` are the unsigned ℤ values of `packed4 c_chunks`, `packed4 d_chunks`.
     4. The chunk identity comes from A.0 + AIR sign-witness pinning. -/
-theorem fgl_mul_signed_to_bv64_hi
+lemma fgl_mul_signed_to_bv64_hi
     (r1 r2 : BitVec 64)
     (A B C D na nb np : ℤ)
     (h_na_bool : na = 0 ∨ na = 1)
@@ -729,7 +729,7 @@ theorem fgl_mul_signed_to_bv64_hi
     as MULH (same AIR), but with `nb = 0` substituted.
 
     Concludes `BitVec.ofNat 64 D.toNat = execute_MUL_pure r1 r2 .MULHSU`. -/
-theorem fgl_mul_signed_unsigned_to_bv64_hi
+lemma fgl_mul_signed_unsigned_to_bv64_hi
     (r1 r2 : BitVec 64)
     (A B C D na : ℤ)
     (h_na_bool : na = 0 ∨ na = 1)
@@ -789,7 +789,7 @@ boundary case) + the operand sign-witness machinery. -/
     before booleanity. The clean statement after booleanity collapse
     is `a_abs * b_abs + d_abs = c_abs`, deferred to Layer 4 (which
     has the AIR-side booleanity on `na, nb, nr`). -/
-theorem fgl_div_signed_chunks_to_abs
+lemma fgl_div_signed_chunks_to_abs
     (A B C D na nb np nr : ℤ)
     (h_np_xor : np = na + nb - 2 * na * nb)
     (h_chunk :
@@ -906,7 +906,7 @@ private lemma bv32_ofInt_eq_ofNat_of_nonneg_lt (D : ℤ)
     The 32-bit BitVec congruence collapses all higher-order terms
     (`A_32 * 2^32`, `B_32 * 2^32`, `na*nb*2^64`, `(1-2*np)*np*2^32`)
     which are each divisible by 2^32. -/
-theorem signed_mulw_int_product_mod_eq
+lemma signed_mulw_int_product_mod_eq
     (A_32 B_32 C_32 na nb np r1_int r2_int : ℤ)
     (h_na_bool : na = 0 ∨ na = 1)
     (h_nb_bool : nb = 0 ∨ nb = 1)
@@ -970,7 +970,7 @@ theorem signed_mulw_int_product_mod_eq
     the RHS is definitionally `PureSpec.execute_MULW_pure_val r1 r2` —
     the per-opcode equiv proof composes this wrapper with that
     1-line bridge to reach the Sail-side spec form. -/
-theorem fgl_mul_w_signed_to_bv64
+lemma fgl_mul_w_signed_to_bv64
     (r1 r2 : BitVec 64) (A_32 B_32 C_32 na nb np : ℤ)
     (h_na_bool : na = 0 ∨ na = 1)
     (h_nb_bool : nb = 0 ∨ nb = 1)
@@ -1022,7 +1022,7 @@ sign-extended equality. -/
     BV64 sign-extended quotient form matches the BV64 sign-extended
     output of `PureSpec.execute_DIVREM_divw_pure`'s 3-branch
     dispatch. -/
-theorem fgl_div_w_signed_to_bv64
+lemma fgl_div_w_signed_to_bv64
     (r1 r2 : BitVec 64) (q : ℤ)
     (h_r2_lo32_ne : Sail.BitVec.extractLsb r2 31 0 ≠ 0#32)
     (h_no_overflow :
@@ -1045,7 +1045,7 @@ theorem fgl_div_w_signed_to_bv64
 /-- **Signed-REMW final BV64 wrapper (non-boundary case).**
 
     Companion to `fgl_div_w_signed_to_bv64` for the remainder. -/
-theorem fgl_rem_w_signed_to_bv64
+lemma fgl_rem_w_signed_to_bv64
     (r1 r2 : BitVec 64) (r_rem : ℤ)
     (h_r2_lo32_ne : Sail.BitVec.extractLsb r2 31 0 ≠ 0#32)
     (h_no_overflow :
@@ -1091,7 +1091,7 @@ The wrapper is simpler than the signed counterpart: only the
     The wrapper handles only the non-zero divisor branch; the `r2 =
     0` case is the per-opcode dispatch (using `b = 0` from the
     arith table). -/
-theorem fgl_div_w_unsigned_to_bv64
+lemma fgl_div_w_unsigned_to_bv64
     (r1 r2 : BitVec 64) (q_nat r_nat : ℕ)
     (h_r2_ne : (Sail.BitVec.extractLsb r2 31 0).toNat ≠ 0)
     (h_r_lt_b : r_nat < (Sail.BitVec.extractLsb r2 31 0).toNat)
@@ -1124,7 +1124,7 @@ theorem fgl_div_w_unsigned_to_bv64
 /-- **Unsigned-REMW final BV64 wrapper (non-zero divisor).**
 
     Companion to `fgl_div_w_unsigned_to_bv64` for the remainder. -/
-theorem fgl_rem_w_unsigned_to_bv64
+lemma fgl_rem_w_unsigned_to_bv64
     (r1 r2 : BitVec 64) (q_nat r_nat : ℕ)
     (h_r2_ne : (Sail.BitVec.extractLsb r2 31 0).toNat ≠ 0)
     (h_r_lt_b : r_nat < (Sail.BitVec.extractLsb r2 31 0).toNat)

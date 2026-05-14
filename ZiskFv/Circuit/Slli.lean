@@ -55,7 +55,7 @@ def slli_circuit_holds
 /-- **Compositional SLLI theorem.** Instantiation of the
     `ShiftArchetype` m32=0 archetype macro at `opcode_lit = OP_SLL`
     (same literal as SLL). -/
-theorem slli_compositional
+lemma slli_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : slli_circuit_holds m r_main bus_entry) :

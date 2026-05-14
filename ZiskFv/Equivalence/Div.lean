@@ -55,7 +55,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     RV64 DIV reduces to the pure-function block supplied by
     `PureSpec.execute_DIVREM_div_pure`. Wraps
     `PureSpec.execute_DIVREM_div_pure_equiv`. -/
-theorem equiv_DIV_sail
+lemma equiv_DIV_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (div_input : PureSpec.DivInput)
     (r1 r2 rd : regidx)

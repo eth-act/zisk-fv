@@ -54,7 +54,7 @@ def divu_circuit_holds
     packed quotient (primary output) under the DIVU circuit-holds
     predicate. Direct instantiation of `arith_archetype_div_bus_match`
     at `opcode_lit = OP_DIVU`. -/
-theorem divu_compositional
+lemma divu_compositional
     (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
     (r_main r_arith : ℕ)
     (h : divu_circuit_holds m v r_main r_arith) :

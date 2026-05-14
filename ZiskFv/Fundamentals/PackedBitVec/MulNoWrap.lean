@@ -113,7 +113,7 @@ well-behaved, so the carries simply cancel out.  The caller will
 supply range bounds when lifting from FGL via
 `NoWrap.fgl_eq_to_nat_eq` per chunk, but at this purely-algebraic
 layer they're irrelevant. -/
-theorem mul_unsigned_packed_of_chunks
+lemma mul_unsigned_packed_of_chunks
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : ℕ)
     (hC31 : a₀ * b₀ = c₀ + cy₀ * 65536)
@@ -196,7 +196,7 @@ The carry-out tail (high 4 chunks) collapses to zero because the
 DIV chain's residual is zero — the constraints witness that the
 overflow chunks of `a*b` are absorbed into the chain's terminating
 `cy₆ = 0`. -/
-theorem div_unsigned_packed_of_chunks
+lemma div_unsigned_packed_of_chunks
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : ℕ)
     (hC31 : a₀ * b₀ + d₀ = c₀ + cy₀ * 65536)
@@ -248,7 +248,7 @@ extraction. -/
 
 Given the packed ℕ identity and chunk bounds on `c[]` (forcing
 `c_nat < 2^64`), conclude that `c_nat = (a_nat * b_nat) % 2^64`. -/
-theorem fgl_mul_unsigned_to_bv64_lo
+lemma fgl_mul_unsigned_to_bv64_lo
     {c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ a_nat b_nat : ℕ}
     (h_c0 : c₀ < 65536) (h_c1 : c₁ < 65536)
     (h_c2 : c₂ < 65536) (h_c3 : c₃ < 65536)
@@ -266,7 +266,7 @@ theorem fgl_mul_unsigned_to_bv64_lo
 
 Given the packed ℕ identity and chunk bounds on `c[]` and `d[]`,
 conclude that `d_nat = (a_nat * b_nat) / 2^64`. -/
-theorem fgl_mul_unsigned_to_bv64_hi
+lemma fgl_mul_unsigned_to_bv64_hi
     {c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ a_nat b_nat : ℕ}
     (h_c0 : c₀ < 65536) (h_c1 : c₁ < 65536)
     (h_c2 : c₂ < 65536) (h_c3 : c₃ < 65536)
@@ -293,7 +293,7 @@ uniqueness pins `c / b = a` and `c % b = d`. -/
 Given `a*b + d = c` (packed) with `d_nat < b_nat` (the remainder
 range bound) and `b_nat ≠ 0` (divisor non-zero), conclude
 `c_nat / b_nat = a_nat`. -/
-theorem fgl_div_unsigned_to_bv64
+lemma fgl_div_unsigned_to_bv64
     {a_nat b_nat c_nat d_nat : ℕ}
     (h_b_ne : b_nat ≠ 0)
     (h_d_lt_b : d_nat < b_nat)
@@ -309,7 +309,7 @@ theorem fgl_div_unsigned_to_bv64
 
 Given `a*b + d = c` (packed) with `d_nat < b_nat` and `b_nat ≠ 0`,
 conclude `c_nat % b_nat = d_nat`. -/
-theorem fgl_rem_unsigned_to_bv64
+lemma fgl_rem_unsigned_to_bv64
     {a_nat b_nat c_nat d_nat : ℕ}
     (_h_b_ne : b_nat ≠ 0)
     (h_d_lt_b : d_nat < b_nat)
@@ -492,7 +492,7 @@ is enough to keep each chunk equation's two sides bounded by
 All comfortably below `GL_prime ≈ 2^64`, so per-chunk
 `fgl_chunk_lift_*` lifts directly.  This wrapper composes those 8
 lifts with `mul_unsigned_packed_of_chunks`. -/
-theorem fgl_mul_unsigned_chunks_to_nat_identity
+lemma fgl_mul_unsigned_chunks_to_nat_identity
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)

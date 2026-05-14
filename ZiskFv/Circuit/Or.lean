@@ -33,7 +33,7 @@ def or_circuit_holds
     (bus_entry : OperationBusEntry FGL) : Prop :=
   alu_rtype_archetype_circuit_holds m r_main bus_entry OP_OR
 
-theorem or_compositional
+lemma or_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : or_circuit_holds m r_main bus_entry) :

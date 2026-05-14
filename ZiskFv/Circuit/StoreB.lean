@@ -83,7 +83,7 @@ lemma memory_entry_toField_of_high_zero_8
     narrowed to the 1-byte width. The proof routes through the store
     archetype theorem `store_archetype_copyb_c_packed` (validating the
     macro) and then applies `memory_entry_toField_of_high_zero_8`. -/
-theorem store_b_compositional
+lemma store_b_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h_circuit : store_archetype_copyb_circuit_holds m r_main next_pc entry)
@@ -98,7 +98,7 @@ theorem store_b_compositional
     entry`. With the high-byte zeroing witness the RHS equals
     `memory_entry_lo_8 entry`, but we expose the general form too so SB
     composes uniformly with SD/SW/SH at the equivalence layer. -/
-theorem store_b_compositional_general
+lemma store_b_compositional_general
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h_circuit : store_archetype_copyb_circuit_holds m r_main next_pc entry) :
@@ -109,7 +109,7 @@ theorem store_b_compositional_general
     `store_h_next_pc_concrete` / `store_w_next_pc_concrete` — the
     archetype's `j(4, 4)` yields `next_pc = pc + 4` for all stores
     regardless of width. -/
-theorem store_b_next_pc_concrete
+lemma store_b_next_pc_concrete
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h_circuit : store_archetype_copyb_circuit_holds m r_main next_pc entry)

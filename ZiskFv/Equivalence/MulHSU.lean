@@ -45,7 +45,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 MULHSU (signed × unsigned, High half) reduces to the pure-
     function block supplied by `PureSpec.execute_MULH_mulhsu_pure`. -/
-theorem equiv_MULHSU_sail
+lemma equiv_MULHSU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhsu_input : PureSpec.MulhsuInput)
     (r1 r2 rd : regidx)

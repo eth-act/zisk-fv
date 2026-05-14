@@ -57,7 +57,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- **Sail-level companion.** `execute_instruction` on an RV64 ADDW
     reduces to `PureSpec.execute_RTYPE_addw_pure`. Wraps
     `PureSpec.execute_RTYPE_addw_pure_equiv`. -/
-theorem equiv_ADDW_sail
+lemma equiv_ADDW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addw_input : PureSpec.AddwInput)
     (r1 r2 rd : regidx)

@@ -88,7 +88,7 @@ def branch_archetype_circuit_holds
     `Circuit.BranchEqual.branch_eq_compositional` but parametric over
     the Zisk opcode literal. Proves the flag-dispatched next-pc
     formula from the branch-subset constraints + mode witnesses. -/
-theorem branch_archetype_pc_dispatch
+lemma branch_archetype_pc_dispatch
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL) (opcode_lit : FGL)
     (h : branch_archetype_circuit_holds m r_main next_pc opcode_lit) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main
@@ -99,7 +99,7 @@ theorem branch_archetype_pc_dispatch
   exact pc_handshake_branch m r_main next_pc h_set_pc h_handshake
 
 /-- **Archetype taken case.** -/
-theorem branch_archetype_taken
+lemma branch_archetype_taken
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL) (opcode_lit : FGL)
     (h : branch_archetype_circuit_holds m r_main next_pc opcode_lit)
     (h_flag : m.flag r_main = 1) :
@@ -109,7 +109,7 @@ theorem branch_archetype_taken
   linear_combination this
 
 /-- **Archetype not-taken case.** -/
-theorem branch_archetype_not_taken
+lemma branch_archetype_not_taken
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL) (opcode_lit : FGL)
     (h : branch_archetype_circuit_holds m r_main next_pc opcode_lit)
     (h_flag : m.flag r_main = 0) :

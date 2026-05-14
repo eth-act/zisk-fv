@@ -49,7 +49,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     the `j1/j2` assignment relative to JAL's `j(imm, 4)`. The PC
     handshake's `flag * (jmp_offset1 - jmp_offset2)` term cancels the
     `jmp_offset2` contribution, leaving `pc + jmp_offset1 = pc + 4`. -/
-theorem auipc_pc_advance
+lemma auipc_pc_advance
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : auipc_archetype_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset1 r_main :=
@@ -57,7 +57,7 @@ theorem auipc_pc_advance
 
 /-- **Compositional AUIPC theorem — rd low lane.** The rd-write low
     lane (`store_value[0]`) equals `pc + jmp_offset2 = pc + imm`. -/
-theorem auipc_store_value_lo
+lemma auipc_store_value_lo
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : auipc_archetype_circuit_holds m r_main next_pc) :
     m.store_pc r_main *
@@ -72,7 +72,7 @@ theorem auipc_store_value_lo
     carried separately by the store-PC mechanics in the downstream
     memory-bus emission (high lane is the pc-high lane, not a direct
     column, for AUIPC). -/
-theorem auipc_store_value_hi
+lemma auipc_store_value_hi
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : auipc_archetype_circuit_holds m r_main next_pc) :
     (1 - m.store_pc r_main) * m.c_1 r_main = 0 :=
@@ -115,7 +115,7 @@ PC-plus-offset Sail sum. -/
 
     The strict form matches `JumpUType.lean`'s lo-half input
     directly. -/
-theorem auipc_store_value_lo_bv
+lemma auipc_store_value_lo_bv
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (PC offset_bv : BitVec 64) (e : MemoryBusEntry FGL)
     (h_circuit : auipc_archetype_circuit_holds m r_main next_pc)
@@ -150,7 +150,7 @@ theorem auipc_store_value_lo_bv
     This upgrades the existing `auipc_store_value_hi` (which proves
     only the gate-zero identity `(1 - store_pc) * c_1 = 0`) into the
     substantive bus-emission bridge. -/
-theorem auipc_store_value_hi_bv
+lemma auipc_store_value_hi_bv
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (PC offset_bv : BitVec 64) (e : MemoryBusEntry FGL)
     (h_circuit : auipc_archetype_circuit_holds m r_main next_pc)

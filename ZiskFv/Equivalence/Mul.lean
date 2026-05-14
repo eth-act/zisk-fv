@@ -53,7 +53,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     and PC knowledge.
 
     Wraps `PureSpec.execute_MULH_mul_pure_equiv`. -/
-theorem equiv_MUL_sail
+lemma equiv_MUL_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mul_input : PureSpec.MulInput)
     (r1 r2 rd : regidx)

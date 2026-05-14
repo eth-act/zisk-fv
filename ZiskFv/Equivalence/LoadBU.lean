@@ -36,7 +36,7 @@ open ZiskFv.Circuit.LoadBU
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-theorem equiv_LBU_sail
+lemma equiv_LBU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lbu_input : PureSpec.LbuInput)
     (mstatus : RegisterType Register.mstatus)

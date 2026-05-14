@@ -58,7 +58,7 @@ def srlw_circuit_holds
     Under the SRLW-mode Main constraints, the secondary SM's bus entry
     carries zero high lanes — the `(1 - m32) * a[1]` / `(1 - m32) * b[1]`
     PIL emission collapses under `m32 = 1`. -/
-theorem srlw_compositional
+lemma srlw_compositional
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : srlw_circuit_holds m r_main bus_entry) :

@@ -53,7 +53,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** Wraps
     `PureSpec.execute_SHIFTIOP_slli_pure_equiv`. -/
-theorem equiv_SLLI_sail
+lemma equiv_SLLI_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slli_input : PureSpec.SlliInput)
     (r1 rd : regidx) (shamt : BitVec 6)

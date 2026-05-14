@@ -86,7 +86,7 @@ def jal_circuit_holds
     Composed with `transpile_JAL` (which pins `jmp_offset1 = imm`), this
     says JAL advances PC to `pc + imm`, consistent with the RISC-V
     unconditional-jump semantics. -/
-theorem jal_pc_advance
+lemma jal_pc_advance
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jal_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset1 r_main := by
@@ -104,7 +104,7 @@ theorem jal_pc_advance
     `is_external_op = 0, op = 0`) evaluates to `pc + jmp_offset2`.
     With `transpile_JAL` pinning `jmp_offset2 = 4`, this is the
     `pc + 4` return-address value written to rd. -/
-theorem jal_store_value
+lemma jal_store_value
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jal_circuit_holds m r_main next_pc) :
     m.store_pc r_main * (m.pc r_main + m.jmp_offset2 r_main - m.c_0 r_main)
@@ -138,7 +138,7 @@ theorem jal_store_value
     (`JumpUType.lean`'s lo-half input) directly. The
     `h_lo_bound : (m.pc + 4).val < 2^32` hypothesis is realistic for
     ELF-loaded ZisK programs (ROM `pc : bits(32)` invariant). -/
-theorem jal_store_value_lo_bv
+lemma jal_store_value_lo_bv
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (PC : BitVec 64) (e : MemoryBusEntry FGL)
     (h_circuit : jal_circuit_holds m r_main next_pc)
@@ -179,7 +179,7 @@ theorem jal_store_value_lo_bv
     programs).
 
     Plugged into JumpUType's hi-entry input by the equivalence layer. -/
-theorem jal_store_value_hi_bv
+lemma jal_store_value_hi_bv
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (PC : BitVec 64) (e : MemoryBusEntry FGL)
     (h_circuit : jal_circuit_holds m r_main next_pc)
