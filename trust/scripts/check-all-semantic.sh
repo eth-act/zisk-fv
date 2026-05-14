@@ -22,8 +22,9 @@ run() {
   echo
 }
 
-run "1/2 axiom-deps baseline (V2)"      "$dir/check-axiom-deps.sh"
-run "2/2 forbidden types (V2)"          "$dir/check-no-output-eq-v2.sh"
+run "1/3 axiom-deps baseline (V2)"       "$dir/check-axiom-deps.sh"
+run "2/3 forbidden types (V2)"           "$dir/check-no-output-eq-v2.sh"
+run "3/3 closure vs baseline-axioms (V2)" "$dir/check-closure-vs-baseline.sh"
 
 if [ $overall -eq 0 ]; then
   echo "trust-gate (V2 semantic): ALL CHECKS PASSED."

@@ -128,6 +128,74 @@ def cmdPrintReachable (env : Environment) (path : String) : IO UInt32 := do
     IO.println n.toString
   return 0
 
+/-- Parse a `trust/baseline-axioms.txt` line. The file is whitespace-
+separated columns: `<hash>  <file>:<line>  <kind>  <name>`. We only
+need the last column (the unqualified axiom name). Lines starting
+with `#` and blank lines are skipped. -/
+def loadBaselineAxioms (path : System.FilePath) : IO (Array String) := do
+  let content ← IO.FS.readFile path
+  let mut out : Array String := #[]
+  for raw in content.splitOn "\n" do
+    let line := raw.trim
+    if line.isEmpty || line.startsWith "#" then continue
+    -- Take the last whitespace-separated token.
+    let parts := line.splitToList (·.isWhitespace) |>.filter (!·.isEmpty)
+    if let some last := parts.getLast? then
+      out := out.push last
+  return out
+
+/-- Subcommand: check that the project-axiom closure of
+`zisk_riscv_compliant_program_bus` exactly matches the unqualified
+names in `trust/baseline-axioms.txt`. Catches the kind of drift that
+the per-theorem `equiv_<OP>` axiom-dep baseline cannot see — i.e.,
+axioms that survive in the trust ledger but are no longer reachable
+from the uber-theorem (dead trust). -/
+def cmdCheckClosureVsBaseline (env : Environment) (path : String)
+    (theoremName : Name) : IO UInt32 := do
+  if (env.find? theoremName).isNone then
+    IO.eprintln s!"trust-gate: unknown const {theoremName}"
+    return 1
+  -- Project-axiom closure (qualified). Strip to last component to
+  -- match the baseline format.
+  let depsQualified := AxiomClosure.axiomDepsForTheorem env theoremName
+  let closureLast : Array String :=
+    depsQualified.map (fun n => n.componentsRev.head!.toString)
+  let baselineLast ← loadBaselineAxioms path
+  let closureSet : Std.HashSet String := closureLast.foldl (·.insert ·) {}
+  let baselineSet : Std.HashSet String := baselineLast.foldl (·.insert ·) {}
+  let mut missingFromBaseline : Array String := #[]
+  let mut missingFromClosure : Array String := #[]
+  for n in closureLast do
+    if !baselineSet.contains n then
+      missingFromBaseline := missingFromBaseline.push n
+  for n in baselineLast do
+    if !closureSet.contains n then
+      missingFromClosure := missingFromClosure.push n
+  let missingFromBaselineSorted := missingFromBaseline.qsort (· < ·)
+  let missingFromClosureSorted := missingFromClosure.qsort (· < ·)
+  if missingFromBaselineSorted.isEmpty && missingFromClosureSorted.isEmpty then
+    IO.println s!"trust-gate (V2): uber-theorem axiom closure matches baseline-axioms.txt ({closureLast.size} names)."
+    return 0
+  IO.eprintln "trust-gate (V2): uber-theorem axiom closure DIVERGES from baseline-axioms.txt."
+  IO.eprintln s!"  Theorem:   {theoremName}"
+  IO.eprintln s!"  Baseline:  {path}"
+  IO.eprintln s!"  Closure:   {closureLast.size} names"
+  IO.eprintln s!"  Baseline:  {baselineLast.size} names"
+  IO.eprintln ""
+  if !missingFromBaselineSorted.isEmpty then
+    IO.eprintln s!"  In closure but NOT in baseline ({missingFromBaselineSorted.size}) — baseline is missing audited axioms:"
+    for n in missingFromBaselineSorted do
+      IO.eprintln s!"    + {n}"
+  if !missingFromClosureSorted.isEmpty then
+    IO.eprintln s!"  In baseline but NOT in closure ({missingFromClosureSorted.size}) — dead axioms in ledger:"
+    for n in missingFromClosureSorted do
+      IO.eprintln s!"    - {n}"
+  IO.eprintln ""
+  IO.eprintln "  After confirming the diff is intentional, regenerate the baseline:"
+  IO.eprintln "    trust/scripts/regenerate.sh"
+  IO.eprintln "  and review (CODEOWNER required for ledger changes)."
+  return 1
+
 /-- Subcommand: enumerate every auditable `ZiskFv.*` const, subtract
 the reachable set, print the unreachable ones grouped by module. -/
 def cmdFindUnused (env : Environment) (path : String) : IO UInt32 := do
@@ -176,6 +244,7 @@ def usage : IO Unit := do
   IO.println "  print-axiom-closure NAME       print transitive ZiskFv-namespace axioms reachable from NAME"
   IO.println "  print-reachable PATH           print every ZiskFv.* const reachable from entry-points in PATH"
   IO.println "  find-unused PATH               enumerate ZiskFv.* consts not reachable from PATH entry points"
+  IO.println "  check-closure-vs-baseline PATH check zisk_riscv_compliant_program_bus axiom closure == baseline-axioms.txt"
 
 def dispatch (env : Environment) (args : List String) : IO UInt32 := do
   match args with
@@ -198,6 +267,9 @@ def dispatch (env : Environment) (args : List String) : IO UInt32 := do
     return 0
   | ["print-reachable", path] => cmdPrintReachable env path
   | ["find-unused", path]     => cmdFindUnused env path
+  | ["check-closure-vs-baseline", path] =>
+    cmdCheckClosureVsBaseline env path
+      `ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus
   | ["all"] =>
     let baseline ← IO.FS.readFile "trust/baseline-equiv-axiom-deps.txt"
     let r1 ← diffStrings (renderDepsBaseline env) baseline
