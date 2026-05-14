@@ -395,3 +395,34 @@ ADDED: h_main_subset, h_main_mode, h_b_core, h_addi_subset
         Main's `(b_0, b_1)` packing to `BitVec.signExtend 64
         addi_input.imm`. Per-opcode metric grows by +1 binder;
         reviewer accepts per structural-unpacking exception.)
+
+OPCODE: ZiskFv.Equivalence.Andi.equiv_ANDI
+DROPPED: h_match_clo, h_match_chi, h_input_r1_circuit, h_input_imm_circuit
+ADDED: h_main_active, h_main_op_andi, h_match, h_andi_subset
+       (Step 4.2r3.I structural-unpacking refactor mirroring the
+        RTYPE `equiv_AND` parameter shape. The 4 loose c-lane / r1-
+        byte / imm-byte promise hypotheses collapse into the
+        higher-level `(h_main_active, h_main_op_andi, h_match)`
+        triple consumed by `Bridge.Binary.match_clo_chi_AND` +
+        `Bridge.Binary.input_r1_packed_a` + the new
+        `Bridge.Binary.itype_imm_subset_binary_row_of_main`. The
+        `h_andi_subset` binder is the Main-form imm constructibility
+        pin (`itype_imm_subset_holds_main`, shared with ADDI/ORI/
+        XORI). Per-opcode metric holds net zero (34 binders / 21
+        hypotheses both before and after). Wrapper-level reduction:
+        -3 binders. Listed here for audit-trail completeness; gate-
+        equivalent to a non-exception refactor.)
+
+OPCODE: ZiskFv.Equivalence.Ori.equiv_ORI
+DROPPED: h_match_clo, h_match_chi, h_input_r1_circuit, h_input_imm_circuit
+ADDED: h_main_active, h_main_op_ori, h_match, h_ori_subset
+       (Step 4.2r3.I structural-unpacking refactor — mechanical clone
+        of `equiv_ANDI` with `AND → OR`. See ANDI entry above for
+        the per-binder rationale. Per-opcode metric holds net zero.)
+
+OPCODE: ZiskFv.Equivalence.Xori.equiv_XORI
+DROPPED: h_match_clo, h_match_chi, h_input_r1_circuit, h_input_imm_circuit
+ADDED: h_main_active, h_main_op_xori, h_match, h_xori_subset
+       (Step 4.2r3.I structural-unpacking refactor — mechanical clone
+        of `equiv_ANDI` with `AND → XOR`. See ANDI entry above for
+        the per-binder rationale. Per-opcode metric holds net zero.)
