@@ -12,8 +12,60 @@
   #controls { position: absolute; bottom: 8px; left: 12px; font-size: 12px; background: rgba(20,22,28,0.85); padding: 6px 10px; border: 1px solid #303540; border-radius: 4px; z-index: 10; }
   #controls button { background: #1c1f26; color: #d8dee9; border: 1px solid #303540; padding: 3px 8px; margin-right: 4px; cursor: pointer; font-family: inherit; font-size: 12px; }
   #controls button:hover { background: #2a2f3a; }
-  #tooltip { position: absolute; pointer-events: none; background: rgba(15,17,21,0.95); border: 1px solid #4a5060; padding: 6px 8px; border-radius: 4px; font-size: 12px; max-width: 600px; word-break: break-all; z-index: 20; visibility: hidden; }
+  #tooltip { position: absolute; pointer-events: none; background: rgba(15,17,21,0.95); border: 1px solid #4a5060; padding: 4px 6px; border-radius: 3px; font-size: 11px; max-width: 600px; word-break: break-all; z-index: 20; visibility: hidden; color: #aab0bc; }
   canvas { display: block; position: absolute; top: 0; left: 0; }
+  #info-panel {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: #1a1a1a;
+    color: #e7e9ee;
+    padding: 14px 24px;
+    font-family: sans-serif;
+    font-size: 13px;
+    border-top: 1px solid #333;
+    z-index: 100;
+    min-height: 70px;
+    box-sizing: border-box;
+  }
+  #info-panel .empty { color: #7a8090; font-style: italic; padding-top: 18px; }
+  #info-panel .name {
+    font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+    font-size: 15px;
+    margin-bottom: 8px;
+    word-break: break-all;
+    color: #ffffff;
+  }
+  #info-panel .meta { display: flex; flex-wrap: wrap; gap: 18px; color: #b8bcc8; font-size: 12px; }
+  #info-panel .meta span { display: inline-block; }
+  #info-panel .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #2a2f3a;
+    color: #d8dee9;
+  }
+  #info-panel .badge.root { background: #3a4a30; color: #c8e0a8; }
+  #info-panel .badge.axiom { background: #4a2830; color: #f0a8a8; }
+  #info-panel .badge.project { background: #28384a; color: #a8c8e8; }
+  #info-panel .toast {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #3a4a30;
+    color: #c8e0a8;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  #info-panel .toast.show { opacity: 1; }
 </style>
 </head>
 <body>
@@ -22,15 +74,27 @@
   <div class="row"><span class="sw" style="background:#a3be8c"></span>root (uber-theorem)</div>
   <div class="row"><span class="sw" style="background:#88c0d0"></span>project const</div>
   <div class="row"><span class="sw" style="background:#bf616a"></span>axiom (trust leaf)</div>
-  <div style="margin-top:6px;font-size:11px;color:#7a8090">layered top-down · scroll to zoom · drag to pan · hover/click node</div>
+  <div style="margin-top:6px;font-size:11px;color:#7a8090">layered top-down · scroll to zoom · drag to pan · hover for info</div>
 </div>
 <div id="controls">
   <button onclick="resetView()">reset view</button>
-  <button onclick="toggleLabels()">toggle labels</button>
   <span id="counts" style="color:#7a8090;margin-left:8px"></span>
 </div>
 <div id="tooltip"></div>
 <canvas id="canvas"></canvas>
+<div id="info-panel">
+  <div class="empty" id="info-empty">Hover a node to inspect · click to copy full name</div>
+  <div class="filled" id="info-filled" hidden>
+    <div class="name" id="info-name"></div>
+    <div class="meta">
+      <span class="badge" id="info-kind"></span>
+      <span>depth <span id="info-depth"></span></span>
+      <span>in-degree <span id="info-in"></span></span>
+      <span>out-degree <span id="info-out"></span></span>
+    </div>
+  </div>
+  <div class="toast" id="info-toast">copied!</div>
+</div>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
 const ROOT = "ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus";
@@ -76,11 +140,12 @@ window.addEventListener("resize", resize);
 
 let allNodes = null, allLinks = null;
 let transform = d3.zoomIdentity;
-let showLabels = false;
 let hoverNode = null;
+let frozenNode = null;  // node pinned in the info panel by a click
 let quad = null;
 let zoomBehavior = null;
 let layoutWidth = 0, layoutHeight = 0;
+let inDeg = new Map(), outDeg = new Map();
 
 async function load() {
   const text = await fetch("edges.tsv").then(r => r.text());
@@ -143,7 +208,13 @@ async function load() {
     n.r = radiusOf(n.kind, isRoot, n.depth);
     n.color = colorOf(n.kind, isRoot);
     n.short = shortName(n.id);
-    n.priority = isRoot || n.kind === "A";  // always-label set
+  }
+  // Precompute in/out degrees once. Sum of outDeg over all nodes equals total edges.
+  inDeg = new Map();
+  outDeg = new Map();
+  for (const e of allLinks) {
+    outDeg.set(e.source.id, (outDeg.get(e.source.id) ?? 0) + 1);
+    inDeg.set(e.target.id, (inDeg.get(e.target.id) ?? 0) + 1);
   }
   d3.select("#counts").text(`${allNodes.length} nodes · ${allLinks.length} edges`);
   status.text("");
@@ -263,20 +334,43 @@ function draw() {
     ctx.stroke();
   }
 
-  // Labels: always-on for root + axioms; everything else only when zoomed enough or toggle is on.
-  // Scale label font so text stays roughly fixed size on screen.
-  const labelPx = 9;
-  ctx.font = (labelPx / transform.k) + "px system-ui, sans-serif";
-  ctx.fillStyle = "#aab0bc";
-  ctx.textBaseline = "middle";
-  const showAll = showLabels || transform.k >= 0.5;
-  for (const n of allNodes) {
-    if (n.x == null) continue;
-    if (!showAll && !n.priority) continue;
-    ctx.fillText(n.short, n.x + n.r + 2 / transform.k, n.y);
-  }
-
+  // Node labels are no longer drawn on the canvas — see the bottom info panel.
   ctx.restore();
+}
+
+function kindLabel(node) {
+  if (node.isRoot) return "root";
+  if (node.kind === "A") return "axiom";
+  return "project";
+}
+
+function updateInfoPanel(node) {
+  const empty = document.getElementById("info-empty");
+  const filled = document.getElementById("info-filled");
+  if (!node) {
+    filled.hidden = true;
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+  filled.hidden = false;
+  document.getElementById("info-name").textContent = node.id;
+  const kind = kindLabel(node);
+  const kindEl = document.getElementById("info-kind");
+  kindEl.textContent = kind;
+  kindEl.className = "badge " + kind;
+  document.getElementById("info-depth").textContent = node.depth;
+  document.getElementById("info-in").textContent = inDeg.get(node.id) ?? 0;
+  document.getElementById("info-out").textContent = outDeg.get(node.id) ?? 0;
+}
+
+let toastTimer = null;
+function flashToast(msg) {
+  const t = document.getElementById("info-toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 1200);
 }
 
 function initialTransform() {
@@ -314,15 +408,13 @@ function initZoom() {
       hoverNode = hit || null;
       draw();
     }
+    // Info panel updates live on hover unless a node is frozen via click.
+    if (!frozenNode) updateInfoPanel(hoverNode);
     if (hoverNode) {
       tooltip.style("visibility", "visible")
         .style("left", (evt.clientX + 12) + "px")
         .style("top", (evt.clientY + 12) + "px")
-        .html(
-          `<b>${escapeHtml(hoverNode.short)}</b><br>` +
-          `<span style="color:#888">${escapeHtml(hoverNode.id)}</span><br>` +
-          `<span style="color:#888">kind: ${hoverNode.kind === "A" ? "axiom" : "project"} · depth: ${hoverNode.depth}</span>`
-        );
+        .text(hoverNode.short);
     } else {
       tooltip.style("visibility", "hidden");
     }
@@ -331,6 +423,7 @@ function initZoom() {
   canvas.addEventListener("mouseleave", () => {
     if (hoverNode) { hoverNode = null; draw(); }
     tooltip.style("visibility", "hidden");
+    if (!frozenNode) updateInfoPanel(null);
   });
 
   canvas.addEventListener("click", (evt) => {
@@ -340,23 +433,24 @@ function initZoom() {
     if (!quad) return;
     const hit = quad.find(x, y, 20 / transform.k);
     if (hit) {
-      console.log(hit.id);
-      navigator.clipboard?.writeText(hit.id);
+      frozenNode = hit;
+      updateInfoPanel(hit);
+      navigator.clipboard?.writeText(hit.id).then(
+        () => flashToast("copied!"),
+        () => flashToast("copy failed")
+      );
+    } else {
+      // Click on empty space unfreezes.
+      if (frozenNode) {
+        frozenNode = null;
+        updateInfoPanel(hoverNode);
+      }
     }
   });
 }
 
-function escapeHtml(s) {
-  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
-}
-
 function resetView() {
   d3.select(canvas).transition().duration(500).call(zoomBehavior.transform, initialTransform());
-}
-
-function toggleLabels() {
-  showLabels = !showLabels;
-  draw();
 }
 
 load();
