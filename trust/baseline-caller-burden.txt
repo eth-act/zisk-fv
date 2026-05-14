@@ -12,16 +12,16 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 2525
-# Category bridge: 62
+# Total rows: 2526
+# Category bridge: 59
 # Category bus_shape: 509
 # Category byte_chain: 55
 # Category entry: 67
 # Category loose: 376
 # Category match: 91
-# Category other: 726
+# Category other: 731
 # Category range: 96
-# Category row: 69
+# Category row: 68
 # Category state: 217
 # Category transpile: 158
 # Category validator: 99
@@ -75,37 +75,38 @@ ZiskFv.Equivalence.Addi.equiv_ADDI 004 imm [other] BitVec 12
 ZiskFv.Equivalence.Addi.equiv_ADDI 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.Addi.equiv_ADDI 006 b [validator] Valid_BinaryAdd C FGL FGL
 ZiskFv.Equivalence.Addi.equiv_ADDI 007 r_main [row] ℕ
-ZiskFv.Equivalence.Addi.equiv_ADDI 008 r_binary [row] ℕ
-ZiskFv.Equivalence.Addi.equiv_ADDI 009 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Equivalence.Addi.equiv_ADDI 010 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Addi.equiv_ADDI 011 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Addi.equiv_ADDI 012 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Addi.equiv_ADDI 013 h_input_r1 [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok addi_input.r1_val state
-ZiskFv.Equivalence.Addi.equiv_ADDI 014 h_input_imm [other] addi_input.imm = imm
-ZiskFv.Equivalence.Addi.equiv_ADDI 015 h_input_rd [transpile] addi_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.Addi.equiv_ADDI 016 h_input_pc [state] state.regs.get? Register.PC = .some addi_input.PC
-ZiskFv.Equivalence.Addi.equiv_ADDI 017 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.Addi.equiv_ADDI 018 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.Addi.equiv_ADDI 019 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.Addi.equiv_ADDI 020 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.Addi.equiv_ADDI 021 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.Addi.equiv_ADDI 022 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.Addi.equiv_ADDI 023 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.Addi.equiv_ADDI 024 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.Addi.equiv_ADDI 025 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.Addi.equiv_ADDI 026 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.Addi.equiv_ADDI 027 h_rd_idx [transpile] addi_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Addi.equiv_ADDI 028 h_circuit [other] ZiskFv.Circuit.Addi.addi_circuit_holds_with_binaryadd m b r_main r_binary
-ZiskFv.Equivalence.Addi.equiv_ADDI 029 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Addi.equiv_ADDI 030 h_e2_0 [range] e2.x0.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 031 h_e2_1 [range] e2.x1.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 032 h_e2_2 [range] e2.x2.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 033 h_e2_3 [range] e2.x3.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 034 h_e2_4 [range] e2.x4.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 035 h_e2_5 [range] e2.x5.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 036 h_e2_6 [range] e2.x6.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 037 h_e2_7 [range] e2.x7.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 038 h_input_imm_circuit [other] BitVec.signExtend 64 addi_input.imm = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b
+ZiskFv.Equivalence.Addi.equiv_ADDI 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
+ZiskFv.Equivalence.Addi.equiv_ADDI 009 e0 [loose] Interaction.MemoryBusEntry FGL
+ZiskFv.Equivalence.Addi.equiv_ADDI 010 e1 [loose] Interaction.MemoryBusEntry FGL
+ZiskFv.Equivalence.Addi.equiv_ADDI 011 e2 [loose] Interaction.MemoryBusEntry FGL
+ZiskFv.Equivalence.Addi.equiv_ADDI 012 h_input_r1 [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok addi_input.r1_val state
+ZiskFv.Equivalence.Addi.equiv_ADDI 013 h_input_imm [other] addi_input.imm = imm
+ZiskFv.Equivalence.Addi.equiv_ADDI 014 h_input_rd [transpile] addi_input.rd = regidx_to_fin rd
+ZiskFv.Equivalence.Addi.equiv_ADDI 015 h_input_pc [state] state.regs.get? Register.PC = .some addi_input.PC
+ZiskFv.Equivalence.Addi.equiv_ADDI 016 h_exec_len [bus_shape] exec_row.length = 2
+ZiskFv.Equivalence.Addi.equiv_ADDI 017 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
+ZiskFv.Equivalence.Addi.equiv_ADDI 018 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
+ZiskFv.Equivalence.Addi.equiv_ADDI 019 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
+ZiskFv.Equivalence.Addi.equiv_ADDI 020 h_m0_mult [bus_shape] e0.multiplicity = -1
+ZiskFv.Equivalence.Addi.equiv_ADDI 021 h_m0_as [bus_shape] e0.as.val = 1
+ZiskFv.Equivalence.Addi.equiv_ADDI 022 h_m1_mult [bus_shape] e1.multiplicity = -1
+ZiskFv.Equivalence.Addi.equiv_ADDI 023 h_m1_as [bus_shape] e1.as.val = 1
+ZiskFv.Equivalence.Addi.equiv_ADDI 024 h_m2_mult [bus_shape] e2.multiplicity = 1
+ZiskFv.Equivalence.Addi.equiv_ADDI 025 h_m2_as [bus_shape] e2.as.val = 1
+ZiskFv.Equivalence.Addi.equiv_ADDI 026 h_rd_idx [transpile] addi_input.rd = Transpiler.wrap_to_regidx e2.ptr
+ZiskFv.Equivalence.Addi.equiv_ADDI 027 h_main_subset [other] add_subset_holds m r_main
+ZiskFv.Equivalence.Addi.equiv_ADDI 028 h_main_mode [other] main_row_in_addi_mode m r_main
+ZiskFv.Equivalence.Addi.equiv_ADDI 029 h_b_core [other] ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r
+ZiskFv.Equivalence.Addi.equiv_ADDI 030 h_addi_subset [other] ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main m r_main addi_input
+ZiskFv.Equivalence.Addi.equiv_ADDI 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Addi.equiv_ADDI 032 h_e2_0 [range] e2.x0.val < 256
+ZiskFv.Equivalence.Addi.equiv_ADDI 033 h_e2_1 [range] e2.x1.val < 256
+ZiskFv.Equivalence.Addi.equiv_ADDI 034 h_e2_2 [range] e2.x2.val < 256
+ZiskFv.Equivalence.Addi.equiv_ADDI 035 h_e2_3 [range] e2.x3.val < 256
+ZiskFv.Equivalence.Addi.equiv_ADDI 036 h_e2_4 [range] e2.x4.val < 256
+ZiskFv.Equivalence.Addi.equiv_ADDI 037 h_e2_5 [range] e2.x5.val < 256
+ZiskFv.Equivalence.Addi.equiv_ADDI 038 h_e2_6 [range] e2.x6.val < 256
+ZiskFv.Equivalence.Addi.equiv_ADDI 039 h_e2_7 [range] e2.x7.val < 256
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 001 addiw_input [other] PureSpec.AddiwInput
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 002 r1 [other] regidx
@@ -319,12 +320,12 @@ ZiskFv.Equivalence.Andi.equiv_ANDI 024 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Andi.equiv_ANDI 025 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Andi.equiv_ANDI 026 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Andi.equiv_ANDI 027 h_rd_idx [transpile] andi_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Andi.equiv_ANDI 028 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_AND
-ZiskFv.Equivalence.Andi.equiv_ANDI 029 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Andi.equiv_ANDI 030 h_match_chi [match] m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Andi.equiv_ANDI 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Andi.equiv_ANDI 032 h_input_r1_circuit [bridge] andi_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a
-ZiskFv.Equivalence.Andi.equiv_ANDI 033 h_input_imm_circuit [other] BitVec.signExtend 64 andi_input.imm = BitVec.ofNat 64 ((v.free_in_b_0 r_binary).
+ZiskFv.Equivalence.Andi.equiv_ANDI 028 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Andi.equiv_ANDI 029 h_main_op_andi [match] m.op r_main = OP_AND
+ZiskFv.Equivalence.Andi.equiv_ANDI 030 h_match [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)
+ZiskFv.Equivalence.Andi.equiv_ANDI 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_AND
+ZiskFv.Equivalence.Andi.equiv_ANDI 032 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Andi.equiv_ANDI 033 h_andi_subset [other] ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main m r_main andi_input
 ZiskFv.Equivalence.Auipc.equiv_AUIPC 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Auipc.equiv_AUIPC 001 auipc_input [other] PureSpec.AuipcInput
 ZiskFv.Equivalence.Auipc.equiv_AUIPC 002 imm [other] BitVec 20
@@ -1294,12 +1295,12 @@ ZiskFv.Equivalence.Ori.equiv_ORI 024 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Ori.equiv_ORI 025 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Ori.equiv_ORI 026 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Ori.equiv_ORI 027 h_rd_idx [transpile] ori_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Ori.equiv_ORI 028 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_OR
-ZiskFv.Equivalence.Ori.equiv_ORI 029 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Ori.equiv_ORI 030 h_match_chi [match] m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Ori.equiv_ORI 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Ori.equiv_ORI 032 h_input_r1_circuit [bridge] ori_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a_
-ZiskFv.Equivalence.Ori.equiv_ORI 033 h_input_imm_circuit [other] BitVec.signExtend 64 ori_input.imm = BitVec.ofNat 64 ((v.free_in_b_0 r_binary).v
+ZiskFv.Equivalence.Ori.equiv_ORI 028 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Ori.equiv_ORI 029 h_main_op_ori [match] m.op r_main = OP_OR
+ZiskFv.Equivalence.Ori.equiv_ORI 030 h_match [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)
+ZiskFv.Equivalence.Ori.equiv_ORI 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_OR
+ZiskFv.Equivalence.Ori.equiv_ORI 032 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Ori.equiv_ORI 033 h_ori_subset [other] ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main m r_main ori_input.
 ZiskFv.Equivalence.Rem.equiv_REM 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Rem.equiv_REM 001 rem_input [other] PureSpec.RemInput
 ZiskFv.Equivalence.Rem.equiv_REM 002 r1 [other] regidx
@@ -2545,9 +2546,9 @@ ZiskFv.Equivalence.Xori.equiv_XORI 024 h_m1_as [bus_shape] e1.as.val = 1
 ZiskFv.Equivalence.Xori.equiv_XORI 025 h_m2_mult [bus_shape] e2.multiplicity = 1
 ZiskFv.Equivalence.Xori.equiv_XORI 026 h_m2_as [bus_shape] e2.as.val = 1
 ZiskFv.Equivalence.Xori.equiv_XORI 027 h_rd_idx [transpile] xori_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Xori.equiv_XORI 028 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_XOR
-ZiskFv.Equivalence.Xori.equiv_XORI 029 h_match_clo [match] m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Xori.equiv_XORI 030 h_match_chi [match] m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256 + v.free_in
-ZiskFv.Equivalence.Xori.equiv_XORI 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Equivalence.Xori.equiv_XORI 032 h_input_r1_circuit [bridge] xori_input.r1_val = BitVec.ofNat 64 ((v.free_in_a_0 r_binary).val + (v.free_in_a
-ZiskFv.Equivalence.Xori.equiv_XORI 033 h_input_imm_circuit [other] BitVec.signExtend 64 xori_input.imm = BitVec.ofNat 64 ((v.free_in_b_0 r_binary).
+ZiskFv.Equivalence.Xori.equiv_XORI 028 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Xori.equiv_XORI 029 h_main_op_xori [match] m.op r_main = OP_XOR
+ZiskFv.Equivalence.Xori.equiv_XORI 030 h_match [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)
+ZiskFv.Equivalence.Xori.equiv_XORI 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_XOR
+ZiskFv.Equivalence.Xori.equiv_XORI 032 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Xori.equiv_XORI 033 h_xori_subset [other] ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main m r_main xori_input

@@ -13,6 +13,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Tactics.ALUITypeArchetype
 
 /-!
 # Binary AIR discharge bridge
@@ -713,5 +714,113 @@ theorem match_clo_chi_XOR
           + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216) :=
   match_clo_chi_logic_core m v r_main r_binary h_match
     (carry_7_zero_XOR_pure v r_binary h_op_XOR)
+
+/-! ## ITYPE immediate Main-form → Binary-row 8-byte form bridge
+
+The ALU-ITYPE Binary-provider opcodes (ANDI/ORI/XORI) consume the
+*constructibility-bundle* predicate
+`ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main` —
+a 2-lane Main-form pin equating `BitVec.signExtend 64 imm` to
+`(m.b_0).val + (m.b_1).val * 2^32`.
+
+For these Binary-AIR opcodes the consuming `RdValDerivation.BinaryLogic`
+helpers expect the imm in **8-byte Binary-row form**
+(`v.free_in_b_0 r + v.free_in_b_1 r * 256 + ... + v.free_in_b_7 r * 2^56`).
+
+`itype_imm_subset_binary_row_of_main` chains the two: the Main-form
+pin, the `matches_entry` `b`-lane projection (under `m32 = 0`), and a
+`free_in_b_*` byte-range bound derive the 8-byte Binary-row form
+purely. No new axiom; structurally analogous to `input_r2_packed_b`
+but with the Main-form imm bridge replacing the Sail `read_xreg`
+chain. -/
+
+/-- **ITYPE immediate Main-form → Binary-row 8-byte form bridge.**
+
+    Given the Main-form constructibility-bundle pin
+    `h_addi_subset : itype_imm_subset_holds_main m r_main imm`
+    (equating `BitVec.signExtend 64 imm` to a 2-lane Main packing of
+    `(m.b_0, m.b_1)`), plus `m32 = 0` and `matches_entry` on
+    Main/Binary bus rows, derive the standard 8-byte Binary-row
+    equation
+      `BitVec.signExtend 64 imm
+        = BitVec.ofNat 64 (Σ_{i=0..7} (free_in_b_i r_binary).val * 256^i)`.
+
+    Uniformly applicable across ANDI/ORI/XORI (and any future
+    ITYPE Binary-provider opcodes). The 8 byte ranges on
+    `v.free_in_b_*` are consumed internally — derived from
+    `binary_columns_in_range`. -/
+theorem itype_imm_subset_binary_row_of_main
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (r_main r_binary : ℕ) (imm : BitVec 12)
+    (h_m32 : m.m32 r_main = 0)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                             (opBus_row_Binary v r_binary))
+    (h_addi_subset :
+      ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
+        m r_main imm) :
+    BitVec.signExtend 64 imm
+      = BitVec.ofNat 64
+          ((v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
+            + (v.free_in_b_2 r_binary).val * 65536
+            + (v.free_in_b_3 r_binary).val * 16777216
+            + (v.free_in_b_4 r_binary).val * 4294967296
+            + (v.free_in_b_5 r_binary).val * 1099511627776
+            + (v.free_in_b_6 r_binary).val * 281474976710656
+            + (v.free_in_b_7 r_binary).val * 72057594037927936) := by
+  -- Byte ranges (derived from `binary_columns_in_range`).
+  have hb0 := bin_b_0_lt_256 v r_binary
+  have hb1 := bin_b_1_lt_256 v r_binary
+  have hb2 := bin_b_2_lt_256 v r_binary
+  have hb3 := bin_b_3_lt_256 v r_binary
+  have hb4 := bin_b_4_lt_256 v r_binary
+  have hb5 := bin_b_5_lt_256 v r_binary
+  have hb6 := bin_b_6_lt_256 v r_binary
+  have hb7 := bin_b_7_lt_256 v r_binary
+  -- Unfold the Main-form pin.
+  have h_subset := h_addi_subset
+  simp only [ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main]
+    at h_subset
+  -- Project `matches_entry`'s b_lo / b_hi conjuncts (with `m32 = 0`).
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match
+  obtain ⟨_, _, _, _, h_b_lo_m, h_b_hi_m, _, _, _, _, _, _⟩ := h_match
+  rw [h_m32] at h_b_hi_m
+  simp only [one_sub_zero_mul] at h_b_hi_m
+  -- Recover `(m.b_0 r_main).val` / `(m.b_1 r_main).val` as 4-byte sums.
+  have h_b0_val : (m.b_0 r_main).val =
+      (v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
+      + (v.free_in_b_2 r_binary).val * 65536
+      + (v.free_in_b_3 r_binary).val * 16777216 := by
+    rw [h_b_lo_m]
+    have h_cast :
+        v.free_in_b_0 r_binary + 256 * v.free_in_b_1 r_binary
+          + 65536 * v.free_in_b_2 r_binary + 16777216 * v.free_in_b_3 r_binary
+        = ((((v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
+              + (v.free_in_b_2 r_binary).val * 65536
+              + (v.free_in_b_3 r_binary).val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
+    omega
+  have h_b1_val : (m.b_1 r_main).val =
+      (v.free_in_b_4 r_binary).val + (v.free_in_b_5 r_binary).val * 256
+      + (v.free_in_b_6 r_binary).val * 65536
+      + (v.free_in_b_7 r_binary).val * 16777216 := by
+    rw [h_b_hi_m]
+    have h_cast :
+        v.free_in_b_4 r_binary + 256 * v.free_in_b_5 r_binary
+          + 65536 * v.free_in_b_6 r_binary + 16777216 * v.free_in_b_7 r_binary
+        = ((((v.free_in_b_4 r_binary).val + (v.free_in_b_5 r_binary).val * 256
+              + (v.free_in_b_6 r_binary).val * 65536
+              + (v.free_in_b_7 r_binary).val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    have h_p : (2:ℕ)^32 ≤ GL_prime := by decide
+    omega
+  rw [h_subset]
+  apply congrArg (BitVec.ofNat 64)
+  rw [h_b0_val, h_b1_val]
+  ring
 
 end ZiskFv.Equivalence.Bridge.Binary
