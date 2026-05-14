@@ -1,7 +1,7 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.Binary.BinaryAddRanges

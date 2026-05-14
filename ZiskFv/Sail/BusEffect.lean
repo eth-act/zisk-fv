@@ -1,6 +1,6 @@
 import ZiskFv.Sail.Auxiliaries
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
 
 /-!

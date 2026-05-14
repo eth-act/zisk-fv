@@ -1,7 +1,7 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Field.Goldilocks
 
 /-!
 ZisK binary lookup table (`bus_id = 125`).

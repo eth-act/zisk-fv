@@ -1,8 +1,8 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.PackedBitVec.SignedChunkLift
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div

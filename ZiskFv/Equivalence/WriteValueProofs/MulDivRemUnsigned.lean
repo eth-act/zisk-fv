@@ -1,13 +1,13 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.PackedBitVec
-import ZiskFv.Fundamentals.PackedBitVec.Extensions
-import ZiskFv.Fundamentals.PackedBitVec.NoWrap
-import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
-import ZiskFv.Fundamentals.PackedBitVec.SignedNoWrap
-import ZiskFv.Fundamentals.Execution
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Bits.PackedBitVec
+import ZiskFv.Bits.PackedBitVec.Extensions
+import ZiskFv.Bits.PackedBitVec.NoWrap
+import ZiskFv.Bits.PackedBitVec.MulNoWrap
+import ZiskFv.Bits.PackedBitVec.SignedNoWrap
+import ZiskFv.Bits.Execution
 import ZiskFv.Sail.mulw
 
 /-!

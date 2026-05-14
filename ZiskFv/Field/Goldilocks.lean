@@ -1,5 +1,5 @@
 import Mathlib
-import ZiskFv.Fundamentals.PrattCertificate
+import ZiskFv.Field.GoldilocksPrimality
 
 /-!
 Goldilocks field scaffold for ZisK circuits: `p = 2^64 - 2^32 + 1`.

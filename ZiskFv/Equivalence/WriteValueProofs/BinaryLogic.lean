@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.PackedBitVec
-import ZiskFv.Fundamentals.Interaction
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Bits.PackedBitVec
+import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryPackedCorrect

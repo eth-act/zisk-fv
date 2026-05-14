@@ -1,7 +1,7 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.PackedBitVec.NoWrap
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Bits.PackedBitVec.NoWrap
 
 /-!
 **Goldilocks FGL ↔ ℕ multiplicative no-wrap toolkit.**

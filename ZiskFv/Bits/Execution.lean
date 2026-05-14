@@ -1,6 +1,6 @@
 import LeanRV64D
 import Mathlib
-import ZiskFv.Fundamentals.U64
+import ZiskFv.Bits.U64
 
 open PreSail
 open LeanRV64D.Functions

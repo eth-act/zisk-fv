@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus

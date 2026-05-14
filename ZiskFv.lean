@@ -1,7 +1,7 @@
-import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.GoldilocksBridge
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Field.GoldilocksBridge
 import ZiskFv.Sail.BusEffect
 import Extraction.BinaryAdd
 import Extraction.Main
@@ -26,15 +26,15 @@ import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
 -- FGL → BitVec 64 arithmetic-extension lifts (h_rd_val bridges).
-import ZiskFv.Fundamentals.PackedBitVec.Extensions
+import ZiskFv.Bits.PackedBitVec.Extensions
 -- Goldilocks no-wrap toolkit (additive packings).
-import ZiskFv.Fundamentals.PackedBitVec.NoWrap
+import ZiskFv.Bits.PackedBitVec.NoWrap
 -- Multiplicative no-wrap toolkit (8-chunk carry chains).
-import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
+import ZiskFv.Bits.PackedBitVec.MulNoWrap
 -- Signed BitVec.toInt extension (sign-witness pattern + INT_MIN/-1 overflow).
-import ZiskFv.Fundamentals.PackedBitVec.SignedNoWrap
+import ZiskFv.Bits.PackedBitVec.SignedNoWrap
 -- Wide-PC no-wrap toolkit (PC values can exceed GL_prime).
-import ZiskFv.Fundamentals.PackedBitVec.WidePCNoWrap
+import ZiskFv.Bits.PackedBitVec.WidePCNoWrap
 import ZiskFv.Circuit.Add
 import ZiskFv.Equivalence.Add
 import ZiskFv.Equivalence.BranchEqual
@@ -100,7 +100,7 @@ import ZiskFv.Equivalence.Lw
 import ZiskFv.Equivalence.Lh
 import ZiskFv.Equivalence.Lb
 -- Signed-case PackedBitVec
-import ZiskFv.Fundamentals.PackedBitVec.Signed
+import ZiskFv.Bits.PackedBitVec.Signed
 -- DIV/REM
 import ZiskFv.Equivalence.Div
 import ZiskFv.Equivalence.Divu

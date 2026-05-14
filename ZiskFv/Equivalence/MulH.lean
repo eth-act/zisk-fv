@@ -1,10 +1,10 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Fundamentals.PackedBitVec.SignedChunkLift
-import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
+import ZiskFv.Bits.PackedBitVec.SignedChunkLift
+import ZiskFv.Bits.PackedBitVec.MulNoWrap
 import ZiskFv.Circuit.Mul
 import ZiskFv.Circuit.MulH
 import ZiskFv.Airs.Main

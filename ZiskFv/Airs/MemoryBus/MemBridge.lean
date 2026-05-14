@@ -2,8 +2,8 @@ import Mathlib
 import LeanRV64D
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem

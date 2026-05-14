@@ -1,5 +1,5 @@
 import ZiskFv.Sail.Auxiliaries
-import ZiskFv.Fundamentals.Execution
+import ZiskFv.Bits.Execution
 
 /-!
 RV64 SRLIW (shift-right-logical-immediate-word). Sibling of SLLIW.

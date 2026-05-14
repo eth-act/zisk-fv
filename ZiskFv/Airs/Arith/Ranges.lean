@@ -1,11 +1,11 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
-import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
-import ZiskFv.Fundamentals.PackedBitVec.SignedChunkLift
+import ZiskFv.Bits.PackedBitVec.MulNoWrap
+import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 
 /-!
 # Arith AIR — universal column-range theorems

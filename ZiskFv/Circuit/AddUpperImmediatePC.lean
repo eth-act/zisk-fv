@@ -1,9 +1,9 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Fundamentals.PackedBitVec.WidePCNoWrap
+import ZiskFv.Bits.PackedBitVec.WidePCNoWrap
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.OperationBus

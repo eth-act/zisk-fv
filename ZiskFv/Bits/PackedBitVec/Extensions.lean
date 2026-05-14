@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.PackedBitVec
-import ZiskFv.Fundamentals.Execution
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Bits.PackedBitVec
+import ZiskFv.Bits.Execution
 
 /-!
 FGL → BitVec 64 arithmetic-extension lifts.

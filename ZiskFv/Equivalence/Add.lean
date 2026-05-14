@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.GoldilocksBridge
-import ZiskFv.Fundamentals.Interaction
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Field.GoldilocksBridge
+import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.Add
 import ZiskFv.Airs.Main

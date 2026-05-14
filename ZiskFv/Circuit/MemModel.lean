@@ -1,7 +1,7 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.Main

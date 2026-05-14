@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Main
 
 /-!

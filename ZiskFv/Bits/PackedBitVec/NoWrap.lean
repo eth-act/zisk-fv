@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Field.Goldilocks
 
 /-!
 **Goldilocks FGL ↔ ℕ no-wrap toolkit.**

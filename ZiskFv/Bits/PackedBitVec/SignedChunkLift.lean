@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.PackedBitVec.NoWrap
-import ZiskFv.Fundamentals.PackedBitVec.SignedNoWrap
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Bits.PackedBitVec.NoWrap
+import ZiskFv.Bits.PackedBitVec.SignedNoWrap
 
 /-!
 **Goldilocks FGL ↔ ℤ signed chunk-lift toolkit.**

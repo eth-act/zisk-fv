@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Main.OpcodeClassification
-import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
 -- One representative shape dispatcher import (LUI from ControlFlow non-branch).
 -- Additional shape dispatchers will be added under

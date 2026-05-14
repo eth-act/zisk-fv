@@ -1,7 +1,7 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
 
 /-!
 Field → `BitVec 64` lift used by the MUL / MULHU / MULW equivalence

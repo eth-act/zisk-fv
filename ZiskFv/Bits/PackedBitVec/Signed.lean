@@ -1,7 +1,7 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.PackedBitVec
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Bits.PackedBitVec
 
 /-!
 **Signed BitVec.toInt bridge.**

@@ -1,5 +1,5 @@
 import ZiskFv.Sail.Auxiliaries
-import ZiskFv.Fundamentals.Execution
+import ZiskFv.Bits.Execution
 
 /-!
 RV64 SRAW (shift-right-arithmetic-word). Sibling of SLLW/SRLW.

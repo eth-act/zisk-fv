@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Field.Goldilocks
 
 /-!
 Minimal ZisK port of `OpenvmFv/Fundamentals/Interaction.lean`.

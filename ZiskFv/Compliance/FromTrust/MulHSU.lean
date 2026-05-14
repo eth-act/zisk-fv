@@ -7,7 +7,7 @@ import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.Bridge1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
-import ZiskFv.Fundamentals.PackedBitVec.SignedChunkLift
+import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 
 /-!
 # `equiv_MULHSU` Compliance exemplar (Step 4.2 r3.III, Family A: ArithMul mixed-sign high-half)

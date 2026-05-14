@@ -7,7 +7,7 @@ import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.Bridge1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
-import ZiskFv.Fundamentals.PackedBitVec.SignedChunkLift
+import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 
 /-!
 # `equiv_REMW` Compliance exemplar (Step 4.2.r2 within-shape, ArithDiv W-signed secondary)

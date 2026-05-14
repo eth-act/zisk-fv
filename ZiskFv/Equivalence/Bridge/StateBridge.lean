@@ -1,8 +1,8 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.GoldilocksBridge
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Field.GoldilocksBridge
 import ZiskFv.Trusted.Transpiler
 
 /-!

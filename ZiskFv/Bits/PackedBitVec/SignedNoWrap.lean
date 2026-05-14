@@ -1,9 +1,9 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.PackedBitVec
-import ZiskFv.Fundamentals.PackedBitVec.Signed
-import ZiskFv.Fundamentals.Execution
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Bits.PackedBitVec
+import ZiskFv.Bits.PackedBitVec.Signed
+import ZiskFv.Bits.Execution
 
 /-!
 **Signed BitVec.toInt no-wrap toolkit.**

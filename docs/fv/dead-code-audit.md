@@ -211,7 +211,7 @@ authored dead code"; see the breakdown below.
 | `ZiskFv.Airs.Arith.Mul` | 42 | ArithMul AIR |
 | `ZiskFv.Airs.Arith.Div` | 42 | ArithDiv AIR |
 | `ZiskFv.Airs.MemAlignReadByte` | 36 | MemAlignReadByte AIR |
-| `ZiskFv.Fundamentals.PrattCertificate` | 30 | Pratt primality certificate auxiliaries |
+| `ZiskFv.Field.GoldilocksPrimality` | 30 | Pratt primality certificate auxiliaries |
 
 The 12 `ZiskFv.Tactics.*Archetype` modules account for ~110
 unreachable constants. These are tactic-archetype scaffolding
