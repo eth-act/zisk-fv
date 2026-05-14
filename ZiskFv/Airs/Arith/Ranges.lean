@@ -1020,4 +1020,121 @@ axiom arith_table_op_mulhsu_main_selector_pin
     (_h_op : v.op r_a = 179) :
     v.main_mul r_a = 0 ∧ v.main_div r_a = 0
 
+/-! ## Arith-table high-half MUL sign-witness MSB pins — `na = MSB(A)`, `nb = MSB(B)`
+
+Step 4.2 round 3.III sign-witness MSB pins for the signed high-half
+MUL family — exact MUL-side mirrors of `arith_div_np_eq_msb_of_dividend`
+/ `arith_div_nb_eq_msb_of_divisor`, with the input column re-labelling
+appropriate to ArithMul (operands sit in `a[]` / `b[]` not `c[]` / `b[]`).
+
+Per the row-type table at `arith.pil:222-234` (legend at lines 222-229):
+
+* MULH (op = 181, signed × signed → high) — row signature
+  `na = a3, nb = b3, np = c3, nr = d3`: `na` carries the MSB of the
+  rs1 chunk packing (i.e. MSB of `packed4 a[0..3]`); `nb` carries the
+  MSB of the rs2 chunk packing.
+* MULHSU (op = 179, signed × unsigned → high) — same row signature for
+  `na = a3` (rs1 is signed) but `nb` is pinned to 0 by
+  `arith_table_op_mulhsu_mode_pin` since rs2 is unsigned.
+
+Trust class #6b — lookup soundness on the consumer-side
+`arith_table_assumes` bus row composed with the arith_table content
+(`arith.pil:286-287` + `arith_table_data.rs::ARITH_TABLE` MULH/MULHSU
+rows whose flag-field bit encoding per `arith_table_helpers.rs:130-140`
+binds `na`/`nb` to the MSB convention). Same trust kind as
+`arith_div_np_eq_msb_of_dividend` / `arith_div_nb_eq_msb_of_divisor`,
+narrower scope (ArithMul rows in place of ArithDiv rows). -/
+
+/-- **Arith-table signed high-half MUL `na = MSB(A)` pin (class #6b).**
+    For every `Valid_ArithMul` row with `op ∈ {179, 181}` (MULHSU or
+    MULH — both have rs1 signed), the sign-of-rs1 witness `na` equals
+    the MSB of the rs1 chunk packing `A := packed4 a[0..3]`:
+
+    ```
+    (na).val = if 2^63 ≤ packed4 a[0..3] then 1 else 0
+    ```
+
+    PIL citation: `arith.pil:286-287` (the `arith_table_assumes`
+    lookup; `na` is an explicit column in the tuple) composed with
+    `arith.pil:222-234` (row-type table: `na = a3` for signed-rs1
+    high-half MUL rows) and the table data at
+    `zisk/state-machines/arith/src/arith_table_data.rs` rows for
+    op = 179 / 181 whose flag-field bit encoding per
+    `arith_table_helpers.rs:130-140` binds `na` to the MSB convention.
+
+    Consumed by `equiv_MULH_from_trust` (`Compliance/MulHExemplar.lean`)
+    and `equiv_MULHSU_from_trust` (`Compliance/MulHSUExemplar.lean`)
+    via `signed_packed_toInt_eq_of_read_xreg` to derive `h_op1` (the
+    signed integer-form lane equation for rs1). -/
+axiom arith_mul_na_eq_msb_of_a
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 179 ∨ v.op r_a = 181) :
+    (v.na r_a).val =
+      (if 2^63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4
+                    (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val
+       then 1 else 0)
+
+/-- **Arith-table signed high-half MUL `nb = MSB(B)` pin (class #6b).**
+    For every `Valid_ArithMul` row with `op = 181` (MULH — signed × signed),
+    the sign-of-rs2 witness `nb` equals the MSB of the rs2 chunk packing
+    `B := packed4 b[0..3]`:
+
+    ```
+    (nb).val = if 2^63 ≤ packed4 b[0..3] then 1 else 0
+    ```
+
+    PIL citation: same as `arith_mul_na_eq_msb_of_a`, with `nb` (not `na`)
+    encoded by the corresponding flag-field bit per
+    `arith_table_helpers.rs:130-140`. The row-type table at
+    `arith.pil:232` for signed × signed MUL (op = 181) carries
+    `nb = b3` MSB.
+
+    Companion to `arith_mul_na_eq_msb_of_a`; consumed by
+    `equiv_MULH_from_trust` via `signed_packed_toInt_eq_of_read_xreg`
+    to derive `h_op2`. MULHSU does NOT consume this — its `nb = 0`
+    pin comes from `arith_table_op_mulhsu_mode_pin` (rs2 unsigned). -/
+axiom arith_mul_nb_eq_msb_of_b
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 181) :
+    (v.nb r_a).val =
+      (if 2^63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4
+                    (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val
+       then 1 else 0)
+
+/-! ## Arith-table MULW mode pin (op = 0xb6 = 182)
+
+W-mode (m32 = 1) signed analog of `arith_table_op_mul_mode_pin`. Per
+the row-type table at `arith.pil:222-234`, the MULW row pins
+`(sext, m32, div) = (0, 1, 0)` and `nr = 0` (no remainder column);
+the sign-witness columns (`na`, `nb`, `np`) are signed booleans
+satisfying the XOR relation `np = na XOR nb` in `toIntZ` form, with
+booleanity enforced by the arith_table lookup.
+
+The MULW row is **primary** lane (writes the low-32 product into the
+`c[]` chunks, which the bus emits as `bus_res0`), so the selector pin
+fixes `main_mul = 1, main_div = 0`.
+
+Trust class #6b. PIL citation: `arith.pil:286-287`
+(`arith_table_assumes`) composed with the MULW=0xb6 row of
+`arith_table_data.rs::ARITH_TABLE`. Same trust kind as
+`arith_table_op_mul_mode_pin` / `arith_table_op_div_rem_signed_w_mode_pin`,
+narrower scope (single opcode literal). -/
+
+/-- **Arith-table MULW mode pin (class #6b).**
+    For every `Valid_ArithMul` row with `op = 182` (MULW — signed × signed,
+    low 32 bits sign-extended to 64), the arith_table lookup pins
+    `nr = 0`, `sext = 0`, `m32 = 1`, `div = 0`, plus `na` / `nb`
+    booleanity and the XOR relation `np = na XOR nb` (in `toIntZ` form). -/
+axiom arith_table_op_mulw_mode_pin
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 182) :
+    v.nr r_a = 0 ∧ v.sext r_a = 0 ∧ v.m32 r_a = 1 ∧ v.div r_a = 0
+      ∧ (v.na r_a = 0 ∨ v.na r_a = 1)
+      ∧ (v.nb r_a = 0 ∨ v.nb r_a = 1)
+      ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+              + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+              - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+                  * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+
 end ZiskFv.Airs.Arith

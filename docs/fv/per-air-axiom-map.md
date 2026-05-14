@@ -369,6 +369,15 @@ via separate signatures (`arith_mul_*` vs `arith_div_*`).
 | `arith_table_op_mulw_operand_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:340` | W-mode operand-chunk pin for MULW |
 | `arith_table_op_mul_mode_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (new) | MUL-pilot mode pin: `op = 180` ⇒ `na = nb = np = nr = sext = m32 = div = 0` |
 | `arith_table_op_mul_main_selector_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (new) | MUL-pilot selector pin: `op = 180` ⇒ `main_mul = 1, main_div = 0` |
+| `arith_table_op_mulhu_mode_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:927` | MULHU mode pin: `op = 177` ⇒ all 7 mode/sign witnesses = 0 |
+| `arith_table_op_mulhu_main_selector_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:946` | MULHU selector pin: `op = 177` ⇒ `main_mul = 0, main_div = 0` |
+| `arith_table_op_mulh_mode_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:977` | MULH mode pin: `op = 181` ⇒ `nr=sext=m32=div=0`, na/nb boolean, np XOR |
+| `arith_table_op_mulh_main_selector_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:993` | MULH selector pin: `op = 181` ⇒ `main_mul = 0, main_div = 0` |
+| `arith_table_op_mulhsu_mode_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:1003` | MULHSU mode pin: `op = 179` ⇒ `nb=nr=sext=m32=div=0`, na boolean, np XOR |
+| `arith_table_op_mulhsu_main_selector_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:1018` | MULHSU selector pin: `op = 179` ⇒ `main_mul = 0, main_div = 0` |
+| `arith_mul_na_eq_msb_of_a` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (Step 4.2 r3.III) | r3.III: `op ∈ {179, 181}` ⇒ `na.val = MSB(packed4 a[0..3])` |
+| `arith_mul_nb_eq_msb_of_b` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (Step 4.2 r3.III) | r3.III: `op = 181` ⇒ `nb.val = MSB(packed4 b[0..3])` |
+| `arith_table_op_mulw_mode_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (Step 4.2 r3.III) | r3.III MULW mode pin: `op = 182` ⇒ `nr=sext=div=0, m32=1`, na/nb boolean, np XOR |
 | `main_external_arith_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:553` | rd-write entry byte-pack lanes equal Main's `c_0`/`c_1` for MUL/DIV-family rows (`is_external_op = 1`, `op ∈ 0xb0..0xbf`) — shared with ArithDiv |
 
 ### Pilot status — landed at Step 4.1.8
@@ -430,6 +439,32 @@ Each within-shape wrapper adds 1-3 axioms (mode pin always; selector
 pin always; sign-witness MSB pins for the two signed-input variants).
 Total predicted MUL family delta: **~6-10 axioms** across all 5
 wrappers, all sitting in class #6b alongside the MUL-pilot pair.
+
+### Status — landed at Step 4.2 r3.III (ArithMul-signed family)
+
+All 4 within-shape wrappers landed:
+
+* `equiv_MULHU_from_trust` (`Compliance/MulHUExemplar.lean`) — Step 4.2 r2 Family A.
+* `equiv_MULH_from_trust` (`Compliance/MulHExemplar.lean`) — Step 4.2 r3.III.
+* `equiv_MULHSU_from_trust` (`Compliance/MulHSUExemplar.lean`) — Step 4.2 r3.III.
+* `equiv_MULW_from_trust` (`Compliance/MulWExemplar.lean`) — Step 4.2 r3.III.
+
+Total ArithMul axiom delta across the whole Step 4.2 effort (r2 + r3.III):
+* `arith_table_op_mul_mode_pin` + `arith_table_op_mul_main_selector_pin` (r1.8)
+* `arith_table_op_mulhu_mode_pin` + `arith_table_op_mulhu_main_selector_pin` (r2)
+* `arith_table_op_mulh_mode_pin` + `arith_table_op_mulh_main_selector_pin` (r2)
+* `arith_table_op_mulhsu_mode_pin` + `arith_table_op_mulhsu_main_selector_pin` (r2)
+* `arith_mul_na_eq_msb_of_a` + `arith_mul_nb_eq_msb_of_b` (r3.III)
+* `arith_table_op_mulw_mode_pin` (r3.III)
+
+11 class-#6b axioms across all 5 MUL-family opcodes — slightly above
+the predicted upper bound (10) because MULW kept the W-mode mode pin
+separate from the existing operand-truncation pin
+(`arith_table_op_mulw_operand_pin`) rather than combining them. MULW
+exemplar still passes through `h_sext_choice`, `h_op1`, `h_op2` as
+W-form caller obligations (mirroring DIVW's exemplar shape); a future
+within-shape pass can derive these from the existing W operand pin
+plus a signed-low-32 form of `signed_packed_toInt_eq_of_read_xreg`.
 
 ---
 
