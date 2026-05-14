@@ -552,6 +552,51 @@ candidates are constructibility-driven (a missing `transpile_*`
 contract for an edge case) — class #1. **Smallest predicted axiom
 delta of the seven AIRs.**
 
+### Pilot status (Step 4.1.1 — non-branch LUI exemplar)
+
+**Actual: 0 new axioms** for the LUI non-branch exemplar
+(`ZiskFv/Equivalence/Compliance/LuiExemplar.lean`,
+`equiv_LUI_from_trust`). Matches the prediction above.
+
+Composition: `transpile_LUI` (class #1) + `equiv_LUI`'s existing
+transitive closure (`main_store_pc_emission_bundle` class #4,
+`memory_bus_entry_byte_range_perm_sound` class #5b,
+`main_columns_in_range` class #5b). No category 1–5 work surfaced
+a new axiom: lane-match, range/bound, and the lone (Main-side)
+mode pins (`m32 = 0`, `set_pc = 0`, `store_pc = 0`) are all already
+internalized by `equiv_LUI`. The wrapper unpacks `h_circuit` into
+`(h_main_active, h_main_op_lui, h_lui_subset)` — a
+structural-unpacking pattern consuming only `transpile_LUI`.
+
+Caller-burden (per discharge-recipe.md): 22 binders / 13 hypotheses
+on `equiv_LUI_from_trust` vs. 22 / 12 on `equiv_LUI`. Per-opcode
+hypothesis count grows by 1 because `h_circuit` is a structural
+bundle (`lui_subset_holds` + `main_row_in_lui_mode`, 12 sub-claims)
+that unpacks into three Compliance-friendly ingredients. The
+removed `h_nextPC_eq` / `nextPC_val` (made `rfl` by setting
+`nextPC_val := lui_input.PC + 4#64`) offsets two added binders;
+the third is the net growth. At the global `Compliance.lean` level
+this nets to a reduction because `(m, ∀ r, lui_universal_row m r)`
+collapses into shared parameters across all eleven ControlFlow
+opcodes plus the Main-only opcodes.
+
+Cross-shape lessons:
+* **No new bridge added** to `Equivalence/Bridge/SailStateBridge.lean`.
+  LUI has no `read_xreg` — operand-bridge category 5 is N/A.
+* The discharge generalizes to AUIPC / JAL / JALR mechanically:
+  swap `transpile_LUI` for `transpile_AUIPC` / `transpile_JAL` /
+  `transpile_JALR`, swap `lui_subset_holds` for the corresponding
+  AUIPC / JAL / JALR subset, swap `lui_archetype_circuit_holds`
+  for the corresponding `*_archetype_circuit_holds`. Mass-author
+  the four UTYPE/jump wrappers in Step 4.2.
+
+Remaining ControlFlow work: the seven branch opcodes
+(`BEQ`, `BNE`, `BLT`, `BLTU`, `BGE`, `BGEU`, `FENCE`) are a
+**different shape** (no rd-write, only PC update) and need a
+separate exemplar. Predicted: still 0 new axioms — the branch
+shape is also Main-only and consumes transpile contracts (#1)
+plus `main_columns_in_range` (#5b) only.
+
 ---
 
 ## Summary: per-AIR axiom counts and predicted deltas
