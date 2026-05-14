@@ -211,6 +211,111 @@ inductive OpEnvelope
     (h_nextPC_matches :
       (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
         = (PureSpec.execute_BEQ_pure beq_input).nextPC) : OpEnvelope state m r_main
+  -- ============================ BNE (branch, no mem) ====================
+  | bne
+    (bne_input : PureSpec.BneInput) (imm : BitVec 13) (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_imm : bne_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok bne_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok bne_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some bne_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_target_aligned :
+      (bne_input.PC + BitVec.signExtend 64 bne_input.imm).toNat % 4 = 0)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BNE_pure bne_input).nextPC) : OpEnvelope state m r_main
+  -- ============================ BLT (branch, no mem) ====================
+  | blt
+    (blt_input : PureSpec.BltInput) (imm : BitVec 13) (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_imm : blt_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok blt_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok blt_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some blt_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_target_aligned :
+      (blt_input.PC + BitVec.signExtend 64 blt_input.imm).toNat % 4 = 0)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BLT_pure blt_input).nextPC) : OpEnvelope state m r_main
+  -- ============================ BGE (branch, no mem) ====================
+  | bge
+    (bge_input : PureSpec.BgeInput) (imm : BitVec 13) (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_imm : bge_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok bge_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok bge_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some bge_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_target_aligned :
+      (bge_input.PC + BitVec.signExtend 64 bge_input.imm).toNat % 4 = 0)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BGE_pure bge_input).nextPC) : OpEnvelope state m r_main
+  -- ============================ BLTU (branch, no mem) ===================
+  | bltu
+    (bltu_input : PureSpec.BltuInput) (imm : BitVec 13) (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_imm : bltu_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok bltu_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok bltu_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some bltu_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_target_aligned :
+      (bltu_input.PC + BitVec.signExtend 64 bltu_input.imm).toNat % 4 = 0)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BLTU_pure bltu_input).nextPC) : OpEnvelope state m r_main
+  -- ============================ BGEU (branch, no mem) ===================
+  | bgeu
+    (bgeu_input : PureSpec.BgeuInput) (imm : BitVec 13) (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_imm : bgeu_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok bgeu_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok bgeu_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some bgeu_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_target_aligned :
+      (bgeu_input.PC + BitVec.signExtend 64 bgeu_input.imm).toNat % 4 = 0)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BGEU_pure bgeu_input).nextPC) : OpEnvelope state m r_main
   -- ============================ FENCE (no mem) ==========================
   | fence
     (fence_input : PureSpec.FenceInput)
@@ -444,6 +549,11 @@ def kind : OpEnvelope state m r_main → mainOpKind
                           -- NOTE: this routing-only choice has no
                           -- soundness implication; the dispatcher's
                           -- conclusion does not depend on `kind`.
+  | .bne ..   => .EQ
+  | .blt ..   => .EQ
+  | .bge ..   => .EQ
+  | .bltu ..  => .EQ
+  | .bgeu ..  => .EQ
   | .fence .. => .FLAG
   | .lui ..   => .COPYB
   | .auipc .. => .FLAG
@@ -457,6 +567,21 @@ def kind : OpEnvelope state m r_main → mainOpKind
 def exec_eq : OpEnvelope state m r_main → Prop
   | .beq _ imm r1 r2 _ exec_row .. =>
       execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BEQ)) state
+        = (bus_effect exec_row [] state).2
+  | .bne _ imm r1 r2 _ exec_row .. =>
+      execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BNE)) state
+        = (bus_effect exec_row [] state).2
+  | .blt _ imm r1 r2 _ exec_row .. =>
+      execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLT)) state
+        = (bus_effect exec_row [] state).2
+  | .bge _ imm r1 r2 _ exec_row .. =>
+      execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BGE)) state
+        = (bus_effect exec_row [] state).2
+  | .bltu _ imm r1 r2 _ exec_row .. =>
+      execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLTU)) state
+        = (bus_effect exec_row [] state).2
+  | .bgeu _ imm r1 r2 _ exec_row .. =>
+      execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BGEU)) state
         = (bus_effect exec_row [] state).2
   | .fence _ fm pred succ rs rd exec_row .. =>
       execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
@@ -526,6 +651,41 @@ theorem zisk_riscv_compliant_program_bus
         h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
     simp only [OpEnvelope.exec_eq]
     exact dispatch_BEQ state beq_input imm r1 r2 misa_val exec_row
+      h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+      h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+  | bne bne_input imm r1 r2 misa_val exec_row
+        h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+        h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_BNE state bne_input imm r1 r2 misa_val exec_row
+      h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+      h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+  | blt blt_input imm r1 r2 misa_val exec_row
+        h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+        h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_BLT state blt_input imm r1 r2 misa_val exec_row
+      h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+      h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+  | bge bge_input imm r1 r2 misa_val exec_row
+        h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+        h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_BGE state bge_input imm r1 r2 misa_val exec_row
+      h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+      h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+  | bltu bltu_input imm r1 r2 misa_val exec_row
+         h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+         h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_BLTU state bltu_input imm r1 r2 misa_val exec_row
+      h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+      h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+  | bgeu bgeu_input imm r1 r2 misa_val exec_row
+         h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+         h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_BGEU state bgeu_input imm r1 r2 misa_val exec_row
       h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
       h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
   | fence fence_input fm pred succ rs rd exec_row
