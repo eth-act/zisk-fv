@@ -761,6 +761,81 @@ separate exemplar. Predicted: still 0 new axioms — the branch
 shape is also Main-only and consumes transpile contracts (#1)
 plus `main_columns_in_range` (#5b) only.
 
+### Pilot status (Step 4.1.7 — branches BEQ exemplar)
+
+**Actual: 0 new axioms** for the BEQ branch exemplar
+(`ZiskFv/Equivalence/Compliance/BeqExemplar.lean`,
+`equiv_BEQ_from_trust`). Matches the prediction (0 new axioms).
+
+Composition: `equiv_BEQ`'s existing transitive closure (which for
+the branch sub-shape comprises `transpile_BEQ` (class #1), Sail
+auxiliaries (`writeReg`/`readReg`/`jump_to_equiv`), and the
+bus-emission shape lemma `bus_effect_matches_sail_beq`) plus a
+pure-Lean misalignment derivation local to this file. No category
+1–5 work surfaced a new axiom:
+
+* **Lane-match (category 1)** N/A on the provider side. The
+  Binary-AIR flag-correctness fact (`m.flag = 1 ↔ r1_val = r2_val`,
+  consumed by a future `h_nextPC_matches` discharge) is NOT
+  exercised by this exemplar — `h_nextPC_matches` passes through
+  as a structural bus pin. The flag-correctness bridge belongs to
+  a separate `Bridge/ControlFlow.lean` extension consuming
+  `op_bus_perm_sound_Binary` (class #4) + `bin_table_consumer_wf`
+  (class #6, `wf_EQ` clause) and is deferred.
+* **Mode pins (category 2)** N/A on the provider side. Main-side
+  mode pins are not directly consumed by `equiv_BEQ`'s Sail-pivot
+  proof.
+* **Sign-witness pins (category 3)** N/A — equality is sign-agnostic.
+* **Range/bound (category 4)** N/A — BEQ writes no register and
+  consumes no byte-level Mem entries.
+* **Operand bridges (category 5)** N/A at the wrapper level —
+  `equiv_BEQ` consumes raw Sail `read_xreg` facts directly; the
+  comparison is `BitVec` equality not lane chunks.
+
+The actual discharge target on BEQ is the pair of Sail-pure-spec
+exception promises `h_not_throws` and `h_success`. Reading
+`PureSpec.execute_BEQ_pure`, both depend on bits 0 and 1 of the
+branch target `input.PC + signExt 64 input.imm`. The wrapper
+introduces a **single SPEC-PRE alignment hypothesis**
+`h_target_aligned : (input.PC + signExt 64 input.imm).toNat % 4 = 0`
+(a ZisK assembler/transpiler invariant — RV64I requires branch
+targets to be 4-byte-aligned per RISC-V ISA Manual §2.5) and
+derives both promises via the pure-Lean lemma
+`beq_pure_no_exception_of_aligned`.
+
+Caller-burden (per discharge-recipe.md): 18 binders / 10 hypotheses
+on `equiv_BEQ_from_trust` vs. 19 / 11 on `equiv_BEQ`. **Net −1
+binder / −1 hypothesis.** Cleaner than LUI's +1 structural-unpacking
+growth — branches need no compensating bundle unpack because there
+is no rd-write entry (no `e_rd` byte ranges, no `register_write_lanes_match`).
+
+Cross-shape lessons:
+* **No new bridge added** to `Equivalence/Bridge/ControlFlow.lean`
+  or `Equivalence/Bridge/SailStateBridge.lean`. The misalignment
+  derivation is a 12-line `BitVec.toNat` argument local to the
+  exemplar file.
+* The discharge generalizes mechanically to the other branches
+  (BNE / BLT / BGE / BLTU / BGEU). Every branch's pure spec uses
+  the same `throws := !skip && bit0`, `fails := throws || (!skip && bit1)`
+  shape parameterized on the per-opcode comparison output; the
+  alignment lemma is opcode-agnostic. The within-shape wrappers
+  swap `execute_BEQ_pure` for the per-opcode pure spec and reuse
+  the same single-hypothesis alignment discharge.
+* **Signed branches BLT / BGE** additionally need sign-witness
+  pins **only if** the within-shape exemplar discharges
+  `h_nextPC_matches` (which BEQ does not). Following BEQ's
+  alignment-only pattern, BLT / BGE / BLTU / BGEU also need only
+  the alignment hypothesis.
+* `FENCE` is structurally distinct (no branch target, no PC
+  jump) — see its current `equiv_FENCE` for the trivial Main-only
+  proof; no Compliance wrapper required.
+
+The trust-ledger size stays unchanged after the BEQ exemplar —
+confirming that ControlFlow branches is the cleanest sub-shape
+within ControlFlow (and one of the cleanest across the seven
+AIRs) and that the per-AIR axiom map's 0-new-axioms prediction
+was correct.
+
 ---
 
 ## Summary: per-AIR axiom counts and predicted deltas
