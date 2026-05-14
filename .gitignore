@@ -41,3 +41,5 @@ docs/superpowers/
 
 # Legacy leftover from the deleted docker pipeline (root-owned, harmless)
 /out/
+
+.rgignore
