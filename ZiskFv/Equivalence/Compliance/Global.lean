@@ -87,6 +87,7 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.BinaryExtension
+open ZiskFv.Airs.Mem
 open ZiskFv.Tactics.UTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.Equivalence.Compliance
@@ -1185,6 +1186,276 @@ inductive OpEnvelope
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
+  -- ============================ SH (store, Main-only) ===================
+  | sh
+    (sh_input : PureSpec.ShInput)
+    (mstatus : RegisterType Register.mstatus)
+    (pmaRegion : PMA_Region)
+    (misa : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 0)
+    (h_main_op : m.op r_main = OP_COPYB)
+    (h_main_ind_width : m.ind_width r_main = 2)
+    (risc_v_assumptions :
+      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    (h_opcode_assumptions :
+      PureSpec.sh_state_assumptions sh_input state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_STOREH_pure sh_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
+  -- ============================ SW (store, Main-only) ===================
+  | sw
+    (sw_input : PureSpec.SwInput)
+    (mstatus : RegisterType Register.mstatus)
+    (pmaRegion : PMA_Region)
+    (misa : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 0)
+    (h_main_op : m.op r_main = OP_COPYB)
+    (h_main_ind_width : m.ind_width r_main = 4)
+    (risc_v_assumptions :
+      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    (h_opcode_assumptions :
+      PureSpec.sw_state_assumptions sw_input state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_STOREW_pure sw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
+  -- ============================ SD (store, Main-only) ===================
+  | sd
+    (sd_input : PureSpec.SdInput)
+    (mstatus : RegisterType Register.mstatus)
+    (pmaRegion : PMA_Region)
+    (misa : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 0)
+    (h_main_op : m.op r_main = OP_COPYB)
+    (risc_v_assumptions :
+      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    (h_opcode_assumptions :
+      PureSpec.sd_state_assumptions sd_input state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_STORED_pure sd_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
+  -- ============================ LD (load doubleword) ====================
+  | ld
+    (ld_input : PureSpec.LdInput)
+    (mstatus : RegisterType Register.mstatus)
+    (pmaRegion : PMA_Region)
+    (misa : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (mem : Valid_Mem C FGL FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 0)
+    (h_main_op_ld : m.op r_main = OP_COPYB)
+    (risc_v_assumptions :
+      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    (h_opcode_assumptions :
+      PureSpec.ld_state_assumptions ld_input state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_LOADD_pure ld_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
+    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+  -- ============================ LBU =====================================
+  | lbu
+    (lbu_input : PureSpec.LbuInput)
+    (mstatus : RegisterType Register.mstatus)
+    (pmaRegion : PMA_Region)
+    (misa : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (mem : Valid_Mem C FGL FGL)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
+    (h_low :
+      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 0)
+    (h_main_op_lbu : m.op r_main = OP_COPYB)
+    (h_width : m.ind_width r_main = (1 : FGL))
+    (risc_v_assumptions :
+      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    (h_opcode_assumptions :
+      PureSpec.lbu_state_assumptions lbu_input state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_LOADBU_pure lbu_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
+    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+  -- ============================ LHU =====================================
+  | lhu
+    (lhu_input : PureSpec.LhuInput)
+    (mstatus : RegisterType Register.mstatus)
+    (pmaRegion : PMA_Region)
+    (misa : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (mem : Valid_Mem C FGL FGL)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
+    (h_low :
+      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 0)
+    (h_main_op_lhu : m.op r_main = OP_COPYB)
+    (h_width : m.ind_width r_main = (2 : FGL))
+    (risc_v_assumptions :
+      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    (h_opcode_assumptions :
+      PureSpec.lhu_state_assumptions lhu_input state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_LOADHU_pure lhu_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
+    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+  -- ============================ LWU =====================================
+  | lwu
+    (lwu_input : PureSpec.LwuInput)
+    (mstatus : RegisterType Register.mstatus)
+    (pmaRegion : PMA_Region)
+    (misa : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (mem : Valid_Mem C FGL FGL)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
+    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
+    (h_low :
+      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 0)
+    (h_main_op_lwu : m.op r_main = OP_COPYB)
+    (h_width : m.ind_width r_main = (4 : FGL))
+    (risc_v_assumptions :
+      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    (h_opcode_assumptions :
+      PureSpec.lwu_state_assumptions lwu_input state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_LOADWU_pure lwu_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
+    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+  -- ============================ LB (signed-byte load) ===================
+  | lb
+    (lb_input : PureSpec.LbInput)
+    (mstatus : RegisterType Register.mstatus)
+    (pmaRegion : PMA_Region)
+    (misa : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (mem : Valid_Mem C FGL FGL)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_B)
+    (risc_v_assumptions :
+      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    (h_opcode_assumptions :
+      PureSpec.lb_state_assumptions lb_input state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_LOADB_pure lb_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
+    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+  -- ============================ LH ======================================
+  | lh
+    (lh_input : PureSpec.LhInput)
+    (mstatus : RegisterType Register.mstatus)
+    (pmaRegion : PMA_Region)
+    (misa : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (mem : Valid_Mem C FGL FGL)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_H)
+    (risc_v_assumptions :
+      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    (h_opcode_assumptions :
+      PureSpec.lh_state_assumptions lh_input state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_LOADH_pure lh_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
+    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+  -- ============================ LW ======================================
+  | lw
+    (lw_input : PureSpec.LwInput)
+    (mstatus : RegisterType Register.mstatus)
+    (pmaRegion : PMA_Region)
+    (misa : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (mem : Valid_Mem C FGL FGL)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_W)
+    (risc_v_assumptions :
+      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
+    (h_opcode_assumptions :
+      PureSpec.lw_state_assumptions lw_input state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_LOADW_pure lw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
+    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
 
 namespace OpEnvelope
 
@@ -1243,6 +1514,16 @@ def kind : OpEnvelope state m r_main → mainOpKind
   | .srliw ..  => .SRL_W
   | .sraiw ..  => .SRA_W
   | .sb ..    => .COPYB
+  | .sh ..    => .COPYB
+  | .sw ..    => .COPYB
+  | .sd ..    => .COPYB
+  | .ld ..    => .COPYB
+  | .lbu ..   => .COPYB
+  | .lhu ..   => .COPYB
+  | .lwu ..   => .COPYB
+  | .lb ..    => .SIGNEXTEND_B
+  | .lh ..    => .SIGNEXTEND_H
+  | .lw ..    => .SIGNEXTEND_W
 
 /-- The dispatcher's conclusion as a `Prop`. -/
 def exec_eq : OpEnvelope state m r_main → Prop
@@ -1435,6 +1716,92 @@ def exec_eq : OpEnvelope state m r_main → Prop
         regidx.Regidx sb_input.r1,
         1
       )) state = (bus_effect exec_row [e0, e1, e2] state).2
+  | .sh sh_input _ _ _ _ exec_row e0 e1 e2 .. =>
+      execute_instruction (instruction.STORE (
+        sh_input.imm,
+        regidx.Regidx sh_input.r2,
+        regidx.Regidx sh_input.r1,
+        2
+      )) state = (bus_effect exec_row [e0, e1, e2] state).2
+  | .sw sw_input _ _ _ _ exec_row e0 e1 e2 .. =>
+      execute_instruction (instruction.STORE (
+        sw_input.imm,
+        regidx.Regidx sw_input.r2,
+        regidx.Regidx sw_input.r1,
+        4
+      )) state = (bus_effect exec_row [e0, e1, e2] state).2
+  | .sd sd_input _ _ _ _ exec_row e0 e1 e2 .. =>
+      execute_instruction (instruction.STORE (
+        sd_input.imm,
+        regidx.Regidx sd_input.r2,
+        regidx.Regidx sd_input.r1,
+        8
+      )) state = (bus_effect exec_row [e0, e1, e2] state).2
+  | .ld ld_input _ _ _ _ _ exec_row e0 e1 e2 .. =>
+      execute_instruction (instruction.LOAD (
+        ld_input.imm,
+        regidx.Regidx ld_input.r1,
+        regidx.Regidx ld_input.rd,
+        false,
+        8
+      )) state = (bus_effect exec_row [e0, e1, e2] state).2
+  | .lbu lbu_input _ _ _ _ _ _ _ _ _ exec_row e0 e1 e2 .. =>
+      execute_instruction (instruction.LOAD (
+        lbu_input.imm,
+        regidx.Regidx lbu_input.r1,
+        regidx.Regidx lbu_input.rd,
+        true,
+        1
+      )) state = (bus_effect exec_row [e0, e1, e2] state).2
+  | .lhu lhu_input _ _ _ _ _ _ _ _ _ exec_row e0 e1 e2 .. =>
+      execute_instruction (instruction.LOAD (
+        lhu_input.imm,
+        regidx.Regidx lhu_input.r1,
+        regidx.Regidx lhu_input.rd,
+        true,
+        2
+      )) state = (bus_effect exec_row [e0, e1, e2] state).2
+  | .lwu lwu_input _ _ _ _ _ _ _ _ _ exec_row e0 e1 e2 .. =>
+      execute_instruction (instruction.LOAD (
+        lwu_input.imm,
+        regidx.Regidx lwu_input.r1,
+        regidx.Regidx lwu_input.rd,
+        true,
+        4
+      )) state = (bus_effect exec_row [e0, e1, e2] state).2
+  | .lb lb_input _ _ _ _ _ _ exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.LOAD (
+          lb_input.imm,
+          regidx.Regidx lb_input.r1,
+          regidx.Regidx lb_input.rd,
+          false,
+          1
+        ))) state = (bus_effect exec_row [e0, e1, e2] state).2
+  | .lh lh_input _ _ _ _ _ _ exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.LOAD (
+          lh_input.imm,
+          regidx.Regidx lh_input.r1,
+          regidx.Regidx lh_input.rd,
+          false,
+          2
+        ))) state = (bus_effect exec_row [e0, e1, e2] state).2
+  | .lw lw_input _ _ _ _ _ _ exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.LOAD (
+          lw_input.imm,
+          regidx.Regidx lw_input.r1,
+          regidx.Regidx lw_input.rd,
+          false,
+          4
+        ))) state = (bus_effect exec_row [e0, e1, e2] state).2
 
 end OpEnvelope
 
@@ -1883,6 +2250,126 @@ theorem zisk_riscv_compliant_program_bus
     exact dispatch_SB state sb_input mstatus pmaRegion misa mseccfg
       m r_main exec_row e0 e1 e2
       h_main_active h_main_op h_main_ind_width
+      risc_v_assumptions h_opcode_assumptions
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+  | sh sh_input mstatus pmaRegion misa mseccfg exec_row e0 e1 e2
+       h_main_active h_main_op h_main_ind_width
+       risc_v_assumptions h_opcode_assumptions
+       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_SH state sh_input mstatus pmaRegion misa mseccfg
+      m r_main exec_row e0 e1 e2
+      h_main_active h_main_op h_main_ind_width
+      risc_v_assumptions h_opcode_assumptions
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+  | sw sw_input mstatus pmaRegion misa mseccfg exec_row e0 e1 e2
+       h_main_active h_main_op h_main_ind_width
+       risc_v_assumptions h_opcode_assumptions
+       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_SW state sw_input mstatus pmaRegion misa mseccfg
+      m r_main exec_row e0 e1 e2
+      h_main_active h_main_op h_main_ind_width
+      risc_v_assumptions h_opcode_assumptions
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+  | sd sd_input mstatus pmaRegion misa mseccfg exec_row e0 e1 e2
+       h_main_active h_main_op
+       risc_v_assumptions h_opcode_assumptions
+       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_SD state sd_input mstatus pmaRegion misa mseccfg
+      m r_main exec_row e0 e1 e2
+      h_main_active h_main_op
+      risc_v_assumptions h_opcode_assumptions
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+  | ld ld_input mstatus pmaRegion misa mseccfg mem exec_row e0 e1 e2
+       h_main_active h_main_op_ld
+       risc_v_assumptions h_opcode_assumptions
+       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_LD state ld_input mstatus pmaRegion misa mseccfg
+      m mem r_main exec_row e0 e1 e2
+      h_main_active h_main_op_ld
+      risc_v_assumptions h_opcode_assumptions
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+  | lbu lbu_input mstatus pmaRegion misa mseccfg mem mab marb ma h_low exec_row e0 e1 e2
+        h_main_active h_main_op_lbu h_width
+        risc_v_assumptions h_opcode_assumptions
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_LBU state lbu_input mstatus pmaRegion misa mseccfg
+      m mem r_main mab marb ma h_low exec_row e0 e1 e2
+      h_main_active h_main_op_lbu h_width
+      risc_v_assumptions h_opcode_assumptions
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+  | lhu lhu_input mstatus pmaRegion misa mseccfg mem mab marb ma h_low exec_row e0 e1 e2
+        h_main_active h_main_op_lhu h_width
+        risc_v_assumptions h_opcode_assumptions
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_LHU state lhu_input mstatus pmaRegion misa mseccfg
+      m mem r_main mab marb ma h_low exec_row e0 e1 e2
+      h_main_active h_main_op_lhu h_width
+      risc_v_assumptions h_opcode_assumptions
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+  | lwu lwu_input mstatus pmaRegion misa mseccfg mem mab marb ma h_low exec_row e0 e1 e2
+        h_main_active h_main_op_lwu h_width
+        risc_v_assumptions h_opcode_assumptions
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_LWU state lwu_input mstatus pmaRegion misa mseccfg
+      m mem r_main mab marb ma h_low exec_row e0 e1 e2
+      h_main_active h_main_op_lwu h_width
+      risc_v_assumptions h_opcode_assumptions
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+  | lb lb_input mstatus pmaRegion misa mseccfg mem v exec_row e0 e1 e2
+       h_main_active h_main_op
+       risc_v_assumptions h_opcode_assumptions
+       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_LB state lb_input mstatus pmaRegion misa mseccfg
+      m mem r_main v exec_row e0 e1 e2
+      h_main_active h_main_op
+      risc_v_assumptions h_opcode_assumptions
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+  | lh lh_input mstatus pmaRegion misa mseccfg mem v exec_row e0 e1 e2
+       h_main_active h_main_op
+       risc_v_assumptions h_opcode_assumptions
+       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_LH state lh_input mstatus pmaRegion misa mseccfg
+      m mem r_main v exec_row e0 e1 e2
+      h_main_active h_main_op
+      risc_v_assumptions h_opcode_assumptions
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+  | lw lw_input mstatus pmaRegion misa mseccfg mem v exec_row e0 e1 e2
+       h_main_active h_main_op
+       risc_v_assumptions h_opcode_assumptions
+       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_LW state lw_input mstatus pmaRegion misa mseccfg
+      m mem r_main v exec_row e0 e1 e2
+      h_main_active h_main_op
       risc_v_assumptions h_opcode_assumptions
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
