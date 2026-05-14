@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>zisk-fv proof tree</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #0f1115; color: #d8dee9; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; }
+  #status { position: absolute; top: 8px; left: 12px; font-size: 12px; z-index: 10; pointer-events: none; }
+  #legend { position: absolute; top: 8px; right: 12px; font-size: 12px; background: rgba(20,22,28,0.85); padding: 8px 10px; border: 1px solid #303540; border-radius: 4px; z-index: 10; }
+  #legend .row { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+  #legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+  #controls { position: absolute; bottom: 8px; left: 12px; font-size: 12px; background: rgba(20,22,28,0.85); padding: 6px 10px; border: 1px solid #303540; border-radius: 4px; z-index: 10; }
+  #controls button { background: #1c1f26; color: #d8dee9; border: 1px solid #303540; padding: 3px 8px; margin-right: 4px; cursor: pointer; font-family: inherit; font-size: 12px; }
+  #controls button:hover { background: #2a2f3a; }
+  #tooltip { position: absolute; pointer-events: none; background: rgba(15,17,21,0.95); border: 1px solid #4a5060; padding: 6px 8px; border-radius: 4px; font-size: 12px; max-width: 600px; word-break: break-all; z-index: 20; visibility: hidden; }
+  svg { width: 100vw; height: 100vh; display: block; }
+  .link { stroke: #3a4050; stroke-opacity: 0.4; stroke-width: 0.6px; fill: none; }
+  .link.highlight { stroke: #ebcb8b; stroke-opacity: 1; stroke-width: 1.5px; }
+  .node circle { stroke: #1a1c22; stroke-width: 0.5px; }
+  .node text { font-size: 9px; fill: #aab0bc; pointer-events: none; }
+  .node.highlight circle { stroke: #ebcb8b; stroke-width: 2px; }
+  .node.dim { opacity: 0.15; }
+  .link.dim { opacity: 0.05; }
+</style>
+</head>
+<body>
+<div id="status">loading edges.tsv…</div>
+<div id="legend">
+  <div class="row"><span class="sw" style="background:#a3be8c"></span>root (uber-theorem)</div>
+  <div class="row"><span class="sw" style="background:#88c0d0"></span>project const</div>
+  <div class="row"><span class="sw" style="background:#bf616a"></span>axiom (trust leaf)</div>
+  <div style="margin-top:6px;font-size:11px;color:#7a8090">drag · scroll to zoom · click node</div>
+</div>
+<div id="controls">
+  <button onclick="resetView()">reset view</button>
+  <button onclick="toggleLabels()">toggle labels</button>
+  <button onclick="restartSim()">re-layout</button>
+  <span id="counts" style="color:#7a8090;margin-left:8px"></span>
+</div>
+<div id="tooltip"></div>
+<svg></svg>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const ROOT = "ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus";
+
+const colorOf = (kind, isRoot) => {
+  if (isRoot) return "#a3be8c";        // root green
+  if (kind === "A") return "#bf616a";  // axiom red
+  return "#88c0d0";                    // project blue
+};
+
+const radiusOf = (kind, isRoot, depth) => {
+  if (isRoot) return 9;
+  if (kind === "A") return 3.5;
+  // gradient by depth — deeper nodes get smaller
+  return Math.max(2.5, 6 - depth * 0.4);
+};
+
+const shortName = (n) => {
+  const parts = n.split(".");
+  return parts[parts.length - 1];
+};
+
+const svg = d3.select("svg");
+const tooltip = d3.select("#tooltip");
+const status = d3.select("#status");
+
+let g, link, node, simulation, allNodes, allLinks, showLabels = false;
+let zoomBehavior;
+
+async function load() {
+  const text = await fetch("edges.tsv").then(r => r.text());
+  const lines = text.trim().split("\n").slice(1);  // drop header
+  const nodeMap = new Map();
+  const links = [];
+  // Add root first so depth-0 BFS starts there.
+  function ensureNode(name, kind) {
+    if (!nodeMap.has(name)) {
+      nodeMap.set(name, { id: name, kind, depth: Infinity });
+    } else if (kind === "A" && nodeMap.get(name).kind !== "A") {
+      // Promote to axiom if we see an A label.
+      nodeMap.get(name).kind = "A";
+    }
+    return nodeMap.get(name);
+  }
+  for (const line of lines) {
+    const [parent, child, pk, ck] = line.split("\t");
+    ensureNode(parent, pk);
+    ensureNode(child, ck);
+    links.push({ source: parent, target: child });
+  }
+  if (!nodeMap.has(ROOT)) {
+    status.text("ERROR: root not found in edges");
+    return;
+  }
+  // BFS depth from root.
+  const adj = new Map();
+  for (const l of links) {
+    if (!adj.has(l.source)) adj.set(l.source, []);
+    adj.get(l.source).push(l.target);
+  }
+  const queue = [ROOT];
+  nodeMap.get(ROOT).depth = 0;
+  while (queue.length) {
+    const cur = queue.shift();
+    const d = nodeMap.get(cur).depth;
+    for (const t of (adj.get(cur) || [])) {
+      const n = nodeMap.get(t);
+      if (n && n.depth > d + 1) {
+        n.depth = d + 1;
+        queue.push(t);
+      }
+    }
+  }
+  allNodes = [...nodeMap.values()];
+  allLinks = links;
+  d3.select("#counts").text(`${allNodes.length} nodes · ${allLinks.length} edges`);
+  status.text("");
+  render();
+}
+
+function render() {
+  svg.selectAll("*").remove();
+  g = svg.append("g");
+
+  link = g.append("g").attr("class", "links").selectAll("line")
+    .data(allLinks).join("line").attr("class", "link");
+
+  node = g.append("g").attr("class", "nodes").selectAll("g")
+    .data(allNodes).join("g").attr("class", "node");
+
+  node.append("circle")
+    .attr("r", d => radiusOf(d.kind, d.id === ROOT, d.depth))
+    .attr("fill", d => colorOf(d.kind, d.id === ROOT))
+    .on("mouseover", function(event, d) {
+      tooltip.style("visibility", "visible")
+        .html(`<b>${shortName(d.id)}</b><br><span style="color:#888">${d.id}</span><br><span style="color:#888">kind: ${d.kind === "A" ? "axiom" : "project"} · depth: ${d.depth}</span>`);
+      highlightNeighborhood(d);
+    })
+    .on("mousemove", function(event) {
+      tooltip.style("left", (event.pageX + 12) + "px").style("top", (event.pageY + 12) + "px");
+    })
+    .on("mouseout", function() {
+      tooltip.style("visibility", "hidden");
+      clearHighlight();
+    })
+    .on("click", function(event, d) {
+      console.log(d.id);
+      navigator.clipboard?.writeText(d.id);
+    })
+    .call(d3.drag()
+      .on("start", (event, d) => { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on("drag",  (event, d) => { d.fx = event.x; d.fy = event.y; })
+      .on("end",   (event, d) => { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+  // Labels: only root + axioms by default (they're the user-facing ends).
+  node.append("text")
+    .attr("dx", d => radiusOf(d.kind, d.id === ROOT, d.depth) + 2)
+    .attr("dy", 3)
+    .text(d => (d.id === ROOT || d.kind === "A") ? shortName(d.id) : "");
+
+  simulation = d3.forceSimulation(allNodes)
+    .force("link", d3.forceLink(allLinks).id(d => d.id).distance(20).strength(0.4))
+    .force("charge", d3.forceManyBody().strength(-30).distanceMax(400))
+    .force("center", d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2))
+    .force("collide", d3.forceCollide().radius(d => radiusOf(d.kind, d.id === ROOT, d.depth) + 2))
+    .force("radial", d3.forceRadial(d => 80 + d.depth * 60, window.innerWidth / 2, window.innerHeight / 2).strength(0.15))
+    .on("tick", ticked);
+
+  zoomBehavior = d3.zoom().scaleExtent([0.05, 8]).on("zoom", (event) => {
+    g.attr("transform", event.transform);
+  });
+  svg.call(zoomBehavior);
+}
+
+function ticked() {
+  link
+    .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+    .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+  node.attr("transform", d => `translate(${d.x},${d.y})`);
+}
+
+// Neighborhood highlight: show only links incident to d.
+function highlightNeighborhood(d) {
+  const neighbors = new Set([d.id]);
+  for (const l of allLinks) {
+    const s = typeof l.source === "object" ? l.source.id : l.source;
+    const t = typeof l.target === "object" ? l.target.id : l.target;
+    if (s === d.id) neighbors.add(t);
+    if (t === d.id) neighbors.add(s);
+  }
+  node.classed("dim", n => !neighbors.has(n.id));
+  node.classed("highlight", n => n.id === d.id);
+  link.classed("dim", l => {
+    const s = typeof l.source === "object" ? l.source.id : l.source;
+    const t = typeof l.target === "object" ? l.target.id : l.target;
+    return s !== d.id && t !== d.id;
+  });
+  link.classed("highlight", l => {
+    const s = typeof l.source === "object" ? l.source.id : l.source;
+    const t = typeof l.target === "object" ? l.target.id : l.target;
+    return s === d.id || t === d.id;
+  });
+}
+
+function clearHighlight() {
+  node.classed("dim", false).classed("highlight", false);
+  link.classed("dim", false).classed("highlight", false);
+}
+
+function resetView() {
+  svg.transition().duration(500).call(zoomBehavior.transform, d3.zoomIdentity);
+}
+
+function toggleLabels() {
+  showLabels = !showLabels;
+  node.selectAll("text").text(d => {
+    if (showLabels) return shortName(d.id);
+    return (d.id === ROOT || d.kind === "A") ? shortName(d.id) : "";
+  });
+}
+
+function restartSim() {
+  simulation.alpha(1).restart();
+}
+
+load();
+</script>
+</body>
+</html>
