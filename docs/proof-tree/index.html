@@ -22,12 +22,11 @@
   <div class="row"><span class="sw" style="background:#a3be8c"></span>root (uber-theorem)</div>
   <div class="row"><span class="sw" style="background:#88c0d0"></span>project const</div>
   <div class="row"><span class="sw" style="background:#bf616a"></span>axiom (trust leaf)</div>
-  <div style="margin-top:6px;font-size:11px;color:#7a8090">scroll to zoom · drag to pan · hover/click node</div>
+  <div style="margin-top:6px;font-size:11px;color:#7a8090">layered top-down · scroll to zoom · drag to pan · hover/click node</div>
 </div>
 <div id="controls">
   <button onclick="resetView()">reset view</button>
   <button onclick="toggleLabels()">toggle labels</button>
-  <button onclick="restartSim()">re-layout</button>
   <span id="counts" style="color:#7a8090;margin-left:8px"></span>
 </div>
 <div id="tooltip"></div>
@@ -35,6 +34,8 @@
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
 const ROOT = "ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus";
+const LAYER_HEIGHT = 120;
+const LAYER_TOP_PAD = 60;
 
 const colorOf = (kind, isRoot) => {
   if (isRoot) return "#a3be8c";        // root green
@@ -74,12 +75,12 @@ function resize() {
 window.addEventListener("resize", resize);
 
 let allNodes = null, allLinks = null;
-let simulation = null;
 let transform = d3.zoomIdentity;
 let showLabels = false;
 let hoverNode = null;
 let quad = null;
 let zoomBehavior = null;
+let layoutWidth = 0, layoutHeight = 0;
 
 async function load() {
   const text = await fetch("edges.tsv").then(r => r.text());
@@ -125,7 +126,16 @@ async function load() {
     }
   }
   allNodes = [...nodeMap.values()];
-  allLinks = links;
+  // Drop nodes unreachable from root (depth still Infinity).
+  allNodes = allNodes.filter(n => Number.isFinite(n.depth));
+  // Resolve link endpoints to node objects (matching forceLink behaviour the rest of the code expects).
+  const byId = new Map(allNodes.map(n => [n.id, n]));
+  allLinks = [];
+  for (const l of links) {
+    const s = byId.get(l.source);
+    const t = byId.get(l.target);
+    if (s && t) allLinks.push({ source: s, target: t });
+  }
   // Precompute static visual props for each node (avoid per-frame recompute).
   for (const n of allNodes) {
     const isRoot = n.id === ROOT;
@@ -138,24 +148,57 @@ async function load() {
   d3.select("#counts").text(`${allNodes.length} nodes · ${allLinks.length} edges`);
   status.text("");
   resize();
-  initSim();
+  layout();
   initZoom();
-}
-
-function initSim() {
-  simulation = d3.forceSimulation(allNodes)
-    .force("link", d3.forceLink(allLinks).id(d => d.id).distance(20).strength(0.4))
-    .force("charge", d3.forceManyBody().strength(-30).distanceMax(400))
-    .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("collide", d3.forceCollide().radius(d => d.r + 2))
-    .force("radial", d3.forceRadial(d => 80 + d.depth * 60, width / 2, height / 2).strength(0.15))
-    .on("tick", onTick);
-}
-
-function onTick() {
-  // Rebuild quadtree each tick for accurate hit-testing.
-  quad = d3.quadtree(allNodes, d => d.x, d => d.y);
   draw();
+}
+
+function layout() {
+  // Group by depth.
+  const byDepth = d3.group(allNodes, d => d.depth);
+  const maxDepth = d3.max(allNodes, d => d.depth);
+  const widest = d3.max([...byDepth.values()], arr => arr.length) || 1;
+
+  // Choose a logical canvas width that scales with the widest layer so dense
+  // rows aren't cramped. Floor at the viewport width; otherwise allocate
+  // ~24px per node in the widest layer.
+  layoutWidth = Math.max(window.innerWidth, widest * 24);
+  layoutHeight = (maxDepth + 1) * LAYER_HEIGHT + LAYER_TOP_PAD;
+
+  // Initial uniform x within each layer; y by depth.
+  for (const [depth, layerNodes] of byDepth) {
+    const n = layerNodes.length;
+    layerNodes.forEach((node, i) => {
+      node.y = depth * LAYER_HEIGHT + LAYER_TOP_PAD;
+      node.x = (layoutWidth * (i + 1)) / (n + 1);
+    });
+  }
+
+  // Build incoming-edge adjacency for the barycenter pass.
+  const parentsOf = new Map();
+  for (const e of allLinks) {
+    if (!parentsOf.has(e.target.id)) parentsOf.set(e.target.id, []);
+    parentsOf.get(e.target.id).push(e.source);
+  }
+
+  // Barycenter heuristic, one top-down pass: order each layer (depth >= 1)
+  // by the mean x of its parents, then re-spread evenly.
+  for (let depth = 1; depth <= maxDepth; depth++) {
+    const layerNodes = byDepth.get(depth) || [];
+    if (!layerNodes.length) continue;
+    for (const node of layerNodes) {
+      const parents = parentsOf.get(node.id) || [];
+      node._bary = parents.length ? d3.mean(parents, p => p.x) : node.x;
+    }
+    layerNodes.sort((a, b) => a._bary - b._bary);
+    const n = layerNodes.length;
+    layerNodes.forEach((node, i) => {
+      node.x = (layoutWidth * (i + 1)) / (n + 1);
+    });
+  }
+
+  // Build quadtree once — positions are now fixed.
+  quad = d3.quadtree(allNodes, d => d.x, d => d.y);
 }
 
 function draw() {
@@ -236,14 +279,28 @@ function draw() {
   ctx.restore();
 }
 
+function initialTransform() {
+  // Fit the layout to the viewport: scale so the full width fits, with a bit
+  // of margin, and center the layout horizontally / pin it near the top.
+  const margin = 40;
+  const kx = (width - 2 * margin) / layoutWidth;
+  const ky = (height - 2 * margin) / layoutHeight;
+  const k = Math.min(kx, ky, 1);
+  const tx = (width - layoutWidth * k) / 2;
+  const ty = margin;
+  return d3.zoomIdentity.translate(tx, ty).scale(k);
+}
+
 function initZoom() {
   zoomBehavior = d3.zoom()
-    .scaleExtent([0.05, 8])
+    .scaleExtent([0.02, 8])
     .on("zoom", (event) => {
       transform = event.transform;
       draw();
     });
   d3.select(canvas).call(zoomBehavior);
+  // Apply the fit-to-view transform so users see the whole tree on load.
+  d3.select(canvas).call(zoomBehavior.transform, initialTransform());
 
   canvas.addEventListener("mousemove", (evt) => {
     const rect = canvas.getBoundingClientRect();
@@ -294,16 +351,12 @@ function escapeHtml(s) {
 }
 
 function resetView() {
-  d3.select(canvas).transition().duration(500).call(zoomBehavior.transform, d3.zoomIdentity);
+  d3.select(canvas).transition().duration(500).call(zoomBehavior.transform, initialTransform());
 }
 
 function toggleLabels() {
   showLabels = !showLabels;
   draw();
-}
-
-function restartSim() {
-  if (simulation) simulation.alpha(1).restart();
 }
 
 load();
