@@ -820,7 +820,7 @@
       </div>
 
       <div class="ledger-cat">
-        <h3><span class="badge b-trusted">Classes #7–#10</span> Platform-feature scope <span class="count">— 4 axioms · <code>Sail/Auxiliaries.lean</code></span></h3>
+        <h3><span class="badge b-trusted">Classes #7–#10</span> Platform-feature scope <span class="count">— 4 axioms · <code>SailSpec/Auxiliaries.lean</code></span></h3>
         <p class="why">
           ZisK's RV64IM deployment has no PMP, no CLINT MMIO region, no PMA filtering, and disables the Zicfilp landing-pad extension. Axiomatising these as inert is strictly stronger than threading state-level disjointness through every load/store proof. Each is scope-honest for ZisK's target; would need revisiting only if the deployment changes.
         </p>
@@ -1744,7 +1744,7 @@
     const sail1 = box(COLS.sail.x, 50, 'Sail RV64 spec', '/sail-riscv (.sail source)', 'trusted');
     const sail2 = box(COLS.sail.x, 130, 'sail_to_lean', 'mechanical translator (upstream)', 'tool');
     const sail3 = box(COLS.sail.x, 210, 'LeanRV64D', 'NethermindEth/sail-riscv-lean (pinned)', 'trusted');
-    const sail4 = box(COLS.sail.x, 290, 'ZiskFv/Sail/<op>.lean', 'hand-written cleaner pure spec', 'proven');
+    const sail4 = box(COLS.sail.x, 290, 'ZiskFv/SailSpec/<op>.lean', 'hand-written cleaner pure spec', 'proven');
     const sail5 = box(COLS.sail.x, 370, 'execute_<OP>_pure_equiv', 'proves Sail ≡ LeanRV64D', 'proven');
     arrow(COLS.sail.x, sail1.y + BOX_H, COLS.sail.x, sail2.y);
     arrow(COLS.sail.x, sail2.y + BOX_H, COLS.sail.x, sail3.y);

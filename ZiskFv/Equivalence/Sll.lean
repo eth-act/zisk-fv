@@ -8,8 +8,8 @@ import ZiskFv.ZiskCircuit.Sll
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.Sail.sll
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.sll
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses

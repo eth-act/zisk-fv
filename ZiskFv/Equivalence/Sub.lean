@@ -9,8 +9,8 @@ import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.Sail.sub
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.sub
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Tactics.ALURTypeArchetype
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect

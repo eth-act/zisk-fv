@@ -15,8 +15,8 @@ import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Equivalence.Bridge.Mem
-import ZiskFv.Sail.lh
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.lh
+import ZiskFv.SailSpec.BusEffect
 
 /-!
 End-to-end theorem for RV64 LH (load halfword, signed / sign-extended).

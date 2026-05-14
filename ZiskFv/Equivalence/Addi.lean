@@ -10,8 +10,8 @@ import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Equivalence.Bridge.BinaryAdd
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.Sail.addi
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.addi
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.Binary.BinaryAdd

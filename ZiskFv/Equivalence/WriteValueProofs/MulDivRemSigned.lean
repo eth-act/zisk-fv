@@ -10,8 +10,8 @@ import ZiskFv.Bits.PackedBitVec.MulNoWrap
 import ZiskFv.Bits.Execution
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Ranges
-import ZiskFv.Sail.mulw
-import ZiskFv.Sail.divw  -- for `to_bits_truncate_32_eq_ofInt_divw`
+import ZiskFv.SailSpec.mulw
+import ZiskFv.SailSpec.divw  -- for `to_bits_truncate_32_eq_ofInt_divw`
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned
 

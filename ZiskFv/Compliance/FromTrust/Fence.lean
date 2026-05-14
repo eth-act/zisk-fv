@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Equivalence.Fence
-import ZiskFv.Sail.fence
+import ZiskFv.SailSpec.fence
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 

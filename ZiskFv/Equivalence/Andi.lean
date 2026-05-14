@@ -8,8 +8,8 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Equivalence.Bridge.Binary
 import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.Sail.andi
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.andi
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect

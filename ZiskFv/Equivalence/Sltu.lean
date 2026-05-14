@@ -7,8 +7,8 @@ import ZiskFv.ZiskCircuit.Sltu
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.Sail.sltu
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.sltu
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Tactics.ALURTypeArchetype
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect

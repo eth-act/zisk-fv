@@ -9,7 +9,7 @@ import ZiskFv.Airs.Binary.BinaryAddPackedCorrect
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.ZiskCircuit.Add
-import ZiskFv.Sail.add
+import ZiskFv.SailSpec.add
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 
 /-!

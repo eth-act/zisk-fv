@@ -11,8 +11,8 @@ import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.Sail.divu
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.divu
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses

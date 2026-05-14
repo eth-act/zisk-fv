@@ -129,7 +129,7 @@ not by AIR — `Circuit/Add.lean` projects out the Add behaviour from
 `Airs/Main.lean` + `Airs/Binary/BinaryAdd.lean`, both joined by their
 matching bus row.
 
-### `ZiskFv/Sail/`
+### `ZiskFv/SailSpec/`
 
 Per-opcode Sail-side mirrors (lowercase, one per opcode: `add.lean`,
 `lw.lean`, …, 65 files total = 63 opcodes + `Auxiliaries.lean` +
@@ -230,7 +230,7 @@ The Sail RV64 spec mechanically compiled to Lean by
 that pattern-matches every RV64GD instruction, plus all supporting types
 (registers, memory model, traps, PMP, CLINT, …). This is the **trusted
 source of truth** for the LHS of every equivalence theorem; per-opcode
-ergonomic mirrors live in `ZiskFv/Sail/`.
+ergonomic mirrors live in `ZiskFv/SailSpec/`.
 
 ### `build/extraction/`
 
@@ -392,7 +392,7 @@ store) is bounded by the pilout build:
 | Step                              | Peak RAM   | Wall time  |
 |-----------------------------------|------------|------------|
 | `.#zisk-pilout` (cold rebuild)    | ~17 GiB    | ~24 min    |
-| `lake build` worst process (`Sail/sd.lean`) | ~8 GiB RSS / ~7 GiB PSS | (subset of total `lake build`) |
+| `lake build` worst process (`SailSpec/sd.lean`) | ~8 GiB RSS / ~7 GiB PSS | (subset of total `lake build`) |
 | Everything else                   | < 5 GiB    | minutes    |
 
 The pilout build dominates because `pil2-compiler` (Node, V8 heap

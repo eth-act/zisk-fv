@@ -13,8 +13,8 @@ import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Equivalence.Bridge.Mem
-import ZiskFv.Sail.ld
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.ld
+import ZiskFv.SailSpec.BusEffect
 
 /-!
 End-to-end theorem for RV64 LD (load doubleword). Combines:

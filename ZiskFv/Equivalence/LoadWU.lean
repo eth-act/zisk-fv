@@ -16,8 +16,8 @@ import ZiskFv.Airs.MemoryBus.MemAlignBridge
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Equivalence.Bridge.Mem
-import ZiskFv.Sail.lwu
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.lwu
+import ZiskFv.SailSpec.BusEffect
 
 /-!
 End-to-end theorem for RV64 LWU (load word, unsigned / zero-extended).

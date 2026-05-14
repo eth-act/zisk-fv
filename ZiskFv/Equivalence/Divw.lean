@@ -11,8 +11,8 @@ import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus.EntryRanges
-import ZiskFv.Sail.divw
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.divw
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned

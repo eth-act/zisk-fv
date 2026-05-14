@@ -48,4 +48,4 @@ ZiskFv/ZiskCircuit/MemModel.lean
 
 # Small Sail-side simp helpers (locally proven; mirrors openvm-fv's
 # RV32D/Auxiliaries.lean pattern).
-ZiskFv/Sail/Auxiliaries.lean
+ZiskFv/SailSpec/Auxiliaries.lean

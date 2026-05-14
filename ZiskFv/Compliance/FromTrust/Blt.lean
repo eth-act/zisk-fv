@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Equivalence.BranchLessThan
-import ZiskFv.Sail.blt
+import ZiskFv.SailSpec.blt
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 

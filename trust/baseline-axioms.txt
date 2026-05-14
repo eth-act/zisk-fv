@@ -70,10 +70,10 @@ d9d7d2422146a7dd  ZiskFv/Airs/OperationBus/Bridge.lean:77  axiom     op_bus_perm
 f0f2b4a2aaab18ee  ZiskFv/Airs/OperationBus/Bridge.lean:101  axiom     op_bus_perm_sound_BinaryExtension
 7fccc882b9a79e6a  ZiskFv/Airs/Tables/BinaryExtensionTable.lean:262  axiom     bin_ext_table_consumer_wf
 4d9e296fb3ead091  ZiskFv/Airs/Tables/BinaryTable.lean:281  axiom     bin_table_consumer_wf
-a00b854e10ea3d18  ZiskFv/Sail/Auxiliaries.lean:794  axiom     pmpCheck_is_pure_none
-1f6fb25749dc02ac  ZiskFv/Sail/Auxiliaries.lean:817  axiom     within_clint_is_false
-52c0bbafc03c9989  ZiskFv/Sail/Auxiliaries.lean:831  axiom     pmaCheck_is_pure_none
-724bd1dd06f6384f  ZiskFv/Sail/Auxiliaries.lean:850  axiom     update_elp_state_is_pure_unit
+a00b854e10ea3d18  ZiskFv/SailSpec/Auxiliaries.lean:794  axiom     pmpCheck_is_pure_none
+1f6fb25749dc02ac  ZiskFv/SailSpec/Auxiliaries.lean:817  axiom     within_clint_is_false
+52c0bbafc03c9989  ZiskFv/SailSpec/Auxiliaries.lean:831  axiom     pmaCheck_is_pure_none
+724bd1dd06f6384f  ZiskFv/SailSpec/Auxiliaries.lean:850  axiom     update_elp_state_is_pure_unit
 fcf669a1c7c11ee9  ZiskFv/Trusted/Transpiler.lean:252  axiom     transpile_ADD
 c96581d489e45f5d  ZiskFv/Trusted/Transpiler.lean:292  axiom     transpile_JAL
 5eeffe0061232e33  ZiskFv/Trusted/Transpiler.lean:341  axiom     transpile_JALR

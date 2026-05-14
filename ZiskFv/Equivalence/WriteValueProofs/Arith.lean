@@ -18,7 +18,7 @@ import ZiskFv.ZiskCircuit.Addw
 import ZiskFv.ZiskCircuit.Addiw
 import ZiskFv.ZiskCircuit.Sub
 import ZiskFv.ZiskCircuit.Subw
-import ZiskFv.Sail.add
+import ZiskFv.SailSpec.add
 
 /-!
 # WriteValueProofs.Arith — `h_rd_val` discharge lemmas for ALU-Arith opcodes

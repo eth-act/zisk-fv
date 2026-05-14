@@ -11,9 +11,9 @@ import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
 import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Equivalence.Bridge.SailStateBridge
-import ZiskFv.Sail.sb
-import ZiskFv.Sail.sh
-import ZiskFv.Sail.sw
+import ZiskFv.SailSpec.sb
+import ZiskFv.SailSpec.sh
+import ZiskFv.SailSpec.sw
 
 /-!
 # Mem discharge bridge

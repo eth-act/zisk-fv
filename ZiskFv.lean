@@ -2,7 +2,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Field.GoldilocksBridge
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.BusEffect
 import Extraction.BinaryAdd
 import Extraction.Main
 import ZiskFv.Airs.Binary.BinaryAdd
@@ -108,25 +108,25 @@ import ZiskFv.Equivalence.Rem
 import ZiskFv.Equivalence.Remu
 -- Sail-side pure-spec files not pulled in transitively by any Equivalence
 -- module above; imported here so regressions surface at build time.
-import ZiskFv.Sail.Auxiliaries
-import ZiskFv.Sail.addi
-import ZiskFv.Sail.addiw
-import ZiskFv.Sail.addw
-import ZiskFv.Sail.andi
-import ZiskFv.Sail.div
-import ZiskFv.Sail.divu
-import ZiskFv.Sail.lb
-import ZiskFv.Sail.lh
-import ZiskFv.Sail.lw
-import ZiskFv.Sail.ori
-import ZiskFv.Sail.rem
-import ZiskFv.Sail.remu
-import ZiskFv.Sail.slt
-import ZiskFv.Sail.slti
-import ZiskFv.Sail.sltiu
-import ZiskFv.Sail.sltu
-import ZiskFv.Sail.subw
-import ZiskFv.Sail.xori
+import ZiskFv.SailSpec.Auxiliaries
+import ZiskFv.SailSpec.addi
+import ZiskFv.SailSpec.addiw
+import ZiskFv.SailSpec.addw
+import ZiskFv.SailSpec.andi
+import ZiskFv.SailSpec.div
+import ZiskFv.SailSpec.divu
+import ZiskFv.SailSpec.lb
+import ZiskFv.SailSpec.lh
+import ZiskFv.SailSpec.lw
+import ZiskFv.SailSpec.ori
+import ZiskFv.SailSpec.rem
+import ZiskFv.SailSpec.remu
+import ZiskFv.SailSpec.slt
+import ZiskFv.SailSpec.slti
+import ZiskFv.SailSpec.sltiu
+import ZiskFv.SailSpec.sltu
+import ZiskFv.SailSpec.subw
+import ZiskFv.SailSpec.xori
 
 -- Per-shape h_rd_val derivation lemmas.
 import ZiskFv.Equivalence.WriteValueProofs.Arith

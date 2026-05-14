@@ -10,8 +10,8 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.Sail.sh
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.sh
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Tactics.StoreArchetype
 
 /-!

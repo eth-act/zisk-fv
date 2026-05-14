@@ -9,8 +9,8 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.Sail.sd
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.sd
+import ZiskFv.SailSpec.BusEffect
 
 /-!
 End-to-end theorem for RV64 SD (store doubleword). The

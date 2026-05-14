@@ -8,7 +8,7 @@ import ZiskFv.Bits.PackedBitVec.NoWrap
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
 import ZiskFv.Bits.PackedBitVec.SignedNoWrap
 import ZiskFv.Bits.Execution
-import ZiskFv.Sail.mulw
+import ZiskFv.SailSpec.mulw
 
 /-!
 # WriteValueProofs.MulDivRemUnsigned — `h_rd_val` discharge lemmas for MUL/MULHU/DIVU/REMU/MULW

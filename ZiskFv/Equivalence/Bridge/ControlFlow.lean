@@ -3,7 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Sail.Auxiliaries
+import ZiskFv.SailSpec.Auxiliaries
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.ZiskCircuit.Jal

@@ -70,7 +70,7 @@ apply globally):
 
 * 66 transpile contracts in `Fundamentals/Transpiler.lean` — one
   per RV64IM instruction kind, consumed by every per-opcode proof.
-* 4 platform-feature axioms in `Sail/Auxiliaries.lean` (PMP / CLINT
+* 4 platform-feature axioms in `SailSpec/Auxiliaries.lean` (PMP / CLINT
   / PMA / Zicfilp).
 * 1 main-range axiom (`main_columns_in_range`) in
   `Airs/Main/Ranges.lean`.

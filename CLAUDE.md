@@ -112,7 +112,7 @@ running on a fresh machine:
   constraints in one process; total RSS hits ~16 GiB plus OS overhead.
   This is the hard ceiling for the whole pipeline.
 - `lake build` worst process: **~8 GiB RSS / ~7 GiB PSS** during
-  `Sail/sd.lean` elaboration (post the PR #4 layered `dsimp`+`rw`
+  `SailSpec/sd.lean` elaboration (post the PR #4 layered `dsimp`+`rw`
   refactor — was 42 GiB before). Other files stay below 5 GiB.
 
 CI runner: needs ≥32 GiB (`size-xl-x64`). 16 GiB OOMs on cold pilout.

@@ -7,9 +7,9 @@ import ZiskFv.ZiskCircuit.LoadUpperImmediate
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.Sail.lui
+import ZiskFv.SailSpec.lui
 import ZiskFv.Airs.BusHypotheses
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.Bridge.ControlFlow

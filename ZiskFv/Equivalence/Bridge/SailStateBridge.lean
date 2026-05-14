@@ -4,7 +4,7 @@ import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
-import ZiskFv.Sail.Auxiliaries
+import ZiskFv.SailSpec.Auxiliaries
 import ZiskFv.Equivalence.Bridge.StateBridge
 
 /-!

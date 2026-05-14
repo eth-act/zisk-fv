@@ -7,8 +7,8 @@ import ZiskFv.ZiskCircuit.BranchNotEqual
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.Sail.bne
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.bne
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses

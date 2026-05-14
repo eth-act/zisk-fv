@@ -7,8 +7,8 @@ import ZiskFv.ZiskCircuit.Jal
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.Sail.jal
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.jal
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
