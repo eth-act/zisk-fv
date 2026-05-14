@@ -365,55 +365,69 @@ via separate signatures (`arith_mul_*` vs `arith_div_*`).
 | `arith_mul_carry_columns_in_range_signed` | #6b (range-bus) | `Airs/Arith/Ranges.lean:177` | signed-mode disjunctive carry-range (`arith.pil:280` + `arith_range_table.pil:69`) |
 | `arith_mul_carry_columns_in_range_w` | #6b (range-bus) | `Airs/Arith/Ranges.lean:296` | W-variant (m32=1) carry-range |
 | `arith_table_op_mulw_operand_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:340` | W-mode operand-chunk pin for MULW |
+| `arith_table_op_mul_mode_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (new) | MUL-pilot mode pin: `op = 180` ⇒ `na = nb = np = nr = sext = m32 = div = 0` |
+| `arith_table_op_mul_main_selector_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (new) | MUL-pilot selector pin: `op = 180` ⇒ `main_mul = 1, main_div = 0` |
 | `main_external_arith_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:553` | rd-write entry byte-pack lanes equal Main's `c_0`/`c_1` for MUL/DIV-family rows (`is_external_op = 1`, `op ∈ 0xb0..0xbf`) — shared with ArithDiv |
 
-### Predicted gaps for the AIR's discharge pilot
+### Pilot status — landed at Step 4.1.8
 
-* **Lane-match:** Mostly discharged — op-bus axiom plus
-  `main_external_arith_emission_bundle` give the c_0/c_1 byte
-  lanes. **Predicted gap**: the MUL-family analog of DIV-pilot's
-  GAP-A hi-lane axiom `arith_table_op_div_rem_main_selector_pin`
-  is **missing** — there is no `arith_table_op_mul_main_selector_pin`
-  axiom on the books. Needed for MUL/MULH/MULHU/MULHSU to discharge
-  `h_byte_hi` via the `mul_bus_res1_eq_*` bridge analog (if such a
-  bridge exists in `Airs/Arith/Bridge1.lean` — TBD). Likely class
-  #6b. PIL cite: `arith.pil:286-287` + row-type table at
-  `arith.pil:222-234` (the `main_mul=1` rows for op = 0xb0..0xb3).
-* **Mode pins:** **Predicted.** MUL/MULH/MULHU/MULHSU each have
-  different signed-ness encodings (na, nb). The DIV-pilot mode-pin
-  axiom `arith_table_op_div_rem_signed_mode_pin` covers only signed
-  DIV/REM (`op ∈ {186, 187}`). A corresponding **MUL mode-pin axiom**
-  is **missing** — needs to pin `(na, nb, np, m32, sext)` for each
-  MUL variant. Estimate: 1 axiom (analogous to the DIV mode pin),
-  class #6b. PIL cite: `arith.pil:286-287` + MUL rows of
-  `arith_table.pil`.
-* **Sign-witness pins:** **Predicted.** MUL/MULH/MULHSU involve
-  signed inputs; the `na = MSB(A)` / `nb = MSB(B)` pins are
-  **missing** from the MUL side (DIV has them as
-  `arith_div_np_eq_msb_of_dividend` / `arith_div_nb_eq_msb_of_divisor`).
-  Estimate: 1–2 axioms, class #6b. PIL cite: same as DIV's
-  (`arith.pil:222-234` for row-type table + `arith.pil:286-287`).
-* **Range/bound:** Discharged for unsigned / signed / W carry
-  bounds. Magnitude bounds for the MUL result (analogous to DIV's
-  Euclidean-remainder bound) are **not predicted to be needed** —
-  MUL has no remainder; the product fits exactly in 2 × 64 bits and
-  is captured by the chunk-range axioms.
-* **Operand bridges:** Mostly discharged via existing transpile
-  axioms + chunk-range lifts. **Predicted gap** for MULHSU
-  specifically — the mixed signed × unsigned semantics may need a
-  bridge-only lemma combining `signed_packed_toInt_eq_of_read_xreg`
-  (for the signed operand) with `unsigned_packed_toNat_eq_of_read_xreg`
-  (for the unsigned operand). Likely no new axiom.
+The ArithMul shape exemplar `equiv_MUL_from_trust`
+(`ZiskFv/Equivalence/Compliance/MulExemplar.lean`) closes all five
+discharge categories for the low-half MUL opcode (OP_MUL = 180) end-to-end
+using **2 new class-#6b axioms** (the two pins listed above) — well
+within the 3-5 prediction.
 
-### Pilot scope
+* **Lane-match:** Discharged via `main_external_arith_emission_bundle`
+  (the c_0/c_1 byte lanes) composed with the op-bus `matches_entry`
+  projection on `opBus_row_Arith` plus, for the hi side, the existing
+  `mul_bus_res1_eq_c_hi` bridge (`Airs/Arith/Bridge1.lean:56`) under
+  the MUL-primary mode pins (`main_mul = 1`, `main_div = 0`) derived
+  from the new `arith_table_op_mul_main_selector_pin`.
+* **Mode pins:** Discharged by the new `arith_table_op_mul_mode_pin`
+  bundling all seven (na/nb/np/nr/sext/m32/div = 0). The low-half MUL
+  row in `arith_table_data.rs` uses the unsigned carry chain (the low
+  64 bits of `a * b` are sign-agnostic).
+* **Sign-witness pins:** Not needed for MUL — `equiv_MUL` consumes
+  `r1.toNat` / `r2.toNat` (unsigned packed4), not the signed form.
+  MULH / MULHU / MULHSU will need parallel mode-pin / selector-pin
+  axioms and, for MULH and MULHSU, sign-witness MSB pins on `na` /
+  `nb` (mirroring DIV's `arith_div_np_eq_msb_of_dividend` /
+  `arith_div_nb_eq_msb_of_divisor`).
+* **Range/bound:** None needed for MUL (no remainder bound).
+* **Operand bridges:** Discharged via the generic
+  `packed_lane_eq_of_read_xreg` (unsigned form) composed with
+  `transpile_MUL` and the matches_entry projection of Main's `a`/`b`
+  lanes to ArithMul's `a[]`/`b[]` packings. No new bridge needed.
 
-Expected for ArithMul: **~3–5 new axioms** — mode pin (1) + sign
-pins (1–2) + selector pin (1) + potentially a magnitude bound for
-the hi/lo lane split (1, low confidence). Slightly larger than the
-DIV pilot's 6-axiom delta because MUL has 5 sub-opcodes (vs DIV/REM's
-8 but with two unified pin axioms across them). The pilot will
-likely need a parallel `Compliance/MulPilot.lean` consuming both
-existing and new MUL-side axioms.
+### Within-shape mass authoring template (MULH / MULHU / MULHSU / MULW)
+
+Each of the 4 remaining MUL-family opcodes will follow the
+`equiv_MUL_from_trust` skeleton with the following per-opcode
+adjustments:
+
+* **MULHU (op = 0xb1 = 177):** unsigned × unsigned, high 64 bits.
+  Needs `arith_table_op_mulhu_mode_pin` (op = 177, sext = 0, m32 = 0,
+  div = 0, all sign witnesses 0) + `arith_table_op_mulhu_main_selector_pin`
+  (op = 177 ⇒ `main_mul = 0, main_div = 0` — secondary lane, since
+  the high-half is emitted via `bus_res1` from the `d[]` chunks). Hi
+  lane uses `rem_bus_res1_eq_d_hi` (mirroring DIV's REM secondary).
+* **MULH (op = 0xb5 = 181):** signed × signed, high 64 bits. Needs
+  mode pin (op = 181 ⇒ sext = 0, m32 = 0, div = 0, na = nb_unspecified,
+  np = unspecified), selector pin (secondary lane), AND `na = MSB(A)`
+  / `nb = MSB(B)` / `np = ?` MSB pins. Consumed via the signed
+  `signed_packed_toInt_eq_of_read_xreg` for r1/r2.
+* **MULHSU (op = 0xb3 = 179):** signed × unsigned, high 64 bits.
+  Mixed signedness — `na = MSB(A)`, `nb = 0`. May need a bridge-only
+  helper combining `signed_packed_toInt_eq_of_read_xreg` (for r1)
+  with `packed_lane_eq_of_read_xreg` (for r2).
+* **MULW (op = 0xb6 = 182):** 32-bit truncated MUL. `m32 = 1`. Needs
+  mode pin + selector pin AND can reuse existing
+  `arith_table_op_mulw_operand_pin` for the upper-chunk zeroing.
+
+Each within-shape wrapper adds 1-3 axioms (mode pin always; selector
+pin always; sign-witness MSB pins for the two signed-input variants).
+Total predicted MUL family delta: **~6-10 axioms** across all 5
+wrappers, all sitting in class #6b alongside the MUL-pilot pair.
 
 ---
 

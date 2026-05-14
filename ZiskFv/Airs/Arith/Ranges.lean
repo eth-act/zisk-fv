@@ -616,4 +616,86 @@ axiom arith_div_remainder_bound
             (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
             - (v.np r_a).val * (2:ℤ)^64)
 
+/-! ## Arith-table MUL-family mode + main_mul/main_div selector pins
+
+Mirror of the DIV-pilot pair
+(`arith_table_op_div_rem_signed_mode_pin` and
+`arith_table_op_div_rem_main_selector_pin`) on the MUL side of the
+shared Arith AIR — class #6b, lookup soundness on the
+`arith_table_assumes(op, m32, div, na, nb, np, nr, sext,
+div_by_zero, div_overflow, main_mul, main_div, ...)` lookup at
+`arith.pil:286-287` composed with the MUL-family rows of
+`arith_table.pil` / `arith_table_data.rs::ARITH_TABLE`.
+
+Per `zisk/pil/operations.pil:71-78`, the MUL-family opcodes are
+MULU=0xb0, MULUH=0xb1, MULSUH=0xb3, MUL=0xb4, MULH=0xb5, MUL_W=0xb6
+(holes 0xb2, 0xb7 are reserved-but-unused). For the **low-half**
+multiply opcode MUL = 0xb4 = 180 — signed × signed → low 64 bits —
+the table entry pins all seven sign / mode witnesses to 0
+(`na = nb = np = nr = sext = m32 = div = 0`) because the low 64 bits
+of a signed×signed product equal the low 64 bits of the corresponding
+unsigned×unsigned product (sign-extension does not affect the low
+64); the implementation accordingly uses the unsigned carry-chain
+identity for MUL. The 64-bit high-half opcodes
+MULUH/MULSUH/MULH/MULU pin different sign-witness combinations and
+are NOT covered by this axiom; their respective within-shape wrappers
+will need parallel pins.
+
+The companion selector pin pins the primary/secondary lane:
+`main_mul = 1, main_div = 0` for op = 180 (MUL-primary lane, the bus
+emits the low product through `bus_res0`).
+-/
+
+/-- **Arith-table MUL mode pin (class #6b).**
+    For every `Valid_ArithMul` row with `op = 180` (MUL — signed × signed,
+    low 64 bits) the `arith_table_assumes` lookup at `arith.pil:286-287`
+    pins all seven sign / mode witnesses to 0:
+    `na = nb = np = nr = sext = m32 = div = 0`.
+
+    PIL citation: `arith.pil:286-287` (`arith_table_assumes(op, m32, div,
+    na, nb, np, nr, sext, ...)`) composed with the MUL = 0xb4 row of
+    `arith_table.pil` / `arith_table_data.rs::ARITH_TABLE`. The
+    low-half signed-MUL row in the table sets every sign-witness flag
+    to 0 (per the row-type table at `arith.pil:222-234`: low-half
+    multiplications use the unsigned carry chain since the low 64 bits
+    of `a * b` are sign-agnostic).
+
+    Consumed by `equiv_MUL_from_trust` (Compliance/MulExemplar.lean) to
+    discharge the seven mode-pin promise hypotheses `h_na`/`h_nb`/`h_np`/
+    `h_nr`/`h_sext`/`h_m32`/`h_div` on `equiv_MUL` from the
+    arith-side opcode literal alone (which is itself a consequence of
+    the OpBus permutation matching `m.op r_main = OP_MUL` to
+    `v.op r_a`). Same trust kind as
+    `arith_table_op_div_rem_signed_mode_pin` (the DIV analog) and
+    `arith_table_op_mulw_operand_pin` (the W-MUL operand pin). -/
+axiom arith_table_op_mul_mode_pin
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 180) :
+    v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
+      ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
+
+/-- **Arith-table MUL primary/secondary selector pin (class #6b).**
+    For every `Valid_ArithMul` row with `op = 180` (MUL — low 64 bits)
+    the same `arith_table_assumes` lookup at `arith.pil:286-287` pins
+    the primary/secondary selectors to MUL-primary:
+    `main_mul = 1, main_div = 0`.
+
+    PIL citation: `arith.pil:286-287` (`arith_table_assumes(op, m32, div,
+    na, nb, np, nr, sext, div_by_zero, div_overflow, main_mul, main_div,
+    ...)` — `main_mul` and `main_div` are explicit columns in the
+    lookup tuple) composed with the row-type table at
+    `arith.pil:222-234` and the MUL=0xb4 row of
+    `arith_table_data.rs::ARITH_TABLE` (which selects the
+    low-product lane via `main_mul = 1`).
+
+    Consumed by `equiv_MUL_from_trust` to derive the MUL-primary mode
+    pins (`main_mul = 1`, `main_div = 0`) required by
+    `mul_bus_res1_eq_c_hi` (`Airs/Arith/Bridge1.lean:56`) for the
+    hi-lane discharge of `h_byte_hi` on `equiv_MUL`. Same trust kind
+    as `arith_table_op_div_rem_main_selector_pin` (the DIV analog). -/
+axiom arith_table_op_mul_main_selector_pin
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 180) :
+    v.main_mul r_a = 1 ∧ v.main_div r_a = 0
+
 end ZiskFv.Airs.Arith

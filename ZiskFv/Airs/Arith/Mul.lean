@@ -335,6 +335,31 @@ def mul_carry_chain_holds (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
   ∧ constraint_37_every_row v.circuit row
   ∧ constraint_38_every_row v.circuit row
 
+/-- **Extended Arith MUL-mode row constraints — includes constraint 46.**
+    Same shape as `mul_carry_chain_holds` but additionally pins
+    `constraint_46_every_row` (the `bus_res1` normalization at
+    `arith.pil:263`). Required by `equiv_MUL_from_trust` to discharge
+    the hi-lane byte-pack equation via `mul_bus_res1_eq_c_hi`
+    (`Airs/Arith/Bridge1.lean`). Mirrors `div_row_constraints_with_c46`
+    on the Div view. Compliance.lean's downstream caller will collapse
+    this into a universal `∀ r, arith_mul_row_well_formed` parameter. -/
+@[simp]
+def mul_row_constraints_with_c46 (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
+  mul_carry_chain_holds v row
+  ∧ constraint_46_every_row v.circuit row
+
+/-- Project out the carry-chain bundle from the extended bundle. -/
+lemma mul_carry_chain_holds_of_extended
+    (v : Valid_ArithMul C F ExtF) (row : ℕ)
+    (h : mul_row_constraints_with_c46 v row) :
+    mul_carry_chain_holds v row := h.1
+
+/-- Project out constraint 46 from the extended bundle. -/
+lemma mul_constraint_46_of_extended
+    (v : Valid_ArithMul C F ExtF) (row : ℕ)
+    (h : mul_row_constraints_with_c46 v row) :
+    constraint_46_every_row v.circuit row := h.2
+
 /-- Packed low-64 value `c_packed := c[0] + c[1] * 2^16 + c[2] * 2^32 + c[3] * 2^48`
     expressed over the named `Valid_ArithMul` columns. For MUL this is the
     low 64 bits of the product. -/
