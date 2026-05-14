@@ -40,7 +40,9 @@ ZiskFv/
 ├── Circuit/        per-opcode lifted circuit semantics — one .lean per RV64IM opcode
 ├── Sail/           per-opcode Sail-side mirrors with equivalence-to-LeanRV64D lemmas
 ├── Tactics/        instruction-shape archetype tactics that drive the per-opcode proofs
-├── Equivalence/    the final per-opcode theorems: canonical equiv_<OP> + bus-precondition variants
+├── Equivalence/    the per-opcode canonical equiv_<OP> theorems
+├── Compliance.lean global theorem zisk_riscv_compliant_program_bus
+├── Compliance/     per-Op dispatch (Dispatch.lean) + trust-discharge wrappers (FromTrust/<Op>.lean ×63)
 └── ZiskFv.lean     root module — imports the whole tree
 ```
 

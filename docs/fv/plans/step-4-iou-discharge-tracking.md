@@ -28,7 +28,9 @@ Equivalence/Bridge/<Shape>.lean           ← per-shape discharge (THIS is what 
   Bridge/StateBridge.lean                  packed-lane reconstruction
 Equivalence/RdValDerivation/<family>.lean rd-value identity (per family)
 Equivalence/<OP>.lean                     canonical equiv (consumes Bridge + RdVal)
-Equivalence/Compliance.lean               global theorem (dispatches to <OP>)
+Compliance.lean                            global theorem (dispatches to <OP>)
+Compliance/Dispatch.lean                   per-Op dispatchers
+Compliance/FromTrust/<Op>.lean             trust-discharge wrappers (×63)
 ```
 
 ## Per-shape IOUs

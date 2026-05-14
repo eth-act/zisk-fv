@@ -43,7 +43,7 @@ if [ -d .lake/build ]; then
     echo "# axioms and Sail-translated module axioms excluded) of the global"
     echo "# compliance theorem"
     echo "#"
-    echo "#   ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus"
+    echo "#   ZiskFv.Compliance.zisk_riscv_compliant_program_bus"
     echo "#"
     echo "# IS the trusted computing base of zisk-fv. This file is a flat"
     echo "# enumeration of that closure for external auditors who want to inspect"
@@ -58,14 +58,14 @@ if [ -d .lake/build ]; then
     echo "# How this file was generated:"
     echo "#"
     echo "#   lake exe trust-gate print-axiom-closure \\"
-    echo "#     ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus \\"
+    echo "#     ZiskFv.Compliance.zisk_riscv_compliant_program_bus \\"
     echo "#     > trust/baseline-zisk-riscv-compliant.txt"
     echo "#"
     echo "# Refresh via \`trust/scripts/regenerate.sh\` (requires \`lake build\`"
     echo "# artefacts under \`.lake/build/\`). Last regenerated: $(date +%Y-%m-%d)."
     echo "#"
     body=$(lake exe trust-gate print-axiom-closure \
-      ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus)
+      ZiskFv.Compliance.zisk_riscv_compliant_program_bus)
     n=$(echo "$body" | wc -l)
     echo "# Total entries: $n"
     echo "#"

@@ -5,10 +5,10 @@
 The verification claim of zisk-fv is the global compliance theorem
 
 ```
-ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus
+ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 ```
 
-(in `ZiskFv/Equivalence/Compliance/Global.lean`). Its
+(in `ZiskFv/Compliance.lean`). Its
 `#print axioms` closure — captured as a flat list in
 [`trust/baseline-zisk-riscv-compliant.txt`](../../trust/baseline-zisk-riscv-compliant.txt)
 and as a hashed source-line ledger in
@@ -19,8 +19,7 @@ summarised below.
 
 The global theorem dispatches the 63 RV64IM opcodes through a 35-arm
 `OpEnvelope` sum type to per-opcode `equiv_<OP>_from_trust` wrappers
-under `ZiskFv/Equivalence/Compliance/<Op>Exemplar.lean` (plus
-`DivPilot.lean`); each wrapper discharges the canonical `equiv_<OP>`
+under `ZiskFv/Compliance/FromTrust/<Op>.lean`; each wrapper discharges the canonical `equiv_<OP>`
 theorem's promise hypotheses from the trust ledger. The principal
 "promise hypothesis" soundness gap surveyed in
 [`docs/fv/known-gaps.md`](known-gaps.md) is therefore closed at the
@@ -233,8 +232,8 @@ ledger.
 (W-mode `carry_7 = 0` bundled corollary) close the SEXT-byte
 case-split for SUBW/ADDW that Round 3.II's chain-pin axiom did not
 expose for bytes 4..7. Wrappers landed: `equiv_SUBW_from_trust`
-(`Compliance/SubwExemplar.lean`), `equiv_ADDW_from_trust`
-(`Compliance/AddwExemplar.lean`).
+(`Compliance/FromTrust/Subw.lean`), `equiv_ADDW_from_trust`
+(`Compliance/FromTrust/Addw.lean`).
 
 ### Step 4.2 round 3 — Four parallel branches landing 13 wrappers (+7 axioms)
 
@@ -281,7 +280,7 @@ AND/XOR wrappers); the Mem+ControlFlow batch added zero new axioms
 `arith_table_op_mul_mode_pin` and
 `arith_table_op_mul_main_selector_pin` — the MUL-side mirrors of the
 DIV-pilot mode-pin + main-selector-pin pair, consumed by the
-`Compliance/MulExemplar.lean` wrapper to derive seven mode pins and
+`Compliance/FromTrust/Mul.lean` wrapper to derive seven mode pins and
 the `main_mul = 1, main_div = 0` selector pin needed for the hi-lane
 discharge of `h_byte_hi` via `mul_bus_res1_eq_c_hi`.
 
@@ -298,20 +297,20 @@ pure-Lean alignment lemma).
 ### Step 4.1.4 — Binary shape exemplar OR (+1 axiom)
 
 `binary_b_op_or_sext_eq_OP_OR` (Binary AIR table-pin sub-class)
-consumed by `equiv_OR_from_trust` (`Compliance/OrExemplar.lean`).
+consumed by `equiv_OR_from_trust` (`Compliance/FromTrust/Or.lean`).
 
 ### Step 4.1.3 — Mem-stores shape exemplar SD (+1 axiom)
 
 `main_store_emission_bundle_sd` (class-#4) delivers byte-extracted
 store entry contents and ptr-match for the `equiv_SD_from_trust`
-wrapper in `Compliance/SdExemplar.lean`.
+wrapper in `Compliance/FromTrust/Sd.lean`.
 
 ### Step 4 DIV pilot — GAP-B sign-witness MSB pins (+2 axioms)
 
 `arith_div_np_eq_msb_of_dividend` and `arith_div_nb_eq_msb_of_divisor`
 (class-#6b sign-witness MSB pins on signed DIV/REM rows that link
 `np` to MSB(C) and `nb` to MSB(B)) — consumed by the
-`Compliance/DivPilot.lean` wrapper via the new generic
+`Compliance/FromTrust/Div.lean` wrapper via the new generic
 `signed_packed_toInt_eq_of_read_xreg` Sail-state bridge to
 discharge the `h_op1` / `h_op2` operand TRANSPILE-BRIDGE binders
 of `equiv_DIV` end-to-end.

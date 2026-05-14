@@ -269,7 +269,7 @@ def dispatch (env : Environment) (args : List String) : IO UInt32 := do
   | ["find-unused", path]     => cmdFindUnused env path
   | ["check-closure-vs-baseline", path] =>
     cmdCheckClosureVsBaseline env path
-      `ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus
+      `ZiskFv.Compliance.zisk_riscv_compliant_program_bus
   | ["all"] =>
     let baseline ← IO.FS.readFile "trust/baseline-equiv-axiom-deps.txt"
     let r1 ← diffStrings (renderDepsBaseline env) baseline

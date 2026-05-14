@@ -15,7 +15,7 @@ iff it is not in the resulting closure.
 
 The 190 entry points are:
 
-* `ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus` — the global compliance theorem dispatching all 63 RV64IM opcodes.
+* `ZiskFv.Compliance.zisk_riscv_compliant_program_bus` — the global compliance theorem dispatching all 63 RV64IM opcodes.
 * The 63 canonical `equiv_<OP>` theorems (one per opcode).
 * The 63 per-opcode `dispatch_<OP>` theorems (consumed by Global).
 * The 63 `equiv_<OP>_from_trust` Exemplar wrappers (the Compliance bridge).
@@ -29,7 +29,7 @@ candidates; a separate follow-up PR is required to delete anything.
 nix develop --command lake build
 # Part A: axioms reachable from the global theorem vs. baseline.
 nix develop --command lake exe trust-gate print-axiom-closure \
-    ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus \
+    ZiskFv.Compliance.zisk_riscv_compliant_program_bus \
     2>/dev/null > /tmp/global-axioms.txt
 # (baseline-axioms.txt records the unqualified suffix in column 4.)
 awk -F. '{print $NF}' /tmp/global-axioms.txt | sort -u > /tmp/global-shortnames.txt
@@ -197,8 +197,8 @@ authored dead code"; see the breakdown below.
 
 | Module | Count | Notes |
 |--------|------:|-------|
-| `ZiskFv.Equivalence.Compliance.Global` | 384 | Inferred elaboration auxiliaries of the dispatching theorem; large because the global theorem unfolds 63 arms |
-| `ZiskFv.Equivalence.Compliance` | 152 | Auxiliary lemmas attached to the Exemplar bridge layer not consumed by Global directly |
+| `ZiskFv.Compliance` | 384 | Inferred elaboration auxiliaries of the dispatching theorem; large because the global theorem unfolds 63 arms |
+| `ZiskFv.Compliance` | 152 | Auxiliary lemmas attached to the Exemplar bridge layer not consumed by Global directly |
 | `ZiskFv.Airs.MemAlign` | 129 | MemAlign AIR — large state-machine, many per-column predicates only some of which are consumed |
 | `ZiskFv.Airs.Binary.Binary` | 78 | Binary AIR — similar pattern |
 | `ZiskFv.Airs.BusShape` | 74 | Bus-shape lemmas — generated en masse, only a slice reached |
@@ -261,7 +261,7 @@ deletion candidates for follow-up cleanup.
 | 27 | `ZiskFv.Equivalence.Bridge.Arith.arith_mul_discharge_conservative` | Bridge wrapper around dead `op_bus_perm_sound_ArithMul` |
 | 28 | `ZiskFv.Equivalence.Bridge.Arith.arith_div_discharge_conservative` | Bridge wrapper around dead `op_bus_perm_sound_ArithDiv` |
 | 29 | `ZiskFv.Fundamentals.TranspileConsumers.transpile_BEQ_consumer` | Consumer wrapper around dead `transpile_BEQ` (representative; 14 more in the same module) |
-| 30 | `ZiskFv.Equivalence.Compliance.DivwExemplar` | Stale Exemplar — superseded by the in-line dispatch arm |
+| 30 | `ZiskFv.Compliance.FromTrust.Divw` | Stale Exemplar — superseded by the in-line dispatch arm |
 
 Full list: `/tmp/unreachable-constants.txt` after running
 `lake exe trust-gate find-unused trust/dead-code-entry-points.txt`.

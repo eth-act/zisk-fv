@@ -248,7 +248,7 @@ PIL citations:
 * `zisk/state-machines/binary/pil/binary.pil:156` — `proves_operation(op: b_op + 0x10 * mode32, …)`
 * `zisk/state-machines/binary/src/binary_table.rs` — BinaryTable assignment table
 
-Consumed by `equiv_OR_from_trust` (`Compliance/OrExemplar.lean`).
+Consumed by `equiv_OR_from_trust` (`Compliance/FromTrust/Or.lean`).
 -/
 
 /-- **Binary table-pin: `b_op_or_sext = OP_OR` for OR-tagged rows.**
@@ -274,7 +274,7 @@ axiom binary_b_op_or_sext_eq_OP_OR (v : Valid_Binary C FGL FGL) (r : ℕ)
     PIL: `binary.pil:104` (`b_op_or_sext` linear def) +
     `binary.pil:131-148` (per-byte BinaryTable lookup restricting the
     `(b_op, mode32, c_is_signed)` triple to valid entries). Consumed by
-    `equiv_AND_from_trust` (`Compliance/AndExemplar.lean`). -/
+    `equiv_AND_from_trust` (`Compliance/FromTrust/And.lean`). -/
 axiom binary_b_op_or_sext_eq_OP_AND (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = 14) :
     (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_AND
@@ -289,7 +289,7 @@ axiom binary_b_op_or_sext_eq_OP_AND (v : Valid_Binary C FGL FGL) (r : ℕ)
     PIL: `binary.pil:104` (`b_op_or_sext` linear def) +
     `binary.pil:131-148` (per-byte BinaryTable lookup restricting the
     `(b_op, mode32, c_is_signed)` triple to valid entries). Consumed by
-    `equiv_XOR_from_trust` (`Compliance/XorExemplar.lean`). -/
+    `equiv_XOR_from_trust` (`Compliance/FromTrust/Xor.lean`). -/
 axiom binary_b_op_or_sext_eq_OP_XOR (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = 16) :
     (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_XOR

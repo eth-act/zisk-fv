@@ -4,7 +4,7 @@
 # axioms and Sail-translated module axioms excluded) of the global
 # compliance theorem
 #
-#   ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus
+#   ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 #
 # IS the trusted computing base of zisk-fv. This file is a flat
 # enumeration of that closure for external auditors who want to inspect
@@ -19,7 +19,7 @@
 # How this file was generated:
 #
 #   lake exe trust-gate print-axiom-closure \
-#     ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus \
+#     ZiskFv.Compliance.zisk_riscv_compliant_program_bus \
 #     > trust/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`

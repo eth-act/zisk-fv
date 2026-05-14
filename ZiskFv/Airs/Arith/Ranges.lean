@@ -380,7 +380,7 @@ columns from the `op` literal). -/
     `arith.pil:286-287` (the `arith_table_assumes` lookup) with the
     table content at `arith_table.pil` (signed 64-bit DIV/REM rows).
 
-    Consumed by `equiv_DIV_from_trust` (Compliance/DivPilot.lean) to
+    Consumed by `equiv_DIV_from_trust` (Compliance/FromTrust/Div.lean) to
     discharge the three mode pins `h_sext`/`h_m32`/`h_div` given the
     arith-side opcode literal (which is itself a consequence of the
     OpBus permutation matching `m.op r_main` to `v.op r_a`). -/
@@ -421,7 +421,7 @@ DIV/REM rows). Same kind, narrower covering set. -/
     lookup, explicitly including `main_mul` and `main_div` columns)
     with the row-type table at `arith.pil:222-234`.
 
-    Consumed by `equiv_DIV_from_trust` (`Compliance/DivPilot.lean`) to
+    Consumed by `equiv_DIV_from_trust` (`Compliance/FromTrust/Div.lean`) to
     derive the `main_div = 1`, `main_mul = 0` pins required by
     `div_bus_res1_eq_a_hi` (`Airs/Arith/Bridge1.lean:79`) for the
     GAP-A hi-lane discharge. -/
@@ -468,7 +468,7 @@ the existing `arith_table_op_div_rem_signed_d_sign_pin` (which pins
 `arith_table_op_div_rem_main_selector_pin` (which pins the
 `main_mul` / `main_div` columns via the same lookup).
 
-Consumed by `equiv_DIV_from_trust` (`Compliance/DivPilot.lean`) — in
+Consumed by `equiv_DIV_from_trust` (`Compliance/FromTrust/Div.lean`) — in
 composition with the generic signed Sail-state bridge — to derive
 `h_op1` / `h_op2` (the signed packed-lane equations connecting
 `r1_val.toInt` / `r2_val.toInt` to the AIR's `C - np·2^64` /
@@ -738,7 +738,7 @@ emits the low product through `bus_res0`).
     multiplications use the unsigned carry chain since the low 64 bits
     of `a * b` are sign-agnostic).
 
-    Consumed by `equiv_MUL_from_trust` (Compliance/MulExemplar.lean) to
+    Consumed by `equiv_MUL_from_trust` (Compliance/FromTrust/Mul.lean) to
     discharge the seven mode-pin promise hypotheses `h_na`/`h_nb`/`h_np`/
     `h_nr`/`h_sext`/`h_m32`/`h_div` on `equiv_MUL` from the
     arith-side opcode literal alone (which is itself a consequence of
@@ -1036,8 +1036,8 @@ narrower scope (ArithMul rows in place of ArithDiv rows). -/
     op = 179 / 181 whose flag-field bit encoding per
     `arith_table_helpers.rs:130-140` binds `na` to the MSB convention.
 
-    Consumed by `equiv_MULH_from_trust` (`Compliance/MulHExemplar.lean`)
-    and `equiv_MULHSU_from_trust` (`Compliance/MulHSUExemplar.lean`)
+    Consumed by `equiv_MULH_from_trust` (`Compliance/FromTrust/MulH.lean`)
+    and `equiv_MULHSU_from_trust` (`Compliance/FromTrust/MulHSU.lean`)
     via `signed_packed_toInt_eq_of_read_xreg` to derive `h_op1` (the
     signed integer-form lane equation for rs1). -/
 axiom arith_mul_na_eq_msb_of_a
