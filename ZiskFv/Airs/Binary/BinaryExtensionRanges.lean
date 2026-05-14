@@ -2,7 +2,7 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
 

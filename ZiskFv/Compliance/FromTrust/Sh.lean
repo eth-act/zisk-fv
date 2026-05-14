@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Equivalence.StoreH
 import ZiskFv.Equivalence.Bridge.Mem
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.MemoryBus
 

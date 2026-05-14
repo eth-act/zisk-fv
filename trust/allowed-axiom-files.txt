@@ -12,7 +12,7 @@
 
 # Transpiler trust-surface — RV→Zisk microinstruction contract,
 # platform assumptions (P1-P4), and store_pc=1 PC bridges (TP-*).
-ZiskFv/Fundamentals/Transpiler.lean
+ZiskFv/Trusted/Transpiler.lean
 
 # Bus-protocol soundness for bus_id=10 (memory bus).
 ZiskFv/Airs/MemoryBus/LaneMatch.lean

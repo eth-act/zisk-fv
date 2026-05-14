@@ -65,7 +65,7 @@ awk '$3=="axiom" {n=split($2,a,":"); print a[1]}' trust/baseline-axioms.txt \
 #   9 ZiskFv/Airs/MemoryBus/MemBridge.lean          memory-bus lookup soundness + emission bundles (class #4)
 #   3 ZiskFv/Airs/OperationBus/Bridge.lean          op-bus permutation soundness (class #4)
 #   1 ZiskFv/Circuit/MemModel.lean                  memory-state bridge — load (class #2)
-#  51 ZiskFv/Fundamentals/Transpiler.lean           transpile contracts (class #1)
+#  51 ZiskFv/Trusted/Transpiler.lean           transpile contracts (class #1)
 #   4 ZiskFv/Sail/Auxiliaries.lean                  platform-feature scope (classes #7–#10)
 ```
 

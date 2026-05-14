@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Equivalence.BranchNotEqual
 import ZiskFv.Sail.bne
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main
 
 /-!

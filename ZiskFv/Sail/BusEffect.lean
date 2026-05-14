@@ -1,7 +1,7 @@
 import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 
 /-!
 RV64 bus-effect model: port of `OpenvmFv/RV32D/BusEffect.lean` widened from

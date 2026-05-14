@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Equivalence.ShiftRLI
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge

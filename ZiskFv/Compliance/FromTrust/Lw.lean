@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Equivalence.Lw
 import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.Equivalence.Bridge.BinaryExtension
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus

@@ -12,7 +12,7 @@ import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.Bridge.SailStateBridge
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 import ZiskFv.Tactics.ALUITypeArchetype
 
 /-!

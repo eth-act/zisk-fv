@@ -132,6 +132,14 @@ def main(argv: list[str]) -> int:
         # docs cite a stem path (rare but cheap).
         if old.endswith(".lean") and new.endswith(".lean"):
             combined[old[:-5]] = new[:-5]
+            # And the dotted import form (e.g. `import ZiskFv.Foo.Bar`).
+            # This matters for path-only renames where the namespace does
+            # not change but the file location does; without this the
+            # imports would not be rewritten.
+            dotted_old = old[:-5].replace("/", ".")
+            dotted_new = new[:-5].replace("/", ".")
+            if dotted_old != dotted_new:
+                combined[dotted_old] = dotted_new
     # Namespace mappings.
     for old, new in namespaces.items():
         combined[old] = new

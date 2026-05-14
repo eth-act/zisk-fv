@@ -3,7 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.GoldilocksBridge
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 
 /-!
 # Shared *discharge bridge* helper — packed-lane BitVec reconstruction

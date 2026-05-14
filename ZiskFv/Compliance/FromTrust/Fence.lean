@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Equivalence.Fence
 import ZiskFv.Sail.fence
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main
 
 /-!

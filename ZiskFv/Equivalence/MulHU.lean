@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.Mul
 import ZiskFv.Circuit.MulHU
 import ZiskFv.Airs.Main

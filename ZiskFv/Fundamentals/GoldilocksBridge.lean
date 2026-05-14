@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 
 /-!
 Goldilocks ↔ `BitVec 64` bridge lemmas.

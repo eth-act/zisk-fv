@@ -86,21 +86,21 @@ of `zisk_riscv_compliant_program_bus` reaches **122**. The remaining
 
 | # | Axiom | File:Line | Classification |
 |--:|-------|-----------|----------------|
-| 1 | `transpile_BEQ` | `ZiskFv/Fundamentals/Transpiler.lean:292` | Genuinely dead — branch-family transpile contract |
-| 2 | `transpile_BNE` | `ZiskFv/Fundamentals/Transpiler.lean:344` | Genuinely dead — branch-family transpile contract |
-| 3 | `transpile_BLT` | `ZiskFv/Fundamentals/Transpiler.lean:924` | Genuinely dead — branch-family transpile contract |
-| 4 | `transpile_BGE` | `ZiskFv/Fundamentals/Transpiler.lean:962` | Genuinely dead — branch-family transpile contract |
-| 5 | `transpile_BLTU` | `ZiskFv/Fundamentals/Transpiler.lean:991` | Genuinely dead — branch-family transpile contract |
-| 6 | `transpile_BGEU` | `ZiskFv/Fundamentals/Transpiler.lean:1020` | Genuinely dead — branch-family transpile contract |
-| 7 | `transpile_FENCE` | `ZiskFv/Fundamentals/Transpiler.lean:420` | Genuinely dead — FENCE transpile contract |
-| 8 | `transpile_LB` | `ZiskFv/Fundamentals/Transpiler.lean:2321` | Genuinely dead — signed load transpile contract |
-| 9 | `transpile_LH` | `ZiskFv/Fundamentals/Transpiler.lean:2292` | Genuinely dead — signed load transpile contract |
-| 10 | `transpile_LW` | `ZiskFv/Fundamentals/Transpiler.lean:2263` | Genuinely dead — signed load transpile contract |
-| 11 | `transpile_LD` | `ZiskFv/Fundamentals/Transpiler.lean:515` | Genuinely dead — 64-bit load transpile contract |
-| 12 | `transpile_LBU` | `ZiskFv/Fundamentals/Transpiler.lean:636` | Genuinely dead — unsigned load transpile contract |
-| 13 | `transpile_LHU` | `ZiskFv/Fundamentals/Transpiler.lean:601` | Genuinely dead — unsigned load transpile contract |
-| 14 | `transpile_LWU` | `ZiskFv/Fundamentals/Transpiler.lean:557` | Genuinely dead — unsigned load transpile contract |
-| 15 | `transpile_MULW` | `ZiskFv/Fundamentals/Transpiler.lean:1538` | Genuinely dead — MULW transpile contract |
+| 1 | `transpile_BEQ` | `ZiskFv/Trusted/Transpiler.lean:292` | Genuinely dead — branch-family transpile contract |
+| 2 | `transpile_BNE` | `ZiskFv/Trusted/Transpiler.lean:344` | Genuinely dead — branch-family transpile contract |
+| 3 | `transpile_BLT` | `ZiskFv/Trusted/Transpiler.lean:924` | Genuinely dead — branch-family transpile contract |
+| 4 | `transpile_BGE` | `ZiskFv/Trusted/Transpiler.lean:962` | Genuinely dead — branch-family transpile contract |
+| 5 | `transpile_BLTU` | `ZiskFv/Trusted/Transpiler.lean:991` | Genuinely dead — branch-family transpile contract |
+| 6 | `transpile_BGEU` | `ZiskFv/Trusted/Transpiler.lean:1020` | Genuinely dead — branch-family transpile contract |
+| 7 | `transpile_FENCE` | `ZiskFv/Trusted/Transpiler.lean:420` | Genuinely dead — FENCE transpile contract |
+| 8 | `transpile_LB` | `ZiskFv/Trusted/Transpiler.lean:2321` | Genuinely dead — signed load transpile contract |
+| 9 | `transpile_LH` | `ZiskFv/Trusted/Transpiler.lean:2292` | Genuinely dead — signed load transpile contract |
+| 10 | `transpile_LW` | `ZiskFv/Trusted/Transpiler.lean:2263` | Genuinely dead — signed load transpile contract |
+| 11 | `transpile_LD` | `ZiskFv/Trusted/Transpiler.lean:515` | Genuinely dead — 64-bit load transpile contract |
+| 12 | `transpile_LBU` | `ZiskFv/Trusted/Transpiler.lean:636` | Genuinely dead — unsigned load transpile contract |
+| 13 | `transpile_LHU` | `ZiskFv/Trusted/Transpiler.lean:601` | Genuinely dead — unsigned load transpile contract |
+| 14 | `transpile_LWU` | `ZiskFv/Trusted/Transpiler.lean:557` | Genuinely dead — unsigned load transpile contract |
+| 15 | `transpile_MULW` | `ZiskFv/Trusted/Transpiler.lean:1538` | Genuinely dead — MULW transpile contract |
 | 16 | `op_bus_perm_sound_ArithMul` | `ZiskFv/Airs/OperationBus/Bridge.lean:120` | Genuinely dead — superseded op-bus perm-soundness axiom |
 | 17 | `op_bus_perm_sound_ArithMulSecondary` | `ZiskFv/Airs/OperationBus/Bridge.lean:158` | Genuinely dead — superseded op-bus perm-soundness axiom |
 | 18 | `op_bus_perm_sound_ArithDiv` | `ZiskFv/Airs/OperationBus/Bridge.lean:181` | Genuinely dead — superseded op-bus perm-soundness axiom |
@@ -202,7 +202,7 @@ authored dead code"; see the breakdown below.
 | `ZiskFv.Airs.MemAlign` | 129 | MemAlign AIR — large state-machine, many per-column predicates only some of which are consumed |
 | `ZiskFv.Airs.Binary.Binary` | 78 | Binary AIR — similar pattern |
 | `ZiskFv.Airs.BusShape` | 74 | Bus-shape lemmas — generated en masse, only a slice reached |
-| `ZiskFv.Fundamentals.Transpiler` | 71 | Includes the 15 dead transpile axioms (Part A) + dead `transpile_*` consumers |
+| `ZiskFv.Trusted.Transpiler` | 71 | Includes the 15 dead transpile axioms (Part A) + dead `transpile_*` consumers |
 | `ZiskFv.Fundamentals.TranspileConsumers` | 66 | Consumer wrappers around the dead transpile axioms (chain-dead with Part A) |
 | `ZiskFv.Airs.MemAlignByte` | 62 | MemAlignByte AIR |
 | `ZiskFv.Airs.Mem` | 57 | Mem AIR |

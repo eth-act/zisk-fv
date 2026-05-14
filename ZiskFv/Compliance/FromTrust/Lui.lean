@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Equivalence.Lui
 import ZiskFv.Tactics.UTypeArchetype
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main
 
 /-!

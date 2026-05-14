@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.GoldilocksBridge
 import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.Add
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Binary.BinaryAdd

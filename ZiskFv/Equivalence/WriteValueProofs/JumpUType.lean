@@ -6,7 +6,7 @@ import ZiskFv.Fundamentals.PackedBitVec
 import ZiskFv.Fundamentals.PackedBitVec.Extensions
 import ZiskFv.Fundamentals.PackedBitVec.NoWrap
 import ZiskFv.Fundamentals.PackedBitVec.WidePCNoWrap
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch

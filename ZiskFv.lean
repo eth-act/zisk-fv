@@ -1,5 +1,5 @@
 import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.GoldilocksBridge
 import ZiskFv.Sail.BusEffect

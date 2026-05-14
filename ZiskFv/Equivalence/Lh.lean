@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
+import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.LoadHalf
 import ZiskFv.Circuit.MemModel
 import ZiskFv.Circuit.SextLoadBridge
