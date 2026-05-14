@@ -74,6 +74,7 @@
   #info-panel .badge.axiom { background: #4a2830; color: #f0a8a8; }
   #info-panel .badge.project { background: #28384a; color: #a8c8e8; }
   #info-panel .badge.template { background: #4a3a20; color: #f0c890; }
+  #info-panel .badge.namespace { background: #28304a; color: #a8b8e8; }
   #info-panel .source-tag {
     display: inline-block; padding: 2px 8px; border-radius: 10px;
     font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
@@ -103,6 +104,7 @@
   <div class="row"><span class="sw" style="background:#88c0d0"></span>project const</div>
   <div class="row"><span class="sw" style="background:#bf616a"></span>axiom (trust leaf)</div>
   <div class="row"><span class="sw" style="background:#d08770"></span>opcode template (click to drill)</div>
+  <div class="row"><span class="sw" style="background:#5e81ac"></span>namespace cluster (top)</div>
   <div class="row"><span class="sw" style="background:#ebcb8b"></span>seed (drill source)</div>
   <div style="margin-top:6px;font-size:11px;color:#7a8090">top: collapsed · click node → bottom shows subgraph<br>scroll: zoom · drag: pan · hover: info</div>
 </div>
@@ -137,6 +139,7 @@
       <span>in-degree <span id="info-in"></span></span>
       <span>out-degree <span id="info-out"></span></span>
       <span id="info-template-meta" hidden>· template covers <span id="info-template-count"></span> instantiations</span>
+      <span id="info-cluster-meta" hidden>· cluster: <span id="info-cluster-count"></span> members (<span id="info-cluster-kinds"></span>), raw depth <span id="info-cluster-range"></span></span>
     </div>
   </div>
   <div class="toast" id="info-toast">copied!</div>
@@ -253,16 +256,25 @@ function templateOf(name) {
   return null;
 }
 
-const colorOf = (kind, isRoot, isTemplate) => {
-  if (isTemplate) return "#d08770";    // orange template
-  if (isRoot) return "#a3be8c";        // root green
-  if (kind === "A") return "#bf616a";  // axiom red
-  return "#88c0d0";                    // project blue
+const colorOf = (kind, isRoot, isTemplate, isNamespace) => {
+  if (isRoot) return "#a3be8c";          // root green
+  if (isTemplate) return "#d08770";      // orange template
+  if (isNamespace) {
+    return kind === "A" ? "#bf616a" : "#5e81ac";  // axiom-namespace red, regular namespace deep blue
+  }
+  if (kind === "A") return "#bf616a";    // axiom red
+  return "#88c0d0";                      // project blue
 };
 
-const radiusOf = (kind, isRoot, depth, isTemplate) => {
-  if (isTemplate) return 6;
+const radiusOf = (kind, isRoot, depth, isTemplate, isNamespace, memberCount) => {
   if (isRoot) return 9;
+  if (isTemplate) return 6;
+  if (isNamespace) {
+    // Scale the cluster glyph by member count so visually dominant
+    // namespaces pop out. log2 keeps the spread compact.
+    const m = memberCount || 1;
+    return Math.min(14, Math.max(5, 4 + Math.log2(m) * 1.3));
+  }
   if (kind === "A") return 3.5;
   return Math.max(2.5, 6 - depth * 0.4);
 };
@@ -397,30 +409,41 @@ async function load() {
   d3.select("#counts").text(
     `raw: ${rawNodes.size} nodes / ${[...rawAdjOut.values()].reduce((a, s) => a + s.size, 0)} edges · ` +
     `collapsed: ${collapsed.nodes.length} nodes / ${collapsed.links.length} edges · ` +
-    `${collapsed.templateCount} templates`
+    `${collapsed.namespaceCount} namespace clusters, ${collapsed.templateCount} templates`
   );
   status.text("");
 }
 
 // ─── Build the collapsed graph used by the TOP panel ───────────────────────
-// Algorithm:
-//   1. Compute the template of each raw node. Templates appearing ≥2× become collapsed nodes.
-//   2. Map each raw id to a collapsed id: templated nodes → template string,
-//      everything else → raw id.
-//   3. Project edges: replace each endpoint by its collapsed id, drop dup + self-loops.
-//   4. Templated nodes have synthetic kind "T" (template). Their kind/depth/etc.
-//      come from a representative member (the first one alphabetically, but all
-//      members are tracked for the click-to-expand step).
+// Aggressive-namespace collapse policy (refined 2026-05-14):
+//   * For every raw node at original-graph depth ≤ 3, the cluster id is the
+//     node's namespace prefix (everything before the final '.'). EVERY upper
+//     layer node becomes a namespace cluster — no bare constants survive.
+//   * For nodes at depth > 3, fall back to the opcode-template collapse
+//     (≥2 instantiations) when applicable; otherwise also collapse by
+//     namespace, so the lower layers stay readable but a bit more granular.
+//   * The ROOT is its own singleton cluster, regardless of depth.
+//   * Cluster depth = min raw depth among members.
+//   * Edges are projected to cluster endpoints, deduped, self-loops dropped.
+//   * Cluster metadata recorded for the info panel: member count, kinds,
+//     depth range. Cluster kind = "A" iff every member is an axiom (so an
+//     axiom-only namespace renders red); template clusters carry the original
+//     orange template colouring.
+function namespacePrefix(name) {
+  const idx = name.lastIndexOf(".");
+  return idx > 0 ? name.slice(0, idx) : name;
+}
+
 function buildCollapsedGraph() {
-  // First pass: gather members for each candidate template.
+  // First pass: gather members for each candidate template (depth > 3 only).
   const tplMembers = new Map();  // template -> array of raw ids
   for (const id of rawNodes.keys()) {
+    if ((rawDepth.get(id) ?? Infinity) <= 3) continue;
     const t = templateOf(id);
     if (!t) continue;
     if (!tplMembers.has(t.template)) tplMembers.set(t.template, []);
     tplMembers.get(t.template).push(id);
   }
-  // Keep only templates with ≥2 instantiations.
   const collapsibleTpl = new Map();
   for (const [tpl, members] of tplMembers) {
     if (members.length >= 2) {
@@ -428,32 +451,72 @@ function buildCollapsedGraph() {
       collapsibleTpl.set(tpl, members);
     }
   }
-  // Map raw id -> collapsed id.
+  // Decide cluster id per raw node.
+  //   depth ≤ 3   : namespace prefix
+  //   depth  > 3  : opcode-template if applicable, else namespace prefix
+  //   ROOT        : itself (singleton)
   const collapseOf = new Map();
+  const clusterKind = new Map();  // cid -> "template" | "namespace" | "root"
   for (const id of rawNodes.keys()) {
-    const t = templateOf(id);
-    if (t && collapsibleTpl.has(t.template)) {
-      collapseOf.set(id, t.template);
-    } else {
+    if (id === ROOT) {
       collapseOf.set(id, id);
+      clusterKind.set(id, "root");
+      continue;
     }
+    const d = rawDepth.get(id);
+    if (d > 3) {
+      const t = templateOf(id);
+      if (t && collapsibleTpl.has(t.template)) {
+        collapseOf.set(id, t.template);
+        clusterKind.set(t.template, "template");
+        continue;
+      }
+    }
+    const ns = namespacePrefix(id);
+    collapseOf.set(id, ns);
+    if (!clusterKind.has(ns)) clusterKind.set(ns, "namespace");
   }
-  // Build collapsed nodes.
-  const cNodes = new Map();  // cid -> { id, kind, isTemplate, members? }
+  // Build collapsed nodes with full member lists + metadata.
+  const cNodes = new Map();
   for (const id of rawNodes.keys()) {
     const cid = collapseOf.get(id);
-    if (cNodes.has(cid)) continue;
-    if (collapsibleTpl.has(cid)) {
-      // Synthetic template node. Kind = whatever its members are; if any member is axiom, mark axiom.
-      const members = collapsibleTpl.get(cid);
-      let kind = "P";
-      for (const m of members) {
-        if (rawNodes.get(m).kind === "A") { kind = "A"; break; }
-      }
-      cNodes.set(cid, { id: cid, kind, isTemplate: true, members });
-    } else {
-      cNodes.set(cid, { id, kind: rawNodes.get(id).kind, isTemplate: false });
+    let node = cNodes.get(cid);
+    if (!node) {
+      const kindTag = clusterKind.get(cid);
+      node = {
+        id: cid,
+        isTemplate: kindTag === "template",
+        isNamespace: kindTag === "namespace",
+        members: [],
+        memberKinds: { A: 0, P: 0, R: 0 },  // axiom / project / root
+        minDepth: Infinity,
+        maxDepth: -Infinity,
+      };
+      cNodes.set(cid, node);
     }
+    node.members.push(id);
+    const raw = rawNodes.get(id);
+    const k = (id === ROOT) ? "R" : raw.kind;
+    node.memberKinds[k] = (node.memberKinds[k] || 0) + 1;
+    const d = rawDepth.get(id);
+    if (d < node.minDepth) node.minDepth = d;
+    if (d > node.maxDepth) node.maxDepth = d;
+  }
+  // Cluster-level kind for colouring.
+  //   * root cluster (containing ROOT)        → kind "R" (isRoot=true downstream)
+  //   * template clusters                     → kind "P" or "A" based on members
+  //   * namespace clusters                    → "A" if every non-root member is axiom, else "P"
+  for (const node of cNodes.values()) {
+    if (node.id === ROOT) {
+      node.kind = "P";  // root flag carries colour
+      continue;
+    }
+    if (node.memberKinds.A > 0 && node.memberKinds.P === 0 && node.memberKinds.R === 0) {
+      node.kind = "A";
+    } else {
+      node.kind = "P";
+    }
+    node.members.sort();
   }
   // Build collapsed edges (deduped).
   const edgeKey = new Set();
@@ -471,26 +534,7 @@ function buildCollapsedGraph() {
       cLinks.push({ source: cs, target: ct });
     }
   }
-  // BFS depth in the collapsed graph.
-  const cAdj = new Map();
-  for (const e of cLinks) {
-    if (!cAdj.has(e.source)) cAdj.set(e.source, []);
-    cAdj.get(e.source).push(e.target);
-  }
-  const depth = new Map();
-  depth.set(ROOT, 0);
-  const queue = [ROOT];
-  while (queue.length) {
-    const cur = queue.shift();
-    const d = depth.get(cur);
-    for (const t of (cAdj.get(cur) || [])) {
-      if (!depth.has(t) || depth.get(t) > d + 1) {
-        depth.set(t, d + 1);
-        queue.push(t);
-      }
-    }
-  }
-  // Attach depth and degree info.
+  // Cluster depth = min raw depth among members (per spec).
   const inDeg = new Map(), outDeg = new Map();
   for (const e of cLinks) {
     outDeg.set(e.source, (outDeg.get(e.source) ?? 0) + 1);
@@ -498,8 +542,7 @@ function buildCollapsedGraph() {
   }
   const nodes = [];
   for (const n of cNodes.values()) {
-    if (!depth.has(n.id)) continue;
-    n.depth = depth.get(n.id);
+    n.depth = n.minDepth;
     n.inDeg = inDeg.get(n.id) ?? 0;
     n.outDeg = outDeg.get(n.id) ?? 0;
     nodes.push(n);
@@ -512,16 +555,24 @@ function buildCollapsedGraph() {
     const t = byId.get(l.target);
     if (s && t) links.push({ source: s, target: t });
   }
-  return { nodes, links, templateCount: collapsibleTpl.size };
+  let namespaceCount = 0;
+  for (const n of nodes) if (n.isNamespace) namespaceCount++;
+  return {
+    nodes, links,
+    templateCount: collapsibleTpl.size,
+    namespaceCount,
+  };
 }
 
 // ─── Install a node set into a panel (computes x,y, builds quadtree) ───────
 function installPanel(p, nodes, links) {
   for (const n of nodes) {
     n.isRoot = (n.id === ROOT);
-    n.r = radiusOf(n.kind, n.isRoot, n.depth, n.isTemplate);
-    n.color = colorOf(n.kind, n.isRoot, n.isTemplate);
-    n.short = shortName(n.id);
+    const mc = (n.members && n.members.length) || 1;
+    n.r = radiusOf(n.kind, n.isRoot, n.depth, n.isTemplate, n.isNamespace, mc);
+    n.color = colorOf(n.kind, n.isRoot, n.isTemplate, n.isNamespace);
+    // Namespace clusters display the full prefix; templates / leaves the trailing name.
+    n.short = n.isNamespace ? n.id : shortName(n.id);
   }
   p.nodes = nodes;
   p.links = links;
@@ -635,8 +686,9 @@ function draw(p) {
 }
 
 function kindLabel(node) {
-  if (node.isTemplate) return "template";
   if (node.isRoot) return "root";
+  if (node.isTemplate) return "template";
+  if (node.isNamespace) return "namespace";
   if (node.kind === "A") return "axiom";
   return "project";
 }
@@ -671,6 +723,21 @@ function updateInfoPanel(node, panelId) {
     document.getElementById("info-template-count").textContent = node.members.length;
   } else {
     tplMeta.hidden = true;
+  }
+  const clusterMeta = document.getElementById("info-cluster-meta");
+  if (node.isNamespace && node.members) {
+    clusterMeta.hidden = false;
+    document.getElementById("info-cluster-count").textContent = node.members.length;
+    const k = node.memberKinds || {};
+    const parts = [];
+    if (k.A) parts.push(k.A + " axiom");
+    if (k.P) parts.push(k.P + " project");
+    if (k.R) parts.push(k.R + " root");
+    document.getElementById("info-cluster-kinds").textContent = parts.join(", ") || "—";
+    const lo = node.minDepth, hi = node.maxDepth;
+    document.getElementById("info-cluster-range").textContent = (lo === hi) ? String(lo) : (lo + "–" + hi);
+  } else {
+    clusterMeta.hidden = true;
   }
 }
 
@@ -792,7 +859,11 @@ function clearBottom() {
 // Subgraph = seeds ∪ all ancestors (transitive via in-edges)
 //                 ∪ all descendants (transitive via out-edges).
 function populateBottomFromTopClick(topNode) {
-  const seeds = topNode.isTemplate ? topNode.members.slice() : [topNode.id];
+  // Both template clusters AND namespace clusters carry a `members` array.
+  // For bare nodes (root, depth>3 unique nodes) the cluster is its own id.
+  const seeds = (topNode.members && topNode.members.length)
+    ? topNode.members.slice()
+    : [topNode.id];
   const include = new Set();
   // Descendants (forward BFS via out-edges).
   const fwd = [...seeds];
