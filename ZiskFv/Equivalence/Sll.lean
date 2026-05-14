@@ -17,8 +17,8 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
-import ZiskFv.Equivalence.RdValDerivation.BinaryShift
-import ZiskFv.Equivalence.RdValDerivation.SailBridge
+import ZiskFv.Equivalence.WriteValueProofs.BinaryShift
+import ZiskFv.Equivalence.WriteValueProofs.SailBridge
 import ZiskFv.Equivalence.Bridge.BinaryExtension
 
 /-!
@@ -36,8 +36,8 @@ Emits three theorems matching the SLLW trio:
 * `equiv_SLL_sail` — Sail-level: `execute_instruction` on a SLL RTYPE
   reduces to the pure spec block.
 * `equiv_SLL` — canonical fused theorem. Derives `h_rd_val`
-  internally via `RdValDerivation.BinaryShift.h_rd_val_shift_sll`
-  + `RdValDerivation.SailBridge.sail_sll_bridge`.
+  internally via `WriteValueProofs.BinaryShift.h_rd_val_shift_sll`
+  + `WriteValueProofs.SailBridge.sail_sll_bridge`.
 -/
 
 namespace ZiskFv.Equivalence.Sll
@@ -82,7 +82,7 @@ lemma equiv_SLL_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
-    `RdValDerivation.BinaryShift.h_rd_val_shift_sll` discharge lemma.
+    `WriteValueProofs.BinaryShift.h_rd_val_shift_sll` discharge lemma.
 
     **Step 3.alpha.2 canonical exemplar for the BinaryExtension shape.**
     17 *promise hypotheses* dropped from caller burden — `h_a_range`
@@ -184,7 +184,7 @@ theorem equiv_SLL
     ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7⟩
   set shift : ℕ := sll_input.r2_val.toNat % 64 with h_shift_def
   have h_discharge :=
-    ZiskFv.Equivalence.RdValDerivation.BinaryShift.h_rd_val_shift_sll
+    ZiskFv.Equivalence.WriteValueProofs.BinaryShift.h_rd_val_shift_sll
       m v r_main r_binary e2 sll_input.r1_val shift h_op h_bytes h_a_range
       hc0 hc2 hc4 hc6 hc8 hc10 hc12 hc14
       hc1 hc3 hc5 hc7 hc9 hc11 hc13 hc15
@@ -194,7 +194,7 @@ theorem equiv_SLL
       h_input_r1_circuit
       (by rw [h_shift_def]; exact h_shift_pin)
   have h_bridge :=
-    ZiskFv.Equivalence.RdValDerivation.SailBridge.sail_sll_bridge
+    ZiskFv.Equivalence.WriteValueProofs.SailBridge.sail_sll_bridge
       sll_input.r1_val sll_input.r2_val shift h_shift_def
   have h_rd_val : U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                               e2.x4, e2.x5, e2.x6, e2.x7]

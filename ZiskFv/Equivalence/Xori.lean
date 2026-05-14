@@ -16,7 +16,7 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Equivalence.RdValDerivation.BinaryLogic
+import ZiskFv.Equivalence.WriteValueProofs.BinaryLogic
 
 /-!
 End-to-end theorem for RV64 XORI. Mirrors
@@ -67,7 +67,7 @@ lemma equiv_XORI_sail
     Mirrors `equiv_ANDI` (Step 4.2r3.I) — see that theorem's docstring
     for the discharge chain. Differences from ANDI: `OP_AND → OP_XOR`,
     `match_clo_chi_AND → match_clo_chi_XOR`, `transpile_ANDI →
-    transpile_XORI`, `RdValDerivation.h_rd_val_logic_andi →
+    transpile_XORI`, `WriteValueProofs.h_rd_val_logic_andi →
     h_rd_val_logic_xori`. -/
 theorem equiv_XORI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -132,7 +132,7 @@ theorem equiv_XORI
     ZiskFv.Equivalence.Bridge.Binary.itype_imm_subset_binary_row_of_main
       m v r_main r_binary xori_input.imm h_m32 h_match h_xori_subset
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.BinaryLogic.h_rd_val_logic_xori
+    ZiskFv.Equivalence.WriteValueProofs.BinaryLogic.h_rd_val_logic_xori
       m v r_main r_binary e2 xori_input.r1_val xori_input.imm
       h_byte_0 h_byte_1 h_byte_2 h_byte_3 h_byte_4 h_byte_5 h_byte_6 h_byte_7
       ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7

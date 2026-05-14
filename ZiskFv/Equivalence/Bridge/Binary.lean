@@ -723,7 +723,7 @@ The ALU-ITYPE Binary-provider opcodes (ANDI/ORI/XORI) consume the
 a 2-lane Main-form pin equating `BitVec.signExtend 64 imm` to
 `(m.b_0).val + (m.b_1).val * 2^32`.
 
-For these Binary-AIR opcodes the consuming `RdValDerivation.BinaryLogic`
+For these Binary-AIR opcodes the consuming `WriteValueProofs.BinaryLogic`
 helpers expect the imm in **8-byte Binary-row form**
 (`v.free_in_b_0 r + v.free_in_b_1 r * 256 + ... + v.free_in_b_7 r * 2^56`).
 

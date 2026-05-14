@@ -16,7 +16,7 @@ import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
+import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
 
 /-!
 End-to-end theorem for RV64 **REM**. REM is the
@@ -89,7 +89,7 @@ lemma equiv_REM_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output (`execute_DIV_REM_pure ... .DRS`) directly;
     that equation is derived internally from circuit witnesses via
-    the `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_rem` discharge
+    the `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_rem` discharge
     lemma. -/
 theorem equiv_REM
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -170,7 +170,7 @@ theorem equiv_REM
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_rem_chunked
+    ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_rem_chunked
       rem_input.r1_val rem_input.r2_val e2 v r_a
       h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
       h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1

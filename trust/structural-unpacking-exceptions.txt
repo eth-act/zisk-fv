@@ -141,7 +141,7 @@ ADDED: v, r_a, h_chain, h_na_bool, h_nb_bool, h_nr_bool, h_np_xor,
        (Phase 4.alpha.A full Tier-3 promotion. Consumes the signed ℤ
         chunk-lift toolkit (`SignedChunkLift` Part 8/9 +
         `Bridge/Arith.div_signed_chain_witnesses` +
-        `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_div_chunked`).
+        `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_div_chunked`).
         The new `h_nr_pin` binder is the arith-table sign-of-
         remainder pin (`nr = np ∨ D = 0`, axiom
         `arith_table_op_div_rem_signed_d_sign_pin` in class #6/#6b).
@@ -202,7 +202,7 @@ ADDED: v, r_a, h_chain, h_na_bool, h_nb_bool, h_nr_bool, h_np_xor,
         1's `fgl_div_w_signed_to_bv64` with the W chain witnesses,
         the new 32-bit `abs_euclidean_to_signed_euclidean_div_rem_w`
         linker (SignedChunkLift Part 9.W), and `h_sext_choice` via
-        the `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_divw_chunked`
+        the `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_divw_chunked`
         helper.)
 
 OPCODE: ZiskFv.Equivalence.Divuw.equiv_DIVUW
@@ -236,7 +236,7 @@ ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
               W-mode-specific addition) is the disjunctive sign-
               extension witness on bytes 4..7: SEXT_00 if q32 < 2^31,
               SEXT_FF if q32 ≥ 2^31. Same trust class as ADDW's
-              `h_sext_choice` (`Equivalence/RdValDerivation/Arith.lean
+              `h_sext_choice` (`Equivalence/WriteValueProofs/Arith.lean
               :579-583` — CIRCUIT-CONSTRAINT-shaped, discharged
               inside the proof body via case-split. No new axiom.).
           (f) `h_op1`/`h_op2` are 32-bit TRANSPILE-BRIDGE equations
@@ -246,7 +246,7 @@ ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
         structural-unpacking exception. Discharge composes Layer 1's
         `fgl_div_w_unsigned_to_bv64` with the chain witnesses and
         `h_sext_choice` via the
-        `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_divuw_chunked`
+        `WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_divuw_chunked`
         helper.)
 
 OPCODE: ZiskFv.Equivalence.Rem.equiv_REM
@@ -320,7 +320,7 @@ ADDED: v, r_a, h_chain, h_sext, h_m32, h_div, h_op, h_na_bool, h_nb_bool,
         Layer 1's `fgl_rem_w_signed_to_bv64` with the chain witnesses,
         the new `abs_euclidean_to_signed_euclidean_div_rem_w` linker
         (SignedChunkLift Part 9b), and `signed_tmod_unique` via the
-        `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_remw_chunked`
+        `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_remw_chunked`
         helper.
         One new axiom: `arith_table_op_div_rem_signed_w_d_sign_pin`
         (`Airs/Arith/Ranges.lean`, class #6 — narrow signed-W

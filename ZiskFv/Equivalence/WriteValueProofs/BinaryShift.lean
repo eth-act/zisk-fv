@@ -10,10 +10,10 @@ import ZiskFv.Airs.BinaryExtensionTable
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
-import ZiskFv.Equivalence.RdValDerivation.Arith
+import ZiskFv.Equivalence.WriteValueProofs.Arith
 
 /-!
-# RdValDerivation.BinaryShift — Tier-1 `h_rd_val` discharges for SLL/SLLI/SRL/SRLI/SRA/SRAI/SRLW/SRLIW/SLLW/SLLIW/SRAW/SRAIW
+# WriteValueProofs.BinaryShift — Tier-1 `h_rd_val` discharges for SLL/SLLI/SRL/SRLI/SRA/SRAI/SRLW/SRLIW/SLLW/SLLIW/SRAW/SRAIW
 
 Twelve Tier-1 lemmas covering the RV64I logical/arithmetic shift
 opcodes routed through ZisK's `BinaryExtension` AIR with full byte
@@ -75,7 +75,7 @@ sum, not concatenate.
 
 set_option maxHeartbeats 1600000
 
-namespace ZiskFv.Equivalence.RdValDerivation.BinaryShift
+namespace ZiskFv.Equivalence.WriteValueProofs.BinaryShift
 
 open Goldilocks
 open Interaction
@@ -86,7 +86,7 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.MemoryBus.LaneMatch
 open ZiskFv.PackedBitVec
-open ZiskFv.Equivalence.RdValDerivation.Arith
+open ZiskFv.Equivalence.WriteValueProofs.Arith
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -1648,4 +1648,4 @@ lemma h_rd_val_shift_sraiw
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
     h_input_r1_lo32 h_shift
 
-end ZiskFv.Equivalence.RdValDerivation.BinaryShift
+end ZiskFv.Equivalence.WriteValueProofs.BinaryShift

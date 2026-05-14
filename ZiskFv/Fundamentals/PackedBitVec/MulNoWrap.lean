@@ -45,7 +45,7 @@ are out of scope here — they live in `PackedBitVec/SignedNoWrap.lean`.
 Lemmas accept chunk-bounded ℕ values plus per-chunk and per-carry
 range bounds as hypotheses; they do **not** derive those bounds from
 circuit primitives.  The caller (a Tier-2 discharge lemma in
-`Equivalence/RdValDerivation/MulDivRem*`) is responsible for:
+`Equivalence/WriteValueProofs/MulDivRem*`) is responsible for:
 
 1. Lifting each FGL chunk equation to ℕ via the additive
    `NoWrap.fgl_eq_to_nat_eq` lemma.

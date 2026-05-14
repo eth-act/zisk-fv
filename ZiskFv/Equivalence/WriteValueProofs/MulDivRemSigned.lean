@@ -13,10 +13,10 @@ import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Sail.mulw
 import ZiskFv.Sail.divw  -- for `to_bits_truncate_32_eq_ofInt_divw`
 import ZiskFv.Equivalence.Bridge.Arith
-import ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned
+import ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned
 
 /-!
-# RdValDerivation.MulDivRemSigned — `h_rd_val` discharge lemmas (signed MUL/DIV/REM)
+# WriteValueProofs.MulDivRemSigned — `h_rd_val` discharge lemmas (signed MUL/DIV/REM)
 
 Each lemma in this file is **Tier 1**: it derives the `h_rd_val` conclusion
 from circuit-constraint-shaped primitives. The Tier-2 `h_byte_sum`
@@ -61,7 +61,7 @@ parameter by composing:
 
 set_option maxHeartbeats 800000
 
-namespace ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
+namespace ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
 
 open Goldilocks
 open Interaction
@@ -2492,7 +2492,7 @@ lemma h_rd_val_mdrs_remw_chunked
                               ⟨⟨hx4, hx5, hx6, hx7⟩, h_neg⟩
     · rw [hx4, hx5, hx6, hx7]
       have h_close :=
-        ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned.w_sext_close_pos
+        ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned.w_sext_close_pos
         ((v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
         (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
         h_d_sum_lt (by omega) h_byte_lo h_pos
@@ -2531,7 +2531,7 @@ lemma h_rd_val_mdrs_remw_chunked
             + 18446744069414584320 < 18446744073709551616 := by
         rw [h_byte_lo]; omega
       have h_close :=
-        ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned.w_sext_close_neg
+        ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned.w_sext_close_neg
         ((v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
         ((e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
           + 18446744069414584320)
@@ -2547,4 +2547,4 @@ lemma h_rd_val_mdrs_remw_chunked
       exact (Nat.mod_eq_of_lt h_byte_sum_lt).symm
   rw [h_byte_sum_eq]
 
-end ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
+end ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned

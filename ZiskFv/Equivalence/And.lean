@@ -16,7 +16,7 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Equivalence.RdValDerivation.BinaryLogic
+import ZiskFv.Equivalence.WriteValueProofs.BinaryLogic
 
 /-!
 End-to-end theorem for RV64 AND. Mirrors
@@ -67,7 +67,7 @@ lemma equiv_AND_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output (`r1_val &&& r2_val`) directly; that
     equation is derived internally from circuit witnesses via the
-    `RdValDerivation.BinaryLogic.h_rd_val_logic_and` discharge lemma. -/
+    `WriteValueProofs.BinaryLogic.h_rd_val_logic_and` discharge lemma. -/
 theorem equiv_AND
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (and_input : PureSpec.AndInput)
@@ -137,7 +137,7 @@ theorem equiv_AND
     ZiskFv.Equivalence.Bridge.Binary.input_r2_packed_b m v r_main r_binary
       (regidx_to_fin r2) and_input.r2_val h_m32 h_b_lo_t h_b_hi_t h_match h_input_r2
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.BinaryLogic.h_rd_val_logic_and
+    ZiskFv.Equivalence.WriteValueProofs.BinaryLogic.h_rd_val_logic_and
       m v r_main r_binary e2 and_input.r1_val and_input.r2_val
       h_byte_0 h_byte_1 h_byte_2 h_byte_3 h_byte_4 h_byte_5 h_byte_6 h_byte_7
       ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7

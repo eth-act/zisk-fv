@@ -10,10 +10,10 @@ import ZiskFv.Airs.BinaryTable
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
-import ZiskFv.Equivalence.RdValDerivation.Arith
+import ZiskFv.Equivalence.WriteValueProofs.Arith
 
 /-!
-# RdValDerivation.BinaryLogic — Tier-1 `h_rd_val` discharges for AND/ANDI/OR/ORI/XOR/XORI
+# WriteValueProofs.BinaryLogic — Tier-1 `h_rd_val` discharges for AND/ANDI/OR/ORI/XOR/XORI
 
 Six Tier-1 lemmas covering the RV64I bitwise opcodes routed through
 ZisK's `Binary` AIR.
@@ -61,7 +61,7 @@ with their respective input bridges. Same applies to OR/ORI and XOR/XORI.
 
 set_option maxHeartbeats 1200000
 
-namespace ZiskFv.Equivalence.RdValDerivation.BinaryLogic
+namespace ZiskFv.Equivalence.WriteValueProofs.BinaryLogic
 
 open Goldilocks
 open Interaction
@@ -72,7 +72,7 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.MemoryBus.LaneMatch
 open ZiskFv.PackedBitVec
-open ZiskFv.Equivalence.RdValDerivation.Arith
+open ZiskFv.Equivalence.WriteValueProofs.Arith
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -762,4 +762,4 @@ lemma h_rd_val_logic_xori
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
     h_input_r1 h_input_imm
 
-end ZiskFv.Equivalence.RdValDerivation.BinaryLogic
+end ZiskFv.Equivalence.WriteValueProofs.BinaryLogic

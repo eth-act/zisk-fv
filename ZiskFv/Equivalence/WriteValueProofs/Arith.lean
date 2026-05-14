@@ -21,7 +21,7 @@ import ZiskFv.Circuit.Subw
 import ZiskFv.Sail.add
 
 /-!
-# RdValDerivation.Arith — `h_rd_val` discharge lemmas for ALU-Arith opcodes
+# WriteValueProofs.Arith — `h_rd_val` discharge lemmas for ALU-Arith opcodes
 
 Provides one discharge lemma per opcode for the following 6 opcodes:
 ADD, ADDI, ADDW, ADDIW, SUB, SUBW.
@@ -104,7 +104,7 @@ exists in the Lean tree.
 
 set_option maxHeartbeats 2400000
 
-namespace ZiskFv.Equivalence.RdValDerivation.Arith
+namespace ZiskFv.Equivalence.WriteValueProofs.Arith
 
 open Goldilocks
 open Interaction
@@ -917,10 +917,10 @@ lemma h_rd_val_arith_subw
     e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
 
-/-! ## SLT, SLTU, SLTI, SLTIU — see `Equivalence.RdValDerivation.BinaryCompare`.
+/-! ## SLT, SLTU, SLTI, SLTIU — see `Equivalence.WriteValueProofs.BinaryCompare`.
 
 These four signed/unsigned compare opcodes ship as Tier-1 derivations
 in `BinaryCompare.lean`, using the K1-B LTU/LT chain lifts plus the
 Binary SM's `c[0] += cout` bus emission for the cout-only output. -/
 
-end ZiskFv.Equivalence.RdValDerivation.Arith
+end ZiskFv.Equivalence.WriteValueProofs.Arith

@@ -16,7 +16,7 @@ Byte-level signed bridge that composes with:
   multiplicative ℕ-level chunk-pack / no-wrap identities.
 
 to give Tier-1 discharge of `h_byte_sum` parameters in
-`Equivalence/RdValDerivation/MulDivRemSigned.lean` for the 8 signed
+`Equivalence/WriteValueProofs/MulDivRemSigned.lean` for the 8 signed
 opcodes (MULH, MULHSU, DIV, DIVW, DIVUW, REM, REMW, REMUW).
 
 ## Architecture
@@ -822,7 +822,7 @@ form requires careful handling of two interacting boundary cases:
    AIR-side dispatch.
 
 Both case dispatches are part of Layer 4's per-opcode composition
-(see `Equivalence/RdValDerivation/MulDivRemSigned.lean`'s
+(see `Equivalence/WriteValueProofs/MulDivRemSigned.lean`'s
 `h_rd_val_mdrs_div` for the existing OUTPUT-EQ-style discharge,
 which Layer 4 will replace by composing the bridges above with the
 operand-bus-pinned sign witnesses). Layer 1 delivers the abs-form

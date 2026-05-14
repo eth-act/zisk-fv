@@ -16,7 +16,7 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Equivalence.RdValDerivation.Arith
+import ZiskFv.Equivalence.WriteValueProofs.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Equivalence.Bridge.Binary
 
@@ -87,7 +87,7 @@ lemma equiv_SUB_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output (`r1_val - r2_val`) directly; that
     equation is derived internally from circuit witnesses via the
-    `RdValDerivation.Arith.h_rd_val_arith_sub` discharge lemma. -/
+    `WriteValueProofs.Arith.h_rd_val_arith_sub` discharge lemma. -/
 theorem equiv_SUB
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sub_input : PureSpec.SubInput)
@@ -310,7 +310,7 @@ theorem equiv_SUB
     rw [h_b0_val, h_b1_val]
     ring
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_sub
+    ZiskFv.Equivalence.WriteValueProofs.Arith.h_rd_val_arith_sub
       m r_main e2 sub_input.r1_val sub_input.r2_val
       (v.free_in_a_0 r_binary) (v.free_in_a_1 r_binary) (v.free_in_a_2 r_binary) (v.free_in_a_3 r_binary)
       (v.free_in_a_4 r_binary) (v.free_in_a_5 r_binary) (v.free_in_a_6 r_binary) (v.free_in_a_7 r_binary)

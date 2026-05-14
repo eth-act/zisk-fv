@@ -103,7 +103,7 @@ pilot, not the cross-cutting infrastructure.
 * **Lane-match:** Discharged. The op-bus axiom plus the lane-match
   packaging in `Bridge/BinaryAdd.lean` already supplies the
   Main↔BinaryAdd row-match identity. The remaining downstream work
-  (`RdValDerivation.Arith.h_rd_val_arith_add`) is pure Lean atop
+  (`WriteValueProofs.Arith.h_rd_val_arith_add`) is pure Lean atop
   these axioms.
 * **Mode pins:** N/A. BinaryAdd has no mode-selector columns —
   ADD and ADDI share the same row shape.

@@ -16,7 +16,7 @@ import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned
+import ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned
 
 /-!
 End-to-end theorem for RV64 **DIVU**. Differs from
@@ -82,7 +82,7 @@ lemma equiv_DIVU_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
-    `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_divu` discharge
+    `WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_divu` discharge
     lemma. -/
 theorem equiv_DIVU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -151,7 +151,7 @@ theorem equiv_DIVU
     ZiskFv.Equivalence.Bridge.Arith.div_unsigned_chain_witnesses v r_a h_chain
       h_na h_nb h_np h_nr h_sext h_m32 h_div
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_divu
+    ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_divu
       divu_input.r1_val divu_input.r2_val e2
       (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
       (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)

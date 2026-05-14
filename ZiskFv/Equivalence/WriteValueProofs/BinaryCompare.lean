@@ -14,10 +14,10 @@ import ZiskFv.Circuit.Slt
 import ZiskFv.Circuit.Sltu
 import ZiskFv.Circuit.Slti
 import ZiskFv.Circuit.Sltiu
-import ZiskFv.Equivalence.RdValDerivation.Arith
+import ZiskFv.Equivalence.WriteValueProofs.Arith
 
 /-!
-# RdValDerivation.BinaryCompare — Tier-1 `h_rd_val` discharges for SLT/SLTU/SLTI/SLTIU
+# WriteValueProofs.BinaryCompare — Tier-1 `h_rd_val` discharges for SLT/SLTU/SLTI/SLTIU
 
 Four Tier-1 lemmas covering the RV64I signed/unsigned compare opcodes
 routed through ZisK's `Binary` AIR with `OP_LT` (signed) or `OP_LTU`
@@ -66,7 +66,7 @@ R-variants with `r2_val := BitVec.signExtend 64 imm`.
 
 set_option maxHeartbeats 1600000
 
-namespace ZiskFv.Equivalence.RdValDerivation.BinaryCompare
+namespace ZiskFv.Equivalence.WriteValueProofs.BinaryCompare
 
 open Goldilocks
 open Interaction
@@ -77,7 +77,7 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.MemoryBus.LaneMatch
 open ZiskFv.PackedBitVec
-open ZiskFv.Equivalence.RdValDerivation.Arith
+open ZiskFv.Equivalence.WriteValueProofs.Arith
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -711,4 +711,4 @@ lemma h_rd_val_compare_slti
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
     h_fl7_lt_2 h_input_r1 h_input_imm
 
-end ZiskFv.Equivalence.RdValDerivation.BinaryCompare
+end ZiskFv.Equivalence.WriteValueProofs.BinaryCompare

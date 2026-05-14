@@ -16,7 +16,7 @@ import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Equivalence.RdValDerivation.Arith
+import ZiskFv.Equivalence.WriteValueProofs.Arith
 
 /-!
 End-to-end theorem for RV64 ADDI.
@@ -101,7 +101,7 @@ lemma equiv_ADDI_sail
        (class #4 — *trust ledger*).
     2. Translates the Main-form imm bridge to BinaryAdd-row form
        via `matches_entry`'s `b`-lane conjuncts under `h_m32 = 0`.
-    3. Composes with the existing `RdValDerivation.Arith` discharge
+    3. Composes with the existing `WriteValueProofs.Arith` discharge
        lemma.
 
     Per-opcode metric: +1 binder vs. the prior canonical. Falls under
@@ -201,7 +201,7 @@ theorem equiv_ADDI
     simp only [ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main] at h
     rw [h, h_b0_val, h_b1_val]
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_addi
+    ZiskFv.Equivalence.WriteValueProofs.Arith.h_rd_val_arith_addi
       m b r_main r_binary e2 addi_input.r1_val addi_input.imm
       h_circuit h_lane_rd
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7

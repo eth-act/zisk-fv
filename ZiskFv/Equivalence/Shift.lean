@@ -18,8 +18,8 @@ import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
 import ZiskFv.Airs.MemoryBus.EntryRanges
-import ZiskFv.Equivalence.RdValDerivation.BinaryShift
-import ZiskFv.Equivalence.RdValDerivation.SailBridge
+import ZiskFv.Equivalence.WriteValueProofs.BinaryShift
+import ZiskFv.Equivalence.WriteValueProofs.SailBridge
 import ZiskFv.Equivalence.Bridge.BinaryExtension
 
 /-!
@@ -93,7 +93,7 @@ lemma equiv_SLLW_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
-    `RdValDerivation.BinaryShift.h_rd_val_shift_sllw` discharge lemma. -/
+    `WriteValueProofs.BinaryShift.h_rd_val_shift_sllw` discharge lemma. -/
 theorem equiv_SLLW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sllw_input : PureSpec.SllwInput)
@@ -189,7 +189,7 @@ theorem equiv_SLLW
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ofNat, h_input_r1_extract, h_a4_def]
   have h_discharge :=
-    ZiskFv.Equivalence.RdValDerivation.BinaryShift.h_rd_val_shift_sllw
+    ZiskFv.Equivalence.WriteValueProofs.BinaryShift.h_rd_val_shift_sllw
       m v r_main r_binary e2
       (Sail.BitVec.extractLsb sllw_input.r1_val 31 0)
       shift h_op h_bytes h_a_range
@@ -201,7 +201,7 @@ theorem equiv_SLLW
       h_r1lo
       (by rw [h_shift_def]; exact h_shift_pin)
   have h_bridge :=
-    ZiskFv.Equivalence.RdValDerivation.SailBridge.sail_sllw_bridge
+    ZiskFv.Equivalence.WriteValueProofs.SailBridge.sail_sllw_bridge
       sllw_input.r1_val sllw_input.r2_val a4sum shift
       (h_input_r1_extract.trans (by rw [h_a4_def]))
       h_shift_def

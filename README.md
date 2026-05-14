@@ -185,7 +185,7 @@ The top-level FV theorems, organised in three layers:
    Bus-precondition variants (`equiv_<OP>_from_bus`,
    `equiv_<OP>_bus_self`, `equiv_<OP>_op_bus`) bridge alternate
    precondition shapes into the same canonical conclusion.
-   `RdValDerivation/` factors out shared rd-value lemmas across
+   `WriteValueProofs/` factors out shared rd-value lemmas across
    opcodes that share a derivation pattern.
 
 2. **`Compliance/<Op>Exemplar.lean` wrappers** — 63

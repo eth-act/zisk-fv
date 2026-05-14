@@ -17,7 +17,7 @@ import ZiskFv.Circuit.AddUpperImmediatePC
 import ZiskFv.Tactics.UTypeArchetype
 
 /-!
-# RdValDerivation.JumpUType — `h_rd_val` discharge lemmas for JAL/JALR/LUI/AUIPC
+# WriteValueProofs.JumpUType — `h_rd_val` discharge lemmas for JAL/JALR/LUI/AUIPC
 
 Each lemma in this file is **Tier 1**: it derives the `h_rd_val` conclusion
 from circuit primitives directly. No output-equality residuals survive in any
@@ -62,7 +62,7 @@ transpiler b-lane Nat pins (`h_imm_lo_nat`, `h_imm_hi_nat`) tie Sail's
 
 set_option maxHeartbeats 800000
 
-namespace ZiskFv.Equivalence.RdValDerivation.JumpUType
+namespace ZiskFv.Equivalence.WriteValueProofs.JumpUType
 
 open Goldilocks
 open Interaction
@@ -500,4 +500,4 @@ lemma h_rd_val_jut_auipc
       h0 h1 h2 h3 h4 h5 h6 h7]
   rw [h_byte_sum]
 
-end ZiskFv.Equivalence.RdValDerivation.JumpUType
+end ZiskFv.Equivalence.WriteValueProofs.JumpUType

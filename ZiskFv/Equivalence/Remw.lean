@@ -15,7 +15,7 @@ import ZiskFv.Sail.remw
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
+import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
 
 /-!
 End-to-end theorem for RV64M REMW (signed 32-bit remainder).
@@ -85,7 +85,7 @@ lemma equiv_REMW_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
-    `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_remw_chunked`
+    `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_remw_chunked`
     discharge lemma.
 
     Phase step4-remw structural-unpacking refactor with the standard
@@ -182,7 +182,7 @@ theorem equiv_REMW
     · right; right; left; exact h
     · right; right; right; exact h
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_remw_chunked
+    ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_remw_chunked
       remw_input.r1_val remw_input.r2_val e2 v r_a
       h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
       h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1

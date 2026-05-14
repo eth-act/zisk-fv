@@ -184,7 +184,7 @@ lemma fgl_pc_plus_offset_to_bv64_hi
 
 /-! ## Direct ℕ-equality forms (matching JumpUType.lean residuals)
 
-`Equivalence/RdValDerivation/JumpUType.lean` consumes residual
+`Equivalence/WriteValueProofs/JumpUType.lean` consumes residual
 hypotheses of the shape `(m.pc r + 4 : FGL).val = (PC + 4).toNat % 2^32`.
 The toolkit's lo / hi lemmas derive exactly that ℕ-level equality
 (without the outer `BitVec.ofNat` wrapper). -/
@@ -392,7 +392,7 @@ opcodes' rd-write residual identity with a clean call site. -/
 
 Given `pc_fgl.val = PC.toNat` and `PC.toNat < GL_prime - 4`, the lo-lane
 identity for the link-register write `pc + 4` closes via the offset-4
-specialisation.  This is the exact shape `RdValDerivation/JumpUType.lean`'s
+specialisation.  This is the exact shape `WriteValueProofs/JumpUType.lean`'s
 `h_pc_fgl_lo_nat` takes. -/
 example
     (pc_fgl : FGL) (PC : BitVec 64)

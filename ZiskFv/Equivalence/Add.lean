@@ -16,7 +16,7 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Equivalence.RdValDerivation.Arith
+import ZiskFv.Equivalence.WriteValueProofs.Arith
 
 /-!
 End-to-end theorem for RV64 ADD. Combines:
@@ -145,7 +145,7 @@ theorem equiv_ADD
       add_input.r1_val add_input.r2_val
       h_input_r1_sail h_input_r2_sail
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_add
+    ZiskFv.Equivalence.WriteValueProofs.Arith.h_rd_val_arith_add
       m b r_main r_binary e2 add_input
       h_circuit h_lane_rd
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7

@@ -16,7 +16,7 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Equivalence.RdValDerivation.BinaryLogic
+import ZiskFv.Equivalence.WriteValueProofs.BinaryLogic
 
 /-!
 End-to-end theorem for RV64 ANDI. Mirrors
@@ -79,7 +79,7 @@ lemma equiv_ANDI_sail
     3. Translates the Main-form `h_andi_subset` to Binary-row 8-byte
        form via `Bridge.Binary.itype_imm_subset_binary_row_of_main`
        (consumes `h_match` + `h_m32` from `transpile_ANDI`).
-    4. Composes with `RdValDerivation.BinaryLogic.h_rd_val_logic_andi`.
+    4. Composes with `WriteValueProofs.BinaryLogic.h_rd_val_logic_andi`.
 
     Per-opcode metric: drops `h_match_clo`, `h_match_chi`,
     `h_input_r1_circuit`, `h_input_imm_circuit` (4 hypotheses);
@@ -152,7 +152,7 @@ theorem equiv_ANDI
     ZiskFv.Equivalence.Bridge.Binary.itype_imm_subset_binary_row_of_main
       m v r_main r_binary andi_input.imm h_m32 h_match h_andi_subset
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.BinaryLogic.h_rd_val_logic_andi
+    ZiskFv.Equivalence.WriteValueProofs.BinaryLogic.h_rd_val_logic_andi
       m v r_main r_binary e2 andi_input.r1_val andi_input.imm
       h_byte_0 h_byte_1 h_byte_2 h_byte_3 h_byte_4 h_byte_5 h_byte_6 h_byte_7
       ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7

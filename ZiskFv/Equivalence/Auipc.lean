@@ -15,7 +15,7 @@ import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Equivalence.Bridge.ControlFlow
-import ZiskFv.Equivalence.RdValDerivation.JumpUType
+import ZiskFv.Equivalence.WriteValueProofs.JumpUType
 
 /-!
 End-to-end theorem for RV64 AUIPC. Combines:
@@ -90,7 +90,7 @@ lemma equiv_AUIPC_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output (`PC + signExtend (imm ++ 0)`) directly;
     that equation is derived internally from circuit witnesses via the
-    `RdValDerivation.JumpUType.h_rd_val_jut_auipc` discharge lemma. -/
+    `WriteValueProofs.JumpUType.h_rd_val_jut_auipc` discharge lemma. -/
 theorem equiv_AUIPC
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (auipc_input : PureSpec.AuipcInput)
@@ -147,7 +147,7 @@ theorem equiv_AUIPC
       U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
                   e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
       = auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ 0#12) :=
-    ZiskFv.Equivalence.RdValDerivation.JumpUType.h_rd_val_jut_auipc
+    ZiskFv.Equivalence.WriteValueProofs.JumpUType.h_rd_val_jut_auipc
       auipc_input.PC auipc_input.imm m r_main next_pc e_rd
       h_circuit h_offset_bridge h_lane_lo h_lane_hi
       h_no_wrap h_lo_bound h_pc_offset_lt_2_32

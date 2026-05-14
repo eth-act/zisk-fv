@@ -15,8 +15,8 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Equivalence.RdValDerivation.Arith
-import ZiskFv.Equivalence.RdValDerivation.SailBridge
+import ZiskFv.Equivalence.WriteValueProofs.Arith
+import ZiskFv.Equivalence.WriteValueProofs.SailBridge
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Equivalence.Bridge.Binary
 import ZiskFv.Airs.Binary.Binary
@@ -84,7 +84,7 @@ lemma equiv_ADDIW_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
-    `RdValDerivation.Arith.h_rd_val_arith_addiw` discharge lemma
+    `WriteValueProofs.Arith.h_rd_val_arith_addiw` discharge lemma
     composed with `SailBridge.sail_addiw_bridge`. -/
 theorem equiv_ADDIW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -228,7 +228,7 @@ theorem equiv_ADDIW
                   + (v.free_in_b_2 r_binary).val * 65536
                   + (v.free_in_b_3 r_binary).val * 16777216 with h_b32_def
   have h_discharge :=
-    ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_addiw
+    ZiskFv.Equivalence.WriteValueProofs.Arith.h_rd_val_arith_addiw
       m r_main e2
       (v.free_in_a_0 r_binary) (v.free_in_a_1 r_binary)
       (v.free_in_a_2 r_binary) (v.free_in_a_3 r_binary)
@@ -245,7 +245,7 @@ theorem equiv_ADDIW
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       a32sum b32sum h_a32_def h_b32_def
   have h_bridge :=
-    ZiskFv.Equivalence.RdValDerivation.SailBridge.sail_addiw_bridge
+    ZiskFv.Equivalence.WriteValueProofs.SailBridge.sail_addiw_bridge
       addiw_input.r1_val imm a32sum b32sum
       (h_input_r1_extract.trans (by rw [h_a32_def]))
       (h_input_imm_extract.trans (by rw [h_b32_def]))

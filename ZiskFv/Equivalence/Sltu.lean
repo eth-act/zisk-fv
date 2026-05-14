@@ -14,7 +14,7 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Equivalence.RdValDerivation.BinaryCompare
+import ZiskFv.Equivalence.WriteValueProofs.BinaryCompare
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Equivalence.Bridge.Binary
 import ZiskFv.Airs.Binary.Binary
@@ -71,7 +71,7 @@ lemma equiv_SLTU_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
-    `RdValDerivation.BinaryCompare.h_rd_val_compare_sltu` discharge
+    `WriteValueProofs.BinaryCompare.h_rd_val_compare_sltu` discharge
     lemma. -/
 theorem equiv_SLTU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -277,7 +277,7 @@ theorem equiv_SLTU
     apply congrArg (BitVec.ofNat 64)
     rw [h_b0_val, h_b1_val]; ring
   have h_rd_val_bv :=
-    ZiskFv.Equivalence.RdValDerivation.BinaryCompare.h_rd_val_compare_sltu
+    ZiskFv.Equivalence.WriteValueProofs.BinaryCompare.h_rd_val_compare_sltu
       m r_main e2 sltu_input.r1_val sltu_input.r2_val
       (v.free_in_a_0 r_binary) (v.free_in_a_1 r_binary) (v.free_in_a_2 r_binary) (v.free_in_a_3 r_binary)
       (v.free_in_a_4 r_binary) (v.free_in_a_5 r_binary) (v.free_in_a_6 r_binary) (v.free_in_a_7 r_binary)

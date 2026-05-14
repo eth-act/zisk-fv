@@ -11,7 +11,7 @@ import ZiskFv.Fundamentals.Execution
 import ZiskFv.Sail.mulw
 
 /-!
-# RdValDerivation.MulDivRemUnsigned — `h_rd_val` discharge lemmas for MUL/MULHU/DIVU/REMU/MULW
+# WriteValueProofs.MulDivRemUnsigned — `h_rd_val` discharge lemmas for MUL/MULHU/DIVU/REMU/MULW
 
 Each lemma in this file is **Tier 1**: it derives the `h_rd_val` conclusion
 from circuit-constraint-shaped primitives directly. The OUTPUT-EQ-shaped
@@ -42,7 +42,7 @@ No `h_byte_sum` parameter survives. Every remaining parameter is one of
 
 set_option maxHeartbeats 1200000
 
-namespace ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned
+namespace ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned
 
 open Goldilocks
 open Interaction
@@ -1226,4 +1226,4 @@ lemma h_rd_val_mdru_remuw_chunked
       exact (Nat.mod_eq_of_lt h_byte_sum_lt).symm
   rw [h_byte_sum_eq]
 
-end ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned
+end ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned

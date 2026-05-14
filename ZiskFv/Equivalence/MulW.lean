@@ -18,7 +18,7 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.Bridge.Arith
-import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
+import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
 
 /-!
 End-to-end theorem for RV64 MULW. MULW is the 32-bit word variant of
@@ -86,7 +86,7 @@ lemma equiv_MULW_sail
     asserts the spec output (`PureSpec.execute_MULW_pure_val ...`)
     directly; that equation is derived internally from circuit
     witnesses via the
-    `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_mulw_chunked`
+    `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_mulw_chunked`
     discharge lemma.
 
     Step 4 structural-unpacking refactor with 17 ADDED binders (16 MUL
@@ -155,7 +155,7 @@ theorem equiv_MULW
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_mulw_chunked
+    ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_mulw_chunked
       mulw_input.r1_val mulw_input.r2_val e2 v r_a
       h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
       h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1

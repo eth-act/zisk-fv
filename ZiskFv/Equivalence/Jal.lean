@@ -14,7 +14,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.Bridge.ControlFlow
-import ZiskFv.Equivalence.RdValDerivation.JumpUType
+import ZiskFv.Equivalence.WriteValueProofs.JumpUType
 
 /-!
 End-to-end theorem for RV64 JAL. Combines:
@@ -94,7 +94,7 @@ lemma equiv_JAL_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output (`PC + 4`) directly; that equation is
     derived internally from circuit witnesses via the
-    `RdValDerivation.JumpUType.h_rd_val_jut_jal` discharge lemma. -/
+    `WriteValueProofs.JumpUType.h_rd_val_jut_jal` discharge lemma. -/
 theorem equiv_JAL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (jal_input : PureSpec.JalInput)
@@ -143,7 +143,7 @@ theorem equiv_JAL
     ZiskFv.Equivalence.Bridge.ControlFlow.jal_discharge_lanes
       m r_main next_pc e_rd h_circuit h_rd_mult h_rd_as
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.JumpUType.h_rd_val_jut_jal
+    ZiskFv.Equivalence.WriteValueProofs.JumpUType.h_rd_val_jut_jal
       jal_input.PC m r_main next_pc e_rd
       h_circuit h_jmp2 h_lane_lo h_lane_hi
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32

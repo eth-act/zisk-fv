@@ -3,7 +3,7 @@ import LeanRV64D
 import ZiskFv.Fundamentals.Execution
 
 /-!
-# RdValDerivation.SailBridge — bridges between Tier-1 discharge outputs and h_rd_val shapes
+# WriteValueProofs.SailBridge — bridges between Tier-1 discharge outputs and h_rd_val shapes
 
 The Tier-1 discharge lemmas in `Arith.lean` / `BinaryShift.lean` for
 ALU-W and shift opcodes produce conclusions in BitVec primitives:
@@ -31,7 +31,7 @@ Each bridge has the symmetric direction stated as `lhs = rhs` so it
 can be `rw`'d into a discharge output to produce the canonical target.
 -/
 
-namespace ZiskFv.Equivalence.RdValDerivation.SailBridge
+namespace ZiskFv.Equivalence.WriteValueProofs.SailBridge
 
 open PreSail
 open LeanRV64D
@@ -451,4 +451,4 @@ lemma sail_sraiw_bridge
   rw [shift_right_arith_eq_sshiftRight_32, ← h_a4_eq, h_shift]
   congr 1
 
-end ZiskFv.Equivalence.RdValDerivation.SailBridge
+end ZiskFv.Equivalence.WriteValueProofs.SailBridge

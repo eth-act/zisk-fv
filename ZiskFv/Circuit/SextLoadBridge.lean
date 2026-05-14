@@ -8,7 +8,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.BinaryExtensionTable
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
-import ZiskFv.Equivalence.RdValDerivation.Arith
+import ZiskFv.Equivalence.WriteValueProofs.Arith
 
 /-!
 # Circuit.SextLoadBridge — proven c-packed identities for LB / LH / LW
@@ -418,7 +418,7 @@ lemma load_byte_c_packed
       + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
       = (BitVec.signExtend 64 (BitVec.ofNat 8 e1.x0.val)).toNat := by
     rw [h_se_toNat, h_byte_sum, h_packed]
-  exact ZiskFv.Equivalence.RdValDerivation.Arith.bv64_of_byte_sum
+  exact ZiskFv.Equivalence.WriteValueProofs.Arith.bv64_of_byte_sum
     (BitVec.signExtend 64 (BitVec.ofNat 8 e1.x0.val))
     e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
@@ -475,7 +475,7 @@ lemma load_half_c_packed
       + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
       = (BitVec.signExtend 64 ((e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8))).toNat := by
     rw [h_se_toNat, h_byte_sum, h_packed]
-  exact ZiskFv.Equivalence.RdValDerivation.Arith.bv64_of_byte_sum
+  exact ZiskFv.Equivalence.WriteValueProofs.Arith.bv64_of_byte_sum
     (BitVec.signExtend 64 ((e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8)))
     e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
@@ -540,7 +540,7 @@ lemma load_word_c_packed
           ((e1.x3 : BitVec 8) ++ (e1.x2 : BitVec 8)
             ++ (e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8))).toNat := by
     rw [h_se_toNat, h_byte_sum, h_packed]
-  exact ZiskFv.Equivalence.RdValDerivation.Arith.bv64_of_byte_sum
+  exact ZiskFv.Equivalence.WriteValueProofs.Arith.bv64_of_byte_sum
     (BitVec.signExtend 64
       ((e1.x3 : BitVec 8) ++ (e1.x2 : BitVec 8)
         ++ (e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8)))
