@@ -288,6 +288,37 @@ def opBus_row_Arith {C : Type → Type → Type} {F ExtF : Type}
     extended_arg := 0
     extra_args_0 := 0 }
 
+/-- Arith's operation-bus emission for a MUL-family row in **secondary**
+    mode (MULH / MULHU / MULHSU). On these rows `main_mul = 0`,
+    `main_div = 0`, so `secondary = 1 - main_mul - main_div = 1` and the
+    bus `c` lane comes from `d[]` — the high 64 bits of the product.
+
+    Same row-level layout as `opBus_row_Arith` except the result lane
+    `c_lo` is packed from `d[0..1]` rather than `c[0..1]`. The hi-half
+    `c_hi := v.bus_res1` is identical; under secondary-mode witnesses
+    (`main_mul = 0, main_div = 0, sext = 0, m32 = 0`) constraint 46
+    pins it to `d[2] + d[3] * 65536`.
+
+    Mirrors the structure of `opBus_row_ArithDivSecondary`
+    (`Airs/Arith/Div.lean:344`). -/
+@[simp]
+def opBus_row_ArithMulSecondary {C : Type → Type → Type} {F ExtF : Type}
+    [Field F] [Field ExtF] [Circuit F ExtF C]
+    (v : Valid_ArithMul C F ExtF) (row : ℕ) : OperationBusEntry F :=
+  { multiplicity := v.multiplicity row
+    op := v.op row
+    a_lo := v.a_0 row + v.a_1 row * 65536
+    a_hi := v.a_2 row + v.a_3 row * 65536
+    b_lo := v.b_0 row + v.b_1 row * 65536
+    b_hi := v.b_2 row + v.b_3 row * 65536
+    -- High-half result lane: `d[0] + d[1] * 2^16` on secondary = 1.
+    c_lo := v.d_0 row + v.d_1 row * 65536
+    c_hi := v.bus_res1 row
+    flag := 0
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
 end BusEmission
 
 /-!

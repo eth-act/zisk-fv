@@ -98,7 +98,7 @@ awk '$3=="axiom" {n=split($2,a,":"); print a[1]}' trust/baseline-axioms.txt \
   | sort | uniq -c
 #  66 ZiskFv/Fundamentals/Transpiler.lean       transpile contracts (1 class)
 #   4 ZiskFv/Sail/Auxiliaries.lean              platform-feature scope (4 classes)
-#   6 ZiskFv/Airs/OperationBus/Bridge.lean      op-bus permutation soundness (6 cross-AIR pairings)
+#   7 ZiskFv/Airs/OperationBus/Bridge.lean      op-bus permutation soundness (incl. ArithMul secondary for MULH-family Family A)
 #   4 ZiskFv/Airs/MemoryBus/MemBridge.lean      memory-bus lookup soundness (incl. MemAlign zero-pad + external-arith rd-write)
 #   2 ZiskFv/Airs/MemoryBus/LaneMatch.lean      memory-bus permutation soundness
 #   2 ZiskFv/Airs/MemoryBus/MemAlignBridge.lean  MemAlign permutation soundness (b) + ROM lookup (c)
@@ -109,7 +109,7 @@ awk '$3=="axiom" {n=split($2,a,":"); print a[1]}' trust/baseline-axioms.txt \
 #   3 ZiskFv/Airs/Binary/BinaryExtensionRanges.lean  binary-extension op_is_shift pin + row→byte-lookups witness + SEXT load closure (same trust class as #6)
 #   4 ZiskFv/Airs/Binary/BinaryRanges.lean      binary range + per-byte lookup witness + carry-bit range + OP_OR b_op_or_sext pin (same trust class as #6 / #5b)
 #   1 ZiskFv/Airs/Binary/BinaryAddRanges.lean   binary-add column range-check (same trust class as #5b)
-#  19 ZiskFv/Airs/Arith/Ranges.lean             arith range-checker lookups + DIV/REM table-row sign+mode pins + W-mode carry/operand pins + Euclidean-remainder bound + main_div/main_mul selector pins + np/nb MSB pins + MUL mode/selector pins (class #6b)
+#  28 ZiskFv/Airs/Arith/Ranges.lean             arith range-checker lookups + DIV/REM table-row sign+mode pins + W-mode carry/operand pins + Euclidean-remainder bound + main_div/main_mul selector pins + np/nb MSB pins + MUL mode/selector pins + MULHU/MULH/MULHSU mode+selector pins (Step 4.2 Family A) (class #6b)
 #   1 ZiskFv/Airs/Main/Ranges.lean              main range-check soundness (class #5b)
 ```
 

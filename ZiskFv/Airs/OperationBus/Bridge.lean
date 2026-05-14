@@ -127,6 +127,44 @@ axiom op_bus_perm_sound_ArithMul
     ∃ r_a : ℕ,
       matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithMul.opBus_row_Arith a r_a)
 
+/-- **OperationBus permutation soundness — ArithMulSecondary provider.**
+    Same provider AIR as `op_bus_perm_sound_ArithMul`, but for the
+    secondary bus emission. On MUL-family rows whose result lane is the
+    high 64 bits of the 128-bit product (MULH / MULHU / MULHSU), Arith's
+    `proves_operation` invocation packs `bus_c0` from the `d[]` chunks
+    rather than from `c[]`. PLONK-style permutation soundness on
+    `OPERATION_BUS_ID = 5000` gives, for every Main-side consumer row
+    pinned to MULH/MULHU/MULHSU, the existence of a matching Arith row
+    whose `opBus_row_ArithMulSecondary` projection matches Main's
+    `opBus_row_Main`.
+
+    Opcode coverage per `zisk/pil/operations.pil:71-78`:
+    MULUH = 0xb1 (= MULHU), MULSUH = 0xb3 (= MULHSU), MULH = 0xb5.
+    (0xb0 = MULU/MUL produces a low-half result on the primary lane;
+    its secondary lane carries the high half but is not consumed by
+    any RV64IM opcode that takes the high half — see
+    `core/src/riscv2zisk_context.rs` MULH-family lowering. The high
+    half is *only* observed on rows whose `op ∈ {0xb1, 0xb3, 0xb5}`,
+    where the primary `c[]` lane would carry a discarded low half.
+    For the formal proof's purposes, however, only the three MULH
+    family opcodes need the secondary handshake — they are the only
+    ones whose canonical `equiv_<OP>` consumes `v.d_*` chunks in the
+    `h_byte_lo` / `h_byte_hi` lane-match equation.)
+
+    Trust class #4 (operation-bus permutation soundness on
+    `OPERATION_BUS_ID = 5000`) — same class as
+    `op_bus_perm_sound_ArithMul` and
+    `op_bus_perm_sound_ArithDivSecondary`. -/
+axiom op_bus_perm_sound_ArithMulSecondary
+    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL)
+    (a : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL)
+    (r_main : ℕ)
+    (h_active : m.is_external_op r_main = 1)
+    (h_op : m.op r_main = 0xb1 ∨ m.op r_main = 0xb3 ∨ m.op r_main = 0xb5) :
+    ∃ r_a : ℕ,
+      matches_entry (opBus_row_Main m r_main)
+                    (ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary a r_a)
+
 /-- **OperationBus permutation soundness — ArithDiv provider.**
     Provider AIR: `Arith` (`zisk/state-machines/arith/pil/arith.pil`),
     division-mode rows (`main_div = 1`). Opcode coverage per
