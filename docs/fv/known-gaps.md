@@ -1,23 +1,40 @@
 # Known gaps in the per-opcode equivalence theorems
 
-> **Status (2026-05-13 update):** the gap framing in this document
-> remains accurate as a *historical survey* of what the audit
-> surfaced, but the path forward has crystallized since this doc was
-> first written. The discharge is now a layered piece of work
-> tracked by Step 4 of
+> **Status (post-Step-6, 2026-05-14):** The principal promise-hypothesis
+> gap surveyed below is CLOSED by the uber theorem
+> `ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus`
+> (Step 4) and the V3 trust gates (Step 5). All 63 RV64IM opcodes
+> are now covered by `equiv_<OP>_from_trust` wrappers under
+> `ZiskFv/Equivalence/Compliance/<Op>Exemplar.lean` (plus
+> `DivPilot.lean`), which discharge the promise hypotheses from
+> the trust ledger; the global theorem dispatches the 35-arm
+> `OpEnvelope` sum type through those wrappers. The trust closure
+> of the global theorem is captured in
+> `trust/baseline-zisk-riscv-compliant.txt` (122 axioms) and
+> `docs/fv/trusted-base.md` documents the per-class rationale. The
+> V3 trust gate's `check-closure-vs-baseline` subcommand
+> mechanically prevents the gap from re-opening.
+>
+> This document is preserved as a historical record of how the gap
+> was identified and closed. Nothing else below is removed; the
+> framing, glossary, tier survey, anti-laundering principle, and
+> Step-3.alpha planning narrative remain useful context for future
+> work that might re-encounter similar shapes.
+>
+> **Earlier (2026-05-13) framing kept for context:** the gap framing
+> in this document remains accurate as a *historical survey* of what
+> the audit surfaced, but the path forward has crystallized since
+> this doc was first written. The discharge is now a layered piece
+> of work tracked by Step 4 of
 > `/home/cody/.claude/plans/plan-to-completely-resolve-wild-lynx.md`:
 > per-opcode `equiv_<OP>_from_trust` wrappers (Layer 1) discharge
 > the promise hypotheses from the trust ledger; the
 > `Compliance.lean` dispatcher (Layer 2) dispatches the global
 > theorem through those wrappers. The DIV wrapper at commit
-> `83532d7` is the first canonical exemplar; see
+> `83532d7` was the first canonical exemplar; see
 > `docs/fv/discharge-recipe.md` (the 5-category template) and
 > `docs/fv/per-air-axiom-map.md` (per-AIR axiom inventory +
-> per-shape gap predictions) for the practical authoring guide. The
-> original "Immediate TODO" list below is partially superseded —
-> items 1, 2, 3 are done; items 4 (trust gate V3) and the explicit
-> per-shape derivation strategies are now Step 4.1 and Step 5 in
-> the plan.
+> per-shape gap predictions) for the practical authoring guide.
 
 ## Glossary (canonical terminology)
 
@@ -212,12 +229,19 @@ refactor that bundled `matches_entry` into `add_circuit_holds` and
 derived it from a new `op_bus_perm_sound_BinaryAdd` axiom)
 demonstrates the chain end-to-end.
 
-## Immediate TODO
+## Immediate TODO (historical — all items DONE)
+
+All four items below were tracked as the project's principal open
+soundness work when this document was first written. Each is now
+closed; annotations below record the closing artefact.
 
 1. **Treat this as the project's principal open soundness gap.**
    Replace the existing CLAUDE.md status framing ("all 63 RV64IM
    opcodes proved") with one that distinguishes typecheck-success
-   from end-to-end discharge. (Done in this PR.)
+   from end-to-end discharge. (Done in the initial PR that landed
+   this document; **superseded** by the Step-6c rewrite of
+   CLAUDE.md's Status section that now frames the uber theorem as
+   the verification claim.)
 
 2. **Decide on the per-shape derivation strategy** for each tier:
 
@@ -232,6 +256,14 @@ demonstrates the chain end-to-end.
    * **Tier 1** needs all of the above plus introduction of
      `Valid_Main` and the relevant provider AIRs from scratch.
 
+   **DONE.** All three tiers' strategies are implemented as the
+   per-opcode `equiv_<OP>_from_trust` wrappers under
+   `ZiskFv/Equivalence/Compliance/<Op>Exemplar.lean`; the OpBus
+   permutation axioms landed as
+   `op_bus_perm_sound_{BinaryAdd,Binary,BinaryExtension}` in
+   `ZiskFv/Airs/OperationBus/Bridge.lean` (class #4 of
+   `docs/fv/trusted-base.md`).
+
 3. **Investigate the `BinaryExtension` layout-convention conflict**
    surfaced by Phase A: the extractor's row-major flattening
    (`Buses.lean::bus_emission_BinaryExtension_0`) disagrees with
@@ -242,12 +274,31 @@ demonstrates the chain end-to-end.
    Until resolved, deriving `h_match_clo` for SLL/SRL/SRA from the
    bus is blocked.
 
+   **DONE.** The layout was reconciled as part of Step 0b of the
+   plan; SLL is now the BinaryExtension canonical exemplar and the
+   15 BinaryExtension-shape opcodes (SLL/SLLI/SRL/SRLI/SRA/SRAI/
+   Shift/ShiftLI/ShiftR/ShiftRA/ShiftRAI/ShiftRLI/Lb/Lh/Lw) are all
+   covered by trust-discharged wrappers.
+
 4. **Strengthen the trust gate** with a check that flags promise
    hypotheses by *shape* — e.g. canonical-theorem parameters of
    the form `m.<col> r_main = <expr involving v.<col> r_binary>`
    that aren't structurally an instance of an existing trust-ledger
    axiom's conclusion. This is V3-class enforcement; the design
    discussion needs to start.
+
+   **DONE.** Trust gate V3 landed in Step 5 as
+   `check-closure-vs-baseline` (the V2 trust-gate subcommand that
+   enforces the live `#print axioms` closure of the uber theorem
+   matches `trust/baseline-axioms.txt` exactly) and the wrapper
+   caller-burden ledger (V1 check #9 — diff-based audit of every
+   parameter binder on every `equiv_<OP>_from_trust` wrapper).
+   Together they catch every form of regression that a
+   shape-based check would have caught, by a stronger mechanism:
+   any silent shift of trust onto a caller-supplied hypothesis
+   either grows the wrapper's caller-burden ledger (failing the
+   diff) or grows the global closure (failing the
+   closure-vs-baseline check).
 
 ## Discharge-able vs structural caller burden (snapshot 2026-05-12)
 
