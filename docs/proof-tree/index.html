@@ -9,29 +9,51 @@
   #legend { position: absolute; top: 8px; right: 12px; font-size: 12px; background: rgba(20,22,28,0.85); padding: 8px 10px; border: 1px solid #303540; border-radius: 4px; z-index: 10; }
   #legend .row { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
   #legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
-  #controls { position: absolute; bottom: 8px; left: 12px; font-size: 12px; background: rgba(20,22,28,0.85); padding: 6px 10px; border: 1px solid #303540; border-radius: 4px; z-index: 10; }
+  #controls { position: absolute; bottom: 80px; left: 12px; font-size: 12px; background: rgba(20,22,28,0.85); padding: 6px 10px; border: 1px solid #303540; border-radius: 4px; z-index: 10; }
   #controls button { background: #1c1f26; color: #d8dee9; border: 1px solid #303540; padding: 3px 8px; margin-right: 4px; cursor: pointer; font-family: inherit; font-size: 12px; }
   #controls button:hover { background: #2a2f3a; }
   #tooltip { position: absolute; pointer-events: none; background: rgba(15,17,21,0.95); border: 1px solid #4a5060; padding: 4px 6px; border-radius: 3px; font-size: 11px; max-width: 600px; word-break: break-all; z-index: 20; visibility: hidden; color: #aab0bc; }
-  canvas { display: block; position: absolute; top: 0; left: 0; }
+
+  /* Vertical split: TOP canvas / BOTTOM canvas / info panel.
+     Info panel is ~70px fixed at the bottom; the two canvases share the
+     rest of the viewport equally. */
+  #panels {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 76px;
+    display: grid; grid-template-rows: 1fr 1fr; gap: 0;
+  }
+  .panel { position: relative; overflow: hidden; border-bottom: 1px solid #2a2f3a; }
+  .panel:last-child { border-bottom: none; }
+  .panel-label {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; color: #7a8090; background: rgba(20,22,28,0.85);
+    padding: 3px 10px; border: 1px solid #303540; border-radius: 10px; z-index: 5; pointer-events: none;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .panel canvas { display: block; position: absolute; top: 0; left: 0; }
+  .panel .hint {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    color: #5a6070; font-size: 14px; font-style: italic; text-align: center;
+    pointer-events: none; line-height: 1.6;
+  }
+
   #info-panel {
     position: fixed;
     bottom: 0; left: 0; right: 0;
     background: #1a1a1a;
     color: #e7e9ee;
-    padding: 14px 24px;
+    padding: 10px 24px;
     font-family: sans-serif;
     font-size: 13px;
     border-top: 1px solid #333;
     z-index: 100;
-    min-height: 70px;
+    height: 76px;
     box-sizing: border-box;
   }
-  #info-panel .empty { color: #7a8090; font-style: italic; padding-top: 18px; }
+  #info-panel .empty { color: #7a8090; font-style: italic; padding-top: 14px; }
   #info-panel .name {
     font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
-    font-size: 15px;
-    margin-bottom: 8px;
+    font-size: 13px;
+    margin-bottom: 4px;
     word-break: break-all;
     color: #ffffff;
   }
@@ -51,6 +73,12 @@
   #info-panel .badge.root { background: #3a4a30; color: #c8e0a8; }
   #info-panel .badge.axiom { background: #4a2830; color: #f0a8a8; }
   #info-panel .badge.project { background: #28384a; color: #a8c8e8; }
+  #info-panel .badge.template { background: #4a3a20; color: #f0c890; }
+  #info-panel .source-tag {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+    background: #2a2f3a; color: #7a8090; margin-left: 8px;
+  }
   #info-panel .toast {
     position: absolute;
     right: 24px;
@@ -74,23 +102,41 @@
   <div class="row"><span class="sw" style="background:#a3be8c"></span>root (uber-theorem)</div>
   <div class="row"><span class="sw" style="background:#88c0d0"></span>project const</div>
   <div class="row"><span class="sw" style="background:#bf616a"></span>axiom (trust leaf)</div>
-  <div style="margin-top:6px;font-size:11px;color:#7a8090">layered top-down · scroll to zoom · drag to pan · hover for info</div>
+  <div class="row"><span class="sw" style="background:#d08770"></span>opcode template (click to drill)</div>
+  <div class="row"><span class="sw" style="background:#ebcb8b"></span>seed (drill source)</div>
+  <div style="margin-top:6px;font-size:11px;color:#7a8090">top: collapsed · click node → bottom shows subgraph<br>scroll: zoom · drag: pan · hover: info</div>
 </div>
 <div id="controls">
-  <button onclick="resetView()">reset view</button>
+  <button onclick="resetView('T')">reset top</button>
+  <button onclick="resetView('B')">reset bottom</button>
+  <button onclick="clearBottom()">clear bottom</button>
   <span id="counts" style="color:#7a8090;margin-left:8px"></span>
 </div>
 <div id="tooltip"></div>
-<canvas id="canvas"></canvas>
+<div id="panels">
+  <div class="panel" id="panel-T">
+    <div class="panel-label">collapsed overview (top)</div>
+    <canvas id="canvas-T"></canvas>
+  </div>
+  <div class="panel" id="panel-B">
+    <div class="panel-label">drill-down subgraph (bottom)</div>
+    <canvas id="canvas-B"></canvas>
+    <div class="hint" id="hint-B">Click a node above to drill in.<br>Ancestors up to root + descendants down to leaves.</div>
+  </div>
+</div>
 <div id="info-panel">
-  <div class="empty" id="info-empty">Hover a node to inspect · click to copy full name</div>
+  <div class="empty" id="info-empty">Hover or click a node to inspect.</div>
   <div class="filled" id="info-filled" hidden>
-    <div class="name" id="info-name"></div>
+    <div class="name">
+      <span id="info-name"></span>
+      <span class="source-tag" id="info-source"></span>
+    </div>
     <div class="meta">
       <span class="badge" id="info-kind"></span>
       <span>depth <span id="info-depth"></span></span>
       <span>in-degree <span id="info-in"></span></span>
       <span>out-degree <span id="info-out"></span></span>
+      <span id="info-template-meta" hidden>· template covers <span id="info-template-count"></span> instantiations</span>
     </div>
   </div>
   <div class="toast" id="info-toast">copied!</div>
@@ -101,16 +147,123 @@ const ROOT = "ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_
 const LAYER_HEIGHT = 120;
 const LAYER_TOP_PAD = 60;
 
-const colorOf = (kind, isRoot) => {
+// The 63 RV64IM opcodes that participate in template collapse, plus the
+// W-variant shift aliases (SLLW/SLLIW/SRAW/SRAIW/SRLW/SRLIW) that appear in
+// the actual node names but aren't in the canonical 63-list.
+const OPS = [
+  "ADD","ADDI","ADDIW","ADDW","AND","ANDI","AUIPC","BEQ","BGE","BGEU","BLT","BLTU","BNE",
+  "DIV","DIVU","DIVUW","DIVW","FENCE","JAL","JALR","LB","LBU","LD","LH","LHU","LUI","LW","LWU",
+  "MUL","MULH","MULHSU","MULHU","MULW","OR","ORI","REM","REMU","REMUW","REMW",
+  "SB","SD","SH","SLL","SLLI","SLLIW","SLLW","SRA","SRAI","SRAIW","SRAW","SRL","SRLI","SRLIW","SRLW",
+  "SLT","SLTI","SLTIU","SLTU","SUB","SUBW","SW","XOR","XORI"
+];
+// Longest first so e.g. ADDIW matches before ADD.
+OPS.sort((a, b) => b.length - a.length);
+const TEMPLATE_TAG = "<OP>";
+
+// Pascal-case form of an opcode mnemonic (e.g. ADDI -> Addi, MULHSU -> Mulhsu).
+function pascalOf(op) {
+  return op[0] + op.slice(1).toLowerCase();
+}
+
+// Per-opcode module-name aliases used inside `ZiskFv.Equivalence.<Mod>.*` —
+// the module that holds the per-opcode equivalence proof. Two flavours:
+//   (a) PascalCase match: `Add` ↔ ADD, `Addi` ↔ ADDI, ... (auto via pascalOf).
+//   (b) Descriptive names like `BranchEqual` for BEQ, `LoadBU` for LBU,
+//       `Shift` for SLLW, etc. — listed explicitly below.
+// Whitelist of descriptive module aliases. Each entry collapses the LHS
+// segment into `<Op>` when the same opcode also appears as a suffix.
+const MODULE_ALIASES = {
+  // branches
+  BranchEqual: "BEQ", BranchNotEqual: "BNE",
+  BranchLessThan: "BLT", BranchLessThanUnsigned: "BLTU",
+  BranchGreaterEqual: "BGE", BranchGreaterEqualUnsigned: "BGEU",
+  // loads
+  LoadBU: "LBU", LoadHU: "LHU", LoadWU: "LWU", LoadD: "LD",
+  // stores
+  StoreB: "SB", StoreH: "SH", StoreW: "SW", StoreD: "SD",
+  // multiplies
+  MulH: "MULH", MulHU: "MULHU", MulHSU: "MULHSU", MulW: "MULW",
+  // shifts (W-mode aliases)
+  Shift: "SLLW", ShiftLI: "SLLIW",
+  ShiftR: "SRLW", ShiftRLI: "SRLIW",
+  ShiftRA: "SRAW", ShiftRAI: "SRAIW",
+};
+
+// Returns { template, op } if `name` collapses, otherwise null.
+//
+// Two collapsing patterns fire (longest opcode wins, to avoid ADDIW being
+// matched as ADD):
+//   (a) suffix-style `..._ADD` / `..._ADD_...` / `..._ADD.something`
+//       → `..._<OP>`
+//   (b) module-component `.Add.` / `.BranchEqual.` (PascalCase or alias)
+//       → `.<Op>.`
+// Both substitutions are applied when both fire for the SAME opcode, so that
+// e.g. `ZiskFv.Equivalence.Add.equiv_ADD` → `ZiskFv.Equivalence.<Op>.equiv_<OP>`
+// and `ZiskFv.Equivalence.BranchEqual.equiv_BEQ` →
+//     `ZiskFv.Equivalence.<Op>.equiv_<OP>`.
+//
+// Build a reverse map from opcode → list of module aliases (PascalCase plus
+// any explicit MODULE_ALIASES entries). Done once at module init.
+const _moduleAliasesByOp = {};
+for (const op of OPS) {
+  _moduleAliasesByOp[op] = [pascalOf(op)];
+}
+for (const [alias, op] of Object.entries(MODULE_ALIASES)) {
+  if (!_moduleAliasesByOp[op]) _moduleAliasesByOp[op] = [];
+  if (!_moduleAliasesByOp[op].includes(alias)) {
+    _moduleAliasesByOp[op].push(alias);
+  }
+}
+
+// Lowercase opcode segments (e.g. `.OpEnvelope.add`, `.OpEnvelope.beq`) appear
+// as constructor names in the OpEnvelope sum. Collapse those as well. AND uses
+// `and_op` (since `and` is a Lean keyword); we list the few that need explicit
+// remapping. Other opcodes just lowercase cleanly.
+const LOWERCASE_REMAPS = { and_op: "AND", or_op: "OR" };
+
+function templateOf(name) {
+  for (const op of OPS) {
+    const suffixRe = new RegExp(`([_\\.])${op}(_|\\.|$)`);
+    const hasSuffix = suffixRe.test(name);
+    let moduleMatch = null;
+    for (const alias of (_moduleAliasesByOp[op] || [])) {
+      const re = new RegExp(`\\.${alias}\\.`);
+      if (re.test(name)) { moduleMatch = re; break; }
+    }
+    // Lowercase-leaf form: trailing `.add`, `.beq`, etc.
+    let lowerRe = null;
+    const lowOp = op.toLowerCase();
+    const lowReCandidate = new RegExp(`\\.${lowOp}(\\.|$)`);
+    if (lowReCandidate.test(name)) lowerRe = lowReCandidate;
+    if (!hasSuffix && !moduleMatch && !lowerRe) continue;
+    let t = name;
+    if (hasSuffix) t = t.replace(suffixRe, `$1${TEMPLATE_TAG}$2`);
+    if (moduleMatch) t = t.replace(moduleMatch, `.<Op>.`);
+    if (lowerRe) t = t.replace(lowerRe, `.<op>$1`);
+    return { template: t, op };
+  }
+  // Try the explicit lowercase remaps (`and_op` etc).
+  for (const [low, op] of Object.entries(LOWERCASE_REMAPS)) {
+    const re = new RegExp(`\\.${low}(\\.|$)`);
+    if (re.test(name)) {
+      return { template: name.replace(re, `.<op>$1`), op };
+    }
+  }
+  return null;
+}
+
+const colorOf = (kind, isRoot, isTemplate) => {
+  if (isTemplate) return "#d08770";    // orange template
   if (isRoot) return "#a3be8c";        // root green
   if (kind === "A") return "#bf616a";  // axiom red
   return "#88c0d0";                    // project blue
 };
 
-const radiusOf = (kind, isRoot, depth) => {
+const radiusOf = (kind, isRoot, depth, isTemplate) => {
+  if (isTemplate) return 6;
   if (isRoot) return 9;
   if (kind === "A") return 3.5;
-  // gradient by depth — deeper nodes get smaller
   return Math.max(2.5, 6 - depth * 0.4);
 };
 
@@ -119,232 +272,376 @@ const shortName = (n) => {
   return parts[parts.length - 1];
 };
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
 const tooltip = d3.select("#tooltip");
 const status = d3.select("#status");
 
-let width = 0, height = 0;
+// ─── Raw graph (loaded once) ────────────────────────────────────────────────
+let rawNodes = null;   // Map<id, { id, kind }>
+let rawAdjOut = null;  // Map<id, Set<id>> (parent -> children)
+let rawAdjIn  = null;  // Map<id, Set<id>> (child  -> parents)
+let rawDepth  = null;  // Map<id, number> BFS depth from ROOT
+let rawInDeg  = null;
+let rawOutDeg = null;
+
+// ─── Panel state (one entry per panel) ──────────────────────────────────────
+function newPanel(id) {
+  const canvas = document.getElementById("canvas-" + id);
+  return {
+    id,
+    canvas,
+    ctx: canvas.getContext("2d"),
+    width: 0, height: 0,
+    nodes: null,    // array of node objects (with x,y,r,color,...)
+    links: null,    // array of { source, target } (refs into nodes)
+    quad: null,
+    transform: d3.zoomIdentity,
+    zoomBehavior: null,
+    hoverNode: null,
+    frozenNode: null,
+    layoutWidth: 0,
+    layoutHeight: 0,
+  };
+}
+
+const P = { T: null, B: null };
+// Tracks which panel last reported a hover/click, so the info panel knows
+// which side to mirror.
+let activePanelId = null;
+
 function resize() {
   const dpr = window.devicePixelRatio || 1;
-  width = window.innerWidth;
-  height = window.innerHeight;
-  canvas.width = width * dpr;
-  canvas.height = height * dpr;
-  canvas.style.width = width + "px";
-  canvas.style.height = height + "px";
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);  // base DPR scale; zoom applies on top via ctx.save/translate/scale
-  if (allNodes) draw();
+  for (const id of ["T", "B"]) {
+    const p = P[id];
+    if (!p) continue;
+    const panelEl = document.getElementById("panel-" + id);
+    p.width  = panelEl.clientWidth;
+    p.height = panelEl.clientHeight;
+    p.canvas.width  = p.width  * dpr;
+    p.canvas.height = p.height * dpr;
+    p.canvas.style.width  = p.width  + "px";
+    p.canvas.style.height = p.height + "px";
+    p.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (p.nodes) draw(p);
+  }
 }
 window.addEventListener("resize", resize);
 
-let allNodes = null, allLinks = null;
-let transform = d3.zoomIdentity;
-let hoverNode = null;
-let frozenNode = null;  // node pinned in the info panel by a click
-let quad = null;
-let zoomBehavior = null;
-let layoutWidth = 0, layoutHeight = 0;
-let inDeg = new Map(), outDeg = new Map();
-
+// ─── Load + parse edges.tsv ─────────────────────────────────────────────────
 async function load() {
   const text = await fetch("edges.tsv").then(r => r.text());
-  const lines = text.trim().split("\n").slice(1);  // drop header
-  const nodeMap = new Map();
-  const links = [];
+  const lines = text.trim().split("\n").slice(1);
+  rawNodes = new Map();
+  rawAdjOut = new Map();
+  rawAdjIn = new Map();
   function ensureNode(name, kind) {
-    if (!nodeMap.has(name)) {
-      nodeMap.set(name, { id: name, kind, depth: Infinity });
-    } else if (kind === "A" && nodeMap.get(name).kind !== "A") {
-      // Promote to axiom if we see an A label.
-      nodeMap.get(name).kind = "A";
+    if (!rawNodes.has(name)) {
+      rawNodes.set(name, { id: name, kind });
+    } else if (kind === "A" && rawNodes.get(name).kind !== "A") {
+      rawNodes.get(name).kind = "A";
     }
-    return nodeMap.get(name);
   }
   for (const line of lines) {
     const [parent, child, pk, ck] = line.split("\t");
     ensureNode(parent, pk);
     ensureNode(child, ck);
-    links.push({ source: parent, target: child });
+    if (!rawAdjOut.has(parent)) rawAdjOut.set(parent, new Set());
+    rawAdjOut.get(parent).add(child);
+    if (!rawAdjIn.has(child)) rawAdjIn.set(child, new Set());
+    rawAdjIn.get(child).add(parent);
   }
-  if (!nodeMap.has(ROOT)) {
+  if (!rawNodes.has(ROOT)) {
     status.text("ERROR: root not found in edges");
     return;
   }
-  // BFS depth from root.
-  const adj = new Map();
-  for (const l of links) {
-    if (!adj.has(l.source)) adj.set(l.source, []);
-    adj.get(l.source).push(l.target);
-  }
+  // BFS depth from ROOT (following out-edges).
+  rawDepth = new Map();
+  rawDepth.set(ROOT, 0);
   const queue = [ROOT];
-  nodeMap.get(ROOT).depth = 0;
   while (queue.length) {
     const cur = queue.shift();
-    const d = nodeMap.get(cur).depth;
-    for (const t of (adj.get(cur) || [])) {
-      const n = nodeMap.get(t);
-      if (n && n.depth > d + 1) {
-        n.depth = d + 1;
+    const d = rawDepth.get(cur);
+    for (const t of (rawAdjOut.get(cur) || [])) {
+      if (!rawDepth.has(t) || rawDepth.get(t) > d + 1) {
+        rawDepth.set(t, d + 1);
         queue.push(t);
       }
     }
   }
-  allNodes = [...nodeMap.values()];
-  // Drop nodes unreachable from root (depth still Infinity).
-  allNodes = allNodes.filter(n => Number.isFinite(n.depth));
-  // Resolve link endpoints to node objects (matching forceLink behaviour the rest of the code expects).
-  const byId = new Map(allNodes.map(n => [n.id, n]));
-  allLinks = [];
-  for (const l of links) {
-    const s = byId.get(l.source);
-    const t = byId.get(l.target);
-    if (s && t) allLinks.push({ source: s, target: t });
+  // Drop nodes unreachable from root.
+  for (const id of [...rawNodes.keys()]) {
+    if (!rawDepth.has(id)) rawNodes.delete(id);
   }
-  // Precompute static visual props for each node (avoid per-frame recompute).
-  for (const n of allNodes) {
-    const isRoot = n.id === ROOT;
-    n.isRoot = isRoot;
-    n.r = radiusOf(n.kind, isRoot, n.depth);
-    n.color = colorOf(n.kind, isRoot);
-    n.short = shortName(n.id);
+  rawInDeg = new Map();
+  rawOutDeg = new Map();
+  for (const [src, set] of rawAdjOut) {
+    if (!rawNodes.has(src)) continue;
+    for (const tgt of set) {
+      if (!rawNodes.has(tgt)) continue;
+      rawOutDeg.set(src, (rawOutDeg.get(src) ?? 0) + 1);
+      rawInDeg.set(tgt, (rawInDeg.get(tgt) ?? 0) + 1);
+    }
   }
-  // Precompute in/out degrees once. Sum of outDeg over all nodes equals total edges.
-  inDeg = new Map();
-  outDeg = new Map();
-  for (const e of allLinks) {
-    outDeg.set(e.source.id, (outDeg.get(e.source.id) ?? 0) + 1);
-    inDeg.set(e.target.id, (inDeg.get(e.target.id) ?? 0) + 1);
-  }
-  d3.select("#counts").text(`${allNodes.length} nodes · ${allLinks.length} edges`);
-  status.text("");
+
+  // Build the collapsed view for the TOP panel.
+  const collapsed = buildCollapsedGraph();
+
+  P.T = newPanel("T");
+  P.B = newPanel("B");
+  installPanel(P.T, collapsed.nodes, collapsed.links);
+  // Bottom panel starts empty.
   resize();
-  layout();
-  initZoom();
-  draw();
+  initZoom(P.T);
+  initZoom(P.B);
+  draw(P.T);
+
+  d3.select("#counts").text(
+    `raw: ${rawNodes.size} nodes / ${[...rawAdjOut.values()].reduce((a, s) => a + s.size, 0)} edges · ` +
+    `collapsed: ${collapsed.nodes.length} nodes / ${collapsed.links.length} edges · ` +
+    `${collapsed.templateCount} templates`
+  );
+  status.text("");
 }
 
-function layout() {
-  // Group by depth.
-  const byDepth = d3.group(allNodes, d => d.depth);
-  const maxDepth = d3.max(allNodes, d => d.depth);
+// ─── Build the collapsed graph used by the TOP panel ───────────────────────
+// Algorithm:
+//   1. Compute the template of each raw node. Templates appearing ≥2× become collapsed nodes.
+//   2. Map each raw id to a collapsed id: templated nodes → template string,
+//      everything else → raw id.
+//   3. Project edges: replace each endpoint by its collapsed id, drop dup + self-loops.
+//   4. Templated nodes have synthetic kind "T" (template). Their kind/depth/etc.
+//      come from a representative member (the first one alphabetically, but all
+//      members are tracked for the click-to-expand step).
+function buildCollapsedGraph() {
+  // First pass: gather members for each candidate template.
+  const tplMembers = new Map();  // template -> array of raw ids
+  for (const id of rawNodes.keys()) {
+    const t = templateOf(id);
+    if (!t) continue;
+    if (!tplMembers.has(t.template)) tplMembers.set(t.template, []);
+    tplMembers.get(t.template).push(id);
+  }
+  // Keep only templates with ≥2 instantiations.
+  const collapsibleTpl = new Map();
+  for (const [tpl, members] of tplMembers) {
+    if (members.length >= 2) {
+      members.sort();
+      collapsibleTpl.set(tpl, members);
+    }
+  }
+  // Map raw id -> collapsed id.
+  const collapseOf = new Map();
+  for (const id of rawNodes.keys()) {
+    const t = templateOf(id);
+    if (t && collapsibleTpl.has(t.template)) {
+      collapseOf.set(id, t.template);
+    } else {
+      collapseOf.set(id, id);
+    }
+  }
+  // Build collapsed nodes.
+  const cNodes = new Map();  // cid -> { id, kind, isTemplate, members? }
+  for (const id of rawNodes.keys()) {
+    const cid = collapseOf.get(id);
+    if (cNodes.has(cid)) continue;
+    if (collapsibleTpl.has(cid)) {
+      // Synthetic template node. Kind = whatever its members are; if any member is axiom, mark axiom.
+      const members = collapsibleTpl.get(cid);
+      let kind = "P";
+      for (const m of members) {
+        if (rawNodes.get(m).kind === "A") { kind = "A"; break; }
+      }
+      cNodes.set(cid, { id: cid, kind, isTemplate: true, members });
+    } else {
+      cNodes.set(cid, { id, kind: rawNodes.get(id).kind, isTemplate: false });
+    }
+  }
+  // Build collapsed edges (deduped).
+  const edgeKey = new Set();
+  const cLinks = [];
+  for (const [src, set] of rawAdjOut) {
+    if (!rawNodes.has(src)) continue;
+    for (const tgt of set) {
+      if (!rawNodes.has(tgt)) continue;
+      const cs = collapseOf.get(src);
+      const ct = collapseOf.get(tgt);
+      if (cs === ct) continue;  // self-loop after collapse
+      const k = cs + "\t" + ct;
+      if (edgeKey.has(k)) continue;
+      edgeKey.add(k);
+      cLinks.push({ source: cs, target: ct });
+    }
+  }
+  // BFS depth in the collapsed graph.
+  const cAdj = new Map();
+  for (const e of cLinks) {
+    if (!cAdj.has(e.source)) cAdj.set(e.source, []);
+    cAdj.get(e.source).push(e.target);
+  }
+  const depth = new Map();
+  depth.set(ROOT, 0);
+  const queue = [ROOT];
+  while (queue.length) {
+    const cur = queue.shift();
+    const d = depth.get(cur);
+    for (const t of (cAdj.get(cur) || [])) {
+      if (!depth.has(t) || depth.get(t) > d + 1) {
+        depth.set(t, d + 1);
+        queue.push(t);
+      }
+    }
+  }
+  // Attach depth and degree info.
+  const inDeg = new Map(), outDeg = new Map();
+  for (const e of cLinks) {
+    outDeg.set(e.source, (outDeg.get(e.source) ?? 0) + 1);
+    inDeg.set(e.target, (inDeg.get(e.target) ?? 0) + 1);
+  }
+  const nodes = [];
+  for (const n of cNodes.values()) {
+    if (!depth.has(n.id)) continue;
+    n.depth = depth.get(n.id);
+    n.inDeg = inDeg.get(n.id) ?? 0;
+    n.outDeg = outDeg.get(n.id) ?? 0;
+    nodes.push(n);
+  }
+  // Resolve link endpoints to node objects.
+  const byId = new Map(nodes.map(n => [n.id, n]));
+  const links = [];
+  for (const l of cLinks) {
+    const s = byId.get(l.source);
+    const t = byId.get(l.target);
+    if (s && t) links.push({ source: s, target: t });
+  }
+  return { nodes, links, templateCount: collapsibleTpl.size };
+}
+
+// ─── Install a node set into a panel (computes x,y, builds quadtree) ───────
+function installPanel(p, nodes, links) {
+  for (const n of nodes) {
+    n.isRoot = (n.id === ROOT);
+    n.r = radiusOf(n.kind, n.isRoot, n.depth, n.isTemplate);
+    n.color = colorOf(n.kind, n.isRoot, n.isTemplate);
+    n.short = shortName(n.id);
+  }
+  p.nodes = nodes;
+  p.links = links;
+  layout(p);
+  // Hide hint once nodes show up.
+  const hint = document.getElementById("hint-" + p.id);
+  if (hint) hint.style.display = nodes.length ? "none" : "";
+}
+
+function layout(p) {
+  const byDepth = d3.group(p.nodes, d => d.depth);
+  const maxDepth = d3.max(p.nodes, d => d.depth) || 0;
   const widest = d3.max([...byDepth.values()], arr => arr.length) || 1;
 
-  // Choose a logical canvas width that scales with the widest layer so dense
-  // rows aren't cramped. Floor at the viewport width; otherwise allocate
-  // ~24px per node in the widest layer.
-  layoutWidth = Math.max(window.innerWidth, widest * 24);
-  layoutHeight = (maxDepth + 1) * LAYER_HEIGHT + LAYER_TOP_PAD;
+  p.layoutWidth = Math.max(p.width || 800, widest * 24);
+  p.layoutHeight = (maxDepth + 1) * LAYER_HEIGHT + LAYER_TOP_PAD;
 
-  // Initial uniform x within each layer; y by depth.
   for (const [depth, layerNodes] of byDepth) {
     const n = layerNodes.length;
     layerNodes.forEach((node, i) => {
       node.y = depth * LAYER_HEIGHT + LAYER_TOP_PAD;
-      node.x = (layoutWidth * (i + 1)) / (n + 1);
+      node.x = (p.layoutWidth * (i + 1)) / (n + 1);
     });
   }
 
-  // Build incoming-edge adjacency for the barycenter pass.
   const parentsOf = new Map();
-  for (const e of allLinks) {
+  for (const e of p.links) {
     if (!parentsOf.has(e.target.id)) parentsOf.set(e.target.id, []);
     parentsOf.get(e.target.id).push(e.source);
   }
-
-  // Barycenter heuristic, one top-down pass: order each layer (depth >= 1)
-  // by the mean x of its parents, then re-spread evenly.
   for (let depth = 1; depth <= maxDepth; depth++) {
     const layerNodes = byDepth.get(depth) || [];
     if (!layerNodes.length) continue;
     for (const node of layerNodes) {
       const parents = parentsOf.get(node.id) || [];
-      node._bary = parents.length ? d3.mean(parents, p => p.x) : node.x;
+      node._bary = parents.length ? d3.mean(parents, p2 => p2.x) : node.x;
     }
     layerNodes.sort((a, b) => a._bary - b._bary);
     const n = layerNodes.length;
     layerNodes.forEach((node, i) => {
-      node.x = (layoutWidth * (i + 1)) / (n + 1);
+      node.x = (p.layoutWidth * (i + 1)) / (n + 1);
     });
   }
-
-  // Build quadtree once — positions are now fixed.
-  quad = d3.quadtree(allNodes, d => d.x, d => d.y);
+  p.quad = d3.quadtree(p.nodes, d => d.x, d => d.y);
 }
 
-function draw() {
+function draw(p) {
+  const ctx = p.ctx;
   ctx.save();
-  ctx.clearRect(0, 0, width, height);
-  ctx.translate(transform.x, transform.y);
-  ctx.scale(transform.k, transform.k);
+  ctx.clearRect(0, 0, p.width, p.height);
+  ctx.translate(p.transform.x, p.transform.y);
+  ctx.scale(p.transform.k, p.transform.k);
 
-  // Edges — single path batch.
-  ctx.beginPath();
-  for (const e of allLinks) {
-    if (e.source.x == null || e.target.x == null) continue;
-    ctx.moveTo(e.source.x, e.source.y);
-    ctx.lineTo(e.target.x, e.target.y);
-  }
-  ctx.lineWidth = 0.6 / transform.k;
-  ctx.strokeStyle = "rgba(58,64,80,0.4)";
-  ctx.stroke();
-
-  // Highlight edges if hovering.
-  if (hoverNode) {
+  // Edges.
+  if (p.links && p.links.length) {
     ctx.beginPath();
-    for (const e of allLinks) {
-      if (e.source === hoverNode || e.target === hoverNode) {
-        ctx.moveTo(e.source.x, e.source.y);
-        ctx.lineTo(e.target.x, e.target.y);
+    for (const e of p.links) {
+      if (e.source.x == null || e.target.x == null) continue;
+      ctx.moveTo(e.source.x, e.source.y);
+      ctx.lineTo(e.target.x, e.target.y);
+    }
+    ctx.lineWidth = 0.6 / p.transform.k;
+    ctx.strokeStyle = "rgba(58,64,80,0.4)";
+    ctx.stroke();
+
+    if (p.hoverNode) {
+      ctx.beginPath();
+      for (const e of p.links) {
+        if (e.source === p.hoverNode || e.target === p.hoverNode) {
+          ctx.moveTo(e.source.x, e.source.y);
+          ctx.lineTo(e.target.x, e.target.y);
+        }
       }
+      ctx.lineWidth = 1.5 / p.transform.k;
+      ctx.strokeStyle = "#ebcb8b";
+      ctx.stroke();
     }
-    ctx.lineWidth = 1.5 / transform.k;
-    ctx.strokeStyle = "#ebcb8b";
-    ctx.stroke();
   }
 
-  // Nodes — group by fill color to minimize state changes.
-  // Three buckets: root green, axiom red, project blue.
-  const buckets = { "#a3be8c": [], "#bf616a": [], "#88c0d0": [] };
-  for (const n of allNodes) {
-    if (n.x == null) continue;
-    (buckets[n.color] || (buckets[n.color] = [])).push(n);
-  }
-  for (const color in buckets) {
-    const arr = buckets[color];
-    if (!arr.length) continue;
-    ctx.beginPath();
-    for (const n of arr) {
-      ctx.moveTo(n.x + n.r, n.y);
-      ctx.arc(n.x, n.y, n.r, 0, 2 * Math.PI);
+  // Nodes (bucketed by color).
+  if (p.nodes && p.nodes.length) {
+    const buckets = {};
+    for (const n of p.nodes) {
+      if (n.x == null) continue;
+      (buckets[n.color] || (buckets[n.color] = [])).push(n);
     }
-    ctx.fillStyle = color;
-    ctx.fill();
-    ctx.lineWidth = 0.5 / transform.k;
-    ctx.strokeStyle = "#1a1c22";
-    ctx.stroke();
-  }
+    for (const color in buckets) {
+      const arr = buckets[color];
+      if (!arr.length) continue;
+      ctx.beginPath();
+      for (const n of arr) {
+        ctx.moveTo(n.x + n.r, n.y);
+        ctx.arc(n.x, n.y, n.r, 0, 2 * Math.PI);
+      }
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.lineWidth = 0.5 / p.transform.k;
+      ctx.strokeStyle = "#1a1c22";
+      ctx.stroke();
+    }
 
-  // Hover ring.
-  if (hoverNode && hoverNode.x != null) {
-    ctx.beginPath();
-    ctx.arc(hoverNode.x, hoverNode.y, hoverNode.r + 1.5, 0, 2 * Math.PI);
-    ctx.lineWidth = 2 / transform.k;
-    ctx.strokeStyle = "#ebcb8b";
-    ctx.stroke();
+    if (p.hoverNode && p.hoverNode.x != null) {
+      ctx.beginPath();
+      ctx.arc(p.hoverNode.x, p.hoverNode.y, p.hoverNode.r + 1.5, 0, 2 * Math.PI);
+      ctx.lineWidth = 2 / p.transform.k;
+      ctx.strokeStyle = "#ebcb8b";
+      ctx.stroke();
+    }
   }
-
-  // Node labels are no longer drawn on the canvas — see the bottom info panel.
   ctx.restore();
 }
 
 function kindLabel(node) {
+  if (node.isTemplate) return "template";
   if (node.isRoot) return "root";
   if (node.kind === "A") return "axiom";
   return "project";
 }
 
-function updateInfoPanel(node) {
+function updateInfoPanel(node, panelId) {
   const empty = document.getElementById("info-empty");
   const filled = document.getElementById("info-filled");
   if (!node) {
@@ -355,13 +652,26 @@ function updateInfoPanel(node) {
   empty.hidden = true;
   filled.hidden = false;
   document.getElementById("info-name").textContent = node.id;
+  const src = document.getElementById("info-source");
+  src.textContent = panelId === "T" ? "from top" : panelId === "B" ? "from bottom" : "";
   const kind = kindLabel(node);
   const kindEl = document.getElementById("info-kind");
   kindEl.textContent = kind;
   kindEl.className = "badge " + kind;
   document.getElementById("info-depth").textContent = node.depth;
-  document.getElementById("info-in").textContent = inDeg.get(node.id) ?? 0;
-  document.getElementById("info-out").textContent = outDeg.get(node.id) ?? 0;
+  // Degree: prefer the panel's collapsed-graph degree, fall back to raw degree
+  // for bottom-panel nodes (which are raw nodes).
+  const inD = (node.inDeg != null) ? node.inDeg : (rawInDeg.get(node.id) ?? 0);
+  const outD = (node.outDeg != null) ? node.outDeg : (rawOutDeg.get(node.id) ?? 0);
+  document.getElementById("info-in").textContent = inD;
+  document.getElementById("info-out").textContent = outD;
+  const tplMeta = document.getElementById("info-template-meta");
+  if (node.isTemplate && node.members) {
+    tplMeta.hidden = false;
+    document.getElementById("info-template-count").textContent = node.members.length;
+  } else {
+    tplMeta.hidden = true;
+  }
 }
 
 let toastTimer = null;
@@ -373,84 +683,198 @@ function flashToast(msg) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 1200);
 }
 
-function initialTransform() {
-  // Fit the layout to the viewport: scale so the full width fits, with a bit
-  // of margin, and center the layout horizontally / pin it near the top.
-  const margin = 40;
-  const kx = (width - 2 * margin) / layoutWidth;
-  const ky = (height - 2 * margin) / layoutHeight;
+function initialTransform(p) {
+  const margin = 20;
+  const kx = (p.width - 2 * margin) / Math.max(p.layoutWidth, 1);
+  const ky = (p.height - 2 * margin) / Math.max(p.layoutHeight, 1);
   const k = Math.min(kx, ky, 1);
-  const tx = (width - layoutWidth * k) / 2;
+  const tx = (p.width - p.layoutWidth * k) / 2;
   const ty = margin;
   return d3.zoomIdentity.translate(tx, ty).scale(k);
 }
 
-function initZoom() {
-  zoomBehavior = d3.zoom()
+function initZoom(p) {
+  p.zoomBehavior = d3.zoom()
     .scaleExtent([0.02, 8])
     .on("zoom", (event) => {
-      transform = event.transform;
-      draw();
+      p.transform = event.transform;
+      draw(p);
     });
-  d3.select(canvas).call(zoomBehavior);
-  // Apply the fit-to-view transform so users see the whole tree on load.
-  d3.select(canvas).call(zoomBehavior.transform, initialTransform());
+  d3.select(p.canvas).call(p.zoomBehavior);
+  if (p.nodes && p.nodes.length) {
+    d3.select(p.canvas).call(p.zoomBehavior.transform, initialTransform(p));
+  }
 
-  canvas.addEventListener("mousemove", (evt) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = (evt.clientX - rect.left - transform.x) / transform.k;
-    const y = (evt.clientY - rect.top - transform.y) / transform.k;
-    if (!quad) return;
-    // Search radius in data space: ~20px on screen, plus node radius slack.
-    const searchR = 20 / transform.k;
-    const hit = quad.find(x, y, searchR);
-    if (hit !== hoverNode) {
-      hoverNode = hit || null;
-      draw();
+  p.canvas.addEventListener("mousemove", (evt) => {
+    if (!p.quad) return;
+    const rect = p.canvas.getBoundingClientRect();
+    const x = (evt.clientX - rect.left - p.transform.x) / p.transform.k;
+    const y = (evt.clientY - rect.top - p.transform.y) / p.transform.k;
+    const searchR = 20 / p.transform.k;
+    const hit = p.quad.find(x, y, searchR);
+    if (hit !== p.hoverNode) {
+      p.hoverNode = hit || null;
+      draw(p);
     }
-    // Info panel updates live on hover unless a node is frozen via click.
-    if (!frozenNode) updateInfoPanel(hoverNode);
-    if (hoverNode) {
+    activePanelId = p.id;
+    if (!p.frozenNode) updateInfoPanel(p.hoverNode, p.id);
+    if (p.hoverNode) {
       tooltip.style("visibility", "visible")
         .style("left", (evt.clientX + 12) + "px")
         .style("top", (evt.clientY + 12) + "px")
-        .text(hoverNode.short);
+        .text(p.hoverNode.short);
     } else {
       tooltip.style("visibility", "hidden");
     }
   });
 
-  canvas.addEventListener("mouseleave", () => {
-    if (hoverNode) { hoverNode = null; draw(); }
+  p.canvas.addEventListener("mouseleave", () => {
+    if (p.hoverNode) { p.hoverNode = null; draw(p); }
     tooltip.style("visibility", "hidden");
-    if (!frozenNode) updateInfoPanel(null);
+    if (!p.frozenNode) updateInfoPanel(null);
   });
 
-  canvas.addEventListener("click", (evt) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = (evt.clientX - rect.left - transform.x) / transform.k;
-    const y = (evt.clientY - rect.top - transform.y) / transform.k;
-    if (!quad) return;
-    const hit = quad.find(x, y, 20 / transform.k);
+  p.canvas.addEventListener("click", (evt) => {
+    if (!p.quad) return;
+    const rect = p.canvas.getBoundingClientRect();
+    const x = (evt.clientX - rect.left - p.transform.x) / p.transform.k;
+    const y = (evt.clientY - rect.top - p.transform.y) / p.transform.k;
+    const hit = p.quad.find(x, y, 20 / p.transform.k);
     if (hit) {
-      frozenNode = hit;
-      updateInfoPanel(hit);
-      navigator.clipboard?.writeText(hit.id).then(
-        () => flashToast("copied!"),
-        () => flashToast("copy failed")
-      );
+      p.frozenNode = hit;
+      activePanelId = p.id;
+      updateInfoPanel(hit, p.id);
+      if (p.id === "T") {
+        // TOP-panel click: drive the BOTTOM panel.
+        populateBottomFromTopClick(hit);
+      } else {
+        // BOTTOM-panel click: just copy the id.
+        navigator.clipboard?.writeText(hit.id).then(
+          () => flashToast("copied!"),
+          () => flashToast("copy failed")
+        );
+      }
     } else {
-      // Click on empty space unfreezes.
-      if (frozenNode) {
-        frozenNode = null;
-        updateInfoPanel(hoverNode);
+      // Click on empty area: unfreeze; let hover drive the info panel again.
+      if (p.frozenNode) {
+        p.frozenNode = null;
+        updateInfoPanel(p.hoverNode, p.id);
       }
     }
   });
 }
 
-function resetView() {
-  d3.select(canvas).transition().duration(500).call(zoomBehavior.transform, initialTransform());
+function resetView(id) {
+  const p = P[id];
+  if (!p || !p.nodes || !p.nodes.length) return;
+  d3.select(p.canvas).transition().duration(400).call(p.zoomBehavior.transform, initialTransform(p));
+}
+
+function clearBottom() {
+  const p = P.B;
+  if (!p) return;
+  p.nodes = null;
+  p.links = null;
+  p.quad = null;
+  p.hoverNode = null;
+  p.frozenNode = null;
+  p.transform = d3.zoomIdentity;
+  document.getElementById("hint-B").style.display = "";
+  draw(p);
+}
+
+// ─── Click-to-drill: render subgraph in the BOTTOM panel ───────────────────
+//
+// Given a node on the TOP panel (collapsed graph), resolve to one or more
+// RAW seed node ids. If the clicked node is a template, the seeds are all
+// members of that template (union of subgraphs is rendered).
+//
+// Subgraph = seeds ∪ all ancestors (transitive via in-edges)
+//                 ∪ all descendants (transitive via out-edges).
+function populateBottomFromTopClick(topNode) {
+  const seeds = topNode.isTemplate ? topNode.members.slice() : [topNode.id];
+  const include = new Set();
+  // Descendants (forward BFS via out-edges).
+  const fwd = [...seeds];
+  for (const s of seeds) include.add(s);
+  while (fwd.length) {
+    const cur = fwd.shift();
+    for (const nxt of (rawAdjOut.get(cur) || [])) {
+      if (!include.has(nxt)) { include.add(nxt); fwd.push(nxt); }
+    }
+  }
+  // Ancestors (backward BFS via in-edges).
+  const back = [...seeds];
+  while (back.length) {
+    const cur = back.shift();
+    for (const nxt of (rawAdjIn.get(cur) || [])) {
+      if (!include.has(nxt)) { include.add(nxt); back.push(nxt); }
+    }
+  }
+  // Re-rooted BFS depth: start from any node in `include` with no included parent.
+  const subDepth = new Map();
+  const roots = [];
+  for (const id of include) {
+    let hasParentIn = false;
+    for (const p of (rawAdjIn.get(id) || [])) {
+      if (include.has(p)) { hasParentIn = true; break; }
+    }
+    if (!hasParentIn) roots.push(id);
+  }
+  for (const r of roots) subDepth.set(r, 0);
+  const q = [...roots];
+  while (q.length) {
+    const cur = q.shift();
+    const d = subDepth.get(cur);
+    for (const t of (rawAdjOut.get(cur) || [])) {
+      if (!include.has(t)) continue;
+      if (!subDepth.has(t) || subDepth.get(t) > d + 1) {
+        subDepth.set(t, d + 1);
+        q.push(t);
+      }
+    }
+  }
+  // Build node + link arrays.
+  const seedSet = new Set(seeds);
+  const nodes = [];
+  for (const id of include) {
+    const raw = rawNodes.get(id);
+    if (!raw) continue;
+    nodes.push({
+      id,
+      kind: raw.kind,
+      isTemplate: false,
+      isSeed: seedSet.has(id),
+      depth: subDepth.get(id) ?? 0,
+      inDeg: rawInDeg.get(id) ?? 0,
+      outDeg: rawOutDeg.get(id) ?? 0,
+    });
+  }
+  const links = [];
+  const byId = new Map(nodes.map(n => [n.id, n]));
+  for (const [src, set] of rawAdjOut) {
+    if (!include.has(src)) continue;
+    for (const tgt of set) {
+      if (!include.has(tgt)) continue;
+      const s = byId.get(src), t = byId.get(tgt);
+      if (s && t) links.push({ source: s, target: t });
+    }
+  }
+  // Boost the visual prominence of seed nodes.
+  for (const n of nodes) {
+    if (n.isSeed) n._seedBoost = true;
+  }
+  installPanel(P.B, nodes, links);
+  // Tweak: highlight seeds by drawing them with an outline color.
+  for (const n of P.B.nodes) {
+    if (n._seedBoost) {
+      n.r = Math.max(n.r, 5.5);
+      n.color = "#ebcb8b";  // yellow for seeds
+    }
+  }
+  // Re-establish zoom transform centered on the subgraph.
+  d3.select(P.B.canvas).call(P.B.zoomBehavior.transform, initialTransform(P.B));
+  draw(P.B);
 }
 
 load();
