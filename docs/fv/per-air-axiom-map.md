@@ -193,6 +193,7 @@ shape and that the per-AIR axiom map's 0–1 prediction was correct.
 | `binary_columns_in_range` | #6 (range-bus) | `Airs/Binary/BinaryRanges.lean:56` | chunk-range bounds on Binary's `bits(8)` byte columns |
 | `binary_per_byte_lookup_witness` | #6 (range-bus) | `Airs/Binary/BinaryRanges.lean:149` | per-byte BinaryTable lookup witness — links each row byte slot to a `consumer_byte_match_chain` instance |
 | `binary_carry_bits_in_range` | #6 (range-bus) | `Airs/Binary/BinaryRanges.lean:198` | `(v.carry_i r).val < 2` for the 8 `bits(1) carry[BYTES]` columns (`binary.pil:67`) — needed for AND/OR/XOR `c_7 = 0` derivation |
+| `binary_b_op_or_sext_eq_OP_OR` | #6 (table-pin) | `Airs/Binary/BinaryRanges.lean:263` | for any Binary row whose op-bus emission `b_op + 16 * mode32 = 15` (OP_OR), `b_op_or_sext = OP_OR` (`binary.pil:104` + `binary.pil:131-148`). Added by Step 4.1.4 (OR exemplar). |
 | `bin_table_consumer_wf` | #6 (lookup-bus) | `Airs/BinaryTable.lean:281` | BinaryTable consumer rows (`multiplicity = 1`) satisfy `wf_properties` |
 
 ### Predicted gaps for the AIR's discharge pilot
@@ -232,6 +233,59 @@ pins (1–2 axioms for SLT-family signed comparison). The byte-chain
 infrastructure is already in place; the gap is on mode/sign for the
 14-opcode coverage. Larger surface than BinaryAdd because of the
 op-class diversity.
+
+### Pilot landed (Step 4.1.4 — OR exemplar)
+
+**Added: 1 axiom** at the low end of the 2–4 prediction.
+
+| New axiom | Class | Source | Discharges (in `equiv_OR_from_trust`) |
+|---|---|---|---|
+| `binary_b_op_or_sext_eq_OP_OR` | #6 (table-pin) | `Airs/Binary/BinaryRanges.lean:263` | `h_bop_or_sext : (v.b_op_or_sext r_binary).val = OP_OR` |
+
+Composition: `op_bus_perm_sound_Binary` (class #4) provides the
+existential row witness `r_binary` + the `matches_entry` predicate.
+Projecting matches_entry's `.op`-slot equality through
+`h_main_op_or : m.op r_main = OP_OR` gives
+`v.b_op r_binary + 16 * v.mode32 r_binary = 15`, which feeds the
+new pin axiom to deliver `(v.b_op_or_sext r_binary).val = OP_OR`.
+
+Caller-burden drop on `equiv_OR_from_trust` vs `equiv_OR`: **−3
+binders / −3 hypotheses** (`r_binary`, `h_match`, `h_bop_or_sext`).
+At the global Compliance.lean level the reduction extends further
+because `(m, v, ∀ r, core_every_row v r)` collapse into shared
+parameters across all 14 Binary-shape opcodes.
+
+### Within-shape mass-author predictions
+
+For each of the 13 remaining Binary-shape opcodes (AND, ANDI, OR
+already piloted, ORI, XOR, XORI, SLT, SLTI, SLTU, SLTIU, SUB, SUBW,
+ADDIW, ADDW), the wrapper authoring will follow the OR exemplar's
+shape. New axiom budget:
+
+* **AND / ANDI** (2 wrappers): `binary_b_op_or_sext_eq_OP_AND` —
+  the OP_AND parallel of (e). +1 axiom, shared across the 2
+  wrappers.
+* **XOR / XORI** (2 wrappers): `binary_b_op_or_sext_eq_OP_XOR` —
+  the OP_XOR parallel. +1 axiom, shared.
+* **ORI** (1 wrapper): reuses `binary_b_op_or_sext_eq_OP_OR`. 0
+  new axioms.
+* **SLT family** (4 wrappers — SLT, SLTI, SLTU, SLTIU): sign-witness
+  pins are needed for the signed forms (SLT, SLTI); the unsigned
+  forms (SLTU, SLTIU) reuse the unsigned-comparison output column.
+  Predicted: +1–2 axioms (a `binary_use_first_byte_pin_SLT_family`
+  and/or `binary_c_is_signed_pin_for_signed_compare`).
+* **SUB / SUBW / ADDIW / ADDW** (4 wrappers): need cin-chain
+  6-field consumer match instead of the byte-local 3-field form;
+  also need an m32 pin for the W variants (SUBW, ADDIW, ADDW).
+  Predicted: +1–2 axioms (`binary_consumer_byte_match_chain_pin`
+  and/or `binary_mode32_pin_for_W_ops`).
+
+**Running budget after the within-shape phase:** 1 (this pilot) + 2
+(AND/XOR pins) + 1–2 (SLT signed) + 1–2 (SUB chain + W-mode) = **5–7
+total class-#6 additions** for the entire Binary shape. The OR pilot
+landed cleanly on the low end of the 2–4 prediction because the
+byte-local logic sub-shape (AND/OR/XOR) is the simplest of the four
+sub-shapes inside the Binary AIR's 14-opcode coverage.
 
 ---
 

@@ -217,4 +217,51 @@ theorem bin_carry_7_is_boolean (v : Valid_Binary C FGL FGL) (r : ℕ) :
       apply Fin.ext; rw [h_val]; rfl
     rw [h_eq]; ring
 
+/-! ## Binary table-pin: `b_op_or_sext = OP_OR` for OR-tagged rows
+    (Step 4.1.4 — Binary shape exemplar, OR pilot)
+
+`opBus_row_Binary v r` emits the on-bus opcode as `b_op + 16 * mode32`
+(per `binary.pil:156`'s `proves_operation(op: b_op + 0x10 * mode32, …)`).
+The PIL constraint `b_op_or_sext = mode32 * (c_is_signed + 512 - b_op) + b_op`
+(`binary.pil:104`, our `constraint_5`) plus the per-byte lookup against
+the BinaryTable at `binary.pil:131-148` (which restricts the
+`(b_op, mode32, c_is_signed)` tuple to valid BinaryTable opcodes
+enumerated at `zisk/state-machines/binary/src/binary_table.rs`) jointly
+pin `b_op_or_sext = OP_OR` whenever the row's emitted op equals 15.
+
+Concretely: for a row whose op-bus emission `b_op + 16 * mode32 = 15`,
+the BinaryTable assignment for OP_OR uses `b_op = 15`, `mode32 = 0`,
+`c_is_signed = 0` (single decomposition since `b_op < 128`, `mode32 < 2`,
+and `b_op_or_sext` distinguishes signed-vs-unsigned via `c_is_signed`).
+Then `b_op_or_sext = 0 * (0 + 512 - 15) + 15 = 15 = OP_OR`.
+
+This pin is the per-AIR analog of `arith_table_op_div_rem_signed_mode_pin`
+(class #6b(h)): a table-lookup consequence pinning a derived consequence
+on existing witness columns. Trust class: #6 (Binary AIR lookup
+soundness) — same class as `binary_columns_in_range`,
+`binary_per_byte_lookup_witness`, `binary_carry_bits_in_range`,
+`bin_table_consumer_wf`.
+
+PIL citations:
+* `zisk/state-machines/binary/pil/binary.pil:104` — `b_op_or_sext` def
+* `zisk/state-machines/binary/pil/binary.pil:131-148` — `lookup_assumes(BINARY_TABLE_ID, …)`
+* `zisk/state-machines/binary/pil/binary.pil:156` — `proves_operation(op: b_op + 0x10 * mode32, …)`
+* `zisk/state-machines/binary/src/binary_table.rs` — BinaryTable assignment table
+
+Consumed by `equiv_OR_from_trust` (`Compliance/OrExemplar.lean`).
+-/
+
+/-- **Binary table-pin: `b_op_or_sext = OP_OR` for OR-tagged rows.**
+    For every Binary AIR row whose op-bus emission `b_op + 16 * mode32`
+    equals `15` (the on-bus literal `OP_OR`), the `b_op_or_sext` column
+    pins to `OP_OR` (`= 15`). Trust class: #6 (Binary AIR lookup
+    soundness — table-pin sub-class).
+
+    PIL: `binary.pil:104` (`b_op_or_sext` linear def) +
+    `binary.pil:131-148` (per-byte BinaryTable lookup restricting the
+    `(b_op, mode32, c_is_signed)` triple to valid entries). -/
+axiom binary_b_op_or_sext_eq_OP_OR (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (h_emit_op : v.b_op r + 16 * v.mode32 r = 15) :
+    (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_OR
+
 end ZiskFv.Airs.Binary
