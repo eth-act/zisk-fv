@@ -1,0 +1,151 @@
+# trust/baseline-zisk-riscv-compliant.txt
+#
+# The project-axiom closure (transitive ZiskFv.* axioms only — Lean kernel
+# axioms and Sail-translated module axioms excluded) of the global
+# compliance theorem
+#
+#   ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus
+#
+# IS the trusted computing base of zisk-fv. This file is a flat
+# enumeration of that closure for external auditors who want to inspect
+# the surface without running Lean.
+#
+# Source-of-truth cross-check: this set must match the unqualified
+# axiom names in `trust/baseline-axioms.txt`. The V2 trust gate's
+# `check-closure-vs-baseline` subcommand enforces the match
+# mechanically; this file is a standalone audit document — readable
+# without running Lean.
+#
+# How this file was generated:
+#
+#   lake exe trust-gate print-axiom-closure \
+#     ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus \
+#     > trust/baseline-zisk-riscv-compliant.txt
+#
+# Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
+# artefacts under `.lake/build/`). Last regenerated: 2026-05-14.
+#
+# Total entries: 122
+#
+ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed
+ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned
+ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_w
+ZiskFv.Airs.Arith.arith_div_columns_in_range
+ZiskFv.Airs.Arith.arith_div_nb_eq_msb_of_divisor
+ZiskFv.Airs.Arith.arith_div_np_eq_msb_of_dividend
+ZiskFv.Airs.Arith.arith_div_remainder_bound
+ZiskFv.Airs.Arith.arith_div_remainder_bound_signed_w
+ZiskFv.Airs.Arith.arith_div_remainder_bound_unsigned
+ZiskFv.Airs.Arith.arith_div_remainder_bound_unsigned_w
+ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_signed
+ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_unsigned
+ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_w
+ZiskFv.Airs.Arith.arith_mul_columns_in_range
+ZiskFv.Airs.Arith.arith_mul_na_eq_msb_of_a
+ZiskFv.Airs.Arith.arith_mul_nb_eq_msb_of_b
+ZiskFv.Airs.Arith.arith_table_op_div_rem_main_selector_pin
+ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_d_sign_pin
+ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_mode_pin
+ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin
+ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_mode_pin
+ZiskFv.Airs.Arith.arith_table_op_div_rem_unsigned_main_selector_pin
+ZiskFv.Airs.Arith.arith_table_op_div_rem_unsigned_mode_pin
+ZiskFv.Airs.Arith.arith_table_op_div_rem_unsigned_w_mode_pin
+ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin
+ZiskFv.Airs.Arith.arith_table_op_mul_main_selector_pin
+ZiskFv.Airs.Arith.arith_table_op_mul_mode_pin
+ZiskFv.Airs.Arith.arith_table_op_mulh_main_selector_pin
+ZiskFv.Airs.Arith.arith_table_op_mulh_mode_pin
+ZiskFv.Airs.Arith.arith_table_op_mulhsu_main_selector_pin
+ZiskFv.Airs.Arith.arith_table_op_mulhsu_mode_pin
+ZiskFv.Airs.Arith.arith_table_op_mulhu_main_selector_pin
+ZiskFv.Airs.Arith.arith_table_op_mulhu_mode_pin
+ZiskFv.Airs.Arith.arith_table_op_mulw_mode_pin
+ZiskFv.Airs.Arith.arith_table_op_mulw_operand_pin
+ZiskFv.Airs.Binary.binary_b_op_or_sext_eq_OP_AND
+ZiskFv.Airs.Binary.binary_b_op_or_sext_eq_OP_OR
+ZiskFv.Airs.Binary.binary_b_op_or_sext_eq_OP_XOR
+ZiskFv.Airs.Binary.binary_carry_bits_in_range
+ZiskFv.Airs.Binary.binary_columns_in_range
+ZiskFv.Airs.Binary.binary_consumer_byte_match_chain_pin
+ZiskFv.Airs.Binary.binary_per_byte_lookup_witness
+ZiskFv.Airs.Binary.binary_w_mode_carry_7_zero
+ZiskFv.Airs.Binary.binary_w_sext_choice_pin
+ZiskFv.Airs.BinaryAdd.binary_add_columns_in_range
+ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range
+ZiskFv.Airs.BinaryExtension.binary_extension_op_is_shift_pin
+ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups
+ZiskFv.Airs.BinaryExtensionTable.bin_ext_table_consumer_wf
+ZiskFv.Airs.BinaryTable.bin_table_consumer_wf
+ZiskFv.Airs.Main.main_columns_in_range
+ZiskFv.Airs.MemoryBus.MemAlignBridge.mem_align_rom_subdoubleword_load_value_1_zero
+ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_load_perm_sound
+ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load
+ZiskFv.Airs.MemoryBus.MemBridge.main_external_arith_emission_bundle
+ZiskFv.Airs.MemoryBus.MemBridge.main_load_emission_bundle
+ZiskFv.Airs.MemoryBus.MemBridge.main_sext_load_emission_bundle
+ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_sb
+ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_sd
+ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_sh
+ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_sw
+ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
+ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
+ZiskFv.Airs.OperationBus.op_bus_perm_sound_Binary
+ZiskFv.Airs.OperationBus.op_bus_perm_sound_BinaryAdd
+ZiskFv.Airs.OperationBus.op_bus_perm_sound_BinaryExtension
+ZiskFv.Circuit.MemModel.row_models_sail_state_load
+ZiskFv.PlatformScope.pmaCheck_is_pure_none
+ZiskFv.PlatformScope.pmpCheck_is_pure_none
+ZiskFv.PlatformScope.update_elp_state_is_pure_unit
+ZiskFv.PlatformScope.within_clint_is_false
+ZiskFv.Trusted.transpile_ADD
+ZiskFv.Trusted.transpile_ADDI
+ZiskFv.Trusted.transpile_ADDIW
+ZiskFv.Trusted.transpile_ADDW
+ZiskFv.Trusted.transpile_AND
+ZiskFv.Trusted.transpile_ANDI
+ZiskFv.Trusted.transpile_AUIPC
+ZiskFv.Trusted.transpile_DIV
+ZiskFv.Trusted.transpile_DIVU
+ZiskFv.Trusted.transpile_DIVUW
+ZiskFv.Trusted.transpile_DIVW
+ZiskFv.Trusted.transpile_JAL
+ZiskFv.Trusted.transpile_JALR
+ZiskFv.Trusted.transpile_LUI
+ZiskFv.Trusted.transpile_MUL
+ZiskFv.Trusted.transpile_MULH
+ZiskFv.Trusted.transpile_MULHSU
+ZiskFv.Trusted.transpile_MULHU
+ZiskFv.Trusted.transpile_OR
+ZiskFv.Trusted.transpile_ORI
+ZiskFv.Trusted.transpile_PC_for_AUIPC
+ZiskFv.Trusted.transpile_PC_for_JAL
+ZiskFv.Trusted.transpile_PC_for_JALR
+ZiskFv.Trusted.transpile_REM
+ZiskFv.Trusted.transpile_REMU
+ZiskFv.Trusted.transpile_REMUW
+ZiskFv.Trusted.transpile_REMW
+ZiskFv.Trusted.transpile_SB
+ZiskFv.Trusted.transpile_SD
+ZiskFv.Trusted.transpile_SH
+ZiskFv.Trusted.transpile_SLL
+ZiskFv.Trusted.transpile_SLLI
+ZiskFv.Trusted.transpile_SLLIW
+ZiskFv.Trusted.transpile_SLLW
+ZiskFv.Trusted.transpile_SLT
+ZiskFv.Trusted.transpile_SLTI
+ZiskFv.Trusted.transpile_SLTIU
+ZiskFv.Trusted.transpile_SLTU
+ZiskFv.Trusted.transpile_SRA
+ZiskFv.Trusted.transpile_SRAI
+ZiskFv.Trusted.transpile_SRAIW
+ZiskFv.Trusted.transpile_SRAW
+ZiskFv.Trusted.transpile_SRL
+ZiskFv.Trusted.transpile_SRLI
+ZiskFv.Trusted.transpile_SRLIW
+ZiskFv.Trusted.transpile_SRLW
+ZiskFv.Trusted.transpile_SUB
+ZiskFv.Trusted.transpile_SUBW
+ZiskFv.Trusted.transpile_SW
+ZiskFv.Trusted.transpile_XOR
+ZiskFv.Trusted.transpile_XORI
