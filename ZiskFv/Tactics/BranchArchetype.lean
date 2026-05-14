@@ -118,21 +118,4 @@ theorem branch_archetype_not_taken
   rw [h_flag] at this
   linear_combination this
 
-/-- **Tactic macro `branch_archetype_proof`.** Convenience wrapper
-    for proving the flag-dispatched next-pc formula from a
-    hypothesis `h_circuit : branch_archetype_circuit_holds m r
-    next_pc opcode_lit` in scope. Mirrors openvm-fv's
-    `alu_non_imm_proof` / `lt_non_imm_proof` pattern.
-
-    **Expected goal shape:**
-    `next_pc = m.pc r + m.jmp_offset2 r + m.flag r * (m.jmp_offset1 r - m.jmp_offset2 r)`.
-
-    **Required hypotheses (must be named literally in the caller):**
-    * `m : Valid_Main C FGL FGL`,
-    * `r_main : ℕ`, `next_pc : FGL`, `opcode_lit : FGL`,
-    * `h_circuit : branch_archetype_circuit_holds m r_main next_pc opcode_lit`. -/
-macro "branch_archetype_proof" : tactic => `(tactic| (
-  exact branch_archetype_pc_dispatch m r_main next_pc opcode_lit h_circuit
-))
-
 end ZiskFv.Tactics.BranchArchetype

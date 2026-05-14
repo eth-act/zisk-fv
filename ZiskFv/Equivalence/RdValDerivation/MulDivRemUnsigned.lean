@@ -6,6 +6,7 @@ import ZiskFv.Fundamentals.PackedBitVec
 import ZiskFv.Fundamentals.PackedBitVec.Extensions
 import ZiskFv.Fundamentals.PackedBitVec.NoWrap
 import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
+import ZiskFv.Fundamentals.PackedBitVec.SignedNoWrap
 import ZiskFv.Fundamentals.Execution
 import ZiskFv.Sail.mulw
 
@@ -791,5 +792,438 @@ theorem h_rd_val_mdru_mulw
   mulw_bv64_of_byte_sum op1 op2
     e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_mulw
+
+/-! ## W-form sign-extension closers (DIVUW / REMUW)
+
+For the W-variant unsigned divide/remainder, the 32-bit quotient `q_nat`
+(or remainder `r_nat`) is computed by the Arith carry-chain (low half
+of the chunks). The bus entry encodes the 64-bit sign-extension via
+bytes 4..7 set to 0 (if top bit of q clear) or 0xFF (if top bit set).
+
+The closer lemmas below match the `addw_close_pos` / `addw_close_neg`
+pattern: given the low-32-bit value and the sext_choice disjunction,
+they produce `signExtend 64 (BV32 q_nat) = BV64 of bytes`. -/
+
+lemma w_sext_close_pos
+    (q_nat byte_sum : ℕ) (h_q_lt : q_nat < 4294967296)
+    (h_byte_sum_lt : byte_sum < 18446744073709551616)
+    (h_low : byte_sum = q_nat)
+    (h_pos : q_nat < 2147483648) :
+    BitVec.signExtend 64 (BitVec.ofNat 32 q_nat) = BitVec.ofNat 64 byte_sum := by
+  apply BitVec.eq_of_toNat_eq
+  have h_q_toNat : (BitVec.ofNat 32 q_nat).toNat = q_nat := by
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h_q_lt
+  rw [BitVec.toNat_signExtend, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
+      BitVec.toNat_ofNat, BitVec.msb_eq_decide, h_q_toNat]
+  have h_q_mod32 : q_nat % 2^32 = q_nat := Nat.mod_eq_of_lt h_q_lt
+  have h_q_mod64 : q_nat % 2^64 = q_nat := Nat.mod_eq_of_lt (by omega)
+  have h_byte_mod : byte_sum % 2^64 = byte_sum := Nat.mod_eq_of_lt h_byte_sum_lt
+  rw [h_q_mod32, h_q_mod64, h_byte_mod]
+  have h_pow : (2 ^ (32 - 1) : ℕ) = 2147483648 := by norm_num
+  rw [h_pow]
+  rw [show decide (2147483648 ≤ q_nat) = false from by
+    rw [decide_eq_false_iff_not]; omega]
+  rw [if_neg (by simp)]
+  omega
+
+lemma w_sext_close_neg
+    (q_nat byte_sum : ℕ) (h_q_lt : q_nat < 4294967296)
+    (h_byte_sum_lt : byte_sum < 18446744073709551616)
+    (h_high : byte_sum = q_nat + 18446744069414584320)
+    (h_neg : q_nat ≥ 2147483648) :
+    BitVec.signExtend 64 (BitVec.ofNat 32 q_nat) = BitVec.ofNat 64 byte_sum := by
+  apply BitVec.eq_of_toNat_eq
+  have h_q_toNat : (BitVec.ofNat 32 q_nat).toNat = q_nat := by
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h_q_lt
+  rw [BitVec.toNat_signExtend, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
+      BitVec.toNat_ofNat, BitVec.msb_eq_decide, h_q_toNat]
+  have h_q_mod32 : q_nat % 2^32 = q_nat := Nat.mod_eq_of_lt h_q_lt
+  have h_q_mod64 : q_nat % 2^64 = q_nat := Nat.mod_eq_of_lt (by omega)
+  have h_byte_mod : byte_sum % 2^64 = byte_sum := Nat.mod_eq_of_lt h_byte_sum_lt
+  rw [h_q_mod32, h_q_mod64, h_byte_mod]
+  have h_pow : (2 ^ (32 - 1) : ℕ) = 2147483648 := by norm_num
+  rw [h_pow]
+  rw [show decide (2147483648 ≤ q_nat) = true from by
+    rw [decide_eq_true_iff]; exact h_neg]
+  rw [if_pos rfl]
+  omega
+
+/-! ## DIVUW / REMUW chunked discharge lemmas
+
+These compose the W-unsigned chain witnesses (delivered by
+`Bridge.Arith.div_w_unsigned_chain_witnesses`) with the W-mode operand
+chunk pins (from `arith_table_op_divw_operand_pin`, supplied as
+binders) and the `h_sext_choice` disjunctive sign-extension witness
+(supplied as a CIRCUIT-CONSTRAINT structural binder — same trust class
+as ADDW's `h_sext_choice`). The 32-bit Euclidean identity is extracted
+via Layer 1's `fgl_div_w_unsigned_to_bv64` / `fgl_rem_w_unsigned_to_bv64`. -/
+
+/-- **`h_rd_val` discharge for DIVUW — chunked W-mode (structural unpacking).**
+
+    Mirror of `h_rd_val_mdru_divu` for the W-variant. Differences:
+
+    * W-mode operand chunk pin (`a_2 = a_3 = b_2 = b_3 = d_2 = d_3 = 0`)
+      collapses the packed4 operands to their low 32 bits.
+    * The c-chunks dividend pin (`c_2 = c_3 = 0`) corresponds to the
+      bus passing the zero-extended r1_lo32 as the dividend.
+    * The `h_sext_choice` disjunction encodes the per-byte sign-
+      extension lookup (SEXT_00 or SEXT_FF) selected based on the
+      top bit of the 32-bit quotient.
+    * Layer 1's `fgl_div_w_unsigned_to_bv64` produces the BV64
+      sign-extension result.
+
+    The lo-quotient lane match `h_byte_lo` ties bytes 0..3 to
+    `a_0 + a_1*65536` (the W quotient lanes). -/
+theorem h_rd_val_mdru_divuw_chunked
+    (r1 r2 : BitVec 64)
+    (e : MemoryBusEntry FGL)
+    -- Chunks (DIV layout: a=quotient, b=divisor, c=dividend, d=remainder)
+    (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL)
+    (cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
+    -- Per-byte range bounds
+    (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
+    (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
+    (h4 : e.x4.val < 256) (h5 : e.x5.val < 256)
+    (h6 : e.x6.val < 256) (h7 : e.x7.val < 256)
+    -- Per-chunk range bounds
+    (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
+    (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
+    (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_c0 : c₀.val < 65536) (h_c1 : c₁.val < 65536)
+    (h_c2 : c₂.val < 65536) (h_c3 : c₃.val < 65536)
+    (h_d0 : d₀.val < 65536) (h_d1 : d₁.val < 65536)
+    (h_d2 : d₂.val < 65536) (h_d3 : d₃.val < 65536)
+    -- Per-carry range bounds
+    (h_cy0 : cy₀.val < 131072) (h_cy1 : cy₁.val < 131072)
+    (h_cy2 : cy₂.val < 131072) (h_cy3 : cy₃.val < 131072)
+    (h_cy4 : cy₄.val < 131072) (h_cy5 : cy₅.val < 131072)
+    (h_cy6 : cy₆.val < 131072)
+    -- 8 W-unsigned chunk equations (from div_w_unsigned_chain_witnesses)
+    (hC31 : a₀ * b₀ + d₀ = c₀ + cy₀ * 65536)
+    (hC32 : a₁ * b₀ + a₀ * b₁ + d₁ + cy₀ = c₁ + cy₁ * 65536)
+    (hC33 : a₂ * b₀ + a₁ * b₁ + a₀ * b₂ + d₂ + cy₁ = c₂ + cy₂ * 65536)
+    (hC34 : a₃ * b₀ + a₂ * b₁ + a₁ * b₂ + a₀ * b₃ + d₃ + cy₂
+              = c₃ + cy₃ * 65536)
+    (hC35 : a₃ * b₁ + a₂ * b₂ + a₁ * b₃ + cy₃ = cy₄ * 65536)
+    (hC36 : a₃ * b₂ + a₂ * b₃ + cy₄ = cy₅ * 65536)
+    (hC37 : a₃ * b₃ + cy₅ = cy₆ * 65536)
+    (hC38 : cy₆ = 0)
+    -- W-mode operand chunk pin (from arith_table_op_divw_operand_pin)
+    (h_a23 : a₂.val = 0 ∧ a₃.val = 0)
+    (h_b23 : b₂.val = 0 ∧ b₃.val = 0)
+    (h_d23 : d₂.val = 0 ∧ d₃.val = 0)
+    -- W-mode c-chunk pin (bus encoding: dividend is zero-extended r1_lo32)
+    (h_c23 : c₂.val = 0 ∧ c₃.val = 0)
+    -- Byte-pack lane match (W): bytes 0..3 pack a_0 + a_1*65536 (quotient low 32)
+    (h_byte_lo :
+      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+        = a₀.val + a₁.val * 65536)
+    -- Sign-extension choice on bytes 4..7 (SEXT_00 / SEXT_FF case-disjunction)
+    (h_sext_choice :
+      ((e.x4.val = 0 ∧ e.x5.val = 0 ∧ e.x6.val = 0 ∧ e.x7.val = 0) ∧
+        a₀.val + a₁.val * 65536 < 2147483648) ∨
+      ((e.x4.val = 255 ∧ e.x5.val = 255 ∧ e.x6.val = 255 ∧ e.x7.val = 255) ∧
+        a₀.val + a₁.val * 65536 ≥ 2147483648))
+    -- Operand TRANSPILE-BRIDGE (W form: low 32 bits)
+    (h_op1 : (Sail.BitVec.extractLsb r1 31 0).toNat = c₀.val + c₁.val * 65536)
+    (h_op2 : (Sail.BitVec.extractLsb r2 31 0).toNat = b₀.val + b₁.val * 65536)
+    -- Divisor non-zero (CIRCUIT-CONSTRAINT)
+    (h_op2_ne : (Sail.BitVec.extractLsb r2 31 0).toNat ≠ 0)
+    -- Remainder strictly less than divisor (CIRCUIT-CONSTRAINT)
+    (h_d_lt_b : d₀.val + d₁.val * 65536 < (Sail.BitVec.extractLsb r2 31 0).toNat) :
+    U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
+                (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
+      = (let r1_lo32 : BitVec 32 := Sail.BitVec.extractLsb r1 31 0
+         let r2_lo32 : BitVec 32 := Sail.BitVec.extractLsb r2 31 0
+         let q32 : BitVec 32 :=
+           if r2_lo32 = 0#32
+             then BitVec.allOnes 32
+             else BitVec.ofNat 32 (r1_lo32.toNat / r2_lo32.toNat)
+         BitVec.signExtend 64 q32) := by
+  -- Step 1: ℕ Euclidean packed identity over full 4-chunks.
+  have h_packed_nat : packed4 a₀.val a₁.val a₂.val a₃.val
+        * packed4 b₀.val b₁.val b₂.val b₃.val
+        + packed4 d₀.val d₁.val d₂.val d₃.val
+      = packed4 c₀.val c₁.val c₂.val c₃.val :=
+    fgl_div_unsigned_chunks_to_nat_identity
+      a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
+      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
+      h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3
+      h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
+      h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
+      hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
+  -- Step 2: collapse packed4 to 32-bit form via W-mode chunk pins.
+  obtain ⟨ha2_eq, ha3_eq⟩ := h_a23
+  obtain ⟨hb2_eq, hb3_eq⟩ := h_b23
+  obtain ⟨hd2_eq, hd3_eq⟩ := h_d23
+  obtain ⟨hc2_eq, hc3_eq⟩ := h_c23
+  have h_q32_lt : a₀.val + a₁.val * 65536 < 4294967296 := by
+    have : a₁.val * 65536 ≤ 65535 * 65536 := Nat.mul_le_mul_right _ (by omega)
+    omega
+  have h_b32_lt : b₀.val + b₁.val * 65536 < 4294967296 := by
+    have : b₁.val * 65536 ≤ 65535 * 65536 := Nat.mul_le_mul_right _ (by omega)
+    omega
+  have h_r32_lt : d₀.val + d₁.val * 65536 < 4294967296 := by
+    have : d₁.val * 65536 ≤ 65535 * 65536 := Nat.mul_le_mul_right _ (by omega)
+    omega
+  have h_c32_lt : c₀.val + c₁.val * 65536 < 4294967296 := by
+    have : c₁.val * 65536 ≤ 65535 * 65536 := Nat.mul_le_mul_right _ (by omega)
+    omega
+  have h_euclid32 :
+      (a₀.val + a₁.val * 65536) * (b₀.val + b₁.val * 65536) + (d₀.val + d₁.val * 65536)
+      = c₀.val + c₁.val * 65536 := by
+    have h_pn := h_packed_nat
+    unfold packed4 at h_pn
+    rw [ha2_eq, ha3_eq, hb2_eq, hb3_eq, hc2_eq, hc3_eq, hd2_eq, hd3_eq] at h_pn
+    linarith
+  -- Step 3: rewrite Euclidean identity in terms of r1_lo32 / r2_lo32.
+  rw [← h_op2] at h_euclid32
+  have h_euclid : (Sail.BitVec.extractLsb r1 31 0).toNat
+                    = (a₀.val + a₁.val * 65536) * (Sail.BitVec.extractLsb r2 31 0).toNat
+                        + (d₀.val + d₁.val * 65536) := by
+    rw [h_op1]; linarith [h_euclid32]
+  -- Step 4: invoke Layer 1 BV64 wrapper for the DIVUW quotient.
+  have h_bv :=
+    ZiskFv.PackedBitVec.SignedNoWrap.fgl_div_w_unsigned_to_bv64
+      r1 r2 (a₀.val + a₁.val * 65536) (d₀.val + d₁.val * 65536)
+      h_op2_ne h_d_lt_b h_euclid
+  -- Step 5: close via sext_choice. Use the byte-sum identity from the lane matches.
+  apply BitVec.eq_of_toNat_eq
+  rw [u64_toBV_of_bytes_toNat e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
+        h0 h1 h2 h3 h4 h5 h6 h7]
+  -- Goal: byte_sum = (BitVec.signExtend 64 ...).toNat
+  -- Use h_bv to bridge: BitVec.signExtend 64 (BV32 q_nat) = signExtend 64 (if-form)
+  rw [← h_bv]
+  -- Now produce signExtend 64 (BitVec.ofNat 32 q_nat) where q_nat = a₀.val + a₁.val*65536.
+  -- Use BV64 of byte_sum = signExtend equation.
+  -- The byte_sum decomposes via h_byte_lo and h_sext_choice.
+  have h_byte_sum_eq :
+      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
+        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      = (BitVec.signExtend 64
+          (BitVec.ofNat 32 (a₀.val + a₁.val * 65536))).toNat := by
+    rcases h_sext_choice with ⟨⟨hx4, hx5, hx6, hx7⟩, h_pos⟩ |
+                              ⟨⟨hx4, hx5, hx6, hx7⟩, h_neg⟩
+    · -- Positive: x4..x7 = 0.
+      rw [hx4, hx5, hx6, hx7]
+      have h_close := w_sext_close_pos
+        (a₀.val + a₁.val * 65536)
+        (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+        h_q32_lt (by omega) h_byte_lo h_pos
+      have h_lhs_eq :
+          e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+            + 0 * 4294967296 + 0 * 1099511627776 + 0 * 281474976710656
+            + 0 * 72057594037927936
+          = e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216 := by ring
+      rw [h_lhs_eq]
+      have h_close_lt :
+          e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+            < 18446744073709551616 := by
+        rw [h_byte_lo]; omega
+      have h_bv64_inj :
+          (BitVec.ofNat 64
+              (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)).toNat
+          = e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216 := by
+        rw [BitVec.toNat_ofNat]
+        exact Nat.mod_eq_of_lt h_close_lt
+      rw [show BitVec.signExtend 64 (BitVec.ofNat 32 (a₀.val + a₁.val * 65536))
+            = BitVec.ofNat 64
+                (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+            from h_close]
+      exact h_bv64_inj.symm
+    · -- Negative: x4..x7 = 255.
+      rw [hx4, hx5, hx6, hx7]
+      have h_byte_eq_neg :
+          e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+            + 255 * 4294967296 + 255 * 1099511627776
+            + 255 * 281474976710656 + 255 * 72057594037927936
+          = (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+              + 18446744069414584320 := by ring
+      rw [h_byte_eq_neg]
+      have h_byte_sum_lt :
+          (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+            + 18446744069414584320 < 18446744073709551616 := by
+        rw [h_byte_lo]; omega
+      have h_close := w_sext_close_neg
+        (a₀.val + a₁.val * 65536)
+        ((e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+          + 18446744069414584320)
+        h_q32_lt h_byte_sum_lt
+        (by rw [h_byte_lo]) h_neg
+      rw [show BitVec.signExtend 64 (BitVec.ofNat 32 (a₀.val + a₁.val * 65536))
+            = BitVec.ofNat 64
+                ((e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+                  + 18446744069414584320)
+            from h_close]
+      rw [BitVec.toNat_ofNat]
+      exact (Nat.mod_eq_of_lt h_byte_sum_lt).symm
+  rw [h_byte_sum_eq]
+
+/-- **`h_rd_val` discharge for REMUW — chunked W-mode (structural unpacking).**
+
+    Mirror of `h_rd_val_mdru_divuw_chunked` for the remainder lane.
+    Bytes 0..3 pack `d_0 + d_1*65536` (remainder low 32) instead of
+    `a_0 + a_1*65536` (quotient). Layer 1's `fgl_rem_w_unsigned_to_bv64`
+    extracts the remainder. -/
+theorem h_rd_val_mdru_remuw_chunked
+    (r1 r2 : BitVec 64)
+    (e : MemoryBusEntry FGL)
+    (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL)
+    (cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
+    (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
+    (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
+    (h4 : e.x4.val < 256) (h5 : e.x5.val < 256)
+    (h6 : e.x6.val < 256) (h7 : e.x7.val < 256)
+    (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
+    (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
+    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
+    (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
+    (h_c0 : c₀.val < 65536) (h_c1 : c₁.val < 65536)
+    (h_c2 : c₂.val < 65536) (h_c3 : c₃.val < 65536)
+    (h_d0 : d₀.val < 65536) (h_d1 : d₁.val < 65536)
+    (h_d2 : d₂.val < 65536) (h_d3 : d₃.val < 65536)
+    (h_cy0 : cy₀.val < 131072) (h_cy1 : cy₁.val < 131072)
+    (h_cy2 : cy₂.val < 131072) (h_cy3 : cy₃.val < 131072)
+    (h_cy4 : cy₄.val < 131072) (h_cy5 : cy₅.val < 131072)
+    (h_cy6 : cy₆.val < 131072)
+    (hC31 : a₀ * b₀ + d₀ = c₀ + cy₀ * 65536)
+    (hC32 : a₁ * b₀ + a₀ * b₁ + d₁ + cy₀ = c₁ + cy₁ * 65536)
+    (hC33 : a₂ * b₀ + a₁ * b₁ + a₀ * b₂ + d₂ + cy₁ = c₂ + cy₂ * 65536)
+    (hC34 : a₃ * b₀ + a₂ * b₁ + a₁ * b₂ + a₀ * b₃ + d₃ + cy₂
+              = c₃ + cy₃ * 65536)
+    (hC35 : a₃ * b₁ + a₂ * b₂ + a₁ * b₃ + cy₃ = cy₄ * 65536)
+    (hC36 : a₃ * b₂ + a₂ * b₃ + cy₄ = cy₅ * 65536)
+    (hC37 : a₃ * b₃ + cy₅ = cy₆ * 65536)
+    (hC38 : cy₆ = 0)
+    (h_a23 : a₂.val = 0 ∧ a₃.val = 0)
+    (h_b23 : b₂.val = 0 ∧ b₃.val = 0)
+    (h_d23 : d₂.val = 0 ∧ d₃.val = 0)
+    (h_c23 : c₂.val = 0 ∧ c₃.val = 0)
+    -- Byte-pack lane match (W): bytes 0..3 pack d_0 + d_1*65536 (remainder low 32)
+    (h_byte_lo :
+      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+        = d₀.val + d₁.val * 65536)
+    -- Sign-extension choice on bytes 4..7 (based on top bit of remainder).
+    (h_sext_choice :
+      ((e.x4.val = 0 ∧ e.x5.val = 0 ∧ e.x6.val = 0 ∧ e.x7.val = 0) ∧
+        d₀.val + d₁.val * 65536 < 2147483648) ∨
+      ((e.x4.val = 255 ∧ e.x5.val = 255 ∧ e.x6.val = 255 ∧ e.x7.val = 255) ∧
+        d₀.val + d₁.val * 65536 ≥ 2147483648))
+    (h_op1 : (Sail.BitVec.extractLsb r1 31 0).toNat = c₀.val + c₁.val * 65536)
+    (h_op2 : (Sail.BitVec.extractLsb r2 31 0).toNat = b₀.val + b₁.val * 65536)
+    (h_op2_ne : (Sail.BitVec.extractLsb r2 31 0).toNat ≠ 0)
+    (h_d_lt_b : d₀.val + d₁.val * 65536 < (Sail.BitVec.extractLsb r2 31 0).toNat) :
+    U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
+                (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
+      = (let r1_lo32 : BitVec 32 := Sail.BitVec.extractLsb r1 31 0
+         let r2_lo32 : BitVec 32 := Sail.BitVec.extractLsb r2 31 0
+         let q32 : BitVec 32 :=
+           if r2_lo32 = 0#32
+             then r1_lo32
+             else BitVec.ofNat 32 (r1_lo32.toNat % r2_lo32.toNat)
+         BitVec.signExtend 64 q32) := by
+  have h_packed_nat : packed4 a₀.val a₁.val a₂.val a₃.val
+        * packed4 b₀.val b₁.val b₂.val b₃.val
+        + packed4 d₀.val d₁.val d₂.val d₃.val
+      = packed4 c₀.val c₁.val c₂.val c₃.val :=
+    fgl_div_unsigned_chunks_to_nat_identity
+      a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
+      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
+      h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3
+      h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
+      h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
+      hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
+  obtain ⟨ha2_eq, ha3_eq⟩ := h_a23
+  obtain ⟨hb2_eq, hb3_eq⟩ := h_b23
+  obtain ⟨hd2_eq, hd3_eq⟩ := h_d23
+  obtain ⟨hc2_eq, hc3_eq⟩ := h_c23
+  have h_q32_lt : a₀.val + a₁.val * 65536 < 4294967296 := by
+    have : a₁.val * 65536 ≤ 65535 * 65536 := Nat.mul_le_mul_right _ (by omega)
+    omega
+  have h_r32_lt : d₀.val + d₁.val * 65536 < 4294967296 := by
+    have : d₁.val * 65536 ≤ 65535 * 65536 := Nat.mul_le_mul_right _ (by omega)
+    omega
+  have h_euclid32 :
+      (a₀.val + a₁.val * 65536) * (b₀.val + b₁.val * 65536) + (d₀.val + d₁.val * 65536)
+      = c₀.val + c₁.val * 65536 := by
+    have h_pn := h_packed_nat
+    unfold packed4 at h_pn
+    rw [ha2_eq, ha3_eq, hb2_eq, hb3_eq, hc2_eq, hc3_eq, hd2_eq, hd3_eq] at h_pn
+    linarith
+  rw [← h_op2] at h_euclid32
+  have h_euclid : (Sail.BitVec.extractLsb r1 31 0).toNat
+                    = (a₀.val + a₁.val * 65536) * (Sail.BitVec.extractLsb r2 31 0).toNat
+                        + (d₀.val + d₁.val * 65536) := by
+    rw [h_op1]; linarith [h_euclid32]
+  have h_bv :=
+    ZiskFv.PackedBitVec.SignedNoWrap.fgl_rem_w_unsigned_to_bv64
+      r1 r2 (a₀.val + a₁.val * 65536) (d₀.val + d₁.val * 65536)
+      h_op2_ne h_d_lt_b h_euclid
+  apply BitVec.eq_of_toNat_eq
+  rw [u64_toBV_of_bytes_toNat e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
+        h0 h1 h2 h3 h4 h5 h6 h7]
+  rw [← h_bv]
+  have h_byte_sum_eq :
+      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
+        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      = (BitVec.signExtend 64
+          (BitVec.ofNat 32 (d₀.val + d₁.val * 65536))).toNat := by
+    rcases h_sext_choice with ⟨⟨hx4, hx5, hx6, hx7⟩, h_pos⟩ |
+                              ⟨⟨hx4, hx5, hx6, hx7⟩, h_neg⟩
+    · rw [hx4, hx5, hx6, hx7]
+      have h_close := w_sext_close_pos
+        (d₀.val + d₁.val * 65536)
+        (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+        h_r32_lt (by omega) h_byte_lo h_pos
+      have h_lhs_eq :
+          e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+            + 0 * 4294967296 + 0 * 1099511627776 + 0 * 281474976710656
+            + 0 * 72057594037927936
+          = e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216 := by ring
+      rw [h_lhs_eq]
+      have h_close_lt :
+          e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+            < 18446744073709551616 := by
+        rw [h_byte_lo]; omega
+      have h_bv64_inj :
+          (BitVec.ofNat 64
+              (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)).toNat
+          = e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216 := by
+        rw [BitVec.toNat_ofNat]
+        exact Nat.mod_eq_of_lt h_close_lt
+      rw [show BitVec.signExtend 64 (BitVec.ofNat 32 (d₀.val + d₁.val * 65536))
+            = BitVec.ofNat 64
+                (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+            from h_close]
+      exact h_bv64_inj.symm
+    · rw [hx4, hx5, hx6, hx7]
+      have h_byte_eq_neg :
+          e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+            + 255 * 4294967296 + 255 * 1099511627776
+            + 255 * 281474976710656 + 255 * 72057594037927936
+          = (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+              + 18446744069414584320 := by ring
+      rw [h_byte_eq_neg]
+      have h_byte_sum_lt :
+          (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+            + 18446744069414584320 < 18446744073709551616 := by
+        rw [h_byte_lo]; omega
+      have h_close := w_sext_close_neg
+        (d₀.val + d₁.val * 65536)
+        ((e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+          + 18446744069414584320)
+        h_r32_lt h_byte_sum_lt
+        (by rw [h_byte_lo]) h_neg
+      rw [show BitVec.signExtend 64 (BitVec.ofNat 32 (d₀.val + d₁.val * 65536))
+            = BitVec.ofNat 64
+                ((e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+                  + 18446744069414584320)
+            from h_close]
+      rw [BitVec.toNat_ofNat]
+      exact (Nat.mod_eq_of_lt h_byte_sum_lt).symm
+  rw [h_byte_sum_eq]
 
 end ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned

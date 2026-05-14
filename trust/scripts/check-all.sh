@@ -17,12 +17,15 @@ run() {
   echo
 }
 
-run "1/6 locality"               "$dir/check-locality.sh"
-run "2/6 baseline freshness"     "$dir/check-baseline.sh"
-run "3/6 forbidden param shapes" "$dir/check-no-output-eq.sh"
-run "4/6 floors + cross-witness" "$dir/check-floor.sh"
-run "5/6 zero sorry"             "$dir/check-no-sorry.sh"
-run "6/6 uniformity (canonical equivalence shape)" "$dir/check-uniformity.sh"
+run "1/9 locality"               "$dir/check-locality.sh"
+run "2/9 baseline freshness"     "$dir/check-baseline.sh"
+run "3/9 forbidden param shapes" "$dir/check-no-output-eq.sh"
+run "4/9 floors + cross-witness" "$dir/check-floor.sh"
+run "5/9 zero sorry"             "$dir/check-no-sorry.sh"
+run "6/9 uniformity (canonical equivalence shape)" "$dir/check-uniformity.sh"
+run "7/9 hypothesis-count anti-laundering" "$dir/check-hypothesis-count.sh"
+run "8/9 caller-burden ledger (canonical)" "$dir/check-caller-burden.sh"
+run "9/9 caller-burden ledger (wrappers)"  "$dir/check-wrapper-caller-burden.sh"
 
 if [ $overall -eq 0 ]; then
   echo "trust-gate: ALL CHECKS PASSED."

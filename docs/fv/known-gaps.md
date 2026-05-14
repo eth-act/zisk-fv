@@ -1,13 +1,58 @@
 # Known gaps in the per-opcode equivalence theorems
 
-> **Status:** open. This document flags a class of user-supplied
-> hypotheses in canonical `equiv_<OP>` theorems that are not derived
-> from circuit witnesses or trusted bus axioms, and that constitute
-> the practical residual gap between "the theorems typecheck" and
-> "ZisK is verified against Sail end-to-end." Removing these
-> hypotheses (or deriving them from existing trusted infrastructure)
-> is the **immediate TODO** before a global compliance theorem can
-> close.
+> **Status (post-Step-6, 2026-05-14):** The principal promise-hypothesis
+> gap surveyed below is CLOSED by the uber theorem
+> `ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus`
+> (Step 4) and the V3 trust gates (Step 5). All 63 RV64IM opcodes
+> are now covered by `equiv_<OP>_from_trust` wrappers under
+> `ZiskFv/Equivalence/Compliance/<Op>Exemplar.lean` (plus
+> `DivPilot.lean`), which discharge the promise hypotheses from
+> the trust ledger; the global theorem dispatches the 35-arm
+> `OpEnvelope` sum type through those wrappers. The trust closure
+> of the global theorem is captured in
+> `trust/baseline-zisk-riscv-compliant.txt` (122 axioms) and
+> `docs/fv/trusted-base.md` documents the per-class rationale. The
+> V3 trust gate's `check-closure-vs-baseline` subcommand
+> mechanically prevents the gap from re-opening.
+>
+> This document is preserved as a historical record of how the gap
+> was identified and closed. Nothing else below is removed; the
+> framing, glossary, tier survey, anti-laundering principle, and
+> Step-3.alpha planning narrative remain useful context for future
+> work that might re-encounter similar shapes.
+>
+> **Earlier (2026-05-13) framing kept for context:** the gap framing
+> in this document remains accurate as a *historical survey* of what
+> the audit surfaced, but the path forward has crystallized since
+> this doc was first written. The discharge is now a layered piece
+> of work tracked by Step 4 of
+> `/home/cody/.claude/plans/plan-to-completely-resolve-wild-lynx.md`:
+> per-opcode `equiv_<OP>_from_trust` wrappers (Layer 1) discharge
+> the promise hypotheses from the trust ledger; the
+> `Compliance.lean` dispatcher (Layer 2) dispatches the global
+> theorem through those wrappers. The DIV wrapper at commit
+> `83532d7` was the first canonical exemplar; see
+> `docs/fv/discharge-recipe.md` (the 5-category template) and
+> `docs/fv/per-air-axiom-map.md` (per-AIR axiom inventory +
+> per-shape gap predictions) for the practical authoring guide.
+
+## Glossary (canonical terminology)
+
+Plans, PRs, commit messages, and agent prompts touching this work
+**must** use the terms below as defined here. Off-cuff synonyms
+("dischargeable preconditions", "spurious assumptions", "moving
+hypotheses around") fragment the audit trail; the canonical terms
+keep the discussion checkable against this document.
+
+| Term                    | Definition |
+|-------------------------|------------|
+| **promise hypothesis**  | A caller-supplied parameter on a canonical `equiv_<OP>` theorem that asserts an algebraic or structural relationship the theorem could derive from the trust ledger but currently does not. The proof body substitutes the hypothesis without deriving it. Example: `h_match_clo : m.c_0 r_main = v.free_in_c_0 r_binary + … + v.free_in_c_7 r_binary`. The full audit is in this document; the cross-AIR matching family, the Sail-input bridge family, the per-byte range/chain family, the BinaryExtension specifics family, and the Tier-1 loose-element-algebra family are all promise hypotheses. |
+| **promise discharge**   | The work of replacing a promise hypothesis with a derivation from the trust ledger (transpile axioms, bus permutation axioms, lookup-soundness axioms, range-check axioms, AIR-validity structures). The result: the theorem still typechecks, but the hypothesis is no longer caller-supplied — it is internally derived from axioms already on the books. **Real promise discharge reduces the trust surface; renaming or splitting a hypothesis without deriving it is laundering, not discharge** (see CLAUDE.md "Anti-laundering principle"). |
+| **discharge bridge**    | A Lean file under `ZiskFv/Equivalence/Bridge/<Shape>.lean` that exposes a uniform discharge API for one provider-AIR shape. Consumes the trust-ledger axioms relevant to that shape; produces the per-byte / per-chunk / cross-AIR equations the per-opcode `equiv_<OP>` theorems for that shape need. Step 2 of `/home/cody/.claude/plans/plan-to-completely-resolve-wild-lynx.md`. |
+| **trust ledger**        | The 87 axioms in `trust/baseline-axioms.txt`, organized by class in `docs/fv/trusted-base.md`. The project's named, audited trust surface. **Promise discharge does not extend the trust ledger** (modulo small bus-protocol additions like Phase A's OpBus axioms, which fit existing classes). |
+| **caller-burden ledger** | `trust/baseline-caller-burden.txt`, the corresponding ledger of every parameter binder on every canonical `equiv_<OP>`. Promise discharge **shrinks** this ledger. The diff IS the audit surface for whether a refactor accomplished real discharge or just laundering (see CLAUDE.md V1 check #8). |
+| **anti-laundering metric** | The pair of gates `check-hypothesis-count.sh` (V1 #7) and `check-caller-burden.sh` (V1 #8). Operational meaning of "real promise discharge": every plan PR must reduce or hold both columns of `trust/baseline-hypothesis-count.txt` and show net REMOVALS (not renamings) in `trust/baseline-caller-burden.txt`. |
+| **constructibility (separate gap)** | Whether a `Valid_<AIR>` instance can actually be constructed from a real ZisK trace. If `Valid_<AIR>`'s declared constraints are stronger than the actual circuit, the equivalence theorems are vacuous. Not addressed by promise discharge; tracked as a separate concern in CLAUDE.md "Anti-laundering principle" item 4. |
 
 ## TL;DR
 
@@ -184,12 +229,19 @@ refactor that bundled `matches_entry` into `add_circuit_holds` and
 derived it from a new `op_bus_perm_sound_BinaryAdd` axiom)
 demonstrates the chain end-to-end.
 
-## Immediate TODO
+## Immediate TODO (historical — all items DONE)
+
+All four items below were tracked as the project's principal open
+soundness work when this document was first written. Each is now
+closed; annotations below record the closing artefact.
 
 1. **Treat this as the project's principal open soundness gap.**
    Replace the existing CLAUDE.md status framing ("all 63 RV64IM
    opcodes proved") with one that distinguishes typecheck-success
-   from end-to-end discharge. (Done in this PR.)
+   from end-to-end discharge. (Done in the initial PR that landed
+   this document; **superseded** by the Step-6c rewrite of
+   CLAUDE.md's Status section that now frames the uber theorem as
+   the verification claim.)
 
 2. **Decide on the per-shape derivation strategy** for each tier:
 
@@ -204,6 +256,14 @@ demonstrates the chain end-to-end.
    * **Tier 1** needs all of the above plus introduction of
      `Valid_Main` and the relevant provider AIRs from scratch.
 
+   **DONE.** All three tiers' strategies are implemented as the
+   per-opcode `equiv_<OP>_from_trust` wrappers under
+   `ZiskFv/Equivalence/Compliance/<Op>Exemplar.lean`; the OpBus
+   permutation axioms landed as
+   `op_bus_perm_sound_{BinaryAdd,Binary,BinaryExtension}` in
+   `ZiskFv/Airs/OperationBus/Bridge.lean` (class #4 of
+   `docs/fv/trusted-base.md`).
+
 3. **Investigate the `BinaryExtension` layout-convention conflict**
    surfaced by Phase A: the extractor's row-major flattening
    (`Buses.lean::bus_emission_BinaryExtension_0`) disagrees with
@@ -214,12 +274,306 @@ demonstrates the chain end-to-end.
    Until resolved, deriving `h_match_clo` for SLL/SRL/SRA from the
    bus is blocked.
 
+   **DONE.** The layout was reconciled as part of Step 0b of the
+   plan; SLL is now the BinaryExtension canonical exemplar and the
+   15 BinaryExtension-shape opcodes (SLL/SLLI/SRL/SRLI/SRA/SRAI/
+   Shift/ShiftLI/ShiftR/ShiftRA/ShiftRAI/ShiftRLI/Lb/Lh/Lw) are all
+   covered by trust-discharged wrappers.
+
 4. **Strengthen the trust gate** with a check that flags promise
    hypotheses by *shape* — e.g. canonical-theorem parameters of
    the form `m.<col> r_main = <expr involving v.<col> r_binary>`
    that aren't structurally an instance of an existing trust-ledger
    axiom's conclusion. This is V3-class enforcement; the design
    discussion needs to start.
+
+   **DONE.** Trust gate V3 landed in Step 5 as
+   `check-closure-vs-baseline` (the V2 trust-gate subcommand that
+   enforces the live `#print axioms` closure of the uber theorem
+   matches `trust/baseline-axioms.txt` exactly) and the wrapper
+   caller-burden ledger (V1 check #9 — diff-based audit of every
+   parameter binder on every `equiv_<OP>_from_trust` wrapper).
+   Together they catch every form of regression that a
+   shape-based check would have caught, by a stronger mechanism:
+   any silent shift of trust onto a caller-supplied hypothesis
+   either grows the wrapper's caller-burden ledger (failing the
+   diff) or grows the global closure (failing the
+   closure-vs-baseline check).
+
+## Discharge-able vs structural caller burden (snapshot 2026-05-12)
+
+`trust/baseline-caller-burden.txt` records every parameter binder
+on every canonical `equiv_<OP>` theorem along with a category tag
+(`validator | state | entry | range | match | bridge | bus_shape |
+transpile | byte_chain | loose | row | instance | other`).
+
+The aggregate breakdown post the Step 1.7b + Step 0b + Step 2c-f
++ Step 2b SLT-family completion work is:
+
+| Category | Count | Discharge-able? | Notes |
+|---|---:|---|---|
+| `range` | 695 | **YES** | Derive from `*_columns_in_range` axioms (Main / Binary / BinaryAdd / BinaryExtension / Arith). |
+| `other` | 611 | no | Structural Sail/state plumbing (`h_input_rd`, `h_rd_idx`, output equation shapes). |
+| `bus_shape` | 516 | no | Bus-protocol shape commitments (`h_exec_len`, `multiplicity` pins, `as` pins). Caller-side. |
+| `loose` | 440 | **YES** | Loose FGL quantifiers — promote to `Valid_<AIR>` columns at the existential row. |
+| `state` | 217 | no | Sail `PreSail.SequentialState` parameters. |
+| `transpile` | 171 | no | Per-opcode `transpile_<OP>` axioms threaded as the trust article itself. |
+| `byte_chain` | 115 | **YES** | `consumer_byte_match` — derived via `binary_per_byte_lookup_witness` + `bin_table_consumer_wf`. |
+| `match` | 98 | **YES** | `h_match_clo`/`chi` — derived via `matches_entry` (Op-Bus perm soundness) + carry_7=0 for AND/OR/XOR rows. |
+| `validator` | 86 | no | `Valid_<AIR>` instance parameters. |
+| `row` | 69 | **YES** | `r_binary` / `r_arith` / `r_e` — make existential via bridges. |
+| `entry` | 67 | no | `MemoryBusEntry` parameters. |
+| `bridge` | 59 | **YES** | Input bridges (`h_input_r{1,2}_circuit`, `h_input_r1_extract`) — derive via `SailStateBridge` + transpile axioms + matches_entry. |
+| **Total** | **3144** | | of which **~1,476** discharge-able, **~1,668** structural. |
+
+### Why this matters
+
+A naive "aggregate hypothesis binders: 2,078" framing overstates
+the remaining work by ~2×. The structural categories
+(`state`/`entry`/`validator`/`bus_shape`/`transpile`/`other`) will
+not shrink: they're how a caller plumbs the per-opcode theorem
+into a concrete context. The discharge surface is the ~1,476
+binders in the `range`/`loose`/`byte_chain`/`match`/`row`/`bridge`
+classes.
+
+### Per-opcode discharge yield (observed)
+
+From the Step 1.7b / 2b refactors already landed in this branch:
+
+| Refactor shape | Opcodes done | Per-opcode savings |
+|---|---|---|
+| BinaryAdd (ADD, ADDI) | 2 | 10–12 binders |
+| Binary loose-promote (SUB/SUBW/ADDW/ADDIW/SLT/SLTI/SLTU/SLTIU) | 8 | 27–30 binders |
+| Binary byte-range only (AND/ANDI/OR/ORI/XOR/XORI) | 6 | ~24 binders |
+
+### Projected Step 3 yield
+
+For the remaining 49 opcodes:
+
+| Shape | # opcodes | Expected per-opcode | Projected total |
+|---|---:|---|---|
+| BinaryExtension (unblocked by Step 0b cascade) | 15 | 15–25 | 225–375 |
+| Arith Mul | 5 | 30–40 | 150–200 |
+| Arith Div | 8 | 30–40 | 240–320 |
+| Mem loads/stores | 8 | 15–20 | 120–160 |
+| ControlFlow | 11 | 5–15 | 55–165 |
+| FENCE / etc. | 2 | small | ~10 |
+| **Total** | **49** | | **800–1,230 binders** |
+
+That shrinks the discharge-able surface from ~1,476 to ~250–675.
+The residual ~250–675 are structurally hard:
+
+* Full 6-field byte-chain witnesses (`consumer_byte_match_chain`
+  with `cin`/`flags`/`pos_ind`) for the SUB/SLT-family Tier-2 chain
+  ops — `binary_per_byte_lookup_witness` covers 3-field
+  `consumer_byte_match` for AND/OR/XOR but not the chain version.
+* Per-opcode carry-chain wiring for Arith (hC31..hC38) — CarryChain
+  re-exports are in `Bridge.Arith` but the per-equiv projection is
+  real work.
+* `h_input_imm_*` on ITYPE / U-type / shift-immediate opcodes — the
+  immediate value is caller-routed via `transpile_<OP>`'s
+  `imm_b_lo`/`imm_b_hi` parameters; no Sail-side axiom links
+  `imm_b_lo` to the Sail spec's `<op>_input.imm`, so these stay
+  caller-supplied unless we add a separate axiom.
+
+### Bottom line
+
+The remaining work is **bounded** — not "3000 hypotheses to
+discharge one by one." It is ~49 opcode refactors averaging ~20
+binders each (Step 3), plus ~500–1k LOC for the global compliance
+theorem (Step 4) and trust-gate V3 + transparency artifacts (Steps
+5–6). All previously-blocking infrastructure (Steps 0–2) is now
+in place.
+
+## Step 3.alpha — pre-fan-out artifacts (parallelization unblockers)
+
+Step 3 (per-opcode *promise discharge* refactors across ~47
+opcodes in 5 shapes) cannot safely parallelize until three
+unblockers land: per-shape *target trust footprint*, per-shape
+canonical exemplars, and baseline-contention / worktree mechanics.
+This section is the canonical record of all three.
+
+### 3.alpha.1 — per-shape target trust footprint
+
+What each Step 2 bridge **discharges** vs. **accepts as caller-burden**,
+and the trust-ledger decision frozen for each shape before Step 3
+fans out. Reviewers and agents should consult this row before
+authoring a refactor in the shape — divergence from the row is a
+laundering risk and should be challenged.
+
+| Shape | Bridge file | Discharges (caller burden REMOVED) | Accepts (caller burden RETAINED) | Decision for fan-out |
+|--|--|--|--|--|
+| **BinaryAdd** | `Bridge/BinaryAdd.lean` | `r_binary` existential, `matches_entry`, chunk-range hypotheses | (none material) | **Done** — ADD/ADDI already refactored. Not in remaining fan-out. |
+| **Binary** | `Bridge/Binary.lean` | `r_binary` existential, `matches_entry`, 24 byte ranges (a/b/c × 0..7) | 8 per-byte `consumer_byte_match` hypotheses, `h_match_clo`/`chi` (carry_7 form), per-byte `h_input_r{1,2}` bridges | **Done conservatively** — 14 Binary-shape opcodes already refactored against the conservative bridge. Deeper discharge (the 6-field `consumer_byte_match_chain` with `cin`/`flags`/`pos_ind` for SUB/SLT-shape chain projection) is deferred to a Step-3-followup PR; **not blocking** fan-out because the 14 Binary opcodes are already done. |
+| **Arith** | `Bridge/Arith.lean` | `r_a` existential, `matches_entry` (mul / div primary / div secondary), 16 chunk ranges (a/b/c/d × 0..3), packed-correctness re-exports (`mul_{un,}signed_packed`, `div_{un,}signed_packed`) | `hC31..hC38` carry-chain hypotheses per opcode | **Accept duplication** — packed-correctness re-exports are one-liners; each MUL/DIV equiv consumes the matching re-export directly. Carry-chain orientation differs by signed/unsigned axis so per-opcode wiring is cleaner than bridge lifting. No further bridge work needed before fan-out. |
+| **BinaryExtension** | `Bridge/BinaryExtension.lean` | `r_e` existential, `matches_entry`, 9 byte ranges (`free_in_a_0..7` + `free_in_b`) | per-byte `consumer_byte_match` for BinaryExtension table, shift-amount + signed/unsigned mode pins (projected from `matches_entry` at the equiv) | **Smoke-test via SLL exemplar in 3.alpha.2.** Bridge is layout-agnostic (delivers `matches_entry` opaquely); the Step 0b cascade fix only matters at the *projection* step inside each equiv. If SLL exemplar typechecks against the post-cascade column convention, the bridge is good for the 15 BinaryExtension opcodes. |
+| **Mem** | `Bridge/Mem.lean` | `load_discharge` (lane match + ∃ r_mem with `wr=0`), `store_discharge` (lane match + ∃ r_mem with `wr=1`) | per-opcode address packing + value packing (consumed at equiv-site against Sail spec) | **As-is sufficient.** LBU/LHU/LWU high-byte-zero is already exposed via `MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero` (imported by `Bridge/Mem.lean`). LB/LH/LW sign-extension chains through `Circuit/SextLoadBridge.lean` directly at the equiv — this is a circuit module, not a bridge concern; no double-batching conflict. Bridge does not need extension before fan-out. |
+| **ControlFlow** | `Bridge/ControlFlow.lean` | `branch_input_bridges_of_read_xreg` (r1 + r2 packed lanes for all 6 branches via shared helper); JALR r1 packed lane via direct use of Step 1.7b `SailStateBridge` | `h_input_imm_*` (linking Main's `imm_b_lo`/`imm_b_hi` columns to Sail spec's `<op>_input.imm` field) for AUIPC / LUI / JAL / JALR + the 6 branches' imm projection | **Accept imm caller-burden** in this fan-out pass. Adding a `transpile_imm_lo_hi` axiom would close it cleanly but triggers a new trust class + CODEOWNER review. Documented as a Step-3-followup; not blocking fan-out. |
+
+**Rule of thumb for parallel agents.** If a refactor wants to
+discharge a hypothesis the row above marks as "RETAINED" for the
+shape, that's out of scope for this fan-out pass — the
+hypothesis stays. If a refactor doesn't discharge a hypothesis
+the row marks as "REMOVED", it's incomplete — fix before merge.
+
+### 3.alpha.2 — canonical per-shape exemplars
+
+Each remaining shape gets one canonical refactored equiv on this
+branch, *before fan-out*, so each parallel agent has a template.
+Status / commit reference per exemplar:
+
+| Shape | Canonical exemplar | Status | Commit |
+|--|--|--|--|
+| BinaryExtension | SLL | **landed** — 17 binders dropped (`h_a_range` + 16 c-byte 32-bit ranges) via `binary_extension_columns_in_range`; smoke-tests Step 0b cascade | `3687a2d` |
+| ControlFlow (branch) | BEQ | **N/A** — `equiv_BEQ` already at minimum form (state inputs + bus shape only, no Provider-AIR cross-AIR promise hypotheses). All 6 branches confirmed at 19-20 binders / 12 hypotheses. No exemplar needed. | (existing) |
+| Arith Mul | MUL | **landed** — Tier-2 → Tier-3 promotion: added `(v : Valid_ArithMul, r_a : ℕ)` parameters, replaced 16 loose FGL chunks `a₀..d₃` with `v.a_0 r_a` etc., dropped 16 chunk-range hypotheses via `arith_mul_chunk_ranges_at_holds`. Net reduction: 16 binders, no laundering. | (this commit) |
+| Arith Div | DIVU | **landed** — mirror of MUL: added `Valid_ArithDiv` + `r_a`, dropped 16 chunk-range hypotheses via `arith_div_chunk_ranges_at_holds`. Net reduction: 16 binders. | (this commit) |
+| Mem load | LD | **landed** — added new trust-ledger axiom `memory_bus_entry_byte_range_perm_sound` (per-byte range soundness for memory-bus entries; same trust class as `memory_bus_register_write_perm_sound`). Dropped `h_e1_range` + `h_e2_range` bundled byte-range hypotheses. Net reduction: 2 bundled binders. | (this commit) |
+| Mem store | SD | **N/A** — `equiv_SD` does not carry byte-range hypotheses; already at minimum form for the new axiom's scope. | (existing) |
+| ControlFlow (non-branch) | AUIPC + JAL | **landed** — consumed `memory_bus_entry_byte_range_perm_sound` to discharge `h_e_rd_0..7` (8 byte-range hypotheses per opcode). Net reduction: 8 binders each. | (this commit) |
+
+#### 3.alpha.2 exit-criterion analysis
+
+The original 3.alpha exit gate required "five exemplars committed and
+tagged" before any Step 3 fan-out. The honest accounting after this
+analysis is:
+
+* **One shape unblocked for fan-out: BinaryExtension** (SLL exemplar
+  landed; smoke-tested Step 0b cascade). 15 opcodes (SLL/SLLI/SRL/SRLI/
+  SRA/SRAI/Shift/ShiftLI/ShiftR/ShiftRA/ShiftRAI/ShiftRLI/Lb/Lh/Lw)
+  ready for parallel agent batches following the SLL template.
+* **One shape needs no exemplar: ControlFlow branches** (BEQ already
+  minimal; the 5 other branches BNE/BLT/BLTU/BGE/BGEU follow the same
+  shape and likely already in similar minimal form — confirm before
+  fan-out).
+* **Three shapes have hard prerequisites that fall outside 3.alpha**:
+  Arith Mul (Tier-2 → Tier-3 promotion), Arith Div (same), Mem (new
+  memory-bus byte-range axiom), ControlFlow non-branch (same memory
+  axiom).
+
+These prerequisites are now visible work. They should land as their
+own PRs *before* the corresponding shapes' fan-out, not as part of
+the fan-out itself. This means the 3.alpha unblocker for fan-out
+applies on a **per-shape basis**: BinaryExtension is unblocked now;
+the others unblock as their prerequisite PRs land.
+
+Recommended sequencing now:
+
+1. **Immediate**: Step 3 BinaryExtension fan-out (parallel agents on
+   the 15 BinaryExtension-shape opcodes using SLL template).
+2. **Confirm branches**: read BNE/BLT/BLTU/BGE/BGEU; if they all
+   match the BEQ minimal form, mark ControlFlow-branch shape as
+   already-fan-out-complete (no agents needed).
+3. **Arith prerequisite PR**: design + author the Tier-2 → Tier-3
+   promotion infrastructure (Valid_<AIR> column shape audit + 2 new
+   carry-related axioms + ledger entries). Then MUL exemplar lands
+   on this branch; then Arith Mul fan-out (5 opcodes); then Arith
+   Div fan-out (8 opcodes).
+4. **Mem prerequisite PR**: design + author `memory_bus_byte_range_perm_sound`
+   axiom + trusted-base.md ledger entry + CODEOWNER review. Then
+   LD / SD exemplars; then Mem fan-out (8 opcodes); then AUIPC / JAL
+   refactors (parallel with Mem since same blocker).
+
+Each exemplar MUST:
+1. Pass `lake build` and V1 + V2 trust gates.
+2. Show a **net REDUCTION** in `trust/baseline-caller-burden.txt`
+   for its opcode (lines removed > lines added).
+3. Show a **non-increase** in
+   `trust/baseline-hypothesis-count.txt`'s per-opcode `total=` and
+   `hypothesis=`.
+
+The exemplar's diff IS the template for the rest of the shape's
+opcodes. Agents authoring follow-on opcodes in a shape are
+expected to read the exemplar's diff first.
+
+### 3.alpha.3 — parallelization appendix
+
+#### Baseline-contention strategy
+
+Step 3 sub-PRs all regenerate four shared files:
+* `trust/baseline-equiv-axiom-deps.txt`
+* `trust/baseline-caller-burden.txt`
+* `trust/baseline-hypothesis-count.txt`
+* `trust/baseline-axioms.txt` (only if shape adds an axiom)
+
+**Chosen: Option A — serialize regenerate as last commit of each PR.**
+
+Mechanics:
+1. Each parallel agent works in its own worktree on its shape's opcodes.
+2. Body work (per-opcode refactors, exemplar consumption) is parallel
+   across worktrees.
+3. The baseline-regen step (`trust/scripts/regenerate.sh` +
+   `regenerate-caller-burden.py`) is the **last commit** of each PR.
+4. PRs land sequentially in merge order; later PRs rebase on
+   whatever landed before, then re-run the regen step as a final
+   commit to refresh the baselines against the post-rebase state.
+
+Rationale: cheap to set up; merge friction is bounded to one rebase
+per PR. If friction is bad after the first 2-3 shapes land,
+switch to Option B (per-AIR baseline split) before Arith batch.
+
+#### Worktree mechanics checklist (per agent)
+
+Before launching an agent for a shape's parallel batch:
+
+1. **Create worktree from current branch tip** (NOT via `isolation:"worktree"`,
+   which creates from `origin/main` → stale base). Example:
+   ```bash
+   git worktree add ../zisk-fv-step3-<SHAPE> <current-branch>
+   ```
+2. **Symlink `.lake/packages`** to the canonical copy to avoid
+   ~10 GiB per worktree:
+   ```bash
+   cd ../zisk-fv-step3-<SHAPE>/.lake
+   rm -rf packages
+   ln -s /home/cody/zisk-fv/.lake/packages packages
+   ```
+3. **Run `lake exe cache get`** immediately — DO NOT skip
+   (mathlib cache; ~30 min penalty if skipped). The post-update
+   hook side-effect is not reliable.
+4. Verify `lake build` succeeds before delegating.
+
+#### Agent prompt template (per parallel batch)
+
+When launching a shape's parallel batch, the agent prompt MUST
+include all of the following:
+
+```
+Read these files first, in this order:
+1. /home/cody/zisk-fv/CLAUDE.md (project context + anti-laundering principle)
+2. /home/cody/zisk-fv/docs/fv/known-gaps.md (glossary + Step 3.alpha per-shape target trust footprint)
+3. /home/cody/zisk-fv/ZiskFv/Equivalence/<EXEMPLAR>.lean (the canonical template for shape <SHAPE>)
+4. /home/cody/zisk-fv/ZiskFv/Equivalence/Bridge/<SHAPE>.lean (the discharge bridge you will consume)
+
+Your task: refactor <LIST OF OPCODE FILES> following the <EXEMPLAR>
+template. For each opcode:
+* Drop the hypotheses the shape's footprint row marks as REMOVED.
+* Retain (do NOT discharge) the hypotheses marked RETAINED — those
+  are out of scope for this fan-out pass.
+* Internally consume Bridge/<SHAPE>.lean's discharge API exactly
+  as <EXEMPLAR> does.
+
+Constraints (NON-NEGOTIABLE):
+* Anti-laundering metric must shrink: per-opcode `total=` /
+  `hypothesis=` in trust/baseline-hypothesis-count.txt may not grow,
+  and caller-burden diff for the opcode must have more removed lines
+  than added.
+* No new axioms. If you find one is needed, STOP and report — that
+  requires a separate trust-ledger PR.
+* No new top-level `def`s without marking @[reducible].
+* Use the canonical vocabulary (promise hypothesis / promise discharge
+  / discharge bridge / trust ledger / caller-burden ledger / anti-
+  laundering metric / constructibility) — no ad-hoc synonyms.
+
+Last commit of your PR must be the regenerate-baselines step:
+  trust/scripts/regenerate.sh
+  python3 trust/scripts/regenerate-caller-burden.py > trust/baseline-caller-burden.txt
+Then run trust/scripts/check-all.sh and confirm green before pushing.
+```
+
+The bracketed `<…>` slots are the only per-batch customization.
+Anything else added to the prompt is at the launcher's discretion;
+nothing in the template above may be omitted.
 
 ## References
 

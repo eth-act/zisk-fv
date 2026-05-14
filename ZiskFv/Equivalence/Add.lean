@@ -8,6 +8,7 @@ import ZiskFv.Circuit.Add
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.OperationBus
+import ZiskFv.Equivalence.Bridge.BinaryAdd
 import ZiskFv.Airs.BusEmission
 import ZiskFv.Sail.add
 import ZiskFv.Sail.BusEffect
@@ -75,21 +76,34 @@ theorem equiv_ADD_sail
   PureSpec.execute_RTYPE_add_pure_equiv
     add_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
-/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64
-    ADD equals the state computed by applying `bus_effect` to the
-    circuit's execution and memory bus rows.
+/-- **Canonical equivalence (post-Step-1.5 *promise discharge*).**
+    Sail's `execute_instruction` on an RV64 ADD equals the state
+    computed by applying `bus_effect` to the circuit's execution and
+    memory bus rows.
 
-    Every parameter classifies as one of {CIRCUIT-CONSTRAINT,
-    LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
-    asserts the spec output (`r1_val + r2_val`) directly; that
-    equation is derived internally from circuit witnesses via the
-    `RdValDerivation.Arith.h_rd_val_arith_add` discharge lemma. -/
+    The cross-AIR matching (`matches_entry`), per-chunk byte ranges
+    on BinaryAdd, and the per-chunk-form input bridges that pre-pilot
+    `equiv_ADD` accepted as caller obligations are now derived inside
+    the proof body via
+    `ZiskFv.Equivalence.Bridge.BinaryAdd.add_discharge`, which
+    consumes Phase A's `op_bus_perm_sound_BinaryAdd` (PLONK soundness
+    on `OPERATION_BUS_ID = 5000`) and Step 1.5's
+    `binary_add_columns_in_range` (range-check bus soundness on
+    BinaryAdd's `bits(N)` columns) — both already in the *trust
+    ledger*.
+
+    Net reduction in the *anti-laundering metric* vs. origin/main
+    pre-pilot: −2 binders. (Conservative; deriving
+    `h_input_r{1,2}_main` from `transpile_ADD` + a state-bridge
+    would give another −2; universalizing `h_main_subset` /
+    `h_main_mode` from `Valid_Main` constraints would give more.
+    Staged for follow-up PRs.) -/
 theorem equiv_ADD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
-    (r_main r_binary : ℕ)
+    (r_main : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     -- Sail-state Sail-input bridges (TRANSPILE-BRIDGE class)
@@ -110,22 +124,26 @@ theorem equiv_ADD
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : add_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Discharge parameters
-    (h_circuit : add_circuit_holds m b r_main r_binary)
+    (h_main_subset : add_subset_holds m r_main)
+    (h_main_mode : main_row_in_add_mode m r_main)
+    (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
     (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
     (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    (h_a_range : a_chunks_in_range b r_binary)
-    (h_b_range : b_chunks_in_range b r_binary)
-    (h_c_range : c_chunks_in_range b r_binary)
-    (h_input_r1_circuit : add_input.r1_val
-      = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296))
-    (h_input_r2_circuit : add_input.r2_val
-      = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296)) :
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- *Promise discharge* via the BinaryAdd bridge (with Step 1.7b's
+  -- SailStateBridge deriving the input bridges from the Sail-form
+  -- `read_xreg` facts that `equiv_ADD_sail` consumes).
+  obtain ⟨r_binary, h_circuit, h_a_range, h_b_range, h_c_range,
+          h_input_r1_circuit, h_input_r2_circuit⟩ :=
+    ZiskFv.Equivalence.Bridge.BinaryAdd.add_discharge
+      m b r_main h_main_subset h_main_mode h_b_core
+      state (regidx_to_fin r1) (regidx_to_fin r2)
+      add_input.r1_val add_input.r2_val
+      h_input_r1_sail h_input_r2_sail
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_add
       m b r_main r_binary e2 add_input

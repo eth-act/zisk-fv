@@ -22,15 +22,28 @@ execute_instruction (.RTYPE rs2 rs1 rd rop.ADD) state
 **Out of scope:** Zicclsm, precompiles (Keccak / SHA256 / big-int /
 DMA / etc.), ECALL/EBREAK, ZisK's custom internal ops.
 
-**Status:** all 63 RV64IM opcodes proved (0 sorries; 80 trusted
-axioms across 10 ledger classes; **all 63** canonical `equiv_<OP>`
-theorems are OUTPUT-EQ-free, mechanically enforced uniformly by
+**Status:** `zisk_riscv_compliant_program_bus` is proved
+(`ZiskFv/Equivalence/Compliance/Global.lean`); its trust closure
+is the **122 axioms** enumerated in
+`trust/baseline-zisk-riscv-compliant.txt` and documented per-class
+in `docs/fv/trusted-base.md`. All 63 RV64IM opcodes are covered as
+`equiv_<OP>_from_trust` wrappers under
+`ZiskFv/Equivalence/Compliance/<Op>Exemplar.lean` (plus
+`DivPilot.lean`), dispatched by the global theorem through a 35-arm
+`OpEnvelope` sum type. The principal "promise hypothesis"
+soundness gap surveyed in
+[`docs/fv/known-gaps.md`](docs/fv/known-gaps.md) is closed at the
+global theorem: V3 trust gates
+(`check-closure-vs-baseline` + wrapper caller-burden ledger)
+mechanically prevent regression. The 63 canonical `equiv_<OP>`
+theorems remain OUTPUT-EQ-free, enforced uniformly by
 `trust/scripts/check-no-output-eq.sh` against
 `trust/forbidden-param-shapes.txt`. The 7 loads were closed by
 deriving their cross-entry rd-value byte equations from circuit
 witnesses — see `ZiskFv/Circuit/LoadDerivation.lean` for the
 copyb / MemAlign families and `ZiskFv/Circuit/SextLoadBridge.lean`
-for the LB/LH/LW signed-load chain (`bin_ext_table_consumer_wf` +
+for the LB/LH/LW signed-load chain
+(`bin_ext_table_consumer_wf` +
 `binary_extension_sext_{b,h,w}_chunks_eq_signextend_nat`). The
 LBU/LHU/LWU zero-pad is itself a derived theorem
 (`memalign_subdoubleword_load_high_bytes_zero` in
@@ -38,23 +51,6 @@ LBU/LHU/LWU zero-pad is itself a derived theorem
 permutation-soundness axiom for the MemAlign* providers plus
 `mem_align_rom_subdoubleword_load_value_1_zero` (a narrow
 ROM-lookup axiom).
-
-**⚠️ Open soundness gap — read before claiming end-to-end
-verification.** The OUTPUT-EQ-free claim above is *narrow*: it
-applies only to the 10 retired hypothesis names listed in
-`trust/forbidden-param-shapes.txt`. 62 of 63 canonical theorems
-still carry **promise hypotheses** (`h_match_clo`,
-`h_input_r1_circuit`, the loose `a₀..a₃ b₀..b₃ … hC*` bundles in
-MUL/DIV, etc.) that assert algebraic relationships not derived
-from the bus protocol or transpile contract. The proofs are
-**conditionally** sound — *if* a caller can supply consistent
-witnesses for those hypotheses, the conclusions follow — but no
-caller (no global compliance theorem) currently exists to discharge
-them, and for many opcodes the hypotheses are unfulfillable from
-the actual circuit without substantial new derivation
-infrastructure. See [`docs/fv/known-gaps.md`](docs/fv/known-gaps.md)
-for the full survey, the three tiers of detachment, and the
-immediate TODO.
 
 ## Pipeline
 
@@ -136,7 +132,7 @@ runs after `lake build`). Both must pass.
 
 ### Layer 1 — V1 syntactic (`trust/scripts/check-all.sh`, no build)
 
-Six checks; if you break any, CI fails:
+Eight checks; if you break any, CI fails:
 
 1. **Locality.** Lean trust-leak constructs (`axiom`, `opaque`,
    `constant`, `unsafe def`, `partial def`, `@[extern]`,
@@ -160,6 +156,27 @@ Six checks; if you break any, CI fails:
 5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,Circuit,Equivalence,Tactics,Sail}`.
 6. **Uniformity.** Every one of 63 RV64IM opcodes has a canonical
    `equiv_<OP>` theorem.
+7. **Hypothesis-count anti-laundering metric.**
+   `trust/scripts/check-hypothesis-count.sh` reads
+   `trust/baseline-hypothesis-count.txt` (one line per canonical
+   `equiv_<OP>` with `total=<N> hypothesis=<M>`). Per-theorem counts
+   must match the baseline exactly. **Reductions** are allowed —
+   refresh the baseline alongside the refactor. **Growth** fails
+   the gate. This catches the "split one promise hypothesis into
+   N smaller ones" laundering pattern that the OUTPUT-EQ retirement
+   and V2 binder-classifier do not detect.
+8. **Caller-burden ledger drift.**
+   `trust/scripts/check-caller-burden.sh` reads
+   `trust/baseline-caller-burden.txt` (one line per parameter binder
+   on every canonical `equiv_<OP>` with name, category, and type
+   snippet). The diff IS the audit surface — a reviewer reads it to
+   confirm a refactor SHRANK the trust surface (lines removed) and
+   did not RENAME it (lines added of the same shape as removed).
+   Categories: `validator | state | entry | range | match | bridge
+   | bus_shape | transpile | byte_chain | loose | row | instance |
+   other`. Refresh with
+   `python3 trust/scripts/regenerate-caller-burden.py >
+   trust/baseline-caller-burden.txt`.
 
 ### Layer 2 — V2 semantic (`trust/scripts/check-all-semantic.sh`, requires `lake build`)
 
@@ -196,6 +213,103 @@ axiom):
 
 Don't try to bypass the gate by editing `trust/forbidden-param-shapes.txt`
 or `trust/allowed-axiom-files.txt` directly — both are CODEOWNER-protected.
+
+### Anti-laundering principle (READ THIS — for any agent or human doing promise discharge)
+
+**Vocabulary.** This section uses **promise hypothesis**, **promise
+discharge**, **discharge bridge**, **trust ledger**, **caller-burden
+ledger**, **anti-laundering metric**, and **constructibility** as
+defined in [`docs/fv/known-gaps.md`'s Glossary](docs/fv/known-gaps.md#glossary-canonical-terminology).
+Any plan / PR / commit / agent prompt touching this work must use
+those terms with those meanings; ad-hoc synonyms fragment the audit
+trail.
+
+**The work.** *Promise discharge* — the activity of replacing
+caller-supplied *promise hypotheses* on canonical `equiv_<OP>`
+theorems with derivations from the *trust ledger* — exists to
+**reduce** the project's residual trust surface. There are several
+ways a refactor can **look like** progress while actually just
+rearranging the trust:
+
+1. **Axiom inflation.** A promise hypothesis becomes an axiom of
+   the same shape. The trust ledger grows; the verification claim
+   does not. **Refusal:** every new axiom must fit one of the 11+
+   trust classes already documented in `docs/fv/trusted-base.md`,
+   with a citation to a specific PIL line, Rust function, or
+   protocol-soundness theorem. New trust *kinds* are a separate
+   prior PR with explicit justification.
+2. **Hypothesis splitting / renaming.** One promise becomes N
+   smaller promises. The V3 binder classifier may pass; the trust
+   surface stays the same or grows. **Refusal:** the
+   `check-hypothesis-count.sh` gate (above, check #7) and
+   `check-caller-burden.sh` gate (check #8) detect this. A PR
+   whose net per-theorem count holds steady or grows fails.
+3. **Universalizing too eagerly.** Replacing `(h_x : P r)` with
+   `(h_univ : ∀ r, P r)` *moves* the trust to a stronger
+   caller-supplied universal — usually still undischarged.
+   **Refusal:** the caller-burden ledger records the type shape;
+   the diff makes the change visible. Reviewers must confirm the
+   universal IS dischargeable from the trust ledger by some downstream
+   consumer (a derivation lemma proved against the existing axioms).
+4. **Overstrong AIR validators (constructibility).** A
+   `Valid_<AIR>` record with declared constraints stronger than
+   what ZisK's circuit actually enforces makes the equivalence
+   theorems vacuous — they universally quantify over
+   `Valid_<AIR>` instances that nobody can produce. **Refusal:**
+   any change to `Valid_<AIR>` constraints requires an explicit
+   citation to the PIL constraint it mirrors and a constructibility
+   sketch (how a real ZisK trace witnesses the constraint).
+5. **Definitional aliasing.** `def AddSpec := <promise>` hides a
+   hypothesis behind a name. V2's `whnfR` unfolds `abbrev` and
+   `@[reducible] def`; non-reducible `def`s slip past. **Refusal:**
+   any new top-level `def` introduced inside a refactor PR must be
+   reviewed for whether it could hide a hypothesis. If unsure, mark
+   it `@[reducible]` so V2 unfolds it.
+
+The single operational metric is: **every plan PR must reduce or
+hold both `total` and `hypothesis` columns of
+`trust/baseline-hypothesis-count.txt`, and every PR's caller-burden
+diff must visibly REMOVE more lines than it adds**. A PR that is
+"net zero" on these metrics did not discharge anything; it just
+moved the trust around. Such a PR should be either rescoped or
+abandoned.
+
+**Exception class — structural unpacking.** There is one narrow
+exception to the "metric must shrink" rule:
+*structural-unpacking refactors* that replace a single compressed
+*promise hypothesis* with the explicit validator + universal-row-
+constraint + structural-pin parameters needed to derive it. The
+per-opcode metric apparently grows but the global-theorem trust
+footprint provably does not — because the added validator and
+universal-row-constraint parameters collapse into shared parameters
+of `Compliance.lean`, which already takes one set of those per
+provider AIR. The opcodes that legitimately qualify are listed in
+`trust/structural-unpacking-exceptions.txt`, with rationale and the
+shape of binders the refactor is allowed to add. Refactors of
+opcodes on that list may grow their per-theorem `total=` / `hypothesis=`
+counts; the reviewer regenerates the baseline alongside the
+refactor. **This exception is NOT a general-purpose backdoor** —
+opcodes not on the list still face the strict metric.
+
+When delegating to a sub-agent for any plan step, **include this
+anti-laundering principle verbatim in the prompt AND require the
+agent to read [`docs/fv/known-gaps.md`'s Glossary](docs/fv/known-gaps.md#glossary-canonical-terminology)
+before starting**. The agent must explicitly check, before
+declaring a *promise discharge* step complete, that:
+* the *anti-laundering metric* shrank — both the hypothesis-count
+  baseline and the *caller-burden ledger* show net REDUCTIONS, AND
+* any new *trust-ledger* axiom fits an existing class with
+  citation, AND
+* any new `Valid_<AIR>` constraint or top-level `def` was reviewed
+  for hidden-promise risk (see "*constructibility*" in the
+  glossary), AND
+* the PR title, body, and commit messages use the canonical terms
+  from the glossary (no ad-hoc synonyms).
+
+Skip any of these and the refactor failed at its stated goal even
+if the build is green and `lake build` typechecks. Trust gate
+checks #7 and #8 enforce the anti-laundering metric mechanically;
+the agent's self-check above enforces the spirit.
 
 ## Traps to avoid (don't re-discover these)
 

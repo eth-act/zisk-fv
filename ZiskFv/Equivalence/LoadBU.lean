@@ -13,7 +13,9 @@ import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
+import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Airs.BusEmission
+import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.Sail.lbu
 import ZiskFv.Sail.BusEffect
 
@@ -85,9 +87,6 @@ theorem equiv_LBU
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
     (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1)
-    (h_rd_zero_iff :
-      Transpiler.wrap_to_regidx e2.ptr = 0 ↔ lbu_input.rd = 0)
-    (h_rd_idx : lbu_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val)
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
     -- MemAlign* providers for the sub-doubleword load (Phase F+ refactor).
     (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
@@ -95,26 +94,10 @@ theorem equiv_LBU
     (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
     (h_low :
       ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma)
-    (h_main_emit_b :
-      main.b_0 r_main = memory_entry_lo e1
-      ∧ main.b_1 r_main = memory_entry_hi e1
-      ∧ e1.as = 2
-      ∧ e1.multiplicity = -1)
-    (h_main_emit_c :
-      main.c_0 r_main = memory_entry_lo e2
-      ∧ main.c_1 r_main = memory_entry_hi e2)
-    (h_ptr_match :
-      e1.ptr.toNat
-        = lbu_input.r1_val.toNat + (BitVec.signExtend 64 lbu_input.imm).toNat)
     -- Circuit constraint witnesses (CIRCUIT-CONSTRAINT class).
-    (h_copy0 : internal_op1_copies_b0 main r_main)
-    (h_copy1 : internal_op1_copies_b1 main r_main)
     (h_ext : main.is_external_op r_main = 0)
     (h_op : main.op r_main = (1 : FGL))
-    (h_width : main.ind_width r_main = (1 : FGL))
-    -- Byte ranges (RANGE class) — discharged by the byte-bus lookup.
-    (h_e1_range : memory_entry_bytes_in_range e1)
-    (h_e2_range : memory_entry_bytes_in_range e2) :
+    (h_width : main.ind_width r_main = (1 : FGL)) :
     execute_instruction (instruction.LOAD (
       lbu_input.imm,
       regidx.Regidx lbu_input.r1,
@@ -122,6 +105,12 @@ theorem equiv_LBU
       true,
       1
     )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- Discharge the Mem-shape promise hypotheses via the bridge entry point.
+  obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match,
+          h_rd_zero_iff, h_rd_idx, h_copy0, h_copy1⟩ :=
+    ZiskFv.Equivalence.Bridge.Mem.lbu_discharge_full
+      main r_main e1 e2 lbu_input.r1_val lbu_input.imm lbu_input.rd
+      h_ext h_op h_m1_mult h_m1_as h_m2_mult h_m2_as
   rw [equiv_LBU_sail state lbu_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
   symm
@@ -134,6 +123,12 @@ theorem equiv_LBU
   rw [h_ptr_match] at h_mem
   have hd0 : (e1.x0 : BitVec 8) = lbu_input.data0 := by
     rw [h_d0] at h_mem; exact (Option.some.inj h_mem).symm
+  -- Memory-bus entry byte ranges discharged via the byte-range bus
+  -- protocol axiom (`memory_bus_entry_byte_range_perm_sound`).
+  have h_e1_range : memory_entry_bytes_in_range e1 :=
+    memory_bus_entry_byte_range_perm_sound e1
+  have h_e2_range : memory_entry_bytes_in_range e2 :=
+    memory_bus_entry_byte_range_perm_sound e2
   have h_lbu_packed :=
     ZiskFv.Circuit.LoadDerivation.load_lbu_c_packed
       main r_main mab marb ma e1 e2 h_copy0 h_copy1 h_ext h_op h_width

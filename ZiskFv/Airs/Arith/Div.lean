@@ -400,6 +400,31 @@ def div_carry_chain_holds (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
   ∧ constraint_37_every_row v.circuit row
   ∧ constraint_38_every_row v.circuit row
 
+/-- **Extended Arith DIV-mode row constraints — includes constraint 46.**
+    Same shape as `div_carry_chain_holds` but additionally pins
+    `constraint_46_every_row` (the `bus_res1` normalization at
+    `arith.pil:263`). Required by `equiv_DIV_from_trust` to discharge
+    the hi-lane byte-pack equation via `div_bus_res1_eq_a_hi`
+    (`Airs/Arith/Bridge1.lean`). Compliance.lean's downstream caller
+    will collapse this into the universal `∀ r, arith_div_row_well_formed`
+    parameter. -/
+@[simp]
+def div_row_constraints_with_c46 (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
+  div_carry_chain_holds v row
+  ∧ constraint_46_every_row v.circuit row
+
+/-- Project out the carry-chain bundle from the extended bundle. -/
+lemma div_carry_chain_holds_of_extended
+    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+    (h : div_row_constraints_with_c46 v row) :
+    div_carry_chain_holds v row := h.1
+
+/-- Project out constraint 46 from the extended bundle. -/
+lemma constraint_46_of_extended
+    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+    (h : div_row_constraints_with_c46 v row) :
+    constraint_46_every_row v.circuit row := h.2
+
 /-- Packed `a` over Div columns: `a[0] + a[1]*2^16 + a[2]*2^32 + a[3]*2^48`.
     For DIVU/DIV this is the quotient; for REMU/REM the quotient lane is
     still computed but unused by the bus emission. -/
@@ -595,6 +620,31 @@ lemma arith_div_unsigned_packed_correct_bundled
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
   exact arith_div_unsigned_packed_correct v row h6 h7 h8 h31 h32 h33 h34 h35 h36 h37 h38
     h_na h_nb h_np h_nr h_sext h_m32 h_div
+
+/-- **DIV-signed carry-chain specialization (bundled form).** Same as
+    `arith_div_signed_packed_correct` but consuming the bundled
+    `div_carry_chain_holds` predicate. Used by the Step 4.alpha.A
+    bridge `div_signed_chain_witnesses` to extract per-chunk identities
+    over named columns for downstream consumption by the signed ℤ
+    aggregator. -/
+lemma arith_div_signed_packed_correct_bundled
+    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+    (h_chain : div_carry_chain_holds v row)
+    (h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
+    (h_div : v.div row = 1) :
+    (1 - 2 * v.na row - 2 * v.nb row + 4 * v.na row * v.nb row)
+        * a_chunks_packed_div v row * b_chunks_packed_div v row
+      + (1 - 2 * v.nr row) * d_chunks_packed_div v row
+      + (v.nb row * (1 - 2 * v.na row) * a_chunks_packed_div v row
+          + v.na row * (1 - 2 * v.nb row) * b_chunks_packed_div v row)
+          * (65536 * 65536 * 65536 * 65536)
+      + (v.nr row - v.np row) * (65536 * 65536 * 65536 * 65536)
+      + v.na row * v.nb row
+          * (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536)
+      = (1 - 2 * v.np row) * c_chunks_packed_div v row := by
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  exact arith_div_signed_packed_correct v row h6 h7 h8 h31 h32 h33 h34 h35 h36 h37 h38
+    h_sext h_m32 h_div
 
 end CarryChain
 

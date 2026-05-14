@@ -52,90 +52,6 @@ open ZiskFv.Trusted
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Archetype mode predicate.** A Main row is in unconditional-jump
-    mode for a given Zisk opcode literal when it is the internal
-    `flag` op (`is_external_op = 0 ∧ op = opcode_lit` with
-    `opcode_lit = 0 = OP_FLAG` for JAL), has full 64-bit width
-    (`m32 = 0`), `set_pc = 0` (next-pc from handshake, not `c[0]`),
-    and `store_pc = 1` (rd ← link address). -/
-@[simp]
-def main_row_in_jump_mode
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
-  m.is_external_op r_main = 0
-  ∧ m.op r_main = opcode_lit
-  ∧ m.m32 r_main = 0
-  ∧ m.set_pc r_main = 0
-  ∧ m.store_pc r_main = 1
-
-/-- **Archetype circuit-holds.** Parametric version of
-    `Circuit.Jal.jal_circuit_holds` over the opcode literal. For JAL
-    specifically, `opcode_lit = 0 = OP_FLAG`; the constraint 17
-    conclusion (`flag = 1`) depends on `opcode_lit = 0`, so instantiation
-    with any other literal breaks the downstream `flag_eq_one_of_internal_op_zero`
-    step. -/
-@[simp]
-def jump_archetype_circuit_holds
-    (m : Valid_Main C FGL FGL)
-    (r_main : ℕ) (next_pc : FGL) (opcode_lit : FGL) : Prop :=
-  jump_subset_holds m r_main next_pc
-  ∧ main_row_in_jump_mode m r_main opcode_lit
-
-/-- **Archetype PC-advance theorem.** Same shape as
-    `Circuit.Jal.jal_pc_advance` but parametric over the Zisk opcode
-    literal. Proves the `next_pc = pc + jmp_offset1` formula from the
-    jump-subset constraints + mode witnesses **when `opcode_lit = 0`**
-    (the internal-op-zero case that forces `flag = 1` via constraint 17).
-
-    For `opcode_lit ≠ 0`, constraint 18 (`(1-ext)*op*flag = 0`) would
-    force `flag = 0`, which is not the unconditional-jump case —
-    callers should use a different archetype. -/
-theorem jump_archetype_pc_advance
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (h : jump_archetype_circuit_holds m r_main next_pc (0 : FGL)) :
-    next_pc = m.pc r_main + m.jmp_offset1 r_main := by
-  obtain ⟨h_subset, h_mode⟩ := h
-  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, _h_c0_zero, _h_c1_zero,
-          h17, h_handshake⟩ := h_subset
-  obtain ⟨h_ext, h_op, _h_m32, h_set_pc, _h_store_pc⟩ := h_mode
-  have h_flag : m.flag r_main = 1 :=
-    flag_eq_one_of_internal_op_zero m r_main h_ext h_op h17
-  exact pc_handshake_jump m r_main next_pc h_set_pc h_flag h_handshake
-
-/-- **Archetype store-value theorem.** The `store_value[0]` expression
-    (`main.pil:311`) evaluates to `pc + jmp_offset2` when the row is in
-    jump-mode with `opcode_lit = 0` (JAL). Parametric version of
-    `Circuit.Jal.jal_store_value`. -/
-theorem jump_archetype_store_value
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (h : jump_archetype_circuit_holds m r_main next_pc (0 : FGL)) :
-    m.store_pc r_main * (m.pc r_main + m.jmp_offset2 r_main - m.c_0 r_main)
-        + m.c_0 r_main
-      = m.pc r_main + m.jmp_offset2 r_main := by
-  obtain ⟨h_subset, h_mode⟩ := h
-  obtain ⟨_h_flag_bool, _h_ext_bool, _h_disjoint, h8, _h15, _h17, _h_handshake⟩ := h_subset
-  obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, h_store_pc⟩ := h_mode
-  have h_c0 : m.c_0 r_main = 0 :=
-    c_0_eq_zero_of_internal_op_zero m r_main h_ext h_op h8
-  rw [h_c0, h_store_pc]
-  ring
-
-/-- **Tactic macro `jump_archetype_proof`.** Convenience wrapper
-    for proving the `next_pc = pc + jmp_offset1` formula from a
-    hypothesis `h_circuit : jump_archetype_circuit_holds m r next_pc 0`
-    in scope. Mirrors openvm-fv's `alu_non_imm_proof` pattern and the
-    A1 `branch_archetype_proof` sibling.
-
-    **Expected goal shape:**
-    `next_pc = m.pc r + m.jmp_offset1 r`.
-
-    **Required hypotheses (must be named literally in the caller):**
-    * `m : Valid_Main C FGL FGL`,
-    * `r_main : ℕ`, `next_pc : FGL`,
-    * `h_circuit : jump_archetype_circuit_holds m r_main next_pc (0 : FGL)`. -/
-macro "jump_archetype_proof" : tactic => `(tactic| (
-  exact jump_archetype_pc_advance m r_main next_pc h_circuit
-))
-
 /-!
 ## JALR sub-archetype
 
@@ -263,21 +179,5 @@ theorem jalr_archetype_store_value
   obtain ⟨_, _, _, _, h_store_pc⟩ := h_mode
   rw [h_store_pc]
   ring
-
-/-- **Tactic macro `jalr_archetype_proof`.** Convenience wrapper for
-    proving the `next_pc = b[0] + jmp_offset1` formula from a hypothesis
-    `h_circuit : jalr_archetype_circuit_holds m r next_pc 1` in scope.
-    Mirrors `jump_archetype_proof`.
-
-    **Expected goal shape:**
-    `next_pc = m.b_0 r + m.jmp_offset1 r`.
-
-    **Required hypotheses (must be named literally in the caller):**
-    * `m : Valid_Main C FGL FGL`,
-    * `r_main : ℕ`, `next_pc : FGL`,
-    * `h_circuit : jalr_archetype_circuit_holds m r_main next_pc (1 : FGL)`. -/
-macro "jalr_archetype_proof" : tactic => `(tactic| (
-  exact jalr_archetype_pc_advance m r_main next_pc h_circuit
-))
 
 end ZiskFv.Tactics.JumpArchetype

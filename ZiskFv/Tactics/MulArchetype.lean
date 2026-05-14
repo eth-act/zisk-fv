@@ -115,21 +115,4 @@ theorem mul_archetype_bus_match
   unfold main_c_packed arith_c_packed
   rw [h_match_clo, h_match_chi]
 
-/-- **Tactic macro `mul_archetype_proof`.** Convenience wrapper for
-    proving the `main_c_packed = arith_c_packed` identity from a
-    hypothesis `h_circuit : mul_archetype_circuit_holds m v r_main
-    r_arith opcode_lit` in scope. Mirrors
-    `Tactics.BranchArchetype.branch_archetype_proof`.
-
-    **Expected goal shape:**
-    `main_c_packed m r_main = arith_c_packed v r_arith`.
-
-    **Required hypotheses (must be named literally in the caller):**
-    * `m : Valid_Main C FGL FGL`, `v : Valid_ArithMul C FGL FGL`,
-    * `r_main r_arith : ℕ`, `opcode_lit : FGL`,
-    * `h_circuit : mul_archetype_circuit_holds m v r_main r_arith opcode_lit`. -/
-macro "mul_archetype_proof" : tactic => `(tactic| (
-  exact mul_archetype_bus_match m v r_main r_arith opcode_lit h_circuit
-))
-
 end ZiskFv.Tactics.MulArchetype

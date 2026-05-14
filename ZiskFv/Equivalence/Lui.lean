@@ -11,6 +11,8 @@ import ZiskFv.Sail.lui
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Equivalence.Bridge.ControlFlow
 import ZiskFv.Equivalence.RdValDerivation.JumpUType
 
 /-!
@@ -106,17 +108,18 @@ theorem equiv_LUI
       (PureSpec.execute_LUI_pure lui_input).nextPC = nextPC_val)
     (h_rd_idx : lui_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
     -- Discharge parameters
-    (h_circuit : ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e_rd)
-    (h_imm_lo_nat : (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat)
-    (h_imm_hi_nat : (m.b_1 r_main).val
-      = (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat / 4294967296)
-    (h_e2_0 : e_rd.x0.val < 256) (h_e2_1 : e_rd.x1.val < 256)
-    (h_e2_2 : e_rd.x2.val < 256) (h_e2_3 : e_rd.x3.val < 256)
-    (h_e2_4 : e_rd.x4.val < 256) (h_e2_5 : e_rd.x5.val < 256)
-    (h_e2_6 : e_rd.x6.val < 256) (h_e2_7 : e_rd.x7.val < 256) :
+    (h_circuit : ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
       = (bus_effect exec_row [e_rd] state).2 := by
+  -- Discharge `h_imm_lo_nat` / `h_imm_hi_nat` via `transpile_LUI` (class #1).
+  obtain ⟨h_imm_lo_nat, h_imm_hi_nat⟩ :=
+    ZiskFv.Equivalence.Bridge.ControlFlow.lui_discharge_full
+      m r_main next_pc imm h_circuit
+  -- Discharge `h_lane_rd` via `main_store_pc_emission_bundle` (trust
+  -- class #4).
+  have h_lane_rd :=
+    ZiskFv.Equivalence.Bridge.ControlFlow.lui_discharge_lanes
+      m r_main next_pc e_rd h_circuit h_rd_mult h_rd_as
   have h_rd_val :
       U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
                   e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
@@ -124,7 +127,14 @@ theorem equiv_LUI
     have h := ZiskFv.Equivalence.RdValDerivation.JumpUType.h_rd_val_jut_lui
       imm m r_main next_pc e_rd
       h_circuit h_lane_rd h_imm_lo_nat h_imm_hi_nat
-      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.2.2
     rw [← h_input_imm] at h
     exact h
   rw [equiv_LUI_sail state lui_input imm rd

@@ -15,8 +15,12 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.Airs.Binary.BinaryExtensionRanges
+import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
+import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.RdValDerivation.BinaryShift
 import ZiskFv.Equivalence.RdValDerivation.SailBridge
+import ZiskFv.Equivalence.Bridge.BinaryExtension
 
 /-!
 End-to-end theorem for RV64 SLLI (immediate sibling of SLL).
@@ -103,67 +107,71 @@ theorem equiv_SLLI
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : slli_input.rd = Transpiler.wrap_to_regidx e2.ptr)
     -- Discharge parameters
-    (h_op : (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SLL)
-    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
-    (h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary)
-    (hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
-    (hc_lo_1 : (v.free_in_c_1 r_binary).val < 4294967296)
-    (hc_lo_2 : (v.free_in_c_2 r_binary).val < 4294967296)
-    (hc_lo_3 : (v.free_in_c_3 r_binary).val < 4294967296)
-    (hc_lo_4 : (v.free_in_c_4 r_binary).val < 4294967296)
-    (hc_lo_5 : (v.free_in_c_5 r_binary).val < 4294967296)
-    (hc_lo_6 : (v.free_in_c_6 r_binary).val < 4294967296)
-    (hc_lo_7 : (v.free_in_c_7 r_binary).val < 4294967296)
-    (hc_hi_0 : (v.free_in_c_8 r_binary).val < 4294967296)
-    (hc_hi_1 : (v.free_in_c_9 r_binary).val < 4294967296)
-    (hc_hi_2 : (v.free_in_c_10 r_binary).val < 4294967296)
-    (hc_hi_3 : (v.free_in_c_11 r_binary).val < 4294967296)
-    (hc_hi_4 : (v.free_in_c_12 r_binary).val < 4294967296)
-    (hc_hi_5 : (v.free_in_c_13 r_binary).val < 4294967296)
-    (hc_hi_6 : (v.free_in_c_14 r_binary).val < 4294967296)
-    (hc_hi_7 : (v.free_in_c_15 r_binary).val < 4294967296)
-    (hc_lo_sum_lt : (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
-        + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
-        + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
-        + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val < 4294967296)
-    (hc_hi_sum_lt : (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
-        + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
-        + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
-        + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
-    (h_match_clo : m.c_0 r_main
-        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
-          + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
-          + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
-          + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary)
-    (h_match_chi : m.c_1 r_main
-        = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
-          + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
-          + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
-          + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
-    (h_input_r1_circuit : slli_input.r1_val
-      = BitVec.ofNat 64
-          ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
-            + (v.free_in_a_2 r_binary).val * 65536
-            + (v.free_in_a_3 r_binary).val * 16777216
-            + (v.free_in_a_4 r_binary).val * 4294967296
-            + (v.free_in_a_5 r_binary).val * 1099511627776
-            + (v.free_in_a_6 r_binary).val * 281474976710656
-            + (v.free_in_a_7 r_binary).val * 72057594037927936))
-    -- Transpile pin: shamt's BitVec value matches the BinaryExtension shamt cell.
-    (h_shift_pin : slli_input.shamt.toNat = (v.free_in_b r_binary).val % 64) :
+    -- Discharge parameters
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
     execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SLLI)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- Project matches_entry into (op, c_lo, c_hi) sub-facts.
+  obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
+    ZiskFv.Equivalence.Bridge.BinaryExtension.project_match_op_clo_chi
+      m v r_main r_binary h_match
+  have h_op : (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SLL := by
+    rw [← h_op_fgl, h_main_op]; decide
+  -- Discharge c-lo/c-hi sum bounds + h_bytes from row-level axioms.
+  have hc_lo_sum_lt :=
+    ZiskFv.Equivalence.Bridge.BinaryExtension.hc_lo_sum_lt_of_match
+      m v r_main r_binary h_match_clo
+  have hc_hi_sum_lt :=
+    ZiskFv.Equivalence.Bridge.BinaryExtension.hc_hi_sum_lt_of_match
+      m v r_main r_binary h_match_chi
+  have h_bytes :=
+    ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v r_binary
+  -- Derive op_is_shift = 1 from the BinaryExtension AIR op_is_shift pin.
+  have h_op_is_shift_fact :=
+    ZiskFv.Airs.BinaryExtension.binary_extension_op_is_shift_pin v r_binary
+  have h_op_v_eq : v.op r_binary = ZiskFv.Trusted.OP_SLL := by
+    rw [← h_op_fgl, h_main_op]
+  have h_op_is_shift : v.op_is_shift r_binary = 1 :=
+    h_op_is_shift_fact.1 (Or.inl h_op_v_eq)
+  -- Discharge h_input_r1_circuit + h_shift_pin via SailStateBridge + transpile_SLLI
+  -- + matches_entry projection (m32 = 0; op_is_shift = 1).
+  obtain ⟨_, h_m32, _, _, _, _, h_a_lo_t, h_a_hi_t, h_b_lo_t, _h_b_hi_t⟩ :=
+    transpile_SLLI m r_main (regidx_to_fin r1) (regidx_to_fin rd) shamt
+      (ZiskFv.Equivalence.Bridge.SailStateBridge.sail_to_rv64 state)
+      h_main_active h_main_op
+  have h_input_r1_circuit :=
+    ZiskFv.Equivalence.Bridge.BinaryExtension.packed_a_eq_of_shift_match_m32_0
+      m v r_main r_binary (regidx_to_fin r1) slli_input.r1_val
+      h_m32 h_a_lo_t h_a_hi_t h_input_r1_sail h_op_is_shift h_match
+  have h_shift_pin_shamt :=
+    ZiskFv.Equivalence.Bridge.BinaryExtension.shift_pin_immediate_eq_of_shift_match
+      m v r_main r_binary shamt h_b_lo_t h_op_is_shift h_match
+  have h_shift_pin : slli_input.shamt.toNat = (v.free_in_b r_binary).val % 64 := by
+    rw [h_input_shamt]; exact h_shift_pin_shamt
+  -- Derive 8 e2 byte ranges from `memory_bus_entry_byte_range_perm_sound`.
+  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
+    ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
+  -- Derive the 8 a-byte ranges + 16 c-byte 32-bit ranges from
+  -- `binary_extension_columns_in_range` (BinaryExtension AIR's
+  -- range-check soundness axiom on the trust ledger). This discharges
+  -- the 17 per-byte *promise hypotheses* without any caller obligation.
+  obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7, _hb,
+          hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
+          hc8, hc9, hc10, hc11, hc12, hc13, hc14, hc15, _, _⟩ :=
+    ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range v r_binary
+  have h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary :=
+    ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7⟩
   set shift : ℕ := slli_input.shamt.toNat with h_shift_def
   have h_discharge :=
     ZiskFv.Equivalence.RdValDerivation.BinaryShift.h_rd_val_shift_slli
       m v r_main r_binary e2 slli_input.r1_val shift h_op h_bytes h_a_range
-      hc_lo_0 hc_lo_1 hc_lo_2 hc_lo_3 hc_lo_4 hc_lo_5 hc_lo_6 hc_lo_7
-      hc_hi_0 hc_hi_1 hc_hi_2 hc_hi_3 hc_hi_4 hc_hi_5 hc_hi_6 hc_hi_7
+      hc0 hc2 hc4 hc6 hc8 hc10 hc12 hc14
+      hc1 hc3 hc5 hc7 hc9 hc11 hc13 hc15
       hc_lo_sum_lt hc_hi_sum_lt
       h_match_clo h_match_chi h_lane_rd
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7

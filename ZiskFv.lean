@@ -1,6 +1,5 @@
 import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Fundamentals.TranspileConsumers
 import ZiskFv.Fundamentals.Interaction
 import ZiskFv.Fundamentals.GoldilocksBridge
 import ZiskFv.Sail.BusEffect
@@ -134,4 +133,5 @@ import ZiskFv.Equivalence.RdValDerivation.Arith
 import ZiskFv.Equivalence.RdValDerivation.JumpUType
 import ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned
 import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
+import ZiskFv.Equivalence.Compliance.Global
 

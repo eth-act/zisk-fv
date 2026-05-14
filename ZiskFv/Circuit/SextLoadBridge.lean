@@ -247,25 +247,25 @@ private lemma c_lift_to_byte_sum
     (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (hc_lo_sum_lt :
-      (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
-      + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
-      + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
-      + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val < 4294967296)
+      (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+      + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+      + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+      + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
     (hc_hi_sum_lt :
-      (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
-      + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
-      + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
-      + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+      (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+      + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+      + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+      + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
     (h_match_clo : m.c_0 r_main
-        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
-          + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
-          + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
-          + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary)
+        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
     (h_match_chi : m.c_1 r_main
-        = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
-          + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
-          + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
-          + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary)
+        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_lane_rd : register_write_lanes_match m r_main e2)
     (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
@@ -274,27 +274,27 @@ private lemma c_lift_to_byte_sum
     e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
     + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
     + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-    = ((v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
-       + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
-       + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
-       + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val)
-      + ((v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
-        + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
-        + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
-        + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val) * 4294967296 := by
+    = ((v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+       + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+       + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+       + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val)
+      + ((v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+        + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+        + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+        + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val) * 4294967296 := by
   simp only [register_write_lanes_match] at h_lane_rd
   obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
   have h_lo_eq_fgl : memory_entry_lo e2
-      = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
-        + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
-        + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
-        + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary := by
+      = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+        + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+        + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+        + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary := by
     rw [← h_lo_match, h_match_clo]
   have h_hi_eq_fgl : memory_entry_hi e2
-      = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
-        + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
-        + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
-        + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary := by
+      = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+        + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+        + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+        + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary := by
     rw [← h_hi_match, h_match_chi]
   have h_lo_nat : (memory_entry_lo e2).val
       = e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 := by
@@ -313,44 +313,44 @@ private lemma c_lift_to_byte_sum
     rw [h_cast, Fin.val_natCast]
     apply Nat.mod_eq_of_lt; omega
   have h_lo_bin_nat :
-      (v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
-       + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
-       + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
-       + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary : FGL).val
-      = (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
-        + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
-        + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
-        + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val := by
+      (v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+       + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+       + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+       + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary : FGL).val
+      = (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+        + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+        + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+        + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val := by
     have h_cast :
-        v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
-        + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
-        + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
-        + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary
-        = ((((v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
-             + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
-             + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
-             + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val : ℕ) : FGL)) := by
+        v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+        + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+        + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+        + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary
+        = ((((v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+             + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+             + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+             + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val : ℕ) : FGL)) := by
       push_cast; ring
     rw [h_cast, Fin.val_natCast]
     apply Nat.mod_eq_of_lt; show _ < 18446744069414584321; omega
   have h_hi_bin_nat :
-      (v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
-       + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
-       + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
-       + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary : FGL).val
-      = (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
-        + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
-        + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
-        + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val := by
+      (v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+       + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+       + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+       + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary : FGL).val
+      = (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+        + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+        + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+        + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val := by
     have h_cast :
-        v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
-        + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
-        + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
-        + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary
-        = ((((v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
-             + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
-             + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
-             + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val : ℕ) : FGL)) := by
+        v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+        + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+        + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+        + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary
+        = ((((v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+             + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+             + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+             + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val : ℕ) : FGL)) := by
       push_cast; ring
     rw [h_cast, Fin.val_natCast]
     apply Nat.mod_eq_of_lt; show _ < 18446744069414584321; omega
@@ -370,25 +370,25 @@ theorem load_byte_c_packed
     (h_op : (v.op r_binary).val = OP_SEXT_B)
     (h_bytes : ByteLookupHypotheses v r_binary)
     (hc_lo_sum_lt :
-      (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
-      + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
-      + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
-      + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val < 4294967296)
+      (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+      + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+      + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+      + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
     (hc_hi_sum_lt :
-      (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
-      + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
-      + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
-      + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+      (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+      + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+      + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+      + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
     (h_match_clo : m.c_0 r_main
-        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
-          + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
-          + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
-          + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary)
+        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
     (h_match_chi : m.c_1 r_main
-        = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
-          + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
-          + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
-          + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary)
+        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_lane_rd : register_write_lanes_match m r_main e2)
     (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
@@ -433,25 +433,25 @@ theorem load_half_c_packed
     (h_op : (v.op r_binary).val = OP_SEXT_H)
     (h_bytes : ByteLookupHypotheses v r_binary)
     (hc_lo_sum_lt :
-      (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
-      + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
-      + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
-      + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val < 4294967296)
+      (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+      + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+      + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+      + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
     (hc_hi_sum_lt :
-      (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
-      + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
-      + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
-      + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+      (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+      + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+      + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+      + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
     (h_match_clo : m.c_0 r_main
-        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
-          + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
-          + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
-          + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary)
+        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
     (h_match_chi : m.c_1 r_main
-        = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
-          + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
-          + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
-          + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary)
+        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_lane_rd : register_write_lanes_match m r_main e2)
     (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
@@ -490,25 +490,25 @@ theorem load_word_c_packed
     (h_op : (v.op r_binary).val = OP_SEXT_W)
     (h_bytes : ByteLookupHypotheses v r_binary)
     (hc_lo_sum_lt :
-      (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
-      + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
-      + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
-      + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val < 4294967296)
+      (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+      + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+      + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+      + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
     (hc_hi_sum_lt :
-      (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
-      + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
-      + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
-      + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+      (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+      + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+      + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+      + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
     (h_match_clo : m.c_0 r_main
-        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
-          + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
-          + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
-          + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary)
+        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
     (h_match_chi : m.c_1 r_main
-        = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
-          + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
-          + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
-          + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary)
+        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_lane_rd : register_write_lanes_match m r_main e2)
     (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
     (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)

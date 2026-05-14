@@ -288,6 +288,37 @@ def opBus_row_Arith {C : Type → Type → Type} {F ExtF : Type}
     extended_arg := 0
     extra_args_0 := 0 }
 
+/-- Arith's operation-bus emission for a MUL-family row in **secondary**
+    mode (MULH / MULHU / MULHSU). On these rows `main_mul = 0`,
+    `main_div = 0`, so `secondary = 1 - main_mul - main_div = 1` and the
+    bus `c` lane comes from `d[]` — the high 64 bits of the product.
+
+    Same row-level layout as `opBus_row_Arith` except the result lane
+    `c_lo` is packed from `d[0..1]` rather than `c[0..1]`. The hi-half
+    `c_hi := v.bus_res1` is identical; under secondary-mode witnesses
+    (`main_mul = 0, main_div = 0, sext = 0, m32 = 0`) constraint 46
+    pins it to `d[2] + d[3] * 65536`.
+
+    Mirrors the structure of `opBus_row_ArithDivSecondary`
+    (`Airs/Arith/Div.lean:344`). -/
+@[simp]
+def opBus_row_ArithMulSecondary {C : Type → Type → Type} {F ExtF : Type}
+    [Field F] [Field ExtF] [Circuit F ExtF C]
+    (v : Valid_ArithMul C F ExtF) (row : ℕ) : OperationBusEntry F :=
+  { multiplicity := v.multiplicity row
+    op := v.op row
+    a_lo := v.a_0 row + v.a_1 row * 65536
+    a_hi := v.a_2 row + v.a_3 row * 65536
+    b_lo := v.b_0 row + v.b_1 row * 65536
+    b_hi := v.b_2 row + v.b_3 row * 65536
+    -- High-half result lane: `d[0] + d[1] * 2^16` on secondary = 1.
+    c_lo := v.d_0 row + v.d_1 row * 65536
+    c_hi := v.bus_res1 row
+    flag := 0
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
 end BusEmission
 
 /-!
@@ -334,6 +365,31 @@ def mul_carry_chain_holds (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
   ∧ constraint_36_every_row v.circuit row
   ∧ constraint_37_every_row v.circuit row
   ∧ constraint_38_every_row v.circuit row
+
+/-- **Extended Arith MUL-mode row constraints — includes constraint 46.**
+    Same shape as `mul_carry_chain_holds` but additionally pins
+    `constraint_46_every_row` (the `bus_res1` normalization at
+    `arith.pil:263`). Required by `equiv_MUL_from_trust` to discharge
+    the hi-lane byte-pack equation via `mul_bus_res1_eq_c_hi`
+    (`Airs/Arith/Bridge1.lean`). Mirrors `div_row_constraints_with_c46`
+    on the Div view. Compliance.lean's downstream caller will collapse
+    this into a universal `∀ r, arith_mul_row_well_formed` parameter. -/
+@[simp]
+def mul_row_constraints_with_c46 (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
+  mul_carry_chain_holds v row
+  ∧ constraint_46_every_row v.circuit row
+
+/-- Project out the carry-chain bundle from the extended bundle. -/
+lemma mul_carry_chain_holds_of_extended
+    (v : Valid_ArithMul C F ExtF) (row : ℕ)
+    (h : mul_row_constraints_with_c46 v row) :
+    mul_carry_chain_holds v row := h.1
+
+/-- Project out constraint 46 from the extended bundle. -/
+lemma mul_constraint_46_of_extended
+    (v : Valid_ArithMul C F ExtF) (row : ℕ)
+    (h : mul_row_constraints_with_c46 v row) :
+    constraint_46_every_row v.circuit row := h.2
 
 /-- Packed low-64 value `c_packed := c[0] + c[1] * 2^16 + c[2] * 2^32 + c[3] * 2^48`
     expressed over the named `Valid_ArithMul` columns. For MUL this is the
@@ -555,6 +611,32 @@ lemma arith_mul_unsigned_packed_correct_bundled
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
   exact arith_mul_unsigned_packed_correct v row h6 h7 h8 h31 h32 h33 h34 h35 h36 h37 h38
     h_na h_nb h_np h_nr h_sext h_m32 h_div
+
+/-- **MUL-signed carry-chain specialization (bundled form).** Same as
+    `arith_mul_signed_packed_correct` but consuming the bundled
+    `mul_carry_chain_holds` predicate. Used by the Step 4.alpha.A
+    bridge `mul_signed_chain_witnesses` to extract per-chunk identities
+    over named columns for downstream consumption by the signed ℤ
+    aggregator. -/
+lemma arith_mul_signed_packed_correct_bundled
+    (v : Valid_ArithMul C F ExtF) (row : ℕ)
+    (h_chain : mul_carry_chain_holds v row)
+    (h_nr : v.nr row = 0)
+    (h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
+    (h_div : v.div row = 0) :
+    (1 - 2 * v.na row - 2 * v.nb row + 4 * v.na row * v.nb row)
+        * a_chunks_packed v row * b_chunks_packed v row
+      + (v.nb row * (1 - 2 * v.na row) * a_chunks_packed v row
+          + v.na row * (1 - 2 * v.nb row) * b_chunks_packed v row)
+          * (65536 * 65536 * 65536 * 65536)
+      + (v.na row * v.nb row - v.np row)
+          * (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536)
+      = (1 - 2 * v.np row)
+          * (c_chunks_packed v row
+            + d_chunks_packed v row * (65536 * 65536 * 65536 * 65536)) := by
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  exact arith_mul_signed_packed_correct v row h6 h7 h8 h31 h32 h33 h34 h35 h36 h37 h38
+    h_nr h_sext h_m32 h_div
 
 end CarryChain
 

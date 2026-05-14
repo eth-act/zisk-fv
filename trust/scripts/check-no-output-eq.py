@@ -59,12 +59,42 @@ def split_params_and_conclusion(sig: str) -> tuple[str, str]:
     The split point is the FIRST `:` at parenthesis-depth 0 that is
     NOT part of `:=` and not a binder colon inside (...) or [...] or
     {...}. We walk character-by-character tracking depth.
+
+    Lean line comments (`-- ... \\n`) and block comments
+    (`/- ... -/`, nesting permitted) are skipped — a `:` inside a
+    comment does NOT terminate the parameter list. Without this,
+    binder-list comments like `-- Mode pin: ...` truncate the
+    signature prematurely.
     """
     depth = 0
     n = len(sig)
     i = 0
+    block_depth = 0
     while i < n:
         c = sig[i]
+        # Block comment (Lean 4: /- ... -/, nested).
+        if block_depth > 0:
+            if c == "-" and i + 1 < n and sig[i + 1] == "/":
+                block_depth -= 1
+                i += 2
+                continue
+            if c == "/" and i + 1 < n and sig[i + 1] == "-":
+                block_depth += 1
+                i += 2
+                continue
+            i += 1
+            continue
+        if c == "/" and i + 1 < n and sig[i + 1] == "-":
+            block_depth = 1
+            i += 2
+            continue
+        # Line comment.
+        if c == "-" and i + 1 < n and sig[i + 1] == "-":
+            nl = sig.find("\n", i)
+            if nl < 0:
+                return sig, ""
+            i = nl + 1
+            continue
         if c in "([{":
             depth += 1
         elif c in ")]}":

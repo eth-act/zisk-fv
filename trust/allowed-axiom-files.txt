@@ -18,10 +18,30 @@ ZiskFv/Fundamentals/Transpiler.lean
 ZiskFv/Airs/MemoryBus/LaneMatch.lean
 ZiskFv/Airs/MemoryBus/MemBridge.lean
 ZiskFv/Airs/MemoryBus/MemAlignBridge.lean
+ZiskFv/Airs/MemoryBus/EntryRanges.lean
 
 # Lookup-table content for bus_id=125 / 124.
 ZiskFv/Airs/BinaryTable.lean
 ZiskFv/Airs/BinaryExtensionTable.lean
+
+# Bus-protocol soundness for bus_id=5000 (operation bus).
+ZiskFv/Airs/OperationBus/Bridge.lean
+
+# Range-checker bus lookup soundness on Main's bits(N)-annotated columns.
+ZiskFv/Airs/Main/Ranges.lean
+
+# Range-checker bus lookup soundness on BinaryAdd's bits(N)-annotated columns.
+ZiskFv/Airs/Binary/BinaryAddRanges.lean
+
+# Range-checker bus lookup soundness on Binary's bits(N)-annotated columns.
+ZiskFv/Airs/Binary/BinaryRanges.lean
+
+# Range-checker bus lookup soundness on BinaryExtension's bits(N)-annotated columns.
+ZiskFv/Airs/Binary/BinaryExtensionRanges.lean
+
+# Range-checker bus lookup soundness on Arith's bits(N)-annotated columns
+# (covers ArithMul and ArithDiv views).
+ZiskFv/Airs/Arith/Ranges.lean
 
 # Sail-state ↔ Mem AIR fidelity (MS-L / MS-S).
 ZiskFv/Circuit/MemModel.lean

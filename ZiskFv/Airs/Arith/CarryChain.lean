@@ -294,4 +294,146 @@ lemma arith_div_signed_carry_identity
     + (65536 * 65536 * 65536 * 65536 * 65536 * 65536) * hC37
     + (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536) * hC38
 
+/-! ## W-mode (m32 = 1) carry-chain identities
+
+Under `m32 = 1` (the W-variant 32-bit-truncated mode), the upper-half
+constraints (35-38) collapse: every term gated by `(1 - m32)` zeroes
+out, leaving only
+
+* `na*nb*m32 + cy[3] - cy[4]*65536 = 0`  (C35')
+* `cy[4] - cy[5]*65536 = 0`              (C36')
+* `cy[5] - cy[6]*65536 = 0`              (C37')
+* `65536*na*nb*(1-m32) - 65536*np*(1-m32)... + cy[6] = 0`  → `cy[6] = 0` (C38')
+
+The chain telescopes: `cy[6] = 0`, `cy[5] = 0`, `cy[4] = 0`, and
+`cy[3] = -na*nb`. The result is that the low-half product
+constraint (C31-C34) carries through as the 4-chunk identity
+
+    a_packed * b_packed ≡ c_packed (mod 2^64)
+
+(more precisely: `fab * a_packed * b_packed - γ * c_packed = na*nb * 2^64`).
+
+This is the 4-chunk **W-mode reduced carry chain** identity.
+
+The signed-W variant (DIVW/DIVUW/REMW/REMUW, MULW for the result-
+truncation) reuses the same low-half chain; sign witnesses (`na`,
+`nb`, `np`, `nr`) are carried for completeness even though most are
+zero in unsigned W. -/
+
+/-- **W-mode reduced carry-chain identity for MUL family (m32 = 1).**
+
+    Specializes the 8-chunk chain to `m32 = 1`. After substituting m32=1
+    into constraints 35-38 (each `(1 - m32)` factor zeroes), the upper
+    half collapses to a pure carry-telescope with `cy[3] = -na*nb` and
+    `cy[6] = cy[5] = cy[4] = 0`.
+
+    In W-mode the arith table additionally pins the **operand input
+    chunks** a_2 = a_3 = b_2 = b_3 = 0 (operand truncated to low 32
+    bits before the multiplication), so the only nontrivial products
+    are `a_0*b_0`, `a_1*b_0`, `a_0*b_1`, `a_1*b_1` — the standard
+    32×32 → 64 schoolbook layout.
+
+    Constraint form (after specialization to m32=1, div=0, nr=0,
+    a_2 = a_3 = b_2 = b_3 = 0):
+
+    * C31': `fab*a_0*b_0 - γ*c_0 - cy[0]*65536 = 0`
+    * C32': `fab*(a_1*b_0+a_0*b_1) - γ*c_1 + cy[0] - cy[1]*65536 = 0`
+    * C33': `fab*a_1*b_1 - γ*c_2 + cy[1] - cy[2]*65536 = 0`
+    * C34': `- γ*c_3 + cy[2] - cy[3]*65536 = 0`
+    * C35'': `na*nb + cy[3] - cy[4]*65536 = 0`
+    * C36''-C37'': carry telescope.
+    * C38'': `cy[6] = 0`
+
+    Conclusion (32-bit product, low 64 bits of result):
+
+        fab * (a_0 + a_1*B) * (b_0 + b_1*B)
+          + na*nb * B^4
+          = γ * (c_0 + c_1*B + c_2*B^2 + c_3*B^3)
+
+    where γ = 1 - 2*np. For unsigned MULW (na=nb=np=0, fab=1) this is
+    `(a_0 + a_1*B) * (b_0 + b_1*B) = c_packed`. -/
+lemma arith_mul_w_carry_identity
+    (a0 a1 b0 b1 c0 c1 c2 c3
+     carry0 carry1 carry2 carry3 carry4 carry5 carry6
+     fab na nb np : F)
+    (hC31 : fab * a0 * b0 - (1 - 2 * np) * c0 - carry0 * 65536 = 0)
+    (hC32 : fab * a1 * b0 + fab * a0 * b1 - (1 - 2 * np) * c1
+              + carry0 - carry1 * 65536 = 0)
+    (hC33 : fab * a1 * b1 - (1 - 2 * np) * c2
+              + carry1 - carry2 * 65536 = 0)
+    (hC34 : -(1 - 2 * np) * c3 + carry2 - carry3 * 65536 = 0)
+    (hC35 : na * nb + carry3 - carry4 * 65536 = 0)
+    (hC36 : carry4 - carry5 * 65536 = 0)
+    (hC37 : carry5 - carry6 * 65536 = 0)
+    (hC38 : carry6 = 0) :
+    fab * (a0 + a1 * 65536) * (b0 + b1 * 65536)
+      + na * nb * (65536 * 65536 * 65536 * 65536)
+      = (1 - 2 * np)
+          * (c0 + c1 * 65536 + c2 * (65536 * 65536) + c3 * (65536 * 65536 * 65536)) := by
+  linear_combination
+    hC31
+    + 65536 * hC32
+    + (65536 * 65536) * hC33
+    + (65536 * 65536 * 65536) * hC34
+    + (65536 * 65536 * 65536 * 65536) * hC35
+    + (65536 * 65536 * 65536 * 65536 * 65536) * hC36
+    + (65536 * 65536 * 65536 * 65536 * 65536 * 65536) * hC37
+    + (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536) * hC38
+
+/-- **W-mode reduced carry-chain identity for DIV family (m32 = 1).**
+
+    Specializes the 8-chunk DIV chain to `m32 = 1`, `div = 1`. The
+    upper-half constraints 35-38 collapse via the `(1 - m32) = 0` gate;
+    the low-half C31-C34 carries the 4-chunk Euclidean identity for
+    32-bit signed/unsigned division.
+
+    The arith table for the W-variant pins the operand input chunks
+    `a_2 = a_3 = b_2 = b_3 = 0` (quotient and divisor are both 32-bit
+    operands). The d (remainder) chunks d_2, d_3 are likewise zero.
+
+    Constraint form (after specialization to m32=1, div=1,
+    a_2 = a_3 = b_2 = b_3 = d_2 = d_3 = 0):
+
+    * C31': `fab*a_0*b_0 + δ*d_0 - γ*c_0 - cy*65536 = 0`
+    * C32': `fab*(a_1*b_0+a_0*b_1) + δ*d_1 - γ*c_1 + cy - cy*65536 = 0`
+    * C33': `fab*a_1*b_1 - γ*c_2 + cy - cy*65536 = 0`
+    * C34': `- γ*c_3 + cy - cy*65536 = 0`
+    * C35''-C38'': pure carry telescope summing `na*nb*B^4`.
+
+    Conclusion (32-bit Euclidean: `a * b + d = c` for low 32 bits):
+
+        fab * (a_0 + a_1*B) * (b_0 + b_1*B)
+          + δ * (d_0 + d_1*B)
+          + na*nb * B^4
+          = γ * c_packed -/
+lemma arith_div_w_carry_identity
+    (a0 a1 b0 b1 c0 c1 c2 c3 d0 d1
+     carry0 carry1 carry2 carry3 carry4 carry5 carry6
+     fab na nb np nr : F)
+    (hC31 : fab * a0 * b0 + (1 - 2 * nr) * d0 - (1 - 2 * np) * c0
+              - carry0 * 65536 = 0)
+    (hC32 : fab * a1 * b0 + fab * a0 * b1 + (1 - 2 * nr) * d1 - (1 - 2 * np) * c1
+              + carry0 - carry1 * 65536 = 0)
+    (hC33 : fab * a1 * b1 - (1 - 2 * np) * c2
+              + carry1 - carry2 * 65536 = 0)
+    (hC34 : -(1 - 2 * np) * c3 + carry2 - carry3 * 65536 = 0)
+    (hC35 : na * nb + carry3 - carry4 * 65536 = 0)
+    (hC36 : carry4 - carry5 * 65536 = 0)
+    (hC37 : carry5 - carry6 * 65536 = 0)
+    (hC38 : carry6 = 0) :
+    fab * (a0 + a1 * 65536) * (b0 + b1 * 65536)
+      + (1 - 2 * nr) * (d0 + d1 * 65536)
+      + na * nb * (65536 * 65536 * 65536 * 65536)
+      = (1 - 2 * np)
+          * (c0 + c1 * 65536 + c2 * (65536 * 65536) + c3 * (65536 * 65536 * 65536)) := by
+  linear_combination
+    hC31
+    + 65536 * hC32
+    + (65536 * 65536) * hC33
+    + (65536 * 65536 * 65536) * hC34
+    + (65536 * 65536 * 65536 * 65536) * hC35
+    + (65536 * 65536 * 65536 * 65536 * 65536) * hC36
+    + (65536 * 65536 * 65536 * 65536 * 65536 * 65536) * hC37
+    + (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536) * hC38
+
 end ZiskFv.Airs.ArithCarryChain

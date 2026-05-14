@@ -191,20 +191,4 @@ theorem sign_extend_load_archetype_op_passthrough
   simp only [opBus_row_Main]
   exact h_op
 
-/-- **Tactic macro `sign_extend_load_m32_one_proof`.** Convenience
-    wrapper for proving `a_hi = 0 ∧ b_hi = 0` from a hypothesis
-    `h_circuit : sign_extend_load_archetype_circuit_holds m r_main
-    bus_entry opcode_lit 1` in scope. -/
-macro "sign_extend_load_m32_one_proof" : tactic => `(tactic| (
-  exact sign_extend_load_archetype_m32_one_zeros_bus m r_main bus_entry
-    opcode_lit h_circuit
-))
-
-/-- **Tactic macro `sign_extend_load_m32_zero_proof`.** Sibling of the
-    above for LH / LB (`m32 = 0`). -/
-macro "sign_extend_load_m32_zero_proof" : tactic => `(tactic| (
-  exact sign_extend_load_archetype_m32_zero_passthrough_bus m r_main
-    bus_entry opcode_lit h_circuit
-))
-
 end ZiskFv.Tactics.SignExtendLoadArchetype

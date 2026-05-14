@@ -14,6 +14,12 @@ echo "opcodes:"
 
 for f in "$ROOT"/*.lean; do
   name="$(basename "$f" .lean)"
+  # Compliance.lean is the global dispatcher (Step 4.3) — by design it
+  # contains shape dispatchers, not a per-op `equiv_<OP>` theorem.
+  # Skip it from the per-file uniformity check.
+  if [ "$name" = "Compliance" ]; then
+    continue
+  fi
   canonical_count=$(grep -cE "^theorem equiv_[A-Z][A-Z0-9]*\b" "$f" || true)
   canonical_name=$(grep -oE "^theorem equiv_[A-Z][A-Z0-9]*\b" "$f" | head -1 | sed 's/^theorem //')
   shape=$(grep -cE "= \(bus_effect " "$f" || true)

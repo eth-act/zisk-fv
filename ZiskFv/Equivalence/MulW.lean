@@ -8,14 +8,17 @@ import ZiskFv.Circuit.Mul
 import ZiskFv.Circuit.MulW
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Arith.Mul
+import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Sail.mulw
 import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned
+import ZiskFv.Equivalence.Bridge.Arith
+import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
 
 /-!
 End-to-end theorem for RV64 MULW. MULW is the 32-bit word variant of
@@ -23,6 +26,13 @@ MUL — `m32 = 1` on both Main and Arith — which means the Main spec
 must be authored with a MULW-specific mode predicate (the archetype
 macro hardcodes `m32 = 0`). See `Circuit.MulW` for the compositional
 statement.
+
+Step 4: Structural-unpacking refactor replacing the single
+`h_byte_mulw` promise hypothesis with the explicit Tier-3 binders
+mirroring MULH but specialized for W-mode (`m32 = 1`) and adding
+`h_sext_choice` for the W sign-extension on bytes 4..7 (same trust
+class as ADDW's `h_sext_choice` and DIVUW/REMUW's W-mode sign
+extension).
 -/
 
 namespace ZiskFv.Equivalence.MulW
@@ -34,6 +44,7 @@ open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Circuit.Mul
 open ZiskFv.Circuit.MulW
+open ZiskFv.PackedBitVec.SignedChunkLift
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -75,12 +86,17 @@ theorem equiv_MULW_sail
     asserts the spec output (`PureSpec.execute_MULW_pure_val ...`)
     directly; that equation is derived internally from circuit
     witnesses via the
-    `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mulw` discharge
-    lemma. -/
+    `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_mulw_chunked`
+    discharge lemma.
+
+    Step 4 structural-unpacking refactor with 17 ADDED binders (16 MUL
+    base shape + `h_sext_choice` for W-mode sign-extension on bytes
+    4..7). -/
 theorem equiv_MULW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulw_input : PureSpec.MulwInput)
     (r1 r2 rd : regidx)
+    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (h_input_r1 : read_xreg (regidx_to_fin r1) state
@@ -99,26 +115,53 @@ theorem equiv_MULW
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : mulw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Discharge parameters
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
-    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
-    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
-    (h_byte_mulw :
+    -- Structural-unpacking ADDED binders (17 total) mirroring MULH
+    -- plus h_sext_choice for W-mode sign-extension on bytes 4..7.
+    (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a)
+    (h_nr : v.nr r_a = 0)
+    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 0)
+    -- Op-pin for MULW: op = 182.
+    (h_op : v.op r_a = 182)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    -- Byte-pack lane match (LANE-MATCH): bytes 0..3 pack c-chunks low 32 (MULW product low half).
+    (h_byte_lo :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-        + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-        + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
-      = (PureSpec.execute_MULW_pure_val mulw_input.r1_val mulw_input.r2_val).toNat) :
+        = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
+    -- Sign-extension choice on bytes 4..7 (SEXT_00 / SEXT_FF case-disjunction)
+    (h_sext_choice :
+      ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧
+        (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
+      ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
+        (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
+    -- Operand TRANSPILE-BRIDGE (W form: low 32 bits, signed toInt).
+    (h_op1 :
+      (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt
+        = ((v.a_0 r_a).val + (v.a_1 r_a).val * 65536 : ℤ)
+            - (v.na r_a).val * (2:ℤ)^32)
+    (h_op2 :
+      (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt
+        = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^32) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.MULW (r2, r1, rd))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mulw
-      mulw_input.r1_val mulw_input.r2_val e2
-      h0 h1 h2 h3 h4 h5 h6 h7 h_byte_mulw
+    ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_mulw_chunked
+      mulw_input.r1_val mulw_input.r2_val e2 v r_a
+      h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
+      h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
+      h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
+      h_chain h_nr h_sext h_m32 h_div h_op
+      h_na_bool h_nb_bool h_np_xor h_byte_lo h_sext_choice h_op1 h_op2
   rw [equiv_MULW_sail state mulw_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

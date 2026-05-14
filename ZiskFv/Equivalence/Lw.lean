@@ -11,8 +11,10 @@ import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
+import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.Sail.lw
 import ZiskFv.Sail.BusEffect
 
@@ -112,23 +114,8 @@ theorem equiv_LW
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
     (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1)
-    -- Decomposed rd-match hypotheses.
-    (h_rd_zero_iff :
-      Transpiler.wrap_to_regidx e2.ptr = 0 ↔ lw_input.rd = 0)
-    (h_rd_idx : lw_input.rd.toNat = (Transpiler.wrap_to_regidx e2.ptr).val)
     -- Circuit-level memory bridge + lane match.
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
-    (h_main_emit_b :
-      main.b_0 r_main = memory_entry_lo e1
-      ∧ main.b_1 r_main = memory_entry_hi e1
-      ∧ e1.as = 2
-      ∧ e1.multiplicity = -1)
-    (h_main_emit_c :
-      main.c_0 r_main = memory_entry_lo e2
-      ∧ main.c_1 r_main = memory_entry_hi e2)
-    (h_ptr_match :
-      e1.ptr.toNat
-        = lw_input.r1_val.toNat + (BitVec.signExtend 64 lw_input.imm).toNat)
     (h_ext : main.is_external_op r_main = 1)
     (h_op : main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_W)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
@@ -137,35 +124,29 @@ theorem equiv_LW
       (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SEXT_W)
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
     (hc_lo_sum_lt :
-      (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val
-      + (v.free_in_c_2 r_binary).val + (v.free_in_c_3 r_binary).val
-      + (v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val
-      + (v.free_in_c_6 r_binary).val + (v.free_in_c_7 r_binary).val < 4294967296)
+      (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+      + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+      + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+      + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
     (hc_hi_sum_lt :
-      (v.free_in_c_8 r_binary).val + (v.free_in_c_9 r_binary).val
-      + (v.free_in_c_10 r_binary).val + (v.free_in_c_11 r_binary).val
-      + (v.free_in_c_12 r_binary).val + (v.free_in_c_13 r_binary).val
-      + (v.free_in_c_14 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+      (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+      + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+      + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+      + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
     (h_match_clo : main.c_0 r_main
-        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary
-          + v.free_in_c_2 r_binary + v.free_in_c_3 r_binary
-          + v.free_in_c_4 r_binary + v.free_in_c_5 r_binary
-          + v.free_in_c_6 r_binary + v.free_in_c_7 r_binary)
+        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
     (h_match_chi : main.c_1 r_main
-        = v.free_in_c_8 r_binary + v.free_in_c_9 r_binary
-          + v.free_in_c_10 r_binary + v.free_in_c_11 r_binary
-          + v.free_in_c_12 r_binary + v.free_in_c_13 r_binary
-          + v.free_in_c_14 r_binary + v.free_in_c_15 r_binary)
+        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
     (h_a0_match : (v.free_in_a_0 r_binary).val = e1.x0.val)
     (h_a1_match : (v.free_in_a_1 r_binary).val = e1.x1.val)
     (h_a2_match : (v.free_in_a_2 r_binary).val = e1.x2.val)
-    (h_a3_match : (v.free_in_a_3 r_binary).val = e1.x3.val)
-    (h_e1_x0 : e1.x0.val < 256) (h_e1_x1 : e1.x1.val < 256)
-    (h_e1_x2 : e1.x2.val < 256) (h_e1_x3 : e1.x3.val < 256)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256) :
+    (h_a3_match : (v.free_in_a_3 r_binary).val = e1.x3.val) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -176,6 +157,11 @@ theorem equiv_LW
         false,
         4
       ))) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match,
+          h_rd_zero_iff, h_rd_idx⟩ :=
+    ZiskFv.Equivalence.Bridge.Mem.lw_discharge_full
+      main r_main e1 e2 lw_input.r1_val lw_input.imm lw_input.rd
+      h_ext h_op h_m1_mult h_m1_as h_m2_mult h_m2_as
   rw [equiv_LW_sail state lw_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
   symm
@@ -199,14 +185,18 @@ theorem equiv_LW
     rw [h_d3] at he3; exact (Option.some.inj he3).symm
   -- Derive the rd-write value equality directly from h_high_bytes_signext
   -- + the per-byte e1.x_i = data_i facts (after rewriting through e1↔e2).
+  have h_e1_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e1
+  have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_lw_packed :=
     ZiskFv.Circuit.SextLoadBridge.load_word_c_packed
       main r_main v r_binary e1 e2
       h_op_binary h_bytes hc_lo_sum_lt hc_hi_sum_lt
       h_match_clo h_match_chi h_main_emit_c
-      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+      h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
+      h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
+      h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
       h_a0_match h_a1_match h_a2_match h_a3_match
-      h_e1_x0 h_e1_x1 h_e1_x2 h_e1_x3
+      h_e1_range.1 h_e1_range.2.1 h_e1_range.2.2.1 h_e1_range.2.2.2.1
   have h_rd_val_derived :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]

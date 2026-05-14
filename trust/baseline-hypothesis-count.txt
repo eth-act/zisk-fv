@@ -1,0 +1,76 @@
+# Canonical-theorem caller-supplied parameter counts.
+# Format: <theorem> total=<N> hypothesis=<M>
+#
+# Anti-laundering metric: a refactor that swaps one promise
+# hypothesis for several smaller ones doesn't reduce trust —
+# it just renames it. Both columns must monotonically
+# decrease (or hold) across plan PRs. To grow either column
+# requires explicit reviewer ack via a baseline diff.
+#
+# Total theorems: 63
+# Aggregate total binders: 2526
+# Aggregate hypothesis binders: 1487
+#
+ZiskFv.Equivalence.Add.equiv_ADD total=41 hypothesis=27
+ZiskFv.Equivalence.Addi.equiv_ADDI total=40 hypothesis=28
+ZiskFv.Equivalence.Addiw.equiv_ADDIW total=76 hypothesis=43
+ZiskFv.Equivalence.Addw.equiv_ADDW total=76 hypothesis=42
+ZiskFv.Equivalence.And.equiv_AND total=33 hypothesis=20
+ZiskFv.Equivalence.Andi.equiv_ANDI total=34 hypothesis=21
+ZiskFv.Equivalence.Auipc.equiv_AUIPC total=25 hypothesis=15
+ZiskFv.Equivalence.BranchEqual.equiv_BEQ total=19 hypothesis=12
+ZiskFv.Equivalence.BranchGreaterEqual.equiv_BGE total=19 hypothesis=12
+ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU total=19 hypothesis=12
+ZiskFv.Equivalence.BranchLessThan.equiv_BLT total=20 hypothesis=12
+ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU total=19 hypothesis=12
+ZiskFv.Equivalence.BranchNotEqual.equiv_BNE total=20 hypothesis=12
+ZiskFv.Equivalence.Div.equiv_DIV total=43 hypothesis=32
+ZiskFv.Equivalence.Divu.equiv_DIVU total=49 hypothesis=37
+ZiskFv.Equivalence.Divuw.equiv_DIVUW total=51 hypothesis=31
+ZiskFv.Equivalence.Divw.equiv_DIVW total=56 hypothesis=34
+ZiskFv.Equivalence.Fence.equiv_FENCE total=14 hypothesis=6
+ZiskFv.Equivalence.Jal.equiv_JAL total=31 hypothesis=19
+ZiskFv.Equivalence.Jalr.equiv_JALR total=36 hypothesis=21
+ZiskFv.Equivalence.Lb.equiv_LB total=37 hypothesis=20
+ZiskFv.Equivalence.Lh.equiv_LH total=37 hypothesis=21
+ZiskFv.Equivalence.LoadBU.equiv_LBU total=34 hypothesis=15
+ZiskFv.Equivalence.LoadD.equiv_LD total=28 hypothesis=13
+ZiskFv.Equivalence.LoadHU.equiv_LHU total=32 hypothesis=15
+ZiskFv.Equivalence.LoadWU.equiv_LWU total=32 hypothesis=15
+ZiskFv.Equivalence.Lui.equiv_LUI total=22 hypothesis=12
+ZiskFv.Equivalence.Lw.equiv_LW total=40 hypothesis=23
+ZiskFv.Equivalence.Mul.equiv_MUL total=49 hypothesis=35
+ZiskFv.Equivalence.MulH.equiv_MULH total=41 hypothesis=30
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU total=43 hypothesis=30
+ZiskFv.Equivalence.MulHU.equiv_MULHU total=47 hypothesis=35
+ZiskFv.Equivalence.MulW.equiv_MULW total=45 hypothesis=28
+ZiskFv.Equivalence.Or.equiv_OR total=33 hypothesis=20
+ZiskFv.Equivalence.Ori.equiv_ORI total=34 hypothesis=21
+ZiskFv.Equivalence.Rem.equiv_REM total=43 hypothesis=32
+ZiskFv.Equivalence.Remu.equiv_REMU total=49 hypothesis=37
+ZiskFv.Equivalence.Remuw.equiv_REMUW total=45 hypothesis=31
+ZiskFv.Equivalence.Remw.equiv_REMW total=54 hypothesis=33
+ZiskFv.Equivalence.Shift.equiv_SLLW total=32 hypothesis=19
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW total=30 hypothesis=18
+ZiskFv.Equivalence.ShiftR.equiv_SRLW total=32 hypothesis=19
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW total=32 hypothesis=19
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW total=30 hypothesis=18
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW total=30 hypothesis=18
+ZiskFv.Equivalence.Sll.equiv_SLL total=32 hypothesis=19
+ZiskFv.Equivalence.Slli.equiv_SLLI total=32 hypothesis=19
+ZiskFv.Equivalence.Slt.equiv_SLT total=85 hypothesis=39
+ZiskFv.Equivalence.Slti.equiv_SLTI total=86 hypothesis=40
+ZiskFv.Equivalence.Sltiu.equiv_SLTIU total=84 hypothesis=39
+ZiskFv.Equivalence.Sltu.equiv_SLTU total=84 hypothesis=38
+ZiskFv.Equivalence.Sra.equiv_SRA total=32 hypothesis=19
+ZiskFv.Equivalence.Srai.equiv_SRAI total=32 hypothesis=19
+ZiskFv.Equivalence.Srl.equiv_SRL total=32 hypothesis=19
+ZiskFv.Equivalence.Srli.equiv_SRLI total=32 hypothesis=19
+ZiskFv.Equivalence.StoreB.equiv_SB total=23 hypothesis=12
+ZiskFv.Equivalence.StoreD.equiv_SD total=31 hypothesis=20
+ZiskFv.Equivalence.StoreH.equiv_SH total=24 hypothesis=12
+ZiskFv.Equivalence.StoreW.equiv_SW total=24 hypothesis=12
+ZiskFv.Equivalence.Sub.equiv_SUB total=98 hypothesis=53
+ZiskFv.Equivalence.Subw.equiv_SUBW total=76 hypothesis=42
+ZiskFv.Equivalence.Xor.equiv_XOR total=33 hypothesis=20
+ZiskFv.Equivalence.Xori.equiv_XORI total=34 hypothesis=21

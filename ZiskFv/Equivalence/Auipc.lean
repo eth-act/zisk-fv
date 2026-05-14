@@ -12,7 +12,9 @@ import ZiskFv.Sail.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
+import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Tactics.UTypeArchetype
+import ZiskFv.Equivalence.Bridge.ControlFlow
 import ZiskFv.Equivalence.RdValDerivation.JumpUType
 
 /-!
@@ -114,10 +116,6 @@ theorem equiv_AUIPC
     -- Discharge parameters
     (h_circuit :
       ZiskFv.Tactics.UTypeArchetype.auipc_archetype_circuit_holds m r_main next_pc)
-    (h_offset_bridge : (m.jmp_offset2 r_main).val
-      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat)
-    (h_lane_lo : ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd)
-    (h_lane_hi : ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd)
     (h_no_wrap : auipc_input.PC.toNat
       + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < GL_prime)
@@ -125,12 +123,26 @@ theorem equiv_AUIPC
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296)
-    (h_e_rd_0 : e_rd.x0.val < 256) (h_e_rd_1 : e_rd.x1.val < 256)
-    (h_e_rd_2 : e_rd.x2.val < 256) (h_e_rd_3 : e_rd.x3.val < 256)
-    (h_e_rd_4 : e_rd.x4.val < 256) (h_e_rd_5 : e_rd.x5.val < 256)
-    (h_e_rd_6 : e_rd.x6.val < 256) (h_e_rd_7 : e_rd.x7.val < 256) :
+     :
     execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
       = (bus_effect exec_row [e_rd] state).2 := by
+  -- Discharge `h_lane_lo`/`h_lane_hi` via `main_store_pc_emission_bundle`
+  -- (trust class #4).
+  obtain ⟨h_lane_lo, h_lane_hi⟩ :=
+    ZiskFv.Equivalence.Bridge.ControlFlow.auipc_discharge_lanes
+      m r_main next_pc e_rd h_circuit h_rd_mult h_rd_as
+  -- Discharge `h_offset_bridge` via `transpile_AUIPC` (trust class #1).
+  -- `h_no_wrap` gives `PC + signExt < GL_prime`; since `PC.toNat ≥ 0`,
+  -- we deduce `signExt < GL_prime` (the no-wrap bound on the offset
+  -- alone) and feed it to `auipc_offset_discharge`.
+  have h_no_wrap_offset :
+      (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat < GL_prime := by
+    have := Nat.lt_of_le_of_lt (Nat.le_add_left _ _) h_no_wrap
+    exact this
+  have h_offset_bridge : (m.jmp_offset2 r_main).val
+      = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat :=
+    ZiskFv.Equivalence.Bridge.ControlFlow.auipc_offset_discharge
+      m r_main next_pc auipc_input.imm h_circuit h_no_wrap_offset
   have h_rd_val :
       U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
                   e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
@@ -139,8 +151,14 @@ theorem equiv_AUIPC
       auipc_input.PC auipc_input.imm m r_main next_pc e_rd
       h_circuit h_offset_bridge h_lane_lo h_lane_hi
       h_no_wrap h_lo_bound h_pc_offset_lt_2_32
-      h_e_rd_0 h_e_rd_1 h_e_rd_2 h_e_rd_3
-      h_e_rd_4 h_e_rd_5 h_e_rd_6 h_e_rd_7
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.2.1
+      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.2.2
   rw [equiv_AUIPC_sail state auipc_input imm rd
         h_input_imm h_input_rd h_input_pc]
   symm

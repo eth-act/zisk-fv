@@ -97,37 +97,4 @@ theorem load_archetype_copyb_c_packed
   refine ⟨h_subset, ?_, h_mem⟩
   exact ⟨h_ext, h_op, h_m32, h_setpc⟩
 
-/-- **Archetype next-PC (zero-extension loads).** Same shape as
-    `Circuit.LoadD.load_d_next_pc_concrete`: when `jmp_offset1 =
-    jmp_offset2 = 4`, the next-pc is `pc + 4`. Holds uniformly for
-    LD/LWU/LHU/LBU since they all use `j(4, 4)` in the Zisk
-    transpiler. -/
-theorem load_archetype_copyb_next_pc
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (entry : MemoryBusEntry FGL)
-    (h : load_archetype_copyb_circuit_holds m r_main next_pc entry)
-    (h_jmp1 : m.jmp_offset1 r_main = 4)
-    (h_jmp2 : m.jmp_offset2 r_main = 4) :
-    next_pc = m.pc r_main + 4 := by
-  obtain ⟨h_subset, h_mode, h_mem⟩ := h
-  obtain ⟨h_ext, h_op, h_m32, h_setpc⟩ := h_mode
-  apply load_d_next_pc_concrete m r_main next_pc entry _ h_jmp1 h_jmp2
-  exact ⟨h_subset, ⟨h_ext, h_op, h_m32, h_setpc⟩, h_mem⟩
-
-/-- **Tactic macro `load_archetype_proof`.** Convenience wrapper for
-    proving the packed-c formula from a hypothesis
-    `h_circuit : load_archetype_copyb_circuit_holds m r_main next_pc entry`
-    in scope.
-
-    **Expected goal shape:**
-    `main_c_packed m r_main = memory_entry_toField entry`.
-
-    **Required hypotheses (must be named literally in the caller):**
-    * `m : Valid_Main C FGL FGL`,
-    * `r_main : ℕ`, `next_pc : FGL`, `entry : MemoryBusEntry FGL`,
-    * `h_circuit : load_archetype_copyb_circuit_holds m r_main next_pc entry`. -/
-macro "load_archetype_proof" : tactic => `(tactic| (
-  exact load_archetype_copyb_c_packed m r_main next_pc entry h_circuit
-))
-
 end ZiskFv.Tactics.LoadArchetype

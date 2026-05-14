@@ -7,6 +7,8 @@ import ZiskFv.Circuit.Mul
 import ZiskFv.Circuit.Remu
 import ZiskFv.Airs.Main
 import ZiskFv.Airs.Arith.Div
+import ZiskFv.Airs.Arith.Ranges
+import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Airs.OperationBus
 import ZiskFv.Airs.BusEmission
 import ZiskFv.Sail.remu
@@ -83,6 +85,7 @@ theorem equiv_REMU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remu_input : PureSpec.RemuInput)
     (r1 r2 rd : regidx)
+    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (h_input_r1 : read_xreg (regidx_to_fin r1) state
@@ -101,57 +104,56 @@ theorem equiv_REMU
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : remu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Discharge parameters (DIV layout: a=quotient, b=divisor,
-    -- c=dividend, d=remainder; bytes pack d[]).
-    (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL)
-    (cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
     (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
     (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
     (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
     (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
-    (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
-    (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
-    (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
-    (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
-    (h_c0 : c₀.val < 65536) (h_c1 : c₁.val < 65536)
-    (h_c2 : c₂.val < 65536) (h_c3 : c₃.val < 65536)
-    (h_d0 : d₀.val < 65536) (h_d1 : d₁.val < 65536)
-    (h_d2 : d₂.val < 65536) (h_d3 : d₃.val < 65536)
-    (h_cy0 : cy₀.val < 131072) (h_cy1 : cy₁.val < 131072)
-    (h_cy2 : cy₂.val < 131072) (h_cy3 : cy₃.val < 131072)
-    (h_cy4 : cy₄.val < 131072) (h_cy5 : cy₅.val < 131072)
-    (h_cy6 : cy₆.val < 131072)
-    (hC31 : a₀ * b₀ + d₀ = c₀ + cy₀ * 65536)
-    (hC32 : a₁ * b₀ + a₀ * b₁ + d₁ + cy₀ = c₁ + cy₁ * 65536)
-    (hC33 : a₂ * b₀ + a₁ * b₁ + a₀ * b₂ + d₂ + cy₁ = c₂ + cy₂ * 65536)
-    (hC34 : a₃ * b₀ + a₂ * b₁ + a₁ * b₂ + a₀ * b₃ + d₃ + cy₂
-              = c₃ + cy₃ * 65536)
-    (hC35 : a₃ * b₁ + a₂ * b₂ + a₁ * b₃ + cy₃ = cy₄ * 65536)
-    (hC36 : a₃ * b₂ + a₂ * b₃ + cy₄ = cy₅ * 65536)
-    (hC37 : a₃ * b₃ + cy₅ = cy₆ * 65536)
-    (hC38 : cy₆ = 0)
+    -- The 22 loose (cy, cy-range, hC) caller-burden binders are now
+    -- replaced by the row-level carry-chain constraint set + unsigned
+    -- mode pins, discharged via `Bridge.Arith.div_unsigned_chain_witnesses`.
+    (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
+    (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
+    (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
+    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
+    (h_div : v.div r_a = 1)
     (h_byte_lo :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-        = d₀.val + d₁.val * 65536)
+        = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
     (h_byte_hi :
       e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
-        = d₂.val + d₃.val * 65536)
+        = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536)
     (h_op1 : remu_input.r1_val.toNat
-      = ZiskFv.PackedBitVec.MulNoWrap.packed4 c₀.val c₁.val c₂.val c₃.val)
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val (v.c_1 r_a).val
+          (v.c_2 r_a).val (v.c_3 r_a).val)
     (h_op2 : remu_input.r2_val.toNat
-      = ZiskFv.PackedBitVec.MulNoWrap.packed4 b₀.val b₁.val b₂.val b₃.val)
+      = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+          (v.b_2 r_a).val (v.b_3 r_a).val)
     (h_op2_ne : remu_input.r2_val.toNat ≠ 0)
-    (h_d_lt_b : ZiskFv.PackedBitVec.MulNoWrap.packed4 d₀.val d₁.val d₂.val d₃.val
+    (h_d_lt_b : ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.d_0 r_a).val (v.d_1 r_a).val
+                  (v.d_2 r_a).val (v.d_3 r_a).val
                   < remu_input.r2_val.toNat) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, true))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_a0, h_a1, h_a2, h_a3,
+          h_b0, h_b1, h_b2, h_b3,
+          h_c0, h_c1, h_c2, h_c3,
+          h_d0, h_d1, h_d2, h_d3⟩ :=
+    ZiskFv.Equivalence.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a
+  obtain ⟨cy₀, cy₁, cy₂, cy₃, cy₄, cy₅, cy₆,
+          h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6,
+          hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ :=
+    ZiskFv.Equivalence.Bridge.Arith.div_unsigned_chain_witnesses v r_a h_chain
+      h_na h_nb h_np h_nr h_sext h_m32 h_div
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_remu
       remu_input.r1_val remu_input.r2_val e2
-      a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
+      (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
+      (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)
+      (v.c_0 r_a) (v.c_1 r_a) (v.c_2 r_a) (v.c_3 r_a)
+      (v.d_0 r_a) (v.d_1 r_a) (v.d_2 r_a) (v.d_3 r_a)
       cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
       h0 h1 h2 h3 h4 h5 h6 h7
       h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3
