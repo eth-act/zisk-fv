@@ -4,8 +4,8 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.Addi
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Equivalence.Bridge.BinaryAdd
 import ZiskFv.Equivalence.Bridge.SailStateBridge

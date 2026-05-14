@@ -4,7 +4,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Sail.Auxiliaries
 import ZiskFv.Sail.BusEffect
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge

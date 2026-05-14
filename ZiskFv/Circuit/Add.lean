@@ -2,9 +2,9 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.BinaryAdd
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 
 /-!
 Compositional ADD spec: given the named ADD-subset constraints on Main and

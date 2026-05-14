@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -71,14 +72,41 @@ def _run_git_mv(old: str, new: str) -> None:
     subprocess.run(["git", "mv", str(old_p), str(new_p)], cwd=REPO_ROOT, check=True)
 
 
-def _apply_substitutions(files: list[Path], mapping: dict[str, str]) -> dict[Path, int]:
+def _apply_substitutions(
+    files: list[Path],
+    mapping: dict[str, str],
+    import_only: dict[str, str] | None = None,
+) -> dict[Path, int]:
     """Replace each key in mapping with its value across the given files.
 
     ``mapping`` should already be sorted by longest-key-first for the
     caller; this function does NOT re-sort.
 
+    ``import_only`` is a secondary mapping applied ONLY at the end of
+    ``import <module>`` lines (i.e. when the dotted module name is
+    followed by end-of-line, whitespace-then-EOL, or end-of-file).
+    This is required for *path-only* renames where the OLD dotted form
+    is also a legitimate prefix of sub-namespaces that must remain
+    unchanged (e.g. ``ZiskFv.Airs.Main`` is both an import target AND
+    a substring of ``ZiskFv.Airs.Main.Ranges``).
+
     Returns a dict mapping file -> total substitution count for that file.
     """
+    # Pre-compile import-only regexes. Anchor: 'import' + whitespace +
+    # OLD module name + (whitespace-or-EOL) — does NOT match if followed
+    # by another '.<Ident>' segment.
+    import_patterns: list[tuple[re.Pattern[str], str]] = []
+    if import_only:
+        for old, new in import_only.items():
+            # Escape dots in OLD for the regex; the lookahead rejects
+            # '.<word-char>' so we don't match a prefix of a longer
+            # dotted path. We allow trailing whitespace or EOL.
+            pat = re.compile(
+                r"(^import[ \t]+)" + re.escape(old) + r"(?![.\w])",
+                flags=re.MULTILINE,
+            )
+            import_patterns.append((pat, r"\1" + new))
+
     counts: dict[Path, int] = {}
     for f in files:
         try:
@@ -92,6 +120,9 @@ def _apply_substitutions(files: list[Path], mapping: dict[str, str]) -> dict[Pat
                 cnt = new_content.count(old)
                 new_content = new_content.replace(old, new)
                 local += cnt
+        for pat, repl in import_patterns:
+            new_content, n = pat.subn(repl, new_content)
+            local += n
         if local > 0:
             f.write_text(new_content, encoding="utf-8")
             counts[f] = local
@@ -125,21 +156,42 @@ def main(argv: list[str]) -> int:
     # The latter is derived from `paths`: for any docs/scripts that
     # cite the old filepath in prose / globs, the rename should follow.
     combined: dict[str, str] = {}
+    # Dotted-import-only rewrites: applied with regex anchored to
+    # ``import <name>`` to avoid mangling sub-namespace references when
+    # the OLD dotted form is a strict prefix of a still-valid module
+    # path (e.g. ``ZiskFv.Airs.Main`` → ``ZiskFv.Airs.Main.Main`` must
+    # not touch ``ZiskFv.Airs.Main.Ranges``).
+    import_only: dict[str, str] = {}
     # Slash-path forms first (more specific than the dotted prefixes).
     for old, new in paths.items():
         combined[old] = new
         # Also handle the directory-stem form without ".lean", in case
         # docs cite a stem path (rare but cheap).
         if old.endswith(".lean") and new.endswith(".lean"):
-            combined[old[:-5]] = new[:-5]
+            stem_old = old[:-5]
+            stem_new = new[:-5]
+            # Skip the stem rewrite when OLD is a strict prefix of NEW
+            # (the consolidation case Foo.lean -> Foo/Foo.lean): the
+            # stem form ``ZiskFv/Airs/Foo`` is still a valid path prefix
+            # of unrelated sibling files (e.g. ``ZiskFv/Airs/Foo/Bar``)
+            # so a blind replace would mangle them.
+            if not stem_new.startswith(stem_old + "/"):
+                combined[stem_old] = stem_new
             # And the dotted import form (e.g. `import ZiskFv.Foo.Bar`).
             # This matters for path-only renames where the namespace does
             # not change but the file location does; without this the
             # imports would not be rewritten.
-            dotted_old = old[:-5].replace("/", ".")
-            dotted_new = new[:-5].replace("/", ".")
+            dotted_old = stem_old.replace("/", ".")
+            dotted_new = stem_new.replace("/", ".")
             if dotted_old != dotted_new:
-                combined[dotted_old] = dotted_new
+                # Detect "OLD is a prefix of NEW" (the consolidation
+                # case: Foo.lean -> Foo/Foo.lean leaves the dotted OLD
+                # form alive as a namespace prefix). Such cases MUST
+                # use import-anchored rewrites only.
+                if dotted_new.startswith(dotted_old + "."):
+                    import_only[dotted_old] = dotted_new
+                else:
+                    combined[dotted_old] = dotted_new
     # Namespace mappings.
     for old, new in namespaces.items():
         combined[old] = new
@@ -155,7 +207,9 @@ def main(argv: list[str]) -> int:
     self_path = Path(__file__).resolve()
     files = [f for f in files if f != batch_path.resolve() and f != self_path]
     print(f"  Scanning {len(files)} candidate files for substitution")
-    counts = _apply_substitutions(files, sorted_combined)
+    if import_only:
+        print(f"  Import-anchored rewrites: {import_only}")
+    counts = _apply_substitutions(files, sorted_combined, import_only=import_only)
 
     total_subs = sum(counts.values())
     print(f"\nTouched {len(counts)} files, {total_subs} total substitutions.")

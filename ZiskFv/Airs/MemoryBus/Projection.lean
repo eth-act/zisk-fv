@@ -2,7 +2,7 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 
 /-!
 # MemoryBus.Projection — register-bus 6-slot entry shape and Main row projections

@@ -6,10 +6,10 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Bits.Execution
 import ZiskFv.Circuit.Mul
 import ZiskFv.Circuit.MulW
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Ranges
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Sail.mulw

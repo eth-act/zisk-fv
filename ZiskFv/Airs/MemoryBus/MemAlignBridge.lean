@@ -4,7 +4,7 @@ import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Bits.PackedBitVec
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte

@@ -2,7 +2,7 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 
 /-!
 # Main AIR — universal column-range theorems

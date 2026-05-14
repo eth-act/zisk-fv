@@ -5,9 +5,9 @@ import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
 import ZiskFv.Circuit.Div
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Sail.div

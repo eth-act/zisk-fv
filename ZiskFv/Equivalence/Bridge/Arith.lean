@@ -3,12 +3,12 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.CarryChain
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 
 /-!

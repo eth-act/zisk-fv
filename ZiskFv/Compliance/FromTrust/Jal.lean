@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Equivalence.Jal
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 
 /-!
 # `equiv_JAL` Compliance wrapper — ControlFlow non-branch (Step 4.2)

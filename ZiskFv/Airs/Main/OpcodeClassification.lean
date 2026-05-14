@@ -3,7 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 
 /-!
 # Main AIR — opcode-set classification

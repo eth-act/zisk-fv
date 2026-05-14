@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Sail.Auxiliaries
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OpBusEffect
 
 /-!

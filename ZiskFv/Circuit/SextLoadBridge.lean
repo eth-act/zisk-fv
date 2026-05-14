@@ -3,7 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Bits.PackedBitVec
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Airs.Binary.BinaryExtension

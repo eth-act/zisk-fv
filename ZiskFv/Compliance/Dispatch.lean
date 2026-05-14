@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Main.OpcodeClassification
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler

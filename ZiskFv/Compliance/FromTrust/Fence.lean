@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Equivalence.Fence
 import ZiskFv.Sail.fence
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 
 /-!
 # `equiv_FENCE` Compliance wrapper — ControlFlow non-branch shape (Step 4.2)

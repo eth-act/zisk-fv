@@ -2,11 +2,11 @@ import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.Binary.BinaryAddRanges
 import ZiskFv.Airs.Binary.BinaryAddPackedCorrect
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Circuit.Add
 import ZiskFv.Sail.add

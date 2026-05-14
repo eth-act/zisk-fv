@@ -7,9 +7,9 @@ import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
 import ZiskFv.Circuit.Mul
 import ZiskFv.Circuit.MulHSU
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Mul
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Sail.mul

@@ -5,8 +5,8 @@ import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Bits.Execution
 import ZiskFv.Circuit.ShiftRA
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Sail.sraw
 import ZiskFv.Sail.BusEffect

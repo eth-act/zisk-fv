@@ -3,12 +3,12 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Main.Ranges
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Tables.BinaryExtensionTable
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.Bridge.SailStateBridge

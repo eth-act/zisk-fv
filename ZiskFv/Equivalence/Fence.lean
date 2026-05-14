@@ -3,8 +3,8 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Sail.fence

@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Equivalence.Auipc
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 
 /-!
 # `equiv_AUIPC` Compliance wrapper — ControlFlow non-branch (Step 4.2)

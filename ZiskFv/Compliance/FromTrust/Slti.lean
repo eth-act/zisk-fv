@@ -2,8 +2,8 @@ import Mathlib
 
 import ZiskFv.Equivalence.Slti
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.Binary

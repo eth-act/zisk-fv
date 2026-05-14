@@ -1,7 +1,7 @@
 import Mathlib
 
 import ZiskFv.Field.Goldilocks
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 
 /-!
 RV64 → Zisk-instruction transpilation contract (axiomatized).

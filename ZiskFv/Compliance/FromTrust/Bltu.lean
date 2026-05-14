@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Equivalence.BranchLessThanUnsigned
 import ZiskFv.Sail.bltu
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 
 /-!
 # `equiv_BLTU` Compliance wrapper — ControlFlow branches (Step 4.2)

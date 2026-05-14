@@ -6,7 +6,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.LoadBU
 import ZiskFv.Circuit.LoadDerivation
 import ZiskFv.Circuit.MemModel
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemAlignByte

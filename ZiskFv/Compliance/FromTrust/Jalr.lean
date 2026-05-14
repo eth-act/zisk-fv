@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Equivalence.Jalr
 import ZiskFv.Tactics.JumpArchetype
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 
 /-!
 # `equiv_JALR` Compliance wrapper — ControlFlow non-branch (Step 4.2)

@@ -6,8 +6,8 @@ import ZiskFv.Sail.BusEffect
 import Extraction.BinaryAdd
 import Extraction.Main
 import ZiskFv.Airs.Binary.BinaryAdd
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
 import Extraction.Buses
 
 import ZiskFv.Airs.BusShape

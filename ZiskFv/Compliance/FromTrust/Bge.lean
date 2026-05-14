@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Equivalence.BranchGreaterEqual
 import ZiskFv.Sail.bge
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 
 /-!
 # `equiv_BGE` Compliance wrapper — ControlFlow branches (Step 4.2)

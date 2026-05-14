@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Equivalence.Lui
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 
 /-!
 # `equiv_LUI` Compliance pilot — ControlFlow non-branch shape exemplar (Step 4.1.1)

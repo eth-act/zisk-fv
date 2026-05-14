@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Equivalence.BranchEqual
 import ZiskFv.Sail.beq
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 
 /-!
 # `equiv_BEQ` Compliance pilot — ControlFlow branches shape exemplar (Step 4.1.7)

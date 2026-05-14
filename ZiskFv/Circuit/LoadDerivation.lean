@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemAlignByte

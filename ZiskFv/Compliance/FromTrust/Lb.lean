@@ -4,10 +4,10 @@ import ZiskFv.Equivalence.Lb
 import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.Equivalence.Bridge.BinaryExtension
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionRanges

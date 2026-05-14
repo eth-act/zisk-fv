@@ -6,7 +6,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.LoadD
 import ZiskFv.Circuit.LoadDerivation
 import ZiskFv.Circuit.MemModel
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge

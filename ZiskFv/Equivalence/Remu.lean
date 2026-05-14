@@ -5,11 +5,11 @@ import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Circuit.Mul
 import ZiskFv.Circuit.Remu
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Equivalence.Bridge.Arith
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Sail.remu
 import ZiskFv.Sail.BusEffect

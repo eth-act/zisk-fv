@@ -3,11 +3,11 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Bits.PackedBitVec
 import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryPackedCorrect
 import ZiskFv.Airs.Tables.BinaryTable
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Equivalence.WriteValueProofs.Arith

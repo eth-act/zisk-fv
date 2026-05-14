@@ -3,7 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Circuit.LoadD
 import ZiskFv.Tactics.LoadArchetype

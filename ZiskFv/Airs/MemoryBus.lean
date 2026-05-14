@@ -4,7 +4,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Bits.PackedBitVec
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 
 /-!
 ZisK memory-bus schema and Main ↔ memory-bus projections for loads/stores.

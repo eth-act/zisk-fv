@@ -2,9 +2,9 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.BinaryAdd
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Circuit.Add
 import ZiskFv.Tactics.ALUITypeArchetype
 
