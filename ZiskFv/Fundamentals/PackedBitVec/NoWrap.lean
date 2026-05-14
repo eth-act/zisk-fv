@@ -37,7 +37,7 @@ they're equal in ℕ.
 Once a caller has pushed an FGL equation through `push_cast; ring`
 into `((lhs:ℕ):FGL) = ((rhs:ℕ):FGL)`, this lemma closes the lift to
 `lhs = rhs : ℕ` provided per-side range bounds. -/
-theorem fgl_eq_to_nat_eq
+lemma fgl_eq_to_nat_eq
     {lhs rhs : ℕ}
     (h_eq_fgl : ((lhs : ℕ) : FGL) = ((rhs : ℕ) : FGL))
     (h_lhs_lt : lhs < GL_prime)
@@ -62,7 +62,7 @@ operation-bus entries:
 ```
 
 Trivial via `push_cast; ring`; named so callers can `rw` against it. -/
-theorem fgl_packed_2_lanes_natCast (l₀ l₁ : FGL) :
+lemma fgl_packed_2_lanes_natCast (l₀ l₁ : FGL) :
     l₀ + l₁ * 4294967296
       = (((l₀.val + l₁.val * 4294967296 : ℕ)) : FGL) := by
   push_cast
@@ -71,7 +71,7 @@ theorem fgl_packed_2_lanes_natCast (l₀ l₁ : FGL) :
 /-- **4-chunk (16-bit) FGL packing as a Nat-cast.** The standard
 packing of four 16-bit chunks into a 64-bit operand on the Arith /
 BinaryAdd `c_chunks_*` layout. -/
-theorem fgl_packed_4_chunks_natCast (c₀ c₁ c₂ c₃ : FGL) :
+lemma fgl_packed_4_chunks_natCast (c₀ c₁ c₂ c₃ : FGL) :
     c₀ + c₁ * 65536 + c₂ * 4294967296 + c₃ * 281474976710656
       = (((c₀.val + c₁.val * 65536 + c₂.val * 4294967296
             + c₃.val * 281474976710656 : ℕ)) : FGL) := by

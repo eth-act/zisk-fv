@@ -77,10 +77,10 @@ lemma bv_toNat_lt_of_msb_false (v : BitVec 64) (h : v.msb = false) :
     handles this via the `(na*nb - np) * 2^128` field term (where `na = nb = 1`,
     `np = 0`), which makes the field-level identity consistent despite the
     hardware overflow. -/
-theorem int_tdiv_overflow_case :
+lemma int_tdiv_overflow_case :
     Int.tdiv (-(2 : ℤ)^63) (-(1 : ℤ)) = (2 : ℤ)^63 := by native_decide
 
-theorem int_tdiv_intmin_neg1_eq :
+lemma int_tdiv_intmin_neg1_eq :
     Int.tdiv (-(2 : ℤ)^63) (-(1 : ℤ)) = (2 : ℤ)^63 := int_tdiv_overflow_case
 
 /-! ## Part 3 — `BitVec.toInt` four-chunk decomposition -/
@@ -134,7 +134,7 @@ lemma bv_toInt_four_chunks
     This is the integer-level analogue of the field identity from
     `arith_mul_signed_packed_correct`. The factor `(1 - 2*na) = sign_a`
     maps the unsigned absolute value back to the signed value. -/
-theorem signed_mul_abs_identity
+lemma signed_mul_abs_identity
     (a_abs b_abs c_low c_high : ℤ)
     (na nb : ℤ) (hnabool : na = 0 ∨ na = 1) (hnbbool : nb = 0 ∨ nb = 1)
     (h_prod : a_abs * b_abs = c_low + c_high * 2^64)
@@ -144,7 +144,7 @@ theorem signed_mul_abs_identity
   rcases hnabool with rfl | rfl <;> rcases hnbbool with rfl | rfl <;> linarith [h_prod]
 
 /-- **Trivial Euclidean identity.** Named for downstream consumers. -/
-theorem signed_div_unsigned_case
+lemma signed_div_unsigned_case
     (q_abs b_abs r_abs dividend_abs : ℤ)
     (h_euc : q_abs * b_abs + r_abs = dividend_abs) :
     q_abs * b_abs + r_abs = dividend_abs := h_euc

@@ -105,7 +105,7 @@ out the wrap branch.  When `pc_fgl.val + offset_fgl.val < GL_prime <
 2^64`, the FGL sum equals the ℕ sum, and the BitVec sum (which wraps
 mod `2^64`) also equals the ℕ sum since `< 2^64` already.  Both sides
 agree pre-modulo, so `% 2^32` projects identically.  -/
-theorem fgl_pc_plus_offset_lo
+lemma fgl_pc_plus_offset_lo
     (pc_fgl offset_fgl : FGL)
     (PC offset_bv : BitVec 64)
     (h_pc_bridge : pc_fgl.val = PC.toNat)
@@ -134,7 +134,7 @@ extraction, after first reducing mod `2^64`).  The full BitVec sum's
 `[0, 2^32)`.  The FGL sum, under the no-wrap hypothesis, equals the
 unreduced ℕ sum; we then strip the excess via `% 2^64` to align
 representations. -/
-theorem fgl_pc_plus_offset_hi
+lemma fgl_pc_plus_offset_hi
     (pc_fgl offset_fgl : FGL)
     (PC offset_bv : BitVec 64)
     (h_pc_bridge : pc_fgl.val = PC.toNat)
@@ -156,7 +156,7 @@ Same as `fgl_pc_plus_offset_lo` but expressed as a `BitVec 64` equality
 via `BitVec.ofNat`.  Matches the shape `JumpUType.lean` consumes:
 `BitVec.ofNat 64 ((pc_fgl + offset_fgl).val % 2^32) = BitVec.ofNat 64
 ((PC + offset_bv).toNat % 2^32)`. -/
-theorem fgl_pc_plus_offset_to_bv64
+lemma fgl_pc_plus_offset_to_bv64
     (pc_fgl offset_fgl : FGL)
     (PC offset_bv : BitVec 64)
     (h_pc_bridge : pc_fgl.val = PC.toNat)
@@ -170,7 +170,7 @@ theorem fgl_pc_plus_offset_to_bv64
 /-- **Hi-half BitVec form (canonical mod-2^64 then div-2^32).**
 
 Companion to `fgl_pc_plus_offset_to_bv64` for the high lane. -/
-theorem fgl_pc_plus_offset_to_bv64_hi
+lemma fgl_pc_plus_offset_to_bv64_hi
     (pc_fgl offset_fgl : FGL)
     (PC offset_bv : BitVec 64)
     (h_pc_bridge : pc_fgl.val = PC.toNat)
@@ -192,7 +192,7 @@ The toolkit's lo / hi lemmas derive exactly that ℕ-level equality
 /-- **`.val % 2^32` direct form.**  Same content as
 `fgl_pc_plus_offset_lo`; renamed to match the exact shape JumpUType's
 `h_pc_fgl_lo_nat` / `h_pci_lo_val` parameters take. -/
-theorem fgl_pc_plus_offset_val_lo_eq
+lemma fgl_pc_plus_offset_val_lo_eq
     (pc_fgl offset_fgl : FGL)
     (PC offset_bv : BitVec 64)
     (h_pc_bridge : pc_fgl.val = PC.toNat)
@@ -210,7 +210,7 @@ theorem fgl_pc_plus_offset_val_lo_eq
 side).  When the FGL sum has been **further range-bounded** to `< 2^32`
 (e.g. by separate byte-decomposition constraints), the outer mod is
 redundant and we can state the lo identity as a direct equality. -/
-theorem fgl_pc_plus_offset_val_eq_lo_strict
+lemma fgl_pc_plus_offset_val_eq_lo_strict
     (pc_fgl offset_fgl : FGL)
     (PC offset_bv : BitVec 64)
     (h_pc_bridge : pc_fgl.val = PC.toNat)
@@ -248,7 +248,7 @@ lemma no_wrap_of_pc_offset_bound
 combinator that JumpUType's JAL / JALR call sites consume directly:
 under a PC-trajectory bound (rather than the more abstract FGL no-wrap),
 derive the lo-lane identity. -/
-theorem fgl_pc_plus_offset_lo_of_bound
+lemma fgl_pc_plus_offset_lo_of_bound
     (pc_fgl offset_fgl : FGL)
     (PC offset_bv : BitVec 64)
     (h_pc_bridge : pc_fgl.val = PC.toNat)
@@ -263,7 +263,7 @@ theorem fgl_pc_plus_offset_lo_of_bound
 
 /-- **Hi-half lift specialised to small offset.**  Companion to
 `fgl_pc_plus_offset_lo_of_bound`. -/
-theorem fgl_pc_plus_offset_hi_of_bound
+lemma fgl_pc_plus_offset_hi_of_bound
     (pc_fgl offset_fgl : FGL)
     (PC offset_bv : BitVec 64)
     (h_pc_bridge : pc_fgl.val = PC.toNat)
@@ -294,7 +294,7 @@ PC bridge and a tight PC bound `PC.toNat < GL_prime - 4`, derive the
 lo-lane identity at offset 4.  Most callers will discharge
 `PC.toNat < 2^32` (a far tighter bound, immediate from the ROM bus
 range table). -/
-theorem fgl_pc_plus_4_lo
+lemma fgl_pc_plus_4_lo
     (pc_fgl : FGL) (PC : BitVec 64)
     (h_pc_bridge : pc_fgl.val = PC.toNat)
     (h_pc_bound : PC.toNat < GL_prime - 4) :
@@ -309,7 +309,7 @@ theorem fgl_pc_plus_4_lo
 
 /-- **Hi-half lift specialised to offset = 4 (JAL / JALR linkage).**
 Companion to `fgl_pc_plus_4_lo`. -/
-theorem fgl_pc_plus_4_hi
+lemma fgl_pc_plus_4_hi
     (pc_fgl : FGL) (PC : BitVec 64)
     (h_pc_bridge : pc_fgl.val = PC.toNat)
     (h_pc_bound : PC.toNat < GL_prime - 4) :
@@ -356,7 +356,7 @@ adjusted via a circuit-level sign witness), so its `.toNat < 2^32`,
 and the PC trajectory is bounded by `< GL_prime - 2^32`.  Both bounds
 are realistic: ELF-loaded programs have PC well under `2^32`, and
 non-negative-imm AUIPC has offset `< 2^32`. -/
-theorem fgl_pc_plus_offset_lo_of_offset_lt_2_32
+lemma fgl_pc_plus_offset_lo_of_offset_lt_2_32
     (pc_fgl offset_fgl : FGL)
     (PC offset_bv : BitVec 64)
     (h_pc_bridge : pc_fgl.val = PC.toNat)
@@ -370,7 +370,7 @@ theorem fgl_pc_plus_offset_lo_of_offset_lt_2_32
     h_pc_bridge h_offset_bridge h_pc_offset
 
 /-- **Hi-half lift for offset bounded by `2^32`.** -/
-theorem fgl_pc_plus_offset_hi_of_offset_lt_2_32
+lemma fgl_pc_plus_offset_hi_of_offset_lt_2_32
     (pc_fgl offset_fgl : FGL)
     (PC offset_bv : BitVec 64)
     (h_pc_bridge : pc_fgl.val = PC.toNat)

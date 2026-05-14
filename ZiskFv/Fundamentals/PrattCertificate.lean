@@ -33,7 +33,7 @@ decreasing_by
   · simp_wf; omega
 
 /-- `powMod` equals the naive `a^n % p`. -/
-theorem powMod_eq (a : ℕ) : ∀ n p : ℕ, powMod a n p = a ^ n % p
+lemma powMod_eq (a : ℕ) : ∀ n p : ℕ, powMod a n p = a ^ n % p
   | 0, p => by simp [powMod]
   | n + 1, p => by
       unfold powMod
@@ -132,7 +132,7 @@ private lemma prime_dvd_list_prod_pow
         exact ⟨qe, List.mem_cons_of_mem _ hmem, heq⟩
 
 /-- Main correctness theorem. -/
-theorem verify_correct : ∀ c : Pratt, c.verify = true → Nat.Prime c.prime
+lemma verify_correct : ∀ c : Pratt, c.verify = true → Nat.Prime c.prime
   | .small p, h => by
       unfold verify at h
       simp only [prime]

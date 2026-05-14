@@ -55,7 +55,7 @@ lemma toIntZ_cast (x : FGL) : ((toIntZ x : ℤ) : FGL) = x := by
   · simp [h]
 
 /-- **Core ℤ-lift: bounded ℤ values agreeing in FGL are equal.** -/
-theorem fgl_eq_to_int_eq
+lemma fgl_eq_to_int_eq
     {lhs rhs : ℤ}
     (h_eq_fgl : ((lhs : ℤ) : FGL) = ((rhs : ℤ) : FGL))
     (h_lhs_lb : -((GL_prime : ℤ) / 2) ≤ lhs)
@@ -103,7 +103,7 @@ lemma toIntZ_eq_val_of_lt {x : FGL} {n : ℕ}
   simp [this]
 
 /-- **`toIntZ` from the disjunctive carry-range shape.** -/
-theorem fgl_carry_disjunctive_lt (cy : FGL)
+lemma fgl_carry_disjunctive_lt (cy : FGL)
     (h_disj : cy.val < 983041 ∨ GL_prime - 983040 ≤ cy.val) :
     -983040 ≤ toIntZ cy ∧ toIntZ cy ≤ 983040 := by
   unfold toIntZ
@@ -161,7 +161,7 @@ The strategy per chunk:
 -/
 
 /-- **Generic ℤ-lift from an FGL "= 0" equation under a magnitude bound.** -/
-theorem fgl_zero_lift_int
+lemma fgl_zero_lift_int
     {E_int : ℤ}
     (h_fgl : ((E_int : ℤ) : FGL) = 0)
     (h_abs : |E_int| ≤ (GL_prime : ℤ) / 2) :
@@ -202,7 +202,7 @@ Each lift produces the corresponding ℤ equation with `toIntZ`
 applied to every variable. -/
 
 /-- **C31'-shape signed chunk lift (no carry-in, 1-product).** -/
-theorem fgl_chunk_lift_C31_int
+lemma fgl_chunk_lift_C31_int
     (a₀ b₀ c₀ cy₀ fab γ : FGL)
     (h_a0 : a₀.val < 65536) (h_b0 : b₀.val < 65536)
     (h_c0 : c₀.val < 65536)
@@ -285,7 +285,7 @@ lemma abs_8sum_bound (t1 t2 t3 t4 t5 t6 t7 t8 : ℤ) :
 private lemma abs_65536 : |(65536 : ℤ)| = 65536 := by norm_num
 
 /-- **C32'-shape signed chunk lift (2-product, carry-in/carry-out).** -/
-theorem fgl_chunk_lift_C32_int
+lemma fgl_chunk_lift_C32_int
     (a₀ a₁ b₀ b₁ c₁ cy₀ cy₁ fab γ : FGL)
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
     (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
@@ -334,7 +334,7 @@ theorem fgl_chunk_lift_C32_int
   exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
 
 /-- **C33'-shape signed chunk lift (3-product, carry-in/carry-out).** -/
-theorem fgl_chunk_lift_C33_int
+lemma fgl_chunk_lift_C33_int
     (a₀ a₁ a₂ b₀ b₁ b₂ c₂ cy₁ cy₂ fab γ : FGL)
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536) (h_a2 : a₂.val < 65536)
     (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536) (h_b2 : b₂.val < 65536)
@@ -393,7 +393,7 @@ theorem fgl_chunk_lift_C33_int
   exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
 
 /-- **C34'-shape signed chunk lift (4-product, carry-in/carry-out).** -/
-theorem fgl_chunk_lift_C34_int
+lemma fgl_chunk_lift_C34_int
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₃ cy₂ cy₃ fab γ : FGL)
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
     (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
@@ -460,7 +460,7 @@ theorem fgl_chunk_lift_C34_int
   exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
 
 /-- **C35'-shape signed chunk lift (3-product + 2 cross-terms).** -/
-theorem fgl_chunk_lift_C35_int
+lemma fgl_chunk_lift_C35_int
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ d₀ cy₃ cy₄ fab γ na_fb nb_fa : FGL)
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
     (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
@@ -539,7 +539,7 @@ theorem fgl_chunk_lift_C35_int
   exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
 
 /-- **C36'-shape signed chunk lift (2-product + 2 cross-terms).** -/
-theorem fgl_chunk_lift_C36_int
+lemma fgl_chunk_lift_C36_int
     (a₁ a₂ a₃ b₁ b₂ b₃ d₁ cy₄ cy₅ fab γ na_fb nb_fa : FGL)
     (h_a1 : a₁.val < 65536) (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
     (h_b1 : b₁.val < 65536) (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
@@ -607,7 +607,7 @@ theorem fgl_chunk_lift_C36_int
   exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
 
 /-- **C37'-shape signed chunk lift (1-product + 2 cross-terms).** -/
-theorem fgl_chunk_lift_C37_int
+lemma fgl_chunk_lift_C37_int
     (a₂ a₃ b₂ b₃ d₂ cy₅ cy₆ fab γ na_fb nb_fa : FGL)
     (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
     (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
@@ -669,7 +669,7 @@ theorem fgl_chunk_lift_C37_int
   exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
 
 /-- **C38'-shape signed chunk lift (closing form).** -/
-theorem fgl_chunk_lift_C38_int
+lemma fgl_chunk_lift_C38_int
     (a₃ b₃ d₃ cy₆ fab γ na_fb nb_fa na nb np : FGL)
     (h_a3 : a₃.val < 65536) (h_b3 : b₃.val < 65536)
     (h_d3 : d₃.val < 65536)
@@ -749,7 +749,7 @@ Each lift mirrors its MUL twin but with adjusted polynomial shape and
 magnitude bound. -/
 
 /-- **C31' DIV-shape signed chunk lift (1-product + δ*d term, no carry-in).** -/
-theorem fgl_div_chunk_lift_C31_signed_int
+lemma fgl_div_chunk_lift_C31_signed_int
     (a₀ b₀ c₀ d₀ cy₀ fab γ δ : FGL)
     (h_a0 : a₀.val < 65536) (h_b0 : b₀.val < 65536)
     (h_c0 : c₀.val < 65536) (h_d0 : d₀.val < 65536)
@@ -804,7 +804,7 @@ theorem fgl_div_chunk_lift_C31_signed_int
   exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
 
 /-- **C32' DIV-shape signed chunk lift (2-product + δ*d term).** -/
-theorem fgl_div_chunk_lift_C32_signed_int
+lemma fgl_div_chunk_lift_C32_signed_int
     (a₀ a₁ b₀ b₁ c₁ d₁ cy₀ cy₁ fab γ δ : FGL)
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
     (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
@@ -865,7 +865,7 @@ theorem fgl_div_chunk_lift_C32_signed_int
   exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
 
 /-- **C33' DIV-shape signed chunk lift (3-product + δ*d term).** -/
-theorem fgl_div_chunk_lift_C33_signed_int
+lemma fgl_div_chunk_lift_C33_signed_int
     (a₀ a₁ a₂ b₀ b₁ b₂ c₂ d₂ cy₁ cy₂ fab γ δ : FGL)
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536) (h_a2 : a₂.val < 65536)
     (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536) (h_b2 : b₂.val < 65536)
@@ -931,7 +931,7 @@ theorem fgl_div_chunk_lift_C33_signed_int
   exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
 
 /-- **C34' DIV-shape signed chunk lift (4-product + δ*d term).** -/
-theorem fgl_div_chunk_lift_C34_signed_int
+lemma fgl_div_chunk_lift_C34_signed_int
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₃ d₃ cy₂ cy₃ fab γ δ : FGL)
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
     (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
@@ -1009,7 +1009,7 @@ theorem fgl_div_chunk_lift_C34_signed_int
 /-- **C35' DIV-shape signed chunk lift (3-product + 2 cross-terms + (nr-np) constant).**
     No `-γ*d_0` term (compared to MUL's C35); instead a small constant
     `+(toIntZ nr - toIntZ np)`. -/
-theorem fgl_div_chunk_lift_C35_signed_int
+lemma fgl_div_chunk_lift_C35_signed_int
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ cy₃ cy₄ fab na_fb nb_fa nr np : FGL)
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
     (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
@@ -1087,7 +1087,7 @@ theorem fgl_div_chunk_lift_C35_signed_int
   exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
 
 /-- **C36' DIV-shape signed chunk lift (drops `-γ*d_1`).** -/
-theorem fgl_div_chunk_lift_C36_signed_int
+lemma fgl_div_chunk_lift_C36_signed_int
     (a₁ a₂ a₃ b₁ b₂ b₃ cy₄ cy₅ fab na_fb nb_fa : FGL)
     (h_a1 : a₁.val < 65536) (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
     (h_b1 : b₁.val < 65536) (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
@@ -1146,7 +1146,7 @@ theorem fgl_div_chunk_lift_C36_signed_int
   exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
 
 /-- **C37' DIV-shape signed chunk lift (drops `-γ*d_2`).** -/
-theorem fgl_div_chunk_lift_C37_signed_int
+lemma fgl_div_chunk_lift_C37_signed_int
     (a₂ a₃ b₂ b₃ cy₅ cy₆ fab na_fb nb_fa : FGL)
     (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
     (h_b2 : b₂.val < 65536) (h_b3 : b₃.val < 65536)
@@ -1198,7 +1198,7 @@ theorem fgl_div_chunk_lift_C37_signed_int
   exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
 
 /-- **C38' DIV-shape signed chunk lift (drops `-65536*np` and `-γ*d_3`).** -/
-theorem fgl_div_chunk_lift_C38_signed_int
+lemma fgl_div_chunk_lift_C38_signed_int
     (a₃ b₃ cy₆ na nb na_fb nb_fa : FGL)
     (h_a3 : a₃.val < 65536) (h_b3 : b₃.val < 65536)
     (h_cy6_abs : |toIntZ cy₆| ≤ 983040)
@@ -1248,7 +1248,7 @@ Pure-ℤ analogues of `arith_mul_signed_carry_identity` and
 proved via `linear_combination`. -/
 
 /-- **8-chunk signed MUL aggregator over ℤ.** -/
-theorem mul_signed_packed_of_chunks_int
+lemma mul_signed_packed_of_chunks_int
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
      fab na_fb nb_fa na nb np : ℤ)
@@ -1290,7 +1290,7 @@ theorem mul_signed_packed_of_chunks_int
     + (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536) * hC38
 
 /-- **8-chunk signed DIV aggregator over ℤ.** -/
-theorem div_signed_packed_of_chunks_int
+lemma div_signed_packed_of_chunks_int
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
      fab na_fb nb_fa na nb np nr : ℤ)
@@ -1374,7 +1374,7 @@ from Part 5. -/
 
     For unsigned-W MUL (`na = nb = np = 0`) the cross-terms vanish and
     d-chunks are 0, reducing to `fab*A_32*B_32 = γ*c_low32`. -/
-theorem mul_w_packed_of_chunks_int
+lemma mul_w_packed_of_chunks_int
     (a₀ a₁ b₀ b₁ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
      fab na_fb nb_fa na nb np : ℤ)
@@ -1433,7 +1433,7 @@ theorem mul_w_packed_of_chunks_int
 
     For unsigned-W DIV (`na=nb=np=nr=0`): cross-terms vanish, `(nr-np)=0`,
     `na*nb=0`, reducing to `fab*A_32*B_32 + δ*D_32 = γ*c_packed`. -/
-theorem div_w_packed_of_chunks_int
+lemma div_w_packed_of_chunks_int
     (a₀ a₁ b₀ b₁ c₀ c₁ c₂ c₃ d₀ d₁
      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
      fab na_fb nb_fa na nb np nr : ℤ)
@@ -1473,7 +1473,7 @@ theorem div_w_packed_of_chunks_int
 /-! ## Part 6 — FGL → ℤ entry-point aggregators -/
 
 /-- **FGL → ℤ entry-point: signed MUL.** -/
-theorem fgl_mul_signed_chunks_to_int_identity
+lemma fgl_mul_signed_chunks_to_int_identity
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
      fab na_fb nb_fa na nb np : FGL)
@@ -1538,7 +1538,7 @@ theorem fgl_mul_signed_chunks_to_int_identity
     hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
 
 /-- **FGL → ℤ entry-point: signed DIV.** -/
-theorem fgl_div_signed_chunks_to_int_identity
+lemma fgl_div_signed_chunks_to_int_identity
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃
      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
      fab na_fb nb_fa na nb np nr : FGL)
@@ -1684,7 +1684,7 @@ lemma toIntZ_bool_cases {x : FGL} (h : x = 0 ∨ x = 1) :
 /-- **Constraint 6 lifted to ℤ via `toIntZ`.**
     Given the FGL pin equation `fab = 1 - 2*na - 2*nb + 4*na*nb` and
     booleanity of `na, nb`, conclude the ℤ form. -/
-theorem fgl_fab_pin_int
+lemma fgl_fab_pin_int
     (fab na nb : FGL)
     (h_na : na = 0 ∨ na = 1) (h_nb : nb = 0 ∨ nb = 1)
     (h_fab : fab = 1 - 2 * na - 2 * nb + 4 * na * nb) :
@@ -1694,7 +1694,7 @@ theorem fgl_fab_pin_int
     (subst h_fab; decide)
 
 /-- **Constraint 7 lifted to ℤ via `toIntZ`.** -/
-theorem fgl_na_fb_pin_int
+lemma fgl_na_fb_pin_int
     (na_fb na nb : FGL)
     (h_na : na = 0 ∨ na = 1) (h_nb : nb = 0 ∨ nb = 1)
     (h_pin : na_fb = na * (1 - 2 * nb)) :
@@ -1703,7 +1703,7 @@ theorem fgl_na_fb_pin_int
     (subst h_pin; decide)
 
 /-- **Constraint 8 lifted to ℤ via `toIntZ`.** -/
-theorem fgl_nb_fa_pin_int
+lemma fgl_nb_fa_pin_int
     (nb_fa na nb : FGL)
     (h_na : na = 0 ∨ na = 1) (h_nb : nb = 0 ∨ nb = 1)
     (h_pin : nb_fa = nb * (1 - 2 * na)) :
@@ -1741,7 +1741,7 @@ turns A.0's output into A.1's input. -/
     Composes the three FGL pin lifts with A.1's
     `signed_mul_chunks_to_abs_product` to deliver the abs-product
     identity directly from A.0's column-form chunk identity. -/
-theorem fgl_mul_signed_simplified_chunks_to_abs_product
+lemma fgl_mul_signed_simplified_chunks_to_abs_product
     (A B C D : ℤ)
     (fab na_fb nb_fa na nb np : FGL)
     (h_na_bool : na = 0 ∨ na = 1) (h_nb_bool : nb = 0 ∨ nb = 1)
@@ -1794,7 +1794,7 @@ themselves — they live on the carry columns, not the output chunks.
 /-- **Four-chunk packing nonnegativity from chunk range bounds.**
     Each `c_i.val < 65536`, so `toIntZ c_i = c_i.val ≥ 0`, and the
     packing is bounded by `(2^16 - 1) * (1 + 2^16 + 2^32 + 2^48) < 2^64`. -/
-theorem toIntZ_packed4_bounds
+lemma toIntZ_packed4_bounds
     {c₀ c₁ c₂ c₃ : FGL}
     (h0 : c₀.val < 65536) (h1 : c₁.val < 65536)
     (h2 : c₂.val < 65536) (h3 : c₃.val < 65536) :
@@ -1826,7 +1826,7 @@ theorem toIntZ_packed4_bounds
     Given the eight `c_i` and `d_i` chunk-range bounds (each `< 65536`),
     both `C` and `D` (the toIntZ-lifted four-chunk packings) live in
     `[0, 2^64)`. -/
-theorem fgl_signed_C_D_chunk_packing_nonneg
+lemma fgl_signed_C_D_chunk_packing_nonneg
     {c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL}
     (h_c0 : c₀.val < 65536) (h_c1 : c₁.val < 65536)
     (h_c2 : c₂.val < 65536) (h_c3 : c₃.val < 65536)
@@ -1885,7 +1885,7 @@ lemma bv64_toInt_eq_toNat_sub_msb_pow (op : BitVec 64) :
 
     This is the canonical input shape for `fgl_mul_signed_to_bv64_hi`
     and the DIV/REM final wrappers below. -/
-theorem signed_op_packing_bridge
+lemma signed_op_packing_bridge
     (op : BitVec 64) (A : ℕ) (na : ℕ)
     (h_toNat : op.toNat = A)
     (h_na : na = op.msb.toNat) :
@@ -2040,7 +2040,7 @@ sign of dividend; `|r| < |r2|`) and concludes the BV64-output equality.
       (the truncated-mod-of-divisor sign convention).
 
     Conclude: `BitVec.ofInt 64 q = (execute_DIV_REM_pure r1 r2 .DRS).1`. -/
-theorem fgl_div_signed_to_bv64
+lemma fgl_div_signed_to_bv64
     (r1 r2 : BitVec 64) (q r : ℤ)
     (h_r2_ne : r2.toInt ≠ 0)
     (h_no_overflow : ¬ (r1.toInt = -2^63 ∧ r2.toInt = -1))
@@ -2080,7 +2080,7 @@ Analogous to 8.5 for the remainder. The non-boundary case has
     `BitVec.ofInt 64 (Int.tmod r1.toInt r2.toInt)`, regardless of the
     boundary dispatch — but the chunk-derived witnessed `r` matches
     `Int.tmod r1.toInt r2.toInt` only in the non-boundary case. -/
-theorem fgl_rem_signed_to_bv64
+lemma fgl_rem_signed_to_bv64
     (r1 r2 : BitVec 64) (q r : ℤ)
     (h_r2_ne : r2.toInt ≠ 0)
     (_h_no_overflow : ¬ (r1.toInt = -2^63 ∧ r2.toInt = -1))
@@ -2141,7 +2141,7 @@ or pure ring arithmetic.
     is **inconsistent** with the range bounds `0 ≤ A, B, C` and
     `C < 2^64` — except in cases where the chain reduces to a clean
     identity. We close via `nlinarith` with the range-bound hypotheses. -/
-theorem abs_euclidean_to_signed_euclidean_div_rem
+lemma abs_euclidean_to_signed_euclidean_div_rem
     (A B C D : ℤ) (na nb np nr : ℤ)
     (r1 r2 : BitVec 64)
     (h_na_bool : na = 0 ∨ na = 1) (h_nb_bool : nb = 0 ∨ nb = 1)
@@ -2244,7 +2244,7 @@ The output is the 32-bit signed Euclidean form
 
 /-- **Abs-Euclidean chain identity → signed Euclidean identity (DIVW/REMW).**
     W-mode mirror of `abs_euclidean_to_signed_euclidean_div_rem`. -/
-theorem abs_euclidean_to_signed_euclidean_div_rem_w
+lemma abs_euclidean_to_signed_euclidean_div_rem_w
     (A B C D : ℤ) (na nb np nr : ℤ)
     (r1_lo32 r2_lo32 : BitVec 32)
     (h_na_bool : na = 0 ∨ na = 1) (h_nb_bool : nb = 0 ∨ nb = 1)

@@ -1,0 +1,148 @@
+# Theorem-vs-lemma keep-list (mechanical refactor 2026-05-14).
+#
+# These names MUST remain `theorem` declarations. Everything else
+# under ZiskFv/ should be `lemma` (kernel-identical in Lean 4 /
+# Mathlib but communicates "internal helper").
+#
+# Three groups, 128 names total:
+#   1. 2 global compliance theorems (ZiskFv/Equivalence/Compliance/Global.lean)
+#   2. 63 canonical per-opcode equivalences (ZiskFv/Equivalence/<Op>.lean)
+#   3. 63 trust-wrapper theorems (ZiskFv/Equivalence/Compliance/<Op>Exemplar.lean)
+#
+# The V1 uniformity gate (check 6) and V2 axiom-closure gate
+# require group-2 names to be `theorem`; flipping them would fail
+# the build and trust gate.
+
+# ---- Group 1: global compliance (2) ----
+zisk_riscv_compliant_program_bus
+decode_main_row_correct
+
+# ---- Group 2: 63 canonical equiv_<OP> ----
+equiv_ADD
+equiv_ADDI
+equiv_ADDIW
+equiv_ADDW
+equiv_AND
+equiv_ANDI
+equiv_AUIPC
+equiv_BEQ
+equiv_BGE
+equiv_BGEU
+equiv_BLT
+equiv_BLTU
+equiv_BNE
+equiv_DIV
+equiv_DIVU
+equiv_DIVUW
+equiv_DIVW
+equiv_FENCE
+equiv_JAL
+equiv_JALR
+equiv_LB
+equiv_LBU
+equiv_LD
+equiv_LH
+equiv_LHU
+equiv_LUI
+equiv_LW
+equiv_LWU
+equiv_MUL
+equiv_MULH
+equiv_MULHSU
+equiv_MULHU
+equiv_MULW
+equiv_OR
+equiv_ORI
+equiv_REM
+equiv_REMU
+equiv_REMUW
+equiv_REMW
+equiv_SB
+equiv_SD
+equiv_SH
+equiv_SLL
+equiv_SLLI
+equiv_SLLIW
+equiv_SLLW
+equiv_SLT
+equiv_SLTI
+equiv_SLTIU
+equiv_SLTU
+equiv_SRA
+equiv_SRAI
+equiv_SRAIW
+equiv_SRAW
+equiv_SRL
+equiv_SRLI
+equiv_SRLIW
+equiv_SRLW
+equiv_SUB
+equiv_SUBW
+equiv_SW
+equiv_XOR
+equiv_XORI
+
+# ---- Group 3: 63 trust-wrapper equiv_<OP>_from_trust ----
+equiv_ADD_from_trust
+equiv_ADDI_from_trust
+equiv_ADDIW_from_trust
+equiv_ADDW_from_trust
+equiv_AND_from_trust
+equiv_ANDI_from_trust
+equiv_AUIPC_from_trust
+equiv_BEQ_from_trust
+equiv_BGE_from_trust
+equiv_BGEU_from_trust
+equiv_BLT_from_trust
+equiv_BLTU_from_trust
+equiv_BNE_from_trust
+equiv_DIV_from_trust
+equiv_DIVU_from_trust
+equiv_DIVUW_from_trust
+equiv_DIVW_from_trust
+equiv_FENCE_from_trust
+equiv_JAL_from_trust
+equiv_JALR_from_trust
+equiv_LB_from_trust
+equiv_LBU_from_trust
+equiv_LD_from_trust
+equiv_LH_from_trust
+equiv_LHU_from_trust
+equiv_LUI_from_trust
+equiv_LW_from_trust
+equiv_LWU_from_trust
+equiv_MUL_from_trust
+equiv_MULH_from_trust
+equiv_MULHSU_from_trust
+equiv_MULHU_from_trust
+equiv_MULW_from_trust
+equiv_OR_from_trust
+equiv_ORI_from_trust
+equiv_REM_from_trust
+equiv_REMU_from_trust
+equiv_REMUW_from_trust
+equiv_REMW_from_trust
+equiv_SB_from_trust
+equiv_SD_from_trust
+equiv_SH_from_trust
+equiv_SLL_from_trust
+equiv_SLLI_from_trust
+equiv_SLLIW_from_trust
+equiv_SLLW_from_trust
+equiv_SLT_from_trust
+equiv_SLTI_from_trust
+equiv_SLTIU_from_trust
+equiv_SLTU_from_trust
+equiv_SRA_from_trust
+equiv_SRAI_from_trust
+equiv_SRAIW_from_trust
+equiv_SRAW_from_trust
+equiv_SRL_from_trust
+equiv_SRLI_from_trust
+equiv_SRLIW_from_trust
+equiv_SRLW_from_trust
+equiv_SUB_from_trust
+equiv_SUBW_from_trust
+equiv_SW_from_trust
+equiv_XOR_from_trust
+equiv_XORI_from_trust
