@@ -7,11 +7,24 @@ zkVM against the [Sail RISC-V specification](https://github.com/rems-project/sai
 via [`sail-riscv-lean`](https://github.com/NethermindEth/sail-riscv-lean)'s
 `LeanRV64D` module. This effort follows the pattern established by [openvm-fv](https://github.com/openvm-org/openvm-fv), and we are grateful to the authors of that library for their excellent work.
 
-**Status:** all 63 RV64IM opcodes proved equivalent to the Sail spec
-(0 sorries, 82 trusted axioms — see `docs/fv/trusted-base.md`). The
-load-bearing claim is `lake build`: every per-opcode equivalence theorem
-typechecks. Run `nix run .#test` for the full suite (cargo + lake + trust
-gate + flake repro check).
+**Status:** the verification claim is the global compliance theorem
+`ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus`
+(in `ZiskFv/Equivalence/Compliance/Global.lean`), which dispatches all
+63 RV64IM opcodes through a 35-arm `OpEnvelope` sum type to per-opcode
+`equiv_<OP>_from_trust` wrappers, each discharging its canonical
+`equiv_<OP>` theorem's promise hypotheses from the trust ledger. The
+trusted computing base is **122 axioms across 12 classes** (51
+transpile contracts + 14 bus / lookup soundness + 35 Arith range /
+table / Euclidean pins + 14 Binary / BinaryExtension lookup soundness
++ 3 range-bus byte-range + 1 memory-state load bridge + 4 platform
+scope — full per-class breakdown in `docs/fv/trusted-base.md`), 0
+sorries. Closure mechanically enforced: V2 gate
+`check-closure-vs-baseline` asserts
+`#print axioms zisk_riscv_compliant_program_bus` equals
+`trust/baseline-axioms.txt` exactly. The load-bearing claim is
+`lake build`: every per-opcode equivalence theorem + every wrapper +
+the uber theorem typechecks. Run `nix run .#test` for the full suite
+(cargo + lake + trust gate V1 + V2 + flake repro check).
 
 ## Layout
 
@@ -40,7 +53,8 @@ ZiskFv/
 ├── Circuit/        per-opcode lifted circuit semantics — one .lean per RV64IM opcode
 ├── Sail/           per-opcode Sail-side mirrors with equivalence-to-LeanRV64D lemmas
 ├── Tactics/        instruction-shape archetype tactics that drive the per-opcode proofs
-├── Equivalence/    the final per-opcode theorems: canonical equiv_<OP> + bus-precondition variants
+├── Equivalence/    per-opcode theorems: canonical equiv_<OP> + bus-precondition variants
+│   └── Compliance/ 63 equiv_<OP>_from_trust wrappers + OpEnvelope dispatchers; Global.lean is the uber theorem
 └── ZiskFv.lean     root module — imports the whole tree
 ```
 
@@ -55,8 +69,8 @@ Foundational definitions and lemmas the rest of the tree builds on.
 `PackedBitVec/` subdirectory hold the fixed-width arithmetic lemmas needed
 for carry-free decompositions across packed lanes. `Transpiler.lean` and
 `TranspileConsumers.lean` declare the `transpile_*` axioms that bridge
-RISC-V instruction encoding to ZisK's microinstruction format (the
-trust-base entries 1–9 in `docs/fv/trusted-base.md`). `Execution.lean` and
+RISC-V instruction encoding to ZisK's microinstruction format (class
+#1 — 51 axioms — in `docs/fv/trusted-base.md`). `Execution.lean` and
 `Interaction.lean` define generic execution-trace and bus-interaction
 structures shared across all AIRs.
 
@@ -152,29 +166,45 @@ scripts.
 
 ### `ZiskFv/Equivalence/`
 
-The top-level FV theorems — one file per opcode, each containing:
+The top-level FV theorems, organised in three layers:
 
-- `equiv_<OP> : execute_instruction (.<shape> …) state = (bus_effect exec_row mem_row state).2`
-  — the canonical equivalence. Both sides live in Sail's state space:
-  the LHS is Sail's `execute`; the RHS comes from `Sail/BusEffect.lean`.
-  Every parameter is in one of the safe trust classes
-  ({CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE, TRANSPILE-BRIDGE,
-  TRANSPILE-PIN}); the rd-value derivation runs internally via
-  `RdValDerivation/`. The trust gate's `check-no-output-eq.sh`
-  mechanically rejects any signature that reintroduces a retired
-  OUTPUT-EQ parameter (`h_rd_val`, `h_byte_sum`, etc. — see
-  `trust/forbidden-param-shapes.txt`). The 7 load opcodes are
-  exempt pending a follow-up that derives byte-decomposition from
-  circuit witnesses.
-- Bus-precondition variants (`equiv_<OP>_from_bus`,
-  `equiv_<OP>_bus_self`, `equiv_<OP>_op_bus`) bridge alternate
-  precondition shapes into the same canonical conclusion.
+1. **Per-opcode canonical theorems** — one file per opcode, each
+   containing
+   `equiv_<OP> : execute_instruction (.<shape> …) state = (bus_effect exec_row mem_row state).2`.
+   Both sides live in Sail's state space: the LHS is Sail's `execute`;
+   the RHS comes from `Sail/BusEffect.lean`. Every parameter is in one
+   of the safe trust classes ({CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE,
+   TRANSPILE-BRIDGE, TRANSPILE-PIN}); uniformly enforced by the trust
+   gate's `check-no-output-eq.sh` (V1) + `check-no-output-eq-v2.sh`
+   (V2) against `trust/forbidden-param-shapes.txt` /
+   `forbidden-types.txt` — no exemptions, including loads (the 7 load
+   opcodes were closed by deriving their cross-entry rd-value byte
+   equations from circuit witnesses, see
+   `Circuit/LoadDerivation.lean` and `Circuit/SextLoadBridge.lean`).
+   Bus-precondition variants (`equiv_<OP>_from_bus`,
+   `equiv_<OP>_bus_self`, `equiv_<OP>_op_bus`) bridge alternate
+   precondition shapes into the same canonical conclusion.
+   `RdValDerivation/` factors out shared rd-value lemmas across
+   opcodes that share a derivation pattern.
 
-Subdirectory `RdValDerivation/` factors out shared rd-value lemmas across
-opcodes that share a derivation pattern (Arith, BinaryCompare, JumpUType,
-MulDivRemUnsigned). **`lake build` succeeding on `Equivalence/` IS the
-formal-verification claim** — everything else in the tree is scaffolding
-toward this point. All 63 RV64IM opcodes covered, 0 sorries.
+2. **`Compliance/<Op>Exemplar.lean` wrappers** — 63
+   `equiv_<OP>_from_trust` wrappers (plus `DivPilot.lean`), one per
+   opcode. Each wrapper discharges its canonical theorem's promise
+   hypotheses from the trust ledger, exposing only the minimal
+   caller-burden surface (recorded in
+   `trust/baseline-wrapper-caller-burden.txt`, drift-guarded by
+   `check-wrapper-caller-burden.sh`).
+
+3. **`Compliance/Global.lean`** — the uber theorem
+   `zisk_riscv_compliant_program_bus`, dispatching all 63 opcodes
+   through a 35-arm `OpEnvelope` sum type by chaining the per-op
+   wrappers. **This is the verification claim.** Its transitive
+   `#print axioms` closure is mechanically asserted equal to
+   `trust/baseline-axioms.txt` by the V2 gate's
+   `check-closure-vs-baseline` subcommand — 122 axioms, no dead
+   trust, no silent additions. **`lake build` succeeding IS the
+   formal-verification claim.** All 63 RV64IM opcodes covered, 0
+   sorries.
 
 ## Inside `build/`
 
@@ -225,8 +255,12 @@ wall on cold rebuild, this is the dominant cost in the `populate` pipeline.
 ## Trust gate (CI)
 
 The trust boundary is **mechanically enforced** on every PR via
-`.github/workflows/trust-gate.yml`, which runs
-`trust/scripts/check-all.sh`. The gate ensures:
+`.github/workflows/trust-gate.yml`, which runs both layers:
+`trust/scripts/check-all.sh` (V1, 9 syntactic checks, no build) and
+`trust/scripts/check-all-semantic.sh` (V2, 3 semantic checks, requires
+`lake build`). Together they ensure:
+
+**V1 (9 checks, syntactic):**
 
 - All `axiom` / `opaque` / `constant` / `unsafe def` / `partial def`
   / `@[extern]` / `@[implemented_by]` declarations live in one of the
@@ -236,18 +270,43 @@ The trust boundary is **mechanically enforced** on every PR via
   weakening of an axiom shows up as a diff on this file.
 - No canonical `equiv_<OP>` theorem accepts a retired OUTPUT-EQ
   hypothesis parameter (`h_rd_val`, `h_byte_sum`, etc. — see
-  `trust/forbidden-param-shapes.txt`). The 7 load opcodes are
-  exempt pending a follow-up.
-- Sanity floors on axiom count and canonical-theorem count.
+  `trust/forbidden-param-shapes.txt`); uniformly enforced across all
+  63 opcodes (no carve-out).
+- Sanity floors on axiom count (≥ 82) and canonical-theorem count
+  (≥ 63), plus cross-witness check.
+- Zero `sorry` under `ZiskFv/{Fundamentals,Airs,Circuit,Equivalence,Tactics,Sail}`.
+- Uniformity: every one of 63 RV64IM opcodes has a canonical
+  `equiv_<OP>`.
+- Anti-laundering tripwires: per-theorem hypothesis count + canonical
+  caller-burden ledger + wrapper caller-burden ledger all
+  drift-guarded against their respective baselines.
+
+**V2 (3 checks, semantic — `lake exe trust-gate`):**
+
+- **Per-theorem axiom closure** (`baseline-equiv-axiom-deps.txt`):
+  transitive non-kernel axiom dependencies of every canonical
+  `equiv_<OP>` recorded; any silent change (additions OR removals)
+  fails the gate.
+- **Forbidden binder types** (`forbidden-types.txt`): walks each
+  canonical theorem's binders via `forallTelescope` + `whnfR`,
+  catching the `abbrev`-aliasing dodge V1's regex misses.
+- **Closure vs baseline**: transitive project-axiom closure of
+  `Compliance.Global.zisk_riscv_compliant_program_bus` must equal the
+  set of names in `baseline-axioms.txt` exactly. Catches **dead
+  trust** (axioms hash-fresh in the ledger but no longer reachable
+  from the uber theorem).
 
 To legitimately extend the trust surface, edit the relevant allowlisted
-file, run `trust/scripts/regenerate.sh`, commit the updated baseline,
-and have a CODEOWNER review the `trust/baseline-axioms.txt` diff (these
-files are protected by `.github/CODEOWNERS`). See `trust/README.md`
-for the full process and `CLAUDE.md` for guidance to AI agents
-contributing to this repo.
+file, run `trust/scripts/regenerate.sh`, commit the updated baselines
+(`baseline-axioms.txt`, `baseline-zisk-riscv-compliant.txt`,
+`baseline-equiv-axiom-deps.txt`), and have a CODEOWNER review the
+diff (these files are protected by `.github/CODEOWNERS`). See
+`trust/README.md` for the full process and `CLAUDE.md` for guidance
+to AI agents contributing to this repo.
 
-Run `trust/scripts/check-all.sh` locally to see what CI will check.
+Run `trust/scripts/check-all.sh` locally (V1, no build) and
+`trust/scripts/check-all-semantic.sh` after `lake build` (V2) to see
+what CI will check; `nix run .#test` runs both in sequence.
 
 ## First-time setup — build the spec + pilout
 
