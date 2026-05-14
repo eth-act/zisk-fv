@@ -88,6 +88,9 @@ open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.Mem
+open ZiskFv.Airs.ArithMul
+open ZiskFv.Airs.ArithDiv
+open ZiskFv.PackedBitVec.SignedChunkLift
 open ZiskFv.Tactics.UTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.Equivalence.Compliance
@@ -1456,6 +1459,516 @@ inductive OpEnvelope
     (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
     (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+  -- ============================ MUL =====================================
+  | mul
+    (mul_input : PureSpec.MulInput) (r1 r2 rd : regidx)
+    (srs1 srs2 : Signedness)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_mul : m.op r_main = OP_MUL)
+    (h_match_primary :
+      matches_entry (opBus_row_Main m r_main)
+                    (opBus_row_Arith v r_a))
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok mul_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok mul_input.r2_val state)
+    (h_input_rd : mul_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some mul_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_MULH_mul_pure mul_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : mul_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
+    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
+    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
+    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a) :
+    OpEnvelope state m r_main
+  -- ============================ MULH ====================================
+  | mulh
+    (mulh_input : PureSpec.MulhInput) (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_mulh : m.op r_main = OP_MULH)
+    (h_match_secondary :
+      matches_entry (opBus_row_Main m r_main)
+                    (opBus_row_ArithMulSecondary v r_a))
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok mulh_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok mulh_input.r2_val state)
+    (h_input_rd : mulh_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some mulh_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : mulh_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a) :
+    OpEnvelope state m r_main
+  -- ============================ MULHU ===================================
+  | mulhu
+    (mulhu_input : PureSpec.MulhuInput) (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_mulhu : m.op r_main = OP_MULUH)
+    (h_match_secondary :
+      matches_entry (opBus_row_Main m r_main)
+                    (opBus_row_ArithMulSecondary v r_a))
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok mulhu_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok mulhu_input.r2_val state)
+    (h_input_rd : mulhu_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some mulhu_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : mulhu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
+    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
+    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
+    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a) :
+    OpEnvelope state m r_main
+  -- ============================ MULHSU ==================================
+  | mulhsu
+    (mulhsu_input : PureSpec.MulhsuInput) (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_mulhsu : m.op r_main = OP_MULSUH)
+    (h_match_secondary :
+      matches_entry (opBus_row_Main m r_main)
+                    (opBus_row_ArithMulSecondary v r_a))
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok mulhsu_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok mulhsu_input.r2_val state)
+    (h_input_rd : mulhsu_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some mulhsu_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : mulhsu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a) :
+    OpEnvelope state m r_main
+  -- ============================ MULW ====================================
+  | mulw
+    (mulw_input : PureSpec.MulwInput) (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_mulw : m.op r_main = OP_MUL_W)
+    (h_match_primary :
+      matches_entry (opBus_row_Main m r_main)
+                    (opBus_row_Arith v r_a))
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok mulw_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok mulw_input.r2_val state)
+    (h_input_rd : mulw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some mulw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_MULW_pure mulw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : mulw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (h_sext_choice :
+      ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧
+        (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
+      ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
+        (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
+    (h_op1 :
+      (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt
+        = ((v.a_0 r_a).val + (v.a_1 r_a).val * 65536 : ℤ)
+            - (v.na r_a).val * (2:ℤ)^32)
+    (h_op2 :
+      (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt
+        = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^32) :
+    OpEnvelope state m r_main
+  -- ============================ DIV =====================================
+  | div
+    (div_input : PureSpec.DivInput) (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_div : m.op r_main = OP_DIV)
+    (h_match_primary :
+      matches_entry (opBus_row_Main m r_main)
+                    (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_DIVREM_div_pure div_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : div_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok div_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok div_input.r2_val state)
+    (h_input_rd : div_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some div_input.PC)
+    (h_op2_ne : div_input.r2_val.toInt ≠ 0)
+    (h_no_overflow :
+      ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
+    (h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) :
+    OpEnvelope state m r_main
+  -- ============================ DIVU ====================================
+  | divu
+    (divu_input : PureSpec.DivuInput) (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_divu : m.op r_main = OP_DIVU)
+    (h_match_primary :
+      matches_entry (opBus_row_Main m r_main)
+                    (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok divu_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok divu_input.r2_val state)
+    (h_input_rd : divu_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some divu_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_DIVREM_divu_pure divu_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : divu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
+    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
+    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
+    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_op2_ne : divu_input.r2_val.toNat ≠ 0) :
+    OpEnvelope state m r_main
+  -- ============================ DIVW ====================================
+  | divw
+    (divw_input : PureSpec.DivwInput) (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_divw : m.op r_main = OP_DIV_W)
+    (h_match_primary :
+      matches_entry (opBus_row_Main m r_main)
+                    (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok divw_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok divw_input.r2_val state)
+    (h_input_rd : divw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some divw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : divw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    (h_sext_choice :
+      ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧
+        (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
+      ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
+        (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
+    (h_op1 :
+      (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt
+        = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
+            - toIntZ (v.np r_a) * (2:ℤ)^32)
+    (h_op2 :
+      (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
+        = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+            - toIntZ (v.nb r_a) * (2:ℤ)^32)
+    (h_op2_ne : Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32)
+    (h_no_overflow :
+      ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
+          ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32)) :
+    OpEnvelope state m r_main
+  -- ============================ DIVUW ===================================
+  | divuw
+    (divuw_input : PureSpec.DivuwInput) (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_divuw : m.op r_main = OP_DIVU_W)
+    (h_match_primary :
+      matches_entry (opBus_row_Main m r_main)
+                    (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok divuw_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok divuw_input.r2_val state)
+    (h_input_rd : divuw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some divuw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : divuw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_sext_choice :
+      ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧
+        (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
+      ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
+        (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
+    (h_op1 : (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat
+              = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
+    (h_op2 : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat
+              = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536)
+    (h_op2_ne : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat ≠ 0) :
+    OpEnvelope state m r_main
+  -- ============================ REM =====================================
+  | rem
+    (rem_input : PureSpec.RemInput) (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_rem : m.op r_main = OP_REM)
+    (h_match_secondary :
+      matches_entry (opBus_row_Main m r_main)
+                    (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : rem_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok rem_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok rem_input.r2_val state)
+    (h_input_rd : rem_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some rem_input.PC)
+    (h_op2_ne : rem_input.r2_val.toInt ≠ 0)
+    (h_no_overflow :
+      ¬ (rem_input.r1_val.toInt = -(2:ℤ)^63 ∧ rem_input.r2_val.toInt = -1))
+    (h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a)) :
+    OpEnvelope state m r_main
+  -- ============================ REMU ====================================
+  | remu
+    (remu_input : PureSpec.RemuInput) (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_remu : m.op r_main = OP_REMU)
+    (h_match_secondary :
+      matches_entry (opBus_row_Main m r_main)
+                    (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok remu_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok remu_input.r2_val state)
+    (h_input_rd : remu_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some remu_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : remu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
+    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
+    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
+    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_op2_ne : remu_input.r2_val.toNat ≠ 0) :
+    OpEnvelope state m r_main
+  -- ============================ REMW ====================================
+  | remw
+    (remw_input : PureSpec.RemwInput) (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_remw : m.op r_main = OP_REM_W)
+    (h_match_secondary :
+      matches_entry (opBus_row_Main m r_main)
+                    (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok remw_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok remw_input.r2_val state)
+    (h_input_rd : remw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some remw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : remw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    (h_sext_choice :
+      ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧
+        (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
+      ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
+        (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
+    (h_op1 :
+      (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
+        = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
+            - (v.np r_a).val * (2:ℤ)^32)
+    (h_op2 :
+      (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
+        = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^32)
+    (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
+    (h_no_overflow_w :
+      ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31))
+          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32)) :
+    OpEnvelope state m r_main
+  -- ============================ REMUW ===================================
+  | remuw
+    (remuw_input : PureSpec.RemuwInput) (r1 r2 rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_remuw : m.op r_main = OP_REMU_W)
+    (h_match_secondary :
+      matches_entry (opBus_row_Main m r_main)
+                    (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok remuw_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok remuw_input.r2_val state)
+    (h_input_rd : remuw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some remuw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : remuw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_sext_choice :
+      ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧
+        (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
+      ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
+        (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
+    (h_op1 : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
+              = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
+    (h_op2 : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
+              = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536)
+    (h_op2_ne : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat ≠ 0) :
+    OpEnvelope state m r_main
 
 namespace OpEnvelope
 
@@ -1524,6 +2037,19 @@ def kind : OpEnvelope state m r_main → mainOpKind
   | .lb ..    => .SIGNEXTEND_B
   | .lh ..    => .SIGNEXTEND_H
   | .lw ..    => .SIGNEXTEND_W
+  | .mul ..    => .MUL
+  | .mulh ..   => .MULH
+  | .mulhu ..  => .MULUH
+  | .mulhsu .. => .MULSUH
+  | .mulw ..   => .MUL_W
+  | .div ..    => .DIV
+  | .divu ..   => .DIVU
+  | .divw ..   => .DIV_W
+  | .divuw ..  => .DIVU_W
+  | .rem ..    => .REM
+  | .remu ..   => .REMU
+  | .remw ..   => .REM_W
+  | .remuw ..  => .REMU_W
 
 /-- The dispatcher's conclusion as a `Prop`. -/
 def exec_eq : OpEnvelope state m r_main → Prop
@@ -1802,6 +2328,105 @@ def exec_eq : OpEnvelope state m r_main → Prop
           false,
           4
         ))) state = (bus_effect exec_row [e0, e1, e2] state).2
+  | .mul _ r1 r2 rd srs1 srs2 exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.MUL
+            (r2, r1, rd,
+             { result_part := VectorHalf.Low
+               signed_rs1 := srs1
+               signed_rs2 := srs2 }))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .mulh _ r1 r2 rd exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.MUL
+            (r2, r1, rd,
+             { result_part := VectorHalf.High
+               signed_rs1 := .Signed
+               signed_rs2 := .Signed }))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .mulhu _ r1 r2 rd exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.MUL
+            (r2, r1, rd,
+             { result_part := VectorHalf.High
+               signed_rs1 := .Unsigned
+               signed_rs2 := .Unsigned }))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .mulhsu _ r1 r2 rd exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.MUL
+            (r2, r1, rd,
+             { result_part := VectorHalf.High
+               signed_rs1 := .Signed
+               signed_rs2 := .Unsigned }))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .mulw _ r1 r2 rd exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.MULW (r2, r1, rd))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .div _ r1 r2 rd exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .divu _ r1 r2 rd exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, true))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .divw _ r1 r2 rd exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .divuw _ r1 r2 rd exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, true))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .rem _ r1 r2 rd exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .remu _ r1 r2 rd exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, true))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .remw _ r1 r2 rd exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, false))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .remuw _ r1 r2 rd exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, true))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
 
 end OpEnvelope
 
@@ -2373,5 +2998,183 @@ theorem zisk_riscv_compliant_program_bus
       risc_v_assumptions h_opcode_assumptions
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+  | mul mul_input r1 r2 rd srs1 srs2 exec_row e0 e1 e2 v r_a
+        h_main_active h_main_op_mul h_match_primary
+        h_input_r1 h_input_r2 h_input_rd h_input_pc
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+        h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_MUL state mul_input r1 r2 rd srs1 srs2
+      exec_row e0 e1 e2 m r_main v r_a
+      h_main_active h_main_op_mul h_match_primary
+      h_input_r1 h_input_r2 h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints
+  | mulh mulh_input r1 r2 rd exec_row e0 e1 e2 v r_a
+         h_main_active h_main_op_mulh h_match_secondary
+         h_input_r1 h_input_r2 h_input_rd h_input_pc
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         h_row_constraints =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_MULH state mulh_input r1 r2 rd
+      exec_row e0 e1 e2 m r_main v r_a
+      h_main_active h_main_op_mulh h_match_secondary
+      h_input_r1 h_input_r2 h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_row_constraints
+  | mulhu mulhu_input r1 r2 rd exec_row e0 e1 e2 v r_a
+          h_main_active h_main_op_mulhu h_match_secondary
+          h_input_r1 h_input_r2 h_input_rd h_input_pc
+          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+          h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_MULHU state mulhu_input r1 r2 rd
+      exec_row e0 e1 e2 m r_main v r_a
+      h_main_active h_main_op_mulhu h_match_secondary
+      h_input_r1 h_input_r2 h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints
+  | mulhsu mulhsu_input r1 r2 rd exec_row e0 e1 e2 v r_a
+           h_main_active h_main_op_mulhsu h_match_secondary
+           h_input_r1 h_input_r2 h_input_rd h_input_pc
+           h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+           h_row_constraints =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_MULHSU state mulhsu_input r1 r2 rd
+      exec_row e0 e1 e2 m r_main v r_a
+      h_main_active h_main_op_mulhsu h_match_secondary
+      h_input_r1 h_input_r2 h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_row_constraints
+  | mulw mulw_input r1 r2 rd exec_row e0 e1 e2 v r_a
+         h_main_active h_main_op_mulw h_match_primary
+         h_input_r1 h_input_r2 h_input_rd h_input_pc
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         h_row_constraints h_sext_choice h_op1 h_op2 =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_MULW state mulw_input r1 r2 rd
+      exec_row e0 e1 e2 m r_main v r_a
+      h_main_active h_main_op_mulw h_match_primary
+      h_input_r1 h_input_r2 h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_row_constraints h_sext_choice h_op1 h_op2
+  | div div_input r1 r2 rd exec_row e0 e1 e2 v r_a
+        h_main_active h_main_op_div h_match_primary
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+        h_input_r1 h_input_r2 h_input_rd h_input_pc h_op2_ne h_no_overflow
+        h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_DIV state div_input r1 r2 rd exec_row e0 e1 e2
+      m r_main v r_a h_main_active h_main_op_div h_match_primary
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_input_r1 h_input_r2 h_input_rd h_input_pc h_op2_ne h_no_overflow
+      h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
+  | divu divu_input r1 r2 rd exec_row e0 e1 e2 v r_a
+         h_main_active h_main_op_divu h_match_primary
+         h_input_r1 h_input_r2 h_input_rd h_input_pc
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_DIVU state divu_input r1 r2 rd exec_row e0 e1 e2
+      m r_main v r_a h_main_active h_main_op_divu h_match_primary
+      h_input_r1 h_input_r2 h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne
+  | divw divw_input r1 r2 rd exec_row e0 e1 e2 v r_a
+         h_main_active h_main_op_divw h_match_primary
+         h_input_r1 h_input_r2 h_input_rd h_input_pc
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
+         h_sext_choice h_op1 h_op2 h_op2_ne h_no_overflow =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_DIVW state divw_input r1 r2 rd exec_row e0 e1 e2
+      m r_main v r_a h_main_active h_main_op_divw h_match_primary
+      h_input_r1 h_input_r2 h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
+      h_sext_choice h_op1 h_op2 h_op2_ne h_no_overflow
+  | divuw divuw_input r1 r2 rd exec_row e0 e1 e2 v r_a
+          h_main_active h_main_op_divuw h_match_primary
+          h_input_r1 h_input_r2 h_input_rd h_input_pc
+          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+          h_row_constraints h_sext_choice h_op1 h_op2 h_op2_ne =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_DIVUW state divuw_input r1 r2 rd exec_row e0 e1 e2
+      m r_main v r_a h_main_active h_main_op_divuw h_match_primary
+      h_input_r1 h_input_r2 h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_row_constraints h_sext_choice h_op1 h_op2 h_op2_ne
+  | rem rem_input r1 r2 rd exec_row e0 e1 e2 v r_a
+        h_main_active h_main_op_rem h_match_secondary
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+        h_input_r1 h_input_r2 h_input_rd h_input_pc h_op2_ne h_no_overflow
+        h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_REM state rem_input r1 r2 rd exec_row e0 e1 e2
+      m r_main v r_a h_main_active h_main_op_rem h_match_secondary
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_input_r1 h_input_r2 h_input_rd h_input_pc h_op2_ne h_no_overflow
+      h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
+  | remu remu_input r1 r2 rd exec_row e0 e1 e2 v r_a
+         h_main_active h_main_op_remu h_match_secondary
+         h_input_r1 h_input_r2 h_input_rd h_input_pc
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_REMU state remu_input r1 r2 rd exec_row e0 e1 e2
+      m r_main v r_a h_main_active h_main_op_remu h_match_secondary
+      h_input_r1 h_input_r2 h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne
+  | remw remw_input r1 r2 rd exec_row e0 e1 e2 v r_a
+         h_main_active h_main_op_remw h_match_secondary
+         h_input_r1 h_input_r2 h_input_rd h_input_pc
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
+         h_sext_choice h_op1 h_op2 h_op2_ne h_no_overflow_w =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_REMW state remw_input r1 r2 rd exec_row e0 e1 e2
+      m r_main v r_a h_main_active h_main_op_remw h_match_secondary
+      h_input_r1 h_input_r2 h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
+      h_sext_choice h_op1 h_op2 h_op2_ne h_no_overflow_w
+  | remuw remuw_input r1 r2 rd exec_row e0 e1 e2 v r_a
+          h_main_active h_main_op_remuw h_match_secondary
+          h_input_r1 h_input_r2 h_input_rd h_input_pc
+          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+          h_row_constraints h_sext_choice h_op1 h_op2 h_op2_ne =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_REMUW state remuw_input r1 r2 rd exec_row e0 e1 e2
+      m r_main v r_a h_main_active h_main_op_remuw h_match_secondary
+      h_input_r1 h_input_r2 h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_row_constraints h_sext_choice h_op1 h_op2 h_op2_ne
 
 end ZiskFv.Equivalence.Compliance.Global
