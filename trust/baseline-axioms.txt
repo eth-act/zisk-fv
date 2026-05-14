@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 125
+# Total entries: 131
 #
 39b9f47eebdda4ca  ZiskFv/Airs/Arith/Ranges.lean:43  axiom     arith_mul_columns_in_range
 c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:55  axiom     arith_div_columns_in_range
@@ -22,10 +22,16 @@ a2a5a478d067c982  ZiskFv/Airs/Arith/Ranges.lean:502  axiom     arith_div_np_eq_m
 a8f5ceba58c3c3a0  ZiskFv/Airs/Arith/Ranges.lean:530  axiom     arith_div_nb_eq_msb_of_divisor
 6b62373475e5f2b8  ZiskFv/Airs/Arith/Ranges.lean:602  axiom     arith_div_remainder_bound
 0c16bb12ac998610  ZiskFv/Airs/Arith/Ranges.lean:631  axiom     arith_div_remainder_bound_unsigned
-dde871d623bc3937  ZiskFv/Airs/Arith/Ranges.lean:692  axiom     arith_table_op_mul_mode_pin
-04d49bc6d936efef  ZiskFv/Airs/Arith/Ranges.lean:717  axiom     arith_table_op_mul_main_selector_pin
-a1054397b066e830  ZiskFv/Airs/Arith/Ranges.lean:742  axiom     arith_table_op_div_rem_unsigned_mode_pin
-211d0e2ccbd7003d  ZiskFv/Airs/Arith/Ranges.lean:755  axiom     arith_table_op_div_rem_unsigned_main_selector_pin
+d9e12831963e28fa  ZiskFv/Airs/Arith/Ranges.lean:669  axiom     arith_div_remainder_bound_unsigned_w
+a5dc560c5067a995  ZiskFv/Airs/Arith/Ranges.lean:683  axiom     arith_div_remainder_bound_signed_w
+dde871d623bc3937  ZiskFv/Airs/Arith/Ranges.lean:748  axiom     arith_table_op_mul_mode_pin
+04d49bc6d936efef  ZiskFv/Airs/Arith/Ranges.lean:773  axiom     arith_table_op_mul_main_selector_pin
+a1054397b066e830  ZiskFv/Airs/Arith/Ranges.lean:798  axiom     arith_table_op_div_rem_unsigned_mode_pin
+211d0e2ccbd7003d  ZiskFv/Airs/Arith/Ranges.lean:811  axiom     arith_table_op_div_rem_unsigned_main_selector_pin
+5b5bb8f32621ed2b  ZiskFv/Airs/Arith/Ranges.lean:855  axiom     arith_table_op_div_rem_unsigned_w_mode_pin
+9b4f9950c5942ae1  ZiskFv/Airs/Arith/Ranges.lean:868  axiom     arith_table_op_div_rem_unsigned_w_main_selector_pin
+49d607fa6da0f8db  ZiskFv/Airs/Arith/Ranges.lean:885  axiom     arith_table_op_div_rem_signed_w_mode_pin
+b1298c518cd05669  ZiskFv/Airs/Arith/Ranges.lean:897  axiom     arith_table_op_div_rem_signed_w_main_selector_pin
 08d74d52fabb3c51  ZiskFv/Airs/Binary/BinaryAddRanges.lean:59  axiom     binary_add_columns_in_range
 feafd4d75a95e2ad  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:53  axiom     binary_extension_columns_in_range
 48b9f2f309f54d71  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:106  axiom     binary_extension_op_is_shift_pin

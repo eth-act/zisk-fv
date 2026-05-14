@@ -637,6 +637,62 @@ axiom arith_div_remainder_bound_unsigned
       < ZiskFv.PackedBitVec.MulNoWrap.packed4
           (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val
 
+/-! ## Arith W-mode Euclidean-remainder bounds (m32 = 1)
+
+W-mode (m32 = 1) analogs of `arith_div_remainder_bound` and
+`arith_div_remainder_bound_unsigned`. The PIL emission at
+`arith.pil:274` is shared (the same `assumes_operation` row appears
+on every DIV/REM row regardless of width); the W-mode specialization
+uses the 32-bit-truncated `a:[d[0]+d[1]*65536, ...]` and
+`b:[b[0]+b[1]*65536, ...]` slots (with `m32 * nr * 0xFFFFFFFF` /
+`m32 * nb * 0xFFFFFFFF` adjustments in the high chunk-pair). For the
+W-unsigned mode (na = nb = np = nr = 0) the adjustment vanishes and
+the bound collapses to `d_lo32 < b_lo32` in ℕ; for the W-signed
+mode the bound is `|d_lo32 - nr*2^32| < |b_lo32 - nb*2^32|` plus the
+remainder-sign correctness `0 ≤ (d_lo32 - nr*2^32) * (c_lo32 - np*2^32)`.
+
+Trust class: same as the non-W siblings (class #6b, lookup soundness
+on the `assumes_operation` consumer bus row composed with the
+binary AIR's OP_LTU / OP_LT_ABS_* relation, restricted to the
+W-mode DIV/REM rows). PIL citation: `arith.pil:274` composed with
+the W-mode (m32 = 1) specialization of the row-type table.
+-/
+
+/-- **Arith W-unsigned DIV/REM remainder bound (class #6b).** W-mode
+    analog of `arith_div_remainder_bound_unsigned`. For every
+    `Valid_ArithDiv` row in unsigned 32-bit DIV/REM mode (`sext = 0`,
+    `m32 = 1`, `div = 1`) with `op ∈ {188, 189}` — DIVUW / REMUW —
+    the 32-bit remainder lo-pair is strictly less than the 32-bit
+    divisor lo-pair (both interpreted as ℕ). Caller supplies the
+    `r2_lo32 ≠ 0` exclusion to align with the `(1 - div_by_zero)`
+    selector. -/
+axiom arith_div_remainder_bound_unsigned_w
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 1) (_h_div : v.div r_a = 1)
+    (_h_op : v.op r_a = 188 ∨ v.op r_a = 189) :
+    (v.d_0 r_a).val + (v.d_1 r_a).val * 65536
+      < (v.b_0 r_a).val + (v.b_1 r_a).val * 65536
+
+/-- **Arith W-signed DIV/REM remainder bound (class #6b).** W-mode
+    analog of `arith_div_remainder_bound`. For every `Valid_ArithDiv`
+    row in signed 32-bit DIV/REM mode (`sext = 0`, `m32 = 1`,
+    `div = 1`) with `op ∈ {190, 191}` — DIVW / REMW — the 32-bit
+    signed remainder magnitude is strictly less than the 32-bit
+    signed divisor magnitude, and the signed remainder times the
+    signed dividend is non-negative. -/
+axiom arith_div_remainder_bound_signed_w
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 1) (_h_div : v.div r_a = 1)
+    (_h_op : v.op r_a = 190 ∨ v.op r_a = 191) :
+    (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+        - (v.nr r_a).val * (2:ℤ)^32).natAbs
+      < (((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+          - (v.nb r_a).val * (2:ℤ)^32).natAbs
+  ∧ 0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
+          - (v.nr r_a).val * (2:ℤ)^32)
+        * (((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
+            - (v.np r_a).val * (2:ℤ)^32)
+
 /-! ## Arith-table MUL-family mode + main_mul/main_div selector pins
 
 Mirror of the DIV-pilot pair
@@ -757,5 +813,91 @@ axiom arith_table_op_div_rem_unsigned_main_selector_pin
     (_h_op : v.op r_a = 184 ∨ v.op r_a = 185) :
     (v.op r_a = 184 → v.main_div r_a = 1 ∧ v.main_mul r_a = 0)
   ∧ (v.op r_a = 185 → v.main_div r_a = 0 ∧ v.main_mul r_a = 0)
+
+/-! ## Arith-table W-mode DIV/REM mode pins (m32 = 1)
+
+W-mode (m32 = 1) analogs of `arith_table_op_div_rem_unsigned_mode_pin`
+and `arith_table_op_div_rem_signed_mode_pin`. Per the row-type table at
+`arith.pil:222-234`, the W-variant DIV/REM rows pin:
+
+* `op ∈ {188 (DIVUW), 189 (REMUW)}` — unsigned-W: all four sign
+  witnesses zero, plus `(sext, m32, div) = (0, 1, 1)`.
+* `op ∈ {190 (DIVW), 191 (REMW)}` — signed-W: `(sext, m32, div) =
+  (0, 1, 1)`; `na, nb, np, nr` carry sign witnesses (na = MSB(a3-cohort),
+  nb = MSB(b3-cohort), np = MSB(c3-cohort), nr = MSB(d3-cohort) per
+  the row-type legend).
+
+Selector-pin companions pin `main_div = 1, main_mul = 0` for the
+primary (DIVUW/DIVW) lanes and `main_div = 0, main_mul = 0` for the
+secondary (REMUW/REMW) lanes.
+
+Trust class: same as `arith_table_op_div_rem_unsigned_mode_pin`
+(class #6b, lookup soundness on the consumer-side `arith_table_assumes`
+bus row composed with the arith_table content for the corresponding
+W-variant rows). PIL citation: `arith.pil:286-287`
+(`arith_table_assumes(op, m32, div, na, nb, np, nr, sext,
+div_by_zero, div_overflow, main_mul, main_div, ...)`) composed with
+the W-variant rows of `arith_table.pil` /
+`arith_table_data.rs::ARITH_TABLE`.
+-/
+
+/-- **Arith-table unsigned-W DIV/REM mode pin (class #6b).**
+    For every `Valid_ArithDiv` row with `op ∈ {188, 189}` (unsigned
+    32-bit DIVUW / REMUW), the arith_table lookup pins all four sign
+    witnesses to 0, plus `sext = 0`, `m32 = 1`, `div = 1`.
+
+    Consumed by `equiv_DIVUW_from_trust` / `equiv_REMUW_from_trust`
+    to discharge the mode + sign-witness pins (`h_na`/`h_nb`/`h_np`/
+    `h_nr`/`h_sext`/`h_m32`/`h_div`) given the arith-side opcode
+    literal (which is itself a consequence of the OpBus permutation
+    matching `m.op r_main` to `v.op r_a`). Same trust kind as
+    `arith_table_op_div_rem_unsigned_mode_pin` (non-W sibling). -/
+axiom arith_table_op_div_rem_unsigned_w_mode_pin
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 188 ∨ v.op r_a = 189) :
+    v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
+      ∧ v.sext r_a = 0 ∧ v.m32 r_a = 1 ∧ v.div r_a = 1
+
+/-- **Arith-table unsigned-W DIV/REM primary/secondary selector pin (class #6b).**
+    For every `Valid_ArithDiv` row with `op = 188` (DIVUW), the
+    arith_table lookup pins `main_div = 1, main_mul = 0` (primary
+    lane); for `op = 189` (REMUW), it pins `main_div = 0, main_mul = 0`
+    (secondary lane). PIL citation: same as
+    `arith_table_op_div_rem_main_selector_pin` modulo the row-table
+    rows for `op = 188 / 189`. -/
+axiom arith_table_op_div_rem_unsigned_w_main_selector_pin
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 188 ∨ v.op r_a = 189) :
+    (v.op r_a = 188 → v.main_div r_a = 1 ∧ v.main_mul r_a = 0)
+  ∧ (v.op r_a = 189 → v.main_div r_a = 0 ∧ v.main_mul r_a = 0)
+
+/-- **Arith-table signed-W DIV/REM mode pin (class #6b).**
+    For every `Valid_ArithDiv` row with `op ∈ {190, 191}` (signed
+    32-bit DIVW / REMW), the arith_table lookup pins `sext = 0`,
+    `m32 = 1`, `div = 1`. The sign-witness columns
+    (`na`/`nb`/`np`/`nr`) remain general for signed-W rows; only the
+    mode triple is pinned here. (The `nr` column's relationship to
+    `np` is covered by `arith_table_op_div_rem_signed_w_d_sign_pin`.)
+
+    Consumed by `equiv_DIVW_from_trust` / `equiv_REMW_from_trust`
+    to discharge the mode pins. Same trust kind as
+    `arith_table_op_div_rem_signed_mode_pin` (non-W sibling). -/
+axiom arith_table_op_div_rem_signed_w_mode_pin
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 190 ∨ v.op r_a = 191) :
+    v.sext r_a = 0 ∧ v.m32 r_a = 1 ∧ v.div r_a = 1
+
+/-- **Arith-table signed-W DIV/REM primary/secondary selector pin (class #6b).**
+    For every `Valid_ArithDiv` row with `op = 190` (DIVW), the
+    arith_table lookup pins `main_div = 1, main_mul = 0` (primary
+    lane); for `op = 191` (REMW), it pins `main_div = 0, main_mul = 0`
+    (secondary lane). PIL citation: same as
+    `arith_table_op_div_rem_main_selector_pin` modulo the row-table
+    rows for `op = 190 / 191`. -/
+axiom arith_table_op_div_rem_signed_w_main_selector_pin
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 190 ∨ v.op r_a = 191) :
+    (v.op r_a = 190 → v.main_div r_a = 1 ∧ v.main_mul r_a = 0)
+  ∧ (v.op r_a = 191 → v.main_div r_a = 0 ∧ v.main_mul r_a = 0)
 
 end ZiskFv.Airs.Arith
