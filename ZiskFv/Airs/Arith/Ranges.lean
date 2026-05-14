@@ -5,6 +5,7 @@ import ZiskFv.Fundamentals.Goldilocks
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
+import ZiskFv.Fundamentals.PackedBitVec.SignedChunkLift
 
 /-!
 # Arith AIR — universal column-range theorems
@@ -899,5 +900,124 @@ axiom arith_table_op_div_rem_signed_w_main_selector_pin
     (_h_op : v.op r_a = 190 ∨ v.op r_a = 191) :
     (v.op r_a = 190 → v.main_div r_a = 1 ∧ v.main_mul r_a = 0)
   ∧ (v.op r_a = 191 → v.main_div r_a = 0 ∧ v.main_mul r_a = 0)
+
+/-! ## Arith-table MULHU mode pin (op = 0xb1 = 177)
+
+Companion to `arith_table_op_mul_mode_pin`. For the **unsigned**
+64-bit high-half MUL row (`op = 177`, MULHU = MULUH), the arith_table
+lookup pins all seven mode columns to 0 — unsigned × unsigned, no
+sign witnesses needed; full 128-bit product is computed by the
+unsigned carry chain, and the high half is observed via the
+secondary bus emission's `d[]` chunks rather than the primary `c[]`.
+
+PIL citation: `arith.pil:286-287` (`arith_table_assumes` lookup)
+composed with the MULUH = 0xb1 row of `arith_table_data.rs::ARITH_TABLE`.
+
+Trust class #6b (lookup soundness on the consumer-side
+`arith_table_assumes` bus row composed with the arith_table content).
+Same kind, narrower scope, as `arith_table_op_mul_mode_pin`.
+-/
+
+/-- **Arith-table MULHU mode pin (class #6b).**
+    For every `Valid_ArithMul` row with `op = 177` (MULHU — unsigned
+    high half), the arith_table lookup pins all seven mode columns
+    to 0 (`na = nb = np = nr = sext = m32 = div = 0`). PIL citation:
+    `arith.pil:286-287` composed with the MULUH=0xb1 row of
+    `arith_table_data.rs::ARITH_TABLE`. -/
+axiom arith_table_op_mulhu_mode_pin
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 177) :
+    v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
+      ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
+
+/-- **Arith-table MULHU primary/secondary selector pin (class #6b).**
+    For every `Valid_ArithMul` row with `op = 177` (MULHU), the same
+    `arith_table_assumes` lookup at `arith.pil:286-287` pins the
+    primary/secondary selectors to MULHU-secondary:
+    `main_mul = 0, main_div = 0`. The MULHU row in
+    `arith_table_data.rs::ARITH_TABLE` selects the high-product
+    lane via `main_mul = 0` (so `secondary = 1 - main_mul - main_div = 1`).
+
+    Consumed by `equiv_MULHU_from_trust` to derive the secondary-mode
+    pins (`main_mul = 0`, `main_div = 0`) required by
+    `mulh_bus_res1_eq_d_hi` (`Airs/Arith/Bridge1.lean`) for the
+    hi-lane discharge of `h_byte_hi`. Same trust kind as
+    `arith_table_op_mul_main_selector_pin` (the low-half MUL analog). -/
+axiom arith_table_op_mulhu_main_selector_pin
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 177) :
+    v.main_mul r_a = 0 ∧ v.main_div r_a = 0
+
+/-! ## Arith-table signed high-half MUL mode pin (MULH = 181, MULHSU = 179)
+
+Companion to `arith_table_op_mul_mode_pin` for the **signed** /
+**mixed-sign** 64-bit high-half MUL rows.
+
+* **MULH (op = 181):** signed × signed. `nr = sext = m32 = div = 0`;
+  `na` / `nb` / `np` are sign-witness columns (NOT pinned to 0) and
+  the arith_table lookup enforces booleanity on `na` / `nb` plus the
+  XOR relation `np = na XOR nb` (in the loose-element `toIntZ` form
+  consumed by `equiv_MULH`).
+* **MULHSU (op = 179):** signed × unsigned. As for MULH but with `nb`
+  additionally pinned to 0 (rs2 is interpreted as unsigned).
+
+PIL citation: `arith.pil:286-287` (`arith_table_assumes` lookup)
+composed with the MULH=0xb5 / MULHSU=0xb3 rows of
+`arith_table_data.rs::ARITH_TABLE`. Trust class #6b (lookup soundness
+on the consumer-side `arith_table_assumes` bus row composed with the
+arith_table content). Same kind as
+`arith_table_op_div_rem_signed_mode_pin` / `arith_table_op_mul_mode_pin`.
+-/
+
+/-- **Arith-table MULH (signed × signed) mode pin (class #6b).**
+    For every `Valid_ArithMul` row with `op = 181` (MULH — signed
+    high half), the arith_table lookup pins `nr = sext = m32 = div = 0`
+    and exposes the signed-witness consequences: `na` / `nb` are
+    boolean (each ∈ {0,1}); `np` is the XOR of `na` and `nb`. -/
+axiom arith_table_op_mulh_mode_pin
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 181) :
+    v.nr r_a = 0 ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
+      ∧ (v.na r_a = 0 ∨ v.na r_a = 1)
+      ∧ (v.nb r_a = 0 ∨ v.nb r_a = 1)
+      ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+              + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+              - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+                  * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+
+/-- **Arith-table MULH primary/secondary selector pin (class #6b).**
+    For every `Valid_ArithMul` row with `op = 181` (MULH), the same
+    `arith_table_assumes` lookup pins the primary/secondary selectors
+    to MULH-secondary: `main_mul = 0, main_div = 0`. -/
+axiom arith_table_op_mulh_main_selector_pin
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 181) :
+    v.main_mul r_a = 0 ∧ v.main_div r_a = 0
+
+/-- **Arith-table MULHSU (signed × unsigned) mode pin (class #6b).**
+    For every `Valid_ArithMul` row with `op = 179` (MULHSU — signed ×
+    unsigned high half), the arith_table lookup pins
+    `nb = nr = sext = m32 = div = 0` (rs2 is unsigned, so `nb = 0`),
+    and exposes the signed-witness consequences on `na` / `np`. -/
+axiom arith_table_op_mulhsu_mode_pin
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 179) :
+    v.nb r_a = 0
+      ∧ v.nr r_a = 0 ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
+      ∧ (v.na r_a = 0 ∨ v.na r_a = 1)
+      ∧ ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+              + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+              - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+                  * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+
+/-- **Arith-table MULHSU primary/secondary selector pin (class #6b).**
+    For every `Valid_ArithMul` row with `op = 179` (MULHSU), the same
+    `arith_table_assumes` lookup pins `main_mul = 0, main_div = 0`. -/
+axiom arith_table_op_mulhsu_main_selector_pin
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (_h_op : v.op r_a = 179) :
+    v.main_mul r_a = 0 ∧ v.main_div r_a = 0
 
 end ZiskFv.Airs.Arith
