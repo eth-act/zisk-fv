@@ -194,6 +194,8 @@ shape and that the per-AIR axiom map's 0–1 prediction was correct.
 | `binary_per_byte_lookup_witness` | #6 (range-bus) | `Airs/Binary/BinaryRanges.lean:149` | per-byte BinaryTable lookup witness — links each row byte slot to a `consumer_byte_match_chain` instance |
 | `binary_carry_bits_in_range` | #6 (range-bus) | `Airs/Binary/BinaryRanges.lean:198` | `(v.carry_i r).val < 2` for the 8 `bits(1) carry[BYTES]` columns (`binary.pil:67`) — needed for AND/OR/XOR `c_7 = 0` derivation |
 | `binary_b_op_or_sext_eq_OP_OR` | #6 (table-pin) | `Airs/Binary/BinaryRanges.lean:263` | for any Binary row whose op-bus emission `b_op + 16 * mode32 = 15` (OP_OR), `b_op_or_sext = OP_OR` (`binary.pil:104` + `binary.pil:131-148`). Added by Step 4.1.4 (OR exemplar). |
+| `binary_b_op_or_sext_eq_OP_AND` | #6 (table-pin) | `Airs/Binary/BinaryRanges.lean` | parallel pin for `b_op + 16 * mode32 = 14` (OP_AND). Added by Step 4.2.B (AND wrapper). |
+| `binary_b_op_or_sext_eq_OP_XOR` | #6 (table-pin) | `Airs/Binary/BinaryRanges.lean` | parallel pin for `b_op + 16 * mode32 = 16` (OP_XOR). Added by Step 4.2.B (XOR wrapper). |
 | `bin_table_consumer_wf` | #6 (lookup-bus) | `Airs/BinaryTable.lean:281` | BinaryTable consumer rows (`multiplicity = 1`) satisfy `wf_properties` |
 
 ### Predicted gaps for the AIR's discharge pilot
