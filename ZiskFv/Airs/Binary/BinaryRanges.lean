@@ -294,4 +294,191 @@ axiom binary_b_op_or_sext_eq_OP_XOR (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = 16) :
     (v.b_op_or_sext r).val = ZiskFv.Airs.BinaryTable.OP_XOR
 
+/-! ## 6-field per-byte chain witness with `cin` / `pos_ind` exposed
+
+The 8 byte-slot `lookup_assumes(BINARY_TABLE_ID, …)` invocations at
+`zisk/state-machines/binary/pil/binary.pil:115-125` pin not just the
+`a_byte / b_byte / c_byte / op` columns (as
+`binary_per_byte_lookup_witness` does) but also the `cin` and `pos_ind`
+columns. The PIL emits:
+
+* byte 0:   `pos_ind = 2*use_first_byte`,  `cin = 0`,                `op = b_op`
+* byte 1:   `pos_ind = 0`,                 `cin = carry[0]`,         `op = b_op`
+* byte 2:   `pos_ind = 0`,                 `cin = carry[1]`,         `op = b_op`
+* byte 3:   `pos_ind = mode32`,            `cin = carry[2]`,         `op = b_op`
+* byte 4:   `pos_ind = 0`,                 `cin = carry[3]`,         `op = b_op_or_sext`
+* byte 5:   `pos_ind = 0`,                 `cin = carry[4]`,         `op = b_op_or_sext`
+* byte 6:   `pos_ind = 0`,                 `cin = carry[5]`,         `op = b_op_or_sext`
+* byte 7:   `pos_ind = mode64`,            `cin = carry[6]`,         `op = b_op_or_sext`
+
+(`mode64 = 1 - mode32`.) The previous 3-field axiom only delivered
+`a_byte / b_byte / c_byte / op`; canonical `equiv_SUB` / `equiv_SLT` /
+`equiv_SLTU` / W-variant equivs additionally consume the chain
+properties on `cin` and the chain-end conditions on `pos_ind`. This
+axiom exposes those, restricted to opcodes whose canonical `equiv_<OP>`
+consumer is the 6-field `consumer_byte_match_chain` family
+(SUB/SUBW/SLT/SLTI/SLTU/SLTIU/ADDIW/ADDW).
+
+The axiom takes the existing 3-field witness as input and refines it
+with the additional `cin` / `pos_ind` pins. Trust class: #6 (Binary
+AIR lookup soundness — per-byte BinaryTable lookup, with the chain
+columns exposed).
+
+PIL citations:
+* `zisk/state-machines/binary/pil/binary.pil:115-125` — the per-byte
+  `lookup_assumes(BINARY_TABLE_ID, …)` calls.
+* `zisk/state-machines/binary/pil/binary.pil:70` — `col witness bits(1)
+  carry[BYTES]` (the chain `carry` column whose values feed the
+  consecutive byte slots as `cin`).
+* `zisk/state-machines/binary/pil/binary.pil:73,79` — `mode32` /
+  `mode64 = 1 - mode32` for the byte-3 and byte-7 `pos_ind` pins.
+
+Used by `equiv_SUB_from_trust` etc. -/
+
+/-- **Binary 6-field per-byte chain witness with `cin` / `pos_ind`
+    exposed, parameterized by op-bus emission.**
+
+    For every Binary AIR row whose op-bus emission `b_op + 16 *
+    mode32` equals `op_emit`, each of the 8 byte slots has a
+    consumed `BinaryTableEntry` whose 6 columns
+    (`a_byte / b_byte / c_byte / op / cin / pos_ind`) plus `flags`
+    are pinned to the row's columns or to chain values per PIL
+    `binary.pil:115-125`:
+
+    * Byte 0: `op = b_op`, `cin = 0`,  `pos_ind = 2 * use_first_byte`.
+    * Byte i for i ∈ {1, 2}: `op = b_op`,
+      `cin = carry[i-1]`, `pos_ind = 0`.
+    * Byte 3: `op = b_op`, `cin = carry[2]`, `pos_ind = mode32`.
+    * Byte i for i ∈ {4, 5, 6}: `op = b_op_or_sext`,
+      `cin = carry[i-1]`, `pos_ind = 0`.
+    * Byte 7: `op = b_op_or_sext`, `cin = carry[6]`,
+      `pos_ind = mode64 = 1 - mode32`.
+
+    All 8 entries' `a_byte / b_byte / c_byte` match the row's
+    `free_in_a_i / free_in_b_i / free_in_c_i` per-byte columns.
+    The `flags.val % 2` projection feeds the next byte's `cin.val`
+    (the chain bit, per PIL `carry[i] = flags[i] % 2`).
+
+    The op-emission precondition together with PIL's
+    `b_op_or_sext = mode32 * (c_is_signed * (OP_SEXT_FF - OP_SEXT_00)
+    + OP_SEXT_00 - b_op) + b_op` (line 111) plus the per-byte
+    BinaryTable lookup restricting `(b_op, mode32, c_is_signed)` to
+    valid entries (lines 131-148) jointly pin the byte op-fields to
+    canonical opcode literals:
+
+    * If `op_emit ∈ {0x06, 0x07, 0x0B}` (`OP_LTU` / `OP_LT` / `OP_SUB`
+      in 64-bit mode), `mode32 = 0` and all 8 byte entries have
+      `e_i.op.val = op_emit` (since `b_op_or_sext = b_op` when
+      `mode32 = 0`).
+    * If `op_emit ∈ {0x1A, 0x1B}` (`OP_ADD_W` / `OP_SUB_W` in 32-bit
+      mode), `mode32 = 1` and bytes 0..3 have `e_i.op.val = b_op_val`
+      where `b_op_val = op_emit - 16` (the 32-bit equivalent opcode:
+      `OP_ADD = 0x0A` for `OP_ADD_W`, `OP_SUB = 0x0B` for `OP_SUB_W`);
+      bytes 4..7 have `e_i.op.val ∈ {OP_SEXT_00, OP_SEXT_FF}`.
+
+    Trust class: #6 (Binary AIR lookup soundness — chain-witness
+    sub-class). Same scope as `binary_per_byte_lookup_witness`; this
+    axiom is the 6-field refinement, plus the op-emission pin that
+    nails the byte op-fields to literal opcode values.
+
+    PIL citations:
+    * `zisk/state-machines/binary/pil/binary.pil:111` —
+      `b_op_or_sext` linear definition.
+    * `zisk/state-machines/binary/pil/binary.pil:115-125` — the 8
+      per-byte `lookup_assumes(BINARY_TABLE_ID, …)` calls.
+    * `zisk/state-machines/binary/pil/binary.pil:70` — `col witness
+      bits(1) carry[BYTES]` (the chain column).
+    * `zisk/state-machines/binary/pil/binary.pil:73,79` — `mode32`
+      and `mode64 = 1 - mode32`.
+
+    Consumed by `equiv_SUB_from_trust` / `equiv_SUBW_from_trust` /
+    `equiv_ADDW_from_trust` / `equiv_ADDIW_from_trust` /
+    `equiv_SLT_from_trust` / `equiv_SLTU_from_trust` /
+    `equiv_SLTI_from_trust` / `equiv_SLTIU_from_trust`. -/
+axiom binary_consumer_byte_match_chain_pin
+    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_emit : ℕ)
+    (h_emit_op : v.b_op r + 16 * v.mode32 r = (op_emit : FGL)) :
+    ∃ (e_0 e_1 e_2 e_3 e_4 e_5 e_6 e_7 :
+        ZiskFv.Airs.BinaryTable.BinaryTableEntry FGL),
+      -- Byte 0..3: a/b/c/flags bytes match the row's per-byte
+      -- columns; op = b_op; for the 5 supported emissions, op.val
+      -- is pinned to the canonical 64-bit opcode (OP_LTU / OP_LT /
+      -- OP_SUB) or to the 32-bit-equivalent (OP_ADD / OP_SUB) for
+      -- W-mode.
+      (e_0.multiplicity = 1
+        ∧ e_0.a_byte = v.free_in_a_0 r ∧ e_0.b_byte = v.free_in_b_0 r
+        ∧ e_0.c_byte = v.free_in_c_0 r ∧ e_0.flags = v.carry_0 r
+        ∧ ((op_emit = 0x06 ∨ op_emit = 0x07 ∨ op_emit = 0x0B) →
+            e_0.op.val = op_emit)
+        ∧ (op_emit = 0x1A → e_0.op.val = 0x0A)
+        ∧ (op_emit = 0x1B → e_0.op.val = 0x0B))
+    ∧ (e_1.multiplicity = 1
+        ∧ e_1.a_byte = v.free_in_a_1 r ∧ e_1.b_byte = v.free_in_b_1 r
+        ∧ e_1.c_byte = v.free_in_c_1 r ∧ e_1.flags = v.carry_1 r
+        ∧ ((op_emit = 0x06 ∨ op_emit = 0x07 ∨ op_emit = 0x0B) →
+            e_1.op.val = op_emit)
+        ∧ (op_emit = 0x1A → e_1.op.val = 0x0A)
+        ∧ (op_emit = 0x1B → e_1.op.val = 0x0B))
+    ∧ (e_2.multiplicity = 1
+        ∧ e_2.a_byte = v.free_in_a_2 r ∧ e_2.b_byte = v.free_in_b_2 r
+        ∧ e_2.c_byte = v.free_in_c_2 r ∧ e_2.flags = v.carry_2 r
+        ∧ ((op_emit = 0x06 ∨ op_emit = 0x07 ∨ op_emit = 0x0B) →
+            e_2.op.val = op_emit)
+        ∧ (op_emit = 0x1A → e_2.op.val = 0x0A)
+        ∧ (op_emit = 0x1B → e_2.op.val = 0x0B))
+    ∧ (e_3.multiplicity = 1
+        ∧ e_3.a_byte = v.free_in_a_3 r ∧ e_3.b_byte = v.free_in_b_3 r
+        ∧ e_3.c_byte = v.free_in_c_3 r ∧ e_3.flags = v.carry_3 r
+        ∧ ((op_emit = 0x06 ∨ op_emit = 0x07 ∨ op_emit = 0x0B) →
+            e_3.op.val = op_emit)
+        ∧ (op_emit = 0x1A → e_3.op.val = 0x0A)
+        ∧ (op_emit = 0x1B → e_3.op.val = 0x0B))
+      -- Byte 4..7: op = b_op_or_sext; for 64-bit ops
+      -- (`b_op_or_sext = b_op`) op.val = op_emit; for W-mode ops
+      -- (`b_op_or_sext = OP_SEXT_00 ∨ OP_SEXT_FF`) we expose only
+      -- the multiplicity / a / b / c / flags pins, the W wrappers
+      -- consume those bytes via a separate sext-choice hypothesis.
+    ∧ (e_4.multiplicity = 1
+        ∧ e_4.a_byte = v.free_in_a_4 r ∧ e_4.b_byte = v.free_in_b_4 r
+        ∧ e_4.c_byte = v.free_in_c_4 r ∧ e_4.flags = v.carry_4 r
+        ∧ ((op_emit = 0x06 ∨ op_emit = 0x07 ∨ op_emit = 0x0B) →
+            e_4.op.val = op_emit))
+    ∧ (e_5.multiplicity = 1
+        ∧ e_5.a_byte = v.free_in_a_5 r ∧ e_5.b_byte = v.free_in_b_5 r
+        ∧ e_5.c_byte = v.free_in_c_5 r ∧ e_5.flags = v.carry_5 r
+        ∧ ((op_emit = 0x06 ∨ op_emit = 0x07 ∨ op_emit = 0x0B) →
+            e_5.op.val = op_emit))
+    ∧ (e_6.multiplicity = 1
+        ∧ e_6.a_byte = v.free_in_a_6 r ∧ e_6.b_byte = v.free_in_b_6 r
+        ∧ e_6.c_byte = v.free_in_c_6 r ∧ e_6.flags = v.carry_6 r
+        ∧ ((op_emit = 0x06 ∨ op_emit = 0x07 ∨ op_emit = 0x0B) →
+            e_6.op.val = op_emit))
+    ∧ (e_7.multiplicity = 1
+        ∧ e_7.a_byte = v.free_in_a_7 r ∧ e_7.b_byte = v.free_in_b_7 r
+        ∧ e_7.c_byte = v.free_in_c_7 r ∧ e_7.flags = v.carry_7 r
+        ∧ ((op_emit = 0x06 ∨ op_emit = 0x07 ∨ op_emit = 0x0B) →
+            e_7.op.val = op_emit))
+      -- Chain-end pins on cin.
+    ∧ e_0.cin.val = 0
+    ∧ e_1.cin.val = e_0.flags.val % 2
+    ∧ e_2.cin.val = e_1.flags.val % 2
+    ∧ e_3.cin.val = e_2.flags.val % 2
+    ∧ e_4.cin.val = e_3.flags.val % 2
+    ∧ e_5.cin.val = e_4.flags.val % 2
+    ∧ e_6.cin.val = e_5.flags.val % 2
+    ∧ e_7.cin.val = e_6.flags.val % 2
+      -- Position-indicator pins. For 64-bit ops (mode32 = 0, ops
+      -- 0x06/0x07/0x0B): pi_0..pi_6 ≠ 1 and pi_7 = 1. For W-mode
+      -- ops (mode32 = 1, ops 0x1A/0x1B): pi_0..pi_2 ≠ 1, pi_3 = 1,
+      -- pi_4..pi_7 ≠ 1 (high-bytes' pos_ind for SEXT slots).
+    ∧ e_0.pos_ind.val ≠ 1
+    ∧ e_1.pos_ind.val ≠ 1
+    ∧ e_2.pos_ind.val ≠ 1
+    ∧ ((op_emit = 0x06 ∨ op_emit = 0x07 ∨ op_emit = 0x0B) →
+        e_3.pos_ind.val ≠ 1 ∧ e_4.pos_ind.val ≠ 1
+        ∧ e_5.pos_ind.val ≠ 1 ∧ e_6.pos_ind.val ≠ 1
+        ∧ e_7.pos_ind.val = 1)
+    ∧ ((op_emit = 0x1A ∨ op_emit = 0x1B) →
+        e_3.pos_ind.val = 1)
+
 end ZiskFv.Airs.Binary
