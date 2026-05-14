@@ -470,6 +470,7 @@ bridge axioms below absorb them).
 |---|---|---|---|
 | `lookup_consumer_matches_provider_load` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:162` | Main-row load consumer (`b_*`, `as = 2`) is matched by a Mem-AIR row |
 | `lookup_consumer_matches_provider_store` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:178` | Main-row store consumer (`c_*`) is matched by a Mem-AIR row |
+| `main_store_emission_bundle_sd` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:672` | SD-pilot store emission — byte-extracted store entry contents + ptr-match for SD (`ind_width = 8`); consumed by `Bridge.Mem.sd_discharge_full` |
 | `main_load_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:374` | internal-copyb (load) Main-row b/c emission lane equalities — consumed by LD/LBU/LHU/LWU discharge |
 | `main_sext_load_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:433` | external-row analog of the above for signed loads (LB/LH/LW; `is_external_op = 1`, `op ∈ OP_SIGNEXTEND_*`) |
 | `main_store_pc_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:495` | rd-write entry lanes match `store_pc_lanes_match_{lo,hi}` for `is_external_op = 0`, `op ∈ {OP_FLAG, OP_COPYB}` — consumed by JAL/JALR/AUIPC/LUI |
@@ -531,9 +532,29 @@ MemAlign* mode-pin closure if the named-column wrappers reveal
 gaps. Smallest projected delta of the seven AIRs — Mem was the
 first AIR to receive comprehensive axiom coverage (the
 load-output-eq-closure work in `docs/fv/plans/`) and its pilot is
-largely a packaging exercise atop existing axioms. The pilot will
-likely be a `Compliance/MemPilot.lean` consuming the 13 existing
-Mem axioms with no new additions.
+largely a packaging exercise atop existing axioms.
+
+### Actual delta (Step 4.1.3 — SD exemplar)
+
+**1 new axiom** added: `main_store_emission_bundle_sd` (class #4,
+`MemBridge.lean:672`). The SD-side store-emission bundle was not
+covered by the pre-existing emission-bundle family
+(`main_load_emission_bundle`, `main_sext_load_emission_bundle`,
+`main_store_pc_emission_bundle`, `main_external_arith_emission_bundle`)
+because the store-side memory-bus emission shape (`c` → `e_st`
+with `as = 2`, `mult = 1`) is a fresh combination of slots — it
+mixes the c-side lanes (like `main_store_pc_emission_bundle`)
+with the byte-extracted form needed by `equiv_SD`'s
+`h_byte_{0..7}` hypotheses. The new bundle covers SD specifically
+(`ind_width = 8`, all 8 lanes meaningful); SB/SH/SW will each
+need their own width-specialized bundle (with high-byte
+zero-padding pins). All four sit in class #4. Matches the lower
+half of the 0-2 prediction range.
+
+The `Bridge.Mem.sd_discharge_full` derivation theorem (pure Lean,
+no axiom) composes the new bundle with `transpile_SD` (class #1)
+and the Sail `read_xreg` bridge to deliver the 9-hypothesis
+promise bundle that `equiv_SD` consumes.
 
 ---
 

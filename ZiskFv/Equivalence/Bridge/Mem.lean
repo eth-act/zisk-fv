@@ -10,6 +10,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
 import ZiskFv.Airs.MemoryBus.LaneMatch
+import ZiskFv.Equivalence.Bridge.SailStateBridge
 
 /-!
 # Mem discharge bridge
@@ -390,5 +391,83 @@ theorem lw_discharge_full
   sext_load_discharge_full main r_main e1 e2 r1_val imm rd
     ZiskFv.Trusted.OP_SIGNEXTEND_W h_ext h_op (Or.inr (Or.inr rfl))
     h_e1_mult h_e1_as_val h_e2_mult h_e2_as_val
+
+/-! ## Store discharge — SD (the Mem-stores pilot)
+
+The SD store discharge composes
+`main_store_emission_bundle_sd` (NEW — Main row's store-side
+memory-bus emission in byte-extracted form) with `transpile_SD`
+(class #1) and the Sail-state `read_xreg` bridge
+(`Bridge/SailStateBridge.lean`, pure Lean) to deliver the full
+9-hypothesis promise bundle that `equiv_SD` consumes (ptr-match +
+8 byte extracts).
+
+Caller obligations after this discharge collapse to:
+* `main : Valid_Main C FGL FGL`, `r_main : ℕ`;
+* `h_main_active : main.is_external_op r_main = 0` and
+  `h_main_op : main.op r_main = OP_COPYB` (Main row activation
+  for the copyb store row — derivable from the Compliance theorem's
+  ROM-handshake on the row hosting SD);
+* `e_st : MemoryBusEntry FGL` (store entry, structural);
+* `h_e_st_mult`, `h_e_st_as_val` (bus shape pins, already required
+  by `equiv_SD`);
+* the Sail-state `read_xreg` predicates for rs1/rs2 (SPEC-PRE,
+  already at `equiv_SD`).
+-/
+
+/-- **SD-specific store discharge full bundle.** Composes
+    `main_store_emission_bundle_sd` (class #4) with `transpile_SD`
+    (class #1) — the latter discharges the bundle's
+    `h_a_lo/hi`, `h_b_lo/hi` parameters from a Sail register-read
+    pair (via `Bridge.SailStateBridge.sail_to_rv64`'s materialization
+    of the universal-state `transpile_SD` to the Sail state). -/
+theorem sd_discharge_full
+    (main : Valid_Main C FGL FGL)
+    (r_main : ℕ)
+    (e_st : Interaction.MemoryBusEntry FGL)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (rs1 rs2 : Fin 32)
+    (r1_val r2_val : BitVec 64) (imm : BitVec 12)
+    (h_active : main.is_external_op r_main = 0)
+    (h_op_main : main.op r_main = ZiskFv.Trusted.OP_COPYB)
+    (h_e_st_mult : e_st.multiplicity = 1) (h_e_st_as_val : e_st.as.val = 2)
+    (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
+    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state) :
+    -- ptr-match: store address = r1_val + signExt(imm)
+    -- (in BitVec-sum form, matching `equiv_SD`).
+    e_st.ptr.toNat = (r1_val + BitVec.signExtend 64 imm).toNat
+    -- 8 byte extracts of r2_val.
+    ∧ (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
+    ∧ (e_st.x1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val
+    ∧ (e_st.x2 : BitVec 8) = BitVec.extractLsb 23 16 r2_val
+    ∧ (e_st.x3 : BitVec 8) = BitVec.extractLsb 31 24 r2_val
+    ∧ (e_st.x4 : BitVec 8) = BitVec.extractLsb 39 32 r2_val
+    ∧ (e_st.x5 : BitVec 8) = BitVec.extractLsb 47 40 r2_val
+    ∧ (e_st.x6 : BitVec 8) = BitVec.extractLsb 55 48 r2_val
+    ∧ (e_st.x7 : BitVec 8) = BitVec.extractLsb 63 56 r2_val := by
+  -- Materialize the universal-state `transpile_SD` axiom at the
+  -- Sail-state-derived RV64 state to deliver `m.a/b lanes ↔
+  -- lane_{lo,hi} (xreg rs)` facts. The `_imm_offset` placeholder
+  -- is irrelevant to the lane equalities (transpile_SD only
+  -- routes them through unused conjuncts).
+  have h_tr := ZiskFv.Trusted.transpile_SD
+    main r_main rs1 rs2 (0 : FGL)
+    (ZiskFv.Equivalence.Bridge.SailStateBridge.sail_to_rv64 state)
+    h_active h_op_main
+  -- Extract the 4 lane equalities at the materialized RV64 state.
+  obtain ⟨_, _, _, _, _, h_a_lo_state, h_a_hi_state, h_b_lo_state, h_b_hi_state⟩ :=
+    h_tr
+  -- Rewrite each lane equality from the materialized state's
+  -- `xreg rs` to the Sail `r{1,2}_val` via the read_xreg bridge.
+  rw [ZiskFv.Equivalence.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
+        state rs1 r1_val h_read_r1] at h_a_lo_state h_a_hi_state
+  rw [ZiskFv.Equivalence.Bridge.SailStateBridge.sail_to_rv64_xreg_eq_of_read_xreg
+        state rs2 r2_val h_read_r2] at h_b_lo_state h_b_hi_state
+  -- Apply the store-emission bundle with the lane equalities now
+  -- expressed in terms of `r1_val` / `r2_val`.
+  exact ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_sd
+    main r_main e_st r1_val r2_val imm
+    h_active h_op_main h_e_st_mult h_e_st_as_val
+    h_a_lo_state h_a_hi_state h_b_lo_state h_b_hi_state
 
 end ZiskFv.Equivalence.Bridge.Mem

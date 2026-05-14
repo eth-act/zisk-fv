@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 116
+# Total entries: 117
 #
 39b9f47eebdda4ca  ZiskFv/Airs/Arith/Ranges.lean:43  axiom     arith_mul_columns_in_range
 c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:55  axiom     arith_div_columns_in_range
@@ -42,6 +42,7 @@ df1bb212fcddf2a6  ZiskFv/Airs/MemoryBus/MemBridge.lean:374  axiom     main_load_
 24dd4ca3f75ffaf3  ZiskFv/Airs/MemoryBus/MemBridge.lean:433  axiom     main_sext_load_emission_bundle
 b7525f7cc15044c1  ZiskFv/Airs/MemoryBus/MemBridge.lean:495  axiom     main_store_pc_emission_bundle
 be9709898787174a  ZiskFv/Airs/MemoryBus/MemBridge.lean:553  axiom     main_external_arith_emission_bundle
+93a53506ac1d3111  ZiskFv/Airs/MemoryBus/MemBridge.lean:673  axiom     main_store_emission_bundle_sd
 67ed8e590d7f0792  ZiskFv/Airs/OperationBus/Bridge.lean:54  axiom     op_bus_perm_sound_BinaryAdd
 d9d7d2422146a7dd  ZiskFv/Airs/OperationBus/Bridge.lean:77  axiom     op_bus_perm_sound_Binary
 f0f2b4a2aaab18ee  ZiskFv/Airs/OperationBus/Bridge.lean:101  axiom     op_bus_perm_sound_BinaryExtension
