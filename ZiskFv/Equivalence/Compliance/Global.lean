@@ -247,6 +247,105 @@ inductive OpEnvelope
         = lui_input.PC + 4#64)
     (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
     (h_rd_idx : lui_input.rd = Transpiler.wrap_to_regidx e_rd.ptr) : OpEnvelope state m r_main
+  -- ============================ AUIPC (1 mem entry) =====================
+  | auipc
+    (auipc_input : PureSpec.AuipcInput)
+    (imm : BitVec 20) (rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
+    (next_pc : FGL)
+    (h_main_active : m.is_external_op r_main = 0)
+    (h_main_op_auipc : m.op r_main = OP_FLAG)
+    (h_auipc_subset : auipc_subset_holds m r_main next_pc)
+    (h_input_imm : auipc_input.imm = imm)
+    (h_input_rd : auipc_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some auipc_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_nextPC_eq :
+      (PureSpec.execute_AUIPC_pure auipc_input).nextPC = nextPC_val)
+    (h_rd_idx : auipc_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_no_wrap : auipc_input.PC.toNat
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+        < GL_prime)
+    (h_lo_bound : (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296)
+    (h_pc_offset_lt_2_32 :
+      (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+        < 4294967296) : OpEnvelope state m r_main
+  -- ============================ JAL (1 mem entry) =======================
+  | jal
+    (jal_input : PureSpec.JalInput)
+    (imm : BitVec 21) (rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (next_pc : FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
+    (h_main_active : m.is_external_op r_main = 0)
+    (h_main_op_jal : m.op r_main = OP_FLAG)
+    (h_jal_subset : ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
+    (h_input_imm : jal_input.imm = imm)
+    (h_input_rd : jal_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some jal_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
+    (h_success : (PureSpec.execute_JAL_pure jal_input).success = true)
+    (h_nextPC_option :
+      (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val)
+    (h_rd_idx : jal_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_pc_bound : jal_input.PC.toNat < GL_prime - 4)
+    (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
+    (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296) : OpEnvelope state m r_main
+  -- ============================ JALR (1 mem entry, do-block) ============
+  | jalr
+    (jalr_input : PureSpec.JalrInput)
+    (imm : BitVec 12) (rs1 rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
+    (next_pc : FGL)
+    (h_main_active : m.is_external_op r_main = 0)
+    (h_main_op_jalr : m.op r_main = OP_COPYB)
+    (h_jalr_subset :
+      ZiskFv.Tactics.JumpArchetype.jalr_subset_holds m r_main next_pc)
+    (h_input_imm : jalr_input.imm = imm)
+    (h_input_rd : jalr_input.rd = regidx_to_fin rd)
+    (h_input_rs1 : read_xreg (regidx_to_fin rs1) state
+      = EStateM.Result.ok jalr_input.rs1_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some jalr_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_cur_privilege : Sail.readReg Register.cur_privilege state
+      = EStateM.Result.ok Privilege.Machine state)
+    (h_mseccfg : Sail.readReg Register.mseccfg state
+      = EStateM.Result.ok mseccfg state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_success : (PureSpec.execute_JALR_pure jalr_input).success = true)
+    (h_nextPC_option :
+      (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val)
+    (h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
+    (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
+    (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) : OpEnvelope state m r_main
   -- ============================ ADD (3 mem entries, BinaryAdd) ==========
   | add
     (add_input : PureSpec.AddInput) (r1 r2 rd : regidx)
@@ -347,6 +446,9 @@ def kind : OpEnvelope state m r_main → mainOpKind
                           -- conclusion does not depend on `kind`.
   | .fence .. => .FLAG
   | .lui ..   => .COPYB
+  | .auipc .. => .FLAG
+  | .jal ..   => .FLAG
+  | .jalr ..  => .COPYB
   | .add ..   => .ADD
   | .addi ..  => .ADD
   | .sb ..    => .COPYB
@@ -361,6 +463,17 @@ def exec_eq : OpEnvelope state m r_main → Prop
         = (bus_effect exec_row [] state).2
   | .lui _ imm rd _ exec_row e_rd .. =>
       execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
+        = (bus_effect exec_row [e_rd] state).2
+  | .auipc _ imm rd exec_row e_rd .. =>
+      execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
+        = (bus_effect exec_row [e_rd] state).2
+  | .jal _ imm rd _ _ exec_row e_rd .. =>
+      execute_instruction (instruction.JAL (imm, rd)) state
+        = (bus_effect exec_row [e_rd] state).2
+  | .jalr _ imm rs1 rd _ _ exec_row e_rd .. =>
+      (do
+          Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+          LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
         = (bus_effect exec_row [e_rd] state).2
   | .add _ r1 r2 rd _ exec_row e0 e1 e2 .. =>
       execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
@@ -433,6 +546,48 @@ theorem zisk_riscv_compliant_program_bus
       h_input_imm h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_rd_mult h_rd_as h_rd_idx
+  | auipc auipc_input imm rd exec_row e_rd nextPC_val next_pc
+          h_main_active h_main_op_auipc h_auipc_subset
+          h_input_imm h_input_rd h_input_pc
+          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+          h_rd_mult h_rd_as h_nextPC_eq h_rd_idx
+          h_no_wrap h_lo_bound h_pc_offset_lt_2_32 =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_AUIPC state auipc_input imm rd exec_row e_rd nextPC_val
+      m r_main next_pc h_main_active h_main_op_auipc h_auipc_subset
+      h_input_imm h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_rd_mult h_rd_as h_nextPC_eq h_rd_idx
+      h_no_wrap h_lo_bound h_pc_offset_lt_2_32
+  | jal jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val
+        h_main_active h_main_op_jal h_jal_subset
+        h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_rd_mult h_rd_as h_not_throws h_success h_nextPC_option h_rd_idx
+        h_pc_bound h_lo_bound h_pc_offset_lt_2_32 =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_JAL state jal_input imm rd misa_val m r_main next_pc
+      exec_row e_rd nextPC_val h_main_active h_main_op_jal h_jal_subset
+      h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_rd_mult h_rd_as h_not_throws h_success h_nextPC_option h_rd_idx
+      h_pc_bound h_lo_bound h_pc_offset_lt_2_32
+  | jalr jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val next_pc
+         h_main_active h_main_op_jalr h_jalr_subset
+         h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
+         h_cur_privilege h_mseccfg
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_rd_mult h_rd_as h_success h_nextPC_option h_rd_idx
+         h_pc_bound h_lo_bound h_pc_offset_lt_2_32 =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_JALR state jalr_input imm rs1 rd misa_val mseccfg
+      exec_row e_rd nextPC_val m r_main next_pc
+      h_main_active h_main_op_jalr h_jalr_subset
+      h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
+      h_cur_privilege h_mseccfg
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_rd_mult h_rd_as h_success h_nextPC_option h_rd_idx
+      h_pc_bound h_lo_bound h_pc_offset_lt_2_32
   | add add_input r1 r2 rd b exec_row e0 e1 e2
         h_main_active h_main_op_add h_main_subset h_b_core h_lane_rd
         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
