@@ -505,6 +505,81 @@ inductive OpEnvelope
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : addi_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+  -- ============================ ADDW (Binary, do-block) =================
+  | addw
+    (addw_input : PureSpec.AddwInput) (r1 r2 rd : regidx)
+    (v : Valid_Binary C FGL FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_addw : m.op r_main = OP_ADD_W)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok addw_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok addw_input.r2_val state)
+    (h_input_rd : addw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some addw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_addw_pure addw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : addw_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+  -- ============================ SUBW (Binary, do-block) =================
+  | subw
+    (subw_input : PureSpec.SubwInput) (r1 r2 rd : regidx)
+    (v : Valid_Binary C FGL FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_subw : m.op r_main = OP_SUB_W)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok subw_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok subw_input.r2_val state)
+    (h_input_rd : subw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some subw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : subw_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+  -- ============================ ADDIW (Binary, do-block, I-type) ========
+  | addiw
+    (addiw_input : PureSpec.AddiwInput) (r1 rd : regidx) (imm : BitVec 12)
+    (v : Valid_Binary C FGL FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_addiw : m.op r_main = OP_ADD_W)
+    (h_addiw_subset : itype_imm_subset_holds_main m r_main addiw_input.imm)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok addiw_input.r1_val state)
+    (h_input_imm : addiw_input.imm = imm)
+    (h_input_rd : addiw_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some addiw_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_ITYPE_addiw_pure addiw_input).nextPC)
+    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
+    (h_rd_idx : addiw_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
   -- ============================ SB (store, Main-only) ===================
   | sb
     (sb_input : PureSpec.SbInput)
@@ -561,6 +636,9 @@ def kind : OpEnvelope state m r_main → mainOpKind
   | .jalr ..  => .COPYB
   | .add ..   => .ADD
   | .addi ..  => .ADD
+  | .addw ..  => .ADD_W
+  | .subw ..  => .SUB_W
+  | .addiw .. => .ADD_W
   | .sb ..    => .COPYB
 
 /-- The dispatcher's conclusion as a `Prop`. -/
@@ -609,6 +687,27 @@ def exec_eq : OpEnvelope state m r_main → Prop
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .addw _ r1 r2 rd _ exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.RTYPEW (r2, r1, rd, ropw.ADDW))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .subw _ r1 r2 rd _ exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.RTYPEW (r2, r1, rd, ropw.SUBW))) state
+        = (bus_effect exec_row [e0, e1, e2] state).2
+  | .addiw _ r1 rd imm _ exec_row e0 e1 e2 .. =>
+      (do
+        Sail.writeReg Register.nextPC
+          (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.ADDIW (imm, r1, rd))) state
         = (bus_effect exec_row [e0, e1, e2] state).2
   | .sb sb_input _ _ _ _ exec_row e0 e1 e2 .. =>
       execute_instruction (instruction.STORE (
@@ -767,6 +866,39 @@ theorem zisk_riscv_compliant_program_bus
     simp only [OpEnvelope.exec_eq]
     exact dispatch_ADDI state addi_input r1 rd imm m b r_main exec_row e0 e1 e2
       h_main_active h_main_op_addi h_main_subset h_b_core h_addi_subset h_lane_rd
+      h_input_r1 h_input_imm h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+  | addw addw_input r1 r2 rd v exec_row e0 e1 e2
+         h_main_active h_main_op_addw h_lane_rd
+         h_input_r1 h_input_r2 h_input_rd h_input_pc
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_ADDW state addw_input r1 r2 rd m v r_main exec_row e0 e1 e2
+      h_main_active h_main_op_addw h_lane_rd
+      h_input_r1 h_input_r2 h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+  | subw subw_input r1 r2 rd v exec_row e0 e1 e2
+         h_main_active h_main_op_subw h_lane_rd
+         h_input_r1 h_input_r2 h_input_rd h_input_pc
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_SUBW state subw_input r1 r2 rd m v r_main exec_row e0 e1 e2
+      h_main_active h_main_op_subw h_lane_rd
+      h_input_r1 h_input_r2 h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+  | addiw addiw_input r1 rd imm v exec_row e0 e1 e2
+          h_main_active h_main_op_addiw h_addiw_subset h_lane_rd
+          h_input_r1 h_input_imm h_input_rd h_input_pc
+          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+    simp only [OpEnvelope.exec_eq]
+    exact dispatch_ADDIW state addiw_input r1 rd imm m v r_main exec_row e0 e1 e2
+      h_main_active h_main_op_addiw h_addiw_subset h_lane_rd
       h_input_r1 h_input_imm h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
