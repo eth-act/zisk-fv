@@ -60,15 +60,33 @@ theorem equiv_ANDI_sail
   PureSpec.execute_ITYPE_andi_pure_equiv
     andi_input r1 rd h_input_r1 h_input_imm h_input_rd h_input_pc
 
-/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64
-    ANDI equals the state computed by applying `bus_effect` to the
-    circuit's execution and memory bus rows.
+/-- **Canonical equivalence (Step 4.2r3.I — structural-unpacking
+    refactor).** Sail's `execute_instruction` on an RV64 ANDI equals
+    the state computed by applying `bus_effect` to the circuit's
+    execution and memory bus rows.
 
-    Every parameter classifies as one of {CIRCUIT-CONSTRAINT,
-    LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
-    asserts the spec output (`r1_val &&& sext(imm)`) directly; that
-    equation is derived internally from circuit witnesses via the
-    `RdValDerivation.BinaryLogic.h_rd_val_logic_andi` discharge lemma. -/
+    Mirrors the `equiv_AND` (RTYPE) canonical's higher-level
+    `(h_main_active, h_main_op, h_match, h_bop_or_sext)` parameter
+    shape, plus the ITYPE-specific Main-form immediate-routing pin
+    `h_andi_subset : itype_imm_subset_holds_main m r_main
+    andi_input.imm`. The proof body internally:
+
+    1. Derives the c-lane match (`h_match_clo` / `h_match_chi`) via
+       `Bridge.Binary.match_clo_chi_AND` (consumes `h_match` +
+       `h_bop_or_sext`).
+    2. Derives `h_input_r1_circuit` via `transpile_ANDI` +
+       `Bridge.Binary.input_r1_packed_a`.
+    3. Translates the Main-form `h_andi_subset` to Binary-row 8-byte
+       form via `Bridge.Binary.itype_imm_subset_binary_row_of_main`
+       (consumes `h_match` + `h_m32` from `transpile_ANDI`).
+    4. Composes with `RdValDerivation.BinaryLogic.h_rd_val_logic_andi`.
+
+    Per-opcode metric: drops `h_match_clo`, `h_match_chi`,
+    `h_input_r1_circuit`, `h_input_imm_circuit` (4 hypotheses);
+    adds `h_main_active`, `h_main_op_andi`, `h_match`,
+    `h_andi_subset` (4 hypotheses). Net 0 per opcode; the gain is
+    cross-shape consistency with AND/OR/XOR's RTYPE canonical shape
+    and the wrapper-level burden reduction. -/
 theorem equiv_ANDI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (andi_input : PureSpec.AndiInput)
@@ -92,34 +110,14 @@ theorem equiv_ANDI
     (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
     (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
     (h_rd_idx : andi_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    -- Mode pin replaces 8 byte_chain *promise hypotheses* via
-    -- `Bridge.Binary.byte_chain_discharge_logic`.
+    (h_main_active : m.is_external_op r_main = 1)
+    (h_main_op_andi : m.op r_main = OP_AND)
+    (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
     (h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_AND)
-    (h_match_clo : m.c_0 r_main
-        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
-          + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216)
-    (h_match_chi : m.c_1 r_main
-        = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256
-          + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1_circuit : andi_input.r1_val
-      = BitVec.ofNat 64
-          ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
-            + (v.free_in_a_2 r_binary).val * 65536
-            + (v.free_in_a_3 r_binary).val * 16777216
-            + (v.free_in_a_4 r_binary).val * 4294967296
-            + (v.free_in_a_5 r_binary).val * 1099511627776
-            + (v.free_in_a_6 r_binary).val * 281474976710656
-            + (v.free_in_a_7 r_binary).val * 72057594037927936))
-    (h_input_imm_circuit : BitVec.signExtend 64 andi_input.imm
-      = BitVec.ofNat 64
-          ((v.free_in_b_0 r_binary).val + (v.free_in_b_1 r_binary).val * 256
-            + (v.free_in_b_2 r_binary).val * 65536
-            + (v.free_in_b_3 r_binary).val * 16777216
-            + (v.free_in_b_4 r_binary).val * 4294967296
-            + (v.free_in_b_5 r_binary).val * 1099511627776
-            + (v.free_in_b_6 r_binary).val * 281474976710656
-            + (v.free_in_b_7 r_binary).val * 72057594037927936)) :
+    (h_andi_subset :
+      ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
+        m r_main andi_input.imm) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -137,6 +135,22 @@ theorem equiv_ANDI
           h_byte_4, h_byte_5, h_byte_6, h_byte_7⟩ :=
     ZiskFv.Equivalence.Bridge.Binary.byte_chain_discharge_logic
       v r_binary _ h_bop_or_sext
+  obtain ⟨h_match_clo, h_match_chi⟩ :=
+    ZiskFv.Equivalence.Bridge.Binary.match_clo_chi_AND m v r_main r_binary
+      h_match h_bop_or_sext
+  -- `transpile_ANDI` row contract supplies `m32 = 0` and the a-lane
+  -- equations; the b-lane equations are reflexive (caller-routed).
+  obtain ⟨_, h_m32, _, _, _, _, h_a_lo_t, h_a_hi_t, _, _⟩ :=
+    transpile_ANDI m r_main (regidx_to_fin r1) (regidx_to_fin rd)
+      (m.b_0 r_main) (m.b_1 r_main)
+      (ZiskFv.Equivalence.Bridge.SailStateBridge.sail_to_rv64 state)
+      h_main_active h_main_op_andi
+  have h_input_r1_circuit :=
+    ZiskFv.Equivalence.Bridge.Binary.input_r1_packed_a m v r_main r_binary
+      (regidx_to_fin r1) andi_input.r1_val h_m32 h_a_lo_t h_a_hi_t h_match h_input_r1
+  have h_input_imm_circuit :=
+    ZiskFv.Equivalence.Bridge.Binary.itype_imm_subset_binary_row_of_main
+      m v r_main r_binary andi_input.imm h_m32 h_match h_andi_subset
   have h_rd_val :=
     ZiskFv.Equivalence.RdValDerivation.BinaryLogic.h_rd_val_logic_andi
       m v r_main r_binary e2 andi_input.r1_val andi_input.imm
