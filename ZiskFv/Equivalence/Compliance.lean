@@ -8,6 +8,16 @@ import ZiskFv.Fundamentals.Transpiler
 -- Additional shape dispatchers will be added under
 -- `ZiskFv/Equivalence/Compliance/Dispatch/<Shape>.lean` as Step 4.3 progresses.
 import ZiskFv.Equivalence.Compliance.LuiExemplar
+import ZiskFv.Equivalence.Compliance.AuipcExemplar
+import ZiskFv.Equivalence.Compliance.JalExemplar
+import ZiskFv.Equivalence.Compliance.JalrExemplar
+import ZiskFv.Equivalence.Compliance.FenceExemplar
+import ZiskFv.Equivalence.Compliance.BeqExemplar
+import ZiskFv.Equivalence.Compliance.BneExemplar
+import ZiskFv.Equivalence.Compliance.BltExemplar
+import ZiskFv.Equivalence.Compliance.BgeExemplar
+import ZiskFv.Equivalence.Compliance.BltuExemplar
+import ZiskFv.Equivalence.Compliance.BgeuExemplar
 
 /-!
 # Compliance.lean — Global dispatcher (Step 4.3 of the wild-lynx plan)
@@ -226,5 +236,346 @@ theorem dispatch_LUI
     h_input_imm h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_rd_mult h_rd_as h_rd_idx
+
+/-! ### ControlFlow non-branch dispatchers (AUIPC, JAL, JALR, FENCE)
+
+Pass-through dispatchers mirroring `dispatch_LUI`. Each is a thin
+delegation to the corresponding `equiv_<OP>_from_trust` wrapper.
+The shape grouping is `ControlFlow_NonBranch`; each opcode in the
+shape gets its own dispatcher because the wrappers' conclusion
+shapes (`instruction.UTYPE / .JAL / .JALR / .FENCE`) and operand
+inputs differ — a single uniform-signature dispatcher across the
+shape would require Phase 3's shape-envelope abstraction. -/
+
+/-- **Dispatcher for AUIPC.** Pass-through to `equiv_AUIPC_from_trust`. -/
+theorem dispatch_AUIPC
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (auipc_input : PureSpec.AuipcInput)
+    (imm : BitVec 20) (rd : regidx)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (h_main_active : m.is_external_op r_main = 0)
+    (h_main_op_auipc : m.op r_main = OP_FLAG)
+    (h_auipc_subset : auipc_subset_holds m r_main next_pc)
+    (h_input_imm : auipc_input.imm = imm)
+    (h_input_rd : auipc_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some auipc_input.PC)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_nextPC_eq :
+      (PureSpec.execute_AUIPC_pure auipc_input).nextPC = nextPC_val)
+    (h_rd_idx : auipc_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_no_wrap : auipc_input.PC.toNat
+      + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+        < GL_prime)
+    (h_lo_bound : (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296)
+    (h_pc_offset_lt_2_32 :
+      (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+        < 4294967296) :
+    execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
+      = (bus_effect exec_row [e_rd] state).2 :=
+  equiv_AUIPC_from_trust state auipc_input imm rd exec_row e_rd nextPC_val
+    m r_main next_pc h_main_active h_main_op_auipc h_auipc_subset
+    h_input_imm h_input_rd h_input_pc
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_rd_mult h_rd_as h_nextPC_eq h_rd_idx
+    h_no_wrap h_lo_bound h_pc_offset_lt_2_32
+
+/-- **Dispatcher for JAL.** Pass-through to `equiv_JAL_from_trust`. -/
+theorem dispatch_JAL
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (jal_input : PureSpec.JalInput)
+    (imm : BitVec 21) (rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
+    (h_main_active : m.is_external_op r_main = 0)
+    (h_main_op_jal : m.op r_main = OP_FLAG)
+    (h_jal_subset : ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
+    (h_input_imm : jal_input.imm = imm)
+    (h_input_rd : jal_input.rd = regidx_to_fin rd)
+    (h_input_pc : state.regs.get? Register.PC = .some jal_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
+    (h_success : (PureSpec.execute_JAL_pure jal_input).success = true)
+    (h_nextPC_option :
+      (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val)
+    (h_rd_idx : jal_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_pc_bound : jal_input.PC.toNat < GL_prime - 4)
+    (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
+    (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296) :
+    execute_instruction (instruction.JAL (imm, rd)) state
+      = (bus_effect exec_row [e_rd] state).2 :=
+  equiv_JAL_from_trust state jal_input imm rd misa_val m r_main next_pc
+    exec_row e_rd nextPC_val h_main_active h_main_op_jal h_jal_subset
+    h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_rd_mult h_rd_as h_not_throws h_success h_nextPC_option h_rd_idx
+    h_pc_bound h_lo_bound h_pc_offset_lt_2_32
+
+/-- **Dispatcher for JALR.** Pass-through to `equiv_JALR_from_trust`. -/
+theorem dispatch_JALR
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (jalr_input : PureSpec.JalrInput)
+    (imm : BitVec 12) (rs1 rd : regidx)
+    (misa_val : RegisterType Register.misa)
+    (mseccfg : RegisterType Register.mseccfg)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
+    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (h_main_active : m.is_external_op r_main = 0)
+    (h_main_op_jalr : m.op r_main = OP_COPYB)
+    (h_jalr_subset :
+      ZiskFv.Tactics.JumpArchetype.jalr_subset_holds m r_main next_pc)
+    (h_input_imm : jalr_input.imm = imm)
+    (h_input_rd : jalr_input.rd = regidx_to_fin rd)
+    (h_input_rs1 : read_xreg (regidx_to_fin rs1) state
+      = EStateM.Result.ok jalr_input.rs1_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some jalr_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_cur_privilege : Sail.readReg Register.cur_privilege state
+      = EStateM.Result.ok Privilege.Machine state)
+    (h_mseccfg : Sail.readReg Register.mseccfg state
+      = EStateM.Result.ok mseccfg state)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = nextPC_val)
+    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
+    (h_success : (PureSpec.execute_JALR_pure jalr_input).success = true)
+    (h_nextPC_option :
+      (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val)
+    (h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
+    (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
+    (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) :
+    (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
+      = (bus_effect exec_row [e_rd] state).2 :=
+  equiv_JALR_from_trust state jalr_input imm rs1 rd misa_val mseccfg
+    exec_row e_rd nextPC_val m r_main next_pc
+    h_main_active h_main_op_jalr h_jalr_subset
+    h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
+    h_cur_privilege h_mseccfg
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    h_rd_mult h_rd_as h_success h_nextPC_option h_rd_idx
+    h_pc_bound h_lo_bound h_pc_offset_lt_2_32
+
+/-- **Dispatcher for FENCE.** Pass-through to `equiv_FENCE_from_trust`. -/
+theorem dispatch_FENCE
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (fence_input : PureSpec.FenceInput)
+    (fm pred succ : BitVec 4) (rs rd : regidx)
+    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_main_active : main.is_external_op r_main = 0)
+    (h_main_op_fence : main.op r_main = OP_FLAG)
+    (h_input_pc : state.regs.get? Register.PC = .some fence_input.PC)
+    (h_input_priv :
+      state.regs.get? Register.cur_privilege = .some Privilege.Machine)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_FENCE_pure fence_input).nextPC) :
+    execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
+      = (bus_effect exec_row [] state).2 :=
+  equiv_FENCE_from_trust state fence_input fm pred succ rs rd main r_main
+    exec_row h_main_active h_main_op_fence h_input_pc h_input_priv
+    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+
+/-! ### Branch dispatchers (BEQ, BNE, BLT, BGE, BLTU, BGEU)
+
+All six branches share the exact same signature shape (modulo
+type/name renaming). Each dispatcher is a thin pass-through to
+its corresponding `equiv_<OP>_from_trust` wrapper. -/
+
+/-- **Dispatcher for BEQ.** Pass-through to `equiv_BEQ_from_trust`. -/
+theorem dispatch_BEQ
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (beq_input : PureSpec.BeqInput) (imm : BitVec 13) (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_imm : beq_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok beq_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok beq_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some beq_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_target_aligned :
+      (beq_input.PC + BitVec.signExtend 64 beq_input.imm).toNat % 4 = 0)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BEQ_pure beq_input).nextPC) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BEQ)) state
+      = (bus_effect exec_row [] state).2 :=
+  equiv_BEQ_from_trust state beq_input imm r1 r2 misa_val exec_row
+    h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+    h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+
+/-- **Dispatcher for BNE.** Pass-through to `equiv_BNE_from_trust`. -/
+theorem dispatch_BNE
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (bne_input : PureSpec.BneInput) (imm : BitVec 13) (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_imm : bne_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok bne_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok bne_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some bne_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_target_aligned :
+      (bne_input.PC + BitVec.signExtend 64 bne_input.imm).toNat % 4 = 0)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BNE_pure bne_input).nextPC) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BNE)) state
+      = (bus_effect exec_row [] state).2 :=
+  equiv_BNE_from_trust state bne_input imm r1 r2 misa_val exec_row
+    h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+    h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+
+/-- **Dispatcher for BLT.** Pass-through to `equiv_BLT_from_trust`. -/
+theorem dispatch_BLT
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (blt_input : PureSpec.BltInput) (imm : BitVec 13) (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_imm : blt_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok blt_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok blt_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some blt_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_target_aligned :
+      (blt_input.PC + BitVec.signExtend 64 blt_input.imm).toNat % 4 = 0)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BLT_pure blt_input).nextPC) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLT)) state
+      = (bus_effect exec_row [] state).2 :=
+  equiv_BLT_from_trust state blt_input imm r1 r2 misa_val exec_row
+    h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+    h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+
+/-- **Dispatcher for BGE.** Pass-through to `equiv_BGE_from_trust`. -/
+theorem dispatch_BGE
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (bge_input : PureSpec.BgeInput) (imm : BitVec 13) (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_imm : bge_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok bge_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok bge_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some bge_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_target_aligned :
+      (bge_input.PC + BitVec.signExtend 64 bge_input.imm).toNat % 4 = 0)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BGE_pure bge_input).nextPC) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BGE)) state
+      = (bus_effect exec_row [] state).2 :=
+  equiv_BGE_from_trust state bge_input imm r1 r2 misa_val exec_row
+    h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+    h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+
+/-- **Dispatcher for BLTU.** Pass-through to `equiv_BLTU_from_trust`. -/
+theorem dispatch_BLTU
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (bltu_input : PureSpec.BltuInput) (imm : BitVec 13) (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_imm : bltu_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok bltu_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok bltu_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some bltu_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_target_aligned :
+      (bltu_input.PC + BitVec.signExtend 64 bltu_input.imm).toNat % 4 = 0)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BLTU_pure bltu_input).nextPC) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLTU)) state
+      = (bus_effect exec_row [] state).2 :=
+  equiv_BLTU_from_trust state bltu_input imm r1 r2 misa_val exec_row
+    h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+    h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+
+/-- **Dispatcher for BGEU.** Pass-through to `equiv_BGEU_from_trust`. -/
+theorem dispatch_BGEU
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (bgeu_input : PureSpec.BgeuInput) (imm : BitVec 13) (r1 r2 : regidx)
+    (misa_val : RegisterType Register.misa)
+    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (h_input_imm : bgeu_input.imm = imm)
+    (h_input_r1 : read_xreg (regidx_to_fin r1) state
+      = EStateM.Result.ok bgeu_input.r1_val state)
+    (h_input_r2 : read_xreg (regidx_to_fin r2) state
+      = EStateM.Result.ok bgeu_input.r2_val state)
+    (h_input_pc : state.regs.get? Register.PC = .some bgeu_input.PC)
+    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
+    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
+    (h_target_aligned :
+      (bgeu_input.PC + BitVec.signExtend 64 bgeu_input.imm).toNat % 4 = 0)
+    (h_exec_len : exec_row.length = 2)
+    (h_e0_mult : exec_row[0]!.multiplicity = -1)
+    (h_e1_mult : exec_row[1]!.multiplicity = 1)
+    (h_nextPC_matches :
+      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
+        = (PureSpec.execute_BGEU_pure bgeu_input).nextPC) :
+    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BGEU)) state
+      = (bus_effect exec_row [] state).2 :=
+  equiv_BGEU_from_trust state bgeu_input imm r1 r2 misa_val exec_row
+    h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
+    h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
 
 end ZiskFv.Equivalence.Compliance
