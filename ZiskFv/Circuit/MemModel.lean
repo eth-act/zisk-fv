@@ -138,43 +138,6 @@ axiom row_models_sail_state_load
     ∧ state.mem[e.ptr.toNat + 6]? = .some e.x6
     ∧ state.mem[e.ptr.toNat + 7]? = .some e.x7
 
-/-- **Sail-state-bridge axiom — store side.** Given a Mem AIR row in
-    write mode (`wr = 1`, `sel = 1`) matching a store bus entry
-    (`as = 2`, `mult = 1`), the post-store Sail state has `state.mem`
-    updated with the entry's eight bytes.
-
-    Dual to `row_models_sail_state_load`: where the load axiom asserts
-    "the entry's bytes match the pre-existing memory contents" (since
-    a load reveals data already in memory), the store axiom asserts
-    "after the store, memory contains the entry's bytes." Concretely,
-    the post-state has `mem` equal to the eight inserts on the entry's
-    lanes — exactly the `bus_effect`'s store-branch update. -/
-axiom row_models_sail_state_store
-    (mem : Valid_Mem C FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (h_match : mem_row_matches_entry mem r_mem e)
-    (h_wr : mem.wr r_mem = 1) :
-    -- After the store, memory at ptr..ptr+7 holds entry.x0..x7.
-    -- We state this in the same shape `bus_effect`'s store branch
-    -- produces: a chain of `mem.insert` calls.
-    let updated_mem :=
-      ((((((((state.mem.insert e.ptr.toNat e.x0
-        ).insert (e.ptr.toNat + 1) e.x1
-        ).insert (e.ptr.toNat + 2) e.x2
-        ).insert (e.ptr.toNat + 3) e.x3
-        ).insert (e.ptr.toNat + 4) e.x4
-        ).insert (e.ptr.toNat + 5) e.x5
-        ).insert (e.ptr.toNat + 6) e.x6
-        ).insert (e.ptr.toNat + 7) e.x7)
-    updated_mem[e.ptr.toNat]? = .some e.x0
-    ∧ updated_mem[e.ptr.toNat + 1]? = .some e.x1
-    ∧ updated_mem[e.ptr.toNat + 2]? = .some e.x2
-    ∧ updated_mem[e.ptr.toNat + 3]? = .some e.x3
-    ∧ updated_mem[e.ptr.toNat + 4]? = .some e.x4
-    ∧ updated_mem[e.ptr.toNat + 5]? = .some e.x5
-    ∧ updated_mem[e.ptr.toNat + 6]? = .some e.x6
-    ∧ updated_mem[e.ptr.toNat + 7]? = .some e.x7
-
 /-! ## Bridge theorems -/
 
 /-- **Memory-load correctness — the M*-axiom replacement.** Given:
@@ -219,43 +182,6 @@ theorem mem_load_correct
   obtain ⟨r_mem, h_match, h_wr⟩ :=
     lookup_consumer_matches_provider_load main mem r_main e h_main_emit
   exact row_models_sail_state_load mem r_mem e state h_match h_wr
-
-/-- **Memory-store correctness — the M*-axiom replacement (store side).**
-    Given a Main AIR store row emitting `(c_0 = lo(e), c_1 = hi(e),
-    as = 2, mult = 1)`, the post-store Sail state's `mem` agrees byte
-    by byte with the entry's lanes.
-
-    Returns the same conclusion shape `bus_effect`'s store branch
-    produces (eight `state.mem.insert` calls; per
-    `BusEffect.lean:90-102`). -/
-theorem mem_store_correct
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
-    (r_main : ℕ) (e : MemoryBusEntry FGL)
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (h_main_emit : main.c_0 r_main = memory_entry_lo e
-                   ∧ main.c_1 r_main = memory_entry_hi e
-                   ∧ e.as = 2
-                   ∧ e.multiplicity = 1) :
-    let updated_mem :=
-      ((((((((state.mem.insert e.ptr.toNat e.x0
-        ).insert (e.ptr.toNat + 1) e.x1
-        ).insert (e.ptr.toNat + 2) e.x2
-        ).insert (e.ptr.toNat + 3) e.x3
-        ).insert (e.ptr.toNat + 4) e.x4
-        ).insert (e.ptr.toNat + 5) e.x5
-        ).insert (e.ptr.toNat + 6) e.x6
-        ).insert (e.ptr.toNat + 7) e.x7)
-    updated_mem[e.ptr.toNat]? = .some e.x0
-    ∧ updated_mem[e.ptr.toNat + 1]? = .some e.x1
-    ∧ updated_mem[e.ptr.toNat + 2]? = .some e.x2
-    ∧ updated_mem[e.ptr.toNat + 3]? = .some e.x3
-    ∧ updated_mem[e.ptr.toNat + 4]? = .some e.x4
-    ∧ updated_mem[e.ptr.toNat + 5]? = .some e.x5
-    ∧ updated_mem[e.ptr.toNat + 6]? = .some e.x6
-    ∧ updated_mem[e.ptr.toNat + 7]? = .some e.x7 := by
-  obtain ⟨r_mem, h_match, h_wr⟩ :=
-    lookup_consumer_matches_provider_store main mem r_main e h_main_emit
-  exact row_models_sail_state_store mem r_mem e state h_match h_wr
 
 /-! ## Convenience: bus_effect-shaped output
 
@@ -330,67 +256,6 @@ theorem mem_load_correct_1byte
   have h := mem_load_correct main mem r_main e state h_main_emit
   exact h.1
 
-/-- 4-byte store correctness — narrow companion of `mem_store_correct`
-    for SW. The post-store state has 4 inserts on `state.mem`; the
-    conclusion exposes byte equalities for those 4 keys. -/
-theorem mem_store_correct_4byte
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
-    (r_main : ℕ) (e : MemoryBusEntry FGL)
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (h_main_emit : main.c_0 r_main = memory_entry_lo e
-                   ∧ main.c_1 r_main = memory_entry_hi e
-                   ∧ e.as = 2
-                   ∧ e.multiplicity = 1) :
-    let updated_mem :=
-      ((((state.mem.insert e.ptr.toNat e.x0
-        ).insert (e.ptr.toNat + 1) e.x1
-        ).insert (e.ptr.toNat + 2) e.x2
-        ).insert (e.ptr.toNat + 3) e.x3)
-    updated_mem[e.ptr.toNat]? = .some e.x0
-    ∧ updated_mem[e.ptr.toNat + 1]? = .some e.x1
-    ∧ updated_mem[e.ptr.toNat + 2]? = .some e.x2
-    ∧ updated_mem[e.ptr.toNat + 3]? = .some e.x3 := by
-  -- The conclusion is a structural consequence of `Std.ExtDHashMap.get?_insert`
-  -- under key-distinctness (the four keys ptr+0..ptr+3 are pairwise
-  -- distinct). The 8-byte axiom is not required for the narrow shape.
-  -- We invoke it (via mem_store_correct) anyway for trust-budget parity:
-  -- the bus-permutation match still has to hold to authorize the store.
-  have _ := mem_store_correct main mem r_main e state h_main_emit
-  refine ⟨?_, ?_, ?_, ?_⟩ <;> grind
-
-/-- 2-byte store correctness — narrow companion of `mem_store_correct`
-    for SH. -/
-theorem mem_store_correct_2byte
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
-    (r_main : ℕ) (e : MemoryBusEntry FGL)
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (h_main_emit : main.c_0 r_main = memory_entry_lo e
-                   ∧ main.c_1 r_main = memory_entry_hi e
-                   ∧ e.as = 2
-                   ∧ e.multiplicity = 1) :
-    let updated_mem :=
-      ((state.mem.insert e.ptr.toNat e.x0
-        ).insert (e.ptr.toNat + 1) e.x1)
-    updated_mem[e.ptr.toNat]? = .some e.x0
-    ∧ updated_mem[e.ptr.toNat + 1]? = .some e.x1 := by
-  have _ := mem_store_correct main mem r_main e state h_main_emit
-  refine ⟨?_, ?_⟩ <;> grind
-
-/-- 1-byte store correctness — narrow companion of `mem_store_correct`
-    for SB. -/
-theorem mem_store_correct_1byte
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
-    (r_main : ℕ) (e : MemoryBusEntry FGL)
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (h_main_emit : main.c_0 r_main = memory_entry_lo e
-                   ∧ main.c_1 r_main = memory_entry_hi e
-                   ∧ e.as = 2
-                   ∧ e.multiplicity = 1) :
-    let updated_mem := state.mem.insert e.ptr.toNat e.x0
-    updated_mem[e.ptr.toNat]? = .some e.x0 := by
-  have _ := mem_store_correct main mem r_main e state h_main_emit
-  grind
-
 /-! ## Axiom audit
 
 `mem_load_correct` and `mem_store_correct` each add **two** ZisK
@@ -413,8 +278,6 @@ restrict the 8-byte versions.
 -/
 
 #print axioms mem_load_correct
-#print axioms mem_store_correct
 #print axioms mem_load_correct_4byte
-#print axioms mem_store_correct_4byte
 
 end ZiskFv.Circuit.MemModel

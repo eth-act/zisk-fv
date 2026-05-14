@@ -171,22 +171,6 @@ axiom lookup_consumer_matches_provider_load
       mem_row_matches_entry mem r_mem e
       ∧ mem.wr r_mem = 0
 
-/-- **Memory-bus permutation soundness — store side.** Given a Main row
-    `r_main` whose memory-bus emission carries the store entry `e`
-    (`as = 2`, `multiplicity = 1` — the producer / "proves" side at
-    `state-machines/mem/pil/mem.pil:527`), there exists a Mem AIR row
-    `r_mem` whose projection matches `e`'s `(ptr, timestamp, lo, hi, 1)`. -/
-axiom lookup_consumer_matches_provider_store
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
-    (r_main : ℕ) (e : MemoryBusEntry FGL)
-    (h_emit : main.c_0 r_main = memory_entry_lo e
-              ∧ main.c_1 r_main = memory_entry_hi e
-              ∧ e.as = 2
-              ∧ e.multiplicity = 1) :
-    ∃ r_mem : ℕ,
-      mem_row_matches_entry mem r_mem e
-      ∧ mem.wr r_mem = 1
-
 /-! ## Lane-match discharge from Mem row -/
 
 /-- **Memory-load lane match from Mem AIR row.** The writes-side
@@ -241,35 +225,6 @@ theorem memory_load_lanes_match_of_mem_row
     ∧ ∃ r_mem : ℕ, mem_row_matches_entry mem r_mem e ∧ mem.wr r_mem = 0 := by
   refine ⟨memory_load_lanes_match_of_main_emit main r_main e h_main_emit, ?_⟩
   exact lookup_consumer_matches_provider_load main mem r_main e h_main_emit
-
-/-- **Memory-store lane match from Main emission.** Symmetric to
-    `memory_load_lanes_match_of_main_emit` for the store side
-    (`multiplicity = 1`); the lane match is structural from Main's
-    `c_0` / `c_1`. -/
-theorem memory_store_lanes_match_of_main_emit
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (e : MemoryBusEntry FGL)
-    (h_main_emit : m.c_0 r_main = memory_entry_lo e
-                   ∧ m.c_1 r_main = memory_entry_hi e
-                   ∧ e.as = 2
-                   ∧ e.multiplicity = 1) :
-    memory_store_lanes_match m r_main e := by
-  exact ⟨h_main_emit.1, h_main_emit.2.1⟩
-
-/-- **Memory-store lane match from Mem AIR row.** Symmetric to
-    `memory_load_lanes_match_of_mem_row`. Composes the Main-side store
-    emission with the Mem AIR row provided by
-    `lookup_consumer_matches_provider_store`. -/
-theorem memory_store_lanes_match_of_mem_row
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
-    (r_main : ℕ) (e : MemoryBusEntry FGL)
-    (h_main_emit : main.c_0 r_main = memory_entry_lo e
-                   ∧ main.c_1 r_main = memory_entry_hi e
-                   ∧ e.as = 2
-                   ∧ e.multiplicity = 1) :
-    memory_store_lanes_match main r_main e
-    ∧ ∃ r_mem : ℕ, mem_row_matches_entry mem r_mem e ∧ mem.wr r_mem = 1 := by
-  refine ⟨memory_store_lanes_match_of_main_emit main r_main e h_main_emit, ?_⟩
-  exact lookup_consumer_matches_provider_store main mem r_main e h_main_emit
 
 /-! ## Mem-row local soundness
 
@@ -869,8 +824,6 @@ lookup-argument soundness on `bus_id = 10`). -/
 
 #print axioms memory_load_lanes_match_of_main_emit
 #print axioms memory_load_lanes_match_of_mem_row
-#print axioms memory_store_lanes_match_of_main_emit
-#print axioms memory_store_lanes_match_of_mem_row
 #print axioms mem_read_addr_change_value_0_zero
 #print axioms mem_read_addr_change_value_1_zero
 

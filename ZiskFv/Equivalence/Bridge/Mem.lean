@@ -81,20 +81,6 @@ theorem load_discharge
     ∧ ∃ r_mem, ZiskFv.Airs.MemoryBus.MemBridge.mem_row_matches_entry mem r_mem e ∧ mem.wr r_mem = 0 :=
   ZiskFv.Airs.MemoryBus.MemBridge.memory_load_lanes_match_of_mem_row main mem r_main e h_main_emit
 
-/-- **Store-side discharge.** Symmetric to `load_discharge` for
-    stores (`multiplicity = 1`, Main's `c` lanes carry the value).
-    Consumed by `equiv_SD` / `equiv_SB` / `equiv_SH` / `equiv_SW`. -/
-theorem store_discharge
-    (main : Valid_Main C FGL FGL) (mem : ZiskFv.Airs.Mem.Valid_Mem C FGL FGL)
-    (r_main : ℕ) (e : Interaction.MemoryBusEntry FGL)
-    (h_main_emit : main.c_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e
-                   ∧ main.c_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e
-                   ∧ e.as = 2
-                   ∧ e.multiplicity = 1) :
-    ZiskFv.Airs.MemoryBus.memory_store_lanes_match main r_main e
-    ∧ ∃ r_mem, ZiskFv.Airs.MemoryBus.MemBridge.mem_row_matches_entry mem r_mem e ∧ mem.wr r_mem = 1 :=
-  ZiskFv.Airs.MemoryBus.MemBridge.memory_store_lanes_match_of_mem_row main mem r_main e h_main_emit
-
 /-! ## Per-opcode `<op>_discharge_full` entry points
 
 For each Mem-AIR-shape opcode, the entry point below packages the

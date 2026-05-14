@@ -859,19 +859,6 @@ axiom arith_table_op_div_rem_unsigned_w_mode_pin
     v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
       ∧ v.sext r_a = 0 ∧ v.m32 r_a = 1 ∧ v.div r_a = 1
 
-/-- **Arith-table unsigned-W DIV/REM primary/secondary selector pin (class #6b).**
-    For every `Valid_ArithDiv` row with `op = 188` (DIVUW), the
-    arith_table lookup pins `main_div = 1, main_mul = 0` (primary
-    lane); for `op = 189` (REMUW), it pins `main_div = 0, main_mul = 0`
-    (secondary lane). PIL citation: same as
-    `arith_table_op_div_rem_main_selector_pin` modulo the row-table
-    rows for `op = 188 / 189`. -/
-axiom arith_table_op_div_rem_unsigned_w_main_selector_pin
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
-    (_h_op : v.op r_a = 188 ∨ v.op r_a = 189) :
-    (v.op r_a = 188 → v.main_div r_a = 1 ∧ v.main_mul r_a = 0)
-  ∧ (v.op r_a = 189 → v.main_div r_a = 0 ∧ v.main_mul r_a = 0)
-
 /-- **Arith-table signed-W DIV/REM mode pin (class #6b).**
     For every `Valid_ArithDiv` row with `op ∈ {190, 191}` (signed
     32-bit DIVW / REMW), the arith_table lookup pins `sext = 0`,
@@ -887,19 +874,6 @@ axiom arith_table_op_div_rem_signed_w_mode_pin
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 190 ∨ v.op r_a = 191) :
     v.sext r_a = 0 ∧ v.m32 r_a = 1 ∧ v.div r_a = 1
-
-/-- **Arith-table signed-W DIV/REM primary/secondary selector pin (class #6b).**
-    For every `Valid_ArithDiv` row with `op = 190` (DIVW), the
-    arith_table lookup pins `main_div = 1, main_mul = 0` (primary
-    lane); for `op = 191` (REMW), it pins `main_div = 0, main_mul = 0`
-    (secondary lane). PIL citation: same as
-    `arith_table_op_div_rem_main_selector_pin` modulo the row-table
-    rows for `op = 190 / 191`. -/
-axiom arith_table_op_div_rem_signed_w_main_selector_pin
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
-    (_h_op : v.op r_a = 190 ∨ v.op r_a = 191) :
-    (v.op r_a = 190 → v.main_div r_a = 1 ∧ v.main_mul r_a = 0)
-  ∧ (v.op r_a = 191 → v.main_div r_a = 0 ∧ v.main_mul r_a = 0)
 
 /-! ## Arith-table MULHU mode pin (op = 0xb1 = 177)
 
