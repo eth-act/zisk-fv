@@ -610,6 +610,41 @@ no axiom) composes the new bundle with `transpile_SD` (class #1)
 and the Sail `read_xreg` bridge to deliver the 9-hypothesis
 promise bundle that `equiv_SD` consumes.
 
+### Actual delta (Step 4.1.6 — LD exemplar, Mem-loads shape)
+
+**Zero new axioms.** The Mem-loads load-side discharge was already
+fully covered before this pilot:
+
+* `main_load_emission_bundle` (class #4, `MemBridge.lean:374`)
+  delivers the seven-tuple `(h_main_emit_b, h_main_emit_c,
+  h_ptr_match, h_rd_zero_iff, h_rd_idx, h_copy0, h_copy1)` from
+  `Bridge.Mem.ld_discharge_full` (and its `lbu_/lhu_/lwu_`
+  synonyms) — already consumed inside `equiv_LD`'s proof body.
+* `memory_bus_entry_byte_range_perm_sound` (class #5b) and
+  `lookup_consumer_matches_provider_load` (class #4) are likewise
+  consumed transitively via `equiv_LD`'s
+  `ZiskFv.Circuit.LoadDerivation.load_copyb_e1_e2_bytes_eq_bv` and
+  `Circuit.MemModel.mem_load_correct` chains.
+* `transpile_LD` (class #1) feeds the routing-pin derivations
+  inside the canonical theorem.
+
+The `equiv_LD_from_trust` wrapper at
+`ZiskFv/Equivalence/Compliance/LdExemplar.lean` therefore consumes
+no per-AIR trust-ledger axiom beyond `equiv_LD`'s existing closure.
+The reduction in caller burden is small (−1 binder, 0 hypothesis
+delta) and is principally **canonical-naming**: `h_op : main.op
+r_main = (1 : FGL)` becomes `h_main_op_ld : main.op r_main =
+OP_COPYB`, aligning with the Compliance-handshake convention used
+by the SD / LUI / ADD / OR / SLL exemplars. The shape's narrower
+zero-extended opcodes (LBU / LHU / LWU) generalize from LD
+mechanically — the canonical-naming pattern carries over verbatim,
+and the high-byte-zero pin is closed by the pre-existing pure-Lean
+derivation `memalign_subdoubleword_load_high_bytes_zero`.
+
+Matches the lower endpoint of the 0-2 prediction range (jointly
+with LUI, ADD, and SLL among prior pilots that needed zero new
+axioms).
+
 ---
 
 ## ControlFlow (covers 11 opcodes: AUIPC, BEQ, BGE, BGEU, BLT, BLTU, BNE, FENCE, JAL, JALR, LUI)
