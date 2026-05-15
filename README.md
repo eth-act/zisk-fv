@@ -8,18 +8,18 @@ via [`sail-riscv-lean`](https://github.com/NethermindEth/sail-riscv-lean)'s
 `LeanRV64D` module. This effort follows the pattern established by [openvm-fv](https://github.com/openvm-org/openvm-fv), and we are grateful to the authors of that library for their excellent work.
 
 **Status:** the verification claim is the global compliance theorem
-`ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus`
-(in `ZiskFv/Equivalence/Compliance/Global.lean`), which dispatches all
+`ZiskFv.Compliance.zisk_riscv_compliant_program_bus`
+(in `ZiskFv/Compliance.lean`), which dispatches all
 63 RV64IM opcodes through a 35-arm `OpEnvelope` sum type to per-opcode
 `equiv_<OP>_from_trust` wrappers, each discharging its canonical
 `equiv_<OP>` theorem's promise hypotheses from the trust ledger. The
-trusted computing base is **122 axioms across 12 classes** (51
-transpile contracts + 14 bus / lookup soundness + 35 Arith range /
-table / Euclidean pins + 14 Binary / BinaryExtension lookup soundness
-+ 3 range-bus byte-range + 1 memory-state load bridge + 4 platform
-scope — full per-class breakdown in `docs/fv/trusted-base.md`), 0
-sorries. Closure mechanically enforced: V2 gate
-`check-closure-vs-baseline` asserts
+trusted computing base is **122 axioms across 9 classes** (51
+transpile contracts + 14 bus / lookup soundness + 14 Binary /
+BinaryExtension lookup soundness + 35 Arith range / table / Euclidean
+pins + 3 range-bus byte-range + 1 memory-state load bridge + 4
+platform-scope — full per-class breakdown in
+`docs/fv/trusted-base.md`), 0 sorries. Closure mechanically enforced:
+V2 gate `check-closure-vs-baseline` asserts
 `#print axioms zisk_riscv_compliant_program_bus` equals
 `trust/baseline-axioms.txt` exactly. The load-bearing claim is
 `lake build`: every per-opcode equivalence theorem + every wrapper +
@@ -39,56 +39,216 @@ the uber theorem typechecks. Run `nix run .#test` for the full suite
 | `build/`               | Generated artifacts. Gitignored — produced by `nix run .#populate`. See [Inside `build/`](#inside-build) below. |
 | `docs/site/`           | Single-page trust-boundary explainer (run `docs/site/serve.sh`, port 4044).                            |
 
-## Inside `ZiskFv/`
+## Two pipelines
 
-The Lake 4 package. Subdirectories track the proof's data flow: foundations
-→ extraction → per-AIR named layer → per-opcode lifted semantics → Sail-side
-mirror → equivalence theorems.
+The project has two distinct pipelines a reader has to keep in mind:
+the **build pipeline** (how the inputs become the artifacts the proofs
+read) and the **reasoning pipeline** (how, given those artifacts, the
+proofs build up to the global theorem). They are illustrated below
+side-by-side; the file map after this section labels each box with the
+directory it lives in.
+
+### Build pipeline
+
+```
+flake.lock          ← single audit surface for build inputs
+  │                   (sail, sail-riscv, zisk, pil2-*, nixpkgs all
+  │                    content-hash pinned)
+  ▼
+nix run .#populate
+  ├──▶ build/sail-lean/           ← Sail RV64 spec compiled to Lean
+  │                                 (~149 files, defines LeanRV64D.Functions.execute)
+  ├──▶ build/zisk.pilout          ← PIL2 constraint set (protobuf, ~17 GiB peak build)
+  │       │
+  │       │ tools/pil-extract  (Rust, decodes protobuf → Lean)
+  │       ▼
+  └──▶ build/extraction/          ← separate Lake library `Extraction`
+        Extraction/<AIR>.lean       (13 files: Arith, Binary, BinaryAdd,
+                                     BinaryExtension, Buses, Main, Mem,
+                                     MemAlign{,Byte,ReadByte,WriteByte},
+                                     MemoryBuses, ArithTable)
+  │
+  ▼
+lake build      ← the FV check. Reads sail-lean + Extraction via
+                  lakefile.toml `[[require]]` entries; typechecks
+                  the entire ZiskFv tree atop them.
+```
+
+The `Extraction` library is a separate Lake package required from
+the root lakefile via `[[require]] name = "Extraction" path = "build/extraction"`.
+Its 13 auto-generated `.lean` files declare anonymous
+`constraint_N_every_row` predicates directly over witness columns;
+the human-readable wrappers and single-AIR correctness theorems live
+in `ZiskFv/Airs/<AIR>/`. Without `nix run .#populate` having
+populated `build/extraction/`, the `lakefile.toml` require fails
+and `lake build` cannot start.
+
+### Reasoning pipeline
+
+```
+build/sail-lean/                       build/extraction/Extraction/
+  LeanRV64D.Functions.execute            constraint_N_every_row predicates
+        │                                          │
+        │ rewritten to clean BitVec/Option         │ wrapped with named-column
+        │ form by ZiskFv/SailSpec/<op>             │ accessors by ZiskFv/Airs/<AIR>
+        ▼                                          ▼
+  PureSpec.execute_<op>_pure              Valid_<AIR> records + iff-bridges
+  + equivalence lemma to LeanRV64D        + single-AIR correctness theorems
+        │                                          │
+        │                                          │ + bus-protocol soundness axioms
+        │                                          │   (operation bus, memory bus,
+        │                                          │    range bus, lookup tables)
+        │                                          ▼
+        │                                  ZiskFv/ZiskCircuit/<Op>.lean
+        │                                  lifted per-opcode circuit semantics
+        │                                  (composes the relevant AIR rows via
+        │                                   matches_entry on the operation bus)
+        │                                          │
+        └──────────── join ────────────────────────┘
+                         │
+                         ▼
+        ZiskFv/Equivalence/<Op>.lean           ZiskFv/Tactics/<Shape>Archetype.lean
+        equiv_<OP> : LHS = RHS                 packaged simp/rewrite cascade per
+        (LHS = Sail execute,                    instruction shape; per-opcode files
+         RHS = bus_effect …)                    instantiate the matching archetype.
+        Takes promise hypotheses
+        (TRANSPILE-BRIDGE, RANGE, etc.)
+                         │
+                         │  discharged by ZiskFv/Trusted/Transpiler.lean
+                         │  + axiom-bearing files under ZiskFv/Airs/{Arith/Ranges,
+                         │  Binary/{Binary,BinaryAdd,BinaryExtension}Ranges,
+                         │  Main/Ranges, MemoryBus/{MemBridge,MemAlignBridge,
+                         │  EntryRanges}, OperationBus/Bridge, Tables/*}
+                         │  + ZiskCircuit/MemModel + SailSpec/Auxiliaries
+                         │  (122 axioms total — see docs/fv/trusted-base.md)
+                         ▼
+        ZiskFv/Compliance/FromTrust/<Op>.lean
+        equiv_<OP>_from_trust    ← 63 wrappers, one per RV64IM opcode
+                         │
+                         ▼
+        ZiskFv/Compliance/Dispatch.lean
+        per-arm OpEnvelope dispatchers (35 arms,
+        one per shape×opcode-family)
+                         │
+                         ▼
+        ZiskFv/Compliance.lean
+        zisk_riscv_compliant_program_bus      ← THE verification claim
+        (uber theorem; #print axioms closure ≡ trust/baseline-axioms.txt)
+```
+
+`lake build` succeeding **is** the formal-verification claim: every
+typed name above checks against the 122 axioms in
+`trust/baseline-axioms.txt` (plus Lean 4's kernel and the LeanRV64D
+Sail-translation — see [trusted-base.md](docs/fv/trusted-base.md)).
+The V2 trust gate's `check-closure-vs-baseline` subcommand asserts
+that the live closure equals the baseline exactly, catching both
+silent additions and dead trust.
+
+## Inside `ZiskFv/`
 
 ```
 ZiskFv/
-├── Fundamentals/   foundations: Goldilocks field, BitVec/U64 lemmas, transpiler axioms
-├── Extraction/     3 hand-written extraction-layer files (auto-generated set lives in build/extraction/)
-├── Airs/           per-AIR named-column wrappers + single-AIR correctness theorems
-├── Circuit/        per-opcode lifted circuit semantics — one .lean per RV64IM opcode
-├── Sail/           per-opcode Sail-side mirrors with equivalence-to-LeanRV64D lemmas
-├── Tactics/        instruction-shape archetype tactics that drive the per-opcode proofs
-├── Equivalence/    per-opcode canonical equiv_<OP> theorems + bus-precondition variants
-├── Compliance.lean uber theorem zisk_riscv_compliant_program_bus
-├── Compliance/     OpEnvelope dispatchers (Dispatch.lean) + 63 equiv_<OP>_from_trust wrappers (FromTrust/<Op>.lean)
-└── ZiskFv.lean     root module — imports the whole tree
+├── Compliance.lean      ← THE uber theorem zisk_riscv_compliant_program_bus
+├── Compliance/          OpEnvelope dispatchers (Dispatch.lean)
+│   ├── Dispatch.lean      + 63 equiv_<OP>_from_trust wrappers under
+│   └── FromTrust/<Op>     FromTrust/<Op>.lean (one per RV64IM opcode)
+├── Equivalence/         per-opcode canonical equiv_<OP> theorems (65 files)
+│   ├── <Op>.lean          + Bridge/ (cross-AIR equivalence machinery)
+│   ├── Bridge/            + WriteValueProofs/ (shared rd-value derivations)
+│   └── WriteValueProofs/
+├── ZiskCircuit/         per-opcode lifted circuit semantics (62 files, by opcode)
+├── SailSpec/            per-opcode Sail-side mirrors + bus_effect (65 files)
+├── Airs/                per-AIR named-column wrappers (by ZisK AIR, not by opcode)
+│   ├── Main/, Binary/,    + Airs/Tables/ for Binary/BinaryExtension lookup table
+│   │   Arith/, MemoryBus/,  soundness, Airs/{Operation,Memory}Bus/ for permutation-
+│   │   OperationBus/        argument soundness, Airs/Bus/ for the bus-emission ADT
+│   ├── Tables/, Bus/      and the generic bus-interaction structure.
+│   └── Mem*.lean
+├── Tactics/             instruction-shape archetype tactics (12 files)
+├── Field/               Goldilocks field + primality certificate
+├── Bits/                BitVec / U64 / PackedBitVec lemmas (foundational)
+├── Trusted/             Transpiler.lean — declares 51 transpile_* axioms (class #1)
+└── ZiskFv.lean          root module — imports the whole tree
 ```
 
-### `ZiskFv/Fundamentals/`
+Each subdirectory has a short `README.md` orienting the reader; the
+sections below summarise.
 
-Foundational definitions and lemmas the rest of the tree builds on.
-`Goldilocks.lean` defines `FGL := Fin (2^64 - 2^32 + 1)` and the canonical
-`[Field FGL]` instance — declared once globally and never shadowed
-(shadowing it as a proof-local variable defeats `ring`).
-`PrattCertificate.lean` proves the prime is prime via `native_decide`
-(~6 min cold; the slowest single proof in the build). `U64.lean` and the
-`PackedBitVec/` subdirectory hold the fixed-width arithmetic lemmas needed
-for carry-free decompositions across packed lanes. `Transpiler.lean` and
-`TranspileConsumers.lean` declare the `transpile_*` axioms that bridge
-RISC-V instruction encoding to ZisK's microinstruction format (class
-#1 — 51 axioms — in `docs/fv/trusted-base.md`). `Execution.lean` and
-`Interaction.lean` define generic execution-trace and bus-interaction
-structures shared across all AIRs.
+### `ZiskFv/Compliance.lean` and `ZiskFv/Compliance/`
 
-### `ZiskFv/Extraction/`
+The verification claim. `Compliance.lean` declares
+`zisk_riscv_compliant_program_bus` and proves it by case-splitting on
+a 35-arm `OpEnvelope` sum type indexed by `mainOpKind`. Each arm calls
+the matching per-opcode dispatcher in `Compliance/Dispatch.lean`,
+which in turn calls `Compliance/FromTrust/<Op>.equiv_<OP>_from_trust`
+(63 wrappers, one per RV64IM opcode). The wrappers are where each
+opcode's canonical `equiv_<OP>` theorem has its promise hypotheses
+discharged from the trust ledger — they make the uber-theorem's
+parameter surface trust-ledger-only.
 
-Three hand-written extraction-layer files that supplement the auto-generated
-set under `build/extraction/Extraction/`:
+The wrapper layer's caller burden is drift-guarded by
+`trust/baseline-wrapper-caller-burden.txt`; the uber theorem's
+transitive axiom closure is drift-guarded by
+`trust/baseline-zisk-riscv-compliant.txt` (per-name flat list) and
+`trust/baseline-axioms.txt` (hashed per-axiom ledger).
 
-- `ArithTable.lean` — hand-transcribed from
-  `zisk/state-machines/arith/src/arith_table_data.rs::ARITH_TABLE` (74 rows).
-  The Rust constant is itself generated from PIL with `generate_table = 1`;
-  we transcribe rather than extending the Rust extractor.
-- `MemoryBuses.lean` — hand-curated subset of memory-bus emissions
-  (bus_id = 10) extracted from PIL2 `gsum_debug_data` hints.
-- `OperationBuses.lean` — hand-written operation-bus emission for the Main
-  AIR (bus_id = 5000); needed because the auto-extracted form became a
-  multiplicity-0 stub starting v0.16.0.
+### `ZiskFv/Equivalence/`
+
+Per-opcode canonical theorems, one file per RV64IM opcode (e.g.
+`Add.lean`, `BranchEqual.lean`, `LoadD.lean`), containing
+`equiv_<OP> : execute_instruction (.<shape> …) state = (bus_effect exec_row mem_row state).2`.
+Both sides live in Sail's state space (LHS is `LeanRV64D.Functions.execute`,
+RHS is `SailSpec.BusEffect.bus_effect`). Each theorem takes promise
+hypotheses in a fixed set of safe trust classes — `CIRCUIT-CONSTRAINT`,
+`LANE-MATCH`, `RANGE`, `TRANSPILE-BRIDGE`, `TRANSPILE-PIN` — uniformly
+enforced by the V1 + V2 trust gates against
+`trust/forbidden-param-shapes.txt` and `trust/forbidden-types.txt`
+(no carve-outs; the 7 load opcodes were closed by deriving their
+cross-entry rd-value equations from circuit witnesses in
+`ZiskCircuit/LoadDerivation.lean` + `ZiskCircuit/SextLoadBridge.lean`).
+
+`Bridge/` factors cross-AIR machinery (control-flow, memory, state,
+binary-add, binary, binary-extension, arith) shared by many opcodes.
+`WriteValueProofs/` factors shared rd-value derivations across
+opcode families that share a pattern (arith, binary-compare,
+binary-logic, binary-shift, jump/utype, mul/div/rem signed/unsigned,
+sail-bridge).
+
+### `ZiskFv/ZiskCircuit/`
+
+Per-opcode lifted ZisK circuit semantics — one file per RV64IM
+opcode (62 files including shared infrastructure like `MemModel.lean`,
+`LoadDerivation.lean`, `SextLoadBridge.lean`). Each file composes the
+relevant `Airs/` pieces via the operation-bus abstraction
+(`Airs/OperationBus/OperationBus.lean::matches_entry`) and concludes
+that the involved AIR rows together produce `f(inputs)` for some
+BitVec function `f`. The math stays in `Fin p` (Goldilocks); the
+BitVec-to-Sail-state lift itself happens in `Equivalence/`. Organised
+**by RISC-V opcode**, not by AIR — `ZiskCircuit/Add.lean` projects out
+the Add behaviour from `Airs/Main/Main.lean` +
+`Airs/Binary/BinaryAdd.lean`, joined by their matching bus row.
+
+### `ZiskFv/SailSpec/`
+
+Per-opcode Sail-side mirrors (lowercase, one per opcode: `add.lean`,
+`lw.lean`, …, 65 files = 63 opcodes + `Auxiliaries.lean` +
+`BusEffect.lean`). Each opcode file does two jobs:
+
+1. **Defines a pure version** in `PureSpec` namespace — the
+   Sail-extracted `execute_instruction` rewritten in clean
+   `BitVec`/`Option` terms, monad stripped, decoder dispatch removed,
+   ZisK-irrelevant trap arms eliminated via the four platform axioms in
+   `Auxiliaries.lean` (PMP/CLINT/PMA inert, Zicfilp disabled — all
+   scope-honest for ZisK's RV64IM target, ledger classes #7–#10).
+2. **Proves an equivalence lemma**
+   `execute_<OP>_pure_equiv : LeanRV64D.Functions.execute … = PureSpec.execute_…_pure …`.
+   The lemma keeps the pure form honest — drift between
+   `build/sail-lean/` and the pure form is a build failure, not a
+   silent trust extension.
+
+`BusEffect.lean` defines the `bus_effect` function that produces a
+Sail-shaped state update from circuit-side rows — this is the RHS
+of every equivalence theorem.
 
 ### `ZiskFv/Airs/`
 
@@ -96,123 +256,82 @@ The per-AIR layer. For each ZisK AIR (`Main`, `Binary`, `BinaryAdd`,
 `BinaryExtension`, `Arith`, `Mem`, `MemAlign{,Byte,ReadByte,WriteByte}`)
 this layer provides:
 
-- a `Valid_<AIR>` structure naming each column (so `m.cout_1 row` instead of
-  `Circuit.main circ (column := 9) (row := row) (rotation := 0)`), with
-  `_def` lemmas tying the names back to the underlying anonymous accessors;
-- iff-bridges that turn each anonymous `constraint_N_every_row` into a
-  meaningfully-named predicate (e.g. `core_every_row` for BinaryAdd's carry
-  chain);
-- **single-AIR correctness theorems** — proofs that one AIR's constraints,
-  in isolation, imply the BitVec relation they claim. These are the heaviest
-  files in the layer: `BinaryPackedCorrect.lean` is 2,109 lines,
-  `BinaryExtensionPackedCorrect.lean` is 2,804;
-- bus-protocol machinery (`OperationBus.lean`, `OpBusEffect.lean`,
-  `BusEmission.lean`, …) and lookup-table soundness (`BinaryTable.lean`,
-  `BinaryExtensionTable.lean`, plus `Arith/ArithTable.lean` for the
-  table-soundness theorem that consumes `Extraction/ArithTable.lean`'s
-  table data).
+- **`Valid_<AIR>` structures** naming each column (so `m.cout_1 row`
+  instead of `Circuit.main circ (column := 9) (row := row) (rotation := 0)`),
+  with `_def` lemmas tying the names back to the underlying anonymous
+  accessors in `Extraction.<AIR>`;
+- **iff-bridges** that turn each anonymous `constraint_N_every_row`
+  into a meaningfully-named predicate (e.g. `core_every_row` for
+  BinaryAdd's carry chain);
+- **single-AIR correctness theorems** — proofs that one AIR's
+  constraints, in isolation, imply the `BitVec` relation they claim.
+  These are the heaviest files in the layer:
+  `Binary/BinaryPackedCorrect.lean` is ~2,100 lines,
+  `Binary/BinaryExtensionPackedCorrect.lean` is ~2,800;
+- **bus-protocol machinery** under `Airs/OperationBus/` (operation-bus
+  permutation-argument soundness), `Airs/MemoryBus/` (memory-bus
+  soundness + MemAlign bridges), `Airs/Bus/` (bus-emission ADT +
+  generic bus-interaction structure);
+- **lookup-table soundness** under `Airs/Tables/` (Binary and
+  BinaryExtension table soundness) and per-AIR `*Ranges.lean` files
+  (Main, BinaryAdd, Binary, BinaryExtension, Arith) declaring the
+  range-bus / column-range axioms.
 
-Files are organized **by ZisK constraint table**, not by RISC-V instruction
-— a single AIR (e.g. Binary) covers many opcodes (ADD, SUB, AND, OR, XOR,
-all branches, …).
+Files are organised **by ZisK constraint table**, not by RISC-V
+instruction — a single AIR (e.g. `Binary`) covers many opcodes (ADD,
+SUB, AND, OR, XOR, branches, …).
 
-### `ZiskFv/ZiskCircuit/`
-
-Per-opcode lifted circuit semantics — one file per RV64IM opcode (62
-files total, including shared infrastructure like `MemModel.lean`,
-`MulField.lean`, `DivFieldSigned.lean`). Each file composes the relevant `Airs/` pieces via
-the operation-bus abstraction (`Airs/OperationBus.lean::matches_entry`) and
-concludes that the involved AIR rows together produce `f(inputs)` for some
-BitVec function `f`. The math stays in `Fin p` (Goldilocks); the BitVec lift
-itself happens in `Equivalence/`. Files are organized **by RISC-V opcode**,
-not by AIR — `Circuit/Add.lean` projects out the Add behaviour from
-`Airs/Main.lean` + `Airs/Binary/BinaryAdd.lean`, both joined by their
-matching bus row.
-
-### `ZiskFv/SailSpec/`
-
-Per-opcode Sail-side mirrors (lowercase, one per opcode: `add.lean`,
-`lw.lean`, …, 65 files total = 63 opcodes + `Auxiliaries.lean` +
-`BusEffect.lean`). Each
-opcode file does two jobs:
-
-1. **Defines a pure version** in `PureSpec` namespace — the Sail-extracted
-   `execute_instruction` rewritten in clean BitVec/Option terms, monad
-   stripped, decoder dispatch removed, ZisK-irrelevant trap arms eliminated
-   via the four platform axioms in `Auxiliaries.lean` (PMP/CLINT/PMA inert,
-   Zicfilp disabled — all scope-honest for ZisK's RV64IM target, ledger
-   entries 10–13).
-2. **Proves an equivalence lemma**
-   `execute_<OP>_pure_equiv : LeanRV64D.Functions.execute (.<shape> …) state = … = PureSpec.execute_<shape>_<op>_pure …`.
-   The lemma is what keeps the pure form honest — drift between
-   `build/sail-lean/` and the pure form is a build failure, not a silent
-   trust extension.
-
-`BusEffect.lean` defines the `bus_effect` function that produces a
-Sail-shaped state update from circuit-side rows — this is the RHS of every
-equivalence theorem.
+Most files in `Airs/` are pure-proof; the axiom-bearing files are
+`Trusted/Transpiler.lean` (51), `Airs/Arith/Ranges.lean` (35),
+`Airs/MemoryBus/{MemBridge,MemAlignBridge,EntryRanges}.lean` (12),
+`Airs/Binary/{BinaryRanges,BinaryExtensionRanges,BinaryAddRanges}.lean`
+(13), `Airs/Tables/{BinaryTable,BinaryExtensionTable}.lean` (2),
+`Airs/OperationBus/Bridge.lean` (3), `Airs/Main/Ranges.lean` (1),
+`ZiskCircuit/MemModel.lean` (1), `SailSpec/Auxiliaries.lean` (4) —
+122 axioms total. The allowlist is `trust/allowed-axiom-files.txt`.
 
 ### `ZiskFv/Tactics/`
 
-Archetype tactics: instruction-shape templates that drive the per-opcode
-proofs. The 12 archetypes (`ALURTypeArchetype`, `ALUITypeArchetype`,
-`BranchArchetype`, `LoadArchetype`, `StoreArchetype`, `JumpArchetype`,
-`MulArchetype`, `ShiftArchetype`, `SignExtendLoadArchetype`,
-`RTypeWArchetype`, `UTypeArchetype`, `ArithSMArchetype`) each package the
-standard simp/rewrite cascade for one instruction shape. Per-opcode files
-under `Equivalence/` mostly instantiate the relevant archetype with the
-opcode's specific Sail-side rewrite and `Circuit/` compositional theorem;
-this is what makes 63 individual proofs feasible without 63 bespoke proof
-scripts.
+Archetype tactics: instruction-shape templates that drive the
+per-opcode proofs. The 12 archetypes (`ALURTypeArchetype`,
+`ALUITypeArchetype`, `BranchArchetype`, `LoadArchetype`,
+`StoreArchetype`, `JumpArchetype`, `MulArchetype`, `ShiftArchetype`,
+`SignExtendLoadArchetype`, `RTypeWArchetype`, `UTypeArchetype`,
+`ArithSMArchetype`) each package the standard simp/rewrite cascade
+for one instruction shape. Per-opcode files under `Equivalence/`
+mostly instantiate the relevant archetype with the opcode's specific
+Sail-side rewrite and `ZiskCircuit/` compositional theorem.
 
-### `ZiskFv/Equivalence/`
+### `ZiskFv/Field/`, `ZiskFv/Bits/`, `ZiskFv/Trusted/`
 
-The top-level FV theorems, organised in three layers:
+Foundational layer.
 
-1. **Per-opcode canonical theorems** — one file per opcode, each
-   containing
-   `equiv_<OP> : execute_instruction (.<shape> …) state = (bus_effect exec_row mem_row state).2`.
-   Both sides live in Sail's state space: the LHS is Sail's `execute`;
-   the RHS comes from `Sail/BusEffect.lean`. Every parameter is in one
-   of the safe trust classes ({CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE,
-   TRANSPILE-BRIDGE, TRANSPILE-PIN}); uniformly enforced by the trust
-   gate's `check-no-output-eq.sh` (V1) + `check-no-output-eq-v2.sh`
-   (V2) against `trust/forbidden-param-shapes.txt` /
-   `forbidden-types.txt` — no exemptions, including loads (the 7 load
-   opcodes were closed by deriving their cross-entry rd-value byte
-   equations from circuit witnesses, see
-   `Circuit/LoadDerivation.lean` and `Circuit/SextLoadBridge.lean`).
-   Bus-precondition variants (`equiv_<OP>_from_bus`,
-   `equiv_<OP>_bus_self`, `equiv_<OP>_op_bus`) bridge alternate
-   precondition shapes into the same canonical conclusion.
-   `WriteValueProofs/` factors out shared rd-value lemmas across
-   opcodes that share a derivation pattern.
-
-2. **`Compliance/<Op>Exemplar.lean` wrappers** — 63
-   `equiv_<OP>_from_trust` wrappers (plus `DivPilot.lean`), one per
-   opcode. Each wrapper discharges its canonical theorem's promise
-   hypotheses from the trust ledger, exposing only the minimal
-   caller-burden surface (recorded in
-   `trust/baseline-wrapper-caller-burden.txt`, drift-guarded by
-   `check-wrapper-caller-burden.sh`).
-
-3. **`Compliance/Global.lean`** — the uber theorem
-   `zisk_riscv_compliant_program_bus`, dispatching all 63 opcodes
-   through a 35-arm `OpEnvelope` sum type by chaining the per-op
-   wrappers. **This is the verification claim.** Its transitive
-   `#print axioms` closure is mechanically asserted equal to
-   `trust/baseline-axioms.txt` by the V2 gate's
-   `check-closure-vs-baseline` subcommand — 122 axioms, no dead
-   trust, no silent additions. **`lake build` succeeding IS the
-   formal-verification claim.** All 63 RV64IM opcodes covered, 0
-   sorries.
+- `Field/Goldilocks.lean` defines `FGL := Fin (2^64 - 2^32 + 1)` and
+  the canonical `[Field FGL]` instance — declared once globally and
+  never shadowed (shadowing as a proof-local variable defeats `ring`).
+- `Field/GoldilocksPrimality.lean` is the Pratt-style primality
+  certificate; uses `native_decide` (~6 min cold; the slowest single
+  proof in the build).
+- `Field/GoldilocksBridge.lean` ties the Mathlib `Field`/`ZMod`
+  formalisation to `Fin p` used elsewhere.
+- `Bits/U64.lean` and `Bits/PackedBitVec/` hold the fixed-width
+  arithmetic lemmas needed for carry-free decompositions across
+  packed lanes; `Bits/BitVec.lean` (top-level) carries the bridge
+  lemmas. `Bits/Execution.lean` defines the generic execution-trace
+  structure.
+- `Trusted/Transpiler.lean` declares the **51 `transpile_*` axioms**
+  (class #1) that bridge RISC-V instruction encoding to ZisK's
+  microinstruction format, plus the platform-scope axioms (P1–P4)
+  and `store_pc=1` PC bridges (TP-*). The namespace
+  `ZiskFv.Trusted` reflects the trust-surface status — this is the
+  largest single axiom block.
 
 ## Inside `build/`
 
 ```
 build/
-├── sail-lean/      Sail RV64 spec compiled to Lean (LeanRV64D module). 149 generated files.
-├── extraction/     Lake lib `Extraction` — auto-generated PIL2 extraction (11 per-AIR files).
+├── sail-lean/      Sail RV64 spec compiled to Lean (LeanRV64D module). ~149 generated files.
+├── extraction/     Lake lib `Extraction` — auto-generated PIL2 extraction (13 per-AIR files).
 └── zisk.pilout     Compiled ZisK constraint set (protobuf). The pil-extract input.
 ```
 
@@ -235,16 +354,17 @@ ergonomic mirrors live in `ZiskFv/SailSpec/`.
 ### `build/extraction/`
 
 A standalone Lake library named `Extraction`, required by the root
-`lakefile.toml` via `[[require]] path = "build/extraction"`. Contains the
-11 auto-generated per-AIR `.lean` files emitted by `tools/pil-extract`
-from `build/zisk.pilout` (`Arith`, `Binary`, `BinaryAdd`, `BinaryExtension`,
-`Buses`, `Main`, `Mem`, `MemAlign`, `MemAlignByte`, `MemAlignReadByte`,
-`MemAlignWriteByte`). Each file defines anonymous `constraint_N_every_row`
-predicates directly over witness columns; the human-readable named bridges
-live in `ZiskFv/Airs/`. The static `lakefile.toml` and root `Extraction.lean`
-are written into the directory by `nix/populate.nix` (they aren't part of
-any Nix derivation), so wiping `build/` and re-running populate restores
-the full lib.
+`lakefile.toml` via `[[require]] path = "build/extraction"`. Contains
+the 13 auto-generated per-AIR `.lean` files emitted by
+`tools/pil-extract` from `build/zisk.pilout`: `Arith`, `ArithTable`,
+`Binary`, `BinaryAdd`, `BinaryExtension`, `Buses`, `Main`, `Mem`,
+`MemAlign`, `MemAlignByte`, `MemAlignReadByte`, `MemAlignWriteByte`,
+`MemoryBuses`. Each file defines anonymous `constraint_N_every_row`
+predicates directly over witness columns; the human-readable named
+wrappers live in `ZiskFv/Airs/<AIR>/`. The static `lakefile.toml` and
+root `Extraction.lean` are written into the directory by
+`nix/populate.nix` (they aren't part of any Nix derivation), so wiping
+`build/` and re-running populate restores the full lib.
 
 ### `build/zisk.pilout`
 
@@ -275,7 +395,7 @@ The trust boundary is **mechanically enforced** on every PR via
   63 opcodes (no carve-out).
 - Sanity floors on axiom count (≥ 82) and canonical-theorem count
   (≥ 63), plus cross-witness check.
-- Zero `sorry` under `ZiskFv/{Fundamentals,Airs,Circuit,Equivalence,Tactics,Sail}`.
+- Zero `sorry` under `ZiskFv/{Field,Bits,Trusted,Airs,ZiskCircuit,Equivalence,Compliance,Tactics,SailSpec}`.
 - Uniformity: every one of 63 RV64IM opcodes has a canonical
   `equiv_<OP>`.
 - Anti-laundering tripwires: per-theorem hypothesis count + canonical
@@ -292,7 +412,7 @@ The trust boundary is **mechanically enforced** on every PR via
   canonical theorem's binders via `forallTelescope` + `whnfR`,
   catching the `abbrev`-aliasing dodge V1's regex misses.
 - **Closure vs baseline**: transitive project-axiom closure of
-  `Compliance.Global.zisk_riscv_compliant_program_bus` must equal the
+  `ZiskFv.Compliance.zisk_riscv_compliant_program_bus` must equal the
   set of names in `baseline-axioms.txt` exactly. Catches **dead
   trust** (axioms hash-fresh in the ledger but no longer reachable
   from the uber theorem).
@@ -380,9 +500,9 @@ flake repro check) is auxiliary scaffolding around that core proof
 check.
 
 First cold `lake build` takes roughly 10 minutes, dominated by
-`native_decide` on Goldilocks primality. The devshell provides
-`cargo`, the Lean toolchain (`elan`), python3, and jq — the same
-toolchain `nix run .#test` bundles.
+`native_decide` on Goldilocks primality (`Field/GoldilocksPrimality.lean`).
+The devshell provides `cargo`, the Lean toolchain (`elan`), python3,
+and jq — the same toolchain `nix run .#test` bundles.
 
 ## Resource requirements
 
