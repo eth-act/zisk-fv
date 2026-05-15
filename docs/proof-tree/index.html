@@ -456,7 +456,18 @@ async function load() {
 //     depth range. Cluster kind = "A" iff every member is an axiom (so an
 //     axiom-only namespace renders red); template clusters carry the original
 //     orange template colouring.
+// Namespaces collapsed all the way to themselves — every descendant of one
+// of these (at any depth) becomes a single cluster bearing the namespace's
+// own name. Used to flatten very fan-out-y subtrees (e.g. the 63 per-opcode
+// modules under ZiskFv.Equivalence) into a single node.
+const FLAT_COLLAPSE_NAMESPACES = [
+  "ZiskFv.Equivalence",
+];
+
 function namespacePrefix(name) {
+  for (const ns of FLAT_COLLAPSE_NAMESPACES) {
+    if (name === ns || name.startsWith(ns + ".")) return ns;
+  }
   const idx = name.lastIndexOf(".");
   return idx > 0 ? name.slice(0, idx) : name;
 }
@@ -488,6 +499,18 @@ function buildCollapsedGraph() {
     if (id === ROOT) {
       collapseOf.set(id, id);
       clusterKind.set(id, "root");
+      continue;
+    }
+    // Flat-collapse overrides everything else: a hit here means we want the
+    // entire descendant subtree to collapse to one node regardless of depth
+    // or whether the leaf would otherwise fit an opcode template.
+    let flat = null;
+    for (const ns of FLAT_COLLAPSE_NAMESPACES) {
+      if (id === ns || id.startsWith(ns + ".")) { flat = ns; break; }
+    }
+    if (flat) {
+      collapseOf.set(id, flat);
+      if (!clusterKind.has(flat)) clusterKind.set(flat, "namespace");
       continue;
     }
     const d = rawDepth.get(id);
