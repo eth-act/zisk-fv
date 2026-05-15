@@ -136,6 +136,72 @@ build/sail-lean/                       build/extraction/Extraction/
         (uber theorem; #print axioms closure ≡ trust/baseline-axioms.txt)
 ```
 
+### Component-level dependency graph
+
+```mermaid
+graph TD
+  Compliance["ZiskFv/Compliance.lean<br/><i>zisk_riscv_compliant_program_bus</i><br/>(the uber theorem)"]
+  Dispatch["ZiskFv/Compliance/Dispatch.lean<br/>35-arm OpEnvelope dispatch"]
+  FromTrust["ZiskFv/Compliance/FromTrust/&lt;Op&gt;<br/>63 trust-discharge wrappers"]
+  Equiv["ZiskFv/Equivalence/&lt;Op&gt;<br/>canonical equiv_&lt;OP&gt; theorems<br/>+ Bridge/, WriteValueProofs/"]
+  ZiskCircuit["ZiskFv/ZiskCircuit/&lt;Op&gt;<br/>lifted ZisK semantics<br/>(by RISC-V opcode)"]
+  SailSpec["ZiskFv/SailSpec/&lt;op&gt;<br/>Sail-side bridges<br/>(per opcode)"]
+  Tactics["ZiskFv/Tactics/<br/>12 shape archetypes<br/>(proof drivers)"]
+  Airs["ZiskFv/Airs/&lt;AIR&gt;<br/>named columns, ranges, buses<br/><b>67 axioms in subdirs</b>"]
+  Trusted["ZiskFv/Trusted/Transpiler.lean<br/><b>51 transpile axioms</b>"]
+  MemModel["ZiskFv/ZiskCircuit/MemModel.lean<br/><b>1 mem-state axiom</b>"]
+  Auxiliaries["ZiskFv/SailSpec/Auxiliaries.lean<br/><b>4 platform axioms</b>"]
+  Bits["ZiskFv/Bits/<br/>BitVec, U64, PackedBitVec"]
+  Field["ZiskFv/Field/<br/>Goldilocks FGL + primality"]
+  Extraction["build/extraction/Extraction/&lt;AIR&gt;<br/>13 PIL-extracted files<br/>(separate Lake lib)"]
+  SailLean["build/sail-lean/LeanRV64D<br/>Sail RV64 spec → Lean"]
+  Mathlib["mathlib + LeanZKCircuit<br/>(Lake [[require]] entries)"]
+
+  Compliance --> Dispatch
+  Dispatch --> FromTrust
+  FromTrust --> Equiv
+  FromTrust --> Trusted
+  FromTrust --> Airs
+  Equiv --> Tactics
+  Equiv --> ZiskCircuit
+  Equiv --> SailSpec
+  ZiskCircuit --> Airs
+  ZiskCircuit --> MemModel
+  ZiskCircuit --> Bits
+  SailSpec --> SailLean
+  SailSpec --> Auxiliaries
+  SailSpec --> Bits
+  Tactics --> Airs
+  Tactics --> Bits
+  Airs --> Extraction
+  Airs --> Field
+  Airs --> Bits
+  Trusted --> Airs
+  Bits --> Mathlib
+  Field --> Mathlib
+
+  classDef trust fill:#ffe0e0,stroke:#c33,color:#000
+  classDef build fill:#e0e8ff,stroke:#369,color:#000
+  classDef proof fill:#e8ffe0,stroke:#393,color:#000
+  classDef external fill:#f0f0f0,stroke:#999,color:#000
+  class Trusted,MemModel,Auxiliaries,Airs trust
+  class Extraction,SailLean,Mathlib external
+  class Compliance,Dispatch,FromTrust,Equiv,ZiskCircuit,SailSpec,Tactics proof
+  class Bits,Field build
+```
+
+**Reading the graph.** Arrows point in the *import* direction: A → B
+means "A imports / depends on B." Red boxes carry axioms (122 total:
+51 in `Trusted/Transpiler.lean`, 67 in `Airs/<AIR>/...` subdirs, 1
+in `ZiskCircuit/MemModel.lean`, 4 in `SailSpec/Auxiliaries.lean`).
+Grey boxes are external (built or pulled outside the Lake package).
+Green boxes are pure-proof. The `Trusted → Airs` edge looks
+backwards but is correct — `Transpiler.lean` references `Airs/Main/Main`
+to phrase its `transpile_<OP>` axioms over `Valid_Main`-row witnesses
+(its axioms are *about* Main rows). All paths from `Compliance` reach
+either a red box (a trust commitment) or one of the two `build/...`
+external nodes (Sail spec or extracted PIL); the rest is pure proof.
+
 `lake build` succeeding **is** the formal-verification claim: every
 typed name above checks against the 122 axioms in
 `trust/baseline-axioms.txt` (plus Lean 4's kernel and the LeanRV64D
