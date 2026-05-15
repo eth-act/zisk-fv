@@ -630,12 +630,36 @@ function layout(p) {
     if (!parentsOf.has(e.target.id)) parentsOf.set(e.target.id, []);
     parentsOf.get(e.target.id).push(e.source);
   }
-  // Namespace key: everything in the id except the leaf segment. Same-namespace
-  // nodes are forced adjacent in the horizontal ordering; within a namespace,
-  // barycenter ordering minimizes crossings as usual.
-  const nsKeyOf = (node) => {
-    const parts = node.id.split(".");
-    return parts.length > 1 ? parts.slice(0, -1).join(".") : node.id;
+  // Hierarchical namespace grouping at every depth of nesting. We recursively
+  // partition each layer by progressively longer namespace prefixes; inside
+  // each group, subgroups are ordered by their mean barycenter (so the
+  // parent-flow direction is roughly preserved), and at the leaves nodes
+  // are barycenter-sorted. The net effect: every shared-prefix block is
+  // contiguous in the horizontal ordering, recursively.
+  const segsOf = (node) => node.id.split(".");
+  const placeRecursive = (nodes, level) => {
+    if (nodes.length <= 1) return nodes;
+    // Group nodes that have a segment at `level` by that segment. Nodes
+    // shorter than `level+1` segments are placed in a singleton bucket
+    // (their full id) at this level — they're already at the leaf.
+    const groups = d3.group(nodes, n => {
+      const s = segsOf(n);
+      return level < s.length - 1 ? s.slice(0, level + 1).join(".") : n.id;
+    });
+    if (groups.size === 1) {
+      // Same prefix at this level — descend one more.
+      const arr = [...groups.values()][0];
+      return placeRecursive(arr, level + 1);
+    }
+    const ordered = [...groups.entries()]
+      .map(([k, arr]) => ({ k, arr, bary: d3.mean(arr, n => n._bary) }))
+      .sort((a, b) => a.bary - b.bary);
+    const out = [];
+    for (const g of ordered) {
+      if (g.arr.length === 1) out.push(g.arr[0]);
+      else out.push(...placeRecursive(g.arr, level + 1));
+    }
+    return out;
   };
   for (let depth = 1; depth <= maxDepth; depth++) {
     const layerNodes = byDepth.get(depth) || [];
@@ -643,19 +667,8 @@ function layout(p) {
     for (const node of layerNodes) {
       const parents = parentsOf.get(node.id) || [];
       node._bary = parents.length ? d3.mean(parents, p2 => p2.x) : node.x;
-      node._ns = nsKeyOf(node);
     }
-    // Cluster nodes by namespace; place clusters in order of their mean
-    // barycenter so the global parent-flow shape is preserved.
-    const groups = d3.group(layerNodes, d => d._ns);
-    const nsOrder = [...groups.entries()]
-      .map(([ns, arr]) => ({ ns, arr, key: d3.mean(arr, d => d._bary) }))
-      .sort((a, b) => a.key - b.key);
-    const ordered = [];
-    for (const g of nsOrder) {
-      g.arr.sort((a, b) => a._bary - b._bary);
-      for (const node of g.arr) ordered.push(node);
-    }
+    const ordered = placeRecursive(layerNodes.slice(), 0);
     const n = ordered.length;
     ordered.forEach((node, i) => {
       node.x = (p.layoutWidth * (i + 1)) / (n + 1);
