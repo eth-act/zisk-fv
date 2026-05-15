@@ -99,17 +99,17 @@
     "sail-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1766413305,
-        "narHash": "sha256-p/pVfyFBbs6B7hyUMx9Nh6P1hvRAIvI5nZtUbR3DRz0=",
-        "owner": "rems-project",
+        "lastModified": 1778803150,
+        "narHash": "sha256-BwkaXunUZFHInWYRibN7Aa+YmF53mUlOR3MtGoaeBAg=",
+        "owner": "codygunton",
         "repo": "sail",
-        "rev": "277470b2ab472af8064e1295be5573845239c96b",
+        "rev": "46acc966ff845b11361c854d59d82a47bd42b487",
         "type": "github"
       },
       "original": {
-        "owner": "rems-project",
+        "owner": "codygunton",
         "repo": "sail",
-        "rev": "277470b2ab472af8064e1295be5573845239c96b",
+        "rev": "46acc966ff845b11361c854d59d82a47bd42b487",
         "type": "github"
       }
     },

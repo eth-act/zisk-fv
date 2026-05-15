@@ -556,7 +556,7 @@ lemma sb_discharge_full
   apply Std.ExtHashMap.ext_getElem?
   intro k
   simp only [Std.ExtHashMap.getElem?_insert, beq_iff_eq]
-  grind
+  set_option synthInstance.maxHeartbeats 400000 in grind
 
 /-- **SH-specific store discharge.** Returns `h_mem_eq` for SH (2 bytes). -/
 lemma sh_discharge_full
@@ -623,7 +623,7 @@ lemma sh_discharge_full
   apply Std.ExtHashMap.ext_getElem?
   intro k
   simp only [Std.ExtHashMap.getElem?_insert, beq_iff_eq]
-  grind
+  set_option synthInstance.maxHeartbeats 400000 in grind
 
 /-- **SW-specific store discharge.** Returns `h_mem_eq` for SW (4 bytes). -/
 lemma sw_discharge_full
@@ -698,6 +698,6 @@ lemma sw_discharge_full
   apply Std.ExtHashMap.ext_getElem?
   intro k
   simp only [Std.ExtHashMap.getElem?_insert, beq_iff_eq]
-  grind
+  set_option synthInstance.maxHeartbeats 400000 in grind
 
 end ZiskFv.Equivalence.Bridge.Mem
