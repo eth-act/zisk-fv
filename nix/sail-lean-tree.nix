@@ -22,10 +22,23 @@ sail-riscv.overrideAttrs (old: {
 
   # The default cmake install phase builds the emulator. We want only
   # the Lean tree.
+  #
+  # Patch the sail-emitted `Sail/IntRange.lean` to add `[Monad m]` to
+  # its `ForIn'` / `ForM` instance heads. The handwritten prelude in
+  # upstream sail targets a Lean nightly (`nightly-2025-11-18`) whose
+  # instance elaboration propagates the Monad constraint implicitly;
+  # stable Lean v4.28 does not, so the instances fail to synthesize
+  # `Monad m` without this annotation. The same fix lives on
+  # codygunton/sail @ lean-backend/v4.28 (commit 46acc966), ready to
+  # upstream to rems-project/sail.
   installPhase = ''
     runHook preInstall
     mkdir -p $out
     cp -r model/Lean_RV64D/. $out/
+    sed -i \
+      -e 's|^instance : ForIn'"'"' m IntRange Int|instance [Monad m] : ForIn'"'"' m IntRange Int|' \
+      -e 's|^instance : ForM m IntRange Int|instance [Monad m] : ForM m IntRange Int|' \
+      $out/LeanRV64D/Sail/IntRange.lean
     runHook postInstall
   '';
 

@@ -10,7 +10,11 @@
     # Pinned upstream sources. Same commits/tags as the deleted
     # docker/versions.txt; flake.lock is now the audit surface.
     sail-src = {
-      url = "github:rems-project/sail/277470b2ab472af8064e1295be5573845239c96b";
+      # codygunton/sail @ lean-backend/v4.28 = upstream
+      # rems-project/sail@277470b2 + a one-file [Monad m] fix in
+      # src/sail_lean_backend/Sail/IntRange.lean needed for Lean v4.28
+      # stable. See codygunton/sail commit 46acc966.
+      url = "github:codygunton/sail/46acc966ff845b11361c854d59d82a47bd42b487";
       flake = false;
     };
     sail-riscv-src = {
