@@ -365,17 +365,44 @@ async function load() {
     status.text("ERROR: root not found in edges");
     return;
   }
-  // BFS depth from ROOT (following out-edges).
+  // Longest-path layering from ROOT: layer(v) = length of the longest path
+  // ROOT → v. Guarantees layer(u) < layer(v) for every reachable edge u→v,
+  // so no edge is horizontal. (Plain BFS shortest-depth allows same-layer
+  // edges when v is reachable from root via two paths of different length;
+  // longest-path forces v one layer below its deepest parent.)
   rawDepth = new Map();
   rawDepth.set(ROOT, 0);
-  const queue = [ROOT];
-  while (queue.length) {
-    const cur = queue.shift();
-    const d = rawDepth.get(cur);
-    for (const t of (rawAdjOut.get(cur) || [])) {
-      if (!rawDepth.has(t) || rawDepth.get(t) > d + 1) {
-        rawDepth.set(t, d + 1);
-        queue.push(t);
+  // First mark reachability from ROOT.
+  const reachable = new Set([ROOT]);
+  {
+    const q = [ROOT];
+    while (q.length) {
+      const cur = q.shift();
+      for (const t of (rawAdjOut.get(cur) || [])) {
+        if (!reachable.has(t)) { reachable.add(t); q.push(t); }
+      }
+    }
+  }
+  // Kahn topo sort restricted to `reachable`; relax layer along the way.
+  {
+    const inDeg = new Map();
+    for (const id of reachable) inDeg.set(id, 0);
+    for (const id of reachable) {
+      for (const t of (rawAdjOut.get(id) || [])) {
+        if (reachable.has(t)) inDeg.set(t, inDeg.get(t) + 1);
+      }
+    }
+    const q = [];
+    for (const [id, d] of inDeg) if (d === 0) q.push(id);
+    while (q.length) {
+      const cur = q.shift();
+      const cd = rawDepth.get(cur) ?? 0;
+      for (const t of (rawAdjOut.get(cur) || [])) {
+        if (!reachable.has(t)) continue;
+        const cand = cd + 1;
+        if (!rawDepth.has(t) || rawDepth.get(t) < cand) rawDepth.set(t, cand);
+        inDeg.set(t, inDeg.get(t) - 1);
+        if (inDeg.get(t) === 0) q.push(t);
       }
     }
   }
@@ -603,18 +630,37 @@ function layout(p) {
     if (!parentsOf.has(e.target.id)) parentsOf.set(e.target.id, []);
     parentsOf.get(e.target.id).push(e.source);
   }
+  // Namespace key: everything in the id except the leaf segment. Same-namespace
+  // nodes are forced adjacent in the horizontal ordering; within a namespace,
+  // barycenter ordering minimizes crossings as usual.
+  const nsKeyOf = (node) => {
+    const parts = node.id.split(".");
+    return parts.length > 1 ? parts.slice(0, -1).join(".") : node.id;
+  };
   for (let depth = 1; depth <= maxDepth; depth++) {
     const layerNodes = byDepth.get(depth) || [];
     if (!layerNodes.length) continue;
     for (const node of layerNodes) {
       const parents = parentsOf.get(node.id) || [];
       node._bary = parents.length ? d3.mean(parents, p2 => p2.x) : node.x;
+      node._ns = nsKeyOf(node);
     }
-    layerNodes.sort((a, b) => a._bary - b._bary);
-    const n = layerNodes.length;
-    layerNodes.forEach((node, i) => {
+    // Cluster nodes by namespace; place clusters in order of their mean
+    // barycenter so the global parent-flow shape is preserved.
+    const groups = d3.group(layerNodes, d => d._ns);
+    const nsOrder = [...groups.entries()]
+      .map(([ns, arr]) => ({ ns, arr, key: d3.mean(arr, d => d._bary) }))
+      .sort((a, b) => a.key - b.key);
+    const ordered = [];
+    for (const g of nsOrder) {
+      g.arr.sort((a, b) => a._bary - b._bary);
+      for (const node of g.arr) ordered.push(node);
+    }
+    const n = ordered.length;
+    ordered.forEach((node, i) => {
       node.x = (p.layoutWidth * (i + 1)) / (n + 1);
     });
+    byDepth.set(depth, ordered);
   }
   p.quad = d3.quadtree(p.nodes, d => d.x, d => d.y);
 }
