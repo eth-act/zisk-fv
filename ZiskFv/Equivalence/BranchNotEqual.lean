@@ -1,14 +1,14 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Circuit.BranchNotEqual
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
-import ZiskFv.Sail.bne
-import ZiskFv.Sail.BusEffect
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.ZiskCircuit.BranchNotEqual
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.Bus.BusEmission
+import ZiskFv.SailSpec.bne
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
@@ -19,7 +19,7 @@ End-to-end theorem for RV64 BNE. Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_BNE`),
 * the compositional BNE spec
-  (`ZiskFv.Circuit.BranchNotEqual.branch_ne_compositional`, which is
+  (`ZiskFv.ZiskCircuit.BranchNotEqual.branch_ne_compositional`, which is
   a thin wrapper over the archetype macro
   `BranchArchetype.branch_archetype_pc_dispatch` at `opcode_lit = OP_EQ`),
 * the Sail pure-function equivalence (`PureSpec.execute_BNE_pure_equiv`,
@@ -46,7 +46,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.BranchNotEqual
+open ZiskFv.ZiskCircuit.BranchNotEqual
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -126,7 +126,7 @@ theorem equiv_BNE
   -- Discharge the bus-side equation via the shape (b) lemma (shared
   -- with BEQ — shape (b) is the externally-routed branch shape).
   symm
-  exact ZiskFv.Airs.BusEmission.bus_effect_matches_sail_beq
+  exact ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_beq
     state exec_row
     (PureSpec.execute_BNE_pure bne_input).nextPC
     (PureSpec.execute_BNE_pure bne_input).throws

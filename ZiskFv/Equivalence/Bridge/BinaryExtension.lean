@@ -1,14 +1,14 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Main.Ranges
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionRanges
-import ZiskFv.Airs.BinaryExtensionTable
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.Tables.BinaryExtensionTable
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.Bridge.SailStateBridge
@@ -180,7 +180,7 @@ lemma sll_discharge_partial
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL) :
     ∃ r_binary,
-      (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SLL
+      (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL
       ∧ m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
                        + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
                        + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
@@ -192,7 +192,7 @@ lemma sll_discharge_partial
       ∧ e2.x0.val < 256 ∧ e2.x1.val < 256 ∧ e2.x2.val < 256 ∧ e2.x3.val < 256
       ∧ e2.x4.val < 256 ∧ e2.x5.val < 256 ∧ e2.x6.val < 256 ∧ e2.x7.val < 256 :=
   binext_shift_discharge_partial m v r_main e2
-    ZiskFv.Airs.BinaryExtensionTable.OP_SLL ZiskFv.Trusted.OP_SLL
+    ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL ZiskFv.Trusted.OP_SLL
     (by decide) h_main_active h_main_op (Or.inl h_main_op)
 
 /-- **SRL partial discharge.** `op = 0x22`. -/
@@ -202,7 +202,7 @@ lemma srl_discharge_partial
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRL) :
     ∃ r_binary,
-      (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SRL
+      (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL
       ∧ m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
                        + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
                        + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
@@ -214,7 +214,7 @@ lemma srl_discharge_partial
       ∧ e2.x0.val < 256 ∧ e2.x1.val < 256 ∧ e2.x2.val < 256 ∧ e2.x3.val < 256
       ∧ e2.x4.val < 256 ∧ e2.x5.val < 256 ∧ e2.x6.val < 256 ∧ e2.x7.val < 256 :=
   binext_shift_discharge_partial m v r_main e2
-    ZiskFv.Airs.BinaryExtensionTable.OP_SRL ZiskFv.Trusted.OP_SRL
+    ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL ZiskFv.Trusted.OP_SRL
     (by decide) h_main_active h_main_op (Or.inr (Or.inl h_main_op))
 
 /-- **SRA partial discharge.** `op = 0x23`. -/
@@ -224,7 +224,7 @@ lemma sra_discharge_partial
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRA) :
     ∃ r_binary,
-      (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SRA
+      (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA
       ∧ m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
                        + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
                        + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
@@ -236,7 +236,7 @@ lemma sra_discharge_partial
       ∧ e2.x0.val < 256 ∧ e2.x1.val < 256 ∧ e2.x2.val < 256 ∧ e2.x3.val < 256
       ∧ e2.x4.val < 256 ∧ e2.x5.val < 256 ∧ e2.x6.val < 256 ∧ e2.x7.val < 256 :=
   binext_shift_discharge_partial m v r_main e2
-    ZiskFv.Airs.BinaryExtensionTable.OP_SRA ZiskFv.Trusted.OP_SRA
+    ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA ZiskFv.Trusted.OP_SRA
     (by decide) h_main_active h_main_op (Or.inr (Or.inr (Or.inl h_main_op)))
 
 /-- **SLLW (SLL_W) partial discharge.** `op = 0x24`. -/
@@ -246,7 +246,7 @@ lemma sllw_discharge_partial
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL_W) :
     ∃ r_binary,
-      (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SLL_W
+      (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL_W
       ∧ m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
                        + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
                        + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
@@ -258,7 +258,7 @@ lemma sllw_discharge_partial
       ∧ e2.x0.val < 256 ∧ e2.x1.val < 256 ∧ e2.x2.val < 256 ∧ e2.x3.val < 256
       ∧ e2.x4.val < 256 ∧ e2.x5.val < 256 ∧ e2.x6.val < 256 ∧ e2.x7.val < 256 :=
   binext_shift_discharge_partial m v r_main e2
-    ZiskFv.Airs.BinaryExtensionTable.OP_SLL_W ZiskFv.Trusted.OP_SLL_W
+    ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL_W ZiskFv.Trusted.OP_SLL_W
     (by decide) h_main_active h_main_op
     (Or.inr (Or.inr (Or.inr (Or.inl h_main_op))))
 
@@ -269,7 +269,7 @@ lemma srlw_discharge_partial
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRL_W) :
     ∃ r_binary,
-      (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SRL_W
+      (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL_W
       ∧ m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
                        + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
                        + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
@@ -281,7 +281,7 @@ lemma srlw_discharge_partial
       ∧ e2.x0.val < 256 ∧ e2.x1.val < 256 ∧ e2.x2.val < 256 ∧ e2.x3.val < 256
       ∧ e2.x4.val < 256 ∧ e2.x5.val < 256 ∧ e2.x6.val < 256 ∧ e2.x7.val < 256 :=
   binext_shift_discharge_partial m v r_main e2
-    ZiskFv.Airs.BinaryExtensionTable.OP_SRL_W ZiskFv.Trusted.OP_SRL_W
+    ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL_W ZiskFv.Trusted.OP_SRL_W
     (by decide) h_main_active h_main_op
     (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_main_op)))))
 
@@ -292,7 +292,7 @@ lemma sraw_discharge_partial
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRA_W) :
     ∃ r_binary,
-      (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SRA_W
+      (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA_W
       ∧ m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
                        + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
                        + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
@@ -304,7 +304,7 @@ lemma sraw_discharge_partial
       ∧ e2.x0.val < 256 ∧ e2.x1.val < 256 ∧ e2.x2.val < 256 ∧ e2.x3.val < 256
       ∧ e2.x4.val < 256 ∧ e2.x5.val < 256 ∧ e2.x6.val < 256 ∧ e2.x7.val < 256 :=
   binext_shift_discharge_partial m v r_main e2
-    ZiskFv.Airs.BinaryExtensionTable.OP_SRA_W ZiskFv.Trusted.OP_SRA_W
+    ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA_W ZiskFv.Trusted.OP_SRA_W
     (by decide) h_main_active h_main_op
     (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_main_op))))))
 

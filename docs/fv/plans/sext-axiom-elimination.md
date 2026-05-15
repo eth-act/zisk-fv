@@ -3,7 +3,7 @@
 ## Status
 
 - **Step 1 (DONE, commit `77eeca8`):** `wf_properties` in
-  `ZiskFv/Airs/BinaryExtensionTable.lean` extended with `wf_SEXT_B`,
+  `ZiskFv/Airs/Tables/BinaryExtensionTable.lean` extended with `wf_SEXT_B`,
   `wf_SEXT_H`, `wf_SEXT_W` mirroring
   `binary_extension_table.pil:149-189`. The `bin_ext_table_consumer_wf`
   axiom statement strengthens automatically.
@@ -26,8 +26,8 @@
 
 ## Step 3 design
 
-Add a bridge theorem in `ZiskFv/Airs/BinaryExtensionTable.lean`
-(or a new dedicated file like `ZiskFv/Circuit/SextLoadBridge.lean`)
+Add a bridge theorem in `ZiskFv/Airs/Tables/BinaryExtensionTable.lean`
+(or a new dedicated file like `ZiskFv/ZiskCircuit/SextLoadBridge.lean`)
 that takes the BinaryExtension AIR connection witnesses and derives
 the existing `signextend_c_packed_for_op` conclusion shape:
 
@@ -93,7 +93,7 @@ Each `case` is ~30-60 lines and shares structure:
 
 ## Step 4 — convert axiom to theorem
 
-After Step 3 lands, in `ZiskFv/Airs/BinaryExtensionTable.lean`:
+After Step 3 lands, in `ZiskFv/Airs/Tables/BinaryExtensionTable.lean`:
 
 1. Change `axiom signextend_load_c_packed` to `theorem
    signextend_load_c_packed`. Take all the new parameters introduced

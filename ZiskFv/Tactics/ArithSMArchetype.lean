@@ -1,11 +1,11 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Circuit.Mul
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.ZiskCircuit.Mul
 
 /-!
 **Arith state-machine archetype — DIV/REM subfamily.**
@@ -54,7 +54,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithDiv
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
-open ZiskFv.Circuit.Mul
+open ZiskFv.ZiskCircuit.Mul
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

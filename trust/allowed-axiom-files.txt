@@ -12,7 +12,7 @@
 
 # Transpiler trust-surface — RV→Zisk microinstruction contract,
 # platform assumptions (P1-P4), and store_pc=1 PC bridges (TP-*).
-ZiskFv/Fundamentals/Transpiler.lean
+ZiskFv/Trusted/Transpiler.lean
 
 # Bus-protocol soundness for bus_id=10 (memory bus).
 ZiskFv/Airs/MemoryBus/LaneMatch.lean
@@ -21,8 +21,8 @@ ZiskFv/Airs/MemoryBus/MemAlignBridge.lean
 ZiskFv/Airs/MemoryBus/EntryRanges.lean
 
 # Lookup-table content for bus_id=125 / 124.
-ZiskFv/Airs/BinaryTable.lean
-ZiskFv/Airs/BinaryExtensionTable.lean
+ZiskFv/Airs/Tables/BinaryTable.lean
+ZiskFv/Airs/Tables/BinaryExtensionTable.lean
 
 # Bus-protocol soundness for bus_id=5000 (operation bus).
 ZiskFv/Airs/OperationBus/Bridge.lean
@@ -44,8 +44,8 @@ ZiskFv/Airs/Binary/BinaryExtensionRanges.lean
 ZiskFv/Airs/Arith/Ranges.lean
 
 # Sail-state ↔ Mem AIR fidelity (MS-L / MS-S).
-ZiskFv/Circuit/MemModel.lean
+ZiskFv/ZiskCircuit/MemModel.lean
 
 # Small Sail-side simp helpers (locally proven; mirrors openvm-fv's
 # RV32D/Auxiliaries.lean pattern).
-ZiskFv/Sail/Auxiliaries.lean
+ZiskFv/SailSpec/Auxiliaries.lean

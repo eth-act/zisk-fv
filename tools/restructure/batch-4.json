@@ -1,0 +1,27 @@
+{
+  "paths": {
+    "ZiskFv/Fundamentals/Goldilocks.lean": "ZiskFv/Field/Goldilocks.lean",
+    "ZiskFv/Fundamentals/GoldilocksBridge.lean": "ZiskFv/Field/GoldilocksBridge.lean",
+    "ZiskFv/Fundamentals/PrattCertificate.lean": "ZiskFv/Field/GoldilocksPrimality.lean",
+    "ZiskFv/Fundamentals/U64.lean": "ZiskFv/Bits/U64.lean",
+    "ZiskFv/Fundamentals/Execution.lean": "ZiskFv/Bits/Execution.lean",
+    "ZiskFv/Fundamentals/PackedBitVec.lean": "ZiskFv/Bits/PackedBitVec.lean",
+    "ZiskFv/Fundamentals/PackedBitVec/Extensions.lean": "ZiskFv/Bits/PackedBitVec/Extensions.lean",
+    "ZiskFv/Fundamentals/PackedBitVec/MulNoWrap.lean": "ZiskFv/Bits/PackedBitVec/MulNoWrap.lean",
+    "ZiskFv/Fundamentals/PackedBitVec/NoWrap.lean": "ZiskFv/Bits/PackedBitVec/NoWrap.lean",
+    "ZiskFv/Fundamentals/PackedBitVec/Signed.lean": "ZiskFv/Bits/PackedBitVec/Signed.lean",
+    "ZiskFv/Fundamentals/PackedBitVec/SignedChunkLift.lean": "ZiskFv/Bits/PackedBitVec/SignedChunkLift.lean",
+    "ZiskFv/Fundamentals/PackedBitVec/SignedNoWrap.lean": "ZiskFv/Bits/PackedBitVec/SignedNoWrap.lean",
+    "ZiskFv/Fundamentals/PackedBitVec/WidePCNoWrap.lean": "ZiskFv/Bits/PackedBitVec/WidePCNoWrap.lean",
+    "ZiskFv/Fundamentals/Interaction.lean": "ZiskFv/Airs/Bus/Interaction.lean"
+  },
+  "namespaces": {
+    "ZiskFv.Fundamentals.PackedBitVec": "ZiskFv.Bits.PackedBitVec",
+    "ZiskFv.Fundamentals.Goldilocks": "ZiskFv.Field.Goldilocks",
+    "ZiskFv.Fundamentals.GoldilocksBridge": "ZiskFv.Field.GoldilocksBridge",
+    "ZiskFv.Fundamentals.PrattCertificate": "ZiskFv.Field.GoldilocksPrimality",
+    "ZiskFv.Fundamentals.U64": "ZiskFv.Bits.U64",
+    "ZiskFv.Fundamentals.Execution": "ZiskFv.Bits.Execution",
+    "ZiskFv.Fundamentals.Interaction": "ZiskFv.Airs.Bus.Interaction"
+  }
+}

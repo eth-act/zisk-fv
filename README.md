@@ -32,7 +32,7 @@ the uber theorem typechecks. Run `nix run .#test` for the full suite
 | ---------------------- | ------------------------------------------------------------------------------------------------------ |
 | `docs/fv/`             | Live library-reference notes: trust ledger, extractor contract, AIR inventory                          |
 | `tools/pil-extract/`   | Rust CLI: decodes `.pilout` protobuf → Lean constraint definitions                                     |
-| `ZiskFv/`              | Lake 4 package (mathlib + LeanZKCircuit + LeanRV, toolchain v4.26.0). See [Inside `ZiskFv/`](#inside-ziskfv) below. |
+| `ZiskFv/`              | Lake 4 package (mathlib + LeanZKCircuit + LeanRV, toolchain v4.28.0). See [Inside `ZiskFv/`](#inside-ziskfv) below. |
 | `zisk/`                | ZisK source tree (git submodule, pinned at `48cf7ccef`)                                                |
 | `trust/`               | Trust-boundary baselines + enforcement scripts. See `trust/README.md`.                                 |
 | `flake.nix`, `nix/`    | Nix flake that builds the pilout + Sail-Lean spec + extracted Lean reproducibly. See `nix/README.md`.  |
@@ -53,8 +53,9 @@ ZiskFv/
 ├── Circuit/        per-opcode lifted circuit semantics — one .lean per RV64IM opcode
 ├── Sail/           per-opcode Sail-side mirrors with equivalence-to-LeanRV64D lemmas
 ├── Tactics/        instruction-shape archetype tactics that drive the per-opcode proofs
-├── Equivalence/    per-opcode theorems: canonical equiv_<OP> + bus-precondition variants
-│   └── Compliance/ 63 equiv_<OP>_from_trust wrappers + OpEnvelope dispatchers; Global.lean is the uber theorem
+├── Equivalence/    per-opcode canonical equiv_<OP> theorems + bus-precondition variants
+├── Compliance.lean uber theorem zisk_riscv_compliant_program_bus
+├── Compliance/     OpEnvelope dispatchers (Dispatch.lean) + 63 equiv_<OP>_from_trust wrappers (FromTrust/<Op>.lean)
 └── ZiskFv.lean     root module — imports the whole tree
 ```
 
@@ -115,7 +116,7 @@ Files are organized **by ZisK constraint table**, not by RISC-V instruction
 — a single AIR (e.g. Binary) covers many opcodes (ADD, SUB, AND, OR, XOR,
 all branches, …).
 
-### `ZiskFv/Circuit/`
+### `ZiskFv/ZiskCircuit/`
 
 Per-opcode lifted circuit semantics — one file per RV64IM opcode (62
 files total, including shared infrastructure like `MemModel.lean`,
@@ -128,7 +129,7 @@ not by AIR — `Circuit/Add.lean` projects out the Add behaviour from
 `Airs/Main.lean` + `Airs/Binary/BinaryAdd.lean`, both joined by their
 matching bus row.
 
-### `ZiskFv/Sail/`
+### `ZiskFv/SailSpec/`
 
 Per-opcode Sail-side mirrors (lowercase, one per opcode: `add.lean`,
 `lw.lean`, …, 65 files total = 63 opcodes + `Auxiliaries.lean` +
@@ -184,7 +185,7 @@ The top-level FV theorems, organised in three layers:
    Bus-precondition variants (`equiv_<OP>_from_bus`,
    `equiv_<OP>_bus_self`, `equiv_<OP>_op_bus`) bridge alternate
    precondition shapes into the same canonical conclusion.
-   `RdValDerivation/` factors out shared rd-value lemmas across
+   `WriteValueProofs/` factors out shared rd-value lemmas across
    opcodes that share a derivation pattern.
 
 2. **`Compliance/<Op>Exemplar.lean` wrappers** — 63
@@ -229,7 +230,7 @@ The Sail RV64 spec mechanically compiled to Lean by
 that pattern-matches every RV64GD instruction, plus all supporting types
 (registers, memory model, traps, PMP, CLINT, …). This is the **trusted
 source of truth** for the LHS of every equivalence theorem; per-opcode
-ergonomic mirrors live in `ZiskFv/Sail/`.
+ergonomic mirrors live in `ZiskFv/SailSpec/`.
 
 ### `build/extraction/`
 
@@ -391,7 +392,7 @@ store) is bounded by the pilout build:
 | Step                              | Peak RAM   | Wall time  |
 |-----------------------------------|------------|------------|
 | `.#zisk-pilout` (cold rebuild)    | ~17 GiB    | ~24 min    |
-| `lake build` worst process (`Sail/sd.lean`) | ~8 GiB RSS / ~7 GiB PSS | (subset of total `lake build`) |
+| `lake build` worst process (`SailSpec/sd.lean`) | ~8 GiB RSS / ~7 GiB PSS | (subset of total `lake build`) |
 | Everything else                   | < 5 GiB    | minutes    |
 
 The pilout build dominates because `pil2-compiler` (Node, V8 heap

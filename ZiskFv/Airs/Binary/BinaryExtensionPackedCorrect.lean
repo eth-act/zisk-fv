@@ -1,9 +1,9 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Binary.BinaryExtension
-import ZiskFv.Airs.BinaryExtensionTable
+import ZiskFv.Airs.Tables.BinaryExtensionTable
 
 /-!
 **BinaryExtension byte-level lookups → `BitVec 64` shift identities.**
@@ -58,7 +58,7 @@ set_option maxRecDepth 4096
 namespace ZiskFv.Airs.BinaryExtension
 
 open Goldilocks
-open ZiskFv.Airs.BinaryExtensionTable
+open ZiskFv.Airs.Tables.BinaryExtensionTable
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 

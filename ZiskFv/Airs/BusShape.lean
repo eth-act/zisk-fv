@@ -1,11 +1,11 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
+import ZiskFv.Field.Goldilocks
 import Extraction.Buses
 
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
 
 /-!
 # BusShape — derivation lemmas linking extracted bus specs to hand-written `OperationBusEntry`s

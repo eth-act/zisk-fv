@@ -1,21 +1,21 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Equivalence.Bridge.Arith
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus.EntryRanges
-import ZiskFv.Sail.remuw
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.remuw
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned
+import ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned
 
 /-!
 End-to-end theorem for RV64M REMUW (unsigned 32-bit divide).
@@ -140,7 +140,7 @@ theorem equiv_REMUW
     ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin v r_a h_sext h_m32 h_div h_op
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_remuw_chunked
+    ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_remuw_chunked
       remuw_input.r1_val remuw_input.r2_val e2
       (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
       (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)
@@ -160,7 +160,7 @@ theorem equiv_REMUW
   rw [equiv_REMUW_sail state remuw_input r1 r2 rd
         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

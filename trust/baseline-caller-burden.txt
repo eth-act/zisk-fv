@@ -158,10 +158,10 @@ ZiskFv.Equivalence.Addiw.equiv_ADDIW 047 pi0 [loose] FGL
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 048 pi1 [loose] FGL
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 049 pi2 [loose] FGL
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 050 pi3 [loose] FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 051 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 052 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 053 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 054 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 051 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_A
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 052 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_A
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 053 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_A
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 054 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_A
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 055 hc0 [range] c0.val < 256
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 056 hc1 [range] c1.val < 256
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 057 hc2 [range] c2.val < 256
@@ -235,10 +235,10 @@ ZiskFv.Equivalence.Addw.equiv_ADDW 048 pi0 [loose] FGL
 ZiskFv.Equivalence.Addw.equiv_ADDW 049 pi1 [loose] FGL
 ZiskFv.Equivalence.Addw.equiv_ADDW 050 pi2 [loose] FGL
 ZiskFv.Equivalence.Addw.equiv_ADDW 051 pi3 [loose] FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 052 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
-ZiskFv.Equivalence.Addw.equiv_ADDW 053 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
-ZiskFv.Equivalence.Addw.equiv_ADDW 054 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
-ZiskFv.Equivalence.Addw.equiv_ADDW 055 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_ADD (v.f
+ZiskFv.Equivalence.Addw.equiv_ADDW 052 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_A
+ZiskFv.Equivalence.Addw.equiv_ADDW 053 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_A
+ZiskFv.Equivalence.Addw.equiv_ADDW 054 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_A
+ZiskFv.Equivalence.Addw.equiv_ADDW 055 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_A
 ZiskFv.Equivalence.Addw.equiv_ADDW 056 hc0 [range] c0.val < 256
 ZiskFv.Equivalence.Addw.equiv_ADDW 057 hc1 [range] c1.val < 256
 ZiskFv.Equivalence.Addw.equiv_ADDW 058 hc2 [range] c2.val < 256
@@ -290,7 +290,7 @@ ZiskFv.Equivalence.And.equiv_AND 027 h_rd_idx [transpile] and_input.rd = Transpi
 ZiskFv.Equivalence.And.equiv_AND 028 h_main_active [match] m.is_external_op r_main = 1
 ZiskFv.Equivalence.And.equiv_AND 029 h_main_op_and [match] m.op r_main = OP_AND
 ZiskFv.Equivalence.And.equiv_AND 030 h_match [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)
-ZiskFv.Equivalence.And.equiv_AND 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_AND
+ZiskFv.Equivalence.And.equiv_AND 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND
 ZiskFv.Equivalence.And.equiv_AND 032 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Andi.equiv_ANDI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Andi.equiv_ANDI 001 andi_input [other] PureSpec.AndiInput
@@ -323,7 +323,7 @@ ZiskFv.Equivalence.Andi.equiv_ANDI 027 h_rd_idx [transpile] andi_input.rd = Tran
 ZiskFv.Equivalence.Andi.equiv_ANDI 028 h_main_active [match] m.is_external_op r_main = 1
 ZiskFv.Equivalence.Andi.equiv_ANDI 029 h_main_op_andi [match] m.op r_main = OP_AND
 ZiskFv.Equivalence.Andi.equiv_ANDI 030 h_match [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)
-ZiskFv.Equivalence.Andi.equiv_ANDI 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_AND
+ZiskFv.Equivalence.Andi.equiv_ANDI 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND
 ZiskFv.Equivalence.Andi.equiv_ANDI 032 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Andi.equiv_ANDI 033 h_andi_subset [other] ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main m r_main andi_input
 ZiskFv.Equivalence.Auipc.equiv_AUIPC 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
@@ -707,7 +707,7 @@ ZiskFv.Equivalence.Jal.equiv_JAL 023 h_not_throws [other] (PureSpec.execute_JAL_
 ZiskFv.Equivalence.Jal.equiv_JAL 024 h_success [other] (PureSpec.execute_JAL_pure jal_input).success = true
 ZiskFv.Equivalence.Jal.equiv_JAL 025 h_nextPC_option [transpile] (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val
 ZiskFv.Equivalence.Jal.equiv_JAL 026 h_rd_idx [transpile] jal_input.rd = Transpiler.wrap_to_regidx e_rd.ptr
-ZiskFv.Equivalence.Jal.equiv_JAL 027 h_circuit [other] ZiskFv.Circuit.Jal.jal_circuit_holds m r_main next_pc
+ZiskFv.Equivalence.Jal.equiv_JAL 027 h_circuit [other] ZiskFv.ZiskCircuit.Jal.jal_circuit_holds m r_main next_pc
 ZiskFv.Equivalence.Jal.equiv_JAL 028 h_pc_bound [other] jal_input.PC.toNat < GL_prime - 4
 ZiskFv.Equivalence.Jal.equiv_JAL 029 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
 ZiskFv.Equivalence.Jal.equiv_JAL 030 h_pc_offset_lt_2_32 [range] (jal_input.PC + 4#64).toNat < 4294967296
@@ -743,7 +743,7 @@ ZiskFv.Equivalence.Jalr.equiv_JALR 028 _ [other] ZisK enforces via -- the JALR_M
 ZiskFv.Equivalence.Jalr.equiv_JALR 029 h_success [other] (PureSpec.execute_JALR_pure jalr_input).success = true
 ZiskFv.Equivalence.Jalr.equiv_JALR 030 h_nextPC_option [transpile] (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val
 ZiskFv.Equivalence.Jalr.equiv_JALR 031 h_rd_idx [transpile] jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr
-ZiskFv.Equivalence.Jalr.equiv_JALR 032 h_circuit [other] ZiskFv.Circuit.Jalr.jalr_circuit_holds m r_main next_pc
+ZiskFv.Equivalence.Jalr.equiv_JALR 032 h_circuit [other] ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc
 ZiskFv.Equivalence.Jalr.equiv_JALR 033 h_pc_bound [other] jalr_input.PC.toNat < GL_prime - 4
 ZiskFv.Equivalence.Jalr.equiv_JALR 034 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
 ZiskFv.Equivalence.Jalr.equiv_JALR 035 h_pc_offset_lt_2_32 [range] (jalr_input.PC + 4#64).toNat < 4294967296
@@ -777,7 +777,7 @@ ZiskFv.Equivalence.Lb.equiv_LB 026 h_op [match] main.op r_main = ZiskFv.Trusted.
 ZiskFv.Equivalence.Lb.equiv_LB 027 _ [other] Op-bus permutation handshake + -- per-byte lookup soundness
 ZiskFv.Equivalence.Lb.equiv_LB 028 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
 ZiskFv.Equivalence.Lb.equiv_LB 029 r_binary [row] ℕ
-ZiskFv.Equivalence.Lb.equiv_LB 030 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SEXT_B
+ZiskFv.Equivalence.Lb.equiv_LB 030 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B
 ZiskFv.Equivalence.Lb.equiv_LB 031 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.Lb.equiv_LB 032 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
 ZiskFv.Equivalence.Lb.equiv_LB 033 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
@@ -813,7 +813,7 @@ ZiskFv.Equivalence.Lh.equiv_LH 025 h_ext [match] main.is_external_op r_main = 1
 ZiskFv.Equivalence.Lh.equiv_LH 026 h_op [match] main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_H
 ZiskFv.Equivalence.Lh.equiv_LH 027 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
 ZiskFv.Equivalence.Lh.equiv_LH 028 r_binary [row] ℕ
-ZiskFv.Equivalence.Lh.equiv_LH 029 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SEXT_H
+ZiskFv.Equivalence.Lh.equiv_LH 029 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H
 ZiskFv.Equivalence.Lh.equiv_LH 030 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.Lh.equiv_LH 031 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
 ZiskFv.Equivalence.Lh.equiv_LH 032 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
@@ -999,7 +999,7 @@ ZiskFv.Equivalence.Lw.equiv_LW 026 h_ext [match] main.is_external_op r_main = 1
 ZiskFv.Equivalence.Lw.equiv_LW 027 h_op [match] main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_W
 ZiskFv.Equivalence.Lw.equiv_LW 028 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
 ZiskFv.Equivalence.Lw.equiv_LW 029 r_binary [row] ℕ
-ZiskFv.Equivalence.Lw.equiv_LW 030 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.BinaryExtensionTable.OP_SEXT_W
+ZiskFv.Equivalence.Lw.equiv_LW 030 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W
 ZiskFv.Equivalence.Lw.equiv_LW 031 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
 ZiskFv.Equivalence.Lw.equiv_LW 032 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
 ZiskFv.Equivalence.Lw.equiv_LW 033 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
@@ -1265,7 +1265,7 @@ ZiskFv.Equivalence.Or.equiv_OR 027 h_rd_idx [transpile] or_input.rd = Transpiler
 ZiskFv.Equivalence.Or.equiv_OR 028 h_main_active [match] m.is_external_op r_main = 1
 ZiskFv.Equivalence.Or.equiv_OR 029 h_main_op_or [match] m.op r_main = OP_OR
 ZiskFv.Equivalence.Or.equiv_OR 030 h_match [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)
-ZiskFv.Equivalence.Or.equiv_OR 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_OR
+ZiskFv.Equivalence.Or.equiv_OR 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR
 ZiskFv.Equivalence.Or.equiv_OR 032 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Ori.equiv_ORI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Ori.equiv_ORI 001 ori_input [other] PureSpec.OriInput
@@ -1298,7 +1298,7 @@ ZiskFv.Equivalence.Ori.equiv_ORI 027 h_rd_idx [transpile] ori_input.rd = Transpi
 ZiskFv.Equivalence.Ori.equiv_ORI 028 h_main_active [match] m.is_external_op r_main = 1
 ZiskFv.Equivalence.Ori.equiv_ORI 029 h_main_op_ori [match] m.op r_main = OP_OR
 ZiskFv.Equivalence.Ori.equiv_ORI 030 h_match [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)
-ZiskFv.Equivalence.Ori.equiv_ORI 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_OR
+ZiskFv.Equivalence.Ori.equiv_ORI 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR
 ZiskFv.Equivalence.Ori.equiv_ORI 032 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Ori.equiv_ORI 033 h_ori_subset [other] ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main m r_main ori_input.
 ZiskFv.Equivalence.Rem.equiv_REM 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
@@ -1806,14 +1806,14 @@ ZiskFv.Equivalence.Slt.equiv_SLT 060 pi4 [loose] FGL
 ZiskFv.Equivalence.Slt.equiv_SLT 061 pi5 [loose] FGL
 ZiskFv.Equivalence.Slt.equiv_SLT 062 pi6 [loose] FGL
 ZiskFv.Equivalence.Slt.equiv_SLT 063 pi7 [loose] FGL
-ZiskFv.Equivalence.Slt.equiv_SLT 064 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
-ZiskFv.Equivalence.Slt.equiv_SLT 065 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
-ZiskFv.Equivalence.Slt.equiv_SLT 066 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
-ZiskFv.Equivalence.Slt.equiv_SLT 067 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
-ZiskFv.Equivalence.Slt.equiv_SLT 068 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
-ZiskFv.Equivalence.Slt.equiv_SLT 069 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
-ZiskFv.Equivalence.Slt.equiv_SLT 070 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
-ZiskFv.Equivalence.Slt.equiv_SLT 071 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
+ZiskFv.Equivalence.Slt.equiv_SLT 064 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Slt.equiv_SLT 065 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Slt.equiv_SLT 066 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Slt.equiv_SLT 067 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Slt.equiv_SLT 068 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Slt.equiv_SLT 069 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Slt.equiv_SLT 070 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Slt.equiv_SLT 071 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
 ZiskFv.Equivalence.Slt.equiv_SLT 072 h_cin0 [other] cin0.val = 0
 ZiskFv.Equivalence.Slt.equiv_SLT 073 h_cin1 [other] cin1.val = fl0.val % 2
 ZiskFv.Equivalence.Slt.equiv_SLT 074 h_cin2 [other] cin2.val = fl1.val % 2
@@ -1891,14 +1891,14 @@ ZiskFv.Equivalence.Slti.equiv_SLTI 060 pi4 [loose] FGL
 ZiskFv.Equivalence.Slti.equiv_SLTI 061 pi5 [loose] FGL
 ZiskFv.Equivalence.Slti.equiv_SLTI 062 pi6 [loose] FGL
 ZiskFv.Equivalence.Slti.equiv_SLTI 063 pi7 [loose] FGL
-ZiskFv.Equivalence.Slti.equiv_SLTI 064 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
-ZiskFv.Equivalence.Slti.equiv_SLTI 065 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
-ZiskFv.Equivalence.Slti.equiv_SLTI 066 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
-ZiskFv.Equivalence.Slti.equiv_SLTI 067 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
-ZiskFv.Equivalence.Slti.equiv_SLTI 068 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
-ZiskFv.Equivalence.Slti.equiv_SLTI 069 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
-ZiskFv.Equivalence.Slti.equiv_SLTI 070 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
-ZiskFv.Equivalence.Slti.equiv_SLTI 071 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LT (v.fr
+ZiskFv.Equivalence.Slti.equiv_SLTI 064 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Slti.equiv_SLTI 065 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Slti.equiv_SLTI 066 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Slti.equiv_SLTI 067 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Slti.equiv_SLTI 068 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Slti.equiv_SLTI 069 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Slti.equiv_SLTI 070 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Slti.equiv_SLTI 071 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
 ZiskFv.Equivalence.Slti.equiv_SLTI 072 h_cin0 [other] cin0.val = 0
 ZiskFv.Equivalence.Slti.equiv_SLTI 073 h_cin1 [other] cin1.val = fl0.val % 2
 ZiskFv.Equivalence.Slti.equiv_SLTI 074 h_cin2 [other] cin2.val = fl1.val % 2
@@ -1976,14 +1976,14 @@ ZiskFv.Equivalence.Sltiu.equiv_SLTIU 059 pi4 [loose] FGL
 ZiskFv.Equivalence.Sltiu.equiv_SLTIU 060 pi5 [loose] FGL
 ZiskFv.Equivalence.Sltiu.equiv_SLTIU 061 pi6 [loose] FGL
 ZiskFv.Equivalence.Sltiu.equiv_SLTIU 062 pi7 [loose] FGL
-ZiskFv.Equivalence.Sltiu.equiv_SLTIU 063 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
-ZiskFv.Equivalence.Sltiu.equiv_SLTIU 064 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
-ZiskFv.Equivalence.Sltiu.equiv_SLTIU 065 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
-ZiskFv.Equivalence.Sltiu.equiv_SLTIU 066 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
-ZiskFv.Equivalence.Sltiu.equiv_SLTIU 067 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
-ZiskFv.Equivalence.Sltiu.equiv_SLTIU 068 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
-ZiskFv.Equivalence.Sltiu.equiv_SLTIU 069 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
-ZiskFv.Equivalence.Sltiu.equiv_SLTIU 070 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
+ZiskFv.Equivalence.Sltiu.equiv_SLTIU 063 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Sltiu.equiv_SLTIU 064 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Sltiu.equiv_SLTIU 065 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Sltiu.equiv_SLTIU 066 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Sltiu.equiv_SLTIU 067 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Sltiu.equiv_SLTIU 068 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Sltiu.equiv_SLTIU 069 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Sltiu.equiv_SLTIU 070 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
 ZiskFv.Equivalence.Sltiu.equiv_SLTIU 071 h_cin0 [other] cin0.val = 0
 ZiskFv.Equivalence.Sltiu.equiv_SLTIU 072 h_cin1 [other] cin1.val = fl0.val % 2
 ZiskFv.Equivalence.Sltiu.equiv_SLTIU 073 h_cin2 [other] cin2.val = fl1.val % 2
@@ -2061,14 +2061,14 @@ ZiskFv.Equivalence.Sltu.equiv_SLTU 060 pi4 [loose] FGL
 ZiskFv.Equivalence.Sltu.equiv_SLTU 061 pi5 [loose] FGL
 ZiskFv.Equivalence.Sltu.equiv_SLTU 062 pi6 [loose] FGL
 ZiskFv.Equivalence.Sltu.equiv_SLTU 063 pi7 [loose] FGL
-ZiskFv.Equivalence.Sltu.equiv_SLTU 064 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
-ZiskFv.Equivalence.Sltu.equiv_SLTU 065 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
-ZiskFv.Equivalence.Sltu.equiv_SLTU 066 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
-ZiskFv.Equivalence.Sltu.equiv_SLTU 067 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
-ZiskFv.Equivalence.Sltu.equiv_SLTU 068 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
-ZiskFv.Equivalence.Sltu.equiv_SLTU 069 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
-ZiskFv.Equivalence.Sltu.equiv_SLTU 070 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
-ZiskFv.Equivalence.Sltu.equiv_SLTU 071 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_LTU (v.f
+ZiskFv.Equivalence.Sltu.equiv_SLTU 064 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Sltu.equiv_SLTU 065 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Sltu.equiv_SLTU 066 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Sltu.equiv_SLTU 067 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Sltu.equiv_SLTU 068 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Sltu.equiv_SLTU 069 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Sltu.equiv_SLTU 070 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
+ZiskFv.Equivalence.Sltu.equiv_SLTU 071 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_L
 ZiskFv.Equivalence.Sltu.equiv_SLTU 072 h_cin0 [other] cin0.val = 0
 ZiskFv.Equivalence.Sltu.equiv_SLTU 073 h_cin1 [other] cin1.val = fl0.val % 2
 ZiskFv.Equivalence.Sltu.equiv_SLTU 074 h_cin2 [other] cin2.val = fl1.val % 2
@@ -2374,14 +2374,14 @@ ZiskFv.Equivalence.Sub.equiv_SUB 059 pi4 [loose] FGL
 ZiskFv.Equivalence.Sub.equiv_SUB 060 pi5 [loose] FGL
 ZiskFv.Equivalence.Sub.equiv_SUB 061 pi6 [loose] FGL
 ZiskFv.Equivalence.Sub.equiv_SUB 062 pi7 [loose] FGL
-ZiskFv.Equivalence.Sub.equiv_SUB 063 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
-ZiskFv.Equivalence.Sub.equiv_SUB 064 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
-ZiskFv.Equivalence.Sub.equiv_SUB 065 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
-ZiskFv.Equivalence.Sub.equiv_SUB 066 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
-ZiskFv.Equivalence.Sub.equiv_SUB 067 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
-ZiskFv.Equivalence.Sub.equiv_SUB 068 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
-ZiskFv.Equivalence.Sub.equiv_SUB 069 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
-ZiskFv.Equivalence.Sub.equiv_SUB 070 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
+ZiskFv.Equivalence.Sub.equiv_SUB 063 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_S
+ZiskFv.Equivalence.Sub.equiv_SUB 064 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_S
+ZiskFv.Equivalence.Sub.equiv_SUB 065 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_S
+ZiskFv.Equivalence.Sub.equiv_SUB 066 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_S
+ZiskFv.Equivalence.Sub.equiv_SUB 067 h_byte_4 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_S
+ZiskFv.Equivalence.Sub.equiv_SUB 068 h_byte_5 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_S
+ZiskFv.Equivalence.Sub.equiv_SUB 069 h_byte_6 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_S
+ZiskFv.Equivalence.Sub.equiv_SUB 070 h_byte_7 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_S
 ZiskFv.Equivalence.Sub.equiv_SUB 071 hc0 [range] c0.val < 256
 ZiskFv.Equivalence.Sub.equiv_SUB 072 hc1 [range] c1.val < 256
 ZiskFv.Equivalence.Sub.equiv_SUB 073 hc2 [range] c2.val < 256
@@ -2461,10 +2461,10 @@ ZiskFv.Equivalence.Subw.equiv_SUBW 048 pi0 [loose] FGL
 ZiskFv.Equivalence.Subw.equiv_SUBW 049 pi1 [loose] FGL
 ZiskFv.Equivalence.Subw.equiv_SUBW 050 pi2 [loose] FGL
 ZiskFv.Equivalence.Subw.equiv_SUBW 051 pi3 [loose] FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 052 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
-ZiskFv.Equivalence.Subw.equiv_SUBW 053 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
-ZiskFv.Equivalence.Subw.equiv_SUBW 054 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
-ZiskFv.Equivalence.Subw.equiv_SUBW 055 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.BinaryTable.OP_SUB (v.f
+ZiskFv.Equivalence.Subw.equiv_SUBW 052 h_byte_0 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_S
+ZiskFv.Equivalence.Subw.equiv_SUBW 053 h_byte_1 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_S
+ZiskFv.Equivalence.Subw.equiv_SUBW 054 h_byte_2 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_S
+ZiskFv.Equivalence.Subw.equiv_SUBW 055 h_byte_3 [byte_chain] ZiskFv.Airs.Binary.consumer_byte_match_chain ZiskFv.Airs.Tables.BinaryTable.OP_S
 ZiskFv.Equivalence.Subw.equiv_SUBW 056 hc0 [range] c0.val < 256
 ZiskFv.Equivalence.Subw.equiv_SUBW 057 hc1 [range] c1.val < 256
 ZiskFv.Equivalence.Subw.equiv_SUBW 058 hc2 [range] c2.val < 256
@@ -2516,7 +2516,7 @@ ZiskFv.Equivalence.Xor.equiv_XOR 027 h_rd_idx [transpile] xor_input.rd = Transpi
 ZiskFv.Equivalence.Xor.equiv_XOR 028 h_main_active [match] m.is_external_op r_main = 1
 ZiskFv.Equivalence.Xor.equiv_XOR 029 h_main_op_xor [match] m.op r_main = OP_XOR
 ZiskFv.Equivalence.Xor.equiv_XOR 030 h_match [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)
-ZiskFv.Equivalence.Xor.equiv_XOR 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_XOR
+ZiskFv.Equivalence.Xor.equiv_XOR 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR
 ZiskFv.Equivalence.Xor.equiv_XOR 032 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Xori.equiv_XORI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Xori.equiv_XORI 001 xori_input [other] PureSpec.XoriInput
@@ -2549,6 +2549,6 @@ ZiskFv.Equivalence.Xori.equiv_XORI 027 h_rd_idx [transpile] xori_input.rd = Tran
 ZiskFv.Equivalence.Xori.equiv_XORI 028 h_main_active [match] m.is_external_op r_main = 1
 ZiskFv.Equivalence.Xori.equiv_XORI 029 h_main_op_xori [match] m.op r_main = OP_XOR
 ZiskFv.Equivalence.Xori.equiv_XORI 030 h_match [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)
-ZiskFv.Equivalence.Xori.equiv_XORI 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.BinaryTable.OP_XOR
+ZiskFv.Equivalence.Xori.equiv_XORI 031 h_bop_or_sext [other] (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR
 ZiskFv.Equivalence.Xori.equiv_XORI 032 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Xori.equiv_XORI 033 h_xori_subset [other] ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main m r_main xori_input

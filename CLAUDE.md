@@ -23,13 +23,12 @@ execute_instruction (.RTYPE rs2 rs1 rd rop.ADD) state
 DMA / etc.), ECALL/EBREAK, ZisK's custom internal ops.
 
 **Status:** `zisk_riscv_compliant_program_bus` is proved
-(`ZiskFv/Equivalence/Compliance/Global.lean`); its trust closure
+(`ZiskFv/Compliance.lean`); its trust closure
 is the **122 axioms** enumerated in
 `trust/baseline-zisk-riscv-compliant.txt` and documented per-class
 in `docs/fv/trusted-base.md`. All 63 RV64IM opcodes are covered as
 `equiv_<OP>_from_trust` wrappers under
-`ZiskFv/Equivalence/Compliance/<Op>Exemplar.lean` (plus
-`DivPilot.lean`), dispatched by the global theorem through a 35-arm
+`ZiskFv/Compliance/FromTrust/<Op>.lean`, dispatched by the global theorem through a 35-arm
 `OpEnvelope` sum type. The principal "promise hypothesis"
 soundness gap surveyed in
 [`docs/fv/known-gaps.md`](docs/fv/known-gaps.md) is closed at the
@@ -40,8 +39,8 @@ theorems remain OUTPUT-EQ-free, enforced uniformly by
 `trust/scripts/check-no-output-eq.sh` against
 `trust/forbidden-param-shapes.txt`. The 7 loads were closed by
 deriving their cross-entry rd-value byte equations from circuit
-witnesses — see `ZiskFv/Circuit/LoadDerivation.lean` for the
-copyb / MemAlign families and `ZiskFv/Circuit/SextLoadBridge.lean`
+witnesses — see `ZiskFv/ZiskCircuit/LoadDerivation.lean` for the
+copyb / MemAlign families and `ZiskFv/ZiskCircuit/SextLoadBridge.lean`
 for the LB/LH/LW signed-load chain
 (`bin_ext_table_consumer_wf` +
 `binary_extension_sext_{b,h,w}_chunks_eq_signextend_nat`). The
@@ -73,7 +72,7 @@ ZiskFv/Airs/Valid_<AIR>       ← human-readable column accessors + simp lemmas
         │
         │ circuit-correctness theorems
         ▼
-ZiskFv/Circuit/<family>       ← circuit semantics in BitVec / FGL
+ZiskFv/ZiskCircuit/<family>   ← circuit semantics in BitVec / FGL
         │
         │ + LHS bridge to Sail spec
         ▼
@@ -113,7 +112,7 @@ running on a fresh machine:
   constraints in one process; total RSS hits ~16 GiB plus OS overhead.
   This is the hard ceiling for the whole pipeline.
 - `lake build` worst process: **~8 GiB RSS / ~7 GiB PSS** during
-  `Sail/sd.lean` elaboration (post the PR #4 layered `dsimp`+`rw`
+  `SailSpec/sd.lean` elaboration (post the PR #4 layered `dsimp`+`rw`
   refactor — was 42 GiB before). Other files stay below 5 GiB.
 
 CI runner: needs ≥32 GiB (`size-xl-x64`). 16 GiB OOMs on cold pilout.
@@ -153,7 +152,7 @@ Eight checks; if you break any, CI fails:
 4. **Floors.** ≥82 axioms in baseline, ≥63 canonical `equiv_<OP>`
    theorems, plus a cross-witness check that the parser hasn't been
    sabotaged.
-5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,Circuit,Equivalence,Tactics,Sail}`.
+5. **Zero sorry** under `ZiskFv/{Fundamentals,Airs,ZiskCircuit,Equivalence,Tactics,Sail}`.
 6. **Uniformity.** Every one of 63 RV64IM opcodes has a canonical
    `equiv_<OP>` theorem.
 7. **Hypothesis-count anti-laundering metric.**

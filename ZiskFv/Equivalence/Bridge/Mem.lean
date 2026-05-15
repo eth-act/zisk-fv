@@ -1,19 +1,19 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
 import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Equivalence.Bridge.SailStateBridge
-import ZiskFv.Sail.sb
-import ZiskFv.Sail.sh
-import ZiskFv.Sail.sw
+import ZiskFv.SailSpec.sb
+import ZiskFv.SailSpec.sh
+import ZiskFv.SailSpec.sw
 
 /-!
 # Mem discharge bridge
@@ -556,7 +556,7 @@ lemma sb_discharge_full
   apply Std.ExtHashMap.ext_getElem?
   intro k
   simp only [Std.ExtHashMap.getElem?_insert, beq_iff_eq]
-  grind
+  set_option synthInstance.maxHeartbeats 400000 in grind
 
 /-- **SH-specific store discharge.** Returns `h_mem_eq` for SH (2 bytes). -/
 lemma sh_discharge_full
@@ -623,7 +623,7 @@ lemma sh_discharge_full
   apply Std.ExtHashMap.ext_getElem?
   intro k
   simp only [Std.ExtHashMap.getElem?_insert, beq_iff_eq]
-  grind
+  set_option synthInstance.maxHeartbeats 400000 in grind
 
 /-- **SW-specific store discharge.** Returns `h_mem_eq` for SW (4 bytes). -/
 lemma sw_discharge_full
@@ -698,6 +698,6 @@ lemma sw_discharge_full
   apply Std.ExtHashMap.ext_getElem?
   intro k
   simp only [Std.ExtHashMap.getElem?_insert, beq_iff_eq]
-  grind
+  set_option synthInstance.maxHeartbeats 400000 in grind
 
 end ZiskFv.Equivalence.Bridge.Mem

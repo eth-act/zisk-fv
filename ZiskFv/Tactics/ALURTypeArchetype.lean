@@ -1,9 +1,9 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
 
 /-!
 **ALU RTYPE archetype macros / generic lemmas.**

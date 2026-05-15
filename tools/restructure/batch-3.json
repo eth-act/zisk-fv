@@ -1,0 +1,6 @@
+{
+  "paths": {
+    "ZiskFv/Fundamentals/Transpiler.lean": "ZiskFv/Trusted/Transpiler.lean"
+  },
+  "namespaces": {}
+}

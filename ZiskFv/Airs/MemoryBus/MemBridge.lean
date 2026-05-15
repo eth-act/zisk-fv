@@ -2,10 +2,10 @@ import Mathlib
 import LeanRV64D
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 
@@ -624,7 +624,7 @@ axiom main_external_arith_emission_bundle
 
     Width specialization: SD only (`ind_width = 8`, all 8 byte
     lanes meaningful). SB/SH/SW will need their own width-specialized
-    bundles in `Compliance/SbExemplar.lean` / etc., as their high
+    bundles in `Compliance/FromTrust/Sb.lean` / etc., as their high
     byte lanes are zero-padded by the bus's `ind_width` selector. -/
 axiom main_store_emission_bundle_sd
     {C : Type → Type → Type} [Circuit FGL FGL C]

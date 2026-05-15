@@ -1,14 +1,14 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Circuit.BranchLessThan
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
-import ZiskFv.Sail.blt
-import ZiskFv.Sail.BusEffect
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.ZiskCircuit.BranchLessThan
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.Bus.BusEmission
+import ZiskFv.SailSpec.blt
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
@@ -19,7 +19,7 @@ End-to-end theorem for RV64 BLT. Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_BLT`),
 * the compositional BLT spec
-  (`ZiskFv.Circuit.BranchLessThan.branch_lt_compositional`, a thin
+  (`ZiskFv.ZiskCircuit.BranchLessThan.branch_lt_compositional`, a thin
   wrapper over `BranchArchetype.branch_archetype_pc_dispatch` at
   `opcode_lit = OP_LT`),
 * the Sail pure-function equivalence (`PureSpec.execute_BLT_pure_equiv`,
@@ -45,7 +45,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.BranchLessThan
+open ZiskFv.ZiskCircuit.BranchLessThan
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -123,7 +123,7 @@ theorem equiv_BLT
   -- Discharge bus-side equation via the shape (b) lemma (shared across
   -- shape (b) branch opcodes: BEQ/BNE/BLT/BGE/BLTU/BGEU).
   symm
-  exact ZiskFv.Airs.BusEmission.bus_effect_matches_sail_beq
+  exact ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_beq
     state exec_row
     (PureSpec.execute_BLT_pure blt_input).nextPC
     (PureSpec.execute_BLT_pure blt_input).throws

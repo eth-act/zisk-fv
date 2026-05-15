@@ -4,7 +4,7 @@
 Sibling of `regenerate-caller-burden.py`: that one tracks every binder
 on the 63 canonical `equiv_<OP>` theorems; this one tracks every
 binder on the 63 `equiv_<OP>_from_trust` Compliance wrappers under
-`ZiskFv/Equivalence/Compliance/*.lean` + `DivPilot.lean`.
+`ZiskFv/Compliance/FromTrust/*.lean`.
 
 Wrappers are the second half of the trust surface: they consume
 trust-ledger axioms (transpile/op_bus_perm_sound/byte-range/...) to
@@ -50,7 +50,7 @@ split_binder_to_names_type = _rb_mod.split_binder_to_names_type
 file_to_module_prefix = _rb_mod.file_to_module_prefix
 
 ROOT = Path(__file__).resolve().parent.parent.parent
-WRAPPER_DIR = ROOT / "ZiskFv/Equivalence/Compliance"
+WRAPPER_DIR = ROOT / "ZiskFv/Compliance/FromTrust"
 
 # Match the canonical wrapper `equiv_<OP>_from_trust`.
 WRAPPER_HEAD = re.compile(
@@ -100,8 +100,8 @@ def main() -> int:
     print(f"#")
     print(f"# Mirrors `trust/baseline-caller-burden.txt` for the wrapper layer —")
     print(f"# every parameter the caller of an `equiv_<OP>_from_trust` (the")
-    print(f"# wrappers under `ZiskFv/Equivalence/Compliance/*Exemplar.lean` +")
-    print(f"# `DivPilot.lean`) is on the hook for. Adding, renaming, or")
+    print(f"# wrappers under `ZiskFv/Compliance/FromTrust/*.lean`)")
+    print(f"# is on the hook for. Adding, renaming, or")
     print(f"# reshaping any wrapper binder produces a diff that has to land")
     print(f"# alongside the refactor.")
     print(f"#")

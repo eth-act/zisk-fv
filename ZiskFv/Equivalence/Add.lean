@@ -1,29 +1,29 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.GoldilocksBridge
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Circuit.Add
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Field.GoldilocksBridge
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.ZiskCircuit.Add
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.BinaryAdd
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Equivalence.Bridge.BinaryAdd
-import ZiskFv.Airs.BusEmission
-import ZiskFv.Sail.add
-import ZiskFv.Sail.BusEffect
+import ZiskFv.Airs.Bus.BusEmission
+import ZiskFv.SailSpec.add
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Equivalence.RdValDerivation.Arith
+import ZiskFv.Equivalence.WriteValueProofs.Arith
 
 /-!
 End-to-end theorem for RV64 ADD. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_ADD`),
-* the compositional ADD spec (`ZiskFv.Circuit.Add.add_compositional`),
+* the compositional ADD spec (`ZiskFv.ZiskCircuit.Add.add_compositional`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_RTYPE_add_pure_equiv`),
 
@@ -44,7 +44,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Add
+open ZiskFv.ZiskCircuit.Add
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -145,7 +145,7 @@ theorem equiv_ADD
       add_input.r1_val add_input.r2_val
       h_input_r1_sail h_input_r2_sail
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_add
+    ZiskFv.Equivalence.WriteValueProofs.Arith.h_rd_val_arith_add
       m b r_main r_binary e2 add_input
       h_circuit h_lane_rd
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
@@ -154,7 +154,7 @@ theorem equiv_ADD
   rw [equiv_ADD_sail state add_input r1 r2 rd
         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_RTYPE_add_pure add_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

@@ -1,21 +1,21 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Equivalence.Bridge.Arith
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus.EntryRanges
-import ZiskFv.Sail.remw
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.remw
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
+import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
 
 /-!
 End-to-end theorem for RV64M REMW (signed 32-bit remainder).
@@ -85,7 +85,7 @@ lemma equiv_REMW_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
-    `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_remw_chunked`
+    `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_remw_chunked`
     discharge lemma.
 
     Phase step4-remw structural-unpacking refactor with the standard
@@ -182,7 +182,7 @@ theorem equiv_REMW
     · right; right; left; exact h
     · right; right; right; exact h
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_remw_chunked
+    ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_remw_chunked
       remw_input.r1_val remw_input.r2_val e2 v r_a
       h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
       h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
@@ -194,7 +194,7 @@ theorem equiv_REMW
   rw [equiv_REMW_sail state remw_input r1 r2 rd
         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

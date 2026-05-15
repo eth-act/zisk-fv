@@ -1,10 +1,10 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.PackedBitVec
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Bits.PackedBitVec
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte

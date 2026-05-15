@@ -20,7 +20,7 @@ fi
 # Must be >= MIN_CANONICAL. The bare equiv_<OP> is the strong form for
 # all 63 opcodes — the 7 loads were rewritten to derive their
 # cross-entry rd-value equations from circuit witnesses (see
-# `ZiskFv/Circuit/LoadDerivation.lean` and the corresponding closure
+# `ZiskFv/ZiskCircuit/LoadDerivation.lean` and the corresponding closure
 # axioms in `Airs/MemoryBus/MemBridge.lean` and
 # `Airs/BinaryExtensionTable.lean`). Catches a sweep that accidentally
 # dropped the canonical strong forms.

@@ -1,13 +1,13 @@
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.GoldilocksBridge
-import ZiskFv.Sail.BusEffect
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Field.GoldilocksBridge
+import ZiskFv.SailSpec.BusEffect
 import Extraction.BinaryAdd
 import Extraction.Main
 import ZiskFv.Airs.Binary.BinaryAdd
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
 import Extraction.Buses
 
 import ZiskFv.Airs.BusShape
@@ -26,16 +26,16 @@ import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
 -- FGL → BitVec 64 arithmetic-extension lifts (h_rd_val bridges).
-import ZiskFv.Fundamentals.PackedBitVec.Extensions
+import ZiskFv.Bits.PackedBitVec.Extensions
 -- Goldilocks no-wrap toolkit (additive packings).
-import ZiskFv.Fundamentals.PackedBitVec.NoWrap
+import ZiskFv.Bits.PackedBitVec.NoWrap
 -- Multiplicative no-wrap toolkit (8-chunk carry chains).
-import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
+import ZiskFv.Bits.PackedBitVec.MulNoWrap
 -- Signed BitVec.toInt extension (sign-witness pattern + INT_MIN/-1 overflow).
-import ZiskFv.Fundamentals.PackedBitVec.SignedNoWrap
+import ZiskFv.Bits.PackedBitVec.SignedNoWrap
 -- Wide-PC no-wrap toolkit (PC values can exceed GL_prime).
-import ZiskFv.Fundamentals.PackedBitVec.WidePCNoWrap
-import ZiskFv.Circuit.Add
+import ZiskFv.Bits.PackedBitVec.WidePCNoWrap
+import ZiskFv.ZiskCircuit.Add
 import ZiskFv.Equivalence.Add
 import ZiskFv.Equivalence.BranchEqual
 import ZiskFv.Equivalence.BranchNotEqual
@@ -100,7 +100,7 @@ import ZiskFv.Equivalence.Lw
 import ZiskFv.Equivalence.Lh
 import ZiskFv.Equivalence.Lb
 -- Signed-case PackedBitVec
-import ZiskFv.Fundamentals.PackedBitVec.Signed
+import ZiskFv.Bits.PackedBitVec.Signed
 -- DIV/REM
 import ZiskFv.Equivalence.Div
 import ZiskFv.Equivalence.Divu
@@ -108,30 +108,30 @@ import ZiskFv.Equivalence.Rem
 import ZiskFv.Equivalence.Remu
 -- Sail-side pure-spec files not pulled in transitively by any Equivalence
 -- module above; imported here so regressions surface at build time.
-import ZiskFv.Sail.Auxiliaries
-import ZiskFv.Sail.addi
-import ZiskFv.Sail.addiw
-import ZiskFv.Sail.addw
-import ZiskFv.Sail.andi
-import ZiskFv.Sail.div
-import ZiskFv.Sail.divu
-import ZiskFv.Sail.lb
-import ZiskFv.Sail.lh
-import ZiskFv.Sail.lw
-import ZiskFv.Sail.ori
-import ZiskFv.Sail.rem
-import ZiskFv.Sail.remu
-import ZiskFv.Sail.slt
-import ZiskFv.Sail.slti
-import ZiskFv.Sail.sltiu
-import ZiskFv.Sail.sltu
-import ZiskFv.Sail.subw
-import ZiskFv.Sail.xori
+import ZiskFv.SailSpec.Auxiliaries
+import ZiskFv.SailSpec.addi
+import ZiskFv.SailSpec.addiw
+import ZiskFv.SailSpec.addw
+import ZiskFv.SailSpec.andi
+import ZiskFv.SailSpec.div
+import ZiskFv.SailSpec.divu
+import ZiskFv.SailSpec.lb
+import ZiskFv.SailSpec.lh
+import ZiskFv.SailSpec.lw
+import ZiskFv.SailSpec.ori
+import ZiskFv.SailSpec.rem
+import ZiskFv.SailSpec.remu
+import ZiskFv.SailSpec.slt
+import ZiskFv.SailSpec.slti
+import ZiskFv.SailSpec.sltiu
+import ZiskFv.SailSpec.sltu
+import ZiskFv.SailSpec.subw
+import ZiskFv.SailSpec.xori
 
 -- Per-shape h_rd_val derivation lemmas.
-import ZiskFv.Equivalence.RdValDerivation.Arith
-import ZiskFv.Equivalence.RdValDerivation.JumpUType
-import ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned
-import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
-import ZiskFv.Equivalence.Compliance.Global
+import ZiskFv.Equivalence.WriteValueProofs.Arith
+import ZiskFv.Equivalence.WriteValueProofs.JumpUType
+import ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned
+import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
+import ZiskFv.Compliance
 

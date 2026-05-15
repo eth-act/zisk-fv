@@ -235,6 +235,21 @@ def cmdFindUnused (env : Environment) (path : String) : IO UInt32 := do
     IO.println ""
   return 0
 
+/-- Subcommand: emit the proof-tree edge list as TSV. Each row is
+`parent\tchild\tparentKind\tchildKind` where kind ∈ {P,A,E}
+(project / axiom / external). Suitable for a static-page graph
+visualizer. -/
+def cmdPrintTreeEdges (env : Environment) (rootStr : String) : IO UInt32 := do
+  let root := rootStr.toName
+  if (env.find? root).isNone then
+    IO.eprintln s!"trust-gate: unknown const {rootStr}"
+    return 1
+  let edges := ConstantClosure.collectEdges env root
+  IO.println "parent\tchild\tparent_kind\tchild_kind"
+  for (p, c, pk, ck) in edges do
+    IO.println s!"{p}\t{c}\t{pk.toTag}\t{ck.toTag}"
+  return 0
+
 def usage : IO Unit := do
   IO.println "Usage: trust-gate <subcommand>"
   IO.println "  regenerate-deps                regen axiom-dep baseline → stdout"
@@ -245,6 +260,7 @@ def usage : IO Unit := do
   IO.println "  print-reachable PATH           print every ZiskFv.* const reachable from entry-points in PATH"
   IO.println "  find-unused PATH               enumerate ZiskFv.* consts not reachable from PATH entry points"
   IO.println "  check-closure-vs-baseline PATH check zisk_riscv_compliant_program_bus axiom closure == baseline-axioms.txt"
+  IO.println "  print-tree-edges NAME          emit TSV edge list (parent→child) for proof-tree visualizer"
 
 def dispatch (env : Environment) (args : List String) : IO UInt32 := do
   match args with
@@ -267,9 +283,10 @@ def dispatch (env : Environment) (args : List String) : IO UInt32 := do
     return 0
   | ["print-reachable", path] => cmdPrintReachable env path
   | ["find-unused", path]     => cmdFindUnused env path
+  | ["print-tree-edges", name] => cmdPrintTreeEdges env name
   | ["check-closure-vs-baseline", path] =>
     cmdCheckClosureVsBaseline env path
-      `ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus
+      `ZiskFv.Compliance.zisk_riscv_compliant_program_bus
   | ["all"] =>
     let baseline ← IO.FS.readFile "trust/baseline-equiv-axiom-deps.txt"
     let r1 ← diffStrings (renderDepsBaseline env) baseline

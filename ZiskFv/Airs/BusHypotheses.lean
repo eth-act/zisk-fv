@@ -1,10 +1,10 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Sail.Auxiliaries
-import ZiskFv.Sail.BusEffect
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.SailSpec.Auxiliaries
+import ZiskFv.SailSpec.BusEffect
 
 /-!
 # BusHypotheses — Sail-side input-state derivation

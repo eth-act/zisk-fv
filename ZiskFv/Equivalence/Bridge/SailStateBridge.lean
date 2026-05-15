@@ -1,10 +1,10 @@
 import Mathlib
 
 import LeanZKCircuit.OpenVM.Circuit
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
-import ZiskFv.Sail.Auxiliaries
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Bits.PackedBitVec.MulNoWrap
+import ZiskFv.SailSpec.Auxiliaries
 import ZiskFv.Equivalence.Bridge.StateBridge
 
 /-!

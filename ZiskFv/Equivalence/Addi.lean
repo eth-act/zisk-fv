@@ -1,22 +1,22 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Circuit.Addi
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.ZiskCircuit.Addi
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Equivalence.Bridge.BinaryAdd
 import ZiskFv.Equivalence.Bridge.SailStateBridge
-import ZiskFv.Airs.BusEmission
-import ZiskFv.Sail.addi
-import ZiskFv.Sail.BusEffect
+import ZiskFv.Airs.Bus.BusEmission
+import ZiskFv.SailSpec.addi
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Equivalence.RdValDerivation.Arith
+import ZiskFv.Equivalence.WriteValueProofs.Arith
 
 /-!
 End-to-end theorem for RV64 ADDI.
@@ -40,7 +40,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Addi
+open ZiskFv.ZiskCircuit.Addi
 open ZiskFv.Tactics.ALURTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.Airs.BinaryAdd
@@ -101,7 +101,7 @@ lemma equiv_ADDI_sail
        (class #4 — *trust ledger*).
     2. Translates the Main-form imm bridge to BinaryAdd-row form
        via `matches_entry`'s `b`-lane conjuncts under `h_m32 = 0`.
-    3. Composes with the existing `RdValDerivation.Arith` discharge
+    3. Composes with the existing `WriteValueProofs.Arith` discharge
        lemma.
 
     Per-opcode metric: +1 binder vs. the prior canonical. Falls under
@@ -162,7 +162,7 @@ theorem equiv_ADDI
     op_bus_perm_sound_BinaryAdd m b r_main h_active h_op
   -- Step 2: reconstruct the Tier-1 `addi_circuit_holds_with_binaryadd`
   -- bundle from the structural-unpacking parameters.
-  have h_circuit : ZiskFv.Circuit.Addi.addi_circuit_holds_with_binaryadd
+  have h_circuit : ZiskFv.ZiskCircuit.Addi.addi_circuit_holds_with_binaryadd
       m b r_main r_binary :=
     ⟨h_main_subset, h_b_core r_binary, h_match, h_main_mode⟩
   -- Step 3: chunk-range facts via `binary_add_columns_in_range` (no
@@ -201,7 +201,7 @@ theorem equiv_ADDI
     simp only [ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main] at h
     rw [h, h_b0_val, h_b1_val]
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.Arith.h_rd_val_arith_addi
+    ZiskFv.Equivalence.WriteValueProofs.Arith.h_rd_val_arith_addi
       m b r_main r_binary e2 addi_input.r1_val addi_input.imm
       h_circuit h_lane_rd
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
@@ -210,7 +210,7 @@ theorem equiv_ADDI
   rw [equiv_ADDI_sail state addi_input r1 rd imm
         h_input_r1 h_input_imm h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

@@ -1,19 +1,19 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Circuit.LoadUpperImmediate
-import ZiskFv.Airs.Main
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
-import ZiskFv.Sail.lui
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.ZiskCircuit.LoadUpperImmediate
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.Bus.BusEmission
+import ZiskFv.SailSpec.lui
 import ZiskFv.Airs.BusHypotheses
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.Bridge.ControlFlow
-import ZiskFv.Equivalence.RdValDerivation.JumpUType
+import ZiskFv.Equivalence.WriteValueProofs.JumpUType
 
 /-!
 End-to-end theorem for RV64 LUI. Combines:
@@ -21,7 +21,7 @@ End-to-end theorem for RV64 LUI. Combines:
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_LUI`),
 * the compositional LUI spec
-  (`ZiskFv.Circuit.LoadUpperImmediate.lui_pc_advance` +
+  (`ZiskFv.ZiskCircuit.LoadUpperImmediate.lui_pc_advance` +
   `lui_store_value_lo`/`_hi`),
 * the Sail pure-function equivalence (`PureSpec.execute_LUI_pure_equiv`),
 
@@ -44,7 +44,7 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.LoadUpperImmediate
+open ZiskFv.ZiskCircuit.LoadUpperImmediate
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -82,7 +82,7 @@ lemma equiv_LUI_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output (`signExtend (imm ++ 0)`) directly; that
     equation is derived internally from circuit witnesses via the
-    `RdValDerivation.JumpUType.h_rd_val_jut_lui` discharge lemma. -/
+    `WriteValueProofs.JumpUType.h_rd_val_jut_lui` discharge lemma. -/
 theorem equiv_LUI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)
@@ -124,7 +124,7 @@ theorem equiv_LUI
       U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
                   e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
       = BitVec.signExtend 64 (lui_input.imm ++ 0#12) := by
-    have h := ZiskFv.Equivalence.RdValDerivation.JumpUType.h_rd_val_jut_lui
+    have h := ZiskFv.Equivalence.WriteValueProofs.JumpUType.h_rd_val_jut_lui
       imm m r_main next_pc e_rd
       h_circuit h_lane_rd h_imm_lo_nat h_imm_hi_nat
       (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).1
@@ -140,7 +140,7 @@ theorem equiv_LUI
   rw [equiv_LUI_sail state lui_input imm rd
         h_input_imm h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_jump_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_jump_rrw
         state exec_row e_rd nextPC_val
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_rd_mult h_rd_as]
   simp only [h_nextPC_eq]

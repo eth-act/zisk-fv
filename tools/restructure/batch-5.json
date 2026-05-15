@@ -1,0 +1,12 @@
+{
+  "paths": {
+    "ZiskFv/Airs/BinaryTable.lean": "ZiskFv/Airs/Tables/BinaryTable.lean",
+    "ZiskFv/Airs/BinaryExtensionTable.lean": "ZiskFv/Airs/Tables/BinaryExtensionTable.lean",
+    "ZiskFv/Airs/BusEmission.lean": "ZiskFv/Airs/Bus/BusEmission.lean"
+  },
+  "namespaces": {
+    "ZiskFv.Airs.BinaryTable": "ZiskFv.Airs.Tables.BinaryTable",
+    "ZiskFv.Airs.BinaryExtensionTable": "ZiskFv.Airs.Tables.BinaryExtensionTable",
+    "ZiskFv.Airs.BusEmission": "ZiskFv.Airs.Bus.BusEmission"
+  }
+}

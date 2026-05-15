@@ -1,17 +1,17 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Circuit.StoreD
-import ZiskFv.Circuit.StoreH
-import ZiskFv.Circuit.MemModel
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.ZiskCircuit.StoreD
+import ZiskFv.ZiskCircuit.StoreH
+import ZiskFv.ZiskCircuit.MemModel
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.BusEmission
-import ZiskFv.Sail.sh
-import ZiskFv.Sail.BusEffect
+import ZiskFv.Airs.Bus.BusEmission
+import ZiskFv.SailSpec.sh
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Tactics.StoreArchetype
 
 /-!
@@ -26,8 +26,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Circuit.StoreD
-open ZiskFv.Circuit.StoreH
+open ZiskFv.ZiskCircuit.StoreD
+open ZiskFv.ZiskCircuit.StoreH
 open ZiskFv.Tactics.StoreArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -106,7 +106,7 @@ theorem equiv_SH
   rw [equiv_SH_sail state sh_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_store_rrrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_store_rrrw
         state exec_row e0 e1 e2
         (PureSpec.execute_STOREH_pure sh_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

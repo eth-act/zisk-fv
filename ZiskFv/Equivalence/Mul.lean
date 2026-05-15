@@ -1,28 +1,28 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Circuit.Mul
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.ZiskCircuit.Mul
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Equivalence.Bridge.Arith
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
-import ZiskFv.Sail.mul
-import ZiskFv.Sail.BusEffect
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.Bus.BusEmission
+import ZiskFv.SailSpec.mul
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned
+import ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned
 
 /-!
 End-to-end theorem for RV64 MUL. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_MUL`),
-* the compositional MUL spec (`ZiskFv.Circuit.Mul.mul_compositional`),
+* the compositional MUL spec (`ZiskFv.ZiskCircuit.Mul.mul_compositional`),
 * the Sail pure-function equivalence
   (`PureSpec.execute_MULH_mul_pure_equiv`),
 
@@ -43,7 +43,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Mul
+open ZiskFv.ZiskCircuit.Mul
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -91,7 +91,7 @@ lemma equiv_MUL_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output (`execute_MUL_pure ...`) directly; that
     equation is derived internally from circuit witnesses via the
-    `RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mul` discharge
+    `WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_mul` discharge
     lemma. -/
 theorem equiv_MUL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -170,7 +170,7 @@ theorem equiv_MUL
     ZiskFv.Equivalence.Bridge.Arith.mul_unsigned_chain_witnesses v r_a h_chain
       h_na h_nb h_np h_nr h_sext h_m32 h_div
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.MulDivRemUnsigned.h_rd_val_mdru_mul
+    ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_mul
       mul_input.r1_val mul_input.r2_val e2
       (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
       (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)
@@ -186,7 +186,7 @@ theorem equiv_MUL
   rw [equiv_MUL_sail state mul_input r1 r2 rd srs1 srs2
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_MULH_mul_pure mul_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

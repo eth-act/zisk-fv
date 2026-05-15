@@ -5,10 +5,10 @@
 The verification claim of zisk-fv is the global compliance theorem
 
 ```
-ZiskFv.Equivalence.Compliance.Global.zisk_riscv_compliant_program_bus
+ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 ```
 
-(in `ZiskFv/Equivalence/Compliance/Global.lean`). Its
+(in `ZiskFv/Compliance.lean`). Its
 `#print axioms` closure — captured as a flat list in
 [`trust/baseline-zisk-riscv-compliant.txt`](../../trust/baseline-zisk-riscv-compliant.txt)
 and as a hashed source-line ledger in
@@ -19,8 +19,7 @@ summarised below.
 
 The global theorem dispatches the 63 RV64IM opcodes through a 35-arm
 `OpEnvelope` sum type to per-opcode `equiv_<OP>_from_trust` wrappers
-under `ZiskFv/Equivalence/Compliance/<Op>Exemplar.lean` (plus
-`DivPilot.lean`); each wrapper discharges the canonical `equiv_<OP>`
+under `ZiskFv/Compliance/FromTrust/<Op>.lean`; each wrapper discharges the canonical `equiv_<OP>`
 theorem's promise hypotheses from the trust ledger. The principal
 "promise hypothesis" soundness gap surveyed in
 [`docs/fv/known-gaps.md`](known-gaps.md) is therefore closed at the
@@ -58,16 +57,16 @@ awk '$3=="axiom" {n=split($2,a,":"); print a[1]}' trust/baseline-axioms.txt \
 #   1 ZiskFv/Airs/Binary/BinaryAddRanges.lean       binary-add column range (class #5b)
 #   3 ZiskFv/Airs/Binary/BinaryExtensionRanges.lean BinaryExtension shift-pin + row→byte witness (class #6)
 #   9 ZiskFv/Airs/Binary/BinaryRanges.lean          Binary range / per-byte / carry / OR/AND/XOR / W-mode pins (class #6)
-#   1 ZiskFv/Airs/BinaryExtensionTable.lean         BinaryExtension lookup soundness (class #6)
-#   1 ZiskFv/Airs/BinaryTable.lean                  Binary lookup soundness (class #6)
+#   1 ZiskFv/Airs/Tables/BinaryExtensionTable.lean         BinaryExtension lookup soundness (class #6)
+#   1 ZiskFv/Airs/Tables/BinaryTable.lean                  Binary lookup soundness (class #6)
 #   1 ZiskFv/Airs/Main/Ranges.lean                  Main range-check soundness (class #5b)
 #   1 ZiskFv/Airs/MemoryBus/EntryRanges.lean        memory-bus entry byte ranges (class #5b)
 #   2 ZiskFv/Airs/MemoryBus/MemAlignBridge.lean     MemAlign permutation + ROM lookup (class #4)
 #   9 ZiskFv/Airs/MemoryBus/MemBridge.lean          memory-bus lookup soundness + emission bundles (class #4)
 #   3 ZiskFv/Airs/OperationBus/Bridge.lean          op-bus permutation soundness (class #4)
-#   1 ZiskFv/Circuit/MemModel.lean                  memory-state bridge — load (class #2)
-#  51 ZiskFv/Fundamentals/Transpiler.lean           transpile contracts (class #1)
-#   4 ZiskFv/Sail/Auxiliaries.lean                  platform-feature scope (classes #7–#10)
+#   1 ZiskFv/ZiskCircuit/MemModel.lean                  memory-state bridge — load (class #2)
+#  51 ZiskFv/Trusted/Transpiler.lean           transpile contracts (class #1)
+#   4 ZiskFv/SailSpec/Auxiliaries.lean                  platform-feature scope (classes #7–#10)
 ```
 
 `trust/scripts/check-locality.sh` enforces that no other file under
@@ -87,10 +86,10 @@ CODEOWNER-protected. The gate is described in detail in
 | 5b | Range-bus / byte-range soundness    |     3 | `Airs/MemoryBus/EntryRanges.lean`, `Airs/Binary/BinaryAddRanges.lean`, `Airs/Main/Ranges.lean` | Each participating AIR's `bits(8)` / `bits(N)`-annotated columns satisfy the byte-range bus: `memory_bus_entry_byte_range_perm_sound`, `binary_add_columns_in_range`, `main_columns_in_range`. | Lookup-argument soundness on the standard byte-range bus, restricted to participants annotated `bits(N)` in the PIL — see citations in each axiom's docstring. |
 | 6  | Binary / BinaryExtension lookup soundness | 14 | `Airs/{Binary,BinaryExtension}Table.lean` (1 + 1), `Airs/Binary/{Binary,BinaryExtension}Ranges.lean` (9 + 3) | Lookup-argument soundness on the Binary and BinaryExtension AIRs: (i) `bin_table_consumer_wf` / `bin_ext_table_consumer_wf` — table-lookup soundness on each; (ii) `binary_columns_in_range` / `binary_extension_columns_in_range` — column range pins; (iii) `binary_per_byte_lookup_witness` — per-byte witness extraction; (iv) `binary_carry_bits_in_range` — `bits(1)` carry-column range; (v) `binary_extension_op_is_shift_pin` — shift/SEXT op classification; (vi) `binary_extension_row_byte_lookups` — row → per-byte lookup witness; (vii) `binary_b_op_or_sext_eq_OP_{OR,AND,XOR}` — Binary `b_op_or_sext` column pins for the three logic ops; (viii) `binary_consumer_byte_match_chain_pin` — full 6-field byte-match chain for SUB/SLT-family; (ix) `binary_w_sext_choice_pin` / `binary_w_mode_carry_7_zero` — W-mode SEXT byte case-split + carry_7=0 corollary for SUBW/ADDW. | Lookup-argument soundness on the Binary and BinaryExtension AIRs (same trust kind as class #4), scoped to lookups against `binary_table.rs::ARITH_TABLE`'s row enumeration. |
 | 6b | Arith range / table / Euclidean pins |    35 | `Airs/Arith/Ranges.lean`              | Range-checker bus lookups + arith_table-row sign / mode / operand / sign-witness pins + Euclidean-remainder bound, for the full MUL / DIV / REM family across signed/unsigned × 64/32 (W) modes + MULH-family high-half. Full list: `arith_{mul,div}_columns_in_range`, `arith_{mul,div}_carry_columns_in_range_{unsigned,signed,w}`, `arith_table_op_div_rem_signed_{d_sign,w_d_sign}_pin`, `arith_table_op_{mulw,divw}_operand_pin`, `arith_table_op_div_rem_{signed,unsigned}_mode_pin`, `arith_table_op_div_rem_{signed,unsigned}_w_mode_pin`, `arith_table_op_div_rem_main_selector_pin`, `arith_table_op_div_rem_{signed,unsigned}_main_selector_pin`, `arith_table_op_div_rem_{unsigned,signed}_w_mode_pin`, `arith_div_{np_eq_msb_of_dividend,nb_eq_msb_of_divisor}`, `arith_div_remainder_bound{,_unsigned,_unsigned_w,_signed_w}`, `arith_table_op_{mul,mulhu,mulh,mulhsu}_{mode_pin,main_selector_pin}`, `arith_mul_{na_eq_msb_of_a,nb_eq_msb_of_b}`, `arith_table_op_mulw_mode_pin`. | Range-checker bus lookup soundness on the Arith AIR's `bits(16)`-annotated chunk columns and on the `ARITH_RANGE_CARRY` entry of the arith_range_table; arith_table lookup soundness for the per-row sign/mode/operand/sign-witness/selector pins; binary-bus lookup soundness on the Arith `assumes_operation(|d|<|b|)` consumer for the Euclidean magnitude/sign bound. All sub-classes have the same lookup-soundness trust kind as #4 / #6. |
-| 7  | Platform — PMP inert                |     1 | `Sail/Auxiliaries.lean`               | `LeanRV64D.Functions.pmpCheck _ _ _ _ = pure none`.                                                                                               | ZisK's RV64IM target excludes PMP. Axiomatising as inert is strictly stronger than threading state-level disjointness through every load/store proof.        |
-| 8  | Platform — CLINT disjoint           |     1 | `Sail/Auxiliaries.lean`               | `LeanRV64D.Functions.within_clint _ _ = pure false`.                                                                                              | ZisK programs do not access the CLINT MMIO region. Same scope-honest framing as #7.                                                                          |
-| 9  | Platform — PMA inert                |     1 | `Sail/Auxiliaries.lean`               | `LeanRV64D.Functions.pmaCheck _ _ _ _ = pure none`.                                                                                               | Alignment-fault arm short-circuited under the `RISC_V_assumptions` fields already recorded by LeanRV64D.                                                     |
-| 10 | Platform — Zicfilp disabled         |     1 | `Sail/Auxiliaries.lean`               | `LeanRV64D.Functions.update_elp_state _ = pure ()`.                                                                                               | Zicfilp landing-pad extension is disabled in ZisK's target; helper reduces to no-op under `currentlyEnabled Ext_Zicfilp = false`.                            |
+| 7  | Platform — PMP inert                |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.pmpCheck _ _ _ _ = pure none`.                                                                                               | ZisK's RV64IM target excludes PMP. Axiomatising as inert is strictly stronger than threading state-level disjointness through every load/store proof.        |
+| 8  | Platform — CLINT disjoint           |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.within_clint _ _ = pure false`.                                                                                              | ZisK programs do not access the CLINT MMIO region. Same scope-honest framing as #7.                                                                          |
+| 9  | Platform — PMA inert                |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.pmaCheck _ _ _ _ = pure none`.                                                                                               | Alignment-fault arm short-circuited under the `RISC_V_assumptions` fields already recorded by LeanRV64D.                                                     |
+| 10 | Platform — Zicfilp disabled         |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.update_elp_state _ = pure ()`.                                                                                               | Zicfilp landing-pad extension is disabled in ZisK's target; helper reduces to no-op under `currentlyEnabled Ext_Zicfilp = false`.                            |
 
 Total: 51 + 1 + 14 + 3 + 14 + 35 + 4 = **122 axioms**.
 
@@ -118,7 +117,7 @@ entry's bytes to the Sail spec's loaded-data field. They were
 rewritten to derive these equations from circuit witnesses:
 
 * **Family A — copyb byte passthrough** (LD, LBU, LHU, LWU):
-  `ZiskFv/Circuit/LoadDerivation.lean::load_copyb_e1_e2_bytes_eq`
+  `ZiskFv/ZiskCircuit/LoadDerivation.lean::load_copyb_e1_e2_bytes_eq`
   derives per-byte equality between the read entry `e1` and the
   rd-write entry `e2` from Main constraints 9/16 (`(1 -
   is_external_op) * op * (b - c) = 0`) plus byte-range hypotheses on
@@ -152,7 +151,7 @@ rewritten to derive these equations from circuit witnesses:
 
 After this rewrite all 63 canonical `equiv_<OP>` theorems pass the
 `check-no-output-eq.sh` gate uniformly with no `EXEMPT_STEMS`
-carve-out. See `ZiskFv/Circuit/LoadDerivation.lean` for the proven
+carve-out. See `ZiskFv/ZiskCircuit/LoadDerivation.lean` for the proven
 derivation lemmas and the equivalence files
 (`ZiskFv/Equivalence/{Lb,Lh,Lw,LoadBU,LoadHU,LoadWU,LoadD}.lean`)
 for the rewritten canonical theorems.
@@ -233,8 +232,8 @@ ledger.
 (W-mode `carry_7 = 0` bundled corollary) close the SEXT-byte
 case-split for SUBW/ADDW that Round 3.II's chain-pin axiom did not
 expose for bytes 4..7. Wrappers landed: `equiv_SUBW_from_trust`
-(`Compliance/SubwExemplar.lean`), `equiv_ADDW_from_trust`
-(`Compliance/AddwExemplar.lean`).
+(`Compliance/FromTrust/Subw.lean`), `equiv_ADDW_from_trust`
+(`Compliance/FromTrust/Addw.lean`).
 
 ### Step 4.2 round 3 — Four parallel branches landing 13 wrappers (+7 axioms)
 
@@ -281,7 +280,7 @@ AND/XOR wrappers); the Mem+ControlFlow batch added zero new axioms
 `arith_table_op_mul_mode_pin` and
 `arith_table_op_mul_main_selector_pin` — the MUL-side mirrors of the
 DIV-pilot mode-pin + main-selector-pin pair, consumed by the
-`Compliance/MulExemplar.lean` wrapper to derive seven mode pins and
+`Compliance/FromTrust/Mul.lean` wrapper to derive seven mode pins and
 the `main_mul = 1, main_div = 0` selector pin needed for the hi-lane
 discharge of `h_byte_hi` via `mul_bus_res1_eq_c_hi`.
 
@@ -298,20 +297,20 @@ pure-Lean alignment lemma).
 ### Step 4.1.4 — Binary shape exemplar OR (+1 axiom)
 
 `binary_b_op_or_sext_eq_OP_OR` (Binary AIR table-pin sub-class)
-consumed by `equiv_OR_from_trust` (`Compliance/OrExemplar.lean`).
+consumed by `equiv_OR_from_trust` (`Compliance/FromTrust/Or.lean`).
 
 ### Step 4.1.3 — Mem-stores shape exemplar SD (+1 axiom)
 
 `main_store_emission_bundle_sd` (class-#4) delivers byte-extracted
 store entry contents and ptr-match for the `equiv_SD_from_trust`
-wrapper in `Compliance/SdExemplar.lean`.
+wrapper in `Compliance/FromTrust/Sd.lean`.
 
 ### Step 4 DIV pilot — GAP-B sign-witness MSB pins (+2 axioms)
 
 `arith_div_np_eq_msb_of_dividend` and `arith_div_nb_eq_msb_of_divisor`
 (class-#6b sign-witness MSB pins on signed DIV/REM rows that link
 `np` to MSB(C) and `nb` to MSB(B)) — consumed by the
-`Compliance/DivPilot.lean` wrapper via the new generic
+`Compliance/FromTrust/Div.lean` wrapper via the new generic
 `signed_packed_toInt_eq_of_read_xreg` Sail-state bridge to
 discharge the `h_op1` / `h_op2` operand TRANSPILE-BRIDGE binders
 of `equiv_DIV` end-to-end.

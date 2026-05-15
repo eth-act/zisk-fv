@@ -1,28 +1,28 @@
 import Mathlib
 
-import ZiskFv.Fundamentals.Goldilocks
-import ZiskFv.Fundamentals.Interaction
-import ZiskFv.Fundamentals.Transpiler
-import ZiskFv.Fundamentals.PackedBitVec.MulNoWrap
-import ZiskFv.Circuit.Div
-import ZiskFv.Airs.Main
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Bits.PackedBitVec.MulNoWrap
+import ZiskFv.ZiskCircuit.Div
+import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Div
-import ZiskFv.Airs.OperationBus
-import ZiskFv.Airs.BusEmission
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Airs.MemoryBus.EntryRanges
-import ZiskFv.Sail.div
-import ZiskFv.Sail.BusEffect
+import ZiskFv.SailSpec.div
+import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned
+import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
 
 /-!
 End-to-end theorem for RV64 **DIV**. Combines:
 
 * the trusted RV64 → Zisk transpilation contract
   (`ZiskFv.Trusted.transpile_DIV`),
-* the compositional DIV spec (`ZiskFv.Circuit.Div.div_compositional`),
+* the compositional DIV spec (`ZiskFv.ZiskCircuit.Div.div_compositional`),
 * the Sail pure-function equivalence (`PureSpec.execute_DIVREM_div_pure_equiv`),
 
 into three canonical theorems:
@@ -45,8 +45,8 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithDiv
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Circuit.Mul
-open ZiskFv.Circuit.Div
+open ZiskFv.ZiskCircuit.Mul
+open ZiskFv.ZiskCircuit.Div
 open ZiskFv.Tactics.ArithSMArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
@@ -87,7 +87,7 @@ lemma equiv_DIV_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
-    `RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_div` discharge
+    `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_div` discharge
     lemma. -/
 theorem equiv_DIV
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -169,7 +169,7 @@ theorem equiv_DIV
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_rd_val :=
-    ZiskFv.Equivalence.RdValDerivation.MulDivRemSigned.h_rd_val_mdrs_div_chunked
+    ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_div_chunked
       div_input.r1_val div_input.r2_val e2 v r_a
       h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
       h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
@@ -180,7 +180,7 @@ theorem equiv_DIV
   rw [equiv_DIV_sail state div_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm
-  rw [ZiskFv.Airs.BusEmission.bus_effect_matches_sail_alu_rrw
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
         (PureSpec.execute_DIVREM_div_pure div_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
