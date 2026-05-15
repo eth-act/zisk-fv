@@ -76,6 +76,15 @@ The allowlist of files is `trust/allowed-axiom-files.txt`, which is
 CODEOWNER-protected. The gate is described in detail in
 [`trust/README.md`](../../trust/README.md).
 
+## The flat index
+
+For a flat per-axiom table — one row per axiom with its class, file:line,
+and the docstring's first-sentence summary — see
+[`axiom-index.md`](axiom-index.md). That file is auto-generated from
+`trust/baseline-axioms.txt` + each axiom's source-file docstring by
+`tools/trust-ledger-index.py` (refreshed by `trust/scripts/regenerate.sh`).
+The narrative per-class rationale below stays here.
+
 ## The classes
 
 | #  | Class                               | Count | File                                  | What is asserted                                                                                                                                  | Why we trust it                                                                                                                                              |

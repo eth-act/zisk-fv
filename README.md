@@ -30,7 +30,7 @@ the uber theorem typechecks. Run `nix run .#test` for the full suite
 
 | Path                   | Purpose                                                                                                |
 | ---------------------- | ------------------------------------------------------------------------------------------------------ |
-| `docs/fv/`             | Live library-reference notes: trust ledger, extractor contract, AIR inventory                          |
+| `docs/fv/`             | Trust ledger ([`trusted-base.md`](docs/fv/trusted-base.md) narrative + [`axiom-index.md`](docs/fv/axiom-index.md) flat per-axiom table), extractor contract, AIR inventory |
 | `tools/pil-extract/`   | Rust CLI: decodes `.pilout` protobuf → Lean constraint definitions                                     |
 | `ZiskFv/`              | Lake 4 package (mathlib + LeanZKCircuit + LeanRV, toolchain v4.28.0). See [Inside `ZiskFv/`](#inside-ziskfv) below. |
 | `zisk/`                | ZisK source tree (git submodule, pinned at `48cf7ccef`)                                                |
