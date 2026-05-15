@@ -1,0 +1,76 @@
+diff --git a/LeanRV64D/Sail/IntRange.lean b/LeanRV64D/Sail/IntRange.lean
+index ac463027..3b7b1773 100644
+--- a/LeanRV64D/Sail/IntRange.lean
++++ b/LeanRV64D/Sail/IntRange.lean
+@@ -51,7 +51,7 @@ theorem toNat_lt_toNat {a b : Int} (hb : 0 < b) : Int.toNat a < Int.toNat b ↔
+   have := range.step_pos
+   loop init range.start (by simp)
+ 
+-instance : ForIn' m IntRange Int inferInstance where
++instance [Monad m] : ForIn' m IntRange Int inferInstance where
+   forIn' := IntRange.forIn'
+ 
+ -- No separate `ForIn` instance is required because it can be derived from `ForIn'`.
+@@ -77,7 +77,7 @@ instance : ForIn' m IntRange Int inferInstance where
+   have := range.step_pos
+   loop range.start
+ 
+-instance : ForM m IntRange Int where
++instance [Monad m] : ForM m IntRange Int where
+   forM := IntRange.forM
+ 
+ syntax:max "[" withoutPosition(":" term) "]i" : term
+diff --git a/LeanRV64D/Sail/Sail.lean b/LeanRV64D/Sail/Sail.lean
+index 7ed5b57d..20a3da09 100644
+--- a/LeanRV64D/Sail/Sail.lean
++++ b/LeanRV64D/Sail/Sail.lean
+@@ -123,11 +123,17 @@ def charToHex (c : Char) : BitVec 4 :=
+ 
+ def round4 (n : Nat) := ((n - 1) / 4) * 4 + 4
+ 
++-- Coerce String.Slice → String for v4.28+ stdlib, where `String.take`/`drop`
++-- return `String.Slice`. Sail-emitted callers (e.g. HexBitsSigned.lean) pass
++-- `String.drop str 1` directly to functions expecting `String`; this Coe
++-- lets that compile without changing the codegen.
++instance : Coe String.Slice String where coe s := s.toString
++
+ def parse_hex_bits_digits (n : Nat) (str : String) : BitVec n :=
+   let len := str.length
+   if h : n < 4 || len = 0 then BitVec.zero n else
+     let bv := parse_hex_bits_digits (n-4) (str.take (len-1))
+-    let c := String.Pos.Raw.get! str ⟨len-1⟩ |> charToHex
++    let c := str.toList[len-1]! |> charToHex
+     BitVec.append bv c |>.cast (by simp_all)
+ decreasing_by simp_all <;> omega
+ 
+@@ -137,8 +143,8 @@ where
+   -- TODO: when there are lemmas about `String.take`, replace with WF induction
+   go (fuel : Nat) (str : String) :=
+     if fuel = 0 then 0 else
+-      let lsd := String.Pos.Raw.get! str ⟨str.length - 1⟩
+-      let rest := str.take (str.length - 1)
++      let lsd := str.toList[str.length - 1]!
++      let rest : String := str.take (str.length - 1)
+       (charToHex lsd).setWidth n + 10#n * go (fuel-1) rest
+ 
+ def parse_hex_bits (n : Nat) (str : String) : BitVec n :=
+@@ -147,14 +153,14 @@ def parse_hex_bits (n : Nat) (str : String) : BitVec n :=
+ 
+ def valid_hex_bits (n : Nat) (str : String) : Bool :=
+   if str.length < 2 then false else
+-  let str := str.drop 2
+-  str.all fun x => x.toLower ∈
+-    ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'] &&
++  let str : String := str.drop 2
++  str.toList.all (fun x => x.toLower ∈
++    ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']) &&
+   2 ^ n > (parse_hex_bits_digits (round4 n) str).toNat
+ 
+ def valid_dec_bits (_ : Nat) (str : String) : Bool :=
+-  str.all fun x => x.toLower ∈
+-    ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
++  str.toList.all (fun (x : Char) => x.toLower ∈
++    ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])
+ 
+ @[simp_sail]
+ def shift_bits_left (bv : BitVec n) (sh : BitVec m) : BitVec n :=
