@@ -222,9 +222,19 @@ theorem equiv_SD_from_trust
   -- Delegate to canonical `equiv_SD`.
   exact ZiskFv.Equivalence.StoreD.equiv_SD
     state sd_input mstatus pmaRegion misa mseccfg
-    exec_row e0 e1 e2 risc_v_assumptions h_opcode_assumptions
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    exec_row e0 e1 e2
+    { risc_v_assumptions := risc_v_assumptions
+      opcode_assumptions_ := h_opcode_assumptions
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      m0_mult := h_m0_mult
+      m0_as := h_m0_as
+      m1_mult := h_m1_mult
+      m1_as := h_m1_as
+      m2_mult := h_m2_mult
+      m2_as := h_m2_as }
     h_ptr_match h_byte_0 h_byte_1 h_byte_2 h_byte_3
     h_byte_4 h_byte_5 h_byte_6 h_byte_7
 

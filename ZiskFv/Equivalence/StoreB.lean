@@ -13,6 +13,7 @@ import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.SailSpec.sb
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Tactics.StoreArchetype
+import ZiskFv.Equivalence.Promises.Store
 
 /-!
 End-to-end theorem for RV64 SB (store byte).
@@ -67,19 +68,11 @@ theorem equiv_SB
     (mseccfg : RegisterType Register.mseccfg)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.sb_state_assumptions sb_input state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_STOREB_pure sb_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 2)
+    (promises : ZiskFv.Equivalence.Promises.StorePromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.sb_state_assumptions sb_input state)
+        (PureSpec.execute_STOREB_pure sb_input).nextPC
+        exec_row e0 e1 e2)
     (h_mem_eq :
       (((((((state.mem.insert e2.ptr.toNat e2.x0
           ).insert (e2.ptr.toNat + 1) e2.x1
@@ -98,6 +91,9 @@ theorem equiv_SB
       regidx.Regidx sb_input.r1,
       1
     )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
+          h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
   rw [equiv_SB_sail state sb_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
   symm

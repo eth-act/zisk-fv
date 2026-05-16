@@ -18,6 +18,7 @@ import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.SailSpec.lhu
 import ZiskFv.SailSpec.BusEffect
+import ZiskFv.Equivalence.Promises.Load
 
 /-!
 End-to-end theorem for RV64 LHU (load halfword, unsigned / zero-extended).
@@ -77,19 +78,11 @@ theorem equiv_LHU
     (mseccfg : RegisterType Register.mseccfg)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.lhu_state_assumptions lhu_input state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_LOADHU_pure lhu_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1)
+    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.lhu_state_assumptions lhu_input state)
+        (PureSpec.execute_LOADHU_pure lhu_input).nextPC
+        exec_row e0 e1 e2)
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
     (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
     (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
@@ -106,6 +99,9 @@ theorem equiv_LHU
       true,
       2
     )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
+          h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
   obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match,
           h_rd_zero_iff, h_rd_idx, h_copy0, h_copy1⟩ :=
     ZiskFv.Equivalence.Bridge.Mem.lhu_discharge_full

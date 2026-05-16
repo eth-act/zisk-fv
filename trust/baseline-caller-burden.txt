@@ -12,17 +12,17 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 2040
+# Total rows: 1917
 # Category bridge: 92
-# Category bus_shape: 228
+# Category bus_shape: 129
 # Category byte_chain: 55
 # Category entry: 67
 # Category loose: 376
 # Category match: 91
-# Category other: 692
+# Category other: 679
 # Category range: 96
 # Category row: 68
-# Category state: 118
+# Category state: 107
 # Category transpile: 58
 # Category validator: 99
 #
@@ -585,33 +585,22 @@ ZiskFv.Equivalence.Lb.equiv_LB 006 exec_row [entry] List (Interaction.ExecutionB
 ZiskFv.Equivalence.Lb.equiv_LB 007 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Lb.equiv_LB 008 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Lb.equiv_LB 009 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Lb.equiv_LB 010 risc_v_assumptions [state] RISC_V_assumptions state mstatus pmaRegion misa mseccfg
-ZiskFv.Equivalence.Lb.equiv_LB 011 h_opcode_assumptions [other] PureSpec.lb_state_assumptions lb_input state
-ZiskFv.Equivalence.Lb.equiv_LB 012 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.Lb.equiv_LB 013 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.Lb.equiv_LB 014 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.Lb.equiv_LB 015 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.Lb.equiv_LB 016 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.Lb.equiv_LB 017 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.Lb.equiv_LB 018 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.Lb.equiv_LB 019 h_m1_as [bus_shape] e1.as.val = 2
-ZiskFv.Equivalence.Lb.equiv_LB 020 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.Lb.equiv_LB 021 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.Lb.equiv_LB 022 main [validator] Valid_Main C FGL FGL
-ZiskFv.Equivalence.Lb.equiv_LB 023 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Equivalence.Lb.equiv_LB 024 r_main [row] ℕ
-ZiskFv.Equivalence.Lb.equiv_LB 025 h_ext [match] main.is_external_op r_main = 1
-ZiskFv.Equivalence.Lb.equiv_LB 026 h_op [match] main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_B
-ZiskFv.Equivalence.Lb.equiv_LB 027 _ [other] Op-bus permutation handshake + -- per-byte lookup soundness
-ZiskFv.Equivalence.Lb.equiv_LB 028 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
-ZiskFv.Equivalence.Lb.equiv_LB 029 r_binary [row] ℕ
-ZiskFv.Equivalence.Lb.equiv_LB 030 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B
-ZiskFv.Equivalence.Lb.equiv_LB 031 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.Lb.equiv_LB 032 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.Lb.equiv_LB 033 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.Lb.equiv_LB 034 h_match_clo [match] main.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_
-ZiskFv.Equivalence.Lb.equiv_LB 035 h_match_chi [match] main.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_
-ZiskFv.Equivalence.Lb.equiv_LB 036 h_a0_match [other] (v.free_in_a_0 r_binary).val = e1.x0.val
+ZiskFv.Equivalence.Lb.equiv_LB 010 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state mstatus pmaRegion misa mseccfg (P
+ZiskFv.Equivalence.Lb.equiv_LB 011 main [validator] Valid_Main C FGL FGL
+ZiskFv.Equivalence.Lb.equiv_LB 012 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Equivalence.Lb.equiv_LB 013 r_main [row] ℕ
+ZiskFv.Equivalence.Lb.equiv_LB 014 h_ext [match] main.is_external_op r_main = 1
+ZiskFv.Equivalence.Lb.equiv_LB 015 h_op [match] main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_B
+ZiskFv.Equivalence.Lb.equiv_LB 016 _ [other] Op-bus permutation handshake + -- per-byte lookup soundness
+ZiskFv.Equivalence.Lb.equiv_LB 017 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
+ZiskFv.Equivalence.Lb.equiv_LB 018 r_binary [row] ℕ
+ZiskFv.Equivalence.Lb.equiv_LB 019 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B
+ZiskFv.Equivalence.Lb.equiv_LB 020 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
+ZiskFv.Equivalence.Lb.equiv_LB 021 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.Lb.equiv_LB 022 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.Lb.equiv_LB 023 h_match_clo [match] main.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_
+ZiskFv.Equivalence.Lb.equiv_LB 024 h_match_chi [match] main.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_
+ZiskFv.Equivalence.Lb.equiv_LB 025 h_a0_match [other] (v.free_in_a_0 r_binary).val = e1.x0.val
 ZiskFv.Equivalence.Lh.equiv_LH 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lh.equiv_LH 001 lh_input [other] PureSpec.LhInput
 ZiskFv.Equivalence.Lh.equiv_LH 002 mstatus [other] RegisterType Register.mstatus
@@ -622,33 +611,22 @@ ZiskFv.Equivalence.Lh.equiv_LH 006 exec_row [entry] List (Interaction.ExecutionB
 ZiskFv.Equivalence.Lh.equiv_LH 007 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Lh.equiv_LH 008 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Lh.equiv_LH 009 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Lh.equiv_LH 010 risc_v_assumptions [state] RISC_V_assumptions state mstatus pmaRegion misa mseccfg
-ZiskFv.Equivalence.Lh.equiv_LH 011 h_opcode_assumptions [other] PureSpec.lh_state_assumptions lh_input state
-ZiskFv.Equivalence.Lh.equiv_LH 012 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.Lh.equiv_LH 013 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.Lh.equiv_LH 014 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.Lh.equiv_LH 015 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.Lh.equiv_LH 016 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.Lh.equiv_LH 017 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.Lh.equiv_LH 018 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.Lh.equiv_LH 019 h_m1_as [bus_shape] e1.as.val = 2
-ZiskFv.Equivalence.Lh.equiv_LH 020 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.Lh.equiv_LH 021 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.Lh.equiv_LH 022 main [validator] Valid_Main C FGL FGL
-ZiskFv.Equivalence.Lh.equiv_LH 023 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Equivalence.Lh.equiv_LH 024 r_main [row] ℕ
-ZiskFv.Equivalence.Lh.equiv_LH 025 h_ext [match] main.is_external_op r_main = 1
-ZiskFv.Equivalence.Lh.equiv_LH 026 h_op [match] main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_H
-ZiskFv.Equivalence.Lh.equiv_LH 027 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
-ZiskFv.Equivalence.Lh.equiv_LH 028 r_binary [row] ℕ
-ZiskFv.Equivalence.Lh.equiv_LH 029 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H
-ZiskFv.Equivalence.Lh.equiv_LH 030 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.Lh.equiv_LH 031 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.Lh.equiv_LH 032 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.Lh.equiv_LH 033 h_match_clo [match] main.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_
-ZiskFv.Equivalence.Lh.equiv_LH 034 h_match_chi [match] main.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_
-ZiskFv.Equivalence.Lh.equiv_LH 035 h_a0_match [other] (v.free_in_a_0 r_binary).val = e1.x0.val
-ZiskFv.Equivalence.Lh.equiv_LH 036 h_a1_match [other] (v.free_in_a_1 r_binary).val = e1.x1.val
+ZiskFv.Equivalence.Lh.equiv_LH 010 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state mstatus pmaRegion misa mseccfg (P
+ZiskFv.Equivalence.Lh.equiv_LH 011 main [validator] Valid_Main C FGL FGL
+ZiskFv.Equivalence.Lh.equiv_LH 012 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Equivalence.Lh.equiv_LH 013 r_main [row] ℕ
+ZiskFv.Equivalence.Lh.equiv_LH 014 h_ext [match] main.is_external_op r_main = 1
+ZiskFv.Equivalence.Lh.equiv_LH 015 h_op [match] main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_H
+ZiskFv.Equivalence.Lh.equiv_LH 016 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
+ZiskFv.Equivalence.Lh.equiv_LH 017 r_binary [row] ℕ
+ZiskFv.Equivalence.Lh.equiv_LH 018 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H
+ZiskFv.Equivalence.Lh.equiv_LH 019 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
+ZiskFv.Equivalence.Lh.equiv_LH 020 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.Lh.equiv_LH 021 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.Lh.equiv_LH 022 h_match_clo [match] main.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_
+ZiskFv.Equivalence.Lh.equiv_LH 023 h_match_chi [match] main.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_
+ZiskFv.Equivalence.Lh.equiv_LH 024 h_a0_match [other] (v.free_in_a_0 r_binary).val = e1.x0.val
+ZiskFv.Equivalence.Lh.equiv_LH 025 h_a1_match [other] (v.free_in_a_1 r_binary).val = e1.x1.val
 ZiskFv.Equivalence.LoadBU.equiv_LBU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.LoadBU.equiv_LBU 001 lbu_input [other] PureSpec.LbuInput
 ZiskFv.Equivalence.LoadBU.equiv_LBU 002 mstatus [other] RegisterType Register.mstatus
@@ -659,30 +637,19 @@ ZiskFv.Equivalence.LoadBU.equiv_LBU 006 exec_row [entry] List (Interaction.Execu
 ZiskFv.Equivalence.LoadBU.equiv_LBU 007 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.LoadBU.equiv_LBU 008 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.LoadBU.equiv_LBU 009 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.LoadBU.equiv_LBU 010 risc_v_assumptions [state] RISC_V_assumptions state mstatus pmaRegion misa mseccfg
-ZiskFv.Equivalence.LoadBU.equiv_LBU 011 h_opcode_assumptions [other] PureSpec.lbu_state_assumptions lbu_input state
-ZiskFv.Equivalence.LoadBU.equiv_LBU 012 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.LoadBU.equiv_LBU 013 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.LoadBU.equiv_LBU 014 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.LoadBU.equiv_LBU 015 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.LoadBU.equiv_LBU 016 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.LoadBU.equiv_LBU 017 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.LoadBU.equiv_LBU 018 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.LoadBU.equiv_LBU 019 h_m1_as [bus_shape] e1.as.val = 2
-ZiskFv.Equivalence.LoadBU.equiv_LBU 020 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.LoadBU.equiv_LBU 021 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.LoadBU.equiv_LBU 022 main [validator] Valid_Main C FGL FGL
-ZiskFv.Equivalence.LoadBU.equiv_LBU 023 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Equivalence.LoadBU.equiv_LBU 024 r_main [row] ℕ
-ZiskFv.Equivalence.LoadBU.equiv_LBU 025 _ [other] Phase F+ refactor
-ZiskFv.Equivalence.LoadBU.equiv_LBU 026 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
-ZiskFv.Equivalence.LoadBU.equiv_LBU 027 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
-ZiskFv.Equivalence.LoadBU.equiv_LBU 028 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
-ZiskFv.Equivalence.LoadBU.equiv_LBU 029 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
-ZiskFv.Equivalence.LoadBU.equiv_LBU 030 _ [other] CIRCUIT-CONSTRAINT class
-ZiskFv.Equivalence.LoadBU.equiv_LBU 031 h_ext [match] main.is_external_op r_main = 0
-ZiskFv.Equivalence.LoadBU.equiv_LBU 032 h_op [match] main.op r_main = (1 : FGL)
-ZiskFv.Equivalence.LoadBU.equiv_LBU 033 h_width [match] main.ind_width r_main = (1 : FGL)
+ZiskFv.Equivalence.LoadBU.equiv_LBU 010 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state mstatus pmaRegion misa mseccfg (P
+ZiskFv.Equivalence.LoadBU.equiv_LBU 011 main [validator] Valid_Main C FGL FGL
+ZiskFv.Equivalence.LoadBU.equiv_LBU 012 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Equivalence.LoadBU.equiv_LBU 013 r_main [row] ℕ
+ZiskFv.Equivalence.LoadBU.equiv_LBU 014 _ [other] Phase F+ refactor
+ZiskFv.Equivalence.LoadBU.equiv_LBU 015 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
+ZiskFv.Equivalence.LoadBU.equiv_LBU 016 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
+ZiskFv.Equivalence.LoadBU.equiv_LBU 017 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
+ZiskFv.Equivalence.LoadBU.equiv_LBU 018 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
+ZiskFv.Equivalence.LoadBU.equiv_LBU 019 _ [other] CIRCUIT-CONSTRAINT class
+ZiskFv.Equivalence.LoadBU.equiv_LBU 020 h_ext [match] main.is_external_op r_main = 0
+ZiskFv.Equivalence.LoadBU.equiv_LBU 021 h_op [match] main.op r_main = (1 : FGL)
+ZiskFv.Equivalence.LoadBU.equiv_LBU 022 h_width [match] main.ind_width r_main = (1 : FGL)
 ZiskFv.Equivalence.LoadD.equiv_LD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.LoadD.equiv_LD 001 ld_input [other] PureSpec.LdInput
 ZiskFv.Equivalence.LoadD.equiv_LD 002 mstatus [other] RegisterType Register.mstatus
@@ -693,24 +660,12 @@ ZiskFv.Equivalence.LoadD.equiv_LD 006 exec_row [entry] List (Interaction.Executi
 ZiskFv.Equivalence.LoadD.equiv_LD 007 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.LoadD.equiv_LD 008 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.LoadD.equiv_LD 009 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.LoadD.equiv_LD 010 risc_v_assumptions [state] RISC_V_assumptions state mstatus pmaRegion misa mseccfg
-ZiskFv.Equivalence.LoadD.equiv_LD 011 h_opcode_assumptions [other] PureSpec.ld_state_assumptions ld_input state
-ZiskFv.Equivalence.LoadD.equiv_LD 012 _ [other] shape d — LD
-ZiskFv.Equivalence.LoadD.equiv_LD 013 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.LoadD.equiv_LD 014 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.LoadD.equiv_LD 015 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.LoadD.equiv_LD 016 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.LoadD.equiv_LD 017 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.LoadD.equiv_LD 018 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.LoadD.equiv_LD 019 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.LoadD.equiv_LD 020 h_m1_as [bus_shape] e1.as.val = 2
-ZiskFv.Equivalence.LoadD.equiv_LD 021 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.LoadD.equiv_LD 022 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.LoadD.equiv_LD 023 main [validator] Valid_Main C FGL FGL
-ZiskFv.Equivalence.LoadD.equiv_LD 024 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Equivalence.LoadD.equiv_LD 025 r_main [row] ℕ
-ZiskFv.Equivalence.LoadD.equiv_LD 026 h_ext [match] main.is_external_op r_main = 0
-ZiskFv.Equivalence.LoadD.equiv_LD 027 h_op [match] main.op r_main = (1 : FGL)
+ZiskFv.Equivalence.LoadD.equiv_LD 010 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state mstatus pmaRegion misa mseccfg (P
+ZiskFv.Equivalence.LoadD.equiv_LD 011 main [validator] Valid_Main C FGL FGL
+ZiskFv.Equivalence.LoadD.equiv_LD 012 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Equivalence.LoadD.equiv_LD 013 r_main [row] ℕ
+ZiskFv.Equivalence.LoadD.equiv_LD 014 h_ext [match] main.is_external_op r_main = 0
+ZiskFv.Equivalence.LoadD.equiv_LD 015 h_op [match] main.op r_main = (1 : FGL)
 ZiskFv.Equivalence.LoadHU.equiv_LHU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.LoadHU.equiv_LHU 001 lhu_input [other] PureSpec.LhuInput
 ZiskFv.Equivalence.LoadHU.equiv_LHU 002 mstatus [other] RegisterType Register.mstatus
@@ -721,28 +676,17 @@ ZiskFv.Equivalence.LoadHU.equiv_LHU 006 exec_row [entry] List (Interaction.Execu
 ZiskFv.Equivalence.LoadHU.equiv_LHU 007 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.LoadHU.equiv_LHU 008 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.LoadHU.equiv_LHU 009 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.LoadHU.equiv_LHU 010 risc_v_assumptions [state] RISC_V_assumptions state mstatus pmaRegion misa mseccfg
-ZiskFv.Equivalence.LoadHU.equiv_LHU 011 h_opcode_assumptions [other] PureSpec.lhu_state_assumptions lhu_input state
-ZiskFv.Equivalence.LoadHU.equiv_LHU 012 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.LoadHU.equiv_LHU 013 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.LoadHU.equiv_LHU 014 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.LoadHU.equiv_LHU 015 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.LoadHU.equiv_LHU 016 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.LoadHU.equiv_LHU 017 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.LoadHU.equiv_LHU 018 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.LoadHU.equiv_LHU 019 h_m1_as [bus_shape] e1.as.val = 2
-ZiskFv.Equivalence.LoadHU.equiv_LHU 020 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.LoadHU.equiv_LHU 021 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.LoadHU.equiv_LHU 022 main [validator] Valid_Main C FGL FGL
-ZiskFv.Equivalence.LoadHU.equiv_LHU 023 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Equivalence.LoadHU.equiv_LHU 024 r_main [row] ℕ
-ZiskFv.Equivalence.LoadHU.equiv_LHU 025 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
-ZiskFv.Equivalence.LoadHU.equiv_LHU 026 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
-ZiskFv.Equivalence.LoadHU.equiv_LHU 027 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
-ZiskFv.Equivalence.LoadHU.equiv_LHU 028 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
-ZiskFv.Equivalence.LoadHU.equiv_LHU 029 h_ext [match] main.is_external_op r_main = 0
-ZiskFv.Equivalence.LoadHU.equiv_LHU 030 h_op [match] main.op r_main = (1 : FGL)
-ZiskFv.Equivalence.LoadHU.equiv_LHU 031 h_width [match] main.ind_width r_main = (2 : FGL)
+ZiskFv.Equivalence.LoadHU.equiv_LHU 010 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state mstatus pmaRegion misa mseccfg (P
+ZiskFv.Equivalence.LoadHU.equiv_LHU 011 main [validator] Valid_Main C FGL FGL
+ZiskFv.Equivalence.LoadHU.equiv_LHU 012 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Equivalence.LoadHU.equiv_LHU 013 r_main [row] ℕ
+ZiskFv.Equivalence.LoadHU.equiv_LHU 014 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
+ZiskFv.Equivalence.LoadHU.equiv_LHU 015 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
+ZiskFv.Equivalence.LoadHU.equiv_LHU 016 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
+ZiskFv.Equivalence.LoadHU.equiv_LHU 017 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
+ZiskFv.Equivalence.LoadHU.equiv_LHU 018 h_ext [match] main.is_external_op r_main = 0
+ZiskFv.Equivalence.LoadHU.equiv_LHU 019 h_op [match] main.op r_main = (1 : FGL)
+ZiskFv.Equivalence.LoadHU.equiv_LHU 020 h_width [match] main.ind_width r_main = (2 : FGL)
 ZiskFv.Equivalence.LoadWU.equiv_LWU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.LoadWU.equiv_LWU 001 lwu_input [other] PureSpec.LwuInput
 ZiskFv.Equivalence.LoadWU.equiv_LWU 002 mstatus [other] RegisterType Register.mstatus
@@ -753,28 +697,17 @@ ZiskFv.Equivalence.LoadWU.equiv_LWU 006 exec_row [entry] List (Interaction.Execu
 ZiskFv.Equivalence.LoadWU.equiv_LWU 007 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.LoadWU.equiv_LWU 008 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.LoadWU.equiv_LWU 009 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.LoadWU.equiv_LWU 010 risc_v_assumptions [state] RISC_V_assumptions state mstatus pmaRegion misa mseccfg
-ZiskFv.Equivalence.LoadWU.equiv_LWU 011 h_opcode_assumptions [other] PureSpec.lwu_state_assumptions lwu_input state
-ZiskFv.Equivalence.LoadWU.equiv_LWU 012 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.LoadWU.equiv_LWU 013 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.LoadWU.equiv_LWU 014 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.LoadWU.equiv_LWU 015 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.LoadWU.equiv_LWU 016 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.LoadWU.equiv_LWU 017 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.LoadWU.equiv_LWU 018 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.LoadWU.equiv_LWU 019 h_m1_as [bus_shape] e1.as.val = 2
-ZiskFv.Equivalence.LoadWU.equiv_LWU 020 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.LoadWU.equiv_LWU 021 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.LoadWU.equiv_LWU 022 main [validator] Valid_Main C FGL FGL
-ZiskFv.Equivalence.LoadWU.equiv_LWU 023 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Equivalence.LoadWU.equiv_LWU 024 r_main [row] ℕ
-ZiskFv.Equivalence.LoadWU.equiv_LWU 025 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
-ZiskFv.Equivalence.LoadWU.equiv_LWU 026 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
-ZiskFv.Equivalence.LoadWU.equiv_LWU 027 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
-ZiskFv.Equivalence.LoadWU.equiv_LWU 028 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
-ZiskFv.Equivalence.LoadWU.equiv_LWU 029 h_ext [match] main.is_external_op r_main = 0
-ZiskFv.Equivalence.LoadWU.equiv_LWU 030 h_op [match] main.op r_main = (1 : FGL)
-ZiskFv.Equivalence.LoadWU.equiv_LWU 031 h_width [match] main.ind_width r_main = (4 : FGL)
+ZiskFv.Equivalence.LoadWU.equiv_LWU 010 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state mstatus pmaRegion misa mseccfg (P
+ZiskFv.Equivalence.LoadWU.equiv_LWU 011 main [validator] Valid_Main C FGL FGL
+ZiskFv.Equivalence.LoadWU.equiv_LWU 012 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Equivalence.LoadWU.equiv_LWU 013 r_main [row] ℕ
+ZiskFv.Equivalence.LoadWU.equiv_LWU 014 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
+ZiskFv.Equivalence.LoadWU.equiv_LWU 015 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
+ZiskFv.Equivalence.LoadWU.equiv_LWU 016 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
+ZiskFv.Equivalence.LoadWU.equiv_LWU 017 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
+ZiskFv.Equivalence.LoadWU.equiv_LWU 018 h_ext [match] main.is_external_op r_main = 0
+ZiskFv.Equivalence.LoadWU.equiv_LWU 019 h_op [match] main.op r_main = (1 : FGL)
+ZiskFv.Equivalence.LoadWU.equiv_LWU 020 h_width [match] main.ind_width r_main = (4 : FGL)
 ZiskFv.Equivalence.Lui.equiv_LUI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lui.equiv_LUI 001 lui_input [other] PureSpec.LuiInput
 ZiskFv.Equivalence.Lui.equiv_LUI 002 imm [other] BitVec 20
@@ -798,36 +731,24 @@ ZiskFv.Equivalence.Lw.equiv_LW 006 exec_row [entry] List (Interaction.ExecutionB
 ZiskFv.Equivalence.Lw.equiv_LW 007 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Lw.equiv_LW 008 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Lw.equiv_LW 009 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Lw.equiv_LW 010 risc_v_assumptions [state] RISC_V_assumptions state mstatus pmaRegion misa mseccfg
-ZiskFv.Equivalence.Lw.equiv_LW 011 h_opcode_assumptions [other] PureSpec.lw_state_assumptions lw_input state
-ZiskFv.Equivalence.Lw.equiv_LW 012 _ [other] shape d-4-signed
-ZiskFv.Equivalence.Lw.equiv_LW 013 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.Lw.equiv_LW 014 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.Lw.equiv_LW 015 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.Lw.equiv_LW 016 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.Lw.equiv_LW 017 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.Lw.equiv_LW 018 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.Lw.equiv_LW 019 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.Lw.equiv_LW 020 h_m1_as [bus_shape] e1.as.val = 2
-ZiskFv.Equivalence.Lw.equiv_LW 021 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.Lw.equiv_LW 022 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.Lw.equiv_LW 023 main [validator] Valid_Main C FGL FGL
-ZiskFv.Equivalence.Lw.equiv_LW 024 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Equivalence.Lw.equiv_LW 025 r_main [row] ℕ
-ZiskFv.Equivalence.Lw.equiv_LW 026 h_ext [match] main.is_external_op r_main = 1
-ZiskFv.Equivalence.Lw.equiv_LW 027 h_op [match] main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_W
-ZiskFv.Equivalence.Lw.equiv_LW 028 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
-ZiskFv.Equivalence.Lw.equiv_LW 029 r_binary [row] ℕ
-ZiskFv.Equivalence.Lw.equiv_LW 030 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W
-ZiskFv.Equivalence.Lw.equiv_LW 031 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
-ZiskFv.Equivalence.Lw.equiv_LW 032 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
-ZiskFv.Equivalence.Lw.equiv_LW 033 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
-ZiskFv.Equivalence.Lw.equiv_LW 034 h_match_clo [match] main.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_
-ZiskFv.Equivalence.Lw.equiv_LW 035 h_match_chi [match] main.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_
-ZiskFv.Equivalence.Lw.equiv_LW 036 h_a0_match [other] (v.free_in_a_0 r_binary).val = e1.x0.val
-ZiskFv.Equivalence.Lw.equiv_LW 037 h_a1_match [other] (v.free_in_a_1 r_binary).val = e1.x1.val
-ZiskFv.Equivalence.Lw.equiv_LW 038 h_a2_match [other] (v.free_in_a_2 r_binary).val = e1.x2.val
-ZiskFv.Equivalence.Lw.equiv_LW 039 h_a3_match [other] (v.free_in_a_3 r_binary).val = e1.x3.val
+ZiskFv.Equivalence.Lw.equiv_LW 010 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state mstatus pmaRegion misa mseccfg (P
+ZiskFv.Equivalence.Lw.equiv_LW 011 main [validator] Valid_Main C FGL FGL
+ZiskFv.Equivalence.Lw.equiv_LW 012 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Equivalence.Lw.equiv_LW 013 r_main [row] ℕ
+ZiskFv.Equivalence.Lw.equiv_LW 014 h_ext [match] main.is_external_op r_main = 1
+ZiskFv.Equivalence.Lw.equiv_LW 015 h_op [match] main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_W
+ZiskFv.Equivalence.Lw.equiv_LW 016 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
+ZiskFv.Equivalence.Lw.equiv_LW 017 r_binary [row] ℕ
+ZiskFv.Equivalence.Lw.equiv_LW 018 h_op_binary [other] (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W
+ZiskFv.Equivalence.Lw.equiv_LW 019 h_bytes [byte_chain] ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary
+ZiskFv.Equivalence.Lw.equiv_LW 020 hc_lo_sum_lt [range] (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val + (v.free_in_c_4 r_b
+ZiskFv.Equivalence.Lw.equiv_LW 021 hc_hi_sum_lt [range] (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val + (v.free_in_c_5 r_b
+ZiskFv.Equivalence.Lw.equiv_LW 022 h_match_clo [match] main.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary + v.free_in_c_
+ZiskFv.Equivalence.Lw.equiv_LW 023 h_match_chi [match] main.c_1 r_main = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary + v.free_in_c_
+ZiskFv.Equivalence.Lw.equiv_LW 024 h_a0_match [other] (v.free_in_a_0 r_binary).val = e1.x0.val
+ZiskFv.Equivalence.Lw.equiv_LW 025 h_a1_match [other] (v.free_in_a_1 r_binary).val = e1.x1.val
+ZiskFv.Equivalence.Lw.equiv_LW 026 h_a2_match [other] (v.free_in_a_2 r_binary).val = e1.x2.val
+ZiskFv.Equivalence.Lw.equiv_LW 027 h_a3_match [other] (v.free_in_a_3 r_binary).val = e1.x3.val
 ZiskFv.Equivalence.Mul.equiv_MUL 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Mul.equiv_MUL 001 mul_input [other] PureSpec.MulInput
 ZiskFv.Equivalence.Mul.equiv_MUL 002 r1 [other] regidx
@@ -1789,19 +1710,8 @@ ZiskFv.Equivalence.StoreB.equiv_SB 006 exec_row [entry] List (Interaction.Execut
 ZiskFv.Equivalence.StoreB.equiv_SB 007 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.StoreB.equiv_SB 008 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.StoreB.equiv_SB 009 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.StoreB.equiv_SB 010 risc_v_assumptions [state] RISC_V_assumptions state mstatus pmaRegion misa mseccfg
-ZiskFv.Equivalence.StoreB.equiv_SB 011 h_opcode_assumptions [other] PureSpec.sb_state_assumptions sb_input state
-ZiskFv.Equivalence.StoreB.equiv_SB 012 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.StoreB.equiv_SB 013 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.StoreB.equiv_SB 014 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.StoreB.equiv_SB 015 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.StoreB.equiv_SB 016 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.StoreB.equiv_SB 017 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.StoreB.equiv_SB 018 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.StoreB.equiv_SB 019 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.StoreB.equiv_SB 020 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.StoreB.equiv_SB 021 h_m2_as [bus_shape] e2.as.val = 2
-ZiskFv.Equivalence.StoreB.equiv_SB 022 h_mem_eq [other] (((((((state.mem.insert e2.ptr.toNat e2.x0 ).insert (e2.ptr.toNat + 1) e2.x1 ).i
+ZiskFv.Equivalence.StoreB.equiv_SB 010 promises [transpile] ZiskFv.Equivalence.Promises.StorePromises state mstatus pmaRegion misa mseccfg (
+ZiskFv.Equivalence.StoreB.equiv_SB 011 h_mem_eq [other] (((((((state.mem.insert e2.ptr.toNat e2.x0 ).insert (e2.ptr.toNat + 1) e2.x1 ).i
 ZiskFv.Equivalence.StoreD.equiv_SD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.StoreD.equiv_SD 001 sd_input [other] PureSpec.SdInput
 ZiskFv.Equivalence.StoreD.equiv_SD 002 mstatus [other] RegisterType Register.mstatus
@@ -1812,27 +1722,16 @@ ZiskFv.Equivalence.StoreD.equiv_SD 006 exec_row [entry] List (Interaction.Execut
 ZiskFv.Equivalence.StoreD.equiv_SD 007 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.StoreD.equiv_SD 008 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.StoreD.equiv_SD 009 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.StoreD.equiv_SD 010 risc_v_assumptions [state] RISC_V_assumptions state mstatus pmaRegion misa mseccfg
-ZiskFv.Equivalence.StoreD.equiv_SD 011 h_opcode_assumptions [other] PureSpec.sd_state_assumptions sd_input state
-ZiskFv.Equivalence.StoreD.equiv_SD 012 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.StoreD.equiv_SD 013 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.StoreD.equiv_SD 014 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.StoreD.equiv_SD 015 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.StoreD.equiv_SD 016 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.StoreD.equiv_SD 017 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.StoreD.equiv_SD 018 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.StoreD.equiv_SD 019 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.StoreD.equiv_SD 020 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.StoreD.equiv_SD 021 h_m2_as [bus_shape] e2.as.val = 2
-ZiskFv.Equivalence.StoreD.equiv_SD 022 h_ptr_match [bridge] e2.ptr.toNat = (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat
-ZiskFv.Equivalence.StoreD.equiv_SD 023 h_byte_0 [bridge] (e2.x0 : BitVec 8) = BitVec.extractLsb 7 0 sd_input.r2_val
-ZiskFv.Equivalence.StoreD.equiv_SD 024 h_byte_1 [bridge] (e2.x1 : BitVec 8) = BitVec.extractLsb 15 8 sd_input.r2_val
-ZiskFv.Equivalence.StoreD.equiv_SD 025 h_byte_2 [bridge] (e2.x2 : BitVec 8) = BitVec.extractLsb 23 16 sd_input.r2_val
-ZiskFv.Equivalence.StoreD.equiv_SD 026 h_byte_3 [bridge] (e2.x3 : BitVec 8) = BitVec.extractLsb 31 24 sd_input.r2_val
-ZiskFv.Equivalence.StoreD.equiv_SD 027 h_byte_4 [bridge] (e2.x4 : BitVec 8) = BitVec.extractLsb 39 32 sd_input.r2_val
-ZiskFv.Equivalence.StoreD.equiv_SD 028 h_byte_5 [bridge] (e2.x5 : BitVec 8) = BitVec.extractLsb 47 40 sd_input.r2_val
-ZiskFv.Equivalence.StoreD.equiv_SD 029 h_byte_6 [bridge] (e2.x6 : BitVec 8) = BitVec.extractLsb 55 48 sd_input.r2_val
-ZiskFv.Equivalence.StoreD.equiv_SD 030 h_byte_7 [bridge] (e2.x7 : BitVec 8) = BitVec.extractLsb 63 56 sd_input.r2_val
+ZiskFv.Equivalence.StoreD.equiv_SD 010 promises [transpile] ZiskFv.Equivalence.Promises.StorePromises state mstatus pmaRegion misa mseccfg (
+ZiskFv.Equivalence.StoreD.equiv_SD 011 h_ptr_match [bridge] e2.ptr.toNat = (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat
+ZiskFv.Equivalence.StoreD.equiv_SD 012 h_byte_0 [bridge] (e2.x0 : BitVec 8) = BitVec.extractLsb 7 0 sd_input.r2_val
+ZiskFv.Equivalence.StoreD.equiv_SD 013 h_byte_1 [bridge] (e2.x1 : BitVec 8) = BitVec.extractLsb 15 8 sd_input.r2_val
+ZiskFv.Equivalence.StoreD.equiv_SD 014 h_byte_2 [bridge] (e2.x2 : BitVec 8) = BitVec.extractLsb 23 16 sd_input.r2_val
+ZiskFv.Equivalence.StoreD.equiv_SD 015 h_byte_3 [bridge] (e2.x3 : BitVec 8) = BitVec.extractLsb 31 24 sd_input.r2_val
+ZiskFv.Equivalence.StoreD.equiv_SD 016 h_byte_4 [bridge] (e2.x4 : BitVec 8) = BitVec.extractLsb 39 32 sd_input.r2_val
+ZiskFv.Equivalence.StoreD.equiv_SD 017 h_byte_5 [bridge] (e2.x5 : BitVec 8) = BitVec.extractLsb 47 40 sd_input.r2_val
+ZiskFv.Equivalence.StoreD.equiv_SD 018 h_byte_6 [bridge] (e2.x6 : BitVec 8) = BitVec.extractLsb 55 48 sd_input.r2_val
+ZiskFv.Equivalence.StoreD.equiv_SD 019 h_byte_7 [bridge] (e2.x7 : BitVec 8) = BitVec.extractLsb 63 56 sd_input.r2_val
 ZiskFv.Equivalence.StoreH.equiv_SH 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.StoreH.equiv_SH 001 sh_input [other] PureSpec.ShInput
 ZiskFv.Equivalence.StoreH.equiv_SH 002 mstatus [other] RegisterType Register.mstatus
@@ -1843,20 +1742,9 @@ ZiskFv.Equivalence.StoreH.equiv_SH 006 exec_row [entry] List (Interaction.Execut
 ZiskFv.Equivalence.StoreH.equiv_SH 007 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.StoreH.equiv_SH 008 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.StoreH.equiv_SH 009 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.StoreH.equiv_SH 010 risc_v_assumptions [state] RISC_V_assumptions state mstatus pmaRegion misa mseccfg
-ZiskFv.Equivalence.StoreH.equiv_SH 011 h_opcode_assumptions [other] PureSpec.sh_state_assumptions sh_input state
-ZiskFv.Equivalence.StoreH.equiv_SH 012 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.StoreH.equiv_SH 013 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.StoreH.equiv_SH 014 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.StoreH.equiv_SH 015 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.StoreH.equiv_SH 016 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.StoreH.equiv_SH 017 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.StoreH.equiv_SH 018 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.StoreH.equiv_SH 019 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.StoreH.equiv_SH 020 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.StoreH.equiv_SH 021 h_m2_as [bus_shape] e2.as.val = 2
-ZiskFv.Equivalence.StoreH.equiv_SH 022 _ [other] via modify_memory_2 data fields
-ZiskFv.Equivalence.StoreH.equiv_SH 023 h_mem_eq [other] (((((((state.mem.insert e2.ptr.toNat e2.x0 ).insert (e2.ptr.toNat + 1) e2.x1 ).i
+ZiskFv.Equivalence.StoreH.equiv_SH 010 promises [transpile] ZiskFv.Equivalence.Promises.StorePromises state mstatus pmaRegion misa mseccfg (
+ZiskFv.Equivalence.StoreH.equiv_SH 011 _ [other] via modify_memory_2 data fields
+ZiskFv.Equivalence.StoreH.equiv_SH 012 h_mem_eq [other] (((((((state.mem.insert e2.ptr.toNat e2.x0 ).insert (e2.ptr.toNat + 1) e2.x1 ).i
 ZiskFv.Equivalence.StoreW.equiv_SW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.StoreW.equiv_SW 001 sw_input [other] PureSpec.SwInput
 ZiskFv.Equivalence.StoreW.equiv_SW 002 mstatus [other] RegisterType Register.mstatus
@@ -1867,20 +1755,9 @@ ZiskFv.Equivalence.StoreW.equiv_SW 006 exec_row [entry] List (Interaction.Execut
 ZiskFv.Equivalence.StoreW.equiv_SW 007 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.StoreW.equiv_SW 008 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.StoreW.equiv_SW 009 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.StoreW.equiv_SW 010 risc_v_assumptions [state] RISC_V_assumptions state mstatus pmaRegion misa mseccfg
-ZiskFv.Equivalence.StoreW.equiv_SW 011 h_opcode_assumptions [other] PureSpec.sw_state_assumptions sw_input state
-ZiskFv.Equivalence.StoreW.equiv_SW 012 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.StoreW.equiv_SW 013 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.StoreW.equiv_SW 014 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.StoreW.equiv_SW 015 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.StoreW.equiv_SW 016 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.StoreW.equiv_SW 017 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.StoreW.equiv_SW 018 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.StoreW.equiv_SW 019 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.StoreW.equiv_SW 020 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.StoreW.equiv_SW 021 h_m2_as [bus_shape] e2.as.val = 2
-ZiskFv.Equivalence.StoreW.equiv_SW 022 _ [other] via `modify_memory_4` data -- fields
-ZiskFv.Equivalence.StoreW.equiv_SW 023 h_mem_eq [other] (((((((state.mem.insert e2.ptr.toNat e2.x0 ).insert (e2.ptr.toNat + 1) e2.x1 ).i
+ZiskFv.Equivalence.StoreW.equiv_SW 010 promises [transpile] ZiskFv.Equivalence.Promises.StorePromises state mstatus pmaRegion misa mseccfg (
+ZiskFv.Equivalence.StoreW.equiv_SW 011 _ [other] via `modify_memory_4` data -- fields
+ZiskFv.Equivalence.StoreW.equiv_SW 012 h_mem_eq [other] (((((((state.mem.insert e2.ptr.toNat e2.x0 ).insert (e2.ptr.toNat + 1) e2.x1 ).i
 ZiskFv.Equivalence.Sub.equiv_SUB 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Sub.equiv_SUB 001 sub_input [other] PureSpec.SubInput
 ZiskFv.Equivalence.Sub.equiv_SUB 002 r1 [other] regidx
