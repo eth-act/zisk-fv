@@ -417,7 +417,7 @@ lemma h_rd_val_mdru_mul
     U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
                 (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
       = execute_MUL_pure op1 op2 .MUL := by
-  -- Step 1: ℕ packed identity from the 8 chunk equations.
+  -- ℕ packed identity from the 8 chunk equations.
   have h_packed_nat : packed4 a₀.val a₁.val a₂.val a₃.val
         * packed4 b₀.val b₁.val b₂.val b₃.val
       = packed4 c₀.val c₁.val c₂.val c₃.val
@@ -430,11 +430,11 @@ lemma h_rd_val_mdru_mul
       h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
       hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
   rw [← h_op1, ← h_op2] at h_packed_nat
-  -- Step 2: low-half modular extraction.
+  -- low-half modular extraction.
   have h_lo_mod : packed4 c₀.val c₁.val c₂.val c₃.val
       = (op1.toNat * op2.toNat) % 18446744073709551616 :=
     fgl_mul_unsigned_to_bv64_lo h_c0 h_c1 h_c2 h_c3 h_packed_nat
-  -- Step 3: byte-sum assembly.
+  -- byte-sum assembly.
   have h_byte_eq_packed :
       e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
         + e.x4.val * 4294967296 + e.x5.val * 1099511627776
@@ -447,7 +447,7 @@ lemma h_rd_val_mdru_mul
         + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
       = (op1.toNat * op2.toNat) % 2 ^ 64 := by
     rw [h_byte_eq_packed, h_lo_mod]; norm_num
-  -- Step 4: K3 byte-bridge closes.
+  -- K3 byte-bridge closes.
   exact mul_lo_bv64_of_byte_sum op1 op2
     e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
@@ -590,7 +590,7 @@ lemma h_rd_val_mdru_divu
     U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
                 (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
       = (execute_DIV_REM_pure op1 op2 .DRU).1 := by
-  -- Step 1: ℕ Euclidean packed identity.
+  -- ℕ Euclidean packed identity.
   have h_packed_nat : packed4 a₀.val a₁.val a₂.val a₃.val
         * packed4 b₀.val b₁.val b₂.val b₃.val
         + packed4 d₀.val d₁.val d₂.val d₃.val
@@ -602,19 +602,19 @@ lemma h_rd_val_mdru_divu
       h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
       h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
       hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
-  -- Step 2: rewrite via TRANSPILE-BRIDGE.
+  -- rewrite via TRANSPILE-BRIDGE.
   rw [← h_op1, ← h_op2] at h_packed_nat
-  -- Step 3: Euclidean quotient extraction.
+  -- Euclidean quotient extraction.
   have h_quot_eq : op1.toNat / op2.toNat = packed4 a₀.val a₁.val a₂.val a₃.val :=
     fgl_div_unsigned_to_bv64 h_op2_ne h_d_lt_b h_packed_nat
-  -- Step 4: byte-sum assembly.
+  -- byte-sum assembly.
   have h_byte_eq_packed :
       e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
         + e.x4.val * 4294967296 + e.x5.val * 1099511627776
         + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
       = packed4 a₀.val a₁.val a₂.val a₃.val :=
     byte_sum_eq_packed4 e a₀.val a₁.val a₂.val a₃.val h_byte_lo h_byte_hi
-  -- Step 5: derive the spec-output byte_sum.
+  -- derive the spec-output byte_sum.
   -- For DRU: q = if op2 = 0 then 2^64 - 1 else Int.tdiv op1.toNat op2.toNat.
   -- Under op2 ≠ 0, q = op1.toNat / op2.toNat (Int.tdiv on non-negative ints).
   have h_q_eq : (execute_DIV_REM_pure op1 op2 .DRU).1.toNat
@@ -941,7 +941,7 @@ lemma h_rd_val_mdru_divuw_chunked
              then BitVec.allOnes 32
              else BitVec.ofNat 32 (r1_lo32.toNat / r2_lo32.toNat)
          BitVec.signExtend 64 q32) := by
-  -- Step 1: ℕ Euclidean packed identity over full 4-chunks.
+  -- ℕ Euclidean packed identity over full 4-chunks.
   have h_packed_nat : packed4 a₀.val a₁.val a₂.val a₃.val
         * packed4 b₀.val b₁.val b₂.val b₃.val
         + packed4 d₀.val d₁.val d₂.val d₃.val
@@ -953,7 +953,7 @@ lemma h_rd_val_mdru_divuw_chunked
       h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
       h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
       hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
-  -- Step 2: collapse packed4 to 32-bit form via W-mode chunk pins.
+  -- collapse packed4 to 32-bit form via W-mode chunk pins.
   obtain ⟨ha2_eq, ha3_eq⟩ := h_a23
   obtain ⟨hb2_eq, hb3_eq⟩ := h_b23
   obtain ⟨hd2_eq, hd3_eq⟩ := h_d23
@@ -977,18 +977,18 @@ lemma h_rd_val_mdru_divuw_chunked
     unfold packed4 at h_pn
     rw [ha2_eq, ha3_eq, hb2_eq, hb3_eq, hc2_eq, hc3_eq, hd2_eq, hd3_eq] at h_pn
     linarith
-  -- Step 3: rewrite Euclidean identity in terms of r1_lo32 / r2_lo32.
+  -- rewrite Euclidean identity in terms of r1_lo32 / r2_lo32.
   rw [← h_op2] at h_euclid32
   have h_euclid : (Sail.BitVec.extractLsb r1 31 0).toNat
                     = (a₀.val + a₁.val * 65536) * (Sail.BitVec.extractLsb r2 31 0).toNat
                         + (d₀.val + d₁.val * 65536) := by
     rw [h_op1]; linarith [h_euclid32]
-  -- Step 4: invoke Layer 1 BV64 wrapper for the DIVUW quotient.
+  -- invoke Layer 1 BV64 wrapper for the DIVUW quotient.
   have h_bv :=
     ZiskFv.PackedBitVec.SignedNoWrap.fgl_div_w_unsigned_to_bv64
       r1 r2 (a₀.val + a₁.val * 65536) (d₀.val + d₁.val * 65536)
       h_op2_ne h_d_lt_b h_euclid
-  -- Step 5: close via sext_choice. Use the byte-sum identity from the lane matches.
+  -- close via sext_choice. Use the byte-sum identity from the lane matches.
   apply BitVec.eq_of_toNat_eq
   rw [u64_toBV_of_bytes_toNat e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
         h0 h1 h2 h3 h4 h5 h6 h7]

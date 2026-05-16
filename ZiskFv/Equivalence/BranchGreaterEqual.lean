@@ -72,7 +72,7 @@ lemma equiv_BGE_sail
   PureSpec.execute_BGE_pure_equiv bge_input imm r1 r2 h_input_imm h_input_r1 h_input_r2
     h_input_pc h_input_misa h_misa_c
 
-/-- **Metaplan theorem.** Shape (b) bus reuse. -/
+/-- **Canonical equivalence.** Shape (b) bus reuse. -/
 theorem equiv_BGE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bge_input : PureSpec.BgeInput)

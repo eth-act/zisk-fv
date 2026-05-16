@@ -9,19 +9,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
 
 /-!
-# `equiv_ADD` Compliance pilot — BinaryAdd shape exemplar (Step 4.1.2)
-
-> **Status:** PILOT. Third shape exemplar after DIV (`FromTrust/Div.lean`,
-> the Arith provider-AIR shape) and LUI (`FromTrust/Lui.lean`, the
-> Main-only ControlFlow non-branch shape). Demonstrates the discharge
-> recipe applied to the BinaryAdd provider-AIR shape — the simplest
-> provider-AIR in the inventory (no mode columns, no sign witnesses,
-> single-opcode coverage).
->
-> Lives outside the canonical surface (under
-> `Compliance/FromTrust/`) so V1 anti-laundering metrics on the
-> canonical theorem are unaffected.
-
+# `equiv_ADD` trust-discharge wrapper
 ## Why ADD
 
 ADD is the canonical exemplar for the BinaryAdd shape (which covers
@@ -145,7 +133,7 @@ into shared parameters across ADD + ADDI, and `h_main_active` /
   for `transpile_ADDI`, swap `OP_ADD = 10` for whatever ADDI's
   op-literal projection is (still 10 — ADDI piggybacks on OP_ADD per
   `Transpiler.lean:1898`'s docstring), and reuse the same matches_entry
-  flag projection. Mass-author ADDI in Step 4.2.
+  flag projection.
 -/
 
 namespace ZiskFv.Compliance
@@ -180,10 +168,10 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     6. The BinaryAdd-side universal-per-row validity (`h_b_core`).
        Compliance.lean shares this across all BinaryAdd-shape
        opcodes (single AIR per shape).
-    7. The lane-match for the rd-write entry (`h_lane_rd`).
-       Currently caller-supplied; the Mem pilot (Step 4.1.x) will
-       discharge this from `memory_bus_register_write_perm_sound`
-       once the Mem-side AIR data is plumbed through Compliance.lean.
+    7. The lane-match for the rd-write entry (`h_lane_rd`) —
+       caller-supplied; discharged downstream from
+       `memory_bus_register_write_perm_sound` when Mem-side AIR
+       data is plumbed through.
     8. The Sail-side state predicates (SPEC-PRE):
        `h_input_r1_sail`, `h_input_r2_sail`, `h_input_rd`,
        `h_input_pc`.
@@ -230,9 +218,8 @@ theorem equiv_ADD_from_trust
     (h_main_subset : add_subset_holds m r_main)
     -- BinaryAdd-side universal-per-row validity.
     (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
-    -- Lane-match for the rd-write entry. Currently caller-supplied;
-    -- the Mem pilot will discharge this from
-    -- `memory_bus_register_write_perm_sound`.
+    -- Lane-match for the rd-write entry — caller-supplied; discharged
+    -- downstream from `memory_bus_register_write_perm_sound`.
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
     -- Sail-side state predicates (SPEC-PRE).
     (h_input_r1_sail : read_xreg (regidx_to_fin r1) state

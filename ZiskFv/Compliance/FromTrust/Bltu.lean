@@ -6,7 +6,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 
 /-!
-# `equiv_BLTU` Compliance wrapper — ControlFlow branches (Step 4.2)
+# `equiv_BLTU` Compliance wrapper — ControlFlow branches
 
 Within-shape companion to `FromTrust/Beq.lean`. Unsigned comparison;
 zero new axioms.

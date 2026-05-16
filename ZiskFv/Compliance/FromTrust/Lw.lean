@@ -14,7 +14,7 @@ import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 
 /-!
-# `equiv_LW` Compliance wrapper — signed-load BinExt SEXT_W chain (Step 4.2 round 4.C)
+# `equiv_LW` Compliance wrapper — signed-load BinExt SEXT_W chain
 
 > **Status:** First of three signed-load wrappers (LW / LH / LB).
 > Lives outside the canonical surface so V1 anti-laundering metrics

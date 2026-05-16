@@ -6,7 +6,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
 -- One representative shape dispatcher import (LUI from ControlFlow non-branch).
 -- Additional shape dispatchers will be added under
--- `ZiskFv/Compliance/Dispatch/Dispatch/<Shape>.lean` as Step 4.3 progresses.
+-- `ZiskFv/Compliance/Dispatch/Dispatch/<Shape>.lean` as progresses.
 import ZiskFv.Compliance.FromTrust.Lui
 import ZiskFv.Compliance.FromTrust.Auipc
 import ZiskFv.Compliance.FromTrust.Jal
@@ -72,19 +72,19 @@ import ZiskFv.Compliance.FromTrust.Sw
 import ZiskFv.Compliance.FromTrust.Sd
 
 /-!
-# Compliance.lean — Global dispatcher (Step 4.3 of the wild-lynx plan)
+# Compliance.lean — Global dispatcher
 
 This file is the **architectural validation** that the 63
 independently-authored `equiv_<OP>_from_trust` wrappers under
 `ZiskFv/Compliance/Dispatch/` compose into a global theorem.
 
-## Status (Step 4.3 Phase 1 — partial)
+## Status
 
 This file currently lands the **decode-side scaffolding** plus a single
 representative shape dispatcher (`dispatch_ControlFlow_LUI`) to demonstrate
 the pattern. The full global theorem
 (`zisk_riscv_compliant_program_bus`) and the remaining eight shape
-dispatchers are tracked as Step 4.3 follow-up work and described in
+dispatchers are tracked as follow-up work and described in
 the structural commentary below.
 
 The follow-up work is concretely bounded — the wrapper signatures
@@ -267,7 +267,7 @@ file's module docstring.
     `rcases` disjunction depth at any one point.
 
     See the module docstring above for the full list of shape
-    dispatchers that will land here as Step 4.3 progresses. -/
+    dispatchers that will land here as progresses. -/
 lemma dispatch_LUI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)

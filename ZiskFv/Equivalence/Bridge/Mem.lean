@@ -24,7 +24,7 @@ stores (`SD` / `SB` / `SH` / `SW`).
 
 Unlike the BinaryAdd / Binary / BinaryExtension / Arith bridges,
 the Mem-side derivation infrastructure was authored *before* the
-Step 2 bridge convention was established. The bulk of the work
+bridge convention was established. The bulk of the work
 lives in:
 
 * `ZiskFv/Airs/MemoryBus/MemBridge.lean` — `lookup_consumer_matches_provider_load`
@@ -45,11 +45,11 @@ lives in:
 
 This module is a thin façade re-exporting those theorems under a
 single `Bridge.Mem` namespace alias so that downstream
-`equiv_<OP>` proofs (Step 3) can consume Mem-side discharges
+`equiv_<OP>` proofs can consume Mem-side discharges
 through the same import path the other bridges use.
 
 No new axioms; no new derivation. All Mem-side trust was already
-encoded prior to the Step 2 bridge convention; this file simply
+encoded prior to the bridge convention; this file simply
 groups it for uniform downstream access.
 -/
 

@@ -59,12 +59,11 @@ lemma equiv_XORI_sail
   PureSpec.execute_ITYPE_xori_pure_equiv
     xori_input r1 rd h_input_r1 h_input_imm h_input_rd h_input_pc
 
-/-- **Canonical equivalence (Step 4.2r3.I — structural-unpacking
-    refactor).** Sail's `execute_instruction` on an RV64 XORI equals
+/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64 XORI equals
     the state computed by applying `bus_effect` to the circuit's
     execution and memory bus rows.
 
-    Mirrors `equiv_ANDI` (Step 4.2r3.I) — see that theorem's docstring
+    Mirrors `equiv_ANDI` — see that theorem's docstring
     for the discharge chain. Differences from ANDI: `OP_AND → OP_XOR`,
     `match_clo_chi_AND → match_clo_chi_XOR`, `transpile_ANDI →
     transpile_XORI`, `WriteValueProofs.h_rd_val_logic_andi →

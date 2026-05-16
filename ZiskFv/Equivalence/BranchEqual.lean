@@ -78,7 +78,7 @@ lemma equiv_BEQ_sail
   PureSpec.execute_BEQ_pure_equiv beq_input imm h_input_imm h_input_r1 h_input_r2
     h_input_pc h_input_misa h_misa_c
 
-/-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64 BEQ
+/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64 BEQ
     equals the state computed by applying `bus_effect` to the circuit's
     execution and memory bus rows. The memory-bus component is empty
     for BEQ (no register write, no memory access). -/

@@ -371,7 +371,7 @@ def mul_carry_chain_holds (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
     `constraint_46_every_row` (the `bus_res1` normalization at
     `arith.pil:263`). Required by `equiv_MUL_from_trust` to discharge
     the hi-lane byte-pack equation via `mul_bus_res1_eq_c_hi`
-    (`Airs/Arith/Bridge1.lean`). Mirrors `div_row_constraints_with_c46`
+    (`Airs/Arith/BusRes1.lean`). Mirrors `div_row_constraints_with_c46`
     on the Div view. Compliance.lean's downstream caller will collapse
     this into a universal `∀ r, arith_mul_row_well_formed` parameter. -/
 @[simp]
@@ -614,9 +614,9 @@ lemma arith_mul_unsigned_packed_correct_bundled
 
 /-- **MUL-signed carry-chain specialization (bundled form).** Same as
     `arith_mul_signed_packed_correct` but consuming the bundled
-    `mul_carry_chain_holds` predicate. Used by the Step 4.alpha.A
-    bridge `mul_signed_chain_witnesses` to extract per-chunk identities
-    over named columns for downstream consumption by the signed ℤ
+    `mul_carry_chain_holds` predicate. Used by the bridge
+    `mul_signed_chain_witnesses` to extract per-chunk identities over
+    named columns for downstream consumption by the signed ℤ
     aggregator. -/
 lemma arith_mul_signed_packed_correct_bundled
     (v : Valid_ArithMul C F ExtF) (row : ℕ)

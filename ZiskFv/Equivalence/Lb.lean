@@ -68,7 +68,7 @@ lemma equiv_LB_sail
   PureSpec.execute_LOADB_pure_equiv
     lb_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** -/
+/-- **Canonical equivalence.** -/
 theorem equiv_LB
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lb_input : PureSpec.LbInput)

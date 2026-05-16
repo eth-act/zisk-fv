@@ -43,7 +43,7 @@ These specializations, combined with the carry-chain identity in
 "polynomial-identity" form.
 -/
 
-namespace ZiskFv.Airs.ArithBridge1
+namespace ZiskFv.Airs.ArithBusRes1
 
 open Goldilocks
 open Arith.extraction
@@ -141,4 +141,4 @@ lemma rem_bus_res1_eq_d_hi
              sub_zero, add_zero, zero_add] at h_c46
   linear_combination h_c46
 
-end ZiskFv.Airs.ArithBridge1
+end ZiskFv.Airs.ArithBusRes1

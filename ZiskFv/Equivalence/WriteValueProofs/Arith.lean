@@ -186,12 +186,12 @@ private lemma byte_sum_from_lane_match
     + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
     + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
     = spec_val.toNat := by
-  -- Step 1: bus_entry.c_lo = memory_entry_lo e2 (from h_clo + h_lo_match)
+  -- bus_entry.c_lo = memory_entry_lo e2 (from h_clo + h_lo_match)
   have h_lo_eq : bus_entry.c_lo = memory_entry_lo e2 := by
     rw [← h_clo, h_lo_match]
   have h_hi_eq : bus_entry.c_hi = memory_entry_hi e2 := by
     rw [← h_chi, h_hi_match]
-  -- Step 2: lift lo to Nat
+  -- lift lo to Nat
   -- memory_entry_lo e2 = e2.x0 + e2.x1*256 + e2.x2*65536 + e2.x3*16777216 : FGL
   -- Under byte ranges, this Nat sum < 2^32 < GL_prime, so the FGL.val equals the Nat sum.
   have h_lo_nat : (memory_entry_lo e2).val
@@ -202,7 +202,7 @@ private lemma byte_sum_from_lane_match
              + e2.x3.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
     rw [h_cast, Fin.val_natCast]
     apply Nat.mod_eq_of_lt; omega
-  -- Step 3: lift hi to Nat
+  -- lift hi to Nat
   have h_hi_nat : (memory_entry_hi e2).val
       = e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216 := by
     simp only [memory_entry_hi]
@@ -211,7 +211,7 @@ private lemma byte_sum_from_lane_match
              + e2.x7.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
     rw [h_cast, Fin.val_natCast]
     apply Nat.mod_eq_of_lt; omega
-  -- Step 4: rewrite c_lo.val and c_hi.val via the entry equalities
+  -- rewrite c_lo.val and c_hi.val via the entry equalities
   rw [h_lo_eq] at h_input_val
   rw [h_hi_eq] at h_input_val
   rw [h_lo_nat, h_hi_nat] at h_input_val
@@ -219,7 +219,7 @@ private lemma byte_sum_from_lane_match
   --   (x0.val + x1.val*256 + x2.val*65536 + x3.val*16777216)
   --   + (x4.val + x5.val*256 + x6.val*65536 + x7.val*16777216) * 4294967296
   --   = spec_val.toNat
-  -- Step 5: omega closes the rearrangement to the byte-sum form
+  -- omega closes the rearrangement to the byte-sum form
   omega
 
 /-! ## ADD (Tier 1 — fully derived from circuit constraints) -/
@@ -262,24 +262,24 @@ lemma h_rd_val_arith_add
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = add_input.r1_val + add_input.r2_val := by
-  -- Step 1: Extract the carry chain from h_circuit.
+  -- Extract the carry chain from h_circuit.
   obtain ⟨_, h_binary_core, h_bus_match, _⟩ := h_circuit
-  -- Step 2: Apply K1-A — BinaryAdd carry chain → BitVec 64 addition.
+  -- Apply K1-A — BinaryAdd carry chain → BitVec 64 addition.
   have h_bv_add := binary_add_chunks_eq_bv_add b r_binary h_binary_core h_a_range h_b_range h_c_range
-  -- Step 3: Extract c_lo / c_hi bus match equalities.
+  -- Extract c_lo / c_hi bus match equalities.
   -- From matches_entry, h_bus_match gives field equalities between Main and BinaryAdd bus rows.
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryAdd] at h_bus_match
   obtain ⟨_, _, _, _, _, _, h_match_clo, h_match_chi, _, _, _, _⟩ := h_bus_match
   -- h_match_clo : m.c_0 r_main = b.c_chunks_1 r_binary * 65536 + b.c_chunks_0 r_binary
   -- h_match_chi : m.c_1 r_main = b.c_chunks_3 r_binary * 65536 + b.c_chunks_2 r_binary
-  -- Step 4: From the rd lane match, extract c_0 / c_1 vs memory entry lo/hi.
+  -- From the rd lane match, extract c_0 / c_1 vs memory entry lo/hi.
   simp only [register_write_lanes_match] at h_lane_rd
   obtain ⟨h_c0_eq, h_c1_eq⟩ := h_lane_rd
   -- h_c0_eq : m.c_0 r_main = memory_entry_lo e2
   -- h_c1_eq : m.c_1 r_main = memory_entry_hi e2
-  -- Step 5: The c_chunks range bounds.
+  -- The c_chunks range bounds.
   obtain ⟨h_c0, h_c1, h_c2, h_c3⟩ := h_c_range
-  -- Step 6: Show the byte sum of e2 equals c_chunks in the K1-A form.
+  -- Show the byte sum of e2 equals c_chunks in the K1-A form.
   apply BitVec.eq_of_toNat_eq
   rw [ZiskFv.PackedBitVec.u64_toBV_of_bytes_toNat _ _ _ _ _ _ _ _
         h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7]
@@ -392,19 +392,19 @@ lemma h_rd_val_arith_addi
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = r1_val + BitVec.signExtend 64 imm := by
-  -- Step 1: Extract the carry chain from h_circuit.
+  -- Extract the carry chain from h_circuit.
   obtain ⟨_, h_binary_core, h_bus_match, _⟩ := h_circuit
-  -- Step 2: Apply K1-A — BinaryAdd carry chain → BitVec 64 addition.
+  -- Apply K1-A — BinaryAdd carry chain → BitVec 64 addition.
   have h_bv_add := binary_add_chunks_eq_bv_add b r_binary h_binary_core h_a_range h_b_range h_c_range
-  -- Step 3: Extract c_lo / c_hi bus match equalities.
+  -- Extract c_lo / c_hi bus match equalities.
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryAdd] at h_bus_match
   obtain ⟨_, _, _, _, _, _, h_match_clo, h_match_chi, _, _, _, _⟩ := h_bus_match
-  -- Step 4: From the rd lane match, extract c_0 / c_1 vs memory entry lo/hi.
+  -- From the rd lane match, extract c_0 / c_1 vs memory entry lo/hi.
   simp only [register_write_lanes_match] at h_lane_rd
   obtain ⟨h_c0_eq, h_c1_eq⟩ := h_lane_rd
-  -- Step 5: The c_chunks range bounds.
+  -- The c_chunks range bounds.
   obtain ⟨h_c0, h_c1, h_c2, h_c3⟩ := h_c_range
-  -- Step 6: Show the byte sum of e2 equals c_chunks in the K1-A form.
+  -- Show the byte sum of e2 equals c_chunks in the K1-A form.
   apply BitVec.eq_of_toNat_eq
   rw [ZiskFv.PackedBitVec.u64_toBV_of_bytes_toNat _ _ _ _ _ _ _ _
         h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7]
@@ -598,7 +598,7 @@ lemma h_rd_val_arith_addw
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = BitVec.signExtend 64 (BitVec.ofNat 32 a32sum + BitVec.ofNat 32 b32sum) := by
-  -- Step 1: K1-B ADDW lift.
+  -- K1-B ADDW lift.
   have h_bv := binary_addw_chunks_eq_bv_add_w
     a0 a1 a2 a3 b0 b1 b2 b3
     c0 c1 c2 c3 c4 c5 c6 c7
@@ -612,16 +612,16 @@ lemma h_rd_val_arith_addw
     h_cin0 h_cin1 h_cin2 h_cin3
     h_pi0 h_pi1 h_pi2 h_pi3
     h_sext_choice
-  -- Step 2: extract lane-match.
+  -- extract lane-match.
   simp only [register_write_lanes_match] at h_lane_rd
   obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
-  -- Step 3: derive byte-sum identity.
+  -- derive byte-sum identity.
   have h_byte_sum := byte_sum_from_chain_lane_match m r_main e2
     c0 c1 c2 c3 c4 c5 c6 c7
     h_match_clo h_match_chi h_lo_match h_hi_match
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
     hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
-  -- Step 4: tie to BitVec.signExtend output.
+  -- tie to BitVec.signExtend output.
   have h_target :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
       + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
@@ -772,7 +772,7 @@ lemma h_rd_val_arith_sub
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = r1_val - r2_val := by
-  -- Step 1: K1-B SUB lift.
+  -- K1-B SUB lift.
   have h_bv := binary_sub_chunks_eq_bv_sub
     a0 a1 a2 a3 a4 a5 a6 a7
     b0 b1 b2 b3 b4 b5 b6 b7
@@ -786,16 +786,16 @@ lemma h_rd_val_arith_sub
     hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
     h_cin0 h_cin1 h_cin2 h_cin3 h_cin4 h_cin5 h_cin6 h_cin7
     h_pi0 h_pi1 h_pi2 h_pi3 h_pi4 h_pi5 h_pi6 h_pi7
-  -- Step 2: extract lane-match.
+  -- extract lane-match.
   simp only [register_write_lanes_match] at h_lane_rd
   obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
-  -- Step 3: derive byte-sum identity from chain bus-match + lane-match.
+  -- derive byte-sum identity from chain bus-match + lane-match.
   have h_byte_sum := byte_sum_from_chain_lane_match m r_main e2
     c0 c1 c2 c3 c4 c5 c6 c7
     h_match_clo h_match_chi h_lo_match h_hi_match
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
     hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
-  -- Step 4: identify byte sum with (r1_val - r2_val).toNat via h_bv.
+  -- identify byte sum with (r1_val - r2_val).toNat via h_bv.
   have h_target :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
       + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
@@ -875,7 +875,7 @@ lemma h_rd_val_arith_subw
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = BitVec.signExtend 64 (BitVec.ofNat 32 a32sum - BitVec.ofNat 32 b32sum) := by
-  -- Step 1: Inline K1-B-style SUBW lift.
+  -- Inline K1-B-style SUBW lift.
   have h_bv := binary_subw_chunks_eq_bv_sub_w
     a0 a1 a2 a3 b0 b1 b2 b3
     c0 c1 c2 c3 c4 c5 c6 c7
@@ -889,16 +889,16 @@ lemma h_rd_val_arith_subw
     h_cin0 h_cin1 h_cin2 h_cin3
     h_pi0 h_pi1 h_pi2 h_pi3
     h_sext_choice
-  -- Step 2: extract lane-match.
+  -- extract lane-match.
   simp only [register_write_lanes_match] at h_lane_rd
   obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
-  -- Step 3: derive byte-sum identity.
+  -- derive byte-sum identity.
   have h_byte_sum := byte_sum_from_chain_lane_match m r_main e2
     c0 c1 c2 c3 c4 c5 c6 c7
     h_match_clo h_match_chi h_lo_match h_hi_match
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
     hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
-  -- Step 4: tie to the BitVec.signExtend output.
+  -- tie to the BitVec.signExtend output.
   have h_target :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
       + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776

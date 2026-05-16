@@ -8,15 +8,7 @@ import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 
 /-!
-# `equiv_LD` Compliance pilot — Mem-loads shape exemplar (Step 4.1.6)
-
-> **Status:** PILOT. Sixth shape exemplar (after DIV, LUI, ADD, SD,
-> SLL, OR). Demonstrates the discharge recipe applied to the
-> Mem-loads provider-AIR shape (LD / LBU / LHU / LWU — the
-> zero-extended / full-width loads through the copyb passthrough).
-> LD is the canonical exemplar — width 8, no high-byte zero-padding,
-> simplest within the shape.
-
+# `equiv_LD` trust-discharge wrapper — Mem-loads shape exemplar
 ## Why LD
 
 LD is the simplest load: all 8 bytes of `state.mem[ptr..ptr+7]` flow

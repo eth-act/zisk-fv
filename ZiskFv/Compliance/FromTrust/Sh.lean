@@ -9,7 +9,7 @@ import ZiskFv.Airs.MemoryBus
 /-!
 # `equiv_SH` Compliance wrapper — Mem-stores shape, 2-byte width
 
-> **Status:** wrapper (Step 4.2.r3.IV — Mem-stores narrow width).
+> **Status:** wrapper.
 > Mirrors `Compliance/FromTrust/Sb.lean` specialized to SH's 2-byte
 > store. Consumes `main_store_emission_bundle_sh` (class #4, NEW) via
 > `Bridge.Mem.sh_discharge_full` to discharge the bundled `h_mem_eq`

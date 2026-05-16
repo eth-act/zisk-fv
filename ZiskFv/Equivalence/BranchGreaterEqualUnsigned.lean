@@ -67,7 +67,7 @@ lemma equiv_BGEU_sail
   PureSpec.execute_BGEU_pure_equiv bgeu_input imm r1 r2 h_input_imm h_input_r1 h_input_r2
     h_input_pc h_input_misa h_misa_c
 
-/-- **Metaplan theorem.** -/
+/-- **Canonical equivalence.** -/
 theorem equiv_BGEU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bgeu_input : PureSpec.BgeuInput)

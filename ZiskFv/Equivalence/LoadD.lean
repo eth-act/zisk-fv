@@ -93,7 +93,7 @@ lemma equiv_LD_sail
   PureSpec.execute_LOADD_pure_equiv
     ld_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** Sail's `execute_instruction` on an LD equals
+/-- **Canonical equivalence.** Sail's `execute_instruction` on an LD equals
     the state computed by applying `bus_effect` to the circuit's
     execution + memory bus rows.
 

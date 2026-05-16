@@ -4,13 +4,13 @@ import ZiskFv.Equivalence.Rem
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
-import ZiskFv.Airs.Arith.Bridge1
+import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 
 /-!
-# `equiv_REM` Compliance exemplar (Step 4.2.A within-shape, ArithDiv signed secondary)
+# `equiv_REM` Compliance exemplar
 
 > Mirrors `DivPilot` but on the secondary lane:
 > opcode = 0xbb = 187, byte lanes target `d[]` (remainder),
@@ -164,7 +164,7 @@ theorem equiv_REM_from_trust
         = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 := by
     rw [h_byte_lo_to_c0, h_c0_val_eq]
   have h_bus_res1_eq : v.bus_res1 r_a = v.d_2 r_a + v.d_3 r_a * 65536 :=
-    ZiskFv.Airs.ArithBridge1.rem_bus_res1_eq_d_hi v r_a h_c46
+    ZiskFv.Airs.ArithBusRes1.rem_bus_res1_eq_d_hi v r_a h_c46
       h_sext h_m32 h_main_mul_zero h_main_div_zero
   have h_c1_val_eq : (m.c_1 r_main).val
       = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536 := by

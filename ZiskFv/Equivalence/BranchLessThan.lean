@@ -87,7 +87,7 @@ lemma equiv_BLT_sail
   PureSpec.execute_BLT_pure_equiv blt_input imm r1 r2 h_input_imm h_input_r1 h_input_r2
     h_input_pc h_input_misa h_misa_c
 
-/-- **Metaplan theorem.**
+/-- **Canonical equivalence.**
 
     `execute_instruction` on an RV64 BLT equals the state computed by
     applying `bus_effect` to the circuit's execution and memory bus rows.

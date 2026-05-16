@@ -6,14 +6,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 
 /-!
-# `equiv_LUI` Compliance pilot — ControlFlow non-branch shape exemplar (Step 4.1.1)
-
-> **Status:** PILOT. Second shape exemplar after DIV, the first
-> non-Arith shape. Demonstrates the discharge recipe applied to
-> ControlFlow non-branch (UTYPE LUI). Lives outside the canonical
-> surface (under `Compliance/FromTrust/`) so V1 anti-laundering
-> metrics on the canonical theorem are unaffected.
-
+# `equiv_LUI` trust-discharge wrapper — ControlFlow non-branch shape exemplar
 ## Why LUI
 
 LUI is the cheapest non-branch ControlFlow opcode:

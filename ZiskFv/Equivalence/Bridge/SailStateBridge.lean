@@ -10,7 +10,7 @@ import ZiskFv.Equivalence.Bridge.StateBridge
 /-!
 # Shared *discharge bridge* helper — Sail-state ↔ `RV64State`
 
-Step 1.7b of `/home/cody/.claude/plans/plan-to-completely-resolve-wild-lynx.md`.
+of `/home/cody/.claude/plans/plan-to-completely-resolve-per-opcode-discharge.md`.
 Closes the final step of the input-bridge derivation chain consumed by
 every ALU-shape *discharge bridge*.
 
@@ -22,7 +22,7 @@ read_xreg rs state = .ok r_val state          (caller-supplied; Sail-form)
 transpile_<OP> at (sail_to_rv64 state) rs     (trust-ledger)
   → m.a_0 r_main = lane_lo r_val
   → m.a_1 r_main = lane_hi r_val
-bv64_packed_eq_of_lanes (Step 1.7a)
+bv64_packed_eq_of_lanes
   → r_val = BitVec.ofNat 64 ((m.a_0).val + (m.a_1).val * 2^32)
 ```
 
@@ -34,7 +34,7 @@ the axiom there, and recover the lane equalities at `r_val`.
 
 (The universal-over-state shape of the `transpile_<OP>` family is a
 known *trust-ledger* coarsening — a sound formulation would
-existentially quantify the state. Step 1.7b extracts exactly the
+existentially quantify the state. extracts exactly the
 state-instantiation that the sound formulation would deliver. A
 narrowing PR for `transpile_<OP>` to existential form is tracked
 separately and does not affect this module's API.)
@@ -84,7 +84,7 @@ lemma sail_to_rv64_xreg_eq_of_read_xreg
     `r_val = BitVec.ofNat 64 (a_lo.val + a_hi.val * 2^32)`.
 
     Composes `sail_to_rv64_xreg_eq_of_read_xreg` (above) with
-    `bv64_packed_eq_of_lanes` (Step 1.7a). Opcode-independent — every
+    `bv64_packed_eq_of_lanes`. Opcode-independent — every
     `transpile_<OP>` lane-equality pair has this shape after the rs
     is the right register. -/
 lemma packed_lane_eq_of_read_xreg

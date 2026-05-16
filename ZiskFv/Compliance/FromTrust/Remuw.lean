@@ -4,12 +4,12 @@ import ZiskFv.Equivalence.Remuw
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
-import ZiskFv.Airs.Arith.Bridge1
+import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 
 /-!
-# `equiv_REMUW` Compliance exemplar (Step 4.2.r2 within-shape, ArithDiv W-unsigned secondary)
+# `equiv_REMUW` Compliance exemplar
 
 > W-mode mirror of `FromTrust/Remu.lean`. opcode = 0xbd = 189, m32 = 1.
 > Secondary lane (REMUW emits the remainder via `d[]`).

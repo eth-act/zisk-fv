@@ -158,8 +158,8 @@ theorem equiv_SUBW
   have hb2 : (v.free_in_b_2 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_2_lt_256 v r_binary
   have hb3 : (v.free_in_b_3 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_3_lt_256 v r_binary
   -- Input bridges: derive `h_input_r{1,2}_extract` (low-32-bit extract
-  -- form) from `transpile_SUBW` (state-bridged via Step 1.7b) plus
-  -- `matches_entry`'s a_lo / b_lo conjuncts (the a_hi / b_hi conjuncts
+  -- form) from `transpile_SUBW` (state-bridged via `SailStateBridge`)
+  -- plus `matches_entry`'s a_lo / b_lo conjuncts (the a_hi / b_hi conjuncts
   -- under m32=1 are not consumed — `extractLsb 31 0` projects to the
   -- low 32 bits only).
   have h_input_r1_extract :

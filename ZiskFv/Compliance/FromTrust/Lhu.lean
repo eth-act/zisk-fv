@@ -8,7 +8,7 @@ import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 
 /-!
-# `equiv_LHU` Compliance wrapper — Mem-loads (zero-ext) shape (Step 4.2)
+# `equiv_LHU` Compliance wrapper — Mem-loads (zero-ext) shape
 
 Within-shape companion to `FromTrust/Ld.lean` / `FromTrust/Lbu.lean`.
 Zero new axioms.

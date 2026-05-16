@@ -84,7 +84,7 @@ lemma equiv_SLL_sail
     internally from circuit witnesses via the
     `WriteValueProofs.BinaryShift.h_rd_val_shift_sll` discharge lemma.
 
-    **Step 3.alpha.2 canonical exemplar for the BinaryExtension shape.**
+    **Canonical exemplar for the BinaryExtension shape.**
     17 *promise hypotheses* dropped from caller burden — `h_a_range`
     (8 a-byte ranges, as a single bundled struct binder) + 16 c-byte
     32-bit range hypotheses (`hc_lo_0..7`, `hc_hi_0..7`) — all derived

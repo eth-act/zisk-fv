@@ -4,12 +4,12 @@ import ZiskFv.Equivalence.Mul
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
-import ZiskFv.Airs.Arith.Bridge1
+import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 
 /-!
-# `equiv_MUL` Compliance exemplar (Step 4.1.8, ArithMul shape pilot)
+# `equiv_MUL` Compliance exemplar
 
 > **Status:** EXEMPLAR. Not part of the canonical `equiv_<OP>` surface
 > (lives outside `ZiskFv/Equivalence/Mul.lean`). Demonstrates the
@@ -26,7 +26,7 @@ import ZiskFv.Airs.MemoryBus.MemBridge
 >   shared with the DIV pilot) composed with the op-bus `matches_entry`
 >   projection plus the FGL → ℕ chunk-range lift for the lo side, and
 >   composed additionally with `mul_bus_res1_eq_c_hi`
->   (`Airs/Arith/Bridge1.lean:56`) for the hi side. The
+>   (`Airs/Arith/BusRes1.lean:56`) for the hi side. The
 >   `main_mul = 1`, `main_div = 0` selector pins that
 >   `mul_bus_res1_eq_c_hi` consumes come from the second new class-#6b
 >   axiom `arith_table_op_mul_main_selector_pin` (mirror of
@@ -210,7 +210,7 @@ theorem equiv_MUL_from_trust
     rw [h_byte_lo_to_c0, h_c0_val_eq]
   -- Hi lane via mul_bus_res1_eq_c_hi.
   have h_bus_res1_eq : v.bus_res1 r_a = v.c_2 r_a + v.c_3 r_a * 65536 :=
-    ZiskFv.Airs.ArithBridge1.mul_bus_res1_eq_c_hi v r_a h_c46
+    ZiskFv.Airs.ArithBusRes1.mul_bus_res1_eq_c_hi v r_a h_c46
       h_sext h_m32 h_main_mul_one h_main_div_zero
   have h_c1_val_eq : (m.c_1 r_main).val
       = (v.c_2 r_a).val + (v.c_3 r_a).val * 65536 := by

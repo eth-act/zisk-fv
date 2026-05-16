@@ -405,7 +405,7 @@ def div_carry_chain_holds (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
     `constraint_46_every_row` (the `bus_res1` normalization at
     `arith.pil:263`). Required by `equiv_DIV_from_trust` to discharge
     the hi-lane byte-pack equation via `div_bus_res1_eq_a_hi`
-    (`Airs/Arith/Bridge1.lean`). Compliance.lean's downstream caller
+    (`Airs/Arith/BusRes1.lean`). Compliance.lean's downstream caller
     will collapse this into the universal `∀ r, arith_div_row_well_formed`
     parameter. -/
 @[simp]
@@ -623,9 +623,9 @@ lemma arith_div_unsigned_packed_correct_bundled
 
 /-- **DIV-signed carry-chain specialization (bundled form).** Same as
     `arith_div_signed_packed_correct` but consuming the bundled
-    `div_carry_chain_holds` predicate. Used by the Step 4.alpha.A
-    bridge `div_signed_chain_witnesses` to extract per-chunk identities
-    over named columns for downstream consumption by the signed ℤ
+    `div_carry_chain_holds` predicate. Used by the bridge
+    `div_signed_chain_witnesses` to extract per-chunk identities over
+    named columns for downstream consumption by the signed ℤ
     aggregator. -/
 lemma arith_div_signed_packed_correct_bundled
     (v : Valid_ArithDiv C F ExtF) (row : ℕ)

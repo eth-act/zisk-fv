@@ -6,15 +6,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 
 /-!
-# `equiv_BEQ` Compliance pilot — ControlFlow branches shape exemplar (Step 4.1.7)
-
-> **Status:** PILOT. Sixth shape exemplar (after DIV, ADD, SD, OR, SLL,
-> LUI). Demonstrates the discharge recipe applied to the ControlFlow
-> *branch* sub-shape, complementing `FromTrust/Lui.lean` (ControlFlow
-> non-branch). Lives outside the canonical surface (under
-> `Compliance/FromTrust/`) so V1 anti-laundering metrics on the
-> canonical theorem are unaffected.
-
+# `equiv_BEQ` trust-discharge wrapper — ControlFlow branches shape exemplar
 ## Why BEQ
 
 BEQ is the cheapest branch in RV64IM:

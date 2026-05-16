@@ -4,13 +4,13 @@ import ZiskFv.Equivalence.MulW
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
-import ZiskFv.Airs.Arith.Bridge1
+import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 
 /-!
-# `equiv_MULW` Compliance exemplar (Step 4.2 r3.III, W-mode signed low-32 MUL)
+# `equiv_MULW` Compliance exemplar
 
 > **Status:** EXEMPLAR. Not part of the canonical `equiv_<OP>` surface
 > (lives outside `ZiskFv/Equivalence/MulW.lean`). W-mode primary-lane

@@ -218,7 +218,7 @@ lemma bin_carry_7_is_boolean (v : Valid_Binary C FGL FGL) (r : ℕ) :
     rw [h_eq]; ring
 
 /-! ## Binary table-pin: `b_op_or_sext = OP_OR` for OR-tagged rows
-    (Step 4.1.4 — Binary shape exemplar, OR pilot)
+   
 
 `opBus_row_Binary v r` emits the on-bus opcode as `b_op + 16 * mode32`
 (per `binary.pil:156`'s `proves_operation(op: b_op + 0x10 * mode32, …)`).

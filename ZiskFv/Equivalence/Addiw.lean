@@ -177,7 +177,7 @@ theorem equiv_ADDIW
   have hb3 : (v.free_in_b_3 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_3_lt_256 v r_binary
   -- Derive `h_input_r1_extract` from `transpile_ADDIW` (ITYPE shape:
   -- single register read, b-lanes caller-routed for immediate) +
-  -- Step 1.7b SailStateBridge + `matches_entry`'s a_lo conjunct.
+  -- SailStateBridge + `matches_entry`'s a_lo conjunct.
   have h_input_r1_extract :
       (Sail.BitVec.extractLsb addiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
       = ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256

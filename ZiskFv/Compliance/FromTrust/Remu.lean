@@ -4,12 +4,12 @@ import ZiskFv.Equivalence.Remu
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
-import ZiskFv.Airs.Arith.Bridge1
+import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 
 /-!
-# `equiv_REMU` Compliance exemplar (Step 4.2.A within-shape, ArithDiv unsigned secondary)
+# `equiv_REMU` Compliance exemplar
 
 > Mirrors `DivuExemplar` (unsigned mode) but on the **secondary** lane:
 > opcode = 0xb9 = 185, byte lanes target `d[]` (remainder), hi-lane via
@@ -141,7 +141,7 @@ theorem equiv_REMU_from_trust
     rw [h_byte_lo_to_c0, h_c0_val_eq]
   -- Hi lane via rem_bus_res1_eq_d_hi (secondary: d[2..3]).
   have h_bus_res1_eq : v.bus_res1 r_a = v.d_2 r_a + v.d_3 r_a * 65536 :=
-    ZiskFv.Airs.ArithBridge1.rem_bus_res1_eq_d_hi v r_a h_c46
+    ZiskFv.Airs.ArithBusRes1.rem_bus_res1_eq_d_hi v r_a h_c46
       h_sext h_m32 h_main_mul_zero h_main_div_zero
   have h_c1_val_eq : (m.c_1 r_main).val
       = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536 := by

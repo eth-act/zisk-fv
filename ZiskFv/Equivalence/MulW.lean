@@ -27,12 +27,11 @@ must be authored with a MULW-specific mode predicate (the archetype
 macro hardcodes `m32 = 0`). See `Circuit.MulW` for the compositional
 statement.
 
-Step 4: Structural-unpacking refactor replacing the single
-`h_byte_mulw` promise hypothesis with the explicit Tier-3 binders
-mirroring MULH but specialized for W-mode (`m32 = 1`) and adding
-`h_sext_choice` for the W sign-extension on bytes 4..7 (same trust
-class as ADDW's `h_sext_choice` and DIVUW/REMUW's W-mode sign
-extension).
+The single `h_byte_mulw` promise hypothesis is replaced with the
+explicit Tier-3 binders mirroring MULH but specialized for W-mode
+(`m32 = 1`), adding `h_sext_choice` for the W sign-extension on
+bytes 4..7 (same trust class as ADDW's `h_sext_choice` and
+DIVUW/REMUW's W-mode sign extension).
 -/
 
 namespace ZiskFv.Equivalence.MulW
@@ -89,7 +88,7 @@ lemma equiv_MULW_sail
     `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_mulw_chunked`
     discharge lemma.
 
-    Step 4 structural-unpacking refactor with 17 ADDED binders (16 MUL
+    structural-unpacking refactor with 17 ADDED binders (16 MUL
     base shape + `h_sext_choice` for W-mode sign-extension on bytes
     4..7). -/
 theorem equiv_MULW

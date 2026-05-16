@@ -57,7 +57,7 @@ lemma equiv_SD_sail
   PureSpec.execute_STORED_pure_equiv
     sd_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** Discharges via structural bus hypotheses
+/-- **Canonical equivalence.** Discharges via structural bus hypotheses
     plus ptr/byte match parameters that bridge the bus's mem-write
     entry to Sail's `modify_memory_8` shape. -/
 theorem equiv_SD

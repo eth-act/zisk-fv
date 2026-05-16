@@ -8,10 +8,10 @@ import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 
 /-!
-# `equiv_LBU` Compliance wrapper — Mem-loads (zero-ext) shape (Step 4.2)
+# `equiv_LBU` Compliance wrapper — Mem-loads (zero-ext) shape
 
 > **Status:** within-shape wrapper, derived mechanically from
-> `FromTrust/Ld.lean` (Step 4.1.6). Lives outside the canonical
+> `FromTrust/Ld.lean`. Lives outside the canonical
 > surface so V1 anti-laundering metrics on the canonical theorem
 > are unaffected.
 

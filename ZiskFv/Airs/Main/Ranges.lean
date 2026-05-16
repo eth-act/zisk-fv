@@ -30,9 +30,9 @@ Lean. This file packages that consequence as a **single axiom**
 
 The axiom delivers the universal-over-rows column bounds the per-shape
 discharge bridges
-(`ZiskFv/Equivalence/Bridge/<Shape>.lean`, see Step 2 of
+(`ZiskFv/Equivalence/Bridge/<Shape>.lean`, see of
 `docs/fv/plans/op-bus-and-global-compliance.md` and the resolution
-plan at `/home/cody/.claude/plans/plan-to-completely-resolve-wild-lynx.md`)
+plan at `/home/cody/.claude/plans/plan-to-completely-resolve-per-opcode-discharge.md`)
 need to drop the per-opcode `h_a_range` / `h_b_range` / `h_c_range`
 caller hypotheses.
 

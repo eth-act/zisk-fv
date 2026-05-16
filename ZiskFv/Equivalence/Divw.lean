@@ -168,17 +168,17 @@ theorem equiv_DIVW
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  -- Step 1: byte-range bounds.
+  -- byte-range bounds.
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
-  -- Step 2: W-mode operand chunk pin (a_2=a_3=b_2=b_3=d_2=d_3=0).
+  -- W-mode operand chunk pin (a_2=a_3=b_2=b_3=d_2=d_3=0).
   have h_w_pin :=
     ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin v r_a h_sext h_m32 h_div h_op
   obtain ⟨h_a2_eq, h_a3_eq, h_b2_eq, h_b3_eq, h_d2_eq, h_d3_eq⟩ := h_w_pin
-  -- Step 3: signed-W sign-of-D pin.
+  -- signed-W sign-of-D pin.
   have h_nr_pin_fgl :=
     ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin
       v r_a h_sext h_m32 h_div h_op_signed
-  -- Step 4: convert h_nr_pin_fgl to the toIntZ form used by the discharge.
+  -- convert h_nr_pin_fgl to the toIntZ form used by the discharge.
   have h_nr_pin :
       ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
         = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
@@ -186,7 +186,7 @@ theorem equiv_DIVW
     rcases h_nr_pin_fgl with h_eq | ⟨hd0, hd1, _hd2, _hd3⟩
     · left; rw [h_eq]
     · right; exact ⟨hd0, hd1⟩
-  -- Step 5: chunked rd-val discharge.
+  -- chunked rd-val discharge.
   have h_rd_val :=
     ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_divw_chunked
       divw_input.r1_val divw_input.r2_val e2 v r_a

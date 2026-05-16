@@ -10,9 +10,9 @@ import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Tactics.ALUITypeArchetype
 
 /-!
-# `equiv_ADDI` Compliance wrapper — BinaryAdd ITYPE shape (Step 4.2r3.I)
+# `equiv_ADDI` Compliance wrapper — BinaryAdd ITYPE shape
 
-> **Status:** Step 4.2 round 3.I (ITYPE constructibility bundles).
+> **Status:** round 3.I (ITYPE constructibility bundles).
 > Mirrors `FromTrust/Add.lean` for ADD, with the ITYPE-specific
 > immediate-routing addition (`h_addi_subset`).
 >

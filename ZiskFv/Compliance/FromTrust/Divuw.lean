@@ -4,12 +4,12 @@ import ZiskFv.Equivalence.Divuw
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
-import ZiskFv.Airs.Arith.Bridge1
+import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 
 /-!
-# `equiv_DIVUW` Compliance exemplar (Step 4.2.r2 within-shape, ArithDiv W-unsigned primary)
+# `equiv_DIVUW` Compliance exemplar
 
 > W-mode mirror of `FromTrust/Divu.lean`. opcode = 0xbc = 188, m32 = 1.
 > Discharges what the trust ledger covers:

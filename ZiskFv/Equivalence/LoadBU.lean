@@ -64,7 +64,7 @@ lemma equiv_LBU_sail
   PureSpec.execute_LOADBU_pure_equiv
     lbu_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** -/
+/-- **Canonical equivalence.** -/
 theorem equiv_LBU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lbu_input : PureSpec.LbuInput)

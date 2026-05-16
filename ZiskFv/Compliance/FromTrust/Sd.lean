@@ -7,14 +7,7 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
 
 /-!
-# `equiv_SD` Compliance pilot — Mem-stores shape exemplar (Step 4.1.3)
-
-> **Status:** PILOT. Fourth shape exemplar (after DIV, LUI, ADD).
-> Demonstrates the discharge recipe applied to the Mem-stores
-> provider-AIR shape (SD / SW / SH / SB). SD is the canonical
-> exemplar — width 8, no high-byte zero-padding, simplest within
-> the shape.
-
+# `equiv_SD` trust-discharge wrapper — Mem-stores shape exemplar
 ## Why SD
 
 SD is the simplest store: all 8 bytes of `xreg rs2` flow through

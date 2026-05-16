@@ -4,13 +4,13 @@ import ZiskFv.Equivalence.Remw
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
-import ZiskFv.Airs.Arith.Bridge1
+import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 
 /-!
-# `equiv_REMW` Compliance exemplar (Step 4.2.r2 within-shape, ArithDiv W-signed secondary)
+# `equiv_REMW` Compliance exemplar
 
 > W-mode signed secondary lane wrapper. opcode = 0xbf = 191, m32 = 1.
 > Mirror of `FromTrust/Divw.lean` with secondary op-bus row +

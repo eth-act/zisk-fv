@@ -11,7 +11,7 @@ import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Tactics.ALUITypeArchetype
 
 /-!
-# `equiv_XORI` Compliance wrapper — Binary ITYPE shape (Step 4.2r3.I)
+# `equiv_XORI` Compliance wrapper — Binary ITYPE shape
 
 Mass-author clone of `FromTrust/Andi.lean` with `AND → XOR`. Consumes
 `binary_b_op_or_sext_eq_OP_XOR` (class #6, parallel to `_OP_AND`).

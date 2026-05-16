@@ -8,19 +8,7 @@ import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.Binary.BinaryExtension
 
 /-!
-# `equiv_SLL` Compliance pilot — BinaryExtension shape exemplar (Step 4.1.5)
-
-> **Status:** PILOT. Fourth shape exemplar after DIV (`FromTrust/Div.lean`,
-> the Arith provider-AIR shape), LUI (`FromTrust/Lui.lean`, the
-> Main-only ControlFlow non-branch shape), and ADD (`FromTrust/Add.lean`,
-> the BinaryAdd provider-AIR shape). Demonstrates the discharge
-> recipe applied to the BinaryExtension provider-AIR shape — the
-> cleanest of the 14 BinExt-shape ops (un-cascaded, no sign-ext).
->
-> Lives outside the canonical surface (under
-> `Compliance/FromTrust/`) so V1 anti-laundering metrics on the
-> canonical theorem are unaffected.
-
+# `equiv_SLL` trust-discharge wrapper
 ## Why SLL
 
 SLL is the canonical exemplar for the BinaryExtension shape (which
@@ -148,7 +136,7 @@ because:
   program-counter handshake — shared across all opcodes.
 * `h_lane_rd` will be discharged from
   `memory_bus_register_write_perm_sound` once the Mem-side AIR data
-  is plumbed through Compliance.lean (Step 4.1.x Mem pilot).
+  is plumbed through Compliance.lean.
 
 ## Cross-shape lessons
 
@@ -208,10 +196,9 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     4. The activation + opcode pins on Main (`h_main_active`,
        `h_main_op`). Both come from Compliance.lean's program-counter
        handshake on the row hosting the SLL instruction.
-    5. The lane-match for the rd-write entry (`h_lane_rd`). Currently
-       caller-supplied; the Mem pilot (Step 4.1.x) will discharge
-       this from `memory_bus_register_write_perm_sound` once the
-       Mem-side AIR data is plumbed through Compliance.lean.
+    5. The lane-match for the rd-write entry (`h_lane_rd`) —
+       caller-supplied; discharged downstream from
+       `memory_bus_register_write_perm_sound`.
     6. The Sail-side state predicates (SPEC-PRE):
        `h_input_r1_sail`, `h_input_r2_sail`, `h_input_rd`, `h_input_pc`.
     7. The bus-protocol structural hypotheses — pass-through from
@@ -268,9 +255,8 @@ theorem equiv_SLL_from_trust
     -- the Main AIR's ROM handshake on the row hosting SLL.
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL)
-    -- Lane-match for the rd-write entry. Currently caller-supplied;
-    -- the Mem pilot will discharge this from
-    -- `memory_bus_register_write_perm_sound`.
+    -- Lane-match for the rd-write entry — caller-supplied; discharged
+    -- downstream from `memory_bus_register_write_perm_sound`.
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by

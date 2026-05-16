@@ -60,8 +60,7 @@ lemma equiv_ANDI_sail
   PureSpec.execute_ITYPE_andi_pure_equiv
     andi_input r1 rd h_input_r1 h_input_imm h_input_rd h_input_pc
 
-/-- **Canonical equivalence (Step 4.2r3.I — structural-unpacking
-    refactor).** Sail's `execute_instruction` on an RV64 ANDI equals
+/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64 ANDI equals
     the state computed by applying `bus_effect` to the circuit's
     execution and memory bus rows.
 

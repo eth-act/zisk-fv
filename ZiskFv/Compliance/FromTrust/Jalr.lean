@@ -6,10 +6,10 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 
 /-!
-# `equiv_JALR` Compliance wrapper — ControlFlow non-branch (Step 4.2)
+# `equiv_JALR` Compliance wrapper — ControlFlow non-branch
 
 > **Status:** within-shape wrapper, derived mechanically from
-> `FromTrust/Lui.lean` (Step 4.1.1). Lives outside the canonical
+> `FromTrust/Lui.lean`. Lives outside the canonical
 > surface so V1 anti-laundering metrics on the canonical theorem
 > are unaffected.
 

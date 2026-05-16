@@ -13,7 +13,7 @@ import ZiskFv.Tactics.ALUITypeArchetype
 /-!
 # `equiv_ADDIW` Compliance wrapper — Binary W-mode + ITYPE chain shape
 
-Final wrapper closing Step 4.2 mass authoring (op 63/63). Combines:
+Final wrapper closing mass authoring (op 63/63). Combines:
 
 * The W-mode 6-field Binary chain (round 4.B; cf. `AddwExemplar`):
   `binary_consumer_byte_match_chain_pin` (bytes 0..3) +

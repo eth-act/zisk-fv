@@ -107,7 +107,7 @@ example
       = (((k₀.val * 4294967296 + c₁.val * 65536 + c₀.val : ℕ)) : FGL) := by
     push_cast; ring
   rw [h_lhs_cast, h_rhs_cast] at h_fgl
-  -- Step 3: lift to ℕ via the toolkit, supplying per-side bounds.
+  -- lift to ℕ via the toolkit, supplying per-side bounds.
   apply fgl_eq_to_nat_eq h_fgl
   · -- LHS bound: a₀.val + b₀.val < 2³³ < GL_prime.
     omega

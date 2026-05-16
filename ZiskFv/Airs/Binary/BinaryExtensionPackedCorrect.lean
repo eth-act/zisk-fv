@@ -2202,7 +2202,7 @@ private lemma sllw_bv_core
   --   ((a32 * 2^sft) % 2^32) % 2^64
   --     + (if ((BitVec.ofNat 32 a32) <<< sft).msb then 2^64 - 2^32 else 0)
   --   = (cl_sum + ch_sum * 4294967296) % 2^64
-  -- Step 1: rewrite the inner msb to a Nat condition.
+  -- rewrite the inner msb to a Nat condition.
   have h_inner_lt : (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) * 2 ^ sft % 2 ^ 32 < 2 ^ 32 :=
     Nat.mod_lt _ (Nat.two_pow_pos 32)
   have h_inner_lt_64 : (a0v + a1v * 256 + a2v * 65536 + a3v * 16777216) * 2 ^ sft % 2 ^ 32 < 2 ^ 64 := by

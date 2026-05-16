@@ -63,7 +63,7 @@ lemma equiv_FENCE_sail
   PureSpec.execute_FENCE_pure_equiv fence_input fm pred succ rs rd
     h_input_pc h_input_priv
 
-/-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64
+/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64
     FENCE equals `(bus_effect exec_row [] state).2`. Composes
     `equiv_FENCE_sail` with `bus_effect_matches_sail_beq` (FENCE
     uses the same empty-memory-bus shape as branches). -/

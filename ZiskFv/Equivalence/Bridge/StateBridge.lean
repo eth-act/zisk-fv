@@ -8,8 +8,7 @@ import ZiskFv.Trusted.Transpiler
 /-!
 # Shared *discharge bridge* helper — packed-lane BitVec reconstruction
 
-Helper for every per-shape *discharge bridge* (Step 2 of
-`/home/cody/.claude/plans/plan-to-completely-resolve-wild-lynx.md`).
+Helper for every per-shape *discharge bridge*.
 
 When discharging the per-opcode `h_input_r1_main` / `h_input_r2_main`
 *promise hypotheses* — currently of the form

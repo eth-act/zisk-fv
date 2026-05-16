@@ -104,7 +104,7 @@ theorem equiv_AND
         (instruction.RTYPE (r2, r1, rd, rop.AND))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
   -- 24 byte-range *promise hypotheses* on Binary AIR columns
-  -- discharged via Step 2b's `byte_ranges_at_holds` helper.
+  -- discharged via `byte_ranges_at_holds` helper.
   obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7,
           hb0, hb1, hb2, hb3, hb4, hb5, hb6, hb7,
           hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7⟩ :=

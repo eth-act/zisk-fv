@@ -397,10 +397,10 @@ ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 035 h_op2_ne [bridge] div_i
 ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 036 h_no_overflow [bridge] ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1)
 ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 037 _ [other] constructibility
 ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 038 _ [other] constraints 6-8 + 31-38
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 039 `bus_res1` [other] 263`, required for -- the GAP-A hi-lane discharge via `div_bus_res1_eq_a_hi`
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 040 normalization [other] 263`, required for -- the GAP-A hi-lane discharge via `div_bus_res1_eq_a_hi`
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 041 at [other] 263`, required for -- the GAP-A hi-lane discharge via `div_bus_res1_eq_a_hi`
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 042 `arith.pil [other] 263`, required for -- the GAP-A hi-lane discharge via `div_bus_res1_eq_a_hi`
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 039 `bus_res1` [other] 263`, required for -- the hi-lane discharge via `div_bus_res1_eq_a_hi`
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 040 normalization [other] 263`, required for -- the hi-lane discharge via `div_bus_res1_eq_a_hi`
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 041 at [other] 263`, required for -- the hi-lane discharge via `div_bus_res1_eq_a_hi`
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 042 `arith.pil [other] 263`, required for -- the hi-lane discharge via `div_bus_res1_eq_a_hi`
 ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 043 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
 ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 044 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a = 1
 ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 045 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1

@@ -67,7 +67,7 @@ lemma equiv_LHU_sail
   PureSpec.execute_LOADHU_pure_equiv
     lhu_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** -/
+/-- **Canonical equivalence.** -/
 theorem equiv_LHU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lhu_input : PureSpec.LhuInput)

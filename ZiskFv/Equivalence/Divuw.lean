@@ -153,24 +153,24 @@ theorem equiv_DIVUW
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, true))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  -- Step 1: chunk-range bounds.
+  -- chunk-range bounds.
   obtain ⟨h_a0, h_a1, h_a2, h_a3,
           h_b0, h_b1, h_b2, h_b3,
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
     ZiskFv.Equivalence.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a
-  -- Step 2: W-unsigned chain witnesses.
+  -- W-unsigned chain witnesses.
   obtain ⟨cy₀, cy₁, cy₂, cy₃, cy₄, cy₅, cy₆,
           h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6,
           hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ :=
     ZiskFv.Equivalence.Bridge.Arith.div_w_unsigned_chain_witnesses v r_a h_chain
       h_na h_nb h_np h_nr h_sext h_m32 h_div
-  -- Step 3: W-mode operand chunk pin (a_2=a_3=b_2=b_3=d_2=d_3=0).
+  -- W-mode operand chunk pin (a_2=a_3=b_2=b_3=d_2=d_3=0).
   obtain ⟨h_a2_eq, h_a3_eq, h_b2_eq, h_b3_eq, h_d2_eq, h_d3_eq⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin v r_a h_sext h_m32 h_div h_op
-  -- Step 4: byte-range bounds.
+  -- byte-range bounds.
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
-  -- Step 5: chunked rd-val discharge.
+  -- chunked rd-val discharge.
   have h_rd_val :=
     ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_divuw_chunked
       divuw_input.r1_val divuw_input.r2_val e2

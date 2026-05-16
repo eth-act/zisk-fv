@@ -88,7 +88,7 @@ lemma equiv_BNE_sail
   PureSpec.execute_BNE_pure_equiv bne_input imm r1 r2 h_input_imm h_input_r1 h_input_r2
     h_input_pc h_input_misa h_misa_c
 
-/-- **Metaplan theorem.**
+/-- **Canonical equivalence.**
 
     `execute_instruction` on an RV64 BNE equals the state computed by
     applying `bus_effect` to the circuit's execution and memory bus rows.

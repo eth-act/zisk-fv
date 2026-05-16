@@ -28,7 +28,7 @@ write). There is no separate Provider AIR for arithmetic — the
 "discharge" reduces to:
 
 * For branches: derive `r1_val` and `r2_val` packed-lane forms
-  from `transpile_<BRANCH>` + Step 1.7b's `SailStateBridge`.
+  from `transpile_<BRANCH>` + `SailStateBridge`.
   Each `transpile_<BRANCH>` axiom shares the same shape: 5 mode
   pins then `a_0 = lane_lo (state.xreg rs1)`, `a_1 = lane_hi
   (state.xreg rs1)`, `b_0 = lane_lo (state.xreg rs2)`, `b_1 =
@@ -69,7 +69,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     conjuncts opaquely so all 6 branches can share it.
 
     Internally calls `packed_lane_eq_of_read_xreg` once per
-    register. No new axioms; pure composition of Step 1.7a + 1.7b
+    register. No new axioms; pure composition of + 1.7b
     infrastructure. -/
 lemma branch_input_bridges_of_read_xreg
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

@@ -6,7 +6,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 
 /-!
-# `equiv_BNE` Compliance wrapper — ControlFlow branches (Step 4.2)
+# `equiv_BNE` Compliance wrapper — ControlFlow branches
 
 Within-shape companion to `FromTrust/Beq.lean`. The pure-spec
 `throws` / `fails` / `success` formula on BNE is structurally

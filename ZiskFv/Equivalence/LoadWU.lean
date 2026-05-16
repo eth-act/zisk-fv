@@ -67,7 +67,7 @@ lemma equiv_LWU_sail
   PureSpec.execute_LOADWU_pure_equiv
     lwu_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** Uses structural bus hypotheses + a
+/-- **Canonical equivalence.** Uses structural bus hypotheses + a
     memory-model bridge with a zero-extension witness on the high bytes. -/
 theorem equiv_LWU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

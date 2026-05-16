@@ -457,7 +457,7 @@ lemma binary_and_chunks_eq_bv_and
         + (v.free_in_c_4 row).val * 4294967296 + (v.free_in_c_5 row).val * 1099511627776
         + (v.free_in_c_6 row).val * 281474976710656
         + (v.free_in_c_7 row).val * 72057594037927936) := by
-  -- Step 1: byte-level Nat relations from the trusted consumer axiom.
+  -- byte-level Nat relations from the trusted consumer axiom.
   have hc0 := byte_eq_AND_of_consumer_match _ _ _ h_byte_0
   have hc1 := byte_eq_AND_of_consumer_match _ _ _ h_byte_1
   have hc2 := byte_eq_AND_of_consumer_match _ _ _ h_byte_2
@@ -466,8 +466,8 @@ lemma binary_and_chunks_eq_bv_and
   have hc5 := byte_eq_AND_of_consumer_match _ _ _ h_byte_5
   have hc6 := byte_eq_AND_of_consumer_match _ _ _ h_byte_6
   have hc7 := byte_eq_AND_of_consumer_match _ _ _ h_byte_7
-  -- Step 2: rewrite each c_i.val to a_i.val &&& b_i.val on the RHS.
-  -- Step 3: apply byte_sum_and to fold the byte-AND sum into a single
+  -- rewrite each c_i.val to a_i.val &&& b_i.val on the RHS.
+  -- apply byte_sum_and to fold the byte-AND sum into a single
   -- AND of byte sums on the result side, then close via BitVec.ofNat_and.
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.and_eq]
@@ -1449,13 +1449,13 @@ lemma binary_ltu_chunks_eq_bv_ult
   -- Initial step: byte 0, with Aprev = 0, Bprev = 0, W = 1.
   -- The "cin" here is 0 (cin_0 = 0). Predicate cin = 1 ↔ 0 < 0 is False ↔ False, vacuous.
   have h_init : cin0.val = 1 ↔ (0 : ℕ) < 0 := by rw [h_cin0]; simp
-  -- step 0: cout_0 = 1 ↔ Aprev_1 < Bprev_1 where Aprev_1 = a_0·1 = a_0, etc.
+  -- cout_0 = 1 ↔ Aprev_1 < Bprev_1 where Aprev_1 = a_0·1 = a_0, etc.
   have step0 := ltu_step cin0.val a0.val b0.val (fl0.val % 2)
     0 0 1 (by norm_num) (by norm_num) (by norm_num)
     (by rw [h_cin0]; norm_num) hf0 h0_lt h0_eq h0_gt h_init
   simp only [Nat.mul_one, Nat.zero_add] at step0
   -- step0 : fl0.val % 2 = 1 ↔ a0.val < b0.val
-  -- step 1: W = 256, Aprev = a0, Bprev = b0.
+  -- W = 256, Aprev = a0, Bprev = b0.
   have step1 := ltu_step cin1.val a1.val b1.val (fl1.val % 2)
     a0.val b0.val 256 (by norm_num) (by omega) (by omega)
     (by rw [h_cin1]; exact hf0) hf1 h1_lt h1_eq h1_gt

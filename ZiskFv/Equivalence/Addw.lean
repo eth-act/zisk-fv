@@ -174,7 +174,7 @@ theorem equiv_ADDW
   have hb2 : (v.free_in_b_2 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_2_lt_256 v r_binary
   have hb3 : (v.free_in_b_3 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_3_lt_256 v r_binary
   -- Input bridges: derive `h_input_r{1,2}_extract` (low-32-bit extract
-  -- form) from `transpile_ADDW` + Step 1.7b SailStateBridge +
+  -- form) from `transpile_ADDW` + SailStateBridge +
   -- `matches_entry`'s a_lo/b_lo conjuncts. Mirrors SUBW's derivation
   -- (W-variants share the same row contract modulo opcode literal).
   have h_input_r1_extract :

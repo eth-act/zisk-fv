@@ -1,7 +1,7 @@
 import ZiskFv.Compliance.Dispatch
 
 /-!
-# Compliance.lean — Step 4.3 Phase 3 architectural validation
+# Compliance.lean — Phase 3 architectural validation
 
 This file lands the **global compliance theorem**
   theorem zisk_riscv_compliant_program_bus

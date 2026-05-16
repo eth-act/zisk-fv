@@ -9,7 +9,7 @@ import ZiskFv.Airs.MemoryBus
 /-!
 # `equiv_SB` Compliance wrapper — Mem-stores shape, 1-byte width
 
-> **Status:** wrapper (Step 4.2.r3.IV — Mem-stores narrow width).
+> **Status:** wrapper.
 > Mirrors `Compliance/FromTrust/Sd.lean` (SD pilot, commit `3a86908`)
 > specialized to SB's 1-byte store. Consumes
 > `main_store_emission_bundle_sb` (class #4, NEW) via

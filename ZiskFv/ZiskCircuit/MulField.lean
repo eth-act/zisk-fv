@@ -6,7 +6,7 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Airs.Arith.CarryChain
-import ZiskFv.Airs.Arith.Bridge1
+import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.ZiskCircuit.Add
 import ZiskFv.ZiskCircuit.Mul
@@ -15,7 +15,7 @@ import ZiskFv.ZiskCircuit.Mul
 **Bridge 2: Main ↔ Arith operand field composition.**
 
 Composes the bus-match (provided by `mul_circuit_holds`), Bridge 1
-(`Airs/Arith/Bridge1.lean`), and the carry-chain packed identity
+(`Airs/Arith/BusRes1.lean`), and the carry-chain packed identity
 (`arith_mul_unsigned_packed_correct` in `Airs/Arith/Mul.lean`) to
 derive the field-level MUL correctness equation over the Main AIR:
 
@@ -48,7 +48,7 @@ open Goldilocks
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.ArithDiv
-open ZiskFv.Airs.ArithBridge1
+open ZiskFv.Airs.ArithBusRes1
 open ZiskFv.Airs.ArithCarryChain
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.Mul

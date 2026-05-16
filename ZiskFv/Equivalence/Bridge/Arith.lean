@@ -20,36 +20,35 @@ multiplication (`MUL` / `MULH` / `MULHU` / `MULHSU` / `MULW` via
 `REMU` / `REMW` / `REMUW` via `ArithDiv`).
 
 The bridge has three API entry points (one per OpBus axiom):
-* `arith_mul_discharge_conservative` — consumes
+* `arith_mul_discharge` — consumes
   `op_bus_perm_sound_ArithMul`.
-* `arith_div_discharge_conservative` — consumes
+* `arith_div_discharge` — consumes
   `op_bus_perm_sound_ArithDiv` (primary bus tuple).
-* `arith_div_secondary_discharge_conservative` — consumes
+* `arith_div_secondary_discharge` — consumes
   `op_bus_perm_sound_ArithDivSecondary` (companion remainder /
   quotient bus tuple).
 
 Each entry point delivers the existential row witness `r_a` for the
 Arith AIR plus the `matches_entry` cross-AIR consistency conjunct.
-Downstream `equiv_<OP>` proofs (Step 3) project that conjunct into
+Downstream `equiv_<OP>` proofs project that conjunct into
 the loose `a₀..a₃ b₀..b₃ c₀..c₃ d₀..d₃` byte-bundle equations the
 current MUL / DIV equivs accept as caller obligations.
 
-What remains caller-supplied (this conservative pass):
+What remains caller-supplied (this pass):
 
 * The carry-chain hypotheses `hC31..hC38` (modeled in
   `ZiskFv/Airs/Arith/CarryChain.lean` as derivable from per-row
-  arithmetic constraints; deferrable to a follow-up PR that
-  promotes the loose byte-bundle to `Valid_ArithMul` /
-  `Valid_ArithDiv` columns and consumes `CarryChain.lean`
-  directly).
+  arithmetic constraints; a downstream refactor would promote the
+  loose byte-bundle to `Valid_ArithMul` / `Valid_ArithDiv` columns
+  and consume `CarryChain.lean` directly).
 * The per-byte range bounds on the loose elements (no
   `arith_columns_in_range` axiom in the trust ledger yet; adding
   one is a separate trust-ledger decision).
 
 (Cross-reference: the BinaryAdd bridge in `Bridge/BinaryAdd.lean`
 is the worked example for ArithMul, and Binary's
-`binary_discharge_conservative` in `Bridge/Binary.lean` shows the
-conservative shape used here.)
+`binary_discharge` in `Bridge/Binary.lean` shows the same
+discharge shape used here.)
 -/
 
 set_option maxHeartbeats 2000000
@@ -96,7 +95,7 @@ lemma arith_div_chunk_ranges_at_holds
 
     Re-exports of the `arith_{mul,div}_{un,}signed_packed_correct_bundled`
     lemmas from `Airs/Arith/{Mul,Div}.lean` under the Bridge namespace
-    so downstream `equiv_<OP>` consumers (Step 3) discharge the
+    so downstream `equiv_<OP>` consumers discharge the
     `hC31..hC38` and friends caller hypotheses through a single Bridge
     import path. The underlying derivation is `CarryChain.lean`'s
     `arith_{mul,div}_{un,}signed_carry_identity`. -/
@@ -436,7 +435,7 @@ lemma mul_signed_chain_witnesses
             + toIntZ (v.na r_a) * (1 - 2 * toIntZ (v.nb r_a)) * B) * 2^64
         + (toIntZ (v.na r_a) * toIntZ (v.nb r_a) - toIntZ (v.np r_a)) * 2^128
       = (1 - 2 * toIntZ (v.np r_a)) * (C + D * 2^64) := by
-  -- Step 1: extract raw constraints from chain.
+  -- extract raw constraints from chain.
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
   -- Pin definitions for fab / na_fb / nb_fa from constraints 6/7/8.
   simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
@@ -452,7 +451,7 @@ lemma mul_signed_chain_witnesses
     linear_combination h6
   have h_nafb : na_fb = v.na r_a * (1 - 2 * v.nb r_a) := by linear_combination h7
   have h_nbfa : nb_fa = v.nb r_a * (1 - 2 * v.na r_a) := by linear_combination h8
-  -- Step 2: unfold the per-chunk constraints and substitute mode pins.
+  -- unfold the per-chunk constraints and substitute mode pins.
   simp only [constraint_31_every_row, constraint_32_every_row,
              constraint_33_every_row, constraint_34_every_row,
              constraint_35_every_row, constraint_36_every_row,
@@ -469,7 +468,7 @@ lemma mul_signed_chain_witnesses
   simp only [h_nr, h_m32, h_div,
              mul_zero, zero_mul, add_zero, sub_zero]
     at h31 h32 h33 h34 h35 h36 h37 h38
-  -- Step 3: name `γ := 1 - 2*np`.
+  -- name `γ := 1 - 2*np`.
   set γ : FGL := 1 - 2 * v.np r_a with hγ
   -- Each h3k now has shape: fab * <prod> ± (γ-form) * c/d - cy*65536 = 0,
   -- but in the unfolded form, `(1 - 2 * np) * c` appears as `- c + 2*np*c`.
@@ -528,13 +527,13 @@ lemma mul_signed_chain_witnesses
         - γ * v.d_3 r_a
         + Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0)
         = 0 := by linear_combination h38
-  -- Step 4: chunk-range bounds from `arith_mul_columns_in_range`.
+  -- chunk-range bounds from `arith_mul_columns_in_range`.
   obtain ⟨h_a0, h_a1, h_a2, h_a3,
           h_b0, h_b1, h_b2, h_b3,
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
     arith_mul_chunk_ranges_at_holds v r_a
-  -- Step 5: signed carry-range disjunctive bounds → |toIntZ cy| ≤ 983040.
+  -- signed carry-range disjunctive bounds → |toIntZ cy| ≤ 983040.
   obtain ⟨hcy0_disj, hcy1_disj, hcy2_disj, hcy3_disj,
           hcy4_disj, hcy5_disj, hcy6_disj⟩ :=
     ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_signed v r_a h_nr _h_sext h_m32 h_div
@@ -559,7 +558,7 @@ lemma mul_signed_chain_witnesses
   have hcy6_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy6_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
-  -- Step 6: bound |toIntZ fab|, |toIntZ na_fb|, |toIntZ nb_fa|, |toIntZ γ|,
+  -- bound |toIntZ fab|, |toIntZ na_fb|, |toIntZ nb_fa|, |toIntZ γ|,
   -- |toIntZ na|, |toIntZ nb|, |toIntZ np| from booleanity.
   -- Booleanity for np follows from h_np_xor + booleanity of na, nb.
   have h_na_abs : |toIntZ (v.na r_a)| ≤ 1 := by
@@ -614,7 +613,7 @@ lemma mul_signed_chain_witnesses
     · rw [hγ, h_np]; show |toIntZ ((1 : FGL) - 2 * 1)| ≤ 1
       have : (1 : FGL) - 2 * 1 = -1 := by ring
       rw [this]; decide
-  -- Step 7: apply per-chunk ℤ lifts. Each produces a ℤ equation.
+  -- apply per-chunk ℤ lifts. Each produces a ℤ equation.
   have hZ31 := fgl_chunk_lift_C31_int
     (v.a_0 r_a) (v.b_0 r_a) (v.c_0 r_a) _
     fab γ h_a0 h_b0 h_c0 hcy0_abs h_fab_abs h_γ_abs h_chunk_31
@@ -652,7 +651,7 @@ lemma mul_signed_chain_witnesses
     fab γ na_fb nb_fa (v.na r_a) (v.nb r_a) (v.np r_a)
     h_a3 h_b3 h_d3 hcy6_abs h_fab_abs h_γ_abs h_nafb_abs h_nbfa_abs
     h_na_abs h_nb_abs h_np_abs h_chunk_38
-  -- Step 8: aggregate via A.0's pure-ℤ aggregator. The output uses
+  -- aggregate via A.0's pure-ℤ aggregator. The output uses
   -- (toIntZ γ) in place of (1 - 2*toIntZ np). We then convert via
   -- `γ = 1 - 2 * v.np r_a` lifted to ℤ.
   -- First note: toIntZ γ = 1 - 2 * toIntZ np (provable from np ∈ {0,1}).
@@ -748,7 +747,7 @@ lemma div_signed_chain_witnesses
         + (toIntZ (v.nr r_a) - toIntZ (v.np r_a)) * 2^64
         + toIntZ (v.na r_a) * toIntZ (v.nb r_a) * 2^128
       = (1 - 2 * toIntZ (v.np r_a)) * C := by
-  -- Step 1: extract constraints from the bundle.
+  -- extract constraints from the bundle.
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
   -- Pin definitions for fab / na_fb / nb_fa from constraints 6/7/8.
   simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
@@ -763,7 +762,7 @@ lemma div_signed_chain_witnesses
     linear_combination h6
   have h_nafb : na_fb = v.na r_a * (1 - 2 * v.nb r_a) := by linear_combination h7
   have h_nbfa : nb_fa = v.nb r_a * (1 - 2 * v.na r_a) := by linear_combination h8
-  -- Step 2: unfold the per-chunk constraints and substitute mode pins.
+  -- unfold the per-chunk constraints and substitute mode pins.
   simp only [constraint_31_every_row, constraint_32_every_row,
              constraint_33_every_row, constraint_34_every_row,
              constraint_35_every_row, constraint_36_every_row,
@@ -780,10 +779,10 @@ lemma div_signed_chain_witnesses
   simp only [h_m32, h_div, mul_zero, add_zero, sub_zero,
              mul_one, one_mul, sub_self]
     at h31 h32 h33 h34 h35 h36 h37 h38
-  -- Step 3: name γ := 1 - 2*np, δ := 1 - 2*nr.
+  -- name γ := 1 - 2*np, δ := 1 - 2*nr.
   set γ : FGL := 1 - 2 * v.np r_a with hγ
   set δ : FGL := 1 - 2 * v.nr r_a with hδ
-  -- Step 4: rewrite each chunk to the canonical DIV-shape form expected by the lifts.
+  -- rewrite each chunk to the canonical DIV-shape form expected by the lifts.
   have h_chunk_31 :
       fab * v.a_0 r_a * v.b_0 r_a + δ * v.d_0 r_a
         - γ * v.c_0 r_a
@@ -835,13 +834,13 @@ lemma div_signed_chain_witnesses
         + v.a_3 r_a * nb_fa + v.b_3 r_a * na_fb
         + Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0)
         = 0 := by linear_combination h38
-  -- Step 5: chunk-range bounds from `arith_div_columns_in_range`.
+  -- chunk-range bounds from `arith_div_columns_in_range`.
   obtain ⟨h_a0, h_a1, h_a2, h_a3,
           h_b0, h_b1, h_b2, h_b3,
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
     arith_div_chunk_ranges_at_holds v r_a
-  -- Step 6: signed carry-range disjunctive bounds → |toIntZ cy_i| ≤ 983040.
+  -- signed carry-range disjunctive bounds → |toIntZ cy_i| ≤ 983040.
   obtain ⟨hcy0_disj, hcy1_disj, hcy2_disj, hcy3_disj,
           hcy4_disj, hcy5_disj, hcy6_disj⟩ :=
     ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed v r_a _h_sext h_m32 h_div
@@ -866,7 +865,7 @@ lemma div_signed_chain_witnesses
   have hcy6_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy6_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
-  -- Step 7: abs bounds on sign witnesses.
+  -- abs bounds on sign witnesses.
   have h_na_abs : |toIntZ (v.na r_a)| ≤ 1 := by
     rcases h_na_bool with h | h
     · rw [h]; decide
@@ -930,7 +929,7 @@ lemma div_signed_chain_witnesses
     · rw [hδ, h_nr]; show |toIntZ ((1 : FGL) - 2 * 1)| ≤ 1
       have : (1 : FGL) - 2 * 1 = -1 := by ring
       rw [this]; decide
-  -- Step 8: apply per-chunk ℤ lifts.
+  -- apply per-chunk ℤ lifts.
   have hZ31 := fgl_div_chunk_lift_C31_signed_int
     (v.a_0 r_a) (v.b_0 r_a) (v.c_0 r_a) (v.d_0 r_a) _
     fab γ δ h_a0 h_b0 h_c0 h_d0 hcy0_abs h_fab_abs h_γ_abs h_δ_abs h_chunk_31
@@ -970,7 +969,7 @@ lemma div_signed_chain_witnesses
     (v.a_3 r_a) (v.b_3 r_a) _
     (v.na r_a) (v.nb r_a) na_fb nb_fa
     h_a3 h_b3 hcy6_abs h_nafb_abs h_nbfa_abs h_na_abs h_nb_abs h_chunk_38
-  -- Step 9: aggregate via the DIV ℤ aggregator. Convert toIntZ γ, toIntZ δ first.
+  -- aggregate via the DIV ℤ aggregator. Convert toIntZ γ, toIntZ δ first.
   have h_γ_int : toIntZ γ = 1 - 2 * toIntZ (v.np r_a) := by
     rcases h_np_bool with h | h
     · rw [hγ, h]

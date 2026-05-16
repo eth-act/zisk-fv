@@ -80,7 +80,7 @@ lemma equiv_LW_sail
     (mstatus := mstatus) (pmaRegion := pmaRegion) (misa := misa)
     (mseccfg := mseccfg) lw_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64 LW
+/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64 LW
     equals the state computed by applying `bus_effect` to the circuit's
     execution + memory bus rows.
 

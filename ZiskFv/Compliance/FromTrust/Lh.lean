@@ -14,7 +14,7 @@ import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 
 /-!
-# `equiv_LH` Compliance wrapper — signed-load BinExt SEXT_H chain (Step 4.2 round 4.C)
+# `equiv_LH` Compliance wrapper — signed-load BinExt SEXT_H chain
 
 > **Status:** Second of three signed-load wrappers (LW / LH / LB).
 > Mirrors `equiv_LW_from_trust` (`Compliance/FromTrust/Lw.lean`) with a

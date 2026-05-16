@@ -4,13 +4,13 @@ import ZiskFv.Equivalence.Divw
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
-import ZiskFv.Airs.Arith.Bridge1
+import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 
 /-!
-# `equiv_DIVW` Compliance exemplar (Step 4.2.r2 within-shape, ArithDiv W-signed primary)
+# `equiv_DIVW` Compliance exemplar
 
 > W-mode signed mirror of `FromTrust/Div.lean` / `FromTrust/Divuw.lean`.
 > opcode = 0xbe = 190, m32 = 1, signed.

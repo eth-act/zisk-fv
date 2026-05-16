@@ -175,7 +175,7 @@ theorem equiv_SUB
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3,
           h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
     ZiskFv.Equivalence.Bridge.Binary.e2_byte_ranges_discharge e2
-  -- Byte ranges on a-/b-lanes derived from Step 2b's
+  -- Byte ranges on a-/b-lanes derived from the
   -- `binary_columns_in_range` axiom (range-check bus soundness).
   have ha0 : (v.free_in_a_0 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_0_lt_256 v r_binary
   have ha1 : (v.free_in_a_1 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_1_lt_256 v r_binary
@@ -194,7 +194,7 @@ theorem equiv_SUB
   have hb6 : (v.free_in_b_6 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_6_lt_256 v r_binary
   have hb7 : (v.free_in_b_7 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_7_lt_256 v r_binary
   -- Input bridges derived from `transpile_SUB` (state-bridged via
-  -- Step 1.7b's `SailStateBridge`) plus `matches_entry`'s a-/b-lane
+  -- `SailStateBridge`) plus `matches_entry`'s a-/b-lane
   -- conjuncts (m32 = 0 collapses the high-lane disjunction). Replaces
   -- the two `h_input_r{1,2}_circuit` *promise hypotheses*.
   have h_input_r1_circuit : sub_input.r1_val

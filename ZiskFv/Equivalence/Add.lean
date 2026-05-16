@@ -76,7 +76,7 @@ lemma equiv_ADD_sail
   PureSpec.execute_RTYPE_add_pure_equiv
     add_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
-/-- **Canonical equivalence (post-Step-1.5 *promise discharge*).**
+/-- **Canonical equivalence .**
     Sail's `execute_instruction` on an RV64 ADD equals the state
     computed by applying `bus_effect` to the circuit's execution and
     memory bus rows.
@@ -86,18 +86,16 @@ lemma equiv_ADD_sail
     `equiv_ADD` accepted as caller obligations are now derived inside
     the proof body via
     `ZiskFv.Equivalence.Bridge.BinaryAdd.add_discharge`, which
-    consumes Phase A's `op_bus_perm_sound_BinaryAdd` (PLONK soundness
-    on `OPERATION_BUS_ID = 5000`) and Step 1.5's
-    `binary_add_columns_in_range` (range-check bus soundness on
-    BinaryAdd's `bits(N)` columns) — both already in the *trust
-    ledger*.
+    consumes `op_bus_perm_sound_BinaryAdd` (PLONK soundness on
+    `OPERATION_BUS_ID = 5000`) and `binary_add_columns_in_range`
+    (range-check bus soundness on BinaryAdd's `bits(N)` columns) —
+    both in the *trust ledger*.
 
     Net reduction in the *anti-laundering metric* vs. origin/main
-    pre-pilot: −2 binders. (Conservative; deriving
-    `h_input_r{1,2}_main` from `transpile_ADD` + a state-bridge
-    would give another −2; universalizing `h_main_subset` /
-    `h_main_mode` from `Valid_Main` constraints would give more.
-    Staged for follow-up PRs.) -/
+    pre-discharge: −2 binders. (Further reductions possible by
+    deriving `h_input_r{1,2}_main` from `transpile_ADD` + a state-
+    bridge, or by universalizing `h_main_subset` / `h_main_mode`
+    from `Valid_Main` constraints.) -/
 theorem equiv_ADD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
@@ -134,9 +132,9 @@ theorem equiv_ADD
     (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  -- *Promise discharge* via the BinaryAdd bridge (with Step 1.7b's
-  -- SailStateBridge deriving the input bridges from the Sail-form
-  -- `read_xreg` facts that `equiv_ADD_sail` consumes).
+  -- *Promise discharge* via the BinaryAdd bridge (with SailStateBridge
+  -- deriving the input bridges from the Sail-form `read_xreg` facts
+  -- that `equiv_ADD_sail` consumes).
   obtain ⟨r_binary, h_circuit, h_a_range, h_b_range, h_c_range,
           h_input_r1_circuit, h_input_r2_circuit⟩ :=
     ZiskFv.Equivalence.Bridge.BinaryAdd.add_discharge

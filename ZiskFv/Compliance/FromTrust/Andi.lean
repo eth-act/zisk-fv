@@ -11,9 +11,9 @@ import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Tactics.ALUITypeArchetype
 
 /-!
-# `equiv_ANDI` Compliance wrapper — Binary ITYPE shape (Step 4.2r3.I)
+# `equiv_ANDI` Compliance wrapper — Binary ITYPE shape
 
-> **Status:** Step 4.2 round 3.I (ITYPE constructibility bundles).
+> **Status:** round 3.I (ITYPE constructibility bundles).
 > Mirrors `FromTrust/And.lean` (RTYPE AND, Binary provider) with the
 > ITYPE-specific immediate-routing addition (`h_andi_subset`).
 >
