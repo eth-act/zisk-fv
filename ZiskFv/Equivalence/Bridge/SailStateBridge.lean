@@ -10,9 +10,12 @@ import ZiskFv.Equivalence.Bridge.StateBridge
 /-!
 # Shared *discharge bridge* helper — Sail-state ↔ `RV64State`
 
-of `/home/cody/.claude/plans/plan-to-completely-resolve-per-opcode-discharge.md`.
 Closes the final step of the input-bridge derivation chain consumed by
-every ALU-shape *discharge bridge*.
+every ALU-shape *discharge bridge*. Distinct from `StateBridge.lean`:
+that file holds the **opcode-independent packed-lane arithmetic**
+(`bv64_packed_eq_of_lanes`), while this file holds the **Sail-state
+materialisation** that turns a Sail `read_xreg` fact into a `RV64State`
+suitable for instantiating the `transpile_<OP>` axioms.
 
 The bridge takes a Sail register-read fact and the `transpile_<OP>`
 lane equalities and produces the packed-lane form of `r_val`:
@@ -34,10 +37,10 @@ the axiom there, and recover the lane equalities at `r_val`.
 
 (The universal-over-state shape of the `transpile_<OP>` family is a
 known *trust-ledger* coarsening — a sound formulation would
-existentially quantify the state. extracts exactly the
-state-instantiation that the sound formulation would deliver. A
-narrowing PR for `transpile_<OP>` to existential form is tracked
-separately and does not affect this module's API.)
+existentially quantify the state. This module extracts exactly the
+state-instantiation that the sound formulation would deliver, so
+narrowing `transpile_<OP>` to existential form later would not
+affect this module's API.)
 -/
 
 namespace ZiskFv.Equivalence.Bridge.SailStateBridge

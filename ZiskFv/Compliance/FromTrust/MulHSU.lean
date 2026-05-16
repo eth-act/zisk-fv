@@ -16,7 +16,7 @@ import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 > (lives outside `ZiskFv/Equivalence/MulHSU.lean`). Demonstrates the
 > ArithMul-secondary-shape *promise discharge* for the **signed × unsigned**
 > high-half MUL (MULHSU = MULSUH = op 0xb3 = 179). Hybrid of `MulHU`
-> (unsigned `h_op2`) and `MulH` (signed `h_op1` via `na` MSB pin).
+> (unsigned `h_rs2_value`) and `MulH` (signed `h_rs1_value` via `na` MSB pin).
 >
 > Discharged promise hypotheses:
 > * Mode pins (`h_na` / `h_np` reflexivity placeholders; `h_nb = 0`
@@ -25,9 +25,9 @@ import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 >   `arith_table_op_mulhsu_mode_pin` (already on the books).
 > * Two lane-match equations — discharged via the secondary-lane
 >   emission bundle composed with `mulh_bus_res1_eq_d_hi`.
-> * `h_op1` (signed-rs1) via `signed_packed_toInt_eq_of_read_xreg`
+> * `h_rs1_value` (signed-rs1) via `signed_packed_toInt_eq_of_read_xreg`
 >   composed with `arith_mul_na_eq_msb_of_a` (op = 179 branch).
-> * `h_op2` (unsigned-rs2) via the unsigned bridge — no MSB pin needed.
+> * `h_rs2_value` (unsigned-rs2) via the unsigned bridge — no MSB pin needed.
 -/
 
 namespace ZiskFv.Compliance
@@ -179,7 +179,7 @@ theorem equiv_MULHSU_from_trust
       e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
         = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536 := by
     rw [h_byte_hi_to_c1, h_c1_val_eq]
-  -- ============ DISCHARGE h_op1 (signed) / h_op2 (unsigned) ============
+  -- ============ DISCHARGE h_rs1_value (signed) / h_rs2_value (unsigned) ============
   obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
          h_main_a_lo, h_main_a_hi, h_main_b_lo, h_main_b_hi⟩ :=
     ZiskFv.Trusted.transpile_MULHSU
@@ -295,18 +295,18 @@ theorem equiv_MULHSU_from_trust
     rw [Nat.mod_eq_of_lt h_lt_2_64]
     unfold ZiskFv.PackedBitVec.MulNoWrap.packed4
     ring
-  -- na MSB pin → h_op1 (signed rs1).
+  -- na MSB pin → h_rs1_value (signed rs1).
   have h_na_msb := ZiskFv.Airs.Arith.arith_mul_na_eq_msb_of_a
     v r_a h_op_arith_na
-  have h_op1 :
+  have h_rs1_value :
       mulhsu_input.r1_val.toInt
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val : ℤ)
             - (v.na r_a).val * (2:ℤ)^64 :=
     ZiskFv.Equivalence.Bridge.SailStateBridge.signed_packed_toInt_eq_of_read_xreg
       h_input_r1 h_r1_toNat ⟨h_a0_lt, h_a1_lt, h_a2_lt, h_a3_lt⟩ h_na_msb
-  -- Unsigned rs2 → h_op2 via direct cast of h_r2_toNat to ℤ.
-  have h_op2 :
+  -- Unsigned rs2 → h_rs2_value via direct cast of h_r2_toNat to ℤ.
+  have h_rs2_value :
       (mulhsu_input.r2_val.toNat : ℤ)
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ) := by
@@ -319,6 +319,6 @@ theorem equiv_MULHSU_from_trust
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
     h_chain h_na h_nb_zero h_np h_nr_eq h_sext h_m32 h_div
     h_na_bool h_nb_bool h_np_xor
-    h_byte_lo h_byte_hi h_op1 h_op2
+    h_byte_lo h_byte_hi h_rs1_value h_rs2_value
 
 end ZiskFv.Compliance

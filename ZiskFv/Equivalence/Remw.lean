@@ -145,11 +145,11 @@ theorem equiv_REMW
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
     -- Operand TRANSPILE-BRIDGE (W toInt-form).
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
         = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
             - (v.np r_a).val * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - (v.nb r_a).val * (2:ℤ)^32)
@@ -187,7 +187,7 @@ theorem equiv_REMW
       h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
       h_chain h_sext h_m32 h_div h_op h_op_full
       h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_c23 h_byte_lo h_sext_choice h_op1 h_op2
+      h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
       h_op2_ne h_no_overflow_w h_r_abs h_r_sign
   rw [equiv_REMW_sail state remw_input r1 r2 rd
         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc]

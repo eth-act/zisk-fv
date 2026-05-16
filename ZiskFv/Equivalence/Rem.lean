@@ -140,12 +140,12 @@ theorem equiv_REM
     (h_byte_hi :
       e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
         = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536)
-    (h_op1 :
+    (h_rs1_value :
       rem_input.r1_val.toInt
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
             - (v.np r_a).val * (2:ℤ)^64)
-    (h_op2 :
+    (h_rs2_value :
       rem_input.r2_val.toInt
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
@@ -174,7 +174,7 @@ theorem equiv_REM
       h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
       h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
       h_chain h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool
-      h_np_xor h_nr_pin h_byte_lo h_byte_hi h_op1 h_op2
+      h_np_xor h_nr_pin h_byte_lo h_byte_hi h_rs1_value h_rs2_value
       h_op2_ne h_no_overflow h_r_abs h_r_sign
   rw [equiv_REM_sail state rem_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]

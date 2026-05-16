@@ -173,7 +173,7 @@ theorem equiv_REM_from_trust
       e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
         = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536 := by
     rw [h_byte_hi_to_c1, h_c1_val_eq]
-  -- ============ DISCHARGE h_op1 / h_op2 (signed operand bridge) ============
+  -- ============ DISCHARGE h_rs1_value / h_rs2_value (signed operand bridge) ============
   obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
          h_main_a_lo, h_main_a_hi, h_main_b_lo, h_main_b_hi⟩ :=
     ZiskFv.Trusted.transpile_REM
@@ -288,14 +288,14 @@ theorem equiv_REM_from_trust
     v r_a h_sext h_m32 h_div h_op_arith
   have h_nb_msb := ZiskFv.Airs.Arith.arith_div_nb_eq_msb_of_divisor
     v r_a h_sext h_m32 h_div h_op_arith
-  have h_op1 :
+  have h_rs1_value :
       rem_input.r1_val.toInt
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
             - (v.np r_a).val * (2:ℤ)^64 :=
     ZiskFv.Equivalence.Bridge.SailStateBridge.signed_packed_toInt_eq_of_read_xreg
       h_input_r1 h_r1_toNat ⟨h_c0_lt, h_c1_lt, h_c2_lt, h_c3_lt⟩ h_np_msb
-  have h_op2 :
+  have h_rs2_value :
       rem_input.r2_val.toInt
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
@@ -309,12 +309,12 @@ theorem equiv_REM_from_trust
       ((ZiskFv.PackedBitVec.MulNoWrap.packed4
           (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
         - (v.nr r_a).val * (2:ℤ)^64).natAbs < rem_input.r2_val.toInt.natAbs := by
-    rw [h_op2]; exact h_r_abs_air
+    rw [h_rs2_value]; exact h_r_abs_air
   have h_r_sign :
       0 ≤ ((ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
             - (v.nr r_a).val * (2:ℤ)^64) * rem_input.r1_val.toInt := by
-    rw [h_op1]; exact h_r_sign_air
+    rw [h_rs1_value]; exact h_r_sign_air
   -- ============ Delegate to `equiv_REM` ============
   exact ZiskFv.Equivalence.Rem.equiv_REM
     state rem_input r1 r2 rd exec_row e0 e1 e2
@@ -322,7 +322,7 @@ theorem equiv_REM_from_trust
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
     v r_a h_chain h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
-    h_sext h_m32 h_div h_byte_lo h_byte_hi h_op1 h_op2
+    h_sext h_m32 h_div h_byte_lo h_byte_hi h_rs1_value h_rs2_value
     h_op2_ne h_no_overflow h_r_abs h_r_sign
 
 end ZiskFv.Compliance

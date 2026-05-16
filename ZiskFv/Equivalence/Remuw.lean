@@ -114,9 +114,9 @@ theorem equiv_REMUW
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
+    (h_rs1_value : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
-    (h_op2 : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
+    (h_rs2_value : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
               = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536)
     (h_op2_ne : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat ≠ 0)
     (h_d_lt_b : (v.d_0 r_a).val + (v.d_1 r_a).val * 65536
@@ -156,7 +156,7 @@ theorem equiv_REMUW
       hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
       ⟨h_a2_eq, h_a3_eq⟩ ⟨h_b2_eq, h_b3_eq⟩ ⟨h_d2_eq, h_d3_eq⟩ h_c23
       h_byte_lo h_sext_choice
-      h_op1 h_op2 h_op2_ne h_d_lt_b
+      h_rs1_value h_rs2_value h_op2_ne h_d_lt_b
   rw [equiv_REMUW_sail state remuw_input r1 r2 rd
         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc]
   symm

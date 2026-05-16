@@ -412,8 +412,8 @@ lemma h_rd_val_mdru_mul
       e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
         = c₂.val + c₃.val * 65536)
     -- Operand TRANSPILE-BRIDGE
-    (h_op1 : op1.toNat = packed4 a₀.val a₁.val a₂.val a₃.val)
-    (h_op2 : op2.toNat = packed4 b₀.val b₁.val b₂.val b₃.val) :
+    (h_rs1_value : op1.toNat = packed4 a₀.val a₁.val a₂.val a₃.val)
+    (h_rs2_value : op2.toNat = packed4 b₀.val b₁.val b₂.val b₃.val) :
     U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
                 (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
       = execute_MUL_pure op1 op2 .MUL := by
@@ -429,7 +429,7 @@ lemma h_rd_val_mdru_mul
       h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
       h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
       hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
-  rw [← h_op1, ← h_op2] at h_packed_nat
+  rw [← h_rs1_value, ← h_rs2_value] at h_packed_nat
   -- low-half modular extraction.
   have h_lo_mod : packed4 c₀.val c₁.val c₂.val c₃.val
       = (op1.toNat * op2.toNat) % 18446744073709551616 :=
@@ -495,8 +495,8 @@ lemma h_rd_val_mdru_mulhu
       e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
         = d₂.val + d₃.val * 65536)
     -- Operand TRANSPILE-BRIDGE
-    (h_op1 : op1.toNat = packed4 a₀.val a₁.val a₂.val a₃.val)
-    (h_op2 : op2.toNat = packed4 b₀.val b₁.val b₂.val b₃.val) :
+    (h_rs1_value : op1.toNat = packed4 a₀.val a₁.val a₂.val a₃.val)
+    (h_rs2_value : op2.toNat = packed4 b₀.val b₁.val b₂.val b₃.val) :
     U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
                 (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
       = execute_MUL_pure op1 op2 .MULHU := by
@@ -511,7 +511,7 @@ lemma h_rd_val_mdru_mulhu
       h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
       h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
       hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
-  rw [← h_op1, ← h_op2] at h_packed_nat
+  rw [← h_rs1_value, ← h_rs2_value] at h_packed_nat
   have h_hi_div : packed4 d₀.val d₁.val d₂.val d₃.val
       = (op1.toNat * op2.toNat) / 18446744073709551616 :=
     fgl_mul_unsigned_to_bv64_hi h_c0 h_c1 h_c2 h_c3 h_packed_nat
@@ -581,8 +581,8 @@ lemma h_rd_val_mdru_divu
       e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
         = a₂.val + a₃.val * 65536)
     -- Operand TRANSPILE-BRIDGE
-    (h_op1 : op1.toNat = packed4 c₀.val c₁.val c₂.val c₃.val)
-    (h_op2 : op2.toNat = packed4 b₀.val b₁.val b₂.val b₃.val)
+    (h_rs1_value : op1.toNat = packed4 c₀.val c₁.val c₂.val c₃.val)
+    (h_rs2_value : op2.toNat = packed4 b₀.val b₁.val b₂.val b₃.val)
     -- Divisor non-zero (CIRCUIT-CONSTRAINT)
     (h_op2_ne : op2.toNat ≠ 0)
     -- Remainder strictly less than divisor (CIRCUIT-CONSTRAINT, from arith range constraints)
@@ -603,7 +603,7 @@ lemma h_rd_val_mdru_divu
       h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
       hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
   -- rewrite via TRANSPILE-BRIDGE.
-  rw [← h_op1, ← h_op2] at h_packed_nat
+  rw [← h_rs1_value, ← h_rs2_value] at h_packed_nat
   -- Euclidean quotient extraction.
   have h_quot_eq : op1.toNat / op2.toNat = packed4 a₀.val a₁.val a₂.val a₃.val :=
     fgl_div_unsigned_to_bv64 h_op2_ne h_d_lt_b h_packed_nat
@@ -697,8 +697,8 @@ lemma h_rd_val_mdru_remu
       e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
         = d₂.val + d₃.val * 65536)
     -- Operand TRANSPILE-BRIDGE
-    (h_op1 : op1.toNat = packed4 c₀.val c₁.val c₂.val c₃.val)
-    (h_op2 : op2.toNat = packed4 b₀.val b₁.val b₂.val b₃.val)
+    (h_rs1_value : op1.toNat = packed4 c₀.val c₁.val c₂.val c₃.val)
+    (h_rs2_value : op2.toNat = packed4 b₀.val b₁.val b₂.val b₃.val)
     -- Divisor non-zero
     (h_op2_ne : op2.toNat ≠ 0)
     -- Remainder strictly less than divisor
@@ -717,7 +717,7 @@ lemma h_rd_val_mdru_remu
       h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
       h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
       hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
-  rw [← h_op1, ← h_op2] at h_packed_nat
+  rw [← h_rs1_value, ← h_rs2_value] at h_packed_nat
   -- Remainder extraction.
   have h_rem_eq : op1.toNat % op2.toNat = packed4 d₀.val d₁.val d₂.val d₃.val :=
     fgl_rem_unsigned_to_bv64 h_op2_ne h_d_lt_b h_packed_nat
@@ -926,8 +926,8 @@ lemma h_rd_val_mdru_divuw_chunked
       ((e.x4.val = 255 ∧ e.x5.val = 255 ∧ e.x6.val = 255 ∧ e.x7.val = 255) ∧
         a₀.val + a₁.val * 65536 ≥ 2147483648))
     -- Operand TRANSPILE-BRIDGE (W form: low 32 bits)
-    (h_op1 : (Sail.BitVec.extractLsb r1 31 0).toNat = c₀.val + c₁.val * 65536)
-    (h_op2 : (Sail.BitVec.extractLsb r2 31 0).toNat = b₀.val + b₁.val * 65536)
+    (h_rs1_value : (Sail.BitVec.extractLsb r1 31 0).toNat = c₀.val + c₁.val * 65536)
+    (h_rs2_value : (Sail.BitVec.extractLsb r2 31 0).toNat = b₀.val + b₁.val * 65536)
     -- Divisor non-zero (CIRCUIT-CONSTRAINT)
     (h_op2_ne : (Sail.BitVec.extractLsb r2 31 0).toNat ≠ 0)
     -- Remainder strictly less than divisor (CIRCUIT-CONSTRAINT)
@@ -978,11 +978,11 @@ lemma h_rd_val_mdru_divuw_chunked
     rw [ha2_eq, ha3_eq, hb2_eq, hb3_eq, hc2_eq, hc3_eq, hd2_eq, hd3_eq] at h_pn
     linarith
   -- rewrite Euclidean identity in terms of r1_lo32 / r2_lo32.
-  rw [← h_op2] at h_euclid32
+  rw [← h_rs2_value] at h_euclid32
   have h_euclid : (Sail.BitVec.extractLsb r1 31 0).toNat
                     = (a₀.val + a₁.val * 65536) * (Sail.BitVec.extractLsb r2 31 0).toNat
                         + (d₀.val + d₁.val * 65536) := by
-    rw [h_op1]; linarith [h_euclid32]
+    rw [h_rs1_value]; linarith [h_euclid32]
   -- invoke Layer 1 BV64 wrapper for the DIVUW quotient.
   have h_bv :=
     ZiskFv.PackedBitVec.SignedNoWrap.fgl_div_w_unsigned_to_bv64
@@ -1111,8 +1111,8 @@ lemma h_rd_val_mdru_remuw_chunked
         d₀.val + d₁.val * 65536 < 2147483648) ∨
       ((e.x4.val = 255 ∧ e.x5.val = 255 ∧ e.x6.val = 255 ∧ e.x7.val = 255) ∧
         d₀.val + d₁.val * 65536 ≥ 2147483648))
-    (h_op1 : (Sail.BitVec.extractLsb r1 31 0).toNat = c₀.val + c₁.val * 65536)
-    (h_op2 : (Sail.BitVec.extractLsb r2 31 0).toNat = b₀.val + b₁.val * 65536)
+    (h_rs1_value : (Sail.BitVec.extractLsb r1 31 0).toNat = c₀.val + c₁.val * 65536)
+    (h_rs2_value : (Sail.BitVec.extractLsb r2 31 0).toNat = b₀.val + b₁.val * 65536)
     (h_op2_ne : (Sail.BitVec.extractLsb r2 31 0).toNat ≠ 0)
     (h_d_lt_b : d₀.val + d₁.val * 65536 < (Sail.BitVec.extractLsb r2 31 0).toNat) :
     U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
@@ -1152,11 +1152,11 @@ lemma h_rd_val_mdru_remuw_chunked
     unfold packed4 at h_pn
     rw [ha2_eq, ha3_eq, hb2_eq, hb3_eq, hc2_eq, hc3_eq, hd2_eq, hd3_eq] at h_pn
     linarith
-  rw [← h_op2] at h_euclid32
+  rw [← h_rs2_value] at h_euclid32
   have h_euclid : (Sail.BitVec.extractLsb r1 31 0).toNat
                     = (a₀.val + a₁.val * 65536) * (Sail.BitVec.extractLsb r2 31 0).toNat
                         + (d₀.val + d₁.val * 65536) := by
-    rw [h_op1]; linarith [h_euclid32]
+    rw [h_rs1_value]; linarith [h_euclid32]
   have h_bv :=
     ZiskFv.PackedBitVec.SignedNoWrap.fgl_rem_w_unsigned_to_bv64
       r1 r2 (a₀.val + a₁.val * 65536) (d₀.val + d₁.val * 65536)

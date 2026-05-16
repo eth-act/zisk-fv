@@ -143,10 +143,10 @@ theorem equiv_DIVW
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
     -- Operand TRANSPILE-BRIDGE (W form: 32-bit toInt with sign witness extracted).
-    (h_op1 : (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt
+    (h_rs1_value : (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt
               = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
                   - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a) * (2:ℤ)^32)
-    (h_op2 : (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
+    (h_rs2_value : (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
               = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
                   - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) * (2:ℤ)^32)
     -- Non-boundary (CIRCUIT-CONSTRAINT — caller excludes div-by-zero / INT_MIN/-1).
@@ -195,7 +195,7 @@ theorem equiv_DIVW
       h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
       h_chain h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor
       ⟨h_a2_eq, h_a3_eq⟩ ⟨h_b2_eq, h_b3_eq⟩ ⟨h_d2_eq, h_d3_eq⟩ h_c23
-      h_nr_pin h_byte_lo h_sext_choice h_op1 h_op2 h_op2_ne h_no_overflow
+      h_nr_pin h_byte_lo h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
       h_r_abs h_r_sign
   rw [equiv_DIVW_sail state divw_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]

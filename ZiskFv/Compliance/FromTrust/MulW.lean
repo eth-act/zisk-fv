@@ -35,7 +35,7 @@ import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 > * `h_sext_choice` — sign-extension on bytes 4..7 of rd. Same
 >   trust class as ADDW / DIVUW / REMUW / DIVW W-mode sign-extension
 >   pass-throughs.
-> * `h_op1`, `h_op2` — signed-extractLsb-31-0 operand bridges. Future
+> * `h_rs1_value`, `h_rs2_value` — signed-extractLsb-31-0 operand bridges. Future
 >   work (mirror of MULH's `signed_packed_toInt_eq_of_read_xreg` chain
 >   specialized to the low-32 form via the existing
 >   `arith_table_op_mulw_operand_pin` axiom) will discharge these from
@@ -57,8 +57,8 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
     W-mode primary-lane MUL discharge: `m32 = 1`, op = 182. Discharges
     mode pins + `h_byte_lo` + `h_chain` + sign-witness booleanity/XOR
-    from the trust ledger; passes through `h_sext_choice`, `h_op1`,
-    `h_op2` as W-form operand bridge obligations (analogous to DIVW). -/
+    from the trust ledger; passes through `h_sext_choice`, `h_rs1_value`,
+    `h_rs2_value` as W-form operand bridge obligations (analogous to DIVW). -/
 theorem equiv_MULW_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulw_input : PureSpec.MulwInput)
@@ -96,11 +96,11 @@ theorem equiv_MULW_from_trust
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt
         = ((v.a_0 r_a).val + (v.a_1 r_a).val * 65536 : ℤ)
             - (v.na r_a).val * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - (v.nb r_a).val * (2:ℤ)^32) :
@@ -177,6 +177,6 @@ theorem equiv_MULW_from_trust
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
     h_chain h_nr h_sext h_m32 h_div h_op_arith_mulw
-    h_na_bool h_nb_bool h_np_xor h_byte_lo h_sext_choice h_op1 h_op2
+    h_na_bool h_nb_bool h_np_xor h_byte_lo h_sext_choice h_rs1_value h_rs2_value
 
 end ZiskFv.Compliance

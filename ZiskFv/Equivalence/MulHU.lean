@@ -126,10 +126,10 @@ theorem equiv_MULHU
     (h_byte_hi :
       e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
         = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536)
-    (h_op1 : mulhu_input.r1_val.toNat
+    (h_rs1_value : mulhu_input.r1_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
           (v.a_2 r_a).val (v.a_3 r_a).val)
-    (h_op2 : mulhu_input.r2_val.toNat
+    (h_rs2_value : mulhu_input.r2_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
           (v.b_2 r_a).val (v.b_3 r_a).val) :
     (do
@@ -165,7 +165,7 @@ theorem equiv_MULHU
       h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
       h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
       hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
-      h_byte_lo h_byte_hi h_op1 h_op2
+      h_byte_lo h_byte_hi h_rs1_value h_rs2_value
   rw [equiv_MULHU_sail state mulhu_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

@@ -150,7 +150,7 @@ theorem equiv_REMU_from_trust
       e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
         = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536 := by
     rw [h_byte_hi_to_c1, h_c1_val_eq]
-  -- ============ DISCHARGE h_op1 / h_op2 (unsigned operand bridge) ============
+  -- ============ DISCHARGE h_rs1_value / h_rs2_value (unsigned operand bridge) ============
   obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
          h_main_a_lo, h_main_a_hi, h_main_b_lo, h_main_b_hi⟩ :=
     ZiskFv.Trusted.transpile_REMU
@@ -208,7 +208,7 @@ theorem equiv_REMU_from_trust
   have h_b1_val_eq : (m.b_1 r_main).val
       = (v.b_2 r_a).val + (v.b_3 r_a).val * 65536 := by
     rw [h_b_hi_collapsed]; exact h_pair_lift _ _ h_b2_lt h_b3_lt
-  have h_op1 :
+  have h_rs1_value :
       remu_input.r1_val.toNat
         = ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val := by
@@ -235,7 +235,7 @@ theorem equiv_REMU_from_trust
     rw [Nat.mod_eq_of_lt h_lt_2_64]
     unfold ZiskFv.PackedBitVec.MulNoWrap.packed4
     ring
-  have h_op2 :
+  have h_rs2_value :
       remu_input.r2_val.toNat
         = ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val := by
@@ -270,7 +270,7 @@ theorem equiv_REMU_from_trust
                     (v.d_0 r_a).val (v.d_1 r_a).val
                     (v.d_2 r_a).val (v.d_3 r_a).val
                   < remu_input.r2_val.toNat := by
-    rw [h_op2]; exact h_bound
+    rw [h_rs2_value]; exact h_bound
   -- ============ Delegate to `equiv_REMU` ============
   exact ZiskFv.Equivalence.Remu.equiv_REMU
     state remu_input r1 r2 rd v r_a exec_row e0 e1 e2
@@ -279,6 +279,6 @@ theorem equiv_REMU_from_trust
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
     h0 h1 h2 h3 h4 h5 h6 h7
     h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div
-    h_byte_lo h_byte_hi h_op1 h_op2 h_op2_ne h_d_lt_b
+    h_byte_lo h_byte_hi h_rs1_value h_rs2_value h_op2_ne h_d_lt_b
 
 end ZiskFv.Compliance

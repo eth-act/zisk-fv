@@ -8,7 +8,11 @@ import ZiskFv.Trusted.Transpiler
 /-!
 # Shared *discharge bridge* helper — packed-lane BitVec reconstruction
 
-Helper for every per-shape *discharge bridge*.
+Opcode-independent packed-lane arithmetic. Distinct from
+`SailStateBridge.lean`: that file materialises the Sail-state and
+instantiates the `transpile_<OP>` axioms, while this file holds the
+pure-arithmetic step that turns two lane equalities into a packed
+`BitVec`.
 
 When discharging the per-opcode `h_input_r1_main` / `h_input_r2_main`
 *promise hypotheses* — currently of the form

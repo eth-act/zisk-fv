@@ -27,11 +27,11 @@ import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 >   `(1 - m32) * m.a_1 = v.c_2 + v.c_3 * 65536` via `transpile_DIVW`.
 > * `h_r_abs`, `h_r_sign` via the new
 >   `arith_div_remainder_bound_signed_w` composed with booleanity
->   (`(v.nr r_a).val = toIntZ (v.nr r_a)`) and `h_op1`/`h_op2`.
+>   (`(v.nr r_a).val = toIntZ (v.nr r_a)`) and `h_rs1_value`/`h_rs2_value`.
 >
 > Pass-through (CIRCUIT-CONSTRAINT / SPEC-PRE / W-form operand bridge):
 > * `h_na_bool`, `h_nb_bool`, `h_nr_bool`, `h_np_xor`.
-> * `h_sext_choice`, `h_op1`, `h_op2`, `h_op2_ne`, `h_no_overflow`.
+> * `h_sext_choice`, `h_rs1_value`, `h_rs2_value`, `h_op2_ne`, `h_no_overflow`.
 -/
 
 namespace ZiskFv.Compliance
@@ -90,11 +90,11 @@ theorem equiv_DIVW_from_trust
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt
         = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.np r_a) * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.nb r_a) * (2:ℤ)^32)
@@ -256,7 +256,7 @@ theorem equiv_DIVW_from_trust
         ((Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt).natAbs
           = (((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
               - (v.nb r_a).val * (2:ℤ)^32).natAbs := by
-      rw [h_op2, h_nb_val_eq_toIntZ]
+      rw [h_rs2_value, h_nb_val_eq_toIntZ]
     rw [h_b_rhs]
     exact h_bound_lhs
   have h_r_sign : 0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
@@ -264,7 +264,7 @@ theorem equiv_DIVW_from_trust
                        * (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt := by
     have h_bound_rhs := h_bound.2
     rw [← h_nr_val_eq_toIntZ]
-    rw [h_op1, ← h_np_val_eq_toIntZ]
+    rw [h_rs1_value, ← h_np_val_eq_toIntZ]
     exact h_bound_rhs
   -- ============ Delegate to `equiv_DIVW` ============
   exact ZiskFv.Equivalence.Divw.equiv_DIVW
@@ -273,7 +273,7 @@ theorem equiv_DIVW_from_trust
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
     h_chain h_na_bool h_nb_bool h_nr_bool h_np_xor h_sext h_m32 h_div
-    h_op_full h_op_signed h_c23 h_byte_lo h_sext_choice h_op1 h_op2
+    h_op_full h_op_signed h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
     h_op2_ne h_no_overflow h_r_abs h_r_sign
 
 end ZiskFv.Compliance

@@ -470,7 +470,7 @@ the existing `arith_table_op_div_rem_signed_d_sign_pin` (which pins
 
 Consumed by `equiv_DIV_from_trust` (`Compliance/FromTrust/Div.lean`) — in
 composition with the generic signed Sail-state bridge — to derive
-`h_op1` / `h_op2` (the signed packed-lane equations connecting
+`h_rs1_value` / `h_rs2_value` (the signed packed-lane equations connecting
 `r1_val.toInt` / `r2_val.toInt` to the AIR's `C - np·2^64` /
 `B - nb·2^64` columns), closing .
 
@@ -499,7 +499,7 @@ columns. -/
     binds the `np` bit to the MSB convention.
 
     Consumed by `equiv_DIV_from_trust` via
-    `signed_packed_toInt_eq_of_read_xreg` to derive `h_op1`. -/
+    `signed_packed_toInt_eq_of_read_xreg` to derive `h_rs1_value`. -/
 axiom arith_div_np_eq_msb_of_dividend
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 0) (_h_div : v.div r_a = 1)
@@ -527,7 +527,7 @@ axiom arith_div_np_eq_msb_of_dividend
 
     Companion to `arith_div_np_eq_msb_of_dividend`; consumed by
     `equiv_DIV_from_trust` via `signed_packed_toInt_eq_of_read_xreg`
-    to derive `h_op2`. -/
+    to derive `h_rs2_value`. -/
 axiom arith_div_nb_eq_msb_of_divisor
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 0) (_h_div : v.div r_a = 1)
@@ -587,7 +587,7 @@ DIV/REM-emitting rows). -/
       the `0 ≤` boundary).
 
     Caller routes the dividend / divisor signed value via the
-    operand TRANSPILE-BRIDGE hypotheses `h_op1`/`h_op2`, which
+    operand TRANSPILE-BRIDGE hypotheses `h_rs1_value`/`h_rs2_value`, which
     equate `r1.toInt`/`r2.toInt` with the same `C - np·2^64` /
     `B - nb·2^64` expressions; under those equalities this axiom
     delivers `(d_packed - nr·2^64).natAbs < r2.toInt.natAbs` and
@@ -1038,7 +1038,7 @@ narrower scope (ArithMul rows in place of ArithDiv rows). -/
 
     Consumed by `equiv_MULH_from_trust` (`Compliance/FromTrust/MulH.lean`)
     and `equiv_MULHSU_from_trust` (`Compliance/FromTrust/MulHSU.lean`)
-    via `signed_packed_toInt_eq_of_read_xreg` to derive `h_op1` (the
+    via `signed_packed_toInt_eq_of_read_xreg` to derive `h_rs1_value` (the
     signed integer-form lane equation for rs1). -/
 axiom arith_mul_na_eq_msb_of_a
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
@@ -1065,7 +1065,7 @@ axiom arith_mul_na_eq_msb_of_a
 
     Companion to `arith_mul_na_eq_msb_of_a`; consumed by
     `equiv_MULH_from_trust` via `signed_packed_toInt_eq_of_read_xreg`
-    to derive `h_op2`. MULHSU does NOT consume this — its `nb = 0`
+    to derive `h_rs2_value`. MULHSU does NOT consume this — its `nb = 0`
     pin comes from `arith_table_op_mulhsu_mode_pin` (rs2 unsigned). -/
 axiom arith_mul_nb_eq_msb_of_b
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)

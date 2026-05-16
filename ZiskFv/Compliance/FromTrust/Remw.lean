@@ -17,10 +17,10 @@ import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 > `h_byte_lo` on `d_0 + d_1 * 65536` (remainder low-32).
 >
 > The canonical `equiv_REMW` uses `(v.nr r_a).val` / `(v.nb r_a).val`
-> directly in `h_r_abs`/`h_r_sign` and `h_op1`/`h_op2` (no `toIntZ`
+> directly in `h_r_abs`/`h_r_sign` and `h_rs1_value`/`h_rs2_value` (no `toIntZ`
 > conversion), so the discharge here is more direct than DIVW —
 > the new `arith_div_remainder_bound_signed_w` axiom plugs in
-> verbatim after rewriting through `h_op1`/`h_op2`.
+> verbatim after rewriting through `h_rs1_value`/`h_rs2_value`.
 -/
 
 namespace ZiskFv.Compliance
@@ -79,11 +79,11 @@ theorem equiv_REMW_from_trust
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
         = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
             - (v.np r_a).val * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - (v.nb r_a).val * (2:ℤ)^32)
@@ -184,11 +184,11 @@ theorem equiv_REMW_from_trust
   have h_r_abs : (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
                   - (v.nr r_a).val * (2:ℤ)^32).natAbs
                  < (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs := by
-    rw [h_op2]; exact h_bound.1
+    rw [h_rs2_value]; exact h_bound.1
   have h_r_sign : 0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
                        - (v.nr r_a).val * (2:ℤ)^32)
                        * (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt := by
-    rw [h_op1]; exact h_bound.2
+    rw [h_rs1_value]; exact h_bound.2
   -- ============ Delegate to `equiv_REMW` ============
   exact ZiskFv.Equivalence.Remw.equiv_REMW
     state remw_input r1 r2 rd v r_a exec_row e0 e1 e2
@@ -197,7 +197,7 @@ theorem equiv_REMW_from_trust
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
     h_chain h_sext h_m32 h_div h_op_signed
     h_na_bool h_nb_bool h_nr_bool h_np_xor
-    h_c23 h_byte_lo h_sext_choice h_op1 h_op2
+    h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
     h_op2_ne h_no_overflow_w h_r_abs h_r_sign
 
 end ZiskFv.Compliance
