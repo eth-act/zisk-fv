@@ -17,6 +17,7 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.WriteValueProofs.Arith
+import ZiskFv.Equivalence.Promises.IType
 
 /-!
 End-to-end theorem for RV64 ADDI.
@@ -117,23 +118,11 @@ theorem equiv_ADDI
     (r_main : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    -- Sail-state input bridges
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok addi_input.r1_val state)
-    (h_input_imm : addi_input.imm = imm)
-    (h_input_rd : addi_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some addi_input.PC)
-    -- Bus-protocol structural hypotheses
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : addi_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    -- Structural promise bundle (15 fields, see Promises/IType.lean).
+    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+        state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
+        (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
+        r1 rd imm exec_row e0 e1 e2)
     (h_main_subset : add_subset_holds m r_main)
     (h_main_mode : main_row_in_addi_mode m r_main)
     (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
@@ -151,6 +140,10 @@ theorem equiv_ADDI
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_input_r1, h_input_imm, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
   -- Project the four mode-pin fields of `main_row_in_addi_mode`.
   have h_active : m.is_external_op r_main = 1 := h_main_mode.1
   have h_op : m.op r_main = (10 : FGL) := h_main_mode.2.1

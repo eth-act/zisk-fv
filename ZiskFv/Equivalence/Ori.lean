@@ -17,6 +17,7 @@ import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.WriteValueProofs.BinaryLogic
+import ZiskFv.Equivalence.Promises.IType
 
 /-!
 End-to-end theorem for RV64 ORI. Mirrors `Equivalence.Andi` with
@@ -76,21 +77,10 @@ theorem equiv_ORI
     (r_main r_binary : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok ori_input.r1_val state)
-    (h_input_imm : ori_input.imm = imm)
-    (h_input_rd : ori_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some ori_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : ori_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+        state ori_input.r1_val ori_input.imm ori_input.rd ori_input.PC
+        (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
+        r1 rd imm exec_row e0 e1 e2)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op_ori : m.op r_main = OP_OR)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
@@ -105,6 +95,10 @@ theorem equiv_ORI
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.ORI))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_input_r1, h_input_imm, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
   obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7,
           hb0, hb1, hb2, hb3, hb4, hb5, hb6, hb7,
           hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7⟩ :=

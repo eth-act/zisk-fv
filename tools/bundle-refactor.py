@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Apply the R-type promise-bundle refactor to a list of opcode files.
+"""Apply promise-bundle refactor to per-opcode canonical theorems + wrappers.
 
-For each opcode the tool:
-1. Replaces the 15 structural binders in the canonical theorem with
-   `(promises : RTypePromises ...)`.
-2. Inserts a destructure of `promises` at the start of the proof body.
-3. Adds `import ZiskFv.Equivalence.Promises.RType` to the import block.
+Each shape is one Spec(shape_name, opcodes, pure_fn_template, ...) that
+encodes:
+  - the shape's bundle import path
+  - the binder pattern to remove from each canonical theorem
+  - the bundle constructor + destructure to insert
+  - the wrapper-binder pattern to replace with a bundle constructor
 
-Run from the repository root.
+Per-shape configurations are at the bottom of the file. Run with no
+args to apply all configured shapes; pass a shape name to limit.
 """
 import re
 import sys
@@ -16,165 +18,266 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 
-# (opcode, equiv-name, input-record-name, sail-input-binder-name, pure-spec-fn-name)
-# The sail-input-binder-name distinguishes opcodes that use `h_input_r1_sail`
-# vs `h_input_r1`.
-OPCODES = [
-    ("And",  "AND",  "and_input",  "h_input_r1", "execute_RTYPE_and_pure"),
-    ("Or",   "OR",   "or_input",   "h_input_r1", "execute_RTYPE_or_pure"),
-    ("Xor",  "XOR",  "xor_input",  "h_input_r1", "execute_RTYPE_xor_pure"),
-    ("Slt",  "SLT",  "slt_input",  "h_input_r1_sail", "execute_RTYPE_slt_pure"),
-    ("Sltu", "SLTU", "sltu_input", "h_input_r1", "execute_RTYPE_sltu_pure"),
-    ("Addw", "ADDW", "addw_input", "h_input_r1", "execute_RTYPE_addw_pure"),
-    ("Subw", "SUBW", "subw_input", "h_input_r1", "execute_RTYPE_subw_pure"),
-]
-
-
-def refactor_canonical(path: Path, opcode: str, equiv_name: str,
-                       input_record: str, sail_binder: str,
-                       pure_fn: str) -> bool:
-    content = path.read_text()
-    original = content
-
-    # 1. Add import.
-    if "import ZiskFv.Equivalence.Promises.RType" not in content:
-        # Insert after the last `import ZiskFv...` line.
-        import_lines = re.findall(r'^import ZiskFv\..*$', content, re.MULTILINE)
-        if import_lines:
-            last_import = import_lines[-1]
-            content = content.replace(
-                last_import,
-                last_import + "\nimport ZiskFv.Equivalence.Promises.RType",
-                1
-            )
-        else:
-            print(f"  WARN: no ZiskFv import to anchor after in {path}", file=sys.stderr)
-
-    # 2. Replace 15 structural binders with bundle binder.
-    # The sail-binder may be "h_input_r1" or "h_input_r1_sail" — adjust.
-    sail2_binder = sail_binder.replace("r1", "r2")
-    binder_block_re = re.compile(
-        rf'    \({sail_binder} : read_xreg \(regidx_to_fin r1\) state\n'
-        rf'      = EStateM\.Result\.ok {input_record}\.r1_val state\)\n'
-        rf'    \({sail2_binder} : read_xreg \(regidx_to_fin r2\) state\n'
-        rf'      = EStateM\.Result\.ok {input_record}\.r2_val state\)\n'
-        rf'    \(h_input_rd : {input_record}\.rd = regidx_to_fin rd\)\n'
-        rf'    \(h_input_pc : state\.regs\.get\? Register\.PC = \.some {input_record}\.PC\)\n'
-        rf'    \(h_exec_len : exec_row\.length = 2\)\n'
-        rf'    \(h_e0_mult : exec_row\[0\]!\.multiplicity = -1\)\n'
-        rf'    \(h_e1_mult : exec_row\[1\]!\.multiplicity = 1\)\n'
-        rf'    \(h_nextPC_matches :\n'
-        rf'      \(register_type_pc_equiv ▸ \(BitVec\.ofNat 64 \(exec_row\[1\]!\.pc\)\.val\)\)\n'
-        rf'        = \(PureSpec\.{pure_fn} {input_record}\)\.nextPC\)\n'
-        rf'    \(h_m0_mult : e0\.multiplicity = -1\) \(h_m0_as : e0\.as\.val = 1\)\n'
-        rf'    \(h_m1_mult : e1\.multiplicity = -1\) \(h_m1_as : e1\.as\.val = 1\)\n'
-        rf'    \(h_m2_mult : e2\.multiplicity = 1\) \(h_m2_as : e2\.as\.val = 1\)\n'
-        rf'    \(h_rd_idx : {input_record}\.rd = Transpiler\.wrap_to_regidx e2\.ptr\)\n'
-    )
-
-    replacement = (
-        f'    (promises : ZiskFv.Equivalence.Promises.RTypePromises\n'
-        f'        state {input_record}.r1_val {input_record}.r2_val {input_record}.rd {input_record}.PC\n'
-        f'        (PureSpec.{pure_fn} {input_record}).nextPC\n'
-        f'        r1 r2 rd exec_row e0 e1 e2)\n'
-    )
-
-    new_content, n = binder_block_re.subn(replacement, content)
-    if n != 1:
-        print(f"  WARN: {path}: expected 1 binder-block match, got {n}", file=sys.stderr)
-        return False
-    content = new_content
-
-    # 3. Insert destructure after the `:= by\n` matching the theorem.
-    # Find the `:= by` followed by a newline that's at the top of the proof body.
-    # We need the FIRST `:= by\n` after `theorem equiv_<OP>`.
-    theorem_match = re.search(rf'^theorem equiv_{equiv_name}\b', content, re.MULTILINE)
-    if not theorem_match:
-        print(f"  WARN: {path}: theorem not found", file=sys.stderr)
-        return False
-    by_match = re.search(r':= by\n', content[theorem_match.start():])
-    if not by_match:
-        print(f"  WARN: {path}: := by not found", file=sys.stderr)
-        return False
-    insert_pos = theorem_match.start() + by_match.end()
-    destructure = (
-        f'  obtain ⟨{sail_binder}, {sail2_binder}, h_input_rd, h_input_pc,\n'
-        f'          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,\n'
-        f'          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,\n'
-        f'          h_rd_idx⟩ := promises\n'
-    )
-    content = content[:insert_pos] + destructure + content[insert_pos:]
-
-    if content == original:
-        return False
-    path.write_text(content)
-    return True
-
-
-def refactor_wrapper(path: Path, opcode: str, equiv_name: str,
-                     input_record: str, sail_binder: str,
-                     pure_fn: str) -> bool:
+def refactor_file(path: Path, replacements: list[tuple[str, str]],
+                  imports: list[str] = None,
+                  insert_after_by: dict = None,
+                  description: str = "") -> bool:
+    """Apply a list of (old, new) replacements to `path`. `imports` are
+    additional imports to add. `insert_after_by` is a dict
+    {theorem_name: text} to insert after the first `:= by\n` following
+    each `theorem <name>` line.
+    """
     if not path.exists():
+        print(f"  SKIP (no file): {path}", file=sys.stderr)
         return False
     content = path.read_text()
     original = content
 
-    # Find the `exact ZiskFv.Equivalence.<Op>.equiv_<OP>` call.
-    sail2_binder = sail_binder.replace("r1", "r2")
-    # Match the binder list passed: h_input_r1, h_input_r2, h_input_rd, h_input_pc,
-    #                                h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
-    #                                h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
-    #                                h_rd_idx
-    # in the call site.
-    # Match the binder list passed at the call site. Two layouts seen:
-    #   variant A: h_m...as on one line, h_rd_idx on the next
-    #   variant B: h_m...as h_rd_idx all on one line
-    pattern = re.compile(
-        rf'    {sail_binder} {sail2_binder} h_input_rd h_input_pc\n'
-        rf'    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches\n'
-        rf'    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as(?: h_rd_idx\n|\n    h_rd_idx\n)'
-    )
-    replacement = (
-        f'    {{ input_r1_eq := {sail_binder}\n'
-        f'      input_r2_eq := {sail2_binder}\n'
-        f'      input_rd_eq := h_input_rd\n'
-        f'      input_pc_eq := h_input_pc\n'
-        f'      exec_len := h_exec_len\n'
-        f'      e0_mult := h_e0_mult\n'
-        f'      e1_mult := h_e1_mult\n'
-        f'      nextPC_matches := h_nextPC_matches\n'
-        f'      m0_mult := h_m0_mult\n'
-        f'      m0_as := h_m0_as\n'
-        f'      m1_mult := h_m1_mult\n'
-        f'      m1_as := h_m1_as\n'
-        f'      m2_mult := h_m2_mult\n'
-        f'      m2_as := h_m2_as\n'
-        f'      rd_idx := h_rd_idx }}\n'
-    )
-    new_content, n = pattern.subn(replacement, content)
-    if n != 1:
-        # Wrapper may use a different binder layout; report and skip.
-        print(f"  INFO: {path}: wrapper pattern not matched (n={n})", file=sys.stderr)
-        return False
-    content = new_content
+    if imports:
+        for imp in imports:
+            if imp not in content:
+                lines = content.split("\n")
+                # Insert after the last `import ZiskFv...` line.
+                last_zisk = -1
+                for i, l in enumerate(lines):
+                    if l.startswith("import ZiskFv"):
+                        last_zisk = i
+                if last_zisk >= 0:
+                    lines.insert(last_zisk + 1, imp)
+                    content = "\n".join(lines)
 
-    if content == original:
-        return False
-    path.write_text(content)
-    return True
+    for old, new in replacements:
+        if old not in content:
+            continue
+        if content.count(old) > 1:
+            print(f"  WARN: pattern matched {content.count(old)} times in {path}", file=sys.stderr)
+        content = content.replace(old, new, 1)
+
+    if insert_after_by:
+        for thm_name, insert_text in insert_after_by.items():
+            m = re.search(rf'^theorem {re.escape(thm_name)}\b', content, re.MULTILINE)
+            if not m:
+                continue
+            tail = content[m.start():]
+            by_m = re.search(r':= by\n', tail)
+            if not by_m:
+                continue
+            insert_pos = m.start() + by_m.end()
+            if insert_text in content[insert_pos:insert_pos + len(insert_text) + 50]:
+                continue  # Already inserted.
+            content = content[:insert_pos] + insert_text + content[insert_pos:]
+
+    if content != original:
+        path.write_text(content)
+        if description:
+            print(f"  {description}: {path.relative_to(ROOT)}", file=sys.stderr)
+        return True
+    return False
+
+
+# Bundle destructure shared by IType (15 fields).
+ITYPE_DESTRUCTURE = (
+    "  obtain ⟨h_input_r1, h_input_imm, h_input_rd, h_input_pc,\n"
+    "          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,\n"
+    "          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,\n"
+    "          h_rd_idx⟩ := promises\n"
+)
+
+ITYPE_BUNDLE_CTOR = (
+    "    {{ input_r1_eq := h_input_r1\n"
+    "      input_imm_eq := h_input_imm\n"
+    "      input_rd_eq := h_input_rd\n"
+    "      input_pc_eq := h_input_pc\n"
+    "      exec_len := h_exec_len\n"
+    "      e0_mult := h_e0_mult\n"
+    "      e1_mult := h_e1_mult\n"
+    "      nextPC_matches := h_nextPC_matches\n"
+    "      m0_mult := h_m0_mult\n"
+    "      m0_as := h_m0_as\n"
+    "      m1_mult := h_m1_mult\n"
+    "      m1_as := h_m1_as\n"
+    "      m2_mult := h_m2_mult\n"
+    "      m2_as := h_m2_as\n"
+    "      rd_idx := h_rd_idx }}\n"
+)
+
+
+def refactor_itype(op_cap: str, op_upper: str, input_record: str,
+                   pure_fn: str) -> bool:
+    """Refactor one ALU-ITYPE opcode."""
+    canon = ROOT / f"ZiskFv/Equivalence/{op_cap}.lean"
+    wrap = ROOT / f"ZiskFv/Compliance/FromTrust/{op_cap}.lean"
+
+    # Canonical: replace 15 binders with bundle.
+    canon_old = (
+        f"    (h_input_r1 : read_xreg (regidx_to_fin r1) state\n"
+        f"      = EStateM.Result.ok {input_record}.r1_val state)\n"
+        f"    (h_input_imm : {input_record}.imm = imm)\n"
+        f"    (h_input_rd : {input_record}.rd = regidx_to_fin rd)\n"
+        f"    (h_input_pc : state.regs.get? Register.PC = .some {input_record}.PC)\n"
+        f"    (h_exec_len : exec_row.length = 2)\n"
+        f"    (h_e0_mult : exec_row[0]!.multiplicity = -1)\n"
+        f"    (h_e1_mult : exec_row[1]!.multiplicity = 1)\n"
+        f"    (h_nextPC_matches :\n"
+        f"      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))\n"
+        f"        = (PureSpec.{pure_fn} {input_record}).nextPC)\n"
+        f"    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)\n"
+        f"    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)\n"
+        f"    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)\n"
+        f"    (h_rd_idx : {input_record}.rd = Transpiler.wrap_to_regidx e2.ptr)\n"
+    )
+    canon_new = (
+        f"    (promises : ZiskFv.Equivalence.Promises.ITypePromises\n"
+        f"        state {input_record}.r1_val {input_record}.imm {input_record}.rd {input_record}.PC\n"
+        f"        (PureSpec.{pure_fn} {input_record}).nextPC\n"
+        f"        r1 rd imm exec_row e0 e1 e2)\n"
+    )
+
+    ok1 = refactor_file(
+        canon,
+        [(canon_old, canon_new)],
+        imports=["import ZiskFv.Equivalence.Promises.IType"],
+        insert_after_by={f"equiv_{op_upper}": ITYPE_DESTRUCTURE},
+        description="canonical",
+    )
+
+    # Wrapper: replace binder list with bundle constructor.
+    wrap_old = (
+        "    h_input_r1 h_input_imm h_input_rd h_input_pc\n"
+        "    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches\n"
+        "    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx\n"
+    )
+    wrap_new = ITYPE_BUNDLE_CTOR.replace("{{", "{").replace("}}", "}")
+
+    ok2 = refactor_file(
+        wrap,
+        [(wrap_old, wrap_new)],
+        description="wrapper",
+    )
+    return ok1 or ok2
+
+
+BRANCH_DESTRUCTURE = (
+    "  obtain ⟨h_input_imm, h_input_r1, h_input_r2, h_input_pc,\n"
+    "          h_input_misa, h_misa_c, h_exec_len, h_e0_mult, h_e1_mult,\n"
+    "          h_nextPC_matches, h_not_throws, h_success⟩ := promises\n"
+)
+
+BRANCH_BUNDLE_CTOR = (
+    "    { input_imm_eq := h_input_imm\n"
+    "      input_r1_eq := h_input_r1\n"
+    "      input_r2_eq := h_input_r2\n"
+    "      input_pc_eq := h_input_pc\n"
+    "      input_misa_eq := h_input_misa\n"
+    "      misa_c_zero := h_misa_c\n"
+    "      exec_len := h_exec_len\n"
+    "      e0_mult := h_e0_mult\n"
+    "      e1_mult := h_e1_mult\n"
+    "      nextPC_matches := h_nextPC_matches\n"
+    "      not_throws := h_not_throws\n"
+    "      success := h_success }\n"
+)
+
+
+def refactor_branch(file_base: str, op_upper: str, input_record: str,
+                    pure_fn: str, wrapper_name: str) -> bool:
+    """Refactor one BRANCH opcode."""
+    canon = ROOT / f"ZiskFv/Equivalence/{file_base}.lean"
+    wrap = ROOT / f"ZiskFv/Compliance/FromTrust/{wrapper_name}.lean"
+
+    # Try multiple "structural bus hypotheses" comment variants.
+    def make_canon_old(comment_line: str) -> str:
+        return (
+            f"    (h_input_imm : {input_record}.imm = imm)\n"
+            f"    (h_input_r1 : read_xreg (regidx_to_fin r1) state\n"
+            f"      = EStateM.Result.ok {input_record}.r1_val state)\n"
+            f"    (h_input_r2 : read_xreg (regidx_to_fin r2) state\n"
+            f"      = EStateM.Result.ok {input_record}.r2_val state)\n"
+            f"    (h_input_pc : state.regs.get? Register.PC = .some {input_record}.PC)\n"
+            f"    (h_input_misa : state.regs.get? Register.misa = .some misa_val)\n"
+            f"    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)\n"
+            f"{comment_line}"
+            f"    (h_exec_len : exec_row.length = 2)\n"
+            f"    (h_e0_mult : exec_row[0]!.multiplicity = -1)\n"
+            f"    (h_e1_mult : exec_row[1]!.multiplicity = 1)\n"
+            f"    (h_nextPC_matches :\n"
+            f"      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))\n"
+            f"        = (PureSpec.{pure_fn} {input_record}).nextPC)\n"
+            f"    (h_not_throws : (PureSpec.{pure_fn} {input_record}).throws = false)\n"
+            f"    (h_success : (PureSpec.{pure_fn} {input_record}).success = true) :\n"
+        )
+
+    canon_new = (
+        f"    (promises : ZiskFv.Equivalence.Promises.BranchPromises\n"
+        f"        state {input_record}.imm {input_record}.r1_val {input_record}.r2_val {input_record}.PC\n"
+        f"        misa_val\n"
+        f"        (PureSpec.{pure_fn} {input_record}).nextPC\n"
+        f"        (PureSpec.{pure_fn} {input_record}).throws\n"
+        f"        (PureSpec.{pure_fn} {input_record}).success\n"
+        f"        imm r1 r2 exec_row) :\n"
+    )
+
+    ok1 = False
+    for comment in [
+        "    -- Structural bus hypotheses.\n",
+        "    -- Structural bus hypotheses (shape (b)).\n",
+        "    -- Structural bus hypotheses (shape b).\n",
+        "",
+    ]:
+        if refactor_file(
+            canon,
+            [(make_canon_old(comment), canon_new)],
+            imports=["import ZiskFv.Equivalence.Promises.Branch"],
+            insert_after_by={f"equiv_{op_upper}": BRANCH_DESTRUCTURE},
+            description="canonical",
+        ):
+            ok1 = True
+            break
+
+    # Two layouts observed; try both.
+    wrap_olds = [
+        ("    h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c\n"
+         "    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_not_throws h_success\n"),
+        ("    h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c\n"
+         "    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches\n"
+         "    h_not_throws h_success\n"),
+    ]
+    ok2 = False
+    for old in wrap_olds:
+        if refactor_file(wrap, [(old, BRANCH_BUNDLE_CTOR)], description="wrapper"):
+            ok2 = True
+            break
+    return ok1 or ok2
 
 
 def main() -> int:
-    for op_capitalized, equiv_name, input_record, sail_binder, pure_fn in OPCODES:
-        canon_path = ROOT / f"ZiskFv/Equivalence/{op_capitalized}.lean"
-        wrap_path = ROOT / f"ZiskFv/Compliance/FromTrust/{op_capitalized}.lean"
-        print(f"== {op_capitalized} ==", file=sys.stderr)
-        if refactor_canonical(canon_path, op_capitalized, equiv_name,
-                              input_record, sail_binder, pure_fn):
-            print(f"  canonical: refactored", file=sys.stderr)
-        if refactor_wrapper(wrap_path, op_capitalized, equiv_name,
-                            input_record, sail_binder, pure_fn):
-            print(f"  wrapper: refactored", file=sys.stderr)
+    # IType configuration.
+    itype_ops = [
+        ("Addi", "ADDI", "addi_input", "execute_ITYPE_addi_pure"),
+        ("Andi", "ANDI", "andi_input", "execute_ITYPE_andi_pure"),
+        ("Ori",  "ORI",  "ori_input",  "execute_ITYPE_ori_pure"),
+        ("Xori", "XORI", "xori_input", "execute_ITYPE_xori_pure"),
+        ("Slti", "SLTI", "slti_input", "execute_ITYPE_slti_pure"),
+        ("Sltiu","SLTIU","sltiu_input","execute_ITYPE_sltiu_pure"),
+    ]
+    print("== IType ==", file=sys.stderr)
+    for op_cap, op_upper, ir, pf in itype_ops:
+        print(f"-- {op_cap} --", file=sys.stderr)
+        refactor_itype(op_cap, op_upper, ir, pf)
+
+    # Branch configuration: (file basename, UPPER op, input record, pure fn, wrapper basename).
+    branch_ops = [
+        ("BranchEqual",                "BEQ",  "beq_input",  "execute_BEQ_pure",  "Beq"),
+        ("BranchNotEqual",             "BNE",  "bne_input",  "execute_BNE_pure",  "Bne"),
+        ("BranchLessThan",             "BLT",  "blt_input",  "execute_BLT_pure",  "Blt"),
+        ("BranchLessThanUnsigned",     "BLTU", "bltu_input", "execute_BLTU_pure", "Bltu"),
+        ("BranchGreaterEqual",         "BGE",  "bge_input",  "execute_BGE_pure",  "Bge"),
+        ("BranchGreaterEqualUnsigned", "BGEU", "bgeu_input", "execute_BGEU_pure", "Bgeu"),
+    ]
+    print("== Branch ==", file=sys.stderr)
+    for file_base, op_upper, ir, pf, wrap_name in branch_ops:
+        print(f"-- {file_base} --", file=sys.stderr)
+        refactor_branch(file_base, op_upper, ir, pf, wrap_name)
     return 0
 
 

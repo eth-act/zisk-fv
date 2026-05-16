@@ -12,6 +12,7 @@ import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
+import ZiskFv.Equivalence.Promises.Branch
 
 /-!
 End-to-end theorem for RV64 BEQ. Combines:
@@ -89,25 +90,18 @@ theorem equiv_BEQ
     (r1 r2 : regidx)
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (h_input_imm : beq_input.imm = imm)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok beq_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok beq_input.r2_val state)
-    (h_input_pc : state.regs.get? Register.PC = .some beq_input.PC)
-    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
-    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Structural bus hypotheses.
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_BEQ_pure beq_input).nextPC)
-    (h_not_throws : (PureSpec.execute_BEQ_pure beq_input).throws = false)
-    (h_success : (PureSpec.execute_BEQ_pure beq_input).success = true) :
+    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+        state beq_input.imm beq_input.r1_val beq_input.r2_val beq_input.PC
+        misa_val
+        (PureSpec.execute_BEQ_pure beq_input).nextPC
+        (PureSpec.execute_BEQ_pure beq_input).throws
+        (PureSpec.execute_BEQ_pure beq_input).success
+        imm r1 r2 exec_row) :
     execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BEQ)) state
       = (bus_effect exec_row [] state).2 := by
+  obtain ⟨h_input_imm, h_input_r1, h_input_r2, h_input_pc,
+          h_input_misa, h_misa_c, h_exec_len, h_e0_mult, h_e1_mult,
+          h_nextPC_matches, h_not_throws, h_success⟩ := promises
   rw [equiv_BEQ_sail state beq_input imm r1 r2 misa_val
         h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c]
   -- Discharge the bus-side equation via the shape lemma.

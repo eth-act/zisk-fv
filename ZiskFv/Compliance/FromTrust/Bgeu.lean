@@ -68,8 +68,17 @@ theorem equiv_BGEU_from_trust
     bgeu_pure_no_exception_of_aligned bgeu_input h_target_aligned
   exact ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU
     state bgeu_input imm r1 r2 misa_val exec_row
-    h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_not_throws h_success
+    { input_imm_eq := h_input_imm
+      input_r1_eq := h_input_r1
+      input_r2_eq := h_input_r2
+      input_pc_eq := h_input_pc
+      input_misa_eq := h_input_misa
+      misa_c_zero := h_misa_c
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      not_throws := h_not_throws
+      success := h_success }
 
 end ZiskFv.Compliance
