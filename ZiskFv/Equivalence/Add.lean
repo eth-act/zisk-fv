@@ -17,6 +17,7 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.WriteValueProofs.Arith
+import ZiskFv.Equivalence.Promises.RType
 
 /-!
 End-to-end theorem for RV64 ADD. Combines:
@@ -101,24 +102,11 @@ theorem equiv_ADD
     (r_main : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    -- Sail-state Sail-input bridges (TRANSPILE-BRIDGE class)
-    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok add_input.r1_val state)
-    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok add_input.r2_val state)
-    (h_input_rd : add_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some add_input.PC)
-    -- Bus-protocol structural hypotheses (CIRCUIT-CONSTRAINT class)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_add_pure add_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : add_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    -- Structural promise bundle (15 fields, see Promises/RType.lean).
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
+        (PureSpec.execute_RTYPE_add_pure add_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_main_subset : add_subset_holds m r_main)
     (h_main_mode : main_row_in_add_mode m r_main)
     (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
@@ -129,6 +117,10 @@ theorem equiv_ADD
     (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_input_r1_sail, h_input_r2_sail, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
   -- *Promise discharge* via the BinaryAdd bridge (with SailStateBridge
   -- deriving the input bridges from the Sail-form `read_xreg` facts
   -- that `equiv_ADD_sail` consumes).

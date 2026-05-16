@@ -17,6 +17,7 @@ import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.Bridge.ControlFlow
 import ZiskFv.Equivalence.WriteValueProofs.JumpUType
+import ZiskFv.Equivalence.Promises.Jump
 
 /-!
 End-to-end theorem for RV64 JALR. Combines:
@@ -130,31 +131,20 @@ theorem equiv_JALR
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    -- Structural promise bundle (12 fields, see Promises/Jump.lean).
+    (promises : ZiskFv.Equivalence.Promises.JumpPromises
+        state jalr_input.PC jalr_input.rd misa_val
+        (PureSpec.execute_JALR_pure jalr_input).success
+        (PureSpec.execute_JALR_pure jalr_input).nextPC
+        rd exec_row e_rd nextPC_val)
+    -- JALR-specific binders kept inline:
     (h_input_imm : jalr_input.imm = imm)
-    (h_input_rd : jalr_input.rd = regidx_to_fin rd)
     (h_input_rs1 : read_xreg (regidx_to_fin rs1) state
       = EStateM.Result.ok jalr_input.rs1_val state)
-    (h_input_pc : state.regs.get? Register.PC = .some jalr_input.PC)
-    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
-    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
     (h_cur_privilege : Sail.readReg Register.cur_privilege state
       = EStateM.Result.ok Privilege.Machine state)
     (h_mseccfg : Sail.readReg Register.mseccfg state
       = EStateM.Result.ok mseccfg state)
-    -- Shape-(c) structural bus hypotheses.
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = nextPC_val)
-    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
-    -- Happy-path hypothesis: no alignment fault (ZisK enforces via
-    -- the JALR_MASK operand in the transpiler).
-    (h_success : (PureSpec.execute_JALR_pure jalr_input).success = true)
-    (h_nextPC_option :
-      (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val)
-    (h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
     -- Discharge parameters
     (h_circuit : ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc)
     (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
@@ -164,6 +154,9 @@ theorem equiv_JALR
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
       = (bus_effect exec_row [e_rd] state).2 := by
+  obtain ⟨h_input_rd, h_input_pc, h_input_misa, h_misa_c, h_exec_len,
+          h_e0_mult, h_e1_mult, h_nextPC_matches, h_rd_mult, h_rd_as,
+          h_success, h_nextPC_option, h_rd_idx⟩ := promises
   -- Discharge `h_jmp2` via `transpile_JALR` (class #1).
   have h_jmp2 : m.jmp_offset2 r_main = 4 :=
     ZiskFv.Equivalence.Bridge.ControlFlow.jalr_discharge_full

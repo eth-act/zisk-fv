@@ -108,9 +108,20 @@ theorem equiv_JAL_from_trust
   -- ============ Delegate to canonical `equiv_JAL` ============
   exact ZiskFv.Equivalence.Jal.equiv_JAL state jal_input imm rd misa_val
     exec_row e_rd nextPC_val m r_main next_pc
-    h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_rd_mult h_rd_as h_not_throws h_success h_nextPC_option h_rd_idx
+    { input_rd_eq := h_input_rd
+      input_pc_eq := h_input_pc
+      input_misa_eq := h_input_misa
+      misa_c_zero := h_misa_c
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      rd_mult := h_rd_mult
+      rd_as := h_rd_as
+      success := h_success
+      nextPC_option := h_nextPC_option
+      rd_idx := h_rd_idx }
+    h_input_imm h_not_throws
     h_circuit h_pc_bound h_lo_bound h_pc_offset_lt_2_32
 
 end ZiskFv.Compliance

@@ -15,6 +15,7 @@ import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.Bridge.ControlFlow
 import ZiskFv.Equivalence.WriteValueProofs.JumpUType
+import ZiskFv.Equivalence.Promises.Jump
 
 /-!
 End-to-end theorem for RV64 JAL. Combines:
@@ -105,26 +106,16 @@ theorem equiv_JAL
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    -- Structural promise bundle (12 fields, see Promises/Jump.lean).
+    (promises : ZiskFv.Equivalence.Promises.JumpPromises
+        state jal_input.PC jal_input.rd misa_val
+        (PureSpec.execute_JAL_pure jal_input).success
+        (PureSpec.execute_JAL_pure jal_input).nextPC
+        rd exec_row e_rd nextPC_val)
+    -- JAL-specific binders kept inline:
     (h_input_imm : jal_input.imm = imm)
-    (h_input_rd : jal_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some jal_input.PC)
-    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
-    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    -- Structural bus hypotheses.
-    -- JAL has a single memory-bus write entry (rd ← PC+4 via `store_pc`).
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = nextPC_val)
-    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
-    -- Happy-path hypotheses: no alignment fault under ZisK's RV64IM profile.
+    -- Happy-path hypothesis: no alignment fault under ZisK's RV64IM profile.
     (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
-    (h_success : (PureSpec.execute_JAL_pure jal_input).success = true)
-    (h_nextPC_option :
-      (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val)
-    (h_rd_idx : jal_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
     -- Discharge parameters
     (h_circuit : ZiskFv.ZiskCircuit.Jal.jal_circuit_holds m r_main next_pc)
     (h_pc_bound : jal_input.PC.toNat < GL_prime - 4)
@@ -133,6 +124,9 @@ theorem equiv_JAL
      :
     execute_instruction (instruction.JAL (imm, rd)) state
       = (bus_effect exec_row [e_rd] state).2 := by
+  obtain ⟨h_input_rd, h_input_pc, h_input_misa, h_misa_c, h_exec_len,
+          h_e0_mult, h_e1_mult, h_nextPC_matches, h_rd_mult, h_rd_as,
+          h_success, h_nextPC_option, h_rd_idx⟩ := promises
   -- Discharge `h_jmp2` via `transpile_JAL` (class #1).
   have h_jmp2 : m.jmp_offset2 r_main = 4 :=
     ZiskFv.Equivalence.Bridge.ControlFlow.jal_discharge_full

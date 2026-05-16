@@ -100,9 +100,17 @@ theorem equiv_AUIPC_from_trust
   -- ============ Delegate to canonical `equiv_AUIPC` ============
   exact ZiskFv.Equivalence.Auipc.equiv_AUIPC state auipc_input imm rd
     exec_row e_rd nextPC_val m r_main next_pc
-    h_input_imm h_input_rd h_input_pc
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_rd_mult h_rd_as h_nextPC_eq h_rd_idx
+    { input_imm_eq := h_input_imm
+      input_rd_eq := h_input_rd
+      input_pc_eq := h_input_pc
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      rd_mult := h_rd_mult
+      rd_as := h_rd_as
+      nextPC_eq := h_nextPC_eq
+      rd_idx := h_rd_idx }
     h_circuit h_no_wrap h_lo_bound h_pc_offset_lt_2_32
 
 end ZiskFv.Compliance
