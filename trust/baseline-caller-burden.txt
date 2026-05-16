@@ -12,18 +12,18 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 2205
-# Category bridge: 80
-# Category bus_shape: 336
+# Total rows: 2040
+# Category bridge: 92
+# Category bus_shape: 228
 # Category byte_chain: 55
 # Category entry: 67
 # Category loose: 376
 # Category match: 91
-# Category other: 695
+# Category other: 692
 # Category range: 96
 # Category row: 68
-# Category state: 148
-# Category transpile: 94
+# Category state: 118
+# Category transpile: 58
 # Category validator: 99
 #
 ZiskFv.Equivalence.Add.equiv_ADD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
@@ -1296,25 +1296,11 @@ ZiskFv.Equivalence.Shift.equiv_SLLW 009 exec_row [entry] List (Interaction.Execu
 ZiskFv.Equivalence.Shift.equiv_SLLW 010 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Shift.equiv_SLLW 011 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Shift.equiv_SLLW 012 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Shift.equiv_SLLW 013 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok sllw_input.r1_val state
-ZiskFv.Equivalence.Shift.equiv_SLLW 014 h_input_r2_sail [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok sllw_input.r2_val state
-ZiskFv.Equivalence.Shift.equiv_SLLW 015 h_input_rd [transpile] sllw_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.Shift.equiv_SLLW 016 h_input_pc [state] state.regs.get? Register.PC = .some sllw_input.PC
-ZiskFv.Equivalence.Shift.equiv_SLLW 017 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.Shift.equiv_SLLW 018 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.Shift.equiv_SLLW 019 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.Shift.equiv_SLLW 020 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.Shift.equiv_SLLW 021 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.Shift.equiv_SLLW 022 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.Shift.equiv_SLLW 023 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.Shift.equiv_SLLW 024 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.Shift.equiv_SLLW 025 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.Shift.equiv_SLLW 026 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.Shift.equiv_SLLW 027 h_rd_idx [transpile] sllw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Shift.equiv_SLLW 028 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Equivalence.Shift.equiv_SLLW 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL_W
-ZiskFv.Equivalence.Shift.equiv_SLLW 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.Shift.equiv_SLLW 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Shift.equiv_SLLW 013 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state sllw_input.r1_val sllw_input.r2_
+ZiskFv.Equivalence.Shift.equiv_SLLW 014 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Shift.equiv_SLLW 015 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL_W
+ZiskFv.Equivalence.Shift.equiv_SLLW 016 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Shift.equiv_SLLW 017 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 001 slliw_input [other] PureSpec.SlliwInput
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 002 r1 [other] regidx
@@ -1327,24 +1313,11 @@ ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 008 exec_row [entry] List (Interaction.Ex
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 009 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 010 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 012 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok slliw_input.r1_val state
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 013 h_input_rd [transpile] slliw_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 014 h_input_pc [state] state.regs.get? Register.PC = .some slliw_input.PC
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 015 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 016 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 017 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 018 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 019 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 020 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 021 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 022 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 023 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 024 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 025 h_rd_idx [transpile] slliw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 026 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 027 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL_W
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 028 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 029 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 012 promises [bridge] ZiskFv.Equivalence.Promises.ShiftWImmPromises state slliw_input.r1_val slliw_inp
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 013 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 014 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL_W
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 015 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW 016 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 001 srlw_input [other] PureSpec.SrlwInput
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 002 r1 [other] regidx
@@ -1358,25 +1331,11 @@ ZiskFv.Equivalence.ShiftR.equiv_SRLW 009 exec_row [entry] List (Interaction.Exec
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 010 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 011 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.ShiftR.equiv_SRLW 012 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 013 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok srlw_input.r1_val state
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 014 h_input_r2_sail [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok srlw_input.r2_val state
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 015 h_input_rd [transpile] srlw_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 016 h_input_pc [state] state.regs.get? Register.PC = .some srlw_input.PC
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 017 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 018 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 019 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 020 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 021 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 022 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 023 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 024 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 025 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 026 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 027 h_rd_idx [transpile] srlw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 028 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL_W
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.ShiftR.equiv_SRLW 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 013 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state srlw_input.r1_val srlw_input.r2_
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 014 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 015 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL_W
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 016 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.ShiftR.equiv_SRLW 017 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 001 sraw_input [other] PureSpec.SrawInput
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 002 r1 [other] regidx
@@ -1390,25 +1349,11 @@ ZiskFv.Equivalence.ShiftRA.equiv_SRAW 009 exec_row [entry] List (Interaction.Exe
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 010 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 011 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.ShiftRA.equiv_SRAW 012 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 013 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok sraw_input.r1_val state
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 014 h_input_r2_sail [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok sraw_input.r2_val state
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 015 h_input_rd [transpile] sraw_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 016 h_input_pc [state] state.regs.get? Register.PC = .some sraw_input.PC
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 017 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 018 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 019 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 020 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 021 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 022 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 023 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 024 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 025 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 026 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 027 h_rd_idx [transpile] sraw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 028 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA_W
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 013 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state sraw_input.r1_val sraw_input.r2_
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 014 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 015 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA_W
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 016 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW 017 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 001 sraiw_input [other] PureSpec.SraiwInput
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 002 r1 [other] regidx
@@ -1421,24 +1366,11 @@ ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 008 exec_row [entry] List (Interaction.E
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 009 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 010 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 012 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok sraiw_input.r1_val state
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 013 h_input_rd [transpile] sraiw_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 014 h_input_pc [state] state.regs.get? Register.PC = .some sraiw_input.PC
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 015 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 016 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 017 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 018 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 019 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 020 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 021 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 022 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 023 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 024 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 025 h_rd_idx [transpile] sraiw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 026 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 027 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA_W
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 028 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 029 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 012 promises [bridge] ZiskFv.Equivalence.Promises.ShiftWImmPromises state sraiw_input.r1_val sraiw_inp
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 013 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 014 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA_W
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 015 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW 016 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 001 srliw_input [other] PureSpec.SrliwInput
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 002 r1 [other] regidx
@@ -1451,24 +1383,11 @@ ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 008 exec_row [entry] List (Interaction.E
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 009 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 010 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 012 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok srliw_input.r1_val state
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 013 h_input_rd [transpile] srliw_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 014 h_input_pc [state] state.regs.get? Register.PC = .some srliw_input.PC
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 015 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 016 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 017 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 018 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 019 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 020 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 021 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 022 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 023 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 024 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 025 h_rd_idx [transpile] srliw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 026 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 027 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL_W
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 028 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 029 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 012 promises [bridge] ZiskFv.Equivalence.Promises.ShiftWImmPromises state srliw_input.r1_val srliw_inp
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 013 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 014 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL_W
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 015 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW 016 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Sll.equiv_SLL 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Sll.equiv_SLL 001 sll_input [other] PureSpec.SllInput
 ZiskFv.Equivalence.Sll.equiv_SLL 002 r1 [other] regidx
@@ -1482,25 +1401,11 @@ ZiskFv.Equivalence.Sll.equiv_SLL 009 exec_row [entry] List (Interaction.Executio
 ZiskFv.Equivalence.Sll.equiv_SLL 010 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Sll.equiv_SLL 011 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Sll.equiv_SLL 012 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Sll.equiv_SLL 013 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok sll_input.r1_val state
-ZiskFv.Equivalence.Sll.equiv_SLL 014 h_input_r2_sail [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok sll_input.r2_val state
-ZiskFv.Equivalence.Sll.equiv_SLL 015 h_input_rd [transpile] sll_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.Sll.equiv_SLL 016 h_input_pc [state] state.regs.get? Register.PC = .some sll_input.PC
-ZiskFv.Equivalence.Sll.equiv_SLL 017 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.Sll.equiv_SLL 018 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.Sll.equiv_SLL 019 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.Sll.equiv_SLL 020 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.Sll.equiv_SLL 021 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.Sll.equiv_SLL 022 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.Sll.equiv_SLL 023 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.Sll.equiv_SLL 024 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.Sll.equiv_SLL 025 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.Sll.equiv_SLL 026 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.Sll.equiv_SLL 027 h_rd_idx [transpile] sll_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Sll.equiv_SLL 028 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Equivalence.Sll.equiv_SLL 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL
-ZiskFv.Equivalence.Sll.equiv_SLL 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.Sll.equiv_SLL 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Sll.equiv_SLL 013 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state sll_input.r1_val sll_input.r2_va
+ZiskFv.Equivalence.Sll.equiv_SLL 014 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Sll.equiv_SLL 015 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL
+ZiskFv.Equivalence.Sll.equiv_SLL 016 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Sll.equiv_SLL 017 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Slli.equiv_SLLI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Slli.equiv_SLLI 001 slli_input [other] PureSpec.SlliInput
 ZiskFv.Equivalence.Slli.equiv_SLLI 002 r1 [other] regidx
@@ -1514,25 +1419,11 @@ ZiskFv.Equivalence.Slli.equiv_SLLI 009 exec_row [entry] List (Interaction.Execut
 ZiskFv.Equivalence.Slli.equiv_SLLI 010 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Slli.equiv_SLLI 011 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Slli.equiv_SLLI 012 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Slli.equiv_SLLI 013 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok slli_input.r1_val state
-ZiskFv.Equivalence.Slli.equiv_SLLI 014 h_input_shamt [other] slli_input.shamt = shamt
-ZiskFv.Equivalence.Slli.equiv_SLLI 015 h_input_rd [transpile] slli_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.Slli.equiv_SLLI 016 h_input_pc [state] state.regs.get? Register.PC = .some slli_input.PC
-ZiskFv.Equivalence.Slli.equiv_SLLI 017 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.Slli.equiv_SLLI 018 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.Slli.equiv_SLLI 019 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.Slli.equiv_SLLI 020 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.Slli.equiv_SLLI 021 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.Slli.equiv_SLLI 022 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.Slli.equiv_SLLI 023 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.Slli.equiv_SLLI 024 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.Slli.equiv_SLLI 025 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.Slli.equiv_SLLI 026 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.Slli.equiv_SLLI 027 h_rd_idx [transpile] slli_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Slli.equiv_SLLI 028 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Equivalence.Slli.equiv_SLLI 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL
-ZiskFv.Equivalence.Slli.equiv_SLLI 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.Slli.equiv_SLLI 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Slli.equiv_SLLI 013 promises [bridge] ZiskFv.Equivalence.Promises.ShiftImmPromises state slli_input.r1_val slli_input.
+ZiskFv.Equivalence.Slli.equiv_SLLI 014 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Slli.equiv_SLLI 015 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL
+ZiskFv.Equivalence.Slli.equiv_SLLI 016 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Slli.equiv_SLLI 017 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Slt.equiv_SLT 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Slt.equiv_SLT 001 slt_input [other] PureSpec.SltInput
 ZiskFv.Equivalence.Slt.equiv_SLT 002 r1 [other] regidx
@@ -1829,25 +1720,11 @@ ZiskFv.Equivalence.Sra.equiv_SRA 009 exec_row [entry] List (Interaction.Executio
 ZiskFv.Equivalence.Sra.equiv_SRA 010 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Sra.equiv_SRA 011 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Sra.equiv_SRA 012 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Sra.equiv_SRA 013 h_input_r1 [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok sra_input.r1_val state
-ZiskFv.Equivalence.Sra.equiv_SRA 014 h_input_r2 [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok sra_input.r2_val state
-ZiskFv.Equivalence.Sra.equiv_SRA 015 h_input_rd [transpile] sra_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.Sra.equiv_SRA 016 h_input_pc [state] state.regs.get? Register.PC = .some sra_input.PC
-ZiskFv.Equivalence.Sra.equiv_SRA 017 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.Sra.equiv_SRA 018 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.Sra.equiv_SRA 019 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.Sra.equiv_SRA 020 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.Sra.equiv_SRA 021 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.Sra.equiv_SRA 022 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.Sra.equiv_SRA 023 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.Sra.equiv_SRA 024 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.Sra.equiv_SRA 025 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.Sra.equiv_SRA 026 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.Sra.equiv_SRA 027 h_rd_idx [transpile] sra_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Sra.equiv_SRA 028 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Equivalence.Sra.equiv_SRA 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA
-ZiskFv.Equivalence.Sra.equiv_SRA 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.Sra.equiv_SRA 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Sra.equiv_SRA 013 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state sra_input.r1_val sra_input.r2_va
+ZiskFv.Equivalence.Sra.equiv_SRA 014 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Sra.equiv_SRA 015 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA
+ZiskFv.Equivalence.Sra.equiv_SRA 016 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Sra.equiv_SRA 017 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Srai.equiv_SRAI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Srai.equiv_SRAI 001 srai_input [other] PureSpec.SraiInput
 ZiskFv.Equivalence.Srai.equiv_SRAI 002 r1 [other] regidx
@@ -1861,25 +1738,11 @@ ZiskFv.Equivalence.Srai.equiv_SRAI 009 exec_row [entry] List (Interaction.Execut
 ZiskFv.Equivalence.Srai.equiv_SRAI 010 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Srai.equiv_SRAI 011 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Srai.equiv_SRAI 012 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Srai.equiv_SRAI 013 h_input_r1 [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok srai_input.r1_val state
-ZiskFv.Equivalence.Srai.equiv_SRAI 014 h_input_shamt [other] srai_input.shamt = shamt
-ZiskFv.Equivalence.Srai.equiv_SRAI 015 h_input_rd [transpile] srai_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.Srai.equiv_SRAI 016 h_input_pc [state] state.regs.get? Register.PC = .some srai_input.PC
-ZiskFv.Equivalence.Srai.equiv_SRAI 017 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.Srai.equiv_SRAI 018 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.Srai.equiv_SRAI 019 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.Srai.equiv_SRAI 020 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.Srai.equiv_SRAI 021 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.Srai.equiv_SRAI 022 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.Srai.equiv_SRAI 023 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.Srai.equiv_SRAI 024 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.Srai.equiv_SRAI 025 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.Srai.equiv_SRAI 026 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.Srai.equiv_SRAI 027 h_rd_idx [transpile] srai_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Srai.equiv_SRAI 028 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Equivalence.Srai.equiv_SRAI 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA
-ZiskFv.Equivalence.Srai.equiv_SRAI 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.Srai.equiv_SRAI 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Srai.equiv_SRAI 013 promises [bridge] ZiskFv.Equivalence.Promises.ShiftImmPromises state srai_input.r1_val srai_input.
+ZiskFv.Equivalence.Srai.equiv_SRAI 014 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Srai.equiv_SRAI 015 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA
+ZiskFv.Equivalence.Srai.equiv_SRAI 016 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Srai.equiv_SRAI 017 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Srl.equiv_SRL 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Srl.equiv_SRL 001 srl_input [other] PureSpec.SrlInput
 ZiskFv.Equivalence.Srl.equiv_SRL 002 r1 [other] regidx
@@ -1893,25 +1756,11 @@ ZiskFv.Equivalence.Srl.equiv_SRL 009 exec_row [entry] List (Interaction.Executio
 ZiskFv.Equivalence.Srl.equiv_SRL 010 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Srl.equiv_SRL 011 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Srl.equiv_SRL 012 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Srl.equiv_SRL 013 h_input_r1 [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok srl_input.r1_val state
-ZiskFv.Equivalence.Srl.equiv_SRL 014 h_input_r2 [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok srl_input.r2_val state
-ZiskFv.Equivalence.Srl.equiv_SRL 015 h_input_rd [transpile] srl_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.Srl.equiv_SRL 016 h_input_pc [state] state.regs.get? Register.PC = .some srl_input.PC
-ZiskFv.Equivalence.Srl.equiv_SRL 017 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.Srl.equiv_SRL 018 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.Srl.equiv_SRL 019 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.Srl.equiv_SRL 020 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.Srl.equiv_SRL 021 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.Srl.equiv_SRL 022 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.Srl.equiv_SRL 023 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.Srl.equiv_SRL 024 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.Srl.equiv_SRL 025 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.Srl.equiv_SRL 026 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.Srl.equiv_SRL 027 h_rd_idx [transpile] srl_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Srl.equiv_SRL 028 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Equivalence.Srl.equiv_SRL 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL
-ZiskFv.Equivalence.Srl.equiv_SRL 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.Srl.equiv_SRL 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Srl.equiv_SRL 013 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state srl_input.r1_val srl_input.r2_va
+ZiskFv.Equivalence.Srl.equiv_SRL 014 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Srl.equiv_SRL 015 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL
+ZiskFv.Equivalence.Srl.equiv_SRL 016 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Srl.equiv_SRL 017 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.Srli.equiv_SRLI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Srli.equiv_SRLI 001 srli_input [other] PureSpec.SrliInput
 ZiskFv.Equivalence.Srli.equiv_SRLI 002 r1 [other] regidx
@@ -1925,25 +1774,11 @@ ZiskFv.Equivalence.Srli.equiv_SRLI 009 exec_row [entry] List (Interaction.Execut
 ZiskFv.Equivalence.Srli.equiv_SRLI 010 e0 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Srli.equiv_SRLI 011 e1 [loose] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Srli.equiv_SRLI 012 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Srli.equiv_SRLI 013 h_input_r1 [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok srli_input.r1_val state
-ZiskFv.Equivalence.Srli.equiv_SRLI 014 h_input_shamt [other] srli_input.shamt = shamt
-ZiskFv.Equivalence.Srli.equiv_SRLI 015 h_input_rd [transpile] srli_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.Srli.equiv_SRLI 016 h_input_pc [state] state.regs.get? Register.PC = .some srli_input.PC
-ZiskFv.Equivalence.Srli.equiv_SRLI 017 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.Srli.equiv_SRLI 018 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.Srli.equiv_SRLI 019 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.Srli.equiv_SRLI 020 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Equivalence.Srli.equiv_SRLI 021 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Equivalence.Srli.equiv_SRLI 022 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Equivalence.Srli.equiv_SRLI 023 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Equivalence.Srli.equiv_SRLI 024 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Equivalence.Srli.equiv_SRLI 025 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Equivalence.Srli.equiv_SRLI 026 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Equivalence.Srli.equiv_SRLI 027 h_rd_idx [transpile] srli_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Equivalence.Srli.equiv_SRLI 028 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Equivalence.Srli.equiv_SRLI 029 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL
-ZiskFv.Equivalence.Srli.equiv_SRLI 030 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
-ZiskFv.Equivalence.Srli.equiv_SRLI 031 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Equivalence.Srli.equiv_SRLI 013 promises [bridge] ZiskFv.Equivalence.Promises.ShiftImmPromises state srli_input.r1_val srli_input.
+ZiskFv.Equivalence.Srli.equiv_SRLI 014 h_main_active [match] m.is_external_op r_main = 1
+ZiskFv.Equivalence.Srli.equiv_SRLI 015 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL
+ZiskFv.Equivalence.Srli.equiv_SRLI 016 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Srli.equiv_SRLI 017 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
 ZiskFv.Equivalence.StoreB.equiv_SB 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.StoreB.equiv_SB 001 sb_input [other] PureSpec.SbInput
 ZiskFv.Equivalence.StoreB.equiv_SB 002 mstatus [other] RegisterType Register.mstatus

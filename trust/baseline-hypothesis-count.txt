@@ -8,8 +8,8 @@
 # requires explicit reviewer ack via a baseline diff.
 #
 # Total theorems: 63
-# Aggregate total binders: 2205
-# Aggregate hypothesis binders: 1142
+# Aggregate total binders: 2040
+# Aggregate hypothesis binders: 965
 #
 ZiskFv.Equivalence.Add.equiv_ADD total=26 hypothesis=12
 ZiskFv.Equivalence.Addi.equiv_ADDI total=27 hypothesis=13
@@ -50,22 +50,22 @@ ZiskFv.Equivalence.Rem.equiv_REM total=43 hypothesis=32
 ZiskFv.Equivalence.Remu.equiv_REMU total=49 hypothesis=37
 ZiskFv.Equivalence.Remuw.equiv_REMUW total=45 hypothesis=31
 ZiskFv.Equivalence.Remw.equiv_REMW total=54 hypothesis=33
-ZiskFv.Equivalence.Shift.equiv_SLLW total=32 hypothesis=19
-ZiskFv.Equivalence.ShiftLI.equiv_SLLIW total=30 hypothesis=18
-ZiskFv.Equivalence.ShiftR.equiv_SRLW total=32 hypothesis=19
-ZiskFv.Equivalence.ShiftRA.equiv_SRAW total=32 hypothesis=19
-ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW total=30 hypothesis=18
-ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW total=30 hypothesis=18
-ZiskFv.Equivalence.Sll.equiv_SLL total=32 hypothesis=19
-ZiskFv.Equivalence.Slli.equiv_SLLI total=32 hypothesis=19
+ZiskFv.Equivalence.Shift.equiv_SLLW total=18 hypothesis=4
+ZiskFv.Equivalence.ShiftLI.equiv_SLLIW total=17 hypothesis=4
+ZiskFv.Equivalence.ShiftR.equiv_SRLW total=18 hypothesis=4
+ZiskFv.Equivalence.ShiftRA.equiv_SRAW total=18 hypothesis=4
+ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW total=17 hypothesis=4
+ZiskFv.Equivalence.ShiftRLI.equiv_SRLIW total=17 hypothesis=4
+ZiskFv.Equivalence.Sll.equiv_SLL total=18 hypothesis=4
+ZiskFv.Equivalence.Slli.equiv_SLLI total=18 hypothesis=4
 ZiskFv.Equivalence.Slt.equiv_SLT total=71 hypothesis=24
 ZiskFv.Equivalence.Slti.equiv_SLTI total=72 hypothesis=25
 ZiskFv.Equivalence.Sltiu.equiv_SLTIU total=70 hypothesis=24
 ZiskFv.Equivalence.Sltu.equiv_SLTU total=70 hypothesis=23
-ZiskFv.Equivalence.Sra.equiv_SRA total=32 hypothesis=19
-ZiskFv.Equivalence.Srai.equiv_SRAI total=32 hypothesis=19
-ZiskFv.Equivalence.Srl.equiv_SRL total=32 hypothesis=19
-ZiskFv.Equivalence.Srli.equiv_SRLI total=32 hypothesis=19
+ZiskFv.Equivalence.Sra.equiv_SRA total=18 hypothesis=4
+ZiskFv.Equivalence.Srai.equiv_SRAI total=18 hypothesis=4
+ZiskFv.Equivalence.Srl.equiv_SRL total=18 hypothesis=4
+ZiskFv.Equivalence.Srli.equiv_SRLI total=18 hypothesis=4
 ZiskFv.Equivalence.StoreB.equiv_SB total=23 hypothesis=12
 ZiskFv.Equivalence.StoreD.equiv_SD total=31 hypothesis=20
 ZiskFv.Equivalence.StoreH.equiv_SH total=24 hypothesis=12

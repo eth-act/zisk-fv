@@ -20,6 +20,7 @@ import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
 import ZiskFv.Equivalence.WriteValueProofs.BinaryShift
 import ZiskFv.Equivalence.WriteValueProofs.SailBridge
 import ZiskFv.Equivalence.Bridge.BinaryExtension
+import ZiskFv.Equivalence.Promises.RType
 
 /-!
 End-to-end theorem for RV64 SLL (64-bit sibling of SLLW).
@@ -103,22 +104,10 @@ theorem equiv_SLL
     (r_main r_binary : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok sll_input.r1_val state)
-    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok sll_input.r2_val state)
-    (h_input_rd : sll_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some sll_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : sll_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state sll_input.r1_val sll_input.r2_val sll_input.rd sll_input.PC
+        (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL)
     (h_match : ZiskFv.Airs.OperationBus.matches_entry
@@ -127,6 +116,10 @@ theorem equiv_SLL
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
   -- Project matches_entry into the (op, c_lo, c_hi) sub-facts the proof
   -- body consumes.
   obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
@@ -162,11 +155,11 @@ theorem equiv_SLL
   have h_input_r1_circuit :=
     ZiskFv.Equivalence.Bridge.BinaryExtension.packed_a_eq_of_shift_match_m32_0
       m v r_main r_binary (regidx_to_fin r1) sll_input.r1_val
-      h_m32 h_a_lo_t h_a_hi_t h_input_r1_sail h_op_is_shift h_match
+      h_m32 h_a_lo_t h_a_hi_t h_input_r1 h_op_is_shift h_match
   have h_shift_pin :=
     ZiskFv.Equivalence.Bridge.BinaryExtension.shift_pin_eq_of_shift_match_m32_0
       m v r_main r_binary (regidx_to_fin r2) sll_input.r2_val
-      h_m32 h_b_lo_t h_b_hi_t h_input_r2_sail h_op_is_shift h_match
+      h_m32 h_b_lo_t h_b_hi_t h_input_r2 h_op_is_shift h_match
   -- Derive 8 e2 byte ranges from `memory_bus_entry_byte_range_perm_sound`.
   -- Net **−8 binders** on `equiv_SLL` (h_e2_0..h_e2_7 removed; no new
   -- caller obligations added — the trust footprint shrinks).
@@ -200,7 +193,7 @@ theorem equiv_SLL
       = execute_RTYPE_pure sll_input.r1_val sll_input.r2_val rop.SLL := by
     rw [h_discharge, h_bridge]
   rw [equiv_SLL_sail state sll_input r1 r2 rd
-        h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc]
+        h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm
   rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2

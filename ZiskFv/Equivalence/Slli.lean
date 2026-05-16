@@ -21,6 +21,7 @@ import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.WriteValueProofs.BinaryShift
 import ZiskFv.Equivalence.WriteValueProofs.SailBridge
 import ZiskFv.Equivalence.Bridge.BinaryExtension
+import ZiskFv.Equivalence.Promises.ShiftImm
 
 /-!
 End-to-end theorem for RV64 SLLI (immediate sibling of SLL).
@@ -91,21 +92,10 @@ theorem equiv_SLLI
     (r_main r_binary : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok slli_input.r1_val state)
-    (h_input_shamt : slli_input.shamt = shamt)
-    (h_input_rd : slli_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some slli_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : slli_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.ShiftImmPromises
+        state slli_input.r1_val slli_input.shamt slli_input.rd slli_input.PC
+        (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC
+        r1 rd shamt exec_row e0 e1 e2)
     -- Discharge parameters
     -- Discharge parameters
     (h_main_active : m.is_external_op r_main = 1)
@@ -116,6 +106,10 @@ theorem equiv_SLLI
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
     execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SLLI)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_input_r1, h_input_shamt, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
   -- Project matches_entry into (op, c_lo, c_hi) sub-facts.
   obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
     ZiskFv.Equivalence.Bridge.BinaryExtension.project_match_op_clo_chi
@@ -147,7 +141,7 @@ theorem equiv_SLLI
   have h_input_r1_circuit :=
     ZiskFv.Equivalence.Bridge.BinaryExtension.packed_a_eq_of_shift_match_m32_0
       m v r_main r_binary (regidx_to_fin r1) slli_input.r1_val
-      h_m32 h_a_lo_t h_a_hi_t h_input_r1_sail h_op_is_shift h_match
+      h_m32 h_a_lo_t h_a_hi_t h_input_r1 h_op_is_shift h_match
   have h_shift_pin_shamt :=
     ZiskFv.Equivalence.Bridge.BinaryExtension.shift_pin_immediate_eq_of_shift_match
       m v r_main r_binary shamt h_b_lo_t h_op_is_shift h_match
@@ -185,7 +179,7 @@ theorem equiv_SLLI
       = execute_SHIFTIOP_pure slli_input.r1_val slli_input.shamt sop.SLLI := by
     rw [h_discharge, h_bridge]
   rw [equiv_SLLI_sail state slli_input r1 rd shamt
-        h_input_r1_sail h_input_shamt h_input_rd h_input_pc]
+        h_input_r1 h_input_shamt h_input_rd h_input_pc]
   symm
   rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2
