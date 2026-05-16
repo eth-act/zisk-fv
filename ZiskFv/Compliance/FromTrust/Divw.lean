@@ -269,9 +269,21 @@ theorem equiv_DIVW_from_trust
   -- ============ Delegate to `equiv_DIVW` ============
   exact ZiskFv.Equivalence.Divw.equiv_DIVW
     state divw_input r1 r2 rd v r_a exec_row e0 e1 e2
-    h_input_r1 h_input_r2 h_input_rd h_input_pc
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    { input_r1_eq := h_input_r1
+      input_r2_eq := h_input_r2
+      input_rd_eq := h_input_rd
+      input_pc_eq := h_input_pc
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      m0_mult := h_m0_mult
+      m0_as := h_m0_as
+      m1_mult := h_m1_mult
+      m1_as := h_m1_as
+      m2_mult := h_m2_mult
+      m2_as := h_m2_as
+      rd_idx := h_rd_idx }
     h_chain h_na_bool h_nb_bool h_nr_bool h_np_xor h_sext h_m32 h_div
     h_op_full h_op_signed h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
     h_op2_ne h_no_overflow h_r_abs h_r_sign

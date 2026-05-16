@@ -11,6 +11,7 @@ import ZiskFv.SailSpec.fence
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
+import ZiskFv.Equivalence.Promises.Fence
 
 /-!
 End-to-end theorem for RV64I FENCE.
@@ -70,17 +71,14 @@ theorem equiv_FENCE
     (fence_input : PureSpec.FenceInput)
     (fm pred succ : BitVec 4) (rs rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (h_input_pc : state.regs.get? Register.PC = .some fence_input.PC)
-    (h_input_priv :
-      state.regs.get? Register.cur_privilege = .some Privilege.Machine)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_FENCE_pure fence_input).nextPC) :
+    (promises : ZiskFv.Equivalence.Promises.FencePromises
+        state fence_input.PC
+        (PureSpec.execute_FENCE_pure fence_input).nextPC
+        exec_row) :
     execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
       = (bus_effect exec_row [] state).2 := by
+  obtain ⟨h_input_pc, h_input_priv, h_exec_len, h_e0_mult, h_e1_mult,
+          h_nextPC_matches⟩ := promises
   rw [equiv_FENCE_sail state fence_input fm pred succ rs rd h_input_pc
         h_input_priv]
   symm

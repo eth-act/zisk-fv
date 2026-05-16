@@ -21,6 +21,7 @@ import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Equivalence.Bridge.Binary
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
+import ZiskFv.Equivalence.Promises.IType
 
 /-!
 End-to-end theorem for RV64 ADDIW. Sibling of
@@ -93,21 +94,10 @@ theorem equiv_ADDIW
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok addiw_input.r1_val state)
-    (h_input_imm : addiw_input.imm = imm)
-    (h_input_rd : addiw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some addiw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_ITYPE_addiw_pure addiw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : addiw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+        state addiw_input.r1_val addiw_input.imm addiw_input.rd addiw_input.PC
+        (PureSpec.execute_ITYPE_addiw_pure addiw_input).nextPC
+        r1 rd imm exec_row e0 e1 e2)
     -- Binary AIR provider witness + activation/op + matches_entry.
     -- Replaces 8 loose a_i/b_i quantifiers, 8 byte-range hypotheses,
     -- and the `h_input_r1_extract` *promise hypothesis*.
@@ -162,6 +152,10 @@ theorem equiv_ADDIW
       LeanRV64D.Functions.execute
         (instruction.ADDIW (imm, r1, rd))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_input_r1, h_input_imm, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
   -- 8 e2 byte-range *promise hypotheses* discharged via
   -- `Bridge.Binary.e2_byte_ranges_discharge`.
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3,
