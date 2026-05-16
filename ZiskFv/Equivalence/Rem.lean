@@ -28,9 +28,7 @@ End-to-end theorem for RV64 **REM**. REM is the
   `arith_archetype_rem_bus_match` at `OP_REM`),
 * `PureSpec.execute_DIVREM_rem_pure_equiv`.
 
-Three canonical theorems:
-* `equiv_REM_circuit` — circuit-level: Main's packed `c` = Arith's packed
-  remainder (`d[]`).
+Two canonical theorems:
 * `equiv_REM_sail` — Sail-level: `execute_instruction` on an RV64 REM
   reduces to the pure-function block.
 * `equiv_REM` — canonical target via

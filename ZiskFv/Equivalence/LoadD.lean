@@ -30,9 +30,6 @@ End-to-end theorem for RV64 LD (load doubleword). Combines:
 
 into three companion theorems paralleling the ADD and BEQ archetypes:
 
-* `equiv_LD_circuit` — circuit-level. States that the Main row's packed `c`
-  lanes (as FGL) equal the 8-byte memory-bus entry's packed value,
-  given the constraint-set + mode + memory-match hypotheses.
 * `equiv_LD_sail` — Sail-level. Wraps `execute_LOADD_pure_equiv`.
 * `equiv_LD` — the canonical theorem
   `execute_instruction (.LOAD …) = (bus_effect …).2`.

@@ -36,8 +36,6 @@ Combines:
 
 Emits three theorems mirroring the A1 (BEQ) shape:
 
-* `equiv_SLLW_circuit` — circuit-level: the `m32 = 1` path zeroes the bus's
-  `a_hi` and `b_hi` lanes, delegating to the `BinaryExtension` SM.
 * `equiv_SLLW_sail` — Sail-level: `execute_instruction` on a SLLW
   RTYPEW reduces to the pure spec block.
 * `equiv_SLLW` — the canonical shape, composing the

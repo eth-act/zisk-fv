@@ -25,7 +25,7 @@ End-to-end theorem for RV64 **REMU**. REMU is the
 spec (`execute_DIVREM_remu_pure` / `_equiv`), and the Sail instruction
 payload (`instruction.REM (r2, r1, rd, true)`).
 
-Three canonical theorems: `equiv_REMU_circuit`, `equiv_REMU_sail`,
+Two canonical theorems: `equiv_REMU_sail`,
 `equiv_REMU`. Arith-internal correctness (carry chains →
 unsigned 64-bit remainder) is delegated to future audit.
 -/

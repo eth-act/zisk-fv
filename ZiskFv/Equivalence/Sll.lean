@@ -32,7 +32,6 @@ verbatim to the `BinaryExtension` SM rather than being zeroed.
 
 Emits three theorems matching the SLLW trio:
 
-* `equiv_SLL_circuit` — circuit-level: bus `a_hi = m.a_1` and `b_hi = m.b_1`.
 * `equiv_SLL_sail` — Sail-level: `execute_instruction` on a SLL RTYPE
   reduces to the pure spec block.
 * `equiv_SLL` — canonical fused theorem. Derives `h_rd_val`

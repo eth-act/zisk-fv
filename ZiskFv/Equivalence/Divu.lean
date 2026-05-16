@@ -25,8 +25,7 @@ spec (`execute_DIVREM_divu_pure` / `_equiv`), and the Sail instruction
 payload (`instruction.DIV (r2, r1, rd, true)` — the boolean selector
 picks unsigned).
 
-Three canonical theorems:
-* `equiv_DIVU_circuit` — circuit-level, wraps `Circuit.Divu.divu_compositional`.
+Two canonical theorems:
 * `equiv_DIVU_sail` — Sail-level, wraps
   `PureSpec.execute_DIVREM_divu_pure_equiv`.
 * `equiv_DIVU` — canonical shape, discharged via shape-

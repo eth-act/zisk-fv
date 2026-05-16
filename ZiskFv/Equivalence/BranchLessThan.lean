@@ -29,7 +29,6 @@ End-to-end theorem for RV64 BLT. Combines:
 into three theorems mirroring `Equivalence/BranchEqual.lean` /
 `Equivalence/BranchNotEqual.lean`:
 
-* `equiv_BLT_circuit` — circuit-level flag-dispatched next-pc formula;
 * `equiv_BLT_sail` — Sail reduction to `PureSpec.execute_BLT_pure`;
 * `equiv_BLT` — the canonical target:
   `execute_instruction (.BTYPE (imm, r2, r1, BLT)) state

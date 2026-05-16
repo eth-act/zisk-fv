@@ -27,8 +27,6 @@ End-to-end theorem for RV64 **DIV**. Combines:
 
 into three canonical theorems:
 
-* `equiv_DIV_circuit` — circuit-level. Main's packed `c` equals Arith's
-  packed quotient (primary output lane `a[]`), given the bus match.
 * `equiv_DIV_sail` — Sail-level. `execute_instruction` on an RV64 DIV
   reduces to the pure-function block.
 * `equiv_DIV` — canonical shape: Sail's

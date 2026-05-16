@@ -30,10 +30,8 @@ End-to-end theorem for RV64 SUB. Mirrors
 * `sub_compositional` (the archetype specialization at `OP_SUB`) in
   place of `add_compositional`.
 
-Three canonical theorems:
+Two canonical theorems:
 
-* `equiv_SUB_circuit` — circuit-level: Main's packed `c` equals the bus
-  entry's packed `c`.
 * `equiv_SUB_sail` — Sail-level: `execute_instruction` reduces to the
   pure-spec block.
 * `equiv_SUB` — canonical shape, discharged via shape

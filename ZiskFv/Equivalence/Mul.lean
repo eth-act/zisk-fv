@@ -28,8 +28,6 @@ End-to-end theorem for RV64 MUL. Combines:
 
 into three canonical theorems:
 
-* `equiv_MUL_circuit` — circuit-level. Main's packed `c` equals Arith's packed
-  result lanes, given the bus match.
 * `equiv_MUL_sail` — Sail-level. `execute_instruction` on an RV64 MUL
   reduces to a monadic block writing `execute_MUL_pure .MUL` to rd.
 * `equiv_MUL` — canonical shape: Sail's

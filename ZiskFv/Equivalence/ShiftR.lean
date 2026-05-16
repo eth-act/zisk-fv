@@ -33,7 +33,6 @@ compositional lemma is the `ShiftArchetype` m32=1 instantiation at
 
 Emits three theorems matching the SLLW trio:
 
-* `equiv_SRLW_circuit` — circuit-level: bus `a_hi = b_hi = 0` under m32=1.
 * `equiv_SRLW_sail` — Sail-level: `execute_instruction` on an SRLW
   RTYPEW reduces to the pure spec block.
 * `equiv_SRLW` — canonical target. Composes the Sail

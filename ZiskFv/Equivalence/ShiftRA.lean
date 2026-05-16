@@ -33,7 +33,6 @@ m32=1 instantiation at `OP_SRA_W = 38`.
 
 Emits three theorems matching the SLLW / SRLW trio:
 
-* `equiv_SRAW_circuit` — circuit-level: bus `a_hi = b_hi = 0` under m32=1.
 * `equiv_SRAW_sail` — Sail-level: `execute_instruction` on an SRAW
   RTYPEW reduces to the pure spec block.
 * `equiv_SRAW` — canonical target. Composes the Sail

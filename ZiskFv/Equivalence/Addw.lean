@@ -31,10 +31,8 @@ of `Equivalence.Sub` / `Equivalence.MulW` with:
 * `addw_compositional` (the RTypeWArchetype specialization at
   `OP_ADD_W`).
 
-Three canonical theorems:
+Two canonical theorems:
 
-* `equiv_ADDW_circuit` — circuit-level: Main's packed `c` equals the bus
-  entry's packed `c`.
 * `equiv_ADDW_sail` — Sail-level: `execute_instruction` reduces to
   the pure-spec block.
 * `equiv_ADDW` — canonical shape, discharged via

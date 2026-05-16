@@ -24,8 +24,6 @@ emits a single Internal-op row with all sources zeroed and
 
 Three theorems mirroring the BEQ pattern (shape-(b) — empty memory bus):
 
-* `equiv_FENCE_circuit` — circuit-level (degenerate: there's no semantic
-  payload, just PC advance via the standard handshake).
 * `equiv_FENCE_sail` — Sail-level wrapper for `execute_FENCE_pure_equiv`.
 * `equiv_FENCE` — the canonical shape combining
   Sail + bus-effect via `bus_effect_matches_sail_beq` (empty memory

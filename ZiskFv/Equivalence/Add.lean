@@ -29,8 +29,6 @@ End-to-end theorem for RV64 ADD. Combines:
 
 into two companion theorems:
 
-* `equiv_ADD_circuit` — circuit-level. States the Goldilocks `c`-packed value
-  equals the field sum of source-register lanes (mod carry-out).
 * `equiv_ADD_sail` — Sail-level. States `LeanRV64D.execute_instruction`
   on an RV64 ADD reduces to a concrete monadic block writing
   `r1_val + r2_val` (BitVec 64, wraps mod 2^64) to `rd` and
@@ -53,8 +51,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     block supplied by `PureSpec.execute_RTYPE_add_pure`, given that the
     source registers are readable and the PC is known. Wraps
     `PureSpec.execute_RTYPE_add_pure_equiv` to expose the Sail chain at
-    this module's export surface — pairs with `equiv_ADD_circuit` above to
-    connect circuit constraints to Sail semantics. -/
+    this module's export surface, consumed by `equiv_ADD` below. -/
 lemma equiv_ADD_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
@@ -76,7 +73,7 @@ lemma equiv_ADD_sail
   PureSpec.execute_RTYPE_add_pure_equiv
     add_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
 
-/-- **Canonical equivalence .**
+/-- **Canonical equivalence.**
     Sail's `execute_instruction` on an RV64 ADD equals the state
     computed by applying `bus_effect` to the circuit's execution and
     memory bus rows.

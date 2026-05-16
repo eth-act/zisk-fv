@@ -27,9 +27,6 @@ End-to-end theorem for RV64 BNE. Combines:
 
 into three theorems mirroring `Equivalence/BranchEqual.lean`:
 
-* `equiv_BNE_circuit` — the circuit-level flag-dispatched next-pc formula
-  (same shape as `equiv_BEQ_circuit`; the polarity flip only shows up after
-  composing with `transpile_BNE`'s `jmp_offset1`/`jmp_offset2` swap),
 * `equiv_BNE_sail` — the Sail reduction to `PureSpec.execute_BNE_pure`,
 * `equiv_BNE` — the canonical shape:
   `execute_instruction (.BTYPE (imm, r2, r1, BNE)) state

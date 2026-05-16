@@ -32,8 +32,6 @@ pin from `arith_table_op_div_rem_signed_w_d_sign_pin`).
 
 Three theorems mirroring the REM pattern (shape-(a) — ALU/Arith bus):
 
-* `equiv_REMW_circuit` — circuit-level (defined in terms of m.a/b lanes via
-  `transpile_REMW`).
 * `equiv_REMW_sail` — Sail-level wrapper for
   `execute_DIVREM_remw_pure_equiv`.
 * `equiv_REMW` — canonical shape composing

@@ -34,8 +34,6 @@ otherwise) — same trust class as ADDW's `h_sext_choice`.
 
 Three theorems mirroring the DIVU pattern (shape-(a) — ALU/Arith bus):
 
-* `equiv_DIVUW_circuit` — circuit-level (defined in terms of m.a/b lanes via
-  `transpile_DIVUW`).
 * `equiv_DIVUW_sail` — Sail-level wrapper for
   `execute_DIVREM_divuw_pure_equiv`.
 * `equiv_DIVUW` — canonical shape composing
