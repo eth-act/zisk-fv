@@ -12,9 +12,9 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 2526
+# Total rows: 2517
 # Category bridge: 59
-# Category bus_shape: 509
+# Category bus_shape: 504
 # Category byte_chain: 55
 # Category entry: 67
 # Category loose: 376
@@ -22,8 +22,8 @@
 # Category other: 731
 # Category range: 96
 # Category row: 68
-# Category state: 217
-# Category transpile: 158
+# Category state: 216
+# Category transpile: 155
 # Category validator: 99
 #
 ZiskFv.Equivalence.Add.equiv_ADD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
@@ -957,18 +957,9 @@ ZiskFv.Equivalence.Lui.equiv_LUI 006 next_pc [other] FGL
 ZiskFv.Equivalence.Lui.equiv_LUI 007 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
 ZiskFv.Equivalence.Lui.equiv_LUI 008 e_rd [entry] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Lui.equiv_LUI 009 nextPC_val [other] BitVec 64
-ZiskFv.Equivalence.Lui.equiv_LUI 010 h_input_imm [other] lui_input.imm = imm
-ZiskFv.Equivalence.Lui.equiv_LUI 011 h_input_rd [transpile] lui_input.rd = regidx_to_fin rd
-ZiskFv.Equivalence.Lui.equiv_LUI 012 h_input_pc [state] state.regs.get? Register.PC = .some lui_input.PC
-ZiskFv.Equivalence.Lui.equiv_LUI 013 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Equivalence.Lui.equiv_LUI 014 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Equivalence.Lui.equiv_LUI 015 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Equivalence.Lui.equiv_LUI 016 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = nextPC_val
-ZiskFv.Equivalence.Lui.equiv_LUI 017 h_rd_mult [bus_shape] e_rd.multiplicity = 1
-ZiskFv.Equivalence.Lui.equiv_LUI 018 h_rd_as [bus_shape] e_rd.as.val = 1
-ZiskFv.Equivalence.Lui.equiv_LUI 019 h_nextPC_eq [transpile] (PureSpec.execute_LUI_pure lui_input).nextPC = nextPC_val
-ZiskFv.Equivalence.Lui.equiv_LUI 020 h_rd_idx [transpile] lui_input.rd = Transpiler.wrap_to_regidx e_rd.ptr
-ZiskFv.Equivalence.Lui.equiv_LUI 021 h_circuit [other] ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc
+ZiskFv.Equivalence.Lui.equiv_LUI 010 _ [other] 11 fields, see Promises/UType.lean
+ZiskFv.Equivalence.Lui.equiv_LUI 011 promises [transpile] ZiskFv.Equivalence.Promises.UTypePromises state lui_input.imm lui_input.rd lui_i
+ZiskFv.Equivalence.Lui.equiv_LUI 012 h_circuit [other] ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc
 ZiskFv.Equivalence.Lw.equiv_LW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lw.equiv_LW 001 lw_input [other] PureSpec.LwInput
 ZiskFv.Equivalence.Lw.equiv_LW 002 mstatus [other] RegisterType Register.mstatus

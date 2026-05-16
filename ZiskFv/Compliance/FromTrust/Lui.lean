@@ -226,13 +226,21 @@ theorem equiv_LUI_from_trust
   -- ============ Delegate to canonical `equiv_LUI` ============
   -- `nextPC_val := lui_input.PC + 4#64` is the value
   -- `execute_LUI_pure lui_input |>.nextPC` definitionally equals,
-  -- so `h_nextPC_eq` reduces to `rfl`.
+  -- so `nextPC_eq` reduces to `rfl`. Construct the structural
+  -- `UTypePromises` bundle from the wrapper's own structural binders.
   exact ZiskFv.Equivalence.Lui.equiv_LUI state lui_input imm rd
     m r_main next_pc exec_row e_rd (lui_input.PC + 4#64)
-    h_input_imm h_input_rd h_input_pc
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_rd_mult h_rd_as
-    rfl  -- h_nextPC_eq : (execute_LUI_pure lui_input).nextPC = lui_input.PC + 4#64
-    h_rd_idx h_circuit
+    { input_imm_eq := h_input_imm
+      input_rd_eq := h_input_rd
+      input_pc_eq := h_input_pc
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      rd_mult := h_rd_mult
+      rd_as := h_rd_as
+      nextPC_eq := rfl  -- (execute_LUI_pure lui_input).nextPC = lui_input.PC + 4#64
+      rd_idx := h_rd_idx }
+    h_circuit
 
 end ZiskFv.Compliance

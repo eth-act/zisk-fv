@@ -14,6 +14,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence.Bridge.ControlFlow
 import ZiskFv.Equivalence.WriteValueProofs.JumpUType
+import ZiskFv.Equivalence.Promises.UType
 
 /-!
 End-to-end theorem for RV64 LUI. Combines:
@@ -92,25 +93,18 @@ theorem equiv_LUI
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
-    -- Sail-state input bridges
-    (h_input_imm : lui_input.imm = imm)
-    (h_input_rd : lui_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some lui_input.PC)
-    -- Bus-protocol structural hypotheses
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = nextPC_val)
-    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
-    (h_nextPC_eq :
-      (PureSpec.execute_LUI_pure lui_input).nextPC = nextPC_val)
-    (h_rd_idx : lui_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    -- Structural promise bundle (11 fields, see Promises/UType.lean).
+    (promises : ZiskFv.Equivalence.Promises.UTypePromises
+        state lui_input.imm lui_input.rd lui_input.PC
+        (PureSpec.execute_LUI_pure lui_input).nextPC
+        imm rd exec_row e_rd nextPC_val)
     -- Discharge parameters
     (h_circuit : ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
       = (bus_effect exec_row [e_rd] state).2 := by
+  obtain ⟨h_input_imm, h_input_rd, h_input_pc, h_exec_len, h_e0_mult,
+          h_e1_mult, h_nextPC_matches, h_rd_mult, h_rd_as, h_nextPC_eq,
+          h_rd_idx⟩ := promises
   -- Discharge `h_imm_lo_nat` / `h_imm_hi_nat` via `transpile_LUI` (class #1).
   obtain ⟨h_imm_lo_nat, h_imm_hi_nat⟩ :=
     ZiskFv.Equivalence.Bridge.ControlFlow.lui_discharge_full
