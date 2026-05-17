@@ -505,15 +505,13 @@ inductive OpEnvelope
   | sub
     (sub_input : PureSpec.SubInput) (r1 r2 rd : regidx)
     (v : Valid_Binary C FGL FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_sub : m.op r_main = OP_SUB)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state sub_input.r1_val sub_input.r2_val sub_input.rd sub_input.PC
         (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ AND (Binary, R-type) ====================
   | and_op
     (and_input : PureSpec.AndInput) (r1 r2 rd : regidx)
@@ -1568,13 +1566,13 @@ def exec_eq : OpEnvelope state m r_main → Prop
         LeanRV64D.Functions.execute
           (instruction.ADDIW (imm, r1, rd))) state
         = (bus_effect exec_row [e0, e1, e2] state).2
-  | .sub _ r1 r2 rd _ exec_row e0 e1 e2 .. =>
+  | .sub _ r1 r2 rd _ bus .. =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.RTYPE (r2, r1, rd, rop.SUB))) state
-        = (bus_effect exec_row [e0, e1, e2] state).2
+        = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
   | .and_op _ r1 r2 rd _ exec_row e0 e1 e2 .. =>
       (do
         Sail.writeReg Register.nextPC
@@ -1992,11 +1990,10 @@ theorem zisk_riscv_compliant_program_bus
     exact equiv_ADDIW_from_trust state addiw_input r1 rd imm m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_addiw h_addiw_subset h_lane_rd
       promises
-  | sub sub_input r1 r2 rd v exec_row e0 e1 e2
-        h_main_active h_main_op_sub h_lane_rd promises =>
+  | sub sub_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SUB_from_trust state sub_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_sub h_lane_rd promises
+    exact equiv_SUB_from_trust state sub_input r1 r2 rd m v r_main bus pins
+      h_lane_rd promises
   | and_op and_input r1 r2 rd v exec_row e0 e1 e2
            h_main_active h_main_op_and h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
