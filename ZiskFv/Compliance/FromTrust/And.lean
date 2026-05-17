@@ -2,6 +2,7 @@ import Mathlib
 
 import ZiskFv.Equivalence.And
 import ZiskFv.Equivalence.Promises.RType
+import ZiskFv.Equivalence.Promises.BinaryHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -12,12 +13,10 @@ import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Compliance.SharedBundles
 
 /-!
-# `equiv_AND` Compliance wrapper — Binary shape
+# `equiv_AND` Compliance wrapper — Binary mode-pin shape
 
-Mass-author clone of `FromTrust/Or.lean` with `OR → AND`. Consumes the
-new mode-pin axiom `binary_b_op_or_sext_eq_OP_AND` (class #6, parallel
-to `_OP_OR`). Trust class unchanged; one additional class-#6 axiom in
-the ledger.
+Refactored to consume per-AIR helpers from
+`Equivalence/Promises/BinaryHelpers.lean`. Trust footprint unchanged.
 -/
 
 namespace ZiskFv.Compliance
@@ -27,6 +26,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.OperationBus
+open ZiskFv.Equivalence.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -51,31 +51,12 @@ theorem equiv_AND_from_trust
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_main_active, h_main_op_and⟩ := pins
-  -- Derive op-bus disjunction membership: OP_AND = 14 = 0x0e.
-  have h_op_disj :
-      m.op r_main = 0x02 ∨ m.op r_main = 0x03 ∨ m.op r_main = 0x04
-    ∨ m.op r_main = 0x05 ∨ m.op r_main = 0x06 ∨ m.op r_main = 0x07
-    ∨ m.op r_main = 0x08 ∨ m.op r_main = 0x09 ∨ m.op r_main = 0x0a
-    ∨ m.op r_main = 0x0b ∨ m.op r_main = 0x0c ∨ m.op r_main = 0x0d
-    ∨ m.op r_main = 0x0e ∨ m.op r_main = 0x0f ∨ m.op r_main = 0x10
-    ∨ m.op r_main = 0x12 ∨ m.op r_main = 0x13 ∨ m.op r_main = 0x14
-    ∨ m.op r_main = 0x15 ∨ m.op r_main = 0x16 ∨ m.op r_main = 0x17
-    ∨ m.op r_main = 0x18 ∨ m.op r_main = 0x19 ∨ m.op r_main = 0x1a
-    ∨ m.op r_main = 0x1b ∨ m.op r_main = 0x1c ∨ m.op r_main = 0x1d
-    ∨ m.op r_main = 0x50 ∨ m.op r_main = 0x51 := by
-    have h14 : m.op r_main = 14 := by rw [h_main_op_and]; rfl
-    tauto
+  have h_op_disj := binary_op_disj_of_eq m r_main 14 h_main_op_and (by tauto)
   obtain ⟨r_binary, h_match⟩ :=
     op_bus_perm_sound_Binary m v r_main h_main_active h_op_disj
-  have h_emit_op : v.b_op r_binary + 16 * v.mode32 r_binary = 14 := by
-    have h_op_match : m.op r_main = v.b_op r_binary + 16 * v.mode32 r_binary := by
-      simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match
-      exact h_match.2.1
-    rw [h_main_op_and] at h_op_match
-    simp only [OP_AND] at h_op_match
-    exact h_op_match.symm
-  have h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND :=
-    binary_b_op_or_sext_eq_OP_AND v r_binary h_emit_op
+  have h_bop_or_sext :=
+    binary_h_bop_or_sext_via_axiom h_match h_main_op_and
+      (binary_b_op_or_sext_eq_OP_AND v r_binary)
   exact ZiskFv.Equivalence.And.equiv_AND
     state and_input r1 r2 rd m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
