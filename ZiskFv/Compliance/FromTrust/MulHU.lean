@@ -8,6 +8,7 @@ import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_MULHU` Compliance exemplar
@@ -55,23 +56,21 @@ theorem equiv_MULHU_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhu_input : PureSpec.MulhuInput)
     (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_mulhu : m.op r_main = OP_MULUH)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULUH)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_ArithMulSecondary v r_a))
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state mulhu_input.r1_val mulhu_input.r2_val mulhu_input.rd mulhu_input.PC
         (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
-    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
-    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h0 : bus.e2.x0.val < 256) (h1 : bus.e2.x1.val < 256)
+    (h2 : bus.e2.x2.val < 256) (h3 : bus.e2.x3.val < 256)
+    (h4 : bus.e2.x4.val < 256) (h5 : bus.e2.x5.val < 256)
+    (h6 : bus.e2.x6.val < 256) (h7 : bus.e2.x7.val < 256)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     :
@@ -84,7 +83,9 @@ theorem equiv_MULHU_from_trust
            { result_part := VectorHalf.High
              signed_rs1 := .Unsigned
              signed_rs2 := .Unsigned }))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_mulhu⟩ := pins
   -- ============ Project bus-bundle fields used by the body ============
   have h_input_r1 := promises.input_r1_eq
   have h_input_r2 := promises.input_r2_eq
@@ -291,7 +292,8 @@ theorem equiv_MULHU_from_trust
     ring
   -- ============ Delegate to `equiv_MULHU` ============
   exact ZiskFv.Equivalence.MulHU.equiv_MULHU
-    state mulhu_input r1 r2 rd v r_a exec_row e0 e1 e2
+    state mulhu_input r1 r2 rd v r_a
+    ⟨exec_row, e0, e1, e2⟩
     promises
     h0 h1 h2 h3 h4 h5 h6 h7
     h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div

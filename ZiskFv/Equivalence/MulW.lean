@@ -20,6 +20,7 @@ import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
 import ZiskFv.Equivalence.Promises.RType
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 MULW. MULW is the 32-bit word variant of
@@ -97,12 +98,11 @@ theorem equiv_MULW
     (mulw_input : PureSpec.MulwInput)
     (r1 r2 rd : regidx)
     (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
         (PureSpec.execute_MULW_pure mulw_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     -- Structural-unpacking ADDED binders (17 total) mirroring MULH
     -- plus h_sext_choice for W-mode sign-extension on bytes 4..7.
     (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a)
@@ -118,13 +118,13 @@ theorem equiv_MULW
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
     -- Byte-pack lane match (LANE-MATCH): bytes 0..3 pack c-chunks low 32 (MULW product low half).
     (h_byte_lo :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16777216
         = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
     -- Sign-extension choice on bytes 4..7 (SEXT_00 / SEXT_FF case-disjunction)
     (h_sext_choice :
-      ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧
+      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
-      ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
+      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
     -- Operand TRANSPILE-BRIDGE (W form: low 32 bits, signed toInt).
     (h_rs1_value :
@@ -140,7 +140,8 @@ theorem equiv_MULW
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.MULW (r2, r1, rd))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,

@@ -18,6 +18,7 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
 import ZiskFv.Equivalence.Promises.RType
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 **REM**. REM is the
@@ -94,12 +95,11 @@ theorem equiv_REM
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rem_input : PureSpec.RemInput)
     (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state rem_input.r1_val rem_input.r2_val rem_input.rd rem_input.PC
         (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     -- Structural-unpacking ADDED binders per `trust/structural-unpacking-exceptions.txt` REM entry.
     (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
@@ -124,10 +124,10 @@ theorem equiv_REM
               ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 1)
     (h_byte_lo :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16777216
         = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
     (h_byte_hi :
-      e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
+      bus.e2.x4.val + bus.e2.x5.val * 256 + bus.e2.x6.val * 65536 + bus.e2.x7.val * 16777216
         = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536)
     (h_rs1_value :
       rem_input.r1_val.toInt
@@ -154,7 +154,8 @@ theorem equiv_REM
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,

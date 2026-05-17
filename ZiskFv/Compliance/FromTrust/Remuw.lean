@@ -8,6 +8,7 @@ import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_REMUW` Compliance exemplar
@@ -34,26 +35,24 @@ theorem equiv_REMUW_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remuw_input : PureSpec.RemuwInput)
     (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_remuw : m.op r_main = OP_REMU_W)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU_W)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state remuw_input.r1_val remuw_input.r2_val remuw_input.rd remuw_input.PC
         (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     -- Pass-through caller burdens (mirror DIVUW).
     (h_sext_choice :
-      ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧
+      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
-      ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
+      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
     (h_rs1_value : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
@@ -64,7 +63,9 @@ theorem equiv_REMUW_from_trust
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, true))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_remuw⟩ := pins
   -- ============ Project bus-bundle fields used by the body ============
   have h_m2_mult := promises.m2_mult
   have h_m2_as := promises.m2_as
@@ -161,7 +162,8 @@ theorem equiv_REMUW_from_trust
     rw [h_rs2_value]; exact h_bound
   -- ============ Delegate to `equiv_REMUW` ============
   exact ZiskFv.Equivalence.Remuw.equiv_REMUW
-    state remuw_input r1 r2 rd v r_a exec_row e0 e1 e2
+    state remuw_input r1 r2 rd v r_a
+    ⟨exec_row, e0, e1, e2⟩
     promises
     h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div h_op_full h_c23
     h_byte_lo h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_d_lt_b

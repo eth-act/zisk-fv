@@ -9,6 +9,7 @@ import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_DIV` trust-discharge wrapper
@@ -80,16 +81,14 @@ theorem equiv_DIV_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (div_input : PureSpec.DivInput)
     (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     -- ============ DISCHARGE INPUTS ============
     -- AIR validators + row indices. Compliance.lean shares (m, v)
     -- across opcodes; per-opcode caller supplies the row indices.
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     -- Activation / opcode pin on Main.
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_div : m.op r_main = OP_DIV)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV)
     -- Cross-AIR row selection: the OpBus permutation gives an
     -- existential `r_a`; we accept it explicitly here so the bridge
     -- shape stays simple (Compliance.lean will obtain `r_a` via
@@ -104,7 +103,7 @@ theorem equiv_DIV_from_trust
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state div_input.r1_val div_input.r2_val div_input.rd div_input.PC
         (PureSpec.execute_DIVREM_div_pure div_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_op2_ne : div_input.r2_val.toInt ≠ 0)
     (h_no_overflow :
       ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
@@ -129,7 +128,9 @@ theorem equiv_DIV_from_trust
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_div⟩ := pins
   -- ============ Project bus-bundle fields used by the body ============
   have h_input_r1 := promises.input_r1_eq
   have h_input_r2 := promises.input_r2_eq
@@ -419,7 +420,8 @@ theorem equiv_DIV_from_trust
   -- ============ Delegate to `equiv_DIV` ============
   -- The Sail `instruction.DIV` LHS matches; all derived hypotheses fit.
   exact ZiskFv.Equivalence.Div.equiv_DIV
-    state div_input r1 r2 rd exec_row e0 e1 e2
+    state div_input r1 r2 rd
+    ⟨exec_row, e0, e1, e2⟩
     promises
     v r_a h_chain h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
     h_sext h_m32 h_div h_byte_lo h_byte_hi h_rs1_value h_rs2_value

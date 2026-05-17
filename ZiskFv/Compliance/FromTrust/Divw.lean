@@ -9,6 +9,7 @@ import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_DIVW` Compliance exemplar
@@ -50,19 +51,17 @@ theorem equiv_DIVW_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divw_input : PureSpec.DivwInput)
     (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_divw : m.op r_main = OP_DIV_W)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV_W)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state divw_input.r1_val divw_input.r2_val divw_input.rd divw_input.PC
         (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     -- Sign-witness booleanity + XOR (CIRCUIT-CONSTRAINT — caller-supplied).
@@ -75,9 +74,9 @@ theorem equiv_DIVW_from_trust
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
     -- Pass-through caller burdens.
     (h_sext_choice :
-      ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧
+      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
-      ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
+      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
     (h_rs1_value :
       (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt
@@ -95,7 +94,9 @@ theorem equiv_DIVW_from_trust
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_divw⟩ := pins
   -- ============ Project bus-bundle fields used by the body ============
   have h_m2_mult := promises.m2_mult
   have h_m2_as := promises.m2_as
@@ -260,7 +261,8 @@ theorem equiv_DIVW_from_trust
     exact h_bound_rhs
   -- ============ Delegate to `equiv_DIVW` ============
   exact ZiskFv.Equivalence.Divw.equiv_DIVW
-    state divw_input r1 r2 rd v r_a exec_row e0 e1 e2
+    state divw_input r1 r2 rd v r_a
+    ⟨exec_row, e0, e1, e2⟩
     promises
     h_chain h_na_bool h_nb_bool h_nr_bool h_np_xor h_sext h_m32 h_div
     h_op_full h_op_signed h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value

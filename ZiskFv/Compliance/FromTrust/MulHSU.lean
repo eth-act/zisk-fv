@@ -9,6 +9,7 @@ import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_MULHSU` Compliance exemplar
@@ -51,19 +52,17 @@ theorem equiv_MULHSU_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhsu_input : PureSpec.MulhsuInput)
     (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_mulhsu : m.op r_main = OP_MULSUH)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULSUH)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_ArithMulSecondary v r_a))
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state mulhsu_input.r1_val mulhsu_input.r2_val mulhsu_input.rd mulhsu_input.PC
         (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     :
@@ -76,7 +75,9 @@ theorem equiv_MULHSU_from_trust
            { result_part := VectorHalf.High
              signed_rs1 := .Signed
              signed_rs2 := .Unsigned }))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_mulhsu⟩ := pins
   -- ============ Project bus-bundle fields used by the body ============
   have h_input_r1 := promises.input_r1_eq
   have h_input_r2 := promises.input_r2_eq
@@ -307,7 +308,8 @@ theorem equiv_MULHSU_from_trust
     exact_mod_cast h_r2_toNat
   -- ============ Delegate to `equiv_MULHSU` ============
   exact ZiskFv.Equivalence.MulHSU.equiv_MULHSU
-    state mulhsu_input r1 r2 rd v r_a exec_row e0 e1 e2
+    state mulhsu_input r1 r2 rd v r_a
+    ⟨exec_row, e0, e1, e2⟩
     promises
     h_chain h_na h_nb_zero h_np h_nr_eq h_sext h_m32 h_div
     h_na_bool h_nb_bool h_np_xor

@@ -8,6 +8,7 @@ import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_DIVU` Compliance exemplar
@@ -42,23 +43,21 @@ theorem equiv_DIVU_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divu_input : PureSpec.DivuInput)
     (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_divu : m.op r_main = OP_DIVU)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIVU)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state divu_input.r1_val divu_input.r2_val divu_input.rd divu_input.PC
         (PureSpec.execute_DIVREM_divu_pure divu_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
-    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
-    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h0 : bus.e2.x0.val < 256) (h1 : bus.e2.x1.val < 256)
+    (h2 : bus.e2.x2.val < 256) (h3 : bus.e2.x3.val < 256)
+    (h4 : bus.e2.x4.val < 256) (h5 : bus.e2.x5.val < 256)
+    (h6 : bus.e2.x6.val < 256) (h7 : bus.e2.x7.val < 256)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_op2_ne : divu_input.r2_val.toNat ≠ 0) :
@@ -66,7 +65,9 @@ theorem equiv_DIVU_from_trust
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, true))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_divu⟩ := pins
   -- ============ Project bus-bundle fields used by the body ============
   have h_input_r1 := promises.input_r1_eq
   have h_input_r2 := promises.input_r2_eq
@@ -276,7 +277,8 @@ theorem equiv_DIVU_from_trust
     rw [h_rs2_value]; exact h_bound
   -- ============ Delegate to `equiv_DIVU` ============
   exact ZiskFv.Equivalence.Divu.equiv_DIVU
-    state divu_input r1 r2 rd v r_a exec_row e0 e1 e2
+    state divu_input r1 r2 rd v r_a
+    ⟨exec_row, e0, e1, e2⟩
     promises
     h0 h1 h2 h3 h4 h5 h6 h7
     h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div

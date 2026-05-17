@@ -9,6 +9,7 @@ import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_MULW` Compliance exemplar
@@ -64,26 +65,24 @@ theorem equiv_MULW_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulw_input : PureSpec.MulwInput)
     (r1 r2 rd : regidx)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_mulw : m.op r_main = OP_MUL_W)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL_W)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_Arith v r_a))
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
         (PureSpec.execute_MULW_pure mulw_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     -- Pass-through caller burdens (W-mode sign-extension + W-form operand bridges).
     (h_sext_choice :
-      ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧
+      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
-      ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
+      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
     (h_rs1_value :
       (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt
@@ -98,7 +97,9 @@ theorem equiv_MULW_from_trust
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.MULW (r2, r1, rd))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_mulw⟩ := pins
   -- ============ Project bus-bundle fields used by the body ============
   have h_m2_mult := promises.m2_mult
   have h_m2_as := promises.m2_as
@@ -164,7 +165,8 @@ theorem equiv_MULW_from_trust
     rw [h_byte_lo_to_c0, h_c0_val_eq]
   -- ============ Delegate to `equiv_MULW` ============
   exact ZiskFv.Equivalence.MulW.equiv_MULW
-    state mulw_input r1 r2 rd v r_a exec_row e0 e1 e2
+    state mulw_input r1 r2 rd v r_a
+    ⟨exec_row, e0, e1, e2⟩
     promises
     h_chain h_nr h_sext h_m32 h_div h_op_arith_mulw
     h_na_bool h_nb_bool h_np_xor h_byte_lo h_sext_choice h_rs1_value h_rs2_value

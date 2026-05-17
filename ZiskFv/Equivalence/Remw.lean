@@ -17,6 +17,7 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
 import ZiskFv.Equivalence.Promises.RType
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64M REMW (signed 32-bit remainder).
@@ -98,12 +99,11 @@ theorem equiv_REMW
     (remw_input : PureSpec.RemwInput)
     (r1 r2 rd : regidx)
     (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state remw_input.r1_val remw_input.r2_val remw_input.rd remw_input.PC
         (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     -- Structural-unpacking ADDED binders for REMW (W-mode signed).
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     -- Mode pins (TRANSPILE-PIN).
@@ -125,13 +125,13 @@ theorem equiv_REMW
     (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     -- W-mode byte-pack lane match: bytes 0..3 pack d_0 + d_1*65536 (remainder low 32).
     (h_byte_lo :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16777216
         = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
     -- Sign-extension choice on bytes 4..7.
     (h_sext_choice :
-      ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧
+      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
-      ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
+      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
     -- Operand TRANSPILE-BRIDGE (W toInt-form).
     (h_rs1_value :
@@ -160,7 +160,8 @@ theorem equiv_REMW
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, false))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
