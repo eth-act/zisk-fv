@@ -465,28 +465,24 @@ inductive OpEnvelope
   | addw
     (addw_input : PureSpec.AddwInput) (r1 r2 rd : regidx)
     (v : Valid_Binary C FGL FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_addw : m.op r_main = OP_ADD_W)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state addw_input.r1_val addw_input.r2_val addw_input.rd addw_input.PC
         (PureSpec.execute_RTYPE_addw_pure addw_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ SUBW (Binary, do-block) =================
   | subw
     (subw_input : PureSpec.SubwInput) (r1 r2 rd : regidx)
     (v : Valid_Binary C FGL FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_subw : m.op r_main = OP_SUB_W)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB_W)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state subw_input.r1_val subw_input.r2_val subw_input.rd subw_input.PC
         (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ ADDIW (Binary, do-block, I-type) ========
   | addiw
     (addiw_input : PureSpec.AddiwInput) (r1 rd : regidx) (imm : BitVec 12)
@@ -516,67 +512,57 @@ inductive OpEnvelope
   | and_op
     (and_input : PureSpec.AndInput) (r1 r2 rd : regidx)
     (v : Valid_Binary C FGL FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_and : m.op r_main = OP_AND)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state and_input.r1_val and_input.r2_val and_input.rd and_input.PC
         (PureSpec.execute_RTYPE_and_pure and_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ OR (Binary, R-type) =====================
   | or_op
     (or_input : PureSpec.OrInput) (r1 r2 rd : regidx)
     (v : Valid_Binary C FGL FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_or : m.op r_main = OP_OR)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
         (PureSpec.execute_RTYPE_or_pure or_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ XOR (Binary, R-type) ====================
   | xor_op
     (xor_input : PureSpec.XorInput) (r1 r2 rd : regidx)
     (v : Valid_Binary C FGL FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_xor : m.op r_main = OP_XOR)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state xor_input.r1_val xor_input.r2_val xor_input.rd xor_input.PC
         (PureSpec.execute_RTYPE_xor_pure xor_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ SLT (Binary, R-type) ====================
   | slt
     (slt_input : PureSpec.SltInput) (r1 r2 rd : regidx)
     (v : Valid_Binary C FGL FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_slt : m.op r_main = OP_LT)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state slt_input.r1_val slt_input.r2_val slt_input.rd slt_input.PC
         (PureSpec.execute_RTYPE_slt_pure slt_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ SLTU (Binary, R-type) ===================
   | sltu
     (sltu_input : PureSpec.SltuInput) (r1 r2 rd : regidx)
     (v : Valid_Binary C FGL FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_sltu : m.op r_main = OP_LTU)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state sltu_input.r1_val sltu_input.r2_val sltu_input.rd sltu_input.PC
         (PureSpec.execute_RTYPE_sltu_pure sltu_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ ANDI (Binary, I-type) ===================
   | andi
     (andi_input : PureSpec.AndiInput) (r1 rd : regidx) (imm : BitVec 12)
@@ -1545,20 +1531,20 @@ def exec_eq : OpEnvelope state m r_main → Prop
         LeanRV64D.Functions.execute
           (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
         = (bus_effect exec_row [e0, e1, e2] state).2
-  | .addw _ r1 r2 rd _ exec_row e0 e1 e2 .. =>
+  | .addw _ r1 r2 rd _ bus .. =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.RTYPEW (r2, r1, rd, ropw.ADDW))) state
-        = (bus_effect exec_row [e0, e1, e2] state).2
-  | .subw _ r1 r2 rd _ exec_row e0 e1 e2 .. =>
+        = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
+  | .subw _ r1 r2 rd _ bus .. =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.RTYPEW (r2, r1, rd, ropw.SUBW))) state
-        = (bus_effect exec_row [e0, e1, e2] state).2
+        = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
   | .addiw _ r1 rd imm _ exec_row e0 e1 e2 .. =>
       (do
         Sail.writeReg Register.nextPC
@@ -1573,41 +1559,41 @@ def exec_eq : OpEnvelope state m r_main → Prop
         LeanRV64D.Functions.execute
           (instruction.RTYPE (r2, r1, rd, rop.SUB))) state
         = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
-  | .and_op _ r1 r2 rd _ exec_row e0 e1 e2 .. =>
+  | .and_op _ r1 r2 rd _ bus .. =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.RTYPE (r2, r1, rd, rop.AND))) state
-        = (bus_effect exec_row [e0, e1, e2] state).2
-  | .or_op _ r1 r2 rd _ exec_row e0 e1 e2 .. =>
+        = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
+  | .or_op _ r1 r2 rd _ bus .. =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.RTYPE (r2, r1, rd, rop.OR))) state
-        = (bus_effect exec_row [e0, e1, e2] state).2
-  | .xor_op _ r1 r2 rd _ exec_row e0 e1 e2 .. =>
+        = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
+  | .xor_op _ r1 r2 rd _ bus .. =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.RTYPE (r2, r1, rd, rop.XOR))) state
-        = (bus_effect exec_row [e0, e1, e2] state).2
-  | .slt _ r1 r2 rd _ exec_row e0 e1 e2 .. =>
+        = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
+  | .slt _ r1 r2 rd _ bus .. =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.RTYPE (r2, r1, rd, rop.SLT))) state
-        = (bus_effect exec_row [e0, e1, e2] state).2
-  | .sltu _ r1 r2 rd _ exec_row e0 e1 e2 .. =>
+        = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
+  | .sltu _ r1 r2 rd _ bus .. =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.RTYPE (r2, r1, rd, rop.SLTU))) state
-        = (bus_effect exec_row [e0, e1, e2] state).2
+        = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
   | .andi _ r1 rd imm _ exec_row e0 e1 e2 .. =>
       (do
         Sail.writeReg Register.nextPC
@@ -1973,16 +1959,14 @@ theorem zisk_riscv_compliant_program_bus
     exact equiv_ADDI_from_trust state addi_input r1 rd imm m b r_main exec_row e0 e1 e2
       h_main_active h_main_op_addi h_main_subset h_b_core h_addi_subset h_lane_rd
       promises
-  | addw addw_input r1 r2 rd v exec_row e0 e1 e2
-         h_main_active h_main_op_addw h_lane_rd promises =>
+  | addw addw_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_ADDW_from_trust state addw_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_addw h_lane_rd promises
-  | subw subw_input r1 r2 rd v exec_row e0 e1 e2
-         h_main_active h_main_op_subw h_lane_rd promises =>
+    exact equiv_ADDW_from_trust state addw_input r1 r2 rd m v r_main bus pins
+      h_lane_rd promises
+  | subw subw_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SUBW_from_trust state subw_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_subw h_lane_rd promises
+    exact equiv_SUBW_from_trust state subw_input r1 r2 rd m v r_main bus pins
+      h_lane_rd promises
   | addiw addiw_input r1 rd imm v exec_row e0 e1 e2
           h_main_active h_main_op_addiw h_addiw_subset h_lane_rd
           promises =>
@@ -1994,31 +1978,26 @@ theorem zisk_riscv_compliant_program_bus
     simp only [OpEnvelope.exec_eq]
     exact equiv_SUB_from_trust state sub_input r1 r2 rd m v r_main bus pins
       h_lane_rd promises
-  | and_op and_input r1 r2 rd v exec_row e0 e1 e2
-           h_main_active h_main_op_and h_lane_rd promises =>
+  | and_op and_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_AND_from_trust state and_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_and h_lane_rd promises
-  | or_op or_input r1 r2 rd v exec_row e0 e1 e2
-          h_main_active h_main_op_or h_lane_rd promises =>
+    exact equiv_AND_from_trust state and_input r1 r2 rd m v r_main bus pins
+      h_lane_rd promises
+  | or_op or_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_OR_from_trust state or_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_or h_lane_rd promises
-  | xor_op xor_input r1 r2 rd v exec_row e0 e1 e2
-           h_main_active h_main_op_xor h_lane_rd promises =>
+    exact equiv_OR_from_trust state or_input r1 r2 rd m v r_main bus pins
+      h_lane_rd promises
+  | xor_op xor_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_XOR_from_trust state xor_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_xor h_lane_rd promises
-  | slt slt_input r1 r2 rd v exec_row e0 e1 e2
-        h_main_active h_main_op_slt h_lane_rd promises =>
+    exact equiv_XOR_from_trust state xor_input r1 r2 rd m v r_main bus pins
+      h_lane_rd promises
+  | slt slt_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SLT_from_trust state slt_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_slt h_lane_rd promises
-  | sltu sltu_input r1 r2 rd v exec_row e0 e1 e2
-         h_main_active h_main_op_sltu h_lane_rd promises =>
+    exact equiv_SLT_from_trust state slt_input r1 r2 rd m v r_main bus pins
+      h_lane_rd promises
+  | sltu sltu_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SLTU_from_trust state sltu_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_sltu h_lane_rd promises
+    exact equiv_SLTU_from_trust state sltu_input r1 r2 rd m v r_main bus pins
+      h_lane_rd promises
   | andi andi_input r1 rd imm v exec_row e0 e1 e2
          h_main_active h_main_op_andi h_andi_subset h_lane_rd
          promises =>
