@@ -126,22 +126,17 @@ build/sail-lean/                       build/extraction/Extraction/
         equiv_<OP>_from_trust    ← 63 wrappers, one per RV64IM opcode
                          │
                          ▼
-        ZiskFv/Compliance/Dispatch.lean
-        per-arm OpEnvelope dispatchers (35 arms,
-        one per shape×opcode-family)
-                         │
-                         ▼
         ZiskFv/Compliance.lean
         zisk_riscv_compliant_program_bus      ← THE verification claim
-        (uber theorem; #print axioms closure ≡ trust/baseline-axioms.txt)
+        (uber theorem; 63-arm OpEnvelope routing match;
+         #print axioms closure ≡ trust/baseline-axioms.txt)
 ```
 
 ### Component-level dependency graph
 
 ```mermaid
 graph TD
-  Compliance["ZiskFv/Compliance.lean<br/><i>zisk_riscv_compliant_program_bus</i><br/>(the uber theorem)"]
-  Dispatch["ZiskFv/Compliance/Dispatch.lean<br/>35-arm OpEnvelope dispatch"]
+  Compliance["ZiskFv/Compliance.lean<br/><i>zisk_riscv_compliant_program_bus</i><br/>(the uber theorem; 63-arm OpEnvelope routing match)"]
   FromTrust["ZiskFv/Compliance/FromTrust/&lt;Op&gt;<br/>63 trust-discharge wrappers"]
   Equiv["ZiskFv/Equivalence/&lt;Op&gt;<br/>canonical equiv_&lt;OP&gt; theorems<br/>+ Bridge/, WriteValueProofs/"]
   ZiskCircuit["ZiskFv/ZiskCircuit/&lt;Op&gt;<br/>lifted ZisK semantics<br/>(by RISC-V opcode)"]
@@ -157,8 +152,7 @@ graph TD
   SailLean["build/sail-lean/LeanRV64D<br/>Sail RV64 spec → Lean"]
   Mathlib["mathlib + LeanZKCircuit<br/>(Lake [[require]] entries)"]
 
-  Compliance --> Dispatch
-  Dispatch --> FromTrust
+  Compliance --> FromTrust
   FromTrust --> Equiv
   FromTrust --> Trusted
   FromTrust --> Airs
@@ -186,7 +180,7 @@ graph TD
   classDef external fill:#f0f0f0,stroke:#999,color:#000
   class Trusted,MemModel,Auxiliaries,Airs trust
   class Extraction,SailLean,Mathlib external
-  class Compliance,Dispatch,FromTrust,Equiv,ZiskCircuit,SailSpec,Tactics proof
+  class Compliance,FromTrust,Equiv,ZiskCircuit,SailSpec,Tactics proof
   class Bits,Field build
 ```
 
@@ -215,8 +209,7 @@ silent additions and dead trust.
 ```
 ZiskFv/
 ├── Compliance.lean      ← THE uber theorem zisk_riscv_compliant_program_bus
-├── Compliance/          OpEnvelope dispatchers (Dispatch.lean)
-│   ├── Dispatch.lean      + 63 equiv_<OP>_from_trust wrappers under
+├── Compliance/          63 equiv_<OP>_from_trust wrappers under
 │   └── FromTrust/<Op>     FromTrust/<Op>.lean (one per RV64IM opcode)
 ├── Equivalence/         per-opcode canonical equiv_<OP> theorems (65 files)
 │   ├── <Op>.lean          + Bridge/ (cross-AIR equivalence machinery)
@@ -244,10 +237,10 @@ sections below summarise.
 
 The verification claim. `Compliance.lean` declares
 `zisk_riscv_compliant_program_bus` and proves it by case-splitting on
-a 35-arm `OpEnvelope` sum type indexed by `mainOpKind`. Each arm calls
-the matching per-opcode dispatcher in `Compliance/Dispatch.lean`,
-which in turn calls `Compliance/FromTrust/<Op>.equiv_<OP>_from_trust`
-(63 wrappers, one per RV64IM opcode). The wrappers are where each
+a 63-arm `OpEnvelope` sum type (one constructor per RV64IM opcode).
+Each arm calls the matching per-opcode wrapper
+`Compliance/FromTrust/<Op>.equiv_<OP>_from_trust` (63 wrappers, one
+per RV64IM opcode). The wrappers are where each
 opcode's canonical `equiv_<OP>` theorem has its promise hypotheses
 discharged from the trust ledger — they make the uber-theorem's
 parameter surface trust-ledger-only.

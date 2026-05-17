@@ -28,8 +28,8 @@
 > `/home/cody/.claude/plans/plan-to-completely-resolve-wild-lynx.md`:
 > per-opcode `equiv_<OP>_from_trust` wrappers (Layer 1) discharge
 > the promise hypotheses from the trust ledger; the
-> `Compliance.lean` dispatcher (Layer 2) dispatches the global
-> theorem through those wrappers. The DIV wrapper at commit
+> `Compliance.lean` global theorem (Layer 2) routes through those
+> wrappers via a 63-arm `OpEnvelope` match. The DIV wrapper at commit
 > `83532d7` was the first canonical exemplar; see
 > `docs/fv/discharge-recipe.md` (the 5-category template) and
 > `docs/fv/per-air-axiom-map.md` (per-AIR axiom inventory +
