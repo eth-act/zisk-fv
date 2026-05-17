@@ -340,8 +340,7 @@ inductive OpEnvelope
     (fence_input : PureSpec.FenceInput)
     (fm pred succ : BitVec 4) (rs rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op_fence : m.op r_main = OP_FLAG)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (promises : ZiskFv.Equivalence.Promises.FencePromises
         state fence_input.PC
         (PureSpec.execute_FENCE_pure fence_input).nextPC
@@ -352,8 +351,7 @@ inductive OpEnvelope
     (imm : BitVec 20) (rd : regidx) (next_pc : FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op_lui : m.op r_main = OP_COPYB)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
     (promises : ZiskFv.Equivalence.Promises.UTypePromises
         state lui_input.imm lui_input.rd lui_input.PC
@@ -366,8 +364,7 @@ inductive OpEnvelope
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
     (next_pc : FGL)
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op_auipc : m.op r_main = OP_FLAG)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
     (promises : ZiskFv.Equivalence.Promises.UTypePromises
         state auipc_input.imm auipc_input.rd auipc_input.PC
@@ -388,8 +385,7 @@ inductive OpEnvelope
     (next_pc : FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op_jal : m.op r_main = OP_FLAG)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_jal_subset :
       ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
     (promises : ZiskFv.Equivalence.Promises.JumpPromises
@@ -411,8 +407,7 @@ inductive OpEnvelope
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
     (next_pc : FGL)
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op_jalr : m.op r_main = OP_COPYB)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_jalr_subset :
       ZiskFv.Tactics.JumpArchetype.jalr_subset_holds m r_main next_pc)
     (promises : ZiskFv.Equivalence.Promises.JumpPromises
@@ -1779,39 +1774,39 @@ theorem zisk_riscv_compliant_program_bus
     exact equiv_BGEU_from_trust state bgeu_input imm r1 r2 misa_val exec_row
       promises
   | fence fence_input fm pred succ rs rd exec_row
-          h_main_active h_main_op_fence promises =>
+          pins promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_FENCE_from_trust state fence_input fm pred succ rs rd m r_main
-      exec_row h_main_active h_main_op_fence promises
+      exec_row pins promises
   | lui lui_input imm rd next_pc exec_row e_rd
-        h_main_active h_main_op_lui h_lui_subset promises =>
+        pins h_lui_subset promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_LUI_from_trust state lui_input imm rd m r_main next_pc
-      exec_row e_rd h_main_active h_main_op_lui h_lui_subset promises
+      exec_row e_rd pins h_lui_subset promises
   | auipc auipc_input imm rd exec_row e_rd nextPC_val next_pc
-          h_main_active h_main_op_auipc h_auipc_subset
+          pins h_auipc_subset
           promises h_no_wrap h_lo_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_AUIPC_from_trust state auipc_input imm rd exec_row e_rd nextPC_val
-      m r_main next_pc h_main_active h_main_op_auipc h_auipc_subset
+      m r_main next_pc pins h_auipc_subset
       promises h_no_wrap h_lo_bound h_pc_offset_lt_2_32
   | jal jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val
-        h_main_active h_main_op_jal h_jal_subset
+        pins h_jal_subset
         promises h_input_imm h_not_throws
         h_pc_bound h_lo_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_JAL_from_trust state jal_input imm rd misa_val m r_main next_pc
-      exec_row e_rd nextPC_val h_main_active h_main_op_jal h_jal_subset
+      exec_row e_rd nextPC_val pins h_jal_subset
       promises h_input_imm h_not_throws
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
   | jalr jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val next_pc
-         h_main_active h_main_op_jalr h_jalr_subset
+         pins h_jalr_subset
          promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
          h_pc_bound h_lo_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_JALR_from_trust state jalr_input imm rs1 rd misa_val mseccfg
       exec_row e_rd nextPC_val m r_main next_pc
-      h_main_active h_main_op_jalr h_jalr_subset
+      pins h_jalr_subset
       promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
   | add add_input r1 r2 rd b bus pins h_main_subset h_b_core h_lane_rd promises =>

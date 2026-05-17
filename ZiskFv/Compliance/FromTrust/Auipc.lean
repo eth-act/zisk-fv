@@ -6,6 +6,7 @@ import ZiskFv.Equivalence.Promises.UTypeHelpers
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_AUIPC` Compliance wrapper — ControlFlow non-branch
@@ -38,8 +39,7 @@ theorem equiv_AUIPC_from_trust
     (nextPC_val : BitVec 64)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     -- Activation / opcode pins on Main + per-row subset constraint.
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op_auipc : m.op r_main = OP_FLAG)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
     -- Structural `UTypePromises` bundle.
     (promises : ZiskFv.Equivalence.Promises.UTypePromises
@@ -57,7 +57,7 @@ theorem equiv_AUIPC_from_trust
       = (bus_effect exec_row [e_rd] state).2 :=
   have h_circuit :=
     ZiskFv.Equivalence.Promises.auipc_h_circuit_of_main_constraints
-      m r_main next_pc h_main_active h_main_op_auipc h_auipc_subset
+      m r_main next_pc pins.main_active pins.main_op h_auipc_subset
   ZiskFv.Equivalence.Auipc.equiv_AUIPC state auipc_input imm rd
     exec_row e_rd nextPC_val m r_main next_pc
     promises h_circuit h_no_wrap h_lo_bound h_pc_offset_lt_2_32

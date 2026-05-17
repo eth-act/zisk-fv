@@ -5,6 +5,7 @@ import ZiskFv.Equivalence.Promises.Jump
 import ZiskFv.Equivalence.Promises.JumpHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_JAL` Compliance wrapper — ControlFlow non-branch
@@ -37,8 +38,7 @@ theorem equiv_JAL_from_trust
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
     -- Activation / opcode pins on Main + per-row subset constraint.
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op_jal : m.op r_main = OP_FLAG)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_jal_subset :
       ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
     -- Structural `JumpPromises` bundle.
@@ -56,7 +56,7 @@ theorem equiv_JAL_from_trust
       = (bus_effect exec_row [e_rd] state).2 :=
   have h_circuit :=
     ZiskFv.Equivalence.Promises.jal_h_circuit_of_main_constraints
-      m r_main next_pc h_main_active h_main_op_jal h_jal_subset
+      m r_main next_pc pins.main_active pins.main_op h_jal_subset
   ZiskFv.Equivalence.Jal.equiv_JAL state jal_input imm rd misa_val
     exec_row e_rd nextPC_val m r_main next_pc
     promises h_input_imm h_not_throws

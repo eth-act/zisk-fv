@@ -5,6 +5,7 @@ import ZiskFv.Equivalence.Promises.Fence
 import ZiskFv.SailSpec.fence
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_FENCE` Compliance wrapper — ControlFlow non-branch shape
@@ -109,8 +110,7 @@ theorem equiv_FENCE_from_trust
     -- Activation / opcode pins (Compliance-handshake; tracked here
     -- for uniformity but not consumed by the proof body since FENCE
     -- has no provider AIR).
-    (_h_main_active : main.is_external_op r_main = 0)
-    (_h_main_op_fence : main.op r_main = OP_FLAG)
+    (_pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_FLAG)
     -- Structural promise bundle (6 fields, see Promises/Fence.lean).
     (promises : ZiskFv.Equivalence.Promises.FencePromises
         state fence_input.PC
