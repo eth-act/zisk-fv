@@ -11,7 +11,7 @@ import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Tactics.ALUITypeArchetype
 
 /-!
-# `equiv_ORI` Compliance wrapper — Binary ITYPE shape (Step 4.2r3.I)
+# `equiv_ORI` Compliance wrapper — Binary ITYPE shape
 
 Mass-author clone of `FromTrust/Andi.lean` with `AND → OR`. Consumes
 `binary_b_op_or_sext_eq_OP_OR` (class #6, parallel to `_OP_AND`).
@@ -89,9 +89,21 @@ theorem equiv_ORI_from_trust
     binary_b_op_or_sext_eq_OP_OR v r_binary h_emit_op
   exact ZiskFv.Equivalence.Ori.equiv_ORI
     state ori_input r1 rd imm m v r_main r_binary exec_row e0 e1 e2
-    h_input_r1 h_input_imm h_input_rd h_input_pc
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    { input_r1_eq := h_input_r1
+      input_imm_eq := h_input_imm
+      input_rd_eq := h_input_rd
+      input_pc_eq := h_input_pc
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      m0_mult := h_m0_mult
+      m0_as := h_m0_as
+      m1_mult := h_m1_mult
+      m1_as := h_m1_as
+      m2_mult := h_m2_mult
+      m2_as := h_m2_as
+      rd_idx := h_rd_idx }
     h_main_active h_main_op_ori h_match h_bop_or_sext h_lane_rd h_ori_subset
 
 end ZiskFv.Compliance

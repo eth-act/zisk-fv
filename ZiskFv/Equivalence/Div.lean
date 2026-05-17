@@ -16,6 +16,7 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
+import ZiskFv.Equivalence.Promises.RType
 
 /-!
 End-to-end theorem for RV64 **DIV**. Combines:
@@ -27,8 +28,6 @@ End-to-end theorem for RV64 **DIV**. Combines:
 
 into three canonical theorems:
 
-* `equiv_DIV_circuit` — circuit-level. Main's packed `c` equals Arith's
-  packed quotient (primary output lane `a[]`), given the bus match.
 * `equiv_DIV_sail` — Sail-level. `execute_instruction` on an RV64 DIV
   reduces to the pure-function block.
 * `equiv_DIV` — canonical shape: Sail's
@@ -95,23 +94,10 @@ theorem equiv_DIV
     (r1 r2 rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok div_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok div_input.r2_val state)
-    (h_input_rd : div_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some div_input.PC)
-    -- Structural bus hypotheses.
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_DIVREM_div_pure div_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : div_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state div_input.r1_val div_input.r2_val div_input.rd div_input.PC
+        (PureSpec.execute_DIVREM_div_pure div_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     -- Structural-unpacking ADDED binders per `trust/structural-unpacking-exceptions.txt` DIV entry.
     (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
@@ -141,12 +127,12 @@ theorem equiv_DIV
     (h_byte_hi :
       e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
         = (v.a_2 r_a).val + (v.a_3 r_a).val * 65536)
-    (h_op1 :
+    (h_rs1_value :
       div_input.r1_val.toInt
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
             - (v.np r_a).val * (2:ℤ)^64)
-    (h_op2 :
+    (h_rs2_value :
       div_input.r2_val.toInt
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
@@ -167,6 +153,10 @@ theorem equiv_DIV
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_rd_val :=
     ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_div_chunked
@@ -175,7 +165,7 @@ theorem equiv_DIV
       h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
       h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
       h_chain h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool
-      h_np_xor h_nr_pin h_byte_lo h_byte_hi h_op1 h_op2
+      h_np_xor h_nr_pin h_byte_lo h_byte_hi h_rs1_value h_rs2_value
       h_op2_ne h_no_overflow h_r_abs h_r_sign
   rw [equiv_DIV_sail state div_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]

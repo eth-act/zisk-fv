@@ -6,10 +6,10 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 
 /-!
-# `equiv_FENCE` Compliance wrapper — ControlFlow non-branch shape (Step 4.2)
+# `equiv_FENCE` Compliance wrapper — ControlFlow non-branch shape
 
 > **Status:** within-shape wrapper, derived mechanically from
-> `FromTrust/Lui.lean` (Step 4.1.1). Lives outside the canonical
+> `FromTrust/Lui.lean`. Lives outside the canonical
 > surface so V1 anti-laundering metrics on the canonical theorem
 > are unaffected.
 
@@ -125,7 +125,11 @@ theorem equiv_FENCE_from_trust
       = (bus_effect exec_row [] state).2 :=
   ZiskFv.Equivalence.Fence.equiv_FENCE
     state fence_input fm pred succ rs rd exec_row
-    h_input_pc h_input_priv
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+    { input_pc_eq := h_input_pc
+      input_priv_eq := h_input_priv
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches }
 
 end ZiskFv.Compliance

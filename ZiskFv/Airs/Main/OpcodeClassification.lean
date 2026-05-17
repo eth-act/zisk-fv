@@ -10,8 +10,8 @@ import ZiskFv.Airs.Main.Main
 
 The 63 canonical `equiv_<OP>` theorems each pin `m.op r_main` to a
 specific `OP_<X>` literal. The global compliance theorem
-(`zisk_riscv_compliant_program_bus`, Step 4 of
-`/home/cody/.claude/plans/plan-to-completely-resolve-wild-lynx.md`)
+(`zisk_riscv_compliant_program_bus`, of
+`/home/cody/.claude/plans/plan-to-completely-resolve-per-opcode-discharge.md`)
 dispatches by case on which literal is in play. This file provides:
 
 1. `main_op_in_RV64IM_scope` — a `Prop`-valued predicate enumerating

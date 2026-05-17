@@ -167,12 +167,12 @@ private theorem shift_right_arith_eq_sshiftRight
     LeanRV64D.Functions.shift_right_arith r1 shift
       = BitVec.sshiftRight r1 shift := by
   unfold LeanRV64D.Functions.shift_right_arith
-  -- Step 1: replace the integer cast tail.
+  -- replace the integer cast tail.
   have h_64_cast : ((↑(64 : Nat) : Int) + ↑shift).toNat = 64 + shift := by
     push_cast; omega
   have h_63m1_cast : ((↑(64 : Nat) : Int) - 1 + ↑shift).toNat = 63 + shift := by
     push_cast; omega
-  -- Step 2: open via getLsbD extensionality.
+  -- open via getLsbD extensionality.
   rw [BitVec.eq_of_getLsbD_eq_iff]
   intro i hi
   have h_not_64_i : ¬ (64 ≤ i) := Nat.not_le_of_lt hi

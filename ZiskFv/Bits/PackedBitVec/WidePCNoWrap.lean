@@ -113,17 +113,17 @@ lemma fgl_pc_plus_offset_lo
     (h_no_fgl_wrap : pc_fgl.val + offset_fgl.val < GL_prime) :
     (pc_fgl + offset_fgl).val % 4294967296
       = (PC + offset_bv).toNat % 4294967296 := by
-  -- Step 1: The FGL sum's `.val` equals the ℕ sum (no wrap).
+  -- The FGL sum's `.val` equals the ℕ sum (no wrap).
   have h_fgl_val :
       (pc_fgl + offset_fgl).val = pc_fgl.val + offset_fgl.val := by
     rw [show (pc_fgl + offset_fgl : FGL) = pc_fgl + offset_fgl from rfl]
     rw [Fin.val_add]
     exact Nat.mod_eq_of_lt h_no_fgl_wrap
-  -- Step 2: Substitute the transpile bridges.
+  -- Substitute the transpile bridges.
   rw [h_fgl_val, h_pc_bridge, h_offset_bridge]
-  -- Step 3: The BitVec sum's `.toNat` is `(PC.toNat + offset_bv.toNat) % 2^64`.
+  -- The BitVec sum's `.toNat` is `(PC.toNat + offset_bv.toNat) % 2^64`.
   rw [BitVec.toNat_add]
-  -- Step 4: `(x % 2^64) % 2^32 = x % 2^32` since 2^32 | 2^64.
+  -- `(x % 2^64) % 2^32 = x % 2^32` since 2^32 | 2^64.
   rw [Nat.mod_mod_of_dvd _ (by decide : (4294967296 : ℕ) ∣ 18446744073709551616)]
 
 /-- **Hi-half wide-PC lift (general offset).**

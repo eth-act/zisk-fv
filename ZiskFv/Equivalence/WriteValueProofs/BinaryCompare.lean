@@ -341,7 +341,7 @@ lemma h_rd_val_compare_sltu
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = if BitVec.ult r1_val r2_val then 1#64 else 0#64 := by
-  -- Step 1: K1-B LTU lift.
+  -- K1-B LTU lift.
   have h_iff := binary_ltu_chunks_eq_bv_ult
     a0 a1 a2 a3 a4 a5 a6 a7
     b0 b1 b2 b3 b4 b5 b6 b7
@@ -354,7 +354,7 @@ lemma h_rd_val_compare_sltu
     hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
     h_cin0 h_cin1 h_cin2 h_cin3 h_cin4 h_cin5 h_cin6 h_cin7
   -- h_iff : fl7 % 2 = 1 ↔ asum < bsum (unsigned, on Nat)
-  -- Step 2: bridge the c-lane to `fl7.val` (which equals fl7 % 2 since fl7.val < 2).
+  -- bridge the c-lane to `fl7.val` (which equals fl7 % 2 since fl7.val < 2).
   have h_fl7_eq : fl7.val = fl7.val % 2 := (Nat.mod_eq_of_lt h_fl7_lt_2).symm
   -- Define cout := fl7.val (which lies in {0, 1}).
   set cout := fl7.val with hcout_def
@@ -368,11 +368,11 @@ lemma h_rd_val_compare_sltu
     show fl7.val < 18446744069414584321
     have := fl7.isLt
     omega
-  -- Step 3: closer kernel — produce U64.toBV [...] = BitVec.ofNat 64 cout.
+  -- closer kernel — produce U64.toBV [...] = BitVec.ofNat 64 cout.
   have h_kernel := compare_byte_sum_kernel m r_main e2 cout hcout_le
     h_clo' h_match_chi h_lane_rd
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
-  -- Step 4: identify BitVec.ofNat 64 cout with `if r1_val.ult r2_val then 1#64 else 0#64`.
+  -- identify BitVec.ofNat 64 cout with `if r1_val.ult r2_val then 1#64 else 0#64`.
   rw [h_kernel]
   -- Goal: BitVec.ofNat 64 cout = if r1_val.ult r2_val then 1#64 else 0#64.
   -- Rewrite cout = fl7.val and use h_iff + input bridges.
@@ -563,7 +563,7 @@ lemma h_rd_val_compare_slt
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = if BitVec.slt r1_val r2_val then 1#64 else 0#64 := by
-  -- Step 1: K1-B LT lift (signed).
+  -- K1-B LT lift (signed).
   have h_iff := binary_lt_chunks_eq_bv_slt
     a0 a1 a2 a3 a4 a5 a6 a7
     b0 b1 b2 b3 b4 b5 b6 b7
@@ -575,7 +575,7 @@ lemma h_rd_val_compare_slt
     ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
     hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
     h_cin0 h_cin1 h_cin2 h_cin3 h_cin4 h_cin5 h_cin6 h_cin7 h_pi7
-  -- Step 2: cout-only c-lane closure.
+  -- cout-only c-lane closure.
   have h_fl7_eq : fl7.val = fl7.val % 2 := (Nat.mod_eq_of_lt h_fl7_lt_2).symm
   set cout := fl7.val with hcout_def
   have hcout_le : cout ≤ 1 := Nat.le_of_lt_succ h_fl7_lt_2

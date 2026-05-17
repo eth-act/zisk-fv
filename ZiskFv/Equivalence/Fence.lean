@@ -11,6 +11,7 @@ import ZiskFv.SailSpec.fence
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
+import ZiskFv.Equivalence.Promises.Fence
 
 /-!
 End-to-end theorem for RV64I FENCE.
@@ -24,8 +25,6 @@ emits a single Internal-op row with all sources zeroed and
 
 Three theorems mirroring the BEQ pattern (shape-(b) — empty memory bus):
 
-* `equiv_FENCE_circuit` — circuit-level (degenerate: there's no semantic
-  payload, just PC advance via the standard handshake).
 * `equiv_FENCE_sail` — Sail-level wrapper for `execute_FENCE_pure_equiv`.
 * `equiv_FENCE` — the canonical shape combining
   Sail + bus-effect via `bus_effect_matches_sail_beq` (empty memory
@@ -63,7 +62,7 @@ lemma equiv_FENCE_sail
   PureSpec.execute_FENCE_pure_equiv fence_input fm pred succ rs rd
     h_input_pc h_input_priv
 
-/-- **Metaplan theorem.** Sail's `execute_instruction` on an RV64
+/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64
     FENCE equals `(bus_effect exec_row [] state).2`. Composes
     `equiv_FENCE_sail` with `bus_effect_matches_sail_beq` (FENCE
     uses the same empty-memory-bus shape as branches). -/
@@ -72,17 +71,14 @@ theorem equiv_FENCE
     (fence_input : PureSpec.FenceInput)
     (fm pred succ : BitVec 4) (rs rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (h_input_pc : state.regs.get? Register.PC = .some fence_input.PC)
-    (h_input_priv :
-      state.regs.get? Register.cur_privilege = .some Privilege.Machine)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_FENCE_pure fence_input).nextPC) :
+    (promises : ZiskFv.Equivalence.Promises.FencePromises
+        state fence_input.PC
+        (PureSpec.execute_FENCE_pure fence_input).nextPC
+        exec_row) :
     execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
       = (bus_effect exec_row [] state).2 := by
+  obtain ⟨h_input_pc, h_input_priv, h_exec_len, h_e0_mult, h_e1_mult,
+          h_nextPC_matches⟩ := promises
   rw [equiv_FENCE_sail state fence_input fm pred succ rs rd h_input_pc
         h_input_priv]
   symm

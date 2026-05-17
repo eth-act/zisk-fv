@@ -16,6 +16,7 @@ import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned
+import ZiskFv.Equivalence.Promises.RType
 
 /-!
 End-to-end theorem for RV64M DIVUW (unsigned 32-bit divide).
@@ -34,8 +35,6 @@ otherwise) — same trust class as ADDW's `h_sext_choice`.
 
 Three theorems mirroring the DIVU pattern (shape-(a) — ALU/Arith bus):
 
-* `equiv_DIVUW_circuit` — circuit-level (defined in terms of m.a/b lanes via
-  `transpile_DIVUW`).
 * `equiv_DIVUW_sail` — Sail-level wrapper for
   `execute_DIVREM_divuw_pure_equiv`.
 * `equiv_DIVUW` — canonical shape composing
@@ -100,22 +99,10 @@ theorem equiv_DIVUW
     (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok divuw_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok divuw_input.r2_val state)
-    (h_input_rd : divuw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some divuw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : divuw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state divuw_input.r1_val divuw_input.r2_val divuw_input.rd divuw_input.PC
+        (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     -- Structural-unpacking ADDED binders (17 total) mirroring DIVU
     -- plus h_sext_choice for W-mode sign-extension.
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
@@ -139,9 +126,9 @@ theorem equiv_DIVUW
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
     -- Operand TRANSPILE-BRIDGE (W form: low 32 bits).
-    (h_op1 : (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat
+    (h_rs1_value : (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
-    (h_op2 : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat
+    (h_rs2_value : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat
               = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536)
     -- Divisor non-zero (CIRCUIT-CONSTRAINT).
     (h_op2_ne : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat ≠ 0)
@@ -153,24 +140,28 @@ theorem equiv_DIVUW
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, true))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  -- Step 1: chunk-range bounds.
+  obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
+  -- chunk-range bounds.
   obtain ⟨h_a0, h_a1, h_a2, h_a3,
           h_b0, h_b1, h_b2, h_b3,
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
     ZiskFv.Equivalence.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a
-  -- Step 2: W-unsigned chain witnesses.
+  -- W-unsigned chain witnesses.
   obtain ⟨cy₀, cy₁, cy₂, cy₃, cy₄, cy₅, cy₆,
           h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6,
           hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ :=
     ZiskFv.Equivalence.Bridge.Arith.div_w_unsigned_chain_witnesses v r_a h_chain
       h_na h_nb h_np h_nr h_sext h_m32 h_div
-  -- Step 3: W-mode operand chunk pin (a_2=a_3=b_2=b_3=d_2=d_3=0).
+  -- W-mode operand chunk pin (a_2=a_3=b_2=b_3=d_2=d_3=0).
   obtain ⟨h_a2_eq, h_a3_eq, h_b2_eq, h_b3_eq, h_d2_eq, h_d3_eq⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin v r_a h_sext h_m32 h_div h_op
-  -- Step 4: byte-range bounds.
+  -- byte-range bounds.
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
-  -- Step 5: chunked rd-val discharge.
+  -- chunked rd-val discharge.
   have h_rd_val :=
     ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_divuw_chunked
       divuw_input.r1_val divuw_input.r2_val e2
@@ -188,7 +179,7 @@ theorem equiv_DIVUW
       hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
       ⟨h_a2_eq, h_a3_eq⟩ ⟨h_b2_eq, h_b3_eq⟩ ⟨h_d2_eq, h_d3_eq⟩ h_c23
       h_byte_lo h_sext_choice
-      h_op1 h_op2 h_op2_ne h_d_lt_b
+      h_rs1_value h_rs2_value h_op2_ne h_d_lt_b
   rw [equiv_DIVUW_sail state divuw_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

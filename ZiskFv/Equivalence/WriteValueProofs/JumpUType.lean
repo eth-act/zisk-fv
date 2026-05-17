@@ -226,23 +226,23 @@ lemma h_rd_val_jut_jal
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = PC + 4 := by
-  -- Step 1: Extract JAL mode witnesses from h_circuit and apply S1's
+  -- Extract JAL mode witnesses from h_circuit and apply S1's
   -- transpile_PC_for_JAL axiom to derive the FGL→BitVec PC bridge.
   have h_mode := h_circuit.2
   obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
   have h_pc_bridge : (m.pc r_main).val = PC.toNat :=
     transpile_PC_for_JAL m r_main PC h_ext h_op
-  -- Step 2: Apply S3's lo/hi BitVec bridges.
+  -- Apply S3's lo/hi BitVec bridges.
   have h_lo_val : (memory_entry_lo e2).val = (PC + 4#64).toNat % 4294967296 :=
     jal_store_value_lo_bv m r_main next_pc PC e2
       h_circuit h_jmp2 h_lane_lo h_pc_bridge h_pc_bound h_lo_bound
   have h_hi_val : (memory_entry_hi e2).val = (PC + 4#64).toNat / 4294967296 :=
     jal_store_value_hi_bv m r_main next_pc PC e2
       h_circuit h_lane_hi h_pc_offset_lt_2_32
-  -- Step 3: Convert (PC + 4#64) to (PC + 4) — definitionally equal.
+  -- Convert (PC + 4#64) to (PC + 4) — definitionally equal.
   have h_pc4_eq : (PC + 4#64) = (PC + 4) := rfl
   rw [h_pc4_eq] at h_lo_val h_hi_val
-  -- Step 4: Bridge each .val equality to the FGL form via the helpers.
+  -- Bridge each .val equality to the FGL form via the helpers.
   have h_lo_bytes :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
       = (PC + 4).toNat % 4294967296 :=
@@ -253,7 +253,7 @@ lemma h_rd_val_jut_jal
       = (PC + 4).toNat / 4294967296 :=
     hi_bytes_from_fgl_eq e2 (memory_entry_hi e2) (PC + 4).toNat
       h4 h5 h6 h7 rfl h_hi_val
-  -- Step 5: Assemble byte_sum and close with K3.
+  -- Assemble byte_sum and close with K3.
   have h_byte_sum := byte_sum_from_lo_hi e2 (PC + 4) h_lo_bytes h_hi_bytes
   exact pc_plus4_bv64_of_bytes PC e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
@@ -296,22 +296,22 @@ lemma h_rd_val_jut_jalr
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = PC + 4 := by
-  -- Step 1: Extract JALR mode witnesses + apply transpile_PC_for_JALR.
+  -- Extract JALR mode witnesses + apply transpile_PC_for_JALR.
   have h_mode := h_circuit.2
   obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
   have h_pc_bridge : (m.pc r_main).val = PC.toNat :=
     transpile_PC_for_JALR m r_main PC h_ext h_op
-  -- Step 2: Apply S3's lo/hi BitVec bridges (JALR variants).
+  -- Apply S3's lo/hi BitVec bridges (JALR variants).
   have h_lo_val : (memory_entry_lo e2).val = (PC + 4#64).toNat % 4294967296 :=
     jalr_store_value_lo_bv m r_main next_pc PC e2
       h_circuit h_jmp2 h_lane_lo h_pc_bridge h_pc_bound h_lo_bound
   have h_hi_val : (memory_entry_hi e2).val = (PC + 4#64).toNat / 4294967296 :=
     jalr_store_value_hi_bv m r_main next_pc PC e2
       h_circuit h_lane_hi h_pc_offset_lt_2_32
-  -- Step 3: PC + 4#64 = PC + 4 definitionally.
+  -- PC + 4#64 = PC + 4 definitionally.
   have h_pc4_eq : (PC + 4#64) = (PC + 4) := rfl
   rw [h_pc4_eq] at h_lo_val h_hi_val
-  -- Step 4: Bridge to byte-sum form.
+  -- Bridge to byte-sum form.
   have h_lo_bytes :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
       = (PC + 4).toNat % 4294967296 :=
@@ -322,7 +322,7 @@ lemma h_rd_val_jut_jalr
       = (PC + 4).toNat / 4294967296 :=
     hi_bytes_from_fgl_eq e2 (memory_entry_hi e2) (PC + 4).toNat
       h4 h5 h6 h7 rfl h_hi_val
-  -- Step 5: Assemble byte_sum and close with K3.
+  -- Assemble byte_sum and close with K3.
   have h_byte_sum := byte_sum_from_lo_hi e2 (PC + 4) h_lo_bytes h_hi_bytes
   exact pc_plus4_bv64_of_bytes PC e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
@@ -370,7 +370,7 @@ lemma h_rd_val_jut_lui
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = BitVec.signExtend 64 (imm ++ (0 : BitVec 12)) := by
-  -- Step 0: Derive the low-half identity internally.
+  -- Derive the low-half identity internally.
   -- (BitVec.signExtend 64 v).toNat % 2^32 = v.toNat for v : BitVec 32.
   -- Proof: signExtend adds 2^64 - 2^32 to toNat when msb = 1, which is
   -- divisible by 2^32; and setWidth 64 v has toNat = v.toNat (since v.toNat < 2^32).
@@ -387,7 +387,7 @@ lemma h_rd_val_jut_lui
       rw [this, Nat.add_mul_mod_self_right]
       exact Nat.mod_eq_of_lt hv_lt
     · simp only [add_zero]; exact Nat.mod_eq_of_lt hv_lt
-  -- Step 1: Extract c_0 = b_0 and c_1 = b_1 from the LUI circuit.
+  -- Extract c_0 = b_0 and c_1 = b_1 from the LUI circuit.
   have h_sv_lo := lui_store_value_lo m r_main next_pc h_circuit
   have h_sv_hi := lui_store_value_hi m r_main next_pc h_circuit
   have h_mode := h_circuit.2
@@ -395,26 +395,26 @@ lemma h_rd_val_jut_lui
   -- From store_pc = 0: simplify sv_lo to c_0 = b_0 and sv_hi to c_1 = b_1.
   rw [h_store_pc] at h_sv_lo h_sv_hi
   simp only [zero_mul, zero_add, sub_zero, one_mul] at h_sv_lo h_sv_hi
-  -- Step 2: Extract c_0 = memory_entry_lo, c_1 = memory_entry_hi from lane-match.
+  -- Extract c_0 = memory_entry_lo, c_1 = memory_entry_hi from lane-match.
   simp only [register_write_lanes_match] at h_lane_rd
   obtain ⟨h_c0_eq, h_c1_eq⟩ := h_lane_rd
-  -- Step 3: Combine to get memory_entry_lo = b_0 and memory_entry_hi = b_1.
+  -- Combine to get memory_entry_lo = b_0 and memory_entry_hi = b_1.
   have h_lo_entry : memory_entry_lo e2 = m.b_0 r_main := by rw [← h_c0_eq, h_sv_lo]
   have h_hi_entry : memory_entry_hi e2 = m.b_1 r_main := by rw [← h_c1_eq, h_sv_hi]
-  -- Step 4: Derive lo bytes sum using the FGL→Nat bridge.
+  -- Derive lo bytes sum using the FGL→Nat bridge.
   have h_b0_as_sext_lo : (m.b_0 r_main).val
       = (BitVec.signExtend 64 v).toNat % 4294967296 := by
     rw [h_imm_lo_nat]; exact h_lo_is_lo.symm
   have h_lo_bytes := lo_bytes_from_fgl_eq e2 (m.b_0 r_main)
     (BitVec.signExtend 64 v).toNat
     h0 h1 h2 h3 h_lo_entry h_b0_as_sext_lo
-  -- Step 5: Derive hi bytes.
+  -- Derive hi bytes.
   have h_hi_bytes := hi_bytes_from_fgl_eq e2 (m.b_1 r_main)
     (BitVec.signExtend 64 v).toNat
     h4 h5 h6 h7 h_hi_entry h_imm_hi_nat
-  -- Step 6: Assemble byte_sum = signExtend.toNat.
+  -- Assemble byte_sum = signExtend.toNat.
   have h_byte_sum := byte_sum_from_lo_hi e2 (BitVec.signExtend 64 v) h_lo_bytes h_hi_bytes
-  -- Step 7: Close with K3.
+  -- Close with K3.
   exact u64_toBV_of_imm20_lanes imm e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
 
@@ -468,12 +468,12 @@ lemma h_rd_val_jut_auipc
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = PC + BitVec.signExtend 64 (imm ++ (0 : BitVec 12)) := by
-  -- Step 1: Extract AUIPC mode witnesses + apply transpile_PC_for_AUIPC.
+  -- Extract AUIPC mode witnesses + apply transpile_PC_for_AUIPC.
   have h_mode := h_circuit.2
   obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
   have h_pc_bridge : (m.pc r_main).val = PC.toNat :=
     transpile_PC_for_AUIPC m r_main PC h_ext h_op
-  -- Step 2: Apply S3's lo/hi BitVec bridges (AUIPC variants).
+  -- Apply S3's lo/hi BitVec bridges (AUIPC variants).
   set offset_bv : BitVec 64 := BitVec.signExtend 64 (imm ++ (0 : BitVec 12)) with h_offset_def
   have h_lo_val : (memory_entry_lo e2).val = (PC + offset_bv).toNat % 4294967296 :=
     auipc_store_value_lo_bv m r_main next_pc PC offset_bv e2
@@ -481,7 +481,7 @@ lemma h_rd_val_jut_auipc
   have h_hi_val : (memory_entry_hi e2).val = (PC + offset_bv).toNat / 4294967296 :=
     auipc_store_value_hi_bv m r_main next_pc PC offset_bv e2
       h_circuit h_lane_hi h_pc_offset_lt_2_32
-  -- Step 3: Bridge to byte-sum form via the helpers.
+  -- Bridge to byte-sum form via the helpers.
   have h_lo_bytes :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
       = (PC + offset_bv).toNat % 4294967296 :=
@@ -492,9 +492,9 @@ lemma h_rd_val_jut_auipc
       = (PC + offset_bv).toNat / 4294967296 :=
     hi_bytes_from_fgl_eq e2 (memory_entry_hi e2) (PC + offset_bv).toNat
       h4 h5 h6 h7 rfl h_hi_val
-  -- Step 4: Assemble byte_sum = (PC + offset_bv).toNat.
+  -- Assemble byte_sum = (PC + offset_bv).toNat.
   have h_byte_sum := byte_sum_from_lo_hi e2 (PC + offset_bv) h_lo_bytes h_hi_bytes
-  -- Step 5: Close via BitVec.eq_of_toNat_eq + u64_toBV_of_bytes_toNat.
+  -- Close via BitVec.eq_of_toNat_eq + u64_toBV_of_bytes_toNat.
   apply BitVec.eq_of_toNat_eq
   rw [ZiskFv.PackedBitVec.u64_toBV_of_bytes_toNat e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
       h0 h1 h2 h3 h4 h5 h6 h7]

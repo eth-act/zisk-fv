@@ -10,20 +10,7 @@ import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
 
 /-!
-# `equiv_OR` Compliance pilot — Binary shape exemplar (Step 4.1.4)
-
-> **Status:** PILOT. Fourth shape exemplar after DIV (`FromTrust/Div.lean`,
-> the Arith provider-AIR shape), LUI (`FromTrust/Lui.lean`, the
-> Main-only ControlFlow non-branch shape), and ADD (`FromTrust/Add.lean`,
-> the BinaryAdd provider-AIR shape). Demonstrates the discharge
-> recipe applied to the **Binary provider-AIR shape** — the largest
-> provider-AIR in the inventory (14 opcodes: AND/ANDI/OR/ORI/XOR/XORI/
-> SLT/SLTI/SLTU/SLTIU/SUB/SUBW/ADDIW/ADDW).
->
-> Lives outside the canonical surface (under
-> `Compliance/FromTrust/`) so V1 anti-laundering metrics on the
-> canonical theorem are unaffected.
-
+# `equiv_OR` trust-discharge wrapper
 ## Why OR
 
 OR is the simplest of the 14 Binary-shape opcodes:
@@ -118,9 +105,9 @@ across all 14 Binary-shape opcodes, and `h_main_active` /
 
 The remaining wrapper-level promise hypothesis (caller-burden) on
 this exemplar is `h_lane_rd : register_write_lanes_match m r_main e2`,
-deferred to the Mem pilot (Step 4.1.3 SD) for cross-shape discharge
-via a Binary-side `main_external_logic_emission_bundle` (or equivalent
-class-#4 bundle). The AddExemplar follows the same convention.
+discharged downstream via a Binary-side
+`main_external_logic_emission_bundle` (or equivalent class-#4
+bundle). The Add wrapper follows the same convention.
 
 ## Cross-shape lessons
 
@@ -178,12 +165,10 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
        `h_main_op_or`). Both come from Compliance.lean's
        program-counter handshake on the row hosting the OR
        instruction.
-    5. The lane-match for the rd-write entry (`h_lane_rd`).
-       Currently caller-supplied; the Mem pilot (Step 4.1.x) will
-       discharge this from a Binary-side
-       `main_external_logic_emission_bundle` (class #4) once the
-       Mem-side AIR data is plumbed through Compliance.lean. The
-       AddExemplar (Step 4.1.2) follows the same convention.
+    5. The lane-match for the rd-write entry (`h_lane_rd`) —
+       caller-supplied; discharged downstream from a Binary-side
+       `main_external_logic_emission_bundle` (class #4). The Add
+       wrapper follows the same convention.
     6. The Sail-side state predicates (SPEC-PRE):
        `h_input_r1`, `h_input_r2`, `h_input_rd`, `h_input_pc`.
     7. The bus-protocol structural hypotheses — pass-through from
@@ -221,8 +206,8 @@ theorem equiv_OR_from_trust
     -- the Main AIR's ROM handshake on the row hosting OR.
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op_or : m.op r_main = OP_OR)
-    -- Lane-match for the rd-write entry. Currently caller-supplied;
-    -- the Mem pilot will discharge this from a Binary-side
+    -- Lane-match for the rd-write entry — caller-supplied; discharged
+    -- downstream from a Binary-side
     -- `main_external_logic_emission_bundle`.
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
     -- Sail-side state predicates (SPEC-PRE).
@@ -289,9 +274,21 @@ theorem equiv_OR_from_trust
   -- ============ Delegate to canonical `equiv_OR` ============
   exact ZiskFv.Equivalence.Or.equiv_OR
     state or_input r1 r2 rd m v r_main r_binary exec_row e0 e1 e2
-    h_input_r1 h_input_r2 h_input_rd h_input_pc
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    { input_r1_eq := h_input_r1
+      input_r2_eq := h_input_r2
+      input_rd_eq := h_input_rd
+      input_pc_eq := h_input_pc
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      m0_mult := h_m0_mult
+      m0_as := h_m0_as
+      m1_mult := h_m1_mult
+      m1_as := h_m1_as
+      m2_mult := h_m2_mult
+      m2_as := h_m2_as
+      rd_idx := h_rd_idx }
     h_main_active h_main_op_or h_match h_bop_or_sext h_lane_rd
 
 end ZiskFv.Compliance

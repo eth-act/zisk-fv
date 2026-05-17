@@ -423,8 +423,8 @@ DIV/REM rows). Same kind, narrower covering set. -/
 
     Consumed by `equiv_DIV_from_trust` (`Compliance/FromTrust/Div.lean`) to
     derive the `main_div = 1`, `main_mul = 0` pins required by
-    `div_bus_res1_eq_a_hi` (`Airs/Arith/Bridge1.lean:79`) for the
-    GAP-A hi-lane discharge. -/
+    `div_bus_res1_eq_a_hi` (`Airs/Arith/BusRes1.lean:79`) for the
+     hi-lane discharge. -/
 axiom arith_table_op_div_rem_main_selector_pin
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
@@ -433,7 +433,7 @@ axiom arith_table_op_div_rem_main_selector_pin
 
 /-! ## Arith-table signed DIV/REM sign-witness MSB pins — `np = MSB(C)`, `nb = MSB(B)`
 
-GAP-B for the DIV pilot. The arith_table lookup at `arith.pil:286-287`
+ for the DIV pilot. The arith_table lookup at `arith.pil:286-287`
 covers, among other columns, the sign-witness pair `(np, nb)`. The
 row-type table at `arith.pil:222-234` for signed 64-bit DIV/REM
 (`op ∈ {186, 187}`, line 232) reads:
@@ -470,9 +470,9 @@ the existing `arith_table_op_div_rem_signed_d_sign_pin` (which pins
 
 Consumed by `equiv_DIV_from_trust` (`Compliance/FromTrust/Div.lean`) — in
 composition with the generic signed Sail-state bridge — to derive
-`h_op1` / `h_op2` (the signed packed-lane equations connecting
+`h_rs1_value` / `h_rs2_value` (the signed packed-lane equations connecting
 `r1_val.toInt` / `r2_val.toInt` to the AIR's `C - np·2^64` /
-`B - nb·2^64` columns), closing GAP-B.
+`B - nb·2^64` columns), closing .
 
 Trust class: same as `arith_table_op_div_rem_signed_mode_pin` and
 `arith_table_op_div_rem_main_selector_pin` — class #6b, arith_table
@@ -499,7 +499,7 @@ columns. -/
     binds the `np` bit to the MSB convention.
 
     Consumed by `equiv_DIV_from_trust` via
-    `signed_packed_toInt_eq_of_read_xreg` to derive `h_op1`. -/
+    `signed_packed_toInt_eq_of_read_xreg` to derive `h_rs1_value`. -/
 axiom arith_div_np_eq_msb_of_dividend
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 0) (_h_div : v.div r_a = 1)
@@ -527,7 +527,7 @@ axiom arith_div_np_eq_msb_of_dividend
 
     Companion to `arith_div_np_eq_msb_of_dividend`; consumed by
     `equiv_DIV_from_trust` via `signed_packed_toInt_eq_of_read_xreg`
-    to derive `h_op2`. -/
+    to derive `h_rs2_value`. -/
 axiom arith_div_nb_eq_msb_of_divisor
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 0) (_h_div : v.div r_a = 1)
@@ -587,7 +587,7 @@ DIV/REM-emitting rows). -/
       the `0 ≤` boundary).
 
     Caller routes the dividend / divisor signed value via the
-    operand TRANSPILE-BRIDGE hypotheses `h_op1`/`h_op2`, which
+    operand TRANSPILE-BRIDGE hypotheses `h_rs1_value`/`h_rs2_value`, which
     equate `r1.toInt`/`r2.toInt` with the same `C - np·2^64` /
     `B - nb·2^64` expressions; under those equalities this axiom
     delivers `(d_packed - nr·2^64).natAbs < r2.toInt.natAbs` and
@@ -768,7 +768,7 @@ axiom arith_table_op_mul_mode_pin
 
     Consumed by `equiv_MUL_from_trust` to derive the MUL-primary mode
     pins (`main_mul = 1`, `main_div = 0`) required by
-    `mul_bus_res1_eq_c_hi` (`Airs/Arith/Bridge1.lean:56`) for the
+    `mul_bus_res1_eq_c_hi` (`Airs/Arith/BusRes1.lean:56`) for the
     hi-lane discharge of `h_byte_hi` on `equiv_MUL`. Same trust kind
     as `arith_table_op_div_rem_main_selector_pin` (the DIV analog). -/
 axiom arith_table_op_mul_main_selector_pin
@@ -914,7 +914,7 @@ axiom arith_table_op_mulhu_mode_pin
 
     Consumed by `equiv_MULHU_from_trust` to derive the secondary-mode
     pins (`main_mul = 0`, `main_div = 0`) required by
-    `mulh_bus_res1_eq_d_hi` (`Airs/Arith/Bridge1.lean`) for the
+    `mulh_bus_res1_eq_d_hi` (`Airs/Arith/BusRes1.lean`) for the
     hi-lane discharge of `h_byte_hi`. Same trust kind as
     `arith_table_op_mul_main_selector_pin` (the low-half MUL analog). -/
 axiom arith_table_op_mulhu_main_selector_pin
@@ -996,7 +996,7 @@ axiom arith_table_op_mulhsu_main_selector_pin
 
 /-! ## Arith-table high-half MUL sign-witness MSB pins — `na = MSB(A)`, `nb = MSB(B)`
 
-Step 4.2 round 3.III sign-witness MSB pins for the signed high-half
+round 3.III sign-witness MSB pins for the signed high-half
 MUL family — exact MUL-side mirrors of `arith_div_np_eq_msb_of_dividend`
 / `arith_div_nb_eq_msb_of_divisor`, with the input column re-labelling
 appropriate to ArithMul (operands sit in `a[]` / `b[]` not `c[]` / `b[]`).
@@ -1038,7 +1038,7 @@ narrower scope (ArithMul rows in place of ArithDiv rows). -/
 
     Consumed by `equiv_MULH_from_trust` (`Compliance/FromTrust/MulH.lean`)
     and `equiv_MULHSU_from_trust` (`Compliance/FromTrust/MulHSU.lean`)
-    via `signed_packed_toInt_eq_of_read_xreg` to derive `h_op1` (the
+    via `signed_packed_toInt_eq_of_read_xreg` to derive `h_rs1_value` (the
     signed integer-form lane equation for rs1). -/
 axiom arith_mul_na_eq_msb_of_a
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
@@ -1065,7 +1065,7 @@ axiom arith_mul_na_eq_msb_of_a
 
     Companion to `arith_mul_na_eq_msb_of_a`; consumed by
     `equiv_MULH_from_trust` via `signed_packed_toInt_eq_of_read_xreg`
-    to derive `h_op2`. MULHSU does NOT consume this — its `nb = 0`
+    to derive `h_rs2_value`. MULHSU does NOT consume this — its `nb = 0`
     pin comes from `arith_table_op_mulhsu_mode_pin` (rs2 unsigned). -/
 axiom arith_mul_nb_eq_msb_of_b
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)

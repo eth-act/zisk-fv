@@ -6,7 +6,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 
 /-!
-# `equiv_BLT` Compliance wrapper — ControlFlow branches (Step 4.2)
+# `equiv_BLT` Compliance wrapper — ControlFlow branches
 
 Within-shape companion to `FromTrust/Beq.lean`. The pure-spec
 `throws`/`fails`/`success` shape on BLT is structurally identical to
@@ -77,8 +77,17 @@ theorem equiv_BLT_from_trust
     blt_pure_no_exception_of_aligned blt_input h_target_aligned
   exact ZiskFv.Equivalence.BranchLessThan.equiv_BLT
     state blt_input imm r1 r2 misa_val exec_row
-    h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_not_throws h_success
+    { input_imm_eq := h_input_imm
+      input_r1_eq := h_input_r1
+      input_r2_eq := h_input_r2
+      input_pc_eq := h_input_pc
+      input_misa_eq := h_input_misa
+      misa_c_zero := h_misa_c
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      not_throws := h_not_throws
+      success := h_success }
 
 end ZiskFv.Compliance

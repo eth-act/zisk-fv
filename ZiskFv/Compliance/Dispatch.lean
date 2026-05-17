@@ -6,7 +6,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
 -- One representative shape dispatcher import (LUI from ControlFlow non-branch).
 -- Additional shape dispatchers will be added under
--- `ZiskFv/Compliance/Dispatch/Dispatch/<Shape>.lean` as Step 4.3 progresses.
+-- `ZiskFv/Compliance/Dispatch/Dispatch/<Shape>.lean` as progresses.
 import ZiskFv.Compliance.FromTrust.Lui
 import ZiskFv.Compliance.FromTrust.Auipc
 import ZiskFv.Compliance.FromTrust.Jal
@@ -72,19 +72,19 @@ import ZiskFv.Compliance.FromTrust.Sw
 import ZiskFv.Compliance.FromTrust.Sd
 
 /-!
-# Compliance.lean — Global dispatcher (Step 4.3 of the wild-lynx plan)
+# Compliance.lean — Global dispatcher
 
 This file is the **architectural validation** that the 63
 independently-authored `equiv_<OP>_from_trust` wrappers under
 `ZiskFv/Compliance/Dispatch/` compose into a global theorem.
 
-## Status (Step 4.3 Phase 1 — partial)
+## Status
 
 This file currently lands the **decode-side scaffolding** plus a single
 representative shape dispatcher (`dispatch_ControlFlow_LUI`) to demonstrate
 the pattern. The full global theorem
 (`zisk_riscv_compliant_program_bus`) and the remaining eight shape
-dispatchers are tracked as Step 4.3 follow-up work and described in
+dispatchers are tracked as follow-up work and described in
 the structural commentary below.
 
 The follow-up work is concretely bounded — the wrapper signatures
@@ -267,7 +267,7 @@ file's module docstring.
     `rcases` disjunction depth at any one point.
 
     See the module docstring above for the full list of shape
-    dispatchers that will land here as Step 4.3 progresses. -/
+    dispatchers that will land here as progresses. -/
 lemma dispatch_LUI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)
@@ -1925,11 +1925,11 @@ lemma dispatch_MULW
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt
         = ((v.a_0 r_a).val + (v.a_1 r_a).val * 65536 : ℤ)
             - (v.na r_a).val * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - (v.nb r_a).val * (2:ℤ)^32) :
@@ -1945,7 +1945,7 @@ lemma dispatch_MULW
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-    h_row_constraints h_sext_choice h_op1 h_op2
+    h_row_constraints h_sext_choice h_rs1_value h_rs2_value
 
 /-! ### ArithDiv dispatchers (DIV, DIVU, DIVW, DIVUW, REM, REMU, REMW, REMUW)
 
@@ -2097,11 +2097,11 @@ lemma dispatch_DIVW
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt
         = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.np r_a) * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.nb r_a) * (2:ℤ)^32)
@@ -2120,7 +2120,7 @@ lemma dispatch_DIVW
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
     h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
-    h_sext_choice h_op1 h_op2 h_op2_ne h_no_overflow
+    h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
 
 /-- **Dispatcher for DIVUW.** -/
 lemma dispatch_DIVUW
@@ -2158,9 +2158,9 @@ lemma dispatch_DIVUW
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 : (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat
+    (h_rs1_value : (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
-    (h_op2 : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat
+    (h_rs2_value : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat
               = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536)
     (h_op2_ne : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat ≠ 0) :
     (do
@@ -2173,7 +2173,7 @@ lemma dispatch_DIVUW
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-    h_row_constraints h_sext_choice h_op1 h_op2 h_op2_ne
+    h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
 
 /-- **Dispatcher for REM.** -/
 lemma dispatch_REM
@@ -2319,11 +2319,11 @@ lemma dispatch_REMW
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
         = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
             - (v.np r_a).val * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - (v.nb r_a).val * (2:ℤ)^32)
@@ -2342,7 +2342,7 @@ lemma dispatch_REMW
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
     h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
-    h_sext_choice h_op1 h_op2 h_op2_ne h_no_overflow_w
+    h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w
 
 /-- **Dispatcher for REMUW.** -/
 lemma dispatch_REMUW
@@ -2380,9 +2380,9 @@ lemma dispatch_REMUW
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
+    (h_rs1_value : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
-    (h_op2 : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
+    (h_rs2_value : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
               = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536)
     (h_op2_ne : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat ≠ 0) :
     (do
@@ -2395,7 +2395,7 @@ lemma dispatch_REMUW
     h_input_r1 h_input_r2 h_input_rd h_input_pc
     h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
     h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-    h_row_constraints h_sext_choice h_op1 h_op2 h_op2_ne
+    h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
 
 /-! ### Memory load dispatchers (LD, LBU, LHU, LWU, LB, LH, LW)
 

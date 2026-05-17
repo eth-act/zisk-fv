@@ -14,7 +14,7 @@ import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 
 /-!
-# `equiv_LH` Compliance wrapper — signed-load BinExt SEXT_H chain (Step 4.2 round 4.C)
+# `equiv_LH` Compliance wrapper — signed-load BinExt SEXT_H chain
 
 > **Status:** Second of three signed-load wrappers (LW / LH / LB).
 > Mirrors `equiv_LW_from_trust` (`Compliance/FromTrust/Lw.lean`) with a
@@ -146,9 +146,19 @@ theorem equiv_LH_from_trust
   -- ============ Delegate to canonical `equiv_LH` ============
   exact ZiskFv.Equivalence.Lh.equiv_LH
     state lh_input mstatus pmaRegion misa mseccfg
-    exec_row e0 e1 e2 risc_v_assumptions h_opcode_assumptions
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    exec_row e0 e1 e2
+    { risc_v_assumptions := risc_v_assumptions
+      opcode_assumptions_ := h_opcode_assumptions
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      m0_mult := h_m0_mult
+      m0_as := h_m0_as
+      m1_mult := h_m1_mult
+      m1_as := h_m1_as
+      m2_mult := h_m2_mult
+      m2_as := h_m2_as }
     main mem r_main h_main_active h_main_op
     v r_binary h_op_binary h_bytes hc_lo_sum_lt hc_hi_sum_lt
     h_match_clo h_match_chi

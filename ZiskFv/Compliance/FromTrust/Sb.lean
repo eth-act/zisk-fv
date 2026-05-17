@@ -9,7 +9,7 @@ import ZiskFv.Airs.MemoryBus
 /-!
 # `equiv_SB` Compliance wrapper — Mem-stores shape, 1-byte width
 
-> **Status:** wrapper (Step 4.2.r3.IV — Mem-stores narrow width).
+> **Status:** wrapper.
 > Mirrors `Compliance/FromTrust/Sd.lean` (SD pilot, commit `3a86908`)
 > specialized to SB's 1-byte store. Consumes
 > `main_store_emission_bundle_sb` (class #4, NEW) via
@@ -102,9 +102,19 @@ theorem equiv_SB_from_trust
   -- Delegate to canonical `equiv_SB`.
   exact ZiskFv.Equivalence.StoreB.equiv_SB
     state sb_input mstatus pmaRegion misa mseccfg
-    exec_row e0 e1 e2 risc_v_assumptions h_opcode_assumptions
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    exec_row e0 e1 e2
+    { risc_v_assumptions := risc_v_assumptions
+      opcode_assumptions_ := h_opcode_assumptions
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      m0_mult := h_m0_mult
+      m0_as := h_m0_as
+      m1_mult := h_m1_mult
+      m1_as := h_m1_as
+      m2_mult := h_m2_mult
+      m2_as := h_m2_as }
     h_mem_eq
 
 end ZiskFv.Compliance

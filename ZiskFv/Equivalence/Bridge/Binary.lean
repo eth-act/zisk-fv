@@ -24,8 +24,8 @@ Tier-2 opcodes `SUB` / `SLT` / `SLTU` / `SLTI` / `SLTIU` / `SUBW` /
 `ADDIW` / `ADDW` once they're refactored to use a `Valid_Binary`
 parameter).
 
-This conservative bridge consumes Phase A's `op_bus_perm_sound_Binary`
-(PLONK soundness) + Step 2b prep's `binary_columns_in_range`
+This discharge bridge consumes Phase A's `op_bus_perm_sound_Binary`
+(PLONK soundness) + prep's `binary_columns_in_range`
 (range-check soundness) and produces:
 
 * the existential row witness `r_binary` for the Binary AIR,
@@ -33,7 +33,7 @@ This conservative bridge consumes Phase A's `op_bus_perm_sound_Binary`
 * the 24 byte-range bounds on `Valid_Binary`'s `free_in_a/b/c`
   cells at `r_binary`.
 
-What remains caller-supplied (this conservative pass):
+What remains caller-supplied (this pass):
 
 * the 8 per-byte `consumer_byte_match` hypotheses for the table chain
   (deferrable to a later PR that consumes `bin_table_consumer_wf`
@@ -42,12 +42,12 @@ What remains caller-supplied (this conservative pass):
   bus-emission's c-lane includes a `carry_7` term that needs a
   separate derivation; deferrable),
 * `h_input_r1` / `h_input_r2` per-byte input bridges (need
-  Step 1.7b's `SailStateBridge` to fully discharge).
+  `SailStateBridge` to fully discharge).
 
-The conservative payoff: each Binary-shape opcode drops 25 caller
-binders (24 byte ranges + 1 `r_binary`). For the existing
+The payoff: each Binary-shape opcode drops 25 caller binders
+(24 byte ranges + 1 `r_binary`). For the existing
 14 Binary-shape opcodes this compounds to ~350 binders project-wide
-once Step 3 lands their refactors.
+once lands their refactors.
 -/
 
 namespace ZiskFv.Equivalence.Bridge.Binary
@@ -60,10 +60,10 @@ open ZiskFv.Airs.OperationBus
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Binary discharge bridge (conservative).** Replaces the
+/-- **Binary discharge bridge.** Replaces the
     per-opcode `r_binary` + 24 byte-range *promise hypotheses* with a
     derivation chain rooted at `op_bus_perm_sound_Binary` (Phase A)
-    and `binary_columns_in_range` (Step 2b prep).
+    and `binary_columns_in_range`.
 
     Caller obligations after this discharge:
     * `h_main_active : m.is_external_op r_main = 1`
@@ -71,11 +71,11 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
       the OpBus axiom; each call site pins a specific literal).
     * The byte-chain (`h_byte_<i>`), c-lane match
       (`h_match_clo`/`chi`), and per-byte input bridge (`h_input_r{1,2}`)
-      hypotheses (deferrable to a follow-up PR).
+      hypotheses.
 
     Outputs: existential `r_binary` + `matches_entry` + 24 byte-range
     facts. -/
-lemma binary_discharge_conservative
+lemma binary_discharge
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
@@ -121,12 +121,12 @@ lemma binary_discharge_conservative
          bin_c_4_lt_256 v r_binary, bin_c_5_lt_256 v r_binary,
          bin_c_6_lt_256 v r_binary, bin_c_7_lt_256 v r_binary⟩
 
-/-! ## Narrow helper for the conservative-refactor path (keeps `r_binary`
+/-! ## Narrow helper for the discharge path (keeps `r_binary`
     as caller-supplied)
 
 Until the discharge pattern matures enough to drop `r_binary` itself
 (requires the per-byte chain + input-bridge derivations not yet in
-place), the most-impactful conservative refactor drops just the 24
+place), the most-impactful discharge refactor drops just the 24
 byte-range *promise hypotheses*. This helper packages exactly that.
 -/
 
@@ -165,7 +165,7 @@ lemma byte_ranges_at_holds (v : Valid_Binary C FGL FGL) (r : ℕ) :
    bin_c_4_lt_256 v r, bin_c_5_lt_256 v r,
    bin_c_6_lt_256 v r, bin_c_7_lt_256 v r⟩
 
-/-! ## Byte-chain discharge (Step 2b full)
+/-! ## Byte-chain discharge
 
 `consumer_byte_match`-style discharge for the 6 byte-local logic
 opcodes (AND/ANDI/OR/ORI/XOR/XORI). Uses the forward-direction
@@ -265,7 +265,7 @@ lemma byte_chain_match_7_holds
   refine ⟨e, h_mult, ?_, h_a, h_b, h_c⟩
   rw [h_op_eq]; exact h_op_val
 
-/-! ## carry_7 = 0 for AND / OR / XOR rows (Step 2b match_clo discharge)
+/-! ## carry_7 = 0 for AND / OR / XOR rows
 
 For the byte-local logic ops (AND/OR/XOR), `wf_AND` / `wf_OR` /
 `wf_XOR` (from `BinaryTable`) pin the per-byte entry's flags
@@ -395,7 +395,7 @@ lemma carry_7_zero_XOR
   rw [h_flags] at h_cout_zero
   exact boolean_carry_implies_eq_zero h_bool_c7 h_cout_zero
 
-/-! ## e2 byte-range discharge (Step 4 IOU)
+/-! ## e2 byte-range discharge
 
 Every Binary-shape opcode currently takes 8 caller-supplied
 `h_e2_<i> : e2.x<i>.val < 256` *promise hypotheses* asserting that

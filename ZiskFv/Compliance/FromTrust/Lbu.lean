@@ -8,10 +8,10 @@ import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 
 /-!
-# `equiv_LBU` Compliance wrapper — Mem-loads (zero-ext) shape (Step 4.2)
+# `equiv_LBU` Compliance wrapper — Mem-loads (zero-ext) shape
 
 > **Status:** within-shape wrapper, derived mechanically from
-> `FromTrust/Ld.lean` (Step 4.1.6). Lives outside the canonical
+> `FromTrust/Ld.lean`. Lives outside the canonical
 > surface so V1 anti-laundering metrics on the canonical theorem
 > are unaffected.
 
@@ -98,9 +98,19 @@ theorem equiv_LBU_from_trust
     rw [h_main_op_lbu]; rfl
   exact ZiskFv.Equivalence.LoadBU.equiv_LBU
     state lbu_input mstatus pmaRegion misa mseccfg
-    exec_row e0 e1 e2 risc_v_assumptions h_opcode_assumptions
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    exec_row e0 e1 e2
+    { risc_v_assumptions := risc_v_assumptions
+      opcode_assumptions_ := h_opcode_assumptions
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      m0_mult := h_m0_mult
+      m0_as := h_m0_as
+      m1_mult := h_m1_mult
+      m1_as := h_m1_as
+      m2_mult := h_m2_mult
+      m2_as := h_m2_as }
     main mem r_main mab marb ma h_low h_main_active h_op h_width
 
 end ZiskFv.Compliance

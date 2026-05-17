@@ -177,12 +177,12 @@ lemma h_rd_val_shift_sll
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = BitVec.shiftLeft r1_val shift := by
-  -- Step 1: K1-C SLL lift.
+  -- K1-C SLL lift.
   have h_bv := binary_extension_sll_chunks_eq_bv_shl v r_binary h_op h_bytes h_a_range
-  -- Step 2: Lane-match equalities for c0/c1.
+  -- Lane-match equalities for c0/c1.
   simp only [register_write_lanes_match] at h_lane_rd
   obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
-  -- Step 3: Identify Main's c_0/c_1 with the BinaryExtension c-lo/c-hi sums
+  -- Identify Main's c_0/c_1 with the BinaryExtension c-lo/c-hi sums
   -- as FGL elements; lift to Nat via byte ranges.
   have h_lo_eq_fgl : memory_entry_lo e2
       = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
@@ -260,7 +260,7 @@ lemma h_rd_val_shift_sll
   have h_hi_val := congr_arg Fin.val h_hi_eq_fgl
   rw [h_lo_nat, h_lo_bin_nat] at h_lo_val
   rw [h_hi_nat, h_hi_bin_nat] at h_hi_val
-  -- Step 4: Derive the e2-byte-sum equals the BinaryExtension c-lo/hi packed sum.
+  -- Derive the e2-byte-sum equals the BinaryExtension c-lo/hi packed sum.
   have h_byte_sum_e2_to_c :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
       + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
@@ -275,7 +275,7 @@ lemma h_rd_val_shift_sll
           + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val)
           * 4294967296 := by
     omega
-  -- Step 5: Now use K1-C's BitVec output to bridge the byte sum to the
+  -- Now use K1-C's BitVec output to bridge the byte sum to the
   -- target `r1_val <<< shift`.
   have h_target :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216

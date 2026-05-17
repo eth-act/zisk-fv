@@ -30,6 +30,10 @@ echo "Refreshing wrapper caller-burden baseline..."
 python3 trust/scripts/regenerate-wrapper-caller-burden.py > trust/baseline-wrapper-caller-burden.txt
 echo "  → trust/baseline-wrapper-caller-burden.txt"
 
+echo "Refreshing trust-ledger axiom index..."
+python3 tools/trust-ledger-index.py > docs/fv/axiom-index.md
+echo "  → docs/fv/axiom-index.md"
+
 if [ -d .lake/build ]; then
   echo "Refreshing V2 per-theorem axiom-dep baseline..."
   lake exe trust-gate regenerate-deps > trust/baseline-equiv-axiom-deps.txt

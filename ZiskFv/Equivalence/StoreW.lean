@@ -13,6 +13,7 @@ import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.SailSpec.sw
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Tactics.StoreArchetype
+import ZiskFv.Equivalence.Promises.Store
 
 /-!
 End-to-end theorem for RV64 SW (store word). The 4-byte narrow store
@@ -63,7 +64,7 @@ lemma equiv_SW_sail
   PureSpec.execute_STOREW_pure_equiv
     sw_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** -/
+/-- **Canonical equivalence.** -/
 theorem equiv_SW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sw_input : PureSpec.SwInput)
@@ -73,19 +74,11 @@ theorem equiv_SW
     (mseccfg : RegisterType Register.mseccfg)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.sw_state_assumptions sw_input state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_STOREW_pure sw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 2)
+    (promises : ZiskFv.Equivalence.Promises.StorePromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.sw_state_assumptions sw_input state)
+        (PureSpec.execute_STOREW_pure sw_input).nextPC
+        exec_row e0 e1 e2)
     -- Bridging premise: bus side's 8-insert chain on `state.mem`
     -- equals Sail's 4-insert chain (via `modify_memory_4` data
     -- fields). Bundles ptr-match + low-byte match + high-byte no-op
@@ -118,6 +111,9 @@ theorem equiv_SW
       regidx.Regidx sw_input.r1,
       4
     )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
+          h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
   rw [equiv_SW_sail state sw_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
   symm

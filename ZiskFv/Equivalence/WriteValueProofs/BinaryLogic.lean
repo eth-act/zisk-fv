@@ -123,7 +123,7 @@ private lemma byte_sum_from_binary_lane_match
       + (v.free_in_c_5 r_binary).val * 1099511627776
       + (v.free_in_c_6 r_binary).val * 281474976710656
       + (v.free_in_c_7 r_binary).val * 72057594037927936 := by
-  -- Step 1: identify the lo/hi packed memory entry with the binary-c lo/hi packings.
+  -- identify the lo/hi packed memory entry with the binary-c lo/hi packings.
   have h_lo_eq : memory_entry_lo e2
       = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
         + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216 := by
@@ -132,7 +132,7 @@ private lemma byte_sum_from_binary_lane_match
       = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256
         + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216 := by
     rw [← h_hi_match, h_match_chi]
-  -- Step 2: lift both sides to Nat via byte-range bounds.
+  -- lift both sides to Nat via byte-range bounds.
   -- LHS: memory_entry_lo e2 = e2.x0 + e2.x1*256 + e2.x2*65536 + e2.x3*16777216,
   -- whose .val under byte ranges < 2^32 < GL_prime.
   have h_lo_nat : (memory_entry_lo e2).val
@@ -272,20 +272,20 @@ lemma h_rd_val_logic_and
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = r1_val &&& r2_val := by
-  -- Step 1: K1-B AND lift.
+  -- K1-B AND lift.
   have h_bv := binary_and_chunks_eq_bv_and v r_binary
     h_byte_0 h_byte_1 h_byte_2 h_byte_3 h_byte_4 h_byte_5 h_byte_6 h_byte_7
     ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
     hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
-  -- Step 2: extract the lane-match equalities for c0/c1.
+  -- extract the lane-match equalities for c0/c1.
   simp only [register_write_lanes_match] at h_lane_rd
   obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
-  -- Step 3: derive the byte-sum Nat identity for e2 = c-bytes packed sum.
+  -- derive the byte-sum Nat identity for e2 = c-bytes packed sum.
   have h_byte_sum := byte_sum_from_binary_lane_match m v r_main r_binary e2
     h_match_clo h_match_chi h_lo_match h_hi_match
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
     hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
-  -- Step 4: convert the byte sum to U64.toBV via bv64_of_byte_sum at spec_val
+  -- convert the byte sum to U64.toBV via bv64_of_byte_sum at spec_val
   -- = r1_val &&& r2_val.
   have h_target :
       e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216

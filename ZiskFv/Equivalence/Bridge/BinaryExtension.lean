@@ -26,11 +26,11 @@ This bridge consumes Phase A's `op_bus_perm_sound_BinaryExtension`
 (PLONK soundness on `OPERATION_BUS_ID = 5000`) and produces the
 existential row witness `r_e` for the BinaryExtension AIR plus the
 `matches_entry` cross-AIR consistency conjunct. The matches_entry
-conjunct is what downstream `equiv_<OP>` proofs (Step 3) consume to
+conjunct is what downstream `equiv_<OP>` proofs consume to
 discharge their `h_match_clo` / `h_match_chi` *promise hypotheses*
 without caller commitment.
 
-What remains caller-supplied (this conservative pass):
+What remains caller-supplied (this pass):
 
 * The per-byte `consumer_byte_match` lookups against the
   BinaryExtension table (no `binary_extension_columns_in_range`
@@ -44,7 +44,7 @@ Per-opcode net effect (caller-burden ledger), once a downstream
 *promise hypotheses* become derivable inside the proof body rather
 than caller-supplied.
 
-(Step 0b — the BinaryExtension layout cascade fix renaming
+(— the BinaryExtension layout cascade fix renaming
 column-major reads to row-major — is the prerequisite for any
 downstream consumer to project `matches_entry`'s `c_lo` / `c_hi`
 conjuncts into the form `equiv_<OP>` expects. This bridge itself
@@ -63,7 +63,7 @@ open ZiskFv.Airs.OperationBus
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **BinaryExtension discharge bridge (conservative).** Replaces
+/-- **BinaryExtension discharge bridge.** Replaces
     the per-opcode `r_e` row-index parameter + `h_match` cross-AIR
     *promise hypothesis* with a derivation rooted at
     `op_bus_perm_sound_BinaryExtension` (Phase A).
@@ -74,7 +74,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
       each call site pins a specific shift / sign-extend literal).
 
     Outputs: existential `r_e` + `matches_entry`. -/
-lemma binext_discharge_conservative
+lemma binext_discharge
     (m : Valid_Main C FGL FGL) (e : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
@@ -89,7 +89,7 @@ lemma binext_discharge_conservative
     Derived from `binary_extension_columns_in_range` — no caller
     hypothesis needed. Mirrors `Bridge.Binary.byte_ranges_at_holds`.
     Consumed by downstream `equiv_<OP>` proofs that have already
-    obtained a concrete `r_e` row index from `binext_discharge_conservative`
+    obtained a concrete `r_e` row index from `binext_discharge`
     (or from caller-supplied existential witnessing). -/
 lemma byte_ranges_at_holds (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
     (e.free_in_a_0 r).val < 256 ∧ (e.free_in_a_1 r).val < 256

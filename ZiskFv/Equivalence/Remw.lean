@@ -16,6 +16,7 @@ import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
+import ZiskFv.Equivalence.Promises.RType
 
 /-!
 End-to-end theorem for RV64M REMW (signed 32-bit remainder).
@@ -32,8 +33,6 @@ pin from `arith_table_op_div_rem_signed_w_d_sign_pin`).
 
 Three theorems mirroring the REM pattern (shape-(a) — ALU/Arith bus):
 
-* `equiv_REMW_circuit` — circuit-level (defined in terms of m.a/b lanes via
-  `transpile_REMW`).
 * `equiv_REMW_sail` — Sail-level wrapper for
   `execute_DIVREM_remw_pure_equiv`.
 * `equiv_REMW` — canonical shape composing
@@ -101,22 +100,10 @@ theorem equiv_REMW
     (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok remw_input.r1_val state)
-    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok remw_input.r2_val state)
-    (h_input_rd : remw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some remw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : remw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state remw_input.r1_val remw_input.r2_val remw_input.rd remw_input.PC
+        (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     -- Structural-unpacking ADDED binders for REMW (W-mode signed).
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     -- Mode pins (TRANSPILE-PIN).
@@ -147,11 +134,11 @@ theorem equiv_REMW
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
     -- Operand TRANSPILE-BRIDGE (W toInt-form).
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
         = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
             - (v.np r_a).val * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - (v.nb r_a).val * (2:ℤ)^32)
@@ -174,6 +161,10 @@ theorem equiv_REMW
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, false))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   -- Op-full for invoking the W operand pin (REMW ∈ {190, 191} ⊆ {188, 189, 190, 191}).
   have h_op_full : v.op r_a = 188 ∨ v.op r_a = 189
@@ -189,10 +180,10 @@ theorem equiv_REMW
       h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
       h_chain h_sext h_m32 h_div h_op h_op_full
       h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_c23 h_byte_lo h_sext_choice h_op1 h_op2
+      h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
       h_op2_ne h_no_overflow_w h_r_abs h_r_sign
   rw [equiv_REMW_sail state remw_input r1 r2 rd
-        h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc]
+        h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm
   rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
         state exec_row e0 e1 e2

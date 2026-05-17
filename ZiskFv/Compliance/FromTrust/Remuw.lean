@@ -4,12 +4,12 @@ import ZiskFv.Equivalence.Remuw
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
-import ZiskFv.Airs.Arith.Bridge1
+import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 
 /-!
-# `equiv_REMUW` Compliance exemplar (Step 4.2.r2 within-shape, ArithDiv W-unsigned secondary)
+# `equiv_REMUW` Compliance exemplar
 
 > W-mode mirror of `FromTrust/Remu.lean`. opcode = 0xbd = 189, m32 = 1.
 > Secondary lane (REMUW emits the remainder via `d[]`).
@@ -66,9 +66,9 @@ theorem equiv_REMUW_from_trust
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
+    (h_rs1_value : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
-    (h_op2 : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
+    (h_rs2_value : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
               = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536)
     (h_op2_ne : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat ≠ 0) :
     (do
@@ -166,14 +166,26 @@ theorem equiv_REMUW_from_trust
       v r_a h_sext h_m32 h_div h_op_arith
   have h_d_lt_b : (v.d_0 r_a).val + (v.d_1 r_a).val * 65536
                   < (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat := by
-    rw [h_op2]; exact h_bound
+    rw [h_rs2_value]; exact h_bound
   -- ============ Delegate to `equiv_REMUW` ============
   exact ZiskFv.Equivalence.Remuw.equiv_REMUW
     state remuw_input r1 r2 rd v r_a exec_row e0 e1 e2
-    h_input_r1 h_input_r2 h_input_rd h_input_pc
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    { input_r1_eq := h_input_r1
+      input_r2_eq := h_input_r2
+      input_rd_eq := h_input_rd
+      input_pc_eq := h_input_pc
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      m0_mult := h_m0_mult
+      m0_as := h_m0_as
+      m1_mult := h_m1_mult
+      m1_as := h_m1_as
+      m2_mult := h_m2_mult
+      m2_as := h_m2_as
+      rd_idx := h_rd_idx }
     h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div h_op_full h_c23
-    h_byte_lo h_sext_choice h_op1 h_op2 h_op2_ne h_d_lt_b
+    h_byte_lo h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_d_lt_b
 
 end ZiskFv.Compliance

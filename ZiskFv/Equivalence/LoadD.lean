@@ -15,6 +15,7 @@ import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.SailSpec.ld
 import ZiskFv.SailSpec.BusEffect
+import ZiskFv.Equivalence.Promises.Load
 
 /-!
 End-to-end theorem for RV64 LD (load doubleword). Combines:
@@ -30,9 +31,6 @@ End-to-end theorem for RV64 LD (load doubleword). Combines:
 
 into three companion theorems paralleling the ADD and BEQ archetypes:
 
-* `equiv_LD_circuit` — circuit-level. States that the Main row's packed `c`
-  lanes (as FGL) equal the 8-byte memory-bus entry's packed value,
-  given the constraint-set + mode + memory-match hypotheses.
 * `equiv_LD_sail` — Sail-level. Wraps `execute_LOADD_pure_equiv`.
 * `equiv_LD` — the canonical theorem
   `execute_instruction (.LOAD …) = (bus_effect …).2`.
@@ -93,7 +91,7 @@ lemma equiv_LD_sail
   PureSpec.execute_LOADD_pure_equiv
     ld_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Metaplan theorem.** Sail's `execute_instruction` on an LD equals
+/-- **Canonical equivalence.** Sail's `execute_instruction` on an LD equals
     the state computed by applying `bus_effect` to the circuit's
     execution + memory bus rows.
 
@@ -112,20 +110,11 @@ theorem equiv_LD
     (mseccfg : RegisterType Register.mseccfg)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.ld_state_assumptions ld_input state)
-    -- Structural bus hypotheses (shape d — LD).
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_LOADD_pure ld_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1)  (h_m2_as : e2.as.val = 1)
+    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.ld_state_assumptions ld_input state)
+        (PureSpec.execute_LOADD_pure ld_input).nextPC
+        exec_row e0 e1 e2)
     -- Circuit-level parameters that supplant `h_rd_val`.
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
     (h_ext : main.is_external_op r_main = 0)
@@ -137,6 +126,9 @@ theorem equiv_LD
       false,
       8
     )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
+          h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
   -- Step 0. Discharge the Mem-shape promise hypotheses via the
   -- Mem bridge entry point. This pulls `h_main_emit_b`, `h_main_emit_c`,
   -- `h_ptr_match`, `h_rd_zero_iff`, `h_rd_idx`, `h_copy0`, `h_copy1`

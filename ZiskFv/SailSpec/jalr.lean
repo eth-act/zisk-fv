@@ -79,7 +79,7 @@ namespace PureSpec
       else
         (pure (ExecutionResult.Retire_Success ()))) state
   := by
-    -- Step 1: unfold execute + execute_JALR. P4 collapses update_elp_state.
+    -- unfold execute + execute_JALR. P4 collapses update_elp_state.
     -- get_next_pc reads nextPC which we just set to PC+4.
     simp [
       readReg_succ h_input_pc,
@@ -89,14 +89,14 @@ namespace PureSpec
       LeanRV64D.Functions.get_next_pc,
       readReg_succ (writeReg_read_same _),
     ]
-    -- Step 2: read rs1_val from the mutated state.
+    -- read rs1_val from the mutated state.
     obtain ⟨⟨rs1_fin: Fin 32⟩⟩ := rs1
     rewrite [rX_read_xreg_equiv _ ⟨⟨rs1_fin⟩⟩ rs1_fin (by simp)]
     simp [regidx_to_fin] at h_input_rs1
     rewrite [read_xreg_write_other_reg_state (register := Register.nextPC)
       (write_val := input.PC + 4#64) rs1_fin h_input_rs1 reg_of_fin_neq_nextPC]
     simp
-    -- Step 3: reduce `jump_to (BitVec.update (rs1_val + signExtend imm) 0 0#1)`
+    -- reduce `jump_to (BitVec.update (rs1_val + signExtend imm) 0 0#1)`
     -- via jump_to_equiv on the mutated state.
     have h_misa_post :
       (write_reg_state state Register.nextPC (input.PC + 4#64)).regs.get? Register.misa
@@ -108,13 +108,13 @@ namespace PureSpec
       (target := Sail.BitVec.update (input.rs1_val + BitVec.signExtend 64 imm) 0 0#1)
       h_misa_post
       h_misa_c]
-    -- Step 4: bit 0 of `Sail.BitVec.update x 0 0#1` is always 0, so the
+    -- bit 0 of `Sail.BitVec.update x 0 0#1` is always 0, so the
     -- bit-0 Assertion branch never fires.
     have h_bit0 : BitVec.ofBool
         (Sail.BitVec.update (input.rs1_val + BitVec.signExtend 64 imm) 0 0#1)[0] = 0#1 := by
       simp [Sail.BitVec.update, Sail.BitVec.updateSubrange']
     rw [if_neg (by grind)]
-    -- Step 5: case-split on bit 1 of the masked target.
+    -- case-split on bit 1 of the masked target.
     -- `(Sail.BitVec.update x 0 0#1)[1] = x[1]` (mask preserves bit 1).
     have h_bit1_preserved :
       BitVec.ofBool (Sail.BitVec.update (input.rs1_val + BitVec.signExtend 64 imm) 0 0#1)[1] =
@@ -138,7 +138,7 @@ namespace PureSpec
         18446744073709551614#64 &&& (input.rs1_val + BitVec.signExtend 64 imm) := by
         simp [Sail.BitVec.update, Sail.BitVec.updateSubrange']
       rw [h_mask_eq]
-      -- Step 6: case-split on whether rd = 0.
+      -- case-split on whether rd = 0.
       by_cases h_rd_0 : input.rd = 0 <;> simp [h_rd_0]
       . replace h_rd_0 : rd.1.toNat = 0 := by
           simp [regidx_to_fin, h_rd_0] at h_input_rd

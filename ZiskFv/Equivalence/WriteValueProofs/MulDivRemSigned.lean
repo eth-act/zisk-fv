@@ -174,28 +174,28 @@ lemma h_rd_val_mdrs_mulh_chunked
       e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
         = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536)
     -- Operand TRANSPILE-BRIDGE (toInt-form for signed).
-    (h_op1 :
+    (h_rs1_value :
       r1_val.toInt
         = (packed4 (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val : ℤ)
             - (v.na r_a).val * (2:ℤ)^64)
-    (h_op2 :
+    (h_rs2_value :
       r2_val.toInt
         = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
             - (v.nb r_a).val * (2:ℤ)^64) :
     U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
                 (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
       = execute_MUL_pure r1_val r2_val .MULH := by
-  -- Step 1: chunk ranges from arith_mul_columns_in_range.
+  -- chunk ranges from arith_mul_columns_in_range.
   obtain ⟨h_a0, h_a1, h_a2, h_a3,
           h_b0, h_b1, h_b2, h_b3,
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
     ZiskFv.Equivalence.Bridge.Arith.arith_mul_chunk_ranges_at_holds v r_a
-  -- Step 2: invoke the chain witnesses (Layer A.4).
+  -- invoke the chain witnesses (Layer A.4).
   have h_chunk_ident :=
     ZiskFv.Equivalence.Bridge.Arith.mul_signed_chain_witnesses
       v r_a h_chain h_nr h_sext h_m32 h_div h_na_bool h_nb_bool h_np_xor
-  -- Step 3: build ℤ packings A, B, C, D from chunk val identities.
+  -- build ℤ packings A, B, C, D from chunk val identities.
   set A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
             + toIntZ (v.a_2 r_a) * (65536 * 65536)
             + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536) with hA_def
@@ -208,12 +208,12 @@ lemma h_rd_val_mdrs_mulh_chunked
   set D := toIntZ (v.d_0 r_a) + toIntZ (v.d_1 r_a) * 65536
             + toIntZ (v.d_2 r_a) * (65536 * 65536)
             + toIntZ (v.d_3 r_a) * (65536 * 65536 * 65536) with hD_def
-  -- Step 4: C, D bounds via A.1.5's `fgl_signed_C_D_chunk_packing_nonneg`.
+  -- C, D bounds via A.1.5's `fgl_signed_C_D_chunk_packing_nonneg`.
   have h_CD_bounds :=
     fgl_signed_C_D_chunk_packing_nonneg h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
   have ⟨h_C_lb, h_C_ub⟩ := h_CD_bounds.1
   have ⟨h_D_lb, h_D_ub⟩ := h_CD_bounds.2
-  -- Step 5: convert toIntZ chunk identities to .val identities.
+  -- convert toIntZ chunk identities to .val identities.
   have h_a0_val : toIntZ (v.a_0 r_a) = (v.a_0 r_a).val := toIntZ_eq_val_of_lt h_a0 (by decide)
   have h_a1_val : toIntZ (v.a_1 r_a) = (v.a_1 r_a).val := toIntZ_eq_val_of_lt h_a1 (by decide)
   have h_a2_val : toIntZ (v.a_2 r_a) = (v.a_2 r_a).val := toIntZ_eq_val_of_lt h_a2 (by decide)
@@ -226,7 +226,7 @@ lemma h_rd_val_mdrs_mulh_chunked
   have h_d1_val : toIntZ (v.d_1 r_a) = (v.d_1 r_a).val := toIntZ_eq_val_of_lt h_d1 (by decide)
   have h_d2_val : toIntZ (v.d_2 r_a) = (v.d_2 r_a).val := toIntZ_eq_val_of_lt h_d2 (by decide)
   have h_d3_val : toIntZ (v.d_3 r_a) = (v.d_3 r_a).val := toIntZ_eq_val_of_lt h_d3 (by decide)
-  -- Step 6: derive na_int = (v.na r_a).val, similarly nb.
+  -- derive na_int = (v.na r_a).val, similarly nb.
   have h_na_int_val : toIntZ (v.na r_a) = (v.na r_a).val := by
     rcases h_na_bool with h | h
     · rw [h]; decide
@@ -235,7 +235,7 @@ lemma h_rd_val_mdrs_mulh_chunked
     rcases h_nb_bool with h | h
     · rw [h]; decide
     · rw [h]; decide
-  -- Step 7: convert h_op1, h_op2 to A - na*2^64 / B - nb*2^64 form.
+  -- convert h_rs1_value, h_rs2_value to A - na*2^64 / B - nb*2^64 form.
   have h_A_eq : A = (packed4 (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val : ℤ) := by
     rw [hA_def, h_a0_val, h_a1_val, h_a2_val, h_a3_val]
     unfold packed4; push_cast; ring
@@ -243,24 +243,24 @@ lemma h_rd_val_mdrs_mulh_chunked
     rw [hB_def, h_b0_val, h_b1_val, h_b2_val, h_b3_val]
     unfold packed4; push_cast; ring
   have h_r1 : r1_val.toInt = A - toIntZ (v.na r_a) * 2^64 := by
-    rw [h_op1, h_A_eq, h_na_int_val]
+    rw [h_rs1_value, h_A_eq, h_na_int_val]
   have h_r2 : r2_val.toInt = B - toIntZ (v.nb r_a) * 2^64 := by
-    rw [h_op2, h_B_eq, h_nb_int_val]
-  -- Step 8: apply Layer A.1's `fgl_mul_signed_to_bv64_hi`.
+    rw [h_rs2_value, h_B_eq, h_nb_int_val]
+  -- apply Layer A.1's `fgl_mul_signed_to_bv64_hi`.
   have h_bv64 := fgl_mul_signed_to_bv64_hi
     r1_val r2_val A B Cz D
     (toIntZ (v.na r_a)) (toIntZ (v.nb r_a)) (toIntZ (v.np r_a))
     (by rcases h_na_bool with h | h <;> rw [h] <;> first | (left; decide) | (right; decide))
     (by rcases h_nb_bool with h | h <;> rw [h] <;> first | (left; decide) | (right; decide))
     h_np_xor h_r1 h_r2 h_C_lb h_C_ub h_D_lb h_D_ub h_chunk_ident
-  -- Step 9: U64.toBV bridge. byte_sum = packed4 d_vals.
+  -- U64.toBV bridge. byte_sum = packed4 d_vals.
   have h_byte_eq_packed :
       e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
         + e.x4.val * 4294967296 + e.x5.val * 1099511627776
         + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
       = packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val :=
     byte_sum_eq_packed4_sig e _ _ _ _ h_byte_lo h_byte_hi
-  -- Step 10: D.toNat = packed4 d_vals.
+  -- D.toNat = packed4 d_vals.
   have h_D_eq_packed :
       D = (packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ) := by
     rw [hD_def, h_d0_val, h_d1_val, h_d2_val, h_d3_val]
@@ -269,7 +269,7 @@ lemma h_rd_val_mdrs_mulh_chunked
       D.toNat = packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val := by
     rw [h_D_eq_packed]
     exact Int.toNat_natCast _
-  -- Step 11: close by chaining.
+  -- close by chaining.
   apply BitVec.eq_of_toNat_eq
   rw [u64_toBV_of_bytes_toNat e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
         h0 h1 h2 h3 h4 h5 h6 h7]
@@ -354,29 +354,29 @@ lemma h_rd_val_mdrs_mulhsu_chunked
       e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
         = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536)
     -- Operand TRANSPILE-BRIDGE.
-    -- `h_op1`: signed (toInt-form) for rs1.
-    (h_op1 :
+    -- `h_rs1_value`: signed (toInt-form) for rs1.
+    (h_rs1_value :
       r1_val.toInt
         = (packed4 (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val : ℤ)
             - (v.na r_a).val * (2:ℤ)^64)
-    -- `h_op2`: unsigned (toNat-form) for rs2.
-    (h_op2 :
+    -- `h_rs2_value`: unsigned (toNat-form) for rs2.
+    (h_rs2_value :
       (r2_val.toNat : ℤ)
         = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)) :
     U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
                 (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
       = execute_MUL_pure r1_val r2_val .MULHSU := by
-  -- Step 1: chunk ranges.
+  -- chunk ranges.
   obtain ⟨h_a0, h_a1, h_a2, h_a3,
           h_b0, h_b1, h_b2, h_b3,
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
     ZiskFv.Equivalence.Bridge.Arith.arith_mul_chunk_ranges_at_holds v r_a
-  -- Step 2: invoke the chain witnesses.
+  -- invoke the chain witnesses.
   have h_chunk_ident :=
     ZiskFv.Equivalence.Bridge.Arith.mul_signed_chain_witnesses
       v r_a h_chain h_nr h_sext h_m32 h_div h_na_bool h_nb_bool h_np_xor
-  -- Step 3: build ℤ packings A, B, C, D.
+  -- build ℤ packings A, B, C, D.
   set A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
             + toIntZ (v.a_2 r_a) * (65536 * 65536)
             + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536) with hA_def
@@ -389,12 +389,12 @@ lemma h_rd_val_mdrs_mulhsu_chunked
   set D := toIntZ (v.d_0 r_a) + toIntZ (v.d_1 r_a) * 65536
             + toIntZ (v.d_2 r_a) * (65536 * 65536)
             + toIntZ (v.d_3 r_a) * (65536 * 65536 * 65536) with hD_def
-  -- Step 4: C, D bounds.
+  -- C, D bounds.
   have h_CD_bounds :=
     fgl_signed_C_D_chunk_packing_nonneg h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
   have ⟨h_C_lb, h_C_ub⟩ := h_CD_bounds.1
   have ⟨h_D_lb, h_D_ub⟩ := h_CD_bounds.2
-  -- Step 5: convert toIntZ chunk identities to .val identities.
+  -- convert toIntZ chunk identities to .val identities.
   have h_a0_val : toIntZ (v.a_0 r_a) = (v.a_0 r_a).val := toIntZ_eq_val_of_lt h_a0 (by decide)
   have h_a1_val : toIntZ (v.a_1 r_a) = (v.a_1 r_a).val := toIntZ_eq_val_of_lt h_a1 (by decide)
   have h_a2_val : toIntZ (v.a_2 r_a) = (v.a_2 r_a).val := toIntZ_eq_val_of_lt h_a2 (by decide)
@@ -407,7 +407,7 @@ lemma h_rd_val_mdrs_mulhsu_chunked
   have h_d1_val : toIntZ (v.d_1 r_a) = (v.d_1 r_a).val := toIntZ_eq_val_of_lt h_d1 (by decide)
   have h_d2_val : toIntZ (v.d_2 r_a) = (v.d_2 r_a).val := toIntZ_eq_val_of_lt h_d2 (by decide)
   have h_d3_val : toIntZ (v.d_3 r_a) = (v.d_3 r_a).val := toIntZ_eq_val_of_lt h_d3 (by decide)
-  -- Step 6: na_int = (v.na r_a).val. For nb, we pin via h_nb : v.nb r_a = 0, so toIntZ = 0.
+  -- na_int = (v.na r_a).val. For nb, we pin via h_nb : v.nb r_a = 0, so toIntZ = 0.
   have h_na_int_val : toIntZ (v.na r_a) = (v.na r_a).val := by
     rcases h_na_bool with h | h
     · rw [h]; decide
@@ -416,7 +416,7 @@ lemma h_rd_val_mdrs_mulhsu_chunked
   -- And np = na from h_np_xor with nb=0.
   have h_np_int_eq_na : toIntZ (v.np r_a) = toIntZ (v.na r_a) := by
     rw [h_np_xor, h_nb_int_zero]; ring
-  -- Step 7: convert h_op1, h_op2 to A - na*2^64 / (r2.toNat : ℤ) = B form.
+  -- convert h_rs1_value, h_rs2_value to A - na*2^64 / (r2.toNat : ℤ) = B form.
   have h_A_eq : A = (packed4 (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val : ℤ) := by
     rw [hA_def, h_a0_val, h_a1_val, h_a2_val, h_a3_val]
     unfold packed4; push_cast; ring
@@ -424,9 +424,9 @@ lemma h_rd_val_mdrs_mulhsu_chunked
     rw [hB_def, h_b0_val, h_b1_val, h_b2_val, h_b3_val]
     unfold packed4; push_cast; ring
   have h_r1 : r1_val.toInt = A - toIntZ (v.na r_a) * 2^64 := by
-    rw [h_op1, h_A_eq, h_na_int_val]
-  have h_r2 : (r2_val.toNat : ℤ) = B := by rw [h_op2, h_B_eq]
-  -- Step 8: apply MULHSU specialization of A.1.
+    rw [h_rs1_value, h_A_eq, h_na_int_val]
+  have h_r2 : (r2_val.toNat : ℤ) = B := by rw [h_rs2_value, h_B_eq]
+  -- apply MULHSU specialization of A.1.
   -- The chain identity in h_chunk_ident has `toIntZ (v.np r_a)` in place
   -- of `na`. Rewrite to use `na` via h_np_int_eq_na, and substitute
   -- `toIntZ (v.nb r_a) = 0`.
@@ -444,14 +444,14 @@ lemma h_rd_val_mdrs_mulhsu_chunked
     r1_val r2_val A B Cz D (toIntZ (v.na r_a))
     (by rcases h_na_bool with h | h <;> rw [h] <;> first | (left; decide) | (right; decide))
     h_r1 h_r2 h_C_lb h_C_ub h_D_lb h_D_ub h_chunk_ident'
-  -- Step 9: U64.toBV bridge. byte_sum = packed4 d_vals.
+  -- U64.toBV bridge. byte_sum = packed4 d_vals.
   have h_byte_eq_packed :
       e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
         + e.x4.val * 4294967296 + e.x5.val * 1099511627776
         + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
       = packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val :=
     byte_sum_eq_packed4_sig e _ _ _ _ h_byte_lo h_byte_hi
-  -- Step 10: D.toNat = packed4 d_vals.
+  -- D.toNat = packed4 d_vals.
   have h_D_eq_packed :
       D = (packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ) := by
     rw [hD_def, h_d0_val, h_d1_val, h_d2_val, h_d3_val]
@@ -460,7 +460,7 @@ lemma h_rd_val_mdrs_mulhsu_chunked
       D.toNat = packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val := by
     rw [h_D_eq_packed]
     exact Int.toNat_natCast _
-  -- Step 11: close by chaining.
+  -- close by chaining.
   apply BitVec.eq_of_toNat_eq
   rw [u64_toBV_of_bytes_toNat e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
         h0 h1 h2 h3 h4 h5 h6 h7]
@@ -523,32 +523,32 @@ lemma h_rd_val_mdrs_mulw_chunked
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
     -- Operand TRANSPILE-BRIDGE: r1_lo32.toInt = A_32 - na*2^32,
     -- r2_lo32.toInt = B_32 - nb*2^32 (signed W form).
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb r1_val 31 0).toInt
         = ((v.a_0 r_a).val + (v.a_1 r_a).val * 65536 : ℤ)
             - (v.na r_a).val * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - (v.nb r_a).val * (2:ℤ)^32) :
     U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
                 (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
       = PureSpec.execute_MULW_pure_val r1_val r2_val := by
-  -- Step 1: chunk ranges.
+  -- chunk ranges.
   obtain ⟨h_a0, h_a1, h_a2, h_a3,
           h_b0, h_b1, h_b2, h_b3,
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
     ZiskFv.Equivalence.Bridge.Arith.arith_mul_chunk_ranges_at_holds v r_a
-  -- Step 2: W-mode operand chunk pin.
+  -- W-mode operand chunk pin.
   obtain ⟨h_a2_eq, h_a3_eq, h_b2_eq, h_b3_eq⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_mulw_operand_pin v r_a h_sext h_m32 h_div h_op
-  -- Step 3: invoke W chain witnesses.
+  -- invoke W chain witnesses.
   have h_chunk_ident :=
     ZiskFv.Equivalence.Bridge.Arith.mul_w_chain_witnesses
       v r_a h_chain h_nr h_sext h_m32 h_div h_na_bool h_nb_bool h_np_xor
       h_a2_eq h_a3_eq h_b2_eq h_b3_eq
-  -- Step 4: convert toIntZ chunk identities to .val identities.
+  -- convert toIntZ chunk identities to .val identities.
   have h_a0_val : toIntZ (v.a_0 r_a) = (v.a_0 r_a).val := toIntZ_eq_val_of_lt h_a0 (by decide)
   have h_a1_val : toIntZ (v.a_1 r_a) = (v.a_1 r_a).val := toIntZ_eq_val_of_lt h_a1 (by decide)
   have h_b0_val : toIntZ (v.b_0 r_a) = (v.b_0 r_a).val := toIntZ_eq_val_of_lt h_b0 (by decide)
@@ -569,7 +569,7 @@ lemma h_rd_val_mdrs_mulw_chunked
     rcases h_nb_bool with h | h
     · rw [h]; decide
     · rw [h]; decide
-  -- Step 5: set A_32, B_32, C_32 as ℤ values + key bounds.
+  -- set A_32, B_32, C_32 as ℤ values + key bounds.
   set A32 : ℤ := ((v.a_0 r_a).val : ℤ) + ((v.a_1 r_a).val : ℤ) * 65536 with hA32_def
   set B32 : ℤ := ((v.b_0 r_a).val : ℤ) + ((v.b_1 r_a).val : ℤ) * 65536 with hB32_def
   set C32 : ℤ := ((v.c_0 r_a).val : ℤ) + ((v.c_1 r_a).val : ℤ) * 65536 with hC32_def
@@ -592,7 +592,7 @@ lemma h_rd_val_mdrs_mulw_chunked
       · norm_num
     have : (2:ℤ)^32 = 4294967296 := by norm_num
     linarith
-  -- Step 6: derive the simple chunk identity needed by fgl_mul_w_signed_to_bv64.
+  -- derive the simple chunk identity needed by fgl_mul_w_signed_to_bv64.
   -- The natural identity has cross-terms and (na*nb - np)*B⁴ corrections;
   -- specialize to a form `(1-2*np)*A32*B32 + na*nb*2^64 = (1-2*np)*C32 + K*2^32`
   -- and absorb K*2^32 via BitVec.ofInt 32 congruence.
@@ -616,7 +616,7 @@ lemma h_rd_val_mdrs_mulw_chunked
     -- Rewrite let-bindings.
     simp only [hA32_def, h_a0_val, h_a1_val, h_b0_val, h_b1_val] at this ⊢
     convert this using 2
-  -- Step 7: bridge via the BitVec.ofInt 32 mod-2^32 congruence.
+  -- bridge via the BitVec.ofInt 32 mod-2^32 congruence.
   -- Goal: BitVec.ofInt 32 (r1_lo32.toInt * r2_lo32.toInt) = BitVec.ofInt 32 C32.
   have h_prod_mod :
       BitVec.ofInt 32
@@ -649,10 +649,10 @@ lemma h_rd_val_mdrs_mulw_chunked
       -- Express r1.toInt, r2.toInt.
       have h_r1 : (Sail.BitVec.extractLsb r1_val 31 0).toInt
                     = A32 - toIntZ (v.na r_a) * (2:ℤ)^32 := by
-        rw [h_na_int_val]; exact h_op1
+        rw [h_na_int_val]; exact h_rs1_value
       have h_r2 : (Sail.BitVec.extractLsb r2_val 31 0).toInt
                     = B32 - toIntZ (v.nb r_a) * (2:ℤ)^32 := by
-        rw [h_nb_int_val]; exact h_op2
+        rw [h_nb_int_val]; exact h_rs2_value
       -- Pack the chunk identity for case analysis.
       have h_ci :
           (1 - 2 * toIntZ (v.np r_a)) * A32 * B32
@@ -729,7 +729,7 @@ lemma h_rd_val_mdrs_mulw_chunked
         linear_combination h_ci
     obtain ⟨k, hk⟩ := h_diff
     rw [hk, Int.add_mul_emod_self_right]
-  -- Step 8: bridge BitVec.ofNat 32 C32_toNat = BitVec.ofInt 32 C32.
+  -- bridge BitVec.ofNat 32 C32_toNat = BitVec.ofInt 32 C32.
   have h_C32_toNat : C32.toNat = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 := by
     rw [hC32_def]
     have h0z : (0 : ℤ) ≤ ((v.c_0 r_a).val : ℤ) := by exact_mod_cast Nat.zero_le _
@@ -741,7 +741,7 @@ lemma h_rd_val_mdrs_mulw_chunked
     rw [show ((v.c_0 r_a).val : ℤ) + ((v.c_1 r_a).val : ℤ) * 65536
           = (((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℕ) : ℤ) by push_cast; ring]
     exact Int.toNat_natCast _
-  -- Step 9: invoke Layer 1 wrapper (fgl_mul_w_signed_to_bv64).
+  -- invoke Layer 1 wrapper (fgl_mul_w_signed_to_bv64).
   -- It takes the simple form h_chunk : (1-2*np)*A_32*B_32 + na*nb*2^64 = (1-2*np)*C_32
   -- which we don't have, but we can bypass it by going through h_prod_mod directly.
   -- Final close: byte-sum decomposes to signExtend 64 (ofNat 32 C32.toNat) form.
@@ -920,7 +920,7 @@ lemma h_rd_val_mdrs_div
     U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
                 (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
       = (execute_DIV_REM_pure r1_val r2_val .DRS).1 := by
-  -- Step 1: unfold (execute_DIV_REM_pure ... .DRS).1 to BitVec.ofInt 64 q_int.
+  -- unfold (execute_DIV_REM_pure ... .DRS).1 to BitVec.ofInt 64 q_int.
   have h_pure_eq :
       (execute_DIV_REM_pure r1_val r2_val .DRS).1
         = BitVec.ofInt 64
@@ -1207,11 +1207,11 @@ lemma h_rd_val_mdrs_div_chunked
       e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
         = (v.a_2 r_a).val + (v.a_3 r_a).val * 65536)
     -- Operand TRANSPILE-BRIDGE (toInt-form, sign-witness extracted).
-    (h_op1 :
+    (h_rs1_value :
       r1_val.toInt
         = (packed4 (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
             - (v.np r_a).val * (2:ℤ)^64)
-    (h_op2 :
+    (h_rs2_value :
       r2_val.toInt
         = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
             - (v.nb r_a).val * (2:ℤ)^64)
@@ -1229,17 +1229,17 @@ lemma h_rd_val_mdrs_div_chunked
     U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
                 (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
       = (execute_DIV_REM_pure r1_val r2_val .DRS).1 := by
-  -- Step 1: chunk ranges from arith_div_columns_in_range.
+  -- chunk ranges from arith_div_columns_in_range.
   obtain ⟨h_a0, h_a1, h_a2, h_a3,
           h_b0, h_b1, h_b2, h_b3,
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
     ZiskFv.Equivalence.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a
-  -- Step 2: invoke the DIV-signed chain witnesses (Bridge/Arith.lean).
+  -- invoke the DIV-signed chain witnesses (Bridge/Arith.lean).
   have h_chunk_ident :=
     ZiskFv.Equivalence.Bridge.Arith.div_signed_chain_witnesses
       v r_a h_chain h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor
-  -- Step 3: name the ℤ packings A (quotient), B (divisor), C (dividend), D (remainder).
+  -- name the ℤ packings A (quotient), B (divisor), C (dividend), D (remainder).
   set A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
             + toIntZ (v.a_2 r_a) * (65536 * 65536)
             + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536) with hA_def
@@ -1252,7 +1252,7 @@ lemma h_rd_val_mdrs_div_chunked
   set D := toIntZ (v.d_0 r_a) + toIntZ (v.d_1 r_a) * 65536
             + toIntZ (v.d_2 r_a) * (65536 * 65536)
             + toIntZ (v.d_3 r_a) * (65536 * 65536 * 65536) with hD_def
-  -- Step 4: A, B, C, D ∈ [0, 2^64) via chunk-range bounds.
+  -- A, B, C, D ∈ [0, 2^64) via chunk-range bounds.
   have h_AB_bounds :=
     fgl_signed_C_D_chunk_packing_nonneg h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3
   have h_CD_bounds :=
@@ -1261,7 +1261,7 @@ lemma h_rd_val_mdrs_div_chunked
   have ⟨h_B_lb, h_B_ub⟩ := h_AB_bounds.2
   have ⟨h_C_lb, h_C_ub⟩ := h_CD_bounds.1
   have ⟨h_D_lb, h_D_ub⟩ := h_CD_bounds.2
-  -- Step 5: convert toIntZ chunk identities to .val identities.
+  -- convert toIntZ chunk identities to .val identities.
   have h_a0_val : toIntZ (v.a_0 r_a) = (v.a_0 r_a).val := toIntZ_eq_val_of_lt h_a0 (by decide)
   have h_a1_val : toIntZ (v.a_1 r_a) = (v.a_1 r_a).val := toIntZ_eq_val_of_lt h_a1 (by decide)
   have h_a2_val : toIntZ (v.a_2 r_a) = (v.a_2 r_a).val := toIntZ_eq_val_of_lt h_a2 (by decide)
@@ -1278,7 +1278,7 @@ lemma h_rd_val_mdrs_div_chunked
   have h_d1_val : toIntZ (v.d_1 r_a) = (v.d_1 r_a).val := toIntZ_eq_val_of_lt h_d1 (by decide)
   have h_d2_val : toIntZ (v.d_2 r_a) = (v.d_2 r_a).val := toIntZ_eq_val_of_lt h_d2 (by decide)
   have h_d3_val : toIntZ (v.d_3 r_a) = (v.d_3 r_a).val := toIntZ_eq_val_of_lt h_d3 (by decide)
-  -- Step 6: derive toIntZ of sign witnesses = .val.
+  -- derive toIntZ of sign witnesses = .val.
   have h_np_bool : toIntZ (v.np r_a) = 0 ∨ toIntZ (v.np r_a) = 1 := by
     rw [h_np_xor]
     rcases h_na_bool with h | h <;> rcases h_nb_bool with hb | hb <;>
@@ -1295,7 +1295,7 @@ lemma h_rd_val_mdrs_div_chunked
     rcases h_nr_bool with h | h
     · rw [h]; decide
     · rw [h]; decide
-  -- Step 7: A, B, C, D in val-form via the toIntZ → val substitution.
+  -- A, B, C, D in val-form via the toIntZ → val substitution.
   have h_A_val : A = (packed4 (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val : ℤ) := by
     rw [hA_def, h_a0_val, h_a1_val, h_a2_val, h_a3_val]; unfold packed4; push_cast; ring
   have h_B_val : B = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ) := by
@@ -1304,7 +1304,7 @@ lemma h_rd_val_mdrs_div_chunked
     rw [hCz_def, h_c0_val, h_c1_val, h_c2_val, h_c3_val]; unfold packed4; push_cast; ring
   have h_D_val : D = (packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ) := by
     rw [hD_def, h_d0_val, h_d1_val, h_d2_val, h_d3_val]; unfold packed4; push_cast; ring
-  -- Step 8: derive np FGL boolean from h_np_xor + na, nb booleanity.
+  -- derive np FGL boolean from h_np_xor + na, nb booleanity.
   have h_np_bool_FGL : v.np r_a = 0 ∨ v.np r_a = 1 := by
     have h_round_trip : ((toIntZ (v.np r_a) : ℤ) : FGL) = v.np r_a := toIntZ_cast _
     rcases h_np_bool with h | h
@@ -1315,10 +1315,10 @@ lemma h_rd_val_mdrs_div_chunked
     · rw [h]; decide
     · rw [h]; decide
   have h_r1_int : r1_val.toInt = Cz - toIntZ (v.np r_a) * 2^64 := by
-    rw [h_op1, h_Cz_val, h_np_int]
+    rw [h_rs1_value, h_Cz_val, h_np_int]
   have h_r2_int : r2_val.toInt = B - toIntZ (v.nb r_a) * 2^64 := by
-    rw [h_op2, h_B_val, h_nb_int]
-  -- Step 9: invoke the abs-Euclidean → signed-Euclidean linker.
+    rw [h_rs2_value, h_B_val, h_nb_int]
+  -- invoke the abs-Euclidean → signed-Euclidean linker.
   have h_euclid : r1_val.toInt
       = (A - toIntZ (v.na r_a) * 2^64) * r2_val.toInt
         + (D - toIntZ (v.nr r_a) * 2^64) := by
@@ -1348,7 +1348,7 @@ lemma h_rd_val_mdrs_div_chunked
       h_np_xor h_nr_pin_int
       h_A_lb h_A_ub h_B_lb h_B_ub h_C_lb h_C_ub h_D_lb h_D_ub
       h_r1_int h_r2_int h_chunk_ident
-  -- Step 10: convert h_r_abs and h_r_sign binders to toIntZ-form.
+  -- convert h_r_abs and h_r_sign binders to toIntZ-form.
   have h_r_int_eq_val : D - toIntZ (v.nr r_a) * 2^64
       = (packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a).val (v.d_3 r_a).val : ℤ)
         - (v.nr r_a).val * (2:ℤ)^64 := by
@@ -1363,21 +1363,21 @@ lemma h_rd_val_mdrs_div_chunked
     rcases h_na_bool with h | h
     · left; rw [h]; decide
     · right; rw [h]; decide
-  -- Step 11: apply fgl_div_signed_to_bv64 to get BV64 conclusion.
+  -- apply fgl_div_signed_to_bv64 to get BV64 conclusion.
   have h_bv64 : BitVec.ofInt 64 (A - toIntZ (v.na r_a) * 2^64)
       = (execute_DIV_REM_pure r1_val r2_val .DRS).1 :=
     fgl_div_signed_to_bv64 r1_val r2_val
       (A - toIntZ (v.na r_a) * 2^64)
       (D - toIntZ (v.nr r_a) * 2^64)
       h_op2_ne h_no_overflow h_euclid h_r_abs' h_r_sign'
-  -- Step 12: byte-sum equals A.toNat = packed4 a_vals.
+  -- byte-sum equals A.toNat = packed4 a_vals.
   have h_byte_eq_packed :
       e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
         + e.x4.val * 4294967296 + e.x5.val * 1099511627776
         + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
       = packed4 (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val :=
     byte_sum_eq_packed4_sig e _ _ _ _ h_byte_lo h_byte_hi
-  -- Step 13: (BitVec.ofInt 64 (A - na*2^64)).toNat = packed4 a_vals = A.toNat.
+  -- (BitVec.ofInt 64 (A - na*2^64)).toNat = packed4 a_vals = A.toNat.
   have h_A_packed_nat :
       A = (packed4 (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val : ℤ) := h_A_val
   have h_A_toNat : A.toNat = packed4 (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val := by
@@ -1403,14 +1403,14 @@ lemma h_rd_val_mdrs_div_chunked
         exact Int.emod_eq_of_lt h_A_lb h_A_ub
       rw [h_emod]
       exact h_A_toNat
-  -- Step 14: byte-sum = (execute_DIV_REM_pure ...).1.toNat.
+  -- byte-sum = (execute_DIV_REM_pure ...).1.toNat.
   have h_byte_eq_result :
       e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
         + e.x4.val * 4294967296 + e.x5.val * 1099511627776
         + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
       = (execute_DIV_REM_pure r1_val r2_val .DRS).1.toNat := by
     rw [h_byte_eq_packed, ← h_bv64_toNat, h_bv64]
-  -- Step 15: apply bv64_of_byte_sum_generic.
+  -- apply bv64_of_byte_sum_generic.
   exact bv64_of_byte_sum_generic
     (execute_DIV_REM_pure r1_val r2_val .DRS).1
     e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
@@ -1455,11 +1455,11 @@ lemma h_rd_val_mdrs_rem_chunked
     (h_byte_hi :
       e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
         = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536)
-    (h_op1 :
+    (h_rs1_value :
       r1_val.toInt
         = (packed4 (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
             - (v.np r_a).val * (2:ℤ)^64)
-    (h_op2 :
+    (h_rs2_value :
       r2_val.toInt
         = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
             - (v.nb r_a).val * (2:ℤ)^64)
@@ -1549,9 +1549,9 @@ lemma h_rd_val_mdrs_rem_chunked
     · rw [h]; decide
     · rw [h]; decide
   have h_r1_int : r1_val.toInt = Cz - toIntZ (v.np r_a) * 2^64 := by
-    rw [h_op1, h_Cz_val, h_np_int]
+    rw [h_rs1_value, h_Cz_val, h_np_int]
   have h_r2_int : r2_val.toInt = B - toIntZ (v.nb r_a) * 2^64 := by
-    rw [h_op2, h_B_val, h_nb_int]
+    rw [h_rs2_value, h_B_val, h_nb_int]
   have h_euclid : r1_val.toInt
       = (A - toIntZ (v.na r_a) * 2^64) * r2_val.toInt
         + (D - toIntZ (v.nr r_a) * 2^64) := by
@@ -1757,11 +1757,11 @@ lemma h_rd_val_mdrs_divw_chunked
       ((e.x4.val = 255 ∧ e.x5.val = 255 ∧ e.x6.val = 255 ∧ e.x7.val = 255) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
     -- Operand TRANSPILE-BRIDGE (W form: 32-bit toInt extracted).
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb r1_val 31 0).toInt
         = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.np r_a) * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.nb r_a) * (2:ℤ)^32)
@@ -1791,13 +1791,13 @@ lemma h_rd_val_mdrs_divw_chunked
                then BitVec.ofNat 32 (2^31)
                else BitVec.ofInt 32 (Int.tdiv r1_lo32.toInt r2_lo32.toInt)
          BitVec.signExtend 64 q32) := by
-  -- Step 1: chunk-range bounds (per-chunk < 65536).
+  -- chunk-range bounds (per-chunk < 65536).
   obtain ⟨h_a0, h_a1, _h_a2, _h_a3,
           h_b0, h_b1, _h_b2, _h_b3,
           _h_c0, _h_c1, _h_c2, _h_c3,
           h_d0, h_d1, _h_d2, _h_d3⟩ :=
     ZiskFv.Equivalence.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a
-  -- Step 2: W chain witnesses.
+  -- W chain witnesses.
   obtain ⟨h_a2_eq, h_a3_eq⟩ := h_a23
   obtain ⟨h_b2_eq, h_b3_eq⟩ := h_b23
   obtain ⟨h_d2_eq, h_d3_eq⟩ := h_d23
@@ -1806,14 +1806,14 @@ lemma h_rd_val_mdrs_divw_chunked
     ZiskFv.Equivalence.Bridge.Arith.div_w_chain_witnesses
       v r_a h_chain h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_a2_eq h_a3_eq h_b2_eq h_b3_eq h_d2_eq h_d3_eq
-  -- Step 3: name the ℤ 32-bit packings.
+  -- name the ℤ 32-bit packings.
   set A_32 : ℤ := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536 with hA_def
   set B_32 : ℤ := toIntZ (v.b_0 r_a) + toIntZ (v.b_1 r_a) * 65536 with hB_def
   set D_32 : ℤ := toIntZ (v.d_0 r_a) + toIntZ (v.d_1 r_a) * 65536 with hD_def
   set c_packed : ℤ := toIntZ (v.c_0 r_a) + toIntZ (v.c_1 r_a) * 65536
                         + toIntZ (v.c_2 r_a) * (65536 * 65536)
                         + toIntZ (v.c_3 r_a) * (65536 * 65536 * 65536) with hC_def
-  -- Step 4: convert toIntZ chunk to .val identities.
+  -- convert toIntZ chunk to .val identities.
   have h_a0_val : toIntZ (v.a_0 r_a) = (v.a_0 r_a).val :=
     toIntZ_eq_val_of_lt h_a0 (by decide)
   have h_a1_val : toIntZ (v.a_1 r_a) = (v.a_1 r_a).val :=
@@ -1843,7 +1843,7 @@ lemma h_rd_val_mdrs_divw_chunked
     rcases h_nr_bool with h | h
     · rw [h]; decide
     · rw [h]; decide
-  -- Step 5: A_32, B_32, D_32 ≥ 0 and < 2^32. Use a unified helper.
+  -- A_32, B_32, D_32 ≥ 0 and < 2^32. Use a unified helper.
   -- Auxiliary fact: x + y * 65536 ∈ [0, 2^32) when x, y < 65536.
   have chunk32_bounds : ∀ (n0 n1 : ℕ), n0 < 65536 → n1 < 65536 →
       0 ≤ ((n0 : ℤ) + (n1 : ℤ) * 65536) ∧ ((n0 : ℤ) + (n1 : ℤ) * 65536) < 2^32 := by
@@ -1875,7 +1875,7 @@ lemma h_rd_val_mdrs_divw_chunked
   have h_D32_ub : D_32 < 2^32 := by
     rw [hD_def, h_d0_val, h_d1_val]
     exact (chunk32_bounds (v.d_0 r_a).val (v.d_1 r_a).val h_d0 h_d1).2
-  -- Step 6: c_packed collapses to C_32 via h_c23.
+  -- c_packed collapses to C_32 via h_c23.
   have h_c_packed_collapse : c_packed = toIntZ (v.c_0 r_a) + toIntZ (v.c_1 r_a) * 65536 := by
     rw [hC_def]
     have h_c2_int : toIntZ (v.c_2 r_a) = 0 := by
@@ -1899,12 +1899,12 @@ lemma h_rd_val_mdrs_divw_chunked
   have h_C32_ub : C_32 < 2^32 := by
     rw [hC32_def, h_c0_val, h_c1_val]
     exact (chunk32_bounds (v.c_0 r_a).val (v.c_1 r_a).val h_c0_range h_c1_range).2
-  -- Step 7: Bridge h_op1, h_op2 to A_32 / B_32 / C_32 / D_32 forms.
+  -- Bridge h_rs1_value, h_rs2_value to A_32 / B_32 / C_32 / D_32 forms.
   have h_r1 : (Sail.BitVec.extractLsb r1_val 31 0).toInt = C_32 - toIntZ (v.np r_a) * 2^32 := by
-    rw [h_op1, hC32_def, h_c0_val, h_c1_val]
+    rw [h_rs1_value, hC32_def, h_c0_val, h_c1_val]
   have h_r2 : (Sail.BitVec.extractLsb r2_val 31 0).toInt = B_32 - toIntZ (v.nb r_a) * 2^32 := by
-    rw [h_op2, hB_def, h_b0_val, h_b1_val]
-  -- Step 8: nr_pin in toIntZ form.
+    rw [h_rs2_value, hB_def, h_b0_val, h_b1_val]
+  -- nr_pin in toIntZ form.
   have h_nr_pin_int : toIntZ (v.nr r_a) = toIntZ (v.np r_a) ∨ D_32 = 0 := by
     rcases h_nr_pin with h_eq | ⟨hd0, hd1⟩
     · left; exact h_eq
@@ -1922,7 +1922,7 @@ lemma h_rd_val_mdrs_divw_chunked
     rcases h_nr_bool with h | h
     · left; rw [h]; decide
     · right; rw [h]; decide
-  -- Step 9: Chain identity in the canonical W shape (with C_32 substituted).
+  -- Chain identity in the canonical W shape (with C_32 substituted).
   -- div_w_chain_witnesses delivers it with c_packed in the equation. After
   -- collapsing via h_c_packed_collapse, we get the C_32-form identity.
   have h_chain_canon :
@@ -1940,7 +1940,7 @@ lemma h_rd_val_mdrs_divw_chunked
     rw [h_c_packed_collapse] at this
     -- The let-expressions A_32, B_32, D_32 in the conclusion match our set vars.
     convert this using 2
-  -- Step 10: invoke the 32-bit abs-Euclidean → signed-Euclidean linker.
+  -- invoke the 32-bit abs-Euclidean → signed-Euclidean linker.
   have h_euclid :
       (Sail.BitVec.extractLsb r1_val 31 0).toInt
         = (A_32 - toIntZ (v.na r_a) * 2^32) * (Sail.BitVec.extractLsb r2_val 31 0).toInt
@@ -1965,7 +1965,7 @@ lemma h_rd_val_mdrs_divw_chunked
       h_np_xor h_nr_pin_int
       h_A32_lb h_A32_ub h_B32_lb h_B32_ub h_C32_lb h_C32_ub h_D32_lb h_D32_ub
       h_r1 h_r2 h_chain_arg
-  -- Step 11: r_int in val form for `h_r_abs` / `h_r_sign`.
+  -- r_int in val form for `h_r_abs` / `h_r_sign`.
   have h_r_int_val : D_32 - toIntZ (v.nr r_a) * 2^32
       = ((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ) - toIntZ (v.nr r_a) * 2^32 := by
     rw [hD_def, h_d0_val, h_d1_val]
@@ -1977,14 +1977,14 @@ lemma h_rd_val_mdrs_divw_chunked
       0 ≤ (D_32 - toIntZ (v.nr r_a) * 2^32)
             * (Sail.BitVec.extractLsb r1_val 31 0).toInt := by
     rw [h_r_int_val]; exact h_r_sign
-  -- Step 12: derive r2_lo32 ≠ 0 in toInt form for signed_tdiv_unique.
+  -- derive r2_lo32 ≠ 0 in toInt form for signed_tdiv_unique.
   have h_r2_toInt_ne : (Sail.BitVec.extractLsb r2_val 31 0).toInt ≠ 0 := by
     intro h_zero
     apply h_op2_ne
     have h_zero' : (Sail.BitVec.extractLsb r2_val 31 0).toInt = (0#32 : BitVec 32).toInt := by
       rw [h_zero, BitVec.toInt_zero]
     exact BitVec.toInt_inj.mp h_zero'
-  -- Step 13: derive q_int = Int.tdiv r1_lo32.toInt r2_lo32.toInt.
+  -- derive q_int = Int.tdiv r1_lo32.toInt r2_lo32.toInt.
   have h_q_eq : (A_32 - toIntZ (v.na r_a) * 2^32)
                   = Int.tdiv (Sail.BitVec.extractLsb r1_val 31 0).toInt
                               (Sail.BitVec.extractLsb r2_val 31 0).toInt := by
@@ -1994,7 +1994,7 @@ lemma h_rd_val_mdrs_divw_chunked
       (A_32 - toIntZ (v.na r_a) * 2^32)
       (D_32 - toIntZ (v.nr r_a) * 2^32)
       h_r2_toInt_ne h_euclid h_r_abs' h_r_sign'
-  -- Step 14: invoke Layer 1 BV64 wrapper (fgl_div_w_signed_to_bv64).
+  -- invoke Layer 1 BV64 wrapper (fgl_div_w_signed_to_bv64).
   have h_bv64 :
       BitVec.signExtend 64 (BitVec.ofInt 32 (A_32 - toIntZ (v.na r_a) * 2^32))
         = BitVec.signExtend 64
@@ -2009,7 +2009,7 @@ lemma h_rd_val_mdrs_divw_chunked
     ZiskFv.PackedBitVec.SignedNoWrap.fgl_div_w_signed_to_bv64
       r1_val r2_val (A_32 - toIntZ (v.na r_a) * 2^32)
       h_op2_ne h_no_overflow h_q_eq
-  -- Step 15: byte-sum bridge via h_sext_choice.
+  -- byte-sum bridge via h_sext_choice.
   apply BitVec.eq_of_toNat_eq
   rw [u64_toBV_of_bytes_toNat e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
         h0 h1 h2 h3 h4 h5 h6 h7]
@@ -2198,11 +2198,11 @@ lemma h_rd_val_mdrs_remw_chunked
       ((e.x4.val = 255 ∧ e.x5.val = 255 ∧ e.x6.val = 255 ∧ e.x7.val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
     -- Operand TRANSPILE-BRIDGE (W toInt-form, sign-witness extracted).
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb r1 31 0).toInt
         = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
             - (v.np r_a).val * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb r2 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - (v.nb r_a).val * (2:ℤ)^32)
@@ -2232,27 +2232,27 @@ lemma h_rd_val_mdrs_remw_chunked
                then 0#32
                else BitVec.ofInt 32 (Int.tmod r1_lo32.toInt r2_lo32.toInt)
          BitVec.signExtend 64 q32) := by
-  -- Step 1: chunk ranges from arith_div_columns_in_range.
+  -- chunk ranges from arith_div_columns_in_range.
   obtain ⟨h_a0, h_a1, h_a2, h_a3,
           h_b0, h_b1, h_b2, h_b3,
           h_c0, h_c1, h_c2, h_c3,
           h_d0, h_d1, h_d2, h_d3⟩ :=
     ZiskFv.Equivalence.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a
-  -- Step 2: invoke W operand/remainder pin (a_2=a_3=b_2=b_3=d_2=d_3=0).
+  -- invoke W operand/remainder pin (a_2=a_3=b_2=b_3=d_2=d_3=0).
   obtain ⟨h_a2_eq, h_a3_eq, h_b2_eq, h_b3_eq, h_d2_eq, h_d3_eq⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin v r_a h_sext h_m32 h_div h_op_full
-  -- Step 3: invoke the W-DIV chain witnesses (Bridge/Arith.lean).
+  -- invoke the W-DIV chain witnesses (Bridge/Arith.lean).
   have h_chunk_ident :=
     ZiskFv.Equivalence.Bridge.Arith.div_w_chain_witnesses
       v r_a h_chain h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_a2_eq h_a3_eq h_b2_eq h_b3_eq h_d2_eq h_d3_eq
-  -- Step 4: name the ℤ W-packings A (quotient32), B (divisor32),
+  -- name the ℤ W-packings A (quotient32), B (divisor32),
   -- C32 (dividend32 after c_2=c_3=0 collapse), D32 (remainder32).
   set A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536 with hA_def
   set B := toIntZ (v.b_0 r_a) + toIntZ (v.b_1 r_a) * 65536 with hB_def
   set D := toIntZ (v.d_0 r_a) + toIntZ (v.d_1 r_a) * 65536 with hD_def
   set Cz := toIntZ (v.c_0 r_a) + toIntZ (v.c_1 r_a) * 65536 with hCz_def
-  -- Step 5: convert toIntZ to .val identities.
+  -- convert toIntZ to .val identities.
   have h_a0_val : toIntZ (v.a_0 r_a) = (v.a_0 r_a).val := toIntZ_eq_val_of_lt h_a0 (by decide)
   have h_a1_val : toIntZ (v.a_1 r_a) = (v.a_1 r_a).val := toIntZ_eq_val_of_lt h_a1 (by decide)
   have h_b0_val : toIntZ (v.b_0 r_a) = (v.b_0 r_a).val := toIntZ_eq_val_of_lt h_b0 (by decide)
@@ -2271,7 +2271,7 @@ lemma h_rd_val_mdrs_remw_chunked
     have h_c3_val : toIntZ (v.c_3 r_a) = (v.c_3 r_a).val :=
       toIntZ_eq_val_of_lt h_c3 (by decide)
     rw [h_c3_val, h_c3_eq]; simp
-  -- Step 6: sign-witness bool lifts to ℤ.
+  -- sign-witness bool lifts to ℤ.
   have h_np_bool : toIntZ (v.np r_a) = 0 ∨ toIntZ (v.np r_a) = 1 := by
     rw [h_np_xor]
     rcases h_na_bool with h | h <;> rcases h_nb_bool with hb | hb <;>
@@ -2297,11 +2297,11 @@ lemma h_rd_val_mdrs_remw_chunked
     rcases h_np_bool_FGL with h | h
     · rw [h]; decide
     · rw [h]; decide
-  -- Step 7: invoke signed-W d-sign pin (REMW = op 191).
+  -- invoke signed-W d-sign pin (REMW = op 191).
   have h_nr_pin_raw :=
     ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin
       v r_a h_sext h_m32 h_div h_op
-  -- Step 8: convert h_nr_pin_raw to ℤ-form on A_32, B_32, C32, D32.
+  -- convert h_nr_pin_raw to ℤ-form on A_32, B_32, C32, D32.
   have h_nr_pin_int : toIntZ (v.nr r_a) = toIntZ (v.np r_a) ∨ D = 0 := by
     rcases h_nr_pin_raw with h_eq | ⟨hd0, hd1, hd2, hd3⟩
     · left; rw [h_eq]
@@ -2318,7 +2318,7 @@ lemma h_rd_val_mdrs_remw_chunked
     rcases h_nr_bool with h | h
     · left; rw [h]; decide
     · right; rw [h]; decide
-  -- Step 9: A_32, B_32, D_32, C32 range bounds (each ∈ [0, 2^32)).
+  -- A_32, B_32, D_32, C32 range bounds (each ∈ [0, 2^32)).
   have h_A_lb : 0 ≤ A := by
     rw [hA_def, h_a0_val, h_a1_val]; positivity
   have h_A_ub : A < 2^32 := by
@@ -2355,12 +2355,12 @@ lemma h_rd_val_mdrs_remw_chunked
     have h_total : (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 4294967296 := by omega
     have h32 : (4294967296 : ℤ) = 2^32 := by norm_num
     rw [← h32]; exact_mod_cast h_total
-  -- Step 10: operand toInt bridges in {A,B,Cz}-form.
+  -- operand toInt bridges in {A,B,Cz}-form.
   have h_r1_int : (Sail.BitVec.extractLsb r1 31 0).toInt = Cz - toIntZ (v.np r_a) * 2^32 := by
-    rw [h_op1, hCz_def, h_c0_val, h_c1_val, h_np_int]
+    rw [h_rs1_value, hCz_def, h_c0_val, h_c1_val, h_np_int]
   have h_r2_int : (Sail.BitVec.extractLsb r2 31 0).toInt = B - toIntZ (v.nb r_a) * 2^32 := by
-    rw [h_op2, hB_def, h_b0_val, h_b1_val, h_nb_int]
-  -- Step 11: collapse chain identity: drop c_2/c_3 terms (= 0) and switch
+    rw [h_rs2_value, hB_def, h_b0_val, h_b1_val, h_nb_int]
+  -- collapse chain identity: drop c_2/c_3 terms (= 0) and switch
   -- to A, B, Cz, D names.
   -- Restate h_chunk_ident with let-bindings unfolded — `have` with explicit
   -- type forces zeta-reduction of the `let`/`have` bindings in
@@ -2389,7 +2389,7 @@ lemma h_rd_val_mdrs_remw_chunked
     rw [h_pow32, h_pow64]
     rw [h_c2_int, h_c3_int] at h_ci
     linear_combination h_ci
-  -- Step 12: apply the W-mode signed Euclidean linker.
+  -- apply the W-mode signed Euclidean linker.
   have h_euclid : (Sail.BitVec.extractLsb r1 31 0).toInt
       = (A - toIntZ (v.na r_a) * 2^32) * (Sail.BitVec.extractLsb r2 31 0).toInt
         + (D - toIntZ (v.nr r_a) * 2^32) :=
@@ -2402,7 +2402,7 @@ lemma h_rd_val_mdrs_remw_chunked
       h_np_xor h_nr_pin_int
       h_A_lb h_A_ub h_B_lb h_B_ub h_Cz_lb h_Cz_ub h_D_lb h_D_ub
       h_r1_int h_r2_int h_chunk_collapsed
-  -- Step 13: convert h_r_abs and h_r_sign binders to ℤ-via-toIntZ form.
+  -- convert h_r_abs and h_r_sign binders to ℤ-via-toIntZ form.
   have h_r_int_eq_val : D - toIntZ (v.nr r_a) * 2^32
       = ((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
         - (v.nr r_a).val * (2:ℤ)^32 := by
@@ -2415,7 +2415,7 @@ lemma h_rd_val_mdrs_remw_chunked
       0 ≤ (D - toIntZ (v.nr r_a) * 2^32)
             * (Sail.BitVec.extractLsb r1 31 0).toInt := by
     rw [h_r_int_eq_val]; exact h_r_sign
-  -- Step 14: derive r_int = Int.tmod r1_lo32.toInt r2_lo32.toInt via uniqueness.
+  -- derive r_int = Int.tmod r1_lo32.toInt r2_lo32.toInt via uniqueness.
   have h_r2_int_ne : (Sail.BitVec.extractLsb r2 31 0).toInt ≠ 0 := by
     intro h_eq
     apply h_op2_ne
@@ -2431,7 +2431,7 @@ lemma h_rd_val_mdrs_remw_chunked
       (A - toIntZ (v.na r_a) * 2^32)
       (D - toIntZ (v.nr r_a) * 2^32)
       h_r2_int_ne h_euclid h_r_abs' h_r_sign'
-  -- Step 15: apply fgl_rem_w_signed_to_bv64 to get the BV64 result.
+  -- apply fgl_rem_w_signed_to_bv64 to get the BV64 result.
   have h_bv64 :
       BitVec.signExtend 64 (BitVec.ofInt 32 (D - toIntZ (v.nr r_a) * 2^32))
         = BitVec.signExtend 64
@@ -2445,7 +2445,7 @@ lemma h_rd_val_mdrs_remw_chunked
                                 (Sail.BitVec.extractLsb r2 31 0).toInt)) :=
     fgl_rem_w_signed_to_bv64
       r1 r2 (D - toIntZ (v.nr r_a) * 2^32) h_op2_ne h_no_overflow_w h_r_eq_tmod
-  -- Step 16: bridge BitVec.ofInt 32 (D - nr * 2^32) = BitVec.ofNat 32 (d_0 + d_1*65536).
+  -- bridge BitVec.ofInt 32 (D - nr * 2^32) = BitVec.ofNat 32 (d_0 + d_1*65536).
   have h_d_sum_lt : (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 4294967296 := by
     have : (v.d_1 r_a).val * 65536 ≤ 65535 * 65536 :=
       Nat.mul_le_mul_right _ (by omega)
@@ -2477,7 +2477,7 @@ lemma h_rd_val_mdrs_remw_chunked
       rw [h32eq]
       exact (Nat.mod_eq_of_lt h_d_sum_lt).symm
   rw [h_bv_int_eq_nat] at h_bv64
-  -- Step 17: byte-sum bridge using h_byte_lo + h_sext_choice + w_sext_close_*.
+  -- byte-sum bridge using h_byte_lo + h_sext_choice + w_sext_close_*.
   apply BitVec.eq_of_toNat_eq
   rw [u64_toBV_of_bytes_toNat e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
         h0 h1 h2 h3 h4 h5 h6 h7]

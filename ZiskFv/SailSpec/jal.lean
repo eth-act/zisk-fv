@@ -95,7 +95,7 @@ namespace PureSpec
       else
         (pure (ExecutionResult.Retire_Success ()))) state
   := by
-    -- Step 1: unfold the dispatcher + the `link_address ← get_next_pc ()` read
+    -- unfold the dispatcher + the `link_address ← get_next_pc ()` read
     -- (which reads `nextPC`, just set to `PC + 4` by `execute_instruction`).
     simp [
       readReg_succ h_input_pc,
@@ -106,7 +106,7 @@ namespace PureSpec
       readReg_succ (writeReg_read_same _),
       readReg_succ (writeReg_read_diff h_input_pc (show Register.PC ≠ Register.nextPC by grind)),
     ]
-    -- Step 2: reduce `jump_to target` via `jump_to_equiv`, threading the
+    -- reduce `jump_to target` via `jump_to_equiv`, threading the
     -- misa[C] = 0 witness through the `writeReg Register.nextPC` state.
     have h_misa_post :
       (write_reg_state state Register.nextPC (jal_input.PC + 4#64)).regs.get? Register.misa
@@ -118,10 +118,10 @@ namespace PureSpec
       (target := jal_input.PC + BitVec.signExtend 64 imm)
       h_misa_post
       h_misa_c]
-    -- Step 3: case-split on bit 0 of the jump target (misalignment by 1).
+    -- case-split on bit 0 of the jump target (misalignment by 1).
     by_cases h_bit0 : BitVec.ofBool (jal_input.PC + BitVec.signExtend 64 imm)[0] = 0#1
     . simp [h_bit0]
-      -- Step 4: case-split on bit 1 (misalignment by 2).
+      -- case-split on bit 1 (misalignment by 2).
       by_cases h_bit1 : BitVec.ofBool (jal_input.PC + BitVec.signExtend 64 imm)[1] = 1#1
       . simp [h_bit1]
         simp [
@@ -142,7 +142,7 @@ namespace PureSpec
           h_bit0,
           h_bit1'
         ]
-        -- Step 5: case-split on whether rd = 0 (no register write).
+        -- case-split on whether rd = 0 (no register write).
         by_cases h_rd_0 : jal_input.rd = 0 <;> simp [h_rd_0]
         . replace h_rd_0 : rd.1.toNat = 0
           := by

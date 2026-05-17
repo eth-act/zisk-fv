@@ -1,7 +1,7 @@
 import ZiskFv.Compliance.Dispatch
 
 /-!
-# Compliance.lean — Step 4.3 Phase 3 architectural validation
+# Compliance.lean — Phase 3 architectural validation
 
 This file lands the **global compliance theorem**
   theorem zisk_riscv_compliant_program_bus
@@ -1623,11 +1623,11 @@ inductive OpEnvelope
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt
         = ((v.a_0 r_a).val + (v.a_1 r_a).val * 65536 : ℤ)
             - (v.na r_a).val * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - (v.nb r_a).val * (2:ℤ)^32) :
@@ -1748,11 +1748,11 @@ inductive OpEnvelope
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt
         = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.np r_a) * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - toIntZ (v.nb r_a) * (2:ℤ)^32)
@@ -1795,9 +1795,9 @@ inductive OpEnvelope
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 : (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat
+    (h_rs1_value : (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
-    (h_op2 : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat
+    (h_rs2_value : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat
               = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536)
     (h_op2_ne : (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat ≠ 0) :
     OpEnvelope state m r_main
@@ -1917,11 +1917,11 @@ inductive OpEnvelope
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
         = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
             - (v.np r_a).val * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - (v.nb r_a).val * (2:ℤ)^32)
@@ -1964,9 +1964,9 @@ inductive OpEnvelope
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
-    (h_op1 : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
+    (h_rs1_value : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
-    (h_op2 : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
+    (h_rs2_value : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
               = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536)
     (h_op2_ne : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat ≠ 0) :
     OpEnvelope state m r_main
@@ -3060,7 +3060,7 @@ theorem zisk_riscv_compliant_program_bus
          h_input_r1 h_input_r2 h_input_rd h_input_pc
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-         h_row_constraints h_sext_choice h_op1 h_op2 =>
+         h_row_constraints h_sext_choice h_rs1_value h_rs2_value =>
     simp only [OpEnvelope.exec_eq]
     exact dispatch_MULW state mulw_input r1 r2 rd
       exec_row e0 e1 e2 m r_main v r_a
@@ -3068,7 +3068,7 @@ theorem zisk_riscv_compliant_program_bus
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      h_row_constraints h_sext_choice h_op1 h_op2
+      h_row_constraints h_sext_choice h_rs1_value h_rs2_value
   | div div_input r1 r2 rd exec_row e0 e1 e2 v r_a
         h_main_active h_main_op_div h_match_primary
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -3101,7 +3101,7 @@ theorem zisk_riscv_compliant_program_bus
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
-         h_sext_choice h_op1 h_op2 h_op2_ne h_no_overflow =>
+         h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow =>
     simp only [OpEnvelope.exec_eq]
     exact dispatch_DIVW state divw_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_divw h_match_primary
@@ -3109,20 +3109,20 @@ theorem zisk_riscv_compliant_program_bus
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
       h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_sext_choice h_op1 h_op2 h_op2_ne h_no_overflow
+      h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
   | divuw divuw_input r1 r2 rd exec_row e0 e1 e2 v r_a
           h_main_active h_main_op_divuw h_match_primary
           h_input_r1 h_input_r2 h_input_rd h_input_pc
           h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-          h_row_constraints h_sext_choice h_op1 h_op2 h_op2_ne =>
+          h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
     exact dispatch_DIVUW state divuw_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_divuw h_match_primary
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      h_row_constraints h_sext_choice h_op1 h_op2 h_op2_ne
+      h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
   | rem rem_input r1 r2 rd exec_row e0 e1 e2 v r_a
         h_main_active h_main_op_rem h_match_secondary
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -3155,7 +3155,7 @@ theorem zisk_riscv_compliant_program_bus
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
-         h_sext_choice h_op1 h_op2 h_op2_ne h_no_overflow_w =>
+         h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w =>
     simp only [OpEnvelope.exec_eq]
     exact dispatch_REMW state remw_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_remw h_match_secondary
@@ -3163,19 +3163,19 @@ theorem zisk_riscv_compliant_program_bus
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
       h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_sext_choice h_op1 h_op2 h_op2_ne h_no_overflow_w
+      h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w
   | remuw remuw_input r1 r2 rd exec_row e0 e1 e2 v r_a
           h_main_active h_main_op_remuw h_match_secondary
           h_input_r1 h_input_r2 h_input_rd h_input_pc
           h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-          h_row_constraints h_sext_choice h_op1 h_op2 h_op2_ne =>
+          h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
     exact dispatch_REMUW state remuw_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_remuw h_match_secondary
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      h_row_constraints h_sext_choice h_op1 h_op2 h_op2_ne
+      h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
 
 end ZiskFv.Compliance

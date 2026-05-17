@@ -16,6 +16,7 @@ import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Equivalence.Bridge.ControlFlow
 import ZiskFv.Equivalence.WriteValueProofs.JumpUType
+import ZiskFv.Equivalence.Promises.UType
 
 /-!
 End-to-end theorem for RV64 AUIPC. Combines:
@@ -100,19 +101,11 @@ theorem equiv_AUIPC
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (h_input_imm : auipc_input.imm = imm)
-    (h_input_rd : auipc_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some auipc_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = nextPC_val)
-    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
-    (h_nextPC_eq :
-      (PureSpec.execute_AUIPC_pure auipc_input).nextPC = nextPC_val)
-    (h_rd_idx : auipc_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    -- Structural promise bundle (11 fields, see Promises/UType.lean).
+    (promises : ZiskFv.Equivalence.Promises.UTypePromises
+        state auipc_input.imm auipc_input.rd auipc_input.PC
+        (PureSpec.execute_AUIPC_pure auipc_input).nextPC
+        imm rd exec_row e_rd nextPC_val)
     -- Discharge parameters
     (h_circuit :
       ZiskFv.Tactics.UTypeArchetype.auipc_archetype_circuit_holds m r_main next_pc)
@@ -126,6 +119,9 @@ theorem equiv_AUIPC
      :
     execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
       = (bus_effect exec_row [e_rd] state).2 := by
+  obtain ⟨h_input_imm, h_input_rd, h_input_pc, h_exec_len, h_e0_mult,
+          h_e1_mult, h_nextPC_matches, h_rd_mult, h_rd_as, h_nextPC_eq,
+          h_rd_idx⟩ := promises
   -- Discharge `h_lane_lo`/`h_lane_hi` via `main_store_pc_emission_bundle`
   -- (trust class #4).
   obtain ⟨h_lane_lo, h_lane_hi⟩ :=

@@ -8,15 +8,7 @@ import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 
 /-!
-# `equiv_LD` Compliance pilot — Mem-loads shape exemplar (Step 4.1.6)
-
-> **Status:** PILOT. Sixth shape exemplar (after DIV, LUI, ADD, SD,
-> SLL, OR). Demonstrates the discharge recipe applied to the
-> Mem-loads provider-AIR shape (LD / LBU / LHU / LWU — the
-> zero-extended / full-width loads through the copyb passthrough).
-> LD is the canonical exemplar — width 8, no high-byte zero-padding,
-> simplest within the shape.
-
+# `equiv_LD` trust-discharge wrapper — Mem-loads shape exemplar
 ## Why LD
 
 LD is the simplest load: all 8 bytes of `state.mem[ptr..ptr+7]` flow
@@ -237,9 +229,19 @@ theorem equiv_LD_from_trust
   -- Delegate to canonical `equiv_LD`.
   exact ZiskFv.Equivalence.LoadD.equiv_LD
     state ld_input mstatus pmaRegion misa mseccfg
-    exec_row e0 e1 e2 risc_v_assumptions h_opcode_assumptions
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+    exec_row e0 e1 e2
+    { risc_v_assumptions := risc_v_assumptions
+      opcode_assumptions_ := h_opcode_assumptions
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      m0_mult := h_m0_mult
+      m0_as := h_m0_as
+      m1_mult := h_m1_mult
+      m1_as := h_m1_as
+      m2_mult := h_m2_mult
+      m2_as := h_m2_as }
     main mem r_main h_main_active h_op
 
 end ZiskFv.Compliance

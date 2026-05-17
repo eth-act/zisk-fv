@@ -13,7 +13,7 @@ import ZiskFv.Tactics.ALUITypeArchetype
 /-!
 # `equiv_ADDIW` Compliance wrapper — Binary W-mode + ITYPE chain shape
 
-Final wrapper closing Step 4.2 mass authoring (op 63/63). Combines:
+Final wrapper closing mass authoring (op 63/63). Combines:
 
 * The W-mode 6-field Binary chain (round 4.B; cf. `AddwExemplar`):
   `binary_consumer_byte_match_chain_pin` (bytes 0..3) +
@@ -283,9 +283,21 @@ theorem equiv_ADDIW_from_trust
   -- ============ Delegate to canonical equiv_ADDIW ============
   exact ZiskFv.Equivalence.Addiw.equiv_ADDIW
     state addiw_input r1 rd imm m r_main exec_row e0 e1 e2
-    h_input_r1 h_input_imm h_input_rd h_input_pc
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    { input_r1_eq := h_input_r1
+      input_imm_eq := h_input_imm
+      input_rd_eq := h_input_rd
+      input_pc_eq := h_input_pc
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      m0_mult := h_m0_mult
+      m0_as := h_m0_as
+      m1_mult := h_m1_mult
+      m1_as := h_m1_as
+      m2_mult := h_m2_mult
+      m2_as := h_m2_as
+      rd_idx := h_rd_idx }
     v r_binary h_main_active h_main_op_addiw h_match
     (v.free_in_c_0 r_binary) (v.free_in_c_1 r_binary) (v.free_in_c_2 r_binary)
     (v.free_in_c_3 r_binary) (v.free_in_c_4 r_binary) (v.free_in_c_5 r_binary)

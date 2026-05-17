@@ -17,15 +17,15 @@ import ZiskFv.Equivalence.Bridge.SailStateBridge
 
 Implements *promise discharge* for the BinaryAdd-using opcode shape.
 
-This bridge consumes pieces of the *trust ledger* — Phase A's
+This bridge consumes pieces of the *trust ledger* —
 `op_bus_perm_sound_BinaryAdd` (PLONK soundness on
-`OPERATION_BUS_ID = 5000`), Step 1.5's `binary_add_columns_in_range`
+`OPERATION_BUS_ID = 5000`), `binary_add_columns_in_range`
 (range-check bus soundness on BinaryAdd's `bits(N)` columns), and
-the `transpile_ADD` row contract (via Step 1.7b's
+the `transpile_ADD` row contract (via
 `Bridge.SailStateBridge.add_input_bridges_of_read_xreg`) — to
 derive the `add_circuit_holds` + range facts + per-byte input
-bridges that pre-pilot `equiv_ADD` accepted as **promise
-hypotheses**. The result is a single existential delivering exactly
+bridges that the canonical `equiv_ADD` would otherwise accept as
+**promise hypotheses**. The result is a single existential delivering exactly
 what the downstream `WriteValueProofs.Arith.h_rd_val_arith_add`
 discharge lemma needs.
 
@@ -45,7 +45,7 @@ origin/main pre-pilot:
   burden is introduced.
 * adds `h_main_subset`, `h_main_mode`, `h_b_core` (3)
 
-Net: −4 binders per BinaryAdd-shape opcode (post Step 1.7b).
+Net: −4 binders per BinaryAdd-shape opcode.
 
 Per `docs/fv/known-gaps.md`'s Glossary and `CLAUDE.md`'s
 *anti-laundering principle*: this bridge produces actual reduction
@@ -69,7 +69,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `h_circuit` + `h_a_range`/`h_b_range`/`h_c_range` +
     `h_input_r{1,2}_circuit` *promise hypotheses* with a single
     derivation chain rooted at `op_bus_perm_sound_BinaryAdd` (Phase A)
-    and `binary_add_columns_in_range` (Step 1.5).
+    and `binary_add_columns_in_range`.
 
     Caller obligations after this discharge:
     * `h_main_subset : add_subset_holds m r_main` (Main-row ADD subset
@@ -115,7 +115,7 @@ lemma add_discharge
   -- Reconstruct add_circuit_holds at the existential row.
   have h_circuit : add_circuit_holds m b r_main r_binary :=
     ⟨h_main_subset, h_b_core r_binary, h_match, h_main_mode⟩
-  -- Range facts come from Step 1.5's binary_add_columns_in_range
+  -- Range facts come from binary_add_columns_in_range
   -- axiom (range-check bus lookup soundness, no caller hypothesis).
   have h_a_range : a_chunks_in_range b r_binary :=
     ⟨ba_a_lo_lt_2_32 b r_binary, ba_a_hi_lt_2_32 b r_binary⟩
@@ -143,7 +143,7 @@ lemma add_discharge
     congrArg Fin.val h_b_lo
   have h_b1_val : (m.b_1 r_main).val = (b.b_1 r_binary).val :=
     congrArg Fin.val h_b_hi
-  -- Derive Main-form input bridges from transpile_ADD via Step 1.7b's
+  -- Derive Main-form input bridges from transpile_ADD via
   -- SailStateBridge. The Sail-form `read_xreg` facts the caller
   -- supplies (already present in every `equiv_<OP>` for the
   -- `equiv_<OP>_sail` companion) are sufficient.
@@ -160,14 +160,14 @@ lemma add_discharge
   exact ⟨r_binary, h_circuit, h_a_range, h_b_range, h_c_range,
          h_input_r1_circuit, h_input_r2_circuit⟩
 
-/-! ## Narrow helper for the conservative-refactor path (keeps `r_binary`
+/-! ## Narrow helper for the discharge path (keeps `r_binary`
     as caller-supplied) — analogue of `Bridge.Binary.byte_ranges_at_holds`
 
 The 3 BinaryAdd chunk-range predicates (`a_chunks_in_range`,
 `b_chunks_in_range`, `c_chunks_in_range`) at any caller-supplied
 `r_binary` are all derivable from `binary_add_columns_in_range`
-(Step 1.5 axiom). This helper packages exactly that for the
-conservative discharge of ADDI and other BinaryAdd-shape opcodes
+(axiom). This helper packages exactly that for the
+discharge of ADDI and other BinaryAdd-shape opcodes
 that retain `r_binary` as a parameter.
 -/
 

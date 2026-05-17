@@ -16,6 +16,7 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned
+import ZiskFv.Equivalence.Promises.RType
 
 /-!
 End-to-end theorem for RV64 MUL. Combines:
@@ -28,8 +29,6 @@ End-to-end theorem for RV64 MUL. Combines:
 
 into three canonical theorems:
 
-* `equiv_MUL_circuit` — circuit-level. Main's packed `c` equals Arith's packed
-  result lanes, given the bus match.
 * `equiv_MUL_sail` — Sail-level. `execute_instruction` on an RV64 MUL
   reduces to a monadic block writing `execute_MUL_pure .MUL` to rd.
 * `equiv_MUL` — canonical shape: Sail's
@@ -101,22 +100,10 @@ theorem equiv_MUL
     (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok mul_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok mul_input.r2_val state)
-    (h_input_rd : mul_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some mul_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_MULH_mul_pure mul_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : mul_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC
+        (PureSpec.execute_MULH_mul_pure mul_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
     (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
     (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
@@ -136,10 +123,10 @@ theorem equiv_MUL
     (h_byte_hi :
       e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
         = (v.c_2 r_a).val + (v.c_3 r_a).val * 65536)
-    (h_op1 : mul_input.r1_val.toNat
+    (h_rs1_value : mul_input.r1_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
           (v.a_2 r_a).val (v.a_3 r_a).val)
-    (h_op2 : mul_input.r2_val.toNat
+    (h_rs2_value : mul_input.r2_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (v.b_1 r_a).val
           (v.b_2 r_a).val (v.b_3 r_a).val) :
     (do
@@ -152,6 +139,10 @@ theorem equiv_MUL
              signed_rs1 := srs1
              signed_rs2 := srs2 }))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
   -- 16 chunk-range *promise hypotheses* discharged via
   -- `arith_mul_chunk_ranges_at_holds` (consumes
   -- `arith_mul_columns_in_range` range-check soundness axiom).
@@ -182,7 +173,7 @@ theorem equiv_MUL
       h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
       h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
       hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
-      h_byte_lo h_byte_hi h_op1 h_op2
+      h_byte_lo h_byte_hi h_rs1_value h_rs2_value
   rw [equiv_MUL_sail state mul_input r1 r2 rd srs1 srs2
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

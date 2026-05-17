@@ -6,15 +6,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 
 /-!
-# `equiv_BEQ` Compliance pilot — ControlFlow branches shape exemplar (Step 4.1.7)
-
-> **Status:** PILOT. Sixth shape exemplar (after DIV, ADD, SD, OR, SLL,
-> LUI). Demonstrates the discharge recipe applied to the ControlFlow
-> *branch* sub-shape, complementing `FromTrust/Lui.lean` (ControlFlow
-> non-branch). Lives outside the canonical surface (under
-> `Compliance/FromTrust/`) so V1 anti-laundering metrics on the
-> canonical theorem are unaffected.
-
+# `equiv_BEQ` trust-discharge wrapper — ControlFlow branches shape exemplar
 ## Why BEQ
 
 BEQ is the cheapest branch in RV64IM:
@@ -270,8 +262,17 @@ theorem equiv_BEQ_from_trust
   -- ============ Delegate to canonical `equiv_BEQ` ============
   exact ZiskFv.Equivalence.BranchEqual.equiv_BEQ
     state beq_input imm r1 r2 misa_val exec_row
-    h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_not_throws h_success
+    { input_imm_eq := h_input_imm
+      input_r1_eq := h_input_r1
+      input_r2_eq := h_input_r2
+      input_pc_eq := h_input_pc
+      input_misa_eq := h_input_misa
+      misa_c_zero := h_misa_c
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      not_throws := h_not_throws
+      success := h_success }
 
 end ZiskFv.Compliance

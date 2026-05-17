@@ -19,6 +19,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.WriteValueProofs.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Equivalence.Bridge.Binary
+import ZiskFv.Equivalence.Promises.RType
 
 /-!
 End-to-end theorem for RV64 SUB. Mirrors
@@ -30,10 +31,8 @@ End-to-end theorem for RV64 SUB. Mirrors
 * `sub_compositional` (the archetype specialization at `OP_SUB`) in
   place of `add_compositional`.
 
-Three canonical theorems:
+Two canonical theorems:
 
-* `equiv_SUB_circuit` — circuit-level: Main's packed `c` equals the bus
-  entry's packed `c`.
 * `equiv_SUB_sail` — Sail-level: `execute_instruction` reduces to the
   pure-spec block.
 * `equiv_SUB` — canonical shape, discharged via shape
@@ -95,22 +94,10 @@ theorem equiv_SUB
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok sub_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok sub_input.r2_val state)
-    (h_input_rd : sub_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some sub_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : sub_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state sub_input.r1_val sub_input.r2_val sub_input.rd sub_input.PC
+        (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     -- Binary AIR provider witness + row index + activation/op + bus match.
     -- Together these replace the 16 loose a_i/b_i quantifiers, 16 byte-range
     -- hypotheses, and 2 input-bridge promise hypotheses from origin/main.
@@ -170,12 +157,16 @@ theorem equiv_SUB
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.SUB))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
   -- 8 e2 byte-range *promise hypotheses* discharged via the
   -- memory-bus byte-range axiom (`Bridge.Binary.e2_byte_ranges_discharge`).
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3,
           h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
     ZiskFv.Equivalence.Bridge.Binary.e2_byte_ranges_discharge e2
-  -- Byte ranges on a-/b-lanes derived from Step 2b's
+  -- Byte ranges on a-/b-lanes derived from the
   -- `binary_columns_in_range` axiom (range-check bus soundness).
   have ha0 : (v.free_in_a_0 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_0_lt_256 v r_binary
   have ha1 : (v.free_in_a_1 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_1_lt_256 v r_binary
@@ -194,7 +185,7 @@ theorem equiv_SUB
   have hb6 : (v.free_in_b_6 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_6_lt_256 v r_binary
   have hb7 : (v.free_in_b_7 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_7_lt_256 v r_binary
   -- Input bridges derived from `transpile_SUB` (state-bridged via
-  -- Step 1.7b's `SailStateBridge`) plus `matches_entry`'s a-/b-lane
+  -- `SailStateBridge`) plus `matches_entry`'s a-/b-lane
   -- conjuncts (m32 = 0 collapses the high-lane disjunction). Replaces
   -- the two `h_input_r{1,2}_circuit` *promise hypotheses*.
   have h_input_r1_circuit : sub_input.r1_val

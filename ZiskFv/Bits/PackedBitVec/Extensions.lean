@@ -167,7 +167,7 @@ private lemma to_bits_truncate128_extractLsb_64_64 (n : ℕ) :
   simp only [to_bits_truncate, Sail.get_slice_int, BitVec.extractLsb'_toNat,
              BitVec.toNat_ofInt, Nat.shiftRight_zero, Nat.zero_add]
   -- Goal: ((↑n % ↑(2^129)).toNat % 2^128 >>> 64) % 2^64 = n / 2^64 % 2^64
-  -- Step 1: (↑n % ↑(2^129)).toNat = n % 2^129 (n : ℕ ≥ 0)
+  -- (↑n % ↑(2^129)).toNat = n % 2^129 (n : ℕ ≥ 0)
   -- The goal has `↑(2^(128+1))` which is `(2^(128+1) : ℕ) : ℤ`.
   -- `Int.toNat_natCast` gives: `(↑m : ℤ).toNat = m` for `m : ℕ`.
   -- Combined with `Int.natCast_mod`: `↑n % ↑m = ↑(n % m)`, then `Int.toNat_natCast`.
@@ -175,14 +175,14 @@ private lemma to_bits_truncate128_extractLsb_64_64 (n : ℕ) :
     rw [← Int.natCast_mod, Int.toNat_natCast]
   rw [step_toNat]
   -- Now the goal is in ℕ: (n % 2^129 % 2^128 >>> 64) % 2^64 = n / 2^64 % 2^64
-  -- Step 2: n % 2^129 % 2^128 = n % 2^128
+  -- n % 2^129 % 2^128 = n % 2^128
   have step_mod129 : n % 2 ^ (128 + 1) % 2 ^ 128 = n % 2 ^ 128 :=
     Nat.mod_mod_of_dvd n ⟨2, by norm_num⟩
   rw [step_mod129]
-  -- Step 3: >>> 64 = / 2^64  (Nat.shiftRight_eq_div_pow)
+  -- >>> 64 = / 2^64  (Nat.shiftRight_eq_div_pow)
   rw [Nat.shiftRight_eq_div_pow]
   -- Goal: (n % 2^128 / 2^64) % 2^64 = n / 2^64 % 2^64
-  -- Step 4: n % (2^64 * 2^64) / 2^64 = n / 2^64 % 2^64  (Nat.mod_mul_right_div_self)
+  -- n % (2^64 * 2^64) / 2^64 = n / 2^64 % 2^64  (Nat.mod_mul_right_div_self)
   have h128 : (2 : ℕ) ^ 128 = 2 ^ 64 * 2 ^ 64 := by norm_num
   rw [h128, Nat.mod_mul_right_div_self]
   -- The RHS `BitVec.toNat_ofNat` introduced an extra `% 2^64`; strip it via `x % m % m = x % m`.
@@ -258,7 +258,7 @@ or 0xFFFFFFFF if bit 31 is 1.
 The bus emits these lanes as 8 bytes. The bridge goes in two steps:
 1. `signExtend_imm20_nat_lanes` — the `(lo.val + hi.val * 2^32)` Nat
    form equals `(BitVec.signExtend 64 (imm ++ 0#12)).toNat`.
-2. `u64_toBV_of_imm20_lanes` — composes step 1 with the byte bridge to
+2. `u64_toBV_of_imm20_lanes` — composes with the byte bridge to
    give `U64.toBV [bytes] = BitVec.signExtend 64 (imm ++ 0#12)`.
 -/
 

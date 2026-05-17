@@ -19,6 +19,7 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned
+import ZiskFv.Equivalence.Promises.RType
 
 /-!
 End-to-end theorem for RV64 MULW. MULW is the 32-bit word variant of
@@ -27,12 +28,11 @@ must be authored with a MULW-specific mode predicate (the archetype
 macro hardcodes `m32 = 0`). See `Circuit.MulW` for the compositional
 statement.
 
-Step 4: Structural-unpacking refactor replacing the single
-`h_byte_mulw` promise hypothesis with the explicit Tier-3 binders
-mirroring MULH but specialized for W-mode (`m32 = 1`) and adding
-`h_sext_choice` for the W sign-extension on bytes 4..7 (same trust
-class as ADDW's `h_sext_choice` and DIVUW/REMUW's W-mode sign
-extension).
+The single `h_byte_mulw` promise hypothesis is replaced with the
+explicit Tier-3 binders mirroring MULH but specialized for W-mode
+(`m32 = 1`), adding `h_sext_choice` for the W sign-extension on
+bytes 4..7 (same trust class as ADDW's `h_sext_choice` and
+DIVUW/REMUW's W-mode sign extension).
 -/
 
 namespace ZiskFv.Equivalence.MulW
@@ -89,7 +89,7 @@ lemma equiv_MULW_sail
     `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_mulw_chunked`
     discharge lemma.
 
-    Step 4 structural-unpacking refactor with 17 ADDED binders (16 MUL
+    structural-unpacking refactor with 17 ADDED binders (16 MUL
     base shape + `h_sext_choice` for W-mode sign-extension on bytes
     4..7). -/
 theorem equiv_MULW
@@ -99,22 +99,10 @@ theorem equiv_MULW
     (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok mulw_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok mulw_input.r2_val state)
-    (h_input_rd : mulw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some mulw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_MULW_pure mulw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : mulw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
+        (PureSpec.execute_MULW_pure mulw_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     -- Structural-unpacking ADDED binders (17 total) mirroring MULH
     -- plus h_sext_choice for W-mode sign-extension on bytes 4..7.
     (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a)
@@ -139,11 +127,11 @@ theorem equiv_MULW
       ((e2.x4.val = 255 ∧ e2.x5.val = 255 ∧ e2.x6.val = 255 ∧ e2.x7.val = 255) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
     -- Operand TRANSPILE-BRIDGE (W form: low 32 bits, signed toInt).
-    (h_op1 :
+    (h_rs1_value :
       (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt
         = ((v.a_0 r_a).val + (v.a_1 r_a).val * 65536 : ℤ)
             - (v.na r_a).val * (2:ℤ)^32)
-    (h_op2 :
+    (h_rs2_value :
       (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt
         = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
             - (v.nb r_a).val * (2:ℤ)^32) :
@@ -153,6 +141,10 @@ theorem equiv_MULW
       LeanRV64D.Functions.execute
         (instruction.MULW (r2, r1, rd))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_rd_val :=
     ZiskFv.Equivalence.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_mulw_chunked
@@ -161,7 +153,7 @@ theorem equiv_MULW
       h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
       h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
       h_chain h_nr h_sext h_m32 h_div h_op
-      h_na_bool h_nb_bool h_np_xor h_byte_lo h_sext_choice h_op1 h_op2
+      h_na_bool h_nb_bool h_np_xor h_byte_lo h_sext_choice h_rs1_value h_rs2_value
   rw [equiv_MULW_sail state mulw_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

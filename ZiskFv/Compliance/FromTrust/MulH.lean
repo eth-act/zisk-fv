@@ -4,13 +4,13 @@ import ZiskFv.Equivalence.MulH
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
-import ZiskFv.Airs.Arith.Bridge1
+import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 
 /-!
-# `equiv_MULH` Compliance exemplar (Step 4.2 r3.III, Family A: ArithMul signed high-half)
+# `equiv_MULH` Compliance exemplar
 
 > **Status:** EXEMPLAR. Not part of the canonical `equiv_<OP>` surface
 > (lives outside `ZiskFv/Equivalence/MulH.lean`). Demonstrates the
@@ -33,7 +33,7 @@ import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 >   for the hi side under the MULH-secondary mode pins
 >   (`main_mul = 0`, `main_div = 0`) from
 >   `arith_table_op_mulh_main_selector_pin`.
-> * Two operand bridges (`h_op1` / `h_op2`) — discharged via
+> * Two operand bridges (`h_rs1_value` / `h_rs2_value`) — discharged via
 >   `signed_packed_toInt_eq_of_read_xreg` composed with `transpile_MULH`
 >   (Main-lane equalities), the secondary `matches_entry` projection
 >   of Main's `a`/`b` lanes to ArithMul's `a[]` / `b[]` chunk packings,
@@ -68,7 +68,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- **Exemplar wrapper for `equiv_MULH`.**
 
     Same shape as `equiv_MULHU_from_trust` modulo the signed-form
-    operand bridge for h_op1 / h_op2 (consumes the new
+    operand bridge for h_rs1_value / h_rs2_value (consumes the new
     `arith_mul_na_eq_msb_of_a` / `arith_mul_nb_eq_msb_of_b` MSB pins
     plus `signed_packed_toInt_eq_of_read_xreg`). -/
 theorem equiv_MULH_from_trust
@@ -195,7 +195,7 @@ theorem equiv_MULH_from_trust
     rw [h_byte_lo_to_c0, h_c0_val_eq]
   -- Hi lane via mulh_bus_res1_eq_d_hi (Family A — secondary).
   have h_bus_res1_eq : v.bus_res1 r_a = v.d_2 r_a + v.d_3 r_a * 65536 :=
-    ZiskFv.Airs.ArithBridge1.mulh_bus_res1_eq_d_hi v r_a h_c46
+    ZiskFv.Airs.ArithBusRes1.mulh_bus_res1_eq_d_hi v r_a h_c46
       h_sext h_m32 h_main_mul_zero h_main_div_zero
   have h_c1_val_eq : (m.c_1 r_main).val
       = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536 := by
@@ -204,7 +204,7 @@ theorem equiv_MULH_from_trust
       e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
         = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536 := by
     rw [h_byte_hi_to_c1, h_c1_val_eq]
-  -- ============ DISCHARGE h_op1 / h_op2 (signed operand bridge) ============
+  -- ============ DISCHARGE h_rs1_value / h_rs2_value (signed operand bridge) ============
   obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
          h_main_a_lo, h_main_a_hi, h_main_b_lo, h_main_b_hi⟩ :=
     ZiskFv.Trusted.transpile_MULH
@@ -325,15 +325,15 @@ theorem equiv_MULH_from_trust
     v r_a h_op_arith_na
   have h_nb_msb := ZiskFv.Airs.Arith.arith_mul_nb_eq_msb_of_b
     v r_a h_op_arith_mulh
-  -- Signed-form bridge → h_op1 / h_op2.
-  have h_op1 :
+  -- Signed-form bridge → h_rs1_value / h_rs2_value.
+  have h_rs1_value :
       mulh_input.r1_val.toInt
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val : ℤ)
             - (v.na r_a).val * (2:ℤ)^64 :=
     ZiskFv.Equivalence.Bridge.SailStateBridge.signed_packed_toInt_eq_of_read_xreg
       h_input_r1 h_r1_toNat ⟨h_a0_lt, h_a1_lt, h_a2_lt, h_a3_lt⟩ h_na_msb
-  have h_op2 :
+  have h_rs2_value :
       mulh_input.r2_val.toInt
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
@@ -343,11 +343,23 @@ theorem equiv_MULH_from_trust
   -- ============ Delegate to `equiv_MULH` ============
   exact ZiskFv.Equivalence.MulH.equiv_MULH
     state mulh_input r1 r2 rd v r_a exec_row e0 e1 e2
-    h_input_r1 h_input_r2 h_input_rd h_input_pc
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    { input_r1_eq := h_input_r1
+      input_r2_eq := h_input_r2
+      input_rd_eq := h_input_rd
+      input_pc_eq := h_input_pc
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      m0_mult := h_m0_mult
+      m0_as := h_m0_as
+      m1_mult := h_m1_mult
+      m1_as := h_m1_as
+      m2_mult := h_m2_mult
+      m2_as := h_m2_as
+      rd_idx := h_rd_idx }
     h_chain h_na h_nb h_np h_nr_eq h_sext h_m32 h_div
     h_na_bool h_nb_bool h_np_xor
-    h_byte_lo h_byte_hi h_op1 h_op2
+    h_byte_lo h_byte_hi h_rs1_value h_rs2_value
 
 end ZiskFv.Compliance

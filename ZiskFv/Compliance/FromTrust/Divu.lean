@@ -4,12 +4,12 @@ import ZiskFv.Equivalence.Divu
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
-import ZiskFv.Airs.Arith.Bridge1
+import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
 
 /-!
-# `equiv_DIVU` Compliance exemplar (Step 4.2.A within-shape, ArithDiv unsigned primary)
+# `equiv_DIVU` Compliance exemplar
 
 > **Status:** WITHIN-SHAPE. Mirrors `MulExemplar` (unsigned operand
 > bridge, primary lane) for the DIVU opcode (op = 0xb8 = 184).
@@ -24,7 +24,7 @@ import ZiskFv.Airs.MemoryBus.MemBridge
 >   DivPilot since DIVU and DIV share the primary `a[]` quotient lane).
 > * Operand bridges via the unsigned `packed_lane_eq_of_read_xreg`.
 > * Range bound (`h_d_lt_b`) via the new
->   `arith_div_remainder_bound_unsigned` composed with `h_op2`.
+>   `arith_div_remainder_bound_unsigned` composed with `h_rs2_value`.
 -/
 
 namespace ZiskFv.Compliance
@@ -149,7 +149,7 @@ theorem equiv_DIVU_from_trust
     rw [h_byte_lo_to_c0, h_c0_val_eq]
   -- Hi lane via div_bus_res1_eq_a_hi (primary lane: a[2..3]).
   have h_bus_res1_eq : v.bus_res1 r_a = v.a_2 r_a + v.a_3 r_a * 65536 :=
-    ZiskFv.Airs.ArithBridge1.div_bus_res1_eq_a_hi v r_a h_c46
+    ZiskFv.Airs.ArithBusRes1.div_bus_res1_eq_a_hi v r_a h_c46
       h_sext h_m32 h_main_mul_zero h_main_div_one
   have h_c1_val_eq : (m.c_1 r_main).val
       = (v.a_2 r_a).val + (v.a_3 r_a).val * 65536 := by
@@ -158,7 +158,7 @@ theorem equiv_DIVU_from_trust
       e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
         = (v.a_2 r_a).val + (v.a_3 r_a).val * 65536 := by
     rw [h_byte_hi_to_c1, h_c1_val_eq]
-  -- ============ DISCHARGE h_op1 / h_op2 (unsigned operand bridge) ============
+  -- ============ DISCHARGE h_rs1_value / h_rs2_value (unsigned operand bridge) ============
   obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
          h_main_a_lo, h_main_a_hi, h_main_b_lo, h_main_b_hi⟩ :=
     ZiskFv.Trusted.transpile_DIVU
@@ -215,9 +215,9 @@ theorem equiv_DIVU_from_trust
   have h_b1_val_eq : (m.b_1 r_main).val
       = (v.b_2 r_a).val + (v.b_3 r_a).val * 65536 := by
     rw [h_b_hi_collapsed]; exact h_pair_lift _ _ h_b2_lt h_b3_lt
-  -- DIVU is unsigned: r1.toNat / r2.toNat consumed. h_op1 : r1.toNat = packed4 c[]
+  -- DIVU is unsigned: r1.toNat / r2.toNat consumed. h_rs1_value : r1.toNat = packed4 c[]
   -- Note: DIVU consumes r1 = dividend = c[], r2 = divisor = b[].
-  have h_op1 :
+  have h_rs1_value :
       divu_input.r1_val.toNat
         = ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val := by
@@ -244,7 +244,7 @@ theorem equiv_DIVU_from_trust
     rw [Nat.mod_eq_of_lt h_lt_2_64]
     unfold ZiskFv.PackedBitVec.MulNoWrap.packed4
     ring
-  have h_op2 :
+  have h_rs2_value :
       divu_input.r2_val.toNat
         = ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val := by
@@ -279,15 +279,27 @@ theorem equiv_DIVU_from_trust
                     (v.d_0 r_a).val (v.d_1 r_a).val
                     (v.d_2 r_a).val (v.d_3 r_a).val
                   < divu_input.r2_val.toNat := by
-    rw [h_op2]; exact h_bound
+    rw [h_rs2_value]; exact h_bound
   -- ============ Delegate to `equiv_DIVU` ============
   exact ZiskFv.Equivalence.Divu.equiv_DIVU
     state divu_input r1 r2 rd v r_a exec_row e0 e1 e2
-    h_input_r1 h_input_r2 h_input_rd h_input_pc
-    h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-    h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+    { input_r1_eq := h_input_r1
+      input_r2_eq := h_input_r2
+      input_rd_eq := h_input_rd
+      input_pc_eq := h_input_pc
+      exec_len := h_exec_len
+      e0_mult := h_e0_mult
+      e1_mult := h_e1_mult
+      nextPC_matches := h_nextPC_matches
+      m0_mult := h_m0_mult
+      m0_as := h_m0_as
+      m1_mult := h_m1_mult
+      m1_as := h_m1_as
+      m2_mult := h_m2_mult
+      m2_as := h_m2_as
+      rd_idx := h_rd_idx }
     h0 h1 h2 h3 h4 h5 h6 h7
     h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div
-    h_byte_lo h_byte_hi h_op1 h_op2 h_op2_ne h_d_lt_b
+    h_byte_lo h_byte_hi h_rs1_value h_rs2_value h_op2_ne h_d_lt_b
 
 end ZiskFv.Compliance

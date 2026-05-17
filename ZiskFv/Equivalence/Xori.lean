@@ -17,6 +17,7 @@ import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.WriteValueProofs.BinaryLogic
+import ZiskFv.Equivalence.Promises.IType
 
 /-!
 End-to-end theorem for RV64 XORI. Mirrors
@@ -59,12 +60,11 @@ lemma equiv_XORI_sail
   PureSpec.execute_ITYPE_xori_pure_equiv
     xori_input r1 rd h_input_r1 h_input_imm h_input_rd h_input_pc
 
-/-- **Canonical equivalence (Step 4.2r3.I — structural-unpacking
-    refactor).** Sail's `execute_instruction` on an RV64 XORI equals
+/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64 XORI equals
     the state computed by applying `bus_effect` to the circuit's
     execution and memory bus rows.
 
-    Mirrors `equiv_ANDI` (Step 4.2r3.I) — see that theorem's docstring
+    Mirrors `equiv_ANDI` — see that theorem's docstring
     for the discharge chain. Differences from ANDI: `OP_AND → OP_XOR`,
     `match_clo_chi_AND → match_clo_chi_XOR`, `transpile_ANDI →
     transpile_XORI`, `WriteValueProofs.h_rd_val_logic_andi →
@@ -77,21 +77,10 @@ theorem equiv_XORI
     (r_main r_binary : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok xori_input.r1_val state)
-    (h_input_imm : xori_input.imm = imm)
-    (h_input_rd : xori_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some xori_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_ITYPE_xori_pure xori_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : xori_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+        state xori_input.r1_val xori_input.imm xori_input.rd xori_input.PC
+        (PureSpec.execute_ITYPE_xori_pure xori_input).nextPC
+        r1 rd imm exec_row e0 e1 e2)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op_xori : m.op r_main = OP_XOR)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
@@ -106,6 +95,10 @@ theorem equiv_XORI
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.XORI))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  obtain ⟨h_input_r1, h_input_imm, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
   obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7,
           hb0, hb1, hb2, hb3, hb4, hb5, hb6, hb7,
           hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7⟩ :=
