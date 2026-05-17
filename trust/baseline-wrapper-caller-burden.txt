@@ -12,19 +12,18 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 1187
+# Total rows: 933
 # Total wrappers: 63
 # Category bridge: 66
 # Category bus_shape: 27
-# Category entry: 67
-# Category loose: 156
-# Category match: 120
-# Category other: 441
+# Category entry: 15
+# Category match: 6
+# Category other: 518
 # Category range: 38
 # Category row: 57
 # Category state: 73
 # Category transpile: 25
-# Category validator: 117
+# Category validator: 108
 #
 ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 001 add_input [other] PureSpec.AddInput
@@ -36,18 +35,14 @@ ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 006 _ [other] ADD, ADDI
 ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 007 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 008 b [validator] Valid_BinaryAdd C FGL FGL
 ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 009 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 010 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 011 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 012 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 013 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 014 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 015 h_main_op_add [match] m.op r_main = OP_ADD
-ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 016 _ [other] per-row ADD-subset constraints
-ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 017 h_main_subset [other] add_subset_holds m r_main
-ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 018 h_b_core [other] ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r
-ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 019 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 020 _ [other] 15 fields
-ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 021 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state add_input.r1_val add_input.r2_va
+ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 010 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 011 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD
+ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 012 _ [other] per-row ADD-subset constraints
+ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 013 h_main_subset [other] add_subset_holds m r_main
+ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 014 h_b_core [other] ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r
+ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 016 _ [other] 15 fields
+ZiskFv.Compliance.FromTrust.Add.equiv_ADD_from_trust 017 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state add_input.r1_val add_input.r2_va
 ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 001 addi_input [other] PureSpec.AddiInput
 ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 002 r1 [other] regidx
@@ -56,20 +51,16 @@ ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 004 imm [other] BitVec 12
 ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 006 b [validator] Valid_BinaryAdd C FGL FGL
 ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 012 _ [other] Compliance.lean derives from ROM handshake
-ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 014 h_main_op_addi [match] m.op r_main = OP_ADD
-ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 015 h_main_subset [other] add_subset_holds m r_main
-ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 016 h_b_core [other] ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r
-ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 017 h_addi_subset [other] itype_imm_subset_holds_main m r_main addi_input.imm
-ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 018 _ [other] deferred to Mem pilot
-ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 019 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 020 _ [other] 14 fields, see Promises/IType.lean
-ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 021 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state addi_input.r1_val addi_input.imm
+ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 009 _ [other] Compliance.lean derives from ROM handshake
+ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD
+ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 011 h_main_subset [other] add_subset_holds m r_main
+ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 012 h_b_core [other] ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r
+ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 013 h_addi_subset [other] itype_imm_subset_holds_main m r_main addi_input.imm
+ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 014 _ [other] deferred to Mem pilot
+ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 016 _ [other] 14 fields, see Promises/IType.lean
+ZiskFv.Compliance.FromTrust.Addi.equiv_ADDI_from_trust 017 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state addi_input.r1_val addi_input.imm
 ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 001 addiw_input [other] PureSpec.AddiwInput
 ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 002 r1 [other] regidx
@@ -78,15 +69,11 @@ ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 004 imm [other] BitVec 
 ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 006 v [validator] Valid_Binary C FGL FGL
 ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 013 h_main_op_addiw [match] m.op r_main = OP_ADD_W
-ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 014 h_addiw_subset [other] itype_imm_subset_holds_main m r_main addiw_input.imm
-ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state addiw_input.r1_val addiw_input.i
+ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W
+ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 010 h_addiw_subset [other] itype_imm_subset_holds_main m r_main addiw_input.imm
+ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 011 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Addiw.equiv_ADDIW_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state addiw_input.r1_val addiw_input.i
 ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 001 addw_input [other] PureSpec.AddwInput
 ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 002 r1 [other] regidx
@@ -95,14 +82,10 @@ ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 004 rd [other] regidx
 ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 006 v [validator] Valid_Binary C FGL FGL
 ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 013 h_main_op_addw [match] m.op r_main = OP_ADD_W
-ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 014 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 015 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state addw_input.r1_val addw_input.r2_
+ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W
+ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 010 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Addw.equiv_ADDW_from_trust 011 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state addw_input.r1_val addw_input.r2_
 ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 001 and_input [other] PureSpec.AndInput
 ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 002 r1 [other] regidx
@@ -111,14 +94,10 @@ ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 004 rd [other] regidx
 ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 006 v [validator] Valid_Binary C FGL FGL
 ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 013 h_main_op_and [match] m.op r_main = OP_AND
-ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 014 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 015 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state and_input.r1_val and_input.r2_va
+ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND
+ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 010 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.And.equiv_AND_from_trust 011 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state and_input.r1_val and_input.r2_va
 ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 001 andi_input [other] PureSpec.AndiInput
 ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 002 r1 [other] regidx
@@ -127,15 +106,11 @@ ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 004 imm [other] BitVec 12
 ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 006 v [validator] Valid_Binary C FGL FGL
 ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 013 h_main_op_andi [match] m.op r_main = OP_AND
-ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 014 h_andi_subset [other] itype_imm_subset_holds_main m r_main andi_input.imm
-ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state andi_input.r1_val andi_input.imm
+ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND
+ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 010 h_andi_subset [other] itype_imm_subset_holds_main m r_main andi_input.imm
+ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 011 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Andi.equiv_ANDI_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state andi_input.r1_val andi_input.imm
 ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 001 auipc_input [other] PureSpec.AuipcInput
 ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 002 imm [other] BitVec 20
@@ -146,13 +121,12 @@ ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 006 nextPC_val [other] 
 ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 007 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 008 r_main [row] ℕ
 ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 009 next_pc [other] FGL
-ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 010 h_main_active [match] m.is_external_op r_main = 0
-ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 011 h_main_op_auipc [match] m.op r_main = OP_FLAG
-ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 012 h_auipc_subset [other] auipc_subset_holds m r_main next_pc
-ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 013 promises [transpile] ZiskFv.Equivalence.Promises.UTypePromises state auipc_input.imm auipc_input.rd a
-ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 014 h_no_wrap [other] auipc_input.PC.toNat + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12)
-ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 015 h_lo_bound [range] (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296
-ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 016 h_pc_offset_lt_2_32 [range] (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toN
+ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG
+ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 011 h_auipc_subset [other] auipc_subset_holds m r_main next_pc
+ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 012 promises [transpile] ZiskFv.Equivalence.Promises.UTypePromises state auipc_input.imm auipc_input.rd a
+ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 013 h_no_wrap [other] auipc_input.PC.toNat + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12)
+ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 014 h_lo_bound [range] (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296
+ZiskFv.Compliance.FromTrust.Auipc.equiv_AUIPC_from_trust 015 h_pc_offset_lt_2_32 [range] (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toN
 ZiskFv.Compliance.FromTrust.Beq.equiv_BEQ_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Beq.equiv_BEQ_from_trust 001 beq_input [other] PureSpec.BeqInput
 ZiskFv.Compliance.FromTrust.Beq.equiv_BEQ_from_trust 002 imm [other] BitVec 13
@@ -206,112 +180,96 @@ ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 001 div_input [other] PureS
 ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 002 r1 [other] regidx
 ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 003 r2 [other] regidx
 ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 004 rd [other] regidx
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 005 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 006 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 007 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 008 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 009 _ [other] m, v
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 010 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 011 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 012 v [validator] Valid_ArithDiv C FGL FGL
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 013 r_a [other] ℕ
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 014 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 015 h_main_op_div [match] m.op r_main = OP_DIV
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 016 _ [other] Compliance.lean will obtain `r_a` via -- `op_bus_perm_sound_ArithDiv` and pass i
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 017 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 018 _ [other] 15 fields
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 019 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state div_input.r1_val div_input.r2_va
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 020 h_op2_ne [bridge] div_input.r2_val.toInt ≠ 0
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 021 h_no_overflow [bridge] ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1)
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 022 _ [other] constructibility
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 023 _ [other] constraints 6-8 + 31-38
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 024 `bus_res1` [other] 263`, required for -- the hi-lane discharge via `div_bus_res1_eq_a_hi`
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 025 normalization [other] 263`, required for -- the hi-lane discharge via `div_bus_res1_eq_a_hi`
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 026 at [other] 263`, required for -- the hi-lane discharge via `div_bus_res1_eq_a_hi`
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 027 `arith.pil [other] 263`, required for -- the hi-lane discharge via `div_bus_res1_eq_a_hi`
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 028 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 029 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a = 1
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 030 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 031 h_nr_bool [other] v.nr r_a = 0 ∨ v.nr r_a = 1
-ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 032 h_np_xor [other] toIntZ (v.np r_a) = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 006 _ [other] m, v
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 007 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 008 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 009 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 010 r_a [other] ℕ
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 011 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 012 _ [other] Compliance.lean will obtain `r_a` via -- `op_bus_perm_sound_ArithDiv` and pass i
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 013 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 014 _ [other] 15 fields
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 015 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state div_input.r1_val div_input.r2_va
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 016 h_op2_ne [bridge] div_input.r2_val.toInt ≠ 0
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 017 h_no_overflow [bridge] ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1)
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 018 _ [other] constructibility
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 019 _ [other] constraints 6-8 + 31-38
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 020 `bus_res1` [other] 263`, required for -- the hi-lane discharge via `div_bus_res1_eq_a_hi`
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 021 normalization [other] 263`, required for -- the hi-lane discharge via `div_bus_res1_eq_a_hi`
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 022 at [other] 263`, required for -- the hi-lane discharge via `div_bus_res1_eq_a_hi`
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 023 `arith.pil [other] 263`, required for -- the hi-lane discharge via `div_bus_res1_eq_a_hi`
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 024 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 025 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a = 1
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 026 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 027 h_nr_bool [other] v.nr r_a = 0 ∨ v.nr r_a = 1
+ZiskFv.Compliance.FromTrust.Div.equiv_DIV_from_trust 028 h_np_xor [other] toIntZ (v.np r_a) = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a
 ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 001 divu_input [other] PureSpec.DivuInput
 ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 002 r1 [other] regidx
 ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 003 r2 [other] regidx
 ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 004 rd [other] regidx
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 005 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 006 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 007 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 008 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 009 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 010 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 011 v [validator] Valid_ArithDiv C FGL FGL
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 012 r_a [other] ℕ
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 014 h_main_op_divu [match] m.op r_main = OP_DIVU
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 015 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state divu_input.r1_val divu_input.r2_
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 017 h0 [range] e2.x0.val < 256
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 018 h1 [range] e2.x1.val < 256
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 019 h2 [range] e2.x2.val < 256
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 020 h3 [range] e2.x3.val < 256
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 021 h4 [range] e2.x4.val < 256
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 022 h5 [range] e2.x5.val < 256
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 023 h6 [range] e2.x6.val < 256
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 024 h7 [range] e2.x7.val < 256
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 025 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
-ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 026 h_op2_ne [bridge] divu_input.r2_val.toNat ≠ 0
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 007 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 009 r_a [other] ℕ
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIVU
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 011 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state divu_input.r1_val divu_input.r2_
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 013 h0 [range] bus.e2.x0.val < 256
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 014 h1 [range] bus.e2.x1.val < 256
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 015 h2 [range] bus.e2.x2.val < 256
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 016 h3 [range] bus.e2.x3.val < 256
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 017 h4 [range] bus.e2.x4.val < 256
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 018 h5 [range] bus.e2.x5.val < 256
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 019 h6 [range] bus.e2.x6.val < 256
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 020 h7 [range] bus.e2.x7.val < 256
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 021 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.FromTrust.Divu.equiv_DIVU_from_trust 022 h_op2_ne [bridge] divu_input.r2_val.toNat ≠ 0
 ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 001 divuw_input [other] PureSpec.DivuwInput
 ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 002 r1 [other] regidx
 ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 003 r2 [other] regidx
 ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 004 rd [other] regidx
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 005 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 006 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 007 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 008 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 009 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 010 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 011 v [validator] Valid_ArithDiv C FGL FGL
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 012 r_a [other] ℕ
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 014 h_main_op_divuw [match] m.op r_main = OP_DIVU_W
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 015 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state divuw_input.r1_val divuw_input.r
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 017 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 018 _ [other] not class #6b — bus encoding / SPEC-PRE / -- operand bridge in W-form
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 019 h_sext_choice [other] ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧ (v.a_0 r_a).v
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 020 h_rs1_value [bridge] (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat = (v.c_0 r_a).val + (v.c_
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 021 h_rs2_value [bridge] (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat = (v.b_0 r_a).val + (v.b_
-ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 022 h_op2_ne [bridge] (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat ≠ 0
+ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 007 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 009 r_a [other] ℕ
+ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIVU_W
+ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 011 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
+ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state divuw_input.r1_val divuw_input.r
+ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 013 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 014 _ [other] not class #6b — bus encoding / SPEC-PRE / -- operand bridge in W-form
+ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 015 h_sext_choice [other] ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0)
+ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 016 h_rs1_value [bridge] (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat = (v.c_0 r_a).val + (v.c_
+ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 017 h_rs2_value [bridge] (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat = (v.b_0 r_a).val + (v.b_
+ZiskFv.Compliance.FromTrust.Divuw.equiv_DIVUW_from_trust 018 h_op2_ne [bridge] (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat ≠ 0
 ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 001 divw_input [other] PureSpec.DivwInput
 ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 002 r1 [other] regidx
 ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 003 r2 [other] regidx
 ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 004 rd [other] regidx
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 005 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 006 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 007 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 008 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 009 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 010 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 011 v [validator] Valid_ArithDiv C FGL FGL
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 012 r_a [other] ℕ
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 014 h_main_op_divw [match] m.op r_main = OP_DIV_W
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 015 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state divw_input.r1_val divw_input.r2_
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 017 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 018 _ [other] CIRCUIT-CONSTRAINT — caller-supplied
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 019 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a = 1
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 020 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 021 h_nr_bool [other] v.nr r_a = 0 ∨ v.nr r_a = 1
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 022 h_np_xor [other] toIntZ (v.np r_a) = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 023 h_sext_choice [other] ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧ (v.a_0 r_a).v
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 024 h_rs1_value [bridge] (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt = ((v.c_0 r_a).val + (v.c_
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 025 h_rs2_value [bridge] (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt = ((v.b_0 r_a).val + (v.b_
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 026 h_op2_ne [bridge] Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32
-ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 027 h_no_overflow [bridge] ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31) ∧ Sail
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 007 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 009 r_a [other] ℕ
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV_W
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 011 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state divw_input.r1_val divw_input.r2_
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 013 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 014 _ [other] CIRCUIT-CONSTRAINT — caller-supplied
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 015 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a = 1
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 016 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 017 h_nr_bool [other] v.nr r_a = 0 ∨ v.nr r_a = 1
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 018 h_np_xor [other] toIntZ (v.np r_a) = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 019 h_sext_choice [other] ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0)
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 020 h_rs1_value [bridge] (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt = ((v.c_0 r_a).val + (v.c_
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 021 h_rs2_value [bridge] (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt = ((v.b_0 r_a).val + (v.b_
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 022 h_op2_ne [bridge] Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32
+ZiskFv.Compliance.FromTrust.Divw.equiv_DIVW_from_trust 023 h_no_overflow [bridge] ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31) ∧ Sail
 ZiskFv.Compliance.FromTrust.Fence.equiv_FENCE_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Fence.equiv_FENCE_from_trust 001 fence_input [other] PureSpec.FenceInput
 ZiskFv.Compliance.FromTrust.Fence.equiv_FENCE_from_trust 002 fm [other] BitVec 4
@@ -323,10 +281,9 @@ ZiskFv.Compliance.FromTrust.Fence.equiv_FENCE_from_trust 007 main [validator] Va
 ZiskFv.Compliance.FromTrust.Fence.equiv_FENCE_from_trust 008 r_main [row] ℕ
 ZiskFv.Compliance.FromTrust.Fence.equiv_FENCE_from_trust 009 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
 ZiskFv.Compliance.FromTrust.Fence.equiv_FENCE_from_trust 010 _ [other] Compliance-handshake; tracked here -- for uniformity but not consumed by the pro
-ZiskFv.Compliance.FromTrust.Fence.equiv_FENCE_from_trust 011 _h_main_active [match] main.is_external_op r_main = 0
-ZiskFv.Compliance.FromTrust.Fence.equiv_FENCE_from_trust 012 _h_main_op_fence [match] main.op r_main = OP_FLAG
-ZiskFv.Compliance.FromTrust.Fence.equiv_FENCE_from_trust 013 _ [other] 6 fields, see Promises/Fence.lean
-ZiskFv.Compliance.FromTrust.Fence.equiv_FENCE_from_trust 014 promises [transpile] ZiskFv.Equivalence.Promises.FencePromises state fence_input.PC (PureSpec.execute
+ZiskFv.Compliance.FromTrust.Fence.equiv_FENCE_from_trust 011 _pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_FLAG
+ZiskFv.Compliance.FromTrust.Fence.equiv_FENCE_from_trust 012 _ [other] 6 fields, see Promises/Fence.lean
+ZiskFv.Compliance.FromTrust.Fence.equiv_FENCE_from_trust 013 promises [transpile] ZiskFv.Equivalence.Promises.FencePromises state fence_input.PC (PureSpec.execute
 ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 001 jal_input [other] PureSpec.JalInput
 ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 002 imm [other] BitVec 21
@@ -338,15 +295,14 @@ ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 007 next_pc [other] FGL
 ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
 ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 009 e_rd [entry] Interaction.MemoryBusEntry FGL
 ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 010 nextPC_val [other] BitVec 64
-ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 011 h_main_active [match] m.is_external_op r_main = 0
-ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 012 h_main_op_jal [match] m.op r_main = OP_FLAG
-ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 013 h_jal_subset [other] ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc
-ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 014 promises [transpile] ZiskFv.Equivalence.Promises.JumpPromises state jal_input.PC jal_input.rd misa_va
-ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 015 h_input_imm [other] jal_input.imm = imm
-ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 016 h_not_throws [other] (PureSpec.execute_JAL_pure jal_input).throws = false
-ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 017 h_pc_bound [other] jal_input.PC.toNat < GL_prime - 4
-ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 018 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
-ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 019 h_pc_offset_lt_2_32 [range] (jal_input.PC + 4#64).toNat < 4294967296
+ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 011 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG
+ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 012 h_jal_subset [other] ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc
+ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 013 promises [transpile] ZiskFv.Equivalence.Promises.JumpPromises state jal_input.PC jal_input.rd misa_va
+ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 014 h_input_imm [other] jal_input.imm = imm
+ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 015 h_not_throws [other] (PureSpec.execute_JAL_pure jal_input).throws = false
+ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 016 h_pc_bound [other] jal_input.PC.toNat < GL_prime - 4
+ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 017 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
+ZiskFv.Compliance.FromTrust.Jal.equiv_JAL_from_trust 018 h_pc_offset_lt_2_32 [range] (jal_input.PC + 4#64).toNat < 4294967296
 ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 001 jalr_input [other] PureSpec.JalrInput
 ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 002 imm [other] BitVec 12
@@ -360,117 +316,75 @@ ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 009 nextPC_val [other] Bi
 ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 010 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 011 r_main [row] ℕ
 ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 012 next_pc [other] FGL
-ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 013 h_main_active [match] m.is_external_op r_main = 0
-ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 014 h_main_op_jalr [match] m.op r_main = OP_COPYB
-ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 015 h_jalr_subset [other] ZiskFv.Tactics.JumpArchetype.jalr_subset_holds m r_main next_pc
-ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 016 promises [transpile] ZiskFv.Equivalence.Promises.JumpPromises state jalr_input.PC jalr_input.rd misa_
-ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 017 h_input_imm [other] jalr_input.imm = imm
-ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 018 h_input_rs1 [state] read_xreg (regidx_to_fin rs1) state = EStateM.Result.ok jalr_input.rs1_val state
-ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 019 h_cur_privilege [other] Sail.readReg Register.cur_privilege state = EStateM.Result.ok Privilege.Machine 
-ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 020 h_mseccfg [other] Sail.readReg Register.mseccfg state = EStateM.Result.ok mseccfg state
-ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 021 h_pc_bound [other] jalr_input.PC.toNat < GL_prime - 4
-ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 022 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
-ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 023 h_pc_offset_lt_2_32 [range] (jalr_input.PC + 4#64).toNat < 4294967296
+ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 013 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB
+ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 014 h_jalr_subset [other] ZiskFv.Tactics.JumpArchetype.jalr_subset_holds m r_main next_pc
+ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 015 promises [transpile] ZiskFv.Equivalence.Promises.JumpPromises state jalr_input.PC jalr_input.rd misa_
+ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 016 h_input_imm [other] jalr_input.imm = imm
+ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 017 h_input_rs1 [state] read_xreg (regidx_to_fin rs1) state = EStateM.Result.ok jalr_input.rs1_val state
+ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 018 h_cur_privilege [other] Sail.readReg Register.cur_privilege state = EStateM.Result.ok Privilege.Machine 
+ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 019 h_mseccfg [other] Sail.readReg Register.mseccfg state = EStateM.Result.ok mseccfg state
+ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 020 h_pc_bound [other] jalr_input.PC.toNat < GL_prime - 4
+ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 021 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
+ZiskFv.Compliance.FromTrust.Jalr.equiv_JALR_from_trust 022 h_pc_offset_lt_2_32 [range] (jalr_input.PC + 4#64).toNat < 4294967296
 ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 001 lb_input [other] PureSpec.LbInput
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 002 mstatus [other] RegisterType Register.mstatus
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 003 pmaRegion [other] PMA_Region
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 004 misa [other] RegisterType Register.misa
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 005 mseccfg [other] RegisterType Register.mseccfg
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 006 main [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 007 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 008 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 009 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 010 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 011 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 012 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 013 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 014 _ [other] Compliance ROM handshake
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 015 h_main_active [match] main.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 016 h_main_op [match] main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_B
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 017 _ [other] 12 fields, see Promises/Load.lean
-ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 018 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state mstatus pmaRegion misa mseccfg (P
+ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 002 regs [other] ZiskFv.Compliance.ModeRegsFull
+ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 004 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 005 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 006 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
+ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 008 _ [other] Compliance ROM handshake
+ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B
+ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 010 _ [other] 12 fields, see Promises/Load.lean
+ZiskFv.Compliance.FromTrust.Lb.equiv_LB_from_trust 011 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.
 ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 001 lbu_input [other] PureSpec.LbuInput
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 002 mstatus [other] RegisterType Register.mstatus
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 003 pmaRegion [other] PMA_Region
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 004 misa [other] RegisterType Register.misa
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 005 mseccfg [other] RegisterType Register.mseccfg
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 006 main [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 007 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 008 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 009 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 010 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 011 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 012 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 013 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 014 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 015 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 016 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 017 _ [other] Compliance ROM handshake
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 018 h_main_active [match] main.is_external_op r_main = 0
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 019 h_main_op_lbu [match] main.op r_main = OP_COPYB
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 020 h_width [match] main.ind_width r_main = (1 : FGL)
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 021 _ [other] 12 fields, see Promises/Load.lean
-ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 022 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state mstatus pmaRegion misa mseccfg (P
+ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 002 regs [other] ZiskFv.Compliance.ModeRegsFull
+ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 004 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 005 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 006 align [other] ZiskFv.Compliance.MemAlignWitness C
+ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 008 _ [other] Compliance ROM handshake
+ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
+ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 010 h_width [match] main.ind_width r_main = (1 : FGL)
+ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 011 _ [other] 12 fields, see Promises/Load.lean
+ZiskFv.Compliance.FromTrust.Lbu.equiv_LBU_from_trust 012 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.
 ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 001 ld_input [other] PureSpec.LdInput
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 002 mstatus [other] RegisterType Register.mstatus
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 003 pmaRegion [other] PMA_Region
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 004 misa [other] RegisterType Register.misa
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 005 mseccfg [other] RegisterType Register.mseccfg
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 006 _ [other] main, mem
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 007 main [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 008 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 009 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 010 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 011 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 012 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 013 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 014 h_main_active [match] main.is_external_op r_main = 0
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 015 h_main_op_ld [match] main.op r_main = OP_COPYB
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 016 _ [other] 12 fields, see Promises/Load.lean
-ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 017 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state mstatus pmaRegion misa mseccfg (P
+ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 002 regs [other] ZiskFv.Compliance.ModeRegsFull
+ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 003 _ [other] main, mem
+ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 004 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 005 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 006 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 008 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
+ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 009 _ [other] 12 fields, see Promises/Load.lean
+ZiskFv.Compliance.FromTrust.Ld.equiv_LD_from_trust 010 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.
 ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 001 lh_input [other] PureSpec.LhInput
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 002 mstatus [other] RegisterType Register.mstatus
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 003 pmaRegion [other] PMA_Region
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 004 misa [other] RegisterType Register.misa
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 005 mseccfg [other] RegisterType Register.mseccfg
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 006 main [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 007 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 008 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 009 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 010 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 011 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 012 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 013 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 014 _ [other] Compliance ROM handshake
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 015 h_main_active [match] main.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 016 h_main_op [match] main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_H
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 017 _ [other] 12 fields, see Promises/Load.lean
-ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 018 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state mstatus pmaRegion misa mseccfg (P
+ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 002 regs [other] ZiskFv.Compliance.ModeRegsFull
+ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 004 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 005 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 006 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
+ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 008 _ [other] Compliance ROM handshake
+ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_H
+ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 010 _ [other] 12 fields, see Promises/Load.lean
+ZiskFv.Compliance.FromTrust.Lh.equiv_LH_from_trust 011 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.
 ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 001 lhu_input [other] PureSpec.LhuInput
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 002 mstatus [other] RegisterType Register.mstatus
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 003 pmaRegion [other] PMA_Region
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 004 misa [other] RegisterType Register.misa
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 005 mseccfg [other] RegisterType Register.mseccfg
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 006 main [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 007 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 008 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 009 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 010 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 011 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 012 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 013 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 014 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 015 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 016 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 017 h_main_active [match] main.is_external_op r_main = 0
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 018 h_main_op_lhu [match] main.op r_main = OP_COPYB
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 019 h_width [match] main.ind_width r_main = (2 : FGL)
-ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 020 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state mstatus pmaRegion misa mseccfg (P
+ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 002 regs [other] ZiskFv.Compliance.ModeRegsFull
+ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 004 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 005 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 006 align [other] ZiskFv.Compliance.MemAlignWitness C
+ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 008 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
+ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 009 h_width [match] main.ind_width r_main = (2 : FGL)
+ZiskFv.Compliance.FromTrust.Lhu.equiv_LHU_from_trust 010 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.
 ZiskFv.Compliance.FromTrust.Lui.equiv_LUI_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Lui.equiv_LUI_from_trust 001 lui_input [other] PureSpec.LuiInput
 ZiskFv.Compliance.FromTrust.Lui.equiv_LUI_from_trust 002 imm [other] BitVec 20
@@ -481,50 +395,32 @@ ZiskFv.Compliance.FromTrust.Lui.equiv_LUI_from_trust 006 next_pc [other] FGL
 ZiskFv.Compliance.FromTrust.Lui.equiv_LUI_from_trust 007 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
 ZiskFv.Compliance.FromTrust.Lui.equiv_LUI_from_trust 008 e_rd [entry] Interaction.MemoryBusEntry FGL
 ZiskFv.Compliance.FromTrust.Lui.equiv_LUI_from_trust 009 _ [other] consumed by the UTypeHelpers helper that fires `transpile_LUI`
-ZiskFv.Compliance.FromTrust.Lui.equiv_LUI_from_trust 010 h_main_active [match] m.is_external_op r_main = 0
-ZiskFv.Compliance.FromTrust.Lui.equiv_LUI_from_trust 011 h_main_op_lui [match] m.op r_main = OP_COPYB
-ZiskFv.Compliance.FromTrust.Lui.equiv_LUI_from_trust 012 h_lui_subset [other] lui_subset_holds m r_main next_pc
-ZiskFv.Compliance.FromTrust.Lui.equiv_LUI_from_trust 013 promises [transpile] ZiskFv.Equivalence.Promises.UTypePromises state lui_input.imm lui_input.rd lui_i
+ZiskFv.Compliance.FromTrust.Lui.equiv_LUI_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB
+ZiskFv.Compliance.FromTrust.Lui.equiv_LUI_from_trust 011 h_lui_subset [other] lui_subset_holds m r_main next_pc
+ZiskFv.Compliance.FromTrust.Lui.equiv_LUI_from_trust 012 promises [transpile] ZiskFv.Equivalence.Promises.UTypePromises state lui_input.imm lui_input.rd lui_i
 ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 001 lw_input [other] PureSpec.LwInput
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 002 mstatus [other] RegisterType Register.mstatus
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 003 pmaRegion [other] PMA_Region
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 004 misa [other] RegisterType Register.misa
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 005 mseccfg [other] RegisterType Register.mseccfg
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 006 main [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 007 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 008 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 009 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 010 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 011 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 012 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 013 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 014 _ [other] Compliance ROM handshake
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 015 h_main_active [match] main.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 016 h_main_op [match] main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_W
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 017 _ [other] 12 fields, see Promises/Load.lean
-ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 018 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state mstatus pmaRegion misa mseccfg (P
+ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 002 regs [other] ZiskFv.Compliance.ModeRegsFull
+ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 004 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 005 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 006 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL
+ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 008 _ [other] Compliance ROM handshake
+ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W
+ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 010 _ [other] 12 fields, see Promises/Load.lean
+ZiskFv.Compliance.FromTrust.Lw.equiv_LW_from_trust 011 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.
 ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 001 lwu_input [other] PureSpec.LwuInput
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 002 mstatus [other] RegisterType Register.mstatus
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 003 pmaRegion [other] PMA_Region
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 004 misa [other] RegisterType Register.misa
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 005 mseccfg [other] RegisterType Register.mseccfg
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 006 main [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 007 mem [validator] Valid_Mem C FGL FGL
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 008 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 009 mab [validator] ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 010 marb [validator] ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 011 ma [validator] ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 012 h_low [other] ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 013 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 014 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 015 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 016 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 017 h_main_active [match] main.is_external_op r_main = 0
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 018 h_main_op_lwu [match] main.op r_main = OP_COPYB
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 019 h_width [match] main.ind_width r_main = (4 : FGL)
-ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 020 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state mstatus pmaRegion misa mseccfg (P
+ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 002 regs [other] ZiskFv.Compliance.ModeRegsFull
+ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 004 mem [validator] Valid_Mem C FGL FGL
+ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 005 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 006 align [other] ZiskFv.Compliance.MemAlignWitness C
+ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 008 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
+ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 009 h_width [match] main.ind_width r_main = (4 : FGL)
+ZiskFv.Compliance.FromTrust.Lwu.equiv_LWU_from_trust 010 promises [transpile] ZiskFv.Equivalence.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.
 ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 001 mul_input [other] PureSpec.MulInput
 ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 002 r1 [other] regidx
@@ -532,111 +428,91 @@ ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 003 r2 [other] regidx
 ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 004 rd [other] regidx
 ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 005 srs1 [other] Signedness
 ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 006 srs2 [other] Signedness
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 007 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 008 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 009 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 010 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 011 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 012 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 013 v [validator] Valid_ArithMul C FGL FGL
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 014 r_a [other] ℕ
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 015 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 016 h_main_op_mul [match] m.op r_main = OP_MUL
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 017 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Arith v r_a)
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 018 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state mul_input.r1_val mul_input.r2_va
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 019 h0 [range] e2.x0.val < 256
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 020 h1 [range] e2.x1.val < 256
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 021 h2 [range] e2.x2.val < 256
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 022 h3 [range] e2.x3.val < 256
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 023 h4 [range] e2.x4.val < 256
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 024 h5 [range] e2.x5.val < 256
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 025 h6 [range] e2.x6.val < 256
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 026 h7 [range] e2.x7.val < 256
-ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 027 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 008 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 009 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 010 v [validator] Valid_ArithMul C FGL FGL
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 011 r_a [other] ℕ
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 012 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 013 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Arith v r_a)
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 014 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state mul_input.r1_val mul_input.r2_va
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 015 h0 [range] bus.e2.x0.val < 256
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 016 h1 [range] bus.e2.x1.val < 256
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 017 h2 [range] bus.e2.x2.val < 256
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 018 h3 [range] bus.e2.x3.val < 256
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 019 h4 [range] bus.e2.x4.val < 256
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 020 h5 [range] bus.e2.x5.val < 256
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 021 h6 [range] bus.e2.x6.val < 256
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 022 h7 [range] bus.e2.x7.val < 256
+ZiskFv.Compliance.FromTrust.Mul.equiv_MUL_from_trust 023 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
 ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 001 mulh_input [other] PureSpec.MulhInput
 ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 002 r1 [other] regidx
 ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 003 r2 [other] regidx
 ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 004 rd [other] regidx
-ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 005 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 006 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 007 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 008 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 009 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 010 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 011 v [validator] Valid_ArithMul C FGL FGL
-ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 012 r_a [other] ℕ
-ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 014 h_main_op_mulh [match] m.op r_main = OP_MULH
-ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 015 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a)
-ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state mulh_input.r1_val mulh_input.r2_
-ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 017 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 007 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 008 v [validator] Valid_ArithMul C FGL FGL
+ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 009 r_a [other] ℕ
+ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULH
+ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a)
+ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state mulh_input.r1_val mulh_input.r2_
+ZiskFv.Compliance.FromTrust.MulH.equiv_MULH_from_trust 013 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
 ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 001 mulhsu_input [other] PureSpec.MulhsuInput
 ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 002 r1 [other] regidx
 ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 003 r2 [other] regidx
 ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 004 rd [other] regidx
-ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 005 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 006 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 007 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 008 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 009 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 010 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 011 v [validator] Valid_ArithMul C FGL FGL
-ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 012 r_a [other] ℕ
-ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 014 h_main_op_mulhsu [match] m.op r_main = OP_MULSUH
-ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 015 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a)
-ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state mulhsu_input.r1_val mulhsu_input
-ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 017 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 007 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 008 v [validator] Valid_ArithMul C FGL FGL
+ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 009 r_a [other] ℕ
+ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULSUH
+ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a)
+ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state mulhsu_input.r1_val mulhsu_input
+ZiskFv.Compliance.FromTrust.MulHSU.equiv_MULHSU_from_trust 013 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
 ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 001 mulhu_input [other] PureSpec.MulhuInput
 ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 002 r1 [other] regidx
 ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 003 r2 [other] regidx
 ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 004 rd [other] regidx
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 005 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 006 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 007 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 008 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 009 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 010 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 011 v [validator] Valid_ArithMul C FGL FGL
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 012 r_a [other] ℕ
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 014 h_main_op_mulhu [match] m.op r_main = OP_MULUH
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 015 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a)
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state mulhu_input.r1_val mulhu_input.r
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 017 h0 [range] e2.x0.val < 256
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 018 h1 [range] e2.x1.val < 256
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 019 h2 [range] e2.x2.val < 256
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 020 h3 [range] e2.x3.val < 256
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 021 h4 [range] e2.x4.val < 256
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 022 h5 [range] e2.x5.val < 256
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 023 h6 [range] e2.x6.val < 256
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 024 h7 [range] e2.x7.val < 256
-ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 025 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 007 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 008 v [validator] Valid_ArithMul C FGL FGL
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 009 r_a [other] ℕ
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULUH
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a)
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state mulhu_input.r1_val mulhu_input.r
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 013 h0 [range] bus.e2.x0.val < 256
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 014 h1 [range] bus.e2.x1.val < 256
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 015 h2 [range] bus.e2.x2.val < 256
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 016 h3 [range] bus.e2.x3.val < 256
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 017 h4 [range] bus.e2.x4.val < 256
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 018 h5 [range] bus.e2.x5.val < 256
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 019 h6 [range] bus.e2.x6.val < 256
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 020 h7 [range] bus.e2.x7.val < 256
+ZiskFv.Compliance.FromTrust.MulHU.equiv_MULHU_from_trust 021 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
 ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 001 mulw_input [other] PureSpec.MulwInput
 ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 002 r1 [other] regidx
 ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 003 r2 [other] regidx
 ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 004 rd [other] regidx
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 005 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 006 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 007 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 008 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 009 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 010 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 011 v [validator] Valid_ArithMul C FGL FGL
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 012 r_a [other] ℕ
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 014 h_main_op_mulw [match] m.op r_main = OP_MUL_W
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 015 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Arith v r_a)
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state mulw_input.r1_val mulw_input.r2_
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 017 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 018 _ [other] W-mode sign-extension + W-form operand bridges
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 019 h_sext_choice [other] ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧ (v.c_0 r_a).v
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 020 h_rs1_value [bridge] (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt = ((v.a_0 r_a).val + (v.a_
-ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 021 h_rs2_value [bridge] (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt = ((v.b_0 r_a).val + (v.b_
+ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 007 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 008 v [validator] Valid_ArithMul C FGL FGL
+ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 009 r_a [other] ℕ
+ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL_W
+ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 011 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Arith v r_a)
+ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state mulw_input.r1_val mulw_input.r2_
+ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 013 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 014 _ [other] W-mode sign-extension + W-form operand bridges
+ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 015 h_sext_choice [other] ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0)
+ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 016 h_rs1_value [bridge] (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt = ((v.a_0 r_a).val + (v.a_
+ZiskFv.Compliance.FromTrust.MulW.equiv_MULW_from_trust 017 h_rs2_value [bridge] (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt = ((v.b_0 r_a).val + (v.b_
 ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 001 or_input [other] PureSpec.OrInput
 ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 002 r1 [other] regidx
@@ -647,15 +523,11 @@ ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 006 _ [other] AND/ANDI/OR/ORI
 ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 007 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 008 v [validator] Valid_Binary C FGL FGL
 ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 009 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 010 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 011 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 012 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 013 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 014 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 015 h_main_op_or [match] m.op r_main = OP_OR
-ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 016 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 017 _ [other] 15 fields
-ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 018 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state or_input.r1_val or_input.r2_val 
+ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 010 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 011 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR
+ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 012 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 013 _ [other] 15 fields
+ZiskFv.Compliance.FromTrust.Or.equiv_OR_from_trust 014 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state or_input.r1_val or_input.r2_val 
 ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 001 ori_input [other] PureSpec.OriInput
 ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 002 r1 [other] regidx
@@ -664,172 +536,132 @@ ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 004 imm [other] BitVec 12
 ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 006 v [validator] Valid_Binary C FGL FGL
 ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 013 h_main_op_ori [match] m.op r_main = OP_OR
-ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 014 h_ori_subset [other] itype_imm_subset_holds_main m r_main ori_input.imm
-ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state ori_input.r1_val ori_input.imm o
+ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR
+ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 010 h_ori_subset [other] itype_imm_subset_holds_main m r_main ori_input.imm
+ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 011 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Ori.equiv_ORI_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state ori_input.r1_val ori_input.imm o
 ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 001 rem_input [other] PureSpec.RemInput
 ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 002 r1 [other] regidx
 ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 003 r2 [other] regidx
 ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 004 rd [other] regidx
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 005 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 006 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 007 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 008 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 009 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 010 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 011 v [validator] Valid_ArithDiv C FGL FGL
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 012 r_a [other] ℕ
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 014 h_main_op_rem [match] m.op r_main = OP_REM
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 015 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state rem_input.r1_val rem_input.r2_va
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 017 h_op2_ne [bridge] rem_input.r2_val.toInt ≠ 0
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 018 h_no_overflow [bridge] ¬ (rem_input.r1_val.toInt = -(2:ℤ)^63 ∧ rem_input.r2_val.toInt = -1)
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 019 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 020 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a = 1
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 021 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 022 h_nr_bool [other] v.nr r_a = 0 ∨ v.nr r_a = 1
-ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 023 h_np_xor [other] toIntZ (v.np r_a) = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 007 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 009 r_a [other] ℕ
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_REM
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state rem_input.r1_val rem_input.r2_va
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 013 h_op2_ne [bridge] rem_input.r2_val.toInt ≠ 0
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 014 h_no_overflow [bridge] ¬ (rem_input.r1_val.toInt = -(2:ℤ)^63 ∧ rem_input.r2_val.toInt = -1)
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 015 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 016 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a = 1
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 017 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 018 h_nr_bool [other] v.nr r_a = 0 ∨ v.nr r_a = 1
+ZiskFv.Compliance.FromTrust.Rem.equiv_REM_from_trust 019 h_np_xor [other] toIntZ (v.np r_a) = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a
 ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 001 remu_input [other] PureSpec.RemuInput
 ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 002 r1 [other] regidx
 ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 003 r2 [other] regidx
 ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 004 rd [other] regidx
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 005 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 006 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 007 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 008 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 009 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 010 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 011 v [validator] Valid_ArithDiv C FGL FGL
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 012 r_a [other] ℕ
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 014 h_main_op_remu [match] m.op r_main = OP_REMU
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 015 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state remu_input.r1_val remu_input.r2_
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 017 h0 [range] e2.x0.val < 256
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 018 h1 [range] e2.x1.val < 256
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 019 h2 [range] e2.x2.val < 256
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 020 h3 [range] e2.x3.val < 256
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 021 h4 [range] e2.x4.val < 256
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 022 h5 [range] e2.x5.val < 256
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 023 h6 [range] e2.x6.val < 256
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 024 h7 [range] e2.x7.val < 256
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 025 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
-ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 026 h_op2_ne [bridge] remu_input.r2_val.toNat ≠ 0
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 007 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 009 r_a [other] ℕ
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state remu_input.r1_val remu_input.r2_
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 013 h0 [range] bus.e2.x0.val < 256
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 014 h1 [range] bus.e2.x1.val < 256
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 015 h2 [range] bus.e2.x2.val < 256
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 016 h3 [range] bus.e2.x3.val < 256
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 017 h4 [range] bus.e2.x4.val < 256
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 018 h5 [range] bus.e2.x5.val < 256
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 019 h6 [range] bus.e2.x6.val < 256
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 020 h7 [range] bus.e2.x7.val < 256
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 021 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.FromTrust.Remu.equiv_REMU_from_trust 022 h_op2_ne [bridge] remu_input.r2_val.toNat ≠ 0
 ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 001 remuw_input [other] PureSpec.RemuwInput
 ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 002 r1 [other] regidx
 ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 003 r2 [other] regidx
 ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 004 rd [other] regidx
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 005 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 006 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 007 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 008 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 009 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 010 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 011 v [validator] Valid_ArithDiv C FGL FGL
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 012 r_a [other] ℕ
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 014 h_main_op_remuw [match] m.op r_main = OP_REMU_W
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 015 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state remuw_input.r1_val remuw_input.r
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 017 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 018 _ [other] mirror DIVUW
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 019 h_sext_choice [other] ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧ (v.d_0 r_a).v
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 020 h_rs1_value [bridge] (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat = (v.c_0 r_a).val + (v.c_
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 021 h_rs2_value [bridge] (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat = (v.b_0 r_a).val + (v.b_
-ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 022 h_op2_ne [bridge] (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat ≠ 0
+ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 007 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 009 r_a [other] ℕ
+ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU_W
+ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
+ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state remuw_input.r1_val remuw_input.r
+ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 013 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 014 _ [other] mirror DIVUW
+ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 015 h_sext_choice [other] ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0)
+ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 016 h_rs1_value [bridge] (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat = (v.c_0 r_a).val + (v.c_
+ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 017 h_rs2_value [bridge] (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat = (v.b_0 r_a).val + (v.b_
+ZiskFv.Compliance.FromTrust.Remuw.equiv_REMUW_from_trust 018 h_op2_ne [bridge] (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat ≠ 0
 ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 001 remw_input [other] PureSpec.RemwInput
 ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 002 r1 [other] regidx
 ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 003 r2 [other] regidx
 ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 004 rd [other] regidx
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 005 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 006 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 007 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 008 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 009 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 010 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 011 v [validator] Valid_ArithDiv C FGL FGL
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 012 r_a [other] ℕ
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 014 h_main_op_remw [match] m.op r_main = OP_REM_W
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 015 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state remw_input.r1_val remw_input.r2_
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 017 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 018 _ [other] CIRCUIT-CONSTRAINT — caller-supplied
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 019 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a = 1
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 020 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 021 h_nr_bool [other] v.nr r_a = 0 ∨ v.nr r_a = 1
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 022 h_np_xor [other] toIntZ (v.np r_a) = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 023 h_sext_choice [other] ((e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0) ∧ (v.d_0 r_a).v
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 024 h_rs1_value [bridge] (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt = ((v.c_0 r_a).val + (v.c_
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 025 h_rs2_value [bridge] (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt = ((v.b_0 r_a).val + (v.b_
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 026 h_op2_ne [bridge] Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32
-ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 027 h_no_overflow_w [bridge] ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31)) ∧ Sa
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 007 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 009 r_a [other] ℕ
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_REM_W
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state remw_input.r1_val remw_input.r2_
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 013 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 014 _ [other] CIRCUIT-CONSTRAINT — caller-supplied
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 015 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a = 1
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 016 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 017 h_nr_bool [other] v.nr r_a = 0 ∨ v.nr r_a = 1
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 018 h_np_xor [other] toIntZ (v.np r_a) = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 019 h_sext_choice [other] ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0)
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 020 h_rs1_value [bridge] (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt = ((v.c_0 r_a).val + (v.c_
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 021 h_rs2_value [bridge] (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt = ((v.b_0 r_a).val + (v.b_
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 022 h_op2_ne [bridge] Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32
+ZiskFv.Compliance.FromTrust.Remw.equiv_REMW_from_trust 023 h_no_overflow_w [bridge] ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31)) ∧ Sa
 ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 001 sb_input [other] PureSpec.SbInput
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 002 mstatus [other] RegisterType Register.mstatus
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 003 pmaRegion [other] PMA_Region
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 004 misa [other] RegisterType Register.misa
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 005 mseccfg [other] RegisterType Register.mseccfg
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 006 main [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 012 _ [other] consumed by the -- StoreHelpers helper that transitively fires `transpile_SB` an
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 013 h_main_active [match] main.is_external_op r_main = 0
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 014 h_main_op [match] main.op r_main = OP_COPYB
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 015 h_main_ind_width [match] main.ind_width r_main = 1
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 016 _ [other] also consumed by the helper
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 017 h_opcode_assumptions [other] PureSpec.sb_state_assumptions sb_input state
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 018 _ [other] 12 fields
-ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 019 promises [transpile] ZiskFv.Equivalence.Promises.StorePromises state mstatus pmaRegion misa mseccfg (
+ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 002 regs [other] ZiskFv.Compliance.ModeRegsFull
+ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 004 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 006 _ [other] consumed by the StoreHelpers -- helper that transitively fires `transpile_SB` an
+ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 007 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
+ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 008 _ [other] per-opcode literal
+ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 009 h_main_ind_width [match] main.ind_width r_main = 1
+ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 010 _ [other] also consumed by the helper
+ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 011 h_opcode_assumptions [other] PureSpec.sb_state_assumptions sb_input state
+ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 012 _ [other] 12 fields
+ZiskFv.Compliance.FromTrust.Sb.equiv_SB_from_trust 013 promises [transpile] ZiskFv.Equivalence.Promises.StorePromises state regs.mstatus regs.pmaRegion regs
 ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 001 sd_input [other] PureSpec.SdInput
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 002 mstatus [other] RegisterType Register.mstatus
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 003 pmaRegion [other] PMA_Region
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 004 misa [other] RegisterType Register.misa
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 005 mseccfg [other] RegisterType Register.mseccfg
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 006 main [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 012 h_main_active [match] main.is_external_op r_main = 0
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 013 h_main_op [match] main.op r_main = OP_COPYB
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 014 h_opcode_assumptions [other] PureSpec.sd_state_assumptions sd_input state
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 015 _ [other] 12 fields
-ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 016 promises [transpile] ZiskFv.Equivalence.Promises.StorePromises state mstatus pmaRegion misa mseccfg (
+ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 002 regs [other] ZiskFv.Compliance.ModeRegsFull
+ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 004 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 006 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
+ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 007 h_opcode_assumptions [other] PureSpec.sd_state_assumptions sd_input state
+ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 008 _ [other] 12 fields
+ZiskFv.Compliance.FromTrust.Sd.equiv_SD_from_trust 009 promises [transpile] ZiskFv.Equivalence.Promises.StorePromises state regs.mstatus regs.pmaRegion regs
 ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 001 sh_input [other] PureSpec.ShInput
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 002 mstatus [other] RegisterType Register.mstatus
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 003 pmaRegion [other] PMA_Region
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 004 misa [other] RegisterType Register.misa
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 005 mseccfg [other] RegisterType Register.mseccfg
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 006 main [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 012 h_main_active [match] main.is_external_op r_main = 0
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 013 h_main_op [match] main.op r_main = OP_COPYB
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 014 h_main_ind_width [match] main.ind_width r_main = 2
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 015 h_opcode_assumptions [other] PureSpec.sh_state_assumptions sh_input state
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 016 _ [other] 12 fields
-ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 017 promises [transpile] ZiskFv.Equivalence.Promises.StorePromises state mstatus pmaRegion misa mseccfg (
+ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 002 regs [other] ZiskFv.Compliance.ModeRegsFull
+ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 004 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 006 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
+ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 007 h_main_ind_width [match] main.ind_width r_main = 2
+ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 008 h_opcode_assumptions [other] PureSpec.sh_state_assumptions sh_input state
+ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 009 _ [other] 12 fields
+ZiskFv.Compliance.FromTrust.Sh.equiv_SH_from_trust 010 promises [transpile] ZiskFv.Equivalence.Promises.StorePromises state regs.mstatus regs.pmaRegion regs
 ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 001 sllw_input [other] PureSpec.SllwInput
 ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 002 r1 [other] regidx
@@ -838,28 +670,24 @@ ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 004 rd [other] regidx
 ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 006 v [validator] Valid_BinaryExtension C FGL FGL
 ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 012 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok sllw_input.r1_val state
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 013 h_input_r2_sail [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok sllw_input.r2_val state
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 014 h_input_rd [transpile] sllw_input.rd = regidx_to_fin rd
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 015 h_input_pc [state] state.regs.get? Register.PC = .some sllw_input.PC
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 016 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 017 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 018 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 019 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 020 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 021 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 022 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 023 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 024 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 025 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 026 h_rd_idx [transpile] sllw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 027 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 028 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL_W
-ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 029 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 009 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok sllw_input.r1_val state
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 010 h_input_r2_sail [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok sllw_input.r2_val state
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 011 h_input_rd [transpile] sllw_input.rd = regidx_to_fin rd
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 012 h_input_pc [state] state.regs.get? Register.PC = .some sllw_input.PC
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 013 h_exec_len [bus_shape] bus.exec_row.length = 2
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 014 h_e0_mult [bus_shape] bus.exec_row[0]!.multiplicity = -1
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 015 h_e1_mult [bus_shape] bus.exec_row[1]!.multiplicity = 1
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 016 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (bus.exec_row[1]!.pc).val)) = (PureSp
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 017 h_m0_mult [bus_shape] bus.e0.multiplicity = -1
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 018 h_m0_as [bus_shape] bus.e0.as.val = 1
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 019 h_m1_mult [bus_shape] bus.e1.multiplicity = -1
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 020 h_m1_as [bus_shape] bus.e1.as.val = 1
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 021 h_m2_mult [bus_shape] bus.e2.multiplicity = 1
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 022 h_m2_as [bus_shape] bus.e2.as.val = 1
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 023 h_rd_idx [transpile] sllw_input.rd = Transpiler.wrap_to_regidx bus.e2.ptr
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 024 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL_W
+ZiskFv.Compliance.FromTrust.Shift.equiv_SLLW_from_trust 025 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
 ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 001 slliw_input [other] PureSpec.SlliwInput
 ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 002 r1 [other] regidx
@@ -867,14 +695,10 @@ ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 003 rd [other] regidx
 ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 004 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 005 v [validator] Valid_BinaryExtension C FGL FGL
 ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 006 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 007 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 008 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 009 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 010 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 011 promises [bridge] ZiskFv.Equivalence.Promises.ShiftWImmPromises state slliw_input.r1_val slliw_inp
-ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 013 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL_W
-ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 014 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 008 promises [bridge] ZiskFv.Equivalence.Promises.ShiftWImmPromises state slliw_input.r1_val slliw_inp
+ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL_W
+ZiskFv.Compliance.FromTrust.ShiftLI.equiv_SLLIW_from_trust 010 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
 ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 001 srlw_input [other] PureSpec.SrlwInput
 ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 002 r1 [other] regidx
@@ -883,28 +707,24 @@ ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 004 rd [other] regidx
 ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 006 v [validator] Valid_BinaryExtension C FGL FGL
 ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 012 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok srlw_input.r1_val state
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 013 h_input_r2_sail [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok srlw_input.r2_val state
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 014 h_input_rd [transpile] srlw_input.rd = regidx_to_fin rd
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 015 h_input_pc [state] state.regs.get? Register.PC = .some srlw_input.PC
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 016 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 017 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 018 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 019 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 020 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 021 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 022 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 023 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 024 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 025 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 026 h_rd_idx [transpile] srlw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 027 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 028 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL_W
-ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 029 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 009 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok srlw_input.r1_val state
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 010 h_input_r2_sail [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok srlw_input.r2_val state
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 011 h_input_rd [transpile] srlw_input.rd = regidx_to_fin rd
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 012 h_input_pc [state] state.regs.get? Register.PC = .some srlw_input.PC
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 013 h_exec_len [bus_shape] bus.exec_row.length = 2
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 014 h_e0_mult [bus_shape] bus.exec_row[0]!.multiplicity = -1
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 015 h_e1_mult [bus_shape] bus.exec_row[1]!.multiplicity = 1
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 016 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (bus.exec_row[1]!.pc).val)) = (PureSp
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 017 h_m0_mult [bus_shape] bus.e0.multiplicity = -1
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 018 h_m0_as [bus_shape] bus.e0.as.val = 1
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 019 h_m1_mult [bus_shape] bus.e1.multiplicity = -1
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 020 h_m1_as [bus_shape] bus.e1.as.val = 1
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 021 h_m2_mult [bus_shape] bus.e2.multiplicity = 1
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 022 h_m2_as [bus_shape] bus.e2.as.val = 1
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 023 h_rd_idx [transpile] srlw_input.rd = Transpiler.wrap_to_regidx bus.e2.ptr
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 024 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRL_W
+ZiskFv.Compliance.FromTrust.ShiftR.equiv_SRLW_from_trust 025 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
 ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 001 sraw_input [other] PureSpec.SrawInput
 ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 002 r1 [other] regidx
@@ -913,28 +733,24 @@ ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 004 rd [other] regidx
 ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 006 v [validator] Valid_BinaryExtension C FGL FGL
 ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 012 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok sraw_input.r1_val state
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 013 h_input_r2_sail [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok sraw_input.r2_val state
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 014 h_input_rd [transpile] sraw_input.rd = regidx_to_fin rd
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 015 h_input_pc [state] state.regs.get? Register.PC = .some sraw_input.PC
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 016 h_exec_len [bus_shape] exec_row.length = 2
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 017 h_e0_mult [bus_shape] exec_row[0]!.multiplicity = -1
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 018 h_e1_mult [bus_shape] exec_row[1]!.multiplicity = 1
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 019 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val)) = (PureSpec.e
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 020 h_m0_mult [bus_shape] e0.multiplicity = -1
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 021 h_m0_as [bus_shape] e0.as.val = 1
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 022 h_m1_mult [bus_shape] e1.multiplicity = -1
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 023 h_m1_as [bus_shape] e1.as.val = 1
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 024 h_m2_mult [bus_shape] e2.multiplicity = 1
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 025 h_m2_as [bus_shape] e2.as.val = 1
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 026 h_rd_idx [transpile] sraw_input.rd = Transpiler.wrap_to_regidx e2.ptr
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 027 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 028 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA_W
-ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 029 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 009 h_input_r1_sail [state] read_xreg (regidx_to_fin r1) state = EStateM.Result.ok sraw_input.r1_val state
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 010 h_input_r2_sail [state] read_xreg (regidx_to_fin r2) state = EStateM.Result.ok sraw_input.r2_val state
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 011 h_input_rd [transpile] sraw_input.rd = regidx_to_fin rd
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 012 h_input_pc [state] state.regs.get? Register.PC = .some sraw_input.PC
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 013 h_exec_len [bus_shape] bus.exec_row.length = 2
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 014 h_e0_mult [bus_shape] bus.exec_row[0]!.multiplicity = -1
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 015 h_e1_mult [bus_shape] bus.exec_row[1]!.multiplicity = 1
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 016 h_nextPC_matches [transpile] (register_type_pc_equiv ▸ (BitVec.ofNat 64 (bus.exec_row[1]!.pc).val)) = (PureSp
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 017 h_m0_mult [bus_shape] bus.e0.multiplicity = -1
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 018 h_m0_as [bus_shape] bus.e0.as.val = 1
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 019 h_m1_mult [bus_shape] bus.e1.multiplicity = -1
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 020 h_m1_as [bus_shape] bus.e1.as.val = 1
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 021 h_m2_mult [bus_shape] bus.e2.multiplicity = 1
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 022 h_m2_as [bus_shape] bus.e2.as.val = 1
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 023 h_rd_idx [transpile] sraw_input.rd = Transpiler.wrap_to_regidx bus.e2.ptr
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 024 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRA_W
+ZiskFv.Compliance.FromTrust.ShiftRA.equiv_SRAW_from_trust 025 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
 ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 001 sraiw_input [other] PureSpec.SraiwInput
 ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 002 r1 [other] regidx
@@ -942,14 +758,10 @@ ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 003 rd [other] regid
 ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 004 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 005 v [validator] Valid_BinaryExtension C FGL FGL
 ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 006 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 007 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 008 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 009 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 010 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 011 promises [bridge] ZiskFv.Equivalence.Promises.ShiftWImmPromises state sraiw_input.r1_val sraiw_inp
-ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 013 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA_W
-ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 014 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 008 promises [bridge] ZiskFv.Equivalence.Promises.ShiftWImmPromises state sraiw_input.r1_val sraiw_inp
+ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRA_W
+ZiskFv.Compliance.FromTrust.ShiftRAI.equiv_SRAIW_from_trust 010 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
 ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 001 srliw_input [other] PureSpec.SrliwInput
 ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 002 r1 [other] regidx
@@ -957,14 +769,10 @@ ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 003 rd [other] regid
 ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 004 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 005 v [validator] Valid_BinaryExtension C FGL FGL
 ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 006 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 007 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 008 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 009 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 010 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 011 promises [bridge] ZiskFv.Equivalence.Promises.ShiftWImmPromises state srliw_input.r1_val srliw_inp
-ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 013 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL_W
-ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 014 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 008 promises [bridge] ZiskFv.Equivalence.Promises.ShiftWImmPromises state srliw_input.r1_val srliw_inp
+ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRL_W
+ZiskFv.Compliance.FromTrust.ShiftRLI.equiv_SRLIW_from_trust 010 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
 ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 001 sll_input [other] PureSpec.SllInput
 ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 002 r1 [other] regidx
@@ -975,15 +783,11 @@ ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 006 _ [other] twelve shifts
 ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 007 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 008 v [validator] Valid_BinaryExtension C FGL FGL
 ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 009 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 010 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 011 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 012 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 013 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 014 _ [other] 15 fields
-ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 015 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state sll_input.r1_val sll_input.r2_va
-ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 016 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 017 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL
-ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 018 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 010 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 011 _ [other] 15 fields
+ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state sll_input.r1_val sll_input.r2_va
+ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 013 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL
+ZiskFv.Compliance.FromTrust.Sll.equiv_SLL_from_trust 014 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
 ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 001 slli_input [other] PureSpec.SlliInput
 ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 002 r1 [other] regidx
@@ -992,14 +796,10 @@ ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 004 shamt [other] BitVec 
 ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 006 v [validator] Valid_BinaryExtension C FGL FGL
 ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.ShiftImmPromises state slli_input.r1_val slli_input.
-ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 014 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SLL
-ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 009 promises [bridge] ZiskFv.Equivalence.Promises.ShiftImmPromises state slli_input.r1_val slli_input.
+ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL
+ZiskFv.Compliance.FromTrust.Slli.equiv_SLLI_from_trust 011 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
 ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 001 slt_input [other] PureSpec.SltInput
 ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 002 r1 [other] regidx
@@ -1008,14 +808,10 @@ ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 004 rd [other] regidx
 ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 006 v [validator] Valid_Binary C FGL FGL
 ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 013 h_main_op_slt [match] m.op r_main = OP_LT
-ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 014 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 015 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state slt_input.r1_val slt_input.r2_va
+ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT
+ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 010 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Slt.equiv_SLT_from_trust 011 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state slt_input.r1_val slt_input.r2_va
 ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 001 slti_input [other] PureSpec.SltiInput
 ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 002 r1 [other] regidx
@@ -1024,15 +820,11 @@ ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 004 imm [other] BitVec 12
 ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 006 v [validator] Valid_Binary C FGL FGL
 ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 013 h_main_op_slti [match] m.op r_main = OP_LT
-ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 014 h_slti_subset [other] itype_imm_subset_holds_main m r_main slti_input.imm
-ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state slti_input.r1_val slti_input.imm
+ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT
+ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 010 h_slti_subset [other] itype_imm_subset_holds_main m r_main slti_input.imm
+ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 011 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Slti.equiv_SLTI_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state slti_input.r1_val slti_input.imm
 ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 001 sltiu_input [other] PureSpec.SltiuInput
 ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 002 r1 [other] regidx
@@ -1041,15 +833,11 @@ ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 004 imm [other] BitVec 
 ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 006 v [validator] Valid_Binary C FGL FGL
 ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 013 h_main_op_sltiu [match] m.op r_main = OP_LTU
-ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 014 h_sltiu_subset [other] itype_imm_subset_holds_main m r_main sltiu_input.imm
-ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state sltiu_input.r1_val sltiu_input.i
+ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU
+ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 010 h_sltiu_subset [other] itype_imm_subset_holds_main m r_main sltiu_input.imm
+ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 011 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Sltiu.equiv_SLTIU_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state sltiu_input.r1_val sltiu_input.i
 ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 001 sltu_input [other] PureSpec.SltuInput
 ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 002 r1 [other] regidx
@@ -1058,14 +846,10 @@ ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 004 rd [other] regidx
 ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 006 v [validator] Valid_Binary C FGL FGL
 ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 013 h_main_op_sltu [match] m.op r_main = OP_LTU
-ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 014 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 015 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state sltu_input.r1_val sltu_input.r2_
+ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU
+ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 010 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Sltu.equiv_SLTU_from_trust 011 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state sltu_input.r1_val sltu_input.r2_
 ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 001 sra_input [other] PureSpec.SraInput
 ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 002 r1 [other] regidx
@@ -1074,14 +858,10 @@ ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 004 rd [other] regidx
 ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 006 v [validator] Valid_BinaryExtension C FGL FGL
 ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state sra_input.r1_val sra_input.r2_va
-ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 014 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA
-ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 009 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state sra_input.r1_val sra_input.r2_va
+ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRA
+ZiskFv.Compliance.FromTrust.Sra.equiv_SRA_from_trust 011 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
 ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 001 srai_input [other] PureSpec.SraiInput
 ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 002 r1 [other] regidx
@@ -1090,14 +870,10 @@ ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 004 shamt [other] BitVec 
 ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 006 v [validator] Valid_BinaryExtension C FGL FGL
 ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.ShiftImmPromises state srai_input.r1_val srai_input.
-ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 014 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRA
-ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 009 promises [bridge] ZiskFv.Equivalence.Promises.ShiftImmPromises state srai_input.r1_val srai_input.
+ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRA
+ZiskFv.Compliance.FromTrust.Srai.equiv_SRAI_from_trust 011 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
 ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 001 srl_input [other] PureSpec.SrlInput
 ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 002 r1 [other] regidx
@@ -1106,14 +882,10 @@ ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 004 rd [other] regidx
 ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 006 v [validator] Valid_BinaryExtension C FGL FGL
 ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state srl_input.r1_val srl_input.r2_va
-ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 014 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL
-ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 009 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state srl_input.r1_val srl_input.r2_va
+ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRL
+ZiskFv.Compliance.FromTrust.Srl.equiv_SRL_from_trust 011 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
 ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 001 srli_input [other] PureSpec.SrliInput
 ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 002 r1 [other] regidx
@@ -1122,14 +894,10 @@ ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 004 shamt [other] BitVec 
 ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 006 v [validator] Valid_BinaryExtension C FGL FGL
 ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.ShiftImmPromises state srli_input.r1_val srli_input.
-ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 013 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 014 h_main_op [match] m.op r_main = ZiskFv.Trusted.OP_SRL
-ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
+ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 009 promises [bridge] ZiskFv.Equivalence.Promises.ShiftImmPromises state srli_input.r1_val srli_input.
+ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRL
+ZiskFv.Compliance.FromTrust.Srli.equiv_SRLI_from_trust 011 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
 ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 001 sub_input [other] PureSpec.SubInput
 ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 002 r1 [other] regidx
@@ -1138,14 +906,10 @@ ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 004 rd [other] regidx
 ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 006 v [validator] Valid_Binary C FGL FGL
 ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 013 h_main_op_sub [match] m.op r_main = OP_SUB
-ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 014 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 015 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state sub_input.r1_val sub_input.r2_va
+ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB
+ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 010 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Sub.equiv_SUB_from_trust 011 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state sub_input.r1_val sub_input.r2_va
 ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 001 subw_input [other] PureSpec.SubwInput
 ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 002 r1 [other] regidx
@@ -1154,32 +918,21 @@ ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 004 rd [other] regidx
 ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 006 v [validator] Valid_Binary C FGL FGL
 ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 013 h_main_op_subw [match] m.op r_main = OP_SUB_W
-ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 014 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 015 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state subw_input.r1_val subw_input.r2_
+ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB_W
+ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 010 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Subw.equiv_SUBW_from_trust 011 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state subw_input.r1_val subw_input.r2_
 ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 001 sw_input [other] PureSpec.SwInput
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 002 mstatus [other] RegisterType Register.mstatus
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 003 pmaRegion [other] PMA_Region
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 004 misa [other] RegisterType Register.misa
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 005 mseccfg [other] RegisterType Register.mseccfg
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 006 main [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 012 h_main_active [match] main.is_external_op r_main = 0
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 013 h_main_op [match] main.op r_main = OP_COPYB
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 014 h_main_ind_width [match] main.ind_width r_main = 4
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 015 h_opcode_assumptions [other] PureSpec.sw_state_assumptions sw_input state
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 016 _ [other] 12 fields
-ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 017 promises [transpile] ZiskFv.Equivalence.Promises.StorePromises state mstatus pmaRegion misa mseccfg (
+ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 002 regs [other] ZiskFv.Compliance.ModeRegsFull
+ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 004 r_main [row] ℕ
+ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 005 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 006 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
+ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 007 h_main_ind_width [match] main.ind_width r_main = 4
+ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 008 h_opcode_assumptions [other] PureSpec.sw_state_assumptions sw_input state
+ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 009 _ [other] 12 fields
+ZiskFv.Compliance.FromTrust.Sw.equiv_SW_from_trust 010 promises [transpile] ZiskFv.Equivalence.Promises.StorePromises state regs.mstatus regs.pmaRegion regs
 ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 001 xor_input [other] PureSpec.XorInput
 ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 002 r1 [other] regidx
@@ -1188,14 +941,10 @@ ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 004 rd [other] regidx
 ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 006 v [validator] Valid_Binary C FGL FGL
 ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 013 h_main_op_xor [match] m.op r_main = OP_XOR
-ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 014 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 015 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state xor_input.r1_val xor_input.r2_va
+ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR
+ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 010 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Xor.equiv_XOR_from_trust 011 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state xor_input.r1_val xor_input.r2_va
 ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 001 xori_input [other] PureSpec.XoriInput
 ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 002 r1 [other] regidx
@@ -1204,12 +953,8 @@ ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 004 imm [other] BitVec 12
 ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 005 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 006 v [validator] Valid_Binary C FGL FGL
 ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 007 r_main [row] ℕ
-ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 009 e0 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 010 e1 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 011 e2 [loose] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 012 h_main_active [match] m.is_external_op r_main = 1
-ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 013 h_main_op_xori [match] m.op r_main = OP_XOR
-ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 014 h_xori_subset [other] itype_imm_subset_holds_main m r_main xori_input.imm
-ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2
-ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 016 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state xori_input.r1_val xori_input.imm
+ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 008 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR
+ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 010 h_xori_subset [other] itype_imm_subset_holds_main m r_main xori_input.imm
+ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 011 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Compliance.FromTrust.Xori.equiv_XORI_from_trust 012 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state xori_input.r1_val xori_input.imm
