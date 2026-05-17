@@ -18,6 +18,7 @@ import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.WriteValueProofs.Arith
 import ZiskFv.Equivalence.Promises.RType
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 ADD. Combines:
@@ -100,23 +101,23 @@ theorem equiv_ADD
     (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
     (r_main : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     -- Structural promise bundle (15 fields, see Promises/RType.lean).
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
         (PureSpec.execute_RTYPE_add_pure add_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_main_subset : add_subset_holds m r_main)
     (h_main_mode : main_row_in_add_mode m r_main)
     (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256) :
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (h_e2_0 : bus.e2.x0.val < 256) (h_e2_1 : bus.e2.x1.val < 256)
+    (h_e2_2 : bus.e2.x2.val < 256) (h_e2_3 : bus.e2.x3.val < 256)
+    (h_e2_4 : bus.e2.x4.val < 256) (h_e2_5 : bus.e2.x5.val < 256)
+    (h_e2_6 : bus.e2.x6.val < 256) (h_e2_7 : bus.e2.x7.val < 256) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_input_r1_sail, h_input_r2_sail, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,

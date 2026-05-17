@@ -8,6 +8,7 @@ import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_ADD` trust-discharge wrapper
@@ -207,12 +208,10 @@ theorem equiv_ADD_from_trust
     -- across all BinaryAdd-shape opcodes (ADD, ADDI).
     (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
     (r_main : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     -- Activation / opcode pins. Compliance.lean derives these from
     -- the Main AIR's ROM handshake on the row hosting ADD.
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_add : m.op r_main = OP_ADD)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
     -- Main-side constructibility bundle (per-row ADD-subset constraints).
     -- Compliance.lean delivers this from a universal
     -- `∀ r, add_universal_row m r` parameter.
@@ -221,7 +220,7 @@ theorem equiv_ADD_from_trust
     (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
     -- Lane-match for the rd-write entry — caller-supplied; discharged
     -- downstream from `memory_bus_register_write_perm_sound`.
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     -- Structural promise bundle (15 fields). Subsumes the prior inline
     -- `h_input_r1_sail`, `h_input_r2_sail`, `h_input_rd`, `h_input_pc`,
     -- `h_exec_len`, `h_e0_mult`, `h_e1_mult`, `h_nextPC_matches`,
@@ -230,9 +229,11 @@ theorem equiv_ADD_from_trust
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
         (PureSpec.execute_RTYPE_add_pure add_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2) :
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_add⟩ := pins
   -- ============ Derive `m.m32 r_main = 0` via `transpile_ADD` ============
   -- Fire `transpile_ADD` with arbitrary placeholders for the ghost
   -- `RV64State` / `Fin 32` parameters; we consume only `m32 = 0`
@@ -265,7 +266,8 @@ theorem equiv_ADD_from_trust
     memory_bus_entry_byte_range_perm_sound e2
   -- ============ Delegate to canonical `equiv_ADD` ============
   exact ZiskFv.Equivalence.Add.equiv_ADD
-    state add_input r1 r2 rd m b r_main exec_row e0 e1 e2
+    state add_input r1 r2 rd m b r_main
+    ⟨exec_row, e0, e1, e2⟩
     promises h_main_subset h_main_mode h_b_core h_lane_rd
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
 
