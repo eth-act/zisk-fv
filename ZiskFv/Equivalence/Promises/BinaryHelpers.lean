@@ -504,7 +504,7 @@ combines the `matches_entry` projection with the `b_op_or_sext` axiom
 call. Caller picks the right axiom for their opcode. -/
 
 /-- Combine `matches_entry` projection with a `b_op_or_sext` pin
-    axiom to derive `(v.b_op_or_sext r_binary).val = op_canon`.
+    (trust-ledger lemma) to derive `(v.b_op_or_sext r_binary).val = op_canon`.
     The `pin_axiom` argument is `binary_b_op_or_sext_eq_OP_{AND,OR,XOR}`
     instantiated with `(v, r_binary)`. -/
 lemma binary_h_bop_or_sext_via_axiom
