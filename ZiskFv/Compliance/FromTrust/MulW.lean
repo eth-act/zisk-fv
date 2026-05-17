@@ -2,6 +2,7 @@ import Mathlib
 
 import ZiskFv.Equivalence.MulW
 import ZiskFv.Equivalence.Promises.RType
+import ZiskFv.Equivalence.Promises.ArithHelpers
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
@@ -52,6 +53,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
 open ZiskFv.PackedBitVec.SignedChunkLift
+open ZiskFv.Equivalence.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -104,13 +106,13 @@ theorem equiv_MULW_from_trust
   have h_m2_mult := promises.m2_mult
   have h_m2_as := promises.m2_as
   -- ============ DERIVE arith-side opcode literal ============
-  have h_op_eq : v.op r_a = m.op r_main := by
-    have := h_match_primary
-    simp only [matches_entry, opBus_row_Main,
-               ZiskFv.Airs.ArithMul.opBus_row_Arith] at this
-    exact this.2.1.symm
+  have h_op_eq := arith_mul_primary_op_eq h_match_primary
   have h_op_arith_mulw : v.op r_a = 182 := by
     rw [h_op_eq, h_main_op_mulw]; simp [OP_MUL_W]
+  -- ============ Unpack matches_entry lane projections ============
+  obtain ⟨_h_a_lo_eq_FGL, _h_a_hi_eq_FGL, _h_b_lo_eq_FGL, _h_b_hi_eq_FGL,
+          h_c0_eq_FGL, _h_c1_eq_FGL⟩ :=
+    arith_mul_primary_projections h_match_primary
   -- ============ Unpack extended row-constraint bundle ============
   have h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a :=
     ZiskFv.Airs.ArithMul.mul_carry_chain_holds_of_extended v r_a h_row_constraints
@@ -130,39 +132,13 @@ theorem equiv_MULW_from_trust
   have h_byte_lo_to_c0 : e2.x0.val + e2.x1.val * 256
       + e2.x2.val * 65536 + e2.x3.val * 16777216
       = (m.c_0 r_main).val := h_bundle.1
-  -- Project m.c_0 = v.c_0 + v.c_1 * 65536 from primary matches_entry.
-  have h_c0_eq_FGL : m.c_0 r_main = v.c_0 r_a + v.c_1 r_a * 65536 := by
-    have := h_match_primary
-    simp only [matches_entry, opBus_row_Main,
-               ZiskFv.Airs.ArithMul.opBus_row_Arith] at this
-    exact this.2.2.2.2.2.2.1
   obtain ⟨_h_a0_lt, _h_a1_lt, _h_a2_lt, _h_a3_lt,
           _h_b0_lt, _h_b1_lt, _h_b2_lt, _h_b3_lt,
           h_c0_lt, h_c1_lt, _h_c2_lt, _h_c3_lt,
           _h_d0_lt, _h_d1_lt, _h_d2_lt, _h_d3_lt⟩ :=
     ZiskFv.Airs.Arith.arith_mul_columns_in_range v r_a
-  have h_pair_lift : ∀ (x y : FGL),
-      x.val < 65536 → y.val < 65536 →
-      (x + y * 65536 : FGL).val = x.val + y.val * 65536 := by
-    intro x y hx hy
-    have h_cast : (x + y * 65536 : FGL)
-        = (((x.val + y.val * 65536 : ℕ) : FGL)) := by
-      push_cast; ring
-    rw [h_cast, Fin.val_natCast]
-    apply Nat.mod_eq_of_lt
-    have h_sum_bound : x.val + y.val * 65536 < 65536 + 65536 * 65536 := by
-      have h_y_mul : y.val * 65536 < 65536 * 65536 :=
-        (Nat.mul_lt_mul_right (by decide : (0:ℕ) < 65536)).mpr hy
-      exact Nat.add_lt_add hx h_y_mul
-    have h_lt_prime : (65536 + 65536 * 65536 : ℕ) < GL_prime := by decide
-    exact lt_trans h_sum_bound h_lt_prime
-  have h_c0_val_eq : (m.c_0 r_main).val
-      = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 := by
-    rw [h_c0_eq_FGL]; exact h_pair_lift _ _ h_c0_lt h_c1_lt
-  have h_byte_lo :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-        = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 := by
-    rw [h_byte_lo_to_c0, h_c0_val_eq]
+  -- Byte-lane lo equation via cross-AIR `arith_byte_lane_eq_of_match`.
+  have h_byte_lo := arith_byte_lane_eq_of_match h_byte_lo_to_c0 h_c0_eq_FGL h_c0_lt h_c1_lt
   -- ============ Delegate to `equiv_MULW` ============
   exact ZiskFv.Equivalence.MulW.equiv_MULW
     state mulw_input r1 r2 rd v r_a
