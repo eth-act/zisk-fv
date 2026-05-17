@@ -7,6 +7,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_LBU` Compliance wrapper — Mem-loads (zero-ext) shape
@@ -55,43 +56,31 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 theorem equiv_LBU_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lbu_input : PureSpec.LbuInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
     -- AIR validators + row index.
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
-    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
-    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
-    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
-    (h_low :
-      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (align : ZiskFv.Compliance.MemAlignWitness C)
+    (bus : ZiskFv.Compliance.BusRows)
     -- Activation + opcode pins (Compliance ROM handshake).
-    (h_main_active : main.is_external_op r_main = 0)
-    (h_main_op_lbu : main.op r_main = OP_COPYB)
+    (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_width : main.ind_width r_main = (1 : FGL))
     -- Structural promise bundle (12 fields, see Promises/Load.lean).
     (promises : ZiskFv.Equivalence.Promises.LoadPromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lbu_state_assumptions lbu_input state)
         (PureSpec.execute_LOADBU_pure lbu_input).nextPC
-        exec_row e0 e1 e2) :
+        bus.exec_row bus.e0 bus.e1 bus.e2) :
     execute_instruction (instruction.LOAD (
       lbu_input.imm,
       regidx.Regidx lbu_input.r1,
       regidx.Regidx lbu_input.rd,
       true,
       1
-    )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  -- `OP_COPYB := 1` definitionally; align names for `equiv_LBU`.
-  have h_op : main.op r_main = (1 : FGL) := by
-    rw [h_main_op_lbu]; rfl
+    )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  -- `OP_COPYB := 1` definitionally; canonical accepts `pins`/`align` verbatim.
   exact ZiskFv.Equivalence.LoadBU.equiv_LBU
-    state lbu_input mstatus pmaRegion misa mseccfg
-    exec_row e0 e1 e2
+    state lbu_input regs bus
     promises
-    main mem r_main mab marb ma h_low h_main_active h_op h_width
+    main mem r_main align pins h_width
 
 end ZiskFv.Compliance

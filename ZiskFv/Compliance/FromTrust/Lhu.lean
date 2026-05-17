@@ -7,6 +7,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_LHU` Compliance wrapper — Mem-loads (zero-ext) shape
@@ -30,39 +31,27 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 theorem equiv_LHU_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lhu_input : PureSpec.LhuInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
-    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
-    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
-    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
-    (h_low :
-      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : main.is_external_op r_main = 0)
-    (h_main_op_lhu : main.op r_main = OP_COPYB)
+    (align : ZiskFv.Compliance.MemAlignWitness C)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_width : main.ind_width r_main = (2 : FGL))
     (promises : ZiskFv.Equivalence.Promises.LoadPromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lhu_state_assumptions lhu_input state)
         (PureSpec.execute_LOADHU_pure lhu_input).nextPC
-        exec_row e0 e1 e2) :
+        bus.exec_row bus.e0 bus.e1 bus.e2) :
     execute_instruction (instruction.LOAD (
       lhu_input.imm,
       regidx.Regidx lhu_input.r1,
       regidx.Regidx lhu_input.rd,
       true,
       2
-    )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  have h_op : main.op r_main = (1 : FGL) := by
-    rw [h_main_op_lhu]; rfl
+    )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   exact ZiskFv.Equivalence.LoadHU.equiv_LHU
-    state lhu_input mstatus pmaRegion misa mseccfg
-    exec_row e0 e1 e2
+    state lhu_input regs bus
     promises
-    main mem r_main mab marb ma h_low h_main_active h_op h_width
+    main mem r_main align pins h_width
 
 end ZiskFv.Compliance

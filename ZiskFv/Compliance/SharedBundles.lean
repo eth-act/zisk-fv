@@ -78,8 +78,11 @@ structure ModeRegsFull where
 /-! ## MemAlign witness triple + low-byte pinning -/
 
 /-- The three MemAlign-family provider witnesses plus the low-byte
-    pinning bridge they jointly support. Shared by LBU, LHU, LWU. -/
-structure MemAlignWitness where
+    pinning bridge they jointly support. Shared by LBU, LHU, LWU.
+    Takes the circuit functor `C` explicitly so type ascription is
+    unambiguous at callers; the `[Circuit FGL FGL C]` instance is
+    inferred from the surrounding scope. -/
+structure MemAlignWitness (C : Type → Type → Type) [Circuit FGL FGL C] where
   mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
   marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
   ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL

@@ -13,6 +13,7 @@ import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Tables.BinaryExtensionTable
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_LW` Compliance wrapper — signed-load BinExt SEXT_W chain
@@ -76,24 +77,19 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 theorem equiv_LW_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lw_input : PureSpec.LwInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
     -- AIR validators + row index.
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     -- Activation + opcode pin (Compliance ROM handshake).
-    (h_main_active : main.is_external_op r_main = 1)
-    (h_main_op : main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_W)
+    (pins : ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W)
     -- Structural promise bundle (12 fields, see Promises/Load.lean).
     (promises : ZiskFv.Equivalence.Promises.LoadPromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lw_state_assumptions lw_input state)
         (PureSpec.execute_LOADW_pure lw_input).nextPC
-        exec_row e0 e1 e2) :
+        bus.exec_row bus.e0 bus.e1 bus.e2) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -103,7 +99,9 @@ theorem equiv_LW_from_trust
         regidx.Regidx lw_input.rd,
         false,
         4
-      ))) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      ))) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op⟩ := pins
   -- Bundle fields used later in the proof body (do NOT consume `promises`
   -- with `obtain` since it is passed through to `equiv_LW`).
   have h_m1_mult := promises.m1_mult
@@ -158,10 +156,11 @@ theorem equiv_LW_from_trust
       main v r_main r_binary e1 h_main_b0_eq h_op_is_shift_zero h_match
   -- ============ Delegate to canonical `equiv_LW` ============
   exact ZiskFv.Equivalence.Lw.equiv_LW
-    state lw_input mstatus pmaRegion misa mseccfg
-    exec_row e0 e1 e2
+    state lw_input regs
+    ⟨exec_row, e0, e1, e2⟩
     promises
-    main mem r_main h_main_active h_main_op
+    main mem r_main
+    ⟨h_main_active, h_main_op⟩
     v r_binary h_op_binary h_bytes hc_lo_sum_lt hc_hi_sum_lt
     h_match_clo h_match_chi
     h_a0_match h_a1_match h_a2_match h_a3_match

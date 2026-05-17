@@ -871,143 +871,96 @@ inductive OpEnvelope
   -- ============================ LD (load doubleword) ====================
   | ld
     (ld_input : PureSpec.LdInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem C FGL FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op_ld : m.op r_main = OP_COPYB)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (promises : ZiskFv.Equivalence.Promises.LoadPromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.ld_state_assumptions ld_input state)
         (PureSpec.execute_LOADD_pure ld_input).nextPC
-        exec_row e0 e1 e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ LBU =====================================
   | lbu
     (lbu_input : PureSpec.LbuInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem C FGL FGL)
-    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
-    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
-    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
-    (h_low :
-      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op_lbu : m.op r_main = OP_COPYB)
+    (align : ZiskFv.Compliance.MemAlignWitness C)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (1 : FGL))
     (promises : ZiskFv.Equivalence.Promises.LoadPromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lbu_state_assumptions lbu_input state)
         (PureSpec.execute_LOADBU_pure lbu_input).nextPC
-        exec_row e0 e1 e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ LHU =====================================
   | lhu
     (lhu_input : PureSpec.LhuInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem C FGL FGL)
-    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
-    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
-    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
-    (h_low :
-      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op_lhu : m.op r_main = OP_COPYB)
+    (align : ZiskFv.Compliance.MemAlignWitness C)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (2 : FGL))
     (promises : ZiskFv.Equivalence.Promises.LoadPromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lhu_state_assumptions lhu_input state)
         (PureSpec.execute_LOADHU_pure lhu_input).nextPC
-        exec_row e0 e1 e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ LWU =====================================
   | lwu
     (lwu_input : PureSpec.LwuInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem C FGL FGL)
-    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
-    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
-    (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
-    (h_low :
-      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op_lwu : m.op r_main = OP_COPYB)
+    (align : ZiskFv.Compliance.MemAlignWitness C)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (4 : FGL))
     (promises : ZiskFv.Equivalence.Promises.LoadPromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lwu_state_assumptions lwu_input state)
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
-        exec_row e0 e1 e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ LB (signed-byte load) ===================
   | lb
     (lb_input : PureSpec.LbInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem C FGL FGL)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_B)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B)
     (promises : ZiskFv.Equivalence.Promises.LoadPromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lb_state_assumptions lb_input state)
         (PureSpec.execute_LOADB_pure lb_input).nextPC
-        exec_row e0 e1 e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ LH ======================================
   | lh
     (lh_input : PureSpec.LhInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem C FGL FGL)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_H)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_H)
     (promises : ZiskFv.Equivalence.Promises.LoadPromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
-        exec_row e0 e1 e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ LW ======================================
   | lw
     (lw_input : PureSpec.LwInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem C FGL FGL)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_W)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W)
     (promises : ZiskFv.Equivalence.Promises.LoadPromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lw_state_assumptions lw_input state)
         (PureSpec.execute_LOADW_pure lw_input).nextPC
-        exec_row e0 e1 e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ MUL =====================================
   | mul
     (mul_input : PureSpec.MulInput) (r1 r2 rd : regidx)
@@ -1630,39 +1583,39 @@ def exec_eq : OpEnvelope state m r_main → Prop
         regidx.Regidx sd_input.r1,
         8
       )) state = (bus_effect exec_row [e0, e1, e2] state).2
-  | .ld ld_input _ _ _ _ _ exec_row e0 e1 e2 .. =>
+  | .ld ld_input _ _ bus .. =>
       execute_instruction (instruction.LOAD (
         ld_input.imm,
         regidx.Regidx ld_input.r1,
         regidx.Regidx ld_input.rd,
         false,
         8
-      )) state = (bus_effect exec_row [e0, e1, e2] state).2
-  | .lbu lbu_input _ _ _ _ _ _ _ _ _ exec_row e0 e1 e2 .. =>
+      )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
+  | .lbu lbu_input _ _ _ bus .. =>
       execute_instruction (instruction.LOAD (
         lbu_input.imm,
         regidx.Regidx lbu_input.r1,
         regidx.Regidx lbu_input.rd,
         true,
         1
-      )) state = (bus_effect exec_row [e0, e1, e2] state).2
-  | .lhu lhu_input _ _ _ _ _ _ _ _ _ exec_row e0 e1 e2 .. =>
+      )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
+  | .lhu lhu_input _ _ _ bus .. =>
       execute_instruction (instruction.LOAD (
         lhu_input.imm,
         regidx.Regidx lhu_input.r1,
         regidx.Regidx lhu_input.rd,
         true,
         2
-      )) state = (bus_effect exec_row [e0, e1, e2] state).2
-  | .lwu lwu_input _ _ _ _ _ _ _ _ _ exec_row e0 e1 e2 .. =>
+      )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
+  | .lwu lwu_input _ _ _ bus .. =>
       execute_instruction (instruction.LOAD (
         lwu_input.imm,
         regidx.Regidx lwu_input.r1,
         regidx.Regidx lwu_input.rd,
         true,
         4
-      )) state = (bus_effect exec_row [e0, e1, e2] state).2
-  | .lb lb_input _ _ _ _ _ _ exec_row e0 e1 e2 .. =>
+      )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
+  | .lb lb_input _ _ _ bus .. =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -1672,8 +1625,8 @@ def exec_eq : OpEnvelope state m r_main → Prop
           regidx.Regidx lb_input.rd,
           false,
           1
-        ))) state = (bus_effect exec_row [e0, e1, e2] state).2
-  | .lh lh_input _ _ _ _ _ _ exec_row e0 e1 e2 .. =>
+        ))) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
+  | .lh lh_input _ _ _ bus .. =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -1683,8 +1636,8 @@ def exec_eq : OpEnvelope state m r_main → Prop
           regidx.Regidx lh_input.rd,
           false,
           2
-        ))) state = (bus_effect exec_row [e0, e1, e2] state).2
-  | .lw lw_input _ _ _ _ _ _ exec_row e0 e1 e2 .. =>
+        ))) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
+  | .lw lw_input _ _ _ bus .. =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -1694,7 +1647,7 @@ def exec_eq : OpEnvelope state m r_main → Prop
           regidx.Regidx lw_input.rd,
           false,
           4
-        ))) state = (bus_effect exec_row [e0, e1, e2] state).2
+        ))) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
   | .mul _ r1 r2 rd srs1 srs2 bus .. =>
       (do
         Sail.writeReg Register.nextPC
@@ -2031,48 +1984,34 @@ theorem zisk_riscv_compliant_program_bus
     exact equiv_SD_from_trust state sd_input mstatus pmaRegion misa mseccfg
       m r_main exec_row e0 e1 e2
       h_main_active h_main_op h_opcode_assumptions promises
-  | ld ld_input mstatus pmaRegion misa mseccfg mem exec_row e0 e1 e2
-       h_main_active h_main_op_ld promises =>
+  | ld ld_input regs mem bus pins promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LD_from_trust state ld_input mstatus pmaRegion misa mseccfg
-      m mem r_main exec_row e0 e1 e2
-      h_main_active h_main_op_ld promises
-  | lbu lbu_input mstatus pmaRegion misa mseccfg mem mab marb ma h_low exec_row e0 e1 e2
-        h_main_active h_main_op_lbu h_width promises =>
+    exact equiv_LD_from_trust state ld_input regs
+      m mem r_main bus pins promises
+  | lbu lbu_input regs mem align bus pins h_width promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LBU_from_trust state lbu_input mstatus pmaRegion misa mseccfg
-      m mem r_main mab marb ma h_low exec_row e0 e1 e2
-      h_main_active h_main_op_lbu h_width promises
-  | lhu lhu_input mstatus pmaRegion misa mseccfg mem mab marb ma h_low exec_row e0 e1 e2
-        h_main_active h_main_op_lhu h_width promises =>
+    exact equiv_LBU_from_trust state lbu_input regs
+      m mem r_main align bus pins h_width promises
+  | lhu lhu_input regs mem align bus pins h_width promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LHU_from_trust state lhu_input mstatus pmaRegion misa mseccfg
-      m mem r_main mab marb ma h_low exec_row e0 e1 e2
-      h_main_active h_main_op_lhu h_width promises
-  | lwu lwu_input mstatus pmaRegion misa mseccfg mem mab marb ma h_low exec_row e0 e1 e2
-        h_main_active h_main_op_lwu h_width promises =>
+    exact equiv_LHU_from_trust state lhu_input regs
+      m mem r_main align bus pins h_width promises
+  | lwu lwu_input regs mem align bus pins h_width promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LWU_from_trust state lwu_input mstatus pmaRegion misa mseccfg
-      m mem r_main mab marb ma h_low exec_row e0 e1 e2
-      h_main_active h_main_op_lwu h_width promises
-  | lb lb_input mstatus pmaRegion misa mseccfg mem v exec_row e0 e1 e2
-       h_main_active h_main_op promises =>
+    exact equiv_LWU_from_trust state lwu_input regs
+      m mem r_main align bus pins h_width promises
+  | lb lb_input regs mem v bus pins promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LB_from_trust state lb_input mstatus pmaRegion misa mseccfg
-      m mem r_main v exec_row e0 e1 e2
-      h_main_active h_main_op promises
-  | lh lh_input mstatus pmaRegion misa mseccfg mem v exec_row e0 e1 e2
-       h_main_active h_main_op promises =>
+    exact equiv_LB_from_trust state lb_input regs
+      m mem r_main v bus pins promises
+  | lh lh_input regs mem v bus pins promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LH_from_trust state lh_input mstatus pmaRegion misa mseccfg
-      m mem r_main v exec_row e0 e1 e2
-      h_main_active h_main_op promises
-  | lw lw_input mstatus pmaRegion misa mseccfg mem v exec_row e0 e1 e2
-       h_main_active h_main_op promises =>
+    exact equiv_LH_from_trust state lh_input regs
+      m mem r_main v bus pins promises
+  | lw lw_input regs mem v bus pins promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LW_from_trust state lw_input mstatus pmaRegion misa mseccfg
-      m mem r_main v exec_row e0 e1 e2
-      h_main_active h_main_op promises
+    exact equiv_LW_from_trust state lw_input regs
+      m mem r_main v bus pins promises
   | mul mul_input r1 r2 rd srs1 srs2 bus v r_a
         pins h_match_primary
         promises
