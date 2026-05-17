@@ -1,6 +1,7 @@
 import Mathlib
 
 import ZiskFv.Equivalence.MulHSU
+import ZiskFv.Equivalence.Promises.RType
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
@@ -59,22 +60,10 @@ theorem equiv_MULHSU_from_trust
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_ArithMulSecondary v r_a))
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok mulhsu_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok mulhsu_input.r2_val state)
-    (h_input_rd : mulhsu_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some mulhsu_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : mulhsu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state mulhsu_input.r1_val mulhsu_input.r2_val mulhsu_input.rd mulhsu_input.PC
+        (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     :
@@ -88,6 +77,11 @@ theorem equiv_MULHSU_from_trust
              signed_rs1 := .Signed
              signed_rs2 := .Unsigned }))) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
+  -- ============ Project bus-bundle fields used by the body ============
+  have h_input_r1 := promises.input_r1_eq
+  have h_input_r2 := promises.input_r2_eq
+  have h_m2_mult := promises.m2_mult
+  have h_m2_as := promises.m2_as
   -- ============ DERIVE arith-side opcode literal ============
   have h_op_eq : v.op r_a = m.op r_main := by
     have := h_match_secondary
@@ -314,21 +308,7 @@ theorem equiv_MULHSU_from_trust
   -- ============ Delegate to `equiv_MULHSU` ============
   exact ZiskFv.Equivalence.MulHSU.equiv_MULHSU
     state mulhsu_input r1 r2 rd v r_a exec_row e0 e1 e2
-    { input_r1_eq := h_input_r1
-      input_r2_eq := h_input_r2
-      input_rd_eq := h_input_rd
-      input_pc_eq := h_input_pc
-      exec_len := h_exec_len
-      e0_mult := h_e0_mult
-      e1_mult := h_e1_mult
-      nextPC_matches := h_nextPC_matches
-      m0_mult := h_m0_mult
-      m0_as := h_m0_as
-      m1_mult := h_m1_mult
-      m1_as := h_m1_as
-      m2_mult := h_m2_mult
-      m2_as := h_m2_as
-      rd_idx := h_rd_idx }
+    promises
     h_chain h_na h_nb_zero h_np h_nr_eq h_sext h_m32 h_div
     h_na_bool h_nb_bool h_np_xor
     h_byte_lo h_byte_hi h_rs1_value h_rs2_value
