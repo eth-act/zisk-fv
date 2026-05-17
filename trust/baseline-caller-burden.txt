@@ -12,18 +12,18 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 1485
+# Total rows: 1417
 # Category bridge: 106
 # Category byte_chain: 55
-# Category entry: 15
+# Category entry: 9
 # Category loose: 220
 # Category match: 25
-# Category other: 730
-# Category range: 96
+# Category other: 718
+# Category range: 48
 # Category row: 68
 # Category state: 64
 # Category transpile: 16
-# Category validator: 90
+# Category validator: 88
 #
 ZiskFv.Equivalence.Add.equiv_ADD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Add.equiv_ADD 001 add_input [other] PureSpec.AddInput
@@ -31,47 +31,31 @@ ZiskFv.Equivalence.Add.equiv_ADD 002 r1 [other] regidx
 ZiskFv.Equivalence.Add.equiv_ADD 003 r2 [other] regidx
 ZiskFv.Equivalence.Add.equiv_ADD 004 rd [other] regidx
 ZiskFv.Equivalence.Add.equiv_ADD 005 m [validator] Valid_Main C FGL FGL
-ZiskFv.Equivalence.Add.equiv_ADD 006 b [validator] Valid_BinaryAdd C FGL FGL
+ZiskFv.Equivalence.Add.equiv_ADD 006 badd [other] ZiskFv.Compliance.BinaryAddWitness C
 ZiskFv.Equivalence.Add.equiv_ADD 007 r_main [row] ℕ
 ZiskFv.Equivalence.Add.equiv_ADD 008 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Add.equiv_ADD 009 _ [other] 15 fields, see Promises/RType.lean
 ZiskFv.Equivalence.Add.equiv_ADD 010 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state add_input.r1_val add_input.r2_va
 ZiskFv.Equivalence.Add.equiv_ADD 011 h_main_subset [other] add_subset_holds m r_main
 ZiskFv.Equivalence.Add.equiv_ADD 012 h_main_mode [other] main_row_in_add_mode m r_main
-ZiskFv.Equivalence.Add.equiv_ADD 013 h_b_core [other] ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r
-ZiskFv.Equivalence.Add.equiv_ADD 014 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
-ZiskFv.Equivalence.Add.equiv_ADD 015 h_e2_0 [range] bus.e2.x0.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 016 h_e2_1 [range] bus.e2.x1.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 017 h_e2_2 [range] bus.e2.x2.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 018 h_e2_3 [range] bus.e2.x3.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 019 h_e2_4 [range] bus.e2.x4.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 020 h_e2_5 [range] bus.e2.x5.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 021 h_e2_6 [range] bus.e2.x6.val < 256
-ZiskFv.Equivalence.Add.equiv_ADD 022 h_e2_7 [range] bus.e2.x7.val < 256
+ZiskFv.Equivalence.Add.equiv_ADD 013 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Equivalence.Add.equiv_ADD 014 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
 ZiskFv.Equivalence.Addi.equiv_ADDI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Addi.equiv_ADDI 001 addi_input [other] PureSpec.AddiInput
 ZiskFv.Equivalence.Addi.equiv_ADDI 002 r1 [other] regidx
 ZiskFv.Equivalence.Addi.equiv_ADDI 003 rd [other] regidx
 ZiskFv.Equivalence.Addi.equiv_ADDI 004 imm [other] BitVec 12
 ZiskFv.Equivalence.Addi.equiv_ADDI 005 m [validator] Valid_Main C FGL FGL
-ZiskFv.Equivalence.Addi.equiv_ADDI 006 b [validator] Valid_BinaryAdd C FGL FGL
+ZiskFv.Equivalence.Addi.equiv_ADDI 006 badd [other] ZiskFv.Compliance.BinaryAddWitness C
 ZiskFv.Equivalence.Addi.equiv_ADDI 007 r_main [row] ℕ
 ZiskFv.Equivalence.Addi.equiv_ADDI 008 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Addi.equiv_ADDI 009 _ [other] 15 fields, see Promises/IType.lean
 ZiskFv.Equivalence.Addi.equiv_ADDI 010 promises [bridge] ZiskFv.Equivalence.Promises.ITypePromises state addi_input.r1_val addi_input.imm
 ZiskFv.Equivalence.Addi.equiv_ADDI 011 h_main_subset [other] add_subset_holds m r_main
 ZiskFv.Equivalence.Addi.equiv_ADDI 012 h_main_mode [other] main_row_in_addi_mode m r_main
-ZiskFv.Equivalence.Addi.equiv_ADDI 013 h_b_core [other] ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r
-ZiskFv.Equivalence.Addi.equiv_ADDI 014 h_addi_subset [other] ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main m r_main addi_input
-ZiskFv.Equivalence.Addi.equiv_ADDI 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
-ZiskFv.Equivalence.Addi.equiv_ADDI 016 h_e2_0 [range] bus.e2.x0.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 017 h_e2_1 [range] bus.e2.x1.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 018 h_e2_2 [range] bus.e2.x2.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 019 h_e2_3 [range] bus.e2.x3.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 020 h_e2_4 [range] bus.e2.x4.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 021 h_e2_5 [range] bus.e2.x5.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 022 h_e2_6 [range] bus.e2.x6.val < 256
-ZiskFv.Equivalence.Addi.equiv_ADDI 023 h_e2_7 [range] bus.e2.x7.val < 256
+ZiskFv.Equivalence.Addi.equiv_ADDI 013 h_addi_subset [other] ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main m r_main addi_input
+ZiskFv.Equivalence.Addi.equiv_ADDI 014 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Equivalence.Addi.equiv_ADDI 015 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 001 addiw_input [other] PureSpec.AddiwInput
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 002 r1 [other] regidx
@@ -237,52 +221,28 @@ ZiskFv.Equivalence.Auipc.equiv_AUIPC 014 h_lo_bound [range] (m.pc r_main + m.jmp
 ZiskFv.Equivalence.Auipc.equiv_AUIPC 015 h_pc_offset_lt_2_32 [range] (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toN
 ZiskFv.Equivalence.BranchEqual.equiv_BEQ 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.BranchEqual.equiv_BEQ 001 beq_input [other] PureSpec.BeqInput
-ZiskFv.Equivalence.BranchEqual.equiv_BEQ 002 imm [other] BitVec 13
-ZiskFv.Equivalence.BranchEqual.equiv_BEQ 003 r1 [other] regidx
-ZiskFv.Equivalence.BranchEqual.equiv_BEQ 004 r2 [other] regidx
-ZiskFv.Equivalence.BranchEqual.equiv_BEQ 005 misa_val [other] RegisterType Register.misa
-ZiskFv.Equivalence.BranchEqual.equiv_BEQ 006 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Equivalence.BranchEqual.equiv_BEQ 007 promises [bridge] ZiskFv.Equivalence.Promises.BranchPromises state beq_input.imm beq_input.r1_val 
+ZiskFv.Equivalence.BranchEqual.equiv_BEQ 002 ops [other] ZiskFv.Compliance.BranchInstrOperands
+ZiskFv.Equivalence.BranchEqual.equiv_BEQ 003 promises [bridge] ZiskFv.Equivalence.Promises.BranchPromises state beq_input.imm beq_input.r1_val 
 ZiskFv.Equivalence.BranchGreaterEqual.equiv_BGE 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.BranchGreaterEqual.equiv_BGE 001 bge_input [other] PureSpec.BgeInput
-ZiskFv.Equivalence.BranchGreaterEqual.equiv_BGE 002 imm [other] BitVec 13
-ZiskFv.Equivalence.BranchGreaterEqual.equiv_BGE 003 r1 [other] regidx
-ZiskFv.Equivalence.BranchGreaterEqual.equiv_BGE 004 r2 [other] regidx
-ZiskFv.Equivalence.BranchGreaterEqual.equiv_BGE 005 misa_val [other] RegisterType Register.misa
-ZiskFv.Equivalence.BranchGreaterEqual.equiv_BGE 006 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Equivalence.BranchGreaterEqual.equiv_BGE 007 promises [bridge] ZiskFv.Equivalence.Promises.BranchPromises state bge_input.imm bge_input.r1_val 
+ZiskFv.Equivalence.BranchGreaterEqual.equiv_BGE 002 ops [other] ZiskFv.Compliance.BranchInstrOperands
+ZiskFv.Equivalence.BranchGreaterEqual.equiv_BGE 003 promises [bridge] ZiskFv.Equivalence.Promises.BranchPromises state bge_input.imm bge_input.r1_val 
 ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU 001 bgeu_input [other] PureSpec.BgeuInput
-ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU 002 imm [other] BitVec 13
-ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU 003 r1 [other] regidx
-ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU 004 r2 [other] regidx
-ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU 005 misa_val [other] RegisterType Register.misa
-ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU 006 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU 007 promises [bridge] ZiskFv.Equivalence.Promises.BranchPromises state bgeu_input.imm bgeu_input.r1_va
+ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU 002 ops [other] ZiskFv.Compliance.BranchInstrOperands
+ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU 003 promises [bridge] ZiskFv.Equivalence.Promises.BranchPromises state bgeu_input.imm bgeu_input.r1_va
 ZiskFv.Equivalence.BranchLessThan.equiv_BLT 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.BranchLessThan.equiv_BLT 001 blt_input [other] PureSpec.BltInput
-ZiskFv.Equivalence.BranchLessThan.equiv_BLT 002 imm [other] BitVec 13
-ZiskFv.Equivalence.BranchLessThan.equiv_BLT 003 r1 [other] regidx
-ZiskFv.Equivalence.BranchLessThan.equiv_BLT 004 r2 [other] regidx
-ZiskFv.Equivalence.BranchLessThan.equiv_BLT 005 misa_val [other] RegisterType Register.misa
-ZiskFv.Equivalence.BranchLessThan.equiv_BLT 006 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Equivalence.BranchLessThan.equiv_BLT 007 promises [bridge] ZiskFv.Equivalence.Promises.BranchPromises state blt_input.imm blt_input.r1_val 
+ZiskFv.Equivalence.BranchLessThan.equiv_BLT 002 ops [other] ZiskFv.Compliance.BranchInstrOperands
+ZiskFv.Equivalence.BranchLessThan.equiv_BLT 003 promises [bridge] ZiskFv.Equivalence.Promises.BranchPromises state blt_input.imm blt_input.r1_val 
 ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU 001 bltu_input [other] PureSpec.BltuInput
-ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU 002 imm [other] BitVec 13
-ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU 003 r1 [other] regidx
-ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU 004 r2 [other] regidx
-ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU 005 misa_val [other] RegisterType Register.misa
-ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU 006 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU 007 promises [bridge] ZiskFv.Equivalence.Promises.BranchPromises state bltu_input.imm bltu_input.r1_va
+ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU 002 ops [other] ZiskFv.Compliance.BranchInstrOperands
+ZiskFv.Equivalence.BranchLessThanUnsigned.equiv_BLTU 003 promises [bridge] ZiskFv.Equivalence.Promises.BranchPromises state bltu_input.imm bltu_input.r1_va
 ZiskFv.Equivalence.BranchNotEqual.equiv_BNE 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.BranchNotEqual.equiv_BNE 001 bne_input [other] PureSpec.BneInput
-ZiskFv.Equivalence.BranchNotEqual.equiv_BNE 002 imm [other] BitVec 13
-ZiskFv.Equivalence.BranchNotEqual.equiv_BNE 003 r1 [other] regidx
-ZiskFv.Equivalence.BranchNotEqual.equiv_BNE 004 r2 [other] regidx
-ZiskFv.Equivalence.BranchNotEqual.equiv_BNE 005 misa_val [other] RegisterType Register.misa
-ZiskFv.Equivalence.BranchNotEqual.equiv_BNE 006 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
-ZiskFv.Equivalence.BranchNotEqual.equiv_BNE 007 promises [bridge] ZiskFv.Equivalence.Promises.BranchPromises state bne_input.imm bne_input.r1_val 
+ZiskFv.Equivalence.BranchNotEqual.equiv_BNE 002 ops [other] ZiskFv.Compliance.BranchInstrOperands
+ZiskFv.Equivalence.BranchNotEqual.equiv_BNE 003 promises [bridge] ZiskFv.Equivalence.Promises.BranchPromises state bne_input.imm bne_input.r1_val 
 ZiskFv.Equivalence.Div.equiv_DIV 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Div.equiv_DIV 001 div_input [other] PureSpec.DivInput
 ZiskFv.Equivalence.Div.equiv_DIV 002 r1 [other] regidx
@@ -318,29 +278,22 @@ ZiskFv.Equivalence.Divu.equiv_DIVU 005 v [validator] Valid_ArithDiv C FGL FGL
 ZiskFv.Equivalence.Divu.equiv_DIVU 006 r_a [other] ℕ
 ZiskFv.Equivalence.Divu.equiv_DIVU 007 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Divu.equiv_DIVU 008 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state divu_input.r1_val divu_input.r2_
-ZiskFv.Equivalence.Divu.equiv_DIVU 009 h0 [range] bus.e2.x0.val < 256
-ZiskFv.Equivalence.Divu.equiv_DIVU 010 h1 [range] bus.e2.x1.val < 256
-ZiskFv.Equivalence.Divu.equiv_DIVU 011 h2 [range] bus.e2.x2.val < 256
-ZiskFv.Equivalence.Divu.equiv_DIVU 012 h3 [range] bus.e2.x3.val < 256
-ZiskFv.Equivalence.Divu.equiv_DIVU 013 h4 [range] bus.e2.x4.val < 256
-ZiskFv.Equivalence.Divu.equiv_DIVU 014 h5 [range] bus.e2.x5.val < 256
-ZiskFv.Equivalence.Divu.equiv_DIVU 015 h6 [range] bus.e2.x6.val < 256
-ZiskFv.Equivalence.Divu.equiv_DIVU 016 h7 [range] bus.e2.x7.val < 256
-ZiskFv.Equivalence.Divu.equiv_DIVU 017 _ [other] cy, cy-range, hC
-ZiskFv.Equivalence.Divu.equiv_DIVU 018 h_chain [other] ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a
-ZiskFv.Equivalence.Divu.equiv_DIVU 019 h_na [other] v.na r_a = 0
-ZiskFv.Equivalence.Divu.equiv_DIVU 020 h_nb [other] v.nb r_a = 0
-ZiskFv.Equivalence.Divu.equiv_DIVU 021 h_np [other] v.np r_a = 0
-ZiskFv.Equivalence.Divu.equiv_DIVU 022 h_nr [other] v.nr r_a = 0
-ZiskFv.Equivalence.Divu.equiv_DIVU 023 h_sext [other] v.sext r_a = 0
-ZiskFv.Equivalence.Divu.equiv_DIVU 024 h_m32 [other] v.m32 r_a = 0
-ZiskFv.Equivalence.Divu.equiv_DIVU 025 h_div [other] v.div r_a = 1
-ZiskFv.Equivalence.Divu.equiv_DIVU 026 h_byte_lo [other] bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16
-ZiskFv.Equivalence.Divu.equiv_DIVU 027 h_byte_hi [other] bus.e2.x4.val + bus.e2.x5.val * 256 + bus.e2.x6.val * 65536 + bus.e2.x7.val * 16
-ZiskFv.Equivalence.Divu.equiv_DIVU 028 h_rs1_value [bridge] divu_input.r1_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val 
-ZiskFv.Equivalence.Divu.equiv_DIVU 029 h_rs2_value [bridge] divu_input.r2_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val 
-ZiskFv.Equivalence.Divu.equiv_DIVU 030 h_op2_ne [bridge] divu_input.r2_val.toNat ≠ 0
-ZiskFv.Equivalence.Divu.equiv_DIVU 031 h_d_lt_b [bridge] ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a
+ZiskFv.Equivalence.Divu.equiv_DIVU 009 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
+ZiskFv.Equivalence.Divu.equiv_DIVU 010 _ [other] cy, cy-range, hC
+ZiskFv.Equivalence.Divu.equiv_DIVU 011 h_chain [other] ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a
+ZiskFv.Equivalence.Divu.equiv_DIVU 012 h_na [other] v.na r_a = 0
+ZiskFv.Equivalence.Divu.equiv_DIVU 013 h_nb [other] v.nb r_a = 0
+ZiskFv.Equivalence.Divu.equiv_DIVU 014 h_np [other] v.np r_a = 0
+ZiskFv.Equivalence.Divu.equiv_DIVU 015 h_nr [other] v.nr r_a = 0
+ZiskFv.Equivalence.Divu.equiv_DIVU 016 h_sext [other] v.sext r_a = 0
+ZiskFv.Equivalence.Divu.equiv_DIVU 017 h_m32 [other] v.m32 r_a = 0
+ZiskFv.Equivalence.Divu.equiv_DIVU 018 h_div [other] v.div r_a = 1
+ZiskFv.Equivalence.Divu.equiv_DIVU 019 h_byte_lo [other] bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16
+ZiskFv.Equivalence.Divu.equiv_DIVU 020 h_byte_hi [other] bus.e2.x4.val + bus.e2.x5.val * 256 + bus.e2.x6.val * 65536 + bus.e2.x7.val * 16
+ZiskFv.Equivalence.Divu.equiv_DIVU 021 h_rs1_value [bridge] divu_input.r1_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val 
+ZiskFv.Equivalence.Divu.equiv_DIVU 022 h_rs2_value [bridge] divu_input.r2_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val 
+ZiskFv.Equivalence.Divu.equiv_DIVU 023 h_op2_ne [bridge] divu_input.r2_val.toNat ≠ 0
+ZiskFv.Equivalence.Divu.equiv_DIVU 024 h_d_lt_b [bridge] ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 001 divuw_input [other] PureSpec.DivuwInput
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 002 r1 [other] regidx
@@ -592,27 +545,20 @@ ZiskFv.Equivalence.Mul.equiv_MUL 007 v [validator] Valid_ArithMul C FGL FGL
 ZiskFv.Equivalence.Mul.equiv_MUL 008 r_a [other] ℕ
 ZiskFv.Equivalence.Mul.equiv_MUL 009 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Mul.equiv_MUL 010 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state mul_input.r1_val mul_input.r2_va
-ZiskFv.Equivalence.Mul.equiv_MUL 011 h0 [range] bus.e2.x0.val < 256
-ZiskFv.Equivalence.Mul.equiv_MUL 012 h1 [range] bus.e2.x1.val < 256
-ZiskFv.Equivalence.Mul.equiv_MUL 013 h2 [range] bus.e2.x2.val < 256
-ZiskFv.Equivalence.Mul.equiv_MUL 014 h3 [range] bus.e2.x3.val < 256
-ZiskFv.Equivalence.Mul.equiv_MUL 015 h4 [range] bus.e2.x4.val < 256
-ZiskFv.Equivalence.Mul.equiv_MUL 016 h5 [range] bus.e2.x5.val < 256
-ZiskFv.Equivalence.Mul.equiv_MUL 017 h6 [range] bus.e2.x6.val < 256
-ZiskFv.Equivalence.Mul.equiv_MUL 018 h7 [range] bus.e2.x7.val < 256
-ZiskFv.Equivalence.Mul.equiv_MUL 019 _ [other] cy, cy-range, hC
-ZiskFv.Equivalence.Mul.equiv_MUL 020 h_chain [other] ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a
-ZiskFv.Equivalence.Mul.equiv_MUL 021 h_na [other] v.na r_a = 0
-ZiskFv.Equivalence.Mul.equiv_MUL 022 h_nb [other] v.nb r_a = 0
-ZiskFv.Equivalence.Mul.equiv_MUL 023 h_np [other] v.np r_a = 0
-ZiskFv.Equivalence.Mul.equiv_MUL 024 h_nr [other] v.nr r_a = 0
-ZiskFv.Equivalence.Mul.equiv_MUL 025 h_sext [other] v.sext r_a = 0
-ZiskFv.Equivalence.Mul.equiv_MUL 026 h_m32 [other] v.m32 r_a = 0
-ZiskFv.Equivalence.Mul.equiv_MUL 027 h_div [other] v.div r_a = 0
-ZiskFv.Equivalence.Mul.equiv_MUL 028 h_byte_lo [other] bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16
-ZiskFv.Equivalence.Mul.equiv_MUL 029 h_byte_hi [other] bus.e2.x4.val + bus.e2.x5.val * 256 + bus.e2.x6.val * 65536 + bus.e2.x7.val * 16
-ZiskFv.Equivalence.Mul.equiv_MUL 030 h_rs1_value [bridge] mul_input.r1_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (
-ZiskFv.Equivalence.Mul.equiv_MUL 031 h_rs2_value [bridge] mul_input.r2_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (
+ZiskFv.Equivalence.Mul.equiv_MUL 011 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
+ZiskFv.Equivalence.Mul.equiv_MUL 012 _ [other] cy, cy-range, hC
+ZiskFv.Equivalence.Mul.equiv_MUL 013 h_chain [other] ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a
+ZiskFv.Equivalence.Mul.equiv_MUL 014 h_na [other] v.na r_a = 0
+ZiskFv.Equivalence.Mul.equiv_MUL 015 h_nb [other] v.nb r_a = 0
+ZiskFv.Equivalence.Mul.equiv_MUL 016 h_np [other] v.np r_a = 0
+ZiskFv.Equivalence.Mul.equiv_MUL 017 h_nr [other] v.nr r_a = 0
+ZiskFv.Equivalence.Mul.equiv_MUL 018 h_sext [other] v.sext r_a = 0
+ZiskFv.Equivalence.Mul.equiv_MUL 019 h_m32 [other] v.m32 r_a = 0
+ZiskFv.Equivalence.Mul.equiv_MUL 020 h_div [other] v.div r_a = 0
+ZiskFv.Equivalence.Mul.equiv_MUL 021 h_byte_lo [other] bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16
+ZiskFv.Equivalence.Mul.equiv_MUL 022 h_byte_hi [other] bus.e2.x4.val + bus.e2.x5.val * 256 + bus.e2.x6.val * 65536 + bus.e2.x7.val * 16
+ZiskFv.Equivalence.Mul.equiv_MUL 023 h_rs1_value [bridge] mul_input.r1_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (
+ZiskFv.Equivalence.Mul.equiv_MUL 024 h_rs2_value [bridge] mul_input.r2_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val (
 ZiskFv.Equivalence.MulH.equiv_MULH 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.MulH.equiv_MULH 001 mulh_input [other] PureSpec.MulhInput
 ZiskFv.Equivalence.MulH.equiv_MULH 002 r1 [other] regidx
@@ -672,27 +618,20 @@ ZiskFv.Equivalence.MulHU.equiv_MULHU 005 v [validator] Valid_ArithMul C FGL FGL
 ZiskFv.Equivalence.MulHU.equiv_MULHU 006 r_a [other] ℕ
 ZiskFv.Equivalence.MulHU.equiv_MULHU 007 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.MulHU.equiv_MULHU 008 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state mulhu_input.r1_val mulhu_input.r
-ZiskFv.Equivalence.MulHU.equiv_MULHU 009 h0 [range] bus.e2.x0.val < 256
-ZiskFv.Equivalence.MulHU.equiv_MULHU 010 h1 [range] bus.e2.x1.val < 256
-ZiskFv.Equivalence.MulHU.equiv_MULHU 011 h2 [range] bus.e2.x2.val < 256
-ZiskFv.Equivalence.MulHU.equiv_MULHU 012 h3 [range] bus.e2.x3.val < 256
-ZiskFv.Equivalence.MulHU.equiv_MULHU 013 h4 [range] bus.e2.x4.val < 256
-ZiskFv.Equivalence.MulHU.equiv_MULHU 014 h5 [range] bus.e2.x5.val < 256
-ZiskFv.Equivalence.MulHU.equiv_MULHU 015 h6 [range] bus.e2.x6.val < 256
-ZiskFv.Equivalence.MulHU.equiv_MULHU 016 h7 [range] bus.e2.x7.val < 256
-ZiskFv.Equivalence.MulHU.equiv_MULHU 017 _ [other] cy, cy-range, hC
-ZiskFv.Equivalence.MulHU.equiv_MULHU 018 h_chain [other] ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a
-ZiskFv.Equivalence.MulHU.equiv_MULHU 019 h_na [other] v.na r_a = 0
-ZiskFv.Equivalence.MulHU.equiv_MULHU 020 h_nb [other] v.nb r_a = 0
-ZiskFv.Equivalence.MulHU.equiv_MULHU 021 h_np [other] v.np r_a = 0
-ZiskFv.Equivalence.MulHU.equiv_MULHU 022 h_nr [other] v.nr r_a = 0
-ZiskFv.Equivalence.MulHU.equiv_MULHU 023 h_sext [other] v.sext r_a = 0
-ZiskFv.Equivalence.MulHU.equiv_MULHU 024 h_m32 [other] v.m32 r_a = 0
-ZiskFv.Equivalence.MulHU.equiv_MULHU 025 h_div [other] v.div r_a = 0
-ZiskFv.Equivalence.MulHU.equiv_MULHU 026 h_byte_lo [other] bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16
-ZiskFv.Equivalence.MulHU.equiv_MULHU 027 h_byte_hi [other] bus.e2.x4.val + bus.e2.x5.val * 256 + bus.e2.x6.val * 65536 + bus.e2.x7.val * 16
-ZiskFv.Equivalence.MulHU.equiv_MULHU 028 h_rs1_value [bridge] mulhu_input.r1_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val
-ZiskFv.Equivalence.MulHU.equiv_MULHU 029 h_rs2_value [bridge] mulhu_input.r2_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val
+ZiskFv.Equivalence.MulHU.equiv_MULHU 009 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
+ZiskFv.Equivalence.MulHU.equiv_MULHU 010 _ [other] cy, cy-range, hC
+ZiskFv.Equivalence.MulHU.equiv_MULHU 011 h_chain [other] ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a
+ZiskFv.Equivalence.MulHU.equiv_MULHU 012 h_na [other] v.na r_a = 0
+ZiskFv.Equivalence.MulHU.equiv_MULHU 013 h_nb [other] v.nb r_a = 0
+ZiskFv.Equivalence.MulHU.equiv_MULHU 014 h_np [other] v.np r_a = 0
+ZiskFv.Equivalence.MulHU.equiv_MULHU 015 h_nr [other] v.nr r_a = 0
+ZiskFv.Equivalence.MulHU.equiv_MULHU 016 h_sext [other] v.sext r_a = 0
+ZiskFv.Equivalence.MulHU.equiv_MULHU 017 h_m32 [other] v.m32 r_a = 0
+ZiskFv.Equivalence.MulHU.equiv_MULHU 018 h_div [other] v.div r_a = 0
+ZiskFv.Equivalence.MulHU.equiv_MULHU 019 h_byte_lo [other] bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16
+ZiskFv.Equivalence.MulHU.equiv_MULHU 020 h_byte_hi [other] bus.e2.x4.val + bus.e2.x5.val * 256 + bus.e2.x6.val * 65536 + bus.e2.x7.val * 16
+ZiskFv.Equivalence.MulHU.equiv_MULHU 021 h_rs1_value [bridge] mulhu_input.r1_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val
+ZiskFv.Equivalence.MulHU.equiv_MULHU 022 h_rs2_value [bridge] mulhu_input.r2_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val
 ZiskFv.Equivalence.MulW.equiv_MULW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.MulW.equiv_MULW 001 mulw_input [other] PureSpec.MulwInput
 ZiskFv.Equivalence.MulW.equiv_MULW 002 r1 [other] regidx
@@ -787,29 +726,22 @@ ZiskFv.Equivalence.Remu.equiv_REMU 005 v [validator] Valid_ArithDiv C FGL FGL
 ZiskFv.Equivalence.Remu.equiv_REMU 006 r_a [other] ℕ
 ZiskFv.Equivalence.Remu.equiv_REMU 007 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Remu.equiv_REMU 008 promises [bridge] ZiskFv.Equivalence.Promises.RTypePromises state remu_input.r1_val remu_input.r2_
-ZiskFv.Equivalence.Remu.equiv_REMU 009 h0 [range] bus.e2.x0.val < 256
-ZiskFv.Equivalence.Remu.equiv_REMU 010 h1 [range] bus.e2.x1.val < 256
-ZiskFv.Equivalence.Remu.equiv_REMU 011 h2 [range] bus.e2.x2.val < 256
-ZiskFv.Equivalence.Remu.equiv_REMU 012 h3 [range] bus.e2.x3.val < 256
-ZiskFv.Equivalence.Remu.equiv_REMU 013 h4 [range] bus.e2.x4.val < 256
-ZiskFv.Equivalence.Remu.equiv_REMU 014 h5 [range] bus.e2.x5.val < 256
-ZiskFv.Equivalence.Remu.equiv_REMU 015 h6 [range] bus.e2.x6.val < 256
-ZiskFv.Equivalence.Remu.equiv_REMU 016 h7 [range] bus.e2.x7.val < 256
-ZiskFv.Equivalence.Remu.equiv_REMU 017 _ [other] cy, cy-range, hC
-ZiskFv.Equivalence.Remu.equiv_REMU 018 h_chain [other] ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a
-ZiskFv.Equivalence.Remu.equiv_REMU 019 h_na [other] v.na r_a = 0
-ZiskFv.Equivalence.Remu.equiv_REMU 020 h_nb [other] v.nb r_a = 0
-ZiskFv.Equivalence.Remu.equiv_REMU 021 h_np [other] v.np r_a = 0
-ZiskFv.Equivalence.Remu.equiv_REMU 022 h_nr [other] v.nr r_a = 0
-ZiskFv.Equivalence.Remu.equiv_REMU 023 h_sext [other] v.sext r_a = 0
-ZiskFv.Equivalence.Remu.equiv_REMU 024 h_m32 [other] v.m32 r_a = 0
-ZiskFv.Equivalence.Remu.equiv_REMU 025 h_div [other] v.div r_a = 1
-ZiskFv.Equivalence.Remu.equiv_REMU 026 h_byte_lo [other] bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16
-ZiskFv.Equivalence.Remu.equiv_REMU 027 h_byte_hi [other] bus.e2.x4.val + bus.e2.x5.val * 256 + bus.e2.x6.val * 65536 + bus.e2.x7.val * 16
-ZiskFv.Equivalence.Remu.equiv_REMU 028 h_rs1_value [bridge] remu_input.r1_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val 
-ZiskFv.Equivalence.Remu.equiv_REMU 029 h_rs2_value [bridge] remu_input.r2_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val 
-ZiskFv.Equivalence.Remu.equiv_REMU 030 h_op2_ne [bridge] remu_input.r2_val.toNat ≠ 0
-ZiskFv.Equivalence.Remu.equiv_REMU 031 h_d_lt_b [bridge] ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a
+ZiskFv.Equivalence.Remu.equiv_REMU 009 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
+ZiskFv.Equivalence.Remu.equiv_REMU 010 _ [other] cy, cy-range, hC
+ZiskFv.Equivalence.Remu.equiv_REMU 011 h_chain [other] ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a
+ZiskFv.Equivalence.Remu.equiv_REMU 012 h_na [other] v.na r_a = 0
+ZiskFv.Equivalence.Remu.equiv_REMU 013 h_nb [other] v.nb r_a = 0
+ZiskFv.Equivalence.Remu.equiv_REMU 014 h_np [other] v.np r_a = 0
+ZiskFv.Equivalence.Remu.equiv_REMU 015 h_nr [other] v.nr r_a = 0
+ZiskFv.Equivalence.Remu.equiv_REMU 016 h_sext [other] v.sext r_a = 0
+ZiskFv.Equivalence.Remu.equiv_REMU 017 h_m32 [other] v.m32 r_a = 0
+ZiskFv.Equivalence.Remu.equiv_REMU 018 h_div [other] v.div r_a = 1
+ZiskFv.Equivalence.Remu.equiv_REMU 019 h_byte_lo [other] bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16
+ZiskFv.Equivalence.Remu.equiv_REMU 020 h_byte_hi [other] bus.e2.x4.val + bus.e2.x5.val * 256 + bus.e2.x6.val * 65536 + bus.e2.x7.val * 16
+ZiskFv.Equivalence.Remu.equiv_REMU 021 h_rs1_value [bridge] remu_input.r1_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.c_0 r_a).val 
+ZiskFv.Equivalence.Remu.equiv_REMU 022 h_rs2_value [bridge] remu_input.r2_val.toNat = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.b_0 r_a).val 
+ZiskFv.Equivalence.Remu.equiv_REMU 023 h_op2_ne [bridge] remu_input.r2_val.toNat ≠ 0
+ZiskFv.Equivalence.Remu.equiv_REMU 024 h_d_lt_b [bridge] ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.d_0 r_a).val (v.d_1 r_a).val (v.d_2 r_a
 ZiskFv.Equivalence.Remuw.equiv_REMUW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Remuw.equiv_REMUW 001 remuw_input [other] PureSpec.RemuwInput
 ZiskFv.Equivalence.Remuw.equiv_REMUW 002 r1 [other] regidx
