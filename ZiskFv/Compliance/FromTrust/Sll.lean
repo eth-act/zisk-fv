@@ -1,6 +1,7 @@
 import Mathlib
 
 import ZiskFv.Equivalence.Sll
+import ZiskFv.Equivalence.Promises.RType
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -233,24 +234,12 @@ theorem equiv_SLL_from_trust
     (r_main : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    -- Sail-side state predicates (SPEC-PRE).
-    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok sll_input.r1_val state)
-    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok sll_input.r2_val state)
-    (h_input_rd : sll_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some sll_input.PC)
-    -- Bus-protocol structural hypotheses — pass-through from `equiv_SLL`.
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : sll_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    -- Structural promise bundle (15 fields). Subsumes the prior inline
+    -- Sail-side state predicates + bus-protocol structural hypotheses.
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state sll_input.r1_val sll_input.r2_val sll_input.rd sll_input.PC
+        (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     -- Activation / opcode pins. Compliance.lean derives these from
     -- the Main AIR's ROM handshake on the row hosting SLL.
     (h_main_active : m.is_external_op r_main = 1)
@@ -273,21 +262,7 @@ theorem equiv_SLL_from_trust
   -- ============ Delegate to canonical `equiv_SLL` ============
   exact ZiskFv.Equivalence.Sll.equiv_SLL state sll_input r1 r2 rd
     m v r_main r_binary exec_row e0 e1 e2
-    { input_r1_eq := h_input_r1_sail
-      input_r2_eq := h_input_r2_sail
-      input_rd_eq := h_input_rd
-      input_pc_eq := h_input_pc
-      exec_len := h_exec_len
-      e0_mult := h_e0_mult
-      e1_mult := h_e1_mult
-      nextPC_matches := h_nextPC_matches
-      m0_mult := h_m0_mult
-      m0_as := h_m0_as
-      m1_mult := h_m1_mult
-      m1_as := h_m1_as
-      m2_mult := h_m2_mult
-      m2_as := h_m2_as
-      rd_idx := h_rd_idx }
+    promises
     h_main_active h_main_op h_match h_lane_rd
 
 end ZiskFv.Compliance

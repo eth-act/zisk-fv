@@ -1,6 +1,7 @@
 import Mathlib
 
 import ZiskFv.Equivalence.Fence
+import ZiskFv.Equivalence.Promises.Fence
 import ZiskFv.SailSpec.fence
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
@@ -110,26 +111,14 @@ theorem equiv_FENCE_from_trust
     -- has no provider AIR).
     (_h_main_active : main.is_external_op r_main = 0)
     (_h_main_op_fence : main.op r_main = OP_FLAG)
-    -- Sail-side state predicates (SPEC-PRE).
-    (h_input_pc : state.regs.get? Register.PC = .some fence_input.PC)
-    (h_input_priv :
-      state.regs.get? Register.cur_privilege = .some Privilege.Machine)
-    -- Bus-shape structural hypotheses.
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_FENCE_pure fence_input).nextPC) :
+    -- Structural promise bundle (6 fields, see Promises/Fence.lean).
+    (promises : ZiskFv.Equivalence.Promises.FencePromises
+        state fence_input.PC
+        (PureSpec.execute_FENCE_pure fence_input).nextPC
+        exec_row) :
     execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
       = (bus_effect exec_row [] state).2 :=
   ZiskFv.Equivalence.Fence.equiv_FENCE
-    state fence_input fm pred succ rs rd exec_row
-    { input_pc_eq := h_input_pc
-      input_priv_eq := h_input_priv
-      exec_len := h_exec_len
-      e0_mult := h_e0_mult
-      e1_mult := h_e1_mult
-      nextPC_matches := h_nextPC_matches }
+    state fence_input fm pred succ rs rd exec_row promises
 
 end ZiskFv.Compliance

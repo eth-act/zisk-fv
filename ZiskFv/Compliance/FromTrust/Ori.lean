@@ -1,6 +1,7 @@
 import Mathlib
 
 import ZiskFv.Equivalence.Ori
+import ZiskFv.Equivalence.Promises.IType
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -41,21 +42,10 @@ theorem equiv_ORI_from_trust
     (h_main_op_ori : m.op r_main = OP_OR)
     (h_ori_subset : itype_imm_subset_holds_main m r_main ori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok ori_input.r1_val state)
-    (h_input_imm : ori_input.imm = imm)
-    (h_input_rd : ori_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some ori_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : ori_input.rd = Transpiler.wrap_to_regidx e2.ptr) :
+    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+        state ori_input.r1_val ori_input.imm ori_input.rd ori_input.PC
+        (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
+        r1 rd imm exec_row e0 e1 e2) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -89,21 +79,7 @@ theorem equiv_ORI_from_trust
     binary_b_op_or_sext_eq_OP_OR v r_binary h_emit_op
   exact ZiskFv.Equivalence.Ori.equiv_ORI
     state ori_input r1 rd imm m v r_main r_binary exec_row e0 e1 e2
-    { input_r1_eq := h_input_r1
-      input_imm_eq := h_input_imm
-      input_rd_eq := h_input_rd
-      input_pc_eq := h_input_pc
-      exec_len := h_exec_len
-      e0_mult := h_e0_mult
-      e1_mult := h_e1_mult
-      nextPC_matches := h_nextPC_matches
-      m0_mult := h_m0_mult
-      m0_as := h_m0_as
-      m1_mult := h_m1_mult
-      m1_as := h_m1_as
-      m2_mult := h_m2_mult
-      m2_as := h_m2_as
-      rd_idx := h_rd_idx }
+    promises
     h_main_active h_main_op_ori h_match h_bop_or_sext h_lane_rd h_ori_subset
 
 end ZiskFv.Compliance

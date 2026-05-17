@@ -268,127 +268,73 @@ inductive OpEnvelope
     (beq_input : PureSpec.BeqInput) (imm : BitVec 13) (r1 r2 : regidx)
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (h_input_imm : beq_input.imm = imm)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok beq_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok beq_input.r2_val state)
-    (h_input_pc : state.regs.get? Register.PC = .some beq_input.PC)
-    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
-    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    (h_target_aligned :
-      (beq_input.PC + BitVec.signExtend 64 beq_input.imm).toNat % 4 = 0)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_BEQ_pure beq_input).nextPC) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+        state beq_input.imm beq_input.r1_val beq_input.r2_val beq_input.PC
+        misa_val
+        (PureSpec.execute_BEQ_pure beq_input).nextPC
+        (PureSpec.execute_BEQ_pure beq_input).throws
+        (PureSpec.execute_BEQ_pure beq_input).success
+        imm r1 r2 exec_row) : OpEnvelope state m r_main
   -- ============================ BNE (branch, no mem) ====================
   | bne
     (bne_input : PureSpec.BneInput) (imm : BitVec 13) (r1 r2 : regidx)
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (h_input_imm : bne_input.imm = imm)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok bne_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok bne_input.r2_val state)
-    (h_input_pc : state.regs.get? Register.PC = .some bne_input.PC)
-    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
-    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    (h_target_aligned :
-      (bne_input.PC + BitVec.signExtend 64 bne_input.imm).toNat % 4 = 0)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_BNE_pure bne_input).nextPC) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+        state bne_input.imm bne_input.r1_val bne_input.r2_val bne_input.PC
+        misa_val
+        (PureSpec.execute_BNE_pure bne_input).nextPC
+        (PureSpec.execute_BNE_pure bne_input).throws
+        (PureSpec.execute_BNE_pure bne_input).success
+        imm r1 r2 exec_row) : OpEnvelope state m r_main
   -- ============================ BLT (branch, no mem) ====================
   | blt
     (blt_input : PureSpec.BltInput) (imm : BitVec 13) (r1 r2 : regidx)
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (h_input_imm : blt_input.imm = imm)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok blt_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok blt_input.r2_val state)
-    (h_input_pc : state.regs.get? Register.PC = .some blt_input.PC)
-    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
-    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    (h_target_aligned :
-      (blt_input.PC + BitVec.signExtend 64 blt_input.imm).toNat % 4 = 0)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_BLT_pure blt_input).nextPC) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+        state blt_input.imm blt_input.r1_val blt_input.r2_val blt_input.PC
+        misa_val
+        (PureSpec.execute_BLT_pure blt_input).nextPC
+        (PureSpec.execute_BLT_pure blt_input).throws
+        (PureSpec.execute_BLT_pure blt_input).success
+        imm r1 r2 exec_row) : OpEnvelope state m r_main
   -- ============================ BGE (branch, no mem) ====================
   | bge
     (bge_input : PureSpec.BgeInput) (imm : BitVec 13) (r1 r2 : regidx)
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (h_input_imm : bge_input.imm = imm)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok bge_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok bge_input.r2_val state)
-    (h_input_pc : state.regs.get? Register.PC = .some bge_input.PC)
-    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
-    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    (h_target_aligned :
-      (bge_input.PC + BitVec.signExtend 64 bge_input.imm).toNat % 4 = 0)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_BGE_pure bge_input).nextPC) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+        state bge_input.imm bge_input.r1_val bge_input.r2_val bge_input.PC
+        misa_val
+        (PureSpec.execute_BGE_pure bge_input).nextPC
+        (PureSpec.execute_BGE_pure bge_input).throws
+        (PureSpec.execute_BGE_pure bge_input).success
+        imm r1 r2 exec_row) : OpEnvelope state m r_main
   -- ============================ BLTU (branch, no mem) ===================
   | bltu
     (bltu_input : PureSpec.BltuInput) (imm : BitVec 13) (r1 r2 : regidx)
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (h_input_imm : bltu_input.imm = imm)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok bltu_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok bltu_input.r2_val state)
-    (h_input_pc : state.regs.get? Register.PC = .some bltu_input.PC)
-    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
-    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    (h_target_aligned :
-      (bltu_input.PC + BitVec.signExtend 64 bltu_input.imm).toNat % 4 = 0)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_BLTU_pure bltu_input).nextPC) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+        state bltu_input.imm bltu_input.r1_val bltu_input.r2_val bltu_input.PC
+        misa_val
+        (PureSpec.execute_BLTU_pure bltu_input).nextPC
+        (PureSpec.execute_BLTU_pure bltu_input).throws
+        (PureSpec.execute_BLTU_pure bltu_input).success
+        imm r1 r2 exec_row) : OpEnvelope state m r_main
   -- ============================ BGEU (branch, no mem) ===================
   | bgeu
     (bgeu_input : PureSpec.BgeuInput) (imm : BitVec 13) (r1 r2 : regidx)
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (h_input_imm : bgeu_input.imm = imm)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok bgeu_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok bgeu_input.r2_val state)
-    (h_input_pc : state.regs.get? Register.PC = .some bgeu_input.PC)
-    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
-    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    (h_target_aligned :
-      (bgeu_input.PC + BitVec.signExtend 64 bgeu_input.imm).toNat % 4 = 0)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_BGEU_pure bgeu_input).nextPC) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+        state bgeu_input.imm bgeu_input.r1_val bgeu_input.r2_val bgeu_input.PC
+        misa_val
+        (PureSpec.execute_BGEU_pure bgeu_input).nextPC
+        (PureSpec.execute_BGEU_pure bgeu_input).throws
+        (PureSpec.execute_BGEU_pure bgeu_input).success
+        imm r1 r2 exec_row) : OpEnvelope state m r_main
   -- ============================ FENCE (no mem) ==========================
   | fence
     (fence_input : PureSpec.FenceInput)
@@ -396,15 +342,10 @@ inductive OpEnvelope
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op_fence : m.op r_main = OP_FLAG)
-    (h_input_pc : state.regs.get? Register.PC = .some fence_input.PC)
-    (h_input_priv :
-      state.regs.get? Register.cur_privilege = .some Privilege.Machine)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_FENCE_pure fence_input).nextPC) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.FencePromises
+        state fence_input.PC
+        (PureSpec.execute_FENCE_pure fence_input).nextPC
+        exec_row) : OpEnvelope state m r_main
   -- ============================ LUI (1 mem entry) =======================
   | lui
     (lui_input : PureSpec.LuiInput)
@@ -414,17 +355,10 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op_lui : m.op r_main = OP_COPYB)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
-    (h_input_imm : lui_input.imm = imm)
-    (h_input_rd : lui_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some lui_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = lui_input.PC + 4#64)
-    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
-    (h_rd_idx : lui_input.rd = Transpiler.wrap_to_regidx e_rd.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.UTypePromises
+        state lui_input.imm lui_input.rd lui_input.PC
+        (PureSpec.execute_LUI_pure lui_input).nextPC
+        imm rd exec_row e_rd (lui_input.PC + 4#64)) : OpEnvelope state m r_main
   -- ============================ AUIPC (1 mem entry) =====================
   | auipc
     (auipc_input : PureSpec.AuipcInput)
@@ -435,19 +369,10 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op_auipc : m.op r_main = OP_FLAG)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
-    (h_input_imm : auipc_input.imm = imm)
-    (h_input_rd : auipc_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some auipc_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = nextPC_val)
-    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
-    (h_nextPC_eq :
-      (PureSpec.execute_AUIPC_pure auipc_input).nextPC = nextPC_val)
-    (h_rd_idx : auipc_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
+    (promises : ZiskFv.Equivalence.Promises.UTypePromises
+        state auipc_input.imm auipc_input.rd auipc_input.PC
+        (PureSpec.execute_AUIPC_pure auipc_input).nextPC
+        imm rd exec_row e_rd nextPC_val)
     (h_no_wrap : auipc_input.PC.toNat
       + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < GL_prime)
@@ -465,24 +390,15 @@ inductive OpEnvelope
     (e_rd : Interaction.MemoryBusEntry FGL) (nextPC_val : BitVec 64)
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op_jal : m.op r_main = OP_FLAG)
-    (h_jal_subset : ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
+    (h_jal_subset :
+      ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
+    (promises : ZiskFv.Equivalence.Promises.JumpPromises
+        state jal_input.PC jal_input.rd misa_val
+        (PureSpec.execute_JAL_pure jal_input).success
+        (PureSpec.execute_JAL_pure jal_input).nextPC
+        rd exec_row e_rd nextPC_val)
     (h_input_imm : jal_input.imm = imm)
-    (h_input_rd : jal_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some jal_input.PC)
-    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
-    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = nextPC_val)
-    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
     (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
-    (h_success : (PureSpec.execute_JAL_pure jal_input).success = true)
-    (h_nextPC_option :
-      (PureSpec.execute_JAL_pure jal_input).nextPC = .some nextPC_val)
-    (h_rd_idx : jal_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
     (h_pc_bound : jal_input.PC.toNat < GL_prime - 4)
     (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296) : OpEnvelope state m r_main
@@ -499,28 +415,18 @@ inductive OpEnvelope
     (h_main_op_jalr : m.op r_main = OP_COPYB)
     (h_jalr_subset :
       ZiskFv.Tactics.JumpArchetype.jalr_subset_holds m r_main next_pc)
+    (promises : ZiskFv.Equivalence.Promises.JumpPromises
+        state jalr_input.PC jalr_input.rd misa_val
+        (PureSpec.execute_JALR_pure jalr_input).success
+        (PureSpec.execute_JALR_pure jalr_input).nextPC
+        rd exec_row e_rd nextPC_val)
     (h_input_imm : jalr_input.imm = imm)
-    (h_input_rd : jalr_input.rd = regidx_to_fin rd)
     (h_input_rs1 : read_xreg (regidx_to_fin rs1) state
       = EStateM.Result.ok jalr_input.rs1_val state)
-    (h_input_pc : state.regs.get? Register.PC = .some jalr_input.PC)
-    (h_input_misa : state.regs.get? Register.misa = .some misa_val)
-    (h_misa_c : Sail.BitVec.extractLsb misa_val 2 2 = 0#1)
     (h_cur_privilege : Sail.readReg Register.cur_privilege state
       = EStateM.Result.ok Privilege.Machine state)
     (h_mseccfg : Sail.readReg Register.mseccfg state
       = EStateM.Result.ok mseccfg state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = nextPC_val)
-    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1)
-    (h_success : (PureSpec.execute_JALR_pure jalr_input).success = true)
-    (h_nextPC_option :
-      (PureSpec.execute_JALR_pure jalr_input).nextPC = .some nextPC_val)
-    (h_rd_idx : jalr_input.rd = Transpiler.wrap_to_regidx e_rd.ptr)
     (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
     (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) : OpEnvelope state m r_main
@@ -535,22 +441,10 @@ inductive OpEnvelope
     (h_main_subset : add_subset_holds m r_main)
     (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok add_input.r1_val state)
-    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok add_input.r2_val state)
-    (h_input_rd : add_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some add_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_add_pure add_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : add_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
+        (PureSpec.execute_RTYPE_add_pure add_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ ADDI (do-block LHS, BinaryAdd) ==========
   | addi
     (addi_input : PureSpec.AddiInput) (r1 rd : regidx) (imm : BitVec 12)
@@ -563,21 +457,10 @@ inductive OpEnvelope
     (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
     (h_addi_subset : itype_imm_subset_holds_main m r_main addi_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok addi_input.r1_val state)
-    (h_input_imm : addi_input.imm = imm)
-    (h_input_rd : addi_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some addi_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : addi_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+        state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
+        (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
+        r1 rd imm exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ ADDW (Binary, do-block) =================
   | addw
     (addw_input : PureSpec.AddwInput) (r1 r2 rd : regidx)
@@ -587,22 +470,10 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op_addw : m.op r_main = OP_ADD_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok addw_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok addw_input.r2_val state)
-    (h_input_rd : addw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some addw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_addw_pure addw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : addw_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state addw_input.r1_val addw_input.r2_val addw_input.rd addw_input.PC
+        (PureSpec.execute_RTYPE_addw_pure addw_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ SUBW (Binary, do-block) =================
   | subw
     (subw_input : PureSpec.SubwInput) (r1 r2 rd : regidx)
@@ -612,22 +483,10 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op_subw : m.op r_main = OP_SUB_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok subw_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok subw_input.r2_val state)
-    (h_input_rd : subw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some subw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : subw_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state subw_input.r1_val subw_input.r2_val subw_input.rd subw_input.PC
+        (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ ADDIW (Binary, do-block, I-type) ========
   | addiw
     (addiw_input : PureSpec.AddiwInput) (r1 rd : regidx) (imm : BitVec 12)
@@ -638,21 +497,10 @@ inductive OpEnvelope
     (h_main_op_addiw : m.op r_main = OP_ADD_W)
     (h_addiw_subset : itype_imm_subset_holds_main m r_main addiw_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok addiw_input.r1_val state)
-    (h_input_imm : addiw_input.imm = imm)
-    (h_input_rd : addiw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some addiw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_ITYPE_addiw_pure addiw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : addiw_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+        state addiw_input.r1_val addiw_input.imm addiw_input.rd addiw_input.PC
+        (PureSpec.execute_ITYPE_addiw_pure addiw_input).nextPC
+        r1 rd imm exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ SUB (Binary, R-type) ====================
   | sub
     (sub_input : PureSpec.SubInput) (r1 r2 rd : regidx)
@@ -662,22 +510,10 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op_sub : m.op r_main = OP_SUB)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok sub_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok sub_input.r2_val state)
-    (h_input_rd : sub_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some sub_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : sub_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state sub_input.r1_val sub_input.r2_val sub_input.rd sub_input.PC
+        (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ AND (Binary, R-type) ====================
   | and_op
     (and_input : PureSpec.AndInput) (r1 r2 rd : regidx)
@@ -687,22 +523,10 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op_and : m.op r_main = OP_AND)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok and_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok and_input.r2_val state)
-    (h_input_rd : and_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some and_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_and_pure and_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : and_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state and_input.r1_val and_input.r2_val and_input.rd and_input.PC
+        (PureSpec.execute_RTYPE_and_pure and_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ OR (Binary, R-type) =====================
   | or_op
     (or_input : PureSpec.OrInput) (r1 r2 rd : regidx)
@@ -712,22 +536,10 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op_or : m.op r_main = OP_OR)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok or_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok or_input.r2_val state)
-    (h_input_rd : or_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some or_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_or_pure or_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : or_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
+        (PureSpec.execute_RTYPE_or_pure or_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ XOR (Binary, R-type) ====================
   | xor_op
     (xor_input : PureSpec.XorInput) (r1 r2 rd : regidx)
@@ -737,22 +549,10 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op_xor : m.op r_main = OP_XOR)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok xor_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok xor_input.r2_val state)
-    (h_input_rd : xor_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some xor_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_xor_pure xor_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : xor_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state xor_input.r1_val xor_input.r2_val xor_input.rd xor_input.PC
+        (PureSpec.execute_RTYPE_xor_pure xor_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ SLT (Binary, R-type) ====================
   | slt
     (slt_input : PureSpec.SltInput) (r1 r2 rd : regidx)
@@ -762,22 +562,10 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op_slt : m.op r_main = OP_LT)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok slt_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok slt_input.r2_val state)
-    (h_input_rd : slt_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some slt_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_slt_pure slt_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : slt_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state slt_input.r1_val slt_input.r2_val slt_input.rd slt_input.PC
+        (PureSpec.execute_RTYPE_slt_pure slt_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ SLTU (Binary, R-type) ===================
   | sltu
     (sltu_input : PureSpec.SltuInput) (r1 r2 rd : regidx)
@@ -787,22 +575,10 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op_sltu : m.op r_main = OP_LTU)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok sltu_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok sltu_input.r2_val state)
-    (h_input_rd : sltu_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some sltu_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_sltu_pure sltu_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : sltu_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state sltu_input.r1_val sltu_input.r2_val sltu_input.rd sltu_input.PC
+        (PureSpec.execute_RTYPE_sltu_pure sltu_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ ANDI (Binary, I-type) ===================
   | andi
     (andi_input : PureSpec.AndiInput) (r1 rd : regidx) (imm : BitVec 12)
@@ -813,21 +589,10 @@ inductive OpEnvelope
     (h_main_op_andi : m.op r_main = OP_AND)
     (h_andi_subset : itype_imm_subset_holds_main m r_main andi_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok andi_input.r1_val state)
-    (h_input_imm : andi_input.imm = imm)
-    (h_input_rd : andi_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some andi_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_ITYPE_andi_pure andi_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : andi_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+        state andi_input.r1_val andi_input.imm andi_input.rd andi_input.PC
+        (PureSpec.execute_ITYPE_andi_pure andi_input).nextPC
+        r1 rd imm exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ ORI (Binary, I-type) ====================
   | ori
     (ori_input : PureSpec.OriInput) (r1 rd : regidx) (imm : BitVec 12)
@@ -838,21 +603,10 @@ inductive OpEnvelope
     (h_main_op_ori : m.op r_main = OP_OR)
     (h_ori_subset : itype_imm_subset_holds_main m r_main ori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok ori_input.r1_val state)
-    (h_input_imm : ori_input.imm = imm)
-    (h_input_rd : ori_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some ori_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : ori_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+        state ori_input.r1_val ori_input.imm ori_input.rd ori_input.PC
+        (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
+        r1 rd imm exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ XORI (Binary, I-type) ===================
   | xori
     (xori_input : PureSpec.XoriInput) (r1 rd : regidx) (imm : BitVec 12)
@@ -863,21 +617,10 @@ inductive OpEnvelope
     (h_main_op_xori : m.op r_main = OP_XOR)
     (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok xori_input.r1_val state)
-    (h_input_imm : xori_input.imm = imm)
-    (h_input_rd : xori_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some xori_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_ITYPE_xori_pure xori_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : xori_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+        state xori_input.r1_val xori_input.imm xori_input.rd xori_input.PC
+        (PureSpec.execute_ITYPE_xori_pure xori_input).nextPC
+        r1 rd imm exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ SLTI (Binary, I-type) ===================
   | slti
     (slti_input : PureSpec.SltiInput) (r1 rd : regidx) (imm : BitVec 12)
@@ -888,21 +631,10 @@ inductive OpEnvelope
     (h_main_op_slti : m.op r_main = OP_LT)
     (h_slti_subset : itype_imm_subset_holds_main m r_main slti_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok slti_input.r1_val state)
-    (h_input_imm : slti_input.imm = imm)
-    (h_input_rd : slti_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some slti_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : slti_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+        state slti_input.r1_val slti_input.imm slti_input.rd slti_input.PC
+        (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC
+        r1 rd imm exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ SLTIU (Binary, I-type) ==================
   | sltiu
     (sltiu_input : PureSpec.SltiuInput) (r1 rd : regidx) (imm : BitVec 12)
@@ -913,43 +645,20 @@ inductive OpEnvelope
     (h_main_op_sltiu : m.op r_main = OP_LTU)
     (h_sltiu_subset : itype_imm_subset_holds_main m r_main sltiu_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok sltiu_input.r1_val state)
-    (h_input_imm : sltiu_input.imm = imm)
-    (h_input_rd : sltiu_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some sltiu_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_ITYPE_sltiu_pure sltiu_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : sltiu_input.rd = Transpiler.wrap_to_regidx e2.ptr) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+        state sltiu_input.r1_val sltiu_input.imm sltiu_input.rd sltiu_input.PC
+        (PureSpec.execute_ITYPE_sltiu_pure sltiu_input).nextPC
+        r1 rd imm exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ SLL (BinaryExtension, R-type) ===========
   | sll
     (sll_input : PureSpec.SllInput) (r1 r2 rd : regidx)
     (v : Valid_BinaryExtension C FGL FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok sll_input.r1_val state)
-    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok sll_input.r2_val state)
-    (h_input_rd : sll_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some sll_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : sll_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state sll_input.r1_val sll_input.r2_val sll_input.rd sll_input.PC
+        (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
@@ -960,22 +669,10 @@ inductive OpEnvelope
     (v : Valid_BinaryExtension C FGL FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok srl_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok srl_input.r2_val state)
-    (h_input_rd : srl_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some srl_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_srl_pure srl_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : srl_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state srl_input.r1_val srl_input.r2_val srl_input.rd srl_input.PC
+        (PureSpec.execute_RTYPE_srl_pure srl_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRL)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
@@ -986,22 +683,10 @@ inductive OpEnvelope
     (v : Valid_BinaryExtension C FGL FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok sra_input.r1_val state)
-    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok sra_input.r2_val state)
-    (h_input_rd : sra_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some sra_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_sra_pure sra_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : sra_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state sra_input.r1_val sra_input.r2_val sra_input.rd sra_input.PC
+        (PureSpec.execute_RTYPE_sra_pure sra_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRA)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
@@ -1012,21 +697,10 @@ inductive OpEnvelope
     (v : Valid_BinaryExtension C FGL FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok slli_input.r1_val state)
-    (h_input_shamt : slli_input.shamt = shamt)
-    (h_input_rd : slli_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some slli_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : slli_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.ShiftImmPromises
+        state slli_input.r1_val slli_input.shamt slli_input.rd slli_input.PC
+        (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC
+        r1 rd shamt exec_row e0 e1 e2)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
@@ -1037,21 +711,10 @@ inductive OpEnvelope
     (v : Valid_BinaryExtension C FGL FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok srli_input.r1_val state)
-    (h_input_shamt : srli_input.shamt = shamt)
-    (h_input_rd : srli_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some srli_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_SHIFTIOP_srli_pure srli_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : srli_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.ShiftImmPromises
+        state srli_input.r1_val srli_input.shamt srli_input.rd srli_input.PC
+        (PureSpec.execute_SHIFTIOP_srli_pure srli_input).nextPC
+        r1 rd shamt exec_row e0 e1 e2)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRL)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
@@ -1062,21 +725,10 @@ inductive OpEnvelope
     (v : Valid_BinaryExtension C FGL FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok srai_input.r1_val state)
-    (h_input_shamt : srai_input.shamt = shamt)
-    (h_input_rd : srai_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some srai_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_SHIFTIOP_srai_pure srai_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : srai_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.ShiftImmPromises
+        state srai_input.r1_val srai_input.shamt srai_input.rd srai_input.PC
+        (PureSpec.execute_SHIFTIOP_srai_pure srai_input).nextPC
+        r1 rd shamt exec_row e0 e1 e2)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRA)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
@@ -1165,20 +817,10 @@ inductive OpEnvelope
     (v : Valid_BinaryExtension C FGL FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok slliw_input.r1_val state)
-    (h_input_rd : slliw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some slliw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_SHIFTIWOP_slliw_pure slliw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : slliw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.ShiftWImmPromises
+        state slliw_input.r1_val slliw_input.rd slliw_input.PC
+        (PureSpec.execute_SHIFTIWOP_slliw_pure slliw_input).nextPC
+        r1 rd exec_row e0 e1 e2)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
@@ -1189,20 +831,10 @@ inductive OpEnvelope
     (v : Valid_BinaryExtension C FGL FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok srliw_input.r1_val state)
-    (h_input_rd : srliw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some srliw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_SHIFTIWOP_srliw_pure srliw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : srliw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.ShiftWImmPromises
+        state srliw_input.r1_val srliw_input.rd srliw_input.PC
+        (PureSpec.execute_SHIFTIWOP_srliw_pure srliw_input).nextPC
+        r1 rd exec_row e0 e1 e2)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRL_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
@@ -1213,20 +845,10 @@ inductive OpEnvelope
     (v : Valid_BinaryExtension C FGL FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok sraiw_input.r1_val state)
-    (h_input_rd : sraiw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some sraiw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_SHIFTIWOP_sraiw_pure sraiw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : sraiw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.ShiftWImmPromises
+        state sraiw_input.r1_val sraiw_input.rd sraiw_input.PC
+        (PureSpec.execute_SHIFTIWOP_sraiw_pure sraiw_input).nextPC
+        r1 rd exec_row e0 e1 e2)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRA_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
@@ -1243,19 +865,12 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op : m.op r_main = OP_COPYB)
     (h_main_ind_width : m.ind_width r_main = 1)
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.sb_state_assumptions sb_input state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_STOREB_pure sb_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
+    (h_opcode_assumptions : PureSpec.sb_state_assumptions sb_input state)
+    (promises : ZiskFv.Equivalence.Promises.StorePromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.sb_state_assumptions sb_input state)
+        (PureSpec.execute_STOREB_pure sb_input).nextPC
+        exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ SH (store, Main-only) ===================
   | sh
     (sh_input : PureSpec.ShInput)
@@ -1268,19 +883,12 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op : m.op r_main = OP_COPYB)
     (h_main_ind_width : m.ind_width r_main = 2)
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.sh_state_assumptions sh_input state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_STOREH_pure sh_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
+    (h_opcode_assumptions : PureSpec.sh_state_assumptions sh_input state)
+    (promises : ZiskFv.Equivalence.Promises.StorePromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.sh_state_assumptions sh_input state)
+        (PureSpec.execute_STOREH_pure sh_input).nextPC
+        exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ SW (store, Main-only) ===================
   | sw
     (sw_input : PureSpec.SwInput)
@@ -1293,19 +901,12 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op : m.op r_main = OP_COPYB)
     (h_main_ind_width : m.ind_width r_main = 4)
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.sw_state_assumptions sw_input state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_STOREW_pure sw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
+    (h_opcode_assumptions : PureSpec.sw_state_assumptions sw_input state)
+    (promises : ZiskFv.Equivalence.Promises.StorePromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.sw_state_assumptions sw_input state)
+        (PureSpec.execute_STOREW_pure sw_input).nextPC
+        exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ SD (store, Main-only) ===================
   | sd
     (sd_input : PureSpec.SdInput)
@@ -1317,19 +918,12 @@ inductive OpEnvelope
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op : m.op r_main = OP_COPYB)
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.sd_state_assumptions sd_input state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_STORED_pure sd_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 2) : OpEnvelope state m r_main
+    (h_opcode_assumptions : PureSpec.sd_state_assumptions sd_input state)
+    (promises : ZiskFv.Equivalence.Promises.StorePromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.sd_state_assumptions sd_input state)
+        (PureSpec.execute_STORED_pure sd_input).nextPC
+        exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ LD (load doubleword) ====================
   | ld
     (ld_input : PureSpec.LdInput)
@@ -1342,19 +936,11 @@ inductive OpEnvelope
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op_ld : m.op r_main = OP_COPYB)
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.ld_state_assumptions ld_input state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_LOADD_pure ld_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.ld_state_assumptions ld_input state)
+        (PureSpec.execute_LOADD_pure ld_input).nextPC
+        exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ LBU =====================================
   | lbu
     (lbu_input : PureSpec.LbuInput)
@@ -1373,19 +959,11 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op_lbu : m.op r_main = OP_COPYB)
     (h_width : m.ind_width r_main = (1 : FGL))
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.lbu_state_assumptions lbu_input state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_LOADBU_pure lbu_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.lbu_state_assumptions lbu_input state)
+        (PureSpec.execute_LOADBU_pure lbu_input).nextPC
+        exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ LHU =====================================
   | lhu
     (lhu_input : PureSpec.LhuInput)
@@ -1404,19 +982,11 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op_lhu : m.op r_main = OP_COPYB)
     (h_width : m.ind_width r_main = (2 : FGL))
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.lhu_state_assumptions lhu_input state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_LOADHU_pure lhu_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.lhu_state_assumptions lhu_input state)
+        (PureSpec.execute_LOADHU_pure lhu_input).nextPC
+        exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ LWU =====================================
   | lwu
     (lwu_input : PureSpec.LwuInput)
@@ -1435,19 +1005,11 @@ inductive OpEnvelope
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op_lwu : m.op r_main = OP_COPYB)
     (h_width : m.ind_width r_main = (4 : FGL))
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.lwu_state_assumptions lwu_input state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_LOADWU_pure lwu_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.lwu_state_assumptions lwu_input state)
+        (PureSpec.execute_LOADWU_pure lwu_input).nextPC
+        exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ LB (signed-byte load) ===================
   | lb
     (lb_input : PureSpec.LbInput)
@@ -1461,19 +1023,11 @@ inductive OpEnvelope
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_B)
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.lb_state_assumptions lb_input state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_LOADB_pure lb_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.lb_state_assumptions lb_input state)
+        (PureSpec.execute_LOADB_pure lb_input).nextPC
+        exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ LH ======================================
   | lh
     (lh_input : PureSpec.LhInput)
@@ -1487,19 +1041,11 @@ inductive OpEnvelope
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_H)
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.lh_state_assumptions lh_input state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_LOADH_pure lh_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.lh_state_assumptions lh_input state)
+        (PureSpec.execute_LOADH_pure lh_input).nextPC
+        exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ LW ======================================
   | lw
     (lw_input : PureSpec.LwInput)
@@ -1513,19 +1059,11 @@ inductive OpEnvelope
     (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_W)
-    (risc_v_assumptions :
-      RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
-    (h_opcode_assumptions :
-      PureSpec.lw_state_assumptions lw_input state)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_LOADW_pure lw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) : OpEnvelope state m r_main
+    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+        state mstatus pmaRegion misa mseccfg
+        (PureSpec.lw_state_assumptions lw_input state)
+        (PureSpec.execute_LOADW_pure lw_input).nextPC
+        exec_row e0 e1 e2) : OpEnvelope state m r_main
   -- ============================ MUL =====================================
   | mul
     (mul_input : PureSpec.MulInput) (r1 r2 rd : regidx)
@@ -1538,22 +1076,10 @@ inductive OpEnvelope
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_Arith v r_a))
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok mul_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok mul_input.r2_val state)
-    (h_input_rd : mul_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some mul_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_MULH_mul_pure mul_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : mul_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC
+        (PureSpec.execute_MULH_mul_pure mul_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
     (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
     (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
@@ -1572,22 +1098,10 @@ inductive OpEnvelope
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_ArithMulSecondary v r_a))
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok mulh_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok mulh_input.r2_val state)
-    (h_input_rd : mulh_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some mulh_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : mulh_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state mulh_input.r1_val mulh_input.r2_val mulh_input.rd mulh_input.PC
+        (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a) :
     OpEnvelope state m r_main
@@ -1602,22 +1116,10 @@ inductive OpEnvelope
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_ArithMulSecondary v r_a))
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok mulhu_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok mulhu_input.r2_val state)
-    (h_input_rd : mulhu_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some mulhu_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : mulhu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state mulhu_input.r1_val mulhu_input.r2_val mulhu_input.rd mulhu_input.PC
+        (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
     (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
     (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
@@ -1636,22 +1138,10 @@ inductive OpEnvelope
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_ArithMulSecondary v r_a))
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok mulhsu_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok mulhsu_input.r2_val state)
-    (h_input_rd : mulhsu_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some mulhsu_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : mulhsu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state mulhsu_input.r1_val mulhsu_input.r2_val mulhsu_input.rd mulhsu_input.PC
+        (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a) :
     OpEnvelope state m r_main
@@ -1666,22 +1156,10 @@ inductive OpEnvelope
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_Arith v r_a))
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok mulw_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok mulw_input.r2_val state)
-    (h_input_rd : mulw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some mulw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_MULW_pure mulw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : mulw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
+        (PureSpec.execute_MULW_pure mulw_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (h_sext_choice :
@@ -1709,22 +1187,10 @@ inductive OpEnvelope
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_DIVREM_div_pure div_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : div_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok div_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok div_input.r2_val state)
-    (h_input_rd : div_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some div_input.PC)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state div_input.r1_val div_input.r2_val div_input.rd div_input.PC
+        (PureSpec.execute_DIVREM_div_pure div_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_op2_ne : div_input.r2_val.toInt ≠ 0)
     (h_no_overflow :
       ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
@@ -1749,22 +1215,10 @@ inductive OpEnvelope
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok divu_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok divu_input.r2_val state)
-    (h_input_rd : divu_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some divu_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_DIVREM_divu_pure divu_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : divu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state divu_input.r1_val divu_input.r2_val divu_input.rd divu_input.PC
+        (PureSpec.execute_DIVREM_divu_pure divu_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
     (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
     (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
@@ -1784,22 +1238,10 @@ inductive OpEnvelope
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok divw_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok divw_input.r2_val state)
-    (h_input_rd : divw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some divw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : divw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state divw_input.r1_val divw_input.r2_val divw_input.rd divw_input.PC
+        (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
@@ -1838,22 +1280,10 @@ inductive OpEnvelope
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok divuw_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok divuw_input.r2_val state)
-    (h_input_rd : divuw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some divuw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : divuw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state divuw_input.r1_val divuw_input.r2_val divuw_input.rd divuw_input.PC
+        (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_sext_choice :
@@ -1878,22 +1308,10 @@ inductive OpEnvelope
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : rem_input.rd = Transpiler.wrap_to_regidx e2.ptr)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok rem_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok rem_input.r2_val state)
-    (h_input_rd : rem_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some rem_input.PC)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state rem_input.r1_val rem_input.r2_val rem_input.rd rem_input.PC
+        (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_op2_ne : rem_input.r2_val.toInt ≠ 0)
     (h_no_overflow :
       ¬ (rem_input.r1_val.toInt = -(2:ℤ)^63 ∧ rem_input.r2_val.toInt = -1))
@@ -1918,22 +1336,10 @@ inductive OpEnvelope
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok remu_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok remu_input.r2_val state)
-    (h_input_rd : remu_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some remu_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : remu_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state remu_input.r1_val remu_input.r2_val remu_input.rd remu_input.PC
+        (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
     (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
     (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
@@ -1953,22 +1359,10 @@ inductive OpEnvelope
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok remw_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok remw_input.r2_val state)
-    (h_input_rd : remw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some remw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : remw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state remw_input.r1_val remw_input.r2_val remw_input.rd remw_input.PC
+        (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
@@ -2007,22 +1401,10 @@ inductive OpEnvelope
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok remuw_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok remuw_input.r2_val state)
-    (h_input_rd : remuw_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some remuw_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : remuw_input.rd = Transpiler.wrap_to_regidx e2.ptr)
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state remuw_input.r1_val remuw_input.r2_val remuw_input.rd remuw_input.PC
+        (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_sext_choice :
@@ -2521,349 +1903,201 @@ theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope (C := C) state m r_main) :
     env.exec_eq := by
   cases env with
-  | beq beq_input imm r1 r2 misa_val exec_row
-        h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-        h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
+  | beq beq_input imm r1 r2 misa_val exec_row promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_BEQ_from_trust state beq_input imm r1 r2 misa_val exec_row
-      h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-      h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-  | bne bne_input imm r1 r2 misa_val exec_row
-        h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-        h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
+      promises
+  | bne bne_input imm r1 r2 misa_val exec_row promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_BNE_from_trust state bne_input imm r1 r2 misa_val exec_row
-      h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-      h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-  | blt blt_input imm r1 r2 misa_val exec_row
-        h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-        h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
+      promises
+  | blt blt_input imm r1 r2 misa_val exec_row promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_BLT_from_trust state blt_input imm r1 r2 misa_val exec_row
-      h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-      h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-  | bge bge_input imm r1 r2 misa_val exec_row
-        h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-        h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
+      promises
+  | bge bge_input imm r1 r2 misa_val exec_row promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_BGE_from_trust state bge_input imm r1 r2 misa_val exec_row
-      h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-      h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-  | bltu bltu_input imm r1 r2 misa_val exec_row
-         h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-         h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
+      promises
+  | bltu bltu_input imm r1 r2 misa_val exec_row promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_BLTU_from_trust state bltu_input imm r1 r2 misa_val exec_row
-      h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-      h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-  | bgeu bgeu_input imm r1 r2 misa_val exec_row
-         h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-         h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
+      promises
+  | bgeu bgeu_input imm r1 r2 misa_val exec_row promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_BGEU_from_trust state bgeu_input imm r1 r2 misa_val exec_row
-      h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
-      h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      promises
   | fence fence_input fm pred succ rs rd exec_row
-          h_main_active h_main_op_fence h_input_pc h_input_priv
-          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
+          h_main_active h_main_op_fence promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_FENCE_from_trust state fence_input fm pred succ rs rd m r_main
-      exec_row h_main_active h_main_op_fence h_input_pc h_input_priv
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      exec_row h_main_active h_main_op_fence promises
   | lui lui_input imm rd next_pc exec_row e_rd
-        h_main_active h_main_op_lui h_lui_subset
-        h_input_imm h_input_rd h_input_pc
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_rd_mult h_rd_as h_rd_idx =>
+        h_main_active h_main_op_lui h_lui_subset promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_LUI_from_trust state lui_input imm rd m r_main next_pc
-      exec_row e_rd h_main_active h_main_op_lui h_lui_subset
-      h_input_imm h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_rd_mult h_rd_as h_rd_idx
+      exec_row e_rd h_main_active h_main_op_lui h_lui_subset promises
   | auipc auipc_input imm rd exec_row e_rd nextPC_val next_pc
           h_main_active h_main_op_auipc h_auipc_subset
-          h_input_imm h_input_rd h_input_pc
-          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-          h_rd_mult h_rd_as h_nextPC_eq h_rd_idx
-          h_no_wrap h_lo_bound h_pc_offset_lt_2_32 =>
+          promises h_no_wrap h_lo_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_AUIPC_from_trust state auipc_input imm rd exec_row e_rd nextPC_val
       m r_main next_pc h_main_active h_main_op_auipc h_auipc_subset
-      h_input_imm h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_rd_mult h_rd_as h_nextPC_eq h_rd_idx
-      h_no_wrap h_lo_bound h_pc_offset_lt_2_32
+      promises h_no_wrap h_lo_bound h_pc_offset_lt_2_32
   | jal jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val
         h_main_active h_main_op_jal h_jal_subset
-        h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_rd_mult h_rd_as h_not_throws h_success h_nextPC_option h_rd_idx
+        promises h_input_imm h_not_throws
         h_pc_bound h_lo_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_JAL_from_trust state jal_input imm rd misa_val m r_main next_pc
       exec_row e_rd nextPC_val h_main_active h_main_op_jal h_jal_subset
-      h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_rd_mult h_rd_as h_not_throws h_success h_nextPC_option h_rd_idx
+      promises h_input_imm h_not_throws
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
   | jalr jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val next_pc
          h_main_active h_main_op_jalr h_jalr_subset
-         h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
-         h_cur_privilege h_mseccfg
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_rd_mult h_rd_as h_success h_nextPC_option h_rd_idx
+         promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
          h_pc_bound h_lo_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_JALR_from_trust state jalr_input imm rs1 rd misa_val mseccfg
       exec_row e_rd nextPC_val m r_main next_pc
       h_main_active h_main_op_jalr h_jalr_subset
-      h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
-      h_cur_privilege h_mseccfg
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_rd_mult h_rd_as h_success h_nextPC_option h_rd_idx
+      promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
   | add add_input r1 r2 rd b exec_row e0 e1 e2
-        h_main_active h_main_op_add h_main_subset h_b_core h_lane_rd
-        h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+        h_main_active h_main_op_add h_main_subset h_b_core h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_ADD_from_trust state add_input r1 r2 rd m b r_main exec_row e0 e1 e2
-      h_main_active h_main_op_add h_main_subset h_b_core h_lane_rd
-      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_main_active h_main_op_add h_main_subset h_b_core h_lane_rd promises
   | addi addi_input r1 rd imm b exec_row e0 e1 e2
          h_main_active h_main_op_addi h_main_subset h_b_core h_addi_subset h_lane_rd
-         h_input_r1 h_input_imm h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+         promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_ADDI_from_trust state addi_input r1 rd imm m b r_main exec_row e0 e1 e2
       h_main_active h_main_op_addi h_main_subset h_b_core h_addi_subset h_lane_rd
-      h_input_r1 h_input_imm h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
   | addw addw_input r1 r2 rd v exec_row e0 e1 e2
-         h_main_active h_main_op_addw h_lane_rd
-         h_input_r1 h_input_r2 h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+         h_main_active h_main_op_addw h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_ADDW_from_trust state addw_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_addw h_lane_rd
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_main_active h_main_op_addw h_lane_rd promises
   | subw subw_input r1 r2 rd v exec_row e0 e1 e2
-         h_main_active h_main_op_subw h_lane_rd
-         h_input_r1 h_input_r2 h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+         h_main_active h_main_op_subw h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SUBW_from_trust state subw_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_subw h_lane_rd
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_main_active h_main_op_subw h_lane_rd promises
   | addiw addiw_input r1 rd imm v exec_row e0 e1 e2
           h_main_active h_main_op_addiw h_addiw_subset h_lane_rd
-          h_input_r1 h_input_imm h_input_rd h_input_pc
-          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+          promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_ADDIW_from_trust state addiw_input r1 rd imm m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_addiw h_addiw_subset h_lane_rd
-      h_input_r1 h_input_imm h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
   | sub sub_input r1 r2 rd v exec_row e0 e1 e2
-        h_main_active h_main_op_sub h_lane_rd
-        h_input_r1 h_input_r2 h_input_rd h_input_pc
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+        h_main_active h_main_op_sub h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SUB_from_trust state sub_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_sub h_lane_rd
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_main_active h_main_op_sub h_lane_rd promises
   | and_op and_input r1 r2 rd v exec_row e0 e1 e2
-           h_main_active h_main_op_and h_lane_rd
-           h_input_r1 h_input_r2 h_input_rd h_input_pc
-           h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+           h_main_active h_main_op_and h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_AND_from_trust state and_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_and h_lane_rd
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_main_active h_main_op_and h_lane_rd promises
   | or_op or_input r1 r2 rd v exec_row e0 e1 e2
-          h_main_active h_main_op_or h_lane_rd
-          h_input_r1 h_input_r2 h_input_rd h_input_pc
-          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+          h_main_active h_main_op_or h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_OR_from_trust state or_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_or h_lane_rd
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_main_active h_main_op_or h_lane_rd promises
   | xor_op xor_input r1 r2 rd v exec_row e0 e1 e2
-           h_main_active h_main_op_xor h_lane_rd
-           h_input_r1 h_input_r2 h_input_rd h_input_pc
-           h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+           h_main_active h_main_op_xor h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_XOR_from_trust state xor_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_xor h_lane_rd
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_main_active h_main_op_xor h_lane_rd promises
   | slt slt_input r1 r2 rd v exec_row e0 e1 e2
-        h_main_active h_main_op_slt h_lane_rd
-        h_input_r1 h_input_r2 h_input_rd h_input_pc
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+        h_main_active h_main_op_slt h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SLT_from_trust state slt_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_slt h_lane_rd
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_main_active h_main_op_slt h_lane_rd promises
   | sltu sltu_input r1 r2 rd v exec_row e0 e1 e2
-         h_main_active h_main_op_sltu h_lane_rd
-         h_input_r1 h_input_r2 h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+         h_main_active h_main_op_sltu h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SLTU_from_trust state sltu_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_main_active h_main_op_sltu h_lane_rd
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      h_main_active h_main_op_sltu h_lane_rd promises
   | andi andi_input r1 rd imm v exec_row e0 e1 e2
          h_main_active h_main_op_andi h_andi_subset h_lane_rd
-         h_input_r1 h_input_imm h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+         promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_ANDI_from_trust state andi_input r1 rd imm m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_andi h_andi_subset h_lane_rd
-      h_input_r1 h_input_imm h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
   | ori ori_input r1 rd imm v exec_row e0 e1 e2
         h_main_active h_main_op_ori h_ori_subset h_lane_rd
-        h_input_r1 h_input_imm h_input_rd h_input_pc
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+        promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_ORI_from_trust state ori_input r1 rd imm m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_ori h_ori_subset h_lane_rd
-      h_input_r1 h_input_imm h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
   | xori xori_input r1 rd imm v exec_row e0 e1 e2
          h_main_active h_main_op_xori h_xori_subset h_lane_rd
-         h_input_r1 h_input_imm h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+         promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_XORI_from_trust state xori_input r1 rd imm m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_xori h_xori_subset h_lane_rd
-      h_input_r1 h_input_imm h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
   | slti slti_input r1 rd imm v exec_row e0 e1 e2
          h_main_active h_main_op_slti h_slti_subset h_lane_rd
-         h_input_r1 h_input_imm h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+         promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SLTI_from_trust state slti_input r1 rd imm m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_slti h_slti_subset h_lane_rd
-      h_input_r1 h_input_imm h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
   | sltiu sltiu_input r1 rd imm v exec_row e0 e1 e2
           h_main_active h_main_op_sltiu h_sltiu_subset h_lane_rd
-          h_input_r1 h_input_imm h_input_rd h_input_pc
-          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
+          promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SLTIU_from_trust state sltiu_input r1 rd imm m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_sltiu h_sltiu_subset h_lane_rd
-      h_input_r1 h_input_imm h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
   | sll sll_input r1 r2 rd v exec_row e0 e1 e2
-        h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+        promises
         h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SLL_from_trust state sll_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_main_active h_main_op h_lane_rd
   | srl srl_input r1 r2 rd v exec_row e0 e1 e2
-        h_input_r1 h_input_r2 h_input_rd h_input_pc
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+        promises
         h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SRL_from_trust state srl_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_main_active h_main_op h_lane_rd
   | sra sra_input r1 r2 rd v exec_row e0 e1 e2
-        h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+        promises
         h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SRA_from_trust state sra_input r1 r2 rd m v r_main exec_row e0 e1 e2
-      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_main_active h_main_op h_lane_rd
   | slli slli_input r1 rd shamt v exec_row e0 e1 e2
-         h_input_r1_sail h_input_shamt h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         promises
          h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SLLI_from_trust state slli_input r1 rd shamt m v r_main exec_row e0 e1 e2
-      h_input_r1_sail h_input_shamt h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_main_active h_main_op h_lane_rd
   | srli srli_input r1 rd shamt v exec_row e0 e1 e2
-         h_input_r1 h_input_shamt h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         promises
          h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SRLI_from_trust state srli_input r1 rd shamt m v r_main exec_row e0 e1 e2
-      h_input_r1 h_input_shamt h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_main_active h_main_op h_lane_rd
   | srai srai_input r1 rd shamt v exec_row e0 e1 e2
-         h_input_r1 h_input_shamt h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         promises
          h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SRAI_from_trust state srai_input r1 rd shamt m v r_main exec_row e0 e1 e2
-      h_input_r1 h_input_shamt h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_main_active h_main_op h_lane_rd
   | sllw sllw_input r1 r2 rd v exec_row e0 e1 e2
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
@@ -2899,347 +2133,221 @@ theorem zisk_riscv_compliant_program_bus
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
       h_main_active h_main_op h_lane_rd
   | slliw slliw_input r1 rd v exec_row e0 e1 e2
-          h_input_r1_sail h_input_rd h_input_pc
-          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+          promises
           h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SLLIW_from_trust state slliw_input r1 rd m v r_main exec_row e0 e1 e2
-      h_input_r1_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_main_active h_main_op h_lane_rd
   | srliw srliw_input r1 rd v exec_row e0 e1 e2
-          h_input_r1_sail h_input_rd h_input_pc
-          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+          promises
           h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SRLIW_from_trust state srliw_input r1 rd m v r_main exec_row e0 e1 e2
-      h_input_r1_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_main_active h_main_op h_lane_rd
   | sraiw sraiw_input r1 rd v exec_row e0 e1 e2
-          h_input_r1_sail h_input_rd h_input_pc
-          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+          promises
           h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SRAIW_from_trust state sraiw_input r1 rd m v r_main exec_row e0 e1 e2
-      h_input_r1_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_main_active h_main_op h_lane_rd
   | sb sb_input mstatus pmaRegion misa mseccfg exec_row e0 e1 e2
-       h_main_active h_main_op h_main_ind_width
-       risc_v_assumptions h_opcode_assumptions
-       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+       h_main_active h_main_op h_main_ind_width h_opcode_assumptions promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SB_from_trust state sb_input mstatus pmaRegion misa mseccfg
       m r_main exec_row e0 e1 e2
-      h_main_active h_main_op h_main_ind_width
-      risc_v_assumptions h_opcode_assumptions
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+      h_main_active h_main_op h_main_ind_width h_opcode_assumptions promises
   | sh sh_input mstatus pmaRegion misa mseccfg exec_row e0 e1 e2
-       h_main_active h_main_op h_main_ind_width
-       risc_v_assumptions h_opcode_assumptions
-       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+       h_main_active h_main_op h_main_ind_width h_opcode_assumptions promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SH_from_trust state sh_input mstatus pmaRegion misa mseccfg
       m r_main exec_row e0 e1 e2
-      h_main_active h_main_op h_main_ind_width
-      risc_v_assumptions h_opcode_assumptions
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+      h_main_active h_main_op h_main_ind_width h_opcode_assumptions promises
   | sw sw_input mstatus pmaRegion misa mseccfg exec_row e0 e1 e2
-       h_main_active h_main_op h_main_ind_width
-       risc_v_assumptions h_opcode_assumptions
-       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+       h_main_active h_main_op h_main_ind_width h_opcode_assumptions promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SW_from_trust state sw_input mstatus pmaRegion misa mseccfg
       m r_main exec_row e0 e1 e2
-      h_main_active h_main_op h_main_ind_width
-      risc_v_assumptions h_opcode_assumptions
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+      h_main_active h_main_op h_main_ind_width h_opcode_assumptions promises
   | sd sd_input mstatus pmaRegion misa mseccfg exec_row e0 e1 e2
-       h_main_active h_main_op
-       risc_v_assumptions h_opcode_assumptions
-       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+       h_main_active h_main_op h_opcode_assumptions promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SD_from_trust state sd_input mstatus pmaRegion misa mseccfg
       m r_main exec_row e0 e1 e2
-      h_main_active h_main_op
-      risc_v_assumptions h_opcode_assumptions
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+      h_main_active h_main_op h_opcode_assumptions promises
   | ld ld_input mstatus pmaRegion misa mseccfg mem exec_row e0 e1 e2
-       h_main_active h_main_op_ld
-       risc_v_assumptions h_opcode_assumptions
-       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+       h_main_active h_main_op_ld promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_LD_from_trust state ld_input mstatus pmaRegion misa mseccfg
       m mem r_main exec_row e0 e1 e2
-      h_main_active h_main_op_ld
-      risc_v_assumptions h_opcode_assumptions
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+      h_main_active h_main_op_ld promises
   | lbu lbu_input mstatus pmaRegion misa mseccfg mem mab marb ma h_low exec_row e0 e1 e2
-        h_main_active h_main_op_lbu h_width
-        risc_v_assumptions h_opcode_assumptions
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+        h_main_active h_main_op_lbu h_width promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_LBU_from_trust state lbu_input mstatus pmaRegion misa mseccfg
       m mem r_main mab marb ma h_low exec_row e0 e1 e2
-      h_main_active h_main_op_lbu h_width
-      risc_v_assumptions h_opcode_assumptions
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+      h_main_active h_main_op_lbu h_width promises
   | lhu lhu_input mstatus pmaRegion misa mseccfg mem mab marb ma h_low exec_row e0 e1 e2
-        h_main_active h_main_op_lhu h_width
-        risc_v_assumptions h_opcode_assumptions
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+        h_main_active h_main_op_lhu h_width promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_LHU_from_trust state lhu_input mstatus pmaRegion misa mseccfg
       m mem r_main mab marb ma h_low exec_row e0 e1 e2
-      h_main_active h_main_op_lhu h_width
-      risc_v_assumptions h_opcode_assumptions
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+      h_main_active h_main_op_lhu h_width promises
   | lwu lwu_input mstatus pmaRegion misa mseccfg mem mab marb ma h_low exec_row e0 e1 e2
-        h_main_active h_main_op_lwu h_width
-        risc_v_assumptions h_opcode_assumptions
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+        h_main_active h_main_op_lwu h_width promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_LWU_from_trust state lwu_input mstatus pmaRegion misa mseccfg
       m mem r_main mab marb ma h_low exec_row e0 e1 e2
-      h_main_active h_main_op_lwu h_width
-      risc_v_assumptions h_opcode_assumptions
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+      h_main_active h_main_op_lwu h_width promises
   | lb lb_input mstatus pmaRegion misa mseccfg mem v exec_row e0 e1 e2
-       h_main_active h_main_op
-       risc_v_assumptions h_opcode_assumptions
-       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+       h_main_active h_main_op promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_LB_from_trust state lb_input mstatus pmaRegion misa mseccfg
       m mem r_main v exec_row e0 e1 e2
-      h_main_active h_main_op
-      risc_v_assumptions h_opcode_assumptions
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+      h_main_active h_main_op promises
   | lh lh_input mstatus pmaRegion misa mseccfg mem v exec_row e0 e1 e2
-       h_main_active h_main_op
-       risc_v_assumptions h_opcode_assumptions
-       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+       h_main_active h_main_op promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_LH_from_trust state lh_input mstatus pmaRegion misa mseccfg
       m mem r_main v exec_row e0 e1 e2
-      h_main_active h_main_op
-      risc_v_assumptions h_opcode_assumptions
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+      h_main_active h_main_op promises
   | lw lw_input mstatus pmaRegion misa mseccfg mem v exec_row e0 e1 e2
-       h_main_active h_main_op
-       risc_v_assumptions h_opcode_assumptions
-       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
+       h_main_active h_main_op promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_LW_from_trust state lw_input mstatus pmaRegion misa mseccfg
       m mem r_main v exec_row e0 e1 e2
-      h_main_active h_main_op
-      risc_v_assumptions h_opcode_assumptions
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as
+      h_main_active h_main_op promises
   | mul mul_input r1 r2 rd srs1 srs2 exec_row e0 e1 e2 v r_a
         h_main_active h_main_op_mul h_match_primary
-        h_input_r1 h_input_r2 h_input_rd h_input_pc
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+        promises
         h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_MUL_from_trust state mul_input r1 r2 rd srs1 srs2
       exec_row e0 e1 e2 m r_main v r_a
       h_main_active h_main_op_mul h_match_primary
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints
   | mulh mulh_input r1 r2 rd exec_row e0 e1 e2 v r_a
          h_main_active h_main_op_mulh h_match_secondary
-         h_input_r1 h_input_r2 h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         promises
          h_row_constraints =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_MULH_from_trust state mulh_input r1 r2 rd
       exec_row e0 e1 e2 m r_main v r_a
       h_main_active h_main_op_mulh h_match_secondary
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_row_constraints
   | mulhu mulhu_input r1 r2 rd exec_row e0 e1 e2 v r_a
           h_main_active h_main_op_mulhu h_match_secondary
-          h_input_r1 h_input_r2 h_input_rd h_input_pc
-          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+          promises
           h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_MULHU_from_trust state mulhu_input r1 r2 rd
       exec_row e0 e1 e2 m r_main v r_a
       h_main_active h_main_op_mulhu h_match_secondary
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints
   | mulhsu mulhsu_input r1 r2 rd exec_row e0 e1 e2 v r_a
            h_main_active h_main_op_mulhsu h_match_secondary
-           h_input_r1 h_input_r2 h_input_rd h_input_pc
-           h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+           promises
            h_row_constraints =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_MULHSU_from_trust state mulhsu_input r1 r2 rd
       exec_row e0 e1 e2 m r_main v r_a
       h_main_active h_main_op_mulhsu h_match_secondary
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_row_constraints
   | mulw mulw_input r1 r2 rd exec_row e0 e1 e2 v r_a
          h_main_active h_main_op_mulw h_match_primary
-         h_input_r1 h_input_r2 h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         promises
          h_row_constraints h_sext_choice h_rs1_value h_rs2_value =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_MULW_from_trust state mulw_input r1 r2 rd
       exec_row e0 e1 e2 m r_main v r_a
       h_main_active h_main_op_mulw h_match_primary
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_row_constraints h_sext_choice h_rs1_value h_rs2_value
   | div div_input r1 r2 rd exec_row e0 e1 e2 v r_a
         h_main_active h_main_op_div h_match_primary
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-        h_input_r1 h_input_r2 h_input_rd h_input_pc h_op2_ne h_no_overflow
+        promises
+        h_op2_ne h_no_overflow
         h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_DIV_from_trust state div_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_div h_match_primary
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      h_input_r1 h_input_r2 h_input_rd h_input_pc h_op2_ne h_no_overflow
+      promises
+      h_op2_ne h_no_overflow
       h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
   | divu divu_input r1 r2 rd exec_row e0 e1 e2 v r_a
          h_main_active h_main_op_divu h_match_primary
-         h_input_r1 h_input_r2 h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         promises
          h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_DIVU_from_trust state divu_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_divu h_match_primary
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne
   | divw divw_input r1 r2 rd exec_row e0 e1 e2 v r_a
          h_main_active h_main_op_divw h_match_primary
-         h_input_r1 h_input_r2 h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         promises
          h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
          h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_DIVW_from_trust state divw_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_divw h_match_primary
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
   | divuw divuw_input r1 r2 rd exec_row e0 e1 e2 v r_a
           h_main_active h_main_op_divuw h_match_primary
-          h_input_r1 h_input_r2 h_input_rd h_input_pc
-          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+          promises
           h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_DIVUW_from_trust state divuw_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_divuw h_match_primary
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
   | rem rem_input r1 r2 rd exec_row e0 e1 e2 v r_a
         h_main_active h_main_op_rem h_match_secondary
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-        h_input_r1 h_input_r2 h_input_rd h_input_pc h_op2_ne h_no_overflow
+        promises
+        h_op2_ne h_no_overflow
         h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_REM_from_trust state rem_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_rem h_match_secondary
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      h_input_r1 h_input_r2 h_input_rd h_input_pc h_op2_ne h_no_overflow
+      promises
+      h_op2_ne h_no_overflow
       h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
   | remu remu_input r1 r2 rd exec_row e0 e1 e2 v r_a
          h_main_active h_main_op_remu h_match_secondary
-         h_input_r1 h_input_r2 h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         promises
          h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_REMU_from_trust state remu_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_remu h_match_secondary
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne
   | remw remw_input r1 r2 rd exec_row e0 e1 e2 v r_a
          h_main_active h_main_op_remw h_match_secondary
-         h_input_r1 h_input_r2 h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         promises
          h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
          h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_REMW_from_trust state remw_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_remw h_match_secondary
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w
   | remuw remuw_input r1 r2 rd exec_row e0 e1 e2 v r_a
           h_main_active h_main_op_remuw h_match_secondary
-          h_input_r1 h_input_r2 h_input_rd h_input_pc
-          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+          promises
           h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_REMUW_from_trust state remuw_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_remuw h_match_secondary
-      h_input_r1 h_input_r2 h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      promises
       h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
 
 end ZiskFv.Compliance

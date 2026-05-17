@@ -1,6 +1,7 @@
 import Mathlib
 
 import ZiskFv.Equivalence.Add
+import ZiskFv.Equivalence.Promises.RType
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -221,24 +222,15 @@ theorem equiv_ADD_from_trust
     -- Lane-match for the rd-write entry — caller-supplied; discharged
     -- downstream from `memory_bus_register_write_perm_sound`.
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    -- Sail-side state predicates (SPEC-PRE).
-    (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok add_input.r1_val state)
-    (h_input_r2_sail : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok add_input.r2_val state)
-    (h_input_rd : add_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some add_input.PC)
-    -- Bus-protocol structural hypotheses — pass-through from `equiv_ADD`.
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_RTYPE_add_pure add_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : add_input.rd = Transpiler.wrap_to_regidx e2.ptr) :
+    -- Structural promise bundle (15 fields). Subsumes the prior inline
+    -- `h_input_r1_sail`, `h_input_r2_sail`, `h_input_rd`, `h_input_pc`,
+    -- `h_exec_len`, `h_e0_mult`, `h_e1_mult`, `h_nextPC_matches`,
+    -- `h_m0_mult`, `h_m0_as`, `h_m1_mult`, `h_m1_as`, `h_m2_mult`,
+    -- `h_m2_as`, `h_rd_idx` binders.
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
+        (PureSpec.execute_RTYPE_add_pure add_input).nextPC
+        r1 r2 rd exec_row e0 e1 e2) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect exec_row [e0, e1, e2] state).2 := by
   -- ============ Derive `m.m32 r_main = 0` via `transpile_ADD` ============
@@ -274,22 +266,7 @@ theorem equiv_ADD_from_trust
   -- ============ Delegate to canonical `equiv_ADD` ============
   exact ZiskFv.Equivalence.Add.equiv_ADD
     state add_input r1 r2 rd m b r_main exec_row e0 e1 e2
-    { input_r1_eq := h_input_r1_sail
-      input_r2_eq := h_input_r2_sail
-      input_rd_eq := h_input_rd
-      input_pc_eq := h_input_pc
-      exec_len := h_exec_len
-      e0_mult := h_e0_mult
-      e1_mult := h_e1_mult
-      nextPC_matches := h_nextPC_matches
-      m0_mult := h_m0_mult
-      m0_as := h_m0_as
-      m1_mult := h_m1_mult
-      m1_as := h_m1_as
-      m2_mult := h_m2_mult
-      m2_as := h_m2_as
-      rd_idx := h_rd_idx }
-    h_main_subset h_main_mode h_b_core h_lane_rd
+    promises h_main_subset h_main_mode h_b_core h_lane_rd
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
 
 end ZiskFv.Compliance

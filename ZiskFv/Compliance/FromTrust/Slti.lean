@@ -1,6 +1,7 @@
 import Mathlib
 
 import ZiskFv.Equivalence.Slti
+import ZiskFv.Equivalence.Promises.IType
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -83,21 +84,10 @@ theorem equiv_SLTI_from_trust
     (h_main_op_slti : m.op r_main = OP_LT)
     (h_slti_subset : itype_imm_subset_holds_main m r_main slti_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok slti_input.r1_val state)
-    (h_input_imm : slti_input.imm = imm)
-    (h_input_rd : slti_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some slti_input.PC)
-    (h_exec_len : exec_row.length = 2)
-    (h_e0_mult : exec_row[0]!.multiplicity = -1)
-    (h_e1_mult : exec_row[1]!.multiplicity = 1)
-    (h_nextPC_matches :
-      (register_type_pc_equiv ▸ (BitVec.ofNat 64 (exec_row[1]!.pc).val))
-        = (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC)
-    (h_m0_mult : e0.multiplicity = -1) (h_m0_as : e0.as.val = 1)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 1)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1)
-    (h_rd_idx : slti_input.rd = Transpiler.wrap_to_regidx e2.ptr) :
+    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+        state slti_input.r1_val slti_input.imm slti_input.rd slti_input.PC
+        (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC
+        r1 rd imm exec_row e0 e1 e2) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -261,21 +251,7 @@ theorem equiv_SLTI_from_trust
   -- ============ Delegate to canonical equiv_SLTI ============
   exact ZiskFv.Equivalence.Slti.equiv_SLTI
     state slti_input r1 rd imm m r_main exec_row e0 e1 e2
-    { input_r1_eq := h_input_r1
-      input_imm_eq := h_input_imm
-      input_rd_eq := h_input_rd
-      input_pc_eq := h_input_pc
-      exec_len := h_exec_len
-      e0_mult := h_e0_mult
-      e1_mult := h_e1_mult
-      nextPC_matches := h_nextPC_matches
-      m0_mult := h_m0_mult
-      m0_as := h_m0_as
-      m1_mult := h_m1_mult
-      m1_as := h_m1_as
-      m2_mult := h_m2_mult
-      m2_as := h_m2_as
-      rd_idx := h_rd_idx }
+    promises
     v r_binary h_main_active h_main_op_slti h_match
     (v.free_in_c_0 r_binary) (v.free_in_c_1 r_binary) (v.free_in_c_2 r_binary)
     (v.free_in_c_3 r_binary) (v.free_in_c_4 r_binary) (v.free_in_c_5 r_binary)
