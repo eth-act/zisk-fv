@@ -6,7 +6,7 @@ Ranked by leverage. Top of the list = touches many files, biggest readability ga
 
 - #1 — Collapse `dispatch_X` layer (PR #33, −2890 lines).
 - #2 — Thread per-shape `Promises` bundles through wrappers + `OpEnvelope` (PR #34, −2971 lines).
-- #2b — Bundle more loose recurring binders: `BusRows`, `MainRowPins`, `ModeRegsFull`, `MemAlignWitness` (this PR; ~57 of 63 opcodes; canonical caller-burden −231, wrapper caller-burden −255).
+- #2b — Bundle every remaining loose recurring binder cluster: `BusRows`, `MainRowPins`, `ModeRegsFull`, `MemAlignWitness`, `BranchInstrOperands`, `BinaryAddWitness`, `ByteBounds` (this PR; **all 63 opcodes**; canonical caller-burden −299, wrapper caller-burden −309).
 
 ## Top-leverage wins
 
