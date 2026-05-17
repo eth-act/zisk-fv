@@ -800,74 +800,54 @@ inductive OpEnvelope
   -- ============================ SB (store, Main-only) ===================
   | sb
     (sb_input : PureSpec.SbInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op : m.op r_main = OP_COPYB)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_main_ind_width : m.ind_width r_main = 1)
     (h_opcode_assumptions : PureSpec.sb_state_assumptions sb_input state)
     (promises : ZiskFv.Equivalence.Promises.StorePromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sb_state_assumptions sb_input state)
         (PureSpec.execute_STOREB_pure sb_input).nextPC
-        exec_row e0 e1 e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ SH (store, Main-only) ===================
   | sh
     (sh_input : PureSpec.ShInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op : m.op r_main = OP_COPYB)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_main_ind_width : m.ind_width r_main = 2)
     (h_opcode_assumptions : PureSpec.sh_state_assumptions sh_input state)
     (promises : ZiskFv.Equivalence.Promises.StorePromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sh_state_assumptions sh_input state)
         (PureSpec.execute_STOREH_pure sh_input).nextPC
-        exec_row e0 e1 e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ SW (store, Main-only) ===================
   | sw
     (sw_input : PureSpec.SwInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op : m.op r_main = OP_COPYB)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_main_ind_width : m.ind_width r_main = 4)
     (h_opcode_assumptions : PureSpec.sw_state_assumptions sw_input state)
     (promises : ZiskFv.Equivalence.Promises.StorePromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sw_state_assumptions sw_input state)
         (PureSpec.execute_STOREW_pure sw_input).nextPC
-        exec_row e0 e1 e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ SD (store, Main-only) ===================
   | sd
     (sd_input : PureSpec.SdInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op : m.op r_main = OP_COPYB)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_opcode_assumptions : PureSpec.sd_state_assumptions sd_input state)
     (promises : ZiskFv.Equivalence.Promises.StorePromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sd_state_assumptions sd_input state)
         (PureSpec.execute_STORED_pure sd_input).nextPC
-        exec_row e0 e1 e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ LD (load doubleword) ====================
   | ld
     (ld_input : PureSpec.LdInput)
@@ -1555,34 +1535,34 @@ def exec_eq : OpEnvelope state m r_main → Prop
       execute_instruction
         (instruction.SHIFTIWOP (sraiw_input.shamt, r1, rd, sopw.SRAIW)) state
         = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
-  | .sb sb_input _ _ _ _ exec_row e0 e1 e2 .. =>
+  | .sb sb_input _ bus .. =>
       execute_instruction (instruction.STORE (
         sb_input.imm,
         regidx.Regidx sb_input.r2,
         regidx.Regidx sb_input.r1,
         1
-      )) state = (bus_effect exec_row [e0, e1, e2] state).2
-  | .sh sh_input _ _ _ _ exec_row e0 e1 e2 .. =>
+      )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
+  | .sh sh_input _ bus .. =>
       execute_instruction (instruction.STORE (
         sh_input.imm,
         regidx.Regidx sh_input.r2,
         regidx.Regidx sh_input.r1,
         2
-      )) state = (bus_effect exec_row [e0, e1, e2] state).2
-  | .sw sw_input _ _ _ _ exec_row e0 e1 e2 .. =>
+      )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
+  | .sw sw_input _ bus .. =>
       execute_instruction (instruction.STORE (
         sw_input.imm,
         regidx.Regidx sw_input.r2,
         regidx.Regidx sw_input.r1,
         4
-      )) state = (bus_effect exec_row [e0, e1, e2] state).2
-  | .sd sd_input _ _ _ _ exec_row e0 e1 e2 .. =>
+      )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
+  | .sd sd_input _ bus .. =>
       execute_instruction (instruction.STORE (
         sd_input.imm,
         regidx.Regidx sd_input.r2,
         regidx.Regidx sd_input.r1,
         8
-      )) state = (bus_effect exec_row [e0, e1, e2] state).2
+      )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
   | .ld ld_input _ _ bus .. =>
       execute_instruction (instruction.LOAD (
         ld_input.imm,
@@ -1960,30 +1940,22 @@ theorem zisk_riscv_compliant_program_bus
   | sraiw sraiw_input r1 rd v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_SRAIW_from_trust state sraiw_input r1 rd m v r_main bus promises pins h_lane_rd
-  | sb sb_input mstatus pmaRegion misa mseccfg exec_row e0 e1 e2
-       h_main_active h_main_op h_main_ind_width h_opcode_assumptions promises =>
+  | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SB_from_trust state sb_input mstatus pmaRegion misa mseccfg
-      m r_main exec_row e0 e1 e2
-      h_main_active h_main_op h_main_ind_width h_opcode_assumptions promises
-  | sh sh_input mstatus pmaRegion misa mseccfg exec_row e0 e1 e2
-       h_main_active h_main_op h_main_ind_width h_opcode_assumptions promises =>
+    exact equiv_SB_from_trust state sb_input regs
+      m r_main bus pins h_main_ind_width h_opcode_assumptions promises
+  | sh sh_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SH_from_trust state sh_input mstatus pmaRegion misa mseccfg
-      m r_main exec_row e0 e1 e2
-      h_main_active h_main_op h_main_ind_width h_opcode_assumptions promises
-  | sw sw_input mstatus pmaRegion misa mseccfg exec_row e0 e1 e2
-       h_main_active h_main_op h_main_ind_width h_opcode_assumptions promises =>
+    exact equiv_SH_from_trust state sh_input regs
+      m r_main bus pins h_main_ind_width h_opcode_assumptions promises
+  | sw sw_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SW_from_trust state sw_input mstatus pmaRegion misa mseccfg
-      m r_main exec_row e0 e1 e2
-      h_main_active h_main_op h_main_ind_width h_opcode_assumptions promises
-  | sd sd_input mstatus pmaRegion misa mseccfg exec_row e0 e1 e2
-       h_main_active h_main_op h_opcode_assumptions promises =>
+    exact equiv_SW_from_trust state sw_input regs
+      m r_main bus pins h_main_ind_width h_opcode_assumptions promises
+  | sd sd_input regs bus pins h_opcode_assumptions promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SD_from_trust state sd_input mstatus pmaRegion misa mseccfg
-      m r_main exec_row e0 e1 e2
-      h_main_active h_main_op h_opcode_assumptions promises
+    exact equiv_SD_from_trust state sd_input regs
+      m r_main bus pins h_opcode_assumptions promises
   | ld ld_input regs mem bus pins promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_LD_from_trust state ld_input regs

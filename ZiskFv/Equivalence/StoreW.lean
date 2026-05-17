@@ -14,6 +14,7 @@ import ZiskFv.SailSpec.sw
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Tactics.StoreArchetype
 import ZiskFv.Equivalence.Promises.Store
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 SW (store word). The 4-byte narrow store
@@ -68,31 +69,27 @@ lemma equiv_SW_sail
 theorem equiv_SW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sw_input : PureSpec.SwInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence.Promises.StorePromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sw_state_assumptions sw_input state)
         (PureSpec.execute_STOREW_pure sw_input).nextPC
-        exec_row e0 e1 e2)
+        bus.exec_row bus.e0 bus.e1 bus.e2)
     -- Bridging premise: bus side's 8-insert chain on `state.mem`
     -- equals Sail's 4-insert chain (via `modify_memory_4` data
     -- fields). Bundles ptr-match + low-byte match + high-byte no-op
     -- match. Caller establishes via byte-bus high-zero witnesses +
     -- ptr-match against `transpile_SW`.
     (h_mem_eq :
-      (((((((state.mem.insert e2.ptr.toNat e2.x0
-          ).insert (e2.ptr.toNat + 1) e2.x1
-          ).insert (e2.ptr.toNat + 2) e2.x2
-          ).insert (e2.ptr.toNat + 3) e2.x3
-          ).insert (e2.ptr.toNat + 4) e2.x4
-          ).insert (e2.ptr.toNat + 5) e2.x5
-          ).insert (e2.ptr.toNat + 6) e2.x6
-          ).insert (e2.ptr.toNat + 7) e2.x7
+      (((((((state.mem.insert bus.e2.ptr.toNat bus.e2.x0
+          ).insert (bus.e2.ptr.toNat + 1) bus.e2.x1
+          ).insert (bus.e2.ptr.toNat + 2) bus.e2.x2
+          ).insert (bus.e2.ptr.toNat + 3) bus.e2.x3
+          ).insert (bus.e2.ptr.toNat + 4) bus.e2.x4
+          ).insert (bus.e2.ptr.toNat + 5) bus.e2.x5
+          ).insert (bus.e2.ptr.toNat + 6) bus.e2.x6
+          ).insert (bus.e2.ptr.toNat + 7) bus.e2.x7
         = (((state.mem.insert
               (PureSpec.execute_STOREW_pure sw_input).data0.1
               (PureSpec.execute_STOREW_pure sw_input).data0.2
@@ -110,7 +107,9 @@ theorem equiv_SW
       regidx.Regidx sw_input.r2,
       regidx.Regidx sw_input.r1,
       4
-    )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
+    )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨mstatus, pmaRegion, misa, mseccfg⟩ := regs
   obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises

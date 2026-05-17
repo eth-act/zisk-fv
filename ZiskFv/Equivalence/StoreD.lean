@@ -12,6 +12,7 @@ import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.SailSpec.sd
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Equivalence.Promises.Store
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 SD (store doubleword). The
@@ -64,34 +65,32 @@ lemma equiv_SD_sail
 theorem equiv_SD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sd_input : PureSpec.SdInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence.Promises.StorePromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sd_state_assumptions sd_input state)
         (PureSpec.execute_STORED_pure sd_input).nextPC
-        exec_row e0 e1 e2)
+        bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_ptr_match :
-      e2.ptr.toNat
+      bus.e2.ptr.toNat
         = (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat)
-    (h_byte_0 : (e2.x0 : BitVec 8) = BitVec.extractLsb 7 0 sd_input.r2_val)
-    (h_byte_1 : (e2.x1 : BitVec 8) = BitVec.extractLsb 15 8 sd_input.r2_val)
-    (h_byte_2 : (e2.x2 : BitVec 8) = BitVec.extractLsb 23 16 sd_input.r2_val)
-    (h_byte_3 : (e2.x3 : BitVec 8) = BitVec.extractLsb 31 24 sd_input.r2_val)
-    (h_byte_4 : (e2.x4 : BitVec 8) = BitVec.extractLsb 39 32 sd_input.r2_val)
-    (h_byte_5 : (e2.x5 : BitVec 8) = BitVec.extractLsb 47 40 sd_input.r2_val)
-    (h_byte_6 : (e2.x6 : BitVec 8) = BitVec.extractLsb 55 48 sd_input.r2_val)
-    (h_byte_7 : (e2.x7 : BitVec 8) = BitVec.extractLsb 63 56 sd_input.r2_val) :
+    (h_byte_0 : (bus.e2.x0 : BitVec 8) = BitVec.extractLsb 7 0 sd_input.r2_val)
+    (h_byte_1 : (bus.e2.x1 : BitVec 8) = BitVec.extractLsb 15 8 sd_input.r2_val)
+    (h_byte_2 : (bus.e2.x2 : BitVec 8) = BitVec.extractLsb 23 16 sd_input.r2_val)
+    (h_byte_3 : (bus.e2.x3 : BitVec 8) = BitVec.extractLsb 31 24 sd_input.r2_val)
+    (h_byte_4 : (bus.e2.x4 : BitVec 8) = BitVec.extractLsb 39 32 sd_input.r2_val)
+    (h_byte_5 : (bus.e2.x5 : BitVec 8) = BitVec.extractLsb 47 40 sd_input.r2_val)
+    (h_byte_6 : (bus.e2.x6 : BitVec 8) = BitVec.extractLsb 55 48 sd_input.r2_val)
+    (h_byte_7 : (bus.e2.x7 : BitVec 8) = BitVec.extractLsb 63 56 sd_input.r2_val) :
     execute_instruction (instruction.STORE (
       sd_input.imm,
       regidx.Regidx sd_input.r2,
       regidx.Regidx sd_input.r1,
       8
-    )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
+    )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨mstatus, pmaRegion, misa, mseccfg⟩ := regs
   obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
