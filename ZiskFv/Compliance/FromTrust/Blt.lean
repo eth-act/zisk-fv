@@ -5,6 +5,7 @@ import ZiskFv.Equivalence.Promises.BranchHelpers
 import ZiskFv.SailSpec.blt
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_BLT` Compliance wrapper — ControlFlow branches
@@ -27,20 +28,17 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 theorem equiv_BLT_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (blt_input : PureSpec.BltInput)
-    (imm : BitVec 13)
-    (r1 r2 : regidx)
-    (misa_val : RegisterType Register.misa)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (ops : ZiskFv.Compliance.BranchInstrOperands)
     (promises : ZiskFv.Equivalence.Promises.BranchPromises
         state blt_input.imm blt_input.r1_val blt_input.r2_val blt_input.PC
-        misa_val
+        ops.misa_val
         (PureSpec.execute_BLT_pure blt_input).nextPC
         (PureSpec.execute_BLT_pure blt_input).throws
         (PureSpec.execute_BLT_pure blt_input).success
-        imm r1 r2 exec_row) :
-    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLT)) state
-      = (bus_effect exec_row [] state).2 :=
+        ops.imm ops.r1 ops.r2 ops.exec_row) :
+    execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BLT)) state
+      = (bus_effect ops.exec_row [] state).2 :=
   ZiskFv.Equivalence.BranchLessThan.equiv_BLT
-    state blt_input imm r1 r2 misa_val exec_row promises
+    state blt_input ops promises
 
 end ZiskFv.Compliance

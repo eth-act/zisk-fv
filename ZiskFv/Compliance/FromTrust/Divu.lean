@@ -54,10 +54,7 @@ theorem equiv_DIVU_from_trust
         state divu_input.r1_val divu_input.r2_val divu_input.rd divu_input.PC
         (PureSpec.execute_DIVREM_divu_pure divu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    (h0 : bus.e2.x0.val < 256) (h1 : bus.e2.x1.val < 256)
-    (h2 : bus.e2.x2.val < 256) (h3 : bus.e2.x3.val < 256)
-    (h4 : bus.e2.x4.val < 256) (h5 : bus.e2.x5.val < 256)
-    (h6 : bus.e2.x6.val < 256) (h7 : bus.e2.x7.val < 256)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_op2_ne : divu_input.r2_val.toNat ≠ 0) :
@@ -67,6 +64,7 @@ theorem equiv_DIVU_from_trust
       LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, true))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
   obtain ⟨h_main_active, h_main_op_divu⟩ := pins
   -- ============ Project bus-bundle fields used by the body ============
   have h_input_r1 := promises.input_r1_eq
@@ -280,7 +278,7 @@ theorem equiv_DIVU_from_trust
     state divu_input r1 r2 rd v r_a
     ⟨exec_row, e0, e1, e2⟩
     promises
-    h0 h1 h2 h3 h4 h5 h6 h7
+    ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
     h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div
     h_byte_lo h_byte_hi h_rs1_value h_rs2_value h_op2_ne h_d_lt_b
 

@@ -130,14 +130,13 @@ theorem equiv_ADDI_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (m : Valid_Main C FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness C)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     -- Activation / opcode pins (Compliance.lean derives from ROM handshake).
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
     -- Main-side constructibility bundles.
     (h_main_subset : add_subset_holds m r_main)
-    (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
     (h_addi_subset : itype_imm_subset_holds_main m r_main addi_input.imm)
     -- Lane-match for rd-write entry (deferred to Mem pilot).
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
@@ -152,6 +151,7 @@ theorem equiv_ADDI_from_trust
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨b, h_b_core⟩ := badd
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_main_active, h_main_op_addi⟩ := pins
   -- ============ Derive `m.m32 r_main = 0` and `m.set_pc r_main = 0`
@@ -172,10 +172,10 @@ theorem equiv_ADDI_from_trust
     memory_bus_entry_byte_range_perm_sound e2
   -- ============ Delegate to canonical `equiv_ADDI` ============
   exact ZiskFv.Equivalence.Addi.equiv_ADDI
-    state addi_input r1 rd imm m b r_main
+    state addi_input r1 rd imm m ⟨b, h_b_core⟩ r_main
     ⟨exec_row, e0, e1, e2⟩
     promises
-    h_main_subset h_main_mode h_b_core h_addi_subset h_lane_rd
-    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_main_subset h_main_mode h_addi_subset h_lane_rd
+    ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩
 
 end ZiskFv.Compliance

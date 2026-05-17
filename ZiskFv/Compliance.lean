@@ -265,76 +265,70 @@ inductive OpEnvelope
     (m : Valid_Main C FGL FGL) (r_main : ℕ) where
   -- ============================ BEQ (branch, no mem) ====================
   | beq
-    (beq_input : PureSpec.BeqInput) (imm : BitVec 13) (r1 r2 : regidx)
-    (misa_val : RegisterType Register.misa)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (beq_input : PureSpec.BeqInput)
+    (ops : ZiskFv.Compliance.BranchInstrOperands)
     (promises : ZiskFv.Equivalence.Promises.BranchPromises
         state beq_input.imm beq_input.r1_val beq_input.r2_val beq_input.PC
-        misa_val
+        ops.misa_val
         (PureSpec.execute_BEQ_pure beq_input).nextPC
         (PureSpec.execute_BEQ_pure beq_input).throws
         (PureSpec.execute_BEQ_pure beq_input).success
-        imm r1 r2 exec_row) : OpEnvelope state m r_main
+        ops.imm ops.r1 ops.r2 ops.exec_row) : OpEnvelope state m r_main
   -- ============================ BNE (branch, no mem) ====================
   | bne
-    (bne_input : PureSpec.BneInput) (imm : BitVec 13) (r1 r2 : regidx)
-    (misa_val : RegisterType Register.misa)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (bne_input : PureSpec.BneInput)
+    (ops : ZiskFv.Compliance.BranchInstrOperands)
     (promises : ZiskFv.Equivalence.Promises.BranchPromises
         state bne_input.imm bne_input.r1_val bne_input.r2_val bne_input.PC
-        misa_val
+        ops.misa_val
         (PureSpec.execute_BNE_pure bne_input).nextPC
         (PureSpec.execute_BNE_pure bne_input).throws
         (PureSpec.execute_BNE_pure bne_input).success
-        imm r1 r2 exec_row) : OpEnvelope state m r_main
+        ops.imm ops.r1 ops.r2 ops.exec_row) : OpEnvelope state m r_main
   -- ============================ BLT (branch, no mem) ====================
   | blt
-    (blt_input : PureSpec.BltInput) (imm : BitVec 13) (r1 r2 : regidx)
-    (misa_val : RegisterType Register.misa)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (blt_input : PureSpec.BltInput)
+    (ops : ZiskFv.Compliance.BranchInstrOperands)
     (promises : ZiskFv.Equivalence.Promises.BranchPromises
         state blt_input.imm blt_input.r1_val blt_input.r2_val blt_input.PC
-        misa_val
+        ops.misa_val
         (PureSpec.execute_BLT_pure blt_input).nextPC
         (PureSpec.execute_BLT_pure blt_input).throws
         (PureSpec.execute_BLT_pure blt_input).success
-        imm r1 r2 exec_row) : OpEnvelope state m r_main
+        ops.imm ops.r1 ops.r2 ops.exec_row) : OpEnvelope state m r_main
   -- ============================ BGE (branch, no mem) ====================
   | bge
-    (bge_input : PureSpec.BgeInput) (imm : BitVec 13) (r1 r2 : regidx)
-    (misa_val : RegisterType Register.misa)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (bge_input : PureSpec.BgeInput)
+    (ops : ZiskFv.Compliance.BranchInstrOperands)
     (promises : ZiskFv.Equivalence.Promises.BranchPromises
         state bge_input.imm bge_input.r1_val bge_input.r2_val bge_input.PC
-        misa_val
+        ops.misa_val
         (PureSpec.execute_BGE_pure bge_input).nextPC
         (PureSpec.execute_BGE_pure bge_input).throws
         (PureSpec.execute_BGE_pure bge_input).success
-        imm r1 r2 exec_row) : OpEnvelope state m r_main
+        ops.imm ops.r1 ops.r2 ops.exec_row) : OpEnvelope state m r_main
   -- ============================ BLTU (branch, no mem) ===================
   | bltu
-    (bltu_input : PureSpec.BltuInput) (imm : BitVec 13) (r1 r2 : regidx)
-    (misa_val : RegisterType Register.misa)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (bltu_input : PureSpec.BltuInput)
+    (ops : ZiskFv.Compliance.BranchInstrOperands)
     (promises : ZiskFv.Equivalence.Promises.BranchPromises
         state bltu_input.imm bltu_input.r1_val bltu_input.r2_val bltu_input.PC
-        misa_val
+        ops.misa_val
         (PureSpec.execute_BLTU_pure bltu_input).nextPC
         (PureSpec.execute_BLTU_pure bltu_input).throws
         (PureSpec.execute_BLTU_pure bltu_input).success
-        imm r1 r2 exec_row) : OpEnvelope state m r_main
+        ops.imm ops.r1 ops.r2 ops.exec_row) : OpEnvelope state m r_main
   -- ============================ BGEU (branch, no mem) ===================
   | bgeu
-    (bgeu_input : PureSpec.BgeuInput) (imm : BitVec 13) (r1 r2 : regidx)
-    (misa_val : RegisterType Register.misa)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (bgeu_input : PureSpec.BgeuInput)
+    (ops : ZiskFv.Compliance.BranchInstrOperands)
     (promises : ZiskFv.Equivalence.Promises.BranchPromises
         state bgeu_input.imm bgeu_input.r1_val bgeu_input.r2_val bgeu_input.PC
-        misa_val
+        ops.misa_val
         (PureSpec.execute_BGEU_pure bgeu_input).nextPC
         (PureSpec.execute_BGEU_pure bgeu_input).throws
         (PureSpec.execute_BGEU_pure bgeu_input).success
-        imm r1 r2 exec_row) : OpEnvelope state m r_main
+        ops.imm ops.r1 ops.r2 ops.exec_row) : OpEnvelope state m r_main
   -- ============================ FENCE (no mem) ==========================
   | fence
     (fence_input : PureSpec.FenceInput)
@@ -428,11 +422,10 @@ inductive OpEnvelope
   -- ============================ ADD (3 mem entries, BinaryAdd) ==========
   | add
     (add_input : PureSpec.AddInput) (r1 r2 rd : regidx)
-    (b : Valid_BinaryAdd C FGL FGL)
+    (badd : ZiskFv.Compliance.BinaryAddWitness C)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
     (h_main_subset : add_subset_holds m r_main)
-    (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
@@ -441,11 +434,10 @@ inductive OpEnvelope
   -- ============================ ADDI (do-block LHS, BinaryAdd) ==========
   | addi
     (addi_input : PureSpec.AddiInput) (r1 rd : regidx) (imm : BitVec 12)
-    (b : Valid_BinaryAdd C FGL FGL)
+    (badd : ZiskFv.Compliance.BinaryAddWitness C)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
     (h_main_subset : add_subset_holds m r_main)
-    (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
     (h_addi_subset : itype_imm_subset_holds_main m r_main addi_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.Equivalence.Promises.ITypePromises
@@ -950,10 +942,7 @@ inductive OpEnvelope
         state mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC
         (PureSpec.execute_MULH_mul_pure mul_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    (h0 : bus.e2.x0.val < 256) (h1 : bus.e2.x1.val < 256)
-    (h2 : bus.e2.x2.val < 256) (h3 : bus.e2.x3.val < 256)
-    (h4 : bus.e2.x4.val < 256) (h5 : bus.e2.x5.val < 256)
-    (h6 : bus.e2.x6.val < 256) (h7 : bus.e2.x7.val < 256)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a) :
     OpEnvelope state m r_main
@@ -986,10 +975,7 @@ inductive OpEnvelope
         state mulhu_input.r1_val mulhu_input.r2_val mulhu_input.rd mulhu_input.PC
         (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    (h0 : bus.e2.x0.val < 256) (h1 : bus.e2.x1.val < 256)
-    (h2 : bus.e2.x2.val < 256) (h3 : bus.e2.x3.val < 256)
-    (h4 : bus.e2.x4.val < 256) (h5 : bus.e2.x5.val < 256)
-    (h6 : bus.e2.x6.val < 256) (h7 : bus.e2.x7.val < 256)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a) :
     OpEnvelope state m r_main
@@ -1077,10 +1063,7 @@ inductive OpEnvelope
         state divu_input.r1_val divu_input.r2_val divu_input.rd divu_input.PC
         (PureSpec.execute_DIVREM_divu_pure divu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    (h0 : bus.e2.x0.val < 256) (h1 : bus.e2.x1.val < 256)
-    (h2 : bus.e2.x2.val < 256) (h3 : bus.e2.x3.val < 256)
-    (h4 : bus.e2.x4.val < 256) (h5 : bus.e2.x5.val < 256)
-    (h6 : bus.e2.x6.val < 256) (h7 : bus.e2.x7.val < 256)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_op2_ne : divu_input.r2_val.toNat ≠ 0) :
@@ -1190,10 +1173,7 @@ inductive OpEnvelope
         state remu_input.r1_val remu_input.r2_val remu_input.rd remu_input.PC
         (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    (h0 : bus.e2.x0.val < 256) (h1 : bus.e2.x1.val < 256)
-    (h2 : bus.e2.x2.val < 256) (h3 : bus.e2.x3.val < 256)
-    (h4 : bus.e2.x4.val < 256) (h5 : bus.e2.x5.val < 256)
-    (h6 : bus.e2.x6.val < 256) (h7 : bus.e2.x7.val < 256)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_op2_ne : remu_input.r2_val.toNat ≠ 0) :
@@ -1348,24 +1328,24 @@ def kind : OpEnvelope state m r_main → mainOpKind
 
 /-- The wrapper's conclusion as a `Prop`. -/
 def exec_eq : OpEnvelope state m r_main → Prop
-  | .beq _ imm r1 r2 _ exec_row .. =>
-      execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BEQ)) state
-        = (bus_effect exec_row [] state).2
-  | .bne _ imm r1 r2 _ exec_row .. =>
-      execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BNE)) state
-        = (bus_effect exec_row [] state).2
-  | .blt _ imm r1 r2 _ exec_row .. =>
-      execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLT)) state
-        = (bus_effect exec_row [] state).2
-  | .bge _ imm r1 r2 _ exec_row .. =>
-      execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BGE)) state
-        = (bus_effect exec_row [] state).2
-  | .bltu _ imm r1 r2 _ exec_row .. =>
-      execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BLTU)) state
-        = (bus_effect exec_row [] state).2
-  | .bgeu _ imm r1 r2 _ exec_row .. =>
-      execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BGEU)) state
-        = (bus_effect exec_row [] state).2
+  | .beq _ ops .. =>
+      execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BEQ)) state
+        = (bus_effect ops.exec_row [] state).2
+  | .bne _ ops .. =>
+      execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BNE)) state
+        = (bus_effect ops.exec_row [] state).2
+  | .blt _ ops .. =>
+      execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BLT)) state
+        = (bus_effect ops.exec_row [] state).2
+  | .bge _ ops .. =>
+      execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BGE)) state
+        = (bus_effect ops.exec_row [] state).2
+  | .bltu _ ops .. =>
+      execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BLTU)) state
+        = (bus_effect ops.exec_row [] state).2
+  | .bgeu _ ops .. =>
+      execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BGEU)) state
+        = (bus_effect ops.exec_row [] state).2
   | .fence _ fm pred succ rs rd exec_row .. =>
       execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
         = (bus_effect exec_row [] state).2
@@ -1749,30 +1729,24 @@ theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope (C := C) state m r_main) :
     env.exec_eq := by
   cases env with
-  | beq beq_input imm r1 r2 misa_val exec_row promises =>
+  | beq beq_input ops promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_BEQ_from_trust state beq_input imm r1 r2 misa_val exec_row
-      promises
-  | bne bne_input imm r1 r2 misa_val exec_row promises =>
+    exact equiv_BEQ_from_trust state beq_input ops promises
+  | bne bne_input ops promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_BNE_from_trust state bne_input imm r1 r2 misa_val exec_row
-      promises
-  | blt blt_input imm r1 r2 misa_val exec_row promises =>
+    exact equiv_BNE_from_trust state bne_input ops promises
+  | blt blt_input ops promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_BLT_from_trust state blt_input imm r1 r2 misa_val exec_row
-      promises
-  | bge bge_input imm r1 r2 misa_val exec_row promises =>
+    exact equiv_BLT_from_trust state blt_input ops promises
+  | bge bge_input ops promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_BGE_from_trust state bge_input imm r1 r2 misa_val exec_row
-      promises
-  | bltu bltu_input imm r1 r2 misa_val exec_row promises =>
+    exact equiv_BGE_from_trust state bge_input ops promises
+  | bltu bltu_input ops promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_BLTU_from_trust state bltu_input imm r1 r2 misa_val exec_row
-      promises
-  | bgeu bgeu_input imm r1 r2 misa_val exec_row promises =>
+    exact equiv_BLTU_from_trust state bltu_input ops promises
+  | bgeu bgeu_input ops promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_BGEU_from_trust state bgeu_input imm r1 r2 misa_val exec_row
-      promises
+    exact equiv_BGEU_from_trust state bgeu_input ops promises
   | fence fence_input fm pred succ rs rd exec_row
           pins promises =>
     simp only [OpEnvelope.exec_eq]
@@ -1809,15 +1783,15 @@ theorem zisk_riscv_compliant_program_bus
       pins h_jalr_subset
       promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
-  | add add_input r1 r2 rd b bus pins h_main_subset h_b_core h_lane_rd promises =>
+  | add add_input r1 r2 rd badd bus pins h_main_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_ADD_from_trust state add_input r1 r2 rd m b r_main bus pins
-      h_main_subset h_b_core h_lane_rd promises
-  | addi addi_input r1 rd imm b bus pins h_main_subset h_b_core h_addi_subset h_lane_rd
+    exact equiv_ADD_from_trust state add_input r1 r2 rd m badd r_main bus pins
+      h_main_subset h_lane_rd promises
+  | addi addi_input r1 rd imm badd bus pins h_main_subset h_addi_subset h_lane_rd
          promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_ADDI_from_trust state addi_input r1 rd imm m b r_main bus pins
-      h_main_subset h_b_core h_addi_subset h_lane_rd
+    exact equiv_ADDI_from_trust state addi_input r1 rd imm m badd r_main bus pins
+      h_main_subset h_addi_subset h_lane_rd
       promises
   | addw addw_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
@@ -1982,13 +1956,13 @@ theorem zisk_riscv_compliant_program_bus
   | mul mul_input r1 r2 rd srs1 srs2 bus v r_a
         pins h_match_primary
         promises
-        h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints =>
+        bounds h_row_constraints =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_MUL_from_trust state mul_input r1 r2 rd srs1 srs2
       bus m r_main v r_a
       pins h_match_primary
       promises
-      h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints
+      bounds h_row_constraints
   | mulh mulh_input r1 r2 rd bus v r_a
          pins h_match_secondary
          promises
@@ -2002,13 +1976,13 @@ theorem zisk_riscv_compliant_program_bus
   | mulhu mulhu_input r1 r2 rd bus v r_a
           pins h_match_secondary
           promises
-          h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints =>
+          bounds h_row_constraints =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_MULHU_from_trust state mulhu_input r1 r2 rd
       bus m r_main v r_a
       pins h_match_secondary
       promises
-      h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints
+      bounds h_row_constraints
   | mulhsu mulhsu_input r1 r2 rd bus v r_a
            pins h_match_secondary
            promises
@@ -2043,12 +2017,12 @@ theorem zisk_riscv_compliant_program_bus
   | divu divu_input r1 r2 rd bus v r_a
          pins h_match_primary
          promises
-         h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne =>
+         bounds h_row_constraints h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_DIVU_from_trust state divu_input r1 r2 rd bus
       m r_main v r_a pins h_match_primary
       promises
-      h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne
+      bounds h_row_constraints h_op2_ne
   | divw divw_input r1 r2 rd bus v r_a
          pins h_match_primary
          promises
@@ -2083,12 +2057,12 @@ theorem zisk_riscv_compliant_program_bus
   | remu remu_input r1 r2 rd bus v r_a
          pins h_match_secondary
          promises
-         h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne =>
+         bounds h_row_constraints h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_REMU_from_trust state remu_input r1 r2 rd bus
       m r_main v r_a pins h_match_secondary
       promises
-      h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne
+      bounds h_row_constraints h_op2_ne
   | remw remw_input r1 r2 rd bus v r_a
          pins h_match_secondary
          promises

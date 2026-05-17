@@ -204,9 +204,9 @@ theorem equiv_ADD_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
-    -- AIR validators + row index. Compliance.lean shares (m, b)
+    -- AIR validators + row index. Compliance.lean shares (m, badd)
     -- across all BinaryAdd-shape opcodes (ADD, ADDI).
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (m : Valid_Main C FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness C)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     -- Activation / opcode pins. Compliance.lean derives these from
@@ -216,8 +216,6 @@ theorem equiv_ADD_from_trust
     -- Compliance.lean delivers this from a universal
     -- `∀ r, add_universal_row m r` parameter.
     (h_main_subset : add_subset_holds m r_main)
-    -- BinaryAdd-side universal-per-row validity.
-    (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
     -- Lane-match for the rd-write entry — caller-supplied; discharged
     -- downstream from `memory_bus_register_write_perm_sound`.
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
@@ -232,6 +230,7 @@ theorem equiv_ADD_from_trust
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨b, h_b_core⟩ := badd
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_main_active, h_main_op_add⟩ := pins
   -- ============ Derive `m.m32 r_main = 0` via `transpile_ADD` ============
@@ -266,9 +265,9 @@ theorem equiv_ADD_from_trust
     memory_bus_entry_byte_range_perm_sound e2
   -- ============ Delegate to canonical `equiv_ADD` ============
   exact ZiskFv.Equivalence.Add.equiv_ADD
-    state add_input r1 r2 rd m b r_main
+    state add_input r1 r2 rd m ⟨b, h_b_core⟩ r_main
     ⟨exec_row, e0, e1, e2⟩
-    promises h_main_subset h_main_mode h_b_core h_lane_rd
-    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    promises h_main_subset h_main_mode h_lane_rd
+    ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩
 
 end ZiskFv.Compliance

@@ -93,10 +93,7 @@ theorem equiv_REMU
         state remu_input.r1_val remu_input.r2_val remu_input.rd remu_input.PC
         (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    (h0 : bus.e2.x0.val < 256) (h1 : bus.e2.x1.val < 256)
-    (h2 : bus.e2.x2.val < 256) (h3 : bus.e2.x3.val < 256)
-    (h4 : bus.e2.x4.val < 256) (h5 : bus.e2.x5.val < 256)
-    (h6 : bus.e2.x6.val < 256) (h7 : bus.e2.x7.val < 256)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     -- The 22 loose (cy, cy-range, hC) caller-burden binders are now
     -- replaced by the row-level carry-chain constraint set + unsigned
     -- mode pins, discharged via `Bridge.Arith.div_unsigned_chain_witnesses`.
@@ -127,6 +124,7 @@ theorem equiv_REMU
       LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, true))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
   obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,

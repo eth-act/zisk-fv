@@ -13,6 +13,7 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.Promises.Branch
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 BNE. Combines:
@@ -96,19 +97,17 @@ lemma equiv_BNE_sail
 theorem equiv_BNE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bne_input : PureSpec.BneInput)
-    (imm : BitVec 13)
-    (r1 r2 : regidx)
-    (misa_val : RegisterType Register.misa)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
+    (ops : ZiskFv.Compliance.BranchInstrOperands)
     (promises : ZiskFv.Equivalence.Promises.BranchPromises
         state bne_input.imm bne_input.r1_val bne_input.r2_val bne_input.PC
-        misa_val
+        ops.misa_val
         (PureSpec.execute_BNE_pure bne_input).nextPC
         (PureSpec.execute_BNE_pure bne_input).throws
         (PureSpec.execute_BNE_pure bne_input).success
-        imm r1 r2 exec_row) :
-    execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BNE)) state
-      = (bus_effect exec_row [] state).2 := by
+        ops.imm ops.r1 ops.r2 ops.exec_row) :
+    execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BNE)) state
+      = (bus_effect ops.exec_row [] state).2 := by
+  obtain ⟨imm, r1, r2, misa_val, exec_row⟩ := ops
   obtain ⟨h_input_imm, h_input_r1, h_input_r2, h_input_pc,
           h_input_misa, h_misa_c, h_exec_len, h_e0_mult, h_e1_mult,
           h_nextPC_matches, h_not_throws, h_success⟩ := promises

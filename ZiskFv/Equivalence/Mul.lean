@@ -104,10 +104,7 @@ theorem equiv_MUL
         state mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC
         (PureSpec.execute_MULH_mul_pure mul_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    (h0 : bus.e2.x0.val < 256) (h1 : bus.e2.x1.val < 256)
-    (h2 : bus.e2.x2.val < 256) (h3 : bus.e2.x3.val < 256)
-    (h4 : bus.e2.x4.val < 256) (h5 : bus.e2.x5.val < 256)
-    (h6 : bus.e2.x6.val < 256) (h7 : bus.e2.x7.val < 256)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     -- The 22 loose (cy, cy-range, hC) caller-burden binders are now
     -- replaced by the row-level carry-chain constraint set + unsigned
     -- mode pins, discharged inside via
@@ -140,6 +137,7 @@ theorem equiv_MUL
              signed_rs2 := srs2 }))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
   obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,

@@ -44,6 +44,19 @@ structure BusRows where
   e1 : Interaction.MemoryBusEntry FGL
   e2 : Interaction.MemoryBusEntry FGL
 
+/-! ## Branch instruction operands -/
+
+/-- The five loose operands that recur in every branch opcode's
+    canonical theorem, wrapper, and `OpEnvelope` arm. Branches have no
+    `e0/e1/e2` (no memory operations), so `BusRows` doesn't fit; this
+    smaller bundle absorbs the branch-shape loose binders. -/
+structure BranchInstrOperands where
+  imm : BitVec 13
+  r1 : regidx
+  r2 : regidx
+  misa_val : RegisterType Register.misa
+  exec_row : List (Interaction.ExecutionBusEntry FGL)
+
 /-! ## Main-row activation + opcode pins -/
 
 /-- The two pins every opcode lands on `Valid_Main`: the activation
@@ -59,8 +72,10 @@ structure MainRowPins (m : Valid_Main C FGL FGL) (r_main : ℕ)
 
 /-- `Valid_BinaryAdd` provider + the universal-row core-constraint
     quantifier that canonical theorems and wrappers consume together.
-    Shared by ADD, ADDI. -/
-structure BinaryAddWitness where
+    Shared by ADD, ADDI. Takes the circuit functor `C` explicitly so
+    type ascription is unambiguous at callers; the `[Circuit FGL FGL C]`
+    instance is inferred from the surrounding scope. -/
+structure BinaryAddWitness (C : Type → Type → Type) [Circuit FGL FGL C] where
   validator : Valid_BinaryAdd C FGL FGL
   core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row validator r
 
