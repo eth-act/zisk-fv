@@ -6,6 +6,7 @@ import ZiskFv.Equivalence.Promises.UTypeHelpers
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_LUI` Compliance wrapper — ControlFlow non-branch shape exemplar
@@ -40,8 +41,7 @@ theorem equiv_LUI_from_trust
     (e_rd : Interaction.MemoryBusEntry FGL)
     -- Activation / opcode pins on Main + per-row subset constraint
     -- (consumed by the UTypeHelpers helper that fires `transpile_LUI`).
-    (h_main_active : m.is_external_op r_main = 0)
-    (h_main_op_lui : m.op r_main = OP_COPYB)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
     -- Structural `UTypePromises` bundle.
     (promises : ZiskFv.Equivalence.Promises.UTypePromises
@@ -52,7 +52,7 @@ theorem equiv_LUI_from_trust
       = (bus_effect exec_row [e_rd] state).2 :=
   have h_circuit :=
     ZiskFv.Equivalence.Promises.lui_h_circuit_of_main_constraints
-      m r_main next_pc h_main_active h_main_op_lui h_lui_subset
+      m r_main next_pc pins.main_active pins.main_op h_lui_subset
   ZiskFv.Equivalence.Lui.equiv_LUI state lui_input imm rd
     m r_main next_pc exec_row e_rd (lui_input.PC + 4#64)
     promises h_circuit

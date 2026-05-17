@@ -20,6 +20,7 @@ import ZiskFv.Equivalence.WriteValueProofs.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Equivalence.Bridge.Binary
 import ZiskFv.Equivalence.Promises.RType
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 SUB. Mirrors
@@ -92,18 +93,16 @@ theorem equiv_SUB
     (sub_input : PureSpec.SubInput)
     (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state sub_input.r1_val sub_input.r2_val sub_input.rd sub_input.PC
         (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     -- Binary AIR provider witness + row index + activation/op + bus match.
     -- Together these replace the 16 loose a_i/b_i quantifiers, 16 byte-range
     -- hypotheses, and 2 input-bridge promise hypotheses from origin/main.
     (v : ZiskFv.Airs.Binary.Valid_Binary C FGL FGL) (r_binary : ℕ)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_sub : m.op r_main = OP_SUB)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
     -- Loose output bytes c_i and per-byte carry/flag/pos quantifiers stay;
     -- the rd-value derivation lemma consumes them as-is.
@@ -150,13 +149,15 @@ theorem equiv_SUB
     (h_pi6 : pi6.val ≠ 1) (h_pi7 : pi7.val = 1)
     (h_match_clo : m.c_0 r_main = c0 + c1 * 256 + c2 * 65536 + c3 * 16777216)
     (h_match_chi : m.c_1 r_main = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.SUB))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_sub⟩ := pins
   obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,

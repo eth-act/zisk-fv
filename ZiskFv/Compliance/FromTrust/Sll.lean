@@ -7,6 +7,7 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_SLL` trust-discharge wrapper
@@ -232,23 +233,23 @@ theorem equiv_SLL_from_trust
     (m : Valid_Main C FGL FGL)
     (v : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     -- Structural promise bundle (15 fields). Subsumes the prior inline
     -- Sail-side state predicates + bus-protocol structural hypotheses.
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state sll_input.r1_val sll_input.r2_val sll_input.rd sll_input.PC
         (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     -- Activation / opcode pins. Compliance.lean derives these from
     -- the Main AIR's ROM handshake on the row hosting SLL.
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL)
     -- Lane-match for the rd-write entry — caller-supplied; discharged
     -- downstream from `memory_bus_register_write_perm_sound`.
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op⟩ := pins
   -- ============ Derive (r_binary, h_match) via op-bus permutation soundness ============
   -- `op_bus_perm_sound_BinaryExtension` takes the Main activation +
   -- opcode-disjunction pins (covering SLL=0x21 through SEXT_W=0x29).
@@ -261,8 +262,10 @@ theorem equiv_SLL_from_trust
       (Or.inl h_main_op)
   -- ============ Delegate to canonical `equiv_SLL` ============
   exact ZiskFv.Equivalence.Sll.equiv_SLL state sll_input r1 r2 rd
-    m v r_main r_binary exec_row e0 e1 e2
+    m v r_main r_binary
+    ⟨exec_row, e0, e1, e2⟩
     promises
-    h_main_active h_main_op h_match h_lane_rd
+    ⟨h_main_active, h_main_op⟩
+    h_match h_lane_rd
 
 end ZiskFv.Compliance

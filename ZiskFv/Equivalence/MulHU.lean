@@ -19,6 +19,7 @@ import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Equivalence.WriteValueProofs.MulDivRemUnsigned
 import ZiskFv.Equivalence.Promises.RType
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 MULHU. Mirrors `Equivalence.MulH` with:
@@ -91,16 +92,12 @@ theorem equiv_MULHU
     (mulhu_input : PureSpec.MulhuInput)
     (r1 r2 rd : regidx)
     (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state mulhu_input.r1_val mulhu_input.r2_val mulhu_input.rd mulhu_input.PC
         (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
-    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
-    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     -- The 22 loose (cy, cy-range, hC) caller-burden binders are now
     -- replaced by the row-level carry-chain constraint set + unsigned
     -- mode pins, discharged via `Bridge.Arith.mul_unsigned_chain_witnesses`.
@@ -110,10 +107,10 @@ theorem equiv_MULHU
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
     (h_div : v.div r_a = 0)
     (h_byte_lo :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16777216
         = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
     (h_byte_hi :
-      e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
+      bus.e2.x4.val + bus.e2.x5.val * 256 + bus.e2.x6.val * 65536 + bus.e2.x7.val * 16777216
         = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536)
     (h_rs1_value : mulhu_input.r1_val.toNat
       = ZiskFv.PackedBitVec.MulNoWrap.packed4 (v.a_0 r_a).val (v.a_1 r_a).val
@@ -130,7 +127,9 @@ theorem equiv_MULHU
            { result_part := VectorHalf.High
              signed_rs1 := .Unsigned
              signed_rs2 := .Unsigned }))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
   obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,

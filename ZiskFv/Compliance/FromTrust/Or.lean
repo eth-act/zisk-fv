@@ -9,6 +9,7 @@ import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_OR` trust-discharge wrapper
@@ -201,28 +202,28 @@ theorem equiv_OR_from_trust
     -- SLT/SLTI/SLTU/SLTIU/SUB/SUBW/ADDIW/ADDW).
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     -- Activation / opcode pins. Compliance.lean derives these from
     -- the Main AIR's ROM handshake on the row hosting OR.
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_or : m.op r_main = OP_OR)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
     -- Lane-match for the rd-write entry — caller-supplied; discharged
     -- downstream from a Binary-side
     -- `main_external_logic_emission_bundle`.
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     -- Structural promise bundle (15 fields). Subsumes the prior inline
     -- Sail-side state predicates + bus-protocol structural hypotheses.
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
         (PureSpec.execute_RTYPE_or_pure or_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2) :
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.OR))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_or⟩ := pins
   -- ============ Derive existential `r_binary` + `matches_entry` ============
   -- `op_bus_perm_sound_Binary` (class #4) gives the cross-AIR row
   -- match for any active Main row whose `op` selector lies in
@@ -262,8 +263,10 @@ theorem equiv_OR_from_trust
     binary_b_op_or_sext_eq_OP_OR v r_binary h_emit_op
   -- ============ Delegate to canonical `equiv_OR` ============
   exact ZiskFv.Equivalence.Or.equiv_OR
-    state or_input r1 r2 rd m v r_main r_binary exec_row e0 e1 e2
+    state or_input r1 r2 rd m v r_main r_binary
+    ⟨exec_row, e0, e1, e2⟩
     promises
-    h_main_active h_main_op_or h_match h_bop_or_sext h_lane_rd
+    ⟨h_main_active, h_main_op_or⟩
+    h_match h_bop_or_sext h_lane_rd
 
 end ZiskFv.Compliance

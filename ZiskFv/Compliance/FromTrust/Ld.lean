@@ -7,6 +7,7 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_LD` trust-discharge wrapper — Mem-loads shape exemplar
@@ -187,42 +188,33 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 theorem equiv_LD_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
     -- AIR validators + row index. Compliance.lean shares
     -- `(main, mem)` across all Mem opcodes.
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
     -- Structural bus rows.
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     -- Activation / opcode pins. Compliance.lean derives these
     -- from Main's ROM handshake on the row hosting LD.
-    (h_main_active : main.is_external_op r_main = 0)
-    (h_main_op_ld : main.op r_main = OP_COPYB)
+    (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     -- Structural promise bundle (12 fields, see Promises/Load.lean).
     (promises : ZiskFv.Equivalence.Promises.LoadPromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.ld_state_assumptions ld_input state)
         (PureSpec.execute_LOADD_pure ld_input).nextPC
-        exec_row e0 e1 e2) :
+        bus.exec_row bus.e0 bus.e1 bus.e2) :
     execute_instruction (instruction.LOAD (
       ld_input.imm,
       regidx.Regidx ld_input.r1,
       regidx.Regidx ld_input.rd,
       false,
       8
-    )) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
-  -- The canonical `equiv_LD` takes `h_op : main.op r_main = (1 : FGL)`;
-  -- `OP_COPYB := 1` definitionally, so we discharge the rename via `rfl`.
-  have h_op : main.op r_main = (1 : FGL) := by
-    rw [h_main_op_ld]; rfl
-  -- Delegate to canonical `equiv_LD`.
+    )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  -- Delegate to canonical `equiv_LD`. `pins`'s opKind `OP_COPYB` is
+  -- definitionally `(1 : FGL)` (see `Trusted/Transpiler.lean:147`).
   exact ZiskFv.Equivalence.LoadD.equiv_LD
-    state ld_input mstatus pmaRegion misa mseccfg
-    exec_row e0 e1 e2
+    state ld_input regs bus
     promises
-    main mem r_main h_main_active h_op
+    main mem r_main pins
 
 end ZiskFv.Compliance

@@ -18,6 +18,7 @@ import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.WriteValueProofs.BinaryLogic
 import ZiskFv.Equivalence.Promises.IType
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 XORI. Mirrors
@@ -75,17 +76,15 @@ theorem equiv_XORI
     (r1 rd : regidx) (imm : BitVec 12)
     (m : Valid_Main C FGL FGL) (v : ZiskFv.Airs.Binary.Valid_Binary C FGL FGL)
     (r_main r_binary : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence.Promises.ITypePromises
         state xori_input.r1_val xori_input.imm xori_input.rd xori_input.PC
         (PureSpec.execute_ITYPE_xori_pure xori_input).nextPC
-        r1 rd imm exec_row e0 e1 e2)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_xori : m.op r_main = OP_XOR)
+        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
     (h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (h_xori_subset :
       ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
         m r_main xori_input.imm) :
@@ -94,7 +93,9 @@ theorem equiv_XORI
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.XORI))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_xori⟩ := pins
   obtain ⟨h_input_r1, h_input_imm, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,

@@ -10,6 +10,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Tactics.ALUITypeArchetype
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_XORI` Compliance wrapper — Binary ITYPE shape
@@ -36,22 +37,22 @@ theorem equiv_XORI_from_trust
     (r1 rd : regidx) (imm : BitVec 12)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_xori : m.op r_main = OP_XOR)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
     (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.Equivalence.Promises.ITypePromises
         state xori_input.r1_val xori_input.imm xori_input.rd xori_input.PC
         (PureSpec.execute_ITYPE_xori_pure xori_input).nextPC
-        r1 rd imm exec_row e0 e1 e2) :
+        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.XORI))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_xori⟩ := pins
   -- OP_XOR = 16 = 0x10.
   have h_op_disj :
       m.op r_main = 0x02 ∨ m.op r_main = 0x03 ∨ m.op r_main = 0x04
@@ -78,8 +79,10 @@ theorem equiv_XORI_from_trust
   have h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR :=
     binary_b_op_or_sext_eq_OP_XOR v r_binary h_emit_op
   exact ZiskFv.Equivalence.Xori.equiv_XORI
-    state xori_input r1 rd imm m v r_main r_binary exec_row e0 e1 e2
+    state xori_input r1 rd imm m v r_main r_binary
+    ⟨exec_row, e0, e1, e2⟩
     promises
-    h_main_active h_main_op_xori h_match h_bop_or_sext h_lane_rd h_xori_subset
+    ⟨h_main_active, h_main_op_xori⟩
+    h_match h_bop_or_sext h_lane_rd h_xori_subset
 
 end ZiskFv.Compliance

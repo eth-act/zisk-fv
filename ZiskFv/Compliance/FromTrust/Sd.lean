@@ -6,6 +6,7 @@ import ZiskFv.Equivalence.Promises.StoreHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_SD` Compliance wrapper — Mem-stores shape, 8-byte width
@@ -35,40 +36,34 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 theorem equiv_SD_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sd_input : PureSpec.SdInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
     -- AIR validator + row index.
     (main : Valid_Main C FGL FGL) (r_main : ℕ)
     -- Structural bus rows.
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     -- Activation / opcode pins on Main.
-    (h_main_active : main.is_external_op r_main = 0)
-    (h_main_op : main.op r_main = OP_COPYB)
+    (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     -- Sail-side opcode assumptions.
     (h_opcode_assumptions : PureSpec.sd_state_assumptions sd_input state)
     -- Structural promise bundle (12 fields).
     (promises : ZiskFv.Equivalence.Promises.StorePromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sd_state_assumptions sd_input state)
         (PureSpec.execute_STORED_pure sd_input).nextPC
-        exec_row e0 e1 e2) :
+        bus.exec_row bus.e0 bus.e1 bus.e2) :
     execute_instruction (instruction.STORE (
       sd_input.imm,
       regidx.Regidx sd_input.r2,
       regidx.Regidx sd_input.r1,
       8
-    )) state = (bus_effect exec_row [e0, e1, e2] state).2 :=
+    )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   have h_mem_facts :=
     ZiskFv.Equivalence.Promises.sd_h_mem_eq_of_emission
-      main r_main e2 state sd_input
-      h_main_active h_main_op
+      main r_main bus.e2 state sd_input
+      pins.main_active pins.main_op
       promises.m2_mult promises.m2_as h_opcode_assumptions
   ZiskFv.Equivalence.StoreD.equiv_SD
-    state sd_input mstatus pmaRegion misa mseccfg
-    exec_row e0 e1 e2 promises
+    state sd_input regs bus promises
     h_mem_facts.1 h_mem_facts.2.1 h_mem_facts.2.2.1 h_mem_facts.2.2.2.1
     h_mem_facts.2.2.2.2.1 h_mem_facts.2.2.2.2.2.1
     h_mem_facts.2.2.2.2.2.2.1 h_mem_facts.2.2.2.2.2.2.2.1

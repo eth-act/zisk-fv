@@ -18,6 +18,7 @@ import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Equivalence.WriteValueProofs.Arith
 import ZiskFv.Equivalence.Promises.IType
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 ADDI.
@@ -114,32 +115,30 @@ theorem equiv_ADDI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (m : Valid_Main C FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness C)
     (r_main : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     -- Structural promise bundle (15 fields, see Promises/IType.lean).
     (promises : ZiskFv.Equivalence.Promises.ITypePromises
         state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
         (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
-        r1 rd imm exec_row e0 e1 e2)
+        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_main_subset : add_subset_holds m r_main)
     (h_main_mode : main_row_in_addi_mode m r_main)
-    (h_b_core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row b r)
     (h_addi_subset :
       ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
         m r_main addi_input.imm)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256) :
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨b, h_b_core⟩ := badd
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ := bounds
   obtain ⟨h_input_r1, h_input_imm, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,

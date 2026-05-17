@@ -22,6 +22,7 @@ import ZiskFv.Equivalence.WriteValueProofs.BinaryShift
 import ZiskFv.Equivalence.WriteValueProofs.SailBridge
 import ZiskFv.Equivalence.Bridge.BinaryExtension
 import ZiskFv.Equivalence.Promises.RType
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 SRLW (`ShiftArchetype`
@@ -92,20 +93,20 @@ theorem equiv_SRLW
     (m : Valid_Main C FGL FGL)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
     (r_main r_binary : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state srlw_input.r1_val srlw_input.r2_val srlw_input.rd srlw_input.PC
         (PureSpec.execute_RTYPE_srlw_pure srlw_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRL_W)
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRL_W)
     (h_match : ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2) :
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRLW)) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op⟩ := pins
   obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,

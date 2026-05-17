@@ -9,6 +9,7 @@ import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_AND` Compliance wrapper — Binary shape
@@ -35,21 +36,21 @@ theorem equiv_AND_from_trust
     (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_and : m.op r_main = OP_AND)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.Equivalence.Promises.RTypePromises
         state and_input.r1_val and_input.r2_val and_input.rd and_input.PC
         (PureSpec.execute_RTYPE_and_pure and_input).nextPC
-        r1 r2 rd exec_row e0 e1 e2) :
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.AND))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_and⟩ := pins
   -- Derive op-bus disjunction membership: OP_AND = 14 = 0x0e.
   have h_op_disj :
       m.op r_main = 0x02 ∨ m.op r_main = 0x03 ∨ m.op r_main = 0x04
@@ -76,8 +77,10 @@ theorem equiv_AND_from_trust
   have h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND :=
     binary_b_op_or_sext_eq_OP_AND v r_binary h_emit_op
   exact ZiskFv.Equivalence.And.equiv_AND
-    state and_input r1 r2 rd m v r_main r_binary exec_row e0 e1 e2
+    state and_input r1 r2 rd m v r_main r_binary
+    ⟨exec_row, e0, e1, e2⟩
     promises
-    h_main_active h_main_op_and h_match h_bop_or_sext h_lane_rd
+    ⟨h_main_active, h_main_op_and⟩
+    h_match h_bop_or_sext h_lane_rd
 
 end ZiskFv.Compliance

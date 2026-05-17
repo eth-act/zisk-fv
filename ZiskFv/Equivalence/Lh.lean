@@ -18,6 +18,7 @@ import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.SailSpec.lh
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Equivalence.Promises.Load
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 LH (load halfword, signed / sign-extended).
@@ -74,20 +75,15 @@ lemma equiv_LH_sail
 theorem equiv_LH
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lh_input : PureSpec.LhInput)
-    (mstatus : RegisterType Register.mstatus)
-    (pmaRegion : PMA_Region)
-    (misa : RegisterType Register.misa)
-    (mseccfg : RegisterType Register.mseccfg)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence.Promises.LoadPromises
-        state mstatus pmaRegion misa mseccfg
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
-        exec_row e0 e1 e2)
+        bus.exec_row bus.e0 bus.e1 bus.e2)
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
-    (h_ext : main.is_external_op r_main = 1)
-    (h_op : main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_H)
+    (pins : ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_H)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
     (r_binary : ℕ)
     (h_op_binary :
@@ -113,8 +109,8 @@ theorem equiv_LH
           + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
           + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
           + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
-    (h_a0_match : (v.free_in_a_0 r_binary).val = e1.x0.val)
-    (h_a1_match : (v.free_in_a_1 r_binary).val = e1.x1.val) :
+    (h_a0_match : (v.free_in_a_0 r_binary).val = bus.e1.x0.val)
+    (h_a1_match : (v.free_in_a_1 r_binary).val = bus.e1.x1.val) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -124,7 +120,10 @@ theorem equiv_LH
         regidx.Regidx lh_input.rd,
         false,
         2
-      ))) state = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      ))) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_ext, h_op⟩ := pins
+  obtain ⟨mstatus, pmaRegion, misa, mseccfg⟩ := regs
   obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
