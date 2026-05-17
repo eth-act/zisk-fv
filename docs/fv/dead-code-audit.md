@@ -13,12 +13,11 @@ each entry point, every `Expr.const` Name appearing in its type or
 value is recursively followed. A constant is reported "unreachable"
 iff it is not in the resulting closure.
 
-The 190 entry points are:
+The 127 entry points are:
 
 * `ZiskFv.Compliance.zisk_riscv_compliant_program_bus` — the global compliance theorem dispatching all 63 RV64IM opcodes.
 * The 63 canonical `equiv_<OP>` theorems (one per opcode).
-* The 63 per-opcode `dispatch_<OP>` theorems (consumed by Global).
-* The 63 `equiv_<OP>_from_trust` Exemplar wrappers (the Compliance bridge).
+* The 63 `equiv_<OP>_from_trust` Compliance wrappers (consumed directly by the global theorem).
 
 The audit is intentionally **not destructive** — this file *reports*
 candidates; a separate follow-up PR is required to delete anything.
@@ -198,7 +197,7 @@ authored dead code"; see the breakdown below.
 | Module | Count | Notes |
 |--------|------:|-------|
 | `ZiskFv.Compliance` | 384 | Inferred elaboration auxiliaries of the dispatching theorem; large because the global theorem unfolds 63 arms |
-| `ZiskFv.Compliance` | 152 | Auxiliary lemmas attached to the Exemplar bridge layer not consumed by Global directly |
+| `ZiskFv.Compliance` | 152 | Auxiliary lemmas attached to the wrapper layer not consumed by the global theorem directly |
 | `ZiskFv.Airs.MemAlign` | 129 | MemAlign AIR — large state-machine, many per-column predicates only some of which are consumed |
 | `ZiskFv.Airs.Binary.Binary` | 78 | Binary AIR — similar pattern |
 | `ZiskFv.Airs.BusShape` | 74 | Bus-shape lemmas — generated en masse, only a slice reached |

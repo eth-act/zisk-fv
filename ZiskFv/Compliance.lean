@@ -1,82 +1,118 @@
-import ZiskFv.Compliance.Dispatch
+import Mathlib
+
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.Main.OpcodeClassification
+import ZiskFv.Field.Goldilocks
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Compliance.FromTrust.Lui
+import ZiskFv.Compliance.FromTrust.Auipc
+import ZiskFv.Compliance.FromTrust.Jal
+import ZiskFv.Compliance.FromTrust.Jalr
+import ZiskFv.Compliance.FromTrust.Fence
+import ZiskFv.Compliance.FromTrust.Beq
+import ZiskFv.Compliance.FromTrust.Bne
+import ZiskFv.Compliance.FromTrust.Blt
+import ZiskFv.Compliance.FromTrust.Bge
+import ZiskFv.Compliance.FromTrust.Bltu
+import ZiskFv.Compliance.FromTrust.Bgeu
+import ZiskFv.Compliance.FromTrust.Add
+import ZiskFv.Compliance.FromTrust.Addi
+import ZiskFv.Compliance.FromTrust.Addw
+import ZiskFv.Compliance.FromTrust.Subw
+import ZiskFv.Compliance.FromTrust.Addiw
+import ZiskFv.Compliance.FromTrust.Sub
+import ZiskFv.Compliance.FromTrust.And
+import ZiskFv.Compliance.FromTrust.Andi
+import ZiskFv.Compliance.FromTrust.Or
+import ZiskFv.Compliance.FromTrust.Ori
+import ZiskFv.Compliance.FromTrust.Xor
+import ZiskFv.Compliance.FromTrust.Xori
+import ZiskFv.Compliance.FromTrust.Slt
+import ZiskFv.Compliance.FromTrust.Sltu
+import ZiskFv.Compliance.FromTrust.Slti
+import ZiskFv.Compliance.FromTrust.Sltiu
+import ZiskFv.Compliance.FromTrust.Sll
+import ZiskFv.Compliance.FromTrust.Srl
+import ZiskFv.Compliance.FromTrust.Sra
+import ZiskFv.Compliance.FromTrust.Slli
+import ZiskFv.Compliance.FromTrust.Srli
+import ZiskFv.Compliance.FromTrust.Srai
+import ZiskFv.Compliance.FromTrust.Shift
+import ZiskFv.Compliance.FromTrust.ShiftLI
+import ZiskFv.Compliance.FromTrust.ShiftR
+import ZiskFv.Compliance.FromTrust.ShiftRLI
+import ZiskFv.Compliance.FromTrust.ShiftRA
+import ZiskFv.Compliance.FromTrust.ShiftRAI
+import ZiskFv.Compliance.FromTrust.Mul
+import ZiskFv.Compliance.FromTrust.MulH
+import ZiskFv.Compliance.FromTrust.MulHU
+import ZiskFv.Compliance.FromTrust.MulHSU
+import ZiskFv.Compliance.FromTrust.MulW
+import ZiskFv.Compliance.FromTrust.Div
+import ZiskFv.Compliance.FromTrust.Divu
+import ZiskFv.Compliance.FromTrust.Divw
+import ZiskFv.Compliance.FromTrust.Divuw
+import ZiskFv.Compliance.FromTrust.Rem
+import ZiskFv.Compliance.FromTrust.Remu
+import ZiskFv.Compliance.FromTrust.Remw
+import ZiskFv.Compliance.FromTrust.Remuw
+import ZiskFv.Compliance.FromTrust.Ld
+import ZiskFv.Compliance.FromTrust.Lbu
+import ZiskFv.Compliance.FromTrust.Lhu
+import ZiskFv.Compliance.FromTrust.Lwu
+import ZiskFv.Compliance.FromTrust.Lb
+import ZiskFv.Compliance.FromTrust.Lh
+import ZiskFv.Compliance.FromTrust.Lw
+import ZiskFv.Compliance.FromTrust.Sb
+import ZiskFv.Compliance.FromTrust.Sh
+import ZiskFv.Compliance.FromTrust.Sw
+import ZiskFv.Compliance.FromTrust.Sd
 
 /-!
-# Compliance.lean — Phase 3 architectural validation
+# Compliance.lean — Global compliance theorem for RV64IM
 
-This file lands the **global compliance theorem**
-  theorem zisk_riscv_compliant_program_bus
-on top of the 63 per-op `dispatch_<OP>` theorems in `Compliance/Dispatch.lean`.
+This file lands `zisk_riscv_compliant_program_bus`, the global theorem
+covering all 63 RV64IM opcodes. Each `OpEnvelope` arm routes to the
+corresponding `equiv_<OP>_from_trust` wrapper under
+`Compliance/FromTrust/`.
 
-## The architectural finding (read this first)
+## Opcode bucketing by AIR shape
 
-The 63 dispatcher signatures are genuinely heterogeneous :
+| Shape                  | Opcodes                                                |
+|------------------------|--------------------------------------------------------|
+| ControlFlow non-branch | LUI, AUIPC, JAL, JALR, FENCE                           |
+| ControlFlow branch     | BEQ, BNE, BLT, BGE, BLTU, BGEU                         |
+| BinaryAdd              | ADD, ADDI                                              |
+| BinaryAddW             | ADDW, SUBW, ADDIW                                      |
+| Binary                 | SUB, AND, OR, XOR, SLT, SLTU, SLTI, SLTIU,             |
+|                        | ANDI, ORI, XORI, SLLI, SRLI, SRAI                      |
+| BinaryExtension Shift  | SLL, SRL, SRA, SLLW, SRLW, SRAW, SLLIW, SRLIW, SRAIW   |
+| ArithMul               | MUL, MULH, MULHSU, MULHU, MULW                         |
+| ArithDiv               | DIV, DIVU, REM, REMU, DIVW, DIVUW, REMW, REMUW         |
+| Mem Load               | LD, LBU, LHU, LWU, LB, LH, LW                          |
+| Mem Store              | SB, SH, SW, SD                                         |
 
-* They take different `PureSpec.<OP>Input` records (one per op).
-* They take different sets of provider-AIR validators (LUI : none;
-  ADD : BinaryAdd; LBU/LHU/LWU : Mem + MemAlignByte + MemAlignReadByte
-  + MemAlign; etc).
-* Their *bus shapes* differ : branches end with `bus_effect exec_row
-  [] state`, LUI/AUIPC/JAL/JALR with `[e_rd]`, most arithmetic / mem
-  with `[e0, e1, e2]`.
-* Their LHS conclusion forms differ : `execute_instruction (instruction
-  …) state` vs. `(do; writeReg Register.nextPC; execute …) state`,
-  the latter arising whenever a Sail wrapper unfolds to a writeReg
-  prefix.
-* Some take `RISC_V_assumptions` with four register-typed inputs
-  (`mstatus`, `pmaRegion`, `misa`, `mseccfg`); others take only
-  `misa_val`; others take none.
+## Why a sum type for `OpEnvelope`
 
-Consequently, there is *no* single uniform predicate that captures
-all 63 conclusions without case-splitting on the op-kind. The honest
-shape of the global theorem is therefore :
+The 63 wrapper signatures do not unify: they take different
+`PureSpec.<OP>Input` records, different provider-AIR validators
+(LUI: none; ADD: BinaryAdd; LBU/LHU/LWU: Mem + MemAlignByte +
+MemAlignReadByte + MemAlign; etc.), and different bus shapes
+(branches end with `bus_effect exec_row [] state`; UType/JAL/JALR
+with `[e_rd]`; most arithmetic/mem with `[e0, e1, e2]`). Their
+LHS conclusion forms also differ: `execute_instruction (instruction
+…) state` vs. `(do; writeReg Register.nextPC; execute …) state`
+whenever a Sail wrapper unfolds to a `writeReg` prefix.
 
-```
-inductive OpEnvelope … where
-  | LUI : <all dispatch_LUI inputs> → OpEnvelope …
-  | ADD : <all dispatch_ADD inputs> → OpEnvelope …
-  | ... -- 35 arms (one per `mainOpKind`); some arms further
-         -- discriminate on the R-vs-I split (ADD covers ADD/ADDI).
-```
-
-Each arm bundles the per-dispatcher inputs, a `kind : mainOpKind`
-projection identifies the op, and a `exec_eq : Prop` projection
-states the dispatcher's conclusion. The global theorem then says :
-
-```
-theorem zisk_riscv_compliant_program_bus … :
-  decode_main_row m r_main = some env.kind → env.exec_eq
-```
-
-The proof body is a 35-way `match env with | … => exact dispatch_<OP>
-…`, i.e., pure routing. There is no new content — the trust footprint
-is exactly the union of the 63 dispatchers' footprints, which is the
-union of the 63 wrappers' footprints (147 axioms today).
-
-## This file's deliverable
-
-The **full global compliance theorem** over a 63-arm `OpEnvelope`,
-one constructor per RV64IM opcode in scope. Each arm :
-
-* Bundles the per-`dispatch_<OP>` inputs verbatim (modulo the
-  shared `state, m, r_main`).
-* Has a `kind` projection mapping to its representative
-  `mainOpKind` (the 6 branches collapse onto `.EQ` because the
-  dispatcher does not depend on `kind` for branches; this is a
-  routing-only choice with no soundness implication).
-* Has an `exec_eq` projection stating the dispatcher's conclusion.
-* Is discharged in `zisk_riscv_compliant_program_bus` by a
-  single `simp only [exec_eq]; exact dispatch_<OP> ...` cases arm.
-
-The 35-way figure in the older docstring referred to the
-`mainOpKind` enum's 35 distinct values; the actual envelope has
-one arm per opcode (63) since several opcodes share a kind (e.g.
-ADD/ADDI both → `.ADD`; LBU/LHU/LWU/SB/SH/SW/SD/LD/LUI/JALR all →
-`.COPYB`).
+A sum type is the honest encoding; an existential over a unified
+record would be vacuous because most fields would be `True` / junk
+values per arm.
 
 ## Trust footprint
 
-Zero new axioms. Everything in this file is structural assembly
-over the existing dispatchers.
+Zero new axioms in this file. The trust footprint is exactly the
+union of the 63 `equiv_<OP>_from_trust` wrappers' closures against
+the project's trust ledger.
 -/
 
 namespace ZiskFv.Compliance
@@ -98,7 +134,47 @@ open ZiskFv.Compliance
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-! ## Decode side — `Option mainOpKind` (Design ii) -/
+/-! ## Decode side — `Option mainOpKind` -/
+
+/-- The 35-way Zisk op-selector classifier, lifted to an enum.
+
+    This is **not** a full Sail `instruction` decoder — operand fields
+    (`imm`, `rd`, `rs1`, `rs2`) and the register-vs-immediate
+    disambiguator are not exposed as named columns on `Valid_Main`, so
+    decoding to a Sail `instruction` requires operand witnesses
+    supplied per-wrapper. This enum identifies which family of per-op
+    equivalence theorem applies to the current Main row. -/
+inductive mainOpKind where
+  | FLAG | COPYB | LTU | LT | EQ | ADD | SUB | AND | OR | XOR
+  | ADD_W | SUB_W | SLL | SRL | SRA | SLL_W | SRL_W | SRA_W
+  | SIGNEXTEND_B | SIGNEXTEND_H | SIGNEXTEND_W
+  | MULU | MULUH | MULSUH | MUL | MULH | MUL_W
+  | DIVU | REMU | DIV | REM | DIVU_W | REMU_W | DIV_W | REM_W
+  deriving DecidableEq, Repr
+
+namespace mainOpKind
+
+/-- Project the kind enum back to its `FGL` literal. Round-trips
+    through `Fundamentals/Transpiler.lean`'s `OP_<X>` definitions. -/
+@[simp] def toFGL : mainOpKind → FGL
+  | .FLAG => OP_FLAG | .COPYB => OP_COPYB
+  | .LTU => OP_LTU | .LT => OP_LT | .EQ => OP_EQ
+  | .ADD => OP_ADD | .SUB => OP_SUB | .AND => OP_AND
+  | .OR => OP_OR | .XOR => OP_XOR
+  | .ADD_W => OP_ADD_W | .SUB_W => OP_SUB_W
+  | .SLL => OP_SLL | .SRL => OP_SRL | .SRA => OP_SRA
+  | .SLL_W => OP_SLL_W | .SRL_W => OP_SRL_W | .SRA_W => OP_SRA_W
+  | .SIGNEXTEND_B => OP_SIGNEXTEND_B
+  | .SIGNEXTEND_H => OP_SIGNEXTEND_H
+  | .SIGNEXTEND_W => OP_SIGNEXTEND_W
+  | .MULU => OP_MULU | .MULUH => OP_MULUH | .MULSUH => OP_MULSUH
+  | .MUL => OP_MUL | .MULH => OP_MULH | .MUL_W => OP_MUL_W
+  | .DIVU => OP_DIVU | .REMU => OP_REMU
+  | .DIV => OP_DIV | .REM => OP_REM
+  | .DIVU_W => OP_DIVU_W | .REMU_W => OP_REMU_W
+  | .DIV_W => OP_DIV_W | .REM_W => OP_REM_W
+
+end mainOpKind
 
 /-- **Decode the op-kind from a Main row.**
 
@@ -173,26 +249,16 @@ theorem decode_main_row_correct
 
 /-! ## The `OpEnvelope` sum type
 
-Bundles, per Zisk op-kind, the inputs the corresponding `dispatch_<OP>`
-lemma requires beyond `(state, m, r_main)`. Each arm's signature is
-verbatim from the dispatcher.
-
-This file lands seven representative arms covering the bus-shape
-variants. The remaining 28 arms are mechanical follow-up (one per
-`mainOpKind`).
-
-**Why a sum type?** Because the dispatcher signatures genuinely do
-not unify (see the file-level docstring). A sum type is the honest
-encoding; an existential over a record with all unioned fields would
-be uniform but vacuous (every constructor sets most fields to `True`
-/ junk values), which is worse than the case-split.
+Bundles, per Zisk op-kind, the inputs the corresponding
+`equiv_<OP>_from_trust` wrapper requires beyond `(state, m, r_main)`.
+Each arm's signature is verbatim from its wrapper.
 -/
 
 set_option maxHeartbeats 1000000 in
-/-- Per-op input bundle (representative slice).
+/-- Per-op input bundle.
 
     Each constructor's parameter list is exactly the corresponding
-    `dispatch_<OP>` theorem's parameter list, minus the shared
+    `equiv_<OP>_from_trust` wrapper's parameter list, minus the shared
     `(state, m, r_main)`. -/
 inductive OpEnvelope
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -1980,14 +2046,14 @@ variable
 /-- The op-kind this envelope corresponds to. -/
 def kind : OpEnvelope state m r_main → mainOpKind
   | .beq .. => .EQ -- branches don't have a single mainOpKind arm;
-                          -- but the dispatcher pins `m.op r_main` via
-                          -- the wrapper rather than a kind hypothesis,
-                          -- so we map all six branches to `.EQ` (Zisk
-                          -- has no separate op for branches; they all
-                          -- live under is_external_op = 0 with op = ?
+                          -- the wrapper pins `m.op r_main` directly
+                          -- rather than via a kind hypothesis, so we
+                          -- map all six branches to `.EQ` (Zisk has no
+                          -- separate op for branches; they all live
+                          -- under is_external_op = 0 with op = ?
                           -- — see Main's PIL for the exact encoding).
                           -- NOTE: this routing-only choice has no
-                          -- soundness implication; the dispatcher's
+                          -- soundness implication; the wrapper's
                           -- conclusion does not depend on `kind`.
   | .bne .. => .EQ
   | .blt .. => .EQ
@@ -2052,7 +2118,7 @@ def kind : OpEnvelope state m r_main → mainOpKind
   | .remw .. => .REM_W
   | .remuw .. => .REMU_W
 
-/-- The dispatcher's conclusion as a `Prop`. -/
+/-- The wrapper's conclusion as a `Prop`. -/
 def exec_eq : OpEnvelope state m r_main → Prop
   | .beq _ imm r1 r2 _ exec_row .. =>
       execute_instruction (instruction.BTYPE (imm, r2, r1, bop.BEQ)) state
@@ -2431,26 +2497,24 @@ def exec_eq : OpEnvelope state m r_main → Prop
 
 end OpEnvelope
 
-/-! ## The global theorem (representative slice)
+/-! ## The global theorem
 
-For each constructor of `OpEnvelope`, dispatch to the corresponding
-`dispatch_<OP>` theorem. The proof is one `match` arm per op,
-delegating verbatim. -/
+For each constructor of `OpEnvelope`, route to the corresponding
+`equiv_<OP>_from_trust` wrapper. The proof is one `match` arm per
+op, delegating verbatim. -/
 
-/-- **Global compliance theorem (representative slice).**
+/-- **Global compliance theorem.**
 
     Given an op-envelope packaging all the inputs and hypotheses the
-    corresponding `dispatch_<OP>` theorem requires, the envelope's
-    declared conclusion (`exec_eq`) holds.
+    corresponding `equiv_<OP>_from_trust` wrapper requires, the
+    envelope's declared conclusion (`exec_eq`) holds.
 
     The conclusion's shape is determined by the envelope's
-    constructor, so the global theorem is a 6-way (here) / 35-way
-    (full) routing match.
+    constructor; the global theorem is a 63-arm routing match
+    delegating to each wrapper.
 
-    Soundness is inherited from the dispatchers; the dispatchers
-    delegate to the 63 `equiv_<OP>_from_trust` wrappers; the wrappers
-    consume the 147-axiom trust ledger. This theorem adds zero new
-    trust. -/
+    Trust footprint: the union of the 63 wrappers' closures against
+    the project's trust ledger. This theorem adds zero new trust. -/
 theorem zisk_riscv_compliant_program_bus
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
@@ -2461,49 +2525,49 @@ theorem zisk_riscv_compliant_program_bus
         h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
         h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_BEQ state beq_input imm r1 r2 misa_val exec_row
+    exact equiv_BEQ_from_trust state beq_input imm r1 r2 misa_val exec_row
       h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
       h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
   | bne bne_input imm r1 r2 misa_val exec_row
         h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
         h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_BNE state bne_input imm r1 r2 misa_val exec_row
+    exact equiv_BNE_from_trust state bne_input imm r1 r2 misa_val exec_row
       h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
       h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
   | blt blt_input imm r1 r2 misa_val exec_row
         h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
         h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_BLT state blt_input imm r1 r2 misa_val exec_row
+    exact equiv_BLT_from_trust state blt_input imm r1 r2 misa_val exec_row
       h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
       h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
   | bge bge_input imm r1 r2 misa_val exec_row
         h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
         h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_BGE state bge_input imm r1 r2 misa_val exec_row
+    exact equiv_BGE_from_trust state bge_input imm r1 r2 misa_val exec_row
       h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
       h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
   | bltu bltu_input imm r1 r2 misa_val exec_row
          h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
          h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_BLTU state bltu_input imm r1 r2 misa_val exec_row
+    exact equiv_BLTU_from_trust state bltu_input imm r1 r2 misa_val exec_row
       h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
       h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
   | bgeu bgeu_input imm r1 r2 misa_val exec_row
          h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
          h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_BGEU state bgeu_input imm r1 r2 misa_val exec_row
+    exact equiv_BGEU_from_trust state bgeu_input imm r1 r2 misa_val exec_row
       h_input_imm h_input_r1 h_input_r2 h_input_pc h_input_misa h_misa_c
       h_target_aligned h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
   | fence fence_input fm pred succ rs rd exec_row
           h_main_active h_main_op_fence h_input_pc h_input_priv
           h_exec_len h_e0_mult h_e1_mult h_nextPC_matches =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_FENCE state fence_input fm pred succ rs rd m r_main
+    exact equiv_FENCE_from_trust state fence_input fm pred succ rs rd m r_main
       exec_row h_main_active h_main_op_fence h_input_pc h_input_priv
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
   | lui lui_input imm rd next_pc exec_row e_rd
@@ -2512,7 +2576,7 @@ theorem zisk_riscv_compliant_program_bus
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
         h_rd_mult h_rd_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_LUI state lui_input imm rd m r_main next_pc
+    exact equiv_LUI_from_trust state lui_input imm rd m r_main next_pc
       exec_row e_rd h_main_active h_main_op_lui h_lui_subset
       h_input_imm h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2524,7 +2588,7 @@ theorem zisk_riscv_compliant_program_bus
           h_rd_mult h_rd_as h_nextPC_eq h_rd_idx
           h_no_wrap h_lo_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_AUIPC state auipc_input imm rd exec_row e_rd nextPC_val
+    exact equiv_AUIPC_from_trust state auipc_input imm rd exec_row e_rd nextPC_val
       m r_main next_pc h_main_active h_main_op_auipc h_auipc_subset
       h_input_imm h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2537,7 +2601,7 @@ theorem zisk_riscv_compliant_program_bus
         h_rd_mult h_rd_as h_not_throws h_success h_nextPC_option h_rd_idx
         h_pc_bound h_lo_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_JAL state jal_input imm rd misa_val m r_main next_pc
+    exact equiv_JAL_from_trust state jal_input imm rd misa_val m r_main next_pc
       exec_row e_rd nextPC_val h_main_active h_main_op_jal h_jal_subset
       h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2551,7 +2615,7 @@ theorem zisk_riscv_compliant_program_bus
          h_rd_mult h_rd_as h_success h_nextPC_option h_rd_idx
          h_pc_bound h_lo_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_JALR state jalr_input imm rs1 rd misa_val mseccfg
+    exact equiv_JALR_from_trust state jalr_input imm rs1 rd misa_val mseccfg
       exec_row e_rd nextPC_val m r_main next_pc
       h_main_active h_main_op_jalr h_jalr_subset
       h_input_imm h_input_rd h_input_rs1 h_input_pc h_input_misa h_misa_c
@@ -2565,7 +2629,7 @@ theorem zisk_riscv_compliant_program_bus
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_ADD state add_input r1 r2 rd m b r_main exec_row e0 e1 e2
+    exact equiv_ADD_from_trust state add_input r1 r2 rd m b r_main exec_row e0 e1 e2
       h_main_active h_main_op_add h_main_subset h_b_core h_lane_rd
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2576,7 +2640,7 @@ theorem zisk_riscv_compliant_program_bus
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_ADDI state addi_input r1 rd imm m b r_main exec_row e0 e1 e2
+    exact equiv_ADDI_from_trust state addi_input r1 rd imm m b r_main exec_row e0 e1 e2
       h_main_active h_main_op_addi h_main_subset h_b_core h_addi_subset h_lane_rd
       h_input_r1 h_input_imm h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2587,7 +2651,7 @@ theorem zisk_riscv_compliant_program_bus
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_ADDW state addw_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    exact equiv_ADDW_from_trust state addw_input r1 r2 rd m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_addw h_lane_rd
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2598,7 +2662,7 @@ theorem zisk_riscv_compliant_program_bus
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SUBW state subw_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    exact equiv_SUBW_from_trust state subw_input r1 r2 rd m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_subw h_lane_rd
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2609,7 +2673,7 @@ theorem zisk_riscv_compliant_program_bus
           h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_ADDIW state addiw_input r1 rd imm m v r_main exec_row e0 e1 e2
+    exact equiv_ADDIW_from_trust state addiw_input r1 rd imm m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_addiw h_addiw_subset h_lane_rd
       h_input_r1 h_input_imm h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2620,7 +2684,7 @@ theorem zisk_riscv_compliant_program_bus
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SUB state sub_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    exact equiv_SUB_from_trust state sub_input r1 r2 rd m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_sub h_lane_rd
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2631,7 +2695,7 @@ theorem zisk_riscv_compliant_program_bus
            h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
            h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_AND state and_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    exact equiv_AND_from_trust state and_input r1 r2 rd m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_and h_lane_rd
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2642,7 +2706,7 @@ theorem zisk_riscv_compliant_program_bus
           h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_OR state or_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    exact equiv_OR_from_trust state or_input r1 r2 rd m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_or h_lane_rd
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2653,7 +2717,7 @@ theorem zisk_riscv_compliant_program_bus
            h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
            h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_XOR state xor_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    exact equiv_XOR_from_trust state xor_input r1 r2 rd m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_xor h_lane_rd
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2664,7 +2728,7 @@ theorem zisk_riscv_compliant_program_bus
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SLT state slt_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    exact equiv_SLT_from_trust state slt_input r1 r2 rd m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_slt h_lane_rd
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2675,7 +2739,7 @@ theorem zisk_riscv_compliant_program_bus
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SLTU state sltu_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    exact equiv_SLTU_from_trust state sltu_input r1 r2 rd m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_sltu h_lane_rd
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2686,7 +2750,7 @@ theorem zisk_riscv_compliant_program_bus
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_ANDI state andi_input r1 rd imm m v r_main exec_row e0 e1 e2
+    exact equiv_ANDI_from_trust state andi_input r1 rd imm m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_andi h_andi_subset h_lane_rd
       h_input_r1 h_input_imm h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2697,7 +2761,7 @@ theorem zisk_riscv_compliant_program_bus
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_ORI state ori_input r1 rd imm m v r_main exec_row e0 e1 e2
+    exact equiv_ORI_from_trust state ori_input r1 rd imm m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_ori h_ori_subset h_lane_rd
       h_input_r1 h_input_imm h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2708,7 +2772,7 @@ theorem zisk_riscv_compliant_program_bus
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_XORI state xori_input r1 rd imm m v r_main exec_row e0 e1 e2
+    exact equiv_XORI_from_trust state xori_input r1 rd imm m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_xori h_xori_subset h_lane_rd
       h_input_r1 h_input_imm h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2719,7 +2783,7 @@ theorem zisk_riscv_compliant_program_bus
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SLTI state slti_input r1 rd imm m v r_main exec_row e0 e1 e2
+    exact equiv_SLTI_from_trust state slti_input r1 rd imm m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_slti h_slti_subset h_lane_rd
       h_input_r1 h_input_imm h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2730,7 +2794,7 @@ theorem zisk_riscv_compliant_program_bus
           h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SLTIU state sltiu_input r1 rd imm m v r_main exec_row e0 e1 e2
+    exact equiv_SLTIU_from_trust state sltiu_input r1 rd imm m v r_main exec_row e0 e1 e2
       h_main_active h_main_op_sltiu h_sltiu_subset h_lane_rd
       h_input_r1 h_input_imm h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -2741,7 +2805,7 @@ theorem zisk_riscv_compliant_program_bus
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
         h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SLL state sll_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    exact equiv_SLL_from_trust state sll_input r1 r2 rd m v r_main exec_row e0 e1 e2
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -2752,7 +2816,7 @@ theorem zisk_riscv_compliant_program_bus
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
         h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SRL state srl_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    exact equiv_SRL_from_trust state srl_input r1 r2 rd m v r_main exec_row e0 e1 e2
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -2763,7 +2827,7 @@ theorem zisk_riscv_compliant_program_bus
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
         h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SRA state sra_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    exact equiv_SRA_from_trust state sra_input r1 r2 rd m v r_main exec_row e0 e1 e2
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -2774,7 +2838,7 @@ theorem zisk_riscv_compliant_program_bus
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SLLI state slli_input r1 rd shamt m v r_main exec_row e0 e1 e2
+    exact equiv_SLLI_from_trust state slli_input r1 rd shamt m v r_main exec_row e0 e1 e2
       h_input_r1_sail h_input_shamt h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -2785,7 +2849,7 @@ theorem zisk_riscv_compliant_program_bus
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SRLI state srli_input r1 rd shamt m v r_main exec_row e0 e1 e2
+    exact equiv_SRLI_from_trust state srli_input r1 rd shamt m v r_main exec_row e0 e1 e2
       h_input_r1 h_input_shamt h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -2796,7 +2860,7 @@ theorem zisk_riscv_compliant_program_bus
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SRAI state srai_input r1 rd shamt m v r_main exec_row e0 e1 e2
+    exact equiv_SRAI_from_trust state srai_input r1 rd shamt m v r_main exec_row e0 e1 e2
       h_input_r1 h_input_shamt h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -2807,7 +2871,7 @@ theorem zisk_riscv_compliant_program_bus
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SLLW state sllw_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    exact equiv_SLLW_from_trust state sllw_input r1 r2 rd m v r_main exec_row e0 e1 e2
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -2818,7 +2882,7 @@ theorem zisk_riscv_compliant_program_bus
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SRLW state srlw_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    exact equiv_SRLW_from_trust state srlw_input r1 r2 rd m v r_main exec_row e0 e1 e2
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -2829,7 +2893,7 @@ theorem zisk_riscv_compliant_program_bus
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SRAW state sraw_input r1 r2 rd m v r_main exec_row e0 e1 e2
+    exact equiv_SRAW_from_trust state sraw_input r1 r2 rd m v r_main exec_row e0 e1 e2
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -2840,7 +2904,7 @@ theorem zisk_riscv_compliant_program_bus
           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
           h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SLLIW state slliw_input r1 rd m v r_main exec_row e0 e1 e2
+    exact equiv_SLLIW_from_trust state slliw_input r1 rd m v r_main exec_row e0 e1 e2
       h_input_r1_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -2851,7 +2915,7 @@ theorem zisk_riscv_compliant_program_bus
           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
           h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SRLIW state srliw_input r1 rd m v r_main exec_row e0 e1 e2
+    exact equiv_SRLIW_from_trust state srliw_input r1 rd m v r_main exec_row e0 e1 e2
       h_input_r1_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -2862,7 +2926,7 @@ theorem zisk_riscv_compliant_program_bus
           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
           h_main_active h_main_op h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SRAIW state sraiw_input r1 rd m v r_main exec_row e0 e1 e2
+    exact equiv_SRAIW_from_trust state sraiw_input r1 rd m v r_main exec_row e0 e1 e2
       h_input_r1_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -2873,7 +2937,7 @@ theorem zisk_riscv_compliant_program_bus
        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SB state sb_input mstatus pmaRegion misa mseccfg
+    exact equiv_SB_from_trust state sb_input mstatus pmaRegion misa mseccfg
       m r_main exec_row e0 e1 e2
       h_main_active h_main_op h_main_ind_width
       risc_v_assumptions h_opcode_assumptions
@@ -2885,7 +2949,7 @@ theorem zisk_riscv_compliant_program_bus
        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SH state sh_input mstatus pmaRegion misa mseccfg
+    exact equiv_SH_from_trust state sh_input mstatus pmaRegion misa mseccfg
       m r_main exec_row e0 e1 e2
       h_main_active h_main_op h_main_ind_width
       risc_v_assumptions h_opcode_assumptions
@@ -2897,7 +2961,7 @@ theorem zisk_riscv_compliant_program_bus
        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SW state sw_input mstatus pmaRegion misa mseccfg
+    exact equiv_SW_from_trust state sw_input mstatus pmaRegion misa mseccfg
       m r_main exec_row e0 e1 e2
       h_main_active h_main_op h_main_ind_width
       risc_v_assumptions h_opcode_assumptions
@@ -2909,7 +2973,7 @@ theorem zisk_riscv_compliant_program_bus
        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_SD state sd_input mstatus pmaRegion misa mseccfg
+    exact equiv_SD_from_trust state sd_input mstatus pmaRegion misa mseccfg
       m r_main exec_row e0 e1 e2
       h_main_active h_main_op
       risc_v_assumptions h_opcode_assumptions
@@ -2921,7 +2985,7 @@ theorem zisk_riscv_compliant_program_bus
        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_LD state ld_input mstatus pmaRegion misa mseccfg
+    exact equiv_LD_from_trust state ld_input mstatus pmaRegion misa mseccfg
       m mem r_main exec_row e0 e1 e2
       h_main_active h_main_op_ld
       risc_v_assumptions h_opcode_assumptions
@@ -2933,7 +2997,7 @@ theorem zisk_riscv_compliant_program_bus
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_LBU state lbu_input mstatus pmaRegion misa mseccfg
+    exact equiv_LBU_from_trust state lbu_input mstatus pmaRegion misa mseccfg
       m mem r_main mab marb ma h_low exec_row e0 e1 e2
       h_main_active h_main_op_lbu h_width
       risc_v_assumptions h_opcode_assumptions
@@ -2945,7 +3009,7 @@ theorem zisk_riscv_compliant_program_bus
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_LHU state lhu_input mstatus pmaRegion misa mseccfg
+    exact equiv_LHU_from_trust state lhu_input mstatus pmaRegion misa mseccfg
       m mem r_main mab marb ma h_low exec_row e0 e1 e2
       h_main_active h_main_op_lhu h_width
       risc_v_assumptions h_opcode_assumptions
@@ -2957,7 +3021,7 @@ theorem zisk_riscv_compliant_program_bus
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_LWU state lwu_input mstatus pmaRegion misa mseccfg
+    exact equiv_LWU_from_trust state lwu_input mstatus pmaRegion misa mseccfg
       m mem r_main mab marb ma h_low exec_row e0 e1 e2
       h_main_active h_main_op_lwu h_width
       risc_v_assumptions h_opcode_assumptions
@@ -2969,7 +3033,7 @@ theorem zisk_riscv_compliant_program_bus
        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_LB state lb_input mstatus pmaRegion misa mseccfg
+    exact equiv_LB_from_trust state lb_input mstatus pmaRegion misa mseccfg
       m mem r_main v exec_row e0 e1 e2
       h_main_active h_main_op
       risc_v_assumptions h_opcode_assumptions
@@ -2981,7 +3045,7 @@ theorem zisk_riscv_compliant_program_bus
        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_LH state lh_input mstatus pmaRegion misa mseccfg
+    exact equiv_LH_from_trust state lh_input mstatus pmaRegion misa mseccfg
       m mem r_main v exec_row e0 e1 e2
       h_main_active h_main_op
       risc_v_assumptions h_opcode_assumptions
@@ -2993,7 +3057,7 @@ theorem zisk_riscv_compliant_program_bus
        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_LW state lw_input mstatus pmaRegion misa mseccfg
+    exact equiv_LW_from_trust state lw_input mstatus pmaRegion misa mseccfg
       m mem r_main v exec_row e0 e1 e2
       h_main_active h_main_op
       risc_v_assumptions h_opcode_assumptions
@@ -3006,7 +3070,7 @@ theorem zisk_riscv_compliant_program_bus
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
         h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_MUL state mul_input r1 r2 rd srs1 srs2
+    exact equiv_MUL_from_trust state mul_input r1 r2 rd srs1 srs2
       exec_row e0 e1 e2 m r_main v r_a
       h_main_active h_main_op_mul h_match_primary
       h_input_r1 h_input_r2 h_input_rd h_input_pc
@@ -3020,7 +3084,7 @@ theorem zisk_riscv_compliant_program_bus
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          h_row_constraints =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_MULH state mulh_input r1 r2 rd
+    exact equiv_MULH_from_trust state mulh_input r1 r2 rd
       exec_row e0 e1 e2 m r_main v r_a
       h_main_active h_main_op_mulh h_match_secondary
       h_input_r1 h_input_r2 h_input_rd h_input_pc
@@ -3034,7 +3098,7 @@ theorem zisk_riscv_compliant_program_bus
           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
           h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_MULHU state mulhu_input r1 r2 rd
+    exact equiv_MULHU_from_trust state mulhu_input r1 r2 rd
       exec_row e0 e1 e2 m r_main v r_a
       h_main_active h_main_op_mulhu h_match_secondary
       h_input_r1 h_input_r2 h_input_rd h_input_pc
@@ -3048,7 +3112,7 @@ theorem zisk_riscv_compliant_program_bus
            h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
            h_row_constraints =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_MULHSU state mulhsu_input r1 r2 rd
+    exact equiv_MULHSU_from_trust state mulhsu_input r1 r2 rd
       exec_row e0 e1 e2 m r_main v r_a
       h_main_active h_main_op_mulhsu h_match_secondary
       h_input_r1 h_input_r2 h_input_rd h_input_pc
@@ -3062,7 +3126,7 @@ theorem zisk_riscv_compliant_program_bus
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          h_row_constraints h_sext_choice h_rs1_value h_rs2_value =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_MULW state mulw_input r1 r2 rd
+    exact equiv_MULW_from_trust state mulw_input r1 r2 rd
       exec_row e0 e1 e2 m r_main v r_a
       h_main_active h_main_op_mulw h_match_primary
       h_input_r1 h_input_r2 h_input_rd h_input_pc
@@ -3076,7 +3140,7 @@ theorem zisk_riscv_compliant_program_bus
         h_input_r1 h_input_r2 h_input_rd h_input_pc h_op2_ne h_no_overflow
         h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_DIV state div_input r1 r2 rd exec_row e0 e1 e2
+    exact equiv_DIV_from_trust state div_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_div h_match_primary
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -3089,7 +3153,7 @@ theorem zisk_riscv_compliant_program_bus
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_DIVU state divu_input r1 r2 rd exec_row e0 e1 e2
+    exact equiv_DIVU_from_trust state divu_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_divu h_match_primary
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -3103,7 +3167,7 @@ theorem zisk_riscv_compliant_program_bus
          h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
          h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_DIVW state divw_input r1 r2 rd exec_row e0 e1 e2
+    exact equiv_DIVW_from_trust state divw_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_divw h_match_primary
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -3117,7 +3181,7 @@ theorem zisk_riscv_compliant_program_bus
           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
           h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_DIVUW state divuw_input r1 r2 rd exec_row e0 e1 e2
+    exact equiv_DIVUW_from_trust state divuw_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_divuw h_match_primary
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -3130,7 +3194,7 @@ theorem zisk_riscv_compliant_program_bus
         h_input_r1 h_input_r2 h_input_rd h_input_pc h_op2_ne h_no_overflow
         h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_REM state rem_input r1 r2 rd exec_row e0 e1 e2
+    exact equiv_REM_from_trust state rem_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_rem h_match_secondary
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -3143,7 +3207,7 @@ theorem zisk_riscv_compliant_program_bus
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          h0 h1 h2 h3 h4 h5 h6 h7 h_row_constraints h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_REMU state remu_input r1 r2 rd exec_row e0 e1 e2
+    exact equiv_REMU_from_trust state remu_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_remu h_match_secondary
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -3157,7 +3221,7 @@ theorem zisk_riscv_compliant_program_bus
          h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
          h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_REMW state remw_input r1 r2 rd exec_row e0 e1 e2
+    exact equiv_REMW_from_trust state remw_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_remw h_match_secondary
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -3171,7 +3235,7 @@ theorem zisk_riscv_compliant_program_bus
           h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
           h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
-    exact dispatch_REMUW state remuw_input r1 r2 rd exec_row e0 e1 e2
+    exact equiv_REMUW_from_trust state remuw_input r1 r2 rd exec_row e0 e1 e2
       m r_main v r_a h_main_active h_main_op_remuw h_match_secondary
       h_input_r1 h_input_r2 h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
