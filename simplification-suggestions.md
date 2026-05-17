@@ -6,7 +6,8 @@ Ranked by leverage. Top of the list = touches many files, biggest readability ga
 
 - #1 — Collapse `dispatch_X` layer (PR #33, −2890 lines).
 - #2 — Thread per-shape `Promises` bundles through wrappers + `OpEnvelope` (PR #34, −2971 lines).
-- #2b — Bundle every remaining loose recurring binder cluster: `BusRows`, `MainRowPins`, `ModeRegsFull`, `MemAlignWitness`, `BranchInstrOperands`, `BinaryAddWitness`, `ByteBounds` (this PR; **all 63 opcodes**; canonical caller-burden −299, wrapper caller-burden −309).
+- #2b — Bundle every remaining loose recurring binder cluster: `BusRows`, `MainRowPins`, `ModeRegsFull`, `MemAlignWitness`, `BranchInstrOperands`, `BinaryAddWitness`, `ByteBounds` (PR #35; **all 63 opcodes**; canonical caller-burden −299, wrapper caller-burden −309).
+- #6 — Hoist within-shape wrapper-body repetition into per-AIR helper modules (`BinaryHelpers`, `BinaryExtensionHelpers`, `ArithHelpers`). 32 wrappers across 3 AIR families shrink by **−2,393 lines**; new helper modules add **+1,405 lines**; net **−988 source lines** plus a clean reusable layer under `Equivalence/Promises/`. BinaryAdd and Mem audited but skipped (no leverage — Mem is pre-discharged at the canonical layer; BinaryAdd's two wrappers are structurally divergent). Trust gate baselines all unchanged.
 
 ## Top-leverage wins
 
