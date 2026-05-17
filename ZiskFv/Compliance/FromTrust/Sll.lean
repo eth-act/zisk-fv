@@ -2,6 +2,7 @@ import Mathlib
 
 import ZiskFv.Equivalence.Sll
 import ZiskFv.Equivalence.Promises.RType
+import ZiskFv.Equivalence.Promises.BinaryExtensionHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -183,6 +184,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.OperationBus
+open ZiskFv.Equivalence.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -250,17 +252,11 @@ theorem equiv_SLL_from_trust
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_main_active, h_main_op⟩ := pins
-  -- ============ Derive (r_binary, h_match) via op-bus permutation soundness ============
-  -- `op_bus_perm_sound_BinaryExtension` takes the Main activation +
-  -- opcode-disjunction pins (covering SLL=0x21 through SEXT_W=0x29).
-  -- For SLL specifically the disjunction member is `m.op r_main = 0x21`,
-  -- which `h_main_op : m.op r_main = OP_SLL` supplies — `OP_SLL := 33 = 0x21`
-  -- definitionally per `Fundamentals/Transpiler.lean:162` (and
-  -- `BinaryExtensionTable.OP_SLL := 0x21` per `Airs/BinaryExtensionTable.lean:36`).
+  -- Derive (r_binary, h_match) via the per-opcode op-bus handshake helper
+  -- (hides the disjunct-selector ladder behind `binexec_op_bus_handshake_SLL`).
   obtain ⟨r_binary, h_match⟩ :=
-    op_bus_perm_sound_BinaryExtension m v r_main h_main_active
-      (Or.inl h_main_op)
-  -- ============ Delegate to canonical `equiv_SLL` ============
+    binexec_op_bus_handshake_SLL m v r_main h_main_active h_main_op
+  -- Delegate to canonical `equiv_SLL`.
   exact ZiskFv.Equivalence.Sll.equiv_SLL state sll_input r1 r2 rd
     m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩

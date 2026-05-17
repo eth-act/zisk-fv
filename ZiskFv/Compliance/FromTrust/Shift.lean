@@ -1,6 +1,7 @@
 import Mathlib
 
 import ZiskFv.Equivalence.Shift
+import ZiskFv.Equivalence.Promises.BinaryExtensionHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -18,6 +19,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.OperationBus
+open ZiskFv.Equivalence.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -50,10 +52,8 @@ theorem equiv_SLLW_from_trust
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_main_active, h_main_op⟩ := pins
-  -- OP_SLL_W = 0x24: disjunction member #4.
   obtain ⟨r_binary, h_match⟩ :=
-    op_bus_perm_sound_BinaryExtension m v r_main h_main_active
-      (Or.inr (Or.inr (Or.inr (Or.inl h_main_op))))
+    binexec_op_bus_handshake_SLL_W m v r_main h_main_active h_main_op
   exact ZiskFv.Equivalence.Shift.equiv_SLLW state sllw_input r1 r2 rd
     m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩

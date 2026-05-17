@@ -2,6 +2,7 @@ import Mathlib
 
 import ZiskFv.Equivalence.Slli
 import ZiskFv.Equivalence.Promises.ShiftImm
+import ZiskFv.Equivalence.Promises.BinaryExtensionHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -26,6 +27,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.OperationBus
+open ZiskFv.Equivalence.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -48,8 +50,7 @@ theorem equiv_SLLI_from_trust
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_main_active, h_main_op⟩ := pins
   obtain ⟨r_binary, h_match⟩ :=
-    op_bus_perm_sound_BinaryExtension m v r_main h_main_active
-      (Or.inl h_main_op)
+    binexec_op_bus_handshake_SLL m v r_main h_main_active h_main_op
   exact ZiskFv.Equivalence.Slli.equiv_SLLI state slli_input r1 rd shamt
     m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
