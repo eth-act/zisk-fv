@@ -10,6 +10,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Tactics.ALUITypeArchetype
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_ANDI` Compliance wrapper — Binary ITYPE shape
@@ -95,22 +96,22 @@ theorem equiv_ANDI_from_trust
     (r1 rd : regidx) (imm : BitVec 12)
     (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
     (r_main : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_andi : m.op r_main = OP_AND)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
     (h_andi_subset : itype_imm_subset_holds_main m r_main andi_input.imm)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.Equivalence.Promises.ITypePromises
         state andi_input.r1_val andi_input.imm andi_input.rd andi_input.PC
         (PureSpec.execute_ITYPE_andi_pure andi_input).nextPC
-        r1 rd imm exec_row e0 e1 e2) :
+        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.ANDI))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_andi⟩ := pins
   -- ============ Derive existential `r_binary` + `matches_entry` ============
   -- `op_bus_perm_sound_Binary` (class #4): OP_AND = 14 = 0x0e.
   have h_op_disj :
@@ -140,8 +141,10 @@ theorem equiv_ANDI_from_trust
     binary_b_op_or_sext_eq_OP_AND v r_binary h_emit_op
   -- ============ Delegate to canonical `equiv_ANDI` ============
   exact ZiskFv.Equivalence.Andi.equiv_ANDI
-    state andi_input r1 rd imm m v r_main r_binary exec_row e0 e1 e2
+    state andi_input r1 rd imm m v r_main r_binary
+    ⟨exec_row, e0, e1, e2⟩
     promises
-    h_main_active h_main_op_andi h_match h_bop_or_sext h_lane_rd h_andi_subset
+    ⟨h_main_active, h_main_op_andi⟩
+    h_match h_bop_or_sext h_lane_rd h_andi_subset
 
 end ZiskFv.Compliance

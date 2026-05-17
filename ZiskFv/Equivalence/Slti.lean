@@ -20,6 +20,7 @@ import ZiskFv.Equivalence.Bridge.Binary
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Equivalence.Promises.IType
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 SLTI. Consumes
@@ -77,19 +78,17 @@ theorem equiv_SLTI
     (slti_input : PureSpec.SltiInput)
     (r1 rd : regidx) (imm : BitVec 12)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (exec_row : List (Interaction.ExecutionBusEntry FGL))
-    (e0 e1 e2 : Interaction.MemoryBusEntry FGL)
+    (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence.Promises.ITypePromises
         state slti_input.r1_val slti_input.imm slti_input.rd slti_input.PC
         (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC
-        r1 rd imm exec_row e0 e1 e2)
+        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
     -- Binary AIR provider witness + activation/op + matches_entry.
     -- Replaces 16 loose a_i/b_i quantifiers + 16 byte ranges +
     -- h_input_r1_circuit. (h_input_imm_circuit is retained — the
     -- immediate is caller-routed via transpile_SLTI's imm_b_lo/hi.)
     (v : ZiskFv.Airs.Binary.Valid_Binary C FGL FGL) (r_binary : ℕ)
-    (h_main_active : m.is_external_op r_main = 1)
-    (h_main_op_slti : m.op r_main = OP_LT)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
     (c0 c1 c2 c3 c4 c5 c6 c7
      cin0 cin1 cin2 cin3 cin4 cin5 cin6 cin7
@@ -130,7 +129,7 @@ theorem equiv_SLTI
     (h_pi7 : pi7.val = 1)
     (h_match_clo : m.c_0 r_main = fl7)
     (h_match_chi : m.c_1 r_main = 0)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e2)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (h_fl7_lt_2 : fl7.val < 2)
     (h_input_imm_circuit : BitVec.signExtend 64 slti_input.imm
       = BitVec.ofNat 64
@@ -146,7 +145,9 @@ theorem equiv_SLTI
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.SLTI))) state
-      = (bus_effect exec_row [e0, e1, e2] state).2 := by
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_slti⟩ := pins
   obtain ⟨h_input_r1, h_input_imm, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
