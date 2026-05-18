@@ -55,12 +55,11 @@ import ZiskFv.Compliance.SharedBundles
 > `arith_table_op_div_rem_main_selector_pin`); narrower scope (each
 > covers a single MUL opcode literal). Net change to caller burden:
 > drop 11 promise hypotheses (7 mode pins + 2 byte-lane pins + 2
-> operand pins). Within-shape MULH / MULHU / MULHSU / MULW will need
+> operand pins). Within-shape MULH / MULHU / MULHSU / MULW use
 > parallel mode-pin / selector-pin axioms with appropriate opcode
 > literals and (for signed variants) the np / nb MSB pins —
 > analogous to DIV's `arith_div_np_eq_msb_of_dividend` /
-> `arith_div_nb_eq_msb_of_divisor`. This PR is the ArithMul shape's
-> canonical exemplar; mass authoring follows the structure below.
+> `arith_div_nb_eq_msb_of_divisor`.
 -/
 
 namespace ZiskFv.Compliance

@@ -834,10 +834,9 @@ when the dispatch fires. -/
 
 /-! ## Part 11 — Layer 1: BV64 wrappers for W-variants (m32 = 1, 32-bit)
 
-Phase 4.alpha.B Layer 1: W-form versions of the Phase A
-`fgl_mul_signed_to_bv64_hi` + `fgl_div_signed_to_bv64` +
-`fgl_rem_signed_to_bv64` wrappers, for the 32-bit-truncated W
-opcodes (MULW, DIVW, REMW, DIVUW, REMUW).
+W-form versions of the `fgl_mul_signed_to_bv64_hi` +
+`fgl_div_signed_to_bv64` + `fgl_rem_signed_to_bv64` wrappers, for
+the 32-bit-truncated W opcodes (MULW, DIVW, REMW, DIVUW, REMUW).
 
 All five W-variants share the same RV64 output convention: the
 32-bit result is sign-extended to 64 bits — **even unsigned**

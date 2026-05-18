@@ -28,7 +28,7 @@ open ZiskFv.Equivalence.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Pilot wrapper for `equiv_DIV`.**
+/-- **Trust-discharged wrapper for `equiv_DIV`.**
 
     Caller obligations (signature header, ordered):
     1. The Sail-side inputs (`state`, `div_input`, `r1`, `r2`, `rd`)

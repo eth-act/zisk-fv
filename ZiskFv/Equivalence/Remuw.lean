@@ -26,10 +26,10 @@ REMUW is the W-variant sibling of REMU. Both transpile through
 `create_register_op` with `m32 = 1` for the 32-bit width. Sail-side,
 both call `execute_REMW` with `is_unsigned = true`.
 
-Phase 4.alpha.B.uw2: Structural-unpacking refactor (see Divuw.lean for
-rationale). 17 ADDED binders including the new `h_sext_choice` for
-W-mode sign-extension over bytes 4..7. The bytes 0..3 pack the
-remainder lanes `d_0 + d_1*65536` (not the quotient).
+Structural-unpacking refactor (see Divuw.lean for rationale). 17
+ADDED binders including the `h_sext_choice` for W-mode sign-extension
+over bytes 4..7. The bytes 0..3 pack the remainder lanes
+`d_0 + d_1*65536` (not the quotient).
 
 Three canonical theorems mirroring the REMU pattern (shape-(a)).
 -/
@@ -73,8 +73,7 @@ lemma equiv_REMUW_sail
     REMUW equals the state computed by applying `bus_effect` to the
     circuit's execution and memory bus rows.
 
-    Phase 4.alpha.B.uw2 structural-unpacking refactor with 17 ADDED
-    binders. -/
+    Structural-unpacking refactor with 17 ADDED binders. -/
 theorem equiv_REMUW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remuw_input : PureSpec.RemuwInput)

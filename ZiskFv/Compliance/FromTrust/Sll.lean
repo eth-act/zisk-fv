@@ -12,169 +12,19 @@ import ZiskFv.Compliance.SharedBundles
 
 /-!
 # `equiv_SLL` trust-discharge wrapper
-## Why SLL
 
-SLL is the canonical exemplar for the BinaryExtension shape (which
-covers SLL, SLLI, SRL, SRLI, SRA, SRAI, SLLW, SRLW, SRAW, SLLIW,
-SRLIW, SRAIW — twelve shift opcodes — plus the internal
-SEXT_B/SEXT_H/SEXT_W used by signed loads).
+Discharges the op-bus `matches_entry` handshake on top of the
+canonical `equiv_SLL`. The canonical surface already internalizes
+the BinaryExtension chunk/byte ranges, the op-is-shift pin, the
+byte-lookup table witness, and the packed-a / shift-pin operand
+bridges; what remains for the wrapper is to derive `h_match` from
+`op_bus_perm_sound_BinaryExtension` (class #4) given the Main opcode
+pin. The existential row index `r_e` from that axiom serves as
+`r_binary`, eliminating two binders (`r_binary`, `h_match`) versus
+the canonical signature.
 
-* Un-cascaded — SLL only consumes `BinaryExtension`; no downstream
-  AIR chain. (The signed loads LB/LH/LW do feed the SEXT outputs
-  into the load result and so cascade through `SextLoadBridge.lean`;
-  the shift opcodes do not.)
-* No sign extension — SLL is left-shift. The sign-witness pin
-  category (3) is N/A for SLL specifically. SRA / SRAI / SRAW /
-  SRAIW (signed-shift) would consume a sign-witness pin that this
-  exemplar's wrapper does not need.
-* Single-mode — 64-bit shift (`m32 = 0`). The W variants (SLLW,
-  SRLW, SRAW, SLLIW, SRLIW, SRAIW) flip to `m32 = 1` but the same
-  bridge infrastructure (`Bridge/BinaryExtension.lean::shift_pin_w_eq_of_shift_match`)
-  handles it.
-
-The canonical `equiv_SLL` already internalizes the heavy lifting
-this AIR's shape would otherwise expose to the wrapper:
-
-* The 8 per-byte rd-write entry ranges (`h_e2_0..h_e2_7`) — derived
-  inside `equiv_SLL` from `memory_bus_entry_byte_range_perm_sound`
-  (class #5b).
-* The 17 BinaryExtension chunk ranges (`h_a_range`, `hc_0..hc_15`) —
-  derived inside `equiv_SLL` from `binary_extension_columns_in_range`
-  (class #6).
-* The c-lane sum bounds (`hc_lo_sum_lt` / `hc_hi_sum_lt`) — derived
-  inside `equiv_SLL` from `hc_{lo,hi}_sum_lt_of_match` (pure-Lean
-  bridge consuming `main_columns_in_range` and
-  `binary_extension_columns_in_range`).
-* The op-is-shift pin (`op_is_shift = 1`) — derived inside
-  `equiv_SLL` from `binary_extension_op_is_shift_pin` (class #6).
-* The 8-byte BinaryExtensionTable witness (`h_bytes`) — from
-  `binary_extension_row_byte_lookups` (class #6).
-* The packed-a / shift-pin operand bridges — derived inside
-  `equiv_SLL` from `Bridge/BinaryExtension.lean::packed_a_eq_of_shift_match_m32_0`
-  + `shift_pin_eq_of_shift_match_m32_0` (pure-Lean, consuming
-  `transpile_SLL` (class #1) + `h_match`).
-
-What remains for the wrapper to discharge is the **op-bus
-matches_entry handshake** (`h_match`) — currently a caller-supplied
-witness on the canonical surface, but derivable from the trust-ledger
-axiom `op_bus_perm_sound_BinaryExtension` (class #4) given the Main
-opcode pin. This eliminates two binders (`r_binary` and `h_match`)
-because the existential `r_e : ℕ` produced by the op-bus axiom
-serves as the `r_binary` row index, freeing the caller from supplying
-either.
-
-## 5-category discharge applied
-
-* **Lane-match.** Internalized by `equiv_SLL` via
-  `project_match_op_clo_chi` + `hc_{lo,hi}_sum_lt_of_match` (consume
-  `op_bus_perm_sound_BinaryExtension` (class #4) through `h_match`).
-  Pre-discharged on the canonical surface.
-* **Mode pins.** Internalized by `equiv_SLL` via
-  `binary_extension_op_is_shift_pin` (class #6). The Main-side
-  `m32 = 0` pin comes from `transpile_SLL` (class #1) — already
-  consumed inside `equiv_SLL` via the Bridge helpers.
-* **Sign-witness pins.** N/A — SLL is left-shift, no sign extension.
-  (The signed-load family LB/LH/LW reuses this AIR via SEXT_B/H/W
-  and DOES need a sign-witness pin; this is separate from SLL
-  specifically. See per-AIR axiom map's "Predicted gaps" section.)
-* **Range/bound.** Internalized by `equiv_SLL` via
-  `binary_extension_columns_in_range` (class #6) and
-  `memory_bus_entry_byte_range_perm_sound` (class #5b).
-  Pre-discharged on the canonical surface.
-* **Operand bridges.** Internalized by `equiv_SLL` via the
-  `packed_a_eq_of_shift_match_m32_0` + `shift_pin_eq_of_shift_match_m32_0`
-  bridges in `Bridge/BinaryExtension.lean` (pure-Lean, consume
-  `transpile_SLL` (class #1) + `h_input_r{1,2}_sail`). Pre-discharged
-  on the canonical surface.
-
-The remaining wrapper-level discharge target is the op-bus handshake
-itself (`h_match`), discharged via `op_bus_perm_sound_BinaryExtension`.
-
-## Anti-laundering report
-
-Per the discharge-recipe.md wrapper-specific checks:
-
-* **No new axioms.** This wrapper consumes only existing trust-ledger
-  axioms: `op_bus_perm_sound_BinaryExtension` (class #4) plus
-  `equiv_SLL`'s existing closure. Trust ledger unchanged — UNDER the
-  per-AIR axiom map's 1–2 prediction. The prediction's "new axioms"
-  budget anticipated SRA-family sign-witness pins (Category 3) which
-  are N/A for SLL specifically.
-* **Bridges cross-shape if possible.** No helpers added — the
-  op-bus discharge is a 3-line application of
-  `op_bus_perm_sound_BinaryExtension`. (If a future shape's wrapper
-  needs the same one-line projection pattern it can be lifted into
-  `Airs/OperationBus/Bridge.lean` then.)
-* **Caller-burden shrinks.** See the count below.
-
-## Caller-burden
-
-`equiv_SLL` (canonical): 32 binders / 19 hypotheses.
-`equiv_SLL_from_trust` (this file): 30 binders / 18 hypotheses.
-
-Net −2 binders / −1 hypothesis per BinaryExtension-shape opcode.
-Composition:
-
-* Drops `r_binary` (1 binder, [row]): the existential `r_e` returned
-  by `op_bus_perm_sound_BinaryExtension` serves the role.
-* Drops `h_match` (1 binder, [other]): the `matches_entry` witness
-  is now derived inside the wrapper from
-  `op_bus_perm_sound_BinaryExtension m v r_main h_main_active <op-disj>`.
-
-The headline drop count is smaller than ADD's (−7) because the
-BinaryExtension canonical surface `equiv_SLL` had already internalized
-the 17 chunk-range and 8 byte-range bulk discharges in the PR #19
-era. The remaining surface-level promise hypotheses on this shape's
-canonical theorems are all bus-protocol structural (the 8 [bus_shape]
-binders, the `h_lane_rd` register-write lane match, the Sail-side
-SPEC-PRE preconditions) — exactly the residue every shape's wrapper
-keeps caller-supplied pending the Mem-pilot + Compliance.lean
-pipeline.
-
-At the global Compliance.lean level the reduction extends further
-because:
-* `(m, v, r_binary)` collapse into shared parameters across all
-  twelve shift opcodes (single AIR per shape).
-* `h_main_active` / `h_main_op` come from Compliance.lean's
-  program-counter handshake — shared across all opcodes.
-* `h_lane_rd` will be discharged from
-  `memory_bus_register_write_perm_sound` once the Mem-side AIR data
-  is plumbed through Compliance.lean.
-
-## Cross-shape lessons
-
-* The **op-bus handshake discharge pattern** — apply
-  `op_bus_perm_sound_<Provider>` with the Main opcode pin to obtain
-  `∃ r_provider, matches_entry ...`, destructure into `r_provider` +
-  `h_match`, delegate — is **reusable across every provider-AIR
-  shape** (Binary, BinaryExtension, BinaryAdd, ArithMul, ArithDiv,
-  Mem). Each provider axiom has its own opcode disjunction; the
-  pattern is otherwise identical.
-* The BinaryExtension shape was the **cleanest demonstration** of
-  this pattern because the canonical `equiv_SLL` already exposes
-  `h_match` directly (without further unpacking into `h_match_clo`
-  / `h_match_chi` — those are derived inside via
-  `project_match_op_clo_chi`). For shapes where the canonical
-  theorem still exposes the projected lane-match equations
-  separately (e.g. some Binary variants), the wrapper does the
-  projection at the wrapper level instead.
-* **No new bridge added** to `Equivalence/Bridge/SailStateBridge.lean`
-  or `Equivalence/Bridge/BinaryExtension.lean`. The existing
-  infrastructure is sufficient for SLL's discharge.
-* The discharge generalizes mechanically to the eleven other shift
-  opcodes (SLLI, SRL, SRLI, SRA, SRAI, SLLW, SRLW, SRAW, SLLIW,
-  SRLIW, SRAIW). The differences are:
-  - Opcode disjunction member in the `op_bus_perm_sound_BinaryExtension`
-    application (each is one of 0x21..0x26).
-  - SRA/SRAI/SRAW/SRAIW additionally consume a sign-witness pin
-    (Category 3) — predicted as the 1–2 new axiom in the per-AIR
-    map; orthogonal to this exemplar's pattern.
-  - SLLI/SRLI/SRAI use the immediate-shift bridge variants
-    (`shift_pin_immediate_eq_of_shift_match`) — also already in
-    `Bridge/BinaryExtension.lean`.
-  - SLLW/SRLW/SRAW/SLLIW/SRLIW/SRAIW use the W-variant bridges
-    (`packed_a_lo32_eq_of_shift_match_m32_1`, `shift_pin_w_eq_of_shift_match`)
-    — also already in `Bridge/BinaryExtension.lean`.
+Trust footprint: `op_bus_perm_sound_BinaryExtension` (class #4)
+plus `equiv_SLL`'s existing closure. Zero new axioms.
 -/
 
 namespace ZiskFv.Compliance
@@ -188,7 +38,7 @@ open ZiskFv.Equivalence.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Pilot wrapper for `equiv_SLL`.**
+/-- **Trust-discharged wrapper for `equiv_SLL`.**
 
     Caller obligations (signature header, ordered):
     1. The Sail-side inputs (`state`, `sll_input`, `r1`, `r2`, `rd`).

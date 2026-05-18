@@ -28,8 +28,8 @@ open ZiskFv.Tactics.UTypeArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Pilot wrapper for `equiv_LUI`.** Derives `h_circuit` from
-    `lui_h_circuit_of_main_constraints` (consuming `transpile_LUI`)
+/-- **Trust-discharged wrapper for `equiv_LUI`.** Derives `h_circuit`
+    from `lui_h_circuit_of_main_constraints` (consuming `transpile_LUI`)
     and delegates to canonical `equiv_LUI`. -/
 theorem equiv_LUI_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

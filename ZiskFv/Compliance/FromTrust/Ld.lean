@@ -151,7 +151,7 @@ open ZiskFv.Airs.MemoryBus
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Pilot wrapper for `equiv_LD`.**
+/-- **Trust-discharged wrapper for `equiv_LD`.**
 
     Caller obligations (signature header, ordered):
     1. Sail-side inputs (`state`, `ld_input`, and the platform-state

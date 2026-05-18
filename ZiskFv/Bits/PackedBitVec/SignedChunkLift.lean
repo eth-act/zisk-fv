@@ -1613,13 +1613,11 @@ example (cy : FGL) (h_disj : cy.val < 983041 ∨ GL_prime - 983040 ≤ cy.val) :
 /-- **Smoke test: `toIntZ_cast` round-trip.** -/
 example (x : FGL) : ((toIntZ x : ℤ) : FGL) = x := toIntZ_cast x
 
-/-! ## Part 8 — Layer 1.5: composition glue for Phase 4.alpha.A.4-6
+/-! ## Part 8 — Layer 1.5: composition glue for signed-chunk lifts
 
-The five lemmas below close the foundation gaps identified by the
-prior Layer-4-6 dispatch agent. They compose A.0's column-form
-chunk identity with A.1's abs-product machinery so that per-opcode
-proofs can produce the final BV64-output form without re-doing the
-algebraic plumbing.
+The five lemmas below compose A.0's column-form chunk identity with
+A.1's abs-product machinery so that per-opcode proofs can produce
+the final BV64-output form without re-doing the algebraic plumbing.
 
 Group A — sign-witness pin lifts (B1):
 * `toIntZ_of_bool` — for FGL `x ∈ {0,1}`, `toIntZ x = (x.val : ℤ) ∈ {0,1}`.

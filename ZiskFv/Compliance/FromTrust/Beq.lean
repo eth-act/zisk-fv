@@ -27,8 +27,9 @@ open ZiskFv.Airs.Main
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Pilot wrapper for `equiv_BEQ`.** Pure pass-through to the canonical
-    `equiv_BEQ` over a fully-constructed `BranchPromises` bundle. -/
+/-- **Trust-discharged wrapper for `equiv_BEQ`.** Pure pass-through to
+    the canonical `equiv_BEQ` over a fully-constructed `BranchPromises`
+    bundle. -/
 theorem equiv_BEQ_from_trust
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (beq_input : PureSpec.BeqInput)

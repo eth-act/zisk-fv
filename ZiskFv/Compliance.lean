@@ -490,7 +490,7 @@ inductive OpEnvelope
         (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ AND (Binary, R-type) ====================
-  | and_op
+  | and
     (and_input : PureSpec.AndInput) (r1 r2 rd : regidx)
     (v : Valid_Binary C FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
@@ -501,7 +501,7 @@ inductive OpEnvelope
         (PureSpec.execute_RTYPE_and_pure and_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ OR (Binary, R-type) =====================
-  | or_op
+  | or
     (or_input : PureSpec.OrInput) (r1 r2 rd : regidx)
     (v : Valid_Binary C FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
@@ -512,7 +512,7 @@ inductive OpEnvelope
         (PureSpec.execute_RTYPE_or_pure or_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ XOR (Binary, R-type) ====================
-  | xor_op
+  | xor
     (xor_input : PureSpec.XorInput) (r1 r2 rd : regidx)
     (v : Valid_Binary C FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
@@ -1279,9 +1279,9 @@ def kind : OpEnvelope state m r_main → mainOpKind
   | .subw .. => .SUB_W
   | .addiw .. => .ADD_W
   | .sub .. => .SUB
-  | .and_op .. => .AND
-  | .or_op .. => .OR
-  | .xor_op .. => .XOR
+  | .and .. => .AND
+  | .or .. => .OR
+  | .xor .. => .XOR
   | .slt .. => .LT
   | .sltu .. => .LTU
   | .andi .. => .AND
@@ -1401,21 +1401,21 @@ def exec_eq : OpEnvelope state m r_main → Prop
         LeanRV64D.Functions.execute
           (instruction.RTYPE (r2, r1, rd, rop.SUB))) state
         = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
-  | .and_op _ r1 r2 rd _ bus .. =>
+  | .and _ r1 r2 rd _ bus .. =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.RTYPE (r2, r1, rd, rop.AND))) state
         = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
-  | .or_op _ r1 r2 rd _ bus .. =>
+  | .or _ r1 r2 rd _ bus .. =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.RTYPE (r2, r1, rd, rop.OR))) state
         = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2
-  | .xor_op _ r1 r2 rd _ bus .. =>
+  | .xor _ r1 r2 rd _ bus .. =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -1809,15 +1809,15 @@ theorem zisk_riscv_compliant_program_bus
     simp only [OpEnvelope.exec_eq]
     exact equiv_SUB_from_trust state sub_input r1 r2 rd m v r_main bus pins
       h_lane_rd promises
-  | and_op and_input r1 r2 rd v bus pins h_lane_rd promises =>
+  | and and_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_AND_from_trust state and_input r1 r2 rd m v r_main bus pins
       h_lane_rd promises
-  | or_op or_input r1 r2 rd v bus pins h_lane_rd promises =>
+  | or or_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_OR_from_trust state or_input r1 r2 rd m v r_main bus pins
       h_lane_rd promises
-  | xor_op xor_input r1 r2 rd v bus pins h_lane_rd promises =>
+  | xor xor_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
     exact equiv_XOR_from_trust state xor_input r1 r2 rd m v r_main bus pins
       h_lane_rd promises

@@ -156,7 +156,7 @@ open ZiskFv.Equivalence.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Pilot wrapper for `equiv_OR`.**
+/-- **Trust-discharged wrapper for `equiv_OR`.**
 
     Caller obligations (signature header, ordered):
     1. The Sail-side inputs (`state`, `or_input`, `r1`, `r2`, `rd`).
