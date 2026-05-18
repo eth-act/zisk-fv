@@ -2,6 +2,7 @@ import Mathlib
 
 import ZiskFv.Equivalence.MulHSU
 import ZiskFv.Equivalence.Promises.RType
+import ZiskFv.Equivalence.Promises.ArithHelpers
 import ZiskFv.Equivalence.Bridge.Arith
 import ZiskFv.Equivalence.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
@@ -40,6 +41,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
 open ZiskFv.PackedBitVec.SignedChunkLift
+open ZiskFv.Equivalence.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -84,15 +86,15 @@ theorem equiv_MULHSU_from_trust
   have h_m2_mult := promises.m2_mult
   have h_m2_as := promises.m2_as
   -- ============ DERIVE arith-side opcode literal ============
-  have h_op_eq : v.op r_a = m.op r_main := by
-    have := h_match_secondary
-    simp only [matches_entry, opBus_row_Main,
-               ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary] at this
-    exact this.2.1.symm
+  have h_op_eq := arith_mul_secondary_op_eq h_match_secondary
   have h_op_arith_mulhsu : v.op r_a = 179 := by
     rw [h_op_eq, h_main_op_mulhsu]; simp [OP_MULSUH]
   have h_op_arith_na : v.op r_a = 179 ∨ v.op r_a = 181 :=
     Or.inl h_op_arith_mulhsu
+  -- ============ Unpack matches_entry lane projections ============
+  obtain ⟨h_a_lo_eq_FGL, h_a_hi_eq_FGL, h_b_lo_eq_FGL, h_b_hi_eq_FGL,
+          h_c0_eq_FGL, h_c1_eq_FGL⟩ :=
+    arith_mul_secondary_projections h_match_secondary
   -- ============ Unpack extended row-constraint bundle ============
   have h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a :=
     ZiskFv.Airs.ArithMul.mul_carry_chain_holds_of_extended v r_a h_row_constraints
@@ -124,56 +126,20 @@ theorem equiv_MULHSU_from_trust
   have h_byte_hi_to_c1 : e2.x4.val + e2.x5.val * 256
       + e2.x6.val * 65536 + e2.x7.val * 16777216
       = (m.c_1 r_main).val := h_bundle.2.1
-  -- Project Main's c_0 / c_1 from the secondary bus matches_entry.
-  have h_c0_eq_FGL : m.c_0 r_main = v.d_0 r_a + v.d_1 r_a * 65536 := by
-    have := h_match_secondary
-    simp only [matches_entry, opBus_row_Main,
-               ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary] at this
-    exact this.2.2.2.2.2.2.1
-  have h_c1_eq_FGL : m.c_1 r_main = v.bus_res1 r_a := by
-    have := h_match_secondary
-    simp only [matches_entry, opBus_row_Main,
-               ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary] at this
-    exact this.2.2.2.2.2.2.2.1
   obtain ⟨h_a0_lt, h_a1_lt, h_a2_lt, h_a3_lt,
           h_b0_lt, h_b1_lt, h_b2_lt, h_b3_lt,
           _h_c0_lt, _h_c1_lt, _h_c2_lt, _h_c3_lt,
           h_d0_lt, h_d1_lt, h_d2_lt, h_d3_lt⟩ :=
     ZiskFv.Airs.Arith.arith_mul_columns_in_range v r_a
-  -- FGL → ℕ lift helper.
-  have h_pair_lift : ∀ (x y : FGL),
-      x.val < 65536 → y.val < 65536 →
-      (x + y * 65536 : FGL).val = x.val + y.val * 65536 := by
-    intro x y hx hy
-    have h_cast : (x + y * 65536 : FGL)
-        = (((x.val + y.val * 65536 : ℕ) : FGL)) := by
-      push_cast; ring
-    rw [h_cast, Fin.val_natCast]
-    apply Nat.mod_eq_of_lt
-    have h_sum_bound : x.val + y.val * 65536 < 65536 + 65536 * 65536 := by
-      have h_y_mul : y.val * 65536 < 65536 * 65536 :=
-        (Nat.mul_lt_mul_right (by decide : (0:ℕ) < 65536)).mpr hy
-      exact Nat.add_lt_add hx h_y_mul
-    have h_lt_prime : (65536 + 65536 * 65536 : ℕ) < GL_prime := by decide
-    exact lt_trans h_sum_bound h_lt_prime
-  have h_c0_val_eq : (m.c_0 r_main).val
-      = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 := by
-    rw [h_c0_eq_FGL]; exact h_pair_lift _ _ h_d0_lt h_d1_lt
-  have h_byte_lo :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-        = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 := by
-    rw [h_byte_lo_to_c0, h_c0_val_eq]
+  -- Byte-lane lo equation via cross-AIR `arith_byte_lane_eq_of_match`.
+  have h_byte_lo := arith_byte_lane_eq_of_match h_byte_lo_to_c0 h_c0_eq_FGL h_d0_lt h_d1_lt
   -- Hi lane via mulh_bus_res1_eq_d_hi (Family A — secondary).
   have h_bus_res1_eq : v.bus_res1 r_a = v.d_2 r_a + v.d_3 r_a * 65536 :=
     ZiskFv.Airs.ArithBusRes1.mulh_bus_res1_eq_d_hi v r_a h_c46
       h_sext h_m32 h_main_mul_zero h_main_div_zero
-  have h_c1_val_eq : (m.c_1 r_main).val
-      = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536 := by
-    rw [h_c1_eq_FGL, h_bus_res1_eq]; exact h_pair_lift _ _ h_d2_lt h_d3_lt
-  have h_byte_hi :
-      e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
-        = (v.d_2 r_a).val + (v.d_3 r_a).val * 65536 := by
-    rw [h_byte_hi_to_c1, h_c1_val_eq]
+  have h_c1_eq_FGL' : m.c_1 r_main = v.d_2 r_a + v.d_3 r_a * 65536 := by
+    rw [h_c1_eq_FGL, h_bus_res1_eq]
+  have h_byte_hi := arith_byte_lane_eq_of_match h_byte_hi_to_c1 h_c1_eq_FGL' h_d2_lt h_d3_lt
   -- ============ DISCHARGE h_rs1_value (signed) / h_rs2_value (unsigned) ============
   obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
          h_main_a_lo, h_main_a_hi, h_main_b_lo, h_main_b_hi⟩ :=
@@ -193,103 +159,15 @@ theorem equiv_MULHSU_from_trust
     ZiskFv.Equivalence.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
       state (regidx_to_fin r2) mulhsu_input.r2_val
       (m.b_0 r_main) (m.b_1 r_main) h_main_b_lo h_main_b_hi h_input_r2
-  have h_a_lo_eq_FGL : m.a_0 r_main = v.a_0 r_a + v.a_1 r_a * 65536 := by
-    have := h_match_secondary
-    simp only [matches_entry, opBus_row_Main,
-               ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary] at this
-    exact this.2.2.1
-  have h_a_hi_eq_FGL : (1 - m.m32 r_main) * m.a_1 r_main
-      = v.a_2 r_a + v.a_3 r_a * 65536 := by
-    have := h_match_secondary
-    simp only [matches_entry, opBus_row_Main,
-               ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary] at this
-    exact this.2.2.2.1
-  have h_b_lo_eq_FGL : m.b_0 r_main = v.b_0 r_a + v.b_1 r_a * 65536 := by
-    have := h_match_secondary
-    simp only [matches_entry, opBus_row_Main,
-               ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary] at this
-    exact this.2.2.2.2.1
-  have h_b_hi_eq_FGL : (1 - m.m32 r_main) * m.b_1 r_main
-      = v.b_2 r_a + v.b_3 r_a * 65536 := by
-    have := h_match_secondary
-    simp only [matches_entry, opBus_row_Main,
-               ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary] at this
-    exact this.2.2.2.2.2.1
-  have h_one_sub_m32 : (1 - m.m32 r_main : FGL) = 1 := by
-    rw [_h_m32_m]; ring
-  have h_a_hi_collapsed : m.a_1 r_main = v.a_2 r_a + v.a_3 r_a * 65536 := by
-    have := h_a_hi_eq_FGL
-    rw [h_one_sub_m32, one_mul] at this; exact this
-  have h_b_hi_collapsed : m.b_1 r_main = v.b_2 r_a + v.b_3 r_a * 65536 := by
-    have := h_b_hi_eq_FGL
-    rw [h_one_sub_m32, one_mul] at this; exact this
-  have h_a0_val_eq : (m.a_0 r_main).val
-      = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 := by
-    rw [h_a_lo_eq_FGL]; exact h_pair_lift _ _ h_a0_lt h_a1_lt
-  have h_a1_val_eq : (m.a_1 r_main).val
-      = (v.a_2 r_a).val + (v.a_3 r_a).val * 65536 := by
-    rw [h_a_hi_collapsed]; exact h_pair_lift _ _ h_a2_lt h_a3_lt
-  have h_b0_val_eq : (m.b_0 r_main).val
-      = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536 := by
-    rw [h_b_lo_eq_FGL]; exact h_pair_lift _ _ h_b0_lt h_b1_lt
-  have h_b1_val_eq : (m.b_1 r_main).val
-      = (v.b_2 r_a).val + (v.b_3 r_a).val * 65536 := by
-    rw [h_b_hi_collapsed]; exact h_pair_lift _ _ h_b2_lt h_b3_lt
-  -- Unsigned packed-nat r1 identity (toward signed form).
-  have h_r1_toNat :
-      mulhsu_input.r1_val.toNat
-        = ZiskFv.PackedBitVec.MulNoWrap.packed4
-            (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val := by
-    rw [h_r1_packed_bv]
-    rw [BitVec.toNat_ofNat]
-    rw [h_a0_val_eq, h_a1_val_eq]
-    have h_lt_2_64 :
-        (v.a_0 r_a).val + (v.a_1 r_a).val * 65536
-          + ((v.a_2 r_a).val + (v.a_3 r_a).val * 65536) * 4294967296
-          < 18446744073709551616 := by
-      have h1' : (v.a_1 r_a).val * 65536 ≤ 65535 * 65536 :=
-        Nat.mul_le_mul_right 65536 (Nat.le_of_lt_succ h_a1_lt)
-      have h3' : (v.a_3 r_a).val * 65536 ≤ 65535 * 65536 :=
-        Nat.mul_le_mul_right 65536 (Nat.le_of_lt_succ h_a3_lt)
-      have h2' : (v.a_2 r_a).val + (v.a_3 r_a).val * 65536 < 4294967296 := by
-        have : (v.a_2 r_a).val ≤ 65535 := Nat.le_of_lt_succ h_a2_lt
-        omega
-      have : ((v.a_2 r_a).val + (v.a_3 r_a).val * 65536) * 4294967296
-          ≤ 4294967295 * 4294967296 := by
-        apply Nat.mul_le_mul_right
-        omega
-      have h0' : (v.a_0 r_a).val ≤ 65535 := Nat.le_of_lt_succ h_a0_lt
-      omega
-    rw [Nat.mod_eq_of_lt h_lt_2_64]
-    unfold ZiskFv.PackedBitVec.MulNoWrap.packed4
-    ring
-  have h_r2_toNat :
-      mulhsu_input.r2_val.toNat
-        = ZiskFv.PackedBitVec.MulNoWrap.packed4
-            (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val := by
-    rw [h_r2_packed_bv]
-    rw [BitVec.toNat_ofNat]
-    rw [h_b0_val_eq, h_b1_val_eq]
-    have h_lt_2_64 :
-        (v.b_0 r_a).val + (v.b_1 r_a).val * 65536
-          + ((v.b_2 r_a).val + (v.b_3 r_a).val * 65536) * 4294967296
-          < 18446744073709551616 := by
-      have h1' : (v.b_1 r_a).val * 65536 ≤ 65535 * 65536 :=
-        Nat.mul_le_mul_right 65536 (Nat.le_of_lt_succ h_b1_lt)
-      have h3' : (v.b_3 r_a).val * 65536 ≤ 65535 * 65536 :=
-        Nat.mul_le_mul_right 65536 (Nat.le_of_lt_succ h_b3_lt)
-      have h2' : (v.b_2 r_a).val + (v.b_3 r_a).val * 65536 < 4294967296 := by
-        have : (v.b_2 r_a).val ≤ 65535 := Nat.le_of_lt_succ h_b2_lt
-        omega
-      have : ((v.b_2 r_a).val + (v.b_3 r_a).val * 65536) * 4294967296
-          ≤ 4294967295 * 4294967296 := by
-        apply Nat.mul_le_mul_right
-        omega
-      have h0' : (v.b_0 r_a).val ≤ 65535 := Nat.le_of_lt_succ h_b0_lt
-      omega
-    rw [Nat.mod_eq_of_lt h_lt_2_64]
-    unfold ZiskFv.PackedBitVec.MulNoWrap.packed4
-    ring
+  -- Unsigned r1/r2 toNat = packed4 via end-to-end non-W operand bridge.
+  have h_r1_toNat := arith_rs_toNat_eq_packed4_nonW
+    (m.a_0 r_main) (m.a_1 r_main) (m.m32 r_main)
+    h_a_lo_eq_FGL h_a_hi_eq_FGL _h_m32_m h_r1_packed_bv
+    h_a0_lt h_a1_lt h_a2_lt h_a3_lt
+  have h_r2_toNat := arith_rs_toNat_eq_packed4_nonW
+    (m.b_0 r_main) (m.b_1 r_main) (m.m32 r_main)
+    h_b_lo_eq_FGL h_b_hi_eq_FGL _h_m32_m h_r2_packed_bv
+    h_b0_lt h_b1_lt h_b2_lt h_b3_lt
   -- na MSB pin → h_rs1_value (signed rs1).
   have h_na_msb := ZiskFv.Airs.Arith.arith_mul_na_eq_msb_of_a
     v r_a h_op_arith_na

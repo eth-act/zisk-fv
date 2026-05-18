@@ -2,6 +2,7 @@ import Mathlib
 
 import ZiskFv.Equivalence.Sra
 import ZiskFv.Equivalence.Promises.RType
+import ZiskFv.Equivalence.Promises.BinaryExtensionHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -23,6 +24,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.OperationBus
+open ZiskFv.Equivalence.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -43,10 +45,8 @@ theorem equiv_SRA_from_trust
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_main_active, h_main_op⟩ := pins
-  -- OP_SRA = 0x23: disjunction member #3.
   obtain ⟨r_binary, h_match⟩ :=
-    op_bus_perm_sound_BinaryExtension m v r_main h_main_active
-      (Or.inr (Or.inr (Or.inl h_main_op)))
+    binexec_op_bus_handshake_SRA m v r_main h_main_active h_main_op
   exact ZiskFv.Equivalence.Sra.equiv_SRA state sra_input r1 r2 rd
     m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
