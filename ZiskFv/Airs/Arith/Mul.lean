@@ -369,7 +369,7 @@ def mul_carry_chain_holds (v : Valid_ArithMul C F ExtF) (row : ℕ) : Prop :=
 /-- **Extended Arith MUL-mode row constraints — includes constraint 46.**
     Same shape as `mul_carry_chain_holds` but additionally pins
     `constraint_46_every_row` (the `bus_res1` normalization at
-    `arith.pil:263`). Required by `equiv_MUL_from_trust` to discharge
+    `arith.pil:263`). Required by `equiv_MUL` to discharge
     the hi-lane byte-pack equation via `mul_bus_res1_eq_c_hi`
     (`Airs/Arith/BusRes1.lean`). Mirrors `div_row_constraints_with_c46`
     on the Div view. Compliance.lean's downstream caller will collapse

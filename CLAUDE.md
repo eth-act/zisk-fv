@@ -27,8 +27,8 @@ DMA / etc.), ECALL/EBREAK, ZisK's custom internal ops.
 is the **122 axioms** enumerated in
 `trust/baseline-zisk-riscv-compliant.txt` and documented per-class
 in `docs/fv/trusted-base.md`. All 63 RV64IM opcodes are covered as
-`equiv_<OP>_from_trust` wrappers under
-`ZiskFv/Compliance/FromTrust/<Op>.lean`, dispatched by the global theorem through a 35-arm
+`ZiskFv.Compliance.equiv_<OP>` wrappers under
+`ZiskFv/Compliance/Wrappers/<Op>.lean`, dispatched by the global theorem through a 35-arm
 `OpEnvelope` sum type. The principal "promise hypothesis"
 soundness gap surveyed in
 [`docs/fv/known-gaps.md`](docs/fv/known-gaps.md) is closed at the

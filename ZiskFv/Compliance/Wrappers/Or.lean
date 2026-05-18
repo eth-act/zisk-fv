@@ -1,0 +1,242 @@
+import Mathlib
+
+import ZiskFv.Equivalence.Or
+import ZiskFv.Equivalence.Promises.RType
+import ZiskFv.Equivalence.Promises.BinaryHelpers
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.OperationBus.Bridge
+import ZiskFv.Airs.MemoryBus
+import ZiskFv.Airs.Binary.Binary
+import ZiskFv.Airs.Binary.BinaryRanges
+import ZiskFv.Compliance.SharedBundles
+
+/-!
+# `equiv_OR` trust-discharge wrapper
+## Why OR
+
+OR is the simplest of the 14 Binary-shape opcodes:
+
+* No signed comparison (unlike SLT/SLTI/SLTU/SLTIU — those add
+  sign-witness pins).
+* No 32-bit truncation (unlike SUBW/ADDIW/ADDW — those add m32-mode
+  pins).
+* No carry-chain consumer (unlike SUB/SLT-family — those need the
+  6-field `consumer_byte_match_chain` family that AND/OR/XOR's
+  byte-local 3-field family covers).
+* Symmetric in rs1/rs2 (unlike Tier-2 ops, no extra ordering).
+
+Per `docs/fv/per-air-axiom-map.md` the Binary shape pilot has the
+largest predicted axiom delta (2–4) of the six remaining shapes —
+the AIR covers 14 opcodes across several sub-shapes, and the
+mode-pin / sign-pin surface is broader than BinaryAdd's. **This OR
+pilot lands 1 new axiom** at the low end of the prediction, because
+the OR-shape (and AND/XOR by symmetry) only need the
+`b_op_or_sext = OP_OR` mode pin — no sign or W-mode pins required.
+
+## 5-category discharge applied
+
+* **Lane-match.** Internalized by `equiv_OR` via the `Bridge.Binary`
+  discharge family (`byte_ranges_at_holds`, `byte_chain_discharge_logic`,
+  `match_clo_chi_OR`, `input_r1_packed_a`, `input_r2_packed_b`,
+  `e2_byte_ranges_discharge`). These consume the trust-ledger axioms
+  `binary_columns_in_range` (#6), `binary_per_byte_lookup_witness`
+  (#6), `binary_carry_bits_in_range` (#6), `bin_table_consumer_wf`
+  (#6), and `memory_bus_entry_byte_range_perm_sound` (#5b). The
+  wrapper-level lane-match obligation is the **existential row**
+  `r_binary` plus the `matches_entry` predicate; both come from
+  `op_bus_perm_sound_Binary` (#4).
+* **Mode pins.** OR consumes one mode pin on the provider AIR:
+  `(v.b_op_or_sext r_binary).val = OP_OR`. This is the gap addressed
+  by the **new axiom** `binary_b_op_or_sext_eq_OP_OR` (class #6) in
+  `ZiskFv/Airs/Binary/BinaryRanges.lean` — the consequence of
+  PIL's `b_op_or_sext` linear def (`binary.pil:104`) plus the
+  per-byte BinaryTable lookup (`binary.pil:131-148`) restricting the
+  `(b_op, mode32, c_is_signed)` triple to a unique valid decomposition
+  when the on-bus emission `b_op + 16 * mode32 = 15`.
+* **Sign-witness pins.** N/A for OR (unsigned bitwise op).
+* **Range/bound.** Discharged by the Binary AIR's range axioms
+  (`binary_columns_in_range`, `binary_carry_bits_in_range`) —
+  pre-internalized by `equiv_OR` via the `Bridge.Binary` helpers.
+  No wrapper-level work.
+* **Operand bridges.** Discharged by
+  `Bridge.SailStateBridge.packed_lane_eq_of_read_xreg` (consumed
+  through `Bridge.Binary.input_r1_packed_a` / `input_r2_packed_b`).
+  Pre-internalized on the canonical surface.
+
+## Anti-laundering report
+
+* **One new axiom.** `binary_b_op_or_sext_eq_OP_OR` in
+  `ZiskFv/Airs/Binary/BinaryRanges.lean`. Class #6 (Binary AIR
+  lookup soundness — table-pin sub-class). PIL-cited
+  (`binary.pil:104` + `binary.pil:131-148`). At the **low end** of
+  the per-AIR axiom map's 2–4 prediction — possible because OR's
+  byte-local logic shape (shared with AND/XOR) only needs one pin
+  to distinguish OR from AND/XOR at the `b_op_or_sext` lookup level;
+  AND and XOR will need parallel `binary_b_op_or_sext_eq_OP_{AND,XOR}`
+  pins for their wrappers (so the shape's mass-author phase will
+  add 2 more class-#6 axioms — still within the 2–4 envelope).
+* **Bridges cross-shape if possible.** No new bridge helpers added.
+  The existing `Bridge.Binary` infrastructure (`carry_7_zero_OR_pure`,
+  `byte_chain_discharge_logic`, `match_clo_chi_OR`, the
+  `input_r{1,2}_packed_a/b` Sail-state bridges) already covers
+  every category the OR pilot needs.
+* **Caller-burden shrinks.** See the count below.
+
+## Caller-burden
+
+`equiv_OR` (canonical): **32 binders / 22 hypotheses**.
+`equiv_OR` (this file): **29 binders / 19 hypotheses**.
+
+Net **−3 binders / −3 hypotheses** per Binary-shape opcode.
+Composition:
+
+* Drops `r_binary` (1 binder): existential row witness produced by
+  `op_bus_perm_sound_Binary`.
+* Drops `h_match` (1 hypothesis): the cross-AIR `matches_entry`
+  comes paired with `r_binary` from `op_bus_perm_sound_Binary`.
+* Drops `h_bop_or_sext` (1 hypothesis): the `b_op_or_sext = OP_OR`
+  mode pin is derived by the new axiom
+  `binary_b_op_or_sext_eq_OP_OR` after projecting matches_entry's
+  `.op` slot through `h_main_op_or`.
+
+At the **global Compliance.lean** level the reduction extends further:
+`(m, v, ∀ r, core_every_row v r)` collapse into shared parameters
+across all 14 Binary-shape opcodes, and `h_main_active` /
+`h_main_op_or` come from Compliance.lean's program-counter handshake.
+
+The remaining wrapper-level promise hypothesis (caller-burden) on
+this exemplar is `h_lane_rd : register_write_lanes_match m r_main e2`,
+discharged downstream via a Binary-side
+`main_external_logic_emission_bundle` (or equivalent class-#4
+bundle). The Add wrapper follows the same convention.
+
+## Cross-shape lessons
+
+* The **matches_entry `.op` projection** under `OP_OR = 15` is
+  one-step: `simp only [matches_entry, opBus_row_Main, opBus_row_Binary]`
+  exposes the `m.op r_main = v.b_op r_binary + 16 * v.mode32 r_binary`
+  equality; combined with `h_main_op_or`, this gives the precondition
+  `v.b_op r_binary + 16 * v.mode32 r_binary = 15` for the new pin
+  axiom. The same pattern transfers verbatim to AND (`OP_AND = 14`)
+  and XOR (`OP_XOR = 16`).
+* The discharge generalizes mechanically to the **6 byte-local logic
+  opcodes** (AND/ANDI/OR/ORI/XOR/XORI):
+  * Swap `transpile_OR` for `transpile_<AND,XOR,…>`.
+  * Swap `OP_OR = 15` for the relevant opcode literal.
+  * Swap the new axiom `binary_b_op_or_sext_eq_OP_OR` for the
+    parallel `_OP_AND` / `_OP_XOR` pin.
+  * The 8 byte-chain matches and the c-lane discharge use the
+    matching `Bridge.Binary.byte_chain_discharge_logic` /
+    `match_clo_chi_{AND,XOR}` already in place.
+* **For SLT/SLTI/SLTU/SLTIU (signed comparison)** the wrapper will
+  additionally need a sign-witness pin (e.g.
+  `binary_use_first_byte_pin_SLT` or a c-lane sign-bit pin) — out
+  of scope for this pilot, predicted in the per-AIR axiom map's
+  "sign-witness pins (1–2)" line.
+* **For SUB/SUBW/ADDIW/ADDW** the wrapper will additionally need a
+  cin/carry-chain pin (`consumer_byte_match_chain` 6-field variant)
+  — out of scope for this pilot.
+
+The byte-chain infrastructure (`Bridge.Binary.byte_chain_discharge_logic`)
+is shape-agnostic in the opcode literal — it works for any
+`b_op_or_sext = op_val` pinning. The wrapper-level work for AND/XOR
+will be ~30 lines apiece (essentially copy of this file).
+-/
+
+namespace ZiskFv.Compliance
+
+open Goldilocks
+open ZiskFv.Trusted
+open ZiskFv.Airs.Main
+open ZiskFv.Airs.Binary
+open ZiskFv.Airs.OperationBus
+open ZiskFv.Equivalence.Promises
+
+variable {C : Type → Type → Type} [Circuit FGL FGL C]
+
+/-- **Trust-discharged wrapper for `equiv_OR`.**
+
+    Caller obligations (signature header, ordered):
+    1. The Sail-side inputs (`state`, `or_input`, `r1`, `r2`, `rd`).
+    2. The two AIR validators with the selected Main row index
+       (`m : Valid_Main`, `v : Valid_Binary`, `r_main : ℕ`).
+       Compliance.lean shares `(m, v)` across all Binary-shape
+       opcodes (14 ops).
+    3. The structural bus rows (`exec_row`, `e0`, `e1`, `e2`).
+    4. The activation + opcode pins on Main (`h_main_active`,
+       `h_main_op_or`). Both come from Compliance.lean's
+       program-counter handshake on the row hosting the OR
+       instruction.
+    5. The lane-match for the rd-write entry (`h_lane_rd`) —
+       caller-supplied; discharged downstream from a Binary-side
+       `main_external_logic_emission_bundle` (class #4). The Add
+       wrapper follows the same convention.
+    6. The Sail-side state predicates (SPEC-PRE):
+       `h_input_r1`, `h_input_r2`, `h_input_rd`, `h_input_pc`.
+    7. The bus-protocol structural hypotheses — pass-through from
+       `equiv_OR`; Compliance.lean supplies these from the same
+       bus-shape obligations as every other opcode in the shape.
+
+    Derived internally (NOT caller-supplied):
+    * Existential row witness `r_binary` and the cross-AIR
+      `matches_entry` predicate — from `op_bus_perm_sound_Binary`
+      (class #4) applied to `h_main_active` + `h_main_op_or`.
+    * `(v.b_op_or_sext r_binary).val = OP_OR` — from the new axiom
+      `binary_b_op_or_sext_eq_OP_OR` (class #6) applied to the
+      matches_entry `.op`-slot projection composed with
+      `h_main_op_or`.
+
+    Trust footprint: `op_bus_perm_sound_Binary` (class #4),
+    `binary_b_op_or_sext_eq_OP_OR` (class #6, **new**), plus
+    `equiv_OR`'s existing closure (which transitively consumes the
+    Binary range / per-byte-lookup / carry-bit-range / table-consumer
+    axioms, plus `memory_bus_entry_byte_range_perm_sound` and
+    `transpile_OR`). One new axiom — at the low end of
+    `docs/fv/per-air-axiom-map.md`'s 2–4 prediction. -/
+theorem equiv_OR
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (or_input : PureSpec.OrInput)
+    (r1 r2 rd : regidx)
+    -- AIR validators + row index. Compliance.lean shares (m, v)
+    -- across all Binary-shape opcodes (AND/ANDI/OR/ORI/XOR/XORI/
+    -- SLT/SLTI/SLTU/SLTIU/SUB/SUBW/ADDIW/ADDW).
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    -- Activation / opcode pins. Compliance.lean derives these from
+    -- the Main AIR's ROM handshake on the row hosting OR.
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
+    -- Lane-match for the rd-write entry — caller-supplied; discharged
+    -- downstream from a Binary-side
+    -- `main_external_logic_emission_bundle`.
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    -- Structural promise bundle (15 fields). Subsumes the prior inline
+    -- Sail-side state predicates + bus-protocol structural hypotheses.
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
+        (PureSpec.execute_RTYPE_or_pure or_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (r2, r1, rd, rop.OR))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_or⟩ := pins
+  have h_op_disj := binary_op_disj_of_eq m r_main 15 h_main_op_or (by tauto)
+  obtain ⟨r_binary, h_match⟩ :=
+    op_bus_perm_sound_Binary m v r_main h_main_active h_op_disj
+  have h_bop_or_sext :=
+    binary_h_bop_or_sext_via_axiom h_match h_main_op_or
+      (binary_b_op_or_sext_eq_OP_OR v r_binary)
+  exact ZiskFv.Equivalence.Or.equiv_OR
+    state or_input r1 r2 rd m v r_main r_binary
+    ⟨exec_row, e0, e1, e2⟩
+    promises
+    ⟨h_main_active, h_main_op_or⟩
+    h_match h_bop_or_sext h_lane_rd
+
+end ZiskFv.Compliance

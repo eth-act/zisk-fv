@@ -163,7 +163,7 @@ The refactor lands in 14 commits (one per shape + 2 wrap-up):
    `ZiskFv/Equivalence/Promises/<Shape>.lean` with the struct
    definition, refactors all canonical theorems of that shape to
    take the struct, and updates the matching wrappers in
-   `Compliance/FromTrust/<Op>.lean`. Per-commit gate green:
+   `Compliance/Wrappers/<Op>.lean`. Per-commit gate green:
    `lake build` + V1 + V2 + regenerated baselines. Order:
    * Commit 2: U-TYPE (2 opcodes — pilot)
    * Commit 3: BRANCH (6 opcodes)

@@ -30,7 +30,7 @@ Equivalence/WriteValueProofs/<family>.lean rd-value identity (per family)
 Equivalence/<OP>.lean                     canonical equiv (consumes Bridge + RdVal)
 Compliance.lean                            global theorem (dispatches to <OP>)
 Compliance/Dispatch.lean                   per-Op dispatchers
-Compliance/FromTrust/<Op>.lean             trust-discharge wrappers (×63)
+Compliance/Wrappers/<Op>.lean             trust-discharge wrappers (×63)
 ```
 
 ## Per-shape IOUs

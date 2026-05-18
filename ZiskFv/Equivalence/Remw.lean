@@ -26,7 +26,7 @@ REMW is the W-variant sibling of REM. Both transpile through
 `create_register_op` with `m32 = 1` for the 32-bit width. Sail-side,
 both call `execute_REMW` with `is_unsigned = false`.
 
-Phase 4 step4-remw: Structural-unpacking refactor replacing the single
+Structural-unpacking refactor replacing the single
 `h_byte_sum_circuit` promise hypothesis with the explicit Tier-3
 binders mirroring REMUW but specialized for signed-W (general
 `na, nb, nr, np` sign witnesses with booleanity + XOR + remainder-sign
@@ -88,8 +88,8 @@ lemma equiv_REMW_sail
     `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_remw_chunked`
     discharge lemma.
 
-    Phase step4-remw structural-unpacking refactor with the standard
-    Tier-3 binders: validator (`v`/`r_a`), W chain-holds, mode pins,
+    Structural-unpacking refactor with the standard Tier-3 binders:
+    validator (`v`/`r_a`), W chain-holds, mode pins,
     op pin, sign-witness booleanity + XOR + signed-W remainder-sign
     pin, c_2=c_3=0 bus-W pin, byte-pack + sign-extension witnesses,
     operand toInt-form bridges, and non-boundary CIRCUIT-CONSTRAINTs

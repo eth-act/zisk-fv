@@ -106,7 +106,7 @@ def refactor_itype(op_cap: str, op_upper: str, input_record: str,
                    pure_fn: str) -> bool:
     """Refactor one ALU-ITYPE opcode."""
     canon = ROOT / f"ZiskFv/Equivalence/{op_cap}.lean"
-    wrap = ROOT / f"ZiskFv/Compliance/FromTrust/{op_cap}.lean"
+    wrap = ROOT / f"ZiskFv/Compliance/Wrappers/{op_cap}.lean"
 
     # Canonical: replace 15 binders with bundle.
     canon_old = (
@@ -183,7 +183,7 @@ def refactor_branch(file_base: str, op_upper: str, input_record: str,
                     pure_fn: str, wrapper_name: str) -> bool:
     """Refactor one BRANCH opcode."""
     canon = ROOT / f"ZiskFv/Equivalence/{file_base}.lean"
-    wrap = ROOT / f"ZiskFv/Compliance/FromTrust/{wrapper_name}.lean"
+    wrap = ROOT / f"ZiskFv/Compliance/Wrappers/{wrapper_name}.lean"
 
     # Try multiple "structural bus hypotheses" comment variants.
     def make_canon_old(comment_line: str) -> str:
@@ -261,7 +261,7 @@ def refactor_shift_rtype(op_cap: str, op_upper: str, input_record: str,
     wrap_sail_suffix.
     """
     canon = ROOT / f"ZiskFv/Equivalence/{op_cap}.lean"
-    wrap = ROOT / f"ZiskFv/Compliance/FromTrust/{op_cap}.lean"
+    wrap = ROOT / f"ZiskFv/Compliance/Wrappers/{op_cap}.lean"
 
     canon_old = (
         f"    (h_input_r1 : read_xreg (regidx_to_fin r1) state\n"
@@ -399,7 +399,7 @@ def main() -> int:
         # Use a variant of refactor_shift_rtype that takes separate
         # canonical-file and wrapper-file paths.
         canon = ROOT / f"ZiskFv/Equivalence/{file_base}.lean"
-        wrap = ROOT / f"ZiskFv/Compliance/FromTrust/{wrap_base}.lean"
+        wrap = ROOT / f"ZiskFv/Compliance/Wrappers/{wrap_base}.lean"
         _shift_refactor_pair(canon, wrap, op_upper, ir, pf,
                               wrap_sail_suffix=True)
 

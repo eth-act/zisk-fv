@@ -26,7 +26,7 @@ DIVUW is the W-variant sibling of DIVU. Both transpile through
 `create_register_op` with `m32 = 1` for the 32-bit width. Sail-side,
 both call `execute_DIVW` with `is_unsigned = true`.
 
-Phase 4.alpha.B.uw2: Structural-unpacking refactor replacing the single
+Structural-unpacking refactor replacing the single
 `h_byte_sum_circuit` promise hypothesis with the explicit Tier-3
 binders mirroring DIVU but specialized for W-mode (`m32 = 1`,
 `a_2=a_3=b_2=b_3=d_2=d_3=0` from `arith_table_op_divw_operand_pin`).
@@ -90,9 +90,9 @@ lemma equiv_DIVUW_sail
     `WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_divuw_chunked`
     discharge lemma.
 
-    Phase 4.alpha.B.uw2 structural-unpacking refactor with 17 ADDED
-    binders (16 standard DIVU-shape + `h_sext_choice` for W-mode
-    sign-extension on bytes 4..7). -/
+    Structural-unpacking refactor with 17 ADDED binders (16 standard
+    DIVU-shape + `h_sext_choice` for W-mode sign-extension on bytes
+    4..7). -/
 theorem equiv_DIVUW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divuw_input : PureSpec.DivuwInput)

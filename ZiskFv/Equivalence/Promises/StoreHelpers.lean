@@ -17,7 +17,7 @@ derives `h_mem_eq` — the additional canonical-side argument that
 `equiv_<OP>` accepts alongside the structural `StorePromises` bundle.
 
 These helpers were extracted from the per-opcode
-`Compliance/FromTrust/<Op>.lean` wrappers, where they previously lived
+`Compliance/Wrappers/<Op>.lean` wrappers, where they previously lived
 inline as a call to `Equivalence.Bridge.Mem.<op>_discharge_full` with
 some `h_opcode_assumptions`-projection prep. The wrappers are now pure
 pass-throughs that take the bundle and `h_mem_eq` directly.

@@ -3,8 +3,8 @@
 
 Sibling of `regenerate-caller-burden.py`: that one tracks every binder
 on the 63 canonical `equiv_<OP>` theorems; this one tracks every
-binder on the 63 `equiv_<OP>_from_trust` Compliance wrappers under
-`ZiskFv/Compliance/FromTrust/*.lean`.
+binder on the 63 `equiv_<OP>` Compliance wrappers under
+`ZiskFv/Compliance/Wrappers/*.lean`.
 
 Wrappers are the second half of the trust surface: they consume
 trust-ledger axioms (transpile/op_bus_perm_sound/byte-range/...) to
@@ -50,11 +50,12 @@ split_binder_to_names_type = _rb_mod.split_binder_to_names_type
 file_to_module_prefix = _rb_mod.file_to_module_prefix
 
 ROOT = Path(__file__).resolve().parent.parent.parent
-WRAPPER_DIR = ROOT / "ZiskFv/Compliance/FromTrust"
+WRAPPER_DIR = ROOT / "ZiskFv/Compliance/Wrappers"
 
-# Match the canonical wrapper `equiv_<OP>_from_trust`.
+# Match the canonical wrapper `equiv_<OP>` (lives in the `ZiskFv.Compliance`
+# namespace, distinct from the canonical `ZiskFv.Equivalence.<File>.equiv_<OP>`).
 WRAPPER_HEAD = re.compile(
-    r"^(?P<indent>\s*)theorem\s+(?P<name>equiv_[A-Z][A-Z0-9]*_from_trust)\b"
+    r"^(?P<indent>\s*)theorem\s+(?P<name>equiv_[A-Z][A-Z0-9]*)\b"
 )
 # Lines that signal the END of a theorem signature (proof body starts).
 SIG_END = re.compile(r"^\s*:=\s*by\b|^\s*:=\s*$|^\s+by\s*$")
@@ -66,7 +67,7 @@ NEXT_DECL = re.compile(
 
 def extract_wrapper_signatures(path: Path):
     """Yield (theorem_name, start_line, params_text) for each
-    `equiv_<OP>_from_trust` theorem in `path`."""
+    `equiv_<OP>` theorem in `path`."""
     lines = path.read_text().splitlines()
     i = 0
     while i < len(lines):
@@ -99,8 +100,8 @@ def main() -> int:
     print(f"# Format: <theorem> <binder_index> <name> <category> <type-snippet>")
     print(f"#")
     print(f"# Mirrors `trust/baseline-caller-burden.txt` for the wrapper layer —")
-    print(f"# every parameter the caller of an `equiv_<OP>_from_trust` (the")
-    print(f"# wrappers under `ZiskFv/Compliance/FromTrust/*.lean`)")
+    print(f"# every parameter the caller of an `equiv_<OP>` (the")
+    print(f"# wrappers under `ZiskFv/Compliance/Wrappers/*.lean`)")
     print(f"# is on the hook for. Adding, renaming, or")
     print(f"# reshaping any wrapper binder produces a diff that has to land")
     print(f"# alongside the refactor.")

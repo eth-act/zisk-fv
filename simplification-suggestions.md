@@ -8,6 +8,7 @@ Ranked by leverage. Top of the list = touches many files, biggest readability ga
 - #2 — Thread per-shape `Promises` bundles through wrappers + `OpEnvelope` (PR #34, −2971 lines).
 - #2b — Bundle every remaining loose recurring binder cluster: `BusRows`, `MainRowPins`, `ModeRegsFull`, `MemAlignWitness`, `BranchInstrOperands`, `BinaryAddWitness`, `ByteBounds` (PR #35; **all 63 opcodes**; canonical caller-burden −299, wrapper caller-burden −309).
 - #6 — Hoist within-shape wrapper-body repetition into per-AIR helper modules (`BinaryHelpers`, `BinaryExtensionHelpers`, `ArithHelpers`). 32 wrappers across 3 AIR families shrink by **−2,393 lines**; new helper modules add **+1,405 lines**; net **−988 source lines** plus a clean reusable layer under `Equivalence/Promises/`. BinaryAdd and Mem audited but skipped (no leverage — Mem is pre-discharged at the canonical layer; BinaryAdd's two wrappers are structurally divergent). Trust gate baselines all unchanged.
+- #4 — Unify `Equivalence/` filenames under RISC-V mnemonics: 20 files renamed (Branch{Equal,…}/Load{BU,…}/Store{B,…}/Shift{,R,RA,LI,RLI,RAI} → Beq/Bne/Blt/Bge/Bltu/Bgeu/Lbu/Ld/Lhu/Lwu/Sb/Sd/Sh/Sw/Sllw/Srlw/Sraw/Slliw/Srliw/Sraiw). Namespace decls + cross-tree imports/refs updated; `baseline-{caller-burden,hypothesis-count,equiv-axiom-deps}.txt` refreshed (name-only diffs); axiom baselines untouched.
 
 ## Top-leverage wins
 
@@ -56,28 +57,6 @@ Surface:
 - Baseline refresh: `baseline-wrapper-caller-burden.txt` (every row's theorem name changes).
 
 Cost: ~10-minute bulk find/replace. Sequenced AFTER the bundling pass so the wrapper-baseline only refreshes once each.
-
-### 4. Unify file naming under RISC-V mnemonics
-
-`Equivalence/` is half-RISC-V (`Lb`, `Lh`, `Sb`, `Sd`) and half-English (`LoadBU`, `LoadD`, `BranchEqual`, `StoreB`, `Shift*`). `Compliance/FromTrust/` is already consistent (RISC-V mnemonics).
-
-Rename:
-
-- `Equivalence/BranchEqual.lean` → `Beq.lean`
-- `Equivalence/BranchGreaterEqual.lean` → `Bge.lean`
-- `Equivalence/BranchGreaterEqualUnsigned.lean` → `Bgeu.lean`
-- `Equivalence/BranchLessThan.lean` → `Blt.lean`
-- `Equivalence/BranchLessThanUnsigned.lean` → `Bltu.lean`
-- `Equivalence/BranchNotEqual.lean` → `Bne.lean`
-- `Equivalence/LoadBU.lean` → `Lbu.lean`
-- `Equivalence/LoadD.lean` → `Ld.lean`
-- `Equivalence/LoadHU.lean` → `Lhu.lean`
-- `Equivalence/LoadWU.lean` → `Lwu.lean`
-- `Equivalence/StoreB.lean` → `Sb.lean`
-- `Equivalence/StoreD.lean` → `Sd.lean`
-- `Equivalence/StoreH.lean` → `Sh.lean`
-- `Equivalence/StoreW.lean` → `Sw.lean`
-- `Equivalence/Shift*.lean` → match RISC-V mnemonics (Sllw / Srlw / Sraw / Slliw / Srliw / Sraiw)
 
 ### 5. Strip development-phase vocabulary
 

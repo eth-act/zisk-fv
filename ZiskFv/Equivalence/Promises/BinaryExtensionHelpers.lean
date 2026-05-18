@@ -16,7 +16,7 @@ import ZiskFv.Equivalence.Bridge.BinaryExtension
 # BinaryExtension-family wrapper helpers
 
 Per-AIR helper lemmas hoisted from the 15 BinaryExtension-family
-`Compliance/FromTrust/<Op>.lean` wrappers (SLL, SRL, SRA, SLLW, SRLW,
+`Compliance/Wrappers/<Op>.lean` wrappers (SLL, SRL, SRA, SLLW, SRLW,
 SRAW, SLLI, SRLI, SRAI, SLLIW, SRLIW, SRAIW, LB, LH, LW).
 
 **Audit outcome:** Outcome B (mostly different from Binary). The
@@ -241,7 +241,7 @@ structure LoadFullDischargeAt
   h_a3_match : (v.free_in_a_3 r_binary).val = e1.x3.val
 
 /-- **Signed-load full-discharge helper for LB.** Bundles the entire
-    ~40-line BinExt-side pipeline that `equiv_LB_from_trust` applies.
+    ~40-line BinExt-side pipeline that `equiv_LB` applies.
 
     Inputs:
     * `main`, `v` — Main + BinExt validators with selected row indices

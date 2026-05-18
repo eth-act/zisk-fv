@@ -34,7 +34,7 @@ the 16-bit value at x0/x1, matching Sail's zero-extension semantics for
 LHU.
 
 The Sail-level companion and equivalence theorem live in
-`Equivalence/LoadHU.lean`; the `LoadArchetype` macro is consumed to
+`Equivalence/Lhu.lean`; the `LoadArchetype` macro is consumed to
 discharge the c-packed equation.
 -/
 

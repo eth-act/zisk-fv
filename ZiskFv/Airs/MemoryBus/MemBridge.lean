@@ -495,7 +495,7 @@ axiom main_store_pc_emission_bundle
       effect; rd is a general-purpose register).
 
     Conclusion shape: byte-pack lane equalities in **nat form**
-    (consumed directly by `equiv_DIV_from_trust` / `equiv_MUL` etc.
+    (consumed directly by `equiv_DIV` / `equiv_MUL` etc.
     as the `h_byte_lo` / `h_byte_hi` promise hypotheses); plus the
     rd-routing equation matching the existing `*_load_emission_bundle`
     family. Byte ranges (each `e_rd.xi.val < 256`) are NOT included
@@ -624,7 +624,7 @@ axiom main_external_arith_emission_bundle
 
     Width specialization: SD only (`ind_width = 8`, all 8 byte
     lanes meaningful). SB/SH/SW will need their own width-specialized
-    bundles in `Compliance/FromTrust/Sb.lean` / etc., as their high
+    bundles in `Compliance/Wrappers/Sb.lean` / etc., as their high
     byte lanes are zero-padded by the bus's `ind_width` selector. -/
 axiom main_store_emission_bundle_sd
     {C : Type → Type → Type} [Circuit FGL FGL C]

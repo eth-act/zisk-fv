@@ -108,7 +108,7 @@ RULES = [
         "Drop `Round N's ` possessive prefix from prose.",
     ),
 
-    # --- 8. GAP-X markers (concentrated in Compliance/FromTrust/Div.lean) ---
+    # --- 8. GAP-X markers (concentrated in Compliance/Wrappers/Div.lean) ---
     (
         "sub",
         r"GAP-[A-Z](?: \([a-z]+\))?",

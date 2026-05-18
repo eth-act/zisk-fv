@@ -26,7 +26,7 @@ DIVW is the W-variant sibling of DIV. Both transpile through
 `create_register_op` with `m32 = 1` for the 32-bit width. Sail-side,
 this calls `execute_DIVW` with `is_unsigned = false`.
 
-Phase 4.step4.divw: Structural-unpacking refactor replacing the single
+Structural-unpacking refactor replacing the single
 `h_byte_sum_circuit` promise hypothesis with the explicit Tier-3
 binders mirroring DIV-signed but specialized for W-mode (`m32 = 1`,
 `a_2=a_3=b_2=b_3=d_2=d_3=0` from `arith_table_op_divw_operand_pin`,
@@ -87,9 +87,9 @@ lemma equiv_DIVW_sail
     `WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_divw_chunked`
     discharge lemma.
 
-    Phase 4.step4 structural-unpacking refactor with 18 ADDED
-    binders (Phase A DIV signed-shape 16 + `h_sext_choice` for W-mode
-    sign-extension + `h_c23` for bus W-encoding). -/
+    Structural-unpacking refactor with 18 ADDED binders (DIV
+    signed-shape 16 + `h_sext_choice` for W-mode sign-extension +
+    `h_c23` for bus W-encoding). -/
 theorem equiv_DIVW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divw_input : PureSpec.DivwInput)

@@ -403,7 +403,7 @@ def div_carry_chain_holds (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
 /-- **Extended Arith DIV-mode row constraints — includes constraint 46.**
     Same shape as `div_carry_chain_holds` but additionally pins
     `constraint_46_every_row` (the `bus_res1` normalization at
-    `arith.pil:263`). Required by `equiv_DIV_from_trust` to discharge
+    `arith.pil:263`). Required by `equiv_DIV` to discharge
     the hi-lane byte-pack equation via `div_bus_res1_eq_a_hi`
     (`Airs/Arith/BusRes1.lean`). Compliance.lean's downstream caller
     will collapse this into the universal `∀ r, arith_div_row_well_formed`
