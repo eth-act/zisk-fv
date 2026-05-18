@@ -254,7 +254,7 @@ transitive axiom closure is drift-guarded by
 ### `ZiskFv/Equivalence/`
 
 Per-opcode canonical theorems, one file per RV64IM opcode (e.g.
-`Add.lean`, `BranchEqual.lean`, `LoadD.lean`), containing
+`Add.lean`, `Beq.lean`, `Ld.lean`), containing
 `equiv_<OP> : execute_instruction (.<shape> …) state = (bus_effect exec_row mem_row state).2`.
 Both sides live in Sail's state space (LHS is `LeanRV64D.Functions.execute`,
 RHS is `SailSpec.BusEffect.bus_effect`). Each theorem takes promise

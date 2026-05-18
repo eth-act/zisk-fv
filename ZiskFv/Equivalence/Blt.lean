@@ -28,8 +28,8 @@ End-to-end theorem for RV64 BLT. Combines:
   a direct proof port of `execute_BNE_pure_equiv` with
   `h_lt : r1.toInt < r2.toInt` as the case-split predicate),
 
-into three theorems mirroring `Equivalence/BranchEqual.lean` /
-`Equivalence/BranchNotEqual.lean`:
+into three theorems mirroring `Equivalence/Beq.lean` /
+`Equivalence/Bne.lean`:
 
 * `equiv_BLT_sail` — Sail reduction to `PureSpec.execute_BLT_pure`;
 * `equiv_BLT` — the canonical target:
@@ -40,7 +40,7 @@ into three theorems mirroring `Equivalence/BranchEqual.lean` /
 the equivalence theorem reuses `bus_effect_matches_sail_beq` directly.
 -/
 
-namespace ZiskFv.Equivalence.BranchLessThan
+namespace ZiskFv.Equivalence.Blt
 
 open Goldilocks
 open ZiskFv.Trusted
@@ -197,4 +197,4 @@ Together these two companions cover both halves of the
 `success = false` ∨ `throws = true` partition of `execute_BLT_pure`'s
 output. -/
 
-end ZiskFv.Equivalence.BranchLessThan
+end ZiskFv.Equivalence.Blt

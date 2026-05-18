@@ -20,7 +20,7 @@ import ZiskFv.Compliance.SharedBundles
 End-to-end theorem for RV64 SB (store byte).
 -/
 
-namespace ZiskFv.Equivalence.StoreB
+namespace ZiskFv.Equivalence.Sb
 
 open Goldilocks
 open Interaction
@@ -109,4 +109,4 @@ theorem equiv_SB
         PureSpec.modify_memory_1]
   exact h_mem_eq
 
-end ZiskFv.Equivalence.StoreB
+end ZiskFv.Equivalence.Sb

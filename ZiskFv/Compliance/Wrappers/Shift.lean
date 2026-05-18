@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Shift
+import ZiskFv.Equivalence.Sllw
 import ZiskFv.Equivalence.Promises.BinaryExtensionHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
@@ -54,7 +54,7 @@ theorem equiv_SLLW
   obtain ⟨h_main_active, h_main_op⟩ := pins
   obtain ⟨r_binary, h_match⟩ :=
     binexec_op_bus_handshake_SLL_W m v r_main h_main_active h_main_op
-  exact ZiskFv.Equivalence.Shift.equiv_SLLW state sllw_input r1 r2 rd
+  exact ZiskFv.Equivalence.Sllw.equiv_SLLW state sllw_input r1 r2 rd
     m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
     { input_r1_eq := h_input_r1_sail

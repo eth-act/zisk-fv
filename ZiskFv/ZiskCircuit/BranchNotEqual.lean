@@ -41,7 +41,7 @@ check for the `BranchArchetype` macro: we consume
 The Sail-side, the pure-spec (`execute_BNE_pure` in `RV64D/bne.lean`),
 uses `!=` where BEQ uses `==`. So the Sail companion theorem differs
 only in the BTYPE opcode and the pure-spec import. See
-`Equivalence/BranchNotEqual.lean` for the composition.
+`Equivalence/Bne.lean` for the composition.
 -/
 
 namespace ZiskFv.ZiskCircuit.BranchNotEqual

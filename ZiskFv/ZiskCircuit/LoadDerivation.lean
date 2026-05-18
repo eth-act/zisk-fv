@@ -169,7 +169,7 @@ lemma byte_bitvec_eq_of_fgl_eq {a b : FGL} (h : a = b) :
 
 /-- **LD-shape derivation.** From the Family A passthrough plus byte
     ranges, deliver the eight `(e2.x_i : BitVec 8) = (e1.x_i : BitVec 8)`
-    equations the `Equivalence/LoadD.lean` proof body needs in place
+    equations the `Equivalence/Ld.lean` proof body needs in place
     of the retired `h_e1_e2_bytes` hypothesis. -/
 lemma load_copyb_e1_e2_bytes_eq_bv
     (m : Valid_Main C FGL FGL) (r_main : ℕ)

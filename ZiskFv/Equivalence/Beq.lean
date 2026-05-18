@@ -30,7 +30,7 @@ into a canonical theorem:
     = (bus_effect exec_row mem_row state).2`.
 -/
 
-namespace ZiskFv.Equivalence.BranchEqual
+namespace ZiskFv.Equivalence.Beq
 
 open Goldilocks
 open ZiskFv.Trusted
@@ -123,4 +123,4 @@ output. No bus-effect equation — see the docstring on
 Case-split predicate is `h_taken : beq_input.r1_val = beq_input.r2_val`
 (BEQ taken on EQUAL). -/
 
-end ZiskFv.Equivalence.BranchEqual
+end ZiskFv.Equivalence.Beq

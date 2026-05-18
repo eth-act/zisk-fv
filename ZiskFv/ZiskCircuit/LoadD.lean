@@ -21,7 +21,7 @@ yield:
 * `next_pc = pc + 4`                       — PC advances by 4.
 
 This is the **A3 archetype** circuit-side spec. The Sail-level companion
-and equivalence theorem live in `Equivalence/LoadD.lean`.
+and equivalence theorem live in `Equivalence/Ld.lean`.
 
 Unlike `Circuit.Add`, LD does *not* use the operation bus — copyb is
 `OpType::Internal`, so Main constraint 9 discharges the `c = b` identity
@@ -103,7 +103,7 @@ def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     3. `memory_entry_toField_lo_hi` reassembles into the 64-bit value.
 
     The conclusion avoids mentioning the byte-lanes individually —
-    `memory_entry_toField` packs them; `Equivalence/LoadD.lean` then
+    `memory_entry_toField` packs them; `Equivalence/Ld.lean` then
     bridges from `memory_entry_toField` to the `BitVec 64` produced
     by Sail's `vmem_read`. -/
 lemma load_d_compositional

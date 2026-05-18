@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Equivalence.LoadBU
+import ZiskFv.Equivalence.Lbu
 import ZiskFv.Equivalence.Promises.Load
 import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.Trusted.Transpiler
@@ -78,7 +78,7 @@ theorem equiv_LBU
       1
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   -- `OP_COPYB := 1` definitionally; canonical accepts `pins`/`align` verbatim.
-  exact ZiskFv.Equivalence.LoadBU.equiv_LBU
+  exact ZiskFv.Equivalence.Lbu.equiv_LBU
     state lbu_input regs bus
     promises
     main mem r_main align pins h_width

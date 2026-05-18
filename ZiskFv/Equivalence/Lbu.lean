@@ -25,7 +25,7 @@ import ZiskFv.Compliance.SharedBundles
 End-to-end theorem for RV64 LBU (load byte, unsigned / zero-extended).
 -/
 
-namespace ZiskFv.Equivalence.LoadBU
+namespace ZiskFv.Equivalence.Lbu
 
 open Goldilocks
 open Interaction
@@ -162,4 +162,4 @@ theorem equiv_LBU
       apply Subtype.ext; exact h_rd_idx.symm
     rw [h_idx_eq]
 
-end ZiskFv.Equivalence.LoadBU
+end ZiskFv.Equivalence.Lbu

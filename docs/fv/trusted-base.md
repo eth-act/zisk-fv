@@ -162,7 +162,7 @@ After this rewrite all 63 canonical `equiv_<OP>` theorems pass the
 `check-no-output-eq.sh` gate uniformly with no `EXEMPT_STEMS`
 carve-out. See `ZiskFv/ZiskCircuit/LoadDerivation.lean` for the proven
 derivation lemmas and the equivalence files
-(`ZiskFv/Equivalence/{Lb,Lh,Lw,LoadBU,LoadHU,LoadWU,LoadD}.lean`)
+(`ZiskFv/Equivalence/{Lb,Lh,Lw,Lbu,Lhu,Lwu,Ld}.lean`)
 for the rewritten canonical theorems.
 
 ## Inspecting per-theorem trust

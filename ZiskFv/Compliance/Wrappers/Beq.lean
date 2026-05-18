@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Equivalence.BranchEqual
+import ZiskFv.Equivalence.Beq
 import ZiskFv.Equivalence.Promises.BranchHelpers
 import ZiskFv.SailSpec.beq
 import ZiskFv.Trusted.Transpiler
@@ -43,7 +43,7 @@ theorem equiv_BEQ
         ops.imm ops.r1 ops.r2 ops.exec_row) :
     execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BEQ)) state
       = (bus_effect ops.exec_row [] state).2 :=
-  ZiskFv.Equivalence.BranchEqual.equiv_BEQ
+  ZiskFv.Equivalence.Beq.equiv_BEQ
     state beq_input ops promises
 
 end ZiskFv.Compliance

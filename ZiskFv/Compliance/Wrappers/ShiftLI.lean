@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Equivalence.ShiftLI
+import ZiskFv.Equivalence.Slliw
 import ZiskFv.Equivalence.Promises.ShiftImm
 import ZiskFv.Equivalence.Promises.BinaryExtensionHelpers
 import ZiskFv.Trusted.Transpiler
@@ -44,7 +44,7 @@ theorem equiv_SLLIW
   obtain ⟨h_main_active, h_main_op⟩ := pins
   obtain ⟨r_binary, h_match⟩ :=
     binexec_op_bus_handshake_SLL_W m v r_main h_main_active h_main_op
-  exact ZiskFv.Equivalence.ShiftLI.equiv_SLLIW state slliw_input r1 rd
+  exact ZiskFv.Equivalence.Slliw.equiv_SLLIW state slliw_input r1 rd
     m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
     promises

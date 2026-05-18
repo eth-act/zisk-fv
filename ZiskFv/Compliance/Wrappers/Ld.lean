@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Equivalence.LoadD
+import ZiskFv.Equivalence.Ld
 import ZiskFv.Equivalence.Promises.Load
 import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.Trusted.Transpiler
@@ -212,7 +212,7 @@ theorem equiv_LD
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   -- Delegate to canonical `equiv_LD`. `pins`'s opKind `OP_COPYB` is
   -- definitionally `(1 : FGL)` (see `Trusted/Transpiler.lean:147`).
-  exact ZiskFv.Equivalence.LoadD.equiv_LD
+  exact ZiskFv.Equivalence.Ld.equiv_LD
     state ld_input regs bus
     promises
     main mem r_main pins

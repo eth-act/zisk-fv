@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Equivalence.ShiftRAI
+import ZiskFv.Equivalence.Sraiw
 import ZiskFv.Equivalence.Promises.ShiftImm
 import ZiskFv.Equivalence.Promises.BinaryExtensionHelpers
 import ZiskFv.Trusted.Transpiler
@@ -44,7 +44,7 @@ theorem equiv_SRAIW
   obtain ⟨h_main_active, h_main_op⟩ := pins
   obtain ⟨r_binary, h_match⟩ :=
     binexec_op_bus_handshake_SRA_W m v r_main h_main_active h_main_op
-  exact ZiskFv.Equivalence.ShiftRAI.equiv_SRAIW state sraiw_input r1 rd
+  exact ZiskFv.Equivalence.Sraiw.equiv_SRAIW state sraiw_input r1 rd
     m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
     promises

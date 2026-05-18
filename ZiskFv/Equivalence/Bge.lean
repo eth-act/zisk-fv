@@ -30,7 +30,7 @@ End-to-end theorem for RV64 BGE. Combines:
 equivalence theorem reuses `bus_effect_matches_sail_beq`.
 -/
 
-namespace ZiskFv.Equivalence.BranchGreaterEqual
+namespace ZiskFv.Equivalence.Bge
 
 open Goldilocks
 open ZiskFv.Trusted
@@ -108,4 +108,4 @@ theorem equiv_BGE
 Same shape as BLT; case-split predicate is `h_taken : r1.toInt ≥ r2.toInt`
 (BGE taken on signed greater-equal). -/
 
-end ZiskFv.Equivalence.BranchGreaterEqual
+end ZiskFv.Equivalence.Bge

@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Equivalence.StoreH
+import ZiskFv.Equivalence.Sh
 import ZiskFv.Equivalence.Promises.Store
 import ZiskFv.Equivalence.Promises.StoreHelpers
 import ZiskFv.Trusted.Transpiler
@@ -64,7 +64,7 @@ theorem equiv_SH
       main r_main bus.e2 state sh_input
       pins.main_active pins.main_op h_main_ind_width
       promises.m2_mult promises.m2_as h_opcode_assumptions
-  ZiskFv.Equivalence.StoreH.equiv_SH
+  ZiskFv.Equivalence.Sh.equiv_SH
     state sh_input regs bus promises h_mem_eq
 
 end ZiskFv.Compliance

@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Equivalence.BranchNotEqual
+import ZiskFv.Equivalence.Bne
 import ZiskFv.Equivalence.Promises.BranchHelpers
 import ZiskFv.SailSpec.bne
 import ZiskFv.Trusted.Transpiler
@@ -38,7 +38,7 @@ theorem equiv_BNE
         ops.imm ops.r1 ops.r2 ops.exec_row) :
     execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BNE)) state
       = (bus_effect ops.exec_row [] state).2 :=
-  ZiskFv.Equivalence.BranchNotEqual.equiv_BNE
+  ZiskFv.Equivalence.Bne.equiv_BNE
     state bne_input ops promises
 
 end ZiskFv.Compliance

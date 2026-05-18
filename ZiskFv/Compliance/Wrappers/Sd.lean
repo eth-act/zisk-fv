@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Equivalence.StoreD
+import ZiskFv.Equivalence.Sd
 import ZiskFv.Equivalence.Promises.Store
 import ZiskFv.Equivalence.Promises.StoreHelpers
 import ZiskFv.Trusted.Transpiler
@@ -62,7 +62,7 @@ theorem equiv_SD
       main r_main bus.e2 state sd_input
       pins.main_active pins.main_op
       promises.m2_mult promises.m2_as h_opcode_assumptions
-  ZiskFv.Equivalence.StoreD.equiv_SD
+  ZiskFv.Equivalence.Sd.equiv_SD
     state sd_input regs bus promises
     h_mem_facts.1 h_mem_facts.2.1 h_mem_facts.2.2.1 h_mem_facts.2.2.2.1
     h_mem_facts.2.2.2.2.1 h_mem_facts.2.2.2.2.2.1

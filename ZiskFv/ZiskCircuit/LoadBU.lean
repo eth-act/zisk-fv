@@ -33,7 +33,7 @@ With the zeroing hypothesis, `memory_entry_toField entry` collapses to
 semantics for LBU.
 
 The Sail-level companion and equivalence theorem live in
-`Equivalence/LoadBU.lean`; the `LoadArchetype` macro is consumed to
+`Equivalence/Lbu.lean`; the `LoadArchetype` macro is consumed to
 discharge the c-packed equation.
 -/
 

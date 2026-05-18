@@ -27,7 +27,7 @@ End-to-end theorem for RV64 BNE. Combines:
 * the Sail pure-function equivalence (`PureSpec.execute_BNE_pure_equiv`,
   closed in `RV64D/bne.lean`),
 
-into three theorems mirroring `Equivalence/BranchEqual.lean`:
+into three theorems mirroring `Equivalence/Beq.lean`:
 
 * `equiv_BNE_sail` — the Sail reduction to `PureSpec.execute_BNE_pure`,
 * `equiv_BNE` — the canonical shape:
@@ -39,7 +39,7 @@ equivalence theorem reuses `bus_effect_matches_sail_beq` — the shape
 lemma is opcode-agnostic within shape (b).
 -/
 
-namespace ZiskFv.Equivalence.BranchNotEqual
+namespace ZiskFv.Equivalence.Bne
 
 open Goldilocks
 open ZiskFv.Trusted
@@ -129,4 +129,4 @@ theorem equiv_BNE
 Same shape as BEQ; case-split predicate is `h_taken : r1_val ≠ r2_val`
 (BNE taken on NOT-EQUAL — `skip = !(r1 != r2) = (r1 == r2) = false`). -/
 
-end ZiskFv.Equivalence.BranchNotEqual
+end ZiskFv.Equivalence.Bne

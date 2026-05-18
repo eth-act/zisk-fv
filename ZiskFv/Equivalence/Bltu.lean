@@ -26,7 +26,7 @@ End-to-end theorem for RV64 BLTU. Combines:
 Shape (b) bus — reuses `bus_effect_matches_sail_beq`.
 -/
 
-namespace ZiskFv.Equivalence.BranchLessThanUnsigned
+namespace ZiskFv.Equivalence.Bltu
 
 open Goldilocks
 open ZiskFv.Trusted
@@ -103,4 +103,4 @@ theorem equiv_BLTU
 Same shape as BLT; case-split predicate is `h_taken : r1.toNat < r2.toNat`
 (BLTU taken on unsigned less-than). -/
 
-end ZiskFv.Equivalence.BranchLessThanUnsigned
+end ZiskFv.Equivalence.Bltu

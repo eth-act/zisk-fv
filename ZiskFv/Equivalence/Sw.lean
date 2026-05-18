@@ -4,23 +4,29 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.ZiskCircuit.StoreD
-import ZiskFv.ZiskCircuit.StoreH
+import ZiskFv.ZiskCircuit.StoreW
 import ZiskFv.ZiskCircuit.MemModel
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.SailSpec.sh
+import ZiskFv.SailSpec.sw
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Tactics.StoreArchetype
 import ZiskFv.Equivalence.Promises.Store
 import ZiskFv.Compliance.SharedBundles
 
 /-!
-End-to-end theorem for RV64 SH (store halfword). Mirrors SW.
+End-to-end theorem for RV64 SW (store word). The 4-byte narrow store
+closes via `bus_effect_matches_sail_store_rrrw` plus a single bridging
+premise that ties Sail's narrow `modify_memory_4` 4-insert post-state
+to the bus's 8-insert update. The bridging premise factors out the
+per-byte work (ptr-match, low-byte match, high-byte no-op match) into
+a single caller obligation; it is decomposable into the smaller
+circuit-level facts but tractably composable at the equivalence layer.
 -/
 
-namespace ZiskFv.Equivalence.StoreH
+namespace ZiskFv.Equivalence.Sw
 
 open Goldilocks
 open Interaction
@@ -29,14 +35,14 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.ZiskCircuit.StoreD
-open ZiskFv.ZiskCircuit.StoreH
+open ZiskFv.ZiskCircuit.StoreW
 open ZiskFv.Tactics.StoreArchetype
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-lemma equiv_SH_sail
+lemma equiv_SW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (sh_input : PureSpec.ShInput)
+    (sw_input : PureSpec.SwInput)
     (mstatus : RegisterType Register.mstatus)
     (pmaRegion : PMA_Region)
     (misa : RegisterType Register.misa)
@@ -44,34 +50,37 @@ lemma equiv_SH_sail
     (risc_v_assumptions :
       RISC_V_assumptions state mstatus pmaRegion misa mseccfg)
     (h_opcode_assumptions :
-      PureSpec.sh_state_assumptions sh_input state) :
+      PureSpec.sw_state_assumptions sw_input state) :
     execute_instruction (instruction.STORE (
-      sh_input.imm,
-      regidx.Regidx sh_input.r2,
-      regidx.Regidx sh_input.r1,
-      2
+      sw_input.imm,
+      regidx.Regidx sw_input.r2,
+      regidx.Regidx sw_input.r1,
+      4
     )) state
-      = let output := PureSpec.execute_STOREH_pure sh_input
+      = let output := PureSpec.execute_STOREW_pure sw_input
         (do
           Sail.writeReg Register.nextPC output.nextPC
-          set (PureSpec.modify_memory_2 (← get) output)
+          set (PureSpec.modify_memory_4 (← get) output)
           pure (ExecutionResult.Retire_Success ())) state :=
-  PureSpec.execute_STOREH_pure_equiv
-    sh_input risc_v_assumptions h_opcode_assumptions
+  PureSpec.execute_STOREW_pure_equiv
+    sw_input risc_v_assumptions h_opcode_assumptions
 
 /-- **Canonical equivalence.** -/
-theorem equiv_SH
+theorem equiv_SW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (sh_input : PureSpec.ShInput)
+    (sw_input : PureSpec.SwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence.Promises.StorePromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
-        (PureSpec.sh_state_assumptions sh_input state)
-        (PureSpec.execute_STOREH_pure sh_input).nextPC
+        (PureSpec.sw_state_assumptions sw_input state)
+        (PureSpec.execute_STOREW_pure sw_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
-    -- Bridging premise: bus 8-insert chain on state.mem equals Sail's
-    -- 2-insert chain (via modify_memory_2 data fields).
+    -- Bridging premise: bus side's 8-insert chain on `state.mem`
+    -- equals Sail's 4-insert chain (via `modify_memory_4` data
+    -- fields). Bundles ptr-match + low-byte match + high-byte no-op
+    -- match. Caller establishes via byte-bus high-zero witnesses +
+    -- ptr-match against `transpile_SW`.
     (h_mem_eq :
       (((((((state.mem.insert bus.e2.ptr.toNat bus.e2.x0
           ).insert (bus.e2.ptr.toNat + 1) bus.e2.x1
@@ -81,37 +90,50 @@ theorem equiv_SH
           ).insert (bus.e2.ptr.toNat + 5) bus.e2.x5
           ).insert (bus.e2.ptr.toNat + 6) bus.e2.x6
           ).insert (bus.e2.ptr.toNat + 7) bus.e2.x7
-        = (state.mem.insert
-              (PureSpec.execute_STOREH_pure sh_input).data0.1
-              (PureSpec.execute_STOREH_pure sh_input).data0.2
+        = (((state.mem.insert
+              (PureSpec.execute_STOREW_pure sw_input).data0.1
+              (PureSpec.execute_STOREW_pure sw_input).data0.2
             ).insert
-              (PureSpec.execute_STOREH_pure sh_input).data1.1
-              (PureSpec.execute_STOREH_pure sh_input).data1.2) :
+              (PureSpec.execute_STOREW_pure sw_input).data1.1
+              (PureSpec.execute_STOREW_pure sw_input).data1.2
+            ).insert
+              (PureSpec.execute_STOREW_pure sw_input).data2.1
+              (PureSpec.execute_STOREW_pure sw_input).data2.2
+            ).insert
+              (PureSpec.execute_STOREW_pure sw_input).data3.1
+              (PureSpec.execute_STOREW_pure sw_input).data3.2) :
     execute_instruction (instruction.STORE (
-      sh_input.imm,
-      regidx.Regidx sh_input.r2,
-      regidx.Regidx sh_input.r1,
-      2
+      sw_input.imm,
+      regidx.Regidx sw_input.r2,
+      regidx.Regidx sw_input.r1,
+      4
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨mstatus, pmaRegion, misa, mseccfg⟩ := regs
   obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
-  rw [equiv_SH_sail state sh_input mstatus pmaRegion misa mseccfg
+  rw [equiv_SW_sail state sw_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
   symm
   rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_store_rrrw
         state exec_row e0 e1 e2
-        (PureSpec.execute_STOREH_pure sh_input).nextPC
+        (PureSpec.execute_STOREW_pure sw_input).nextPC
         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
+  -- Both sides are EStateM monadic blocks: same `Sail.writeReg`,
+  -- then bus's `modify (fun s => { s with mem := <8 inserts on s.mem> })`
+  -- equals Sail's `set (modify_memory_4 (← get) output)`. Strip
+  -- monad machinery (and unfold modify_memory_4) so both sides land
+  -- on a common state record whose `mem` field is an insert chain.
   simp [bind, pure, EStateM.bind, EStateM.pure, modify, modifyGet,
         MonadStateOf.modifyGet, EStateM.modifyGet, set,
         MonadStateOf.set, EStateM.set, get, MonadState.get, getThe,
         MonadStateOf.get, EStateM.get,
         Sail.writeReg, PreSail.writeReg,
-        PureSpec.modify_memory_2]
+        PureSpec.modify_memory_4]
+  -- Goal: bus 8-insert chain on state.mem = Sail 4-insert chain on
+  -- state.mem. Close via the bridging premise.
   exact h_mem_eq
 
-end ZiskFv.Equivalence.StoreH
+end ZiskFv.Equivalence.Sw

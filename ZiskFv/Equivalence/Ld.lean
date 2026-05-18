@@ -44,7 +44,7 @@ passthrough hypothesis. These carry circuit content (Mem AIR witness +
 Main AIR witness + bus emission shape), not Sail-spec output content.
 -/
 
-namespace ZiskFv.Equivalence.LoadD
+namespace ZiskFv.Equivalence.Ld
 
 open Goldilocks
 open Interaction
@@ -249,4 +249,4 @@ theorem equiv_LD
       exact h_rd_idx.symm
     rw [h_idx_eq]
 
-end ZiskFv.Equivalence.LoadD
+end ZiskFv.Equivalence.Ld

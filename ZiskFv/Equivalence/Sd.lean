@@ -22,7 +22,7 @@ bus's mem-write entry pointer and Sail's `r1_val + signExtend imm`,
 plus per-byte byte-match between the bus entry's lanes and the
 extracted bytes of `r2_val`. -/
 
-namespace ZiskFv.Equivalence.StoreD
+namespace ZiskFv.Equivalence.Sd
 
 open Goldilocks
 open Interaction
@@ -118,4 +118,4 @@ theorem equiv_SD
         MonadStateOf.get, EStateM.get,
         Sail.writeReg, PreSail.writeReg]
 
-end ZiskFv.Equivalence.StoreD
+end ZiskFv.Equivalence.Sd

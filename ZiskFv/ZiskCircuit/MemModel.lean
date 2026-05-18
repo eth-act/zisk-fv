@@ -71,7 +71,7 @@ We don't re-derive it here — `mem_load_correct` consumes it directly.
 ## Note on M-axiom retirement
 
 The current per-opcode load/store equivalence theorems (e.g.
-`equiv_LD` in `Equivalence/LoadD.lean`) take an
+`equiv_LD` in `Equivalence/Ld.lean`) take an
 `h_bus_execute_matches_sail`-style hypothesis that ties the bus-effect's
 output state to Sail's pure-spec result. Under the bridge here, that
 hypothesis is replaced by:

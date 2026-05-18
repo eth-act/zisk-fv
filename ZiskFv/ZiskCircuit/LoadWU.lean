@@ -35,7 +35,7 @@ loaded value directly — matching Sail's `zero_extend 64` semantics for
 LWU.
 
 The Sail-level companion and equivalence theorem live in
-`Equivalence/LoadWU.lean`; the `LoadArchetype` macro is consumed to
+`Equivalence/Lwu.lean`; the `LoadArchetype` macro is consumed to
 discharge the c-packed equation.
 -/
 

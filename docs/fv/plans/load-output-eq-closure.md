@@ -94,7 +94,7 @@ Three lemmas:
 
 ### Step 4 — Per-equivalence file rewrite (all 7 files)
 
-For each of `ZiskFv/Equivalence/{Lb,Lh,Lw,LoadBU,LoadHU,LoadWU,LoadD}.lean`:
+For each of `ZiskFv/Equivalence/{Lb,Lh,Lw,Lbu,Lhu,Lwu,Ld}.lean`:
 
 - **Drop:** `h_high_bytes_signext` (LB/LH/LW), `h_high_bytes_zeroext` (LBU/LHU/LWU), `h_e1_e2_bytes` (LD), `memory_entry_high_bytes_zero_*` (LBU/LHU/LWU).
 - **Add:** `h_main_emit_c` (`c_0/c_1` packing predicate, mirrors existing `h_main_emit_b`); for LB/LH/LW: a `Valid_BinaryExtension` row + `r_be` + op-bus match; for LBU/LHU/LWU: a `Valid_MemAlign*` row + `r_memalign` + width-selector emission.
@@ -141,7 +141,7 @@ Each must pass. Specifically:
 - **New (conditional):** `ZiskFv/Airs/MemAlign/HighBytesZero.lean` (C-1, +1 axiom max).
 - **Modified — axioms:** `ZiskFv/Airs/Tables/BinaryExtensionTable.lean` (extend `wf_properties`).
 - **Modified — Lean theorems:** `ZiskFv/Airs/Binary/BinaryExtensionPackedCorrect.lean`, `ZiskFv/Tactics/SignExtendLoadArchetype.lean`.
-- **Modified — equivalence files (7):** `ZiskFv/Equivalence/{Lb,Lh,Lw,LoadBU,LoadHU,LoadWU,LoadD}.lean`.
+- **Modified — equivalence files (7):** `ZiskFv/Equivalence/{Lb,Lh,Lw,Lbu,Lhu,Lwu,Ld}.lean`.
 - **Modified — trust gate:** `trust/scripts/check-no-output-eq.py`, `trust/forbidden-param-shapes.txt`, `trust/scripts/check-floor.sh`.
 - **Modified — docs:** `CLAUDE.md`, `trust/README.md`, `docs/fv/trusted-base.md`.
 

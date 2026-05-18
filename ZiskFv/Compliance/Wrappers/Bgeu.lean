@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Equivalence.BranchGreaterEqualUnsigned
+import ZiskFv.Equivalence.Bgeu
 import ZiskFv.Equivalence.Promises.BranchHelpers
 import ZiskFv.SailSpec.bgeu
 import ZiskFv.Trusted.Transpiler
@@ -38,7 +38,7 @@ theorem equiv_BGEU
         ops.imm ops.r1 ops.r2 ops.exec_row) :
     execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BGEU)) state
       = (bus_effect ops.exec_row [] state).2 :=
-  ZiskFv.Equivalence.BranchGreaterEqualUnsigned.equiv_BGEU
+  ZiskFv.Equivalence.Bgeu.equiv_BGEU
     state bgeu_input ops promises
 
 end ZiskFv.Compliance

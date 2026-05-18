@@ -101,8 +101,8 @@ axiom.
 
 Affected: `Add` *(only one in this list)*, `Addi`, `And`, `Andi`,
 `Or`, `Ori`, `Xor`, `Xori`, `Sll`, `Slli`, `Sra`, `Srai`, `Srl`,
-`Srli`, `Shift`, `ShiftLI`, `ShiftR`, `ShiftRA`, `ShiftRAI`,
-`ShiftRLI`, `Lb`, `Lh`, `Lw`, `LoadD`, `LoadBU`, `LoadHU`, `LoadWU`.
+`Srli`, `Sllw`, `Slliw`, `Srlw`, `Sraw`, `Sraiw`,
+`Srliw`, `Lb`, `Lh`, `Lw`, `Ld`, `Lbu`, `Lhu`, `Lwu`.
 
 ### Tier 2 — No Provider AIR, loose elements + Main (12 opcodes)
 
@@ -168,8 +168,8 @@ could be doing anything.
 Affected: all 6 branches (`Beq`, `Bne`, `Blt`, `Bge`, `Bltu`,
 `Bgeu`); all 5 muls (`Mul`, `MulH`, `MulHU`, `MulHSU`, `MulW`); all
 8 div/rem variants (`Div`, `Divu`, `Divuw`, `Divw`, `Rem`, `Remu`,
-`Remuw`, `Remw`); all 4 stores (`StoreB`, `StoreD`, `StoreH`,
-`StoreW`); `Fence`.
+`Remuw`, `Remw`); all 4 stores (`Sb`, `Sd`, `Sh`,
+`Sw`); `Fence`.
 
 ### Summary
 
@@ -276,7 +276,7 @@ closed; annotations below record the closing artefact.
    **DONE.** The layout was reconciled as part of Step 0b of the
    plan; SLL is now the BinaryExtension canonical exemplar and the
    15 BinaryExtension-shape opcodes (SLL/SLLI/SRL/SRLI/SRA/SRAI/
-   Shift/ShiftLI/ShiftR/ShiftRA/ShiftRAI/ShiftRLI/Lb/Lh/Lw) are all
+   Sllw/Slliw/Srlw/Sraw/Sraiw/Srliw/Lb/Lh/Lw) are all
    covered by trust-discharged wrappers.
 
 4. **Strengthen the trust gate** with a check that flags promise
@@ -439,7 +439,7 @@ analysis is:
 
 * **One shape unblocked for fan-out: BinaryExtension** (SLL exemplar
   landed; smoke-tested Step 0b cascade). 15 opcodes (SLL/SLLI/SRL/SRLI/
-  SRA/SRAI/Shift/ShiftLI/ShiftR/ShiftRA/ShiftRAI/ShiftRLI/Lb/Lh/Lw)
+  SRA/SRAI/Sllw/Slliw/Srlw/Sraw/Sraiw/Srliw/Lb/Lh/Lw)
   ready for parallel agent batches following the SLL template.
 * **One shape needs no exemplar: ControlFlow branches** (BEQ already
   minimal; the 5 other branches BNE/BLT/BLTU/BGE/BGEU follow the same

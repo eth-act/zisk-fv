@@ -1,6 +1,6 @@
 import Mathlib
 
-import ZiskFv.Equivalence.LoadWU
+import ZiskFv.Equivalence.Lwu
 import ZiskFv.Equivalence.Promises.Load
 import ZiskFv.Equivalence.Bridge.Mem
 import ZiskFv.Trusted.Transpiler
@@ -49,7 +49,7 @@ theorem equiv_LWU
       true,
       4
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  exact ZiskFv.Equivalence.LoadWU.equiv_LWU
+  exact ZiskFv.Equivalence.Lwu.equiv_LWU
     state lwu_input regs bus
     promises
     main mem r_main align pins h_width

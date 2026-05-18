@@ -26,7 +26,7 @@ End-to-end theorem for RV64 BGEU. Combines:
 Shape (b) bus — reuses `bus_effect_matches_sail_beq`.
 -/
 
-namespace ZiskFv.Equivalence.BranchGreaterEqualUnsigned
+namespace ZiskFv.Equivalence.Bgeu
 
 open Goldilocks
 open ZiskFv.Trusted
@@ -103,4 +103,4 @@ theorem equiv_BGEU
 Same shape as BGE; case-split predicate is `h_taken : r1.toNat ≥ r2.toNat`
 (BGEU taken on unsigned greater-equal). -/
 
-end ZiskFv.Equivalence.BranchGreaterEqualUnsigned
+end ZiskFv.Equivalence.Bgeu
