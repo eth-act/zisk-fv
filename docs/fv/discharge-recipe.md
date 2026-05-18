@@ -1,10 +1,10 @@
-# Discharge recipe — authoring `equiv_OP_from_trust` wrappers
+# Discharge recipe — authoring `equiv_OP` wrappers
 
 > **Status:** canonical. This document codifies the five-category
 > discharge pattern crystallized by the DIV pilot (commits `75629e5`,
 > `349c799`, `83532d7`; final form
-> `ZiskFv/Compliance/FromTrust/Div.lean`). Every future
-> `equiv_<OP>_from_trust` wrapper authored on top of an existing
+> `ZiskFv/Compliance/Wrappers/Div.lean`). Every future
+> `equiv_<OP>` wrapper authored on top of an existing
 > canonical `equiv_<OP>` follows this template. Read this end-to-end
 > before authoring a wrapper for a new opcode; the structure is not
 > a tutorial, it is the contract.
@@ -23,7 +23,7 @@ following hold:
   axioms + structural bus shape + Sail-side state predicates, and
   derives the promise hypotheses internally.
 * The wrapper lives **outside** the canonical surface (under
-  `ZiskFv/Compliance/FromTrust/<OP>.lean` or the future
+  `ZiskFv/Compliance/Wrappers/<OP>.lean` or the future
   `Compliance.lean`), so the V1 anti-laundering metric on the
   canonical theorem is unaffected.
 
@@ -59,14 +59,14 @@ form), `h_match_clo`, `h_match_chi`.
 
 **DIV pilot witnesses.**
 
-* `h_byte_lo` discharged at `FromTrust/Div.lean:280-326`. Chain:
+* `h_byte_lo` discharged at `Wrappers/Div.lean:280-326`. Chain:
   `main_external_arith_emission_bundle` (`MemBridge.lean:553`, trust
   class #4(g)) delivers `e2.x0..x3.val pack = (m.c_0 r_main).val`; the
-  op-bus `matches_entry` projection at `FromTrust/Div.lean:287-290`
+  op-bus `matches_entry` projection at `Wrappers/Div.lean:287-290`
   delivers `m.c_0 r_main = v.a_0 r_a + v.a_1 r_a * 65536`; an FGL→ℕ
-  lift (`h_pair_lift` defined at `FromTrust/Div.lean:302-317`, consuming
+  lift (`h_pair_lift` defined at `Wrappers/Div.lean:302-317`, consuming
   `arith_div_columns_in_range` from class #6b(a)) closes the chain.
-* `h_byte_hi` discharged at `FromTrust/Div.lean:327-339`. Same bundle for
+* `h_byte_hi` discharged at `Wrappers/Div.lean:327-339`. Same bundle for
   the `e2.x4..x7 → m.c_1 r_main` side; `matches_entry` projects
   `m.c_1 r_main = v.bus_res1 r_a`; then
   `div_bus_res1_eq_a_hi` (`Airs/Arith/Bridge1.lean:79`) bridges
@@ -102,11 +102,11 @@ row's opcode literal. Canonical names: `h_sext`, `h_m32`, `h_div`,
 
 **DIV pilot witnesses.**
 
-* `h_sext`, `h_m32`, `h_div` discharged at `FromTrust/Div.lean:236-237`
+* `h_sext`, `h_m32`, `h_div` discharged at `Wrappers/Div.lean:236-237`
   via `arith_table_op_div_rem_signed_mode_pin v r_a h_op_arith`
   (declared `Airs/Arith/Ranges.lean:386`, trust class #6b(h)).
 * `h_main_div_one`, `h_main_mul_zero` discharged at
-  `FromTrust/Div.lean:241-243` via
+  `Wrappers/Div.lean:241-243` via
   `arith_table_op_div_rem_main_selector_pin v r_a h_op_arith` then
   `.1 h_op_arith_div` (declared `Airs/Arith/Ranges.lean:427`, trust
   class #6b(j)).
@@ -123,7 +123,7 @@ sub-classes per-AIR.
 **Author discipline.** The opcode literal hypothesis
 `h_op_arith : v.op r_a = 186 ∨ v.op r_a = 187` is itself derived
 from the `matches_entry` op-slot equality plus the Main-side opcode
-pin (`FromTrust/Div.lean:223-229`). Do not accept it as a parameter.
+pin (`Wrappers/Div.lean:223-229`). Do not accept it as a parameter.
 
 ### 3. Sign-witness pins (signed and W-mode ops only)
 
@@ -137,13 +137,13 @@ consequences in `h_op1`, `h_op2`, `h_nr_pin`).
 
 * `arith_div_np_eq_msb_of_dividend` (`Airs/Arith/Ranges.lean:502`,
   class #6b(k)) — pins `np` to the MSB of the dividend's packed4.
-  Consumed at `FromTrust/Div.lean:464-465`.
+  Consumed at `Wrappers/Div.lean:464-465`.
 * `arith_div_nb_eq_msb_of_divisor` (`Airs/Arith/Ranges.lean:530`,
   class #6b(l)) — pins `nb` to the MSB of the divisor's packed4.
-  Consumed at `FromTrust/Div.lean:466-467`.
+  Consumed at `Wrappers/Div.lean:466-467`.
 * `arith_table_op_div_rem_signed_d_sign_pin` (declared earlier;
   class #6b(d)) — pins `nr = np ∨ d[] = 0`. Consumed at
-  `FromTrust/Div.lean:245-258` to produce `h_nr_pin` in the shape
+  `Wrappers/Div.lean:245-258` to produce `h_nr_pin` in the shape
   `equiv_DIV` expects (the disjunctive boundary form).
 
 **Generalization.** Per-AIR, per-signed-or-W operation. Only the
@@ -170,12 +170,12 @@ ranges), `h_r_abs` (signed-remainder magnitude bound), `h_r_sign`
 
 **DIV pilot witnesses.**
 
-* Chunk ranges `h_a0_lt..h_d3_lt` discharged at `FromTrust/Div.lean:298-301`
+* Chunk ranges `h_a0_lt..h_d3_lt` discharged at `Wrappers/Div.lean:298-301`
   via `arith_div_columns_in_range v r_a` (class #6b(a)). This is the
   "structural" range axiom that the canonical `equiv_DIV` already
   consumes transitively; the wrapper consumes it directly to lift
   FGL→ℕ in the lane-match composition.
-* `h_r_abs`, `h_r_sign` discharged at `FromTrust/Div.lean:488-499` via
+* `h_r_abs`, `h_r_sign` discharged at `Wrappers/Div.lean:488-499` via
   `arith_div_remainder_bound v r_a h_sext h_m32 h_div h_op_arith`
   (class #6b(i)), composed with `h_op1` / `h_op2` (category 5) to
   rewrite into the `r2_val.toInt` / `r1_val.toInt` shapes that
@@ -202,17 +202,17 @@ bound consumed by `arith_div_remainder_bound`).
 
 **DIV pilot witnesses.**
 
-* `h_op1` discharged at `FromTrust/Div.lean:469-475` via
+* `h_op1` discharged at `Wrappers/Div.lean:469-475` via
   `signed_packed_toInt_eq_of_read_xreg`
   (`Equivalence/Bridge/SailStateBridge.lean:190`). Inputs: the Sail
   `read_xreg` predicate `h_input_r1`, the unsigned `r1_val.toNat =
   packed4` identity (derived from `transpile_DIV` + op-bus
   `matches_entry` lane projections + chunk-range bounds; see
-  `FromTrust/Div.lean:347-435`), the chunk-range bundle, and the
+  `Wrappers/Div.lean:347-435`), the chunk-range bundle, and the
   `np = MSB` pin from category 3.
-* `h_op2` discharged symmetrically at `FromTrust/Div.lean:476-482`.
+* `h_op2` discharged symmetrically at `Wrappers/Div.lean:476-482`.
 * The unsigned companion `packed_lane_eq_of_read_xreg`
-  (`SailStateBridge.lean:90`) is used at `FromTrust/Div.lean:356-358`
+  (`SailStateBridge.lean:90`) is used at `Wrappers/Div.lean:356-358`
   and `:362-364` to deliver the `r{1,2}_val = BitVec.ofNat 64 …`
   step that feeds into the signed form.
 
@@ -241,13 +241,13 @@ rather than per-opcode in the wrapper file.
 
 ## The wrapper template
 
-This section walks through `equiv_DIV_from_trust`'s signature and
+This section walks through `equiv_DIV`'s signature and
 proof outline so a future author has a template to clone.
 
 ### Signature shape
 
 The wrapper's parameter block has seven sections in this order
-(`FromTrust/Div.lean:154-213`):
+(`Wrappers/Div.lean:154-213`):
 
 1. **Sail-side inputs.** `state`, the input record (`div_input`),
    `r1 r2 rd : regidx`. Pass-through from the canonical theorem.
@@ -280,26 +280,26 @@ The wrapper's parameter block has seven sections in this order
 ### Proof outline
 
 The proof body composes the five categories in a strict order
-(`FromTrust/Div.lean:218-509`):
+(`Wrappers/Div.lean:218-509`):
 
 1. **Derive the opcode literal on the provider AIR's `op` column.**
    Project from `h_match_primary` (op-bus `matches_entry`) + the
-   Main-side `h_main_op_<OP>` pin. `FromTrust/Div.lean:222-229`.
-2. **Unpack the row-constraint bundle.** `FromTrust/Div.lean:230-234`.
-3. **Discharge category 2 (mode pins).** `FromTrust/Div.lean:236-243`.
+   Main-side `h_main_op_<OP>` pin. `Wrappers/Div.lean:222-229`.
+2. **Unpack the row-constraint bundle.** `Wrappers/Div.lean:230-234`.
+3. **Discharge category 2 (mode pins).** `Wrappers/Div.lean:236-243`.
 4. **Discharge any opcode-specific lookup-consequence pins** (e.g.
    `h_nr_pin` for DIV's signed-remainder closure).
-   `FromTrust/Div.lean:244-258`.
+   `Wrappers/Div.lean:244-258`.
 5. **Discharge category 1 (lane-match)** using the emission bundle +
-   op-bus projection + FGL→ℕ lift. `FromTrust/Div.lean:259-339`.
+   op-bus projection + FGL→ℕ lift. `Wrappers/Div.lean:259-339`.
 6. **Discharge category 5 (operand bridges)** by first deriving the
    unsigned packed4 identities (transpile + op-bus + chunk-range
    composition), then composing with category 3's MSB pins via
-   `signed_packed_toInt_eq_of_read_xreg`. `FromTrust/Div.lean:340-482`.
+   `signed_packed_toInt_eq_of_read_xreg`. `Wrappers/Div.lean:340-482`.
 7. **Discharge category 4 (range/bound)** rewriting via category 5's
-   results. `FromTrust/Div.lean:483-499`.
+   results. `Wrappers/Div.lean:483-499`.
 8. **Delegate to the canonical theorem.** Pass every derived
-   hypothesis through. `FromTrust/Div.lean:500-509`.
+   hypothesis through. `Wrappers/Div.lean:500-509`.
 
 Step ordering matters: category 5's signed bridges consume
 category 3's MSB pins, and category 4's `arith_div_remainder_bound`
@@ -330,7 +330,7 @@ the PIL line, audited the class fit, and ran the trust gate.
 
 A pilot for shape `<S>` is complete when:
 
-1. `equiv_<OP>_from_trust` for one canonical opcode in shape `<S>`
+1. `equiv_<OP>` for one canonical opcode in shape `<S>`
    typechecks (`lake build` green).
 2. Every promise hypothesis on the wrapper's `equiv_<OP>` delegation
    call is discharged from a trust-ledger axiom — no `sorry`, no
@@ -379,7 +379,7 @@ Two wrapper-specific checks substitute:
    wrapper has more binders than the canonical theorem, you did
    not discharge; you laundered. The DIV pilot's signature has
    35 binders / 22 hypotheses vs.  `equiv_DIV`'s 43/32
-   (`FromTrust/Div.lean:144-145`); the 8-binder drop *is* the discharge.
+   (`Wrappers/Div.lean:144-145`); the 8-binder drop *is* the discharge.
 2. **New axioms must fit existing classes with PIL citations.** Any
    new axiom in the wrapper's discharge path must (a) live in a
    file listed in `trust/allowed-axiom-files.txt`, (b) match an
@@ -398,7 +398,7 @@ Two wrapper-specific checks substitute:
    DIV-specific helper to the wrapper file. The generic
    `signed_packed_toInt_eq_of_read_xreg` covers every signed
    register-read operand; a new bridge belongs in
-   `SailStateBridge.lean`, not in `Compliance/FromTrust/<OP>.lean`.
+   `SailStateBridge.lean`, not in `Compliance/Wrappers/<OP>.lean`.
 
 ## Cross-shape generic infrastructure (already built — DON'T re-author)
 

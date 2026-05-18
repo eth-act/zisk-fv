@@ -125,8 +125,8 @@ specific `Valid_Main`↔`Valid_BinaryAdd` row-shape bridge.
 ### Pilot status (Step 4.1.2 — ADD exemplar)
 
 **Actual: 0 new axioms** for the ADD exemplar
-(`ZiskFv/Compliance/FromTrust/Add.lean`,
-`equiv_ADD_from_trust`). Matches the prediction's lower bound (0–1).
+(`ZiskFv/Compliance/Wrappers/Add.lean`,
+`equiv_ADD`). Matches the prediction's lower bound (0–1).
 
 Composition: `transpile_ADD` (class #1) + `op_bus_perm_sound_BinaryAdd`
 (class #4) + `memory_bus_entry_byte_range_perm_sound` (class #5b) +
@@ -149,7 +149,7 @@ surfaced a new axiom:
   `add_input_bridges_of_read_xreg` — no wrapper-level work.
 
 Caller-burden (per discharge-recipe.md): 34 binders / 20 hypotheses
-on `equiv_ADD_from_trust` vs. 41 / 27 on `equiv_ADD`. **Net −7
+on `equiv_ADD` vs. 41 / 27 on `equiv_ADD`. **Net −7
 binders / −7 hypotheses**. Composition: drops `h_main_mode` (1) and
 `h_e2_0..h_e2_7` (8); adds `h_main_active`, `h_main_op_add` (2) —
 the activation/opcode pins from Compliance.lean's program-counter
@@ -243,7 +243,7 @@ op-class diversity.
 
 **Added: 1 axiom** at the low end of the 2–4 prediction.
 
-| New axiom | Class | Source | Discharges (in `equiv_OR_from_trust`) |
+| New axiom | Class | Source | Discharges (in `equiv_OR`) |
 |---|---|---|---|
 | `binary_b_op_or_sext_eq_OP_OR` | #6 (table-pin) | `Airs/Binary/BinaryRanges.lean:263` | `h_bop_or_sext : (v.b_op_or_sext r_binary).val = OP_OR` |
 
@@ -254,7 +254,7 @@ Projecting matches_entry's `.op`-slot equality through
 `v.b_op r_binary + 16 * v.mode32 r_binary = 15`, which feeds the
 new pin axiom to deliver `(v.b_op_or_sext r_binary).val = OP_OR`.
 
-Caller-burden drop on `equiv_OR_from_trust` vs `equiv_OR`: **−3
+Caller-burden drop on `equiv_OR` vs `equiv_OR`: **−3
 binders / −3 hypotheses** (`r_binary`, `h_match`, `h_bop_or_sext`).
 At the global Compliance.lean level the reduction extends further
 because `(m, v, ∀ r, core_every_row v r)` collapse into shared
@@ -385,8 +385,8 @@ via separate signatures (`arith_mul_*` vs `arith_div_*`).
 
 ### Pilot status — landed at Step 4.1.8
 
-The ArithMul shape exemplar `equiv_MUL_from_trust`
-(`ZiskFv/Compliance/FromTrust/Mul.lean`) closes all five
+The ArithMul shape exemplar `equiv_MUL`
+(`ZiskFv/Compliance/Wrappers/Mul.lean`) closes all five
 discharge categories for the low-half MUL opcode (OP_MUL = 180) end-to-end
 using **2 new class-#6b axioms** (the two pins listed above) — well
 within the 3-5 prediction.
@@ -416,7 +416,7 @@ within the 3-5 prediction.
 ### Within-shape mass authoring template (MULH / MULHU / MULHSU / MULW)
 
 Each of the 4 remaining MUL-family opcodes will follow the
-`equiv_MUL_from_trust` skeleton with the following per-opcode
+`equiv_MUL` skeleton with the following per-opcode
 adjustments:
 
 * **MULHU (op = 0xb1 = 177):** unsigned × unsigned, high 64 bits.
@@ -447,10 +447,10 @@ wrappers, all sitting in class #6b alongside the MUL-pilot pair.
 
 All 4 within-shape wrappers landed:
 
-* `equiv_MULHU_from_trust` (`Compliance/FromTrust/MulHU.lean`) — Step 4.2 r2 Family A.
-* `equiv_MULH_from_trust` (`Compliance/FromTrust/MulH.lean`) — Step 4.2 r3.III.
-* `equiv_MULHSU_from_trust` (`Compliance/FromTrust/MulHSU.lean`) — Step 4.2 r3.III.
-* `equiv_MULW_from_trust` (`Compliance/FromTrust/MulW.lean`) — Step 4.2 r3.III.
+* `equiv_MULHU` (`Compliance/Wrappers/MulHU.lean`) — Step 4.2 r2 Family A.
+* `equiv_MULH` (`Compliance/Wrappers/MulH.lean`) — Step 4.2 r3.III.
+* `equiv_MULHSU` (`Compliance/Wrappers/MulHSU.lean`) — Step 4.2 r3.III.
+* `equiv_MULW` (`Compliance/Wrappers/MulW.lean`) — Step 4.2 r3.III.
 
 Total ArithMul axiom delta across the whole Step 4.2 effort (r2 + r3.III):
 * `arith_table_op_mul_mode_pin` + `arith_table_op_mul_main_selector_pin` (r1.8)
@@ -477,7 +477,7 @@ plus a signed-low-32 form of `signed_packed_toInt_eq_of_read_xreg`.
 **Discharge bridges:** `ZiskFv/Equivalence/Bridge/Arith.lean`
 (entry points `arith_div_discharge_conservative` and
 `arith_div_secondary_discharge_conservative`), plus the
-pilot wrapper `ZiskFv/Compliance/FromTrust/Div.lean`.
+pilot wrapper `ZiskFv/Compliance/Wrappers/Div.lean`.
 **Provider-bus axioms:**
 * `op_bus_perm_sound_ArithDiv` — `Airs/OperationBus/Bridge.lean:143`
   (primary bus tuple, quotient lane)
@@ -507,7 +507,7 @@ pilot wrapper `ZiskFv/Compliance/FromTrust/Div.lean`.
 ### Predicted gaps for the AIR's discharge pilot
 
 ArithDiv **is the piloted AIR** as of commit `83532d7`. The DIV
-pilot (`Compliance/FromTrust/Div.lean`) closed all five categories for
+pilot (`Compliance/Wrappers/Div.lean`) closed all five categories for
 `equiv_DIV` end-to-end. Remaining items to lift the DIV pilot to
 the full 8-opcode DIV/REM family:
 
@@ -731,8 +731,8 @@ fully covered before this pilot:
 * `transpile_LD` (class #1) feeds the routing-pin derivations
   inside the canonical theorem.
 
-The `equiv_LD_from_trust` wrapper at
-`ZiskFv/Compliance/FromTrust/Ld.lean` therefore consumes
+The `equiv_LD` wrapper at
+`ZiskFv/Compliance/Wrappers/Ld.lean` therefore consumes
 no per-AIR trust-ledger axiom beyond `equiv_LD`'s existing closure.
 The reduction in caller burden is small (−1 binder, 0 hypothesis
 delta) and is principally **canonical-naming**: `h_op : main.op
@@ -822,8 +822,8 @@ delta of the seven AIRs.**
 ### Pilot status (Step 4.1.1 — non-branch LUI exemplar)
 
 **Actual: 0 new axioms** for the LUI non-branch exemplar
-(`ZiskFv/Compliance/FromTrust/Lui.lean`,
-`equiv_LUI_from_trust`). Matches the prediction above.
+(`ZiskFv/Compliance/Wrappers/Lui.lean`,
+`equiv_LUI`). Matches the prediction above.
 
 Composition: `transpile_LUI` (class #1) + `equiv_LUI`'s existing
 transitive closure (`main_store_pc_emission_bundle` class #4,
@@ -836,7 +836,7 @@ internalized by `equiv_LUI`. The wrapper unpacks `h_circuit` into
 structural-unpacking pattern consuming only `transpile_LUI`.
 
 Caller-burden (per discharge-recipe.md): 22 binders / 13 hypotheses
-on `equiv_LUI_from_trust` vs. 22 / 12 on `equiv_LUI`. Per-opcode
+on `equiv_LUI` vs. 22 / 12 on `equiv_LUI`. Per-opcode
 hypothesis count grows by 1 because `h_circuit` is a structural
 bundle (`lui_subset_holds` + `main_row_in_lui_mode`, 12 sub-claims)
 that unpacks into three Compliance-friendly ingredients. The
@@ -867,8 +867,8 @@ plus `main_columns_in_range` (#5b) only.
 ### Pilot status (Step 4.1.7 — branches BEQ exemplar)
 
 **Actual: 0 new axioms** for the BEQ branch exemplar
-(`ZiskFv/Compliance/FromTrust/Beq.lean`,
-`equiv_BEQ_from_trust`). Matches the prediction (0 new axioms).
+(`ZiskFv/Compliance/Wrappers/Beq.lean`,
+`equiv_BEQ`). Matches the prediction (0 new axioms).
 
 Composition: `equiv_BEQ`'s existing transitive closure (which for
 the branch sub-shape comprises `transpile_BEQ` (class #1), Sail
@@ -907,7 +907,7 @@ derives both promises via the pure-Lean lemma
 `beq_pure_no_exception_of_aligned`.
 
 Caller-burden (per discharge-recipe.md): 18 binders / 10 hypotheses
-on `equiv_BEQ_from_trust` vs. 19 / 11 on `equiv_BEQ`. **Net −1
+on `equiv_BEQ` vs. 19 / 11 on `equiv_BEQ`. **Net −1
 binder / −1 hypothesis.** Cleaner than LUI's +1 structural-unpacking
 growth — branches need no compensating bundle unpack because there
 is no rd-write entry (no `e_rd` byte ranges, no `register_write_lanes_match`).

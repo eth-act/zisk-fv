@@ -17,7 +17,7 @@ The 127 entry points are:
 
 * `ZiskFv.Compliance.zisk_riscv_compliant_program_bus` — the global compliance theorem dispatching all 63 RV64IM opcodes.
 * The 63 canonical `equiv_<OP>` theorems (one per opcode).
-* The 63 `equiv_<OP>_from_trust` Compliance wrappers (consumed directly by the global theorem).
+* The 63 `equiv_<OP>` Compliance wrappers (consumed directly by the global theorem).
 
 The audit is intentionally **not destructive** — this file *reports*
 candidates; a separate follow-up PR is required to delete anything.
@@ -260,7 +260,7 @@ deletion candidates for follow-up cleanup.
 | 27 | `ZiskFv.Equivalence.Bridge.Arith.arith_mul_discharge_conservative` | Bridge wrapper around dead `op_bus_perm_sound_ArithMul` |
 | 28 | `ZiskFv.Equivalence.Bridge.Arith.arith_div_discharge_conservative` | Bridge wrapper around dead `op_bus_perm_sound_ArithDiv` |
 | 29 | `ZiskFv.Fundamentals.TranspileConsumers.transpile_BEQ_consumer` | Consumer wrapper around dead `transpile_BEQ` (representative; 14 more in the same module) |
-| 30 | `ZiskFv.Compliance.FromTrust.Divw` | Stale Exemplar — superseded by the in-line dispatch arm |
+| 30 | `ZiskFv.Compliance.Wrappers.Divw` | Stale Exemplar — superseded by the in-line dispatch arm |
 
 Full list: `/tmp/unreachable-constants.txt` after running
 `lake exe trust-gate find-unused trust/dead-code-entry-points.txt`.

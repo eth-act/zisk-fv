@@ -22,7 +22,7 @@ bits 0 and 1 of an address ≡ 0 mod 4 are both zero, so both
 uniformly (regardless of taken/not-taken). The same 6-step proof
 works for every branch — only the `execute_<OP>_pure` symbol differs.
 
-These helpers were extracted from the per-opcode `Compliance/FromTrust/<Op>.lean`
+These helpers were extracted from the per-opcode `Compliance/Wrappers/<Op>.lean`
 wrappers (where they previously lived inline as `private theorem
 <op>_pure_no_exception_of_aligned`). The wrappers are now pure
 pass-throughs that take a fully-populated `BranchPromises` bundle.

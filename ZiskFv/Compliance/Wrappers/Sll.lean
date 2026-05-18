@@ -1,0 +1,117 @@
+import Mathlib
+
+import ZiskFv.Equivalence.Sll
+import ZiskFv.Equivalence.Promises.RType
+import ZiskFv.Equivalence.Promises.BinaryExtensionHelpers
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.OperationBus.Bridge
+import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.Compliance.SharedBundles
+
+/-!
+# `equiv_SLL` trust-discharge wrapper
+
+Discharges the op-bus `matches_entry` handshake on top of the
+canonical `equiv_SLL`. The canonical surface already internalizes
+the BinaryExtension chunk/byte ranges, the op-is-shift pin, the
+byte-lookup table witness, and the packed-a / shift-pin operand
+bridges; what remains for the wrapper is to derive `h_match` from
+`op_bus_perm_sound_BinaryExtension` (class #4) given the Main opcode
+pin. The existential row index `r_e` from that axiom serves as
+`r_binary`, eliminating two binders (`r_binary`, `h_match`) versus
+the canonical signature.
+
+Trust footprint: `op_bus_perm_sound_BinaryExtension` (class #4)
+plus `equiv_SLL`'s existing closure. Zero new axioms.
+-/
+
+namespace ZiskFv.Compliance
+
+open Goldilocks
+open ZiskFv.Trusted
+open ZiskFv.Airs.Main
+open ZiskFv.Airs.BinaryExtension
+open ZiskFv.Airs.OperationBus
+open ZiskFv.Equivalence.Promises
+
+variable {C : Type → Type → Type} [Circuit FGL FGL C]
+
+/-- **Trust-discharged wrapper for `equiv_SLL`.**
+
+    Caller obligations (signature header, ordered):
+    1. The Sail-side inputs (`state`, `sll_input`, `r1`, `r2`, `rd`).
+    2. The two AIR validators with the selected Main row index
+       (`m : Valid_Main`, `v : Valid_BinaryExtension`, `r_main : ℕ`).
+       Compliance.lean shares `(m, v)` across every BinaryExtension-shape
+       opcode (all twelve shifts plus the three internal SEXTs).
+    3. The structural bus rows (`exec_row`, `e0`, `e1`, `e2`).
+    4. The activation + opcode pins on Main (`h_main_active`,
+       `h_main_op`). Both come from Compliance.lean's program-counter
+       handshake on the row hosting the SLL instruction.
+    5. The lane-match for the rd-write entry (`h_lane_rd`) —
+       caller-supplied; discharged downstream from
+       `memory_bus_register_write_perm_sound`.
+    6. The Sail-side state predicates (SPEC-PRE):
+       `h_input_r1_sail`, `h_input_r2_sail`, `h_input_rd`, `h_input_pc`.
+    7. The bus-protocol structural hypotheses — pass-through from
+       `equiv_SLL`; Compliance.lean supplies these from the same
+       bus-shape obligations as every other opcode in the shape.
+
+    Derived internally (NOT caller-supplied):
+    * `r_binary : ℕ` — existential witness from
+      `op_bus_perm_sound_BinaryExtension`.
+    * `h_match : matches_entry (opBus_row_Main m r_main)
+        (opBus_row_BinaryExtension v r_binary)` — derived from
+      `op_bus_perm_sound_BinaryExtension m v r_main h_main_active`
+      with the op-disjunction satisfied via `Or.inl h_main_op`.
+
+    Trust footprint: `op_bus_perm_sound_BinaryExtension` (class #4)
+    plus `equiv_SLL`'s existing closure (which transitively consumes
+    `transpile_SLL` (class #1), `binary_extension_columns_in_range`
+    (class #6), `binary_extension_op_is_shift_pin` (class #6),
+    `binary_extension_row_byte_lookups` (class #6),
+    `memory_bus_entry_byte_range_perm_sound` (class #5b),
+    `main_columns_in_range` (class #5b)). Zero new axioms — UNDER
+    `docs/fv/per-air-axiom-map.md`'s 1–2 prediction (SRA-family
+    sign-witness pin is N/A for SLL specifically). -/
+theorem equiv_SLL
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sll_input : PureSpec.SllInput)
+    (r1 r2 rd : regidx)
+    -- AIR validators + row index. Compliance.lean shares (m, v)
+    -- across all BinaryExtension-shape opcodes (twelve shifts).
+    (m : Valid_Main C FGL FGL)
+    (v : Valid_BinaryExtension C FGL FGL)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    -- Structural promise bundle (15 fields). Subsumes the prior inline
+    -- Sail-side state predicates + bus-protocol structural hypotheses.
+    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+        state sll_input.r1_val sll_input.r2_val sll_input.rd sll_input.PC
+        (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    -- Activation / opcode pins. Compliance.lean derives these from
+    -- the Main AIR's ROM handshake on the row hosting SLL.
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL)
+    -- Lane-match for the rd-write entry — caller-supplied; discharged
+    -- downstream from `memory_bus_register_write_perm_sound`.
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
+    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op⟩ := pins
+  -- Derive (r_binary, h_match) via the per-opcode op-bus handshake helper
+  -- (hides the disjunct-selector ladder behind `binexec_op_bus_handshake_SLL`).
+  obtain ⟨r_binary, h_match⟩ :=
+    binexec_op_bus_handshake_SLL m v r_main h_main_active h_main_op
+  -- Delegate to canonical `equiv_SLL`.
+  exact ZiskFv.Equivalence.Sll.equiv_SLL state sll_input r1 r2 rd
+    m v r_main r_binary
+    ⟨exec_row, e0, e1, e2⟩
+    promises
+    ⟨h_main_active, h_main_op⟩
+    h_match h_lane_rd
+
+end ZiskFv.Compliance

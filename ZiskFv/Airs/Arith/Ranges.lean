@@ -380,7 +380,7 @@ columns from the `op` literal). -/
     `arith.pil:286-287` (the `arith_table_assumes` lookup) with the
     table content at `arith_table.pil` (signed 64-bit DIV/REM rows).
 
-    Consumed by `equiv_DIV_from_trust` (Compliance/FromTrust/Div.lean) to
+    Consumed by `equiv_DIV` (Compliance/Wrappers/Div.lean) to
     discharge the three mode pins `h_sext`/`h_m32`/`h_div` given the
     arith-side opcode literal (which is itself a consequence of the
     OpBus permutation matching `m.op r_main` to `v.op r_a`). -/
@@ -421,7 +421,7 @@ DIV/REM rows). Same kind, narrower covering set. -/
     lookup, explicitly including `main_mul` and `main_div` columns)
     with the row-type table at `arith.pil:222-234`.
 
-    Consumed by `equiv_DIV_from_trust` (`Compliance/FromTrust/Div.lean`) to
+    Consumed by `equiv_DIV` (`Compliance/Wrappers/Div.lean`) to
     derive the `main_div = 1`, `main_mul = 0` pins required by
     `div_bus_res1_eq_a_hi` (`Airs/Arith/BusRes1.lean:79`) for the
      hi-lane discharge. -/
@@ -468,7 +468,7 @@ the existing `arith_table_op_div_rem_signed_d_sign_pin` (which pins
 `arith_table_op_div_rem_main_selector_pin` (which pins the
 `main_mul` / `main_div` columns via the same lookup).
 
-Consumed by `equiv_DIV_from_trust` (`Compliance/FromTrust/Div.lean`) — in
+Consumed by `equiv_DIV` (`Compliance/Wrappers/Div.lean`) — in
 composition with the generic signed Sail-state bridge — to derive
 `h_rs1_value` / `h_rs2_value` (the signed packed-lane equations connecting
 `r1_val.toInt` / `r2_val.toInt` to the AIR's `C - np·2^64` /
@@ -498,7 +498,7 @@ columns. -/
     (op = 186/187 entries) whose flag-field encoding (`arith_table_helpers.rs:130-140`)
     binds the `np` bit to the MSB convention.
 
-    Consumed by `equiv_DIV_from_trust` via
+    Consumed by `equiv_DIV` via
     `signed_packed_toInt_eq_of_read_xreg` to derive `h_rs1_value`. -/
 axiom arith_div_np_eq_msb_of_dividend
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
@@ -526,7 +526,7 @@ axiom arith_div_np_eq_msb_of_dividend
     `arith_table_helpers.rs:130-140`.
 
     Companion to `arith_div_np_eq_msb_of_dividend`; consumed by
-    `equiv_DIV_from_trust` via `signed_packed_toInt_eq_of_read_xreg`
+    `equiv_DIV` via `signed_packed_toInt_eq_of_read_xreg`
     to derive `h_rs2_value`. -/
 axiom arith_div_nb_eq_msb_of_divisor
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
@@ -738,7 +738,7 @@ emits the low product through `bus_res0`).
     multiplications use the unsigned carry chain since the low 64 bits
     of `a * b` are sign-agnostic).
 
-    Consumed by `equiv_MUL_from_trust` (Compliance/FromTrust/Mul.lean) to
+    Consumed by `equiv_MUL` (Compliance/Wrappers/Mul.lean) to
     discharge the seven mode-pin promise hypotheses `h_na`/`h_nb`/`h_np`/
     `h_nr`/`h_sext`/`h_m32`/`h_div` on `equiv_MUL` from the
     arith-side opcode literal alone (which is itself a consequence of
@@ -766,7 +766,7 @@ axiom arith_table_op_mul_mode_pin
     `arith_table_data.rs::ARITH_TABLE` (which selects the
     low-product lane via `main_mul = 1`).
 
-    Consumed by `equiv_MUL_from_trust` to derive the MUL-primary mode
+    Consumed by `equiv_MUL` to derive the MUL-primary mode
     pins (`main_mul = 1`, `main_div = 0`) required by
     `mul_bus_res1_eq_c_hi` (`Airs/Arith/BusRes1.lean:56`) for the
     hi-lane discharge of `h_byte_hi` on `equiv_MUL`. Same trust kind
@@ -847,7 +847,7 @@ the W-variant rows of `arith_table.pil` /
     32-bit DIVUW / REMUW), the arith_table lookup pins all four sign
     witnesses to 0, plus `sext = 0`, `m32 = 1`, `div = 1`.
 
-    Consumed by `equiv_DIVUW_from_trust` / `equiv_REMUW_from_trust`
+    Consumed by `equiv_DIVUW` / `equiv_REMUW`
     to discharge the mode + sign-witness pins (`h_na`/`h_nb`/`h_np`/
     `h_nr`/`h_sext`/`h_m32`/`h_div`) given the arith-side opcode
     literal (which is itself a consequence of the OpBus permutation
@@ -867,7 +867,7 @@ axiom arith_table_op_div_rem_unsigned_w_mode_pin
     mode triple is pinned here. (The `nr` column's relationship to
     `np` is covered by `arith_table_op_div_rem_signed_w_d_sign_pin`.)
 
-    Consumed by `equiv_DIVW_from_trust` / `equiv_REMW_from_trust`
+    Consumed by `equiv_DIVW` / `equiv_REMW`
     to discharge the mode pins. Same trust kind as
     `arith_table_op_div_rem_signed_mode_pin` (non-W sibling). -/
 axiom arith_table_op_div_rem_signed_w_mode_pin
@@ -912,7 +912,7 @@ axiom arith_table_op_mulhu_mode_pin
     `arith_table_data.rs::ARITH_TABLE` selects the high-product
     lane via `main_mul = 0` (so `secondary = 1 - main_mul - main_div = 1`).
 
-    Consumed by `equiv_MULHU_from_trust` to derive the secondary-mode
+    Consumed by `equiv_MULHU` to derive the secondary-mode
     pins (`main_mul = 0`, `main_div = 0`) required by
     `mulh_bus_res1_eq_d_hi` (`Airs/Arith/BusRes1.lean`) for the
     hi-lane discharge of `h_byte_hi`. Same trust kind as
@@ -1036,8 +1036,8 @@ narrower scope (ArithMul rows in place of ArithDiv rows). -/
     op = 179 / 181 whose flag-field bit encoding per
     `arith_table_helpers.rs:130-140` binds `na` to the MSB convention.
 
-    Consumed by `equiv_MULH_from_trust` (`Compliance/FromTrust/MulH.lean`)
-    and `equiv_MULHSU_from_trust` (`Compliance/FromTrust/MulHSU.lean`)
+    Consumed by `equiv_MULH` (`Compliance/Wrappers/MulH.lean`)
+    and `equiv_MULHSU` (`Compliance/Wrappers/MulHSU.lean`)
     via `signed_packed_toInt_eq_of_read_xreg` to derive `h_rs1_value` (the
     signed integer-form lane equation for rs1). -/
 axiom arith_mul_na_eq_msb_of_a
@@ -1064,7 +1064,7 @@ axiom arith_mul_na_eq_msb_of_a
     `nb = b3` MSB.
 
     Companion to `arith_mul_na_eq_msb_of_a`; consumed by
-    `equiv_MULH_from_trust` via `signed_packed_toInt_eq_of_read_xreg`
+    `equiv_MULH` via `signed_packed_toInt_eq_of_read_xreg`
     to derive `h_rs2_value`. MULHSU does NOT consume this — its `nb = 0`
     pin comes from `arith_table_op_mulhsu_mode_pin` (rs2 unsigned). -/
 axiom arith_mul_nb_eq_msb_of_b

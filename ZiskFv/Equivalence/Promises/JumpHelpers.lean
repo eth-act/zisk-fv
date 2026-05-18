@@ -19,7 +19,7 @@ subset constraint.
 
 The helper internally fires `transpile_<OP>` (class #1) to derive the
 routing pins, then packs them with the subset hypothesis. Extracted
-from the per-opcode `Compliance/FromTrust/<Op>.lean` wrappers.
+from the per-opcode `Compliance/Wrappers/<Op>.lean` wrappers.
 -/
 
 namespace ZiskFv.Equivalence.Promises

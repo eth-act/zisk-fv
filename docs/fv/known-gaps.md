@@ -4,8 +4,8 @@
 > gap surveyed below is CLOSED by the uber theorem
 > `ZiskFv.Compliance.zisk_riscv_compliant_program_bus`
 > (Step 4) and the V3 trust gates (Step 5). All 63 RV64IM opcodes
-> are now covered by `equiv_<OP>_from_trust` wrappers under
-> `ZiskFv/Compliance/FromTrust/<Op>.lean`, which discharge the promise hypotheses from
+> are now covered by `equiv_<OP>` wrappers under
+> `ZiskFv/Compliance/Wrappers/<Op>.lean`, which discharge the promise hypotheses from
 > the trust ledger; the global theorem dispatches the 35-arm
 > `OpEnvelope` sum type through those wrappers. The trust closure
 > of the global theorem is captured in
@@ -26,7 +26,7 @@
 > this doc was first written. The discharge is now a layered piece
 > of work tracked by Step 4 of
 > `/home/cody/.claude/plans/plan-to-completely-resolve-wild-lynx.md`:
-> per-opcode `equiv_<OP>_from_trust` wrappers (Layer 1) discharge
+> per-opcode `equiv_<OP>` wrappers (Layer 1) discharge
 > the promise hypotheses from the trust ledger; the
 > `Compliance.lean` global theorem (Layer 2) routes through those
 > wrappers via a 63-arm `OpEnvelope` match. The DIV wrapper at commit
@@ -256,8 +256,8 @@ closed; annotations below record the closing artefact.
      `Valid_Main` and the relevant provider AIRs from scratch.
 
    **DONE.** All three tiers' strategies are implemented as the
-   per-opcode `equiv_<OP>_from_trust` wrappers under
-   `ZiskFv/Compliance/FromTrust/<Op>.lean`; the OpBus
+   per-opcode `equiv_<OP>` wrappers under
+   `ZiskFv/Compliance/Wrappers/<Op>.lean`; the OpBus
    permutation axioms landed as
    `op_bus_perm_sound_{BinaryAdd,Binary,BinaryExtension}` in
    `ZiskFv/Airs/OperationBus/Bridge.lean` (class #4 of
@@ -291,7 +291,7 @@ closed; annotations below record the closing artefact.
    enforces the live `#print axioms` closure of the uber theorem
    matches `trust/baseline-axioms.txt` exactly) and the wrapper
    caller-burden ledger (V1 check #9 — diff-based audit of every
-   parameter binder on every `equiv_<OP>_from_trust` wrapper).
+   parameter binder on every `equiv_<OP>` wrapper).
    Together they catch every form of regression that a
    shape-based check would have caught, by a stronger mechanism:
    any silent shift of trust onto a caller-supplied hypothesis

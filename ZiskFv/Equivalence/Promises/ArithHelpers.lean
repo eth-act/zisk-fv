@@ -16,7 +16,7 @@ import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 # Arith-family (cross-AIR) wrapper helpers
 
 Per-AIR helper lemmas hoisted from the 13 Arith-family
-`Compliance/FromTrust/<Op>.lean` wrappers — 5 ArithMul (MUL, MULH,
+`Compliance/Wrappers/<Op>.lean` wrappers — 5 ArithMul (MUL, MULH,
 MULHU, MULHSU, MULW) + 8 ArithDiv (DIV, DIVU, DIVW, DIVUW, REM,
 REMU, REMW, REMUW). The repeated proof scaffolding broke into
 three reusable blocks:

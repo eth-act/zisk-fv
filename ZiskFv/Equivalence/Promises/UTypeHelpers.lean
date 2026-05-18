@@ -18,7 +18,7 @@ activation pin, the opcode pin, and the per-row constraint subset.
 The helper internally fires `transpile_<OP>` (class #1) to derive
 the `m32`, `set_pc`, `store_pc` routing pins, then packs them
 together with the subset hypothesis. Extracted from the per-opcode
-`Compliance/FromTrust/<Op>.lean` wrappers.
+`Compliance/Wrappers/<Op>.lean` wrappers.
 -/
 
 namespace ZiskFv.Equivalence.Promises

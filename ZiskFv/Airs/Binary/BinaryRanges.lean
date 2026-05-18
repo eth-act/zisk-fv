@@ -248,7 +248,7 @@ PIL citations:
 * `zisk/state-machines/binary/pil/binary.pil:156` — `proves_operation(op: b_op + 0x10 * mode32, …)`
 * `zisk/state-machines/binary/src/binary_table.rs` — BinaryTable assignment table
 
-Consumed by `equiv_OR_from_trust` (`Compliance/FromTrust/Or.lean`).
+Consumed by `equiv_OR` (`Compliance/Wrappers/Or.lean`).
 -/
 
 /-- **Binary table-pin: `b_op_or_sext = OP_OR` for OR-tagged rows.**
@@ -274,7 +274,7 @@ axiom binary_b_op_or_sext_eq_OP_OR (v : Valid_Binary C FGL FGL) (r : ℕ)
     PIL: `binary.pil:104` (`b_op_or_sext` linear def) +
     `binary.pil:131-148` (per-byte BinaryTable lookup restricting the
     `(b_op, mode32, c_is_signed)` triple to valid entries). Consumed by
-    `equiv_AND_from_trust` (`Compliance/FromTrust/And.lean`). -/
+    `equiv_AND` (`Compliance/Wrappers/And.lean`). -/
 axiom binary_b_op_or_sext_eq_OP_AND (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = 14) :
     (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND
@@ -289,7 +289,7 @@ axiom binary_b_op_or_sext_eq_OP_AND (v : Valid_Binary C FGL FGL) (r : ℕ)
     PIL: `binary.pil:104` (`b_op_or_sext` linear def) +
     `binary.pil:131-148` (per-byte BinaryTable lookup restricting the
     `(b_op, mode32, c_is_signed)` triple to valid entries). Consumed by
-    `equiv_XOR_from_trust` (`Compliance/FromTrust/Xor.lean`). -/
+    `equiv_XOR` (`Compliance/Wrappers/Xor.lean`). -/
 axiom binary_b_op_or_sext_eq_OP_XOR (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = 16) :
     (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR
@@ -333,7 +333,7 @@ PIL citations:
 * `zisk/state-machines/binary/pil/binary.pil:73,79` — `mode32` /
   `mode64 = 1 - mode32` for the byte-3 and byte-7 `pos_ind` pins.
 
-Used by `equiv_SUB_from_trust` etc. -/
+Used by `equiv_SUB` etc. -/
 
 /-- **Binary 6-field per-byte chain witness with `cin` / `pos_ind`
     exposed, parameterized by op-bus emission.**
@@ -391,10 +391,10 @@ Used by `equiv_SUB_from_trust` etc. -/
     * `zisk/state-machines/binary/pil/binary.pil:73,79` — `mode32`
       and `mode64 = 1 - mode32`.
 
-    Consumed by `equiv_SUB_from_trust` / `equiv_SUBW_from_trust` /
-    `equiv_ADDW_from_trust` / `equiv_ADDIW_from_trust` /
-    `equiv_SLT_from_trust` / `equiv_SLTU_from_trust` /
-    `equiv_SLTI_from_trust` / `equiv_SLTIU_from_trust`. -/
+    Consumed by `equiv_SUB` / `equiv_SUBW` /
+    `equiv_ADDW` / `equiv_ADDIW` /
+    `equiv_SLT` / `equiv_SLTU` /
+    `equiv_SLTI` / `equiv_SLTIU`. -/
 axiom binary_consumer_byte_match_chain_pin
     (v : Valid_Binary C FGL FGL) (r : ℕ) (op_emit : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = (op_emit : FGL)) :
@@ -538,7 +538,7 @@ position. -/
       result MSB; `OP_SEXT_00` rows produce `c = 0x00`, `OP_SEXT_FF`
       rows produce `c = 0xFF`.
 
-    Consumed by `equiv_SUBW_from_trust` / `equiv_ADDW_from_trust`. -/
+    Consumed by `equiv_SUBW` / `equiv_ADDW`. -/
 axiom binary_w_sext_choice_pin
     (v : Valid_Binary C FGL FGL) (r : ℕ) (op_emit : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = (op_emit : FGL))

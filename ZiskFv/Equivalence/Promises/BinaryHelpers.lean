@@ -12,7 +12,7 @@ import ZiskFv.Airs.Binary.BinaryPackedCorrect
 # Binary-family wrapper helpers
 
 Per-AIR helper lemmas hoisted from the 14 Binary-family
-`Compliance/FromTrust/<Op>.lean` wrappers (SUB, AND, OR, XOR, SLT,
+`Compliance/Wrappers/<Op>.lean` wrappers (SUB, AND, OR, XOR, SLT,
 SLTU, ANDI, ORI, XORI, SLTI, SLTIU, ADDW, SUBW, ADDIW). Each
 wrapper had ~30-200 lines of near-identical "AIR plumbing"
 discharging the chain-pin / mode-pin axiom output. These helpers

@@ -16,7 +16,7 @@ import ZiskFv.Airs.MemoryBus.MemAlignBridge
 Companions to `Equivalence/Promises/*` (per-shape promise bundles
 shipped in PR #34): these are smaller, opcode-shape-uniform bundles
 that absorb the remaining loose recurring binders on canonical
-`equiv_<OP>` theorems, `equiv_<OP>_from_trust` wrappers, and
+`equiv_<OP>` theorems, `equiv_<OP>` Compliance wrappers, and
 `OpEnvelope` arms.
 
 Each bundle is a thin record of already-existing fields — no derivation

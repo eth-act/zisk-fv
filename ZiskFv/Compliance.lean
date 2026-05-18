@@ -4,77 +4,77 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Main.OpcodeClassification
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
-import ZiskFv.Compliance.FromTrust.Lui
-import ZiskFv.Compliance.FromTrust.Auipc
-import ZiskFv.Compliance.FromTrust.Jal
-import ZiskFv.Compliance.FromTrust.Jalr
-import ZiskFv.Compliance.FromTrust.Fence
-import ZiskFv.Compliance.FromTrust.Beq
-import ZiskFv.Compliance.FromTrust.Bne
-import ZiskFv.Compliance.FromTrust.Blt
-import ZiskFv.Compliance.FromTrust.Bge
-import ZiskFv.Compliance.FromTrust.Bltu
-import ZiskFv.Compliance.FromTrust.Bgeu
-import ZiskFv.Compliance.FromTrust.Add
-import ZiskFv.Compliance.FromTrust.Addi
-import ZiskFv.Compliance.FromTrust.Addw
-import ZiskFv.Compliance.FromTrust.Subw
-import ZiskFv.Compliance.FromTrust.Addiw
-import ZiskFv.Compliance.FromTrust.Sub
-import ZiskFv.Compliance.FromTrust.And
-import ZiskFv.Compliance.FromTrust.Andi
-import ZiskFv.Compliance.FromTrust.Or
-import ZiskFv.Compliance.FromTrust.Ori
-import ZiskFv.Compliance.FromTrust.Xor
-import ZiskFv.Compliance.FromTrust.Xori
-import ZiskFv.Compliance.FromTrust.Slt
-import ZiskFv.Compliance.FromTrust.Sltu
-import ZiskFv.Compliance.FromTrust.Slti
-import ZiskFv.Compliance.FromTrust.Sltiu
-import ZiskFv.Compliance.FromTrust.Sll
-import ZiskFv.Compliance.FromTrust.Srl
-import ZiskFv.Compliance.FromTrust.Sra
-import ZiskFv.Compliance.FromTrust.Slli
-import ZiskFv.Compliance.FromTrust.Srli
-import ZiskFv.Compliance.FromTrust.Srai
-import ZiskFv.Compliance.FromTrust.Shift
-import ZiskFv.Compliance.FromTrust.ShiftLI
-import ZiskFv.Compliance.FromTrust.ShiftR
-import ZiskFv.Compliance.FromTrust.ShiftRLI
-import ZiskFv.Compliance.FromTrust.ShiftRA
-import ZiskFv.Compliance.FromTrust.ShiftRAI
-import ZiskFv.Compliance.FromTrust.Mul
-import ZiskFv.Compliance.FromTrust.MulH
-import ZiskFv.Compliance.FromTrust.MulHU
-import ZiskFv.Compliance.FromTrust.MulHSU
-import ZiskFv.Compliance.FromTrust.MulW
-import ZiskFv.Compliance.FromTrust.Div
-import ZiskFv.Compliance.FromTrust.Divu
-import ZiskFv.Compliance.FromTrust.Divw
-import ZiskFv.Compliance.FromTrust.Divuw
-import ZiskFv.Compliance.FromTrust.Rem
-import ZiskFv.Compliance.FromTrust.Remu
-import ZiskFv.Compliance.FromTrust.Remw
-import ZiskFv.Compliance.FromTrust.Remuw
-import ZiskFv.Compliance.FromTrust.Ld
-import ZiskFv.Compliance.FromTrust.Lbu
-import ZiskFv.Compliance.FromTrust.Lhu
-import ZiskFv.Compliance.FromTrust.Lwu
-import ZiskFv.Compliance.FromTrust.Lb
-import ZiskFv.Compliance.FromTrust.Lh
-import ZiskFv.Compliance.FromTrust.Lw
-import ZiskFv.Compliance.FromTrust.Sb
-import ZiskFv.Compliance.FromTrust.Sh
-import ZiskFv.Compliance.FromTrust.Sw
-import ZiskFv.Compliance.FromTrust.Sd
+import ZiskFv.Compliance.Wrappers.Lui
+import ZiskFv.Compliance.Wrappers.Auipc
+import ZiskFv.Compliance.Wrappers.Jal
+import ZiskFv.Compliance.Wrappers.Jalr
+import ZiskFv.Compliance.Wrappers.Fence
+import ZiskFv.Compliance.Wrappers.Beq
+import ZiskFv.Compliance.Wrappers.Bne
+import ZiskFv.Compliance.Wrappers.Blt
+import ZiskFv.Compliance.Wrappers.Bge
+import ZiskFv.Compliance.Wrappers.Bltu
+import ZiskFv.Compliance.Wrappers.Bgeu
+import ZiskFv.Compliance.Wrappers.Add
+import ZiskFv.Compliance.Wrappers.Addi
+import ZiskFv.Compliance.Wrappers.Addw
+import ZiskFv.Compliance.Wrappers.Subw
+import ZiskFv.Compliance.Wrappers.Addiw
+import ZiskFv.Compliance.Wrappers.Sub
+import ZiskFv.Compliance.Wrappers.And
+import ZiskFv.Compliance.Wrappers.Andi
+import ZiskFv.Compliance.Wrappers.Or
+import ZiskFv.Compliance.Wrappers.Ori
+import ZiskFv.Compliance.Wrappers.Xor
+import ZiskFv.Compliance.Wrappers.Xori
+import ZiskFv.Compliance.Wrappers.Slt
+import ZiskFv.Compliance.Wrappers.Sltu
+import ZiskFv.Compliance.Wrappers.Slti
+import ZiskFv.Compliance.Wrappers.Sltiu
+import ZiskFv.Compliance.Wrappers.Sll
+import ZiskFv.Compliance.Wrappers.Srl
+import ZiskFv.Compliance.Wrappers.Sra
+import ZiskFv.Compliance.Wrappers.Slli
+import ZiskFv.Compliance.Wrappers.Srli
+import ZiskFv.Compliance.Wrappers.Srai
+import ZiskFv.Compliance.Wrappers.Shift
+import ZiskFv.Compliance.Wrappers.ShiftLI
+import ZiskFv.Compliance.Wrappers.ShiftR
+import ZiskFv.Compliance.Wrappers.ShiftRLI
+import ZiskFv.Compliance.Wrappers.ShiftRA
+import ZiskFv.Compliance.Wrappers.ShiftRAI
+import ZiskFv.Compliance.Wrappers.Mul
+import ZiskFv.Compliance.Wrappers.MulH
+import ZiskFv.Compliance.Wrappers.MulHU
+import ZiskFv.Compliance.Wrappers.MulHSU
+import ZiskFv.Compliance.Wrappers.MulW
+import ZiskFv.Compliance.Wrappers.Div
+import ZiskFv.Compliance.Wrappers.Divu
+import ZiskFv.Compliance.Wrappers.Divw
+import ZiskFv.Compliance.Wrappers.Divuw
+import ZiskFv.Compliance.Wrappers.Rem
+import ZiskFv.Compliance.Wrappers.Remu
+import ZiskFv.Compliance.Wrappers.Remw
+import ZiskFv.Compliance.Wrappers.Remuw
+import ZiskFv.Compliance.Wrappers.Ld
+import ZiskFv.Compliance.Wrappers.Lbu
+import ZiskFv.Compliance.Wrappers.Lhu
+import ZiskFv.Compliance.Wrappers.Lwu
+import ZiskFv.Compliance.Wrappers.Lb
+import ZiskFv.Compliance.Wrappers.Lh
+import ZiskFv.Compliance.Wrappers.Lw
+import ZiskFv.Compliance.Wrappers.Sb
+import ZiskFv.Compliance.Wrappers.Sh
+import ZiskFv.Compliance.Wrappers.Sw
+import ZiskFv.Compliance.Wrappers.Sd
 
 /-!
 # Compliance.lean — Global compliance theorem for RV64IM
 
 This file lands `zisk_riscv_compliant_program_bus`, the global theorem
 covering all 63 RV64IM opcodes. Each `OpEnvelope` arm routes to the
-corresponding `equiv_<OP>_from_trust` wrapper under
-`Compliance/FromTrust/`.
+corresponding `equiv_<OP>` wrapper under
+`Compliance/Wrappers/`.
 
 ## Opcode bucketing by AIR shape
 
@@ -111,7 +111,7 @@ values per arm.
 ## Trust footprint
 
 Zero new axioms in this file. The trust footprint is exactly the
-union of the 63 `equiv_<OP>_from_trust` wrappers' closures against
+union of the 63 `equiv_<OP>` wrappers' closures against
 the project's trust ledger.
 -/
 
@@ -250,7 +250,7 @@ theorem decode_main_row_correct
 /-! ## The `OpEnvelope` sum type
 
 Bundles, per Zisk op-kind, the inputs the corresponding
-`equiv_<OP>_from_trust` wrapper requires beyond `(state, m, r_main)`.
+`equiv_<OP>` wrapper requires beyond `(state, m, r_main)`.
 Each arm's signature is verbatim from its wrapper.
 -/
 
@@ -258,7 +258,7 @@ set_option maxHeartbeats 1000000 in
 /-- Per-op input bundle.
 
     Each constructor's parameter list is exactly the corresponding
-    `equiv_<OP>_from_trust` wrapper's parameter list, minus the shared
+    `equiv_<OP>` wrapper's parameter list, minus the shared
     `(state, m, r_main)`. -/
 inductive OpEnvelope
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -1708,13 +1708,13 @@ end OpEnvelope
 /-! ## The global theorem
 
 For each constructor of `OpEnvelope`, route to the corresponding
-`equiv_<OP>_from_trust` wrapper. The proof is one `match` arm per
+`equiv_<OP>` wrapper. The proof is one `match` arm per
 op, delegating verbatim. -/
 
 /-- **Global compliance theorem.**
 
     Given an op-envelope packaging all the inputs and hypotheses the
-    corresponding `equiv_<OP>_from_trust` wrapper requires, the
+    corresponding `equiv_<OP>` wrapper requires, the
     envelope's declared conclusion (`exec_eq`) holds.
 
     The conclusion's shape is determined by the envelope's
@@ -1731,37 +1731,37 @@ theorem zisk_riscv_compliant_program_bus
   cases env with
   | beq beq_input ops promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_BEQ_from_trust state beq_input ops promises
+    exact equiv_BEQ state beq_input ops promises
   | bne bne_input ops promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_BNE_from_trust state bne_input ops promises
+    exact equiv_BNE state bne_input ops promises
   | blt blt_input ops promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_BLT_from_trust state blt_input ops promises
+    exact equiv_BLT state blt_input ops promises
   | bge bge_input ops promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_BGE_from_trust state bge_input ops promises
+    exact equiv_BGE state bge_input ops promises
   | bltu bltu_input ops promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_BLTU_from_trust state bltu_input ops promises
+    exact equiv_BLTU state bltu_input ops promises
   | bgeu bgeu_input ops promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_BGEU_from_trust state bgeu_input ops promises
+    exact equiv_BGEU state bgeu_input ops promises
   | fence fence_input fm pred succ rs rd exec_row
           pins promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_FENCE_from_trust state fence_input fm pred succ rs rd m r_main
+    exact equiv_FENCE state fence_input fm pred succ rs rd m r_main
       exec_row pins promises
   | lui lui_input imm rd next_pc exec_row e_rd
         pins h_lui_subset promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LUI_from_trust state lui_input imm rd m r_main next_pc
+    exact equiv_LUI state lui_input imm rd m r_main next_pc
       exec_row e_rd pins h_lui_subset promises
   | auipc auipc_input imm rd exec_row e_rd nextPC_val next_pc
           pins h_auipc_subset
           promises h_no_wrap h_lo_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_AUIPC_from_trust state auipc_input imm rd exec_row e_rd nextPC_val
+    exact equiv_AUIPC state auipc_input imm rd exec_row e_rd nextPC_val
       m r_main next_pc pins h_auipc_subset
       promises h_no_wrap h_lo_bound h_pc_offset_lt_2_32
   | jal jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val
@@ -1769,7 +1769,7 @@ theorem zisk_riscv_compliant_program_bus
         promises h_input_imm h_not_throws
         h_pc_bound h_lo_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_JAL_from_trust state jal_input imm rd misa_val m r_main next_pc
+    exact equiv_JAL state jal_input imm rd misa_val m r_main next_pc
       exec_row e_rd nextPC_val pins h_jal_subset
       promises h_input_imm h_not_throws
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
@@ -1778,102 +1778,102 @@ theorem zisk_riscv_compliant_program_bus
          promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
          h_pc_bound h_lo_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_JALR_from_trust state jalr_input imm rs1 rd misa_val mseccfg
+    exact equiv_JALR state jalr_input imm rs1 rd misa_val mseccfg
       exec_row e_rd nextPC_val m r_main next_pc
       pins h_jalr_subset
       promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
   | add add_input r1 r2 rd badd bus pins h_main_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_ADD_from_trust state add_input r1 r2 rd m badd r_main bus pins
+    exact equiv_ADD state add_input r1 r2 rd m badd r_main bus pins
       h_main_subset h_lane_rd promises
   | addi addi_input r1 rd imm badd bus pins h_main_subset h_addi_subset h_lane_rd
          promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_ADDI_from_trust state addi_input r1 rd imm m badd r_main bus pins
+    exact equiv_ADDI state addi_input r1 rd imm m badd r_main bus pins
       h_main_subset h_addi_subset h_lane_rd
       promises
   | addw addw_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_ADDW_from_trust state addw_input r1 r2 rd m v r_main bus pins
+    exact equiv_ADDW state addw_input r1 r2 rd m v r_main bus pins
       h_lane_rd promises
   | subw subw_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SUBW_from_trust state subw_input r1 r2 rd m v r_main bus pins
+    exact equiv_SUBW state subw_input r1 r2 rd m v r_main bus pins
       h_lane_rd promises
   | addiw addiw_input r1 rd imm v bus pins h_addiw_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_ADDIW_from_trust state addiw_input r1 rd imm m v r_main bus pins
+    exact equiv_ADDIW state addiw_input r1 rd imm m v r_main bus pins
       h_addiw_subset h_lane_rd promises
   | sub sub_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SUB_from_trust state sub_input r1 r2 rd m v r_main bus pins
+    exact equiv_SUB state sub_input r1 r2 rd m v r_main bus pins
       h_lane_rd promises
   | and and_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_AND_from_trust state and_input r1 r2 rd m v r_main bus pins
+    exact equiv_AND state and_input r1 r2 rd m v r_main bus pins
       h_lane_rd promises
   | or or_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_OR_from_trust state or_input r1 r2 rd m v r_main bus pins
+    exact equiv_OR state or_input r1 r2 rd m v r_main bus pins
       h_lane_rd promises
   | xor xor_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_XOR_from_trust state xor_input r1 r2 rd m v r_main bus pins
+    exact equiv_XOR state xor_input r1 r2 rd m v r_main bus pins
       h_lane_rd promises
   | slt slt_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SLT_from_trust state slt_input r1 r2 rd m v r_main bus pins
+    exact equiv_SLT state slt_input r1 r2 rd m v r_main bus pins
       h_lane_rd promises
   | sltu sltu_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SLTU_from_trust state sltu_input r1 r2 rd m v r_main bus pins
+    exact equiv_SLTU state sltu_input r1 r2 rd m v r_main bus pins
       h_lane_rd promises
   | andi andi_input r1 rd imm v bus pins h_andi_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_ANDI_from_trust state andi_input r1 rd imm m v r_main bus pins
+    exact equiv_ANDI state andi_input r1 rd imm m v r_main bus pins
       h_andi_subset h_lane_rd promises
   | ori ori_input r1 rd imm v bus pins h_ori_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_ORI_from_trust state ori_input r1 rd imm m v r_main bus pins
+    exact equiv_ORI state ori_input r1 rd imm m v r_main bus pins
       h_ori_subset h_lane_rd promises
   | xori xori_input r1 rd imm v bus pins h_xori_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_XORI_from_trust state xori_input r1 rd imm m v r_main bus pins
+    exact equiv_XORI state xori_input r1 rd imm m v r_main bus pins
       h_xori_subset h_lane_rd promises
   | slti slti_input r1 rd imm v bus pins h_slti_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SLTI_from_trust state slti_input r1 rd imm m v r_main bus pins
+    exact equiv_SLTI state slti_input r1 rd imm m v r_main bus pins
       h_slti_subset h_lane_rd promises
   | sltiu sltiu_input r1 rd imm v bus pins h_sltiu_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SLTIU_from_trust state sltiu_input r1 rd imm m v r_main bus pins
+    exact equiv_SLTIU state sltiu_input r1 rd imm m v r_main bus pins
       h_sltiu_subset h_lane_rd promises
   | sll sll_input r1 r2 rd v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SLL_from_trust state sll_input r1 r2 rd m v r_main bus promises pins h_lane_rd
+    exact equiv_SLL state sll_input r1 r2 rd m v r_main bus promises pins h_lane_rd
   | srl srl_input r1 r2 rd v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SRL_from_trust state srl_input r1 r2 rd m v r_main bus promises pins h_lane_rd
+    exact equiv_SRL state srl_input r1 r2 rd m v r_main bus promises pins h_lane_rd
   | sra sra_input r1 r2 rd v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SRA_from_trust state sra_input r1 r2 rd m v r_main bus promises pins h_lane_rd
+    exact equiv_SRA state sra_input r1 r2 rd m v r_main bus promises pins h_lane_rd
   | slli slli_input r1 rd shamt v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SLLI_from_trust state slli_input r1 rd shamt m v r_main bus promises pins h_lane_rd
+    exact equiv_SLLI state slli_input r1 rd shamt m v r_main bus promises pins h_lane_rd
   | srli srli_input r1 rd shamt v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SRLI_from_trust state srli_input r1 rd shamt m v r_main bus promises pins h_lane_rd
+    exact equiv_SRLI state srli_input r1 rd shamt m v r_main bus promises pins h_lane_rd
   | srai srai_input r1 rd shamt v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SRAI_from_trust state srai_input r1 rd shamt m v r_main bus promises pins h_lane_rd
+    exact equiv_SRAI state srai_input r1 rd shamt m v r_main bus promises pins h_lane_rd
   | sllw sllw_input r1 r2 rd v bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SLLW_from_trust state sllw_input r1 r2 rd m v r_main bus
+    exact equiv_SLLW state sllw_input r1 r2 rd m v r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -1884,7 +1884,7 @@ theorem zisk_riscv_compliant_program_bus
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SRLW_from_trust state srlw_input r1 r2 rd m v r_main bus
+    exact equiv_SRLW state srlw_input r1 r2 rd m v r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
@@ -1895,70 +1895,70 @@ theorem zisk_riscv_compliant_program_bus
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SRAW_from_trust state sraw_input r1 r2 rd m v r_main bus
+    exact equiv_SRAW state sraw_input r1 r2 rd m v r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
       pins h_lane_rd
   | slliw slliw_input r1 rd v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SLLIW_from_trust state slliw_input r1 rd m v r_main bus promises pins h_lane_rd
+    exact equiv_SLLIW state slliw_input r1 rd m v r_main bus promises pins h_lane_rd
   | srliw srliw_input r1 rd v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SRLIW_from_trust state srliw_input r1 rd m v r_main bus promises pins h_lane_rd
+    exact equiv_SRLIW state srliw_input r1 rd m v r_main bus promises pins h_lane_rd
   | sraiw sraiw_input r1 rd v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SRAIW_from_trust state sraiw_input r1 rd m v r_main bus promises pins h_lane_rd
+    exact equiv_SRAIW state sraiw_input r1 rd m v r_main bus promises pins h_lane_rd
   | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SB_from_trust state sb_input regs
+    exact equiv_SB state sb_input regs
       m r_main bus pins h_main_ind_width h_opcode_assumptions promises
   | sh sh_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SH_from_trust state sh_input regs
+    exact equiv_SH state sh_input regs
       m r_main bus pins h_main_ind_width h_opcode_assumptions promises
   | sw sw_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SW_from_trust state sw_input regs
+    exact equiv_SW state sw_input regs
       m r_main bus pins h_main_ind_width h_opcode_assumptions promises
   | sd sd_input regs bus pins h_opcode_assumptions promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_SD_from_trust state sd_input regs
+    exact equiv_SD state sd_input regs
       m r_main bus pins h_opcode_assumptions promises
   | ld ld_input regs mem bus pins promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LD_from_trust state ld_input regs
+    exact equiv_LD state ld_input regs
       m mem r_main bus pins promises
   | lbu lbu_input regs mem align bus pins h_width promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LBU_from_trust state lbu_input regs
+    exact equiv_LBU state lbu_input regs
       m mem r_main align bus pins h_width promises
   | lhu lhu_input regs mem align bus pins h_width promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LHU_from_trust state lhu_input regs
+    exact equiv_LHU state lhu_input regs
       m mem r_main align bus pins h_width promises
   | lwu lwu_input regs mem align bus pins h_width promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LWU_from_trust state lwu_input regs
+    exact equiv_LWU state lwu_input regs
       m mem r_main align bus pins h_width promises
   | lb lb_input regs mem v bus pins promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LB_from_trust state lb_input regs
+    exact equiv_LB state lb_input regs
       m mem r_main v bus pins promises
   | lh lh_input regs mem v bus pins promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LH_from_trust state lh_input regs
+    exact equiv_LH state lh_input regs
       m mem r_main v bus pins promises
   | lw lw_input regs mem v bus pins promises =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_LW_from_trust state lw_input regs
+    exact equiv_LW state lw_input regs
       m mem r_main v bus pins promises
   | mul mul_input r1 r2 rd srs1 srs2 bus v r_a
         pins h_match_primary
         promises
         bounds h_row_constraints =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_MUL_from_trust state mul_input r1 r2 rd srs1 srs2
+    exact equiv_MUL state mul_input r1 r2 rd srs1 srs2
       bus m r_main v r_a
       pins h_match_primary
       promises
@@ -1968,7 +1968,7 @@ theorem zisk_riscv_compliant_program_bus
          promises
          h_row_constraints =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_MULH_from_trust state mulh_input r1 r2 rd
+    exact equiv_MULH state mulh_input r1 r2 rd
       bus m r_main v r_a
       pins h_match_secondary
       promises
@@ -1978,7 +1978,7 @@ theorem zisk_riscv_compliant_program_bus
           promises
           bounds h_row_constraints =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_MULHU_from_trust state mulhu_input r1 r2 rd
+    exact equiv_MULHU state mulhu_input r1 r2 rd
       bus m r_main v r_a
       pins h_match_secondary
       promises
@@ -1988,7 +1988,7 @@ theorem zisk_riscv_compliant_program_bus
            promises
            h_row_constraints =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_MULHSU_from_trust state mulhsu_input r1 r2 rd
+    exact equiv_MULHSU state mulhsu_input r1 r2 rd
       bus m r_main v r_a
       pins h_match_secondary
       promises
@@ -1998,7 +1998,7 @@ theorem zisk_riscv_compliant_program_bus
          promises
          h_row_constraints h_sext_choice h_rs1_value h_rs2_value =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_MULW_from_trust state mulw_input r1 r2 rd
+    exact equiv_MULW state mulw_input r1 r2 rd
       bus m r_main v r_a
       pins h_match_primary
       promises
@@ -2009,7 +2009,7 @@ theorem zisk_riscv_compliant_program_bus
         h_op2_ne h_no_overflow
         h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_DIV_from_trust state div_input r1 r2 rd bus
+    exact equiv_DIV state div_input r1 r2 rd bus
       m r_main v r_a pins h_match_primary
       promises
       h_op2_ne h_no_overflow
@@ -2019,7 +2019,7 @@ theorem zisk_riscv_compliant_program_bus
          promises
          bounds h_row_constraints h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_DIVU_from_trust state divu_input r1 r2 rd bus
+    exact equiv_DIVU state divu_input r1 r2 rd bus
       m r_main v r_a pins h_match_primary
       promises
       bounds h_row_constraints h_op2_ne
@@ -2029,7 +2029,7 @@ theorem zisk_riscv_compliant_program_bus
          h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
          h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_DIVW_from_trust state divw_input r1 r2 rd bus
+    exact equiv_DIVW state divw_input r1 r2 rd bus
       m r_main v r_a pins h_match_primary
       promises
       h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
@@ -2039,7 +2039,7 @@ theorem zisk_riscv_compliant_program_bus
           promises
           h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_DIVUW_from_trust state divuw_input r1 r2 rd bus
+    exact equiv_DIVUW state divuw_input r1 r2 rd bus
       m r_main v r_a pins h_match_primary
       promises
       h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
@@ -2049,7 +2049,7 @@ theorem zisk_riscv_compliant_program_bus
         h_op2_ne h_no_overflow
         h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_REM_from_trust state rem_input r1 r2 rd bus
+    exact equiv_REM state rem_input r1 r2 rd bus
       m r_main v r_a pins h_match_secondary
       promises
       h_op2_ne h_no_overflow
@@ -2059,7 +2059,7 @@ theorem zisk_riscv_compliant_program_bus
          promises
          bounds h_row_constraints h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_REMU_from_trust state remu_input r1 r2 rd bus
+    exact equiv_REMU state remu_input r1 r2 rd bus
       m r_main v r_a pins h_match_secondary
       promises
       bounds h_row_constraints h_op2_ne
@@ -2069,7 +2069,7 @@ theorem zisk_riscv_compliant_program_bus
          h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
          h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_REMW_from_trust state remw_input r1 r2 rd bus
+    exact equiv_REMW state remw_input r1 r2 rd bus
       m r_main v r_a pins h_match_secondary
       promises
       h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
@@ -2079,7 +2079,7 @@ theorem zisk_riscv_compliant_program_bus
           promises
           h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
     simp only [OpEnvelope.exec_eq]
-    exact equiv_REMUW_from_trust state remuw_input r1 r2 rd bus
+    exact equiv_REMUW state remuw_input r1 r2 rd bus
       m r_main v r_a pins h_match_secondary
       promises
       h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne

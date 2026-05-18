@@ -24,8 +24,8 @@ by deriving their cross-entry rd-value byte equations from circuit
 witnesses in `ZiskCircuit/LoadDerivation.lean` and
 `ZiskCircuit/SextLoadBridge.lean`).
 
-Each canonical theorem is wrapped by a `equiv_<OP>_from_trust`
-theorem in `ZiskFv/Compliance/FromTrust/<Op>.lean`, which discharges
+Each canonical theorem is wrapped by a `ZiskFv.Compliance.equiv_<OP>`
+theorem in `ZiskFv/Compliance/Wrappers/<Op>.lean`, which discharges
 the promise hypotheses from the trust ledger; the global theorem
 chains those wrappers via `OpEnvelope`.
 
@@ -40,6 +40,6 @@ chains those wrappers via `OpEnvelope`.
   signed and unsigned, sail-bridge.
 
 To start auditing one opcode, read its `<Op>.lean` here, the matching
-`FromTrust/<Op>.lean` in `Compliance/`, and the relevant `ZiskCircuit/<Op>.lean`
+`Wrappers/<Op>.lean` in `Compliance/`, and the relevant `ZiskCircuit/<Op>.lean`
 file for the circuit side. The `<Op>` Sail-side bridge is in
 `SailSpec/<op>.lean` (lowercase).
