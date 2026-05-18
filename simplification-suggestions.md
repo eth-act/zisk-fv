@@ -123,13 +123,19 @@ The helper modules shipped in PR #36 (`BinaryHelpers`, `BinaryExtensionHelpers`,
 
 Helpers were the cheapest local fix that didn't require touching axioms or canonicals. The smell is real and points at #2 and #5 as the *actually* right answer. The reason we shipped helpers instead is that the bigger fixes touch the trust-protected surface (axioms) or invert the API of every canonical theorem.
 
-### Suggestion 7: collapse per-opcode wrappers into per-shape wrappers
+### Suggestion 7: collapse per-opcode wrappers into per-shape wrappers — *likely deprecated*
 
-Promoted from suggestion #3's "lower-friction" option. Replace the 63 `equiv_<OP>_from_trust` wrappers with ~6 per-shape wrappers (`equiv_binary_from_trust`, `equiv_binary_extension_from_trust`, `equiv_arith_mul_from_trust`, etc.). Each takes an opcode parameter (or typeclass instance) and discharges the shape's AIR plumbing once. The helper modules become the body of the per-shape wrapper.
+Originally promoted from suggestion #3's "lower-friction" option. Replace the 63 `equiv_<OP>_from_trust` wrappers with ~6 per-shape wrappers (`equiv_binary_from_trust`, `equiv_binary_extension_from_trust`, `equiv_arith_mul_from_trust`, etc.). Each takes an opcode parameter (or typeclass instance) and discharges the shape's AIR plumbing once.
 
-This is the natural endpoint of the bundling + hoisting sequence. The wrappers we just refactored ARE the call sites the helpers exist for; collapsing them removes the redundancy structurally rather than papering over it with helpers.
+**Status (post-PR #36):** *likely deprecated*. Walking through the actual opcode-to-AIR mapping shows the groups are awkward in practice:
 
-Estimated impact: removes ~50 wrapper files; collapses `Compliance/FromTrust/` to ~6 files totaling ~1500 lines. The dispatch theorem `zisk_riscv_compliant_program_bus` changes from a 63-arm match to a per-shape dispatch (~6-12 arms calling each shape's wrapper). Trust-gate impact: changes the wrapper caller-burden ledger entirely (every row goes away or merges).
+- **Genuinely natural groups** are already collapsed via PR #34/#36 helpers: stores, branches, UType, jumps, Mem loads, ArithMul, ArithDiv, BinaryExtension shifts. Bodies already share code via helper modules.
+- **Awkward groups** would result from forcing the collapse: "Binary" combining 14 RType+IType+RTypeW+ADDIW variants (different instruction constructors, no real body unification — just dispatch); "ControlFlow" combining branches+UType+jumps+fence (nothing structurally in common). "Mem" combining loads+stores (opposite bus directions).
+- **Stragglers** would force ugly choices: ADD/ADDI (different validator), LB/LH/LW (LOADS using BinaryExtension), FENCE (one-line case in a junk drawer).
+
+Collapsing 14 wrapper *files* into 1 wrapper *theorem* with 14 case-arms saves ~240 lines of import/namespace boilerplate but doesn't eliminate any real complexity — per-opcode bodies still exist, just rehomed.
+
+**Reframing:** the per-shape helpers shipped in PR #36 already ARE the shape abstraction at the right granularity. "Per-shape wrappers" is a presentation re-org, not a structural improvement. Revisit only if a different motivation appears (e.g., wanting one dispatch entry point per AIR for downstream tooling).
 
 ### Suggestion 8: tighten trust-ledger axiom APIs
 
@@ -138,7 +144,21 @@ Make axioms return what callers need, not what's most-general-to-state. Concrete
 - `<AIR>_consumer_byte_match_chain_pin` return a structured record (`ChainPinResult` etc.) instead of a 29-line tuple.
 - `matches_entry` come with the projection lemmas baked in (or use a structured return type from the start).
 
-This is CODEOWNER-protected work since it touches `Airs/<AIR>/Bridge.lean` axiom signatures. Risk: must verify that the new axiom shape is logically equivalent to the old one (a soundness audit), and `baseline-axioms.txt` source-hashes change for every axiom touched.
+**Soundness safeguard:** every tightened axiom commits a bidirectional equivalence proof (`A_old ↔ A_new`) in the same PR. The kernel enforces logical equivalence — if `A_new` is silently stronger than `A_old`, one direction won't typecheck and `lake build` fails. Staged migration: add new alongside old, migrate callers one at a time, delete old after `lake exe trust-gate find-unused` reports zero callers.
+
+**Spike results (post-PR #36, on `op_bus_perm_sound_Binary`):**
+
+- ✓ Bidirectional equivalence proof typechecks (~60 lines).
+- ✓ New tightened axiom + migrated SUB wrapper builds cleanly.
+- ✓ Closure shows both axioms during migration (expected); after all 14 Binary wrappers migrate + old axiom deleted, closure replaces one name with another (no net change).
+- **Per-wrapper saving:** −1 line, eliminates one helper call.
+- **Across 14 Binary wrappers + delete the `binary_op_disj_of_eq` helper (~30 lines):** ~−44 lines.
+- **Cost of the new axiom + equivalence proof:** ~+90 lines in `Bridge.lean`.
+- **Net for this axiom:** roughly +46 lines, no clarity revolution. The equivalence proof is comparable in size to the helper it eliminates — complexity moves from `BinaryHelpers.lean` to `Bridge.lean` rather than disappearing.
+
+**Verdict:** **set aside as a blanket policy.** Worth pursuing only on a per-axiom basis where the existing return type is a **deeply-nested tuple or disjunction** (the helper exists purely to give structure to unstructured output, and a `structure`-typed return needs no equivalence proof — the structure IS the new return type).
+
+Best remaining candidate: `binary_consumer_byte_match_chain_pin` returns a 70-line nested ∃ tuple; the `binary_chain_pin_obtain_64` helper (~50 lines) becomes unnecessary if the axiom returns a structured record. Other perm-sound axioms (BinaryExtension, ArithMul, ArithDiv) follow the same wash-trade pattern as the Binary spike.
 
 ## Caveats on the trust gate
 
