@@ -71,6 +71,8 @@ and the V2 binder walker (`whnfR`) sees through them. -/
 
 /-- Upper bound for `bits(1)` (boolean) values: `2^1 = 2`. -/
 abbrev U1_max : ℕ := 2 ^ 1
+/-- Upper bound for `bits(4)` values: `2^4 = 16`. -/
+abbrev U4_max : ℕ := 2 ^ 4
 /-- Upper bound for `bits(8)` values: `2^8 = 256`. -/
 abbrev U8_max : ℕ := 2 ^ 8
 /-- Upper bound for `bits(16)` values: `2^16 = 65536`. -/

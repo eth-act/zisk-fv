@@ -3,6 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Main.Main
+import ZiskFv.Channels.RangeBusSoundness
 
 /-!
 # Main AIR — universal column-range theorems
@@ -44,14 +45,21 @@ bus (same scope as `bin_table_consumer_wf`,
 namespace ZiskFv.Airs.Main
 
 open Goldilocks
+open ZiskFv.Channels.RangeBusSoundness
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Main range-check soundness.** Given the row-level
+/-- **Main range-check soundness (derived).** Given the row-level
     `lookup_assumes(RANGE_BUS_ID, …)` interactions induced by Main's
     `bits(N)` column annotations, every row's witness cells satisfy
     their declared bit ranges. This delivers the universal-over-rows
     bounds the per-shape discharge bridges depend on.
+
+    Previously an axiom; now derived from the consolidated
+    `range_bus_sound` axiom in
+    `ZiskFv/Channels/RangeBusSoundness.lean` via one application per
+    column. The cryptographic content is identical — only the
+    location of the axiom moved.
 
     PIL citations:
     * `bits(32) a[RC]` (`zisk/state-machines/main/pil/main.pil:94`)
@@ -59,21 +67,27 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     * `bits(32) c[RC]` (`main.pil:96`)
     * `bits(32) pc` (`main.pil:98`)
     * `bits(8) op` (`main.pil:136`)
-    * `bits(4) ind_width` (`main.pil:131`)
-
-    Project-trusted at the same scope as `bin_table_consumer_wf`
-    (`Airs/BinaryTable.lean:281`) — lookup-argument soundness on the
-    standard range-checker bus, scoped to Main's contributions. -/
-axiom main_columns_in_range (m : Valid_Main C FGL FGL) (r : ℕ) :
-    (m.a_0 r).val < 4294967296
-  ∧ (m.a_1 r).val < 4294967296
-  ∧ (m.b_0 r).val < 4294967296
-  ∧ (m.b_1 r).val < 4294967296
-  ∧ (m.c_0 r).val < 4294967296
-  ∧ (m.c_1 r).val < 4294967296
-  ∧ (m.pc r).val < 4294967296
-  ∧ (m.op r).val < 256
-  ∧ (m.ind_width r).val < 16
+    * `bits(4) ind_width` (`main.pil:131`) -/
+theorem main_columns_in_range (m : Valid_Main C FGL FGL) (r : ℕ) :
+    (m.a_0 r).val < U32_max
+  ∧ (m.a_1 r).val < U32_max
+  ∧ (m.b_0 r).val < U32_max
+  ∧ (m.b_1 r).val < U32_max
+  ∧ (m.c_0 r).val < U32_max
+  ∧ (m.c_1 r).val < U32_max
+  ∧ (m.pc r).val < U32_max
+  ∧ (m.op r).val < U8_max
+  ∧ (m.ind_width r).val < U4_max := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact range_bus_sound m (fun m r => m.a_0 r) 32 trivial r
+  · exact range_bus_sound m (fun m r => m.a_1 r) 32 trivial r
+  · exact range_bus_sound m (fun m r => m.b_0 r) 32 trivial r
+  · exact range_bus_sound m (fun m r => m.b_1 r) 32 trivial r
+  · exact range_bus_sound m (fun m r => m.c_0 r) 32 trivial r
+  · exact range_bus_sound m (fun m r => m.c_1 r) 32 trivial r
+  · exact range_bus_sound m (fun m r => m.pc r) 32 trivial r
+  · exact range_bus_sound m (fun m r => m.op r) 8 trivial r
+  · exact range_bus_sound m (fun m r => m.ind_width r) 4 trivial r
 
 /-! ## Specialized accessors
 
@@ -83,47 +97,47 @@ destructuring the tuple. -/
 
 /-- `m.a_0 r < 2^32`. -/
 lemma main_a_lo_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
-    (m.a_0 r).val < 4294967296 :=
+    (m.a_0 r).val < U32_max :=
   (main_columns_in_range m r).1
 
 /-- `m.a_1 r < 2^32`. -/
 lemma main_a_hi_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
-    (m.a_1 r).val < 4294967296 :=
+    (m.a_1 r).val < U32_max :=
   (main_columns_in_range m r).2.1
 
 /-- `m.b_0 r < 2^32`. -/
 lemma main_b_lo_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
-    (m.b_0 r).val < 4294967296 :=
+    (m.b_0 r).val < U32_max :=
   (main_columns_in_range m r).2.2.1
 
 /-- `m.b_1 r < 2^32`. -/
 lemma main_b_hi_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
-    (m.b_1 r).val < 4294967296 :=
+    (m.b_1 r).val < U32_max :=
   (main_columns_in_range m r).2.2.2.1
 
 /-- `m.c_0 r < 2^32`. -/
 lemma main_c_lo_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
-    (m.c_0 r).val < 4294967296 :=
+    (m.c_0 r).val < U32_max :=
   (main_columns_in_range m r).2.2.2.2.1
 
 /-- `m.c_1 r < 2^32`. -/
 lemma main_c_hi_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
-    (m.c_1 r).val < 4294967296 :=
+    (m.c_1 r).val < U32_max :=
   (main_columns_in_range m r).2.2.2.2.2.1
 
 /-- `m.pc r < 2^32`. -/
 lemma main_pc_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
-    (m.pc r).val < 4294967296 :=
+    (m.pc r).val < U32_max :=
   (main_columns_in_range m r).2.2.2.2.2.2.1
 
 /-- `m.op r < 2^8`. -/
 lemma main_op_lt_2_8 (m : Valid_Main C FGL FGL) (r : ℕ) :
-    (m.op r).val < 256 :=
+    (m.op r).val < U8_max :=
   (main_columns_in_range m r).2.2.2.2.2.2.2.1
 
 /-- `m.ind_width r < 2^4`. -/
 lemma main_ind_width_lt_2_4 (m : Valid_Main C FGL FGL) (r : ℕ) :
-    (m.ind_width r).val < 16 :=
+    (m.ind_width r).val < U4_max :=
   (main_columns_in_range m r).2.2.2.2.2.2.2.2
 
 end ZiskFv.Airs.Main

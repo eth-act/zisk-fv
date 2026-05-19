@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 116
+# Total entries: 115
 #
 39b9f47eebdda4ca  ZiskFv/Airs/Arith/Ranges.lean:44  axiom     arith_mul_columns_in_range
 c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:56  axiom     arith_div_columns_in_range
@@ -49,7 +49,6 @@ b26ddaaa78c5277f  ZiskFv/Airs/Binary/BinaryRanges.lean:198  axiom     binary_car
 316ca8f85d288192  ZiskFv/Airs/Binary/BinaryRanges.lean:399  axiom     binary_consumer_byte_match_chain_pin
 b206ab1a686ceb3f  ZiskFv/Airs/Binary/BinaryRanges.lean:543  axiom     binary_w_sext_choice_pin
 3fbe8ea0cae828af  ZiskFv/Airs/Binary/BinaryRanges.lean:569  axiom     binary_w_mode_carry_7_zero
-219730a67e1235f3  ZiskFv/Airs/Main/Ranges.lean:67  axiom     main_columns_in_range
 e6a596bef7ff88cb  ZiskFv/Airs/MemoryBus/EntryRanges.lean:52  axiom     memory_bus_entry_byte_range_perm_sound
 8c04bbb28c410ebd  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:135  axiom     memalign_load_perm_sound
 ddbca43a3ae7757a  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:168  axiom     mem_align_rom_subdoubleword_load_value_1_zero
@@ -63,7 +62,7 @@ c0321bacfa0a0871  ZiskFv/Airs/MemoryBus/MemBridge.lean:724  axiom     main_store
 09b2623540de2837  ZiskFv/Airs/OperationBus/Consolidated.lean:124  axiom     op_bus_permutation_sound
 7fccc882b9a79e6a  ZiskFv/Airs/Tables/BinaryExtensionTable.lean:262  axiom     bin_ext_table_consumer_wf
 4d9e296fb3ead091  ZiskFv/Airs/Tables/BinaryTable.lean:281  axiom     bin_table_consumer_wf
-a14bc89102ea84fa  ZiskFv/Channels/RangeBusSoundness.lean:104  axiom     range_bus_sound
+a14bc89102ea84fa  ZiskFv/Channels/RangeBusSoundness.lean:106  axiom     range_bus_sound
 a00b854e10ea3d18  ZiskFv/SailSpec/Auxiliaries.lean:794  axiom     pmpCheck_is_pure_none
 1f6fb25749dc02ac  ZiskFv/SailSpec/Auxiliaries.lean:817  axiom     within_clint_is_false
 52c0bbafc03c9989  ZiskFv/SailSpec/Auxiliaries.lean:831  axiom     pmaCheck_is_pure_none
