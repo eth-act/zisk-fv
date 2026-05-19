@@ -1,6 +1,6 @@
 import Mathlib
 
-import LeanZKCircuit.OpenVM.Circuit
+import ZiskFv.Circuit
 import ZiskFv.Equivalence_v1.Promises.Store
 import ZiskFv.Equivalence_v1.Bridge.Mem
 import ZiskFv.Airs.Main.Main

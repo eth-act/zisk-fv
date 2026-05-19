@@ -12,11 +12,6 @@ name = "mathlib"
 scope = "leanprover-community"
 rev = "v4.28.0"
 
-[[require]]
-name = "LeanZKCircuit"
-git = "https://github.com/codygunton/LeanZKCircuit.git"
-rev = "v4.28.0"
-
 # Sail-Lean RV64D spec is built locally from primary source via
 # the Nix flake (`nix run .#populate`). Lake reads from the local
 # build/sail-lean/ tree — the spec is NOT pulled pre-built. Run

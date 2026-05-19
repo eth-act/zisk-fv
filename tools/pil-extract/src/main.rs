@@ -326,7 +326,7 @@ fn render_air(pilout: &PilOut, hit: AirHit<'_>, opts: &RenderOpts) -> Result<Str
 
     let mut out = String::new();
     out.push_str("import Mathlib\n\n");
-    out.push_str("import LeanZKCircuit.OpenVM.Circuit\n\n");
+    out.push_str("import ZiskFv.Circuit\n\n");
     out.push_str("set_option linter.all false\n\n");
     out.push_str(&format!(
         "register_simp_attr {}_air_simplification\n",
@@ -873,7 +873,7 @@ fn parse_bus_emission(pilout: &PilOut, air: &Air, hint: &Hint) -> Result<BusEmis
 /// (`render_bus_emissions_multi`) paths.
 fn write_bus_emissions_prelude(out: &mut String, scope_doc: &str, bus_id: u64, module: &str) {
     out.push_str("import Mathlib\n\n");
-    out.push_str("import LeanZKCircuit.OpenVM.Circuit\n");
+    out.push_str("import ZiskFv.Circuit\n");
     // The `Buses` module owns the canonical `BusEmissionSpec` /
     // `BusEmissionSlot` declarations. Secondary bus files (memory bus,
     // future per-bus projections) import them from there to avoid
@@ -1962,7 +1962,7 @@ mod tests {
         let out = render_air(&pilout, hit, &opts).expect("render");
 
         assert!(out.starts_with("import Mathlib\n"));
-        assert!(out.contains("import LeanZKCircuit.OpenVM.Circuit"));
+        assert!(out.contains("import ZiskFv.Circuit"));
         assert!(out.contains("namespace Demo.extraction"));
         assert!(
             out.contains("-- airgroup: Zisk (id 0)  air: Demo (id 0)"),
