@@ -52,4 +52,17 @@ def rowAt (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL) (r :
     b_1 := v.b_1 r
   }
 
+/-- BinaryExtension has zero F-typed per-row constraints. The
+    constraints_at predicate is vacuous; spec_of_valid is trivial. -/
+def constraints_at
+    (_v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL) (_r : ℕ) :
+    Prop := True
+
+theorem spec_of_valid
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL) (r : ℕ)
+    (h_assumptions : Assumptions (rowAt v r))
+    (_h_constraints : constraints_at v r) :
+    Spec (rowAt v r) :=
+  soundness (rowAt v r) h_assumptions
+
 end ZiskFv.AirsClean.BinaryExtension
