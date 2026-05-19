@@ -709,6 +709,46 @@ captured by the same permutation handshake (`bus_id = 10`) that
 delivers the SD bundle's lane equalities.
 -/
 
+/-- **Main memory-bus emission bundle — sub-doubleword store (SB/SH/SW).**
+
+    Consolidates `main_store_emission_bundle_{sb,sh,sw}` into a
+    single axiom parameterized by store width `n ∈ {1, 2, 4}`.
+    Per-width conclusions are gated by `n` literals; downstream
+    callers extract the conjuncts they need (or use the per-width
+    derived theorems below).
+
+    Trust class #4 — memory-bus permutation soundness on
+    `bus_id = 10`, specialized to sub-doubleword copyb-passthrough
+    stores via the MemAlign RMW protocol
+    (`mem_align.pil:28-37`, `mem_align.pil:189`). -/
+axiom main_store_emission_bundle_subword
+    {C : Type → Type → Type} [Circuit FGL FGL C]
+    (n : ℕ) (h_n : n = 1 ∨ n = 2 ∨ n = 4)
+    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (e_st : MemoryBusEntry FGL)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1_val r2_val : BitVec 64) (imm : BitVec 12)
+    (h_ext : main.is_external_op r_main = 0)
+    (h_op : main.op r_main = OP_COPYB)
+    (h_ind_width : main.ind_width r_main = (n : FGL))
+    (h_e_st_mult : e_st.multiplicity = 1) (h_e_st_as_val : e_st.as.val = 2)
+    (h_a_lo : main.a_0 r_main = ZiskFv.Trusted.lane_lo r1_val)
+    (h_a_hi : main.a_1 r_main = ZiskFv.Trusted.lane_hi r1_val)
+    (h_b_lo : main.b_0 r_main = ZiskFv.Trusted.lane_lo r2_val)
+    (h_b_hi : main.b_1 r_main = ZiskFv.Trusted.lane_hi r2_val) :
+    e_st.ptr.toNat = (r1_val + BitVec.signExtend 64 imm).toNat
+    ∧ (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
+    ∧ (n ≥ 2 → (e_st.x1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val)
+    ∧ (n ≥ 4 → (e_st.x2 : BitVec 8) = BitVec.extractLsb 23 16 r2_val)
+    ∧ (n ≥ 4 → (e_st.x3 : BitVec 8) = BitVec.extractLsb 31 24 r2_val)
+    ∧ (n < 2 → state.mem[e_st.ptr.toNat + 1]? = some (e_st.x1 : BitVec 8))
+    ∧ (n < 4 → state.mem[e_st.ptr.toNat + 2]? = some (e_st.x2 : BitVec 8))
+    ∧ (n < 4 → state.mem[e_st.ptr.toNat + 3]? = some (e_st.x3 : BitVec 8))
+    ∧ state.mem[e_st.ptr.toNat + 4]? = some (e_st.x4 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 5]? = some (e_st.x5 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 6]? = some (e_st.x6 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 7]? = some (e_st.x7 : BitVec 8)
+
 /-- **Main memory-bus emission bundle — store side, SB width (1 byte).**
 
     For every Main row in the SB store family (`is_external_op = 0`,
@@ -719,44 +759,45 @@ delivers the SD bundle's lane equalities.
       contents** at `ptr+1..ptr+7` (restored by the MemAlign RMW
       protocol).
 
-    Trust class #4. Width specialization: SB only. -/
-axiom main_store_emission_bundle_sb
+    Derived theorem: specialization of
+    `main_store_emission_bundle_subword` to `n = 1`. Trust class #4. -/
+theorem main_store_emission_bundle_sb
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (main : Valid_Main C FGL FGL) (r_main : ℕ)
     (e_st : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1_val r2_val : BitVec 64) (imm : BitVec 12)
-    -- Activation: internal store row (copyb passthrough).
     (h_ext : main.is_external_op r_main = 0)
     (h_op : main.op r_main = OP_COPYB)
-    -- Width pin: SB = 1-byte store.
     (h_ind_width : main.ind_width r_main = 1)
-    -- Bus side: e_st is the store entry (`as = 2`, `mult = 1`).
     (h_e_st_mult : e_st.multiplicity = 1) (h_e_st_as_val : e_st.as.val = 2)
-    -- Transpile-pinned Sail-state lane equalities (from `transpile_SB`).
     (h_a_lo : main.a_0 r_main = ZiskFv.Trusted.lane_lo r1_val)
     (h_a_hi : main.a_1 r_main = ZiskFv.Trusted.lane_hi r1_val)
     (h_b_lo : main.b_0 r_main = ZiskFv.Trusted.lane_lo r2_val)
     (h_b_hi : main.b_1 r_main = ZiskFv.Trusted.lane_hi r2_val) :
-    -- ptr-match: store address = xreg rs1 + signExt(imm).
     e_st.ptr.toNat = (r1_val + BitVec.signExtend 64 imm).toNat
-    -- Low byte: e_st.x0 is the low byte of r2_val.
     ∧ (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
-    -- High bytes: RMW preservation — bytes 1..7 equal pre-store memory.
     ∧ state.mem[e_st.ptr.toNat + 1]? = some (e_st.x1 : BitVec 8)
     ∧ state.mem[e_st.ptr.toNat + 2]? = some (e_st.x2 : BitVec 8)
     ∧ state.mem[e_st.ptr.toNat + 3]? = some (e_st.x3 : BitVec 8)
     ∧ state.mem[e_st.ptr.toNat + 4]? = some (e_st.x4 : BitVec 8)
     ∧ state.mem[e_st.ptr.toNat + 5]? = some (e_st.x5 : BitVec 8)
     ∧ state.mem[e_st.ptr.toNat + 6]? = some (e_st.x6 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 7]? = some (e_st.x7 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 7]? = some (e_st.x7 : BitVec 8) := by
+  have h := main_store_emission_bundle_subword 1 (.inl rfl)
+    main r_main e_st state r1_val r2_val imm h_ext h_op h_ind_width
+    h_e_st_mult h_e_st_as_val h_a_lo h_a_hi h_b_lo h_b_hi
+  obtain ⟨h_ptr, h_x0, _h_x1_ex_imp, _h_x2_ex_imp, _h_x3_ex_imp,
+          h_x1_mem_imp, h_x2_mem_imp, h_x3_mem_imp,
+          h_x4_mem, h_x5_mem, h_x6_mem, h_x7_mem⟩ := h
+  exact ⟨h_ptr, h_x0, h_x1_mem_imp (by omega),
+         h_x2_mem_imp (by omega), h_x3_mem_imp (by omega),
+         h_x4_mem, h_x5_mem, h_x6_mem, h_x7_mem⟩
 
 /-- **Main memory-bus emission bundle — store side, SH width (2 bytes).**
-
-    SH analog of `main_store_emission_bundle_sb`: 2 low bytes match
-    `r2_val`'s low 16 bits; 6 high bytes are RMW-preserved against
-    `state.mem`. Trust class #4. -/
-axiom main_store_emission_bundle_sh
+    Derived theorem: specialization of `main_store_emission_bundle_subword`
+    to `n = 2`. -/
+theorem main_store_emission_bundle_sh
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (main : Valid_Main C FGL FGL) (r_main : ℕ)
     (e_st : MemoryBusEntry FGL)
@@ -778,13 +819,22 @@ axiom main_store_emission_bundle_sh
     ∧ state.mem[e_st.ptr.toNat + 4]? = some (e_st.x4 : BitVec 8)
     ∧ state.mem[e_st.ptr.toNat + 5]? = some (e_st.x5 : BitVec 8)
     ∧ state.mem[e_st.ptr.toNat + 6]? = some (e_st.x6 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 7]? = some (e_st.x7 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 7]? = some (e_st.x7 : BitVec 8) := by
+  have h := main_store_emission_bundle_subword 2 (.inr (.inl rfl))
+    main r_main e_st state r1_val r2_val imm h_ext h_op h_ind_width
+    h_e_st_mult h_e_st_as_val h_a_lo h_a_hi h_b_lo h_b_hi
+  obtain ⟨h_ptr, h_x0, h_x1_ex_imp, _h_x2_ex_imp, _h_x3_ex_imp,
+          _h_x1_mem_imp, h_x2_mem_imp, h_x3_mem_imp,
+          h_x4_mem, h_x5_mem, h_x6_mem, h_x7_mem⟩ := h
+  exact ⟨h_ptr, h_x0, h_x1_ex_imp (by omega),
+         h_x2_mem_imp (by omega), h_x3_mem_imp (by omega),
+         h_x4_mem, h_x5_mem, h_x6_mem, h_x7_mem⟩
 
 /-- **Main memory-bus emission bundle — store side, SW width (4 bytes).**
 
-    SW analog: 4 low bytes match `r2_val`'s low 32 bits; 4 high bytes
-    are RMW-preserved against `state.mem`. Trust class #4. -/
-axiom main_store_emission_bundle_sw
+    Derived theorem: specialization of
+    `main_store_emission_bundle_subword` to `n = 4`. Trust class #4. -/
+theorem main_store_emission_bundle_sw
     {C : Type → Type → Type} [Circuit FGL FGL C]
     (main : Valid_Main C FGL FGL) (r_main : ℕ)
     (e_st : MemoryBusEntry FGL)
@@ -806,7 +856,16 @@ axiom main_store_emission_bundle_sw
     ∧ state.mem[e_st.ptr.toNat + 4]? = some (e_st.x4 : BitVec 8)
     ∧ state.mem[e_st.ptr.toNat + 5]? = some (e_st.x5 : BitVec 8)
     ∧ state.mem[e_st.ptr.toNat + 6]? = some (e_st.x6 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 7]? = some (e_st.x7 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 7]? = some (e_st.x7 : BitVec 8) := by
+  have h := main_store_emission_bundle_subword 4 (.inr (.inr rfl))
+    main r_main e_st state r1_val r2_val imm h_ext h_op h_ind_width
+    h_e_st_mult h_e_st_as_val h_a_lo h_a_hi h_b_lo h_b_hi
+  obtain ⟨h_ptr, h_x0, h_x1_ex_imp, h_x2_ex_imp, h_x3_ex_imp,
+          _h_x1_mem_imp, _h_x2_mem_imp, _h_x3_mem_imp,
+          h_x4_mem, h_x5_mem, h_x6_mem, h_x7_mem⟩ := h
+  exact ⟨h_ptr, h_x0, h_x1_ex_imp (by omega),
+         h_x2_ex_imp (by omega), h_x3_ex_imp (by omega),
+         h_x4_mem, h_x5_mem, h_x6_mem, h_x7_mem⟩
 
 /-! ## Axiom audit
 

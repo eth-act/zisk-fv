@@ -23,9 +23,9 @@
 #     > trust/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
-# artefacts under `.lake/build/`). Last regenerated: 2026-05-18.
+# artefacts under `.lake/build/`). Last regenerated: 2026-05-19.
 #
-# Total entries: 120
+# Total entries: 118
 #
 ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed
 ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned
@@ -82,10 +82,8 @@ ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load
 ZiskFv.Airs.MemoryBus.MemBridge.main_external_arith_emission_bundle
 ZiskFv.Airs.MemoryBus.MemBridge.main_load_emission_bundle
 ZiskFv.Airs.MemoryBus.MemBridge.main_sext_load_emission_bundle
-ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_sb
 ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_sd
-ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_sh
-ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_sw
+ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_subword
 ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
 ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
 ZiskFv.Airs.OperationBus.op_bus_permutation_sound
