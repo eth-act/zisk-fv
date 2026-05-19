@@ -14,8 +14,15 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 and as a hashed source-line ledger in
 [`trust/baseline-axioms.txt`](../../trust/baseline-axioms.txt) —
 **is** the trusted computing base for zisk-fv. The closure currently
-contains **116 axioms**, organised into the rationale classes
+contains **104 axioms**, organised into the rationale classes
 summarised below.
+
+**As of the `clean-integration` + `clean-full` work** (commits up to
+`5e255bb`, tag `phase-5-complete-clean-full`), the floor is 104 — down
+from 116 prior. The 12-axiom reduction is the result of the
+`range_bus_sound` + `signed_range_bus_sound` consolidations
+(class #5b/#6/#6b range axioms collapsed into 2 shared axioms; see
+`ZiskFv/Channels/RangeBusSoundness.lean`).
 
 The global theorem dispatches the 63 RV64IM opcodes through a 35-arm
 `OpEnvelope` sum type to per-opcode `equiv_<OP>` wrappers
