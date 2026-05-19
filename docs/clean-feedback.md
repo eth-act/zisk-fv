@@ -204,3 +204,74 @@ has consolidatable structure:
 from MemBus emission bundles + OpBus consolidation + lookup-table
 consolidation), not the 20+ estimated in the original plan. Range
 bus stays as-is.
+
+---
+
+### `import Clean` umbrella collides with Mathlib's Batteries.Data.Fin.Fold
+
+**Observed:** `ZiskFv/Channels/OperationBus.lean` initial draft, line 1.
+
+**Reproduction:**
+
+```lean
+-- file: scratch/CleanImportCollision.lean
+import Clean
+import Mathlib
+example : True := trivial
+```
+
+Yields:
+
+```
+error: import Batteries.Data.Fin.Fold failed,
+       environment already contains 'Fin.foldl_eq_foldl_finRange'
+       from Clean.Utils.Misc
+```
+
+The collision is structural: `Clean.Utils.Misc` (line 62) defines
+`Fin.foldl_eq_foldl_finRange`, and Lean's stdlib / Batteries
+`Data.Fin.Fold` define the same name. Order-of-import flips which
+one wins; loading both fails.
+
+**Ask:**
+
+Option A — rename Clean's lemma (preferred, since the stdlib one is
+the more canonical home).
+Option B — make the top-level `Clean` umbrella module skip
+`Clean.Utils.Misc`'s utility lemmas that already live in stdlib.
+
+**Severity:** friction — `import Clean` is the documented entry
+point in `~/clean/Clean/Examples/`, so anyone integrating Clean
+*alongside* Mathlib has to discover the narrower-imports workaround.
+
+**Workaround used:** Import only `Clean.Circuit.Channel` +
+`Clean.Circuit.Provable` + `Clean.Utils.Tactics.ProvableStructDeriving`,
+which avoids pulling `Clean.Utils.Misc` and the collision.
+
+---
+
+### `[Field F]` requirement on TypeMap-shaped records
+
+**Observed:** `ZiskFv/Airs/OperationBus/OperationBus.lean::OperationBusEntry`,
+`ZiskFv/Airs/Bus/Interaction.lean::MemoryBusEntry`.
+
+**Reproduction:** zisk-fv's existing bus-entry records declare
+`structure OperationBusEntry (F : Type) [Field F] where ...`. Clean's
+`ProvableType` / `TypeMap` machinery operates over `Type → Type` with
+no `[Field F]` constraint on the structure itself. Trying to use
+`OperationBusEntry` directly as a `Message` in `Channel F Message`
+fails with the typeclass mismatch.
+
+**Ask:** Documentation note in Clean's `ProvableType` / `Channel`
+section explaining the convention — "your Message type should be
+declared `structure Foo (F : Type) where ...` without `[Field F]`
+unless its fields require it". The narrowing is straightforward
+once you know to do it, but the failure mode is opaque to a first-
+time integrator.
+
+**Severity:** friction (documentation, no code change in Clean).
+
+**Workaround used:** Introduced parallel TypeMap records
+(`OpBusMessage`, `MemBusMessage`) without `[Field F]`, with
+@[reducible] conversions to/from the existing zisk-fv records.
+
