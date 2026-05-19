@@ -53,4 +53,32 @@ def rowAt (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ) :
     multiplicity := Circuit.main v.circuit (id := 1) (column := 41) (row := r) (rotation := 0)
   }
 
+/-- The 9 boolean flag constraints at row `r`, expressed against
+    a `Valid_ArithMul`. The 6 explicit ones (na, nb, nr, np, sext,
+    m32) match v1's boolean_X predicates; the 3 remaining (div,
+    main_div, main_mul) are enforced compositionally via the
+    ArithTable lookup (caller supplies them as hypotheses). -/
+def constraints_at (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ) : Prop :=
+  v.na r * (1 - v.na r) = 0
+  ∧ Circuit.main v.circuit (id := 1) (column := 24) (row := r) (rotation := 0)
+      * (1 - Circuit.main v.circuit (id := 1) (column := 24) (row := r) (rotation := 0)) = 0
+  ∧ v.nr r * (1 - v.nr r) = 0
+  ∧ Circuit.main v.circuit (id := 1) (column := 26) (row := r) (rotation := 0)
+      * (1 - Circuit.main v.circuit (id := 1) (column := 26) (row := r) (rotation := 0)) = 0
+  ∧ v.sext r * (1 - v.sext r) = 0
+  ∧ Circuit.main v.circuit (id := 1) (column := 28) (row := r) (rotation := 0)
+      * (1 - Circuit.main v.circuit (id := 1) (column := 28) (row := r) (rotation := 0)) = 0
+  ∧ v.div r * (1 - v.div r) = 0
+  ∧ Circuit.main v.circuit (id := 1) (column := 33) (row := r) (rotation := 0)
+      * (1 - Circuit.main v.circuit (id := 1) (column := 33) (row := r) (rotation := 0)) = 0
+  ∧ v.main_mul r * (1 - v.main_mul r) = 0
+
+theorem spec_of_valid
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ)
+    (h_assumptions : Assumptions (rowAt v r))
+    (h_constraints : constraints_at v r) :
+    Spec (rowAt v r) := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h_constraints
+  exact soundness (rowAt v r) h_assumptions h1 h2 h3 h4 h5 h6 h7 h8 h9
+
 end ZiskFv.AirsClean.ArithMul
