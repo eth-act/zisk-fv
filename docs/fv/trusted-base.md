@@ -14,7 +14,7 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 and as a hashed source-line ledger in
 [`trust/baseline-axioms.txt`](../../trust/baseline-axioms.txt) —
 **is** the trusted computing base for zisk-fv. The closure currently
-contains **122 axioms**, organised into the rationale classes
+contains **116 axioms**, organised into the rationale classes
 summarised below.
 
 The global theorem dispatches the 63 RV64IM opcodes through a 35-arm
@@ -27,7 +27,7 @@ global theorem; the V3 trust gates (`check-closure-vs-baseline` +
 the wrapper caller-burden ledger) mechanically prevent regression.
 
 Together with Lean 4's kernel and the LeanRV64D Sail-translated
-specification (the LHS of every per-opcode equivalence), the 122
+specification (the LHS of every per-opcode equivalence), the 116
 axioms below **are** the trusted computing base. Adding, removing,
 renaming, or weakening any axiom is a trust-surface change — see
 "Changing the trust surface" at the bottom.
@@ -39,7 +39,7 @@ Three independent checks, all run from the repo root:
 ```bash
 trust/scripts/check-all.sh                                      # full V1 gate (CI runs this)
 trust/scripts/check-all-semantic.sh                             # full V2 gate (post lake build)
-awk '$3=="axiom" {print $4}' trust/baseline-axioms.txt | wc -l  # total: 122
+awk '$3=="axiom" {print $4}' trust/baseline-axioms.txt | wc -l  # total: 116
 ```
 
 The V2 gate's `check-closure-vs-baseline` subcommand enforces that
@@ -48,7 +48,7 @@ the live transitive `#print axioms` closure of
 `trust/baseline-axioms.txt` exactly; any silent drift — addition OR
 removal — fails the gate.
 
-Per-class spot check (122 axioms total):
+Per-class spot check (116 axioms total):
 
 ```bash
 awk '$3=="axiom" {n=split($2,a,":"); print a[1]}' trust/baseline-axioms.txt \
@@ -56,14 +56,14 @@ awk '$3=="axiom" {n=split($2,a,":"); print a[1]}' trust/baseline-axioms.txt \
 #  35 ZiskFv/Airs/Arith/Ranges.lean                arith range / table / Euclidean-bound pins (class #6b)
 #   1 ZiskFv/Airs/Binary/BinaryAddRanges.lean       binary-add column range (class #5b)
 #   3 ZiskFv/Airs/Binary/BinaryExtensionRanges.lean BinaryExtension shift-pin + row→byte witness (class #6)
-#   9 ZiskFv/Airs/Binary/BinaryRanges.lean          Binary range / per-byte / carry / OR/AND/XOR / W-mode pins (class #6)
+#   7 ZiskFv/Airs/Binary/BinaryRanges.lean          Binary range / per-byte / carry / b_op_or_sext consolidated / W-mode pins (class #6)
 #   1 ZiskFv/Airs/Tables/BinaryExtensionTable.lean         BinaryExtension lookup soundness (class #6)
 #   1 ZiskFv/Airs/Tables/BinaryTable.lean                  Binary lookup soundness (class #6)
 #   1 ZiskFv/Airs/Main/Ranges.lean                  Main range-check soundness (class #5b)
 #   1 ZiskFv/Airs/MemoryBus/EntryRanges.lean        memory-bus entry byte ranges (class #5b)
 #   2 ZiskFv/Airs/MemoryBus/MemAlignBridge.lean     MemAlign permutation + ROM lookup (class #4)
-#   9 ZiskFv/Airs/MemoryBus/MemBridge.lean          memory-bus lookup soundness + emission bundles (class #4)
-#   3 ZiskFv/Airs/OperationBus/Bridge.lean          op-bus permutation soundness (class #4)
+#   7 ZiskFv/Airs/MemoryBus/MemBridge.lean          memory-bus lookup soundness + emission bundles, sub-doubleword consolidated (class #4)
+#   1 ZiskFv/Airs/OperationBus/Consolidated.lean   op-bus permutation soundness, consolidated (class #4)
 #   1 ZiskFv/ZiskCircuit/MemModel.lean                  memory-state bridge — load (class #2)
 #  51 ZiskFv/Trusted/Transpiler.lean           transpile contracts (class #1)
 #   4 ZiskFv/SailSpec/Auxiliaries.lean                  platform-feature scope (classes #7–#10)
@@ -91,18 +91,48 @@ The narrative per-class rationale below stays here.
 | -- | ----------------------------------- | ----: | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 1  | Transpile contracts                 |    51 | `Trusted/Transpiler.lean`             | For each RV64IM instruction kind, ZisK's Rust transpilation lowers a Sail-decoded `ast` into a Main-row column shape that matches the pure spec. | Direct reading of ZisK's `transpile_*` Rust functions in the `zisk/` submodule; each axiom's docstring cites the exact upstream source line.                 |
 | 2  | Memory state bridge — load          |     1 | `ZiskCircuit/MemModel.lean`           | A Mem-AIR row tagged `wr=0` matching a memory-bus entry implies Sail's `state.mem` agrees with the entry's eight bytes.                           | Bridges Mem AIR's column language to Sail's byte-addressable `Std.HashMap` once class #4 has placed the entry on the bus.                                    |
-| 4  | Bus / lookup soundness              |    14 | `Airs/OperationBus/Bridge.lean` (3), `Airs/MemoryBus/{MemBridge,MemAlignBridge}.lean` (9 + 2) | Permutation-argument and lookup soundness on the operation-bus, memory-bus, and MemAlign providers: (i) `op_bus_perm_sound_{BinaryAdd,Binary,BinaryExtension}` — a Main-row consumer pairs with a row in the provider AIR (operation_bus); (ii) `lookup_consumer_matches_provider_load` — load consumer ↔ Mem AIR row; (iii) `memalign_load_perm_sound` — sub-doubleword load consumer ↔ MemAlign* row; (iv) `mem_align_rom_subdoubleword_load_value_1_zero` — MemAlignRom lookup pins `value_1 = 0`; (v) `main_load_emission_bundle` / `main_sext_load_emission_bundle` — load and signed-load lane / ptr / rd-routing bundle on Main; (vi) `main_store_pc_emission_bundle` — lane match for `store_pc ∈ {0,1}` register writes; (vii) `main_external_arith_emission_bundle` — rd-write byte-pack lanes for the MUL/DIV family; (viii) `main_store_emission_bundle_{sd,sb,sh,sw}` — byte-extract + ptr-match + RMW high-byte preservation for the four store widths. | PLONK / logUp permutation-argument soundness for `bus_id = 10` (op-bus + mem-bus) and ROM-lookup soundness for the MemAlignRom table. Each axiom's docstring cites the PIL line and Rust transpile function it mirrors. |
+| 4  | Bus / lookup soundness              |    10 | `Airs/OperationBus/Consolidated.lean` (1), `Airs/MemoryBus/{MemBridge,MemAlignBridge}.lean` (7 + 2) | Permutation-argument and lookup soundness on the operation-bus, memory-bus, and MemAlign providers: (i) `op_bus_perm_sound_{BinaryAdd,Binary,BinaryExtension}` — a Main-row consumer pairs with a row in the provider AIR (operation_bus); (ii) `lookup_consumer_matches_provider_load` — load consumer ↔ Mem AIR row; (iii) `memalign_load_perm_sound` — sub-doubleword load consumer ↔ MemAlign* row; (iv) `mem_align_rom_subdoubleword_load_value_1_zero` — MemAlignRom lookup pins `value_1 = 0`; (v) `main_load_emission_bundle` / `main_sext_load_emission_bundle` — load and signed-load lane / ptr / rd-routing bundle on Main; (vi) `main_store_pc_emission_bundle` — lane match for `store_pc ∈ {0,1}` register writes; (vii) `main_external_arith_emission_bundle` — rd-write byte-pack lanes for the MUL/DIV family; (viii) `main_store_emission_bundle_{sd,sb,sh,sw}` — byte-extract + ptr-match + RMW high-byte preservation for the four store widths. | PLONK / logUp permutation-argument soundness for `bus_id = 10` (op-bus + mem-bus) and ROM-lookup soundness for the MemAlignRom table. Each axiom's docstring cites the PIL line and Rust transpile function it mirrors. |
 | 5b | Range-bus / byte-range soundness    |     3 | `Airs/MemoryBus/EntryRanges.lean`, `Airs/Binary/BinaryAddRanges.lean`, `Airs/Main/Ranges.lean` | Each participating AIR's `bits(8)` / `bits(N)`-annotated columns satisfy the byte-range bus: `memory_bus_entry_byte_range_perm_sound`, `binary_add_columns_in_range`, `main_columns_in_range`. | Lookup-argument soundness on the standard byte-range bus, restricted to participants annotated `bits(N)` in the PIL — see citations in each axiom's docstring. |
-| 6  | Binary / BinaryExtension lookup soundness | 14 | `Airs/{Binary,BinaryExtension}Table.lean` (1 + 1), `Airs/Binary/{Binary,BinaryExtension}Ranges.lean` (9 + 3) | Lookup-argument soundness on the Binary and BinaryExtension AIRs: (i) `bin_table_consumer_wf` / `bin_ext_table_consumer_wf` — table-lookup soundness on each; (ii) `binary_columns_in_range` / `binary_extension_columns_in_range` — column range pins; (iii) `binary_per_byte_lookup_witness` — per-byte witness extraction; (iv) `binary_carry_bits_in_range` — `bits(1)` carry-column range; (v) `binary_extension_op_is_shift_pin` — shift/SEXT op classification; (vi) `binary_extension_row_byte_lookups` — row → per-byte lookup witness; (vii) `binary_b_op_or_sext_eq_OP_{OR,AND,XOR}` — Binary `b_op_or_sext` column pins for the three logic ops; (viii) `binary_consumer_byte_match_chain_pin` — full 6-field byte-match chain for SUB/SLT-family; (ix) `binary_w_sext_choice_pin` / `binary_w_mode_carry_7_zero` — W-mode SEXT byte case-split + carry_7=0 corollary for SUBW/ADDW. | Lookup-argument soundness on the Binary and BinaryExtension AIRs (same trust kind as class #4), scoped to lookups against `binary_table.rs::ARITH_TABLE`'s row enumeration. |
+| 6  | Binary / BinaryExtension lookup soundness | 12 | `Airs/{Binary,BinaryExtension}Table.lean` (1 + 1), `Airs/Binary/{Binary,BinaryExtension}Ranges.lean` (7 + 3) | Lookup-argument soundness on the Binary and BinaryExtension AIRs: (i) `bin_table_consumer_wf` / `bin_ext_table_consumer_wf` — table-lookup soundness on each; (ii) `binary_columns_in_range` / `binary_extension_columns_in_range` — column range pins; (iii) `binary_per_byte_lookup_witness` — per-byte witness extraction; (iv) `binary_carry_bits_in_range` — `bits(1)` carry-column range; (v) `binary_extension_op_is_shift_pin` — shift/SEXT op classification; (vi) `binary_extension_row_byte_lookups` — row → per-byte lookup witness; (vii) `binary_b_op_or_sext_eq_OP_{OR,AND,XOR}` — Binary `b_op_or_sext` column pins for the three logic ops; (viii) `binary_consumer_byte_match_chain_pin` — full 6-field byte-match chain for SUB/SLT-family; (ix) `binary_w_sext_choice_pin` / `binary_w_mode_carry_7_zero` — W-mode SEXT byte case-split + carry_7=0 corollary for SUBW/ADDW. | Lookup-argument soundness on the Binary and BinaryExtension AIRs (same trust kind as class #4), scoped to lookups against `binary_table.rs::ARITH_TABLE`'s row enumeration. |
 | 6b | Arith range / table / Euclidean pins |    35 | `Airs/Arith/Ranges.lean`              | Range-checker bus lookups + arith_table-row sign / mode / operand / sign-witness pins + Euclidean-remainder bound, for the full MUL / DIV / REM family across signed/unsigned × 64/32 (W) modes + MULH-family high-half. Full list: `arith_{mul,div}_columns_in_range`, `arith_{mul,div}_carry_columns_in_range_{unsigned,signed,w}`, `arith_table_op_div_rem_signed_{d_sign,w_d_sign}_pin`, `arith_table_op_{mulw,divw}_operand_pin`, `arith_table_op_div_rem_{signed,unsigned}_mode_pin`, `arith_table_op_div_rem_{signed,unsigned}_w_mode_pin`, `arith_table_op_div_rem_main_selector_pin`, `arith_table_op_div_rem_{signed,unsigned}_main_selector_pin`, `arith_table_op_div_rem_{unsigned,signed}_w_mode_pin`, `arith_div_{np_eq_msb_of_dividend,nb_eq_msb_of_divisor}`, `arith_div_remainder_bound{,_unsigned,_unsigned_w,_signed_w}`, `arith_table_op_{mul,mulhu,mulh,mulhsu}_{mode_pin,main_selector_pin}`, `arith_mul_{na_eq_msb_of_a,nb_eq_msb_of_b}`, `arith_table_op_mulw_mode_pin`. | Range-checker bus lookup soundness on the Arith AIR's `bits(16)`-annotated chunk columns and on the `ARITH_RANGE_CARRY` entry of the arith_range_table; arith_table lookup soundness for the per-row sign/mode/operand/sign-witness/selector pins; binary-bus lookup soundness on the Arith `assumes_operation(|d|<|b|)` consumer for the Euclidean magnitude/sign bound. All sub-classes have the same lookup-soundness trust kind as #4 / #6. |
 | 7  | Platform — PMP inert                |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.pmpCheck _ _ _ _ = pure none`.                                                                                               | ZisK's RV64IM target excludes PMP. Axiomatising as inert is strictly stronger than threading state-level disjointness through every load/store proof.        |
 | 8  | Platform — CLINT disjoint           |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.within_clint _ _ = pure false`.                                                                                              | ZisK programs do not access the CLINT MMIO region. Same scope-honest framing as #7.                                                                          |
 | 9  | Platform — PMA inert                |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.pmaCheck _ _ _ _ = pure none`.                                                                                               | Alignment-fault arm short-circuited under the `RISC_V_assumptions` fields already recorded by LeanRV64D.                                                     |
 | 10 | Platform — Zicfilp disabled         |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.update_elp_state _ = pure ()`.                                                                                               | Zicfilp landing-pad extension is disabled in ZisK's target; helper reduces to no-op under `currentlyEnabled Ext_Zicfilp = false`.                            |
 
-Total: 51 + 1 + 14 + 3 + 14 + 35 + 4 = **122 axioms**.
+Total: 51 + 1 + 10 + 3 + 12 + 35 + 4 = **116 axioms**.
 
-### Out-of-scope assumptions (NOT in the 122)
+### Recent consolidations (clean-integration branch)
+
+Three structural-symmetry consolidations replaced groups of
+per-AIR / per-opcode axioms with bus-level / op-parameterized
+axioms while preserving the per-target results as derived
+theorems. Net: −6 axioms over the prior 122-axiom baseline.
+
+* `op_bus_perm_sound_{BinaryAdd, Binary, BinaryExtension}` (3) →
+  `op_bus_permutation_sound` (1) — parameterized over an
+  `OpBusProvider` sum type. `ZiskFv/Airs/OperationBus/Consolidated.lean`.
+* `main_store_emission_bundle_{sb, sh, sw}` (3) →
+  `main_store_emission_bundle_subword` (1) — parameterized over
+  store width `n ∈ {1, 2, 4}`. `ZiskFv/Airs/MemoryBus/MemBridge.lean`.
+* `binary_b_op_or_sext_eq_OP_{AND, OR, XOR}` (3) →
+  `binary_b_op_or_sext_eq_op_general` (1) — parameterized over
+  opcode literal. `ZiskFv/Airs/Binary/BinaryRanges.lean`.
+
+The per-target results are preserved as theorems with original
+names and signatures, so downstream consumers (per-AIR discharge
+bridges, Compliance wrappers) require no changes.
+
+Remaining axiom classes (#1 transpile, #2 mem state bridge, #6b
+Arith range/table/Euclidean, #7–10 platform) are honestly at the
+right granularity — per-axiom specialization reflects genuinely
+distinct trust content (different Rust source lines, different
+state-bridge claims, different sign/mode/width specializations).
+Further consolidation would require typeclass abstractions or
+disjunctive conclusion shapes that compromise per-axiom
+auditability.
+
+### Out-of-scope assumptions (NOT in the 116)
 
 For completeness, two trusts the proofs rely on that are not counted
 here:
@@ -115,7 +145,7 @@ here:
   `flake.lock` (`sail-src`, `sail-riscv-src`); the build is
   reproduced by `nix build .#sail-lean-tree`.
 
-These are scope decisions, not omissions. The 122 axioms above are the
+These are scope decisions, not omissions. The 116 axioms above are the
 project-internal assumptions on top of those external trusts.
 
 ### Load-equivalence trust path
@@ -215,7 +245,7 @@ CODEOWNER-protected change.
 
 The trust ledger grew incrementally as the per-opcode `equiv_<OP>`
 proofs were closed; the rounds below preserve the audit trail of
-which axiom landed when and why. The current state — 122 axioms,
+which axiom landed when and why. The current state — 116 axioms,
 verified equal to the project-axiom closure of
 `zisk_riscv_compliant_program_bus` — is the result of the rounds
 chronologically listed below, with the Step-4 dead-code cleanup
