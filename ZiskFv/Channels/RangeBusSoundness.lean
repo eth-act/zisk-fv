@@ -61,6 +61,23 @@ namespace ZiskFv.Channels.RangeBusSoundness
 
 open Goldilocks
 
+/-! ## Named bit-width bounds
+
+Per the project's coding convention (no raw decimal literals for
+bit-width bounds), the following `abbrev`s are the canonical names
+for the powers of two that range-bus participants commonly land on.
+Defined as `abbrev` so `decide`/`omega`/`rfl` unfold transparently
+and the V2 binder walker (`whnfR`) sees through them. -/
+
+/-- Upper bound for `bits(1)` (boolean) values: `2^1 = 2`. -/
+abbrev U1_max : ℕ := 2 ^ 1
+/-- Upper bound for `bits(8)` values: `2^8 = 256`. -/
+abbrev U8_max : ℕ := 2 ^ 8
+/-- Upper bound for `bits(16)` values: `2^16 = 65536`. -/
+abbrev U16_max : ℕ := 2 ^ 16
+/-- Upper bound for `bits(32)` values: `2^32 = 4294967296`. -/
+abbrev U32_max : ℕ := 2 ^ 32
+
 /-- **PIL `bits(N)` annotation marker.** Definitional placeholder for
     "PIL declared this column as `bits(width)`". This is *not* a
     cryptographic claim — it's a textual citation marker. The

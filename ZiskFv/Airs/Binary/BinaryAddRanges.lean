@@ -62,16 +62,16 @@ open ZiskFv.Channels.RangeBusSoundness
     * `bits(16) c_chunks[RC*2]`  → `c_chunks_0..3`     < 2¹⁶
     * `bits(1)  cout[RC]`        → `cout_0`, `cout_1`  < 2 -/
 theorem binary_add_columns_in_range (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
-    (b.a_0 r).val < 4294967296
-  ∧ (b.a_1 r).val < 4294967296
-  ∧ (b.b_0 r).val < 4294967296
-  ∧ (b.b_1 r).val < 4294967296
-  ∧ (b.c_chunks_0 r).val < 65536
-  ∧ (b.c_chunks_1 r).val < 65536
-  ∧ (b.c_chunks_2 r).val < 65536
-  ∧ (b.c_chunks_3 r).val < 65536
-  ∧ (b.cout_0 r).val < 2
-  ∧ (b.cout_1 r).val < 2 := by
+    (b.a_0 r).val < U32_max
+  ∧ (b.a_1 r).val < U32_max
+  ∧ (b.b_0 r).val < U32_max
+  ∧ (b.b_1 r).val < U32_max
+  ∧ (b.c_chunks_0 r).val < U16_max
+  ∧ (b.c_chunks_1 r).val < U16_max
+  ∧ (b.c_chunks_2 r).val < U16_max
+  ∧ (b.c_chunks_3 r).val < U16_max
+  ∧ (b.cout_0 r).val < U1_max
+  ∧ (b.cout_1 r).val < U1_max := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact range_bus_sound b (fun b r => b.a_0 r) 32 trivial r
   · exact range_bus_sound b (fun b r => b.a_1 r) 32 trivial r
@@ -89,35 +89,35 @@ theorem binary_add_columns_in_range (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
 Per-component projections of `binary_add_columns_in_range`. -/
 
 lemma ba_a_lo_lt_2_32 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
-    (b.a_0 r).val < 4294967296 :=
+    (b.a_0 r).val < U32_max :=
   (binary_add_columns_in_range b r).1
 
 lemma ba_a_hi_lt_2_32 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
-    (b.a_1 r).val < 4294967296 :=
+    (b.a_1 r).val < U32_max :=
   (binary_add_columns_in_range b r).2.1
 
 lemma ba_b_lo_lt_2_32 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
-    (b.b_0 r).val < 4294967296 :=
+    (b.b_0 r).val < U32_max :=
   (binary_add_columns_in_range b r).2.2.1
 
 lemma ba_b_hi_lt_2_32 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
-    (b.b_1 r).val < 4294967296 :=
+    (b.b_1 r).val < U32_max :=
   (binary_add_columns_in_range b r).2.2.2.1
 
 lemma ba_c_chunk_0_lt_2_16 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
-    (b.c_chunks_0 r).val < 65536 :=
+    (b.c_chunks_0 r).val < U16_max :=
   (binary_add_columns_in_range b r).2.2.2.2.1
 
 lemma ba_c_chunk_1_lt_2_16 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
-    (b.c_chunks_1 r).val < 65536 :=
+    (b.c_chunks_1 r).val < U16_max :=
   (binary_add_columns_in_range b r).2.2.2.2.2.1
 
 lemma ba_c_chunk_2_lt_2_16 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
-    (b.c_chunks_2 r).val < 65536 :=
+    (b.c_chunks_2 r).val < U16_max :=
   (binary_add_columns_in_range b r).2.2.2.2.2.2.1
 
 lemma ba_c_chunk_3_lt_2_16 (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
-    (b.c_chunks_3 r).val < 65536 :=
+    (b.c_chunks_3 r).val < U16_max :=
   (binary_add_columns_in_range b r).2.2.2.2.2.2.2.1
 
 end ZiskFv.Airs.BinaryAdd

@@ -63,7 +63,7 @@ c0321bacfa0a0871  ZiskFv/Airs/MemoryBus/MemBridge.lean:724  axiom     main_store
 09b2623540de2837  ZiskFv/Airs/OperationBus/Consolidated.lean:124  axiom     op_bus_permutation_sound
 7fccc882b9a79e6a  ZiskFv/Airs/Tables/BinaryExtensionTable.lean:262  axiom     bin_ext_table_consumer_wf
 4d9e296fb3ead091  ZiskFv/Airs/Tables/BinaryTable.lean:281  axiom     bin_table_consumer_wf
-a14bc89102ea84fa  ZiskFv/Channels/RangeBusSoundness.lean:87  axiom     range_bus_sound
+a14bc89102ea84fa  ZiskFv/Channels/RangeBusSoundness.lean:104  axiom     range_bus_sound
 a00b854e10ea3d18  ZiskFv/SailSpec/Auxiliaries.lean:794  axiom     pmpCheck_is_pure_none
 1f6fb25749dc02ac  ZiskFv/SailSpec/Auxiliaries.lean:817  axiom     within_clint_is_false
 52c0bbafc03c9989  ZiskFv/SailSpec/Auxiliaries.lean:831  axiom     pmaCheck_is_pure_none

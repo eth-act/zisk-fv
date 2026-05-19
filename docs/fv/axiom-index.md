@@ -136,7 +136,7 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 
 | # | Axiom | Line | Asserts |
 | - | ----- | ---: | ------- |
-| 1 | `range_bus_sound` | 87 | **Range-bus lookup-argument soundness (consolidated).** A column declared `bits(width)` in PIL has value `< 2^width` at every row. |
+| 1 | `range_bus_sound` | 104 | **Range-bus lookup-argument soundness (consolidated).** A column declared `bits(width)` in PIL has value `< 2^width` at every row. |
 
 ## #6 Binary / BinaryExtension lookup soundness — `ZiskFv/Airs/Binary/BinaryExtensionRanges.lean` (3)
 
