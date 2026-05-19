@@ -69,7 +69,6 @@ ZiskFv.Airs.Binary.binary_consumer_byte_match_chain_pin
 ZiskFv.Airs.Binary.binary_per_byte_lookup_witness
 ZiskFv.Airs.Binary.binary_w_mode_carry_7_zero
 ZiskFv.Airs.Binary.binary_w_sext_choice_pin
-ZiskFv.Airs.BinaryAdd.binary_add_columns_in_range
 ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range
 ZiskFv.Airs.BinaryExtension.binary_extension_op_is_shift_pin
 ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups
@@ -87,6 +86,7 @@ ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
 ZiskFv.Airs.OperationBus.op_bus_permutation_sound
 ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf
+ZiskFv.Channels.RangeBusSoundness.range_bus_sound
 ZiskFv.PlatformScope.pmaCheck_is_pure_none
 ZiskFv.PlatformScope.pmpCheck_is_pure_none
 ZiskFv.PlatformScope.update_elp_state_is_pure_unit

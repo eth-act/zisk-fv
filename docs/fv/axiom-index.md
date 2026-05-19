@@ -114,14 +114,6 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 | - | ----- | ---: | ------- |
 | 1 | `op_bus_permutation_sound` | 124 | **OperationBus permutation soundness (consolidated).** For any consumer Main row that is externally-active and whose opcode falls within a provider's coverage, there exists a provider row whose op-bus emission matches the Main row's. |
 
-## #5b Range-bus / byte-range soundness — `ZiskFv/Airs/Binary/BinaryAddRanges.lean` (1)
-
-*Range-bus / byte-range — BinaryAdd.* Lookup-argument soundness on the standard byte-range bus, restricted to participants annotated `bits(N)` in the PIL — see citations in each axiom's docstring.
-
-| # | Axiom | Line | Asserts |
-| - | ----- | ---: | ------- |
-| 1 | `binary_add_columns_in_range` | 59 | **BinaryAdd range-check soundness.** Given the row-level `lookup_assumes(RANGE_BUS_ID, …)` interactions induced by BinaryAdd's `bits(N)` column annotations, every row's witness cells satisfy their declared bit ranges. |
-
 ## #5b Range-bus / byte-range soundness — `ZiskFv/Airs/Main/Ranges.lean` (1)
 
 *Range-bus / byte-range — Main.* Lookup-argument soundness on the standard byte-range bus, restricted to participants annotated `bits(N)` in the PIL — see citations in each axiom's docstring.
@@ -137,6 +129,14 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 | # | Axiom | Line | Asserts |
 | - | ----- | ---: | ------- |
 | 1 | `memory_bus_entry_byte_range_perm_sound` | 52 | **Memory-bus entry byte-range soundness.** Every memory-bus entry's 8 byte cells (`x0..x7`) lie in `[0, 256)`. |
+
+## #5b Range-bus / byte-range soundness — `ZiskFv/Channels/RangeBusSoundness.lean` (1)
+
+*Range-bus / byte-range — consolidated soundness axiom.* Lookup-argument soundness on the standard byte-range bus, restricted to participants annotated `bits(N)` in the PIL — see citations in each axiom's docstring.
+
+| # | Axiom | Line | Asserts |
+| - | ----- | ---: | ------- |
+| 1 | `range_bus_sound` | 87 | **Range-bus lookup-argument soundness (consolidated).** A column declared `bits(width)` in PIL has value `< 2^width` at every row. |
 
 ## #6 Binary / BinaryExtension lookup soundness — `ZiskFv/Airs/Binary/BinaryExtensionRanges.lean` (3)
 

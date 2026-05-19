@@ -39,7 +39,6 @@ ada7f250a30b1360  ZiskFv/Airs/Arith/Ranges.lean:977  axiom     arith_table_op_mu
 df4f11d1887c2818  ZiskFv/Airs/Arith/Ranges.lean:1043  axiom     arith_mul_na_eq_msb_of_a
 8536d3fb917bfa35  ZiskFv/Airs/Arith/Ranges.lean:1070  axiom     arith_mul_nb_eq_msb_of_b
 b3cdb2b4ad78b074  ZiskFv/Airs/Arith/Ranges.lean:1102  axiom     arith_table_op_mulw_mode_pin
-08d74d52fabb3c51  ZiskFv/Airs/Binary/BinaryAddRanges.lean:59  axiom     binary_add_columns_in_range
 feafd4d75a95e2ad  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:53  axiom     binary_extension_columns_in_range
 48b9f2f309f54d71  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:106  axiom     binary_extension_op_is_shift_pin
 005de0f3bbc11bd2  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:136  axiom     binary_extension_row_byte_lookups
@@ -64,6 +63,7 @@ c0321bacfa0a0871  ZiskFv/Airs/MemoryBus/MemBridge.lean:724  axiom     main_store
 09b2623540de2837  ZiskFv/Airs/OperationBus/Consolidated.lean:124  axiom     op_bus_permutation_sound
 7fccc882b9a79e6a  ZiskFv/Airs/Tables/BinaryExtensionTable.lean:262  axiom     bin_ext_table_consumer_wf
 4d9e296fb3ead091  ZiskFv/Airs/Tables/BinaryTable.lean:281  axiom     bin_table_consumer_wf
+a14bc89102ea84fa  ZiskFv/Channels/RangeBusSoundness.lean:87  axiom     range_bus_sound
 a00b854e10ea3d18  ZiskFv/SailSpec/Auxiliaries.lean:794  axiom     pmpCheck_is_pure_none
 1f6fb25749dc02ac  ZiskFv/SailSpec/Auxiliaries.lean:817  axiom     within_clint_is_false
 52c0bbafc03c9989  ZiskFv/SailSpec/Auxiliaries.lean:831  axiom     pmaCheck_is_pure_none

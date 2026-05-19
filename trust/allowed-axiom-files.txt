@@ -32,6 +32,11 @@ ZiskFv/Airs/Tables/BinaryExtensionTable.lean
 ZiskFv/Airs/OperationBus/Bridge.lean
 ZiskFv/Airs/OperationBus/Consolidated.lean
 
+# Consolidated range-bus soundness axiom (single axiom replacing the
+# 14 per-AIR `*_columns_in_range` axioms; per-AIR theorems are
+# derived from `range_bus_sound`).
+ZiskFv/Channels/RangeBusSoundness.lean
+
 # Range-checker bus lookup soundness on Main's bits(N)-annotated columns.
 ZiskFv/Airs/Main/Ranges.lean
 

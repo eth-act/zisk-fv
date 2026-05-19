@@ -3,6 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Binary.BinaryAdd
+import ZiskFv.Channels.RangeBusSoundness
 
 /-!
 # BinaryAdd AIR — universal column-range theorems
@@ -42,21 +43,25 @@ open Goldilocks
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **BinaryAdd range-check soundness.** Given the row-level
-    `lookup_assumes(RANGE_BUS_ID, …)` interactions induced by
+open ZiskFv.Channels.RangeBusSoundness
+
+/-- **BinaryAdd range-check soundness (derived).** Given the row-
+    level `lookup_assumes(RANGE_BUS_ID, …)` interactions induced by
     BinaryAdd's `bits(N)` column annotations, every row's witness
     cells satisfy their declared bit ranges.
+
+    Previously an axiom; now derived from the consolidated
+    `range_bus_sound` axiom in
+    `ZiskFv/Channels/RangeBusSoundness.lean` via one application per
+    column. The cryptographic content is identical — only the
+    location of the axiom moved.
 
     PIL citations (`zisk/state-machines/binary/pil/binary_add.pil:7-10`):
     * `bits(32) a[RC]`           → `a_0`, `a_1`         < 2³²
     * `bits(32) b[RC]`           → `b_0`, `b_1`         < 2³²
     * `bits(16) c_chunks[RC*2]`  → `c_chunks_0..3`     < 2¹⁶
-    * `bits(1)  cout[RC]`        → `cout_0`, `cout_1`  < 2
-
-    Project-trusted at the same scope as `main_columns_in_range`
-    (`Airs/Main/Ranges.lean:67`) — lookup-argument soundness on the
-    standard range-checker bus, scoped to BinaryAdd's contributions. -/
-axiom binary_add_columns_in_range (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
+    * `bits(1)  cout[RC]`        → `cout_0`, `cout_1`  < 2 -/
+theorem binary_add_columns_in_range (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
     (b.a_0 r).val < 4294967296
   ∧ (b.a_1 r).val < 4294967296
   ∧ (b.b_0 r).val < 4294967296
@@ -66,7 +71,18 @@ axiom binary_add_columns_in_range (b : Valid_BinaryAdd C FGL FGL) (r : ℕ) :
   ∧ (b.c_chunks_2 r).val < 65536
   ∧ (b.c_chunks_3 r).val < 65536
   ∧ (b.cout_0 r).val < 2
-  ∧ (b.cout_1 r).val < 2
+  ∧ (b.cout_1 r).val < 2 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact range_bus_sound b (fun b r => b.a_0 r) 32 trivial r
+  · exact range_bus_sound b (fun b r => b.a_1 r) 32 trivial r
+  · exact range_bus_sound b (fun b r => b.b_0 r) 32 trivial r
+  · exact range_bus_sound b (fun b r => b.b_1 r) 32 trivial r
+  · exact range_bus_sound b (fun b r => b.c_chunks_0 r) 16 trivial r
+  · exact range_bus_sound b (fun b r => b.c_chunks_1 r) 16 trivial r
+  · exact range_bus_sound b (fun b r => b.c_chunks_2 r) 16 trivial r
+  · exact range_bus_sound b (fun b r => b.c_chunks_3 r) 16 trivial r
+  · exact range_bus_sound b (fun b r => b.cout_0 r) 1 trivial r
+  · exact range_bus_sound b (fun b r => b.cout_1 r) 1 trivial r
 
 /-! ## Specialized accessors
 

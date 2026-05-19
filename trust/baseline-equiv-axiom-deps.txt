@@ -1,5 +1,5 @@
-ZiskFv.Equivalence.Add.equiv_ADD: ZiskFv.Airs.BinaryAdd.binary_add_columns_in_range, ZiskFv.Airs.OperationBus.op_bus_permutation_sound, ZiskFv.Trusted.transpile_ADD
-ZiskFv.Equivalence.Addi.equiv_ADDI: ZiskFv.Airs.BinaryAdd.binary_add_columns_in_range, ZiskFv.Airs.OperationBus.op_bus_permutation_sound, ZiskFv.Trusted.transpile_ADDI
+ZiskFv.Equivalence.Add.equiv_ADD: ZiskFv.Airs.OperationBus.op_bus_permutation_sound, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_ADD
+ZiskFv.Equivalence.Addi.equiv_ADDI: ZiskFv.Airs.OperationBus.op_bus_permutation_sound, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_ADDI
 ZiskFv.Equivalence.Addiw.equiv_ADDIW: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound, ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_ADDIW
 ZiskFv.Equivalence.Addw.equiv_ADDW: ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound, ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_ADDW
 ZiskFv.Equivalence.And.equiv_AND: ZiskFv.Airs.Binary.binary_carry_bits_in_range, ZiskFv.Airs.Binary.binary_columns_in_range, ZiskFv.Airs.Binary.binary_per_byte_lookup_witness, ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound, ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf, ZiskFv.Trusted.transpile_AND
