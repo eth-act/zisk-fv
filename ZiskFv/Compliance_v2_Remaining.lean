@@ -63,6 +63,100 @@ def OpEnvelope.exec_eq_v2_remaining
       execute_instruction (instruction.STORE (
         sw_input.imm, regidx.Regidx sw_input.r2, regidx.Regidx sw_input.r1, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  -- W-shifts (6)
+  | .sllw _ r1 r2 rd _ bus .. =>
+      execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SLLW)) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .srlw _ r1 r2 rd _ bus .. =>
+      execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRLW)) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .sraw _ r1 r2 rd _ bus .. =>
+      execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRAW)) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .slliw slliw_input r1 rd _ bus .. =>
+      execute_instruction (instruction.SHIFTIWOP (slliw_input.shamt, r1, rd, sopw.SLLIW)) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .srliw srliw_input r1 rd _ bus .. =>
+      execute_instruction (instruction.SHIFTIWOP (srliw_input.shamt, r1, rd, sopw.SRLIW)) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .sraiw sraiw_input r1 rd _ bus .. =>
+      execute_instruction (instruction.SHIFTIWOP (sraiw_input.shamt, r1, rd, sopw.SRAIW)) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  -- Mul family (5)
+  | .mul _ r1 r2 rd srs1 srs2 bus .. =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.MUL (r2, r1, rd, { result_part := VectorHalf.Low, signed_rs1 := srs1, signed_rs2 := srs2 }))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .mulh _ r1 r2 rd bus .. =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.MUL (r2, r1, rd, { result_part := VectorHalf.High, signed_rs1 := .Signed, signed_rs2 := .Signed }))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .mulhu _ r1 r2 rd bus .. =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.MUL (r2, r1, rd, { result_part := VectorHalf.High, signed_rs1 := .Unsigned, signed_rs2 := .Unsigned }))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .mulhsu _ r1 r2 rd bus .. =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute
+          (instruction.MUL (r2, r1, rd, { result_part := VectorHalf.High, signed_rs1 := .Signed, signed_rs2 := .Unsigned }))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .mulw _ r1 r2 rd bus .. =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.MULW (r2, r1, rd))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  -- Div / Rem (7)
+  | .div _ r1 r2 rd bus .. =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .rem _ r1 r2 rd bus .. =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .remu _ r1 r2 rd bus .. =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, true))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .divw _ r1 r2 rd bus .. =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .divuw _ r1 r2 rd bus .. =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, true))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .remw _ r1 r2 rd bus .. =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, false))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .remuw _ r1 r2 rd bus .. =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, true))) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  -- Jumps (2)
+  | .jal _ imm rd _ _ exec_row e_rd .. =>
+      execute_instruction (instruction.JAL (imm, rd)) state
+        = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
+  | .jalr _ imm rs1 rd _ _ exec_row e_rd .. =>
+      (do
+        Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+        LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
+        = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
   | _ => True
 
 theorem zisk_riscv_compliant_program_bus_v2_remaining
@@ -90,6 +184,146 @@ theorem zisk_riscv_compliant_program_bus_v2_remaining
     simp only [OpEnvelope.exec_eq_v2_remaining]
     exact equiv_SW_v2 state sw_input regs m r_main bus pins
       h_main_ind_width h_opcode_assumptions promises
+  -- W-shifts
+  | sllw sllw_input r1 r2 rd v bus
+         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_SLLW_v2 state sllw_input r1 r2 rd m v r_main bus
+      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      pins h_lane_rd
+  | srlw srlw_input r1 r2 rd v bus
+         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_SRLW_v2 state srlw_input r1 r2 rd m v r_main bus
+      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      pins h_lane_rd
+  | sraw sraw_input r1 r2 rd v bus
+         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_SRAW_v2 state sraw_input r1 r2 rd m v r_main bus
+      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      pins h_lane_rd
+  | slliw slliw_input r1 rd v bus promises pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_SLLIW_v2 state slliw_input r1 rd m v r_main bus promises pins h_lane_rd
+  | srliw srliw_input r1 rd v bus promises pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_SRLIW_v2 state srliw_input r1 rd m v r_main bus promises pins h_lane_rd
+  | sraiw sraiw_input r1 rd v bus promises pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_SRAIW_v2 state sraiw_input r1 rd m v r_main bus promises pins h_lane_rd
+  -- Mul family
+  | mul mul_input r1 r2 rd srs1 srs2 bus v r_a pins h_match_primary
+        promises bounds h_row_constraints =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_MUL_v2 state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
+      pins h_match_primary promises bounds h_row_constraints
+  | mulh mulh_input r1 r2 rd bus v r_a pins h_match_secondary
+        promises h_row_constraints =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_MULH_v2 state mulh_input r1 r2 rd bus m r_main v r_a
+      pins h_match_secondary promises h_row_constraints
+  | mulhu mulhu_input r1 r2 rd bus v r_a pins h_match_secondary
+         promises bounds h_row_constraints =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_MULHU_v2 state mulhu_input r1 r2 rd bus m r_main v r_a
+      pins h_match_secondary promises bounds h_row_constraints
+  | mulhsu mulhsu_input r1 r2 rd bus v r_a pins h_match_secondary
+        promises h_row_constraints =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_MULHSU_v2 state mulhsu_input r1 r2 rd bus m r_main v r_a
+      pins h_match_secondary promises h_row_constraints
+  | mulw mulw_input r1 r2 rd bus v r_a pins h_match_primary
+        promises h_row_constraints h_sext_choice h_rs1_value h_rs2_value =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_MULW_v2 state mulw_input r1 r2 rd bus m r_main v r_a
+      pins h_match_primary promises h_row_constraints h_sext_choice h_rs1_value h_rs2_value
+  -- Div / Rem
+  | div div_input r1 r2 rd bus v r_a
+        pins h_match_primary
+        promises h_op2_ne h_no_overflow
+        h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_DIV_v2 state div_input r1 r2 rd bus m r_main v r_a
+      pins h_match_primary promises h_op2_ne h_no_overflow
+      h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
+  | rem rem_input r1 r2 rd bus v r_a
+        pins h_match_secondary
+        promises h_op2_ne h_no_overflow
+        h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_REM_v2 state rem_input r1 r2 rd bus m r_main v r_a
+      pins h_match_secondary promises h_op2_ne h_no_overflow
+      h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
+  | remu remu_input r1 r2 rd bus v r_a
+         pins h_match_secondary promises
+         bounds h_row_constraints h_op2_ne =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_REMU_v2 state remu_input r1 r2 rd bus m r_main v r_a
+      pins h_match_secondary promises bounds h_row_constraints h_op2_ne
+  | divw divw_input r1 r2 rd bus v r_a
+         pins h_match_primary promises
+         h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
+         h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_DIVW_v2 state divw_input r1 r2 rd bus m r_main v r_a
+      pins h_match_primary promises h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
+      h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
+  | divuw divuw_input r1 r2 rd bus v r_a
+          pins h_match_primary promises
+          h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_DIVUW_v2 state divuw_input r1 r2 rd bus m r_main v r_a
+      pins h_match_primary promises h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
+  | remw remw_input r1 r2 rd bus v r_a
+         pins h_match_secondary promises
+         h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
+         h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_REMW_v2 state remw_input r1 r2 rd bus m r_main v r_a
+      pins h_match_secondary promises h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
+      h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w
+  | remuw remuw_input r1 r2 rd bus v r_a
+          pins h_match_secondary promises
+          h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_REMUW_v2 state remuw_input r1 r2 rd bus m r_main v r_a
+      pins h_match_secondary promises h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
+  -- Jumps
+  | jal jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val
+        pins h_jal_subset
+        promises h_input_imm h_not_throws
+        h_pc_bound h_lo_bound h_pc_offset_lt_2_32 =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_JAL_v2 state jal_input imm rd misa_val m r_main next_pc
+      exec_row e_rd nextPC_val pins h_jal_subset
+      promises h_input_imm h_not_throws
+      h_pc_bound h_lo_bound h_pc_offset_lt_2_32
+  | jalr jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val next_pc
+         pins h_jalr_subset
+         promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
+         h_pc_bound h_lo_bound h_pc_offset_lt_2_32 =>
+    simp only [OpEnvelope.exec_eq_v2_remaining]
+    exact equiv_JALR_v2 state jalr_input imm rs1 rd misa_val mseccfg
+      exec_row e_rd nextPC_val m r_main next_pc
+      pins h_jalr_subset
+      promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
+      h_pc_bound h_lo_bound h_pc_offset_lt_2_32
   | _ => trivial
 
 end ZiskFv.Compliance
