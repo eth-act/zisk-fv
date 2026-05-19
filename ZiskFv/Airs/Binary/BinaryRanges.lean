@@ -251,48 +251,49 @@ PIL citations:
 Consumed by `equiv_OR` (`Compliance/Wrappers/Or.lean`).
 -/
 
-/-- **Binary table-pin: `b_op_or_sext = OP_OR` for OR-tagged rows.**
-    For every Binary AIR row whose op-bus emission `b_op + 16 * mode32`
-    equals `15` (the on-bus literal `OP_OR`), the `b_op_or_sext` column
-    pins to `OP_OR` (`= 15`). Trust class: #6 (Binary AIR lookup
-    soundness — table-pin sub-class).
+/-- **Binary table-pin (consolidated): `b_op_or_sext` matches the
+    on-bus opcode literal for AND/OR/XOR rows.**
+
+    For any Binary AIR row whose op-bus emission `b_op + 16 * mode32`
+    equals an AND/OR/XOR opcode literal (14/15/16), the
+    `b_op_or_sext` column pins to that literal. Replaces three
+    per-opcode axioms (`binary_b_op_or_sext_eq_OP_{AND,OR,XOR}`)
+    with one parameterized axiom; the three per-opcode results are
+    now derived theorems below.
 
     PIL: `binary.pil:104` (`b_op_or_sext` linear def) +
-    `binary.pil:131-148` (per-byte BinaryTable lookup restricting the
-    `(b_op, mode32, c_is_signed)` triple to valid entries). -/
-axiom binary_b_op_or_sext_eq_OP_OR (v : Valid_Binary C FGL FGL) (r : ℕ)
+    `binary.pil:131-148` (per-byte BinaryTable lookup restricting
+    the `(b_op, mode32, c_is_signed)` triple to valid entries).
+
+    Trust class: #6 (Binary AIR lookup soundness — table-pin sub-
+    class). One axiom per opcode in {AND, OR, XOR} share identical
+    structure, so consolidation is a textual / structural merge with
+    no trust delta beyond the named-axiom reduction (3 → 1). -/
+axiom binary_b_op_or_sext_eq_op_general (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (op : ℕ) (h_op : op = 14 ∨ op = 15 ∨ op = 16)
+    (h_emit_op : v.b_op r + 16 * v.mode32 r = (op : FGL)) :
+    (v.b_op_or_sext r).val = op
+
+/-- Derived theorem: `b_op_or_sext = OP_OR` for OR-tagged rows.
+    Specialization of `binary_b_op_or_sext_eq_op_general` to op = 15. -/
+theorem binary_b_op_or_sext_eq_OP_OR (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = 15) :
-    (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR
+    (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR :=
+  binary_b_op_or_sext_eq_op_general v r 15 (.inr (.inl rfl)) h_emit_op
 
-/-- **Binary table-pin: `b_op_or_sext = OP_AND` for AND-tagged rows.**
-    For every Binary AIR row whose op-bus emission `b_op + 16 * mode32`
-    equals `14` (the on-bus literal `OP_AND`), the `b_op_or_sext` column
-    pins to `OP_AND` (`= 14`). AND uses `b_op = 14, mode32 = 0,
-    c_is_signed = 0`. Trust class: #6 (Binary AIR lookup soundness —
-    table-pin sub-class), parallel to `binary_b_op_or_sext_eq_OP_OR`.
-
-    PIL: `binary.pil:104` (`b_op_or_sext` linear def) +
-    `binary.pil:131-148` (per-byte BinaryTable lookup restricting the
-    `(b_op, mode32, c_is_signed)` triple to valid entries). Consumed by
-    `equiv_AND` (`Compliance/Wrappers/And.lean`). -/
-axiom binary_b_op_or_sext_eq_OP_AND (v : Valid_Binary C FGL FGL) (r : ℕ)
+/-- Derived theorem: `b_op_or_sext = OP_AND` for AND-tagged rows.
+    Specialization of `binary_b_op_or_sext_eq_op_general` to op = 14. -/
+theorem binary_b_op_or_sext_eq_OP_AND (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = 14) :
-    (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND
+    (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND :=
+  binary_b_op_or_sext_eq_op_general v r 14 (.inl rfl) h_emit_op
 
-/-- **Binary table-pin: `b_op_or_sext = OP_XOR` for XOR-tagged rows.**
-    For every Binary AIR row whose op-bus emission `b_op + 16 * mode32`
-    equals `16` (the on-bus literal `OP_XOR`), the `b_op_or_sext` column
-    pins to `OP_XOR` (`= 16`). XOR uses `b_op = 16, mode32 = 0,
-    c_is_signed = 0`. Trust class: #6 (Binary AIR lookup soundness —
-    table-pin sub-class), parallel to `binary_b_op_or_sext_eq_OP_OR`.
-
-    PIL: `binary.pil:104` (`b_op_or_sext` linear def) +
-    `binary.pil:131-148` (per-byte BinaryTable lookup restricting the
-    `(b_op, mode32, c_is_signed)` triple to valid entries). Consumed by
-    `equiv_XOR` (`Compliance/Wrappers/Xor.lean`). -/
-axiom binary_b_op_or_sext_eq_OP_XOR (v : Valid_Binary C FGL FGL) (r : ℕ)
+/-- Derived theorem: `b_op_or_sext = OP_XOR` for XOR-tagged rows.
+    Specialization of `binary_b_op_or_sext_eq_op_general` to op = 16. -/
+theorem binary_b_op_or_sext_eq_OP_XOR (v : Valid_Binary C FGL FGL) (r : ℕ)
     (h_emit_op : v.b_op r + 16 * v.mode32 r = 16) :
-    (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR
+    (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR :=
+  binary_b_op_or_sext_eq_op_general v r 16 (.inr (.inr rfl)) h_emit_op
 
 /-! ## 6-field per-byte chain witness with `cin` / `pos_ind` exposed
 

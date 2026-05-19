@@ -25,7 +25,7 @@
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
 # artefacts under `.lake/build/`). Last regenerated: 2026-05-19.
 #
-# Total entries: 118
+# Total entries: 116
 #
 ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed
 ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned
@@ -62,9 +62,7 @@ ZiskFv.Airs.Arith.arith_table_op_mulhu_main_selector_pin
 ZiskFv.Airs.Arith.arith_table_op_mulhu_mode_pin
 ZiskFv.Airs.Arith.arith_table_op_mulw_mode_pin
 ZiskFv.Airs.Arith.arith_table_op_mulw_operand_pin
-ZiskFv.Airs.Binary.binary_b_op_or_sext_eq_OP_AND
-ZiskFv.Airs.Binary.binary_b_op_or_sext_eq_OP_OR
-ZiskFv.Airs.Binary.binary_b_op_or_sext_eq_OP_XOR
+ZiskFv.Airs.Binary.binary_b_op_or_sext_eq_op_general
 ZiskFv.Airs.Binary.binary_carry_bits_in_range
 ZiskFv.Airs.Binary.binary_columns_in_range
 ZiskFv.Airs.Binary.binary_consumer_byte_match_chain_pin
