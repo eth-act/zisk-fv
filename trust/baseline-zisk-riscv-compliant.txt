@@ -25,18 +25,14 @@
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
 # artefacts under `.lake/build/`). Last regenerated: 2026-05-19.
 #
-# Total entries: 107
+# Total entries: 104
 #
-ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed
-ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_w
 ZiskFv.Airs.Arith.arith_div_nb_eq_msb_of_divisor
 ZiskFv.Airs.Arith.arith_div_np_eq_msb_of_dividend
 ZiskFv.Airs.Arith.arith_div_remainder_bound
 ZiskFv.Airs.Arith.arith_div_remainder_bound_signed_w
 ZiskFv.Airs.Arith.arith_div_remainder_bound_unsigned
 ZiskFv.Airs.Arith.arith_div_remainder_bound_unsigned_w
-ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_signed
-ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_w
 ZiskFv.Airs.Arith.arith_mul_na_eq_msb_of_a
 ZiskFv.Airs.Arith.arith_mul_nb_eq_msb_of_b
 ZiskFv.Airs.Arith.arith_table_op_div_rem_main_selector_pin
@@ -78,6 +74,7 @@ ZiskFv.Airs.OperationBus.op_bus_permutation_sound
 ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf
 ZiskFv.Channels.RangeBusSoundness.range_bus_sound
+ZiskFv.Channels.RangeBusSoundness.signed_range_bus_sound
 ZiskFv.PlatformScope.pmaCheck_is_pure_none
 ZiskFv.PlatformScope.pmpCheck_is_pure_none
 ZiskFv.PlatformScope.update_elp_state_is_pure_unit

@@ -230,7 +230,7 @@ shape (disjunctive instead of single-bound). -/
     PIL citation: `arith.pil:280`
     (`arith_range_table_assumes(ARITH_RANGE_CARRY, carry[index])`)
     composed with the signed-mode specialization of the carry chain. -/
-axiom arith_mul_carry_columns_in_range_signed
+theorem arith_mul_carry_columns_in_range_signed
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ)
     (_h_nr : v.nr r = 0) (_h_sext : v.sext r = 0)
     (_h_m32 : v.m32 r = 0) (_h_div : v.div r = 0) :
@@ -238,7 +238,15 @@ axiom arith_mul_carry_columns_in_range_signed
       (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val < 983041
         ∨ GL_prime - 983040 ≤ (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val
     cy_disj 0 ∧ cy_disj 1 ∧ cy_disj 2 ∧ cy_disj 3
-      ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6
+      ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL)) trivial r
 
 /-- **ArithDiv carry-column range (signed mode, disjunctive).** Mirror
     of `arith_mul_carry_columns_in_range_signed` for the Div view of the
@@ -246,14 +254,22 @@ axiom arith_mul_carry_columns_in_range_signed
 
     Signed DIV/REM rows (`na, nb, np, nr ∈ {0,1}`, `m32 = 0`, `div = 1`)
     are the consumers. -/
-axiom arith_div_carry_columns_in_range_signed
+theorem arith_div_carry_columns_in_range_signed
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ)
     (_h_sext : v.sext r = 0) (_h_m32 : v.m32 r = 0) (_h_div : v.div r = 1) :
     let cy_disj (col : ℕ) : Prop :=
       (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val < 983041
         ∨ GL_prime - 983040 ≤ (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val
     cy_disj 0 ∧ cy_disj 1 ∧ cy_disj 2 ∧ cy_disj 3
-      ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6
+      ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL)) trivial r
 
 /-! ## Arith-table row pin — signed DIV/REM sign-of-remainder
 
@@ -349,14 +365,22 @@ conditioned by the m32=1 mode pin. -/
     PIL citation: `arith.pil:280` (range table on carry columns)
     composed with the W-mode (m32=1) specialization of the
     `arith_mul_w_carry_identity`. -/
-axiom arith_mul_carry_columns_in_range_w
+theorem arith_mul_carry_columns_in_range_w
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ)
     (_h_sext : v.sext r = 0) (_h_m32 : v.m32 r = 1) (_h_div : v.div r = 0) :
     let cy_disj (col : ℕ) : Prop :=
       (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val < 983041
         ∨ GL_prime - 983040 ≤ (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val
     cy_disj 0 ∧ cy_disj 1 ∧ cy_disj 2 ∧ cy_disj 3
-      ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6
+      ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL)) trivial r
 
 /-- **ArithDiv carry-column range (W-mode, m32 = 1).** Mirror of
     `arith_mul_carry_columns_in_range_w` for the Div view of the
@@ -364,14 +388,22 @@ axiom arith_mul_carry_columns_in_range_w
 
     DIVW / DIVUW / REMW / REMUW rows are the consumers
     (`m32 = 1`, `div = 1`, `sext = 0`). -/
-axiom arith_div_carry_columns_in_range_w
+theorem arith_div_carry_columns_in_range_w
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ)
     (_h_sext : v.sext r = 0) (_h_m32 : v.m32 r = 1) (_h_div : v.div r = 1) :
     let cy_disj (col : ℕ) : Prop :=
       (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val < 983041
         ∨ GL_prime - 983040 ≤ (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val
     cy_disj 0 ∧ cy_disj 1 ∧ cy_disj 2 ∧ cy_disj 3
-      ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6
+      ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL)) trivial r
 
 /-! ## Arith-table W-mode operand-input pin (m32 = 1)
 

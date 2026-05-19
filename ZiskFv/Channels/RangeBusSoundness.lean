@@ -121,4 +121,47 @@ axiom range_bus_sound
     (_h_in_range_bus : PIL_bits_annotation w col width) :
     ∀ r, (col w r).val < 2 ^ width
 
+/-! ## Signed-region soundness for Arith's carry table
+
+The Arith AIR's carry columns are range-checked against
+`ARITH_RANGE_CARRY`, whose entries are `[-0xEFFFF .. 0xF0000]`
+(`zisk/state-machines/arith/pil/arith_range_table.pil:69`). In
+Goldilocks-`Fin` representation this is the disjoint union of:
+
+* the **non-negative** band `[0, 0xF0000]`, i.e. `.val < 0xF0001 = 983041`
+* the **negative** band `[GL_prime - 0xF0000, GL_prime - 1]`,
+  i.e. `GL_prime - 983040 ≤ .val`
+
+This is a different soundness shape than `range_bus_sound`'s
+`< 2^width`. We capture it via a sibling axiom
+`signed_range_bus_sound` so the 4 signed/W-mode Arith carry-column
+range axioms become derived theorems.
+
+Trust class: same #6b as the retired pure-bit-width Arith range
+axioms (range-checker bus lookup soundness, signed-table sub-class). -/
+
+/-- Threshold for the signed-mode arith carry table's non-negative band. -/
+abbrev ARITH_SIGNED_POS_BOUND : ℕ := 983041   -- 0xF0001
+/-- Threshold for the signed-mode arith carry table's negative band. -/
+abbrev ARITH_SIGNED_NEG_OFFSET : ℕ := 983040  -- 0xF0000
+
+/-- **PIL `ARITH_RANGE_CARRY` annotation marker.** Same definitional
+    role as `PIL_bits_annotation` but for the signed-carry table. -/
+def PIL_arith_signed_carry_annotation
+    {W : Type} (_w : W) (_col : W → ℕ → FGL) : Prop := True
+
+/-- **Signed Arith carry-table soundness (consolidated).** A column
+    range-checked against `ARITH_RANGE_CARRY` (entries
+    `[-0xEFFFF..0xF0000]`) satisfies the signed-band disjunction at
+    every row.
+
+    Replaces the 4 signed/W-mode `arith_*_carry_columns_in_range_*`
+    axioms. Trust class: #6b range-checker bus lookup soundness,
+    signed-table sub-class. -/
+axiom signed_range_bus_sound
+    {W : Type} (w : W) (col : W → ℕ → FGL)
+    (_h_in_arith_signed_carry_bus : PIL_arith_signed_carry_annotation w col) :
+    ∀ r, (col w r).val < ARITH_SIGNED_POS_BOUND
+       ∨ GL_prime - ARITH_SIGNED_NEG_OFFSET ≤ (col w r).val
+
 end ZiskFv.Channels.RangeBusSoundness
