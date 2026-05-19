@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 113
+# Total entries: 111
 #
 39b9f47eebdda4ca  ZiskFv/Airs/Arith/Ranges.lean:44  axiom     arith_mul_columns_in_range
 c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:56  axiom     arith_div_columns_in_range
@@ -39,15 +39,13 @@ ada7f250a30b1360  ZiskFv/Airs/Arith/Ranges.lean:977  axiom     arith_table_op_mu
 df4f11d1887c2818  ZiskFv/Airs/Arith/Ranges.lean:1043  axiom     arith_mul_na_eq_msb_of_a
 8536d3fb917bfa35  ZiskFv/Airs/Arith/Ranges.lean:1070  axiom     arith_mul_nb_eq_msb_of_b
 b3cdb2b4ad78b074  ZiskFv/Airs/Arith/Ranges.lean:1102  axiom     arith_table_op_mulw_mode_pin
-feafd4d75a95e2ad  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:53  axiom     binary_extension_columns_in_range
-48b9f2f309f54d71  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:106  axiom     binary_extension_op_is_shift_pin
-005de0f3bbc11bd2  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:136  axiom     binary_extension_row_byte_lookups
+48b9f2f309f54d71  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:141  axiom     binary_extension_op_is_shift_pin
+005de0f3bbc11bd2  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:171  axiom     binary_extension_row_byte_lookups
 10baeda5676d8393  ZiskFv/Airs/Binary/BinaryRanges.lean:178  axiom     binary_per_byte_lookup_witness
 6902260bea95d1b3  ZiskFv/Airs/Binary/BinaryRanges.lean:307  axiom     binary_b_op_or_sext_eq_op_general
 316ca8f85d288192  ZiskFv/Airs/Binary/BinaryRanges.lean:434  axiom     binary_consumer_byte_match_chain_pin
 b206ab1a686ceb3f  ZiskFv/Airs/Binary/BinaryRanges.lean:578  axiom     binary_w_sext_choice_pin
 3fbe8ea0cae828af  ZiskFv/Airs/Binary/BinaryRanges.lean:604  axiom     binary_w_mode_carry_7_zero
-e6a596bef7ff88cb  ZiskFv/Airs/MemoryBus/EntryRanges.lean:52  axiom     memory_bus_entry_byte_range_perm_sound
 8c04bbb28c410ebd  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:135  axiom     memalign_load_perm_sound
 ddbca43a3ae7757a  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:168  axiom     mem_align_rom_subdoubleword_load_value_1_zero
 2a92e6d678fb5c0f  ZiskFv/Airs/MemoryBus/MemBridge.lean:163  axiom     lookup_consumer_matches_provider_load

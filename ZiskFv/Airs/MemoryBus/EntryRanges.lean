@@ -4,6 +4,7 @@ import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Channels.RangeBusSoundness
 
 /-!
 # Memory-bus entry byte-range soundness
@@ -38,18 +39,27 @@ bus, restricted to memory-bus participants.
 namespace ZiskFv.Airs.MemoryBus
 
 open Goldilocks
+open ZiskFv.Channels.RangeBusSoundness
 
-/-- **Memory-bus entry byte-range soundness.** Every memory-bus
-    entry's 8 byte cells (`x0..x7`) lie in `[0, 256)`. Soundness
-    derives from the bus protocol's `bits(8)` annotation on the
-    per-byte columns of every memory-bus participant (Mem, MemAlign*,
-    Main's memory-bus emission path).
+/-- **Memory-bus entry byte-range soundness (derived).** Every
+    memory-bus entry's 8 byte cells (`x0..x7`) lie in `[0, 256)`.
+    Soundness derives from the bus protocol's `bits(8)` annotation
+    on the per-byte columns of every memory-bus participant (Mem,
+    MemAlign*, Main's memory-bus emission path).
 
-    Same trust class as `memory_bus_register_write_perm_sound`:
-    a permutation-soundness-style closure on the memory bus that
-    asserts every entry appearing on the bus carries the per-byte
-    range constraint. -/
-axiom memory_bus_entry_byte_range_perm_sound (e : Interaction.MemoryBusEntry FGL) :
-    memory_entry_bytes_in_range e
+    Previously an axiom; now derived from `range_bus_sound` via 8
+    applications (one per byte lane). The row argument is dummied to
+    `0` since `MemoryBusEntry` is not a row-indexed record. -/
+theorem memory_bus_entry_byte_range_perm_sound (e : Interaction.MemoryBusEntry FGL) :
+    memory_entry_bytes_in_range e := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact range_bus_sound e (fun e _ => e.x0) 8 trivial 0
+  · exact range_bus_sound e (fun e _ => e.x1) 8 trivial 0
+  · exact range_bus_sound e (fun e _ => e.x2) 8 trivial 0
+  · exact range_bus_sound e (fun e _ => e.x3) 8 trivial 0
+  · exact range_bus_sound e (fun e _ => e.x4) 8 trivial 0
+  · exact range_bus_sound e (fun e _ => e.x5) 8 trivial 0
+  · exact range_bus_sound e (fun e _ => e.x6) 8 trivial 0
+  · exact range_bus_sound e (fun e _ => e.x7) 8 trivial 0
 
 end ZiskFv.Airs.MemoryBus
