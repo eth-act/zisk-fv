@@ -32,6 +32,13 @@ path = "build/sail-lean"
 name = "Extraction"
 path = "build/extraction"
 
+# Clean DSL (Verified-zkEVM/clean) source tree. Populated by
+# `nix run .#populate` from the pinned `clean-src` flake input.
+# Mathlib v4.28.0 is shared (Clean and zisk-fv pin the same rev).
+[[require]]
+name = "Clean"
+path = "build/clean-lean"
+
 [[lean_lib]]
 name = "ZiskFv"
 

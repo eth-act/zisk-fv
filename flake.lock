@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "clean-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778932231,
+        "narHash": "sha256-NWPfpBEPM9VKZY+1togfvr2mYi3tbVwAGw8lV9Umcvc=",
+        "owner": "Verified-zkEVM",
+        "repo": "clean",
+        "rev": "95c8cc2e9a86ec54350ab33f07f1d89e47d57fee",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Verified-zkEVM",
+        "repo": "clean",
+        "rev": "95c8cc2e9a86ec54350ab33f07f1d89e47d57fee",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -70,6 +87,7 @@
     },
     "root": {
       "inputs": {
+        "clean-src": "clean-src",
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
         "pil2-compiler-src": "pil2-compiler-src",

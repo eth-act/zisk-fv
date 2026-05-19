@@ -33,10 +33,16 @@
       url = "github:0xPolygonHermez/pil2-proofman/v0.17.0";
       flake = false;
     };
+    clean-src = {
+      # Verified-zkEVM/clean @ main HEAD as of the clean-full branch
+      # cut. Lean v4.28.0; Mathlib v4.28.0 — matches zisk-fv exactly.
+      url = "github:Verified-zkEVM/clean/95c8cc2e9a86ec54350ab33f07f1d89e47d57fee";
+      flake = false;
+    };
   };
 
   outputs = { self, nixpkgs, flake-utils, sail-src, sail-riscv-src,
-              zisk-src, pil2-compiler-src, pil2-proofman-src }:
+              zisk-src, pil2-compiler-src, pil2-proofman-src, clean-src }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
@@ -45,6 +51,10 @@
 
         packages.sail-lean-tree = pkgs.callPackage ./nix/sail-lean-tree.nix {
           inherit sail-riscv-src;
+        };
+
+        packages.clean-source = pkgs.callPackage ./nix/clean.nix {
+          inherit clean-src;
         };
 
         packages.pil2-compiler = pkgs.callPackage ./nix/pil2-compiler.nix {
@@ -68,9 +78,10 @@
             sail-lean-tree = self.packages.${system}.sail-lean-tree;
             zisk-pilout = self.packages.${system}.zisk-pilout;
             extracted-lean = self.packages.${system}.extracted-lean;
+            clean-source = self.packages.${system}.clean-source;
           }}/bin/populate";
           meta = {
-            description = "Build and copy the Sail-Lean spec, ZisK pilout, and extracted Lean into build/.";
+            description = "Build and copy the Sail-Lean spec, ZisK pilout, extracted Lean, and Clean source into build/.";
           };
         };
 
