@@ -11,10 +11,10 @@ ZiskFv.Equivalence.Bgeu.equiv_BGEU:
 ZiskFv.Equivalence.Blt.equiv_BLT: 
 ZiskFv.Equivalence.Bltu.equiv_BLTU: 
 ZiskFv.Equivalence.Bne.equiv_BNE: 
-ZiskFv.Equivalence.Div.equiv_DIV: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed, ZiskFv.Airs.Arith.arith_div_columns_in_range, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
-ZiskFv.Equivalence.Divu.equiv_DIVU: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned, ZiskFv.Airs.Arith.arith_div_columns_in_range
-ZiskFv.Equivalence.Divuw.equiv_DIVUW: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned, ZiskFv.Airs.Arith.arith_div_columns_in_range, ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
-ZiskFv.Equivalence.Divw.equiv_DIVW: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_w, ZiskFv.Airs.Arith.arith_div_columns_in_range, ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin, ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
+ZiskFv.Equivalence.Div.equiv_DIV: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
+ZiskFv.Equivalence.Divu.equiv_DIVU: ZiskFv.Channels.RangeBusSoundness.range_bus_sound
+ZiskFv.Equivalence.Divuw.equiv_DIVUW: ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
+ZiskFv.Equivalence.Divw.equiv_DIVW: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_w, ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin, ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
 ZiskFv.Equivalence.Fence.equiv_FENCE: 
 ZiskFv.Equivalence.Jal.equiv_JAL: ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_JAL, ZiskFv.Trusted.transpile_PC_for_JAL
 ZiskFv.Equivalence.Jalr.equiv_JALR: ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.PlatformScope.update_elp_state_is_pure_unit, ZiskFv.Trusted.transpile_JALR, ZiskFv.Trusted.transpile_PC_for_JALR
@@ -26,17 +26,17 @@ ZiskFv.Equivalence.Lhu.equiv_LHU: ZiskFv.Airs.MemoryBus.MemAlignBridge.mem_align
 ZiskFv.Equivalence.Lui.equiv_LUI: ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_LUI
 ZiskFv.Equivalence.Lw.equiv_LW: ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Airs.MemoryBus.MemBridge.main_sext_load_emission_bundle, ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
 ZiskFv.Equivalence.Lwu.equiv_LWU: ZiskFv.Airs.MemoryBus.MemAlignBridge.mem_align_rom_subdoubleword_load_value_1_zero, ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_load_perm_sound, ZiskFv.Airs.MemoryBus.MemBridge.lookup_consumer_matches_provider_load, ZiskFv.Airs.MemoryBus.MemBridge.main_load_emission_bundle, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.ZiskCircuit.MemModel.row_models_sail_state_load
-ZiskFv.Equivalence.Mul.equiv_MUL: ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_unsigned, ZiskFv.Airs.Arith.arith_mul_columns_in_range
-ZiskFv.Equivalence.MulH.equiv_MULH: ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_signed, ZiskFv.Airs.Arith.arith_mul_columns_in_range, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
-ZiskFv.Equivalence.MulHSU.equiv_MULHSU: ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_signed, ZiskFv.Airs.Arith.arith_mul_columns_in_range, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
-ZiskFv.Equivalence.MulHU.equiv_MULHU: ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_unsigned, ZiskFv.Airs.Arith.arith_mul_columns_in_range
-ZiskFv.Equivalence.MulW.equiv_MULW: ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_w, ZiskFv.Airs.Arith.arith_mul_columns_in_range, ZiskFv.Airs.Arith.arith_table_op_mulw_operand_pin, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
+ZiskFv.Equivalence.Mul.equiv_MUL: ZiskFv.Channels.RangeBusSoundness.range_bus_sound
+ZiskFv.Equivalence.MulH.equiv_MULH: ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_signed, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU: ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_signed, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
+ZiskFv.Equivalence.MulHU.equiv_MULHU: ZiskFv.Channels.RangeBusSoundness.range_bus_sound
+ZiskFv.Equivalence.MulW.equiv_MULW: ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_w, ZiskFv.Airs.Arith.arith_table_op_mulw_operand_pin, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
 ZiskFv.Equivalence.Or.equiv_OR: ZiskFv.Airs.Binary.binary_per_byte_lookup_witness, ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_OR
 ZiskFv.Equivalence.Ori.equiv_ORI: ZiskFv.Airs.Binary.binary_per_byte_lookup_witness, ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_ORI
-ZiskFv.Equivalence.Rem.equiv_REM: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed, ZiskFv.Airs.Arith.arith_div_columns_in_range, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
-ZiskFv.Equivalence.Remu.equiv_REMU: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned, ZiskFv.Airs.Arith.arith_div_columns_in_range
-ZiskFv.Equivalence.Remuw.equiv_REMUW: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned, ZiskFv.Airs.Arith.arith_div_columns_in_range, ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
-ZiskFv.Equivalence.Remw.equiv_REMW: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_w, ZiskFv.Airs.Arith.arith_div_columns_in_range, ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin, ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
+ZiskFv.Equivalence.Rem.equiv_REM: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
+ZiskFv.Equivalence.Remu.equiv_REMU: ZiskFv.Channels.RangeBusSoundness.range_bus_sound
+ZiskFv.Equivalence.Remuw.equiv_REMUW: ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
+ZiskFv.Equivalence.Remw.equiv_REMW: ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_w, ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin, ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin, ZiskFv.Channels.RangeBusSoundness.range_bus_sound
 ZiskFv.Equivalence.Sb.equiv_SB: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
 ZiskFv.Equivalence.Sd.equiv_SD: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false
 ZiskFv.Equivalence.Sh.equiv_SH: ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false

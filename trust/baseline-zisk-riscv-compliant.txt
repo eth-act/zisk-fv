@@ -25,12 +25,10 @@
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
 # artefacts under `.lake/build/`). Last regenerated: 2026-05-19.
 #
-# Total entries: 111
+# Total entries: 107
 #
 ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed
-ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned
 ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_w
-ZiskFv.Airs.Arith.arith_div_columns_in_range
 ZiskFv.Airs.Arith.arith_div_nb_eq_msb_of_divisor
 ZiskFv.Airs.Arith.arith_div_np_eq_msb_of_dividend
 ZiskFv.Airs.Arith.arith_div_remainder_bound
@@ -38,9 +36,7 @@ ZiskFv.Airs.Arith.arith_div_remainder_bound_signed_w
 ZiskFv.Airs.Arith.arith_div_remainder_bound_unsigned
 ZiskFv.Airs.Arith.arith_div_remainder_bound_unsigned_w
 ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_signed
-ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_unsigned
 ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_w
-ZiskFv.Airs.Arith.arith_mul_columns_in_range
 ZiskFv.Airs.Arith.arith_mul_na_eq_msb_of_a
 ZiskFv.Airs.Arith.arith_mul_nb_eq_msb_of_b
 ZiskFv.Airs.Arith.arith_table_op_div_rem_main_selector_pin

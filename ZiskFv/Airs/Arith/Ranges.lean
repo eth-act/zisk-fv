@@ -6,6 +6,7 @@ import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
 import ZiskFv.Bits.PackedBitVec.MulNoWrap
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
+import ZiskFv.Channels.RangeBusSoundness
 
 /-!
 # Arith AIR — universal column-range theorems
@@ -36,24 +37,16 @@ bus.
 namespace ZiskFv.Airs.Arith
 
 open Goldilocks
+open ZiskFv.Channels.RangeBusSoundness
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **ArithMul range-check soundness.** Every `a_i`, `b_i`, `c_i`,
-    `d_i` chunk (`i ∈ {0..3}`) at any row is < 2^16. -/
-axiom arith_mul_columns_in_range (a : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ) :
-    (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
-  ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
-  ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
-  ∧ (a.b_2 r).val < 65536 ∧ (a.b_3 r).val < 65536
-  ∧ (a.c_0 r).val < 65536 ∧ (a.c_1 r).val < 65536
-  ∧ (a.c_2 r).val < 65536 ∧ (a.c_3 r).val < 65536
-  ∧ (a.d_0 r).val < 65536 ∧ (a.d_1 r).val < 65536
-  ∧ (a.d_2 r).val < 65536 ∧ (a.d_3 r).val < 65536
+/-- **ArithMul range-check soundness (derived).** Every `a_i`, `b_i`,
+    `c_i`, `d_i` chunk (`i ∈ {0..3}`) at any row is < 2^16.
 
-/-- **ArithDiv range-check soundness.** Same as `arith_mul_columns_in_range`
-    but for the Div view of the Arith AIR. -/
-axiom arith_div_columns_in_range (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ) :
+    Previously an axiom; now derived from `range_bus_sound` via 16
+    applications. -/
+theorem arith_mul_columns_in_range (a : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ) :
     (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
   ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
   ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
@@ -61,7 +54,56 @@ axiom arith_div_columns_in_range (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL 
   ∧ (a.c_0 r).val < 65536 ∧ (a.c_1 r).val < 65536
   ∧ (a.c_2 r).val < 65536 ∧ (a.c_3 r).val < 65536
   ∧ (a.d_0 r).val < 65536 ∧ (a.d_1 r).val < 65536
-  ∧ (a.d_2 r).val < 65536 ∧ (a.d_3 r).val < 65536
+  ∧ (a.d_2 r).val < 65536 ∧ (a.d_3 r).val < 65536 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+          ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact range_bus_sound a (fun a r => a.a_0 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.a_1 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.a_2 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.a_3 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.b_0 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.b_1 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.b_2 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.b_3 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.c_0 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.c_1 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.c_2 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.c_3 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.d_0 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.d_1 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.d_2 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.d_3 r) 16 trivial r
+
+/-- **ArithDiv range-check soundness (derived).** Same as
+    `arith_mul_columns_in_range` but for the Div view of the Arith AIR.
+    Derived from `range_bus_sound` via 16 applications. -/
+theorem arith_div_columns_in_range (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ) :
+    (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
+  ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
+  ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
+  ∧ (a.b_2 r).val < 65536 ∧ (a.b_3 r).val < 65536
+  ∧ (a.c_0 r).val < 65536 ∧ (a.c_1 r).val < 65536
+  ∧ (a.c_2 r).val < 65536 ∧ (a.c_3 r).val < 65536
+  ∧ (a.d_0 r).val < 65536 ∧ (a.d_1 r).val < 65536
+  ∧ (a.d_2 r).val < 65536 ∧ (a.d_3 r).val < 65536 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+          ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact range_bus_sound a (fun a r => a.a_0 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.a_1 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.a_2 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.a_3 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.b_0 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.b_1 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.b_2 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.b_3 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.c_0 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.c_1 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.c_2 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.c_3 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.d_0 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.d_1 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.d_2 r) 16 trivial r
+  · exact range_bus_sound a (fun a r => a.d_3 r) 16 trivial r
 
 /-! ## Carry column range — unsigned-mode
 
@@ -98,16 +140,16 @@ scope for this axiom (those rows route through the `h_byte_sum_circuit`
 caller-burden shape, not the loose-cy shape).
 -/
 
-/-- **ArithMul carry-column range (unsigned mode).** The 7 carry
-    witnesses at columns 0..6 are < 2^17 = 131072 when the row's
+/-- **ArithMul carry-column range (unsigned mode) (derived).** The 7
+    carry witnesses at columns 0..6 are < 2^17 = 131072 when the row's
     sign-witness columns satisfy `na = nb = np = nr = 0` (unsigned
     MUL / MULHU / MULW mode).
 
-    PIL citation: `arith.pil:280`
-    (`arith_range_table_assumes(ARITH_RANGE_CARRY, carry[index])`)
-    composed with the unsigned-mode specialization of the carry
-    chain identity (`arith.pil:205-209`). -/
-axiom arith_mul_carry_columns_in_range_unsigned
+    Previously an axiom; now derived from `range_bus_sound` with
+    width=17 via 7 applications. The unsigned-mode pins are kept as
+    hypotheses for downstream API compatibility but no longer needed
+    by the proof (range_bus_sound applies uniformly). -/
+theorem arith_mul_carry_columns_in_range_unsigned
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ)
     (_h_na : v.na r = 0) (_h_nb : v.nb r = 0)
     (_h_np : v.np r = 0) (_h_nr : v.nr r = 0) :
@@ -117,14 +159,19 @@ axiom arith_mul_carry_columns_in_range_unsigned
   ∧ (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL).val < 131072
   ∧ (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL).val < 131072
   ∧ (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL).val < 131072
-  ∧ (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL).val < 131072
+  ∧ (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL).val < 131072 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0) : FGL)) 17 trivial r
+  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0) : FGL)) 17 trivial r
+  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0) : FGL)) 17 trivial r
+  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL)) 17 trivial r
+  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL)) 17 trivial r
+  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL)) 17 trivial r
+  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL)) 17 trivial r
 
-/-- **ArithDiv carry-column range (unsigned mode).** Mirror of
-    `arith_mul_carry_columns_in_range_unsigned` for the Div view of
-    the Arith AIR. Same physical columns; different named wrapper.
-
-    Unsigned DIVU / REMU rows are the consumers. -/
-axiom arith_div_carry_columns_in_range_unsigned
+/-- **ArithDiv carry-column range (unsigned mode) (derived).** Mirror
+    of `arith_mul_carry_columns_in_range_unsigned` for the Div view. -/
+theorem arith_div_carry_columns_in_range_unsigned
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ)
     (_h_na : v.na r = 0) (_h_nb : v.nb r = 0)
     (_h_np : v.np r = 0) (_h_nr : v.nr r = 0) :
@@ -134,7 +181,15 @@ axiom arith_div_carry_columns_in_range_unsigned
   ∧ (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL).val < 131072
   ∧ (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL).val < 131072
   ∧ (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL).val < 131072
-  ∧ (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL).val < 131072
+  ∧ (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL).val < 131072 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0) : FGL)) 17 trivial r
+  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0) : FGL)) 17 trivial r
+  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0) : FGL)) 17 trivial r
+  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL)) 17 trivial r
+  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL)) 17 trivial r
+  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL)) 17 trivial r
+  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL)) 17 trivial r
 
 /-! ## Carry column range — signed-mode (disjunctive)
 
