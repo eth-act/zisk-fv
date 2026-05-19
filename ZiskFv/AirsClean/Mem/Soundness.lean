@@ -3,8 +3,8 @@ import ZiskFv.AirsClean.Mem.Spec
 /-!
 # Mem Soundness
 
-The Spec is the conjunction of the 6 F-typed constraints. Each
-constraint is its own Spec clause, so Soundness is structural.
+The 9 F-typed per-row constraints map 1:1 to Spec clauses, so
+Soundness is structural — the proof is `⟨h_1, h_2, …, h_9⟩`.
 
 ## Trust note
 
@@ -22,9 +22,14 @@ theorem soundness (row : MemRow FGL)
     (h_sel_bool : row.sel * (1 - row.sel) = 0)
     (h_addr_changes_bool : row.addr_changes * (1 - row.addr_changes) = 0)
     (h_wr_bool : row.wr * (1 - row.wr) = 0)
-    (h_wr_implies_sel : row.wr * (1 - row.sel) = 0) :
+    (h_wr_implies_sel : row.wr * (1 - row.sel) = 0)
+    (h_read_same_addr_def : row.read_same_addr - (1 - row.addr_changes) * (1 - row.wr) = 0)
+    (h_addr_change_no_write_value_0 : (row.addr_changes * (1 - row.wr)) * row.value_0 = 0)
+    (h_addr_change_no_write_value_1 : (row.addr_changes * (1 - row.wr)) * row.value_1 = 0) :
     Spec row :=
   ⟨h_sel_dual_bool, h_sel_implies_sel_dual, h_sel_bool,
-   h_addr_changes_bool, h_wr_bool, h_wr_implies_sel⟩
+   h_addr_changes_bool, h_wr_bool, h_wr_implies_sel,
+   h_read_same_addr_def,
+   h_addr_change_no_write_value_0, h_addr_change_no_write_value_1⟩
 
 end ZiskFv.AirsClean.Mem
