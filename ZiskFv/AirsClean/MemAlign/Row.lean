@@ -41,6 +41,14 @@ structure MemAlignRow (F : Type) where
   sel_0 : F
   sel_1 : F
   step : F
+  sel_2 : F
+  sel_3 : F
+  sel_4 : F
+  sel_5 : F
+  sel_6 : F
+  sel_7 : F
+  sel_prove : F
+  preL1 : F
 deriving ProvableStruct
 
 end ZiskFv.AirsClean.MemAlign

@@ -2,7 +2,13 @@ import ZiskFv.AirsClean.MemAlign.Soundness
 import ZiskFv.Airs.MemAlign
 
 /-!
-# `Valid_MemAlign` ↔ `MemAlignRow` compatibility
+# `Valid_MemAlign` ↔ `MemAlignRow` compatibility bridge (Phase A4 partial)
+
+The Bridge routes v1 `Valid_MemAlign` consumers through the Clean
+Component's per-row Spec. Cross-row continuity clauses
+(`down_to_up_continuity_N`, `delta_addr_definition`) live in a
+separate `cross_row_at` predicate that downstream consumers can
+invoke once the per-row Spec is established.
 -/
 
 namespace ZiskFv.AirsClean.MemAlign
@@ -33,5 +39,39 @@ def rowAt (v : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL) (r : ℕ) :
   sel_0 := v.sel_0 r
   sel_1 := v.sel_1 r
   step := v.step r
+  sel_2 := v.sel_2 r
+  sel_3 := v.sel_3 r
+  sel_4 := v.sel_4 r
+  sel_5 := v.sel_5 r
+  sel_6 := v.sel_6 r
+  sel_7 := v.sel_7 r
+  sel_prove := v.sel_prove r
+  preL1 := v.preL1 r
+
+/-- The 14 per-row F-typed constraints at row `r`, expressed against
+    a `Valid_MemAlign`. -/
+def constraints_at (v : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL) (r : ℕ) : Prop :=
+  v.wr r * (1 - v.wr r) = 0
+  ∧ v.reset r * (1 - v.reset r) = 0
+  ∧ v.sel_up_to_down r * (1 - v.sel_up_to_down r) = 0
+  ∧ v.sel_down_to_up r * (1 - v.sel_down_to_up r) = 0
+  ∧ v.sel_0 r * (1 - v.sel_0 r) = 0
+  ∧ v.sel_1 r * (1 - v.sel_1 r) = 0
+  ∧ v.sel_2 r * (1 - v.sel_2 r) = 0
+  ∧ v.sel_3 r * (1 - v.sel_3 r) = 0
+  ∧ v.sel_4 r * (1 - v.sel_4 r) = 0
+  ∧ v.sel_5 r * (1 - v.sel_5 r) = 0
+  ∧ v.sel_6 r * (1 - v.sel_6 r) = 0
+  ∧ v.sel_7 r * (1 - v.sel_7 r) = 0
+  ∧ v.preL1 r * v.pc r = 0
+  ∧ v.sel_prove r * (v.sel_up_to_down r + v.sel_down_to_up r) = 0
+
+theorem spec_of_valid
+    (v : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL) (r : ℕ)
+    (h_assumptions : Assumptions (rowAt v r))
+    (h_constraints : constraints_at v r) :
+    Spec (rowAt v r) := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h_constraints
+  exact soundness (rowAt v r) h_assumptions h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13 h14
 
 end ZiskFv.AirsClean.MemAlign
