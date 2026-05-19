@@ -4,6 +4,7 @@ import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Tables.BinaryTable
+import ZiskFv.Channels.RangeBusSoundness
 
 /-!
 # Binary AIR — universal column-range theorems
@@ -37,35 +38,63 @@ bus (same scope as `main_columns_in_range`,
 namespace ZiskFv.Airs.Binary
 
 open Goldilocks
+open ZiskFv.Channels.RangeBusSoundness
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Binary range-check soundness.** Given the row-level
+/-- **Binary range-check soundness (derived).** Given the row-level
     `lookup_assumes(RANGE_BUS_ID, …)` interactions induced by Binary's
     `bits(N)` column annotations, every row's witness cells satisfy
     their declared bit ranges.
 
+    Previously an axiom; now derived from `range_bus_sound` via 24
+    applications (one per byte column).
+
     PIL citations (`zisk/state-machines/binary/pil/binary.pil:60-86`):
     * `bits(8) free_in_a[BYTES]`           → `free_in_a_0..7` < 2⁸
     * `bits(8) free_in_b[BYTES]`           → `free_in_b_0..7` < 2⁸
-    * `bits(8) free_in_c[BYTES]`           → `free_in_c_0..7` < 2⁸
-    * `bits(1) carry[BYTES]`               → `carry_0..7`     < 2
-
-    Project-trusted at the same scope as `binary_add_columns_in_range`
-    (`Airs/Binary/BinaryAddRanges.lean:67`). -/
-axiom binary_columns_in_range (v : Valid_Binary C FGL FGL) (r : ℕ) :
-    (v.free_in_a_0 r).val < 256 ∧ (v.free_in_a_1 r).val < 256
-  ∧ (v.free_in_a_2 r).val < 256 ∧ (v.free_in_a_3 r).val < 256
-  ∧ (v.free_in_a_4 r).val < 256 ∧ (v.free_in_a_5 r).val < 256
-  ∧ (v.free_in_a_6 r).val < 256 ∧ (v.free_in_a_7 r).val < 256
-  ∧ (v.free_in_b_0 r).val < 256 ∧ (v.free_in_b_1 r).val < 256
-  ∧ (v.free_in_b_2 r).val < 256 ∧ (v.free_in_b_3 r).val < 256
-  ∧ (v.free_in_b_4 r).val < 256 ∧ (v.free_in_b_5 r).val < 256
-  ∧ (v.free_in_b_6 r).val < 256 ∧ (v.free_in_b_7 r).val < 256
-  ∧ (v.free_in_c_0 r).val < 256 ∧ (v.free_in_c_1 r).val < 256
-  ∧ (v.free_in_c_2 r).val < 256 ∧ (v.free_in_c_3 r).val < 256
-  ∧ (v.free_in_c_4 r).val < 256 ∧ (v.free_in_c_5 r).val < 256
-  ∧ (v.free_in_c_6 r).val < 256 ∧ (v.free_in_c_7 r).val < 256
+    * `bits(8) free_in_c[BYTES]`           → `free_in_c_0..7` < 2⁸ -/
+theorem binary_columns_in_range (v : Valid_Binary C FGL FGL) (r : ℕ) :
+    (v.free_in_a_0 r).val < U8_max ∧ (v.free_in_a_1 r).val < U8_max
+  ∧ (v.free_in_a_2 r).val < U8_max ∧ (v.free_in_a_3 r).val < U8_max
+  ∧ (v.free_in_a_4 r).val < U8_max ∧ (v.free_in_a_5 r).val < U8_max
+  ∧ (v.free_in_a_6 r).val < U8_max ∧ (v.free_in_a_7 r).val < U8_max
+  ∧ (v.free_in_b_0 r).val < U8_max ∧ (v.free_in_b_1 r).val < U8_max
+  ∧ (v.free_in_b_2 r).val < U8_max ∧ (v.free_in_b_3 r).val < U8_max
+  ∧ (v.free_in_b_4 r).val < U8_max ∧ (v.free_in_b_5 r).val < U8_max
+  ∧ (v.free_in_b_6 r).val < U8_max ∧ (v.free_in_b_7 r).val < U8_max
+  ∧ (v.free_in_c_0 r).val < U8_max ∧ (v.free_in_c_1 r).val < U8_max
+  ∧ (v.free_in_c_2 r).val < U8_max ∧ (v.free_in_c_3 r).val < U8_max
+  ∧ (v.free_in_c_4 r).val < U8_max ∧ (v.free_in_c_5 r).val < U8_max
+  ∧ (v.free_in_c_6 r).val < U8_max ∧ (v.free_in_c_7 r).val < 256 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+          ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+          ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  all_goals first
+    | exact range_bus_sound v (fun v r => v.free_in_a_0 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_a_1 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_a_2 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_a_3 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_a_4 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_a_5 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_a_6 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_a_7 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_b_0 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_b_1 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_b_2 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_b_3 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_b_4 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_b_5 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_b_6 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_b_7 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_c_0 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_c_1 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_c_2 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_c_3 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_c_4 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_c_5 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_c_6 r) 8 trivial r
+    | exact range_bus_sound v (fun v r => v.free_in_c_7 r) 8 trivial r
 
 /-! ## Specialized accessors -/
 
@@ -187,19 +216,25 @@ lookup against the standard range-checker bus that pins each carry cell
 to `[0, 2)`. Combined with the field's non-trivial inhabitedness, this
 implies `carry_i * (1 - carry_i) = 0` (Lean's boolean predicate). -/
 
-/-- **Binary carry-bit range-check soundness.** Per PIL
+/-- **Binary carry-bit range-check soundness (derived).** Per PIL
     `zisk/state-machines/binary/pil/binary.pil:67` (`col witness bits(1)
     carry[BYTES]`), each `carry_i` cell lies in `[0, 2)`. Companion to
-    `binary_columns_in_range`; split out so the byte-range accessors above
-    keep their tuple indices stable.
-
-    Trust class: lookup-argument soundness on the standard range-checker
-    bus (same scope as `binary_columns_in_range`). -/
-axiom binary_carry_bits_in_range (v : Valid_Binary C FGL FGL) (r : ℕ) :
-    (v.carry_0 r).val < 2 ∧ (v.carry_1 r).val < 2
-  ∧ (v.carry_2 r).val < 2 ∧ (v.carry_3 r).val < 2
-  ∧ (v.carry_4 r).val < 2 ∧ (v.carry_5 r).val < 2
-  ∧ (v.carry_6 r).val < 2 ∧ (v.carry_7 r).val < 2
+    `binary_columns_in_range`; previously an axiom, now derived from
+    `range_bus_sound` via 8 applications. -/
+theorem binary_carry_bits_in_range (v : Valid_Binary C FGL FGL) (r : ℕ) :
+    (v.carry_0 r).val < U1_max ∧ (v.carry_1 r).val < U1_max
+  ∧ (v.carry_2 r).val < U1_max ∧ (v.carry_3 r).val < U1_max
+  ∧ (v.carry_4 r).val < U1_max ∧ (v.carry_5 r).val < U1_max
+  ∧ (v.carry_6 r).val < U1_max ∧ (v.carry_7 r).val < U1_max := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact range_bus_sound v (fun v r => v.carry_0 r) 1 trivial r
+  · exact range_bus_sound v (fun v r => v.carry_1 r) 1 trivial r
+  · exact range_bus_sound v (fun v r => v.carry_2 r) 1 trivial r
+  · exact range_bus_sound v (fun v r => v.carry_3 r) 1 trivial r
+  · exact range_bus_sound v (fun v r => v.carry_4 r) 1 trivial r
+  · exact range_bus_sound v (fun v r => v.carry_5 r) 1 trivial r
+  · exact range_bus_sound v (fun v r => v.carry_6 r) 1 trivial r
+  · exact range_bus_sound v (fun v r => v.carry_7 r) 1 trivial r
 
 lemma bin_carry_7_lt_2 (v : Valid_Binary C FGL FGL) (r : ℕ) :
     (v.carry_7 r).val < 2 :=

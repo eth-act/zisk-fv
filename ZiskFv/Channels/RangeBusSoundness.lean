@@ -80,6 +80,19 @@ abbrev U16_max : ℕ := 2 ^ 16
 /-- Upper bound for `bits(32)` values: `2^32 = 4294967296`. -/
 abbrev U32_max : ℕ := 2 ^ 32
 
+/-! ## Evaluation lemmas for the named constants
+
+These `@[simp]` lemmas unfold the abbrevs to their decimal values
+so downstream `omega` / `simp` passes can fold them away without
+needing to manually `unfold U<N>_max`. The equations are `rfl`-true,
+but registering them as simp lemmas ensures every tactic in the
+codebase that uses simp's normalization sees the literal form. -/
+@[simp] lemma U1_max_eq  : U1_max  = 2 := rfl
+@[simp] lemma U4_max_eq  : U4_max  = 16 := rfl
+@[simp] lemma U8_max_eq  : U8_max  = 256 := rfl
+@[simp] lemma U16_max_eq : U16_max = 65536 := rfl
+@[simp] lemma U32_max_eq : U32_max = 4294967296 := rfl
+
 /-- **PIL `bits(N)` annotation marker.** Definitional placeholder for
     "PIL declared this column as `bits(width)`". This is *not* a
     cryptographic claim — it's a textual citation marker. The

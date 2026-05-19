@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 115
+# Total entries: 113
 #
 39b9f47eebdda4ca  ZiskFv/Airs/Arith/Ranges.lean:44  axiom     arith_mul_columns_in_range
 c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:56  axiom     arith_div_columns_in_range
@@ -42,13 +42,11 @@ b3cdb2b4ad78b074  ZiskFv/Airs/Arith/Ranges.lean:1102  axiom     arith_table_op_m
 feafd4d75a95e2ad  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:53  axiom     binary_extension_columns_in_range
 48b9f2f309f54d71  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:106  axiom     binary_extension_op_is_shift_pin
 005de0f3bbc11bd2  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:136  axiom     binary_extension_row_byte_lookups
-81896805d93d6948  ZiskFv/Airs/Binary/BinaryRanges.lean:56  axiom     binary_columns_in_range
-10baeda5676d8393  ZiskFv/Airs/Binary/BinaryRanges.lean:149  axiom     binary_per_byte_lookup_witness
-b26ddaaa78c5277f  ZiskFv/Airs/Binary/BinaryRanges.lean:198  axiom     binary_carry_bits_in_range
-6902260bea95d1b3  ZiskFv/Airs/Binary/BinaryRanges.lean:272  axiom     binary_b_op_or_sext_eq_op_general
-316ca8f85d288192  ZiskFv/Airs/Binary/BinaryRanges.lean:399  axiom     binary_consumer_byte_match_chain_pin
-b206ab1a686ceb3f  ZiskFv/Airs/Binary/BinaryRanges.lean:543  axiom     binary_w_sext_choice_pin
-3fbe8ea0cae828af  ZiskFv/Airs/Binary/BinaryRanges.lean:569  axiom     binary_w_mode_carry_7_zero
+10baeda5676d8393  ZiskFv/Airs/Binary/BinaryRanges.lean:178  axiom     binary_per_byte_lookup_witness
+6902260bea95d1b3  ZiskFv/Airs/Binary/BinaryRanges.lean:307  axiom     binary_b_op_or_sext_eq_op_general
+316ca8f85d288192  ZiskFv/Airs/Binary/BinaryRanges.lean:434  axiom     binary_consumer_byte_match_chain_pin
+b206ab1a686ceb3f  ZiskFv/Airs/Binary/BinaryRanges.lean:578  axiom     binary_w_sext_choice_pin
+3fbe8ea0cae828af  ZiskFv/Airs/Binary/BinaryRanges.lean:604  axiom     binary_w_mode_carry_7_zero
 e6a596bef7ff88cb  ZiskFv/Airs/MemoryBus/EntryRanges.lean:52  axiom     memory_bus_entry_byte_range_perm_sound
 8c04bbb28c410ebd  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:135  axiom     memalign_load_perm_sound
 ddbca43a3ae7757a  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:168  axiom     mem_align_rom_subdoubleword_load_value_1_zero
@@ -62,7 +60,7 @@ c0321bacfa0a0871  ZiskFv/Airs/MemoryBus/MemBridge.lean:724  axiom     main_store
 09b2623540de2837  ZiskFv/Airs/OperationBus/Consolidated.lean:124  axiom     op_bus_permutation_sound
 7fccc882b9a79e6a  ZiskFv/Airs/Tables/BinaryExtensionTable.lean:262  axiom     bin_ext_table_consumer_wf
 4d9e296fb3ead091  ZiskFv/Airs/Tables/BinaryTable.lean:281  axiom     bin_table_consumer_wf
-a14bc89102ea84fa  ZiskFv/Channels/RangeBusSoundness.lean:106  axiom     range_bus_sound
+a14bc89102ea84fa  ZiskFv/Channels/RangeBusSoundness.lean:119  axiom     range_bus_sound
 a00b854e10ea3d18  ZiskFv/SailSpec/Auxiliaries.lean:794  axiom     pmpCheck_is_pure_none
 1f6fb25749dc02ac  ZiskFv/SailSpec/Auxiliaries.lean:817  axiom     within_clint_is_false
 52c0bbafc03c9989  ZiskFv/SailSpec/Auxiliaries.lean:831  axiom     pmaCheck_is_pure_none
