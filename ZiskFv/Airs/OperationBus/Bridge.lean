@@ -3,6 +3,7 @@ import Mathlib
 import LeanZKCircuit.OpenVM.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Airs.OperationBus.Consolidated
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.Binary.Binary
@@ -11,26 +12,18 @@ import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
 
 /-!
-# OperationBus permutation soundness — trusted axioms
+# OperationBus permutation soundness — per-provider derived theorems
 
-Mirrors `Airs/MemoryBus/MemBridge.lean` for `OPERATION_BUS_ID = 5000`
-(`zisk/pil/opids.pil:2`).
+This file used to host three per-provider axioms
+(`op_bus_perm_sound_BinaryAdd`, `op_bus_perm_sound_Binary`,
+`op_bus_perm_sound_BinaryExtension`). They are now **theorems**
+derived from the consolidated bus-level axiom
+`op_bus_permutation_sound` in `Consolidated.lean`.
 
-The Main AIR consumes from the operation bus on every
-`is_external_op = 1` row (`zisk/state-machines/main/pil/main.pil:367-374`).
-The actual computation is performed by one of the secondary state
-machines (BinaryAdd / Binary / BinaryExtension / Arith / ArithDiv),
-each of which `proves_operation` on the bus for the subset of opcodes
-it implements. PLONK-style permutation soundness for that protocol is
-project-trusted — all-rows multiplicity-summed equality on the assumes
-side forces, for every consumer row, the existence of a matching
-provider row across the union of provider AIRs. This file packages
-that consequence as one axiom per provider AIR.
-
-Each axiom is parameterized on a disjunction of `m.op` literals
-characterizing the opcodes that the named provider AIR is responsible
-for. Citations next to each axiom point at the PIL file that defines
-the provider's opcode coverage.
+The three per-provider names + signatures are preserved exactly so
+downstream consumers (per-AIR discharge bridges, Compliance
+wrappers) require no changes. Net trust ledger delta: 3 axioms → 1
+axiom (the bus-level `op_bus_permutation_sound`).
 
 Trust class: PLONK / logUp permutation-argument soundness on
 `OPERATION_BUS_ID = 5000`. Same scope as
@@ -44,21 +37,21 @@ open Goldilocks
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **OperationBus permutation soundness — BinaryAdd provider.**
+    Now a theorem: specialization of `op_bus_permutation_sound`
+    (`Consolidated.lean`) to the BinaryAdd provider.
+
     Provider AIR: `BinaryAdd` (`zisk/state-machines/binary/pil/binary_add.pil`).
     Opcode coverage: `OP_ADD = 0x0a` only — see `binary_add.pil:25`
-    `proves_operation(op: OP_ADD, ...)`.
-
-    Concretely: any active Main row whose `op` selector reads as the
-    BinaryAdd opcode is matched by some BinaryAdd row whose bus
-    projection equals Main's. -/
-axiom op_bus_perm_sound_BinaryAdd
+    `proves_operation(op: OP_ADD, ...)`. -/
+theorem op_bus_perm_sound_BinaryAdd
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL)
     (b : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd C FGL FGL)
     (r_main : ℕ)
     (h_active : m.is_external_op r_main = 1)
     (h_op : m.op r_main = 10) :
     ∃ r_b : ℕ,
-      matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryAdd b r_b)
+      matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryAdd b r_b) :=
+  op_bus_permutation_sound m (.binaryAdd b) r_main h_active h_op
 
 /-- **OperationBus permutation soundness — Binary provider.**
     Provider AIR: `Binary` (`zisk/state-machines/binary/pil/binary.pil`).
@@ -74,7 +67,7 @@ axiom op_bus_perm_sound_BinaryAdd
       ⇒ 0x02..0x10;
     * 32-bit (mode32=1): same ops with `_W` suffix ⇒ 0x12..0x1d;
     * Arith helpers: LT_ABS_NP=0x50, LT_ABS_PN=0x51. -/
-axiom op_bus_perm_sound_Binary
+theorem op_bus_perm_sound_Binary
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL)
     (b : ZiskFv.Airs.Binary.Valid_Binary C FGL FGL)
     (r_main : ℕ)
@@ -90,7 +83,8 @@ axiom op_bus_perm_sound_Binary
           ∨ m.op r_main = 0x1b ∨ m.op r_main = 0x1c ∨ m.op r_main = 0x1d
           ∨ m.op r_main = 0x50 ∨ m.op r_main = 0x51) :
     ∃ r_b : ℕ,
-      matches_entry (opBus_row_Main m r_main) (opBus_row_Binary b r_b)
+      matches_entry (opBus_row_Main m r_main) (opBus_row_Binary b r_b) :=
+  op_bus_permutation_sound m (.binary b) r_main h_active h_op
 
 /-- **OperationBus permutation soundness — BinaryExtension provider.**
     Provider AIR: `BinaryExtension`
@@ -98,7 +92,7 @@ axiom op_bus_perm_sound_Binary
     coverage from the table at `binary_extension.pil:11-21`:
     SLL=0x21, SRL=0x22, SRA=0x23, SLL_W=0x24, SRL_W=0x25, SRA_W=0x26,
     SEXT_B=0x27, SEXT_H=0x28, SEXT_W=0x29. -/
-axiom op_bus_perm_sound_BinaryExtension
+theorem op_bus_perm_sound_BinaryExtension
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL)
     (e : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ)
@@ -107,6 +101,7 @@ axiom op_bus_perm_sound_BinaryExtension
           ∨ m.op r_main = 0x24 ∨ m.op r_main = 0x25 ∨ m.op r_main = 0x26
           ∨ m.op r_main = 0x27 ∨ m.op r_main = 0x28 ∨ m.op r_main = 0x29) :
     ∃ r_e : ℕ,
-      matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryExtension e r_e)
+      matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryExtension e r_e) :=
+  op_bus_permutation_sound m (.binaryExtension e) r_main h_active h_op
 
 end ZiskFv.Airs.OperationBus

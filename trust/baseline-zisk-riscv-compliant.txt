@@ -23,9 +23,9 @@
 #     > trust/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
-# artefacts under `.lake/build/`). Last regenerated: 2026-05-17.
+# artefacts under `.lake/build/`). Last regenerated: 2026-05-18.
 #
-# Total entries: 122
+# Total entries: 120
 #
 ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_signed
 ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_unsigned
@@ -88,9 +88,7 @@ ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_sh
 ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_sw
 ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
 ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound
-ZiskFv.Airs.OperationBus.op_bus_perm_sound_Binary
-ZiskFv.Airs.OperationBus.op_bus_perm_sound_BinaryAdd
-ZiskFv.Airs.OperationBus.op_bus_perm_sound_BinaryExtension
+ZiskFv.Airs.OperationBus.op_bus_permutation_sound
 ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf
 ZiskFv.PlatformScope.pmaCheck_is_pure_none

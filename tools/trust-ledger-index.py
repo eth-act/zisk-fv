@@ -28,6 +28,7 @@ FILE_CLASS = {
     "ZiskFv/Trusted/Transpiler.lean":               ("1",  "Transpile contracts"),
     "ZiskFv/ZiskCircuit/MemModel.lean":             ("2",  "Memory state bridge — load"),
     "ZiskFv/Airs/OperationBus/Bridge.lean":         ("4",  "Bus / lookup soundness — operation bus"),
+    "ZiskFv/Airs/OperationBus/Consolidated.lean":   ("4",  "Bus / lookup soundness — operation bus (consolidated)"),
     "ZiskFv/Airs/MemoryBus/MemBridge.lean":         ("4",  "Bus / lookup soundness — memory bus"),
     "ZiskFv/Airs/MemoryBus/MemAlignBridge.lean":    ("4",  "Bus / lookup soundness — MemAlign"),
     "ZiskFv/Airs/Main/Ranges.lean":                 ("5b", "Range-bus / byte-range — Main"),

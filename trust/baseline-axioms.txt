@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 122
+# Total entries: 120
 #
 39b9f47eebdda4ca  ZiskFv/Airs/Arith/Ranges.lean:44  axiom     arith_mul_columns_in_range
 c89e8d3c43bd50c6  ZiskFv/Airs/Arith/Ranges.lean:56  axiom     arith_div_columns_in_range
@@ -65,9 +65,7 @@ be9709898787174a  ZiskFv/Airs/MemoryBus/MemBridge.lean:509  axiom     main_exter
 ad517419e27f4b60  ZiskFv/Airs/MemoryBus/MemBridge.lean:723  axiom     main_store_emission_bundle_sb
 6e2cbab0ad008e6c  ZiskFv/Airs/MemoryBus/MemBridge.lean:759  axiom     main_store_emission_bundle_sh
 8a4cf50573c92704  ZiskFv/Airs/MemoryBus/MemBridge.lean:787  axiom     main_store_emission_bundle_sw
-67ed8e590d7f0792  ZiskFv/Airs/OperationBus/Bridge.lean:54  axiom     op_bus_perm_sound_BinaryAdd
-d9d7d2422146a7dd  ZiskFv/Airs/OperationBus/Bridge.lean:77  axiom     op_bus_perm_sound_Binary
-f0f2b4a2aaab18ee  ZiskFv/Airs/OperationBus/Bridge.lean:101  axiom     op_bus_perm_sound_BinaryExtension
+09b2623540de2837  ZiskFv/Airs/OperationBus/Consolidated.lean:124  axiom     op_bus_permutation_sound
 7fccc882b9a79e6a  ZiskFv/Airs/Tables/BinaryExtensionTable.lean:262  axiom     bin_ext_table_consumer_wf
 4d9e296fb3ead091  ZiskFv/Airs/Tables/BinaryTable.lean:281  axiom     bin_table_consumer_wf
 a00b854e10ea3d18  ZiskFv/SailSpec/Auxiliaries.lean:794  axiom     pmpCheck_is_pure_none
