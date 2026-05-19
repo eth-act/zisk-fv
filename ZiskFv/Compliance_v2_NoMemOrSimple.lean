@@ -1,0 +1,68 @@
+import ZiskFv.Compliance
+import ZiskFv.Vm.Probe_UTYPE
+import ZiskFv.Vm.Probe_Fence
+
+/-!
+# Phase 5 partial — Compliance_v2 dispatcher (UTYPE + Fence)
+
+Extends Phase 5's partial dispatcher pattern (see
+`Compliance_v2_Branch.lean`) to UTYPE (LUI, AUIPC) and FENCE arms.
+
+These three arms share a property convenient for v2: they take no
+provider-AIR validator on the OpEnvelope (just exec_row + optional
+single mem_row), so the channel-ensemble extraction is direct.
+
+## Trust note
+
+No new axioms.
+-/
+
+namespace ZiskFv.Compliance
+
+open Goldilocks
+open ZiskFv.Vm
+open ZiskFv.Vm.Probe
+open ZiskFv.Airs.Main (Valid_Main)
+
+variable {C : Type → Type → Type} [Circuit FGL FGL C]
+variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+variable {m : Valid_Main C FGL FGL} {r_main : ℕ}
+
+/-- The per-arm v2 conclusion Prop for LUI / AUIPC / FENCE arms.
+    Falls through to `True` for unhandled arms. -/
+def OpEnvelope.exec_eq_v2_nomem
+    : OpEnvelope (C := C) state m r_main → Prop
+  | .lui _ imm rd _ exec_row e_rd _ _ _ =>
+      execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
+        = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
+  | .auipc _ imm rd exec_row e_rd _ _ _ _ _ _ _ _ =>
+      execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
+        = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
+  | .fence _ fm pred succ rs rd exec_row _ _ =>
+      execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
+        = state_effect_via_channels ⟨exec_row, []⟩ state
+  | _ => True
+
+/-- Partial v2 dispatcher for LUI / AUIPC / FENCE. -/
+theorem zisk_riscv_compliant_program_bus_v2_nomem
+    (env : OpEnvelope (C := C) state m r_main) :
+    env.exec_eq_v2_nomem := by
+  cases env with
+  | lui lui_input imm rd next_pc exec_row e_rd pins h_lui_subset promises =>
+    simp only [OpEnvelope.exec_eq_v2_nomem]
+    exact equiv_LUI_v2 state lui_input imm rd m r_main next_pc
+      exec_row e_rd pins h_lui_subset promises
+  | auipc auipc_input imm rd exec_row e_rd nextPC_val next_pc
+          pins h_auipc_subset
+          promises h_no_wrap h_lo_bound h_pc_offset_lt_2_32 =>
+    simp only [OpEnvelope.exec_eq_v2_nomem]
+    exact equiv_AUIPC_v2 state auipc_input imm rd exec_row e_rd nextPC_val
+      m r_main next_pc pins h_auipc_subset
+      promises h_no_wrap h_lo_bound h_pc_offset_lt_2_32
+  | fence fence_input fm pred succ rs rd exec_row pins promises =>
+    simp only [OpEnvelope.exec_eq_v2_nomem]
+    exact equiv_FENCE_v2 state fence_input fm pred succ rs rd m r_main
+      exec_row pins promises
+  | _ => trivial
+
+end ZiskFv.Compliance
