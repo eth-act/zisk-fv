@@ -1,4 +1,4 @@
-import ZiskFv.AirsClean.BinaryAdd.Constraints
+import ZiskFv.AirsClean.BinaryAdd.Spec
 import Mathlib.Tactic.LinearCombination
 
 /-!

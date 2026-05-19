@@ -300,3 +300,43 @@ The permutation-argument soundness that ExtF was meant to express lives instead 
 
 **Workaround used:** Phase 3-6 of the integration plan replaces `Valid_<AIR>` with Clean Components, drops the `Circuit FGL FGL C` boilerplate from all theorem signatures, and at the final cutover removes the `LeanZKCircuit` require from `lakefile.toml`.
 
+
+---
+
+### `Circuit` name collides between Clean and LeanZKCircuit.OpenVM
+
+**Observed:** `ZiskFv/AirsClean/BinaryAdd/Bridge.lean` initial draft.
+
+**Reproduction:**
+
+```lean
+-- file: scratch/CircuitCollision.lean
+import Clean.Circuit.Basic
+import LeanZKCircuit.OpenVM.Circuit
+example : True := trivial
+```
+
+Yields:
+
+```
+error: import LeanZKCircuit.OpenVM.Circuit failed,
+       environment already contains 'Circuit'
+       from Clean.Circuit.Basic
+```
+
+Both packages define `Circuit` as a top-level name in distinct
+namespaces, but Lean treats them as a clash when both are loaded.
+
+**Ask:** Document the package-namespace convention. For Clean to be
+adoptable alongside other AIR DSLs (LeanZKCircuit, eigenfound,
+openvm-fv), top-level names like `Circuit`, `Component`, `Channel`
+should live under `Clean.*` consistently.
+
+**Severity:** friction (blocks interop with LeanZKCircuit-using
+projects without import-graph surgery).
+
+**Workaround used:** Split `BinaryAdd/Soundness.lean` so it does NOT
+import `Constraints.lean` (which transitively pulls Clean's
+`Circuit`). The bridge file then imports Soundness + LeanZKCircuit-
+based `Valid_BinaryAdd` without collision.
+
