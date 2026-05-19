@@ -121,5 +121,86 @@ arith, MemAlignRom, BinaryTable, BinaryExtensionTable), this adds up.
 
 ## New entries (encountered during integration phases)
 
-(Phases 1-6 will append concrete entries here with file:line in zisk-fv
-and minimal reproductions.)
+### Range-bus consolidation hits a participation-map wall
+
+**Observed:** Phase 2 of the integration plan. Tried to consolidate
+`main_columns_in_range`, `binary_columns_in_range`, and
+`binary_add_columns_in_range` into one bus-level
+`range_bus_lookup_sound` axiom.
+
+**Reproduction:** The three per-AIR axioms each state "for any row,
+this AIR's annotated columns satisfy their declared bit ranges."
+The conjunct structure differs per AIR (Main has 9 fields with widths
+{32, 8, 4}; Binary has 24 fields all width 8; BinaryAdd has 10
+fields with widths {32, 16, 1}).
+
+For consolidation, two approaches:
+
+A. **Single conjunctive axiom over all participants.** Stated as
+   `axiom range_bus_lookup_sound (m bin badd : ...) (r : ℕ) :
+   <all-conjuncts>`. Each per-AIR theorem extracts its conjuncts.
+   PROBLEM: every per-AIR consumer must now supply Binary +
+   BinaryAdd validators too, even when they only care about Main.
+   This is an invasive shape change to 21+ downstream files.
+
+B. **Abstract via `RangeBusParticipant` structure.** A list of
+   `(column-accessor, bit-width)` pairs forms a "participant
+   record"; the axiom asserts "for any participant, every entry
+   gets the bound." PROBLEM: this is too abstract — the axiom
+   doesn't constrain what counts as a "participant," so the trust
+   content moves to per-AIR `def`s that assert participation. Those
+   defs are unverifiable against PIL (without further machinery),
+   so the trust delta is zero, just renamed.
+
+**Conclusion:** The range-bus axioms are honestly already at the
+right granularity. The "consolidation win" I estimated (5-15 axioms)
+in the integration plan was over-optimistic for this bus.
+
+**Ask:** Clean's `StaticLookupChannel` pattern works for ROM-style
+*tables* (fixed enumerations like the byte table 0..255), not for
+*per-AIR declared widths*. Documentation or guidance for the latter
+pattern would help.
+
+**Severity:** finding, not a Clean bug. Affects the integration
+plan's Phase 2 scope.
+
+**Workaround used:** Skip the range-bus consolidation; focus
+consolidation effort on classes where structural symmetry is real
+(OpBus, MemBus emission bundles, lookup-table soundness axioms).
+
+### Where consolidation IS structurally clean
+
+After the range-bus finding, here's where the trust ledger actually
+has consolidatable structure:
+
+- **OpBus permutation axioms.** `op_bus_perm_sound_BinaryAdd`,
+  `op_bus_perm_sound_Binary`, `op_bus_perm_sound_BinaryExtension`
+  have identical shape (just different provider AIRs). Can be
+  unified into one axiom taking a `provider` parameter, with the
+  three per-AIR results becoming theorems. Trust content honest —
+  this matches the cryptographic claim ("the operation bus's
+  permutation argument is sound for any provider"). Net: 3 → 1.
+
+- **Memory-bus emission bundles.** The 7 `main_*_emission_bundle`
+  axioms package structural facts the channel `Message` would
+  carry. Each one packs ~10 conjuncts about specific lane/ptr/rd
+  routing. Genuine consolidation: define a `MemBusMessage` Provable
+  type, and the bundle becomes a structural property of the message
+  type, not an axiom. Net: 7 → 0 axioms (the structural facts
+  move into the type definition), plus 1 retained axiom for the
+  bus's permutation soundness.
+
+- **Memory-bus + MemAlign permutation.** Two `memalign_*` axioms
+  are specializations of the memory-bus permutation soundness to
+  the MemAlign* providers. Consolidate by deriving them from a
+  general memory-bus axiom. Net: 2 → 0 (provable from general).
+
+- **Lookup-table soundness.** `bin_table_consumer_wf`,
+  `bin_ext_table_consumer_wf` plus the BinaryExtension chain are
+  structurally similar to one `StaticLookupChannel` axiom per
+  table. Net: ~6 → 2.
+
+**Realistic total trust ledger reduction**: ~12-15 axioms (mostly
+from MemBus emission bundles + OpBus consolidation + lookup-table
+consolidation), not the 20+ estimated in the original plan. Range
+bus stays as-is.
