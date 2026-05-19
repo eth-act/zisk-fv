@@ -7,6 +7,7 @@ import ZiskFv.Compliance_v2_ADD_RTYPEW
 import ZiskFv.Compliance_v2_LDSD
 import ZiskFv.Compliance_v2_DIVU
 import ZiskFv.Compliance_v2_Misc
+import ZiskFv.Compliance_v2_Remaining
 
 /-!
 # Compliance_v2 — unified channel-balance global theorem
@@ -72,6 +73,7 @@ def OpEnvelope.exec_eq_v2 (env : OpEnvelope (C := C) state m r_main) : Prop :=
     ∧ env.exec_eq_v2_ldsd
     ∧ env.exec_eq_v2_divu
     ∧ env.exec_eq_v2_misc
+    ∧ env.exec_eq_v2_remaining
 
 /-- **Channel-balance global theorem (partial).**
 
@@ -86,7 +88,7 @@ def OpEnvelope.exec_eq_v2 (env : OpEnvelope (C := C) state m r_main) : Prop :=
 theorem zisk_riscv_compliant_program_bus_v2
     (env : OpEnvelope (C := C) state m r_main) :
     env.exec_eq_v2 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact zisk_riscv_compliant_program_bus_v2_branch env
   · exact zisk_riscv_compliant_program_bus_v2_nomem env
   · exact zisk_riscv_compliant_program_bus_v2_rtype_binary env
@@ -96,5 +98,6 @@ theorem zisk_riscv_compliant_program_bus_v2
   · exact zisk_riscv_compliant_program_bus_v2_ldsd env
   · exact zisk_riscv_compliant_program_bus_v2_divu env
   · exact zisk_riscv_compliant_program_bus_v2_misc env
+  · exact zisk_riscv_compliant_program_bus_v2_remaining env
 
 end ZiskFv.Compliance
