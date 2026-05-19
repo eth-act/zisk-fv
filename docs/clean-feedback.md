@@ -275,3 +275,28 @@ time integrator.
 (`OpBusMessage`, `MemBusMessage`) without `[Field F]`, with
 @[reducible] conversions to/from the existing zisk-fv records.
 
+
+---
+
+### LeanZKCircuit's `Circuit F ExtF C` extension-field parameter is operationally vestigial
+
+**Observed:** Every `Valid_<AIR>` record, every `equiv_<OP>` theorem, every `Compliance/Wrappers/<Op>.lean`, every trust-ledger axiom in `ZiskFv/Trusted/Transpiler.lean` opens with the boilerplate `variable {C : Type → Type → Type} [Circuit FGL FGL C]` (`F = FGL, ExtF = FGL` — both Goldilocks). 43 files in zisk-fv import `LeanZKCircuit.OpenVM.Circuit`.
+
+**Reproduction:** Investigation in this branch's conversation log. The `Circuit F ExtF α` typeclass at `LeanZKCircuit/OpenVM/Circuit.lean:3-11` has 8 methods; three of them return ExtF (`challenge`, `exposed`, `permutation`). In principle these are needed to express PIL2 permutation-accumulator constraints of shape `gsum_next = gsum + challenge * column` which genuinely mix F (column) with ExtF (challenge, gsum).
+
+But in *both* openvm-fv and zisk-fv, the ExtF-using constraints are filtered out at extraction time:
+
+- openvm-fv: `OpenvmFv/Extraction/AccessAdapterAir_4.lean:27-43` — ExtF-using constraints are emitted as Lean comments. No proof consumes them.
+- zisk-fv: `tools/pil-extract/src/main.rs:425-435` — extractor `bail!`s on any constraint mixing F with ExtF, so the constraint never reaches the Lean output. `grep "Circuit.challenge\|Circuit.permutation\|Circuit.exposed" build/extraction/Extraction/*.lean` returns zero uncommented hits.
+- Bus emissions: `tools/pil-extract/src/main.rs:769-771` stubs any ExtF-tainted slot to literal `0`. **50 of 99 bus emission slots in `build/extraction/Extraction/Buses.lean` are stubbed.**
+
+The permutation-argument soundness that ExtF was meant to express lives instead in the trust-ledger axioms (class #4 bus/lookup soundness, class #6 lookup-table soundness) — *separate from* the constraint encoding. So ExtF is structurally present in the typeclass but operationally unused for the zisk-fv proof.
+
+**Why this is feedback for the Clean migration:** Clean's `Channel F Message` and `Air.Flat.Component F` use **one field type** at the user level. There is no analogue of the permutation-accumulator constraint that exposes a second field, because Clean handles permutation soundness via `Air.Balance` (a theorem over multisets of channel interactions, not via per-row constraints over F+ExtF). So replacing `Valid_<AIR>` with `Component F` is *principled*, not just convenient — it drops a 30-character boilerplate prefix (`variable {C : Type → Type → Type} [Circuit FGL FGL C]`) from every theorem signature, and removes 43 files' worth of LeanZKCircuit import overhead.
+
+**Ask:** Not a Clean change request — Clean already gets this right. This entry documents the *contrast* with LeanZKCircuit's design as a justification for the migration, so future readers don't recreate the ExtF parameter under the impression it's load-bearing. It isn't.
+
+**Severity:** N/A (justification for the integration choice, not a Clean defect).
+
+**Workaround used:** Phase 3-6 of the integration plan replaces `Valid_<AIR>` with Clean Components, drops the `Circuit FGL FGL C` boilerplate from all theorem signatures, and at the final cutover removes the `LeanZKCircuit` require from `lakefile.toml`.
+
