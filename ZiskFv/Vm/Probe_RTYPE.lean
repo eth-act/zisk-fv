@@ -48,7 +48,7 @@ theorem equiv_SUB_v2
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state sub_input.r1_val sub_input.r2_val sub_input.rd sub_input.PC
         (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -72,7 +72,7 @@ theorem equiv_AND_v2
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state and_input.r1_val and_input.r2_val and_input.rd and_input.PC
         (PureSpec.execute_RTYPE_and_pure and_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -96,7 +96,7 @@ theorem equiv_OR_v2
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
         (PureSpec.execute_RTYPE_or_pure or_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -120,7 +120,7 @@ theorem equiv_XOR_v2
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state xor_input.r1_val xor_input.r2_val xor_input.rd xor_input.PC
         (PureSpec.execute_RTYPE_xor_pure xor_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :

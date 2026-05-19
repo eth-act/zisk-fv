@@ -1,10 +1,10 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Rem
-import ZiskFv.Equivalence.Promises.RType
-import ZiskFv.Equivalence.Promises.ArithHelpers
-import ZiskFv.Equivalence.Bridge.Arith
-import ZiskFv.Equivalence.Bridge.SailStateBridge
+import ZiskFv.Equivalence_v1.Rem
+import ZiskFv.Equivalence_v1.Promises.RType
+import ZiskFv.Equivalence_v1.Promises.ArithHelpers
+import ZiskFv.Equivalence_v1.Bridge.Arith
+import ZiskFv.Equivalence_v1.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
@@ -31,7 +31,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithDiv
 open ZiskFv.Airs.OperationBus
 open ZiskFv.PackedBitVec.SignedChunkLift
-open ZiskFv.Equivalence.Promises
+open ZiskFv.Equivalence_v1.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -46,7 +46,7 @@ theorem equiv_REM
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state rem_input.r1_val rem_input.r2_val rem_input.rd rem_input.PC
         (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -145,18 +145,18 @@ theorem equiv_REM
          h_main_a_lo, h_main_a_hi, h_main_b_lo, h_main_b_hi⟩ :=
     ZiskFv.Trusted.transpile_REM
       m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
-      (ZiskFv.Equivalence.Bridge.SailStateBridge.sail_to_rv64 state)
+      (ZiskFv.Equivalence_v1.Bridge.SailStateBridge.sail_to_rv64 state)
       h_main_active h_main_op_rem
   have h_r1_packed_bv :
       rem_input.r1_val
         = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296) :=
-    ZiskFv.Equivalence.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
+    ZiskFv.Equivalence_v1.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
       state (regidx_to_fin r1) rem_input.r1_val
       (m.a_0 r_main) (m.a_1 r_main) h_main_a_lo h_main_a_hi h_input_r1
   have h_r2_packed_bv :
       rem_input.r2_val
         = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296) :=
-    ZiskFv.Equivalence.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
+    ZiskFv.Equivalence_v1.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
       state (regidx_to_fin r2) rem_input.r2_val
       (m.b_0 r_main) (m.b_1 r_main) h_main_b_lo h_main_b_hi h_input_r2
   -- Unsigned r1/r2 toNat = packed4 via end-to-end non-W operand bridge.
@@ -177,14 +177,14 @@ theorem equiv_REM
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val : ℤ)
             - (v.np r_a).val * (2:ℤ)^64 :=
-    ZiskFv.Equivalence.Bridge.SailStateBridge.signed_packed_toInt_eq_of_read_xreg
+    ZiskFv.Equivalence_v1.Bridge.SailStateBridge.signed_packed_toInt_eq_of_read_xreg
       h_input_r1 h_r1_toNat ⟨h_c0_lt, h_c1_lt, h_c2_lt, h_c3_lt⟩ h_np_msb
   have h_rs2_value :
       rem_input.r2_val.toInt
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ)
             - (v.nb r_a).val * (2:ℤ)^64 :=
-    ZiskFv.Equivalence.Bridge.SailStateBridge.signed_packed_toInt_eq_of_read_xreg
+    ZiskFv.Equivalence_v1.Bridge.SailStateBridge.signed_packed_toInt_eq_of_read_xreg
       h_input_r2 h_r2_toNat ⟨h_b0_lt, h_b1_lt, h_b2_lt, h_b3_lt⟩ h_nb_msb
   -- ============ DISCHARGE h_r_abs, h_r_sign (signed remainder bound) ============
   obtain ⟨h_r_abs_air, h_r_sign_air⟩ :=
@@ -200,7 +200,7 @@ theorem equiv_REM
             - (v.nr r_a).val * (2:ℤ)^64) * rem_input.r1_val.toInt := by
     rw [h_rs1_value]; exact h_r_sign_air
   -- ============ Delegate to `equiv_REM` ============
-  exact ZiskFv.Equivalence.Rem.equiv_REM
+  exact ZiskFv.Equivalence_v1.Rem.equiv_REM
     state rem_input r1 r2 rd
     ⟨exec_row, e0, e1, e2⟩
     promises

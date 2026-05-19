@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Addw
-import ZiskFv.Equivalence.Promises.RType
-import ZiskFv.Equivalence.Promises.BinaryHelpers
+import ZiskFv.Equivalence_v1.Addw
+import ZiskFv.Equivalence_v1.Promises.RType
+import ZiskFv.Equivalence_v1.Promises.BinaryHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -26,7 +26,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Equivalence.Promises
+open ZiskFv.Equivalence_v1.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -39,7 +39,7 @@ theorem equiv_ADDW
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state addw_input.r1_val addw_input.r2_val addw_input.rd addw_input.PC
         (PureSpec.execute_RTYPE_addw_pure addw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -77,7 +77,7 @@ theorem equiv_ADDW
     binary_w_mode_carry_7_zero v r_binary 0x1A h_emit_op (Or.inl rfl)
   have h_match_clo := binary_h_match_clo_of_carry_7_zero h_c_lo_m h_carry_7_zero
   have h_match_chi := binary_h_match_chi_standard h_c_hi_m
-  exact ZiskFv.Equivalence.Addw.equiv_ADDW
+  exact ZiskFv.Equivalence_v1.Addw.equiv_ADDW
     state addw_input r1 r2 rd m r_main
     ⟨exec_row, e0, e1, e2⟩
     promises

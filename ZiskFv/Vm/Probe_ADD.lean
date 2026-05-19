@@ -43,7 +43,7 @@ theorem equiv_ADD_v2
     (h_main_subset : add_subset_holds m r_main)
     (h_lane_rd :
       ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
         (PureSpec.execute_RTYPE_add_pure add_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :

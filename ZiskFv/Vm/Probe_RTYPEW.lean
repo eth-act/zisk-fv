@@ -36,7 +36,7 @@ theorem equiv_ADDW_v2
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state addw_input.r1_val addw_input.r2_val addw_input.rd addw_input.PC
         (PureSpec.execute_RTYPE_addw_pure addw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -60,7 +60,7 @@ theorem equiv_SUBW_v2
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state subw_input.r1_val subw_input.r2_val subw_input.rd subw_input.PC
         (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :

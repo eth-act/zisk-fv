@@ -43,7 +43,7 @@ theorem equiv_ANDI_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
     (h_andi_subset : itype_imm_subset_holds_main m r_main andi_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
         state andi_input.r1_val andi_input.imm andi_input.rd andi_input.PC
         (PureSpec.execute_ITYPE_andi_pure andi_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -68,7 +68,7 @@ theorem equiv_ORI_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
     (h_ori_subset : itype_imm_subset_holds_main m r_main ori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
         state ori_input.r1_val ori_input.imm ori_input.rd ori_input.PC
         (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -93,7 +93,7 @@ theorem equiv_XORI_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
     (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
         state xori_input.r1_val xori_input.imm xori_input.rd xori_input.PC
         (PureSpec.execute_ITYPE_xori_pure xori_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :

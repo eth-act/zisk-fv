@@ -36,7 +36,7 @@ theorem equiv_LD_v2
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
-    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.ld_state_assumptions ld_input state)
         (PureSpec.execute_LOADD_pure ld_input).nextPC

@@ -35,7 +35,7 @@ theorem equiv_ADDI_v2
     (h_main_subset : add_subset_holds m r_main)
     (h_addi_subset : itype_imm_subset_holds_main m r_main addi_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
         state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
         (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -57,7 +57,7 @@ theorem equiv_ADDIW_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W)
     (h_addiw_subset : itype_imm_subset_holds_main m r_main addiw_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
         state addiw_input.r1_val addiw_input.imm addiw_input.rd addiw_input.PC
         (PureSpec.execute_ITYPE_addiw_pure addiw_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :

@@ -1,7 +1,7 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Srlw
-import ZiskFv.Equivalence.Promises.BinaryExtensionHelpers
+import ZiskFv.Equivalence_v1.Srlw
+import ZiskFv.Equivalence_v1.Promises.BinaryExtensionHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -19,7 +19,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Equivalence.Promises
+open ZiskFv.Equivalence_v1.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -54,7 +54,7 @@ theorem equiv_SRLW
   obtain ⟨h_main_active, h_main_op⟩ := pins
   obtain ⟨r_binary, h_match⟩ :=
     binexec_op_bus_handshake_SRL_W m v r_main h_main_active h_main_op
-  exact ZiskFv.Equivalence.Srlw.equiv_SRLW state srlw_input r1 r2 rd
+  exact ZiskFv.Equivalence_v1.Srlw.equiv_SRLW state srlw_input r1 r2 rd
     m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
     { input_r1_eq := h_input_r1_sail

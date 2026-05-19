@@ -1,7 +1,7 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Fence
-import ZiskFv.Equivalence.Promises.Fence
+import ZiskFv.Equivalence_v1.Fence
+import ZiskFv.Equivalence_v1.Promises.Fence
 import ZiskFv.SailSpec.fence
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
@@ -112,13 +112,13 @@ theorem equiv_FENCE
     -- has no provider AIR).
     (_pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_FLAG)
     -- Structural promise bundle (6 fields, see Promises/Fence.lean).
-    (promises : ZiskFv.Equivalence.Promises.FencePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.FencePromises
         state fence_input.PC
         (PureSpec.execute_FENCE_pure fence_input).nextPC
         exec_row) :
     execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
       = (bus_effect exec_row [] state).2 :=
-  ZiskFv.Equivalence.Fence.equiv_FENCE
+  ZiskFv.Equivalence_v1.Fence.equiv_FENCE
     state fence_input fm pred succ rs rd exec_row promises
 
 end ZiskFv.Compliance

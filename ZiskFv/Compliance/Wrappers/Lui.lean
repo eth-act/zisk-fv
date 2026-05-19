@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Lui
-import ZiskFv.Equivalence.Promises.UType
-import ZiskFv.Equivalence.Promises.UTypeHelpers
+import ZiskFv.Equivalence_v1.Lui
+import ZiskFv.Equivalence_v1.Promises.UType
+import ZiskFv.Equivalence_v1.Promises.UTypeHelpers
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
@@ -44,16 +44,16 @@ theorem equiv_LUI
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
     -- Structural `UTypePromises` bundle.
-    (promises : ZiskFv.Equivalence.Promises.UTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.UTypePromises
         state lui_input.imm lui_input.rd lui_input.PC
         (PureSpec.execute_LUI_pure lui_input).nextPC
         imm rd exec_row e_rd (lui_input.PC + 4#64)) :
     execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
       = (bus_effect exec_row [e_rd] state).2 :=
   have h_circuit :=
-    ZiskFv.Equivalence.Promises.lui_h_circuit_of_main_constraints
+    ZiskFv.Equivalence_v1.Promises.lui_h_circuit_of_main_constraints
       m r_main next_pc pins.main_active pins.main_op h_lui_subset
-  ZiskFv.Equivalence.Lui.equiv_LUI state lui_input imm rd
+  ZiskFv.Equivalence_v1.Lui.equiv_LUI state lui_input imm rd
     m r_main next_pc exec_row e_rd (lui_input.PC + 4#64)
     promises h_circuit
 

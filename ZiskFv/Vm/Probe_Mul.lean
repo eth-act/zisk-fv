@@ -39,7 +39,7 @@ theorem equiv_MUL_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_Arith v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC
         (PureSpec.execute_MULH_mul_pure mul_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -68,7 +68,7 @@ theorem equiv_MULH_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULH)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state mulh_input.r1_val mulh_input.r2_val mulh_input.rd mulh_input.PC
         (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -91,7 +91,7 @@ theorem equiv_MULHU_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULUH)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state mulhu_input.r1_val mulhu_input.r2_val mulhu_input.rd mulhu_input.PC
         (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -115,7 +115,7 @@ theorem equiv_MULHSU_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULSUH)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state mulhsu_input.r1_val mulhsu_input.r2_val mulhsu_input.rd mulhsu_input.PC
         (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -138,7 +138,7 @@ theorem equiv_MULW_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL_W)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_Arith v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
         (PureSpec.execute_MULW_pure mulw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)

@@ -1,10 +1,10 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Mul
-import ZiskFv.Equivalence.Promises.RType
-import ZiskFv.Equivalence.Promises.ArithHelpers
-import ZiskFv.Equivalence.Bridge.Arith
-import ZiskFv.Equivalence.Bridge.SailStateBridge
+import ZiskFv.Equivalence_v1.Mul
+import ZiskFv.Equivalence_v1.Promises.RType
+import ZiskFv.Equivalence_v1.Promises.ArithHelpers
+import ZiskFv.Equivalence_v1.Bridge.Arith
+import ZiskFv.Equivalence_v1.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
@@ -69,7 +69,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Equivalence.Promises
+open ZiskFv.Equivalence_v1.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -106,7 +106,7 @@ theorem equiv_MUL
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_Arith v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC
         (PureSpec.execute_MULH_mul_pure mul_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -183,18 +183,18 @@ theorem equiv_MUL
          h_main_a_lo, h_main_a_hi, h_main_b_lo, h_main_b_hi⟩ :=
     ZiskFv.Trusted.transpile_MUL
       m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
-      (ZiskFv.Equivalence.Bridge.SailStateBridge.sail_to_rv64 state)
+      (ZiskFv.Equivalence_v1.Bridge.SailStateBridge.sail_to_rv64 state)
       h_main_active h_main_op_mul
   have h_r1_packed_bv :
       mul_input.r1_val
         = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296) :=
-    ZiskFv.Equivalence.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
+    ZiskFv.Equivalence_v1.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
       state (regidx_to_fin r1) mul_input.r1_val
       (m.a_0 r_main) (m.a_1 r_main) h_main_a_lo h_main_a_hi h_input_r1
   have h_r2_packed_bv :
       mul_input.r2_val
         = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296) :=
-    ZiskFv.Equivalence.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
+    ZiskFv.Equivalence_v1.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
       state (regidx_to_fin r2) mul_input.r2_val
       (m.b_0 r_main) (m.b_1 r_main) h_main_b_lo h_main_b_hi h_input_r2
   -- End-to-end unsigned non-W operand bridge → r1/r2 toNat = packed4.
@@ -207,7 +207,7 @@ theorem equiv_MUL
     h_b_lo_eq_FGL h_b_hi_eq_FGL _h_m32_m h_r2_packed_bv
     h_b0_lt h_b1_lt h_b2_lt h_b3_lt
   -- ============ Delegate to `equiv_MUL` ============
-  exact ZiskFv.Equivalence.Mul.equiv_MUL
+  exact ZiskFv.Equivalence_v1.Mul.equiv_MUL
     state mul_input r1 r2 rd srs1 srs2 v r_a
     ⟨exec_row, e0, e1, e2⟩
     promises

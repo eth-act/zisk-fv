@@ -32,7 +32,7 @@ theorem equiv_SB_v2
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_main_ind_width : main.ind_width r_main = 1)
     (h_opcode_assumptions : PureSpec.sb_state_assumptions sb_input state)
-    (promises : ZiskFv.Equivalence.Promises.StorePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.StorePromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sb_state_assumptions sb_input state)
         (PureSpec.execute_STOREB_pure sb_input).nextPC
@@ -53,7 +53,7 @@ theorem equiv_SH_v2
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_main_ind_width : main.ind_width r_main = 2)
     (h_opcode_assumptions : PureSpec.sh_state_assumptions sh_input state)
-    (promises : ZiskFv.Equivalence.Promises.StorePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.StorePromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sh_state_assumptions sh_input state)
         (PureSpec.execute_STOREH_pure sh_input).nextPC
@@ -74,7 +74,7 @@ theorem equiv_SW_v2
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_main_ind_width : main.ind_width r_main = 4)
     (h_opcode_assumptions : PureSpec.sw_state_assumptions sw_input state)
-    (promises : ZiskFv.Equivalence.Promises.StorePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.StorePromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sw_state_assumptions sw_input state)
         (PureSpec.execute_STOREW_pure sw_input).nextPC

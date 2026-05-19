@@ -1,10 +1,10 @@
 import Mathlib
 
-import ZiskFv.Equivalence.MulW
-import ZiskFv.Equivalence.Promises.RType
-import ZiskFv.Equivalence.Promises.ArithHelpers
-import ZiskFv.Equivalence.Bridge.Arith
-import ZiskFv.Equivalence.Bridge.SailStateBridge
+import ZiskFv.Equivalence_v1.MulW
+import ZiskFv.Equivalence_v1.Promises.RType
+import ZiskFv.Equivalence_v1.Promises.ArithHelpers
+import ZiskFv.Equivalence_v1.Bridge.Arith
+import ZiskFv.Equivalence_v1.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
@@ -53,7 +53,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
 open ZiskFv.PackedBitVec.SignedChunkLift
-open ZiskFv.Equivalence.Promises
+open ZiskFv.Equivalence_v1.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -74,7 +74,7 @@ theorem equiv_MULW
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_Arith v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
         (PureSpec.execute_MULW_pure mulw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -140,7 +140,7 @@ theorem equiv_MULW
   -- Byte-lane lo equation via cross-AIR `arith_byte_lane_eq_of_match`.
   have h_byte_lo := arith_byte_lane_eq_of_match h_byte_lo_to_c0 h_c0_eq_FGL h_c0_lt h_c1_lt
   -- ============ Delegate to `equiv_MULW` ============
-  exact ZiskFv.Equivalence.MulW.equiv_MULW
+  exact ZiskFv.Equivalence_v1.MulW.equiv_MULW
     state mulw_input r1 r2 rd v r_a
     ⟨exec_row, e0, e1, e2⟩
     promises

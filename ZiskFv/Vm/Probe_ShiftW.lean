@@ -139,7 +139,7 @@ theorem equiv_SLLIW_v2
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence.Promises.ShiftWImmPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.ShiftWImmPromises
         state slliw_input.r1_val slliw_input.rd slliw_input.PC
         (PureSpec.execute_SHIFTIWOP_slliw_pure slliw_input).nextPC
         r1 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -157,7 +157,7 @@ theorem equiv_SRLIW_v2
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence.Promises.ShiftWImmPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.ShiftWImmPromises
         state srliw_input.r1_val srliw_input.rd srliw_input.PC
         (PureSpec.execute_SHIFTIWOP_srliw_pure srliw_input).nextPC
         r1 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -175,7 +175,7 @@ theorem equiv_SRAIW_v2
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence.Promises.ShiftWImmPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.ShiftWImmPromises
         state sraiw_input.r1_val sraiw_input.rd sraiw_input.PC
         (PureSpec.execute_SHIFTIWOP_sraiw_pure sraiw_input).nextPC
         r1 rd bus.exec_row bus.e0 bus.e1 bus.e2)

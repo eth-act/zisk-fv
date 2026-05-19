@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Sra
-import ZiskFv.Equivalence.Promises.RType
-import ZiskFv.Equivalence.Promises.BinaryExtensionHelpers
+import ZiskFv.Equivalence_v1.Sra
+import ZiskFv.Equivalence_v1.Promises.RType
+import ZiskFv.Equivalence_v1.Promises.BinaryExtensionHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -24,7 +24,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Equivalence.Promises
+open ZiskFv.Equivalence_v1.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -35,7 +35,7 @@ theorem equiv_SRA
     (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state sra_input.r1_val sra_input.r2_val sra_input.rd sra_input.PC
         (PureSpec.execute_RTYPE_sra_pure sra_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -47,7 +47,7 @@ theorem equiv_SRA
   obtain ⟨h_main_active, h_main_op⟩ := pins
   obtain ⟨r_binary, h_match⟩ :=
     binexec_op_bus_handshake_SRA m v r_main h_main_active h_main_op
-  exact ZiskFv.Equivalence.Sra.equiv_SRA state sra_input r1 r2 rd
+  exact ZiskFv.Equivalence_v1.Sra.equiv_SRA state sra_input r1 r2 rd
     m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
     promises

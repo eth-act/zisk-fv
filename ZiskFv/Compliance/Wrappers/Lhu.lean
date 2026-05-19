@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Lhu
-import ZiskFv.Equivalence.Promises.Load
-import ZiskFv.Equivalence.Bridge.Mem
+import ZiskFv.Equivalence_v1.Lhu
+import ZiskFv.Equivalence_v1.Promises.Load
+import ZiskFv.Equivalence_v1.Bridge.Mem
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
@@ -37,7 +37,7 @@ theorem equiv_LHU
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_width : main.ind_width r_main = (2 : FGL))
-    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lhu_state_assumptions lhu_input state)
         (PureSpec.execute_LOADHU_pure lhu_input).nextPC
@@ -49,7 +49,7 @@ theorem equiv_LHU
       true,
       2
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  exact ZiskFv.Equivalence.Lhu.equiv_LHU
+  exact ZiskFv.Equivalence_v1.Lhu.equiv_LHU
     state lhu_input regs bus
     promises
     main mem r_main align pins h_width

@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Jal
-import ZiskFv.Equivalence.Promises.Jump
-import ZiskFv.Equivalence.Promises.JumpHelpers
+import ZiskFv.Equivalence_v1.Jal
+import ZiskFv.Equivalence_v1.Promises.Jump
+import ZiskFv.Equivalence_v1.Promises.JumpHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Compliance.SharedBundles
@@ -42,7 +42,7 @@ theorem equiv_JAL
     (h_jal_subset :
       ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
     -- Structural `JumpPromises` bundle.
-    (promises : ZiskFv.Equivalence.Promises.JumpPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.JumpPromises
         state jal_input.PC jal_input.rd misa_val
         (PureSpec.execute_JAL_pure jal_input).success
         (PureSpec.execute_JAL_pure jal_input).nextPC
@@ -55,9 +55,9 @@ theorem equiv_JAL
     execute_instruction (instruction.JAL (imm, rd)) state
       = (bus_effect exec_row [e_rd] state).2 :=
   have h_circuit :=
-    ZiskFv.Equivalence.Promises.jal_h_circuit_of_main_constraints
+    ZiskFv.Equivalence_v1.Promises.jal_h_circuit_of_main_constraints
       m r_main next_pc pins.main_active pins.main_op h_jal_subset
-  ZiskFv.Equivalence.Jal.equiv_JAL state jal_input imm rd misa_val
+  ZiskFv.Equivalence_v1.Jal.equiv_JAL state jal_input imm rd misa_val
     exec_row e_rd nextPC_val m r_main next_pc
     promises h_input_imm h_not_throws
     h_circuit h_pc_bound h_lo_bound h_pc_offset_lt_2_32

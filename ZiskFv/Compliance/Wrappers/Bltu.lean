@@ -1,7 +1,7 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Bltu
-import ZiskFv.Equivalence.Promises.BranchHelpers
+import ZiskFv.Equivalence_v1.Bltu
+import ZiskFv.Equivalence_v1.Promises.BranchHelpers
 import ZiskFv.SailSpec.bltu
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
@@ -29,7 +29,7 @@ theorem equiv_BLTU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bltu_input : PureSpec.BltuInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)
-    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
         state bltu_input.imm bltu_input.r1_val bltu_input.r2_val bltu_input.PC
         ops.misa_val
         (PureSpec.execute_BLTU_pure bltu_input).nextPC
@@ -38,7 +38,7 @@ theorem equiv_BLTU
         ops.imm ops.r1 ops.r2 ops.exec_row) :
     execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BLTU)) state
       = (bus_effect ops.exec_row [] state).2 :=
-  ZiskFv.Equivalence.Bltu.equiv_BLTU
+  ZiskFv.Equivalence_v1.Bltu.equiv_BLTU
     state bltu_input ops promises
 
 end ZiskFv.Compliance

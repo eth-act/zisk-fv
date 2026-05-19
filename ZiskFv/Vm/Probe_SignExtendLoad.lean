@@ -33,7 +33,7 @@ theorem equiv_LB_v2
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 1 OP_SIGNEXTEND_B)
-    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lb_state_assumptions lb_input state)
         (PureSpec.execute_LOADB_pure lb_input).nextPC
@@ -54,7 +54,7 @@ theorem equiv_LH_v2
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 1 OP_SIGNEXTEND_H)
-    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
@@ -75,7 +75,7 @@ theorem equiv_LW_v2
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 1 OP_SIGNEXTEND_W)
-    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lw_state_assumptions lw_input state)
         (PureSpec.execute_LOADW_pure lw_input).nextPC

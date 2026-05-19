@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Ld
-import ZiskFv.Equivalence.Promises.Load
-import ZiskFv.Equivalence.Bridge.Mem
+import ZiskFv.Equivalence_v1.Ld
+import ZiskFv.Equivalence_v1.Promises.Load
+import ZiskFv.Equivalence_v1.Bridge.Mem
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
@@ -198,7 +198,7 @@ theorem equiv_LD
     -- from Main's ROM handshake on the row hosting LD.
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     -- Structural promise bundle (12 fields, see Promises/Load.lean).
-    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.ld_state_assumptions ld_input state)
         (PureSpec.execute_LOADD_pure ld_input).nextPC
@@ -212,7 +212,7 @@ theorem equiv_LD
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   -- Delegate to canonical `equiv_LD`. `pins`'s opKind `OP_COPYB` is
   -- definitionally `(1 : FGL)` (see `Trusted/Transpiler.lean:147`).
-  exact ZiskFv.Equivalence.Ld.equiv_LD
+  exact ZiskFv.Equivalence_v1.Ld.equiv_LD
     state ld_input regs bus
     promises
     main mem r_main pins

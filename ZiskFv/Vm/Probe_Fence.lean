@@ -33,7 +33,7 @@ theorem equiv_FENCE_v2
     (main : Valid_Main C FGL FGL) (r_main : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (_pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_FLAG)
-    (promises : ZiskFv.Equivalence.Promises.FencePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.FencePromises
         state fence_input.PC
         (PureSpec.execute_FENCE_pure fence_input).nextPC
         exec_row) :

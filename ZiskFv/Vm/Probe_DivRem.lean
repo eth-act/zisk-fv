@@ -40,7 +40,7 @@ theorem equiv_DIV_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDiv v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state div_input.r1_val div_input.r2_val div_input.rd div_input.PC
         (PureSpec.execute_DIVREM_div_pure div_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -73,7 +73,7 @@ theorem equiv_REM_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REM)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state rem_input.r1_val rem_input.r2_val rem_input.rd rem_input.PC
         (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -106,7 +106,7 @@ theorem equiv_REMU_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state remu_input.r1_val remu_input.r2_val remu_input.rd remu_input.PC
         (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -130,7 +130,7 @@ theorem equiv_DIVW_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV_W)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDiv v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state divw_input.r1_val divw_input.r2_val divw_input.rd divw_input.PC
         (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -176,7 +176,7 @@ theorem equiv_DIVUW_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIVU_W)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDiv v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state divuw_input.r1_val divuw_input.r2_val divuw_input.rd divuw_input.PC
         (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -209,7 +209,7 @@ theorem equiv_REMW_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REM_W)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state remw_input.r1_val remw_input.r2_val remw_input.rd remw_input.PC
         (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -255,7 +255,7 @@ theorem equiv_REMUW_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU_W)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state remuw_input.r1_val remuw_input.r2_val remuw_input.rd remuw_input.PC
         (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)

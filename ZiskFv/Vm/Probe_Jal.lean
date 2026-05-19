@@ -36,7 +36,7 @@ theorem equiv_JAL_v2
     (nextPC_val : BitVec 64)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_jal_subset : jump_subset_holds m r_main next_pc)
-    (promises : ZiskFv.Equivalence.Promises.JumpPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.JumpPromises
         state jal_input.PC jal_input.rd misa_val
         (PureSpec.execute_JAL_pure jal_input).success
         (PureSpec.execute_JAL_pure jal_input).nextPC
@@ -67,7 +67,7 @@ theorem equiv_JALR_v2
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_jalr_subset : jalr_subset_holds m r_main next_pc)
-    (promises : ZiskFv.Equivalence.Promises.JumpPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.JumpPromises
         state jalr_input.PC jalr_input.rd misa_val
         (PureSpec.execute_JALR_pure jalr_input).success
         (PureSpec.execute_JALR_pure jalr_input).nextPC

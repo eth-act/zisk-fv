@@ -34,7 +34,7 @@ theorem equiv_LUI_v2
     (e_rd : Interaction.MemoryBusEntry FGL)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
-    (promises : ZiskFv.Equivalence.Promises.UTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.UTypePromises
         state lui_input.imm lui_input.rd lui_input.PC
         (PureSpec.execute_LUI_pure lui_input).nextPC
         imm rd exec_row e_rd (lui_input.PC + 4#64)) :
@@ -55,7 +55,7 @@ theorem equiv_AUIPC_v2
     (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
-    (promises : ZiskFv.Equivalence.Promises.UTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.UTypePromises
         state auipc_input.imm auipc_input.rd auipc_input.PC
         (PureSpec.execute_AUIPC_pure auipc_input).nextPC
         imm rd exec_row e_rd nextPC_val)

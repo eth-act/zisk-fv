@@ -35,7 +35,7 @@ theorem equiv_SLT_v2
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state slt_input.r1_val slt_input.r2_val slt_input.rd slt_input.PC
         (PureSpec.execute_RTYPE_slt_pure slt_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -59,7 +59,7 @@ theorem equiv_SLTU_v2
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state sltu_input.r1_val sltu_input.r2_val sltu_input.rd sltu_input.PC
         (PureSpec.execute_RTYPE_sltu_pure sltu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -84,7 +84,7 @@ theorem equiv_SLTI_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
     (h_slti_subset : itype_imm_subset_holds_main m r_main slti_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
         state slti_input.r1_val slti_input.imm slti_input.rd slti_input.PC
         (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -109,7 +109,7 @@ theorem equiv_SLTIU_v2
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)
     (h_sltiu_subset : itype_imm_subset_holds_main m r_main sltiu_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
         state sltiu_input.r1_val sltiu_input.imm sltiu_input.rd sltiu_input.PC
         (PureSpec.execute_ITYPE_sltiu_pure sltiu_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :

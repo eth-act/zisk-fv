@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Lbu
-import ZiskFv.Equivalence.Promises.Load
-import ZiskFv.Equivalence.Bridge.Mem
+import ZiskFv.Equivalence_v1.Lbu
+import ZiskFv.Equivalence_v1.Promises.Load
+import ZiskFv.Equivalence_v1.Bridge.Mem
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
@@ -65,7 +65,7 @@ theorem equiv_LBU
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_width : main.ind_width r_main = (1 : FGL))
     -- Structural promise bundle (12 fields, see Promises/Load.lean).
-    (promises : ZiskFv.Equivalence.Promises.LoadPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lbu_state_assumptions lbu_input state)
         (PureSpec.execute_LOADBU_pure lbu_input).nextPC
@@ -78,7 +78,7 @@ theorem equiv_LBU
       1
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   -- `OP_COPYB := 1` definitionally; canonical accepts `pins`/`align` verbatim.
-  exact ZiskFv.Equivalence.Lbu.equiv_LBU
+  exact ZiskFv.Equivalence_v1.Lbu.equiv_LBU
     state lbu_input regs bus
     promises
     main mem r_main align pins h_width

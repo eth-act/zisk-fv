@@ -1,7 +1,7 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Beq
-import ZiskFv.Equivalence.Promises.BranchHelpers
+import ZiskFv.Equivalence_v1.Beq
+import ZiskFv.Equivalence_v1.Promises.BranchHelpers
 import ZiskFv.SailSpec.beq
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
@@ -34,7 +34,7 @@ theorem equiv_BEQ
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (beq_input : PureSpec.BeqInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)
-    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
         state beq_input.imm beq_input.r1_val beq_input.r2_val beq_input.PC
         ops.misa_val
         (PureSpec.execute_BEQ_pure beq_input).nextPC
@@ -43,7 +43,7 @@ theorem equiv_BEQ
         ops.imm ops.r1 ops.r2 ops.exec_row) :
     execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BEQ)) state
       = (bus_effect ops.exec_row [] state).2 :=
-  ZiskFv.Equivalence.Beq.equiv_BEQ
+  ZiskFv.Equivalence_v1.Beq.equiv_BEQ
     state beq_input ops promises
 
 end ZiskFv.Compliance

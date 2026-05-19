@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Xori
-import ZiskFv.Equivalence.Promises.IType
-import ZiskFv.Equivalence.Promises.BinaryHelpers
+import ZiskFv.Equivalence_v1.Xori
+import ZiskFv.Equivalence_v1.Promises.IType
+import ZiskFv.Equivalence_v1.Promises.BinaryHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -28,7 +28,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Tactics.ALUITypeArchetype
-open ZiskFv.Equivalence.Promises
+open ZiskFv.Equivalence_v1.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -42,7 +42,7 @@ theorem equiv_XORI
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
     (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence.Promises.ITypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
         state xori_input.r1_val xori_input.imm xori_input.rd xori_input.PC
         (PureSpec.execute_ITYPE_xori_pure xori_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -60,7 +60,7 @@ theorem equiv_XORI
   have h_bop_or_sext :=
     binary_h_bop_or_sext_via_axiom h_match h_main_op_xori
       (binary_b_op_or_sext_eq_OP_XOR v r_binary)
-  exact ZiskFv.Equivalence.Xori.equiv_XORI
+  exact ZiskFv.Equivalence_v1.Xori.equiv_XORI
     state xori_input r1 rd imm m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
     promises

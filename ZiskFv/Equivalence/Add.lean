@@ -1,100 +1,29 @@
-import Mathlib
-
-import ZiskFv.Field.Goldilocks
-import ZiskFv.Field.GoldilocksBridge
-import ZiskFv.Airs.Bus.Interaction
-import ZiskFv.Trusted.Transpiler
-import ZiskFv.ZiskCircuit.Add
-import ZiskFv.Airs.Main.Main
-import ZiskFv.Airs.Binary.BinaryAdd
-import ZiskFv.Airs.OperationBus.OperationBus
-import ZiskFv.Equivalence.Bridge.BinaryAdd
-import ZiskFv.Airs.Bus.BusEmission
-import ZiskFv.SailSpec.add
-import ZiskFv.SailSpec.BusEffect
-import ZiskFv.Airs.BusHypotheses
-import ZiskFv.Airs.OpBusEffect
-import ZiskFv.Airs.OpBusHypotheses
-import ZiskFv.Airs.MemoryBus
-import ZiskFv.Equivalence.WriteValueProofs.Arith
-import ZiskFv.Equivalence.Promises.RType
-import ZiskFv.Compliance.SharedBundles
+import ZiskFv.Vm.Probe_ADD
 
 /-!
-End-to-end theorem for RV64 ADD. Combines:
+# `equiv_ADD` per-opcode canonical theorem (channel-balance form)
 
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_ADD`),
-* the compositional ADD spec (`ZiskFv.ZiskCircuit.Add.add_compositional`),
-* the Sail pure-function equivalence
-  (`PureSpec.execute_RTYPE_add_pure_equiv`),
+Post-Phase-6 canonical per-opcode theorem for ADD. Proves the
+channel-balance conclusion (`= state_effect_via_channels …`) by
+invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_ADD_v2`.
 
-into two companion theorems:
+The pre-cutover v1 form (`= (bus_effect …).2`) lives at
+`ZiskFv/Equivalence_v1/Add.lean`.
 
-* `equiv_ADD_sail` — Sail-level. States `LeanRV64D.execute_instruction`
-  on an RV64 ADD reduces to a concrete monadic block writing
-  `r1_val + r2_val` (BitVec 64, wraps mod 2^64) to `rd` and
-  advancing `nextPC`. Discharged via `execute_RTYPE_add_pure_equiv`.
+## Trust note
+
+No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_ADD_v2`'s closure exactly.
 -/
+
+open ZiskFv.Vm
+open Goldilocks
+open ZiskFv.Airs.Main (Valid_Main add_subset_holds)
+open ZiskFv.Trusted (OP_ADD)
 
 namespace ZiskFv.Equivalence.Add
 
-open Goldilocks
-open ZiskFv.Trusted
-open ZiskFv.Airs.Main
-open ZiskFv.Airs.BinaryAdd
-open ZiskFv.Airs.OperationBus
-open ZiskFv.ZiskCircuit.Add
-
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
-/-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an RV64
-    ADD (`.RTYPE (r2, r1, rd, rop.ADD)`) reduces to the pure function
-    block supplied by `PureSpec.execute_RTYPE_add_pure`, given that the
-    source registers are readable and the PC is known. Wraps
-    `PureSpec.execute_RTYPE_add_pure_equiv` to expose the Sail chain at
-    this module's export surface, consumed by `equiv_ADD` below. -/
-lemma equiv_ADD_sail
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (add_input : PureSpec.AddInput)
-    (r1 r2 rd : regidx)
-    (h_input_r1 : read_xreg (regidx_to_fin r1) state
-      = EStateM.Result.ok add_input.r1_val state)
-    (h_input_r2 : read_xreg (regidx_to_fin r2) state
-      = EStateM.Result.ok add_input.r2_val state)
-    (h_input_rd : add_input.rd = regidx_to_fin rd)
-    (h_input_pc : state.regs.get? Register.PC = .some add_input.PC) :
-    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
-      = let add_output := PureSpec.execute_RTYPE_add_pure add_input
-        (do
-          Sail.writeReg Register.nextPC add_output.nextPC
-          match add_output.rd with
-            | .some (rd, rd_val) => write_xreg rd rd_val
-            | .none => pure ()
-          pure (ExecutionResult.Retire_Success ())) state :=
-  PureSpec.execute_RTYPE_add_pure_equiv
-    add_input r1 r2 rd h_input_r1 h_input_r2 h_input_rd h_input_pc
-
-/-- **Canonical equivalence.**
-    Sail's `execute_instruction` on an RV64 ADD equals the state
-    computed by applying `bus_effect` to the circuit's execution and
-    memory bus rows.
-
-    The cross-AIR matching (`matches_entry`), per-chunk byte ranges
-    on BinaryAdd, and the per-chunk-form input bridges that pre-pilot
-    `equiv_ADD` accepted as caller obligations are now derived inside
-    the proof body via
-    `ZiskFv.Equivalence.Bridge.BinaryAdd.add_discharge`, which
-    consumes `op_bus_perm_sound_BinaryAdd` (PLONK soundness on
-    `OPERATION_BUS_ID = 5000`) and `binary_add_columns_in_range`
-    (range-check bus soundness on BinaryAdd's `bits(N)` columns) —
-    both in the *trust ledger*.
-
-    Net reduction in the *anti-laundering metric* vs. origin/main
-    pre-discharge: −2 binders. (Further reductions possible by
-    deriving `h_input_r{1,2}_main` from `transpile_ADD` + a state-
-    bridge, or by universalizing `h_main_subset` / `h_main_mode`
-    from `Valid_Main` constraints.) -/
 theorem equiv_ADD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
@@ -102,52 +31,17 @@ theorem equiv_ADD
     (m : Valid_Main C FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness C)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    -- Structural promise bundle (15 fields, see Promises/RType.lean).
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
+    (h_main_subset : add_subset_holds m r_main)
+    (h_lane_rd :
+      ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
         (PureSpec.execute_RTYPE_add_pure add_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    (h_main_subset : add_subset_holds m r_main)
-    (h_main_mode : main_row_in_add_mode m r_main)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (bounds : ZiskFv.Compliance.ByteBounds bus.e2) :
-    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
-      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨b, h_b_core⟩ := badd
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ := bounds
-  obtain ⟨h_input_r1_sail, h_input_r2_sail, h_input_rd, h_input_pc,
-          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
-          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
-          h_rd_idx⟩ := promises
-  -- *Promise discharge* via the BinaryAdd bridge (with SailStateBridge
-  -- deriving the input bridges from the Sail-form `read_xreg` facts
-  -- that `equiv_ADD_sail` consumes).
-  obtain ⟨r_binary, h_circuit, h_a_range, h_b_range, h_c_range,
-          h_input_r1_circuit, h_input_r2_circuit⟩ :=
-    ZiskFv.Equivalence.Bridge.BinaryAdd.add_discharge
-      m b r_main h_main_subset h_main_mode h_b_core
-      state (regidx_to_fin r1) (regidx_to_fin r2)
-      add_input.r1_val add_input.r2_val
-      h_input_r1_sail h_input_r2_sail
-  have h_rd_val :=
-    ZiskFv.Equivalence.WriteValueProofs.Arith.h_rd_val_arith_add
-      m b r_main r_binary e2 add_input
-      h_circuit h_lane_rd
-      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
-      h_a_range h_b_range h_c_range
-      h_input_r1_circuit h_input_r2_circuit
-  rw [equiv_ADD_sail state add_input r1 r2 rd
-        h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc]
-  symm
-  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
-        state exec_row e0 e1 e2
-        (PureSpec.execute_RTYPE_add_pure add_input).nextPC
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
-  simp only [PureSpec.execute_RTYPE_add_pure, h_rd_idx]
-  split_ifs with h_rd_zero
-  · simp only [bind, pure, EStateM.bind, EStateM.pure]
-  · rw [h_rd_val]
+    : execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
+      = state_effect_via_channels
+          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
+  ZiskFv.Vm.Probe.equiv_ADD_v2 state add_input r1 r2 rd m badd r_main bus pins h_main_subset h_lane_rd promises
 
 end ZiskFv.Equivalence.Add

@@ -29,7 +29,7 @@ theorem equiv_SD_v2
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_opcode_assumptions : PureSpec.sd_state_assumptions sd_input state)
-    (promises : ZiskFv.Equivalence.Promises.StorePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.StorePromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sd_state_assumptions sd_input state)
         (PureSpec.execute_STORED_pure sd_input).nextPC

@@ -1,10 +1,10 @@
 import Mathlib
 
-import ZiskFv.Equivalence.MulHSU
-import ZiskFv.Equivalence.Promises.RType
-import ZiskFv.Equivalence.Promises.ArithHelpers
-import ZiskFv.Equivalence.Bridge.Arith
-import ZiskFv.Equivalence.Bridge.SailStateBridge
+import ZiskFv.Equivalence_v1.MulHSU
+import ZiskFv.Equivalence_v1.Promises.RType
+import ZiskFv.Equivalence_v1.Promises.ArithHelpers
+import ZiskFv.Equivalence_v1.Bridge.Arith
+import ZiskFv.Equivalence_v1.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
@@ -41,7 +41,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
 open ZiskFv.PackedBitVec.SignedChunkLift
-open ZiskFv.Equivalence.Promises
+open ZiskFv.Equivalence_v1.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -61,7 +61,7 @@ theorem equiv_MULHSU
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_ArithMulSecondary v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state mulhsu_input.r1_val mulhsu_input.r2_val mulhsu_input.rd mulhsu_input.PC
         (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -145,18 +145,18 @@ theorem equiv_MULHSU
          h_main_a_lo, h_main_a_hi, h_main_b_lo, h_main_b_hi⟩ :=
     ZiskFv.Trusted.transpile_MULHSU
       m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
-      (ZiskFv.Equivalence.Bridge.SailStateBridge.sail_to_rv64 state)
+      (ZiskFv.Equivalence_v1.Bridge.SailStateBridge.sail_to_rv64 state)
       h_main_active h_main_op_mulhsu
   have h_r1_packed_bv :
       mulhsu_input.r1_val
         = BitVec.ofNat 64 ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296) :=
-    ZiskFv.Equivalence.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
+    ZiskFv.Equivalence_v1.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
       state (regidx_to_fin r1) mulhsu_input.r1_val
       (m.a_0 r_main) (m.a_1 r_main) h_main_a_lo h_main_a_hi h_input_r1
   have h_r2_packed_bv :
       mulhsu_input.r2_val
         = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296) :=
-    ZiskFv.Equivalence.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
+    ZiskFv.Equivalence_v1.Bridge.SailStateBridge.packed_lane_eq_of_read_xreg
       state (regidx_to_fin r2) mulhsu_input.r2_val
       (m.b_0 r_main) (m.b_1 r_main) h_main_b_lo h_main_b_hi h_input_r2
   -- Unsigned r1/r2 toNat = packed4 via end-to-end non-W operand bridge.
@@ -176,7 +176,7 @@ theorem equiv_MULHSU
         = (ZiskFv.PackedBitVec.MulNoWrap.packed4
             (v.a_0 r_a).val (v.a_1 r_a).val (v.a_2 r_a).val (v.a_3 r_a).val : ℤ)
             - (v.na r_a).val * (2:ℤ)^64 :=
-    ZiskFv.Equivalence.Bridge.SailStateBridge.signed_packed_toInt_eq_of_read_xreg
+    ZiskFv.Equivalence_v1.Bridge.SailStateBridge.signed_packed_toInt_eq_of_read_xreg
       h_input_r1 h_r1_toNat ⟨h_a0_lt, h_a1_lt, h_a2_lt, h_a3_lt⟩ h_na_msb
   -- Unsigned rs2 → h_rs2_value via direct cast of h_r2_toNat to ℤ.
   have h_rs2_value :
@@ -185,7 +185,7 @@ theorem equiv_MULHSU
             (v.b_0 r_a).val (v.b_1 r_a).val (v.b_2 r_a).val (v.b_3 r_a).val : ℤ) := by
     exact_mod_cast h_r2_toNat
   -- ============ Delegate to `equiv_MULHSU` ============
-  exact ZiskFv.Equivalence.MulHSU.equiv_MULHSU
+  exact ZiskFv.Equivalence_v1.MulHSU.equiv_MULHSU
     state mulhsu_input r1 r2 rd v r_a
     ⟨exec_row, e0, e1, e2⟩
     promises

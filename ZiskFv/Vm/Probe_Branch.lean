@@ -31,7 +31,7 @@ theorem equiv_BEQ_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (beq_input : PureSpec.BeqInput)
     (ops : BranchInstrOperands)
-    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
         state beq_input.imm beq_input.r1_val beq_input.r2_val beq_input.PC
         ops.misa_val
         (PureSpec.execute_BEQ_pure beq_input).nextPC
@@ -47,7 +47,7 @@ theorem equiv_BNE_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bne_input : PureSpec.BneInput)
     (ops : BranchInstrOperands)
-    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
         state bne_input.imm bne_input.r1_val bne_input.r2_val bne_input.PC
         ops.misa_val
         (PureSpec.execute_BNE_pure bne_input).nextPC
@@ -63,7 +63,7 @@ theorem equiv_BLT_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (blt_input : PureSpec.BltInput)
     (ops : BranchInstrOperands)
-    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
         state blt_input.imm blt_input.r1_val blt_input.r2_val blt_input.PC
         ops.misa_val
         (PureSpec.execute_BLT_pure blt_input).nextPC
@@ -79,7 +79,7 @@ theorem equiv_BGE_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bge_input : PureSpec.BgeInput)
     (ops : BranchInstrOperands)
-    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
         state bge_input.imm bge_input.r1_val bge_input.r2_val bge_input.PC
         ops.misa_val
         (PureSpec.execute_BGE_pure bge_input).nextPC
@@ -95,7 +95,7 @@ theorem equiv_BLTU_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bltu_input : PureSpec.BltuInput)
     (ops : BranchInstrOperands)
-    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
         state bltu_input.imm bltu_input.r1_val bltu_input.r2_val bltu_input.PC
         ops.misa_val
         (PureSpec.execute_BLTU_pure bltu_input).nextPC
@@ -111,7 +111,7 @@ theorem equiv_BGEU_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bgeu_input : PureSpec.BgeuInput)
     (ops : BranchInstrOperands)
-    (promises : ZiskFv.Equivalence.Promises.BranchPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
         state bgeu_input.imm bgeu_input.r1_val bgeu_input.r2_val bgeu_input.PC
         ops.misa_val
         (PureSpec.execute_BGEU_pure bgeu_input).nextPC

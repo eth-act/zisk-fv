@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Uniformity lint: verifies every ZiskFv/Equivalence/<Op>.lean exports
 # exactly one theorem named equiv_<OP> with the canonical shape
-# `execute_instruction ... state = (bus_effect ...).2`.
+# `execute_instruction ... state = state_effect_via_channels ...`
+# (post-Phase-6) or `= (bus_effect ...).2` (pre-cutover v1).
 #
 # Emits a YAML roster to stdout. Exits non-zero if any file diverges.
 
@@ -22,7 +23,7 @@ for f in "$ROOT"/*.lean; do
   fi
   canonical_count=$(grep -cE "^theorem equiv_[A-Z][A-Z0-9]*\b" "$f" || true)
   canonical_name=$(grep -oE "^theorem equiv_[A-Z][A-Z0-9]*\b" "$f" | head -1 | sed 's/^theorem //')
-  shape=$(grep -cE "= \(bus_effect " "$f" || true)
+  shape=$(grep -cE "= \(bus_effect |= state_effect_via_channels" "$f" || true)
 
   if [ "$canonical_count" -eq 0 ]; then
     echo "# FAIL: $name has no canonical equiv_<OP> theorem" >&2
@@ -35,7 +36,7 @@ for f in "$ROOT"/*.lean; do
     continue
   fi
   if [ "$shape" -eq 0 ]; then
-    echo "# WARN: $name has no bus_effect RHS (non-canonical shape?)" >&2
+    echo "# WARN: $name has no bus_effect or state_effect_via_channels RHS (non-canonical shape?)" >&2
   fi
 
   echo "  - file: $name.lean"

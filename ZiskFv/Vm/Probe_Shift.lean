@@ -37,7 +37,7 @@ theorem equiv_SLL_v2
     (v : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state sll_input.r1_val sll_input.r2_val sll_input.rd sll_input.PC
         (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -62,7 +62,7 @@ theorem equiv_SLLI_v2
     (v : Valid_BinaryExtension C FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence.Promises.ShiftImmPromises
+    (promises : ZiskFv.Equivalence_v1.Promises.ShiftImmPromises
         state slli_input.r1_val slli_input.shamt slli_input.rd slli_input.PC
         (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC
         r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)

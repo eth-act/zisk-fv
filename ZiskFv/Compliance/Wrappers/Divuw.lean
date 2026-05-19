@@ -1,10 +1,10 @@
 import Mathlib
 
-import ZiskFv.Equivalence.Divuw
-import ZiskFv.Equivalence.Promises.RType
-import ZiskFv.Equivalence.Promises.ArithHelpers
-import ZiskFv.Equivalence.Bridge.Arith
-import ZiskFv.Equivalence.Bridge.SailStateBridge
+import ZiskFv.Equivalence_v1.Divuw
+import ZiskFv.Equivalence_v1.Promises.RType
+import ZiskFv.Equivalence_v1.Promises.ArithHelpers
+import ZiskFv.Equivalence_v1.Bridge.Arith
+import ZiskFv.Equivalence_v1.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
@@ -48,7 +48,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithDiv
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Equivalence.Promises
+open ZiskFv.Equivalence_v1.Promises
 
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
@@ -63,7 +63,7 @@ theorem equiv_DIVUW
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
-    (promises : ZiskFv.Equivalence.Promises.RTypePromises
+    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state divuw_input.r1_val divuw_input.r2_val divuw_input.rd divuw_input.PC
         (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -114,7 +114,7 @@ theorem equiv_DIVUW
          _h_main_a_lo, _h_main_a_hi, _h_main_b_lo, _h_main_b_hi⟩ :=
     ZiskFv.Trusted.transpile_DIVUW
       m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
-      (ZiskFv.Equivalence.Bridge.SailStateBridge.sail_to_rv64 state)
+      (ZiskFv.Equivalence_v1.Bridge.SailStateBridge.sail_to_rv64 state)
       h_main_active h_main_op_divuw
   obtain ⟨h_a0_lt, h_a1_lt, _h_a2_lt, _h_a3_lt,
           _h_b0_lt, _h_b1_lt, _h_b2_lt, _h_b3_lt,
@@ -144,7 +144,7 @@ theorem equiv_DIVUW
                   < (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat := by
     rw [h_rs2_value]; exact h_bound
   -- ============ Delegate to `equiv_DIVUW` ============
-  exact ZiskFv.Equivalence.Divuw.equiv_DIVUW
+  exact ZiskFv.Equivalence_v1.Divuw.equiv_DIVUW
     state divuw_input r1 r2 rd v r_a
     ⟨exec_row, e0, e1, e2⟩
     promises
