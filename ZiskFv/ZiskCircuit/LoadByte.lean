@@ -26,14 +26,13 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Tactics.SignExtendLoadArchetype
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- LB circuit hypotheses. Specializes
     `sign_extend_load_archetype_circuit_holds` to LB's opcode and
     `m32` pins (`OP_SIGNEXTEND_B`, `m32 = 0`). -/
 @[simp]
 def lb_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL) : Prop :=
   sign_extend_load_archetype_circuit_holds m r_main bus_entry
     OP_SIGNEXTEND_B 0
@@ -42,7 +41,7 @@ def lb_circuit_holds
     Main row (`m32 = 0`), the operation-bus entry's `a_hi` / `b_hi`
     lanes carry the Main row's `a_1` / `b_1` lanes verbatim. -/
 lemma lb_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : lb_circuit_holds m r_main bus_entry) :
     bus_entry.a_hi = m.a_1 r_main ∧ bus_entry.b_hi = m.b_1 r_main :=
@@ -51,7 +50,7 @@ lemma lb_compositional
 
 /-- **LB bus-entry op passthrough.** -/
 lemma lb_bus_op
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : lb_circuit_holds m r_main bus_entry) :
     bus_entry.op = OP_SIGNEXTEND_B :=
@@ -60,7 +59,7 @@ lemma lb_bus_op
 
 /-- **LB bus-entry multiplicity.** -/
 lemma lb_bus_multiplicity
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : lb_circuit_holds m r_main bus_entry) :
     bus_entry.multiplicity = 1 :=

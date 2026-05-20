@@ -54,7 +54,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Equivalence_v1.Bridge.StateBridge
 open ZiskFv.Equivalence_v1.Bridge.SailStateBridge
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Branch-shape input bridges (r1 + r2 in one call).** Given the
     a and b lane conjuncts already projected from a branch
@@ -139,7 +138,7 @@ Anti-laundering metric:
     Trust footprint: pure composition of `transpile_LUI` (class
     #1) — no new axiom. -/
 lemma lui_discharge_full
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (imm : BitVec 20)
     (h_circuit : ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc) :
     (m.b_0 r_main).val = (imm ++ (0 : BitVec 12)).toNat
@@ -195,7 +194,7 @@ lemma lui_discharge_full
     Trust footprint: pure composition of `transpile_JAL` (class
     #1) — no new axiom. -/
 lemma jal_discharge_full
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_circuit : ZiskFv.ZiskCircuit.Jal.jal_circuit_holds m r_main next_pc) :
     m.jmp_offset2 r_main = 4 := by
   obtain ⟨_h_subset, h_mode⟩ := h_circuit
@@ -213,7 +212,7 @@ lemma jal_discharge_full
     Trust footprint: pure composition of `transpile_JALR` (class
     #1) — no new axiom. -/
 lemma jalr_discharge_full
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_circuit : ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc) :
     m.jmp_offset2 r_main = 4 := by
   obtain ⟨_h_subset, h_mode⟩ := h_circuit
@@ -253,7 +252,7 @@ Trust ledger: +1 axiom (`main_store_pc_emission_bundle`) in class #4.
     JAL's circuit mode pins `is_external_op = 0` and `op = OP_FLAG`,
     activating the bundle's `op_code = OP_FLAG` disjunct. -/
 lemma jal_discharge_lanes
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (e_rd : Interaction.MemoryBusEntry FGL)
     (h_circuit : ZiskFv.ZiskCircuit.Jal.jal_circuit_holds m r_main next_pc)
     (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1) :
@@ -271,7 +270,7 @@ lemma jal_discharge_lanes
     JALR's circuit mode pins `is_external_op = 0` and `op = OP_COPYB`,
     activating the bundle's `op_code = OP_COPYB` disjunct. -/
 lemma jalr_discharge_lanes
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (e_rd : Interaction.MemoryBusEntry FGL)
     (h_circuit : ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc)
     (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1) :
@@ -298,7 +297,7 @@ lemma jalr_discharge_lanes
     Trust footprint: pure composition of `transpile_AUIPC` (class
     #1) — no new axiom. -/
 lemma auipc_offset_discharge
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (imm : BitVec 20)
     (h_circuit :
       ZiskFv.Tactics.UTypeArchetype.auipc_archetype_circuit_holds m r_main next_pc)
@@ -326,7 +325,7 @@ lemma auipc_offset_discharge
     `memory_entry_lo e = c_0` and the hi formula to
     `memory_entry_hi e = c_1` — i.e. `register_write_lanes_match`. -/
 lemma lui_discharge_lanes
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (e_rd : Interaction.MemoryBusEntry FGL)
     (h_circuit :
       ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc)
@@ -352,7 +351,7 @@ lemma lui_discharge_lanes
     AUIPC's circuit mode pins `is_external_op = 0` and `op = OP_FLAG`,
     activating the bundle's `op_code = OP_FLAG` disjunct. -/
 lemma auipc_discharge_lanes
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (e_rd : Interaction.MemoryBusEntry FGL)
     (h_circuit :
       ZiskFv.Tactics.UTypeArchetype.auipc_archetype_circuit_holds m r_main next_pc)

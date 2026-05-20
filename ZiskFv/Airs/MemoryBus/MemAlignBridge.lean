@@ -47,7 +47,6 @@ open ZiskFv.Airs.MemAlignReadByte
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.MemoryBus.MemBridge
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Bus-tuple row-match predicates
 
@@ -133,7 +132,7 @@ Two narrow axioms, each cited to a specific PIL artifact.
     `lookup_consumer_matches_provider_load` (PLONK / plookup
     permutation argument). -/
 axiom memalign_load_perm_sound
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (mab : Valid_MemAlignByte FGL FGL)
     (marb : Valid_MemAlignReadByte FGL FGL)
     (ma : Valid_MemAlign FGL FGL)
@@ -322,7 +321,7 @@ structure SubdoublewordLoadLowBytePinning
     range pinning on the providers' lo-value columns, produce
     `high_bytes_zero_for_width e (main.ind_width r_main)`. -/
 lemma memalign_subdoubleword_load_high_bytes_zero
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (mab : Valid_MemAlignByte FGL FGL)
     (marb : Valid_MemAlignReadByte FGL FGL)
     (ma : Valid_MemAlign FGL FGL)

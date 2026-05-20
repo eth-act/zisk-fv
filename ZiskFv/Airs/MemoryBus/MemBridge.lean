@@ -65,7 +65,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Mem-row ↔ bus-entry correspondence -/
 
@@ -161,7 +160,7 @@ def high_bytes_zero_for_width (e : MemoryBusEntry FGL) (width : FGL) : Prop :=
     PLONK-style permutation soundness for the arithmetic protocol is
     project-trusted (see CLAUDE.md "Trust scoping"). -/
 axiom lookup_consumer_matches_provider_load
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (h_emit : main.b_0 r_main = memory_entry_lo e
               ∧ main.b_1 r_main = memory_entry_hi e
@@ -197,7 +196,7 @@ axiom lookup_consumer_matches_provider_load
     `h_emit` hypotheses by exposing the same content under a uniform
     name aligned with the rest of the lane-match family. -/
 lemma memory_load_lanes_match_of_main_emit
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (e : MemoryBusEntry FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (e : MemoryBusEntry FGL)
     (h_main_emit : m.b_0 r_main = memory_entry_lo e
                    ∧ m.b_1 r_main = memory_entry_hi e
                    ∧ e.as = 2
@@ -215,7 +214,7 @@ lemma memory_load_lanes_match_of_main_emit
     object `Spec/MemModel.lean::mem_load_correct` consumes to derive the
     Sail-state predicate. -/
 lemma memory_load_lanes_match_of_mem_row
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (h_main_emit : main.b_0 r_main = memory_entry_lo e
                    ∧ main.b_1 r_main = memory_entry_hi e
@@ -328,8 +327,8 @@ Trust class: lookup-argument / permutation soundness on `bus_id =
     `r1_val + signExt(imm)`, the rd routing into the rd-write
     entry's `ptr` slot, and the per-row copyb passthrough facts. -/
 axiom main_load_emission_bundle
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+   
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
     -- Activation: this row is an internal load (copyb).
@@ -387,8 +386,8 @@ axiom main_load_emission_bundle
     `main_load_emission_bundle` and
     `lookup_consumer_matches_provider_{load,store}`. -/
 axiom main_sext_load_emission_bundle
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+   
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
     (op_code : FGL)
@@ -449,8 +448,8 @@ axiom main_sext_load_emission_bundle
     (the `Bridge.ControlFlow.{jal,jalr,auipc}_discharge_lanes`
     entry points) consume the lane equalities directly. -/
 axiom main_store_pc_emission_bundle
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+   
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (e_rd : MemoryBusEntry FGL)
     (op_code : FGL)
     -- Activation: this row is an internal `store_pc = 1` register-write
@@ -507,8 +506,8 @@ axiom main_store_pc_emission_bundle
     `main_load_emission_bundle`, `main_sext_load_emission_bundle`,
     and `main_store_pc_emission_bundle`. -/
 axiom main_external_arith_emission_bundle
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+   
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (e_rd : MemoryBusEntry FGL)
     (rd : BitVec 5)
     (op_code : FGL)
@@ -627,8 +626,8 @@ axiom main_external_arith_emission_bundle
     bundles in `Compliance/Wrappers/Sb.lean` / etc., as their high
     byte lanes are zero-padded by the bus's `ind_width` selector. -/
 axiom main_store_emission_bundle_sd
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+   
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (e_st : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64) (imm : BitVec 12)
     -- Activation: internal store row (copyb passthrough).
@@ -722,9 +721,9 @@ delivers the SD bundle's lane equalities.
     stores via the MemAlign RMW protocol
     (`mem_align.pil:28-37`, `mem_align.pil:189`). -/
 axiom main_store_emission_bundle_subword
-    {C : Type → Type → Type} [Circuit FGL FGL C]
+   
     (n : ℕ) (h_n : n = 1 ∨ n = 2 ∨ n = 4)
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (e_st : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1_val r2_val : BitVec 64) (imm : BitVec 12)
@@ -762,8 +761,8 @@ axiom main_store_emission_bundle_subword
     Derived theorem: specialization of
     `main_store_emission_bundle_subword` to `n = 1`. Trust class #4. -/
 theorem main_store_emission_bundle_sb
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+   
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (e_st : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1_val r2_val : BitVec 64) (imm : BitVec 12)
@@ -798,8 +797,8 @@ theorem main_store_emission_bundle_sb
     Derived theorem: specialization of `main_store_emission_bundle_subword`
     to `n = 2`. -/
 theorem main_store_emission_bundle_sh
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+   
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (e_st : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1_val r2_val : BitVec 64) (imm : BitVec 12)
@@ -835,8 +834,8 @@ theorem main_store_emission_bundle_sh
     Derived theorem: specialization of
     `main_store_emission_bundle_subword` to `n = 4`. Trust class #4. -/
 theorem main_store_emission_bundle_sw
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+   
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (e_st : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (r1_val r2_val : BitVec 64) (imm : BitVec 12)

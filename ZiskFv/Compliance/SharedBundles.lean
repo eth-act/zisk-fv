@@ -30,7 +30,6 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryAdd
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Bus rows: shared by ~52 OpEnvelope arms / wrappers / canonicals -/
 
@@ -63,7 +62,7 @@ structure BranchInstrOperands where
     bit (`is_external_op r_main = active`) and the opcode literal
     (`op r_main = opKind`). Type-indexed on the FGL literals so each
     caller pins its own `active`/`opKind`. -/
-structure MainRowPins (m : Valid_Main C FGL FGL) (r_main : ℕ)
+structure MainRowPins (m : Valid_Main FGL FGL) (r_main : ℕ)
     (active : FGL) (opKind : FGL) where
   main_active : m.is_external_op r_main = active
   main_op : m.op r_main = opKind
@@ -72,10 +71,8 @@ structure MainRowPins (m : Valid_Main C FGL FGL) (r_main : ℕ)
 
 /-- `Valid_BinaryAdd` provider + the universal-row core-constraint
     quantifier that canonical theorems and wrappers consume together.
-    Shared by ADD, ADDI. Takes the circuit functor `C` explicitly so
-    type ascription is unambiguous at callers; the `[Circuit FGL FGL C]`
-    instance is inferred from the surrounding scope. -/
-structure BinaryAddWitness (C : Type → Type → Type) [Circuit FGL FGL C] where
+    Shared by ADD, ADDI. -/
+structure BinaryAddWitness where
   validator : Valid_BinaryAdd FGL FGL
   core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row validator r
 
@@ -93,11 +90,8 @@ structure ModeRegsFull where
 /-! ## MemAlign witness triple + low-byte pinning -/
 
 /-- The three MemAlign-family provider witnesses plus the low-byte
-    pinning bridge they jointly support. Shared by LBU, LHU, LWU.
-    Takes the circuit functor `C` explicitly so type ascription is
-    unambiguous at callers; the `[Circuit FGL FGL C]` instance is
-    inferred from the surrounding scope. -/
-structure MemAlignWitness (C : Type → Type → Type) [Circuit FGL FGL C] where
+    pinning bridge they jointly support. Shared by LBU, LHU, LWU. -/
+structure MemAlignWitness where
   mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL
   marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL
   ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL

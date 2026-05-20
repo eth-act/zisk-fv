@@ -54,7 +54,6 @@ open ZiskFv.Airs.MemoryBus.MemBridge
 open ZiskFv.ZiskCircuit.LoadD
 open ZiskFv.Tactics.LoadArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Base-256 unique decomposition over FGL
 
@@ -122,7 +121,7 @@ lemma four_bytes_eq_of_packed_eq
     LD-mode witnesses (`is_external_op = 0, op = 1`); per-byte
     equality follows from `four_bytes_eq_of_packed_eq` on each half. -/
 lemma load_copyb_e1_e2_bytes_eq
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)
     (h_copy1 : internal_op1_copies_b1 m r_main)
@@ -172,7 +171,7 @@ lemma byte_bitvec_eq_of_fgl_eq {a b : FGL} (h : a = b) :
     equations the `Equivalence/Ld.lean` proof body needs in place
     of the retired `h_e1_e2_bytes` hypothesis. -/
 lemma load_copyb_e1_e2_bytes_eq_bv
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)
     (h_copy1 : internal_op1_copies_b1 m r_main)
@@ -248,7 +247,7 @@ lemma fgl_zero_to_bitvec8 : ((0 : FGL) : BitVec 8) = 0#8 := by
     `Airs/MemoryBus/MemAlignBridge.lean`), derive the LBU U64.toBV
     form. -/
 lemma load_lbu_c_packed
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
     (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
     (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL)
@@ -290,7 +289,7 @@ lemma load_lbu_c_packed
     zero-padding (derived in `MemAlignBridge.lean`), derive the LHU
     U64.toBV form. -/
 lemma load_lhu_c_packed
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
     (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
     (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL)
@@ -332,7 +331,7 @@ lemma load_lhu_c_packed
     zero-padding (derived in `MemAlignBridge.lean`), derive the LWU
     U64.toBV form. -/
 lemma load_lwu_c_packed
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
     (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
     (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL)

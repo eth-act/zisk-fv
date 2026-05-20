@@ -56,14 +56,13 @@ namespace ZiskFv.Compliance
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-variable {m : Valid_Main C FGL FGL} {r_main : ℕ}
+variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 /-- Unified per-arm v2 conclusion: conjunction of the eight family-
     specific exec_eq_v2_<family> Props. Exactly one family fires
     non-trivially for any given arm; the others are `True`. -/
-def OpEnvelope.exec_eq_v2 (env : OpEnvelope (C := C) state m r_main) : Prop :=
+def OpEnvelope.exec_eq_v2 (env : OpEnvelope state m r_main) : Prop :=
   env.exec_eq_v2_branch
     ∧ env.exec_eq_v2_nomem
     ∧ env.exec_eq_v2_rtype_binary
@@ -90,7 +89,7 @@ def OpEnvelope.exec_eq_v2 (env : OpEnvelope (C := C) state m r_main) : Prop :=
     `state_effect_via_channels` directly via the channel-balance
     bridge. -/
 theorem zisk_riscv_compliant_program_bus
-    (env : OpEnvelope (C := C) state m r_main) :
+    (env : OpEnvelope state m r_main) :
     env.exec_eq_v2 := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact zisk_riscv_compliant_program_bus_v2_branch env

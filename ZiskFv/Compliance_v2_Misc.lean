@@ -27,13 +27,12 @@ open ZiskFv.Vm
 open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-variable {m : Valid_Main C FGL FGL} {r_main : ℕ}
+variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 /-- v2 conclusion Prop for all arms not in the other partial files. -/
 def OpEnvelope.exec_eq_v2_misc
-    : OpEnvelope (C := C) state m r_main → Prop
+    : OpEnvelope state m r_main → Prop
   -- Signed loads
   | .lb lb_input _ _ _ bus _ _ =>
       (do
@@ -70,7 +69,7 @@ def OpEnvelope.exec_eq_v2_misc
   | _ => True
 
 theorem zisk_riscv_compliant_program_bus_v2_misc
-    (env : OpEnvelope (C := C) state m r_main) :
+    (env : OpEnvelope state m r_main) :
     env.exec_eq_v2_misc := by
   cases env with
   | lb lb_input regs mem v bus pins promises =>

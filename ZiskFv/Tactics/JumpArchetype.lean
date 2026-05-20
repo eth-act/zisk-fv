@@ -50,7 +50,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-!
 ## JALR sub-archetype
@@ -81,7 +80,7 @@ directly.
     jmp_offset1`), `store_pc = 1` (rd ← `pc + jmp_offset2`). -/
 @[simp]
 def main_row_in_jalr_mode
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
   m.is_external_op r_main = 0
   ∧ m.op r_main = opcode_lit
   ∧ m.m32 r_main = 0
@@ -94,7 +93,7 @@ def main_row_in_jalr_mode
     parameter same as for JAL. -/
 @[simp]
 def jalr_subset_holds
-    (v : Valid_Main C FGL FGL) (row : ℕ) (next_pc : FGL) : Prop :=
+    (v : Valid_Main FGL FGL) (row : ℕ) (next_pc : FGL) : Prop :=
   flag_boolean v row
   ∧ is_external_op_boolean v row
   ∧ flag_set_pc_disjoint v row
@@ -109,7 +108,7 @@ def jalr_subset_holds
     opcode (not currently the case). -/
 @[simp]
 def jalr_archetype_circuit_holds
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (r_main : ℕ) (next_pc : FGL) (opcode_lit : FGL) : Prop :=
   jalr_subset_holds m r_main next_pc
   ∧ main_row_in_jalr_mode m r_main opcode_lit
@@ -118,7 +117,7 @@ variable {C' : Type → Type → Type} [Circuit FGL FGL C']
 
 /-- Derived: `flag = 0` when the row is internal-op-1 (`ext = 0, op = 1`). -/
 private lemma flag_eq_zero_of_internal_op_one
-    (v : Valid_Main C' FGL FGL) (row : ℕ)
+    (v : Valid_Main FGL FGL) (row : ℕ)
     (h_ext : v.is_external_op row = 0)
     (h_op : v.op row = 1)
     (h18 : internal_op1_clears_flag v row) :
@@ -129,7 +128,7 @@ private lemma flag_eq_zero_of_internal_op_one
 
 /-- Derived: `c_0 = b_0` when the row is internal-op-1. -/
 private lemma c_0_eq_b_0_of_internal_op_one
-    (v : Valid_Main C' FGL FGL) (row : ℕ)
+    (v : Valid_Main FGL FGL) (row : ℕ)
     (h_ext : v.is_external_op row = 0)
     (h_op : v.op row = 1)
     (h9 : internal_op1_copies_b0 v row) :
@@ -149,7 +148,7 @@ private lemma c_0_eq_b_0_of_internal_op_one
     constraint 18 forces `flag = 0`, collapsing it to `c_0 + jmp_offset1`;
     constraint 9 forces `c_0 = b_0`, giving the final form. -/
 lemma jalr_archetype_pc_advance
-    (m : Valid_Main C' FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jalr_archetype_circuit_holds m r_main next_pc (1 : FGL)) :
     next_pc = m.b_0 r_main + m.jmp_offset1 r_main := by
   obtain ⟨h_subset, h_mode⟩ := h
@@ -170,7 +169,7 @@ lemma jalr_archetype_pc_advance
     = pc + jmp_offset2`. For JALR's `jmp_offset2 = 4`, the rd receives
     `pc + 4` — the link address. -/
 lemma jalr_archetype_store_value
-    (m : Valid_Main C' FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : jalr_archetype_circuit_holds m r_main next_pc (1 : FGL)) :
     m.store_pc r_main * (m.pc r_main + m.jmp_offset2 r_main - m.c_0 r_main)
         + m.c_0 r_main

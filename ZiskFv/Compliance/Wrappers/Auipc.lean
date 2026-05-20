@@ -24,7 +24,6 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Tactics.UTypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compliance wrapper for `equiv_AUIPC`.** Derives `h_circuit` from
     `auipc_h_circuit_of_main_constraints` (consuming `transpile_AUIPC`)
@@ -37,7 +36,7 @@ theorem equiv_AUIPC
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     -- Activation / opcode pins on Main + per-row subset constraint.
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)

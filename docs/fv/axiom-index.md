@@ -24,56 +24,56 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 | # | Axiom | Line | Asserts |
 | - | ----- | ---: | ------- |
 | 1 | `transpile_ADD` | 252 | The axiomatic RV64 → Zisk row contract for ADD, in `Valid_Main`-row form. |
-| 2 | `transpile_JAL` | 292 | The axiomatic RV64 → Zisk row contract for JAL. |
-| 3 | `transpile_JALR` | 341 | The axiomatic RV64 → Zisk row contract for JALR (jump-and-link-register). |
-| 4 | `transpile_SD` | 387 | The axiomatic RV64 → Zisk row contract for SD (store doubleword). |
-| 5 | `transpile_SW` | 437 | The axiomatic RV64 → Zisk row contract for SW (store word). |
-| 6 | `transpile_MUL` | 514 | The axiomatic RV64 → Zisk row contract for MUL. |
-| 7 | `transpile_MULH` | 549 | The axiomatic RV64 → Zisk row contract for MULH. |
-| 8 | `transpile_SLLW` | 592 | The axiomatic RV64 → Zisk row contract for SLLW. |
-| 9 | `transpile_SH` | 635 | The axiomatic RV64 → Zisk row contract for SH (store halfword). |
-| 10 | `transpile_SB` | 670 | The axiomatic RV64 → Zisk row contract for SB (store byte). |
-| 11 | `transpile_SLL` | 701 | The axiomatic RV64 → Zisk row contract for SLL. |
-| 12 | `transpile_SRL` | 727 | The axiomatic RV64 → Zisk row contract for SRL. |
-| 13 | `transpile_SRA` | 753 | The axiomatic RV64 → Zisk row contract for SRA. |
-| 14 | `transpile_SLLI` | 808 | The axiomatic RV64 → Zisk row contract for SLLI. |
-| 15 | `transpile_SRLI` | 828 | The axiomatic RV64 → Zisk row contract for SRLI. |
-| 16 | `transpile_SRAI` | 848 | The axiomatic RV64 → Zisk row contract for SRAI. |
-| 17 | `transpile_SRLW` | 875 | The axiomatic RV64 → Zisk row contract for SRLW (`ShiftArchetype` sibling of SLLW, register variant). |
-| 18 | `transpile_SRAW` | 904 | The axiomatic RV64 → Zisk row contract for SRAW (`ShiftArchetype` sibling of SLLW/SRLW, register variant). |
-| 19 | `transpile_SLLIW` | 958 | The axiomatic RV64 → Zisk row contract for SLLIW (`ShiftArchetype` sibling, W-variant immediate). |
-| 20 | `transpile_SRLIW` | 978 | The axiomatic RV64 → Zisk row contract for SRLIW. |
-| 21 | `transpile_SRAIW` | 998 | The axiomatic RV64 → Zisk row contract for SRAIW. |
-| 22 | `transpile_MULHU` | 1034 | The axiomatic RV64 → Zisk row contract for MULHU. |
-| 23 | `transpile_MULHSU` | 1068 | The axiomatic RV64 → Zisk row contract for MULHSU. |
-| 24 | `transpile_LUI` | 1112 | The axiomatic RV64 → Zisk row contract for LUI (load-upper-immediate). |
-| 25 | `transpile_AUIPC` | 1158 | The axiomatic RV64 → Zisk row contract for AUIPC (add-upper-immediate-PC). |
-| 26 | `transpile_SUB` | 1230 | The axiomatic RV64 → Zisk row contract for SUB. |
-| 27 | `transpile_AND` | 1258 | The axiomatic RV64 → Zisk row contract for AND. |
-| 28 | `transpile_OR` | 1288 | The axiomatic RV64 → Zisk row contract for OR. |
-| 29 | `transpile_XOR` | 1316 | The axiomatic RV64 → Zisk row contract for XOR. |
-| 30 | `transpile_SLT` | 1353 | The axiomatic RV64 → Zisk row contract for SLT. |
-| 31 | `transpile_SLTU` | 1380 | The axiomatic RV64 → Zisk row contract for SLTU. |
-| 32 | `transpile_ADDI` | 1452 | The axiomatic RV64 → Zisk row contract for ADDI. |
-| 33 | `transpile_ANDI` | 1480 | The axiomatic RV64 → Zisk row contract for ANDI. |
-| 34 | `transpile_ORI` | 1509 | The axiomatic RV64 → Zisk row contract for ORI. |
-| 35 | `transpile_XORI` | 1538 | The axiomatic RV64 → Zisk row contract for XORI. |
-| 36 | `transpile_SLTI` | 1571 | The axiomatic RV64 → Zisk row contract for SLTI. |
-| 37 | `transpile_SLTIU` | 1598 | The axiomatic RV64 → Zisk row contract for SLTIU. |
-| 38 | `transpile_ADDW` | 1652 | The axiomatic RV64 → Zisk row contract for ADDW. |
-| 39 | `transpile_SUBW` | 1682 | The axiomatic RV64 → Zisk row contract for SUBW. |
-| 40 | `transpile_ADDIW` | 1728 | The axiomatic RV64 → Zisk row contract for ADDIW. |
-| 41 | `transpile_DIVUW` | 1838 | Transpile contract for RV64M DIVUW. |
-| 42 | `transpile_REMUW` | 1856 | Transpile contract for RV64M REMUW. |
-| 43 | `transpile_DIVW` | 1872 | Transpile contract for RV64M DIVW. |
-| 44 | `transpile_REMW` | 1888 | Transpile contract for RV64M REMW. |
-| 45 | `transpile_DIVU` | 1924 | The axiomatic RV64 → Zisk row contract for DIVU. |
-| 46 | `transpile_REMU` | 1959 | The axiomatic RV64 → Zisk row contract for REMU. |
-| 47 | `transpile_DIV` | 1997 | The axiomatic RV64 → Zisk row contract for DIV. |
-| 48 | `transpile_REM` | 2031 | The axiomatic RV64 → Zisk row contract for REM. |
-| 49 | `transpile_PC_for_JAL` | 2146 | JAL PC bridge. |
-| 50 | `transpile_PC_for_JALR` | 2168 | JALR PC bridge. |
-| 51 | `transpile_PC_for_AUIPC` | 2197 | AUIPC PC bridge. |
+| 2 | `transpile_JAL` | 291 | The axiomatic RV64 → Zisk row contract for JAL. |
+| 3 | `transpile_JALR` | 339 | The axiomatic RV64 → Zisk row contract for JALR (jump-and-link-register). |
+| 4 | `transpile_SD` | 384 | The axiomatic RV64 → Zisk row contract for SD (store doubleword). |
+| 5 | `transpile_SW` | 433 | The axiomatic RV64 → Zisk row contract for SW (store word). |
+| 6 | `transpile_MUL` | 509 | The axiomatic RV64 → Zisk row contract for MUL. |
+| 7 | `transpile_MULH` | 543 | The axiomatic RV64 → Zisk row contract for MULH. |
+| 8 | `transpile_SLLW` | 585 | The axiomatic RV64 → Zisk row contract for SLLW. |
+| 9 | `transpile_SH` | 627 | The axiomatic RV64 → Zisk row contract for SH (store halfword). |
+| 10 | `transpile_SB` | 661 | The axiomatic RV64 → Zisk row contract for SB (store byte). |
+| 11 | `transpile_SLL` | 691 | The axiomatic RV64 → Zisk row contract for SLL. |
+| 12 | `transpile_SRL` | 716 | The axiomatic RV64 → Zisk row contract for SRL. |
+| 13 | `transpile_SRA` | 741 | The axiomatic RV64 → Zisk row contract for SRA. |
+| 14 | `transpile_SLLI` | 795 | The axiomatic RV64 → Zisk row contract for SLLI. |
+| 15 | `transpile_SRLI` | 814 | The axiomatic RV64 → Zisk row contract for SRLI. |
+| 16 | `transpile_SRAI` | 833 | The axiomatic RV64 → Zisk row contract for SRAI. |
+| 17 | `transpile_SRLW` | 859 | The axiomatic RV64 → Zisk row contract for SRLW (`ShiftArchetype` sibling of SLLW, register variant). |
+| 18 | `transpile_SRAW` | 887 | The axiomatic RV64 → Zisk row contract for SRAW (`ShiftArchetype` sibling of SLLW/SRLW, register variant). |
+| 19 | `transpile_SLLIW` | 940 | The axiomatic RV64 → Zisk row contract for SLLIW (`ShiftArchetype` sibling, W-variant immediate). |
+| 20 | `transpile_SRLIW` | 959 | The axiomatic RV64 → Zisk row contract for SRLIW. |
+| 21 | `transpile_SRAIW` | 978 | The axiomatic RV64 → Zisk row contract for SRAIW. |
+| 22 | `transpile_MULHU` | 1013 | The axiomatic RV64 → Zisk row contract for MULHU. |
+| 23 | `transpile_MULHSU` | 1046 | The axiomatic RV64 → Zisk row contract for MULHSU. |
+| 24 | `transpile_LUI` | 1089 | The axiomatic RV64 → Zisk row contract for LUI (load-upper-immediate). |
+| 25 | `transpile_AUIPC` | 1134 | The axiomatic RV64 → Zisk row contract for AUIPC (add-upper-immediate-PC). |
+| 26 | `transpile_SUB` | 1205 | The axiomatic RV64 → Zisk row contract for SUB. |
+| 27 | `transpile_AND` | 1232 | The axiomatic RV64 → Zisk row contract for AND. |
+| 28 | `transpile_OR` | 1261 | The axiomatic RV64 → Zisk row contract for OR. |
+| 29 | `transpile_XOR` | 1288 | The axiomatic RV64 → Zisk row contract for XOR. |
+| 30 | `transpile_SLT` | 1324 | The axiomatic RV64 → Zisk row contract for SLT. |
+| 31 | `transpile_SLTU` | 1350 | The axiomatic RV64 → Zisk row contract for SLTU. |
+| 32 | `transpile_ADDI` | 1421 | The axiomatic RV64 → Zisk row contract for ADDI. |
+| 33 | `transpile_ANDI` | 1448 | The axiomatic RV64 → Zisk row contract for ANDI. |
+| 34 | `transpile_ORI` | 1476 | The axiomatic RV64 → Zisk row contract for ORI. |
+| 35 | `transpile_XORI` | 1504 | The axiomatic RV64 → Zisk row contract for XORI. |
+| 36 | `transpile_SLTI` | 1536 | The axiomatic RV64 → Zisk row contract for SLTI. |
+| 37 | `transpile_SLTIU` | 1562 | The axiomatic RV64 → Zisk row contract for SLTIU. |
+| 38 | `transpile_ADDW` | 1615 | The axiomatic RV64 → Zisk row contract for ADDW. |
+| 39 | `transpile_SUBW` | 1644 | The axiomatic RV64 → Zisk row contract for SUBW. |
+| 40 | `transpile_ADDIW` | 1689 | The axiomatic RV64 → Zisk row contract for ADDIW. |
+| 41 | `transpile_DIVUW` | 1798 | Transpile contract for RV64M DIVUW. |
+| 42 | `transpile_REMUW` | 1815 | Transpile contract for RV64M REMUW. |
+| 43 | `transpile_DIVW` | 1830 | Transpile contract for RV64M DIVW. |
+| 44 | `transpile_REMW` | 1845 | Transpile contract for RV64M REMW. |
+| 45 | `transpile_DIVU` | 1880 | The axiomatic RV64 → Zisk row contract for DIVU. |
+| 46 | `transpile_REMU` | 1914 | The axiomatic RV64 → Zisk row contract for REMU. |
+| 47 | `transpile_DIV` | 1951 | The axiomatic RV64 → Zisk row contract for DIV. |
+| 48 | `transpile_REM` | 1984 | The axiomatic RV64 → Zisk row contract for REM. |
+| 49 | `transpile_PC_for_JAL` | 2098 | JAL PC bridge. |
+| 50 | `transpile_PC_for_JALR` | 2119 | JALR PC bridge. |
+| 51 | `transpile_PC_for_AUIPC` | 2147 | AUIPC PC bridge. |
 
 ## #2 Memory state bridge — load — `ZiskFv/ZiskCircuit/MemModel.lean` (1)
 
@@ -81,7 +81,7 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 
 | # | Axiom | Line | Asserts |
 | - | ----- | ---: | ------- |
-| 1 | `row_models_sail_state_load` | 127 | **Sail-state-bridge axiom — load side.** Given a Mem AIR row `r_mem` of `mem` matching the bus entry `e` in read mode (`wr = 0`, `sel = 1`, byte decomposition pinned, `as = 2`, `mult = -1`), the Sail state's memory at `e.ptr.toNat + i` agrees with `e.x_i` for each byte lane. |
+| 1 | `row_models_sail_state_load` | 126 | **Sail-state-bridge axiom — load side.** Given a Mem AIR row `r_mem` of `mem` matching the bus entry `e` in read mode (`wr = 0`, `sel = 1`, byte decomposition pinned, `as = 2`, `mult = -1`), the Sail state's memory at `e.ptr.toNat + i` agrees with `e.x_i` for each byte lane. |
 
 ## #4 Bus / lookup soundness — `ZiskFv/Airs/MemoryBus/MemAlignBridge.lean` (2)
 
@@ -89,8 +89,8 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 
 | # | Axiom | Line | Asserts |
 | - | ----- | ---: | ------- |
-| 1 | `memalign_load_perm_sound` | 135 | **Permutation-soundness — sub-doubleword load consumer.** Mirrors `lookup_consumer_matches_provider_load` (`MemBridge.lean:170`) but pairs the Main consumer with the MemAlign\* provider AIRs that actually emit narrow-load tuples on `bus_id = 10`. |
-| 2 | `mem_align_rom_subdoubleword_load_value_1_zero` | 168 | **MemAlignRom lookup soundness — sub-doubleword `value_1 = 0`.** The `MemAlignRom` table (`mem_align_rom.pil`) enumerates the legal `(pc, delta_pc, delta_addr, offset, width, flags)` tuples for valid `MemAlign` programs. |
+| 1 | `memalign_load_perm_sound` | 134 | **Permutation-soundness — sub-doubleword load consumer.** Mirrors `lookup_consumer_matches_provider_load` (`MemBridge.lean:170`) but pairs the Main consumer with the MemAlign\* provider AIRs that actually emit narrow-load tuples on `bus_id = 10`. |
+| 2 | `mem_align_rom_subdoubleword_load_value_1_zero` | 167 | **MemAlignRom lookup soundness — sub-doubleword `value_1 = 0`.** The `MemAlignRom` table (`mem_align_rom.pil`) enumerates the legal `(pc, delta_pc, delta_addr, offset, width, flags)` tuples for valid `MemAlign` programs. |
 
 ## #4 Bus / lookup soundness — `ZiskFv/Airs/MemoryBus/MemBridge.lean` (7)
 
@@ -98,13 +98,13 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 
 | # | Axiom | Line | Asserts |
 | - | ----- | ---: | ------- |
-| 1 | `lookup_consumer_matches_provider_load` | 163 | **Memory-bus permutation soundness — load side.** Given a Main row `r_main` whose memory-bus emission carries the load entry `e` (`as = 2`, `multiplicity = -1` — the consumer / "assumes" side at `state-machines/mem/pil/mem.pil:526`), there exists a Mem AIR row `r_mem` whose `(addr, step, value_0, value_1, wr)` projection matches `e`'s `(ptr, timestamp, lo, hi, 0)`. |
-| 2 | `main_load_emission_bundle` | 330 | **Main memory-bus emission bundle — load side.** PIL citations: * `state-machines/main/pil/main.pil:300` — b-side `mem_op` emits the load entry (`as = 2`, `mult = -1` consumer); * `state-machines/main/pil/main.pil:304` — `addr1 = b_offset_imm0 + b_src_ind * a[0]` (the load address); * `state-machines/main/pil/main.pil:323` — c-side `mem_op` emits the rd-write entry (`as = 1`, `mult = 1`); * `state-machines/main/pil/main.pil:148` — `store_offset` column carries `rd` for register-targeting rows; * `state-machines/main/pil/main.pil:282` — `a = state.xreg rs1` for `a_src_reg` rows (all loads);… |
-| 3 | `main_sext_load_emission_bundle` | 389 | **Main memory-bus emission bundle — signed-load side.** Same emission shape as `main_load_emission_bundle`, but for the sign-extended-load family (LB / LH / LW). |
-| 4 | `main_store_pc_emission_bundle` | 451 | **Main memory-bus emission bundle — store_pc=1 register write.** For the JAL / JALR / AUIPC archetypes, Main's row emits a single memory-bus register-write entry (`as = 1`, `mult = 1`, `store_pc = 1`, `store_reg = 1`). |
-| 5 | `main_external_arith_emission_bundle` | 509 | **Main memory-bus emission bundle — external arithmetic rd-write.** For every Main row in the MUL / DIV family (`is_external_op = 1`, `op ∈ {OP_MULU..OP_MUL_W, OP_DIVU..OP_REM_W}`, bus literals `0xb0..0xbf` per `zisk/pil/operations.pil:71-86`), the rd-write memory-bus entry `e_rd` (`mult = 1`, `as = 1`) satisfies the byte-pack lane equalities tying `e_rd`'s byte-decomposition `x0..x7` to Main's `c_0` / `c_1` 32-bit lanes. |
-| 6 | `main_store_emission_bundle_sd` | 629 | **Main memory-bus emission bundle — store (`as = 2`) side, SD width.** For every Main row in the SD family (`is_external_op = 0`, `op = OP_COPYB`, `store_ind = 1`, `store_pc = 0`, `ind_width = 8`), the store memory-bus entry `e_st` (`as = 2`, `mult = 1`) carries `xreg rs2`'s 8 byte cells — and the store address slot is `xreg rs1 + signExt(imm)`. |
-| 7 | `main_store_emission_bundle_subword` | 724 | **Main memory-bus emission bundle — sub-doubleword store (SB/SH/SW).** Consolidates `main_store_emission_bundle_{sb,sh,sw}` into a single axiom parameterized by store width `n ∈ {1, 2, 4}`. |
+| 1 | `lookup_consumer_matches_provider_load` | 162 | **Memory-bus permutation soundness — load side.** Given a Main row `r_main` whose memory-bus emission carries the load entry `e` (`as = 2`, `multiplicity = -1` — the consumer / "assumes" side at `state-machines/mem/pil/mem.pil:526`), there exists a Mem AIR row `r_mem` whose `(addr, step, value_0, value_1, wr)` projection matches `e`'s `(ptr, timestamp, lo, hi, 0)`. |
+| 2 | `main_load_emission_bundle` | 329 | **Main memory-bus emission bundle — load side.** PIL citations: * `state-machines/main/pil/main.pil:300` — b-side `mem_op` emits the load entry (`as = 2`, `mult = -1` consumer); * `state-machines/main/pil/main.pil:304` — `addr1 = b_offset_imm0 + b_src_ind * a[0]` (the load address); * `state-machines/main/pil/main.pil:323` — c-side `mem_op` emits the rd-write entry (`as = 1`, `mult = 1`); * `state-machines/main/pil/main.pil:148` — `store_offset` column carries `rd` for register-targeting rows; * `state-machines/main/pil/main.pil:282` — `a = state.xreg rs1` for `a_src_reg` rows (all loads);… |
+| 3 | `main_sext_load_emission_bundle` | 388 | **Main memory-bus emission bundle — signed-load side.** Same emission shape as `main_load_emission_bundle`, but for the sign-extended-load family (LB / LH / LW). |
+| 4 | `main_store_pc_emission_bundle` | 450 | **Main memory-bus emission bundle — store_pc=1 register write.** For the JAL / JALR / AUIPC archetypes, Main's row emits a single memory-bus register-write entry (`as = 1`, `mult = 1`, `store_pc = 1`, `store_reg = 1`). |
+| 5 | `main_external_arith_emission_bundle` | 508 | **Main memory-bus emission bundle — external arithmetic rd-write.** For every Main row in the MUL / DIV family (`is_external_op = 1`, `op ∈ {OP_MULU..OP_MUL_W, OP_DIVU..OP_REM_W}`, bus literals `0xb0..0xbf` per `zisk/pil/operations.pil:71-86`), the rd-write memory-bus entry `e_rd` (`mult = 1`, `as = 1`) satisfies the byte-pack lane equalities tying `e_rd`'s byte-decomposition `x0..x7` to Main's `c_0` / `c_1` 32-bit lanes. |
+| 6 | `main_store_emission_bundle_sd` | 628 | **Main memory-bus emission bundle — store (`as = 2`) side, SD width.** For every Main row in the SD family (`is_external_op = 0`, `op = OP_COPYB`, `store_ind = 1`, `store_pc = 0`, `ind_width = 8`), the store memory-bus entry `e_st` (`as = 2`, `mult = 1`) carries `xreg rs2`'s 8 byte cells — and the store address slot is `xreg rs1 + signExt(imm)`. |
+| 7 | `main_store_emission_bundle_subword` | 723 | **Main memory-bus emission bundle — sub-doubleword store (SB/SH/SW).** Consolidates `main_store_emission_bundle_{sb,sh,sw}` into a single axiom parameterized by store width `n ∈ {1, 2, 4}`. |
 
 ## #4 Bus / lookup soundness — `ZiskFv/Airs/OperationBus/Consolidated.lean` (1)
 
@@ -112,7 +112,7 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 
 | # | Axiom | Line | Asserts |
 | - | ----- | ---: | ------- |
-| 1 | `op_bus_permutation_sound` | 128 | **OperationBus permutation soundness (consolidated).** For any consumer Main row that is externally-active and whose opcode falls within a provider's coverage, there exists a provider row whose op-bus emission matches the Main row's. |
+| 1 | `op_bus_permutation_sound` | 127 | **OperationBus permutation soundness (consolidated).** For any consumer Main row that is externally-active and whose opcode falls within a provider's coverage, there exists a provider row whose op-bus emission matches the Main row's. |
 
 ## #5b Range-bus / byte-range soundness — `ZiskFv/Channels/RangeBusSoundness.lean` (2)
 
@@ -129,8 +129,8 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 
 | # | Axiom | Line | Asserts |
 | - | ----- | ---: | ------- |
-| 1 | `binary_extension_op_is_shift_pin` | 141 | **BinaryExtension AIR op_is_shift linkage.** The `op_is_shift` column is `bits(1)` (per `binary_extension.pil:88`: `col witness bits(1) op_is_shift; // 1 if operation is in the shift family; 0 otherwise`) and the per-byte table lookup at `binary_extension.pil:92` binds it to the table entry's `op_is_shift` flag — so every row whose `op` is a shift literal has `op_is_shift = 1`, and every row whose `op` is a SEXT literal has `op_is_shift = 0`. |
-| 2 | `binary_extension_row_byte_lookups` | 171 | **BinaryExtension row → 8-byte table-entry witness.** For every row `r` of a `Valid_BinaryExtension` AIR, the 8 per-byte lookups against the `BinaryExtensionTable` (per PIL `binary_extension.pil:92`: `lookup_assumes(BINARY_EXTENSION_TABLE_ID, [op, j, free_in_a[j], free_in_b, free_in_c[j][0], free_in_c[j][1], op_is_shift])`) are witnessed by 8 `BinaryExtensionTableEntry` consumers at multiplicity 1, one per byte slot j ∈ {0..7}. |
+| 1 | `binary_extension_op_is_shift_pin` | 140 | **BinaryExtension AIR op_is_shift linkage.** The `op_is_shift` column is `bits(1)` (per `binary_extension.pil:88`: `col witness bits(1) op_is_shift; // 1 if operation is in the shift family; 0 otherwise`) and the per-byte table lookup at `binary_extension.pil:92` binds it to the table entry's `op_is_shift` flag — so every row whose `op` is a shift literal has `op_is_shift = 1`, and every row whose `op` is a SEXT literal has `op_is_shift = 0`. |
+| 2 | `binary_extension_row_byte_lookups` | 169 | **BinaryExtension row → 8-byte table-entry witness.** For every row `r` of a `Valid_BinaryExtension` AIR, the 8 per-byte lookups against the `BinaryExtensionTable` (per PIL `binary_extension.pil:92`: `lookup_assumes(BINARY_EXTENSION_TABLE_ID, [op, j, free_in_a[j], free_in_b, free_in_c[j][0], free_in_c[j][1], op_is_shift])`) are witnessed by 8 `BinaryExtensionTableEntry` consumers at multiplicity 1, one per byte slot j ∈ {0..7}. |
 
 ## #6 Binary / BinaryExtension lookup soundness — `ZiskFv/Airs/Binary/BinaryRanges.lean` (5)
 
@@ -138,11 +138,11 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 
 | # | Axiom | Line | Asserts |
 | - | ----- | ---: | ------- |
-| 1 | `binary_per_byte_lookup_witness` | 178 | **Forward-direction Binary lookup soundness.** For every Binary AIR row and every byte slot `i ∈ {0..7}`, there exists a `BinaryTableEntry` consumed (multiplicity = 1) against the BinaryTable bus, whose `op` matches the row's `b_op_or_sext` and whose `a_byte`/`b_byte`/`c_byte` match the row's per-byte columns at that slot. |
-| 2 | `binary_b_op_or_sext_eq_op_general` | 307 | **Binary table-pin (consolidated): `b_op_or_sext` matches the on-bus opcode literal for AND/OR/XOR rows.** For any Binary AIR row whose op-bus emission `b_op + 16 * mode32` equals an AND/OR/XOR opcode literal (14/15/16), the `b_op_or_sext` column pins to that literal. |
-| 3 | `binary_consumer_byte_match_chain_pin` | 434 | **Binary 6-field per-byte chain witness with `cin` / `pos_ind` exposed, parameterized by op-bus emission.** For every Binary AIR row whose op-bus emission `b_op + 16 * mode32` equals `op_emit`, each of the 8 byte slots has a consumed `BinaryTableEntry` whose 6 columns (`a_byte / b_byte / c_byte / op / cin / pos_ind`) plus `flags` are pinned to the row's columns or to chain values per PIL `binary.pil:115-125`: * Byte 0: `op = b_op`, `cin = 0`, `pos_ind = 2 * use_first_byte`. |
-| 4 | `binary_w_sext_choice_pin` | 578 | **Binary W-mode SEXT-byte sign-extension choice.** For every Binary AIR row whose op-bus emission `b_op + 16 * mode32` equals a W-mode opcode (`0x1A = OP_ADD_W` or `0x1B = OP_SUB_W`), the upper four `free_in_c` byte columns satisfy the canonical RV64 sign-extension disjunction: either all four are `0x00` and the low-32-bit result (assembled from `free_in_c_0..3`) is in `[0, 2^31)`, or all four are `0xFF` and the low-32-bit result is in `[2^31, 2^32)`. |
-| 5 | `binary_w_mode_carry_7_zero` | 604 | **W-mode carry_7 = 0 corollary.** Bundled with `binary_w_sext_choice_pin` because the same `wf_SEXT_{00,FF}` semantics (`e.flags.val % 2 = e.cin.val`, chained against `wf_ADD/wf_SUB` at byte 3 producing `flags.val % 2 = 0`) pins `carry_7.val = 0`. |
+| 1 | `binary_per_byte_lookup_witness` | 177 | **Forward-direction Binary lookup soundness.** For every Binary AIR row and every byte slot `i ∈ {0..7}`, there exists a `BinaryTableEntry` consumed (multiplicity = 1) against the BinaryTable bus, whose `op` matches the row's `b_op_or_sext` and whose `a_byte`/`b_byte`/`c_byte` match the row's per-byte columns at that slot. |
+| 2 | `binary_b_op_or_sext_eq_op_general` | 306 | **Binary table-pin (consolidated): `b_op_or_sext` matches the on-bus opcode literal for AND/OR/XOR rows.** For any Binary AIR row whose op-bus emission `b_op + 16 * mode32` equals an AND/OR/XOR opcode literal (14/15/16), the `b_op_or_sext` column pins to that literal. |
+| 3 | `binary_consumer_byte_match_chain_pin` | 433 | **Binary 6-field per-byte chain witness with `cin` / `pos_ind` exposed, parameterized by op-bus emission.** For every Binary AIR row whose op-bus emission `b_op + 16 * mode32` equals `op_emit`, each of the 8 byte slots has a consumed `BinaryTableEntry` whose 6 columns (`a_byte / b_byte / c_byte / op / cin / pos_ind`) plus `flags` are pinned to the row's columns or to chain values per PIL `binary.pil:115-125`: * Byte 0: `op = b_op`, `cin = 0`, `pos_ind = 2 * use_first_byte`. |
+| 4 | `binary_w_sext_choice_pin` | 577 | **Binary W-mode SEXT-byte sign-extension choice.** For every Binary AIR row whose op-bus emission `b_op + 16 * mode32` equals a W-mode opcode (`0x1A = OP_ADD_W` or `0x1B = OP_SUB_W`), the upper four `free_in_c` byte columns satisfy the canonical RV64 sign-extension disjunction: either all four are `0x00` and the low-32-bit result (assembled from `free_in_c_0..3`) is in `[0, 2^31)`, or all four are `0xFF` and the low-32-bit result is in `[2^31, 2^32)`. |
+| 5 | `binary_w_mode_carry_7_zero` | 603 | **W-mode carry_7 = 0 corollary.** Bundled with `binary_w_sext_choice_pin` because the same `wf_SEXT_{00,FF}` semantics (`e.flags.val % 2 = e.cin.val`, chained against `wf_ADD/wf_SUB` at byte 3 producing `flags.val % 2 = 0`) pins `carry_7.val = 0`. |
 
 ## #6 Binary / BinaryExtension lookup soundness — `ZiskFv/Airs/Tables/BinaryExtensionTable.lean` (1)
 
@@ -166,33 +166,33 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 
 | # | Axiom | Line | Asserts |
 | - | ----- | ---: | ------- |
-| 1 | `arith_table_op_div_rem_signed_d_sign_pin` | 312 | **Arith-table signed DIV/REM remainder-sign pin (class #6).** For every `Valid_ArithDiv` row carrying signed-DIV/REM mode pins (`sext = 0`, `m32 = 0`, `div = 1`) with `op ∈ {186, 187}`, the sign-of-remainder column `nr` matches the sign-of-dividend column `np`, **or** the four chunks of the remainder column `d[]` are each zero. |
-| 2 | `arith_table_op_div_rem_signed_w_d_sign_pin` | 336 | **Arith-table signed-W DIV/REM remainder-sign pin (class #6).** W-mode analog of `arith_table_op_div_rem_signed_d_sign_pin`. |
-| 3 | `arith_table_op_mulw_operand_pin` | 432 | **Arith-table W-mode operand chunk pin for MUL family (class #6).** For every `Valid_ArithMul` row carrying W-mode pins (`sext = 0`, `m32 = 1`, `div = 0`) with `op = 182` (MULW), the upper operand chunks are zero (32-bit operand restriction). |
-| 4 | `arith_table_op_divw_operand_pin` | 444 | **Arith-table W-mode operand/remainder chunk pin for DIV family (class #6).** For every `Valid_ArithDiv` row carrying W-mode pins (`sext = 0`, `m32 = 1`, `div = 1`) with `op ∈ {188, 189, 190, 191}` (DIVUW, REMUW, DIVW, REMW), the upper operand chunks AND the upper remainder chunks are zero. |
-| 5 | `arith_table_op_div_rem_signed_mode_pin` | 478 | **Arith-table signed non-W DIV/REM mode pin (class #6).** For every `Valid_ArithDiv` row with `op ∈ {186, 187}` (signed 64-bit DIV / REM), the arith_table lookup pins `sext = 0`, `m32 = 0`, `div = 1`. |
-| 6 | `arith_table_op_div_rem_main_selector_pin` | 519 | **Arith-table signed non-W DIV/REM primary/secondary selector pin (class #6b).** For every `Valid_ArithDiv` row with `op = 186` (signed 64-bit DIV), the arith_table lookup pins `main_div = 1`, `main_mul = 0` (primary lane); for `op = 187` (signed 64-bit REM), it pins `main_div = 0`, `main_mul = 0` (secondary lane). |
-| 7 | `arith_div_np_eq_msb_of_dividend` | 594 | **Arith-table signed DIV/REM `np = MSB(C)` pin (class #6b).** For every `Valid_ArithDiv` row carrying signed 64-bit DIV/REM mode pins (`sext = 0`, `m32 = 0`, `div = 1`) with `op ∈ {186, 187}`, the sign-of-dividend witness `np` equals the MSB of the dividend chunk packing `C := packed4 c[0..3]`: ``` (np).val = if 2^63 ≤ packed4 c[0..3] then 1 else 0 ``` PIL citation: `arith.pil:286-287` (the `arith_table_assumes(op, m32, div, na, nb, np, nr, sext, ...)` lookup; `np` is an explicit column in the lookup tuple) composed with the row-type table at `arith.pil:232` (signed 64-bit DIV/REM row signa… |
-| 8 | `arith_div_nb_eq_msb_of_divisor` | 622 | **Arith-table signed DIV/REM `nb = MSB(B)` pin (class #6b).** For every `Valid_ArithDiv` row carrying signed 64-bit DIV/REM mode pins (`sext = 0`, `m32 = 0`, `div = 1`) with `op ∈ {186, 187}`, the sign-of-divisor witness `nb` equals the MSB of the divisor chunk packing `B := packed4 b[0..3]`: ``` (nb).val = if 2^63 ≤ packed4 b[0..3] then 1 else 0 ``` PIL citation: `arith.pil:286-287` composed with `arith.pil:232` (signed 64-bit DIV/REM row signature `nb=b3`) and `arith_table_data.rs` rows 23-44 (op = 186/187) whose flag-field bit-3 encodes `nb` per `arith_table_helpers.rs:130-140`. |
-| 9 | `arith_div_remainder_bound` | 694 | **Arith DIV/REM Euclidean-remainder bound (class #6).** For every `Valid_ArithDiv` row in signed 64-bit DIV/REM mode (`sext = 0`, `m32 = 0`, `div = 1`) with `op ∈ {186, 187}` — i.e. |
-| 10 | `arith_div_remainder_bound_unsigned` | 723 | **Arith-table unsigned non-W DIV/REM remainder bound (class #6b).** Companion to `arith_div_remainder_bound` for the **unsigned** non-W DIV/REM rows (`op ∈ {184, 185}`, `m32 = 0`, `div = 1`, `nr = nb = np = 0`). |
-| 11 | `arith_div_remainder_bound_unsigned_w` | 761 | **Arith W-unsigned DIV/REM remainder bound (class #6b).** W-mode analog of `arith_div_remainder_bound_unsigned`. |
-| 12 | `arith_div_remainder_bound_signed_w` | 775 | **Arith W-signed DIV/REM remainder bound (class #6b).** W-mode analog of `arith_div_remainder_bound`. |
-| 13 | `arith_table_op_mul_mode_pin` | 840 | **Arith-table MUL mode pin (class #6b).** For every `Valid_ArithMul` row with `op = 180` (MUL — signed × signed, low 64 bits) the `arith_table_assumes` lookup at `arith.pil:286-287` pins all seven sign / mode witnesses to 0: `na = nb = np = nr = sext = m32 = div = 0`. |
-| 14 | `arith_table_op_mul_main_selector_pin` | 865 | **Arith-table MUL primary/secondary selector pin (class #6b).** For every `Valid_ArithMul` row with `op = 180` (MUL — low 64 bits) the same `arith_table_assumes` lookup at `arith.pil:286-287` pins the primary/secondary selectors to MUL-primary: `main_mul = 1, main_div = 0`. |
-| 15 | `arith_table_op_div_rem_unsigned_mode_pin` | 890 | **Arith-table unsigned non-W DIV/REM mode pin (class #6b).** For every `Valid_ArithDiv` row with `op ∈ {184, 185}` (unsigned 64-bit DIVU / REMU), the arith_table lookup pins all four sign witnesses to 0, plus `sext = 0`, `m32 = 0`, `div = 1`. |
-| 16 | `arith_table_op_div_rem_unsigned_main_selector_pin` | 903 | **Arith-table unsigned non-W DIV/REM primary/secondary selector pin (class #6b).** For every `Valid_ArithDiv` row with `op = 184` (DIVU), the arith_table lookup pins `main_div = 1, main_mul = 0` (primary lane); for `op = 185` (REMU), it pins `main_div = 0, main_mul = 0` (secondary lane). |
-| 17 | `arith_table_op_div_rem_unsigned_w_mode_pin` | 947 | **Arith-table unsigned-W DIV/REM mode pin (class #6b).** For every `Valid_ArithDiv` row with `op ∈ {188, 189}` (unsigned 32-bit DIVUW / REMUW), the arith_table lookup pins all four sign witnesses to 0, plus `sext = 0`, `m32 = 1`, `div = 1`. |
-| 18 | `arith_table_op_div_rem_signed_w_mode_pin` | 964 | **Arith-table signed-W DIV/REM mode pin (class #6b).** For every `Valid_ArithDiv` row with `op ∈ {190, 191}` (signed 32-bit DIVW / REMW), the arith_table lookup pins `sext = 0`, `m32 = 1`, `div = 1`. |
-| 19 | `arith_table_op_mulhu_mode_pin` | 992 | **Arith-table MULHU mode pin (class #6b).** For every `Valid_ArithMul` row with `op = 177` (MULHU — unsigned high half), the arith_table lookup pins all seven mode columns to 0 (`na = nb = np = nr = sext = m32 = div = 0`). |
-| 20 | `arith_table_op_mulhu_main_selector_pin` | 1011 | **Arith-table MULHU primary/secondary selector pin (class #6b).** For every `Valid_ArithMul` row with `op = 177` (MULHU), the same `arith_table_assumes` lookup at `arith.pil:286-287` pins the primary/secondary selectors to MULHU-secondary: `main_mul = 0, main_div = 0`. |
-| 21 | `arith_table_op_mulh_mode_pin` | 1042 | **Arith-table MULH (signed × signed) mode pin (class #6b).** For every `Valid_ArithMul` row with `op = 181` (MULH — signed high half), the arith_table lookup pins `nr = sext = m32 = div = 0` and exposes the signed-witness consequences: `na` / `nb` are boolean (each ∈ {0,1}); `np` is the XOR of `na` and `nb`. |
-| 22 | `arith_table_op_mulh_main_selector_pin` | 1058 | **Arith-table MULH primary/secondary selector pin (class #6b).** For every `Valid_ArithMul` row with `op = 181` (MULH), the same `arith_table_assumes` lookup pins the primary/secondary selectors to MULH-secondary: `main_mul = 0, main_div = 0`. |
-| 23 | `arith_table_op_mulhsu_mode_pin` | 1068 | **Arith-table MULHSU (signed × unsigned) mode pin (class #6b).** For every `Valid_ArithMul` row with `op = 179` (MULHSU — signed × unsigned high half), the arith_table lookup pins `nb = nr = sext = m32 = div = 0` (rs2 is unsigned, so `nb = 0`), and exposes the signed-witness consequences on `na` / `np`. |
-| 24 | `arith_table_op_mulhsu_main_selector_pin` | 1083 | **Arith-table MULHSU primary/secondary selector pin (class #6b).** For every `Valid_ArithMul` row with `op = 179` (MULHSU), the same `arith_table_assumes` lookup pins `main_mul = 0, main_div = 0`. |
-| 25 | `arith_mul_na_eq_msb_of_a` | 1134 | **Arith-table signed high-half MUL `na = MSB(A)` pin (class #6b).** For every `Valid_ArithMul` row with `op ∈ {179, 181}` (MULHSU or MULH — both have rs1 signed), the sign-of-rs1 witness `na` equals the MSB of the rs1 chunk packing `A := packed4 a[0..3]`: ``` (na).val = if 2^63 ≤ packed4 a[0..3] then 1 else 0 ``` PIL citation: `arith.pil:286-287` (the `arith_table_assumes` lookup; `na` is an explicit column in the tuple) composed with `arith.pil:222-234` (row-type table: `na = a3` for signed-rs1 high-half MUL rows) and the table data at `zisk/state-machines/arith/src/arith_table_data.rs` ro… |
-| 26 | `arith_mul_nb_eq_msb_of_b` | 1161 | **Arith-table signed high-half MUL `nb = MSB(B)` pin (class #6b).** For every `Valid_ArithMul` row with `op = 181` (MULH — signed × signed), the sign-of-rs2 witness `nb` equals the MSB of the rs2 chunk packing `B := packed4 b[0..3]`: ``` (nb).val = if 2^63 ≤ packed4 b[0..3] then 1 else 0 ``` PIL citation: same as `arith_mul_na_eq_msb_of_a`, with `nb` (not `na`) encoded by the corresponding flag-field bit per `arith_table_helpers.rs:130-140`. |
-| 27 | `arith_table_op_mulw_mode_pin` | 1193 | **Arith-table MULW mode pin (class #6b).** For every `Valid_ArithMul` row with `op = 182` (MULW — signed × signed, low 32 bits sign-extended to 64), the arith_table lookup pins `nr = 0`, `sext = 0`, `m32 = 1`, `div = 0`, plus `na` / `nb` booleanity and the XOR relation `np = na XOR nb` (in `toIntZ` form). |
+| 1 | `arith_table_op_div_rem_signed_d_sign_pin` | 311 | **Arith-table signed DIV/REM remainder-sign pin (class #6).** For every `Valid_ArithDiv` row carrying signed-DIV/REM mode pins (`sext = 0`, `m32 = 0`, `div = 1`) with `op ∈ {186, 187}`, the sign-of-remainder column `nr` matches the sign-of-dividend column `np`, **or** the four chunks of the remainder column `d[]` are each zero. |
+| 2 | `arith_table_op_div_rem_signed_w_d_sign_pin` | 335 | **Arith-table signed-W DIV/REM remainder-sign pin (class #6).** W-mode analog of `arith_table_op_div_rem_signed_d_sign_pin`. |
+| 3 | `arith_table_op_mulw_operand_pin` | 431 | **Arith-table W-mode operand chunk pin for MUL family (class #6).** For every `Valid_ArithMul` row carrying W-mode pins (`sext = 0`, `m32 = 1`, `div = 0`) with `op = 182` (MULW), the upper operand chunks are zero (32-bit operand restriction). |
+| 4 | `arith_table_op_divw_operand_pin` | 443 | **Arith-table W-mode operand/remainder chunk pin for DIV family (class #6).** For every `Valid_ArithDiv` row carrying W-mode pins (`sext = 0`, `m32 = 1`, `div = 1`) with `op ∈ {188, 189, 190, 191}` (DIVUW, REMUW, DIVW, REMW), the upper operand chunks AND the upper remainder chunks are zero. |
+| 5 | `arith_table_op_div_rem_signed_mode_pin` | 477 | **Arith-table signed non-W DIV/REM mode pin (class #6).** For every `Valid_ArithDiv` row with `op ∈ {186, 187}` (signed 64-bit DIV / REM), the arith_table lookup pins `sext = 0`, `m32 = 0`, `div = 1`. |
+| 6 | `arith_table_op_div_rem_main_selector_pin` | 518 | **Arith-table signed non-W DIV/REM primary/secondary selector pin (class #6b).** For every `Valid_ArithDiv` row with `op = 186` (signed 64-bit DIV), the arith_table lookup pins `main_div = 1`, `main_mul = 0` (primary lane); for `op = 187` (signed 64-bit REM), it pins `main_div = 0`, `main_mul = 0` (secondary lane). |
+| 7 | `arith_div_np_eq_msb_of_dividend` | 593 | **Arith-table signed DIV/REM `np = MSB(C)` pin (class #6b).** For every `Valid_ArithDiv` row carrying signed 64-bit DIV/REM mode pins (`sext = 0`, `m32 = 0`, `div = 1`) with `op ∈ {186, 187}`, the sign-of-dividend witness `np` equals the MSB of the dividend chunk packing `C := packed4 c[0..3]`: ``` (np).val = if 2^63 ≤ packed4 c[0..3] then 1 else 0 ``` PIL citation: `arith.pil:286-287` (the `arith_table_assumes(op, m32, div, na, nb, np, nr, sext, ...)` lookup; `np` is an explicit column in the lookup tuple) composed with the row-type table at `arith.pil:232` (signed 64-bit DIV/REM row signa… |
+| 8 | `arith_div_nb_eq_msb_of_divisor` | 621 | **Arith-table signed DIV/REM `nb = MSB(B)` pin (class #6b).** For every `Valid_ArithDiv` row carrying signed 64-bit DIV/REM mode pins (`sext = 0`, `m32 = 0`, `div = 1`) with `op ∈ {186, 187}`, the sign-of-divisor witness `nb` equals the MSB of the divisor chunk packing `B := packed4 b[0..3]`: ``` (nb).val = if 2^63 ≤ packed4 b[0..3] then 1 else 0 ``` PIL citation: `arith.pil:286-287` composed with `arith.pil:232` (signed 64-bit DIV/REM row signature `nb=b3`) and `arith_table_data.rs` rows 23-44 (op = 186/187) whose flag-field bit-3 encodes `nb` per `arith_table_helpers.rs:130-140`. |
+| 9 | `arith_div_remainder_bound` | 693 | **Arith DIV/REM Euclidean-remainder bound (class #6).** For every `Valid_ArithDiv` row in signed 64-bit DIV/REM mode (`sext = 0`, `m32 = 0`, `div = 1`) with `op ∈ {186, 187}` — i.e. |
+| 10 | `arith_div_remainder_bound_unsigned` | 722 | **Arith-table unsigned non-W DIV/REM remainder bound (class #6b).** Companion to `arith_div_remainder_bound` for the **unsigned** non-W DIV/REM rows (`op ∈ {184, 185}`, `m32 = 0`, `div = 1`, `nr = nb = np = 0`). |
+| 11 | `arith_div_remainder_bound_unsigned_w` | 760 | **Arith W-unsigned DIV/REM remainder bound (class #6b).** W-mode analog of `arith_div_remainder_bound_unsigned`. |
+| 12 | `arith_div_remainder_bound_signed_w` | 774 | **Arith W-signed DIV/REM remainder bound (class #6b).** W-mode analog of `arith_div_remainder_bound`. |
+| 13 | `arith_table_op_mul_mode_pin` | 839 | **Arith-table MUL mode pin (class #6b).** For every `Valid_ArithMul` row with `op = 180` (MUL — signed × signed, low 64 bits) the `arith_table_assumes` lookup at `arith.pil:286-287` pins all seven sign / mode witnesses to 0: `na = nb = np = nr = sext = m32 = div = 0`. |
+| 14 | `arith_table_op_mul_main_selector_pin` | 864 | **Arith-table MUL primary/secondary selector pin (class #6b).** For every `Valid_ArithMul` row with `op = 180` (MUL — low 64 bits) the same `arith_table_assumes` lookup at `arith.pil:286-287` pins the primary/secondary selectors to MUL-primary: `main_mul = 1, main_div = 0`. |
+| 15 | `arith_table_op_div_rem_unsigned_mode_pin` | 889 | **Arith-table unsigned non-W DIV/REM mode pin (class #6b).** For every `Valid_ArithDiv` row with `op ∈ {184, 185}` (unsigned 64-bit DIVU / REMU), the arith_table lookup pins all four sign witnesses to 0, plus `sext = 0`, `m32 = 0`, `div = 1`. |
+| 16 | `arith_table_op_div_rem_unsigned_main_selector_pin` | 902 | **Arith-table unsigned non-W DIV/REM primary/secondary selector pin (class #6b).** For every `Valid_ArithDiv` row with `op = 184` (DIVU), the arith_table lookup pins `main_div = 1, main_mul = 0` (primary lane); for `op = 185` (REMU), it pins `main_div = 0, main_mul = 0` (secondary lane). |
+| 17 | `arith_table_op_div_rem_unsigned_w_mode_pin` | 946 | **Arith-table unsigned-W DIV/REM mode pin (class #6b).** For every `Valid_ArithDiv` row with `op ∈ {188, 189}` (unsigned 32-bit DIVUW / REMUW), the arith_table lookup pins all four sign witnesses to 0, plus `sext = 0`, `m32 = 1`, `div = 1`. |
+| 18 | `arith_table_op_div_rem_signed_w_mode_pin` | 963 | **Arith-table signed-W DIV/REM mode pin (class #6b).** For every `Valid_ArithDiv` row with `op ∈ {190, 191}` (signed 32-bit DIVW / REMW), the arith_table lookup pins `sext = 0`, `m32 = 1`, `div = 1`. |
+| 19 | `arith_table_op_mulhu_mode_pin` | 991 | **Arith-table MULHU mode pin (class #6b).** For every `Valid_ArithMul` row with `op = 177` (MULHU — unsigned high half), the arith_table lookup pins all seven mode columns to 0 (`na = nb = np = nr = sext = m32 = div = 0`). |
+| 20 | `arith_table_op_mulhu_main_selector_pin` | 1010 | **Arith-table MULHU primary/secondary selector pin (class #6b).** For every `Valid_ArithMul` row with `op = 177` (MULHU), the same `arith_table_assumes` lookup at `arith.pil:286-287` pins the primary/secondary selectors to MULHU-secondary: `main_mul = 0, main_div = 0`. |
+| 21 | `arith_table_op_mulh_mode_pin` | 1041 | **Arith-table MULH (signed × signed) mode pin (class #6b).** For every `Valid_ArithMul` row with `op = 181` (MULH — signed high half), the arith_table lookup pins `nr = sext = m32 = div = 0` and exposes the signed-witness consequences: `na` / `nb` are boolean (each ∈ {0,1}); `np` is the XOR of `na` and `nb`. |
+| 22 | `arith_table_op_mulh_main_selector_pin` | 1057 | **Arith-table MULH primary/secondary selector pin (class #6b).** For every `Valid_ArithMul` row with `op = 181` (MULH), the same `arith_table_assumes` lookup pins the primary/secondary selectors to MULH-secondary: `main_mul = 0, main_div = 0`. |
+| 23 | `arith_table_op_mulhsu_mode_pin` | 1067 | **Arith-table MULHSU (signed × unsigned) mode pin (class #6b).** For every `Valid_ArithMul` row with `op = 179` (MULHSU — signed × unsigned high half), the arith_table lookup pins `nb = nr = sext = m32 = div = 0` (rs2 is unsigned, so `nb = 0`), and exposes the signed-witness consequences on `na` / `np`. |
+| 24 | `arith_table_op_mulhsu_main_selector_pin` | 1082 | **Arith-table MULHSU primary/secondary selector pin (class #6b).** For every `Valid_ArithMul` row with `op = 179` (MULHSU), the same `arith_table_assumes` lookup pins `main_mul = 0, main_div = 0`. |
+| 25 | `arith_mul_na_eq_msb_of_a` | 1133 | **Arith-table signed high-half MUL `na = MSB(A)` pin (class #6b).** For every `Valid_ArithMul` row with `op ∈ {179, 181}` (MULHSU or MULH — both have rs1 signed), the sign-of-rs1 witness `na` equals the MSB of the rs1 chunk packing `A := packed4 a[0..3]`: ``` (na).val = if 2^63 ≤ packed4 a[0..3] then 1 else 0 ``` PIL citation: `arith.pil:286-287` (the `arith_table_assumes` lookup; `na` is an explicit column in the tuple) composed with `arith.pil:222-234` (row-type table: `na = a3` for signed-rs1 high-half MUL rows) and the table data at `zisk/state-machines/arith/src/arith_table_data.rs` ro… |
+| 26 | `arith_mul_nb_eq_msb_of_b` | 1160 | **Arith-table signed high-half MUL `nb = MSB(B)` pin (class #6b).** For every `Valid_ArithMul` row with `op = 181` (MULH — signed × signed), the sign-of-rs2 witness `nb` equals the MSB of the rs2 chunk packing `B := packed4 b[0..3]`: ``` (nb).val = if 2^63 ≤ packed4 b[0..3] then 1 else 0 ``` PIL citation: same as `arith_mul_na_eq_msb_of_a`, with `nb` (not `na`) encoded by the corresponding flag-field bit per `arith_table_helpers.rs:130-140`. |
+| 27 | `arith_table_op_mulw_mode_pin` | 1192 | **Arith-table MULW mode pin (class #6b).** For every `Valid_ArithMul` row with `op = 182` (MULW — signed × signed, low 32 bits sign-extended to 64), the arith_table lookup pins `nr = 0`, `sext = 0`, `m32 = 1`, `div = 0`, plus `na` / `nb` booleanity and the XOR relation `np = na XOR nb` (in `toIntZ` form). |
 
 ## #7-10 Platform-scope assumptions — `ZiskFv/SailSpec/Auxiliaries.lean` (4)
 

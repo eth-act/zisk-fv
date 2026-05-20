@@ -9,7 +9,6 @@ import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
-import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Equivalence_v1.Bridge.SailStateBridge
 import ZiskFv.SailSpec.sb
 import ZiskFv.SailSpec.sh
@@ -59,7 +58,6 @@ open Goldilocks
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.MemoryBus
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Load-side discharge.** Re-export of
     `MemoryBus.memory_load_lanes_match_of_mem_row`: given a Main
@@ -71,7 +69,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     indirectly by `equiv_LB` / `equiv_LH` / `equiv_LW` after the
     sign-extension chain in `Circuit/SextLoadBridge.lean`). -/
 lemma load_discharge
-    (main : Valid_Main C FGL FGL) (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (main : Valid_Main FGL FGL) (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
     (r_main : ℕ) (e : Interaction.MemoryBusEntry FGL)
     (h_main_emit : main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e
                    ∧ main.b_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e
@@ -95,7 +93,7 @@ needs into a single derivation, consuming the trust-ledger entries
 * transpile contracts (`transpile_LD`, `transpile_SD`, ...).
 
 Caller obligations after this discharge collapse to:
-* `main : Valid_Main C FGL FGL`, `mem : Valid_Mem FGL FGL`,
+* `main : Valid_Main FGL FGL`, `mem : Valid_Mem FGL FGL`,
   `r_main : ℕ` (validators + row index);
 * `h_active`, `h_op_main` (Main row activation + opcode pin —
   derivable from `transpile_<OP>` once the global Compliance
@@ -130,7 +128,7 @@ equiv currently consumes as separate parameters:
     `(h_main_emit_b, h_main_emit_c, h_ptr_match, h_rd_zero_iff,
       h_rd_idx, h_copy0, h_copy1)`. -/
 lemma load_discharge_full
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
@@ -165,7 +163,7 @@ lemma load_discharge_full
 /-- **Per-opcode load discharge — LD.** Synonym of
     `load_discharge_full`; named for downstream readability. -/
 lemma ld_discharge_full
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
@@ -190,7 +188,7 @@ lemma ld_discharge_full
 /-- **Per-opcode load discharge — LBU.** Same shape as LD; the
     width is downstream-irrelevant for the Main-row contract. -/
 lemma lbu_discharge_full
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
@@ -214,7 +212,7 @@ lemma lbu_discharge_full
 
 /-- **Per-opcode load discharge — LHU.** Same shape as LBU. -/
 lemma lhu_discharge_full
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
@@ -238,7 +236,7 @@ lemma lhu_discharge_full
 
 /-- **Per-opcode load discharge — LWU.** Same shape as LBU. -/
 lemma lwu_discharge_full
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
@@ -278,7 +276,7 @@ Consumes `MemBridge.main_sext_load_emission_bundle` (class #4). -/
     practice) and bus-shape pins; returns the lane / ptr / rd-routing
     bundle. -/
 lemma sext_load_discharge_full
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
@@ -314,7 +312,7 @@ lemma sext_load_discharge_full
 
 /-- **Per-opcode signed-load discharge — LB.** -/
 lemma lb_discharge_full
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
@@ -337,7 +335,7 @@ lemma lb_discharge_full
 
 /-- **Per-opcode signed-load discharge — LH.** -/
 lemma lh_discharge_full
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
@@ -360,7 +358,7 @@ lemma lh_discharge_full
 
 /-- **Per-opcode signed-load discharge — LW.** -/
 lemma lw_discharge_full
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (r_main : ℕ)
     (e1 e2 : Interaction.MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
@@ -392,7 +390,7 @@ memory-bus emission in byte-extracted form) with `transpile_SD`
 8 byte extracts).
 
 Caller obligations after this discharge collapse to:
-* `main : Valid_Main C FGL FGL`, `r_main : ℕ`;
+* `main : Valid_Main FGL FGL`, `r_main : ℕ`;
 * `h_main_active : main.is_external_op r_main = 0` and
   `h_main_op : main.op r_main = OP_COPYB` (Main row activation
   for the copyb store row — derivable from the Compliance theorem's
@@ -411,7 +409,7 @@ Caller obligations after this discharge collapse to:
     pair (via `Bridge.SailStateBridge.sail_to_rv64`'s materialization
     of the universal-state `transpile_SD` to the Sail state). -/
 lemma sd_discharge_full
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (r_main : ℕ)
     (e_st : Interaction.MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -480,7 +478,7 @@ already-present `(k, v)` pair.
 /-- **SB-specific store discharge.** Returns `h_mem_eq` in the shape
     `equiv_SB` consumes (8-insert chain = 1-insert chain on `state.mem`). -/
 lemma sb_discharge_full
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (r_main : ℕ)
     (e_st : Interaction.MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -560,7 +558,7 @@ lemma sb_discharge_full
 
 /-- **SH-specific store discharge.** Returns `h_mem_eq` for SH (2 bytes). -/
 lemma sh_discharge_full
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (r_main : ℕ)
     (e_st : Interaction.MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -627,7 +625,7 @@ lemma sh_discharge_full
 
 /-- **SW-specific store discharge.** Returns `h_mem_eq` for SW (4 bytes). -/
 lemma sw_discharge_full
-    (main : Valid_Main C FGL FGL)
+    (main : Valid_Main FGL FGL)
     (r_main : ℕ)
     (e_st : Interaction.MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

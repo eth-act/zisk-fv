@@ -79,7 +79,6 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compliance wrapper for `equiv_FENCE`.** Pass-through plus
     Compliance-handshake activation pins.
@@ -105,7 +104,7 @@ theorem equiv_FENCE
     (fence_input : PureSpec.FenceInput)
     (fm pred succ : BitVec 4) (rs rd : regidx)
     -- AIR validator + row index. Compliance.lean shares `main`.
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     -- Activation / opcode pins (Compliance-handshake; tracked here
     -- for uniformity but not consumed by the proof body since FENCE

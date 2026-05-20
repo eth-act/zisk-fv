@@ -13,7 +13,6 @@ namespace ZiskFv.AirsClean.MemAlignByte
 
 open Goldilocks
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 @[reducible]
 def rowAt (v : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL) (r : ℕ)

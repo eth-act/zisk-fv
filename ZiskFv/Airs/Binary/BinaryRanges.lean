@@ -40,7 +40,6 @@ namespace ZiskFv.Airs.Binary
 open Goldilocks
 open ZiskFv.Channels.RangeBusSoundness
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Binary range-check soundness (derived).** Given the row-level
     `lookup_assumes(RANGE_BUS_ID, …)` interactions induced by Binary's

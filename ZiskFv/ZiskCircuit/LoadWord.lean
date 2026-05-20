@@ -43,14 +43,13 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Tactics.SignExtendLoadArchetype
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- LW circuit hypotheses. Specializes
     `sign_extend_load_archetype_circuit_holds` to LW's opcode and
     `m32` pins (`OP_SIGNEXTEND_W`, `m32 = 1`). -/
 @[simp]
 def lw_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL) : Prop :=
   sign_extend_load_archetype_circuit_holds m r_main bus_entry
     OP_SIGNEXTEND_W 1
@@ -63,7 +62,7 @@ def lw_circuit_holds
 
     Proof: archetype invocation. -/
 lemma lw_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : lw_circuit_holds m r_main bus_entry) :
     bus_entry.a_hi = 0 ∧ bus_entry.b_hi = 0 :=
@@ -74,7 +73,7 @@ lemma lw_compositional
     equals `OP_SIGNEXTEND_W` — mirrors Shift-family's op
     passthrough. -/
 lemma lw_bus_op
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : lw_circuit_holds m r_main bus_entry) :
     bus_entry.op = OP_SIGNEXTEND_W :=
@@ -84,7 +83,7 @@ lemma lw_bus_op
 /-- **LW bus-entry multiplicity.** The bus-entry multiplicity is
     `1` (the Main row pushes one entry per `is_external_op = 1`). -/
 lemma lw_bus_multiplicity
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : lw_circuit_holds m r_main bus_entry) :
     bus_entry.multiplicity = 1 :=

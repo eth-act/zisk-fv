@@ -19,12 +19,11 @@ open ZiskFv.Vm
 open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-variable {m : Valid_Main C FGL FGL} {r_main : ℕ}
+variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 def OpEnvelope.exec_eq_v2_itype_binary
-    : OpEnvelope (C := C) state m r_main → Prop
+    : OpEnvelope state m r_main → Prop
   | .andi _ r1 rd imm _ bus _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
@@ -68,7 +67,7 @@ def OpEnvelope.exec_eq_v2_itype_binary
   | _ => True
 
 theorem zisk_riscv_compliant_program_bus_v2_itype_binary
-    (env : OpEnvelope (C := C) state m r_main) :
+    (env : OpEnvelope state m r_main) :
     env.exec_eq_v2_itype_binary := by
   cases env with
   | andi andi_input r1 rd imm v bus pins h_andi_subset h_lane_rd promises =>

@@ -38,7 +38,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.OperationBus
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Helper 1: op-bus disjunction membership
 
@@ -54,7 +53,7 @@ selecting the appropriate disjunct via `tauto`. -/
     Implementation: `rw` the equality, then `tauto` selects the
     matching disjunct (all 29 RHS values are pure `FGL` literals). -/
 lemma binary_op_disj_of_eq
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (n : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (n : ℕ)
     (h_eq : m.op r_main = (n : FGL))
     (h_mem : n = 0x02 ∨ n = 0x03 ∨ n = 0x04 ∨ n = 0x05 ∨ n = 0x06
         ∨ n = 0x07 ∨ n = 0x08 ∨ n = 0x09 ∨ n = 0x0a ∨ n = 0x0b
@@ -86,7 +85,7 @@ lemma binary_op_disj_of_eq
     This is the precondition for `binary_consumer_byte_match_chain_pin`
     and `binary_b_op_or_sext_eq_OP_*`. -/
 lemma binary_h_emit_op_of_matches_entry
-    {m : Valid_Main C FGL FGL} {v : Valid_Binary FGL FGL}
+    {m : Valid_Main FGL FGL} {v : Valid_Binary FGL FGL}
     {r_main r_binary : ℕ} {n : ℕ}
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
     (h_main_op : m.op r_main = (n : FGL)) :
@@ -104,7 +103,7 @@ both the chain-pin family and mode-pin family wrappers. -/
 /-- Project `matches_entry` into the pair of c-lane equations
     `(m.c_0 r_main = …)` and `(m.c_1 r_main = …)`. -/
 lemma binary_c_lane_eqs_of_matches_entry
-    {m : Valid_Main C FGL FGL} {v : Valid_Binary FGL FGL}
+    {m : Valid_Main FGL FGL} {v : Valid_Binary FGL FGL}
     {r_main r_binary : ℕ}
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)) :
     m.c_0 r_main = v.free_in_c_0 r_binary + 256 * v.free_in_c_1 r_binary
@@ -469,7 +468,7 @@ substituting `v.carry_7 = 0` into the `matches_entry` projection. -/
 /-- Reconstruct `m.c_0 r_main` from the 4 low c-bytes once
     `v.carry_7 = 0`. Consumed by SUB / SUBW / ADDW / ADDIW. -/
 lemma binary_h_match_clo_of_carry_7_zero
-    {m : Valid_Main C FGL FGL} {v : Valid_Binary FGL FGL}
+    {m : Valid_Main FGL FGL} {v : Valid_Binary FGL FGL}
     {r_main r_binary : ℕ}
     (h_c_lo_m : m.c_0 r_main = v.free_in_c_0 r_binary
         + 256 * v.free_in_c_1 r_binary + 65536 * v.free_in_c_2 r_binary
@@ -484,7 +483,7 @@ lemma binary_h_match_clo_of_carry_7_zero
     SUB / SUBW / ADDW / ADDIW (and any other Binary 6-field chain
     op whose c-hi recipe is the standard 4-byte sum). -/
 lemma binary_h_match_chi_standard
-    {m : Valid_Main C FGL FGL} {v : Valid_Binary FGL FGL}
+    {m : Valid_Main FGL FGL} {v : Valid_Binary FGL FGL}
     {r_main r_binary : ℕ}
     (h_c_hi_m : m.c_1 r_main = v.free_in_c_4 r_binary
         + 256 * v.free_in_c_5 r_binary + 65536 * v.free_in_c_6 r_binary
@@ -508,7 +507,7 @@ call. Caller picks the right axiom for their opcode. -/
     The `pin_axiom` argument is `binary_b_op_or_sext_eq_OP_{AND,OR,XOR}`
     instantiated with `(v, r_binary)`. -/
 lemma binary_h_bop_or_sext_via_axiom
-    {m : Valid_Main C FGL FGL} {v : Valid_Binary FGL FGL}
+    {m : Valid_Main FGL FGL} {v : Valid_Binary FGL FGL}
     {r_main r_binary : ℕ} {n : ℕ} {op_canon : ℕ}
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
     (h_main_op : m.op r_main = (n : FGL))

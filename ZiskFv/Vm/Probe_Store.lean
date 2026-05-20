@@ -19,13 +19,12 @@ open ZiskFv.Trusted (OP_COPYB)
 
 namespace ZiskFv.Vm.Probe
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_SD_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sd_input : PureSpec.SdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_opcode_assumptions : PureSpec.sd_state_assumptions sd_input state)

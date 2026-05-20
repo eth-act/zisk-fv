@@ -23,13 +23,12 @@ open ZiskFv.Trusted (OP_SIGNEXTEND_B OP_SIGNEXTEND_H OP_SIGNEXTEND_W)
 
 namespace ZiskFv.Equivalence.Lh
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_LH
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lh_input : PureSpec.LhInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 1 OP_SIGNEXTEND_H)

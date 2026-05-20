@@ -32,8 +32,8 @@ ZiskFv.Compliance.Wrappers.Add.equiv_ADD 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Add.equiv_ADD 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Add.equiv_ADD 005 _ [other] m, badd
 ZiskFv.Compliance.Wrappers.Add.equiv_ADD 006 _ [other] ADD, ADDI
-ZiskFv.Compliance.Wrappers.Add.equiv_ADD 007 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.Wrappers.Add.equiv_ADD 008 badd [other] ZiskFv.Compliance.BinaryAddWitness C
+ZiskFv.Compliance.Wrappers.Add.equiv_ADD 007 m [validator] Valid_Main FGL FGL
+ZiskFv.Compliance.Wrappers.Add.equiv_ADD 008 badd [other] ZiskFv.Compliance.BinaryAddWitness
 ZiskFv.Compliance.Wrappers.Add.equiv_ADD 009 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Add.equiv_ADD 010 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Add.equiv_ADD 011 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD
@@ -47,8 +47,8 @@ ZiskFv.Compliance.Wrappers.Addi.equiv_ADDI 001 addi_input [other] PureSpec.AddiI
 ZiskFv.Compliance.Wrappers.Addi.equiv_ADDI 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Addi.equiv_ADDI 003 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Addi.equiv_ADDI 004 imm [other] BitVec 12
-ZiskFv.Compliance.Wrappers.Addi.equiv_ADDI 005 m [validator] Valid_Main C FGL FGL
-ZiskFv.Compliance.Wrappers.Addi.equiv_ADDI 006 badd [other] ZiskFv.Compliance.BinaryAddWitness C
+ZiskFv.Compliance.Wrappers.Addi.equiv_ADDI 005 m [validator] Valid_Main FGL FGL
+ZiskFv.Compliance.Wrappers.Addi.equiv_ADDI 006 badd [other] ZiskFv.Compliance.BinaryAddWitness
 ZiskFv.Compliance.Wrappers.Addi.equiv_ADDI 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Addi.equiv_ADDI 008 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Addi.equiv_ADDI 009 _ [other] Compliance.lean derives from ROM handshake
@@ -64,7 +64,7 @@ ZiskFv.Compliance.Wrappers.Addiw.equiv_ADDIW 001 addiw_input [other] PureSpec.Ad
 ZiskFv.Compliance.Wrappers.Addiw.equiv_ADDIW 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Addiw.equiv_ADDIW 003 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Addiw.equiv_ADDIW 004 imm [other] BitVec 12
-ZiskFv.Compliance.Wrappers.Addiw.equiv_ADDIW 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Addiw.equiv_ADDIW 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Addiw.equiv_ADDIW 006 v [validator] Valid_Binary FGL FGL
 ZiskFv.Compliance.Wrappers.Addiw.equiv_ADDIW 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Addiw.equiv_ADDIW 008 bus [other] ZiskFv.Compliance.BusRows
@@ -77,7 +77,7 @@ ZiskFv.Compliance.Wrappers.Addw.equiv_ADDW 001 addw_input [other] PureSpec.AddwI
 ZiskFv.Compliance.Wrappers.Addw.equiv_ADDW 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Addw.equiv_ADDW 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Addw.equiv_ADDW 004 rd [other] regidx
-ZiskFv.Compliance.Wrappers.Addw.equiv_ADDW 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Addw.equiv_ADDW 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Addw.equiv_ADDW 006 v [validator] Valid_Binary FGL FGL
 ZiskFv.Compliance.Wrappers.Addw.equiv_ADDW 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Addw.equiv_ADDW 008 bus [other] ZiskFv.Compliance.BusRows
@@ -89,7 +89,7 @@ ZiskFv.Compliance.Wrappers.And.equiv_AND 001 and_input [other] PureSpec.AndInput
 ZiskFv.Compliance.Wrappers.And.equiv_AND 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.And.equiv_AND 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.And.equiv_AND 004 rd [other] regidx
-ZiskFv.Compliance.Wrappers.And.equiv_AND 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.And.equiv_AND 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.And.equiv_AND 006 v [validator] Valid_Binary FGL FGL
 ZiskFv.Compliance.Wrappers.And.equiv_AND 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.And.equiv_AND 008 bus [other] ZiskFv.Compliance.BusRows
@@ -101,7 +101,7 @@ ZiskFv.Compliance.Wrappers.Andi.equiv_ANDI 001 andi_input [other] PureSpec.AndiI
 ZiskFv.Compliance.Wrappers.Andi.equiv_ANDI 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Andi.equiv_ANDI 003 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Andi.equiv_ANDI 004 imm [other] BitVec 12
-ZiskFv.Compliance.Wrappers.Andi.equiv_ANDI 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Andi.equiv_ANDI 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Andi.equiv_ANDI 006 v [validator] Valid_Binary FGL FGL
 ZiskFv.Compliance.Wrappers.Andi.equiv_ANDI 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Andi.equiv_ANDI 008 bus [other] ZiskFv.Compliance.BusRows
@@ -116,7 +116,7 @@ ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 003 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 004 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
 ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 005 e_rd [entry] Interaction.MemoryBusEntry FGL
 ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 006 nextPC_val [other] BitVec 64
-ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 007 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 007 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 008 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 009 next_pc [other] FGL
 ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG
@@ -156,7 +156,7 @@ ZiskFv.Compliance.Wrappers.Div.equiv_DIV 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Div.equiv_DIV 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Div.equiv_DIV 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Div.equiv_DIV 006 _ [other] m, v
-ZiskFv.Compliance.Wrappers.Div.equiv_DIV 007 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Div.equiv_DIV 007 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Div.equiv_DIV 008 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Div.equiv_DIV 009 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Div.equiv_DIV 010 r_a [other] ℕ
@@ -184,7 +184,7 @@ ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 005 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 006 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 009 r_a [other] ℕ
@@ -200,7 +200,7 @@ ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 005 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 006 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 009 r_a [other] ℕ
@@ -219,7 +219,7 @@ ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 005 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 006 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 009 r_a [other] ℕ
@@ -244,7 +244,7 @@ ZiskFv.Compliance.Wrappers.Fence.equiv_FENCE 003 pred [other] BitVec 4
 ZiskFv.Compliance.Wrappers.Fence.equiv_FENCE 004 succ [other] BitVec 4
 ZiskFv.Compliance.Wrappers.Fence.equiv_FENCE 005 rs [other] regidx
 ZiskFv.Compliance.Wrappers.Fence.equiv_FENCE 006 rd [other] regidx
-ZiskFv.Compliance.Wrappers.Fence.equiv_FENCE 007 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Fence.equiv_FENCE 007 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Fence.equiv_FENCE 008 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Fence.equiv_FENCE 009 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
 ZiskFv.Compliance.Wrappers.Fence.equiv_FENCE 010 _ [other] Compliance-handshake; tracked here -- for uniformity but not consumed by the pro
@@ -256,7 +256,7 @@ ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 001 jal_input [other] PureSpec.JalInput
 ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 002 imm [other] BitVec 21
 ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 003 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 004 misa_val [other] RegisterType Register.misa
-ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 006 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 007 next_pc [other] FGL
 ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
@@ -280,7 +280,7 @@ ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 006 mseccfg [other] RegisterType Regi
 ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 007 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
 ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 008 e_rd [entry] Interaction.MemoryBusEntry FGL
 ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 009 nextPC_val [other] BitVec 64
-ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 010 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 010 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 011 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 012 next_pc [other] FGL
 ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 013 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB
@@ -296,7 +296,7 @@ ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 022 h_pc_offset_lt_2_32 [range] (jalr
 ZiskFv.Compliance.Wrappers.Lb.equiv_LB 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Lb.equiv_LB 001 lb_input [other] PureSpec.LbInput
 ZiskFv.Compliance.Wrappers.Lb.equiv_LB 002 regs [other] ZiskFv.Compliance.ModeRegsFull
-ZiskFv.Compliance.Wrappers.Lb.equiv_LB 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Lb.equiv_LB 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Lb.equiv_LB 004 mem [validator] Valid_Mem FGL FGL
 ZiskFv.Compliance.Wrappers.Lb.equiv_LB 005 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Lb.equiv_LB 006 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
@@ -308,10 +308,10 @@ ZiskFv.Compliance.Wrappers.Lb.equiv_LB 011 promises [transpile] ZiskFv.Equivalen
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 001 lbu_input [other] PureSpec.LbuInput
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 002 regs [other] ZiskFv.Compliance.ModeRegsFull
-ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 004 mem [validator] Valid_Mem FGL FGL
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 005 r_main [row] ℕ
-ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 006 align [other] ZiskFv.Compliance.MemAlignWitness C
+ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 006 align [other] ZiskFv.Compliance.MemAlignWitness
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 007 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 008 _ [other] Compliance ROM handshake
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 009 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
@@ -322,7 +322,7 @@ ZiskFv.Compliance.Wrappers.Ld.equiv_LD 000 state [state] PreSail.SequentialState
 ZiskFv.Compliance.Wrappers.Ld.equiv_LD 001 ld_input [other] PureSpec.LdInput
 ZiskFv.Compliance.Wrappers.Ld.equiv_LD 002 regs [other] ZiskFv.Compliance.ModeRegsFull
 ZiskFv.Compliance.Wrappers.Ld.equiv_LD 003 _ [other] main, mem
-ZiskFv.Compliance.Wrappers.Ld.equiv_LD 004 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Ld.equiv_LD 004 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Ld.equiv_LD 005 mem [validator] Valid_Mem FGL FGL
 ZiskFv.Compliance.Wrappers.Ld.equiv_LD 006 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Ld.equiv_LD 007 bus [other] ZiskFv.Compliance.BusRows
@@ -332,7 +332,7 @@ ZiskFv.Compliance.Wrappers.Ld.equiv_LD 010 promises [transpile] ZiskFv.Equivalen
 ZiskFv.Compliance.Wrappers.Lh.equiv_LH 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Lh.equiv_LH 001 lh_input [other] PureSpec.LhInput
 ZiskFv.Compliance.Wrappers.Lh.equiv_LH 002 regs [other] ZiskFv.Compliance.ModeRegsFull
-ZiskFv.Compliance.Wrappers.Lh.equiv_LH 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Lh.equiv_LH 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Lh.equiv_LH 004 mem [validator] Valid_Mem FGL FGL
 ZiskFv.Compliance.Wrappers.Lh.equiv_LH 005 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Lh.equiv_LH 006 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
@@ -344,10 +344,10 @@ ZiskFv.Compliance.Wrappers.Lh.equiv_LH 011 promises [transpile] ZiskFv.Equivalen
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 001 lhu_input [other] PureSpec.LhuInput
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 002 regs [other] ZiskFv.Compliance.ModeRegsFull
-ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 004 mem [validator] Valid_Mem FGL FGL
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 005 r_main [row] ℕ
-ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 006 align [other] ZiskFv.Compliance.MemAlignWitness C
+ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 006 align [other] ZiskFv.Compliance.MemAlignWitness
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 007 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 008 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 009 h_width [match] main.ind_width r_main = (2 : FGL)
@@ -356,7 +356,7 @@ ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 000 state [state] PreSail.SequentialSta
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 001 lui_input [other] PureSpec.LuiInput
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 002 imm [other] BitVec 20
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 003 rd [other] regidx
-ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 004 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 004 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 005 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 006 next_pc [other] FGL
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 007 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
@@ -368,7 +368,7 @@ ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 012 promises [transpile] ZiskFv.Equival
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 001 lw_input [other] PureSpec.LwInput
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 002 regs [other] ZiskFv.Compliance.ModeRegsFull
-ZiskFv.Compliance.Wrappers.Lw.equiv_LW 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Lw.equiv_LW 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 004 mem [validator] Valid_Mem FGL FGL
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 005 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 006 v [validator] ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL
@@ -380,10 +380,10 @@ ZiskFv.Compliance.Wrappers.Lw.equiv_LW 011 promises [transpile] ZiskFv.Equivalen
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 001 lwu_input [other] PureSpec.LwuInput
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 002 regs [other] ZiskFv.Compliance.ModeRegsFull
-ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 004 mem [validator] Valid_Mem FGL FGL
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 005 r_main [row] ℕ
-ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 006 align [other] ZiskFv.Compliance.MemAlignWitness C
+ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 006 align [other] ZiskFv.Compliance.MemAlignWitness
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 007 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 008 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 009 h_width [match] main.ind_width r_main = (4 : FGL)
@@ -396,7 +396,7 @@ ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 005 srs1 [other] Signedness
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 006 srs2 [other] Signedness
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 007 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 008 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 008 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 009 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 010 v [validator] Valid_ArithMul FGL FGL
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 011 r_a [other] ℕ
@@ -411,7 +411,7 @@ ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 005 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 006 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 008 v [validator] Valid_ArithMul FGL FGL
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 009 r_a [other] ℕ
@@ -425,7 +425,7 @@ ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 005 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 006 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 008 v [validator] Valid_ArithMul FGL FGL
 ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 009 r_a [other] ℕ
@@ -439,7 +439,7 @@ ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 005 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 006 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 008 v [validator] Valid_ArithMul FGL FGL
 ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 009 r_a [other] ℕ
@@ -454,7 +454,7 @@ ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 005 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 006 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 008 v [validator] Valid_ArithMul FGL FGL
 ZiskFv.Compliance.Wrappers.MulW.equiv_MULW 009 r_a [other] ℕ
@@ -473,7 +473,7 @@ ZiskFv.Compliance.Wrappers.Or.equiv_OR 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Or.equiv_OR 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Or.equiv_OR 005 _ [other] m, v
 ZiskFv.Compliance.Wrappers.Or.equiv_OR 006 _ [other] AND/ANDI/OR/ORI/XOR/XORI/ -- SLT/SLTI/SLTU/SLTIU/SUB/SUBW/ADDIW/ADDW
-ZiskFv.Compliance.Wrappers.Or.equiv_OR 007 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Or.equiv_OR 007 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Or.equiv_OR 008 v [validator] Valid_Binary FGL FGL
 ZiskFv.Compliance.Wrappers.Or.equiv_OR 009 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Or.equiv_OR 010 bus [other] ZiskFv.Compliance.BusRows
@@ -486,7 +486,7 @@ ZiskFv.Compliance.Wrappers.Ori.equiv_ORI 001 ori_input [other] PureSpec.OriInput
 ZiskFv.Compliance.Wrappers.Ori.equiv_ORI 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Ori.equiv_ORI 003 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Ori.equiv_ORI 004 imm [other] BitVec 12
-ZiskFv.Compliance.Wrappers.Ori.equiv_ORI 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Ori.equiv_ORI 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Ori.equiv_ORI 006 v [validator] Valid_Binary FGL FGL
 ZiskFv.Compliance.Wrappers.Ori.equiv_ORI 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Ori.equiv_ORI 008 bus [other] ZiskFv.Compliance.BusRows
@@ -500,7 +500,7 @@ ZiskFv.Compliance.Wrappers.Rem.equiv_REM 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Rem.equiv_REM 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Rem.equiv_REM 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Rem.equiv_REM 005 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Compliance.Wrappers.Rem.equiv_REM 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Rem.equiv_REM 006 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Rem.equiv_REM 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Rem.equiv_REM 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Rem.equiv_REM 009 r_a [other] ℕ
@@ -520,7 +520,7 @@ ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 005 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 006 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 009 r_a [other] ℕ
@@ -536,7 +536,7 @@ ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 005 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 006 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 009 r_a [other] ℕ
@@ -555,7 +555,7 @@ ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 005 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 006 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 006 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 009 r_a [other] ℕ
@@ -576,7 +576,7 @@ ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 023 h_no_overflow_w [bridge] ¬ (Sail
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 001 sb_input [other] PureSpec.SbInput
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 002 regs [other] ZiskFv.Compliance.ModeRegsFull
-ZiskFv.Compliance.Wrappers.Sb.equiv_SB 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Sb.equiv_SB 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 004 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 006 _ [other] consumed by the StoreHelpers -- helper that transitively fires `transpile_SB` an
@@ -590,7 +590,7 @@ ZiskFv.Compliance.Wrappers.Sb.equiv_SB 013 promises [transpile] ZiskFv.Equivalen
 ZiskFv.Compliance.Wrappers.Sd.equiv_SD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Sd.equiv_SD 001 sd_input [other] PureSpec.SdInput
 ZiskFv.Compliance.Wrappers.Sd.equiv_SD 002 regs [other] ZiskFv.Compliance.ModeRegsFull
-ZiskFv.Compliance.Wrappers.Sd.equiv_SD 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Sd.equiv_SD 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Sd.equiv_SD 004 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Sd.equiv_SD 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Sd.equiv_SD 006 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
@@ -600,7 +600,7 @@ ZiskFv.Compliance.Wrappers.Sd.equiv_SD 009 promises [transpile] ZiskFv.Equivalen
 ZiskFv.Compliance.Wrappers.Sh.equiv_SH 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Sh.equiv_SH 001 sh_input [other] PureSpec.ShInput
 ZiskFv.Compliance.Wrappers.Sh.equiv_SH 002 regs [other] ZiskFv.Compliance.ModeRegsFull
-ZiskFv.Compliance.Wrappers.Sh.equiv_SH 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Sh.equiv_SH 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Sh.equiv_SH 004 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Sh.equiv_SH 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Sh.equiv_SH 006 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
@@ -613,7 +613,7 @@ ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 001 sllw_input [other] PureSpec.Sllw
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 004 rd [other] regidx
-ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 006 v [validator] Valid_BinaryExtension FGL FGL
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 008 bus [other] ZiskFv.Compliance.BusRows
@@ -638,7 +638,7 @@ ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 000 state [state] PreSail.Sequent
 ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 001 slliw_input [other] PureSpec.SlliwInput
 ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 003 rd [other] regidx
-ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 004 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 004 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 005 v [validator] Valid_BinaryExtension FGL FGL
 ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 006 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 007 bus [other] ZiskFv.Compliance.BusRows
@@ -650,7 +650,7 @@ ZiskFv.Compliance.Wrappers.ShiftR.equiv_SRLW 001 srlw_input [other] PureSpec.Srl
 ZiskFv.Compliance.Wrappers.ShiftR.equiv_SRLW 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.ShiftR.equiv_SRLW 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.ShiftR.equiv_SRLW 004 rd [other] regidx
-ZiskFv.Compliance.Wrappers.ShiftR.equiv_SRLW 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.ShiftR.equiv_SRLW 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.ShiftR.equiv_SRLW 006 v [validator] Valid_BinaryExtension FGL FGL
 ZiskFv.Compliance.Wrappers.ShiftR.equiv_SRLW 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.ShiftR.equiv_SRLW 008 bus [other] ZiskFv.Compliance.BusRows
@@ -676,7 +676,7 @@ ZiskFv.Compliance.Wrappers.ShiftRA.equiv_SRAW 001 sraw_input [other] PureSpec.Sr
 ZiskFv.Compliance.Wrappers.ShiftRA.equiv_SRAW 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.ShiftRA.equiv_SRAW 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.ShiftRA.equiv_SRAW 004 rd [other] regidx
-ZiskFv.Compliance.Wrappers.ShiftRA.equiv_SRAW 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.ShiftRA.equiv_SRAW 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.ShiftRA.equiv_SRAW 006 v [validator] Valid_BinaryExtension FGL FGL
 ZiskFv.Compliance.Wrappers.ShiftRA.equiv_SRAW 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.ShiftRA.equiv_SRAW 008 bus [other] ZiskFv.Compliance.BusRows
@@ -701,7 +701,7 @@ ZiskFv.Compliance.Wrappers.ShiftRAI.equiv_SRAIW 000 state [state] PreSail.Sequen
 ZiskFv.Compliance.Wrappers.ShiftRAI.equiv_SRAIW 001 sraiw_input [other] PureSpec.SraiwInput
 ZiskFv.Compliance.Wrappers.ShiftRAI.equiv_SRAIW 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.ShiftRAI.equiv_SRAIW 003 rd [other] regidx
-ZiskFv.Compliance.Wrappers.ShiftRAI.equiv_SRAIW 004 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.ShiftRAI.equiv_SRAIW 004 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.ShiftRAI.equiv_SRAIW 005 v [validator] Valid_BinaryExtension FGL FGL
 ZiskFv.Compliance.Wrappers.ShiftRAI.equiv_SRAIW 006 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.ShiftRAI.equiv_SRAIW 007 bus [other] ZiskFv.Compliance.BusRows
@@ -712,7 +712,7 @@ ZiskFv.Compliance.Wrappers.ShiftRLI.equiv_SRLIW 000 state [state] PreSail.Sequen
 ZiskFv.Compliance.Wrappers.ShiftRLI.equiv_SRLIW 001 srliw_input [other] PureSpec.SrliwInput
 ZiskFv.Compliance.Wrappers.ShiftRLI.equiv_SRLIW 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.ShiftRLI.equiv_SRLIW 003 rd [other] regidx
-ZiskFv.Compliance.Wrappers.ShiftRLI.equiv_SRLIW 004 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.ShiftRLI.equiv_SRLIW 004 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.ShiftRLI.equiv_SRLIW 005 v [validator] Valid_BinaryExtension FGL FGL
 ZiskFv.Compliance.Wrappers.ShiftRLI.equiv_SRLIW 006 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.ShiftRLI.equiv_SRLIW 007 bus [other] ZiskFv.Compliance.BusRows
@@ -726,7 +726,7 @@ ZiskFv.Compliance.Wrappers.Sll.equiv_SLL 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Sll.equiv_SLL 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Sll.equiv_SLL 005 _ [other] m, v
 ZiskFv.Compliance.Wrappers.Sll.equiv_SLL 006 _ [other] twelve shifts
-ZiskFv.Compliance.Wrappers.Sll.equiv_SLL 007 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Sll.equiv_SLL 007 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Sll.equiv_SLL 008 v [validator] Valid_BinaryExtension FGL FGL
 ZiskFv.Compliance.Wrappers.Sll.equiv_SLL 009 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Sll.equiv_SLL 010 bus [other] ZiskFv.Compliance.BusRows
@@ -739,7 +739,7 @@ ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 001 slli_input [other] PureSpec.SlliI
 ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 003 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 004 shamt [other] BitVec 6
-ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 006 v [validator] Valid_BinaryExtension FGL FGL
 ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 008 bus [other] ZiskFv.Compliance.BusRows
@@ -751,7 +751,7 @@ ZiskFv.Compliance.Wrappers.Slt.equiv_SLT 001 slt_input [other] PureSpec.SltInput
 ZiskFv.Compliance.Wrappers.Slt.equiv_SLT 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Slt.equiv_SLT 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Slt.equiv_SLT 004 rd [other] regidx
-ZiskFv.Compliance.Wrappers.Slt.equiv_SLT 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Slt.equiv_SLT 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Slt.equiv_SLT 006 v [validator] Valid_Binary FGL FGL
 ZiskFv.Compliance.Wrappers.Slt.equiv_SLT 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Slt.equiv_SLT 008 bus [other] ZiskFv.Compliance.BusRows
@@ -763,7 +763,7 @@ ZiskFv.Compliance.Wrappers.Slti.equiv_SLTI 001 slti_input [other] PureSpec.SltiI
 ZiskFv.Compliance.Wrappers.Slti.equiv_SLTI 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Slti.equiv_SLTI 003 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Slti.equiv_SLTI 004 imm [other] BitVec 12
-ZiskFv.Compliance.Wrappers.Slti.equiv_SLTI 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Slti.equiv_SLTI 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Slti.equiv_SLTI 006 v [validator] Valid_Binary FGL FGL
 ZiskFv.Compliance.Wrappers.Slti.equiv_SLTI 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Slti.equiv_SLTI 008 bus [other] ZiskFv.Compliance.BusRows
@@ -776,7 +776,7 @@ ZiskFv.Compliance.Wrappers.Sltiu.equiv_SLTIU 001 sltiu_input [other] PureSpec.Sl
 ZiskFv.Compliance.Wrappers.Sltiu.equiv_SLTIU 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Sltiu.equiv_SLTIU 003 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Sltiu.equiv_SLTIU 004 imm [other] BitVec 12
-ZiskFv.Compliance.Wrappers.Sltiu.equiv_SLTIU 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Sltiu.equiv_SLTIU 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Sltiu.equiv_SLTIU 006 v [validator] Valid_Binary FGL FGL
 ZiskFv.Compliance.Wrappers.Sltiu.equiv_SLTIU 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Sltiu.equiv_SLTIU 008 bus [other] ZiskFv.Compliance.BusRows
@@ -789,7 +789,7 @@ ZiskFv.Compliance.Wrappers.Sltu.equiv_SLTU 001 sltu_input [other] PureSpec.SltuI
 ZiskFv.Compliance.Wrappers.Sltu.equiv_SLTU 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Sltu.equiv_SLTU 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Sltu.equiv_SLTU 004 rd [other] regidx
-ZiskFv.Compliance.Wrappers.Sltu.equiv_SLTU 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Sltu.equiv_SLTU 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Sltu.equiv_SLTU 006 v [validator] Valid_Binary FGL FGL
 ZiskFv.Compliance.Wrappers.Sltu.equiv_SLTU 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Sltu.equiv_SLTU 008 bus [other] ZiskFv.Compliance.BusRows
@@ -801,7 +801,7 @@ ZiskFv.Compliance.Wrappers.Sra.equiv_SRA 001 sra_input [other] PureSpec.SraInput
 ZiskFv.Compliance.Wrappers.Sra.equiv_SRA 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Sra.equiv_SRA 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Sra.equiv_SRA 004 rd [other] regidx
-ZiskFv.Compliance.Wrappers.Sra.equiv_SRA 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Sra.equiv_SRA 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Sra.equiv_SRA 006 v [validator] Valid_BinaryExtension FGL FGL
 ZiskFv.Compliance.Wrappers.Sra.equiv_SRA 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Sra.equiv_SRA 008 bus [other] ZiskFv.Compliance.BusRows
@@ -813,7 +813,7 @@ ZiskFv.Compliance.Wrappers.Srai.equiv_SRAI 001 srai_input [other] PureSpec.SraiI
 ZiskFv.Compliance.Wrappers.Srai.equiv_SRAI 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Srai.equiv_SRAI 003 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Srai.equiv_SRAI 004 shamt [other] BitVec 6
-ZiskFv.Compliance.Wrappers.Srai.equiv_SRAI 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Srai.equiv_SRAI 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Srai.equiv_SRAI 006 v [validator] Valid_BinaryExtension FGL FGL
 ZiskFv.Compliance.Wrappers.Srai.equiv_SRAI 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Srai.equiv_SRAI 008 bus [other] ZiskFv.Compliance.BusRows
@@ -825,7 +825,7 @@ ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 001 srl_input [other] PureSpec.SrlInput
 ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 004 rd [other] regidx
-ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 006 v [validator] Valid_BinaryExtension FGL FGL
 ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 008 bus [other] ZiskFv.Compliance.BusRows
@@ -837,7 +837,7 @@ ZiskFv.Compliance.Wrappers.Srli.equiv_SRLI 001 srli_input [other] PureSpec.SrliI
 ZiskFv.Compliance.Wrappers.Srli.equiv_SRLI 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Srli.equiv_SRLI 003 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Srli.equiv_SRLI 004 shamt [other] BitVec 6
-ZiskFv.Compliance.Wrappers.Srli.equiv_SRLI 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Srli.equiv_SRLI 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Srli.equiv_SRLI 006 v [validator] Valid_BinaryExtension FGL FGL
 ZiskFv.Compliance.Wrappers.Srli.equiv_SRLI 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Srli.equiv_SRLI 008 bus [other] ZiskFv.Compliance.BusRows
@@ -849,7 +849,7 @@ ZiskFv.Compliance.Wrappers.Sub.equiv_SUB 001 sub_input [other] PureSpec.SubInput
 ZiskFv.Compliance.Wrappers.Sub.equiv_SUB 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Sub.equiv_SUB 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Sub.equiv_SUB 004 rd [other] regidx
-ZiskFv.Compliance.Wrappers.Sub.equiv_SUB 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Sub.equiv_SUB 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Sub.equiv_SUB 006 v [validator] Valid_Binary FGL FGL
 ZiskFv.Compliance.Wrappers.Sub.equiv_SUB 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Sub.equiv_SUB 008 bus [other] ZiskFv.Compliance.BusRows
@@ -861,7 +861,7 @@ ZiskFv.Compliance.Wrappers.Subw.equiv_SUBW 001 subw_input [other] PureSpec.SubwI
 ZiskFv.Compliance.Wrappers.Subw.equiv_SUBW 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Subw.equiv_SUBW 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Subw.equiv_SUBW 004 rd [other] regidx
-ZiskFv.Compliance.Wrappers.Subw.equiv_SUBW 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Subw.equiv_SUBW 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Subw.equiv_SUBW 006 v [validator] Valid_Binary FGL FGL
 ZiskFv.Compliance.Wrappers.Subw.equiv_SUBW 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Subw.equiv_SUBW 008 bus [other] ZiskFv.Compliance.BusRows
@@ -871,7 +871,7 @@ ZiskFv.Compliance.Wrappers.Subw.equiv_SUBW 011 promises [bridge] ZiskFv.Equivale
 ZiskFv.Compliance.Wrappers.Sw.equiv_SW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Sw.equiv_SW 001 sw_input [other] PureSpec.SwInput
 ZiskFv.Compliance.Wrappers.Sw.equiv_SW 002 regs [other] ZiskFv.Compliance.ModeRegsFull
-ZiskFv.Compliance.Wrappers.Sw.equiv_SW 003 main [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Sw.equiv_SW 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Sw.equiv_SW 004 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Sw.equiv_SW 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Sw.equiv_SW 006 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
@@ -884,7 +884,7 @@ ZiskFv.Compliance.Wrappers.Xor.equiv_XOR 001 xor_input [other] PureSpec.XorInput
 ZiskFv.Compliance.Wrappers.Xor.equiv_XOR 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Xor.equiv_XOR 003 r2 [other] regidx
 ZiskFv.Compliance.Wrappers.Xor.equiv_XOR 004 rd [other] regidx
-ZiskFv.Compliance.Wrappers.Xor.equiv_XOR 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Xor.equiv_XOR 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Xor.equiv_XOR 006 v [validator] Valid_Binary FGL FGL
 ZiskFv.Compliance.Wrappers.Xor.equiv_XOR 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Xor.equiv_XOR 008 bus [other] ZiskFv.Compliance.BusRows
@@ -896,7 +896,7 @@ ZiskFv.Compliance.Wrappers.Xori.equiv_XORI 001 xori_input [other] PureSpec.XoriI
 ZiskFv.Compliance.Wrappers.Xori.equiv_XORI 002 r1 [other] regidx
 ZiskFv.Compliance.Wrappers.Xori.equiv_XORI 003 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Xori.equiv_XORI 004 imm [other] BitVec 12
-ZiskFv.Compliance.Wrappers.Xori.equiv_XORI 005 m [validator] Valid_Main C FGL FGL
+ZiskFv.Compliance.Wrappers.Xori.equiv_XORI 005 m [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Xori.equiv_XORI 006 v [validator] Valid_Binary FGL FGL
 ZiskFv.Compliance.Wrappers.Xori.equiv_XORI 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Xori.equiv_XORI 008 bus [other] ZiskFv.Compliance.BusRows

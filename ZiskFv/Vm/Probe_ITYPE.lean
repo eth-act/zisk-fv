@@ -31,13 +31,12 @@ open ZiskFv.Tactics.ALUITypeArchetype (itype_imm_subset_holds_main)
 
 namespace ZiskFv.Vm.Probe
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_ANDI_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (andi_input : PureSpec.AndiInput)
     (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
@@ -62,7 +61,7 @@ theorem equiv_ORI_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ori_input : PureSpec.OriInput)
     (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
@@ -87,7 +86,7 @@ theorem equiv_XORI_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (xori_input : PureSpec.XoriInput)
     (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)

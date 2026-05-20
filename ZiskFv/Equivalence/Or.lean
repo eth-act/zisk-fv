@@ -23,13 +23,12 @@ open ZiskFv.Trusted (OP_SUB OP_AND OP_OR OP_XOR)
 
 namespace ZiskFv.Equivalence.Or
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_OR
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (or_input : PureSpec.OrInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)

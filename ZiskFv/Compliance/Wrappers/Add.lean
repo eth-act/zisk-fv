@@ -40,7 +40,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.ZiskCircuit.Add
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Trust-discharged wrapper for `equiv_ADD`.**
 
@@ -98,7 +97,7 @@ theorem equiv_ADD
     (r1 r2 rd : regidx)
     -- AIR validators + row index. Compliance.lean shares (m, badd)
     -- across all BinaryAdd-shape opcodes (ADD, ADDI).
-    (m : Valid_Main C FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness C)
+    (m : Valid_Main FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     -- Activation / opcode pins. Compliance.lean derives these from

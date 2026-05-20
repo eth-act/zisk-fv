@@ -60,7 +60,6 @@ namespace ZiskFv.Airs.BinaryExtension
 open Goldilocks
 open ZiskFv.Airs.Tables.BinaryExtensionTable
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Witness range predicates -/
 

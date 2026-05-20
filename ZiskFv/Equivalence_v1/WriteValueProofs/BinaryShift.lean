@@ -9,7 +9,6 @@ import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Equivalence_v1.WriteValueProofs.Arith
 
 /-!
@@ -84,11 +83,9 @@ open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.Tables.BinaryExtensionTable
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Airs.MemoryBus.LaneMatch
 open ZiskFv.PackedBitVec
 open ZiskFv.Equivalence_v1.WriteValueProofs.Arith
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## SLL -/
 
@@ -103,7 +100,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     The shift amount is taken from `(v.free_in_b r_binary).val % 64` directly
     (RV64 SLL/SLLI mask the shift amount to its low 6 bits). -/
 lemma h_rd_val_shift_sll
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (shift : ℕ)
@@ -313,7 +310,7 @@ lemma h_rd_val_shift_sll
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 64`. -/
 lemma h_rd_val_shift_slli
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (shift : ℕ)
@@ -386,7 +383,7 @@ lemma h_rd_val_shift_slli
     `h_rd_val_shift_sll` but with `BitVec.ushiftRight`. Uses K1-C SRL
     lift `binary_extension_srl_chunks_eq_bv_ushr`. -/
 lemma h_rd_val_shift_srl
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (shift : ℕ)
@@ -564,7 +561,7 @@ lemma h_rd_val_shift_srl
 /-- **SRLI `h_rd_val` derivation (Tier 1).** Same shape as `h_rd_val_shift_srl`;
     SRLI shares SRL's Zisk opcode (`OP_SRL = 34`) at the BinaryExtension SM. -/
 lemma h_rd_val_shift_srli
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (shift : ℕ)
@@ -638,7 +635,7 @@ lemma h_rd_val_shift_srli
     lift `binary_extension_sra_chunks_eq_bv_sshr`. RV64 SRA pre-masks the
     rs2 register read to 6 bits. -/
 lemma h_rd_val_shift_sra
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (shift : ℕ)
@@ -819,7 +816,7 @@ lemma h_rd_val_shift_sra
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 64`. -/
 lemma h_rd_val_shift_srai
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (shift : ℕ)
@@ -898,7 +895,7 @@ lemma h_rd_val_shift_srai
     side equals `(v.free_in_b r_binary).val % 32` — RV64 SRLW pre-masks
     the rs2 register read to 5 bits. -/
 lemma h_rd_val_shift_srlw
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val_lo32 : BitVec 32) (shift : ℕ)
@@ -1077,7 +1074,7 @@ lemma h_rd_val_shift_srlw
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 32`. -/
 lemma h_rd_val_shift_srliw
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val_lo32 : BitVec 32) (shift : ℕ)
@@ -1152,7 +1149,7 @@ lemma h_rd_val_shift_srliw
     side equals `(v.free_in_b r_binary).val % 32` — RV64 SLLW pre-masks
     the rs2 register read to 5 bits. -/
 lemma h_rd_val_shift_sllw
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val_lo32 : BitVec 32) (shift : ℕ)
@@ -1331,7 +1328,7 @@ lemma h_rd_val_shift_sllw
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 32`. -/
 lemma h_rd_val_shift_slliw
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val_lo32 : BitVec 32) (shift : ℕ)
@@ -1406,7 +1403,7 @@ lemma h_rd_val_shift_slliw
     side equals `(v.free_in_b r_binary).val % 32` — RV64 SRAW pre-masks
     the rs2 register read to 5 bits. -/
 lemma h_rd_val_shift_sraw
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val_lo32 : BitVec 32) (shift : ℕ)
@@ -1585,7 +1582,7 @@ lemma h_rd_val_shift_sraw
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 32`. -/
 lemma h_rd_val_shift_sraiw
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val_lo32 : BitVec 32) (shift : ℕ)

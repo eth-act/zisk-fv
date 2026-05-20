@@ -30,20 +30,19 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.Tactics.RTypeWArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- ADDW's specialization of
     `RTypeWArchetype.main_row_in_rtypew_mode` at
     `opcode_lit = OP_ADD_W`. -/
 @[simp]
-def main_row_in_addw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_addw_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   main_row_in_rtypew_mode m r_main OP_ADD_W
 
 /-- ADDW's circuit-holds predicate: specialization of
     `rtypew_archetype_circuit_holds` at `OP_ADD_W`. -/
 @[simp]
 def addw_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL) : Prop :=
   rtypew_archetype_circuit_holds m r_main bus_entry OP_ADD_W
 
@@ -51,7 +50,7 @@ def addw_circuit_holds
     bus entry's packed `c` lanes. Instantiation of
     `rtypew_archetype_c_bus_match` at `OP_ADD_W`. -/
 lemma addw_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : addw_circuit_holds m r_main bus_entry) :
     main_c_packed m r_main

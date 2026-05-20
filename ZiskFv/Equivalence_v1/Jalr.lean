@@ -13,7 +13,6 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Equivalence_v1.Bridge.ControlFlow
 import ZiskFv.Equivalence_v1.WriteValueProofs.JumpUType
@@ -51,7 +50,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.Jalr
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 JALR reduces to the pure-function block supplied by
@@ -130,7 +128,7 @@ theorem equiv_JALR
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     -- Structural promise bundle (12 fields, see Promises/Jump.lean).
     (promises : ZiskFv.Equivalence_v1.Promises.JumpPromises
         state jalr_input.PC jalr_input.rd misa_val

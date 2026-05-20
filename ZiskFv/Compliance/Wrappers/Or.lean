@@ -154,7 +154,6 @@ open ZiskFv.Airs.Binary
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Equivalence_v1.Promises
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Trust-discharged wrapper for `equiv_OR`.**
 
@@ -202,7 +201,7 @@ theorem equiv_OR
     -- AIR validators + row index. Compliance.lean shares (m, v)
     -- across all Binary-shape opcodes (AND/ANDI/OR/ORI/XOR/XORI/
     -- SLT/SLTI/SLTU/SLTIU/SUB/SUBW/ADDIW/ADDW).
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     -- Activation / opcode pins. Compliance.lean derives these from

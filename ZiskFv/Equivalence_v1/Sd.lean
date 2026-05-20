@@ -32,7 +32,6 @@ open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.ZiskCircuit.StoreD
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 lemma equiv_SD_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

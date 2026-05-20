@@ -46,7 +46,6 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.Tables.BinaryExtensionTable
 open ZiskFv.Airs.BinaryExtension
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Nat-form `signExtend` identities
 
@@ -243,7 +242,7 @@ rd-write lane match, derive
 `(memory_entry_lo e2).val + (memory_entry_hi e2).val * 2^32 = Σ free_in_c`. -/
 
 private lemma c_lift_to_byte_sum
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (hc_lo_sum_lt :
@@ -364,7 +363,7 @@ private lemma c_lift_to_byte_sum
 
 /-- **Proven c-packed identity for LB.** -/
 lemma load_byte_c_packed
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_op : (v.op r_binary).val = OP_SEXT_B)
@@ -427,7 +426,7 @@ lemma load_byte_c_packed
 
 /-- **Proven c-packed identity for LH.** -/
 lemma load_half_c_packed
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_op : (v.op r_binary).val = OP_SEXT_H)
@@ -484,7 +483,7 @@ lemma load_half_c_packed
 
 /-- **Proven c-packed identity for LW.** -/
 lemma load_word_c_packed
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_op : (v.op r_binary).val = OP_SEXT_W)

@@ -27,12 +27,11 @@ namespace ZiskFv.Equivalence_v1.Promises
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- Assemble JAL's `h_circuit` from the Main-side activation/opcode
     pins and the per-row JAL subset constraint. -/
 def jal_h_circuit_of_main_constraints
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op_jal : m.op r_main = OP_FLAG)
     (h_jal_subset : ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc) :
@@ -48,7 +47,7 @@ def jal_h_circuit_of_main_constraints
 /-- Assemble JALR's `h_circuit` from the Main-side activation/opcode
     pins and the per-row JALR subset constraint. -/
 def jalr_h_circuit_of_main_constraints
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op_jalr : m.op r_main = OP_COPYB)
     (h_jalr_subset :

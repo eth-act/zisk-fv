@@ -34,7 +34,6 @@ namespace ZiskFv.Airs.OperationBus
 
 open Goldilocks
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **OperationBus permutation soundness — BinaryAdd provider.**
     Now a theorem: specialization of `op_bus_permutation_sound`
@@ -44,7 +43,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     Opcode coverage: `OP_ADD = 0x0a` only — see `binary_add.pil:25`
     `proves_operation(op: OP_ADD, ...)`. -/
 theorem op_bus_perm_sound_BinaryAdd
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL)
     (b : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL)
     (r_main : ℕ)
     (h_active : m.is_external_op r_main = 1)
@@ -68,7 +67,7 @@ theorem op_bus_perm_sound_BinaryAdd
     * 32-bit (mode32=1): same ops with `_W` suffix ⇒ 0x12..0x1d;
     * Arith helpers: LT_ABS_NP=0x50, LT_ABS_PN=0x51. -/
 theorem op_bus_perm_sound_Binary
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL)
     (b : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
     (r_main : ℕ)
     (h_active : m.is_external_op r_main = 1)
@@ -93,7 +92,7 @@ theorem op_bus_perm_sound_Binary
     SLL=0x21, SRL=0x22, SRA=0x23, SLL_W=0x24, SRL_W=0x25, SRA_W=0x26,
     SEXT_B=0x27, SEXT_H=0x28, SEXT_W=0x29. -/
 theorem op_bus_perm_sound_BinaryExtension
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL)
     (e : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (h_active : m.is_external_op r_main = 1)

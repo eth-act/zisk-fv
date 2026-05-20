@@ -58,7 +58,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.OperationBus
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Binary discharge bridge.** Replaces the
     per-opcode `r_binary` + 24 byte-range *promise hypotheses* with a
@@ -76,7 +75,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     Outputs: existential `r_binary` + `matches_entry` + 24 byte-range
     facts. -/
 lemma binary_discharge
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = 0x02 ∨ m.op r_main = 0x03 ∨ m.op r_main = 0x04
@@ -495,7 +494,7 @@ open ZiskFv.Equivalence_v1.Bridge.SailStateBridge in
     are consumed internally — derived from `binary_columns_in_range`. -/
 lemma input_r1_packed_a
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
     (h_m32 : m.m32 r_main = 0)
     (h_a_lo_t : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
@@ -568,7 +567,7 @@ open ZiskFv.Equivalence_v1.Bridge.SailStateBridge in
     `input_r1_packed_a` for the b-lane (`m.b_0/1` ↔ `state.xreg rs2`). -/
 lemma input_r2_packed_b
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
     (h_m32 : m.m32 r_main = 0)
     (h_b_lo_t : m.b_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs2))
@@ -650,7 +649,7 @@ Outputs: the standard 4-byte packed c-lane match equations in the
 shape the rd-value derivation lemmas consume. -/
 
 private lemma match_clo_chi_logic_core
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
@@ -669,7 +668,7 @@ private lemma match_clo_chi_logic_core
 
 /-- **`h_match_clo`/`h_match_chi` discharge for AND-shape rows.** -/
 lemma match_clo_chi_AND
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
@@ -685,7 +684,7 @@ lemma match_clo_chi_AND
 
 /-- **`h_match_clo`/`h_match_chi` discharge for OR-shape rows.** -/
 lemma match_clo_chi_OR
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
@@ -701,7 +700,7 @@ lemma match_clo_chi_OR
 
 /-- **`h_match_clo`/`h_match_chi` discharge for XOR-shape rows.** -/
 lemma match_clo_chi_XOR
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
@@ -750,7 +749,7 @@ chain. -/
     `v.free_in_b_*` are consumed internally — derived from
     `binary_columns_in_range`. -/
 lemma itype_imm_subset_binary_row_of_main
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ) (imm : BitVec 12)
     (h_m32 : m.m32 r_main = 0)
     (h_match : matches_entry (opBus_row_Main m r_main)

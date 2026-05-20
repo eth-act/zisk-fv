@@ -57,9 +57,9 @@ structure OperationBusEntry (F : Type) [Field F] where
     forwarded verbatim; `main_step`/`extended_arg` derive from precompile
     gating which we treat as zero (`is_precompiled = 0` for plain ADD). -/
 @[simp]
-def opBus_row_Main {C : Type → Type → Type} {F ExtF : Type}
-    [Field F] [Field ExtF] [Circuit F ExtF C]
-    (m : ZiskFv.Airs.Main.Valid_Main C F ExtF) (row : ℕ) : OperationBusEntry F :=
+def opBus_row_Main {F ExtF : Type}
+    [Field F] [Field ExtF]
+    (m : ZiskFv.Airs.Main.Valid_Main F ExtF) (row : ℕ) : OperationBusEntry F :=
   { multiplicity := m.is_external_op row
     op := m.op row
     a_lo := m.a_0 row

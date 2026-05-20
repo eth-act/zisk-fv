@@ -38,7 +38,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.Sltu
 open ZiskFv.Tactics.ALURTypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 lemma equiv_SLTU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -79,7 +78,7 @@ theorem equiv_SLTU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sltu_input : PureSpec.SltuInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state sltu_input.r1_val sltu_input.r2_val sltu_input.rd sltu_input.PC

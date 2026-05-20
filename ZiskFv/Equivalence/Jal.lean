@@ -23,7 +23,6 @@ open ZiskFv.Trusted (OP_FLAG OP_COPYB)
 
 namespace ZiskFv.Equivalence.Jal
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_JAL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -31,7 +30,7 @@ theorem equiv_JAL
     (imm : BitVec 21)
     (rd : regidx)
     (misa_val : RegisterType Register.misa)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)

@@ -109,8 +109,8 @@ lemma packed_lane_eq_of_read_xreg
     hypotheses* with the Sail-form `read_xreg` facts that
     `equiv_ADD` already carries. -/
 lemma add_input_bridges_of_read_xreg
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (r_main : ℕ)
+   
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rs1 rs2 : Fin 32) (r1_val r2_val : BitVec 64)
     (h_active : m.is_external_op r_main = 1)
@@ -137,8 +137,8 @@ lemma add_input_bridges_of_read_xreg
     Main lanes to BinaryAdd-row lanes via the existing
     `matches_entry` projection inside `addi_circuit_holds_with_binaryadd`. -/
 lemma addi_input_r1_main_eq_of_read_xreg
-    {C : Type → Type → Type} [Circuit FGL FGL C]
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (r_main : ℕ)
+   
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rs1 rd_dummy : Fin 32) (r1_val : BitVec 64)
     (h_active : m.is_external_op r_main = 1)

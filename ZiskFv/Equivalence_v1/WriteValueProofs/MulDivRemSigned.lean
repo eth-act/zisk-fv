@@ -71,7 +71,6 @@ open ZiskFv.PackedBitVec.SignedChunkLift
 open ZiskFv.PackedBitVec.MulNoWrap
 open LeanRV64D.Functions
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Internal helpers for chunked discharge -/
 

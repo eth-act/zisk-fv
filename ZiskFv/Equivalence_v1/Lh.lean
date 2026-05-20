@@ -38,7 +38,6 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.LoadHalf
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 lemma equiv_LH_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -82,7 +81,7 @@ theorem equiv_LH
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_H)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary : ℕ)

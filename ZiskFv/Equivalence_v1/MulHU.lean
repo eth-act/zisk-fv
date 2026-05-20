@@ -41,7 +41,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.Mul
 open ZiskFv.ZiskCircuit.MulHU
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 MULHU (unsigned × unsigned, High half) reduces to the pure-

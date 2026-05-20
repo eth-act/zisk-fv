@@ -39,7 +39,6 @@ namespace ZiskFv.Airs.Arith
 open Goldilocks
 open ZiskFv.Channels.RangeBusSoundness
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **ArithMul range-check soundness (derived).** Every `a_i`, `b_i`,
     `c_i`, `d_i` chunk (`i ∈ {0..3}`) at any row is < 2^16.

@@ -29,13 +29,12 @@ open ZiskFv.PackedBitVec.SignedChunkLift (toIntZ)
 
 namespace ZiskFv.Vm.Probe
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_DIV_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (div_input : PureSpec.DivInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV)
     (h_match_primary :
@@ -68,7 +67,7 @@ theorem equiv_REM_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (rem_input : PureSpec.RemInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REM)
     (h_match_secondary :
@@ -101,7 +100,7 @@ theorem equiv_REMU_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remu_input : PureSpec.RemuInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU)
     (h_match_secondary :
@@ -125,7 +124,7 @@ theorem equiv_DIVW_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divw_input : PureSpec.DivwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV_W)
     (h_match_primary :
@@ -171,7 +170,7 @@ theorem equiv_DIVUW_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divuw_input : PureSpec.DivuwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIVU_W)
     (h_match_primary :
@@ -204,7 +203,7 @@ theorem equiv_REMW_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remw_input : PureSpec.RemwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REM_W)
     (h_match_secondary :
@@ -250,7 +249,7 @@ theorem equiv_REMUW_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remuw_input : PureSpec.RemuwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU_W)
     (h_match_secondary :

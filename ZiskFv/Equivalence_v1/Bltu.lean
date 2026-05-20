@@ -34,7 +34,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.BranchLessThanUnsigned
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** -/
 lemma equiv_BLTU_sail

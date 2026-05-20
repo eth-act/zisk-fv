@@ -32,13 +32,12 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in BEQ-execution mode: external op with
     opcode literal 9 (OP_EQ), full 64-bit width (m32 = 0), and
     `set_pc = 0` (branches don't use `c[0]` as next-pc source). -/
 @[simp]
-def main_row_in_beq_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_beq_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = (9 : FGL)
   ∧ m.m32 r_main = 0
@@ -51,7 +50,7 @@ def main_row_in_beq_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     deferring the PIL-level derivation to the audit. -/
 @[simp]
 def branch_eq_circuit_holds
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (r_main : ℕ) (next_pc : FGL) : Prop :=
   branch_subset_holds m r_main next_pc
   ∧ main_row_in_beq_mode m r_main
@@ -76,7 +75,7 @@ def branch_eq_circuit_holds
     `flag = 1 ↔ (a_lo, a_hi) = (b_lo, b_hi)` from the Binary-SM bus hop.
     That hypothesis is parameterized at the equivalence level, not here. -/
 lemma branch_eq_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_eq_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main
             + m.flag r_main * (m.jmp_offset1 r_main - m.jmp_offset2 r_main) := by
@@ -90,7 +89,7 @@ lemma branch_eq_compositional
     `jmp_offset1 = imm` (from `transpile_BEQ`), so this corresponds
     to `pc + imm`. -/
 lemma branch_eq_taken
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_eq_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 1) :
     next_pc = m.pc r_main + m.jmp_offset1 r_main := by
@@ -102,7 +101,7 @@ lemma branch_eq_taken
     `pc + jmp_offset2 = pc + 4` (from `transpile_BEQ`'s
     `jmp_offset2 = 4`). -/
 lemma branch_eq_not_taken
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_eq_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 0) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main := by

@@ -37,7 +37,6 @@ open ZiskFv.ZiskCircuit.Sltiu
 open ZiskFv.Tactics.ALURTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 lemma equiv_SLTIU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -77,7 +76,7 @@ theorem equiv_SLTIU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sltiu_input : PureSpec.SltiuInput)
     (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
         state sltiu_input.r1_val sltiu_input.imm sltiu_input.rd sltiu_input.PC

@@ -45,7 +45,7 @@ obligation's concern.
 
 ```
 lemma addw_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : rtypew_archetype_circuit_holds m r_main bus_entry OP_ADD_W) :
     main_c_packed m r_main
@@ -61,7 +61,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Archetype mode predicate (Main side).** A Main row is in
     RTYPEW execution mode when `is_external_op = 1`, `op =
@@ -73,7 +72,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     in the m32-0 archetype). -/
 @[simp]
 def main_row_in_rtypew_mode
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = opcode_lit
   ∧ m.m32 r_main = 1
@@ -86,7 +85,7 @@ def main_row_in_rtypew_mode
     bus-match hypothesis is the link to a concrete Binary-SM row. -/
 @[simp]
 def rtypew_archetype_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL) : Prop :=
   flag_boolean m r_main
@@ -99,7 +98,7 @@ def rtypew_archetype_circuit_holds
     Redeclared here (instead of importing `Circuit.Add.main_c_packed`)
     so the archetype module has no dependency on `Circuit.Add`. -/
 @[simp]
-def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
+def main_c_packed (m : Valid_Main FGL FGL) (r : ℕ) : FGL :=
   m.c_0 r + m.c_1 r * 4294967296
 
 /-- **Archetype bus-match theorem (m32 = 1 variant).** Parametric
@@ -113,7 +112,7 @@ def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     `sign_extend_32_to_64 (op_32 (low32 a) (low32 b))`) is a
     separate audit obligation. -/
 lemma rtypew_archetype_c_bus_match
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL)
     (h : rtypew_archetype_circuit_holds m r_main bus_entry opcode_lit) :

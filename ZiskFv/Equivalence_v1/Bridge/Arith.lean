@@ -59,7 +59,6 @@ open Goldilocks
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **ArithMul chunk-range discharge at any row.** All 16 chunks
     (`a_0..a_3`, `b_0..b_3`, `c_0..c_3`, `d_0..d_3`) are < 2^16.

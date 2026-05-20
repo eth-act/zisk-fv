@@ -9,7 +9,6 @@ import ZiskFv.Bits.PackedBitVec.WidePCNoWrap
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.ZiskCircuit.Jal
 import ZiskFv.ZiskCircuit.Jalr
 import ZiskFv.ZiskCircuit.LoadUpperImmediate
@@ -68,7 +67,6 @@ open Goldilocks
 open Interaction
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Airs.MemoryBus.LaneMatch
 open ZiskFv.ZiskCircuit.Jal
 open ZiskFv.ZiskCircuit.Jalr
 open ZiskFv.ZiskCircuit.LoadUpperImmediate
@@ -79,7 +77,6 @@ open ZiskFv.PackedBitVec.Extensions
 open ZiskFv.PackedBitVec.WidePCNoWrap
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Shared internal helper
 
@@ -204,7 +201,7 @@ private lemma byte_sum_from_lo_hi
     closes the goal. -/
 lemma h_rd_val_jut_jal
     (PC : BitVec 64)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (next_pc : FGL)
     (e2 : MemoryBusEntry FGL)
     -- CIRCUIT-CONSTRAINT
@@ -274,7 +271,7 @@ lemma h_rd_val_jut_jal
     {CIRCUIT-CONSTRAINT, TRANSPILE-PIN, LANE-MATCH, RANGE}. -/
 lemma h_rd_val_jut_jalr
     (PC : BitVec 64)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (next_pc : FGL)
     (e2 : MemoryBusEntry FGL)
     -- CIRCUIT-CONSTRAINT
@@ -350,7 +347,7 @@ lemma h_rd_val_jut_jalr
     K3 u64_toBV_of_imm20_lanes closes the goal. -/
 lemma h_rd_val_jut_lui
     (imm : BitVec 20)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (next_pc : FGL)
     (e2 : MemoryBusEntry FGL)
     -- (1) Circuit hypothesis
@@ -442,7 +439,7 @@ lemma h_rd_val_jut_lui
 lemma h_rd_val_jut_auipc
     (PC : BitVec 64)
     (imm : BitVec 20)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (next_pc : FGL)
     (e2 : MemoryBusEntry FGL)
     -- CIRCUIT-CONSTRAINT

@@ -23,13 +23,12 @@ open ZiskFv.Trusted (OP_SLL_W OP_SRL_W OP_SRA_W)
 
 namespace ZiskFv.Equivalence.Sllw
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_SLLW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sllw_input : PureSpec.SllwInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (h_input_r1_sail : read_xreg (regidx_to_fin r1) state

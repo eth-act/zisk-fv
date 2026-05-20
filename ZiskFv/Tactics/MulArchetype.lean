@@ -65,7 +65,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.ZiskCircuit.Mul
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Archetype mode predicate (Main side).** A Main row is in MUL-family
     execution mode when `is_external_op = 1`, `op = opcode_lit`,
@@ -76,7 +75,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     — parameterizing the archetype over the exact Zisk opcode literal. -/
 @[simp]
 def main_row_in_mul_archetype_mode
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = opcode_lit
   ∧ m.m32 r_main = 0
@@ -89,7 +88,7 @@ def main_row_in_mul_archetype_mode
     is a specialization at `opcode_lit = OP_MUL`. -/
 @[simp]
 def mul_archetype_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL) : Prop :=
   add_subset_holds m r_main
   ∧ mul_mode_booleans v r_arith
@@ -104,7 +103,7 @@ def mul_archetype_circuit_holds
     Result: Main's packed `c` equals Arith's packed result lanes,
     independent of which MUL-family opcode is on the Main row. -/
 lemma mul_archetype_bus_match
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : mul_archetype_circuit_holds m v r_main r_arith opcode_lit) :
     main_c_packed m r_main = arith_c_packed v r_arith := by

@@ -34,7 +34,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.And
 open ZiskFv.Tactics.ALURTypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 lemma equiv_AND_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -74,7 +73,7 @@ theorem equiv_AND
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (and_input : PureSpec.AndInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises

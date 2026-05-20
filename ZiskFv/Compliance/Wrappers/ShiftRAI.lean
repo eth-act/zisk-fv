@@ -22,13 +22,12 @@ open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Equivalence_v1.Promises
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_SRAIW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sraiw_input : PureSpec.SraiwInput)
     (r1 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ShiftWImmPromises

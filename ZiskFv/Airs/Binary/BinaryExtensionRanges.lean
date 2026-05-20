@@ -38,7 +38,6 @@ namespace ZiskFv.Airs.BinaryExtension
 open Goldilocks
 open ZiskFv.Channels.RangeBusSoundness
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **BinaryExtension range-check soundness (derived).** Given the
     row-level `lookup_assumes(RANGE_BUS_ID, …)` interactions induced
@@ -149,7 +148,6 @@ end ZiskFv.Airs.BinaryExtension
 
 namespace ZiskFv.Airs.BinaryExtension
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 open ZiskFv.Airs.Tables.BinaryExtensionTable in
 /-- **BinaryExtension row → 8-byte table-entry witness.** For every row

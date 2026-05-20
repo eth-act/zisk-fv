@@ -22,13 +22,12 @@ open ZiskFv.Trusted (OP_COPYB)
 
 namespace ZiskFv.Equivalence.Sw
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_SW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sw_input : PureSpec.SwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_main_ind_width : main.ind_width r_main = 4)

@@ -29,7 +29,6 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.ZiskCircuit.StoreD
 open ZiskFv.ZiskCircuit.StoreB
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Wrapper for `equiv_SB`.** Derives `h_mem_eq` from
     `sb_h_mem_eq_of_emission` (which consumes
@@ -40,7 +39,7 @@ theorem equiv_SB
     (sb_input : PureSpec.SbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- AIR validator + row index. Compliance.lean shares `main`.
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     -- Structural bus rows.
     (bus : ZiskFv.Compliance.BusRows)
     -- Activation / opcode pins on Main (consumed by the StoreHelpers

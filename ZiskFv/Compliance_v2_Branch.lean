@@ -27,14 +27,13 @@ open ZiskFv.Vm
 open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-variable {m : Valid_Main C FGL FGL} {r_main : ℕ}
+variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 /-- The per-arm v2 conclusion Prop for Branch arms only.
     Falls through to `True` for non-branch arms (the partial demo). -/
 def OpEnvelope.exec_eq_v2_branch
-    : OpEnvelope (C := C) state m r_main → Prop
+    : OpEnvelope state m r_main → Prop
   | .beq _ ops _ =>
       execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BEQ)) state
         = state_effect_via_channels ⟨ops.exec_row, []⟩ state
@@ -59,7 +58,7 @@ def OpEnvelope.exec_eq_v2_branch
     balance form of the conclusion holds. For other arms,
     `exec_eq_v2_branch` is `True` and trivially holds. -/
 theorem zisk_riscv_compliant_program_bus_v2_branch
-    (env : OpEnvelope (C := C) state m r_main) :
+    (env : OpEnvelope state m r_main) :
     env.exec_eq_v2_branch := by
   cases env with
   | beq beq_input ops promises =>

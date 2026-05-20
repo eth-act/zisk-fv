@@ -47,14 +47,13 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.PackedBitVec.SignedChunkLift
 open ZiskFv.Equivalence_v1.Promises
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_DIVW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divw_input : PureSpec.DivwInput)
     (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV_W)
     (h_match_primary :

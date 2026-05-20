@@ -38,7 +38,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.BranchEqual
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 BEQ reduces to the pure-function block supplied by

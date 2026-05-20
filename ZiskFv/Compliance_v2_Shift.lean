@@ -20,12 +20,11 @@ open ZiskFv.Vm
 open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-variable {m : Valid_Main C FGL FGL} {r_main : ℕ}
+variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 def OpEnvelope.exec_eq_v2_shift
-    : OpEnvelope (C := C) state m r_main → Prop
+    : OpEnvelope state m r_main → Prop
   | .sll _ r1 r2 rd _ bus _ _ _ =>
       execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
@@ -47,7 +46,7 @@ def OpEnvelope.exec_eq_v2_shift
   | _ => True
 
 theorem zisk_riscv_compliant_program_bus_v2_shift
-    (env : OpEnvelope (C := C) state m r_main) :
+    (env : OpEnvelope state m r_main) :
     env.exec_eq_v2_shift := by
   cases env with
   | sll sll_input r1 r2 rd v bus promises pins h_lane_rd =>

@@ -5,7 +5,7 @@ import ZiskFv.Airs.Main.Main
 # `Valid_Main` ↔ `MainRow` compatibility bridge (long-lived)
 
 This is the **central Bridge** — every opcode's `Equivalence_v1/<Op>.lean`
-proof takes `m : Valid_Main C FGL FGL`. The Bridge preserves the
+proof takes `m : Valid_Main FGL FGL`. The Bridge preserves the
 `Valid_Main` parameter shape through Phases C and D, so opcode-level
 proofs compile unchanged until the final Phase D3 (drop circuit field).
 
@@ -22,10 +22,9 @@ namespace ZiskFv.AirsClean.Main
 
 open Goldilocks
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 @[reducible]
-def rowAt (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (r : ℕ) : MainRow FGL where
+def rowAt (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r : ℕ) : MainRow FGL where
   a_0 := m.a_0 r
   a_1 := m.a_1 r
   b_0 := m.b_0 r
@@ -47,7 +46,7 @@ def rowAt (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (r : ℕ) : MainRow FGL wh
 
 /-- The 9 F-typed per-row Main constraints at row `r`, expressed
     against a `Valid_Main`. -/
-def constraints_at (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (r : ℕ) : Prop :=
+def constraints_at (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r : ℕ) : Prop :=
   m.flag r * (1 - m.flag r) = 0
   ∧ m.is_external_op r * (1 - m.is_external_op r) = 0
   ∧ (1 - m.is_external_op r) * (1 - m.op r) * m.c_0 r = 0
@@ -59,7 +58,7 @@ def constraints_at (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (r : ℕ) : Prop 
   ∧ m.flag r * m.set_pc r = 0
 
 theorem spec_of_valid
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (r : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r : ℕ)
     (h_assumptions : Assumptions (rowAt m r))
     (h_constraints : constraints_at m r) :
     Spec (rowAt m r) := by

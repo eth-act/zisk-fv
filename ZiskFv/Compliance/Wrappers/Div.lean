@@ -26,7 +26,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.PackedBitVec.SignedChunkLift
 open ZiskFv.Equivalence_v1.Promises
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Trust-discharged wrapper for `equiv_DIV`.**
 
@@ -87,7 +86,7 @@ theorem equiv_DIV
     -- ============ DISCHARGE INPUTS ============
     -- AIR validators + row indices. Compliance.lean shares (m, v)
     -- across opcodes; per-opcode caller supplies the row indices.
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     -- Activation / opcode pin on Main.
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV)

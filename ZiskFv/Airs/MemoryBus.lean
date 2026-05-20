@@ -25,7 +25,6 @@ namespace ZiskFv.Airs.MemoryBus
 open Goldilocks
 open Interaction
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The 64-bit memory value packed from a `MemoryBusEntry`'s byte lanes
     as a single `FGL` element:
@@ -94,7 +93,7 @@ def matches_memory_entry (a b : MemoryBusEntry FGL) : Prop :=
     `[op=LOAD, addr, mem_step, bytes=8, ...value]` entry on the bus. -/
 @[simp]
 def memory_load_lanes_match
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ)
     (e : MemoryBusEntry FGL) : Prop :=
   m.b_0 row = memory_entry_lo e
   ∧ m.b_1 row = memory_entry_hi e
@@ -105,7 +104,7 @@ def memory_load_lanes_match
     (`main.pil:316-319,323-328`). -/
 @[simp]
 def register_write_lanes_match
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ)
     (e : MemoryBusEntry FGL) : Prop :=
   m.c_0 row = memory_entry_lo e
   ∧ m.c_1 row = memory_entry_hi e
@@ -134,7 +133,7 @@ against `b` or `c`. We expose the `c`-side form (symmetric with LD's
       constraint 9/16). -/
 @[simp]
 def memory_store_lanes_match
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ)
     (e : MemoryBusEntry FGL) : Prop :=
   m.c_0 row = memory_entry_lo e
   ∧ m.c_1 row = memory_entry_hi e
@@ -152,7 +151,7 @@ def memory_store_lanes_match
     `matches_memory_entry`. -/
 @[simp]
 def register_read_rs1_lanes_match
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ)
     (e : MemoryBusEntry FGL) : Prop :=
   m.a_0 row = memory_entry_lo e
   ∧ m.a_1 row = memory_entry_hi e
@@ -165,7 +164,7 @@ def register_read_rs1_lanes_match
     into `b`. -/
 @[simp]
 def register_read_rs2_lanes_match
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ)
     (e : MemoryBusEntry FGL) : Prop :=
   m.b_0 row = memory_entry_lo e
   ∧ m.b_1 row = memory_entry_hi e
@@ -213,7 +212,7 @@ a single FGL value carried entirely in the lo lane.) -/
     the `store_pc = 1` case, see file). -/
 @[simp]
 def store_pc_lanes_match_lo
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ)
     (e : MemoryBusEntry FGL) : Prop :=
   memory_entry_lo e =
     m.store_pc row * (m.pc row + m.jmp_offset2 row - m.c_0 row) + m.c_0 row
@@ -240,7 +239,7 @@ def store_pc_lanes_match_lo
     Trust class: same as `store_pc_lanes_match_lo`. -/
 @[simp]
 def store_pc_lanes_match_hi
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ)
     (e : MemoryBusEntry FGL) : Prop :=
   memory_entry_hi e = (1 - m.store_pc row) * m.c_1 row
 

@@ -38,7 +38,7 @@ lanes) is a separate audit obligation.
 
 ```
 lemma sub_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : alu_rtype_archetype_circuit_holds m r_main bus_entry OP_SUB) :
     main_c_packed m r_main
@@ -62,7 +62,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Archetype mode predicate (Main side).** A Main row is in ALU-RTYPE
     execution mode when `is_external_op = 1`, `op = opcode_lit`,
@@ -76,7 +75,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     six RTYPE opcodes. -/
 @[simp]
 def main_row_in_alu_rtype_mode
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = opcode_lit
   ∧ m.m32 r_main = 0
@@ -88,7 +87,7 @@ def main_row_in_alu_rtype_mode
     hypothesis is the link to a concrete Binary-SM row. -/
 @[simp]
 def alu_rtype_archetype_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL) : Prop :=
   flag_boolean m r_main
@@ -102,7 +101,7 @@ def alu_rtype_archetype_circuit_holds
     archetype module has no dependency on `Circuit.Add`; downstream
     ALU-RTYPE opcodes are identical to ADD in this packing. -/
 @[simp]
-def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
+def main_c_packed (m : Valid_Main FGL FGL) (r : ℕ) : FGL :=
   m.c_0 r + m.c_1 r * 4294967296
 
 /-- **Archetype bus-match theorem.** Parametric version of
@@ -116,7 +115,7 @@ def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     `c_lo`/`c_hi` decode to the opcode's semantics on `a`/`b`) is
     a separate audit obligation. -/
 lemma alu_rtype_archetype_c_bus_match
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL)
     (h : alu_rtype_archetype_circuit_holds m r_main bus_entry opcode_lit) :

@@ -1,8 +1,6 @@
 import Mathlib
 
-import ZiskFv.Circuit
 import ZiskFv.Field.Goldilocks
-import Extraction.Buses
 
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -35,21 +33,10 @@ the load-bearing artifact is the named-form shape proved below. -/
 namespace ZiskFv.Airs.BusShape
 
 open Goldilocks
-open Extraction.Buses
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 
-variable {C : Type → Type → Type} {F ExtF : Type}
-  [Field F] [Field ExtF] [Circuit F ExtF C]
-
-/-- Helper: extracted slot lookup by zero-based index, projecting just
-    the `value` thunk. Returns `0` past the end (which never happens for
-    well-formed specs — the operation-bus tuple has exactly 8 slots). -/
-def slotValue (spec : @BusEmissionSpec C F ExtF _ _ _) (i : ℕ)
-    : C F ExtF → ℕ → F :=
-  match spec.slots[i]? with
-  | some s => s.value
-  | none => fun _ _ => 0
+variable {F ExtF : Type} [Field F] [Field ExtF]
 
 /-- The Main AIR's operation-bus emission, expressed in named-accessor
     form: every field of `opBus_row_Main m row` equals the corresponding
@@ -61,7 +48,7 @@ def slotValue (spec : @BusEmissionSpec C F ExtF _ _ _) (i : ℕ)
 
     Proof is a tautological unfolding of `opBus_row_Main`. -/
 lemma bus_emission_main_slots_match_opBus_row_Main
-    (m : Valid_Main C F ExtF) (row : ℕ) :
+    (m : Valid_Main F ExtF) (row : ℕ) :
     let entry := opBus_row_Main m row
     entry.multiplicity = m.is_external_op row ∧
     entry.op = m.op row ∧
@@ -85,7 +72,7 @@ lemma bus_emission_main_slots_match_opBus_row_Main
     yields `opBus_row_Main`'s ADD-mode shape — the form a downstream
     caller can rewrite the bus-matcher predicate against. -/
 lemma bus_shape_for_ADD
-    (m : Valid_Main C F ExtF) (row : ℕ)
+    (m : Valid_Main F ExtF) (row : ℕ)
     (h_op : m.op row = 10)
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -120,7 +107,7 @@ specialisations.
     the opcode literal. Other fields are definitionally the corresponding
     named-column accessor. -/
 lemma bus_shape_for_main_at_m32_zero
-    (m : Valid_Main C F ExtF) (row : ℕ) (op_lit : F)
+    (m : Valid_Main F ExtF) (row : ℕ) (op_lit : F)
     (h_op : m.op row = op_lit)
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
@@ -142,7 +129,7 @@ lemma bus_shape_for_main_at_m32_zero
     archetype. The `a_hi`/`b_hi` fields collapse to `0` via `(1 - 1) * x = 0`,
     mirroring PIL's zero-out of the high lanes for word opcodes. -/
 lemma bus_shape_for_main_at_m32_one
-    (m : Valid_Main C F ExtF) (row : ℕ) (op_lit : F)
+    (m : Valid_Main F ExtF) (row : ℕ) (op_lit : F)
     (h_op : m.op row = op_lit)
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
@@ -165,7 +152,7 @@ lemma bus_shape_for_main_at_m32_one
     out so the per-opcode aliases can share one return type. -/
 @[simp]
 def bus_shape_main_at_m32_zero_conclusion
-    (m : Valid_Main C F ExtF) (row : ℕ) (op_lit : F) : Prop :=
+    (m : Valid_Main F ExtF) (row : ℕ) (op_lit : F) : Prop :=
   let entry := opBus_row_Main m row
   entry.multiplicity = 1
   ∧ entry.op = op_lit
@@ -181,7 +168,7 @@ def bus_shape_main_at_m32_zero_conclusion
     zero out on the bus. -/
 @[simp]
 def bus_shape_main_at_m32_one_conclusion
-    (m : Valid_Main C F ExtF) (row : ℕ) (op_lit : F) : Prop :=
+    (m : Valid_Main F ExtF) (row : ℕ) (op_lit : F) : Prop :=
   let entry := opBus_row_Main m row
   entry.multiplicity = 1
   ∧ entry.op = op_lit
@@ -213,7 +200,7 @@ matching `OP_*` constant.
 
 section PerOpcode
 
-variable (m : Valid_Main C F ExtF) (row : ℕ)
+variable (m : Valid_Main F ExtF) (row : ℕ)
 
 /-- ADD (RV32IM) — opcode literal 10, m32 = 0. -/
 lemma bus_shape_for_ADD'

@@ -11,7 +11,6 @@ import ZiskFv.Airs.Binary.BinaryPackedCorrect
 import ZiskFv.Airs.Tables.BinaryTable
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.ZiskCircuit.Add
 import ZiskFv.ZiskCircuit.Addi
 import ZiskFv.ZiskCircuit.Addw
@@ -114,11 +113,9 @@ open ZiskFv.Airs.Binary
 open ZiskFv.Airs.Tables.BinaryTable
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Airs.MemoryBus.LaneMatch
 open ZiskFv.ZiskCircuit.Add
 open ZiskFv.PackedBitVec
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Shared primitive: byte-sum → U64.toBV bridge
 
@@ -168,7 +165,7 @@ Nat equality from the c-lane bus-match and lane-match hypotheses. -/
     This is the internal derivation step that replaces the old `h_c_byte_sum`
     parameter in all non-ADD Tier-1 lemmas. -/
 private lemma byte_sum_from_lane_match
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (e2 : MemoryBusEntry FGL)
     (spec_val : BitVec 64)
@@ -237,7 +234,7 @@ private lemma byte_sum_from_lane_match
     5. Byte ranges + c_chunks range bounds give the byte-sum identity.
     6. `bv64_of_byte_sum` closes. -/
 lemma h_rd_val_arith_add
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd FGL FGL)
+    (m : Valid_Main FGL FGL) (b : Valid_BinaryAdd FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (add_input : PureSpec.AddInput)
@@ -364,7 +361,7 @@ lemma h_rd_val_arith_add
     4. From lane match: `m.c_0/c_1` equal `memory_entry_lo/hi e2`.
     5. Byte ranges + chunk ranges close the byte-sum identity. -/
 lemma h_rd_val_arith_addi
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd FGL FGL)
+    (m : Valid_Main FGL FGL) (b : Valid_BinaryAdd FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)
@@ -477,7 +474,7 @@ lane match, this kernel produces the byte-sum equality
 
 /-- Byte-sum derivation from chain-style c-lane bus-match + lane-match. -/
 private lemma byte_sum_from_chain_lane_match
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (c0 c1 c2 c3 c4 c5 c6 c7 : FGL)
     (h_match_clo : m.c_0 r_main = c0 + c1 * 256 + c2 * 65536 + c3 * 16777216)
@@ -551,7 +548,7 @@ private lemma byte_sum_from_chain_lane_match
     plus per-byte sign-extension lookups on bytes 4..7 (SEXT_00 if the
     low-32 result is non-negative, SEXT_FF otherwise). -/
 lemma h_rd_val_arith_addw
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (a0 a1 a2 a3 b0 b1 b2 b3
      c0 c1 c2 c3 c4 c5 c6 c7
@@ -648,7 +645,7 @@ lemma h_rd_val_arith_addw
     the circuit-level identity is the same. Forwards to
     `h_rd_val_arith_addw` with the Sail immediate-extended `b32sum`. -/
 lemma h_rd_val_arith_addiw
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (a0 a1 a2 a3 b0 b1 b2 b3
      c0 c1 c2 c3 c4 c5 c6 c7
@@ -710,7 +707,7 @@ lemma h_rd_val_arith_addiw
     Main side; the Binary AIR consumes 8 byte-chains at `OP_SUB` with
     `pi7 = 1` (final byte) and per-byte cin links. -/
 lemma h_rd_val_arith_sub
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
     -- K1-B SUB chain witnesses (8 bytes, OP_SUB).
@@ -828,7 +825,7 @@ lemma h_rd_val_arith_sub
     4-byte SUB chain (bytes 0..3 at OP_SUB, `pi3 = 1`) with the
     sign-extension byte lookups on bytes 4..7. -/
 lemma h_rd_val_arith_subw
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (a0 a1 a2 a3 b0 b1 b2 b3
      c0 c1 c2 c3 c4 c5 c6 c7

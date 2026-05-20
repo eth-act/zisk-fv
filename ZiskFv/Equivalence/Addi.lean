@@ -24,13 +24,12 @@ open ZiskFv.Trusted (OP_ADD OP_ADD_W)
 
 namespace ZiskFv.Equivalence.Addi
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_ADDI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main C FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness C)
+    (m : Valid_Main FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)

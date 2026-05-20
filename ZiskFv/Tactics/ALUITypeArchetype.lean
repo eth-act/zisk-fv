@@ -34,7 +34,7 @@ Identical to `ALURTypeArchetype`: `opcode_lit : FGL` — one of
 
 ```
 lemma addi_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : alu_itype_archetype_circuit_holds m r_main bus_entry OP_ADD) :
     main_c_packed m r_main
@@ -51,7 +51,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.Tactics.ALURTypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Archetype mode predicate (Main side, ITYPE).** Alias for
     `ALURTypeArchetype.main_row_in_alu_rtype_mode` — Main's column
@@ -60,7 +59,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `a`/`b` lane sources are not constrained by these columns. -/
 @[simp]
 def main_row_in_alu_itype_mode
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (opcode_lit : FGL) : Prop :=
   main_row_in_alu_rtype_mode m r_main opcode_lit
 
 /-- **Archetype circuit-holds (ITYPE).** Alias for
@@ -72,7 +71,7 @@ def main_row_in_alu_itype_mode
     references. -/
 @[simp]
 def alu_itype_archetype_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL) : Prop :=
   alu_rtype_archetype_circuit_holds m r_main bus_entry opcode_lit
@@ -86,7 +85,7 @@ def alu_itype_archetype_circuit_holds
     the `a`/`b` lanes the transpile axiom pinned) is a separate audit
     obligation. -/
 lemma alu_itype_archetype_c_bus_match
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (opcode_lit : FGL)
     (h : alu_itype_archetype_circuit_holds m r_main bus_entry opcode_lit) :
@@ -127,7 +126,7 @@ parameterised by `imm` because the predicate body is opcode-agnostic.
     `equiv_<OP>` via the `matches_entry` b-lane projection. -/
 @[simp]
 def itype_imm_subset_holds_main
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (imm : BitVec 12) : Prop :=
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (imm : BitVec 12) : Prop :=
   BitVec.signExtend 64 imm
     = BitVec.ofNat 64 ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296)
 

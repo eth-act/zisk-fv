@@ -43,7 +43,6 @@ open ZiskFv.ZiskCircuit.Mul
 open ZiskFv.ZiskCircuit.Remu
 open ZiskFv.Tactics.ArithSMArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 REMU reduces to the pure-function block supplied by

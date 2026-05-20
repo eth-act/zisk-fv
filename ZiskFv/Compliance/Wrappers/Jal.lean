@@ -22,7 +22,6 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compliance wrapper for `equiv_JAL`.** Derives `h_circuit` from
     `jal_h_circuit_of_main_constraints` (consuming `transpile_JAL`)
@@ -33,7 +32,7 @@ theorem equiv_JAL
     (imm : BitVec 21)
     (rd : regidx)
     (misa_val : RegisterType Register.misa)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)

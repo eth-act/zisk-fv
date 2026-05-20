@@ -250,8 +250,7 @@ def lane_hi (v : BitVec 64) : FGL :=
     ZisK's transpiler changes (new opcode encoding, different source
     routing), this axiom must change in lockstep. -/
 axiom transpile_ADD :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (state : RV64State)
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (state : RV64State)
       (rs1 rs2 : Fin 32),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_ADD →
@@ -290,8 +289,7 @@ axiom transpile_ADD :
     **Trust basis.** Pure spec of `fn jal` in `riscv2zisk_context.rs`
     at line 1098. -/
 axiom transpile_JAL :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_FLAG →
         m.m32 r_main = 0
@@ -339,8 +337,7 @@ axiom transpile_JAL :
     `riscv2zisk_context.rs:1025`, targeting the Main AIR row observables
     the `JumpArchetype` macro depends on. -/
 axiom transpile_JALR :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_offset : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_offset : FGL) (state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_COPYB →
         m.m32 r_main = 0
@@ -385,8 +382,7 @@ axiom transpile_JALR :
     with the `ind_width` fact adjusted (and a byte-zeroing hypothesis
     on the memory-bus-write entry's high lanes). A4 scope is SD only. -/
 axiom transpile_SD :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_COPYB →
         m.m32 r_main = 0
@@ -435,8 +431,7 @@ axiom transpile_SD :
     design — the store archetype covers both uniformly. SB/SH will
     mirror this with their own width-zeroing witnesses. -/
 axiom transpile_SW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_COPYB →
         m.m32 r_main = 0
@@ -512,8 +507,7 @@ axiom transpile_SW :
     MULW) changing; their transpile-axioms will mirror this one with
     the `OP_*` literal swapped and, for MULW, `m32 = 1`. -/
 axiom transpile_MUL :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_MUL →
         m.m32 r_main = 0
@@ -547,8 +541,7 @@ axiom transpile_MUL :
     low-64 via the secondary op; the Main row's transpile contract is
     uniform across the family. -/
 axiom transpile_MULH :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_MULH →
         m.m32 r_main = 0
@@ -590,8 +583,7 @@ axiom transpile_MULH :
     `op = OP_SRA_W = 38` and the same `m32 = 1` path. SLL / SRL /
     SRA (64-bit siblings) keep `m32 = 0`. -/
 axiom transpile_SLLW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SLL_W →
         m.flag r_main = 0
@@ -633,8 +625,7 @@ axiom transpile_SLLW :
     `riscv2zisk_context.rs:828` specialized to `w = 2`. Direct
     transposition of `transpile_SW`. -/
 axiom transpile_SH :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_COPYB →
         m.m32 r_main = 0
@@ -668,8 +659,7 @@ axiom transpile_SH :
     `riscv2zisk_context.rs:828` specialized to `w = 1`. Direct
     transposition of `transpile_SW`. -/
 axiom transpile_SB :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 : Fin 32) (_imm_offset : FGL) (state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_COPYB →
         m.m32 r_main = 0
@@ -699,8 +689,7 @@ axiom transpile_SB :
     `OP_SLL_W → OP_SLL` and `m32 = 1 → m32 = 0`. SRL/SRA mirror this
     with `OP_SRL`/`OP_SRA`. -/
 axiom transpile_SLL :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SLL →
         m.flag r_main = 0
@@ -725,8 +714,7 @@ axiom transpile_SLL :
     **Trust basis.** Direct transposition of `transpile_SLL` with
     `OP_SLL → OP_SRL`. -/
 axiom transpile_SRL :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRL →
         m.flag r_main = 0
@@ -751,8 +739,7 @@ axiom transpile_SRL :
     **Trust basis.** Direct transposition of `transpile_SLL` with
     `OP_SLL → OP_SRA`. -/
 axiom transpile_SRA :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRA →
         m.flag r_main = 0
@@ -806,8 +793,7 @@ def shamt_b_lo (shamt : BitVec 6) : FGL :=
     dispatch in `riscv2zisk_context.rs:175`. SRLI / SRAI mirror this
     with `OP_SRL` / `OP_SRA`. -/
 axiom transpile_SLLI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SLL →
         m.flag r_main = 0
@@ -826,8 +812,7 @@ axiom transpile_SLLI :
     Per `zisk/core/src/riscv2zisk_context.rs:179`. Same shape
     as `transpile_SLLI` with `OP_SLL → OP_SRL`. -/
 axiom transpile_SRLI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRL →
         m.flag r_main = 0
@@ -846,8 +831,7 @@ axiom transpile_SRLI :
     Per `zisk/core/src/riscv2zisk_context.rs:180`. Same shape
     as `transpile_SLLI` with `OP_SLL → OP_SRA`. -/
 axiom transpile_SRAI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 6) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRA →
         m.flag r_main = 0
@@ -873,8 +857,7 @@ axiom transpile_SRAI :
     **Trust basis.** Direct transposition of `transpile_SLLW` with
     `OP_SLL_W → OP_SRL_W`. SRAW mirrors with `OP_SRA_W`. -/
 axiom transpile_SRLW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRL_W →
         m.flag r_main = 0
@@ -902,8 +885,7 @@ axiom transpile_SRLW :
     **Trust basis.** Direct transposition of `transpile_SLLW` with
     `OP_SLL_W → OP_SRA_W`. -/
 axiom transpile_SRAW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRA_W →
         m.flag r_main = 0
@@ -956,8 +938,7 @@ def shamt_w_b_lo (shamt : BitVec 5) : FGL :=
     with `OP_SRL_W` / `OP_SRA_W` — same bus shape, different
     secondary-SM opcode. -/
 axiom transpile_SLLIW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SLL_W →
         m.flag r_main = 0
@@ -976,8 +957,7 @@ axiom transpile_SLLIW :
     Per `zisk/core/src/riscv2zisk_context.rs:196`. Same shape as
     `transpile_SLLIW` with `OP_SLL_W → OP_SRL_W`. -/
 axiom transpile_SRLIW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRL_W →
         m.flag r_main = 0
@@ -996,8 +976,7 @@ axiom transpile_SRLIW :
     Per `zisk/core/src/riscv2zisk_context.rs:197`. Same shape as
     `transpile_SLLIW` with `OP_SLL_W → OP_SRA_W`. -/
 axiom transpile_SRAIW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (shamt : BitVec 5) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SRA_W →
         m.flag r_main = 0
@@ -1032,8 +1011,7 @@ axiom transpile_SRAIW :
     `riscv2zisk_context.rs:246`. Differs from `transpile_MULH` only in
     the opcode literal (181 → 177). -/
 axiom transpile_MULHU :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_MULUH →
         m.m32 r_main = 0
@@ -1066,8 +1044,7 @@ axiom transpile_MULHU :
     `riscv2zisk_context.rs:245`. Differs from `transpile_MULH` only in
     the opcode literal (181 → 179). -/
 axiom transpile_MULHSU :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_MULSUH →
         m.m32 r_main = 0
@@ -1110,8 +1087,7 @@ axiom transpile_MULHSU :
     sign-extension identity between Goldilocks lanes and the BitVec 64
     target is discharged in `Equivalence.Lui`. -/
 axiom transpile_LUI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_lo imm_hi : FGL) (_state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_lo imm_hi : FGL) (_state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_COPYB →
         m.m32 r_main = 0
@@ -1156,8 +1132,7 @@ axiom transpile_LUI :
     caller-supplied Goldilocks representative of the 32-bit-signed
     AUIPC offset). -/
 axiom transpile_AUIPC :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (_rd : Fin 32) (imm_offset : FGL) (_state : RV64State),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_FLAG →
         m.m32 r_main = 0
@@ -1228,8 +1203,7 @@ axiom transpile_AUIPC :
     **Trust basis.** Pure spec of the `"sub"` arm in
     `riscv2zisk_context.rs:134`. -/
 axiom transpile_SUB :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SUB →
         m.flag r_main = 0
@@ -1256,8 +1230,7 @@ axiom transpile_SUB :
 
     **Trust basis.** Pure spec of the `"and"` arm. -/
 axiom transpile_AND :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_AND →
         m.flag r_main = 0
@@ -1286,8 +1259,7 @@ axiom transpile_AND :
 
     **Trust basis.** Pure spec of the `"or"` arm. -/
 axiom transpile_OR :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_OR →
         m.flag r_main = 0
@@ -1314,8 +1286,7 @@ axiom transpile_OR :
 
     **Trust basis.** Pure spec of the `"xor"` arm. -/
 axiom transpile_XOR :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_XOR →
         m.flag r_main = 0
@@ -1351,8 +1322,7 @@ axiom transpile_XOR :
     **Trust basis.** Pure spec of the `"slt"` arm in
     `riscv2zisk_context.rs:136`. -/
 axiom transpile_SLT :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_LT →
         m.m32 r_main = 0
@@ -1378,8 +1348,7 @@ axiom transpile_SLT :
 
     **Trust basis.** Pure spec of the `"sltu"` arm. -/
 axiom transpile_SLTU :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_LTU →
         m.m32 r_main = 0
@@ -1450,8 +1419,7 @@ axiom transpile_SLTU :
     row simply carries whatever `(b_lo, b_hi)` values the transpiler
     emits, registered or immediate. -/
 axiom transpile_ADDI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_ADD →
         m.flag r_main = 0
@@ -1478,8 +1446,7 @@ axiom transpile_ADDI :
 
     **Trust basis.** Pure spec of the `"andi"` arm. -/
 axiom transpile_ANDI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_AND →
         m.flag r_main = 0
@@ -1507,8 +1474,7 @@ axiom transpile_ANDI :
 
     **Trust basis.** Pure spec of the `"ori"` arm. -/
 axiom transpile_ORI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_OR →
         m.flag r_main = 0
@@ -1536,8 +1502,7 @@ axiom transpile_ORI :
 
     **Trust basis.** Pure spec of the `"xori"` arm. -/
 axiom transpile_XORI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_XOR →
         m.flag r_main = 0
@@ -1569,8 +1534,7 @@ axiom transpile_XORI :
 
     **Trust basis.** Pure spec of the `"slti"` arm. -/
 axiom transpile_SLTI :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_LT →
         m.m32 r_main = 0
@@ -1596,8 +1560,7 @@ axiom transpile_SLTI :
 
     **Trust basis.** Pure spec of the `"sltiu"` arm. -/
 axiom transpile_SLTIU :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_b_lo imm_b_hi : FGL) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_LTU →
         m.m32 r_main = 0
@@ -1650,8 +1613,7 @@ that degenerate instance is outside the per-opcode axiom's scope —
     **Trust basis.** Pure spec of the `"addw"` arm in
     `riscv2zisk_context.rs:153`. -/
 axiom transpile_ADDW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_ADD_W →
         m.flag r_main = 0
@@ -1680,8 +1642,7 @@ axiom transpile_ADDW :
     **Trust basis.** Pure spec of the `"subw"` arm in
     `riscv2zisk_context.rs:154`. -/
 axiom transpile_SUBW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_SUB_W →
         m.flag r_main = 0
@@ -1726,8 +1687,7 @@ axiom transpile_SUBW :
     the Sail-level proof (`equiv_ADDIW_sail`), not by this
     axiom. -/
 axiom transpile_ADDIW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_lo imm_hi : FGL) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 _rd : Fin 32) (imm_lo imm_hi : FGL) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_ADD_W →
         m.flag r_main = 0
@@ -1836,8 +1796,7 @@ axiom transpile_ADDIW :
     Mirrors `transpile_DIVU` modulo opcode = `OP_DIVU_W` and
     `m32 = 1`. -/
 axiom transpile_DIVUW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_DIVU_W →
         m.m32 r_main = 1
@@ -1854,8 +1813,7 @@ axiom transpile_DIVUW :
     Mirrors `transpile_REMU` modulo opcode = `OP_REMU_W` and
     `m32 = 1`. -/
 axiom transpile_REMUW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_REMU_W →
         m.m32 r_main = 1
@@ -1870,8 +1828,7 @@ axiom transpile_REMUW :
 
 /-- Transpile contract for RV64M DIVW. Signed 32-bit divide. -/
 axiom transpile_DIVW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_DIV_W →
         m.m32 r_main = 1
@@ -1886,8 +1843,7 @@ axiom transpile_DIVW :
 
 /-- Transpile contract for RV64M REMW. Signed 32-bit remainder. -/
 axiom transpile_REMW :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_REM_W →
         m.m32 r_main = 1
@@ -1922,8 +1878,7 @@ axiom transpile_REMW :
     `riscv2zisk_context.rs:249`. Differs from `transpile_MUL` only in
     the opcode literal (180 → 184). -/
 axiom transpile_DIVU :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_DIVU →
         m.m32 r_main = 0
@@ -1957,8 +1912,7 @@ axiom transpile_DIVU :
     `riscv2zisk_context.rs:253`. Differs from `transpile_DIVU` only in
     the opcode literal (184 → 185). -/
 axiom transpile_REMU :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_REMU →
         m.m32 r_main = 0
@@ -1995,8 +1949,7 @@ axiom transpile_REMU :
     lives inside the Arith SM witnesses (na/nb/np/nr) — the Main
     transpile contract is uniform. -/
 axiom transpile_DIV :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_DIV →
         m.m32 r_main = 0
@@ -2029,8 +1982,7 @@ axiom transpile_DIV :
     `riscv2zisk_context.rs:252`. Differs from `transpile_DIV` only in
     the opcode literal (186 → 187). -/
 axiom transpile_REM :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_REM →
         m.m32 r_main = 0
@@ -2144,8 +2096,7 @@ axiom transpile_REM :
     cross-segment handshake formally, derive this equality from the
     in-tree pieces. See `docs/fv/trusted-base.md` entry **TP-JAL**. -/
 axiom transpile_PC_for_JAL :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (PC : BitVec 64),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_FLAG →
       (m.pc r_main).val = PC.toNat
@@ -2166,8 +2117,7 @@ axiom transpile_PC_for_JAL :
     **Trust class.** Same as `transpile_PC_for_JAL`. See
     `docs/fv/trusted-base.md` entry **TP-JALR**. -/
 axiom transpile_PC_for_JALR :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (PC : BitVec 64),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_COPYB →
       (m.pc r_main).val = PC.toNat
@@ -2195,8 +2145,7 @@ axiom transpile_PC_for_JALR :
     **Trust class.** Same as `transpile_PC_for_JAL`. See
     `docs/fv/trusted-base.md` entry **TP-AUIPC**. -/
 axiom transpile_PC_for_AUIPC :
-    ∀ {C : Type → Type → Type} [Circuit FGL FGL C]
-      (m : Valid_Main C FGL FGL) (r_main : ℕ) (PC : BitVec 64),
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (PC : BitVec 64),
       m.is_external_op r_main = 0 →
       m.op r_main = OP_FLAG →
       (m.pc r_main).val = PC.toNat

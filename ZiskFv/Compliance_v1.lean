@@ -132,7 +132,6 @@ open ZiskFv.Tactics.UTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.Compliance
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Decode side — `Option mainOpKind` -/
 
@@ -187,7 +186,7 @@ end mainOpKind
     `m.op r_main = k.toFGL`. The companion lemma
     `decode_main_row_correct` shows that under the RV64IM scope
     assumption decoding always succeeds. -/
-noncomputable def decode_main_row (m : Valid_Main C FGL FGL) (r : ℕ) :
+noncomputable def decode_main_row (m : Valid_Main FGL FGL) (r : ℕ) :
     Option mainOpKind :=
   open Classical in
   if h : ∃ k : mainOpKind, m.op r = k.toFGL then
@@ -200,7 +199,7 @@ noncomputable def decode_main_row (m : Valid_Main C FGL FGL) (r : ℕ) :
 
     Direct from `main_op_in_RV64IM_scope`. -/
 theorem decode_main_row_correct
-    (m : Valid_Main C FGL FGL) (r : ℕ)
+    (m : Valid_Main FGL FGL) (r : ℕ)
     (h_scope : main_op_in_RV64IM_scope m r) :
     ∃ k : mainOpKind, decode_main_row m r = some k ∧ m.op r = k.toFGL := by
   -- Enumerate the 35-way disjunction and produce the matching kind.
@@ -262,7 +261,7 @@ set_option maxHeartbeats 1000000 in
     `(state, m, r_main)`. -/
 inductive OpEnvelope
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) where
+    (m : Valid_Main FGL FGL) (r_main : ℕ) where
   -- ============================ BEQ (branch, no mem) ====================
   | beq
     (beq_input : PureSpec.BeqInput)
@@ -422,7 +421,7 @@ inductive OpEnvelope
   -- ============================ ADD (3 mem entries, BinaryAdd) ==========
   | add
     (add_input : PureSpec.AddInput) (r1 r2 rd : regidx)
-    (badd : ZiskFv.Compliance.BinaryAddWitness C)
+    (badd : ZiskFv.Compliance.BinaryAddWitness)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
     (h_main_subset : add_subset_holds m r_main)
@@ -434,7 +433,7 @@ inductive OpEnvelope
   -- ============================ ADDI (do-block LHS, BinaryAdd) ==========
   | addi
     (addi_input : PureSpec.AddiInput) (r1 rd : regidx) (imm : BitVec 12)
-    (badd : ZiskFv.Compliance.BinaryAddWitness C)
+    (badd : ZiskFv.Compliance.BinaryAddWitness)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
     (h_main_subset : add_subset_holds m r_main)
@@ -852,7 +851,7 @@ inductive OpEnvelope
     (lbu_input : PureSpec.LbuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
-    (align : ZiskFv.Compliance.MemAlignWitness C)
+    (align : ZiskFv.Compliance.MemAlignWitness)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (1 : FGL))
@@ -866,7 +865,7 @@ inductive OpEnvelope
     (lhu_input : PureSpec.LhuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
-    (align : ZiskFv.Compliance.MemAlignWitness C)
+    (align : ZiskFv.Compliance.MemAlignWitness)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (2 : FGL))
@@ -880,7 +879,7 @@ inductive OpEnvelope
     (lwu_input : PureSpec.LwuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
-    (align : ZiskFv.Compliance.MemAlignWitness C)
+    (align : ZiskFv.Compliance.MemAlignWitness)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (4 : FGL))
@@ -1249,7 +1248,7 @@ namespace OpEnvelope
 
 variable
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    {m : Valid_Main C FGL FGL} {r_main : ℕ}
+    {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 /-- The op-kind this envelope corresponds to. -/
 def kind : OpEnvelope state m r_main → mainOpKind
@@ -1725,8 +1724,8 @@ op, delegating verbatim. -/
     the project's trust ledger. This theorem adds zero new trust. -/
 theorem zisk_riscv_compliant_program_bus_v1
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (env : OpEnvelope (C := C) state m r_main) :
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (env : OpEnvelope state m r_main) :
     env.exec_eq := by
   cases env with
   | beq beq_input ops promises =>

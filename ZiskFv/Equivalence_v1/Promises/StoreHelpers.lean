@@ -31,13 +31,12 @@ namespace ZiskFv.Equivalence_v1.Promises
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- Derive SB's `h_mem_eq` from the SB emission bundle. Repackages
     `Bridge.Mem.sb_discharge_full` with the `h_opcode_assumptions`
     projection step baked in. -/
 lemma sb_h_mem_eq_of_emission
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (e_st : Interaction.MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sb_input : PureSpec.SbInput)
@@ -64,7 +63,7 @@ lemma sb_h_mem_eq_of_emission
 
 /-- Derive SH's `h_mem_eq` from the SH emission bundle. -/
 lemma sh_h_mem_eq_of_emission
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (e_st : Interaction.MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sh_input : PureSpec.ShInput)
@@ -94,7 +93,7 @@ lemma sh_h_mem_eq_of_emission
 
 /-- Derive SW's `h_mem_eq` from the SW emission bundle. -/
 lemma sw_h_mem_eq_of_emission
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (e_st : Interaction.MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sw_input : PureSpec.SwInput)
@@ -133,7 +132,7 @@ lemma sw_h_mem_eq_of_emission
     reads; this helper does the `rX_bits → read_xreg` conversion
     via `rX_read_xreg_equiv`. -/
 lemma sd_h_mem_eq_of_emission
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (e_st : Interaction.MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sd_input : PureSpec.SdInput)

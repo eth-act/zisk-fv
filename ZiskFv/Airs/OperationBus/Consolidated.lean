@@ -50,7 +50,6 @@ namespace ZiskFv.Airs.OperationBus
 
 open Goldilocks
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- An operation-bus provider: one of the three secondary state
     machines (BinaryAdd / Binary / BinaryExtension) that
@@ -126,7 +125,7 @@ def OpBusProvider.handles_op : OpBusProvider → FGL → Prop
     universally weakened in Phase F2 by Wave 1's removal of `C`
     from each arm's `Valid_<AIR>` payload. -/
 axiom op_bus_permutation_sound
-    (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL)
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL)
     (p : OpBusProvider)
     (r_main : ℕ)
     (h_active : m.is_external_op r_main = 1)

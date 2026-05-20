@@ -35,7 +35,6 @@ open ZiskFv.ZiskCircuit.Ori
 open ZiskFv.Tactics.ALURTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 lemma equiv_ORI_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -74,7 +73,7 @@ theorem equiv_ORI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ori_input : PureSpec.OriInput)
     (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main C FGL FGL) (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises

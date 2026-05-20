@@ -47,7 +47,6 @@ open ZiskFv.Tactics.ALURTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.Airs.BinaryAdd
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `execute_instruction` on an RV64 ADDI
     reduces to `PureSpec.execute_ITYPE_addi_pure`. Wraps
@@ -115,7 +114,7 @@ theorem equiv_ADDI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main C FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness C)
+    (m : Valid_Main FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     -- Structural promise bundle (15 fields, see Promises/IType.lean).

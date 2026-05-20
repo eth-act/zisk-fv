@@ -9,7 +9,6 @@ import ZiskFv.Airs.Binary.BinaryPackedCorrect
 import ZiskFv.Airs.Tables.BinaryTable
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.ZiskCircuit.Slt
 import ZiskFv.ZiskCircuit.Sltu
 import ZiskFv.ZiskCircuit.Slti
@@ -75,11 +74,9 @@ open ZiskFv.Airs.Binary
 open ZiskFv.Airs.Tables.BinaryTable
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Airs.MemoryBus.LaneMatch
 open ZiskFv.PackedBitVec
 open ZiskFv.Equivalence_v1.WriteValueProofs.Arith
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Internal: byte-decode for cout-only c-lane
 
@@ -215,7 +212,7 @@ Both lemmas share the byte-decoding + lane-match piece. We split out:
 /-- Common closer: from `m.c_0 = cout`, `m.c_1 = 0`, byte ranges, lane
     match, produce `U64.toBV [e2.x0..7] = BitVec.ofNat 64 cout`. -/
 private lemma compare_byte_sum_kernel
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (cout : ℕ)
     (h_cout_le : cout ≤ 1)
@@ -275,7 +272,7 @@ private lemma compare_byte_sum_kernel
     `m.c_0 r_main = flags_7` (the cout slot) and `m.c_1 r_main = 0`.
     -/
 lemma h_rd_val_compare_sltu
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
     -- K1-B LTU chain witnesses (8 bytes) on free FGL primitives.
@@ -440,7 +437,7 @@ lemma h_rd_val_compare_sltu
     of `r2_val` on the Sail side (sign-extended immediate vs rs2
     register read), which lives in the transpile bridge `h_input_r2`. -/
 lemma h_rd_val_compare_sltiu
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)
     (a0 a1 a2 a3 a4 a5 a6 a7
@@ -511,7 +508,7 @@ lemma h_rd_val_compare_sltiu
     via the K1-B LT (signed) chain lift, which adds the final-byte
     sign-byte override clause to the LTU chain rule. -/
 lemma h_rd_val_compare_slt
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
     (a0 a1 a2 a3 a4 a5 a6 a7
@@ -646,7 +643,7 @@ lemma h_rd_val_compare_slt
     at the Binary SM. Differs only in the source of `r2_val` on the
     Sail side. -/
 lemma h_rd_val_compare_slti
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)
     (a0 a1 a2 a3 a4 a5 a6 a7

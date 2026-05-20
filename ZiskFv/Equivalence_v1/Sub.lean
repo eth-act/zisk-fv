@@ -49,7 +49,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.Sub
 open ZiskFv.Tactics.ALURTypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `execute_instruction` on an RV64 SUB
     reduces to `PureSpec.execute_RTYPE_sub_pure`. Wraps
@@ -92,7 +91,7 @@ theorem equiv_SUB
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sub_input : PureSpec.SubInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state sub_input.r1_val sub_input.r2_val sub_input.rd sub_input.PC

@@ -38,14 +38,13 @@ open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in MUL-execution mode: external op with
     opcode literal 180 (OP_MUL), full 64-bit width (m32 = 0), `flag = 0`
     (MUL's Arith-side flag is `div_by_zero`, always 0 on MUL rows), and
     no PC write (`set_pc = 0`). -/
 @[simp]
-def main_row_in_mul_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_mul_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = OP_MUL
   ∧ m.m32 r_main = 0
@@ -70,7 +69,7 @@ def arith_row_in_mul_mode (v : Valid_ArithMul FGL FGL) (r_arith : ℕ) : Prop :=
     the mode witnesses on both sides. -/
 @[simp]
 def mul_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ) : Prop :=
   add_subset_holds m r_main
   ∧ mul_mode_booleans v r_arith
@@ -87,7 +86,7 @@ def arith_c_packed (v : Valid_ArithMul FGL FGL) (r : ℕ) : FGL :=
 
 /-- The 64-bit value packed into the Main row's `(c_0, c_1)` lanes. -/
 @[simp]
-def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
+def main_c_packed (m : Valid_Main FGL FGL) (r : ℕ) : FGL :=
   m.c_0 r + m.c_1 r * 4294967296
 
 /-- **Compositional MUL theorem.** If the MUL circuit-holds predicate
@@ -102,7 +101,7 @@ def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     MUL happens in `Equivalence.Mul`, which parameterizes on an Arith-
     correctness hypothesis (left to the audit). -/
 lemma mul_compositional
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ)
     (h : mul_circuit_holds m v r_main r_arith) :
     main_c_packed m r_main = arith_c_packed v r_arith := by

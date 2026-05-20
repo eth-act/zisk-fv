@@ -28,7 +28,6 @@ namespace ZiskFv.AirsClean.MemAlign
 
 open Goldilocks
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The 9 cross-row F-typed constraints at row `r`, referencing the
     previous row `r - 1`. -/

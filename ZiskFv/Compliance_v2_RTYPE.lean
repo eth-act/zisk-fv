@@ -21,14 +21,13 @@ open ZiskFv.Vm
 open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-variable {m : Valid_Main C FGL FGL} {r_main : ℕ}
+variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 /-- The per-arm v2 conclusion Prop for RTYPE+Binary arms.
     Falls through to `True` for non-RTYPE-Binary arms. -/
 def OpEnvelope.exec_eq_v2_rtype_binary
-    : OpEnvelope (C := C) state m r_main → Prop
+    : OpEnvelope state m r_main → Prop
   | .sub _ r1 r2 rd _ bus _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
@@ -81,7 +80,7 @@ def OpEnvelope.exec_eq_v2_rtype_binary
 
 /-- Partial v2 dispatcher for RTYPE+Binary arms. -/
 theorem zisk_riscv_compliant_program_bus_v2_rtype_binary
-    (env : OpEnvelope (C := C) state m r_main) :
+    (env : OpEnvelope state m r_main) :
     env.exec_eq_v2_rtype_binary := by
   cases env with
   | sub sub_input r1 r2 rd v bus pins h_lane_rd promises =>

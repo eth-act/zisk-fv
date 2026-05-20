@@ -63,7 +63,6 @@ open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.Add
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **BinaryAdd discharge bridge.** Replaces the per-opcode
     `h_circuit` + `h_a_range`/`h_b_range`/`h_c_range` +
@@ -86,7 +85,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     Outputs an existential row witness `r_binary` for BinaryAdd plus
     the full equation bundle `h_rd_val_arith_add` consumes. -/
 lemma add_discharge
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd FGL FGL)
+    (m : Valid_Main FGL FGL) (b : Valid_BinaryAdd FGL FGL)
     (r_main : ℕ)
     (h_main_subset : add_subset_holds m r_main)
     (h_main_mode : main_row_in_add_mode m r_main)

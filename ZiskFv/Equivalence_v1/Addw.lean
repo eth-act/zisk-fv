@@ -52,7 +52,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.Addw
 open ZiskFv.Tactics.RTypeWArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `execute_instruction` on an RV64 ADDW
     reduces to `PureSpec.execute_RTYPE_addw_pure`. Wraps
@@ -96,7 +95,7 @@ theorem equiv_ADDW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addw_input : PureSpec.AddwInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state addw_input.r1_val addw_input.r2_val addw_input.rd addw_input.PC

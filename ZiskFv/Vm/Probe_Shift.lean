@@ -27,13 +27,12 @@ open ZiskFv.Trusted (OP_SLL)
 
 namespace ZiskFv.Vm.Probe
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_SLL_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
@@ -58,7 +57,7 @@ theorem equiv_SLLI_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slli_input : PureSpec.SlliInput)
     (r1 rd : regidx) (shamt : BitVec 6)
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)

@@ -20,13 +20,12 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.Tactics.ShiftArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in SRAI-execution mode. Same as
     `Circuit.Sra.main_row_in_sra_mode` — SRA and SRAI map to the same
     Zisk opcode (`OP_SRA = 35`, `m32 = 0`). -/
 @[simp]
-def main_row_in_srai_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_srai_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = (35 : FGL)
   ∧ m.m32 r_main = 0
@@ -36,7 +35,7 @@ def main_row_in_srai_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
 /-- Main-side hypotheses for the SRAI archetype. -/
 @[simp]
 def srai_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL) : Prop :=
   flag_boolean m r_main
   ∧ is_external_op_boolean m r_main
@@ -47,7 +46,7 @@ def srai_circuit_holds
 /-- **Compositional SRAI theorem.** Instantiation of the
     `ShiftArchetype` m32=0 archetype macro at `opcode_lit = OP_SRA`. -/
 lemma srai_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : srai_circuit_holds m r_main bus_entry) :
     bus_entry.a_hi = m.a_1 r_main ∧ bus_entry.b_hi = m.b_1 r_main := by

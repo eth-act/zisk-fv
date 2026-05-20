@@ -67,7 +67,6 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.PackedBitVec.SignedChunkLift
 open ZiskFv.Equivalence_v1.Promises
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Exemplar wrapper for `equiv_MULH`.**
 
@@ -80,7 +79,7 @@ theorem equiv_MULH
     (mulh_input : PureSpec.MulhInput)
     (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULH)
     (h_match_secondary :

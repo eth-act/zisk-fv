@@ -33,7 +33,6 @@ namespace ZiskFv.Airs.Binary
 open Goldilocks
 open ZiskFv.Airs.Tables.BinaryTable
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Byte-reassembly Nat lemma
 

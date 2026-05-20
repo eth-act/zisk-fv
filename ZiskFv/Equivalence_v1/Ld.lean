@@ -54,7 +54,6 @@ open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.ZiskCircuit.LoadD
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 LD (`.LOAD (imm, rs1, rd, false, 8)`) reduces to the
@@ -113,7 +112,7 @@ theorem equiv_LD
         (PureSpec.execute_LOADD_pure ld_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
     -- Circuit-level parameters that supplant `h_rd_val`.
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB) :
     execute_instruction (instruction.LOAD (
       ld_input.imm,

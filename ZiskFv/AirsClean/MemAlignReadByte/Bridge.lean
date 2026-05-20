@@ -16,7 +16,6 @@ namespace ZiskFv.AirsClean.MemAlignReadByte
 
 open Goldilocks
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- Project a `Valid_MemAlignReadByte` at row `r` into a Clean
     `MemAlignReadByteRow FGL`. -/

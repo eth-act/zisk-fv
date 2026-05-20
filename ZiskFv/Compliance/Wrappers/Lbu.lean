@@ -48,7 +48,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compliance wrapper for `equiv_LBU`.** Mirrors
     `equiv_LD`'s structure with `equiv_LBU` substituted and
@@ -58,8 +57,8 @@ theorem equiv_LBU
     (lbu_input : PureSpec.LbuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- AIR validators + row index.
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
-    (align : ZiskFv.Compliance.MemAlignWitness C)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
+    (align : ZiskFv.Compliance.MemAlignWitness)
     (bus : ZiskFv.Compliance.BusRows)
     -- Activation + opcode pins (Compliance ROM handshake).
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)

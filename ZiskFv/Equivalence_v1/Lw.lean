@@ -44,7 +44,6 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.LoadWord
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 LW-shape LOAD reduces to the pure-function block supplied by
@@ -104,7 +103,7 @@ theorem equiv_LW
         (PureSpec.execute_LOADW_pure lw_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
     -- Circuit-level memory bridge + lane match.
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary : ℕ)

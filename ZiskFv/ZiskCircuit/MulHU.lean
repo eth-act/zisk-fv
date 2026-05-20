@@ -35,7 +35,6 @@ open ZiskFv.Trusted
 open ZiskFv.ZiskCircuit.Mul
 open ZiskFv.Tactics.MulArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in MULHU-execution mode: external op with
     opcode literal 177 (OP_MULUH), 64-bit operand width (m32 = 0),
@@ -44,7 +43,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     Specialization of `main_row_in_mul_archetype_mode` at
     `opcode_lit = OP_MULUH`. -/
 @[simp]
-def main_row_in_mulhu_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_mulhu_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = OP_MULUH
   ∧ m.m32 r_main = 0
@@ -59,7 +58,7 @@ def main_row_in_mulhu_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     the bus-row match, and mode witnesses on both AIRs. -/
 @[simp]
 def mulhu_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ) : Prop :=
   add_subset_holds m r_main
   ∧ mul_mode_booleans v r_arith
@@ -76,7 +75,7 @@ def mulhu_circuit_holds
     `opcode_lit = OP_MULUH`: the archetype circuit-holds predicate
     definitionally coincides with `mulhu_circuit_holds`. -/
 lemma mulhu_compositional
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ)
     (h : mulhu_circuit_holds m v r_main r_arith) :
     main_c_packed m r_main = arith_c_packed v r_arith :=

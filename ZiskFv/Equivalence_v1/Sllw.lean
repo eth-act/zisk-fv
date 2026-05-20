@@ -56,7 +56,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.Shift
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 SLLW reduces to the pure-function block supplied by
@@ -98,7 +97,7 @@ theorem equiv_SLLW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sllw_input : PureSpec.SllwInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (bus : ZiskFv.Compliance.BusRows)

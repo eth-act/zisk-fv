@@ -50,7 +50,6 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithDiv
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** Wraps `execute_DIVREM_remw_pure_equiv`. -/
 lemma equiv_REMW_sail

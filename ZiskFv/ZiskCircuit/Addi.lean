@@ -33,20 +33,19 @@ open ZiskFv.Trusted
 open ZiskFv.Tactics.ALURTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 @[simp]
-def main_row_in_addi_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_addi_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   main_row_in_alu_itype_mode m r_main OP_ADD
 
 @[simp]
 def addi_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL) : Prop :=
   alu_itype_archetype_circuit_holds m r_main bus_entry OP_ADD
 
 lemma addi_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : addi_circuit_holds m r_main bus_entry) :
     main_c_packed m r_main
@@ -69,7 +68,7 @@ open ZiskFv.Airs.Main ZiskFv.Airs.BinaryAdd
     composition does not depend on the unused fourth predicate. -/
 @[simp]
 def addi_circuit_holds_with_binaryadd
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd FGL FGL)
+    (m : Valid_Main FGL FGL) (b : Valid_BinaryAdd FGL FGL)
     (r_main r_binary : ℕ) : Prop :=
   add_subset_holds m r_main
   ∧ core_every_row b r_binary
@@ -82,7 +81,7 @@ def addi_circuit_holds_with_binaryadd
     is `add_compositional`'s with the unused fourth mode predicate
     substituted. -/
 lemma addi_compositional_with_binaryadd
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd FGL FGL)
+    (m : Valid_Main FGL FGL) (b : Valid_BinaryAdd FGL FGL)
     (r_main r_binary : ℕ)
     (h : addi_circuit_holds_with_binaryadd m b r_main r_binary) :
     ZiskFv.ZiskCircuit.Add.main_c_packed m r_main

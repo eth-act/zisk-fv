@@ -93,7 +93,6 @@ open ZiskFv.ZiskCircuit.Add
 open ZiskFv.ZiskCircuit.Addi
 open ZiskFv.Tactics.ALUITypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compliance wrapper for `equiv_ADDI`.**
 
@@ -130,7 +129,7 @@ theorem equiv_ADDI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main C FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness C)
+    (m : Valid_Main FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     -- Activation / opcode pins (Compliance.lean derives from ROM handshake).

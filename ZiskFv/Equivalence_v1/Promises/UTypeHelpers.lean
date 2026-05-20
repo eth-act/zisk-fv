@@ -27,12 +27,11 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Tactics.UTypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- Assemble LUI's `h_circuit` from the Main-side activation/opcode
     pins and the per-row LUI subset constraint. -/
 def lui_h_circuit_of_main_constraints
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op_lui : m.op r_main = OP_COPYB)
     (h_lui_subset : lui_subset_holds m r_main next_pc) :
@@ -48,7 +47,7 @@ def lui_h_circuit_of_main_constraints
 /-- Assemble AUIPC's `h_circuit` from the Main-side activation/opcode
     pins and the per-row AUIPC subset constraint. -/
 def auipc_h_circuit_of_main_constraints
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h_main_active : m.is_external_op r_main = 0)
     (h_main_op_auipc : m.op r_main = OP_FLAG)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc) :

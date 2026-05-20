@@ -50,7 +50,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.ShiftR
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 SRLW reduces to the pure-function block. Wraps
@@ -90,7 +89,7 @@ theorem equiv_SRLW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srlw_input : PureSpec.SrlwInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (bus : ZiskFv.Compliance.BusRows)

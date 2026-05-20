@@ -41,7 +41,6 @@ namespace ZiskFv.Airs.BinaryAdd
 
 open Goldilocks
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 open ZiskFv.Channels.RangeBusSoundness
 

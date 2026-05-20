@@ -14,9 +14,6 @@ import ZiskFv.Airs.BusShape
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import Extraction.MemoryBuses
-import ZiskFv.Airs.MemoryBus.Projection
-import ZiskFv.Airs.MemoryBus.BusShape
-import ZiskFv.Airs.MemoryBus.LaneMatch
 import Extraction.Mem
 import ZiskFv.Airs.Mem
 import Extraction.MemAlign

@@ -39,13 +39,12 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.Tactics.BranchArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in BLT-execution mode: external op with
     opcode literal 7 (OP_LT), full 64-bit width (m32 = 0), and
     `set_pc = 0`. -/
 @[simp]
-def main_row_in_blt_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_blt_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = (7 : FGL)
   ∧ m.m32 r_main = 0
@@ -55,7 +54,7 @@ def main_row_in_blt_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     of `branch_archetype_circuit_holds` at `opcode_lit = OP_LT`. -/
 @[simp]
 def branch_lt_circuit_holds
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (r_main : ℕ) (next_pc : FGL) : Prop :=
   branch_subset_holds m r_main next_pc
   ∧ main_row_in_blt_mode m r_main
@@ -64,7 +63,7 @@ def branch_lt_circuit_holds
     Instantiates the archetype macro's `branch_archetype_pc_dispatch`
     at `opcode_lit = OP_LT`. -/
 lemma branch_lt_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_lt_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main
             + m.flag r_main * (m.jmp_offset1 r_main - m.jmp_offset2 r_main) := by
@@ -78,7 +77,7 @@ lemma branch_lt_compositional
     (from `transpile_BLT`), so this is `pc + imm` — the taken branch
     (BEQ polarity). -/
 lemma branch_lt_taken
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_lt_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 1) :
     next_pc = m.pc r_main + m.jmp_offset1 r_main := by
@@ -88,7 +87,7 @@ lemma branch_lt_taken
 /-- **BLT not-taken case.** When `flag = 0` (`a ≥s b`), the
     next-pc is `pc + jmp_offset2 = pc + 4`. -/
 lemma branch_lt_not_taken
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : branch_lt_circuit_holds m r_main next_pc)
     (h_flag : m.flag r_main = 0) :
     next_pc = m.pc r_main + m.jmp_offset2 r_main := by

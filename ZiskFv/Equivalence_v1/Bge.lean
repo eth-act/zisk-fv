@@ -38,7 +38,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.BranchGreaterEqual
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** Wraps
     `PureSpec.execute_BGE_pure_equiv`. -/

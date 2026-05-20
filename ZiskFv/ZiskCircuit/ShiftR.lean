@@ -27,14 +27,13 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.Trusted
 open ZiskFv.Tactics.ShiftArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in SRLW-execution mode: external op with
     opcode literal 37 (`OP_SRL_W`), 32-bit width (`m32 = 1`),
     `set_pc = 0`, and `flag = 0`. Identical shape to
     `Circuit.Shift.main_row_in_sllw_mode` modulo the op literal. -/
 @[simp]
-def main_row_in_srlw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_srlw_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = (37 : FGL)
   ∧ m.m32 r_main = 1
@@ -45,7 +44,7 @@ def main_row_in_srlw_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     `Circuit.Shift.sllw_circuit_holds` modulo opcode literal. -/
 @[simp]
 def srlw_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL) : Prop :=
   flag_boolean m r_main
   ∧ is_external_op_boolean m r_main
@@ -59,7 +58,7 @@ def srlw_circuit_holds
     carries zero high lanes — the `(1 - m32) * a[1]` / `(1 - m32) * b[1]`
     PIL emission collapses under `m32 = 1`. -/
 lemma srlw_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (bus_entry : OperationBusEntry FGL)
     (h : srlw_circuit_holds m r_main bus_entry) :
     bus_entry.a_hi = 0 ∧ bus_entry.b_hi = 0 := by

@@ -43,7 +43,6 @@ namespace ZiskFv.Airs.BinaryAdd
 open Goldilocks
 open ZiskFv.Airs.BinaryAdd
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Range predicates -/
 

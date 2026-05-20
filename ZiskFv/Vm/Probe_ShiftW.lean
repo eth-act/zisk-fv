@@ -27,13 +27,12 @@ open ZiskFv.Trusted (OP_SLL_W OP_SRL_W OP_SRA_W)
 
 namespace ZiskFv.Vm.Probe
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_SLLW_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sllw_input : PureSpec.SllwInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
@@ -67,7 +66,7 @@ theorem equiv_SRLW_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srlw_input : PureSpec.SrlwInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
@@ -101,7 +100,7 @@ theorem equiv_SRAW_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sraw_input : PureSpec.SrawInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
@@ -136,7 +135,7 @@ theorem equiv_SLLIW_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slliw_input : PureSpec.SlliwInput)
     (r1 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ShiftWImmPromises
@@ -154,7 +153,7 @@ theorem equiv_SRLIW_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srliw_input : PureSpec.SrliwInput)
     (r1 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ShiftWImmPromises
@@ -172,7 +171,7 @@ theorem equiv_SRAIW_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sraiw_input : PureSpec.SraiwInput)
     (r1 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ShiftWImmPromises

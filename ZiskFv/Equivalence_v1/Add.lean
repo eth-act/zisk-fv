@@ -46,7 +46,6 @@ open ZiskFv.Airs.BinaryAdd
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.Add
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an RV64
     ADD (`.RTYPE (r2, r1, rd, rop.ADD)`) reduces to the pure function
@@ -99,7 +98,7 @@ theorem equiv_ADD
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness C)
+    (m : Valid_Main FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     -- Structural promise bundle (15 fields, see Promises/RType.lean).

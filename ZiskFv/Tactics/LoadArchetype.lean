@@ -49,7 +49,6 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.ZiskCircuit.LoadD
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Archetype mode predicate.** A Main row is in load-execution mode
     for a given Zisk opcode literal when `is_external_op`, `op`, `m32`,
@@ -58,7 +57,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     literal is `OP_COPYB = 1` + `is_external_op = 0`. -/
 @[simp]
 def main_row_in_load_mode
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (opcode_lit : FGL) (is_ext : FGL) : Prop :=
   m.is_external_op r_main = is_ext
   ∧ m.op r_main = opcode_lit
@@ -75,7 +74,7 @@ def main_row_in_load_mode
     zeros x2..x7, LBU zeros x1..x7). -/
 @[simp]
 def load_archetype_copyb_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL) : Prop :=
   load_subset_holds m r_main next_pc
   ∧ main_row_in_load_mode m r_main (1 : FGL) (0 : FGL)
@@ -87,7 +86,7 @@ def load_archetype_copyb_circuit_holds
     LHU / LBU close via instantiation + a width-specific
     zeroing-of-high-bytes assumption on the memory-bus entry. -/
 lemma load_archetype_copyb_c_packed
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : load_archetype_copyb_circuit_holds m r_main next_pc entry) :
     main_c_packed m r_main = memory_entry_toField entry := by

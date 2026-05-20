@@ -23,13 +23,12 @@ open ZiskFv.Trusted (OP_SLL)
 
 namespace ZiskFv.Equivalence.Sll
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_SLL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)

@@ -39,7 +39,6 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.ZiskCircuit.LoadD
 open ZiskFv.ZiskCircuit.LoadHU
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 lemma equiv_LHU_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -80,8 +79,8 @@ theorem equiv_LHU
         (PureSpec.lhu_state_assumptions lhu_input state)
         (PureSpec.execute_LOADHU_pure lhu_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
-    (align : ZiskFv.Compliance.MemAlignWitness C)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
+    (align : ZiskFv.Compliance.MemAlignWitness)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_width : main.ind_width r_main = (2 : FGL)) :
     execute_instruction (instruction.LOAD (

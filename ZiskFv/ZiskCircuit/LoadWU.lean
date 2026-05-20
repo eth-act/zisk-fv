@@ -49,7 +49,6 @@ open ZiskFv.ZiskCircuit.LoadD
 open ZiskFv.Tactics.LoadArchetype
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The memory-bus entry's high 4 byte lanes are zero. Holds for any
     `ind_width = 4` load (LWU) because ZisK's Memory SM zero-pads the
@@ -82,7 +81,7 @@ lemma memory_entry_toField_eq_lo {e : MemoryBusEntry FGL}
     LWU shares `main_row_in_ld_mode` verbatim — aliased here for
     documentation. -/
 @[simp]
-def main_row_in_lwu_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_lwu_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   main_row_in_ld_mode m r_main
 
 /-- LWU circuit hypotheses. Extends `load_d_circuit_holds` with the
@@ -90,7 +89,7 @@ def main_row_in_lwu_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     `ind_width = 4` bus-side zero-pad). -/
 @[simp]
 def load_wu_circuit_holds
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL) : Prop :=
   load_d_circuit_holds m r_main next_pc entry
   ∧ memory_entry_high_bytes_zero entry
@@ -104,7 +103,7 @@ def load_wu_circuit_holds
     `c_packed = memory_entry_toField entry`, then collapse the high
     half to zero using `memory_entry_toField_eq_lo`. -/
 lemma load_wu_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : load_wu_circuit_holds m r_main next_pc entry) :
     main_c_packed m r_main = memory_entry_lo entry := by
@@ -116,7 +115,7 @@ lemma load_wu_compositional
     lemma (`load_archetype_copyb_c_packed`) closes the LD-shape goal
     that underlies LWU; LWU then adds the high-bytes-zero step on top. -/
 lemma load_wu_compositional_via_archetype
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : load_wu_circuit_holds m r_main next_pc entry) :
     main_c_packed m r_main = memory_entry_lo entry := by
@@ -136,7 +135,7 @@ lemma load_wu_compositional_via_archetype
     jmp_offset2 = 4` (from `transpile_LWU`) + `flag = 0` (constraint
     18) collapses the PC handshake to `pc + 4`. -/
 lemma load_wu_next_pc_concrete
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h : load_wu_circuit_holds m r_main next_pc entry)
     (h_jmp1 : m.jmp_offset1 r_main = 4)

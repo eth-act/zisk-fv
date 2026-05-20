@@ -47,7 +47,6 @@ namespace ZiskFv.Airs.Main
 open Goldilocks
 open ZiskFv.Channels.RangeBusSoundness
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Main range-check soundness (derived).** Given the row-level
     `lookup_assumes(RANGE_BUS_ID, …)` interactions induced by Main's
@@ -68,7 +67,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     * `bits(32) pc` (`main.pil:98`)
     * `bits(8) op` (`main.pil:136`)
     * `bits(4) ind_width` (`main.pil:131`) -/
-theorem main_columns_in_range (m : Valid_Main C FGL FGL) (r : ℕ) :
+theorem main_columns_in_range (m : Valid_Main FGL FGL) (r : ℕ) :
     (m.a_0 r).val < U32_max
   ∧ (m.a_1 r).val < U32_max
   ∧ (m.b_0 r).val < U32_max
@@ -96,47 +95,47 @@ Per-component projections of `main_columns_in_range`. Provided as
 destructuring the tuple. -/
 
 /-- `m.a_0 r < 2^32`. -/
-lemma main_a_lo_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_a_lo_lt_2_32 (m : Valid_Main FGL FGL) (r : ℕ) :
     (m.a_0 r).val < U32_max :=
   (main_columns_in_range m r).1
 
 /-- `m.a_1 r < 2^32`. -/
-lemma main_a_hi_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_a_hi_lt_2_32 (m : Valid_Main FGL FGL) (r : ℕ) :
     (m.a_1 r).val < U32_max :=
   (main_columns_in_range m r).2.1
 
 /-- `m.b_0 r < 2^32`. -/
-lemma main_b_lo_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_b_lo_lt_2_32 (m : Valid_Main FGL FGL) (r : ℕ) :
     (m.b_0 r).val < U32_max :=
   (main_columns_in_range m r).2.2.1
 
 /-- `m.b_1 r < 2^32`. -/
-lemma main_b_hi_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_b_hi_lt_2_32 (m : Valid_Main FGL FGL) (r : ℕ) :
     (m.b_1 r).val < U32_max :=
   (main_columns_in_range m r).2.2.2.1
 
 /-- `m.c_0 r < 2^32`. -/
-lemma main_c_lo_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_c_lo_lt_2_32 (m : Valid_Main FGL FGL) (r : ℕ) :
     (m.c_0 r).val < U32_max :=
   (main_columns_in_range m r).2.2.2.2.1
 
 /-- `m.c_1 r < 2^32`. -/
-lemma main_c_hi_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_c_hi_lt_2_32 (m : Valid_Main FGL FGL) (r : ℕ) :
     (m.c_1 r).val < U32_max :=
   (main_columns_in_range m r).2.2.2.2.2.1
 
 /-- `m.pc r < 2^32`. -/
-lemma main_pc_lt_2_32 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_pc_lt_2_32 (m : Valid_Main FGL FGL) (r : ℕ) :
     (m.pc r).val < U32_max :=
   (main_columns_in_range m r).2.2.2.2.2.2.1
 
 /-- `m.op r < 2^8`. -/
-lemma main_op_lt_2_8 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_op_lt_2_8 (m : Valid_Main FGL FGL) (r : ℕ) :
     (m.op r).val < U8_max :=
   (main_columns_in_range m r).2.2.2.2.2.2.2.1
 
 /-- `m.ind_width r < 2^4`. -/
-lemma main_ind_width_lt_2_4 (m : Valid_Main C FGL FGL) (r : ℕ) :
+lemma main_ind_width_lt_2_4 (m : Valid_Main FGL FGL) (r : ℕ) :
     (m.ind_width r).val < U4_max :=
   (main_columns_in_range m r).2.2.2.2.2.2.2.2
 

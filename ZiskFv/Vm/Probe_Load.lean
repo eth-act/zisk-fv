@@ -27,13 +27,12 @@ open ZiskFv.Trusted (OP_COPYB)
 
 namespace ZiskFv.Vm.Probe
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_LD_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (ld_input : PureSpec.LdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises

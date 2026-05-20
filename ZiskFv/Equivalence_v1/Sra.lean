@@ -38,7 +38,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.Sra
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** Wraps
     `PureSpec.execute_RTYPE_sra_pure_equiv`. -/
@@ -76,7 +75,7 @@ theorem equiv_SRA
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sra_input : PureSpec.SraInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (bus : ZiskFv.Compliance.BusRows)

@@ -38,7 +38,6 @@ open ZiskFv.Trusted
 open ZiskFv.Tactics.UTypeArchetype
 open ZiskFv.PackedBitVec.WidePCNoWrap
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compositional AUIPC theorem — next-pc advance.** The next-pc
     equals `pc + jmp_offset1`. Under `transpile_AUIPC`'s pinning
@@ -50,7 +49,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     handshake's `flag * (jmp_offset1 - jmp_offset2)` term cancels the
     `jmp_offset2` contribution, leaving `pc + jmp_offset1 = pc + 4`. -/
 lemma auipc_pc_advance
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : auipc_archetype_circuit_holds m r_main next_pc) :
     next_pc = m.pc r_main + m.jmp_offset1 r_main :=
   auipc_archetype_pc_advance m r_main next_pc h
@@ -58,7 +57,7 @@ lemma auipc_pc_advance
 /-- **Compositional AUIPC theorem — rd low lane.** The rd-write low
     lane (`store_value[0]`) equals `pc + jmp_offset2 = pc + imm`. -/
 lemma auipc_store_value_lo
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : auipc_archetype_circuit_holds m r_main next_pc) :
     m.store_pc r_main *
         (m.pc r_main + m.jmp_offset2 r_main - m.c_0 r_main)
@@ -73,7 +72,7 @@ lemma auipc_store_value_lo
     memory-bus emission (high lane is the pc-high lane, not a direct
     column, for AUIPC). -/
 lemma auipc_store_value_hi
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (h : auipc_archetype_circuit_holds m r_main next_pc) :
     (1 - m.store_pc r_main) * m.c_1 r_main = 0 :=
   auipc_archetype_store_value_hi m r_main next_pc h
@@ -116,7 +115,7 @@ PC-plus-offset Sail sum. -/
     The strict form matches `JumpUType.lean`'s lo-half input
     directly. -/
 lemma auipc_store_value_lo_bv
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (PC offset_bv : BitVec 64) (e : MemoryBusEntry FGL)
     (h_circuit : auipc_archetype_circuit_holds m r_main next_pc)
     (h_lane_lo : store_pc_lanes_match_lo m r_main e)
@@ -151,7 +150,7 @@ lemma auipc_store_value_lo_bv
     only the gate-zero identity `(1 - store_pc) * c_1 = 0`) into the
     substantive bus-emission bridge. -/
 lemma auipc_store_value_hi_bv
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (PC offset_bv : BitVec 64) (e : MemoryBusEntry FGL)
     (h_circuit : auipc_archetype_circuit_holds m r_main next_pc)
     (h_lane_hi : store_pc_lanes_match_hi m r_main e)

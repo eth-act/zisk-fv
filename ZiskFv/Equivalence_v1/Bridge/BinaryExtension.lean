@@ -61,7 +61,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.OperationBus
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **BinaryExtension discharge bridge.** Replaces
     the per-opcode `r_e` row-index parameter + `h_match` cross-AIR
@@ -75,7 +74,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
     Outputs: existential `r_e` + `matches_entry`. -/
 lemma binext_discharge
-    (m : Valid_Main C FGL FGL) (e : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (e : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = 0x21 ∨ m.op r_main = 0x22 ∨ m.op r_main = 0x23
@@ -129,12 +128,11 @@ Net effect per opcode (caller-burden ledger): drops
 
 section perOpcodeDischarge
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- Shared partial discharge: existential `r_binary` + op-pin (in `.val`
     form) + `c_lo`/`c_hi` match equations + 8 e2 byte ranges. -/
 private theorem binext_shift_discharge_partial
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ) (e2 : Interaction.MemoryBusEntry FGL)
     (op_nat : ℕ) (op_fgl : FGL)
     (h_op_val : op_fgl.val = op_nat)
@@ -175,7 +173,7 @@ private theorem binext_shift_discharge_partial
 
 /-- **SLL partial discharge.** `op = 0x21`. -/
 lemma sll_discharge_partial
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ) (e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL) :
@@ -197,7 +195,7 @@ lemma sll_discharge_partial
 
 /-- **SRL partial discharge.** `op = 0x22`. -/
 lemma srl_discharge_partial
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ) (e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRL) :
@@ -219,7 +217,7 @@ lemma srl_discharge_partial
 
 /-- **SRA partial discharge.** `op = 0x23`. -/
 lemma sra_discharge_partial
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ) (e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRA) :
@@ -241,7 +239,7 @@ lemma sra_discharge_partial
 
 /-- **SLLW (SLL_W) partial discharge.** `op = 0x24`. -/
 lemma sllw_discharge_partial
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ) (e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL_W) :
@@ -264,7 +262,7 @@ lemma sllw_discharge_partial
 
 /-- **SRLW (SRL_W) partial discharge.** `op = 0x25`. -/
 lemma srlw_discharge_partial
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ) (e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRL_W) :
@@ -287,7 +285,7 @@ lemma srlw_discharge_partial
 
 /-- **SRAW (SRA_W) partial discharge.** `op = 0x26`. -/
 lemma sraw_discharge_partial
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ) (e2 : Interaction.MemoryBusEntry FGL)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRA_W) :
@@ -328,7 +326,7 @@ parameters. The replacement is a net **−2 binders** per opcode.
     `c_lo` / `c_hi` conjuncts in the forms consumed by per-opcode
     `equiv_<OP>` proofs. -/
 lemma project_match_op_clo_chi
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
                               (opBus_row_BinaryExtension v r_binary)) :
@@ -401,7 +399,7 @@ private theorem c_lo_sum_eq_nat_sum_of_match
     on each `free_in_c_{even}`, conclude the BinExt c-lo Nat sum is
     `< 2^32`. -/
 lemma hc_lo_sum_lt_of_match
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (h_match_clo : m.c_0 r_main
         = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
@@ -462,7 +460,7 @@ private theorem c_hi_sum_eq_nat_sum_of_match
 
 /-- **C-hi sum bound discharge.** Mirror of `hc_lo_sum_lt_of_match`. -/
 lemma hc_hi_sum_lt_of_match
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (h_match_chi : m.c_1 r_main
         = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
@@ -558,7 +556,7 @@ private theorem packed_a_hi_val_eq_of_match
     matches_entry a_hi conjunct. -/
 lemma packed_a_eq_of_shift_match_m32_0
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
     (h_m32 : m.m32 r_main = 0)
     (h_a_lo_t : m.a_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs1))
@@ -630,7 +628,7 @@ lemma packed_a_eq_of_shift_match_m32_0
     (b_0).val`. Taking `% 64` and observing `256 ≡ 0 (mod 64)` finishes. -/
 lemma shift_pin_eq_of_shift_match_m32_0
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
     (h_m32 : m.m32 r_main = 0)
     (h_b_lo_t : m.b_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs2))
@@ -697,7 +695,7 @@ lemma shift_pin_eq_of_shift_match_m32_0
     `(v.free_in_b).val + 256 * (v.b_0).val = shamt.toNat`, which
     bounds both addends and gives the mod-64 equation directly. -/
 lemma shift_pin_immediate_eq_of_shift_match
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (shamt : BitVec 6)
     (h_b_lo_t : m.b_0 r_main = shamt_b_lo shamt)
     (h_op_is_shift : v.op_is_shift r_binary = 1)
@@ -755,7 +753,7 @@ consume (as `h_input_r1_extract`). -/
     derive `(extractLsb r1_val 31 0).toNat = (4 lo a-bytes packed) % 2^32`. -/
 lemma packed_a_lo32_eq_of_shift_match_m32_1
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
     (h_m32 : m.m32 r_main = 1)
     (h_a_lo_t : m.a_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs1))
@@ -821,7 +819,7 @@ lemma packed_a_lo32_eq_of_shift_match_m32_1
     `equiv_<OP>` proofs as `h_shift_pin`. -/
 lemma shift_pin_w_eq_of_shift_match
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
     (h_b_lo_t : m.b_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs2))
     (h_b_hi_t : m.b_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs2))
@@ -877,7 +875,7 @@ lemma shift_pin_w_eq_of_shift_match
     Mirrors `shift_pin_immediate_eq_of_shift_match` but for the 5-bit
     immediate W-variants. -/
 lemma shift_pin_w_immediate_eq_of_shift_match
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (shamt : BitVec 5)
     (h_b_lo_t : m.b_0 r_main = shamt_w_b_lo shamt)
     (h_op_is_shift : v.op_is_shift r_binary = 1)
@@ -969,7 +967,7 @@ private theorem byte_pack4_inj
     internally), produce the per-byte equalities
     `(v.free_in_a_i r_binary).val = e1.x_i.val` for i ∈ {0, 1, 2, 3}. -/
 lemma sext_lane_match_bytes_eq_of_match
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (e1 : Interaction.MemoryBusEntry FGL)
     (h_main_b0_eq : m.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1)
     (h_op_is_shift_zero : v.op_is_shift r_binary = 0)

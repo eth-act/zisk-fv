@@ -38,7 +38,6 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.ZiskCircuit.LoadD
 open ZiskFv.ZiskCircuit.LoadWU
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** Wraps `PureSpec.execute_LOADWU_pure_equiv`. -/
 lemma equiv_LWU_sail
@@ -82,8 +81,8 @@ theorem equiv_LWU
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
     -- Memory-bridge premises.
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
-    (align : ZiskFv.Compliance.MemAlignWitness C)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
+    (align : ZiskFv.Compliance.MemAlignWitness)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_width : main.ind_width r_main = (4 : FGL)) :
     execute_instruction (instruction.LOAD (

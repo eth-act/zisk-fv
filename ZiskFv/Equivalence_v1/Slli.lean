@@ -51,7 +51,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.Slli
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** Wraps
     `PureSpec.execute_SHIFTIOP_slli_pure_equiv`. -/
@@ -88,7 +87,7 @@ theorem equiv_SLLI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slli_input : PureSpec.SlliInput)
     (r1 rd : regidx) (shamt : BitVec 6)
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (bus : ZiskFv.Compliance.BusRows)

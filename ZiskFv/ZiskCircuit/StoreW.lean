@@ -41,7 +41,6 @@ open ZiskFv.ZiskCircuit.StoreD
 open ZiskFv.Tactics.StoreArchetype
 open ZiskFv.Trusted
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **SW high-byte zeroing.** The memory-bus write entry populated by a
     4-byte store has its top 4 byte lanes (`x4..x7`) pinned to zero,
@@ -74,7 +73,7 @@ lemma memory_entry_toField_of_high_zero
     `store_archetype_copyb_c_packed` (validating the macro) and then
     applies `memory_entry_toField_of_high_zero`. -/
 lemma store_w_compositional
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h_circuit : store_archetype_copyb_circuit_holds m r_main next_pc entry)
     (h_zero : sw_high_bytes_zero entry) :
@@ -89,7 +88,7 @@ lemma store_w_compositional
     `memory_entry_lo entry`, but we expose the general form too so SW
     composes uniformly with SD at the equivalence layer. -/
 lemma store_w_compositional_general
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h_circuit : store_archetype_copyb_circuit_holds m r_main next_pc entry) :
     main_c_packed m r_main = memory_entry_toField entry :=
@@ -99,7 +98,7 @@ lemma store_w_compositional_general
     `store_d_next_pc_concrete` — the archetype's `j(4, 4)` yields
     `next_pc = pc + 4` for all stores regardless of width. -/
 lemma store_w_next_pc_concrete
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (entry : MemoryBusEntry FGL)
     (h_circuit : store_archetype_copyb_circuit_holds m r_main next_pc entry)
     (h_jmp1 : m.jmp_offset1 r_main = 4)

@@ -34,7 +34,6 @@ namespace ZiskFv.AirsClean.BinaryAdd
 
 open Goldilocks
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- Project a `Valid_BinaryAdd` at row `r` into a Clean
     `BinaryAddRow FGL`. The 10 witness columns map 1:1; stage-2

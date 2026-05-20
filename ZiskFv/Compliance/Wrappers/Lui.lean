@@ -26,7 +26,6 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Tactics.UTypeArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Trust-discharged wrapper for `equiv_LUI`.** Derives `h_circuit`
     from `lui_h_circuit_of_main_constraints` (consuming `transpile_LUI`)
@@ -36,7 +35,7 @@ theorem equiv_LUI
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)
     (rd : regidx)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     -- Activation / opcode pins on Main + per-row subset constraint

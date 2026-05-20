@@ -11,7 +11,6 @@ import ZiskFv.SailSpec.auipc
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Equivalence_v1.Bridge.ControlFlow
@@ -54,7 +53,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.AddUpperImmediatePC
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 AUIPC reduces to the pure-function block supplied by
@@ -100,7 +98,7 @@ theorem equiv_AUIPC
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     -- Structural promise bundle (11 fields, see Promises/UType.lean).
     (promises : ZiskFv.Equivalence_v1.Promises.UTypePromises
         state auipc_input.imm auipc_input.rd auipc_input.PC

@@ -23,7 +23,6 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compliance wrapper for `equiv_JALR`.** Derives `h_circuit` from
     `jalr_h_circuit_of_main_constraints` (consuming `transpile_JALR`)
@@ -38,7 +37,7 @@ theorem equiv_JALR
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     -- Activation / opcode pins on Main + per-row subset constraint.
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_jalr_subset :

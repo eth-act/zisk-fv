@@ -29,14 +29,13 @@ open ZiskFv.Vm
 open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-variable {m : Valid_Main C FGL FGL} {r_main : ℕ}
+variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 /-- v2 conclusion Prop for the remaining 26 arms. Falls through to
     `True` for arms covered by other partial dispatchers. -/
 def OpEnvelope.exec_eq_v2_remaining
-    : OpEnvelope (C := C) state m r_main → Prop
+    : OpEnvelope state m r_main → Prop
   -- Unsigned loads (3)
   | .lbu lbu_input _ _ _ bus _ _ _ =>
       execute_instruction (instruction.LOAD (
@@ -160,7 +159,7 @@ def OpEnvelope.exec_eq_v2_remaining
   | _ => True
 
 theorem zisk_riscv_compliant_program_bus_v2_remaining
-    (env : OpEnvelope (C := C) state m r_main) :
+    (env : OpEnvelope state m r_main) :
     env.exec_eq_v2_remaining := by
   cases env with
   | lbu lbu_input regs mem align bus pins h_width promises =>

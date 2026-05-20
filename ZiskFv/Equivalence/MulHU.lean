@@ -25,13 +25,12 @@ open ZiskFv.Trusted (OP_MUL OP_MULH OP_MULU OP_MULUH OP_MULSUH OP_MUL_W)
 
 namespace ZiskFv.Equivalence.MulHU
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_MULHU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhu_input : PureSpec.MulhuInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULUH)
     (h_match_secondary :

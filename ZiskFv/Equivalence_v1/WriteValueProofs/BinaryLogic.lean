@@ -9,7 +9,6 @@ import ZiskFv.Airs.Binary.BinaryPackedCorrect
 import ZiskFv.Airs.Tables.BinaryTable
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.MemoryBus.LaneMatch
 import ZiskFv.Equivalence_v1.WriteValueProofs.Arith
 
 /-!
@@ -70,11 +69,9 @@ open ZiskFv.Airs.Binary
 open ZiskFv.Airs.Tables.BinaryTable
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.MemoryBus
-open ZiskFv.Airs.MemoryBus.LaneMatch
 open ZiskFv.PackedBitVec
 open ZiskFv.Equivalence_v1.WriteValueProofs.Arith
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-! ## Internal kernel: byte-sum identity from c-lane bus-match + lane-match -/
 
@@ -94,7 +91,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     Derives the byte-sum equality of `e2`'s 8 bytes equals the byte-sum of
     `v.free_in_c_*`'s 8 bytes, in `Nat`. -/
 private lemma byte_sum_from_binary_lane_match
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -196,7 +193,7 @@ private lemma byte_sum_from_binary_lane_match
     ranges, and transpile bridges identifying `r1_val`/`r2_val` with
     `Valid_Binary`'s packed `a`/`b` byte sums. -/
 lemma h_rd_val_logic_and
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
@@ -327,7 +324,7 @@ lemma h_rd_val_logic_and
     immediate vs rs2 register read), which lives in the transpile bridge
     `h_input_r2`. -/
 lemma h_rd_val_logic_andi
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)
@@ -405,7 +402,7 @@ lemma h_rd_val_logic_andi
 /-- **OR `h_rd_val` derivation (Tier 1).** Same architecture as
     `h_rd_val_logic_and`, with K1-B OR lift and `BitVec.or`. -/
 lemma h_rd_val_logic_or
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
@@ -508,7 +505,7 @@ lemma h_rd_val_logic_or
 /-- **ORI `h_rd_val` derivation (Tier 1).** Same as `h_rd_val_logic_or`
     with sign-extended-immediate input bridge. -/
 lemma h_rd_val_logic_ori
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)
@@ -586,7 +583,7 @@ lemma h_rd_val_logic_ori
 /-- **XOR `h_rd_val` derivation (Tier 1).** Same architecture as
     `h_rd_val_logic_and`, with K1-B XOR lift and `BitVec.xor`. -/
 lemma h_rd_val_logic_xor
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
@@ -689,7 +686,7 @@ lemma h_rd_val_logic_xor
 /-- **XORI `h_rd_val` derivation (Tier 1).** Same as `h_rd_val_logic_xor`
     with sign-extended-immediate input bridge. -/
 lemma h_rd_val_logic_xori
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)

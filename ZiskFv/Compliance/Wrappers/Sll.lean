@@ -36,7 +36,6 @@ open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Equivalence_v1.Promises
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Trust-discharged wrapper for `equiv_SLL`.**
 
@@ -82,7 +81,7 @@ theorem equiv_SLL
     (r1 r2 rd : regidx)
     -- AIR validators + row index. Compliance.lean shares (m, v)
     -- across all BinaryExtension-shape opcodes (twelve shifts).
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)

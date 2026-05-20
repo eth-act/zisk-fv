@@ -47,7 +47,6 @@ open ZiskFv.ZiskCircuit.Mul
 open ZiskFv.ZiskCircuit.MulW
 open ZiskFv.PackedBitVec.SignedChunkLift
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
     RV64 MULW reduces to the pure-function block supplied by

@@ -40,7 +40,6 @@ namespace ZiskFv.AirsClean.Main
 
 open Goldilocks
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **PC handshake adjacency at row `row`** (`main.pil:410`). Closed
     form of the PIL constraint relating `pc row` to the previous
@@ -66,7 +65,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     (same closed-form expression). The downstream opcode-level proof
     consumes the v1 record's `pc_handshake` constraint, which is
     definitionally this predicate at row `r`. -/
-def pc_handshake_at (v : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ) : Prop :=
+def pc_handshake_at (v : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ) : Prop :=
   (1 - v.segment_l1 row) *
     (v.pc row -
       (v.set_pc (row - 1) * (v.c_0 (row - 1) + v.jmp_offset1 (row - 1))
@@ -82,7 +81,7 @@ def pc_handshake_at (v : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ) : Pr
     this lemma lets Bridge.spec_of_valid-style theorems hand a v1
     hypothesis through unchanged. -/
 theorem pc_handshake_at_iff_v1
-    (v : ZiskFv.Airs.Main.Valid_Main C FGL FGL) (row : ℕ) :
+    (v : ZiskFv.Airs.Main.Valid_Main FGL FGL) (row : ℕ) :
     pc_handshake_at v row ↔ ZiskFv.Airs.Main.pc_handshake v row := by
   unfold pc_handshake_at ZiskFv.Airs.Main.pc_handshake
   rfl

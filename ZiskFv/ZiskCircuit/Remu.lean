@@ -25,13 +25,12 @@ open ZiskFv.Trusted
 open ZiskFv.ZiskCircuit.Mul
 open ZiskFv.Tactics.ArithSMArchetype
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The Main row at `r_main` is in REMU-execution mode: external op with
     opcode literal 185 (OP_REMU), 64-bit operand width (m32 = 0),
     `flag = 0`, and `set_pc = 0`. -/
 @[simp]
-def main_row_in_remu_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
+def main_row_in_remu_mode (m : Valid_Main FGL FGL) (r_main : ℕ) : Prop :=
   m.is_external_op r_main = 1
   ∧ m.op r_main = OP_REMU
   ∧ m.m32 r_main = 0
@@ -41,7 +40,7 @@ def main_row_in_remu_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
 /-- All hypotheses needed by `remu_compositional`. -/
 @[simp]
 def remu_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ) : Prop :=
   add_subset_holds m r_main
   ∧ div_mode_booleans v r_arith
@@ -54,7 +53,7 @@ def remu_circuit_holds
     instantiation of `arith_archetype_rem_bus_match` at
     `opcode_lit = OP_REMU`. -/
 lemma remu_compositional
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ)
     (h : remu_circuit_holds m v r_main r_arith) :
     main_c_packed m r_main = arith_remainder_packed v r_arith :=

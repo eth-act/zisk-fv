@@ -27,7 +27,6 @@ open ZiskFv.Trusted (OP_ADD)
 
 namespace ZiskFv.Vm.Probe
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- `equiv_ADD_v2` — the channel-balance-shaped canonical theorem
     for ADD. Same hypotheses as `equiv_ADD`; conclusion uses
@@ -36,7 +35,7 @@ theorem equiv_ADD_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness C)
+    (m : Valid_Main FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)

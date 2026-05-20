@@ -24,12 +24,11 @@ open ZiskFv.Vm
 open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-variable {m : Valid_Main C FGL FGL} {r_main : ℕ}
+variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 def OpEnvelope.exec_eq_v2_add_rtypew
-    : OpEnvelope (C := C) state m r_main → Prop
+    : OpEnvelope state m r_main → Prop
   | .add _ r1 r2 rd _ bus _ _ _ _ =>
       execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
@@ -50,7 +49,7 @@ def OpEnvelope.exec_eq_v2_add_rtypew
   | _ => True
 
 theorem zisk_riscv_compliant_program_bus_v2_add_rtypew
-    (env : OpEnvelope (C := C) state m r_main) :
+    (env : OpEnvelope state m r_main) :
     env.exec_eq_v2_add_rtypew := by
   cases env with
   | add add_input r1 r2 rd badd bus pins h_main_subset h_lane_rd promises =>

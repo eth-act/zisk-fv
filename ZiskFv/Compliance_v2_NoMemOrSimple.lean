@@ -24,14 +24,13 @@ open ZiskFv.Vm
 open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-variable {m : Valid_Main C FGL FGL} {r_main : ℕ}
+variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 /-- The per-arm v2 conclusion Prop for LUI / AUIPC / FENCE arms.
     Falls through to `True` for unhandled arms. -/
 def OpEnvelope.exec_eq_v2_nomem
-    : OpEnvelope (C := C) state m r_main → Prop
+    : OpEnvelope state m r_main → Prop
   | .lui _ imm rd _ exec_row e_rd _ _ _ =>
       execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
         = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
@@ -45,7 +44,7 @@ def OpEnvelope.exec_eq_v2_nomem
 
 /-- Partial v2 dispatcher for LUI / AUIPC / FENCE. -/
 theorem zisk_riscv_compliant_program_bus_v2_nomem
-    (env : OpEnvelope (C := C) state m r_main) :
+    (env : OpEnvelope state m r_main) :
     env.exec_eq_v2_nomem := by
   cases env with
   | lui lui_input imm rd next_pc exec_row e_rd pins h_lui_subset promises =>

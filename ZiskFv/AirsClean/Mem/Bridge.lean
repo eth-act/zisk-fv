@@ -27,7 +27,6 @@ namespace ZiskFv.AirsClean.Mem
 
 open Goldilocks
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 @[reducible]
 def rowAt (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ) : MemRow FGL where

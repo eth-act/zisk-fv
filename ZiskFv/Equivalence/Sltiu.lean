@@ -24,13 +24,12 @@ open ZiskFv.Tactics.ALUITypeArchetype (itype_imm_subset_holds_main)
 
 namespace ZiskFv.Equivalence.Sltiu
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_SLTIU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sltiu_input : PureSpec.SltiuInput)
     (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)

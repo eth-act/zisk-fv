@@ -50,7 +50,6 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Equivalence_v1.Promises
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compliance wrapper for `equiv_LB`.** Replaces the BinExt-side
     promise hypotheses (`h_op_binary`, `h_bytes`, `hc_lo_sum_lt`,
@@ -63,7 +62,7 @@ theorem equiv_LB
     (lb_input : PureSpec.LbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- AIR validators + row index.
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     -- Activation + opcode pin (Compliance ROM handshake).

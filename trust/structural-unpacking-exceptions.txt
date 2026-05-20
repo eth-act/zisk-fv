@@ -552,3 +552,63 @@ ADDED:   none new at canonical site (validator shape change only)
 #   * arith.pil:262-263 — bus_res1 normalization (constraint 46)
 #   * arith.pil:17 — `bits(16)` witness columns (chunk-range basis)
 #   * arith.pil:280 — `arith_range_table_assumes` carry-column range
+
+# ============================================================
+# Phase F6 — Valid_Main record retirement (AIR-level)
+# ============================================================
+#
+# Phase F6 retires `Valid_Main` from its previous C-parameterized,
+# `Circuit.main`-backed shape (with a `circuit : C F ExtF` field and 18
+# `*_def` projection-into-extraction constraints) to a plain named-column
+# record (no C parameter, no circuit field, no _def fields). Mirrors
+# Phases F3 (Valid_ArithMul) and F4 (Valid_ArithDiv).
+#
+# **No new accessors needed.** The 16 named columns Main already exposed
+# (a_0/a_1/b_0/b_1/c_0/c_1/flag/pc/is_external_op/op/m32/ind_width/set_pc/
+# jmp_offset1/jmp_offset2/store_pc/im_high_degree_2/segment_l1) are
+# sufficient for the post-F6 named-form proof discharge. The previous
+# `extraction_bridge` block (10 `constraint_N_of_extraction` iff-lemmas)
+# is dropped because it has zero external consumers — every caller of
+# the named subset (`add_subset_holds`, `branch_subset_holds`,
+# `jump_subset_holds`, `pc_handshake`, etc.) consumes the named accessors
+# directly without going through the `_def` rewrites.
+#
+# **Per-opcode metric: NET ZERO.** All 63 canonical equiv_<OP> theorems
+# maintain identical binder counts (`total` / `hypothesis`) — the
+# retirement only changes the *shape* of one binder
+# (`Valid_Main C FGL FGL` → `Valid_Main FGL FGL`), not its count.
+# Likewise `BinaryAddWitness C` → `BinaryAddWitness` and
+# `MemAlignWitness C` → `MemAlignWitness` drop the now-vestigial C
+# parameter from the SharedBundles structures.
+#
+# **Cascade scope.** The retirement touches ~293 consumer sites:
+#   * 63 canonical `equiv_<OP>` theorems
+#   * 63 `Compliance.Wrappers.equiv_<OP>` wrappers
+#   * 8 `Vm/Probe_*` files
+#   * `Tactics/*Archetype.lean` files
+#   * `Compliance_v1.lean` + 9 `Compliance_v2_*.lean` files
+#   * `Compliance.lean` global theorem
+# All changes are pure type-shape simplifications (3-arg → 2-arg for
+# Valid_Main, 1-arg → 0-arg for the SharedBundles structures).
+#
+# **Companion cleanup.** Three orphan files under `Airs/MemoryBus/`
+# (Projection.lean, BusShape.lean, LaneMatch.lean) that defined dead
+# `m.circuit`-using slot-match scaffolding are removed; they had zero
+# live callers (the predicates they targeted live in `MemoryBus.lean`
+# and are reached via direct named-accessor equalities). Two pre-existing
+# orphan files (`ZiskCircuit/MulField.lean`,
+# `AirsClean/ArithDiv/Bridge.lean`) carrying stale `v.circuit` references
+# on already-retired structures are also removed.
+#
+# **Why structural-unpacking, not laundering.** No new axioms, no new
+# constraint predicates, no new validator constraints. The validator
+# parameter is shared across all opcodes in `Compliance.lean` (one
+# Valid_Main instance per global theorem call). The 104-axiom floor is
+# unchanged.
+#
+# PIL-BASIS:
+#   * `main.pil:19` — `SEGMENT_L1` preprocessed column declaration
+#   * `main.pil:142,151,311-312,367-374,410,473` — opcode mode pins, PC
+#     handshake, store-pc gating, operation-bus emission tuple
+#   * `main.pil:300-328` — register-bus reads-side emission
+#     (rs1/rs2/store-reg prev) — the MemoryBus scaffolding being removed

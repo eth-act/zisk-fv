@@ -23,14 +23,13 @@ open ZiskFv.Trusted (OP_COPYB OP_FLAG)
 
 namespace ZiskFv.Equivalence.Lui
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_LUI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lui_input : PureSpec.LuiInput)
     (imm : BitVec 20)
     (rd : regidx)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)

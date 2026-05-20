@@ -23,13 +23,12 @@ open ZiskFv.Trusted (OP_ADD_W OP_SUB_W)
 
 namespace ZiskFv.Equivalence.Addw
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_ADDW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addw_input : PureSpec.AddwInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W)

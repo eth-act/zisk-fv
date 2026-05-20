@@ -23,13 +23,12 @@ open ZiskFv.Trusted (OP_SRL OP_SRA)
 
 namespace ZiskFv.Equivalence.Srli
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_SRLI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srli_input : PureSpec.SrliInput)
     (r1 rd : regidx) (shamt : BitVec 6)
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)

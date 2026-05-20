@@ -22,12 +22,11 @@ open ZiskFv.Vm
 open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-variable {m : Valid_Main C FGL FGL} {r_main : ℕ}
+variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 def OpEnvelope.exec_eq_v2_ldsd
-    : OpEnvelope (C := C) state m r_main → Prop
+    : OpEnvelope state m r_main → Prop
   | .ld ld_input _ _ bus _ _ =>
       execute_instruction (instruction.LOAD (
         ld_input.imm,
@@ -48,7 +47,7 @@ def OpEnvelope.exec_eq_v2_ldsd
   | _ => True
 
 theorem zisk_riscv_compliant_program_bus_v2_ldsd
-    (env : OpEnvelope (C := C) state m r_main) :
+    (env : OpEnvelope state m r_main) :
     env.exec_eq_v2_ldsd := by
   cases env with
   | ld ld_input regs mem bus pins promises =>

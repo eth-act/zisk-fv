@@ -23,13 +23,12 @@ open ZiskFv.Trusted (OP_SRL OP_SRA)
 
 namespace ZiskFv.Vm.Probe
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_SRL_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srl_input : PureSpec.SrlInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
@@ -50,7 +49,7 @@ theorem equiv_SRA_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sra_input : PureSpec.SraInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
@@ -71,7 +70,7 @@ theorem equiv_SRLI_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srli_input : PureSpec.SrliInput)
     (r1 rd : regidx) (shamt : BitVec 6)
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
@@ -92,7 +91,7 @@ theorem equiv_SRAI_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srai_input : PureSpec.SraiInput)
     (r1 rd : regidx) (shamt : BitVec 6)
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)

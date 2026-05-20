@@ -24,13 +24,12 @@ open ZiskFv.Trusted (OP_FLAG)
 
 namespace ZiskFv.Vm.Probe
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_FENCE_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (fence_input : PureSpec.FenceInput)
     (fm pred succ : BitVec 4) (rs rd : regidx)
-    (main : Valid_Main C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (_pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_FLAG)
     (promises : ZiskFv.Equivalence_v1.Promises.FencePromises

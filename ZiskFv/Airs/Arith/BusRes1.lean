@@ -1,8 +1,6 @@
 import Mathlib
 
-import ZiskFv.Circuit
 import ZiskFv.Field.Goldilocks
-import Extraction.Arith
 import ZiskFv.Airs.Arith.Mul
 import ZiskFv.Airs.Arith.Div
 
@@ -46,10 +44,8 @@ These specializations, combined with the carry-chain identity in
 namespace ZiskFv.Airs.ArithBusRes1
 
 open Goldilocks
-open Arith.extraction
 
-variable {C : Type → Type → Type} {F ExtF : Type}
-  [Field F] [Field ExtF] [Circuit F ExtF C]
+variable {F ExtF : Type} [Field F] [Field ExtF]
 
 /-- **Bridge 1 for MUL-unsigned.** Under MUL-mode witnesses, constraint
     46 collapses `bus_res1` to the high-chunk pack `c[2] + c[3] * 65536`. -/

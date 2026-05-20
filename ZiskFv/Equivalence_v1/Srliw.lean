@@ -41,7 +41,6 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.ShiftRLI
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 lemma equiv_SRLIW_sail
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -76,7 +75,7 @@ theorem equiv_SRLIW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srliw_input : PureSpec.SrliwInput)
     (r1 rd : regidx)
-    (m : Valid_Main C FGL FGL)
+    (m : Valid_Main FGL FGL)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (bus : ZiskFv.Compliance.BusRows)

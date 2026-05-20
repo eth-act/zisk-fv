@@ -25,13 +25,12 @@ open ZiskFv.PackedBitVec.SignedChunkLift (toIntZ)
 
 namespace ZiskFv.Equivalence.Divuw
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_DIVUW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divuw_input : PureSpec.DivuwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (m : Valid_Main C FGL FGL) (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIVU_W)
     (h_match_primary :
