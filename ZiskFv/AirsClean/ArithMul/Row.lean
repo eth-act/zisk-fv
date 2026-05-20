@@ -54,9 +54,26 @@ structure ArithMulFlags (F : Type) where
   multiplicity : F
 deriving ProvableStruct
 
+/-- Carry-chain auxiliary witnesses: 7 carries (PIL cols 0–6)
+    plus the sign-product helpers `fab`, `na_fb`, `nb_fa`
+    (cols 30–32). -/
+structure ArithMulCarries (F : Type) where
+  carry_0 : F
+  carry_1 : F
+  carry_2 : F
+  carry_3 : F
+  carry_4 : F
+  carry_5 : F
+  carry_6 : F
+  fab : F
+  na_fb : F
+  nb_fa : F
+deriving ProvableStruct
+
 structure ArithMulRow (F : Type) where
   chunks : ArithMulChunks F
   flags : ArithMulFlags F
+  carries : ArithMulCarries F
 deriving ProvableStruct
 
 end ZiskFv.AirsClean.ArithMul
