@@ -37,7 +37,7 @@ theorem equiv_REMU
     (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
@@ -75,8 +75,8 @@ theorem equiv_REMU
   -- ============ Unpack extended row-constraint bundle ============
   have h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a :=
     ZiskFv.Airs.ArithDiv.div_carry_chain_holds_of_extended v r_a h_row_constraints
-  have h_c46 : Arith.extraction.constraint_46_every_row v.circuit r_a :=
-    ZiskFv.Airs.ArithDiv.constraint_46_of_extended v r_a h_row_constraints
+  have h_c46 : ZiskFv.Airs.ArithDiv.bus_res1_eq_div v r_a :=
+    ZiskFv.Airs.ArithDiv.bus_res1_eq_div_of_extended v r_a h_row_constraints
   -- ============ DISCHARGE mode pins ============
   obtain ⟨h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_div_rem_unsigned_mode_pin v r_a h_op_arith

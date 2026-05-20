@@ -42,7 +42,7 @@ def main_row_in_divu_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
 /-- All hypotheses needed by `divu_compositional`. -/
 @[simp]
 def divu_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ) : Prop :=
   add_subset_holds m r_main
   ∧ div_mode_booleans v r_arith
@@ -55,7 +55,7 @@ def divu_circuit_holds
     predicate. Direct instantiation of `arith_archetype_div_bus_match`
     at `opcode_lit = OP_DIVU`. -/
 lemma divu_compositional
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ)
     (h : divu_circuit_holds m v r_main r_arith) :
     main_c_packed m r_main = arith_quotient_packed v r_arith :=

@@ -88,7 +88,7 @@ theorem equiv_DIV
     -- AIR validators + row indices. Compliance.lean shares (m, v)
     -- across opcodes; per-opcode caller supplies the row indices.
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     -- Activation / opcode pin on Main.
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV)
     -- Cross-AIR row selection: the OpBus permutation gives an
@@ -153,8 +153,8 @@ theorem equiv_DIV
   -- ============ Unpack extended row-constraint bundle ============
   have h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a :=
     ZiskFv.Airs.ArithDiv.div_carry_chain_holds_of_extended v r_a h_row_constraints
-  have h_c46 : Arith.extraction.constraint_46_every_row v.circuit r_a :=
-    ZiskFv.Airs.ArithDiv.constraint_46_of_extended v r_a h_row_constraints
+  have h_c46 : ZiskFv.Airs.ArithDiv.bus_res1_eq_div v r_a :=
+    ZiskFv.Airs.ArithDiv.bus_res1_eq_div_of_extended v r_a h_row_constraints
   -- ============ DISCHARGE mode pins () ============
   obtain ⟨h_sext, h_m32, h_div⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_mode_pin v r_a h_op_arith

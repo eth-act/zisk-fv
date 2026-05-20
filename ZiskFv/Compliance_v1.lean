@@ -1028,7 +1028,7 @@ inductive OpEnvelope
   | div
     (div_input : PureSpec.DivInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
@@ -1054,7 +1054,7 @@ inductive OpEnvelope
   | divu
     (divu_input : PureSpec.DivuInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIVU)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
@@ -1072,7 +1072,7 @@ inductive OpEnvelope
   | divw
     (divw_input : PureSpec.DivwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV_W)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
@@ -1112,7 +1112,7 @@ inductive OpEnvelope
   | divuw
     (divuw_input : PureSpec.DivuwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIVU_W)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
@@ -1138,7 +1138,7 @@ inductive OpEnvelope
   | rem
     (rem_input : PureSpec.RemInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REM)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
@@ -1164,7 +1164,7 @@ inductive OpEnvelope
   | remu
     (remu_input : PureSpec.RemuInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
@@ -1182,7 +1182,7 @@ inductive OpEnvelope
   | remw
     (remw_input : PureSpec.RemwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REM_W)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
@@ -1222,7 +1222,7 @@ inductive OpEnvelope
   | remuw
     (remuw_input : PureSpec.RemuwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU_W)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)

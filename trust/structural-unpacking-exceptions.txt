@@ -495,3 +495,60 @@ OPCODE: ZiskFv.Equivalence.MulW.equiv_MULW
 DROPPED: none (typeclass-elimination only)
 ADDED:   none new at canonical site (validator shape change only)
        (Phase F3 ArithMul retirement: see MUL entry above.)
+
+# ============================================================
+# Phase F4 — Valid_ArithDiv record retirement (AIR-level)
+# ============================================================
+#
+# Phase F4 retires `Valid_ArithDiv` from its previous C-parameterized,
+# `Circuit.main`-backed shape (with a `circuit : C F ExtF` field and 28
+# `*_def` projection-into-extraction constraints) to a plain named-column
+# record (no C parameter, no circuit field, no _def fields). Mirrors
+# Phase F3 (Valid_ArithMul); both consume the same physical Arith AIR
+# but expose Div-specific named accessors.
+#
+# **Structural-unpacking shape.** The retirement adds 10 new named
+# accessors that were previously accessed positionally via
+# `Circuit.main v.circuit (column := N)`:
+#   * fab (col 30) / na_fb (col 31) / nb_fa (col 32) — sign-consistency
+#     witness columns, pinned by `constraint_6/7/8_every_row`
+#   * cy_0 .. cy_6 (cols 0..6) — 7 carry-chain witness columns, used
+#     internally by `constraint_31..38_every_row`
+# Plus 11 named-form constraint predicates that replace
+# `constraint_{6,7,8,31..38}_every_row v.circuit` references on the
+# trust-ledger:
+#   * fab_eq_div / na_fb_eq_div / nb_fa_eq_div — pinning closures
+#   * carry_eq_0_div .. carry_eq_7_div — named-form chunk equations
+# Plus `bus_res1_eq_div` replacing `constraint_46_every_row v.circuit`.
+#
+# **Per-opcode metric: NET ZERO.** All 8 DIV/REM equiv_<OP> wrappers
+# (Div/Divu/Divuw/Divw/Rem/Remu/Remuw/Remw) maintain identical binder
+# counts (`total` / `hypothesis`) — the retirement only changes the
+# *shape* of one binder (`Valid_ArithDiv C FGL FGL` → `Valid_ArithDiv
+# FGL FGL`), not their count. The caller-burden ledger records the
+# type-shape diff but the line count is unchanged. The auxiliary
+# row-constraint binder (`h_row_constraints : ∀ r,
+# div_row_constraints_with_c46 v r`) becomes a pure-field predicate
+# rather than a `Circuit.main`-form predicate, but its count remains 1.
+#
+# **Why structural-unpacking, not laundering.** The 10 added named
+# accessors + 11 named-form predicates are explicit witnesses of
+# information that was previously hidden behind a positional
+# `Circuit.main` API; the global-theorem trust footprint provably does
+# not grow, because:
+#   * The validator parameter is shared across all DIV/REM opcodes in
+#     `Compliance.lean` (one set per provider AIR), so adding fields
+#     to the structure does not multiply the global trust footprint.
+#   * The named-form constraint predicates are *equivalent* to the
+#     `Circuit.main`-form constraints they replace — they reduce
+#     trivially to the same algebraic equations, just with named
+#     columns substituted.
+#   * No new axioms are introduced. The 104-axiom floor is unchanged.
+#
+# PIL-BASIS: same as the per-opcode entries above:
+#   * arith.pil:58-60 — fab / na_fb / nb_fa column definitions
+#     (constraints 6/7/8)
+#   * arith.pil:205-209 — carry-chain (constraints 31-38)
+#   * arith.pil:262-263 — bus_res1 normalization (constraint 46)
+#   * arith.pil:17 — `bits(16)` witness columns (chunk-range basis)
+#   * arith.pil:280 — `arith_range_table_assumes` carry-column range

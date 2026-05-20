@@ -275,7 +275,7 @@ open ZiskFv.Airs.ArithDiv in
 /-- Project the arith-side `op` value from a `matches_entry` against
     the primary ArithDiv bus row. -/
 lemma arith_div_primary_op_eq
-    {m : Valid_Main C FGL FGL} {v : Valid_ArithDiv C FGL FGL}
+    {m : Valid_Main C FGL FGL} {v : Valid_ArithDiv FGL FGL}
     {r_main r_a : ℕ}
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_ArithDiv v r_a)) :
@@ -287,7 +287,7 @@ open ZiskFv.Airs.ArithDiv in
 /-- Project the arith-side `op` value from a `matches_entry` against
     the secondary ArithDiv bus row. -/
 lemma arith_div_secondary_op_eq
-    {m : Valid_Main C FGL FGL} {v : Valid_ArithDiv C FGL FGL}
+    {m : Valid_Main C FGL FGL} {v : Valid_ArithDiv FGL FGL}
     {r_main r_a : ℕ}
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_ArithDivSecondary v r_a)) :
@@ -383,7 +383,7 @@ open ZiskFv.Airs.ArithDiv in
     `matches_entry`. The a/b lanes target `v.c_{0..3}` / `v.b_{0..3}`,
     and the c-lo lane targets `v.a_{0,1}` (quotient). -/
 lemma arith_div_primary_projections
-    {m : Valid_Main C FGL FGL} {v : Valid_ArithDiv C FGL FGL}
+    {m : Valid_Main C FGL FGL} {v : Valid_ArithDiv FGL FGL}
     {r_main r_a : ℕ}
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_ArithDiv v r_a)) :
@@ -407,7 +407,7 @@ open ZiskFv.Airs.ArithDiv in
     `matches_entry`. The a/b lanes target `v.c_{0..3}` / `v.b_{0..3}`,
     and the c-lo lane targets `v.d_{0,1}` (remainder). -/
 lemma arith_div_secondary_projections
-    {m : Valid_Main C FGL FGL} {v : Valid_ArithDiv C FGL FGL}
+    {m : Valid_Main C FGL FGL} {v : Valid_ArithDiv FGL FGL}
     {r_main r_a : ℕ}
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_ArithDivSecondary v r_a)) :

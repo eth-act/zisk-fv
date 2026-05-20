@@ -99,7 +99,7 @@ theorem equiv_DIV
         (PureSpec.execute_DIVREM_div_pure div_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     -- Structural-unpacking ADDED binders per `trust/structural-unpacking-exceptions.txt` DIV entry.
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)

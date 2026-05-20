@@ -1173,7 +1173,7 @@ lemma h_rd_val_mdrs_remuw
 lemma h_rd_val_mdrs_div_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     -- Per-byte range bounds (RANGE).
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
     (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
@@ -1427,7 +1427,7 @@ lemma h_rd_val_mdrs_div_chunked
 lemma h_rd_val_mdrs_rem_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
     (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
     (h4 : e.x4.val < 256) (h5 : e.x5.val < 256)
@@ -1718,7 +1718,7 @@ Composes: W chain witnesses → 32-bit abs-Euclidean → `signed_tdiv_unique`
 lemma h_rd_val_mdrs_divw_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     -- Per-byte range bounds (RANGE).
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
     (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
@@ -2161,7 +2161,7 @@ linker `abs_euclidean_to_signed_euclidean_div_rem_w` from
 lemma h_rd_val_mdrs_remw_chunked
     (r1 r2 : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     -- Per-byte range bounds (RANGE).
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
     (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
