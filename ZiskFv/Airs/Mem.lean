@@ -49,6 +49,24 @@ namespace ZiskFv.Airs.Mem
 open Goldilocks
 open Mem.extraction
 
+/-!
+## Deprecation notice — Phase D3/D4 removal
+
+The `circuit` field and all `_def` constraint fields below are slated
+for removal as part of the OpenVM Circuit retirement plan (see
+`/home/cody/.claude/plans/ok-i-will-let-humble-reddy.md`):
+
+* `circuit : C F ExtF` removed in Phase D3
+* All `<col>_def` fields removed in Phase D4
+
+After D6 (the completion marker), the canonical AIR view is the Clean
+`Air.Flat.Component` at `ZiskFv/AirsClean/Mem/`. The Bridge at
+`ZiskFv/AirsClean/Mem/Bridge.lean` provides the v1-compatibility shim.
+
+Note: Lean 4 does not permit `@[deprecated]` attributes on structure
+fields (verified via spike), so this notice is documentation-only.
+-/
+
 /-- Named accessors for one row of ZisK's `Mem` AIR. -/
 structure Valid_Mem (C : Type → Type → Type) (F ExtF : Type)
     [Field F] [Field ExtF] [Circuit F ExtF C] where

@@ -21,6 +21,24 @@ namespace ZiskFv.Airs.Binary
 open Goldilocks
 open Binary.extraction
 
+/-!
+## Deprecation notice — Phase D3/D4 removal
+
+The `circuit` field and all `_def` constraint fields below are slated
+for removal as part of the OpenVM Circuit retirement plan (see
+`/home/cody/.claude/plans/ok-i-will-let-humble-reddy.md`):
+
+* `circuit : C F ExtF` removed in Phase D3
+* All `<col>_def` fields removed in Phase D4
+
+After D6 (the completion marker), the canonical AIR view is the Clean
+`Air.Flat.Component` at `ZiskFv/AirsClean/Binary/`. The Bridge at
+`ZiskFv/AirsClean/Binary/Bridge.lean` provides the v1-compatibility shim.
+
+Note: Lean 4 does not permit `@[deprecated]` attributes on structure
+fields (verified via spike), so this notice is documentation-only.
+-/
+
 /-- Named accessors for one row of ZisK's `Binary` AIR.
 
     Column layout taken from the witness-column header in

@@ -16,6 +16,24 @@ namespace ZiskFv.Airs.Main
 open Goldilocks
 open Main.extraction
 
+/-!
+## Deprecation notice — Phase D3/D4 removal
+
+The `circuit` field and all `_def` constraint fields below are slated
+for removal as part of the OpenVM Circuit retirement plan (see
+`/home/cody/.claude/plans/ok-i-will-let-humble-reddy.md`):
+
+* `circuit : C F ExtF` removed in Phase D3
+* All `<col>_def` fields removed in Phase D4
+
+After D6 (the completion marker), the canonical AIR view is the Clean
+`Air.Flat.Component` at `ZiskFv/AirsClean/Main/`. The Bridge at
+`ZiskFv/AirsClean/Main/Bridge.lean` provides the v1-compatibility shim.
+
+Note: Lean 4 does not permit `@[deprecated]` attributes on structure
+fields (verified via spike), so this notice is documentation-only.
+-/
+
 /-- Named accessors for the ADD- and branch-relevant Main-AIR columns.
     Column numbers come from the witness-column header of
     `ZiskFv/ZiskFv/Extraction/Main.lean`. -/
