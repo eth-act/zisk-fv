@@ -46,7 +46,7 @@ def main_row_in_rem_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     **secondary** (remainder) projection + mode witnesses. -/
 @[simp]
 def rem_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ) : Prop :=
   add_subset_holds m r_main
   ∧ div_mode_booleans v r_arith
@@ -59,7 +59,7 @@ def rem_circuit_holds
     Direct instantiation of `arith_archetype_rem_bus_match` at
     `opcode_lit = OP_REM`. -/
 lemma rem_compositional
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithDiv FGL FGL)
     (r_main r_arith : ℕ)
     (h : rem_circuit_holds m v r_main r_arith) :
     main_c_packed m r_main = arith_remainder_packed v r_arith :=

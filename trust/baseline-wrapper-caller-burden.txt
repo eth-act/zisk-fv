@@ -158,7 +158,7 @@ ZiskFv.Compliance.Wrappers.Div.equiv_DIV 005 bus [other] ZiskFv.Compliance.BusRo
 ZiskFv.Compliance.Wrappers.Div.equiv_DIV 006 _ [other] m, v
 ZiskFv.Compliance.Wrappers.Div.equiv_DIV 007 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.Wrappers.Div.equiv_DIV 008 r_main [row] ℕ
-ZiskFv.Compliance.Wrappers.Div.equiv_DIV 009 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.Wrappers.Div.equiv_DIV 009 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Div.equiv_DIV 010 r_a [other] ℕ
 ZiskFv.Compliance.Wrappers.Div.equiv_DIV 011 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV
 ZiskFv.Compliance.Wrappers.Div.equiv_DIV 012 _ [other] Compliance.lean will obtain `r_a` via -- `op_bus_perm_sound_ArithDiv` and pass i
@@ -186,7 +186,7 @@ ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 007 r_main [row] ℕ
-ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 009 r_a [other] ℕ
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIVU
 ZiskFv.Compliance.Wrappers.Divu.equiv_DIVU 011 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
@@ -202,7 +202,7 @@ ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 007 r_main [row] ℕ
-ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 009 r_a [other] ℕ
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIVU_W
 ZiskFv.Compliance.Wrappers.Divuw.equiv_DIVUW 011 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
@@ -221,7 +221,7 @@ ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 007 r_main [row] ℕ
-ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 009 r_a [other] ℕ
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV_W
 ZiskFv.Compliance.Wrappers.Divw.equiv_DIVW 011 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
@@ -502,7 +502,7 @@ ZiskFv.Compliance.Wrappers.Rem.equiv_REM 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Rem.equiv_REM 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Rem.equiv_REM 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.Wrappers.Rem.equiv_REM 007 r_main [row] ℕ
-ZiskFv.Compliance.Wrappers.Rem.equiv_REM 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.Wrappers.Rem.equiv_REM 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Rem.equiv_REM 009 r_a [other] ℕ
 ZiskFv.Compliance.Wrappers.Rem.equiv_REM 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_REM
 ZiskFv.Compliance.Wrappers.Rem.equiv_REM 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
@@ -522,7 +522,7 @@ ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 007 r_main [row] ℕ
-ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 009 r_a [other] ℕ
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU
 ZiskFv.Compliance.Wrappers.Remu.equiv_REMU 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
@@ -538,7 +538,7 @@ ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 007 r_main [row] ℕ
-ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 009 r_a [other] ℕ
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU_W
 ZiskFv.Compliance.Wrappers.Remuw.equiv_REMUW 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
@@ -557,7 +557,7 @@ ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 004 rd [other] regidx
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 007 r_main [row] ℕ
-ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 009 r_a [other] ℕ
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_REM_W
 ZiskFv.Compliance.Wrappers.Remw.equiv_REMW 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv

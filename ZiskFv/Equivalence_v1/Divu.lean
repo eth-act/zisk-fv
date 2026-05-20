@@ -89,7 +89,7 @@ theorem equiv_DIVU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divu_input : PureSpec.DivuInput)
     (r1 r2 rd : regidx)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state divu_input.r1_val divu_input.r2_val divu_input.rd divu_input.PC

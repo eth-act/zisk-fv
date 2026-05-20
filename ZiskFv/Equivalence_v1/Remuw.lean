@@ -78,7 +78,7 @@ theorem equiv_REMUW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remuw_input : PureSpec.RemuwInput)
     (r1 r2 rd : regidx)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state remuw_input.r1_val remuw_input.r2_val remuw_input.rd remuw_input.PC

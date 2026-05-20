@@ -23,7 +23,7 @@ open Goldilocks
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 @[reducible]
-def rowAt (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ) :
+def rowAt (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) :
     ArithDivRow FGL where
   chunks := {
     a_0 := v.a_0 r
@@ -80,7 +80,7 @@ def rowAt (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ) :
     Component's row layout — the 11 carry-chain clauses share the
     same shape as v1's `div_carry_chain_holds` bundle in
     `ZiskFv/Airs/Arith/Div.lean`. -/
-def constraints_at (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ) : Prop :=
+def constraints_at (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) : Prop :=
   -- 9 boolean flag constraints.
   (rowAt v r).flags.na * (1 - (rowAt v r).flags.na) = 0
   ∧ (rowAt v r).flags.nb * (1 - (rowAt v r).flags.nb) = 0
@@ -177,7 +177,7 @@ def constraints_at (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ)
       + (rowAt v r).aux.carry_6 = 0
 
 theorem spec_of_valid
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
     (h_assumptions : Assumptions (rowAt v r))
     (h_constraints : constraints_at v r) :
     Spec (rowAt v r) := by

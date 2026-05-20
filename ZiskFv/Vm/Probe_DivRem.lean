@@ -36,7 +36,7 @@ theorem equiv_DIV_v2
     (div_input : PureSpec.DivInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDiv v r_a))
@@ -69,7 +69,7 @@ theorem equiv_REM_v2
     (rem_input : PureSpec.RemInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REM)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_a))
@@ -102,7 +102,7 @@ theorem equiv_REMU_v2
     (remu_input : PureSpec.RemuInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_a))
@@ -126,7 +126,7 @@ theorem equiv_DIVW_v2
     (divw_input : PureSpec.DivwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV_W)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDiv v r_a))
@@ -172,7 +172,7 @@ theorem equiv_DIVUW_v2
     (divuw_input : PureSpec.DivuwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIVU_W)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDiv v r_a))
@@ -205,7 +205,7 @@ theorem equiv_REMW_v2
     (remw_input : PureSpec.RemwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REM_W)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_a))
@@ -251,7 +251,7 @@ theorem equiv_REMUW_v2
     (remuw_input : PureSpec.RemuwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU_W)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_a))

@@ -149,7 +149,7 @@ ZiskFv.Equivalence.Div.equiv_DIV 004 rd [other] regidx
 ZiskFv.Equivalence.Div.equiv_DIV 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Div.equiv_DIV 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.Div.equiv_DIV 007 r_main [row] ℕ
-ZiskFv.Equivalence.Div.equiv_DIV 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Equivalence.Div.equiv_DIV 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Equivalence.Div.equiv_DIV 009 r_a [other] ℕ
 ZiskFv.Equivalence.Div.equiv_DIV 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV
 ZiskFv.Equivalence.Div.equiv_DIV 011 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDiv v r_a)
@@ -169,7 +169,7 @@ ZiskFv.Equivalence.Divu.equiv_DIVU 004 rd [other] regidx
 ZiskFv.Equivalence.Divu.equiv_DIVU 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Divu.equiv_DIVU 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.Divu.equiv_DIVU 007 r_main [row] ℕ
-ZiskFv.Equivalence.Divu.equiv_DIVU 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Equivalence.Divu.equiv_DIVU 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Equivalence.Divu.equiv_DIVU 009 r_a [other] ℕ
 ZiskFv.Equivalence.Divu.equiv_DIVU 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIVU
 ZiskFv.Equivalence.Divu.equiv_DIVU 011 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv
@@ -185,7 +185,7 @@ ZiskFv.Equivalence.Divuw.equiv_DIVUW 004 rd [other] regidx
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 007 r_main [row] ℕ
-ZiskFv.Equivalence.Divuw.equiv_DIVUW 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Equivalence.Divuw.equiv_DIVUW 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 009 r_a [other] ℕ
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIVU_W
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 011 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDiv v r_a)
@@ -203,7 +203,7 @@ ZiskFv.Equivalence.Divw.equiv_DIVW 004 rd [other] regidx
 ZiskFv.Equivalence.Divw.equiv_DIVW 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Divw.equiv_DIVW 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.Divw.equiv_DIVW 007 r_main [row] ℕ
-ZiskFv.Equivalence.Divw.equiv_DIVW 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Equivalence.Divw.equiv_DIVW 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Equivalence.Divw.equiv_DIVW 009 r_a [other] ℕ
 ZiskFv.Equivalence.Divw.equiv_DIVW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV_W
 ZiskFv.Equivalence.Divw.equiv_DIVW 011 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDiv v r_a)
@@ -466,7 +466,7 @@ ZiskFv.Equivalence.Rem.equiv_REM 004 rd [other] regidx
 ZiskFv.Equivalence.Rem.equiv_REM 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Rem.equiv_REM 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.Rem.equiv_REM 007 r_main [row] ℕ
-ZiskFv.Equivalence.Rem.equiv_REM 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Equivalence.Rem.equiv_REM 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Equivalence.Rem.equiv_REM 009 r_a [other] ℕ
 ZiskFv.Equivalence.Rem.equiv_REM 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_REM
 ZiskFv.Equivalence.Rem.equiv_REM 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_a)
@@ -486,7 +486,7 @@ ZiskFv.Equivalence.Remu.equiv_REMU 004 rd [other] regidx
 ZiskFv.Equivalence.Remu.equiv_REMU 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Remu.equiv_REMU 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.Remu.equiv_REMU 007 r_main [row] ℕ
-ZiskFv.Equivalence.Remu.equiv_REMU 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Equivalence.Remu.equiv_REMU 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Equivalence.Remu.equiv_REMU 009 r_a [other] ℕ
 ZiskFv.Equivalence.Remu.equiv_REMU 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU
 ZiskFv.Equivalence.Remu.equiv_REMU 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_a)
@@ -502,7 +502,7 @@ ZiskFv.Equivalence.Remuw.equiv_REMUW 004 rd [other] regidx
 ZiskFv.Equivalence.Remuw.equiv_REMUW 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Remuw.equiv_REMUW 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.Remuw.equiv_REMUW 007 r_main [row] ℕ
-ZiskFv.Equivalence.Remuw.equiv_REMUW 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Equivalence.Remuw.equiv_REMUW 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Equivalence.Remuw.equiv_REMUW 009 r_a [other] ℕ
 ZiskFv.Equivalence.Remuw.equiv_REMUW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU_W
 ZiskFv.Equivalence.Remuw.equiv_REMUW 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_a)
@@ -520,7 +520,7 @@ ZiskFv.Equivalence.Remw.equiv_REMW 004 rd [other] regidx
 ZiskFv.Equivalence.Remw.equiv_REMW 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Remw.equiv_REMW 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.Remw.equiv_REMW 007 r_main [row] ℕ
-ZiskFv.Equivalence.Remw.equiv_REMW 008 v [validator] Valid_ArithDiv C FGL FGL
+ZiskFv.Equivalence.Remw.equiv_REMW 008 v [validator] Valid_ArithDiv FGL FGL
 ZiskFv.Equivalence.Remw.equiv_REMW 009 r_a [other] ℕ
 ZiskFv.Equivalence.Remw.equiv_REMW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_REM_W
 ZiskFv.Equivalence.Remw.equiv_REMW 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithDivSecondary v r_a)

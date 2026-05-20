@@ -77,7 +77,7 @@ theorem arith_mul_columns_in_range (a : ZiskFv.Airs.ArithMul.Valid_ArithMul C FG
 /-- **ArithDiv range-check soundness (derived).** Same as
     `arith_mul_columns_in_range` but for the Div view of the Arith AIR.
     Derived from `range_bus_sound` via 16 applications. -/
-theorem arith_div_columns_in_range (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ) :
+theorem arith_div_columns_in_range (a : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) :
     (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
   ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
   ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
@@ -170,26 +170,27 @@ theorem arith_mul_carry_columns_in_range_unsigned
   · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL)) 17 trivial r
 
 /-- **ArithDiv carry-column range (unsigned mode) (derived).** Mirror
-    of `arith_mul_carry_columns_in_range_unsigned` for the Div view. -/
+    of `arith_mul_carry_columns_in_range_unsigned` for the Div view.
+    Post-Phase-F4 retirement: uses the named `cy_0..cy_6` accessors. -/
 theorem arith_div_carry_columns_in_range_unsigned
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
     (_h_na : v.na r = 0) (_h_nb : v.nb r = 0)
     (_h_np : v.np r = 0) (_h_nr : v.nr r = 0) :
-    (Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0) : FGL).val < 131072
-  ∧ (Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0) : FGL).val < 131072
-  ∧ (Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0) : FGL).val < 131072
-  ∧ (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL).val < 131072
-  ∧ (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL).val < 131072
-  ∧ (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL).val < 131072
-  ∧ (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL).val < 131072 := by
+    (v.cy_0 r).val < 131072
+  ∧ (v.cy_1 r).val < 131072
+  ∧ (v.cy_2 r).val < 131072
+  ∧ (v.cy_3 r).val < 131072
+  ∧ (v.cy_4 r).val < 131072
+  ∧ (v.cy_5 r).val < 131072
+  ∧ (v.cy_6 r).val < 131072 := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0) : FGL)) 17 trivial r
-  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0) : FGL)) 17 trivial r
-  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0) : FGL)) 17 trivial r
-  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL)) 17 trivial r
-  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL)) 17 trivial r
-  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL)) 17 trivial r
-  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL)) 17 trivial r
+  · exact range_bus_sound v (fun v r => v.cy_0 r) 17 trivial r
+  · exact range_bus_sound v (fun v r => v.cy_1 r) 17 trivial r
+  · exact range_bus_sound v (fun v r => v.cy_2 r) 17 trivial r
+  · exact range_bus_sound v (fun v r => v.cy_3 r) 17 trivial r
+  · exact range_bus_sound v (fun v r => v.cy_4 r) 17 trivial r
+  · exact range_bus_sound v (fun v r => v.cy_5 r) 17 trivial r
+  · exact range_bus_sound v (fun v r => v.cy_6 r) 17 trivial r
 
 /-! ## Carry column range — signed-mode (disjunctive)
 
@@ -250,26 +251,26 @@ theorem arith_mul_carry_columns_in_range_signed
 
 /-- **ArithDiv carry-column range (signed mode, disjunctive).** Mirror
     of `arith_mul_carry_columns_in_range_signed` for the Div view of the
-    Arith AIR. Same physical columns; different named wrapper.
+    Arith AIR. Same physical columns; uses named accessors after Phase
+    F4 retirement.
 
     Signed DIV/REM rows (`na, nb, np, nr ∈ {0,1}`, `m32 = 0`, `div = 1`)
     are the consumers. -/
 theorem arith_div_carry_columns_in_range_signed
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
     (_h_sext : v.sext r = 0) (_h_m32 : v.m32 r = 0) (_h_div : v.div r = 1) :
-    let cy_disj (col : ℕ) : Prop :=
-      (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val < 983041
-        ∨ GL_prime - 983040 ≤ (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val
-    cy_disj 0 ∧ cy_disj 1 ∧ cy_disj 2 ∧ cy_disj 3
-      ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6 := by
+    let cy_disj (cy : FGL) : Prop :=
+      cy.val < 983041 ∨ GL_prime - 983040 ≤ cy.val
+    cy_disj (v.cy_0 r) ∧ cy_disj (v.cy_1 r) ∧ cy_disj (v.cy_2 r) ∧ cy_disj (v.cy_3 r)
+      ∧ cy_disj (v.cy_4 r) ∧ cy_disj (v.cy_5 r) ∧ cy_disj (v.cy_6 r) := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_0 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_1 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_2 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_3 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_4 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_5 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_6 r) trivial r
 
 /-! ## Arith-table row pin — signed DIV/REM sign-of-remainder
 
@@ -307,7 +308,7 @@ soundness on a small AIR table that pins a derived column). -/
     each zero. PIL: lookup soundness on the `arith_table_assumes`
     consumer-side bus row composed with the table content. -/
 axiom arith_table_op_div_rem_signed_d_sign_pin
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 0) (_h_div : v.div r_a = 1)
     (_h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
     v.nr r_a = v.np r_a
@@ -331,7 +332,7 @@ axiom arith_table_op_div_rem_signed_d_sign_pin
     `zisk/state-machines/arith/pil/arith_table.pil` for the signed-W
     opcodes (op ∈ {190, 191}). -/
 axiom arith_table_op_div_rem_signed_w_d_sign_pin
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 1) (_h_div : v.div r_a = 1)
     (_h_op : v.op r_a = 190 ∨ v.op r_a = 191) :
     v.nr r_a = v.np r_a
@@ -384,26 +385,25 @@ theorem arith_mul_carry_columns_in_range_w
 
 /-- **ArithDiv carry-column range (W-mode, m32 = 1).** Mirror of
     `arith_mul_carry_columns_in_range_w` for the Div view of the
-    Arith AIR. Same physical columns; different named wrapper.
+    Arith AIR. Uses named accessors after Phase F4 retirement.
 
     DIVW / DIVUW / REMW / REMUW rows are the consumers
     (`m32 = 1`, `div = 1`, `sext = 0`). -/
 theorem arith_div_carry_columns_in_range_w
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
     (_h_sext : v.sext r = 0) (_h_m32 : v.m32 r = 1) (_h_div : v.div r = 1) :
-    let cy_disj (col : ℕ) : Prop :=
-      (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val < 983041
-        ∨ GL_prime - 983040 ≤ (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val
-    cy_disj 0 ∧ cy_disj 1 ∧ cy_disj 2 ∧ cy_disj 3
-      ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6 := by
+    let cy_disj (cy : FGL) : Prop :=
+      cy.val < 983041 ∨ GL_prime - 983040 ≤ cy.val
+    cy_disj (v.cy_0 r) ∧ cy_disj (v.cy_1 r) ∧ cy_disj (v.cy_2 r) ∧ cy_disj (v.cy_3 r)
+      ∧ cy_disj (v.cy_4 r) ∧ cy_disj (v.cy_5 r) ∧ cy_disj (v.cy_6 r) := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_0 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_1 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_2 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_3 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_4 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_5 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_6 r) trivial r
 
 /-! ## Arith-table W-mode operand-input pin (m32 = 1)
 
@@ -438,7 +438,7 @@ axiom arith_table_op_mulw_operand_pin
     REMUW, DIVW, REMW), the upper operand chunks AND the upper
     remainder chunks are zero. -/
 axiom arith_table_op_divw_operand_pin
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 1) (_h_div : v.div r_a = 1)
     (_h_op : v.op r_a = 188 ∨ v.op r_a = 189 ∨ v.op r_a = 190 ∨ v.op r_a = 191) :
     (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0
@@ -472,7 +472,7 @@ columns from the `op` literal). -/
     arith-side opcode literal (which is itself a consequence of the
     OpBus permutation matching `m.op r_main` to `v.op r_a`). -/
 axiom arith_table_op_div_rem_signed_mode_pin
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
     v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 1
 
@@ -513,7 +513,7 @@ DIV/REM rows). Same kind, narrower covering set. -/
     `div_bus_res1_eq_a_hi` (`Airs/Arith/BusRes1.lean:79`) for the
      hi-lane discharge. -/
 axiom arith_table_op_div_rem_main_selector_pin
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
     (v.op r_a = 186 → v.main_div r_a = 1 ∧ v.main_mul r_a = 0)
   ∧ (v.op r_a = 187 → v.main_div r_a = 0 ∧ v.main_mul r_a = 0)
@@ -588,7 +588,7 @@ columns. -/
     Consumed by `equiv_DIV` via
     `signed_packed_toInt_eq_of_read_xreg` to derive `h_rs1_value`. -/
 axiom arith_div_np_eq_msb_of_dividend
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 0) (_h_div : v.div r_a = 1)
     (_h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
     (v.np r_a).val =
@@ -616,7 +616,7 @@ axiom arith_div_np_eq_msb_of_dividend
     `equiv_DIV` via `signed_packed_toInt_eq_of_read_xreg`
     to derive `h_rs2_value`. -/
 axiom arith_div_nb_eq_msb_of_divisor
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 0) (_h_div : v.div r_a = 1)
     (_h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
     (v.nb r_a).val =
@@ -688,7 +688,7 @@ DIV/REM-emitting rows). -/
     align with the `(1 - div_by_zero) * (1 - div_overflow)` selector
     in the arith_table). -/
 axiom arith_div_remainder_bound
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 0) (_h_div : v.div r_a = 1)
     (_h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
     ((ZiskFv.PackedBitVec.MulNoWrap.packed4
@@ -717,7 +717,7 @@ axiom arith_div_remainder_bound
     same as `arith_div_remainder_bound` modulo the unsigned LTU
     branch and the table rows `op ∈ {184, 185}`. -/
 axiom arith_div_remainder_bound_unsigned
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 0) (_h_div : v.div r_a = 1)
     (_h_op : v.op r_a = 184 ∨ v.op r_a = 185) :
     ZiskFv.PackedBitVec.MulNoWrap.packed4
@@ -755,7 +755,7 @@ the W-mode (m32 = 1) specialization of the row-type table.
     `r2_lo32 ≠ 0` exclusion to align with the `(1 - div_by_zero)`
     selector. -/
 axiom arith_div_remainder_bound_unsigned_w
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 1) (_h_div : v.div r_a = 1)
     (_h_op : v.op r_a = 188 ∨ v.op r_a = 189) :
     (v.d_0 r_a).val + (v.d_1 r_a).val * 65536
@@ -769,7 +769,7 @@ axiom arith_div_remainder_bound_unsigned_w
     signed divisor magnitude, and the signed remainder times the
     signed dividend is non-negative. -/
 axiom arith_div_remainder_bound_signed_w
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 1) (_h_div : v.div r_a = 1)
     (_h_op : v.op r_a = 190 ∨ v.op r_a = 191) :
     (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
@@ -884,7 +884,7 @@ scope, as `arith_table_op_div_rem_signed_mode_pin`.
     64-bit DIVU / REMU), the arith_table lookup pins all four sign
     witnesses to 0, plus `sext = 0`, `m32 = 0`, `div = 1`. -/
 axiom arith_table_op_div_rem_unsigned_mode_pin
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 184 ∨ v.op r_a = 185) :
     v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
       ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 1
@@ -897,7 +897,7 @@ axiom arith_table_op_div_rem_unsigned_mode_pin
     `arith_table_op_div_rem_main_selector_pin` modulo the row-table
     rows for `op = 184 / 185`. -/
 axiom arith_table_op_div_rem_unsigned_main_selector_pin
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 184 ∨ v.op r_a = 185) :
     (v.op r_a = 184 → v.main_div r_a = 1 ∧ v.main_mul r_a = 0)
   ∧ (v.op r_a = 185 → v.main_div r_a = 0 ∧ v.main_mul r_a = 0)
@@ -941,7 +941,7 @@ the W-variant rows of `arith_table.pil` /
     matching `m.op r_main` to `v.op r_a`). Same trust kind as
     `arith_table_op_div_rem_unsigned_mode_pin` (non-W sibling). -/
 axiom arith_table_op_div_rem_unsigned_w_mode_pin
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 188 ∨ v.op r_a = 189) :
     v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
       ∧ v.sext r_a = 0 ∧ v.m32 r_a = 1 ∧ v.div r_a = 1
@@ -958,7 +958,7 @@ axiom arith_table_op_div_rem_unsigned_w_mode_pin
     to discharge the mode pins. Same trust kind as
     `arith_table_op_div_rem_signed_mode_pin` (non-W sibling). -/
 axiom arith_table_op_div_rem_signed_w_mode_pin
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 190 ∨ v.op r_a = 191) :
     v.sext r_a = 0 ∧ v.m32 r_a = 1 ∧ v.div r_a = 1
 

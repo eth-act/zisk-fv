@@ -1,15 +1,17 @@
 import Mathlib
 
-import ZiskFv.Circuit
 import ZiskFv.Field.Goldilocks
-import Extraction.Arith
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Arith.CarryChain
 
 /-!
 Named-column mirror of the ZisK `Arith` AIR, restricted to the
 **DIV/REM subset** (clone of `Airs/Arith/Mul.lean` for RV64 DIV / DIVU
-/ REM / REMU rows).
+/ REM / REMU rows). After Phase F4 retirement, the structure no longer
+exposes the underlying `C F ExtF` circuit or the `Circuit.main`-backed
+extraction-bridge — the named columns are taken as primitive accessors,
+matching the post-retirement shape of `Valid_BinaryAdd` /
+`Valid_BinaryExtension` / `Valid_Mem*` after Phase D3+D4.
 
 The Arith state machine is the same AIR used for MUL, but a single row
 serves a pair of opcodes dispatched through the `div` / `main_div` /
@@ -50,31 +52,15 @@ schema; DIV-family rows just set different selectors).
 namespace ZiskFv.Airs.ArithDiv
 
 open Goldilocks
-open Arith.extraction
-
-/-!
-## Deprecation notice — Phase D3/D4 removal
-
-The `circuit` field and all `_def` constraint fields below are slated
-for removal as part of the OpenVM Circuit retirement plan (see
-`/home/cody/.claude/plans/ok-i-will-let-humble-reddy.md`):
-
-* `circuit : C F ExtF` removed in Phase D3
-* All `<col>_def` fields removed in Phase D4
-
-After D6 (the completion marker), the canonical AIR view is the Clean
-`Air.Flat.Component` at `ZiskFv/AirsClean/ArithDiv/`. The Bridge at
-`ZiskFv/AirsClean/ArithDiv/Bridge.lean` provides the v1-compatibility shim.
-
-Note: Lean 4 does not permit `@[deprecated]` attributes on structure
-fields (verified via spike), so this notice is documentation-only.
--/
 
 /-- Named accessors for one row of ZisK's `Arith` AIR, restricted to the
     DIV/REM-relevant columns.
 
     Column layout from `ZiskFv/ZiskFv/Extraction/Arith.lean`:
 
+    * `cy_0..cy_6` — stage-1 cols 0–6 — the 7 carry-chain witnesses
+      used by `constraint_31..38_every_row`. Range-bounded by the
+      `ARITH_RANGE_CARRY` lookup table (see `Airs/Arith/Ranges.lean`).
     * `a[0..3]`, `b[0..3]`, `c[0..3]`, `d[0..3]` — stage-1 cols 7–22.
       On DIV/DIVU rows (`main_div = 1`, primary) the quotient is packed
       into `a[0..3]`, the remainder into `d[0..3]`. On REM/REMU rows
@@ -86,19 +72,28 @@ fields (verified via spike), so this notice is documentation-only.
       `nr` follow the operand/quotient/remainder signs. `div = 1` marks
       the row as division (vs. multiplication), `m32 = 0` selects the
       64-bit width (divu_w/div_w/remu_w/rem_w out of scope).
+    * `fab`, `na_fb`, `nb_fa` — stage-1 cols 30–32 — sign-consistency
+      witnesses pinned by `constraint_6/7/8_every_row` to
+      `1 - 2·na - 2·nb + 4·na·nb`, `na·(1-2·nb)`, `nb·(1-2·na)`.
     * `main_mul`, `main_div` — stage-1 cols 33–34. On DIV/DIVU rows
       `main_div = 1`, `main_mul = 0`; on REM/REMU rows (secondary)
       both are zero. The `secondary` row-expr (arith.pil:246) is
       `1 - main_mul - main_div`.
     * `op` — stage-1 col 39 — the 8-bit opcode literal
       (0xb8..0xbb for 64-bit DIV family).
-    * `multiplicity` — stage-1 col 41 — operation-bus consume multiplicity.
     * `bus_res1` — stage-1 col 40 — the range-checked high-32 witness
       column. For the 64-bit div cases (sext = 0, m32 = 0) it equals
-      `bus_res1_64` (see constraint 46 in `Extraction/Arith`). -/
-structure Valid_ArithDiv (C : Type → Type → Type) (F ExtF : Type)
-    [Field F] [Field ExtF] [Circuit F ExtF C] where
-  circuit : C F ExtF
+      `bus_res1_64` (see constraint 46 in `Extraction/Arith`).
+    * `multiplicity` — stage-1 col 41 — operation-bus consume multiplicity. -/
+structure Valid_ArithDiv (F ExtF : Type)
+    [Field F] [Field ExtF] where
+  cy_0 : ℕ → F
+  cy_1 : ℕ → F
+  cy_2 : ℕ → F
+  cy_3 : ℕ → F
+  cy_4 : ℕ → F
+  cy_5 : ℕ → F
+  cy_6 : ℕ → F
   a_0 : ℕ → F
   a_1 : ℕ → F
   a_2 : ℕ → F
@@ -122,124 +117,52 @@ structure Valid_ArithDiv (C : Type → Type → Type) (F ExtF : Type)
   sext : ℕ → F
   m32 : ℕ → F
   div : ℕ → F
-  /-- fab = (1 - 2·na) - 2·nb + 4·na·nb (Arith col 30, constraint 6).
-      Sign-consistency witness pinned by `constraint_6_every_row`. Added
-      under Phase F4 structural-unpacking to allow the
-      `arith_div_*_packed_correct` proofs to access this column via the
-      named-accessor API rather than positional `Circuit.main` access. -/
   fab : ℕ → F
-  /-- na_fb = na · (1 - 2·nb) (Arith col 31, constraint 7).
-      Sign-consistency witness pinned by `constraint_7_every_row`. -/
   na_fb : ℕ → F
-  /-- nb_fa = nb · (1 - 2·na) (Arith col 32, constraint 8).
-      Sign-consistency witness pinned by `constraint_8_every_row`. -/
   nb_fa : ℕ → F
   main_div : ℕ → F
   main_mul : ℕ → F
   op : ℕ → F
   bus_res1 : ℕ → F
   multiplicity : ℕ → F
-  a_0_def : ∀ row,
-    a_0 row = Circuit.main circuit (id := 1) (column := 7) (row := row) (rotation := 0)
-  a_1_def : ∀ row,
-    a_1 row = Circuit.main circuit (id := 1) (column := 8) (row := row) (rotation := 0)
-  a_2_def : ∀ row,
-    a_2 row = Circuit.main circuit (id := 1) (column := 9) (row := row) (rotation := 0)
-  a_3_def : ∀ row,
-    a_3 row = Circuit.main circuit (id := 1) (column := 10) (row := row) (rotation := 0)
-  b_0_def : ∀ row,
-    b_0 row = Circuit.main circuit (id := 1) (column := 11) (row := row) (rotation := 0)
-  b_1_def : ∀ row,
-    b_1 row = Circuit.main circuit (id := 1) (column := 12) (row := row) (rotation := 0)
-  b_2_def : ∀ row,
-    b_2 row = Circuit.main circuit (id := 1) (column := 13) (row := row) (rotation := 0)
-  b_3_def : ∀ row,
-    b_3 row = Circuit.main circuit (id := 1) (column := 14) (row := row) (rotation := 0)
-  c_0_def : ∀ row,
-    c_0 row = Circuit.main circuit (id := 1) (column := 15) (row := row) (rotation := 0)
-  c_1_def : ∀ row,
-    c_1 row = Circuit.main circuit (id := 1) (column := 16) (row := row) (rotation := 0)
-  c_2_def : ∀ row,
-    c_2 row = Circuit.main circuit (id := 1) (column := 17) (row := row) (rotation := 0)
-  c_3_def : ∀ row,
-    c_3 row = Circuit.main circuit (id := 1) (column := 18) (row := row) (rotation := 0)
-  d_0_def : ∀ row,
-    d_0 row = Circuit.main circuit (id := 1) (column := 19) (row := row) (rotation := 0)
-  d_1_def : ∀ row,
-    d_1 row = Circuit.main circuit (id := 1) (column := 20) (row := row) (rotation := 0)
-  d_2_def : ∀ row,
-    d_2 row = Circuit.main circuit (id := 1) (column := 21) (row := row) (rotation := 0)
-  d_3_def : ∀ row,
-    d_3 row = Circuit.main circuit (id := 1) (column := 22) (row := row) (rotation := 0)
-  na_def : ∀ row,
-    na row = Circuit.main circuit (id := 1) (column := 23) (row := row) (rotation := 0)
-  nb_def : ∀ row,
-    nb row = Circuit.main circuit (id := 1) (column := 24) (row := row) (rotation := 0)
-  nr_def : ∀ row,
-    nr row = Circuit.main circuit (id := 1) (column := 25) (row := row) (rotation := 0)
-  np_def : ∀ row,
-    np row = Circuit.main circuit (id := 1) (column := 26) (row := row) (rotation := 0)
-  sext_def : ∀ row,
-    sext row = Circuit.main circuit (id := 1) (column := 27) (row := row) (rotation := 0)
-  m32_def : ∀ row,
-    m32 row = Circuit.main circuit (id := 1) (column := 28) (row := row) (rotation := 0)
-  div_def : ∀ row,
-    div row = Circuit.main circuit (id := 1) (column := 29) (row := row) (rotation := 0)
-  fab_def : ∀ row,
-    fab row = Circuit.main circuit (id := 1) (column := 30) (row := row) (rotation := 0)
-  na_fb_def : ∀ row,
-    na_fb row = Circuit.main circuit (id := 1) (column := 31) (row := row) (rotation := 0)
-  nb_fa_def : ∀ row,
-    nb_fa row = Circuit.main circuit (id := 1) (column := 32) (row := row) (rotation := 0)
-  main_div_def : ∀ row,
-    main_div row = Circuit.main circuit (id := 1) (column := 33) (row := row) (rotation := 0)
-  main_mul_def : ∀ row,
-    main_mul row = Circuit.main circuit (id := 1) (column := 34) (row := row) (rotation := 0)
-  op_def : ∀ row,
-    op row = Circuit.main circuit (id := 1) (column := 39) (row := row) (rotation := 0)
-  bus_res1_def : ∀ row,
-    bus_res1 row = Circuit.main circuit (id := 1) (column := 40) (row := row) (rotation := 0)
-  multiplicity_def : ∀ row,
-    multiplicity row = Circuit.main circuit (id := 1) (column := 41) (row := row) (rotation := 0)
 
-variable {C : Type → Type → Type} {F ExtF : Type}
-  [Field F] [Field ExtF] [Circuit F ExtF C]
+variable {F ExtF : Type} [Field F] [Field ExtF]
 
 /-- `main_mul` and `main_div` are mutually exclusive: `main_mul * main_div = 0`.
     Rewrites `constraint_2_every_row`. Same constraint as MUL rows — this
     is a global Arith-AIR boolean not specific to mode. -/
 @[simp]
-def main_mul_div_disjoint (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
+def main_mul_div_disjoint (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
   v.main_mul row * v.main_div row = 0
 
 /-- `m32` is boolean — rewrites `constraint_40_every_row`. -/
 @[simp]
-def boolean_m32 (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
+def boolean_m32 (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
   v.m32 row * (1 - v.m32 row) = 0
 
 /-- `na` is boolean — rewrites `constraint_41_every_row`. -/
 @[simp]
-def boolean_na (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
+def boolean_na (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
   v.na row * (1 - v.na row) = 0
 
 /-- `nb` is boolean — rewrites `constraint_42_every_row`. -/
 @[simp]
-def boolean_nb (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
+def boolean_nb (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
   v.nb row * (1 - v.nb row) = 0
 
 /-- `nr` is boolean — rewrites `constraint_43_every_row`. -/
 @[simp]
-def boolean_nr (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
+def boolean_nr (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
   v.nr row * (1 - v.nr row) = 0
 
 /-- `np` is boolean — rewrites `constraint_44_every_row`. -/
 @[simp]
-def boolean_np (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
+def boolean_np (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
   v.np row * (1 - v.np row) = 0
 
 /-- `sext` is boolean — rewrites `constraint_45_every_row`. -/
 @[simp]
-def boolean_sext (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
+def boolean_sext (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
   v.sext row * (1 - v.sext row) = 0
 
 /-- **DIV/REM-subset mode predicates bundled.** Same boolean-selector
@@ -248,7 +171,7 @@ def boolean_sext (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
     constraints (31–38), specialized to `div = 1`, remain reachable
     via the raw extraction bridges. -/
 @[simp]
-def div_mode_booleans (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
+def div_mode_booleans (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
   main_mul_div_disjoint v row
   ∧ boolean_m32 v row
   ∧ boolean_na v row
@@ -256,59 +179,6 @@ def div_mode_booleans (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
   ∧ boolean_nr v row
   ∧ boolean_np v row
   ∧ boolean_sext v row
-
-section extraction_bridge
-
-@[simp]
-lemma constraint_2_of_extraction
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ) :
-    constraint_2_every_row v.circuit row ↔ main_mul_div_disjoint v row := by
-  unfold constraint_2_every_row main_mul_div_disjoint
-  rw [v.main_mul_def, v.main_div_def]
-
-@[simp]
-lemma constraint_40_of_extraction
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ) :
-    constraint_40_every_row v.circuit row ↔ boolean_m32 v row := by
-  unfold constraint_40_every_row boolean_m32
-  rw [v.m32_def]
-
-@[simp]
-lemma constraint_41_of_extraction
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ) :
-    constraint_41_every_row v.circuit row ↔ boolean_na v row := by
-  unfold constraint_41_every_row boolean_na
-  rw [v.na_def]
-
-@[simp]
-lemma constraint_42_of_extraction
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ) :
-    constraint_42_every_row v.circuit row ↔ boolean_nb v row := by
-  unfold constraint_42_every_row boolean_nb
-  rw [v.nb_def]
-
-@[simp]
-lemma constraint_43_of_extraction
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ) :
-    constraint_43_every_row v.circuit row ↔ boolean_nr v row := by
-  unfold constraint_43_every_row boolean_nr
-  rw [v.nr_def]
-
-@[simp]
-lemma constraint_44_of_extraction
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ) :
-    constraint_44_every_row v.circuit row ↔ boolean_np v row := by
-  unfold constraint_44_every_row boolean_np
-  rw [v.np_def]
-
-@[simp]
-lemma constraint_45_of_extraction
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ) :
-    constraint_45_every_row v.circuit row ↔ boolean_sext v row := by
-  unfold constraint_45_every_row boolean_sext
-  rw [v.sext_def]
-
-end extraction_bridge
 
 section BusEmission
 
@@ -351,9 +221,8 @@ open ZiskFv.Airs.OperationBus
     directly; div-by-zero is handled by the PIL + arith_table
     assumption network. -/
 @[simp]
-def opBus_row_ArithDiv {C : Type → Type → Type} {F ExtF : Type}
-    [Field F] [Field ExtF] [Circuit F ExtF C]
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ) : OperationBusEntry F :=
+def opBus_row_ArithDiv {F ExtF : Type} [Field F] [Field ExtF]
+    (v : Valid_ArithDiv F ExtF) (row : ℕ) : OperationBusEntry F :=
   { multiplicity := v.multiplicity row
     op := v.op row
     -- DIV rows: `div = 1` → bus `a` comes from `c[]`.
@@ -377,9 +246,8 @@ def opBus_row_ArithDiv {C : Type → Type → Type} {F ExtF : Type}
     Same row-level layout as `opBus_row_ArithDiv` except the result lane
     is packed from `d[0..3]` rather than `a[0..3]`. -/
 @[simp]
-def opBus_row_ArithDivSecondary {C : Type → Type → Type} {F ExtF : Type}
-    [Field F] [Field ExtF] [Circuit F ExtF C]
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ) : OperationBusEntry F :=
+def opBus_row_ArithDivSecondary {F ExtF : Type} [Field F] [Field ExtF]
+    (v : Valid_ArithDiv F ExtF) (row : ℕ) : OperationBusEntry F :=
   { multiplicity := v.multiplicity row
     op := v.op row
     -- DIV rows: `div = 1` → bus `a` comes from `c[]`.
@@ -400,119 +268,231 @@ end BusEmission
 /-!
 ## Carry-chain specialization (DIV-unsigned)
 
-Connects the raw extraction constraints 31-38 at `v.circuit` to the
-pure-field DIV carry-chain identity in `Airs/Arith/CarryChain.lean`,
-yielding the packed identity
+Post-Phase-F4-retirement, the carry-chain bundle is expressed entirely
+over named columns — no `Circuit.main` / `v.circuit` references. Each
+`carry_eq_*_div` predicate captures the named-column form of the
+corresponding `Extraction.Arith.constraint_3{1..8}_every_row` /
+`constraint_{6,7,8}_every_row`; the `bus_res1_eq` predicate captures
+constraint 46. The packed identity
 
     a_packed * b_packed + d_packed = c_packed
 
 for the DIVU/REMU mode (`fab = 1`,
-`na = nb = np = nr = sext = m32 = 0`, `div = 1`). Here `a` holds the
-quotient, `b` the divisor, `c` the dividend, and `d` the remainder.
-
-Mirrors `arith_mul_unsigned_packed_correct` from `Mul.lean`, specialized
-to DIV mode (`div = 1` instead of 0).
+`na = nb = np = nr = sext = m32 = 0`, `div = 1`) is derived from
+these named-form predicates exactly as the pre-retirement version
+derived from the `Circuit.main`-form constraint predicates. Here `a`
+holds the quotient, `b` the divisor, `c` the dividend, `d` the
+remainder.
 -/
 
 section CarryChain
 
-open Arith.extraction
 open ZiskFv.Airs.ArithCarryChain
 
-/-- **Bundled Arith DIV-mode carry-chain constraints.** Packs the 11
-    extraction constraints the `arith_div_unsigned_packed_correct`
-    theorem consumes: constraints 6-8 + 31-38. -/
+/-- Named-form `fab` closure equation — mirrors `constraint_6_every_row`. -/
 @[simp]
-def div_carry_chain_holds (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
-  constraint_6_every_row v.circuit row
-  ∧ constraint_7_every_row v.circuit row
-  ∧ constraint_8_every_row v.circuit row
-  ∧ constraint_31_every_row v.circuit row
-  ∧ constraint_32_every_row v.circuit row
-  ∧ constraint_33_every_row v.circuit row
-  ∧ constraint_34_every_row v.circuit row
-  ∧ constraint_35_every_row v.circuit row
-  ∧ constraint_36_every_row v.circuit row
-  ∧ constraint_37_every_row v.circuit row
-  ∧ constraint_38_every_row v.circuit row
+def fab_eq_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.fab row - ((1 - 2 * v.na row) - 2 * v.nb row + 4 * v.na row * v.nb row) = 0
 
-/-- **Extended Arith DIV-mode row constraints — includes constraint 46.**
+/-- Named-form `na_fb` closure equation — mirrors `constraint_7_every_row`. -/
+@[simp]
+def na_fb_eq_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.na_fb row - (v.na row * (1 - 2 * v.nb row)) = 0
+
+/-- Named-form `nb_fa` closure equation — mirrors `constraint_8_every_row`. -/
+@[simp]
+def nb_fa_eq_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.nb_fa row - (v.nb row * (1 - 2 * v.na row)) = 0
+
+/-- Named-form carry equation 0 — mirrors `constraint_31_every_row`.
+    The original `Circuit.main`-form was:
+    `(fab*a0*b0 - c0 + 2*np*c0 + div*d0 - 2*nr*d0 - cy_0 * 65536) = 0` -/
+@[simp]
+def carry_eq_0_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.fab row * v.a_0 row * v.b_0 row - v.c_0 row + 2 * v.np row * v.c_0 row
+    + v.div row * v.d_0 row - 2 * v.nr row * v.d_0 row
+    - v.cy_0 row * 65536 = 0
+
+/-- Named-form carry equation 1 — mirrors `constraint_32_every_row`. -/
+@[simp]
+def carry_eq_1_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.fab row * v.a_1 row * v.b_0 row + v.fab row * v.a_0 row * v.b_1 row
+    - v.c_1 row + 2 * v.np row * v.c_1 row
+    + v.div row * v.d_1 row - 2 * v.nr row * v.d_1 row
+    + v.cy_0 row - v.cy_1 row * 65536 = 0
+
+/-- Named-form carry equation 2 — mirrors `constraint_33_every_row`. -/
+@[simp]
+def carry_eq_2_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.fab row * v.a_2 row * v.b_0 row + v.fab row * v.a_1 row * v.b_1 row
+    + v.fab row * v.a_0 row * v.b_2 row
+    + v.a_0 row * v.nb_fa row * v.m32 row
+    + v.b_0 row * v.na_fb row * v.m32 row
+    - v.c_2 row + 2 * v.np row * v.c_2 row
+    + v.div row * v.d_2 row - 2 * v.nr row * v.d_2 row
+    - v.np row * v.div row * v.m32 row + v.nr row * v.m32 row
+    + v.cy_1 row - v.cy_2 row * 65536 = 0
+
+/-- Named-form carry equation 3 — mirrors `constraint_34_every_row`. -/
+@[simp]
+def carry_eq_3_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.fab row * v.a_3 row * v.b_0 row + v.fab row * v.a_2 row * v.b_1 row
+    + v.fab row * v.a_1 row * v.b_2 row + v.fab row * v.a_0 row * v.b_3 row
+    + v.a_1 row * v.nb_fa row * v.m32 row
+    + v.b_1 row * v.na_fb row * v.m32 row
+    - v.c_3 row + 2 * v.np row * v.c_3 row
+    + v.div row * v.d_3 row - 2 * v.nr row * v.d_3 row
+    + v.cy_2 row - v.cy_3 row * 65536 = 0
+
+/-- Named-form carry equation 4 — mirrors `constraint_35_every_row`. -/
+@[simp]
+def carry_eq_4_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.fab row * v.a_3 row * v.b_1 row + v.fab row * v.a_2 row * v.b_2 row
+    + v.fab row * v.a_1 row * v.b_3 row
+    + v.na row * v.nb row * v.m32 row
+    + v.b_0 row * v.na_fb row * (1 - v.m32 row)
+    + v.a_0 row * v.nb_fa row * (1 - v.m32 row)
+    - v.np row * v.m32 row * (1 - v.div row)
+    - v.np row * (1 - v.m32 row) * v.div row
+    + v.nr row * (1 - v.m32 row)
+    - v.d_0 row * (1 - v.div row)
+    + 2 * v.np row * v.d_0 row * (1 - v.div row)
+    + v.cy_3 row - v.cy_4 row * 65536 = 0
+
+/-- Named-form carry equation 5 — mirrors `constraint_36_every_row`. -/
+@[simp]
+def carry_eq_5_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.fab row * v.a_3 row * v.b_2 row + v.fab row * v.a_2 row * v.b_3 row
+    + v.a_1 row * v.nb_fa row * (1 - v.m32 row)
+    + v.b_1 row * v.na_fb row * (1 - v.m32 row)
+    - v.d_1 row * (1 - v.div row)
+    + v.d_1 row * 2 * v.np row * (1 - v.div row)
+    + v.cy_4 row - v.cy_5 row * 65536 = 0
+
+/-- Named-form carry equation 6 — mirrors `constraint_37_every_row`. -/
+@[simp]
+def carry_eq_6_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.fab row * v.a_3 row * v.b_3 row
+    + v.a_2 row * v.nb_fa row * (1 - v.m32 row)
+    + v.b_2 row * v.na_fb row * (1 - v.m32 row)
+    - v.d_2 row * (1 - v.div row)
+    + 2 * v.np row * v.d_2 row * (1 - v.div row)
+    + v.cy_5 row - v.cy_6 row * 65536 = 0
+
+/-- Named-form carry equation 7 — mirrors `constraint_38_every_row`. -/
+@[simp]
+def carry_eq_7_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  65536 * v.na row * v.nb row * (1 - v.m32 row)
+    + v.a_3 row * v.nb_fa row * (1 - v.m32 row)
+    + v.b_3 row * v.na_fb row * (1 - v.m32 row)
+    - 65536 * v.np row * (1 - v.div row) * (1 - v.m32 row)
+    - v.d_3 row * (1 - v.div row)
+    + 2 * v.np row * v.d_3 row * (1 - v.div row)
+    + v.cy_6 row = 0
+
+/-- Named-form bus_res1 equation — mirrors `constraint_46_every_row`. -/
+@[simp]
+def bus_res1_eq_div (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  v.bus_res1 row -
+    (v.sext row * 4294967295
+      + (1 - v.m32 row)
+        * (((1 - v.main_mul row - v.main_div row)
+            * (v.d_2 row + v.d_3 row * 65536))
+          + (v.main_mul row * (v.c_2 row + v.c_3 row * 65536))
+          + (v.main_div row * (v.a_2 row + v.a_3 row * 65536)))) = 0
+
+/-- **Bundled Arith DIV-mode carry-chain constraints.** Packs the 11
+    named-form constraints the `arith_div_unsigned_packed_correct`
+    theorem consumes: the 3 `fab`/`na_fb`/`nb_fa` closures + the 8
+    carry equations. -/
+@[simp]
+def div_carry_chain_holds (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
+  fab_eq_div v row
+  ∧ na_fb_eq_div v row
+  ∧ nb_fa_eq_div v row
+  ∧ carry_eq_0_div v row
+  ∧ carry_eq_1_div v row
+  ∧ carry_eq_2_div v row
+  ∧ carry_eq_3_div v row
+  ∧ carry_eq_4_div v row
+  ∧ carry_eq_5_div v row
+  ∧ carry_eq_6_div v row
+  ∧ carry_eq_7_div v row
+
+/-- **Extended Arith DIV-mode row constraints — includes bus_res1 equation.**
     Same shape as `div_carry_chain_holds` but additionally pins
-    `constraint_46_every_row` (the `bus_res1` normalization at
-    `arith.pil:263`). Required by `equiv_DIV` to discharge
+    `bus_res1_eq_div` (the named-form analog of `constraint_46_every_row`
+    at `arith.pil:263`). Required by `equiv_DIV` to discharge
     the hi-lane byte-pack equation via `div_bus_res1_eq_a_hi`
     (`Airs/Arith/BusRes1.lean`). Compliance.lean's downstream caller
     will collapse this into the universal `∀ r, arith_div_row_well_formed`
     parameter. -/
 @[simp]
-def div_row_constraints_with_c46 (v : Valid_ArithDiv C F ExtF) (row : ℕ) : Prop :=
+def div_row_constraints_with_c46 (v : Valid_ArithDiv F ExtF) (row : ℕ) : Prop :=
   div_carry_chain_holds v row
-  ∧ constraint_46_every_row v.circuit row
+  ∧ bus_res1_eq_div v row
 
 /-- Project out the carry-chain bundle from the extended bundle. -/
 lemma div_carry_chain_holds_of_extended
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+    (v : Valid_ArithDiv F ExtF) (row : ℕ)
     (h : div_row_constraints_with_c46 v row) :
     div_carry_chain_holds v row := h.1
 
-/-- Project out constraint 46 from the extended bundle. -/
-lemma constraint_46_of_extended
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+/-- Project out the bus_res1 equation from the extended bundle. -/
+lemma bus_res1_eq_div_of_extended
+    (v : Valid_ArithDiv F ExtF) (row : ℕ)
     (h : div_row_constraints_with_c46 v row) :
-    constraint_46_every_row v.circuit row := h.2
+    bus_res1_eq_div v row := h.2
 
 /-- Packed `a` over Div columns: `a[0] + a[1]*2^16 + a[2]*2^32 + a[3]*2^48`.
     For DIVU/DIV this is the quotient; for REMU/REM the quotient lane is
     still computed but unused by the bus emission. -/
 @[simp]
-def a_chunks_packed_div (v : Valid_ArithDiv C F ExtF) (r : ℕ) : F :=
+def a_chunks_packed_div (v : Valid_ArithDiv F ExtF) (r : ℕ) : F :=
   v.a_0 r + v.a_1 r * 65536 + v.a_2 r * (65536 * 65536)
     + v.a_3 r * (65536 * 65536 * 65536)
 
 /-- Packed `b` over Div columns: divisor. -/
 @[simp]
-def b_chunks_packed_div (v : Valid_ArithDiv C F ExtF) (r : ℕ) : F :=
+def b_chunks_packed_div (v : Valid_ArithDiv F ExtF) (r : ℕ) : F :=
   v.b_0 r + v.b_1 r * 65536 + v.b_2 r * (65536 * 65536)
     + v.b_3 r * (65536 * 65536 * 65536)
 
 /-- Packed `c` over Div columns: dividend. -/
 @[simp]
-def c_chunks_packed_div (v : Valid_ArithDiv C F ExtF) (r : ℕ) : F :=
+def c_chunks_packed_div (v : Valid_ArithDiv F ExtF) (r : ℕ) : F :=
   v.c_0 r + v.c_1 r * 65536 + v.c_2 r * (65536 * 65536)
     + v.c_3 r * (65536 * 65536 * 65536)
 
 /-- Packed `d` over Div columns: remainder. -/
 @[simp]
-def d_chunks_packed_div (v : Valid_ArithDiv C F ExtF) (r : ℕ) : F :=
+def d_chunks_packed_div (v : Valid_ArithDiv F ExtF) (r : ℕ) : F :=
   v.d_0 r + v.d_1 r * 65536 + v.d_2 r * (65536 * 65536)
     + v.d_3 r * (65536 * 65536 * 65536)
 
 /-- **DIV-unsigned carry-chain specialization.**
 
-    If the 8 raw extraction carry constraints hold at `v.circuit`
-    (constraints 31-38), together with constraints 6/7/8 fixing
-    `fab`/`na_fb`/`nb_fa`, and the mode witnesses pin
-    `na = nb = np = nr = sext = m32 = 0`, `div = 1`, then the packed
-    chunks satisfy
+    Named-form analog of the pre-retirement
+    `arith_div_unsigned_packed_correct`. Consumes the 11 named-form
+    constraint equations plus the unsigned-mode pins; concludes the
+    packed identity
 
         a_packed * b_packed + d_packed = c_packed
 
-    (quotient × divisor + remainder = dividend).
-
-    Direct consequence of `CarryChain.arith_div_unsigned_carry_identity`. -/
+    (quotient × divisor + remainder = dividend). -/
 lemma arith_div_unsigned_packed_correct
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
-    (h6 : constraint_6_every_row v.circuit row)
-    (h7 : constraint_7_every_row v.circuit row)
-    (h8 : constraint_8_every_row v.circuit row)
-    (h31 : constraint_31_every_row v.circuit row)
-    (h32 : constraint_32_every_row v.circuit row)
-    (h33 : constraint_33_every_row v.circuit row)
-    (h34 : constraint_34_every_row v.circuit row)
-    (h35 : constraint_35_every_row v.circuit row)
-    (h36 : constraint_36_every_row v.circuit row)
-    (h37 : constraint_37_every_row v.circuit row)
-    (h38 : constraint_38_every_row v.circuit row)
+    (v : Valid_ArithDiv F ExtF) (row : ℕ)
+    (h6 : fab_eq_div v row)
+    (h7 : na_fb_eq_div v row)
+    (h8 : nb_fa_eq_div v row)
+    (h31 : carry_eq_0_div v row)
+    (h32 : carry_eq_1_div v row)
+    (h33 : carry_eq_2_div v row)
+    (h34 : carry_eq_3_div v row)
+    (h35 : carry_eq_4_div v row)
+    (h36 : carry_eq_5_div v row)
+    (h37 : carry_eq_6_div v row)
+    (h38 : carry_eq_7_div v row)
     (h_na : v.na row = 0) (h_nb : v.nb row = 0)
     (h_np : v.np row = 0) (h_nr : v.nr row = 0)
     (_h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
@@ -520,24 +500,14 @@ lemma arith_div_unsigned_packed_correct
     a_chunks_packed_div v row * b_chunks_packed_div v row
       + d_chunks_packed_div v row
       = c_chunks_packed_div v row := by
-  simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
-             ← v.na_def, ← v.nb_def, ← v.fab_def, ← v.na_fb_def, ← v.nb_fa_def] at h6 h7 h8
+  simp only [fab_eq_div, na_fb_eq_div, nb_fa_eq_div] at h6 h7 h8
   simp only [h_na, h_nb] at h6 h7 h8
   have h_fab : v.fab row = (1 : F) := by linear_combination h6
   have h_nafb : v.na_fb row = (0 : F) := by linear_combination h7
   have h_nbfa : v.nb_fa row = (0 : F) := by linear_combination h8
-  simp only [constraint_31_every_row, constraint_32_every_row,
-             constraint_33_every_row, constraint_34_every_row,
-             constraint_35_every_row, constraint_36_every_row,
-             constraint_37_every_row, constraint_38_every_row,
-             ← v.a_0_def, ← v.a_1_def, ← v.a_2_def, ← v.a_3_def,
-             ← v.b_0_def, ← v.b_1_def, ← v.b_2_def, ← v.b_3_def,
-             ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
-             ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
-             ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
-             ← v.m32_def, ← v.div_def,
-             ← v.fab_def, ← v.na_fb_def, ← v.nb_fa_def]
-    at h31 h32 h33 h34 h35 h36 h37 h38
+  simp only [carry_eq_0_div, carry_eq_1_div, carry_eq_2_div,
+             carry_eq_3_div, carry_eq_4_div, carry_eq_5_div,
+             carry_eq_6_div, carry_eq_7_div] at h31 h32 h33 h34 h35 h36 h37 h38
   simp only [h_na, h_nb, h_np, h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
              mul_zero, zero_mul, add_zero, sub_zero,
              mul_one, one_mul, sub_self]
@@ -555,44 +525,31 @@ lemma arith_div_unsigned_packed_correct
 
 /-- **DIV-signed carry-chain specialization.**
 
-    Extends `arith_div_unsigned_packed_correct` to signed DIV
-    (`(na, nb, np, nr) ∈ {0,1}⁴` with the signed-DIV rows per
-    `arith.pil:222-234`; `m32 = 0`, `div = 1`).
-
-    The conclusion mirrors the pure-field
-    `ArithCarryChain.arith_div_signed_carry_identity`:
+    Named-form analog of the pre-retirement
+    `arith_div_signed_packed_correct`. Consumes the 11 named-form
+    constraint equations plus the signed-mode pins (`sext`, `m32`,
+    `div`); concludes the polynomial identity
 
         fab * a_packed * b_packed + (1 - 2*nr) * d_packed
           + (nb_fa * a_packed + na_fb * b_packed) * B^4
           + (nr - np) * B^4 + na*nb * B^8
-        = (1 - 2*np) * c_packed
+        = (1 - 2*np) * c_packed.
 
-    where `fab`, `na_fb`, `nb_fa` are pinned by constraints 6/7/8 to
-        fab = 1 - 2*na - 2*nb + 4*na*nb,
-        na_fb = na*(1 - 2*nb),
-        nb_fa = nb*(1 - 2*na).
-
-    Specializing `(na, nb, np, nr) = (0, 0, 0, 0)` recovers
-    `a_packed * b_packed + d_packed = c_packed`
-    (quotient × divisor + remainder = dividend).
-
-    **Scope note — arith_table.** The 4-DIV-opcode mapping
-    `(opcode, m32) ↦ (na, nb, np, nr)` is enforced by the arith_table
-    permutation lookup; this theorem takes the sign witnesses as
-    explicit hypotheses, not derived from the table. -/
+    Specializing `(na, nb, np, nr) = (0, 0, 0, 0)` recovers the
+    unsigned form. -/
 lemma arith_div_signed_packed_correct
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
-    (h6 : constraint_6_every_row v.circuit row)
-    (h7 : constraint_7_every_row v.circuit row)
-    (h8 : constraint_8_every_row v.circuit row)
-    (h31 : constraint_31_every_row v.circuit row)
-    (h32 : constraint_32_every_row v.circuit row)
-    (h33 : constraint_33_every_row v.circuit row)
-    (h34 : constraint_34_every_row v.circuit row)
-    (h35 : constraint_35_every_row v.circuit row)
-    (h36 : constraint_36_every_row v.circuit row)
-    (h37 : constraint_37_every_row v.circuit row)
-    (h38 : constraint_38_every_row v.circuit row)
+    (v : Valid_ArithDiv F ExtF) (row : ℕ)
+    (h6 : fab_eq_div v row)
+    (h7 : na_fb_eq_div v row)
+    (h8 : nb_fa_eq_div v row)
+    (h31 : carry_eq_0_div v row)
+    (h32 : carry_eq_1_div v row)
+    (h33 : carry_eq_2_div v row)
+    (h34 : carry_eq_3_div v row)
+    (h35 : carry_eq_4_div v row)
+    (h36 : carry_eq_5_div v row)
+    (h37 : carry_eq_6_div v row)
+    (h38 : carry_eq_7_div v row)
     (_h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
     (h_div : v.div row = 1) :
     (1 - 2 * v.na row - 2 * v.nb row + 4 * v.na row * v.nb row)
@@ -605,27 +562,16 @@ lemma arith_div_signed_packed_correct
       + v.na row * v.nb row
           * (65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536 * 65536)
       = (1 - 2 * v.np row) * c_chunks_packed_div v row := by
-  -- Derive fab / na_fb / nb_fa from constraints 6/7/8.
-  simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
-             ← v.na_def, ← v.nb_def, ← v.fab_def, ← v.na_fb_def, ← v.nb_fa_def] at h6 h7 h8
+  simp only [fab_eq_div, na_fb_eq_div, nb_fa_eq_div] at h6 h7 h8
   have h_fab : v.fab row
     = 1 - 2 * v.na row - 2 * v.nb row + 4 * v.na row * v.nb row := by linear_combination h6
   have h_nafb : v.na_fb row
     = v.na row * (1 - 2 * v.nb row) := by linear_combination h7
   have h_nbfa : v.nb_fa row
     = v.nb row * (1 - 2 * v.na row) := by linear_combination h8
-  simp only [constraint_31_every_row, constraint_32_every_row,
-             constraint_33_every_row, constraint_34_every_row,
-             constraint_35_every_row, constraint_36_every_row,
-             constraint_37_every_row, constraint_38_every_row,
-             ← v.a_0_def, ← v.a_1_def, ← v.a_2_def, ← v.a_3_def,
-             ← v.b_0_def, ← v.b_1_def, ← v.b_2_def, ← v.b_3_def,
-             ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
-             ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
-             ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
-             ← v.m32_def, ← v.div_def,
-             ← v.fab_def, ← v.na_fb_def, ← v.nb_fa_def]
-    at h31 h32 h33 h34 h35 h36 h37 h38
+  simp only [carry_eq_0_div, carry_eq_1_div, carry_eq_2_div,
+             carry_eq_3_div, carry_eq_4_div, carry_eq_5_div,
+             carry_eq_6_div, carry_eq_7_div] at h31 h32 h33 h34 h35 h36 h37 h38
   simp only [h_m32, h_div, h_fab, h_nafb, h_nbfa,
              mul_zero, add_zero, sub_zero,
              mul_one, sub_self]
@@ -643,7 +589,7 @@ lemma arith_div_signed_packed_correct
 
 /-- **DIV-unsigned carry-chain specialization (bundled form).** -/
 lemma arith_div_unsigned_packed_correct_bundled
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+    (v : Valid_ArithDiv F ExtF) (row : ℕ)
     (h_chain : div_carry_chain_holds v row)
     (h_na : v.na row = 0) (h_nb : v.nb row = 0)
     (h_np : v.np row = 0) (h_nr : v.nr row = 0)
@@ -663,7 +609,7 @@ lemma arith_div_unsigned_packed_correct_bundled
     named columns for downstream consumption by the signed ℤ
     aggregator. -/
 lemma arith_div_signed_packed_correct_bundled
-    (v : Valid_ArithDiv C F ExtF) (row : ℕ)
+    (v : Valid_ArithDiv F ExtF) (row : ℕ)
     (h_chain : div_carry_chain_holds v row)
     (h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
     (h_div : v.div row = 1) :
