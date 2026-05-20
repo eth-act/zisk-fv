@@ -122,6 +122,18 @@ structure Valid_ArithDiv (C : Type → Type → Type) (F ExtF : Type)
   sext : ℕ → F
   m32 : ℕ → F
   div : ℕ → F
+  /-- fab = (1 - 2·na) - 2·nb + 4·na·nb (Arith col 30, constraint 6).
+      Sign-consistency witness pinned by `constraint_6_every_row`. Added
+      under Phase F4 structural-unpacking to allow the
+      `arith_div_*_packed_correct` proofs to access this column via the
+      named-accessor API rather than positional `Circuit.main` access. -/
+  fab : ℕ → F
+  /-- na_fb = na · (1 - 2·nb) (Arith col 31, constraint 7).
+      Sign-consistency witness pinned by `constraint_7_every_row`. -/
+  na_fb : ℕ → F
+  /-- nb_fa = nb · (1 - 2·na) (Arith col 32, constraint 8).
+      Sign-consistency witness pinned by `constraint_8_every_row`. -/
+  nb_fa : ℕ → F
   main_div : ℕ → F
   main_mul : ℕ → F
   op : ℕ → F
@@ -173,6 +185,12 @@ structure Valid_ArithDiv (C : Type → Type → Type) (F ExtF : Type)
     m32 row = Circuit.main circuit (id := 1) (column := 28) (row := row) (rotation := 0)
   div_def : ∀ row,
     div row = Circuit.main circuit (id := 1) (column := 29) (row := row) (rotation := 0)
+  fab_def : ∀ row,
+    fab row = Circuit.main circuit (id := 1) (column := 30) (row := row) (rotation := 0)
+  na_fb_def : ∀ row,
+    na_fb row = Circuit.main circuit (id := 1) (column := 31) (row := row) (rotation := 0)
+  nb_fa_def : ∀ row,
+    nb_fa row = Circuit.main circuit (id := 1) (column := 32) (row := row) (rotation := 0)
   main_div_def : ∀ row,
     main_div row = Circuit.main circuit (id := 1) (column := 33) (row := row) (rotation := 0)
   main_mul_def : ∀ row,
@@ -503,14 +521,11 @@ lemma arith_div_unsigned_packed_correct
       + d_chunks_packed_div v row
       = c_chunks_packed_div v row := by
   simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
-             ← v.na_def, ← v.nb_def] at h6 h7 h8
+             ← v.na_def, ← v.nb_def, ← v.fab_def, ← v.na_fb_def, ← v.nb_fa_def] at h6 h7 h8
   simp only [h_na, h_nb] at h6 h7 h8
-  have h_fab : Circuit.main v.circuit (id := 1) (column := 30) (row := row) (rotation := 0)
-    = (1 : F) := by linear_combination h6
-  have h_nafb : Circuit.main v.circuit (id := 1) (column := 31) (row := row) (rotation := 0)
-    = (0 : F) := by linear_combination h7
-  have h_nbfa : Circuit.main v.circuit (id := 1) (column := 32) (row := row) (rotation := 0)
-    = (0 : F) := by linear_combination h8
+  have h_fab : v.fab row = (1 : F) := by linear_combination h6
+  have h_nafb : v.na_fb row = (0 : F) := by linear_combination h7
+  have h_nbfa : v.nb_fa row = (0 : F) := by linear_combination h8
   simp only [constraint_31_every_row, constraint_32_every_row,
              constraint_33_every_row, constraint_34_every_row,
              constraint_35_every_row, constraint_36_every_row,
@@ -520,7 +535,8 @@ lemma arith_div_unsigned_packed_correct
              ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
              ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
              ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
-             ← v.m32_def, ← v.div_def]
+             ← v.m32_def, ← v.div_def,
+             ← v.fab_def, ← v.na_fb_def, ← v.nb_fa_def]
     at h31 h32 h33 h34 h35 h36 h37 h38
   simp only [h_na, h_nb, h_np, h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
              mul_zero, zero_mul, add_zero, sub_zero,
@@ -591,12 +607,12 @@ lemma arith_div_signed_packed_correct
       = (1 - 2 * v.np row) * c_chunks_packed_div v row := by
   -- Derive fab / na_fb / nb_fa from constraints 6/7/8.
   simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
-             ← v.na_def, ← v.nb_def] at h6 h7 h8
-  have h_fab : Circuit.main v.circuit (id := 1) (column := 30) (row := row) (rotation := 0)
+             ← v.na_def, ← v.nb_def, ← v.fab_def, ← v.na_fb_def, ← v.nb_fa_def] at h6 h7 h8
+  have h_fab : v.fab row
     = 1 - 2 * v.na row - 2 * v.nb row + 4 * v.na row * v.nb row := by linear_combination h6
-  have h_nafb : Circuit.main v.circuit (id := 1) (column := 31) (row := row) (rotation := 0)
+  have h_nafb : v.na_fb row
     = v.na row * (1 - 2 * v.nb row) := by linear_combination h7
-  have h_nbfa : Circuit.main v.circuit (id := 1) (column := 32) (row := row) (rotation := 0)
+  have h_nbfa : v.nb_fa row
     = v.nb row * (1 - 2 * v.na row) := by linear_combination h8
   simp only [constraint_31_every_row, constraint_32_every_row,
              constraint_33_every_row, constraint_34_every_row,
@@ -607,7 +623,8 @@ lemma arith_div_signed_packed_correct
              ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
              ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
              ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
-             ← v.m32_def, ← v.div_def]
+             ← v.m32_def, ← v.div_def,
+             ← v.fab_def, ← v.na_fb_def, ← v.nb_fa_def]
     at h31 h32 h33 h34 h35 h36 h37 h38
   simp only [h_m32, h_div, h_fab, h_nafb, h_nbfa,
              mul_zero, add_zero, sub_zero,
