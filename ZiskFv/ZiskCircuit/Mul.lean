@@ -57,7 +57,7 @@ def main_row_in_mul_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     not a division), `sext = 0` (no sign-extension — MULW uses sext=1
     and is out of scope), `m32 = 0` (64-bit operand form). -/
 @[simp]
-def arith_row_in_mul_mode (v : Valid_ArithMul C FGL FGL) (r_arith : ℕ) : Prop :=
+def arith_row_in_mul_mode (v : Valid_ArithMul FGL FGL) (r_arith : ℕ) : Prop :=
   v.main_mul r_arith = 1
   ∧ v.main_div r_arith = 0
   ∧ v.div r_arith = 0
@@ -70,7 +70,7 @@ def arith_row_in_mul_mode (v : Valid_ArithMul C FGL FGL) (r_arith : ℕ) : Prop 
     the mode witnesses on both sides. -/
 @[simp]
 def mul_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ) : Prop :=
   add_subset_holds m r_main
   ∧ mul_mode_booleans v r_arith
@@ -82,7 +82,7 @@ def mul_circuit_holds
     chunks, treated as a single Goldilocks element. For MUL-primary
     this is the low 64 bits of `a * b`. -/
 @[simp]
-def arith_c_packed (v : Valid_ArithMul C FGL FGL) (r : ℕ) : FGL :=
+def arith_c_packed (v : Valid_ArithMul FGL FGL) (r : ℕ) : FGL :=
   (v.c_0 r + v.c_1 r * 65536) + v.bus_res1 r * 4294967296
 
 /-- The 64-bit value packed into the Main row's `(c_0, c_1)` lanes. -/
@@ -102,7 +102,7 @@ def main_c_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     MUL happens in `Equivalence.Mul`, which parameterizes on an Arith-
     correctness hypothesis (left to the audit). -/
 lemma mul_compositional
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ)
     (h : mul_circuit_holds m v r_main r_arith) :
     main_c_packed m r_main = arith_c_packed v r_arith := by

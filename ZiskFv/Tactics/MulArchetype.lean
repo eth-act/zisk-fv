@@ -89,7 +89,7 @@ def main_row_in_mul_archetype_mode
     is a specialization at `opcode_lit = OP_MUL`. -/
 @[simp]
 def mul_archetype_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL) : Prop :=
   add_subset_holds m r_main
   ∧ mul_mode_booleans v r_arith
@@ -104,7 +104,7 @@ def mul_archetype_circuit_holds
     Result: Main's packed `c` equals Arith's packed result lanes,
     independent of which MUL-family opcode is on the Main row. -/
 lemma mul_archetype_bus_match
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ) (opcode_lit : FGL)
     (h : mul_archetype_circuit_holds m v r_main r_arith opcode_lit) :
     main_c_packed m r_main = arith_c_packed v r_arith := by

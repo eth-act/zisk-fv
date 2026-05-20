@@ -933,7 +933,7 @@ inductive OpEnvelope
     (mul_input : PureSpec.MulInput) (r1 r2 rd : regidx)
     (srs1 srs2 : Signedness)
     (bus : ZiskFv.Compliance.BusRows)
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
@@ -950,7 +950,7 @@ inductive OpEnvelope
   | mulh
     (mulh_input : PureSpec.MulhInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULH)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
@@ -966,7 +966,7 @@ inductive OpEnvelope
   | mulhu
     (mulhu_input : PureSpec.MulhuInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULUH)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
@@ -983,7 +983,7 @@ inductive OpEnvelope
   | mulhsu
     (mulhsu_input : PureSpec.MulhsuInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULSUH)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
@@ -999,7 +999,7 @@ inductive OpEnvelope
   | mulw
     (mulw_input : PureSpec.MulwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL_W)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)

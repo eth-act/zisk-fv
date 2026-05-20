@@ -426,3 +426,72 @@ ADDED: h_main_active, h_main_op_xori, h_match, h_xori_subset
        (Step 4.2r3.I structural-unpacking refactor — mechanical clone
         of `equiv_ANDI` with `AND → XOR`. See ANDI entry above for
         the per-binder rationale. Per-opcode metric holds net zero.)
+
+# ============================================================
+# Phase F3 ArithMul retirement (structural-unpacking via 10 new accessors)
+# ============================================================
+#
+# The 5 MUL-family opcodes (MUL, MULH, MULHU, MULHSU, MULW) all consume
+# `Valid_ArithMul C FGL FGL` as their arith-side validator. Phase F3
+# retires the `[Circuit F ExtF C]` typeclass scaffolding from
+# `Valid_ArithMul`, dropping:
+#   * the `circuit : C F ExtF` field
+#   * 23 `*_def` equation fields (a_0_def … multiplicity_def + 3 new
+#     fab_def/na_fb_def/nb_fa_def created during the schema-gap close)
+#   * the {C : Type → Type → Type} [Circuit F ExtF C] structure params
+#
+# The schema gap previously exposed by the carry-chain proof
+# (`Mul.lean::arith_mul_unsigned_packed_correct`) — which accessed
+# Arith cols 30/31/32 positionally via `Circuit.main v.circuit (column := N)`
+# without named accessors — is closed by structural unpacking: 10 new
+# named accessors are added.
+#
+# The Phase F3 refactor is a *typeclass elimination*, not a *promise
+# discharge*. The per-opcode hypothesis-count metric is unchanged (0
+# net growth across all 5 MUL opcodes). The caller-burden ledger shows
+# a type-shape simplification: `Valid_ArithMul C FGL FGL` →
+# `Valid_ArithMul FGL FGL` on the same number of binders (5 inserts,
+# 5 deletes — 1 per MUL opcode validator parameter).
+#
+# Per-opcode metric: holds steady at exact equality. No real growth.
+#
+# PIL-BASIS for the 10 new accessors:
+#   * cy_0..cy_6 at Arith cols 0..6: `zisk/state-machines/arith/pil/arith.pil:17`
+#     (`col witness signed(64) carry[CARRY_COUNT];` — the 7 carry
+#     witnesses of the 8-chunk MUL/DIV carry chain).
+#   * fab at Arith col 30: `arith.pil:58` (constraint 6:
+#     `fab - ((1 - 2·na) - 2·nb + 4·na·nb)`).
+#   * na_fb at Arith col 31: `arith.pil:59` (constraint 7:
+#     `na_fb - na · (1 - 2·nb)`).
+#   * nb_fa at Arith col 32: `arith.pil:60` (constraint 8:
+#     `nb_fa - nb · (1 - 2·na)`).
+
+OPCODE: ZiskFv.Equivalence.Mul.equiv_MUL
+DROPPED: none (typeclass-elimination only)
+ADDED:   none new at canonical site (validator shape change only)
+       (Phase F3 ArithMul retirement: typeclass elimination on
+        `Valid_ArithMul`. The 5 MUL family canonical theorems each
+        carry one `v : Valid_ArithMul FGL FGL` validator parameter
+        (was `Valid_ArithMul C FGL FGL`). The hypothesis-count metric
+        is unchanged at the canonical level; only the caller-burden
+        type snippet changes.)
+
+OPCODE: ZiskFv.Equivalence.MulH.equiv_MULH
+DROPPED: none (typeclass-elimination only)
+ADDED:   none new at canonical site (validator shape change only)
+       (Phase F3 ArithMul retirement: see MUL entry above.)
+
+OPCODE: ZiskFv.Equivalence.MulHU.equiv_MULHU
+DROPPED: none (typeclass-elimination only)
+ADDED:   none new at canonical site (validator shape change only)
+       (Phase F3 ArithMul retirement: see MUL entry above.)
+
+OPCODE: ZiskFv.Equivalence.MulHSU.equiv_MULHSU
+DROPPED: none (typeclass-elimination only)
+ADDED:   none new at canonical site (validator shape change only)
+       (Phase F3 ArithMul retirement: see MUL entry above.)
+
+OPCODE: ZiskFv.Equivalence.MulW.equiv_MULW
+DROPPED: none (typeclass-elimination only)
+ADDED:   none new at canonical site (validator shape change only)
+       (Phase F3 ArithMul retirement: see MUL entry above.)

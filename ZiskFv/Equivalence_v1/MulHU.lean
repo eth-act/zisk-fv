@@ -91,7 +91,7 @@ theorem equiv_MULHU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhu_input : PureSpec.MulhuInput)
     (r1 r2 rd : regidx)
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state mulhu_input.r1_val mulhu_input.r2_val mulhu_input.rd mulhu_input.PC

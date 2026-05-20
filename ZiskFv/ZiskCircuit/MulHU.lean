@@ -59,7 +59,7 @@ def main_row_in_mulhu_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     the bus-row match, and mode witnesses on both AIRs. -/
 @[simp]
 def mulhu_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ) : Prop :=
   add_subset_holds m r_main
   ∧ mul_mode_booleans v r_arith
@@ -76,7 +76,7 @@ def mulhu_circuit_holds
     `opcode_lit = OP_MULUH`: the archetype circuit-holds predicate
     definitionally coincides with `mulhu_circuit_holds`. -/
 lemma mulhu_compositional
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ)
     (h : mulhu_circuit_holds m v r_main r_arith) :
     main_c_packed m r_main = arith_c_packed v r_arith :=

@@ -65,7 +65,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     (`a_0..a_3`, `b_0..b_3`, `c_0..c_3`, `d_0..d_3`) are < 2^16.
     Pure consequence of `arith_mul_columns_in_range`. -/
 lemma arith_mul_chunk_ranges_at_holds
-    (a : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ) :
+    (a : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :
     (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
   ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
   ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
@@ -152,7 +152,7 @@ open Arith.extraction
     rewriting selectors to mode-zero / fab-one / na_fb-nb_fa-zero
     form (constraints 6/7/8 supply the last). -/
 lemma mul_unsigned_chain_witnesses
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (h_chain : mul_carry_chain_holds v r_a)
     (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
     (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
@@ -174,36 +174,25 @@ lemma mul_unsigned_chain_witnesses
     ∧ (v.a_3 r_a * v.b_3 r_a + cy₅ = v.d_2 r_a + cy₆ * 65536)
     ∧ (cy₆ = v.d_3 r_a) := by
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
-  -- Extract fab = 1, na_fb = 0, nb_fa = 0 from constraints 6/7/8 + mode.
-  simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
-             ← v.na_def, ← v.nb_def] at h6 h7 h8
-  simp only [h_na, h_nb] at h6 h7 h8
-  have h_fab : Circuit.main v.circuit (id := 1) (column := 30) (row := r_a) (rotation := 0)
-    = (1 : FGL) := by linear_combination h6
-  have h_nafb : Circuit.main v.circuit (id := 1) (column := 31) (row := r_a) (rotation := 0)
-    = (0 : FGL) := by linear_combination h7
-  have h_nbfa : Circuit.main v.circuit (id := 1) (column := 32) (row := r_a) (rotation := 0)
-    = (0 : FGL) := by linear_combination h8
-  -- Unfold constraints 31..38 to named-column form + mode-zero substitution.
-  simp only [constraint_31_every_row, constraint_32_every_row,
-             constraint_33_every_row, constraint_34_every_row,
-             constraint_35_every_row, constraint_36_every_row,
-             constraint_37_every_row, constraint_38_every_row,
-             ← v.a_0_def, ← v.a_1_def, ← v.a_2_def, ← v.a_3_def,
-             ← v.b_0_def, ← v.b_1_def, ← v.b_2_def, ← v.b_3_def,
-             ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
-             ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
-             ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
-             ← v.m32_def, ← v.div_def]
-    at h31 h32 h33 h34 h35 h36 h37 h38
-  simp only [h_na, h_nb, h_np, h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
+  -- Extract fab = 1, na_fb = 0, nb_fa = 0 from named-form constraints 6/7/8 + mode.
+  simp only [mul_constraint_6_named, mul_constraint_7_named, mul_constraint_8_named,
+             h_na, h_nb, mul_zero, zero_mul, add_zero, sub_zero] at h6 h7 h8
+  have h_fab : v.fab r_a = (1 : FGL) := by linear_combination h6
+  have h_nafb : v.na_fb r_a = (0 : FGL) := by linear_combination h7
+  have h_nbfa : v.nb_fa r_a = (0 : FGL) := by linear_combination h8
+  -- Substitute mode + fab/na_fb/nb_fa into named-form constraints 31..38.
+  simp only [mul_constraint_31_named, mul_constraint_32_named,
+             mul_constraint_33_named, mul_constraint_34_named,
+             mul_constraint_35_named, mul_constraint_36_named,
+             mul_constraint_37_named, mul_constraint_38_named,
+             h_na, h_nb, h_np, h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
              mul_zero, zero_mul, add_zero, sub_zero, zero_sub,
              mul_one, one_mul]
     at h31 h32 h33 h34 h35 h36 h37 h38
-  -- Carry range bounds (axiom).
+  -- Carry range bounds (derived from range_bus_sound).
   obtain ⟨hr0, hr1, hr2, hr3, hr4, hr5, hr6⟩ :=
     ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_unsigned v r_a h_na h_nb h_np h_nr
-  -- Package the existential witnesses (cy_i = Circuit.main at column i).
+  -- Package the existential witnesses (cy_i = v.cy_i r_a).
   refine ⟨_, _, _, _, _, _, _, hr0, hr1, hr2, hr3, hr4, hr5, hr6, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · linear_combination h31
   · linear_combination h32
@@ -408,7 +397,7 @@ open ZiskFv.PackedBitVec.SignedChunkLift
     Carry-range bounds discharged by
     `arith_mul_carry_columns_in_range_signed` (trust ledger class #6b). -/
 lemma mul_signed_chain_witnesses
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (h_chain : mul_carry_chain_holds v r_a)
     (h_nr : v.nr r_a = 0) (_h_sext : v.sext r_a = 0)
     (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 0)
@@ -437,95 +426,81 @@ lemma mul_signed_chain_witnesses
       = (1 - 2 * toIntZ (v.np r_a)) * (C + D * 2^64) := by
   -- extract raw constraints from chain.
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
-  -- Pin definitions for fab / na_fb / nb_fa from constraints 6/7/8.
-  simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
-             ← v.na_def, ← v.nb_def] at h6 h7 h8
+  -- Unfold named-form constraints 6/7/8 to extract fab/na_fb/nb_fa pin equalities.
+  simp only [mul_constraint_6_named, mul_constraint_7_named, mul_constraint_8_named] at h6 h7 h8
   -- Name the three pin columns.
-  set fab : FGL := Circuit.main v.circuit (id := 1) (column := 30) (row := r_a) (rotation := 0)
-    with h_fab_def
-  set na_fb : FGL := Circuit.main v.circuit (id := 1) (column := 31) (row := r_a) (rotation := 0)
-    with h_nafb_def
-  set nb_fa : FGL := Circuit.main v.circuit (id := 1) (column := 32) (row := r_a) (rotation := 0)
-    with h_nbfa_def
+  set fab : FGL := v.fab r_a with h_fab_def
+  set na_fb : FGL := v.na_fb r_a with h_nafb_def
+  set nb_fa : FGL := v.nb_fa r_a with h_nbfa_def
   have h_fab : fab = 1 - 2 * v.na r_a - 2 * v.nb r_a + 4 * v.na r_a * v.nb r_a := by
     linear_combination h6
   have h_nafb : na_fb = v.na r_a * (1 - 2 * v.nb r_a) := by linear_combination h7
   have h_nbfa : nb_fa = v.nb r_a * (1 - 2 * v.na r_a) := by linear_combination h8
-  -- unfold the per-chunk constraints and substitute mode pins.
-  simp only [constraint_31_every_row, constraint_32_every_row,
-             constraint_33_every_row, constraint_34_every_row,
-             constraint_35_every_row, constraint_36_every_row,
-             constraint_37_every_row, constraint_38_every_row,
-             ← v.a_0_def, ← v.a_1_def, ← v.a_2_def, ← v.a_3_def,
-             ← v.b_0_def, ← v.b_1_def, ← v.b_2_def, ← v.b_3_def,
-             ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
-             ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
-             ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
-             ← v.m32_def, ← v.div_def,
-             ← h_fab_def, ← h_nafb_def, ← h_nbfa_def]
-    at h31 h32 h33 h34 h35 h36 h37 h38
-  -- Substitute m32 = 0, nr = 0, div = 0 (and rewrite (1-0) = 1).
-  simp only [h_nr, h_m32, h_div,
+  -- Unfold named-form constraints 31..38 and substitute mode pins.
+  simp only [mul_constraint_31_named, mul_constraint_32_named,
+             mul_constraint_33_named, mul_constraint_34_named,
+             mul_constraint_35_named, mul_constraint_36_named,
+             mul_constraint_37_named, mul_constraint_38_named,
+             ← h_fab_def, ← h_nafb_def, ← h_nbfa_def,
+             h_nr, h_m32, h_div,
              mul_zero, zero_mul, add_zero, sub_zero]
     at h31 h32 h33 h34 h35 h36 h37 h38
   -- name `γ := 1 - 2*np`.
   set γ : FGL := 1 - 2 * v.np r_a with hγ
-  -- Each h3k now has shape: fab * <prod> ± (γ-form) * c/d - cy*65536 = 0,
-  -- but in the unfolded form, `(1 - 2 * np) * c` appears as `- c + 2*np*c`.
   -- Rewrite each hCxx to the canonical signed-form needed by chunk lifts.
   have h_chunk_31 :
       fab * v.a_0 r_a * v.b_0 r_a
         - γ * v.c_0 r_a
-        - Circuit.main v.circuit (id := 1) (column := 0) (row := r_a) (rotation := 0) * 65536
+        - v.cy_0 r_a * 65536
         = 0 := by linear_combination h31
   have h_chunk_32 :
       fab * v.a_1 r_a * v.b_0 r_a + fab * v.a_0 r_a * v.b_1 r_a
         - γ * v.c_1 r_a
-        + Circuit.main v.circuit (id := 1) (column := 0) (row := r_a) (rotation := 0)
-        - Circuit.main v.circuit (id := 1) (column := 1) (row := r_a) (rotation := 0) * 65536
+        + v.cy_0 r_a
+        - v.cy_1 r_a * 65536
         = 0 := by linear_combination h32
   have h_chunk_33 :
       fab * v.a_2 r_a * v.b_0 r_a + fab * v.a_1 r_a * v.b_1 r_a
         + fab * v.a_0 r_a * v.b_2 r_a
         - γ * v.c_2 r_a
-        + Circuit.main v.circuit (id := 1) (column := 1) (row := r_a) (rotation := 0)
-        - Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0) * 65536
+        + v.cy_1 r_a
+        - v.cy_2 r_a * 65536
         = 0 := by linear_combination h33
   have h_chunk_34 :
       fab * v.a_3 r_a * v.b_0 r_a + fab * v.a_2 r_a * v.b_1 r_a
         + fab * v.a_1 r_a * v.b_2 r_a + fab * v.a_0 r_a * v.b_3 r_a
         - γ * v.c_3 r_a
-        + Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0)
-        - Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) * 65536
+        + v.cy_2 r_a
+        - v.cy_3 r_a * 65536
         = 0 := by linear_combination h34
   have h_chunk_35 :
       fab * v.a_3 r_a * v.b_1 r_a + fab * v.a_2 r_a * v.b_2 r_a
         + fab * v.a_1 r_a * v.b_3 r_a
         + v.b_0 r_a * na_fb + v.a_0 r_a * nb_fa
         - γ * v.d_0 r_a
-        + Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0)
-        - Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) * 65536
+        + v.cy_3 r_a
+        - v.cy_4 r_a * 65536
         = 0 := by linear_combination h35
   have h_chunk_36 :
       fab * v.a_3 r_a * v.b_2 r_a + fab * v.a_2 r_a * v.b_3 r_a
         + v.a_1 r_a * nb_fa + v.b_1 r_a * na_fb
         - γ * v.d_1 r_a
-        + Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0)
-        - Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) * 65536
+        + v.cy_4 r_a
+        - v.cy_5 r_a * 65536
         = 0 := by linear_combination h36
   have h_chunk_37 :
       fab * v.a_3 r_a * v.b_3 r_a
         + v.a_2 r_a * nb_fa + v.b_2 r_a * na_fb
         - γ * v.d_2 r_a
-        + Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0)
-        - Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) * 65536
+        + v.cy_5 r_a
+        - v.cy_6 r_a * 65536
         = 0 := by linear_combination h37
   have h_chunk_38 :
       65536 * v.na r_a * v.nb r_a
         + v.a_3 r_a * nb_fa + v.b_3 r_a * na_fb
         - 65536 * v.np r_a
         - γ * v.d_3 r_a
-        + Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0)
+        + v.cy_6 r_a
         = 0 := by linear_combination h38
   -- chunk-range bounds from `arith_mul_columns_in_range`.
   obtain ⟨h_a0, h_a1, h_a2, h_a3,
@@ -537,25 +512,25 @@ lemma mul_signed_chain_witnesses
   obtain ⟨hcy0_disj, hcy1_disj, hcy2_disj, hcy3_disj,
           hcy4_disj, hcy5_disj, hcy6_disj⟩ :=
     ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_signed v r_a h_nr _h_sext h_m32 h_div
-  have hcy0_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 0) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+  have hcy0_abs : |toIntZ (v.cy_0 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy0_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
-  have hcy1_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 1) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+  have hcy1_abs : |toIntZ (v.cy_1 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy1_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
-  have hcy2_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+  have hcy2_abs : |toIntZ (v.cy_2 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy2_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
-  have hcy3_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+  have hcy3_abs : |toIntZ (v.cy_3 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy3_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
-  have hcy4_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+  have hcy4_abs : |toIntZ (v.cy_4 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy4_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
-  have hcy5_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+  have hcy5_abs : |toIntZ (v.cy_5 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy5_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
-  have hcy6_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+  have hcy6_abs : |toIntZ (v.cy_6 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy6_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
   -- bound |toIntZ fab|, |toIntZ na_fb|, |toIntZ nb_fa|, |toIntZ γ|,
@@ -681,13 +656,13 @@ lemma mul_signed_chain_witnesses
     (toIntZ (v.b_0 r_a)) (toIntZ (v.b_1 r_a)) (toIntZ (v.b_2 r_a)) (toIntZ (v.b_3 r_a))
     (toIntZ (v.c_0 r_a)) (toIntZ (v.c_1 r_a)) (toIntZ (v.c_2 r_a)) (toIntZ (v.c_3 r_a))
     (toIntZ (v.d_0 r_a)) (toIntZ (v.d_1 r_a)) (toIntZ (v.d_2 r_a)) (toIntZ (v.d_3 r_a))
-    (toIntZ (Circuit.main v.circuit (id := 1) (column := 0) (row := r_a) (rotation := 0) : FGL))
-    (toIntZ (Circuit.main v.circuit (id := 1) (column := 1) (row := r_a) (rotation := 0) : FGL))
-    (toIntZ (Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0) : FGL))
-    (toIntZ (Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) : FGL))
-    (toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL))
-    (toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL))
-    (toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL))
+    (toIntZ (v.cy_0 r_a))
+    (toIntZ (v.cy_1 r_a))
+    (toIntZ (v.cy_2 r_a))
+    (toIntZ (v.cy_3 r_a))
+    (toIntZ (v.cy_4 r_a))
+    (toIntZ (v.cy_5 r_a))
+    (toIntZ (v.cy_6 r_a))
     (toIntZ fab) (toIntZ na_fb) (toIntZ nb_fa)
     (toIntZ (v.na r_a)) (toIntZ (v.nb r_a)) (toIntZ (v.np r_a))
     hZ31 hZ32 hZ33 hZ34 hZ35 hZ36 hZ37 hZ38
@@ -1070,7 +1045,7 @@ open ZiskFv.PackedBitVec.SignedChunkLift
     operands), the cross-term vanishes via the XOR pin
     (`na_fb = na*(1-2*nb) = 0`, `nb_fa = nb*(1-2*na) = 0`). -/
 lemma mul_w_chain_witnesses
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (h_chain : mul_carry_chain_holds v r_a)
     (h_nr : v.nr r_a = 0) (_h_sext : v.sext r_a = 0)
     (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 0)
@@ -1099,14 +1074,10 @@ lemma mul_w_chain_witnesses
       = (1 - 2 * toIntZ (v.np r_a))
           * (c_packed + d_packed * (65536 * 65536 * 65536 * 65536)) := by
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
-  simp only [constraint_6_every_row, constraint_7_every_row, constraint_8_every_row,
-             ← v.na_def, ← v.nb_def] at h6 h7 h8
-  set fab : FGL := Circuit.main v.circuit (id := 1) (column := 30) (row := r_a) (rotation := 0)
-    with h_fab_def
-  set na_fb : FGL := Circuit.main v.circuit (id := 1) (column := 31) (row := r_a) (rotation := 0)
-    with h_nafb_def
-  set nb_fa : FGL := Circuit.main v.circuit (id := 1) (column := 32) (row := r_a) (rotation := 0)
-    with h_nbfa_def
+  simp only [mul_constraint_6_named, mul_constraint_7_named, mul_constraint_8_named] at h6 h7 h8
+  set fab : FGL := v.fab r_a with h_fab_def
+  set na_fb : FGL := v.na_fb r_a with h_nafb_def
+  set nb_fa : FGL := v.nb_fa r_a with h_nbfa_def
   have h_fab : fab = 1 - 2 * v.na r_a - 2 * v.nb r_a + 4 * v.na r_a * v.nb r_a := by
     linear_combination h6
   have h_nafb : na_fb = v.na r_a * (1 - 2 * v.nb r_a) := by linear_combination h7
@@ -1115,19 +1086,12 @@ lemma mul_w_chain_witnesses
   have h_a3 : v.a_3 r_a = (0 : FGL) := by apply Fin.ext; exact h_a3_val
   have h_b2 : v.b_2 r_a = (0 : FGL) := by apply Fin.ext; exact h_b2_val
   have h_b3 : v.b_3 r_a = (0 : FGL) := by apply Fin.ext; exact h_b3_val
-  simp only [constraint_31_every_row, constraint_32_every_row,
-             constraint_33_every_row, constraint_34_every_row,
-             constraint_35_every_row, constraint_36_every_row,
-             constraint_37_every_row, constraint_38_every_row,
-             ← v.a_0_def, ← v.a_1_def, ← v.a_2_def, ← v.a_3_def,
-             ← v.b_0_def, ← v.b_1_def, ← v.b_2_def, ← v.b_3_def,
-             ← v.c_0_def, ← v.c_1_def, ← v.c_2_def, ← v.c_3_def,
-             ← v.d_0_def, ← v.d_1_def, ← v.d_2_def, ← v.d_3_def,
-             ← v.na_def, ← v.nb_def, ← v.np_def, ← v.nr_def,
-             ← v.m32_def, ← v.div_def,
-             ← h_fab_def, ← h_nafb_def, ← h_nbfa_def]
-    at h31 h32 h33 h34 h35 h36 h37 h38
-  simp only [h_nr, h_m32, h_div, h_a2, h_a3, h_b2, h_b3,
+  simp only [mul_constraint_31_named, mul_constraint_32_named,
+             mul_constraint_33_named, mul_constraint_34_named,
+             mul_constraint_35_named, mul_constraint_36_named,
+             mul_constraint_37_named, mul_constraint_38_named,
+             ← h_fab_def, ← h_nafb_def, ← h_nbfa_def,
+             h_nr, h_m32, h_div, h_a2, h_a3, h_b2, h_b3,
              mul_zero, zero_mul, add_zero, sub_zero, mul_one,
              zero_add, sub_self]
     at h31 h32 h33 h34 h35 h36 h37 h38
@@ -1135,42 +1099,42 @@ lemma mul_w_chain_witnesses
   -- W-canonical chunk equations.
   have h_chunk_31 :
       fab * v.a_0 r_a * v.b_0 r_a - γ * v.c_0 r_a
-        - Circuit.main v.circuit (id := 1) (column := 0) (row := r_a) (rotation := 0) * 65536
+        - v.cy_0 r_a * 65536
         = 0 := by linear_combination h31
   have h_chunk_32 :
       fab * v.a_1 r_a * v.b_0 r_a + fab * v.a_0 r_a * v.b_1 r_a - γ * v.c_1 r_a
-        + Circuit.main v.circuit (id := 1) (column := 0) (row := r_a) (rotation := 0)
-        - Circuit.main v.circuit (id := 1) (column := 1) (row := r_a) (rotation := 0) * 65536
+        + v.cy_0 r_a
+        - v.cy_1 r_a * 65536
         = 0 := by linear_combination h32
   have h_chunk_33 :
       fab * v.a_1 r_a * v.b_1 r_a + v.a_0 r_a * nb_fa + v.b_0 r_a * na_fb
         - γ * v.c_2 r_a
-        + Circuit.main v.circuit (id := 1) (column := 1) (row := r_a) (rotation := 0)
-        - Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0) * 65536
+        + v.cy_1 r_a
+        - v.cy_2 r_a * 65536
         = 0 := by linear_combination h33
   have h_chunk_34 :
       v.a_1 r_a * nb_fa + v.b_1 r_a * na_fb - γ * v.c_3 r_a
-        + Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0)
-        - Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) * 65536
+        + v.cy_2 r_a
+        - v.cy_3 r_a * 65536
         = 0 := by linear_combination h34
   have h_chunk_35 :
       v.na r_a * v.nb r_a - v.np r_a - γ * v.d_0 r_a
-        + Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0)
-        - Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) * 65536
+        + v.cy_3 r_a
+        - v.cy_4 r_a * 65536
         = 0 := by linear_combination h35
   have h_chunk_36 :
       -(γ * v.d_1 r_a)
-        + Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0)
-        - Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) * 65536
+        + v.cy_4 r_a
+        - v.cy_5 r_a * 65536
         = 0 := by linear_combination h36
   have h_chunk_37 :
       -(γ * v.d_2 r_a)
-        + Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0)
-        - Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) * 65536
+        + v.cy_5 r_a
+        - v.cy_6 r_a * 65536
         = 0 := by linear_combination h37
   have h_chunk_38 :
       -(γ * v.d_3 r_a)
-        + Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0)
+        + v.cy_6 r_a
         = 0 := by linear_combination h38
   obtain ⟨h_a0, h_a1, _h_a2, _h_a3,
           h_b0, h_b1, _h_b2, _h_b3,
@@ -1180,25 +1144,25 @@ lemma mul_w_chain_witnesses
   obtain ⟨hcy0_disj, hcy1_disj, hcy2_disj, hcy3_disj,
           hcy4_disj, hcy5_disj, hcy6_disj⟩ :=
     ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_w v r_a _h_sext h_m32 h_div
-  have hcy0_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 0) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+  have hcy0_abs : |toIntZ (v.cy_0 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy0_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
-  have hcy1_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 1) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+  have hcy1_abs : |toIntZ (v.cy_1 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy1_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
-  have hcy2_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+  have hcy2_abs : |toIntZ (v.cy_2 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy2_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
-  have hcy3_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+  have hcy3_abs : |toIntZ (v.cy_3 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy3_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
-  have hcy4_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+  have hcy4_abs : |toIntZ (v.cy_4 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy4_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
-  have hcy5_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+  have hcy5_abs : |toIntZ (v.cy_5 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy5_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
-  have hcy6_abs : |toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL)| ≤ 983040 := by
+  have hcy6_abs : |toIntZ (v.cy_6 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy6_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
   have h_na_abs : |toIntZ (v.na r_a)| ≤ 1 := by
@@ -1265,8 +1229,8 @@ lemma mul_w_chain_witnesses
       fab * (0 : FGL) * (0 : FGL) + fab * (0 : FGL) * (0 : FGL)
         + fab * v.a_1 r_a * v.b_1 r_a
         + v.b_0 r_a * na_fb + v.a_0 r_a * nb_fa - γ * v.c_2 r_a
-        + Circuit.main v.circuit (id := 1) (column := 1) (row := r_a) (rotation := 0)
-        - Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0) * 65536
+        + v.cy_1 r_a
+        - v.cy_2 r_a * 65536
         = 0 := by linear_combination h_chunk_33
   have hZ33_raw := fgl_chunk_lift_C35_int
     (v.a_0 r_a) (v.a_1 r_a) (0 : FGL) (0 : FGL)
@@ -1279,8 +1243,8 @@ lemma mul_w_chain_witnesses
   have h_chunk_34_C37shape :
       fab * (0 : FGL) * (0 : FGL) + v.a_1 r_a * nb_fa + v.b_1 r_a * na_fb
         - γ * v.c_3 r_a
-        + Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0)
-        - Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) * 65536
+        + v.cy_2 r_a
+        - v.cy_3 r_a * 65536
         = 0 := by linear_combination h_chunk_34
   have hZ34_raw := fgl_chunk_lift_C37_int
     (v.a_1 r_a) (0 : FGL) (v.b_1 r_a) (0 : FGL) (v.c_3 r_a)
@@ -1292,13 +1256,13 @@ lemma mul_w_chain_witnesses
   have hZ35 :
       toIntZ (v.na r_a) * toIntZ (v.nb r_a) - toIntZ (v.np r_a)
         - toIntZ γ * toIntZ (v.d_0 r_a)
-        + toIntZ (Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) : FGL)
-        - toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL)
+        + toIntZ (v.cy_3 r_a : FGL)
+        - toIntZ (v.cy_4 r_a : FGL)
             * 65536 = 0 := by
     set L : ℤ := toIntZ (v.na r_a) * toIntZ (v.nb r_a) - toIntZ (v.np r_a)
                   - toIntZ γ * toIntZ (v.d_0 r_a)
-                  + toIntZ (Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) : FGL)
-                  - toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL)
+                  + toIntZ (v.cy_3 r_a : FGL)
+                  - toIntZ (v.cy_4 r_a : FGL)
                       * 65536 with hL
     have h_fgl : ((L : ℤ) : FGL) = 0 := by
       rw [hL]; push_cast; repeat rw [toIntZ_cast]
@@ -1309,25 +1273,25 @@ lemma mul_w_chain_witnesses
         (by norm_num)
     have h_p2 : |toIntZ γ * toIntZ (v.d_0 r_a)| ≤ 1 * 65535 :=
       abs_mul_le_of_abs_le h_γ_abs hd0 (by norm_num) (by norm_num)
-    have h_p3 : |toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL) * 65536| ≤ 983040 * 65536 :=
+    have h_p3 : |toIntZ (v.cy_4 r_a : FGL) * 65536| ≤ 983040 * 65536 :=
       abs_mul_le_of_abs_le hcy4_abs (show |(65536:ℤ)| ≤ 65536 by norm_num) (by norm_num) (by norm_num)
     have h_abs : |L| ≤ 1 + 1 + 1 * 65535 + 983040 + 983040 * 65536 := by
       have hsplit : L = toIntZ (v.na r_a) * toIntZ (v.nb r_a)
                         + (- toIntZ (v.np r_a))
                         + (- (toIntZ γ * toIntZ (v.d_0 r_a)))
-                        + toIntZ (Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) : FGL)
-                        + (- (toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL) * 65536)) := by
+                        + toIntZ (v.cy_3 r_a : FGL)
+                        + (- (toIntZ (v.cy_4 r_a : FGL) * 65536)) := by
         rw [hL]; ring
       rw [hsplit]
       have h_tri := abs_5sum_bound
         (toIntZ (v.na r_a) * toIntZ (v.nb r_a))
         (- toIntZ (v.np r_a))
         (- (toIntZ γ * toIntZ (v.d_0 r_a)))
-        (toIntZ (Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) : FGL))
-        (- (toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL) * 65536))
+        (toIntZ (v.cy_3 r_a : FGL))
+        (- (toIntZ (v.cy_4 r_a : FGL) * 65536))
       have hn1 : |- toIntZ (v.np r_a)| = |toIntZ (v.np r_a)| := abs_neg _
       have hn2 : |- (toIntZ γ * toIntZ (v.d_0 r_a))| = |toIntZ γ * toIntZ (v.d_0 r_a)| := abs_neg _
-      have hn3 : |- (toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL) * 65536)| = |toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL) * 65536| := abs_neg _
+      have hn3 : |- (toIntZ (v.cy_4 r_a : FGL) * 65536)| = |toIntZ (v.cy_4 r_a : FGL) * 65536| := abs_neg _
       linarith
     have h_safe : (1 + 1 + 1 * 65535 + 983040 + 983040 * 65536 : ℤ) ≤ (GL_prime : ℤ) / 2 := by
       show _ ≤ 18446744069414584321 / 2
@@ -1335,12 +1299,12 @@ lemma mul_w_chain_witnesses
     exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
   have hZ36 :
       -(toIntZ γ * toIntZ (v.d_1 r_a))
-        + toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL)
-        - toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL)
+        + toIntZ (v.cy_4 r_a : FGL)
+        - toIntZ (v.cy_5 r_a : FGL)
             * 65536 = 0 := by
     set L : ℤ := -(toIntZ γ * toIntZ (v.d_1 r_a))
-                  + toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL)
-                  - toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL)
+                  + toIntZ (v.cy_4 r_a : FGL)
+                  - toIntZ (v.cy_5 r_a : FGL)
                       * 65536 with hL
     have h_fgl : ((L : ℤ) : FGL) = 0 := by
       rw [hL]; push_cast; repeat rw [toIntZ_cast]
@@ -1348,21 +1312,21 @@ lemma mul_w_chain_witnesses
     have hd1 := toIntZ_chunk_abs h_d1
     have h_p1 : |toIntZ γ * toIntZ (v.d_1 r_a)| ≤ 1 * 65535 :=
       abs_mul_le_of_abs_le h_γ_abs hd1 (by norm_num) (by norm_num)
-    have h_p2 : |toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL) * 65536| ≤ 983040 * 65536 :=
+    have h_p2 : |toIntZ (v.cy_5 r_a : FGL) * 65536| ≤ 983040 * 65536 :=
       abs_mul_le_of_abs_le hcy5_abs (show |(65536:ℤ)| ≤ 65536 by norm_num) (by norm_num) (by norm_num)
     have h_abs : |L| ≤ 1 * 65535 + 983040 + 983040 * 65536 := by
       have hsplit : L = (- (toIntZ γ * toIntZ (v.d_1 r_a)))
-                        + toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL)
-                        + (- (toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL) * 65536)) := by
+                        + toIntZ (v.cy_4 r_a : FGL)
+                        + (- (toIntZ (v.cy_5 r_a : FGL) * 65536)) := by
         rw [hL]; ring
       rw [hsplit]
       have h_tri1 := abs_add_le ((- (toIntZ γ * toIntZ (v.d_1 r_a)))
-                                  + toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL))
-        (- (toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL) * 65536))
+                                  + toIntZ (v.cy_4 r_a : FGL))
+        (- (toIntZ (v.cy_5 r_a : FGL) * 65536))
       have h_tri2 := abs_add_le (- (toIntZ γ * toIntZ (v.d_1 r_a)))
-        (toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL))
+        (toIntZ (v.cy_4 r_a : FGL))
       have hn1 : |- (toIntZ γ * toIntZ (v.d_1 r_a))| = |toIntZ γ * toIntZ (v.d_1 r_a)| := abs_neg _
-      have hn2 : |- (toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL) * 65536)| = |toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL) * 65536| := abs_neg _
+      have hn2 : |- (toIntZ (v.cy_5 r_a : FGL) * 65536)| = |toIntZ (v.cy_5 r_a : FGL) * 65536| := abs_neg _
       linarith
     have h_safe : (1 * 65535 + 983040 + 983040 * 65536 : ℤ) ≤ (GL_prime : ℤ) / 2 := by
       show _ ≤ 18446744069414584321 / 2
@@ -1370,12 +1334,12 @@ lemma mul_w_chain_witnesses
     exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
   have hZ37 :
       -(toIntZ γ * toIntZ (v.d_2 r_a))
-        + toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL)
-        - toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL)
+        + toIntZ (v.cy_5 r_a : FGL)
+        - toIntZ (v.cy_6 r_a : FGL)
             * 65536 = 0 := by
     set L : ℤ := -(toIntZ γ * toIntZ (v.d_2 r_a))
-                  + toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL)
-                  - toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL)
+                  + toIntZ (v.cy_5 r_a : FGL)
+                  - toIntZ (v.cy_6 r_a : FGL)
                       * 65536 with hL
     have h_fgl : ((L : ℤ) : FGL) = 0 := by
       rw [hL]; push_cast; repeat rw [toIntZ_cast]
@@ -1383,21 +1347,21 @@ lemma mul_w_chain_witnesses
     have hd2 := toIntZ_chunk_abs h_d2
     have h_p1 : |toIntZ γ * toIntZ (v.d_2 r_a)| ≤ 1 * 65535 :=
       abs_mul_le_of_abs_le h_γ_abs hd2 (by norm_num) (by norm_num)
-    have h_p2 : |toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL) * 65536| ≤ 983040 * 65536 :=
+    have h_p2 : |toIntZ (v.cy_6 r_a : FGL) * 65536| ≤ 983040 * 65536 :=
       abs_mul_le_of_abs_le hcy6_abs (show |(65536:ℤ)| ≤ 65536 by norm_num) (by norm_num) (by norm_num)
     have h_abs : |L| ≤ 1 * 65535 + 983040 + 983040 * 65536 := by
       have hsplit : L = (- (toIntZ γ * toIntZ (v.d_2 r_a)))
-                        + toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL)
-                        + (- (toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL) * 65536)) := by
+                        + toIntZ (v.cy_5 r_a : FGL)
+                        + (- (toIntZ (v.cy_6 r_a : FGL) * 65536)) := by
         rw [hL]; ring
       rw [hsplit]
       have h_tri1 := abs_add_le ((- (toIntZ γ * toIntZ (v.d_2 r_a)))
-                                  + toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL))
-        (- (toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL) * 65536))
+                                  + toIntZ (v.cy_5 r_a : FGL))
+        (- (toIntZ (v.cy_6 r_a : FGL) * 65536))
       have h_tri2 := abs_add_le (- (toIntZ γ * toIntZ (v.d_2 r_a)))
-        (toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL))
+        (toIntZ (v.cy_5 r_a : FGL))
       have hn1 : |- (toIntZ γ * toIntZ (v.d_2 r_a))| = |toIntZ γ * toIntZ (v.d_2 r_a)| := abs_neg _
-      have hn2 : |- (toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL) * 65536)| = |toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL) * 65536| := abs_neg _
+      have hn2 : |- (toIntZ (v.cy_6 r_a : FGL) * 65536)| = |toIntZ (v.cy_6 r_a : FGL) * 65536| := abs_neg _
       linarith
     have h_safe : (1 * 65535 + 983040 + 983040 * 65536 : ℤ) ≤ (GL_prime : ℤ) / 2 := by
       show _ ≤ 18446744069414584321 / 2
@@ -1405,10 +1369,10 @@ lemma mul_w_chain_witnesses
     exact fgl_zero_lift_int h_fgl (le_trans h_abs h_safe)
   have hZ38 :
       -(toIntZ γ * toIntZ (v.d_3 r_a))
-        + toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL)
+        + toIntZ (v.cy_6 r_a : FGL)
         = 0 := by
     set L : ℤ := -(toIntZ γ * toIntZ (v.d_3 r_a))
-                  + toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL) with hL
+                  + toIntZ (v.cy_6 r_a : FGL) with hL
     have h_fgl : ((L : ℤ) : FGL) = 0 := by
       rw [hL]; push_cast; repeat rw [toIntZ_cast]
       linear_combination h_chunk_38
@@ -1417,11 +1381,11 @@ lemma mul_w_chain_witnesses
       abs_mul_le_of_abs_le h_γ_abs hd3 (by norm_num) (by norm_num)
     have h_abs : |L| ≤ 1 * 65535 + 983040 := by
       have hsplit : L = (- (toIntZ γ * toIntZ (v.d_3 r_a)))
-                        + toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL) := by
+                        + toIntZ (v.cy_6 r_a : FGL) := by
         rw [hL]
       rw [hsplit]
       have h_tri := abs_add_le (- (toIntZ γ * toIntZ (v.d_3 r_a)))
-        (toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL))
+        (toIntZ (v.cy_6 r_a : FGL))
       have hn1 : |- (toIntZ γ * toIntZ (v.d_3 r_a))| = |toIntZ γ * toIntZ (v.d_3 r_a)| := abs_neg _
       linarith
     have h_safe : (1 * 65535 + 983040 : ℤ) ≤ (GL_prime : ℤ) / 2 := by
@@ -1445,16 +1409,16 @@ lemma mul_w_chain_witnesses
       toIntZ fab * toIntZ (v.a_1 r_a) * toIntZ (v.b_1 r_a)
         + toIntZ (v.a_0 r_a) * toIntZ nb_fa + toIntZ (v.b_0 r_a) * toIntZ na_fb
         - toIntZ γ * toIntZ (v.c_2 r_a)
-        + toIntZ (Circuit.main v.circuit (id := 1) (column := 1) (row := r_a) (rotation := 0) : FGL)
-        - toIntZ (Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0) : FGL)
+        + toIntZ (v.cy_1 r_a : FGL)
+        - toIntZ (v.cy_2 r_a : FGL)
             * 65536 = 0 := by
     simp only [h_z0, mul_zero, add_zero, zero_add] at hZ33_raw
     linear_combination hZ33_raw
   have hZ34 :
       toIntZ (v.a_1 r_a) * toIntZ nb_fa + toIntZ (v.b_1 r_a) * toIntZ na_fb
         - toIntZ γ * toIntZ (v.c_3 r_a)
-        + toIntZ (Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0) : FGL)
-        - toIntZ (Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) : FGL)
+        + toIntZ (v.cy_2 r_a : FGL)
+        - toIntZ (v.cy_3 r_a : FGL)
             * 65536 = 0 := by
     simp only [h_z0, mul_zero, zero_add] at hZ34_raw
     linear_combination hZ34_raw
@@ -1466,13 +1430,13 @@ lemma mul_w_chain_witnesses
     (toIntZ (v.c_2 r_a)) (toIntZ (v.c_3 r_a))
     (toIntZ (v.d_0 r_a)) (toIntZ (v.d_1 r_a))
     (toIntZ (v.d_2 r_a)) (toIntZ (v.d_3 r_a))
-    (toIntZ (Circuit.main v.circuit (id := 1) (column := 0) (row := r_a) (rotation := 0) : FGL))
-    (toIntZ (Circuit.main v.circuit (id := 1) (column := 1) (row := r_a) (rotation := 0) : FGL))
-    (toIntZ (Circuit.main v.circuit (id := 1) (column := 2) (row := r_a) (rotation := 0) : FGL))
-    (toIntZ (Circuit.main v.circuit (id := 1) (column := 3) (row := r_a) (rotation := 0) : FGL))
-    (toIntZ (Circuit.main v.circuit (id := 1) (column := 4) (row := r_a) (rotation := 0) : FGL))
-    (toIntZ (Circuit.main v.circuit (id := 1) (column := 5) (row := r_a) (rotation := 0) : FGL))
-    (toIntZ (Circuit.main v.circuit (id := 1) (column := 6) (row := r_a) (rotation := 0) : FGL))
+    (toIntZ (v.cy_0 r_a : FGL))
+    (toIntZ (v.cy_1 r_a : FGL))
+    (toIntZ (v.cy_2 r_a : FGL))
+    (toIntZ (v.cy_3 r_a : FGL))
+    (toIntZ (v.cy_4 r_a : FGL))
+    (toIntZ (v.cy_5 r_a : FGL))
+    (toIntZ (v.cy_6 r_a : FGL))
     (toIntZ fab) (toIntZ na_fb) (toIntZ nb_fa)
     (toIntZ (v.na r_a)) (toIntZ (v.nb r_a)) (toIntZ (v.np r_a))
     (by linear_combination hZ31 + (toIntZ (v.c_0 r_a)) * h_γ_int)

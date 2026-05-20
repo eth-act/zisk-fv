@@ -366,7 +366,7 @@ ZiskFv.Equivalence.Mul.equiv_MUL 006 srs2 [other] Signedness
 ZiskFv.Equivalence.Mul.equiv_MUL 007 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Mul.equiv_MUL 008 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.Mul.equiv_MUL 009 r_main [row] ℕ
-ZiskFv.Equivalence.Mul.equiv_MUL 010 v [validator] Valid_ArithMul C FGL FGL
+ZiskFv.Equivalence.Mul.equiv_MUL 010 v [validator] Valid_ArithMul FGL FGL
 ZiskFv.Equivalence.Mul.equiv_MUL 011 r_a [other] ℕ
 ZiskFv.Equivalence.Mul.equiv_MUL 012 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL
 ZiskFv.Equivalence.Mul.equiv_MUL 013 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Arith v r_a)
@@ -381,7 +381,7 @@ ZiskFv.Equivalence.MulH.equiv_MULH 004 rd [other] regidx
 ZiskFv.Equivalence.MulH.equiv_MULH 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.MulH.equiv_MULH 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.MulH.equiv_MULH 007 r_main [row] ℕ
-ZiskFv.Equivalence.MulH.equiv_MULH 008 v [validator] Valid_ArithMul C FGL FGL
+ZiskFv.Equivalence.MulH.equiv_MULH 008 v [validator] Valid_ArithMul FGL FGL
 ZiskFv.Equivalence.MulH.equiv_MULH 009 r_a [other] ℕ
 ZiskFv.Equivalence.MulH.equiv_MULH 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULH
 ZiskFv.Equivalence.MulH.equiv_MULH 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a)
@@ -395,7 +395,7 @@ ZiskFv.Equivalence.MulHSU.equiv_MULHSU 004 rd [other] regidx
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 007 r_main [row] ℕ
-ZiskFv.Equivalence.MulHSU.equiv_MULHSU 008 v [validator] Valid_ArithMul C FGL FGL
+ZiskFv.Equivalence.MulHSU.equiv_MULHSU 008 v [validator] Valid_ArithMul FGL FGL
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 009 r_a [other] ℕ
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULSUH
 ZiskFv.Equivalence.MulHSU.equiv_MULHSU 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a)
@@ -409,7 +409,7 @@ ZiskFv.Equivalence.MulHU.equiv_MULHU 004 rd [other] regidx
 ZiskFv.Equivalence.MulHU.equiv_MULHU 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.MulHU.equiv_MULHU 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.MulHU.equiv_MULHU 007 r_main [row] ℕ
-ZiskFv.Equivalence.MulHU.equiv_MULHU 008 v [validator] Valid_ArithMul C FGL FGL
+ZiskFv.Equivalence.MulHU.equiv_MULHU 008 v [validator] Valid_ArithMul FGL FGL
 ZiskFv.Equivalence.MulHU.equiv_MULHU 009 r_a [other] ℕ
 ZiskFv.Equivalence.MulHU.equiv_MULHU 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULUH
 ZiskFv.Equivalence.MulHU.equiv_MULHU 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a)
@@ -424,7 +424,7 @@ ZiskFv.Equivalence.MulW.equiv_MULW 004 rd [other] regidx
 ZiskFv.Equivalence.MulW.equiv_MULW 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.MulW.equiv_MULW 006 m [validator] Valid_Main C FGL FGL
 ZiskFv.Equivalence.MulW.equiv_MULW 007 r_main [row] ℕ
-ZiskFv.Equivalence.MulW.equiv_MULW 008 v [validator] Valid_ArithMul C FGL FGL
+ZiskFv.Equivalence.MulW.equiv_MULW 008 v [validator] Valid_ArithMul FGL FGL
 ZiskFv.Equivalence.MulW.equiv_MULW 009 r_a [other] ℕ
 ZiskFv.Equivalence.MulW.equiv_MULW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL_W
 ZiskFv.Equivalence.MulW.equiv_MULW 011 h_match_primary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_Arith v r_a)

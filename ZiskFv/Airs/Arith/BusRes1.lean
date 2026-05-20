@@ -54,20 +54,14 @@ variable {C : Type → Type → Type} {F ExtF : Type}
 /-- **Bridge 1 for MUL-unsigned.** Under MUL-mode witnesses, constraint
     46 collapses `bus_res1` to the high-chunk pack `c[2] + c[3] * 65536`. -/
 lemma mul_bus_res1_eq_c_hi
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C F ExtF) (row : ℕ)
-    (h_c46 : constraint_46_every_row v.circuit row)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul F ExtF) (row : ℕ)
+    (h_c46 : ZiskFv.Airs.ArithMul.mul_constraint_46_named v row)
     (h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
     (h_main_mul : v.main_mul row = 1) (h_main_div : v.main_div row = 0) :
     v.bus_res1 row = v.c_2 row + v.c_3 row * 65536 := by
-  -- Unfold constraint 46 and rewrite raw extraction columns to named columns.
-  simp only [constraint_46_every_row,
-             ← v.bus_res1_def, ← v.sext_def, ← v.m32_def,
-             ← v.main_mul_def, ← v.main_div_def,
-             ← v.c_2_def, ← v.c_3_def,
-             ← v.a_2_def, ← v.a_3_def,
-             ← v.d_2_def, ← v.d_3_def] at h_c46
-  -- Substitute the MUL-mode witnesses.
-  simp only [h_sext, h_m32, h_main_mul, h_main_div,
+  -- Substitute the MUL-mode witnesses into the named-form constraint 46.
+  simp only [ZiskFv.Airs.ArithMul.mul_constraint_46_named,
+             h_sext, h_m32, h_main_mul, h_main_div,
              zero_mul, one_mul,
              sub_zero, add_zero, zero_add, sub_self] at h_c46
   -- Close via linear_combination over the residual equation.
@@ -104,18 +98,13 @@ lemma div_bus_res1_eq_a_hi
     analog); they unfold the same constraint 46 against different
     `Valid_<AIR>` views. -/
 lemma mulh_bus_res1_eq_d_hi
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C F ExtF) (row : ℕ)
-    (h_c46 : constraint_46_every_row v.circuit row)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul F ExtF) (row : ℕ)
+    (h_c46 : ZiskFv.Airs.ArithMul.mul_constraint_46_named v row)
     (h_sext : v.sext row = 0) (h_m32 : v.m32 row = 0)
     (h_main_mul : v.main_mul row = 0) (h_main_div : v.main_div row = 0) :
     v.bus_res1 row = v.d_2 row + v.d_3 row * 65536 := by
-  simp only [constraint_46_every_row,
-             ← v.bus_res1_def, ← v.sext_def, ← v.m32_def,
-             ← v.main_mul_def, ← v.main_div_def,
-             ← v.c_2_def, ← v.c_3_def,
-             ← v.a_2_def, ← v.a_3_def,
-             ← v.d_2_def, ← v.d_3_def] at h_c46
-  simp only [h_sext, h_m32, h_main_mul, h_main_div,
+  simp only [ZiskFv.Airs.ArithMul.mul_constraint_46_named,
+             h_sext, h_m32, h_main_mul, h_main_div,
              zero_mul, one_mul,
              sub_zero, add_zero, zero_add] at h_c46
   linear_combination h_c46

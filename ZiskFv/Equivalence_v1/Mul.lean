@@ -98,7 +98,7 @@ theorem equiv_MUL
     (mul_input : PureSpec.MulInput)
     (r1 r2 rd : regidx)
     (srs1 srs2 : Signedness)
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC

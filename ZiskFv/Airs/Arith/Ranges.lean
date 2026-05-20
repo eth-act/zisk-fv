@@ -46,7 +46,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
     Previously an axiom; now derived from `range_bus_sound` via 16
     applications. -/
-theorem arith_mul_columns_in_range (a : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ) :
+theorem arith_mul_columns_in_range (a : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :
     (a.a_0 r).val < 65536 ∧ (a.a_1 r).val < 65536
   ∧ (a.a_2 r).val < 65536 ∧ (a.a_3 r).val < 65536
   ∧ (a.b_0 r).val < 65536 ∧ (a.b_1 r).val < 65536
@@ -150,24 +150,24 @@ caller-burden shape, not the loose-cy shape).
     hypotheses for downstream API compatibility but no longer needed
     by the proof (range_bus_sound applies uniformly). -/
 theorem arith_mul_carry_columns_in_range_unsigned
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (_h_na : v.na r = 0) (_h_nb : v.nb r = 0)
     (_h_np : v.np r = 0) (_h_nr : v.nr r = 0) :
-    (Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0) : FGL).val < 131072
-  ∧ (Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0) : FGL).val < 131072
-  ∧ (Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0) : FGL).val < 131072
-  ∧ (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL).val < 131072
-  ∧ (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL).val < 131072
-  ∧ (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL).val < 131072
-  ∧ (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL).val < 131072 := by
+    (v.cy_0 r).val < 131072
+  ∧ (v.cy_1 r).val < 131072
+  ∧ (v.cy_2 r).val < 131072
+  ∧ (v.cy_3 r).val < 131072
+  ∧ (v.cy_4 r).val < 131072
+  ∧ (v.cy_5 r).val < 131072
+  ∧ (v.cy_6 r).val < 131072 := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0) : FGL)) 17 trivial r
-  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0) : FGL)) 17 trivial r
-  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0) : FGL)) 17 trivial r
-  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL)) 17 trivial r
-  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL)) 17 trivial r
-  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL)) 17 trivial r
-  · exact range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL)) 17 trivial r
+  · exact range_bus_sound v (fun v r => v.cy_0 r) 17 trivial r
+  · exact range_bus_sound v (fun v r => v.cy_1 r) 17 trivial r
+  · exact range_bus_sound v (fun v r => v.cy_2 r) 17 trivial r
+  · exact range_bus_sound v (fun v r => v.cy_3 r) 17 trivial r
+  · exact range_bus_sound v (fun v r => v.cy_4 r) 17 trivial r
+  · exact range_bus_sound v (fun v r => v.cy_5 r) 17 trivial r
+  · exact range_bus_sound v (fun v r => v.cy_6 r) 17 trivial r
 
 /-- **ArithDiv carry-column range (unsigned mode) (derived).** Mirror
     of `arith_mul_carry_columns_in_range_unsigned` for the Div view. -/
@@ -231,22 +231,24 @@ shape (disjunctive instead of single-bound). -/
     (`arith_range_table_assumes(ARITH_RANGE_CARRY, carry[index])`)
     composed with the signed-mode specialization of the carry chain. -/
 theorem arith_mul_carry_columns_in_range_signed
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (_h_nr : v.nr r = 0) (_h_sext : v.sext r = 0)
     (_h_m32 : v.m32 r = 0) (_h_div : v.div r = 0) :
-    let cy_disj (col : ℕ) : Prop :=
-      (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val < 983041
-        ∨ GL_prime - 983040 ≤ (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val
-    cy_disj 0 ∧ cy_disj 1 ∧ cy_disj 2 ∧ cy_disj 3
-      ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6 := by
+    ((v.cy_0 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_0 r).val)
+  ∧ ((v.cy_1 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_1 r).val)
+  ∧ ((v.cy_2 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_2 r).val)
+  ∧ ((v.cy_3 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_3 r).val)
+  ∧ ((v.cy_4 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_4 r).val)
+  ∧ ((v.cy_5 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_5 r).val)
+  ∧ ((v.cy_6 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_6 r).val) := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_0 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_1 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_2 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_3 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_4 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_5 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_6 r) trivial r
 
 /-- **ArithDiv carry-column range (signed mode, disjunctive).** Mirror
     of `arith_mul_carry_columns_in_range_signed` for the Div view of the
@@ -366,21 +368,23 @@ conditioned by the m32=1 mode pin. -/
     composed with the W-mode (m32=1) specialization of the
     `arith_mul_w_carry_identity`. -/
 theorem arith_mul_carry_columns_in_range_w
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (_h_sext : v.sext r = 0) (_h_m32 : v.m32 r = 1) (_h_div : v.div r = 0) :
-    let cy_disj (col : ℕ) : Prop :=
-      (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val < 983041
-        ∨ GL_prime - 983040 ≤ (Circuit.main v.circuit (id := 1) (column := col) (row := r) (rotation := 0) : FGL).val
-    cy_disj 0 ∧ cy_disj 1 ∧ cy_disj 2 ∧ cy_disj 3
-      ∧ cy_disj 4 ∧ cy_disj 5 ∧ cy_disj 6 := by
+    ((v.cy_0 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_0 r).val)
+  ∧ ((v.cy_1 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_1 r).val)
+  ∧ ((v.cy_2 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_2 r).val)
+  ∧ ((v.cy_3 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_3 r).val)
+  ∧ ((v.cy_4 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_4 r).val)
+  ∧ ((v.cy_5 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_5 r).val)
+  ∧ ((v.cy_6 r).val < 983041 ∨ GL_prime - 983040 ≤ (v.cy_6 r).val) := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0) : FGL)) trivial r
-  · exact signed_range_bus_sound v (fun v r => (Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0) : FGL)) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_0 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_1 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_2 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_3 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_4 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_5 r) trivial r
+  · exact signed_range_bus_sound v (fun v r => v.cy_6 r) trivial r
 
 /-- **ArithDiv carry-column range (W-mode, m32 = 1).** Mirror of
     `arith_mul_carry_columns_in_range_w` for the Div view of the
@@ -426,7 +430,7 @@ lookup soundness on a small AIR table that pins input columns). -/
     `m32 = 1`, `div = 0`) with `op = 182` (MULW), the upper operand
     chunks are zero (32-bit operand restriction). -/
 axiom arith_table_op_mulw_operand_pin
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     (_h_sext : v.sext r_a = 0) (_h_m32 : v.m32 r_a = 1) (_h_div : v.div r_a = 0)
     (_h_op : v.op r_a = 182) :
     (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0
@@ -834,7 +838,7 @@ emits the low product through `bus_res0`).
     `arith_table_op_div_rem_signed_mode_pin` (the DIV analog) and
     `arith_table_op_mulw_operand_pin` (the W-MUL operand pin). -/
 axiom arith_table_op_mul_mode_pin
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 180) :
     v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
       ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
@@ -859,7 +863,7 @@ axiom arith_table_op_mul_mode_pin
     hi-lane discharge of `h_byte_hi` on `equiv_MUL`. Same trust kind
     as `arith_table_op_div_rem_main_selector_pin` (the DIV analog). -/
 axiom arith_table_op_mul_main_selector_pin
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 180) :
     v.main_mul r_a = 1 ∧ v.main_div r_a = 0
 
@@ -986,7 +990,7 @@ Same kind, narrower scope, as `arith_table_op_mul_mode_pin`.
     `arith.pil:286-287` composed with the MULUH=0xb1 row of
     `arith_table_data.rs::ARITH_TABLE`. -/
 axiom arith_table_op_mulhu_mode_pin
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 177) :
     v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
       ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
@@ -1005,7 +1009,7 @@ axiom arith_table_op_mulhu_mode_pin
     hi-lane discharge of `h_byte_hi`. Same trust kind as
     `arith_table_op_mul_main_selector_pin` (the low-half MUL analog). -/
 axiom arith_table_op_mulhu_main_selector_pin
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 177) :
     v.main_mul r_a = 0 ∧ v.main_div r_a = 0
 
@@ -1036,7 +1040,7 @@ arith_table content). Same kind as
     and exposes the signed-witness consequences: `na` / `nb` are
     boolean (each ∈ {0,1}); `np` is the XOR of `na` and `nb`. -/
 axiom arith_table_op_mulh_mode_pin
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 181) :
     v.nr r_a = 0 ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
       ∧ (v.na r_a = 0 ∨ v.na r_a = 1)
@@ -1052,7 +1056,7 @@ axiom arith_table_op_mulh_mode_pin
     `arith_table_assumes` lookup pins the primary/secondary selectors
     to MULH-secondary: `main_mul = 0, main_div = 0`. -/
 axiom arith_table_op_mulh_main_selector_pin
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 181) :
     v.main_mul r_a = 0 ∧ v.main_div r_a = 0
 
@@ -1062,7 +1066,7 @@ axiom arith_table_op_mulh_main_selector_pin
     `nb = nr = sext = m32 = div = 0` (rs2 is unsigned, so `nb = 0`),
     and exposes the signed-witness consequences on `na` / `np`. -/
 axiom arith_table_op_mulhsu_mode_pin
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 179) :
     v.nb r_a = 0
       ∧ v.nr r_a = 0 ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
@@ -1077,7 +1081,7 @@ axiom arith_table_op_mulhsu_mode_pin
     For every `Valid_ArithMul` row with `op = 179` (MULHSU), the same
     `arith_table_assumes` lookup pins `main_mul = 0, main_div = 0`. -/
 axiom arith_table_op_mulhsu_main_selector_pin
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 179) :
     v.main_mul r_a = 0 ∧ v.main_div r_a = 0
 
@@ -1128,7 +1132,7 @@ narrower scope (ArithMul rows in place of ArithDiv rows). -/
     via `signed_packed_toInt_eq_of_read_xreg` to derive `h_rs1_value` (the
     signed integer-form lane equation for rs1). -/
 axiom arith_mul_na_eq_msb_of_a
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 179 ∨ v.op r_a = 181) :
     (v.na r_a).val =
       (if 2^63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4
@@ -1155,7 +1159,7 @@ axiom arith_mul_na_eq_msb_of_a
     to derive `h_rs2_value`. MULHSU does NOT consume this — its `nb = 0`
     pin comes from `arith_table_op_mulhsu_mode_pin` (rs2 unsigned). -/
 axiom arith_mul_nb_eq_msb_of_b
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 181) :
     (v.nb r_a).val =
       (if 2^63 ≤ ZiskFv.PackedBitVec.MulNoWrap.packed4
@@ -1187,7 +1191,7 @@ narrower scope (single opcode literal). -/
     `nr = 0`, `sext = 0`, `m32 = 1`, `div = 0`, plus `na` / `nb`
     booleanity and the XOR relation `np = na XOR nb` (in `toIntZ` form). -/
 axiom arith_table_op_mulw_mode_pin
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 182) :
     v.nr r_a = 0 ∧ v.sext r_a = 0 ∧ v.m32 r_a = 1 ∧ v.div r_a = 0
       ∧ (v.na r_a = 0 ∨ v.na r_a = 1)

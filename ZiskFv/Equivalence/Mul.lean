@@ -34,7 +34,7 @@ theorem equiv_MUL
     (srs1 srs2 : Signedness)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_Arith v r_a))

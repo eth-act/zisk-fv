@@ -35,7 +35,7 @@ theorem equiv_MUL_v2
     (srs1 srs2 : Signedness)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_Arith v r_a))
@@ -64,7 +64,7 @@ theorem equiv_MULH_v2
     (mulh_input : PureSpec.MulhInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULH)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a))
@@ -87,7 +87,7 @@ theorem equiv_MULHU_v2
     (mulhu_input : PureSpec.MulhuInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULUH)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a))
@@ -111,7 +111,7 @@ theorem equiv_MULHSU_v2
     (mulhsu_input : PureSpec.MulhsuInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULSUH)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a))
@@ -134,7 +134,7 @@ theorem equiv_MULW_v2
     (mulw_input : PureSpec.MulwInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL_W)
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_Arith v r_a))

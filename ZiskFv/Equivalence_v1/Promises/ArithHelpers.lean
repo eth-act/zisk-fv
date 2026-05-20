@@ -251,7 +251,7 @@ open ZiskFv.Airs.ArithMul in
 /-- Project the arith-side `op` value from a `matches_entry` against
     the primary ArithMul bus row. -/
 lemma arith_mul_primary_op_eq
-    {m : Valid_Main C FGL FGL} {v : Valid_ArithMul C FGL FGL}
+    {m : Valid_Main C FGL FGL} {v : Valid_ArithMul FGL FGL}
     {r_main r_a : ℕ}
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Arith v r_a)) :
@@ -263,7 +263,7 @@ open ZiskFv.Airs.ArithMul in
 /-- Project the arith-side `op` value from a `matches_entry` against
     the secondary ArithMul bus row. -/
 lemma arith_mul_secondary_op_eq
-    {m : Valid_Main C FGL FGL} {v : Valid_ArithMul C FGL FGL}
+    {m : Valid_Main C FGL FGL} {v : Valid_ArithMul FGL FGL}
     {r_main r_a : ℕ}
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_ArithMulSecondary v r_a)) :
@@ -336,7 +336,7 @@ open ZiskFv.Airs.ArithMul in
 /-- Unpack the 6 FGL-form projections from a primary ArithMul
     `matches_entry`. -/
 lemma arith_mul_primary_projections
-    {m : Valid_Main C FGL FGL} {v : Valid_ArithMul C FGL FGL}
+    {m : Valid_Main C FGL FGL} {v : Valid_ArithMul FGL FGL}
     {r_main r_a : ℕ}
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Arith v r_a)) :
@@ -359,7 +359,7 @@ open ZiskFv.Airs.ArithMul in
 /-- Unpack the 6 FGL-form projections from a secondary ArithMul
     `matches_entry`. The c-lo lane targets `v.d_{0,1}`. -/
 lemma arith_mul_secondary_projections
-    {m : Valid_Main C FGL FGL} {v : Valid_ArithMul C FGL FGL}
+    {m : Valid_Main C FGL FGL} {v : Valid_ArithMul FGL FGL}
     {r_main r_a : ℕ}
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_ArithMulSecondary v r_a)) :
