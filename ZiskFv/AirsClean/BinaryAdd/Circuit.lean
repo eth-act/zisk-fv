@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.BinaryAdd.Constraints
 import ZiskFv.AirsClean.BinaryAdd.Soundness
+import ZiskFv.AirsClean.Completeness
 import ZiskFv.Channels.RangeBusSoundness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
@@ -9,15 +10,15 @@ import Clean.Utils.Tactics
 
 Packages ZisK's BinaryAdd AIR as a Clean `Air.Flat.Component`:
 
-* `binaryAddElaborated` — the `ElaboratedCircuit` over the existing `main`
-  (the 4 `assertZero` constraints + the op-bus push; no fresh witnesses).
+* `binaryAddElaborated` — the `ElaboratedCircuit` over `main` — lives in
+  `Constraints.lean` (so the completeness axiom can name it).
 * `circuit` — the `GeneralFormalCircuit`. `Assumptions := True` (plan D-2:
   a Component carries no soundness-assumptions — every fact comes from its
   constraints or its channel interactions). `soundness` discharges the
   BinaryAdd relation from the 4 constraints (`soundness_of_ranges`), drawing
   the 8 column range bounds from `range_bus_sound` (the range-checker bus).
   `completeness` is the declared axiom `binaryAdd_circuit_completeness`
-  (plan D-COMPLETE — zisk-fv is soundness-only).
+  (`AirsClean/Completeness.lean`; plan D-COMPLETE — zisk-fv is soundness-only).
 * `component` — the `Air.Flat.Component`.
 
 ## Trust note
@@ -35,24 +36,6 @@ namespace ZiskFv.AirsClean.BinaryAdd
 open Goldilocks
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.RangeBusSoundness (range_bus_sound)
-
-/-- The elaborated circuit for BinaryAdd's `main` — 4 `assertZero`
-    constraints + the op-bus push, no fresh witnesses (`localLength = 0`,
-    `unit` output). -/
-@[reducible] def binaryAddElaborated : ElaboratedCircuit FGL BinaryAddRow unit where
-  name := "BinaryAdd"
-  main := main
-  localLength _ := 0
-  output _ _ := ()
-  channelsWithRequirements := [OpBusChannel.toRaw]
-
-/-- **Completeness axiom** (plan D-COMPLETE). zisk-fv is a soundness-only
-    verification and does not claim completeness; Clean's
-    `GeneralFormalCircuit` makes the field mandatory, so it is filled by this
-    declared, non-security-critical axiom rather than proved. -/
-axiom binaryAdd_circuit_completeness :
-    GeneralFormalCircuit.Completeness FGL binaryAddElaborated
-      (fun _ _ _ => True) (fun _ _ _ => True)
 
 /-- BinaryAdd as a Clean `GeneralFormalCircuit`. `Assumptions := True` —
     the 8 column range bounds the soundness proof needs are supplied by

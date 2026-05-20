@@ -58,4 +58,16 @@ def main (row : Var BinaryAddRow FGL) : Circuit FGL Unit := do
       c_hi := row.c_chunks_3 * 65536 + row.c_chunks_2
       flag := 0,  main_step := 0,  extended_arg := 0,  extra_args_0 := 0 }
 
+/-- The elaborated circuit for BinaryAdd's `main` — 4 `assertZero`
+    constraints + the op-bus push, no fresh witnesses (`localLength = 0`,
+    `unit` output). Lives here (next to `main`) rather than in
+    `Circuit.lean` so the completeness axiom (`Completeness.lean`, whose
+    type mentions this) can be declared without an import cycle. -/
+@[reducible] def binaryAddElaborated : ElaboratedCircuit FGL BinaryAddRow unit where
+  name := "BinaryAdd"
+  main := main
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [OpBusChannel.toRaw]
+
 end ZiskFv.AirsClean.BinaryAdd
