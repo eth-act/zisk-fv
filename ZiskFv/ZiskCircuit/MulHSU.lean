@@ -57,7 +57,7 @@ def main_row_in_mulhsu_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     mode witnesses on both AIRs. -/
 @[simp]
 def mulhsu_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ) : Prop :=
   add_subset_holds m r_main
   ∧ mul_mode_booleans v r_arith
@@ -74,7 +74,7 @@ def mulhsu_circuit_holds
     `opcode_lit = OP_MULSUH`: the archetype circuit-holds predicate
     definitionally coincides with `mulhsu_circuit_holds`. -/
 lemma mulhsu_compositional
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ)
     (h : mulhsu_circuit_holds m v r_main r_arith) :
     main_c_packed m r_main = arith_c_packed v r_arith :=

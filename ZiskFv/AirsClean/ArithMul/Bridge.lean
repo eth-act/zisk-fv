@@ -18,76 +18,66 @@ namespace ZiskFv.AirsClean.ArithMul
 
 open Goldilocks
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
-
 @[reducible]
-def rowAt (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ) :
+def rowAt (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :
     ArithMulRow FGL where
   chunks := {
     a_0 := v.a_0 r
-    a_1 := Circuit.main v.circuit (id := 1) (column := 8) (row := r) (rotation := 0)
+    a_1 := v.a_1 r
     a_2 := v.a_2 r
-    a_3 := Circuit.main v.circuit (id := 1) (column := 10) (row := r) (rotation := 0)
+    a_3 := v.a_3 r
     b_0 := v.b_0 r
-    b_1 := Circuit.main v.circuit (id := 1) (column := 12) (row := r) (rotation := 0)
+    b_1 := v.b_1 r
     b_2 := v.b_2 r
-    b_3 := Circuit.main v.circuit (id := 1) (column := 14) (row := r) (rotation := 0)
+    b_3 := v.b_3 r
     c_0 := v.c_0 r
-    c_1 := Circuit.main v.circuit (id := 1) (column := 16) (row := r) (rotation := 0)
+    c_1 := v.c_1 r
     c_2 := v.c_2 r
-    c_3 := Circuit.main v.circuit (id := 1) (column := 18) (row := r) (rotation := 0)
+    c_3 := v.c_3 r
     d_0 := v.d_0 r
-    d_1 := Circuit.main v.circuit (id := 1) (column := 20) (row := r) (rotation := 0)
+    d_1 := v.d_1 r
     d_2 := v.d_2 r
-    d_3 := Circuit.main v.circuit (id := 1) (column := 22) (row := r) (rotation := 0)
+    d_3 := v.d_3 r
   }
   flags := {
     na := v.na r
-    nb := Circuit.main v.circuit (id := 1) (column := 24) (row := r) (rotation := 0)
+    nb := v.nb r
     nr := v.nr r
-    np := Circuit.main v.circuit (id := 1) (column := 26) (row := r) (rotation := 0)
+    np := v.np r
     sext := v.sext r
-    m32 := Circuit.main v.circuit (id := 1) (column := 28) (row := r) (rotation := 0)
+    m32 := v.m32 r
     div := v.div r
-    main_div := Circuit.main v.circuit (id := 1) (column := 33) (row := r) (rotation := 0)
+    main_div := v.main_div r
     main_mul := v.main_mul r
-    op := Circuit.main v.circuit (id := 1) (column := 39) (row := r) (rotation := 0)
+    op := v.op r
     bus_res1 := v.bus_res1 r
-    multiplicity := Circuit.main v.circuit (id := 1) (column := 41) (row := r) (rotation := 0)
+    multiplicity := v.multiplicity r
   }
   carries := {
-    carry_0 := Circuit.main v.circuit (id := 1) (column := 0) (row := r) (rotation := 0)
-    carry_1 := Circuit.main v.circuit (id := 1) (column := 1) (row := r) (rotation := 0)
-    carry_2 := Circuit.main v.circuit (id := 1) (column := 2) (row := r) (rotation := 0)
-    carry_3 := Circuit.main v.circuit (id := 1) (column := 3) (row := r) (rotation := 0)
-    carry_4 := Circuit.main v.circuit (id := 1) (column := 4) (row := r) (rotation := 0)
-    carry_5 := Circuit.main v.circuit (id := 1) (column := 5) (row := r) (rotation := 0)
-    carry_6 := Circuit.main v.circuit (id := 1) (column := 6) (row := r) (rotation := 0)
-    fab := Circuit.main v.circuit (id := 1) (column := 30) (row := r) (rotation := 0)
-    na_fb := Circuit.main v.circuit (id := 1) (column := 31) (row := r) (rotation := 0)
-    nb_fa := Circuit.main v.circuit (id := 1) (column := 32) (row := r) (rotation := 0)
+    carry_0 := v.cy_0 r
+    carry_1 := v.cy_1 r
+    carry_2 := v.cy_2 r
+    carry_3 := v.cy_3 r
+    carry_4 := v.cy_4 r
+    carry_5 := v.cy_5 r
+    carry_6 := v.cy_6 r
+    fab := v.fab r
+    na_fb := v.na_fb r
+    nb_fa := v.nb_fa r
   }
 
 /-- The 9 boolean flag constraints + 11 carry-chain constraints at
-    row `r`, expressed against a `Valid_ArithMul`. The 6 explicit
-    flag predicates (na, nb, nr, np, sext, m32) match v1's
-    boolean_X predicates; the 3 main/div ones (div, main_div,
-    main_mul) come through the `Circuit.main` reads at cols 24,
-    26, 28 above. The 11 carry-chain ones are syntactic literal
-    copies of `constraint_N_every_row` for N ∈ {6, 7, 8, 31, …, 38}. -/
-def constraints_at (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ) : Prop :=
+    row `r`, expressed against a `Valid_ArithMul`. After Phase F3,
+    all references use named accessors directly. -/
+def constraints_at (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) : Prop :=
   v.na r * (1 - v.na r) = 0
-  ∧ Circuit.main v.circuit (id := 1) (column := 24) (row := r) (rotation := 0)
-      * (1 - Circuit.main v.circuit (id := 1) (column := 24) (row := r) (rotation := 0)) = 0
+  ∧ v.nb r * (1 - v.nb r) = 0
   ∧ v.nr r * (1 - v.nr r) = 0
-  ∧ Circuit.main v.circuit (id := 1) (column := 26) (row := r) (rotation := 0)
-      * (1 - Circuit.main v.circuit (id := 1) (column := 26) (row := r) (rotation := 0)) = 0
+  ∧ v.np r * (1 - v.np r) = 0
   ∧ v.sext r * (1 - v.sext r) = 0
-  ∧ Circuit.main v.circuit (id := 1) (column := 28) (row := r) (rotation := 0)
-      * (1 - Circuit.main v.circuit (id := 1) (column := 28) (row := r) (rotation := 0)) = 0
+  ∧ v.m32 r * (1 - v.m32 r) = 0
   ∧ v.div r * (1 - v.div r) = 0
-  ∧ Circuit.main v.circuit (id := 1) (column := 33) (row := r) (rotation := 0)
-      * (1 - Circuit.main v.circuit (id := 1) (column := 33) (row := r) (rotation := 0)) = 0
+  ∧ v.main_div r * (1 - v.main_div r) = 0
   ∧ v.main_mul r * (1 - v.main_mul r) = 0
   -- 11 carry-chain clauses (each is the Spec clause restated against
   -- the rowAt projection).
@@ -174,7 +164,7 @@ def constraints_at (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ)
       + (rowAt v r).carries.carry_6 = 0
 
 theorem spec_of_valid
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (h_assumptions : Assumptions (rowAt v r))
     (h_constraints : constraints_at v r) :
     Spec (rowAt v r) := by

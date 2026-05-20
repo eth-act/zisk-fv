@@ -56,7 +56,7 @@ theorem equiv_MULHSU
     (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULSUH)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
@@ -98,7 +98,7 @@ theorem equiv_MULHSU
   -- ============ Unpack extended row-constraint bundle ============
   have h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a :=
     ZiskFv.Airs.ArithMul.mul_carry_chain_holds_of_extended v r_a h_row_constraints
-  have h_c46 : Arith.extraction.constraint_46_every_row v.circuit r_a :=
+  have h_c46 : ZiskFv.Airs.ArithMul.mul_constraint_46_named v r_a :=
     ZiskFv.Airs.ArithMul.mul_constraint_46_of_extended v r_a h_row_constraints
   -- ============ DISCHARGE mode pins (MULHSU = hard nb pin + sign-witness) ============
   obtain ⟨h_nb_zero, h_nr_eq, h_sext, h_m32, h_div, h_na_bool, h_np_xor⟩ :=

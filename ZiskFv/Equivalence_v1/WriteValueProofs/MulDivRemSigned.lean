@@ -145,7 +145,7 @@ lemma h_rd_val_mdrs_mulh
 lemma h_rd_val_mdrs_mulh_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     -- Per-byte range bounds (RANGE).
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
     (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
@@ -325,7 +325,7 @@ lemma h_rd_val_mdrs_mulhsu
 lemma h_rd_val_mdrs_mulhsu_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     -- Per-byte range bounds (RANGE).
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
     (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
@@ -491,7 +491,7 @@ lemma h_rd_val_mdrs_mulhsu_chunked
 lemma h_rd_val_mdrs_mulw_chunked
     (r1_val r2_val : BitVec 64)
     (e : Interaction.MemoryBusEntry FGL)
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul C FGL FGL) (r_a : ℕ)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
     -- Per-byte range bounds (RANGE).
     (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
     (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)

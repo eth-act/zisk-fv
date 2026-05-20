@@ -64,7 +64,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     constraint 46 (the `bus_res1` normalization). -/
 @[simp]
 def mul_field_circuit_holds
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ) : Prop :=
   mul_circuit_holds m v r_main r_arith
   ∧ mul_carry_chain_holds v r_arith
@@ -74,7 +74,7 @@ def mul_field_circuit_holds
     Under MUL-mode `m32 = 0`, the bus-match on `a_lo`/`a_hi` composes
     into Main's 2-lane packing equaling Arith's 4-chunk packing. -/
 lemma main_a_eq_chunks_mul
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ)
     (h : mul_circuit_holds m v r_main r_arith) :
     Circuit.Add.main_a_packed m r_main = a_chunks_packed v r_arith := by
@@ -90,7 +90,7 @@ lemma main_a_eq_chunks_mul
 
 /-- **Bridge 2: Main-side packed b equals Arith-side 4-chunk pack.** -/
 lemma main_b_eq_chunks_mul
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ)
     (h : mul_circuit_holds m v r_main r_arith) :
     Circuit.Add.main_b_packed m r_main = b_chunks_packed v r_arith := by
@@ -109,7 +109,7 @@ lemma main_b_eq_chunks_mul
     arith_c_packed`) with Bridge 1 (→ `arith_c_packed = c_chunks_packed`
     under MUL-unsigned mode) and constraint 46. -/
 lemma main_c_eq_chunks_mul
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ)
     (h : mul_field_circuit_holds m v r_main r_arith) :
     main_c_packed m r_main = c_chunks_packed v r_arith := by
@@ -149,7 +149,7 @@ lemma main_c_eq_chunks_mul
     pinned to zero by the transpile contract and the `arith_table`
     lookup; we take them as explicit proof inputs. -/
 lemma main_mul_unsigned_field_correct
-    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_ArithMul FGL FGL)
     (r_main r_arith : ℕ)
     (h : mul_field_circuit_holds m v r_main r_arith)
     (h_na : v.na r_arith = 0) (h_nb : v.nb r_arith = 0)
