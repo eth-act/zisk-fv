@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_DivRem
+import ZiskFv.Compliance.Wrappers.Rem
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_REM` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for REM. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_REM_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_REM`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Rem.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_REM_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_REM`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -53,7 +54,8 @@ theorem equiv_REM
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
-      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_REM_v2 state rem_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises h_op2_ne h_no_overflow h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
+      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_REM state rem_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises h_op2_ne h_no_overflow h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
 
 end ZiskFv.Equivalence.Rem

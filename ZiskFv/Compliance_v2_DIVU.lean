@@ -1,5 +1,5 @@
 import ZiskFv.Compliance_v1
-import ZiskFv.Vm.Probe_Arith
+import ZiskFv.Equivalence.Divu
 
 /-!
 # Phase 5 partial — Compliance_v2 dispatcher (DIVU arm)
@@ -18,7 +18,6 @@ namespace ZiskFv.Compliance
 
 open Goldilocks
 open ZiskFv.Vm
-open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
@@ -41,7 +40,7 @@ theorem zisk_riscv_compliant_program_bus_v2_divu
   | divu divu_input r1 r2 rd bus v r_a
          pins h_match_primary promises bounds h_row_constraints h_op2_ne =>
     simp only [OpEnvelope.exec_eq_v2_divu]
-    exact equiv_DIVU_v2 state divu_input r1 r2 rd bus m r_main v r_a
+    exact ZiskFv.Equivalence.Divu.equiv_DIVU state divu_input r1 r2 rd bus m r_main v r_a
       pins h_match_primary promises bounds h_row_constraints h_op2_ne
   | _ => trivial
 

@@ -1,6 +1,6 @@
 import ZiskFv.Compliance_v1
-import ZiskFv.Vm.Probe_Load
-import ZiskFv.Vm.Probe_Store
+import ZiskFv.Equivalence.Ld
+import ZiskFv.Equivalence.Sd
 
 /-!
 # Phase 5 partial — Compliance_v2 dispatcher (LD + SD arms)
@@ -19,7 +19,6 @@ namespace ZiskFv.Compliance
 
 open Goldilocks
 open ZiskFv.Vm
-open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
@@ -52,10 +51,10 @@ theorem zisk_riscv_compliant_program_bus_v2_ldsd
   cases env with
   | ld ld_input regs mem bus pins promises =>
     simp only [OpEnvelope.exec_eq_v2_ldsd]
-    exact equiv_LD_v2 state ld_input regs m mem r_main bus pins promises
+    exact ZiskFv.Equivalence.Ld.equiv_LD state ld_input regs m mem r_main bus pins promises
   | sd sd_input regs bus pins h_opcode_assumptions promises =>
     simp only [OpEnvelope.exec_eq_v2_ldsd]
-    exact equiv_SD_v2 state sd_input regs m r_main bus pins h_opcode_assumptions promises
+    exact ZiskFv.Equivalence.Sd.equiv_SD state sd_input regs m r_main bus pins h_opcode_assumptions promises
   | _ => trivial
 
 end ZiskFv.Compliance

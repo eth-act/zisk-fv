@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_Jal
+import ZiskFv.Compliance.Wrappers.Jalr
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_JALR` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for JALR. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_JALR_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_JALR`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Jalr.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_JALR_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_JALR`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -55,7 +56,8 @@ theorem equiv_JALR
     : (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
-      = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_JALR_v2 state jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val m r_main next_pc pins h_jalr_subset promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg h_pc_bound h_lo_bound h_pc_offset_lt_2_32
+      = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_JALR state jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val m r_main next_pc pins h_jalr_subset promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg h_pc_bound h_lo_bound h_pc_offset_lt_2_32
 
 end ZiskFv.Equivalence.Jalr

@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_Mul
+import ZiskFv.Compliance.Wrappers.MulW
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_MULW` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for MULW. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_MULW_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_MULW`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/MulW.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_MULW_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_MULW`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -54,7 +55,8 @@ theorem equiv_MULW
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.MULW (r2, r1, rd))) state
-      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_MULW_v2 state mulw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises h_row_constraints h_sext_choice h_rs1_value h_rs2_value
+      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_MULW state mulw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises h_row_constraints h_sext_choice h_rs1_value h_rs2_value
 
 end ZiskFv.Equivalence.MulW

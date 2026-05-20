@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_Compare
+import ZiskFv.Compliance.Wrappers.Slti
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_SLTI` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for SLTI. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_SLTI_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_SLTI`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Slti.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_SLTI_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_SLTI`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -45,7 +46,8 @@ theorem equiv_SLTI
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.SLTI))) state
       = state_effect_via_channels
-          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_SLTI_v2 state slti_input r1 rd imm m v r_main bus pins h_slti_subset h_lane_rd promises
+          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_SLTI state slti_input r1 rd imm m v r_main bus pins h_slti_subset h_lane_rd promises
 
 end ZiskFv.Equivalence.Slti

@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_Arith
+import ZiskFv.Compliance.Wrappers.Divu
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_DIVU` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for DIVU. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_DIVU_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_DIVU`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Divu.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_DIVU_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_DIVU`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -49,7 +50,8 @@ theorem equiv_DIVU
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, true))) state
       = state_effect_via_channels
-          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_DIVU_v2 state divu_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises bounds h_row_constraints h_op2_ne
+          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_DIVU state divu_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises bounds h_row_constraints h_op2_ne
 
 end ZiskFv.Equivalence.Divu

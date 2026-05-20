@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_ADD
+import ZiskFv.Compliance.Wrappers.Add
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_ADD` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for ADD. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_ADD_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_ADD`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Add.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_ADD_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_ADD`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -40,7 +41,8 @@ theorem equiv_ADD
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     : execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = state_effect_via_channels
-          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_ADD_v2 state add_input r1 r2 rd m badd r_main bus pins h_main_subset h_lane_rd promises
+          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_ADD state add_input r1 r2 rd m badd r_main bus pins h_main_subset h_lane_rd promises
 
 end ZiskFv.Equivalence.Add

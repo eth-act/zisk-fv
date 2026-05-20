@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_StoreSubword
+import ZiskFv.Compliance.Wrappers.Sw
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_SW` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for SW. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_SW_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_SW`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Sw.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_SW_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_SW`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -39,7 +40,8 @@ theorem equiv_SW
         bus.exec_row bus.e0 bus.e1 bus.e2)
     : execute_instruction (instruction.STORE (
       sw_input.imm, regidx.Regidx sw_input.r2, regidx.Regidx sw_input.r1, 4
-    )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_SW_v2 state sw_input regs main r_main bus pins h_main_ind_width h_opcode_assumptions promises
+    )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_SW state sw_input regs main r_main bus pins h_main_ind_width h_opcode_assumptions promises
 
 end ZiskFv.Equivalence.Sw

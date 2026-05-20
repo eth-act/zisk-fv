@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_Branch
+import ZiskFv.Compliance.Wrappers.Bltu
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_BLTU` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for BLTU. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_BLTU_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_BLTU`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Bltu.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_BLTU_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_BLTU`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -34,7 +35,8 @@ theorem equiv_BLTU
         (PureSpec.execute_BLTU_pure bltu_input).success
         ops.imm ops.r1 ops.r2 ops.exec_row)
     : execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BLTU)) state
-      = state_effect_via_channels ⟨ops.exec_row, []⟩ state :=
-  ZiskFv.Vm.Probe.equiv_BLTU_v2 state bltu_input ops promises
+      = state_effect_via_channels ⟨ops.exec_row, []⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_BLTU state bltu_input ops promises
 
 end ZiskFv.Equivalence.Bltu

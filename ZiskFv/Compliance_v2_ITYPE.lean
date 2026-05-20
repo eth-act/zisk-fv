@@ -1,6 +1,9 @@
 import ZiskFv.Compliance_v1
-import ZiskFv.Vm.Probe_ITYPE
-import ZiskFv.Vm.Probe_Compare
+import ZiskFv.Equivalence.Andi
+import ZiskFv.Equivalence.Ori
+import ZiskFv.Equivalence.Slti
+import ZiskFv.Equivalence.Sltiu
+import ZiskFv.Equivalence.Xori
 
 /-!
 # Phase 5 partial — Compliance_v2 dispatcher (ITYPE+Binary arms)
@@ -16,7 +19,6 @@ namespace ZiskFv.Compliance
 
 open Goldilocks
 open ZiskFv.Vm
-open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
@@ -72,23 +74,23 @@ theorem zisk_riscv_compliant_program_bus_v2_itype_binary
   cases env with
   | andi andi_input r1 rd imm v bus pins h_andi_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_v2_itype_binary]
-    exact equiv_ANDI_v2 state andi_input r1 rd imm m v r_main bus pins
+    exact ZiskFv.Equivalence.Andi.equiv_ANDI state andi_input r1 rd imm m v r_main bus pins
       h_andi_subset h_lane_rd promises
   | ori ori_input r1 rd imm v bus pins h_ori_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_v2_itype_binary]
-    exact equiv_ORI_v2 state ori_input r1 rd imm m v r_main bus pins
+    exact ZiskFv.Equivalence.Ori.equiv_ORI state ori_input r1 rd imm m v r_main bus pins
       h_ori_subset h_lane_rd promises
   | xori xori_input r1 rd imm v bus pins h_xori_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_v2_itype_binary]
-    exact equiv_XORI_v2 state xori_input r1 rd imm m v r_main bus pins
+    exact ZiskFv.Equivalence.Xori.equiv_XORI state xori_input r1 rd imm m v r_main bus pins
       h_xori_subset h_lane_rd promises
   | slti slti_input r1 rd imm v bus pins h_slti_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_v2_itype_binary]
-    exact equiv_SLTI_v2 state slti_input r1 rd imm m v r_main bus pins
+    exact ZiskFv.Equivalence.Slti.equiv_SLTI state slti_input r1 rd imm m v r_main bus pins
       h_slti_subset h_lane_rd promises
   | sltiu sltiu_input r1 rd imm v bus pins h_sltiu_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_v2_itype_binary]
-    exact equiv_SLTIU_v2 state sltiu_input r1 rd imm m v r_main bus pins
+    exact ZiskFv.Equivalence.Sltiu.equiv_SLTIU state sltiu_input r1 rd imm m v r_main bus pins
       h_sltiu_subset h_lane_rd promises
   | _ => trivial
 

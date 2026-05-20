@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_ITYPE
+import ZiskFv.Compliance.Wrappers.Andi
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_ANDI` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for ANDI. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_ANDI_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_ANDI`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Andi.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_ANDI_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_ANDI`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -45,7 +46,8 @@ theorem equiv_ANDI
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.ANDI))) state
       = state_effect_via_channels
-          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_ANDI_v2 state andi_input r1 rd imm m v r_main bus pins h_andi_subset h_lane_rd promises
+          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_ANDI state andi_input r1 rd imm m v r_main bus pins h_andi_subset h_lane_rd promises
 
 end ZiskFv.Equivalence.Andi

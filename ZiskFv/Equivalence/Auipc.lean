@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_UTYPE
+import ZiskFv.Compliance.Wrappers.Auipc
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_AUIPC` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for AUIPC. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_AUIPC_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_AUIPC`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Auipc.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_AUIPC_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_AUIPC`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -47,7 +48,8 @@ theorem equiv_AUIPC
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296)
     : execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
-      = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_AUIPC_v2 state auipc_input imm rd exec_row e_rd nextPC_val m r_main next_pc pins h_auipc_subset promises h_no_wrap h_lo_bound h_pc_offset_lt_2_32
+      = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_AUIPC state auipc_input imm rd exec_row e_rd nextPC_val m r_main next_pc pins h_auipc_subset promises h_no_wrap h_lo_bound h_pc_offset_lt_2_32
 
 end ZiskFv.Equivalence.Auipc

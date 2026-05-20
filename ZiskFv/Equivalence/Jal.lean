@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_Jal
+import ZiskFv.Compliance.Wrappers.Jal
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_JAL` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for JAL. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_JAL_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_JAL`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Jal.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_JAL_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_JAL`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -47,7 +48,8 @@ theorem equiv_JAL
     (h_lo_bound : ↑(m.pc r_main + 4) < 4294967296)
     (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296)
     : execute_instruction (instruction.JAL (imm, rd)) state
-      = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_JAL_v2 state jal_input imm rd misa_val m r_main next_pc exec_row e_rd nextPC_val pins h_jal_subset promises h_input_imm h_not_throws h_pc_bound h_lo_bound h_pc_offset_lt_2_32
+      = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_JAL state jal_input imm rd misa_val m r_main next_pc exec_row e_rd nextPC_val pins h_jal_subset promises h_input_imm h_not_throws h_pc_bound h_lo_bound h_pc_offset_lt_2_32
 
 end ZiskFv.Equivalence.Jal

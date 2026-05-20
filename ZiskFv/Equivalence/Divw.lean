@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_DivRem
+import ZiskFv.Compliance.Wrappers.Divw
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_DIVW` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for DIVW. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_DIVW_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_DIVW`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Divw.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_DIVW_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_DIVW`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -65,7 +66,8 @@ theorem equiv_DIVW
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
-      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_DIVW_v2 state divw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
+      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_DIVW state divw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
 
 end ZiskFv.Equivalence.Divw

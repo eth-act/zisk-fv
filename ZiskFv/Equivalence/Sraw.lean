@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_ShiftW
+import ZiskFv.Compliance.Wrappers.ShiftRA
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_SRAW` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for SRAW. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_SRAW_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_SRAW`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Sraw.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_SRAW_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_SRAW`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -50,7 +51,8 @@ theorem equiv_SRAW
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SRA_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     : execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRAW)) state
-      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_SRAW_v2 state sraw_input r1 r2 rd m v r_main bus h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx pins h_lane_rd
+      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_SRAW state sraw_input r1 r2 rd m v r_main bus h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc h_exec_len h_e0_mult h_e1_mult h_nextPC_matches h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx pins h_lane_rd
 
 end ZiskFv.Equivalence.Sraw

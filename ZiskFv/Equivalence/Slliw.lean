@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_ShiftW
+import ZiskFv.Compliance.Wrappers.ShiftLI
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_SLLIW` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for SLLIW. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_SLLIW_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_SLLIW`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Slliw.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_SLLIW_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_SLLIW`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -38,7 +39,8 @@ theorem equiv_SLLIW
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SLL_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     : execute_instruction (instruction.SHIFTIWOP (slliw_input.shamt, r1, rd, sopw.SLLIW)) state
-      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_SLLIW_v2 state slliw_input r1 rd m v r_main bus promises pins h_lane_rd
+      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_SLLIW state slliw_input r1 rd m v r_main bus promises pins h_lane_rd
 
 end ZiskFv.Equivalence.Slliw

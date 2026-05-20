@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_SignExtendLoad
+import ZiskFv.Compliance.Wrappers.Lh
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_LH` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for LH. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_LH_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_LH`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Lh.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_LH_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_LH`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -41,7 +42,8 @@ theorem equiv_LH
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.LOAD (
         lh_input.imm, regidx.Regidx lh_input.r1, regidx.Regidx lh_input.rd, false, 2
-      ))) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_LH_v2 state lh_input regs main mem r_main v bus pins promises
+      ))) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_LH state lh_input regs main mem r_main v bus pins promises
 
 end ZiskFv.Equivalence.Lh

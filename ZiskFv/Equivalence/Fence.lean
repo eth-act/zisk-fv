@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_Fence
+import ZiskFv.Compliance.Wrappers.Fence
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_FENCE` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for FENCE. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_FENCE_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_FENCE`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Fence.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_FENCE_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_FENCE`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -35,7 +36,8 @@ theorem equiv_FENCE
         (PureSpec.execute_FENCE_pure fence_input).nextPC
         exec_row)
     : execute_instruction (instruction.FENCE (fm, pred, succ, rs, rd)) state
-      = state_effect_via_channels ⟨exec_row, []⟩ state :=
-  ZiskFv.Vm.Probe.equiv_FENCE_v2 state fence_input fm pred succ rs rd main r_main exec_row _pins promises
+      = state_effect_via_channels ⟨exec_row, []⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_FENCE state fence_input fm pred succ rs rd main r_main exec_row _pins promises
 
 end ZiskFv.Equivalence.Fence

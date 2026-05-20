@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_UTYPE
+import ZiskFv.Compliance.Wrappers.Lui
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_LUI` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for LUI. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_LUI_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_LUI`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Lui.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_LUI_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_LUI`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -39,7 +40,8 @@ theorem equiv_LUI
         (PureSpec.execute_LUI_pure lui_input).nextPC
         imm rd exec_row e_rd (lui_input.PC + 4#64))
     : execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
-      = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_LUI_v2 state lui_input imm rd m r_main next_pc exec_row e_rd pins h_lui_subset promises
+      = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_LUI state lui_input imm rd m r_main next_pc exec_row e_rd pins h_lui_subset promises
 
 end ZiskFv.Equivalence.Lui

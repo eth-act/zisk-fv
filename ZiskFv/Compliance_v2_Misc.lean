@@ -1,12 +1,9 @@
 import ZiskFv.Compliance_v1
-import ZiskFv.Vm.Probe_SignExtendLoad
-import ZiskFv.Vm.Probe_ShiftW
-import ZiskFv.Vm.Probe_LoadU
-import ZiskFv.Vm.Probe_StoreSubword
-import ZiskFv.Vm.Probe_Mul
-import ZiskFv.Vm.Probe_DivRem
-import ZiskFv.Vm.Probe_AddI
-import ZiskFv.Vm.Probe_Jal
+import ZiskFv.Equivalence.Addi
+import ZiskFv.Equivalence.Addiw
+import ZiskFv.Equivalence.Lb
+import ZiskFv.Equivalence.Lh
+import ZiskFv.Equivalence.Lw
 
 /-!
 # Phase 5 partial — Compliance_v2 dispatcher for remaining arms
@@ -24,7 +21,6 @@ namespace ZiskFv.Compliance
 
 open Goldilocks
 open ZiskFv.Vm
-open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
@@ -74,20 +70,20 @@ theorem zisk_riscv_compliant_program_bus_v2_misc
   cases env with
   | lb lb_input regs mem v bus pins promises =>
     simp only [OpEnvelope.exec_eq_v2_misc]
-    exact equiv_LB_v2 state lb_input regs m mem r_main v bus pins promises
+    exact ZiskFv.Equivalence.Lb.equiv_LB state lb_input regs m mem r_main v bus pins promises
   | lh lh_input regs mem v bus pins promises =>
     simp only [OpEnvelope.exec_eq_v2_misc]
-    exact equiv_LH_v2 state lh_input regs m mem r_main v bus pins promises
+    exact ZiskFv.Equivalence.Lh.equiv_LH state lh_input regs m mem r_main v bus pins promises
   | lw lw_input regs mem v bus pins promises =>
     simp only [OpEnvelope.exec_eq_v2_misc]
-    exact equiv_LW_v2 state lw_input regs m mem r_main v bus pins promises
+    exact ZiskFv.Equivalence.Lw.equiv_LW state lw_input regs m mem r_main v bus pins promises
   | addi addi_input r1 rd imm badd bus pins h_main_subset h_addi_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_v2_misc]
-    exact equiv_ADDI_v2 state addi_input r1 rd imm m badd r_main bus
+    exact ZiskFv.Equivalence.Addi.equiv_ADDI state addi_input r1 rd imm m badd r_main bus
       pins h_main_subset h_addi_subset h_lane_rd promises
   | addiw addiw_input r1 rd imm v bus pins h_addiw_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_v2_misc]
-    exact equiv_ADDIW_v2 state addiw_input r1 rd imm m v r_main bus
+    exact ZiskFv.Equivalence.Addiw.equiv_ADDIW state addiw_input r1 rd imm m v r_main bus
       pins h_addiw_subset h_lane_rd promises
   | _ => trivial
 

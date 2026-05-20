@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_RTYPE
+import ZiskFv.Compliance.Wrappers.Sub
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_SUB` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for SUB. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_SUB_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_SUB`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Sub.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_SUB_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_SUB`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -43,7 +44,8 @@ theorem equiv_SUB
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.SUB))) state
       = state_effect_via_channels
-          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_SUB_v2 state sub_input r1 r2 rd m v r_main bus pins h_lane_rd promises
+          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_SUB state sub_input r1 r2 rd m v r_main bus pins h_lane_rd promises
 
 end ZiskFv.Equivalence.Sub

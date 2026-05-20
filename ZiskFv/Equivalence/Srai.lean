@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_ShiftRight
+import ZiskFv.Compliance.Wrappers.Srai
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_SRAI` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for SRAI. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_SRAI_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_SRAI`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Srai.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_SRAI_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_SRAI`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -40,7 +41,8 @@ theorem equiv_SRAI
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     : execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SRAI)) state
       = state_effect_via_channels
-          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_SRAI_v2 state srai_input r1 rd shamt m v r_main bus promises pins h_lane_rd
+          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_SRAI state srai_input r1 rd shamt m v r_main bus promises pins h_lane_rd
 
 end ZiskFv.Equivalence.Srai

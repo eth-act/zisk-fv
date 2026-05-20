@@ -1,6 +1,7 @@
 import ZiskFv.Compliance_v1
-import ZiskFv.Vm.Probe_UTYPE
-import ZiskFv.Vm.Probe_Fence
+import ZiskFv.Equivalence.Auipc
+import ZiskFv.Equivalence.Fence
+import ZiskFv.Equivalence.Lui
 
 /-!
 # Phase 5 partial — Compliance_v2 dispatcher (UTYPE + Fence)
@@ -21,7 +22,6 @@ namespace ZiskFv.Compliance
 
 open Goldilocks
 open ZiskFv.Vm
-open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
@@ -49,18 +49,18 @@ theorem zisk_riscv_compliant_program_bus_v2_nomem
   cases env with
   | lui lui_input imm rd next_pc exec_row e_rd pins h_lui_subset promises =>
     simp only [OpEnvelope.exec_eq_v2_nomem]
-    exact equiv_LUI_v2 state lui_input imm rd m r_main next_pc
+    exact ZiskFv.Equivalence.Lui.equiv_LUI state lui_input imm rd m r_main next_pc
       exec_row e_rd pins h_lui_subset promises
   | auipc auipc_input imm rd exec_row e_rd nextPC_val next_pc
           pins h_auipc_subset
           promises h_no_wrap h_lo_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq_v2_nomem]
-    exact equiv_AUIPC_v2 state auipc_input imm rd exec_row e_rd nextPC_val
+    exact ZiskFv.Equivalence.Auipc.equiv_AUIPC state auipc_input imm rd exec_row e_rd nextPC_val
       m r_main next_pc pins h_auipc_subset
       promises h_no_wrap h_lo_bound h_pc_offset_lt_2_32
   | fence fence_input fm pred succ rs rd exec_row pins promises =>
     simp only [OpEnvelope.exec_eq_v2_nomem]
-    exact equiv_FENCE_v2 state fence_input fm pred succ rs rd m r_main
+    exact ZiskFv.Equivalence.Fence.equiv_FENCE state fence_input fm pred succ rs rd m r_main
       exec_row pins promises
   | _ => trivial
 

@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_AddI
+import ZiskFv.Compliance.Wrappers.Addiw
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_ADDIW` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for ADDIW. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_ADDIW_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_ADDIW`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Addiw.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_ADDIW_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_ADDIW`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -42,7 +43,8 @@ theorem equiv_ADDIW
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.ADDIW (imm, r1, rd))) state
-      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_ADDIW_v2 state addiw_input r1 rd imm m v r_main bus pins h_addiw_subset h_lane_rd promises
+      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_ADDIW state addiw_input r1 rd imm m v r_main bus pins h_addiw_subset h_lane_rd promises
 
 end ZiskFv.Equivalence.Addiw

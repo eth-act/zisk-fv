@@ -1,5 +1,10 @@
 import ZiskFv.Compliance_v1
-import ZiskFv.Vm.Probe_Branch
+import ZiskFv.Equivalence.Beq
+import ZiskFv.Equivalence.Bge
+import ZiskFv.Equivalence.Bgeu
+import ZiskFv.Equivalence.Blt
+import ZiskFv.Equivalence.Bltu
+import ZiskFv.Equivalence.Bne
 
 /-!
 # Phase 5 partial — Compliance_v2 dispatcher (Branch arms only)
@@ -24,7 +29,6 @@ namespace ZiskFv.Compliance
 
 open Goldilocks
 open ZiskFv.Vm
-open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
@@ -63,22 +67,22 @@ theorem zisk_riscv_compliant_program_bus_v2_branch
   cases env with
   | beq beq_input ops promises =>
     simp only [OpEnvelope.exec_eq_v2_branch]
-    exact equiv_BEQ_v2 state beq_input ops promises
+    exact ZiskFv.Equivalence.Beq.equiv_BEQ state beq_input ops promises
   | bne bne_input ops promises =>
     simp only [OpEnvelope.exec_eq_v2_branch]
-    exact equiv_BNE_v2 state bne_input ops promises
+    exact ZiskFv.Equivalence.Bne.equiv_BNE state bne_input ops promises
   | blt blt_input ops promises =>
     simp only [OpEnvelope.exec_eq_v2_branch]
-    exact equiv_BLT_v2 state blt_input ops promises
+    exact ZiskFv.Equivalence.Blt.equiv_BLT state blt_input ops promises
   | bge bge_input ops promises =>
     simp only [OpEnvelope.exec_eq_v2_branch]
-    exact equiv_BGE_v2 state bge_input ops promises
+    exact ZiskFv.Equivalence.Bge.equiv_BGE state bge_input ops promises
   | bltu bltu_input ops promises =>
     simp only [OpEnvelope.exec_eq_v2_branch]
-    exact equiv_BLTU_v2 state bltu_input ops promises
+    exact ZiskFv.Equivalence.Bltu.equiv_BLTU state bltu_input ops promises
   | bgeu bgeu_input ops promises =>
     simp only [OpEnvelope.exec_eq_v2_branch]
-    exact equiv_BGEU_v2 state bgeu_input ops promises
+    exact ZiskFv.Equivalence.Bgeu.equiv_BGEU state bgeu_input ops promises
   -- All non-branch arms: `exec_eq_v2_branch = True`.
   | _ => trivial
 

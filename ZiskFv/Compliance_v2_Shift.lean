@@ -1,6 +1,10 @@
 import ZiskFv.Compliance_v1
-import ZiskFv.Vm.Probe_Shift
-import ZiskFv.Vm.Probe_ShiftRight
+import ZiskFv.Equivalence.Sll
+import ZiskFv.Equivalence.Slli
+import ZiskFv.Equivalence.Sra
+import ZiskFv.Equivalence.Srai
+import ZiskFv.Equivalence.Srl
+import ZiskFv.Equivalence.Srli
 
 /-!
 # Phase 5 partial — Compliance_v2 dispatcher (Shift arms)
@@ -17,7 +21,6 @@ namespace ZiskFv.Compliance
 
 open Goldilocks
 open ZiskFv.Vm
-open ZiskFv.Vm.Probe
 open ZiskFv.Airs.Main (Valid_Main)
 
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
@@ -51,22 +54,22 @@ theorem zisk_riscv_compliant_program_bus_v2_shift
   cases env with
   | sll sll_input r1 r2 rd v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq_v2_shift]
-    exact equiv_SLL_v2 state sll_input r1 r2 rd m v r_main bus promises pins h_lane_rd
+    exact ZiskFv.Equivalence.Sll.equiv_SLL state sll_input r1 r2 rd m v r_main bus promises pins h_lane_rd
   | srl srl_input r1 r2 rd v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq_v2_shift]
-    exact equiv_SRL_v2 state srl_input r1 r2 rd m v r_main bus promises pins h_lane_rd
+    exact ZiskFv.Equivalence.Srl.equiv_SRL state srl_input r1 r2 rd m v r_main bus promises pins h_lane_rd
   | sra sra_input r1 r2 rd v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq_v2_shift]
-    exact equiv_SRA_v2 state sra_input r1 r2 rd m v r_main bus promises pins h_lane_rd
+    exact ZiskFv.Equivalence.Sra.equiv_SRA state sra_input r1 r2 rd m v r_main bus promises pins h_lane_rd
   | slli slli_input r1 rd shamt v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq_v2_shift]
-    exact equiv_SLLI_v2 state slli_input r1 rd shamt m v r_main bus promises pins h_lane_rd
+    exact ZiskFv.Equivalence.Slli.equiv_SLLI state slli_input r1 rd shamt m v r_main bus promises pins h_lane_rd
   | srli srli_input r1 rd shamt v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq_v2_shift]
-    exact equiv_SRLI_v2 state srli_input r1 rd shamt m v r_main bus promises pins h_lane_rd
+    exact ZiskFv.Equivalence.Srli.equiv_SRLI state srli_input r1 rd shamt m v r_main bus promises pins h_lane_rd
   | srai srai_input r1 rd shamt v bus promises pins h_lane_rd =>
     simp only [OpEnvelope.exec_eq_v2_shift]
-    exact equiv_SRAI_v2 state srai_input r1 rd shamt m v r_main bus promises pins h_lane_rd
+    exact ZiskFv.Equivalence.Srai.equiv_SRAI state srai_input r1 rd shamt m v r_main bus promises pins h_lane_rd
   | _ => trivial
 
 end ZiskFv.Compliance

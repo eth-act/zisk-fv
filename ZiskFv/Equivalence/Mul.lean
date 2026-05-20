@@ -1,18 +1,19 @@
-import ZiskFv.Vm.Probe_Mul
+import ZiskFv.Compliance.Wrappers.Mul
+import ZiskFv.Vm.StateEffect
 
 /-!
 # `equiv_MUL` per-opcode canonical theorem (channel-balance form)
 
 Post-Phase-6 canonical per-opcode theorem for MUL. Proves the
 channel-balance conclusion (`= state_effect_via_channels …`) by
-invoking the corresponding Probe theorem `ZiskFv.Vm.Probe.equiv_MUL_v2`.
+invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_MUL`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 `ZiskFv/Equivalence_v1/Mul.lean`.
 
 ## Trust note
 
-No new axioms. The axiom closure equals `ZiskFv.Vm.Probe.equiv_MUL_v2`'s closure exactly.
+No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_MUL`'s closure exactly.
 -/
 
 open ZiskFv.Vm
@@ -52,7 +53,8 @@ theorem equiv_MUL
            { result_part := VectorHalf.Low
              signed_rs1 := srs1
              signed_rs2 := srs2 }))) state
-      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state :=
-  ZiskFv.Vm.Probe.equiv_MUL_v2 state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a pins h_match_primary promises bounds h_row_constraints
+      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_MUL state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a pins h_match_primary promises bounds h_row_constraints
 
 end ZiskFv.Equivalence.Mul
