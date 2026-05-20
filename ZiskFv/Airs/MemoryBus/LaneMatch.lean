@@ -134,7 +134,7 @@ lemma register_read_rs1_lanes_match_of_bus_emission
                    m.circuit row = memory_entry_hi e) :
     register_read_rs1_lanes_match m row e := by
   obtain ⟨_, _, _, _, _, h_s4, h_s5⟩ :=
-    bus_emission_main_slots_match_memBus_row_Main_register_read_rs1 m row
+    bus_emission_main_slots_match_memBus_row_Main_register_read_rs1 m m.circuit rfl row
   -- After slot-match, `slotValue 4 = entry.value_lo = m.a_0 row` and
   -- similarly `slotValue 5 = m.a_1 row` (definitional from
   -- `memBus_row_Main_register_read_rs1`).
@@ -160,7 +160,7 @@ lemma register_read_rs2_lanes_match_of_bus_emission
                    m.circuit row = memory_entry_hi e) :
     register_read_rs2_lanes_match m row e := by
   obtain ⟨_, _, _, _, _, h_s4, h_s5⟩ :=
-    bus_emission_main_slots_match_memBus_row_Main_register_read_rs2 m row
+    bus_emission_main_slots_match_memBus_row_Main_register_read_rs2 m m.circuit rfl row
   simp only [register_read_rs2_lanes_match]
   refine ⟨?_, ?_⟩
   · have h := h_s4.symm.trans h_slot_lo

@@ -56,6 +56,12 @@ variable {C : Type → Type → Type} {F ExtF : Type}
     `memBus_row_Main_register_read_rs1` projection's fields, plus
     a multiplicity equality.
 
+    The circuit witness `c` is taken as an explicit parameter (with a
+    bridge hypothesis `h_c : c = m.circuit`) rather than being read out
+    of `m.circuit` structurally. This shape is Phase-D3-ready: once the
+    v1 record loses its `circuit` field, callers will supply the
+    Clean Component-derived witness directly via the same parameter.
+
     Proof structure: every slot thunk in the extracted spec is either a
     constant (`3`, `8`) or `(Circuit.main ... col ...) + 0`; the
     projection sets each field to the corresponding raw `Circuit.main`
@@ -64,17 +70,18 @@ variable {C : Type → Type → Type} {F ExtF : Type}
     the same `Circuit.main` lookups; `simp` plus `_def` rewrites and
     `ring` (for the trailing `+ 0`) closes each conjunct. -/
 lemma bus_emission_main_slots_match_memBus_row_Main_register_read_rs1
-    (m : Valid_Main C F ExtF) (row : ℕ) :
+    (m : Valid_Main C F ExtF) (c : C F ExtF) (h_c : c = m.circuit) (row : ℕ) :
     let spec := @Extraction.MemoryBuses.bus_emission_Main_0 C F ExtF _ _ _
     let entry := memBus_row_Main_register_read_rs1 m row
-    spec.multiplicity m.circuit row =
-      Circuit.main m.circuit (id := 1) (column := 35) (row := row) (rotation := 0) ∧
-    slotValue spec 0 m.circuit row = entry.as ∧
-    slotValue spec 1 m.circuit row = entry.ptr ∧
-    slotValue spec 2 m.circuit row = entry.mem_step ∧
-    slotValue spec 3 m.circuit row = entry.bytes ∧
-    slotValue spec 4 m.circuit row = entry.value_lo ∧
-    slotValue spec 5 m.circuit row = entry.value_hi := by
+    spec.multiplicity c row =
+      Circuit.main c (id := 1) (column := 35) (row := row) (rotation := 0) ∧
+    slotValue spec 0 c row = entry.as ∧
+    slotValue spec 1 c row = entry.ptr ∧
+    slotValue spec 2 c row = entry.mem_step ∧
+    slotValue spec 3 c row = entry.bytes ∧
+    slotValue spec 4 c row = entry.value_lo ∧
+    slotValue spec 5 c row = entry.value_hi := by
+  subst h_c
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     · simp only [Extraction.MemoryBuses.bus_emission_Main_0, slotValue, memBus_row_Main_register_read_rs1,
                  List.getElem?_cons_zero, List.getElem?_cons_succ]
@@ -85,19 +92,21 @@ lemma bus_emission_main_slots_match_memBus_row_Main_register_read_rs1
     emission `bus_emission_Main_2` (the rs2 register-read at PIL
     debug index #36) has its 6 slot thunks pointwise equal to the
     `memBus_row_Main_register_read_rs2` projection's fields. Same proof
-    skeleton as the rs1 variant. -/
+    skeleton as the rs1 variant, with the same explicit-witness shape
+    (`c : C F ExtF` parameter plus `h_c : c = m.circuit` bridge). -/
 lemma bus_emission_main_slots_match_memBus_row_Main_register_read_rs2
-    (m : Valid_Main C F ExtF) (row : ℕ) :
+    (m : Valid_Main C F ExtF) (c : C F ExtF) (h_c : c = m.circuit) (row : ℕ) :
     let spec := @Extraction.MemoryBuses.bus_emission_Main_2 C F ExtF _ _ _
     let entry := memBus_row_Main_register_read_rs2 m row
-    spec.multiplicity m.circuit row =
-      Circuit.main m.circuit (id := 1) (column := 36) (row := row) (rotation := 0) ∧
-    slotValue spec 0 m.circuit row = entry.as ∧
-    slotValue spec 1 m.circuit row = entry.ptr ∧
-    slotValue spec 2 m.circuit row = entry.mem_step ∧
-    slotValue spec 3 m.circuit row = entry.bytes ∧
-    slotValue spec 4 m.circuit row = entry.value_lo ∧
-    slotValue spec 5 m.circuit row = entry.value_hi := by
+    spec.multiplicity c row =
+      Circuit.main c (id := 1) (column := 36) (row := row) (rotation := 0) ∧
+    slotValue spec 0 c row = entry.as ∧
+    slotValue spec 1 c row = entry.ptr ∧
+    slotValue spec 2 c row = entry.mem_step ∧
+    slotValue spec 3 c row = entry.bytes ∧
+    slotValue spec 4 c row = entry.value_lo ∧
+    slotValue spec 5 c row = entry.value_hi := by
+  subst h_c
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     · simp only [Extraction.MemoryBuses.bus_emission_Main_2, slotValue, memBus_row_Main_register_read_rs2,
                  List.getElem?_cons_zero, List.getElem?_cons_succ]
@@ -110,19 +119,21 @@ lemma bus_emission_main_slots_match_memBus_row_Main_register_read_rs2
     pointwise equal to the `memBus_row_Main_store_reg_prev` projection's
     fields. Same proof skeleton as the rs1/rs2 variants — but the value
     lanes are not aliased to named `Valid_Main` accessors, so no `_def`
-    rewrites apply; the slots reduce directly via `ring`. -/
+    rewrites apply; the slots reduce directly via `ring`. Carries the
+    same explicit-witness shape as its siblings. -/
 lemma bus_emission_main_slots_match_memBus_row_Main_store_reg_prev
-    (m : Valid_Main C F ExtF) (row : ℕ) :
+    (m : Valid_Main C F ExtF) (c : C F ExtF) (h_c : c = m.circuit) (row : ℕ) :
     let spec := @Extraction.MemoryBuses.bus_emission_Main_4 C F ExtF _ _ _
     let entry := memBus_row_Main_store_reg_prev m row
-    spec.multiplicity m.circuit row =
-      Circuit.main m.circuit (id := 1) (column := 37) (row := row) (rotation := 0) ∧
-    slotValue spec 0 m.circuit row = entry.as ∧
-    slotValue spec 1 m.circuit row = entry.ptr ∧
-    slotValue spec 2 m.circuit row = entry.mem_step ∧
-    slotValue spec 3 m.circuit row = entry.bytes ∧
-    slotValue spec 4 m.circuit row = entry.value_lo ∧
-    slotValue spec 5 m.circuit row = entry.value_hi := by
+    spec.multiplicity c row =
+      Circuit.main c (id := 1) (column := 37) (row := row) (rotation := 0) ∧
+    slotValue spec 0 c row = entry.as ∧
+    slotValue spec 1 c row = entry.ptr ∧
+    slotValue spec 2 c row = entry.mem_step ∧
+    slotValue spec 3 c row = entry.bytes ∧
+    slotValue spec 4 c row = entry.value_lo ∧
+    slotValue spec 5 c row = entry.value_hi := by
+  subst h_c
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     · simp only [Extraction.MemoryBuses.bus_emission_Main_4, slotValue, memBus_row_Main_store_reg_prev,
                  List.getElem?_cons_zero, List.getElem?_cons_succ]
