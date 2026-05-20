@@ -32,7 +32,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- The 9 cross-row F-typed constraints at row `r`, referencing the
     previous row `r - 1`. -/
-def cross_row_at (v : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL) (r : ℕ) : Prop :=
+def cross_row_at (v : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL) (r : ℕ) : Prop :=
   v.delta_addr r - (v.addr r - v.addr (r - 1)) * (1 - v.reset r) = 0
   ∧ (v.reg_0 (r - 1) - v.reg_0 r) * v.sel_0 r * v.sel_down_to_up r = 0
   ∧ (v.reg_1 (r - 1) - v.reg_1 r) * v.sel_1 r * v.sel_down_to_up r = 0

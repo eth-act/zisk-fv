@@ -82,7 +82,7 @@ theorem equiv_LWU
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
     -- Memory-bridge premises.
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     (align : ZiskFv.Compliance.MemAlignWitness C)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_width : main.ind_width r_main = (4 : FGL)) :

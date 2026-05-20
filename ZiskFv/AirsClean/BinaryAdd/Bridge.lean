@@ -41,7 +41,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     accumulators (`gsum`, `im_0`, `im_1`) are dropped (the channel
     model subsumes them). -/
 @[reducible]
-def rowAt (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd C FGL FGL) (r : ℕ)
+def rowAt (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) (r : ℕ)
     : BinaryAddRow FGL where
   a_0        := v.a_0 r
   a_1        := v.a_1 r
@@ -56,7 +56,7 @@ def rowAt (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd C FGL FGL) (r : ℕ)
 
 /-- The four BinaryAdd row constraints at row `r`, expressed against
     a `Valid_BinaryAdd`. -/
-def constraints_at (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd C FGL FGL) (r : ℕ) : Prop :=
+def constraints_at (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) (r : ℕ) : Prop :=
   v.cout_0 r * (1 + -v.cout_0 r) = 0
   ∧ v.a_0 r + v.b_0 r
       + -(v.cout_0 r * 4294967296 + v.c_chunks_1 r * 65536 + v.c_chunks_0 r) = 0
@@ -74,7 +74,7 @@ def constraints_at (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd C FGL FGL) (r : �
     RangeBus channel-balance proof — completing the trust-retirement chain
     for `binary_add_columns_in_range`. -/
 theorem spec_of_valid
-    (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd C FGL FGL) (r : ℕ)
+    (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) (r : ℕ)
     (h_assumptions : Assumptions (rowAt v r))
     (h_constraints : constraints_at v r) :
     Spec (rowAt v r) := by

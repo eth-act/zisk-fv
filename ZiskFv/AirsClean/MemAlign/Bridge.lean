@@ -18,7 +18,7 @@ open Goldilocks
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 @[reducible]
-def rowAt (v : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL) (r : ℕ) :
+def rowAt (v : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL) (r : ℕ) :
     MemAlignRow FGL where
   addr := v.addr r
   offset := v.offset r
@@ -53,7 +53,7 @@ def rowAt (v : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL) (r : ℕ) :
 
 /-- The 16 per-row F-typed constraints at row `r`, expressed against
     a `Valid_MemAlign`. -/
-def constraints_at (v : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL) (r : ℕ) : Prop :=
+def constraints_at (v : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL) (r : ℕ) : Prop :=
   v.wr r * (1 - v.wr r) = 0
   ∧ v.reset r * (1 - v.reset r) = 0
   ∧ v.sel_up_to_down r * (1 - v.sel_up_to_down r) = 0
@@ -94,7 +94,7 @@ def constraints_at (v : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL) (r : ℕ)
          * (v.reg_4 r + v.reg_5 r * 256 + v.reg_6 r * 65536 + v.reg_7 r * 16777216)) = 0
 
 theorem spec_of_valid
-    (v : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL) (r : ℕ)
+    (v : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL) (r : ℕ)
     (h_assumptions : Assumptions (rowAt v r))
     (h_constraints : constraints_at v r) :
     Spec (rowAt v r) := by

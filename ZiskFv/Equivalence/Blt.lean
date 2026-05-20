@@ -21,7 +21,6 @@ open ZiskFv.Compliance (BranchInstrOperands)
 
 namespace ZiskFv.Equivalence.Blt
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_BLT
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

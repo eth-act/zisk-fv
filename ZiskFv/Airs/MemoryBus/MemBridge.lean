@@ -82,7 +82,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `[0, 256)`. -/
 @[simp]
 def entry_packs_mem_row_value
-    (mem : Valid_Mem C FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL) : Prop :=
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL) : Prop :=
   mem.value_0 r_mem = memory_entry_lo e
   ∧ mem.value_1 r_mem = memory_entry_hi e
 
@@ -101,7 +101,7 @@ def entry_packs_mem_row_value
     store: `wr = 1`). -/
 @[simp]
 def mem_row_matches_entry
-    (mem : Valid_Mem C FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL) : Prop :=
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL) : Prop :=
   mem.sel r_mem = 1
   ∧ mem.addr r_mem = e.ptr
   ∧ mem.step r_mem = e.timestamp
@@ -161,7 +161,7 @@ def high_bytes_zero_for_width (e : MemoryBusEntry FGL) (width : FGL) : Prop :=
     PLONK-style permutation soundness for the arithmetic protocol is
     project-trusted (see CLAUDE.md "Trust scoping"). -/
 axiom lookup_consumer_matches_provider_load
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (h_emit : main.b_0 r_main = memory_entry_lo e
               ∧ main.b_1 r_main = memory_entry_hi e
@@ -215,7 +215,7 @@ lemma memory_load_lanes_match_of_main_emit
     object `Spec/MemModel.lean::mem_load_correct` consumes to derive the
     Sail-state predicate. -/
 lemma memory_load_lanes_match_of_mem_row
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (h_main_emit : main.b_0 r_main = memory_entry_lo e
                    ∧ main.b_1 r_main = memory_entry_hi e
@@ -240,7 +240,7 @@ them. -/
     (extracted Mem constraint 21) under `addr_changes = 1` and
     `wr = 0`. -/
 lemma mem_read_addr_change_value_0_zero
-    (mem : Valid_Mem C FGL FGL) (r_mem : ℕ)
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ)
     (h_core : core_every_row mem r_mem)
     (h_addr_changes : mem.addr_changes r_mem = 1)
     (h_wr : mem.wr r_mem = 0) :
@@ -253,7 +253,7 @@ lemma mem_read_addr_change_value_0_zero
 
 /-- Companion of `mem_read_addr_change_value_0_zero` for the high chunk. -/
 lemma mem_read_addr_change_value_1_zero
-    (mem : Valid_Mem C FGL FGL) (r_mem : ℕ)
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ)
     (h_core : core_every_row mem r_mem)
     (h_addr_changes : mem.addr_changes r_mem = 1)
     (h_wr : mem.wr r_mem = 0) :

@@ -839,7 +839,7 @@ inductive OpEnvelope
   | ld
     (ld_input : PureSpec.LdInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
-    (mem : Valid_Mem C FGL FGL)
+    (mem : Valid_Mem FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
@@ -851,7 +851,7 @@ inductive OpEnvelope
   | lbu
     (lbu_input : PureSpec.LbuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
-    (mem : Valid_Mem C FGL FGL)
+    (mem : Valid_Mem FGL FGL)
     (align : ZiskFv.Compliance.MemAlignWitness C)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
@@ -865,7 +865,7 @@ inductive OpEnvelope
   | lhu
     (lhu_input : PureSpec.LhuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
-    (mem : Valid_Mem C FGL FGL)
+    (mem : Valid_Mem FGL FGL)
     (align : ZiskFv.Compliance.MemAlignWitness C)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
@@ -879,7 +879,7 @@ inductive OpEnvelope
   | lwu
     (lwu_input : PureSpec.LwuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
-    (mem : Valid_Mem C FGL FGL)
+    (mem : Valid_Mem FGL FGL)
     (align : ZiskFv.Compliance.MemAlignWitness C)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
@@ -893,7 +893,7 @@ inductive OpEnvelope
   | lb
     (lb_input : PureSpec.LbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
-    (mem : Valid_Mem C FGL FGL)
+    (mem : Valid_Mem FGL FGL)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B)
@@ -906,7 +906,7 @@ inductive OpEnvelope
   | lh
     (lh_input : PureSpec.LhInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
-    (mem : Valid_Mem C FGL FGL)
+    (mem : Valid_Mem FGL FGL)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_H)
@@ -919,7 +919,7 @@ inductive OpEnvelope
   | lw
     (lw_input : PureSpec.LwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
-    (mem : Valid_Mem C FGL FGL)
+    (mem : Valid_Mem FGL FGL)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W)

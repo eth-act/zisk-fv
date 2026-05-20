@@ -113,7 +113,7 @@ theorem equiv_LD
         (PureSpec.execute_LOADD_pure ld_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
     -- Circuit-level parameters that supplant `h_rd_val`.
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB) :
     execute_instruction (instruction.LOAD (
       ld_input.imm,

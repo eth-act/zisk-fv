@@ -62,7 +62,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     binder types. -/
 inductive OpBusProvider (C : Type → Type → Type) [Circuit FGL FGL C] : Type
   | binaryAdd
-      (b : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd C FGL FGL) : OpBusProvider C
+      (b : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) : OpBusProvider C
   | binary
       (b : ZiskFv.Airs.Binary.Valid_Binary C FGL FGL) : OpBusProvider C
   | binaryExtension

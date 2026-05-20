@@ -191,7 +191,7 @@ theorem equiv_LD
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- AIR validators + row index. Compliance.lean shares
     -- `(main, mem)` across all Mem opcodes.
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     -- Structural bus rows.
     (bus : ZiskFv.Compliance.BusRows)
     -- Activation / opcode pins. Compliance.lean derives these

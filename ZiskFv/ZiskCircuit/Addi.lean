@@ -69,7 +69,7 @@ open ZiskFv.Airs.Main ZiskFv.Airs.BinaryAdd
     composition does not depend on the unused fourth predicate. -/
 @[simp]
 def addi_circuit_holds_with_binaryadd
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd FGL FGL)
     (r_main r_binary : ℕ) : Prop :=
   add_subset_holds m r_main
   ∧ core_every_row b r_binary
@@ -82,7 +82,7 @@ def addi_circuit_holds_with_binaryadd
     is `add_compositional`'s with the unused fourth mode predicate
     substituted. -/
 lemma addi_compositional_with_binaryadd
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd FGL FGL)
     (r_main r_binary : ℕ)
     (h : addi_circuit_holds_with_binaryadd m b r_main r_binary) :
     ZiskFv.ZiskCircuit.Add.main_c_packed m r_main

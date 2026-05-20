@@ -117,9 +117,9 @@ lemma one_sub_m32_mul_of_eq_one {F : Type} [Field F]
     `c_chunks` per the per-lane recombination
     `c[i] := c_chunks[2i+1] * 2^16 + c_chunks[2i]`. -/
 @[simp]
-def opBus_row_BinaryAdd {C : Type → Type → Type} {F ExtF : Type}
-    [Field F] [Field ExtF] [Circuit F ExtF C]
-    (b : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd C F ExtF) (row : ℕ) : OperationBusEntry F :=
+def opBus_row_BinaryAdd {F ExtF : Type}
+    [Field F] [Field ExtF]
+    (b : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd F ExtF) (row : ℕ) : OperationBusEntry F :=
   { multiplicity := 1
     -- Opcode literal `0x0A` per `zisk/pil/opids.pil`. The bus entry
     -- is parametric in F, so we use the natural literal directly rather

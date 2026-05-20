@@ -76,7 +76,7 @@ structure MainRowPins (m : Valid_Main C FGL FGL) (r_main : ℕ)
     type ascription is unambiguous at callers; the `[Circuit FGL FGL C]`
     instance is inferred from the surrounding scope. -/
 structure BinaryAddWitness (C : Type → Type → Type) [Circuit FGL FGL C] where
-  validator : Valid_BinaryAdd C FGL FGL
+  validator : Valid_BinaryAdd FGL FGL
   core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row validator r
 
 /-! ## Full mode-register set -/
@@ -98,9 +98,9 @@ structure ModeRegsFull where
     unambiguous at callers; the `[Circuit FGL FGL C]` instance is
     inferred from the surrounding scope. -/
 structure MemAlignWitness (C : Type → Type → Type) [Circuit FGL FGL C] where
-  mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
-  marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
-  ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
+  mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL
+  marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL
+  ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL
   h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
 
 /-! ## Byte-range bounds on a memory-bus entry -/

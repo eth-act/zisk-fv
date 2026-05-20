@@ -125,7 +125,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     of an "implementation models specification" axiom; it's the
     irreducible memory-model trust for the load side. -/
 axiom row_models_sail_state_load
-    (mem : Valid_Mem C FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
+    (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_match : mem_row_matches_entry mem r_mem e)
     (h_wr : mem.wr r_mem = 0) :
@@ -164,7 +164,7 @@ axiom row_models_sail_state_load
     `multiplicity = -1` plus the permutation handshake force the read
     side. -/
 lemma mem_load_correct
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_main_emit : main.b_0 r_main = memory_entry_lo e
@@ -215,7 +215,7 @@ only the bytes the corresponding Sail spec writes/reads.
 
 /-- 4-byte projection of `mem_load_correct` for LW / LWU. -/
 lemma mem_load_correct_4byte
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_main_emit : main.b_0 r_main = memory_entry_lo e
@@ -231,7 +231,7 @@ lemma mem_load_correct_4byte
 
 /-- 2-byte projection of `mem_load_correct` for LH / LHU. -/
 lemma mem_load_correct_2byte
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_main_emit : main.b_0 r_main = memory_entry_lo e
@@ -245,7 +245,7 @@ lemma mem_load_correct_2byte
 
 /-- 1-byte projection of `mem_load_correct` for LB / LBU. -/
 lemma mem_load_correct_1byte
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_main_emit : main.b_0 r_main = memory_entry_lo e

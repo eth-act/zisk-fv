@@ -21,7 +21,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 /-- Project a `Valid_MemAlignReadByte` at row `r` into a Clean
     `MemAlignReadByteRow FGL`. -/
 @[reducible]
-def rowAt (v : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL) (r : ℕ)
+def rowAt (v : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL) (r : ℕ)
     : MemAlignReadByteRow FGL where
   sel_high_4b := v.sel_high_4b r
   sel_high_2b := v.sel_high_2b r
@@ -37,7 +37,7 @@ def rowAt (v : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL) (r
 /-- The 4 F-typed MemAlignReadByte row constraints at row `r`,
     expressed against a `Valid_MemAlignReadByte`. -/
 def constraints_at
-    (v : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL) (r : ℕ) : Prop :=
+    (v : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL) (r : ℕ) : Prop :=
   v.sel_high_4b r * (1 - v.sel_high_4b r) = 0
   ∧ v.sel_high_2b r * (1 - v.sel_high_2b r) = 0
   ∧ v.sel_high_b r * (1 - v.sel_high_b r) = 0
@@ -50,7 +50,7 @@ def constraints_at
     satisfying the 4 Clean Component constraints + the boolean
     assumptions, the MemAlignReadByte Spec holds. -/
 theorem spec_of_valid
-    (v : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL) (r : ℕ)
+    (v : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL) (r : ℕ)
     (h_assumptions : Assumptions (rowAt v r))
     (h_constraints : constraints_at v r) :
     Spec (rowAt v r) := by
