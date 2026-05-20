@@ -33,25 +33,18 @@ def opBusConsumer : GeneralFormalCircuit FGL OpBusMessage unit where
   soundness := by circuit_proof_start [OpBusChannel]
   completeness := by circuit_proof_start [OpBusChannel]
 
-/-- The minimal BinaryAdd ensemble, assembled up through `addFinishedChannel`:
-    the BinaryAdd provider Component + the trivial op-bus consumer, op-bus
-    finished. This much of the `Air.Flat` assembly API (`SoundEnsemble` /
-    `addTable` / `addFinishedChannel`) provably composes for a real ZisK AIR
-    `Component`, with the `addTable` obligations discharged.
+/-- The minimal BinaryAdd ensemble: the BinaryAdd provider Component + the
+    trivial op-bus consumer, `OpBusChannel` finished, taken all the way
+    through `toFormal` to a `FormalEnsemble`.
 
-    `toFormal` (→ a non-vacuous `FormalEnsemble`) is intentionally NOT taken
-    here. It carries an `AssumptionsConsistency` obligation —
-    `∀ witness, EnsembleAssumptions witness.publicInput → witness.Assumptions`
-    — and `witness.Assumptions` requires *every* BinaryAdd row to satisfy the
-    Component's `Assumptions`. BinaryAdd's Component `Assumptions` is
-    currently `BinaryAdd.Assumptions` (the 8 column range bounds + 2 carry
-    pins), which a `PublicIO := unit` ensemble assumption cannot establish
-    non-vacuously. The non-vacuous fix (plan decision D-2): BinaryAdd's
-    Component `Assumptions` must become `True`, with the range bounds
-    supplied by range-bus *lookup* interactions (channel guarantees), not
-    soundness-assumptions. That is range-bus integration — a per-AIR-phase
-    step, not part of the op-bus pilot. See the C0c finding. -/
-def binaryAddEnsemble : SoundEnsemble FGL unit :=
+    `toFormal`'s `AssumptionsConsistency` obligation discharges because both
+    Components carry `Assumptions := True` (plan D-2 — BinaryAdd's column
+    range bounds are sourced inside `soundness` from `range_bus_sound`, not
+    from a caller assumption). The resulting ensemble soundness is genuine —
+    *not* vacuous: its trust closure is `range_bus_sound` (a documented
+    pre-existing axiom) + the per-Component completeness axiom, no `sorry`,
+    no `False`-style assumption. This is the C0c GO criterion met. -/
+def binaryAddEnsemble : FormalEnsemble FGL unit :=
   SoundEnsemble.empty FGL unit
     |>.addTable component
         (by simp [circuit_norm, component, circuit, binaryAddElaborated])
@@ -60,5 +53,17 @@ def binaryAddEnsemble : SoundEnsemble FGL unit :=
     |>.addTable ⟨ opBusConsumer ⟩
         (by simp [circuit_norm, opBusConsumer])
         (by simp [circuit_norm, opBusConsumer])
+    |>.toFormal (fun _ => True) (fun _ => True)
+        (by
+          -- AssumptionsConsistency: every component carries `Assumptions := True`,
+          -- so every witness table's per-row assumption is `True`.
+          intro _ _ table h_mem row _
+          have h := EnsembleWitness.mem_allTables_component_of_mem_allTables h_mem
+          simp only [circuit_norm, Ensemble.allTables] at h
+          rcases h with h | h | h <;>
+            (rw [h]
+             simp [circuit_norm, Air.Flat.Component.Assumptions,
+               component, circuit, opBusConsumer, binaryAddElaborated]))
+        (by intro _ _; trivial)
 
 end ZiskFv.AirsClean.BinaryAdd

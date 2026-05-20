@@ -199,8 +199,43 @@ lemma carry_chain_hi_nat
 
 /-! ## Row-level soundness theorem -/
 
+/-- BinaryAdd row soundness from explicit column range bounds: the four
+    constraints + the 8 `bits(N)` column range bounds imply the Spec.
+
+    This is the form the Clean `Component`'s `soundness` field consumes —
+    the range bounds arrive from `range_bus_sound` (the range-checker bus),
+    so the Component's `Assumptions` can be `True`. The carry-pin conjuncts
+    of `Assumptions` are *not* needed here. -/
+theorem soundness_of_ranges (row : BinaryAddRow FGL)
+    (h_a0 : row.a_0.val < 2 ^ 32) (h_a1 : row.a_1.val < 2 ^ 32)
+    (h_b0 : row.b_0.val < 2 ^ 32) (h_b1 : row.b_1.val < 2 ^ 32)
+    (h_c0 : row.c_chunks_0.val < 2 ^ 16) (h_c1 : row.c_chunks_1.val < 2 ^ 16)
+    (h_c2 : row.c_chunks_2.val < 2 ^ 16) (h_c3 : row.c_chunks_3.val < 2 ^ 16)
+    (h_bool_0 : row.cout_0 * (1 + -row.cout_0) = 0)
+    (h_carry_0 :
+      row.a_0 + row.b_0
+        + -(row.cout_0 * 4294967296 + row.c_chunks_1 * 65536 + row.c_chunks_0)
+      = 0)
+    (h_bool_1 : row.cout_1 * (1 + -row.cout_1) = 0)
+    (h_carry_1 :
+      row.a_1 + row.b_1 + row.cout_0
+        + -(row.cout_1 * 4294967296 + row.c_chunks_3 * 65536 + row.c_chunks_2)
+      = 0) :
+    Spec row := by
+  have hlo := carry_chain_lo_nat h_bool_0 h_carry_0 h_a0 h_b0 h_c0 h_c1
+  have h_cout0_le : row.cout_0.val ≤ 1 := by
+    rcases bool_val_cases h_bool_0 with h | h <;> omega
+  have hhi := carry_chain_hi_nat h_bool_1 h_cout0_le h_carry_1
+    h_a1 h_b1 h_c2 h_c3
+  have h_cout1_le : row.cout_1.val ≤ 1 := by
+    rcases bool_val_cases h_bool_1 with h | h <;> omega
+  simp only [Spec, cPacked, packed32]
+  omega
+
 /-- BinaryAdd row soundness: the four constraints + range/carry
-    assumptions imply the Spec. -/
+    assumptions imply the Spec. (Thin wrapper over `soundness_of_ranges`
+    unpacking the bundled `Assumptions`; the carry-pin conjuncts are
+    unused.) -/
 theorem soundness (row : BinaryAddRow FGL)
     (h_assumptions : Assumptions row)
     (h_bool_0 : row.cout_0 * (1 + -row.cout_0) = 0)
@@ -214,16 +249,8 @@ theorem soundness (row : BinaryAddRow FGL)
         + -(row.cout_1 * 4294967296 + row.c_chunks_3 * 65536 + row.c_chunks_2)
       = 0) :
     Spec row := by
-  obtain ⟨h_a0, h_a1, h_b0, h_b1, h_c0, h_c1, h_c2, h_c3,
-          _h_cout0_pin, _h_cout1_pin⟩ := h_assumptions
-  have hlo := carry_chain_lo_nat h_bool_0 h_carry_0 h_a0 h_b0 h_c0 h_c1
-  have h_cout0_le : row.cout_0.val ≤ 1 := by
-    rcases bool_val_cases h_bool_0 with h | h <;> omega
-  have hhi := carry_chain_hi_nat h_bool_1 h_cout0_le h_carry_1
-    h_a1 h_b1 h_c2 h_c3
-  have h_cout1_le : row.cout_1.val ≤ 1 := by
-    rcases bool_val_cases h_bool_1 with h | h <;> omega
-  simp only [Spec, cPacked, packed32]
-  omega
+  obtain ⟨h_a0, h_a1, h_b0, h_b1, h_c0, h_c1, h_c2, h_c3, _, _⟩ := h_assumptions
+  exact soundness_of_ranges row h_a0 h_a1 h_b0 h_b1 h_c0 h_c1 h_c2 h_c3
+    h_bool_0 h_carry_0 h_bool_1 h_carry_1
 
 end ZiskFv.AirsClean.BinaryAdd
