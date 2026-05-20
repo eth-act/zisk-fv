@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.BinaryAdd.Spec
 import Clean.Circuit.Basic
+import ZiskFv.Channels.OperationBus
 
 /-!
 # BinaryAdd circuit operations (the `main` field of the Component)
@@ -29,6 +30,7 @@ namespace ZiskFv.AirsClean.BinaryAdd
 
 open Goldilocks
 open Circuit (assertZero)
+open ZiskFv.Channels.OperationBus (OpBusChannel)
 
 /-- The four BinaryAdd constraints, taking the row's slot values as
     `Expression FGL`s. Returns `Unit` because BinaryAdd is a pure
@@ -45,5 +47,15 @@ def main (row : Var BinaryAddRow FGL) : Circuit FGL Unit := do
   -- High-half carry chain
   assertZero (row.a_1 + row.b_1 + row.cout_0
               - (row.cout_1 * 4294967296 + row.c_chunks_3 * 65536 + row.c_chunks_2))
+  -- Op-bus emission: BinaryAdd pushes its ADD result onto the operation
+  -- bus. Mirrors `opBus_row_BinaryAdd` (Airs/OperationBus/OperationBus.lean):
+  -- op = 0x0A, a/b lanes direct, c lanes reassembled from 16-bit chunks.
+  OpBusChannel.push
+    { op := 10
+      a_lo := row.a_0,  a_hi := row.a_1
+      b_lo := row.b_0,  b_hi := row.b_1
+      c_lo := row.c_chunks_1 * 65536 + row.c_chunks_0
+      c_hi := row.c_chunks_3 * 65536 + row.c_chunks_2
+      flag := 0,  main_step := 0,  extended_arg := 0,  extra_args_0 := 0 }
 
 end ZiskFv.AirsClean.BinaryAdd

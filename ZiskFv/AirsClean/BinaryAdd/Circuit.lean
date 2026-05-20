@@ -26,6 +26,7 @@ verify). No `sorry`. The `soundness` field is genuinely proved.
 namespace ZiskFv.AirsClean.BinaryAdd
 
 open Goldilocks
+open ZiskFv.Channels.OperationBus (OpBusChannel)
 
 /-- The elaborated circuit for BinaryAdd's `main` — 4 `assertZero`
     constraints, no fresh witnesses (`localLength = 0`, `unit` output). -/
@@ -34,6 +35,7 @@ open Goldilocks
   main := main
   localLength _ := 0
   output _ _ := ()
+  channelsWithRequirements := [OpBusChannel.toRaw]
 
 /-- Honest-prover assumptions for the (axiomatized) completeness field —
     a genuine BinaryAdd row (range bounds + carry pins). -/
@@ -58,8 +60,13 @@ def circuit : GeneralFormalCircuit FGL BinaryAddRow unit :=
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
-      obtain ⟨hb0, hc0, hb1, hc1⟩ := h_holds
-      exact BinaryAdd.soundness _ h_assumptions hb0 hc0 hb1 hc1
+      refine ⟨?_, ?_⟩
+      · -- the BinaryAdd algebraic relation, from the 4 assertZero constraints
+        obtain ⟨hb0, hc0, hb1, hc1⟩ := h_holds
+        exact BinaryAdd.soundness _ h_assumptions hb0 hc0 hb1 hc1
+      · -- the op-bus push's requirement: `OpBusChannel.Guarantees` is `True`
+        intro _
+        trivial
     completeness := binaryAdd_circuit_completeness }
 
 /-- BinaryAdd as a Clean `Air.Flat.Component`. -/
