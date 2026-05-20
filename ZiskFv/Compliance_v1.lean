@@ -447,7 +447,7 @@ inductive OpEnvelope
   -- ============================ ADDW (Binary, do-block) =================
   | addw
     (addw_input : PureSpec.AddwInput) (r1 r2 rd : regidx)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
@@ -458,7 +458,7 @@ inductive OpEnvelope
   -- ============================ SUBW (Binary, do-block) =================
   | subw
     (subw_input : PureSpec.SubwInput) (r1 r2 rd : regidx)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
@@ -469,7 +469,7 @@ inductive OpEnvelope
   -- ============================ ADDIW (Binary, do-block, I-type) ========
   | addiw
     (addiw_input : PureSpec.AddiwInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W)
     (h_addiw_subset : itype_imm_subset_holds_main m r_main addiw_input.imm)
@@ -481,7 +481,7 @@ inductive OpEnvelope
   -- ============================ SUB (Binary, R-type) ====================
   | sub
     (sub_input : PureSpec.SubInput) (r1 r2 rd : regidx)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
@@ -492,7 +492,7 @@ inductive OpEnvelope
   -- ============================ AND (Binary, R-type) ====================
   | and
     (and_input : PureSpec.AndInput) (r1 r2 rd : regidx)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
@@ -503,7 +503,7 @@ inductive OpEnvelope
   -- ============================ OR (Binary, R-type) =====================
   | or
     (or_input : PureSpec.OrInput) (r1 r2 rd : regidx)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
@@ -514,7 +514,7 @@ inductive OpEnvelope
   -- ============================ XOR (Binary, R-type) ====================
   | xor
     (xor_input : PureSpec.XorInput) (r1 r2 rd : regidx)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
@@ -525,7 +525,7 @@ inductive OpEnvelope
   -- ============================ SLT (Binary, R-type) ====================
   | slt
     (slt_input : PureSpec.SltInput) (r1 r2 rd : regidx)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
@@ -536,7 +536,7 @@ inductive OpEnvelope
   -- ============================ SLTU (Binary, R-type) ===================
   | sltu
     (sltu_input : PureSpec.SltuInput) (r1 r2 rd : regidx)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
@@ -547,7 +547,7 @@ inductive OpEnvelope
   -- ============================ ANDI (Binary, I-type) ===================
   | andi
     (andi_input : PureSpec.AndiInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
     (h_andi_subset : itype_imm_subset_holds_main m r_main andi_input.imm)
@@ -559,7 +559,7 @@ inductive OpEnvelope
   -- ============================ ORI (Binary, I-type) ====================
   | ori
     (ori_input : PureSpec.OriInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
     (h_ori_subset : itype_imm_subset_holds_main m r_main ori_input.imm)
@@ -571,7 +571,7 @@ inductive OpEnvelope
   -- ============================ XORI (Binary, I-type) ===================
   | xori
     (xori_input : PureSpec.XoriInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
     (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
@@ -583,7 +583,7 @@ inductive OpEnvelope
   -- ============================ SLTI (Binary, I-type) ===================
   | slti
     (slti_input : PureSpec.SltiInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
     (h_slti_subset : itype_imm_subset_holds_main m r_main slti_input.imm)
@@ -595,7 +595,7 @@ inductive OpEnvelope
   -- ============================ SLTIU (Binary, I-type) ==================
   | sltiu
     (sltiu_input : PureSpec.SltiuInput) (r1 rd : regidx) (imm : BitVec 12)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)
     (h_sltiu_subset : itype_imm_subset_holds_main m r_main sltiu_input.imm)

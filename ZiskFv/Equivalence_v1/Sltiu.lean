@@ -84,7 +84,7 @@ theorem equiv_SLTIU
         (PureSpec.execute_ITYPE_sltiu_pure sltiu_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
     -- Binary AIR provider witness + activation/op + matches_entry.
-    (v : ZiskFv.Airs.Binary.Valid_Binary C FGL FGL) (r_binary : ℕ)
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r_binary : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
     (c0 c1 c2 c3 c4 c5 c6 c7

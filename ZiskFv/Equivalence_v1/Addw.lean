@@ -105,7 +105,7 @@ theorem equiv_ADDW
     -- Binary AIR provider witness + activation/op + matches_entry.
     -- Replaces 8 loose a_i/b_i quantifiers, 8 byte-range hypotheses
     -- (ha0..ha3, hb0..hb3), and 2 input-bridge promise hypotheses.
-    (v : ZiskFv.Airs.Binary.Valid_Binary C FGL FGL) (r_binary : ℕ)
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r_binary : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
     (c0 c1 c2 c3 c4 c5 c6 c7

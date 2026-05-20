@@ -86,7 +86,7 @@ lemma binary_op_disj_of_eq
     This is the precondition for `binary_consumer_byte_match_chain_pin`
     and `binary_b_op_or_sext_eq_OP_*`. -/
 lemma binary_h_emit_op_of_matches_entry
-    {m : Valid_Main C FGL FGL} {v : Valid_Binary C FGL FGL}
+    {m : Valid_Main C FGL FGL} {v : Valid_Binary FGL FGL}
     {r_main r_binary : ℕ} {n : ℕ}
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
     (h_main_op : m.op r_main = (n : FGL)) :
@@ -104,7 +104,7 @@ both the chain-pin family and mode-pin family wrappers. -/
 /-- Project `matches_entry` into the pair of c-lane equations
     `(m.c_0 r_main = …)` and `(m.c_1 r_main = …)`. -/
 lemma binary_c_lane_eqs_of_matches_entry
-    {m : Valid_Main C FGL FGL} {v : Valid_Binary C FGL FGL}
+    {m : Valid_Main C FGL FGL} {v : Valid_Binary FGL FGL}
     {r_main r_binary : ℕ}
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary)) :
     m.c_0 r_main = v.free_in_c_0 r_binary + 256 * v.free_in_c_1 r_binary
@@ -132,7 +132,7 @@ SUB, SLT, SLTU, SLTI, SLTIU wrappers. -/
     `e_i.flags = v.carry_i` equations. The 8 entries `e0..e7` are
     parameters carried over from the surrounding `∃` in the obtain
     lemma below. -/
-structure BinaryChainPinOut64 (v : Valid_Binary C FGL FGL) (r_binary : ℕ)
+structure BinaryChainPinOut64 (v : Valid_Binary FGL FGL) (r_binary : ℕ)
     (op_canon : ℕ)
     (e0 e1 e2 e3 e4 e5 e6 e7 :
       ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL) : Prop where
@@ -223,7 +223,7 @@ structure BinaryChainPinOut64 (v : Valid_Binary C FGL FGL) (r_binary : ℕ)
     bundling everything wrappers need to discharge their plumbing in
     one destructure. -/
 lemma binary_chain_pin_obtain_64
-    (v : Valid_Binary C FGL FGL) (r_binary : ℕ) (op_canon : ℕ)
+    (v : Valid_Binary FGL FGL) (r_binary : ℕ) (op_canon : ℕ)
     (h_branch_64 : op_canon = 0x06 ∨ op_canon = 0x07 ∨ op_canon = 0x0B)
     (h_emit_op : v.b_op r_binary + 16 * v.mode32 r_binary
         = ((op_canon : ℕ) : FGL)) :
@@ -336,7 +336,7 @@ Consumed by ADDW, SUBW, ADDIW wrappers. -/
     pins + 3 `pos_ind ≠ 1` pins + `pos_ind_3 = 1`. `op_canon` is
     the canonical W-mode chain opcode (`OP_ADD = 0x0A` for ADD_W,
     `OP_SUB = 0x0B` for SUB_W). -/
-structure BinaryChainPinOutW (v : Valid_Binary C FGL FGL) (r_binary : ℕ)
+structure BinaryChainPinOutW (v : Valid_Binary FGL FGL) (r_binary : ℕ)
     (op_canon : ℕ)
     (e0 e1 e2 e3 : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL) : Prop where
   chain_0 : consumer_byte_match_chain op_canon
@@ -375,7 +375,7 @@ structure BinaryChainPinOutW (v : Valid_Binary C FGL FGL) (r_binary : ℕ)
     for ADDW it's `h_byte_op_AW h_branch_addw : e_i.op.val = 0x0A`;
     for SUBW it's `h_byte_op_SW h_branch_subw : e_i.op.val = 0x0B`. -/
 lemma binary_chain_pin_obtain_W
-    (v : Valid_Binary C FGL FGL) (r_binary : ℕ) (op_emit op_canon : ℕ)
+    (v : Valid_Binary FGL FGL) (r_binary : ℕ) (op_emit op_canon : ℕ)
     (h_branch_w : op_emit = 0x1A ∨ op_emit = 0x1B)
     (h_canon_match :
       (op_emit = 0x1A → op_canon = 0x0A) ∧
@@ -436,7 +436,7 @@ boolean range on `carry_7`, this yields `v.carry_7 r_binary = 0`. -/
     pos_ind=1 forces `e_7.flags.val % 2 = 0`; carry_7's boolean
     bound then forces it to be `0`. -/
 lemma binary_carry_7_zero_of_chain_end_SUB
-    (v : Valid_Binary C FGL FGL) (r_binary : ℕ)
+    (v : Valid_Binary FGL FGL) (r_binary : ℕ)
     (e7 : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL)
     (h_mult7 : e7.multiplicity = 1)
     (h_op7 : e7.op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB)
@@ -469,7 +469,7 @@ substituting `v.carry_7 = 0` into the `matches_entry` projection. -/
 /-- Reconstruct `m.c_0 r_main` from the 4 low c-bytes once
     `v.carry_7 = 0`. Consumed by SUB / SUBW / ADDW / ADDIW. -/
 lemma binary_h_match_clo_of_carry_7_zero
-    {m : Valid_Main C FGL FGL} {v : Valid_Binary C FGL FGL}
+    {m : Valid_Main C FGL FGL} {v : Valid_Binary FGL FGL}
     {r_main r_binary : ℕ}
     (h_c_lo_m : m.c_0 r_main = v.free_in_c_0 r_binary
         + 256 * v.free_in_c_1 r_binary + 65536 * v.free_in_c_2 r_binary
@@ -484,7 +484,7 @@ lemma binary_h_match_clo_of_carry_7_zero
     SUB / SUBW / ADDW / ADDIW (and any other Binary 6-field chain
     op whose c-hi recipe is the standard 4-byte sum). -/
 lemma binary_h_match_chi_standard
-    {m : Valid_Main C FGL FGL} {v : Valid_Binary C FGL FGL}
+    {m : Valid_Main C FGL FGL} {v : Valid_Binary FGL FGL}
     {r_main r_binary : ℕ}
     (h_c_hi_m : m.c_1 r_main = v.free_in_c_4 r_binary
         + 256 * v.free_in_c_5 r_binary + 65536 * v.free_in_c_6 r_binary
@@ -508,7 +508,7 @@ call. Caller picks the right axiom for their opcode. -/
     The `pin_axiom` argument is `binary_b_op_or_sext_eq_OP_{AND,OR,XOR}`
     instantiated with `(v, r_binary)`. -/
 lemma binary_h_bop_or_sext_via_axiom
-    {m : Valid_Main C FGL FGL} {v : Valid_Binary C FGL FGL}
+    {m : Valid_Main C FGL FGL} {v : Valid_Binary FGL FGL}
     {r_main r_binary : ℕ} {n : ℕ} {op_canon : ℕ}
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
     (h_main_op : m.op r_main = (n : FGL))

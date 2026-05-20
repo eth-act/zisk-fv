@@ -36,7 +36,7 @@ theorem equiv_SUBW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (subw_input : PureSpec.SubwInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB_W)

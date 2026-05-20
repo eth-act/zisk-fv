@@ -76,7 +76,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     Outputs: existential `r_binary` + `matches_entry` + 24 byte-range
     facts. -/
 lemma binary_discharge
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = 0x02 ∨ m.op r_main = 0x03 ∨ m.op r_main = 0x04
@@ -133,7 +133,7 @@ byte-range *promise hypotheses*. This helper packages exactly that.
 /-- The 24 byte-range bounds on `Valid_Binary`'s `free_in_a/b/c` cells
     at a specific row, derived from `binary_columns_in_range`. -/
 @[simp]
-def byte_ranges_at (v : Valid_Binary C FGL FGL) (r : ℕ) : Prop :=
+def byte_ranges_at (v : Valid_Binary FGL FGL) (r : ℕ) : Prop :=
     (v.free_in_a_0 r).val < 256 ∧ (v.free_in_a_1 r).val < 256
   ∧ (v.free_in_a_2 r).val < 256 ∧ (v.free_in_a_3 r).val < 256
   ∧ (v.free_in_a_4 r).val < 256 ∧ (v.free_in_a_5 r).val < 256
@@ -150,7 +150,7 @@ def byte_ranges_at (v : Valid_Binary C FGL FGL) (r : ℕ) : Prop :=
 /-- Discharge the 24 byte-range *promise hypotheses* at any row of a
     valid `Binary` AIR. Pure derivation from
     `binary_columns_in_range`; no caller hypothesis needed. -/
-lemma byte_ranges_at_holds (v : Valid_Binary C FGL FGL) (r : ℕ) :
+lemma byte_ranges_at_holds (v : Valid_Binary FGL FGL) (r : ℕ) :
     byte_ranges_at v r :=
   ⟨bin_a_0_lt_256 v r, bin_a_1_lt_256 v r,
    bin_a_2_lt_256 v r, bin_a_3_lt_256 v r,
@@ -186,7 +186,7 @@ open ZiskFv.Airs.Binary in
     follow the same shape with `binary_per_byte_lookup_witness`'s
     other 7 conjuncts. -/
 lemma byte_chain_match_0_holds
-    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_0 r) (v.free_in_b_0 r) (v.free_in_c_0 r) := by
@@ -196,7 +196,7 @@ lemma byte_chain_match_0_holds
   rw [h_op_eq]; exact h_op_val
 
 lemma byte_chain_match_1_holds
-    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_1 r) (v.free_in_b_1 r) (v.free_in_c_1 r) := by
@@ -206,7 +206,7 @@ lemma byte_chain_match_1_holds
   rw [h_op_eq]; exact h_op_val
 
 lemma byte_chain_match_2_holds
-    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_2 r) (v.free_in_b_2 r) (v.free_in_c_2 r) := by
@@ -216,7 +216,7 @@ lemma byte_chain_match_2_holds
   rw [h_op_eq]; exact h_op_val
 
 lemma byte_chain_match_3_holds
-    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_3 r) (v.free_in_b_3 r) (v.free_in_c_3 r) := by
@@ -226,7 +226,7 @@ lemma byte_chain_match_3_holds
   rw [h_op_eq]; exact h_op_val
 
 lemma byte_chain_match_4_holds
-    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_4 r) (v.free_in_b_4 r) (v.free_in_c_4 r) := by
@@ -236,7 +236,7 @@ lemma byte_chain_match_4_holds
   rw [h_op_eq]; exact h_op_val
 
 lemma byte_chain_match_5_holds
-    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_5 r) (v.free_in_b_5 r) (v.free_in_c_5 r) := by
@@ -246,7 +246,7 @@ lemma byte_chain_match_5_holds
   rw [h_op_eq]; exact h_op_val
 
 lemma byte_chain_match_6_holds
-    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_6 r) (v.free_in_b_6 r) (v.free_in_c_6 r) := by
@@ -256,7 +256,7 @@ lemma byte_chain_match_6_holds
   rw [h_op_eq]; exact h_op_val
 
 lemma byte_chain_match_7_holds
-    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_7 r) (v.free_in_b_7 r) (v.free_in_c_7 r) := by
@@ -303,7 +303,7 @@ private lemma boolean_carry_implies_eq_zero {x : FGL}
     `boolean_carry_7` hypothesis by deriving it from
     `bin_carry_7_is_boolean` (in `BinaryRanges.lean`). -/
 lemma carry_7_zero_AND_pure
-    (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ)
     (h_op_AND : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND) :
     v.carry_7 r = 0 := by
   obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
@@ -318,7 +318,7 @@ lemma carry_7_zero_AND_pure
 
 /-- **carry_7 = 0 for OR rows (caller-friendly variant).** -/
 lemma carry_7_zero_OR_pure
-    (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ)
     (h_op_OR : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR) :
     v.carry_7 r = 0 := by
   obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
@@ -333,7 +333,7 @@ lemma carry_7_zero_OR_pure
 
 /-- **carry_7 = 0 for XOR rows (caller-friendly variant).** -/
 lemma carry_7_zero_XOR_pure
-    (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ)
     (h_op_XOR : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR) :
     v.carry_7 r = 0 := by
   obtain ⟨_, _, _, _, _, _, _, ⟨e, h_mult, h_op_eq, _, _, _, h_flags⟩⟩ :=
@@ -348,7 +348,7 @@ lemma carry_7_zero_XOR_pure
 
 /-- **carry_7 = 0 for AND rows.** -/
 lemma carry_7_zero_AND
-    (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ)
     (h_op_AND : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND)
     (h_bool_c7 : ZiskFv.Airs.Binary.boolean_carry_7 v r) :
     v.carry_7 r = 0 := by
@@ -365,7 +365,7 @@ lemma carry_7_zero_AND
 
 /-- **carry_7 = 0 for OR rows.** -/
 lemma carry_7_zero_OR
-    (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ)
     (h_op_OR : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR)
     (h_bool_c7 : ZiskFv.Airs.Binary.boolean_carry_7 v r) :
     v.carry_7 r = 0 := by
@@ -381,7 +381,7 @@ lemma carry_7_zero_OR
 
 /-- **carry_7 = 0 for XOR rows.** -/
 lemma carry_7_zero_XOR
-    (v : Valid_Binary C FGL FGL) (r : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ)
     (h_op_XOR : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR)
     (h_bool_c7 : ZiskFv.Airs.Binary.boolean_carry_7 v r) :
     v.carry_7 r = 0 := by
@@ -433,7 +433,7 @@ bundled helper consumes one mode-pin hypothesis and delivers all
 /-- The 8 per-byte `consumer_byte_match` predicates packaged as
     a single conjunction at opcode `op_val`. -/
 @[simp]
-def all_byte_matches_at (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ) : Prop :=
+def all_byte_matches_at (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ) : Prop :=
     ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_0 r) (v.free_in_b_0 r) (v.free_in_c_0 r)
   ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
@@ -457,7 +457,7 @@ def all_byte_matches_at (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ) : 
     the 8 `h_byte_<i>` *promise hypotheses* uniformly across the 6
     logic opcodes (AND/ANDI/OR/ORI/XOR/XORI). -/
 lemma byte_chain_discharge_logic
-    (v : Valid_Binary C FGL FGL) (r : ℕ) (op_val : ℕ)
+    (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ)
     (h_op_val : (v.b_op_or_sext r).val = op_val) :
     all_byte_matches_at v r op_val := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -495,7 +495,7 @@ open ZiskFv.Equivalence_v1.Bridge.SailStateBridge in
     are consumed internally — derived from `binary_columns_in_range`. -/
 lemma input_r1_packed_a
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
     (h_m32 : m.m32 r_main = 0)
     (h_a_lo_t : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
@@ -568,7 +568,7 @@ open ZiskFv.Equivalence_v1.Bridge.SailStateBridge in
     `input_r1_packed_a` for the b-lane (`m.b_0/1` ↔ `state.xreg rs2`). -/
 lemma input_r2_packed_b
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
     (h_m32 : m.m32 r_main = 0)
     (h_b_lo_t : m.b_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs2))
@@ -650,7 +650,7 @@ Outputs: the standard 4-byte packed c-lane match equations in the
 shape the rd-value derivation lemmas consume. -/
 
 private lemma match_clo_chi_logic_core
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
@@ -669,7 +669,7 @@ private lemma match_clo_chi_logic_core
 
 /-- **`h_match_clo`/`h_match_chi` discharge for AND-shape rows.** -/
 lemma match_clo_chi_AND
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
@@ -685,7 +685,7 @@ lemma match_clo_chi_AND
 
 /-- **`h_match_clo`/`h_match_chi` discharge for OR-shape rows.** -/
 lemma match_clo_chi_OR
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
@@ -701,7 +701,7 @@ lemma match_clo_chi_OR
 
 /-- **`h_match_clo`/`h_match_chi` discharge for XOR-shape rows.** -/
 lemma match_clo_chi_XOR
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (h_match : matches_entry (opBus_row_Main m r_main)
                              (opBus_row_Binary v r_binary))
@@ -750,7 +750,7 @@ chain. -/
     `v.free_in_b_*` are consumed internally — derived from
     `binary_columns_in_range`. -/
 lemma itype_imm_subset_binary_row_of_main
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ) (imm : BitVec 12)
     (h_m32 : m.m32 r_main = 0)
     (h_match : matches_entry (opBus_row_Main m r_main)

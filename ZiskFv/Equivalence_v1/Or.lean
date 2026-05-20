@@ -74,7 +74,7 @@ theorem equiv_OR
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (or_input : PureSpec.OrInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main C FGL FGL) (v : ZiskFv.Airs.Binary.Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises

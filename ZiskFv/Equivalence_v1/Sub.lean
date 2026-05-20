@@ -101,7 +101,7 @@ theorem equiv_SUB
     -- Binary AIR provider witness + row index + activation/op + bus match.
     -- Together these replace the 16 loose a_i/b_i quantifiers, 16 byte-range
     -- hypotheses, and 2 input-bridge promise hypotheses from origin/main.
-    (v : ZiskFv.Airs.Binary.Valid_Binary C FGL FGL) (r_binary : ℕ)
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r_binary : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB)
     (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
     -- Loose output bytes c_i and per-byte carry/flag/pos quantifiers stay;

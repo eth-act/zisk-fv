@@ -95,7 +95,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `v.free_in_c_*`'s 8 bytes, in `Nat`. -/
 private lemma byte_sum_from_binary_lane_match
     (m : Valid_Main C FGL FGL)
-    (v : Valid_Binary C FGL FGL)
+    (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (h_match_clo : m.c_0 r_main
@@ -196,7 +196,7 @@ private lemma byte_sum_from_binary_lane_match
     ranges, and transpile bridges identifying `r1_val`/`r2_val` with
     `Valid_Binary`'s packed `a`/`b` byte sums. -/
 lemma h_rd_val_logic_and
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
@@ -327,7 +327,7 @@ lemma h_rd_val_logic_and
     immediate vs rs2 register read), which lives in the transpile bridge
     `h_input_r2`. -/
 lemma h_rd_val_logic_andi
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)
@@ -405,7 +405,7 @@ lemma h_rd_val_logic_andi
 /-- **OR `h_rd_val` derivation (Tier 1).** Same architecture as
     `h_rd_val_logic_and`, with K1-B OR lift and `BitVec.or`. -/
 lemma h_rd_val_logic_or
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
@@ -508,7 +508,7 @@ lemma h_rd_val_logic_or
 /-- **ORI `h_rd_val` derivation (Tier 1).** Same as `h_rd_val_logic_or`
     with sign-extended-immediate input bridge. -/
 lemma h_rd_val_logic_ori
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)
@@ -586,7 +586,7 @@ lemma h_rd_val_logic_ori
 /-- **XOR `h_rd_val` derivation (Tier 1).** Same architecture as
     `h_rd_val_logic_and`, with K1-B XOR lift and `BitVec.xor`. -/
 lemma h_rd_val_logic_xor
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val r2_val : BitVec 64)
@@ -689,7 +689,7 @@ lemma h_rd_val_logic_xor
 /-- **XORI `h_rd_val` derivation (Tier 1).** Same as `h_rd_val_logic_xor`
     with sign-extended-immediate input bridge. -/
 lemma h_rd_val_logic_xori
-    (m : Valid_Main C FGL FGL) (v : Valid_Binary C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)
