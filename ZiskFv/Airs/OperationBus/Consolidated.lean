@@ -60,20 +60,19 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     hypotheses. The destructuring `def`s below are `@[reducible]`
     so V2's `whnfR` walker can unfold them when auditing forbidden
     binder types. -/
-inductive OpBusProvider (C : Type → Type → Type) [Circuit FGL FGL C] : Type
+inductive OpBusProvider : Type
   | binaryAdd
-      (b : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) : OpBusProvider C
+      (b : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) : OpBusProvider
   | binary
-      (b : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) : OpBusProvider C
+      (b : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) : OpBusProvider
   | binaryExtension
       (e : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) :
-        OpBusProvider C
+        OpBusProvider
 
 /-- The provider's row at index `r`, projected onto the
     operation-bus message tuple. -/
 @[reducible]
-def OpBusProvider.opBus_row {C : Type → Type → Type} [Circuit FGL FGL C]
-    : OpBusProvider C → ℕ → OperationBusEntry FGL
+def OpBusProvider.opBus_row : OpBusProvider → ℕ → OperationBusEntry FGL
   | .binaryAdd b, r => opBus_row_BinaryAdd b r
   | .binary b, r => opBus_row_Binary b r
   | .binaryExtension e, r => opBus_row_BinaryExtension e r
@@ -83,8 +82,7 @@ def OpBusProvider.opBus_row {C : Type → Type → Type} [Circuit FGL FGL C]
     handler. Mirrors the `h_op` disjunctions on the old per-provider
     axioms. -/
 @[reducible]
-def OpBusProvider.handles_op {C : Type → Type → Type} [Circuit FGL FGL C]
-    : OpBusProvider C → FGL → Prop
+def OpBusProvider.handles_op : OpBusProvider → FGL → Prop
   | .binaryAdd _, op => op = 10
   | .binary _, op =>
       op = 0x02 ∨ op = 0x03 ∨ op = 0x04 ∨ op = 0x05 ∨ op = 0x06
@@ -120,10 +118,16 @@ def OpBusProvider.handles_op {C : Type → Type → Type} [Circuit FGL FGL C]
     NOTE: This axiom REPLACES the three per-provider axioms. The
     trust content is identical; the consolidation makes the
     cryptographic claim explicit at the protocol layer instead of
-    distributing it across three AIR-specific specializations. -/
+    distributing it across three AIR-specific specializations.
+
+    The `C` typeclass binder is retained solely for the `Valid_Main`
+    parameter (still C-parameterized until its own retirement); the
+    `OpBusProvider` parameter is now `C`-free, having been
+    universally weakened in Phase F2 by Wave 1's removal of `C`
+    from each arm's `Valid_<AIR>` payload. -/
 axiom op_bus_permutation_sound
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL)
-    (p : OpBusProvider C)
+    (p : OpBusProvider)
     (r_main : ℕ)
     (h_active : m.is_external_op r_main = 1)
     (h_op : p.handles_op (m.op r_main)) :

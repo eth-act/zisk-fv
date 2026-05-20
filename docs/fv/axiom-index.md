@@ -112,7 +112,7 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 
 | # | Axiom | Line | Asserts |
 | - | ----- | ---: | ------- |
-| 1 | `op_bus_permutation_sound` | 124 | **OperationBus permutation soundness (consolidated).** For any consumer Main row that is externally-active and whose opcode falls within a provider's coverage, there exists a provider row whose op-bus emission matches the Main row's. |
+| 1 | `op_bus_permutation_sound` | 128 | **OperationBus permutation soundness (consolidated).** For any consumer Main row that is externally-active and whose opcode falls within a provider's coverage, there exists a provider row whose op-bus emission matches the Main row's. |
 
 ## #5b Range-bus / byte-range soundness — `ZiskFv/Channels/RangeBusSoundness.lean` (2)
 
