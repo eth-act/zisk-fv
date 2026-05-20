@@ -1,8 +1,6 @@
 import Mathlib
 
-import ZiskFv.Circuit
 import ZiskFv.Field.Goldilocks
-import Extraction.BinaryExtension
 
 /-!
 Named-column mirror of the extracted ZisK `BinaryExtension` AIR.
@@ -33,7 +31,6 @@ Mirrors the structural pattern of `Airs/Binary/BinaryAdd.lean`.
 namespace ZiskFv.Airs.BinaryExtension
 
 open Goldilocks
-open BinaryExtension.extraction
 
 /-!
 ## Deprecation notice — Phase D3/D4 removal

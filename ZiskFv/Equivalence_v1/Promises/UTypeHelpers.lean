@@ -1,6 +1,5 @@
 import Mathlib
 
-import ZiskFv.Circuit
 import ZiskFv.Equivalence_v1.Promises.UType
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Trusted.Transpiler

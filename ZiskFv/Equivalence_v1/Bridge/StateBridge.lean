@@ -1,6 +1,5 @@
 import Mathlib
 
-import ZiskFv.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Field.GoldilocksBridge
 import ZiskFv.Trusted.Transpiler

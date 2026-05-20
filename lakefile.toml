@@ -22,10 +22,11 @@ path = "build/sail-lean"
 
 # Auto-generated PIL2 extraction (per-AIR Lean files emitted by
 # `tools/pil-extract` from `build/zisk.pilout`). Populated by
-# `nix run .#populate` — never committed.
-[[require]]
-name = "Extraction"
-path = "build/extraction"
+# `nix run .#populate` — never committed. ORPHANED (Phase F7): the
+# extraction files reference the now-deleted `ZiskFv.Circuit` typeclass
+# and the v1 Valid_<AIR> shape; they remain on disk for the audit
+# trail (PIL ↔ Lean diff) but are no longer a Lake dep. Re-introducing
+# requires re-extracting against a Clean-Components-aware emitter.
 
 # Clean DSL (Verified-zkEVM/clean) source tree. Populated by
 # `nix run .#populate` from the pinned `clean-src` flake input.

@@ -1,6 +1,5 @@
 import Mathlib
 
-import ZiskFv.Circuit
 import ZiskFv.Equivalence_v1.Promises.Jump
 import ZiskFv.ZiskCircuit.Jal
 import ZiskFv.ZiskCircuit.Jalr

@@ -1,6 +1,5 @@
 import Mathlib
 
-import ZiskFv.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Airs.Main.Main
@@ -134,7 +133,6 @@ section UnsignedChainWitnesses
 
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.ArithDiv
-open Arith.extraction
 
 /-- **MUL-unsigned chain witnesses (existential bundle).**
 
@@ -358,7 +356,6 @@ section SignedChainWitnesses
 
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.ArithDiv
-open Arith.extraction
 open ZiskFv.PackedBitVec.SignedChunkLift
 
 /-- **MUL-signed chain witnesses (simplified ℤ chunk identity).**
@@ -984,7 +981,6 @@ section WChainWitnesses
 
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.ArithDiv
-open Arith.extraction
 open ZiskFv.PackedBitVec.SignedChunkLift
 
 /-- **MUL-W chain witnesses (natural 4-chunk ℤ identity, m32 = 1).**

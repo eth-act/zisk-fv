@@ -3,22 +3,14 @@ import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Field.GoldilocksBridge
 import ZiskFv.SailSpec.BusEffect
-import Extraction.BinaryAdd
-import Extraction.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
-import Extraction.Buses
 
 import ZiskFv.Airs.BusShape
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
-import Extraction.MemoryBuses
-import Extraction.Mem
 import ZiskFv.Airs.Mem
-import Extraction.MemAlign
-import Extraction.MemAlignByte
-import Extraction.MemAlignReadByte
 import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte

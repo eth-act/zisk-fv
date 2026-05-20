@@ -113,8 +113,6 @@ def jalr_archetype_circuit_holds
   jalr_subset_holds m r_main next_pc
   ∧ main_row_in_jalr_mode m r_main opcode_lit
 
-variable {C' : Type → Type → Type} [Circuit FGL FGL C']
-
 /-- Derived: `flag = 0` when the row is internal-op-1 (`ext = 0, op = 1`). -/
 private lemma flag_eq_zero_of_internal_op_one
     (v : Valid_Main FGL FGL) (row : ℕ)

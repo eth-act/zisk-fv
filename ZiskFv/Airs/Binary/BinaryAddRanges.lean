@@ -1,6 +1,5 @@
 import Mathlib
 
-import ZiskFv.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Channels.RangeBusSoundness

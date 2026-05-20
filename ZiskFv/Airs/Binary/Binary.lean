@@ -1,8 +1,6 @@
 import Mathlib
 
-import ZiskFv.Circuit
 import ZiskFv.Field.Goldilocks
-import Extraction.Binary
 
 /-!
 Named-column mirror of the extracted ZisK `Binary` AIR (pilout idx 10).
@@ -26,7 +24,6 @@ canonical AIR view is the Clean `Air.Flat.Component` at
 namespace ZiskFv.Airs.Binary
 
 open Goldilocks
-open Binary.extraction
 
 /-- Named accessors for one row of ZisK's `Binary` AIR.
 

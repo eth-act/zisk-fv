@@ -1,8 +1,6 @@
 import Mathlib
 
-import ZiskFv.Circuit
 import ZiskFv.Field.Goldilocks
-import Extraction.Arith
 
 /-!
 **Arith carry-chain identity.**

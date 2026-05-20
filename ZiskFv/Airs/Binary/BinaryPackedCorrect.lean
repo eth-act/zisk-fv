@@ -1,6 +1,5 @@
 import Mathlib
 
-import ZiskFv.Circuit
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Tables.BinaryTable
