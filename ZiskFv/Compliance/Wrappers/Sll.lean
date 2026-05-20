@@ -83,7 +83,7 @@ theorem equiv_SLL
     -- AIR validators + row index. Compliance.lean shares (m, v)
     -- across all BinaryExtension-shape opcodes (twelve shifts).
     (m : Valid_Main C FGL FGL)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     -- Structural promise bundle (15 fields). Subsumes the prior inline

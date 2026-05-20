@@ -244,7 +244,7 @@ rd-write lane match, derive
 
 private lemma c_lift_to_byte_sum
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (hc_lo_sum_lt :
       (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
@@ -365,7 +365,7 @@ private lemma c_lift_to_byte_sum
 /-- **Proven c-packed identity for LB.** -/
 lemma load_byte_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_op : (v.op r_binary).val = OP_SEXT_B)
     (h_bytes : ByteLookupHypotheses v r_binary)
@@ -428,7 +428,7 @@ lemma load_byte_c_packed
 /-- **Proven c-packed identity for LH.** -/
 lemma load_half_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_op : (v.op r_binary).val = OP_SEXT_H)
     (h_bytes : ByteLookupHypotheses v r_binary)
@@ -485,7 +485,7 @@ lemma load_half_c_packed
 /-- **Proven c-packed identity for LW.** -/
 lemma load_word_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (v : Valid_BinaryExtension C FGL FGL) (r_binary : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
     (e1 e2 : MemoryBusEntry FGL)
     (h_op : (v.op r_binary).val = OP_SEXT_W)
     (h_bytes : ByteLookupHypotheses v r_binary)

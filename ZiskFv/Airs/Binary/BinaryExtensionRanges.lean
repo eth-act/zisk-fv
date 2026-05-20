@@ -53,7 +53,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     * `bits(8) free_in_b`        → `free_in_b`     < 2⁸
     * `bits(32) free_in_c[BYTES][2]` → `free_in_c_0..15` < 2³²
     * `bits(32) b[2]`            → `b_0`, `b_1`    < 2³² -/
-theorem binary_extension_columns_in_range (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+theorem binary_extension_columns_in_range (e : Valid_BinaryExtension FGL FGL) (r : ℕ) :
     (e.free_in_a_0 r).val < 256 ∧ (e.free_in_a_1 r).val < 256
   ∧ (e.free_in_a_2 r).val < 256 ∧ (e.free_in_a_3 r).val < 256
   ∧ (e.free_in_a_4 r).val < 256 ∧ (e.free_in_a_5 r).val < 256
@@ -103,23 +103,23 @@ theorem binary_extension_columns_in_range (e : Valid_BinaryExtension C FGL FGL) 
 
 /-! ## Specialized accessors -/
 
-lemma be_a_0_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_0_lt_256 (e : Valid_BinaryExtension FGL FGL) (r : ℕ) :
     (e.free_in_a_0 r).val < 256 := (binary_extension_columns_in_range e r).1
-lemma be_a_1_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_1_lt_256 (e : Valid_BinaryExtension FGL FGL) (r : ℕ) :
     (e.free_in_a_1 r).val < 256 := (binary_extension_columns_in_range e r).2.1
-lemma be_a_2_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_2_lt_256 (e : Valid_BinaryExtension FGL FGL) (r : ℕ) :
     (e.free_in_a_2 r).val < 256 := (binary_extension_columns_in_range e r).2.2.1
-lemma be_a_3_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_3_lt_256 (e : Valid_BinaryExtension FGL FGL) (r : ℕ) :
     (e.free_in_a_3 r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.1
-lemma be_a_4_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_4_lt_256 (e : Valid_BinaryExtension FGL FGL) (r : ℕ) :
     (e.free_in_a_4 r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.2.1
-lemma be_a_5_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_5_lt_256 (e : Valid_BinaryExtension FGL FGL) (r : ℕ) :
     (e.free_in_a_5 r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.2.2.1
-lemma be_a_6_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_6_lt_256 (e : Valid_BinaryExtension FGL FGL) (r : ℕ) :
     (e.free_in_a_6 r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.2.2.2.1
-lemma be_a_7_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_a_7_lt_256 (e : Valid_BinaryExtension FGL FGL) (r : ℕ) :
     (e.free_in_a_7 r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.2.2.2.2.1
-lemma be_b_lt_256 (e : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+lemma be_b_lt_256 (e : Valid_BinaryExtension FGL FGL) (r : ℕ) :
     (e.free_in_b r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.2.2.2.2.2.1
 
 /-! ## op_is_shift linkage -/
@@ -138,7 +138,7 @@ open ZiskFv.Trusted in
     class as `bin_ext_table_consumer_wf`, trusted-base.md class #6).
     Cited PIL: `binary_extension.pil:88` (column declaration),
     `binary_extension.pil:92` (table-lookup binding). -/
-axiom binary_extension_op_is_shift_pin (v : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+axiom binary_extension_op_is_shift_pin (v : Valid_BinaryExtension FGL FGL) (r : ℕ) :
     ((v.op r = OP_SLL ∨ v.op r = OP_SRL ∨ v.op r = OP_SRA
       ∨ v.op r = OP_SLL_W ∨ v.op r = OP_SRL_W ∨ v.op r = OP_SRA_W)
         → v.op_is_shift r = 1)
@@ -168,7 +168,7 @@ open ZiskFv.Airs.Tables.BinaryExtensionTable in
     class as `bin_ext_table_consumer_wf`, trusted-base.md class #6).
     Cited PIL: `binary_extension.pil:92` (the 8-byte lookup_assumes
     declaration). -/
-axiom binary_extension_row_byte_lookups (v : Valid_BinaryExtension C FGL FGL) (r : ℕ) :
+axiom binary_extension_row_byte_lookups (v : Valid_BinaryExtension FGL FGL) (r : ℕ) :
     ByteLookupHypotheses v r
 
 end ZiskFv.Airs.BinaryExtension

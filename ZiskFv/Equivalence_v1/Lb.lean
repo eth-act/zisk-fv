@@ -85,7 +85,7 @@ theorem equiv_LB
     (pins : ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B)
     -- BinaryExtension AIR connection witnesses (Op-bus permutation handshake +
     -- per-byte lookup soundness).
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary : ℕ)
     (h_op_binary :
       (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B)

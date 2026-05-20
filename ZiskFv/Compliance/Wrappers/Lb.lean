@@ -64,7 +64,7 @@ theorem equiv_LB
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- AIR validators + row index.
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     -- Activation + opcode pin (Compliance ROM handshake).
     (pins : ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B)

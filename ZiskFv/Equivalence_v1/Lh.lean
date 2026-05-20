@@ -84,7 +84,7 @@ theorem equiv_LH
         bus.exec_row bus.e0 bus.e1 bus.e2)
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_H)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary : ℕ)
     (h_op_binary :
       (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H)

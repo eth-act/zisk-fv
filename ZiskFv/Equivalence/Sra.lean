@@ -30,7 +30,7 @@ theorem equiv_SRA
     (sra_input : PureSpec.SraInput)
     (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises

@@ -83,7 +83,7 @@ opcode literals in order: 0x21 (SLL), 0x22 (SRL), 0x23 (SRA), 0x24
 
 /-- Op-bus handshake helper for `OP_SLL = 0x21` (disjunct #1). -/
 lemma binexec_op_bus_handshake_SLL
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL) :
@@ -93,7 +93,7 @@ lemma binexec_op_bus_handshake_SLL
 
 /-- Op-bus handshake helper for `OP_SRL = 0x22` (disjunct #2). -/
 lemma binexec_op_bus_handshake_SRL
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRL) :
@@ -104,7 +104,7 @@ lemma binexec_op_bus_handshake_SRL
 
 /-- Op-bus handshake helper for `OP_SRA = 0x23` (disjunct #3). -/
 lemma binexec_op_bus_handshake_SRA
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRA) :
@@ -115,7 +115,7 @@ lemma binexec_op_bus_handshake_SRA
 
 /-- Op-bus handshake helper for `OP_SLL_W = 0x24` (disjunct #4). -/
 lemma binexec_op_bus_handshake_SLL_W
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SLL_W) :
@@ -126,7 +126,7 @@ lemma binexec_op_bus_handshake_SLL_W
 
 /-- Op-bus handshake helper for `OP_SRL_W = 0x25` (disjunct #5). -/
 lemma binexec_op_bus_handshake_SRL_W
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRL_W) :
@@ -137,7 +137,7 @@ lemma binexec_op_bus_handshake_SRL_W
 
 /-- Op-bus handshake helper for `OP_SRA_W = 0x26` (disjunct #6). -/
 lemma binexec_op_bus_handshake_SRA_W
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SRA_W) :
@@ -148,7 +148,7 @@ lemma binexec_op_bus_handshake_SRA_W
 
 /-- Op-bus handshake helper for `OP_SIGNEXTEND_B = 0x27` (disjunct #7). -/
 lemma binexec_op_bus_handshake_SIGNEXTEND_B
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_B) :
@@ -159,7 +159,7 @@ lemma binexec_op_bus_handshake_SIGNEXTEND_B
 
 /-- Op-bus handshake helper for `OP_SIGNEXTEND_H = 0x28` (disjunct #8). -/
 lemma binexec_op_bus_handshake_SIGNEXTEND_H
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_H) :
@@ -170,7 +170,7 @@ lemma binexec_op_bus_handshake_SIGNEXTEND_H
 
 /-- Op-bus handshake helper for `OP_SIGNEXTEND_W = 0x29` (disjunct #9). -/
 lemma binexec_op_bus_handshake_SIGNEXTEND_W
-    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (m : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (h_main_active : m.is_external_op r_main = 1)
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_W) :
@@ -207,7 +207,7 @@ record with all 4 byte lane-matches; the wrappers project the
     Each wrapper calls `binary_extension_row_byte_lookups v r_binary`
     on its own — a 1-line invocation. -/
 structure LoadFullDischargeAt
-    (main : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (main : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (e1 : Interaction.MemoryBusEntry FGL)
     (op_sext_table : ℕ) : Prop where
   h_match :
@@ -257,7 +257,7 @@ structure LoadFullDischargeAt
     `h_a0_match` is actually used by `equiv_LB`; the helper still
     returns all four for uniformity with LH/LW). -/
 lemma load_full_discharge_LB
-    (main : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (main : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ) (e1 e2 : Interaction.MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
     (h_main_active : main.is_external_op r_main = 1)
@@ -313,7 +313,7 @@ lemma load_full_discharge_LB
     + `binary_extension_op_is_shift_pin` branch + `lh_discharge_full`
     variant differ. -/
 lemma load_full_discharge_LH
-    (main : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (main : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ) (e1 e2 : Interaction.MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
     (h_main_active : main.is_external_op r_main = 1)
@@ -369,7 +369,7 @@ lemma load_full_discharge_LH
     + `binary_extension_op_is_shift_pin` branch + `lw_discharge_full`
     variant differ. -/
 lemma load_full_discharge_LW
-    (main : Valid_Main C FGL FGL) (v : Valid_BinaryExtension C FGL FGL)
+    (main : Valid_Main C FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ) (e1 e2 : Interaction.MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
     (h_main_active : main.is_external_op r_main = 1)

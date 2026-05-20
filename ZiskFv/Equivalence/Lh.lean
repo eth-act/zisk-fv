@@ -30,7 +30,7 @@ theorem equiv_LH
     (lh_input : PureSpec.LhInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 1 OP_SIGNEXTEND_H)
     (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises

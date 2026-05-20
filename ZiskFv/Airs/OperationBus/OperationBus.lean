@@ -187,9 +187,9 @@ def opBus_row_Binary {C : Type → Type → Type} {F ExtF : Type}
     `bus_emission_BinaryExtension_0` at
     `build/extraction/Extraction/Buses.lean` (gsum debug #1220). -/
 @[simp]
-def opBus_row_BinaryExtension {C : Type → Type → Type} {F ExtF : Type}
-    [Field F] [Field ExtF] [Circuit F ExtF C]
-    (e : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C F ExtF)
+def opBus_row_BinaryExtension {F ExtF : Type}
+    [Field F] [Field ExtF]
+    (e : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension F ExtF)
     (row : ℕ) : OperationBusEntry F :=
   let a0 := e.free_in_a_0 row + 256 * e.free_in_a_1 row
             + 65536 * e.free_in_a_2 row + 16777216 * e.free_in_a_3 row

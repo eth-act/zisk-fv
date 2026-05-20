@@ -66,7 +66,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- All 8 input-byte lanes lie in `[0, 256)`. -/
 @[simp]
-def a_bytes_in_range (v : Valid_BinaryExtension C FGL FGL) (row : ℕ) : Prop :=
+def a_bytes_in_range (v : Valid_BinaryExtension FGL FGL) (row : ℕ) : Prop :=
   (v.free_in_a_0 row).val < 256
   ∧ (v.free_in_a_1 row).val < 256
   ∧ (v.free_in_a_2 row).val < 256
@@ -88,7 +88,7 @@ witness columns. -/
     `op = v.op row`, `a_byte = v.free_in_a_<i> row`,
     `shift_amount = v.free_in_b row`, `c_lo_byte = v.free_in_c_<i> row`,
     `c_hi_byte = v.free_in_c_<i+8> row`. -/
-structure ByteLookupHypotheses (v : Valid_BinaryExtension C FGL FGL) (row : ℕ) where
+structure ByteLookupHypotheses (v : Valid_BinaryExtension FGL FGL) (row : ℕ) where
   e0 : BinaryExtensionTableEntry FGL
   h0 : e0.multiplicity = 1 ∧ e0.op = v.op row ∧ e0.byte_index = (0 : FGL)
        ∧ e0.a_byte = v.free_in_a_0 row ∧ e0.shift_amount = v.free_in_b row
@@ -218,7 +218,7 @@ private lemma byte_pair_div_pow_two (a b s k : ℕ)
     range-bound on each input byte (`a_i.val < 256`), conclude that the
     BinaryExtension AIR computes 64-bit SLL. -/
 lemma binary_extension_sll_chunks_eq_bv_shl
-    (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SLL)
     (h_bytes : ByteLookupHypotheses v row)
     (h_a_range : a_bytes_in_range v row) :
@@ -433,7 +433,7 @@ lemma binary_extension_sll_chunks_eq_bv_shl
     `(a64 >>> s) = sum_i ((a_i * 256^i) >>> s)`. This is iterated
     `byte_pair_div_pow_two` over the byte chain. -/
 lemma binary_extension_srl_chunks_eq_bv_ushr
-    (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SRL)
     (h_bytes : ByteLookupHypotheses v row)
     (h_a_range : a_bytes_in_range v row) :
@@ -1365,7 +1365,7 @@ private lemma sra_bv_core
     range-bound on each input byte, conclude that the BinaryExtension AIR
     computes 64-bit signed shift-right (`BitVec.sshiftRight`). -/
 lemma binary_extension_sra_chunks_eq_bv_sshr
-    (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SRA)
     (h_bytes : ByteLookupHypotheses v row)
     (h_a_range : a_bytes_in_range v row) :
@@ -1817,7 +1817,7 @@ private lemma srlw_bv_core
     computes 32-bit unsigned shift-right (`BitVec.ushiftRight`) on the
     low 32 bits of the operand, sign-extended to 64. -/
 lemma binary_extension_srlw_chunks_eq_bv_ushr_w
-    (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SRL_W)
     (h_bytes : ByteLookupHypotheses v row)
     (h_a_range : a_bytes_in_range v row) :
@@ -2270,7 +2270,7 @@ private lemma sllw_bv_core
     computes 32-bit shift-left (`BitVec.shiftLeft`) on the low 32 bits of
     the operand, sign-extended to 64. -/
 lemma binary_extension_sllw_chunks_eq_bv_shl_w
-    (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SLL_W)
     (h_bytes : ByteLookupHypotheses v row)
     (h_a_range : a_bytes_in_range v row) :
@@ -2652,7 +2652,7 @@ private lemma sraw_bv_core
     computes 32-bit signed shift-right (`BitVec.sshiftRight`) on the low 32
     bits of the operand, sign-extended to 64. -/
 lemma binary_extension_sraw_chunks_eq_bv_sshr_w
-    (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SRA_W)
     (h_bytes : ByteLookupHypotheses v row)
     (h_a_range : a_bytes_in_range v row) :
@@ -2906,7 +2906,7 @@ lift happens at the canonical equiv site via
     output equals `(BitVec.signExtend 64 (BitVec.ofNat 8 a_0)).toNat`,
     expressed as the if-then-else over the high-bit of `a_0`. -/
 lemma binary_extension_sext_b_chunks_eq_signextend_nat
-    (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SEXT_B)
     (h_bytes : ByteLookupHypotheses v row) :
     ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
@@ -2973,7 +2973,7 @@ lemma binary_extension_sext_b_chunks_eq_signextend_nat
 
 /-- **SEXT_H packed-correctness (Nat form).** -/
 lemma binary_extension_sext_h_chunks_eq_signextend_nat
-    (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SEXT_H)
     (h_bytes : ByteLookupHypotheses v row) :
     ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
@@ -3053,7 +3053,7 @@ lemma binary_extension_sext_h_chunks_eq_signextend_nat
 
 /-- **SEXT_W packed-correctness (Nat form).** -/
 lemma binary_extension_sext_w_chunks_eq_signextend_nat
-    (v : Valid_BinaryExtension C FGL FGL) (row : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SEXT_W)
     (h_bytes : ByteLookupHypotheses v row) :
     ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val

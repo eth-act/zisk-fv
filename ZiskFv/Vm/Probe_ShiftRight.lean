@@ -30,7 +30,7 @@ theorem equiv_SRL_v2
     (srl_input : PureSpec.SrlInput)
     (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
@@ -51,7 +51,7 @@ theorem equiv_SRA_v2
     (sra_input : PureSpec.SraInput)
     (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
@@ -72,7 +72,7 @@ theorem equiv_SRLI_v2
     (srli_input : PureSpec.SrliInput)
     (r1 rd : regidx) (shamt : BitVec 6)
     (m : Valid_Main C FGL FGL)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ShiftImmPromises
@@ -93,7 +93,7 @@ theorem equiv_SRAI_v2
     (srai_input : PureSpec.SraiInput)
     (r1 rd : regidx) (shamt : BitVec 6)
     (m : Valid_Main C FGL FGL)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ShiftImmPromises

@@ -61,9 +61,8 @@ fields (verified via spike), so this notice is documentation-only.
     `free_in_c_<i+8>` is its high-32-bit contribution. (See
     `BinaryExtensionTableEntry.c_lo_byte` / `c_hi_byte` in
     `Airs/BinaryExtensionTable.lean`.) -/
-structure Valid_BinaryExtension (C : Type → Type → Type) (F ExtF : Type)
-    [Field F] [Field ExtF] [Circuit F ExtF C] where
-  circuit : C F ExtF
+structure Valid_BinaryExtension (F ExtF : Type)
+    [Field F] [Field ExtF] where
   /-- Operation opcode (matches one of `OP_SLL`, `OP_SRL`, `OP_SRA`,
       `OP_SLL_W`, `OP_SRL_W`, `OP_SRA_W`, `OP_SEXT_B`, `OP_SEXT_H`,
       `OP_SEXT_W`). -/
@@ -113,77 +112,5 @@ structure Valid_BinaryExtension (C : Type → Type → Type) (F ExtF : Type)
   im_2 : ℕ → F
   im_3 : ℕ → F
   im_high_degree_0 : ℕ → F
-  /-- Agreement with the extraction layer. Each named field refers to
-      the same cell the raw `Circuit.main` accessor would. -/
-  op_def : ∀ row,
-    op row = Circuit.main circuit (id := 1) (column := 0) (row := row) (rotation := 0)
-  free_in_a_0_def : ∀ row,
-    free_in_a_0 row = Circuit.main circuit (id := 1) (column := 1) (row := row) (rotation := 0)
-  free_in_a_1_def : ∀ row,
-    free_in_a_1 row = Circuit.main circuit (id := 1) (column := 2) (row := row) (rotation := 0)
-  free_in_a_2_def : ∀ row,
-    free_in_a_2 row = Circuit.main circuit (id := 1) (column := 3) (row := row) (rotation := 0)
-  free_in_a_3_def : ∀ row,
-    free_in_a_3 row = Circuit.main circuit (id := 1) (column := 4) (row := row) (rotation := 0)
-  free_in_a_4_def : ∀ row,
-    free_in_a_4 row = Circuit.main circuit (id := 1) (column := 5) (row := row) (rotation := 0)
-  free_in_a_5_def : ∀ row,
-    free_in_a_5 row = Circuit.main circuit (id := 1) (column := 6) (row := row) (rotation := 0)
-  free_in_a_6_def : ∀ row,
-    free_in_a_6 row = Circuit.main circuit (id := 1) (column := 7) (row := row) (rotation := 0)
-  free_in_a_7_def : ∀ row,
-    free_in_a_7 row = Circuit.main circuit (id := 1) (column := 8) (row := row) (rotation := 0)
-  free_in_b_def : ∀ row,
-    free_in_b row = Circuit.main circuit (id := 1) (column := 9) (row := row) (rotation := 0)
-  free_in_c_0_def : ∀ row,
-    free_in_c_0 row = Circuit.main circuit (id := 1) (column := 10) (row := row) (rotation := 0)
-  free_in_c_1_def : ∀ row,
-    free_in_c_1 row = Circuit.main circuit (id := 1) (column := 11) (row := row) (rotation := 0)
-  free_in_c_2_def : ∀ row,
-    free_in_c_2 row = Circuit.main circuit (id := 1) (column := 12) (row := row) (rotation := 0)
-  free_in_c_3_def : ∀ row,
-    free_in_c_3 row = Circuit.main circuit (id := 1) (column := 13) (row := row) (rotation := 0)
-  free_in_c_4_def : ∀ row,
-    free_in_c_4 row = Circuit.main circuit (id := 1) (column := 14) (row := row) (rotation := 0)
-  free_in_c_5_def : ∀ row,
-    free_in_c_5 row = Circuit.main circuit (id := 1) (column := 15) (row := row) (rotation := 0)
-  free_in_c_6_def : ∀ row,
-    free_in_c_6 row = Circuit.main circuit (id := 1) (column := 16) (row := row) (rotation := 0)
-  free_in_c_7_def : ∀ row,
-    free_in_c_7 row = Circuit.main circuit (id := 1) (column := 17) (row := row) (rotation := 0)
-  free_in_c_8_def : ∀ row,
-    free_in_c_8 row = Circuit.main circuit (id := 1) (column := 18) (row := row) (rotation := 0)
-  free_in_c_9_def : ∀ row,
-    free_in_c_9 row = Circuit.main circuit (id := 1) (column := 19) (row := row) (rotation := 0)
-  free_in_c_10_def : ∀ row,
-    free_in_c_10 row = Circuit.main circuit (id := 1) (column := 20) (row := row) (rotation := 0)
-  free_in_c_11_def : ∀ row,
-    free_in_c_11 row = Circuit.main circuit (id := 1) (column := 21) (row := row) (rotation := 0)
-  free_in_c_12_def : ∀ row,
-    free_in_c_12 row = Circuit.main circuit (id := 1) (column := 22) (row := row) (rotation := 0)
-  free_in_c_13_def : ∀ row,
-    free_in_c_13 row = Circuit.main circuit (id := 1) (column := 23) (row := row) (rotation := 0)
-  free_in_c_14_def : ∀ row,
-    free_in_c_14 row = Circuit.main circuit (id := 1) (column := 24) (row := row) (rotation := 0)
-  free_in_c_15_def : ∀ row,
-    free_in_c_15 row = Circuit.main circuit (id := 1) (column := 25) (row := row) (rotation := 0)
-  op_is_shift_def : ∀ row,
-    op_is_shift row = Circuit.main circuit (id := 1) (column := 26) (row := row) (rotation := 0)
-  b_0_def : ∀ row,
-    b_0 row = Circuit.main circuit (id := 1) (column := 27) (row := row) (rotation := 0)
-  b_1_def : ∀ row,
-    b_1 row = Circuit.main circuit (id := 1) (column := 28) (row := row) (rotation := 0)
-  gsum_def : ∀ row,
-    gsum row = Circuit.main circuit (id := 2) (column := 0) (row := row) (rotation := 0)
-  im_0_def : ∀ row,
-    im_0 row = Circuit.main circuit (id := 2) (column := 1) (row := row) (rotation := 0)
-  im_1_def : ∀ row,
-    im_1 row = Circuit.main circuit (id := 2) (column := 2) (row := row) (rotation := 0)
-  im_2_def : ∀ row,
-    im_2 row = Circuit.main circuit (id := 2) (column := 3) (row := row) (rotation := 0)
-  im_3_def : ∀ row,
-    im_3 row = Circuit.main circuit (id := 2) (column := 4) (row := row) (rotation := 0)
-  im_high_degree_0_def : ∀ row,
-    im_high_degree_0 row = Circuit.main circuit (id := 2) (column := 5) (row := row) (rotation := 0)
 
 end ZiskFv.Airs.BinaryExtension

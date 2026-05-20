@@ -94,7 +94,7 @@ theorem op_bus_perm_sound_Binary
     SEXT_B=0x27, SEXT_H=0x28, SEXT_W=0x29. -/
 theorem op_bus_perm_sound_BinaryExtension
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL)
-    (e : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
+    (e : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (h_active : m.is_external_op r_main = 1)
     (h_op : m.op r_main = 0x21 ∨ m.op r_main = 0x22 ∨ m.op r_main = 0x23

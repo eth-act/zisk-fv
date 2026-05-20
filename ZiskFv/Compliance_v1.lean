@@ -607,7 +607,7 @@ inductive OpEnvelope
   -- ============================ SLL (BinaryExtension, R-type) ===========
   | sll
     (sll_input : PureSpec.SllInput) (r1 r2 rd : regidx)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state sll_input.r1_val sll_input.r2_val sll_input.rd sll_input.PC
@@ -619,7 +619,7 @@ inductive OpEnvelope
   -- ============================ SRL ====================================
   | srl
     (srl_input : PureSpec.SrlInput) (r1 r2 rd : regidx)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state srl_input.r1_val srl_input.r2_val srl_input.rd srl_input.PC
@@ -631,7 +631,7 @@ inductive OpEnvelope
   -- ============================ SRA ====================================
   | sra
     (sra_input : PureSpec.SraInput) (r1 r2 rd : regidx)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
         state sra_input.r1_val sra_input.r2_val sra_input.rd sra_input.PC
@@ -643,7 +643,7 @@ inductive OpEnvelope
   -- ============================ SLLI ====================================
   | slli
     (slli_input : PureSpec.SlliInput) (r1 rd : regidx) (shamt : BitVec 6)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ShiftImmPromises
         state slli_input.r1_val slli_input.shamt slli_input.rd slli_input.PC
@@ -655,7 +655,7 @@ inductive OpEnvelope
   -- ============================ SRLI ====================================
   | srli
     (srli_input : PureSpec.SrliInput) (r1 rd : regidx) (shamt : BitVec 6)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ShiftImmPromises
         state srli_input.r1_val srli_input.shamt srli_input.rd srli_input.PC
@@ -667,7 +667,7 @@ inductive OpEnvelope
   -- ============================ SRAI ====================================
   | srai
     (srai_input : PureSpec.SraiInput) (r1 rd : regidx) (shamt : BitVec 6)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ShiftImmPromises
         state srai_input.r1_val srai_input.shamt srai_input.rd srai_input.PC
@@ -679,7 +679,7 @@ inductive OpEnvelope
   -- ============================ SLLW ====================================
   | sllw
     (sllw_input : PureSpec.SllwInput) (r1 r2 rd : regidx)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
       = EStateM.Result.ok sllw_input.r1_val state)
@@ -703,7 +703,7 @@ inductive OpEnvelope
   -- ============================ SRLW ====================================
   | srlw
     (srlw_input : PureSpec.SrlwInput) (r1 r2 rd : regidx)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
       = EStateM.Result.ok srlw_input.r1_val state)
@@ -727,7 +727,7 @@ inductive OpEnvelope
   -- ============================ SRAW ====================================
   | sraw
     (sraw_input : PureSpec.SrawInput) (r1 r2 rd : regidx)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
       = EStateM.Result.ok sraw_input.r1_val state)
@@ -751,7 +751,7 @@ inductive OpEnvelope
   -- ============================ SLLIW ===================================
   | slliw
     (slliw_input : PureSpec.SlliwInput) (r1 rd : regidx)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ShiftWImmPromises
         state slliw_input.r1_val slliw_input.rd slliw_input.PC
@@ -763,7 +763,7 @@ inductive OpEnvelope
   -- ============================ SRLIW ===================================
   | srliw
     (srliw_input : PureSpec.SrliwInput) (r1 rd : regidx)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ShiftWImmPromises
         state srliw_input.r1_val srliw_input.rd srliw_input.PC
@@ -775,7 +775,7 @@ inductive OpEnvelope
   -- ============================ SRAIW ===================================
   | sraiw
     (sraiw_input : PureSpec.SraiwInput) (r1 rd : regidx)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ShiftWImmPromises
         state sraiw_input.r1_val sraiw_input.rd sraiw_input.PC
@@ -894,7 +894,7 @@ inductive OpEnvelope
     (lb_input : PureSpec.LbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B)
     (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
@@ -907,7 +907,7 @@ inductive OpEnvelope
     (lh_input : PureSpec.LhInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_H)
     (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
@@ -920,7 +920,7 @@ inductive OpEnvelope
     (lw_input : PureSpec.LwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W)
     (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises

@@ -34,7 +34,7 @@ theorem equiv_SLL_v2
     (sll_input : PureSpec.SllInput)
     (r1 r2 rd : regidx)
     (m : Valid_Main C FGL FGL)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
@@ -59,7 +59,7 @@ theorem equiv_SLLI_v2
     (slli_input : PureSpec.SlliInput)
     (r1 rd : regidx) (shamt : BitVec 6)
     (m : Valid_Main C FGL FGL)
-    (v : Valid_BinaryExtension C FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.Equivalence_v1.Promises.ShiftImmPromises
