@@ -3,17 +3,17 @@
     "clean-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1778932231,
-        "narHash": "sha256-NWPfpBEPM9VKZY+1togfvr2mYi3tbVwAGw8lV9Umcvc=",
-        "owner": "Verified-zkEVM",
+        "lastModified": 1779314662,
+        "narHash": "sha256-vkmrjWwQBq9QzEaSte50yG+L+Wv5tLOZK7NXqOkW1UA=",
+        "owner": "codygunton",
         "repo": "clean",
-        "rev": "95c8cc2e9a86ec54350ab33f07f1d89e47d57fee",
+        "rev": "bade3b25dd1f439358952f8999fca6ce961bb1b1",
         "type": "github"
       },
       "original": {
-        "owner": "Verified-zkEVM",
+        "owner": "codygunton",
         "repo": "clean",
-        "rev": "95c8cc2e9a86ec54350ab33f07f1d89e47d57fee",
+        "rev": "bade3b25dd1f439358952f8999fca6ce961bb1b1",
         "type": "github"
       }
     },

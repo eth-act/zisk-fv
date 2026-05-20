@@ -34,9 +34,14 @@
       flake = false;
     };
     clean-src = {
-      # Verified-zkEVM/clean @ main HEAD as of the clean-full branch
-      # cut. Lean v4.28.0; Mathlib v4.28.0 — matches zisk-fv exactly.
-      url = "github:Verified-zkEVM/clean/95c8cc2e9a86ec54350ab33f07f1d89e47d57fee";
+      # Private fork codygunton/clean: a squashed snapshot of upstream
+      # Verified-zkEVM/clean @ 95c8cc2e (= upstream main HEAD; Lean/Mathlib
+      # v4.28.0, matches zisk-fv) plus the zisk-fv namespace-hygiene patch
+      # (Fin.foldl_eq_foldl_finRange → Clean.Fin.foldl_eq_foldl_finRange, so
+      # Clean.Air.* can be imported alongside Mathlib/Batteries). To be
+      # upstreamed; re-point at Verified-zkEVM/clean once it merges.
+      # NOTE: private repo — `nix` needs a github access-token to fetch it.
+      url = "github:codygunton/clean/bade3b25dd1f439358952f8999fca6ce961bb1b1";
       flake = false;
     };
   };
