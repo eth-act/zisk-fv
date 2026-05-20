@@ -51,7 +51,7 @@ theorem op_bus_perm_sound_BinaryAdd
     (h_op : m.op r_main = 10) :
     ∃ r_b : ℕ,
       matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryAdd b r_b) :=
-  op_bus_permutation_sound m (.binaryAdd b) r_main h_active h_op
+  op_bus_permutation_sound m (.binaryAdd b : OpBusProvider C) r_main h_active h_op
 
 /-- **OperationBus permutation soundness — Binary provider.**
     Provider AIR: `Binary` (`zisk/state-machines/binary/pil/binary.pil`).
@@ -102,6 +102,6 @@ theorem op_bus_perm_sound_BinaryExtension
           ∨ m.op r_main = 0x27 ∨ m.op r_main = 0x28 ∨ m.op r_main = 0x29) :
     ∃ r_e : ℕ,
       matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryExtension e r_e) :=
-  op_bus_permutation_sound m (.binaryExtension e) r_main h_active h_op
+  op_bus_permutation_sound m (.binaryExtension e : OpBusProvider C) r_main h_active h_op
 
 end ZiskFv.Airs.OperationBus
