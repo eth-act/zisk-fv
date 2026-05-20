@@ -1,7 +1,7 @@
 import Mathlib
 
-import ZiskFv.Equivalence_v1.Addi
-import ZiskFv.Equivalence_v1.Promises.IType
+import ZiskFv.EquivCore.Addi
+import ZiskFv.EquivCore.Promises.IType
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -140,7 +140,7 @@ theorem equiv_ADDI
     -- Lane-match for rd-write entry (deferred to Mem pilot).
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     -- Structural promise bundle (14 fields, see Promises/IType.lean).
-    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
         (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -170,7 +170,7 @@ theorem equiv_ADDI
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
     memory_bus_entry_byte_range_perm_sound e2
   -- ============ Delegate to canonical `equiv_ADDI` ============
-  exact ZiskFv.Equivalence_v1.Addi.equiv_ADDI
+  exact ZiskFv.EquivCore.Addi.equiv_ADDI
     state addi_input r1 rd imm m ⟨b, h_b_core⟩ r_main
     ⟨exec_row, e0, e1, e2⟩
     promises

@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence_v1.Sb
-import ZiskFv.Equivalence_v1.Promises.Store
-import ZiskFv.Equivalence_v1.Promises.StoreHelpers
+import ZiskFv.EquivCore.Sb
+import ZiskFv.EquivCore.Promises.Store
+import ZiskFv.EquivCore.Promises.StoreHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
@@ -51,7 +51,7 @@ theorem equiv_SB
     -- Sail-side opcode assumptions (also consumed by the helper).
     (h_opcode_assumptions : PureSpec.sb_state_assumptions sb_input state)
     -- Structural promise bundle (12 fields).
-    (promises : ZiskFv.Equivalence_v1.Promises.StorePromises
+    (promises : ZiskFv.EquivCore.Promises.StorePromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sb_state_assumptions sb_input state)
         (PureSpec.execute_STOREB_pure sb_input).nextPC
@@ -63,11 +63,11 @@ theorem equiv_SB
       1
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   have h_mem_eq :=
-    ZiskFv.Equivalence_v1.Promises.sb_h_mem_eq_of_emission
+    ZiskFv.EquivCore.Promises.sb_h_mem_eq_of_emission
       main r_main bus.e2 state sb_input
       pins.main_active pins.main_op h_main_ind_width
       promises.m2_mult promises.m2_as h_opcode_assumptions
-  ZiskFv.Equivalence_v1.Sb.equiv_SB
+  ZiskFv.EquivCore.Sb.equiv_SB
     state sb_input regs bus promises h_mem_eq
 
 end ZiskFv.Compliance

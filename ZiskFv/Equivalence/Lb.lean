@@ -9,7 +9,7 @@ channel-balance conclusion (`= state_effect_via_channels …`) by
 invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_LB`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
-`ZiskFv/Equivalence_v1/Lb.lean`.
+`ZiskFv/EquivCore/Lb.lean`.
 
 ## Trust note
 
@@ -33,7 +33,7 @@ theorem equiv_LB
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 1 OP_SIGNEXTEND_B)
-    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lb_state_assumptions lb_input state)
         (PureSpec.execute_LOADB_pure lb_input).nextPC

@@ -9,7 +9,7 @@ channel-balance conclusion (`= state_effect_via_channels …`) by
 invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_BNE`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
-`ZiskFv/Equivalence_v1/Bne.lean`.
+`ZiskFv/EquivCore/Bne.lean`.
 
 ## Trust note
 
@@ -27,7 +27,7 @@ theorem equiv_BNE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (bne_input : PureSpec.BneInput)
     (ops : BranchInstrOperands)
-    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
+    (promises : ZiskFv.EquivCore.Promises.BranchPromises
         state bne_input.imm bne_input.r1_val bne_input.r2_val bne_input.PC
         ops.misa_val
         (PureSpec.execute_BNE_pure bne_input).nextPC

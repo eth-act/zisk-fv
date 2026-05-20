@@ -4,7 +4,7 @@ import ZiskFv.Airs.Main.Main
 /-!
 # `Valid_Main` ↔ `MainRow` compatibility bridge (long-lived)
 
-This is the **central Bridge** — every opcode's `Equivalence_v1/<Op>.lean`
+This is the **central Bridge** — every opcode's `EquivCore/<Op>.lean`
 proof takes `m : Valid_Main FGL FGL`. The Bridge preserves the
 `Valid_Main` parameter shape through Phases C and D, so opcode-level
 proofs compile unchanged until the final Phase D3 (drop circuit field).

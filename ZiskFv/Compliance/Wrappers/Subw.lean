@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence_v1.Subw
-import ZiskFv.Equivalence_v1.Promises.RType
-import ZiskFv.Equivalence_v1.Promises.BinaryHelpers
+import ZiskFv.EquivCore.Subw
+import ZiskFv.EquivCore.Promises.RType
+import ZiskFv.EquivCore.Promises.BinaryHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -28,7 +28,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Equivalence_v1.Promises
+open ZiskFv.EquivCore.Promises
 
 
 theorem equiv_SUBW
@@ -40,7 +40,7 @@ theorem equiv_SUBW
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state subw_input.r1_val subw_input.r2_val subw_input.rd subw_input.PC
         (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -79,7 +79,7 @@ theorem equiv_SUBW
     binary_w_mode_carry_7_zero v r_binary 0x1B h_emit_op (Or.inr rfl)
   have h_match_clo := binary_h_match_clo_of_carry_7_zero h_c_lo_m h_carry_7_zero
   have h_match_chi := binary_h_match_chi_standard h_c_hi_m
-  exact ZiskFv.Equivalence_v1.Subw.equiv_SUBW
+  exact ZiskFv.EquivCore.Subw.equiv_SUBW
     state subw_input r1 r2 rd m r_main
     ⟨exec_row, e0, e1, e2⟩
     promises

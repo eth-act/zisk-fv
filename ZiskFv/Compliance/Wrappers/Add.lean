@@ -1,7 +1,7 @@
 import Mathlib
 
-import ZiskFv.Equivalence_v1.Add
-import ZiskFv.Equivalence_v1.Promises.RType
+import ZiskFv.EquivCore.Add
+import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -115,7 +115,7 @@ theorem equiv_ADD
     -- `h_exec_len`, `h_e0_mult`, `h_e1_mult`, `h_nextPC_matches`,
     -- `h_m0_mult`, `h_m0_as`, `h_m1_mult`, `h_m1_as`, `h_m2_mult`,
     -- `h_m2_as`, `h_rd_idx` binders.
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
         (PureSpec.execute_RTYPE_add_pure add_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -155,7 +155,7 @@ theorem equiv_ADD
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
     memory_bus_entry_byte_range_perm_sound e2
   -- ============ Delegate to canonical `equiv_ADD` ============
-  exact ZiskFv.Equivalence_v1.Add.equiv_ADD
+  exact ZiskFv.EquivCore.Add.equiv_ADD
     state add_input r1 r2 rd m ⟨b, h_b_core⟩ r_main
     ⟨exec_row, e0, e1, e2⟩
     promises h_main_subset h_main_mode h_lane_rd

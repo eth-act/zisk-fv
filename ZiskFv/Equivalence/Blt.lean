@@ -9,7 +9,7 @@ channel-balance conclusion (`= state_effect_via_channels …`) by
 invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_BLT`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
-`ZiskFv/Equivalence_v1/Blt.lean`.
+`ZiskFv/EquivCore/Blt.lean`.
 
 ## Trust note
 
@@ -27,7 +27,7 @@ theorem equiv_BLT
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (blt_input : PureSpec.BltInput)
     (ops : BranchInstrOperands)
-    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
+    (promises : ZiskFv.EquivCore.Promises.BranchPromises
         state blt_input.imm blt_input.r1_val blt_input.r2_val blt_input.PC
         ops.misa_val
         (PureSpec.execute_BLT_pure blt_input).nextPC

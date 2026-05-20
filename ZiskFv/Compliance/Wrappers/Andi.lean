@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence_v1.Andi
-import ZiskFv.Equivalence_v1.Promises.IType
-import ZiskFv.Equivalence_v1.Promises.BinaryHelpers
+import ZiskFv.EquivCore.Andi
+import ZiskFv.EquivCore.Promises.IType
+import ZiskFv.EquivCore.Promises.BinaryHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -85,7 +85,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Tactics.ALUITypeArchetype
-open ZiskFv.Equivalence_v1.Promises
+open ZiskFv.EquivCore.Promises
 
 
 /-- **Compliance wrapper for `equiv_ANDI`.** Mass-author clone of
@@ -101,7 +101,7 @@ theorem equiv_ANDI
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
     (h_andi_subset : itype_imm_subset_holds_main m r_main andi_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state andi_input.r1_val andi_input.imm andi_input.rd andi_input.PC
         (PureSpec.execute_ITYPE_andi_pure andi_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -119,7 +119,7 @@ theorem equiv_ANDI
   have h_bop_or_sext :=
     binary_h_bop_or_sext_via_axiom h_match h_main_op_andi
       (binary_b_op_or_sext_eq_OP_AND v r_binary)
-  exact ZiskFv.Equivalence_v1.Andi.equiv_ANDI
+  exact ZiskFv.EquivCore.Andi.equiv_ANDI
     state andi_input r1 rd imm m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
     promises

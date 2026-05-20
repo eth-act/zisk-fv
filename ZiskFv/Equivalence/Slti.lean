@@ -9,7 +9,7 @@ channel-balance conclusion (`= state_effect_via_channels …`) by
 invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_SLTI`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
-`ZiskFv/Equivalence_v1/Slti.lean`.
+`ZiskFv/EquivCore/Slti.lean`.
 
 ## Trust note
 
@@ -36,7 +36,7 @@ theorem equiv_SLTI
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
     (h_slti_subset : itype_imm_subset_holds_main m r_main slti_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state slti_input.r1_val slti_input.imm slti_input.rd slti_input.PC
         (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)

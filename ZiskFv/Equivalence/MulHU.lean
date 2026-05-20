@@ -9,7 +9,7 @@ channel-balance conclusion (`= state_effect_via_channels …`) by
 invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_MULHU`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
-`ZiskFv/Equivalence_v1/MulHU.lean`.
+`ZiskFv/EquivCore/MulHU.lean`.
 
 ## Trust note
 
@@ -36,7 +36,7 @@ theorem equiv_MULHU
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULUH)
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state mulhu_input.r1_val mulhu_input.r2_val mulhu_input.rd mulhu_input.PC
         (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)

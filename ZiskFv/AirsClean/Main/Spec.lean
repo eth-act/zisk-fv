@@ -3,7 +3,7 @@ import ZiskFv.AirsClean.Main.Row
 /-!
 # Main Spec + Assumptions
 
-Main is the central AIR — every opcode's `Equivalence_v1/<Op>.lean`
+Main is the central AIR — every opcode's `EquivCore/<Op>.lean`
 proof takes a `Valid_Main` as a parameter. The per-row Spec captures
 the 9 F-typed every-row constraints (`ZiskFv/Airs/Main/Main.lean`):
 

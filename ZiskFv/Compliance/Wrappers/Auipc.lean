@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence_v1.Auipc
-import ZiskFv.Equivalence_v1.Promises.UType
-import ZiskFv.Equivalence_v1.Promises.UTypeHelpers
+import ZiskFv.EquivCore.Auipc
+import ZiskFv.EquivCore.Promises.UType
+import ZiskFv.EquivCore.Promises.UTypeHelpers
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
@@ -41,7 +41,7 @@ theorem equiv_AUIPC
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
     -- Structural `UTypePromises` bundle.
-    (promises : ZiskFv.Equivalence_v1.Promises.UTypePromises
+    (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state auipc_input.imm auipc_input.rd auipc_input.PC
         (PureSpec.execute_AUIPC_pure auipc_input).nextPC
         imm rd exec_row e_rd nextPC_val)
@@ -55,9 +55,9 @@ theorem equiv_AUIPC
     execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
       = (bus_effect exec_row [e_rd] state).2 :=
   have h_circuit :=
-    ZiskFv.Equivalence_v1.Promises.auipc_h_circuit_of_main_constraints
+    ZiskFv.EquivCore.Promises.auipc_h_circuit_of_main_constraints
       m r_main next_pc pins.main_active pins.main_op h_auipc_subset
-  ZiskFv.Equivalence_v1.Auipc.equiv_AUIPC state auipc_input imm rd
+  ZiskFv.EquivCore.Auipc.equiv_AUIPC state auipc_input imm rd
     exec_row e_rd nextPC_val m r_main next_pc
     promises h_circuit h_no_wrap h_lo_bound h_pc_offset_lt_2_32
 

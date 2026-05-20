@@ -9,7 +9,7 @@ channel-balance conclusion (`= state_effect_via_channels …`) by
 invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_SD`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
-`ZiskFv/Equivalence_v1/Sd.lean`.
+`ZiskFv/EquivCore/Sd.lean`.
 
 ## Trust note
 
@@ -32,7 +32,7 @@ theorem equiv_SD
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_opcode_assumptions : PureSpec.sd_state_assumptions sd_input state)
-    (promises : ZiskFv.Equivalence_v1.Promises.StorePromises
+    (promises : ZiskFv.EquivCore.Promises.StorePromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sd_state_assumptions sd_input state)
         (PureSpec.execute_STORED_pure sd_input).nextPC

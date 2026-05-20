@@ -158,7 +158,7 @@ inductive OpEnvelope
   | beq
     (beq_input : PureSpec.BeqInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)
-    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
+    (promises : ZiskFv.EquivCore.Promises.BranchPromises
         state beq_input.imm beq_input.r1_val beq_input.r2_val beq_input.PC
         ops.misa_val
         (PureSpec.execute_BEQ_pure beq_input).nextPC
@@ -169,7 +169,7 @@ inductive OpEnvelope
   | bne
     (bne_input : PureSpec.BneInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)
-    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
+    (promises : ZiskFv.EquivCore.Promises.BranchPromises
         state bne_input.imm bne_input.r1_val bne_input.r2_val bne_input.PC
         ops.misa_val
         (PureSpec.execute_BNE_pure bne_input).nextPC
@@ -180,7 +180,7 @@ inductive OpEnvelope
   | blt
     (blt_input : PureSpec.BltInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)
-    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
+    (promises : ZiskFv.EquivCore.Promises.BranchPromises
         state blt_input.imm blt_input.r1_val blt_input.r2_val blt_input.PC
         ops.misa_val
         (PureSpec.execute_BLT_pure blt_input).nextPC
@@ -191,7 +191,7 @@ inductive OpEnvelope
   | bge
     (bge_input : PureSpec.BgeInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)
-    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
+    (promises : ZiskFv.EquivCore.Promises.BranchPromises
         state bge_input.imm bge_input.r1_val bge_input.r2_val bge_input.PC
         ops.misa_val
         (PureSpec.execute_BGE_pure bge_input).nextPC
@@ -202,7 +202,7 @@ inductive OpEnvelope
   | bltu
     (bltu_input : PureSpec.BltuInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)
-    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
+    (promises : ZiskFv.EquivCore.Promises.BranchPromises
         state bltu_input.imm bltu_input.r1_val bltu_input.r2_val bltu_input.PC
         ops.misa_val
         (PureSpec.execute_BLTU_pure bltu_input).nextPC
@@ -213,7 +213,7 @@ inductive OpEnvelope
   | bgeu
     (bgeu_input : PureSpec.BgeuInput)
     (ops : ZiskFv.Compliance.BranchInstrOperands)
-    (promises : ZiskFv.Equivalence_v1.Promises.BranchPromises
+    (promises : ZiskFv.EquivCore.Promises.BranchPromises
         state bgeu_input.imm bgeu_input.r1_val bgeu_input.r2_val bgeu_input.PC
         ops.misa_val
         (PureSpec.execute_BGEU_pure bgeu_input).nextPC
@@ -226,7 +226,7 @@ inductive OpEnvelope
     (fm pred succ : BitVec 4) (rs rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
-    (promises : ZiskFv.Equivalence_v1.Promises.FencePromises
+    (promises : ZiskFv.EquivCore.Promises.FencePromises
         state fence_input.PC
         (PureSpec.execute_FENCE_pure fence_input).nextPC
         exec_row) : OpEnvelope state m r_main
@@ -238,7 +238,7 @@ inductive OpEnvelope
     (e_rd : Interaction.MemoryBusEntry FGL)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
-    (promises : ZiskFv.Equivalence_v1.Promises.UTypePromises
+    (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state lui_input.imm lui_input.rd lui_input.PC
         (PureSpec.execute_LUI_pure lui_input).nextPC
         imm rd exec_row e_rd (lui_input.PC + 4#64)) : OpEnvelope state m r_main
@@ -251,7 +251,7 @@ inductive OpEnvelope
     (next_pc : FGL)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
-    (promises : ZiskFv.Equivalence_v1.Promises.UTypePromises
+    (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state auipc_input.imm auipc_input.rd auipc_input.PC
         (PureSpec.execute_AUIPC_pure auipc_input).nextPC
         imm rd exec_row e_rd nextPC_val)
@@ -273,7 +273,7 @@ inductive OpEnvelope
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_jal_subset :
       ZiskFv.Airs.Main.jump_subset_holds m r_main next_pc)
-    (promises : ZiskFv.Equivalence_v1.Promises.JumpPromises
+    (promises : ZiskFv.EquivCore.Promises.JumpPromises
         state jal_input.PC jal_input.rd misa_val
         (PureSpec.execute_JAL_pure jal_input).success
         (PureSpec.execute_JAL_pure jal_input).nextPC
@@ -295,7 +295,7 @@ inductive OpEnvelope
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_jalr_subset :
       ZiskFv.Tactics.JumpArchetype.jalr_subset_holds m r_main next_pc)
-    (promises : ZiskFv.Equivalence_v1.Promises.JumpPromises
+    (promises : ZiskFv.EquivCore.Promises.JumpPromises
         state jalr_input.PC jalr_input.rd misa_val
         (PureSpec.execute_JALR_pure jalr_input).success
         (PureSpec.execute_JALR_pure jalr_input).nextPC
@@ -318,7 +318,7 @@ inductive OpEnvelope
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
     (h_main_subset : add_subset_holds m r_main)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
         (PureSpec.execute_RTYPE_add_pure add_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -331,7 +331,7 @@ inductive OpEnvelope
     (h_main_subset : add_subset_holds m r_main)
     (h_addi_subset : itype_imm_subset_holds_main m r_main addi_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
         (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -342,7 +342,7 @@ inductive OpEnvelope
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state addw_input.r1_val addw_input.r2_val addw_input.rd addw_input.PC
         (PureSpec.execute_RTYPE_addw_pure addw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -353,7 +353,7 @@ inductive OpEnvelope
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB_W)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state subw_input.r1_val subw_input.r2_val subw_input.rd subw_input.PC
         (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -365,7 +365,7 @@ inductive OpEnvelope
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W)
     (h_addiw_subset : itype_imm_subset_holds_main m r_main addiw_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state addiw_input.r1_val addiw_input.imm addiw_input.rd addiw_input.PC
         (PureSpec.execute_ITYPE_addiw_pure addiw_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -376,7 +376,7 @@ inductive OpEnvelope
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state sub_input.r1_val sub_input.r2_val sub_input.rd sub_input.PC
         (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -387,7 +387,7 @@ inductive OpEnvelope
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state and_input.r1_val and_input.r2_val and_input.rd and_input.PC
         (PureSpec.execute_RTYPE_and_pure and_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -398,7 +398,7 @@ inductive OpEnvelope
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
         (PureSpec.execute_RTYPE_or_pure or_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -409,7 +409,7 @@ inductive OpEnvelope
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state xor_input.r1_val xor_input.r2_val xor_input.rd xor_input.PC
         (PureSpec.execute_RTYPE_xor_pure xor_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -420,7 +420,7 @@ inductive OpEnvelope
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state slt_input.r1_val slt_input.r2_val slt_input.rd slt_input.PC
         (PureSpec.execute_RTYPE_slt_pure slt_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -431,7 +431,7 @@ inductive OpEnvelope
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state sltu_input.r1_val sltu_input.r2_val sltu_input.rd sltu_input.PC
         (PureSpec.execute_RTYPE_sltu_pure sltu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -443,7 +443,7 @@ inductive OpEnvelope
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
     (h_andi_subset : itype_imm_subset_holds_main m r_main andi_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state andi_input.r1_val andi_input.imm andi_input.rd andi_input.PC
         (PureSpec.execute_ITYPE_andi_pure andi_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -455,7 +455,7 @@ inductive OpEnvelope
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
     (h_ori_subset : itype_imm_subset_holds_main m r_main ori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state ori_input.r1_val ori_input.imm ori_input.rd ori_input.PC
         (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -467,7 +467,7 @@ inductive OpEnvelope
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
     (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state xori_input.r1_val xori_input.imm xori_input.rd xori_input.PC
         (PureSpec.execute_ITYPE_xori_pure xori_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -479,7 +479,7 @@ inductive OpEnvelope
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
     (h_slti_subset : itype_imm_subset_holds_main m r_main slti_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state slti_input.r1_val slti_input.imm slti_input.rd slti_input.PC
         (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -491,7 +491,7 @@ inductive OpEnvelope
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)
     (h_sltiu_subset : itype_imm_subset_holds_main m r_main sltiu_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state sltiu_input.r1_val sltiu_input.imm sltiu_input.rd sltiu_input.PC
         (PureSpec.execute_ITYPE_sltiu_pure sltiu_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
@@ -500,7 +500,7 @@ inductive OpEnvelope
     (sll_input : PureSpec.SllInput) (r1 r2 rd : regidx)
     (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state sll_input.r1_val sll_input.r2_val sll_input.rd sll_input.PC
         (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -512,7 +512,7 @@ inductive OpEnvelope
     (srl_input : PureSpec.SrlInput) (r1 r2 rd : regidx)
     (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state srl_input.r1_val srl_input.r2_val srl_input.rd srl_input.PC
         (PureSpec.execute_RTYPE_srl_pure srl_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -524,7 +524,7 @@ inductive OpEnvelope
     (sra_input : PureSpec.SraInput) (r1 r2 rd : regidx)
     (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state sra_input.r1_val sra_input.r2_val sra_input.rd sra_input.PC
         (PureSpec.execute_RTYPE_sra_pure sra_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -536,7 +536,7 @@ inductive OpEnvelope
     (slli_input : PureSpec.SlliInput) (r1 rd : regidx) (shamt : BitVec 6)
     (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence_v1.Promises.ShiftImmPromises
+    (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
         state slli_input.r1_val slli_input.shamt slli_input.rd slli_input.PC
         (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC
         r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -548,7 +548,7 @@ inductive OpEnvelope
     (srli_input : PureSpec.SrliInput) (r1 rd : regidx) (shamt : BitVec 6)
     (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence_v1.Promises.ShiftImmPromises
+    (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
         state srli_input.r1_val srli_input.shamt srli_input.rd srli_input.PC
         (PureSpec.execute_SHIFTIOP_srli_pure srli_input).nextPC
         r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -560,7 +560,7 @@ inductive OpEnvelope
     (srai_input : PureSpec.SraiInput) (r1 rd : regidx) (shamt : BitVec 6)
     (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence_v1.Promises.ShiftImmPromises
+    (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
         state srai_input.r1_val srai_input.shamt srai_input.rd srai_input.PC
         (PureSpec.execute_SHIFTIOP_srai_pure srai_input).nextPC
         r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -644,7 +644,7 @@ inductive OpEnvelope
     (slliw_input : PureSpec.SlliwInput) (r1 rd : regidx)
     (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence_v1.Promises.ShiftWImmPromises
+    (promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
         state slliw_input.r1_val slliw_input.rd slliw_input.PC
         (PureSpec.execute_SHIFTIWOP_slliw_pure slliw_input).nextPC
         r1 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -656,7 +656,7 @@ inductive OpEnvelope
     (srliw_input : PureSpec.SrliwInput) (r1 rd : regidx)
     (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence_v1.Promises.ShiftWImmPromises
+    (promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
         state srliw_input.r1_val srliw_input.rd srliw_input.PC
         (PureSpec.execute_SHIFTIWOP_srliw_pure srliw_input).nextPC
         r1 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -668,7 +668,7 @@ inductive OpEnvelope
     (sraiw_input : PureSpec.SraiwInput) (r1 rd : regidx)
     (v : Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence_v1.Promises.ShiftWImmPromises
+    (promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
         state sraiw_input.r1_val sraiw_input.rd sraiw_input.PC
         (PureSpec.execute_SHIFTIWOP_sraiw_pure sraiw_input).nextPC
         r1 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -683,7 +683,7 @@ inductive OpEnvelope
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_main_ind_width : m.ind_width r_main = 1)
     (h_opcode_assumptions : PureSpec.sb_state_assumptions sb_input state)
-    (promises : ZiskFv.Equivalence_v1.Promises.StorePromises
+    (promises : ZiskFv.EquivCore.Promises.StorePromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sb_state_assumptions sb_input state)
         (PureSpec.execute_STOREB_pure sb_input).nextPC
@@ -696,7 +696,7 @@ inductive OpEnvelope
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_main_ind_width : m.ind_width r_main = 2)
     (h_opcode_assumptions : PureSpec.sh_state_assumptions sh_input state)
-    (promises : ZiskFv.Equivalence_v1.Promises.StorePromises
+    (promises : ZiskFv.EquivCore.Promises.StorePromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sh_state_assumptions sh_input state)
         (PureSpec.execute_STOREH_pure sh_input).nextPC
@@ -709,7 +709,7 @@ inductive OpEnvelope
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_main_ind_width : m.ind_width r_main = 4)
     (h_opcode_assumptions : PureSpec.sw_state_assumptions sw_input state)
-    (promises : ZiskFv.Equivalence_v1.Promises.StorePromises
+    (promises : ZiskFv.EquivCore.Promises.StorePromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sw_state_assumptions sw_input state)
         (PureSpec.execute_STOREW_pure sw_input).nextPC
@@ -721,7 +721,7 @@ inductive OpEnvelope
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_opcode_assumptions : PureSpec.sd_state_assumptions sd_input state)
-    (promises : ZiskFv.Equivalence_v1.Promises.StorePromises
+    (promises : ZiskFv.EquivCore.Promises.StorePromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sd_state_assumptions sd_input state)
         (PureSpec.execute_STORED_pure sd_input).nextPC
@@ -733,7 +733,7 @@ inductive OpEnvelope
     (mem : Valid_Mem FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
-    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.ld_state_assumptions ld_input state)
         (PureSpec.execute_LOADD_pure ld_input).nextPC
@@ -747,7 +747,7 @@ inductive OpEnvelope
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (1 : FGL))
-    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lbu_state_assumptions lbu_input state)
         (PureSpec.execute_LOADBU_pure lbu_input).nextPC
@@ -761,7 +761,7 @@ inductive OpEnvelope
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (2 : FGL))
-    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lhu_state_assumptions lhu_input state)
         (PureSpec.execute_LOADHU_pure lhu_input).nextPC
@@ -775,7 +775,7 @@ inductive OpEnvelope
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (4 : FGL))
-    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lwu_state_assumptions lwu_input state)
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
@@ -788,7 +788,7 @@ inductive OpEnvelope
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B)
-    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lb_state_assumptions lb_input state)
         (PureSpec.execute_LOADB_pure lb_input).nextPC
@@ -801,7 +801,7 @@ inductive OpEnvelope
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_H)
-    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
@@ -814,7 +814,7 @@ inductive OpEnvelope
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W)
-    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lw_state_assumptions lw_input state)
         (PureSpec.execute_LOADW_pure lw_input).nextPC
@@ -829,7 +829,7 @@ inductive OpEnvelope
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_Arith v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC
         (PureSpec.execute_MULH_mul_pure mul_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -846,7 +846,7 @@ inductive OpEnvelope
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_ArithMulSecondary v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state mulh_input.r1_val mulh_input.r2_val mulh_input.rd mulh_input.PC
         (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -862,7 +862,7 @@ inductive OpEnvelope
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_ArithMulSecondary v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state mulhu_input.r1_val mulhu_input.r2_val mulhu_input.rd mulhu_input.PC
         (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -879,7 +879,7 @@ inductive OpEnvelope
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_ArithMulSecondary v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state mulhsu_input.r1_val mulhsu_input.r2_val mulhsu_input.rd mulhsu_input.PC
         (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -895,7 +895,7 @@ inductive OpEnvelope
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (opBus_row_Arith v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
         (PureSpec.execute_MULW_pure mulw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -924,7 +924,7 @@ inductive OpEnvelope
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state div_input.r1_val div_input.r2_val div_input.rd div_input.PC
         (PureSpec.execute_DIVREM_div_pure div_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -950,7 +950,7 @@ inductive OpEnvelope
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state divu_input.r1_val divu_input.r2_val divu_input.rd divu_input.PC
         (PureSpec.execute_DIVREM_divu_pure divu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -968,7 +968,7 @@ inductive OpEnvelope
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state divw_input.r1_val divw_input.r2_val divw_input.rd divw_input.PC
         (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -1008,7 +1008,7 @@ inductive OpEnvelope
     (h_match_primary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state divuw_input.r1_val divuw_input.r2_val divuw_input.rd divuw_input.PC
         (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -1034,7 +1034,7 @@ inductive OpEnvelope
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state rem_input.r1_val rem_input.r2_val rem_input.rd rem_input.PC
         (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -1060,7 +1060,7 @@ inductive OpEnvelope
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state remu_input.r1_val remu_input.r2_val remu_input.rd remu_input.PC
         (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -1078,7 +1078,7 @@ inductive OpEnvelope
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state remw_input.r1_val remw_input.r2_val remw_input.rd remw_input.PC
         (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -1118,7 +1118,7 @@ inductive OpEnvelope
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state remuw_input.r1_val remuw_input.r2_val remuw_input.rd remuw_input.PC
         (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)

@@ -9,7 +9,7 @@ channel-balance conclusion (`= state_effect_via_channels …`) by
 invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_AUIPC`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
-`ZiskFv/Equivalence_v1/Auipc.lean`.
+`ZiskFv/EquivCore/Auipc.lean`.
 
 ## Trust note
 
@@ -36,7 +36,7 @@ theorem equiv_AUIPC
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
-    (promises : ZiskFv.Equivalence_v1.Promises.UTypePromises
+    (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state auipc_input.imm auipc_input.rd auipc_input.PC
         (PureSpec.execute_AUIPC_pure auipc_input).nextPC
         imm rd exec_row e_rd nextPC_val)

@@ -9,7 +9,7 @@ channel-balance conclusion (`= state_effect_via_channels …`) by
 invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_FENCE`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
-`ZiskFv/Equivalence_v1/Fence.lean`.
+`ZiskFv/EquivCore/Fence.lean`.
 
 ## Trust note
 
@@ -31,7 +31,7 @@ theorem equiv_FENCE
     (main : Valid_Main FGL FGL) (r_main : ℕ)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (_pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_FLAG)
-    (promises : ZiskFv.Equivalence_v1.Promises.FencePromises
+    (promises : ZiskFv.EquivCore.Promises.FencePromises
         state fence_input.PC
         (PureSpec.execute_FENCE_pure fence_input).nextPC
         exec_row)

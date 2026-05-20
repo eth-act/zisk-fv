@@ -9,7 +9,7 @@ channel-balance conclusion (`= state_effect_via_channels …`) by
 invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_ANDI`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
-`ZiskFv/Equivalence_v1/Andi.lean`.
+`ZiskFv/EquivCore/Andi.lean`.
 
 ## Trust note
 
@@ -36,7 +36,7 @@ theorem equiv_ANDI
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
     (h_andi_subset : itype_imm_subset_holds_main m r_main andi_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state andi_input.r1_val andi_input.imm andi_input.rd andi_input.PC
         (PureSpec.execute_ITYPE_andi_pure andi_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)

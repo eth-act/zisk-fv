@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence_v1.Or
-import ZiskFv.Equivalence_v1.Promises.RType
-import ZiskFv.Equivalence_v1.Promises.BinaryHelpers
+import ZiskFv.EquivCore.Or
+import ZiskFv.EquivCore.Promises.RType
+import ZiskFv.EquivCore.Promises.BinaryHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -152,7 +152,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Equivalence_v1.Promises
+open ZiskFv.EquivCore.Promises
 
 
 /-- **Trust-discharged wrapper for `equiv_OR`.**
@@ -213,7 +213,7 @@ theorem equiv_OR
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     -- Structural promise bundle (15 fields). Subsumes the prior inline
     -- Sail-side state predicates + bus-protocol structural hypotheses.
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
         (PureSpec.execute_RTYPE_or_pure or_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -231,7 +231,7 @@ theorem equiv_OR
   have h_bop_or_sext :=
     binary_h_bop_or_sext_via_axiom h_match h_main_op_or
       (binary_b_op_or_sext_eq_OP_OR v r_binary)
-  exact ZiskFv.Equivalence_v1.Or.equiv_OR
+  exact ZiskFv.EquivCore.Or.equiv_OR
     state or_input r1 r2 rd m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
     promises

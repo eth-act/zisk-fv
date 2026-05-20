@@ -9,7 +9,7 @@ channel-balance conclusion (`= state_effect_via_channels …`) by
 invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_JALR`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
-`ZiskFv/Equivalence_v1/Jalr.lean`.
+`ZiskFv/EquivCore/Jalr.lean`.
 
 ## Trust note
 
@@ -38,7 +38,7 @@ theorem equiv_JALR
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_jalr_subset : jalr_subset_holds m r_main next_pc)
-    (promises : ZiskFv.Equivalence_v1.Promises.JumpPromises
+    (promises : ZiskFv.EquivCore.Promises.JumpPromises
         state jalr_input.PC jalr_input.rd misa_val
         (PureSpec.execute_JALR_pure jalr_input).success
         (PureSpec.execute_JALR_pure jalr_input).nextPC

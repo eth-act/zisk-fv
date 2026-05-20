@@ -18,7 +18,7 @@ Post-Phase-F1: the `circuit` field, all `_def` fields, the
 canonical AIR view is the Clean `Air.Flat.Component` at
 `ZiskFv/AirsClean/Binary/`; the v1 named predicates `core_every_row` /
 `boolean_*` remain as compositional inputs to downstream provers (e.g.
-`Equivalence_v1/Bridge/Binary.lean::h_bool_c7`).
+`EquivCore/Bridge/Binary.lean::h_bool_c7`).
 -/
 
 namespace ZiskFv.Airs.Binary

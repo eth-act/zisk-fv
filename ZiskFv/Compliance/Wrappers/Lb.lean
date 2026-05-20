@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence_v1.Lb
-import ZiskFv.Equivalence_v1.Promises.Load
-import ZiskFv.Equivalence_v1.Promises.BinaryExtensionHelpers
+import ZiskFv.EquivCore.Lb
+import ZiskFv.EquivCore.Promises.Load
+import ZiskFv.EquivCore.Promises.BinaryExtensionHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
@@ -48,7 +48,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Equivalence_v1.Promises
+open ZiskFv.EquivCore.Promises
 
 
 /-- **Compliance wrapper for `equiv_LB`.** Replaces the BinExt-side
@@ -68,7 +68,7 @@ theorem equiv_LB
     -- Activation + opcode pin (Compliance ROM handshake).
     (pins : ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B)
     -- Structural promise bundle (12 fields, see Promises/Load.lean).
-    (promises : ZiskFv.Equivalence_v1.Promises.LoadPromises
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lb_state_assumptions lb_input state)
         (PureSpec.execute_LOADB_pure lb_input).nextPC
@@ -98,7 +98,7 @@ theorem equiv_LB
   have h_bytes :=
     ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v r_binary
   -- Delegate to canonical `equiv_LB`.
-  exact ZiskFv.Equivalence_v1.Lb.equiv_LB
+  exact ZiskFv.EquivCore.Lb.equiv_LB
     state lb_input regs
     ⟨exec_row, e0, e1, e2⟩
     promises

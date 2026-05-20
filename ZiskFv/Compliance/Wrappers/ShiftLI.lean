@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence_v1.Slliw
-import ZiskFv.Equivalence_v1.Promises.ShiftImm
-import ZiskFv.Equivalence_v1.Promises.BinaryExtensionHelpers
+import ZiskFv.EquivCore.Slliw
+import ZiskFv.EquivCore.Promises.ShiftImm
+import ZiskFv.EquivCore.Promises.BinaryExtensionHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -20,7 +20,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Equivalence_v1.Promises
+open ZiskFv.EquivCore.Promises
 
 
 theorem equiv_SLLIW
@@ -30,7 +30,7 @@ theorem equiv_SLLIW
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.Equivalence_v1.Promises.ShiftWImmPromises
+    (promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
         state slliw_input.r1_val slliw_input.rd slliw_input.PC
         (PureSpec.execute_SHIFTIWOP_slliw_pure slliw_input).nextPC
         r1 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -43,7 +43,7 @@ theorem equiv_SLLIW
   obtain ⟨h_main_active, h_main_op⟩ := pins
   obtain ⟨r_binary, h_match⟩ :=
     binexec_op_bus_handshake_SLL_W m v r_main h_main_active h_main_op
-  exact ZiskFv.Equivalence_v1.Slliw.equiv_SLLIW state slliw_input r1 rd
+  exact ZiskFv.EquivCore.Slliw.equiv_SLLIW state slliw_input r1 rd
     m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
     promises

@@ -9,7 +9,7 @@ channel-balance conclusion (`= state_effect_via_channels …`) by
 invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_LUI`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
-`ZiskFv/Equivalence_v1/Lui.lean`.
+`ZiskFv/EquivCore/Lui.lean`.
 
 ## Trust note
 
@@ -35,7 +35,7 @@ theorem equiv_LUI
     (e_rd : Interaction.MemoryBusEntry FGL)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
-    (promises : ZiskFv.Equivalence_v1.Promises.UTypePromises
+    (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state lui_input.imm lui_input.rd lui_input.PC
         (PureSpec.execute_LUI_pure lui_input).nextPC
         imm rd exec_row e_rd (lui_input.PC + 4#64))

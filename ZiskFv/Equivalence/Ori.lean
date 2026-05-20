@@ -9,7 +9,7 @@ channel-balance conclusion (`= state_effect_via_channels …`) by
 invoking the corresponding wrapper theorem `ZiskFv.Compliance.equiv_ORI`.
 
 The pre-cutover v1 form (`= (bus_effect …).2`) lives at
-`ZiskFv/Equivalence_v1/Ori.lean`.
+`ZiskFv/EquivCore/Ori.lean`.
 
 ## Trust note
 
@@ -36,7 +36,7 @@ theorem equiv_ORI
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
     (h_ori_subset : itype_imm_subset_holds_main m r_main ori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state ori_input.r1_val ori_input.imm ori_input.rd ori_input.PC
         (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)

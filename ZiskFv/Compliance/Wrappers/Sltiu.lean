@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence_v1.Sltiu
-import ZiskFv.Equivalence_v1.Promises.IType
-import ZiskFv.Equivalence_v1.Promises.BinaryHelpers
+import ZiskFv.EquivCore.Sltiu
+import ZiskFv.EquivCore.Promises.IType
+import ZiskFv.EquivCore.Promises.BinaryHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -10,7 +10,7 @@ import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
-import ZiskFv.Equivalence_v1.Bridge.Binary
+import ZiskFv.EquivCore.Bridge.Binary
 import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.Compliance.SharedBundles
 
@@ -29,7 +29,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.OperationBus
 open ZiskFv.Tactics.ALUITypeArchetype
-open ZiskFv.Equivalence_v1.Promises
+open ZiskFv.EquivCore.Promises
 
 
 theorem equiv_SLTIU
@@ -42,7 +42,7 @@ theorem equiv_SLTIU
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)
     (h_sltiu_subset : itype_imm_subset_holds_main m r_main sltiu_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.Equivalence_v1.Promises.ITypePromises
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state sltiu_input.r1_val sltiu_input.imm sltiu_input.rd sltiu_input.PC
         (PureSpec.execute_ITYPE_sltiu_pure sltiu_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) :
@@ -95,12 +95,12 @@ theorem equiv_SLTIU
   obtain ⟨h_m32, _, _, _, _, _, _, _, _⟩ :=
     transpile_SLTIU m r_main (regidx_to_fin r1) (regidx_to_fin rd)
       (m.b_0 r_main) (m.b_1 r_main)
-      (ZiskFv.Equivalence_v1.Bridge.SailStateBridge.sail_to_rv64 state)
+      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
       h_main_active h_main_op_sltiu
   have h_input_imm_circuit :=
-    ZiskFv.Equivalence_v1.Bridge.Binary.itype_imm_subset_binary_row_of_main
+    ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main
       m v r_main r_binary sltiu_input.imm h_m32 h_match h_sltiu_subset
-  exact ZiskFv.Equivalence_v1.Sltiu.equiv_SLTIU
+  exact ZiskFv.EquivCore.Sltiu.equiv_SLTIU
     state sltiu_input r1 rd imm m r_main
     ⟨exec_row, e0, e1, e2⟩
     promises

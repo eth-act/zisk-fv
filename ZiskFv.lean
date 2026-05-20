@@ -118,9 +118,9 @@ import ZiskFv.SailSpec.subw
 import ZiskFv.SailSpec.xori
 
 -- Per-shape h_rd_val derivation lemmas.
-import ZiskFv.Equivalence_v1.WriteValueProofs.Arith
-import ZiskFv.Equivalence_v1.WriteValueProofs.JumpUType
-import ZiskFv.Equivalence_v1.WriteValueProofs.MulDivRemUnsigned
-import ZiskFv.Equivalence_v1.WriteValueProofs.MulDivRemSigned
+import ZiskFv.EquivCore.WriteValueProofs.Arith
+import ZiskFv.EquivCore.WriteValueProofs.JumpUType
+import ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned
+import ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned
 import ZiskFv.Compliance
 

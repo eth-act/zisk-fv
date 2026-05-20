@@ -1,10 +1,10 @@
 import Mathlib
 
-import ZiskFv.Equivalence_v1.Remuw
-import ZiskFv.Equivalence_v1.Promises.RType
-import ZiskFv.Equivalence_v1.Promises.ArithHelpers
-import ZiskFv.Equivalence_v1.Bridge.Arith
-import ZiskFv.Equivalence_v1.Bridge.SailStateBridge
+import ZiskFv.EquivCore.Remuw
+import ZiskFv.EquivCore.Promises.RType
+import ZiskFv.EquivCore.Promises.ArithHelpers
+import ZiskFv.EquivCore.Bridge.Arith
+import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
@@ -29,7 +29,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithDiv
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Equivalence_v1.Promises
+open ZiskFv.EquivCore.Promises
 
 
 theorem equiv_REMUW
@@ -43,7 +43,7 @@ theorem equiv_REMUW
     (h_match_secondary :
       matches_entry (opBus_row_Main m r_main)
                     (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state remuw_input.r1_val remuw_input.r2_val remuw_input.rd remuw_input.PC
         (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -93,7 +93,7 @@ theorem equiv_REMUW
          _h_main_a_lo, _h_main_a_hi, _h_main_b_lo, _h_main_b_hi⟩ :=
     ZiskFv.Trusted.transpile_REMUW
       m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
-      (ZiskFv.Equivalence_v1.Bridge.SailStateBridge.sail_to_rv64 state)
+      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
       h_main_active h_main_op_remuw
   obtain ⟨_h_a0_lt, _h_a1_lt, _h_a2_lt, _h_a3_lt,
           _h_b0_lt, _h_b1_lt, _h_b2_lt, _h_b3_lt,
@@ -123,7 +123,7 @@ theorem equiv_REMUW
                   < (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat := by
     rw [h_rs2_value]; exact h_bound
   -- ============ Delegate to `equiv_REMUW` ============
-  exact ZiskFv.Equivalence_v1.Remuw.equiv_REMUW
+  exact ZiskFv.EquivCore.Remuw.equiv_REMUW
     state remuw_input r1 r2 rd v r_a
     ⟨exec_row, e0, e1, e2⟩
     promises

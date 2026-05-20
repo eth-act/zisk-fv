@@ -1,8 +1,8 @@
 import Mathlib
 
-import ZiskFv.Equivalence_v1.Sll
-import ZiskFv.Equivalence_v1.Promises.RType
-import ZiskFv.Equivalence_v1.Promises.BinaryExtensionHelpers
+import ZiskFv.EquivCore.Sll
+import ZiskFv.EquivCore.Promises.RType
+import ZiskFv.EquivCore.Promises.BinaryExtensionHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -34,7 +34,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.OperationBus
-open ZiskFv.Equivalence_v1.Promises
+open ZiskFv.EquivCore.Promises
 
 
 /-- **Trust-discharged wrapper for `equiv_SLL`.**
@@ -87,7 +87,7 @@ theorem equiv_SLL
     (bus : ZiskFv.Compliance.BusRows)
     -- Structural promise bundle (15 fields). Subsumes the prior inline
     -- Sail-side state predicates + bus-protocol structural hypotheses.
-    (promises : ZiskFv.Equivalence_v1.Promises.RTypePromises
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state sll_input.r1_val sll_input.r2_val sll_input.rd sll_input.PC
         (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
@@ -106,7 +106,7 @@ theorem equiv_SLL
   obtain ⟨r_binary, h_match⟩ :=
     binexec_op_bus_handshake_SLL m v r_main h_main_active h_main_op
   -- Delegate to canonical `equiv_SLL`.
-  exact ZiskFv.Equivalence_v1.Sll.equiv_SLL state sll_input r1 r2 rd
+  exact ZiskFv.EquivCore.Sll.equiv_SLL state sll_input r1 r2 rd
     m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
     promises
