@@ -27,15 +27,15 @@ import ZiskFv.Equivalence.Srlw
 import ZiskFv.Equivalence.Sw
 
 /-!
-# Phase 5 partial — Compliance_v2 dispatcher for the remaining 26 arms
+# Compliance dispatcher for the remaining 26 arms
 
 Covers LBU/LHU/LWU + SB/SH/SW + SLLW/SRLW/SRAW/SLLIW/SRLIW/SRAIW +
 MUL/MULH/MULHU/MULHSU/MULW + DIV/REM/REMU/DIVUW/DIVW/REMW/REMUW +
 JAL/JALR.
 
 After this dispatcher lands, every OpEnvelope arm has a real
-channel-balance conclusion in `Compliance_v2.lean`'s unified
-`exec_eq_v2`. No `True` fallbacks remain.
+channel-balance conclusion in `Compliance.lean`'s unified
+`exec_eq`. No `True` fallbacks remain.
 
 ## Trust note
 
@@ -45,7 +45,7 @@ No new axioms.
 namespace ZiskFv.Compliance
 
 open Goldilocks
-open ZiskFv.Vm
+open ZiskFv.Channels
 open ZiskFv.Airs.Main (Valid_Main)
 
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
@@ -53,7 +53,7 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 /-- v2 conclusion Prop for the remaining 26 arms. Falls through to
     `True` for arms covered by other partial dispatchers. -/
-def OpEnvelope.exec_eq_v2_remaining
+def OpEnvelope.exec_eq_remaining
     : OpEnvelope state m r_main → Prop
   -- Unsigned loads (3)
   | .lbu lbu_input _ _ _ bus _ _ _ =>
@@ -177,29 +177,29 @@ def OpEnvelope.exec_eq_v2_remaining
         = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
   | _ => True
 
-theorem zisk_riscv_compliant_program_bus_v2_remaining
+theorem zisk_riscv_compliant_program_bus_remaining
     (env : OpEnvelope state m r_main) :
-    env.exec_eq_v2_remaining := by
+    env.exec_eq_remaining := by
   cases env with
   | lbu lbu_input regs mem align bus pins h_width promises =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Lbu.equiv_LBU state lbu_input regs m mem r_main align bus pins h_width promises
   | lhu lhu_input regs mem align bus pins h_width promises =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Lhu.equiv_LHU state lhu_input regs m mem r_main align bus pins h_width promises
   | lwu lwu_input regs mem align bus pins h_width promises =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Lwu.equiv_LWU state lwu_input regs m mem r_main align bus pins h_width promises
   | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Sb.equiv_SB state sb_input regs m r_main bus pins
       h_main_ind_width h_opcode_assumptions promises
   | sh sh_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Sh.equiv_SH state sh_input regs m r_main bus pins
       h_main_ind_width h_opcode_assumptions promises
   | sw sw_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Sw.equiv_SW state sw_input regs m r_main bus pins
       h_main_ind_width h_opcode_assumptions promises
   -- W-shifts
@@ -208,7 +208,7 @@ theorem zisk_riscv_compliant_program_bus_v2_remaining
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          pins h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Sllw.equiv_SLLW state sllw_input r1 r2 rd m v r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -219,7 +219,7 @@ theorem zisk_riscv_compliant_program_bus_v2_remaining
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          pins h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Srlw.equiv_SRLW state srlw_input r1 r2 rd m v r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
@@ -230,45 +230,45 @@ theorem zisk_riscv_compliant_program_bus_v2_remaining
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
          pins h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Sraw.equiv_SRAW state sraw_input r1 r2 rd m v r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
       pins h_lane_rd
   | slliw slliw_input r1 rd v bus promises pins h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Slliw.equiv_SLLIW state slliw_input r1 rd m v r_main bus promises pins h_lane_rd
   | srliw srliw_input r1 rd v bus promises pins h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Srliw.equiv_SRLIW state srliw_input r1 rd m v r_main bus promises pins h_lane_rd
   | sraiw sraiw_input r1 rd v bus promises pins h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Sraiw.equiv_SRAIW state sraiw_input r1 rd m v r_main bus promises pins h_lane_rd
   -- Mul family
   | mul mul_input r1 r2 rd srs1 srs2 bus v r_a pins h_match_primary
         promises bounds h_row_constraints =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Mul.equiv_MUL state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
       pins h_match_primary promises bounds h_row_constraints
   | mulh mulh_input r1 r2 rd bus v r_a pins h_match_secondary
         promises h_row_constraints =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.MulH.equiv_MULH state mulh_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises h_row_constraints
   | mulhu mulhu_input r1 r2 rd bus v r_a pins h_match_secondary
          promises bounds h_row_constraints =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.MulHU.equiv_MULHU state mulhu_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises bounds h_row_constraints
   | mulhsu mulhsu_input r1 r2 rd bus v r_a pins h_match_secondary
         promises h_row_constraints =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.MulHSU.equiv_MULHSU state mulhsu_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises h_row_constraints
   | mulw mulw_input r1 r2 rd bus v r_a pins h_match_primary
         promises h_row_constraints h_sext_choice h_rs1_value h_rs2_value =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.MulW.equiv_MULW state mulw_input r1 r2 rd bus m r_main v r_a
       pins h_match_primary promises h_row_constraints h_sext_choice h_rs1_value h_rs2_value
   -- Div / Rem
@@ -276,7 +276,7 @@ theorem zisk_riscv_compliant_program_bus_v2_remaining
         pins h_match_primary
         promises h_op2_ne h_no_overflow
         h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Div.equiv_DIV state div_input r1 r2 rd bus m r_main v r_a
       pins h_match_primary promises h_op2_ne h_no_overflow
       h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
@@ -284,42 +284,42 @@ theorem zisk_riscv_compliant_program_bus_v2_remaining
         pins h_match_secondary
         promises h_op2_ne h_no_overflow
         h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Rem.equiv_REM state rem_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises h_op2_ne h_no_overflow
       h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
   | remu remu_input r1 r2 rd bus v r_a
          pins h_match_secondary promises
          bounds h_row_constraints h_op2_ne =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Remu.equiv_REMU state remu_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises bounds h_row_constraints h_op2_ne
   | divw divw_input r1 r2 rd bus v r_a
          pins h_match_primary promises
          h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
          h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Divw.equiv_DIVW state divw_input r1 r2 rd bus m r_main v r_a
       pins h_match_primary promises h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
   | divuw divuw_input r1 r2 rd bus v r_a
           pins h_match_primary promises
           h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Divuw.equiv_DIVUW state divuw_input r1 r2 rd bus m r_main v r_a
       pins h_match_primary promises h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
   | remw remw_input r1 r2 rd bus v r_a
          pins h_match_secondary promises
          h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
          h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Remw.equiv_REMW state remw_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow_w
   | remuw remuw_input r1 r2 rd bus v r_a
           pins h_match_secondary promises
           h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Remuw.equiv_REMUW state remuw_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
   -- Jumps
@@ -327,7 +327,7 @@ theorem zisk_riscv_compliant_program_bus_v2_remaining
         pins h_jal_subset
         promises h_input_imm h_not_throws
         h_pc_bound h_lo_bound h_pc_offset_lt_2_32 =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Jal.equiv_JAL state jal_input imm rd misa_val m r_main next_pc
       exec_row e_rd nextPC_val pins h_jal_subset
       promises h_input_imm h_not_throws
@@ -336,7 +336,7 @@ theorem zisk_riscv_compliant_program_bus_v2_remaining
          pins h_jalr_subset
          promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
          h_pc_bound h_lo_bound h_pc_offset_lt_2_32 =>
-    simp only [OpEnvelope.exec_eq_v2_remaining]
+    simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Jalr.equiv_JALR state jalr_input imm rs1 rd misa_val mseccfg
       exec_row e_rd nextPC_val m r_main next_pc
       pins h_jalr_subset

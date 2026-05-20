@@ -24,7 +24,7 @@ from 116 prior. The 12-axiom reduction is the result of the
 (class #5b/#6/#6b range axioms collapsed into 2 shared axioms; see
 `ZiskFv/Channels/RangeBusSoundness.lean`).
 
-The global theorem dispatches the 63 RV64IM opcodes through a 35-arm
+The global theorem dispatches the 63 RV64IM opcodes through a 63-arm
 `OpEnvelope` sum type to per-opcode `equiv_<OP>` wrappers
 under `ZiskFv/Compliance/Wrappers/<Op>.lean`; each wrapper discharges the canonical `equiv_<OP>`
 theorem's promise hypotheses from the trust ledger. The principal

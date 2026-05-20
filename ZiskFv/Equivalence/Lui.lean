@@ -1,5 +1,5 @@
 import ZiskFv.Compliance.Wrappers.Lui
-import ZiskFv.Vm.StateEffect
+import ZiskFv.Channels.StateEffect
 
 /-!
 # `equiv_LUI` per-opcode canonical theorem (channel-balance form)
@@ -16,7 +16,7 @@ The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_LUI`'s closure exactly.
 -/
 
-open ZiskFv.Vm
+open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
 open ZiskFv.Tactics.UTypeArchetype (lui_subset_holds auipc_subset_holds)
@@ -41,7 +41,7 @@ theorem equiv_LUI
         imm rd exec_row e_rd (lui_input.PC + 4#64))
     : execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
-  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_LUI state lui_input imm rd m r_main next_pc exec_row e_rd pins h_lui_subset promises
 
 end ZiskFv.Equivalence.Lui

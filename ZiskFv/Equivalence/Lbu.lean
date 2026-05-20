@@ -1,5 +1,5 @@
 import ZiskFv.Compliance.Wrappers.Lbu
-import ZiskFv.Vm.StateEffect
+import ZiskFv.Channels.StateEffect
 
 /-!
 # `equiv_LBU` per-opcode canonical theorem (channel-balance form)
@@ -16,7 +16,7 @@ The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_LBU`'s closure exactly.
 -/
 
-open ZiskFv.Vm
+open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
 open ZiskFv.Airs.Mem (Valid_Mem)
@@ -42,7 +42,7 @@ theorem equiv_LBU
     : execute_instruction (instruction.LOAD (
       lbu_input.imm, regidx.Regidx lbu_input.r1, regidx.Regidx lbu_input.rd, true, 1
     )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_LBU state lbu_input regs main mem r_main align bus pins h_width promises
 
 end ZiskFv.Equivalence.Lbu

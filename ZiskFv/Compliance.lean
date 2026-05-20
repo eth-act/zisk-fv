@@ -1,54 +1,51 @@
-import ZiskFv.Compliance_v2_Branch
-import ZiskFv.Compliance_v2_NoMemOrSimple
-import ZiskFv.Compliance_v2_RTYPE
-import ZiskFv.Compliance_v2_ITYPE
-import ZiskFv.Compliance_v2_Shift
-import ZiskFv.Compliance_v2_ADD_RTYPEW
-import ZiskFv.Compliance_v2_LDSD
-import ZiskFv.Compliance_v2_DIVU
-import ZiskFv.Compliance_v2_Misc
-import ZiskFv.Compliance_v2_Remaining
+import ZiskFv.Compliance.Dispatch.Branch
+import ZiskFv.Compliance.Dispatch.NoMemOrSimple
+import ZiskFv.Compliance.Dispatch.RTYPE
+import ZiskFv.Compliance.Dispatch.ITYPE
+import ZiskFv.Compliance.Dispatch.Shift
+import ZiskFv.Compliance.Dispatch.ADD_RTYPEW
+import ZiskFv.Compliance.Dispatch.LDSD
+import ZiskFv.Compliance.Dispatch.DIVU
+import ZiskFv.Compliance.Dispatch.Misc
+import ZiskFv.Compliance.Dispatch.Remaining
 
 /-!
-# Compliance_v2 — unified channel-balance global theorem
+# Compliance.lean — unified channel-balance global theorem
 
-This file aggregates all the partial Phase 5 dispatchers
-(`Compliance_v2_<Family>.lean`) into one top-level v2 global theorem.
+This file aggregates the ten per-family dispatchers in
+`Compliance/Dispatch/` into the global theorem
+`zisk_riscv_compliant_program_bus`.
 
-The aggregation strategy: `OpEnvelope.exec_eq_v2` is the conjunction
-of the per-family v2 conclusions. For any OpEnvelope arm, *exactly
-one* partial `exec_eq_v2_<family>` produces the real v2 statement;
-the others return `True`. The conjunction of all is therefore
-exactly "this arm's v2 statement holds".
+`OpEnvelope.exec_eq` is the conjunction of the ten per-family
+conclusions. For any `OpEnvelope` arm, *exactly one* family's
+`exec_eq_<family>` produces the real channel-balance statement; the
+others return `True`. The conjunction is therefore exactly "this
+arm's channel-balance statement holds". `zisk_riscv_compliant_program_bus`
+proves the conjunction by invoking each dispatcher in turn.
 
-The unified theorem `zisk_riscv_compliant_program_bus_v2` proves
-this conjunction by invoking each partial dispatcher in turn.
+## Coverage
 
-## Coverage (32 OpEnvelope arms)
+All 63 RV64IM opcode arms are covered with a real (non-`True`)
+channel-balance statement, partitioned across the ten dispatchers:
 
-| Family file                      | Arms covered                                      |
-|----------------------------------|---------------------------------------------------|
-| `Compliance_v2_Branch.lean`      | BEQ, BNE, BLT, BGE, BLTU, BGEU (6)                |
-| `Compliance_v2_NoMemOrSimple`    | LUI, AUIPC, FENCE (3)                             |
-| `Compliance_v2_RTYPE.lean`       | SUB, AND, OR, XOR, SLT, SLTU (6)                  |
-| `Compliance_v2_ITYPE.lean`       | ANDI, ORI, XORI, SLTI, SLTIU (5)                  |
-| `Compliance_v2_Shift.lean`       | SLL, SRL, SRA, SLLI, SRLI, SRAI (6)               |
-| `Compliance_v2_ADD_RTYPEW.lean`  | ADD, ADDW, SUBW (3)                               |
-| `Compliance_v2_LDSD.lean`        | LD, SD (2)                                        |
-| `Compliance_v2_DIVU.lean`        | DIVU (1)                                          |
-| **Total**                        | **32**                                            |
-
-Remaining arms (not yet covered): ADDI, ADDIW, SLLW/SRLW/SRAW,
-SLLIW/SRLIW/SRAIW, JAL, JALR, 6 more loads (LB/LH/LW/LBU/LHU/LWU),
-3 more stores (SB/SH/SW), 12 more Arith (MUL/MULH/MULHU/MULHSU/MULW,
-DIV/REM/REMU, DIVW/DIVUW/REMW/REMUW). Each is a mechanical
-extension following the same pattern.
+| Dispatcher (`Compliance/Dispatch/`) | Arms                                       |
+|-------------------------------------|--------------------------------------------|
+| `Branch`        | BEQ, BNE, BLT, BGE, BLTU, BGEU (6)                            |
+| `NoMemOrSimple` | LUI, AUIPC, FENCE (3)                                        |
+| `RTYPE`         | SUB, AND, OR, XOR, SLT, SLTU (6)                             |
+| `ITYPE`         | ANDI, ORI, XORI, SLTI, SLTIU (5)                             |
+| `Shift`         | SLL, SRL, SRA, SLLI, SRLI, SRAI (6)                          |
+| `ADD_RTYPEW`    | ADD, ADDW, SUBW (3)                                          |
+| `LDSD`          | LD, SD (2)                                                   |
+| `DIVU`          | DIVU (1)                                                     |
+| `Misc`          | LB, LH, LW, ADDI, ADDIW (5)                                  |
+| `Remaining`     | the remaining 26 (loads/stores/W-shifts/Mul/Div/Rem/JAL/JALR)|
 
 ## Trust note
 
-No new axioms — the closure is exactly the union of the v1 wrappers'
+No new axioms — the closure is exactly the union of the 63 wrappers'
 closures plus the trivial `state_effect_via_channels_eq_bus_effect_2`
-bridge. V2 trust gate enforces this.
+bridge. The V2 trust gate enforces this.
 -/
 
 namespace ZiskFv.Compliance
@@ -59,48 +56,41 @@ open ZiskFv.Airs.Main (Valid_Main)
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
 variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
-/-- Unified per-arm v2 conclusion: conjunction of the eight family-
-    specific exec_eq_v2_<family> Props. Exactly one family fires
+/-- Unified per-arm conclusion: conjunction of the ten family-
+    specific `exec_eq_<family>` Props. Exactly one family fires
     non-trivially for any given arm; the others are `True`. -/
-def OpEnvelope.exec_eq_v2 (env : OpEnvelope state m r_main) : Prop :=
-  env.exec_eq_v2_branch
-    ∧ env.exec_eq_v2_nomem
-    ∧ env.exec_eq_v2_rtype_binary
-    ∧ env.exec_eq_v2_itype_binary
-    ∧ env.exec_eq_v2_shift
-    ∧ env.exec_eq_v2_add_rtypew
-    ∧ env.exec_eq_v2_ldsd
-    ∧ env.exec_eq_v2_divu
-    ∧ env.exec_eq_v2_misc
-    ∧ env.exec_eq_v2_remaining
+def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
+  env.exec_eq_branch
+    ∧ env.exec_eq_nomem
+    ∧ env.exec_eq_rtype_binary
+    ∧ env.exec_eq_itype_binary
+    ∧ env.exec_eq_shift
+    ∧ env.exec_eq_add_rtypew
+    ∧ env.exec_eq_ldsd
+    ∧ env.exec_eq_divu
+    ∧ env.exec_eq_misc
+    ∧ env.exec_eq_remaining
 
-/-- **Channel-balance global theorem (canonical).**
+/-- **Channel-balance global theorem.**
 
     For any `OpEnvelope` arm, the channel-balance form of the
-    conclusion holds. The trust footprint equals the union of the
-    corresponding v1 wrappers' closures plus the trivial bridge —
-    zero new axioms beyond what `zisk_riscv_compliant_program_bus_v1`
-    closure depends on.
-
-    This theorem is the post-Phase-6 canonical global compliance
-    statement. The v1 form (`zisk_riscv_compliant_program_bus_v1`
-    in `ZiskFv/Compliance_v1.lean`) is preserved as the predecessor
-    proof against the `bus_effect.2` RHS shape; this v2 form uses
-    `state_effect_via_channels` directly via the channel-balance
-    bridge. -/
+    conclusion (`= state_effect_via_channels …`) holds. The trust
+    footprint equals the union of the 63 wrappers' closures plus the
+    trivial `state_effect_via_channels_eq_bus_effect_2` bridge — zero
+    new axioms. -/
 theorem zisk_riscv_compliant_program_bus
     (env : OpEnvelope state m r_main) :
-    env.exec_eq_v2 := by
+    env.exec_eq := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · exact zisk_riscv_compliant_program_bus_v2_branch env
-  · exact zisk_riscv_compliant_program_bus_v2_nomem env
-  · exact zisk_riscv_compliant_program_bus_v2_rtype_binary env
-  · exact zisk_riscv_compliant_program_bus_v2_itype_binary env
-  · exact zisk_riscv_compliant_program_bus_v2_shift env
-  · exact zisk_riscv_compliant_program_bus_v2_add_rtypew env
-  · exact zisk_riscv_compliant_program_bus_v2_ldsd env
-  · exact zisk_riscv_compliant_program_bus_v2_divu env
-  · exact zisk_riscv_compliant_program_bus_v2_misc env
-  · exact zisk_riscv_compliant_program_bus_v2_remaining env
+  · exact zisk_riscv_compliant_program_bus_branch env
+  · exact zisk_riscv_compliant_program_bus_nomem env
+  · exact zisk_riscv_compliant_program_bus_rtype_binary env
+  · exact zisk_riscv_compliant_program_bus_itype_binary env
+  · exact zisk_riscv_compliant_program_bus_shift env
+  · exact zisk_riscv_compliant_program_bus_add_rtypew env
+  · exact zisk_riscv_compliant_program_bus_ldsd env
+  · exact zisk_riscv_compliant_program_bus_divu env
+  · exact zisk_riscv_compliant_program_bus_misc env
+  · exact zisk_riscv_compliant_program_bus_remaining env
 
 end ZiskFv.Compliance

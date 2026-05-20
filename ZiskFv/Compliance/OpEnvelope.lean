@@ -73,8 +73,8 @@ import ZiskFv.Compliance.Wrappers.Sd
 
 This file defines `OpEnvelope`, the 63-arm sum type whose constructors
 bundle, per Zisk opcode, the inputs and hypotheses the corresponding
-`equiv_<OP>` wrapper requires. It is consumed by the per-family
-`Compliance_v2_*` dispatchers and, through them, by the global
+`equiv_<OP>` wrapper requires. It is consumed by the per-family dispatchers in
+`Compliance/Dispatch/` and, through them, by the global
 theorem `zisk_riscv_compliant_program_bus` in `Compliance.lean`.
 
 (Before Phase E2 this file was `Compliance_v1.lean`; the pre-cutover

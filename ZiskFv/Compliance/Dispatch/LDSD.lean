@@ -3,7 +3,7 @@ import ZiskFv.Equivalence.Ld
 import ZiskFv.Equivalence.Sd
 
 /-!
-# Phase 5 partial — Compliance_v2 dispatcher (LD + SD arms)
+# Compliance dispatcher (LD + SD arms)
 
 Two memory-bus arms: LD (load doubleword) and SD (store doubleword).
 The other 6 loads (LB/LH/LW/LBU/LHU/LWU) and 3 stores (SB/SH/SW)
@@ -18,13 +18,13 @@ No new axioms.
 namespace ZiskFv.Compliance
 
 open Goldilocks
-open ZiskFv.Vm
+open ZiskFv.Channels
 open ZiskFv.Airs.Main (Valid_Main)
 
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
 variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
-def OpEnvelope.exec_eq_v2_ldsd
+def OpEnvelope.exec_eq_ldsd
     : OpEnvelope state m r_main → Prop
   | .ld ld_input _ _ bus _ _ =>
       execute_instruction (instruction.LOAD (
@@ -45,15 +45,15 @@ def OpEnvelope.exec_eq_v2_ldsd
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   | _ => True
 
-theorem zisk_riscv_compliant_program_bus_v2_ldsd
+theorem zisk_riscv_compliant_program_bus_ldsd
     (env : OpEnvelope state m r_main) :
-    env.exec_eq_v2_ldsd := by
+    env.exec_eq_ldsd := by
   cases env with
   | ld ld_input regs mem bus pins promises =>
-    simp only [OpEnvelope.exec_eq_v2_ldsd]
+    simp only [OpEnvelope.exec_eq_ldsd]
     exact ZiskFv.Equivalence.Ld.equiv_LD state ld_input regs m mem r_main bus pins promises
   | sd sd_input regs bus pins h_opcode_assumptions promises =>
-    simp only [OpEnvelope.exec_eq_v2_ldsd]
+    simp only [OpEnvelope.exec_eq_ldsd]
     exact ZiskFv.Equivalence.Sd.equiv_SD state sd_input regs m r_main bus pins h_opcode_assumptions promises
   | _ => trivial
 

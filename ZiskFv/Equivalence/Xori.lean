@@ -1,5 +1,5 @@
 import ZiskFv.Compliance.Wrappers.Xori
-import ZiskFv.Vm.StateEffect
+import ZiskFv.Channels.StateEffect
 
 /-!
 # `equiv_XORI` per-opcode canonical theorem (channel-balance form)
@@ -16,7 +16,7 @@ The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_XORI`'s closure exactly.
 -/
 
-open ZiskFv.Vm
+open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
 open ZiskFv.Airs.Binary (Valid_Binary)
@@ -47,7 +47,7 @@ theorem equiv_XORI
         (instruction.ITYPE (imm, r1, rd, iop.XORI))) state
       = state_effect_via_channels
           ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_XORI state xori_input r1 rd imm m v r_main bus pins h_xori_subset h_lane_rd promises
 
 end ZiskFv.Equivalence.Xori

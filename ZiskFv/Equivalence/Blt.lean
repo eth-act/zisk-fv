@@ -1,5 +1,5 @@
 import ZiskFv.Compliance.Wrappers.Blt
-import ZiskFv.Vm.StateEffect
+import ZiskFv.Channels.StateEffect
 
 /-!
 # `equiv_BLT` per-opcode canonical theorem (channel-balance form)
@@ -16,7 +16,7 @@ The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_BLT`'s closure exactly.
 -/
 
-open ZiskFv.Vm
+open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Compliance (BranchInstrOperands)
 
@@ -36,7 +36,7 @@ theorem equiv_BLT
         ops.imm ops.r1 ops.r2 ops.exec_row)
     : execute_instruction (instruction.BTYPE (ops.imm, ops.r2, ops.r1, bop.BLT)) state
       = state_effect_via_channels ⟨ops.exec_row, []⟩ state := by
-  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_BLT state blt_input ops promises
 
 end ZiskFv.Equivalence.Blt

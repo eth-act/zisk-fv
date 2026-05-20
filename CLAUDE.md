@@ -28,8 +28,15 @@ is the **122 axioms** enumerated in
 `trust/baseline-zisk-riscv-compliant.txt` and documented per-class
 in `docs/fv/trusted-base.md`. All 63 RV64IM opcodes are covered as
 `ZiskFv.Compliance.equiv_<OP>` wrappers under
-`ZiskFv/Compliance/Wrappers/<Op>.lean`, dispatched by the global theorem through a 35-arm
-`OpEnvelope` sum type. The principal "promise hypothesis"
+`ZiskFv/Compliance/Wrappers/<Op>.lean`, dispatched by the global theorem through a 63-arm
+`OpEnvelope` sum type.
+
+Per-opcode the proof is a 3-layer tower: `ZiskFv/EquivCore/<Op>.lean`
+(the real Sail↔circuit proof, plus shared `EquivCore/{Bridge,Promises,
+WriteValueProofs}/`) → `ZiskFv/Compliance/Wrappers/<Op>.lean` (promise
+discharge) → `ZiskFv/Equivalence/<Op>.lean` (the canonical
+`equiv_<OP>`, channel-balance form). The global theorem aggregates the
+ten per-family dispatchers in `ZiskFv/Compliance/Dispatch/`. The principal "promise hypothesis"
 soundness gap surveyed in
 [`docs/fv/known-gaps.md`](docs/fv/known-gaps.md) is closed at the
 global theorem: V3 trust gates
@@ -76,7 +83,15 @@ ZiskFv/ZiskCircuit/<family>   ← circuit semantics in BitVec / FGL
         │
         │ + LHS bridge to Sail spec
         ▼
-ZiskFv/Equivalence/<OP>       ← equiv_<OP> : Sail.execute = bus_effect.2
+ZiskFv/EquivCore/<OP>         ← core proof : Sail.execute = bus_effect.2
+        │
+        │ promise discharge
+        ▼
+ZiskFv/Compliance/Wrappers/<OP>  ← Compliance.equiv_<OP>
+        │
+        │ channel-balance bridge
+        ▼
+ZiskFv/Equivalence/<OP>       ← canonical equiv_<OP> : Sail.execute = state_effect_via_channels
 ```
 
 ## Build / verify / test

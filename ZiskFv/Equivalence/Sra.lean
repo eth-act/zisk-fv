@@ -1,5 +1,5 @@
 import ZiskFv.Compliance.Wrappers.Sra
-import ZiskFv.Vm.StateEffect
+import ZiskFv.Channels.StateEffect
 
 /-!
 # `equiv_SRA` per-opcode canonical theorem (channel-balance form)
@@ -16,7 +16,7 @@ The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_SRA`'s closure exactly.
 -/
 
-open ZiskFv.Vm
+open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
 open ZiskFv.Airs.BinaryExtension (Valid_BinaryExtension)
@@ -42,7 +42,7 @@ theorem equiv_SRA
     : execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRA)) state
       = state_effect_via_channels
           ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_SRA state sra_input r1 r2 rd m v r_main bus promises pins h_lane_rd
 
 end ZiskFv.Equivalence.Sra

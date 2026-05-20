@@ -20,7 +20,7 @@ The bridge:
 ## Trust note
 
 No axioms added. This is the bridge that Phase 5's
-`Compliance_v2.lean` will use to dispatch via the Clean Component's
+the Compliance dispatch layer will use to dispatch via the Clean Component's
 Soundness instead of the spike's bespoke per-AIR proofs.
 
 The actual retirement of `binary_add_columns_in_range` (the one
@@ -68,7 +68,7 @@ def constraints_at (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) (r : ℕ)
     the BinaryAdd Spec holds (i.e. `cPacked = (packed32 a + packed32 b) mod 2^64`).
 
     This routes the existing `Valid_BinaryAdd` consumer through the
-    Clean Component's `soundness` lemma. Phase 5's `Compliance_v2.lean`
+    Clean Component's `soundness` lemma. The Compliance dispatch layer
     will discharge the `Assumptions` precondition via the FlatEnsemble's
     RangeBus channel-balance proof — completing the trust-retirement chain
     for `binary_add_columns_in_range`. -/

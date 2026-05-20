@@ -4,7 +4,7 @@ import ZiskFv.Equivalence.Addw
 import ZiskFv.Equivalence.Subw
 
 /-!
-# Phase 5 partial — Compliance_v2 dispatcher (ADD + RTYPEW arms)
+# Compliance dispatcher (ADD + RTYPEW arms)
 
 ADD (RTYPE+BinaryAdd) plus ADDW, SUBW (RTYPEW+Binary).
 
@@ -21,13 +21,13 @@ No new axioms.
 namespace ZiskFv.Compliance
 
 open Goldilocks
-open ZiskFv.Vm
+open ZiskFv.Channels
 open ZiskFv.Airs.Main (Valid_Main)
 
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
 variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
-def OpEnvelope.exec_eq_v2_add_rtypew
+def OpEnvelope.exec_eq_add_rtypew
     : OpEnvelope state m r_main → Prop
   | .add _ r1 r2 rd _ bus _ _ _ _ =>
       execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
@@ -48,19 +48,19 @@ def OpEnvelope.exec_eq_v2_add_rtypew
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   | _ => True
 
-theorem zisk_riscv_compliant_program_bus_v2_add_rtypew
+theorem zisk_riscv_compliant_program_bus_add_rtypew
     (env : OpEnvelope state m r_main) :
-    env.exec_eq_v2_add_rtypew := by
+    env.exec_eq_add_rtypew := by
   cases env with
   | add add_input r1 r2 rd badd bus pins h_main_subset h_lane_rd promises =>
-    simp only [OpEnvelope.exec_eq_v2_add_rtypew]
+    simp only [OpEnvelope.exec_eq_add_rtypew]
     exact ZiskFv.Equivalence.Add.equiv_ADD state add_input r1 r2 rd m badd r_main bus pins
       h_main_subset h_lane_rd promises
   | addw addw_input r1 r2 rd v bus pins h_lane_rd promises =>
-    simp only [OpEnvelope.exec_eq_v2_add_rtypew]
+    simp only [OpEnvelope.exec_eq_add_rtypew]
     exact ZiskFv.Equivalence.Addw.equiv_ADDW state addw_input r1 r2 rd m v r_main bus pins h_lane_rd promises
   | subw subw_input r1 r2 rd v bus pins h_lane_rd promises =>
-    simp only [OpEnvelope.exec_eq_v2_add_rtypew]
+    simp only [OpEnvelope.exec_eq_add_rtypew]
     exact ZiskFv.Equivalence.Subw.equiv_SUBW state subw_input r1 r2 rd m v r_main bus pins h_lane_rd promises
   | _ => trivial
 

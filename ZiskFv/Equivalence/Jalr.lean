@@ -1,5 +1,5 @@
 import ZiskFv.Compliance.Wrappers.Jalr
-import ZiskFv.Vm.StateEffect
+import ZiskFv.Channels.StateEffect
 
 /-!
 # `equiv_JALR` per-opcode canonical theorem (channel-balance form)
@@ -16,7 +16,7 @@ The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_JALR`'s closure exactly.
 -/
 
-open ZiskFv.Vm
+open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main jump_subset_holds)
 open ZiskFv.Tactics.JumpArchetype (jalr_subset_holds)
@@ -57,7 +57,7 @@ theorem equiv_JALR
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
-  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_JALR state jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val m r_main next_pc pins h_jalr_subset promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg h_pc_bound h_lo_bound h_pc_offset_lt_2_32
 
 end ZiskFv.Equivalence.Jalr

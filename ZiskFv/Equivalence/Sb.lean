@@ -1,5 +1,5 @@
 import ZiskFv.Compliance.Wrappers.Sb
-import ZiskFv.Vm.StateEffect
+import ZiskFv.Channels.StateEffect
 
 /-!
 # `equiv_SB` per-opcode canonical theorem (channel-balance form)
@@ -16,7 +16,7 @@ The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_SB`'s closure exactly.
 -/
 
-open ZiskFv.Vm
+open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
 open ZiskFv.Trusted (OP_COPYB)
@@ -41,7 +41,7 @@ theorem equiv_SB
     : execute_instruction (instruction.STORE (
       sb_input.imm, regidx.Regidx sb_input.r2, regidx.Regidx sb_input.r1, 1
     )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_SB state sb_input regs main r_main bus pins h_main_ind_width h_opcode_assumptions promises
 
 end ZiskFv.Equivalence.Sb

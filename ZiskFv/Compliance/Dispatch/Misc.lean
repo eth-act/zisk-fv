@@ -6,7 +6,7 @@ import ZiskFv.Equivalence.Lh
 import ZiskFv.Equivalence.Lw
 
 /-!
-# Phase 5 partial — Compliance_v2 dispatcher for remaining arms
+# Compliance dispatcher for remaining arms
 
 Completes coverage of the OpEnvelope arms not handled by the other
 partial dispatchers: signed loads, sub-doubleword stores, unsigned
@@ -20,14 +20,14 @@ No new axioms.
 namespace ZiskFv.Compliance
 
 open Goldilocks
-open ZiskFv.Vm
+open ZiskFv.Channels
 open ZiskFv.Airs.Main (Valid_Main)
 
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
 variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 /-- v2 conclusion Prop for all arms not in the other partial files. -/
-def OpEnvelope.exec_eq_v2_misc
+def OpEnvelope.exec_eq_misc
     : OpEnvelope state m r_main → Prop
   -- Signed loads
   | .lb lb_input _ _ _ bus _ _ =>
@@ -64,25 +64,25 @@ def OpEnvelope.exec_eq_v2_misc
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   | _ => True
 
-theorem zisk_riscv_compliant_program_bus_v2_misc
+theorem zisk_riscv_compliant_program_bus_misc
     (env : OpEnvelope state m r_main) :
-    env.exec_eq_v2_misc := by
+    env.exec_eq_misc := by
   cases env with
   | lb lb_input regs mem v bus pins promises =>
-    simp only [OpEnvelope.exec_eq_v2_misc]
+    simp only [OpEnvelope.exec_eq_misc]
     exact ZiskFv.Equivalence.Lb.equiv_LB state lb_input regs m mem r_main v bus pins promises
   | lh lh_input regs mem v bus pins promises =>
-    simp only [OpEnvelope.exec_eq_v2_misc]
+    simp only [OpEnvelope.exec_eq_misc]
     exact ZiskFv.Equivalence.Lh.equiv_LH state lh_input regs m mem r_main v bus pins promises
   | lw lw_input regs mem v bus pins promises =>
-    simp only [OpEnvelope.exec_eq_v2_misc]
+    simp only [OpEnvelope.exec_eq_misc]
     exact ZiskFv.Equivalence.Lw.equiv_LW state lw_input regs m mem r_main v bus pins promises
   | addi addi_input r1 rd imm badd bus pins h_main_subset h_addi_subset h_lane_rd promises =>
-    simp only [OpEnvelope.exec_eq_v2_misc]
+    simp only [OpEnvelope.exec_eq_misc]
     exact ZiskFv.Equivalence.Addi.equiv_ADDI state addi_input r1 rd imm m badd r_main bus
       pins h_main_subset h_addi_subset h_lane_rd promises
   | addiw addiw_input r1 rd imm v bus pins h_addiw_subset h_lane_rd promises =>
-    simp only [OpEnvelope.exec_eq_v2_misc]
+    simp only [OpEnvelope.exec_eq_misc]
     exact ZiskFv.Equivalence.Addiw.equiv_ADDIW state addiw_input r1 rd imm m v r_main bus
       pins h_addiw_subset h_lane_rd promises
   | _ => trivial

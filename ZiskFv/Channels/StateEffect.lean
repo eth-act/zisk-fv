@@ -6,18 +6,11 @@ import ZiskFv.Channels.MemoryBus
 # State effect via channel interactions
 
 This file defines `state_effect_via_channels` — the channel-balance-
-shaped successor to `bus_effect.2`. The current `equiv_<OP>` canonical
-theorem shape is:
+shaped form of `bus_effect.2` that the canonical `equiv_<OP>` theorems
+conclude with:
 
 ```
-equiv_<OP> : execute_instruction ... state = (bus_effect exec_row mem_rows state).2
-```
-
-where `exec_row, mem_rows` are caller-supplied lists. Phase 4's
-`equiv_<OP>_v2` will pivot to:
-
-```
-equiv_<OP>_v2 : execute_instruction ... state = state_effect_via_channels cs state
+equiv_<OP> : execute_instruction ... state = state_effect_via_channels cs state
 ```
 
 where `cs` packages the ensemble's channel-interaction output — the
@@ -34,20 +27,17 @@ This file establishes:
    type as `bus_effect.2`).
 
 3. `state_effect_via_channels_eq_bus_effect_2`: the compatibility
-   bridge. By definition for the trivial extractors, the equality is
-   `rfl`. Phase 3 will introduce derived extractors that route
-   through channel-balance theorems.
+   bridge. For the trivial extractors the equality is `rfl`.
 
 ## Trust note
 
-No axiom added. The point of this file is to establish the
-*signature* that Phase 4 wrappers will target; the *justification*
-that `cs.execMessages` / `cs.memMessages` are well-formed comes from
-the ensemble's `BalancedInteractions` proof (a theorem in
-`Clean.Air.Balance`, not an axiom).
+No axiom added. The justification that `cs.execMessages` /
+`cs.memMessages` are well-formed comes from the ensemble's
+`BalancedInteractions` proof (a theorem in `Clean.Air.Balance`, not
+an axiom).
 -/
 
-namespace ZiskFv.Vm
+namespace ZiskFv.Channels
 
 open Goldilocks
 open ZiskFv.Channels.OperationBus (OpBusMessage)
@@ -114,4 +104,4 @@ theorem state_effect_via_channels_eq_bus_effect_2
       = (bus_effect execRows memRows state).2 := by
   rfl
 
-end ZiskFv.Vm
+end ZiskFv.Channels

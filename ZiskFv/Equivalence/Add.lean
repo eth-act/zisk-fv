@@ -1,5 +1,5 @@
 import ZiskFv.Compliance.Wrappers.Add
-import ZiskFv.Vm.StateEffect
+import ZiskFv.Channels.StateEffect
 
 /-!
 # `equiv_ADD` per-opcode canonical theorem (channel-balance form)
@@ -16,7 +16,7 @@ The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_ADD`'s closure exactly.
 -/
 
-open ZiskFv.Vm
+open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main add_subset_holds)
 open ZiskFv.Trusted (OP_ADD)
@@ -42,7 +42,7 @@ theorem equiv_ADD
     : execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = state_effect_via_channels
           ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_ADD state add_input r1 r2 rd m badd r_main bus pins h_main_subset h_lane_rd promises
 
 end ZiskFv.Equivalence.Add

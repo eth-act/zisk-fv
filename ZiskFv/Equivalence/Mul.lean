@@ -1,5 +1,5 @@
 import ZiskFv.Compliance.Wrappers.Mul
-import ZiskFv.Vm.StateEffect
+import ZiskFv.Channels.StateEffect
 
 /-!
 # `equiv_MUL` per-opcode canonical theorem (channel-balance form)
@@ -16,7 +16,7 @@ The pre-cutover v1 form (`= (bus_effect …).2`) lives at
 No new axioms. The axiom closure equals `ZiskFv.Compliance.equiv_MUL`'s closure exactly.
 -/
 
-open ZiskFv.Vm
+open ZiskFv.Channels
 open Goldilocks
 open ZiskFv.Airs.Main (Valid_Main)
 open ZiskFv.Airs.ArithMul (Valid_ArithMul)
@@ -54,7 +54,7 @@ theorem equiv_MUL
              signed_rs1 := srs1
              signed_rs2 := srs2 }))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  rw [ZiskFv.Vm.state_effect_via_channels_eq_bus_effect_2]
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_MUL state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a pins h_match_primary promises bounds h_row_constraints
 
 end ZiskFv.Equivalence.Mul
