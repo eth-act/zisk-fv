@@ -79,7 +79,7 @@ theorem equiv_LW
     (lw_input : PureSpec.LwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- AIR validators + row index.
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     -- Activation + opcode pin (Compliance ROM handshake).

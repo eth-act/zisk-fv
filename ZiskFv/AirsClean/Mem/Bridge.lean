@@ -30,7 +30,7 @@ open Goldilocks
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 @[reducible]
-def rowAt (v : ZiskFv.Airs.Mem.Valid_Mem C FGL FGL) (r : ℕ) : MemRow FGL where
+def rowAt (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ) : MemRow FGL where
   addr := v.addr r
   step := v.step r
   sel := v.sel r
@@ -47,7 +47,7 @@ def rowAt (v : ZiskFv.Airs.Mem.Valid_Mem C FGL FGL) (r : ℕ) : MemRow FGL where
 
 /-- The 9 F-typed Mem row constraints at row `r`, expressed against a
     `Valid_Mem`. -/
-def constraints_at (v : ZiskFv.Airs.Mem.Valid_Mem C FGL FGL) (r : ℕ) : Prop :=
+def constraints_at (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ) : Prop :=
   v.sel_dual r * (1 - v.sel_dual r) = 0
   ∧ (1 - v.sel r) * v.sel_dual r = 0
   ∧ v.sel r * (1 - v.sel r) = 0
@@ -62,7 +62,7 @@ def constraints_at (v : ZiskFv.Airs.Mem.Valid_Mem C FGL FGL) (r : ℕ) : Prop :=
     9 Clean Component constraints and the boolean range assumptions,
     the Mem per-row Spec holds. -/
 theorem spec_of_valid
-    (v : ZiskFv.Airs.Mem.Valid_Mem C FGL FGL) (r : ℕ)
+    (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ)
     (h_assumptions : Assumptions (rowAt v r))
     (h_constraints : constraints_at v r) :
     Spec (rowAt v r) := by

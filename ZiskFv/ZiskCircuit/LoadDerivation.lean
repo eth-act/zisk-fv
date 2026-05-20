@@ -249,8 +249,8 @@ lemma fgl_zero_to_bitvec8 : ((0 : FGL) : BitVec 8) = 0#8 := by
     form. -/
 lemma load_lbu_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
-    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
     (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)
@@ -291,8 +291,8 @@ lemma load_lbu_c_packed
     U64.toBV form. -/
 lemma load_lhu_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
-    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
     (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)
@@ -333,8 +333,8 @@ lemma load_lhu_c_packed
     U64.toBV form. -/
 lemma load_lwu_c_packed
     (m : Valid_Main C FGL FGL) (r_main : ℕ)
-    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL)
-    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL)
+    (mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL)
+    (marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL)
     (ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL)
     (e1 e2 : MemoryBusEntry FGL)
     (h_copy0 : internal_op1_copies_b0 m r_main)

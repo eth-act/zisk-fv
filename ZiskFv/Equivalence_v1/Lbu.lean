@@ -77,7 +77,7 @@ theorem equiv_LBU
         (PureSpec.lbu_state_assumptions lbu_input state)
         (PureSpec.execute_LOADBU_pure lbu_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     -- MemAlign* providers for the sub-doubleword load (bundled).
     (align : ZiskFv.Compliance.MemAlignWitness C)
     -- Circuit constraint witnesses (CIRCUIT-CONSTRAINT class).

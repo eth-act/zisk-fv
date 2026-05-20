@@ -71,7 +71,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     indirectly by `equiv_LB` / `equiv_LH` / `equiv_LW` after the
     sign-extension chain in `Circuit/SextLoadBridge.lean`). -/
 lemma load_discharge
-    (main : Valid_Main C FGL FGL) (mem : ZiskFv.Airs.Mem.Valid_Mem C FGL FGL)
+    (main : Valid_Main C FGL FGL) (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
     (r_main : ℕ) (e : Interaction.MemoryBusEntry FGL)
     (h_main_emit : main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e
                    ∧ main.b_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e
@@ -95,7 +95,7 @@ needs into a single derivation, consuming the trust-ledger entries
 * transpile contracts (`transpile_LD`, `transpile_SD`, ...).
 
 Caller obligations after this discharge collapse to:
-* `main : Valid_Main C FGL FGL`, `mem : Valid_Mem C FGL FGL`,
+* `main : Valid_Main C FGL FGL`, `mem : Valid_Mem FGL FGL`,
   `r_main : ℕ` (validators + row index);
 * `h_active`, `h_op_main` (Main row activation + opcode pin —
   derivable from `transpile_<OP>` once the global Compliance

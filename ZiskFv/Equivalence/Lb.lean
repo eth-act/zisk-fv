@@ -29,7 +29,7 @@ theorem equiv_LB
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lb_input : PureSpec.LbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension C FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 1 OP_SIGNEXTEND_B)

@@ -16,7 +16,7 @@ open Goldilocks
 variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 @[reducible]
-def rowAt (v : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL) (r : ℕ)
+def rowAt (v : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL) (r : ℕ)
     : MemAlignByteRow FGL where
   sel_high_4b := v.sel_high_4b r
   sel_high_2b := v.sel_high_2b r
@@ -40,7 +40,7 @@ def rowAt (v : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL) (r : ℕ)
     6, 7, 8, 9) are what `soundness` consumes; the 4 booleans (1, 2,
     3, 5) live in `Assumptions`. -/
 def constraints_at
-    (v : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL) (r : ℕ) : Prop :=
+    (v : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL) (r : ℕ) : Prop :=
   v.composed_value r - (v.byte_value r
       * byte_value_factor (v.sel_high_2b r) (v.sel_high_b r)
     + v.value_8b r * value_8b_factor (v.sel_high_2b r) (v.sel_high_b r)
@@ -61,7 +61,7 @@ def constraints_at
 
 /-- **Bridge theorem.** -/
 theorem spec_of_valid
-    (v : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL) (r : ℕ)
+    (v : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL) (r : ℕ)
     (h_assumptions : Assumptions (rowAt v r))
     (h_constraints : constraints_at v r) :
     Spec (rowAt v r) := by

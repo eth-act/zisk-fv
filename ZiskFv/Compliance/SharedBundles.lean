@@ -98,8 +98,8 @@ structure ModeRegsFull where
     unambiguous at callers; the `[Circuit FGL FGL C]` instance is
     inferred from the surrounding scope. -/
 structure MemAlignWitness (C : Type → Type → Type) [Circuit FGL FGL C] where
-  mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte C FGL FGL
-  marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte C FGL FGL
+  mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL
+  marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL
   ma : ZiskFv.Airs.MemAlign.Valid_MemAlign C FGL FGL
   h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
 

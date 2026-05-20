@@ -58,7 +58,7 @@ theorem equiv_LBU
     (lbu_input : PureSpec.LbuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- AIR validators + row index.
-    (main : Valid_Main C FGL FGL) (mem : Valid_Mem C FGL FGL) (r_main : ℕ)
+    (main : Valid_Main C FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
     (align : ZiskFv.Compliance.MemAlignWitness C)
     (bus : ZiskFv.Compliance.BusRows)
     -- Activation + opcode pins (Compliance ROM handshake).

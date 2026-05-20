@@ -70,7 +70,7 @@ literal is recorded inside the predicate (memory-side address space).
     the literal 0. -/
 @[simp]
 def memalign_byte_row_matches_load_entry
-    (v : Valid_MemAlignByte C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL) : Prop :=
+    (v : Valid_MemAlignByte FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL) : Prop :=
   v.is_write r = 0
   ∧ v.addr_w r * 8
       + (4 * v.sel_high_4b r + 2 * v.sel_high_2b r + v.sel_high_b r) = e.ptr
@@ -83,7 +83,7 @@ def memalign_byte_row_matches_load_entry
     `bus_emission_MemAlignReadByte_1` (`MemoryBuses.lean:1842`). -/
 @[simp]
 def memalign_read_byte_row_matches_load_entry
-    (v : Valid_MemAlignReadByte C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL) : Prop :=
+    (v : Valid_MemAlignReadByte FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL) : Prop :=
   v.addr_w r * 8
       + (4 * v.sel_high_4b r + 2 * v.sel_high_2b r + v.sel_high_b r) = e.ptr
   ∧ v.step r = e.timestamp
@@ -134,8 +134,8 @@ Two narrow axioms, each cited to a specific PIL artifact.
     permutation argument). -/
 axiom memalign_load_perm_sound
     (main : Valid_Main C FGL FGL)
-    (mab : Valid_MemAlignByte C FGL FGL)
-    (marb : Valid_MemAlignReadByte C FGL FGL)
+    (mab : Valid_MemAlignByte FGL FGL)
+    (marb : Valid_MemAlignReadByte FGL FGL)
     (ma : Valid_MemAlign C FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (h_emit : main.b_0 r_main = memory_entry_lo e
@@ -182,7 +182,7 @@ decomposition: `Σ b_i · 256^i = 0` over `b_i ∈ [0, 256)` ⇒ all zero.
 /-- High-byte zeros for any LOAD-providing `MemAlignByte` row.
     Direct from `slot[5] = 0` ↔ `memory_entry_hi e = 0`. -/
 lemma memalign_byte_load_high_bytes_zero
-    (v : Valid_MemAlignByte C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
+    (v : Valid_MemAlignByte FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_byte_row_matches_load_entry v r e)
     (h_range : memory_entry_bytes_in_range e) :
     e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0 := by
@@ -204,7 +204,7 @@ lemma memalign_byte_load_high_bytes_zero
     low-byte pinning consumes a separate hypothesis (the byte-bus
     range check on `bus_byte`) which is supplied at the call site. -/
 lemma memalign_byte_load_low_bytes_zero
-    (v : Valid_MemAlignByte C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
+    (v : Valid_MemAlignByte FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_byte_row_matches_load_entry v r e)
     (h_range : memory_entry_bytes_in_range e)
     (h_bus_byte_lt : (v.bus_byte r).val < 256) :
@@ -221,7 +221,7 @@ lemma memalign_byte_load_low_bytes_zero
 /-- High-byte zeros for any LOAD-providing `MemAlignReadByte` row.
     Same shape as the MemAlignByte case (slot[5] = literal 0). -/
 lemma memalign_read_byte_load_high_bytes_zero
-    (v : Valid_MemAlignReadByte C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
+    (v : Valid_MemAlignReadByte FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_read_byte_row_matches_load_entry v r e)
     (h_range : memory_entry_bytes_in_range e) :
     e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0 := by
@@ -234,7 +234,7 @@ lemma memalign_read_byte_load_high_bytes_zero
 /-- Width=1 lo-bytes pinning for `MemAlignReadByte`, analogous to the
     MemAlignByte version. -/
 lemma memalign_read_byte_load_low_bytes_zero
-    (v : Valid_MemAlignReadByte C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
+    (v : Valid_MemAlignReadByte FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_read_byte_row_matches_load_entry v r e)
     (h_range : memory_entry_bytes_in_range e)
     (h_byte_value_lt : (v.byte_value r).val < 256) :
@@ -308,8 +308,8 @@ predicate. -/
     / byte_value / value_0 column. The derivation packages all three
     via `h_low_pinning`. -/
 structure SubdoublewordLoadLowBytePinning
-    (mab : Valid_MemAlignByte C FGL FGL)
-    (marb : Valid_MemAlignReadByte C FGL FGL)
+    (mab : Valid_MemAlignByte FGL FGL)
+    (marb : Valid_MemAlignReadByte FGL FGL)
     (ma : Valid_MemAlign C FGL FGL) where
   byte_value_lt : ∀ r, (mab.bus_byte r).val < 256
   read_byte_value_lt : ∀ r, (marb.byte_value r).val < 256
@@ -323,8 +323,8 @@ structure SubdoublewordLoadLowBytePinning
     `high_bytes_zero_for_width e (main.ind_width r_main)`. -/
 lemma memalign_subdoubleword_load_high_bytes_zero
     (main : Valid_Main C FGL FGL)
-    (mab : Valid_MemAlignByte C FGL FGL)
-    (marb : Valid_MemAlignReadByte C FGL FGL)
+    (mab : Valid_MemAlignByte FGL FGL)
+    (marb : Valid_MemAlignReadByte FGL FGL)
     (ma : Valid_MemAlign C FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (h_emit : main.b_0 r_main = memory_entry_lo e
