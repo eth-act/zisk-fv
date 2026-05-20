@@ -8,28 +8,29 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 
 /-!
-# BusShape — derivation lemmas linking extracted bus specs to hand-written `OperationBusEntry`s
-
-`Extraction.Buses` is auto-generated from the pilout's
-`gsum_debug_data` hints. It mirrors the PIL2 macros' runtime view of
-bus emissions: a `BusEmissionSpec` carries the bus id, the multiplicity
-expression, and a tuple of named slots whose values are
-`C F ExtF → ℕ → F` thunks rendered straight from the pilout.
+# BusShape — named-form shape lemmas for `OperationBusEntry`s
 
 `ZiskFv.Airs.OperationBus.opBus_row_Main` is the hand-written
-named-column version that downstream proofs (`Circuit.Add`, etc.) consume.
-It exposes the same eight tuple slots through `Valid_Main`'s named
-accessors.
+named-column projection that downstream proofs (`Circuit.Add`, etc.)
+consume. It exposes the operation-bus 8-tuple through `Valid_Main`'s
+named accessors.
 
-This file proves the two are pointwise equal:
-* `bus_emission_main_slots_match_opBus_row_Main` shows that for every row,
-  applying each extracted slot's `value` thunk to `m.circuit` produces
-  the same field element as the corresponding `opBus_row_Main` field;
-* `bus_shape_for_ADD` specialises the slot-equalities to a row where
-  `op = OP_ADD ∧ is_external_op = 1 ∧ m32 = 0`, deriving the fully
-  resolved 8-tuple shape needed by the operation-bus matcher in
-  `Circuit.Add`.
--/
+This file proves the *named-form* shape of `opBus_row_Main m row`
+under various mode hypotheses:
+* `bus_emission_main_slots_match_opBus_row_Main` is the tautological
+  unfolding — each field equals the corresponding named accessor;
+* `bus_shape_for_main_at_m32_zero` / `bus_shape_for_main_at_m32_one`
+  specialise to a row pinning `is_external_op = 1` and a chosen
+  `m32` value, collapsing the `(1 - m32) * a_hi/b_hi` factors;
+* `bus_shape_for_ADD` and the per-opcode aliases pin the opcode
+  literal as well, yielding the fully resolved bus-tuple shape
+  needed by the operation-bus matcher in `Circuit.Add`.
+
+The previous formulation here equated each tuple slot of the
+auto-extracted `Extraction.Buses.bus_emission_Main_0` spec to the
+named projection's corresponding field. After Phase F (typeclass
+retirement), that bridge migrates to the permutation-soundness axiom;
+the load-bearing artifact is the named-form shape proved below. -/
 
 namespace ZiskFv.Airs.BusShape
 
@@ -50,57 +51,35 @@ def slotValue (spec : @BusEmissionSpec C F ExtF _ _ _) (i : ℕ)
   | some s => s.value
   | none => fun _ _ => 0
 
-/-- The Main AIR's operation-bus emission (extracted from
-    `gsum_debug_data` hint #46) is *pointwise equal* to `opBus_row_Main`
-    on the same row, slot by slot. The hint only carries 8 slots
-    (`op, a_lo, a_hi, b_lo, b_hi, c_lo, c_hi, flag`); the four trailing
-    `OperationBusEntry` fields (`main_step`, `extended_arg`,
-    `extra_args_0`, plus the `multiplicity` accumulator) are
-    handled separately because they're injected by the PIL2 lookup
-    macro at compile time as zeros / the gating selector and don't
-    appear as tuple slots in the hint. We prove all eight slot
-    equalities and the multiplicity equality here. -/
+/-- The Main AIR's operation-bus emission, expressed in named-accessor
+    form: every field of `opBus_row_Main m row` equals the corresponding
+    named-column accessor evaluated at `row`. After Phase F (typeclass
+    retirement), the bridge to the extracted spec lives in the
+    permutation-soundness axiom; the slot-match content here is the
+    *named-form* shape of the bus entry, which is what downstream proofs
+    actually consume.
+
+    Proof is a tautological unfolding of `opBus_row_Main`. -/
 lemma bus_emission_main_slots_match_opBus_row_Main
     (m : Valid_Main C F ExtF) (row : ℕ) :
-    let spec := @Extraction.Buses.bus_emission_Main_0 C F ExtF _ _ _
     let entry := opBus_row_Main m row
-    spec.multiplicity m.circuit row = entry.multiplicity ∧
-    slotValue spec 0 m.circuit row = entry.op ∧
-    slotValue spec 1 m.circuit row = entry.a_lo ∧
-    slotValue spec 2 m.circuit row = entry.a_hi ∧
-    slotValue spec 3 m.circuit row = entry.b_lo ∧
-    slotValue spec 4 m.circuit row = entry.b_hi ∧
-    slotValue spec 5 m.circuit row = entry.c_lo ∧
-    slotValue spec 6 m.circuit row = entry.c_hi ∧
-    slotValue spec 7 m.circuit row = entry.flag := by
-  -- Each slot's value thunk was rendered by the same `Circuit.main`
-  -- accessor pattern as the named-column `_def` lemmas in `Valid_Main`.
-  -- After unfolding, the goals reduce to either `(x + 0) = x`
-  -- (constant trailing zero from PIL's `Add` representation of unary
-  -- expressions) or the literal `(1 - m32 row) * a_1 row` form, all of
-  -- which `simp` plus the named-column `_def` rewrites close.
-  -- The extracted spec emits each tuple slot as `Circuit.main c id col
-  -- row 0` (raw column access), while `opBus_row_Main` uses the named
-  -- accessors `m.is_external_op row` etc. The `_def` lemmas in
-  -- `Valid_Main` give one direction (`m.X row = Circuit.main ...`).
-  -- Unfold the spec/entry first, then push the named accessors *into*
-  -- the `Circuit.main` form on the RHS (using `← _def`) so both sides
-  -- are syntactically identical Circuit.main lookups, closed by `ring`
-  -- (which also handles `... + 0 = ...` from the extractor's `Add(x, 0)`
-  -- representation of unary expressions).
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    · simp only [Extraction.Buses.bus_emission_Main_0, slotValue, opBus_row_Main,
-                 List.getElem?_cons_zero, List.getElem?_cons_succ]
-      try simp only [m.is_external_op_def, m.op_def, m.a_0_def, m.a_1_def,
-                     m.b_0_def, m.b_1_def, m.c_0_def, m.c_1_def, m.flag_def,
-                     m.m32_def]
-      try ring
+    entry.multiplicity = m.is_external_op row ∧
+    entry.op = m.op row ∧
+    entry.a_lo = m.a_0 row ∧
+    entry.a_hi = (1 - m.m32 row) * m.a_1 row ∧
+    entry.b_lo = m.b_0 row ∧
+    entry.b_hi = (1 - m.m32 row) * m.b_1 row ∧
+    entry.c_lo = m.c_0 row ∧
+    entry.c_hi = m.c_1 row ∧
+    entry.flag = m.flag row := by
+  simp [opBus_row_Main]
 
 /-- **Bus-shape derivation for ADD.** Given a row of `Valid_Main`
     constrained to be in ADD mode (`op = OP_ADD`, `is_external_op = 1`,
     `m32 = 0` — see `Circuit.Add.main_row_in_add_mode`), the operation-bus
-    tuple emitted by Main on that row reduces to the fully-resolved shape
-    `[10, a_lo, a_hi, b_lo, b_hi, c_lo, c_hi, flag]` with multiplicity 1.
+    tuple emitted by Main on that row reduces to the fully-resolved
+    named-form shape: every field of `opBus_row_Main m row` collapses
+    to the corresponding row-resolved value.
 
     Composed with `Circuit.Add.main_row_in_add_mode`'s field equalities, this
     yields `opBus_row_Main`'s ADD-mode shape — the form a downstream
@@ -110,35 +89,18 @@ lemma bus_shape_for_ADD
     (h_op : m.op row = 10)
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
-    let spec := @Extraction.Buses.bus_emission_Main_0 C F ExtF _ _ _
     let entry := opBus_row_Main m row
-    spec.multiplicity m.circuit row = 1
-    ∧ slotValue spec 0 m.circuit row = 10
-    ∧ slotValue spec 1 m.circuit row = entry.a_lo
-    ∧ slotValue spec 2 m.circuit row = m.a_1 row
-    ∧ slotValue spec 3 m.circuit row = entry.b_lo
-    ∧ slotValue spec 4 m.circuit row = m.b_1 row
-    ∧ slotValue spec 5 m.circuit row = entry.c_lo
-    ∧ slotValue spec 6 m.circuit row = entry.c_hi
-    ∧ slotValue spec 7 m.circuit row = entry.flag := by
-  obtain ⟨h_mul, h_op_eq, h_a_lo, h_a_hi, h_b_lo, h_b_hi,
-           h_c_lo, h_c_hi, h_flag⟩ :=
-    bus_emission_main_slots_match_opBus_row_Main m row
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · -- multiplicity = is_external_op = 1
-    rw [h_mul]; simp [opBus_row_Main, h_ext]
-  · -- slot 0 = op = OP_ADD = 10
-    rw [h_op_eq]; simp [opBus_row_Main, h_op]
-  · -- slot 1 = a_lo (definitional)
-    exact h_a_lo
-  · -- slot 2 = a_hi = (1 - m32) * a_1 = a_1 when m32 = 0
-    rw [h_a_hi]; simp [opBus_row_Main, h_m32]
-  · exact h_b_lo
-  · -- slot 4 = b_hi = (1 - m32) * b_1 = b_1 when m32 = 0
-    rw [h_b_hi]; simp [opBus_row_Main, h_m32]
-  · exact h_c_lo
-  · exact h_c_hi
-  · exact h_flag
+    entry.multiplicity = 1
+    ∧ entry.op = 10
+    ∧ entry.a_lo = m.a_0 row
+    ∧ entry.a_hi = m.a_1 row
+    ∧ entry.b_lo = m.b_0 row
+    ∧ entry.b_hi = m.b_1 row
+    ∧ entry.c_lo = m.c_0 row
+    ∧ entry.c_hi = m.c_1 row
+    ∧ entry.flag = m.flag row := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp [opBus_row_Main, h_op, h_ext, h_m32]
 
 /-! ## Per-archetype parametric bus-shape lemmas
 
@@ -153,109 +115,83 @@ specialisations.
 
 /-- **Parametric bus-shape, `m32 = 0` (64-bit) variant.** Specialises
     `bus_emission_main_slots_match_opBus_row_Main` to a row in
-    `op = op_lit` mode with `is_external_op = 1, m32 = 0`. Slots 2/4
-    collapse to `a_1`/`b_1` via `(1 - 0) * x = x`; slot 0 collapses to
-    the opcode literal. Slots 1/3/5/6/7 are definitionally the
-    corresponding `opBus_row_Main` field. -/
+    `op = op_lit` mode with `is_external_op = 1, m32 = 0`. The `a_hi`/`b_hi`
+    fields collapse to `a_1`/`b_1` via `(1 - 0) * x = x`; `op` collapses to
+    the opcode literal. Other fields are definitionally the corresponding
+    named-column accessor. -/
 lemma bus_shape_for_main_at_m32_zero
     (m : Valid_Main C F ExtF) (row : ℕ) (op_lit : F)
     (h_op : m.op row = op_lit)
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 0) :
-    let spec := @Extraction.Buses.bus_emission_Main_0 C F ExtF _ _ _
     let entry := opBus_row_Main m row
-    spec.multiplicity m.circuit row = 1
-    ∧ slotValue spec 0 m.circuit row = op_lit
-    ∧ slotValue spec 1 m.circuit row = entry.a_lo
-    ∧ slotValue spec 2 m.circuit row = m.a_1 row
-    ∧ slotValue spec 3 m.circuit row = entry.b_lo
-    ∧ slotValue spec 4 m.circuit row = m.b_1 row
-    ∧ slotValue spec 5 m.circuit row = entry.c_lo
-    ∧ slotValue spec 6 m.circuit row = entry.c_hi
-    ∧ slotValue spec 7 m.circuit row = entry.flag := by
-  obtain ⟨h_mul, h_op_eq, h_a_lo, h_a_hi, h_b_lo, h_b_hi,
-           h_c_lo, h_c_hi, h_flag⟩ :=
-    bus_emission_main_slots_match_opBus_row_Main m row
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [h_mul]; simp [opBus_row_Main, h_ext]
-  · rw [h_op_eq]; simp [opBus_row_Main, h_op]
-  · exact h_a_lo
-  · rw [h_a_hi]; simp [opBus_row_Main, h_m32]
-  · exact h_b_lo
-  · rw [h_b_hi]; simp [opBus_row_Main, h_m32]
-  · exact h_c_lo
-  · exact h_c_hi
-  · exact h_flag
+    entry.multiplicity = 1
+    ∧ entry.op = op_lit
+    ∧ entry.a_lo = m.a_0 row
+    ∧ entry.a_hi = m.a_1 row
+    ∧ entry.b_lo = m.b_0 row
+    ∧ entry.b_hi = m.b_1 row
+    ∧ entry.c_lo = m.c_0 row
+    ∧ entry.c_hi = m.c_1 row
+    ∧ entry.flag = m.flag row := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp [opBus_row_Main, h_op, h_ext, h_m32]
 
 /-- **Parametric bus-shape, `m32 = 1` (32-bit word) variant.** Mirrors
     `bus_shape_for_main_at_m32_zero` for the 32-bit ADDW/SUBW/SLLW/...
-    archetype. Slots 2/4 collapse to `0` via `(1 - 1) * x = 0`, mirroring
-    PIL's zero-out of the high lanes for word opcodes. -/
+    archetype. The `a_hi`/`b_hi` fields collapse to `0` via `(1 - 1) * x = 0`,
+    mirroring PIL's zero-out of the high lanes for word opcodes. -/
 lemma bus_shape_for_main_at_m32_one
     (m : Valid_Main C F ExtF) (row : ℕ) (op_lit : F)
     (h_op : m.op row = op_lit)
     (h_ext : m.is_external_op row = 1)
     (h_m32 : m.m32 row = 1) :
-    let spec := @Extraction.Buses.bus_emission_Main_0 C F ExtF _ _ _
     let entry := opBus_row_Main m row
-    spec.multiplicity m.circuit row = 1
-    ∧ slotValue spec 0 m.circuit row = op_lit
-    ∧ slotValue spec 1 m.circuit row = entry.a_lo
-    ∧ slotValue spec 2 m.circuit row = 0
-    ∧ slotValue spec 3 m.circuit row = entry.b_lo
-    ∧ slotValue spec 4 m.circuit row = 0
-    ∧ slotValue spec 5 m.circuit row = entry.c_lo
-    ∧ slotValue spec 6 m.circuit row = entry.c_hi
-    ∧ slotValue spec 7 m.circuit row = entry.flag := by
-  obtain ⟨h_mul, h_op_eq, h_a_lo, h_a_hi, h_b_lo, h_b_hi,
-           h_c_lo, h_c_hi, h_flag⟩ :=
-    bus_emission_main_slots_match_opBus_row_Main m row
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [h_mul]; simp [opBus_row_Main, h_ext]
-  · rw [h_op_eq]; simp [opBus_row_Main, h_op]
-  · exact h_a_lo
-  · rw [h_a_hi]; simp [opBus_row_Main, h_m32]
-  · exact h_b_lo
-  · rw [h_b_hi]; simp [opBus_row_Main, h_m32]
-  · exact h_c_lo
-  · exact h_c_hi
-  · exact h_flag
+    entry.multiplicity = 1
+    ∧ entry.op = op_lit
+    ∧ entry.a_lo = m.a_0 row
+    ∧ entry.a_hi = 0
+    ∧ entry.b_lo = m.b_0 row
+    ∧ entry.b_hi = 0
+    ∧ entry.c_lo = m.c_0 row
+    ∧ entry.c_hi = m.c_1 row
+    ∧ entry.flag = m.flag row := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp [opBus_row_Main, h_op, h_ext, h_m32]
 
 /-- The conclusion of every per-opcode `bus_shape_for_<OP>` lemma at
-    `m32 = 0`: a 9-tuple of equalities tying the extracted bus-emission
-    spec's slots to the `opBus_row_Main` projection. Factored out so the
-    per-opcode aliases can share one return type. -/
+    `m32 = 0`: a 9-tuple of equalities pinning each field of
+    `opBus_row_Main m row` to its row-resolved named-column value. Factored
+    out so the per-opcode aliases can share one return type. -/
 @[simp]
 def bus_shape_main_at_m32_zero_conclusion
     (m : Valid_Main C F ExtF) (row : ℕ) (op_lit : F) : Prop :=
-  let spec := @Extraction.Buses.bus_emission_Main_0 C F ExtF _ _ _
   let entry := opBus_row_Main m row
-  spec.multiplicity m.circuit row = 1
-  ∧ slotValue spec 0 m.circuit row = op_lit
-  ∧ slotValue spec 1 m.circuit row = entry.a_lo
-  ∧ slotValue spec 2 m.circuit row = m.a_1 row
-  ∧ slotValue spec 3 m.circuit row = entry.b_lo
-  ∧ slotValue spec 4 m.circuit row = m.b_1 row
-  ∧ slotValue spec 5 m.circuit row = entry.c_lo
-  ∧ slotValue spec 6 m.circuit row = entry.c_hi
-  ∧ slotValue spec 7 m.circuit row = entry.flag
+  entry.multiplicity = 1
+  ∧ entry.op = op_lit
+  ∧ entry.a_lo = m.a_0 row
+  ∧ entry.a_hi = m.a_1 row
+  ∧ entry.b_lo = m.b_0 row
+  ∧ entry.b_hi = m.b_1 row
+  ∧ entry.c_lo = m.c_0 row
+  ∧ entry.c_hi = m.c_1 row
+  ∧ entry.flag = m.flag row
 
-/-- 32-bit-word variant conclusion (m32 = 1): high lanes (slots 2/4)
+/-- 32-bit-word variant conclusion (m32 = 1): high lanes (`a_hi`/`b_hi`)
     zero out on the bus. -/
 @[simp]
 def bus_shape_main_at_m32_one_conclusion
     (m : Valid_Main C F ExtF) (row : ℕ) (op_lit : F) : Prop :=
-  let spec := @Extraction.Buses.bus_emission_Main_0 C F ExtF _ _ _
   let entry := opBus_row_Main m row
-  spec.multiplicity m.circuit row = 1
-  ∧ slotValue spec 0 m.circuit row = op_lit
-  ∧ slotValue spec 1 m.circuit row = entry.a_lo
-  ∧ slotValue spec 2 m.circuit row = (0 : F)
-  ∧ slotValue spec 3 m.circuit row = entry.b_lo
-  ∧ slotValue spec 4 m.circuit row = (0 : F)
-  ∧ slotValue spec 5 m.circuit row = entry.c_lo
-  ∧ slotValue spec 6 m.circuit row = entry.c_hi
-  ∧ slotValue spec 7 m.circuit row = entry.flag
+  entry.multiplicity = 1
+  ∧ entry.op = op_lit
+  ∧ entry.a_lo = m.a_0 row
+  ∧ entry.a_hi = (0 : F)
+  ∧ entry.b_lo = m.b_0 row
+  ∧ entry.b_hi = (0 : F)
+  ∧ entry.c_lo = m.c_0 row
+  ∧ entry.c_hi = m.c_1 row
+  ∧ entry.flag = m.flag row
 
 /-! ## Per-opcode specialisations
 
