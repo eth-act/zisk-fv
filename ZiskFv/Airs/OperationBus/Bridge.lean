@@ -69,7 +69,7 @@ theorem op_bus_perm_sound_BinaryAdd
     * Arith helpers: LT_ABS_NP=0x50, LT_ABS_PN=0x51. -/
 theorem op_bus_perm_sound_Binary
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL)
-    (b : ZiskFv.Airs.Binary.Valid_Binary C FGL FGL)
+    (b : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
     (r_main : ℕ)
     (h_active : m.is_external_op r_main = 1)
     (h_op : m.op r_main = 0x02 ∨ m.op r_main = 0x03 ∨ m.op r_main = 0x04

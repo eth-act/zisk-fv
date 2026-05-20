@@ -64,7 +64,7 @@ inductive OpBusProvider (C : Type → Type → Type) [Circuit FGL FGL C] : Type
   | binaryAdd
       (b : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) : OpBusProvider C
   | binary
-      (b : ZiskFv.Airs.Binary.Valid_Binary C FGL FGL) : OpBusProvider C
+      (b : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) : OpBusProvider C
   | binaryExtension
       (e : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) :
         OpBusProvider C

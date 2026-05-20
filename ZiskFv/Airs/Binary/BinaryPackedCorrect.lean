@@ -412,7 +412,7 @@ private lemma byte_eq_XOR_of_consumer_match
     `op = OP_AND` and matching a/b/c bytes, conclude the 64-bit
     `BitVec.and` identity on the packed byte sums. -/
 lemma binary_and_chunks_eq_bv_and
-    (v : Valid_Binary C FGL FGL) (row : ℕ)
+    (v : Valid_Binary FGL FGL) (row : ℕ)
     (h_byte_0 : consumer_byte_match OP_AND
       (v.free_in_a_0 row) (v.free_in_b_0 row) (v.free_in_c_0 row))
     (h_byte_1 : consumer_byte_match OP_AND
@@ -494,7 +494,7 @@ lemma binary_and_chunks_eq_bv_and
 /-- **Lift for OR.** Same shape as `binary_and_chunks_eq_bv_and`, with
     `OP_OR` and `BitVec.or`. -/
 lemma binary_or_chunks_eq_bv_or
-    (v : Valid_Binary C FGL FGL) (row : ℕ)
+    (v : Valid_Binary FGL FGL) (row : ℕ)
     (h_byte_0 : consumer_byte_match OP_OR
       (v.free_in_a_0 row) (v.free_in_b_0 row) (v.free_in_c_0 row))
     (h_byte_1 : consumer_byte_match OP_OR
@@ -572,7 +572,7 @@ lemma binary_or_chunks_eq_bv_or
 /-- **Lift for XOR.** Same shape as the AND/OR theorems with
     `OP_XOR` and `BitVec.xor`. -/
 lemma binary_xor_chunks_eq_bv_xor
-    (v : Valid_Binary C FGL FGL) (row : ℕ)
+    (v : Valid_Binary FGL FGL) (row : ℕ)
     (h_byte_0 : consumer_byte_match OP_XOR
       (v.free_in_a_0 row) (v.free_in_b_0 row) (v.free_in_c_0 row))
     (h_byte_1 : consumer_byte_match OP_XOR
