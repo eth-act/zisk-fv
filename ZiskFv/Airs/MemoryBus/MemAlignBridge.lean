@@ -98,7 +98,7 @@ def memalign_read_byte_row_matches_load_entry
     those; the prove side pins `sel_prove = 1`). -/
 @[simp]
 def memalign_row_matches_load_entry
-    (v : Valid_MemAlign C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL) : Prop :=
+    (v : Valid_MemAlign FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL) : Prop :=
   v.sel_prove r = 1
   ∧ v.sel_up_to_down r = 0
   ∧ v.sel_down_to_up r = 0
@@ -136,7 +136,7 @@ axiom memalign_load_perm_sound
     (main : Valid_Main C FGL FGL)
     (mab : Valid_MemAlignByte FGL FGL)
     (marb : Valid_MemAlignReadByte FGL FGL)
-    (ma : Valid_MemAlign C FGL FGL)
+    (ma : Valid_MemAlign FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (h_emit : main.b_0 r_main = memory_entry_lo e
               ∧ main.b_1 r_main = memory_entry_hi e
@@ -166,7 +166,7 @@ axiom memalign_load_perm_sound
     (`Airs/BinaryExtensionTable.lean:262`) — a ROM-lookup soundness
     statement scoped to a single state-machine ROM. -/
 axiom mem_align_rom_subdoubleword_load_value_1_zero
-    (ma : Valid_MemAlign C FGL FGL) (r : ℕ)
+    (ma : Valid_MemAlign FGL FGL) (r : ℕ)
     (h_live : ma.sel_prove r = 1)
     (h_narrow : ma.width r = 1 ∨ ma.width r = 2 ∨ ma.width r = 4) :
     ma.value_1 r = 0
@@ -251,7 +251,7 @@ lemma memalign_read_byte_load_low_bytes_zero
     width is sub-doubleword. Combines the row-match's
     `value_1 = hi(e)` with the ROM-lookup axiom's `value_1 = 0`. -/
 lemma memalign_load_high_bytes_zero
-    (v : Valid_MemAlign C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
+    (v : Valid_MemAlign FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_row_matches_load_entry v r e)
     (h_range : memory_entry_bytes_in_range e)
     (h_narrow : v.width r = 1 ∨ v.width r = 2 ∨ v.width r = 4) :
@@ -270,7 +270,7 @@ lemma memalign_load_high_bytes_zero
     coming from the ROM/AIR-internal width pinning — supplied at the
     derivation site as `h_v0_lt`. -/
 lemma memalign_load_low_bytes_pinned_for_width_1
-    (v : Valid_MemAlign C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
+    (v : Valid_MemAlign FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_row_matches_load_entry v r e)
     (h_range : memory_entry_bytes_in_range e)
     (h_v0_lt : (v.value_0 r).val < 256) :
@@ -284,7 +284,7 @@ lemma memalign_load_low_bytes_pinned_for_width_1
     e.x0 e.x1 e.x2 e.x3 h0 h1 h2 h3 h_lt
 
 lemma memalign_load_low_bytes_pinned_for_width_2
-    (v : Valid_MemAlign C FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
+    (v : Valid_MemAlign FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_row_matches_load_entry v r e)
     (h_range : memory_entry_bytes_in_range e)
     (h_v0_lt : (v.value_0 r).val < 65536) :
@@ -310,7 +310,7 @@ predicate. -/
 structure SubdoublewordLoadLowBytePinning
     (mab : Valid_MemAlignByte FGL FGL)
     (marb : Valid_MemAlignReadByte FGL FGL)
-    (ma : Valid_MemAlign C FGL FGL) where
+    (ma : Valid_MemAlign FGL FGL) where
   byte_value_lt : ∀ r, (mab.bus_byte r).val < 256
   read_byte_value_lt : ∀ r, (marb.byte_value r).val < 256
   ma_value_0_lt_for_width_1 : ∀ r, ma.width r = 1 → (ma.value_0 r).val < 256
@@ -325,7 +325,7 @@ lemma memalign_subdoubleword_load_high_bytes_zero
     (main : Valid_Main C FGL FGL)
     (mab : Valid_MemAlignByte FGL FGL)
     (marb : Valid_MemAlignReadByte FGL FGL)
-    (ma : Valid_MemAlign C FGL FGL)
+    (ma : Valid_MemAlign FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
     (h_emit : main.b_0 r_main = memory_entry_lo e
               ∧ main.b_1 r_main = memory_entry_hi e
