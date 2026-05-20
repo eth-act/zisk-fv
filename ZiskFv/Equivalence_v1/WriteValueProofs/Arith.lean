@@ -237,7 +237,7 @@ private lemma byte_sum_from_lane_match
     5. Byte ranges + c_chunks range bounds give the byte-sum identity.
     6. `bv64_of_byte_sum` closes. -/
 lemma h_rd_val_arith_add
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (add_input : PureSpec.AddInput)
@@ -364,7 +364,7 @@ lemma h_rd_val_arith_add
     4. From lane match: `m.c_0/c_1` equal `memory_entry_lo/hi e2`.
     5. Byte ranges + chunk ranges close the byte-sum identity. -/
 lemma h_rd_val_arith_addi
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (imm : BitVec 12)

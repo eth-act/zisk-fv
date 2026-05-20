@@ -41,7 +41,7 @@ def main_row_in_add_mode (m : Valid_Main C FGL FGL) (r_main : ℕ) : Prop :=
     on each AIR plus the bus-row equality between them. -/
 @[simp]
 def add_circuit_holds
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd FGL FGL)
     (r_main r_binary : ℕ) : Prop :=
   add_subset_holds m r_main
   ∧ ZiskFv.Airs.BinaryAdd.core_every_row b r_binary
@@ -77,7 +77,7 @@ def main_b_packed (m : Valid_Main C FGL FGL) (r : ℕ) : FGL :=
     The lifting from this field-level identity to the RV64 `BitVec 64` ADD
     semantics happens in `Equivalence.Add`. -/
 lemma add_compositional
-    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd C FGL FGL)
+    (m : Valid_Main C FGL FGL) (b : Valid_BinaryAdd FGL FGL)
     (r_main r_binary : ℕ)
     (h : add_circuit_holds m b r_main r_binary) :
     main_c_packed m r_main

@@ -45,7 +45,7 @@ variable {C : Type → Type → Type} [Circuit FGL FGL C]
     `proves_operation(op: OP_ADD, ...)`. -/
 theorem op_bus_perm_sound_BinaryAdd
     (m : ZiskFv.Airs.Main.Valid_Main C FGL FGL)
-    (b : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd C FGL FGL)
+    (b : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL)
     (r_main : ℕ)
     (h_active : m.is_external_op r_main = 1)
     (h_op : m.op r_main = 10) :

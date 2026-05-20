@@ -76,7 +76,7 @@ structure MainRowPins (m : Valid_Main C FGL FGL) (r_main : ℕ)
     type ascription is unambiguous at callers; the `[Circuit FGL FGL C]`
     instance is inferred from the surrounding scope. -/
 structure BinaryAddWitness (C : Type → Type → Type) [Circuit FGL FGL C] where
-  validator : Valid_BinaryAdd C FGL FGL
+  validator : Valid_BinaryAdd FGL FGL
   core : ∀ r, ZiskFv.Airs.BinaryAdd.core_every_row validator r
 
 /-! ## Full mode-register set -/
