@@ -25,8 +25,6 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
-
 /-- **Trust-discharged wrapper for `equiv_BEQ`.** Pure pass-through to
     the canonical `equiv_BEQ` over a fully-constructed `BranchPromises`
     bundle. -/

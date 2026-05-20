@@ -25,7 +25,6 @@ open ZiskFv.Compliance (BranchInstrOperands)
 
 namespace ZiskFv.Vm.Probe
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_BEQ_v2
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

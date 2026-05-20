@@ -20,7 +20,6 @@ open Goldilocks
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 /-- **Compliance wrapper for `equiv_BGEU`.** Pure pass-through to the
     canonical `equiv_BGEU` over a fully-constructed `BranchPromises`

@@ -21,7 +21,6 @@ open ZiskFv.Compliance (BranchInstrOperands)
 
 namespace ZiskFv.Equivalence.Bgeu
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_BGEU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

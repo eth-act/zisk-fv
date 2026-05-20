@@ -21,7 +21,6 @@ open ZiskFv.Compliance (BranchInstrOperands)
 
 namespace ZiskFv.Equivalence.Bne
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_BNE
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

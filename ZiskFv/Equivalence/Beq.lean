@@ -21,7 +21,6 @@ open ZiskFv.Compliance (BranchInstrOperands)
 
 namespace ZiskFv.Equivalence.Beq
 
-variable {C : Type → Type → Type} [Circuit FGL FGL C]
 
 theorem equiv_BEQ
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
