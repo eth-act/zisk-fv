@@ -1,4 +1,4 @@
-import ZiskFv.Compliance_v1
+import ZiskFv.Compliance.OpEnvelope
 import ZiskFv.Equivalence.Andi
 import ZiskFv.Equivalence.Ori
 import ZiskFv.Equivalence.Slti
