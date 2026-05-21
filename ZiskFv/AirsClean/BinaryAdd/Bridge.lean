@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.BinaryAdd.Soundness
+import ZiskFv.AirsClean.BinaryAdd.Circuit
 import ZiskFv.Airs.Binary.BinaryAdd
 
 /-!
@@ -79,5 +80,29 @@ theorem spec_of_valid
     Spec (rowAt v r) := by
   obtain ⟨h_bool_0, h_carry_0, h_bool_1, h_carry_1⟩ := h_constraints
   exact soundness (rowAt v r) h_assumptions h_bool_0 h_carry_0 h_bool_1 h_carry_1
+
+/-- **C0d re-root — Component-routed `Spec`.** From `core_every_row` (the
+    hand-rolled four BinaryAdd row constraints) derive `BinaryAdd.Spec`
+    **through the Clean Component**: `spec_via_component` routes through
+    `circuit.soundness`, so any consumer of this lemma depends on `circuit`.
+
+    `core_every_row`'s four conjuncts become the four constraints
+    `spec_via_component` consumes (`1 - x` → `1 + -x` via `sub_eq_add_neg`;
+    `(rowAt v row).field` ≡ `v.field row` since `rowAt` is `@[reducible]`).
+
+    This is the routing half of the ADD re-root. The remaining half — an
+    adapter from this `Spec` (`cPacked = (packed a + packed b) % 2^64`) to
+    the `BitVec`-addition equation `h_rd_val_arith_add` consumes — hits a
+    Lean kernel `deep recursion` in the `BitVec`/`Nat`-`%` arithmetic;
+    isolating that adapter is the next C0d step. -/
+theorem spec_of_core_every_row_via_component
+    (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) (row : ℕ)
+    (h_chain : ZiskFv.Airs.BinaryAdd.core_every_row v row) :
+    Spec (rowAt v row) := by
+  obtain ⟨h_bool0, h_carry0, h_bool1, h_carry1⟩ := h_chain
+  simp only [ZiskFv.Airs.BinaryAdd.boolean_cout_0, ZiskFv.Airs.BinaryAdd.carry_chain_0,
+    ZiskFv.Airs.BinaryAdd.boolean_cout_1, ZiskFv.Airs.BinaryAdd.carry_chain_1,
+    sub_eq_add_neg] at h_bool0 h_carry0 h_bool1 h_carry1
+  exact spec_via_component (rowAt v row) h_bool0 h_carry0 h_bool1 h_carry1
 
 end ZiskFv.AirsClean.BinaryAdd
