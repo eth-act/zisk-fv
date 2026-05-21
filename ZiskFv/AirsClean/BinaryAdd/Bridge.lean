@@ -1,6 +1,7 @@
 import ZiskFv.AirsClean.BinaryAdd.Soundness
 import ZiskFv.AirsClean.BinaryAdd.Circuit
 import ZiskFv.Airs.Binary.BinaryAdd
+import ZiskFv.Airs.Binary.BinaryAddPackedCorrect
 
 /-!
 # `Valid_BinaryAdd` ↔ `BinaryAddRow` compatibility bridge
@@ -104,5 +105,40 @@ theorem spec_of_core_every_row_via_component
     ZiskFv.Airs.BinaryAdd.boolean_cout_1, ZiskFv.Airs.BinaryAdd.carry_chain_1,
     sub_eq_add_neg] at h_bool0 h_carry0 h_bool1 h_carry1
   exact spec_via_component (rowAt v row) h_bool0 h_carry0 h_bool1 h_carry1
+
+/-- **C0d re-root — the BitVec adapter.** Same statement as the hand-rolled
+    `Airs.Binary.BinaryAddPackedCorrect.binary_add_chunks_eq_bv_add`, so it
+    drops in at `h_rd_val_arith_add`'s call site — the swap that makes
+    `equiv_ADD` (hence the global theorem) depend on `circuit`. The carry
+    content comes from `spec_of_core_every_row_via_component` (→ the Clean
+    Component); the `BitVec` arithmetic mimics the hand-rolled lemma's
+    pure-`rw` shape (a `simp`-based variant kernel-`deep recursion`s). -/
+theorem binary_add_chunks_eq_bv_add_via_component
+    (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) (row : ℕ)
+    (h_chain : ZiskFv.Airs.BinaryAdd.core_every_row v row)
+    (h_a_range : ZiskFv.Airs.BinaryAdd.a_chunks_in_range v row)
+    (h_b_range : ZiskFv.Airs.BinaryAdd.b_chunks_in_range v row)
+    (h_c_range : ZiskFv.Airs.BinaryAdd.c_chunks_in_range v row) :
+    BitVec.ofNat 64 ((v.a_0 row).val + (v.a_1 row).val * 4294967296)
+    + BitVec.ofNat 64 ((v.b_0 row).val + (v.b_1 row).val * 4294967296)
+    = BitVec.ofNat 64
+        ((v.c_chunks_0 row).val
+          + (v.c_chunks_1 row).val * 65536
+          + (v.c_chunks_2 row).val * 4294967296
+          + (v.c_chunks_3 row).val * 281474976710656) := by
+  have h_spec := spec_of_core_every_row_via_component v row h_chain
+  simp only [Spec, cPacked, packed32, Nat.reducePow] at h_spec
+  obtain ⟨h_a0, h_a1⟩ := h_a_range
+  obtain ⟨h_b0, h_b1⟩ := h_b_range
+  obtain ⟨h_c0, h_c1, h_c2, h_c3⟩ := h_c_range
+  have h_av : (v.a_0 row).val + (v.a_1 row).val * 4294967296 < 18446744073709551616 := by omega
+  have h_bv : (v.b_0 row).val + (v.b_1 row).val * 4294967296 < 18446744073709551616 := by omega
+  have h_cv : (v.c_chunks_0 row).val + (v.c_chunks_1 row).val * 65536
+      + (v.c_chunks_2 row).val * 4294967296
+      + (v.c_chunks_3 row).val * 281474976710656 < 18446744073709551616 := by omega
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt h_av, Nat.mod_eq_of_lt h_bv, Nat.mod_eq_of_lt h_cv, ← h_spec]
+  ring
 
 end ZiskFv.AirsClean.BinaryAdd
