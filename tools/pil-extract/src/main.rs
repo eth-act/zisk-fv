@@ -7,6 +7,7 @@ use clap::{Args, Parser, Subcommand};
 use prost::Message;
 
 mod arith_table;
+mod clean_component;
 
 pub mod pilout {
     include!(concat!(env!("OUT_DIR"), "/pilout.rs"));
@@ -36,6 +37,10 @@ enum Cmd {
     BusEmissions(BusEmissionsCmd),
     /// Parse `arith_table_data.rs` and emit `Extraction.ArithTable`.
     ArithTable(ArithTableCmd),
+    /// Emit the Clean `Air.Flat.Component` source for one AIR — the `Row`
+    /// `ProvableStruct` and the `main` do-block (assertZero constraints +
+    /// the operation-bus `OpBusChannel.push`). Plan step C0g / D-EXT.
+    CleanComponent(CleanComponentCmd),
 }
 
 #[derive(Args, Debug)]
@@ -110,6 +115,33 @@ struct ArithTableCmd {
     output: Option<PathBuf>,
 }
 
+#[derive(Args, Debug)]
+struct CleanComponentCmd {
+    /// Path to the .pilout file.
+    #[arg(long)]
+    pilout: PathBuf,
+
+    /// AIR name (substring match; exact-name preferred).
+    #[arg(long)]
+    air: String,
+
+    /// Output path for the generated `Row.lean`. If omitted (along with
+    /// `--constraints-output`), both files are printed to stdout with a
+    /// separator banner.
+    #[arg(long)]
+    row_output: Option<PathBuf>,
+
+    /// Output path for the generated `Constraints.lean`.
+    #[arg(long)]
+    constraints_output: Option<PathBuf>,
+
+    /// Operation-bus id whose proves-side `gsum_debug_data` hint supplies
+    /// the `OpBusChannel.push` tuple. Defaults to ZisK's
+    /// `OPERATION_BUS_ID = 5000` (`zisk/pil/opids.pil:2`).
+    #[arg(long, default_value_t = 5000)]
+    bus_id: u64,
+}
+
 fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
@@ -131,7 +163,35 @@ fn main() -> Result<()> {
         }
         Cmd::Air(args) => run_air(args),
         Cmd::BusEmissions(args) => run_bus_emissions(args),
+        Cmd::CleanComponent(args) => run_clean_component(args),
     }
+}
+
+/// Emit the Clean `Air.Flat.Component` source for one AIR (plan step C0g).
+/// Writes `Row.lean` / `Constraints.lean` to the requested paths, or prints
+/// both to stdout with a banner when no paths are given.
+fn run_clean_component(args: CleanComponentCmd) -> Result<()> {
+    let bytes = fs::read(&args.pilout)
+        .with_context(|| format!("failed to read pilout {}", args.pilout.display()))?;
+    let pilout = PilOut::decode(bytes.as_slice()).context("failed to decode pilout protobuf")?;
+
+    let (row, constraints) = clean_component::run(&pilout, &args.air, args.bus_id)?;
+
+    match (args.row_output.as_deref(), args.constraints_output.as_deref()) {
+        (None, None) => {
+            print!("-- ===== Row.lean =====\n{}", row);
+            print!("\n-- ===== Constraints.lean =====\n{}", constraints);
+        }
+        _ => {
+            if let Some(path) = args.row_output.as_deref() {
+                write_output(Some(path), &row)?;
+            }
+            if let Some(path) = args.constraints_output.as_deref() {
+                write_output(Some(path), &constraints)?;
+            }
+        }
+    }
+    Ok(())
 }
 
 fn run_air(args: AirCmd) -> Result<()> {
@@ -223,14 +283,14 @@ fn list_airs(pilout: &PilOut) {
     }
 }
 
-struct AirHit<'a> {
-    airgroup_idx: usize,
-    air_idx: usize,
-    airgroup_name: String,
-    air: &'a Air,
+pub(crate) struct AirHit<'a> {
+    pub(crate) airgroup_idx: usize,
+    pub(crate) air_idx: usize,
+    pub(crate) airgroup_name: String,
+    pub(crate) air: &'a Air,
 }
 
-fn find_air<'a>(pilout: &'a PilOut, needle: &str) -> Result<AirHit<'a>> {
+pub(crate) fn find_air<'a>(pilout: &'a PilOut, needle: &str) -> Result<AirHit<'a>> {
     let mut matches: Vec<AirHit<'a>> = Vec::new();
     let mut exact: Vec<AirHit<'a>> = Vec::new();
     for (gi, group) in pilout.air_groups.iter().enumerate() {
@@ -282,7 +342,7 @@ fn find_air<'a>(pilout: &'a PilOut, needle: &str) -> Result<AirHit<'a>> {
 
 /// Map stage-relative witness column indices to their declared names. Walks the
 /// pilout symbol table and keeps only `WITNESS_COL` symbols bound to this AIR.
-fn witness_column_names(pilout: &PilOut, hit: &AirHit<'_>) -> HashMap<(u32, u32), String> {
+pub(crate) fn witness_column_names(pilout: &PilOut, hit: &AirHit<'_>) -> HashMap<(u32, u32), String> {
     let mut m = HashMap::new();
     for sym in &pilout.symbols {
         let ty = SymbolType::try_from(sym.r#type).unwrap_or(SymbolType::WitnessCol);
@@ -452,7 +512,7 @@ fn render_constraint(
 /// whether any operand is an `ExtF`-typed reference (Challenge, AirValue,
 /// AirGroupValue). These cannot be mixed with witness cells in a single
 /// constraint definition without explicit coercions.
-fn expr_uses_extf(pilout: &PilOut, air: &Air, idx: usize) -> Result<bool> {
+pub(crate) fn expr_uses_extf(pilout: &PilOut, air: &Air, idx: usize) -> Result<bool> {
     let expr = air
         .expressions
         .get(idx)
@@ -656,7 +716,7 @@ fn flatten_challenge_index(pilout: &PilOut, stage: u32, idx: u32) -> Result<usiz
 
 /// Render a protobuf-encoded base-field constant (little-endian bytes) as a
 /// decimal Lean literal.
-fn format_basefield(bytes: &[u8]) -> String {
+pub(crate) fn format_basefield(bytes: &[u8]) -> String {
     if bytes.is_empty() {
         return "0".to_string();
     }
@@ -686,7 +746,7 @@ fn format_basefield(bytes: &[u8]) -> String {
     s
 }
 
-fn sanitize(s: &str) -> String {
+pub(crate) fn sanitize(s: &str) -> String {
     s.chars()
         .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
         .collect()
@@ -736,7 +796,7 @@ struct BusEmission {
 /// Parse a `Const` operand's bytes as a u64 (big-endian, leading-zero
 /// stripped — same convention as `format_basefield`). Returns `None` if
 /// the bytes don't correspond to a `Const` operand.
-fn const_operand_to_u64(op: &Operand) -> Option<u64> {
+pub(crate) fn const_operand_to_u64(op: &Operand) -> Option<u64> {
     match op.operand.as_ref()? {
         OperandKind::Constant(c) => {
             let mut acc: u64 = 0;
@@ -754,7 +814,7 @@ fn const_to_u64(op: &Operand) -> Result<u64> {
 }
 
 /// Look up a hint's named field, asserting that exactly one matches.
-fn hint_field_by_name<'a>(fields: &'a [HintField], name: &str) -> Option<&'a HintField> {
+pub(crate) fn hint_field_by_name<'a>(fields: &'a [HintField], name: &str) -> Option<&'a HintField> {
     fields.iter().find(|f| f.name.as_deref() == Some(name))
 }
 

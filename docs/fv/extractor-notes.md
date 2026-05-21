@@ -103,6 +103,66 @@ the existing constraint renderer types them cleanly over `F`. The
 `--bus-emissions` mode walks these hints and produces `BusEmissionSpec`
 defs.
 
+## Clean `Air.Flat.Component` emission (`clean-component`, C0g)
+
+The `clean-component` subcommand emits the **Clean `Air.Flat.Component`
+source shape** of an AIR — the rendering target for the Clean-integration
+epic (plan decision D-EXT: `Constraints.lean` / `Row.lean` become
+generated, faithful-by-construction). Module: `src/clean_component.rs`.
+
+```
+pil-extract clean-component --pilout <path> --air <needle>
+                 [--row-output <path>] [--constraints-output <path>]
+                 [--bus-id <N>]
+```
+
+It produces two files:
+
+- **`Row.lean`** — the AIR's *stage-1* witness columns as a
+  `ProvableStruct` (`<Air>Row`), plus the `packed32` / `cPacked` reducible
+  helpers. Pilout column names are sanitized to Lean field identifiers
+  (`a[0]` → `a_0`). Stage-2 columns (the permutation accumulator `gsum` and
+  intermediates) are **omitted** — Clean's channel-balance machinery
+  subsumes them; they are listed in the generated docstring for the record.
+- **`Constraints.lean`** — `main : Var <Air>Row FGL → Circuit FGL Unit`,
+  a do-block of one `assertZero` per F-only pilout constraint followed by
+  the operation-bus `OpBusChannel.push`; plus `<air>Elaborated :
+  ElaboratedCircuit`. The permutation/lookup running-product constraints
+  (the ones `--air` skip-stubs as ExtF-mixing) are **not** emitted as
+  `assertZero`s — they are *represented* by the channel `push`.
+
+The op-bus `push` tuple is reconstructed from the AIR's proves-side
+`gsum_debug_data` hint (the `proves_operation(…)` PIL macro). Its 11 slots
+map positionally onto `OpBusMessage`'s declared fields
+(`ZiskFv/Channels/OperationBus.lean`). The renderer folds the additive /
+multiplicative identities (`x + 0 → x`, `x * 1 → x`, `x * 0 → 0`) so the
+PIL-macro slot padding (`cell + 0`) collapses, making the emission
+slot-for-slot faithful to the hand-written `opBus_row_<Air>`
+(`ZiskFv/Airs/OperationBus/OperationBus.lean`) — the faithfulness
+cross-check D-EXT mandates.
+
+C0g validated this on **BinaryAdd** only; the generated output matches the
+verified hand-written `ZiskFv/AirsClean/BinaryAdd/{Row,Constraints}.lean`
+field-for-field and constraint-for-constraint (the residual diff is
+docstring prose and inert parenthesization — `lake build` is green and
+`equiv_ADD`'s axiom closure is unchanged). Like every other extractor
+shape, `clean-component` is extended one AIR-interaction-kind at a time;
+later phases add range-lookup / ROM-lookup / memory-bus / cross-row
+emission, each validated on one AIR before reuse.
+
+Regenerate BinaryAdd's Clean Component source with:
+
+```
+pil-extract clean-component --pilout build/zisk.pilout --air BinaryAdd \
+    --row-output ZiskFv/AirsClean/BinaryAdd/Row.lean \
+    --constraints-output ZiskFv/AirsClean/BinaryAdd/Constraints.lean
+```
+
+Unlike the `air` / `bus-emissions` outputs (which land in the gitignored
+`build/extraction/`), these are *committed* source files: the regeneration
+is run deliberately when the BinaryAdd AIR changes, and the diff is the
+audit surface.
+
 ## Limitations (deliberate; expand as phases demand)
 
 The extractor renders these operand kinds: `Constant`, `WitnessCol`,
