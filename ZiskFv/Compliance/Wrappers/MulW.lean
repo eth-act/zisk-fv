@@ -4,6 +4,7 @@ import ZiskFv.EquivCore.MulW
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.EquivCore.Promises.ArithHelpers
 import ZiskFv.EquivCore.Bridge.Arith
+import ZiskFv.AirsClean.ArithMul.Bridge
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
@@ -115,6 +116,12 @@ theorem equiv_MULW
   -- ============ Unpack extended row-constraint bundle ============
   have h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a :=
     ZiskFv.Airs.ArithMul.mul_carry_chain_holds_of_extended v r_a h_row_constraints
+  -- C3 re-root: route the MUL-mode carry-chain constraints through the
+  -- Clean `Air.Flat.Component` (`AirsClean/ArithMul/`). Same constraint set;
+  -- the routing makes `arithMul_circuit_completeness` (completeness-direction)
+  -- enter this opcode's `#print axioms`, so the Component is load-bearing.
+  have h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a :=
+    ZiskFv.AirsClean.ArithMul.mul_carry_chain_holds_via_component v r_a h_chain
   -- ============ DISCHARGE MULW mode pins (the new arith_table axiom) ============
   obtain ⟨h_nr, h_sext, h_m32, h_div, h_na_bool, h_nb_bool, h_np_xor⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_mulw_mode_pin v r_a h_op_arith_mulw

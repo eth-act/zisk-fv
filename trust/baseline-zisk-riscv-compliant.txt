@@ -73,6 +73,7 @@ ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
 ZiskFv.Airs.OperationBus.op_bus_permutation_sound
 ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf
+ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
 ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness
 ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
 ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness

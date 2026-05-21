@@ -212,7 +212,8 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 
 | # | Axiom | Line | Asserts |
 | - | ----- | ---: | ------- |
-| 1 | `binaryAdd_circuit_completeness` | 35 | **BinaryAdd Component completeness** (plan decision D-COMPLETE). |
-| 2 | `memAlignByte_circuit_completeness` | 48 | **MemAlignByte Component completeness** (plan decision D-COMPLETE). |
-| 3 | `memAlignReadByte_circuit_completeness` | 61 | **MemAlignReadByte Component completeness** (plan decision D-COMPLETE). |
+| 1 | `binaryAdd_circuit_completeness` | 51 | **BinaryAdd Component completeness** (plan decision D-COMPLETE). |
+| 2 | `memAlignByte_circuit_completeness` | 64 | **MemAlignByte Component completeness** (plan decision D-COMPLETE). |
+| 3 | `memAlignReadByte_circuit_completeness` | 77 | **MemAlignReadByte Component completeness** (plan decision D-COMPLETE). |
+| 4 | `arithMul_circuit_completeness` | 90 | **ArithMul Component completeness** (plan decision D-COMPLETE). |
 
