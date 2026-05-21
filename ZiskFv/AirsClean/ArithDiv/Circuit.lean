@@ -75,7 +75,7 @@ def circuit : GeneralFormalCircuit FGL ArithDivRow unit :=
         -- `circuit_norm`-distributed `Expression.eval` form, so each
         -- `Spec` clause closes by `linear_combination` against the
         -- matching constraint.
-        simp only [Spec, circuit_norm, main, arithDivElaborated] at h_holds ⊢
+        simp only [Spec, circuit_norm, main] at h_holds ⊢
         obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_holds
         refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
         · linear_combination h6
@@ -90,7 +90,7 @@ def circuit : GeneralFormalCircuit FGL ArithDivRow unit :=
         · linear_combination h37
         · linear_combination h38
       · -- no channel interaction → empty `Operations.Requirements`.
-        simp only [circuit_norm, main, arithDivElaborated]
+        simp only [circuit_norm, main]
     completeness := arithDiv_circuit_completeness }
 
 /-- ArithDiv as a Clean `Air.Flat.Component`. -/
