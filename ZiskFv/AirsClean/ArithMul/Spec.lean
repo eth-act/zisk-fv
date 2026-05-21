@@ -1,66 +1,71 @@
 import ZiskFv.AirsClean.ArithMul.Row
 
 /-!
-# ArithMul Spec + Assumptions (boolean flags + 4-limb carry chain)
+# ArithMul Spec + Assumptions (4-limb MUL-mode carry chain)
 
-ArithMul's per-row content covers:
+ArithMul is the **MUL-mode view** of ZisK's Arith AIR. The Clean
+Component this `Spec` belongs to constrains the MUL-mode carry-chain
+slice of that AIR: the 11 named-form constraints `6/7/8` + `31..38`,
+i.e. exactly the `Airs/Arith/Mul.lean::mul_carry_chain_holds`
+predicate the MUL-family equivalence proofs consume as their
+AIR-fidelity surface.
 
-1. 9 boolean flag constraints on `na`, `nb`, `nr`, `np`, `sext`, `m32`,
-   `div`, `main_div`, `main_mul` (constraints 40-45 + `constraint_2` +
-   `main_mul`/`main_div` booleans).
-2. The 4-limb (8-chunk × 16-bit) carry-chain identity `a · b = c + d · 2^64`,
-   parameterized by the sign-product helper columns `fab`, `na_fb`,
-   `nb_fa` (cols 30–32) and 7 carry witnesses (cols 0–6). The
-   helpers are pinned to `1 − 2·na − 2·nb + 4·na·nb`,
-   `na · (1 − 2·nb)`, `nb · (1 − 2·na)` by constraints 6/7/8.
+* Constraints 6/7/8 — the sign-product helper columns `fab`,
+  `na_fb`, `nb_fa` (Arith cols 30-32) pinned to
+  `1 − 2·na − 2·nb + 4·na·nb`, `na · (1 − 2·nb)`, `nb · (1 − 2·na)`.
+  PIL: `arith.pil:58`, `:59`, `:60`.
+* Constraints 31..38 — the 4-limb (8-chunk × 16-bit) carry-chain
+  identity `a · b = c + d · 2^64`, parameterized by the sign-product
+  helpers and 7 carry witnesses (cols 0-6). PIL: `arith.pil:205`,
+  `:207`, `:209`, `:211`, `:213`, `:215`, `:217`, `:219`.
 
-Each clause below mirrors the corresponding `constraint_N_every_row`
-in `build/extraction/Extraction/Arith.lean` after substituting the
-named accessor for the corresponding `Circuit.main … (column := N)`
-expression.
+Each clause below is a verbatim algebraic mirror of the corresponding
+`constraint_N_every_row` in `build/extraction/Extraction/Arith.lean`
+after substituting the named accessor for the corresponding
+`Circuit.main … (column := N)` expression — **non-vacuous**, every
+clause cited to a PIL line (plan D-2 / V-3).
+
+The Arith AIR's 9 boolean flag constraints (na/nb/nr/np/sext/m32/div
++ the two `main_*` selectors) and the ROM lookup against the
+74-row `ArithTable` are **not** part of this MUL-view Component's
+`Spec` — they are consumed at the opcode-equiv level (the boolean
+flags via `Airs/Arith/Mul.lean::mul_mode_booleans`; the ArithTable
+via the `arith_table_*` class-#6b axioms). A narrower faithful view
+is sound: it constrains a subset of the AIR's `assertZero`s.
 
 ## Trust note
 
-No axioms.
+No axioms. Pure definitional content.
 -/
 
 namespace ZiskFv.AirsClean.ArithMul
 
 open Goldilocks
 
-def Assumptions (row : ArithMulRow FGL) : Prop :=
-  row.flags.na.val < 2 ∧ row.flags.nb.val < 2 ∧ row.flags.nr.val < 2
-  ∧ row.flags.np.val < 2 ∧ row.flags.sext.val < 2 ∧ row.flags.m32.val < 2
-  ∧ row.flags.div.val < 2 ∧ row.flags.main_div.val < 2 ∧ row.flags.main_mul.val < 2
+/-- ArithMul carries no soundness-assumptions: the 11-clause carry-chain
+    `Spec` follows from the 11 definitional `assertZero` constraints
+    alone (plan D-2 / F-4). -/
+def Assumptions (_row : ArithMulRow FGL) : Prop := True
 
+/-- The ArithMul MUL-mode carry-chain `Spec`: the 11 named-form
+    constraints `6/7/8` + `31..38` of ZisK's Arith AIR. -/
 def Spec (row : ArithMulRow FGL) : Prop :=
-  -- 9 boolean flag constraints (constraints 40–45 + 2 main + div).
-  row.flags.na * (1 - row.flags.na) = 0
-  ∧ row.flags.nb * (1 - row.flags.nb) = 0
-  ∧ row.flags.nr * (1 - row.flags.nr) = 0
-  ∧ row.flags.np * (1 - row.flags.np) = 0
-  ∧ row.flags.sext * (1 - row.flags.sext) = 0
-  ∧ row.flags.m32 * (1 - row.flags.m32) = 0
-  ∧ row.flags.div * (1 - row.flags.div) = 0
-  ∧ row.flags.main_div * (1 - row.flags.main_div) = 0
-  ∧ row.flags.main_mul * (1 - row.flags.main_mul) = 0
-  -- Constraint 6: fab − ((1 − 2·na) − 2·nb + 4·na·nb) = 0.
-  ∧ row.carries.fab - ((1 - 2 * row.flags.na) - 2 * row.flags.nb
+  -- Constraint 6 (`arith.pil:58`): fab − ((1 − 2·na) − 2·nb + 4·na·nb) = 0.
+  row.carries.fab - ((1 - 2 * row.flags.na) - 2 * row.flags.nb
         + 4 * row.flags.na * row.flags.nb) = 0
-  -- Constraint 7: na_fb − na·(1 − 2·nb) = 0.
+  -- Constraint 7 (`arith.pil:59`): na_fb − na·(1 − 2·nb) = 0.
   ∧ row.carries.na_fb - row.flags.na * (1 - 2 * row.flags.nb) = 0
-  -- Constraint 8: nb_fa − nb·(1 − 2·na) = 0.
+  -- Constraint 8 (`arith.pil:60`): nb_fa − nb·(1 − 2·na) = 0.
   ∧ row.carries.nb_fa - row.flags.nb * (1 - 2 * row.flags.na) = 0
-  -- Constraint 31: (fab·a_0·b_0 − c_0) + 2·np·c_0 + div·d_0
-  --                − 2·nr·d_0 − carry_0·65536 = 0.
+  -- Constraint 31 (`arith.pil:205`): (fab·a_0·b_0 − c_0) + 2·np·c_0
+  --   + div·d_0 − 2·nr·d_0 − carry_0·65536 = 0.
   ∧ row.carries.fab * row.chunks.a_0 * row.chunks.b_0
         - row.chunks.c_0
         + 2 * row.flags.np * row.chunks.c_0
         + row.flags.div * row.chunks.d_0
         - 2 * row.flags.nr * row.chunks.d_0
         - row.carries.carry_0 * 65536 = 0
-  -- Constraint 32: (fab·a_1·b_0 + fab·a_0·b_1 − c_1) + 2·np·c_1
-  --                + div·d_1 − 2·nr·d_1 + carry_0 − carry_1·65536 = 0.
+  -- Constraint 32 (`arith.pil:207`).
   ∧ row.carries.fab * row.chunks.a_1 * row.chunks.b_0
         + row.carries.fab * row.chunks.a_0 * row.chunks.b_1
         - row.chunks.c_1
@@ -69,7 +74,7 @@ def Spec (row : ArithMulRow FGL) : Prop :=
         - 2 * row.flags.nr * row.chunks.d_1
         + row.carries.carry_0
         - row.carries.carry_1 * 65536 = 0
-  -- Constraint 33 (extended; see arith.pil:207, chunk index 2).
+  -- Constraint 33 (`arith.pil:209`).
   ∧ row.carries.fab * row.chunks.a_2 * row.chunks.b_0
         + row.carries.fab * row.chunks.a_1 * row.chunks.b_1
         + row.carries.fab * row.chunks.a_0 * row.chunks.b_2
@@ -83,7 +88,7 @@ def Spec (row : ArithMulRow FGL) : Prop :=
         + row.flags.nr * row.flags.m32
         + row.carries.carry_1
         - row.carries.carry_2 * 65536 = 0
-  -- Constraint 34 (chunk index 3).
+  -- Constraint 34 (`arith.pil:211`).
   ∧ row.carries.fab * row.chunks.a_3 * row.chunks.b_0
         + row.carries.fab * row.chunks.a_2 * row.chunks.b_1
         + row.carries.fab * row.chunks.a_1 * row.chunks.b_2
@@ -96,8 +101,7 @@ def Spec (row : ArithMulRow FGL) : Prop :=
         - 2 * row.flags.nr * row.chunks.d_3
         + row.carries.carry_2
         - row.carries.carry_3 * 65536 = 0
-  -- Constraint 35 (chunk index 4 — half-byte boundary; brings in
-  --   `na·nb·m32` and `(1 - m32)` selectors).
+  -- Constraint 35 (`arith.pil:213` — half-byte boundary).
   ∧ row.carries.fab * row.chunks.a_3 * row.chunks.b_1
         + row.carries.fab * row.chunks.a_2 * row.chunks.b_2
         + row.carries.fab * row.chunks.a_1 * row.chunks.b_3
@@ -111,7 +115,7 @@ def Spec (row : ArithMulRow FGL) : Prop :=
         + 2 * row.flags.np * row.chunks.d_0 * (1 - row.flags.div)
         + row.carries.carry_3
         - row.carries.carry_4 * 65536 = 0
-  -- Constraint 36 (chunk index 5).
+  -- Constraint 36 (`arith.pil:215`).
   ∧ row.carries.fab * row.chunks.a_3 * row.chunks.b_2
         + row.carries.fab * row.chunks.a_2 * row.chunks.b_3
         + row.chunks.b_1 * row.carries.na_fb * (1 - row.flags.m32)
@@ -120,7 +124,7 @@ def Spec (row : ArithMulRow FGL) : Prop :=
         + row.chunks.d_1 * 2 * row.flags.np * (1 - row.flags.div)
         + row.carries.carry_4
         - row.carries.carry_5 * 65536 = 0
-  -- Constraint 37 (chunk index 6).
+  -- Constraint 37 (`arith.pil:217`).
   ∧ row.carries.fab * row.chunks.a_3 * row.chunks.b_3
         + row.chunks.a_2 * row.carries.nb_fa * (1 - row.flags.m32)
         + row.chunks.b_2 * row.carries.na_fb * (1 - row.flags.m32)
@@ -128,7 +132,7 @@ def Spec (row : ArithMulRow FGL) : Prop :=
         + 2 * row.flags.np * row.chunks.d_2 * (1 - row.flags.div)
         + row.carries.carry_5
         - row.carries.carry_6 * 65536 = 0
-  -- Constraint 38 (chunk index 7, final).
+  -- Constraint 38 (`arith.pil:219`, final chunk).
   ∧ 65536 * row.flags.na * row.flags.nb * (1 - row.flags.m32)
         + row.chunks.a_3 * row.carries.nb_fa * (1 - row.flags.m32)
         + row.chunks.b_3 * row.carries.na_fb * (1 - row.flags.m32)
