@@ -6,6 +6,7 @@ import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.Binary.BinaryAddPackedCorrect
+import ZiskFv.AirsClean.BinaryAdd.Bridge
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryPackedCorrect
 import ZiskFv.Airs.Tables.BinaryTable
@@ -262,7 +263,8 @@ lemma h_rd_val_arith_add
   -- Extract the carry chain from h_circuit.
   obtain ⟨_, h_binary_core, h_bus_match, _⟩ := h_circuit
   -- Apply K1-A — BinaryAdd carry chain → BitVec 64 addition.
-  have h_bv_add := binary_add_chunks_eq_bv_add b r_binary h_binary_core h_a_range h_b_range h_c_range
+  have h_bv_add := ZiskFv.AirsClean.BinaryAdd.binary_add_chunks_eq_bv_add_via_component
+    b r_binary h_binary_core h_a_range h_b_range h_c_range
   -- Extract c_lo / c_hi bus match equalities.
   -- From matches_entry, h_bus_match gives field equalities between Main and BinaryAdd bus rows.
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryAdd] at h_bus_match
@@ -392,7 +394,8 @@ lemma h_rd_val_arith_addi
   -- Extract the carry chain from h_circuit.
   obtain ⟨_, h_binary_core, h_bus_match, _⟩ := h_circuit
   -- Apply K1-A — BinaryAdd carry chain → BitVec 64 addition.
-  have h_bv_add := binary_add_chunks_eq_bv_add b r_binary h_binary_core h_a_range h_b_range h_c_range
+  have h_bv_add := ZiskFv.AirsClean.BinaryAdd.binary_add_chunks_eq_bv_add_via_component
+    b r_binary h_binary_core h_a_range h_b_range h_c_range
   -- Extract c_lo / c_hi bus match equalities.
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryAdd] at h_bus_match
   obtain ⟨_, _, _, _, _, _, h_match_clo, h_match_chi, _, _, _, _⟩ := h_bus_match
