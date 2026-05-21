@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.BinaryAdd.Constraints
+import ZiskFv.AirsClean.MemAlignByte.Constraints
 
 /-!
 # Clean Component completeness axioms (non-security-critical trust class)
@@ -17,9 +18,9 @@ ledger shows them plainly and separately from the soundness-critical axioms.
 
 ## Trust note
 
-Axioms here: `binaryAdd_circuit_completeness` (one more per AIR as the epic
-proceeds). Trust class: "Clean-Component completeness (non-security-
-critical)" — see `docs/fv/trusted-base.md`.
+Axioms here: `binaryAdd_circuit_completeness`, `memAlignByte_circuit_completeness`
+(one more per AIR as the epic proceeds). Trust class: "Clean-Component
+completeness (non-security-critical)" — see `docs/fv/trusted-base.md`.
 -/
 
 namespace ZiskFv.AirsClean.BinaryAdd
@@ -34,3 +35,16 @@ axiom binaryAdd_circuit_completeness :
       (fun _ _ _ => True) (fun _ _ _ => True)
 
 end ZiskFv.AirsClean.BinaryAdd
+
+namespace ZiskFv.AirsClean.MemAlignByte
+
+open Goldilocks
+
+/-- **MemAlignByte Component completeness** (plan decision D-COMPLETE).
+    Declared, not proved — zisk-fv is soundness-only. Completeness-direction:
+    the verification's soundness does not depend on this axiom. -/
+axiom memAlignByte_circuit_completeness :
+    GeneralFormalCircuit.Completeness FGL memAlignByteElaborated
+      (fun _ _ _ => True) (fun _ _ _ => True)
+
+end ZiskFv.AirsClean.MemAlignByte
