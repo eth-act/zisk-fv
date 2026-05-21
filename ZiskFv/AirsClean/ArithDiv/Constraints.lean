@@ -2,21 +2,34 @@ import ZiskFv.AirsClean.ArithDiv.Spec
 import Clean.Circuit.Basic
 
 /-!
-# ArithDiv circuit operations
+# ArithDiv circuit operations (the `main` field of the Component)
 
-The 20 constraints on the Arith AIR's DIV view:
+The 11 DIV carry-chain constraints of the Arith AIR, expressed as a
+Clean circuit do-block — one `assertZero` per F-only constraint:
 
-  * 9 boolean flag constraints (na, nb, nr, np, sext, m32, div,
-    main_div, main_mul).
   * 3 sign-product witness pins (constraints 6, 7, 8 —
     arith.pil:58-60): `fab`, `na_fb`, `nb_fa`.
   * 8 chunk-level carry equations (constraints 31-38 —
     arith.pil:205-209): the 4-limb packed-product / division
     relation with signed-flag dispatch.
 
+ArithDiv is a pure assertion — no fresh witnesses, no channel
+interaction (the Arith op-bus is a shared channel wired family-
+terminal, plan phase C7/CZ). The DIV carry-chain sub-circuit has no
+range-lookup or ROM interaction of its own.
+
+**Scope note.** The 9 AIR-global flag-booleanity `assertZero`s
+(`na/nb/...` boolean) are *not* emitted here: per `Spec.lean`'s scope
+note, they belong to the Arith AIR's flag-validation sub-circuit, on
+which the DIV carry-chain relation is independent — the per-opcode DIV
+verification pins flag *values* through `arith_table` axioms, never the
+boolean `assertZero`s. This `main` renders the DIV carry-chain
+sub-circuit faithfully (the curated constraint subset the verification
+consumes).
+
 ## Trust note
 
-No axioms.
+No axioms. Pure operational declaration.
 -/
 
 namespace ZiskFv.AirsClean.ArithDiv
@@ -24,18 +37,11 @@ namespace ZiskFv.AirsClean.ArithDiv
 open Goldilocks
 open Circuit (assertZero)
 
+/-- The 11 DIV carry-chain F-constraints, taking the row's slot values
+    as `Expression FGL`s. Returns `Unit` (ArithDiv is a pure assertion —
+    no fresh witnesses introduced inside the circuit). -/
 @[circuit_norm]
 def main (row : Var ArithDivRow FGL) : Circuit FGL Unit := do
-  -- 9 boolean flag constraints (unchanged from A8 partial port).
-  assertZero (row.flags.na * (1 - row.flags.na))
-  assertZero (row.flags.nb * (1 - row.flags.nb))
-  assertZero (row.flags.nr * (1 - row.flags.nr))
-  assertZero (row.flags.np * (1 - row.flags.np))
-  assertZero (row.flags.sext * (1 - row.flags.sext))
-  assertZero (row.flags.m32 * (1 - row.flags.m32))
-  assertZero (row.flags.div * (1 - row.flags.div))
-  assertZero (row.flags.main_div * (1 - row.flags.main_div))
-  assertZero (row.flags.main_mul * (1 - row.flags.main_mul))
   -- 3 sign-product witness pins (constraints 6, 7, 8 — arith.pil:58-60).
   assertZero (row.aux.fab
               - ((1 - 2 * row.flags.na) - 2 * row.flags.nb
@@ -125,5 +131,16 @@ def main (row : Var ArithDivRow FGL) : Circuit FGL Unit := do
               - row.chunks.d_3 * (1 - row.flags.div)
               + 2 * row.flags.np * row.chunks.d_3 * (1 - row.flags.div)
               + row.aux.carry_6)
+
+/-- The elaborated circuit for ArithDiv's `main` — 11 `assertZero`
+    constraints, no fresh witnesses (`localLength = 0`, `unit` output)
+    and no channel interactions. Lives here (next to `main`) rather than
+    in `Circuit.lean` so the completeness axiom (`Completeness.lean`,
+    whose type mentions this) can be declared without an import cycle. -/
+@[reducible] def arithDivElaborated : ElaboratedCircuit FGL ArithDivRow unit where
+  name := "ArithDiv"
+  main := main
+  localLength _ := 0
+  output _ _ := ()
 
 end ZiskFv.AirsClean.ArithDiv

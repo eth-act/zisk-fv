@@ -2,6 +2,7 @@ import ZiskFv.AirsClean.BinaryAdd.Constraints
 import ZiskFv.AirsClean.MemAlignByte.Constraints
 import ZiskFv.AirsClean.MemAlignReadByte.Constraints
 import ZiskFv.AirsClean.ArithMul.Constraints
+import ZiskFv.AirsClean.ArithDiv.Constraints
 
 /-!
 # Clean Component completeness axioms (non-security-critical trust class)
@@ -78,3 +79,16 @@ axiom arithMul_circuit_completeness :
       (fun _ _ _ => True) (fun _ _ _ => True)
 
 end ZiskFv.AirsClean.ArithMul
+
+namespace ZiskFv.AirsClean.ArithDiv
+
+open Goldilocks
+
+/-- **ArithDiv Component completeness** (plan decision D-COMPLETE).
+    Declared, not proved — zisk-fv is soundness-only. Completeness-direction:
+    the verification's soundness does not depend on this axiom. -/
+axiom arithDiv_circuit_completeness :
+    GeneralFormalCircuit.Completeness FGL arithDivElaborated
+      (fun _ _ _ => True) (fun _ _ _ => True)
+
+end ZiskFv.AirsClean.ArithDiv

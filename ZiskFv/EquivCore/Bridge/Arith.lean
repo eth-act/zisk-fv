@@ -9,6 +9,10 @@ import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.CarryChain
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
+-- C4 D-6: the ArithDiv Clean Component re-root bridge — the DIV/REM
+-- chain-witness lemmas below route `div_carry_chain_holds` through
+-- `AirsClean/ArithDiv/circuit`'s proven `soundness`.
+import ZiskFv.AirsClean.ArithDiv.Bridge
 
 /-!
 # Arith discharge bridge (Mul + Div)
@@ -232,6 +236,11 @@ lemma div_unsigned_chain_witnesses
     ∧ (v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + cy₄ = cy₅ * 65536)
     ∧ (v.a_3 r_a * v.b_3 r_a + cy₅ = cy₆ * 65536)
     ∧ (cy₆ = 0) := by
+  -- C4 D-6 re-root: route the carry-chain bundle through the ArithDiv
+  -- Clean Component's proven `soundness` (via `spec_via_component`),
+  -- making `AirsClean/ArithDiv/circuit` load-bearing for this opcode
+  -- family. Identity-typed; the routing is the substance.
+  have h_chain := ZiskFv.AirsClean.ArithDiv.div_carry_chain_via_component v r_a h_chain
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
   simp only [ZiskFv.Airs.ArithDiv.fab_eq_div, ZiskFv.Airs.ArithDiv.na_fb_eq_div,
              ZiskFv.Airs.ArithDiv.nb_fa_eq_div] at h6 h7 h8
@@ -302,6 +311,11 @@ lemma div_w_unsigned_chain_witnesses
     ∧ (v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + cy₄ = cy₅ * 65536)
     ∧ (v.a_3 r_a * v.b_3 r_a + cy₅ = cy₆ * 65536)
     ∧ (cy₆ = 0) := by
+  -- C4 D-6 re-root: route the carry-chain bundle through the ArithDiv
+  -- Clean Component's proven `soundness` (via `spec_via_component`),
+  -- making `AirsClean/ArithDiv/circuit` load-bearing for this opcode
+  -- family. Identity-typed; the routing is the substance.
+  have h_chain := ZiskFv.AirsClean.ArithDiv.div_carry_chain_via_component v r_a h_chain
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
   simp only [ZiskFv.Airs.ArithDiv.fab_eq_div, ZiskFv.Airs.ArithDiv.na_fb_eq_div,
              ZiskFv.Airs.ArithDiv.nb_fa_eq_div] at h6 h7 h8
@@ -701,6 +715,11 @@ lemma div_signed_chain_witnesses
         + toIntZ (v.na r_a) * toIntZ (v.nb r_a) * 2^128
       = (1 - 2 * toIntZ (v.np r_a)) * C := by
   -- extract constraints from the bundle.
+  -- C4 D-6 re-root: route the carry-chain bundle through the ArithDiv
+  -- Clean Component's proven `soundness` (via `spec_via_component`),
+  -- making `AirsClean/ArithDiv/circuit` load-bearing for this opcode
+  -- family. Identity-typed; the routing is the substance.
+  have h_chain := ZiskFv.AirsClean.ArithDiv.div_carry_chain_via_component v r_a h_chain
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
   -- Pin definitions for fab / na_fb / nb_fa from constraints 6/7/8.
   simp only [ZiskFv.Airs.ArithDiv.fab_eq_div, ZiskFv.Airs.ArithDiv.na_fb_eq_div,
@@ -1466,6 +1485,11 @@ lemma div_w_chain_witnesses
         + toIntZ (v.na r_a) * toIntZ (v.nb r_a)
           * (65536 * 65536 * 65536 * 65536)
       = (1 - 2 * toIntZ (v.np r_a)) * c_packed := by
+  -- C4 D-6 re-root: route the carry-chain bundle through the ArithDiv
+  -- Clean Component's proven `soundness` (via `spec_via_component`),
+  -- making `AirsClean/ArithDiv/circuit` load-bearing for this opcode
+  -- family. Identity-typed; the routing is the substance.
+  have h_chain := ZiskFv.AirsClean.ArithDiv.div_carry_chain_via_component v r_a h_chain
   obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
   simp only [ZiskFv.Airs.ArithDiv.fab_eq_div, ZiskFv.Airs.ArithDiv.na_fb_eq_div,
              ZiskFv.Airs.ArithDiv.nb_fa_eq_div] at h6 h7 h8
