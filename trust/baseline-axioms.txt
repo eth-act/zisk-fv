@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 106
+# Total entries: 107
 #
 8c6c6e5b2f3462c0  ZiskFv/Airs/Arith/Ranges.lean:310  axiom     arith_table_op_div_rem_signed_d_sign_pin
 3a9572a85e6cefd3  ZiskFv/Airs/Arith/Ranges.lean:334  axiom     arith_table_op_div_rem_signed_w_d_sign_pin
@@ -50,8 +50,9 @@ a539a8b93915ab09  ZiskFv/Airs/MemoryBus/MemBridge.lean:627  axiom     main_store
 42be701b1c0c0bbf  ZiskFv/Airs/OperationBus/Consolidated.lean:126  axiom     op_bus_permutation_sound
 7fccc882b9a79e6a  ZiskFv/Airs/Tables/BinaryExtensionTable.lean:261  axiom     bin_ext_table_consumer_wf
 4d9e296fb3ead091  ZiskFv/Airs/Tables/BinaryTable.lean:280  axiom     bin_table_consumer_wf
-fa200b1ab7404b33  ZiskFv/AirsClean/Completeness.lean:33  axiom     binaryAdd_circuit_completeness
-3f25cdecf241bf62  ZiskFv/AirsClean/Completeness.lean:46  axiom     memAlignByte_circuit_completeness
+fa200b1ab7404b33  ZiskFv/AirsClean/Completeness.lean:35  axiom     binaryAdd_circuit_completeness
+3f25cdecf241bf62  ZiskFv/AirsClean/Completeness.lean:48  axiom     memAlignByte_circuit_completeness
+7a63389181c1c135  ZiskFv/AirsClean/Completeness.lean:61  axiom     arithMul_circuit_completeness
 a14bc89102ea84fa  ZiskFv/Channels/RangeBusSoundness.lean:118  axiom     range_bus_sound
 bdfe384a95e129d3  ZiskFv/Channels/RangeBusSoundness.lean:160  axiom     signed_range_bus_sound
 a00b854e10ea3d18  ZiskFv/SailSpec/Auxiliaries.lean:794  axiom     pmpCheck_is_pure_none
