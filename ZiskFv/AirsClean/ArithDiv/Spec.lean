@@ -3,63 +3,71 @@ import ZiskFv.AirsClean.ArithDiv.Row
 /-!
 # ArithDiv Spec + Assumptions
 
-Parallel to `ArithMul.Spec`. The Spec is structured as the original
-9 boolean flag invariants plus the 11 carry-chain clauses that
-encode the 4-limb divide relation `a = b * c + d` with signed-flag
-dispatch (arith.pil:58-60 and arith.pil:205-209).
+The Clean-side spec for the Arith AIR's **DIV carry-chain sub-circuit**.
 
-The 11 carry-chain clauses break down as:
+`Spec` is the genuine algebraic relation the DIV carry-chain constraints
+compute: the 11 clauses that encode the 4-limb signed-dispatch division
+relation `a = b * c + d` (quotient × divisor + remainder = dividend).
 
-  * 3 sign-product witnesses (constraints 6, 7, 8):
-    `fab = 1 - 2na - 2nb + 4*na*nb`,
-    `na_fb = na*(1 - 2nb)`, `nb_fa = nb*(1 - 2na)`.
-  * 8 chunk-equations (constraints 31-38): the 8 packed-product
-    carry equations relating `fab * a[i] * b[j]` cross-terms, the
-    signed-flag offsets (`np`, `nr`, `m32`, `div` selectors), the
-    `na_fb`/`nb_fa`/`na*nb` summands, the result chunks `c[i]`,
-    `d[i]`, and the seven 16-bit carries `carry[0..6]`.
+The 11 clauses break down as:
+
+  * 3 sign-product witness pins (constraints 6, 7, 8 — arith.pil:58-60):
+    `fab = 1 - 2na - 2nb + 4*na*nb`, `na_fb = na*(1 - 2nb)`,
+    `nb_fa = nb*(1 - 2na)`.
+  * 8 chunk-equations (constraints 31-38 — arith.pil:205-209): the 8
+    packed-product carry equations relating the `fab * a[i] * b[j]`
+    cross-terms, the signed-flag offsets (`np`, `nr`, `m32`, `div`
+    selectors), the `na_fb`/`nb_fa`/`na*nb` summands, the result chunks
+    `c[i]`, `d[i]`, and the seven 16-bit carries `carry[0..6]`.
 
 These are precisely the 11 PIL constraints on which
-`arith_div_unsigned_packed_correct` /
-`arith_div_signed_packed_correct` (`ZiskFv/Airs/Arith/Div.lean`)
-depend. Specializing the signed identity to `(na, nb, np, nr) = 0`
-recovers the unsigned identity
-`a_packed * b_packed + d_packed = c_packed`
-(quotient × divisor + remainder = dividend).
+`arith_div_unsigned_packed_correct` / `arith_div_signed_packed_correct`
+(`ZiskFv/Airs/Arith/Div.lean`) depend, and the 11 conjuncts of the
+hand-rolled `div_carry_chain_holds` predicate. Specializing the signed
+identity to `(na, nb, np, nr) = 0` recovers the unsigned identity
+`a_packed * b_packed + d_packed = c_packed`.
+
+**Scope note.** The 9 AIR-global flag-booleanity constraints
+(`na/nb/nr/np/sext/m32/div/main_div/main_mul` boolean) are *not* part
+of this Component's `Spec`: they belong to the Arith AIR's flag-
+validation sub-circuit, on which the division carry-chain relation is
+independent. ZisK's DIV verification chain pins those flag *values*
+through the `arith_table` lookup axioms (`Compliance/Wrappers/Div.lean`),
+never through the boolean `assertZero`s. This Component therefore
+renders the DIV carry-chain sub-circuit faithfully — the curated
+constraint subset that the per-opcode verification actually consumes —
+exactly as the `ArithDivRow` type is itself a curated DIV view of the
+Arith AIR's columns.
 
 ## Trust note
 
-No axioms.
+No axioms. Pure definitional content.
 -/
 
 namespace ZiskFv.AirsClean.ArithDiv
 
 open Goldilocks
 
-def Assumptions (row : ArithDivRow FGL) : Prop :=
-  row.flags.na.val < 2 ∧ row.flags.nb.val < 2 ∧ row.flags.nr.val < 2
-  ∧ row.flags.np.val < 2 ∧ row.flags.sext.val < 2 ∧ row.flags.m32.val < 2
-  ∧ row.flags.div.val < 2 ∧ row.flags.main_div.val < 2 ∧ row.flags.main_mul.val < 2
+/-- Assumptions on an ArithDiv row, as expected by the Clean Component.
 
-/-- The ArithDiv per-row well-formedness Spec.
+    `True` (plan decision D-2 / finding F-4): a Component carries no
+    soundness-assumptions. The 11-clause carry-chain `Spec` follows from
+    the 11 definitional `assertZero` constraints alone — no range
+    reasoning, no flag-value pins. -/
+@[reducible]
+def Assumptions (_row : ArithDivRow FGL) : Prop := True
 
-    Comprises 20 algebraic clauses: 9 boolean flag invariants
-    + 3 sign-product witness pins + 8 packed-product chunk equations
-    matching the v1 `div_carry_chain_holds` bundle
-    (`ZiskFv/Airs/Arith/Div.lean`). -/
+/-- The ArithDiv DIV carry-chain Spec — the genuine 11-clause algebraic
+    division relation.
+
+    Comprises 3 sign-product witness pins (constraints 6, 7, 8) + 8
+    packed-product chunk equations (constraints 31-38), matching the
+    v1 `div_carry_chain_holds` bundle (`ZiskFv/Airs/Arith/Div.lean`)
+    clause-for-clause. -/
+@[reducible]
 def Spec (row : ArithDivRow FGL) : Prop :=
-  -- 9 boolean flag invariants (unchanged from A8 partial port).
-  row.flags.na * (1 - row.flags.na) = 0
-  ∧ row.flags.nb * (1 - row.flags.nb) = 0
-  ∧ row.flags.nr * (1 - row.flags.nr) = 0
-  ∧ row.flags.np * (1 - row.flags.np) = 0
-  ∧ row.flags.sext * (1 - row.flags.sext) = 0
-  ∧ row.flags.m32 * (1 - row.flags.m32) = 0
-  ∧ row.flags.div * (1 - row.flags.div) = 0
-  ∧ row.flags.main_div * (1 - row.flags.main_div) = 0
-  ∧ row.flags.main_mul * (1 - row.flags.main_mul) = 0
   -- 3 sign-product witnesses (constraints 6, 7, 8 — arith.pil:58-60).
-  ∧ row.aux.fab
+  row.aux.fab
       - ((1 - 2 * row.flags.na) - 2 * row.flags.nb
           + 4 * row.flags.na * row.flags.nb) = 0
   ∧ row.aux.na_fb - row.flags.na * (1 - 2 * row.flags.nb) = 0
