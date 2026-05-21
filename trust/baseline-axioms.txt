@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 106
+# Total entries: 107
 #
 8c6c6e5b2f3462c0  ZiskFv/Airs/Arith/Ranges.lean:310  axiom     arith_table_op_div_rem_signed_d_sign_pin
 3a9572a85e6cefd3  ZiskFv/Airs/Arith/Ranges.lean:334  axiom     arith_table_op_div_rem_signed_w_d_sign_pin
@@ -38,8 +38,8 @@ da52a24a56bd46d1  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:139  axiom     b
 4f3fd6ea6ee39393  ZiskFv/Airs/Binary/BinaryRanges.lean:432  axiom     binary_consumer_byte_match_chain_pin
 f44f05cf9d736e28  ZiskFv/Airs/Binary/BinaryRanges.lean:576  axiom     binary_w_sext_choice_pin
 d96debfe468fadd0  ZiskFv/Airs/Binary/BinaryRanges.lean:602  axiom     binary_w_mode_carry_7_zero
-8f6646dc64606633  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:134  axiom     memalign_load_perm_sound
-79a78b883c3fb199  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:167  axiom     mem_align_rom_subdoubleword_load_value_1_zero
+8f6646dc64606633  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:135  axiom     memalign_load_perm_sound
+79a78b883c3fb199  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:168  axiom     mem_align_rom_subdoubleword_load_value_1_zero
 0540200a584861c7  ZiskFv/Airs/MemoryBus/MemBridge.lean:161  axiom     lookup_consumer_matches_provider_load
 84fed375d548dfe6  ZiskFv/Airs/MemoryBus/MemBridge.lean:328  axiom     main_load_emission_bundle
 395c5d71102395d6  ZiskFv/Airs/MemoryBus/MemBridge.lean:387  axiom     main_sext_load_emission_bundle
@@ -50,8 +50,9 @@ a539a8b93915ab09  ZiskFv/Airs/MemoryBus/MemBridge.lean:627  axiom     main_store
 42be701b1c0c0bbf  ZiskFv/Airs/OperationBus/Consolidated.lean:126  axiom     op_bus_permutation_sound
 7fccc882b9a79e6a  ZiskFv/Airs/Tables/BinaryExtensionTable.lean:261  axiom     bin_ext_table_consumer_wf
 4d9e296fb3ead091  ZiskFv/Airs/Tables/BinaryTable.lean:280  axiom     bin_table_consumer_wf
-fa200b1ab7404b33  ZiskFv/AirsClean/Completeness.lean:33  axiom     binaryAdd_circuit_completeness
-3f25cdecf241bf62  ZiskFv/AirsClean/Completeness.lean:46  axiom     memAlignByte_circuit_completeness
+fa200b1ab7404b33  ZiskFv/AirsClean/Completeness.lean:35  axiom     binaryAdd_circuit_completeness
+3f25cdecf241bf62  ZiskFv/AirsClean/Completeness.lean:48  axiom     memAlignByte_circuit_completeness
+ab814329258a5f2c  ZiskFv/AirsClean/Completeness.lean:61  axiom     memAlignReadByte_circuit_completeness
 a14bc89102ea84fa  ZiskFv/Channels/RangeBusSoundness.lean:118  axiom     range_bus_sound
 bdfe384a95e129d3  ZiskFv/Channels/RangeBusSoundness.lean:160  axiom     signed_range_bus_sound
 a00b854e10ea3d18  ZiskFv/SailSpec/Auxiliaries.lean:794  axiom     pmpCheck_is_pure_none
