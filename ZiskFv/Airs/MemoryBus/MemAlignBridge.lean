@@ -10,6 +10,7 @@ import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.AirsClean.MemAlignByte.Bridge
+import ZiskFv.AirsClean.MemAlignReadByte.Bridge
 
 /-!
 # MemoryBus.MemAlignBridge — sub-doubleword load zero-padding from MemAlign* providers
@@ -311,12 +312,17 @@ predicate. -/
     longer** a field here — it is derived from the MemAlignByte AIR's
     own `core_every_row` PIL constraints through the Clean Component
     (`AirsClean/MemAlignByte/Bridge.lean :: bus_byte_in_range_via_component`),
-    not a caller-supplied promise. The MemAlignReadByte / MemAlign
-    bounds stay caller-supplied until those AIRs migrate (C2 / C9). -/
+    not a caller-supplied promise.
+
+    **C2 re-root:** likewise the MemAlignReadByte `byte_value < 256`
+    bound is **no longer** a field here — it is derived from the
+    MemAlignReadByte AIR's own `core_every_row` PIL constraints through
+    the Clean Component
+    (`AirsClean/MemAlignReadByte/Bridge.lean :: byte_value_in_range_via_component`),
+    not a caller-supplied promise. The MemAlign bound stays
+    caller-supplied until that AIR migrates (C9). -/
 structure SubdoublewordLoadLowBytePinning
-    (marb : Valid_MemAlignReadByte FGL FGL)
     (ma : Valid_MemAlign FGL FGL) where
-  read_byte_value_lt : ∀ r, (marb.byte_value r).val < 256
   ma_value_0_lt_for_width_1 : ∀ r, ma.width r = 1 → (ma.value_0 r).val < 256
   ma_value_0_lt_for_width_2 : ∀ r, ma.width r = 2 → (ma.value_0 r).val < 65536
 
@@ -330,7 +336,14 @@ structure SubdoublewordLoadLowBytePinning
     is derived from `h_mab_core` (the MemAlignByte AIR's own
     `core_every_row` PIL constraints) **through the Clean Component**
     (`bus_byte_in_range_via_component`) — not a caller promise. This
-    makes `memAlignByteComponent` load-bearing for LBU / LHU / LWU. -/
+    makes `memAlignByteComponent` load-bearing for LBU / LHU / LWU.
+
+    **C2 re-root.** Likewise the MemAlignReadByte branch's
+    `byte_value < 256` bound is derived from `h_marb_core` (the
+    MemAlignReadByte AIR's own `core_every_row` PIL constraints)
+    **through the Clean Component** (`byte_value_in_range_via_component`)
+    — not a caller promise. This makes `memAlignReadByteComponent`
+    load-bearing for LBU / LHU / LWU. -/
 lemma memalign_subdoubleword_load_high_bytes_zero
     (main : Valid_Main FGL FGL)
     (mab : Valid_MemAlignByte FGL FGL)
@@ -345,7 +358,8 @@ lemma memalign_subdoubleword_load_high_bytes_zero
              ∨ main.ind_width r_main = 4)
     (h_byte_range : memory_entry_bytes_in_range e)
     (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
-    (h_low : SubdoublewordLoadLowBytePinning marb ma) :
+    (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
+    (h_low : SubdoublewordLoadLowBytePinning ma) :
     high_bytes_zero_for_width e (main.ind_width r_main) := by
   rcases memalign_load_perm_sound main mab marb ma r_main e h_emit h_subdw with
     ⟨r, h_match, h_w_eq⟩ | ⟨r, h_match, h_w_eq⟩ | ⟨r, h_match, h_w_eq⟩
@@ -360,12 +374,16 @@ lemma memalign_subdoubleword_load_high_bytes_zero
     · exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)
-  · -- MemAlignReadByte branch: provider's width is literal 1.
+  · -- MemAlignReadByte branch: provider's width is literal 1. The
+    -- `byte_value < 256` bound is derived from the MemAlignReadByte
+    -- AIR's own `core_every_row` PIL constraints **through the Clean
+    -- Component** (C2 re-root) — not a caller promise.
     obtain ⟨h4, h5, h6, h7⟩ :=
       memalign_read_byte_load_high_bytes_zero marb r e h_match h_byte_range
     obtain ⟨h1, h2, h3⟩ :=
       memalign_read_byte_load_low_bytes_zero marb r e h_match h_byte_range
-        (h_low.read_byte_value_lt r)
+        (ZiskFv.AirsClean.MemAlignReadByte.byte_value_in_range_via_component
+          marb r (h_marb_core r))
     refine ⟨?_, ?_, ?_⟩ <;> intro h_w
     · exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)

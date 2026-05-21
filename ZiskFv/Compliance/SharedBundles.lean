@@ -100,13 +100,23 @@ structure ModeRegsFull where
     now *derive* that range bound from `mab_core` **through the Clean
     `memAlignByteComponent`** (`bus_byte_in_range_via_component`),
     rather than accept it as a caller promise. Same validator-bundled
-    universal-row-constraint shape as `BinaryAddWitness.core`. -/
+    universal-row-constraint shape as `BinaryAddWitness.core`.
+
+    **C2 re-root.** `marb_core` is the MemAlignReadByte AIR's own
+    `core_every_row` PIL constraints — the analogous *constructibility*
+    fact. It replaces the former free-floating `byte_value < 256`
+    promise (`read_byte_value_lt`, removed from
+    `SubdoublewordLoadLowBytePinning`): the narrow loads now *derive*
+    that range bound from `marb_core` **through the Clean
+    `memAlignReadByteComponent`** (`byte_value_in_range_via_component`),
+    rather than accept it as a caller promise. -/
 structure MemAlignWitness where
   mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL
   marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL
   ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL
   mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r
-  h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning marb ma
+  marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r
+  h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning ma
 
 /-! ## Byte-range bounds on a memory-bus entry -/
 
