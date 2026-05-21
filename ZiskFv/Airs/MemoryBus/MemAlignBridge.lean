@@ -9,6 +9,7 @@ import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
+import ZiskFv.AirsClean.MemAlignByte.Bridge
 
 /-!
 # MemoryBus.MemAlignBridge — sub-doubleword load zero-padding from MemAlign* providers
@@ -302,14 +303,19 @@ per-AIR theorems above into the `high_bytes_zero_for_width`
 predicate. -/
 
 /-- Width=1 case requires width-conditional low-byte pinning, which
-    in turn requires byte-range hypotheses on the provider's bus_byte
-    / byte_value / value_0 column. The derivation packages all three
-    via `h_low_pinning`. -/
+    in turn requires byte-range hypotheses on the provider's
+    byte_value / value_0 column. The derivation packages them via
+    `h_low_pinning`.
+
+    **C1 re-root:** the MemAlignByte `bus_byte < 256` bound is **no
+    longer** a field here — it is derived from the MemAlignByte AIR's
+    own `core_every_row` PIL constraints through the Clean Component
+    (`AirsClean/MemAlignByte/Bridge.lean :: bus_byte_in_range_via_component`),
+    not a caller-supplied promise. The MemAlignReadByte / MemAlign
+    bounds stay caller-supplied until those AIRs migrate (C2 / C9). -/
 structure SubdoublewordLoadLowBytePinning
-    (mab : Valid_MemAlignByte FGL FGL)
     (marb : Valid_MemAlignReadByte FGL FGL)
     (ma : Valid_MemAlign FGL FGL) where
-  byte_value_lt : ∀ r, (mab.bus_byte r).val < 256
   read_byte_value_lt : ∀ r, (marb.byte_value r).val < 256
   ma_value_0_lt_for_width_1 : ∀ r, ma.width r = 1 → (ma.value_0 r).val < 256
   ma_value_0_lt_for_width_2 : ∀ r, ma.width r = 2 → (ma.value_0 r).val < 65536
@@ -318,7 +324,13 @@ structure SubdoublewordLoadLowBytePinning
     `memalign_load_high_bytes_zero` axiom. Given the perm axiom and
     the ROM axiom, plus byte-range hypotheses on `e` and width-conditional
     range pinning on the providers' lo-value columns, produce
-    `high_bytes_zero_for_width e (main.ind_width r_main)`. -/
+    `high_bytes_zero_for_width e (main.ind_width r_main)`.
+
+    **C1 re-root.** The MemAlignByte branch's `bus_byte < 256` bound
+    is derived from `h_mab_core` (the MemAlignByte AIR's own
+    `core_every_row` PIL constraints) **through the Clean Component**
+    (`bus_byte_in_range_via_component`) — not a caller promise. This
+    makes `memAlignByteComponent` load-bearing for LBU / LHU / LWU. -/
 lemma memalign_subdoubleword_load_high_bytes_zero
     (main : Valid_Main FGL FGL)
     (mab : Valid_MemAlignByte FGL FGL)
@@ -332,7 +344,8 @@ lemma memalign_subdoubleword_load_high_bytes_zero
              ∨ main.ind_width r_main = 2
              ∨ main.ind_width r_main = 4)
     (h_byte_range : memory_entry_bytes_in_range e)
-    (h_low : SubdoublewordLoadLowBytePinning mab marb ma) :
+    (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
+    (h_low : SubdoublewordLoadLowBytePinning marb ma) :
     high_bytes_zero_for_width e (main.ind_width r_main) := by
   rcases memalign_load_perm_sound main mab marb ma r_main e h_emit h_subdw with
     ⟨r, h_match, h_w_eq⟩ | ⟨r, h_match, h_w_eq⟩ | ⟨r, h_match, h_w_eq⟩
@@ -341,7 +354,8 @@ lemma memalign_subdoubleword_load_high_bytes_zero
       memalign_byte_load_high_bytes_zero mab r e h_match h_byte_range
     obtain ⟨h1, h2, h3⟩ :=
       memalign_byte_load_low_bytes_zero mab r e h_match h_byte_range
-        (h_low.byte_value_lt r)
+        (ZiskFv.AirsClean.MemAlignByte.bus_byte_in_range_via_component
+          mab r (h_mab_core r))
     refine ⟨?_, ?_, ?_⟩ <;> intro h_w
     · exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)

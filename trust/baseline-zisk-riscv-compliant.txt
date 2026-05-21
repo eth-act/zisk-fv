@@ -23,9 +23,9 @@
 #     > trust/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
-# artefacts under `.lake/build/`). Last regenerated: 2026-05-20.
+# artefacts under `.lake/build/`). Last regenerated: 2026-05-21.
 #
-# Total entries: 105
+# Total entries: 106
 #
 ZiskFv.Airs.Arith.arith_div_nb_eq_msb_of_divisor
 ZiskFv.Airs.Arith.arith_div_np_eq_msb_of_dividend
@@ -74,6 +74,7 @@ ZiskFv.Airs.OperationBus.op_bus_permutation_sound
 ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf
 ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness
+ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
 ZiskFv.Channels.RangeBusSoundness.range_bus_sound
 ZiskFv.Channels.RangeBusSoundness.signed_range_bus_sound
 ZiskFv.PlatformScope.pmaCheck_is_pure_none

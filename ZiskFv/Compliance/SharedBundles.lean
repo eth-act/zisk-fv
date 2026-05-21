@@ -90,12 +90,23 @@ structure ModeRegsFull where
 /-! ## MemAlign witness triple + low-byte pinning -/
 
 /-- The three MemAlign-family provider witnesses plus the low-byte
-    pinning bridge they jointly support. Shared by LBU, LHU, LWU. -/
+    pinning bridge they jointly support. Shared by LBU, LHU, LWU.
+
+    **C1 re-root.** `mab_core` is the MemAlignByte AIR's own
+    `core_every_row` PIL constraints — a *constructibility* fact (a
+    real ZisK MemAlignByte trace satisfies its PIL). It replaces the
+    former free-floating `bus_byte < 256` promise (`byte_value_lt`,
+    removed from `SubdoublewordLoadLowBytePinning`): the narrow loads
+    now *derive* that range bound from `mab_core` **through the Clean
+    `memAlignByteComponent`** (`bus_byte_in_range_via_component`),
+    rather than accept it as a caller promise. Same validator-bundled
+    universal-row-constraint shape as `BinaryAddWitness.core`. -/
 structure MemAlignWitness where
   mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL
   marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL
   ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL
-  h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma
+  mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r
+  h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning marb ma
 
 /-! ## Byte-range bounds on a memory-bus entry -/
 

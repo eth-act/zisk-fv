@@ -95,7 +95,7 @@ theorem equiv_LWU
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_ext, h_op⟩ := pins
   obtain ⟨mstatus, pmaRegion, misa, mseccfg⟩ := regs
-  obtain ⟨mab, marb, ma, h_low⟩ := align
+  obtain ⟨mab, marb, ma, mab_core, h_low⟩ := align
   obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
@@ -132,7 +132,7 @@ theorem equiv_LWU
   have h_lwu_packed :=
     ZiskFv.ZiskCircuit.LoadDerivation.load_lwu_c_packed
       main r_main mab marb ma e1 e2 h_copy0 h_copy1 h_ext h_op h_width
-      h_main_emit_b h_main_emit_c h_e1_range h_e2_range h_low
+      h_main_emit_b h_main_emit_c h_e1_range h_e2_range mab_core h_low
   have h_rd_val_derived :
       U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
                   e2.x4, e2.x5, e2.x6, e2.x7]

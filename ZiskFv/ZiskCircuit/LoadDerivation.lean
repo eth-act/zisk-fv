@@ -266,7 +266,8 @@ lemma load_lbu_c_packed
       ∧ m.c_1 r_main = memory_entry_hi e2)
     (h_e1_range : memory_entry_bytes_in_range e1)
     (h_e2_range : memory_entry_bytes_in_range e2)
-    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma) :
+    (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
+    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning marb ma) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8),
                 (e2.x3 : BitVec 8), (e2.x4 : BitVec 8), (e2.x5 : BitVec 8),
                 (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
@@ -278,7 +279,7 @@ lemma load_lbu_c_packed
       ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c h_e1_range h_e2_range
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
-      m mab marb ma r_main e1 h_emit_b (Or.inl h_width) h_e1_range h_low
+      m mab marb ma r_main e1 h_emit_b (Or.inl h_width) h_e1_range h_mab_core h_low
   obtain ⟨z1, z2, z3, z4, z5, z6, z7⟩ := h_zero_pad.1 h_width
   rw [h0, h1, h2, h3, h4, h5, h6, h7]
   rw [z1, z2, z3, z4, z5, z6, z7]
@@ -308,7 +309,8 @@ lemma load_lhu_c_packed
       ∧ m.c_1 r_main = memory_entry_hi e2)
     (h_e1_range : memory_entry_bytes_in_range e1)
     (h_e2_range : memory_entry_bytes_in_range e2)
-    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma) :
+    (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
+    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning marb ma) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8),
                 (e2.x3 : BitVec 8), (e2.x4 : BitVec 8), (e2.x5 : BitVec 8),
                 (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
@@ -320,7 +322,7 @@ lemma load_lhu_c_packed
       ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c h_e1_range h_e2_range
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
-      m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inl h_width)) h_e1_range h_low
+      m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inl h_width)) h_e1_range h_mab_core h_low
   obtain ⟨z2, z3, z4, z5, z6, z7⟩ := h_zero_pad.2.1 h_width
   rw [h0, h1, h2, h3, h4, h5, h6, h7]
   rw [z2, z3, z4, z5, z6, z7]
@@ -350,7 +352,8 @@ lemma load_lwu_c_packed
       ∧ m.c_1 r_main = memory_entry_hi e2)
     (h_e1_range : memory_entry_bytes_in_range e1)
     (h_e2_range : memory_entry_bytes_in_range e2)
-    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning mab marb ma) :
+    (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
+    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning marb ma) :
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8),
                 (e2.x3 : BitVec 8), (e2.x4 : BitVec 8), (e2.x5 : BitVec 8),
                 (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
@@ -363,7 +366,7 @@ lemma load_lwu_c_packed
       ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c h_e1_range h_e2_range
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
-      m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inr h_width)) h_e1_range h_low
+      m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inr h_width)) h_e1_range h_mab_core h_low
   obtain ⟨z4, z5, z6, z7⟩ := h_zero_pad.2.2 h_width
   rw [h0, h1, h2, h3, h4, h5, h6, h7]
   rw [z4, z5, z6, z7]
