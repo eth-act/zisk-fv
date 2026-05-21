@@ -70,4 +70,35 @@ def circuit : GeneralFormalCircuit FGL BinaryAddRow unit :=
 /-- BinaryAdd as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
 
+/-- The BinaryAdd `Spec` for a row, derived **through the Clean Component
+    `circuit`** — its proven `soundness` field — rather than through
+    `BinaryAdd.soundness` directly. Any consumer genuinely depends on
+    `circuit`; this is the C0d re-root entry point that makes
+    `AirsClean/BinaryAdd/` load-bearing.
+
+    `circuit.soundness` cannot be applied in raw term mode (the `operations`
+    `whnf` explodes); the working idiom is to normalize its type with the
+    `circuit_norm` simp set first, then feed it a constant-expression row. -/
+theorem spec_via_component (row : BinaryAddRow FGL)
+    (h0 : row.cout_0 * (1 + -row.cout_0) = 0)
+    (h1 : row.a_0 + row.b_0
+            + -(row.cout_0 * 4294967296 + row.c_chunks_1 * 65536 + row.c_chunks_0) = 0)
+    (h2 : row.cout_1 * (1 + -row.cout_1) = 0)
+    (h3 : row.a_1 + row.b_1 + row.cout_0
+            + -(row.cout_1 * 4294967296 + row.c_chunks_3 * 65536 + row.c_chunks_2) = 0) :
+    Spec row := by
+  have hsound := circuit.soundness
+  simp only [GeneralFormalCircuit.Soundness, circuit, binaryAddElaborated,
+    circuit_norm] at hsound
+  refine (hsound (Environment.fromInput row (fun _ n => (#[] : Array (Vector FGL n))))
+    { a_0 := .const row.a_0, a_1 := .const row.a_1,
+      b_0 := .const row.b_0, b_1 := .const row.b_1,
+      c_chunks_0 := .const row.c_chunks_0, c_chunks_1 := .const row.c_chunks_1,
+      c_chunks_2 := .const row.c_chunks_2, c_chunks_3 := .const row.c_chunks_3,
+      cout_0 := .const row.cout_0, cout_1 := .const row.cout_1 }
+    row ?_ ?_).1
+  · simp [circuit_norm]
+  · simp only [circuit_norm]
+    exact ⟨h0, h1, h2, h3⟩
+
 end ZiskFv.AirsClean.BinaryAdd
