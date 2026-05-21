@@ -113,8 +113,30 @@ generated, faithful-by-construction). Module: `src/clean_component.rs`.
 ```
 pil-extract clean-component --pilout <path> --air <needle>
                  [--row-output <path>] [--constraints-output <path>]
-                 [--bus-id <N>]
+                 [--bus-id <N>] [--channel op-bus|mem-align-bus]
 ```
+
+`--channel` selects the proves-side `push`'s Clean channel shape
+(C1 staged extension, plan D-EXT):
+
+* `op-bus` (default) — the 11-slot `OpBusChannel`
+  (`ZiskFv/Channels/OperationBus.lean`), the BinaryAdd-family
+  operation-bus providers. The proves-side emission is a
+  logUp **`Lookup`** argument (`proves_operation`,
+  `bus_id = 5000`).
+* `mem-align-bus` — the 6-slot `MemAlignBusChannel`
+  (`ZiskFv/Channels/MemAlignBus.lean`), the MemAlign-family
+  memory-bus providers. The proves-side emission is a
+  **`Permutation`** argument (`permutation_proves`,
+  `bus_id = 10`); the tuple is
+  `[mem_op, addr, step, width, value_0, value_1]`. The inert
+  `Direct`-mode range-check emissions on the same bus
+  (`multiplicity = 0`) are filtered out.
+
+Resolution rule: among the AIR's `gsum_debug_data` hints, the
+emitter keeps the single one with `type_piop = proves`, matching
+`bus_id`, and `name_piop` equal to the channel's PIOP kind
+(`Lookup` for `op-bus`, `Permutation` for `mem-align-bus`).
 
 It produces two files:
 
@@ -141,21 +163,28 @@ slot-for-slot faithful to the hand-written `opBus_row_<Air>`
 (`ZiskFv/Airs/OperationBus/OperationBus.lean`) — the faithfulness
 cross-check D-EXT mandates.
 
-C0g validated this on **BinaryAdd** only; the generated output matches the
-verified hand-written `ZiskFv/AirsClean/BinaryAdd/{Row,Constraints}.lean`
-field-for-field and constraint-for-constraint (the residual diff is
-docstring prose and inert parenthesization — `lake build` is green and
-`equiv_ADD`'s axiom closure is unchanged). Like every other extractor
-shape, `clean-component` is extended one AIR-interaction-kind at a time;
-later phases add range-lookup / ROM-lookup / memory-bus / cross-row
-emission, each validated on one AIR before reuse.
+C0g validated this on **BinaryAdd** (op-bus); C1 extended it for the
+**memory-bus** shape and validated on **MemAlignByte**. Both AIRs'
+committed `{Row,Constraints}.lean` are the generated output verbatim
+(faithful-by-construction) — `lake build` is green and the opcodes'
+axiom closures are unchanged. Like every other extractor shape,
+`clean-component` is extended one AIR-interaction-kind at a time;
+later phases add range-lookup / ROM-lookup / cross-row emission, each
+validated on one AIR before reuse.
 
-Regenerate BinaryAdd's Clean Component source with:
+Regenerate the Clean Component source with:
 
 ```
+# BinaryAdd (op-bus provider)
 pil-extract clean-component --pilout build/zisk.pilout --air BinaryAdd \
     --row-output ZiskFv/AirsClean/BinaryAdd/Row.lean \
     --constraints-output ZiskFv/AirsClean/BinaryAdd/Constraints.lean
+
+# MemAlignByte (memory-bus provider)
+pil-extract clean-component --pilout build/zisk.pilout --air MemAlignByte \
+    --bus-id 10 --channel mem-align-bus \
+    --row-output ZiskFv/AirsClean/MemAlignByte/Row.lean \
+    --constraints-output ZiskFv/AirsClean/MemAlignByte/Constraints.lean
 ```
 
 Unlike the `air` / `bus-emissions` outputs (which land in the gitignored

@@ -280,17 +280,104 @@ const OP_BUS_MESSAGE_FIELDS: [&str; 11] = [
     "extra_args_0",
 ];
 
-/// Resolve the AIR's single proves-side operation-bus emission.
+/// The 6 `MemAlignBusMessage` fields, in declared order
+/// (`ZiskFv/Channels/MemAlignBus.lean`). The MemAlign-family memory-bus
+/// proves-side tuple is `[mem_op, addr, step, width, value_0, value_1]`
+/// (`mem_align_byte.pil:96`, `permutation_proves`).
+const MEM_ALIGN_BUS_MESSAGE_FIELDS: [&str; 6] =
+    ["mem_op", "addr", "step", "width", "value_0", "value_1"];
+
+/// Which Clean channel the AIR's proves-side `push` targets — selects the
+/// message shape, the channel name, and which bus to resolve.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ChannelKind {
+    /// The 11-slot `OpBusChannel` (operation bus, C0g BinaryAdd shape).
+    OpBus,
+    /// The 6-slot `MemAlignBusChannel` (MemAlign-family memory bus, C1).
+    MemAlignBus,
+}
+
+impl ChannelKind {
+    /// Parse the `--channel` CLI flag.
+    pub fn from_flag(flag: &str) -> Result<ChannelKind> {
+        match flag {
+            "op-bus" => Ok(ChannelKind::OpBus),
+            "mem-align-bus" => Ok(ChannelKind::MemAlignBus),
+            other => bail!(
+                "unknown --channel `{}`; expected `op-bus` or `mem-align-bus`",
+                other
+            ),
+        }
+    }
+
+    /// The declared message-field names, in slot order.
+    fn message_fields(self) -> &'static [&'static str] {
+        match self {
+            ChannelKind::OpBus => &OP_BUS_MESSAGE_FIELDS,
+            ChannelKind::MemAlignBus => &MEM_ALIGN_BUS_MESSAGE_FIELDS,
+        }
+    }
+
+    /// The Clean channel value the `main` do-block pushes onto.
+    fn channel_value(self) -> &'static str {
+        match self {
+            ChannelKind::OpBus => "OpBusChannel",
+            ChannelKind::MemAlignBus => "MemAlignBusChannel",
+        }
+    }
+
+    /// The `import` line for the channel's defining module.
+    fn channel_import(self) -> &'static str {
+        match self {
+            ChannelKind::OpBus => "import ZiskFv.Channels.OperationBus",
+            ChannelKind::MemAlignBus => "import ZiskFv.Channels.MemAlignBus",
+        }
+    }
+
+    /// The `open` namespace bringing the channel value into scope.
+    fn channel_open(self) -> &'static str {
+        match self {
+            ChannelKind::OpBus => "open ZiskFv.Channels.OperationBus (OpBusChannel)",
+            ChannelKind::MemAlignBus => "open ZiskFv.Channels.MemAlignBus (MemAlignBusChannel)",
+        }
+    }
+
+    /// Human label for the bus, used in generated comments.
+    fn bus_label(self) -> &'static str {
+        match self {
+            ChannelKind::OpBus => "operation bus",
+            ChannelKind::MemAlignBus => "memory bus",
+        }
+    }
+
+    /// The `name_piop` string the proves-side `push` emission carries.
+    /// ZisK's operation bus is a logUp **`Lookup`** argument
+    /// (`proves_operation`); the MemAlign-family memory bus is a
+    /// **`Permutation`** argument (`permutation_proves`). The other
+    /// proves-side emissions on the same bus (the inert `Direct`
+    /// range-check rows) are filtered out.
+    fn proves_piop(self) -> &'static str {
+        match self {
+            ChannelKind::OpBus => "Lookup",
+            ChannelKind::MemAlignBus => "Permutation",
+        }
+    }
+}
+
+/// Resolve the AIR's single proves-side permutation `push` emission on
+/// `bus_id`.
 ///
-/// An AIR that pushes onto the operation bus emits exactly one
-/// `gsum_debug_data` hint with `busid = bus_id` and `type_piop = proves`
-/// (the `proves_operation(…)` PIL macro). The matching assumes-side hints
-/// (`assumes_padding_operation`) are skipped — they are the Main-side
-/// consumer's mirror, not this provider's push.
-fn resolve_op_bus_push(
+/// An AIR that pushes onto a bus emits a `gsum_debug_data` hint with
+/// `busid = bus_id`, `type_piop = proves`, and `name_piop = "Permutation"`
+/// (the `proves_operation(…)` / `permutation_proves(…)` PIL macros). The
+/// matching assumes-side hints, and the inert `Direct`-mode range-check
+/// emissions (`multiplicity = 0`), are skipped. Exactly one proves-side
+/// **Permutation** emission must remain — that is this provider's `push`.
+fn resolve_bus_push(
     pilout: &PilOut,
     hit: &AirHit<'_>,
     bus_id: u64,
+    channel: ChannelKind,
     col_to_field: &HashMap<u32, String>,
 ) -> Result<CleanBusEmission> {
     let air = hit.air;
@@ -299,6 +386,7 @@ fn resolve_op_bus_push(
         air,
         col_to_field,
     };
+    let want_piop = channel.proves_piop();
 
     let mut found: Option<CleanBusEmission> = None;
     for (hi, hint) in pilout.hints.iter().enumerate() {
@@ -310,16 +398,21 @@ fn resolve_op_bus_push(
         {
             continue;
         }
-        let (busid, is_proves, slots) = parse_op_bus_hint(&renderer, hint)
+        let (busid, is_proves, piop, slots) = parse_op_bus_hint(&renderer, hint)
             .with_context(|| format!("gsum_debug_data hint #{}", hi))?;
-        if busid != bus_id || !is_proves {
+        // Keep only the proves-side push of the channel's PIOP kind on
+        // the target bus — the assumes-side pulls and the inert
+        // `Direct` range-check emissions are not this provider's `push`.
+        if busid != bus_id || !is_proves || piop != want_piop {
             continue;
         }
         if found.is_some() {
             bail!(
-                "AIR `{}` has more than one proves-side operation-bus emission; \
-                 the C0g Clean-Component emitter expects exactly one push",
-                air.name.as_deref().unwrap_or("<unnamed>")
+                "AIR `{}` has more than one proves-side `{}` emission on \
+                 bus_id {}; the Clean-Component emitter expects exactly one push",
+                air.name.as_deref().unwrap_or("<unnamed>"),
+                want_piop,
+                bus_id
             );
         }
         found = Some(CleanBusEmission {
@@ -330,19 +423,21 @@ fn resolve_op_bus_push(
 
     found.ok_or_else(|| {
         anyhow!(
-            "AIR `{}` has no proves-side operation-bus emission for bus_id {}",
+            "AIR `{}` has no proves-side `{}` emission for bus_id {}",
             air.name.as_deref().unwrap_or("<unnamed>"),
+            want_piop,
             bus_id
         )
     })
 }
 
-/// Decode a `gsum_debug_data` hint into `(busid, is_proves, slot_values)`,
-/// rendering each tuple slot through the Clean-row expression renderer.
+/// Decode a `gsum_debug_data` hint into
+/// `(busid, is_proves, name_piop, slot_values)`, rendering each tuple
+/// slot through the Clean-row expression renderer.
 fn parse_op_bus_hint(
     renderer: &CleanExprRenderer<'_>,
     hint: &Hint,
-) -> Result<(u64, bool, Vec<String>)> {
+) -> Result<(u64, bool, String, Vec<String>)> {
     let outer = hint
         .hint_fields
         .first()
@@ -363,6 +458,13 @@ fn parse_op_bus_hint(
             const_operand_to_u64(op).ok_or_else(|| anyhow!("type_piop is not a constant"))? != 0
         }
         _ => bail!("missing or non-operand type_piop"),
+    };
+    // `name_piop` is the PIOP kind string ("Permutation" / "Lookup" /
+    // "Direct" / "Range Check"). The caller filters on it to pick the
+    // channel's proves-side `push` emission.
+    let name_piop = match hint_field_by_name(array, "name_piop").and_then(|f| f.value.as_ref()) {
+        Some(hint_field::Value::StringValue(s)) => s.clone(),
+        _ => bail!("missing or non-string name_piop"),
     };
     let exprs_arr = match hint_field_by_name(array, "expressions").and_then(|f| f.value.as_ref()) {
         Some(hint_field::Value::HintFieldArray(a)) => &a.hint_fields,
@@ -406,7 +508,7 @@ fn parse_op_bus_hint(
         };
         slots.push(rendered);
     }
-    Ok((busid, is_proves, slots))
+    Ok((busid, is_proves, name_piop, slots))
 }
 
 /// Render the `Row.lean` content for the AIR: the `<Air>Row` `ProvableStruct`
@@ -470,20 +572,28 @@ fn render_row_file(air_name: &str, fields: &[RowField], omitted: &[String]) -> S
     out.push_str("deriving ProvableStruct\n\n");
 
     // The two reducible packing helpers. Their shape is fixed for the
-    // 10-column BinaryAdd row (two 32-bit operands, four 16-bit result
-    // chunks); emitted verbatim to match the hand-written reference.
-    out.push_str("/-- The 32-bit packed value of a two-half lane. -/\n");
-    out.push_str("@[reducible]\n");
-    out.push_str("def packed32 (lo hi : FGL) : ℕ := lo.val + hi.val * 2 ^ 32\n\n");
+    // BinaryAdd-style row (two 32-bit operands, four 16-bit result
+    // `c_chunks` columns); emitted verbatim to match the hand-written
+    // reference. They are emitted ONLY when the row actually has the
+    // four `c_chunks_*` columns — a memory-bus AIR (MemAlignByte etc.)
+    // has no such columns, so the helpers are skipped.
+    let has_c_chunks = ["c_chunks_0", "c_chunks_1", "c_chunks_2", "c_chunks_3"]
+        .iter()
+        .all(|n| fields.iter().any(|f| f.lean_name == *n));
+    if has_c_chunks {
+        out.push_str("/-- The 32-bit packed value of a two-half lane. -/\n");
+        out.push_str("@[reducible]\n");
+        out.push_str("def packed32 (lo hi : FGL) : ℕ := lo.val + hi.val * 2 ^ 32\n\n");
 
-    out.push_str("/-- The 64-bit packed value reconstructed from four 16-bit chunks. -/\n");
-    out.push_str("@[reducible]\n");
-    out.push_str(&format!(
-        "def cPacked (row : {} FGL) : ℕ :=\n",
-        row_ty
-    ));
-    out.push_str("  (row.c_chunks_0.val + row.c_chunks_1.val * 2 ^ 16) +\n");
-    out.push_str("  (row.c_chunks_2.val + row.c_chunks_3.val * 2 ^ 16) * 2 ^ 32\n\n");
+        out.push_str("/-- The 64-bit packed value reconstructed from four 16-bit chunks. -/\n");
+        out.push_str("@[reducible]\n");
+        out.push_str(&format!(
+            "def cPacked (row : {} FGL) : ℕ :=\n",
+            row_ty
+        ));
+        out.push_str("  (row.c_chunks_0.val + row.c_chunks_1.val * 2 ^ 16) +\n");
+        out.push_str("  (row.c_chunks_2.val + row.c_chunks_3.val * 2 ^ 16) * 2 ^ 32\n\n");
+    }
 
     out.push_str(&format!("end ZiskFv.AirsClean.{}\n", air_name));
     out
@@ -499,6 +609,7 @@ fn render_constraints_file(
     hit: &AirHit<'_>,
     fields: &[RowField],
     bus_id: u64,
+    channel: ChannelKind,
 ) -> Result<String> {
     let air = hit.air;
     let air_name = air
@@ -519,7 +630,7 @@ fn render_constraints_file(
     // Render every F-only constraint as an `assertZero`. Constraints that
     // mix in ExtF operands (the permutation running-product updates) are
     // the bus interaction's algebraic shadow — they are *replaced* by the
-    // `OpBusChannel.push` below, so they are skipped here, exactly as the
+    // channel `push` below, so they are skipped here, exactly as the
     // hand-written `Constraints.lean` does.
     let mut assertions: Vec<(usize, String, Option<String>)> = Vec::new();
     for (idx, c) in air.constraints.iter().enumerate() {
@@ -558,16 +669,19 @@ fn render_constraints_file(
         );
     }
 
-    let push = resolve_op_bus_push(pilout, hit, bus_id, &col_to_field)?;
-    if push.slot_values.len() != OP_BUS_MESSAGE_FIELDS.len() {
+    let push = resolve_bus_push(pilout, hit, bus_id, channel, &col_to_field)?;
+    let message_fields = channel.message_fields();
+    if push.slot_values.len() != message_fields.len() {
         bail!(
-            "AIR `{}` operation-bus tuple has {} slots; `OpBusMessage` declares \
+            "AIR `{}` {} tuple has {} slots; the channel message declares \
              {} fields — the positional slot↔field mapping is broken",
             air_name,
+            channel.bus_label(),
             push.slot_values.len(),
-            OP_BUS_MESSAGE_FIELDS.len()
+            message_fields.len()
         );
     }
+    let channel_value = channel.channel_value();
 
     let mut out = String::new();
     out.push_str(&format!(
@@ -575,7 +689,8 @@ fn render_constraints_file(
         air_name
     ));
     out.push_str("import Clean.Circuit.Basic\n");
-    out.push_str("import ZiskFv.Channels.OperationBus\n\n");
+    out.push_str(channel.channel_import());
+    out.push_str("\n\n");
 
     out.push_str("/-!\n");
     out.push_str(&format!(
@@ -585,12 +700,12 @@ fn render_constraints_file(
     out.push_str(&format!(
         "The constraint emissions of ZisK's {} AIR, expressed as a Clean\n\
          circuit do-block: one `assertZero` per F-only pilout constraint,\n\
-         then the operation-bus `OpBusChannel.push`.\n\n\
+         then the {} `{}.push`.\n\n\
          AUTO-GENERATED by `tools/pil-extract` (`clean-component` subcommand) —\n\
-         do not hand-edit. The op-bus push is reconstructed from the\n\
+         do not hand-edit. The bus push is reconstructed from the\n\
          proves-side `gsum_debug_data` hint and is slot-for-slot faithful to\n\
-         `opBus_row_{}` (`ZiskFv/Airs/OperationBus/OperationBus.lean`).\n\n",
-        air_name, air_name
+         the hand-written reference.\n\n",
+        air_name, channel.bus_label(), channel_value
     ));
     out.push_str("## Trust note\n\n");
     out.push_str("No axioms. Pure operational declaration.\n");
@@ -599,13 +714,15 @@ fn render_constraints_file(
     out.push_str(&format!("namespace ZiskFv.AirsClean.{}\n\n", air_name));
     out.push_str("open Goldilocks\n");
     out.push_str("open Circuit (assertZero)\n");
-    out.push_str("open ZiskFv.Channels.OperationBus (OpBusChannel)\n\n");
+    out.push_str(channel.channel_open());
+    out.push_str("\n\n");
 
     out.push_str(&format!(
-        "/-- The {} F-constraints and op-bus push, taking the row's slot\n    \
+        "/-- The {} F-constraints and {} push, taking the row's slot\n    \
          values as `Expression FGL`s. Returns `Unit` ({} is a pure\n    \
          assertion — no fresh witnesses introduced inside the circuit). -/\n",
         assertions.len(),
+        channel.bus_label(),
         air_name
     ));
     out.push_str("@[circuit_norm]\n");
@@ -624,14 +741,14 @@ fn render_constraints_file(
         out.push_str(&format!("  assertZero ({})\n", body));
     }
     out.push_str(&format!(
-        "  -- Op-bus emission: {} pushes its result onto operation bus {}.\n  \
+        "  -- Bus emission: {} pushes its proves-side tuple onto {} {}.\n  \
          -- Reconstructed from the proves-side `gsum_debug_data` hint;\n  \
-         -- slot-for-slot faithful to `opBus_row_{}`.\n",
-        air_name, push.busid, air_name
+         -- slot-for-slot faithful to the hand-written reference.\n",
+        air_name, channel.bus_label(), push.busid
     ));
-    out.push_str("  OpBusChannel.push\n");
-    let n_fields = OP_BUS_MESSAGE_FIELDS.len();
-    for (i, field) in OP_BUS_MESSAGE_FIELDS.iter().enumerate() {
+    out.push_str(&format!("  {}.push\n", channel_value));
+    let n_fields = message_fields.len();
+    for (i, field) in message_fields.iter().enumerate() {
         let value = &push.slot_values[i];
         let open = if i == 0 { "    { " } else { "      " };
         let close = if i + 1 == n_fields { " }" } else { "" };
@@ -641,7 +758,7 @@ fn render_constraints_file(
 
     out.push_str(&format!(
         "/-- The elaborated circuit for {}'s `main` — {} `assertZero`\n    \
-         constraints + the op-bus push, no fresh witnesses (`localLength = 0`,\n    \
+         constraints + the bus push, no fresh witnesses (`localLength = 0`,\n    \
          `unit` output). Lives here (next to `main`) rather than in\n    \
          `Circuit.lean` so the completeness axiom (`Completeness.lean`, whose\n    \
          type mentions this) can be declared without an import cycle. -/\n",
@@ -658,7 +775,10 @@ fn render_constraints_file(
     out.push_str("  main := main\n");
     out.push_str("  localLength _ := 0\n");
     out.push_str("  output _ _ := ()\n");
-    out.push_str("  channelsWithRequirements := [OpBusChannel.toRaw]\n\n");
+    out.push_str(&format!(
+        "  channelsWithRequirements := [{}.toRaw]\n\n",
+        channel_value
+    ));
 
     out.push_str(&format!("end ZiskFv.AirsClean.{}\n", air_name));
     Ok(out)
@@ -693,6 +813,7 @@ pub fn run(
     pilout: &PilOut,
     air_needle: &str,
     bus_id: u64,
+    channel: ChannelKind,
 ) -> Result<(String, String)> {
     let hit = find_air(pilout, air_needle)?;
     let air_name = sanitize(
@@ -710,7 +831,7 @@ pub fn run(
     }
     let omitted = omitted_stage2_columns(pilout, &hit);
     let row = render_row_file(&air_name, &fields, &omitted);
-    let constraints = render_constraints_file(pilout, &hit, &fields, bus_id)?;
+    let constraints = render_constraints_file(pilout, &hit, &fields, bus_id, channel)?;
     Ok((row, constraints))
 }
 

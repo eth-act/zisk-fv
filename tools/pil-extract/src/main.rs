@@ -140,6 +140,14 @@ struct CleanComponentCmd {
     /// `OPERATION_BUS_ID = 5000` (`zisk/pil/opids.pil:2`).
     #[arg(long, default_value_t = 5000)]
     bus_id: u64,
+
+    /// Channel shape for the proves-side `push`. `op-bus` (default) is
+    /// the 11-slot `OpBusChannel` (BinaryAdd-family providers, C0g).
+    /// `mem-align-bus` is the 6-slot `MemAlignBusChannel` for the
+    /// MemAlign-family memory-bus providers (`bus_id = 10`; C1) —
+    /// `[mem_op, addr, step, width, value_0, value_1]`.
+    #[arg(long, default_value = "op-bus")]
+    channel: String,
 }
 
 fn main() -> Result<()> {
@@ -175,7 +183,9 @@ fn run_clean_component(args: CleanComponentCmd) -> Result<()> {
         .with_context(|| format!("failed to read pilout {}", args.pilout.display()))?;
     let pilout = PilOut::decode(bytes.as_slice()).context("failed to decode pilout protobuf")?;
 
-    let (row, constraints) = clean_component::run(&pilout, &args.air, args.bus_id)?;
+    let channel_kind = clean_component::ChannelKind::from_flag(&args.channel)?;
+    let (row, constraints) =
+        clean_component::run(&pilout, &args.air, args.bus_id, channel_kind)?;
 
     match (args.row_output.as_deref(), args.constraints_output.as_deref()) {
         (None, None) => {
