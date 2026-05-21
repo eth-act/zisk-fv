@@ -62,11 +62,13 @@ def circuit : GeneralFormalCircuit FGL ArithDivRow unit :=
       -- constraints (plan finding F-3). Discharge with the *core* of
       -- `circuit_proof_start` (just the `intro`s — no struct-
       -- decomposition `repeat`-loop), `subst` the input, then
-      -- `circuit_norm`-normalize `h_holds` AND the goal together: both
-      -- the 11 `assertZero` constraints and the 11 `Spec` clauses land
-      -- in the same `Expression.eval`-distributed form, so
-      -- `soundness_of_constraints` (over the row `eval env input_var`)
-      -- closes via `linear_combination`.
+      -- `circuit_norm`-normalize `h_holds` AND the `Spec` goal together:
+      -- both the 11 `assertZero` constraints and the 11 `Spec` clauses
+      -- land in the same `Expression.eval`-distributed form, so each
+      -- `Spec` clause closes by `linear_combination` against the
+      -- matching constraint. (The same algebraic content as
+      -- `ArithDiv.soundness_of_constraints` — adapted to the
+      -- `circuit_norm`-normalized goal shape, per plan D-REFACTOR.)
       circuit_proof_start_core
       subst h_input
       refine ⟨?_, ?_⟩
