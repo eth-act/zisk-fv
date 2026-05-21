@@ -26,9 +26,24 @@ The three byte-position factor expressions (`byte_value_factor`,
 / `value_8b_factor` / `value_16b_factor` PIL macros
 (`mem_align_byte.pil:41-57`).
 
+The Spec additionally pins the `bits(N)` range bounds of the
+byte/selector columns the AIR declares:
+
+* `bus_byte.val < 256`        — `mem_align_byte.pil:94` (`bits(8)`).
+* `byte_value.val < 256`      — `mem_align_byte.pil:30` (`bits(8)`).
+* `is_write.val < 2`          — `mem_align_byte.pil:70` (`bits(1)`).
+
+These are the standard range-checker-bus lookup bounds — the Clean
+Component's `soundness` discharges them from `range_bus_sound` (the
+range-checker bus, plan F-4: column bounds come from inside
+`soundness`, not from `Assumptions`). The `bus_byte` bound is the
+fact the LBU / LHU / LWU narrow-load consumers need
+(`SubdoublewordLoadLowBytePinning`).
+
 ## Trust note
 
-No axioms.
+No axioms (the `Spec` is a pure definition; `range_bus_sound` is
+consumed only inside the Component's `soundness` proof).
 -/
 
 namespace ZiskFv.AirsClean.MemAlignByte
@@ -57,8 +72,9 @@ def Assumptions (row : MemAlignByteRow FGL) : Prop :=
   row.sel_high_4b.val < 2 ∧ row.sel_high_2b.val < 2
   ∧ row.sel_high_b.val < 2 ∧ row.is_write.val < 2
 
-/-- MemAlignByte Spec: the four derived relations (composed value,
-    written composed value, two mem_write lanes, bus byte). -/
+/-- MemAlignByte Spec: the 5 derived algebraic relations (composed
+    value, written composed value, two mem_write lanes, bus byte) and
+    the 3 byte/selector `bits(N)` range bounds. -/
 def Spec (row : MemAlignByteRow FGL) : Prop :=
   row.composed_value
     = row.byte_value * byte_value_factor row.sel_high_2b row.sel_high_b
@@ -76,5 +92,10 @@ def Spec (row : MemAlignByteRow FGL) : Prop :=
         + row.direct_value
   ∧ row.bus_byte
     = row.is_write * (row.written_byte_value - row.byte_value) + row.byte_value
+  -- `bits(N)` range bounds (from `range_bus_sound`, discharged inside
+  -- the Component's `soundness`):
+  ∧ row.bus_byte.val < 2 ^ 8
+  ∧ row.byte_value.val < 2 ^ 8
+  ∧ row.is_write.val < 2 ^ 1
 
 end ZiskFv.AirsClean.MemAlignByte
