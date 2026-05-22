@@ -15,6 +15,7 @@ import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
+import ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned
 import ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.Compliance.SharedBundles
@@ -105,12 +106,20 @@ theorem equiv_MUL
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     -- The 22 loose (cy, cy-range, hC) caller-burden binders are now
-    -- replaced by the row-level carry-chain constraint set + unsigned
-    -- mode pins, discharged inside via
-    -- `Bridge.Arith.mul_unsigned_chain_witnesses`.
+    -- replaced by the row-level carry-chain constraint set + signed
+    -- low-half bridge. Low MUL is modulo 2^64, so it does not need
+    -- `na = nb = np = 0`; it only needs the XOR branch for the signed
+    -- carry-chain identity.
     (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a)
-    (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
-    (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_np_xor :
+      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+        = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+          + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+          - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+            * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a))
+    (h_nr : v.nr r_a = 0)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
     (h_div : v.div r_a = 0)
     (h_byte_lo :
@@ -141,36 +150,11 @@ theorem equiv_MUL
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
           h_rd_idx⟩ := promises
-  -- 16 chunk-range *promise hypotheses* discharged via
-  -- `arith_mul_chunk_ranges_at_holds` (consumes
-  -- `arith_mul_columns_in_range` range-check soundness axiom).
-  obtain ⟨h_a0, h_a1, h_a2, h_a3,
-          h_b0, h_b1, h_b2, h_b3,
-          h_c0, h_c1, h_c2, h_c3,
-          h_d0, h_d1, h_d2, h_d3⟩ :=
-    ZiskFv.EquivCore.Bridge.Arith.arith_mul_chunk_ranges_at_holds v r_a
-  -- 22 loose (cy, cy-range, hC) caller-burden binders discharged via
-  -- `mul_unsigned_chain_witnesses` (consumes `mul_carry_chain_holds` +
-  -- unsigned mode pins; produces existential cy bundle + range bounds
-  -- + 8 named-column hC equations).
-  obtain ⟨cy₀, cy₁, cy₂, cy₃, cy₄, cy₅, cy₆,
-          h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6,
-          hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ :=
-    ZiskFv.EquivCore.Bridge.Arith.mul_unsigned_chain_witnesses v r_a h_chain
-      h_na h_nb h_np h_nr h_sext h_m32 h_div
   have h_rd_val :=
-    ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_mul
-      mul_input.r1_val mul_input.r2_val e2
-      (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
-      (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)
-      (v.c_0 r_a) (v.c_1 r_a) (v.c_2 r_a) (v.c_3 r_a)
-      (v.d_0 r_a) (v.d_1 r_a) (v.d_2 r_a) (v.d_3 r_a)
-      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
+    ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_mul_low_chunked
+      mul_input.r1_val mul_input.r2_val e2 v r_a
       h0 h1 h2 h3 h4 h5 h6 h7
-      h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3
-      h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
-      h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
-      hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
+      h_chain h_nr h_sext h_m32 h_div h_na_bool h_nb_bool h_np_xor
       h_byte_lo h_byte_hi h_rs1_value h_rs2_value
   rw [equiv_MUL_sail state mul_input r1 r2 rd srs1 srs2
         h_input_r1 h_input_r2 h_input_rd h_input_pc]

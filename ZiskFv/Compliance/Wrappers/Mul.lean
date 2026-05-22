@@ -156,10 +156,11 @@ theorem equiv_MUL
   -- booleanity. The remaining low-MUL repair is to remove the old axiom's
   -- overstrong `na = nb = np = 0` use by proving the low-half product
   -- sign-agnostically.
-  obtain ⟨h_nr, h_sext, h_m32, h_div, _h_na_bool, _h_nb_bool, _h_np_bool⟩ :=
+  obtain ⟨h_nr, h_sext, h_m32, h_div, h_na_bool, h_nb_bool, h_np_bool⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_mul_basic_mode_pin v r_a h_op_arith_mul
-  obtain ⟨h_na, h_nb, h_np, _h_nr_ax, _h_sext_ax, _h_m32_ax, _h_div_ax⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_mul_mode_pin v r_a h_op_arith_mul
+  have h_mul_split :=
+    ZiskFv.Airs.Arith.arith_table_op_mul_np_xor_or_zero_product_shape
+      v r_a h_op_arith_mul
   -- ============ DISCHARGE main_mul/main_div selector pins ============
   obtain ⟨h_main_mul_one, h_main_div_zero⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_mul_main_selector_pin v r_a h_op_arith_mul
@@ -219,12 +220,34 @@ theorem equiv_MUL
     h_b_lo_eq_FGL h_b_hi_eq_FGL _h_m32_m h_r2_packed_bv
     h_b0_lt h_b1_lt h_b2_lt h_b3_lt
   -- ============ Delegate to `equiv_MUL` ============
-  exact ZiskFv.EquivCore.Mul.equiv_MUL
-    state mul_input r1 r2 rd srs1 srs2 v r_a
-    ⟨exec_row, e0, e1, e2⟩
-    promises
-    ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
-    h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div
-    h_byte_lo h_byte_hi h_rs1_value h_rs2_value
+  rcases h_mul_split with h_np_xor_fgl | h_exception
+  · have h_np_xor :
+        ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+          = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+            + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+            - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+              * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) := by
+      rcases h_na_bool with hna | hna <;>
+        rcases h_nb_bool with hnb | hnb <;>
+        rcases h_np_bool with hnp | hnp
+      all_goals
+        rw [hna, hnb, hnp] at h_np_xor_fgl ⊢
+        first | contradiction | decide
+    exact ZiskFv.EquivCore.Mul.equiv_MUL
+      state mul_input r1 r2 rd srs1 srs2 v r_a
+      ⟨exec_row, e0, e1, e2⟩
+      promises
+      ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+      h_chain h_na_bool h_nb_bool h_np_xor h_nr h_sext h_m32 h_div
+      h_byte_lo h_byte_hi h_rs1_value h_rs2_value
+  · -- TODO(C3): replace this quarantined use with the dynamic zero-product
+    -- proof for the two exceptional low-MUL rows.
+    obtain ⟨h_na_zero, h_nb_zero, _h_np_zero, _h_nr_ax, _h_sext_ax, _h_m32_ax, _h_div_ax⟩ :=
+      ZiskFv.Airs.Arith.arith_table_op_mul_mode_pin v r_a h_op_arith_mul
+    rcases h_exception with h_exception | h_exception
+    · exact False.elim (by
+        exact one_ne_zero (h_exception.1.symm.trans h_na_zero))
+    · exact False.elim (by
+        exact one_ne_zero (h_exception.2.1.symm.trans h_nb_zero))
 
 end ZiskFv.Compliance

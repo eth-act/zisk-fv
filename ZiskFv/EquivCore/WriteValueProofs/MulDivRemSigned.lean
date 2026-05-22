@@ -91,6 +91,149 @@ private lemma byte_sum_eq_packed4_sig
       = (c₂ + c₃ * 65536) * 4294967296 := by rw [h_hi]
   linarith [h_lo, hh]
 
+/-! ## MUL: rd ← low 64 bits of product via signed Arith rows -/
+
+/-- **`h_rd_val` discharge for MUL — signed-row low-half form.**
+
+    Low `MUL` can use the signed Arith carry-chain identity without
+    requiring `na`/`nb` to be zero or to be operand-MSB witnesses: modulo
+    `2^64`, `(A - na*2^64) * (B - nb*2^64)` has the same low half as
+    `A * B`. The only sign-side algebraic requirement is the branch
+    `np = na XOR nb`, supplied by the table projection/case split. -/
+lemma h_rd_val_mdrs_mul_low_chunked
+    (r1_val r2_val : BitVec 64)
+    (e : Interaction.MemoryBusEntry FGL)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    -- Per-byte range bounds (RANGE).
+    (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
+    (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
+    (h4 : e.x4.val < 256) (h5 : e.x5.val < 256)
+    (h6 : e.x6.val < 256) (h7 : e.x7.val < 256)
+    -- Row-level carry-chain constraint set.
+    (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a)
+    -- Mode pins.
+    (h_nr : v.nr r_a = 0)
+    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 0)
+    -- Booleanity + XOR branch.
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    -- Byte-pack lane match (LANE-MATCH): bytes pack c-chunks (low half).
+    (h_byte_lo :
+      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+        = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
+    (h_byte_hi :
+      e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
+        = (v.c_2 r_a).val + (v.c_3 r_a).val * 65536)
+    -- Operand TRANSPILE-BRIDGE: unsigned packings are enough for low MUL.
+    (h_rs1_value :
+      r1_val.toNat = packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+        (v.a_2 r_a).val (v.a_3 r_a).val)
+    (h_rs2_value :
+      r2_val.toNat = packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+        (v.b_2 r_a).val (v.b_3 r_a).val) :
+    U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
+                (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
+      = execute_MUL_pure r1_val r2_val .MUL := by
+  -- Chunk ranges.
+  obtain ⟨h_a0, h_a1, h_a2, h_a3,
+          h_b0, h_b1, h_b2, h_b3,
+          h_c0, h_c1, h_c2, h_c3,
+          h_d0, h_d1, h_d2, h_d3⟩ :=
+    ZiskFv.EquivCore.Bridge.Arith.arith_mul_chunk_ranges_at_holds v r_a
+  -- Signed chain identity over packed chunks.
+  have h_chunk_ident :=
+    ZiskFv.EquivCore.Bridge.Arith.mul_signed_chain_witnesses
+      v r_a h_chain h_nr h_sext h_m32 h_div h_na_bool h_nb_bool h_np_xor
+  -- Build integer packings A, B, C, D.
+  set A := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536
+            + toIntZ (v.a_2 r_a) * (65536 * 65536)
+            + toIntZ (v.a_3 r_a) * (65536 * 65536 * 65536) with hA_def
+  set B := toIntZ (v.b_0 r_a) + toIntZ (v.b_1 r_a) * 65536
+            + toIntZ (v.b_2 r_a) * (65536 * 65536)
+            + toIntZ (v.b_3 r_a) * (65536 * 65536 * 65536) with hB_def
+  set C := toIntZ (v.c_0 r_a) + toIntZ (v.c_1 r_a) * 65536
+            + toIntZ (v.c_2 r_a) * (65536 * 65536)
+            + toIntZ (v.c_3 r_a) * (65536 * 65536 * 65536) with hC_def
+  set D := toIntZ (v.d_0 r_a) + toIntZ (v.d_1 r_a) * 65536
+            + toIntZ (v.d_2 r_a) * (65536 * 65536)
+            + toIntZ (v.d_3 r_a) * (65536 * 65536 * 65536) with hD_def
+  -- Bounds for packed chunks.
+  have h_AB_bounds :=
+    fgl_signed_C_D_chunk_packing_nonneg h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3
+  have ⟨h_A_lb, _h_A_ub⟩ := h_AB_bounds.1
+  have ⟨h_B_lb, _h_B_ub⟩ := h_AB_bounds.2
+  have h_CD_bounds :=
+    fgl_signed_C_D_chunk_packing_nonneg h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
+  have ⟨h_C_lb, h_C_ub⟩ := h_CD_bounds.1
+  -- Convert chunk `toIntZ` values to `.val` values.
+  have h_a0_val : toIntZ (v.a_0 r_a) = (v.a_0 r_a).val := toIntZ_eq_val_of_lt h_a0 (by decide)
+  have h_a1_val : toIntZ (v.a_1 r_a) = (v.a_1 r_a).val := toIntZ_eq_val_of_lt h_a1 (by decide)
+  have h_a2_val : toIntZ (v.a_2 r_a) = (v.a_2 r_a).val := toIntZ_eq_val_of_lt h_a2 (by decide)
+  have h_a3_val : toIntZ (v.a_3 r_a) = (v.a_3 r_a).val := toIntZ_eq_val_of_lt h_a3 (by decide)
+  have h_b0_val : toIntZ (v.b_0 r_a) = (v.b_0 r_a).val := toIntZ_eq_val_of_lt h_b0 (by decide)
+  have h_b1_val : toIntZ (v.b_1 r_a) = (v.b_1 r_a).val := toIntZ_eq_val_of_lt h_b1 (by decide)
+  have h_b2_val : toIntZ (v.b_2 r_a) = (v.b_2 r_a).val := toIntZ_eq_val_of_lt h_b2 (by decide)
+  have h_b3_val : toIntZ (v.b_3 r_a) = (v.b_3 r_a).val := toIntZ_eq_val_of_lt h_b3 (by decide)
+  have h_c0_val : toIntZ (v.c_0 r_a) = (v.c_0 r_a).val := toIntZ_eq_val_of_lt h_c0 (by decide)
+  have h_c1_val : toIntZ (v.c_1 r_a) = (v.c_1 r_a).val := toIntZ_eq_val_of_lt h_c1 (by decide)
+  have h_c2_val : toIntZ (v.c_2 r_a) = (v.c_2 r_a).val := toIntZ_eq_val_of_lt h_c2 (by decide)
+  have h_c3_val : toIntZ (v.c_3 r_a) = (v.c_3 r_a).val := toIntZ_eq_val_of_lt h_c3 (by decide)
+  -- Packings as natural `packed4` values.
+  have h_A_eq : A = (packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+      (v.a_2 r_a).val (v.a_3 r_a).val : ℤ) := by
+    rw [hA_def, h_a0_val, h_a1_val, h_a2_val, h_a3_val]
+    unfold packed4; push_cast; ring
+  have h_B_eq : B = (packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+      (v.b_2 r_a).val (v.b_3 r_a).val : ℤ) := by
+    rw [hB_def, h_b0_val, h_b1_val, h_b2_val, h_b3_val]
+    unfold packed4; push_cast; ring
+  have h_C_eq : C = (packed4 (v.c_0 r_a).val (v.c_1 r_a).val
+      (v.c_2 r_a).val (v.c_3 r_a).val : ℤ) := by
+    rw [hC_def, h_c0_val, h_c1_val, h_c2_val, h_c3_val]
+    unfold packed4; push_cast; ring
+  have h_A_toNat : A.toNat = packed4 (v.a_0 r_a).val (v.a_1 r_a).val
+      (v.a_2 r_a).val (v.a_3 r_a).val := by
+    rw [h_A_eq]
+    exact Int.toNat_natCast _
+  have h_B_toNat : B.toNat = packed4 (v.b_0 r_a).val (v.b_1 r_a).val
+      (v.b_2 r_a).val (v.b_3 r_a).val := by
+    rw [h_B_eq]
+    exact Int.toNat_natCast _
+  have h_C_toNat : C.toNat = packed4 (v.c_0 r_a).val (v.c_1 r_a).val
+      (v.c_2 r_a).val (v.c_3 r_a).val := by
+    rw [h_C_eq]
+    exact Int.toNat_natCast _
+  -- Low-half BitVec result from signed chunks + unsigned operand packs.
+  have h_bv64 := fgl_mul_signed_chunks_to_bv64_lo_of_nat_pack
+    r1_val r2_val A B C D (toIntZ (v.na r_a)) (toIntZ (v.nb r_a)) (toIntZ (v.np r_a))
+    (by rcases h_na_bool with h | h <;> rw [h] <;> first | (left; decide) | (right; decide))
+    (by rcases h_nb_bool with h | h <;> rw [h] <;> first | (left; decide) | (right; decide))
+    h_np_xor h_A_lb h_B_lb h_C_lb h_C_ub
+    (by rw [h_rs1_value, h_A_toNat])
+    (by rw [h_rs2_value, h_B_toNat])
+    h_chunk_ident
+  -- Byte lanes pack C.
+  have h_byte_eq_packed :
+      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
+        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      = packed4 (v.c_0 r_a).val (v.c_1 r_a).val (v.c_2 r_a).val (v.c_3 r_a).val :=
+    byte_sum_eq_packed4_sig e _ _ _ _ h_byte_lo h_byte_hi
+  apply BitVec.eq_of_toNat_eq
+  rw [u64_toBV_of_bytes_toNat e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
+        h0 h1 h2 h3 h4 h5 h6 h7]
+  rw [h_byte_eq_packed, ← h_C_toNat]
+  rw [← h_bv64]
+  simp [BitVec.toNat_ofNat]
+  have h_C_nat_lt : C.toNat < 2^64 := by
+    have : C < ((2^64 : ℕ) : ℤ) := by exact_mod_cast h_C_ub
+    omega
+  exact (Nat.mod_eq_of_lt h_C_nat_lt).symm
+
 /-! ## MULH: rd ← high 64 bits of (signed × signed) product -/
 
 /-- **`h_rd_val` discharge for MULH (Tier 1).**

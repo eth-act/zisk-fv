@@ -610,6 +610,13 @@ the ROM. Of the 19:
     half when the `np = na XOR nb` branch holds. The wrapper rewrite can
     use this for the ordinary branch and reserve the exceptional branches
     for the dynamic zero-product proof.
+  - The ordinary low-MUL branch is now wired through
+    `h_rd_val_mdrs_mul_low_chunked`, which consumes the signed carry-chain
+    identity and proves the emitted low 64 bits by reducing the signed
+    product modulo `2^64`. The remaining old-axiom use is quarantined to
+    the two exceptional `np = 0`, opposite-sign ROM rows; this is not yet
+    C3/C4-b retirement because `arith_table_op_mul_mode_pin` remains in
+    `equiv_MUL`'s V2 closure.
   - The false / over-claiming axioms are *deleted only after their
     consumers are reproven* against true ROM facts or separately
     justified dynamic constraints.
