@@ -362,6 +362,14 @@ via separate signatures (`arith_mul_*` vs `arith_div_*`).
 
 ### Trust-ledger axioms already in place (MUL-side)
 
+> Current correction: this subsection is historical. The false
+> opcode-shaped ArithTable axioms named below for `MUL`, `MULH`,
+> `MULHSU`, and `MULW` have been deleted from the Lean trust ledger.
+> The current generated ledger is `docs/fv/axiom-index.md`; the signed
+> multiply leftovers are tracked as
+> `ZISK-DEFECT-ARITH-MUL-SIGNED-WITNESS-SOUNDNESS`, not as active
+> ArithTable trust-shape axioms.
+
 | Axiom | Class | Source | Discharges |
 |---|---|---|---|
 | `op_bus_perm_sound_ArithMul` | #4 (op-bus perm) | `Airs/OperationBus/Bridge.lean:120` | cross-AIR matches_entry for MUL-family opcodes |
@@ -369,7 +377,6 @@ via separate signatures (`arith_mul_*` vs `arith_div_*`).
 | `arith_mul_carry_columns_in_range_unsigned` | #6b (range-bus) | `Airs/Arith/Ranges.lean:109` | 7-carry-witness range under unsigned mode (na=nb=np=nr=0) |
 | `arith_mul_carry_columns_in_range_signed` | #6b (range-bus) | `Airs/Arith/Ranges.lean:177` | signed-mode disjunctive carry-range (`arith.pil:280` + `arith_range_table.pil:69`) |
 | `arith_mul_carry_columns_in_range_w` | #6b (range-bus) | `Airs/Arith/Ranges.lean:296` | W-variant (m32=1) carry-range |
-| `arith_table_op_mulw_operand_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:340` | W-mode operand-chunk pin for MULW |
 | `arith_table_op_mul_mode_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (new) | MUL-pilot mode pin: `op = 180` ⇒ `na = nb = np = nr = sext = m32 = div = 0` |
 | `arith_table_op_mul_main_selector_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (new) | MUL-pilot selector pin: `op = 180` ⇒ `main_mul = 1, main_div = 0` |
 | `arith_table_op_mulhu_mode_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:927` | MULHU mode pin: `op = 177` ⇒ all 7 mode/sign witnesses = 0 |
@@ -436,7 +443,7 @@ adjustments:
   with `packed_lane_eq_of_read_xreg` (for r2).
 * **MULW (op = 0xb6 = 182):** 32-bit truncated MUL. `m32 = 1`. Needs
   mode pin + selector pin AND can reuse existing
-  `arith_table_op_mulw_operand_pin` for the upper-chunk zeroing.
+  operation-bus W high-lane collapse for the upper-chunk zeroing.
 
 Each within-shape wrapper adds 1-3 axioms (mode pin always; selector
 pin always; sign-witness MSB pins for the two signed-input variants).
@@ -463,7 +470,7 @@ Total ArithMul axiom delta across the whole Step 4.2 effort (r2 + r3.III):
 11 class-#6b axioms across all 5 MUL-family opcodes — slightly above
 the predicted upper bound (10) because MULW kept the W-mode mode pin
 separate from the existing operand-truncation pin
-(`arith_table_op_mulw_operand_pin`) rather than combining them. MULW
+by operation-bus W high-lane collapse rather than combining them. MULW
 exemplar still passes through `h_sext_choice`, `h_op1`, `h_op2` as
 W-form caller obligations (mirroring DIVW's exemplar shape); a future
 within-shape pass can derive these from the existing W operand pin

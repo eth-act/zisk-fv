@@ -28,8 +28,9 @@ import ZiskFv.Compliance.SharedBundles
 > Discharged promise hypotheses:
 > * Mode pins (`h_na` / `h_nb` / `h_np` reflexivity placeholders;
 >   `h_nr = 0`, `h_sext = 0`, `h_m32 = 0`, `h_div = 0`; `h_na_bool`,
->   `h_nb_bool`, `h_np_xor`) — discharged via
->   `arith_table_op_mulh_mode_pin`.
+>   `h_nb_bool`) — discharged via the derived Clean finite-table
+>   projection `arith_table_op_mulh_basic_mode_pin`. `h_np_xor` is a
+>   dynamic proof target during C3.2-P, not a static table fact.
 > * Two lane-match equations (`h_byte_lo`, `h_byte_hi`) — discharged
 >   via `main_external_arith_emission_bundle` (shared with MUL / DIV)
 >   composed with the secondary-lane op-bus `matches_entry` projection
@@ -92,6 +93,7 @@ theorem equiv_MULH
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (h_no_signed_mul_witness_defect : False)
     :
     (do
       Sail.writeReg Register.nextPC
@@ -137,9 +139,15 @@ theorem equiv_MULH
   -- until the high-half signed product proof is repaired dynamically.
   obtain ⟨h_nr_eq, h_sext, h_m32, h_div, h_na_bool, h_nb_bool, _h_np_bool⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_mulh_basic_mode_pin v r_a h_op_arith_mulh
-  obtain ⟨_h_nr_ax, _h_sext_ax, _h_m32_ax, _h_div_ax,
-          _h_na_bool_ax, _h_nb_bool_ax, h_np_xor⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_mulh_mode_pin v r_a h_op_arith_mulh
+  have h_np_xor :
+      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+        = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+            + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+            - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+                * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) := by
+    -- Known-defect exclusion: MULH product-sign relation must come from
+    -- dynamic witness soundness or an upstream circuit fix.
+    exact False.elim h_no_signed_mul_witness_defect
   -- ============ DISCHARGE main_mul/main_div selector pins (both = 0) ============
   obtain ⟨h_main_mul_zero, h_main_div_zero⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_mulh_main_selector_pin v r_a h_op_arith_mulh

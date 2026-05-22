@@ -111,7 +111,7 @@ theorem equiv_DIVW
             + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
             - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
                 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a))
-    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
+    (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
     -- Op-pin (TRANSPILE-PIN): DIVW is in {188, 189, 190, 191}
     -- (W-DIV family). For the signed sign-pin axiom (op ∈ {190, 191}).
     (h_op : v.op r_a = 188 ∨ v.op r_a = 189 ∨ v.op r_a = 190 ∨ v.op r_a = 191)
@@ -165,12 +165,12 @@ theorem equiv_DIVW
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   -- W-mode operand chunk pin (a_2=a_3=b_2=b_3=d_2=d_3=0).
   have h_w_pin :=
-    ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin v r_a h_sext h_m32 h_div h_op
+    ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin v r_a h_m32 h_div h_op
   obtain ⟨h_a2_eq, h_a3_eq, h_b2_eq, h_b3_eq, h_d2_eq, h_d3_eq⟩ := h_w_pin
   -- signed-W sign-of-D pin.
   have h_nr_pin_fgl :=
     ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin
-      v r_a h_sext h_m32 h_div h_op_signed
+      v r_a h_m32 h_div h_op_signed
   -- convert h_nr_pin_fgl to the toIntZ form used by the discharge.
   have h_nr_pin :
       ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
@@ -186,7 +186,7 @@ theorem equiv_DIVW
       h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
       h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
       h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
-      h_chain h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor
+      h_chain h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor
       ⟨h_a2_eq, h_a3_eq⟩ ⟨h_b2_eq, h_b3_eq⟩ ⟨h_d2_eq, h_d3_eq⟩ h_c23
       h_nr_pin h_byte_lo h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
       h_r_abs h_r_sign

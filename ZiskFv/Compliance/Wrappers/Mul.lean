@@ -21,10 +21,11 @@ import ZiskFv.Compliance.SharedBundles
 > the eleven promise hypotheses that the canonical `equiv_MUL` accepts
 > directly:
 >
-> * Seven **mode pins** (`h_na`, `h_nb`, `h_np`, `h_nr`, `h_sext`,
->   `h_m32`, `h_div` — each `v.<col> r_a = 0`). Discharged via the
->   new class-#6b axiom `arith_table_op_mul_mode_pin` (mirror of
->   `arith_table_op_div_rem_signed_mode_pin`).
+> * Static **mode pins** (`h_nr`, `h_sext`, `h_m32`, `h_div`) and
+>   sign-witness booleanity are discharged via the derived Clean
+>   projection `arith_table_op_mul_basic_mode_pin`. The old all-zero
+>   sign-witness claim was false as a static table fact and is no longer
+>   used.
 > * Two **lane-match** equations (`h_byte_lo`, `h_byte_hi`). Discharged
 >   via `main_external_arith_emission_bundle` (already on the books;
 >   shared with the DIV pilot) composed with the op-bus `matches_entry`
@@ -47,20 +48,11 @@ import ZiskFv.Compliance.SharedBundles
 >   MUL variants MULH / MULHU / MULHSU, which use the signed bridge —
 >   see the within-shape authoring template below).
 >
-> Anti-laundering: this PR adds **two** new class-#6b axioms in
-> `Airs/Arith/Ranges.lean` (`arith_table_op_mul_mode_pin` and
-> `arith_table_op_mul_main_selector_pin`), both PIL-cited to
-> `arith.pil:286-287` + the MUL=0xb4 row of `arith_table.pil` /
-> `arith_table_data.rs::ARITH_TABLE`. Both sit in the same trust class
-> as the DIV-pilot pair (`arith_table_op_div_rem_signed_mode_pin`,
-> `arith_table_op_div_rem_main_selector_pin`); narrower scope (each
-> covers a single MUL opcode literal). Net change to caller burden:
-> drop 11 promise hypotheses (7 mode pins + 2 byte-lane pins + 2
-> operand pins). Within-shape MULH / MULHU / MULHSU / MULW use
-> parallel mode-pin / selector-pin axioms with appropriate opcode
-> literals and (for signed variants) the np / nb MSB pins —
-> analogous to DIV's `arith_div_np_eq_msb_of_dividend` /
-> `arith_div_nb_eq_msb_of_divisor`.
+> Anti-laundering: C3.2-P retires the false all-zero
+> `arith_table_op_mul_mode_pin` use from this wrapper. The true static
+> facts now flow through Clean finite-table projections plus the shared
+> lookup boundary; the remaining exceptional low-MUL branch is an
+> explicit dynamic proof target.
 -/
 
 namespace ZiskFv.Compliance
@@ -88,7 +80,7 @@ open ZiskFv.EquivCore.Promises
 
     Derived internally:
     * `h_op_arith` (= 180) from `h_match_primary` + `h_main_op_mul`.
-    * 7 mode pins from `arith_table_op_mul_mode_pin`.
+    * static mode pins from `arith_table_op_mul_basic_mode_pin`.
     * `main_mul = 1, main_div = 0` from `arith_table_op_mul_main_selector_pin`.
     * `h_byte_lo` / `h_byte_hi` from `main_external_arith_emission_bundle`
        + op-bus projection + `mul_bus_res1_eq_c_hi` (hi side) + FGL→ℕ lift.
@@ -113,6 +105,7 @@ theorem equiv_MUL
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (h_no_signed_mul_witness_defect : False)
     :
     (do
       Sail.writeReg Register.nextPC
@@ -240,14 +233,10 @@ theorem equiv_MUL
       ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
       h_chain h_na_bool h_nb_bool h_np_xor h_nr h_sext h_m32 h_div
       h_byte_lo h_byte_hi h_rs1_value h_rs2_value
-  · -- TODO(C3): replace this quarantined use with the dynamic zero-product
-    -- proof for the two exceptional low-MUL rows.
-    obtain ⟨h_na_zero, h_nb_zero, _h_np_zero, _h_nr_ax, _h_sext_ax, _h_m32_ax, _h_div_ax⟩ :=
-      ZiskFv.Airs.Arith.arith_table_op_mul_mode_pin v r_a h_op_arith_mul
-    rcases h_exception with h_exception | h_exception
-    · exact False.elim (by
-        exact one_ne_zero (h_exception.1.symm.trans h_na_zero))
-    · exact False.elim (by
-        exact one_ne_zero (h_exception.2.1.symm.trans h_nb_zero))
+  · have h_exception_impossible : False := by
+      -- Known-defect exclusion: low MUL exceptional product-shape rows need
+      -- a dynamic zero-product proof or an upstream circuit fix.
+      exact False.elim h_no_signed_mul_witness_defect
+    exact False.elim h_exception_impossible
 
 end ZiskFv.Compliance

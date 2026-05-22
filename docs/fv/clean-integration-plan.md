@@ -552,166 +552,238 @@ completion must delete the over-claiming axioms and reprove their
 consumers using only faithful ROM facts plus separately justified
 dynamic constraints.
 
-### C3/C4 scope — retirement target under re-audit (user-confirmed 2026-05-21)
-An investigation cross-checked all 19 `arith_table_op_*` axioms against
-the ROM. Of the 19:
+### Shared Arith prerequisite — completed before C3/C4 split
 
-- **The retireable set is under active C3/C4-b re-audit** (the immediate
-  next step):
-  - **12 projection families have true ROM-data subsets**, derived from `arithTable`'s
-    `StaticTable.contains_iff` by a 74-row case split + the `op` literal:
-    the mode/selector pins `arith_table_op_{mul_main_selector,
-    mulhu_mode, mulhu_main_selector, mulh_mode, mulh_main_selector,
-    mulhsu_mode, mulhsu_main_selector, div_rem_signed_mode,
-    div_rem_main_selector, div_rem_unsigned_mode,
-    div_rem_unsigned_main_selector}_pin`, except any conclusion that the
-    projection implementation proves is not a faithful ROM fact. In
-    particular, MULH/MULHSU `np_xor` and W-mode `sext=0` must not be
-    retired as static-ROM projections.
-  - Nine true mode/selector families have already been retired as axioms:
-    signed DIV/REM mode + selector, unsigned DIVU/REMU mode + selector,
-    MULHU mode + selector, and the MUL/MULH/MULHSU selector pins. They
-    are now theorems from shared ArithTable lookup membership plus
-    finite-table projections.
-  - The true static subsets of the remaining over-claiming mode pins are
-    now public theorems in `Airs/Arith/Ranges.lean`:
-    `arith_table_op_{mul,mulh,mulhsu,mulw}_basic_mode_pin` and
-    `arith_table_op_div_rem_{unsigned_w,signed_w}_basic_mode_pin`.
-    These deliberately omit the false clauses (`na = nb = np = 0` for
-    low-half MUL, static `np_xor` for MULH/MULHSU, and W-mode
-    `sext = 0`) so consumers can be repaired against the faithful ROM
-    facts without recreating the bad trust shape.
-  - The MUL/MULH/MULHSU wrappers now consume those faithful basic-mode
-    projections for all true static facts they need. The old over-claiming
-    axioms remain live only for the clauses that still need proof repair in
-    those wrappers: low-half MUL's `na = nb = np = 0` shortcut and
-    MULH/MULHSU's static `np_xor` shortcut. This caused no V2
-    axiom-closure drift because those wrappers already depended on the
-    shared ArithMul lookup boundary through selector projections.
-  - Upstream source confirms the repair target:
-    `state-machines/arith/pil/arith.pil:222-228` documents signed
-    non-W MUL rows as `na=a3`, `nb=b3`, `np=d3`, `nr=0`, `sext=0`,
-    and `state-machines/arith/src/arith_operation.rs::update_flags_and_ranges`
-    computes `np` for non-W multiplication from the high result `d`, not
-    from `na XOR nb`. Therefore the next low-MUL proof must use the signed
-    carry-chain/two's-complement result model and cannot be a static-ROM
-    `np_xor` or all-zero sign-witness projection.
-  - `arith_table_op_mul_range_pins` is now a theorem from the same lookup
-    boundary plus finite-table projection. It exposes the static low-MUL
-    range-selector facts needed by that repair: `range_ab` is determined
-    by `(na, nb)`, and `range_cd` is determined by `np`.
-  - `arith_table_op_mul_np_xor_or_zero_product_shape` is now a theorem
-    from the same lookup boundary plus finite-table projection. It shows
-    that low-MUL rows either satisfy the usual `np = na XOR nb` field
-    relation or are one of the two exceptional negative-times-positive
-    shapes with `np = 0`.
-  - `fgl_mul_signed_to_bv64_lo` is now a pure signed-no-wrap theorem
-    proving that the signed MUL chunk identity yields the `.MUL` low
-    half when the `np = na XOR nb` branch holds. The wrapper rewrite can
-    use this for the ordinary branch and reserve the exceptional branches
-    for the dynamic zero-product proof.
-  - The ordinary low-MUL branch is now wired through
-    `h_rd_val_mdrs_mul_low_chunked`, which consumes the signed carry-chain
-    identity and proves the emitted low 64 bits by reducing the signed
-    product modulo `2^64`. The remaining old-axiom use is quarantined to
-    the two exceptional `np = 0`, opposite-sign ROM rows; this is not yet
-    C3/C4-b retirement because `arith_table_op_mul_mode_pin` remains in
-    `equiv_MUL`'s V2 closure.
-  - The false / over-claiming axioms are *deleted only after their
-    consumers are reproven* against true ROM facts or separately
-    justified dynamic constraints.
-  - "Retired" means **genuinely deleted, by proof** — removed from
-    `Ranges.lean`, gone from `#print axioms`. Current C3/C4-b net:
-    `baseline-axioms.txt` shrank from 109 to 102 after replacing nine
-    old opcode-shaped axioms with two shared lookup-membership axioms.
-    The remaining unsoundness is fixed only when the false consumer
-    shapes are repaired and the remaining over-claiming axioms disappear.
+The old combined "C3/C4" checklist is retired. C3 now means **ArithMul
+only**; C4 means **ArithDiv/Rem only**. Shared setup remains a prerequisite,
+not a mixed active phase.
 
-- **3 are deferred** (genuinely cannot retire in C3/C4) —
-  `arith_table_op_div_rem_signed_d_sign_pin`,
+Shared prerequisite state:
+- 🪓 The 74-row `ArithTable` is translated into Lean and checked against
+  `arith_table_data.rs`.
+- 🪓 ArithMul and ArithDiv expose the full 15-column
+  `arith_table_assumes` row in PIL order.
+- 🪓 Lookup-aware Clean entry points and `ArithTableSpec` /
+  `FullSpec := Spec ∧ ArithTableSpec` bridge helpers exist.
+- 🪓 The shared lookup/permutation boundaries exist:
+  `arith_mul_table_lookup_sound` and `arith_div_table_lookup_sound`.
+- 🪓 Faithful finite-table projection lemmas exist in
+  `AirsClean/ArithTableProjections.lean`.
+- 🪓 The defect-aware public theorem
+  `zisk_riscv_compliant_program_bus_except_known_defects` avoids the
+  old Arith proof closure by routing currently blocked Arith arms through
+  `h_known_bugs : Defects.NoKnownDefect env`.
+
+Progress after this point is measured by shrinking
+`Defects.UsesOpcodeSpecificArithTableAxiom`. An opcode is not marked
+complete merely because the defect-aware theorem excludes it; it is complete
+only when its own wrapper is repaired and its constructor is removed from
+that predicate.
+
+Retirement rule after the purge phase: do not delete an `arith_table_op_*`
+axiom merely because the defect-aware theorem hides it. Delete it only after
+all direct consumers are reproved against true ROM facts or separately
+justified dynamic facts.
+
+### C3.2-P — controlled ArithTable axiom purge (complete)
+
+This phase temporarily changed the development invariant for the arithmetic
+table cleanup only. It is now closed: the false opcode-shaped table
+assumptions are removed from the active proof surface, and the ordinary
+zero-sorry invariant is restored. The remaining signed-MUL limitations are
+known-defect exclusions, not proof holes.
+
+- 🪓 **C3.2-P1 — classify the arithmetic-table facts.**
+  `docs/fv/arith-table-axiom-audit.md` is the source of truth for whether
+  each old fact is a true finite-table projection, false as stated, or a
+  dynamic/protocol-boundary fact.
+- 🪓 **C3.2-P2 — purge false opcode-shaped facts from active closures.**
+  Remove or neutralize direct use of known-false static conclusions:
+  `np_xor` for `MULH`/`MULHSU`, all-zero sign witnesses for exceptional
+  `MUL` table rows, and W-mode `sext = 0`.
+  Done: `MULH`, `MULHSU`, `MUL`, `MULW`, `DIVUW`, `REMUW`, `DIVW`, and
+  `REMW` no longer call the false opcode-shaped mode-pin axioms from their
+  active wrappers. Remaining signed-MUL gaps are explicit known-defect
+  exclusions.
+- 🪓 **C3.2-P3 — replace true static facts with Clean projections.**
+  Use `arith_{mul,div}_table_lookup_sound` plus finite-table projection
+  theorems from `AirsClean/ArithTableProjections.lean`; add missing
+  projection theorems where the audit says `derivable-via-lookup`.
+  Done: the true static mode/selector facts consumed by the active wrappers
+  now route through Clean projection theorems. The remaining candidates that
+  looked like missing projections were reclassified in the audit because they
+  mention concrete witness chunks or dynamic arithmetic facts outside the
+  15-field ArithTable lookup tuple.
+- 🪓 **C3.2-P4 — classify every non-static break.**
+  Each remaining obligation must become either a dynamic row/range/bus proof
+  target or a documented defect if a satisfying bad witness exists.
+  Done: `arith-table-axiom-audit.md` records the signed-MUL residual as
+  `arithMulSignedWitnessSoundness` and records the non-pure-table
+  sign/operand/bound facts as dynamic proof targets. The W-contract holes
+  were discharged in C3.5/C4.3/C4.4.
+- 🪓 **C3.2-P5 — restore normal invariants.**
+  Restore `lake build`, `trust/scripts/check-all.sh`, and
+  `nix develop --command trust/scripts/check-all-semantic.sh`, then return to
+  strict C3.2. Completed for the purge: all W-contract repairs are complete;
+  those wrappers no longer need the false `sext = 0` premise. The false
+  opcode-shaped ArithTable axiom declarations for `MUL`, `MULH`, `MULHSU`,
+  `MULW`, unsigned-W DIV/REM, and signed-W DIV/REM have been deleted from
+  `Ranges.lean`. The remaining signed-MUL limitations are not proof holes:
+  they are explicit known-defect exclusions under
+  `arithMulSignedWitnessSoundness`.
+
+The shared lookup/permutation assumptions
+`arith_mul_table_lookup_sound` and `arith_div_table_lookup_sound` stay in
+scope; they are the accepted protocol boundary, not the fiasco being purged.
+
+### C3 — ArithMul checklist (active after C2.5)
+
+C3 owns only these constructors:
+`mulhu`, `mulh`, `mulhsu`, `mul`, `mulw`.
+
+- 🪓 **C3.1 — unblock `MULHU`.**
+  Confirm `equiv_MULHU` depends only on shared ArithTable lookup membership
+  plus faithful projections for its table facts. Remove `.mulhu` from
+  `UsesOpcodeSpecificArithTableAxiom`; update the defect ledger/status.
+  Completed: `equiv_MULHU`'s axiom closure is
+  `arith_mul_table_lookup_sound`, `arithMul_circuit_completeness`,
+  `range_bus_sound`, `main_external_arith_emission_bundle`, and
+  `transpile_MULHU`; no opcode-shaped ArithTable axiom remains.
+- 🪓 **C3.2 — defect-qualify `MULH`.**
+  Stop using static-ROM `np = na XOR nb`; keep the faithful
+  `mulh_basic_mode_pin` facts; delete the old
+  `arith_table_op_mulh_mode_pin`; remove `.mulh` from
+  `UsesOpcodeSpecificArithTableAxiom`. Completed for this branch:
+  `equiv_MULH` now carries the explicit false premise
+  `h_no_signed_mul_witness_defect : False`, derived at the global theorem
+  from `h_known_bugs`. This is intentionally vacuous for `MULH` envelopes
+  and marks the confirmed circuit bug. Executable repro evidence confirms
+  stock ZisK accepts and verifies a malicious proof for `MULH(-1,1)=0`.
+- 🪓 **C3.3 — defect-qualify `MULHSU`.**
+  Same shape as `MULH`, but signed/unsigned high-half. Completed for this
+  branch: `equiv_MULHSU` uses faithful static pins, no false
+  opcode-shaped ArithTable axiom, and the explicit false
+  `h_no_signed_mul_witness_defect : False` premise derived from
+  `h_known_bugs`. Executable repro evidence confirms stock ZisK accepts and
+  verifies a malicious proof for `MULHSU(-1,1)=0`.
+- 🪓 **C3.4 — repair low-half `MUL` ArithTable trust shape.**
+  Keep the ordinary `np = na XOR nb` branch already wired through
+  `h_rd_val_mdrs_mul_low_chunked`. Finish the exceptional opposite-sign
+  `np = 0` branches without `arith_table_op_mul_mode_pin`.
+  Completed for trust-shape: `arith_table_op_mul_mode_pin` has been deleted
+  and `.mul` is removed from `UsesOpcodeSpecificArithTableAxiom`. The
+  exceptional branch remains blocked only by
+  `arithMulSignedWitnessSoundness`. Executable repro evidence now confirms
+  the low-MUL malicious shape reaches proof verification in pre-fix ZisK
+  (`0142ab5d7`), and the same demo branch confirms the corresponding
+  high-half `MULH` and `MULHSU` shapes.
+- 🪓 **C3.5 — repair and unblock `MULW`.**
+  Stop using static-ROM `sext = 0`; use real W-mode sign-extension /
+  operand evidence. Remove `arith_table_op_mulw_mode_pin` from the proof
+  closure and remove `.mulw`.
+  Completed: `equiv_MULW` consumes `arith_table_op_mulw_basic_mode_pin`
+  only for true static pins, uses `h_sext_choice` for result
+  sign-extension, derives operand high-chunk zeroes from the operation bus
+  and `transpile_MULW`, and `.mulw` is no longer in
+  `UsesOpcodeSpecificArithTableAxiom`.
+
+**C3 done criteria (current branch):**
+- no ArithMul-family constructor remains in
+  `UsesOpcodeSpecificArithTableAxiom`;
+- no ArithMul proof closure depends on a false/static-overstrong
+  `arith_table_op_*` axiom;
+- `MUL`, `MULH`, and `MULHSU` are allowed to be proved only under the
+  explicit false `arithMulSignedWitnessSoundness` exclusion; this is the
+  visible theorem-interface marker that the current circuit is buggy;
+- `docs/fv/defects.md` distinguishes ArithTable trust-shape retirement from
+  the signed-MUL witness soundness defect.
+
+Future upstream-fix work is not part of C3 completion in this branch. When
+the circuit rejects the malicious signed-MUL witness family, remove the
+false premise, shrink `Defects.MaliciousSignedMulWitnessShape`, and prove
+`MUL`, `MULH`, and `MULHSU` non-vacuously from the fixed constraints.
+
+### C4 — ArithDiv/Rem checklist
+
+C4 owns only these constructors:
+`divu`, `remu`, `div`, `rem`, `divuw`, `remuw`, `divw`, `remw`.
+
+- 🪓 **C4.1 — unblock `DIVU` and `REMU`.**
+  Confirm both wrappers use `arith_div_table_lookup_sound` plus faithful
+  unsigned non-W projections. Remove `.divu` and `.remu` from
+  `UsesOpcodeSpecificArithTableAxiom`.
+  Completed: both closures contain `arith_div_table_lookup_sound`,
+  `arithDiv_circuit_completeness`, `arith_div_remainder_bound_unsigned`,
+  `range_bus_sound`, `main_external_arith_emission_bundle`, and their
+  transpiler axiom; no opcode-shaped ArithTable axiom remains.
+- 🪓 **C4.2 — unblock non-W signed `DIV` and `REM`.**
+  Keep genuinely dynamic sign/remainder facts classified as Binary-side /
+  `assumes_operation` facts, not static ArithTable facts. Confirm no false
+  static ArithTable shortcut remains; remove `.div` and `.rem`.
+  Completed: `equiv_DIV` and `equiv_REM` still consume
+  `arith_table_op_div_rem_signed_d_sign_pin`, signed dividend/divisor MSB
+  pins, and the signed remainder-bound fact, but those are classified as
+  dynamic C6-deferred row/range/bus facts rather than false static
+  ArithTable projections. `.div` and `.rem` are no longer in
+  `UsesOpcodeSpecificArithTableAxiom`.
+- 🪓 **C4.3 — repair and unblock unsigned W-mode `DIVUW` and `REMUW`.**
+  Stop using static-ROM `sext = 0`; use real W-mode sign-extension /
+  operand evidence. Remove `.divuw` and `.remuw`.
+  Completed: `equiv_DIVUW` and `equiv_REMUW` no longer consume
+  `arith_table_op_div_rem_unsigned_w_mode_pin` or `sorryAx`. Their closures
+  consume the dynamic `arith_table_op_divw_operand_pin` and
+  `arith_div_remainder_bound_unsigned_w` facts, plus
+  `arith_div_table_lookup_sound`, `arithDiv_circuit_completeness`,
+  `range_bus_sound`, `main_external_arith_emission_bundle`, and the relevant
+  transpiler axiom. `.divuw` and `.remuw` are no longer in
+  `UsesOpcodeSpecificArithTableAxiom`.
+- 🪓 **C4.4 — repair and unblock signed W-mode `DIVW` and `REMW`.**
+  Stop using static-ROM `sext = 0`; keep genuinely dynamic remainder /
+  operand facts deferred to Binary lookup migration. Remove `.divw` and
+  `.remw`.
+  Completed: `equiv_DIVW` and `equiv_REMW` no longer consume
+  `arith_table_op_div_rem_signed_w_mode_pin` or `sorryAx`. Their closures
+  consume the dynamic `arith_table_op_div_rem_signed_w_d_sign_pin`,
+  `arith_table_op_divw_operand_pin`, and
+  `arith_div_remainder_bound_signed_w` facts, plus shared lookup/Clean/range
+  boundaries and the relevant transpiler axiom. `.divw` and `.remw` are no
+  longer in `UsesOpcodeSpecificArithTableAxiom`.
+
+**C4 done criteria:**
+- no Div/Rem-family constructor remains in
+  `UsesOpcodeSpecificArithTableAxiom`;
+- remaining Div/Rem trust items, if any, are documented dynamic
+  Binary-side facts deferred to C6, not ArithTable trust-shape defects;
+- no Div/Rem proof closure depends on false W-mode `sext = 0`
+  static-table claims.
+
+### C2.5 — defect framework setup (done)
+
+C2.5 is the completed guardrail that makes the split checklists meaningful:
+`Defects.NoKnownDefect` is a theorem-side hypothesis, and currently blocked
+signed-MUL constructors are visible in
+`Defects.MaliciousSignedMulWitnessShape`. `UsesOpcodeSpecificArithTableAxiom`
+is empty after C3/C4; the remaining signed-MUL exclusions are circuit-defect
+markers, not ArithTable trust-shape markers. The defect-aware theorem proves
+those blocked constructors by contradiction from `h_known_bugs`, so the
+public `*_except_known_defects` theorem avoids advertising false signed-MUL
+coverage.
+
+### C3/C4 implementation rules
+
+- Do not mix C3 and C4 in one checklist item.
+- Execute C3 first unless a C3 proof is blocked; if switching to C4, record
+  the blocker in `clean-integration-status.md`.
+- For each opcode unblocked:
+  1. inspect the opcode wrapper closure;
+  2. remove exactly that constructor from
+     `UsesOpcodeSpecificArithTableAxiom`;
+  3. update `docs/fv/defects.md` and `clean-integration-status.md`;
+  4. run verification before marking the item done.
+- Dynamic Div/Rem facts (`arith_table_op_div_rem_signed_d_sign_pin`,
   `arith_table_op_div_rem_signed_w_d_sign_pin`,
-  `arith_table_op_divw_operand_pin`. They assert facts about the
-  **remainder `d`-chunks**, which are *not columns of the 15-slot arith
-  ROM*; they follow from the `assumes_operation` Euclidean-bound lookup
-  (`arith.pil:274`, `0 ≤ |d| < |b|`) — a *dynamic op-bus lookup into the
-  Binary AIR*, not a static ROM, whose soundness is the separate
-  `arith_div_remainder_bound` axiom family (`Ranges.lean:692-773`).
-  These 3 are **true, faithful axioms — not the unsoundness.** They
-  cannot retire until the Binary AIR is a Component (C6) and the
-  `assumes_operation` lookup is migrated; they retire then, by deletion,
-  alongside the `arith_div_remainder_bound` family. C3/C4 leaves them in
-  place, untouched.
-
-### Immediate next action — complete C3/C4 with an honest boundary
-The old "add a `StaticTable` lookup and delete 16 axioms" path was
-incomplete. `StaticTable.contains_iff` proves only the ROM-data half:
-if a 15-tuple is in `arith_table`, then the table columns have the
-literal row values. It does **not** prove the AIR row's
-`arith_table_assumes` tuple is in the ROM. That lookup-membership half
-must be represented by either the Clean ensemble or one shared temporary
-lookup/permutation axiom before any per-op table axiom is deleted.
-
-**C3/C4-a — structural lookup evidence, zero retirements. DONE.**
-For both ArithMul and ArithDiv:
-1. Extend the named row / validator views with the full 15-column
-   `arith_table_assumes` tuple in PIL order:
-   `[op, m32, div, na, nb, np, nr, sext, div_by_zero, div_overflow,
-   main_mul, main_div, signed, range_ab, range_cd]`.
-2. Cite the added columns as structural fields from
-   `build/extraction/Extraction/Arith.lean` stage-1 cols 35-37 and
-   42-43. This is **not** a new promise hypothesis: the fields are
-   data needed to state the existing AIR lookup.
-3. Add lookup-aware Clean entry points that emit
-   `lookup (Table.fromStatic arithTable) arithTableRow`. Keep the
-   existing carry-chain `Spec` / `spec_via_component` usable until
-   Compliance supplies lookup membership globally; otherwise every
-   current wrapper would need a new caller promise.
-4. Add a separated `ArithTableSpec` / `FullSpec := carry Spec ∧
-   ArithTableSpec`. Do not use `FullSpec` to retire axioms until its
-   lookup half is sourced from the global AIR statement / ensemble, not
-   from a per-op caller binder.
-
-**C3/C4-b — replace bad table axioms with one shared boundary. IN PROGRESS.**
-This stage is allowed to temporarily keep or add trust only at the correct
-granularity: a shared ArithTable lookup/permutation boundary. It must shrink
-or eliminate per-op table-fact axioms and must not add any per-op replacement
-axiom.
-
-1. Introduce a shared ArithTable lookup source, preferably as a Clean
-   ensemble/channel theorem. If the ensemble is not ready, introduce one
-   explicitly named temporary axiom in the existing lookup/permutation trust
-   class. Its statement must say that an Arith row's emitted
-   `arith_table_assumes` tuple is in the translated ArithTable. It must not
-   conclude opcode-specific mode pins directly. **Current implementation:**
-   `arith_mul_table_lookup_sound` and `arith_div_table_lookup_sound`.
-2. Use `AirsClean/ArithTableProjections.lean` for all faithful finite-table
-   facts. The projection lemmas consume `ArithTableSpec (rowAt v r)` and
-   produce the row facts that are actually true in the ROM. The public
-   `*_basic_mode_pin` theorems in `Airs/Arith/Ranges.lean` expose those
-   true subsets to downstream proof repairs.
-3. Delete or stop using every `arith_table_op_*` axiom whose only job is to
-   turn opcode equality into static-table facts. If a conclusion is false as
-   a ROM projection, do not recreate it under another name. The trust gate now
-   includes `check-arith-table-op-axioms.sh`, which allows removals from the
-   existing `arith_table_op_*` retirement queue but forbids additions.
-4. Repair consumers of over-strong facts:
-   - low-half MUL must become sign-agnostic instead of assuming
-     `na = nb = np = 0`;
-   - signed MULH/MULHSU must stop relying on static-ROM `np_xor`;
-   - W-mode consumers must stop relying on static-ROM `sext = 0`;
-   - DIV/REM W-mode must use the real W-mode sign-extension / operand-side
-     evidence, not a static-table `sext = 0` shortcut.
-5. Leave genuinely dynamic non-ROM facts in the trust ledger until their
-   provider lookups are migrated:
-   `arith_table_op_div_rem_signed_d_sign_pin`,
-   `arith_table_op_div_rem_signed_w_d_sign_pin`,
-   `arith_table_op_divw_operand_pin`, and the `arith_div_remainder_bound`
-   family. They are about the dynamic `assumes_operation` lookup into the
-   Binary side, not about the static 15-column ArithTable.
-6. Verify the meaningful invariant: `lake build` and V1/V2 trust gates pass,
-   the global theorem closure no longer depends on known-false
-   `arith_table_op_*` axioms, and `docs/fv/trusted-base.md` names the
-   remaining shared lookup/permutation boundary precisely.
+  `arith_table_op_divw_operand_pin`, and `arith_div_remainder_bound`) are
+  C6-deferred Binary-side facts, not C3/C4 ArithTable static facts.
 
 **Axiom policy for C3/C4:** no new opcode-specific table axioms. A single
 shared temporary ArithTable lookup/permutation axiom is permitted if it
@@ -722,8 +794,9 @@ soundness axioms" rule: the final target is fewer and truer assumptions,
 not the accidental preservation of a green build under false assumptions.
 
 After C3/C4: **C5** (BinaryExtension), **C6** (Binary), then the
-family-terminal phases — see "Phase sequence". The 3 deferred axioms
-retire at/after C6 with the `assumes_operation` lookup migration.
+family-terminal phases — see "Phase sequence". The deferred dynamic
+Binary-side facts retire at/after C6 with the `assumes_operation` lookup
+migration.
 
 ## Universal per-AIR migration contract (every C-phase after C0)
 
@@ -800,8 +873,9 @@ terminal phases where the shared axioms genuinely retire:
 | **C0** | BinaryAdd pilot + 3 spikes | real | op-bus emission + Component skeleton | 0 (GO/NO-GO) |
 | C1 | MemAlignByte | real | memory-bus + ROM lookup | its ROM-content axiom, if isolated |
 | C2 | MemAlignReadByte | real | (covered) | 0 |
-| C3 | ArithMul *(completion in progress — see Status)* | real | ArithTable (74-row) `StaticTable` lookup + shared lookup/permutation boundary | Replace MUL-family `arith_table_op_*` with faithful projections; repair false `na/nb/np`, `np_xor`, and W-mode `sext` shortcuts |
-| C4 | ArithDiv *(completion in progress — see Status)* | real | ArithTable `StaticTable` lookup + shared lookup/permutation boundary + signed-carry | Replace DIV/REM-family static table facts with faithful projections; leave dynamic `assumes_operation` facts until Binary lookup migration |
+| **C2.5** | Defect framework setup | — | theorem-side defect predicate + ledger | 0 — inserts `NoKnownDefect` / `h_known_bugs` before C3/C4 resumes |
+| C3 | ArithMul *(active — see C3 checklist)* | real | ArithTable (74-row) `StaticTable` lookup + shared lookup/permutation boundary | all C3 constructors removed from `UsesOpcodeSpecificArithTableAxiom`; remaining `mul`, `mulh`, `mulhsu` blockers are signed-witness soundness, not ArithTable trust shape |
+| C4 | ArithDiv/Rem | real | ArithTable `StaticTable` lookup + shared lookup/permutation boundary + signed-carry | all C4 constructors removed from `UsesOpcodeSpecificArithTableAxiom`; leave dynamic `assumes_operation` facts until Binary lookup migration |
 | C5 | BinaryExtension | **skeleton, `Spec:=True`** | byte lookup | 0 — `Spec` lifted to AIR level + soundness **adapted from the existing shift-opcode `EquivCore/` proofs**; heaviest reshaping |
 | C6 | Binary | **skeleton** | per-byte lookup | 0 — soundness **adapted from the existing Binary-opcode proofs** (`Spec` ≈ constraints — light) |
 | **C7** | terminal-A: assemble the op-bus + Binary-family ensemble | — | — | **`op_bus_permutation_sound`, `bin_table_consumer_wf`, `bin_ext_table_consumer_wf`** |

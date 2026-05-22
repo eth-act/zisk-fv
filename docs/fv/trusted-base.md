@@ -80,10 +80,19 @@ also exposed as derived `*_basic_mode_pin` theorems in
 `ZiskFv/Airs/Arith/Ranges.lean`; those theorems intentionally omit the
 clauses that the real ROM does not prove (`np_xor` and W-mode
 `sext = 0`).
-The live global theorem can still remain green while depending on the
-remaining known-bad arithmetic-table assumptions. That is not the final
-verification claim. New opcode-specific ArithTable axioms are not
-permitted.
+The per-axiom classification lives in
+[`arith-table-axiom-audit.md`](arith-table-axiom-audit.md).
+C3.2-P is closed: the ordinary zero-sorry trust gate is restored, and the
+known-bad arithmetic-table assumptions have been removed from the active
+ArithMul/ArithDiv closures. The live global theorem is now explicitly
+defect-aware via `h_known_bugs : Defects.NoKnownDefect env`; signed-MUL
+claim weakening lives in the defect ledger, not in hidden proof holes. New
+opcode-specific ArithTable axioms are not permitted.
+
+Known defects that weaken or block the public compliance claim are tracked
+separately from the trust ledger in [`defects.md`](defects.md), following
+[`defect-ledger-design.md`](defect-ledger-design.md). A defect entry is not
+a trusted fact and must not be used to justify a new axiom.
 
 Per-class spot check (102 axioms total):
 
@@ -312,7 +321,7 @@ expose for bytes 4..7. Wrappers landed: `equiv_SUBW`
 (`Compliance/Wrappers/Subw.lean`), `equiv_ADDW`
 (`Compliance/Wrappers/Addw.lean`).
 
-### Step 4.2 round 3 — Four parallel branches landing 13 wrappers (+7 axioms)
+### Step 4.2 round 3 — Four parallel branches landing 13 wrappers
 
 Zero new axioms from the ITYPE constructibility-bundle branch (4
 wrappers: ADDI/ANDI/ORI/XORI; uses pre-existing AND/OR/XOR mode pins
@@ -320,24 +329,37 @@ via the new pure-Lean `itype_imm_subset_holds_main` bundle +
 `itype_imm_subset_binary_row_of_main` bridge); one class-#6 axiom
 (`binary_consumer_byte_match_chain_pin`) from the Binary 6-field
 chain branch (3 wrappers: SUB/SLTU/SLT; SLTI/SLTIU/ADDIW/SUBW/ADDW
-deferred pending integration); three class-#6b axioms from the
+deferred pending integration); two remaining class-#6b axioms from the
 MULH-family branch (`arith_mul_na_eq_msb_of_a`,
-`arith_mul_nb_eq_msb_of_b`, `arith_table_op_mulw_mode_pin`) for
-MULH/MULHSU/MULW wrappers; three class-#4 axioms from the Mem-stores
+`arith_mul_nb_eq_msb_of_b`) for MULH/MULHSU wrappers; three class-#4
+axioms from the Mem-stores
 RMW branch (`main_store_emission_bundle_{sb,sh,sw}` — narrow-width
 RMW emission bundles for SB/SH/SW).
 
+### C3.2-P5 — MULW transpiler contract (+1 in class #1)
+
+`transpile_MULW` fills the missing RV64M MULW Main-row contract in the
+same class as `transpile_MUL`, `transpile_MULH`, `transpile_DIVUW`,
+`transpile_DIVW`, and the other per-opcode transpiler pins. It cites
+`riscv2zisk_context.rs:247`, where MULW is emitted through
+`create_register_op(..., "mul_w", 4)`: opcode `OP_MUL_W`, external-op
+dispatch, `m32 = 1`, no PC/store-PC side effect, `jmp_offset1 =
+jmp_offset2 = 4`, and `a`/`b` lanes from `rs1`/`rs2`. The C3.2-P5
+MULW repair consumes only the `m32 = 1` and operand-lane pieces to
+derive W high-lane collapse; it replaces the false static ArithTable
+claim formerly made by `arith_table_op_mulw_mode_pin`'s `sext = 0`
+premise. That false axiom declaration has since been deleted.
+
 ### Step 4.2 round 2 — W-variant Arith + high-half MUL (+13 axioms)
 
-Six W-variant Arith class-#6b axioms
-(`arith_table_op_div_rem_{unsigned,signed}_w_mode_pin`,
-`_{unsigned,signed}_w_main_selector_pin`,
-`arith_div_remainder_bound_{unsigned,signed}_w`) for the
+W-variant Arith class-#6b facts
+(`arith_div_remainder_bound_{unsigned,signed}_w` plus faithful derived
+mode/selector projections) for the
 DIVUW/REMUW/DIVW/REMW wrappers; one class-#4 op-bus axiom
 (`op_bus_perm_sound_ArithMulSecondary`) opening the secondary lane
-for the high-half MUL family; and six class-#6b high-half MUL
-mode/selector pins (`arith_table_op_mulh{,u,su}_mode_pin` +
-`_main_selector_pin`) consumed by `equiv_MULHU`. Round 2
+for the high-half MUL family; and faithful high-half MUL
+mode/selector projections consumed by `equiv_MULHU`. The false W-mode
+and signed-high-half mode axiom declarations have since been deleted. Round 2
 left 20 wrappers behind 4 deeper prerequisites (subsequently
 addressed in round 3).
 
@@ -352,14 +374,13 @@ two class-#6 axioms from the Binary batch
 AND/XOR wrappers); the Mem+ControlFlow batch added zero new axioms
 (12 wrappers landed via existing trust closure).
 
-### Step 4.1.8 — ArithMul shape exemplar MUL (+2 axioms)
+### Step 4.1.8 — ArithMul shape exemplar MUL
 
-`arith_table_op_mul_mode_pin` and
-`arith_table_op_mul_main_selector_pin` — the MUL-side mirrors of the
-DIV-pilot mode-pin + main-selector-pin pair, consumed by the
-`Compliance/Wrappers/Mul.lean` wrapper to derive seven mode pins and
-the `main_mul = 1, main_div = 0` selector pin needed for the hi-lane
-discharge of `h_byte_hi` via `mul_bus_res1_eq_c_hi`.
+The old `arith_table_op_mul_mode_pin` has been deleted because its
+all-zero sign-witness claim was false as a static table fact. The wrapper
+now uses faithful Clean finite-table projections for basic mode and selector
+facts; the remaining exceptional branch is tracked under
+`arithMulSignedWitnessSoundness`.
 
 ### Step 4.1.6 / 4.1.7 — Mem-load and ControlFlow-branch exemplars (+0 axioms)
 

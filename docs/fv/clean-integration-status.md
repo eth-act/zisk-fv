@@ -48,12 +48,124 @@ a dep).
   by definition `rfl` via the trivial extractor; trust improvement
   comes in *who supplies the rows* (Phase 3).
 
+### C2.5 — Defect framework setup (current branch, 2026-05-22)
+
+- `docs/fv/defect-ledger-design.md` defines the rule: a defect is neither a
+  trust-ledger axiom nor a silent scope exclusion.
+- `docs/fv/defects.md` seeds the ledger with the ArithTable trust-shape
+  defect, the signed-MUL malicious-witness soundness defect, and the
+  FENCE no-op/incomplete-support triage item.
+- `ZiskFv/Compliance/Defects.lean` adds the Lean-side `DefectId`,
+  `Blocks`, and `NoKnownDefect` predicates.
+- `ZiskFv.Compliance.zisk_riscv_compliant_program_bus_except_known_defects`
+  adds the explicit `h_known_bugs : Defects.NoKnownDefect env` binder.
+  The existing `OpEnvelope` constructors already carry validity witnesses,
+  so `h_known_bugs` is an orthogonal defect-exclusion hypothesis rather than
+  a replacement for validity.
+- The defect-aware theorem now routes DIVU and the remaining Arith-family
+  arms through `h_known_bugs` instead of through the old Arith proof closure.
+  Direct closure check:
+  `lake exe trust-gate print-axiom-closure
+  ZiskFv.Compliance.zisk_riscv_compliant_program_bus_except_known_defects`
+  lists 66 project axioms and no `arith_table_op_*` /
+  `arith_{mul,div}_table_lookup_sound` entries.
+
 ## Active phase
+
+### C5 — BinaryExtension
+
+Status: next. C3/C4-b is closed under the agreed known-defect convention:
+ArithTable trust-shape cleanup is complete, and the confirmed signed-MUL
+circuit defect is visible through `h_known_bugs` / the false
+`h_no_signed_mul_witness_defect` premise. The next Clean integration phase
+is BinaryExtension.
+
+### C3.2-P — controlled ArithTable axiom purge
+
+Status: complete. This was a temporary invariant-relaxation phase for the
+arithmetic-table cleanup. C3 and C4 are tracked separately. C3 owns only
+`MULHU`, `MULH`, `MULHSU`, `MUL`, and `MULW`; C4 owns only the Div/Rem
+family. The visible progress metric was removing constructors from
+`Defects.UsesOpcodeSpecificArithTableAxiom`, which is now empty.
+
+Arithmetic-table axiom classification is tracked in
+[`arith-table-axiom-audit.md`](arith-table-axiom-audit.md). That audit is
+the source of truth for whether an old `arith_table_op_*` fact is a true
+finite-table projection, false as stated, or requires a dynamic row proof.
+
+Current C3.2-P checklist:
+
+- 🪓 C3.2-P1 arithmetic-table facts classified in
+  `arith-table-axiom-audit.md`.
+- 🪓 C3.2-P2 false opcode-shaped facts purged from active closures.
+- 🪓 C3.2-P3 true static facts replaced by Clean finite-table projections.
+- 🪓 C3.2-P4 non-static breaks classified as dynamic proof targets or
+  explicit defects.
+- 🪓 C3.2-P5 zero-sorry and normal trust gates restored.
+  Completed for the ArithTable purge: all W-contract holes are removed
+  (`MULW`, `DIVUW`, `REMUW`, `DIVW`, and `REMW`), the false opcode-shaped
+  ArithTable axiom declarations for `MUL`, `MULH`, `MULHSU`, `MULW`,
+  unsigned-W DIV/REM, and signed-W DIV/REM have been deleted from
+  `Ranges.lean`, and the signed-MUL residual is now an explicit
+  known-defect exclusion rather than a `sorry`.
+
+C3.2-P2 completion note: the active wrappers for `MULH`, `MULHSU`, `MUL`,
+`MULW`, `DIVUW`, `REMUW`, `DIVW`, and `REMW` no longer call
+`arith_table_op_mulh_mode_pin`, `arith_table_op_mulhsu_mode_pin`,
+`arith_table_op_mul_mode_pin`, `arith_table_op_mulw_mode_pin`,
+`arith_table_op_div_rem_unsigned_w_mode_pin`, or
+`arith_table_op_div_rem_signed_w_mode_pin`. `lake build` succeeds without
+proof holes. The three signed-MUL residuals are visible as
+`h_no_signed_mul_witness_defect : False` binders and as the global
+`h_known_bugs` hypothesis.
+
+C3.2 and C3.3 are complete under the current branch convention: `MULH` and
+`MULHSU` are not claimed non-vacuously. Their theorem statements carry the
+explicit false premise `h_no_signed_mul_witness_defect : False`, derived at
+the global theorem from `h_known_bugs`, so the theorem interface itself
+marks the confirmed circuit bug. In a separate ZisK worktree at commit
+`0142ab5d7`, branch `repro/mulh-mulhsu-malicious-witness-demo`, Docker image
+`zisk-arith-mul-repro:mulh-demo` accepted and verified malicious proofs for
+`MUL(-1,1)=1`, `MULH(-1,1)=0`, and `MULHSU(-1,1)=0`.
+
+Current C3 checklist:
+
+- 🪓 C3.1 `MULHU` unblocked from `arithTableTrustShape`.
+- 🪓 C3.2 `MULH` defect-qualified; no static-ROM `np_xor`, no
+  opcode-shaped ArithTable axiom, and the remaining semantic claim is
+  intentionally under the false `h_no_signed_mul_witness_defect` premise.
+- 🪓 C3.3 `MULHSU` defect-qualified; same convention as `MULH`.
+- 🪓 C3.4 low-half `MUL` ArithTable trust-shape repaired; any remaining
+  semantic claim is intentionally under `arithMulSignedWitnessSoundness`.
+- 🪓 C3.5 `MULW` repaired and unblocked; no static-ROM `sext = 0`.
+  `equiv_MULW` is routed through the real W sign-extension evidence and
+  op-bus-derived operand high-chunk zeroes; `.mulw` is removed from
+  `UsesOpcodeSpecificArithTableAxiom`.
+
+Current C4 checklist:
+
+- 🪓 C4.1 `DIVU` and `REMU` unblocked.
+- 🪓 C4.2 non-W signed `DIV` and `REM` unblocked; dynamic facts classified
+  as Binary-side / `assumes_operation`, not static ArithTable facts.
+- 🪓 C4.3 unsigned W-mode `DIVUW` and `REMUW` repaired and unblocked; no
+  static-ROM `sext = 0`.
+- 🪓 C4.4 signed W-mode `DIVW` and `REMW` repaired and unblocked; no
+  static-ROM `sext = 0`.
+
+C3/C4 trust-shape completion note: all ArithMul and Div/Rem-family
+constructors are now removed from `UsesOpcodeSpecificArithTableAxiom`.
+The remaining signed-MUL blockers are recorded under
+`arithMulSignedWitnessSoundness`. The remaining signed Div/Rem trust items
+in their closures are documented dynamic row/range/bus facts deferred to C6,
+not C4 ArithTable trust-shape blockers.
+
+Per-opcode completion rule: inspect closure, remove exactly that
+constructor from `UsesOpcodeSpecificArithTableAxiom`, update the defect
+ledger/status, then run `lake build`, V1, and V2.
 
 ### Phase 3 — Per-AIR transpiler rewrite
 
-Status: **not started in this session.** Reference for the next
-PR series:
+Reference for the broader PR series after C3/C4:
 
 1. Rust side (`tools/pil-extract/src/clean_emit.rs`): adapt the
    spike-branch transpiler at `tools/pil-to-clean/` (which already

@@ -106,7 +106,7 @@ theorem equiv_MULW
     -- plus h_sext_choice for W-mode sign-extension on bytes 4..7.
     (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a)
     (h_nr : v.nr r_a = 0)
-    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 0)
+    (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 0)
     -- Op-pin for MULW: op = 182.
     (h_op : v.op r_a = 182)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
@@ -115,6 +115,9 @@ theorem equiv_MULW
       toIntZ (v.np r_a)
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    -- W operand chunk facts from op-bus high-lane collapse.
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
     -- Byte-pack lane match (LANE-MATCH): bytes 0..3 pack c-chunks low 32 (MULW product low half).
     (h_byte_lo :
       bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16777216
@@ -152,8 +155,8 @@ theorem equiv_MULW
       h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
       h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
       h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
-      h_chain h_nr h_sext h_m32 h_div h_op
-      h_na_bool h_nb_bool h_np_xor h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+      h_chain h_nr h_m32 h_div h_op
+      h_na_bool h_nb_bool h_np_xor h_a23 h_b23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
   rw [equiv_MULW_sail state mulw_input r1 r2 rd
         h_input_r1 h_input_r2 h_input_rd h_input_pc]
   symm

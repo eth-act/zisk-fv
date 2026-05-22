@@ -273,7 +273,7 @@ lemma div_unsigned_chain_witnesses
 
     Mirror of `div_unsigned_chain_witnesses` for the **W-variant**
     DIVUW / REMUW rows. The mode pins are:
-    `na = nb = np = nr = 0`, `sext = 0`, `m32 = 1`, `div = 1`.
+    `na = nb = np = nr = 0`, `m32 = 1`, `div = 1`.
 
     The carry-range axiom `arith_div_carry_columns_in_range_unsigned`
     is reused — it only checks `na = nb = np = nr = 0` (not `m32`),
@@ -292,7 +292,7 @@ lemma div_w_unsigned_chain_witnesses
     (h_chain : div_carry_chain_holds v r_a)
     (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
     (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
-    (_h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1)
+    (h_m32 : v.m32 r_a = 1)
     (h_div : v.div r_a = 1) :
     ∃ cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL,
       cy₀.val < 131072 ∧ cy₁.val < 131072 ∧ cy₂.val < 131072 ∧ cy₃.val < 131072
@@ -1006,10 +1006,10 @@ open ZiskFv.PackedBitVec.SignedChunkLift
 
     Inputs:
     * `mul_carry_chain_holds v r_a` — row-level 11 constraints.
-    * W-mode pins (`nr = 0`, `sext = 0`, `m32 = 1`, `div = 0`).
+    * W-mode pins (`nr = 0`, `m32 = 1`, `div = 0`).
     * `na, nb ∈ {0,1}` booleanity + XOR pin `np = na + nb - 2*na*nb`.
-    * Operand pin `a_2 = a_3 = b_2 = b_3 = 0` (val-form, from
-      `arith_table_op_mulw_operand_pin`).
+    * Operand pin `a_2 = a_3 = b_2 = b_3 = 0` (val-form, supplied by
+      the wrapper from the operation-bus W high-lane collapse).
 
     Output: the **natural** W-MUL chunk identity over ℤ
     `(1-2*np)*A_32*B_32 + (nb*(1-2*na)*A_32 + na*(1-2*nb)*B_32)*B²
@@ -1029,7 +1029,7 @@ open ZiskFv.PackedBitVec.SignedChunkLift
 lemma mul_w_chain_witnesses
     (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
     (h_chain : mul_carry_chain_holds v r_a)
-    (h_nr : v.nr r_a = 0) (_h_sext : v.sext r_a = 0)
+    (h_nr : v.nr r_a = 0)
     (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 0)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
@@ -1125,7 +1125,7 @@ lemma mul_w_chain_witnesses
     arith_mul_chunk_ranges_at_holds v r_a
   obtain ⟨hcy0_disj, hcy1_disj, hcy2_disj, hcy3_disj,
           hcy4_disj, hcy5_disj, hcy6_disj⟩ :=
-    ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_w v r_a _h_sext h_m32 h_div
+    ZiskFv.Airs.Arith.arith_mul_carry_columns_in_range_w v r_a h_m32 h_div
   have hcy0_abs : |toIntZ (v.cy_0 r_a)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy0_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩
@@ -1437,7 +1437,7 @@ lemma mul_w_chain_witnesses
 
     Inputs:
     * `div_carry_chain_holds v r_a` — row-level 11 constraints.
-    * W-mode pins (`sext = 0`, `m32 = 1`, `div = 1`).
+    * W-mode pins (`m32 = 1`, `div = 1`).
     * `na, nb, nr ∈ {0,1}` booleanity + XOR pin `np = na + nb - 2*na*nb`.
     * Operand/remainder pin `a_2 = a_3 = b_2 = b_3 = d_2 = d_3 = 0`
       (val-form, from `arith_table_op_divw_operand_pin`).
@@ -1458,7 +1458,6 @@ lemma mul_w_chain_witnesses
 lemma div_w_chain_witnesses
     (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (h_chain : div_carry_chain_holds v r_a)
-    (_h_sext : v.sext r_a = 0)
     (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
@@ -1564,7 +1563,7 @@ lemma div_w_chain_witnesses
     arith_div_chunk_ranges_at_holds v r_a
   obtain ⟨hcy0_disj, hcy1_disj, hcy2_disj, hcy3_disj,
           hcy4_disj, hcy5_disj, hcy6_disj⟩ :=
-    ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_w v r_a _h_sext h_m32 h_div
+    ZiskFv.Airs.Arith.arith_div_carry_columns_in_range_w v r_a h_m32 h_div
   have hcy0_abs : |toIntZ (v.cy_0 r_a : FGL)| ≤ 983040 := by
     have := fgl_carry_disjunctive_lt _ hcy0_disj
     rcases this with ⟨h1, h2⟩; exact abs_le.mpr ⟨h1, h2⟩

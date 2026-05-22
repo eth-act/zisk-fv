@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.OpEnvelope
+import ZiskFv.Compliance.Defects
 import ZiskFv.Equivalence.Divu
 
 /-!
@@ -35,6 +36,22 @@ def OpEnvelope.exec_eq_divu
 
 theorem zisk_riscv_compliant_program_bus_divu
     (env : OpEnvelope state m r_main) :
+    env.exec_eq_divu := by
+  cases env with
+  | divu divu_input r1 r2 rd bus v r_a
+         pins h_match_primary promises bounds h_row_constraints h_op2_ne =>
+    simp only [OpEnvelope.exec_eq_divu]
+    exact ZiskFv.Equivalence.Divu.equiv_DIVU state divu_input r1 r2 rd bus m r_main v r_a
+      pins h_match_primary promises bounds h_row_constraints h_op2_ne
+  | _ => trivial
+
+/-- Defect-aware DIVU dispatcher.
+
+    DIVU has been retired from the ArithTable trust-shape defect block, so
+    the defect-aware path now consumes the ordinary DIVU proof closure. -/
+theorem zisk_riscv_compliant_program_bus_divu_except_known_defects
+    (env : OpEnvelope state m r_main)
+    (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq_divu := by
   cases env with
   | divu divu_input r1 r2 rd bus v r_a

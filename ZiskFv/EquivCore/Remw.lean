@@ -106,7 +106,7 @@ theorem equiv_REMW
     -- Structural-unpacking ADDED binders for REMW (W-mode signed).
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     -- Mode pins (TRANSPILE-PIN).
-    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1)
+    (h_m32 : v.m32 r_a = 1)
     (h_div : v.div r_a = 1)
     -- Op-pin (TRANSPILE-PIN): REMW = 191, in {190, 191} signed-W family.
     (h_op : v.op r_a = 190 ∨ v.op r_a = 191)
@@ -178,7 +178,7 @@ theorem equiv_REMW
       h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
       h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
       h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
-      h_chain h_sext h_m32 h_div h_op h_op_full
+      h_chain h_m32 h_div h_op h_op_full
       h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
       h_op2_ne h_no_overflow_w h_r_abs h_r_sign

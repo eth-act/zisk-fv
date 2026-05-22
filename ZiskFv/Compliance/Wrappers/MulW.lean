@@ -26,10 +26,10 @@ import ZiskFv.Compliance.SharedBundles
 >
 > Discharged promise hypotheses:
 > * `h_chain` via `mul_carry_chain_holds_of_extended`.
-> * Mode pins (`h_nr = 0`, `h_sext = 0`, `h_m32 = 1`, `h_div = 0`,
->   `h_op = 182`, `h_na_bool`, `h_nb_bool`, `h_np_xor`) via the new
->   `arith_table_op_mulw_mode_pin` (class #6b, landed alongside the
->   MULH na/nb MSB pins).
+> * Mode pins (`h_nr = 0`, `h_m32 = 1`, `h_div = 0`, `h_op = 182`,
+>   `h_na_bool`, `h_nb_bool`, `h_np_xor`) via the derived Clean
+>   projection `arith_table_op_mulw_basic_mode_pin`. `h_sext = 0` is a
+>   dynamic proof target during C3.2-P, not a static table fact.
 > * `h_byte_lo` via `main_external_arith_emission_bundle` (class #4)
 >   composed with the primary-lane op-bus `matches_entry` projection
 >   of `m.c_0 r_main = v.c_0 r_a + v.c_1 r_a * 65536` and the FGL → ℕ
@@ -39,11 +39,9 @@ import ZiskFv.Compliance.SharedBundles
 > * `h_sext_choice` — sign-extension on bytes 4..7 of rd. Same
 >   trust class as ADDW / DIVUW / REMUW / DIVW W-mode sign-extension
 >   pass-throughs.
-> * `h_rs1_value`, `h_rs2_value` — signed-extractLsb-31-0 operand bridges. Future
->   work (mirror of MULH's `signed_packed_toInt_eq_of_read_xreg` chain
->   specialized to the low-32 form via the existing
->   `arith_table_op_mulw_operand_pin` axiom) will discharge these from
->   the trust ledger.
+    > * `h_rs1_value`, `h_rs2_value` — signed-extractLsb-31-0 operand bridges
+    >   derived from the operation-bus W high-lane collapse plus the
+    >   transpiler row contract.
 -/
 
 namespace ZiskFv.Compliance
@@ -110,7 +108,7 @@ theorem equiv_MULW
   have h_op_arith_mulw : v.op r_a = 182 := by
     rw [h_op_eq, h_main_op_mulw]; simp [OP_MUL_W]
   -- ============ Unpack matches_entry lane projections ============
-  obtain ⟨_h_a_lo_eq_FGL, _h_a_hi_eq_FGL, _h_b_lo_eq_FGL, _h_b_hi_eq_FGL,
+  obtain ⟨_h_a_lo_eq_FGL, h_a_hi_eq_FGL, _h_b_lo_eq_FGL, h_b_hi_eq_FGL,
           h_c0_eq_FGL, _h_c1_eq_FGL⟩ :=
     arith_mul_primary_projections h_match_primary
   -- ============ Unpack extended row-constraint bundle ============
@@ -122,9 +120,19 @@ theorem equiv_MULW
   -- enter this opcode's `#print axioms`, so the Component is load-bearing.
   have h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a :=
     ZiskFv.AirsClean.ArithMul.mul_carry_chain_holds_via_component v r_a h_chain
-  -- ============ DISCHARGE MULW mode pins (the new arith_table axiom) ============
-  obtain ⟨h_nr, h_sext, h_m32, h_div, h_na_bool, h_nb_bool, h_np_xor⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_mulw_mode_pin v r_a h_op_arith_mulw
+  -- ============ DISCHARGE true MULW static mode pins ============
+  obtain ⟨h_na, h_nb, h_np, h_nr, h_m32, h_div⟩ :=
+    ZiskFv.Airs.Arith.arith_table_op_mulw_basic_mode_pin v r_a h_op_arith_mulw
+  have h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1 := Or.inl h_na
+  have h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1 := Or.inl h_nb
+  have h_np_xor :
+      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+        = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+            + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+            - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+                * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) := by
+    rw [h_na, h_nb, h_np]
+    decide
   -- ============ DISCHARGE h_byte_lo (lane match, primary lane = c[]) ============
   -- OP_MUL_W literal 0xb6 = 182 — position 5 in the
   -- main_external_arith_emission_bundle 14-way disjunction
@@ -138,11 +146,21 @@ theorem equiv_MULW
   have h_byte_lo_to_c0 : e2.x0.val + e2.x1.val * 256
       + e2.x2.val * 65536 + e2.x3.val * 16777216
       = (m.c_0 r_main).val := h_bundle.1
-  obtain ⟨_h_a0_lt, _h_a1_lt, _h_a2_lt, _h_a3_lt,
-          _h_b0_lt, _h_b1_lt, _h_b2_lt, _h_b3_lt,
+  obtain ⟨h_m32_main, _h_sp1, _h_sp2, _h_off1, _h_off2,
+         _h_main_a_lo, _h_main_a_hi, _h_main_b_lo, _h_main_b_hi⟩ :=
+    ZiskFv.Trusted.transpile_MULW
+      m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
+      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
+      h_main_active h_main_op_mulw
+  obtain ⟨_h_a0_lt, _h_a1_lt, h_a2_lt, h_a3_lt,
+          _h_b0_lt, _h_b1_lt, h_b2_lt, h_b3_lt,
           h_c0_lt, h_c1_lt, _h_c2_lt, _h_c3_lt,
           _h_d0_lt, _h_d1_lt, _h_d2_lt, _h_d3_lt⟩ :=
     ZiskFv.Airs.Arith.arith_mul_columns_in_range v r_a
+  have h_a23 := arith_chunk_pair_eq_zero_of_m32_one
+    (m.a_1 r_main) (m.m32 r_main) h_a_hi_eq_FGL h_m32_main h_a2_lt h_a3_lt
+  have h_b23 := arith_chunk_pair_eq_zero_of_m32_one
+    (m.b_1 r_main) (m.m32 r_main) h_b_hi_eq_FGL h_m32_main h_b2_lt h_b3_lt
   -- Byte-lane lo equation via cross-AIR `arith_byte_lane_eq_of_match`.
   have h_byte_lo := arith_byte_lane_eq_of_match h_byte_lo_to_c0 h_c0_eq_FGL h_c0_lt h_c1_lt
   -- ============ Delegate to `equiv_MULW` ============
@@ -150,7 +168,7 @@ theorem equiv_MULW
     state mulw_input r1 r2 rd v r_a
     ⟨exec_row, e0, e1, e2⟩
     promises
-    h_chain h_nr h_sext h_m32 h_div h_op_arith_mulw
-    h_na_bool h_nb_bool h_np_xor h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+    h_chain h_nr h_m32 h_div h_op_arith_mulw
+    h_na_bool h_nb_bool h_np_xor h_a23 h_b23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
 
 end ZiskFv.Compliance

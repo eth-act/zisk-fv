@@ -113,7 +113,7 @@ ADDED: v, r_a, h_chain, h_nr, h_sext, h_m32, h_div, h_op,
         specialization (`m32 = 1`, op = 0x91). Differences from
         MULH:
         * `h_op` (TRANSPILE-PIN to op = 0x91, MULW's arith_table row)
-          consumed by `arith_table_op_mulw_operand_pin` to pin
+          plus operation-bus W high-lane collapse pins
           `a_2 = a_3 = b_2 = b_3 = 0`.
         * `h_byte_lo` ties bytes 0..3 to `c_0 + c_1*65536` (the
           low-32 product chunks) — not d-chunks like MULH (which is

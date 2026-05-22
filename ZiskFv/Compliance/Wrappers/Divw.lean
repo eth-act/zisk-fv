@@ -19,8 +19,10 @@ import ZiskFv.Compliance.SharedBundles
 > opcode = 0xbe = 190, m32 = 1, signed.
 >
 > Discharges:
-> * Mode pins (`sext = 0`, `m32 = 1`, `div = 1`) via the new
->   `arith_table_op_div_rem_signed_w_mode_pin` (class #6b).
+> * Static mode pins (`m32 = 1`, `div = 1`) via the derived Clean
+>   projection `arith_table_op_div_rem_signed_w_basic_mode_pin`.
+>   `sext = 0` is a dynamic proof target during C3.2-P, not a static
+>   table fact.
 > * Op-pin disjunctions (`h_op_signed : op ∈ {190, 191}`,
 >   `h_op : op ∈ {188..191}`) from op-bus + Main-side op pin.
 > * `h_chain` via `div_carry_chain_holds_of_extended`.
@@ -116,9 +118,9 @@ theorem equiv_DIVW
   -- ============ Unpack extended row-constraint bundle ============
   have h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a :=
     ZiskFv.Airs.ArithDiv.div_carry_chain_holds_of_extended v r_a h_row_constraints
-  -- ============ DISCHARGE mode pins (W-signed) ============
-  obtain ⟨h_sext, h_m32, h_div⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_mode_pin v r_a h_op_signed
+  -- ============ DISCHARGE true W-signed static mode pins ============
+  obtain ⟨h_m32, h_div⟩ :=
+    ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_basic_mode_pin v r_a h_op_signed
   -- ============ DERIVE h_c23 from W-mode + op-bus a_hi projection ============
   obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
          _h_main_a_lo, _h_main_a_hi, _h_main_b_lo, _h_main_b_hi⟩ :=
@@ -148,7 +150,7 @@ theorem equiv_DIVW
   -- ============ DISCHARGE h_r_abs / h_r_sign (W-signed remainder bound) ============
   have h_bound :=
     ZiskFv.Airs.Arith.arith_div_remainder_bound_signed_w
-      v r_a h_sext h_m32 h_div h_op_signed
+      v r_a h_m32 h_div h_op_signed
   -- The axiom is in `.val` form; convert to `toIntZ` form via booleanity.
   have toIntZ_zero : toIntZ (0 : FGL) = 0 := by simp [toIntZ]
   have toIntZ_one : toIntZ (1 : FGL) = 1 := by
@@ -227,7 +229,7 @@ theorem equiv_DIVW
     state divw_input r1 r2 rd v r_a
     ⟨exec_row, e0, e1, e2⟩
     promises
-    h_chain h_na_bool h_nb_bool h_nr_bool h_np_xor h_sext h_m32 h_div
+    h_chain h_na_bool h_nb_bool h_nr_bool h_np_xor h_m32 h_div
     h_op_full h_op_signed h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
     h_op2_ne h_no_overflow h_r_abs h_r_sign
 

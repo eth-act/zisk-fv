@@ -481,6 +481,25 @@ axiom transpile_SW :
     `riscv2zisk_context.rs:247`. `m32 = 1` on the Main row. -/
 @[simp] def OP_MUL_W : FGL := 182
 
+/-- Transpile contract for RV64M MULW.
+    Mirrors `transpile_MUL` modulo opcode = `OP_MUL_W` and `m32 = 1`.
+    `riscv2zisk_context.rs:247` routes MULW through
+    `create_register_op(..., "mul_w", 4)`, whose `_w` suffix sets the
+    Main-row `m32` selector. -/
+axiom transpile_MULW :
+    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
+      m.is_external_op r_main = 1 →
+      m.op r_main = OP_MUL_W →
+        m.m32 r_main = 1
+      ∧ m.set_pc r_main = 0
+      ∧ m.store_pc r_main = 0
+      ∧ m.jmp_offset1 r_main = 4
+      ∧ m.jmp_offset2 r_main = 4
+      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
+      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
+      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
+      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
+
 /-- The axiomatic RV64 → Zisk row contract for MUL.
 
     Per `zisk/core/src/riscv2zisk_context.rs:243` an RV64 MUL

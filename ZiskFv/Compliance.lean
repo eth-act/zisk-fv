@@ -8,6 +8,7 @@ import ZiskFv.Compliance.Dispatch.LDSD
 import ZiskFv.Compliance.Dispatch.DIVU
 import ZiskFv.Compliance.Dispatch.Misc
 import ZiskFv.Compliance.Dispatch.Remaining
+import ZiskFv.Compliance.Defects
 
 /-!
 # Compliance.lean — unified channel-balance global theorem
@@ -46,6 +47,13 @@ channel-balance statement, partitioned across the ten dispatchers:
 No new axioms — the closure is exactly the union of the 63 wrappers'
 closures plus the trivial `state_effect_via_channels_eq_bus_effect_2`
 bridge. The V2 trust gate enforces this.
+
+`zisk_riscv_compliant_program_bus_except_known_defects` is the public
+defect-aware theorem shape while `docs/fv/defects.md` contains open
+claim-weakening defects. Its extra `h_known_bugs` binder is orthogonal to
+the validity witnesses already bundled in `OpEnvelope`: validity says the
+current modeled constraints hold; `h_known_bugs` says this envelope is not
+inside a ledgered defect region.
 -/
 
 namespace ZiskFv.Compliance
@@ -71,15 +79,14 @@ def OpEnvelope.exec_eq (env : OpEnvelope state m r_main) : Prop :=
     ∧ env.exec_eq_misc
     ∧ env.exec_eq_remaining
 
-/-- **Channel-balance global theorem.**
+/-- **Known-defect-aware channel-balance global theorem.**
 
     For any `OpEnvelope` arm, the channel-balance form of the
-    conclusion (`= state_effect_via_channels …`) holds. The trust
-    footprint equals the union of the 63 wrappers' closures plus the
-    trivial `state_effect_via_channels_eq_bus_effect_2` bridge — zero
-    new axioms. -/
+    conclusion (`= state_effect_via_channels …`) holds outside the
+    defect regions recorded by `Defects.NoKnownDefect`. -/
 theorem zisk_riscv_compliant_program_bus
-    (env : OpEnvelope state m r_main) :
+    (env : OpEnvelope state m r_main)
+    (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact zisk_riscv_compliant_program_bus_branch env
@@ -89,8 +96,20 @@ theorem zisk_riscv_compliant_program_bus
   · exact zisk_riscv_compliant_program_bus_shift env
   · exact zisk_riscv_compliant_program_bus_add_rtypew env
   · exact zisk_riscv_compliant_program_bus_ldsd env
-  · exact zisk_riscv_compliant_program_bus_divu env
+  · exact zisk_riscv_compliant_program_bus_divu_except_known_defects env h_known_bugs
   · exact zisk_riscv_compliant_program_bus_misc env
-  · exact zisk_riscv_compliant_program_bus_remaining env
+  · exact zisk_riscv_compliant_program_bus_remaining env h_known_bugs
+
+/-- Defect-aware public compliance theorem.
+
+    `h_known_bugs` is a visible exclusion of every currently ledgered defect
+    region. The proof currently reuses the existing dispatcher theorem; as
+    each defect predicate becomes more precise, opcode-family dispatchers can
+    consume the corresponding derived facts locally. -/
+theorem zisk_riscv_compliant_program_bus_except_known_defects
+    (env : OpEnvelope state m r_main)
+    (h_known_bugs : Defects.NoKnownDefect env) :
+    env.exec_eq :=
+  zisk_riscv_compliant_program_bus env h_known_bugs
 
 end ZiskFv.Compliance

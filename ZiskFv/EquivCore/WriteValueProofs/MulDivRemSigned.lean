@@ -622,8 +622,8 @@ lemma h_rd_val_mdrs_mulhsu_chunked
 
     * `mul_w_chain_witnesses` (Layer A.4 W-mode) → natural 4-chunk
       ℤ identity with cross-terms.
-    * `arith_table_op_mulw_operand_pin` (Trust class #6) → upper
-      operand chunks `a_2 = a_3 = b_2 = b_3 = 0`.
+    * W operand chunk facts `a_2 = a_3 = b_2 = b_3 = 0`, derived by the
+      wrapper from the op-bus W high-lane collapse.
     * `h_sext_choice` disjunctive sign-extension witness over bytes 4..7
       (same trust class as DIVUW/REMUW).
     * Layer 1's `fgl_mul_w_signed_to_bv64` → BV64 sign-extension result.
@@ -643,9 +643,9 @@ lemma h_rd_val_mdrs_mulw_chunked
     (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r_a)
     -- Mode pins (TRANSPILE-PIN).
     (h_nr : v.nr r_a = 0)
-    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 0)
+    (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 0)
     -- Op-pin for MULW (TRANSPILE-PIN): MULW = op 182.
-    (h_op : v.op r_a = 182)
+    (_h_op : v.op r_a = 182)
     -- Booleanity + XOR (CIRCUIT-CONSTRAINT, derivable from constraints 41/42/44 + arith_table).
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
@@ -653,6 +653,9 @@ lemma h_rd_val_mdrs_mulw_chunked
       toIntZ (v.np r_a)
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    -- W-mode operand chunk pin, derived from op-bus high-lane collapse.
+    (h_a23 : (v.a_2 r_a).val = 0 ∧ (v.a_3 r_a).val = 0)
+    (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
     -- Byte-pack lane match (LANE-MATCH): bytes 0..3 pack c-chunks low 32.
     (h_byte_lo :
       e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
@@ -683,12 +686,12 @@ lemma h_rd_val_mdrs_mulw_chunked
           h_d0, h_d1, h_d2, h_d3⟩ :=
     ZiskFv.EquivCore.Bridge.Arith.arith_mul_chunk_ranges_at_holds v r_a
   -- W-mode operand chunk pin.
-  obtain ⟨h_a2_eq, h_a3_eq, h_b2_eq, h_b3_eq⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_mulw_operand_pin v r_a h_sext h_m32 h_div h_op
+  obtain ⟨h_a2_eq, h_a3_eq⟩ := h_a23
+  obtain ⟨h_b2_eq, h_b3_eq⟩ := h_b23
   -- invoke W chain witnesses.
   have h_chunk_ident :=
     ZiskFv.EquivCore.Bridge.Arith.mul_w_chain_witnesses
-      v r_a h_chain h_nr h_sext h_m32 h_div h_na_bool h_nb_bool h_np_xor
+      v r_a h_chain h_nr h_m32 h_div h_na_bool h_nb_bool h_np_xor
       h_a2_eq h_a3_eq h_b2_eq h_b3_eq
   -- convert toIntZ chunk identities to .val identities.
   have h_a0_val : toIntZ (v.a_0 r_a) = (v.a_0 r_a).val := toIntZ_eq_val_of_lt h_a0 (by decide)
@@ -1869,7 +1872,7 @@ lemma h_rd_val_mdrs_divw_chunked
     -- Row-level carry-chain constraint set.
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     -- Mode pins (TRANSPILE-PIN).
-    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
+    (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
     -- Booleanity + XOR (CIRCUIT-CONSTRAINT).
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
@@ -1946,7 +1949,7 @@ lemma h_rd_val_mdrs_divw_chunked
   obtain ⟨h_c2_eq, h_c3_eq⟩ := h_c23
   have h_chunk_ident :=
     ZiskFv.EquivCore.Bridge.Arith.div_w_chain_witnesses
-      v r_a h_chain h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor
+      v r_a h_chain h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_a2_eq h_a3_eq h_b2_eq h_b3_eq h_d2_eq h_d3_eq
   -- name the ℤ 32-bit packings.
   set A_32 : ℤ := toIntZ (v.a_0 r_a) + toIntZ (v.a_1 r_a) * 65536 with hA_def
@@ -2312,7 +2315,7 @@ lemma h_rd_val_mdrs_remw_chunked
     -- Row-level carry-chain constraint set.
     (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a)
     -- Mode pins (TRANSPILE-PIN).
-    (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
+    (h_m32 : v.m32 r_a = 1) (h_div : v.div r_a = 1)
     -- Op-pin (TRANSPILE-PIN): REMW = op 191, in {190, 191}.
     (h_op : v.op r_a = 190 ∨ v.op r_a = 191)
     (h_op_full : v.op r_a = 188 ∨ v.op r_a = 189
@@ -2382,11 +2385,11 @@ lemma h_rd_val_mdrs_remw_chunked
     ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a
   -- invoke W operand/remainder pin (a_2=a_3=b_2=b_3=d_2=d_3=0).
   obtain ⟨h_a2_eq, h_a3_eq, h_b2_eq, h_b3_eq, h_d2_eq, h_d3_eq⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin v r_a h_sext h_m32 h_div h_op_full
+    ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin v r_a h_m32 h_div h_op_full
   -- invoke the W-DIV chain witnesses (Bridge/Arith.lean).
   have h_chunk_ident :=
     ZiskFv.EquivCore.Bridge.Arith.div_w_chain_witnesses
-      v r_a h_chain h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor
+      v r_a h_chain h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor
       h_a2_eq h_a3_eq h_b2_eq h_b3_eq h_d2_eq h_d3_eq
   -- name the ℤ W-packings A (quotient32), B (divisor32),
   -- C32 (dividend32 after c_2=c_3=0 collapse), D32 (remainder32).
@@ -2442,7 +2445,7 @@ lemma h_rd_val_mdrs_remw_chunked
   -- invoke signed-W d-sign pin (REMW = op 191).
   have h_nr_pin_raw :=
     ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin
-      v r_a h_sext h_m32 h_div h_op
+      v r_a h_m32 h_div h_op
   -- convert h_nr_pin_raw to ℤ-form on A_32, B_32, C32, D32.
   have h_nr_pin_int : toIntZ (v.nr r_a) = toIntZ (v.np r_a) ∨ D = 0 := by
     rcases h_nr_pin_raw with h_eq | ⟨hd0, hd1, hd2, hd3⟩

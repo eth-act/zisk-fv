@@ -25,8 +25,10 @@ import ZiskFv.Compliance.SharedBundles
 > Discharged promise hypotheses:
 > * Mode pins (`h_na` / `h_np` reflexivity placeholders; `h_nb = 0`
 >   real pin, `h_nr = 0`, `h_sext = 0`, `h_m32 = 0`, `h_div = 0`;
->   `h_na_bool`, `h_nb_bool`, `h_np_xor`) — discharged via
->   `arith_table_op_mulhsu_mode_pin` (already on the books).
+>   `h_na_bool`, `h_nb_bool`) — discharged via the derived Clean
+>   finite-table projection `arith_table_op_mulhsu_basic_mode_pin`.
+>   `h_np_xor` is a dynamic proof target during C3.2-P, not a static
+>   table fact.
 > * Two lane-match equations — discharged via the secondary-lane
 >   emission bundle composed with `mulh_bus_res1_eq_d_hi`.
 > * `h_rs1_value` (signed-rs1) via `signed_packed_toInt_eq_of_read_xreg`
@@ -49,7 +51,7 @@ open ZiskFv.EquivCore.Promises
 
     Mixed-sign signature: rs1 routes through the signed bridge,
     rs2 through the unsigned bridge. `nb` is hard-pinned to 0 by
-    the existing `arith_table_op_mulhsu_mode_pin` axiom. -/
+    `arith_table_op_mulhsu_basic_mode_pin`. -/
 theorem equiv_MULHSU
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhsu_input : PureSpec.MulhsuInput)
@@ -67,6 +69,7 @@ theorem equiv_MULHSU
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (h_no_signed_mul_witness_defect : False)
     :
     (do
       Sail.writeReg Register.nextPC
@@ -112,9 +115,15 @@ theorem equiv_MULHSU
   -- `np_xor` clause until the signed/unsigned high-half proof is repaired.
   obtain ⟨h_nb_zero, h_nr_eq, h_sext, h_m32, h_div, h_na_bool, _h_np_bool⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_mulhsu_basic_mode_pin v r_a h_op_arith_mulhsu
-  obtain ⟨_h_nb_zero_ax, _h_nr_ax, _h_sext_ax, _h_m32_ax, _h_div_ax,
-          _h_na_bool_ax, h_np_xor⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_mulhsu_mode_pin v r_a h_op_arith_mulhsu
+  have h_np_xor :
+      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
+        = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+            + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+            - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
+                * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a) := by
+    -- Known-defect exclusion: MULHSU product-sign relation must come from
+    -- dynamic witness soundness or an upstream circuit fix.
+    exact False.elim h_no_signed_mul_witness_defect
   have h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1 := Or.inl h_nb_zero
   -- ============ DISCHARGE main_mul/main_div selector pins (both = 0) ============
   obtain ⟨h_main_mul_zero, h_main_div_zero⟩ :=

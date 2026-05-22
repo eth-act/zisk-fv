@@ -23,9 +23,9 @@
 #     > trust/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
-# artefacts under `.lake/build/`). Last regenerated: 2026-05-21.
+# artefacts under `.lake/build/`). Last regenerated: 2026-05-22.
 #
-# Total entries: 102
+# Total entries: 96
 #
 ZiskFv.Airs.Arith.arith_div_nb_eq_msb_of_divisor
 ZiskFv.Airs.Arith.arith_div_np_eq_msb_of_dividend
@@ -39,14 +39,7 @@ ZiskFv.Airs.Arith.arith_mul_nb_eq_msb_of_b
 ZiskFv.Airs.Arith.arith_mul_table_lookup_sound
 ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_d_sign_pin
 ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin
-ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_mode_pin
-ZiskFv.Airs.Arith.arith_table_op_div_rem_unsigned_w_mode_pin
 ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin
-ZiskFv.Airs.Arith.arith_table_op_mul_mode_pin
-ZiskFv.Airs.Arith.arith_table_op_mulh_mode_pin
-ZiskFv.Airs.Arith.arith_table_op_mulhsu_mode_pin
-ZiskFv.Airs.Arith.arith_table_op_mulw_mode_pin
-ZiskFv.Airs.Arith.arith_table_op_mulw_operand_pin
 ZiskFv.Airs.Binary.binary_b_op_or_sext_eq_op_general
 ZiskFv.Airs.Binary.binary_consumer_byte_match_chain_pin
 ZiskFv.Airs.Binary.binary_per_byte_lookup_witness
@@ -95,6 +88,7 @@ ZiskFv.Trusted.transpile_MUL
 ZiskFv.Trusted.transpile_MULH
 ZiskFv.Trusted.transpile_MULHSU
 ZiskFv.Trusted.transpile_MULHU
+ZiskFv.Trusted.transpile_MULW
 ZiskFv.Trusted.transpile_OR
 ZiskFv.Trusted.transpile_ORI
 ZiskFv.Trusted.transpile_PC_for_AUIPC

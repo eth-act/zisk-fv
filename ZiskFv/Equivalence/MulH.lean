@@ -41,12 +41,14 @@ theorem equiv_MULH
         (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_row_constraints : ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (h_no_signed_mul_witness_defect : False)
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute
         (instruction.MUL (r2, r1, rd, { result_part := VectorHalf.High, signed_rs1 := .Signed, signed_rs2 := .Signed }))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_MULH state mulh_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises h_row_constraints
+  exact ZiskFv.Compliance.equiv_MULH state mulh_input r1 r2 rd bus m r_main v r_a
+    pins h_match_secondary promises h_row_constraints h_no_signed_mul_witness_defect
 
 end ZiskFv.Equivalence.MulH

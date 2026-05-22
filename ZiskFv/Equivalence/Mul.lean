@@ -44,6 +44,7 @@ theorem equiv_MUL
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints : ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (h_no_signed_mul_witness_defect : False)
     : (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -55,6 +56,7 @@ theorem equiv_MUL
              signed_rs2 := srs2 }))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_MUL state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a pins h_match_primary promises bounds h_row_constraints
+  exact ZiskFv.Compliance.equiv_MUL state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
+    pins h_match_primary promises bounds h_row_constraints h_no_signed_mul_witness_defect
 
 end ZiskFv.Equivalence.Mul

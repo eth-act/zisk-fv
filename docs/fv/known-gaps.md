@@ -22,7 +22,9 @@
 > corrected pattern is one shared lookup/permutation soundness boundary for
 > ArithTable membership, plus proved finite-table projections. A green
 > `lake build` under known-false trust assumptions is not a completed
-> verification claim.
+> verification claim. Current implementation/proof defects are tracked in
+> [`defects.md`](defects.md); the governing design is
+> [`defect-ledger-design.md`](defect-ledger-design.md).
 >
 > This document is preserved as a historical record of how the gap
 > was identified and closed. Nothing else below is removed; the

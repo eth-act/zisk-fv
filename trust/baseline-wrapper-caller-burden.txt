@@ -12,13 +12,13 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 879
+# Total rows: 882
 # Total wrappers: 63
 # Category bridge: 66
 # Category bus_shape: 27
 # Category entry: 9
 # Category match: 6
-# Category other: 504
+# Category other: 507
 # Category range: 6
 # Category row: 57
 # Category state: 73
@@ -405,6 +405,7 @@ ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 013 h_match_primary [other] matches_ent
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 014 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state mul_input.r1_val mul_input.r2_val 
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 015 bounds [other] ZiskFv.Compliance.ByteBounds bus.e2
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 016 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 017 h_no_signed_mul_witness_defect [other] False
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 001 mulh_input [other] PureSpec.MulhInput
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 002 r1 [other] regidx
@@ -419,6 +420,7 @@ ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 010 pins [other] ZiskFv.Compliance.Ma
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a)
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 012 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state mulh_input.r1_val mulh_input.r2_va
 ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 013 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.Wrappers.MulH.equiv_MULH 014 h_no_signed_mul_witness_defect [other] False
 ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 001 mulhsu_input [other] PureSpec.MulhsuInput
 ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 002 r1 [other] regidx
@@ -433,6 +435,7 @@ ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 010 pins [other] ZiskFv.Complianc
 ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 011 h_match_secondary [other] matches_entry (opBus_row_Main m r_main) (opBus_row_ArithMulSecondary v r_a)
 ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 012 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state mulhsu_input.r1_val mulhsu_input.r
 ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 013 h_row_constraints [other] ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a
+ZiskFv.Compliance.Wrappers.MulHSU.equiv_MULHSU 014 h_no_signed_mul_witness_defect [other] False
 ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 001 mulhu_input [other] PureSpec.MulhuInput
 ZiskFv.Compliance.Wrappers.MulHU.equiv_MULHU 002 r1 [other] regidx

@@ -102,9 +102,9 @@ theorem equiv_REMW
   -- ============ Unpack extended row-constraint bundle ============
   have h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a :=
     ZiskFv.Airs.ArithDiv.div_carry_chain_holds_of_extended v r_a h_row_constraints
-  -- ============ DISCHARGE mode pins (W-signed) ============
-  obtain ⟨h_sext, h_m32, h_div⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_mode_pin v r_a h_op_signed
+  -- ============ DISCHARGE true W-signed static mode pins ============
+  obtain ⟨h_m32, h_div⟩ :=
+    ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_basic_mode_pin v r_a h_op_signed
   -- ============ DERIVE h_c23 from W-mode + secondary op-bus a_hi projection ============
   obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
          _h_main_a_lo, _h_main_a_hi, _h_main_b_lo, _h_main_b_hi⟩ :=
@@ -135,7 +135,7 @@ theorem equiv_REMW
   -- ============ DISCHARGE h_r_abs / h_r_sign (W-signed remainder bound) ============
   have h_bound :=
     ZiskFv.Airs.Arith.arith_div_remainder_bound_signed_w
-      v r_a h_sext h_m32 h_div h_op_signed
+      v r_a h_m32 h_div h_op_signed
   have h_r_abs : (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
                   - (v.nr r_a).val * (2:ℤ)^32).natAbs
                  < (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs := by
@@ -149,7 +149,7 @@ theorem equiv_REMW
     state remw_input r1 r2 rd v r_a
     ⟨exec_row, e0, e1, e2⟩
     promises
-    h_chain h_sext h_m32 h_div h_op_signed
+    h_chain h_m32 h_div h_op_signed
     h_na_bool h_nb_bool h_nr_bool h_np_xor
     h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
     h_op2_ne h_no_overflow_w h_r_abs h_r_sign

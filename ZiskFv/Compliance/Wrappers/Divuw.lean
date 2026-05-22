@@ -16,8 +16,10 @@ import ZiskFv.Compliance.SharedBundles
 
 > W-mode mirror of `Wrappers/Divu.lean`. opcode = 0xbc = 188, m32 = 1.
 > Discharges what the trust ledger covers:
-> * Mode pins (na/nb/np/nr/sext/m32/div) via the new
->   `arith_table_op_div_rem_unsigned_w_mode_pin` (class #6b).
+> * Static mode pins (na/nb/np/nr/m32/div) via the derived Clean
+>   projection `arith_table_op_div_rem_unsigned_w_basic_mode_pin`.
+>   `sext = 0` is a dynamic proof target during C3.2-P, not a static
+>   table fact.
 > * Op-pin disjunction (`h_op : op ∈ {188, 189, 190, 191}`) via
 >   the op-bus projection + Main-side opcode literal.
 > * Chunk-range / row-constraint bundle via `div_row_constraints_with_c46`.
@@ -105,9 +107,9 @@ theorem equiv_DIVUW
   -- ============ Unpack extended row-constraint bundle ============
   have h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a :=
     ZiskFv.Airs.ArithDiv.div_carry_chain_holds_of_extended v r_a h_row_constraints
-  -- ============ DISCHARGE mode pins (W-unsigned) ============
-  obtain ⟨h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_div_rem_unsigned_w_mode_pin v r_a h_op_arith
+  -- ============ DISCHARGE true W-unsigned static mode pins ============
+  obtain ⟨h_na, h_nb, h_np, h_nr, h_m32, h_div⟩ :=
+    ZiskFv.Airs.Arith.arith_table_op_div_rem_unsigned_w_basic_mode_pin v r_a h_op_arith
   -- ============ DERIVE h_c23 from W-mode + op-bus a_hi projection ============
   obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
          _h_main_a_lo, _h_main_a_hi, _h_main_b_lo, _h_main_b_hi⟩ :=
@@ -138,7 +140,7 @@ theorem equiv_DIVUW
   -- ============ DISCHARGE h_d_lt_b (W-unsigned remainder bound) ============
   have h_bound :=
     ZiskFv.Airs.Arith.arith_div_remainder_bound_unsigned_w
-      v r_a h_sext h_m32 h_div h_op_arith
+      v r_a h_m32 h_div h_op_arith
   have h_d_lt_b : (v.d_0 r_a).val + (v.d_1 r_a).val * 65536
                   < (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat := by
     rw [h_rs2_value]; exact h_bound
@@ -147,7 +149,7 @@ theorem equiv_DIVUW
     state divuw_input r1 r2 rd v r_a
     ⟨exec_row, e0, e1, e2⟩
     promises
-    h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div h_op_full h_c23
+    h_chain h_na h_nb h_np h_nr h_m32 h_div h_op_full h_c23
     h_byte_lo h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_d_lt_b
 
 end ZiskFv.Compliance
