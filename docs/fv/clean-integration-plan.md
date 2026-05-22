@@ -573,6 +573,14 @@ the ROM. Of the 19:
     MULHU mode + selector, and the MUL/MULH/MULHSU selector pins. They
     are now theorems from shared ArithTable lookup membership plus
     finite-table projections.
+  - The true static subsets of the remaining over-claiming mode pins are
+    now public theorems in `Airs/Arith/Ranges.lean`:
+    `arith_table_op_{mul,mulh,mulhsu,mulw}_basic_mode_pin` and
+    `arith_table_op_div_rem_{unsigned_w,signed_w}_basic_mode_pin`.
+    These deliberately omit the false clauses (`na = nb = np = 0` for
+    low-half MUL, static `np_xor` for MULH/MULHSU, and W-mode
+    `sext = 0`) so consumers can be repaired against the faithful ROM
+    facts without recreating the bad trust shape.
   - The false / over-claiming axioms are *deleted only after their
     consumers are reproven* against true ROM facts or separately
     justified dynamic constraints.
@@ -642,7 +650,9 @@ axiom.
    `arith_mul_table_lookup_sound` and `arith_div_table_lookup_sound`.
 2. Use `AirsClean/ArithTableProjections.lean` for all faithful finite-table
    facts. The projection lemmas consume `ArithTableSpec (rowAt v r)` and
-   produce the row facts that are actually true in the ROM.
+   produce the row facts that are actually true in the ROM. The public
+   `*_basic_mode_pin` theorems in `Airs/Arith/Ranges.lean` expose those
+   true subsets to downstream proof repairs.
 3. Delete or stop using every `arith_table_op_*` axiom whose only job is to
    turn opcode equality into static-table facts. If a conclusion is false as
    a ROM projection, do not recreate it under another name. The trust gate now

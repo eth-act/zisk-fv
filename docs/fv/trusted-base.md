@@ -75,6 +75,11 @@ folded into per-op axioms.
 C3/C4-b is partially landed: nine old opcode-shaped mode/selector axioms
 are now theorems from shared ArithTable lookup membership plus finite-table
 projection lemmas under `ZiskFv/AirsClean/ArithTableProjections.lean`.
+The faithful static subsets of the remaining over-claiming mode pins are
+also exposed as derived `*_basic_mode_pin` theorems in
+`ZiskFv/Airs/Arith/Ranges.lean`; those theorems intentionally omit the
+clauses that the real ROM does not prove (`np_xor` and W-mode
+`sext = 0`).
 The live global theorem can still remain green while depending on the
 remaining known-bad arithmetic-table assumptions. That is not the final
 verification claim. New opcode-specific ArithTable axioms are not

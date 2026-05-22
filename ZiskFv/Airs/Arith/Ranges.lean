@@ -879,6 +879,20 @@ axiom arith_table_op_mul_mode_pin
     v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
       ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
 
+/-- **Arith-table MUL basic mode pin (derived).**
+    This is the true static subset of the MUL table rows: the lookup pins
+    `nr = sext = m32 = div = 0` and booleanity of `na`, `nb`, and `np`,
+    but does not pin those sign witnesses to zero. -/
+theorem arith_table_op_mul_basic_mode_pin
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_op : v.op r_a = 180) :
+    v.nr r_a = 0 ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
+      ∧ (v.na r_a = 0 ∨ v.na r_a = 1)
+      ∧ (v.nb r_a = 0 ∨ v.nb r_a = 1)
+      ∧ (v.np r_a = 0 ∨ v.np r_a = 1) :=
+  ZiskFv.AirsClean.ArithTableProjections.Mul.mul_basic_mode_pin
+    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+
 /-- **Arith-table MUL primary/secondary selector pin (class #6b).**
     For every `Valid_ArithMul` row with `op = 180` (MUL — low 64 bits)
     the same `arith_table_assumes` lookup at `arith.pil:286-287` pins
@@ -992,6 +1006,17 @@ axiom arith_table_op_div_rem_unsigned_w_mode_pin
     v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
       ∧ v.sext r_a = 0 ∧ v.m32 r_a = 1 ∧ v.div r_a = 1
 
+/-- **Arith-table unsigned-W DIV/REM basic mode pin (derived).**
+    True static subset of the unsigned W rows. `sext` is intentionally not
+    pinned here: concrete ROM rows include both `sext = 0` and `sext = 1`. -/
+theorem arith_table_op_div_rem_unsigned_w_basic_mode_pin
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_op : v.op r_a = 188 ∨ v.op r_a = 189) :
+    v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
+      ∧ v.m32 r_a = 1 ∧ v.div r_a = 1 :=
+  ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_unsigned_w_basic_mode_pin
+    v r_a (arith_div_table_lookup_sound v r_a) h_op
+
 /-- **Arith-table signed-W DIV/REM mode pin (class #6b).**
     For every `Valid_ArithDiv` row with `op ∈ {190, 191}` (signed
     32-bit DIVW / REMW), the arith_table lookup pins `sext = 0`,
@@ -1007,6 +1032,16 @@ axiom arith_table_op_div_rem_signed_w_mode_pin
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
     (_h_op : v.op r_a = 190 ∨ v.op r_a = 191) :
     v.sext r_a = 0 ∧ v.m32 r_a = 1 ∧ v.div r_a = 1
+
+/-- **Arith-table signed-W DIV/REM basic mode pin (derived).**
+    True static subset of the signed W rows. `sext` is intentionally not
+    pinned here: the table contains sign-extending rows. -/
+theorem arith_table_op_div_rem_signed_w_basic_mode_pin
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_op : v.op r_a = 190 ∨ v.op r_a = 191) :
+    v.m32 r_a = 1 ∧ v.div r_a = 1 :=
+  ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_signed_w_basic_mode_pin
+    v r_a (arith_div_table_lookup_sound v r_a) h_op
 
 /-! ## Arith-table MULHU mode pin (op = 0xb1 = 177)
 
@@ -1097,6 +1132,19 @@ axiom arith_table_op_mulh_mode_pin
               - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
                   * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
 
+/-- **Arith-table MULH basic mode pin (derived).**
+    True static subset of the MULH rows: mode pins plus booleanity of the
+    sign witnesses. The XOR/product-sign relation is not a static ROM fact. -/
+theorem arith_table_op_mulh_basic_mode_pin
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_op : v.op r_a = 181) :
+    v.nr r_a = 0 ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
+      ∧ (v.na r_a = 0 ∨ v.na r_a = 1)
+      ∧ (v.nb r_a = 0 ∨ v.nb r_a = 1)
+      ∧ (v.np r_a = 0 ∨ v.np r_a = 1) :=
+  ZiskFv.AirsClean.ArithTableProjections.Mul.mulh_basic_mode_pin
+    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+
 /-- **Arith-table MULH primary/secondary selector pin (class #6b).**
     For every `Valid_ArithMul` row with `op = 181` (MULH), the same
     `arith_table_assumes` lookup pins the primary/secondary selectors
@@ -1124,6 +1172,20 @@ axiom arith_table_op_mulhsu_mode_pin
               + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
               - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
                   * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+
+/-- **Arith-table MULHSU basic mode pin (derived).**
+    True static subset of the MULHSU rows: unsigned second operand, mode
+    pins, and booleanity of the remaining sign witnesses. The product-sign
+    XOR relation is not a static ROM fact. -/
+theorem arith_table_op_mulhsu_basic_mode_pin
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_op : v.op r_a = 179) :
+    v.nb r_a = 0
+      ∧ v.nr r_a = 0 ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
+      ∧ (v.na r_a = 0 ∨ v.na r_a = 1)
+      ∧ (v.np r_a = 0 ∨ v.np r_a = 1) :=
+  ZiskFv.AirsClean.ArithTableProjections.Mul.mulhsu_basic_mode_pin
+    v r_a (arith_mul_table_lookup_sound v r_a) h_op
 
 /-- **Arith-table MULHSU primary/secondary selector pin (class #6b).**
     For every `Valid_ArithMul` row with `op = 179` (MULHSU), the same
@@ -1251,5 +1313,16 @@ axiom arith_table_op_mulw_mode_pin
               + ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
               - 2 * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
                   * ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nb r_a)
+
+/-- **Arith-table MULW basic mode pin (derived).**
+    True static subset of the MULW rows. `sext` is intentionally not pinned
+    here: concrete ROM rows include both `sext = 0` and `sext = 1`. -/
+theorem arith_table_op_mulw_basic_mode_pin
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_op : v.op r_a = 182) :
+    v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
+      ∧ v.m32 r_a = 1 ∧ v.div r_a = 0 :=
+  ZiskFv.AirsClean.ArithTableProjections.Mul.mulw_basic_mode_pin
+    v r_a (arith_mul_table_lookup_sound v r_a) h_op
 
 end ZiskFv.Airs.Arith
