@@ -912,6 +912,24 @@ theorem arith_table_op_mul_range_pins
   ZiskFv.AirsClean.ArithTableProjections.Mul.mul_range_pins
     v r_a (arith_mul_table_lookup_sound v r_a) h_op
 
+/-- **Arith-table MUL sign-product split (derived).**
+    For low-half signed MUL (`op = 180`), the static ROM rows either
+    satisfy the usual sign-product relation `np = na XOR nb` in field
+    arithmetic, or they are one of the two exceptional negative-times-
+    positive shapes with `np = 0`.
+
+    This is only the table-side case split. The exceptional branches
+    still need the dynamic carry/range argument before the old all-zero
+    sign shortcut can be deleted. -/
+theorem arith_table_op_mul_np_xor_or_zero_product_shape
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_op : v.op r_a = 180) :
+    v.np r_a = v.na r_a + v.nb r_a - 2 * v.na r_a * v.nb r_a
+      ∨ (v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
+      ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0) :=
+  ZiskFv.AirsClean.ArithTableProjections.Mul.mul_np_xor_or_zero_product_shape
+    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+
 /-- **Arith-table MUL primary/secondary selector pin (class #6b).**
     For every `Valid_ArithMul` row with `op = 180` (MUL — low 64 bits)
     the same `arith_table_assumes` lookup at `arith.pil:286-287` pins

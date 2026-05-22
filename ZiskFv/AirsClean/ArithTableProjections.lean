@@ -176,6 +176,35 @@ theorem mul_range_pins
       have hval := congrArg Fin.val hop
       norm_num at hval
 
+theorem mul_np_xor_or_zero_product_shape
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r))
+    (h_op : v.op r = 180) :
+    v.np r = v.na r + v.nb r - 2 * v.na r * v.nb r
+      ∨ (v.na r = 1 ∧ v.nb r = 0 ∧ v.np r = 0)
+      ∨ (v.na r = 0 ∧ v.nb r = 1 ∧ v.np r = 0) := by
+  rcases h_table with ⟨i, hrow⟩
+  fin_cases i <;>
+    simp [ZiskFv.AirsClean.ArithMul.arithTableRow,
+      ZiskFv.AirsClean.ArithTable.rows] at hrow h_op ⊢
+  all_goals
+    rcases hrow with ⟨hop, _hm32, _hdiv, hna, hnb, hnp, _hnr, _hsext,
+      _hdiv_by_zero, _hdiv_overflow, _hmain_mul, _hmain_div, _hsigned, _hrange_ab,
+      _hrange_cd⟩
+    rw [hop] at h_op
+    have hval := congrArg Fin.val h_op
+    norm_num at hval
+  all_goals
+    first
+    | right; left
+      exact ⟨hna, hnb, hnp⟩
+    | right; right
+      exact ⟨hna, hnb, hnp⟩
+    | left
+      rw [hna, hnb, hnp]
+      norm_num
+
 theorem mulhu_mode_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
     (h_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
@@ -398,6 +427,23 @@ theorem mul_range_pins_of_lookup_aware_soundness
       ∧ (v.np r = 0 → v.range_cd r = 1)
       ∧ (v.np r = 1 → v.range_cd r = 2) := by
   exact mul_range_pins v r
+    (ZiskFv.AirsClean.ArithMul.arith_table_spec_of_lookup_aware_const_soundness
+      offset env (ZiskFv.AirsClean.ArithMul.rowAt v r) h_holds)
+    h_op
+
+theorem mul_np_xor_or_zero_product_shape_of_lookup_aware_soundness
+    (offset : ℕ) (env : Environment FGL)
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((ZiskFv.AirsClean.ArithMul.mainWithArithTable
+          (ZiskFv.AirsClean.ArithMul.constVar
+            (ZiskFv.AirsClean.ArithMul.rowAt v r))).operations offset))
+    (h_op : v.op r = 180) :
+    v.np r = v.na r + v.nb r - 2 * v.na r * v.nb r
+      ∨ (v.na r = 1 ∧ v.nb r = 0 ∧ v.np r = 0)
+      ∨ (v.na r = 0 ∧ v.nb r = 1 ∧ v.np r = 0) := by
+  exact mul_np_xor_or_zero_product_shape v r
     (ZiskFv.AirsClean.ArithMul.arith_table_spec_of_lookup_aware_const_soundness
       offset env (ZiskFv.AirsClean.ArithMul.rowAt v r) h_holds)
     h_op

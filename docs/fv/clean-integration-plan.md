@@ -600,6 +600,11 @@ the ROM. Of the 19:
     boundary plus finite-table projection. It exposes the static low-MUL
     range-selector facts needed by that repair: `range_ab` is determined
     by `(na, nb)`, and `range_cd` is determined by `np`.
+  - `arith_table_op_mul_np_xor_or_zero_product_shape` is now a theorem
+    from the same lookup boundary plus finite-table projection. It shows
+    that low-MUL rows either satisfy the usual `np = na XOR nb` field
+    relation or are one of the two exceptional negative-times-positive
+    shapes with `np = 0`.
   - The false / over-claiming axioms are *deleted only after their
     consumers are reproven* against true ROM facts or separately
     justified dynamic constraints.
