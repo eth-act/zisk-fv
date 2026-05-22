@@ -74,7 +74,7 @@ a dep).
 
 ### C5 — BinaryExtension
 
-Status: next. C3/C4-b is closed under the agreed known-defect convention:
+Status: in progress. C3/C4-b is closed under the agreed known-defect convention:
 ArithTable trust-shape cleanup is complete, and the confirmed signed-MUL
 circuit defect is visible through `h_known_bugs` / the false
 `h_no_signed_mul_witness_defect` premise. The next Clean integration phase
@@ -90,6 +90,15 @@ lookup-soundness axioms (`binary_extension_row_byte_lookups`,
 Binary-family lookup phase. There is no trust delta for the component:
 BinaryExtension completeness is proved directly because the local circuit is
 only an operation-bus push with `True` guarantees.
+
+Provider-side op-bus bridge progress: `AirsClean/BinaryExtension/Bridge.lean`
+now defines the FGL-level Clean `OpBusMessage` emitted by the component and
+proves
+`opBusMessage_toEntry_rowAt_eq_opBus_row`, a definitional equality with the
+pre-Clean `opBus_row_BinaryExtension` row. This gives C7 a concrete
+adapter from the Clean provider payload into the existing operation-bus
+entry surface without adding trust or pretending the
+BinaryExtensionTable lookup facts have been discharged.
 
 ### C3.2-P — controlled ArithTable axiom purge
 
