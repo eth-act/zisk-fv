@@ -152,7 +152,13 @@ theorem equiv_MUL
   have h_c46 : ZiskFv.Airs.ArithMul.mul_constraint_46_named v r_a :=
     ZiskFv.Airs.ArithMul.mul_constraint_46_of_extended v r_a h_row_constraints
   -- ============ DISCHARGE mode pins ============
-  obtain ⟨h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div⟩ :=
+  -- The true ROM projection supplies the mode pins and sign-witness
+  -- booleanity. The remaining low-MUL repair is to remove the old axiom's
+  -- overstrong `na = nb = np = 0` use by proving the low-half product
+  -- sign-agnostically.
+  obtain ⟨h_nr, h_sext, h_m32, h_div, _h_na_bool, _h_nb_bool, _h_np_bool⟩ :=
+    ZiskFv.Airs.Arith.arith_table_op_mul_basic_mode_pin v r_a h_op_arith_mul
+  obtain ⟨h_na, h_nb, h_np, _h_nr_ax, _h_sext_ax, _h_m32_ax, _h_div_ax⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_mul_mode_pin v r_a h_op_arith_mul
   -- ============ DISCHARGE main_mul/main_div selector pins ============
   obtain ⟨h_main_mul_one, h_main_div_zero⟩ :=

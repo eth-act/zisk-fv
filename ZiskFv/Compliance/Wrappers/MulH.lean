@@ -132,7 +132,13 @@ theorem equiv_MULH
   have h_c46 : ZiskFv.Airs.ArithMul.mul_constraint_46_named v r_a :=
     ZiskFv.Airs.ArithMul.mul_constraint_46_of_extended v r_a h_row_constraints
   -- ============ DISCHARGE mode pins ============
-  obtain ⟨h_nr_eq, h_sext, h_m32, h_div, h_na_bool, h_nb_bool, h_np_xor⟩ :=
+  -- The mode pins and sign-witness booleanity are true ROM projections.
+  -- The old axiom is still used only for the overstrong `np_xor` clause
+  -- until the high-half signed product proof is repaired dynamically.
+  obtain ⟨h_nr_eq, h_sext, h_m32, h_div, h_na_bool, h_nb_bool, _h_np_bool⟩ :=
+    ZiskFv.Airs.Arith.arith_table_op_mulh_basic_mode_pin v r_a h_op_arith_mulh
+  obtain ⟨_h_nr_ax, _h_sext_ax, _h_m32_ax, _h_div_ax,
+          _h_na_bool_ax, _h_nb_bool_ax, h_np_xor⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_mulh_mode_pin v r_a h_op_arith_mulh
   -- ============ DISCHARGE main_mul/main_div selector pins (both = 0) ============
   obtain ⟨h_main_mul_zero, h_main_div_zero⟩ :=

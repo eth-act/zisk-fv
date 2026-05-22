@@ -107,7 +107,13 @@ theorem equiv_MULHSU
   have h_c46 : ZiskFv.Airs.ArithMul.mul_constraint_46_named v r_a :=
     ZiskFv.Airs.ArithMul.mul_constraint_46_of_extended v r_a h_row_constraints
   -- ============ DISCHARGE mode pins (MULHSU = hard nb pin + sign-witness) ============
-  obtain ⟨h_nb_zero, h_nr_eq, h_sext, h_m32, h_div, h_na_bool, h_np_xor⟩ :=
+  -- The hard `nb = 0`, mode pins, and sign-witness booleanity are true ROM
+  -- projections. The old axiom is still used only for the overstrong
+  -- `np_xor` clause until the signed/unsigned high-half proof is repaired.
+  obtain ⟨h_nb_zero, h_nr_eq, h_sext, h_m32, h_div, h_na_bool, _h_np_bool⟩ :=
+    ZiskFv.Airs.Arith.arith_table_op_mulhsu_basic_mode_pin v r_a h_op_arith_mulhsu
+  obtain ⟨_h_nb_zero_ax, _h_nr_ax, _h_sext_ax, _h_m32_ax, _h_div_ax,
+          _h_na_bool_ax, h_np_xor⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_mulhsu_mode_pin v r_a h_op_arith_mulhsu
   have h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1 := Or.inl h_nb_zero
   -- ============ DISCHARGE main_mul/main_div selector pins (both = 0) ============

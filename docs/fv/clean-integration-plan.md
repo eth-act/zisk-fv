@@ -581,6 +581,13 @@ the ROM. Of the 19:
     low-half MUL, static `np_xor` for MULH/MULHSU, and W-mode
     `sext = 0`) so consumers can be repaired against the faithful ROM
     facts without recreating the bad trust shape.
+  - The MUL/MULH/MULHSU wrappers now consume those faithful basic-mode
+    projections for all true static facts they need. The old over-claiming
+    axioms remain live only for the clauses that still need proof repair in
+    those wrappers: low-half MUL's `na = nb = np = 0` shortcut and
+    MULH/MULHSU's static `np_xor` shortcut. This caused no V2
+    axiom-closure drift because those wrappers already depended on the
+    shared ArithMul lookup boundary through selector projections.
   - The false / over-claiming axioms are *deleted only after their
     consumers are reproven* against true ROM facts or separately
     justified dynamic constraints.
