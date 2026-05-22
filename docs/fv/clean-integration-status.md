@@ -80,6 +80,17 @@ circuit defect is visible through `h_known_bugs` / the false
 `h_no_signed_mul_witness_defect` premise. The next Clean integration phase
 is BinaryExtension.
 
+Initial C5 progress: `AirsClean/BinaryExtension` now has a Clean
+`GeneralFormalCircuit`, `Air.Flat.Component`, and minimal op-bus ensemble.
+The component emits the BinaryExtension operation-bus push and has no F-only
+`assertZero` constraints, matching the extracted AIR. Its `Spec` remains
+`True`; BinaryExtensionTable semantic facts still flow through the existing
+lookup-soundness axioms (`binary_extension_row_byte_lookups`,
+`binary_extension_op_is_shift_pin`, `bin_ext_table_consumer_wf`) until the
+Binary-family lookup phase. There is no trust delta for the component:
+BinaryExtension completeness is proved directly because the local circuit is
+only an operation-bus push with `True` guarantees.
+
 ### C3.2-P — controlled ArithTable axiom purge
 
 Status: complete. This was a temporary invariant-relaxation phase for the
