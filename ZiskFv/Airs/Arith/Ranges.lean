@@ -898,10 +898,12 @@ axiom arith_table_op_mul_mode_pin
     `mul_bus_res1_eq_c_hi` (`Airs/Arith/BusRes1.lean:56`) for the
     hi-lane discharge of `h_byte_hi` on `equiv_MUL`. Same trust kind
     as `arith_table_op_div_rem_main_selector_pin` (the DIV analog). -/
-axiom arith_table_op_mul_main_selector_pin
+theorem arith_table_op_mul_main_selector_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
-    (_h_op : v.op r_a = 180) :
-    v.main_mul r_a = 1 ∧ v.main_div r_a = 0
+    (h_op : v.op r_a = 180) :
+    v.main_mul r_a = 1 ∧ v.main_div r_a = 0 :=
+  ZiskFv.AirsClean.ArithTableProjections.Mul.mul_main_selector_pin
+    v r_a (arith_mul_table_lookup_sound v r_a) h_op
 
 /-! ## Arith-table unsigned non-W DIV/REM mode pin (DIVU = 184, REMU = 185)
 
@@ -1099,10 +1101,12 @@ axiom arith_table_op_mulh_mode_pin
     For every `Valid_ArithMul` row with `op = 181` (MULH), the same
     `arith_table_assumes` lookup pins the primary/secondary selectors
     to MULH-secondary: `main_mul = 0, main_div = 0`. -/
-axiom arith_table_op_mulh_main_selector_pin
+theorem arith_table_op_mulh_main_selector_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
-    (_h_op : v.op r_a = 181) :
-    v.main_mul r_a = 0 ∧ v.main_div r_a = 0
+    (h_op : v.op r_a = 181) :
+    v.main_mul r_a = 0 ∧ v.main_div r_a = 0 :=
+  ZiskFv.AirsClean.ArithTableProjections.Mul.mulh_main_selector_pin
+    v r_a (arith_mul_table_lookup_sound v r_a) h_op
 
 /-- **Arith-table MULHSU (signed × unsigned) mode pin (class #6b).**
     For every `Valid_ArithMul` row with `op = 179` (MULHSU — signed ×
@@ -1124,10 +1128,12 @@ axiom arith_table_op_mulhsu_mode_pin
 /-- **Arith-table MULHSU primary/secondary selector pin (class #6b).**
     For every `Valid_ArithMul` row with `op = 179` (MULHSU), the same
     `arith_table_assumes` lookup pins `main_mul = 0, main_div = 0`. -/
-axiom arith_table_op_mulhsu_main_selector_pin
+theorem arith_table_op_mulhsu_main_selector_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
-    (_h_op : v.op r_a = 179) :
-    v.main_mul r_a = 0 ∧ v.main_div r_a = 0
+    (h_op : v.op r_a = 179) :
+    v.main_mul r_a = 0 ∧ v.main_div r_a = 0 :=
+  ZiskFv.AirsClean.ArithTableProjections.Mul.mulhsu_main_selector_pin
+    v r_a (arith_mul_table_lookup_sound v r_a) h_op
 
 /-! ## Arith-table high-half MUL sign-witness MSB pins — `na = MSB(A)`, `nb = MSB(B)`
 

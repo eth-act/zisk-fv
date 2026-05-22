@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 105
+# Total entries: 102
 #
 5146b31aab2412d7  ZiskFv/Airs/Arith/Ranges.lean:60  axiom     arith_mul_table_lookup_sound
 5023f778af7563b7  ZiskFv/Airs/Arith/Ranges.lean:70  axiom     arith_div_table_lookup_sound
@@ -17,16 +17,13 @@ fa99203f44f899fd  ZiskFv/Airs/Arith/Ranges.lean:658  axiom     arith_div_nb_eq_m
 9961527750700b32  ZiskFv/Airs/Arith/Ranges.lean:797  axiom     arith_div_remainder_bound_unsigned_w
 c7e4c67fd8c81356  ZiskFv/Airs/Arith/Ranges.lean:811  axiom     arith_div_remainder_bound_signed_w
 7a0b086096b4b616  ZiskFv/Airs/Arith/Ranges.lean:876  axiom     arith_table_op_mul_mode_pin
-5ab1f1e1ba3e756b  ZiskFv/Airs/Arith/Ranges.lean:901  axiom     arith_table_op_mul_main_selector_pin
-98c33b2ebf1db15d  ZiskFv/Airs/Arith/Ranges.lean:987  axiom     arith_table_op_div_rem_unsigned_w_mode_pin
-d558c70508202e63  ZiskFv/Airs/Arith/Ranges.lean:1004  axiom     arith_table_op_div_rem_signed_w_mode_pin
-40f369345eaec9b8  ZiskFv/Airs/Arith/Ranges.lean:1086  axiom     arith_table_op_mulh_mode_pin
-e318a3432890608c  ZiskFv/Airs/Arith/Ranges.lean:1102  axiom     arith_table_op_mulh_main_selector_pin
-2a2ece446a392232  ZiskFv/Airs/Arith/Ranges.lean:1112  axiom     arith_table_op_mulhsu_mode_pin
-ff995f749519e4ea  ZiskFv/Airs/Arith/Ranges.lean:1127  axiom     arith_table_op_mulhsu_main_selector_pin
-4795fba538119f8e  ZiskFv/Airs/Arith/Ranges.lean:1178  axiom     arith_mul_na_eq_msb_of_a
-e5e831f6110f53e0  ZiskFv/Airs/Arith/Ranges.lean:1205  axiom     arith_mul_nb_eq_msb_of_b
-ace8b8a501aacd27  ZiskFv/Airs/Arith/Ranges.lean:1237  axiom     arith_table_op_mulw_mode_pin
+98c33b2ebf1db15d  ZiskFv/Airs/Arith/Ranges.lean:989  axiom     arith_table_op_div_rem_unsigned_w_mode_pin
+d558c70508202e63  ZiskFv/Airs/Arith/Ranges.lean:1006  axiom     arith_table_op_div_rem_signed_w_mode_pin
+40f369345eaec9b8  ZiskFv/Airs/Arith/Ranges.lean:1088  axiom     arith_table_op_mulh_mode_pin
+2a2ece446a392232  ZiskFv/Airs/Arith/Ranges.lean:1116  axiom     arith_table_op_mulhsu_mode_pin
+4795fba538119f8e  ZiskFv/Airs/Arith/Ranges.lean:1184  axiom     arith_mul_na_eq_msb_of_a
+e5e831f6110f53e0  ZiskFv/Airs/Arith/Ranges.lean:1211  axiom     arith_mul_nb_eq_msb_of_b
+ace8b8a501aacd27  ZiskFv/Airs/Arith/Ranges.lean:1243  axiom     arith_table_op_mulw_mode_pin
 da52a24a56bd46d1  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:139  axiom     binary_extension_op_is_shift_pin
 417970cbf37c35ff  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:168  axiom     binary_extension_row_byte_lookups
 1551d121ae09668b  ZiskFv/Airs/Binary/BinaryRanges.lean:176  axiom     binary_per_byte_lookup_witness

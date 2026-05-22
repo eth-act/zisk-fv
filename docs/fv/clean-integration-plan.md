@@ -568,16 +568,17 @@ the ROM. Of the 19:
     projection implementation proves is not a faithful ROM fact. In
     particular, MULH/MULHSU `np_xor` and W-mode `sext=0` must not be
     retired as static-ROM projections.
-  - Six true mode/selector families have already been retired as axioms:
+  - Nine true mode/selector families have already been retired as axioms:
     signed DIV/REM mode + selector, unsigned DIVU/REMU mode + selector,
-    and MULHU mode + selector. They are now theorems from shared
-    ArithTable lookup membership plus finite-table projections.
+    MULHU mode + selector, and the MUL/MULH/MULHSU selector pins. They
+    are now theorems from shared ArithTable lookup membership plus
+    finite-table projections.
   - The false / over-claiming axioms are *deleted only after their
     consumers are reproven* against true ROM facts or separately
     justified dynamic constraints.
   - "Retired" means **genuinely deleted, by proof** — removed from
     `Ranges.lean`, gone from `#print axioms`. Current C3/C4-b net:
-    `baseline-axioms.txt` shrank from 109 to 105 after replacing six
+    `baseline-axioms.txt` shrank from 109 to 102 after replacing nine
     old opcode-shaped axioms with two shared lookup-membership axioms.
     The remaining unsoundness is fixed only when the false consumer
     shapes are repaired and the remaining over-claiming axioms disappear.

@@ -25,7 +25,7 @@
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
 # artefacts under `.lake/build/`). Last regenerated: 2026-05-21.
 #
-# Total entries: 105
+# Total entries: 102
 #
 ZiskFv.Airs.Arith.arith_div_nb_eq_msb_of_divisor
 ZiskFv.Airs.Arith.arith_div_np_eq_msb_of_dividend
@@ -42,11 +42,8 @@ ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin
 ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_mode_pin
 ZiskFv.Airs.Arith.arith_table_op_div_rem_unsigned_w_mode_pin
 ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin
-ZiskFv.Airs.Arith.arith_table_op_mul_main_selector_pin
 ZiskFv.Airs.Arith.arith_table_op_mul_mode_pin
-ZiskFv.Airs.Arith.arith_table_op_mulh_main_selector_pin
 ZiskFv.Airs.Arith.arith_table_op_mulh_mode_pin
-ZiskFv.Airs.Arith.arith_table_op_mulhsu_main_selector_pin
 ZiskFv.Airs.Arith.arith_table_op_mulhsu_mode_pin
 ZiskFv.Airs.Arith.arith_table_op_mulw_mode_pin
 ZiskFv.Airs.Arith.arith_table_op_mulw_operand_pin
