@@ -120,34 +120,6 @@ lemma be_a_7_lt_256 (e : Valid_BinaryExtension FGL FGL) (r : ℕ) :
 lemma be_b_lt_256 (e : Valid_BinaryExtension FGL FGL) (r : ℕ) :
     (e.free_in_b r).val < 256 := (binary_extension_columns_in_range e r).2.2.2.2.2.2.2.2.1
 
-/-! ## op_is_shift linkage -/
-
-open ZiskFv.Trusted in
-/-- **BinaryExtension AIR op_is_shift linkage.** The `op_is_shift`
-    column is `bits(1)` (per `binary_extension.pil:88`: `col witness
-    bits(1) op_is_shift; // 1 if operation is in the shift family;
-    0 otherwise`) and the per-byte table lookup at
-    `binary_extension.pil:92` binds it to the table entry's
-    `op_is_shift` flag — so every row whose `op` is a shift literal
-    has `op_is_shift = 1`, and every row whose `op` is a SEXT literal
-    has `op_is_shift = 0`.
-
-    Trust class: lookup-soundness on the BinaryExtension table (same
-    class as `bin_ext_table_consumer_wf`, trusted-base.md class #6).
-    Cited PIL: `binary_extension.pil:88` (column declaration),
-    `binary_extension.pil:92` (table-lookup binding). -/
-axiom binary_extension_op_is_shift_pin (v : Valid_BinaryExtension FGL FGL) (r : ℕ) :
-    ((v.op r = OP_SLL ∨ v.op r = OP_SRL ∨ v.op r = OP_SRA
-      ∨ v.op r = OP_SLL_W ∨ v.op r = OP_SRL_W ∨ v.op r = OP_SRA_W)
-        → v.op_is_shift r = 1)
-  ∧ ((v.op r = OP_SIGNEXTEND_B ∨ v.op r = OP_SIGNEXTEND_H ∨ v.op r = OP_SIGNEXTEND_W)
-        → v.op_is_shift r = 0)
-
-end ZiskFv.Airs.BinaryExtension
-
-namespace ZiskFv.Airs.BinaryExtension
-
-
 open ZiskFv.Airs.Tables.BinaryExtensionTable in
 /-- **BinaryExtension row → 8-byte table-entry witness.** For every row
     `r` of a `Valid_BinaryExtension` AIR, the 8 per-byte lookups against
@@ -246,5 +218,91 @@ def binary_extension_row_byte_lookups (v : Valid_BinaryExtension FGL FGL) (r : �
         c_hi_byte := v.free_in_c_15 r
         op_is_shift := v.op_is_shift r }
     h7 := by simp }
+
+/-! ## op_is_shift linkage -/
+
+open ZiskFv.Trusted in
+/-- **BinaryExtension AIR op_is_shift linkage.** The `op_is_shift`
+    column is `bits(1)` (per `binary_extension.pil:88`: `col witness
+    bits(1) op_is_shift; // 1 if operation is in the shift family;
+    0 otherwise`) and the per-byte table lookup at
+    `binary_extension.pil:92` binds it to the table entry's
+    `op_is_shift` flag — so every row whose `op` is a shift literal
+    has `op_is_shift = 1`, and every row whose `op` is a SEXT literal
+    has `op_is_shift = 0`.
+
+    Derived from the row-shaped byte lookup entry plus
+    `bin_ext_table_consumer_wf`; the table predicates already pin the
+    `op_is_shift` flag for every shift and SEXT opcode. -/
+theorem binary_extension_op_is_shift_pin (v : Valid_BinaryExtension FGL FGL) (r : ℕ) :
+    ((v.op r = OP_SLL ∨ v.op r = OP_SRL ∨ v.op r = OP_SRA
+      ∨ v.op r = OP_SLL_W ∨ v.op r = OP_SRL_W ∨ v.op r = OP_SRA_W)
+        → v.op_is_shift r = 1)
+  ∧ ((v.op r = OP_SIGNEXTEND_B ∨ v.op r = OP_SIGNEXTEND_H ∨ v.op r = OP_SIGNEXTEND_W)
+        → v.op_is_shift r = 0) := by
+  open ZiskFv.Airs.Tables.BinaryExtensionTable in
+  let hbytes := binary_extension_row_byte_lookups v r
+  have h_wf := bin_ext_table_consumer_wf hbytes.e0 hbytes.h0.1
+  rcases h_wf with
+    ⟨_hrange, hSLL, hSRL, hSRA, hSLLW, hSRLW, hSRAW, hSEXTB, hSEXTH, hSEXTW⟩
+  constructor
+  · intro h_op
+    rcases h_op with h_op | h_op | h_op | h_op | h_op | h_op
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SLL,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL]
+      have h_flag := (hSLL h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SRL,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL]
+      have h_flag := (hSRL h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SRA,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA]
+      have h_flag := (hSRA h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL_W := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SLL_W,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL_W]
+      have h_flag := (hSLLW h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL_W := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SRL_W,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRL_W]
+      have h_flag := (hSRLW h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA_W := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SRA_W,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA_W]
+      have h_flag := (hSRAW h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+  · intro h_op
+    rcases h_op with h_op | h_op | h_op
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SIGNEXTEND_B,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B]
+      have h_flag := (hSEXTB h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SIGNEXTEND_H,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H]
+      have h_flag := (hSEXTH h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+    · have h_op_val : hbytes.e0.op.val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W := by
+        simp [hbytes, binary_extension_row_byte_lookups, h_op, ZiskFv.Trusted.OP_SIGNEXTEND_W,
+          ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W]
+      have h_flag := (hSEXTW h_op_val).2.2
+      ext
+      simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
 
 end ZiskFv.Airs.BinaryExtension

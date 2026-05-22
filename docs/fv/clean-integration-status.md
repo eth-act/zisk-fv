@@ -85,9 +85,8 @@ Initial C5 progress: `AirsClean/BinaryExtension` now has a Clean
 The component emits the BinaryExtension operation-bus push and has no F-only
 `assertZero` constraints, matching the extracted AIR. Its `Spec` remains
 `True`; BinaryExtensionTable semantic facts still flow through the existing
-lookup-soundness axioms (`binary_extension_op_is_shift_pin`,
-`bin_ext_table_consumer_wf`) until the Binary-family lookup phase. There is
-no trust delta for the component:
+lookup-soundness axiom (`bin_ext_table_consumer_wf`) until the
+Binary-family lookup phase. There is no trust delta for the component:
 BinaryExtension completeness is proved directly because the local circuit is
 only an operation-bus push with `True` guarantees.
 
@@ -111,6 +110,12 @@ the `ByteLookupHypotheses` bundle is now constructed definitionally from
 the BinaryExtension row columns. The remaining table semantics still rely on
 `bin_ext_table_consumer_wf`, so this is a duplicate witness-shape removal,
 not the terminal BinaryExtensionTable proof.
+
+`binary_extension_op_is_shift_pin` is also now derived from the constructed
+byte-0 entry plus `bin_ext_table_consumer_wf`; the table's per-op
+well-formedness predicates already pin `op_is_shift` for the shift and
+SEXT opcode families. After this, BinaryExtension has one remaining
+table-semantics axiom: `bin_ext_table_consumer_wf`.
 
 ### C3.2-P — controlled ArithTable axiom purge
 
