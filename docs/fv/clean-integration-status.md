@@ -100,6 +100,12 @@ adapter from the Clean provider payload into the existing operation-bus
 entry surface without adding trust or pretending the
 BinaryExtensionTable lookup facts have been discharged.
 
+The C5 `spec_via_component` theorem now also follows the same F-3 route as
+the non-trivial components: normalize `circuit.soundness`, instantiate a
+constant-expression row, and project the resulting `Spec`. Since the local
+`Spec` is still `True`, this is a hygiene/load-bearing-entrypoint cleanup
+rather than promise discharge.
+
 ### C3.2-P — controlled ArithTable axiom purge
 
 Status: complete. This was a temporary invariant-relaxation phase for the
