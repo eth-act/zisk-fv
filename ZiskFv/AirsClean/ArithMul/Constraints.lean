@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.ArithMul.Spec
+import ZiskFv.AirsClean.ArithTable
 import Clean.Circuit.Basic
 import ZiskFv.Channels.OperationBus
 
@@ -33,7 +34,7 @@ No axioms. Pure operational declaration.
 namespace ZiskFv.AirsClean.ArithMul
 
 open Goldilocks
-open Circuit (assertZero)
+open Circuit (assertZero lookup)
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 
 @[circuit_norm]
@@ -144,6 +145,27 @@ def main (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
       main_step := 0
       extended_arg := 0
       extra_args_0 := 0 }
+
+/-- Lookup-aware ArithMul circuit path. This appends the full 15-column
+    `arith_table_assumes` ROM lookup after the existing carry-chain/op-bus
+    component body. The current load-bearing carry-chain component remains
+    unchanged until Compliance supplies this lookup evidence globally. -/
+@[circuit_norm]
+def mainWithArithTable (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
+  main row
+  lookup (Table.fromStatic ArithTable.arithTable) (arithTableRow row)
+
+/-- Lookup-aware elaboration for the next C3/C4 stage. It is intentionally
+    separate from `arithMulElaborated` so existing carry-chain consumers do
+    not acquire a new caller-supplied lookup promise before Compliance has
+    a global source for it. -/
+@[reducible] def arithMulWithArithTableElaborated :
+    ElaboratedCircuit FGL ArithMulRow unit where
+  name := "ArithMulWithArithTable"
+  main := mainWithArithTable
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [OpBusChannel.toRaw]
 
 /-- The elaborated circuit for ArithMul's `main` — 11 `assertZero`
     carry-chain constraints + the op-bus push, no fresh witnesses

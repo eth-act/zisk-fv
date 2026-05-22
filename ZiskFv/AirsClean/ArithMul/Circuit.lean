@@ -203,8 +203,14 @@ theorem spec_via_component (row : ArithMulRow FGL)
         { na := .const row.flags.na, nb := .const row.flags.nb,
           nr := .const row.flags.nr, np := .const row.flags.np,
           sext := .const row.flags.sext, m32 := .const row.flags.m32,
-          div := .const row.flags.div, main_div := .const row.flags.main_div,
+          div := .const row.flags.div,
+          div_by_zero := .const row.flags.div_by_zero,
+          div_overflow := .const row.flags.div_overflow,
+          main_div := .const row.flags.main_div,
           main_mul := .const row.flags.main_mul, op := .const row.flags.op,
+          signed := .const row.flags.signed,
+          range_ab := .const row.flags.range_ab,
+          range_cd := .const row.flags.range_cd,
           bus_res1 := .const row.flags.bus_res1,
           multiplicity := .const row.flags.multiplicity }
       carries :=

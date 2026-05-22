@@ -41,14 +41,14 @@ is, by construction, the `StaticTable.Contains` predicate). A
 consumer would read structured column facts off `Spec` by
 enumerating the 74 literal rows.
 
-## Status — mechanism only; `arith_table_op_*` retirement is BLOCKED
+## Status — mechanism plus lookup row; `arith_table_op_*` retirement still gated
 
-This module is the proven `StaticTable` *mechanism* for the Arith
-ROM (plan D-ROM). It is **not** wired into any Component or the
-global theorem, and it retires **zero** axioms. Two findings block
-the `arith_table_op_*` retirement that the C3+C4 batch set out to do
-— both surfaced by building this faithful table; both are reported
-in full to the project owner (decisions D-ROM / D-STOP):
+This module is the proven `StaticTable` mechanism for the Arith ROM
+(plan D-ROM). The ArithMul/ArithDiv Clean row views now expose the full
+15-column tuple and provide lookup-aware circuit entry points, but the
+lookup membership is not yet sourced from the global theorem / ensemble.
+This file therefore still retires **zero** axioms by itself. Two findings
+govern the remaining `arith_table_op_*` retirement:
 
 1. **Missing lookup-soundness premise (D-STOP).** The 19
    `arith_table_op_*` axioms of `Airs/Arith/Ranges.lean` each bundle
@@ -59,22 +59,21 @@ in full to the project owner (decisions D-ROM / D-STOP):
    delivers only **(b)**, the data half. Half **(a)** can come only
    from a *new* shared lookup-soundness axiom (the established
    `bin_table_consumer_wf` pattern — `Airs/Tables/BinaryTable.lean`)
-   or from a Component whose `main` emits the ROM lookup. The C3/C4
-   carry-chain Components emit only `assertZero`s — no lookup — so
-   they cannot supply (a). Retiring the `arith_table_op_*` axioms
-   therefore needs a new soundness axiom, which the batch's brief
-   forbids; per D-STOP the work stops here and is reported.
+   or from the global Clean AIR/ensemble statement proving the lookup
+   emitted by the lookup-aware ArithMul/ArithDiv entry points. Retiring
+   the `arith_table_op_*` axioms before that would add a new promise
+   hypothesis, which is forbidden by the anti-laundering policy.
 
-2. **`arith_table_op_mul_mode_pin` over-claims (faithfulness bug).**
-   That axiom asserts every `Valid_ArithMul` row with `op = 180`
-   (MUL) has `na = nb = np = 0`. But ZisK's ROM (`ARITH_TABLE` rows
-   5–10, op = 180) contains rows with `na`/`nb`/`np ∈ {0,1}` — the
-   operand-sign MSBs (`arith_table.pil:13`, legend `na = a3,
-   nb = b3, np = d3`). A faithful projection lemma off this table's
-   `Spec` would *contradict* the axiom. The axiom is over-strong;
-   `equiv_MUL` consuming it is vacuous for negative-operand MUL
-   traces. This is a pre-existing C3 defect, separate from (1), and
-   needs owner adjudication before any ArithTable rewiring.
+2. **Several `arith_table_op_*` axioms over-claim (faithfulness bug).**
+   Static ROM membership supports faithful column projections, but not
+   every bundled conclusion in `Airs/Arith/Ranges.lean`. Formal
+   counterexamples live in `AirsClean/ArithTableProjections.lean`:
+   MULH/MULHSU `np = na XOR nb` is not a static ROM-column fact, and
+   W-mode `sext = 0` is refuted by concrete ROM rows for MULW, DIVUW,
+   and DIVW. The projection lemmas therefore expose only the true
+   ROM-data subsets; consumers of over-strong facts must be repaired
+   using dynamic constraints or sign-agnostic arithmetic before the old
+   axioms can be deleted.
 
 ## Trust note
 

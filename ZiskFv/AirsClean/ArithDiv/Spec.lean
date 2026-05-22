@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.ArithDiv.Row
+import ZiskFv.AirsClean.ArithTable
 
 /-!
 # ArithDiv Spec + Assumptions
@@ -155,5 +156,20 @@ def Spec (row : ArithDivRow FGL) : Prop :=
       - row.chunks.d_3 * (1 - row.flags.div)
       + 2 * row.flags.np * row.chunks.d_3 * (1 - row.flags.div)
       + row.aux.carry_6 = 0
+
+/-- The lookup half of the full ArithTable contract for this row.
+    This is separated from `Spec` so the existing carry-chain re-root
+    remains usable until the global theorem supplies lookup membership
+    constructibly. -/
+@[reducible]
+def ArithTableSpec (row : ArithDivRow FGL) : Prop :=
+  ArithTable.arithTable.Spec (arithTableRow row)
+
+/-- Full ArithDiv row contract once the ArithTable lookup is plumbed into
+    Compliance: carry-chain algebra plus ROM membership for the full
+    `arith_table_assumes` tuple. -/
+@[reducible]
+def FullSpec (row : ArithDivRow FGL) : Prop :=
+  Spec row ∧ ArithTableSpec row
 
 end ZiskFv.AirsClean.ArithDiv

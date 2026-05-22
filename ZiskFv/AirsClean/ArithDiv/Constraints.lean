@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.ArithDiv.Spec
+import ZiskFv.AirsClean.ArithTable
 import Clean.Circuit.Basic
 
 /-!
@@ -35,7 +36,7 @@ No axioms. Pure operational declaration.
 namespace ZiskFv.AirsClean.ArithDiv
 
 open Goldilocks
-open Circuit (assertZero)
+open Circuit (assertZero lookup)
 
 /-- The 11 DIV carry-chain F-constraints, taking the row's slot values
     as `Expression FGL`s. Returns `Unit` (ArithDiv is a pure assertion —
@@ -131,6 +132,26 @@ def main (row : Var ArithDivRow FGL) : Circuit FGL Unit := do
               - row.chunks.d_3 * (1 - row.flags.div)
               + 2 * row.flags.np * row.chunks.d_3 * (1 - row.flags.div)
               + row.aux.carry_6)
+
+/-- Lookup-aware ArithDiv circuit path. This appends the full 15-column
+    `arith_table_assumes` ROM lookup after the existing carry-chain
+    component body. The current load-bearing carry-chain component remains
+    unchanged until Compliance supplies this lookup evidence globally. -/
+@[circuit_norm]
+def mainWithArithTable (row : Var ArithDivRow FGL) : Circuit FGL Unit := do
+  main row
+  lookup (Table.fromStatic ArithTable.arithTable) (arithTableRow row)
+
+/-- Lookup-aware elaboration for the next C3/C4 stage. It is intentionally
+    separate from `arithDivElaborated` so existing carry-chain consumers do
+    not acquire a new caller-supplied lookup promise before Compliance has
+    a global source for it. -/
+@[reducible] def arithDivWithArithTableElaborated :
+    ElaboratedCircuit FGL ArithDivRow unit where
+  name := "ArithDivWithArithTable"
+  main := mainWithArithTable
+  localLength _ := 0
+  output _ _ := ()
 
 /-- The elaborated circuit for ArithDiv's `main` — 11 `assertZero`
     constraints, no fresh witnesses (`localLength = 0`, `unit` output)

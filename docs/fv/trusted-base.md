@@ -55,7 +55,32 @@ the live transitive `#print axioms` closure of
 `trust/baseline-axioms.txt` exactly; any silent drift — addition OR
 removal — fails the gate.
 
-Per-class spot check (116 axioms total):
+### Current correction: ArithTable trust shape
+
+The C3/C4 Clean-integration audit found that several class-#6b
+`arith_table_op_*` axioms are the wrong trust shape, and some are false as
+statements about the real 74-row ArithTable. They bundle three different
+claims:
+
+1. the trace row emits an `arith_table_assumes` lookup tuple;
+2. the lookup/permutation argument implies that tuple is in the translated
+   table;
+3. opcode-specific row facts follow from finite table contents.
+
+Only (2) is an appropriate trust boundary while the PLONK/logUp argument
+remains out of scope. Item (3) must be proved from the translated table.
+Item (1) must be represented by the AIR/Clean row model, not silently
+folded into per-op axioms.
+
+C3/C4-b is partially landed: six old opcode-shaped mode/selector axioms
+are now theorems from shared ArithTable lookup membership plus finite-table
+projection lemmas under `ZiskFv/AirsClean/ArithTableProjections.lean`.
+The live global theorem can still remain green while depending on the
+remaining known-bad arithmetic-table assumptions. That is not the final
+verification claim. New opcode-specific ArithTable axioms are not
+permitted.
+
+Per-class spot check (105 axioms total):
 
 ```bash
 awk '$3=="axiom" {n=split($2,a,":"); print a[1]}' trust/baseline-axioms.txt \
@@ -101,7 +126,7 @@ The narrative per-class rationale below stays here.
 | 4  | Bus / lookup soundness              |    10 | `Airs/OperationBus/Consolidated.lean` (1), `Airs/MemoryBus/{MemBridge,MemAlignBridge}.lean` (7 + 2) | Permutation-argument and lookup soundness on the operation-bus, memory-bus, and MemAlign providers: (i) `op_bus_perm_sound_{BinaryAdd,Binary,BinaryExtension}` — a Main-row consumer pairs with a row in the provider AIR (operation_bus); (ii) `lookup_consumer_matches_provider_load` — load consumer ↔ Mem AIR row; (iii) `memalign_load_perm_sound` — sub-doubleword load consumer ↔ MemAlign* row; (iv) `mem_align_rom_subdoubleword_load_value_1_zero` — MemAlignRom lookup pins `value_1 = 0`; (v) `main_load_emission_bundle` / `main_sext_load_emission_bundle` — load and signed-load lane / ptr / rd-routing bundle on Main; (vi) `main_store_pc_emission_bundle` — lane match for `store_pc ∈ {0,1}` register writes; (vii) `main_external_arith_emission_bundle` — rd-write byte-pack lanes for the MUL/DIV family; (viii) `main_store_emission_bundle_{sd,sb,sh,sw}` — byte-extract + ptr-match + RMW high-byte preservation for the four store widths. | PLONK / logUp permutation-argument soundness for `bus_id = 10` (op-bus + mem-bus) and ROM-lookup soundness for the MemAlignRom table. Each axiom's docstring cites the PIL line and Rust transpile function it mirrors. |
 | 5b | Range-bus / byte-range soundness    |     3 | `Airs/MemoryBus/EntryRanges.lean`, `Airs/Binary/BinaryAddRanges.lean`, `Airs/Main/Ranges.lean` | Each participating AIR's `bits(8)` / `bits(N)`-annotated columns satisfy the byte-range bus: `memory_bus_entry_byte_range_perm_sound`, `binary_add_columns_in_range`, `main_columns_in_range`. | Lookup-argument soundness on the standard byte-range bus, restricted to participants annotated `bits(N)` in the PIL — see citations in each axiom's docstring. |
 | 6  | Binary / BinaryExtension lookup soundness | 12 | `Airs/{Binary,BinaryExtension}Table.lean` (1 + 1), `Airs/Binary/{Binary,BinaryExtension}Ranges.lean` (7 + 3) | Lookup-argument soundness on the Binary and BinaryExtension AIRs: (i) `bin_table_consumer_wf` / `bin_ext_table_consumer_wf` — table-lookup soundness on each; (ii) `binary_columns_in_range` / `binary_extension_columns_in_range` — column range pins; (iii) `binary_per_byte_lookup_witness` — per-byte witness extraction; (iv) `binary_carry_bits_in_range` — `bits(1)` carry-column range; (v) `binary_extension_op_is_shift_pin` — shift/SEXT op classification; (vi) `binary_extension_row_byte_lookups` — row → per-byte lookup witness; (vii) `binary_b_op_or_sext_eq_OP_{OR,AND,XOR}` — Binary `b_op_or_sext` column pins for the three logic ops; (viii) `binary_consumer_byte_match_chain_pin` — full 6-field byte-match chain for SUB/SLT-family; (ix) `binary_w_sext_choice_pin` / `binary_w_mode_carry_7_zero` — W-mode SEXT byte case-split + carry_7=0 corollary for SUBW/ADDW. | Lookup-argument soundness on the Binary and BinaryExtension AIRs (same trust kind as class #4), scoped to lookups against `binary_table.rs::ARITH_TABLE`'s row enumeration. |
-| 6b | Arith range / table / Euclidean pins |    35 | `Airs/Arith/Ranges.lean`              | Range-checker bus lookups + arith_table-row sign / mode / operand / sign-witness pins + Euclidean-remainder bound, for the full MUL / DIV / REM family across signed/unsigned × 64/32 (W) modes + MULH-family high-half. Full list: `arith_{mul,div}_columns_in_range`, `arith_{mul,div}_carry_columns_in_range_{unsigned,signed,w}`, `arith_table_op_div_rem_signed_{d_sign,w_d_sign}_pin`, `arith_table_op_{mulw,divw}_operand_pin`, `arith_table_op_div_rem_{signed,unsigned}_mode_pin`, `arith_table_op_div_rem_{signed,unsigned}_w_mode_pin`, `arith_table_op_div_rem_main_selector_pin`, `arith_table_op_div_rem_{signed,unsigned}_main_selector_pin`, `arith_table_op_div_rem_{unsigned,signed}_w_mode_pin`, `arith_div_{np_eq_msb_of_dividend,nb_eq_msb_of_divisor}`, `arith_div_remainder_bound{,_unsigned,_unsigned_w,_signed_w}`, `arith_table_op_{mul,mulhu,mulh,mulhsu}_{mode_pin,main_selector_pin}`, `arith_mul_{na_eq_msb_of_a,nb_eq_msb_of_b}`, `arith_table_op_mulw_mode_pin`. | Range-checker bus lookup soundness on the Arith AIR's `bits(16)`-annotated chunk columns and on the `ARITH_RANGE_CARRY` entry of the arith_range_table; arith_table lookup soundness for the per-row sign/mode/operand/sign-witness/selector pins; binary-bus lookup soundness on the Arith `assumes_operation(|d|<|b|)` consumer for the Euclidean magnitude/sign bound. All sub-classes have the same lookup-soundness trust kind as #4 / #6. |
+| 6b | Arith range / table / Euclidean pins |    23 | `Airs/Arith/Ranges.lean`              | Range-checker bus lookups + shared ArithTable lookup membership + remaining arith-table sign / operand / W-mode / sign-witness pins + Euclidean-remainder bounds. **Correction in progress:** six old `arith_table_op_*` mode/selector axioms have been replaced by `arith_{mul,div}_table_lookup_sound` plus finite-table projection theorems; the remaining `arith_table_op_*` subfamily is a retirement queue. | Range-checker bus lookup soundness on the Arith AIR's `bits(16)`-annotated chunk columns and on the `ARITH_RANGE_CARRY` entry of the arith_range_table; binary-bus lookup soundness on the Arith `assumes_operation(|d|<|b|)` consumer for the Euclidean magnitude/sign bound; and, temporarily, ArithTable lookup/permutation soundness stated as table membership. Opcode-specific conclusions should be theorems from `ArithTableSpec`, not axioms. |
 | 7  | Platform — PMP inert                |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.pmpCheck _ _ _ _ = pure none`.                                                                                               | ZisK's RV64IM target excludes PMP. Axiomatising as inert is strictly stronger than threading state-level disjointness through every load/store proof.        |
 | 8  | Platform — CLINT disjoint           |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.within_clint _ _ = pure false`.                                                                                              | ZisK programs do not access the CLINT MMIO region. Same scope-honest framing as #7.                                                                          |
 | 9  | Platform — PMA inert                |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.pmaCheck _ _ _ _ = pure none`.                                                                                               | Alignment-fault arm short-circuited under the `RISC_V_assumptions` fields already recorded by LeanRV64D.                                                     |

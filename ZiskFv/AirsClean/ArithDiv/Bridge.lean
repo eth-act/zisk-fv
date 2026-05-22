@@ -41,6 +41,35 @@ namespace ZiskFv.AirsClean.ArithDiv
 
 open Goldilocks
 
+/-- The lookup-aware Clean circuit sources ArithTable membership from its
+    `lookup (Table.fromStatic ArithTable.arithTable) ...` operation.
+
+    This is the shape C3/C4-b needs globally: the membership proof is
+    extracted from `ConstraintsHold.Soundness` of `mainWithArithTable`,
+    not supplied as an opcode-wrapper promise. -/
+theorem arith_table_spec_of_lookup_aware_soundness
+    (offset : ℕ) (env : Environment FGL)
+    (input_var : Var ArithDivRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithArithTable input_var).operations offset)) :
+    ArithTable.arithTable.Spec
+      #v[Expression.eval env input_var.flags.op, Expression.eval env input_var.flags.m32,
+        Expression.eval env input_var.flags.div, Expression.eval env input_var.flags.na,
+        Expression.eval env input_var.flags.nb, Expression.eval env input_var.flags.np,
+        Expression.eval env input_var.flags.nr, Expression.eval env input_var.flags.sext,
+        Expression.eval env input_var.flags.div_by_zero,
+        Expression.eval env input_var.flags.div_overflow,
+        Expression.eval env input_var.flags.main_mul, Expression.eval env input_var.flags.main_div,
+        Expression.eval env input_var.flags.signed, Expression.eval env input_var.flags.range_ab,
+        Expression.eval env input_var.flags.range_cd] := by
+  simp only [mainWithArithTable, main, circuit_norm] at h_holds
+  rcases h_holds with
+    ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
+      h_lookup⟩
+  simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
+    ArithTableSpec, arithTableRow] using h_lookup
+
 /-- Project a `Valid_ArithDiv` at row `r` into a Clean `ArithDivRow FGL`.
     The 38 columns map 1:1 (`carry_i` ↔ `Valid_ArithDiv.cy_i`). -/
 @[reducible]
@@ -54,7 +83,9 @@ def rowAt (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
   flags :=
     { na := v.na r, nb := v.nb r, nr := v.nr r, np := v.np r
       sext := v.sext r, m32 := v.m32 r, div := v.div r
+      div_by_zero := v.div_by_zero r, div_overflow := v.div_overflow r
       main_div := v.main_div r, main_mul := v.main_mul r, op := v.op r
+      signed := v.signed r, range_ab := v.range_ab r, range_cd := v.range_cd r
       bus_res1 := v.bus_res1 r, multiplicity := v.multiplicity r }
   aux :=
     { fab := v.fab r, na_fb := v.na_fb r, nb_fa := v.nb_fa r
@@ -95,5 +126,29 @@ theorem div_carry_chain_via_component
   -- clauses are the same equations (`rowAt` is `@[reducible]`, so
   -- `(rowAt v r).aux.fab` reduces to `v.fab r` etc.).
   exact spec_via_component (rowAt v r) h6 h7 h8 h31 h32 h33 h34 h35 h36 h37 h38
+
+/-- Combine the load-bearing Clean carry-chain route with a separately
+    sourced ArithTable lookup membership proof.
+
+    This is the non-laundered C3/C4-b shape: `h_table` is explicit here
+    because the current global theorem does not yet provide lookup
+    membership. Compliance wrappers must not acquire this as a fresh
+    per-opcode promise; the proof becomes useful only once the shared
+    lookup/ensemble statement supplies `ArithTableSpec (rowAt v r)`. -/
+theorem full_spec_of_carry_chain_and_arith_table
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ)
+    (h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r)
+    (h_table : ArithTableSpec (rowAt v r)) :
+    FullSpec (rowAt v r) := by
+  simp only [ZiskFv.Airs.ArithDiv.div_carry_chain_holds,
+    ZiskFv.Airs.ArithDiv.fab_eq_div, ZiskFv.Airs.ArithDiv.na_fb_eq_div,
+    ZiskFv.Airs.ArithDiv.nb_fa_eq_div, ZiskFv.Airs.ArithDiv.carry_eq_0_div,
+    ZiskFv.Airs.ArithDiv.carry_eq_1_div, ZiskFv.Airs.ArithDiv.carry_eq_2_div,
+    ZiskFv.Airs.ArithDiv.carry_eq_3_div, ZiskFv.Airs.ArithDiv.carry_eq_4_div,
+    ZiskFv.Airs.ArithDiv.carry_eq_5_div, ZiskFv.Airs.ArithDiv.carry_eq_6_div,
+    ZiskFv.Airs.ArithDiv.carry_eq_7_div] at h_chain
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  exact ⟨spec_via_component (rowAt v r)
+    h6 h7 h8 h31 h32 h33 h34 h35 h36 h37 h38, h_table⟩
 
 end ZiskFv.AirsClean.ArithDiv

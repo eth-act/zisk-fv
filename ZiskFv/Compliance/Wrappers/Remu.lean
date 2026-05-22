@@ -5,6 +5,7 @@ import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.EquivCore.Promises.ArithHelpers
 import ZiskFv.EquivCore.Bridge.Arith
 import ZiskFv.EquivCore.Bridge.SailStateBridge
+import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
@@ -67,6 +68,7 @@ theorem equiv_REMU
   have h_op_arith_remu : v.op r_a = 185 := by
     rw [h_op_eq, h_main_op_remu]; simp [OP_REMU]
   have h_op_arith : v.op r_a = 184 ∨ v.op r_a = 185 := Or.inr h_op_arith_remu
+  have h_arith_table := ZiskFv.Airs.Arith.arith_div_table_lookup_sound v r_a
   -- ============ Unpack matches_entry lane projections ============
   obtain ⟨h_a_lo_eq_FGL, h_a_hi_eq_FGL, h_b_lo_eq_FGL, h_b_hi_eq_FGL,
           h_c0_eq_FGL, h_c1_eq_FGL⟩ :=
@@ -78,11 +80,12 @@ theorem equiv_REMU
     ZiskFv.Airs.ArithDiv.bus_res1_eq_div_of_extended v r_a h_row_constraints
   -- ============ DISCHARGE mode pins ============
   obtain ⟨h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_div_rem_unsigned_mode_pin v r_a h_op_arith
+    ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_unsigned_mode_pin
+      v r_a h_arith_table h_op_arith
   -- ============ DISCHARGE main_mul/main_div selector pins (secondary lane) ============
   obtain ⟨h_main_div_zero, h_main_mul_zero⟩ :=
-    (ZiskFv.Airs.Arith.arith_table_op_div_rem_unsigned_main_selector_pin
-      v r_a h_op_arith).2 h_op_arith_remu
+    (ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_unsigned_main_selector_pin
+      v r_a h_arith_table h_op_arith).2 h_op_arith_remu
   -- ============ DISCHARGE h_byte_lo / h_byte_hi (lane match on d[]) ============
   have h_bundle :=
     ZiskFv.Airs.MemoryBus.MemBridge.main_external_arith_emission_bundle

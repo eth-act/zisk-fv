@@ -79,6 +79,11 @@ open Goldilocks
       `main_div = 1`, `main_mul = 0`; on REM/REMU rows (secondary)
       both are zero. The `secondary` row-expr (arith.pil:246) is
       `1 - main_mul - main_div`.
+    * `signed`, `div_by_zero`, `div_overflow`, `range_ab`, `range_cd` —
+      stage-1 cols 35–37 and 42–43 — remaining `arith_table_assumes`
+      lookup columns. They are structural fields for the full 15-column
+      Clean ArithTable lookup tuple; adding them does not assert any table
+      membership or value pin.
     * `op` — stage-1 col 39 — the 8-bit opcode literal
       (0xb8..0xbb for 64-bit DIV family).
     * `bus_res1` — stage-1 col 40 — the range-checked high-32 witness
@@ -122,9 +127,14 @@ structure Valid_ArithDiv (F ExtF : Type)
   nb_fa : ℕ → F
   main_div : ℕ → F
   main_mul : ℕ → F
+  signed : ℕ → F
+  div_by_zero : ℕ → F
+  div_overflow : ℕ → F
   op : ℕ → F
   bus_res1 : ℕ → F
   multiplicity : ℕ → F
+  range_ab : ℕ → F
+  range_cd : ℕ → F
 
 variable {F ExtF : Type} [Field F] [Field ExtF]
 

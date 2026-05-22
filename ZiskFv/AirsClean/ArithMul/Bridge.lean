@@ -27,6 +27,85 @@ namespace ZiskFv.AirsClean.ArithMul
 
 open Goldilocks
 
+/-- Constant-expression view of an `ArithMulRow`, used when specializing
+    lookup-aware Clean soundness to one concrete row. -/
+@[reducible]
+def constVar (row : ArithMulRow FGL) : Var ArithMulRow FGL where
+  chunks :=
+    { a_0 := .const row.chunks.a_0, a_1 := .const row.chunks.a_1,
+      a_2 := .const row.chunks.a_2, a_3 := .const row.chunks.a_3,
+      b_0 := .const row.chunks.b_0, b_1 := .const row.chunks.b_1,
+      b_2 := .const row.chunks.b_2, b_3 := .const row.chunks.b_3,
+      c_0 := .const row.chunks.c_0, c_1 := .const row.chunks.c_1,
+      c_2 := .const row.chunks.c_2, c_3 := .const row.chunks.c_3,
+      d_0 := .const row.chunks.d_0, d_1 := .const row.chunks.d_1,
+      d_2 := .const row.chunks.d_2, d_3 := .const row.chunks.d_3 }
+  flags :=
+    { na := .const row.flags.na, nb := .const row.flags.nb,
+      nr := .const row.flags.nr, np := .const row.flags.np,
+      sext := .const row.flags.sext, m32 := .const row.flags.m32,
+      div := .const row.flags.div,
+      div_by_zero := .const row.flags.div_by_zero,
+      div_overflow := .const row.flags.div_overflow,
+      main_div := .const row.flags.main_div,
+      main_mul := .const row.flags.main_mul, op := .const row.flags.op,
+      signed := .const row.flags.signed,
+      range_ab := .const row.flags.range_ab,
+      range_cd := .const row.flags.range_cd,
+      bus_res1 := .const row.flags.bus_res1,
+      multiplicity := .const row.flags.multiplicity }
+  carries :=
+    { carry_0 := .const row.carries.carry_0, carry_1 := .const row.carries.carry_1,
+      carry_2 := .const row.carries.carry_2, carry_3 := .const row.carries.carry_3,
+      carry_4 := .const row.carries.carry_4, carry_5 := .const row.carries.carry_5,
+      carry_6 := .const row.carries.carry_6, fab := .const row.carries.fab,
+      na_fb := .const row.carries.na_fb, nb_fa := .const row.carries.nb_fa }
+
+/-- The lookup-aware Clean circuit sources ArithTable membership from its
+    `lookup (Table.fromStatic ArithTable.arithTable) ...` operation.
+
+    This is the shape C3/C4-b needs globally: the membership proof is
+    extracted from `ConstraintsHold.Soundness` of `mainWithArithTable`,
+    not supplied as an opcode-wrapper promise. -/
+theorem arith_table_spec_of_lookup_aware_soundness
+    (offset : ℕ) (env : Environment FGL)
+    (input_var : Var ArithMulRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithArithTable input_var).operations offset)) :
+    ArithTable.arithTable.Spec
+      #v[Expression.eval env input_var.flags.op, Expression.eval env input_var.flags.m32,
+        Expression.eval env input_var.flags.div, Expression.eval env input_var.flags.na,
+        Expression.eval env input_var.flags.nb, Expression.eval env input_var.flags.np,
+        Expression.eval env input_var.flags.nr, Expression.eval env input_var.flags.sext,
+        Expression.eval env input_var.flags.div_by_zero,
+        Expression.eval env input_var.flags.div_overflow,
+        Expression.eval env input_var.flags.main_mul, Expression.eval env input_var.flags.main_div,
+        Expression.eval env input_var.flags.signed, Expression.eval env input_var.flags.range_ab,
+        Expression.eval env input_var.flags.range_cd] := by
+  simp only [mainWithArithTable, main, circuit_norm] at h_holds
+  rcases h_holds with
+    ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
+      h_lookup⟩
+  simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
+    ArithTableSpec, arithTableRow] using h_lookup
+
+/-- Constant-row specialization of
+    `arith_table_spec_of_lookup_aware_soundness`.
+
+    This is the local C3 lookup bridge for one concrete ArithMul row:
+    `ArithTableSpec row` comes from the lookup-aware Clean circuit's
+    `lookup`, not from an opcode-wrapper promise. -/
+theorem arith_table_spec_of_lookup_aware_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : ArithMulRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithArithTable (constVar row)).operations offset)) :
+    ArithTableSpec row := by
+  have h_table :=
+    arith_table_spec_of_lookup_aware_soundness offset env (constVar row) h_holds
+  simpa [ArithTableSpec, arithTableRow, constVar] using h_table
+
 /-- Project a `Valid_ArithMul` at row `r` into a Clean `ArithMulRow FGL`.
     The `Valid_ArithMul` record exposes all 28 chunk / flag / carry
     columns the MUL-mode carry-chain Component constrains; the map is
@@ -43,7 +122,9 @@ def rowAt (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :
   flags := {
     na := v.na r, nb := v.nb r, nr := v.nr r, np := v.np r
     sext := v.sext r, m32 := v.m32 r, div := v.div r
+    div_by_zero := v.div_by_zero r, div_overflow := v.div_overflow r
     main_div := v.main_div r, main_mul := v.main_mul r
+    signed := v.signed r, range_ab := v.range_ab r, range_cd := v.range_cd r
     op := v.op r, bus_res1 := v.bus_res1 r, multiplicity := v.multiplicity r
   }
   carries := {
@@ -121,5 +202,20 @@ theorem mul_carry_chain_holds_via_component
   · exact hs36
   · exact hs37
   · exact hs38
+
+/-- Combine the load-bearing Clean carry-chain route with a separately
+    sourced ArithTable lookup membership proof.
+
+    This is the non-laundered C3/C4-b shape: `h_table` is explicit here
+    because the current global theorem does not yet provide lookup
+    membership. Compliance wrappers must not acquire this as a fresh
+    per-opcode promise; the proof becomes useful only once the shared
+    lookup/ensemble statement supplies `ArithTableSpec (rowAt v r)`. -/
+theorem full_spec_of_carry_chain_and_arith_table
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ)
+    (h_chain : ZiskFv.Airs.ArithMul.mul_carry_chain_holds v r)
+    (h_table : ArithTableSpec (rowAt v r)) :
+    FullSpec (rowAt v r) := by
+  exact ⟨spec_of_carry_chain_via_component v r h_chain, h_table⟩
 
 end ZiskFv.AirsClean.ArithMul

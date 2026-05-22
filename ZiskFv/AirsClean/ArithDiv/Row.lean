@@ -47,8 +47,13 @@ structure ArithDivFlags (F : Type) where
   sext : F
   m32 : F
   div : F
+  div_by_zero : F
+  div_overflow : F
   main_div : F
   main_mul : F
+  signed : F
+  range_ab : F
+  range_cd : F
   op : F
   bus_res1 : F
   multiplicity : F
@@ -82,5 +87,20 @@ structure ArithDivRow (F : Type) where
   flags : ArithDivFlags F
   aux : ArithDivAux F
 deriving ProvableStruct
+
+/-- Full `arith_table_assumes` lookup tuple in PIL order:
+    `[op, m32, div, na, nb, np, nr, sext, div_by_zero, div_overflow,
+    main_mul, main_div, signed, range_ab, range_cd]`.
+
+    The five fields beyond the previous carry-chain view are structural
+    lookup columns from the extracted Arith AIR header:
+    stage-1 cols 35-37 and 42-43 in
+    `build/extraction/Extraction/Arith.lean`. -/
+@[reducible]
+def arithTableRow (row : ArithDivRow F) : fields 15 F :=
+  #v[row.flags.op, row.flags.m32, row.flags.div, row.flags.na, row.flags.nb,
+    row.flags.np, row.flags.nr, row.flags.sext, row.flags.div_by_zero,
+    row.flags.div_overflow, row.flags.main_mul, row.flags.main_div,
+    row.flags.signed, row.flags.range_ab, row.flags.range_cd]
 
 end ZiskFv.AirsClean.ArithDiv

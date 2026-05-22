@@ -122,5 +122,5 @@ import ZiskFv.EquivCore.WriteValueProofs.Arith
 import ZiskFv.EquivCore.WriteValueProofs.JumpUType
 import ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned
 import ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned
+import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.Compliance
-

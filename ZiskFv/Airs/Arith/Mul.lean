@@ -44,6 +44,11 @@ open Goldilocks
       operand/result signs.
     * `main_mul`, `main_div` — stage-1 cols 33–34 — dual-use selectors. On
       MUL rows `main_mul = 1` and `main_div = 0`; on DIV rows the opposite.
+    * `signed`, `div_by_zero`, `div_overflow`, `range_ab`, `range_cd` —
+      stage-1 cols 35–37 and 42–43 — remaining `arith_table_assumes`
+      lookup columns. They are structural fields for the full 15-column
+      Clean ArithTable lookup tuple; adding them does not assert any table
+      membership or value pin.
     * `op` — stage-1 col 39 — the 8-bit opcode literal (0xb0..0xb6 for MUL).
     * `multiplicity` — stage-1 col 41 — operation-bus consume multiplicity
       (the `mul` argument of `proves_operation` in the PIL). -/
@@ -97,9 +102,14 @@ structure Valid_ArithMul (F ExtF : Type)
   nb_fa : ℕ → F
   main_div : ℕ → F
   main_mul : ℕ → F
+  signed : ℕ → F
+  div_by_zero : ℕ → F
+  div_overflow : ℕ → F
   op : ℕ → F
   bus_res1 : ℕ → F
   multiplicity : ℕ → F
+  range_ab : ℕ → F
+  range_cd : ℕ → F
 
 variable {F ExtF : Type} [Field F] [Field ExtF]
 

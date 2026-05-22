@@ -5,6 +5,7 @@ import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.EquivCore.Promises.ArithHelpers
 import ZiskFv.EquivCore.Bridge.Arith
 import ZiskFv.AirsClean.ArithMul.Bridge
+import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
@@ -20,18 +21,20 @@ import ZiskFv.Compliance.SharedBundles
 > ArithMul-secondary-shape *promise discharge* for the unsigned
 > high-half MUL (MULHU = MULUH = op 0xb1 = 177). Mirrors
 > `MulExemplar` but routes through the new Family A axioms
-> `op_bus_perm_sound_ArithMulSecondary` + `arith_table_op_mulhu_*`.
+> `op_bus_perm_sound_ArithMulSecondary` + shared ArithTable lookup membership.
 >
 > Discharged promise hypotheses:
 > * Seven **mode pins** (`h_na`, `h_nb`, `h_np`, `h_nr`, `h_sext`,
->   `h_m32`, `h_div`) — discharged via `arith_table_op_mulhu_mode_pin`.
+>   `h_m32`, `h_div`) — discharged via `arith_mul_table_lookup_sound`
+>   plus a finite-table projection.
 > * Two **lane-match** equations (`h_byte_lo`, `h_byte_hi`) over
 >   `v.d_*` chunks — discharged via `main_external_arith_emission_bundle`
 >   (shared with MUL/DIV) composed with the **secondary** op-bus
 >   `matches_entry` projection (via `op_bus_perm_sound_ArithMulSecondary`)
 >   for the lo side, and additionally with `mulh_bus_res1_eq_d_hi` for
 >   the hi side under the MULHU-secondary mode pins (`main_mul = 0`,
->   `main_div = 0`) from `arith_table_op_mulhu_main_selector_pin`.
+>   `main_div = 0`) from shared ArithTable lookup membership plus a
+>   finite-table projection.
 > * Two **operand bridges** (`h_rs1_value`, `h_rs2_value`) — discharged via the
 >   generic `packed_lane_eq_of_read_xreg` (unsigned form) composed
 >   with `transpile_MULHU` and the secondary `matches_entry` projection
@@ -95,6 +98,7 @@ theorem equiv_MULHU
   have h_op_eq := arith_mul_secondary_op_eq h_match_secondary
   have h_op_arith_mulhu : v.op r_a = 177 := by
     rw [h_op_eq, h_main_op_mulhu]; simp [OP_MULUH]
+  have h_arith_table := ZiskFv.Airs.Arith.arith_mul_table_lookup_sound v r_a
   -- ============ Unpack matches_entry lane projections ============
   obtain ⟨h_a_lo_eq_FGL, h_a_hi_eq_FGL, h_b_lo_eq_FGL, h_b_hi_eq_FGL,
           h_c0_eq_FGL, h_c1_eq_FGL⟩ :=
@@ -112,10 +116,12 @@ theorem equiv_MULHU
     ZiskFv.Airs.ArithMul.mul_constraint_46_of_extended v r_a h_row_constraints
   -- ============ DISCHARGE mode pins ============
   obtain ⟨h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_mulhu_mode_pin v r_a h_op_arith_mulhu
+    ZiskFv.AirsClean.ArithTableProjections.Mul.mulhu_mode_pin
+      v r_a h_arith_table h_op_arith_mulhu
   -- ============ DISCHARGE main_mul/main_div selector pins (both = 0) ============
   obtain ⟨h_main_mul_zero, h_main_div_zero⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_mulhu_main_selector_pin v r_a h_op_arith_mulhu
+    ZiskFv.AirsClean.ArithTableProjections.Mul.mulhu_main_selector_pin
+      v r_a h_arith_table h_op_arith_mulhu
   -- ============ DISCHARGE h_byte_lo / h_byte_hi (lane match — Family A) ============
   -- MULHU literal 0xb1 = 177 (OP_MULUH) — position 1 in
   -- main_external_arith_emission_bundle's 14-way disjunction.

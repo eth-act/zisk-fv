@@ -5,6 +5,7 @@ import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.EquivCore.Promises.ArithHelpers
 import ZiskFv.EquivCore.Bridge.Arith
 import ZiskFv.EquivCore.Bridge.SailStateBridge
+import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
@@ -62,7 +63,7 @@ open ZiskFv.EquivCore.Promises
     * `h_op_arith : v.op r_a = 186 ∨ v.op r_a = 187` — from the
       `matches_entry` op-slot equality (op-bus permutation).
     * `h_sext`, `h_m32`, `h_div` — from
-      `arith_table_op_div_rem_signed_mode_pin` ().
+      `arith_div_table_lookup_sound` plus finite-table projections.
     * `h_nr_pin` — from
       `arith_table_op_div_rem_signed_d_sign_pin` (existing).
     * `h_r_abs`, `h_r_sign` — from `arith_div_remainder_bound`
@@ -145,6 +146,7 @@ theorem equiv_DIV
   have h_op_arith_div : v.op r_a = 186 := by
     rw [h_op_eq, h_main_op_div]; simp [OP_DIV]
   have h_op_arith : v.op r_a = 186 ∨ v.op r_a = 187 := Or.inl h_op_arith_div
+  have h_arith_table := ZiskFv.Airs.Arith.arith_div_table_lookup_sound v r_a
   -- ============ Unpack matches_entry lane projections ============
   obtain ⟨h_a_lo_eq_FGL, h_a_hi_eq_FGL, h_b_lo_eq_FGL, h_b_hi_eq_FGL,
           h_c0_eq_FGL, h_c1_eq_FGL⟩ :=
@@ -156,13 +158,14 @@ theorem equiv_DIV
     ZiskFv.Airs.ArithDiv.bus_res1_eq_div_of_extended v r_a h_row_constraints
   -- ============ DISCHARGE mode pins () ============
   obtain ⟨h_sext, h_m32, h_div⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_mode_pin v r_a h_op_arith
+    ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_signed_mode_pin
+      v r_a h_arith_table h_op_arith
   -- ============ DISCHARGE main_div/main_mul selector pins ( hi prep) ============
-  -- Class-#6b axiom: `op = 186 (DIV)` pins `main_div = 1, main_mul = 0`
-  -- on the same arith_table lookup as `arith_table_op_div_rem_signed_mode_pin`.
+  -- `op = 186 (DIV)` pins `main_div = 1, main_mul = 0` as a finite-table
+  -- projection from the same shared ArithTable lookup membership.
   obtain ⟨h_main_div_one, h_main_mul_zero⟩ :=
-    (ZiskFv.Airs.Arith.arith_table_op_div_rem_main_selector_pin
-      v r_a h_op_arith).1 h_op_arith_div
+    (ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_main_selector_pin
+      v r_a h_arith_table h_op_arith).1 h_op_arith_div
   -- ============ DISCHARGE h_nr_pin (existing trust ledger) ============
   have h_nr_pin_fgl :=
     ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_d_sign_pin
