@@ -161,11 +161,90 @@ open ZiskFv.Airs.Tables.BinaryExtensionTable in
     `Airs/Binary/BinaryExtensionPackedCorrect.lean`) packages these 8
     table entries together with the row→entry projection equations.
 
-    Trust class: lookup-soundness on the BinaryExtension table (same
-    class as `bin_ext_table_consumer_wf`, trusted-base.md class #6).
-    Cited PIL: `binary_extension.pil:92` (the 8-byte lookup_assumes
-    declaration). -/
-axiom binary_extension_row_byte_lookups (v : Valid_BinaryExtension FGL FGL) (r : ℕ) :
-    ByteLookupHypotheses v r
+    This theorem only constructs the row-shaped lookup entries. Their table
+    semantics still flow through `bin_ext_table_consumer_wf`, which is the
+    remaining BinaryExtensionTable lookup-soundness boundary. -/
+def binary_extension_row_byte_lookups (v : Valid_BinaryExtension FGL FGL) (r : ℕ) :
+    ByteLookupHypotheses v r :=
+  { e0 :=
+      { multiplicity := 1
+        op := v.op r
+        byte_index := 0
+        a_byte := v.free_in_a_0 r
+        shift_amount := v.free_in_b r
+        c_lo_byte := v.free_in_c_0 r
+        c_hi_byte := v.free_in_c_1 r
+        op_is_shift := v.op_is_shift r }
+    h0 := by simp
+    e1 :=
+      { multiplicity := 1
+        op := v.op r
+        byte_index := 1
+        a_byte := v.free_in_a_1 r
+        shift_amount := v.free_in_b r
+        c_lo_byte := v.free_in_c_2 r
+        c_hi_byte := v.free_in_c_3 r
+        op_is_shift := v.op_is_shift r }
+    h1 := by simp
+    e2 :=
+      { multiplicity := 1
+        op := v.op r
+        byte_index := 2
+        a_byte := v.free_in_a_2 r
+        shift_amount := v.free_in_b r
+        c_lo_byte := v.free_in_c_4 r
+        c_hi_byte := v.free_in_c_5 r
+        op_is_shift := v.op_is_shift r }
+    h2 := by simp
+    e3 :=
+      { multiplicity := 1
+        op := v.op r
+        byte_index := 3
+        a_byte := v.free_in_a_3 r
+        shift_amount := v.free_in_b r
+        c_lo_byte := v.free_in_c_6 r
+        c_hi_byte := v.free_in_c_7 r
+        op_is_shift := v.op_is_shift r }
+    h3 := by simp
+    e4 :=
+      { multiplicity := 1
+        op := v.op r
+        byte_index := 4
+        a_byte := v.free_in_a_4 r
+        shift_amount := v.free_in_b r
+        c_lo_byte := v.free_in_c_8 r
+        c_hi_byte := v.free_in_c_9 r
+        op_is_shift := v.op_is_shift r }
+    h4 := by simp
+    e5 :=
+      { multiplicity := 1
+        op := v.op r
+        byte_index := 5
+        a_byte := v.free_in_a_5 r
+        shift_amount := v.free_in_b r
+        c_lo_byte := v.free_in_c_10 r
+        c_hi_byte := v.free_in_c_11 r
+        op_is_shift := v.op_is_shift r }
+    h5 := by simp
+    e6 :=
+      { multiplicity := 1
+        op := v.op r
+        byte_index := 6
+        a_byte := v.free_in_a_6 r
+        shift_amount := v.free_in_b r
+        c_lo_byte := v.free_in_c_12 r
+        c_hi_byte := v.free_in_c_13 r
+        op_is_shift := v.op_is_shift r }
+    h6 := by simp
+    e7 :=
+      { multiplicity := 1
+        op := v.op r
+        byte_index := 7
+        a_byte := v.free_in_a_7 r
+        shift_amount := v.free_in_b r
+        c_lo_byte := v.free_in_c_14 r
+        c_hi_byte := v.free_in_c_15 r
+        op_is_shift := v.op_is_shift r }
+    h7 := by simp }
 
 end ZiskFv.Airs.BinaryExtension

@@ -2,7 +2,7 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 96
+# Total entries: 95
 #
 5146b31aab2412d7  ZiskFv/Airs/Arith/Ranges.lean:60  axiom     arith_mul_table_lookup_sound
 5023f778af7563b7  ZiskFv/Airs/Arith/Ranges.lean:70  axiom     arith_div_table_lookup_sound
@@ -18,7 +18,6 @@ fa99203f44f899fd  ZiskFv/Airs/Arith/Ranges.lean:647  axiom     arith_div_nb_eq_m
 4795fba538119f8e  ZiskFv/Airs/Arith/Ranges.lean:1172  axiom     arith_mul_na_eq_msb_of_a
 e5e831f6110f53e0  ZiskFv/Airs/Arith/Ranges.lean:1199  axiom     arith_mul_nb_eq_msb_of_b
 da52a24a56bd46d1  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:139  axiom     binary_extension_op_is_shift_pin
-417970cbf37c35ff  ZiskFv/Airs/Binary/BinaryExtensionRanges.lean:168  axiom     binary_extension_row_byte_lookups
 1551d121ae09668b  ZiskFv/Airs/Binary/BinaryRanges.lean:176  axiom     binary_per_byte_lookup_witness
 8782452d5f9a0774  ZiskFv/Airs/Binary/BinaryRanges.lean:305  axiom     binary_b_op_or_sext_eq_op_general
 4f3fd6ea6ee39393  ZiskFv/Airs/Binary/BinaryRanges.lean:432  axiom     binary_consumer_byte_match_chain_pin
