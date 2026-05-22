@@ -605,6 +605,11 @@ the ROM. Of the 19:
     that low-MUL rows either satisfy the usual `np = na XOR nb` field
     relation or are one of the two exceptional negative-times-positive
     shapes with `np = 0`.
+  - `fgl_mul_signed_to_bv64_lo` is now a pure signed-no-wrap theorem
+    proving that the signed MUL chunk identity yields the `.MUL` low
+    half when the `np = na XOR nb` branch holds. The wrapper rewrite can
+    use this for the ordinary branch and reserve the exceptional branches
+    for the dynamic zero-product proof.
   - The false / over-claiming axioms are *deleted only after their
     consumers are reproven* against true ROM facts or separately
     justified dynamic constraints.
