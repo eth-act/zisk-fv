@@ -588,6 +588,14 @@ the ROM. Of the 19:
     MULH/MULHSU's static `np_xor` shortcut. This caused no V2
     axiom-closure drift because those wrappers already depended on the
     shared ArithMul lookup boundary through selector projections.
+  - Upstream source confirms the repair target:
+    `state-machines/arith/pil/arith.pil:222-228` documents signed
+    non-W MUL rows as `na=a3`, `nb=b3`, `np=d3`, `nr=0`, `sext=0`,
+    and `state-machines/arith/src/arith_operation.rs::update_flags_and_ranges`
+    computes `np` for non-W multiplication from the high result `d`, not
+    from `na XOR nb`. Therefore the next low-MUL proof must use the signed
+    carry-chain/two's-complement result model and cannot be a static-ROM
+    `np_xor` or all-zero sign-witness projection.
   - The false / over-claiming axioms are *deleted only after their
     consumers are reproven* against true ROM facts or separately
     justified dynamic constraints.
