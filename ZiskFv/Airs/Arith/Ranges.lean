@@ -893,6 +893,25 @@ theorem arith_table_op_mul_basic_mode_pin
   ZiskFv.AirsClean.ArithTableProjections.Mul.mul_basic_mode_pin
     v r_a (arith_mul_table_lookup_sound v r_a) h_op
 
+/-- **Arith-table MUL range pins (derived).**
+    For low-half signed MUL (`op = 180`), the static table classifies
+    the range-check selector columns by the sign-witness tuple:
+    `range_ab` follows `(na, nb)` and `range_cd` follows `np`.
+
+    These are faithful ROM facts only; they do not assert the dynamic
+    side conditions needed to replace the old all-zero sign shortcut. -/
+theorem arith_table_op_mul_range_pins
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_op : v.op r_a = 180) :
+    (v.na r_a = 0 → v.nb r_a = 0 → v.range_ab r_a = 4)
+      ∧ (v.na r_a = 1 → v.nb r_a = 0 → v.range_ab r_a = 7)
+      ∧ (v.na r_a = 0 → v.nb r_a = 1 → v.range_ab r_a = 5)
+      ∧ (v.na r_a = 1 → v.nb r_a = 1 → v.range_ab r_a = 8)
+      ∧ (v.np r_a = 0 → v.range_cd r_a = 1)
+      ∧ (v.np r_a = 1 → v.range_cd r_a = 2) :=
+  ZiskFv.AirsClean.ArithTableProjections.Mul.mul_range_pins
+    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+
 /-- **Arith-table MUL primary/secondary selector pin (class #6b).**
     For every `Valid_ArithMul` row with `op = 180` (MUL — low 64 bits)
     the same `arith_table_assumes` lookup at `arith.pil:286-287` pins

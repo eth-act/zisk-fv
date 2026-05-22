@@ -596,6 +596,10 @@ the ROM. Of the 19:
     from `na XOR nb`. Therefore the next low-MUL proof must use the signed
     carry-chain/two's-complement result model and cannot be a static-ROM
     `np_xor` or all-zero sign-witness projection.
+  - `arith_table_op_mul_range_pins` is now a theorem from the same lookup
+    boundary plus finite-table projection. It exposes the static low-MUL
+    range-selector facts needed by that repair: `range_ab` is determined
+    by `(na, nb)`, and `range_cd` is determined by `np`.
   - The false / over-claiming axioms are *deleted only after their
     consumers are reproven* against true ROM facts or separately
     justified dynamic constraints.
