@@ -6,6 +6,7 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.Airs.Binary.BinaryPackedCorrect
+import ZiskFv.AirsClean.Binary.Bridge
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
@@ -343,6 +344,119 @@ lemma carry_7_zero_XOR_pure
   have h_cout_zero : e.flags.val % 2 = 0 := (h_XOR h_e_op).2
   rw [h_flags] at h_cout_zero
   exact boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
+
+open ZiskFv.Airs.Binary in
+private lemma static_binary_table_wf_slot7
+    (v : Valid_Binary FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v) :
+    ZiskFv.Airs.Tables.BinaryTable.wf_properties
+      (ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry
+        { pos_ind := 1 - v.mode32 r
+          op := v.b_op_or_sext r
+          a_byte := v.free_in_a_7 r
+          b_byte := v.free_in_b_7 r
+          cin := v.carry_6 r
+          c_byte := v.free_in_c_7 r
+          flags := v.carry_7 r } 1) := by
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_lookup_wf_facts v r offset env h_static
+  simpa [ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts,
+    ZiskFv.AirsClean.Binary.rowAt] using h_facts.2.2.2.2.2.2.2
+
+/-- Static-lookup route for `carry_7 = 0` on AND rows. This avoids both
+    `binary_per_byte_lookup_witness` and `bin_table_consumer_wf`; it consumes
+    the shared C7 static BinaryTable witness instead. -/
+lemma carry_7_zero_AND_of_static_lookup
+    (v : Valid_Binary FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
+    (h_op_AND : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND) :
+    v.carry_7 r = 0 := by
+  have h_wf := static_binary_table_wf_slot7 v r offset env h_static
+  obtain ⟨_, h_AND, _⟩ := h_wf
+  have h_e_op :
+      (ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry
+        { pos_ind := 1 - v.mode32 r
+          op := v.b_op_or_sext r
+          a_byte := v.free_in_a_7 r
+          b_byte := v.free_in_b_7 r
+          cin := v.carry_6 r
+          c_byte := v.free_in_c_7 r
+          flags := v.carry_7 r } 1).op.val
+        = ZiskFv.Airs.Tables.BinaryTable.OP_AND := by
+    simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_op_AND
+  have h_cout_zero :
+      (ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry
+        { pos_ind := 1 - v.mode32 r
+          op := v.b_op_or_sext r
+          a_byte := v.free_in_a_7 r
+          b_byte := v.free_in_b_7 r
+          cin := v.carry_6 r
+          c_byte := v.free_in_c_7 r
+          flags := v.carry_7 r } 1).flags.val % 2 = 0 := (h_AND h_e_op).2
+  simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using
+    boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
+
+/-- Static-lookup route for `carry_7 = 0` on OR rows. -/
+lemma carry_7_zero_OR_of_static_lookup
+    (v : Valid_Binary FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
+    (h_op_OR : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR) :
+    v.carry_7 r = 0 := by
+  have h_wf := static_binary_table_wf_slot7 v r offset env h_static
+  obtain ⟨_, _, h_OR, _⟩ := h_wf
+  have h_e_op :
+      (ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry
+        { pos_ind := 1 - v.mode32 r
+          op := v.b_op_or_sext r
+          a_byte := v.free_in_a_7 r
+          b_byte := v.free_in_b_7 r
+          cin := v.carry_6 r
+          c_byte := v.free_in_c_7 r
+          flags := v.carry_7 r } 1).op.val
+        = ZiskFv.Airs.Tables.BinaryTable.OP_OR := by
+    simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_op_OR
+  have h_cout_zero :
+      (ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry
+        { pos_ind := 1 - v.mode32 r
+          op := v.b_op_or_sext r
+          a_byte := v.free_in_a_7 r
+          b_byte := v.free_in_b_7 r
+          cin := v.carry_6 r
+          c_byte := v.free_in_c_7 r
+          flags := v.carry_7 r } 1).flags.val % 2 = 0 := (h_OR h_e_op).2
+  simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using
+    boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
+
+/-- Static-lookup route for `carry_7 = 0` on XOR rows. -/
+lemma carry_7_zero_XOR_of_static_lookup
+    (v : Valid_Binary FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
+    (h_op_XOR : (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR) :
+    v.carry_7 r = 0 := by
+  have h_wf := static_binary_table_wf_slot7 v r offset env h_static
+  obtain ⟨_, _, _, h_XOR, _⟩ := h_wf
+  have h_e_op :
+      (ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry
+        { pos_ind := 1 - v.mode32 r
+          op := v.b_op_or_sext r
+          a_byte := v.free_in_a_7 r
+          b_byte := v.free_in_b_7 r
+          cin := v.carry_6 r
+          c_byte := v.free_in_c_7 r
+          flags := v.carry_7 r } 1).op.val
+        = ZiskFv.Airs.Tables.BinaryTable.OP_XOR := by
+    simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_op_XOR
+  have h_cout_zero :
+      (ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry
+        { pos_ind := 1 - v.mode32 r
+          op := v.b_op_or_sext r
+          a_byte := v.free_in_a_7 r
+          b_byte := v.free_in_b_7 r
+          cin := v.carry_6 r
+          c_byte := v.free_in_c_7 r
+          flags := v.carry_7 r } 1).flags.val % 2 = 0 := (h_XOR h_e_op).2
+  simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using
+    boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
 
 /-- **carry_7 = 0 for AND rows.** -/
 lemma carry_7_zero_AND
