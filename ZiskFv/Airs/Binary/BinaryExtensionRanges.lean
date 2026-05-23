@@ -4,6 +4,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
+import ZiskFv.AirsClean.BinaryExtension.Bridge
 import ZiskFv.Channels.RangeBusSoundness
 
 /-!
@@ -222,19 +223,11 @@ def binary_extension_row_byte_lookups (v : Valid_BinaryExtension FGL FGL) (r : �
 /-! ## op_is_shift linkage -/
 
 open ZiskFv.Trusted in
-/-- **BinaryExtension AIR op_is_shift linkage.** The `op_is_shift`
-    column is `bits(1)` (per `binary_extension.pil:88`: `col witness
-    bits(1) op_is_shift; // 1 if operation is in the shift family;
-    0 otherwise`) and the per-byte table lookup at
-    `binary_extension.pil:92` binds it to the table entry's
-    `op_is_shift` flag — so every row whose `op` is a shift literal
-    has `op_is_shift = 1`, and every row whose `op` is a SEXT literal
-    has `op_is_shift = 0`.
-
-    Derived from the row-shaped byte lookup entry plus
-    `bin_ext_table_consumer_wf`; the table predicates already pin the
-    `op_is_shift` flag for every shift and SEXT opcode. -/
-theorem binary_extension_op_is_shift_pin (v : Valid_BinaryExtension FGL FGL) (r : ℕ) :
+private theorem binary_extension_op_is_shift_pin_of_e0_wf
+    (v : Valid_BinaryExtension FGL FGL) (r : ℕ)
+    (h_wf :
+      ZiskFv.Airs.Tables.BinaryExtensionTable.wf_properties
+        (binary_extension_row_byte_lookups v r).e0) :
     ((v.op r = OP_SLL ∨ v.op r = OP_SRL ∨ v.op r = OP_SRA
       ∨ v.op r = OP_SLL_W ∨ v.op r = OP_SRL_W ∨ v.op r = OP_SRA_W)
         → v.op_is_shift r = 1)
@@ -242,8 +235,9 @@ theorem binary_extension_op_is_shift_pin (v : Valid_BinaryExtension FGL FGL) (r 
         → v.op_is_shift r = 0) := by
   open ZiskFv.Airs.Tables.BinaryExtensionTable in
   let hbytes := binary_extension_row_byte_lookups v r
-  have h_wf := bin_ext_table_consumer_wf hbytes.e0 hbytes.h0.1
-  rcases h_wf with
+  have h_wf' : wf_properties hbytes.e0 := by
+    simpa [hbytes] using h_wf
+  rcases h_wf' with
     ⟨_hrange, hSLL, hSRL, hSRA, hSLLW, hSRLW, hSRAW, hSEXTB, hSEXTH, hSEXTW⟩
   constructor
   · intro h_op
@@ -304,5 +298,52 @@ theorem binary_extension_op_is_shift_pin (v : Valid_BinaryExtension FGL FGL) (r 
       have h_flag := (hSEXTW h_op_val).2.2
       ext
       simpa [hbytes, binary_extension_row_byte_lookups] using h_flag
+
+open ZiskFv.Trusted in
+/-- Static-lookup variant of `binary_extension_op_is_shift_pin`. This consumes
+    the shared C7 static-provider witness rather than
+    `bin_ext_table_consumer_wf`. -/
+theorem binary_extension_op_is_shift_pin_of_static_lookup
+    (v : Valid_BinaryExtension FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v) :
+    ((v.op r = OP_SLL ∨ v.op r = OP_SRL ∨ v.op r = OP_SRA
+      ∨ v.op r = OP_SLL_W ∨ v.op r = OP_SRL_W ∨ v.op r = OP_SRA_W)
+        → v.op_is_shift r = 1)
+  ∧ ((v.op r = OP_SIGNEXTEND_B ∨ v.op r = OP_SIGNEXTEND_H ∨ v.op r = OP_SIGNEXTEND_W)
+        → v.op_is_shift r = 0) := by
+  open ZiskFv.Airs.Tables.BinaryExtensionTable in
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_lookup_wf_facts v r offset env h_static
+  have h_wf :
+      wf_properties (binary_extension_row_byte_lookups v r).e0 := by
+    simpa [binary_extension_row_byte_lookups,
+      ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts,
+      ZiskFv.AirsClean.BinaryExtension.rowAt,
+      ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableMessage.toEntry] using h_facts.1
+  exact binary_extension_op_is_shift_pin_of_e0_wf v r h_wf
+
+open ZiskFv.Trusted in
+/-- **BinaryExtension AIR op_is_shift linkage.** The `op_is_shift`
+    column is `bits(1)` (per `binary_extension.pil:88`: `col witness
+    bits(1) op_is_shift; // 1 if operation is in the shift family;
+    0 otherwise`) and the per-byte table lookup at
+    `binary_extension.pil:92` binds it to the table entry's
+    `op_is_shift` flag — so every row whose `op` is a shift literal
+    has `op_is_shift = 1`, and every row whose `op` is a SEXT literal
+    has `op_is_shift = 0`.
+
+    Derived from the row-shaped byte lookup entry plus
+    `bin_ext_table_consumer_wf`; the table predicates already pin the
+    `op_is_shift` flag for every shift and SEXT opcode. -/
+theorem binary_extension_op_is_shift_pin (v : Valid_BinaryExtension FGL FGL) (r : ℕ) :
+    ((v.op r = OP_SLL ∨ v.op r = OP_SRL ∨ v.op r = OP_SRA
+      ∨ v.op r = OP_SLL_W ∨ v.op r = OP_SRL_W ∨ v.op r = OP_SRA_W)
+        → v.op_is_shift r = 1)
+  ∧ ((v.op r = OP_SIGNEXTEND_B ∨ v.op r = OP_SIGNEXTEND_H ∨ v.op r = OP_SIGNEXTEND_W)
+        → v.op_is_shift r = 0) := by
+  open ZiskFv.Airs.Tables.BinaryExtensionTable in
+  let hbytes := binary_extension_row_byte_lookups v r
+  have h_wf := bin_ext_table_consumer_wf hbytes.e0 hbytes.h0.1
+  exact binary_extension_op_is_shift_pin_of_e0_wf v r (by simpa [hbytes] using h_wf)
 
 end ZiskFv.Airs.BinaryExtension
