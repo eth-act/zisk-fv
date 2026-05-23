@@ -116,6 +116,14 @@ The same file now also proves decoder scaffolding for per-op projections:
 `rowOfIndex_op_is_shift_eq_{one,zero}_of_block_*` projects the decoded
 `op_is_shift` flag once the block class is known.
 
+BinaryTable now has the analogous first provider-membership semantic
+projection:
+`AirsClean/BinaryTable.lean::spec_range_conditions` derives the legacy
+`range_conditions` clause from exact static-table membership. The proof
+projects the decoder's `a_byte`, `b_byte`, `cin`, and `c_byte` bounds over
+the real 19 table blocks; it does not assert any per-op semantic clause or
+retire `bin_table_consumer_wf` yet.
+
 BinaryExtensionTable lookup-channel groundwork now mirrors the BinaryTable
 side: `Channels/BinaryExtensionTable.lean` defines the typed payload/channel,
 `AirsClean/BinaryExtension/Constraints.lean` exposes a separate

@@ -187,15 +187,34 @@ def cinOfIndex (i : ℕ) : ℕ :=
 def coutLt (a b cin : ℕ) : ℕ :=
   if a < b then 1 else if a = b then cin else 0
 
+theorem coutLt_lt_two {a b cin : ℕ} (hcin : cin < 2) : coutLt a b cin < 2 := by
+  unfold coutLt
+  split <;> try omega
+  split <;> omega
+
 @[reducible]
 def coutGt (a b cin : ℕ) : ℕ :=
   if a > b then 1 else if a = b then cin else 0
 
+theorem coutGt_lt_two {a b cin : ℕ} (hcin : cin < 2) : coutGt a b cin < 2 := by
+  unfold coutGt
+  split <;> try omega
+  split <;> omega
+
 @[reducible]
 def signByte (a : ℕ) : ℕ := if (a &&& 0x80) = 0 then 0 else 1
 
+theorem signByte_lt_two (a : ℕ) : signByte a < 2 := by
+  unfold signByte
+  split <;> omega
+
 @[reducible]
 def chooseByte (pickA a b : ℕ) : ℕ := if pickA = 0 then b else a
+
+theorem chooseByte_lt_256 {pickA a b : ℕ} (ha : a < 256) (hb : b < 256) :
+    chooseByte pickA a b < 256 := by
+  unfold chooseByte
+  split <;> assumption
 
 @[reducible]
 def cOfIndex (i : ℕ) : ℕ :=
@@ -362,5 +381,180 @@ def binaryTable : StaticTable FGL BinaryTableMessage where
 theorem spec_iff (t : BinaryTableMessage FGL) :
     binaryTable.Spec t ↔ ∃ i : Fin tableSize, t = rowOfIndex i.val :=
   Iff.rfl
+
+theorem blockOfIndex_lt_19 (i : Fin tableSize) : blockOfIndex i.val < 19 := by
+  unfold blockOfIndex
+  by_cases h1 : i.val < block1
+  · rw [if_pos h1]; norm_num
+  · rw [if_neg h1]
+    by_cases h2 : i.val < block2
+    · rw [if_pos h2]; norm_num
+    · rw [if_neg h2]
+      by_cases h3 : i.val < block3
+      · rw [if_pos h3]; norm_num
+      · rw [if_neg h3]
+        by_cases h4 : i.val < block4
+        · rw [if_pos h4]; norm_num
+        · rw [if_neg h4]
+          by_cases h5 : i.val < block5
+          · rw [if_pos h5]; norm_num
+          · rw [if_neg h5]
+            by_cases h6 : i.val < block6
+            · rw [if_pos h6]; norm_num
+            · rw [if_neg h6]
+              by_cases h7 : i.val < block7
+              · rw [if_pos h7]; norm_num
+              · rw [if_neg h7]
+                by_cases h8 : i.val < block8
+                · rw [if_pos h8]; norm_num
+                · rw [if_neg h8]
+                  by_cases h9 : i.val < block9
+                  · rw [if_pos h9]; norm_num
+                  · rw [if_neg h9]
+                    by_cases h10 : i.val < block10
+                    · rw [if_pos h10]; norm_num
+                    · rw [if_neg h10]
+                      by_cases h11 : i.val < block11
+                      · rw [if_pos h11]; norm_num
+                      · rw [if_neg h11]
+                        by_cases h12 : i.val < block12
+                        · rw [if_pos h12]; norm_num
+                        · rw [if_neg h12]
+                          by_cases h13 : i.val < block13
+                          · rw [if_pos h13]; norm_num
+                          · rw [if_neg h13]
+                            by_cases h14 : i.val < block14
+                            · rw [if_pos h14]; norm_num
+                            · rw [if_neg h14]
+                              by_cases h15 : i.val < block15
+                              · rw [if_pos h15]; norm_num
+                              · rw [if_neg h15]
+                                by_cases h16 : i.val < block16
+                                · rw [if_pos h16]; norm_num
+                                · rw [if_neg h16]
+                                  by_cases h17 : i.val < block17
+                                  · rw [if_pos h17]; norm_num
+                                  · rw [if_neg h17]
+                                    by_cases h18 : i.val < block18
+                                    · rw [if_pos h18]; norm_num
+                                    · rw [if_neg h18]; norm_num
+
+theorem rowOfIndex_c_byte_lt_256 (i : Fin tableSize) :
+    (BinaryTableMessage.toEntry (rowOfIndex i.val) 1).c_byte.val < 256 := by
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_high : highByte i.val < 256 := by
+    unfold highByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  simp only
+  change (cOfIndex i.val : FGL).val < 256
+  rw [Fin.val_natCast]
+  suffices h_c : cOfIndex i.val < 256 by
+    have hp : cOfIndex i.val < 18446744069414584321 := by omega
+    rw [Nat.mod_eq_of_lt hp]
+    exact h_c
+  unfold cOfIndex
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block
+  · simp
+    exact chooseByte_lt_256 h_low h_high
+  · simp
+    exact chooseByte_lt_256 h_low h_high
+  · simp
+    exact chooseByte_lt_256 h_low h_high
+  · simp
+    exact chooseByte_lt_256 h_low h_high
+  · simp
+  · simp
+  · simp
+  · simp
+  · simp
+  · simp
+  · simp
+    exact Nat.mod_lt _ (by norm_num)
+  · simp
+    split <;> omega
+  · simp
+  · simp
+  · simp
+    exact lt_of_le_of_lt Nat.and_le_left h_low
+  · simp
+    have h_or : lowByte i.val ||| highByte i.val < 2 ^ 8 :=
+      Nat.bitwise_lt_two_pow (by simpa using h_low) (by simpa using h_high)
+    simpa using h_or
+  · simp
+    have h_xor : lowByte i.val ^^^ highByte i.val < 2 ^ 8 :=
+      Nat.xor_lt_two_pow (by simpa using h_low) (by simpa using h_high)
+    simpa using h_xor
+  · simp
+  · simp
+
+open ZiskFv.Airs.Tables.BinaryTable in
+/-- The BinaryTable decoder always emits 8-bit `a` and `b` inputs and a
+    one-bit carry input. The `c_byte` range is op-dependent and is proved by
+    separate block projections. -/
+theorem rowOfIndex_input_range_conditions (i : Fin tableSize) :
+    (BinaryTableMessage.toEntry (rowOfIndex i.val) 1).a_byte.val < 256 ∧
+    (BinaryTableMessage.toEntry (rowOfIndex i.val) 1).b_byte.val < 256 ∧
+    (BinaryTableMessage.toEntry (rowOfIndex i.val) 1).cin.val < 2 := by
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_high : highByte i.val < 256 := by
+    unfold highByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_cin : cinOfIndex i.val < 2 := by
+    simp [cinOfIndex]
+    split <;> try exact Nat.mod_lt _ (by norm_num)
+    split <;> try omega
+    split <;> try omega
+    split <;> try omega
+    split <;> try omega
+    split <;> try omega
+    split <;> omega
+  simp only
+  constructor
+  · rw [Fin.val_natCast]
+    omega
+  constructor
+  · rw [Fin.val_natCast]
+    omega
+  · rw [Fin.val_natCast]
+    omega
+
+open ZiskFv.Airs.Tables.BinaryTable in
+/-- Static BinaryTable membership gives the input-byte/carry range part of
+    the legacy `range_conditions` predicate. -/
+theorem spec_input_range_conditions {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    (BinaryTableMessage.toEntry t 1).a_byte.val < 256 ∧
+    (BinaryTableMessage.toEntry t 1).b_byte.val < 256 ∧
+    (BinaryTableMessage.toEntry t 1).cin.val < 2 := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_input_range_conditions i
+
+open ZiskFv.Airs.Tables.BinaryTable in
+/-- Static BinaryTable membership gives the full legacy byte/carry range
+    predicate. This is the provider-side replacement for the range component
+    of `bin_table_consumer_wf`; the per-op semantic clauses are discharged
+    separately. -/
+theorem rowOfIndex_range_conditions (i : Fin tableSize) :
+    range_conditions (BinaryTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  rcases rowOfIndex_input_range_conditions i with ⟨ha, hb, hcin⟩
+  exact ⟨ha, hb, rowOfIndex_c_byte_lt_256 i, hcin⟩
+
+open ZiskFv.Airs.Tables.BinaryTable in
+/-- Exact static-table membership implies the legacy BinaryTable range
+    predicate. -/
+theorem spec_range_conditions {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    range_conditions (BinaryTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_range_conditions i
 
 end ZiskFv.AirsClean.BinaryTable
