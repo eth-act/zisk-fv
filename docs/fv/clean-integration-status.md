@@ -133,6 +133,9 @@ table clauses remain open.
 from static membership, including the `highByte` modulo-normalization between
 the decoder and the legacy table predicate. The comparison and SUB clauses
 remain open.
+`spec_wf_SUB` now proves the SUB byte equation, borrow cases, and non-final
+/ final flag clauses from static membership. The remaining BinaryTable
+semantic projections are the comparison clauses (`LTU`, `LT`, and `EQ`).
 
 BinaryExtensionTable lookup-channel groundwork now mirrors the BinaryTable
 side: `Channels/BinaryExtensionTable.lean` defines the typed payload/channel,

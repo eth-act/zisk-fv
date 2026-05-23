@@ -829,4 +829,123 @@ theorem spec_wf_ADD {t : BinaryTableMessage FGL}
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_wf_ADD i
 
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem rowOfIndex_wf_SUB (i : Fin tableSize) :
+    wf_SUB (BinaryTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  intro h_op
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_high : highByte i.val < 256 := by
+    unfold highByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_cin : cinOfIndex i.val < 2 := by
+    simp [cinOfIndex]
+    split <;> try exact Nat.mod_lt _ (by norm_num)
+    split <;> try omega
+    split <;> try omega
+    split <;> try omega
+    split <;> try omega
+    split <;> try omega
+    split <;> omega
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  simp only at h_op
+  rw [Fin.val_natCast] at h_op
+  unfold opOfIndex at h_op
+  generalize h_block : blockOfIndex i.val = block at h_op
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR, OP_LTU,
+    OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE, OP_SEXT_00, OP_SEXT_FF,
+    OP_MINU, OP_MIN, OP_MAXU, OP_MAX, OP_LT_ABS_NP, OP_LT_ABS_PN] at h_op
+  have h_cin_eq :
+      cinOfIndex i.val = (if relativeIndex i.val < p2_17 then 0 else 1) := by
+    simp [cinOfIndex, h_block]
+  constructor
+  · intro hge
+    simp [cOfIndex, h_block] at hge ⊢
+    rw [Nat.mod_eq_of_lt (by omega : lowByte i.val < 18446744069414584321)] at hge
+    rw [Nat.mod_eq_of_lt (by omega : highByte i.val < 18446744069414584321)] at hge
+    have hbranch : cinOfIndex i.val + highByte i.val ≤ lowByte i.val := by
+      by_cases hr : relativeIndex i.val < p2_17
+      · simp [h_cin_eq, hr] at hge ⊢
+        omega
+      · simp [h_cin_eq, hr] at hge ⊢
+        omega
+    simp [hbranch]
+    rw [Nat.mod_eq_of_lt (by omega : lowByte i.val < 18446744069414584321)]
+    rw [Nat.mod_eq_of_lt (by omega : highByte i.val < 18446744069414584321)]
+    by_cases hr : relativeIndex i.val < p2_17
+    · simp [h_cin_eq, hr]
+      omega
+    · simp [h_cin_eq, hr]
+      omega
+  constructor
+  · intro hlt
+    simp [cOfIndex, h_block] at hlt ⊢
+    rw [Nat.mod_eq_of_lt (by omega : lowByte i.val < 18446744069414584321)] at hlt
+    rw [Nat.mod_eq_of_lt (by omega : highByte i.val < 18446744069414584321)] at hlt
+    have hbranch : ¬ cinOfIndex i.val + highByte i.val ≤ lowByte i.val := by
+      by_cases hr : relativeIndex i.val < p2_17
+      · simp [h_cin_eq, hr] at hlt ⊢
+        omega
+      · simp [h_cin_eq, hr] at hlt ⊢
+        omega
+    simp [hbranch]
+    rw [Nat.mod_eq_of_lt (by omega : lowByte i.val < 18446744069414584321)]
+    rw [Nat.mod_eq_of_lt (by omega : highByte i.val < 18446744069414584321)]
+    by_cases hr : relativeIndex i.val < p2_17
+    · simp [h_cin_eq, hr]
+      omega
+    · simp [h_cin_eq, hr]
+      omega
+  constructor
+  · intro h_not_last
+    by_cases h_pos : posIndOfIndex i.val = 1
+    · exfalso
+      exact h_not_last (by simp [h_pos])
+    · constructor
+      · intro hge
+        simp [h_block, flagsOfIndex, coutOfIndex, resultIsAOfIndex, useFirstByteOfIndex,
+        cIsSignedOfIndex, h_pos] at *
+        rw [Nat.mod_eq_of_lt (by omega : lowByte i.val < 18446744069414584321)] at hge
+        rw [Nat.mod_eq_of_lt (by omega : highByte i.val < 18446744069414584321)] at hge
+        have hnot : ¬ lowByte i.val < cinOfIndex i.val + highByte i.val := by
+          by_cases hr : relativeIndex i.val < p2_17
+          · simp [h_cin_eq, hr] at hge ⊢
+            omega
+          · simp [h_cin_eq, hr] at hge ⊢
+            omega
+        simp [hnot]
+      · intro hlt
+        simp [h_block, flagsOfIndex, coutOfIndex, resultIsAOfIndex, useFirstByteOfIndex,
+          cIsSignedOfIndex, h_pos] at *
+        rw [Nat.mod_eq_of_lt (by omega : lowByte i.val < 18446744069414584321)] at hlt
+        rw [Nat.mod_eq_of_lt (by omega : highByte i.val < 18446744069414584321)] at hlt
+        have hborrow : lowByte i.val < cinOfIndex i.val + highByte i.val := by
+          by_cases hr : relativeIndex i.val < p2_17
+          · simp [h_cin_eq, hr] at hlt ⊢
+            omega
+          · simp [h_cin_eq, hr] at hlt ⊢
+            omega
+        simp [hborrow]
+  · intro h_last
+    by_cases h_pos : posIndOfIndex i.val = 1
+    · simp [h_block, flagsOfIndex, coutOfIndex, resultIsAOfIndex, useFirstByteOfIndex,
+        cIsSignedOfIndex, h_pos]
+      split <;> norm_num
+    · exfalso
+      have h_pos_from_last : posIndOfIndex i.val = 1 := by
+        simp [posIndOfIndex, h_block] at h_last ⊢
+        split at h_last <;> omega
+      exact h_pos h_pos_from_last
+
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem spec_wf_SUB {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    wf_SUB (BinaryTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_wf_SUB i
+
 end ZiskFv.AirsClean.BinaryTable
