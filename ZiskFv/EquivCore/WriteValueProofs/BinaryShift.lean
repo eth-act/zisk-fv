@@ -459,13 +459,14 @@ lemma h_rd_val_shift_slli
 /-- **SRL `h_rd_val` derivation (Tier 1).** Same architecture as
     `h_rd_val_shift_sll` but with `BitVec.ushiftRight`. Uses K1-C SRL
     lift `binary_extension_srl_chunks_eq_bv_ushr`. -/
-lemma h_rd_val_shift_srl
+lemma h_rd_val_shift_srl_of_wf
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (shift : ℕ)
     (h_op : (v.op r_binary).val = OP_SRL)
     (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
     (h_a_range : a_bytes_in_range v r_binary)
     (_hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
     (_hc_lo_1 : (v.free_in_c_2 r_binary).val < 4294967296)
@@ -519,7 +520,7 @@ lemma h_rd_val_shift_srl
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = BitVec.ushiftRight r1_val shift := by
-  have h_bv := binary_extension_srl_chunks_eq_bv_ushr v r_binary h_op h_bytes h_a_range
+  have h_bv := binary_extension_srl_chunks_eq_bv_ushr_of_wf v r_binary h_op h_bytes h_wfs h_a_range
   simp only [register_write_lanes_match] at h_lane_rd
   obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
   have h_lo_eq_fgl : memory_entry_lo e2
@@ -633,6 +634,82 @@ lemma h_rd_val_shift_srl
     e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
 
+/-- Legacy SRL `h_rd_val` route through `bin_ext_table_consumer_wf`. -/
+lemma h_rd_val_shift_srl
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (r_main r_binary : ℕ)
+    (e2 : MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (shift : ℕ)
+    (h_op : (v.op r_binary).val = OP_SRL)
+    (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_a_range : a_bytes_in_range v r_binary)
+    (_hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
+    (_hc_lo_1 : (v.free_in_c_2 r_binary).val < 4294967296)
+    (_hc_lo_2 : (v.free_in_c_4 r_binary).val < 4294967296)
+    (_hc_lo_3 : (v.free_in_c_6 r_binary).val < 4294967296)
+    (_hc_lo_4 : (v.free_in_c_8 r_binary).val < 4294967296)
+    (_hc_lo_5 : (v.free_in_c_10 r_binary).val < 4294967296)
+    (_hc_lo_6 : (v.free_in_c_12 r_binary).val < 4294967296)
+    (_hc_lo_7 : (v.free_in_c_14 r_binary).val < 4294967296)
+    (_hc_hi_0 : (v.free_in_c_1 r_binary).val < 4294967296)
+    (_hc_hi_1 : (v.free_in_c_3 r_binary).val < 4294967296)
+    (_hc_hi_2 : (v.free_in_c_5 r_binary).val < 4294967296)
+    (_hc_hi_3 : (v.free_in_c_7 r_binary).val < 4294967296)
+    (_hc_hi_4 : (v.free_in_c_9 r_binary).val < 4294967296)
+    (_hc_hi_5 : (v.free_in_c_11 r_binary).val < 4294967296)
+    (_hc_hi_6 : (v.free_in_c_13 r_binary).val < 4294967296)
+    (_hc_hi_7 : (v.free_in_c_15 r_binary).val < 4294967296)
+    (hc_lo_sum_lt : (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+        + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+        + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+        + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
+    (hc_hi_sum_lt : (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+        + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+        + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+        + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+    (h_match_clo : m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
+    (h_match_chi : m.c_1 r_main
+        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_input_r1 : r1_val
+      = BitVec.ofNat 64
+          ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+            + (v.free_in_a_2 r_binary).val * 65536
+            + (v.free_in_a_3 r_binary).val * 16777216
+            + (v.free_in_a_4 r_binary).val * 4294967296
+            + (v.free_in_a_5 r_binary).val * 1099511627776
+            + (v.free_in_a_6 r_binary).val * 281474976710656
+            + (v.free_in_a_7 r_binary).val * 72057594037927936))
+    (h_shift : shift = (v.free_in_b r_binary).val % 64) :
+    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
+                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+      = BitVec.ushiftRight r1_val shift :=
+  h_rd_val_shift_srl_of_wf m v r_main r_binary e2 r1_val shift h_op h_bytes
+    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
+    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
+    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
+    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
+    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
+    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
+    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
+    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
+    h_a_range _hc_lo_0 _hc_lo_1 _hc_lo_2 _hc_lo_3 _hc_lo_4 _hc_lo_5 _hc_lo_6 _hc_lo_7
+    _hc_hi_0 _hc_hi_1 _hc_hi_2 _hc_hi_3 _hc_hi_4 _hc_hi_5 _hc_hi_6 _hc_hi_7
+    hc_lo_sum_lt hc_hi_sum_lt h_match_clo h_match_chi h_lane_rd
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_input_r1 h_shift
+
 /-! ## SRLI -/
 
 /-- **SRLI `h_rd_val` derivation (Tier 1).** Same shape as `h_rd_val_shift_srl`;
@@ -711,13 +788,14 @@ lemma h_rd_val_shift_srli
     `h_rd_val_shift_sll`/`_srl` but with `BitVec.sshiftRight`. Uses K1-C SRA
     lift `binary_extension_sra_chunks_eq_bv_sshr`. RV64 SRA pre-masks the
     rs2 register read to 6 bits. -/
-lemma h_rd_val_shift_sra
+lemma h_rd_val_shift_sra_of_wf
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
     (r1_val : BitVec 64) (shift : ℕ)
     (h_op : (v.op r_binary).val = OP_SRA)
     (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
     (h_a_range : a_bytes_in_range v r_binary)
     (_hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
     (_hc_lo_1 : (v.free_in_c_2 r_binary).val < 4294967296)
@@ -771,7 +849,7 @@ lemma h_rd_val_shift_sra
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = BitVec.sshiftRight r1_val shift := by
-  have h_bv := binary_extension_sra_chunks_eq_bv_sshr v r_binary h_op h_bytes h_a_range
+  have h_bv := binary_extension_sra_chunks_eq_bv_sshr_of_wf v r_binary h_op h_bytes h_wfs h_a_range
   simp only [register_write_lanes_match] at h_lane_rd
   obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
   have h_lo_eq_fgl : memory_entry_lo e2
@@ -884,6 +962,82 @@ lemma h_rd_val_shift_sra
   exact bv64_of_byte_sum (BitVec.sshiftRight r1_val shift)
     e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
+
+/-- Legacy SRA `h_rd_val` route through `bin_ext_table_consumer_wf`. -/
+lemma h_rd_val_shift_sra
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (r_main r_binary : ℕ)
+    (e2 : MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (shift : ℕ)
+    (h_op : (v.op r_binary).val = OP_SRA)
+    (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_a_range : a_bytes_in_range v r_binary)
+    (_hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
+    (_hc_lo_1 : (v.free_in_c_2 r_binary).val < 4294967296)
+    (_hc_lo_2 : (v.free_in_c_4 r_binary).val < 4294967296)
+    (_hc_lo_3 : (v.free_in_c_6 r_binary).val < 4294967296)
+    (_hc_lo_4 : (v.free_in_c_8 r_binary).val < 4294967296)
+    (_hc_lo_5 : (v.free_in_c_10 r_binary).val < 4294967296)
+    (_hc_lo_6 : (v.free_in_c_12 r_binary).val < 4294967296)
+    (_hc_lo_7 : (v.free_in_c_14 r_binary).val < 4294967296)
+    (_hc_hi_0 : (v.free_in_c_1 r_binary).val < 4294967296)
+    (_hc_hi_1 : (v.free_in_c_3 r_binary).val < 4294967296)
+    (_hc_hi_2 : (v.free_in_c_5 r_binary).val < 4294967296)
+    (_hc_hi_3 : (v.free_in_c_7 r_binary).val < 4294967296)
+    (_hc_hi_4 : (v.free_in_c_9 r_binary).val < 4294967296)
+    (_hc_hi_5 : (v.free_in_c_11 r_binary).val < 4294967296)
+    (_hc_hi_6 : (v.free_in_c_13 r_binary).val < 4294967296)
+    (_hc_hi_7 : (v.free_in_c_15 r_binary).val < 4294967296)
+    (hc_lo_sum_lt : (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+        + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+        + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+        + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
+    (hc_hi_sum_lt : (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+        + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+        + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+        + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+    (h_match_clo : m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
+    (h_match_chi : m.c_1 r_main
+        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_input_r1 : r1_val
+      = BitVec.ofNat 64
+          ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+            + (v.free_in_a_2 r_binary).val * 65536
+            + (v.free_in_a_3 r_binary).val * 16777216
+            + (v.free_in_a_4 r_binary).val * 4294967296
+            + (v.free_in_a_5 r_binary).val * 1099511627776
+            + (v.free_in_a_6 r_binary).val * 281474976710656
+            + (v.free_in_a_7 r_binary).val * 72057594037927936))
+    (h_shift : shift = (v.free_in_b r_binary).val % 64) :
+    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
+                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+      = BitVec.sshiftRight r1_val shift :=
+  h_rd_val_shift_sra_of_wf m v r_main r_binary e2 r1_val shift h_op h_bytes
+    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
+    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
+    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
+    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
+    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
+    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
+    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
+    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
+    h_a_range _hc_lo_0 _hc_lo_1 _hc_lo_2 _hc_lo_3 _hc_lo_4 _hc_lo_5 _hc_lo_6 _hc_lo_7
+    _hc_hi_0 _hc_hi_1 _hc_hi_2 _hc_hi_3 _hc_hi_4 _hc_hi_5 _hc_hi_6 _hc_hi_7
+    hc_lo_sum_lt hc_hi_sum_lt h_match_clo h_match_chi h_lane_rd
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    h_input_r1 h_shift
 
 /-! ## SRAI -/
 
