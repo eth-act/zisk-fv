@@ -134,14 +134,13 @@ def ByteLookupWfHypotheses {v : Valid_BinaryExtension FGL FGL} {row : ℕ}
 /-! ## Per-byte arithmetic helpers — extract the SLL/SRL byte-equation
     from the trusted lookup-table contract. -/
 
-private lemma sll_byte_eq
+private lemma sll_byte_eq_of_wf
     (e : BinaryExtensionTableEntry FGL)
-    (h_mult : e.multiplicity = 1)
+    (h_wf : wf_properties e)
     (h_op_val : e.op.val = OP_SLL) :
     e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
       = (e.a_byte.val * 256 ^ e.byte_index.val * 2 ^ (e.shift_amount.val % 64))
         % 2 ^ 64 := by
-  have h_wf := bin_ext_table_consumer_wf e h_mult
   have h_sll : wf_SLL e := h_wf.2.1
   have ⟨h_lo, h_hi, _⟩ := h_sll h_op_val
   rw [h_lo, h_hi]
@@ -154,6 +153,15 @@ private lemma sll_byte_eq
   rw [h_eq]
   show positioned <<< s % 2 ^ 64 = positioned * 2 ^ s % 2 ^ 64
   rw [Nat.shiftLeft_eq]
+
+private lemma sll_byte_eq
+    (e : BinaryExtensionTableEntry FGL)
+    (h_mult : e.multiplicity = 1)
+    (h_op_val : e.op.val = OP_SLL) :
+    e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
+      = (e.a_byte.val * 256 ^ e.byte_index.val * 2 ^ (e.shift_amount.val % 64))
+        % 2 ^ 64 :=
+  sll_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
 
 private lemma srl_byte_eq
     (e : BinaryExtensionTableEntry FGL)
@@ -226,10 +234,11 @@ private lemma byte_pair_div_pow_two (a b s k : ℕ)
     (consumer at multiplicity 1, all with `op = OP_SLL`), and the
     range-bound on each input byte (`a_i.val < 256`), conclude that the
     BinaryExtension AIR computes 64-bit SLL. -/
-lemma binary_extension_sll_chunks_eq_bv_shl
+lemma binary_extension_sll_chunks_eq_bv_shl_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SLL)
     (h_bytes : ByteLookupHypotheses v row)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
     (h_a_range : a_bytes_in_range v row) :
     BitVec.shiftLeft
         (BitVec.ofNat 64
@@ -272,7 +281,7 @@ lemma binary_extension_sll_chunks_eq_bv_shl
   -- For each entry, we substitute its slots immediately to avoid 8 layers of rw chains.
   have eq0 : (v.free_in_c_0 row).val + (v.free_in_c_1 row).val * 4294967296
       = (v.free_in_a_0 row).val * 1 * 2 ^ sft % 2 ^ 64 := by
-    have h := sll_byte_eq e0 hm0 (by rw [hop0]; exact h_op)
+    have h := sll_byte_eq_of_wf e0 h_wfs.1 (by rw [hop0]; exact h_op)
     rw [show e0.byte_index.val = 0 from by rw [hbi0]; rfl,
         show e0.shift_amount.val = (v.free_in_b row).val from by rw [hs0],
         show e0.a_byte.val = (v.free_in_a_0 row).val from by rw [ha0],
@@ -284,7 +293,7 @@ lemma binary_extension_sll_chunks_eq_bv_shl
     exact h
   have eq1 : (v.free_in_c_2 row).val + (v.free_in_c_3 row).val * 4294967296
       = (v.free_in_a_1 row).val * 256 * 2 ^ sft % 2 ^ 64 := by
-    have h := sll_byte_eq e1 hm1 (by rw [hop1]; exact h_op)
+    have h := sll_byte_eq_of_wf e1 h_wfs.2.1 (by rw [hop1]; exact h_op)
     rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
         show e1.shift_amount.val = (v.free_in_b row).val from by rw [hs1],
         show e1.a_byte.val = (v.free_in_a_1 row).val from by rw [ha1],
@@ -295,7 +304,7 @@ lemma binary_extension_sll_chunks_eq_bv_shl
     exact h
   have eq2 : (v.free_in_c_4 row).val + (v.free_in_c_5 row).val * 4294967296
       = (v.free_in_a_2 row).val * 65536 * 2 ^ sft % 2 ^ 64 := by
-    have h := sll_byte_eq e2 hm2 (by rw [hop2]; exact h_op)
+    have h := sll_byte_eq_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
     rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
         show e2.shift_amount.val = (v.free_in_b row).val from by rw [hs2],
         show e2.a_byte.val = (v.free_in_a_2 row).val from by rw [ha2],
@@ -306,7 +315,7 @@ lemma binary_extension_sll_chunks_eq_bv_shl
     exact h
   have eq3 : (v.free_in_c_6 row).val + (v.free_in_c_7 row).val * 4294967296
       = (v.free_in_a_3 row).val * 16777216 * 2 ^ sft % 2 ^ 64 := by
-    have h := sll_byte_eq e3 hm3 (by rw [hop3]; exact h_op)
+    have h := sll_byte_eq_of_wf e3 h_wfs.2.2.2.1 (by rw [hop3]; exact h_op)
     rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
         show e3.shift_amount.val = (v.free_in_b row).val from by rw [hs3],
         show e3.a_byte.val = (v.free_in_a_3 row).val from by rw [ha3],
@@ -317,7 +326,7 @@ lemma binary_extension_sll_chunks_eq_bv_shl
     exact h
   have eq4 : (v.free_in_c_8 row).val + (v.free_in_c_9 row).val * 4294967296
       = (v.free_in_a_4 row).val * 4294967296 * 2 ^ sft % 2 ^ 64 := by
-    have h := sll_byte_eq e4 hm4 (by rw [hop4]; exact h_op)
+    have h := sll_byte_eq_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
     rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
         show e4.shift_amount.val = (v.free_in_b row).val from by rw [hs4],
         show e4.a_byte.val = (v.free_in_a_4 row).val from by rw [ha4],
@@ -328,7 +337,7 @@ lemma binary_extension_sll_chunks_eq_bv_shl
     exact h
   have eq5 : (v.free_in_c_10 row).val + (v.free_in_c_11 row).val * 4294967296
       = (v.free_in_a_5 row).val * 1099511627776 * 2 ^ sft % 2 ^ 64 := by
-    have h := sll_byte_eq e5 hm5 (by rw [hop5]; exact h_op)
+    have h := sll_byte_eq_of_wf e5 h_wfs.2.2.2.2.2.1 (by rw [hop5]; exact h_op)
     rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
         show e5.shift_amount.val = (v.free_in_b row).val from by rw [hs5],
         show e5.a_byte.val = (v.free_in_a_5 row).val from by rw [ha5],
@@ -339,7 +348,7 @@ lemma binary_extension_sll_chunks_eq_bv_shl
     exact h
   have eq6 : (v.free_in_c_12 row).val + (v.free_in_c_13 row).val * 4294967296
       = (v.free_in_a_6 row).val * 281474976710656 * 2 ^ sft % 2 ^ 64 := by
-    have h := sll_byte_eq e6 hm6 (by rw [hop6]; exact h_op)
+    have h := sll_byte_eq_of_wf e6 h_wfs.2.2.2.2.2.2.1 (by rw [hop6]; exact h_op)
     rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
         show e6.shift_amount.val = (v.free_in_b row).val from by rw [hs6],
         show e6.a_byte.val = (v.free_in_a_6 row).val from by rw [ha6],
@@ -350,7 +359,7 @@ lemma binary_extension_sll_chunks_eq_bv_shl
     exact h
   have eq7 : (v.free_in_c_14 row).val + (v.free_in_c_15 row).val * 4294967296
       = (v.free_in_a_7 row).val * 72057594037927936 * 2 ^ sft % 2 ^ 64 := by
-    have h := sll_byte_eq e7 hm7 (by rw [hop7]; exact h_op)
+    have h := sll_byte_eq_of_wf e7 h_wfs.2.2.2.2.2.2.2 (by rw [hop7]; exact h_op)
     rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
         show e7.shift_amount.val = (v.free_in_b row).val from by rw [hs7],
         show e7.a_byte.val = (v.free_in_a_7 row).val from by rw [ha7],
@@ -427,6 +436,51 @@ lemma binary_extension_sll_chunks_eq_bv_shl
   --     = (p0 % 2^64 + p1 % 2^64 + ... + p7 % 2^64) % 2^64
   -- This is iterated `Nat.add_mod`. omega handles literal modulus.
   omega
+
+/-- Legacy SLL packed-correctness route through `bin_ext_table_consumer_wf`. -/
+lemma binary_extension_sll_chunks_eq_bv_shl
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
+    (h_op : (v.op row).val = OP_SLL)
+    (h_bytes : ByteLookupHypotheses v row)
+    (h_a_range : a_bytes_in_range v row) :
+    BitVec.shiftLeft
+        (BitVec.ofNat 64
+          ((v.free_in_a_0 row).val
+            + (v.free_in_a_1 row).val * 256
+            + (v.free_in_a_2 row).val * 65536
+            + (v.free_in_a_3 row).val * 16777216
+            + (v.free_in_a_4 row).val * 4294967296
+            + (v.free_in_a_5 row).val * 1099511627776
+            + (v.free_in_a_6 row).val * 281474976710656
+            + (v.free_in_a_7 row).val * 72057594037927936))
+        ((v.free_in_b row).val % 64)
+      = BitVec.ofNat 64
+          (((v.free_in_c_0 row).val
+              + (v.free_in_c_2 row).val
+              + (v.free_in_c_4 row).val
+              + (v.free_in_c_6 row).val
+              + (v.free_in_c_8 row).val
+              + (v.free_in_c_10 row).val
+              + (v.free_in_c_12 row).val
+              + (v.free_in_c_14 row).val)
+            + ((v.free_in_c_1 row).val
+              + (v.free_in_c_3 row).val
+              + (v.free_in_c_5 row).val
+              + (v.free_in_c_7 row).val
+              + (v.free_in_c_9 row).val
+              + (v.free_in_c_11 row).val
+              + (v.free_in_c_13 row).val
+              + (v.free_in_c_15 row).val) * 4294967296) :=
+  binary_extension_sll_chunks_eq_bv_shl_of_wf v row h_op h_bytes
+    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
+    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
+    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
+    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
+    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
+    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
+    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
+    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
+    h_a_range
 
 /-- **BinaryExtension SRL `BitVec 64` lift.**
 
