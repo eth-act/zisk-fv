@@ -168,4 +168,41 @@ theorem spec_iff (t : BinaryExtensionTableMessage FGL) :
     binaryExtensionTable.Spec t ↔ ∃ i : Fin tableSize, t = rowOfIndex i.val :=
   Iff.rfl
 
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+/-- The static decoder always produces the byte/range side of the legacy
+    BinaryExtensionTable semantic predicate. This is the first reusable
+    membership-to-semantics projection; the per-op output equations are
+    proved separately to keep the arithmetic cases tractable. -/
+theorem rowOfIndex_range_conditions (i : Fin tableSize) :
+    range_conditions (BinaryExtensionTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_byte : byteIndex i.val < 8 := by
+    unfold byteIndex
+    exact Nat.mod_lt _ (by norm_num)
+  have h_shift : shiftAmount i.val < 256 := by
+    unfold shiftAmount
+    split
+    · exact Nat.mod_lt _ (by norm_num)
+    · norm_num
+  simp only [range_conditions]
+  constructor
+  · rw [Fin.val_natCast]
+    omega
+  constructor
+  · rw [Fin.val_natCast]
+    omega
+  · rw [Fin.val_natCast]
+    omega
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+/-- Static-table membership implies the range-condition part of the legacy
+    BinaryExtensionTable semantics. -/
+theorem spec_range_conditions {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    range_conditions (BinaryExtensionTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_range_conditions i
+
 end ZiskFv.AirsClean.BinaryExtensionTable
