@@ -173,8 +173,8 @@ def rowOfIndex (i : ℕ) : BinaryExtensionTableMessage FGL :=
     byte_index := byteIndex i
     a_byte := lowByte i
     shift_amount := shiftAmount i
-    c_lo_byte := out % 2 ^ 32
-    c_hi_byte := out / 2 ^ 32
+    c_lo_byte := (out % 2 ^ 32 : ℕ)
+    c_hi_byte := (out / 2 ^ 32 : ℕ)
     op_is_shift := opIsShiftOfIndex i }
 
 theorem rowOfIndex_op_is_shift_eq_one_of_block_lt_6 {i : Fin tableSize}
@@ -238,5 +238,130 @@ theorem spec_range_conditions {t : BinaryExtensionTableMessage FGL}
     range_conditions (BinaryExtensionTableMessage.toEntry t 1) := by
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_range_conditions i
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem rowOfIndex_wf_SEXT_B (i : Fin tableSize) :
+    wf_SEXT_B (BinaryExtensionTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  intro h_op
+  have h_block_lt : blockOfIndex i.val < 9 := blockOfIndex_lt_9 i
+  simp only at h_op
+  rw [Fin.val_natCast] at h_op
+  unfold opOfIndex at h_op
+  generalize h_block : blockOfIndex i.val = block at h_op
+  have h_block_lt' : block < 9 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_SLL, OP_SRL, OP_SRA, OP_SLL_W,
+    OP_SRL_W, OP_SRA_W, OP_SEXT_B, OP_SEXT_H, OP_SEXT_W] at h_op
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_byte : byteIndex i.val < 8 := by
+    unfold byteIndex
+    exact Nat.mod_lt _ (by norm_num)
+  have h_low_mod : lowByte i.val % 18446744069414584321 = lowByte i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_byte_mod : byteIndex i.val % 18446744069414584321 = byteIndex i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  simp [outOfIndex, sextbOut, h_block, h_low_mod, h_byte_mod]
+  by_cases h_byte_zero : byteIndex i.val = 0
+  · by_cases h_sign : 128 ≤ lowByte i.val
+    · simp [h_byte_zero, h_sign]
+      omega
+    · simp [h_byte_zero, h_sign]
+      omega
+  · simp [h_byte_zero]
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem spec_wf_SEXT_B {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    wf_SEXT_B (BinaryExtensionTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_wf_SEXT_B i
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem rowOfIndex_wf_SEXT_H (i : Fin tableSize) :
+    wf_SEXT_H (BinaryExtensionTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  intro h_op
+  have h_block_lt : blockOfIndex i.val < 9 := blockOfIndex_lt_9 i
+  simp only at h_op
+  rw [Fin.val_natCast] at h_op
+  unfold opOfIndex at h_op
+  generalize h_block : blockOfIndex i.val = block at h_op
+  have h_block_lt' : block < 9 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_SLL, OP_SRL, OP_SRA, OP_SLL_W,
+    OP_SRL_W, OP_SRA_W, OP_SEXT_B, OP_SEXT_H, OP_SEXT_W] at h_op
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_byte : byteIndex i.val < 8 := by
+    unfold byteIndex
+    exact Nat.mod_lt _ (by norm_num)
+  have h_low_mod : lowByte i.val % 18446744069414584321 = lowByte i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_byte_mod : byteIndex i.val % 18446744069414584321 = byteIndex i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  simp [outOfIndex, sexthOut, h_block, h_low_mod, h_byte_mod]
+  by_cases h_byte_zero : byteIndex i.val = 0
+  · simp [h_byte_zero]
+    omega
+  · by_cases h_byte_one : byteIndex i.val = 1
+    · by_cases h_sign : 128 ≤ lowByte i.val
+      · simp [h_byte_one, h_sign]
+        omega
+      · simp [h_byte_one, h_sign]
+        omega
+    · simp [h_byte_zero, h_byte_one]
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem spec_wf_SEXT_H {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    wf_SEXT_H (BinaryExtensionTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_wf_SEXT_H i
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem rowOfIndex_wf_SEXT_W (i : Fin tableSize) :
+    wf_SEXT_W (BinaryExtensionTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  intro h_op
+  have h_block_lt : blockOfIndex i.val < 9 := blockOfIndex_lt_9 i
+  simp only at h_op
+  rw [Fin.val_natCast] at h_op
+  unfold opOfIndex at h_op
+  generalize h_block : blockOfIndex i.val = block at h_op
+  have h_block_lt' : block < 9 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_SLL, OP_SRL, OP_SRA, OP_SLL_W,
+    OP_SRL_W, OP_SRA_W, OP_SEXT_B, OP_SEXT_H, OP_SEXT_W] at h_op
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_byte : byteIndex i.val < 8 := by
+    unfold byteIndex
+    exact Nat.mod_lt _ (by norm_num)
+  have h_low_mod : lowByte i.val % 18446744069414584321 = lowByte i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_byte_mod : byteIndex i.val % 18446744069414584321 = byteIndex i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  simp [outOfIndex, sextwOut, h_block, h_low_mod, h_byte_mod]
+  by_cases h_byte_lt : byteIndex i.val < 4
+  · by_cases h_byte_three : byteIndex i.val = 3
+    · by_cases h_sign : 128 ≤ lowByte i.val
+      · simp [h_byte_three, h_sign]
+        omega
+      · simp [h_byte_three, h_sign]
+        omega
+    · interval_cases byteIndex i.val <;> simp at h_byte_three ⊢ <;> omega
+  · simp [h_byte_lt]
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem spec_wf_SEXT_W {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    wf_SEXT_W (BinaryExtensionTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_wf_SEXT_W i
 
 end ZiskFv.AirsClean.BinaryExtensionTable

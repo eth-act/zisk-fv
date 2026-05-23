@@ -156,6 +156,12 @@ that pulls the eight per-byte table messages, and
 `AirsClean/BinaryExtension/Bridge.lean` has
 `binary_extension_table_wf_of_lookup_aware_const_soundness`, extracting the
 eight `wf_properties` facts from that lookup-aware path for a concrete row.
+`AirsClean/BinaryExtensionTable.lean` now makes the decoded `c_lo_byte` /
+`c_hi_byte` split explicitly in `Nat` before coercion to `FGL`, avoiding a
+Goldilocks-modulus split for sign-extension outputs above the field modulus.
+It also proves `spec_wf_SEXT_B`, `spec_wf_SEXT_H`, and `spec_wf_SEXT_W` from
+exact static membership. The BinaryExtensionTable shift projections remain
+open.
 
 ### C8 — Mem
 
