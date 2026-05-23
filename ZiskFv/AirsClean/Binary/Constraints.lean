@@ -2,6 +2,7 @@ import ZiskFv.AirsClean.Binary.Spec
 import Clean.Circuit.Basic
 import ZiskFv.Channels.OperationBus
 import ZiskFv.Channels.BinaryTable
+import ZiskFv.AirsClean.BinaryTable
 
 /-!
 # Binary circuit operations
@@ -18,7 +19,7 @@ No axioms.
 namespace ZiskFv.AirsClean.Binary
 
 open Goldilocks
-open Circuit (assertZero)
+open Circuit (assertZero lookup)
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.BinaryTable (BinaryTableChannel)
 
@@ -143,5 +144,89 @@ def mainWithBinaryTable (row : Var BinaryRow FGL) : Circuit FGL Unit := do
   output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
   channelsWithGuarantees := [BinaryTableChannel.toRaw]
+
+/-- Static-provider lookup-aware Binary circuit path. This is the same eight
+    BinaryTable rows as `mainWithBinaryTable`, but expressed as direct Clean
+    lookups against `AirsClean.BinaryTable.binaryTable` instead of pulls from
+    `BinaryTableChannel`.
+
+    This is the provider-side C7 shape: soundness of this circuit yields exact
+    decoded-row membership in the static provider. Turning that membership into
+    the legacy `wf_properties` clauses is a separate projection step. -/
+@[circuit_norm]
+def mainWithStaticBinaryTable (row : Var BinaryRow FGL) : Circuit FGL Unit := do
+  main row
+  lookup (Table.fromStatic ZiskFv.AirsClean.BinaryTable.binaryTable)
+    { pos_ind := 2 * row.mode.use_first_byte
+      op := row.chain.b_op
+      a_byte := row.aBytes.free_in_a_0
+      b_byte := row.bBytes.free_in_b_0
+      cin := 0
+      c_byte := row.cBytes.free_in_c_0
+      flags := row.chain.carry_0 }
+  lookup (Table.fromStatic ZiskFv.AirsClean.BinaryTable.binaryTable)
+    { pos_ind := 0
+      op := row.chain.b_op
+      a_byte := row.aBytes.free_in_a_1
+      b_byte := row.bBytes.free_in_b_1
+      cin := row.chain.carry_0
+      c_byte := row.cBytes.free_in_c_1
+      flags := row.chain.carry_1 }
+  lookup (Table.fromStatic ZiskFv.AirsClean.BinaryTable.binaryTable)
+    { pos_ind := 0
+      op := row.chain.b_op
+      a_byte := row.aBytes.free_in_a_2
+      b_byte := row.bBytes.free_in_b_2
+      cin := row.chain.carry_1
+      c_byte := row.cBytes.free_in_c_2
+      flags := row.chain.carry_2 }
+  lookup (Table.fromStatic ZiskFv.AirsClean.BinaryTable.binaryTable)
+    { pos_ind := row.mode.mode32
+      op := row.chain.b_op
+      a_byte := row.aBytes.free_in_a_3
+      b_byte := row.bBytes.free_in_b_3
+      cin := row.chain.carry_2
+      c_byte := row.cBytes.free_in_c_3
+      flags := row.chain.carry_3 }
+  lookup (Table.fromStatic ZiskFv.AirsClean.BinaryTable.binaryTable)
+    { pos_ind := 0
+      op := row.chain.b_op_or_sext
+      a_byte := row.aBytes.free_in_a_4
+      b_byte := row.bBytes.free_in_b_4
+      cin := row.chain.carry_3
+      c_byte := row.cBytes.free_in_c_4
+      flags := row.chain.carry_4 }
+  lookup (Table.fromStatic ZiskFv.AirsClean.BinaryTable.binaryTable)
+    { pos_ind := 0
+      op := row.chain.b_op_or_sext
+      a_byte := row.aBytes.free_in_a_5
+      b_byte := row.bBytes.free_in_b_5
+      cin := row.chain.carry_4
+      c_byte := row.cBytes.free_in_c_5
+      flags := row.chain.carry_5 }
+  lookup (Table.fromStatic ZiskFv.AirsClean.BinaryTable.binaryTable)
+    { pos_ind := 0
+      op := row.chain.b_op_or_sext
+      a_byte := row.aBytes.free_in_a_6
+      b_byte := row.bBytes.free_in_b_6
+      cin := row.chain.carry_5
+      c_byte := row.cBytes.free_in_c_6
+      flags := row.chain.carry_6 }
+  lookup (Table.fromStatic ZiskFv.AirsClean.BinaryTable.binaryTable)
+    { pos_ind := 1 - row.mode.mode32
+      op := row.chain.b_op_or_sext
+      a_byte := row.aBytes.free_in_a_7
+      b_byte := row.bBytes.free_in_b_7
+      cin := row.chain.carry_6
+      c_byte := row.cBytes.free_in_c_7
+      flags := row.chain.carry_7 }
+
+@[reducible] def binaryWithStaticBinaryTableElaborated :
+    ElaboratedCircuit FGL BinaryRow unit where
+  name := "BinaryWithStaticBinaryTable"
+  main := mainWithStaticBinaryTable
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [OpBusChannel.toRaw]
 
 end ZiskFv.AirsClean.Binary

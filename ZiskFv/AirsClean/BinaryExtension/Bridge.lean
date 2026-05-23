@@ -188,6 +188,104 @@ theorem binary_extension_table_wf_of_lookup_aware_const_soundness
         , by simpa [BinaryExtensionTableChannel,
                     BinaryExtensionTableMessage.toEntry] using h7 ⟩
 
+/-- Constant-row specialization of the static-provider
+    BinaryExtensionTable lookup path. The eight returned facts are exact
+    decoded-row memberships in
+    `AirsClean.BinaryExtensionTable.binaryExtensionTable`, sourced from
+    `mainWithStaticBinaryExtensionTable`'s Clean
+    `lookup (Table.fromStatic ...)` operations.
+
+    This proves provider-side table membership only. Semantic
+    `wf_properties` projection and load-bearing opcode rewiring remain C7
+    work. -/
+theorem binary_extension_table_specs_of_static_lookup_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : BinaryExtensionRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithStaticBinaryExtensionTable (constVar row)).operations offset)) :
+    ZiskFv.AirsClean.BinaryExtensionTable.binaryExtensionTable.Spec
+      { op := row.flags.op
+        byte_index := 0
+        a_byte := row.aCols.free_in_a_0
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsLo.free_in_c_0
+        c_hi_byte := row.cColsLo.free_in_c_1
+        op_is_shift := row.flags.op_is_shift }
+  ∧ ZiskFv.AirsClean.BinaryExtensionTable.binaryExtensionTable.Spec
+      { op := row.flags.op
+        byte_index := 1
+        a_byte := row.aCols.free_in_a_1
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsLo.free_in_c_2
+        c_hi_byte := row.cColsLo.free_in_c_3
+        op_is_shift := row.flags.op_is_shift }
+  ∧ ZiskFv.AirsClean.BinaryExtensionTable.binaryExtensionTable.Spec
+      { op := row.flags.op
+        byte_index := 2
+        a_byte := row.aCols.free_in_a_2
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsLo.free_in_c_4
+        c_hi_byte := row.cColsLo.free_in_c_5
+        op_is_shift := row.flags.op_is_shift }
+  ∧ ZiskFv.AirsClean.BinaryExtensionTable.binaryExtensionTable.Spec
+      { op := row.flags.op
+        byte_index := 3
+        a_byte := row.aCols.free_in_a_3
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsLo.free_in_c_6
+        c_hi_byte := row.cColsLo.free_in_c_7
+        op_is_shift := row.flags.op_is_shift }
+  ∧ ZiskFv.AirsClean.BinaryExtensionTable.binaryExtensionTable.Spec
+      { op := row.flags.op
+        byte_index := 4
+        a_byte := row.aCols.free_in_a_4
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsHi.free_in_c_8
+        c_hi_byte := row.cColsHi.free_in_c_9
+        op_is_shift := row.flags.op_is_shift }
+  ∧ ZiskFv.AirsClean.BinaryExtensionTable.binaryExtensionTable.Spec
+      { op := row.flags.op
+        byte_index := 5
+        a_byte := row.aCols.free_in_a_5
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsHi.free_in_c_10
+        c_hi_byte := row.cColsHi.free_in_c_11
+        op_is_shift := row.flags.op_is_shift }
+  ∧ ZiskFv.AirsClean.BinaryExtensionTable.binaryExtensionTable.Spec
+      { op := row.flags.op
+        byte_index := 6
+        a_byte := row.aCols.free_in_a_6
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsHi.free_in_c_12
+        c_hi_byte := row.cColsHi.free_in_c_13
+        op_is_shift := row.flags.op_is_shift }
+  ∧ ZiskFv.AirsClean.BinaryExtensionTable.binaryExtensionTable.Spec
+      { op := row.flags.op
+        byte_index := 7
+        a_byte := row.aCols.free_in_a_7
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsHi.free_in_c_14
+        c_hi_byte := row.cColsHi.free_in_c_15
+        op_is_shift := row.flags.op_is_shift } := by
+  simp only [mainWithStaticBinaryExtensionTable, main, circuit_norm] at h_holds
+  rcases h_holds with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  exact ⟨ by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw] using h0
+        , by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw] using h1
+        , by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw] using h2
+        , by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw] using h3
+        , by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw] using h4
+        , by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw] using h5
+        , by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw] using h6
+        , by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+                    Table.toRaw] using h7 ⟩
+
 /-- BinaryExtension has zero F-typed per-row constraints. -/
 def constraints_at
     (_v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) (_r : ℕ) :

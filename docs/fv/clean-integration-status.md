@@ -97,6 +97,17 @@ retirement requires the lookup-aware Binary/BinaryExtension consumers and
 these static providers to be composed in the terminal Binary-family
 ensemble, then threaded to the opcode proofs without adding caller promises.
 
+Static-provider lookup entry points are now present for both consumers:
+`AirsClean/Binary/Constraints.lean::mainWithStaticBinaryTable` emits the
+same eight BinaryTable rows as direct `lookup (Table.fromStatic
+BinaryTable.binaryTable)` operations, and
+`AirsClean/BinaryExtension/Constraints.lean::mainWithStaticBinaryExtensionTable`
+does the same for BinaryExtensionTable. Their bridge lemmas,
+`binary_table_specs_of_static_lookup_const_soundness` and
+`binary_extension_table_specs_of_static_lookup_const_soundness`, extract the
+eight exact static-table membership facts from `ConstraintsHold.Soundness`.
+These are provider-membership facts, not semantic `wf_properties` facts yet.
+
 BinaryExtensionTable lookup-channel groundwork now mirrors the BinaryTable
 side: `Channels/BinaryExtensionTable.lean` defines the typed payload/channel,
 `AirsClean/BinaryExtension/Constraints.lean` exposes a separate
