@@ -120,6 +120,17 @@ structure ByteLookupHypotheses (v : Valid_BinaryExtension FGL FGL) (row : ℕ) w
        ∧ e7.a_byte = v.free_in_a_7 row ∧ e7.shift_amount = v.free_in_b row
        ∧ e7.c_lo_byte = v.free_in_c_14 row ∧ e7.c_hi_byte = v.free_in_c_15 row
 
+/-- The semantic `wf_properties` facts for the eight per-byte
+    BinaryExtension table entries packaged by `ByteLookupHypotheses`.
+    Static-provider C7 routes prove this bundle from exact table membership;
+    the legacy route proves it from `bin_ext_table_consumer_wf`. -/
+def ByteLookupWfHypotheses {v : Valid_BinaryExtension FGL FGL} {row : ℕ}
+    (h_bytes : ByteLookupHypotheses v row) : Prop :=
+  wf_properties h_bytes.e0 ∧ wf_properties h_bytes.e1
+    ∧ wf_properties h_bytes.e2 ∧ wf_properties h_bytes.e3
+    ∧ wf_properties h_bytes.e4 ∧ wf_properties h_bytes.e5
+    ∧ wf_properties h_bytes.e6 ∧ wf_properties h_bytes.e7
+
 /-! ## Per-byte arithmetic helpers — extract the SLL/SRL byte-equation
     from the trusted lookup-table contract. -/
 
@@ -2814,9 +2825,9 @@ into the standard `BitVec.signExtend 64` of the sub-doubleword input.
 
 /-- Per-byte equation for `OP_SEXT_B`. Pulls the byte's `c_lo + c_hi * 2^32`
     contribution out of the SEXT_B case of `wf_properties`. -/
-private lemma sext_b_byte_eq
+private lemma sext_b_byte_eq_of_wf
     (e : BinaryExtensionTableEntry FGL)
-    (h_mult : e.multiplicity = 1)
+    (h_wf : wf_properties e)
     (h_op_val : e.op.val = OP_SEXT_B) :
     e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
       = if e.byte_index.val = 0 then
@@ -2824,7 +2835,6 @@ private lemma sext_b_byte_eq
           then e.a_byte.val + (2 ^ 64 - 256)
           else e.a_byte.val
         else 0 := by
-  have h_wf := bin_ext_table_consumer_wf e h_mult
   have h_sb : wf_SEXT_B e := h_wf.2.2.2.2.2.2.2.1
   have ⟨h_lo, h_hi, _⟩ := h_sb h_op_val
   rw [h_lo, h_hi]
@@ -2839,10 +2849,22 @@ private lemma sext_b_byte_eq
   -- Goal: out % 2^32 + out / 2^32 * 2^32 = out
   omega
 
-/-- Per-byte equation for `OP_SEXT_H`. -/
-private lemma sext_h_byte_eq
+private lemma sext_b_byte_eq
     (e : BinaryExtensionTableEntry FGL)
     (h_mult : e.multiplicity = 1)
+    (h_op_val : e.op.val = OP_SEXT_B) :
+    e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
+      = if e.byte_index.val = 0 then
+          if e.a_byte.val ≥ 128
+          then e.a_byte.val + (2 ^ 64 - 256)
+          else e.a_byte.val
+        else 0 :=
+  sext_b_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
+
+/-- Per-byte equation for `OP_SEXT_H`. -/
+private lemma sext_h_byte_eq_of_wf
+    (e : BinaryExtensionTableEntry FGL)
+    (h_wf : wf_properties e)
     (h_op_val : e.op.val = OP_SEXT_H) :
     e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
       = if e.byte_index.val = 0 then e.a_byte.val
@@ -2851,7 +2873,6 @@ private lemma sext_h_byte_eq
           then e.a_byte.val * 256 + (2 ^ 64 - 2 ^ 16)
           else e.a_byte.val * 256
         else 0 := by
-  have h_wf := bin_ext_table_consumer_wf e h_mult
   have h_sh : wf_SEXT_H e := h_wf.2.2.2.2.2.2.2.2.1
   have ⟨h_lo, h_hi, _⟩ := h_sh h_op_val
   rw [h_lo, h_hi]
@@ -2865,10 +2886,23 @@ private lemma sext_h_byte_eq
     else 0
   omega
 
-/-- Per-byte equation for `OP_SEXT_W`. -/
-private lemma sext_w_byte_eq
+private lemma sext_h_byte_eq
     (e : BinaryExtensionTableEntry FGL)
     (h_mult : e.multiplicity = 1)
+    (h_op_val : e.op.val = OP_SEXT_H) :
+    e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
+      = if e.byte_index.val = 0 then e.a_byte.val
+        else if e.byte_index.val = 1 then
+          if e.a_byte.val ≥ 128
+          then e.a_byte.val * 256 + (2 ^ 64 - 2 ^ 16)
+          else e.a_byte.val * 256
+        else 0 :=
+  sext_h_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
+
+/-- Per-byte equation for `OP_SEXT_W`. -/
+private lemma sext_w_byte_eq_of_wf
+    (e : BinaryExtensionTableEntry FGL)
+    (h_wf : wf_properties e)
     (h_op_val : e.op.val = OP_SEXT_W) :
     e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
       = if e.byte_index.val < 4 then
@@ -2876,7 +2910,6 @@ private lemma sext_w_byte_eq
           then e.a_byte.val * (256 ^ e.byte_index.val) + (2 ^ 64 - 2 ^ 32)
           else e.a_byte.val * (256 ^ e.byte_index.val)
         else 0 := by
-  have h_wf := bin_ext_table_consumer_wf e h_mult
   have h_sw : wf_SEXT_W e := h_wf.2.2.2.2.2.2.2.2.2
   have ⟨h_lo, h_hi, _⟩ := h_sw h_op_val
   rw [h_lo, h_hi]
@@ -2891,6 +2924,18 @@ private lemma sext_w_byte_eq
     else 0
   omega
 
+private lemma sext_w_byte_eq
+    (e : BinaryExtensionTableEntry FGL)
+    (h_mult : e.multiplicity = 1)
+    (h_op_val : e.op.val = OP_SEXT_W) :
+    e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
+      = if e.byte_index.val < 4 then
+          if e.byte_index.val = 3 ∧ e.a_byte.val ≥ 128
+          then e.a_byte.val * (256 ^ e.byte_index.val) + (2 ^ 64 - 2 ^ 32)
+          else e.a_byte.val * (256 ^ e.byte_index.val)
+        else 0 :=
+  sext_w_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
+
 /-! ## Packed-correctness theorems for SEXT_B/H/W
 
 For each SEXT opcode we compose 8 per-byte equations into a single
@@ -2903,10 +2948,11 @@ lift happens at the canonical equiv site via
 /-- **SEXT_B packed-correctness (Nat form).** The packed BinaryExtension
     output equals `(BitVec.signExtend 64 (BitVec.ofNat 8 a_0)).toNat`,
     expressed as the if-then-else over the high-bit of `a_0`. -/
-lemma binary_extension_sext_b_chunks_eq_signextend_nat
+lemma binary_extension_sext_b_chunks_eq_signextend_nat_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SEXT_B)
-    (h_bytes : ByteLookupHypotheses v row) :
+    (h_bytes : ByteLookupHypotheses v row)
+    (h_wfs : ByteLookupWfHypotheses h_bytes) :
     ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
         + (v.free_in_c_4 row).val + (v.free_in_c_6 row).val
         + (v.free_in_c_8 row).val + (v.free_in_c_10 row).val
@@ -2926,54 +2972,81 @@ lemma binary_extension_sext_b_chunks_eq_signextend_nat
          e5, ⟨hm5, hop5, hbi5, _, _, hcl5, hch5⟩,
          e6, ⟨hm6, hop6, hbi6, _, _, hcl6, hch6⟩,
          e7, ⟨hm7, hop7, hbi7, _, _, hcl7, hch7⟩⟩ := h_bytes
-  have h0 := sext_b_byte_eq e0 hm0 (by rw [hop0]; exact h_op)
+  have h0 := sext_b_byte_eq_of_wf e0 h_wfs.1 (by rw [hop0]; exact h_op)
   rw [show e0.byte_index.val = 0 from by rw [hbi0]; rfl,
       show e0.a_byte.val = (v.free_in_a_0 row).val from by rw [ha0],
       show e0.c_lo_byte.val = (v.free_in_c_0 row).val from by rw [hcl0],
       show e0.c_hi_byte.val = (v.free_in_c_1 row).val from by rw [hch0]] at h0
   simp only [if_true] at h0
-  have h1 := sext_b_byte_eq e1 hm1 (by rw [hop1]; exact h_op)
+  have h1 := sext_b_byte_eq_of_wf e1 h_wfs.2.1 (by rw [hop1]; exact h_op)
   rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
       show e1.c_lo_byte.val = (v.free_in_c_2 row).val from by rw [hcl1],
       show e1.c_hi_byte.val = (v.free_in_c_3 row).val from by rw [hch1]] at h1
   simp only [show ((1 : ℕ) = 0) ↔ False from by decide, if_false, iff_false] at h1
-  have h2 := sext_b_byte_eq e2 hm2 (by rw [hop2]; exact h_op)
+  have h2 := sext_b_byte_eq_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
   rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
       show e2.c_lo_byte.val = (v.free_in_c_4 row).val from by rw [hcl2],
       show e2.c_hi_byte.val = (v.free_in_c_5 row).val from by rw [hch2]] at h2
   simp only [show ((2 : ℕ) = 0) ↔ False from by decide, if_false, iff_false] at h2
-  have h3 := sext_b_byte_eq e3 hm3 (by rw [hop3]; exact h_op)
+  have h3 := sext_b_byte_eq_of_wf e3 h_wfs.2.2.2.1 (by rw [hop3]; exact h_op)
   rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
       show e3.c_lo_byte.val = (v.free_in_c_6 row).val from by rw [hcl3],
       show e3.c_hi_byte.val = (v.free_in_c_7 row).val from by rw [hch3]] at h3
   simp only [show ((3 : ℕ) = 0) ↔ False from by decide, if_false, iff_false] at h3
-  have h4 := sext_b_byte_eq e4 hm4 (by rw [hop4]; exact h_op)
+  have h4 := sext_b_byte_eq_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
   rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
       show e4.c_lo_byte.val = (v.free_in_c_8 row).val from by rw [hcl4],
       show e4.c_hi_byte.val = (v.free_in_c_9 row).val from by rw [hch4]] at h4
   simp only [show ((4 : ℕ) = 0) ↔ False from by decide, if_false, iff_false] at h4
-  have h5 := sext_b_byte_eq e5 hm5 (by rw [hop5]; exact h_op)
+  have h5 := sext_b_byte_eq_of_wf e5 h_wfs.2.2.2.2.2.1 (by rw [hop5]; exact h_op)
   rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
       show e5.c_lo_byte.val = (v.free_in_c_10 row).val from by rw [hcl5],
       show e5.c_hi_byte.val = (v.free_in_c_11 row).val from by rw [hch5]] at h5
   simp only [show ((5 : ℕ) = 0) ↔ False from by decide, if_false, iff_false] at h5
-  have h6 := sext_b_byte_eq e6 hm6 (by rw [hop6]; exact h_op)
+  have h6 := sext_b_byte_eq_of_wf e6 h_wfs.2.2.2.2.2.2.1 (by rw [hop6]; exact h_op)
   rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
       show e6.c_lo_byte.val = (v.free_in_c_12 row).val from by rw [hcl6],
       show e6.c_hi_byte.val = (v.free_in_c_13 row).val from by rw [hch6]] at h6
   simp only [show ((6 : ℕ) = 0) ↔ False from by decide, if_false, iff_false] at h6
-  have h7 := sext_b_byte_eq e7 hm7 (by rw [hop7]; exact h_op)
+  have h7 := sext_b_byte_eq_of_wf e7 h_wfs.2.2.2.2.2.2.2 (by rw [hop7]; exact h_op)
   rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
       show e7.c_lo_byte.val = (v.free_in_c_14 row).val from by rw [hcl7],
       show e7.c_hi_byte.val = (v.free_in_c_15 row).val from by rw [hch7]] at h7
   simp only [show ((7 : ℕ) = 0) ↔ False from by decide, if_false] at h7
   omega
 
+/-- Legacy SEXT_B packed-correctness route through `bin_ext_table_consumer_wf`. -/
+lemma binary_extension_sext_b_chunks_eq_signextend_nat
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
+    (h_op : (v.op row).val = OP_SEXT_B)
+    (h_bytes : ByteLookupHypotheses v row) :
+    ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
+        + (v.free_in_c_4 row).val + (v.free_in_c_6 row).val
+        + (v.free_in_c_8 row).val + (v.free_in_c_10 row).val
+        + (v.free_in_c_12 row).val + (v.free_in_c_14 row).val)
+      + ((v.free_in_c_1 row).val + (v.free_in_c_3 row).val
+        + (v.free_in_c_5 row).val + (v.free_in_c_7 row).val
+        + (v.free_in_c_9 row).val + (v.free_in_c_11 row).val
+        + (v.free_in_c_13 row).val + (v.free_in_c_15 row).val) * 4294967296
+      = if (v.free_in_a_0 row).val ≥ 128
+        then (v.free_in_a_0 row).val + (2 ^ 64 - 256)
+        else (v.free_in_a_0 row).val :=
+  binary_extension_sext_b_chunks_eq_signextend_nat_of_wf v row h_op h_bytes
+    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
+    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
+    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
+    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
+    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
+    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
+    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
+    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
+
 /-- **SEXT_H packed-correctness (Nat form).** -/
-lemma binary_extension_sext_h_chunks_eq_signextend_nat
+lemma binary_extension_sext_h_chunks_eq_signextend_nat_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SEXT_H)
-    (h_bytes : ByteLookupHypotheses v row) :
+    (h_bytes : ByteLookupHypotheses v row)
+    (h_wfs : ByteLookupWfHypotheses h_bytes) :
     ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
         + (v.free_in_c_4 row).val + (v.free_in_c_6 row).val
         + (v.free_in_c_8 row).val + (v.free_in_c_10 row).val
@@ -2992,50 +3065,50 @@ lemma binary_extension_sext_h_chunks_eq_signextend_nat
          e5, ⟨hm5, hop5, hbi5, _, _, hcl5, hch5⟩,
          e6, ⟨hm6, hop6, hbi6, _, _, hcl6, hch6⟩,
          e7, ⟨hm7, hop7, hbi7, _, _, hcl7, hch7⟩⟩ := h_bytes
-  have h0 := sext_h_byte_eq e0 hm0 (by rw [hop0]; exact h_op)
+  have h0 := sext_h_byte_eq_of_wf e0 h_wfs.1 (by rw [hop0]; exact h_op)
   rw [show e0.byte_index.val = 0 from by rw [hbi0]; rfl,
       show e0.a_byte.val = (v.free_in_a_0 row).val from by rw [ha0],
       show e0.c_lo_byte.val = (v.free_in_c_0 row).val from by rw [hcl0],
       show e0.c_hi_byte.val = (v.free_in_c_1 row).val from by rw [hch0]] at h0
   simp only [if_true] at h0
-  have h1 := sext_h_byte_eq e1 hm1 (by rw [hop1]; exact h_op)
+  have h1 := sext_h_byte_eq_of_wf e1 h_wfs.2.1 (by rw [hop1]; exact h_op)
   rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
       show e1.a_byte.val = (v.free_in_a_1 row).val from by rw [ha1],
       show e1.c_lo_byte.val = (v.free_in_c_2 row).val from by rw [hcl1],
       show e1.c_hi_byte.val = (v.free_in_c_3 row).val from by rw [hch1]] at h1
   simp only [show ((1 : ℕ) = 0) ↔ False from by decide, if_false,
              show ((1 : ℕ) = 1) ↔ True from by decide, if_true] at h1
-  have h2 := sext_h_byte_eq e2 hm2 (by rw [hop2]; exact h_op)
+  have h2 := sext_h_byte_eq_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
   rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
       show e2.c_lo_byte.val = (v.free_in_c_4 row).val from by rw [hcl2],
       show e2.c_hi_byte.val = (v.free_in_c_5 row).val from by rw [hch2]] at h2
   simp only [show ((2 : ℕ) = 0) ↔ False from by decide,
              show ((2 : ℕ) = 1) ↔ False from by decide, if_false] at h2
-  have h3 := sext_h_byte_eq e3 hm3 (by rw [hop3]; exact h_op)
+  have h3 := sext_h_byte_eq_of_wf e3 h_wfs.2.2.2.1 (by rw [hop3]; exact h_op)
   rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
       show e3.c_lo_byte.val = (v.free_in_c_6 row).val from by rw [hcl3],
       show e3.c_hi_byte.val = (v.free_in_c_7 row).val from by rw [hch3]] at h3
   simp only [show ((3 : ℕ) = 0) ↔ False from by decide,
              show ((3 : ℕ) = 1) ↔ False from by decide, if_false] at h3
-  have h4 := sext_h_byte_eq e4 hm4 (by rw [hop4]; exact h_op)
+  have h4 := sext_h_byte_eq_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
   rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
       show e4.c_lo_byte.val = (v.free_in_c_8 row).val from by rw [hcl4],
       show e4.c_hi_byte.val = (v.free_in_c_9 row).val from by rw [hch4]] at h4
   simp only [show ((4 : ℕ) = 0) ↔ False from by decide,
              show ((4 : ℕ) = 1) ↔ False from by decide, if_false] at h4
-  have h5 := sext_h_byte_eq e5 hm5 (by rw [hop5]; exact h_op)
+  have h5 := sext_h_byte_eq_of_wf e5 h_wfs.2.2.2.2.2.1 (by rw [hop5]; exact h_op)
   rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
       show e5.c_lo_byte.val = (v.free_in_c_10 row).val from by rw [hcl5],
       show e5.c_hi_byte.val = (v.free_in_c_11 row).val from by rw [hch5]] at h5
   simp only [show ((5 : ℕ) = 0) ↔ False from by decide,
              show ((5 : ℕ) = 1) ↔ False from by decide, if_false] at h5
-  have h6 := sext_h_byte_eq e6 hm6 (by rw [hop6]; exact h_op)
+  have h6 := sext_h_byte_eq_of_wf e6 h_wfs.2.2.2.2.2.2.1 (by rw [hop6]; exact h_op)
   rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
       show e6.c_lo_byte.val = (v.free_in_c_12 row).val from by rw [hcl6],
       show e6.c_hi_byte.val = (v.free_in_c_13 row).val from by rw [hch6]] at h6
   simp only [show ((6 : ℕ) = 0) ↔ False from by decide,
              show ((6 : ℕ) = 1) ↔ False from by decide, if_false] at h6
-  have h7 := sext_h_byte_eq e7 hm7 (by rw [hop7]; exact h_op)
+  have h7 := sext_h_byte_eq_of_wf e7 h_wfs.2.2.2.2.2.2.2 (by rw [hop7]; exact h_op)
   rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
       show e7.c_lo_byte.val = (v.free_in_c_14 row).val from by rw [hcl7],
       show e7.c_hi_byte.val = (v.free_in_c_15 row).val from by rw [hch7]] at h7
@@ -3049,11 +3122,37 @@ lemma binary_extension_sext_h_chunks_eq_signextend_nat
     rw [if_neg hsign]
     omega
 
+/-- Legacy SEXT_H packed-correctness route through `bin_ext_table_consumer_wf`. -/
+lemma binary_extension_sext_h_chunks_eq_signextend_nat
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
+    (h_op : (v.op row).val = OP_SEXT_H)
+    (h_bytes : ByteLookupHypotheses v row) :
+    ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
+        + (v.free_in_c_4 row).val + (v.free_in_c_6 row).val
+        + (v.free_in_c_8 row).val + (v.free_in_c_10 row).val
+        + (v.free_in_c_12 row).val + (v.free_in_c_14 row).val)
+      + ((v.free_in_c_1 row).val + (v.free_in_c_3 row).val
+        + (v.free_in_c_5 row).val + (v.free_in_c_7 row).val
+        + (v.free_in_c_9 row).val + (v.free_in_c_11 row).val
+        + (v.free_in_c_13 row).val + (v.free_in_c_15 row).val) * 4294967296
+      = (v.free_in_a_0 row).val + (v.free_in_a_1 row).val * 256
+        + (if (v.free_in_a_1 row).val ≥ 128 then 2 ^ 64 - 2 ^ 16 else 0) :=
+  binary_extension_sext_h_chunks_eq_signextend_nat_of_wf v row h_op h_bytes
+    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
+    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
+    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
+    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
+    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
+    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
+    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
+    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
+
 /-- **SEXT_W packed-correctness (Nat form).** -/
-lemma binary_extension_sext_w_chunks_eq_signextend_nat
+lemma binary_extension_sext_w_chunks_eq_signextend_nat_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SEXT_W)
-    (h_bytes : ByteLookupHypotheses v row) :
+    (h_bytes : ByteLookupHypotheses v row)
+    (h_wfs : ByteLookupWfHypotheses h_bytes) :
     ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
         + (v.free_in_c_4 row).val + (v.free_in_c_6 row).val
         + (v.free_in_c_8 row).val + (v.free_in_c_10 row).val
@@ -3075,7 +3174,7 @@ lemma binary_extension_sext_w_chunks_eq_signextend_nat
          e5, ⟨hm5, hop5, hbi5, _, _, hcl5, hch5⟩,
          e6, ⟨hm6, hop6, hbi6, _, _, hcl6, hch6⟩,
          e7, ⟨hm7, hop7, hbi7, _, _, hcl7, hch7⟩⟩ := h_bytes
-  have h0 := sext_w_byte_eq e0 hm0 (by rw [hop0]; exact h_op)
+  have h0 := sext_w_byte_eq_of_wf e0 h_wfs.1 (by rw [hop0]; exact h_op)
   rw [show e0.byte_index.val = 0 from by rw [hbi0]; rfl,
       show e0.a_byte.val = (v.free_in_a_0 row).val from by rw [ha0],
       show e0.c_lo_byte.val = (v.free_in_c_0 row).val from by rw [hcl0],
@@ -3083,7 +3182,7 @@ lemma binary_extension_sext_w_chunks_eq_signextend_nat
   simp only [show ((0 : ℕ) < 4) ↔ True from by decide, if_true,
              show ((0 : ℕ) = 3) ↔ False from by decide, false_and, if_false,
              pow_zero, mul_one] at h0
-  have h1 := sext_w_byte_eq e1 hm1 (by rw [hop1]; exact h_op)
+  have h1 := sext_w_byte_eq_of_wf e1 h_wfs.2.1 (by rw [hop1]; exact h_op)
   rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
       show e1.a_byte.val = (v.free_in_a_1 row).val from by rw [ha1],
       show e1.c_lo_byte.val = (v.free_in_c_2 row).val from by rw [hcl1],
@@ -3091,7 +3190,7 @@ lemma binary_extension_sext_w_chunks_eq_signextend_nat
   simp only [show ((1 : ℕ) < 4) ↔ True from by decide, if_true,
              show ((1 : ℕ) = 3) ↔ False from by decide, false_and, if_false,
              pow_one] at h1
-  have h2 := sext_w_byte_eq e2 hm2 (by rw [hop2]; exact h_op)
+  have h2 := sext_w_byte_eq_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
   rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
       show e2.a_byte.val = (v.free_in_a_2 row).val from by rw [ha2],
       show e2.c_lo_byte.val = (v.free_in_c_4 row).val from by rw [hcl2],
@@ -3099,7 +3198,7 @@ lemma binary_extension_sext_w_chunks_eq_signextend_nat
   simp only [show ((2 : ℕ) < 4) ↔ True from by decide, if_true,
              show ((2 : ℕ) = 3) ↔ False from by decide, false_and, if_false,
              show (256 ^ 2 : ℕ) = 65536 from by decide] at h2
-  have h3 := sext_w_byte_eq e3 hm3 (by rw [hop3]; exact h_op)
+  have h3 := sext_w_byte_eq_of_wf e3 h_wfs.2.2.2.1 (by rw [hop3]; exact h_op)
   rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
       show e3.a_byte.val = (v.free_in_a_3 row).val from by rw [ha3],
       show e3.c_lo_byte.val = (v.free_in_c_6 row).val from by rw [hcl3],
@@ -3107,22 +3206,22 @@ lemma binary_extension_sext_w_chunks_eq_signextend_nat
   simp only [show ((3 : ℕ) < 4) ↔ True from by decide, if_true,
              show ((3 : ℕ) = 3) ↔ True from by decide, true_and,
              show (256 ^ 3 : ℕ) = 16777216 from by decide] at h3
-  have h4 := sext_w_byte_eq e4 hm4 (by rw [hop4]; exact h_op)
+  have h4 := sext_w_byte_eq_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
   rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
       show e4.c_lo_byte.val = (v.free_in_c_8 row).val from by rw [hcl4],
       show e4.c_hi_byte.val = (v.free_in_c_9 row).val from by rw [hch4]] at h4
   simp only [show ((4 : ℕ) < 4) ↔ False from by decide, if_false] at h4
-  have h5 := sext_w_byte_eq e5 hm5 (by rw [hop5]; exact h_op)
+  have h5 := sext_w_byte_eq_of_wf e5 h_wfs.2.2.2.2.2.1 (by rw [hop5]; exact h_op)
   rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
       show e5.c_lo_byte.val = (v.free_in_c_10 row).val from by rw [hcl5],
       show e5.c_hi_byte.val = (v.free_in_c_11 row).val from by rw [hch5]] at h5
   simp only [show ((5 : ℕ) < 4) ↔ False from by decide, if_false] at h5
-  have h6 := sext_w_byte_eq e6 hm6 (by rw [hop6]; exact h_op)
+  have h6 := sext_w_byte_eq_of_wf e6 h_wfs.2.2.2.2.2.2.1 (by rw [hop6]; exact h_op)
   rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
       show e6.c_lo_byte.val = (v.free_in_c_12 row).val from by rw [hcl6],
       show e6.c_hi_byte.val = (v.free_in_c_13 row).val from by rw [hch6]] at h6
   simp only [show ((6 : ℕ) < 4) ↔ False from by decide, if_false] at h6
-  have h7 := sext_w_byte_eq e7 hm7 (by rw [hop7]; exact h_op)
+  have h7 := sext_w_byte_eq_of_wf e7 h_wfs.2.2.2.2.2.2.2 (by rw [hop7]; exact h_op)
   rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
       show e7.c_lo_byte.val = (v.free_in_c_14 row).val from by rw [hcl7],
       show e7.c_hi_byte.val = (v.free_in_c_15 row).val from by rw [hch7]] at h7
@@ -3134,5 +3233,33 @@ lemma binary_extension_sext_w_chunks_eq_signextend_nat
   · simp only [if_neg hsign] at h3
     rw [if_neg hsign]
     omega
+
+/-- Legacy SEXT_W packed-correctness route through `bin_ext_table_consumer_wf`. -/
+lemma binary_extension_sext_w_chunks_eq_signextend_nat
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
+    (h_op : (v.op row).val = OP_SEXT_W)
+    (h_bytes : ByteLookupHypotheses v row) :
+    ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
+        + (v.free_in_c_4 row).val + (v.free_in_c_6 row).val
+        + (v.free_in_c_8 row).val + (v.free_in_c_10 row).val
+        + (v.free_in_c_12 row).val + (v.free_in_c_14 row).val)
+      + ((v.free_in_c_1 row).val + (v.free_in_c_3 row).val
+        + (v.free_in_c_5 row).val + (v.free_in_c_7 row).val
+        + (v.free_in_c_9 row).val + (v.free_in_c_11 row).val
+        + (v.free_in_c_13 row).val + (v.free_in_c_15 row).val) * 4294967296
+      = (v.free_in_a_0 row).val
+        + (v.free_in_a_1 row).val * 256
+        + (v.free_in_a_2 row).val * 65536
+        + (v.free_in_a_3 row).val * 16777216
+        + (if (v.free_in_a_3 row).val ≥ 128 then 2 ^ 64 - 2 ^ 32 else 0) :=
+  binary_extension_sext_w_chunks_eq_signextend_nat_of_wf v row h_op h_bytes
+    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
+    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
+    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
+    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
+    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
+    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
+    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
+    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
 
 end ZiskFv.Airs.BinaryExtension

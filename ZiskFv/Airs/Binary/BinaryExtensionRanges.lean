@@ -220,6 +220,17 @@ def binary_extension_row_byte_lookups (v : Valid_BinaryExtension FGL FGL) (r : â
         op_is_shift := v.op_is_shift r }
     h7 := by simp }
 
+open ZiskFv.AirsClean.BinaryExtension in
+/-- Static-lookup route from the shared C7 witness to the eight semantic
+    `wf_properties` facts for BinaryExtension's row-shaped byte lookups. -/
+theorem binary_extension_row_byte_lookup_wfs_of_static_lookup
+    (v : Valid_BinaryExtension FGL FGL) (r offset : â„•) (env : Environment FGL)
+    (h_static : StaticLookupSoundness v) :
+    ByteLookupWfHypotheses (binary_extension_row_byte_lookups v r) := by
+  have h_wfs := static_lookup_wf_facts v r offset env h_static
+  simpa [binary_extension_row_byte_lookups, rowAt,
+    ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableMessage.toEntry] using h_wfs
+
 /-! ## op_is_shift linkage -/
 
 open ZiskFv.Trusted in
