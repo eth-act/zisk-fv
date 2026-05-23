@@ -96,10 +96,12 @@ Lookup-channel groundwork: `Channels/BinaryTable.lean` now defines the typed
 `BinaryTableChannel` whose guarantee is the existing `BinaryTable.wf_properties`
 predicate, and `AirsClean/Binary/Constraints.lean` exposes a separate
 `mainWithBinaryTable` / `binaryWithBinaryTableElaborated` path that pulls the
-eight per-byte BinaryTable messages. This does not retire
-`bin_table_consumer_wf` by itself: C7 still has to supply the balanced table
-provider side before those guarantees can replace the legacy lookup axiom in
-load-bearing opcode proofs.
+eight per-byte BinaryTable messages. `AirsClean/Binary/Bridge.lean` also has
+`binary_table_wf_of_lookup_aware_const_soundness`, which extracts the eight
+`wf_properties` facts from that lookup-aware path for a concrete row. This
+does not retire `bin_table_consumer_wf` by itself: C7 still has to supply the
+balanced table provider side before those guarantees can replace the legacy
+lookup axiom in load-bearing opcode proofs.
 
 ### C5 — BinaryExtension
 

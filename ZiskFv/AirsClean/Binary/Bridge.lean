@@ -64,6 +64,93 @@ def constVar (row : BinaryRow FGL) : Var BinaryRow FGL where
     c_is_signed := .const row.mode.c_is_signed
     mode32_and_c_is_signed := .const row.mode.mode32_and_c_is_signed }
 
+open ZiskFv.Airs.Tables.BinaryTable in
+/-- Constant-row specialization of the lookup-aware BinaryTable channel path.
+    The eight returned facts are sourced from `mainWithBinaryTable`'s channel
+    pulls, not from `bin_table_consumer_wf`. This is C6 groundwork for C7:
+    the theorem is local until the balanced BinaryTable provider side exists. -/
+theorem binary_table_wf_of_lookup_aware_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : BinaryRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithBinaryTable (constVar row)).operations offset)) :
+    wf_properties (BinaryTableMessage.toEntry
+      { pos_ind := 2 * row.mode.use_first_byte
+        op := row.chain.b_op
+        a_byte := row.aBytes.free_in_a_0
+        b_byte := row.bBytes.free_in_b_0
+        cin := 0
+        c_byte := row.cBytes.free_in_c_0
+        flags := row.chain.carry_0 } 1)
+  ∧ wf_properties (BinaryTableMessage.toEntry
+      { pos_ind := 0
+        op := row.chain.b_op
+        a_byte := row.aBytes.free_in_a_1
+        b_byte := row.bBytes.free_in_b_1
+        cin := row.chain.carry_0
+        c_byte := row.cBytes.free_in_c_1
+        flags := row.chain.carry_1 } 1)
+  ∧ wf_properties (BinaryTableMessage.toEntry
+      { pos_ind := 0
+        op := row.chain.b_op
+        a_byte := row.aBytes.free_in_a_2
+        b_byte := row.bBytes.free_in_b_2
+        cin := row.chain.carry_1
+        c_byte := row.cBytes.free_in_c_2
+        flags := row.chain.carry_2 } 1)
+  ∧ wf_properties (BinaryTableMessage.toEntry
+      { pos_ind := row.mode.mode32
+        op := row.chain.b_op
+        a_byte := row.aBytes.free_in_a_3
+        b_byte := row.bBytes.free_in_b_3
+        cin := row.chain.carry_2
+        c_byte := row.cBytes.free_in_c_3
+        flags := row.chain.carry_3 } 1)
+  ∧ wf_properties (BinaryTableMessage.toEntry
+      { pos_ind := 0
+        op := row.chain.b_op_or_sext
+        a_byte := row.aBytes.free_in_a_4
+        b_byte := row.bBytes.free_in_b_4
+        cin := row.chain.carry_3
+        c_byte := row.cBytes.free_in_c_4
+        flags := row.chain.carry_4 } 1)
+  ∧ wf_properties (BinaryTableMessage.toEntry
+      { pos_ind := 0
+        op := row.chain.b_op_or_sext
+        a_byte := row.aBytes.free_in_a_5
+        b_byte := row.bBytes.free_in_b_5
+        cin := row.chain.carry_4
+        c_byte := row.cBytes.free_in_c_5
+        flags := row.chain.carry_5 } 1)
+  ∧ wf_properties (BinaryTableMessage.toEntry
+      { pos_ind := 0
+        op := row.chain.b_op_or_sext
+        a_byte := row.aBytes.free_in_a_6
+        b_byte := row.bBytes.free_in_b_6
+        cin := row.chain.carry_5
+        c_byte := row.cBytes.free_in_c_6
+        flags := row.chain.carry_6 } 1)
+  ∧ wf_properties (BinaryTableMessage.toEntry
+      { pos_ind := 1 - row.mode.mode32
+        op := row.chain.b_op_or_sext
+        a_byte := row.aBytes.free_in_a_7
+        b_byte := row.bBytes.free_in_b_7
+        cin := row.chain.carry_6
+        c_byte := row.cBytes.free_in_c_7
+        flags := row.chain.carry_7 } 1) := by
+  simp only [mainWithBinaryTable, main, circuit_norm] at h_holds
+  rcases h_holds with
+    ⟨_h0, _h1, _h2, _h3, _h4, _h5, _h6,
+      h0, h1, h2, h3, h4, h5, h6, h7⟩
+  exact ⟨ by simpa [BinaryTableChannel, BinaryTableMessage.toEntry] using h0
+        , by simpa [BinaryTableChannel, BinaryTableMessage.toEntry] using h1
+        , by simpa [BinaryTableChannel, BinaryTableMessage.toEntry] using h2
+        , by simpa [BinaryTableChannel, BinaryTableMessage.toEntry] using h3
+        , by simpa [BinaryTableChannel, BinaryTableMessage.toEntry] using h4
+        , by simpa [BinaryTableChannel, BinaryTableMessage.toEntry] using h5
+        , by simpa [BinaryTableChannel, BinaryTableMessage.toEntry] using h6
+        , by simpa [BinaryTableChannel, BinaryTableMessage.toEntry, sub_eq_add_neg] using h7 ⟩
+
 @[reducible]
 def rowAt (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) :
     BinaryRow FGL where
