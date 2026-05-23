@@ -1019,6 +1019,35 @@ private lemma sra_byte_eq
            else 0) :=
   sra_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
 
+private lemma sllw_byte_eq_of_wf
+    (e : BinaryExtensionTableEntry FGL)
+    (h_wf : wf_properties e)
+    (h_op_val : e.op.val = OP_SLL_W) :
+    e.c_lo_byte.val
+      = (if e.byte_index.val < 4
+         then (e.a_byte.val * 256 ^ e.byte_index.val * 2 ^ (e.shift_amount.val % 32))
+              % 2 ^ 32
+         else 0)
+    ∧ e.c_hi_byte.val
+      = (if (if e.byte_index.val < 4
+            then (e.a_byte.val * 256 ^ e.byte_index.val * 2 ^ (e.shift_amount.val % 32))
+                 % 2 ^ 32
+            else 0) ≥ 2 ^ 31
+         then 2 ^ 32 - 1 else 0) := by
+  have h_sllw : wf_SLL_W e := h_wf.2.2.2.2.1
+  have ⟨h_lo, h_hi, _⟩ := h_sllw h_op_val
+  refine ⟨?_, ?_⟩
+  · rw [h_lo]
+    by_cases hbi : e.byte_index.val < 4
+    · simp only [hbi, if_true]
+      rw [Nat.shiftLeft_eq]
+    · simp only [hbi, if_false]
+  · rw [h_hi]
+    by_cases hbi : e.byte_index.val < 4
+    · simp only [hbi, if_true]
+      rw [Nat.shiftLeft_eq]
+    · simp only [hbi, if_false]
+
 private lemma sllw_byte_eq
     (e : BinaryExtensionTableEntry FGL)
     (h_mult : e.multiplicity = 1)
@@ -1033,21 +1062,8 @@ private lemma sllw_byte_eq
             then (e.a_byte.val * 256 ^ e.byte_index.val * 2 ^ (e.shift_amount.val % 32))
                  % 2 ^ 32
             else 0) ≥ 2 ^ 31
-         then 2 ^ 32 - 1 else 0) := by
-  have h_wf := bin_ext_table_consumer_wf e h_mult
-  have h_sllw : wf_SLL_W e := h_wf.2.2.2.2.1
-  have ⟨h_lo, h_hi, _⟩ := h_sllw h_op_val
-  refine ⟨?_, ?_⟩
-  · rw [h_lo]
-    by_cases hbi : e.byte_index.val < 4
-    · simp only [hbi, if_true]
-      rw [Nat.shiftLeft_eq]
-    · simp only [hbi, if_false]
-  · rw [h_hi]
-    by_cases hbi : e.byte_index.val < 4
-    · simp only [hbi, if_true]
-      rw [Nat.shiftLeft_eq]
-    · simp only [hbi, if_false]
+         then 2 ^ 32 - 1 else 0) :=
+  sllw_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
 
 private lemma srlw_byte_eq
     (e : BinaryExtensionTableEntry FGL)
@@ -2441,10 +2457,11 @@ private lemma sllw_bv_core
     range-bound on each input byte, conclude that the BinaryExtension AIR
     computes 32-bit shift-left (`BitVec.shiftLeft`) on the low 32 bits of
     the operand, sign-extended to 64. -/
-lemma binary_extension_sllw_chunks_eq_bv_shl_w
+lemma binary_extension_sllw_chunks_eq_bv_shl_w_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SLL_W)
     (h_bytes : ByteLookupHypotheses v row)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
     (h_a_range : a_bytes_in_range v row) :
     BitVec.signExtend 64
       (BitVec.shiftLeft (BitVec.ofNat 32
@@ -2483,7 +2500,7 @@ lemma binary_extension_sllw_chunks_eq_bv_shl_w
   -- Bytes 0..3: cl_i = (a_i * 256^i * 2^sft) % 2^32.
   -- Bytes 4..7: cl_i = 0.
   have eq0 : (v.free_in_c_0 row).val = ((v.free_in_a_0 row).val * 1 * 2 ^ sft) % 2 ^ 32 := by
-    have ⟨h_lo, _⟩ := sllw_byte_eq e0 hm0 (by rw [hop0]; exact h_op)
+    have ⟨h_lo, _⟩ := sllw_byte_eq_of_wf e0 h_wfs.1 (by rw [hop0]; exact h_op)
     rw [show e0.byte_index.val = 0 from by rw [hbi0]; rfl,
         show e0.shift_amount.val = (v.free_in_b row).val from by rw [hs0],
         show e0.a_byte.val = (v.free_in_a_0 row).val from by rw [ha0],
@@ -2493,7 +2510,7 @@ lemma binary_extension_sllw_chunks_eq_bv_shl_w
     simp only [show (0 : ℕ) < 4 from by decide, if_true] at h_lo
     exact h_lo
   have eq1 : (v.free_in_c_2 row).val = ((v.free_in_a_1 row).val * 256 * 2 ^ sft) % 2 ^ 32 := by
-    have ⟨h_lo, _⟩ := sllw_byte_eq e1 hm1 (by rw [hop1]; exact h_op)
+    have ⟨h_lo, _⟩ := sllw_byte_eq_of_wf e1 h_wfs.2.1 (by rw [hop1]; exact h_op)
     rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
         show e1.shift_amount.val = (v.free_in_b row).val from by rw [hs1],
         show e1.a_byte.val = (v.free_in_a_1 row).val from by rw [ha1],
@@ -2503,7 +2520,7 @@ lemma binary_extension_sllw_chunks_eq_bv_shl_w
     simp only [show (1 : ℕ) < 4 from by decide, if_true] at h_lo
     exact h_lo
   have eq2 : (v.free_in_c_4 row).val = ((v.free_in_a_2 row).val * 65536 * 2 ^ sft) % 2 ^ 32 := by
-    have ⟨h_lo, _⟩ := sllw_byte_eq e2 hm2 (by rw [hop2]; exact h_op)
+    have ⟨h_lo, _⟩ := sllw_byte_eq_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
     rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
         show e2.shift_amount.val = (v.free_in_b row).val from by rw [hs2],
         show e2.a_byte.val = (v.free_in_a_2 row).val from by rw [ha2],
@@ -2513,7 +2530,7 @@ lemma binary_extension_sllw_chunks_eq_bv_shl_w
     simp only [show (2 : ℕ) < 4 from by decide, if_true] at h_lo
     exact h_lo
   have eq3 : (v.free_in_c_6 row).val = ((v.free_in_a_3 row).val * 16777216 * 2 ^ sft) % 2 ^ 32 := by
-    have ⟨h_lo, _⟩ := sllw_byte_eq e3 hm3 (by rw [hop3]; exact h_op)
+    have ⟨h_lo, _⟩ := sllw_byte_eq_of_wf e3 h_wfs.2.2.2.1 (by rw [hop3]; exact h_op)
     rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
         show e3.shift_amount.val = (v.free_in_b row).val from by rw [hs3],
         show e3.a_byte.val = (v.free_in_a_3 row).val from by rw [ha3],
@@ -2523,25 +2540,25 @@ lemma binary_extension_sllw_chunks_eq_bv_shl_w
     simp only [show (3 : ℕ) < 4 from by decide, if_true] at h_lo
     exact h_lo
   have eq4 : (v.free_in_c_8 row).val = 0 := by
-    have ⟨h_lo, _⟩ := sllw_byte_eq e4 hm4 (by rw [hop4]; exact h_op)
+    have ⟨h_lo, _⟩ := sllw_byte_eq_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
     rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
         show e4.c_lo_byte.val = (v.free_in_c_8 row).val from by rw [hcl4]] at h_lo
     simp only [show ¬ ((4 : ℕ) < 4) from by decide, if_false] at h_lo
     exact h_lo
   have eq5 : (v.free_in_c_10 row).val = 0 := by
-    have ⟨h_lo, _⟩ := sllw_byte_eq e5 hm5 (by rw [hop5]; exact h_op)
+    have ⟨h_lo, _⟩ := sllw_byte_eq_of_wf e5 h_wfs.2.2.2.2.2.1 (by rw [hop5]; exact h_op)
     rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
         show e5.c_lo_byte.val = (v.free_in_c_10 row).val from by rw [hcl5]] at h_lo
     simp only [show ¬ ((5 : ℕ) < 4) from by decide, if_false] at h_lo
     exact h_lo
   have eq6 : (v.free_in_c_12 row).val = 0 := by
-    have ⟨h_lo, _⟩ := sllw_byte_eq e6 hm6 (by rw [hop6]; exact h_op)
+    have ⟨h_lo, _⟩ := sllw_byte_eq_of_wf e6 h_wfs.2.2.2.2.2.2.1 (by rw [hop6]; exact h_op)
     rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
         show e6.c_lo_byte.val = (v.free_in_c_12 row).val from by rw [hcl6]] at h_lo
     simp only [show ¬ ((6 : ℕ) < 4) from by decide, if_false] at h_lo
     exact h_lo
   have eq7 : (v.free_in_c_14 row).val = 0 := by
-    have ⟨h_lo, _⟩ := sllw_byte_eq e7 hm7 (by rw [hop7]; exact h_op)
+    have ⟨h_lo, _⟩ := sllw_byte_eq_of_wf e7 h_wfs.2.2.2.2.2.2.2 (by rw [hop7]; exact h_op)
     rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
         show e7.c_lo_byte.val = (v.free_in_c_14 row).val from by rw [hcl7]] at h_lo
     simp only [show ¬ ((7 : ℕ) < 4) from by decide, if_false] at h_lo
@@ -2549,7 +2566,7 @@ lemma binary_extension_sllw_chunks_eq_bv_shl_w
   -- ch values: by symmetry of wf_SLL_W.
   have ech0 : (v.free_in_c_1 row).val
             = if (v.free_in_c_0 row).val ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0 := by
-    have ⟨_, h_hi⟩ := sllw_byte_eq e0 hm0 (by rw [hop0]; exact h_op)
+    have ⟨_, h_hi⟩ := sllw_byte_eq_of_wf e0 h_wfs.1 (by rw [hop0]; exact h_op)
     rw [show e0.byte_index.val = 0 from by rw [hbi0]; rfl,
         show e0.shift_amount.val = (v.free_in_b row).val from by rw [hs0],
         show e0.a_byte.val = (v.free_in_a_0 row).val from by rw [ha0],
@@ -2560,7 +2577,7 @@ lemma binary_extension_sllw_chunks_eq_bv_shl_w
     rw [h_hi, eq0]
   have ech1 : (v.free_in_c_3 row).val
             = if (v.free_in_c_2 row).val ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0 := by
-    have ⟨_, h_hi⟩ := sllw_byte_eq e1 hm1 (by rw [hop1]; exact h_op)
+    have ⟨_, h_hi⟩ := sllw_byte_eq_of_wf e1 h_wfs.2.1 (by rw [hop1]; exact h_op)
     rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
         show e1.shift_amount.val = (v.free_in_b row).val from by rw [hs1],
         show e1.a_byte.val = (v.free_in_a_1 row).val from by rw [ha1],
@@ -2571,7 +2588,7 @@ lemma binary_extension_sllw_chunks_eq_bv_shl_w
     rw [h_hi, eq1]
   have ech2 : (v.free_in_c_5 row).val
             = if (v.free_in_c_4 row).val ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0 := by
-    have ⟨_, h_hi⟩ := sllw_byte_eq e2 hm2 (by rw [hop2]; exact h_op)
+    have ⟨_, h_hi⟩ := sllw_byte_eq_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
     rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
         show e2.shift_amount.val = (v.free_in_b row).val from by rw [hs2],
         show e2.a_byte.val = (v.free_in_a_2 row).val from by rw [ha2],
@@ -2582,7 +2599,7 @@ lemma binary_extension_sllw_chunks_eq_bv_shl_w
     rw [h_hi, eq2]
   have ech3 : (v.free_in_c_7 row).val
             = if (v.free_in_c_6 row).val ≥ 2 ^ 31 then 2 ^ 32 - 1 else 0 := by
-    have ⟨_, h_hi⟩ := sllw_byte_eq e3 hm3 (by rw [hop3]; exact h_op)
+    have ⟨_, h_hi⟩ := sllw_byte_eq_of_wf e3 h_wfs.2.2.2.1 (by rw [hop3]; exact h_op)
     rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
         show e3.shift_amount.val = (v.free_in_b row).val from by rw [hs3],
         show e3.a_byte.val = (v.free_in_a_3 row).val from by rw [ha3],
@@ -2592,28 +2609,28 @@ lemma binary_extension_sllw_chunks_eq_bv_shl_w
     simp only [show (3 : ℕ) < 4 from by decide, if_true] at h_hi
     rw [h_hi, eq3]
   have ech4 : (v.free_in_c_9 row).val = 0 := by
-    have ⟨_, h_hi⟩ := sllw_byte_eq e4 hm4 (by rw [hop4]; exact h_op)
+    have ⟨_, h_hi⟩ := sllw_byte_eq_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
     rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
         show e4.c_hi_byte.val = (v.free_in_c_9 row).val from by rw [hch4]] at h_hi
     simp only [show ¬ ((4 : ℕ) < 4) from by decide, if_false] at h_hi
     rw [h_hi]
     simp
   have ech5 : (v.free_in_c_11 row).val = 0 := by
-    have ⟨_, h_hi⟩ := sllw_byte_eq e5 hm5 (by rw [hop5]; exact h_op)
+    have ⟨_, h_hi⟩ := sllw_byte_eq_of_wf e5 h_wfs.2.2.2.2.2.1 (by rw [hop5]; exact h_op)
     rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
         show e5.c_hi_byte.val = (v.free_in_c_11 row).val from by rw [hch5]] at h_hi
     simp only [show ¬ ((5 : ℕ) < 4) from by decide, if_false] at h_hi
     rw [h_hi]
     simp
   have ech6 : (v.free_in_c_13 row).val = 0 := by
-    have ⟨_, h_hi⟩ := sllw_byte_eq e6 hm6 (by rw [hop6]; exact h_op)
+    have ⟨_, h_hi⟩ := sllw_byte_eq_of_wf e6 h_wfs.2.2.2.2.2.2.1 (by rw [hop6]; exact h_op)
     rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
         show e6.c_hi_byte.val = (v.free_in_c_13 row).val from by rw [hch6]] at h_hi
     simp only [show ¬ ((6 : ℕ) < 4) from by decide, if_false] at h_hi
     rw [h_hi]
     simp
   have ech7 : (v.free_in_c_15 row).val = 0 := by
-    have ⟨_, h_hi⟩ := sllw_byte_eq e7 hm7 (by rw [hop7]; exact h_op)
+    have ⟨_, h_hi⟩ := sllw_byte_eq_of_wf e7 h_wfs.2.2.2.2.2.2.2 (by rw [hop7]; exact h_op)
     rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
         show e7.c_hi_byte.val = (v.free_in_c_15 row).val from by rw [hch7]] at h_hi
     simp only [show ¬ ((7 : ℕ) < 4) from by decide, if_false] at h_hi
@@ -2634,6 +2651,47 @@ lemma binary_extension_sllw_chunks_eq_bv_shl_w
     ha0r ha1r ha2r ha3r ha4r ha5r ha6r ha7r hsft_lt
     eq0 eq1 eq2 eq3 eq4 eq5 eq6 eq7
     ech0 ech1 ech2 ech3 ech4 ech5 ech6 ech7
+
+/-- Legacy SLL_W packed-correctness route through `bin_ext_table_consumer_wf`. -/
+lemma binary_extension_sllw_chunks_eq_bv_shl_w
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
+    (h_op : (v.op row).val = OP_SLL_W)
+    (h_bytes : ByteLookupHypotheses v row)
+    (h_a_range : a_bytes_in_range v row) :
+    BitVec.signExtend 64
+      (BitVec.shiftLeft (BitVec.ofNat 32
+        ((v.free_in_a_0 row).val
+          + (v.free_in_a_1 row).val * 256
+          + (v.free_in_a_2 row).val * 65536
+          + (v.free_in_a_3 row).val * 16777216))
+        ((v.free_in_b row).val % 32))
+      = BitVec.ofNat 64
+          (((v.free_in_c_0 row).val
+              + (v.free_in_c_2 row).val
+              + (v.free_in_c_4 row).val
+              + (v.free_in_c_6 row).val
+              + (v.free_in_c_8 row).val
+              + (v.free_in_c_10 row).val
+              + (v.free_in_c_12 row).val
+              + (v.free_in_c_14 row).val)
+            + ((v.free_in_c_1 row).val
+              + (v.free_in_c_3 row).val
+              + (v.free_in_c_5 row).val
+              + (v.free_in_c_7 row).val
+              + (v.free_in_c_9 row).val
+              + (v.free_in_c_11 row).val
+              + (v.free_in_c_13 row).val
+              + (v.free_in_c_15 row).val) * 4294967296) :=
+  binary_extension_sllw_chunks_eq_bv_shl_w_of_wf v row h_op h_bytes
+    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
+    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
+    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
+    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
+    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
+    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
+    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
+    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
+    h_a_range
 
 /-! ## SRA_W lift -/
 
