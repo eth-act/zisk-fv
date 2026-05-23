@@ -71,7 +71,7 @@ lemma equiv_SRA_sail
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
     `WriteValueProofs.BinaryShift.h_rd_val_shift_sra` discharge lemma. -/
-theorem equiv_SRA
+theorem equiv_SRA_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sra_input : PureSpec.SraInput)
     (r1 r2 rd : regidx)
@@ -87,7 +87,10 @@ theorem equiv_SRA
     (h_match : ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
+    (h_op_is_shift : v.op_is_shift r_binary = 1) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRA)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
@@ -102,22 +105,13 @@ theorem equiv_SRA
       m v r_main r_binary h_match
   have h_op : (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SRA := by
     rw [← h_op_fgl, h_main_op]; decide
-  -- Discharge c-lo/c-hi sum bounds + h_bytes from row-level axioms.
+  -- Discharge c-lo/c-hi sum bounds from row-level axioms.
   have hc_lo_sum_lt :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.hc_lo_sum_lt_of_match
       m v r_main r_binary h_match_clo
   have hc_hi_sum_lt :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.hc_hi_sum_lt_of_match
       m v r_main r_binary h_match_chi
-  have h_bytes :=
-    ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v r_binary
-  -- Derive op_is_shift = 1 from the BinaryExtension AIR op_is_shift pin.
-  have h_op_is_shift_fact :=
-    ZiskFv.Airs.BinaryExtension.binary_extension_op_is_shift_pin v r_binary
-  have h_op_v_eq : v.op r_binary = ZiskFv.Trusted.OP_SRA := by
-    rw [← h_op_fgl, h_main_op]
-  have h_op_is_shift : v.op_is_shift r_binary = 1 :=
-    h_op_is_shift_fact.1 (Or.inr (Or.inr (Or.inl h_op_v_eq)))
   -- Discharge h_input_r1_circuit + h_shift_pin via SailStateBridge
   -- + transpile_SRA + matches_entry projection (m32 = 0; op_is_shift = 1).
   obtain ⟨_, h_m32, _, _, _, _, h_a_lo_t, h_a_hi_t, h_b_lo_t, h_b_hi_t⟩ :=
@@ -147,8 +141,8 @@ theorem equiv_SRA
     ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7⟩
   set shift : ℕ := sra_input.r2_val.toNat % 64 with h_shift_def
   have h_discharge :=
-    ZiskFv.EquivCore.WriteValueProofs.BinaryShift.h_rd_val_shift_sra
-      m v r_main r_binary e2 sra_input.r1_val shift h_op h_bytes h_a_range
+    ZiskFv.EquivCore.WriteValueProofs.BinaryShift.h_rd_val_shift_sra_of_wf
+      m v r_main r_binary e2 sra_input.r1_val shift h_op h_bytes h_wfs h_a_range
       hc0 hc2 hc4 hc6 hc8 hc10 hc12 hc14
       hc1 hc3 hc5 hc7 hc9 hc11 hc13 hc15
       hc_lo_sum_lt hc_hi_sum_lt
@@ -175,5 +169,50 @@ theorem equiv_SRA
   split_ifs with h_rd_zero
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
+
+/-- Canonical SRA equivalence. The signature is unchanged; this legacy route
+    derives BinaryExtension table well-formedness and `op_is_shift` through the
+    existing table-consumer theorem, then delegates to `equiv_SRA_of_wf`. -/
+theorem equiv_SRA
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sra_input : PureSpec.SraInput)
+    (r1 r2 rd : regidx)
+    (m : Valid_Main FGL FGL)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (r_main r_binary : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state sra_input.r1_val sra_input.r2_val sra_input.rd sra_input.PC
+        (PureSpec.execute_RTYPE_sra_pure sra_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRA)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
+    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRA)) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨h_main_active, h_main_op⟩ := pins
+  obtain ⟨h_op_fgl, _, _⟩ :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.project_match_op_clo_chi
+      m v r_main r_binary h_match
+  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v r_binary
+  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes :=
+    ⟨ ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
+    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
+    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
+    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
+    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
+    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
+    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
+    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
+  have h_op_is_shift_fact :=
+    ZiskFv.Airs.BinaryExtension.binary_extension_op_is_shift_pin v r_binary
+  have h_op_v_eq : v.op r_binary = ZiskFv.Trusted.OP_SRA := by
+    rw [← h_op_fgl, h_main_op]
+  have h_op_is_shift : v.op_is_shift r_binary = 1 :=
+    h_op_is_shift_fact.1 (Or.inr (Or.inr (Or.inl h_op_v_eq)))
+  exact equiv_SRA_of_wf state sra_input r1 r2 rd m v r_main r_binary bus
+    promises ⟨h_main_active, h_main_op⟩ h_match h_lane_rd h_bytes h_wfs h_op_is_shift
 
 end ZiskFv.EquivCore.Sra
