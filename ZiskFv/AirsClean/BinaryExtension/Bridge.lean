@@ -287,15 +287,11 @@ theorem binary_extension_table_specs_of_static_lookup_const_soundness
                     Table.toRaw] using h7 ⟩
 
 open ZiskFv.Airs.Tables.BinaryExtensionTable in
-/-- Static-provider BinaryExtensionTable lookup path, projected all the way to
-    the legacy semantic `wf_properties` facts. This consumes exact membership
-    in `AirsClean.BinaryExtensionTable.binaryExtensionTable` plus the proved
-    membership-to-semantics projections, not `bin_ext_table_consumer_wf`. -/
-theorem binary_extension_table_wf_of_static_lookup_const_soundness
-    (offset : ℕ) (env : Environment FGL) (row : BinaryExtensionRow FGL)
-    (h_holds :
-      ConstraintsHold.Soundness env
-        ((mainWithStaticBinaryExtensionTable (constVar row)).operations offset)) :
+/-- The eight legacy `BinaryExtensionTable.wf_properties` facts for the exact
+    rows emitted by BinaryExtension's static-table lookup path. This is the
+    shared C7 target shape for replacing direct uses of
+    `bin_ext_table_consumer_wf`. -/
+abbrev StaticBinaryExtensionTableWfFacts (row : BinaryExtensionRow FGL) : Prop :=
     wf_properties (BinaryExtensionTableMessage.toEntry
       { op := row.flags.op
         byte_index := 0
@@ -359,7 +355,19 @@ theorem binary_extension_table_wf_of_static_lookup_const_soundness
         shift_amount := row.flags.free_in_b
         c_lo_byte := row.cColsHi.free_in_c_14
         c_hi_byte := row.cColsHi.free_in_c_15
-        op_is_shift := row.flags.op_is_shift } 1) := by
+        op_is_shift := row.flags.op_is_shift } 1)
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+/-- Static-provider BinaryExtensionTable lookup path, projected all the way to
+    the legacy semantic `wf_properties` facts. This consumes exact membership
+    in `AirsClean.BinaryExtensionTable.binaryExtensionTable` plus the proved
+    membership-to-semantics projections, not `bin_ext_table_consumer_wf`. -/
+theorem binary_extension_table_wf_of_static_lookup_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : BinaryExtensionRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithStaticBinaryExtensionTable (constVar row)).operations offset)) :
+    StaticBinaryExtensionTableWfFacts row := by
   have h_specs :=
     binary_extension_table_specs_of_static_lookup_const_soundness offset env row h_holds
   rcases h_specs with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
@@ -376,6 +384,24 @@ theorem binary_extension_table_wf_of_static_lookup_const_soundness
 def constraints_at
     (_v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) (_r : ℕ) :
     Prop := True
+
+/-- Shared C7 witness surface for BinaryExtension's static-table lookup path.
+    This remains a family-level row-indexed predicate until the terminal
+    Binary-family ensemble wires the static provider into the same Clean path. -/
+def StaticLookupSoundness
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) : Prop :=
+  ∀ (r offset : ℕ) (env : Environment FGL),
+    ConstraintsHold.Soundness env
+      ((mainWithStaticBinaryExtensionTable (constVar (rowAt v r))).operations offset)
+
+/-- Project the shared C7 BinaryExtension static-lookup witness to the legacy
+    per-byte semantic facts for row `r`. -/
+theorem static_lookup_wf_facts
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (r offset : ℕ) (env : Environment FGL) (h_static : StaticLookupSoundness v) :
+    StaticBinaryExtensionTableWfFacts (rowAt v r) :=
+  binary_extension_table_wf_of_static_lookup_const_soundness offset env (rowAt v r)
+    (h_static r offset env)
 
 /-!
 ## Operation-bus bridge

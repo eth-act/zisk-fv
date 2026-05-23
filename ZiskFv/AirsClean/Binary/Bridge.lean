@@ -251,16 +251,11 @@ theorem binary_table_specs_of_static_lookup_const_soundness
                     Table.toRaw, sub_eq_add_neg] using h7 ⟩
 
 open ZiskFv.Airs.Tables.BinaryTable in
-/-- Static-provider BinaryTable lookup path, projected all the way to the
-    legacy semantic `wf_properties` facts. Unlike
-    `binary_table_wf_of_lookup_aware_const_soundness`, this consumes exact
-    membership in `AirsClean.BinaryTable.binaryTable` and the proved
-    membership-to-semantics projections, not `bin_table_consumer_wf`. -/
-theorem binary_table_wf_of_static_lookup_const_soundness
-    (offset : ℕ) (env : Environment FGL) (row : BinaryRow FGL)
-    (h_holds :
-      ConstraintsHold.Soundness env
-        ((mainWithStaticBinaryTable (constVar row)).operations offset)) :
+/-- The eight legacy `BinaryTable.wf_properties` facts for the exact rows
+    emitted by Binary's static-table lookup path. This is the shared C7 target
+    shape: downstream Binary proofs should consume this fact rather than call
+    `bin_table_consumer_wf` directly. -/
+abbrev StaticBinaryTableWfFacts (row : BinaryRow FGL) : Prop :=
     wf_properties (BinaryTableMessage.toEntry
       { pos_ind := 2 * row.mode.use_first_byte
         op := row.chain.b_op
@@ -324,7 +319,20 @@ theorem binary_table_wf_of_static_lookup_const_soundness
         b_byte := row.bBytes.free_in_b_7
         cin := row.chain.carry_6
         c_byte := row.cBytes.free_in_c_7
-        flags := row.chain.carry_7 } 1) := by
+        flags := row.chain.carry_7 } 1)
+
+open ZiskFv.Airs.Tables.BinaryTable in
+/-- Static-provider BinaryTable lookup path, projected all the way to the
+    legacy semantic `wf_properties` facts. Unlike
+    `binary_table_wf_of_lookup_aware_const_soundness`, this consumes exact
+    membership in `AirsClean.BinaryTable.binaryTable` and the proved
+    membership-to-semantics projections, not `bin_table_consumer_wf`. -/
+theorem binary_table_wf_of_static_lookup_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : BinaryRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithStaticBinaryTable (constVar row)).operations offset)) :
+    StaticBinaryTableWfFacts row := by
   have h_specs := binary_table_specs_of_static_lookup_const_soundness offset env row h_holds
   rcases h_specs with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
   exact ⟨ ZiskFv.AirsClean.BinaryTable.spec_wf_properties h0
@@ -388,6 +396,24 @@ def rowAt (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) :
     c_is_signed := v.c_is_signed r
     mode32_and_c_is_signed := v.mode32_and_c_is_signed r
   }
+
+/-- Shared C7 witness surface for Binary's static-table lookup path.
+    This is intentionally family-level and row-indexed; it is the shape a
+    terminal Binary-family ensemble can provide once the static provider is
+    wired into the same Clean path. -/
+def StaticLookupSoundness (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) : Prop :=
+  ∀ (r offset : ℕ) (env : Environment FGL),
+    ConstraintsHold.Soundness env
+      ((mainWithStaticBinaryTable (constVar (rowAt v r))).operations offset)
+
+/-- Project the shared C7 Binary static-lookup witness to the legacy
+    per-byte semantic facts for row `r`. -/
+theorem static_lookup_wf_facts
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r offset : ℕ)
+    (env : Environment FGL) (h_static : StaticLookupSoundness v) :
+    StaticBinaryTableWfFacts (rowAt v r) :=
+  binary_table_wf_of_static_lookup_const_soundness offset env (rowAt v r)
+    (h_static r offset env)
 
 /-- The 7 F-typed Binary row constraints at row `r`, expressed against
     a `Valid_Binary` via its named accessors (`v.mode32 r`, etc.). -/
