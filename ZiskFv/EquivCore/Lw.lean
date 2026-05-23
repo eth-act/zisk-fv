@@ -81,7 +81,9 @@ lemma equiv_LW_sail
     (mstatus := mstatus) (pmaRegion := pmaRegion) (misa := misa)
     (mseccfg := mseccfg) lw_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64 LW
+/-- LW equivalence with BinaryExtension table semantics supplied explicitly.
+
+    Sail's `execute_instruction` on an RV64 LW
     equals the state computed by applying `bus_effect` to the circuit's
     execution + memory bus rows.
 
@@ -92,7 +94,7 @@ lemma equiv_LW_sail
     witness (`h_high_bytes_signext`) supplied by the caller as a
     LANE-MATCH-class fact about the high bytes of the rd-write
     entry. -/
-theorem equiv_LW
+theorem equiv_LW_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lw_input : PureSpec.LwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -110,6 +112,7 @@ theorem equiv_LW
     (h_op_binary :
       (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W)
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
     (hc_lo_sum_lt :
       (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
       + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
@@ -181,9 +184,9 @@ theorem equiv_LW
   have h_e1_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e1
   have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
   have h_lw_packed :=
-    ZiskFv.ZiskCircuit.SextLoadBridge.load_word_c_packed
+    ZiskFv.ZiskCircuit.SextLoadBridge.load_word_c_packed_of_wf
       main r_main v r_binary e1 e2
-      h_op_binary h_bytes hc_lo_sum_lt hc_hi_sum_lt
+      h_op_binary h_bytes h_wfs hc_lo_sum_lt hc_hi_sum_lt
       h_match_clo h_match_chi h_main_emit_c
       h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
       h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
@@ -231,5 +234,70 @@ theorem equiv_LW
               Finset.mem_Icc.mpr ⟨by omega, by omega⟩⟩ := by
       apply Subtype.ext; exact h_rd_idx.symm
     rw [h_idx_eq]
+
+/-- **Canonical equivalence.** -/
+theorem equiv_LW
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (lw_input : PureSpec.LwInput)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+        (PureSpec.lw_state_assumptions lw_input state)
+        (PureSpec.execute_LOADW_pure lw_input).nextPC
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
+    (pins : ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (r_binary : ℕ)
+    (h_op_binary :
+      (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W)
+    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (hc_lo_sum_lt :
+      (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+      + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+      + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+      + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
+    (hc_hi_sum_lt :
+      (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+      + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+      + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+      + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+    (h_match_clo : main.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
+    (h_match_chi : main.c_1 r_main
+        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
+    (h_a0_match : (v.free_in_a_0 r_binary).val = bus.e1.x0.val)
+    (h_a1_match : (v.free_in_a_1 r_binary).val = bus.e1.x1.val)
+    (h_a2_match : (v.free_in_a_2 r_binary).val = bus.e1.x2.val)
+    (h_a3_match : (v.free_in_a_3 r_binary).val = bus.e1.x3.val) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.LOAD (
+        lw_input.imm,
+        regidx.Regidx lw_input.r1,
+        regidx.Regidx lw_input.rd,
+        false,
+        4
+      ))) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
+  equiv_LW_of_wf state lw_input regs bus promises main mem r_main pins v r_binary
+    h_op_binary h_bytes
+    ⟨ ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
+    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
+    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
+    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
+    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
+    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
+    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
+    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
+    hc_lo_sum_lt hc_hi_sum_lt h_match_clo h_match_chi
+    h_a0_match h_a1_match h_a2_match h_a3_match
 
 end ZiskFv.EquivCore.Lw
