@@ -1205,4 +1205,20 @@ theorem spec_wf_LT {t : BinaryTableMessage FGL}
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_wf_LT i
 
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem spec_wf_properties {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    wf_properties (BinaryTableMessage.toEntry t 1) := by
+  exact ⟨ spec_range_conditions h
+        , spec_wf_AND h
+        , spec_wf_OR h
+        , spec_wf_XOR h
+        , spec_wf_LTU h
+        , spec_wf_LT h
+        , spec_wf_EQ h
+        , spec_wf_ADD h
+        , spec_wf_SUB h
+        , spec_wf_SEXT_00 h
+        , spec_wf_SEXT_FF h ⟩
+
 end ZiskFv.AirsClean.BinaryTable

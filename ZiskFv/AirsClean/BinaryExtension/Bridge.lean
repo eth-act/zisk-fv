@@ -286,6 +286,92 @@ theorem binary_extension_table_specs_of_static_lookup_const_soundness
         , by simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
                     Table.toRaw] using h7 ⟩
 
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+/-- Static-provider BinaryExtensionTable lookup path, projected all the way to
+    the legacy semantic `wf_properties` facts. This consumes exact membership
+    in `AirsClean.BinaryExtensionTable.binaryExtensionTable` plus the proved
+    membership-to-semantics projections, not `bin_ext_table_consumer_wf`. -/
+theorem binary_extension_table_wf_of_static_lookup_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : BinaryExtensionRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithStaticBinaryExtensionTable (constVar row)).operations offset)) :
+    wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 0
+        a_byte := row.aCols.free_in_a_0
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsLo.free_in_c_0
+        c_hi_byte := row.cColsLo.free_in_c_1
+        op_is_shift := row.flags.op_is_shift } 1)
+  ∧ wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 1
+        a_byte := row.aCols.free_in_a_1
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsLo.free_in_c_2
+        c_hi_byte := row.cColsLo.free_in_c_3
+        op_is_shift := row.flags.op_is_shift } 1)
+  ∧ wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 2
+        a_byte := row.aCols.free_in_a_2
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsLo.free_in_c_4
+        c_hi_byte := row.cColsLo.free_in_c_5
+        op_is_shift := row.flags.op_is_shift } 1)
+  ∧ wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 3
+        a_byte := row.aCols.free_in_a_3
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsLo.free_in_c_6
+        c_hi_byte := row.cColsLo.free_in_c_7
+        op_is_shift := row.flags.op_is_shift } 1)
+  ∧ wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 4
+        a_byte := row.aCols.free_in_a_4
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsHi.free_in_c_8
+        c_hi_byte := row.cColsHi.free_in_c_9
+        op_is_shift := row.flags.op_is_shift } 1)
+  ∧ wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 5
+        a_byte := row.aCols.free_in_a_5
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsHi.free_in_c_10
+        c_hi_byte := row.cColsHi.free_in_c_11
+        op_is_shift := row.flags.op_is_shift } 1)
+  ∧ wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 6
+        a_byte := row.aCols.free_in_a_6
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsHi.free_in_c_12
+        c_hi_byte := row.cColsHi.free_in_c_13
+        op_is_shift := row.flags.op_is_shift } 1)
+  ∧ wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 7
+        a_byte := row.aCols.free_in_a_7
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsHi.free_in_c_14
+        c_hi_byte := row.cColsHi.free_in_c_15
+        op_is_shift := row.flags.op_is_shift } 1) := by
+  have h_specs :=
+    binary_extension_table_specs_of_static_lookup_const_soundness offset env row h_holds
+  rcases h_specs with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  exact ⟨ ZiskFv.AirsClean.BinaryExtensionTable.spec_wf_properties h0
+        , ZiskFv.AirsClean.BinaryExtensionTable.spec_wf_properties h1
+        , ZiskFv.AirsClean.BinaryExtensionTable.spec_wf_properties h2
+        , ZiskFv.AirsClean.BinaryExtensionTable.spec_wf_properties h3
+        , ZiskFv.AirsClean.BinaryExtensionTable.spec_wf_properties h4
+        , ZiskFv.AirsClean.BinaryExtensionTable.spec_wf_properties h5
+        , ZiskFv.AirsClean.BinaryExtensionTable.spec_wf_properties h6
+        , ZiskFv.AirsClean.BinaryExtensionTable.spec_wf_properties h7 ⟩
+
 /-- BinaryExtension has zero F-typed per-row constraints. -/
 def constraints_at
     (_v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) (_r : ℕ) :

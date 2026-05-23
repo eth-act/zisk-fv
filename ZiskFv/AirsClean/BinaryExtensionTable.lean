@@ -803,4 +803,19 @@ theorem spec_wf_SEXT_W {t : BinaryExtensionTableMessage FGL}
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_wf_SEXT_W i
 
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem spec_wf_properties {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    wf_properties (BinaryExtensionTableMessage.toEntry t 1) := by
+  exact ⟨ spec_range_conditions h
+        , spec_wf_SLL h
+        , spec_wf_SRL h
+        , spec_wf_SRA h
+        , spec_wf_SLL_W h
+        , spec_wf_SRL_W h
+        , spec_wf_SRA_W h
+        , spec_wf_SEXT_B h
+        , spec_wf_SEXT_H h
+        , spec_wf_SEXT_W h ⟩
+
 end ZiskFv.AirsClean.BinaryExtensionTable

@@ -158,6 +158,17 @@ plus `spec_range_conditions`; C7 still has to compose these provider facts
 with the lookup-aware consumers and rewire load-bearing proofs to retire
 `bin_ext_table_consumer_wf`.
 
+Static lookup bridges now project provider membership to legacy semantics:
+`AirsClean/Binary/Bridge.lean::binary_table_wf_of_static_lookup_const_soundness`
+and
+`AirsClean/BinaryExtension/Bridge.lean::binary_extension_table_wf_of_static_lookup_const_soundness`
+return the same eight per-byte `wf_properties` facts as the old lookup-aware
+axiom-facing bridges, but derive them from
+`lookup (Table.fromStatic ...)` membership and the static providers'
+`spec_wf_properties` lemmas. This still does not remove the two legacy axioms
+from closures until the load-bearing opcode proofs are rewired to consume
+these static-lookup bridge facts.
+
 ### C8 — Mem
 
 Status: in progress. `AirsClean/Mem` now packages the existing Mem
