@@ -1097,4 +1097,21 @@ theorem spec_wf_EQ {t : BinaryTableMessage FGL}
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_wf_EQ i
 
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem not_rowOfIndex_wf_LT_counterexample :
+    ¬ wf_LT (BinaryTableMessage.toEntry (rowOfIndex (block7 + p2_16 + 128)) 1) := by
+  intro h_wf
+  have h_op :
+      (BinaryTableMessage.toEntry (rowOfIndex (block7 + p2_16 + 128)) 1).op.val = OP_LT := by
+    norm_num [rowOfIndex, opOfIndex, blockOfIndex, opOfBlock, OP_LT]
+  rcases h_wf h_op with ⟨_, _, _, h_gt, _⟩
+  have h_a_gt_b :
+      (BinaryTableMessage.toEntry (rowOfIndex (block7 + p2_16 + 128)) 1).a_byte.val >
+        (BinaryTableMessage.toEntry (rowOfIndex (block7 + p2_16 + 128)) 1).b_byte.val := by
+    norm_num [rowOfIndex]
+  have h_flags := h_gt h_a_gt_b
+  norm_num [rowOfIndex, flagsOfIndex, coutOfIndex, resultIsAOfIndex, useFirstByteOfIndex,
+    cIsSignedOfIndex, cOfIndex, posIndOfIndex, cinOfIndex, relativeIndex, blockOfIndex,
+    startOfBlock, lowByte, highByte, coutLt, signByte] at h_flags
+
 end ZiskFv.AirsClean.BinaryTable

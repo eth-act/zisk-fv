@@ -142,6 +142,11 @@ and `EQ`.
 `spec_wf_EQ` now proves the equality-chain polarity rules for non-final and
 final bytes from exact static membership. The remaining BinaryTable semantic
 projection is `LT`.
+`LT` is blocked by a mismatch in the current legacy predicate rather than a
+proof search issue: `not_rowOfIndex_wf_LT_counterexample` formally shows that
+the decoded final-byte row `op=LT, a=0x80, b=0, cin=0` cannot satisfy
+`wf_LT`, because the static table's signed override sets the flag to `1`
+while the predicate's unconditional unsigned `a>b` chain clause requires `0`.
 
 BinaryExtensionTable lookup-channel groundwork now mirrors the BinaryTable
 side: `Channels/BinaryExtensionTable.lean` defines the typed payload/channel,
