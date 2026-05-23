@@ -307,6 +307,64 @@ lemma load_full_discharge_LB
       h_a2_match := h_a2_match
       h_a3_match := h_a3_match }⟩
 
+/-- Static-lookup variant of `load_full_discharge_LB`. This has the same
+    output shape, but derives `op_is_shift = 0` from the shared C7
+    BinaryExtension static lookup witness rather than from
+    `binary_extension_op_is_shift_pin`. -/
+lemma load_full_discharge_LB_of_static_lookup
+    (main : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (r_main offset : ℕ) (env : Environment FGL)
+    (e1 e2 : Interaction.MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_main_active : main.is_external_op r_main = 1)
+    (h_main_op : main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_B)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) :
+    ∃ r_binary : ℕ,
+      LoadFullDischargeAt main v r_main r_binary e1
+        ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B := by
+  obtain ⟨r_binary, h_match⟩ :=
+    binexec_op_bus_handshake_SIGNEXTEND_B main v r_main h_main_active h_main_op
+  obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.project_match_op_clo_chi
+      main v r_main r_binary h_match
+  have h_op_binary : (v.op r_binary).val
+      = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B := by
+    rw [← h_op_fgl, h_main_op]; decide
+  have hc_lo_sum_lt :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.hc_lo_sum_lt_of_match
+      main v r_main r_binary h_match_clo
+  have hc_hi_sum_lt :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.hc_hi_sum_lt_of_match
+      main v r_main r_binary h_match_chi
+  have h_op_v_eq : v.op r_binary = ZiskFv.Trusted.OP_SIGNEXTEND_B := by
+    rw [← h_op_fgl, h_main_op]
+  have h_op_is_shift_zero : v.op_is_shift r_binary = 0 :=
+    ZiskFv.Airs.BinaryExtension.op_is_shift_zero_SIGNEXTEND_B_of_static_lookup
+      v r_binary offset env h_static h_op_v_eq
+  obtain ⟨h_main_emit_b, _h_main_emit_c, _h_ptr_match,
+          _h_rd_zero_iff, _h_rd_idx⟩ :=
+    ZiskFv.EquivCore.Bridge.Mem.lb_discharge_full
+      main r_main e1 e2 r1_val imm rd
+      h_main_active h_main_op h_m1_mult h_m1_as h_m2_mult h_m2_as
+  have h_main_b0_eq : main.b_0 r_main
+      = ZiskFv.Airs.MemoryBus.memory_entry_lo e1 := h_main_emit_b.1
+  obtain ⟨h_a0_match, h_a1_match, h_a2_match, h_a3_match⟩ :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.sext_lane_match_bytes_eq_of_match
+      main v r_main r_binary e1 h_main_b0_eq h_op_is_shift_zero h_match
+  exact ⟨r_binary,
+    { h_match := h_match
+      h_op_binary := h_op_binary
+      hc_lo_sum_lt := hc_lo_sum_lt
+      hc_hi_sum_lt := hc_hi_sum_lt
+      h_match_clo := h_match_clo
+      h_match_chi := h_match_chi
+      h_a0_match := h_a0_match
+      h_a1_match := h_a1_match
+      h_a2_match := h_a2_match
+      h_a3_match := h_a3_match }⟩
+
 /-- **Signed-load full-discharge helper for LH.** See
     `load_full_discharge_LB` for description; only the opcode literal
     + `binary_extension_op_is_shift_pin` branch + `lh_discharge_full`
@@ -363,6 +421,63 @@ lemma load_full_discharge_LH
       h_a2_match := h_a2_match
       h_a3_match := h_a3_match }⟩
 
+/-- Static-lookup variant of `load_full_discharge_LH`. This mirrors the
+    old helper but derives `op_is_shift = 0` from the shared C7
+    BinaryExtension static lookup witness. -/
+lemma load_full_discharge_LH_of_static_lookup
+    (main : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (r_main offset : ℕ) (env : Environment FGL)
+    (e1 e2 : Interaction.MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_main_active : main.is_external_op r_main = 1)
+    (h_main_op : main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_H)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) :
+    ∃ r_binary : ℕ,
+      LoadFullDischargeAt main v r_main r_binary e1
+        ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H := by
+  obtain ⟨r_binary, h_match⟩ :=
+    binexec_op_bus_handshake_SIGNEXTEND_H main v r_main h_main_active h_main_op
+  obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.project_match_op_clo_chi
+      main v r_main r_binary h_match
+  have h_op_binary : (v.op r_binary).val
+      = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H := by
+    rw [← h_op_fgl, h_main_op]; decide
+  have hc_lo_sum_lt :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.hc_lo_sum_lt_of_match
+      main v r_main r_binary h_match_clo
+  have hc_hi_sum_lt :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.hc_hi_sum_lt_of_match
+      main v r_main r_binary h_match_chi
+  have h_op_v_eq : v.op r_binary = ZiskFv.Trusted.OP_SIGNEXTEND_H := by
+    rw [← h_op_fgl, h_main_op]
+  have h_op_is_shift_zero : v.op_is_shift r_binary = 0 :=
+    ZiskFv.Airs.BinaryExtension.op_is_shift_zero_SIGNEXTEND_H_of_static_lookup
+      v r_binary offset env h_static h_op_v_eq
+  obtain ⟨h_main_emit_b, _h_main_emit_c, _h_ptr_match,
+          _h_rd_zero_iff, _h_rd_idx⟩ :=
+    ZiskFv.EquivCore.Bridge.Mem.lh_discharge_full
+      main r_main e1 e2 r1_val imm rd
+      h_main_active h_main_op h_m1_mult h_m1_as h_m2_mult h_m2_as
+  have h_main_b0_eq : main.b_0 r_main
+      = ZiskFv.Airs.MemoryBus.memory_entry_lo e1 := h_main_emit_b.1
+  obtain ⟨h_a0_match, h_a1_match, h_a2_match, h_a3_match⟩ :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.sext_lane_match_bytes_eq_of_match
+      main v r_main r_binary e1 h_main_b0_eq h_op_is_shift_zero h_match
+  exact ⟨r_binary,
+    { h_match := h_match
+      h_op_binary := h_op_binary
+      hc_lo_sum_lt := hc_lo_sum_lt
+      hc_hi_sum_lt := hc_hi_sum_lt
+      h_match_clo := h_match_clo
+      h_match_chi := h_match_chi
+      h_a0_match := h_a0_match
+      h_a1_match := h_a1_match
+      h_a2_match := h_a2_match
+      h_a3_match := h_a3_match }⟩
+
 /-- **Signed-load full-discharge helper for LW.** See
     `load_full_discharge_LB` for description; only the opcode literal
     + `binary_extension_op_is_shift_pin` branch + `lw_discharge_full`
@@ -397,6 +512,63 @@ lemma load_full_discharge_LW
   have h_op_is_shift_zero : v.op_is_shift r_binary = 0 :=
     (ZiskFv.Airs.BinaryExtension.binary_extension_op_is_shift_pin v r_binary).2
       (Or.inr (Or.inr h_op_v_eq))
+  obtain ⟨h_main_emit_b, _h_main_emit_c, _h_ptr_match,
+          _h_rd_zero_iff, _h_rd_idx⟩ :=
+    ZiskFv.EquivCore.Bridge.Mem.lw_discharge_full
+      main r_main e1 e2 r1_val imm rd
+      h_main_active h_main_op h_m1_mult h_m1_as h_m2_mult h_m2_as
+  have h_main_b0_eq : main.b_0 r_main
+      = ZiskFv.Airs.MemoryBus.memory_entry_lo e1 := h_main_emit_b.1
+  obtain ⟨h_a0_match, h_a1_match, h_a2_match, h_a3_match⟩ :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.sext_lane_match_bytes_eq_of_match
+      main v r_main r_binary e1 h_main_b0_eq h_op_is_shift_zero h_match
+  exact ⟨r_binary,
+    { h_match := h_match
+      h_op_binary := h_op_binary
+      hc_lo_sum_lt := hc_lo_sum_lt
+      hc_hi_sum_lt := hc_hi_sum_lt
+      h_match_clo := h_match_clo
+      h_match_chi := h_match_chi
+      h_a0_match := h_a0_match
+      h_a1_match := h_a1_match
+      h_a2_match := h_a2_match
+      h_a3_match := h_a3_match }⟩
+
+/-- Static-lookup variant of `load_full_discharge_LW`. This mirrors the
+    old helper but derives `op_is_shift = 0` from the shared C7
+    BinaryExtension static lookup witness. -/
+lemma load_full_discharge_LW_of_static_lookup
+    (main : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (r_main offset : ℕ) (env : Environment FGL)
+    (e1 e2 : Interaction.MemoryBusEntry FGL)
+    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_main_active : main.is_external_op r_main = 1)
+    (h_main_op : main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_W)
+    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
+    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) :
+    ∃ r_binary : ℕ,
+      LoadFullDischargeAt main v r_main r_binary e1
+        ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W := by
+  obtain ⟨r_binary, h_match⟩ :=
+    binexec_op_bus_handshake_SIGNEXTEND_W main v r_main h_main_active h_main_op
+  obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.project_match_op_clo_chi
+      main v r_main r_binary h_match
+  have h_op_binary : (v.op r_binary).val
+      = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W := by
+    rw [← h_op_fgl, h_main_op]; decide
+  have hc_lo_sum_lt :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.hc_lo_sum_lt_of_match
+      main v r_main r_binary h_match_clo
+  have hc_hi_sum_lt :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.hc_hi_sum_lt_of_match
+      main v r_main r_binary h_match_chi
+  have h_op_v_eq : v.op r_binary = ZiskFv.Trusted.OP_SIGNEXTEND_W := by
+    rw [← h_op_fgl, h_main_op]
+  have h_op_is_shift_zero : v.op_is_shift r_binary = 0 :=
+    ZiskFv.Airs.BinaryExtension.op_is_shift_zero_SIGNEXTEND_W_of_static_lookup
+      v r_binary offset env h_static h_op_v_eq
   obtain ⟨h_main_emit_b, _h_main_emit_c, _h_ptr_match,
           _h_rd_zero_iff, _h_rd_idx⟩ :=
     ZiskFv.EquivCore.Bridge.Mem.lw_discharge_full
