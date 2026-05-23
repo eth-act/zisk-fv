@@ -323,6 +323,87 @@ theorem binary_extension_op_is_shift_pin_of_static_lookup
   exact binary_extension_op_is_shift_pin_of_e0_wf v r h_wf
 
 open ZiskFv.Trusted in
+lemma op_is_shift_one_SLL_of_static_lookup
+    (v : Valid_BinaryExtension FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_op : v.op r = OP_SLL) :
+    v.op_is_shift r = 1 :=
+  (binary_extension_op_is_shift_pin_of_static_lookup v r offset env h_static).1
+    (Or.inl h_op)
+
+open ZiskFv.Trusted in
+lemma op_is_shift_one_SRL_of_static_lookup
+    (v : Valid_BinaryExtension FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_op : v.op r = OP_SRL) :
+    v.op_is_shift r = 1 :=
+  (binary_extension_op_is_shift_pin_of_static_lookup v r offset env h_static).1
+    (Or.inr (Or.inl h_op))
+
+open ZiskFv.Trusted in
+lemma op_is_shift_one_SRA_of_static_lookup
+    (v : Valid_BinaryExtension FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_op : v.op r = OP_SRA) :
+    v.op_is_shift r = 1 :=
+  (binary_extension_op_is_shift_pin_of_static_lookup v r offset env h_static).1
+    (Or.inr (Or.inr (Or.inl h_op)))
+
+open ZiskFv.Trusted in
+lemma op_is_shift_one_SLL_W_of_static_lookup
+    (v : Valid_BinaryExtension FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_op : v.op r = OP_SLL_W) :
+    v.op_is_shift r = 1 :=
+  (binary_extension_op_is_shift_pin_of_static_lookup v r offset env h_static).1
+    (Or.inr (Or.inr (Or.inr (Or.inl h_op))))
+
+open ZiskFv.Trusted in
+lemma op_is_shift_one_SRL_W_of_static_lookup
+    (v : Valid_BinaryExtension FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_op : v.op r = OP_SRL_W) :
+    v.op_is_shift r = 1 :=
+  (binary_extension_op_is_shift_pin_of_static_lookup v r offset env h_static).1
+    (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_op)))))
+
+open ZiskFv.Trusted in
+lemma op_is_shift_one_SRA_W_of_static_lookup
+    (v : Valid_BinaryExtension FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_op : v.op r = OP_SRA_W) :
+    v.op_is_shift r = 1 :=
+  (binary_extension_op_is_shift_pin_of_static_lookup v r offset env h_static).1
+    (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_op)))))
+
+open ZiskFv.Trusted in
+lemma op_is_shift_zero_SIGNEXTEND_B_of_static_lookup
+    (v : Valid_BinaryExtension FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_op : v.op r = OP_SIGNEXTEND_B) :
+    v.op_is_shift r = 0 :=
+  (binary_extension_op_is_shift_pin_of_static_lookup v r offset env h_static).2
+    (Or.inl h_op)
+
+open ZiskFv.Trusted in
+lemma op_is_shift_zero_SIGNEXTEND_H_of_static_lookup
+    (v : Valid_BinaryExtension FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_op : v.op r = OP_SIGNEXTEND_H) :
+    v.op_is_shift r = 0 :=
+  (binary_extension_op_is_shift_pin_of_static_lookup v r offset env h_static).2
+    (Or.inr (Or.inl h_op))
+
+open ZiskFv.Trusted in
+lemma op_is_shift_zero_SIGNEXTEND_W_of_static_lookup
+    (v : Valid_BinaryExtension FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_op : v.op r = OP_SIGNEXTEND_W) :
+    v.op_is_shift r = 0 :=
+  (binary_extension_op_is_shift_pin_of_static_lookup v r offset env h_static).2
+    (Or.inr (Or.inr h_op))
+
+open ZiskFv.Trusted in
 /-- **BinaryExtension AIR op_is_shift linkage.** The `op_is_shift`
     column is `bits(1)` (per `binary_extension.pil:88`: `col witness
     bits(1) op_is_shift; // 1 if operation is in the shift family;
