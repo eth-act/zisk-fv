@@ -123,30 +123,17 @@ projection:
 projects the decoder's `a_byte`, `b_byte`, `cin`, and `c_byte` bounds over
 the real 19 table blocks; it does not assert any per-op semantic clause or
 retire `bin_table_consumer_wf` yet.
-The first per-op semantic projections are also in place:
-`spec_wf_AND`, `spec_wf_OR`, and `spec_wf_XOR` prove the direct bitwise
-`c_byte` equations and `cout = 0` flag clauses from static membership.
-`spec_wf_SEXT_00` and `spec_wf_SEXT_FF` prove the auxiliary sign-extension
-table clauses from the two fixed SEXT blocks. The comparison and ADD/SUB
-table clauses remain open.
-`spec_wf_ADD` now proves the ADD byte equation and carry-out flag clauses
-from static membership, including the `highByte` modulo-normalization between
-the decoder and the legacy table predicate. The comparison and SUB clauses
-remain open.
-`spec_wf_SUB` now proves the SUB byte equation, borrow cases, and non-final
-/ final flag clauses from static membership. The remaining BinaryTable
-semantic projections are the comparison clauses (`LTU`, `LT`, and `EQ`).
-`spec_wf_LTU` now proves the unsigned comparison carry/flag chain from exact
-static membership. The remaining BinaryTable semantic projections are `LT`
-and `EQ`.
-`spec_wf_EQ` now proves the equality-chain polarity rules for non-final and
-final bytes from exact static membership. The remaining BinaryTable semantic
-projection is `LT`.
-`LT` is blocked by a mismatch in the current legacy predicate rather than a
-proof search issue: `not_rowOfIndex_wf_LT_counterexample` formally shows that
-the decoded final-byte row `op=LT, a=0x80, b=0, cin=0` cannot satisfy
-`wf_LT`, because the static table's signed override sets the flag to `1`
-while the predicate's unconditional unsigned `a>b` chain clause requires `0`.
+The BinaryTable per-op semantic projections now cover the bitwise, SEXT,
+ADD/SUB, and comparison rows: `spec_wf_AND`, `spec_wf_OR`, `spec_wf_XOR`,
+`spec_wf_SEXT_00`, `spec_wf_SEXT_FF`, `spec_wf_ADD`, `spec_wf_SUB`,
+`spec_wf_LTU`, `spec_wf_EQ`, and `spec_wf_LT` all derive their legacy
+`wf_*` clauses from exact static membership. The `LT` work fixed a stale
+overstrong legacy predicate, not a circuit defect: the unsigned byte-chain
+clause is now conditional on non-final bytes or same-sign final bytes, while
+the signed final-byte override handles opposite signs. Downstream SLT/SLTI
+proofs consume the already-existing `pi0..pi6 ≠ 1` and `pi7 = 1`
+structural pins, so no `h_known_bugs` carve-out or new caller promise was
+introduced.
 
 BinaryExtensionTable lookup-channel groundwork now mirrors the BinaryTable
 side: `Channels/BinaryExtensionTable.lean` defines the typed payload/channel,

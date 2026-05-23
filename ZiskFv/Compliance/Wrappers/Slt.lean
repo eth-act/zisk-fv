@@ -110,6 +110,8 @@ theorem equiv_SLT
     out.chain_4 out.chain_5 out.chain_6 out.chain_7
     out.cin0_eq out.cin1_eq out.cin2_eq out.cin3_eq
     out.cin4_eq out.cin5_eq out.cin6_eq out.cin7_eq
+    out.pi0_ne out.pi1_ne out.pi2_ne out.pi3_ne
+    out.pi4_ne out.pi5_ne out.pi6_ne
     out.pi7_eq h_match_clo h_match_chi h_lane_rd h_fl7_lt_2
 
 end ZiskFv.Compliance

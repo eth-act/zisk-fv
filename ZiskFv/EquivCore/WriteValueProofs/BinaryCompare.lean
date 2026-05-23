@@ -537,6 +537,9 @@ lemma h_rd_val_compare_slt
     (h_cin5 : cin5.val = fl4.val % 2)
     (h_cin6 : cin6.val = fl5.val % 2)
     (h_cin7 : cin7.val = fl6.val % 2)
+    (h_pi0 : pi0.val ≠ 1) (h_pi1 : pi1.val ≠ 1) (h_pi2 : pi2.val ≠ 1)
+    (h_pi3 : pi3.val ≠ 1) (h_pi4 : pi4.val ≠ 1) (h_pi5 : pi5.val ≠ 1)
+    (h_pi6 : pi6.val ≠ 1)
     -- Final-byte plast pin: pi7 = 1 (forces the sign-byte override).
     (h_pi7 : pi7.val = 1)
     (h_match_clo : m.c_0 r_main = fl7)
@@ -571,7 +574,8 @@ lemma h_rd_val_compare_slt
     h_byte_0 h_byte_1 h_byte_2 h_byte_3 h_byte_4 h_byte_5 h_byte_6 h_byte_7
     ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
     hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
-    h_cin0 h_cin1 h_cin2 h_cin3 h_cin4 h_cin5 h_cin6 h_cin7 h_pi7
+    h_cin0 h_cin1 h_cin2 h_cin3 h_cin4 h_cin5 h_cin6 h_cin7
+    h_pi0 h_pi1 h_pi2 h_pi3 h_pi4 h_pi5 h_pi6 h_pi7
   -- cout-only c-lane closure.
   have h_fl7_eq : fl7.val = fl7.val % 2 := (Nat.mod_eq_of_lt h_fl7_lt_2).symm
   set cout := fl7.val with hcout_def
@@ -672,6 +676,9 @@ lemma h_rd_val_compare_slti
     (h_cin5 : cin5.val = fl4.val % 2)
     (h_cin6 : cin6.val = fl5.val % 2)
     (h_cin7 : cin7.val = fl6.val % 2)
+    (h_pi0 : pi0.val ≠ 1) (h_pi1 : pi1.val ≠ 1) (h_pi2 : pi2.val ≠ 1)
+    (h_pi3 : pi3.val ≠ 1) (h_pi4 : pi4.val ≠ 1) (h_pi5 : pi5.val ≠ 1)
+    (h_pi6 : pi6.val ≠ 1)
     (h_pi7 : pi7.val = 1)
     (h_match_clo : m.c_0 r_main = fl7)
     (h_match_chi : m.c_1 r_main = 0)
@@ -703,7 +710,8 @@ lemma h_rd_val_compare_slti
     h_byte_0 h_byte_1 h_byte_2 h_byte_3 h_byte_4 h_byte_5 h_byte_6 h_byte_7
     ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
     hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
-    h_cin0 h_cin1 h_cin2 h_cin3 h_cin4 h_cin5 h_cin6 h_cin7 h_pi7
+    h_cin0 h_cin1 h_cin2 h_cin3 h_cin4 h_cin5 h_cin6 h_cin7
+    h_pi0 h_pi1 h_pi2 h_pi3 h_pi4 h_pi5 h_pi6 h_pi7
     h_match_clo h_match_chi h_lane_rd
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
     h_fl7_lt_2 h_input_r1 h_input_imm

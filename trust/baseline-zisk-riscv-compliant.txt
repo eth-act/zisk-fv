@@ -23,7 +23,7 @@
 #     > trust/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
-# artefacts under `.lake/build/`). Last regenerated: 2026-05-22.
+# artefacts under `.lake/build/`). Last regenerated: 2026-05-23.
 #
 # Total entries: 94
 #

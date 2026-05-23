@@ -688,9 +688,10 @@ private lemma byte_relation_LT
     (h_mult : e.multiplicity = 1)
     (h_op : e.op.val = OP_LT) :
     e.c_byte.val = 0 ∧
-    (e.a_byte.val < e.b_byte.val → e.flags.val % 2 = 1) ∧
-    (e.a_byte.val = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
-    (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 0) ∧
+    (e.pos_ind.val ≠ 1 ∨ (e.a_byte.val &&& 0x80) = (e.b_byte.val &&& 0x80) →
+      (e.a_byte.val < e.b_byte.val → e.flags.val % 2 = 1) ∧
+      (e.a_byte.val = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
+      (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 0)) ∧
     (e.pos_ind.val = 1 →
       (e.a_byte.val &&& 0x80) ≠ (e.b_byte.val &&& 0x80) →
       e.flags.val % 2 = (if (e.a_byte.val &&& 0x80) ≠ 0 then 1 else 0)) := by
@@ -1215,9 +1216,10 @@ private lemma lt_byte_chain
     (a b c cin_cell flags_cell pos_cell : FGL)
     (h : consumer_byte_match_chain OP_LT a b c cin_cell flags_cell pos_cell) :
     c.val = 0 ∧
-    (a.val < b.val → flags_cell.val % 2 = 1) ∧
-    (a.val = b.val → flags_cell.val % 2 = cin_cell.val) ∧
-    (a.val > b.val → flags_cell.val % 2 = 0) ∧
+    (pos_cell.val ≠ 1 ∨ (a.val &&& 0x80) = (b.val &&& 0x80) →
+      (a.val < b.val → flags_cell.val % 2 = 1) ∧
+      (a.val = b.val → flags_cell.val % 2 = cin_cell.val) ∧
+      (a.val > b.val → flags_cell.val % 2 = 0)) ∧
     (pos_cell.val = 1 →
       (a.val &&& 0x80) ≠ (b.val &&& 0x80) →
       flags_cell.val % 2 = (if (a.val &&& 0x80) ≠ 0 then 1 else 0)) := by
@@ -1526,20 +1528,15 @@ private lemma lt_byte7_close
     (h_cin7 : cin7_val = fl6_val % 2)
     (hf6_le : fl6_val % 2 ≤ 1) (hf7_le : fl7_val % 2 ≤ 1)
     (step6_iff : fl6_val % 2 = 1 ↔ Alow < Blow)
-    (h7_lt : a7 < b7 → fl7_val % 2 = 1)
-    (h7_eq : a7 = b7 → fl7_val % 2 = cin7_val)
-    (h7_gt : a7 > b7 → fl7_val % 2 = 0)
+    (h7_chain : (a7 &&& 0x80) = (b7 &&& 0x80) →
+      (a7 < b7 → fl7_val % 2 = 1) ∧
+      (a7 = b7 → fl7_val % 2 = cin7_val) ∧
+      (a7 > b7 → fl7_val % 2 = 0))
     (h7_override : (a7 &&& 0x80) ≠ (b7 &&& 0x80) →
       fl7_val % 2 = (if (a7 &&& 0x80) ≠ 0 then 1 else 0)) :
     (fl7_val % 2 = 1 ↔ signed_lt_64'
       (Alow + a7 * 72057594037927936)
       (Blow + b7 * 72057594037927936)) := by
-  -- LTU step (chain rule) gives the unsigned answer.
-  have step7 := ltu_step cin7_val a7 b7 (fl7_val % 2)
-    Alow Blow 72057594037927936
-    (by norm_num) hAlow_lt hBlow_lt
-    (by rw [h_cin7]; exact hf6_le) hf7_le h7_lt h7_eq h7_gt
-    (by rw [h_cin7]; exact step6_iff)
   -- Goal: fl7 % 2 = 1 ↔ signed_lt_64' (Alow + a7·W) (Blow + b7·W)
   unfold signed_lt_64'
   -- Auxiliary: the Asum/Bsum sign bit is determined by a7 ≥ 128 / b7 ≥ 128.
@@ -1570,6 +1567,12 @@ private lemma lt_byte7_close
   -- Now case-split on a7's sign vs b7's sign.
   by_cases h_sign_eq : (a7 &&& 0x80) = (b7 &&& 0x80)
   · -- Sign bits match → signed = unsigned (override doesn't fire).
+    obtain ⟨h7_lt, h7_eq, h7_gt⟩ := h7_chain h_sign_eq
+    have step7 := ltu_step cin7_val a7 b7 (fl7_val % 2)
+      Alow Blow 72057594037927936
+      (by norm_num) hAlow_lt hBlow_lt
+      (by rw [h_cin7]; exact hf6_le) hf7_le h7_lt h7_eq h7_gt
+      (by rw [h_cin7]; exact step6_iff)
     have h_signs : (a7 ≥ 128 ↔ b7 ≥ 128) := by
       have ha_set := byte_and_0x80_set _ ha7
       have hb_set := byte_and_0x80_set _ hb7
@@ -1671,6 +1674,9 @@ lemma binary_lt_chunks_eq_bv_slt
     (h_cin5 : cin5.val = fl4.val % 2)
     (h_cin6 : cin6.val = fl5.val % 2)
     (h_cin7 : cin7.val = fl6.val % 2)
+    (h_pi0 : pi0.val ≠ 1) (h_pi1 : pi1.val ≠ 1) (h_pi2 : pi2.val ≠ 1)
+    (h_pi3 : pi3.val ≠ 1) (h_pi4 : pi4.val ≠ 1) (h_pi5 : pi5.val ≠ 1)
+    (h_pi6 : pi6.val ≠ 1)
     (h_pi7 : pi7.val = 1) :
     (fl7.val % 2 = 1 ↔ signed_lt_64'
       (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
@@ -1680,14 +1686,21 @@ lemma binary_lt_chunks_eq_bv_slt
         + b4.val * 4294967296 + b5.val * 1099511627776
         + b6.val * 281474976710656 + b7.val * 72057594037927936)) := by
   -- LT byte chain extracts: chain rule (same as LTU) + override at pos_ind = 1.
-  obtain ⟨_hc0, h0_lt, h0_eq, h0_gt, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_0
-  obtain ⟨_hc1, h1_lt, h1_eq, h1_gt, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_1
-  obtain ⟨_hc2, h2_lt, h2_eq, h2_gt, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_2
-  obtain ⟨_hc3, h3_lt, h3_eq, h3_gt, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_3
-  obtain ⟨_hc4, h4_lt, h4_eq, h4_gt, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_4
-  obtain ⟨_hc5, h5_lt, h5_eq, h5_gt, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_5
-  obtain ⟨_hc6, h6_lt, h6_eq, h6_gt, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_6
-  obtain ⟨_hc7, h7_lt, h7_eq, h7_gt, h7_override⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_7
+  obtain ⟨_hc0, h0_chain, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_0
+  obtain ⟨h0_lt, h0_eq, h0_gt⟩ := h0_chain (Or.inl h_pi0)
+  obtain ⟨_hc1, h1_chain, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_1
+  obtain ⟨h1_lt, h1_eq, h1_gt⟩ := h1_chain (Or.inl h_pi1)
+  obtain ⟨_hc2, h2_chain, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_2
+  obtain ⟨h2_lt, h2_eq, h2_gt⟩ := h2_chain (Or.inl h_pi2)
+  obtain ⟨_hc3, h3_chain, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_3
+  obtain ⟨h3_lt, h3_eq, h3_gt⟩ := h3_chain (Or.inl h_pi3)
+  obtain ⟨_hc4, h4_chain, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_4
+  obtain ⟨h4_lt, h4_eq, h4_gt⟩ := h4_chain (Or.inl h_pi4)
+  obtain ⟨_hc5, h5_chain, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_5
+  obtain ⟨h5_lt, h5_eq, h5_gt⟩ := h5_chain (Or.inl h_pi5)
+  obtain ⟨_hc6, h6_chain, _⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_6
+  obtain ⟨h6_lt, h6_eq, h6_gt⟩ := h6_chain (Or.inl h_pi6)
+  obtain ⟨_hc7, h7_chain, h7_override⟩ := lt_byte_chain _ _ _ _ _ _ h_byte_7
   have hf0 : fl0.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
   have hf1 : fl1.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
   have hf2 : fl2.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
@@ -1750,7 +1763,7 @@ lemma binary_lt_chunks_eq_bv_slt
     a7.val b7.val fl6.val cin7.val fl7.val
     (by omega) (by omega) ha7 hb7
     (by rw [h_cin7]) hf6 hf7 step6
-    h7_lt h7_eq h7_gt (h7_override h_pi7)
+    (fun h_sign_eq => h7_chain (Or.inr h_sign_eq)) (h7_override h_pi7)
 
 /-! ## Chain lift: ADDW
 
@@ -2100,4 +2113,3 @@ lemma binary_subw_chunks_eq_bv_sub_w
       B3 (by omega) (by omega) (by omega) hB3_le h_telescope hCneg
 
 end ZiskFv.Airs.Binary
-

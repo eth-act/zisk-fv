@@ -33,7 +33,7 @@ a539a8b93915ab09  ZiskFv/Airs/MemoryBus/MemBridge.lean:627  axiom     main_store
 4d6f891e2ee0e56f  ZiskFv/Airs/MemoryBus/MemBridge.lean:722  axiom     main_store_emission_bundle_subword
 42be701b1c0c0bbf  ZiskFv/Airs/OperationBus/Consolidated.lean:126  axiom     op_bus_permutation_sound
 7fccc882b9a79e6a  ZiskFv/Airs/Tables/BinaryExtensionTable.lean:261  axiom     bin_ext_table_consumer_wf
-4d9e296fb3ead091  ZiskFv/Airs/Tables/BinaryTable.lean:280  axiom     bin_table_consumer_wf
+4d9e296fb3ead091  ZiskFv/Airs/Tables/BinaryTable.lean:275  axiom     bin_table_consumer_wf
 fa200b1ab7404b33  ZiskFv/AirsClean/Completeness.lean:38  axiom     binaryAdd_circuit_completeness
 3f25cdecf241bf62  ZiskFv/AirsClean/Completeness.lean:51  axiom     memAlignByte_circuit_completeness
 ab814329258a5f2c  ZiskFv/AirsClean/Completeness.lean:64  axiom     memAlignReadByte_circuit_completeness

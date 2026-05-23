@@ -140,16 +140,10 @@ def wf_LTU (e : BinaryTableEntry FGL) : Prop :=
     (e.a_byte.val = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
     (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 0)
 
-/-- Less-than signed. Same byte-level chain rule as LTU on every
-    byte. Additionally, on the final byte (`pos_ind.val = 1`), if the
-    high bits (sign bits) of `a_byte` and `b_byte` differ, the chain
-    outcome is overridden: `cout = 1` iff `a` is negative.
-
-    Encoded as: chain rule unconditionally, **plus** a final-byte
-    sign-byte override clause. Both clauses hold simultaneously; in
-    the sign-byte-differing case at the final byte, the chain rule
-    yields the same value as the override (because the sign bit of
-    `a` determines which is unsigned-larger when sign bits differ).
+/-- Less-than signed. Non-final bytes use the same byte-level chain rule
+    as LTU. On the final byte (`pos_ind.val = 1`), same-sign bytes still
+    use the unsigned chain rule, while sign-differing bytes override the
+    chain outcome: `cout = 1` iff `a` is negative.
 
     Spec from `binary_table.pil`'s `case OP_LT` branch (lines 197–213):
       `if (a < b) cout = 1; else if (a == b) cout = cin; else cout = 0;`
@@ -159,10 +153,11 @@ def wf_LTU (e : BinaryTableEntry FGL) : Prop :=
 def wf_LT (e : BinaryTableEntry FGL) : Prop :=
   e.op.val = OP_LT →
     e.c_byte.val = 0 ∧
-    -- Chain rule (same as LTU) — applies regardless of pos_ind.
-    (e.a_byte.val < e.b_byte.val → e.flags.val % 2 = 1) ∧
-    (e.a_byte.val = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
-    (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 0) ∧
+    -- Chain rule (same as LTU) unless the final-byte sign override fires.
+    (e.pos_ind.val ≠ 1 ∨ (e.a_byte.val &&& 0x80) = (e.b_byte.val &&& 0x80) →
+      (e.a_byte.val < e.b_byte.val → e.flags.val % 2 = 1) ∧
+      (e.a_byte.val = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
+      (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 0)) ∧
     -- Final-byte sign-byte override: at pos_ind = 1, when sign bits of
     -- a and b differ, cout = sign-bit of a.
     (e.pos_ind.val = 1 →
