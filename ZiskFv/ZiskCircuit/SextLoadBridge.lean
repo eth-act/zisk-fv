@@ -421,6 +421,70 @@ lemma load_byte_c_packed
     e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
 
+/-- `load_byte_c_packed`, but with BinaryExtension table semantics supplied as
+    explicit per-byte `wf_properties` facts. C7 static-provider routes use this
+    to avoid the legacy `bin_ext_table_consumer_wf` dependency. -/
+lemma load_byte_c_packed_of_wf
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
+    (e1 e2 : MemoryBusEntry FGL)
+    (h_op : (v.op r_binary).val = OP_SEXT_B)
+    (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
+    (hc_lo_sum_lt :
+      (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+      + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+      + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+      + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
+    (hc_hi_sum_lt :
+      (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+      + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+      + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+      + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+    (h_match_clo : m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
+    (h_match_chi : m.c_1 r_main
+        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_a0_match : (v.free_in_a_0 r_binary).val = e1.x0.val)
+    (h_e1_x0 : e1.x0.val < 256) :
+    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
+                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+      = BitVec.signExtend 64 (e1.x0 : BitVec 8) := by
+  have h_packed :=
+    binary_extension_sext_b_chunks_eq_signextend_nat_of_wf v r_binary h_op h_bytes h_wfs
+  rw [h_a0_match] at h_packed
+  have h_byte_sum := c_lift_to_byte_sum m r_main v r_binary e2
+    hc_lo_sum_lt hc_hi_sum_lt h_match_clo h_match_chi h_lane_rd
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+  have h_coe : (e1.x0 : BitVec 8) = BitVec.ofNat 8 e1.x0.val := by
+    apply BitVec.eq_of_toNat_eq
+    rw [ZiskFv.PackedBitVec.fgl_byte_coe_toBV8_toNat h_e1_x0]
+    rw [BitVec.toNat_ofNat]
+    exact (Nat.mod_eq_of_lt (by simpa using h_e1_x0)).symm
+  rw [h_coe]
+  have h_se_toNat := signExtend_8_toNat h_e1_x0
+  have h_target :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (BitVec.signExtend 64 (BitVec.ofNat 8 e1.x0.val)).toNat := by
+    rw [h_se_toNat, h_byte_sum, h_packed]
+  exact ZiskFv.EquivCore.WriteValueProofs.Arith.bv64_of_byte_sum
+    (BitVec.signExtend 64 (BitVec.ofNat 8 e1.x0.val))
+    e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
+
 /-! ## LH bridge -/
 
 /-- **Proven c-packed identity for LH.** -/
@@ -462,6 +526,64 @@ lemma load_half_c_packed
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = BitVec.signExtend 64 ((e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8)) := by
   have h_packed := binary_extension_sext_h_chunks_eq_signextend_nat v r_binary h_op h_bytes
+  rw [h_a0_match, h_a1_match] at h_packed
+  have h_byte_sum := c_lift_to_byte_sum m r_main v r_binary e2
+    hc_lo_sum_lt hc_hi_sum_lt h_match_clo h_match_chi h_lane_rd
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+  have h_se_toNat := signExtend_append16_toNat e1.x1 e1.x0 h_e1_x0 h_e1_x1
+  have h_target :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (BitVec.signExtend 64 ((e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8))).toNat := by
+    rw [h_se_toNat, h_byte_sum, h_packed]
+  exact ZiskFv.EquivCore.WriteValueProofs.Arith.bv64_of_byte_sum
+    (BitVec.signExtend 64 ((e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8)))
+    e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
+
+/-- `load_half_c_packed`, but with BinaryExtension table semantics supplied as
+    explicit per-byte `wf_properties` facts. -/
+lemma load_half_c_packed_of_wf
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
+    (e1 e2 : MemoryBusEntry FGL)
+    (h_op : (v.op r_binary).val = OP_SEXT_H)
+    (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
+    (hc_lo_sum_lt :
+      (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+      + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+      + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+      + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
+    (hc_hi_sum_lt :
+      (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+      + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+      + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+      + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+    (h_match_clo : m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
+    (h_match_chi : m.c_1 r_main
+        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_a0_match : (v.free_in_a_0 r_binary).val = e1.x0.val)
+    (h_a1_match : (v.free_in_a_1 r_binary).val = e1.x1.val)
+    (h_e1_x0 : e1.x0.val < 256) (h_e1_x1 : e1.x1.val < 256) :
+    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
+                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+      = BitVec.signExtend 64 ((e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8)) := by
+  have h_packed :=
+    binary_extension_sext_h_chunks_eq_signextend_nat_of_wf v r_binary h_op h_bytes h_wfs
   rw [h_a0_match, h_a1_match] at h_packed
   have h_byte_sum := c_lift_to_byte_sum m r_main v r_binary e2
     hc_lo_sum_lt hc_hi_sum_lt h_match_clo h_match_chi h_lane_rd
@@ -524,6 +646,74 @@ lemma load_word_c_packed
           ((e1.x3 : BitVec 8) ++ (e1.x2 : BitVec 8)
             ++ (e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8)) := by
   have h_packed := binary_extension_sext_w_chunks_eq_signextend_nat v r_binary h_op h_bytes
+  rw [h_a0_match, h_a1_match, h_a2_match, h_a3_match] at h_packed
+  have h_byte_sum := c_lift_to_byte_sum m r_main v r_binary e2
+    hc_lo_sum_lt hc_hi_sum_lt h_match_clo h_match_chi h_lane_rd
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+  have h_se_toNat :=
+    signExtend_append32_toNat e1.x3 e1.x2 e1.x1 e1.x0 h_e1_x0 h_e1_x1 h_e1_x2 h_e1_x3
+  have h_target :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (BitVec.signExtend 64
+          ((e1.x3 : BitVec 8) ++ (e1.x2 : BitVec 8)
+            ++ (e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8))).toNat := by
+    rw [h_se_toNat, h_byte_sum, h_packed]
+  exact ZiskFv.EquivCore.WriteValueProofs.Arith.bv64_of_byte_sum
+    (BitVec.signExtend 64
+      ((e1.x3 : BitVec 8) ++ (e1.x2 : BitVec 8)
+        ++ (e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8)))
+    e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
+
+/-- `load_word_c_packed`, but with BinaryExtension table semantics supplied as
+    explicit per-byte `wf_properties` facts. -/
+lemma load_word_c_packed_of_wf
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_BinaryExtension FGL FGL) (r_binary : ℕ)
+    (e1 e2 : MemoryBusEntry FGL)
+    (h_op : (v.op r_binary).val = OP_SEXT_W)
+    (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
+    (hc_lo_sum_lt :
+      (v.free_in_c_0 r_binary).val + (v.free_in_c_2 r_binary).val
+      + (v.free_in_c_4 r_binary).val + (v.free_in_c_6 r_binary).val
+      + (v.free_in_c_8 r_binary).val + (v.free_in_c_10 r_binary).val
+      + (v.free_in_c_12 r_binary).val + (v.free_in_c_14 r_binary).val < 4294967296)
+    (hc_hi_sum_lt :
+      (v.free_in_c_1 r_binary).val + (v.free_in_c_3 r_binary).val
+      + (v.free_in_c_5 r_binary).val + (v.free_in_c_7 r_binary).val
+      + (v.free_in_c_9 r_binary).val + (v.free_in_c_11 r_binary).val
+      + (v.free_in_c_13 r_binary).val + (v.free_in_c_15 r_binary).val < 4294967296)
+    (h_match_clo : m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
+          + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
+          + v.free_in_c_8 r_binary + v.free_in_c_10 r_binary
+          + v.free_in_c_12 r_binary + v.free_in_c_14 r_binary)
+    (h_match_chi : m.c_1 r_main
+        = v.free_in_c_1 r_binary + v.free_in_c_3 r_binary
+          + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
+          + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
+          + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_a0_match : (v.free_in_a_0 r_binary).val = e1.x0.val)
+    (h_a1_match : (v.free_in_a_1 r_binary).val = e1.x1.val)
+    (h_a2_match : (v.free_in_a_2 r_binary).val = e1.x2.val)
+    (h_a3_match : (v.free_in_a_3 r_binary).val = e1.x3.val)
+    (h_e1_x0 : e1.x0.val < 256) (h_e1_x1 : e1.x1.val < 256)
+    (h_e1_x2 : e1.x2.val < 256) (h_e1_x3 : e1.x3.val < 256) :
+    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
+                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+      = BitVec.signExtend 64
+          ((e1.x3 : BitVec 8) ++ (e1.x2 : BitVec 8)
+            ++ (e1.x1 : BitVec 8) ++ (e1.x0 : BitVec 8)) := by
+  have h_packed :=
+    binary_extension_sext_w_chunks_eq_signextend_nat_of_wf v r_binary h_op h_bytes h_wfs
   rw [h_a0_match, h_a1_match, h_a2_match, h_a3_match] at h_packed
   have h_byte_sum := c_lift_to_byte_sum m r_main v r_binary e2
     hc_lo_sum_lt hc_hi_sum_lt h_match_clo h_match_chi h_lane_rd
