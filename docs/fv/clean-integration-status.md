@@ -72,6 +72,40 @@ a dep).
 
 ## Active phase
 
+### C7 — terminal-A op-bus + Binary-family ensemble
+
+Status: in progress. `AirsClean/BinaryFamily/Ensemble.lean` now assembles
+the migrated BinaryAdd, Binary, and BinaryExtension Clean components behind
+one finished `OpBusChannel`, with a generic op-bus consumer table. This is
+the provider-side terminal-A skeleton only: it proves the three migrated
+providers can live on one balanced Clean operation-bus path, but it does not
+retire `op_bus_permutation_sound` until the real Main consumer is wired into
+the same ensemble.
+
+BinaryTable and BinaryExtensionTable now both have static provider-side
+Clean `StaticTable` modules:
+`AirsClean/BinaryTable.lean` decodes the `binary_table.pil` fixed-column
+row set (`2^22 + 2^20 + 2^18` rows), and
+`AirsClean/BinaryExtensionTable.lean` decodes the
+`binary_extension_table.pil` row set (`6 * 2^19 + 3 * 2^11` rows). In both
+cases `Spec` is exact decoded-row membership and `contains_iff` is
+definitional, following the large-ROM pattern from `AirsClean/ZRomSpike.lean`.
+
+This is still provider-side membership only. It does not by itself retire
+`bin_table_consumer_wf` or `bin_ext_table_consumer_wf`: load-bearing
+retirement requires the lookup-aware Binary/BinaryExtension consumers and
+these static providers to be composed in the terminal Binary-family
+ensemble, then threaded to the opcode proofs without adding caller promises.
+
+BinaryExtensionTable lookup-channel groundwork now mirrors the BinaryTable
+side: `Channels/BinaryExtensionTable.lean` defines the typed payload/channel,
+`AirsClean/BinaryExtension/Constraints.lean` exposes a separate
+`mainWithBinaryExtensionTable` / `binaryExtensionWithTableElaborated` path
+that pulls the eight per-byte table messages, and
+`AirsClean/BinaryExtension/Bridge.lean` has
+`binary_extension_table_wf_of_lookup_aware_const_soundness`, extracting the
+eight `wf_properties` facts from that lookup-aware path for a concrete row.
+
 ### C8 — Mem
 
 Status: in progress. `AirsClean/Mem` now packages the existing Mem
@@ -87,28 +121,6 @@ stores two 32-bit chunks, while the current memory-bus message carries eight
 byte lanes; wiring that provider side requires an explicit byte-lane witness
 and range/packing proof against the real PIL bus shape. That belongs to the
 memory-family terminal work, not to a hidden C8 promise.
-
-### C7 — terminal-A op-bus + Binary-family ensemble
-
-Status: open. `AirsClean/BinaryFamily/Ensemble.lean` now assembles
-the migrated BinaryAdd, Binary, and BinaryExtension Clean components behind
-one finished `OpBusChannel`, with a generic op-bus consumer table. This is
-the provider-side terminal-A skeleton only: it proves the three migrated
-providers can live on one balanced Clean operation-bus path, but it does not
-retire `op_bus_permutation_sound` until the real Main consumer is wired into
-the same ensemble.
-
-BinaryExtensionTable lookup-channel groundwork now mirrors the BinaryTable
-side: `Channels/BinaryExtensionTable.lean` defines the typed payload/channel,
-`AirsClean/BinaryExtension/Constraints.lean` exposes a separate
-`mainWithBinaryExtensionTable` / `binaryExtensionWithTableElaborated` path
-that pulls the eight per-byte table messages, and
-`AirsClean/BinaryExtension/Bridge.lean` has
-`binary_extension_table_wf_of_lookup_aware_const_soundness`, extracting the
-eight `wf_properties` facts from that lookup-aware path for a concrete row.
-This does not retire `bin_ext_table_consumer_wf` by itself; C7 still has to
-supply the balanced table provider side before those guarantees replace the
-legacy lookup axiom in load-bearing opcode proofs.
 
 ### C6 — Binary
 
