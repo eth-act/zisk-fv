@@ -948,4 +948,58 @@ theorem spec_wf_SUB {t : BinaryTableMessage FGL}
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_wf_SUB i
 
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem rowOfIndex_wf_LTU (i : Fin tableSize) :
+    wf_LTU (BinaryTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  intro h_op
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_high : highByte i.val < 256 := by
+    unfold highByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  simp only at h_op
+  rw [Fin.val_natCast] at h_op
+  unfold opOfIndex at h_op
+  generalize h_block : blockOfIndex i.val = block at h_op
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR, OP_LTU,
+    OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE, OP_SEXT_00, OP_SEXT_FF,
+    OP_MINU, OP_MIN, OP_MAXU, OP_MAX, OP_LT_ABS_NP, OP_LT_ABS_PN] at h_op
+  constructor
+  · simp [cOfIndex, h_block]
+  constructor
+  · intro hlt
+    simp at hlt
+    rw [Nat.mod_eq_of_lt (by omega : lowByte i.val < 18446744069414584321)] at hlt
+    rw [Nat.mod_eq_of_lt (by omega : highByte i.val < 18446744069414584321)] at hlt
+    simp [h_block, flagsOfIndex, coutOfIndex, resultIsAOfIndex, useFirstByteOfIndex,
+      cIsSignedOfIndex, coutLt, hlt]
+  constructor
+  · intro heq
+    simp at heq
+    rw [Nat.mod_eq_of_lt (by omega : lowByte i.val < 18446744069414584321)] at heq
+    rw [Nat.mod_eq_of_lt (by omega : highByte i.val < 18446744069414584321)] at heq
+    simp [h_block, flagsOfIndex, coutOfIndex, resultIsAOfIndex, useFirstByteOfIndex,
+      cIsSignedOfIndex, coutLt, heq]
+    split <;> norm_num
+  · intro hgt
+    simp at hgt
+    rw [Nat.mod_eq_of_lt (by omega : lowByte i.val < 18446744069414584321)] at hgt
+    rw [Nat.mod_eq_of_lt (by omega : highByte i.val < 18446744069414584321)] at hgt
+    simp [h_block, flagsOfIndex, coutOfIndex, resultIsAOfIndex, useFirstByteOfIndex,
+      cIsSignedOfIndex, coutLt]
+    split <;> try omega
+    split <;> omega
+
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem spec_wf_LTU {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    wf_LTU (BinaryTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_wf_LTU i
+
 end ZiskFv.AirsClean.BinaryTable

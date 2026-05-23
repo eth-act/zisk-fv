@@ -136,6 +136,9 @@ remain open.
 `spec_wf_SUB` now proves the SUB byte equation, borrow cases, and non-final
 / final flag clauses from static membership. The remaining BinaryTable
 semantic projections are the comparison clauses (`LTU`, `LT`, and `EQ`).
+`spec_wf_LTU` now proves the unsigned comparison carry/flag chain from exact
+static membership. The remaining BinaryTable semantic projections are `LT`
+and `EQ`.
 
 BinaryExtensionTable lookup-channel groundwork now mirrors the BinaryTable
 side: `Channels/BinaryExtensionTable.lean` defines the typed payload/channel,
