@@ -2,6 +2,7 @@ import ZiskFv.AirsClean.Binary.Circuit
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Channels.OperationBus
+import ZiskFv.Channels.BinaryTable
 
 /-!
 # `Valid_Binary` ↔ `BinaryRow` compatibility
@@ -14,6 +15,54 @@ namespace ZiskFv.AirsClean.Binary
 
 open Goldilocks
 open ZiskFv.Channels.OperationBus
+open ZiskFv.Channels.BinaryTable
+
+@[reducible]
+def constVar (row : BinaryRow FGL) : Var BinaryRow FGL where
+  aBytes := {
+    free_in_a_0 := .const row.aBytes.free_in_a_0
+    free_in_a_1 := .const row.aBytes.free_in_a_1
+    free_in_a_2 := .const row.aBytes.free_in_a_2
+    free_in_a_3 := .const row.aBytes.free_in_a_3
+    free_in_a_4 := .const row.aBytes.free_in_a_4
+    free_in_a_5 := .const row.aBytes.free_in_a_5
+    free_in_a_6 := .const row.aBytes.free_in_a_6
+    free_in_a_7 := .const row.aBytes.free_in_a_7 }
+  bBytes := {
+    free_in_b_0 := .const row.bBytes.free_in_b_0
+    free_in_b_1 := .const row.bBytes.free_in_b_1
+    free_in_b_2 := .const row.bBytes.free_in_b_2
+    free_in_b_3 := .const row.bBytes.free_in_b_3
+    free_in_b_4 := .const row.bBytes.free_in_b_4
+    free_in_b_5 := .const row.bBytes.free_in_b_5
+    free_in_b_6 := .const row.bBytes.free_in_b_6
+    free_in_b_7 := .const row.bBytes.free_in_b_7 }
+  cBytes := {
+    free_in_c_0 := .const row.cBytes.free_in_c_0
+    free_in_c_1 := .const row.cBytes.free_in_c_1
+    free_in_c_2 := .const row.cBytes.free_in_c_2
+    free_in_c_3 := .const row.cBytes.free_in_c_3
+    free_in_c_4 := .const row.cBytes.free_in_c_4
+    free_in_c_5 := .const row.cBytes.free_in_c_5
+    free_in_c_6 := .const row.cBytes.free_in_c_6
+    free_in_c_7 := .const row.cBytes.free_in_c_7 }
+  chain := {
+    carry_0 := .const row.chain.carry_0
+    carry_1 := .const row.chain.carry_1
+    carry_2 := .const row.chain.carry_2
+    carry_3 := .const row.chain.carry_3
+    carry_4 := .const row.chain.carry_4
+    carry_5 := .const row.chain.carry_5
+    carry_6 := .const row.chain.carry_6
+    carry_7 := .const row.chain.carry_7
+    b_op := .const row.chain.b_op
+    b_op_or_sext := .const row.chain.b_op_or_sext }
+  mode := {
+    mode32 := .const row.mode.mode32
+    result_is_a := .const row.mode.result_is_a
+    use_first_byte := .const row.mode.use_first_byte
+    c_is_signed := .const row.mode.c_is_signed
+    mode32_and_c_is_signed := .const row.mode.mode32_and_c_is_signed }
 
 @[reducible]
 def rowAt (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) :
