@@ -1,4 +1,4 @@
-import ZiskFv.AirsClean.Mem.Soundness
+import ZiskFv.AirsClean.Mem.Circuit
 import ZiskFv.Airs.Mem
 
 /-!
@@ -65,7 +65,7 @@ theorem spec_of_valid
     (h_assumptions : Assumptions (rowAt v r))
     (h_constraints : constraints_at v r) :
     Spec (rowAt v r) := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h_constraints
-  exact soundness (rowAt v r) h_assumptions h1 h2 h3 h4 h5 h6 h7 h8 h9
+  exact spec_via_component (rowAt v r) h_assumptions
+    (by simpa only [constraints_at, Spec, rowAt] using h_constraints)
 
 end ZiskFv.AirsClean.Mem

@@ -72,9 +72,25 @@ a dep).
 
 ## Active phase
 
+### C8 — Mem
+
+Status: in progress. `AirsClean/Mem` now packages the existing Mem
+`Row`/`Constraints`/`Spec`/`Soundness` material as a Clean
+`GeneralFormalCircuit`, `Air.Flat.Component`, and minimal ensemble. The
+component covers the nine F-typed per-row Mem constraints and routes
+`spec_of_valid` through `spec_via_component`. Its Clean table assumptions are
+`True` so the ensemble remains constructible; the unused boolean/range
+assumptions stay outside the component trust boundary.
+
+The memory-bus provider path is intentionally not claimed here. The Mem row
+stores two 32-bit chunks, while the current memory-bus message carries eight
+byte lanes; wiring that provider side requires an explicit byte-lane witness
+and range/packing proof against the real PIL bus shape. That belongs to the
+memory-family terminal work, not to a hidden C8 promise.
+
 ### C7 — terminal-A op-bus + Binary-family ensemble
 
-Status: in progress. `AirsClean/BinaryFamily/Ensemble.lean` now assembles
+Status: open. `AirsClean/BinaryFamily/Ensemble.lean` now assembles
 the migrated BinaryAdd, Binary, and BinaryExtension Clean components behind
 one finished `OpBusChannel`, with a generic op-bus consumer table. This is
 the provider-side terminal-A skeleton only: it proves the three migrated

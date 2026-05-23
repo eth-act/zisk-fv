@@ -46,4 +46,11 @@ def main (row : Var MemRow FGL) : Circuit FGL Unit := do
   -- address change without write zeros high value chunk
   assertZero ((row.addr_changes * (1 - row.wr)) * row.value_1)
 
+@[reducible] def memElaborated :
+    ElaboratedCircuit FGL MemRow unit where
+  name := "Mem"
+  main := main
+  localLength _ := 0
+  output _ _ := ()
+
 end ZiskFv.AirsClean.Mem
