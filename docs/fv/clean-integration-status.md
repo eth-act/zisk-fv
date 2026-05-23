@@ -123,6 +123,10 @@ projection:
 projects the decoder's `a_byte`, `b_byte`, `cin`, and `c_byte` bounds over
 the real 19 table blocks; it does not assert any per-op semantic clause or
 retire `bin_table_consumer_wf` yet.
+The first per-op semantic projections are also in place:
+`spec_wf_AND`, `spec_wf_OR`, and `spec_wf_XOR` prove the direct bitwise
+`c_byte` equations and `cout = 0` flag clauses from static membership.
+The comparison/add/sub/sign-extension table clauses remain open.
 
 BinaryExtensionTable lookup-channel groundwork now mirrors the BinaryTable
 side: `Channels/BinaryExtensionTable.lean` defines the typed payload/channel,

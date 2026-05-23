@@ -557,4 +557,122 @@ theorem spec_range_conditions {t : BinaryTableMessage FGL}
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_range_conditions i
 
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem rowOfIndex_wf_AND (i : Fin tableSize) :
+    wf_AND (BinaryTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  intro h_op
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_high : highByte i.val < 256 := by
+    unfold highByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  simp only at h_op
+  rw [Fin.val_natCast] at h_op
+  unfold opOfIndex at h_op
+  generalize h_block : blockOfIndex i.val = block at h_op
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR, OP_LTU,
+    OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE, OP_SEXT_00, OP_SEXT_FF,
+    OP_MINU, OP_MIN, OP_MAXU, OP_MAX, OP_LT_ABS_NP, OP_LT_ABS_PN] at h_op
+  constructor
+  · simp [cOfIndex, h_block]
+    have h_and_p : lowByte i.val &&& highByte i.val < 18446744069414584321 :=
+      lt_of_le_of_lt Nat.and_le_left (by omega)
+    rw [Nat.mod_eq_of_lt h_and_p]
+    rw [Nat.mod_eq_of_lt (by omega : lowByte i.val < 18446744069414584321)]
+    rw [Nat.mod_eq_of_lt (by omega : highByte i.val < 18446744069414584321)]
+  · simp [h_block, flagsOfIndex, coutOfIndex, resultIsAOfIndex, useFirstByteOfIndex,
+      cIsSignedOfIndex]
+
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem spec_wf_AND {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    wf_AND (BinaryTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_wf_AND i
+
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem rowOfIndex_wf_OR (i : Fin tableSize) :
+    wf_OR (BinaryTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  intro h_op
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_high : highByte i.val < 256 := by
+    unfold highByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  simp only at h_op
+  rw [Fin.val_natCast] at h_op
+  unfold opOfIndex at h_op
+  generalize h_block : blockOfIndex i.val = block at h_op
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR, OP_LTU,
+    OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE, OP_SEXT_00, OP_SEXT_FF,
+    OP_MINU, OP_MIN, OP_MAXU, OP_MAX, OP_LT_ABS_NP, OP_LT_ABS_PN] at h_op
+  constructor
+  · simp [cOfIndex, h_block]
+    have h_or : lowByte i.val ||| highByte i.val < 2 ^ 8 :=
+      Nat.or_lt_two_pow (by simpa using h_low) (by simpa using h_high)
+    have h_or_p : lowByte i.val ||| highByte i.val < 18446744069414584321 := by
+      omega
+    rw [Nat.mod_eq_of_lt h_or_p]
+    rw [Nat.mod_eq_of_lt (by omega : lowByte i.val < 18446744069414584321)]
+    rw [Nat.mod_eq_of_lt (by omega : highByte i.val < 18446744069414584321)]
+  · simp [h_block, flagsOfIndex, coutOfIndex, resultIsAOfIndex, useFirstByteOfIndex,
+      cIsSignedOfIndex]
+
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem spec_wf_OR {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    wf_OR (BinaryTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_wf_OR i
+
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem rowOfIndex_wf_XOR (i : Fin tableSize) :
+    wf_XOR (BinaryTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  intro h_op
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_high : highByte i.val < 256 := by
+    unfold highByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  simp only at h_op
+  rw [Fin.val_natCast] at h_op
+  unfold opOfIndex at h_op
+  generalize h_block : blockOfIndex i.val = block at h_op
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR, OP_LTU,
+    OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE, OP_SEXT_00, OP_SEXT_FF,
+    OP_MINU, OP_MIN, OP_MAXU, OP_MAX, OP_LT_ABS_NP, OP_LT_ABS_PN] at h_op
+  constructor
+  · simp [cOfIndex, h_block]
+    have h_xor : lowByte i.val ^^^ highByte i.val < 2 ^ 8 :=
+      Nat.xor_lt_two_pow (by simpa using h_low) (by simpa using h_high)
+    have h_xor_p : lowByte i.val ^^^ highByte i.val < 18446744069414584321 := by
+      omega
+    rw [Nat.mod_eq_of_lt h_xor_p]
+    rw [Nat.mod_eq_of_lt (by omega : lowByte i.val < 18446744069414584321)]
+    rw [Nat.mod_eq_of_lt (by omega : highByte i.val < 18446744069414584321)]
+  · simp [h_block, flagsOfIndex, coutOfIndex, resultIsAOfIndex, useFirstByteOfIndex,
+      cIsSignedOfIndex]
+
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem spec_wf_XOR {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    wf_XOR (BinaryTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_wf_XOR i
+
 end ZiskFv.AirsClean.BinaryTable
