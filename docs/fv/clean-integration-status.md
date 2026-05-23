@@ -74,11 +74,11 @@ a dep).
 
 ### C6 — Binary
 
-Status: in progress. C3/C4-b is closed under the agreed known-defect convention:
+Status: complete. C3/C4-b is closed under the agreed known-defect convention:
 ArithTable trust-shape cleanup is complete, and the confirmed signed-MUL
 circuit defect is visible through `h_known_bugs` / the false
 `h_no_signed_mul_witness_defect` premise. C5 BinaryExtension is complete;
-the active Clean integration phase is Binary.
+the next Clean integration phase is C7 terminal-A.
 
 Initial C6 progress: `AirsClean/Binary` now has a Clean
 `GeneralFormalCircuit`, `Air.Flat.Component`, and minimal op-bus ensemble.
