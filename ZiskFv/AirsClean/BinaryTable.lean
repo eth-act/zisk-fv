@@ -675,4 +675,60 @@ theorem spec_wf_XOR {t : BinaryTableMessage FGL}
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_wf_XOR i
 
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem rowOfIndex_wf_SEXT_00 (i : Fin tableSize) :
+    wf_SEXT_00 (BinaryTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  intro h_op
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  simp only at h_op
+  rw [Fin.val_natCast] at h_op
+  unfold opOfIndex at h_op
+  generalize h_block : blockOfIndex i.val = block at h_op
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR, OP_LTU,
+    OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE, OP_SEXT_00, OP_SEXT_FF,
+    OP_MINU, OP_MIN, OP_MAXU, OP_MAX, OP_LT_ABS_NP, OP_LT_ABS_PN] at h_op
+  constructor
+  · simp [cOfIndex, h_block]
+  · simp [h_block, flagsOfIndex, coutOfIndex, resultIsAOfIndex, useFirstByteOfIndex,
+      cIsSignedOfIndex]
+    split <;> split <;> norm_num
+
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem spec_wf_SEXT_00 {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    wf_SEXT_00 (BinaryTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_wf_SEXT_00 i
+
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem rowOfIndex_wf_SEXT_FF (i : Fin tableSize) :
+    wf_SEXT_FF (BinaryTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  intro h_op
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  simp only at h_op
+  rw [Fin.val_natCast] at h_op
+  unfold opOfIndex at h_op
+  generalize h_block : blockOfIndex i.val = block at h_op
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR, OP_LTU,
+    OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE, OP_SEXT_00, OP_SEXT_FF,
+    OP_MINU, OP_MIN, OP_MAXU, OP_MAX, OP_LT_ABS_NP, OP_LT_ABS_PN] at h_op
+  constructor
+  · simp [cOfIndex, h_block]
+  · simp [h_block, flagsOfIndex, coutOfIndex, resultIsAOfIndex, useFirstByteOfIndex,
+      cIsSignedOfIndex]
+    split <;> split <;> norm_num
+
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem spec_wf_SEXT_FF {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    wf_SEXT_FF (BinaryTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_wf_SEXT_FF i
+
 end ZiskFv.AirsClean.BinaryTable
