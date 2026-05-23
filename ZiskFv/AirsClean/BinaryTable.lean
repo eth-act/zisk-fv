@@ -216,6 +216,15 @@ theorem chooseByte_lt_256 {pickA a b : ℕ} (ha : a < 256) (hb : b < 256) :
   unfold chooseByte
   split <;> assumption
 
+theorem add_mod_highByte (cin a i : ℕ) :
+    (cin + a + i / 256) % 256 = (cin + a + highByte i) % 256 := by
+  unfold highByte
+  omega
+
+theorem even_add_cIsSigned_mod_two (x y : ℕ) :
+    (x + 8 * y) % 2 = x % 2 := by
+  omega
+
 @[reducible]
 def cOfIndex (i : ℕ) : ℕ :=
   let block := blockOfIndex i
@@ -730,5 +739,94 @@ theorem spec_wf_SEXT_FF {t : BinaryTableMessage FGL}
     wf_SEXT_FF (BinaryTableMessage.toEntry t 1) := by
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_wf_SEXT_FF i
+
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem rowOfIndex_wf_ADD (i : Fin tableSize) :
+    wf_ADD (BinaryTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  intro h_op
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_high : highByte i.val < 256 := by
+    unfold highByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_cin : cinOfIndex i.val < 2 := by
+    simp [cinOfIndex]
+    split <;> try exact Nat.mod_lt _ (by norm_num)
+    split <;> try omega
+    split <;> try omega
+    split <;> try omega
+    split <;> try omega
+    split <;> try omega
+    split <;> omega
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  simp only at h_op
+  rw [Fin.val_natCast] at h_op
+  unfold opOfIndex at h_op
+  generalize h_block : blockOfIndex i.val = block at h_op
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR, OP_LTU,
+    OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE, OP_SEXT_00, OP_SEXT_FF,
+    OP_MINU, OP_MIN, OP_MAXU, OP_MAX, OP_LT_ABS_NP, OP_LT_ABS_PN] at h_op
+  constructor
+  · simp [cOfIndex, h_block]
+    rw [add_mod_highByte]
+    have h_cin_eq :
+        cinOfIndex i.val = (if relativeIndex i.val < p2_17 then 0 else 1) := by
+      simp [cinOfIndex, h_block]
+    have h_sum_lt :
+        (cinOfIndex i.val + lowByte i.val + highByte i.val) % 256 <
+            18446744069414584321 := by
+      have h_mod :
+          (cinOfIndex i.val + lowByte i.val + highByte i.val) % 256 < 256 :=
+        Nat.mod_lt _ (by norm_num)
+      omega
+    rw [Nat.mod_eq_of_lt h_sum_lt]
+    rw [h_cin_eq]
+    rw [Nat.mod_eq_of_lt (by omega : lowByte i.val < 18446744069414584321)]
+    rw [Nat.mod_eq_of_lt (by omega : highByte i.val < 18446744069414584321)]
+    split <;> norm_num
+  constructor
+  · intro h_not_last
+    have h_cin_eq :
+        cinOfIndex i.val = (if relativeIndex i.val < p2_17 then 0 else 1) := by
+      simp [cinOfIndex, h_block]
+    by_cases h_pos : posIndOfIndex i.val = 1
+    · exfalso
+      exact h_not_last (by simp [h_pos])
+    · simp [h_block, flagsOfIndex, coutOfIndex, resultIsAOfIndex, useFirstByteOfIndex,
+        cIsSignedOfIndex, h_pos] at *
+      have h_carry_lt :
+          (cinOfIndex i.val + lowByte i.val + highByte i.val) / 256 <
+              18446744069414584321 := by
+        omega
+      have h_carry_two :
+          (cinOfIndex i.val + lowByte i.val + highByte i.val) / 256 < 2 := by
+        omega
+      rw [Nat.mod_eq_of_lt h_carry_lt]
+      rw [Nat.mod_eq_of_lt h_carry_two]
+      rw [Nat.mod_eq_of_lt (by omega : lowByte i.val < 18446744069414584321)]
+      rw [Nat.mod_eq_of_lt (by omega : highByte i.val < 18446744069414584321)]
+      rw [h_cin_eq]
+      split <;> norm_num
+  · intro h_last
+    by_cases h_pos : posIndOfIndex i.val = 1
+    · simp [h_block, flagsOfIndex, coutOfIndex, resultIsAOfIndex, useFirstByteOfIndex,
+        cIsSignedOfIndex, h_pos]
+      split <;> norm_num
+    · exfalso
+      have h_pos_from_last : posIndOfIndex i.val = 1 := by
+        simp [posIndOfIndex, h_block] at h_last ⊢
+        split at h_last <;> omega
+      exact h_pos h_pos_from_last
+
+open ZiskFv.Airs.Tables.BinaryTable in
+theorem spec_wf_ADD {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) :
+    wf_ADD (BinaryTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_wf_ADD i
 
 end ZiskFv.AirsClean.BinaryTable

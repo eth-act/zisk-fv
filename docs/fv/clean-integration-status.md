@@ -129,6 +129,10 @@ The first per-op semantic projections are also in place:
 `spec_wf_SEXT_00` and `spec_wf_SEXT_FF` prove the auxiliary sign-extension
 table clauses from the two fixed SEXT blocks. The comparison and ADD/SUB
 table clauses remain open.
+`spec_wf_ADD` now proves the ADD byte equation and carry-out flag clauses
+from static membership, including the `highByte` modulo-normalization between
+the decoder and the legacy table predicate. The comparison and SUB clauses
+remain open.
 
 BinaryExtensionTable lookup-channel groundwork now mirrors the BinaryTable
 side: `Channels/BinaryExtensionTable.lean` defines the typed payload/channel,
