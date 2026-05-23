@@ -2,6 +2,7 @@ import ZiskFv.AirsClean.BinaryExtension.Circuit
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Channels.OperationBus
+import ZiskFv.Channels.BinaryExtensionTable
 
 /-!
 # `Valid_BinaryExtension` ↔ `BinaryExtensionRow` compatibility
@@ -14,6 +15,7 @@ namespace ZiskFv.AirsClean.BinaryExtension
 
 open Goldilocks
 open ZiskFv.Channels.OperationBus
+open ZiskFv.Channels.BinaryExtensionTable
 
 @[reducible]
 def rowAt (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) (r : ℕ) :
@@ -55,6 +57,136 @@ def rowAt (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) (r : �
     b_0 := v.b_0 r
     b_1 := v.b_1 r
   }
+
+@[reducible]
+def constVar (row : BinaryExtensionRow FGL) : Var BinaryExtensionRow FGL :=
+  { aCols := {
+      free_in_a_0 := .const row.aCols.free_in_a_0
+      free_in_a_1 := .const row.aCols.free_in_a_1
+      free_in_a_2 := .const row.aCols.free_in_a_2
+      free_in_a_3 := .const row.aCols.free_in_a_3
+      free_in_a_4 := .const row.aCols.free_in_a_4
+      free_in_a_5 := .const row.aCols.free_in_a_5
+      free_in_a_6 := .const row.aCols.free_in_a_6
+      free_in_a_7 := .const row.aCols.free_in_a_7 }
+    cColsLo := {
+      free_in_c_0 := .const row.cColsLo.free_in_c_0
+      free_in_c_1 := .const row.cColsLo.free_in_c_1
+      free_in_c_2 := .const row.cColsLo.free_in_c_2
+      free_in_c_3 := .const row.cColsLo.free_in_c_3
+      free_in_c_4 := .const row.cColsLo.free_in_c_4
+      free_in_c_5 := .const row.cColsLo.free_in_c_5
+      free_in_c_6 := .const row.cColsLo.free_in_c_6
+      free_in_c_7 := .const row.cColsLo.free_in_c_7 }
+    cColsHi := {
+      free_in_c_8 := .const row.cColsHi.free_in_c_8
+      free_in_c_9 := .const row.cColsHi.free_in_c_9
+      free_in_c_10 := .const row.cColsHi.free_in_c_10
+      free_in_c_11 := .const row.cColsHi.free_in_c_11
+      free_in_c_12 := .const row.cColsHi.free_in_c_12
+      free_in_c_13 := .const row.cColsHi.free_in_c_13
+      free_in_c_14 := .const row.cColsHi.free_in_c_14
+      free_in_c_15 := .const row.cColsHi.free_in_c_15 }
+    flags := {
+      op := .const row.flags.op
+      free_in_b := .const row.flags.free_in_b
+      op_is_shift := .const row.flags.op_is_shift
+      b_0 := .const row.flags.b_0
+      b_1 := .const row.flags.b_1 } }
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+/-- Constant-row specialization of the lookup-aware BinaryExtensionTable
+    channel path. The eight returned facts are sourced from
+    `mainWithBinaryExtensionTable`'s channel pulls, not from
+    `bin_ext_table_consumer_wf`. This is C7 groundwork: the theorem is local
+    until the balanced BinaryExtensionTable provider side exists. -/
+theorem binary_extension_table_wf_of_lookup_aware_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : BinaryExtensionRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithBinaryExtensionTable (constVar row)).operations offset)) :
+    wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 0
+        a_byte := row.aCols.free_in_a_0
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsLo.free_in_c_0
+        c_hi_byte := row.cColsLo.free_in_c_1
+        op_is_shift := row.flags.op_is_shift } 1)
+  ∧ wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 1
+        a_byte := row.aCols.free_in_a_1
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsLo.free_in_c_2
+        c_hi_byte := row.cColsLo.free_in_c_3
+        op_is_shift := row.flags.op_is_shift } 1)
+  ∧ wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 2
+        a_byte := row.aCols.free_in_a_2
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsLo.free_in_c_4
+        c_hi_byte := row.cColsLo.free_in_c_5
+        op_is_shift := row.flags.op_is_shift } 1)
+  ∧ wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 3
+        a_byte := row.aCols.free_in_a_3
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsLo.free_in_c_6
+        c_hi_byte := row.cColsLo.free_in_c_7
+        op_is_shift := row.flags.op_is_shift } 1)
+  ∧ wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 4
+        a_byte := row.aCols.free_in_a_4
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsHi.free_in_c_8
+        c_hi_byte := row.cColsHi.free_in_c_9
+        op_is_shift := row.flags.op_is_shift } 1)
+  ∧ wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 5
+        a_byte := row.aCols.free_in_a_5
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsHi.free_in_c_10
+        c_hi_byte := row.cColsHi.free_in_c_11
+        op_is_shift := row.flags.op_is_shift } 1)
+  ∧ wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 6
+        a_byte := row.aCols.free_in_a_6
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsHi.free_in_c_12
+        c_hi_byte := row.cColsHi.free_in_c_13
+        op_is_shift := row.flags.op_is_shift } 1)
+  ∧ wf_properties (BinaryExtensionTableMessage.toEntry
+      { op := row.flags.op
+        byte_index := 7
+        a_byte := row.aCols.free_in_a_7
+        shift_amount := row.flags.free_in_b
+        c_lo_byte := row.cColsHi.free_in_c_14
+        c_hi_byte := row.cColsHi.free_in_c_15
+        op_is_shift := row.flags.op_is_shift } 1) := by
+  simp only [mainWithBinaryExtensionTable, main, circuit_norm] at h_holds
+  rcases h_holds with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  exact ⟨ by simpa [BinaryExtensionTableChannel,
+                    BinaryExtensionTableMessage.toEntry] using h0
+        , by simpa [BinaryExtensionTableChannel,
+                    BinaryExtensionTableMessage.toEntry] using h1
+        , by simpa [BinaryExtensionTableChannel,
+                    BinaryExtensionTableMessage.toEntry] using h2
+        , by simpa [BinaryExtensionTableChannel,
+                    BinaryExtensionTableMessage.toEntry] using h3
+        , by simpa [BinaryExtensionTableChannel,
+                    BinaryExtensionTableMessage.toEntry] using h4
+        , by simpa [BinaryExtensionTableChannel,
+                    BinaryExtensionTableMessage.toEntry] using h5
+        , by simpa [BinaryExtensionTableChannel,
+                    BinaryExtensionTableMessage.toEntry] using h6
+        , by simpa [BinaryExtensionTableChannel,
+                    BinaryExtensionTableMessage.toEntry] using h7 ⟩
 
 /-- BinaryExtension has zero F-typed per-row constraints. -/
 def constraints_at

@@ -82,6 +82,18 @@ providers can live on one balanced Clean operation-bus path, but it does not
 retire `op_bus_permutation_sound` until the real Main consumer is wired into
 the same ensemble.
 
+BinaryExtensionTable lookup-channel groundwork now mirrors the BinaryTable
+side: `Channels/BinaryExtensionTable.lean` defines the typed payload/channel,
+`AirsClean/BinaryExtension/Constraints.lean` exposes a separate
+`mainWithBinaryExtensionTable` / `binaryExtensionWithTableElaborated` path
+that pulls the eight per-byte table messages, and
+`AirsClean/BinaryExtension/Bridge.lean` has
+`binary_extension_table_wf_of_lookup_aware_const_soundness`, extracting the
+eight `wf_properties` facts from that lookup-aware path for a concrete row.
+This does not retire `bin_ext_table_consumer_wf` by itself; C7 still has to
+supply the balanced table provider side before those guarantees replace the
+legacy lookup axiom in load-bearing opcode proofs.
+
 ### C6 — Binary
 
 Status: complete. C3/C4-b is closed under the agreed known-defect convention:
