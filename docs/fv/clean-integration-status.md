@@ -150,9 +150,13 @@ It also proves `spec_wf_SEXT_B`, `spec_wf_SEXT_H`, and `spec_wf_SEXT_W` from
 exact static membership. The 64-bit shift rows now have the same
 membership-to-semantics projection: `spec_wf_SLL`, `spec_wf_SRL`, and
 `spec_wf_SRA` prove their shifted lo/hi output equations and
-`op_is_shift = 1` from exact static membership. The remaining
-BinaryExtensionTable projections are the W-mode shift rows
-(`SLL_W`, `SRL_W`, `SRA_W`).
+`op_is_shift = 1` from exact static membership. The W-mode shift rows are
+also projected: `spec_wf_SLL_W`, `spec_wf_SRL_W`, and `spec_wf_SRA_W` prove
+the 32-bit shift contribution and sign-extension split from exact static
+membership. BinaryExtensionTable now has all nine per-op `wf_*` projections
+plus `spec_range_conditions`; C7 still has to compose these provider facts
+with the lookup-aware consumers and rewire load-bearing proofs to retire
+`bin_ext_table_consumer_wf`.
 
 ### C8 — Mem
 
