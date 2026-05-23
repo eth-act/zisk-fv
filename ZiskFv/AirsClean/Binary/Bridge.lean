@@ -1,5 +1,7 @@
-import ZiskFv.AirsClean.Binary.Soundness
+import ZiskFv.AirsClean.Binary.Circuit
 import ZiskFv.Airs.Binary.Binary
+import ZiskFv.Airs.OperationBus.OperationBus
+import ZiskFv.Channels.OperationBus
 
 /-!
 # `Valid_Binary` ↔ `BinaryRow` compatibility
@@ -11,6 +13,7 @@ Post-F1 Bridge: all 20 columns reached via named accessors on
 namespace ZiskFv.AirsClean.Binary
 
 open Goldilocks
+open ZiskFv.Channels.OperationBus
 
 @[reducible]
 def rowAt (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) :
@@ -77,22 +80,73 @@ def constraints_at (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) : Pro
       - (v.mode32 r * (v.c_is_signed r + 512 - v.b_op r) + v.b_op r) = 0
   ∧ v.mode32_and_c_is_signed r - v.mode32 r * v.c_is_signed r = 0
 
+@[reducible]
+def aLoValue (row : BinaryRow FGL) : FGL :=
+  row.aBytes.free_in_a_0 + 256 * row.aBytes.free_in_a_1
+    + 65536 * row.aBytes.free_in_a_2 + 16777216 * row.aBytes.free_in_a_3
+
+@[reducible]
+def aHiValue (row : BinaryRow FGL) : FGL :=
+  row.aBytes.free_in_a_4 + 256 * row.aBytes.free_in_a_5
+    + 65536 * row.aBytes.free_in_a_6 + 16777216 * row.aBytes.free_in_a_7
+
+@[reducible]
+def bLoValue (row : BinaryRow FGL) : FGL :=
+  row.bBytes.free_in_b_0 + 256 * row.bBytes.free_in_b_1
+    + 65536 * row.bBytes.free_in_b_2 + 16777216 * row.bBytes.free_in_b_3
+
+@[reducible]
+def bHiValue (row : BinaryRow FGL) : FGL :=
+  row.bBytes.free_in_b_4 + 256 * row.bBytes.free_in_b_5
+    + 65536 * row.bBytes.free_in_b_6 + 16777216 * row.bBytes.free_in_b_7
+
+@[reducible]
+def cLoValue (row : BinaryRow FGL) : FGL :=
+  row.cBytes.free_in_c_0 + 256 * row.cBytes.free_in_c_1
+    + 65536 * row.cBytes.free_in_c_2 + 16777216 * row.cBytes.free_in_c_3
+    + row.chain.carry_7
+
+@[reducible]
+def cHiValue (row : BinaryRow FGL) : FGL :=
+  row.cBytes.free_in_c_4 + 256 * row.cBytes.free_in_c_5
+    + 65536 * row.cBytes.free_in_c_6 + 16777216 * row.cBytes.free_in_c_7
+
+@[reducible]
+def opBusMessage (row : BinaryRow FGL) : OpBusMessage FGL :=
+  { op := row.chain.b_op + 16 * row.mode.mode32
+    a_lo := aLoValue row
+    a_hi := aHiValue row
+    b_lo := bLoValue row
+    b_hi := bHiValue row
+    c_lo := cLoValue row
+    c_hi := cHiValue row
+    flag := row.chain.carry_7
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
+theorem opBusMessage_toEntry_rowAt_eq_opBus_row
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) :
+    OpBusMessage.toEntry (opBusMessage (rowAt v r)) 1 =
+      ZiskFv.Airs.OperationBus.opBus_row_Binary v r := by
+  rfl
+
 /-- **Bridge theorem.** Converts v1's named-accessor constraint
     hypotheses into the Component's `rowAt`-projected Spec form. -/
 theorem spec_of_valid
     (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ)
-    (h_assumptions : Assumptions (rowAt v r))
+    (_h_assumptions : Assumptions (rowAt v r))
     (h_constraints : constraints_at v r) :
     Spec (rowAt v r) := by
   obtain ⟨h_mode32, h_carry_7, h_result_is_a, h_use_first_byte, h_c_is_signed,
           h_b_op_or_sext, h_m32_cs⟩ := h_constraints
-  refine soundness (rowAt v r) h_assumptions ?_ ?_ ?_ ?_ ?_ ?_ ?_
-  · exact h_mode32
-  · exact h_carry_7
-  · exact h_result_is_a
-  · exact h_use_first_byte
-  · exact h_c_is_signed
-  · exact h_b_op_or_sext
-  · exact h_m32_cs
+  exact spec_via_component (rowAt v r)
+    (by simpa [sub_eq_add_neg] using h_mode32)
+    (by simpa [sub_eq_add_neg] using h_carry_7)
+    (by simpa [sub_eq_add_neg] using h_result_is_a)
+    (by simpa [sub_eq_add_neg] using h_use_first_byte)
+    (by simpa [sub_eq_add_neg] using h_c_is_signed)
+    (by simpa [sub_eq_add_neg] using h_b_op_or_sext)
+    (by simpa [sub_eq_add_neg] using h_m32_cs)
 
 end ZiskFv.AirsClean.Binary

@@ -74,11 +74,23 @@ a dep).
 
 ### C6 — Binary
 
-Status: next. C3/C4-b is closed under the agreed known-defect convention:
+Status: in progress. C3/C4-b is closed under the agreed known-defect convention:
 ArithTable trust-shape cleanup is complete, and the confirmed signed-MUL
 circuit defect is visible through `h_known_bugs` / the false
 `h_no_signed_mul_witness_defect` premise. C5 BinaryExtension is complete;
-the next Clean integration phase is Binary.
+the active Clean integration phase is Binary.
+
+Initial C6 progress: `AirsClean/Binary` now has a Clean
+`GeneralFormalCircuit`, `Air.Flat.Component`, and minimal op-bus ensemble.
+The component covers the seven F-typed Binary constraints and emits the
+Binary operation-bus push. `Bridge.lean` exposes
+`opBusMessage_toEntry_rowAt_eq_opBus_row`, definitionally matching the Clean
+provider payload to the legacy `opBus_row_Binary`, and `spec_of_valid` now
+routes through `spec_via_component`. BinaryTable lookup semantics still
+flow through the existing Binary lookup-soundness axioms until C7. No new
+trust-ledger axiom is added: the mandatory Clean completeness field is
+conditional on the same row `Spec`, so it does not claim honest-prover
+constructibility beyond the already-stated soundness relation.
 
 ### C5 — BinaryExtension
 
