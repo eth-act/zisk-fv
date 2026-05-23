@@ -61,6 +61,17 @@ def blockOfIndex (i : ℕ) : ℕ :=
   if i < 6 * shiftBlockSize then i / shiftBlockSize
   else 6 + (i - 6 * shiftBlockSize) / sextBlockSize
 
+theorem blockOfIndex_lt_9 (i : Fin tableSize) : blockOfIndex i.val < 9 := by
+  have h_i : i.val < tableSize := i.isLt
+  unfold blockOfIndex tableSize shiftBlockSize sextBlockSize at *
+  split
+  · have h_div : i.val / 2 ^ 19 < 6 := Nat.div_lt_of_lt_mul (by omega)
+    omega
+  · have h_tail : i.val - 6 * 2 ^ 19 < 3 * 2 ^ 11 := by omega
+    have h_div : (i.val - 6 * 2 ^ 19) / 2 ^ 11 < 3 :=
+      Nat.div_lt_of_lt_mul (by omega)
+    omega
+
 @[reducible]
 def opOfIndex (i : ℕ) : ℕ := opOfBlock (blockOfIndex i)
 
