@@ -153,6 +153,17 @@ def outOfIndex (i : ℕ) : ℕ :=
 def opIsShiftOfIndex (i : ℕ) : ℕ :=
   if blockOfIndex i < 6 then 1 else 0
 
+theorem opIsShiftOfIndex_eq_one_of_block_lt_6 {i : Fin tableSize}
+    (h_block : blockOfIndex i.val < 6) :
+    (opIsShiftOfIndex i.val : FGL).val = 1 := by
+  simp [opIsShiftOfIndex, h_block]
+
+theorem opIsShiftOfIndex_eq_zero_of_block_ge_6 {i : Fin tableSize}
+    (h_block : 6 ≤ blockOfIndex i.val) :
+    (opIsShiftOfIndex i.val : FGL).val = 0 := by
+  have h_not : ¬ blockOfIndex i.val < 6 := by omega
+  simp [opIsShiftOfIndex, h_not]
+
 /-- Decoded row `i` of the BinaryExtensionTable, as a Clean channel
     payload. -/
 @[reducible]
@@ -165,6 +176,18 @@ def rowOfIndex (i : ℕ) : BinaryExtensionTableMessage FGL :=
     c_lo_byte := out % 2 ^ 32
     c_hi_byte := out / 2 ^ 32
     op_is_shift := opIsShiftOfIndex i }
+
+theorem rowOfIndex_op_is_shift_eq_one_of_block_lt_6 {i : Fin tableSize}
+    (h_block : blockOfIndex i.val < 6) :
+    (rowOfIndex i.val).op_is_shift.val = 1 := by
+  change (opIsShiftOfIndex i.val : FGL).val = 1
+  exact opIsShiftOfIndex_eq_one_of_block_lt_6 (i := i) h_block
+
+theorem rowOfIndex_op_is_shift_eq_zero_of_block_ge_6 {i : Fin tableSize}
+    (h_block : 6 ≤ blockOfIndex i.val) :
+    (rowOfIndex i.val).op_is_shift.val = 0 := by
+  change (opIsShiftOfIndex i.val : FGL).val = 0
+  exact opIsShiftOfIndex_eq_zero_of_block_ge_6 (i := i) h_block
 
 /-- Exact decoded-row membership for the BinaryExtensionTable provider. -/
 def binaryExtensionTable : StaticTable FGL BinaryExtensionTableMessage where

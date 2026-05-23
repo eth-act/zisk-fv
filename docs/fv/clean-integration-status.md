@@ -111,6 +111,10 @@ First membership-to-semantics projection has started on the
 BinaryExtensionTable side:
 `AirsClean/BinaryExtensionTable.lean::spec_range_conditions` derives the
 legacy `range_conditions` clause from static provider membership.
+The same file now also proves decoder scaffolding for per-op projections:
+`blockOfIndex_lt_9` bounds the nine table blocks, and
+`rowOfIndex_op_is_shift_eq_{one,zero}_of_block_*` projects the decoded
+`op_is_shift` flag once the block class is known.
 
 BinaryExtensionTable lookup-channel groundwork now mirrors the BinaryTable
 side: `Channels/BinaryExtensionTable.lean` defines the typed payload/channel,
