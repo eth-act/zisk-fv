@@ -72,6 +72,16 @@ a dep).
 
 ## Active phase
 
+### C7 — terminal-A op-bus + Binary-family ensemble
+
+Status: in progress. `AirsClean/BinaryFamily/Ensemble.lean` now assembles
+the migrated BinaryAdd, Binary, and BinaryExtension Clean components behind
+one finished `OpBusChannel`, with a generic op-bus consumer table. This is
+the provider-side terminal-A skeleton only: it proves the three migrated
+providers can live on one balanced Clean operation-bus path, but it does not
+retire `op_bus_permutation_sound` until the real Main consumer is wired into
+the same ensemble.
+
 ### C6 — Binary
 
 Status: complete. C3/C4-b is closed under the agreed known-defect convention:
