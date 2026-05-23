@@ -147,8 +147,12 @@ eight `wf_properties` facts from that lookup-aware path for a concrete row.
 `c_hi_byte` split explicitly in `Nat` before coercion to `FGL`, avoiding a
 Goldilocks-modulus split for sign-extension outputs above the field modulus.
 It also proves `spec_wf_SEXT_B`, `spec_wf_SEXT_H`, and `spec_wf_SEXT_W` from
-exact static membership. The BinaryExtensionTable shift projections remain
-open.
+exact static membership. The 64-bit shift rows now have the same
+membership-to-semantics projection: `spec_wf_SLL`, `spec_wf_SRL`, and
+`spec_wf_SRA` prove their shifted lo/hi output equations and
+`op_is_shift = 1` from exact static membership. The remaining
+BinaryExtensionTable projections are the W-mode shift rows
+(`SLL_W`, `SRL_W`, `SRA_W`).
 
 ### C8 — Mem
 

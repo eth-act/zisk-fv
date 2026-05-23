@@ -240,6 +240,204 @@ theorem spec_range_conditions {t : BinaryExtensionTableMessage FGL}
   exact rowOfIndex_range_conditions i
 
 open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem rowOfIndex_wf_SLL (i : Fin tableSize) :
+    wf_SLL (BinaryExtensionTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  intro h_op
+  have h_block_lt : blockOfIndex i.val < 9 := blockOfIndex_lt_9 i
+  simp only at h_op
+  rw [Fin.val_natCast] at h_op
+  unfold opOfIndex at h_op
+  generalize h_block : blockOfIndex i.val = block at h_op
+  have h_block_lt' : block < 9 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_SLL, OP_SRL, OP_SRA, OP_SLL_W,
+    OP_SRL_W, OP_SRA_W, OP_SEXT_B, OP_SEXT_H, OP_SEXT_W] at h_op
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_byte : byteIndex i.val < 8 := by
+    unfold byteIndex
+    exact Nat.mod_lt _ (by norm_num)
+  have h_shift : shiftAmount i.val < 256 := by
+    unfold shiftAmount
+    split
+    · exact Nat.mod_lt _ (by norm_num)
+    · norm_num
+  have h_low_mod : lowByte i.val % 18446744069414584321 = lowByte i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_byte_mod : byteIndex i.val % 18446744069414584321 = byteIndex i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_shift_mod : shiftAmount i.val % 18446744069414584321 = shiftAmount i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_shift_val :
+      (if i.val < 6 * shiftBlockSize then ((i.val / sextBlockSize) % 256 : ℕ) else 0 : FGL).val =
+        if i.val < 6 * shiftBlockSize then i.val / sextBlockSize % 256 else 0 := by
+    split
+    · exact Nat.mod_eq_of_lt
+        (lt_trans (Nat.mod_lt _ (by norm_num : 0 < 256))
+          (by norm_num : 256 < 18446744069414584321))
+    · rfl
+  simp [outOfIndex, sllOut, shiftAmount, h_block, h_low_mod, h_byte_mod,
+    h_shift_val, Nat.shiftLeft_eq]
+  constructor
+  · exact lt_trans (Nat.mod_lt _ (by norm_num : 0 < 4294967296))
+      (by norm_num : 4294967296 < 18446744069414584321)
+  · have hmod : lowByte i.val * 256 ^ byteIndex i.val *
+          2 ^ ((if i.val < 6 * shiftBlockSize then i.val / sextBlockSize % 256 else 0) % 64) %
+          18446744073709551616 < 18446744073709551616 :=
+        Nat.mod_lt _ (by norm_num)
+    exact Nat.div_lt_of_lt_mul (by omega)
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem spec_wf_SLL {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    wf_SLL (BinaryExtensionTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_wf_SLL i
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem rowOfIndex_wf_SRL (i : Fin tableSize) :
+    wf_SRL (BinaryExtensionTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  intro h_op
+  have h_block_lt : blockOfIndex i.val < 9 := blockOfIndex_lt_9 i
+  simp only at h_op
+  rw [Fin.val_natCast] at h_op
+  unfold opOfIndex at h_op
+  generalize h_block : blockOfIndex i.val = block at h_op
+  have h_block_lt' : block < 9 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_SLL, OP_SRL, OP_SRA, OP_SLL_W,
+    OP_SRL_W, OP_SRA_W, OP_SEXT_B, OP_SEXT_H, OP_SEXT_W] at h_op
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_byte : byteIndex i.val < 8 := by
+    unfold byteIndex
+    exact Nat.mod_lt _ (by norm_num)
+  have h_shift : shiftAmount i.val < 256 := by
+    unfold shiftAmount
+    split
+    · exact Nat.mod_lt _ (by norm_num)
+    · norm_num
+  have h_low_mod : lowByte i.val % 18446744069414584321 = lowByte i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_byte_mod : byteIndex i.val % 18446744069414584321 = byteIndex i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_shift_mod : shiftAmount i.val % 18446744069414584321 = shiftAmount i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_shift_val :
+      (if i.val < 6 * shiftBlockSize then ((i.val / sextBlockSize) % 256 : ℕ) else 0 : FGL).val =
+        if i.val < 6 * shiftBlockSize then i.val / sextBlockSize % 256 else 0 := by
+    split
+    · exact Nat.mod_eq_of_lt
+        (lt_trans (Nat.mod_lt _ (by norm_num : 0 < 256))
+          (by norm_num : 256 < 18446744069414584321))
+    · rfl
+  simp [outOfIndex, srlOut, shiftAmount, h_block, h_low_mod, h_byte_mod,
+    h_shift_val, Nat.shiftRight_eq_div_pow]
+  have h_pos_lt_p : lowByte i.val * 256 ^ byteIndex i.val < 18446744069414584321 := by
+    have h_low_le : lowByte i.val ≤ 255 := by omega
+    calc
+      lowByte i.val * 256 ^ byteIndex i.val ≤ 255 * 256 ^ byteIndex i.val := by
+        exact Nat.mul_le_mul_right _ h_low_le
+      _ ≤ 255 * 256 ^ 7 := by
+        exact Nat.mul_le_mul_left _ (Nat.pow_le_pow_right (by norm_num) (by omega))
+      _ < 18446744069414584321 := by norm_num
+  constructor
+  · exact lt_trans (Nat.mod_lt _ (by norm_num : 0 < 4294967296))
+      (by norm_num : 4294967296 < 18446744069414584321)
+  · exact lt_of_le_of_lt
+      (le_trans (Nat.div_le_self _ _) (Nat.div_le_self _ _))
+      h_pos_lt_p
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem spec_wf_SRL {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    wf_SRL (BinaryExtensionTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_wf_SRL i
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem rowOfIndex_wf_SRA (i : Fin tableSize) :
+    wf_SRA (BinaryExtensionTableMessage.toEntry (rowOfIndex i.val) 1) := by
+  intro h_op
+  have h_block_lt : blockOfIndex i.val < 9 := blockOfIndex_lt_9 i
+  simp only at h_op
+  rw [Fin.val_natCast] at h_op
+  unfold opOfIndex at h_op
+  generalize h_block : blockOfIndex i.val = block at h_op
+  have h_block_lt' : block < 9 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_SLL, OP_SRL, OP_SRA, OP_SLL_W,
+    OP_SRL_W, OP_SRA_W, OP_SEXT_B, OP_SEXT_H, OP_SEXT_W] at h_op
+  have h_low : lowByte i.val < 256 := by
+    unfold lowByte
+    exact Nat.mod_lt _ (by norm_num)
+  have h_byte : byteIndex i.val < 8 := by
+    unfold byteIndex
+    exact Nat.mod_lt _ (by norm_num)
+  have h_shift : shiftAmount i.val < 256 := by
+    unfold shiftAmount
+    split
+    · exact Nat.mod_lt _ (by norm_num)
+    · norm_num
+  have h_low_mod : lowByte i.val % 18446744069414584321 = lowByte i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_byte_mod : byteIndex i.val % 18446744069414584321 = byteIndex i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_shift_mod : shiftAmount i.val % 18446744069414584321 = shiftAmount i.val := by
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_shift_val :
+      (if i.val < 6 * shiftBlockSize then ((i.val / sextBlockSize) % 256 : ℕ) else 0 : FGL).val =
+        if i.val < 6 * shiftBlockSize then i.val / sextBlockSize % 256 else 0 := by
+    split
+    · exact Nat.mod_eq_of_lt
+        (lt_trans (Nat.mod_lt _ (by norm_num : 0 < 256))
+          (by norm_num : 256 < 18446744069414584321))
+    · rfl
+  simp [outOfIndex, sraOut, shiftAmount, h_block, h_low_mod, h_byte_mod,
+    h_shift_val, Nat.shiftRight_eq_div_pow]
+  have h_pos_lt_p : lowByte i.val * 256 ^ byteIndex i.val < 18446744069414584321 := by
+    have h_low_le : lowByte i.val ≤ 255 := by omega
+    calc
+      lowByte i.val * 256 ^ byteIndex i.val ≤ 255 * 256 ^ byteIndex i.val := by
+        exact Nat.mul_le_mul_right _ h_low_le
+      _ ≤ 255 * 256 ^ 7 := by
+        exact Nat.mul_le_mul_left _ (Nat.pow_le_pow_right (by norm_num) (by omega))
+      _ < 18446744069414584321 := by norm_num
+  constructor
+  · exact lt_trans (Nat.mod_lt _ (by norm_num : 0 < 4294967296))
+      (by norm_num : 4294967296 < 18446744069414584321)
+  · apply Nat.div_lt_of_lt_mul
+    have h_base_le :
+        lowByte i.val * 256 ^ byteIndex i.val /
+            2 ^ ((if i.val < 6 * shiftBlockSize then i.val / sextBlockSize % 256 else 0) % 64)
+          ≤ lowByte i.val * 256 ^ byteIndex i.val :=
+      Nat.div_le_self _ _
+    have h_ext_lt :
+        (if byteIndex i.val = 7 ∧ 128 ≤ lowByte i.val then
+            18446744073709551616 -
+              2 ^ (64 - (if i.val < 6 * shiftBlockSize then i.val / sextBlockSize % 256 else 0) % 64)
+          else 0) < 18446744073709551616 := by
+      split
+      · have hpow_pos :
+            0 < 2 ^ (64 - (if i.val < 6 * shiftBlockSize then i.val / sextBlockSize % 256 else 0) % 64) :=
+          Nat.pow_pos (by norm_num : 0 < 2)
+        omega
+      · norm_num
+    omega
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
+theorem spec_wf_SRA {t : BinaryExtensionTableMessage FGL}
+    (h : binaryExtensionTable.Spec t) :
+    wf_SRA (BinaryExtensionTableMessage.toEntry t 1) := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_wf_SRA i
+
+open ZiskFv.Airs.Tables.BinaryExtensionTable in
 theorem rowOfIndex_wf_SEXT_B (i : Fin tableSize) :
     wf_SEXT_B (BinaryExtensionTableMessage.toEntry (rowOfIndex i.val) 1) := by
   intro h_op
