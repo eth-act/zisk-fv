@@ -139,6 +139,9 @@ semantic projections are the comparison clauses (`LTU`, `LT`, and `EQ`).
 `spec_wf_LTU` now proves the unsigned comparison carry/flag chain from exact
 static membership. The remaining BinaryTable semantic projections are `LT`
 and `EQ`.
+`spec_wf_EQ` now proves the equality-chain polarity rules for non-final and
+final bytes from exact static membership. The remaining BinaryTable semantic
+projection is `LT`.
 
 BinaryExtensionTable lookup-channel groundwork now mirrors the BinaryTable
 side: `Channels/BinaryExtensionTable.lean` defines the typed payload/channel,
