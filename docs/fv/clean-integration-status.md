@@ -196,9 +196,12 @@ carry-link and position pins plus a static SUB final-carry closer.
 `EquivCore/Sub.lean` now has `equiv_SUB_of_wf` and
 `equiv_SUB_of_static_lookup`, and `EquivCore/{Sltu,Sltiu,Slt,Slti}.lean`
 have `_of_wf` theorem variants over the same static-provider chain predicate.
-The compare-family static routes still need their c-lane closer: prove the
-static LTU/LT rows force all c-bytes to zero and emit `carry_7` as the result,
-then thread those facts through the wrappers/dispatchers.
+The compare c-lane closer is proved in `EquivCore/Bridge/Binary.lean`: static
+LTU/LT rows force all c-bytes to zero and emit `carry_7` as the result.
+`EquivCore/Sltu.lean` and `EquivCore/Slt.lean` now expose
+`equiv_SLTU_of_static_lookup` / `equiv_SLT_of_static_lookup`; the remaining
+compare work is to add the analogous SLTIU/SLTI static routes, then thread all
+four through wrappers/dispatchers.
 
 ### C8 — Mem
 

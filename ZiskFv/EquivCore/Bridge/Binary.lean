@@ -813,6 +813,81 @@ lemma carry_7_zero_SUB_of_static_chain
   rw [h_flags] at h_cout_zero
   exact boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
 
+private lemma c_byte_zero_of_chain_wf_LTU
+    {a b c cin flags pos : FGL}
+    (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf
+      ZiskFv.Airs.Tables.BinaryTable.OP_LTU a b c cin flags pos) :
+    c = 0 := by
+  obtain ⟨e, h_wf, h_op, _, _, h_c, _, _, _⟩ := h
+  obtain ⟨_, _, _, _, h_ltu, _⟩ := h_wf
+  have h_zero : e.c_byte.val = 0 := (h_ltu h_op).1
+  rw [h_c] at h_zero
+  apply Fin.ext
+  exact h_zero
+
+private lemma c_byte_zero_of_chain_wf_LT
+    {a b c cin flags pos : FGL}
+    (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf
+      ZiskFv.Airs.Tables.BinaryTable.OP_LT a b c cin flags pos) :
+    c = 0 := by
+  obtain ⟨e, h_wf, h_op, _, _, h_c, _, _, _⟩ := h
+  obtain ⟨_, _, _, _, _, h_lt, _⟩ := h_wf
+  have h_zero : e.c_byte.val = 0 := (h_lt h_op).1
+  rw [h_c] at h_zero
+  apply Fin.ext
+  exact h_zero
+
+/-- Static-provider c-lane closer for LTU rows: the table semantics force
+    all eight c-bytes to zero, so Binary's emitted low lane is exactly
+    `carry_7` and its high lane is zero. -/
+lemma compare_c_lanes_LTU_of_static_chain
+    {m : Valid_Main FGL FGL} {v : Valid_Binary FGL FGL}
+    {r_main r_binary : ℕ}
+    (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
+    (out : BinaryChainStaticOut64 v r_binary ZiskFv.Airs.Tables.BinaryTable.OP_LTU) :
+    m.c_0 r_main = v.carry_7 r_binary ∧ m.c_1 r_main = 0 := by
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_lane_eqs
+  obtain ⟨_, _, _, _, _, _, h_c_lo_m, h_c_hi_m, _, _, _, _⟩ := h_lane_eqs
+  have hc0 := c_byte_zero_of_chain_wf_LTU out.chain_0
+  have hc1 := c_byte_zero_of_chain_wf_LTU out.chain_1
+  have hc2 := c_byte_zero_of_chain_wf_LTU out.chain_2
+  have hc3 := c_byte_zero_of_chain_wf_LTU out.chain_3
+  have hc4 := c_byte_zero_of_chain_wf_LTU out.chain_4
+  have hc5 := c_byte_zero_of_chain_wf_LTU out.chain_5
+  have hc6 := c_byte_zero_of_chain_wf_LTU out.chain_6
+  have hc7 := c_byte_zero_of_chain_wf_LTU out.chain_7
+  constructor
+  · rw [h_c_lo_m, hc0, hc1, hc2, hc3]
+    ring
+  · rw [h_c_hi_m, hc4, hc5, hc6, hc7]
+    ring
+
+/-- Static-provider c-lane closer for LT rows. Same c-byte shape as LTU;
+    the signedness only affects the final carry semantics. -/
+lemma compare_c_lanes_LT_of_static_chain
+    {m : Valid_Main FGL FGL} {v : Valid_Binary FGL FGL}
+    {r_main r_binary : ℕ}
+    (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
+    (out : BinaryChainStaticOut64 v r_binary ZiskFv.Airs.Tables.BinaryTable.OP_LT) :
+    m.c_0 r_main = v.carry_7 r_binary ∧ m.c_1 r_main = 0 := by
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_lane_eqs
+  obtain ⟨_, _, _, _, _, _, h_c_lo_m, h_c_hi_m, _, _, _, _⟩ := h_lane_eqs
+  have hc0 := c_byte_zero_of_chain_wf_LT out.chain_0
+  have hc1 := c_byte_zero_of_chain_wf_LT out.chain_1
+  have hc2 := c_byte_zero_of_chain_wf_LT out.chain_2
+  have hc3 := c_byte_zero_of_chain_wf_LT out.chain_3
+  have hc4 := c_byte_zero_of_chain_wf_LT out.chain_4
+  have hc5 := c_byte_zero_of_chain_wf_LT out.chain_5
+  have hc6 := c_byte_zero_of_chain_wf_LT out.chain_6
+  have hc7 := c_byte_zero_of_chain_wf_LT out.chain_7
+  constructor
+  · rw [h_c_lo_m, hc0, hc1, hc2, hc3]
+    ring
+  · rw [h_c_hi_m, hc4, hc5, hc6, hc7]
+    ring
+
 /-- **Byte-chain discharge for the 3-field family.** Given a row of
     a valid `Binary` AIR plus the mode pin `b_op_or_sext = op_val`,
     derive the 8 per-byte `consumer_byte_match` predicates. Replaces
