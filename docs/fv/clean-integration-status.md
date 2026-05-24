@@ -116,6 +116,12 @@ the balanced counterpart lies on a non-Main table once Main's own
 proof gap is narrow and explicit: derive that Main exclusion without
 normalizing the whole `Table.Spec`, then combine it with the component-list
 lemma to finish the provider-row classification.
+The first piece of that Main exclusion is now local:
+`AirsClean/Main/Circuit.lean::is_external_op_boolean_of_mainWithOpBus_constraints`
+projects the `is_external_op` boolean assertion directly from concrete
+`mainWithOpBus` operations. The remaining adapter is from
+`Table.Constraints` / `component.operations` to that concrete operations
+shape without a heavyweight component unfold.
 
 BinaryTable and BinaryExtensionTable now both have static provider-side
 Clean `StaticTable` modules:

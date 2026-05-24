@@ -67,6 +67,18 @@ theorem component_interactionsWith_opBus :
     Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
     List.map_nil]
 
+/-- Project the `is_external_op` boolean assertion from the concrete
+    `mainWithOpBus` operations without unfolding the whole Component `Spec`.
+
+This is the local Main-side fact C7 needs to prove that Main op-bus
+interactions have only multiplicity `-1` or `0`. -/
+theorem is_external_op_boolean_of_mainWithOpBus_constraints
+    (row : Var MainRow FGL) (offset : ℕ) (env : Environment FGL)
+    (h_holds : Operations.ConstraintsHold env ((mainWithOpBus row).operations offset)) :
+    env (row.is_external_op * (1 - row.is_external_op)) = 0 := by
+  simp only [mainWithOpBus, main, circuit_norm] at h_holds
+  exact h_holds (row.is_external_op * (1 - row.is_external_op)) (Or.inr (Or.inl rfl))
+
 theorem spec_via_component (row : MainRow FGL)
     (_h_assumptions : Assumptions row)
     (h_constraints : Spec row) :
