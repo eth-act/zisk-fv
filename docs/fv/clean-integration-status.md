@@ -111,17 +111,22 @@ The next bridge layer has started:
 `component_mem_binaryFamily_cases` exposes the concrete verifier/Main/
 BinaryAdd/Binary/BinaryExtension component list, and
 `exists_matching_nonMain_component_of_active_main_interaction` proves that
-the balanced counterpart lies on a non-Main table once Main's own
-`is_external_op` multiplicity exclusion is supplied locally. The remaining
-proof gap is narrow and explicit: derive that Main exclusion without
-normalizing the whole `Table.Spec`, then combine it with the component-list
-lemma to finish the provider-row classification.
-The first piece of that Main exclusion is now local:
+the balanced counterpart lies on a non-Main table from `witness.Constraints`
+and `witness.BalancedChannels`, with no caller-supplied Main multiplicity
+premise. The Main exclusion is local:
 `AirsClean/Main/Circuit.lean::is_external_op_boolean_of_mainWithOpBus_constraints`
 projects the `is_external_op` boolean assertion directly from concrete
-`mainWithOpBus` operations. The remaining adapter is from
-`Table.Constraints` / `component.operations` to that concrete operations
-shape without a heavyweight component unfold.
+`mainWithOpBus` operations, and
+`is_external_op_boolean_of_component_constraints` adapts it through Clean's
+`Component.constraintsHold_iff` idiom. `Balance.lean` then proves
+`main_table_opBus_mult_neg_one_or_zero_of_constraints`, excluding nonzero
+non-pull Main rows by the field fact `x * (1 - x) = 0 -> x = 0 or x = 1`.
+The same file now also proves
+`exists_matching_provider_component_of_active_main_interaction`: the
+balanced counterpart must come from BinaryAdd, Binary, or BinaryExtension
+after the empty verifier table and Main are ruled out. The remaining op-bus
+C7 work is to project that provider table/row into the legacy
+`matches_entry` shape and thread it into canonical closures.
 
 BinaryTable and BinaryExtensionTable now both have static provider-side
 Clean `StaticTable` modules:

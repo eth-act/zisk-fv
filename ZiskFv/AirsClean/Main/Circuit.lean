@@ -79,6 +79,21 @@ theorem is_external_op_boolean_of_mainWithOpBus_constraints
   simp only [mainWithOpBus, main, circuit_norm] at h_holds
   exact h_holds (row.is_external_op * (1 - row.is_external_op)) (Or.inr (Or.inl rfl))
 
+/-- Component-level adapter for the Main `is_external_op` boolean assertion.
+
+This is the Clean-flat idiom: first project `component.operations` to the
+per-row `rowOperations` via `Component.constraintsHold_iff`, then unfold only
+the local Main component wrapper. -/
+theorem is_external_op_boolean_of_component_constraints
+    (env : Environment FGL)
+    (h_holds : component.operations.ConstraintsHold env) :
+    env (component.rowInputVar.is_external_op * (1 - component.rowInputVar.is_external_op)) = 0 := by
+  have h_row : component.rowOperations.ConstraintsHold env :=
+    (Component.constraintsHold_iff (component := component) env).mp h_holds
+  exact is_external_op_boolean_of_mainWithOpBus_constraints
+    component.rowInputVar component.rowOffset env (by
+      simpa only [component, circuit, Component.rowOperations] using h_row)
+
 theorem spec_via_component (row : MainRow FGL)
     (_h_assumptions : Assumptions row)
     (h_constraints : Spec row) :
