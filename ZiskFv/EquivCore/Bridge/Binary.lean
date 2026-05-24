@@ -795,6 +795,23 @@ lemma match_clo_chi_AND
   match_clo_chi_logic_core m v r_main r_binary h_match
     (carry_7_zero_AND_pure v r_binary h_op_AND)
 
+/-- Static-lookup route for `h_match_clo`/`h_match_chi` on AND-shape rows. -/
+lemma match_clo_chi_AND_of_static_lookup
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
+    (r_main r_binary offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                             (opBus_row_Binary v r_binary))
+    (h_op_AND : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND) :
+    (m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
+          + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216)
+  ∧ (m.c_1 r_main
+        = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256
+          + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216) :=
+  match_clo_chi_logic_core m v r_main r_binary h_match
+    (carry_7_zero_AND_of_static_lookup v r_binary offset env h_static h_op_AND)
+
 /-- **`h_match_clo`/`h_match_chi` discharge for OR-shape rows.** -/
 lemma match_clo_chi_OR
     (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
@@ -811,6 +828,23 @@ lemma match_clo_chi_OR
   match_clo_chi_logic_core m v r_main r_binary h_match
     (carry_7_zero_OR_pure v r_binary h_op_OR)
 
+/-- Static-lookup route for `h_match_clo`/`h_match_chi` on OR-shape rows. -/
+lemma match_clo_chi_OR_of_static_lookup
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
+    (r_main r_binary offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                             (opBus_row_Binary v r_binary))
+    (h_op_OR : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR) :
+    (m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
+          + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216)
+  ∧ (m.c_1 r_main
+        = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256
+          + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216) :=
+  match_clo_chi_logic_core m v r_main r_binary h_match
+    (carry_7_zero_OR_of_static_lookup v r_binary offset env h_static h_op_OR)
+
 /-- **`h_match_clo`/`h_match_chi` discharge for XOR-shape rows.** -/
 lemma match_clo_chi_XOR
     (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
@@ -826,6 +860,23 @@ lemma match_clo_chi_XOR
           + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216) :=
   match_clo_chi_logic_core m v r_main r_binary h_match
     (carry_7_zero_XOR_pure v r_binary h_op_XOR)
+
+/-- Static-lookup route for `h_match_clo`/`h_match_chi` on XOR-shape rows. -/
+lemma match_clo_chi_XOR_of_static_lookup
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
+    (r_main r_binary offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                             (opBus_row_Binary v r_binary))
+    (h_op_XOR : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR) :
+    (m.c_0 r_main
+        = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
+          + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216)
+  ∧ (m.c_1 r_main
+        = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256
+          + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216) :=
+  match_clo_chi_logic_core m v r_main r_binary h_match
+    (carry_7_zero_XOR_of_static_lookup v r_binary offset env h_static h_op_XOR)
 
 /-! ## ITYPE immediate Main-form → Binary-row 8-byte form bridge
 

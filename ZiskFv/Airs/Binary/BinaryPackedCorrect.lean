@@ -334,6 +334,14 @@ private lemma byte_relation_AND
   obtain ⟨_, h_and, _⟩ := wf
   exact (h_and h_op).1
 
+private lemma byte_relation_AND_of_wf
+    (e : BinaryTableEntry FGL)
+    (wf : wf_properties e)
+    (h_op : e.op.val = OP_AND) :
+    e.c_byte.val = e.a_byte.val &&& e.b_byte.val := by
+  obtain ⟨_, h_and, _⟩ := wf
+  exact (h_and h_op).1
+
 private lemma byte_relation_OR
     (e : BinaryTableEntry FGL)
     (h_mult : e.multiplicity = 1)
@@ -343,12 +351,28 @@ private lemma byte_relation_OR
   obtain ⟨_, _, h_or, _⟩ := wf
   exact (h_or h_op).1
 
+private lemma byte_relation_OR_of_wf
+    (e : BinaryTableEntry FGL)
+    (wf : wf_properties e)
+    (h_op : e.op.val = OP_OR) :
+    e.c_byte.val = e.a_byte.val ||| e.b_byte.val := by
+  obtain ⟨_, _, h_or, _⟩ := wf
+  exact (h_or h_op).1
+
 private lemma byte_relation_XOR
     (e : BinaryTableEntry FGL)
     (h_mult : e.multiplicity = 1)
     (h_op : e.op.val = OP_XOR) :
     e.c_byte.val = e.a_byte.val ^^^ e.b_byte.val := by
   have wf := bin_table_consumer_wf e h_mult
+  obtain ⟨_, _, _, h_xor, _⟩ := wf
+  exact (h_xor h_op).1
+
+private lemma byte_relation_XOR_of_wf
+    (e : BinaryTableEntry FGL)
+    (wf : wf_properties e)
+    (h_op : e.op.val = OP_XOR) :
+    e.c_byte.val = e.a_byte.val ^^^ e.b_byte.val := by
   obtain ⟨_, _, _, h_xor, _⟩ := wf
   exact (h_xor h_op).1
 
