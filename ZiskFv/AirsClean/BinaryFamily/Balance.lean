@@ -32,9 +32,26 @@ theorem opBus_balanced_of_witness
 
 /-- Clean balance gives the first replacement shape for the old op-bus
     permutation axiom: an active Main-side interaction (`mult = -1`) has a
-    same-message counterpart whose multiplicity is not a pull. Later C7
-    lemmas specialize the counterpart to one of the Binary-family provider
-    components using the component interaction-shape lemmas. -/
+    same-message counterpart whose multiplicity is neither a pull nor an
+    inactive zero row. Later C7 lemmas specialize the counterpart to one of
+    the Binary-family provider components using the component
+    interaction-shape lemmas. -/
+theorem exists_matching_nonzero_nonpull_of_active_main_interaction
+    (witness : EnsembleWitness binaryFamilyOpBusEnsemble.ensemble)
+    (h_balanced : witness.BalancedChannels)
+    {mainInteraction : Interaction FGL}
+    (h_mem : mainInteraction ∈ witness.interactionsWith OpBusChannel.toRaw)
+    (h_active : mainInteraction.mult = -1) :
+    ∃ providerInteraction ∈ witness.interactionsWith OpBusChannel.toRaw,
+      providerInteraction.msg = mainInteraction.msg
+        ∧ providerInteraction.mult ≠ -1
+        ∧ providerInteraction.mult ≠ 0 := by
+  exact exists_nonzero_push_of_pull (witness.interactionsWith OpBusChannel.toRaw)
+    (opBus_balanced_of_witness witness h_balanced)
+    mainInteraction h_mem h_active
+
+/-- Compatibility projection for existing C7 callers that only need the
+    older non-pull shape. -/
 theorem exists_matching_nonpull_of_active_main_interaction
     (witness : EnsembleWitness binaryFamilyOpBusEnsemble.ensemble)
     (h_balanced : witness.BalancedChannels)
@@ -44,8 +61,8 @@ theorem exists_matching_nonpull_of_active_main_interaction
     ∃ providerInteraction ∈ witness.interactionsWith OpBusChannel.toRaw,
       providerInteraction.msg = mainInteraction.msg
         ∧ providerInteraction.mult ≠ -1 := by
-  exact exists_push_of_pull (witness.interactionsWith OpBusChannel.toRaw)
-    (opBus_balanced_of_witness witness h_balanced)
-    mainInteraction h_mem h_active
+  obtain ⟨providerInteraction, h_mem_provider, h_msg, h_nonpull, _h_nonzero⟩ :=
+    exists_matching_nonzero_nonpull_of_active_main_interaction witness h_balanced h_mem h_active
+  exact ⟨providerInteraction, h_mem_provider, h_msg, h_nonpull⟩
 
 end ZiskFv.AirsClean.BinaryFamily

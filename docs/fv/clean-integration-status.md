@@ -100,10 +100,13 @@ unfolding each component's full constraint list.
 projects the Binary-family ensemble's `BalancedChannels` hypothesis to the
 concrete `BalancedInteractions (witness.interactionsWith OpBusChannel.toRaw)`
 fact used by the next bridge layer. The same file starts that next layer with
-`exists_matching_nonpull_of_active_main_interaction`, a direct Clean-balance
-replacement shape for the old permutation axiom: an active Main interaction
-has a same-message non-pull counterpart. The remaining work is to specialize
-that counterpart to BinaryAdd/Binary/BinaryExtension provider rows.
+`exists_matching_nonzero_nonpull_of_active_main_interaction`, a direct
+Clean-balance replacement shape for the old permutation axiom: an active Main
+interaction has a same-message counterpart whose multiplicity is neither
+`-1` nor `0`. This uses the Clean fork theorem
+`exists_nonzero_push_of_pull`; the older non-pull theorem remains as a
+compatibility projection. The remaining work is to specialize that
+counterpart to BinaryAdd/Binary/BinaryExtension provider rows.
 
 BinaryTable and BinaryExtensionTable now both have static provider-side
 Clean `StaticTable` modules:

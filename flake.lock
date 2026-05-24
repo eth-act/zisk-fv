@@ -3,18 +3,19 @@
     "clean-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1779314662,
-        "narHash": "sha256-vkmrjWwQBq9QzEaSte50yG+L+Wv5tLOZK7NXqOkW1UA=",
-        "owner": "codygunton",
-        "repo": "clean",
-        "rev": "bade3b25dd1f439358952f8999fca6ce961bb1b1",
-        "type": "github"
+        "lastModified": 1779653704,
+        "narHash": "sha256-0RDayE8GIpYhGzw8fPHBUB3SQji2qmhyOghPC5S70u8=",
+        "ref": "zisk-nonzero-balance",
+        "rev": "b0302b747ece73dd607651c0ca784ae801cbe8be",
+        "revCount": 4051,
+        "type": "git",
+        "url": "ssh://git@github.com/codygunton/clean.git"
       },
       "original": {
-        "owner": "codygunton",
-        "repo": "clean",
-        "rev": "bade3b25dd1f439358952f8999fca6ce961bb1b1",
-        "type": "github"
+        "ref": "zisk-nonzero-balance",
+        "rev": "b0302b747ece73dd607651c0ca784ae801cbe8be",
+        "type": "git",
+        "url": "ssh://git@github.com/codygunton/clean.git"
       }
     },
     "flake-utils": {

@@ -24,6 +24,26 @@ Format per entry:
 
 ---
 
+## Active upstream candidates
+
+### Balanced pull should imply a nonzero same-message non-pull
+
+**Observed:** C7 operation-bus integration needs to turn an active Main
+pull (`mult = -1`) into a real same-message provider interaction, not an
+inactive zero row.
+**Reproduction:** `ZiskFv/AirsClean/BinaryFamily/Balance.lean` consumes
+Clean's `BalancedInteractions` for the Binary-family op-bus ensemble.
+Clean's old `exists_push_of_pull` only concluded `mult ≠ -1`; this was
+too weak for selector-gated rows because `mult = 0` remained possible.
+**Ask:** Upstream the generic `Clean/Air/Balance.lean`
+`exists_nonzero_push_of_pull` theorem: from a balanced interaction list and
+an active pull, produce a same-message interaction with `mult ≠ -1` and
+`mult ≠ 0`.
+**Severity:** blocker for C7 op-bus axiom retirement.
+**Workaround used:** Forked `codygunton/clean:zisk-nonzero-balance`
+at commit `b0302b747ece73dd607651c0ca784ae801cbe8be`, which proves the
+generic theorem and keeps zisk-fv's existing namespace-hygiene patch.
+
 ## Seed entries (from earlier spike work)
 
 These are observations from the prior `clean-transpiler-spike` exploration;
@@ -339,4 +359,3 @@ projects without import-graph surgery).
 import `Constraints.lean` (which transitively pulls Clean's
 `Circuit`). The bridge file then imports Soundness + LeanZKCircuit-
 based `Valid_BinaryAdd` without collision.
-
