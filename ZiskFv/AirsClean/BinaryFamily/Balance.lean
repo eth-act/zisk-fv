@@ -30,4 +30,22 @@ theorem opBus_balanced_of_witness
   simpa [EnsembleWitness.BalancedChannel,
     EnsembleWitness.interactionsWith_allTablesWitness] using h
 
+/-- Clean balance gives the first replacement shape for the old op-bus
+    permutation axiom: an active Main-side interaction (`mult = -1`) has a
+    same-message counterpart whose multiplicity is not a pull. Later C7
+    lemmas specialize the counterpart to one of the Binary-family provider
+    components using the component interaction-shape lemmas. -/
+theorem exists_matching_nonpull_of_active_main_interaction
+    (witness : EnsembleWitness binaryFamilyOpBusEnsemble.ensemble)
+    (h_balanced : witness.BalancedChannels)
+    {mainInteraction : Interaction FGL}
+    (h_mem : mainInteraction ∈ witness.interactionsWith OpBusChannel.toRaw)
+    (h_active : mainInteraction.mult = -1) :
+    ∃ providerInteraction ∈ witness.interactionsWith OpBusChannel.toRaw,
+      providerInteraction.msg = mainInteraction.msg
+        ∧ providerInteraction.mult ≠ -1 := by
+  exact exists_push_of_pull (witness.interactionsWith OpBusChannel.toRaw)
+    (opBus_balanced_of_witness witness h_balanced)
+    mainInteraction h_mem h_active
+
 end ZiskFv.AirsClean.BinaryFamily

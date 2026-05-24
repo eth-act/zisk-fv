@@ -99,7 +99,11 @@ unfolding each component's full constraint list.
 `AirsClean/BinaryFamily/Balance.lean::opBus_balanced_of_witness` now also
 projects the Binary-family ensemble's `BalancedChannels` hypothesis to the
 concrete `BalancedInteractions (witness.interactionsWith OpBusChannel.toRaw)`
-fact used by the next bridge layer.
+fact used by the next bridge layer. The same file starts that next layer with
+`exists_matching_nonpull_of_active_main_interaction`, a direct Clean-balance
+replacement shape for the old permutation axiom: an active Main interaction
+has a same-message non-pull counterpart. The remaining work is to specialize
+that counterpart to BinaryAdd/Binary/BinaryExtension provider rows.
 
 BinaryTable and BinaryExtensionTable now both have static provider-side
 Clean `StaticTable` modules:
