@@ -48,6 +48,88 @@ theorem verifierTable_interactionsWith_opBus_nil :
     Ensemble.verifierTable_interactionsWith, Ensemble.verifierOperations,
     GeneralFormalCircuit.empty, circuit_norm]
 
+/-- If a table's operation-bus abstract interactions are a singleton, any
+    concrete table-level interaction on that channel is that singleton
+    evaluated at some row. -/
+theorem exists_row_eval_of_singleton_interactionsWith
+    {table : Table FGL} {abstractInteraction : AbstractInteraction FGL}
+    (h_singleton :
+      table.component.operations.interactionsWith OpBusChannel.toRaw =
+        [abstractInteraction])
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction = abstractInteraction.eval (table.environment row) := by
+  simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
+    h_singleton] at h_mem
+  exact h_mem
+
+/-- Row extraction for a Main operation-bus interaction. -/
+theorem exists_main_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_main : table.component = ZiskFv.AirsClean.Main.component)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+        ((OpBusChannel.emitted
+          (-ZiskFv.AirsClean.Main.component.rowInputVar.is_external_op)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            ZiskFv.AirsClean.Main.component.rowInputVar)).toRaw).eval
+          (table.environment row) := by
+  apply exists_row_eval_of_singleton_interactionsWith
+  · simpa [h_main] using ZiskFv.AirsClean.Main.component_interactionsWith_opBus
+  · exact h_mem
+
+/-- Row extraction for a BinaryAdd operation-bus provider interaction. -/
+theorem exists_binaryAdd_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.BinaryAdd.component)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+        ((OpBusChannel.pushed
+          (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+            ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)).toRaw).eval
+          (table.environment row) := by
+  apply exists_row_eval_of_singleton_interactionsWith
+  · simpa [h_component] using ZiskFv.AirsClean.BinaryAdd.component_interactionsWith_opBus
+  · exact h_mem
+
+/-- Row extraction for a Binary operation-bus provider interaction. -/
+theorem exists_binary_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.Binary.component)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+        ((OpBusChannel.pushed
+          (ZiskFv.AirsClean.Binary.opBusMessageExpr
+            ZiskFv.AirsClean.Binary.component.rowInputVar)).toRaw).eval
+          (table.environment row) := by
+  apply exists_row_eval_of_singleton_interactionsWith
+  · simpa [h_component] using ZiskFv.AirsClean.Binary.component_interactionsWith_opBus
+  · exact h_mem
+
+/-- Row extraction for a BinaryExtension operation-bus provider interaction. -/
+theorem exists_binaryExtension_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.BinaryExtension.component)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+        ((OpBusChannel.pushed
+          (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+            ZiskFv.AirsClean.BinaryExtension.component.rowInputVar)).toRaw).eval
+          (table.environment row) := by
+  apply exists_row_eval_of_singleton_interactionsWith
+  · simpa [h_component] using
+      ZiskFv.AirsClean.BinaryExtension.component_interactionsWith_opBus
+  · exact h_mem
+
 /-- Project the Binary-family ensemble's `BalancedChannels` hypothesis to
     the concrete operation-bus interaction list. -/
 theorem opBus_balanced_of_witness

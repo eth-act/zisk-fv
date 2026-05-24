@@ -132,4 +132,33 @@ instance OpBusChannel : Channel FGL OpBusMessage where
   name := "OperationBus"
   Guarantees _msg _data := True
 
+/-- Equal evaluated Clean op-bus message arrays give equal legacy
+    `OperationBusEntry` payloads when both sides are viewed with
+    multiplicity `1`.
+
+This is the small message-level bridge used by the Clean balance path: balance
+proves equality of raw channel message arrays, while legacy opcode proofs
+consume `matches_entry` over `OperationBusEntry` records. -/
+theorem matches_entry_of_eval_msg_eq
+    {mainMsg providerMsg : OpBusMessage (Expression FGL)}
+    {mainMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    (h_msg :
+      (((OpBusChannel.pushed providerMsg).toRaw).eval providerEnv).msg =
+        (((OpBusChannel.emitted mainMult mainMsg).toRaw).eval mainEnv).msg) :
+    ZiskFv.Airs.OperationBus.matches_entry
+      (OpBusMessage.toEntry (eval mainEnv mainMsg) 1)
+      (OpBusMessage.toEntry (eval providerEnv providerMsg) 1) := by
+  have h_vec :
+      Vector.map (Expression.eval providerEnv) (toElements providerMsg) =
+        Vector.map (Expression.eval mainEnv) (toElements mainMsg) := by
+    apply Vector.toArray_injective
+    simpa [ChannelInteraction.toRaw, AbstractInteraction.eval] using h_msg
+  have h_eval : eval providerEnv providerMsg = eval mainEnv mainMsg := by
+    have h_from := congrArg
+      (fun xs => (fromElements xs : OpBusMessage FGL)) h_vec
+    simpa [ProvableType.fromElements_eval_toElements] using h_from
+  rw [h_eval]
+  simp [ZiskFv.Airs.OperationBus.matches_entry]
+
 end ZiskFv.Channels.OperationBus

@@ -128,6 +128,19 @@ after the empty verifier table and Main are ruled out. The remaining op-bus
 C7 work is to project that provider table/row into the legacy
 `matches_entry` shape and thread it into canonical closures.
 
+Provider-row projection groundwork is now explicit. `Balance.lean` has a
+generic singleton-channel row extractor,
+`exists_row_eval_of_singleton_interactionsWith`, plus Main/BinaryAdd/Binary/
+BinaryExtension specializations that turn a concrete table-level op-bus
+interaction into the corresponding exposed Clean interaction evaluated at
+some table row. At the channel level,
+`Channels/OperationBus.lean::matches_entry_of_eval_msg_eq` converts equality
+of evaluated raw Clean op-bus message arrays into legacy
+`OperationBus.matches_entry` for multiplicity `1` on both entries. The next
+step is the provider-specific adapter from these arbitrary Clean table rows
+back to the legacy `Valid_*` row witnesses used by the canonical theorem
+stack.
+
 BinaryTable and BinaryExtensionTable now both have static provider-side
 Clean `StaticTable` modules:
 `AirsClean/BinaryTable.lean` decodes the `binary_table.pil` fixed-column
