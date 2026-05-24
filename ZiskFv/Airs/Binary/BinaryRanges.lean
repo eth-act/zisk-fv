@@ -96,6 +96,12 @@ theorem binary_columns_in_range (v : Valid_Binary FGL FGL) (r : ℕ) :
 
 /-! ## Specialized accessors -/
 
+lemma bin_b_op_lt_128 (v : Valid_Binary FGL FGL) (r : ℕ) : (v.b_op r).val < 128 :=
+  range_bus_sound v (fun v r => v.b_op r) 7 trivial r
+
+lemma bin_mode32_lt_2 (v : Valid_Binary FGL FGL) (r : ℕ) : (v.mode32 r).val < 2 :=
+  range_bus_sound v (fun v r => v.mode32 r) 1 trivial r
+
 lemma bin_a_0_lt_256 (v : Valid_Binary FGL FGL) (r : ℕ) : (v.free_in_a_0 r).val < 256 :=
   (binary_columns_in_range v r).1
 lemma bin_a_1_lt_256 (v : Valid_Binary FGL FGL) (r : ℕ) : (v.free_in_a_1 r).val < 256 :=

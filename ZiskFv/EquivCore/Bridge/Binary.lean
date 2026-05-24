@@ -671,6 +671,33 @@ private lemma b_op_or_sext_val_eq_of_mode32_zero
   rw [h_bop_or]
   exact h_b_op
 
+/-- A Binary op-bus emission below `0x10` can only be a 64-bit row:
+    `mode32 = 0` and `b_op` is the emitted opcode. This is the local
+    row-shape derivation used by static chain routes; it consumes only the
+    emitted-op equality plus the declared Binary column ranges. -/
+lemma chain_row_shape_of_emit_op_lt_16
+    (v : Valid_Binary FGL FGL) (r op_val : ℕ)
+    (h_op_lt : op_val < 16)
+    (h_emit : v.b_op r + 16 * v.mode32 r = (op_val : FGL)) :
+    v.mode32 r = 0 ∧ (v.b_op r).val = op_val := by
+  have h_bop_lt : (v.b_op r).val < 128 :=
+    ZiskFv.Airs.Binary.bin_b_op_lt_128 v r
+  have h_mode32_lt : (v.mode32 r).val < 2 :=
+    ZiskFv.Airs.Binary.bin_mode32_lt_2 v r
+  have hval : (v.b_op r).val + 16 * (v.mode32 r).val = op_val := by
+    have hv := congrArg Fin.val h_emit
+    rw [Fin.val_add, Fin.val_mul, Fin.val_natCast] at hv
+    have hsmall :
+        (v.b_op r).val + 16 * (v.mode32 r).val < GL_prime := by omega
+    have hmulsmall : 16 * (v.mode32 r).val < GL_prime := by omega
+    have hopsmall : op_val < GL_prime := by omega
+    simp [Nat.mod_eq_of_lt hsmall, Nat.mod_eq_of_lt hmulsmall,
+      Nat.mod_eq_of_lt (by omega : 16 < GL_prime),
+      Nat.mod_eq_of_lt hopsmall] at hv
+    exact hv
+  have h_mode32_val : (v.mode32 r).val = 0 := by omega
+  exact ⟨Fin.ext h_mode32_val, by omega⟩
+
 /-- Static BinaryTable route for the 64-bit chain family. The table
     provider supplies `wf_properties`; the caller still supplies the row's
     64-bit mode/op pins. Those pins are not consequences of the table wf

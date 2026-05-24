@@ -81,16 +81,12 @@ def OpEnvelope.exec_eq_rtype_binary
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   | _ => True
 
-/-- Shared C7 static BinaryTable lookup obligation for RTYPE Binary arms.
-    Bitwise rows need static lookup + Binary core facts. Chain rows also
-    expose the remaining 64-bit row-shape pin explicitly. -/
+/-- Shared C7 static BinaryTable lookup obligation for RTYPE Binary arms. -/
 def OpEnvelope.rtype_binary_logic_static_lookup_soundness
     : OpEnvelope state m r_main → Prop
   | .sub _ _ _ _ v _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
         ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
-          ∧ v.mode32 r = 0
-          ∧ (v.b_op r).val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB
   | .and _ _ _ _ v _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
         ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
@@ -103,13 +99,9 @@ def OpEnvelope.rtype_binary_logic_static_lookup_soundness
   | .slt _ _ _ _ v _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
         ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
-          ∧ v.mode32 r = 0
-          ∧ (v.b_op r).val = ZiskFv.Airs.Tables.BinaryTable.OP_LT
   | .sltu _ _ _ _ v _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
         ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
-          ∧ v.mode32 r = 0
-          ∧ (v.b_op r).val = ZiskFv.Airs.Tables.BinaryTable.OP_LTU
   | _ => True
 
 /-- Partial v2 dispatcher for RTYPE+Binary arms. -/

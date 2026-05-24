@@ -129,10 +129,7 @@ theorem equiv_SLTIU_of_static_lookup
     (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
-    (h_binary_chain_shape : ∀ r,
-      ZiskFv.Airs.Binary.core_every_row v r
-      ∧ v.mode32 r = 0
-      ∧ (v.b_op r).val = ZiskFv.Airs.Tables.BinaryTable.OP_LTU)
+    (h_binary_core : ∀ r, ZiskFv.Airs.Binary.core_every_row v r)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)
     (h_sltiu_subset : itype_imm_subset_holds_main m r_main sltiu_input.imm)
@@ -152,7 +149,12 @@ theorem equiv_SLTIU_of_static_lookup
   have h_op_disj := binary_op_disj_of_eq m r_main 0x06 h_main_op_sltiu (by tauto)
   obtain ⟨r_binary, h_match⟩ :=
     op_bus_perm_sound_Binary m v r_main h_main_active h_op_disj
-  obtain ⟨h_core, h_mode32_zero, h_b_op⟩ := h_binary_chain_shape r_binary
+  have h_emit_op := binary_h_emit_op_of_matches_entry (n := 0x06) h_match h_main_op_sltiu
+  have h_core := h_binary_core r_binary
+  obtain ⟨h_mode32_zero, h_b_op⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_row_shape_of_emit_op_lt_16
+      v r_binary ZiskFv.Airs.Tables.BinaryTable.OP_LTU (by norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_LTU])
+      (by simpa [ZiskFv.Airs.Tables.BinaryTable.OP_LTU] using h_emit_op)
   obtain ⟨h_m32, _, _, _, _, _, _, _, _⟩ :=
     transpile_SLTIU m r_main (regidx_to_fin r1) (regidx_to_fin rd)
       (m.b_0 r_main) (m.b_1 r_main)

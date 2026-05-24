@@ -17,11 +17,11 @@ fa99203f44f899fd  ZiskFv/Airs/Arith/Ranges.lean:647  axiom     arith_div_nb_eq_m
 8113c5562ed67ef8  ZiskFv/Airs/Arith/Ranges.lean:800  axiom     arith_div_remainder_bound_signed_w
 4795fba538119f8e  ZiskFv/Airs/Arith/Ranges.lean:1172  axiom     arith_mul_na_eq_msb_of_a
 e5e831f6110f53e0  ZiskFv/Airs/Arith/Ranges.lean:1199  axiom     arith_mul_nb_eq_msb_of_b
-1551d121ae09668b  ZiskFv/Airs/Binary/BinaryRanges.lean:176  axiom     binary_per_byte_lookup_witness
-8782452d5f9a0774  ZiskFv/Airs/Binary/BinaryRanges.lean:305  axiom     binary_b_op_or_sext_eq_op_general
-4f3fd6ea6ee39393  ZiskFv/Airs/Binary/BinaryRanges.lean:432  axiom     binary_consumer_byte_match_chain_pin
-f44f05cf9d736e28  ZiskFv/Airs/Binary/BinaryRanges.lean:576  axiom     binary_w_sext_choice_pin
-d96debfe468fadd0  ZiskFv/Airs/Binary/BinaryRanges.lean:602  axiom     binary_w_mode_carry_7_zero
+1551d121ae09668b  ZiskFv/Airs/Binary/BinaryRanges.lean:182  axiom     binary_per_byte_lookup_witness
+8782452d5f9a0774  ZiskFv/Airs/Binary/BinaryRanges.lean:311  axiom     binary_b_op_or_sext_eq_op_general
+4f3fd6ea6ee39393  ZiskFv/Airs/Binary/BinaryRanges.lean:438  axiom     binary_consumer_byte_match_chain_pin
+f44f05cf9d736e28  ZiskFv/Airs/Binary/BinaryRanges.lean:582  axiom     binary_w_sext_choice_pin
+d96debfe468fadd0  ZiskFv/Airs/Binary/BinaryRanges.lean:608  axiom     binary_w_mode_carry_7_zero
 8f6646dc64606633  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:135  axiom     memalign_load_perm_sound
 79a78b883c3fb199  ZiskFv/Airs/MemoryBus/MemAlignBridge.lean:168  axiom     mem_align_rom_subdoubleword_load_value_1_zero
 0540200a584861c7  ZiskFv/Airs/MemoryBus/MemBridge.lean:161  axiom     lookup_consumer_matches_provider_load

@@ -161,9 +161,11 @@ theorem zisk_riscv_compliant_program_bus_binary_extension_of_static_lookup
     theorem.
 
     This extends `zisk_riscv_compliant_program_bus_binary_extension_of_static_lookup`
-    with the bitwise BinaryTable static route for AND/ANDI/OR/ORI/XOR/XORI.
-    The canonical global theorem remains unchanged until the terminal ensemble
-    supplies these shared witnesses internally. -/
+    with BinaryTable static routes for AND/ANDI/OR/ORI/XOR/XORI and the
+    64-bit chain arms SUB/SLT/SLTU/SLTI/SLTIU. The chain arms derive
+    `mode32 = 0` and the concrete `b_op` from the selected Binary row's
+    op-bus emission plus Binary column ranges, so the shared premise is only
+    static lookup plus Binary core constraints. -/
 theorem zisk_riscv_compliant_program_bus_binary_family_of_static_lookup
     (env : OpEnvelope state m r_main)
     (h_known_bugs : Defects.NoKnownDefect env)

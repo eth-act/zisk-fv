@@ -199,16 +199,14 @@ have `_of_wf` theorem variants over the same static-provider chain predicate.
 The compare c-lane closer is proved in `EquivCore/Bridge/Binary.lean`: static
 LTU/LT rows force all c-bytes to zero and emit `carry_7` as the result.
 `EquivCore/{Sltu,Slt,Sltiu,Slti}.lean` now expose
-`equiv_*_of_static_lookup` routes. These core routes intentionally keep the
-64-bit row-shape pins (`mode32 = 0`, `b_op = OP_LT/LTU`) explicit; the
-Compliance wrappers for SUB/SLTU/SLT/SLTIU/SLTI now expose matching
-`_of_static_lookup` routes with an explicit `h_binary_chain_shape` premise
-instead of reusing the old chain-pin axiom. The RTYPE and ITYPE dispatchers
-now thread those five static routes through the same noncanonical C7 surface
-as the bitwise Binary routes. Their static-lookup obligations require
-`StaticLookupSoundness`, Binary core facts, and the explicit 64-bit row-shape
-premise for the selected chain opcode; this keeps the remaining pin visible
-instead of laundering it back into the old chain-pin axiom.
+`equiv_*_of_static_lookup` routes. The core routes still take the concrete
+64-bit row-shape pins, but the Compliance wrappers now derive those pins from
+the selected Binary row's op-bus emission plus derived `b_op < 128` and
+`mode32 < 2` range facts. The RTYPE and ITYPE dispatchers thread those five
+static routes through the same noncanonical C7 surface as the bitwise Binary
+routes; their BinaryTable obligation has now shrunk to
+`StaticLookupSoundness` plus Binary core facts, with no explicit
+`h_binary_chain_shape` premise and no reuse of the old chain-pin axiom.
 
 ### C8 — Mem
 

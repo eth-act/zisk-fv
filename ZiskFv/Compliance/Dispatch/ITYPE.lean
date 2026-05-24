@@ -69,8 +69,7 @@ def OpEnvelope.exec_eq_itype_binary
   | _ => True
 
 /-- Shared C7 static BinaryTable lookup obligation for ITYPE Binary arms.
-    Bitwise rows need static lookup + Binary core facts. Compare rows also
-    expose the remaining 64-bit row-shape pin explicitly. -/
+    All covered arms need static lookup + Binary core facts. -/
 def OpEnvelope.itype_binary_logic_static_lookup_soundness
     : OpEnvelope state m r_main → Prop
   | .andi _ _ _ _ v _ _ _ _ _ =>
@@ -85,13 +84,9 @@ def OpEnvelope.itype_binary_logic_static_lookup_soundness
   | .slti _ _ _ _ v _ _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
         ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
-          ∧ v.mode32 r = 0
-          ∧ (v.b_op r).val = ZiskFv.Airs.Tables.BinaryTable.OP_LT
   | .sltiu _ _ _ _ v _ _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
         ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
-          ∧ v.mode32 r = 0
-          ∧ (v.b_op r).val = ZiskFv.Airs.Tables.BinaryTable.OP_LTU
   | _ => True
 
 theorem zisk_riscv_compliant_program_bus_itype_binary
