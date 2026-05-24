@@ -96,6 +96,10 @@ participants. Main, BinaryAdd, Binary, and BinaryExtension each name their
 `exposedChannels`, and prove a `component_interactionsWith_opBus` lemma.
 This is the hook the balance-to-`matches_entry` proof should use instead of
 unfolding each component's full constraint list.
+`AirsClean/BinaryFamily/Balance.lean::opBus_balanced_of_witness` now also
+projects the Binary-family ensemble's `BalancedChannels` hypothesis to the
+concrete `BalancedInteractions (witness.interactionsWith OpBusChannel.toRaw)`
+fact used by the next bridge layer.
 
 BinaryTable and BinaryExtensionTable now both have static provider-side
 Clean `StaticTable` modules:
