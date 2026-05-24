@@ -186,6 +186,18 @@ static routes. The canonical theorem still uses the old route until the C7
 terminal ensemble supplies `StaticLookupSoundness` and Binary core facts
 internally rather than as noncanonical theorem parameters.
 
+The 64-bit Binary chain route has now reached the same lower proof layers for
+SUB/SLTU/SLTIU/SLT/SLTI. `BinaryPackedCorrect.lean` has
+`consumer_byte_match_chain_wf` lifts for `OP_SUB`, `OP_LTU`, and `OP_LT`;
+`WriteValueProofs/Arith.lean` and `WriteValueProofs/BinaryCompare.lean`
+have `_of_wf` rd-value closures; and `EquivCore/Bridge/Binary.lean`
+packages the faithful static lookup shape for 64-bit chain rows, including
+carry-link and position pins plus a static SUB final-carry closer. This is
+not yet threaded into the opcode cores: the existing canonical SUB/compare
+theorems still take the old `consumer_byte_match_chain` parameters, so the
+next C7 step is to factor their shared endgame around the new `_of_wf`
+write-value lemmas instead of delegating back through the old chain theorem.
+
 ### C8 — Mem
 
 Status: in progress. `AirsClean/Mem` now packages the existing Mem

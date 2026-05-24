@@ -959,6 +959,17 @@ def consumer_byte_match_chain
     e.a_byte = a ∧ e.b_byte = b ∧ e.c_byte = c ∧
     e.cin = cin ∧ e.flags = flags ∧ e.pos_ind = pos_ind
 
+/-- Static-provider form of `consumer_byte_match_chain`: the table row is
+    already known to satisfy `wf_properties`, so chain proofs can avoid
+    `bin_table_consumer_wf` while still exposing the same byte/carry slots. -/
+def consumer_byte_match_chain_wf
+    (op_val : ℕ) (a b c cin flags pos_ind : FGL) : Prop :=
+  ∃ e : BinaryTableEntry FGL,
+    wf_properties e ∧
+    e.op.val = op_val ∧
+    e.a_byte = a ∧ e.b_byte = b ∧ e.c_byte = c ∧
+    e.cin = cin ∧ e.flags = flags ∧ e.pos_ind = pos_ind
+
 /-! ### LTU byte-relation extractor -/
 
 /-- LTU byte relation. Given the chain match at `op = OP_LTU`,
@@ -974,6 +985,17 @@ private lemma byte_relation_LTU
     (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 0) := by
   have wf := bin_table_consumer_wf e h_mult
   obtain ⟨_, _, _, _, h_ltu, _⟩ := wf
+  exact h_ltu h_op
+
+private lemma byte_relation_LTU_of_wf
+    (e : BinaryTableEntry FGL)
+    (h_wf : wf_properties e)
+    (h_op : e.op.val = OP_LTU) :
+    e.c_byte.val = 0 ∧
+    (e.a_byte.val < e.b_byte.val → e.flags.val % 2 = 1) ∧
+    (e.a_byte.val = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
+    (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 0) := by
+  obtain ⟨_, _, _, _, h_ltu, _⟩ := h_wf
   exact h_ltu h_op
 
 /-- LT byte relation. Same as LTU plus the final-byte sign-byte
@@ -994,6 +1016,21 @@ private lemma byte_relation_LT
   obtain ⟨_, _, _, _, _, h_lt, _⟩ := wf
   exact h_lt h_op
 
+private lemma byte_relation_LT_of_wf
+    (e : BinaryTableEntry FGL)
+    (h_wf : wf_properties e)
+    (h_op : e.op.val = OP_LT) :
+    e.c_byte.val = 0 ∧
+    (e.pos_ind.val ≠ 1 ∨ (e.a_byte.val &&& 0x80) = (e.b_byte.val &&& 0x80) →
+      (e.a_byte.val < e.b_byte.val → e.flags.val % 2 = 1) ∧
+      (e.a_byte.val = e.b_byte.val → e.flags.val % 2 = e.cin.val) ∧
+      (e.a_byte.val > e.b_byte.val → e.flags.val % 2 = 0)) ∧
+    (e.pos_ind.val = 1 →
+      (e.a_byte.val &&& 0x80) ≠ (e.b_byte.val &&& 0x80) →
+      e.flags.val % 2 = (if (e.a_byte.val &&& 0x80) ≠ 0 then 1 else 0)) := by
+  obtain ⟨_, _, _, _, _, h_lt, _⟩ := h_wf
+  exact h_lt h_op
+
 /-- SUB byte relation. Carry-flip (borrow) byte equation from
     `wf_SUB`. -/
 private lemma byte_relation_SUB
@@ -1010,6 +1047,21 @@ private lemma byte_relation_SUB
     (e.pos_ind.val = 1 → e.flags.val % 2 = 0) := by
   have wf := bin_table_consumer_wf e h_mult
   obtain ⟨_, _, _, _, _, _, _, _, h_sub, _⟩ := wf
+  exact h_sub h_op
+
+private lemma byte_relation_SUB_of_wf
+    (e : BinaryTableEntry FGL)
+    (h_wf : wf_properties e)
+    (h_op : e.op.val = OP_SUB) :
+    (e.a_byte.val ≥ e.cin.val + e.b_byte.val →
+      e.c_byte.val = e.a_byte.val - e.cin.val - e.b_byte.val) ∧
+    (e.a_byte.val < e.cin.val + e.b_byte.val →
+      e.c_byte.val = 256 + e.a_byte.val - e.cin.val - e.b_byte.val) ∧
+    (e.pos_ind.val ≠ 1 →
+      (e.a_byte.val ≥ e.cin.val + e.b_byte.val → e.flags.val % 2 = 0) ∧
+      (e.a_byte.val < e.cin.val + e.b_byte.val → e.flags.val % 2 = 1)) ∧
+    (e.pos_ind.val = 1 → e.flags.val % 2 = 0) := by
+  obtain ⟨_, _, _, _, _, _, _, _, h_sub, _⟩ := h_wf
   exact h_sub h_op
 
 /-- SEXT_00 byte relation: `c = 0` and `cout = cin`. -/
@@ -1045,6 +1097,89 @@ private lemma byte_relation_ADD
   have wf := bin_table_consumer_wf e h_mult
   obtain ⟨_, _, _, _, _, _, _, h_add, _⟩ := wf
   exact h_add h_op
+
+
+/-! ### Static-provider chain byte helpers -/
+
+lemma sub_byte_uniform_eq_of_wf
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain_wf OP_SUB a b c cin_cell flags_cell pos_cell)
+    (ha : a.val < 256) (hb : b.val < 256)
+    (h_cin : cin_cell.val < 2) :
+    ∃ B : ℕ, B ≤ 1 ∧
+      a.val + 256 * B = c.val + cin_cell.val + b.val := by
+  obtain ⟨e, h_wf, h_op, h_a, h_b, h_c, h_cin_eq, _, _⟩ := h
+  have hrel := byte_relation_SUB_of_wf e h_wf h_op
+  -- Substitute the row cells into hrel's a/b/c/cin slots.
+  rw [h_a, h_b, h_c, h_cin_eq] at hrel
+  obtain ⟨h_case0, h_case1, _, _⟩ := hrel
+  -- Case split on the borrow.
+  by_cases h_borrow : a.val ≥ cin_cell.val + b.val
+  · refine ⟨0, by omega, ?_⟩
+    have := h_case0 h_borrow
+    -- this : c.val = a.val - cin_cell.val - b.val
+    omega
+  · push_neg at h_borrow
+    refine ⟨1, by omega, ?_⟩
+    have := h_case1 h_borrow
+    -- this : c.val = 256 + a.val - cin_cell.val - b.val
+    omega
+
+/-- Per-byte SUB equation that **also** asserts that for non-final
+    bytes, the borrow `B` matches `flags_cell.val % 2`. -/
+
+lemma sub_byte_nonfinal_eq_of_wf
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain_wf OP_SUB a b c cin_cell flags_cell pos_cell)
+    (ha : a.val < 256) (hb : b.val < 256)
+    (h_cin : cin_cell.val < 2)
+    (h_pos : pos_cell.val ≠ 1) :
+    a.val + 256 * (flags_cell.val % 2) = c.val + cin_cell.val + b.val ∧
+    flags_cell.val % 2 ≤ 1 := by
+  obtain ⟨e, h_wf, h_op, h_a, h_b, h_c, h_cin_eq, h_flags, h_pos_eq⟩ := h
+  have hrel := byte_relation_SUB_of_wf e h_wf h_op
+  rw [h_a, h_b, h_c, h_cin_eq, h_flags, h_pos_eq] at hrel
+  obtain ⟨h_case0, h_case1, h_nonfinal, _⟩ := hrel
+  obtain ⟨h_nf0, h_nf1⟩ := h_nonfinal h_pos
+  have hflags_le : flags_cell.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  refine ⟨?_, hflags_le⟩
+  by_cases h_borrow : a.val ≥ cin_cell.val + b.val
+  · have h_c_eq := h_case0 h_borrow
+    have h_flags_eq := h_nf0 h_borrow
+    omega
+  · push_neg at h_borrow
+    have h_c_eq := h_case1 h_borrow
+    have h_flags_eq := h_nf1 h_borrow
+    omega
+
+private lemma ltu_byte_chain_of_wf
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain_wf OP_LTU a b c cin_cell flags_cell pos_cell) :
+    c.val = 0 ∧
+    (a.val < b.val → flags_cell.val % 2 = 1) ∧
+    (a.val = b.val → flags_cell.val % 2 = cin_cell.val) ∧
+    (a.val > b.val → flags_cell.val % 2 = 0) := by
+  obtain ⟨e, h_wf, h_op, h_a, h_b, h_c, h_cin_eq, h_flags, _⟩ := h
+  have hrel := byte_relation_LTU_of_wf e h_wf h_op
+  rw [h_a, h_b, h_c, h_cin_eq, h_flags] at hrel
+  exact hrel
+
+private lemma lt_byte_chain_of_wf
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain_wf OP_LT a b c cin_cell flags_cell pos_cell) :
+    c.val = 0 ∧
+    (pos_cell.val ≠ 1 ∨ (a.val &&& 0x80) = (b.val &&& 0x80) →
+      (a.val < b.val → flags_cell.val % 2 = 1) ∧
+      (a.val = b.val → flags_cell.val % 2 = cin_cell.val) ∧
+      (a.val > b.val → flags_cell.val % 2 = 0)) ∧
+    (pos_cell.val = 1 →
+      (a.val &&& 0x80) ≠ (b.val &&& 0x80) →
+      flags_cell.val % 2 = (if (a.val &&& 0x80) ≠ 0 then 1 else 0)) := by
+  obtain ⟨e, h_wf, h_op, h_a, h_b, h_c, h_cin_eq, h_flags, h_pos⟩ := h
+  have hrel := byte_relation_LT_of_wf e h_wf h_op
+  rw [h_a, h_b, h_c, h_cin_eq, h_flags, h_pos] at hrel
+  exact hrel
+
 
 /-! ## Chain lifts (SUB / LTU / LT / ADDW)
 
@@ -1679,6 +1814,141 @@ lemma binary_sub_chunks_eq_bv_sub
   -- Apply sub_close_modular with N = 18446744073709551616, X = Bsum, Y = Csum, A = Asum, B = B7
   exact sub_close_modular Asum Bsum Csum 18446744073709551616 B7 hB7_le hB_lt' hC_lt' h_combined
 
+lemma binary_sub_chunks_eq_bv_sub_of_wf
+    (a0 a1 a2 a3 a4 a5 a6 a7
+     b0 b1 b2 b3 b4 b5 b6 b7
+     c0 c1 c2 c3 c4 c5 c6 c7
+     cin0 cin1 cin2 cin3 cin4 cin5 cin6 cin7
+     fl0 fl1 fl2 fl3 fl4 fl5 fl6 fl7
+     pi0 pi1 pi2 pi3 pi4 pi5 pi6 pi7 : FGL)
+    (h_byte_0 : consumer_byte_match_chain_wf OP_SUB a0 b0 c0 cin0 fl0 pi0)
+    (h_byte_1 : consumer_byte_match_chain_wf OP_SUB a1 b1 c1 cin1 fl1 pi1)
+    (h_byte_2 : consumer_byte_match_chain_wf OP_SUB a2 b2 c2 cin2 fl2 pi2)
+    (h_byte_3 : consumer_byte_match_chain_wf OP_SUB a3 b3 c3 cin3 fl3 pi3)
+    (h_byte_4 : consumer_byte_match_chain_wf OP_SUB a4 b4 c4 cin4 fl4 pi4)
+    (h_byte_5 : consumer_byte_match_chain_wf OP_SUB a5 b5 c5 cin5 fl5 pi5)
+    (h_byte_6 : consumer_byte_match_chain_wf OP_SUB a6 b6 c6 cin6 fl6 pi6)
+    (h_byte_7 : consumer_byte_match_chain_wf OP_SUB a7 b7 c7 cin7 fl7 pi7)
+    (ha0 : a0.val < 256) (ha1 : a1.val < 256) (ha2 : a2.val < 256) (ha3 : a3.val < 256)
+    (ha4 : a4.val < 256) (ha5 : a5.val < 256) (ha6 : a6.val < 256) (ha7 : a7.val < 256)
+    (hb0 : b0.val < 256) (hb1 : b1.val < 256) (hb2 : b2.val < 256) (hb3 : b3.val < 256)
+    (hb4 : b4.val < 256) (hb5 : b5.val < 256) (hb6 : b6.val < 256) (hb7 : b7.val < 256)
+    (hc0 : c0.val < 256) (hc1 : c1.val < 256) (hc2 : c2.val < 256) (hc3 : c3.val < 256)
+    (hc4 : c4.val < 256) (hc5 : c5.val < 256) (hc6 : c6.val < 256) (hc7 : c7.val < 256)
+    (h_cin0 : cin0.val = 0)
+    (h_cin1 : cin1.val = fl0.val % 2)
+    (h_cin2 : cin2.val = fl1.val % 2)
+    (h_cin3 : cin3.val = fl2.val % 2)
+    (h_cin4 : cin4.val = fl3.val % 2)
+    (h_cin5 : cin5.val = fl4.val % 2)
+    (h_cin6 : cin6.val = fl5.val % 2)
+    (h_cin7 : cin7.val = fl6.val % 2)
+    (h_pi0 : pi0.val ≠ 1) (h_pi1 : pi1.val ≠ 1) (h_pi2 : pi2.val ≠ 1)
+    (h_pi3 : pi3.val ≠ 1) (h_pi4 : pi4.val ≠ 1) (h_pi5 : pi5.val ≠ 1)
+    (h_pi6 : pi6.val ≠ 1)
+    (_h_pi7 : pi7.val = 1) :
+    BitVec.ofNat 64
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+        + a4.val * 4294967296 + a5.val * 1099511627776
+        + a6.val * 281474976710656 + a7.val * 72057594037927936)
+    -
+    BitVec.ofNat 64
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+        + b4.val * 4294967296 + b5.val * 1099511627776
+        + b6.val * 281474976710656 + b7.val * 72057594037927936)
+    =
+    BitVec.ofNat 64
+      (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+        + c4.val * 4294967296 + c5.val * 1099511627776
+        + c6.val * 281474976710656 + c7.val * 72057594037927936) := by
+  -- All cin values are in {0,1} from the chain links.
+  have h_cin0_lt : cin0.val < 2 := by omega
+  have h_cin1_lt : cin1.val < 2 := by
+    have : fl0.val % 2 < 2 := Nat.mod_lt _ (by norm_num)
+    omega
+  have h_cin2_lt : cin2.val < 2 := by
+    have : fl1.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin3_lt : cin3.val < 2 := by
+    have : fl2.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin4_lt : cin4.val < 2 := by
+    have : fl3.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin5_lt : cin5.val < 2 := by
+    have : fl4.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin6_lt : cin6.val < 2 := by
+    have : fl5.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin7_lt : cin7.val < 2 := by
+    have : fl6.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  -- Per-byte uniform equations for non-final bytes (0..6) — borrow = flags % 2.
+  obtain ⟨he0, hB0_le⟩ := sub_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_0 ha0 hb0 h_cin0_lt h_pi0
+  obtain ⟨he1, hB1_le⟩ := sub_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_1 ha1 hb1 h_cin1_lt h_pi1
+  obtain ⟨he2, hB2_le⟩ := sub_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_2 ha2 hb2 h_cin2_lt h_pi2
+  obtain ⟨he3, hB3_le⟩ := sub_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_3 ha3 hb3 h_cin3_lt h_pi3
+  obtain ⟨he4, hB4_le⟩ := sub_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_4 ha4 hb4 h_cin4_lt h_pi4
+  obtain ⟨he5, hB5_le⟩ := sub_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_5 ha5 hb5 h_cin5_lt h_pi5
+  obtain ⟨he6, hB6_le⟩ := sub_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_6 ha6 hb6 h_cin6_lt h_pi6
+  -- Final byte: structural borrow only.
+  obtain ⟨B7, hB7_le, he7⟩ := sub_byte_uniform_eq_of_wf _ _ _ _ _ _ h_byte_7 ha7 hb7 h_cin7_lt
+  -- Substitute cin links so each byte equation matches the telescope shape.
+  -- LO half: cin0 = 0, cin1 = fl0%2, cin2 = fl1%2, cin3 = fl2%2.
+  rw [h_cin0] at he0
+  rw [h_cin1] at he1
+  rw [h_cin2] at he2
+  rw [h_cin3] at he3
+  rw [h_cin4] at he4
+  rw [h_cin5] at he5
+  rw [h_cin6] at he6
+  rw [h_cin7] at he7
+  -- LO 4-byte telescope.
+  have h_lo := sub_telescope_4byte
+    a0.val a1.val a2.val a3.val
+    b0.val b1.val b2.val b3.val
+    c0.val c1.val c2.val c3.val
+    0 (fl0.val % 2) (fl1.val % 2) (fl2.val % 2) (fl3.val % 2)
+    he0 he1 he2 he3
+  -- HI 4-byte telescope (init_cin = fl3.val % 2).
+  have h_hi := sub_telescope_4byte
+    a4.val a5.val a6.val a7.val
+    b4.val b5.val b6.val b7.val
+    c4.val c5.val c6.val c7.val
+    (fl3.val % 2) (fl4.val % 2) (fl5.val % 2) (fl6.val % 2) B7
+    he4 he5 he6 he7
+  -- Combine LO + HI.
+  have h_combined := sub_telescope_8byte
+    a0.val a1.val a2.val a3.val a4.val a5.val a6.val a7.val
+    b0.val b1.val b2.val b3.val b4.val b5.val b6.val b7.val
+    c0.val c1.val c2.val c3.val c4.val c5.val c6.val c7.val
+    (fl3.val % 2) B7 h_lo h_hi
+  -- Convert to BitVec identity.
+  set Asum := a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+                + a4.val * 4294967296 + a5.val * 1099511627776
+                + a6.val * 281474976710656 + a7.val * 72057594037927936 with hAsum
+  set Bsum := b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+                + b4.val * 4294967296 + b5.val * 1099511627776
+                + b6.val * 281474976710656 + b7.val * 72057594037927936 with hBsum
+  set Csum := c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+                + c4.val * 4294967296 + c5.val * 1099511627776
+                + c6.val * 281474976710656 + c7.val * 72057594037927936 with hCsum
+  -- h_combined : Asum + 18446744073709551616 * B7 = Bsum + Csum
+  have hA_lt : Asum < 2 ^ 64 := by
+    rw [hAsum]; exact byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
+  have hB_lt : Bsum < 2 ^ 64 := by
+    rw [hBsum]; exact byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
+  have hC_lt : Csum < 2 ^ 64 := by
+    rw [hCsum]; exact byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
+  have h2_64_eq : (2 : ℕ) ^ 64 = 18446744073709551616 := by norm_num
+  have hA_lt' : Asum < 18446744073709551616 := h2_64_eq ▸ hA_lt
+  have hB_lt' : Bsum < 18446744073709551616 := h2_64_eq ▸ hB_lt
+  have hC_lt' : Csum < 18446744073709551616 := h2_64_eq ▸ hC_lt
+  -- BitVec.sub goal: Asum - Bsum mod 2^64 = Csum (as BitVec).
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt hA_lt, Nat.mod_eq_of_lt hB_lt, Nat.mod_eq_of_lt hC_lt]
+  show (2 ^ 64 - Bsum + Asum) % 2 ^ 64 = Csum
+  rw [h2_64_eq]
+  -- Apply sub_close_modular with N = 18446744073709551616, X = Bsum, Y = Csum, A = Asum, B = B7
+  exact sub_close_modular Asum Bsum Csum 18446744073709551616 B7 hB7_le hB_lt' hC_lt' h_combined
+
+
 /-! ## Chain lift: LTU
 
 64-bit unsigned less-than via the byte chain. Output is `flags_7 % 2`,
@@ -1795,6 +2065,116 @@ lemma binary_ltu_chunks_eq_bv_ult
     (by rw [h_cin7]; exact hf6) hf7 h7_lt h7_eq h7_gt
     (by rw [h_cin7]; exact step6)
   exact step7
+
+lemma binary_ltu_chunks_eq_bv_ult_of_wf
+    (a0 a1 a2 a3 a4 a5 a6 a7
+     b0 b1 b2 b3 b4 b5 b6 b7
+     c0 c1 c2 c3 c4 c5 c6 c7
+     cin0 cin1 cin2 cin3 cin4 cin5 cin6 cin7
+     fl0 fl1 fl2 fl3 fl4 fl5 fl6 fl7
+     pi0 pi1 pi2 pi3 pi4 pi5 pi6 pi7 : FGL)
+    (h_byte_0 : consumer_byte_match_chain_wf OP_LTU a0 b0 c0 cin0 fl0 pi0)
+    (h_byte_1 : consumer_byte_match_chain_wf OP_LTU a1 b1 c1 cin1 fl1 pi1)
+    (h_byte_2 : consumer_byte_match_chain_wf OP_LTU a2 b2 c2 cin2 fl2 pi2)
+    (h_byte_3 : consumer_byte_match_chain_wf OP_LTU a3 b3 c3 cin3 fl3 pi3)
+    (h_byte_4 : consumer_byte_match_chain_wf OP_LTU a4 b4 c4 cin4 fl4 pi4)
+    (h_byte_5 : consumer_byte_match_chain_wf OP_LTU a5 b5 c5 cin5 fl5 pi5)
+    (h_byte_6 : consumer_byte_match_chain_wf OP_LTU a6 b6 c6 cin6 fl6 pi6)
+    (h_byte_7 : consumer_byte_match_chain_wf OP_LTU a7 b7 c7 cin7 fl7 pi7)
+    (ha0 : a0.val < 256) (ha1 : a1.val < 256) (ha2 : a2.val < 256) (ha3 : a3.val < 256)
+    (ha4 : a4.val < 256) (ha5 : a5.val < 256) (ha6 : a6.val < 256) (_ha7 : a7.val < 256)
+    (hb0 : b0.val < 256) (hb1 : b1.val < 256) (hb2 : b2.val < 256) (hb3 : b3.val < 256)
+    (hb4 : b4.val < 256) (hb5 : b5.val < 256) (hb6 : b6.val < 256) (_hb7 : b7.val < 256)
+    (h_cin0 : cin0.val = 0)
+    (h_cin1 : cin1.val = fl0.val % 2)
+    (h_cin2 : cin2.val = fl1.val % 2)
+    (h_cin3 : cin3.val = fl2.val % 2)
+    (h_cin4 : cin4.val = fl3.val % 2)
+    (h_cin5 : cin5.val = fl4.val % 2)
+    (h_cin6 : cin6.val = fl5.val % 2)
+    (h_cin7 : cin7.val = fl6.val % 2) :
+    (fl7.val % 2 = 1 ↔
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+        + a4.val * 4294967296 + a5.val * 1099511627776
+        + a6.val * 281474976710656 + a7.val * 72057594037927936)
+      <
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+        + b4.val * 4294967296 + b5.val * 1099511627776
+        + b6.val * 281474976710656 + b7.val * 72057594037927936)) := by
+  -- Extract the per-byte chain implications.
+  obtain ⟨_hc0, h0_lt, h0_eq, h0_gt⟩ := ltu_byte_chain_of_wf _ _ _ _ _ _ h_byte_0
+  obtain ⟨_hc1, h1_lt, h1_eq, h1_gt⟩ := ltu_byte_chain_of_wf _ _ _ _ _ _ h_byte_1
+  obtain ⟨_hc2, h2_lt, h2_eq, h2_gt⟩ := ltu_byte_chain_of_wf _ _ _ _ _ _ h_byte_2
+  obtain ⟨_hc3, h3_lt, h3_eq, h3_gt⟩ := ltu_byte_chain_of_wf _ _ _ _ _ _ h_byte_3
+  obtain ⟨_hc4, h4_lt, h4_eq, h4_gt⟩ := ltu_byte_chain_of_wf _ _ _ _ _ _ h_byte_4
+  obtain ⟨_hc5, h5_lt, h5_eq, h5_gt⟩ := ltu_byte_chain_of_wf _ _ _ _ _ _ h_byte_5
+  obtain ⟨_hc6, h6_lt, h6_eq, h6_gt⟩ := ltu_byte_chain_of_wf _ _ _ _ _ _ h_byte_6
+  obtain ⟨_hc7, h7_lt, h7_eq, h7_gt⟩ := ltu_byte_chain_of_wf _ _ _ _ _ _ h_byte_7
+  -- Don't rewrite h_i_eq — ltu_step takes cin_cell.val as explicit arg.
+  -- Bool bounds for cin/flags.
+  have hf0 : fl0.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf1 : fl1.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf2 : fl2.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf3 : fl3.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf4 : fl4.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf5 : fl5.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf6 : fl6.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf7 : fl7.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  -- Initial step: byte 0, with Aprev = 0, Bprev = 0, W = 1.
+  -- The "cin" here is 0 (cin_0 = 0). Predicate cin = 1 ↔ 0 < 0 is False ↔ False, vacuous.
+  have h_init : cin0.val = 1 ↔ (0 : ℕ) < 0 := by rw [h_cin0]; simp
+  -- cout_0 = 1 ↔ Aprev_1 < Bprev_1 where Aprev_1 = a_0·1 = a_0, etc.
+  have step0 := ltu_step cin0.val a0.val b0.val (fl0.val % 2)
+    0 0 1 (by norm_num) (by norm_num) (by norm_num)
+    (by rw [h_cin0]; norm_num) hf0 h0_lt h0_eq h0_gt h_init
+  simp only [Nat.mul_one, Nat.zero_add] at step0
+  -- step0 : fl0.val % 2 = 1 ↔ a0.val < b0.val
+  -- W = 256, Aprev = a0, Bprev = b0.
+  have step1 := ltu_step cin1.val a1.val b1.val (fl1.val % 2)
+    a0.val b0.val 256 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin1]; exact hf0) hf1 h1_lt h1_eq h1_gt
+    (by rw [h_cin1]; exact step0)
+  -- step1 : fl1.val % 2 = 1 ↔ a0.val + a1.val * 256 < b0.val + b1.val * 256
+  have step2 := ltu_step cin2.val a2.val b2.val (fl2.val % 2)
+    (a0.val + a1.val * 256) (b0.val + b1.val * 256) 65536
+    (by norm_num) (by omega) (by omega)
+    (by rw [h_cin2]; exact hf1) hf2 h2_lt h2_eq h2_gt
+    (by rw [h_cin2]; exact step1)
+  have step3 := ltu_step cin3.val a3.val b3.val (fl3.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536) (b0.val + b1.val * 256 + b2.val * 65536)
+    16777216 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin3]; exact hf2) hf3 h3_lt h3_eq h3_gt
+    (by rw [h_cin3]; exact step2)
+  have step4 := ltu_step cin4.val a4.val b4.val (fl4.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216)
+    4294967296 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin4]; exact hf3) hf4 h4_lt h4_eq h4_gt
+    (by rw [h_cin4]; exact step3)
+  have step5 := ltu_step cin5.val a5.val b5.val (fl5.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216 + a4.val * 4294967296)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216 + b4.val * 4294967296)
+    1099511627776 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin5]; exact hf4) hf5 h5_lt h5_eq h5_gt
+    (by rw [h_cin5]; exact step4)
+  have step6 := ltu_step cin6.val a6.val b6.val (fl6.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296 + a5.val * 1099511627776)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+      + b4.val * 4294967296 + b5.val * 1099511627776)
+    281474976710656 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin6]; exact hf5) hf6 h6_lt h6_eq h6_gt
+    (by rw [h_cin6]; exact step5)
+  have step7 := ltu_step cin7.val a7.val b7.val (fl7.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296 + a5.val * 1099511627776 + a6.val * 281474976710656)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+      + b4.val * 4294967296 + b5.val * 1099511627776 + b6.val * 281474976710656)
+    72057594037927936 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin7]; exact hf6) hf7 h7_lt h7_eq h7_gt
+    (by rw [h_cin7]; exact step6)
+  exact step7
+
 
 /-! ## Chain lift: LT (signed)
 
@@ -2059,6 +2439,125 @@ lemma binary_lt_chunks_eq_bv_slt
     (by omega) (by omega) ha7 hb7
     (by rw [h_cin7]) hf6 hf7 step6
     (fun h_sign_eq => h7_chain (Or.inr h_sign_eq)) (h7_override h_pi7)
+
+lemma binary_lt_chunks_eq_bv_slt_of_wf
+    (a0 a1 a2 a3 a4 a5 a6 a7
+     b0 b1 b2 b3 b4 b5 b6 b7
+     c0 c1 c2 c3 c4 c5 c6 c7
+     cin0 cin1 cin2 cin3 cin4 cin5 cin6 cin7
+     fl0 fl1 fl2 fl3 fl4 fl5 fl6 fl7
+     pi0 pi1 pi2 pi3 pi4 pi5 pi6 pi7 : FGL)
+    (h_byte_0 : consumer_byte_match_chain_wf OP_LT a0 b0 c0 cin0 fl0 pi0)
+    (h_byte_1 : consumer_byte_match_chain_wf OP_LT a1 b1 c1 cin1 fl1 pi1)
+    (h_byte_2 : consumer_byte_match_chain_wf OP_LT a2 b2 c2 cin2 fl2 pi2)
+    (h_byte_3 : consumer_byte_match_chain_wf OP_LT a3 b3 c3 cin3 fl3 pi3)
+    (h_byte_4 : consumer_byte_match_chain_wf OP_LT a4 b4 c4 cin4 fl4 pi4)
+    (h_byte_5 : consumer_byte_match_chain_wf OP_LT a5 b5 c5 cin5 fl5 pi5)
+    (h_byte_6 : consumer_byte_match_chain_wf OP_LT a6 b6 c6 cin6 fl6 pi6)
+    (h_byte_7 : consumer_byte_match_chain_wf OP_LT a7 b7 c7 cin7 fl7 pi7)
+    (ha0 : a0.val < 256) (ha1 : a1.val < 256) (ha2 : a2.val < 256) (ha3 : a3.val < 256)
+    (ha4 : a4.val < 256) (ha5 : a5.val < 256) (ha6 : a6.val < 256) (ha7 : a7.val < 256)
+    (hb0 : b0.val < 256) (hb1 : b1.val < 256) (hb2 : b2.val < 256) (hb3 : b3.val < 256)
+    (hb4 : b4.val < 256) (hb5 : b5.val < 256) (hb6 : b6.val < 256) (hb7 : b7.val < 256)
+    (h_cin0 : cin0.val = 0)
+    (h_cin1 : cin1.val = fl0.val % 2)
+    (h_cin2 : cin2.val = fl1.val % 2)
+    (h_cin3 : cin3.val = fl2.val % 2)
+    (h_cin4 : cin4.val = fl3.val % 2)
+    (h_cin5 : cin5.val = fl4.val % 2)
+    (h_cin6 : cin6.val = fl5.val % 2)
+    (h_cin7 : cin7.val = fl6.val % 2)
+    (h_pi0 : pi0.val ≠ 1) (h_pi1 : pi1.val ≠ 1) (h_pi2 : pi2.val ≠ 1)
+    (h_pi3 : pi3.val ≠ 1) (h_pi4 : pi4.val ≠ 1) (h_pi5 : pi5.val ≠ 1)
+    (h_pi6 : pi6.val ≠ 1)
+    (h_pi7 : pi7.val = 1) :
+    (fl7.val % 2 = 1 ↔ signed_lt_64'
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+        + a4.val * 4294967296 + a5.val * 1099511627776
+        + a6.val * 281474976710656 + a7.val * 72057594037927936)
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+        + b4.val * 4294967296 + b5.val * 1099511627776
+        + b6.val * 281474976710656 + b7.val * 72057594037927936)) := by
+  -- LT byte chain extracts: chain rule (same as LTU) + override at pos_ind = 1.
+  obtain ⟨_hc0, h0_chain, _⟩ := lt_byte_chain_of_wf _ _ _ _ _ _ h_byte_0
+  obtain ⟨h0_lt, h0_eq, h0_gt⟩ := h0_chain (Or.inl h_pi0)
+  obtain ⟨_hc1, h1_chain, _⟩ := lt_byte_chain_of_wf _ _ _ _ _ _ h_byte_1
+  obtain ⟨h1_lt, h1_eq, h1_gt⟩ := h1_chain (Or.inl h_pi1)
+  obtain ⟨_hc2, h2_chain, _⟩ := lt_byte_chain_of_wf _ _ _ _ _ _ h_byte_2
+  obtain ⟨h2_lt, h2_eq, h2_gt⟩ := h2_chain (Or.inl h_pi2)
+  obtain ⟨_hc3, h3_chain, _⟩ := lt_byte_chain_of_wf _ _ _ _ _ _ h_byte_3
+  obtain ⟨h3_lt, h3_eq, h3_gt⟩ := h3_chain (Or.inl h_pi3)
+  obtain ⟨_hc4, h4_chain, _⟩ := lt_byte_chain_of_wf _ _ _ _ _ _ h_byte_4
+  obtain ⟨h4_lt, h4_eq, h4_gt⟩ := h4_chain (Or.inl h_pi4)
+  obtain ⟨_hc5, h5_chain, _⟩ := lt_byte_chain_of_wf _ _ _ _ _ _ h_byte_5
+  obtain ⟨h5_lt, h5_eq, h5_gt⟩ := h5_chain (Or.inl h_pi5)
+  obtain ⟨_hc6, h6_chain, _⟩ := lt_byte_chain_of_wf _ _ _ _ _ _ h_byte_6
+  obtain ⟨h6_lt, h6_eq, h6_gt⟩ := h6_chain (Or.inl h_pi6)
+  obtain ⟨_hc7, h7_chain, h7_override⟩ := lt_byte_chain_of_wf _ _ _ _ _ _ h_byte_7
+  have hf0 : fl0.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf1 : fl1.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf2 : fl2.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf3 : fl3.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf4 : fl4.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf5 : fl5.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf6 : fl6.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  have hf7 : fl7.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  -- Bytes 0..6 use the LTU-style step. Apply ltu_step sequentially.
+  have h_init : cin0.val = 1 ↔ (0 : ℕ) < 0 := by rw [h_cin0]; simp
+  have step0 := ltu_step cin0.val a0.val b0.val (fl0.val % 2)
+    0 0 1 (by norm_num) (by norm_num) (by norm_num)
+    (by rw [h_cin0]; norm_num) hf0 h0_lt h0_eq h0_gt h_init
+  simp only [Nat.mul_one, Nat.zero_add] at step0
+  have step1 := ltu_step cin1.val a1.val b1.val (fl1.val % 2)
+    a0.val b0.val 256 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin1]; exact hf0) hf1 h1_lt h1_eq h1_gt
+    (by rw [h_cin1]; exact step0)
+  have step2 := ltu_step cin2.val a2.val b2.val (fl2.val % 2)
+    (a0.val + a1.val * 256) (b0.val + b1.val * 256) 65536
+    (by norm_num) (by omega) (by omega)
+    (by rw [h_cin2]; exact hf1) hf2 h2_lt h2_eq h2_gt
+    (by rw [h_cin2]; exact step1)
+  have step3 := ltu_step cin3.val a3.val b3.val (fl3.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536) (b0.val + b1.val * 256 + b2.val * 65536)
+    16777216 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin3]; exact hf2) hf3 h3_lt h3_eq h3_gt
+    (by rw [h_cin3]; exact step2)
+  have step4 := ltu_step cin4.val a4.val b4.val (fl4.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216)
+    4294967296 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin4]; exact hf3) hf4 h4_lt h4_eq h4_gt
+    (by rw [h_cin4]; exact step3)
+  have step5 := ltu_step cin5.val a5.val b5.val (fl5.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216 + a4.val * 4294967296)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216 + b4.val * 4294967296)
+    1099511627776 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin5]; exact hf4) hf5 h5_lt h5_eq h5_gt
+    (by rw [h_cin5]; exact step4)
+  have step6 := ltu_step cin6.val a6.val b6.val (fl6.val % 2)
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296 + a5.val * 1099511627776)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+      + b4.val * 4294967296 + b5.val * 1099511627776)
+    281474976710656 (by norm_num) (by omega) (by omega)
+    (by rw [h_cin6]; exact hf5) hf6 h6_lt h6_eq h6_gt
+    (by rw [h_cin6]; exact step5)
+  -- Byte 7: combine the chain rule (LTU answer for the LO-byte 6 step) and the override.
+  -- We prove the LT-specific conclusion via a separate Nat helper (lt_byte7_close).
+  -- Set up: Alow, Blow, and step6 says fl6 % 2 = 1 ↔ Alow < Blow.
+  -- Apply lt_byte7_close.
+  exact lt_byte7_close
+    (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+      + a4.val * 4294967296 + a5.val * 1099511627776
+      + a6.val * 281474976710656)
+    (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+      + b4.val * 4294967296 + b5.val * 1099511627776
+      + b6.val * 281474976710656)
+    a7.val b7.val fl6.val cin7.val fl7.val
+    (by omega) (by omega) ha7 hb7
+    (by rw [h_cin7]) hf6 hf7 step6
+    (fun h_sign_eq => h7_chain (Or.inr h_sign_eq)) (h7_override h_pi7)
+
 
 /-! ## Chain lift: ADDW
 

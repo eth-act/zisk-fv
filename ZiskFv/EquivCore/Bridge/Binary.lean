@@ -594,6 +594,225 @@ def all_byte_matches_wf_at (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ) :
   ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
       (v.free_in_a_7 r) (v.free_in_b_7 r) (v.free_in_c_7 r)
 
+private lemma two_mul_boolean_ne_one {x : FGL} (h_bool : x * (1 - x) = 0) :
+    (2 * x).val ≠ 1 := by
+  rcases fgl_boolean_cases_local h_bool with h_zero | h_one
+  · rw [h_zero]
+    norm_num
+  · rw [h_one]
+    norm_num
+
+/-- Static-provider output for the 64-bit Binary chain family
+    (`SUB`/`LTU`/`LT`). It mirrors the useful pieces of
+    `BinaryChainPinOut64`, but each byte carries `consumer_byte_match_chain_wf`
+    instead of the older multiplicity-based table consumer predicate. -/
+structure BinaryChainStaticOut64 (v : Valid_Binary FGL FGL) (r : ℕ)
+    (op_val : ℕ) : Prop where
+  chain_0 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+              (v.free_in_a_0 r) (v.free_in_b_0 r) (v.free_in_c_0 r)
+              0 (v.carry_0 r) (2 * v.use_first_byte r)
+  chain_1 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+              (v.free_in_a_1 r) (v.free_in_b_1 r) (v.free_in_c_1 r)
+              (v.carry_0 r) (v.carry_1 r) 0
+  chain_2 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+              (v.free_in_a_2 r) (v.free_in_b_2 r) (v.free_in_c_2 r)
+              (v.carry_1 r) (v.carry_2 r) 0
+  chain_3 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+              (v.free_in_a_3 r) (v.free_in_b_3 r) (v.free_in_c_3 r)
+              (v.carry_2 r) (v.carry_3 r) (v.mode32 r)
+  chain_4 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+              (v.free_in_a_4 r) (v.free_in_b_4 r) (v.free_in_c_4 r)
+              (v.carry_3 r) (v.carry_4 r) 0
+  chain_5 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+              (v.free_in_a_5 r) (v.free_in_b_5 r) (v.free_in_c_5 r)
+              (v.carry_4 r) (v.carry_5 r) 0
+  chain_6 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+              (v.free_in_a_6 r) (v.free_in_b_6 r) (v.free_in_c_6 r)
+              (v.carry_5 r) (v.carry_6 r) 0
+  chain_7 : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op_val
+              (v.free_in_a_7 r) (v.free_in_b_7 r) (v.free_in_c_7 r)
+              (v.carry_6 r) (v.carry_7 r) (1 - v.mode32 r)
+  c0_lt : (v.free_in_c_0 r).val < 256
+  c1_lt : (v.free_in_c_1 r).val < 256
+  c2_lt : (v.free_in_c_2 r).val < 256
+  c3_lt : (v.free_in_c_3 r).val < 256
+  c4_lt : (v.free_in_c_4 r).val < 256
+  c5_lt : (v.free_in_c_5 r).val < 256
+  c6_lt : (v.free_in_c_6 r).val < 256
+  c7_lt : (v.free_in_c_7 r).val < 256
+  cin0_eq : (0 : FGL).val = 0
+  cin1_eq : (v.carry_0 r).val = (v.carry_0 r).val % 2
+  cin2_eq : (v.carry_1 r).val = (v.carry_1 r).val % 2
+  cin3_eq : (v.carry_2 r).val = (v.carry_2 r).val % 2
+  cin4_eq : (v.carry_3 r).val = (v.carry_3 r).val % 2
+  cin5_eq : (v.carry_4 r).val = (v.carry_4 r).val % 2
+  cin6_eq : (v.carry_5 r).val = (v.carry_5 r).val % 2
+  cin7_eq : (v.carry_6 r).val = (v.carry_6 r).val % 2
+  pi0_ne : (2 * v.use_first_byte r).val ≠ 1
+  pi1_ne : (0 : FGL).val ≠ 1
+  pi2_ne : (0 : FGL).val ≠ 1
+  pi3_ne : (v.mode32 r).val ≠ 1
+  pi4_ne : (0 : FGL).val ≠ 1
+  pi5_ne : (0 : FGL).val ≠ 1
+  pi6_ne : (0 : FGL).val ≠ 1
+  pi7_eq : (1 - v.mode32 r).val = 1
+
+private lemma b_op_or_sext_val_eq_of_mode32_zero
+    (v : Valid_Binary FGL FGL) (r op_val : ℕ)
+    (h_core : ZiskFv.Airs.Binary.core_every_row v r)
+    (h_mode32_zero : v.mode32 r = 0)
+    (h_b_op : (v.b_op r).val = op_val) :
+    (v.b_op_or_sext r).val = op_val := by
+  rcases h_core with ⟨_, _, _, _, _, h_bop_or_sext_def, _⟩
+  have h_eq := sub_eq_zero.mp h_bop_or_sext_def
+  rw [h_mode32_zero] at h_eq
+  have h_bop_or : v.b_op_or_sext r = v.b_op r := by
+    simpa using h_eq
+  rw [h_bop_or]
+  exact h_b_op
+
+/-- Static BinaryTable route for the 64-bit chain family. The table
+    provider supplies `wf_properties`; the caller still supplies the row's
+    64-bit mode/op pins. Those pins are not consequences of the table wf
+    relation itself and must remain visible until a separate derivation
+    discharges them. -/
+lemma byte_chain_discharge_64_of_static_lookup
+    (v : Valid_Binary FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
+    (op_val : ℕ)
+    (h_core : ZiskFv.Airs.Binary.core_every_row v r)
+    (h_mode32_zero : v.mode32 r = 0)
+    (h_b_op : (v.b_op r).val = op_val) :
+    BinaryChainStaticOut64 v r op_val := by
+  have h_b_op_or_sext :=
+    b_op_or_sext_val_eq_of_mode32_zero v r op_val h_core h_mode32_zero h_b_op
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_lookup_wf_facts v r offset env h_static
+  rcases h_facts with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  rcases h_core with
+    ⟨_, _, _, h_use_first_byte_bool, _, _, _⟩
+  have hc0 := ZiskFv.Airs.Binary.bin_c_0_lt_256 v r
+  have hc1 := ZiskFv.Airs.Binary.bin_c_1_lt_256 v r
+  have hc2 := ZiskFv.Airs.Binary.bin_c_2_lt_256 v r
+  have hc3 := ZiskFv.Airs.Binary.bin_c_3_lt_256 v r
+  have hc4 := ZiskFv.Airs.Binary.bin_c_4_lt_256 v r
+  have hc5 := ZiskFv.Airs.Binary.bin_c_5_lt_256 v r
+  have hc6 := ZiskFv.Airs.Binary.bin_c_6_lt_256 v r
+  have hc7 := ZiskFv.Airs.Binary.bin_c_7_lt_256 v r
+  obtain ⟨hcarry0, hcarry1, hcarry2, hcarry3, hcarry4, hcarry5, hcarry6, _⟩ :=
+    ZiskFv.Airs.Binary.binary_carry_bits_in_range v r
+  refine {
+    chain_0 := ?_, chain_1 := ?_, chain_2 := ?_, chain_3 := ?_,
+    chain_4 := ?_, chain_5 := ?_, chain_6 := ?_, chain_7 := ?_,
+    c0_lt := hc0, c1_lt := hc1, c2_lt := hc2, c3_lt := hc3,
+    c4_lt := hc4, c5_lt := hc5, c6_lt := hc6, c7_lt := hc7,
+    cin0_eq := rfl,
+    cin1_eq := (Nat.mod_eq_of_lt hcarry0).symm,
+    cin2_eq := (Nat.mod_eq_of_lt hcarry1).symm,
+    cin3_eq := (Nat.mod_eq_of_lt hcarry2).symm,
+    cin4_eq := (Nat.mod_eq_of_lt hcarry3).symm,
+    cin5_eq := (Nat.mod_eq_of_lt hcarry4).symm,
+    cin6_eq := (Nat.mod_eq_of_lt hcarry5).symm,
+    cin7_eq := (Nat.mod_eq_of_lt hcarry6).symm,
+    pi0_ne := two_mul_boolean_ne_one h_use_first_byte_bool,
+    pi1_ne := by norm_num,
+    pi2_ne := by norm_num,
+    pi3_ne := by rw [h_mode32_zero]; norm_num,
+    pi4_ne := by norm_num,
+    pi5_ne := by norm_num,
+    pi6_ne := by norm_num,
+    pi7_eq := by rw [h_mode32_zero]; norm_num
+  } <;>
+    first
+    | refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+          pos_ind := 2 * v.use_first_byte r, op := v.b_op r,
+          a_byte := v.free_in_a_0 r, b_byte := v.free_in_b_0 r,
+          cin := 0, c_byte := v.free_in_c_0 r, flags := v.carry_0 r } 1,
+        ?_, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h0
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op
+    | refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+          pos_ind := 0, op := v.b_op r,
+          a_byte := v.free_in_a_1 r, b_byte := v.free_in_b_1 r,
+          cin := v.carry_0 r, c_byte := v.free_in_c_1 r, flags := v.carry_1 r } 1,
+        ?_, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h1
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op
+    | refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+          pos_ind := 0, op := v.b_op r,
+          a_byte := v.free_in_a_2 r, b_byte := v.free_in_b_2 r,
+          cin := v.carry_1 r, c_byte := v.free_in_c_2 r, flags := v.carry_2 r } 1,
+        ?_, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h2
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op
+    | refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+          pos_ind := v.mode32 r, op := v.b_op r,
+          a_byte := v.free_in_a_3 r, b_byte := v.free_in_b_3 r,
+          cin := v.carry_2 r, c_byte := v.free_in_c_3 r, flags := v.carry_3 r } 1,
+        ?_, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h3
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op
+    | refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+          pos_ind := 0, op := v.b_op_or_sext r,
+          a_byte := v.free_in_a_4 r, b_byte := v.free_in_b_4 r,
+          cin := v.carry_3 r, c_byte := v.free_in_c_4 r, flags := v.carry_4 r } 1,
+        ?_, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h4
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+    | refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+          pos_ind := 0, op := v.b_op_or_sext r,
+          a_byte := v.free_in_a_5 r, b_byte := v.free_in_b_5 r,
+          cin := v.carry_4 r, c_byte := v.free_in_c_5 r, flags := v.carry_5 r } 1,
+        ?_, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h5
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+    | refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+          pos_ind := 0, op := v.b_op_or_sext r,
+          a_byte := v.free_in_a_6 r, b_byte := v.free_in_b_6 r,
+          cin := v.carry_5 r, c_byte := v.free_in_c_6 r, flags := v.carry_6 r } 1,
+        ?_, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h6
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+    | refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+          pos_ind := 1 - v.mode32 r, op := v.b_op_or_sext r,
+          a_byte := v.free_in_a_7 r, b_byte := v.free_in_b_7 r,
+          cin := v.carry_6 r, c_byte := v.free_in_c_7 r, flags := v.carry_7 r } 1,
+        ?_, ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h7
+      · simpa [ZiskFv.AirsClean.Binary.rowAt,
+          ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+
+/-- Static-provider route for the SUB final-byte carry close. The final
+    SUB table row forces `flags % 2 = 0`; the Binary carry range then
+    upgrades that low-bit fact to the field equality `carry_7 = 0`. -/
+lemma carry_7_zero_SUB_of_static_chain
+    (v : Valid_Binary FGL FGL) (r : ℕ)
+    (out : BinaryChainStaticOut64 v r ZiskFv.Airs.Tables.BinaryTable.OP_SUB) :
+    v.carry_7 r = 0 := by
+  obtain ⟨e, h_wf, h_op, _, _, _, _, h_flags, h_pos⟩ := out.chain_7
+  obtain ⟨_, _, _, _, _, _, _, _, h_sub, _⟩ := h_wf
+  have h_pos_one : e.pos_ind.val = 1 := by
+    rw [h_pos]
+    exact out.pi7_eq
+  have h_cout_zero : e.flags.val % 2 = 0 := (h_sub h_op).2.2.2 h_pos_one
+  rw [h_flags] at h_cout_zero
+  exact boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
+
 /-- **Byte-chain discharge for the 3-field family.** Given a row of
     a valid `Binary` AIR plus the mode pin `b_op_or_sext = op_val`,
     derive the 8 per-byte `consumer_byte_match` predicates. Replaces
