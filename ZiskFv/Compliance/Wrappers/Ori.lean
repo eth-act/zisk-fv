@@ -75,7 +75,6 @@ theorem equiv_ORI_of_static_lookup
     (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
-    (h_binary_core : ∀ r, ZiskFv.Airs.Binary.core_every_row v r)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
     (h_ori_subset : itype_imm_subset_holds_main m r_main ori_input.imm)
@@ -103,6 +102,6 @@ theorem equiv_ORI_of_static_lookup
     ⟨exec_row, e0, e1, e2⟩
     promises
     ⟨h_main_active, h_main_op_ori⟩
-    h_match h_bop_or_sext offset env h_static (h_binary_core r_binary) h_lane_rd h_ori_subset
+    h_match h_bop_or_sext offset env h_static (ZiskFv.AirsClean.Binary.core_every_row_of_static_lookup v r_binary offset env h_static) h_lane_rd h_ori_subset
 
 end ZiskFv.Compliance

@@ -183,8 +183,9 @@ the RTYPE/ITYPE dispatchers now expose `_of_static_lookup` routes. Globally,
 `Compliance.lean::zisk_riscv_compliant_program_bus_binary_family_of_static_lookup`
 composes those bitwise BinaryTable routes with the existing BinaryExtension
 static routes. The canonical theorem still uses the old route until the C7
-terminal ensemble supplies `StaticLookupSoundness` and Binary core facts
-internally rather than as noncanonical theorem parameters.
+terminal ensemble supplies `StaticLookupSoundness` internally rather than as
+a noncanonical theorem parameter. Binary core facts are now projected from
+that same static-lookup path.
 
 The 64-bit Binary chain route has now reached the same lower proof layers for
 SUB/SLTU/SLTIU/SLT/SLTI. `BinaryPackedCorrect.lean` has
@@ -205,8 +206,9 @@ the selected Binary row's op-bus emission plus derived `b_op < 128` and
 `mode32 < 2` range facts. The RTYPE and ITYPE dispatchers thread those five
 static routes through the same noncanonical C7 surface as the bitwise Binary
 routes; their BinaryTable obligation has now shrunk to
-`StaticLookupSoundness` plus Binary core facts, with no explicit
-`h_binary_chain_shape` premise and no reuse of the old chain-pin axiom.
+`StaticLookupSoundness` alone, with no explicit `h_binary_chain_shape`
+premise, no separate Binary core premise, and no reuse of the old chain-pin
+axiom.
 
 ### C8 — Mem
 

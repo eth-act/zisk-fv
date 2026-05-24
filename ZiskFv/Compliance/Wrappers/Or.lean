@@ -102,9 +102,10 @@ Composition:
   `.op` slot through `h_main_op_or`.
 
 At the **global Compliance.lean** level the reduction extends further:
-`(m, v, ∀ r, core_every_row v r)` collapse into shared parameters
-across all 14 Binary-shape opcodes, and `h_main_active` /
-`h_main_op_or` come from Compliance.lean's program-counter handshake.
+the static BinaryTable route now derives `core_every_row` from the same
+`StaticLookupSoundness` path that supplies table membership, and
+`h_main_active` / `h_main_op_or` come from Compliance.lean's
+program-counter handshake.
 
 The remaining wrapper-level promise hypothesis (caller-burden) on
 this exemplar is `h_lane_rd : register_write_lanes_match m r_main e2`,
@@ -250,7 +251,6 @@ theorem equiv_OR_of_static_lookup
     (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
-    (h_binary_core : ∀ r, ZiskFv.Airs.Binary.core_every_row v r)
     (bus : ZiskFv.Compliance.BusRows)
     -- Activation / opcode pins. Compliance.lean derives these from
     -- the Main AIR's ROM handshake on the row hosting OR.
@@ -284,6 +284,6 @@ theorem equiv_OR_of_static_lookup
     ⟨exec_row, e0, e1, e2⟩
     promises
     ⟨h_main_active, h_main_op_or⟩
-    h_match h_bop_or_sext offset env h_static (h_binary_core r_binary) h_lane_rd
+    h_match h_bop_or_sext offset env h_static (ZiskFv.AirsClean.Binary.core_every_row_of_static_lookup v r_binary offset env h_static) h_lane_rd
 
 end ZiskFv.Compliance

@@ -68,25 +68,19 @@ def OpEnvelope.exec_eq_itype_binary
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   | _ => True
 
-/-- Shared C7 static BinaryTable lookup obligation for ITYPE Binary arms.
-    All covered arms need static lookup + Binary core facts. -/
+/-- Shared C7 static BinaryTable lookup obligation for ITYPE Binary arms. -/
 def OpEnvelope.itype_binary_logic_static_lookup_soundness
     : OpEnvelope state m r_main → Prop
   | .andi _ _ _ _ v _ _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-        ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
   | .ori _ _ _ _ v _ _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-        ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
   | .xori _ _ _ _ v _ _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-        ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
   | .slti _ _ _ _ v _ _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-        ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
   | .sltiu _ _ _ _ v _ _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-        ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
   | _ => True
 
 theorem zisk_riscv_compliant_program_bus_itype_binary
@@ -125,27 +119,27 @@ theorem zisk_riscv_compliant_program_bus_itype_binary_logic_of_static_lookup
   | andi andi_input r1 rd imm v bus pins h_andi_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_itype_binary, OpEnvelope.itype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Equivalence.Andi.equiv_ANDI_of_static_lookup
-      state andi_input r1 rd imm m v r_main offset cleanEnv h_static.1 h_static.2
+      state andi_input r1 rd imm m v r_main offset cleanEnv h_static
       bus pins h_andi_subset h_lane_rd promises
   | ori ori_input r1 rd imm v bus pins h_ori_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_itype_binary, OpEnvelope.itype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Equivalence.Ori.equiv_ORI_of_static_lookup
-      state ori_input r1 rd imm m v r_main offset cleanEnv h_static.1 h_static.2
+      state ori_input r1 rd imm m v r_main offset cleanEnv h_static
       bus pins h_ori_subset h_lane_rd promises
   | xori xori_input r1 rd imm v bus pins h_xori_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_itype_binary, OpEnvelope.itype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Equivalence.Xori.equiv_XORI_of_static_lookup
-      state xori_input r1 rd imm m v r_main offset cleanEnv h_static.1 h_static.2
+      state xori_input r1 rd imm m v r_main offset cleanEnv h_static
       bus pins h_xori_subset h_lane_rd promises
   | slti slti_input r1 rd imm v bus pins h_slti_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_itype_binary, OpEnvelope.itype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Compliance.equiv_SLTI_of_static_lookup
-      state slti_input r1 rd imm m v r_main offset cleanEnv h_static.1 h_static.2
+      state slti_input r1 rd imm m v r_main offset cleanEnv h_static
       bus pins h_slti_subset h_lane_rd promises
   | sltiu sltiu_input r1 rd imm v bus pins h_sltiu_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_itype_binary, OpEnvelope.itype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Compliance.equiv_SLTIU_of_static_lookup
-      state sltiu_input r1 rd imm m v r_main offset cleanEnv h_static.1 h_static.2
+      state sltiu_input r1 rd imm m v r_main offset cleanEnv h_static
       bus pins h_sltiu_subset h_lane_rd promises
   | _ => trivial
 

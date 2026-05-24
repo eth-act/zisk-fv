@@ -57,7 +57,6 @@ theorem equiv_AND_of_static_lookup
     (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
     (r_main offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
-    (h_binary_core : ∀ r, ZiskFv.Airs.Binary.core_every_row v r)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
@@ -73,6 +72,6 @@ theorem equiv_AND_of_static_lookup
       = state_effect_via_channels
           ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_AND_of_static_lookup state and_input r1 r2 rd m v r_main offset env h_static h_binary_core bus pins h_lane_rd promises
+  exact ZiskFv.Compliance.equiv_AND_of_static_lookup state and_input r1 r2 rd m v r_main offset env h_static bus pins h_lane_rd promises
 
 end ZiskFv.Equivalence.And

@@ -86,22 +86,16 @@ def OpEnvelope.rtype_binary_logic_static_lookup_soundness
     : OpEnvelope state m r_main → Prop
   | .sub _ _ _ _ v _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-        ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
   | .and _ _ _ _ v _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-        ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
   | .or _ _ _ _ v _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-        ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
   | .xor _ _ _ _ v _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-        ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
   | .slt _ _ _ _ v _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-        ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
   | .sltu _ _ _ _ v _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-        ∧ ∀ r, ZiskFv.Airs.Binary.core_every_row v r
   | _ => True
 
 /-- Partial v2 dispatcher for RTYPE+Binary arms. -/
@@ -139,32 +133,32 @@ theorem zisk_riscv_compliant_program_bus_rtype_binary_logic_of_static_lookup
   | sub sub_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary, OpEnvelope.rtype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Compliance.equiv_SUB_of_static_lookup
-      state sub_input r1 r2 rd m v r_main offset cleanEnv h_static.1 h_static.2
+      state sub_input r1 r2 rd m v r_main offset cleanEnv h_static
       bus pins h_lane_rd promises
   | and and_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary, OpEnvelope.rtype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Equivalence.And.equiv_AND_of_static_lookup
-      state and_input r1 r2 rd m v r_main offset cleanEnv h_static.1 h_static.2
+      state and_input r1 r2 rd m v r_main offset cleanEnv h_static
       bus pins h_lane_rd promises
   | or or_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary, OpEnvelope.rtype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Equivalence.Or.equiv_OR_of_static_lookup
-      state or_input r1 r2 rd m v r_main offset cleanEnv h_static.1 h_static.2
+      state or_input r1 r2 rd m v r_main offset cleanEnv h_static
       bus pins h_lane_rd promises
   | xor xor_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary, OpEnvelope.rtype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Equivalence.Xor.equiv_XOR_of_static_lookup
-      state xor_input r1 r2 rd m v r_main offset cleanEnv h_static.1 h_static.2
+      state xor_input r1 r2 rd m v r_main offset cleanEnv h_static
       bus pins h_lane_rd promises
   | slt slt_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary, OpEnvelope.rtype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Compliance.equiv_SLT_of_static_lookup
-      state slt_input r1 r2 rd m v r_main offset cleanEnv h_static.1 h_static.2
+      state slt_input r1 r2 rd m v r_main offset cleanEnv h_static
       bus pins h_lane_rd promises
   | sltu sltu_input r1 r2 rd v bus pins h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary, OpEnvelope.rtype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Compliance.equiv_SLTU_of_static_lookup
-      state sltu_input r1 r2 rd m v r_main offset cleanEnv h_static.1 h_static.2
+      state sltu_input r1 r2 rd m v r_main offset cleanEnv h_static
       bus pins h_lane_rd promises
   | _ => trivial
 

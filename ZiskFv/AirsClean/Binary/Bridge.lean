@@ -415,6 +415,28 @@ theorem static_lookup_wf_facts
   binary_table_wf_of_static_lookup_const_soundness offset env (rowAt v r)
     (h_static r offset env)
 
+/-- The same static-lookup path also contains Binary's seven F-typed core
+    constraints before the eight table lookups. This projects those
+    constraints back to the legacy `core_every_row` predicate, so C7 callers
+    do not need to supply Binary core facts separately from
+    `StaticLookupSoundness`. -/
+theorem core_every_row_of_static_lookup
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r offset : ℕ)
+    (env : Environment FGL) (h_static : StaticLookupSoundness v) :
+    ZiskFv.Airs.Binary.core_every_row v r := by
+  have h_holds := h_static r offset env
+  simp only [mainWithStaticBinaryTable, main, circuit_norm] at h_holds
+  rcases h_holds with
+    ⟨h0, h1, h2, h3, h4, h5, h6, _h7, _h8, _h9, _h10, _h11, _h12, _h13, _h14⟩
+  exact ⟨ by simpa [ZiskFv.Airs.Binary.boolean_mode32, sub_eq_add_neg] using h0
+        , by simpa [ZiskFv.Airs.Binary.boolean_carry_7, sub_eq_add_neg] using h1
+        , by simpa [ZiskFv.Airs.Binary.boolean_result_is_a, sub_eq_add_neg] using h2
+        , by simpa [ZiskFv.Airs.Binary.boolean_use_first_byte, sub_eq_add_neg] using h3
+        , by simpa [ZiskFv.Airs.Binary.boolean_c_is_signed, sub_eq_add_neg] using h4
+        , by simpa [ZiskFv.Airs.Binary.b_op_or_sext_def_holds, sub_eq_add_neg] using h5
+        , by simpa [ZiskFv.Airs.Binary.mode32_and_c_is_signed_def_holds,
+            sub_eq_add_neg] using h6 ⟩
+
 /-- The 7 F-typed Binary row constraints at row `r`, expressed against
     a `Valid_Binary` via its named accessors (`v.mode32 r`, etc.). -/
 def constraints_at (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) : Prop :=
