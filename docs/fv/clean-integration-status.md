@@ -192,11 +192,13 @@ SUB/SLTU/SLTIU/SLT/SLTI. `BinaryPackedCorrect.lean` has
 `WriteValueProofs/Arith.lean` and `WriteValueProofs/BinaryCompare.lean`
 have `_of_wf` rd-value closures; and `EquivCore/Bridge/Binary.lean`
 packages the faithful static lookup shape for 64-bit chain rows, including
-carry-link and position pins plus a static SUB final-carry closer. This is
-not yet threaded into the opcode cores: the existing canonical SUB/compare
-theorems still take the old `consumer_byte_match_chain` parameters, so the
-next C7 step is to factor their shared endgame around the new `_of_wf`
-write-value lemmas instead of delegating back through the old chain theorem.
+carry-link and position pins plus a static SUB final-carry closer.
+`EquivCore/Sub.lean` now has `equiv_SUB_of_wf` and
+`equiv_SUB_of_static_lookup`, and `EquivCore/{Sltu,Sltiu,Slt,Slti}.lean`
+have `_of_wf` theorem variants over the same static-provider chain predicate.
+The compare-family static routes still need their c-lane closer: prove the
+static LTU/LT rows force all c-bytes to zero and emit `carry_7` as the result,
+then thread those facts through the wrappers/dispatchers.
 
 ### C8 — Mem
 
