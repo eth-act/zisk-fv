@@ -58,6 +58,12 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.OperationBus
 
+private lemma fgl_boolean_cases_local {x : FGL} (h : x * (1 - x) = 0) :
+    x = 0 ∨ x = 1 := by
+  rcases mul_eq_zero.mp h with h | h
+  · left; exact h
+  · right; exact (sub_eq_zero.mp h).symm
+
 
 /-- **Binary discharge bridge.** Replaces the
     per-opcode `r_binary` + 24 byte-range *promise hypotheses* with a
@@ -563,6 +569,31 @@ def all_byte_matches_at (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ) : Pr
   ∧ ZiskFv.Airs.Binary.consumer_byte_match op_val
       (v.free_in_a_7 r) (v.free_in_b_7 r) (v.free_in_c_7 r)
 
+/-- The 8 per-byte `consumer_byte_match_wf` predicates packaged as
+    a single conjunction at opcode `op_val`.
+
+    This is the static-provider shape: it carries exact
+    `BinaryTable.wf_properties` facts from the Clean static table instead of
+    the older multiplicity-based consumer axiom. -/
+@[simp]
+def all_byte_matches_wf_at (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ) : Prop :=
+    ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      (v.free_in_a_0 r) (v.free_in_b_0 r) (v.free_in_c_0 r)
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      (v.free_in_a_1 r) (v.free_in_b_1 r) (v.free_in_c_1 r)
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      (v.free_in_a_2 r) (v.free_in_b_2 r) (v.free_in_c_2 r)
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      (v.free_in_a_3 r) (v.free_in_b_3 r) (v.free_in_c_3 r)
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      (v.free_in_a_4 r) (v.free_in_b_4 r) (v.free_in_c_4 r)
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      (v.free_in_a_5 r) (v.free_in_b_5 r) (v.free_in_c_5 r)
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      (v.free_in_a_6 r) (v.free_in_b_6 r) (v.free_in_c_6 r)
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      (v.free_in_a_7 r) (v.free_in_b_7 r) (v.free_in_c_7 r)
+
 /-- **Byte-chain discharge for the 3-field family.** Given a row of
     a valid `Binary` AIR plus the mode pin `b_op_or_sext = op_val`,
     derive the 8 per-byte `consumer_byte_match` predicates. Replaces
@@ -581,6 +612,145 @@ lemma byte_chain_discharge_logic
   · exact byte_chain_match_5_holds v r op_val h_op_val
   · exact byte_chain_match_6_holds v r op_val h_op_val
   · exact byte_chain_match_7_holds v r op_val h_op_val
+
+/-- **Static byte-chain discharge for the 3-field family.** The Clean static
+    BinaryTable route is faithful to the PIL: bytes 0-3 lookup `b_op`, while
+    bytes 4-7 lookup `b_op_or_sext`. For RV64 bitwise rows both pins must be
+    the requested logical opcode. -/
+lemma byte_chain_discharge_logic_of_static_lookup
+    (v : Valid_Binary FGL FGL) (r offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
+    (op_val : ℕ)
+    (h_b_op : (v.b_op r).val = op_val)
+    (h_b_op_or_sext : (v.b_op_or_sext r).val = op_val) :
+    all_byte_matches_wf_at v r op_val := by
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_lookup_wf_facts v r offset env h_static
+  rcases h_facts with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := 2 * v.use_first_byte r, op := v.b_op r,
+        a_byte := v.free_in_a_0 r, b_byte := v.free_in_b_0 r,
+        cin := 0, c_byte := v.free_in_c_0 r, flags := v.carry_0 r } 1,
+      ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h0
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := 0, op := v.b_op r,
+        a_byte := v.free_in_a_1 r, b_byte := v.free_in_b_1 r,
+        cin := v.carry_0 r, c_byte := v.free_in_c_1 r, flags := v.carry_1 r } 1,
+      ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h1
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := 0, op := v.b_op r,
+        a_byte := v.free_in_a_2 r, b_byte := v.free_in_b_2 r,
+        cin := v.carry_1 r, c_byte := v.free_in_c_2 r, flags := v.carry_2 r } 1,
+      ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h2
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := v.mode32 r, op := v.b_op r,
+        a_byte := v.free_in_a_3 r, b_byte := v.free_in_b_3 r,
+        cin := v.carry_2 r, c_byte := v.free_in_c_3 r, flags := v.carry_3 r } 1,
+      ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h3
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := 0, op := v.b_op_or_sext r,
+        a_byte := v.free_in_a_4 r, b_byte := v.free_in_b_4 r,
+        cin := v.carry_3 r, c_byte := v.free_in_c_4 r, flags := v.carry_4 r } 1,
+      ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h4
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := 0, op := v.b_op_or_sext r,
+        a_byte := v.free_in_a_5 r, b_byte := v.free_in_b_5 r,
+        cin := v.carry_4 r, c_byte := v.free_in_c_5 r, flags := v.carry_5 r } 1,
+      ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h5
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := 0, op := v.b_op_or_sext r,
+        a_byte := v.free_in_a_6 r, b_byte := v.free_in_b_6 r,
+        cin := v.carry_5 r, c_byte := v.free_in_c_6 r, flags := v.carry_6 r } 1,
+      ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h6
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := 1 - v.mode32 r, op := v.b_op_or_sext r,
+        a_byte := v.free_in_a_7 r, b_byte := v.free_in_b_7 r,
+        cin := v.carry_6 r, c_byte := v.free_in_c_7 r, flags := v.carry_7 r } 1,
+      ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h7
+    · simpa [ZiskFv.AirsClean.Binary.rowAt,
+        ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+
+/-- For 64-bit bitwise rows (`op ∈ {AND, OR, XOR}`), the Binary core
+    constraints force the low-byte lookup opcode `b_op` to agree with the
+    emitted opcode once `b_op_or_sext` has been pinned to that same opcode.
+
+    This is the bridge needed by the faithful static-table route: bytes 0-3
+    use `b_op`, bytes 4-7 use `b_op_or_sext`. -/
+lemma b_op_val_eq_of_logic_core
+    (v : Valid_Binary FGL FGL) (r op_val : ℕ)
+    (h_core : ZiskFv.Airs.Binary.core_every_row v r)
+    (h_op : op_val = ZiskFv.Airs.Tables.BinaryTable.OP_AND
+          ∨ op_val = ZiskFv.Airs.Tables.BinaryTable.OP_OR
+          ∨ op_val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR)
+    (h_emit : v.b_op r + 16 * v.mode32 r = (op_val : FGL))
+    (h_bop_or_sext : (v.b_op_or_sext r).val = op_val) :
+    (v.b_op r).val = op_val := by
+  rcases h_core with
+    ⟨h_mode32_bool, _, _, _, h_c_signed_bool, h_bop_or_sext_def, _⟩
+  have h_mode32_cases := fgl_boolean_cases_local h_mode32_bool
+  rcases h_mode32_cases with h_mode32_zero | h_mode32_one
+  · have h_bop_eq : v.b_op r = (op_val : FGL) := by
+      rw [h_mode32_zero] at h_emit
+      simpa using h_emit
+    rw [h_bop_eq]
+    rcases h_op with h_and | h_or | h_xor
+    · simp [h_and, ZiskFv.Airs.Tables.BinaryTable.OP_AND]
+    · simp [h_or, ZiskFv.Airs.Tables.BinaryTable.OP_OR]
+    · simp [h_xor, ZiskFv.Airs.Tables.BinaryTable.OP_XOR]
+  · have h_c_signed_cases := fgl_boolean_cases_local h_c_signed_bool
+    have h_bop_or_sext_eq : v.b_op_or_sext r = v.c_is_signed r + 512 := by
+      have h_zero := sub_eq_zero.mp h_bop_or_sext_def
+      rw [h_mode32_one] at h_zero
+      rw [h_zero]
+      ring
+    have h_op_small : op_val = 14 ∨ op_val = 15 ∨ op_val = 16 := by
+      rcases h_op with h_and | h_or | h_xor
+      · left
+        simpa [ZiskFv.Airs.Tables.BinaryTable.OP_AND] using h_and
+      · right; left
+        simpa [ZiskFv.Airs.Tables.BinaryTable.OP_OR] using h_or
+      · right; right
+        simpa [ZiskFv.Airs.Tables.BinaryTable.OP_XOR] using h_xor
+    rcases h_c_signed_cases with h_c_zero | h_c_one
+    · have h_val : (v.b_op_or_sext r).val = 512 := by
+        rw [h_bop_or_sext_eq, h_c_zero]
+        simp
+      omega
+    · have h_val : (v.b_op_or_sext r).val = 513 := by
+        rw [h_bop_or_sext_eq, h_c_one]
+        simp
+      omega
 
 /-! ## Sail r1/r2 ↔ packed a/b byte sum bridges (Round-3 lift)
 

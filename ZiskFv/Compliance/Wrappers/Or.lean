@@ -238,4 +238,52 @@ theorem equiv_OR
     ⟨h_main_active, h_main_op_or⟩
     h_match h_bop_or_sext h_lane_rd
 
+
+/-- Static-provider BinaryTable route for `equiv_OR`. -/
+theorem equiv_OR_of_static_lookup
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (or_input : PureSpec.OrInput)
+    (r1 r2 rd : regidx)
+    -- AIR validators + row index. Compliance.lean shares (m, v)
+    -- across all Binary-shape opcodes (AND/ANDI/OR/ORI/XOR/XORI/
+    -- SLT/SLTI/SLTU/SLTIU/SUB/SUBW/ADDIW/ADDW).
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
+    (r_main offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
+    (h_binary_core : ∀ r, ZiskFv.Airs.Binary.core_every_row v r)
+    (bus : ZiskFv.Compliance.BusRows)
+    -- Activation / opcode pins. Compliance.lean derives these from
+    -- the Main AIR's ROM handshake on the row hosting OR.
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
+    -- Lane-match for the rd-write entry — caller-supplied; discharged
+    -- downstream from a Binary-side
+    -- `main_external_logic_emission_bundle`.
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    -- Structural promise bundle (15 fields). Subsumes the prior inline
+    -- Sail-side state predicates + bus-protocol structural hypotheses.
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
+        (PureSpec.execute_RTYPE_or_pure or_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (r2, r1, rd, rop.OR))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_or⟩ := pins
+  have h_op_disj := binary_op_disj_of_eq m r_main 15 h_main_op_or (by tauto)
+  obtain ⟨r_binary, h_match⟩ :=
+    op_bus_perm_sound_Binary m v r_main h_main_active h_op_disj
+  have h_bop_or_sext :=
+    binary_h_bop_or_sext_via_axiom h_match h_main_op_or
+      (binary_b_op_or_sext_eq_OP_OR v r_binary)
+  exact ZiskFv.EquivCore.Or.equiv_OR_of_static_lookup
+    state or_input r1 r2 rd m v r_main r_binary
+    ⟨exec_row, e0, e1, e2⟩
+    promises
+    ⟨h_main_active, h_main_op_or⟩
+    h_match h_bop_or_sext offset env h_static (h_binary_core r_binary) h_lane_rd
+
 end ZiskFv.Compliance

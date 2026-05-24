@@ -169,6 +169,23 @@ axiom-facing bridges, but derive them from
 from closures until the load-bearing opcode proofs are rewired to consume
 these static-lookup bridge facts.
 
+The bitwise BinaryTable route is now threaded through the load-bearing proof
+stack for AND/ANDI/OR/ORI/XOR/XORI without changing canonical theorem
+signatures. `Airs/Binary/BinaryPackedCorrect.lean` has static-provider
+`binary_{and,or,xor}_chunks_eq_bv_{and,or,xor}_of_wf` lifts over
+`consumer_byte_match_wf`; `EquivCore/Bridge/Binary.lean` packages the
+faithful eight-byte static lookup shape (bytes 0-3 use `b_op`, bytes 4-7 use
+`b_op_or_sext`) and derives the low-byte `b_op` pin from Binary core
+constraints plus the existing emitted-op / `b_op_or_sext` pin.
+`EquivCore/WriteValueProofs/BinaryLogic.lean`, the six bitwise opcode cores,
+the six compliance wrappers, the six channel-level equivalence files, and
+the RTYPE/ITYPE dispatchers now expose `_of_static_lookup` routes. Globally,
+`Compliance.lean::zisk_riscv_compliant_program_bus_binary_family_of_static_lookup`
+composes those bitwise BinaryTable routes with the existing BinaryExtension
+static routes. The canonical theorem still uses the old route until the C7
+terminal ensemble supplies `StaticLookupSoundness` and Binary core facts
+internally rather than as noncanonical theorem parameters.
+
 ### C8 — Mem
 
 Status: in progress. `AirsClean/Mem` now packages the existing Mem

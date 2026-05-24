@@ -402,12 +402,32 @@ def consumer_byte_match (op_val : ℕ) (a b c : FGL) : Prop :=
     e.b_byte = b ∧
     e.c_byte = c
 
+/-- Static-provider form of `consumer_byte_match`: the consumed table row is
+    already known to satisfy `wf_properties`, so no multiplicity-to-wf axiom is
+    needed. -/
+def consumer_byte_match_wf (op_val : ℕ) (a b c : FGL) : Prop :=
+  ∃ e : BinaryTableEntry FGL,
+    wf_properties e ∧
+    e.op.val = op_val ∧
+    e.a_byte = a ∧
+    e.b_byte = b ∧
+    e.c_byte = c
+
 private lemma byte_eq_AND_of_consumer_match
     (a b c : FGL)
     (h : consumer_byte_match OP_AND a b c) :
     c.val = a.val &&& b.val := by
   obtain ⟨e, h_mult, h_op, h_a, h_b, h_c⟩ := h
   have h_eq := byte_relation_AND e h_mult h_op
+  rw [h_a, h_b, h_c] at h_eq
+  exact h_eq
+
+private lemma byte_eq_AND_of_consumer_match_wf
+    (a b c : FGL)
+    (h : consumer_byte_match_wf OP_AND a b c) :
+    c.val = a.val &&& b.val := by
+  obtain ⟨e, h_wf, h_op, h_a, h_b, h_c⟩ := h
+  have h_eq := byte_relation_AND_of_wf e h_wf h_op
   rw [h_a, h_b, h_c] at h_eq
   exact h_eq
 
@@ -420,12 +440,30 @@ private lemma byte_eq_OR_of_consumer_match
   rw [h_a, h_b, h_c] at h_eq
   exact h_eq
 
+private lemma byte_eq_OR_of_consumer_match_wf
+    (a b c : FGL)
+    (h : consumer_byte_match_wf OP_OR a b c) :
+    c.val = a.val ||| b.val := by
+  obtain ⟨e, h_wf, h_op, h_a, h_b, h_c⟩ := h
+  have h_eq := byte_relation_OR_of_wf e h_wf h_op
+  rw [h_a, h_b, h_c] at h_eq
+  exact h_eq
+
 private lemma byte_eq_XOR_of_consumer_match
     (a b c : FGL)
     (h : consumer_byte_match OP_XOR a b c) :
     c.val = a.val ^^^ b.val := by
   obtain ⟨e, h_mult, h_op, h_a, h_b, h_c⟩ := h
   have h_eq := byte_relation_XOR e h_mult h_op
+  rw [h_a, h_b, h_c] at h_eq
+  exact h_eq
+
+private lemma byte_eq_XOR_of_consumer_match_wf
+    (a b c : FGL)
+    (h : consumer_byte_match_wf OP_XOR a b c) :
+    c.val = a.val ^^^ b.val := by
+  obtain ⟨e, h_wf, h_op, h_a, h_b, h_c⟩ := h
+  have h_eq := byte_relation_XOR_of_wf e h_wf h_op
   rw [h_a, h_b, h_c] at h_eq
   exact h_eq
 
@@ -491,6 +529,85 @@ lemma binary_and_chunks_eq_bv_and
   -- rewrite each c_i.val to a_i.val &&& b_i.val on the RHS.
   -- apply byte_sum_and to fold the byte-AND sum into a single
   -- AND of byte sums on the result side, then close via BitVec.ofNat_and.
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.and_eq]
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+  rw [BitVec.toNat_ofNat]
+  rw [hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7]
+  rw [← byte_sum_and _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+        ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7 hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7]
+  have hA : (v.free_in_a_0 row).val + (v.free_in_a_1 row).val * 256
+            + (v.free_in_a_2 row).val * 65536 + (v.free_in_a_3 row).val * 16777216
+            + (v.free_in_a_4 row).val * 4294967296 + (v.free_in_a_5 row).val * 1099511627776
+            + (v.free_in_a_6 row).val * 281474976710656
+            + (v.free_in_a_7 row).val * 72057594037927936 < 2 ^ 64 :=
+    byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
+  have hB : (v.free_in_b_0 row).val + (v.free_in_b_1 row).val * 256
+            + (v.free_in_b_2 row).val * 65536 + (v.free_in_b_3 row).val * 16777216
+            + (v.free_in_b_4 row).val * 4294967296 + (v.free_in_b_5 row).val * 1099511627776
+            + (v.free_in_b_6 row).val * 281474976710656
+            + (v.free_in_b_7 row).val * 72057594037927936 < 2 ^ 64 :=
+    byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
+  rw [Nat.mod_eq_of_lt hA, Nat.mod_eq_of_lt hB]
+  exact (Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt Nat.and_le_left hA)).symm
+
+/-- Static-provider variant of `binary_and_chunks_eq_bv_and`.
+    The per-byte facts carry `wf_properties` directly, avoiding
+    `bin_table_consumer_wf`. -/
+lemma binary_and_chunks_eq_bv_and_of_wf
+    (v : Valid_Binary FGL FGL) (row : ℕ)
+    (h_byte_0 : consumer_byte_match_wf OP_AND
+      (v.free_in_a_0 row) (v.free_in_b_0 row) (v.free_in_c_0 row))
+    (h_byte_1 : consumer_byte_match_wf OP_AND
+      (v.free_in_a_1 row) (v.free_in_b_1 row) (v.free_in_c_1 row))
+    (h_byte_2 : consumer_byte_match_wf OP_AND
+      (v.free_in_a_2 row) (v.free_in_b_2 row) (v.free_in_c_2 row))
+    (h_byte_3 : consumer_byte_match_wf OP_AND
+      (v.free_in_a_3 row) (v.free_in_b_3 row) (v.free_in_c_3 row))
+    (h_byte_4 : consumer_byte_match_wf OP_AND
+      (v.free_in_a_4 row) (v.free_in_b_4 row) (v.free_in_c_4 row))
+    (h_byte_5 : consumer_byte_match_wf OP_AND
+      (v.free_in_a_5 row) (v.free_in_b_5 row) (v.free_in_c_5 row))
+    (h_byte_6 : consumer_byte_match_wf OP_AND
+      (v.free_in_a_6 row) (v.free_in_b_6 row) (v.free_in_c_6 row))
+    (h_byte_7 : consumer_byte_match_wf OP_AND
+      (v.free_in_a_7 row) (v.free_in_b_7 row) (v.free_in_c_7 row))
+    (ha0 : (v.free_in_a_0 row).val < 256) (ha1 : (v.free_in_a_1 row).val < 256)
+    (ha2 : (v.free_in_a_2 row).val < 256) (ha3 : (v.free_in_a_3 row).val < 256)
+    (ha4 : (v.free_in_a_4 row).val < 256) (ha5 : (v.free_in_a_5 row).val < 256)
+    (ha6 : (v.free_in_a_6 row).val < 256) (ha7 : (v.free_in_a_7 row).val < 256)
+    (hb0 : (v.free_in_b_0 row).val < 256) (hb1 : (v.free_in_b_1 row).val < 256)
+    (hb2 : (v.free_in_b_2 row).val < 256) (hb3 : (v.free_in_b_3 row).val < 256)
+    (hb4 : (v.free_in_b_4 row).val < 256) (hb5 : (v.free_in_b_5 row).val < 256)
+    (hb6 : (v.free_in_b_6 row).val < 256) (hb7 : (v.free_in_b_7 row).val < 256) :
+    BitVec.and
+      (BitVec.ofNat 64
+        ((v.free_in_a_0 row).val + (v.free_in_a_1 row).val * 256
+          + (v.free_in_a_2 row).val * 65536 + (v.free_in_a_3 row).val * 16777216
+          + (v.free_in_a_4 row).val * 4294967296 + (v.free_in_a_5 row).val * 1099511627776
+          + (v.free_in_a_6 row).val * 281474976710656
+          + (v.free_in_a_7 row).val * 72057594037927936))
+      (BitVec.ofNat 64
+        ((v.free_in_b_0 row).val + (v.free_in_b_1 row).val * 256
+          + (v.free_in_b_2 row).val * 65536 + (v.free_in_b_3 row).val * 16777216
+          + (v.free_in_b_4 row).val * 4294967296 + (v.free_in_b_5 row).val * 1099511627776
+          + (v.free_in_b_6 row).val * 281474976710656
+          + (v.free_in_b_7 row).val * 72057594037927936))
+    =
+    BitVec.ofNat 64
+      ((v.free_in_c_0 row).val + (v.free_in_c_1 row).val * 256
+        + (v.free_in_c_2 row).val * 65536 + (v.free_in_c_3 row).val * 16777216
+        + (v.free_in_c_4 row).val * 4294967296 + (v.free_in_c_5 row).val * 1099511627776
+        + (v.free_in_c_6 row).val * 281474976710656
+        + (v.free_in_c_7 row).val * 72057594037927936) := by
+  have hc0 := byte_eq_AND_of_consumer_match_wf _ _ _ h_byte_0
+  have hc1 := byte_eq_AND_of_consumer_match_wf _ _ _ h_byte_1
+  have hc2 := byte_eq_AND_of_consumer_match_wf _ _ _ h_byte_2
+  have hc3 := byte_eq_AND_of_consumer_match_wf _ _ _ h_byte_3
+  have hc4 := byte_eq_AND_of_consumer_match_wf _ _ _ h_byte_4
+  have hc5 := byte_eq_AND_of_consumer_match_wf _ _ _ h_byte_5
+  have hc6 := byte_eq_AND_of_consumer_match_wf _ _ _ h_byte_6
+  have hc7 := byte_eq_AND_of_consumer_match_wf _ _ _ h_byte_7
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.and_eq]
   rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
@@ -591,6 +708,83 @@ lemma binary_or_chunks_eq_bv_or
   rw [Nat.mod_eq_of_lt hA, Nat.mod_eq_of_lt hB]
   exact (Nat.mod_eq_of_lt (Nat.or_lt_two_pow hA hB)).symm
 
+/-- Static-provider variant of `binary_or_chunks_eq_bv_or`. -/
+lemma binary_or_chunks_eq_bv_or_of_wf
+    (v : Valid_Binary FGL FGL) (row : ℕ)
+    (h_byte_0 : consumer_byte_match_wf OP_OR
+      (v.free_in_a_0 row) (v.free_in_b_0 row) (v.free_in_c_0 row))
+    (h_byte_1 : consumer_byte_match_wf OP_OR
+      (v.free_in_a_1 row) (v.free_in_b_1 row) (v.free_in_c_1 row))
+    (h_byte_2 : consumer_byte_match_wf OP_OR
+      (v.free_in_a_2 row) (v.free_in_b_2 row) (v.free_in_c_2 row))
+    (h_byte_3 : consumer_byte_match_wf OP_OR
+      (v.free_in_a_3 row) (v.free_in_b_3 row) (v.free_in_c_3 row))
+    (h_byte_4 : consumer_byte_match_wf OP_OR
+      (v.free_in_a_4 row) (v.free_in_b_4 row) (v.free_in_c_4 row))
+    (h_byte_5 : consumer_byte_match_wf OP_OR
+      (v.free_in_a_5 row) (v.free_in_b_5 row) (v.free_in_c_5 row))
+    (h_byte_6 : consumer_byte_match_wf OP_OR
+      (v.free_in_a_6 row) (v.free_in_b_6 row) (v.free_in_c_6 row))
+    (h_byte_7 : consumer_byte_match_wf OP_OR
+      (v.free_in_a_7 row) (v.free_in_b_7 row) (v.free_in_c_7 row))
+    (ha0 : (v.free_in_a_0 row).val < 256) (ha1 : (v.free_in_a_1 row).val < 256)
+    (ha2 : (v.free_in_a_2 row).val < 256) (ha3 : (v.free_in_a_3 row).val < 256)
+    (ha4 : (v.free_in_a_4 row).val < 256) (ha5 : (v.free_in_a_5 row).val < 256)
+    (ha6 : (v.free_in_a_6 row).val < 256) (ha7 : (v.free_in_a_7 row).val < 256)
+    (hb0 : (v.free_in_b_0 row).val < 256) (hb1 : (v.free_in_b_1 row).val < 256)
+    (hb2 : (v.free_in_b_2 row).val < 256) (hb3 : (v.free_in_b_3 row).val < 256)
+    (hb4 : (v.free_in_b_4 row).val < 256) (hb5 : (v.free_in_b_5 row).val < 256)
+    (hb6 : (v.free_in_b_6 row).val < 256) (hb7 : (v.free_in_b_7 row).val < 256) :
+    BitVec.or
+      (BitVec.ofNat 64
+        ((v.free_in_a_0 row).val + (v.free_in_a_1 row).val * 256
+          + (v.free_in_a_2 row).val * 65536 + (v.free_in_a_3 row).val * 16777216
+          + (v.free_in_a_4 row).val * 4294967296 + (v.free_in_a_5 row).val * 1099511627776
+          + (v.free_in_a_6 row).val * 281474976710656
+          + (v.free_in_a_7 row).val * 72057594037927936))
+      (BitVec.ofNat 64
+        ((v.free_in_b_0 row).val + (v.free_in_b_1 row).val * 256
+          + (v.free_in_b_2 row).val * 65536 + (v.free_in_b_3 row).val * 16777216
+          + (v.free_in_b_4 row).val * 4294967296 + (v.free_in_b_5 row).val * 1099511627776
+          + (v.free_in_b_6 row).val * 281474976710656
+          + (v.free_in_b_7 row).val * 72057594037927936))
+    =
+    BitVec.ofNat 64
+      ((v.free_in_c_0 row).val + (v.free_in_c_1 row).val * 256
+        + (v.free_in_c_2 row).val * 65536 + (v.free_in_c_3 row).val * 16777216
+        + (v.free_in_c_4 row).val * 4294967296 + (v.free_in_c_5 row).val * 1099511627776
+        + (v.free_in_c_6 row).val * 281474976710656
+        + (v.free_in_c_7 row).val * 72057594037927936) := by
+  have hc0 := byte_eq_OR_of_consumer_match_wf _ _ _ h_byte_0
+  have hc1 := byte_eq_OR_of_consumer_match_wf _ _ _ h_byte_1
+  have hc2 := byte_eq_OR_of_consumer_match_wf _ _ _ h_byte_2
+  have hc3 := byte_eq_OR_of_consumer_match_wf _ _ _ h_byte_3
+  have hc4 := byte_eq_OR_of_consumer_match_wf _ _ _ h_byte_4
+  have hc5 := byte_eq_OR_of_consumer_match_wf _ _ _ h_byte_5
+  have hc6 := byte_eq_OR_of_consumer_match_wf _ _ _ h_byte_6
+  have hc7 := byte_eq_OR_of_consumer_match_wf _ _ _ h_byte_7
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.or_eq]
+  rw [BitVec.toNat_or, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+  rw [BitVec.toNat_ofNat]
+  rw [hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7]
+  rw [← byte_sum_or _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+        ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7 hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7]
+  have hA : (v.free_in_a_0 row).val + (v.free_in_a_1 row).val * 256
+            + (v.free_in_a_2 row).val * 65536 + (v.free_in_a_3 row).val * 16777216
+            + (v.free_in_a_4 row).val * 4294967296 + (v.free_in_a_5 row).val * 1099511627776
+            + (v.free_in_a_6 row).val * 281474976710656
+            + (v.free_in_a_7 row).val * 72057594037927936 < 2 ^ 64 :=
+    byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
+  have hB : (v.free_in_b_0 row).val + (v.free_in_b_1 row).val * 256
+            + (v.free_in_b_2 row).val * 65536 + (v.free_in_b_3 row).val * 16777216
+            + (v.free_in_b_4 row).val * 4294967296 + (v.free_in_b_5 row).val * 1099511627776
+            + (v.free_in_b_6 row).val * 281474976710656
+            + (v.free_in_b_7 row).val * 72057594037927936 < 2 ^ 64 :=
+    byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
+  rw [Nat.mod_eq_of_lt hA, Nat.mod_eq_of_lt hB]
+  exact (Nat.mod_eq_of_lt (Nat.or_lt_two_pow hA hB)).symm
+
 /-- **Lift for XOR.** Same shape as the AND/OR theorems with
     `OP_XOR` and `BitVec.xor`. -/
 lemma binary_xor_chunks_eq_bv_xor
@@ -647,6 +841,83 @@ lemma binary_xor_chunks_eq_bv_xor
   have hc5 := byte_eq_XOR_of_consumer_match _ _ _ h_byte_5
   have hc6 := byte_eq_XOR_of_consumer_match _ _ _ h_byte_6
   have hc7 := byte_eq_XOR_of_consumer_match _ _ _ h_byte_7
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.xor_eq]
+  rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+  rw [BitVec.toNat_ofNat]
+  rw [hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7]
+  rw [← byte_sum_xor _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+        ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7 hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7]
+  have hA : (v.free_in_a_0 row).val + (v.free_in_a_1 row).val * 256
+            + (v.free_in_a_2 row).val * 65536 + (v.free_in_a_3 row).val * 16777216
+            + (v.free_in_a_4 row).val * 4294967296 + (v.free_in_a_5 row).val * 1099511627776
+            + (v.free_in_a_6 row).val * 281474976710656
+            + (v.free_in_a_7 row).val * 72057594037927936 < 2 ^ 64 :=
+    byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
+  have hB : (v.free_in_b_0 row).val + (v.free_in_b_1 row).val * 256
+            + (v.free_in_b_2 row).val * 65536 + (v.free_in_b_3 row).val * 16777216
+            + (v.free_in_b_4 row).val * 4294967296 + (v.free_in_b_5 row).val * 1099511627776
+            + (v.free_in_b_6 row).val * 281474976710656
+            + (v.free_in_b_7 row).val * 72057594037927936 < 2 ^ 64 :=
+    byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
+  rw [Nat.mod_eq_of_lt hA, Nat.mod_eq_of_lt hB]
+  exact (Nat.mod_eq_of_lt (Nat.xor_lt_two_pow hA hB)).symm
+
+/-- Static-provider variant of `binary_xor_chunks_eq_bv_xor`. -/
+lemma binary_xor_chunks_eq_bv_xor_of_wf
+    (v : Valid_Binary FGL FGL) (row : ℕ)
+    (h_byte_0 : consumer_byte_match_wf OP_XOR
+      (v.free_in_a_0 row) (v.free_in_b_0 row) (v.free_in_c_0 row))
+    (h_byte_1 : consumer_byte_match_wf OP_XOR
+      (v.free_in_a_1 row) (v.free_in_b_1 row) (v.free_in_c_1 row))
+    (h_byte_2 : consumer_byte_match_wf OP_XOR
+      (v.free_in_a_2 row) (v.free_in_b_2 row) (v.free_in_c_2 row))
+    (h_byte_3 : consumer_byte_match_wf OP_XOR
+      (v.free_in_a_3 row) (v.free_in_b_3 row) (v.free_in_c_3 row))
+    (h_byte_4 : consumer_byte_match_wf OP_XOR
+      (v.free_in_a_4 row) (v.free_in_b_4 row) (v.free_in_c_4 row))
+    (h_byte_5 : consumer_byte_match_wf OP_XOR
+      (v.free_in_a_5 row) (v.free_in_b_5 row) (v.free_in_c_5 row))
+    (h_byte_6 : consumer_byte_match_wf OP_XOR
+      (v.free_in_a_6 row) (v.free_in_b_6 row) (v.free_in_c_6 row))
+    (h_byte_7 : consumer_byte_match_wf OP_XOR
+      (v.free_in_a_7 row) (v.free_in_b_7 row) (v.free_in_c_7 row))
+    (ha0 : (v.free_in_a_0 row).val < 256) (ha1 : (v.free_in_a_1 row).val < 256)
+    (ha2 : (v.free_in_a_2 row).val < 256) (ha3 : (v.free_in_a_3 row).val < 256)
+    (ha4 : (v.free_in_a_4 row).val < 256) (ha5 : (v.free_in_a_5 row).val < 256)
+    (ha6 : (v.free_in_a_6 row).val < 256) (ha7 : (v.free_in_a_7 row).val < 256)
+    (hb0 : (v.free_in_b_0 row).val < 256) (hb1 : (v.free_in_b_1 row).val < 256)
+    (hb2 : (v.free_in_b_2 row).val < 256) (hb3 : (v.free_in_b_3 row).val < 256)
+    (hb4 : (v.free_in_b_4 row).val < 256) (hb5 : (v.free_in_b_5 row).val < 256)
+    (hb6 : (v.free_in_b_6 row).val < 256) (hb7 : (v.free_in_b_7 row).val < 256) :
+    BitVec.xor
+      (BitVec.ofNat 64
+        ((v.free_in_a_0 row).val + (v.free_in_a_1 row).val * 256
+          + (v.free_in_a_2 row).val * 65536 + (v.free_in_a_3 row).val * 16777216
+          + (v.free_in_a_4 row).val * 4294967296 + (v.free_in_a_5 row).val * 1099511627776
+          + (v.free_in_a_6 row).val * 281474976710656
+          + (v.free_in_a_7 row).val * 72057594037927936))
+      (BitVec.ofNat 64
+        ((v.free_in_b_0 row).val + (v.free_in_b_1 row).val * 256
+          + (v.free_in_b_2 row).val * 65536 + (v.free_in_b_3 row).val * 16777216
+          + (v.free_in_b_4 row).val * 4294967296 + (v.free_in_b_5 row).val * 1099511627776
+          + (v.free_in_b_6 row).val * 281474976710656
+          + (v.free_in_b_7 row).val * 72057594037927936))
+    =
+    BitVec.ofNat 64
+      ((v.free_in_c_0 row).val + (v.free_in_c_1 row).val * 256
+        + (v.free_in_c_2 row).val * 65536 + (v.free_in_c_3 row).val * 16777216
+        + (v.free_in_c_4 row).val * 4294967296 + (v.free_in_c_5 row).val * 1099511627776
+        + (v.free_in_c_6 row).val * 281474976710656
+        + (v.free_in_c_7 row).val * 72057594037927936) := by
+  have hc0 := byte_eq_XOR_of_consumer_match_wf _ _ _ h_byte_0
+  have hc1 := byte_eq_XOR_of_consumer_match_wf _ _ _ h_byte_1
+  have hc2 := byte_eq_XOR_of_consumer_match_wf _ _ _ h_byte_2
+  have hc3 := byte_eq_XOR_of_consumer_match_wf _ _ _ h_byte_3
+  have hc4 := byte_eq_XOR_of_consumer_match_wf _ _ _ h_byte_4
+  have hc5 := byte_eq_XOR_of_consumer_match_wf _ _ _ h_byte_5
+  have hc6 := byte_eq_XOR_of_consumer_match_wf _ _ _ h_byte_6
+  have hc7 := byte_eq_XOR_of_consumer_match_wf _ _ _ h_byte_7
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.xor_eq]
   rw [BitVec.toNat_xor, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
