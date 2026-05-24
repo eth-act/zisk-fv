@@ -107,6 +107,15 @@ interaction has a same-message counterpart whose multiplicity is neither
 `exists_nonzero_push_of_pull`; the older non-pull theorem remains as a
 compatibility projection. The remaining work is to specialize that
 counterpart to BinaryAdd/Binary/BinaryExtension provider rows.
+The next bridge layer has started:
+`component_mem_binaryFamily_cases` exposes the concrete verifier/Main/
+BinaryAdd/Binary/BinaryExtension component list, and
+`exists_matching_nonMain_component_of_active_main_interaction` proves that
+the balanced counterpart lies on a non-Main table once Main's own
+`is_external_op` multiplicity exclusion is supplied locally. The remaining
+proof gap is narrow and explicit: derive that Main exclusion without
+normalizing the whole `Table.Spec`, then combine it with the component-list
+lemma to finish the provider-row classification.
 
 BinaryTable and BinaryExtensionTable now both have static provider-side
 Clean `StaticTable` modules:
