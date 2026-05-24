@@ -21,6 +21,7 @@ No axioms.
 namespace ZiskFv.AirsClean.Main
 
 open Goldilocks
+open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 
 def circuit : GeneralFormalCircuit FGL MainRow unit :=
@@ -49,6 +50,22 @@ def circuit : GeneralFormalCircuit FGL MainRow unit :=
       simpa [sub_eq_add_neg] using h_assumptions }
 
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+
+/-- The Main component exposes exactly its one operation-bus interaction.
+    This keeps later C7 balance projections from unfolding the nine local
+    constraints just to recover the channel message. -/
+theorem component_interactionsWith_opBus :
+    component.operations.interactionsWith OpBusChannel.toRaw =
+      [((OpBusChannel.emitted (-component.rowInputVar.is_external_op)
+          (opBusMessageExpr component.rowInputVar)).toRaw)] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨OpBusChannel.toRaw,
+      [((OpBusChannel.emitted (-component.rowInputVar.is_external_op)
+          (opBusMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
+    component.exposedChannels
+  simp only [component, circuit, mainWithOpBusElaborated,
+    Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
+    List.map_nil]
 
 theorem spec_via_component (row : MainRow FGL)
     (_h_assumptions : Assumptions row)

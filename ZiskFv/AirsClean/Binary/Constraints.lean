@@ -20,8 +20,29 @@ namespace ZiskFv.AirsClean.Binary
 
 open Goldilocks
 open Circuit (assertZero lookup)
-open ZiskFv.Channels.OperationBus (OpBusChannel)
+open ZiskFv.Channels.OperationBus (OpBusChannel OpBusMessage)
 open ZiskFv.Channels.BinaryTable (BinaryTableChannel)
+
+@[reducible]
+def opBusMessageExpr (row : Var BinaryRow FGL) : OpBusMessage (Expression FGL) :=
+  { op := row.chain.b_op + 16 * row.mode.mode32
+    a_lo := row.aBytes.free_in_a_0 + 256 * row.aBytes.free_in_a_1
+      + 65536 * row.aBytes.free_in_a_2 + 16777216 * row.aBytes.free_in_a_3
+    a_hi := row.aBytes.free_in_a_4 + 256 * row.aBytes.free_in_a_5
+      + 65536 * row.aBytes.free_in_a_6 + 16777216 * row.aBytes.free_in_a_7
+    b_lo := row.bBytes.free_in_b_0 + 256 * row.bBytes.free_in_b_1
+      + 65536 * row.bBytes.free_in_b_2 + 16777216 * row.bBytes.free_in_b_3
+    b_hi := row.bBytes.free_in_b_4 + 256 * row.bBytes.free_in_b_5
+      + 65536 * row.bBytes.free_in_b_6 + 16777216 * row.bBytes.free_in_b_7
+    c_lo := row.cBytes.free_in_c_0 + 256 * row.cBytes.free_in_c_1
+      + 65536 * row.cBytes.free_in_c_2 + 16777216 * row.cBytes.free_in_c_3
+      + row.chain.carry_7
+    c_hi := row.cBytes.free_in_c_4 + 256 * row.cBytes.free_in_c_5
+      + 65536 * row.cBytes.free_in_c_6 + 16777216 * row.cBytes.free_in_c_7
+    flag := row.chain.carry_7
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
 
 @[circuit_norm]
 def main (row : Var BinaryRow FGL) : Circuit FGL Unit := do
@@ -35,25 +56,7 @@ def main (row : Var BinaryRow FGL) : Circuit FGL Unit := do
        + row.chain.b_op))
   assertZero (row.mode.mode32_and_c_is_signed
     - row.mode.mode32 * row.mode.c_is_signed)
-  OpBusChannel.push
-    { op := row.chain.b_op + 16 * row.mode.mode32
-      a_lo := row.aBytes.free_in_a_0 + 256 * row.aBytes.free_in_a_1
-        + 65536 * row.aBytes.free_in_a_2 + 16777216 * row.aBytes.free_in_a_3
-      a_hi := row.aBytes.free_in_a_4 + 256 * row.aBytes.free_in_a_5
-        + 65536 * row.aBytes.free_in_a_6 + 16777216 * row.aBytes.free_in_a_7
-      b_lo := row.bBytes.free_in_b_0 + 256 * row.bBytes.free_in_b_1
-        + 65536 * row.bBytes.free_in_b_2 + 16777216 * row.bBytes.free_in_b_3
-      b_hi := row.bBytes.free_in_b_4 + 256 * row.bBytes.free_in_b_5
-        + 65536 * row.bBytes.free_in_b_6 + 16777216 * row.bBytes.free_in_b_7
-      c_lo := row.cBytes.free_in_c_0 + 256 * row.cBytes.free_in_c_1
-        + 65536 * row.cBytes.free_in_c_2 + 16777216 * row.cBytes.free_in_c_3
-        + row.chain.carry_7
-      c_hi := row.cBytes.free_in_c_4 + 256 * row.cBytes.free_in_c_5
-        + 65536 * row.cBytes.free_in_c_6 + 16777216 * row.cBytes.free_in_c_7
-      flag := row.chain.carry_7
-      main_step := 0
-      extended_arg := 0
-      extra_args_0 := 0 }
+  OpBusChannel.push (opBusMessageExpr row)
 
 @[reducible] def binaryElaborated :
     ElaboratedCircuit FGL BinaryRow unit where
@@ -62,6 +65,10 @@ def main (row : Var BinaryRow FGL) : Circuit FGL Unit := do
   localLength _ := 0
   output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
+  channelsLawful := by
+    simp only [circuit_norm, main, opBusMessageExpr, OpBusChannel]
 
 /-- Lookup-aware Binary circuit path. This appends the eight per-byte
     BinaryTable pulls after the existing algebraic constraints and op-bus

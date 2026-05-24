@@ -90,6 +90,13 @@ PIL-faithful operation-bus assume-side interaction using multiplicity
 constraint circuit; the op-bus emission is layered separately so the
 generated constraint meaning is not changed.
 
+Row-level interaction projection groundwork is now explicit for all four C7
+participants. Main, BinaryAdd, Binary, and BinaryExtension each name their
+`opBusMessageExpr`, expose their single op-bus interaction through
+`exposedChannels`, and prove a `component_interactionsWith_opBus` lemma.
+This is the hook the balance-to-`matches_entry` proof should use instead of
+unfolding each component's full constraint list.
+
 BinaryTable and BinaryExtensionTable now both have static provider-side
 Clean `StaticTable` modules:
 `AirsClean/BinaryTable.lean` decodes the `binary_table.pil` fixed-column

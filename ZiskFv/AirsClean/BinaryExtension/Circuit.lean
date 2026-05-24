@@ -18,6 +18,7 @@ step; the load-bearing table facts still come through the existing
 namespace ZiskFv.AirsClean.BinaryExtension
 
 open Goldilocks
+open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 
 /-- BinaryExtension as a Clean `GeneralFormalCircuit`. -/
@@ -35,6 +36,17 @@ def circuit : GeneralFormalCircuit FGL BinaryExtensionRow unit :=
 
 /-- BinaryExtension as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+
+theorem component_interactionsWith_opBus :
+    component.operations.interactionsWith OpBusChannel.toRaw =
+      [((OpBusChannel.pushed (opBusMessageExpr component.rowInputVar)).toRaw)] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨OpBusChannel.toRaw,
+      [((OpBusChannel.pushed (opBusMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
+    component.exposedChannels
+  simp only [component, circuit, binaryExtensionElaborated,
+    Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
+    List.map_nil]
 
 /-- The BinaryExtension `Spec` for a row, derived through the Clean
     Component. Since `Spec := True` at C5, this is mainly the load-bearing

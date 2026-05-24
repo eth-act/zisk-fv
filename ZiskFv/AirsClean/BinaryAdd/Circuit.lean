@@ -34,6 +34,7 @@ the `soundness` field is genuinely proved.
 namespace ZiskFv.AirsClean.BinaryAdd
 
 open Goldilocks
+open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 open ZiskFv.Channels.RangeBusSoundness (range_bus_sound)
 
@@ -69,6 +70,16 @@ def circuit : GeneralFormalCircuit FGL BinaryAddRow unit :=
 
 /-- BinaryAdd as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+
+theorem component_interactionsWith_opBus :
+    component.operations.interactionsWith OpBusChannel.toRaw =
+      [((OpBusChannel.pushed (opBusMessageExpr component.rowInputVar)).toRaw)] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨OpBusChannel.toRaw,
+      [((OpBusChannel.pushed (opBusMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
+    component.exposedChannels
+  simp only [component, circuit, binaryAddElaborated, Component.exposedChannels,
+    expose, List.mem_singleton, List.map_cons, List.map_nil]
 
 /-- The BinaryAdd `Spec` for a row, derived **through the Clean Component
     `circuit`** — its proven `soundness` field — rather than through

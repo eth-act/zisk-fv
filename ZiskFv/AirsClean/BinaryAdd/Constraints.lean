@@ -23,7 +23,21 @@ namespace ZiskFv.AirsClean.BinaryAdd
 
 open Goldilocks
 open Circuit (assertZero)
-open ZiskFv.Channels.OperationBus (OpBusChannel)
+open ZiskFv.Channels.OperationBus (OpBusChannel OpBusMessage)
+
+@[reducible]
+def opBusMessageExpr (row : Var BinaryAddRow FGL) : OpBusMessage (Expression FGL) :=
+  { op := 10
+    a_lo := row.a_0
+    a_hi := row.a_1
+    b_lo := row.b_0
+    b_hi := row.b_1
+    c_lo := ((row.c_chunks_1 * 65536) + row.c_chunks_0)
+    c_hi := ((row.c_chunks_3 * 65536) + row.c_chunks_2)
+    flag := 0
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
 
 /-- The 4 F-constraints and operation bus push, taking the row's slot
     values as `Expression FGL`s. Returns `Unit` (BinaryAdd is a pure
@@ -41,18 +55,7 @@ def main (row : Var BinaryAddRow FGL) : Circuit FGL Unit := do
   -- Bus emission: BinaryAdd pushes its proves-side tuple onto operation bus 5000.
   -- Reconstructed from the proves-side `gsum_debug_data` hint;
   -- slot-for-slot faithful to the hand-written reference.
-  OpBusChannel.push
-    { op := 10
-      a_lo := row.a_0
-      a_hi := row.a_1
-      b_lo := row.b_0
-      b_hi := row.b_1
-      c_lo := ((row.c_chunks_1 * 65536) + row.c_chunks_0)
-      c_hi := ((row.c_chunks_3 * 65536) + row.c_chunks_2)
-      flag := 0
-      main_step := 0
-      extended_arg := 0
-      extra_args_0 := 0 }
+  OpBusChannel.push (opBusMessageExpr row)
 
 /-- The elaborated circuit for BinaryAdd's `main` — 4 `assertZero`
     constraints + the bus push, no fresh witnesses (`localLength = 0`,
@@ -65,5 +68,9 @@ def main (row : Var BinaryAddRow FGL) : Circuit FGL Unit := do
   localLength _ := 0
   output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
+  channelsLawful := by
+    simp only [circuit_norm, main, opBusMessageExpr, OpBusChannel]
 
 end ZiskFv.AirsClean.BinaryAdd

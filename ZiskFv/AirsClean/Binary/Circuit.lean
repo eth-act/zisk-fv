@@ -16,6 +16,7 @@ boundary until the Binary-family terminal phase.
 namespace ZiskFv.AirsClean.Binary
 
 open Goldilocks
+open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 
 def circuit : GeneralFormalCircuit FGL BinaryRow unit :=
@@ -42,6 +43,16 @@ def circuit : GeneralFormalCircuit FGL BinaryRow unit :=
       simpa [sub_eq_add_neg] using h_assumptions }
 
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+
+theorem component_interactionsWith_opBus :
+    component.operations.interactionsWith OpBusChannel.toRaw =
+      [((OpBusChannel.pushed (opBusMessageExpr component.rowInputVar)).toRaw)] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨OpBusChannel.toRaw,
+      [((OpBusChannel.pushed (opBusMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
+    component.exposedChannels
+  simp only [component, circuit, binaryElaborated, Component.exposedChannels,
+    expose, List.mem_singleton, List.map_cons, List.map_nil]
 
 theorem spec_via_component (row : BinaryRow FGL)
     (h0 : row.mode.mode32 * (1 + -row.mode.mode32) = 0)

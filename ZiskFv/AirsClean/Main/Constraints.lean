@@ -64,5 +64,9 @@ def mainWithOpBus (row : Var MainRow FGL) : Circuit FGL Unit := do
   localLength _ := 0
   output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.emitted (-row.is_external_op) (opBusMessageExpr row)]
+  channelsLawful := by
+    simp only [circuit_norm, mainWithOpBus, main, opBusMessageExpr, OpBusChannel]
 
 end ZiskFv.AirsClean.Main
