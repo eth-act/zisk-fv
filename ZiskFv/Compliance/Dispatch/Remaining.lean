@@ -178,6 +178,19 @@ def OpEnvelope.exec_eq_remaining
         = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
   | _ => True
 
+/-- Static BinaryExtension lookup witness required by the noncanonical C7
+    static route for the W-shift arms in this dispatch family. Non-W-shift
+    arms carry no obligation. -/
+def OpEnvelope.remaining_wshift_static_lookup_soundness
+    : OpEnvelope state m r_main → Prop
+  | .sllw _ _ _ _ v _ .. => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | .srlw _ _ _ _ v _ .. => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | .sraw _ _ _ _ v _ .. => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | .slliw _ _ _ v _ .. => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | .srliw _ _ _ v _ .. => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | .sraiw _ _ _ v _ .. => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | _ => True
+
 theorem zisk_riscv_compliant_program_bus_remaining
     (env : OpEnvelope state m r_main)
     (h_known_bugs : Defects.NoKnownDefect env) :
@@ -533,5 +546,69 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
   | _ => trivial
+
+/-- Noncanonical C7 static BinaryExtensionTable route for the W-shift subset of
+    the remaining dispatcher.
+
+    The canonical dispatcher above is unchanged. For non-W-shift arms this
+    theorem delegates to the existing defect-aware dispatcher, so the arithmetic
+    known-defect boundary is not copied or weakened here. -/
+theorem zisk_riscv_compliant_program_bus_remaining_wshift_of_static_lookup
+    (env : OpEnvelope state m r_main)
+    (h_known_bugs : Defects.NoKnownDefect env)
+    (offset : ℕ) (cleanEnv : Environment FGL)
+    (h_static : env.remaining_wshift_static_lookup_soundness) :
+    env.exec_eq_remaining := by
+  cases env with
+  | sllw sllw_input r1 r2 rd v bus
+         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Sllw.equiv_SLLW_of_static_lookup state sllw_input r1 r2 rd
+      m v r_main offset cleanEnv h_static bus
+      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      pins h_lane_rd
+  | srlw srlw_input r1 r2 rd v bus
+         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Srlw.equiv_SRLW_of_static_lookup state srlw_input r1 r2 rd
+      m v r_main offset cleanEnv h_static bus
+      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      pins h_lane_rd
+  | sraw sraw_input r1 r2 rd v bus
+         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+         pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Sraw.equiv_SRAW_of_static_lookup state sraw_input r1 r2 rd
+      m v r_main offset cleanEnv h_static bus
+      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
+      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
+      pins h_lane_rd
+  | slliw slliw_input r1 rd v bus promises pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Slliw.equiv_SLLIW_of_static_lookup state slliw_input r1 rd
+      m v r_main offset cleanEnv h_static bus promises pins h_lane_rd
+  | srliw srliw_input r1 rd v bus promises pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Srliw.equiv_SRLIW_of_static_lookup state srliw_input r1 rd
+      m v r_main offset cleanEnv h_static bus promises pins h_lane_rd
+  | sraiw sraiw_input r1 rd v bus promises pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Sraiw.equiv_SRAIW_of_static_lookup state sraiw_input r1 rd
+      m v r_main offset cleanEnv h_static bus promises pins h_lane_rd
+  | _ =>
+    exact zisk_riscv_compliant_program_bus_remaining_except_known_defects _ h_known_bugs
 
 end ZiskFv.Compliance

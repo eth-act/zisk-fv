@@ -48,6 +48,18 @@ def OpEnvelope.exec_eq_shift
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   | _ => True
 
+/-- Static BinaryExtension lookup witness required by the noncanonical C7
+    static route for this dispatch family. Non-shift arms carry no obligation. -/
+def OpEnvelope.shift_static_lookup_soundness
+    : OpEnvelope state m r_main → Prop
+  | .sll _ _ _ _ v _ _ _ _ => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | .srl _ _ _ _ v _ _ _ _ => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | .sra _ _ _ _ v _ _ _ _ => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | .slli _ _ _ _ v _ _ _ _ => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | .srli _ _ _ _ v _ _ _ _ => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | .srai _ _ _ _ v _ _ _ _ => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | _ => True
+
 theorem zisk_riscv_compliant_program_bus_shift
     (env : OpEnvelope state m r_main) :
     env.exec_eq_shift := by
@@ -71,5 +83,42 @@ theorem zisk_riscv_compliant_program_bus_shift
     simp only [OpEnvelope.exec_eq_shift]
     exact ZiskFv.Equivalence.Srai.equiv_SRAI state srai_input r1 rd shamt m v r_main bus promises pins h_lane_rd
   | _ => trivial
+
+/-- Noncanonical C7 static BinaryExtensionTable route for the shift dispatcher.
+    The canonical dispatcher above is unchanged; this theorem is the terminal
+    wiring target for retiring the legacy BinaryExtension table-consumer axiom
+    from the shift family. -/
+theorem zisk_riscv_compliant_program_bus_shift_of_static_lookup
+    (env : OpEnvelope state m r_main)
+    (offset : ℕ) (cleanEnv : Environment FGL)
+    (h_static : env.shift_static_lookup_soundness) :
+    env.exec_eq_shift := by
+  cases env with
+  | sll sll_input r1 r2 rd v bus promises pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_shift, OpEnvelope.shift_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Sll.equiv_SLL_of_static_lookup state sll_input r1 r2 rd
+      m v r_main offset cleanEnv h_static bus promises pins h_lane_rd
+  | srl srl_input r1 r2 rd v bus promises pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_shift, OpEnvelope.shift_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Srl.equiv_SRL_of_static_lookup state srl_input r1 r2 rd
+      m v r_main offset cleanEnv h_static bus promises pins h_lane_rd
+  | sra sra_input r1 r2 rd v bus promises pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_shift, OpEnvelope.shift_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Sra.equiv_SRA_of_static_lookup state sra_input r1 r2 rd
+      m v r_main offset cleanEnv h_static bus promises pins h_lane_rd
+  | slli slli_input r1 rd shamt v bus promises pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_shift, OpEnvelope.shift_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Slli.equiv_SLLI_of_static_lookup state slli_input r1 rd shamt
+      m v r_main offset cleanEnv h_static bus promises pins h_lane_rd
+  | srli srli_input r1 rd shamt v bus promises pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_shift, OpEnvelope.shift_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Srli.equiv_SRLI_of_static_lookup state srli_input r1 rd shamt
+      m v r_main offset cleanEnv h_static bus promises pins h_lane_rd
+  | srai srai_input r1 rd shamt v bus promises pins h_lane_rd =>
+    simp only [OpEnvelope.exec_eq_shift, OpEnvelope.shift_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Srai.equiv_SRAI_of_static_lookup state srai_input r1 rd shamt
+      m v r_main offset cleanEnv h_static bus promises pins h_lane_rd
+  | _ =>
+    simp only [OpEnvelope.exec_eq_shift]
 
 end ZiskFv.Compliance
