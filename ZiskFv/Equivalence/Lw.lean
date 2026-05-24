@@ -46,4 +46,29 @@ theorem equiv_LW
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_LW state lw_input regs main mem r_main v bus pins promises
 
+/-- Noncanonical static-lookup route for LW in channel-balance form. -/
+theorem equiv_LW_of_static_lookup
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (lw_input : PureSpec.LwInput)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins main r_main 1 OP_SIGNEXTEND_W)
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+        (PureSpec.lw_state_assumptions lw_input state)
+        (PureSpec.execute_LOADW_pure lw_input).nextPC
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    : (do
+      Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.LOAD (
+        lw_input.imm, regidx.Regidx lw_input.r1, regidx.Regidx lw_input.rd, false, 4
+      ))) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_LW_of_static_lookup state lw_input regs main mem r_main v
+    offset env h_static bus pins promises
+
 end ZiskFv.Equivalence.Lw

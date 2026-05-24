@@ -64,6 +64,16 @@ def OpEnvelope.exec_eq_misc
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   | _ => True
 
+/-- Static BinaryExtension lookup witness required by the noncanonical C7
+    static route for signed-load arms in this dispatch family. Non-signed-load
+    arms carry no obligation. -/
+def OpEnvelope.misc_signed_load_static_lookup_soundness
+    : OpEnvelope state m r_main → Prop
+  | .lb _ _ _ v _ _ _ => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | .lh _ _ _ v _ _ _ => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | .lw _ _ _ v _ _ _ => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | _ => True
+
 theorem zisk_riscv_compliant_program_bus_misc
     (env : OpEnvelope state m r_main) :
     env.exec_eq_misc := by
@@ -86,5 +96,28 @@ theorem zisk_riscv_compliant_program_bus_misc
     exact ZiskFv.Equivalence.Addiw.equiv_ADDIW state addiw_input r1 rd imm m v r_main bus
       pins h_addiw_subset h_lane_rd promises
   | _ => trivial
+
+/-- Noncanonical C7 static BinaryExtensionTable route for the signed-load subset
+    of the misc dispatcher. The canonical dispatcher above is unchanged. -/
+theorem zisk_riscv_compliant_program_bus_misc_signed_load_of_static_lookup
+    (env : OpEnvelope state m r_main)
+    (offset : ℕ) (cleanEnv : Environment FGL)
+    (h_static : env.misc_signed_load_static_lookup_soundness) :
+    env.exec_eq_misc := by
+  cases env with
+  | lb lb_input regs mem v bus pins promises =>
+    simp only [OpEnvelope.exec_eq_misc, OpEnvelope.misc_signed_load_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Lb.equiv_LB_of_static_lookup state lb_input regs m mem r_main v
+      offset cleanEnv h_static bus pins promises
+  | lh lh_input regs mem v bus pins promises =>
+    simp only [OpEnvelope.exec_eq_misc, OpEnvelope.misc_signed_load_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Lh.equiv_LH_of_static_lookup state lh_input regs m mem r_main v
+      offset cleanEnv h_static bus pins promises
+  | lw lw_input regs mem v bus pins promises =>
+    simp only [OpEnvelope.exec_eq_misc, OpEnvelope.misc_signed_load_static_lookup_soundness] at h_static ⊢
+    exact ZiskFv.Equivalence.Lw.equiv_LW_of_static_lookup state lw_input regs m mem r_main v
+      offset cleanEnv h_static bus pins promises
+  | _ =>
+    exact zisk_riscv_compliant_program_bus_misc _
 
 end ZiskFv.Compliance
