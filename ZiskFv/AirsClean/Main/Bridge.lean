@@ -1,5 +1,7 @@
 import ZiskFv.AirsClean.Main.Soundness
 import ZiskFv.Airs.Main.Main
+import ZiskFv.Channels.OperationBus
+import ZiskFv.Airs.OperationBus.OperationBus
 
 /-!
 # `Valid_Main` ↔ `MainRow` compatibility bridge (long-lived)
@@ -21,6 +23,7 @@ No axioms.
 namespace ZiskFv.AirsClean.Main
 
 open Goldilocks
+open ZiskFv.Channels.OperationBus
 
 
 @[reducible]
@@ -64,5 +67,28 @@ theorem spec_of_valid
     Spec (rowAt m r) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h_constraints
   exact soundness (rowAt m r) h_assumptions h1 h2 h3 h4 h5 h6 h7 h8 h9
+
+/-- Main's operation-bus message without multiplicity, as a concrete row
+    value. Clean carries multiplicity on the interaction, while the legacy
+    `OperationBusEntry` carries it in the record. -/
+@[reducible]
+def opBusMessage (row : MainRow FGL) : OpBusMessage FGL :=
+  { op := row.op
+    a_lo := row.a_0
+    a_hi := (1 - row.m32) * row.a_1
+    b_lo := row.b_0
+    b_hi := (1 - row.m32) * row.b_1
+    c_lo := row.c_0
+    c_hi := row.c_1
+    flag := row.flag
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
+theorem opBusMessage_toEntry_rowAt_eq_opBus_row
+    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r : ℕ) :
+    OpBusMessage.toEntry (opBusMessage (rowAt m r)) (m.is_external_op r) =
+      ZiskFv.Airs.OperationBus.opBus_row_Main m r := by
+  rfl
 
 end ZiskFv.AirsClean.Main

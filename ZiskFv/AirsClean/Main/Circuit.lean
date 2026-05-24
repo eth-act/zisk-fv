@@ -1,0 +1,59 @@
+import ZiskFv.AirsClean.Main.Constraints
+import ZiskFv.AirsClean.Main.Soundness
+import Clean.Air.FlatComponent
+import Clean.Utils.Tactics
+
+/-!
+# Main Clean Component
+
+Packages the Main AIR's per-row constraints plus its assume-side operation-bus
+emission as a Clean `Air.Flat.Component`.
+
+The base `Constraints.main` definition remains the extracted nine F-typed
+constraints. This component uses `mainWithOpBus`, which appends the
+PIL-faithful operation-bus emission with multiplicity `-is_external_op`.
+
+## Trust note
+
+No axioms.
+-/
+
+namespace ZiskFv.AirsClean.Main
+
+open Goldilocks
+open ZiskFv.Channels.OperationBus (OpBusChannel)
+
+def circuit : GeneralFormalCircuit FGL MainRow unit :=
+  { mainWithOpBusElaborated with
+    Assumptions := fun _ _ => True
+    Spec := fun row _ _ => Spec row
+    ProverAssumptions := fun row _ _ => Spec row
+    ProverSpec := fun _ _ _ => True
+    soundness := by
+      circuit_proof_start
+      refine ⟨?_, ?_⟩
+      · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8⟩ := h_holds
+        exact ⟨ by simpa [sub_eq_add_neg] using h0
+              , by simpa [sub_eq_add_neg] using h1
+              , by simpa [sub_eq_add_neg] using h2
+              , by simpa [sub_eq_add_neg] using h3
+              , by simpa [sub_eq_add_neg] using h4
+              , by simpa [sub_eq_add_neg] using h5
+              , by simpa [sub_eq_add_neg] using h6
+              , by simpa [sub_eq_add_neg] using h7
+              , by simpa [sub_eq_add_neg] using h8 ⟩
+      · intro _
+        trivial
+    completeness := by
+      circuit_proof_start [OpBusChannel]
+      simpa [sub_eq_add_neg] using h_assumptions }
+
+def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+
+theorem spec_via_component (row : MainRow FGL)
+    (_h_assumptions : Assumptions row)
+    (h_constraints : Spec row) :
+    Spec row := by
+  exact h_constraints
+
+end ZiskFv.AirsClean.Main

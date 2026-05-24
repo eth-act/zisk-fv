@@ -75,12 +75,20 @@ a dep).
 ### C7 — terminal-A op-bus + Binary-family ensemble
 
 Status: in progress. `AirsClean/BinaryFamily/Ensemble.lean` now assembles
-the migrated BinaryAdd, Binary, and BinaryExtension Clean components behind
-one finished `OpBusChannel`, with a generic op-bus consumer table. This is
-the provider-side terminal-A skeleton only: it proves the three migrated
-providers can live on one balanced Clean operation-bus path, but it does not
-retire `op_bus_permutation_sound` until the real Main consumer is wired into
-the same ensemble.
+the migrated Main assume-side component plus the BinaryAdd, Binary, and
+BinaryExtension provider components behind one finished `OpBusChannel`. The
+old generic op-bus consumer table has been removed from this ensemble.
+This proves the Main/three-provider family can live on one balanced Clean
+operation-bus path, but it does not retire `op_bus_permutation_sound` until
+the balanced-channel result is projected into the canonical `matches_entry`
+bridges and threaded into the opcode proofs.
+
+Main-side Clean progress: `AirsClean/Main/Circuit.lean` packages the existing
+nine Main F-typed constraints with `mainWithOpBus`, which emits the
+PIL-faithful operation-bus assume-side interaction using multiplicity
+`-is_external_op`. `Constraints.main` remains the extracted per-row
+constraint circuit; the op-bus emission is layered separately so the
+generated constraint meaning is not changed.
 
 BinaryTable and BinaryExtensionTable now both have static provider-side
 Clean `StaticTable` modules:

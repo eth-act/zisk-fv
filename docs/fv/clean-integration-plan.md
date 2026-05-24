@@ -886,10 +886,11 @@ terminal phases where the shared axioms genuinely retire:
 | **CZ** | terminal-C: re-root + finish | — | — | **`range_bus_sound`, `signed_range_bus_sound`**; delete residual hand-rolled bus layer |
 
 **C7/C11 ordering note.** `op_bus_permutation_sound`'s consumer is the Main
-row (C11), but its providers are the Binary family (C5/C6). A balanced
-op-bus needs both. C7 assembles the provider side with the ensemble
-`verifier` slot standing in for the aggregate consumer (the
-`FibonacciWithChannels` pattern); C11 refines the verifier with real Main.
+row, but its providers are the Binary family (C5/C6). A balanced op-bus
+needs both. C7 now assembles the Binary-family providers with the Main
+assume-side op-bus component; remaining C7 work is the projection from
+balanced Clean interactions into the canonical `matches_entry` bridge and
+theorem closures. C11 still owns Main's non-op-bus state/PC work.
 **The op-bus retirement is a named deliverable pinned to whichever of
 C7/C11 first makes `#print axioms` drop it** — the V-6 gate enforces it is
 not claimed early.
