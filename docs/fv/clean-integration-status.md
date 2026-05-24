@@ -203,10 +203,12 @@ LTU/LT rows force all c-bytes to zero and emit `carry_7` as the result.
 64-bit row-shape pins (`mode32 = 0`, `b_op = OP_LT/LTU`) explicit; the
 Compliance wrappers for SUB/SLTU/SLT/SLTIU/SLTI now expose matching
 `_of_static_lookup` routes with an explicit `h_binary_chain_shape` premise
-instead of reusing the old chain-pin axiom. The remaining dispatcher/global
-work is to decide where that row-shape premise belongs in the noncanonical
-C7 theorem and then thread these five routes through the same surface as the
-bitwise static route.
+instead of reusing the old chain-pin axiom. The RTYPE and ITYPE dispatchers
+now thread those five static routes through the same noncanonical C7 surface
+as the bitwise Binary routes. Their static-lookup obligations require
+`StaticLookupSoundness`, Binary core facts, and the explicit 64-bit row-shape
+premise for the selected chain opcode; this keeps the remaining pin visible
+instead of laundering it back into the old chain-pin axiom.
 
 ### C8 — Mem
 
