@@ -111,4 +111,43 @@ theorem equiv_SLTU
     out.cin4_eq out.cin5_eq out.cin6_eq out.cin7_eq
     h_match_clo h_match_chi h_lane_rd h_fl7_lt_2
 
+/-- Static-provider BinaryTable route for `equiv_SLTU`. -/
+theorem equiv_SLTU_of_static_lookup
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sltu_input : PureSpec.SltuInput)
+    (r1 r2 rd : regidx)
+    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
+    (r_main offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
+    (h_binary_chain_shape : ∀ r,
+      ZiskFv.Airs.Binary.core_every_row v r
+      ∧ v.mode32 r = 0
+      ∧ (v.b_op r).val = ZiskFv.Airs.Tables.BinaryTable.OP_LTU)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state sltu_input.r1_val sltu_input.r2_val sltu_input.rd sltu_input.PC
+        (PureSpec.execute_RTYPE_sltu_pure sltu_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPE (r2, r1, rd, rop.SLTU))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_sltu⟩ := pins
+  have h_op_disj := binary_op_disj_of_eq m r_main 0x06 h_main_op_sltu (by tauto)
+  obtain ⟨r_binary, h_match⟩ :=
+    op_bus_perm_sound_Binary m v r_main h_main_active h_op_disj
+  obtain ⟨h_core, h_mode32_zero, h_b_op⟩ := h_binary_chain_shape r_binary
+  exact ZiskFv.EquivCore.Sltu.equiv_SLTU_of_static_lookup
+    state sltu_input r1 r2 rd m v r_main r_binary offset env h_static
+    h_core h_mode32_zero h_b_op
+    ⟨exec_row, e0, e1, e2⟩
+    promises
+    ⟨h_main_active, h_main_op_sltu⟩
+    h_match h_lane_rd
+
 end ZiskFv.Compliance

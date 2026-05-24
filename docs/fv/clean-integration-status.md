@@ -201,8 +201,12 @@ LTU/LT rows force all c-bytes to zero and emit `carry_7` as the result.
 `EquivCore/{Sltu,Slt,Sltiu,Slti}.lean` now expose
 `equiv_*_of_static_lookup` routes. These core routes intentionally keep the
 64-bit row-shape pins (`mode32 = 0`, `b_op = OP_LT/LTU`) explicit; the
-remaining wrapper/dispatcher work is to package those pins honestly rather
-than reusing the old chain-pin axiom.
+Compliance wrappers for SUB/SLTU/SLT/SLTIU/SLTI now expose matching
+`_of_static_lookup` routes with an explicit `h_binary_chain_shape` premise
+instead of reusing the old chain-pin axiom. The remaining dispatcher/global
+work is to decide where that row-shape premise belongs in the noncanonical
+C7 theorem and then thread these five routes through the same surface as the
+bitwise static route.
 
 ### C8 — Mem
 
