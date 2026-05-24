@@ -45,4 +45,28 @@ theorem equiv_SRLI
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_SRLI state srli_input r1 rd shamt m v r_main bus promises pins h_lane_rd
 
+/-- Noncanonical static-lookup route for SRLI in channel-balance form. -/
+theorem equiv_SRLI_of_static_lookup
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (srli_input : PureSpec.SrliInput)
+    (r1 rd : regidx) (shamt : BitVec 6)
+    (m : Valid_Main FGL FGL)
+    (v : Valid_BinaryExtension FGL FGL)
+    (r_main : ℕ)
+    (offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
+        state srli_input.r1_val srli_input.shamt srli_input.rd srli_input.PC
+        (PureSpec.execute_SHIFTIOP_srli_pure srli_input).nextPC
+        r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SRL)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    : execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SRLI)) state
+      = state_effect_via_channels
+          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
+  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+  exact ZiskFv.Compliance.equiv_SRLI_of_static_lookup state srli_input r1 rd shamt
+    m v r_main offset env h_static bus promises pins h_lane_rd
+
 end ZiskFv.Equivalence.Srli
