@@ -4,7 +4,9 @@ This is the working branch for the full Clean integration per
 [`/home/cody/.claude/plans/ok-i-will-let-humble-reddy.md`]. It
 branches off `clean-integration` (which had landed the bus-level
 axiom consolidation from 122 → 116 axioms without taking Clean as
-a dep).
+a dep). Current working status after the Binary-family table migration:
+`lake build`, V1, and V2 pass with 92 axioms in the baseline and global
+closure.
 
 ## Completed phases
 
@@ -79,9 +81,16 @@ the migrated Main assume-side component plus the BinaryAdd, Binary, and
 BinaryExtension provider components behind one finished `OpBusChannel`. The
 old generic op-bus consumer table has been removed from this ensemble.
 This proves the Main/three-provider family can live on one balanced Clean
-operation-bus path, but it does not retire `op_bus_permutation_sound` until
-the balanced-channel result is projected into the canonical `matches_entry`
-bridges and threaded into the opcode proofs.
+operation-bus path. A lookup-aware parallel route,
+`binaryFamilyStaticBinaryTableOpBusEnsemble`, now replaces the plain Binary
+and BinaryExtension components with
+`AirsClean.Binary.staticLookupComponent` and
+`AirsClean.BinaryExtension.staticLookupComponent`; this is the route for
+bitwise Binary rows whose op-bus provider row must also carry direct static
+table lookup constraints and whose non-Binary provider branches must be
+excluded from provider-local facts. Neither ensemble retires
+`op_bus_permutation_sound` until the balanced-channel result is threaded into
+the canonical theorem closures.
 
 Main-side Clean progress: `AirsClean/Main/Circuit.lean` packages the existing
 nine Main F-typed constraints with `mainWithOpBus`, which emits the
@@ -124,9 +133,13 @@ non-pull Main rows by the field fact `x * (1 - x) = 0 -> x = 0 or x = 1`.
 The same file now also proves
 `exists_matching_provider_component_of_active_main_interaction`: the
 balanced counterpart must come from BinaryAdd, Binary, or BinaryExtension
-after the empty verifier table and Main are ruled out. The remaining op-bus
-C7 work is to project that provider table/row into the legacy
-`matches_entry` shape and thread it into canonical closures.
+after the empty verifier table and Main are ruled out. The lookup-aware
+parallel lemmas
+`exists_static_matching_nonzero_nonpull_of_active_main_interaction`,
+`exists_static_matching_nonMain_component_of_active_main_interaction`, and
+`exists_static_matching_provider_component_of_active_main_interaction` prove
+the same classification for `binaryFamilyStaticBinaryTableOpBusEnsemble`,
+with the Binary branch classified as `Binary.staticLookupComponent`.
 
 Provider-row projection groundwork is now explicit. `Balance.lean` has a
 generic singleton-channel row extractor,
@@ -144,9 +157,104 @@ interaction, it returns a concrete Main table row, a concrete provider table
 row, provider classification (`BinaryAdd | Binary | BinaryExtension`), and a
 legacy `matches_entry` between the evaluated Clean messages. This deliberately
 does not assert that an arbitrary Clean row corresponds to an arbitrary legacy
-`Valid_*` row; the remaining terminal C7 work is to expose row-native proof
-entry points for the opcode stack and thread these Clean-row facts through
-the noncanonical static routes.
+`Valid_*` row; the remaining terminal C7 work is to thread these Clean-row
+facts through the noncanonical static routes and then the canonical closures.
+The lookup-aware companion,
+`exists_static_provider_row_matches_entry_of_active_main_table_interaction`,
+returns the same shape for the static ensemble and keeps the Binary provider
+row on `Binary.staticLookupComponent`, so the next bridge can consume that
+same row's static BinaryTable facts. The noncanonical bitwise routes now
+consume lookup-aware Binary table rows directly:
+`Equivalence/{And,Or,Xor}.lean::equiv_*_of_static_table_row` derives the
+Binary core row facts and static BinaryTable facts from
+`Binary.staticLookupComponent`'s `table.Spec` before invoking the row-native
+AND/OR/XOR wrappers. `Compliance/Dispatch/RTYPE.lean` threads those
+table-row routes through an `OpEnvelope` family route for RTYPE bitwise arms,
+and `Compliance.lean::zisk_riscv_compliant_program_bus_binary_family_of_static_table_row`
+threads that through the global noncanonical C7 Binary-family theorem while
+the not-yet-row-native Binary-family arms remain on their existing static
+lookup route.
+
+Current C7 checklist:
+
+- 🪓 Clean balance projects active Main op-bus rows to concrete provider rows.
+- 🪓 Binary provider rows now have row-native byte-table facts.
+- 🪓 Row-native packed AND/OR/XOR identities are proved over `BinaryRow`.
+- 🪓 Row-native write-value facts added.
+- 🪓 Row-native opcode-core theorems added.
+- 🪓 Channel-level row-native wrappers added.
+- 🪓 Lookup-aware Binary component exposes the same op-bus provider row plus static BinaryTable lookup facts.
+- 🪓 Lookup-aware Binary-family ensemble and provider-row `matches_entry` projection added.
+- 🪓 Thread the static-provider row route into the noncanonical C7 global route.
+- 🪓 Thread that route into canonical closures for the six bitwise
+  Binary-family arms (AND/OR/XOR/ANDI/ORI/XORI). The legacy wrapper surface
+  now exposes static-provider-row versions of those theorem names, so
+  `binary_b_op_or_sext_eq_op_general` and
+  `binary_per_byte_lookup_witness` are deleted from the live trust ledger.
+- 🪓 Thread the same static-provider row route into the remaining 64-bit
+  BinaryTable consumers `SUB`, `SLT`, `SLTU`, `SLTI`, and `SLTIU`.
+- 🪓 Thread the static-provider BinaryExtension row route into the full
+  shift family (`SLL/SRL/SRA`, immediate shifts, and W-shifts).
+- 🪓 Record the remaining non-shift consumers of `op_bus_permutation_sound`.
+- 🪓 Record the remaining non-shift consumers of `bin_table_consumer_wf` and
+  `bin_ext_table_consumer_wf`.
+
+Retirement blocker update: the evaluated-message projection issue is cleared.
+The lookup-aware ensemble constrains both Binary rows and BinaryExtension rows
+with their direct static table facts. BinaryExtension uses
+`AirsClean.BinaryExtension.staticLookupComponent`, whose `Spec` includes the
+eight exact BinaryExtensionTable memberships for the same row that emits the
+op-bus message. `AirsClean.BinaryExtensionTable.spec_op_val_ne_bitwise` proves
+those table rows cannot carry bitwise Binary opcodes 14/15/16, and
+`staticLookupComponent_op_val_ne_bitwise_of_spec` projects that fact through
+the component `Spec`. `Channels.OperationBus.OpBusMessage.eval_op`,
+`AirsClean.Binary.staticLookupComponent_eval_opBusMessageExpr`, and
+`AirsClean.Main.component_eval_opBusMessageExpr` now bridge evaluated Clean
+messages back to their row-native bus messages without unfolding full
+provider rows in `Balance.lean`. The static balance route therefore refines
+the provider disjunction to a concrete lookup-aware Binary provider row and
+then rewrites the selected Clean Main row back to legacy
+`opBus_row_Main m r_main`. The row-native XOR/XORI table routes no longer
+carry an explicit `b_op_or_sext = OP_XOR` promise:
+`BinaryTable.spec_op_val_ne_zero`,
+`Binary.static_table_b_op_or_sext_eq_of_xor_emit`, and
+`Binary.static_table_xor_mode_pins_of_emit` derive the pins from the same
+lookup-aware provider row by ruling out the ambiguous `mode32 = 1, b_op = 0`
+shape. Canonical dispatcher replacement is now threaded for the six bitwise
+Binary-family arms (AND/OR/XOR/ANDI/ORI/XORI): the relevant `OpEnvelope`
+constructors carry the concrete lookup-aware Binary provider table row, and
+the RTYPE/ITYPE dispatchers call the row-native `equiv_*_of_static_table_row`
+routes directly. The legacy wrapper theorem names have also been migrated to
+static-provider-row signatures, so `binary_b_op_or_sext_eq_op_general` and
+`binary_per_byte_lookup_witness` are no longer live declarations. After
+regeneration, `lake build`, `trust/scripts/check-all.sh`, and
+`trust/scripts/check-all-semantic.sh` pass with 92 axioms in both
+`baseline-axioms.txt` and the global compliance closure.
+
+The remaining 64-bit BinaryTable consumers now follow that same route.
+`EquivCore/Bridge/Binary.lean` adds a row-native 64-bit chain discharge over
+`StaticBinaryTableWfFacts row`; `EquivCore/{Sub,Slt,Sltu,Slti,Sltiu}.lean`
+expose `*_of_static_row` variants; and
+`Equivalence/{Sub,Slt,Sltu,Slti,Sltiu}.lean` plus the corresponding
+`Compliance/Wrappers` theorem names now take the concrete lookup-aware
+Binary provider table row. The regenerated semantic closure removes
+`binary_consumer_byte_match_chain_pin`, `op_bus_permutation_sound`, and
+`bin_table_consumer_wf` from those five canonical opcode closures; each now
+depends only on `range_bus_sound` plus its `transpile_*` axiom.
+
+T1.6 is complete. The same concrete-row pattern now covers the whole
+BinaryExtension shift family: `SLL/SRL/SRA`, `SLLI/SRLI/SRAI`, and
+`SLLW/SRLW/SRAW/SLLIW/SRLIW/SRAIW`. `AirsClean/BinaryExtension/Bridge.lean`
+exposes `validOfRow`; the relevant `EquivCore/*` files expose row-native
+`*_of_static_row` routes; the canonical wrappers/equivalence files and
+`OpEnvelope` now carry the lookup-aware BinaryExtension provider table row.
+The immediate-W write-value helpers consume `ByteLookupWfHypotheses`
+directly, so their closure no longer re-enters
+`bin_ext_table_consumer_wf`. After regeneration, all twelve shift-family
+canonical closures are exactly `range_bus_sound` plus the corresponding
+`transpile_*` axiom, with no `op_bus_permutation_sound` and no
+`bin_ext_table_consumer_wf`. `lake build`, `trust/scripts/check-all.sh`,
+and `trust/scripts/check-all-semantic.sh` pass.
 
 First row-native Binary proof surface is now present. `AirsClean/Binary/Bridge.lean`
 exposes `validOfRow`, a one-row legacy view constructed from a Clean
@@ -156,6 +264,17 @@ and `binary_row_{and,or,xor}_chunks_eq_bv_{and,or,xor}_of_wf`. These
 derive the bitwise packed identities directly from
 `StaticBinaryTableWfFacts row`; they do not require `StaticLookupSoundness v`
 or any claim that a Clean row equals a caller-supplied `Valid_Binary` row.
+The row-native surface now reaches the opcode-core layer for RTYPE bitwise
+ops: `WriteValueProofs/BinaryLogic.lean` has
+`h_rd_val_logic_{and,or,xor}_row_of_wf`, and
+`EquivCore/{And,Or,Xor}.lean` have `equiv_*_of_static_row` theorem
+variants over a concrete Clean `BinaryRow`. `Equivalence/{And,Or,Xor}.lean`
+also expose channel-effect `equiv_*_of_static_row` wrappers over the same
+row-native inputs. `AND` and `OR` derive their row mode/op pins from the
+op-bus emission plus Binary core constraints. The table-row `XOR` route now
+also derives `b_op_or_sext = OP_XOR`: exact BinaryTable membership rules out
+the otherwise ambiguous `mode32 = 1, b_op = 0` shape because the static
+BinaryTable has no opcode-zero rows.
 
 BinaryTable and BinaryExtensionTable now both have static provider-side
 Clean `StaticTable` modules:
@@ -458,59 +577,244 @@ Per-opcode completion rule: inspect closure, remove exactly that
 constructor from `UsesOpcodeSpecificArithTableAxiom`, update the defect
 ledger/status, then run `lake build`, V1, and V2.
 
-### Phase 3 — Per-AIR transpiler rewrite
+## Restructured terminal plan
 
-Reference for the broader PR series after C3/C4:
+The old plan grouped too much work under "C7". Binary-family work showed
+that a useful Clean phase is not "make AIR X a component"; it is:
 
-1. Rust side (`tools/pil-extract/src/clean_emit.rs`): adapt the
-   spike-branch transpiler at `tools/pil-to-clean/` (which already
-   emits Clean components for a single AIR) into the existing
-   `tools/pil-extract` shape. The spike's emitter is ~275 LoC.
+1. expose the component's channel message and table-row facts,
+2. use Clean balance/static lookup to produce a concrete provider row,
+3. prove a row-native bridge theorem over that concrete row,
+4. thread that route through `OpEnvelope`, family dispatch, and canonical
+   wrappers,
+5. regenerate the trust baselines and retire named axioms only when the
+   global theorem closure loses them.
 
-2. AIR-by-AIR (lowest blast radius first): **BinaryAdd → Binary →
-   BinaryExtension → MemAlign{Byte,ReadByte,_} → Mem → Arith{Mul,
-   Div,_} → Main**. Each PR:
-   - emits `build/extraction/Clean/<AIR>.lean` (gitignored)
-   - hand-writes `ZiskFv/AirsClean/<AIR>/{Spec,Soundness}.lean`
-   - provides compatibility lemma: existing `Valid_<AIR>` derived
-     from `<AIR>.circuit.Soundness`
-   - retires that AIR's old axiom-file entries from
-     `trust/allowed-axiom-files.txt`
-   - lowers `trust/.shrinkage-floor` by exactly the number of
-     axioms removed (e.g. BinaryAdd: 116 → 115)
+Future phases are therefore organized by **terminal trust retirements**. A
+phase is complete only when `lake build`, `trust/scripts/check-all.sh`, and
+`trust/scripts/check-all-semantic.sh` pass, and the relevant checklist item
+below is marked with 🪓.
 
-3. Important adaptation note: the spike's `BinaryAdd/Soundness.lean`
-   uses `[Fact (p > 2^65)]`. Goldilocks `p ≈ 2^64` so `2^65 > p` —
-   the pGt fact doesn't directly hold. The port needs to weaken the
-   spike's assumption to `p > 2^33` (sufficient for 32-bit chunk
-   range bounds), or specialise more aggressively against FGL.
+### T1 — Binary-family terminal op-bus and table lookup
 
-4. Per-AIR expected axiom reduction (from the plan):
-   - BinaryAdd: −1 (op-bus emission bundle)
-   - Binary: −5 (range pins + table-consumer-wf)
-   - BinaryExtension: −7 (range pins + table chain)
-   - MemAlign\*: −2 (perm + ROM lookup)
-   - Mem: −9 (7 main_*_emission_bundle + lookup + LaneMatch)
-   - Arith\*: −30 (range pins consolidated; some Euclidean pins irreducible)
-   - Main: −1 (op-bus consumer wf)
-   - **Aggregate target: 116 → ~70 axioms.**
+Purpose: finish the work started in C7 and retire the remaining
+Binary-family shared trust instead of treating Binary/BinaryExtension as
+separate local component ports.
 
-## Phases 4–7
+Current status:
 
-Same plan as the master file. Phase 4 (per-opcode `equiv_<OP>_v2`)
-follows the pattern proved in `ZiskFv/Vm/Probe_ADD.lean`: a single
-`rw [state_effect_via_channels_eq_bus_effect_2]` followed by
-`exact equiv_<OP>`. The 63 wrappers can be batched by archetype
-into 10–12 PRs.
+- 🪓 T1.1 Clean balance projects active Main op-bus rows to concrete
+  Binary-family provider rows.
+- 🪓 T1.2 lookup-aware Binary provider rows carry direct static
+  BinaryTable lookup facts.
+- 🪓 T1.3 canonical bitwise arms
+  `AND/OR/XOR/ANDI/ORI/XORI` consume static-provider rows.
+- 🪓 T1.4 retired `binary_per_byte_lookup_witness` and
+  `binary_b_op_or_sext_eq_op_general` from the live trust ledger.
+- 🪓 T1.5 migrate remaining Binary table consumers:
+  `SUB`, `SLT`, `SLTU`, `SLTI`, `SLTIU`.
+- 🪓 T1.6 migrate BinaryExtension/shift-family table consumers:
+  `SLL`, `SRL`, `SRA`, immediate shifts, and W-shifts.
+- 🪓 T1.7 retire `op_bus_permutation_sound` if the Binary-family route was
+  its last global consumer; otherwise record the remaining consumer family
+  explicitly.
+- 🪓 T1.8 retire `bin_table_consumer_wf` and
+  `bin_ext_table_consumer_wf`, or document their last non-Binary-family
+  consumers if any remain.
 
-## Trust gate state
+Expected trust movement from the current 92-axiom state:
+
+- definite target: remove `op_bus_permutation_sound` once every global
+  operation-bus consumer is routed through Clean balance;
+- Binary-family target: remove `bin_table_consumer_wf` and
+  `bin_ext_table_consumer_wf` once all Binary/BinaryExtension table
+  semantics are sourced from static provider rows;
+- no new soundness-critical axioms.
+
+T1.7/T1.8 audit result: these axioms are not yet globally retireable.
+`trust/baseline-equiv-axiom-deps.txt` still lists
+`op_bus_permutation_sound` in canonical closures for `ADD`, `ADDI`,
+`ADDIW`, `ADDW`, `SUBW`, and signed loads `LB/LH/LW`; it is also still in
+the global compliance closure. `bin_table_consumer_wf` remains in
+`ADDIW/ADDW/SUBW`. `bin_ext_table_consumer_wf` remains in signed loads
+`LB/LH/LW`. The shift-family BinaryExtension work is not the blocker
+anymore; the remaining consumers move to T2 BinaryAdd/add-word work and T4
+memory/signed-load work.
+
+### T2 — BinaryAdd and simple arithmetic-add family
+
+Purpose: reuse T1's op-bus provider-row pattern for `ADD`, `ADDI`, and
+the BinaryAddW-adjacent add/subword paths where applicable. T1 established
+that the useful unit of work is a row-native canonical route whose closure
+proves old trust is gone, not a broad "port the AIR" marker. T2 starts from
+the remaining T1 audit consumers: `ADD`, `ADDI`, `ADDIW`, `ADDW`, and
+`SUBW`.
+
+Checklist:
+
+- ☐ T2.1 expose/load-bearing BinaryAdd component row facts through the same
+  singleton-channel row extractor pattern used in T1, including an evaluated
+  Clean op-bus message bridge back to legacy `matches_entry`.
+- ☐ T2.2 add row-native `ADD`/`ADDI` write-value bridges over concrete
+  Clean BinaryAdd rows; no caller promise may restate the output value.
+- ☐ T2.3 thread canonical `ADD`/`ADDI` wrappers, `OpEnvelope` constructors,
+  and dispatch through the Clean row route.
+- ☐ T2.4 classify `ADDIW/ADDW/SUBW` by actual provider/table dependency, not
+  by opcode family name. Reuse the T1 lookup-aware Binary route if they
+  still need BinaryTable facts.
+- ☐ T2.5 regenerate trust ledgers and record exact remaining consumers of
+  `op_bus_permutation_sound` and `bin_table_consumer_wf`; retire either only
+  if the global/V2 closure actually loses it.
+
+### T3 — Control-flow and no-memory family
+
+Purpose: handle branches, `JAL`, `JALR`, `LUI`, `AUIPC`, and `FENCE`
+without assuming they are "free" just because they are not table-heavy. T1's
+lesson applies on the Main side: project facts from concrete Clean rows,
+thread them into canonical closures, and shrink hand-rolled pin bundles only
+when closure proves they are no longer needed.
+
+Checklist:
+
+- ☐ T3.1 classify each control-flow opcode by channel use:
+  no memory, register write, PC/state handshake, memory-bus side effect.
+- ☐ T3.2 expose Main/control-flow row facts from Clean Main rather than
+  hand-rolled Main pin bundles where possible.
+- ☐ T3.3 thread branch opcodes through row-native Main/control-flow routes.
+- ☐ T3.4 thread `JAL/JALR/LUI/AUIPC` through row-native routes, preserving
+  their memory/register-write bus-effect shape.
+- ☐ T3.5 keep `FENCE` under `h_known_bugs` until the documented ZisK FENCE
+  support defect is resolved; do not silently exclude it.
+- ☐ T3.6 regenerate trust ledgers and record any remaining Main/control-flow
+  bus-shape or op-bus consumers instead of claiming retirement early.
+
+Expected trust movement:
+
+- likely smaller than Binary/Memory/Arith;
+- may retire Main-side bus-shape/emission trust if those facts are no
+  longer needed by any canonical control-flow theorem.
+
+### T4 — Memory-family terminal phase
+
+Purpose: retire the memory-bus and MemAlign trust by using Clean component
+rows, memory-bus balance, and static MemAlign ROM membership. T1's exact-row
+discipline applies directly, but signed loads add one composition not present
+in T1: the memory provider row supplies the loaded bytes, while a separate
+BinaryExtension provider row supplies the sign-extension table facts. T4 must
+prove those two provider rows are tied to the same Main load result before it
+can retire `bin_ext_table_consumer_wf` for `LB/LH/LW`.
+
+Checklist:
+
+- ☐ T4.1 build the memory-family ensemble:
+  Main/Mem/MemAlignByte/MemAlignReadByte/MemAlign/static ROM providers.
+- ☐ T4.2 prove Clean balance gives concrete memory provider rows matching
+  active Main memory interactions.
+- ☐ T4.3 signed-load spike: prove the `LB` chain from memory provider row
+  bytes to lookup-aware BinaryExtension sign-extension row to Sail result.
+- ☐ T4.4 prove row-native load routes for
+  `LD/LB/LH/LW/LBU/LHU/LWU`.
+- ☐ T4.5 prove row-native store routes for `SB/SH/SW/SD`.
+- ☐ T4.6 for signed loads `LB/LH/LW`, replace the remaining
+  `bin_ext_table_consumer_wf` closure with exact lookup-aware
+  BinaryExtension provider-row facts, reusing T1's shift-family route.
+- ☐ T4.7 retire `lookup_consumer_matches_provider_load` and the
+  `main_*_emission_bundle` memory axioms when the canonical closures lose
+  them.
+- ☐ T4.8 retire `memalign_load_perm_sound` and
+  `mem_align_rom_subdoubleword_load_value_1_zero` only after the direct ROM
+  membership route proves the corresponding facts for the same provider row.
+
+Expected trust movement:
+
+- high-value phase; memory has several current soundness-critical axioms;
+- likely slower than control-flow, but should reuse T1's provider-row and
+  static-table proof pattern;
+- largest known T4 unknown is the signed-load composition across memory and
+  BinaryExtension provider rows, so the `LB` spike should happen before
+  broad load/store migration.
+
+### T5 — Arith-family terminal phase
+
+Purpose: move ArithMul/ArithDiv/ArithTable from defect-qualified and
+trust-shape-repaired proofs to Clean row/static-table proofs for every
+non-defective claim. T1's static-table lesson applies, but T5 also has the
+`h_known_bugs` interaction: prove restricted statements under explicit defect
+hypotheses rather than hiding known defects behind fresh trust.
+
+Checklist:
+
+- ☐ T5.1 build lookup-aware ArithMul and ArithDiv component routes that emit
+  the same ArithTable rows used by their op proofs.
+- ☐ T5.2 build the static ArithTable provider with exact 74-row membership
+  projections for all true static facts.
+- ☐ T5.3 prove row-native non-defective `MUL/MULHU/MULW` facts from the same
+  Arith provider rows that balance the Main channel interaction, without
+  opcode-shaped ArithTable axioms.
+- ☐ T5.4 keep signed-MUL defect predicates explicit through
+  `h_known_bugs` until the circuit/witness issue is fixed upstream.
+- ☐ T5.5 prove row-native non-defective `DIV/REM` facts and keep remaining
+  documented dynamic defects under `h_known_bugs`.
+- ☐ T5.6 retire `arith_mul_table_lookup_sound`,
+  `arith_div_table_lookup_sound`, and every remaining true static
+  `arith_table_*` fact that is no longer needed in the global closure; if a
+  fact remains because of a defect or later family, record the exact consumer
+  as in T1.7/T1.8.
+
+Expected trust movement:
+
+- high-value but likely the hardest remaining family because it combines
+  static table facts, dynamic signedness/range facts, and known defects;
+- the Binary lesson applies, but defect accounting remains unique to Arith.
+
+### T6 — Range-bus terminal phase
+
+Purpose: remove generic byte/signed-range trust once all families that use
+range membership are routed through Clean/static lookup facts.
+
+Checklist:
+
+- ☐ T6.1 enumerate last consumers of `range_bus_sound` and
+  `signed_range_bus_sound`.
+- ☐ T6.2 replace each with a row/static-table/local component fact from the
+  relevant family phase rather than a new global range axiom. Follow T1's
+  rule: the fact must be tied to the same concrete provider row used by the
+  channel/matches proof.
+- ☐ T6.3 retire `range_bus_sound` and `signed_range_bus_sound` when their
+  global closure entries disappear.
+
+### T7 — Final ensemble re-root and deletion pass
+
+Purpose: after terminal families retire their shared trust, collapse the
+hybrid proof surface into the intended Clean ensemble proof architecture.
+
+Checklist:
+
+- ☐ T7.1 define the full Clean ensemble statement for the supported RV64IM
+  scope.
+- ☐ T7.2 prove constructibility: real ZisK traces produce an
+  `EnsembleWitness` satisfying constraints and balanced channels, modulo
+  explicit `h_known_bugs`.
+- ☐ T7.3 re-root canonical theorem closures on the ensemble statement rather
+  than per-family hybrid wrappers, without reintroducing row-local promise
+  hypotheses under new names.
+- ☐ T7.4 delete dead hand-rolled bus/permutation/range/lookup scaffolding.
+- ☐ T7.5 update docs and trust ledgers so the remaining trust splits cleanly
+  into irreducible transpiler/Sail axioms, sanctioned completeness axioms,
+  and explicit known-defect hypotheses.
+
+## Current trust gate state
 
 | Metric                 | Value |
 | ---------------------- | ----- |
-| Axiom baseline         | 116   |
-| Shrinkage floor        | 116   |
+| Axiom baseline         | 92    |
 | Canonical equiv_<OP>   | 63    |
-| V1 checks              | 10/10 |
+| Wrapper equiv_<OP>     | 63    |
+| V1 checks              | 11/11 |
 | V2 semantic            | green |
-| `lake build`           | 8508 jobs |
-| `nix flake check`      | green |
+| `lake build`           | green |
+
+The current 92-axiom baseline includes the sanctioned Clean completeness
+axioms already present in `AirsClean/Completeness.lean`. The two retired
+Binary bitwise axioms are absent from both `trust/baseline-axioms.txt` and
+the global compliance closure.
