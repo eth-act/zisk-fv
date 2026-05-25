@@ -488,4 +488,96 @@ theorem equiv_SUBW_of_wf
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
+/-- Static-provider BinaryTable route for `equiv_SUBW`.
+
+    The 4 low-byte chain wfs come from `static_lookup_wf_facts`; the
+    W-mode SEXT disjunction `h_sext_choice` and chain-end `carry_7 = 0`
+    are caller-supplied (currently sourced from
+    `binary_w_sext_choice_pin` / `binary_w_mode_carry_7_zero` at the
+    wrapper layer). Removes `bin_table_consumer_wf` and
+    `binary_consumer_byte_match_chain_pin` from the canonical closure. -/
+theorem equiv_SUBW_of_static_lookup
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (subw_input : PureSpec.SubwInput)
+    (r1 r2 rd : regidx)
+    (m : Valid_Main FGL FGL) (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
+    (r_main r_binary offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
+    (h_core : ZiskFv.Airs.Binary.core_every_row v r_binary)
+    (h_mode32_one : v.mode32 r_binary = 1)
+    (h_b_op : (v.b_op r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state subw_input.r1_val subw_input.r2_val subw_input.rd subw_input.PC
+        (PureSpec.execute_RTYPE_subw_pure subw_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB_W)
+    (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
+    (h_sext_choice :
+      (((v.free_in_c_4 r_binary).val = 0 ∧ (v.free_in_c_5 r_binary).val = 0
+          ∧ (v.free_in_c_6 r_binary).val = 0 ∧ (v.free_in_c_7 r_binary).val = 0) ∧
+        (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val * 256
+          + (v.free_in_c_2 r_binary).val * 65536
+          + (v.free_in_c_3 r_binary).val * 16777216 < 2147483648) ∨
+      (((v.free_in_c_4 r_binary).val = 255 ∧ (v.free_in_c_5 r_binary).val = 255
+          ∧ (v.free_in_c_6 r_binary).val = 255 ∧ (v.free_in_c_7 r_binary).val = 255) ∧
+        (v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val * 256
+          + (v.free_in_c_2 r_binary).val * 65536
+          + (v.free_in_c_3 r_binary).val * 16777216 ≥ 2147483648))
+    (h_carry_7_zero : v.carry_7 r_binary = 0)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.RTYPEW (r2, r1, rd, ropw.SUBW))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_subw⟩ := pins
+  have out :=
+    ZiskFv.EquivCore.Bridge.Binary.byte_chain_W_low4_discharge_of_static_lookup
+      v r_binary offset env h_static
+      ZiskFv.Airs.Tables.BinaryTable.OP_SUB h_core h_mode32_one h_b_op
+  -- Project Main↔Binary c-lane bus-match from `matches_entry`.
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_lane_eqs
+  obtain ⟨_, _, _, _, _, _, h_c_lo_m, h_c_hi_m, _, _, _, _⟩ := h_lane_eqs
+  have h_match_clo :
+      m.c_0 r_main = v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
+        + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216 := by
+    rw [h_c_lo_m, h_carry_7_zero]
+    ring
+  have h_match_chi :
+      m.c_1 r_main = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256
+        + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216 := by
+    rw [h_c_hi_m]
+    ring
+  -- Need hc4..hc7 byte ranges for the equiv_SUBW_of_wf delegation.
+  have hc4 : (v.free_in_c_4 r_binary).val < 256 :=
+    ZiskFv.Airs.Binary.bin_c_4_lt_256 v r_binary
+  have hc5 : (v.free_in_c_5 r_binary).val < 256 :=
+    ZiskFv.Airs.Binary.bin_c_5_lt_256 v r_binary
+  have hc6 : (v.free_in_c_6 r_binary).val < 256 :=
+    ZiskFv.Airs.Binary.bin_c_6_lt_256 v r_binary
+  have hc7 : (v.free_in_c_7 r_binary).val < 256 :=
+    ZiskFv.Airs.Binary.bin_c_7_lt_256 v r_binary
+  exact ZiskFv.EquivCore.Subw.equiv_SUBW_of_wf
+    state subw_input r1 r2 rd m r_main
+    ⟨exec_row, e0, e1, e2⟩
+    promises
+    v r_binary
+    ⟨h_main_active, h_main_op_subw⟩
+    h_match
+    (v.free_in_c_0 r_binary) (v.free_in_c_1 r_binary) (v.free_in_c_2 r_binary)
+    (v.free_in_c_3 r_binary) (v.free_in_c_4 r_binary) (v.free_in_c_5 r_binary)
+    (v.free_in_c_6 r_binary) (v.free_in_c_7 r_binary)
+    (0 : FGL) (v.carry_0 r_binary) (v.carry_1 r_binary) (v.carry_2 r_binary)
+    (v.carry_0 r_binary) (v.carry_1 r_binary) (v.carry_2 r_binary) (v.carry_3 r_binary)
+    (2 * v.use_first_byte r_binary) (0 : FGL) (0 : FGL) (v.mode32 r_binary)
+    out.chain_0 out.chain_1 out.chain_2 out.chain_3
+    out.c0_lt out.c1_lt out.c2_lt out.c3_lt hc4 hc5 hc6 hc7
+    out.cin0_eq out.cin1_eq out.cin2_eq out.cin3_eq
+    out.pi0_ne out.pi1_ne out.pi2_ne out.pi3_eq
+    h_sext_choice h_match_clo h_match_chi h_lane_rd
+
 end ZiskFv.EquivCore.Subw
