@@ -693,6 +693,61 @@ lemma chain_row_shape_of_emit_op_lt_16
   have h_mode32_val : (v.mode32 r).val = 0 := by omega
   exact ⟨Fin.ext h_mode32_val, by omega⟩
 
+/-- W-mode row-shape derivation for ADDW/SUBW. Given the op-bus emission
+    `b_op + 16 * mode32 = op_emit` with `op_emit ∈ {0x1A, 0x1B}` and a
+    Clean static-table spec for byte 0 (whose `op` field is `b_op`),
+    `spec_op_val_ne_W_add_sub` rules out the (mode32 = 0, b_op = op_emit)
+    decomposition. Forces `mode32 = 1` and `b_op = op_emit - 16`. -/
+lemma chain_row_shape_W_of_emit
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_spec_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
+    (op_emit : ℕ)
+    (h_op_W : op_emit = 0x1A ∨ op_emit = 0x1B)
+    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = (op_emit : FGL)) :
+    row.mode.mode32 = 1 ∧ row.chain.b_op.val = op_emit - 16 := by
+  let v := ZiskFv.AirsClean.Binary.validOfRow row
+  have h_bop_lt : (v.b_op 0).val < 128 :=
+    ZiskFv.Airs.Binary.bin_b_op_lt_128 v 0
+  have h_mode32_lt : (v.mode32 0).val < 2 :=
+    ZiskFv.Airs.Binary.bin_mode32_lt_2 v 0
+  have h_bop_v : (v.b_op 0).val = (row.chain.b_op).val := by
+    simp [v, ZiskFv.AirsClean.Binary.validOfRow]
+  have h_mode32_v : (v.mode32 0).val = (row.mode.mode32).val := by
+    simp [v, ZiskFv.AirsClean.Binary.validOfRow]
+  have h_bop_row_lt : (row.chain.b_op).val < 128 := h_bop_v ▸ h_bop_lt
+  have h_mode32_row_lt : (row.mode.mode32).val < 2 := h_mode32_v ▸ h_mode32_lt
+  -- FGL → Nat translation of h_emit (mirrors chain_row_shape_of_emit_op_lt_16).
+  have hval : (row.chain.b_op).val + 16 * (row.mode.mode32).val = op_emit := by
+    have hv := congrArg Fin.val h_emit
+    rw [Fin.val_add, Fin.val_mul, Fin.val_natCast] at hv
+    have hsmall :
+        (row.chain.b_op).val + 16 * (row.mode.mode32).val < GL_prime := by omega
+    have hmulsmall : 16 * (row.mode.mode32).val < GL_prime := by omega
+    have hopsmall : op_emit < GL_prime := by rcases h_op_W with h | h <;> rw [h] <;> decide
+    simp [Nat.mod_eq_of_lt hsmall, Nat.mod_eq_of_lt hmulsmall,
+      Nat.mod_eq_of_lt (by omega : 16 < GL_prime),
+      Nat.mod_eq_of_lt hopsmall] at hv
+    exact hv
+  -- Exclude mode32 = 0 via static-table byte-0 membership.
+  have h_byte0_spec := h_spec_facts.1
+  have h_byte0_ne :=
+    ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_W_add_sub h_byte0_spec
+  -- The byte-0 entry's op field is row.chain.b_op (per StaticBinaryTableSpecFacts).
+  have h_bop_ne_1A : (row.chain.b_op).val ≠ 0x1A := by
+    intro h
+    apply h_byte0_ne.1
+    simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h
+  have h_bop_ne_1B : (row.chain.b_op).val ≠ 0x1B := by
+    intro h
+    apply h_byte0_ne.2
+    simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h
+  -- With b_op ≠ 0x1A and ≠ 0x1B, the equation forces mode32 = 1.
+  have h_mode32_val : (row.mode.mode32).val = 1 := by
+    rcases h_op_W with h | h <;> rw [h] at hval <;> omega
+  have h_bop_val : (row.chain.b_op).val = op_emit - 16 := by
+    rcases h_op_W with h | h <;> rw [h] at hval ⊢ <;> omega
+  refine ⟨Fin.ext h_mode32_val, h_bop_val⟩
+
 /-- Row-native version of `chain_row_shape_of_emit_op_lt_16` plus the
     Binary core equation connecting `b_op_or_sext` to `b_op`. This is the
     mode-pin bridge needed by Clean-row callers: once the op-bus emission is
