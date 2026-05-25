@@ -32,14 +32,14 @@ def OpEnvelope.exec_eq_add_rtypew
   | .add _ r1 r2 rd _ bus _ _ _ _ =>
       execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .addw _ r1 r2 rd _ bus _ _ _ =>
+  | .addw _ r1 r2 rd _ bus _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute
           (instruction.RTYPEW (r2, r1, rd, ropw.ADDW))) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .subw _ r1 r2 rd _ bus _ _ _ =>
+  | .subw _ r1 r2 rd _ bus _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -56,10 +56,12 @@ theorem zisk_riscv_compliant_program_bus_add_rtypew
     simp only [OpEnvelope.exec_eq_add_rtypew]
     exact ZiskFv.Equivalence.Add.equiv_ADD state add_input r1 r2 rd m badd r_main bus pins
       h_main_subset h_lane_rd promises
-  | addw addw_input r1 r2 rd v bus pins h_lane_rd promises =>
+  | addw addw_input r1 r2 rd v bus pins _providerTable _providerRow _h_component
+      _h_table_spec _h_provider_row _h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_add_rtypew]
     exact ZiskFv.Equivalence.Addw.equiv_ADDW state addw_input r1 r2 rd m v r_main bus pins h_lane_rd promises
-  | subw subw_input r1 r2 rd v bus pins h_lane_rd promises =>
+  | subw subw_input r1 r2 rd v bus pins _providerTable _providerRow _h_component
+      _h_table_spec _h_provider_row _h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_add_rtypew]
     exact ZiskFv.Equivalence.Subw.equiv_SUBW state subw_input r1 r2 rd m v r_main bus pins h_lane_rd promises
   | _ => trivial

@@ -57,7 +57,7 @@ def OpEnvelope.exec_eq_misc
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .addiw _ r1 rd imm _ bus _ _ _ _ =>
+  | .addiw _ r1 rd imm _ bus _ _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.ADDIW (imm, r1, rd))) state
@@ -91,7 +91,8 @@ theorem zisk_riscv_compliant_program_bus_misc
     simp only [OpEnvelope.exec_eq_misc]
     exact ZiskFv.Equivalence.Addi.equiv_ADDI state addi_input r1 rd imm m badd r_main bus
       pins h_main_subset h_addi_subset h_lane_rd promises
-  | addiw addiw_input r1 rd imm v bus pins h_addiw_subset h_lane_rd promises =>
+  | addiw addiw_input r1 rd imm v bus pins h_addiw_subset _providerTable _providerRow
+      _h_component _h_table_spec _h_provider_row _h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_misc]
     exact ZiskFv.Equivalence.Addiw.equiv_ADDIW state addiw_input r1 rd imm m v r_main bus
       pins h_addiw_subset h_lane_rd promises
