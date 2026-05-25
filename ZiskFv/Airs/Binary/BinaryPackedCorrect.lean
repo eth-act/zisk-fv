@@ -1152,6 +1152,52 @@ lemma sub_byte_nonfinal_eq_of_wf
     have h_flags_eq := h_nf1 h_borrow
     omega
 
+private lemma byte_relation_ADD_of_wf
+    (e : BinaryTableEntry FGL)
+    (h_wf : wf_properties e)
+    (h_op : e.op.val = OP_ADD) :
+    e.c_byte.val = (e.cin.val + e.a_byte.val + e.b_byte.val) % 256 ∧
+    (e.pos_ind.val ≠ 1 →
+      e.flags.val % 2 = (e.cin.val + e.a_byte.val + e.b_byte.val) / 256) ∧
+    (e.pos_ind.val = 1 → e.flags.val % 2 = 0) := by
+  obtain ⟨_, _, _, _, _, _, _, h_add, _⟩ := h_wf
+  exact h_add h_op
+
+lemma add_byte_uniform_eq_of_wf
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain_wf OP_ADD a b c cin_cell flags_cell pos_cell)
+    (ha : a.val < 256) (hb : b.val < 256)
+    (h_cin : cin_cell.val < 2) :
+    ∃ B : ℕ, B ≤ 1 ∧
+      a.val + b.val + cin_cell.val = c.val + 256 * B := by
+  obtain ⟨e, h_wf, h_op, h_a, h_b, h_c, h_cin_eq, _, _⟩ := h
+  have hrel := byte_relation_ADD_of_wf e h_wf h_op
+  rw [h_a, h_b, h_c, h_cin_eq] at hrel
+  obtain ⟨h_c_eq, _, _⟩ := hrel
+  refine ⟨(cin_cell.val + a.val + b.val) / 256, ?_, ?_⟩
+  · have : cin_cell.val + a.val + b.val ≤ 511 := by omega
+    omega
+  · have hdm := Nat.div_add_mod (cin_cell.val + a.val + b.val) 256
+    omega
+
+lemma add_byte_nonfinal_eq_of_wf
+    (a b c cin_cell flags_cell pos_cell : FGL)
+    (h : consumer_byte_match_chain_wf OP_ADD a b c cin_cell flags_cell pos_cell)
+    (_ha : a.val < 256) (_hb : b.val < 256)
+    (_h_cin : cin_cell.val < 2)
+    (h_pos : pos_cell.val ≠ 1) :
+    a.val + b.val + cin_cell.val
+      = c.val + 256 * (flags_cell.val % 2) ∧
+    flags_cell.val % 2 ≤ 1 := by
+  obtain ⟨e, h_wf, h_op, h_a, h_b, h_c, h_cin_eq, h_flags, h_pos_eq⟩ := h
+  have hrel := byte_relation_ADD_of_wf e h_wf h_op
+  rw [h_a, h_b, h_c, h_cin_eq, h_flags, h_pos_eq] at hrel
+  obtain ⟨h_c_eq, h_nonfinal, _⟩ := hrel
+  have h_flags_eq := h_nonfinal h_pos
+  have hdm := Nat.div_add_mod (cin_cell.val + a.val + b.val) 256
+  have hflags_le : flags_cell.val % 2 ≤ 1 := Nat.le_of_lt_succ (Nat.mod_lt _ (by norm_num))
+  refine ⟨by omega, hflags_le⟩
+
 private lemma ltu_byte_chain_of_wf
     (a b c cin_cell flags_cell pos_cell : FGL)
     (h : consumer_byte_match_chain_wf OP_LTU a b c cin_cell flags_cell pos_cell) :
@@ -2710,6 +2756,99 @@ lemma binary_addw_chunks_eq_bv_add_w
       (by omega) (by omega) (by omega) h_lo_mod hClo_pos
   · -- Negative: c4..c7 = 255, low-32 result ≥ 2^31.
     rw [hc4, hc5, hc6, hc7]
+    have h_rhs : c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+                + 255 * 4294967296 + 255 * 1099511627776
+                + 255 * 281474976710656 + 255 * 72057594037927936
+              = (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216)
+                + 18446744069414584320 := by omega
+    rw [h_rhs]
+    exact addw_close_neg
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216)
+      (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216)
+      (by omega) (by omega) (by omega) h_lo_mod hClo_neg
+
+/-- Static-provider variant of `binary_addw_chunks_eq_bv_add_w`. Identical
+    statement except the 4 low-byte chain hypotheses carry
+    `consumer_byte_match_chain_wf` (table wf_properties) instead of
+    multiplicity-based `consumer_byte_match_chain`. Body mirrors the
+    original, swapping `add_byte_{nonfinal,uniform}_eq` for their `_of_wf`
+    analogs. -/
+lemma binary_addw_chunks_eq_bv_add_w_of_wf
+    (a0 a1 a2 a3 b0 b1 b2 b3
+     c0 c1 c2 c3 c4 c5 c6 c7
+     cin0 cin1 cin2 cin3
+     fl0 fl1 fl2 fl3
+     pi0 pi1 pi2 pi3 : FGL)
+    (h_byte_0 : consumer_byte_match_chain_wf OP_ADD a0 b0 c0 cin0 fl0 pi0)
+    (h_byte_1 : consumer_byte_match_chain_wf OP_ADD a1 b1 c1 cin1 fl1 pi1)
+    (h_byte_2 : consumer_byte_match_chain_wf OP_ADD a2 b2 c2 cin2 fl2 pi2)
+    (h_byte_3 : consumer_byte_match_chain_wf OP_ADD a3 b3 c3 cin3 fl3 pi3)
+    (ha0 : a0.val < 256) (ha1 : a1.val < 256) (ha2 : a2.val < 256) (ha3 : a3.val < 256)
+    (hb0 : b0.val < 256) (hb1 : b1.val < 256) (hb2 : b2.val < 256) (hb3 : b3.val < 256)
+    (hc0 : c0.val < 256) (hc1 : c1.val < 256) (hc2 : c2.val < 256) (hc3 : c3.val < 256)
+    (h_cin0 : cin0.val = 0)
+    (h_cin1 : cin1.val = fl0.val % 2)
+    (h_cin2 : cin2.val = fl1.val % 2)
+    (h_cin3 : cin3.val = fl2.val % 2)
+    (h_pi0 : pi0.val ≠ 1) (h_pi1 : pi1.val ≠ 1) (h_pi2 : pi2.val ≠ 1)
+    (_h_pi3 : pi3.val = 1)
+    (h_sext_choice :
+      ((c4.val = 0 ∧ c5.val = 0 ∧ c6.val = 0 ∧ c7.val = 0) ∧
+        c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216 < 2147483648) ∨
+      ((c4.val = 255 ∧ c5.val = 255 ∧ c6.val = 255 ∧ c7.val = 255) ∧
+        c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216 ≥ 2147483648)) :
+    BitVec.signExtend 64 (
+      BitVec.ofNat 32 (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+      +
+      BitVec.ofNat 32 (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216))
+    = BitVec.ofNat 64
+      (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+        + c4.val * 4294967296 + c5.val * 1099511627776
+        + c6.val * 281474976710656 + c7.val * 72057594037927936) := by
+  have h_cin0_lt : cin0.val < 2 := by omega
+  have h_cin1_lt : cin1.val < 2 := by
+    rw [h_cin1]; exact Nat.mod_lt _ (by norm_num)
+  have h_cin2_lt : cin2.val < 2 := by
+    rw [h_cin2]; exact Nat.mod_lt _ (by norm_num)
+  have h_cin3_lt : cin3.val < 2 := by
+    rw [h_cin3]; exact Nat.mod_lt _ (by norm_num)
+  obtain ⟨he0, _hB0_le⟩ := add_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_0 ha0 hb0 h_cin0_lt h_pi0
+  obtain ⟨he1, _hB1_le⟩ := add_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_1 ha1 hb1 h_cin1_lt h_pi1
+  obtain ⟨he2, _hB2_le⟩ := add_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_2 ha2 hb2 h_cin2_lt h_pi2
+  obtain ⟨B3, _hB3_le, he3⟩ := add_byte_uniform_eq_of_wf _ _ _ _ _ _ h_byte_3 ha3 hb3 h_cin3_lt
+  rw [h_cin0] at he0
+  rw [h_cin1] at he1
+  rw [h_cin2] at he2
+  rw [h_cin3] at he3
+  have h_telescope := add_telescope_4byte
+    a0.val a1.val a2.val a3.val
+    b0.val b1.val b2.val b3.val
+    c0.val c1.val c2.val c3.val
+    0 (fl0.val % 2) (fl1.val % 2) (fl2.val % 2) B3
+    he0 he1 he2 he3
+  rw [Nat.add_zero] at h_telescope
+  have h_lo_mod :
+      ((a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+        + (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216))
+      % 4294967296
+      = (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216) := by
+    rw [h_telescope, Nat.add_mul_mod_self_left]
+    exact Nat.mod_eq_of_lt (by omega)
+  rcases h_sext_choice with ⟨⟨hc4, hc5, hc6, hc7⟩, hClo_pos⟩ |
+                            ⟨⟨hc4, hc5, hc6, hc7⟩, hClo_neg⟩
+  · rw [hc4, hc5, hc6, hc7]
+    have h_rhs : c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+                + 0 * 4294967296 + 0 * 1099511627776
+                + 0 * 281474976710656 + 0 * 72057594037927936
+              = c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216 := by ring
+    rw [h_rhs]
+    exact addw_close_pos
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216)
+      (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216)
+      (by omega) (by omega) (by omega) h_lo_mod hClo_pos
+  · rw [hc4, hc5, hc6, hc7]
     have h_rhs : c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
                 + 255 * 4294967296 + 255 * 1099511627776
                 + 255 * 281474976710656 + 255 * 72057594037927936
