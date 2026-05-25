@@ -71,6 +71,12 @@ def opBusMessage (row : BinaryAddRow FGL) : OpBusMessage FGL :=
     extended_arg := 0
     extra_args_0 := 0 }
 
+theorem opBusMessage_toEntry_rowAt_eq_opBus_row
+    (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) (r : ℕ) :
+    OpBusMessage.toEntry (opBusMessage (rowAt v r)) 1 =
+      ZiskFv.Airs.OperationBus.opBus_row_BinaryAdd v r := by
+  rfl
+
 /-- The four BinaryAdd row constraints at row `r`, expressed against
     a `Valid_BinaryAdd`. -/
 def constraints_at (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) (r : ℕ) : Prop :=

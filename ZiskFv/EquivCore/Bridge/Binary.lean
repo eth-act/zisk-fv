@@ -594,6 +594,29 @@ def all_byte_matches_wf_at (v : Valid_Binary FGL FGL) (r : ℕ) (op_val : ℕ) :
   ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
       (v.free_in_a_7 r) (v.free_in_b_7 r) (v.free_in_c_7 r)
 
+/-- Row-native form of `all_byte_matches_wf_at` for Clean `BinaryRow`s.
+    This is the C7 shape used once Clean table rows, rather than legacy
+    `Valid_Binary` rows, are the source of truth. -/
+@[simp]
+def all_byte_matches_wf_at_row
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) (op_val : ℕ) : Prop :=
+    ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      row.aBytes.free_in_a_0 row.bBytes.free_in_b_0 row.cBytes.free_in_c_0
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      row.aBytes.free_in_a_1 row.bBytes.free_in_b_1 row.cBytes.free_in_c_1
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      row.aBytes.free_in_a_2 row.bBytes.free_in_b_2 row.cBytes.free_in_c_2
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      row.aBytes.free_in_a_3 row.bBytes.free_in_b_3 row.cBytes.free_in_c_3
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      row.aBytes.free_in_a_4 row.bBytes.free_in_b_4 row.cBytes.free_in_c_4
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      row.aBytes.free_in_a_5 row.bBytes.free_in_b_5 row.cBytes.free_in_c_5
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      row.aBytes.free_in_a_6 row.bBytes.free_in_b_6 row.cBytes.free_in_c_6
+  ∧ ZiskFv.Airs.Binary.consumer_byte_match_wf op_val
+      row.aBytes.free_in_a_7 row.bBytes.free_in_b_7 row.cBytes.free_in_c_7
+
 private lemma two_mul_boolean_ne_one {x : FGL} (h_bool : x * (1 - x) = 0) :
     (2 * x).val ≠ 1 := by
   rcases fgl_boolean_cases_local h_bool with h_zero | h_one
@@ -1021,6 +1044,226 @@ lemma byte_chain_discharge_logic_of_static_lookup
         ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h7
     · simpa [ZiskFv.AirsClean.Binary.rowAt,
         ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+
+/-- Row-native static byte-chain discharge for the 3-field bitwise family.
+    Bytes 0-3 consume `b_op`; bytes 4-7 consume `b_op_or_sext`, matching the
+    Clean `Binary` lookup path exactly. -/
+lemma byte_chain_discharge_logic_of_static_row
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
+    (op_val : ℕ)
+    (h_b_op : row.chain.b_op.val = op_val)
+    (h_b_op_or_sext : row.chain.b_op_or_sext.val = op_val) :
+    all_byte_matches_wf_at_row row op_val := by
+  rcases h_facts with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := 2 * row.mode.use_first_byte, op := row.chain.b_op,
+        a_byte := row.aBytes.free_in_a_0, b_byte := row.bBytes.free_in_b_0,
+        cin := 0, c_byte := row.cBytes.free_in_c_0, flags := row.chain.carry_0 } 1,
+      ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h0
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := 0, op := row.chain.b_op,
+        a_byte := row.aBytes.free_in_a_1, b_byte := row.bBytes.free_in_b_1,
+        cin := row.chain.carry_0, c_byte := row.cBytes.free_in_c_1,
+        flags := row.chain.carry_1 } 1, ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h1
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := 0, op := row.chain.b_op,
+        a_byte := row.aBytes.free_in_a_2, b_byte := row.bBytes.free_in_b_2,
+        cin := row.chain.carry_1, c_byte := row.cBytes.free_in_c_2,
+        flags := row.chain.carry_2 } 1, ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h2
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := row.mode.mode32, op := row.chain.b_op,
+        a_byte := row.aBytes.free_in_a_3, b_byte := row.bBytes.free_in_b_3,
+        cin := row.chain.carry_2, c_byte := row.cBytes.free_in_c_3,
+        flags := row.chain.carry_3 } 1, ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h3
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := 0, op := row.chain.b_op_or_sext,
+        a_byte := row.aBytes.free_in_a_4, b_byte := row.bBytes.free_in_b_4,
+        cin := row.chain.carry_3, c_byte := row.cBytes.free_in_c_4,
+        flags := row.chain.carry_4 } 1, ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h4
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := 0, op := row.chain.b_op_or_sext,
+        a_byte := row.aBytes.free_in_a_5, b_byte := row.bBytes.free_in_b_5,
+        cin := row.chain.carry_4, c_byte := row.cBytes.free_in_c_5,
+        flags := row.chain.carry_5 } 1, ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h5
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := 0, op := row.chain.b_op_or_sext,
+        a_byte := row.aBytes.free_in_a_6, b_byte := row.bBytes.free_in_b_6,
+        cin := row.chain.carry_5, c_byte := row.cBytes.free_in_c_6,
+        flags := row.chain.carry_6 } 1, ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h6
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+  · refine ⟨ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry {
+        pos_ind := 1 - row.mode.mode32, op := row.chain.b_op_or_sext,
+        a_byte := row.aBytes.free_in_a_7, b_byte := row.bBytes.free_in_b_7,
+        cin := row.chain.carry_6, c_byte := row.cBytes.free_in_c_7,
+        flags := row.chain.carry_7 } 1, ?_, ?_, rfl, rfl, rfl⟩
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h7
+    · simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h_b_op_or_sext
+
+private lemma byte_ranges_of_consumer_byte_match_wf
+    {op_val : ℕ} {a b c : FGL}
+    (h : ZiskFv.Airs.Binary.consumer_byte_match_wf op_val a b c) :
+    a.val < 256 ∧ b.val < 256 ∧ c.val < 256 := by
+  obtain ⟨e, h_wf, _h_op, h_a, h_b, h_c⟩ := h
+  rcases h_wf.1 with ⟨ha, hb, hc, _hcin⟩
+  exact ⟨by simpa [h_a] using ha, by simpa [h_b] using hb,
+    by simpa [h_c] using hc⟩
+
+/-- Row-native packed AND identity from exact static BinaryTable facts.
+    This reuses the existing packed theorem through the constructed
+    one-row `validOfRow` view; no claim is made that the row corresponds to
+    any external legacy `Valid_Binary` witness. -/
+lemma binary_row_and_chunks_eq_bv_and_of_wf
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_matches :
+      all_byte_matches_wf_at_row row ZiskFv.Airs.Tables.BinaryTable.OP_AND) :
+    BitVec.and
+      (BitVec.ofNat 64
+        (row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+          + row.aBytes.free_in_a_2.val * 65536
+          + row.aBytes.free_in_a_3.val * 16777216
+          + row.aBytes.free_in_a_4.val * 4294967296
+          + row.aBytes.free_in_a_5.val * 1099511627776
+          + row.aBytes.free_in_a_6.val * 281474976710656
+          + row.aBytes.free_in_a_7.val * 72057594037927936))
+      (BitVec.ofNat 64
+        (row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+          + row.bBytes.free_in_b_2.val * 65536
+          + row.bBytes.free_in_b_3.val * 16777216
+          + row.bBytes.free_in_b_4.val * 4294967296
+          + row.bBytes.free_in_b_5.val * 1099511627776
+          + row.bBytes.free_in_b_6.val * 281474976710656
+          + row.bBytes.free_in_b_7.val * 72057594037927936))
+    =
+    BitVec.ofNat 64
+      (row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
+        + row.cBytes.free_in_c_2.val * 65536
+        + row.cBytes.free_in_c_3.val * 16777216
+        + row.cBytes.free_in_c_4.val * 4294967296
+        + row.cBytes.free_in_c_5.val * 1099511627776
+        + row.cBytes.free_in_c_6.val * 281474976710656
+        + row.cBytes.free_in_c_7.val * 72057594037927936) := by
+  rcases h_matches with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨ha0, hb0, _hc0⟩ := byte_ranges_of_consumer_byte_match_wf h0
+  obtain ⟨ha1, hb1, _hc1⟩ := byte_ranges_of_consumer_byte_match_wf h1
+  obtain ⟨ha2, hb2, _hc2⟩ := byte_ranges_of_consumer_byte_match_wf h2
+  obtain ⟨ha3, hb3, _hc3⟩ := byte_ranges_of_consumer_byte_match_wf h3
+  obtain ⟨ha4, hb4, _hc4⟩ := byte_ranges_of_consumer_byte_match_wf h4
+  obtain ⟨ha5, hb5, _hc5⟩ := byte_ranges_of_consumer_byte_match_wf h5
+  obtain ⟨ha6, hb6, _hc6⟩ := byte_ranges_of_consumer_byte_match_wf h6
+  obtain ⟨ha7, hb7, _hc7⟩ := byte_ranges_of_consumer_byte_match_wf h7
+  simpa [ZiskFv.AirsClean.Binary.validOfRow] using
+    ZiskFv.Airs.Binary.binary_and_chunks_eq_bv_and_of_wf
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0
+      h0 h1 h2 h3 h4 h5 h6 h7
+      ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
+      hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
+
+lemma binary_row_or_chunks_eq_bv_or_of_wf
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_matches :
+      all_byte_matches_wf_at_row row ZiskFv.Airs.Tables.BinaryTable.OP_OR) :
+    BitVec.or
+      (BitVec.ofNat 64
+        (row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+          + row.aBytes.free_in_a_2.val * 65536
+          + row.aBytes.free_in_a_3.val * 16777216
+          + row.aBytes.free_in_a_4.val * 4294967296
+          + row.aBytes.free_in_a_5.val * 1099511627776
+          + row.aBytes.free_in_a_6.val * 281474976710656
+          + row.aBytes.free_in_a_7.val * 72057594037927936))
+      (BitVec.ofNat 64
+        (row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+          + row.bBytes.free_in_b_2.val * 65536
+          + row.bBytes.free_in_b_3.val * 16777216
+          + row.bBytes.free_in_b_4.val * 4294967296
+          + row.bBytes.free_in_b_5.val * 1099511627776
+          + row.bBytes.free_in_b_6.val * 281474976710656
+          + row.bBytes.free_in_b_7.val * 72057594037927936))
+    =
+    BitVec.ofNat 64
+      (row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
+        + row.cBytes.free_in_c_2.val * 65536
+        + row.cBytes.free_in_c_3.val * 16777216
+        + row.cBytes.free_in_c_4.val * 4294967296
+        + row.cBytes.free_in_c_5.val * 1099511627776
+        + row.cBytes.free_in_c_6.val * 281474976710656
+        + row.cBytes.free_in_c_7.val * 72057594037927936) := by
+  rcases h_matches with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨ha0, hb0, _hc0⟩ := byte_ranges_of_consumer_byte_match_wf h0
+  obtain ⟨ha1, hb1, _hc1⟩ := byte_ranges_of_consumer_byte_match_wf h1
+  obtain ⟨ha2, hb2, _hc2⟩ := byte_ranges_of_consumer_byte_match_wf h2
+  obtain ⟨ha3, hb3, _hc3⟩ := byte_ranges_of_consumer_byte_match_wf h3
+  obtain ⟨ha4, hb4, _hc4⟩ := byte_ranges_of_consumer_byte_match_wf h4
+  obtain ⟨ha5, hb5, _hc5⟩ := byte_ranges_of_consumer_byte_match_wf h5
+  obtain ⟨ha6, hb6, _hc6⟩ := byte_ranges_of_consumer_byte_match_wf h6
+  obtain ⟨ha7, hb7, _hc7⟩ := byte_ranges_of_consumer_byte_match_wf h7
+  simpa [ZiskFv.AirsClean.Binary.validOfRow] using
+    ZiskFv.Airs.Binary.binary_or_chunks_eq_bv_or_of_wf
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0
+      h0 h1 h2 h3 h4 h5 h6 h7
+      ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
+      hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
+
+lemma binary_row_xor_chunks_eq_bv_xor_of_wf
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_matches :
+      all_byte_matches_wf_at_row row ZiskFv.Airs.Tables.BinaryTable.OP_XOR) :
+    BitVec.xor
+      (BitVec.ofNat 64
+        (row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+          + row.aBytes.free_in_a_2.val * 65536
+          + row.aBytes.free_in_a_3.val * 16777216
+          + row.aBytes.free_in_a_4.val * 4294967296
+          + row.aBytes.free_in_a_5.val * 1099511627776
+          + row.aBytes.free_in_a_6.val * 281474976710656
+          + row.aBytes.free_in_a_7.val * 72057594037927936))
+      (BitVec.ofNat 64
+        (row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+          + row.bBytes.free_in_b_2.val * 65536
+          + row.bBytes.free_in_b_3.val * 16777216
+          + row.bBytes.free_in_b_4.val * 4294967296
+          + row.bBytes.free_in_b_5.val * 1099511627776
+          + row.bBytes.free_in_b_6.val * 281474976710656
+          + row.bBytes.free_in_b_7.val * 72057594037927936))
+    =
+    BitVec.ofNat 64
+      (row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
+        + row.cBytes.free_in_c_2.val * 65536
+        + row.cBytes.free_in_c_3.val * 16777216
+        + row.cBytes.free_in_c_4.val * 4294967296
+        + row.cBytes.free_in_c_5.val * 1099511627776
+        + row.cBytes.free_in_c_6.val * 281474976710656
+        + row.cBytes.free_in_c_7.val * 72057594037927936) := by
+  rcases h_matches with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨ha0, hb0, _hc0⟩ := byte_ranges_of_consumer_byte_match_wf h0
+  obtain ⟨ha1, hb1, _hc1⟩ := byte_ranges_of_consumer_byte_match_wf h1
+  obtain ⟨ha2, hb2, _hc2⟩ := byte_ranges_of_consumer_byte_match_wf h2
+  obtain ⟨ha3, hb3, _hc3⟩ := byte_ranges_of_consumer_byte_match_wf h3
+  obtain ⟨ha4, hb4, _hc4⟩ := byte_ranges_of_consumer_byte_match_wf h4
+  obtain ⟨ha5, hb5, _hc5⟩ := byte_ranges_of_consumer_byte_match_wf h5
+  obtain ⟨ha6, hb6, _hc6⟩ := byte_ranges_of_consumer_byte_match_wf h6
+  obtain ⟨ha7, hb7, _hc7⟩ := byte_ranges_of_consumer_byte_match_wf h7
+  simpa [ZiskFv.AirsClean.Binary.validOfRow] using
+    ZiskFv.Airs.Binary.binary_xor_chunks_eq_bv_xor_of_wf
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0
+      h0 h1 h2 h3 h4 h5 h6 h7
+      ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
+      hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
 
 /-- For 64-bit bitwise rows (`op ∈ {AND, OR, XOR}`), the Binary core
     constraints force the low-byte lookup opcode `b_op` to agree with the

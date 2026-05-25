@@ -397,6 +397,59 @@ def rowAt (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) :
     mode32_and_c_is_signed := v.mode32_and_c_is_signed r
   }
 
+@[reducible]
+def validOfRow (row : BinaryRow FGL) :
+    ZiskFv.Airs.Binary.Valid_Binary FGL FGL where
+  b_op := fun _ => row.chain.b_op
+  free_in_a_0 := fun _ => row.aBytes.free_in_a_0
+  free_in_a_1 := fun _ => row.aBytes.free_in_a_1
+  free_in_a_2 := fun _ => row.aBytes.free_in_a_2
+  free_in_a_3 := fun _ => row.aBytes.free_in_a_3
+  free_in_a_4 := fun _ => row.aBytes.free_in_a_4
+  free_in_a_5 := fun _ => row.aBytes.free_in_a_5
+  free_in_a_6 := fun _ => row.aBytes.free_in_a_6
+  free_in_a_7 := fun _ => row.aBytes.free_in_a_7
+  free_in_b_0 := fun _ => row.bBytes.free_in_b_0
+  free_in_b_1 := fun _ => row.bBytes.free_in_b_1
+  free_in_b_2 := fun _ => row.bBytes.free_in_b_2
+  free_in_b_3 := fun _ => row.bBytes.free_in_b_3
+  free_in_b_4 := fun _ => row.bBytes.free_in_b_4
+  free_in_b_5 := fun _ => row.bBytes.free_in_b_5
+  free_in_b_6 := fun _ => row.bBytes.free_in_b_6
+  free_in_b_7 := fun _ => row.bBytes.free_in_b_7
+  free_in_c_0 := fun _ => row.cBytes.free_in_c_0
+  free_in_c_1 := fun _ => row.cBytes.free_in_c_1
+  free_in_c_2 := fun _ => row.cBytes.free_in_c_2
+  free_in_c_3 := fun _ => row.cBytes.free_in_c_3
+  free_in_c_4 := fun _ => row.cBytes.free_in_c_4
+  free_in_c_5 := fun _ => row.cBytes.free_in_c_5
+  free_in_c_6 := fun _ => row.cBytes.free_in_c_6
+  free_in_c_7 := fun _ => row.cBytes.free_in_c_7
+  carry_0 := fun _ => row.chain.carry_0
+  carry_1 := fun _ => row.chain.carry_1
+  carry_2 := fun _ => row.chain.carry_2
+  carry_3 := fun _ => row.chain.carry_3
+  carry_4 := fun _ => row.chain.carry_4
+  carry_5 := fun _ => row.chain.carry_5
+  carry_6 := fun _ => row.chain.carry_6
+  carry_7 := fun _ => row.chain.carry_7
+  mode32 := fun _ => row.mode.mode32
+  result_is_a := fun _ => row.mode.result_is_a
+  use_first_byte := fun _ => row.mode.use_first_byte
+  c_is_signed := fun _ => row.mode.c_is_signed
+  b_op_or_sext := fun _ => row.chain.b_op_or_sext
+  mode32_and_c_is_signed := fun _ => row.mode.mode32_and_c_is_signed
+  gsum := fun _ => 0
+  im_0 := fun _ => 0
+  im_1 := fun _ => 0
+  im_2 := fun _ => 0
+  im_3 := fun _ => 0
+
+theorem rowAt_validOfRow_zero (row : BinaryRow FGL) :
+    rowAt (validOfRow row) 0 = row := by
+  cases row
+  rfl
+
 /-- Shared C7 witness surface for Binary's static-table lookup path.
     This is intentionally family-level and row-indexed; it is the shape a
     terminal Binary-family ensemble can provide once the static provider is

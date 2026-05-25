@@ -148,6 +148,15 @@ does not assert that an arbitrary Clean row corresponds to an arbitrary legacy
 entry points for the opcode stack and thread these Clean-row facts through
 the noncanonical static routes.
 
+First row-native Binary proof surface is now present. `AirsClean/Binary/Bridge.lean`
+exposes `validOfRow`, a one-row legacy view constructed from a Clean
+`BinaryRow` for theorem reuse only. `EquivCore/Bridge/Binary.lean` adds
+`all_byte_matches_wf_at_row`, `byte_chain_discharge_logic_of_static_row`,
+and `binary_row_{and,or,xor}_chunks_eq_bv_{and,or,xor}_of_wf`. These
+derive the bitwise packed identities directly from
+`StaticBinaryTableWfFacts row`; they do not require `StaticLookupSoundness v`
+or any claim that a Clean row equals a caller-supplied `Valid_Binary` row.
+
 BinaryTable and BinaryExtensionTable now both have static provider-side
 Clean `StaticTable` modules:
 `AirsClean/BinaryTable.lean` decodes the `binary_table.pil` fixed-column
