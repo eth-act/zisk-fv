@@ -9,6 +9,7 @@ import ZiskFv.Airs.Binary.BinaryPackedCorrect
 import ZiskFv.Airs.Tables.BinaryTable
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.EquivCore.Bridge.Binary
 import ZiskFv.EquivCore.WriteValueProofs.Arith
 
 /-!
@@ -184,7 +185,193 @@ private lemma byte_sum_from_binary_lane_match
   rw [h_hi_nat, h_hi_bin_nat] at h_hi_val
   omega
 
+private lemma byte_ranges_of_consumer_byte_match_wf
+    {op_val : ℕ} {a b c : FGL}
+    (h : consumer_byte_match_wf op_val a b c) :
+    a.val < 256 ∧ b.val < 256 ∧ c.val < 256 := by
+  obtain ⟨e, h_wf, _h_op, h_a, h_b, h_c⟩ := h
+  rcases h_wf.1 with ⟨ha, hb, hc, _hcin⟩
+  exact ⟨by simpa [h_a] using ha, by simpa [h_b] using hb,
+    by simpa [h_c] using hc⟩
+
+private lemma byte_sum_from_binary_row_lane_match
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (e2 : MemoryBusEntry FGL)
+    (h_match_clo :
+        row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
+          + row.cBytes.free_in_c_2 * 65536
+          + row.cBytes.free_in_c_3 * 16777216 = memory_entry_lo e2)
+    (h_match_chi :
+        row.cBytes.free_in_c_4 + row.cBytes.free_in_c_5 * 256
+          + row.cBytes.free_in_c_6 * 65536
+          + row.cBytes.free_in_c_7 * 16777216 = memory_entry_hi e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (hc0 : row.cBytes.free_in_c_0.val < 256)
+    (hc1 : row.cBytes.free_in_c_1.val < 256)
+    (hc2 : row.cBytes.free_in_c_2.val < 256)
+    (hc3 : row.cBytes.free_in_c_3.val < 256)
+    (hc4 : row.cBytes.free_in_c_4.val < 256)
+    (hc5 : row.cBytes.free_in_c_5.val < 256)
+    (hc6 : row.cBytes.free_in_c_6.val < 256)
+    (hc7 : row.cBytes.free_in_c_7.val < 256) :
+    e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+    + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+    + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+    = row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
+      + row.cBytes.free_in_c_2.val * 65536
+      + row.cBytes.free_in_c_3.val * 16777216
+      + row.cBytes.free_in_c_4.val * 4294967296
+      + row.cBytes.free_in_c_5.val * 1099511627776
+      + row.cBytes.free_in_c_6.val * 281474976710656
+      + row.cBytes.free_in_c_7.val * 72057594037927936 := by
+  have h_lo_nat : (memory_entry_lo e2).val
+      = e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 := by
+    simp only [memory_entry_lo]
+    have h_cast : e2.x0 + e2.x1 * 256 + e2.x2 * 65536 + e2.x3 * 16777216
+        = (((e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536
+             + e2.x3.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt; omega
+  have h_hi_nat : (memory_entry_hi e2).val
+      = e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216 := by
+    simp only [memory_entry_hi]
+    have h_cast : e2.x4 + e2.x5 * 256 + e2.x6 * 65536 + e2.x7 * 16777216
+        = (((e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536
+             + e2.x7.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt; omega
+  have h_lo_row_nat :
+      (row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
+       + row.cBytes.free_in_c_2 * 65536
+       + row.cBytes.free_in_c_3 * 16777216 : FGL).val
+      = row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
+        + row.cBytes.free_in_c_2.val * 65536
+        + row.cBytes.free_in_c_3.val * 16777216 := by
+    have h_cast :
+        row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
+        + row.cBytes.free_in_c_2 * 65536
+        + row.cBytes.free_in_c_3 * 16777216
+        = (((row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
+             + row.cBytes.free_in_c_2.val * 65536
+             + row.cBytes.free_in_c_3.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt; omega
+  have h_hi_row_nat :
+      (row.cBytes.free_in_c_4 + row.cBytes.free_in_c_5 * 256
+       + row.cBytes.free_in_c_6 * 65536
+       + row.cBytes.free_in_c_7 * 16777216 : FGL).val
+      = row.cBytes.free_in_c_4.val + row.cBytes.free_in_c_5.val * 256
+        + row.cBytes.free_in_c_6.val * 65536
+        + row.cBytes.free_in_c_7.val * 16777216 := by
+    have h_cast :
+        row.cBytes.free_in_c_4 + row.cBytes.free_in_c_5 * 256
+        + row.cBytes.free_in_c_6 * 65536
+        + row.cBytes.free_in_c_7 * 16777216
+        = (((row.cBytes.free_in_c_4.val + row.cBytes.free_in_c_5.val * 256
+             + row.cBytes.free_in_c_6.val * 65536
+             + row.cBytes.free_in_c_7.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt; omega
+  have h_lo_val := congrArg Fin.val h_match_clo
+  have h_hi_val := congrArg Fin.val h_match_chi
+  rw [h_lo_row_nat, h_lo_nat] at h_lo_val
+  rw [h_hi_row_nat, h_hi_nat] at h_hi_val
+  omega
+
 /-! ## AND -/
+
+/-- Row-native AND write-value derivation.
+
+This is the C7 entry point below the legacy `Valid_Binary` wrapper stack:
+the Binary-side semantic input is a Clean `BinaryRow` plus row-level static
+BinaryTable facts. The operation-bus and memory-bus information is supplied
+as direct lane equalities, which is exactly what the Clean balance projection
+and row-native Main/memory bridge should produce. -/
+lemma h_rd_val_logic_and_row_of_wf
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (e2 : MemoryBusEntry FGL)
+    (r1_val r2_val : BitVec 64)
+    (h_matches :
+      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row row OP_AND)
+    (h_match_clo :
+        row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
+          + row.cBytes.free_in_c_2 * 65536
+          + row.cBytes.free_in_c_3 * 16777216 = memory_entry_lo e2)
+    (h_match_chi :
+        row.cBytes.free_in_c_4 + row.cBytes.free_in_c_5 * 256
+          + row.cBytes.free_in_c_6 * 65536
+          + row.cBytes.free_in_c_7 * 16777216 = memory_entry_hi e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_input_r1 : r1_val
+      = BitVec.ofNat 64
+          (row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+            + row.aBytes.free_in_a_2.val * 65536
+            + row.aBytes.free_in_a_3.val * 16777216
+            + row.aBytes.free_in_a_4.val * 4294967296
+            + row.aBytes.free_in_a_5.val * 1099511627776
+            + row.aBytes.free_in_a_6.val * 281474976710656
+            + row.aBytes.free_in_a_7.val * 72057594037927936))
+    (h_input_r2 : r2_val
+      = BitVec.ofNat 64
+          (row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+            + row.bBytes.free_in_b_2.val * 65536
+            + row.bBytes.free_in_b_3.val * 16777216
+            + row.bBytes.free_in_b_4.val * 4294967296
+            + row.bBytes.free_in_b_5.val * 1099511627776
+            + row.bBytes.free_in_b_6.val * 281474976710656
+            + row.bBytes.free_in_b_7.val * 72057594037927936)) :
+    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
+                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+      = r1_val &&& r2_val := by
+  rcases h_matches with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨_, _, hc0⟩ := byte_ranges_of_consumer_byte_match_wf h0
+  obtain ⟨_, _, hc1⟩ := byte_ranges_of_consumer_byte_match_wf h1
+  obtain ⟨_, _, hc2⟩ := byte_ranges_of_consumer_byte_match_wf h2
+  obtain ⟨_, _, hc3⟩ := byte_ranges_of_consumer_byte_match_wf h3
+  obtain ⟨_, _, hc4⟩ := byte_ranges_of_consumer_byte_match_wf h4
+  obtain ⟨_, _, hc5⟩ := byte_ranges_of_consumer_byte_match_wf h5
+  obtain ⟨_, _, hc6⟩ := byte_ranges_of_consumer_byte_match_wf h6
+  obtain ⟨_, _, hc7⟩ := byte_ranges_of_consumer_byte_match_wf h7
+  have h_matches' :
+      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row row OP_AND :=
+    ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  have h_bv :=
+    ZiskFv.EquivCore.Bridge.Binary.binary_row_and_chunks_eq_bv_and_of_wf
+      row h_matches'
+  have h_byte_sum := byte_sum_from_binary_row_lane_match row e2
+    h_match_clo h_match_chi
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
+  have h_target :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (r1_val &&& r2_val).toNat := by
+    rw [h_byte_sum]
+    rw [h_input_r1, h_input_r2]
+    rw [show (BitVec.ofNat 64 _ &&& BitVec.ofNat 64 _ : BitVec 64)
+            = BitVec.and (BitVec.ofNat 64 _) (BitVec.ofNat 64 _) from rfl]
+    rw [h_bv, BitVec.toNat_ofNat]
+    have h_lt :
+        row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
+          + row.cBytes.free_in_c_2.val * 65536
+          + row.cBytes.free_in_c_3.val * 16777216
+          + row.cBytes.free_in_c_4.val * 4294967296
+          + row.cBytes.free_in_c_5.val * 1099511627776
+          + row.cBytes.free_in_c_6.val * 281474976710656
+          + row.cBytes.free_in_c_7.val * 72057594037927936
+        < 2 ^ 64 := by
+      show _ < 18446744073709551616; omega
+    rw [Nat.mod_eq_of_lt h_lt]
+  exact bv64_of_byte_sum (r1_val &&& r2_val) e2.x0 e2.x1 e2.x2 e2.x3
+    e2.x4 e2.x5 e2.x6 e2.x7
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
 
 /-- **AND `h_rd_val` derivation (Tier 1).**
 
@@ -399,6 +586,90 @@ lemma h_rd_val_logic_andi
 
 /-! ## OR -/
 
+/-- Row-native OR write-value derivation. -/
+lemma h_rd_val_logic_or_row_of_wf
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (e2 : MemoryBusEntry FGL)
+    (r1_val r2_val : BitVec 64)
+    (h_matches :
+      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row row OP_OR)
+    (h_match_clo :
+        row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
+          + row.cBytes.free_in_c_2 * 65536
+          + row.cBytes.free_in_c_3 * 16777216 = memory_entry_lo e2)
+    (h_match_chi :
+        row.cBytes.free_in_c_4 + row.cBytes.free_in_c_5 * 256
+          + row.cBytes.free_in_c_6 * 65536
+          + row.cBytes.free_in_c_7 * 16777216 = memory_entry_hi e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_input_r1 : r1_val
+      = BitVec.ofNat 64
+          (row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+            + row.aBytes.free_in_a_2.val * 65536
+            + row.aBytes.free_in_a_3.val * 16777216
+            + row.aBytes.free_in_a_4.val * 4294967296
+            + row.aBytes.free_in_a_5.val * 1099511627776
+            + row.aBytes.free_in_a_6.val * 281474976710656
+            + row.aBytes.free_in_a_7.val * 72057594037927936))
+    (h_input_r2 : r2_val
+      = BitVec.ofNat 64
+          (row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+            + row.bBytes.free_in_b_2.val * 65536
+            + row.bBytes.free_in_b_3.val * 16777216
+            + row.bBytes.free_in_b_4.val * 4294967296
+            + row.bBytes.free_in_b_5.val * 1099511627776
+            + row.bBytes.free_in_b_6.val * 281474976710656
+            + row.bBytes.free_in_b_7.val * 72057594037927936)) :
+    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
+                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+      = r1_val ||| r2_val := by
+  rcases h_matches with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨_, _, hc0⟩ := byte_ranges_of_consumer_byte_match_wf h0
+  obtain ⟨_, _, hc1⟩ := byte_ranges_of_consumer_byte_match_wf h1
+  obtain ⟨_, _, hc2⟩ := byte_ranges_of_consumer_byte_match_wf h2
+  obtain ⟨_, _, hc3⟩ := byte_ranges_of_consumer_byte_match_wf h3
+  obtain ⟨_, _, hc4⟩ := byte_ranges_of_consumer_byte_match_wf h4
+  obtain ⟨_, _, hc5⟩ := byte_ranges_of_consumer_byte_match_wf h5
+  obtain ⟨_, _, hc6⟩ := byte_ranges_of_consumer_byte_match_wf h6
+  obtain ⟨_, _, hc7⟩ := byte_ranges_of_consumer_byte_match_wf h7
+  have h_matches' :
+      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row row OP_OR :=
+    ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  have h_bv :=
+    ZiskFv.EquivCore.Bridge.Binary.binary_row_or_chunks_eq_bv_or_of_wf
+      row h_matches'
+  have h_byte_sum := byte_sum_from_binary_row_lane_match row e2
+    h_match_clo h_match_chi
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
+  have h_target :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (r1_val ||| r2_val).toNat := by
+    rw [h_byte_sum]
+    rw [h_input_r1, h_input_r2]
+    rw [show (BitVec.ofNat 64 _ ||| BitVec.ofNat 64 _ : BitVec 64)
+            = BitVec.or (BitVec.ofNat 64 _) (BitVec.ofNat 64 _) from rfl]
+    rw [h_bv, BitVec.toNat_ofNat]
+    have h_lt :
+        row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
+          + row.cBytes.free_in_c_2.val * 65536
+          + row.cBytes.free_in_c_3.val * 16777216
+          + row.cBytes.free_in_c_4.val * 4294967296
+          + row.cBytes.free_in_c_5.val * 1099511627776
+          + row.cBytes.free_in_c_6.val * 281474976710656
+          + row.cBytes.free_in_c_7.val * 72057594037927936
+        < 2 ^ 64 := by
+      show _ < 18446744073709551616; omega
+    rw [Nat.mod_eq_of_lt h_lt]
+  exact bv64_of_byte_sum (r1_val ||| r2_val) e2.x0 e2.x1 e2.x2 e2.x3
+    e2.x4 e2.x5 e2.x6 e2.x7
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
+
 /-- **OR `h_rd_val` derivation (Tier 1).** Same architecture as
     `h_rd_val_logic_and`, with K1-B OR lift and `BitVec.or`. -/
 lemma h_rd_val_logic_or
@@ -579,6 +850,90 @@ lemma h_rd_val_logic_ori
     h_input_r1 h_input_imm
 
 /-! ## XOR -/
+
+/-- Row-native XOR write-value derivation. -/
+lemma h_rd_val_logic_xor_row_of_wf
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (e2 : MemoryBusEntry FGL)
+    (r1_val r2_val : BitVec 64)
+    (h_matches :
+      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row row OP_XOR)
+    (h_match_clo :
+        row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
+          + row.cBytes.free_in_c_2 * 65536
+          + row.cBytes.free_in_c_3 * 16777216 = memory_entry_lo e2)
+    (h_match_chi :
+        row.cBytes.free_in_c_4 + row.cBytes.free_in_c_5 * 256
+          + row.cBytes.free_in_c_6 * 65536
+          + row.cBytes.free_in_c_7 * 16777216 = memory_entry_hi e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_input_r1 : r1_val
+      = BitVec.ofNat 64
+          (row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+            + row.aBytes.free_in_a_2.val * 65536
+            + row.aBytes.free_in_a_3.val * 16777216
+            + row.aBytes.free_in_a_4.val * 4294967296
+            + row.aBytes.free_in_a_5.val * 1099511627776
+            + row.aBytes.free_in_a_6.val * 281474976710656
+            + row.aBytes.free_in_a_7.val * 72057594037927936))
+    (h_input_r2 : r2_val
+      = BitVec.ofNat 64
+          (row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+            + row.bBytes.free_in_b_2.val * 65536
+            + row.bBytes.free_in_b_3.val * 16777216
+            + row.bBytes.free_in_b_4.val * 4294967296
+            + row.bBytes.free_in_b_5.val * 1099511627776
+            + row.bBytes.free_in_b_6.val * 281474976710656
+            + row.bBytes.free_in_b_7.val * 72057594037927936)) :
+    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
+                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+      = r1_val ^^^ r2_val := by
+  rcases h_matches with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨_, _, hc0⟩ := byte_ranges_of_consumer_byte_match_wf h0
+  obtain ⟨_, _, hc1⟩ := byte_ranges_of_consumer_byte_match_wf h1
+  obtain ⟨_, _, hc2⟩ := byte_ranges_of_consumer_byte_match_wf h2
+  obtain ⟨_, _, hc3⟩ := byte_ranges_of_consumer_byte_match_wf h3
+  obtain ⟨_, _, hc4⟩ := byte_ranges_of_consumer_byte_match_wf h4
+  obtain ⟨_, _, hc5⟩ := byte_ranges_of_consumer_byte_match_wf h5
+  obtain ⟨_, _, hc6⟩ := byte_ranges_of_consumer_byte_match_wf h6
+  obtain ⟨_, _, hc7⟩ := byte_ranges_of_consumer_byte_match_wf h7
+  have h_matches' :
+      ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row row OP_XOR :=
+    ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  have h_bv :=
+    ZiskFv.EquivCore.Bridge.Binary.binary_row_xor_chunks_eq_bv_xor_of_wf
+      row h_matches'
+  have h_byte_sum := byte_sum_from_binary_row_lane_match row e2
+    h_match_clo h_match_chi
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
+  have h_target :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (r1_val ^^^ r2_val).toNat := by
+    rw [h_byte_sum]
+    rw [h_input_r1, h_input_r2]
+    rw [show (BitVec.ofNat 64 _ ^^^ BitVec.ofNat 64 _ : BitVec 64)
+            = BitVec.xor (BitVec.ofNat 64 _) (BitVec.ofNat 64 _) from rfl]
+    rw [h_bv, BitVec.toNat_ofNat]
+    have h_lt :
+        row.cBytes.free_in_c_0.val + row.cBytes.free_in_c_1.val * 256
+          + row.cBytes.free_in_c_2.val * 65536
+          + row.cBytes.free_in_c_3.val * 16777216
+          + row.cBytes.free_in_c_4.val * 4294967296
+          + row.cBytes.free_in_c_5.val * 1099511627776
+          + row.cBytes.free_in_c_6.val * 281474976710656
+          + row.cBytes.free_in_c_7.val * 72057594037927936
+        < 2 ^ 64 := by
+      show _ < 18446744073709551616; omega
+    rw [Nat.mod_eq_of_lt h_lt]
+  exact bv64_of_byte_sum (r1_val ^^^ r2_val) e2.x0 e2.x1 e2.x2 e2.x3
+    e2.x4 e2.x5 e2.x6 e2.x7
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
 
 /-- **XOR `h_rd_val` derivation (Tier 1).** Same architecture as
     `h_rd_val_logic_and`, with K1-B XOR lift and `BitVec.xor`. -/

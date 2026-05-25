@@ -235,5 +235,10 @@ def mainWithStaticBinaryTable (row : Var BinaryRow FGL) : Circuit FGL Unit := do
   localLength _ := 0
   output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
+  channelsLawful := by
+    simp only [circuit_norm, mainWithStaticBinaryTable, main, opBusMessageExpr,
+      OpBusChannel]
 
 end ZiskFv.AirsClean.Binary

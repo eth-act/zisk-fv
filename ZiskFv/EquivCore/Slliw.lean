@@ -110,7 +110,7 @@ theorem equiv_SLLIW_of_wf
         (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
-    (_h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
+    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
     (h_op_is_shift : v.op_is_shift r_binary = 1) :
     execute_instruction
       (instruction.SHIFTIWOP (slliw_input.shamt, r1, rd, sopw.SLLIW)) state
@@ -172,7 +172,7 @@ theorem equiv_SLLIW_of_wf
     ZiskFv.EquivCore.WriteValueProofs.BinaryShift.h_rd_val_shift_slliw
       m v r_main r_binary e2
       (Sail.BitVec.extractLsb slliw_input.r1_val 31 0)
-      shift h_op h_bytes h_a_range
+      shift h_op h_bytes h_wfs h_a_range
       hc0 hc2 hc4 hc6 hc8 hc10 hc12 hc14
       hc1 hc3 hc5 hc7 hc9 hc11 hc13 hc15
       hc_lo_sum_lt hc_hi_sum_lt
@@ -252,5 +252,56 @@ theorem equiv_SLLIW
     h_op_is_shift_fact.1 (Or.inr (Or.inr (Or.inr (Or.inl h_op_v_eq))))
   exact equiv_SLLIW_of_wf state slliw_input r1 rd m v r_main r_binary bus
     promises ⟨h_main_active, h_main_op⟩ h_match h_lane_rd h_bytes h_wfs h_op_is_shift
+
+/-- Row-native static-provider route for SLLIW. The BinaryExtensionTable facts
+    come from the same Clean provider row that emits the op-bus message. -/
+theorem equiv_SLLIW_of_static_row
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (slliw_input : PureSpec.SlliwInput)
+    (r1 rd : regidx)
+    (m : Valid_Main FGL FGL)
+    (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
+        state slliw_input.r1_val slliw_input.rd slliw_input.PC
+        (PureSpec.execute_SHIFTIWOP_slliw_pure slliw_input).nextPC
+        r1 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL_W)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (ZiskFv.AirsClean.BinaryExtension.opBusMessage row) 1))
+    (h_facts : ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts row)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
+    execute_instruction
+      (instruction.SHIFTIWOP (slliw_input.shamt, r1, rd, sopw.SLLIW)) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨h_main_active, h_main_op⟩ := pins
+  let v := ZiskFv.AirsClean.BinaryExtension.validOfRow row
+  have h_match_v : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v 0) := by
+    simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
+      ZiskFv.AirsClean.BinaryExtension.opBusMessage,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension] using h_match
+  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v 0
+  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+    simpa [h_bytes, ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups,
+      ZiskFv.AirsClean.BinaryExtension.validOfRow,
+      ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts,
+      ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableMessage.toEntry] using h_facts
+  obtain ⟨h_op_fgl, _, _⟩ :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.project_match_op_clo_chi
+      m v r_main 0 h_match_v
+  have h_op_v_eq : v.op 0 = ZiskFv.Trusted.OP_SLL_W := by
+    rw [← h_op_fgl, h_main_op]
+  have h_op_is_shift : v.op_is_shift 0 = 1 :=
+    (ZiskFv.Airs.BinaryExtension.binary_extension_op_is_shift_pin_of_wf_hypotheses
+      v 0 h_wfs).1 (Or.inr (Or.inr (Or.inr (Or.inl h_op_v_eq))))
+  exact equiv_SLLIW_of_wf state slliw_input r1 rd m v r_main 0 bus
+    promises ⟨h_main_active, h_main_op⟩ h_match_v h_lane_rd
+    h_bytes h_wfs h_op_is_shift
 
 end ZiskFv.EquivCore.Slliw

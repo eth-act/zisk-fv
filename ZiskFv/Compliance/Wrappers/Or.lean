@@ -10,6 +10,7 @@ import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
+import ZiskFv.AirsClean.BinaryFamily.Balance
 import ZiskFv.Compliance.SharedBundles
 
 /-!
@@ -156,64 +157,26 @@ open ZiskFv.Airs.OperationBus
 open ZiskFv.EquivCore.Promises
 
 
-/-- **Trust-discharged wrapper for `equiv_OR`.**
-
-    Caller obligations (signature header, ordered):
-    1. The Sail-side inputs (`state`, `or_input`, `r1`, `r2`, `rd`).
-    2. The two AIR validators with the selected Main row index
-       (`m : Valid_Main`, `v : Valid_Binary`, `r_main : ℕ`).
-       Compliance.lean shares `(m, v)` across all Binary-shape
-       opcodes (14 ops).
-    3. The structural bus rows (`exec_row`, `e0`, `e1`, `e2`).
-    4. The activation + opcode pins on Main (`h_main_active`,
-       `h_main_op_or`). Both come from Compliance.lean's
-       program-counter handshake on the row hosting the OR
-       instruction.
-    5. The lane-match for the rd-write entry (`h_lane_rd`) —
-       caller-supplied; discharged downstream from a Binary-side
-       `main_external_logic_emission_bundle` (class #4). The Add
-       wrapper follows the same convention.
-    6. The Sail-side state predicates (SPEC-PRE):
-       `h_input_r1`, `h_input_r2`, `h_input_rd`, `h_input_pc`.
-    7. The bus-protocol structural hypotheses — pass-through from
-       `equiv_OR`; Compliance.lean supplies these from the same
-       bus-shape obligations as every other opcode in the shape.
-
-    Derived internally (NOT caller-supplied):
-    * Existential row witness `r_binary` and the cross-AIR
-      `matches_entry` predicate — from `op_bus_perm_sound_Binary`
-      (class #4) applied to `h_main_active` + `h_main_op_or`.
-    * `(v.b_op_or_sext r_binary).val = OP_OR` — from the new axiom
-      `binary_b_op_or_sext_eq_OP_OR` (class #6) applied to the
-      matches_entry `.op`-slot projection composed with
-      `h_main_op_or`.
-
-    Trust footprint: `op_bus_perm_sound_Binary` (class #4),
-    `binary_b_op_or_sext_eq_OP_OR` (class #6, **new**), plus
-    `equiv_OR`'s existing closure (which transitively consumes the
-    Binary range / per-byte-lookup / carry-bit-range / table-consumer
-    axioms, plus `memory_bus_entry_byte_range_perm_sound` and
-    `transpile_OR`). One new axiom — at the low end of
-    `docs/fv/per-air-axiom-map.md`'s 2–4 prediction. -/
 theorem equiv_OR
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (or_input : PureSpec.OrInput)
     (r1 r2 rd : regidx)
-    -- AIR validators + row index. Compliance.lean shares (m, v)
-    -- across all Binary-shape opcodes (AND/ANDI/OR/ORI/XOR/XORI/
-    -- SLT/SLTI/SLTU/SLTIU/SUB/SUBW/ADDIW/ADDW).
-    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    -- Activation / opcode pins. Compliance.lean derives these from
-    -- the Main AIR's ROM handshake on the row hosting OR.
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
-    -- Lane-match for the rd-write entry — caller-supplied; discharged
-    -- downstream from a Binary-side
-    -- `main_external_logic_emission_bundle`.
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    -- Structural promise bundle (15 fields). Subsumes the prior inline
-    -- Sail-side state predicates + bus-protocol structural hypotheses.
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
         (PureSpec.execute_RTYPE_or_pure or_input).nextPC
@@ -224,21 +187,15 @@ theorem equiv_OR
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.OR))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_main_active, h_main_op_or⟩ := pins
-  have h_op_disj := binary_op_disj_of_eq m r_main 15 h_main_op_or (by tauto)
-  obtain ⟨r_binary, h_match⟩ :=
-    op_bus_perm_sound_Binary m v r_main h_main_active h_op_disj
-  have h_bop_or_sext :=
-    binary_h_bop_or_sext_via_axiom h_match h_main_op_or
-      (binary_b_op_or_sext_eq_OP_OR v r_binary)
-  exact ZiskFv.EquivCore.Or.equiv_OR
-    state or_input r1 r2 rd m v r_main r_binary
-    ⟨exec_row, e0, e1, e2⟩
-    promises
-    ⟨h_main_active, h_main_op_or⟩
-    h_match h_bop_or_sext h_lane_rd
-
+  let row :=
+    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  obtain ⟨h_core, h_facts⟩ :=
+    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
+      h_component h_table_spec h_provider_row
+  exact ZiskFv.EquivCore.Or.equiv_OR_of_static_row
+    state or_input r1 r2 rd m row r_main bus promises pins
+    h_match h_core h_facts h_lane_rd
 
 /-- Static-provider BinaryTable route for `equiv_OR`. -/
 theorem equiv_OR_of_static_lookup
@@ -276,14 +233,25 @@ theorem equiv_OR_of_static_lookup
   have h_op_disj := binary_op_disj_of_eq m r_main 15 h_main_op_or (by tauto)
   obtain ⟨r_binary, h_match⟩ :=
     op_bus_perm_sound_Binary m v r_main h_main_active h_op_disj
+  have h_emit : v.b_op r_binary + 16 * v.mode32 r_binary = (15 : FGL) := by
+    have h_op_match : m.op r_main = v.b_op r_binary + 16 * v.mode32 r_binary := by
+      simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match
+      exact h_match.2.1
+    rw [← h_op_match]
+    simpa [ZiskFv.Trusted.OP_OR] using h_main_op_or
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_static_lookup
+    v r_binary offset env h_static
+  have h_shape :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_row_shape_of_emit_op_lt_16
+      v r_binary 15 (by norm_num) h_emit
   have h_bop_or_sext :=
-    binary_h_bop_or_sext_via_axiom h_match h_main_op_or
-      (binary_b_op_or_sext_eq_OP_OR v r_binary)
+    ZiskFv.EquivCore.Bridge.Binary.b_op_or_sext_val_eq_of_mode32_zero
+      v r_binary 15 h_core h_shape.1 h_shape.2
   exact ZiskFv.EquivCore.Or.equiv_OR_of_static_lookup
     state or_input r1 r2 rd m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
     promises
     ⟨h_main_active, h_main_op_or⟩
-    h_match h_bop_or_sext offset env h_static (ZiskFv.AirsClean.Binary.core_every_row_of_static_lookup v r_binary offset env h_static) h_lane_rd
+    h_match h_bop_or_sext offset env h_static h_core h_lane_rd
 
 end ZiskFv.Compliance

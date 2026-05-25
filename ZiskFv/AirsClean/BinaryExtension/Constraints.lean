@@ -247,6 +247,11 @@ def mainWithStaticBinaryExtensionTable (row : Var BinaryExtensionRow FGL) :
     ElaboratedCircuit FGL BinaryExtensionRow unit where
   name := "BinaryExtensionWithStaticTable"
   main := mainWithStaticBinaryExtensionTable
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
+  channelsLawful := by
+    simp only [circuit_norm, mainWithStaticBinaryExtensionTable, main,
+      opBusMessageExpr, aLo, aHi, OpBusChannel]
   localLength _ := 0
   output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]

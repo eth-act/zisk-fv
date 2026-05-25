@@ -334,6 +334,19 @@ theorem binary_extension_op_is_shift_pin_of_static_lookup
   exact binary_extension_op_is_shift_pin_of_e0_wf v r h_wf
 
 open ZiskFv.Trusted in
+/-- Variant of `binary_extension_op_is_shift_pin_of_static_lookup` for callers
+    that already projected the row's BinaryExtensionTable facts. -/
+theorem binary_extension_op_is_shift_pin_of_wf_hypotheses
+    (v : Valid_BinaryExtension FGL FGL) (r : ℕ)
+    (h_wfs : ByteLookupWfHypotheses (binary_extension_row_byte_lookups v r)) :
+    ((v.op r = OP_SLL ∨ v.op r = OP_SRL ∨ v.op r = OP_SRA
+      ∨ v.op r = OP_SLL_W ∨ v.op r = OP_SRL_W ∨ v.op r = OP_SRA_W)
+        → v.op_is_shift r = 1)
+  ∧ ((v.op r = OP_SIGNEXTEND_B ∨ v.op r = OP_SIGNEXTEND_H ∨ v.op r = OP_SIGNEXTEND_W)
+        → v.op_is_shift r = 0) :=
+  binary_extension_op_is_shift_pin_of_e0_wf v r h_wfs.1
+
+open ZiskFv.Trusted in
 lemma op_is_shift_one_SLL_of_static_lookup
     (v : Valid_BinaryExtension FGL FGL) (r offset : ℕ) (env : Environment FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)

@@ -103,6 +103,18 @@ theorem OpBusMessage.toEntry_ofEntry (entry : ZiskFv.Airs.OperationBus.Operation
     OpBusMessage.toEntry (OpBusMessage.ofEntry entry) entry.multiplicity = entry := by
   rfl
 
+/-- Field projection for evaluated Clean op-bus messages. This is intentionally
+    stated once at the channel boundary so downstream balance proofs can read
+    the opcode slot without unfolding a whole provider row expression. -/
+theorem OpBusMessage.eval_op
+    (env : Environment FGL) (msg : OpBusMessage (Expression FGL)) :
+    (eval env msg).op = Expression.eval env msg.op := by
+  rw [ProvableStruct.eval_eq_eval]
+  cases msg
+  simp only [ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field]
+
 /-- The 64-bit packed value of the `a` lane. -/
 @[reducible]
 def OpBusMessage.aPacked (msg : OpBusMessage FGL) : ℕ :=

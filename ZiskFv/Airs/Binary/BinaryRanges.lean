@@ -153,66 +153,6 @@ lemma bin_c_6_lt_256 (v : Valid_Binary FGL FGL) (r : ℕ) : (v.free_in_c_6 r).va
 lemma bin_c_7_lt_256 (v : Valid_Binary FGL FGL) (r : ℕ) : (v.free_in_c_7 r).val < 256 :=
   (binary_columns_in_range v r).2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
 
-/-! ## Forward-direction lookup-protocol axiom
-
-`bin_table_consumer_wf` (in `Airs/BinaryTable.lean`) is the
-*backward* direction: "for any entry the Binary AIR consumes via
-the `bus_id = 125` lookup, `wf_properties` holds." The companion
-*forward* direction below states that the Binary AIR's per-byte
-lookup interactions are realized as consumed entries — i.e., for
-every row and every byte slot, there exists a consumed
-`BinaryTableEntry` whose a/b/c bytes match the row's columns and
-whose op matches the row's `b_op_or_sext`.
-
-This is the same protocol-soundness trust class as
-`bin_table_consumer_wf`; the two together are the standard
-"lookup is bidirectional" trust assumption that the PLONK / logUp
-permutation argument formalizes. Cited at
-`zisk/state-machines/binary/pil/binary.pil:131-148` (the
-`lookup_assumes(BINARY_TABLE_ID, ...)` calls in the `proves_*`
-loops).
--/
-
-/-- **Forward-direction Binary lookup soundness.** For every Binary
-    AIR row and every byte slot `i ∈ {0..7}`, there exists a
-    `BinaryTableEntry` consumed (multiplicity = 1) against the
-    BinaryTable bus, whose `op` matches the row's `b_op_or_sext`
-    and whose `a_byte`/`b_byte`/`c_byte` match the row's per-byte
-    columns at that slot. Companion to `bin_table_consumer_wf`. -/
-axiom binary_per_byte_lookup_witness (v : Valid_Binary FGL FGL) (r : ℕ) :
-    (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
-        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
-        ∧ e.a_byte = v.free_in_a_0 r ∧ e.b_byte = v.free_in_b_0 r
-        ∧ e.c_byte = v.free_in_c_0 r ∧ e.flags = v.carry_0 r)
-  ∧ (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
-        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
-        ∧ e.a_byte = v.free_in_a_1 r ∧ e.b_byte = v.free_in_b_1 r
-        ∧ e.c_byte = v.free_in_c_1 r ∧ e.flags = v.carry_1 r)
-  ∧ (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
-        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
-        ∧ e.a_byte = v.free_in_a_2 r ∧ e.b_byte = v.free_in_b_2 r
-        ∧ e.c_byte = v.free_in_c_2 r ∧ e.flags = v.carry_2 r)
-  ∧ (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
-        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
-        ∧ e.a_byte = v.free_in_a_3 r ∧ e.b_byte = v.free_in_b_3 r
-        ∧ e.c_byte = v.free_in_c_3 r ∧ e.flags = v.carry_3 r)
-  ∧ (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
-        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
-        ∧ e.a_byte = v.free_in_a_4 r ∧ e.b_byte = v.free_in_b_4 r
-        ∧ e.c_byte = v.free_in_c_4 r ∧ e.flags = v.carry_4 r)
-  ∧ (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
-        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
-        ∧ e.a_byte = v.free_in_a_5 r ∧ e.b_byte = v.free_in_b_5 r
-        ∧ e.c_byte = v.free_in_c_5 r ∧ e.flags = v.carry_5 r)
-  ∧ (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
-        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
-        ∧ e.a_byte = v.free_in_a_6 r ∧ e.b_byte = v.free_in_b_6 r
-        ∧ e.c_byte = v.free_in_c_6 r ∧ e.flags = v.carry_6 r)
-  ∧ (∃ e : ZiskFv.Airs.Tables.BinaryTable.BinaryTableEntry FGL,
-        e.multiplicity = 1 ∧ e.op = v.b_op_or_sext r
-        ∧ e.a_byte = v.free_in_a_7 r ∧ e.b_byte = v.free_in_b_7 r
-        ∧ e.c_byte = v.free_in_c_7 r ∧ e.flags = v.carry_7 r)
-
 /-! ## Carry-bit range-check soundness
 
 `bits(1) carry[BYTES]` (per PIL `binary.pil:67`) compiles to a row-level
@@ -289,50 +229,6 @@ PIL citations:
 
 Consumed by `equiv_OR` (`Compliance/Wrappers/Or.lean`).
 -/
-
-/-- **Binary table-pin (consolidated): `b_op_or_sext` matches the
-    on-bus opcode literal for AND/OR/XOR rows.**
-
-    For any Binary AIR row whose op-bus emission `b_op + 16 * mode32`
-    equals an AND/OR/XOR opcode literal (14/15/16), the
-    `b_op_or_sext` column pins to that literal. Replaces three
-    per-opcode axioms (`binary_b_op_or_sext_eq_OP_{AND,OR,XOR}`)
-    with one parameterized axiom; the three per-opcode results are
-    now derived theorems below.
-
-    PIL: `binary.pil:104` (`b_op_or_sext` linear def) +
-    `binary.pil:131-148` (per-byte BinaryTable lookup restricting
-    the `(b_op, mode32, c_is_signed)` triple to valid entries).
-
-    Trust class: #6 (Binary AIR lookup soundness — table-pin sub-
-    class). One axiom per opcode in {AND, OR, XOR} share identical
-    structure, so consolidation is a textual / structural merge with
-    no trust delta beyond the named-axiom reduction (3 → 1). -/
-axiom binary_b_op_or_sext_eq_op_general (v : Valid_Binary FGL FGL) (r : ℕ)
-    (op : ℕ) (h_op : op = 14 ∨ op = 15 ∨ op = 16)
-    (h_emit_op : v.b_op r + 16 * v.mode32 r = (op : FGL)) :
-    (v.b_op_or_sext r).val = op
-
-/-- Derived theorem: `b_op_or_sext = OP_OR` for OR-tagged rows.
-    Specialization of `binary_b_op_or_sext_eq_op_general` to op = 15. -/
-theorem binary_b_op_or_sext_eq_OP_OR (v : Valid_Binary FGL FGL) (r : ℕ)
-    (h_emit_op : v.b_op r + 16 * v.mode32 r = 15) :
-    (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR :=
-  binary_b_op_or_sext_eq_op_general v r 15 (.inr (.inl rfl)) h_emit_op
-
-/-- Derived theorem: `b_op_or_sext = OP_AND` for AND-tagged rows.
-    Specialization of `binary_b_op_or_sext_eq_op_general` to op = 14. -/
-theorem binary_b_op_or_sext_eq_OP_AND (v : Valid_Binary FGL FGL) (r : ℕ)
-    (h_emit_op : v.b_op r + 16 * v.mode32 r = 14) :
-    (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_AND :=
-  binary_b_op_or_sext_eq_op_general v r 14 (.inl rfl) h_emit_op
-
-/-- Derived theorem: `b_op_or_sext = OP_XOR` for XOR-tagged rows.
-    Specialization of `binary_b_op_or_sext_eq_op_general` to op = 16. -/
-theorem binary_b_op_or_sext_eq_OP_XOR (v : Valid_Binary FGL FGL) (r : ℕ)
-    (h_emit_op : v.b_op r + 16 * v.mode32 r = 16) :
-    (v.b_op_or_sext r).val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR :=
-  binary_b_op_or_sext_eq_op_general v r 16 (.inr (.inr rfl)) h_emit_op
 
 /-! ## 6-field per-byte chain witness with `cin` / `pos_ind` exposed
 

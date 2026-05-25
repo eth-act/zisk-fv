@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.Main.Constraints
 import ZiskFv.AirsClean.Main.Soundness
+import ZiskFv.AirsClean.Main.Bridge
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -50,6 +51,16 @@ def circuit : GeneralFormalCircuit FGL MainRow unit :=
       simpa [sub_eq_add_neg] using h_assumptions }
 
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+
+theorem component_eval_opBusMessageExpr
+    (env : Environment FGL) :
+    eval env (opBusMessageExpr component.rowInputVar) =
+      opBusMessage (component.rowInput env) := by
+  rw [eval_opBusMessageExpr]
+  exact congrArg opBusMessage
+    (by
+      simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar] using
+        (eval_varFromOffset_valueFromOffset component.Input 0 env))
 
 /-- The Main component exposes exactly its one operation-bus interaction.
     This keeps later C7 balance projections from unfolding the nine local

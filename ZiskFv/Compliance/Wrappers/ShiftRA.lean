@@ -7,6 +7,7 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.Binary.BinaryExtension
+import ZiskFv.AirsClean.BinaryFamily.Balance
 import ZiskFv.Compliance.SharedBundles
 
 /-! `equiv_SRAW` Compliance wrapper — BinaryExtension W signed shift,
@@ -26,7 +27,9 @@ theorem equiv_SRAW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sraw_input : PureSpec.SrawInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (m : Valid_Main FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
@@ -46,16 +49,26 @@ theorem equiv_SRAW
     (h_m2_mult : bus.e2.multiplicity = 1) (h_m2_as : bus.e2.as.val = 1)
     (h_rd_idx : sraw_input.rd = Transpiler.wrap_to_regidx bus.e2.ptr)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRA_W)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRAW)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_main_active, h_main_op⟩ := pins
-  obtain ⟨r_binary, h_match⟩ :=
-    binexec_op_bus_handshake_SRA_W m v r_main h_main_active h_main_op
-  exact ZiskFv.EquivCore.Sraw.equiv_SRAW state sraw_input r1 r2 rd
-    m v r_main r_binary
-    ⟨exec_row, e0, e1, e2⟩
+  let row :=
+    ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryFamily.staticBinaryExtension_wf_of_table_spec
+      h_component h_table_spec h_provider_row
+  exact ZiskFv.EquivCore.Sraw.equiv_SRAW_of_static_row state sraw_input r1 r2 rd
+    m row r_main bus
     { input_r1_eq := h_input_r1_sail
       input_r2_eq := h_input_r2_sail
       input_rd_eq := h_input_rd
@@ -71,8 +84,7 @@ theorem equiv_SRAW
       m2_mult := h_m2_mult
       m2_as := h_m2_as
       rd_idx := h_rd_idx }
-    ⟨h_main_active, h_main_op⟩
-    h_match h_lane_rd
+    pins h_match h_facts h_lane_rd
 
 /-- Static-lookup route for the SRAW wrapper. This is not the canonical wrapper
     surface; it consumes the shared BinaryExtension static lookup witness and

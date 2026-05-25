@@ -311,6 +311,7 @@ lemma h_rd_val_shift_sll
     (r1_val : BitVec 64) (shift : ℕ)
     (h_op : (v.op r_binary).val = OP_SLL)
     (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
     (h_a_range : a_bytes_in_range v r_binary)
     (_hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
     (_hc_lo_1 : (v.free_in_c_2 r_binary).val < 4294967296)
@@ -393,6 +394,7 @@ lemma h_rd_val_shift_slli
     (r1_val : BitVec 64) (shift : ℕ)
     (h_op : (v.op r_binary).val = OP_SLL)
     (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
     (h_a_range : a_bytes_in_range v r_binary)
     (hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
     (hc_lo_1 : (v.free_in_c_2 r_binary).val < 4294967296)
@@ -446,7 +448,7 @@ lemma h_rd_val_shift_slli
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = BitVec.shiftLeft r1_val shift := by
-  exact h_rd_val_shift_sll m v r_main r_binary e2 r1_val shift h_op h_bytes h_a_range
+  exact h_rd_val_shift_sll_of_wf m v r_main r_binary e2 r1_val shift h_op h_bytes h_wfs h_a_range
     hc_lo_0 hc_lo_1 hc_lo_2 hc_lo_3 hc_lo_4 hc_lo_5 hc_lo_6 hc_lo_7
     hc_hi_0 hc_hi_1 hc_hi_2 hc_hi_3 hc_hi_4 hc_hi_5 hc_hi_6 hc_hi_7
     hc_lo_sum_lt hc_hi_sum_lt
@@ -721,6 +723,7 @@ lemma h_rd_val_shift_srli
     (r1_val : BitVec 64) (shift : ℕ)
     (h_op : (v.op r_binary).val = OP_SRL)
     (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
     (h_a_range : a_bytes_in_range v r_binary)
     (hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
     (hc_lo_1 : (v.free_in_c_2 r_binary).val < 4294967296)
@@ -774,7 +777,7 @@ lemma h_rd_val_shift_srli
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = BitVec.ushiftRight r1_val shift := by
-  exact h_rd_val_shift_srl m v r_main r_binary e2 r1_val shift h_op h_bytes h_a_range
+  exact h_rd_val_shift_srl_of_wf m v r_main r_binary e2 r1_val shift h_op h_bytes h_wfs h_a_range
     hc_lo_0 hc_lo_1 hc_lo_2 hc_lo_3 hc_lo_4 hc_lo_5 hc_lo_6 hc_lo_7
     hc_hi_0 hc_hi_1 hc_hi_2 hc_hi_3 hc_hi_4 hc_hi_5 hc_hi_6 hc_hi_7
     hc_lo_sum_lt hc_hi_sum_lt
@@ -1053,6 +1056,7 @@ lemma h_rd_val_shift_srai
     (r1_val : BitVec 64) (shift : ℕ)
     (h_op : (v.op r_binary).val = OP_SRA)
     (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
     (h_a_range : a_bytes_in_range v r_binary)
     (hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
     (hc_lo_1 : (v.free_in_c_2 r_binary).val < 4294967296)
@@ -1106,7 +1110,7 @@ lemma h_rd_val_shift_srai
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = BitVec.sshiftRight r1_val shift := by
-  exact h_rd_val_shift_sra m v r_main r_binary e2 r1_val shift h_op h_bytes h_a_range
+  exact h_rd_val_shift_sra_of_wf m v r_main r_binary e2 r1_val shift h_op h_bytes h_wfs h_a_range
     hc_lo_0 hc_lo_1 hc_lo_2 hc_lo_3 hc_lo_4 hc_lo_5 hc_lo_6 hc_lo_7
     hc_hi_0 hc_hi_1 hc_hi_2 hc_hi_3 hc_hi_4 hc_hi_5 hc_hi_6 hc_hi_7
     hc_lo_sum_lt hc_hi_sum_lt
@@ -1384,6 +1388,7 @@ lemma h_rd_val_shift_srliw
     (r1_val_lo32 : BitVec 32) (shift : ℕ)
     (h_op : (v.op r_binary).val = OP_SRL_W)
     (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
     (h_a_range : a_bytes_in_range v r_binary)
     (hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
     (hc_lo_1 : (v.free_in_c_2 r_binary).val < 4294967296)
@@ -1433,7 +1438,7 @@ lemma h_rd_val_shift_srliw
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = BitVec.signExtend 64 (BitVec.ushiftRight r1_val_lo32 shift) := by
-  exact h_rd_val_shift_srlw m v r_main r_binary e2 r1_val_lo32 shift h_op h_bytes h_a_range
+  exact h_rd_val_shift_srlw_of_wf m v r_main r_binary e2 r1_val_lo32 shift h_op h_bytes h_wfs h_a_range
     hc_lo_0 hc_lo_1 hc_lo_2 hc_lo_3 hc_lo_4 hc_lo_5 hc_lo_6 hc_lo_7
     hc_hi_0 hc_hi_1 hc_hi_2 hc_hi_3 hc_hi_4 hc_hi_5 hc_hi_6 hc_hi_7
     hc_lo_sum_lt hc_hi_sum_lt
@@ -1711,6 +1716,7 @@ lemma h_rd_val_shift_slliw
     (r1_val_lo32 : BitVec 32) (shift : ℕ)
     (h_op : (v.op r_binary).val = OP_SLL_W)
     (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
     (h_a_range : a_bytes_in_range v r_binary)
     (hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
     (hc_lo_1 : (v.free_in_c_2 r_binary).val < 4294967296)
@@ -1760,7 +1766,7 @@ lemma h_rd_val_shift_slliw
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = BitVec.signExtend 64 (BitVec.shiftLeft r1_val_lo32 shift) := by
-  exact h_rd_val_shift_sllw m v r_main r_binary e2 r1_val_lo32 shift h_op h_bytes h_a_range
+  exact h_rd_val_shift_sllw_of_wf m v r_main r_binary e2 r1_val_lo32 shift h_op h_bytes h_wfs h_a_range
     hc_lo_0 hc_lo_1 hc_lo_2 hc_lo_3 hc_lo_4 hc_lo_5 hc_lo_6 hc_lo_7
     hc_hi_0 hc_hi_1 hc_hi_2 hc_hi_3 hc_hi_4 hc_hi_5 hc_hi_6 hc_hi_7
     hc_lo_sum_lt hc_hi_sum_lt
@@ -2038,6 +2044,7 @@ lemma h_rd_val_shift_sraiw
     (r1_val_lo32 : BitVec 32) (shift : ℕ)
     (h_op : (v.op r_binary).val = OP_SRA_W)
     (h_bytes : ByteLookupHypotheses v r_binary)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
     (h_a_range : a_bytes_in_range v r_binary)
     (hc_lo_0 : (v.free_in_c_0 r_binary).val < 4294967296)
     (hc_lo_1 : (v.free_in_c_2 r_binary).val < 4294967296)
@@ -2087,7 +2094,7 @@ lemma h_rd_val_shift_sraiw
     U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
                 (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
       = BitVec.signExtend 64 (BitVec.sshiftRight r1_val_lo32 shift) := by
-  exact h_rd_val_shift_sraw m v r_main r_binary e2 r1_val_lo32 shift h_op h_bytes h_a_range
+  exact h_rd_val_shift_sraw_of_wf m v r_main r_binary e2 r1_val_lo32 shift h_op h_bytes h_wfs h_a_range
     hc_lo_0 hc_lo_1 hc_lo_2 hc_lo_3 hc_lo_4 hc_lo_5 hc_lo_6 hc_lo_7
     hc_hi_0 hc_hi_1 hc_hi_2 hc_hi_3 hc_hi_4 hc_hi_5 hc_hi_6 hc_hi_7
     hc_lo_sum_lt hc_hi_sum_lt

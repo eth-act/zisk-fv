@@ -59,6 +59,50 @@ def rowAt (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL) (r : â
   }
 
 @[reducible]
+def validOfRow (row : BinaryExtensionRow FGL) :
+    ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL where
+  op := fun _ => row.flags.op
+  free_in_a_0 := fun _ => row.aCols.free_in_a_0
+  free_in_a_1 := fun _ => row.aCols.free_in_a_1
+  free_in_a_2 := fun _ => row.aCols.free_in_a_2
+  free_in_a_3 := fun _ => row.aCols.free_in_a_3
+  free_in_a_4 := fun _ => row.aCols.free_in_a_4
+  free_in_a_5 := fun _ => row.aCols.free_in_a_5
+  free_in_a_6 := fun _ => row.aCols.free_in_a_6
+  free_in_a_7 := fun _ => row.aCols.free_in_a_7
+  free_in_b := fun _ => row.flags.free_in_b
+  free_in_c_0 := fun _ => row.cColsLo.free_in_c_0
+  free_in_c_1 := fun _ => row.cColsLo.free_in_c_1
+  free_in_c_2 := fun _ => row.cColsLo.free_in_c_2
+  free_in_c_3 := fun _ => row.cColsLo.free_in_c_3
+  free_in_c_4 := fun _ => row.cColsLo.free_in_c_4
+  free_in_c_5 := fun _ => row.cColsLo.free_in_c_5
+  free_in_c_6 := fun _ => row.cColsLo.free_in_c_6
+  free_in_c_7 := fun _ => row.cColsLo.free_in_c_7
+  free_in_c_8 := fun _ => row.cColsHi.free_in_c_8
+  free_in_c_9 := fun _ => row.cColsHi.free_in_c_9
+  free_in_c_10 := fun _ => row.cColsHi.free_in_c_10
+  free_in_c_11 := fun _ => row.cColsHi.free_in_c_11
+  free_in_c_12 := fun _ => row.cColsHi.free_in_c_12
+  free_in_c_13 := fun _ => row.cColsHi.free_in_c_13
+  free_in_c_14 := fun _ => row.cColsHi.free_in_c_14
+  free_in_c_15 := fun _ => row.cColsHi.free_in_c_15
+  op_is_shift := fun _ => row.flags.op_is_shift
+  b_0 := fun _ => row.flags.b_0
+  b_1 := fun _ => row.flags.b_1
+  gsum := fun _ => 0
+  im_0 := fun _ => 0
+  im_1 := fun _ => 0
+  im_2 := fun _ => 0
+  im_3 := fun _ => 0
+  im_high_degree_0 := fun _ => 0
+
+theorem rowAt_validOfRow_zero (row : BinaryExtensionRow FGL) :
+    rowAt (validOfRow row) 0 = row := by
+  cases row
+  rfl
+
+@[reducible]
 def constVar (row : BinaryExtensionRow FGL) : Var BinaryExtensionRow FGL :=
   { aCols := {
       free_in_a_0 := .const row.aCols.free_in_a_0

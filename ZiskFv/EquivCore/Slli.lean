@@ -157,7 +157,7 @@ theorem equiv_SLLI_of_wf
   set shift : ℕ := slli_input.shamt.toNat with h_shift_def
   have h_discharge :=
     ZiskFv.EquivCore.WriteValueProofs.BinaryShift.h_rd_val_shift_slli
-      m v r_main r_binary e2 slli_input.r1_val shift h_op h_bytes h_a_range
+      m v r_main r_binary e2 slli_input.r1_val shift h_op h_bytes _h_wfs h_a_range
       hc0 hc2 hc4 hc6 hc8 hc10 hc12 hc14
       hc1 hc3 hc5 hc7 hc9 hc11 hc13 hc15
       hc_lo_sum_lt hc_hi_sum_lt
@@ -229,5 +229,55 @@ theorem equiv_SLLI
     h_op_is_shift_fact.1 (Or.inl h_op_v_eq)
   exact equiv_SLLI_of_wf state slli_input r1 rd shamt m v r_main r_binary bus
     promises ⟨h_main_active, h_main_op⟩ h_match h_lane_rd h_bytes h_wfs h_op_is_shift
+
+/-- Row-native static-provider route for SLLI. The BinaryExtensionTable facts
+    come from the same Clean provider row that emits the op-bus message. -/
+theorem equiv_SLLI_of_static_row
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (slli_input : PureSpec.SlliInput)
+    (r1 rd : regidx) (shamt : BitVec 6)
+    (m : Valid_Main FGL FGL)
+    (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
+        state slli_input.r1_val slli_input.shamt slli_input.rd slli_input.PC
+        (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC
+        r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+          (ZiskFv.AirsClean.BinaryExtension.opBusMessage row) 1))
+    (h_facts : ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts row)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
+    execute_instruction (instruction.SHIFTIOP (shamt, r1, rd, sop.SLLI)) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨h_main_active, h_main_op⟩ := pins
+  let v := ZiskFv.AirsClean.BinaryExtension.validOfRow row
+  have h_match_v : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v 0) := by
+    simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
+      ZiskFv.AirsClean.BinaryExtension.opBusMessage,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension] using h_match
+  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v 0
+  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
+    simpa [h_bytes, ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups,
+      ZiskFv.AirsClean.BinaryExtension.validOfRow,
+      ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts,
+      ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableMessage.toEntry] using h_facts
+  obtain ⟨h_op_fgl, _, _⟩ :=
+    ZiskFv.EquivCore.Bridge.BinaryExtension.project_match_op_clo_chi
+      m v r_main 0 h_match_v
+  have h_op_v_eq : v.op 0 = ZiskFv.Trusted.OP_SLL := by
+    rw [← h_op_fgl, h_main_op]
+  have h_op_is_shift : v.op_is_shift 0 = 1 :=
+    (ZiskFv.Airs.BinaryExtension.binary_extension_op_is_shift_pin_of_wf_hypotheses
+      v 0 h_wfs).1 (Or.inl h_op_v_eq)
+  exact equiv_SLLI_of_wf state slli_input r1 rd shamt m v r_main 0 bus
+    promises ⟨h_main_active, h_main_op⟩ h_match_v h_lane_rd
+    h_bytes h_wfs h_op_is_shift
 
 end ZiskFv.EquivCore.Slli

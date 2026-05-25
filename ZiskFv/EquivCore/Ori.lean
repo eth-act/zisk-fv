@@ -60,94 +60,6 @@ lemma equiv_ORI_sail
   PureSpec.execute_ITYPE_ori_pure_equiv
     ori_input r1 rd h_input_r1 h_input_imm h_input_rd h_input_pc
 
-/-- **Canonical equivalence.** Sail's `execute_instruction` on an RV64 ORI equals
-    the state computed by applying `bus_effect` to the circuit's
-    execution and memory bus rows.
-
-    Mirrors `equiv_ANDI` — see that theorem's docstring
-    for the discharge chain. Differences from ANDI: `OP_AND → OP_OR`,
-    `match_clo_chi_AND → match_clo_chi_OR`, `transpile_ANDI →
-    transpile_ORI`, `WriteValueProofs.h_rd_val_logic_andi →
-    h_rd_val_logic_ori`. -/
-theorem equiv_ORI
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (ori_input : PureSpec.OriInput)
-    (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main FGL FGL) (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL)
-    (r_main r_binary : ℕ)
-    (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.EquivCore.Promises.ITypePromises
-        state ori_input.r1_val ori_input.imm ori_input.rd ori_input.PC
-        (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
-        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
-    (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v r_binary))
-    (h_bop_or_sext : (v.b_op_or_sext r_binary).val = ZiskFv.Airs.Tables.BinaryTable.OP_OR)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (h_ori_subset :
-      ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
-        m r_main ori_input.imm) :
-    (do
-      Sail.writeReg Register.nextPC
-        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute
-        (instruction.ITYPE (imm, r1, rd, iop.ORI))) state
-      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_main_active, h_main_op_ori⟩ := pins
-  obtain ⟨h_input_r1, h_input_imm, h_input_rd, h_input_pc,
-          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
-          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
-          h_rd_idx⟩ := promises
-  obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7,
-          hb0, hb1, hb2, hb3, hb4, hb5, hb6, hb7,
-          hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.byte_ranges_at_holds v r_binary
-  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3,
-          h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.e2_byte_ranges_discharge e2
-  obtain ⟨h_byte_0, h_byte_1, h_byte_2, h_byte_3,
-          h_byte_4, h_byte_5, h_byte_6, h_byte_7⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_logic
-      v r_binary _ h_bop_or_sext
-  obtain ⟨h_match_clo, h_match_chi⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.match_clo_chi_OR m v r_main r_binary
-      h_match h_bop_or_sext
-  obtain ⟨_, h_m32, _, _, _, _, h_a_lo_t, h_a_hi_t, _, _⟩ :=
-    transpile_ORI m r_main (regidx_to_fin r1) (regidx_to_fin rd)
-      (m.b_0 r_main) (m.b_1 r_main)
-      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-      h_main_active h_main_op_ori
-  have h_input_r1_circuit :=
-    ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a m v r_main r_binary
-      (regidx_to_fin r1) ori_input.r1_val h_m32 h_a_lo_t h_a_hi_t h_match h_input_r1
-  have h_input_imm_circuit :=
-    ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main
-      m v r_main r_binary ori_input.imm h_m32 h_match h_ori_subset
-  have h_rd_val :=
-    ZiskFv.EquivCore.WriteValueProofs.BinaryLogic.h_rd_val_logic_ori
-      m v r_main r_binary e2 ori_input.r1_val ori_input.imm
-      h_byte_0 h_byte_1 h_byte_2 h_byte_3 h_byte_4 h_byte_5 h_byte_6 h_byte_7
-      ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
-      hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
-      hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
-      h_match_clo h_match_chi h_lane_rd
-      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
-      h_input_r1_circuit h_input_imm_circuit
-  rw [equiv_ORI_sail state ori_input r1 rd imm
-        h_input_r1 h_input_imm h_input_rd h_input_pc]
-  symm
-  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
-        state exec_row e0 e1 e2
-        (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
-  simp only [PureSpec.execute_ITYPE_ori_pure, h_rd_idx]
-  split_ifs with h_rd_zero
-  · simp only [bind, pure, EStateM.bind, EStateM.pure]
-  · rw [h_rd_val]
-
-
 /-- Static-provider BinaryTable route for `equiv_ORI`. -/
 theorem equiv_ORI_of_static_lookup
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
@@ -225,6 +137,111 @@ theorem equiv_ORI_of_static_lookup
       hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
       hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
       h_match_clo h_match_chi h_lane_rd
+      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+      h_input_r1_circuit h_input_imm_circuit
+  rw [equiv_ORI_sail state ori_input r1 rd imm
+        h_input_r1 h_input_imm h_input_rd h_input_pc]
+  symm
+  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
+        state exec_row e0 e1 e2
+        (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
+        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
+        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
+  simp only [PureSpec.execute_ITYPE_ori_pure, h_rd_idx]
+  split_ifs with h_rd_zero
+  · simp only [bind, pure, EStateM.bind, EStateM.pure]
+  · rw [h_rd_val]
+
+/-- Row-native static-provider route for `ORI`. -/
+theorem equiv_ORI_of_static_row
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (ori_input : PureSpec.OriInput)
+    (r1 rd : regidx) (imm : BitVec 12)
+    (m : Valid_Main FGL FGL)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
+        state ori_input.r1_val ori_input.imm ori_input.rd ori_input.PC
+        (PureSpec.execute_ITYPE_ori_pure ori_input).nextPC
+        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
+    (h_core : ZiskFv.Airs.Binary.core_every_row
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0)
+    (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (h_ori_subset :
+      ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
+        m r_main ori_input.imm) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (imm, r1, rd, iop.ORI))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_ori⟩ := pins
+  obtain ⟨h_input_r1, h_input_imm, h_input_rd, h_input_pc,
+          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
+          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
+          h_rd_idx⟩ := promises
+  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3,
+          h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.e2_byte_ranges_discharge e2
+  have h_emit :
+      row.chain.b_op + 16 * row.mode.mode32 =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_OR : FGL) := by
+    have h_match_op := h_match.2.1
+    change (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+      (ZiskFv.AirsClean.Binary.opBusMessage row) 1).op =
+        (ZiskFv.Airs.Tables.BinaryTable.OP_OR : FGL)
+    rw [← h_match_op]
+    simpa [ZiskFv.AirsClean.Binary.opBusMessage,
+      ZiskFv.Airs.Tables.BinaryTable.OP_OR, ZiskFv.Trusted.OP_OR]
+      using h_main_op_ori
+  obtain ⟨h_row_m32, h_bop, h_bop_or_sext⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16
+      row ZiskFv.Airs.Tables.BinaryTable.OP_OR (by decide) h_core h_emit
+  have h_matches :=
+    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_logic_of_static_row
+      row h_facts ZiskFv.Airs.Tables.BinaryTable.OP_OR h_bop h_bop_or_sext
+  obtain ⟨h_match_clo, h_match_chi⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.match_clo_chi_OR_row_of_static_facts
+      m row r_main h_core h_facts h_match h_bop_or_sext
+  obtain ⟨_, h_main_m32, _, _, _, _, h_a_lo_t, h_a_hi_t, _, _⟩ :=
+    transpile_ORI m r_main (regidx_to_fin r1) (regidx_to_fin rd)
+      (m.b_0 r_main) (m.b_1 r_main)
+      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
+      h_main_active h_main_op_ori
+  have h_input_r1_circuit :=
+    ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
+      m row r_main (regidx_to_fin r1) ori_input.r1_val
+      h_main_m32 h_a_lo_t h_a_hi_t h_match h_input_r1
+  have h_input_imm_circuit :=
+    ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
+      m row r_main ori_input.imm h_main_m32 h_match h_ori_subset
+  obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
+  have h_match_clo_mem :
+      row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
+        + row.cBytes.free_in_c_2 * 65536
+        + row.cBytes.free_in_c_3 * 16777216 =
+          ZiskFv.Airs.MemoryBus.memory_entry_lo e2 := by
+    rw [← h_match_clo]
+    exact h_lo_match
+  have h_match_chi_mem :
+      row.cBytes.free_in_c_4 + row.cBytes.free_in_c_5 * 256
+        + row.cBytes.free_in_c_6 * 65536
+        + row.cBytes.free_in_c_7 * 16777216 =
+          ZiskFv.Airs.MemoryBus.memory_entry_hi e2 := by
+    rw [← h_match_chi]
+    exact h_hi_match
+  have h_rd_val :=
+    ZiskFv.EquivCore.WriteValueProofs.BinaryLogic.h_rd_val_logic_or_row_of_wf
+      row e2 ori_input.r1_val (BitVec.signExtend 64 ori_input.imm)
+      h_matches h_match_clo_mem h_match_chi_mem
       h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_input_r1_circuit h_input_imm_circuit
   rw [equiv_ORI_sail state ori_input r1 rd imm

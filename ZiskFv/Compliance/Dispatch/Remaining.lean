@@ -83,22 +83,22 @@ def OpEnvelope.exec_eq_remaining
         sw_input.imm, regidx.Regidx sw_input.r2, regidx.Regidx sw_input.r1, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   -- W-shifts (6)
-  | .sllw _ r1 r2 rd _ bus .. =>
+  | .sllw _ r1 r2 rd _ _ bus .. =>
       execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SLLW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .srlw _ r1 r2 rd _ bus .. =>
+  | .srlw _ r1 r2 rd _ _ bus .. =>
       execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRLW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .sraw _ r1 r2 rd _ bus .. =>
+  | .sraw _ r1 r2 rd _ _ bus .. =>
       execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRAW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .slliw slliw_input r1 rd _ bus .. =>
+  | .slliw slliw_input r1 rd _ _ bus .. =>
       execute_instruction (instruction.SHIFTIWOP (slliw_input.shamt, r1, rd, sopw.SLLIW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .srliw srliw_input r1 rd _ bus .. =>
+  | .srliw srliw_input r1 rd _ _ bus .. =>
       execute_instruction (instruction.SHIFTIWOP (srliw_input.shamt, r1, rd, sopw.SRLIW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .sraiw sraiw_input r1 rd _ bus .. =>
+  | .sraiw sraiw_input r1 rd _ _ bus .. =>
       execute_instruction (instruction.SHIFTIWOP (sraiw_input.shamt, r1, rd, sopw.SRAIW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   -- Mul family (5)
@@ -183,12 +183,12 @@ def OpEnvelope.exec_eq_remaining
     arms carry no obligation. -/
 def OpEnvelope.remaining_wshift_static_lookup_soundness
     : OpEnvelope state m r_main → Prop
-  | .sllw _ _ _ _ v _ .. => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
-  | .srlw _ _ _ _ v _ .. => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
-  | .sraw _ _ _ _ v _ .. => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
-  | .slliw _ _ _ v _ .. => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
-  | .srliw _ _ _ v _ .. => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
-  | .sraiw _ _ _ v _ .. => ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v
+  | .sllw _ _ _ _ _ _ _ .. => True
+  | .srlw _ _ _ _ _ _ _ .. => True
+  | .sraw _ _ _ _ _ _ _ .. => True
+  | .slliw _ _ _ _ _ _ .. => True
+  | .srliw _ _ _ _ _ _ .. => True
+  | .sraiw _ _ _ _ _ _ .. => True
   | _ => True
 
 theorem zisk_riscv_compliant_program_bus_remaining
@@ -218,48 +218,60 @@ theorem zisk_riscv_compliant_program_bus_remaining
     exact ZiskFv.Equivalence.Sw.equiv_SW state sw_input regs m r_main bus pins
       h_main_ind_width h_opcode_assumptions promises
   -- W-shifts
-  | sllw sllw_input r1 r2 rd v bus
+  | sllw sllw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-         pins h_lane_rd =>
+         pins h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Sllw.equiv_SLLW state sllw_input r1 r2 rd m v r_main bus
+    exact ZiskFv.Equivalence.Sllw.equiv_SLLW state sllw_input r1 r2 rd
+      m providerTable providerRow r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      pins h_lane_rd
-  | srlw srlw_input r1 r2 rd v bus
+      pins h_component h_table_spec h_provider_row h_match h_lane_rd
+  | srlw srlw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-         pins h_lane_rd =>
+         pins h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Srlw.equiv_SRLW state srlw_input r1 r2 rd m v r_main bus
+    exact ZiskFv.Equivalence.Srlw.equiv_SRLW state srlw_input r1 r2 rd
+      m providerTable providerRow r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      pins h_lane_rd
-  | sraw sraw_input r1 r2 rd v bus
+      pins h_component h_table_spec h_provider_row h_match h_lane_rd
+  | sraw sraw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-         pins h_lane_rd =>
+         pins h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Sraw.equiv_SRAW state sraw_input r1 r2 rd m v r_main bus
+    exact ZiskFv.Equivalence.Sraw.equiv_SRAW state sraw_input r1 r2 rd
+      m providerTable providerRow r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      pins h_lane_rd
-  | slliw slliw_input r1 rd v bus promises pins h_lane_rd =>
+      pins h_component h_table_spec h_provider_row h_match h_lane_rd
+  | slliw slliw_input r1 rd providerTable providerRow bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Slliw.equiv_SLLIW state slliw_input r1 rd m v r_main bus promises pins h_lane_rd
-  | srliw srliw_input r1 rd v bus promises pins h_lane_rd =>
+    exact ZiskFv.Equivalence.Slliw.equiv_SLLIW state slliw_input r1 rd
+      m providerTable providerRow r_main bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd
+  | srliw srliw_input r1 rd providerTable providerRow bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Srliw.equiv_SRLIW state srliw_input r1 rd m v r_main bus promises pins h_lane_rd
-  | sraiw sraiw_input r1 rd v bus promises pins h_lane_rd =>
+    exact ZiskFv.Equivalence.Srliw.equiv_SRLIW state srliw_input r1 rd
+      m providerTable providerRow r_main bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd
+  | sraiw sraiw_input r1 rd providerTable providerRow bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Sraiw.equiv_SRAIW state sraiw_input r1 rd m v r_main bus promises pins h_lane_rd
+    exact ZiskFv.Equivalence.Sraiw.equiv_SRAIW state sraiw_input r1 rd
+      m providerTable providerRow r_main bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd
   -- Mul family
   | mul mul_input r1 r2 rd srs1 srs2 bus v r_a pins h_match_primary
         promises bounds h_row_constraints =>
@@ -400,48 +412,60 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Sw.equiv_SW state sw_input regs m r_main bus pins
       h_main_ind_width h_opcode_assumptions promises
-  | sllw sllw_input r1 r2 rd v bus
+  | sllw sllw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-         pins h_lane_rd =>
+         pins h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Sllw.equiv_SLLW state sllw_input r1 r2 rd m v r_main bus
+    exact ZiskFv.Equivalence.Sllw.equiv_SLLW state sllw_input r1 r2 rd
+      m providerTable providerRow r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      pins h_lane_rd
-  | srlw srlw_input r1 r2 rd v bus
+      pins h_component h_table_spec h_provider_row h_match h_lane_rd
+  | srlw srlw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-         pins h_lane_rd =>
+         pins h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Srlw.equiv_SRLW state srlw_input r1 r2 rd m v r_main bus
+    exact ZiskFv.Equivalence.Srlw.equiv_SRLW state srlw_input r1 r2 rd
+      m providerTable providerRow r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      pins h_lane_rd
-  | sraw sraw_input r1 r2 rd v bus
+      pins h_component h_table_spec h_provider_row h_match h_lane_rd
+  | sraw sraw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-         pins h_lane_rd =>
+         pins h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Sraw.equiv_SRAW state sraw_input r1 r2 rd m v r_main bus
+    exact ZiskFv.Equivalence.Sraw.equiv_SRAW state sraw_input r1 r2 rd
+      m providerTable providerRow r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      pins h_lane_rd
-  | slliw slliw_input r1 rd v bus promises pins h_lane_rd =>
+      pins h_component h_table_spec h_provider_row h_match h_lane_rd
+  | slliw slliw_input r1 rd providerTable providerRow bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Slliw.equiv_SLLIW state slliw_input r1 rd m v r_main bus promises pins h_lane_rd
-  | srliw srliw_input r1 rd v bus promises pins h_lane_rd =>
+    exact ZiskFv.Equivalence.Slliw.equiv_SLLIW state slliw_input r1 rd
+      m providerTable providerRow r_main bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd
+  | srliw srliw_input r1 rd providerTable providerRow bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Srliw.equiv_SRLIW state srliw_input r1 rd m v r_main bus promises pins h_lane_rd
-  | sraiw sraiw_input r1 rd v bus promises pins h_lane_rd =>
+    exact ZiskFv.Equivalence.Srliw.equiv_SRLIW state srliw_input r1 rd
+      m providerTable providerRow r_main bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd
+  | sraiw sraiw_input r1 rd providerTable providerRow bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Sraiw.equiv_SRAIW state sraiw_input r1 rd m v r_main bus promises pins h_lane_rd
+    exact ZiskFv.Equivalence.Sraiw.equiv_SRAIW state sraiw_input r1 rd
+      m providerTable providerRow r_main bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd
   | mul mul_input r1 r2 rd srs1 srs2 bus v r_a pins h_match_primary
         promises bounds h_row_constraints =>
     simp only [OpEnvelope.exec_eq_remaining]
@@ -560,54 +584,60 @@ theorem zisk_riscv_compliant_program_bus_remaining_wshift_of_static_lookup
     (h_static : env.remaining_wshift_static_lookup_soundness) :
     env.exec_eq_remaining := by
   cases env with
-  | sllw sllw_input r1 r2 rd v bus
+  | sllw sllw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-         pins h_lane_rd =>
+         pins h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
-    exact ZiskFv.Equivalence.Sllw.equiv_SLLW_of_static_lookup state sllw_input r1 r2 rd
-      m v r_main offset cleanEnv h_static bus
+    exact ZiskFv.Equivalence.Sllw.equiv_SLLW state sllw_input r1 r2 rd
+      m providerTable providerRow r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      pins h_lane_rd
-  | srlw srlw_input r1 r2 rd v bus
+      pins h_component h_table_spec h_provider_row h_match h_lane_rd
+  | srlw srlw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-         pins h_lane_rd =>
+         pins h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
-    exact ZiskFv.Equivalence.Srlw.equiv_SRLW_of_static_lookup state srlw_input r1 r2 rd
-      m v r_main offset cleanEnv h_static bus
+    exact ZiskFv.Equivalence.Srlw.equiv_SRLW state srlw_input r1 r2 rd
+      m providerTable providerRow r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      pins h_lane_rd
-  | sraw sraw_input r1 r2 rd v bus
+      pins h_component h_table_spec h_provider_row h_match h_lane_rd
+  | sraw sraw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
          h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-         pins h_lane_rd =>
+         pins h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
-    exact ZiskFv.Equivalence.Sraw.equiv_SRAW_of_static_lookup state sraw_input r1 r2 rd
-      m v r_main offset cleanEnv h_static bus
+    exact ZiskFv.Equivalence.Sraw.equiv_SRAW state sraw_input r1 r2 rd
+      m providerTable providerRow r_main bus
       h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
       h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
       h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      pins h_lane_rd
-  | slliw slliw_input r1 rd v bus promises pins h_lane_rd =>
+      pins h_component h_table_spec h_provider_row h_match h_lane_rd
+  | slliw slliw_input r1 rd providerTable providerRow bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
-    exact ZiskFv.Equivalence.Slliw.equiv_SLLIW_of_static_lookup state slliw_input r1 rd
-      m v r_main offset cleanEnv h_static bus promises pins h_lane_rd
-  | srliw srliw_input r1 rd v bus promises pins h_lane_rd =>
+    exact ZiskFv.Equivalence.Slliw.equiv_SLLIW state slliw_input r1 rd
+      m providerTable providerRow r_main bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd
+  | srliw srliw_input r1 rd providerTable providerRow bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
-    exact ZiskFv.Equivalence.Srliw.equiv_SRLIW_of_static_lookup state srliw_input r1 rd
-      m v r_main offset cleanEnv h_static bus promises pins h_lane_rd
-  | sraiw sraiw_input r1 rd v bus promises pins h_lane_rd =>
+    exact ZiskFv.Equivalence.Srliw.equiv_SRLIW state srliw_input r1 rd
+      m providerTable providerRow r_main bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd
+  | sraiw sraiw_input r1 rd providerTable providerRow bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd =>
     simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
-    exact ZiskFv.Equivalence.Sraiw.equiv_SRAIW_of_static_lookup state sraiw_input r1 rd
-      m v r_main offset cleanEnv h_static bus promises pins h_lane_rd
+    exact ZiskFv.Equivalence.Sraiw.equiv_SRAIW state sraiw_input r1 rd
+      m providerTable providerRow r_main bus promises pins
+      h_component h_table_spec h_provider_row h_match h_lane_rd
   | _ =>
     exact zisk_riscv_compliant_program_bus_remaining_except_known_defects _ h_known_bugs
 

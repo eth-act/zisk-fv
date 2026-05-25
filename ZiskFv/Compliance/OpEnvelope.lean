@@ -27,6 +27,7 @@ import ZiskFv.Compliance.Wrappers.Or
 import ZiskFv.Compliance.Wrappers.Ori
 import ZiskFv.Compliance.Wrappers.Xor
 import ZiskFv.Compliance.Wrappers.Xori
+import ZiskFv.AirsClean.Binary.Constraints
 import ZiskFv.Compliance.Wrappers.Slt
 import ZiskFv.Compliance.Wrappers.Sltu
 import ZiskFv.Compliance.Wrappers.Slti
@@ -375,6 +376,18 @@ inductive OpEnvelope
     (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state sub_input.r1_val sub_input.r2_val sub_input.rd sub_input.PC
@@ -386,6 +399,18 @@ inductive OpEnvelope
     (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state and_input.r1_val and_input.r2_val and_input.rd and_input.PC
@@ -397,6 +422,18 @@ inductive OpEnvelope
     (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state or_input.r1_val or_input.r2_val or_input.rd or_input.PC
@@ -408,6 +445,18 @@ inductive OpEnvelope
     (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state xor_input.r1_val xor_input.r2_val xor_input.rd xor_input.PC
@@ -419,6 +468,18 @@ inductive OpEnvelope
     (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state slt_input.r1_val slt_input.r2_val slt_input.rd slt_input.PC
@@ -430,6 +491,18 @@ inductive OpEnvelope
     (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state sltu_input.r1_val sltu_input.r2_val sltu_input.rd sltu_input.PC
@@ -441,6 +514,18 @@ inductive OpEnvelope
     (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_AND)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_andi_subset : itype_imm_subset_holds_main m r_main andi_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -453,6 +538,18 @@ inductive OpEnvelope
     (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_OR)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_ori_subset : itype_imm_subset_holds_main m r_main ori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -465,6 +562,18 @@ inductive OpEnvelope
     (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -477,6 +586,18 @@ inductive OpEnvelope
     (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_slti_subset : itype_imm_subset_holds_main m r_main slti_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -489,6 +610,18 @@ inductive OpEnvelope
     (v : Valid_Binary FGL FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LTU)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_sltiu_subset : itype_imm_subset_holds_main m r_main sltiu_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -498,79 +631,146 @@ inductive OpEnvelope
   -- ============================ SLL (BinaryExtension, R-type) ===========
   | sll
     (sll_input : PureSpec.SllInput) (r1 r2 rd : regidx)
-    (v : Valid_BinaryExtension FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state sll_input.r1_val sll_input.r2_val sll_input.rd sll_input.PC
         (PureSpec.execute_RTYPE_sll_pure sll_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRL ====================================
   | srl
     (srl_input : PureSpec.SrlInput) (r1 r2 rd : regidx)
-    (v : Valid_BinaryExtension FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state srl_input.r1_val srl_input.r2_val srl_input.rd srl_input.PC
         (PureSpec.execute_RTYPE_srl_pure srl_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRA ====================================
   | sra
     (sra_input : PureSpec.SraInput) (r1 r2 rd : regidx)
-    (v : Valid_BinaryExtension FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state sra_input.r1_val sra_input.r2_val sra_input.rd sra_input.PC
         (PureSpec.execute_RTYPE_sra_pure sra_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRA)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SLLI ====================================
   | slli
     (slli_input : PureSpec.SlliInput) (r1 rd : regidx) (shamt : BitVec 6)
-    (v : Valid_BinaryExtension FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
         state slli_input.r1_val slli_input.shamt slli_input.rd slli_input.PC
         (PureSpec.execute_SHIFTIOP_slli_pure slli_input).nextPC
         r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRLI ====================================
   | srli
     (srli_input : PureSpec.SrliInput) (r1 rd : regidx) (shamt : BitVec 6)
-    (v : Valid_BinaryExtension FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
         state srli_input.r1_val srli_input.shamt srli_input.rd srli_input.PC
         (PureSpec.execute_SHIFTIOP_srli_pure srli_input).nextPC
         r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRAI ====================================
   | srai
     (srai_input : PureSpec.SraiInput) (r1 rd : regidx) (shamt : BitVec 6)
-    (v : Valid_BinaryExtension FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.EquivCore.Promises.ShiftImmPromises
         state srai_input.r1_val srai_input.shamt srai_input.rd srai_input.PC
         (PureSpec.execute_SHIFTIOP_srai_pure srai_input).nextPC
         r1 rd shamt bus.exec_row bus.e0 bus.e1 bus.e2)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRA)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SLLW ====================================
   | sllw
     (sllw_input : PureSpec.SllwInput) (r1 r2 rd : regidx)
-    (v : Valid_BinaryExtension FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
       = EStateM.Result.ok sllw_input.r1_val state)
@@ -589,12 +789,23 @@ inductive OpEnvelope
     (h_m2_mult : bus.e2.multiplicity = 1) (h_m2_as : bus.e2.as.val = 1)
     (h_rd_idx : sllw_input.rd = Transpiler.wrap_to_regidx bus.e2.ptr)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL_W)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRLW ====================================
   | srlw
     (srlw_input : PureSpec.SrlwInput) (r1 r2 rd : regidx)
-    (v : Valid_BinaryExtension FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
       = EStateM.Result.ok srlw_input.r1_val state)
@@ -613,12 +824,23 @@ inductive OpEnvelope
     (h_m2_mult : bus.e2.multiplicity = 1) (h_m2_as : bus.e2.as.val = 1)
     (h_rd_idx : srlw_input.rd = Transpiler.wrap_to_regidx bus.e2.ptr)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRL_W)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRAW ====================================
   | sraw
     (sraw_input : PureSpec.SrawInput) (r1 r2 rd : regidx)
-    (v : Valid_BinaryExtension FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (h_input_r1_sail : read_xreg (regidx_to_fin r1) state
       = EStateM.Result.ok sraw_input.r1_val state)
@@ -637,42 +859,85 @@ inductive OpEnvelope
     (h_m2_mult : bus.e2.multiplicity = 1) (h_m2_as : bus.e2.as.val = 1)
     (h_rd_idx : sraw_input.rd = Transpiler.wrap_to_regidx bus.e2.ptr)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRA_W)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SLLIW ===================================
   | slliw
     (slliw_input : PureSpec.SlliwInput) (r1 rd : regidx)
-    (v : Valid_BinaryExtension FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
         state slliw_input.r1_val slliw_input.rd slliw_input.PC
         (PureSpec.execute_SHIFTIWOP_slliw_pure slliw_input).nextPC
         r1 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL_W)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRLIW ===================================
   | srliw
     (srliw_input : PureSpec.SrliwInput) (r1 rd : regidx)
-    (v : Valid_BinaryExtension FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
         state srliw_input.r1_val srliw_input.rd srliw_input.PC
         (PureSpec.execute_SHIFTIWOP_srliw_pure srliw_input).nextPC
         r1 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRL_W)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SRAIW ===================================
   | sraiw
     (sraiw_input : PureSpec.SraiwInput) (r1 rd : regidx)
-    (v : Valid_BinaryExtension FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (bus : ZiskFv.Compliance.BusRows)
     (promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
         state sraiw_input.r1_val sraiw_input.rd sraiw_input.PC
         (PureSpec.execute_SHIFTIWOP_sraiw_pure sraiw_input).nextPC
         r1 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRA_W)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryExtension.opBusMessage
+          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     OpEnvelope state m r_main
   -- ============================ SB (store, Main-only) ===================

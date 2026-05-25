@@ -10,6 +10,7 @@ import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
+import ZiskFv.AirsClean.BinaryFamily.Balance
 import ZiskFv.Tactics.ALUITypeArchetype
 import ZiskFv.Compliance.SharedBundles
 
@@ -35,10 +36,21 @@ theorem equiv_XORI
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (xori_input : PureSpec.XoriInput)
     (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
@@ -51,21 +63,31 @@ theorem equiv_XORI
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.XORI))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_main_active, h_main_op_xori⟩ := pins
-  have h_op_disj := binary_op_disj_of_eq m r_main 16 h_main_op_xori (by tauto)
-  obtain ⟨r_binary, h_match⟩ :=
-    op_bus_perm_sound_Binary m v r_main h_main_active h_op_disj
-  have h_bop_or_sext :=
-    binary_h_bop_or_sext_via_axiom h_match h_main_op_xori
-      (binary_b_op_or_sext_eq_OP_XOR v r_binary)
-  exact ZiskFv.EquivCore.Xori.equiv_XORI
-    state xori_input r1 rd imm m v r_main r_binary
-    ⟨exec_row, e0, e1, e2⟩
-    promises
-    ⟨h_main_active, h_main_op_xori⟩
-    h_match h_bop_or_sext h_lane_rd h_xori_subset
-
+  let row :=
+    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  obtain ⟨h_core, h_facts⟩ :=
+    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
+      h_component h_table_spec h_provider_row
+  have h_component_spec :
+      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
+        (providerTable.environment providerRow) := by
+    simpa [h_component] using h_table_spec providerRow h_provider_row
+  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
+  obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
+  have h_emit : row.chain.b_op + 16 * row.mode.mode32 = (16 : FGL) := by
+    have h_match_op := h_match.2.1
+    change (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+      (ZiskFv.AirsClean.Binary.opBusMessage row) 1).op = (16 : FGL)
+    rw [← h_match_op]
+    simpa [row, ZiskFv.AirsClean.Binary.opBusMessage, ZiskFv.Trusted.OP_XOR]
+      using pins.main_op
+  have h_pins :=
+    ZiskFv.AirsClean.Binary.static_table_xor_mode_pins_of_emit
+      row h_row_spec h_static_specs h_emit
+  exact ZiskFv.EquivCore.Xori.equiv_XORI_of_static_row
+    state xori_input r1 rd imm m row r_main bus promises pins
+    h_match h_pins.2.2 h_core h_facts h_lane_rd h_xori_subset
 
 /-- Static-provider BinaryTable route for `equiv_XORI`. -/
 theorem equiv_XORI_of_static_lookup
@@ -94,14 +116,25 @@ theorem equiv_XORI_of_static_lookup
   have h_op_disj := binary_op_disj_of_eq m r_main 16 h_main_op_xori (by tauto)
   obtain ⟨r_binary, h_match⟩ :=
     op_bus_perm_sound_Binary m v r_main h_main_active h_op_disj
+  have h_emit : v.b_op r_binary + 16 * v.mode32 r_binary = (16 : FGL) := by
+    have h_op_match : m.op r_main = v.b_op r_binary + 16 * v.mode32 r_binary := by
+      simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match
+      exact h_match.2.1
+    rw [← h_op_match]
+    simpa [ZiskFv.Trusted.OP_XOR] using h_main_op_xori
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_static_lookup
+    v r_binary offset env h_static
   have h_bop_or_sext :=
-    binary_h_bop_or_sext_via_axiom h_match h_main_op_xori
-      (binary_b_op_or_sext_eq_OP_XOR v r_binary)
+    ZiskFv.AirsClean.Binary.static_table_b_op_or_sext_eq_of_xor_emit
+      (ZiskFv.AirsClean.Binary.rowAt v r_binary)
+      (ZiskFv.AirsClean.Binary.spec_of_static_lookup v r_binary offset env h_static)
+      (ZiskFv.AirsClean.Binary.static_lookup_spec_facts v r_binary offset env h_static)
+      (by simpa [ZiskFv.AirsClean.Binary.rowAt] using h_emit)
   exact ZiskFv.EquivCore.Xori.equiv_XORI_of_static_lookup
     state xori_input r1 rd imm m v r_main r_binary
     ⟨exec_row, e0, e1, e2⟩
     promises
     ⟨h_main_active, h_main_op_xori⟩
-    h_match h_bop_or_sext offset env h_static (ZiskFv.AirsClean.Binary.core_every_row_of_static_lookup v r_binary offset env h_static) h_lane_rd h_xori_subset
+    h_match h_bop_or_sext offset env h_static h_core h_lane_rd h_xori_subset
 
 end ZiskFv.Compliance

@@ -527,4 +527,92 @@ theorem equiv_SLTI_of_static_lookup
     out.pi4_ne out.pi5_ne out.pi6_ne out.pi7_eq
     h_match_clo h_match_chi h_lane_rd h_fl7_lt_2 h_input_imm_circuit
 
+/-- Row-native static-provider BinaryTable route for `equiv_SLTI`. -/
+theorem equiv_SLTI_of_static_row
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (slti_input : PureSpec.SltiInput)
+    (r1 rd : regidx) (imm : BitVec 12)
+    (m : Valid_Main FGL FGL)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
+        state slti_input.r1_val slti_input.imm slti_input.rd slti_input.PC
+        (PureSpec.execute_ITYPE_slti_pure slti_input).nextPC
+        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
+    (h_core : ZiskFv.Airs.Binary.core_every_row
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0)
+    (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
+    (h_mode32_zero : row.mode.mode32 = 0)
+    (h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_LT)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (h_input_imm_circuit : BitVec.signExtend 64 slti_input.imm
+      = BitVec.ofNat 64
+          ((row.bBytes.free_in_b_0).val + (row.bBytes.free_in_b_1).val * 256
+            + (row.bBytes.free_in_b_2).val * 65536
+            + (row.bBytes.free_in_b_3).val * 16777216
+            + (row.bBytes.free_in_b_4).val * 4294967296
+            + (row.bBytes.free_in_b_5).val * 1099511627776
+            + (row.bBytes.free_in_b_6).val * 281474976710656
+            + (row.bBytes.free_in_b_7).val * 72057594037927936)) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (imm, r1, rd, iop.SLTI))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_slti⟩ := pins
+  let v := ZiskFv.AirsClean.Binary.validOfRow row
+  have h_match_v : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v 0) := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.AirsClean.Binary.opBusMessage,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      opBus_row_Binary] using h_match
+  have out :=
+    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_64_of_static_row
+      row h_facts ZiskFv.Airs.Tables.BinaryTable.OP_LT h_core
+      h_mode32_zero h_b_op
+  obtain ⟨h_match_clo, h_match_chi⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.compare_c_lanes_LT_of_static_chain h_match_v out
+  have h_fl7_lt_2 : (v.carry_7 0).val < 2 :=
+    ZiskFv.Airs.Binary.bin_carry_7_lt_2 v 0
+  have h_input_imm_v : BitVec.signExtend 64 slti_input.imm
+      = BitVec.ofNat 64
+          ((v.free_in_b_0 0).val + (v.free_in_b_1 0).val * 256
+            + (v.free_in_b_2 0).val * 65536
+            + (v.free_in_b_3 0).val * 16777216
+            + (v.free_in_b_4 0).val * 4294967296
+            + (v.free_in_b_5 0).val * 1099511627776
+            + (v.free_in_b_6 0).val * 281474976710656
+            + (v.free_in_b_7 0).val * 72057594037927936) := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h_input_imm_circuit
+  exact ZiskFv.EquivCore.Slti.equiv_SLTI_of_wf
+    state slti_input r1 rd imm m r_main
+    ⟨exec_row, e0, e1, e2⟩
+    promises
+    v 0
+    ⟨h_main_active, h_main_op_slti⟩
+    h_match_v
+    (v.free_in_c_0 0) (v.free_in_c_1 0) (v.free_in_c_2 0)
+    (v.free_in_c_3 0) (v.free_in_c_4 0) (v.free_in_c_5 0)
+    (v.free_in_c_6 0) (v.free_in_c_7 0)
+    (0 : FGL) (v.carry_0 0) (v.carry_1 0) (v.carry_2 0)
+    (v.carry_3 0) (v.carry_4 0) (v.carry_5 0) (v.carry_6 0)
+    (v.carry_0 0) (v.carry_1 0) (v.carry_2 0) (v.carry_3 0)
+    (v.carry_4 0) (v.carry_5 0) (v.carry_6 0) (v.carry_7 0)
+    (2 * v.use_first_byte 0) (0 : FGL) (0 : FGL) (v.mode32 0)
+    (0 : FGL) (0 : FGL) (0 : FGL) (1 - v.mode32 0)
+    out.chain_0 out.chain_1 out.chain_2 out.chain_3
+    out.chain_4 out.chain_5 out.chain_6 out.chain_7
+    out.cin0_eq out.cin1_eq out.cin2_eq out.cin3_eq
+    out.cin4_eq out.cin5_eq out.cin6_eq out.cin7_eq
+    out.pi0_ne out.pi1_ne out.pi2_ne out.pi3_ne
+    out.pi4_ne out.pi5_ne out.pi6_ne out.pi7_eq
+    h_match_clo h_match_chi h_lane_rd h_fl7_lt_2 h_input_imm_v
+
 end ZiskFv.EquivCore.Slti

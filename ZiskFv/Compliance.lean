@@ -97,6 +97,14 @@ def OpEnvelope.binary_family_static_lookup_soundness
     ∧ env.itype_binary_logic_static_lookup_soundness
     ∧ env.binary_extension_static_lookup_soundness
 
+/-- C7 global route that uses concrete lookup-aware Clean Binary table rows
+    for the migrated RTYPE bitwise arms while retaining the existing static
+    lookup route for the Binary-family arms not yet row-native. -/
+def OpEnvelope.binary_family_static_table_row_route
+    (env : OpEnvelope state m r_main) : Prop :=
+  env.rtype_bitwise_static_table_row_route
+    ∧ env.binary_family_static_lookup_soundness
+
 /-- **Known-defect-aware channel-balance global theorem.**
 
     For any `OpEnvelope` arm, the channel-balance form of the
@@ -189,5 +197,35 @@ theorem zisk_riscv_compliant_program_bus_binary_family_of_static_lookup
       env offset cleanEnv h_static.2.2.1
   · exact zisk_riscv_compliant_program_bus_remaining_wshift_of_static_lookup
       env h_known_bugs offset cleanEnv h_static.2.2.2.2
+
+/-- Noncanonical C7 Binary-family route with row-native RTYPE bitwise
+    provider evidence.
+
+This is the first global composition point that can use the lookup-aware
+Clean Binary table row route for AND/OR/XOR. Other Binary-family arms remain
+on their existing static-lookup route until their row-native variants are
+threaded in. -/
+theorem zisk_riscv_compliant_program_bus_binary_family_of_static_table_row
+    (env : OpEnvelope state m r_main)
+    (h_known_bugs : Defects.NoKnownDefect env)
+    (offset : ℕ) (cleanEnv : Environment FGL)
+    (h_route : env.binary_family_static_table_row_route) :
+    env.exec_eq := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact zisk_riscv_compliant_program_bus_branch env
+  · exact zisk_riscv_compliant_program_bus_nomem env
+  · exact zisk_riscv_compliant_program_bus_rtype_bitwise_of_static_table_row
+      env h_route.1
+  · exact zisk_riscv_compliant_program_bus_itype_binary_logic_of_static_lookup
+      env offset cleanEnv h_route.2.2.1
+  · exact zisk_riscv_compliant_program_bus_shift_of_static_lookup
+      env offset cleanEnv h_route.2.2.2.2.1
+  · exact zisk_riscv_compliant_program_bus_add_rtypew env
+  · exact zisk_riscv_compliant_program_bus_ldsd env
+  · exact zisk_riscv_compliant_program_bus_divu_except_known_defects env h_known_bugs
+  · exact zisk_riscv_compliant_program_bus_misc_signed_load_of_static_lookup
+      env offset cleanEnv h_route.2.2.2.1
+  · exact zisk_riscv_compliant_program_bus_remaining_wshift_of_static_lookup
+      env h_known_bugs offset cleanEnv h_route.2.2.2.2.2
 
 end ZiskFv.Compliance

@@ -10,6 +10,7 @@ import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
+import ZiskFv.AirsClean.BinaryFamily.Balance
 import ZiskFv.Compliance.SharedBundles
 
 /-!
@@ -33,10 +34,21 @@ theorem equiv_SLT
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slt_input : PureSpec.SltInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
+    (m : Valid_Main FGL FGL)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
     (r_main : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_LT)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state slt_input.r1_val slt_input.r2_val slt_input.rd slt_input.PC
@@ -48,71 +60,31 @@ theorem equiv_SLT
       LeanRV64D.Functions.execute
         (instruction.RTYPE (r2, r1, rd, rop.SLT))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  let row :=
+    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (providerTable.environment providerRow)
+  obtain ⟨h_core, h_facts⟩ :=
+    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
+      h_component h_table_spec h_provider_row
   obtain ⟨h_main_active, h_main_op_slt⟩ := pins
-  have h_op_disj := binary_op_disj_of_eq m r_main 0x07 h_main_op_slt (by tauto)
-  obtain ⟨r_binary, h_match⟩ :=
-    op_bus_perm_sound_Binary m v r_main h_main_active h_op_disj
-  have h_emit_op := binary_h_emit_op_of_matches_entry (n := 0x07) h_match h_main_op_slt
-  obtain ⟨h_c_lo_m, h_c_hi_m⟩ := binary_c_lane_eqs_of_matches_entry h_match
-  -- Chain-pin unpack (64-bit, op_canon = OP_LT = 0x07).
-  obtain ⟨e0', e1', e2', e3', e4', e5', e6', e7', out⟩ :=
-    binary_chain_pin_obtain_64 v r_binary ZiskFv.Airs.Tables.BinaryTable.OP_LT
-      (Or.inr (Or.inl rfl)) h_emit_op
-  -- For LT, every byte's c_byte = 0.
-  have h_c0_val : (v.free_in_c_0 r_binary).val = 0 :=
-    binary_c_byte_zero_LT e0' _ out.c0_eq out.mult0_eq out.op0_eq
-  have h_c1_val : (v.free_in_c_1 r_binary).val = 0 :=
-    binary_c_byte_zero_LT e1' _ out.c1_eq out.mult1_eq out.op1_eq
-  have h_c2_val : (v.free_in_c_2 r_binary).val = 0 :=
-    binary_c_byte_zero_LT e2' _ out.c2_eq out.mult2_eq out.op2_eq
-  have h_c3_val : (v.free_in_c_3 r_binary).val = 0 :=
-    binary_c_byte_zero_LT e3' _ out.c3_eq out.mult3_eq out.op3_eq
-  have h_c4_val : (v.free_in_c_4 r_binary).val = 0 :=
-    binary_c_byte_zero_LT e4' _ out.c4_eq out.mult4_eq out.op4_eq
-  have h_c5_val : (v.free_in_c_5 r_binary).val = 0 :=
-    binary_c_byte_zero_LT e5' _ out.c5_eq out.mult5_eq out.op5_eq
-  have h_c6_val : (v.free_in_c_6 r_binary).val = 0 :=
-    binary_c_byte_zero_LT e6' _ out.c6_eq out.mult6_eq out.op6_eq
-  have h_c7_val : (v.free_in_c_7 r_binary).val = 0 :=
-    binary_c_byte_zero_LT e7' _ out.c7_eq out.mult7_eq out.op7_eq
-  have h_c0_zero : v.free_in_c_0 r_binary = 0 := Fin.ext h_c0_val
-  have h_c1_zero : v.free_in_c_1 r_binary = 0 := Fin.ext h_c1_val
-  have h_c2_zero : v.free_in_c_2 r_binary = 0 := Fin.ext h_c2_val
-  have h_c3_zero : v.free_in_c_3 r_binary = 0 := Fin.ext h_c3_val
-  have h_c4_zero : v.free_in_c_4 r_binary = 0 := Fin.ext h_c4_val
-  have h_c5_zero : v.free_in_c_5 r_binary = 0 := Fin.ext h_c5_val
-  have h_c6_zero : v.free_in_c_6 r_binary = 0 := Fin.ext h_c6_val
-  have h_c7_zero : v.free_in_c_7 r_binary = 0 := Fin.ext h_c7_val
-  -- h_match_clo : m.c_0 r_main = e7'.flags (after low c-bytes vanish).
-  have h_match_clo : m.c_0 r_main = e7'.flags := by
-    rw [h_c_lo_m, h_c0_zero, h_c1_zero, h_c2_zero, h_c3_zero, out.flags7]; ring
-  have h_match_chi : m.c_1 r_main = 0 := by
-    rw [h_c_hi_m, h_c4_zero, h_c5_zero, h_c6_zero, h_c7_zero]; ring
-  have h_fl7_lt_2 : e7'.flags.val < 2 := by
-    rw [out.flags7]; exact bin_carry_7_lt_2 v r_binary
-  exact ZiskFv.EquivCore.Slt.equiv_SLT
-    state slt_input r1 r2 rd m r_main
-    ⟨exec_row, e0, e1, e2⟩
-    promises
-    v r_binary
+  have h_emit : row.chain.b_op + 16 * row.mode.mode32 =
+      (ZiskFv.Airs.Tables.BinaryTable.OP_LT : FGL) := by
+    have h_match_op := h_match
+    simp only [matches_entry, opBus_row_Main] at h_match_op
+    have h_op_match :
+        m.op r_main = row.chain.b_op + 16 * row.mode.mode32 := h_match_op.2.1
+    rw [← h_op_match]
+    simpa [ZiskFv.Airs.Tables.BinaryTable.OP_LT, ZiskFv.Trusted.OP_LT] using
+      h_main_op_slt
+  obtain ⟨h_row_m32, h_bop, _⟩ :=
+    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16
+      row ZiskFv.Airs.Tables.BinaryTable.OP_LT (by
+        simp [ZiskFv.Airs.Tables.BinaryTable.OP_LT])
+      h_core h_emit
+  exact ZiskFv.EquivCore.Slt.equiv_SLT_of_static_row
+    state slt_input r1 r2 rd m row r_main bus promises
     ⟨h_main_active, h_main_op_slt⟩
-    h_match
-    (v.free_in_c_0 r_binary) (v.free_in_c_1 r_binary) (v.free_in_c_2 r_binary)
-    (v.free_in_c_3 r_binary) (v.free_in_c_4 r_binary) (v.free_in_c_5 r_binary)
-    (v.free_in_c_6 r_binary) (v.free_in_c_7 r_binary)
-    e0'.cin e1'.cin e2'.cin e3'.cin e4'.cin e5'.cin e6'.cin e7'.cin
-    e0'.flags e1'.flags e2'.flags e3'.flags
-    e4'.flags e5'.flags e6'.flags e7'.flags
-    e0'.pos_ind e1'.pos_ind e2'.pos_ind e3'.pos_ind
-    e4'.pos_ind e5'.pos_ind e6'.pos_ind e7'.pos_ind
-    out.chain_0 out.chain_1 out.chain_2 out.chain_3
-    out.chain_4 out.chain_5 out.chain_6 out.chain_7
-    out.cin0_eq out.cin1_eq out.cin2_eq out.cin3_eq
-    out.cin4_eq out.cin5_eq out.cin6_eq out.cin7_eq
-    out.pi0_ne out.pi1_ne out.pi2_ne out.pi3_ne
-    out.pi4_ne out.pi5_ne out.pi6_ne
-    out.pi7_eq h_match_clo h_match_chi h_lane_rd h_fl7_lt_2
+    h_match h_core h_facts h_row_m32 h_bop h_lane_rd
 
 /-- Static-provider BinaryTable route for `equiv_SLT`. -/
 theorem equiv_SLT_of_static_lookup

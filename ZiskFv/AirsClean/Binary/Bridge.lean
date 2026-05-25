@@ -344,6 +344,23 @@ theorem binary_table_wf_of_static_lookup_const_soundness
         , ZiskFv.AirsClean.BinaryTable.spec_wf_properties h6
         , ZiskFv.AirsClean.BinaryTable.spec_wf_properties h7 ⟩
 
+/-- Project the lookup-aware Binary component's static-table spec facts to
+    the legacy semantic `wf_properties` bundle consumed by row-native
+    Binary proofs. -/
+theorem static_table_wf_facts_of_spec_facts
+    (row : BinaryRow FGL)
+    (h_static : StaticBinaryTableSpecFacts row) :
+    StaticBinaryTableWfFacts row := by
+  rcases h_static with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  exact ⟨ ZiskFv.AirsClean.BinaryTable.spec_wf_properties h0
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_properties h1
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_properties h2
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_properties h3
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_properties h4
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_properties h5
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_properties h6
+        , ZiskFv.AirsClean.BinaryTable.spec_wf_properties h7 ⟩
+
 @[reducible]
 def rowAt (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) :
     BinaryRow FGL where
@@ -450,6 +467,94 @@ theorem rowAt_validOfRow_zero (row : BinaryRow FGL) :
   cases row
   rfl
 
+/-- Project the lookup-aware Binary component's algebraic `Spec` to the
+    legacy `core_every_row` predicate on the one-row `validOfRow` view. -/
+theorem core_every_row_of_spec
+    (row : BinaryRow FGL) (h_spec : Spec row) :
+    ZiskFv.Airs.Binary.core_every_row (validOfRow row) 0 := by
+  rcases h_spec with ⟨h0, h1, h2, h3, h4, h5, h6⟩
+  exact ⟨ by simpa [validOfRow, ZiskFv.Airs.Binary.boolean_mode32,
+            sub_eq_add_neg] using h0
+        , by simpa [validOfRow, ZiskFv.Airs.Binary.boolean_carry_7,
+            sub_eq_add_neg] using h1
+        , by simpa [validOfRow, ZiskFv.Airs.Binary.boolean_result_is_a,
+            sub_eq_add_neg] using h2
+        , by simpa [validOfRow, ZiskFv.Airs.Binary.boolean_use_first_byte,
+            sub_eq_add_neg] using h3
+        , by simpa [validOfRow, ZiskFv.Airs.Binary.boolean_c_is_signed,
+            sub_eq_add_neg] using h4
+        , by simpa [validOfRow, ZiskFv.Airs.Binary.b_op_or_sext_def_holds,
+            sub_eq_add_neg] using h5
+        , by simpa [validOfRow,
+            ZiskFv.Airs.Binary.mode32_and_c_is_signed_def_holds,
+            sub_eq_add_neg] using h6 ⟩
+
+/-- Exact static BinaryTable membership rules out the ambiguous
+    `b_op + 16 * mode32 = 16` / `mode32 = 1` shape. If the Binary op-bus
+    emission is XOR, the row's high-byte opcode column is also XOR. -/
+theorem static_table_b_op_or_sext_eq_of_xor_emit
+    (row : BinaryRow FGL)
+    (h_spec : Spec row)
+    (h_static : StaticBinaryTableSpecFacts row)
+    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = (16 : FGL)) :
+    row.chain.b_op_or_sext.val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR := by
+  rcases h_spec with ⟨h_mode32, _, _, _, _, h_bop_or_sext_def, _⟩
+  rcases h_static with ⟨_, _, _, h3, _, _, _, _⟩
+  have h_bop_or_eq_of_mode32_zero
+      (h_zero : row.mode.mode32 = 0) :
+      row.chain.b_op_or_sext = row.chain.b_op := by
+    have h_eq := sub_eq_zero.mp h_bop_or_sext_def
+    rw [h_zero] at h_eq
+    simpa using h_eq
+  have h_mode : row.mode.mode32 = 0 ∨ row.mode.mode32 = 1 := by
+    rcases mul_eq_zero.mp h_mode32 with h_zero | h_one_sub
+    · exact Or.inl h_zero
+    · exact Or.inr ((sub_eq_zero.mp h_one_sub).symm)
+  rcases h_mode with h_zero | h_one
+  · have h_bop : row.chain.b_op = (16 : FGL) := by
+      simpa [h_zero] using h_emit
+    rw [h_bop_or_eq_of_mode32_zero h_zero, h_bop]
+    norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_XOR]
+  · have h_bop_zero : row.chain.b_op = 0 := by
+      rw [h_one] at h_emit
+      simpa using (add_right_cancel h_emit)
+    have h_ne := ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_zero h3
+    exact False.elim (h_ne (by rw [h_bop_zero]; norm_num))
+
+/-- Exact static BinaryTable membership also pins the low-byte opcode and
+    `mode32` for an emitted XOR row. -/
+theorem static_table_xor_mode_pins_of_emit
+    (row : BinaryRow FGL)
+    (h_spec : Spec row)
+    (h_static : StaticBinaryTableSpecFacts row)
+    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = (16 : FGL)) :
+    row.mode.mode32 = 0
+      ∧ row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR
+      ∧ row.chain.b_op_or_sext.val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR := by
+  rcases h_spec with ⟨h_mode32, _, _, _, _, h_bop_or_sext_def, _⟩
+  rcases h_static with ⟨_, _, _, h3, _, _, _, _⟩
+  have h_mode : row.mode.mode32 = 0 ∨ row.mode.mode32 = 1 := by
+    rcases mul_eq_zero.mp h_mode32 with h_zero | h_one_sub
+    · exact Or.inl h_zero
+    · exact Or.inr ((sub_eq_zero.mp h_one_sub).symm)
+  rcases h_mode with h_zero | h_one
+  · have h_bop : row.chain.b_op = (16 : FGL) := by
+      simpa [h_zero] using h_emit
+    have h_bop_or_eq : row.chain.b_op_or_sext = row.chain.b_op := by
+      have h_eq := sub_eq_zero.mp h_bop_or_sext_def
+      rw [h_zero] at h_eq
+      simpa using h_eq
+    refine ⟨h_zero, ?_, ?_⟩
+    · rw [h_bop]
+      norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_XOR]
+    · rw [h_bop_or_eq, h_bop]
+      norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_XOR]
+  · have h_bop_zero : row.chain.b_op = 0 := by
+      rw [h_one] at h_emit
+      simpa using (add_right_cancel h_emit)
+    have h_ne := ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_zero h3
+    exact False.elim (h_ne (by rw [h_bop_zero]; norm_num))
+
 /-- Shared C7 witness surface for Binary's static-table lookup path.
     This is intentionally family-level and row-indexed; it is the shape a
     terminal Binary-family ensemble can provide once the static provider is
@@ -467,6 +572,35 @@ theorem static_lookup_wf_facts
     StaticBinaryTableWfFacts (rowAt v r) :=
   binary_table_wf_of_static_lookup_const_soundness offset env (rowAt v r)
     (h_static r offset env)
+
+/-- Project the shared C7 Binary static-lookup witness to the exact static
+    BinaryTable membership facts for row `r`. This is stronger than
+    `static_lookup_wf_facts` and is needed when downstream code must rule out
+    ambiguous opcode shapes before projecting semantic `wf_properties`. -/
+theorem static_lookup_spec_facts
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r offset : ℕ)
+    (env : Environment FGL) (h_static : StaticLookupSoundness v) :
+    StaticBinaryTableSpecFacts (rowAt v r) :=
+  binary_table_specs_of_static_lookup_const_soundness offset env (rowAt v r)
+    (h_static r offset env)
+
+/-- The same static-lookup path also contains Binary's seven F-typed core
+    constraints, projected to the Clean-row `Spec` shape. -/
+theorem spec_of_static_lookup
+    (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r offset : ℕ)
+    (env : Environment FGL) (h_static : StaticLookupSoundness v) :
+    Spec (rowAt v r) := by
+  have h_holds := h_static r offset env
+  simp only [mainWithStaticBinaryTable, main, circuit_norm] at h_holds
+  rcases h_holds with
+    ⟨h0, h1, h2, h3, h4, h5, h6, _h7, _h8, _h9, _h10, _h11, _h12, _h13, _h14⟩
+  exact ⟨ by simpa [rowAt, sub_eq_add_neg] using h0
+        , by simpa [rowAt, sub_eq_add_neg] using h1
+        , by simpa [rowAt, sub_eq_add_neg] using h2
+        , by simpa [rowAt, sub_eq_add_neg] using h3
+        , by simpa [rowAt, sub_eq_add_neg] using h4
+        , by simpa [rowAt, sub_eq_add_neg] using h5
+        , by simpa [rowAt, sub_eq_add_neg] using h6 ⟩
 
 /-- The same static-lookup path also contains Binary's seven F-typed core
     constraints before the eight table lookups. This projects those
@@ -546,6 +680,113 @@ def opBusMessage (row : BinaryRow FGL) : OpBusMessage FGL :=
     main_step := 0
     extended_arg := 0
     extra_args_0 := 0 }
+
+theorem aByteCols_eval_eq
+    (env : Environment FGL) (cols : BinaryAByteCols (Expression FGL)) :
+    eval env cols =
+      { free_in_a_0 := Expression.eval env cols.free_in_a_0
+        free_in_a_1 := Expression.eval env cols.free_in_a_1
+        free_in_a_2 := Expression.eval env cols.free_in_a_2
+        free_in_a_3 := Expression.eval env cols.free_in_a_3
+        free_in_a_4 := Expression.eval env cols.free_in_a_4
+        free_in_a_5 := Expression.eval env cols.free_in_a_5
+        free_in_a_6 := Expression.eval env cols.free_in_a_6
+        free_in_a_7 := Expression.eval env cols.free_in_a_7 } := by
+  rw [ProvableStruct.eval_eq_eval]
+  cases cols
+  simp only [ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field]
+
+theorem bByteCols_eval_eq
+    (env : Environment FGL) (cols : BinaryBByteCols (Expression FGL)) :
+    eval env cols =
+      { free_in_b_0 := Expression.eval env cols.free_in_b_0
+        free_in_b_1 := Expression.eval env cols.free_in_b_1
+        free_in_b_2 := Expression.eval env cols.free_in_b_2
+        free_in_b_3 := Expression.eval env cols.free_in_b_3
+        free_in_b_4 := Expression.eval env cols.free_in_b_4
+        free_in_b_5 := Expression.eval env cols.free_in_b_5
+        free_in_b_6 := Expression.eval env cols.free_in_b_6
+        free_in_b_7 := Expression.eval env cols.free_in_b_7 } := by
+  rw [ProvableStruct.eval_eq_eval]
+  cases cols
+  simp only [ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field]
+
+theorem cByteCols_eval_eq
+    (env : Environment FGL) (cols : BinaryCByteCols (Expression FGL)) :
+    eval env cols =
+      { free_in_c_0 := Expression.eval env cols.free_in_c_0
+        free_in_c_1 := Expression.eval env cols.free_in_c_1
+        free_in_c_2 := Expression.eval env cols.free_in_c_2
+        free_in_c_3 := Expression.eval env cols.free_in_c_3
+        free_in_c_4 := Expression.eval env cols.free_in_c_4
+        free_in_c_5 := Expression.eval env cols.free_in_c_5
+        free_in_c_6 := Expression.eval env cols.free_in_c_6
+        free_in_c_7 := Expression.eval env cols.free_in_c_7 } := by
+  rw [ProvableStruct.eval_eq_eval]
+  cases cols
+  simp only [ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field]
+
+theorem chainCols_eval_eq
+    (env : Environment FGL) (cols : BinaryChainCols (Expression FGL)) :
+    eval env cols =
+      { carry_0 := Expression.eval env cols.carry_0
+        carry_1 := Expression.eval env cols.carry_1
+        carry_2 := Expression.eval env cols.carry_2
+        carry_3 := Expression.eval env cols.carry_3
+        carry_4 := Expression.eval env cols.carry_4
+        carry_5 := Expression.eval env cols.carry_5
+        carry_6 := Expression.eval env cols.carry_6
+        carry_7 := Expression.eval env cols.carry_7
+        b_op := Expression.eval env cols.b_op
+        b_op_or_sext := Expression.eval env cols.b_op_or_sext } := by
+  rw [ProvableStruct.eval_eq_eval]
+  cases cols
+  simp only [ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field]
+
+theorem modeCols_eval_eq
+    (env : Environment FGL) (cols : BinaryModeCols (Expression FGL)) :
+    eval env cols =
+      { mode32 := Expression.eval env cols.mode32
+        result_is_a := Expression.eval env cols.result_is_a
+        use_first_byte := Expression.eval env cols.use_first_byte
+        c_is_signed := Expression.eval env cols.c_is_signed
+        mode32_and_c_is_signed :=
+          Expression.eval env cols.mode32_and_c_is_signed } := by
+  rw [ProvableStruct.eval_eq_eval]
+  cases cols
+  simp only [ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field]
+
+theorem eval_opBusMessageExpr
+    (env : Environment FGL) (row : Var BinaryRow FGL) :
+    eval env (opBusMessageExpr row) = opBusMessage (eval env row) := by
+  cases row
+  simp only [opBusMessageExpr, opBusMessage, aLoValue, aHiValue,
+    bLoValue, bHiValue, cLoValue, cHiValue, ProvableStruct.eval_eq_eval]
+  simp only [ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field]
+  simp [aByteCols_eval_eq, bByteCols_eval_eq, cByteCols_eval_eq,
+    chainCols_eval_eq, modeCols_eval_eq, Expression.eval]
+
+theorem staticLookupComponent_eval_opBusMessageExpr
+    (env : Environment FGL) :
+    eval env (opBusMessageExpr staticLookupComponent.rowInputVar) =
+      opBusMessage (staticLookupComponent.rowInput env) := by
+  rw [eval_opBusMessageExpr]
+  exact congrArg opBusMessage
+    (by
+      simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar] using
+        (eval_varFromOffset_valueFromOffset staticLookupComponent.Input 0 env))
 
 theorem opBusMessage_toEntry_rowAt_eq_opBus_row
     (v : ZiskFv.Airs.Binary.Valid_Binary FGL FGL) (r : ℕ) :

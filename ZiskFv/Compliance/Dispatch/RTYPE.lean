@@ -31,7 +31,7 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
     Falls through to `True` for non-RTYPE-Binary arms. -/
 def OpEnvelope.exec_eq_rtype_binary
     : OpEnvelope state m r_main → Prop
-  | .sub _ r1 r2 rd _ bus _ _ _ =>
+  | .sub _ r1 r2 rd _ bus _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -39,7 +39,7 @@ def OpEnvelope.exec_eq_rtype_binary
           (instruction.RTYPE (r2, r1, rd, rop.SUB))) state
         = state_effect_via_channels
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .and _ r1 r2 rd _ bus _ _ _ =>
+  | .and _ r1 r2 rd _ bus _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -47,7 +47,7 @@ def OpEnvelope.exec_eq_rtype_binary
           (instruction.RTYPE (r2, r1, rd, rop.AND))) state
         = state_effect_via_channels
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .or _ r1 r2 rd _ bus _ _ _ =>
+  | .or _ r1 r2 rd _ bus _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -55,7 +55,7 @@ def OpEnvelope.exec_eq_rtype_binary
           (instruction.RTYPE (r2, r1, rd, rop.OR))) state
         = state_effect_via_channels
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .xor _ r1 r2 rd _ bus _ _ _ =>
+  | .xor _ r1 r2 rd _ bus _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -63,7 +63,7 @@ def OpEnvelope.exec_eq_rtype_binary
           (instruction.RTYPE (r2, r1, rd, rop.XOR))) state
         = state_effect_via_channels
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .slt _ r1 r2 rd _ bus _ _ _ =>
+  | .slt _ r1 r2 rd _ bus _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -71,7 +71,7 @@ def OpEnvelope.exec_eq_rtype_binary
           (instruction.RTYPE (r2, r1, rd, rop.SLT))) state
         = state_effect_via_channels
             ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .sltu _ r1 r2 rd _ bus _ _ _ =>
+  | .sltu _ r1 r2 rd _ bus _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -84,18 +84,34 @@ def OpEnvelope.exec_eq_rtype_binary
 /-- Shared C7 static BinaryTable lookup obligation for RTYPE Binary arms. -/
 def OpEnvelope.rtype_binary_logic_static_lookup_soundness
     : OpEnvelope state m r_main → Prop
-  | .sub _ _ _ _ v _ _ _ _ =>
+  | .sub _ _ _ _ v _ _ _ _ _ _ _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-  | .and _ _ _ _ v _ _ _ _ =>
+  | .and _ _ _ _ v _ _ _ _ _ _ _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-  | .or _ _ _ _ v _ _ _ _ =>
+  | .or _ _ _ _ v _ _ _ _ _ _ _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-  | .xor _ _ _ _ v _ _ _ _ =>
+  | .xor _ _ _ _ v _ _ _ _ _ _ _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-  | .slt _ _ _ _ v _ _ _ _ =>
+  | .slt _ _ _ _ v _ _ _ _ _ _ _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
-  | .sltu _ _ _ _ v _ _ _ _ =>
+  | .sltu _ _ _ _ v _ _ _ _ _ _ _ _ _ _ =>
       ZiskFv.AirsClean.Binary.StaticLookupSoundness v
+  | _ => True
+
+/-- C7 table-row route for RTYPE bitwise Binary arms.
+
+Unlike `rtype_binary_logic_static_lookup_soundness`, this does not quantify
+over a legacy `Valid_Binary` row plus offset. The provider evidence is the
+actual lookup-aware Clean Binary table row whose `table.Spec` supplies both
+the Binary core constraints and static BinaryTable facts. -/
+def OpEnvelope.rtype_bitwise_static_table_row_route
+    : OpEnvelope state m r_main → Prop
+  | .sub _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => True
+  | .and _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => True
+  | .or _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => True
+  | .xor _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => True
+  | .slt _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => True
+  | .sltu _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => True
   | _ => True
 
 /-- Partial v2 dispatcher for RTYPE+Binary arms. -/
@@ -103,24 +119,42 @@ theorem zisk_riscv_compliant_program_bus_rtype_binary
     (env : OpEnvelope state m r_main) :
     env.exec_eq_rtype_binary := by
   cases env with
-  | sub sub_input r1 r2 rd v bus pins h_lane_rd promises =>
+  | sub sub_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary]
-    exact ZiskFv.Equivalence.Sub.equiv_SUB state sub_input r1 r2 rd m v r_main bus pins h_lane_rd promises
-  | and and_input r1 r2 rd v bus pins h_lane_rd promises =>
+    exact ZiskFv.Equivalence.Sub.equiv_SUB
+      state sub_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
+  | and and_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary]
-    exact ZiskFv.Equivalence.And.equiv_AND state and_input r1 r2 rd m v r_main bus pins h_lane_rd promises
-  | or or_input r1 r2 rd v bus pins h_lane_rd promises =>
+    exact ZiskFv.Equivalence.And.equiv_AND_of_static_table_row
+      state and_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
+  | or or_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary]
-    exact ZiskFv.Equivalence.Or.equiv_OR state or_input r1 r2 rd m v r_main bus pins h_lane_rd promises
-  | xor xor_input r1 r2 rd v bus pins h_lane_rd promises =>
+    exact ZiskFv.Equivalence.Or.equiv_OR_of_static_table_row
+      state or_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
+  | xor xor_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary]
-    exact ZiskFv.Equivalence.Xor.equiv_XOR state xor_input r1 r2 rd m v r_main bus pins h_lane_rd promises
-  | slt slt_input r1 r2 rd v bus pins h_lane_rd promises =>
+    exact ZiskFv.Equivalence.Xor.equiv_XOR_of_static_table_row
+      state xor_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
+  | slt slt_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary]
-    exact ZiskFv.Equivalence.Slt.equiv_SLT state slt_input r1 r2 rd m v r_main bus pins h_lane_rd promises
-  | sltu sltu_input r1 r2 rd v bus pins h_lane_rd promises =>
+    exact ZiskFv.Equivalence.Slt.equiv_SLT
+      state slt_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
+  | sltu sltu_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary]
-    exact ZiskFv.Equivalence.Sltu.equiv_SLTU state sltu_input r1 r2 rd m v r_main bus pins h_lane_rd promises
+    exact ZiskFv.Equivalence.Sltu.equiv_SLTU
+      state sltu_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
   | _ => trivial
 
 /-- Noncanonical C7 static BinaryTable route for the RTYPE Binary arms. -/
@@ -130,36 +164,97 @@ theorem zisk_riscv_compliant_program_bus_rtype_binary_logic_of_static_lookup
     (h_static : env.rtype_binary_logic_static_lookup_soundness) :
     env.exec_eq_rtype_binary := by
   cases env with
-  | sub sub_input r1 r2 rd v bus pins h_lane_rd promises =>
+  | sub sub_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary, OpEnvelope.rtype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Compliance.equiv_SUB_of_static_lookup
       state sub_input r1 r2 rd m v r_main offset cleanEnv h_static
       bus pins h_lane_rd promises
-  | and and_input r1 r2 rd v bus pins h_lane_rd promises =>
+  | and and_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary, OpEnvelope.rtype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Equivalence.And.equiv_AND_of_static_lookup
       state and_input r1 r2 rd m v r_main offset cleanEnv h_static
       bus pins h_lane_rd promises
-  | or or_input r1 r2 rd v bus pins h_lane_rd promises =>
+  | or or_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary, OpEnvelope.rtype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Equivalence.Or.equiv_OR_of_static_lookup
       state or_input r1 r2 rd m v r_main offset cleanEnv h_static
       bus pins h_lane_rd promises
-  | xor xor_input r1 r2 rd v bus pins h_lane_rd promises =>
+  | xor xor_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary, OpEnvelope.rtype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Equivalence.Xor.equiv_XOR_of_static_lookup
       state xor_input r1 r2 rd m v r_main offset cleanEnv h_static
       bus pins h_lane_rd promises
-  | slt slt_input r1 r2 rd v bus pins h_lane_rd promises =>
+  | slt slt_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary, OpEnvelope.rtype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Compliance.equiv_SLT_of_static_lookup
       state slt_input r1 r2 rd m v r_main offset cleanEnv h_static
       bus pins h_lane_rd promises
-  | sltu sltu_input r1 r2 rd v bus pins h_lane_rd promises =>
+  | sltu sltu_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_rtype_binary, OpEnvelope.rtype_binary_logic_static_lookup_soundness] at h_static ⊢
     exact ZiskFv.Compliance.equiv_SLTU_of_static_lookup
       state sltu_input r1 r2 rd m v r_main offset cleanEnv h_static
       bus pins h_lane_rd promises
   | _ => trivial
+
+/-- Noncanonical C7 table-row dispatcher for RTYPE bitwise Binary arms.
+
+AND/OR/XOR consume a lookup-aware Clean Binary provider row directly; the
+remaining RTYPE Binary arms fall back to the existing dispatcher until their
+own row-native C7 routes are migrated. -/
+theorem zisk_riscv_compliant_program_bus_rtype_bitwise_of_static_table_row
+    (env : OpEnvelope state m r_main)
+    (h_route : env.rtype_bitwise_static_table_row_route) :
+    env.exec_eq_rtype_binary := by
+  cases env with
+  | and and_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
+    simp only [OpEnvelope.exec_eq_rtype_binary,
+      OpEnvelope.rtype_bitwise_static_table_row_route] at h_route ⊢
+    exact ZiskFv.Equivalence.And.equiv_AND_of_static_table_row
+      state and_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
+  | or or_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
+    simp only [OpEnvelope.exec_eq_rtype_binary,
+      OpEnvelope.rtype_bitwise_static_table_row_route] at h_route ⊢
+    exact ZiskFv.Equivalence.Or.equiv_OR_of_static_table_row
+      state or_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
+  | xor xor_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
+    simp only [OpEnvelope.exec_eq_rtype_binary,
+      OpEnvelope.rtype_bitwise_static_table_row_route] at h_route ⊢
+    exact ZiskFv.Equivalence.Xor.equiv_XOR_of_static_table_row
+      state xor_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
+  | sub sub_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
+    simp only [OpEnvelope.exec_eq_rtype_binary,
+      OpEnvelope.rtype_bitwise_static_table_row_route] at h_route ⊢
+    exact ZiskFv.Equivalence.Sub.equiv_SUB
+      state sub_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
+  | slt slt_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
+    simp only [OpEnvelope.exec_eq_rtype_binary,
+      OpEnvelope.rtype_bitwise_static_table_row_route] at h_route ⊢
+    exact ZiskFv.Equivalence.Slt.equiv_SLT
+      state slt_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
+  | sltu sltu_input r1 r2 rd v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
+    simp only [OpEnvelope.exec_eq_rtype_binary,
+      OpEnvelope.rtype_bitwise_static_table_row_route] at h_route ⊢
+    exact ZiskFv.Equivalence.Sltu.equiv_SLTU
+      state sltu_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
+  | _ =>
+    trivial
 
 end ZiskFv.Compliance

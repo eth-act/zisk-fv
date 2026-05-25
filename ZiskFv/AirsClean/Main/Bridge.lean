@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.Main.Soundness
+import ZiskFv.AirsClean.Main.Constraints
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Channels.OperationBus
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -90,5 +91,15 @@ theorem opBusMessage_toEntry_rowAt_eq_opBus_row
     OpBusMessage.toEntry (opBusMessage (rowAt m r)) (m.is_external_op r) =
       ZiskFv.Airs.OperationBus.opBus_row_Main m r := by
   rfl
+
+theorem eval_opBusMessageExpr
+    (env : Environment FGL) (row : Var MainRow FGL) :
+    eval env (opBusMessageExpr row) = opBusMessage (eval env row) := by
+  rw [OpBusMessage.mk.injEq]
+  simp only [opBusMessageExpr, ProvableStruct.eval_eq_eval,
+    ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field, Expression.eval]
+  repeat constructor <;> try ring_nf <;> trivial
 
 end ZiskFv.AirsClean.Main
