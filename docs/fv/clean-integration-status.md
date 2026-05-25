@@ -136,10 +136,17 @@ interaction into the corresponding exposed Clean interaction evaluated at
 some table row. At the channel level,
 `Channels/OperationBus.lean::matches_entry_of_eval_msg_eq` converts equality
 of evaluated raw Clean op-bus message arrays into legacy
-`OperationBus.matches_entry` for multiplicity `1` on both entries. The next
-step is the provider-specific adapter from these arbitrary Clean table rows
-back to the legacy `Valid_*` row witnesses used by the canonical theorem
-stack.
+`OperationBus.matches_entry` for multiplicity `1` on both entries.
+`AirsClean/BinaryFamily/Balance.lean::exists_provider_row_matches_entry_of_active_main_table_interaction`
+now composes those pieces: from a constrained Binary-family
+`EnsembleWitness`, a balanced `OpBusChannel`, and an active Main table
+interaction, it returns a concrete Main table row, a concrete provider table
+row, provider classification (`BinaryAdd | Binary | BinaryExtension`), and a
+legacy `matches_entry` between the evaluated Clean messages. This deliberately
+does not assert that an arbitrary Clean row corresponds to an arbitrary legacy
+`Valid_*` row; the remaining terminal C7 work is to expose row-native proof
+entry points for the opcode stack and thread these Clean-row facts through
+the noncanonical static routes.
 
 BinaryTable and BinaryExtensionTable now both have static provider-side
 Clean `StaticTable` modules:

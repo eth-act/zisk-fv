@@ -2,6 +2,7 @@ import ZiskFv.AirsClean.BinaryAdd.Soundness
 import ZiskFv.AirsClean.BinaryAdd.Circuit
 import ZiskFv.Airs.Binary.BinaryAdd
 import ZiskFv.Airs.Binary.BinaryAddPackedCorrect
+import ZiskFv.Channels.OperationBus
 
 /-!
 # `Valid_BinaryAdd` ↔ `BinaryAddRow` compatibility bridge
@@ -35,6 +36,7 @@ deferred to Phase 5. For now this Bridge demonstrates the
 namespace ZiskFv.AirsClean.BinaryAdd
 
 open Goldilocks
+open ZiskFv.Channels.OperationBus
 
 
 /-- Project a `Valid_BinaryAdd` at row `r` into a Clean
@@ -54,6 +56,20 @@ def rowAt (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) (r : ℕ)
   c_chunks_3 := v.c_chunks_3 r
   cout_0     := v.cout_0 r
   cout_1     := v.cout_1 r
+
+@[reducible]
+def opBusMessage (row : BinaryAddRow FGL) : OpBusMessage FGL :=
+  { op := 10
+    a_lo := row.a_0
+    a_hi := row.a_1
+    b_lo := row.b_0
+    b_hi := row.b_1
+    c_lo := ((row.c_chunks_1 * 65536) + row.c_chunks_0)
+    c_hi := ((row.c_chunks_3 * 65536) + row.c_chunks_2)
+    flag := 0
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
 
 /-- The four BinaryAdd row constraints at row `r`, expressed against
     a `Valid_BinaryAdd`. -/
