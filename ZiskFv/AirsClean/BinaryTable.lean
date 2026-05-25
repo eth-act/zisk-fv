@@ -585,6 +585,30 @@ theorem spec_op_val_ne_zero {t : BinaryTableMessage FGL}
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_op_val_ne_zero i
 
+/-- No static BinaryTable row carries op_val = 0x1A or 0x1B (those are
+    W-mode bus opcodes ADDW/SUBW, not byte-table opcodes). Used by the
+    W-mode dispatch to exclude the alternate (mode32 = 0, b_op = op_emit)
+    decomposition of the op-bus emission. -/
+theorem rowOfIndex_op_val_ne_W_add_sub (i : Fin tableSize) :
+    (rowOfIndex i.val).op.val ≠ 0x1A ∧ (rowOfIndex i.val).op.val ≠ 0x1B := by
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  unfold rowOfIndex opOfIndex
+  rw [Fin.val_natCast]
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  refine ⟨?_, ?_⟩ <;>
+    interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR,
+      OP_LTU, OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE,
+      OP_SEXT_00, OP_SEXT_FF, OP_MINU, OP_MIN, OP_MAXU, OP_MAX,
+      OP_LT_ABS_NP, OP_LT_ABS_PN]
+
+theorem spec_op_val_ne_W_add_sub {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) : t.op.val ≠ 0x1A ∧ t.op.val ≠ 0x1B := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_op_val_ne_W_add_sub i
+
 open ZiskFv.Airs.Tables.BinaryTable in
 theorem rowOfIndex_wf_AND (i : Fin tableSize) :
     wf_AND (BinaryTableMessage.toEntry (rowOfIndex i.val) 1) := by
