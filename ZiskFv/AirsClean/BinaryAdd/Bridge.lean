@@ -36,6 +36,7 @@ deferred to Phase 5. For now this Bridge demonstrates the
 namespace ZiskFv.AirsClean.BinaryAdd
 
 open Goldilocks
+open Air.Flat
 open ZiskFv.Channels.OperationBus
 
 
@@ -162,5 +163,25 @@ theorem binary_add_chunks_eq_bv_add_via_component
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt h_av, Nat.mod_eq_of_lt h_bv, Nat.mod_eq_of_lt h_cv, ← h_spec]
   ring
+
+theorem eval_opBusMessageExpr
+    (env : Environment FGL) (row : Var BinaryAddRow FGL) :
+    eval env (opBusMessageExpr row) = opBusMessage (eval env row) := by
+  rw [OpBusMessage.mk.injEq]
+  simp only [opBusMessageExpr, ProvableStruct.eval_eq_eval,
+    ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field, Expression.eval]
+  repeat constructor
+
+theorem component_eval_opBusMessageExpr
+    (env : Environment FGL) :
+    eval env (opBusMessageExpr component.rowInputVar) =
+      opBusMessage (component.rowInput env) := by
+  rw [eval_opBusMessageExpr]
+  exact congrArg opBusMessage
+    (by
+      simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar] using
+        (eval_varFromOffset_valueFromOffset component.Input 0 env))
 
 end ZiskFv.AirsClean.BinaryAdd
