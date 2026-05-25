@@ -1024,6 +1024,88 @@ lemma h_rd_val_arith_subw
     e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
 
+/-- Static-provider variant of `h_rd_val_arith_subw`. Identical statement
+    except the 4 low-byte chain hypotheses carry `consumer_byte_match_chain_wf`
+    (table wf_properties) instead of multiplicity-based
+    `consumer_byte_match_chain`. Used by `equiv_SUBW_of_wf`. -/
+lemma h_rd_val_arith_subw_of_wf
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (e2 : MemoryBusEntry FGL)
+    (a0 a1 a2 a3 b0 b1 b2 b3
+     c0 c1 c2 c3 c4 c5 c6 c7
+     cin0 cin1 cin2 cin3
+     fl0 fl1 fl2 fl3
+     pi0 pi1 pi2 pi3 : FGL)
+    (h_byte_0 : consumer_byte_match_chain_wf OP_SUB a0 b0 c0 cin0 fl0 pi0)
+    (h_byte_1 : consumer_byte_match_chain_wf OP_SUB a1 b1 c1 cin1 fl1 pi1)
+    (h_byte_2 : consumer_byte_match_chain_wf OP_SUB a2 b2 c2 cin2 fl2 pi2)
+    (h_byte_3 : consumer_byte_match_chain_wf OP_SUB a3 b3 c3 cin3 fl3 pi3)
+    (ha0 : a0.val < 256) (ha1 : a1.val < 256) (ha2 : a2.val < 256) (ha3 : a3.val < 256)
+    (hb0 : b0.val < 256) (hb1 : b1.val < 256) (hb2 : b2.val < 256) (hb3 : b3.val < 256)
+    (hc0 : c0.val < 256) (hc1 : c1.val < 256) (hc2 : c2.val < 256) (hc3 : c3.val < 256)
+    (hc4 : c4.val < 256) (hc5 : c5.val < 256) (hc6 : c6.val < 256) (hc7 : c7.val < 256)
+    (h_cin0 : cin0.val = 0)
+    (h_cin1 : cin1.val = fl0.val % 2)
+    (h_cin2 : cin2.val = fl1.val % 2)
+    (h_cin3 : cin3.val = fl2.val % 2)
+    (h_pi0 : pi0.val ≠ 1) (h_pi1 : pi1.val ≠ 1) (h_pi2 : pi2.val ≠ 1)
+    (h_pi3 : pi3.val = 1)
+    (h_sext_choice :
+      ((c4.val = 0 ∧ c5.val = 0 ∧ c6.val = 0 ∧ c7.val = 0) ∧
+        c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216 < 2147483648) ∨
+      ((c4.val = 255 ∧ c5.val = 255 ∧ c6.val = 255 ∧ c7.val = 255) ∧
+        c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216 ≥ 2147483648))
+    (h_match_clo : m.c_0 r_main = c0 + c1 * 256 + c2 * 65536 + c3 * 16777216)
+    (h_match_chi : m.c_1 r_main = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216)
+    (h_lane_rd : register_write_lanes_match m r_main e2)
+    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
+    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
+    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
+    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (a32sum b32sum : ℕ)
+    (h_a32 : a32sum = a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216)
+    (h_b32 : b32sum = b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216) :
+    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
+                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+      = BitVec.signExtend 64 (BitVec.ofNat 32 a32sum - BitVec.ofNat 32 b32sum) := by
+  have h_bv := binary_subw_chunks_eq_bv_sub_w_of_wf
+    a0 a1 a2 a3 b0 b1 b2 b3
+    c0 c1 c2 c3 c4 c5 c6 c7
+    cin0 cin1 cin2 cin3
+    fl0 fl1 fl2 fl3
+    pi0 pi1 pi2 pi3
+    h_byte_0 h_byte_1 h_byte_2 h_byte_3
+    ha0 ha1 ha2 ha3
+    hb0 hb1 hb2 hb3
+    hc0 hc1 hc2 hc3
+    h_cin0 h_cin1 h_cin2 h_cin3
+    h_pi0 h_pi1 h_pi2 h_pi3
+    h_sext_choice
+  simp only [register_write_lanes_match] at h_lane_rd
+  obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
+  have h_byte_sum := byte_sum_from_chain_lane_match m r_main e2
+    c0 c1 c2 c3 c4 c5 c6 c7
+    h_match_clo h_match_chi h_lo_match h_hi_match
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
+    hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
+  have h_target :
+      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
+      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      = (BitVec.signExtend 64 (BitVec.ofNat 32 a32sum - BitVec.ofNat 32 b32sum)).toNat := by
+    rw [h_byte_sum, h_a32, h_b32]
+    rw [h_bv, BitVec.toNat_ofNat]
+    have h_lt :
+        c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+          + c4.val * 4294967296 + c5.val * 1099511627776
+          + c6.val * 281474976710656 + c7.val * 72057594037927936
+        < 2 ^ 64 := by show _ < 18446744073709551616; omega
+    rw [Nat.mod_eq_of_lt h_lt]
+  exact bv64_of_byte_sum
+    (BitVec.signExtend 64 (BitVec.ofNat 32 a32sum - BitVec.ofNat 32 b32sum))
+    e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
+    h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
+
 /-! ## SLT, SLTU, SLTI, SLTIU — see `Equivalence.WriteValueProofs.BinaryCompare`.
 
 These four signed/unsigned compare opcodes ship as Tier-1 derivations
