@@ -183,6 +183,26 @@ theorem staticBinary_core_and_wf_of_table_spec
   exact ⟨ ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_core_spec
         , ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_static_specs ⟩
 
+/-- Sibling of `staticBinary_core_and_wf_of_table_spec` exposing the raw
+    `StaticBinaryTableSpecFacts` (exact static-table memberships for the 8
+    per-byte entries). Needed by the W-mode dispatch to apply
+    `spec_op_val_ne_W_add_sub` and exclude the (mode32 = 0, b_op = op_emit)
+    decomposition of the op-bus emission. -/
+theorem staticBinary_spec_facts_of_table_spec
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_spec : table.Spec)
+    {row : Array FGL} (h_row : row ∈ table.table) :
+    ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts
+      (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (table.environment row)) := by
+  have h_component_spec :
+      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
+        (table.environment row) := by
+    simpa [h_component] using h_spec row h_row
+  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
+  exact h_component_spec.2
+
 /-- Row extraction for a BinaryExtension operation-bus provider interaction. -/
 theorem exists_binaryExtension_row_eval_of_interaction_mem
     {table : Table FGL}
