@@ -154,14 +154,7 @@ private lemma sll_byte_eq_of_wf
   show positioned <<< s % 2 ^ 64 = positioned * 2 ^ s % 2 ^ 64
   rw [Nat.shiftLeft_eq]
 
-private lemma sll_byte_eq
-    (e : BinaryExtensionTableEntry FGL)
-    (h_mult : e.multiplicity = 1)
-    (h_op_val : e.op.val = OP_SLL) :
-    e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
-      = (e.a_byte.val * 256 ^ e.byte_index.val * 2 ^ (e.shift_amount.val % 64))
-        % 2 ^ 64 :=
-  sll_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
+-- legacy sll_byte_eq (bin_ext_table_consumer_wf route) deleted in T4-purge P3.6.
 
 private lemma srl_byte_eq_of_wf
     (e : BinaryExtensionTableEntry FGL)
@@ -181,22 +174,7 @@ private lemma srl_byte_eq_of_wf
   rw [h_eq]
   exact Nat.shiftRight_eq_div_pow positioned s
 
-private lemma srl_byte_eq
-    (e : BinaryExtensionTableEntry FGL)
-    (h_mult : e.multiplicity = 1)
-    (h_op_val : e.op.val = OP_SRL) :
-    e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
-      = e.a_byte.val * 256 ^ e.byte_index.val / 2 ^ (e.shift_amount.val % 64) :=
-  srl_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
-
-/-! ## Byte-disjoint additivity helper for division by `2^s`.
-
-For `a < 2^k` and `2^k ∣ b`, division by `2^s` distributes:
-`(a + b) / 2^s = a / 2^s + b / 2^s`.
-
-This is the key fact used in the SRL proof: when the input is split into
-byte lanes `a_i * 256^i`, each subsequent lane is a multiple of `256^i`,
-so dividing the whole packed value by any `2^s` distributes additively. -/
+-- legacy srl_byte_eq (bin_ext_table_consumer_wf route) deleted in T4-purge P3.6.
 
 private lemma byte_pair_div_pow_two (a b s k : ℕ)
     (h_a : a < 2 ^ k) (h_b : 2 ^ k ∣ b) :
@@ -444,64 +422,8 @@ lemma binary_extension_sll_chunks_eq_bv_shl_of_wf
   -- This is iterated `Nat.add_mod`. omega handles literal modulus.
   omega
 
-/-- Legacy SLL packed-correctness route through `bin_ext_table_consumer_wf`. -/
-lemma binary_extension_sll_chunks_eq_bv_shl
-    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SLL)
-    (h_bytes : ByteLookupHypotheses v row)
-    (h_a_range : a_bytes_in_range v row) :
-    BitVec.shiftLeft
-        (BitVec.ofNat 64
-          ((v.free_in_a_0 row).val
-            + (v.free_in_a_1 row).val * 256
-            + (v.free_in_a_2 row).val * 65536
-            + (v.free_in_a_3 row).val * 16777216
-            + (v.free_in_a_4 row).val * 4294967296
-            + (v.free_in_a_5 row).val * 1099511627776
-            + (v.free_in_a_6 row).val * 281474976710656
-            + (v.free_in_a_7 row).val * 72057594037927936))
-        ((v.free_in_b row).val % 64)
-      = BitVec.ofNat 64
-          (((v.free_in_c_0 row).val
-              + (v.free_in_c_2 row).val
-              + (v.free_in_c_4 row).val
-              + (v.free_in_c_6 row).val
-              + (v.free_in_c_8 row).val
-              + (v.free_in_c_10 row).val
-              + (v.free_in_c_12 row).val
-              + (v.free_in_c_14 row).val)
-            + ((v.free_in_c_1 row).val
-              + (v.free_in_c_3 row).val
-              + (v.free_in_c_5 row).val
-              + (v.free_in_c_7 row).val
-              + (v.free_in_c_9 row).val
-              + (v.free_in_c_11 row).val
-              + (v.free_in_c_13 row).val
-              + (v.free_in_c_15 row).val) * 4294967296) :=
-  binary_extension_sll_chunks_eq_bv_shl_of_wf v row h_op h_bytes
-    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
-    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
-    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
-    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
-    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
-    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
-    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
-    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
-    h_a_range
+-- legacy binary_extension_sll_chunks_eq_bv_shl (bin_ext_table_consumer_wf route) deleted in T4-purge P3.5.
 
-/-- **BinaryExtension SRL `BitVec 64` lift.**
-
-    Given the 8 byte-lookup hypotheses against the BinaryExtensionTable
-    (consumer at multiplicity 1, all with `op = OP_SRL`), and the
-    range-bound on each input byte (`a_i.val < 256`), conclude that the
-    BinaryExtension AIR computes 64-bit SRL.
-
-    The right-shift case differs from SLL: each byte's positioned value
-    `a_i * 256^i` has bits inside `[8i, 8i+8)`, so the right-shifted
-    pieces occupy disjoint output bit ranges and can be summed (no
-    carries), giving the natural identity
-    `(a64 >>> s) = sum_i ((a_i * 256^i) >>> s)`. This is iterated
-    `byte_pair_div_pow_two` over the byte chain. -/
 lemma binary_extension_srl_chunks_eq_bv_ushr_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SRL)
@@ -1008,16 +930,7 @@ private lemma sra_byte_eq_of_wf
   congr 1
   exact Nat.shiftRight_eq_div_pow positioned s
 
-private lemma sra_byte_eq
-    (e : BinaryExtensionTableEntry FGL)
-    (h_mult : e.multiplicity = 1)
-    (h_op_val : e.op.val = OP_SRA) :
-    e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
-      = e.a_byte.val * 256 ^ e.byte_index.val / 2 ^ (e.shift_amount.val % 64)
-        + (if e.byte_index.val = 7 ∧ e.a_byte.val ≥ 128
-           then 2 ^ 64 - 2 ^ (64 - e.shift_amount.val % 64)
-           else 0) :=
-  sra_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
+-- legacy sra_byte_eq (bin_ext_table_consumer_wf route) deleted in T4-purge P3.6.
 
 private lemma sllw_byte_eq_of_wf
     (e : BinaryExtensionTableEntry FGL)
@@ -1048,22 +961,7 @@ private lemma sllw_byte_eq_of_wf
       rw [Nat.shiftLeft_eq]
     · simp only [hbi, if_false]
 
-private lemma sllw_byte_eq
-    (e : BinaryExtensionTableEntry FGL)
-    (h_mult : e.multiplicity = 1)
-    (h_op_val : e.op.val = OP_SLL_W) :
-    e.c_lo_byte.val
-      = (if e.byte_index.val < 4
-         then (e.a_byte.val * 256 ^ e.byte_index.val * 2 ^ (e.shift_amount.val % 32))
-              % 2 ^ 32
-         else 0)
-    ∧ e.c_hi_byte.val
-      = (if (if e.byte_index.val < 4
-            then (e.a_byte.val * 256 ^ e.byte_index.val * 2 ^ (e.shift_amount.val % 32))
-                 % 2 ^ 32
-            else 0) ≥ 2 ^ 31
-         then 2 ^ 32 - 1 else 0) :=
-  sllw_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
+-- legacy sllw_byte_eq (bin_ext_table_consumer_wf route) deleted in T4-purge P3.6.
 
 private lemma srlw_byte_eq_of_wf
     (e : BinaryExtensionTableEntry FGL)
@@ -1092,20 +990,7 @@ private lemma srlw_byte_eq_of_wf
       rw [Nat.shiftRight_eq_div_pow]
     · simp only [hbi, if_false]
 
-private lemma srlw_byte_eq
-    (e : BinaryExtensionTableEntry FGL)
-    (h_mult : e.multiplicity = 1)
-    (h_op_val : e.op.val = OP_SRL_W) :
-    e.c_lo_byte.val
-      = (if e.byte_index.val < 4
-         then e.a_byte.val * 256 ^ e.byte_index.val / 2 ^ (e.shift_amount.val % 32)
-         else 0)
-    ∧ e.c_hi_byte.val
-      = (if (if e.byte_index.val < 4
-            then e.a_byte.val * 256 ^ e.byte_index.val / 2 ^ (e.shift_amount.val % 32)
-            else 0) ≥ 2 ^ 31
-         then 2 ^ 32 - 1 else 0) :=
-  srlw_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
+-- legacy srlw_byte_eq (bin_ext_table_consumer_wf route) deleted in T4-purge P3.6.
 
 private lemma sraw_byte_eq_of_wf
     (e : BinaryExtensionTableEntry FGL)
@@ -1141,24 +1026,7 @@ private lemma sraw_byte_eq_of_wf
     exact Nat.shiftRight_eq_div_pow positioned s
   · simp only [base_def, hbi, if_false]
 
-private lemma sraw_byte_eq
-    (e : BinaryExtensionTableEntry FGL)
-    (h_mult : e.multiplicity = 1)
-    (h_op_val : e.op.val = OP_SRA_W) :
-    e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
-      = (if e.byte_index.val < 4
-         then e.a_byte.val * 256 ^ e.byte_index.val / 2 ^ (e.shift_amount.val % 32)
-         else 0)
-        + (if e.byte_index.val = 3 ∧ e.a_byte.val ≥ 128
-           then 2 ^ 64 - 2 ^ (32 - e.shift_amount.val % 32)
-           else 0) :=
-  sraw_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
-
-/-! ## Pure arithmetic core of the SRA lift.
-
-We extract the byte-disjoint right-shift split as a standalone lemma so
-the kernel doesn't have to verify it inline alongside the rest of the
-SRA case analysis. -/
+-- legacy sraw_byte_eq (bin_ext_table_consumer_wf route) deleted in T4-purge P3.6.
 
 private lemma byte_split_div_8
     (a0v a1v a2v a3v a4v a5v a6v a7v sft : ℕ)
@@ -1298,52 +1166,8 @@ private lemma byte_split_div_8
   rw [hsplit_0, hsplit_1, hsplit_2, hsplit_3, hsplit_4, hsplit_5, hsplit_6, ha0v_one]
   ring
 
-/-- Legacy SRL packed-correctness route through `bin_ext_table_consumer_wf`. -/
-lemma binary_extension_srl_chunks_eq_bv_ushr
-    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SRL)
-    (h_bytes : ByteLookupHypotheses v row)
-    (h_a_range : a_bytes_in_range v row) :
-    BitVec.ushiftRight
-        (BitVec.ofNat 64
-          ((v.free_in_a_0 row).val
-            + (v.free_in_a_1 row).val * 256
-            + (v.free_in_a_2 row).val * 65536
-            + (v.free_in_a_3 row).val * 16777216
-            + (v.free_in_a_4 row).val * 4294967296
-            + (v.free_in_a_5 row).val * 1099511627776
-            + (v.free_in_a_6 row).val * 281474976710656
-            + (v.free_in_a_7 row).val * 72057594037927936))
-        ((v.free_in_b row).val % 64)
-      = BitVec.ofNat 64
-          (((v.free_in_c_0 row).val
-              + (v.free_in_c_2 row).val
-              + (v.free_in_c_4 row).val
-              + (v.free_in_c_6 row).val
-              + (v.free_in_c_8 row).val
-              + (v.free_in_c_10 row).val
-              + (v.free_in_c_12 row).val
-              + (v.free_in_c_14 row).val)
-            + ((v.free_in_c_1 row).val
-              + (v.free_in_c_3 row).val
-              + (v.free_in_c_5 row).val
-              + (v.free_in_c_7 row).val
-              + (v.free_in_c_9 row).val
-              + (v.free_in_c_11 row).val
-              + (v.free_in_c_13 row).val
-              + (v.free_in_c_15 row).val) * 4294967296) :=
-  binary_extension_srl_chunks_eq_bv_ushr_of_wf v row h_op h_bytes
-    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
-    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
-    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
-    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
-    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
-    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
-    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
-    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
-    h_a_range
+-- legacy binary_extension_srl_chunks_eq_bv_ushr (bin_ext_table_consumer_wf route) deleted in T4-purge P3.5.
 
-/-- Pure-Nat statement of the SRA result, factoring out the BitVec wrapper. -/
 private lemma sra_nat_core
     (a0v a1v a2v a3v a4v a5v a6v a7v : ℕ)
     (cl0 cl1 cl2 cl3 cl4 cl5 cl6 cl7 : ℕ)
@@ -1705,56 +1529,7 @@ lemma binary_extension_sra_chunks_eq_bv_sshr_of_wf
     ha0r ha1r ha2r ha3r ha4r ha5r ha6r ha7r hsft_lt
     eq0 eq1 eq2 eq3 eq4 eq5 eq6 eq7
 
-/-- Legacy SRA packed-correctness route through `bin_ext_table_consumer_wf`. -/
-lemma binary_extension_sra_chunks_eq_bv_sshr
-    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SRA)
-    (h_bytes : ByteLookupHypotheses v row)
-    (h_a_range : a_bytes_in_range v row) :
-    BitVec.sshiftRight
-        (BitVec.ofNat 64
-          ((v.free_in_a_0 row).val
-            + (v.free_in_a_1 row).val * 256
-            + (v.free_in_a_2 row).val * 65536
-            + (v.free_in_a_3 row).val * 16777216
-            + (v.free_in_a_4 row).val * 4294967296
-            + (v.free_in_a_5 row).val * 1099511627776
-            + (v.free_in_a_6 row).val * 281474976710656
-            + (v.free_in_a_7 row).val * 72057594037927936))
-        ((v.free_in_b row).val % 64)
-      = BitVec.ofNat 64
-          (((v.free_in_c_0 row).val
-              + (v.free_in_c_2 row).val
-              + (v.free_in_c_4 row).val
-              + (v.free_in_c_6 row).val
-              + (v.free_in_c_8 row).val
-              + (v.free_in_c_10 row).val
-              + (v.free_in_c_12 row).val
-              + (v.free_in_c_14 row).val)
-            + ((v.free_in_c_1 row).val
-              + (v.free_in_c_3 row).val
-              + (v.free_in_c_5 row).val
-              + (v.free_in_c_7 row).val
-              + (v.free_in_c_9 row).val
-              + (v.free_in_c_11 row).val
-              + (v.free_in_c_13 row).val
-              + (v.free_in_c_15 row).val) * 4294967296) :=
-  binary_extension_sra_chunks_eq_bv_sshr_of_wf v row h_op h_bytes
-    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
-    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
-    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
-    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
-    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
-    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
-    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
-    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
-    h_a_range
-
-/-! ## Helper for the W-variant lifts: 4-byte right-shift split.
-
-For a 32-bit operand `a32 = a0 + a1*256 + a2*256^2 + a3*256^3`, the
-right-shifted value `a32 / 2^sft` distributes additively into the
-per-byte contributions `(a_i * 256^i) / 2^sft`. -/
+-- legacy binary_extension_sra_chunks_eq_bv_sshr (bin_ext_table_consumer_wf route) deleted in T4-purge P3.5.
 
 private lemma byte_split_div_4
     (a0v a1v a2v a3v sft : ℕ)
@@ -2228,68 +2003,8 @@ lemma binary_extension_srlw_chunks_eq_bv_ushr_w_of_wf
     eq0 eq1 eq2 eq3 eq4 eq5 eq6 eq7
     ech0 ech1 ech2 ech3 ech4 ech5 ech6 ech7
 
-/-- Legacy SRL_W packed-correctness route through `bin_ext_table_consumer_wf`. -/
-lemma binary_extension_srlw_chunks_eq_bv_ushr_w
-    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SRL_W)
-    (h_bytes : ByteLookupHypotheses v row)
-    (h_a_range : a_bytes_in_range v row) :
-    BitVec.signExtend 64
-      (BitVec.ushiftRight (BitVec.ofNat 32
-        ((v.free_in_a_0 row).val
-          + (v.free_in_a_1 row).val * 256
-          + (v.free_in_a_2 row).val * 65536
-          + (v.free_in_a_3 row).val * 16777216))
-        ((v.free_in_b row).val % 32))
-      = BitVec.ofNat 64
-          (((v.free_in_c_0 row).val
-              + (v.free_in_c_2 row).val
-              + (v.free_in_c_4 row).val
-              + (v.free_in_c_6 row).val
-              + (v.free_in_c_8 row).val
-              + (v.free_in_c_10 row).val
-              + (v.free_in_c_12 row).val
-              + (v.free_in_c_14 row).val)
-            + ((v.free_in_c_1 row).val
-              + (v.free_in_c_3 row).val
-              + (v.free_in_c_5 row).val
-              + (v.free_in_c_7 row).val
-              + (v.free_in_c_9 row).val
-              + (v.free_in_c_11 row).val
-              + (v.free_in_c_13 row).val
-              + (v.free_in_c_15 row).val) * 4294967296) :=
-  binary_extension_srlw_chunks_eq_bv_ushr_w_of_wf v row h_op h_bytes
-    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
-    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
-    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
-    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
-    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
-    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
-    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
-    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
-    h_a_range
+-- legacy binary_extension_srlw_chunks_eq_bv_ushr_w (bin_ext_table_consumer_wf route) deleted in T4-purge P3.5.
 
-/-! ## SLL_W and SRA_W lifts
-
-The W-mode shift opcodes operate on the low 32 bits of the operand and
-sign-extend the 32-bit result to 64 bits. Per `wf_SLL_W` / `wf_SRA_W`
-(`Airs/BinaryExtensionTable.lean`), the byte-level table contract carries
-the full per-byte semantics:
-
-* For SLL_W: byte `i ∈ [0, 4)`'s `c_lo_byte` = `(a_byte * 256^i * 2^s) % 2^32`,
-  and `c_hi_byte = if c_lo_byte ≥ 2^31 then 2^32 - 1 else 0`. Bytes 4..7 are
-  zero. Each byte's `c_hi_byte` carries its share of the W-mode sign extension.
-* For SRA_W: byte `i ∈ [0, 4)`'s `c_lo_byte + c_hi_byte * 2^32` = `a_byte * 256^i / 2^s`
-  (no extension), except byte 3 with `a_byte ≥ 128` adds the sign-extension
-  term `2^64 - 2^(32 - s)`. Bytes 4..7 are zero.
-
-The disjointness of byte contributions modulo 32 (for SLL_W) is closed by
-`interval_cases sft` over the 32 possible shift amounts, with `omega`
-handling the per-shift arithmetic. -/
-
-/-- **Width-32 analog of `sra_msb_true_identity`.** The msb-true case of
-    a signed right shift at width 32: the bit-flip identity
-    `2^32 - 1 - (2^32 - 1 - a) >>> s = a/2^s + (2^32 - 2^(32-s))`. -/
 private lemma sra_msb_true_identity_32 (a s : ℕ)
     (h_a : a < 2 ^ 32) (h_s : s < 32) :
     2 ^ 32 - 1 - (2 ^ 32 - 1 - a) >>> s = a / 2 ^ s + (2 ^ 32 - 2 ^ (32 - s)) := by
@@ -2720,50 +2435,8 @@ lemma binary_extension_sllw_chunks_eq_bv_shl_w_of_wf
     eq0 eq1 eq2 eq3 eq4 eq5 eq6 eq7
     ech0 ech1 ech2 ech3 ech4 ech5 ech6 ech7
 
-/-- Legacy SLL_W packed-correctness route through `bin_ext_table_consumer_wf`. -/
-lemma binary_extension_sllw_chunks_eq_bv_shl_w
-    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SLL_W)
-    (h_bytes : ByteLookupHypotheses v row)
-    (h_a_range : a_bytes_in_range v row) :
-    BitVec.signExtend 64
-      (BitVec.shiftLeft (BitVec.ofNat 32
-        ((v.free_in_a_0 row).val
-          + (v.free_in_a_1 row).val * 256
-          + (v.free_in_a_2 row).val * 65536
-          + (v.free_in_a_3 row).val * 16777216))
-        ((v.free_in_b row).val % 32))
-      = BitVec.ofNat 64
-          (((v.free_in_c_0 row).val
-              + (v.free_in_c_2 row).val
-              + (v.free_in_c_4 row).val
-              + (v.free_in_c_6 row).val
-              + (v.free_in_c_8 row).val
-              + (v.free_in_c_10 row).val
-              + (v.free_in_c_12 row).val
-              + (v.free_in_c_14 row).val)
-            + ((v.free_in_c_1 row).val
-              + (v.free_in_c_3 row).val
-              + (v.free_in_c_5 row).val
-              + (v.free_in_c_7 row).val
-              + (v.free_in_c_9 row).val
-              + (v.free_in_c_11 row).val
-              + (v.free_in_c_13 row).val
-              + (v.free_in_c_15 row).val) * 4294967296) :=
-  binary_extension_sllw_chunks_eq_bv_shl_w_of_wf v row h_op h_bytes
-    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
-    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
-    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
-    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
-    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
-    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
-    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
-    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
-    h_a_range
+-- legacy binary_extension_sllw_chunks_eq_bv_shl_w (bin_ext_table_consumer_wf route) deleted in T4-purge P3.5.
 
-/-! ## SRA_W lift -/
-
-/-- Pure-Nat statement of the SRA_W identity. -/
 private lemma sraw_nat_core
     (a0v a1v a2v a3v : ℕ)
     (cl0 cl1 cl2 cl3 cl4 cl5 cl6 cl7 : ℕ)
@@ -3100,62 +2773,8 @@ lemma binary_extension_sraw_chunks_eq_bv_sshr_w_of_wf
     ha0r ha1r ha2r ha3r ha4r ha5r ha6r ha7r hsft_lt
     eq0 eq1 eq2 eq3 eq4 eq5 eq6 eq7
 
-/-- Legacy SRA_W packed-correctness route through `bin_ext_table_consumer_wf`. -/
-lemma binary_extension_sraw_chunks_eq_bv_sshr_w
-    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SRA_W)
-    (h_bytes : ByteLookupHypotheses v row)
-    (h_a_range : a_bytes_in_range v row) :
-    BitVec.signExtend 64
-      (BitVec.sshiftRight (BitVec.ofNat 32
-        ((v.free_in_a_0 row).val
-          + (v.free_in_a_1 row).val * 256
-          + (v.free_in_a_2 row).val * 65536
-          + (v.free_in_a_3 row).val * 16777216))
-        ((v.free_in_b row).val % 32))
-      = BitVec.ofNat 64
-          (((v.free_in_c_0 row).val
-              + (v.free_in_c_2 row).val
-              + (v.free_in_c_4 row).val
-              + (v.free_in_c_6 row).val
-              + (v.free_in_c_8 row).val
-              + (v.free_in_c_10 row).val
-              + (v.free_in_c_12 row).val
-              + (v.free_in_c_14 row).val)
-            + ((v.free_in_c_1 row).val
-              + (v.free_in_c_3 row).val
-              + (v.free_in_c_5 row).val
-              + (v.free_in_c_7 row).val
-              + (v.free_in_c_9 row).val
-              + (v.free_in_c_11 row).val
-              + (v.free_in_c_13 row).val
-              + (v.free_in_c_15 row).val) * 4294967296) :=
-  binary_extension_sraw_chunks_eq_bv_sshr_w_of_wf v row h_op h_bytes
-    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
-    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
-    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
-    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
-    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
-    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
-    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
-    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
-    h_a_range
+-- legacy binary_extension_sraw_chunks_eq_bv_sshr_w (bin_ext_table_consumer_wf route) deleted in T4-purge P3.5.
 
-/-! ## SEXT byte-equation lemmas + packed-correctness theorems
-
-For the three sign-extension opcodes (SEXT_B / SEXT_H / SEXT_W) the
-per-byte structure is much simpler than the shifts: only byte_index `i`
-in `{0}` (B), `{0, 1}` (H), or `{0, 1, 2, 3}` (W) contribute non-zero
-output; all other byte_indices contribute zero. The "active" highest
-byte additionally contributes the sign-extension mask when the input
-byte's high bit is set.
-
-The packed-correctness theorems composes the 8 per-byte equations
-into the standard `BitVec.signExtend 64` of the sub-doubleword input.
--/
-
-/-- Per-byte equation for `OP_SEXT_B`. Pulls the byte's `c_lo + c_hi * 2^32`
-    contribution out of the SEXT_B case of `wf_properties`. -/
 private lemma sext_b_byte_eq_of_wf
     (e : BinaryExtensionTableEntry FGL)
     (h_wf : wf_properties e)
@@ -3180,19 +2799,8 @@ private lemma sext_b_byte_eq_of_wf
   -- Goal: out % 2^32 + out / 2^32 * 2^32 = out
   omega
 
-private lemma sext_b_byte_eq
-    (e : BinaryExtensionTableEntry FGL)
-    (h_mult : e.multiplicity = 1)
-    (h_op_val : e.op.val = OP_SEXT_B) :
-    e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
-      = if e.byte_index.val = 0 then
-          if e.a_byte.val ≥ 128
-          then e.a_byte.val + (2 ^ 64 - 256)
-          else e.a_byte.val
-        else 0 :=
-  sext_b_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
+-- legacy sext_b_byte_eq (bin_ext_table_consumer_wf route) deleted in T4-purge P3.6.
 
-/-- Per-byte equation for `OP_SEXT_H`. -/
 private lemma sext_h_byte_eq_of_wf
     (e : BinaryExtensionTableEntry FGL)
     (h_wf : wf_properties e)
@@ -3217,20 +2825,8 @@ private lemma sext_h_byte_eq_of_wf
     else 0
   omega
 
-private lemma sext_h_byte_eq
-    (e : BinaryExtensionTableEntry FGL)
-    (h_mult : e.multiplicity = 1)
-    (h_op_val : e.op.val = OP_SEXT_H) :
-    e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
-      = if e.byte_index.val = 0 then e.a_byte.val
-        else if e.byte_index.val = 1 then
-          if e.a_byte.val ≥ 128
-          then e.a_byte.val * 256 + (2 ^ 64 - 2 ^ 16)
-          else e.a_byte.val * 256
-        else 0 :=
-  sext_h_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
+-- legacy sext_h_byte_eq (bin_ext_table_consumer_wf route) deleted in T4-purge P3.6.
 
-/-- Per-byte equation for `OP_SEXT_W`. -/
 private lemma sext_w_byte_eq_of_wf
     (e : BinaryExtensionTableEntry FGL)
     (h_wf : wf_properties e)
@@ -3255,30 +2851,8 @@ private lemma sext_w_byte_eq_of_wf
     else 0
   omega
 
-private lemma sext_w_byte_eq
-    (e : BinaryExtensionTableEntry FGL)
-    (h_mult : e.multiplicity = 1)
-    (h_op_val : e.op.val = OP_SEXT_W) :
-    e.c_lo_byte.val + e.c_hi_byte.val * 4294967296
-      = if e.byte_index.val < 4 then
-          if e.byte_index.val = 3 ∧ e.a_byte.val ≥ 128
-          then e.a_byte.val * (256 ^ e.byte_index.val) + (2 ^ 64 - 2 ^ 32)
-          else e.a_byte.val * (256 ^ e.byte_index.val)
-        else 0 :=
-  sext_w_byte_eq_of_wf e (bin_ext_table_consumer_wf e h_mult) h_op_val
+-- legacy sext_w_byte_eq (bin_ext_table_consumer_wf route) deleted in T4-purge P3.6.
 
-/-! ## Packed-correctness theorems for SEXT_B/H/W
-
-For each SEXT opcode we compose 8 per-byte equations into a single
-identity stating that the BinaryExtension AIR's packed c-output
-equals the natural-number value of `BitVec.signExtend 64` applied
-to the 8/16/32-bit input slice. Stated in Nat form; the BitVec
-lift happens at the canonical equiv site via
-`BitVec.toNat_signExtend`-style identities. -/
-
-/-- **SEXT_B packed-correctness (Nat form).** The packed BinaryExtension
-    output equals `(BitVec.signExtend 64 (BitVec.ofNat 8 a_0)).toNat`,
-    expressed as the if-then-else over the high-bit of `a_0`. -/
 lemma binary_extension_sext_b_chunks_eq_signextend_nat_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SEXT_B)
@@ -3346,33 +2920,8 @@ lemma binary_extension_sext_b_chunks_eq_signextend_nat_of_wf
   simp only [show ((7 : ℕ) = 0) ↔ False from by decide, if_false] at h7
   omega
 
-/-- Legacy SEXT_B packed-correctness route through `bin_ext_table_consumer_wf`. -/
-lemma binary_extension_sext_b_chunks_eq_signextend_nat
-    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SEXT_B)
-    (h_bytes : ByteLookupHypotheses v row) :
-    ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
-        + (v.free_in_c_4 row).val + (v.free_in_c_6 row).val
-        + (v.free_in_c_8 row).val + (v.free_in_c_10 row).val
-        + (v.free_in_c_12 row).val + (v.free_in_c_14 row).val)
-      + ((v.free_in_c_1 row).val + (v.free_in_c_3 row).val
-        + (v.free_in_c_5 row).val + (v.free_in_c_7 row).val
-        + (v.free_in_c_9 row).val + (v.free_in_c_11 row).val
-        + (v.free_in_c_13 row).val + (v.free_in_c_15 row).val) * 4294967296
-      = if (v.free_in_a_0 row).val ≥ 128
-        then (v.free_in_a_0 row).val + (2 ^ 64 - 256)
-        else (v.free_in_a_0 row).val :=
-  binary_extension_sext_b_chunks_eq_signextend_nat_of_wf v row h_op h_bytes
-    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
-    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
-    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
-    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
-    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
-    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
-    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
-    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
+-- legacy binary_extension_sext_b_chunks_eq_signextend_nat (bin_ext_table_consumer_wf route) deleted in T4-purge P3.5.
 
-/-- **SEXT_H packed-correctness (Nat form).** -/
 lemma binary_extension_sext_h_chunks_eq_signextend_nat_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SEXT_H)
@@ -3453,32 +3002,8 @@ lemma binary_extension_sext_h_chunks_eq_signextend_nat_of_wf
     rw [if_neg hsign]
     omega
 
-/-- Legacy SEXT_H packed-correctness route through `bin_ext_table_consumer_wf`. -/
-lemma binary_extension_sext_h_chunks_eq_signextend_nat
-    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SEXT_H)
-    (h_bytes : ByteLookupHypotheses v row) :
-    ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
-        + (v.free_in_c_4 row).val + (v.free_in_c_6 row).val
-        + (v.free_in_c_8 row).val + (v.free_in_c_10 row).val
-        + (v.free_in_c_12 row).val + (v.free_in_c_14 row).val)
-      + ((v.free_in_c_1 row).val + (v.free_in_c_3 row).val
-        + (v.free_in_c_5 row).val + (v.free_in_c_7 row).val
-        + (v.free_in_c_9 row).val + (v.free_in_c_11 row).val
-        + (v.free_in_c_13 row).val + (v.free_in_c_15 row).val) * 4294967296
-      = (v.free_in_a_0 row).val + (v.free_in_a_1 row).val * 256
-        + (if (v.free_in_a_1 row).val ≥ 128 then 2 ^ 64 - 2 ^ 16 else 0) :=
-  binary_extension_sext_h_chunks_eq_signextend_nat_of_wf v row h_op h_bytes
-    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
-    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
-    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
-    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
-    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
-    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
-    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
-    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
+-- legacy binary_extension_sext_h_chunks_eq_signextend_nat (bin_ext_table_consumer_wf route) deleted in T4-purge P3.5.
 
-/-- **SEXT_W packed-correctness (Nat form).** -/
 lemma binary_extension_sext_w_chunks_eq_signextend_nat_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SEXT_W)
@@ -3565,32 +3090,6 @@ lemma binary_extension_sext_w_chunks_eq_signextend_nat_of_wf
     rw [if_neg hsign]
     omega
 
-/-- Legacy SEXT_W packed-correctness route through `bin_ext_table_consumer_wf`. -/
-lemma binary_extension_sext_w_chunks_eq_signextend_nat
-    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
-    (h_op : (v.op row).val = OP_SEXT_W)
-    (h_bytes : ByteLookupHypotheses v row) :
-    ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
-        + (v.free_in_c_4 row).val + (v.free_in_c_6 row).val
-        + (v.free_in_c_8 row).val + (v.free_in_c_10 row).val
-        + (v.free_in_c_12 row).val + (v.free_in_c_14 row).val)
-      + ((v.free_in_c_1 row).val + (v.free_in_c_3 row).val
-        + (v.free_in_c_5 row).val + (v.free_in_c_7 row).val
-        + (v.free_in_c_9 row).val + (v.free_in_c_11 row).val
-        + (v.free_in_c_13 row).val + (v.free_in_c_15 row).val) * 4294967296
-      = (v.free_in_a_0 row).val
-        + (v.free_in_a_1 row).val * 256
-        + (v.free_in_a_2 row).val * 65536
-        + (v.free_in_a_3 row).val * 16777216
-        + (if (v.free_in_a_3 row).val ≥ 128 then 2 ^ 64 - 2 ^ 32 else 0) :=
-  binary_extension_sext_w_chunks_eq_signextend_nat_of_wf v row h_op h_bytes
-    ⟨ bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
-    , bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
-    , bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
-    , bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
-    , bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
-    , bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
-    , bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
-    , bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
+-- legacy binary_extension_sext_w_chunks_eq_signextend_nat (bin_ext_table_consumer_wf route) deleted in T4-purge P3.5.
 
 end ZiskFv.Airs.BinaryExtension

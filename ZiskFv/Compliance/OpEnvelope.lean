@@ -16,9 +16,7 @@ import ZiskFv.Compliance.Wrappers.Bge
 import ZiskFv.Compliance.Wrappers.Bltu
 import ZiskFv.Compliance.Wrappers.Bgeu
 import ZiskFv.Compliance.Wrappers.Add
-import ZiskFv.Compliance.Wrappers.Add_via_binary
 import ZiskFv.Compliance.Wrappers.Addi
-import ZiskFv.Compliance.Wrappers.Addi_via_binary
 import ZiskFv.Compliance.Wrappers.Addw
 import ZiskFv.Compliance.Wrappers.Subw
 import ZiskFv.Compliance.Wrappers.Addiw
@@ -313,19 +311,7 @@ inductive OpEnvelope
     (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
     (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) : OpEnvelope state m r_main
-  -- ============================ ADD (3 mem entries, BinaryAdd) ==========
-  | add
-    (add_input : PureSpec.AddInput) (r1 r2 rd : regidx)
-    (badd : ZiskFv.Compliance.BinaryAddWitness)
-    (bus : ZiskFv.Compliance.BusRows)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
-    (h_main_subset : add_subset_holds m r_main)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.EquivCore.Promises.RTypePromises
-        state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
-        (PureSpec.execute_RTYPE_add_pure add_input).nextPC
-        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
-  -- ============================ ADD via Binary arm (alternate provider) =
+  -- ============================ ADD via Binary arm (sole provider after T4-purge) =
   | add_via_binary
     (add_input : PureSpec.AddInput) (r1 r2 rd : regidx)
     (bus : ZiskFv.Compliance.BusRows)
@@ -347,20 +333,7 @@ inductive OpEnvelope
         state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
         (PureSpec.execute_RTYPE_add_pure add_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
-  -- ============================ ADDI (do-block LHS, BinaryAdd) ==========
-  | addi
-    (addi_input : PureSpec.AddiInput) (r1 rd : regidx) (imm : BitVec 12)
-    (badd : ZiskFv.Compliance.BinaryAddWitness)
-    (bus : ZiskFv.Compliance.BusRows)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
-    (h_main_subset : add_subset_holds m r_main)
-    (h_addi_subset : itype_imm_subset_holds_main m r_main addi_input.imm)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.EquivCore.Promises.ITypePromises
-        state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
-        (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
-        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
-  -- ============================ ADDI via Binary arm (alternate provider) =
+  -- ============================ ADDI via Binary arm (sole provider after T4-purge) =
   | addi_via_binary
     (addi_input : PureSpec.AddiInput) (r1 rd : regidx) (imm : BitVec 12)
     (bus : ZiskFv.Compliance.BusRows)
@@ -1128,19 +1101,6 @@ inductive OpEnvelope
         (PureSpec.lwu_state_assumptions lwu_input state)
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
-  -- ============================ LB (signed-byte load) ===================
-  | lb
-    (lb_input : PureSpec.LbInput)
-    (regs : ZiskFv.Compliance.ModeRegsFull)
-    (mem : Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
-    (bus : ZiskFv.Compliance.BusRows)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
-        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
-        (PureSpec.lb_state_assumptions lb_input state)
-        (PureSpec.execute_LOADB_pure lb_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ LB via static BinaryExtension lookup ====
   -- T4 alternate provider arm: takes the BinaryExtension row witness
   -- + matches_entry directly + static lookup soundness, bypassing
@@ -1163,19 +1123,6 @@ inductive OpEnvelope
         (PureSpec.lb_state_assumptions lb_input state)
         (PureSpec.execute_LOADB_pure lb_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
-  -- ============================ LH ======================================
-  | lh
-    (lh_input : PureSpec.LhInput)
-    (regs : ZiskFv.Compliance.ModeRegsFull)
-    (mem : Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
-    (bus : ZiskFv.Compliance.BusRows)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_H)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
-        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
-        (PureSpec.lh_state_assumptions lh_input state)
-        (PureSpec.execute_LOADH_pure lh_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ LH via static BinaryExtension lookup ====
   | lh_via_static_match
     (lh_input : PureSpec.LhInput)
@@ -1194,19 +1141,6 @@ inductive OpEnvelope
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
-  -- ============================ LW ======================================
-  | lw
-    (lw_input : PureSpec.LwInput)
-    (regs : ZiskFv.Compliance.ModeRegsFull)
-    (mem : Valid_Mem FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
-    (bus : ZiskFv.Compliance.BusRows)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W)
-    (promises : ZiskFv.EquivCore.Promises.LoadPromises
-        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
-        (PureSpec.lw_state_assumptions lw_input state)
-        (PureSpec.execute_LOADW_pure lw_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ LW via static BinaryExtension lookup ====
   | lw_via_static_match

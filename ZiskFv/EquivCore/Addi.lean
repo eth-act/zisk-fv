@@ -205,39 +205,8 @@ theorem equiv_ADDI_with_match
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- Thin forwarder over `equiv_ADDI_with_match`: derives the BinaryAdd
-    row witness + matches_entry via `op_bus_perm_sound_BinaryAdd`. -/
-theorem equiv_ADDI
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (addi_input : PureSpec.AddiInput)
-    (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness)
-    (r_main : ℕ)
-    (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.EquivCore.Promises.ITypePromises
-        state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
-        (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
-        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
-    (h_main_subset : add_subset_holds m r_main)
-    (h_main_mode : main_row_in_addi_mode m r_main)
-    (h_addi_subset :
-      ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
-        m r_main addi_input.imm)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (bounds : ZiskFv.Compliance.ByteBounds bus.e2) :
-    (do
-      Sail.writeReg Register.nextPC
-        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute
-        (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
-      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨b, h_b_core⟩ := badd
-  obtain ⟨r_binary, h_match⟩ :=
-    op_bus_perm_sound_BinaryAdd m b r_main h_main_mode.1 h_main_mode.2.1
-  exact equiv_ADDI_with_match
-    state addi_input r1 rd imm m b r_main r_binary bus
-    promises h_main_subset h_main_mode (h_b_core r_binary) h_match
-    h_addi_subset h_lane_rd bounds
+-- Legacy `equiv_ADDI` (BinaryAdd-arm thin forwarder using
+-- op_bus_perm_sound_BinaryAdd) deleted in T4-purge P3.10.
 
 /-- **Binary-arm equiv_ADDI** (T2.2 multi-provider migration).
     Mirrors `equiv_ADD_of_wf` with `transpile_ADD → transpile_ADDI`

@@ -170,53 +170,8 @@ theorem equiv_SRA_of_wf
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- Canonical SRA equivalence. The signature is unchanged; this legacy route
-    derives BinaryExtension table well-formedness and `op_is_shift` through the
-    existing table-consumer theorem, then delegates to `equiv_SRA_of_wf`. -/
-theorem equiv_SRA
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (sra_input : PureSpec.SraInput)
-    (r1 r2 rd : regidx)
-    (m : Valid_Main FGL FGL)
-    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
-    (r_main r_binary : ℕ)
-    (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.EquivCore.Promises.RTypePromises
-        state sra_input.r1_val sra_input.r2_val sra_input.rd sra_input.PC
-        (PureSpec.execute_RTYPE_sra_pure sra_input).nextPC
-        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRA)
-    (h_match : ZiskFv.Airs.OperationBus.matches_entry
-        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
-        (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
-    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRA)) state
-      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨h_main_active, h_main_op⟩ := pins
-  obtain ⟨h_op_fgl, _, _⟩ :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.project_match_op_clo_chi
-      m v r_main r_binary h_match
-  let h_bytes := ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v r_binary
-  have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes :=
-    ⟨ ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e0 h_bytes.h0.1
-    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e1 h_bytes.h1.1
-    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e2 h_bytes.h2.1
-    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e3 h_bytes.h3.1
-    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e4 h_bytes.h4.1
-    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e5 h_bytes.h5.1
-    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e6 h_bytes.h6.1
-    , ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf h_bytes.e7 h_bytes.h7.1 ⟩
-  have h_op_is_shift_fact :=
-    ZiskFv.Airs.BinaryExtension.binary_extension_op_is_shift_pin v r_binary
-  have h_op_v_eq : v.op r_binary = ZiskFv.Trusted.OP_SRA := by
-    rw [← h_op_fgl, h_main_op]
-  have h_op_is_shift : v.op_is_shift r_binary = 1 :=
-    h_op_is_shift_fact.1 (Or.inr (Or.inr (Or.inl h_op_v_eq)))
-  exact equiv_SRA_of_wf state sra_input r1 r2 rd m v r_main r_binary bus
-    promises ⟨h_main_active, h_main_op⟩ h_match h_lane_rd h_bytes h_wfs h_op_is_shift
+-- legacy `equiv_SRA` (bin_ext_table_consumer_wf route) deleted in T4-purge P3.3.
 
-/-- Row-native static-provider route for SRA. The BinaryExtensionTable facts
-    come from the same Clean provider row that emits the op-bus message. -/
 theorem equiv_SRA_of_static_row
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sra_input : PureSpec.SraInput)

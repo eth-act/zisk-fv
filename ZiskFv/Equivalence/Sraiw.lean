@@ -57,26 +57,6 @@ theorem equiv_SRAIW
     m providerTable providerRow r_main bus promises pins
     h_component h_table_spec h_provider_row h_match h_lane_rd
 
-/-- Noncanonical static-lookup route for SRAIW in channel-balance form. -/
-theorem equiv_SRAIW_of_static_lookup
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (sraiw_input : PureSpec.SraiwInput)
-    (r1 rd : regidx)
-    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
-    (r_main : ℕ)
-    (offset : ℕ) (env : Environment FGL)
-    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
-    (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
-        state sraiw_input.r1_val sraiw_input.rd sraiw_input.PC
-        (PureSpec.execute_SHIFTIWOP_sraiw_pure sraiw_input).nextPC
-        r1 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SRA_W)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    : execute_instruction (instruction.SHIFTIWOP (sraiw_input.shamt, r1, rd, sopw.SRAIW)) state
-      = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_SRAIW_of_static_lookup state sraiw_input r1 rd
-    m v r_main offset env h_static bus promises pins h_lane_rd
+-- equiv_<OP>_of_static_lookup (noncanonical alt route) deleted in T4-purge step P3.1.
 
 end ZiskFv.Equivalence.Sraiw

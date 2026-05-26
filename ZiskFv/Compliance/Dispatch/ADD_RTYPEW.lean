@@ -1,18 +1,14 @@
 import ZiskFv.Compliance.OpEnvelope
 import ZiskFv.Equivalence.Add
-import ZiskFv.Equivalence.Alt.Add_via_binary
 import ZiskFv.Equivalence.Addw
 import ZiskFv.Equivalence.Subw
 
 /-!
 # Compliance dispatcher (ADD + RTYPEW arms)
 
-ADD (RTYPE+BinaryAdd) plus ADDW, SUBW (RTYPEW+Binary).
-
-ADDI omitted — has additional `h_main_subset` + `h_addi_subset`
-hypotheses making the arm signature longer. Mechanical follow-up.
-
-ADDIW omitted — similar.
+ADD (RTYPE via Binary lookup) plus ADDW, SUBW (RTYPEW+Binary).
+Post-T4-purge: `.add` constructor is the Binary-arm one (legacy
+BinaryAdd-arm retired).
 
 ## Trust note
 
@@ -30,9 +26,6 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 def OpEnvelope.exec_eq_add_rtypew
     : OpEnvelope state m r_main → Prop
-  | .add _ r1 r2 rd _ bus _ _ _ _ =>
-      execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
-        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   | .add_via_binary _ r1 r2 rd bus _ _ _ _ _ _ _ _ _ =>
       execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
@@ -56,14 +49,10 @@ theorem zisk_riscv_compliant_program_bus_add_rtypew
     (env : OpEnvelope state m r_main) :
     env.exec_eq_add_rtypew := by
   cases env with
-  | add add_input r1 r2 rd badd bus pins h_main_subset h_lane_rd promises =>
-    simp only [OpEnvelope.exec_eq_add_rtypew]
-    exact ZiskFv.Equivalence.Add.equiv_ADD state add_input r1 r2 rd m badd r_main bus pins
-      h_main_subset h_lane_rd promises
   | add_via_binary add_input r1 r2 rd bus pins providerTable providerRow
       h_component h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_add_rtypew]
-    exact ZiskFv.Equivalence.Add.equiv_ADD_via_binary
+    exact ZiskFv.Equivalence.Add.equiv_ADD
       state add_input r1 r2 rd m providerTable providerRow r_main bus pins
       h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
   | addw addw_input r1 r2 rd _v bus pins providerTable providerRow h_component

@@ -427,28 +427,8 @@ lemma op_is_shift_zero_SIGNEXTEND_W_of_static_lookup
   (binary_extension_op_is_shift_pin_of_static_lookup v r offset env h_static).2
     (Or.inr (Or.inr h_op))
 
-open ZiskFv.Trusted in
-/-- **BinaryExtension AIR op_is_shift linkage.** The `op_is_shift`
-    column is `bits(1)` (per `binary_extension.pil:88`: `col witness
-    bits(1) op_is_shift; // 1 if operation is in the shift family;
-    0 otherwise`) and the per-byte table lookup at
-    `binary_extension.pil:92` binds it to the table entry's
-    `op_is_shift` flag — so every row whose `op` is a shift literal
-    has `op_is_shift = 1`, and every row whose `op` is a SEXT literal
-    has `op_is_shift = 0`.
-
-    Derived from the row-shaped byte lookup entry plus
-    `bin_ext_table_consumer_wf`; the table predicates already pin the
-    `op_is_shift` flag for every shift and SEXT opcode. -/
-theorem binary_extension_op_is_shift_pin (v : Valid_BinaryExtension FGL FGL) (r : ℕ) :
-    ((v.op r = OP_SLL ∨ v.op r = OP_SRL ∨ v.op r = OP_SRA
-      ∨ v.op r = OP_SLL_W ∨ v.op r = OP_SRL_W ∨ v.op r = OP_SRA_W)
-        → v.op_is_shift r = 1)
-  ∧ ((v.op r = OP_SIGNEXTEND_B ∨ v.op r = OP_SIGNEXTEND_H ∨ v.op r = OP_SIGNEXTEND_W)
-        → v.op_is_shift r = 0) := by
-  open ZiskFv.Airs.Tables.BinaryExtensionTable in
-  let hbytes := binary_extension_row_byte_lookups v r
-  have h_wf := bin_ext_table_consumer_wf hbytes.e0 hbytes.h0.1
-  exact binary_extension_op_is_shift_pin_of_e0_wf v r (by simpa [hbytes] using h_wf)
+-- legacy `binary_extension_op_is_shift_pin` (bin_ext_table_consumer_wf route)
+-- deleted in T4-purge P3.8. Consumers use
+-- `binary_extension_op_is_shift_pin_of_static_lookup` (Clean static-table route).
 
 end ZiskFv.Airs.BinaryExtension

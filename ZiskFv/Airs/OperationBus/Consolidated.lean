@@ -93,42 +93,11 @@ def OpBusProvider.handles_op : OpBusProvider → FGL → Prop
       op = 0x21 ∨ op = 0x22 ∨ op = 0x23 ∨ op = 0x24 ∨ op = 0x25
       ∨ op = 0x26 ∨ op = 0x27 ∨ op = 0x28 ∨ op = 0x29
 
-/-- **OperationBus permutation soundness (consolidated).**
-    For any consumer Main row that is externally-active and whose
-    opcode falls within a provider's coverage, there exists a
-    provider row whose op-bus emission matches the Main row's.
-
-    This is the bus-level statement of the three per-provider
-    permutation-soundness facts. The three per-provider results
-    (`op_bus_perm_sound_BinaryAdd`, `op_bus_perm_sound_Binary`,
-    `op_bus_perm_sound_BinaryExtension`) are now theorems derived
-    from this axiom (see `Bridge.lean`).
-
-    PIL citation: `zisk/pil/opids.pil:2` (`OPERATION_BUS_ID = 5000`).
-    Provider opcode-coverage citations:
-    * BinaryAdd: `binary_add.pil:25` (`proves_operation(op: 10, ...)`)
-    * Binary: `binary.pil:6-49` (op_or_sext literals)
-    * BinaryExtension: `binary_extension.pil:11-21` (SLL/SRL/SRA family)
-
-    Trust class: PLONK / logUp permutation-argument soundness on
-    the operation bus.
-
-    NOTE: This axiom REPLACES the three per-provider axioms. The
-    trust content is identical; the consolidation makes the
-    cryptographic claim explicit at the protocol layer instead of
-    distributing it across three AIR-specific specializations.
-
-    The `C` typeclass binder is retained solely for the `Valid_Main`
-    parameter (still C-parameterized until its own retirement); the
-    `OpBusProvider` parameter is now `C`-free, having been
-    universally weakened in Phase F2 by Wave 1's removal of `C`
-    from each arm's `Valid_<AIR>` payload. -/
-axiom op_bus_permutation_sound
-    (m : ZiskFv.Airs.Main.Valid_Main FGL FGL)
-    (p : OpBusProvider)
-    (r_main : ℕ)
-    (h_active : m.is_external_op r_main = 1)
-    (h_op : p.handles_op (m.op r_main)) :
-    ∃ r_p : ℕ, matches_entry (opBus_row_Main m r_main) (p.opBus_row r_p)
+-- `op_bus_permutation_sound` axiom retired in T4-purge P6. All global-theorem
+-- opcode routes now use row-explicit static-lookup paths (Clean ensemble +
+-- static BinaryTable / BinaryExtensionTable membership) instead of the
+-- bus-level permutation axiom. The retirement landed once the 5 ADD/ADDI/LB/LH/LW
+-- canonical theorems migrated to the row-explicit signature; the 12 shifts
+-- had already been on the static-lookup route.
 
 end ZiskFv.Airs.OperationBus

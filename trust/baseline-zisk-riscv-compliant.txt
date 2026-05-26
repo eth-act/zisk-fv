@@ -23,9 +23,9 @@
 #     > trust/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
-# artefacts under `.lake/build/`). Last regenerated: 2026-05-25.
+# artefacts under `.lake/build/`). Last regenerated: 2026-05-26.
 #
-# Total entries: 90
+# Total entries: 87
 #
 ZiskFv.Airs.Arith.arith_div_nb_eq_msb_of_divisor
 ZiskFv.Airs.Arith.arith_div_np_eq_msb_of_dividend
@@ -51,11 +51,8 @@ ZiskFv.Airs.MemoryBus.MemBridge.main_sext_load_emission_bundle
 ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_sd
 ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_subword
 ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
-ZiskFv.Airs.OperationBus.op_bus_permutation_sound
-ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf
 ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness
 ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
-ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness
 ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
 ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness
 ZiskFv.Channels.RangeBusSoundness.range_bus_sound

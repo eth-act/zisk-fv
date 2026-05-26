@@ -158,32 +158,8 @@ theorem equiv_ADD_with_match
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
-/-- Thin forwarder over `equiv_ADD_with_match`: derives the BinaryAdd
-    row witness + `matches_entry` via `op_bus_perm_sound_BinaryAdd`. -/
-theorem equiv_ADD
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (add_input : PureSpec.AddInput)
-    (r1 r2 rd : regidx)
-    (m : Valid_Main FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness)
-    (r_main : ℕ)
-    (bus : ZiskFv.Compliance.BusRows)
-    (promises : ZiskFv.EquivCore.Promises.RTypePromises
-        state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
-        (PureSpec.execute_RTYPE_add_pure add_input).nextPC
-        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    (h_main_subset : add_subset_holds m r_main)
-    (h_main_mode : main_row_in_add_mode m r_main)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (bounds : ZiskFv.Compliance.ByteBounds bus.e2) :
-    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
-      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨b, h_b_core⟩ := badd
-  obtain ⟨r_binary, h_match⟩ :=
-    op_bus_perm_sound_BinaryAdd m b r_main h_main_mode.1 h_main_mode.2.1
-  exact equiv_ADD_with_match
-    state add_input r1 r2 rd m b r_main r_binary bus
-    promises h_main_subset h_main_mode (h_b_core r_binary) h_match
-    h_lane_rd bounds
+-- Legacy `equiv_ADD` (BinaryAdd-arm thin forwarder using
+-- op_bus_perm_sound_BinaryAdd) deleted in T4-purge P3.10.
 
 /-- **Binary-arm equiv_ADD** (T2.2 multi-provider migration).
     Takes a Valid_Binary witness with an 8-byte chain at OP_ADD and the
