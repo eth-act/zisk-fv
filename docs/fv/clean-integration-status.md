@@ -406,19 +406,32 @@ axiom.
 
 ### C8 — Mem
 
-Status: in progress. `AirsClean/Mem` now packages the existing Mem
+Status: in progress. Phase 1 (byte-lane witness extension) landed at
+commit `<HEAD>`. `AirsClean/Mem` now packages the existing Mem
 `Row`/`Constraints`/`Spec`/`Soundness` material as a Clean
 `GeneralFormalCircuit`, `Air.Flat.Component`, and minimal ensemble. The
-component covers the nine F-typed per-row Mem constraints and routes
-`spec_of_valid` through `spec_via_component`. Its Clean table assumptions are
-`True` so the ensemble remains constructible; the unused boolean/range
+component covers the nine F-typed per-row Mem constraints **plus two
+byte-pack equations** tying eight new witness columns `x0..x7` to the
+extracted PIL chunks `value_0`/`value_1`. `spec_of_valid` routes
+through `spec_via_component`. Its Clean table assumptions are `True`
+so the ensemble remains constructible; the unused boolean/range
 assumptions stay outside the component trust boundary.
 
-The memory-bus provider path is intentionally not claimed here. The Mem row
-stores two 32-bit chunks, while the current memory-bus message carries eight
-byte lanes; wiring that provider side requires an explicit byte-lane witness
-and range/packing proof against the real PIL bus shape. That belongs to the
-memory-family terminal work, not to a hidden C8 promise.
+The C8 Phase 1 byte-lane extension adds the modeling layer required
+by `SailSpec/BusEffect.lean` (which is byte-addressed: `state.mem[ptr]?`
+returns one byte at a time) without changing the extracted PIL columns.
+The byte witnesses live on the Component's row; `Bridge.lean::rowAt`
+populates them via `byteOf (v.value_i r) j := ((v.value_i r).val / 256^j) % 256`
+and feeds the corresponding byte-pack equations to `constraints_at`.
+Byte ranges are not part of the per-row polynomial Spec — they flow
+from `range_bus_sound` at Phase 2 (memory-bus provider push), the
+next step.
+
+Phase 2 (memory-bus provider channel push from Mem's Circuit) is the
+remaining C8 deliverable; it then enables T4.7 retirement of
+`main_load_emission_bundle`, `main_sext_load_emission_bundle`, and
+`lookup_consumer_matches_provider_load` once consumers route through
+Clean balance.
 
 ### C6 — Binary
 

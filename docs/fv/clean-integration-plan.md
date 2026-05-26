@@ -992,26 +992,31 @@ after all global consumers are gone.
 - ☐ T4.8 retire MemAlign permutation/ROM axioms only after direct ROM
   membership proves the same provider-row facts.
 
-T4-purge execution checklist, refined after the green `f2cb26c` checkpoint:
+T4-purge execution checklist, refined after the green `f2cb26c` checkpoint
+(retires `op_bus_permutation_sound` + `bin_ext_table_consumer_wf`):
 
-- ☐ T4.P1 add `_of_wf` write-value helpers for the six immediate shifts:
-  `SLLI`, `SRLI`, `SRAI`, `SLLIW`, `SRLIW`, `SRAIW`.
-- ☐ T4.P2 rewrite the six immediate-shift `equiv_<OP>I_of_wf` theorems to
-  call those `_of_wf` helpers.
-- ☐ T4.P3 delete the legacy shift write-value helpers, non-`_of_wf`
+- 🪓 T4.P1 add `_of_wf` write-value helpers for the six immediate shifts:
+  `SLLI`, `SRLI`, `SRAI`, `SLLIW`, `SRLIW`, `SRAIW`. Done (commit `c2046e6`).
+- 🪓 T4.P2 rewrite the six immediate-shift `equiv_<OP>I_of_wf` theorems to
+  call those `_of_wf` helpers. Done (commit `c2046e6`).
+- 🪓 T4.P3 delete the legacy shift write-value helpers, non-`_of_wf`
   BinaryExtension packed-correctness wrappers, and no-suffix legacy shift
-  `EquivCore` routes.
-- ☐ T4.P4 delete `bin_ext_table_consumer_wf` once no canonical/global closure
-  reaches it.
-- ☐ T4.P5 handle `binaryAdd_circuit_completeness` only after the
-  soundness-critical purge: prove it if retiring the BinaryAdd component
-  completeness axiom is in scope, otherwise leave it documented as
-  completeness-direction trust.
-- ☐ T4.P6 delete `op_bus_permutation_sound` and derived
+  `EquivCore` routes; swap LB/LH/LW + ADD/ADDI canonicals to the
+  static-match / via-binary forms. Done (commit `e52485e`, 80 files, 428
+  ins / 5378 del).
+- 🪓 T4.P4 delete `bin_ext_table_consumer_wf` once no canonical/global closure
+  reaches it. Done (commit `e52485e`).
+- 🪓 T4.P5 handle `binaryAdd_circuit_completeness`: kept as documented
+  completeness-direction axiom (D-COMPLETE class). V2 gate allowlist
+  added in `trust/tolerated-completeness-axioms.txt` covering all five
+  Clean `circuit.completeness` axioms (commit `fbfe959`).
+- 🪓 T4.P6 delete `op_bus_permutation_sound` and derived
   `op_bus_perm_sound_*` helpers after ADD/ADDI, LB/LH/LW, and all shift-family
-  legacy consumers are gone.
-- ☐ T4.P7 regenerate all trust ledgers and closure baselines.
-- ☐ T4.P8 run `lake build`, V1, and V2.
+  legacy consumers are gone. Done (commit `e52485e`).
+- 🪓 T4.P7 regenerate all trust ledgers and closure baselines. Done
+  (commit `e52485e`).
+- 🪓 T4.P8 run `lake build`, V1, and V2. Done — all green at commit
+  `fbfe959`.
 
 ### T5 detail — arith
 

@@ -23,8 +23,8 @@ namespace ZiskFv.AirsClean.Mem
 open Goldilocks
 open Circuit (assertZero)
 
-/-- The 9 F-typed Mem constraints emitted per row. Returns `Unit`
-    because Mem's main constraints introduce no fresh witnesses. -/
+/-- The 9 F-typed extracted Mem constraints + 2 byte-pack constraints
+    tying the 8 byte-lane witnesses to `value_0` / `value_1`. -/
 @[circuit_norm]
 def main (row : Var MemRow FGL) : Circuit FGL Unit := do
   -- sel_dual boolean
@@ -45,6 +45,10 @@ def main (row : Var MemRow FGL) : Circuit FGL Unit := do
   assertZero ((row.addr_changes * (1 - row.wr)) * row.value_0)
   -- address change without write zeros high value chunk
   assertZero ((row.addr_changes * (1 - row.wr)) * row.value_1)
+  -- value_0 byte-pack: ties the lo byte-lane witnesses to the extracted chunk
+  assertZero (row.value_0 - (row.x0 + row.x1 * 256 + row.x2 * 65536 + row.x3 * 16777216))
+  -- value_1 byte-pack: ties the hi byte-lane witnesses to the extracted chunk
+  assertZero (row.value_1 - (row.x4 + row.x5 * 256 + row.x6 * 65536 + row.x7 * 16777216))
 
 @[reducible] def memElaborated :
     ElaboratedCircuit FGL MemRow unit where
