@@ -262,24 +262,12 @@ def wf_properties (e : BinaryTableEntry FGL) : Prop :=
   ∧ wf_SEXT_00 e
   ∧ wf_SEXT_FF e
 
-/-! ## Trusted axiom
+/-! ## Trusted axiom (scheduled for retirement)
 
   Bus-protocol soundness: any row consumed (multiplicity = 1) by a Binary
-  AIR via the `bus_id = 125` lookup satisfies the per-row spec. This is the
-  trusted bridge from "the prover accepts" to "the byte-level relation
-  holds." Same role as `OperationBus.matches_entry` for `bus_id = 5000`.
-
-  NOTE (T2.4 follow-up): the canonical RV64IM theorem's closure no longer
-  reaches this axiom — it is "dead in ledger" relative to the live trust
-  surface. Full retirement is deferred to a follow-up task that cascade-
-  deletes the multiplicity-based proof stack (private byte_relation_*
-  helpers, non-_of_wf chunk lemmas, non-_of_wf h_rd_val_arith_* helpers,
-  and the orphan OLD Compliance.equiv_<OP> wrappers for SUB/AND/OR/XOR/
-  ANDI/ORI/XORI/SLT/SLTI/SLTU/SLTIU that drive them).
+  AIR via the `bus_id = 125` lookup satisfies the per-row spec.
 -/
 
-/-- **Trusted axiom (consumer-side).** Every entry the Binary AIR consumes
-    against the binary table satisfies `wf_properties`. -/
 axiom bin_table_consumer_wf
     (e : BinaryTableEntry FGL)
     (h_consumer : e.multiplicity = 1) :

@@ -178,19 +178,6 @@ def OpEnvelope.exec_eq_remaining
         = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
   | _ => True
 
-/-- Static BinaryExtension lookup witness required by the noncanonical C7
-    static route for the W-shift arms in this dispatch family. Non-W-shift
-    arms carry no obligation. -/
-def OpEnvelope.remaining_wshift_static_lookup_soundness
-    : OpEnvelope state m r_main → Prop
-  | .sllw _ _ _ _ _ _ _ .. => True
-  | .srlw _ _ _ _ _ _ _ .. => True
-  | .sraw _ _ _ _ _ _ _ .. => True
-  | .slliw _ _ _ _ _ _ .. => True
-  | .srliw _ _ _ _ _ _ .. => True
-  | .sraiw _ _ _ _ _ _ .. => True
-  | _ => True
-
 theorem zisk_riscv_compliant_program_bus_remaining
     (env : OpEnvelope state m r_main)
     (h_known_bugs : Defects.NoKnownDefect env) :
@@ -570,75 +557,5 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
   | _ => trivial
-
-/-- Noncanonical C7 static BinaryExtensionTable route for the W-shift subset of
-    the remaining dispatcher.
-
-    The canonical dispatcher above is unchanged. For non-W-shift arms this
-    theorem delegates to the existing defect-aware dispatcher, so the arithmetic
-    known-defect boundary is not copied or weakened here. -/
-theorem zisk_riscv_compliant_program_bus_remaining_wshift_of_static_lookup
-    (env : OpEnvelope state m r_main)
-    (h_known_bugs : Defects.NoKnownDefect env)
-    (offset : ℕ) (cleanEnv : Environment FGL)
-    (h_static : env.remaining_wshift_static_lookup_soundness) :
-    env.exec_eq_remaining := by
-  cases env with
-  | sllw sllw_input r1 r2 rd providerTable providerRow bus
-         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-         pins h_component h_table_spec h_provider_row h_match h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
-    exact ZiskFv.Equivalence.Sllw.equiv_SLLW state sllw_input r1 r2 rd
-      m providerTable providerRow r_main bus
-      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      pins h_component h_table_spec h_provider_row h_match h_lane_rd
-  | srlw srlw_input r1 r2 rd providerTable providerRow bus
-         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-         pins h_component h_table_spec h_provider_row h_match h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
-    exact ZiskFv.Equivalence.Srlw.equiv_SRLW state srlw_input r1 r2 rd
-      m providerTable providerRow r_main bus
-      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      pins h_component h_table_spec h_provider_row h_match h_lane_rd
-  | sraw sraw_input r1 r2 rd providerTable providerRow bus
-         h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-         h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-         h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-         pins h_component h_table_spec h_provider_row h_match h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
-    exact ZiskFv.Equivalence.Sraw.equiv_SRAW state sraw_input r1 r2 rd
-      m providerTable providerRow r_main bus
-      h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
-      h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-      h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as h_rd_idx
-      pins h_component h_table_spec h_provider_row h_match h_lane_rd
-  | slliw slliw_input r1 rd providerTable providerRow bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
-    exact ZiskFv.Equivalence.Slliw.equiv_SLLIW state slliw_input r1 rd
-      m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd
-  | srliw srliw_input r1 rd providerTable providerRow bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
-    exact ZiskFv.Equivalence.Srliw.equiv_SRLIW state srliw_input r1 rd
-      m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd
-  | sraiw sraiw_input r1 rd providerTable providerRow bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd =>
-    simp only [OpEnvelope.exec_eq_remaining, OpEnvelope.remaining_wshift_static_lookup_soundness] at h_static ⊢
-    exact ZiskFv.Equivalence.Sraiw.equiv_SRAIW state sraiw_input r1 rd
-      m providerTable providerRow r_main bus promises pins
-      h_component h_table_spec h_provider_row h_match h_lane_rd
-  | _ =>
-    exact zisk_riscv_compliant_program_bus_remaining_except_known_defects _ h_known_bugs
 
 end ZiskFv.Compliance
