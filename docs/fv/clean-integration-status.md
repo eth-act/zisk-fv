@@ -631,15 +631,16 @@ Expected trust movement from the current 92-axiom state:
   semantics are sourced from static provider rows;
 - no new soundness-critical axioms.
 
-T1.7/T1.8 audit result: these axioms are not yet globally retireable.
-`trust/baseline-equiv-axiom-deps.txt` still lists
-`op_bus_permutation_sound` in canonical closures for `ADD`, `ADDI`,
-`ADDIW`, `ADDW`, `SUBW`, and signed loads `LB/LH/LW`; it is also still in
-the global compliance closure. `bin_table_consumer_wf` remains in
-`ADDIW/ADDW/SUBW`. `bin_ext_table_consumer_wf` remains in signed loads
-`LB/LH/LW`. The shift-family BinaryExtension work is not the blocker
-anymore; the remaining consumers move to T2 BinaryAdd/add-word work and T4
-memory/signed-load work.
+T1.7/T1.8 audit result, after T2.4/T2.5 cleanup:
+`bin_table_consumer_wf` is retired from source and from the global theorem
+closure. `trust/baseline-equiv-axiom-deps.txt` still lists
+`op_bus_permutation_sound` in canonical closures for `ADD`, `ADDI`, and signed
+loads `LB/LH/LW`; it is also still in the global compliance closure.
+`ADDIW/ADDW/SUBW` now use the Clean/static Binary route and retain only the
+W-mode Binary refinements `binary_w_sext_choice_pin` and
+`binary_w_mode_carry_7_zero` besides range/transpile trust.
+`bin_ext_table_consumer_wf` remains in signed loads `LB/LH/LW`. The remaining
+consumers move to T2 BinaryAdd `ADD/ADDI` work and T4 memory/signed-load work.
 
 ### T2 — BinaryAdd and simple arithmetic-add family
 
@@ -659,10 +660,10 @@ Checklist:
   Clean BinaryAdd rows; no caller promise may restate the output value.
 - ☐ T2.3 thread canonical `ADD`/`ADDI` wrappers, `OpEnvelope` constructors,
   and dispatch through the Clean row route.
-- ☐ T2.4 classify `ADDIW/ADDW/SUBW` by actual provider/table dependency, not
+- 🪓 T2.4 classify `ADDIW/ADDW/SUBW` by actual provider/table dependency, not
   by opcode family name. Reuse the T1 lookup-aware Binary route if they
   still need BinaryTable facts.
-- ☐ T2.5 regenerate trust ledgers and record exact remaining consumers of
+- 🪓 T2.5 regenerate trust ledgers and record exact remaining consumers of
   `op_bus_permutation_sound` and `bin_table_consumer_wf`; retire either only
   if the global/V2 closure actually loses it.
 

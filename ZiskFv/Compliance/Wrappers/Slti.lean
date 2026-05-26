@@ -2,7 +2,6 @@ import Mathlib
 
 import ZiskFv.EquivCore.Slti
 import ZiskFv.EquivCore.Promises.IType
-import ZiskFv.EquivCore.Promises.BinaryHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -18,8 +17,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 # `equiv_SLTI` Compliance wrapper — Binary LT-shape ITYPE
 
-Refactored to consume per-AIR helpers from
-`Equivalence/Promises/BinaryHelpers.lean`. Trust footprint unchanged.
+Canonical wrapper delegates to the Clean/static provider core. Trust footprint is tracked by the regenerated caller-burden and axiom-closure ledgers.
 -/
 
 namespace ZiskFv.Compliance

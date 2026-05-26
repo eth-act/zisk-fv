@@ -2,7 +2,6 @@ import Mathlib
 
 import ZiskFv.EquivCore.Or
 import ZiskFv.EquivCore.Promises.RType
-import ZiskFv.EquivCore.Promises.BinaryHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -38,16 +37,9 @@ the OR-shape (and AND/XOR by symmetry) only need the
 
 ## 5-category discharge applied
 
-* **Lane-match.** Internalized by `equiv_OR` via the `Bridge.Binary`
-  discharge family (`byte_ranges_at_holds`, `byte_chain_discharge_logic`,
-  `match_clo_chi_OR`, `input_r1_packed_a`, `input_r2_packed_b`,
-  `e2_byte_ranges_discharge`). These consume the trust-ledger axioms
-  `binary_columns_in_range` (#6), `binary_per_byte_lookup_witness`
-  (#6), `binary_carry_bits_in_range` (#6), `bin_table_consumer_wf`
-  (#6), and `memory_bus_entry_byte_range_perm_sound` (#5b). The
-  wrapper-level lane-match obligation is the **existential row**
-  `r_binary` plus the `matches_entry` predicate; both come from
-  `op_bus_perm_sound_Binary` (#4).
+* **Lane-match.** Internalized by the Clean/static Binary provider route.
+  The retired multiplicity-based BinaryTable path and `bin_table_consumer_wf`
+  no longer appear in the canonical closure.
 * **Mode pins.** OR consumes one mode pin on the provider AIR:
   `(v.b_op_or_sext r_binary).val = OP_OR`. This is the gap addressed
   by the **new axiom** `binary_b_op_or_sext_eq_OP_OR` (class #6) in

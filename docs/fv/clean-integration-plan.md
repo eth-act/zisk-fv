@@ -923,9 +923,9 @@ thread canonical dispatch, then retire named trust-ledger entries only after
   Clean BinaryAdd rows; do not introduce output-value promise hypotheses.
 - ☐ T2.3 thread canonical `ADD`/`ADDI` wrappers, `OpEnvelope`, and dispatch
   through the Clean row route.
-- ☐ T2.4 classify `ADDW/SUBW/ADDIW` by actual provider/table dependency and
+- 🪓 T2.4 classify `ADDW/SUBW/ADDIW` by actual provider/table dependency and
   reuse T1's lookup-aware Binary route where needed.
-- ☐ T2.5 regenerate trust ledgers and record/retire exact remaining
+- 🪓 T2.5 regenerate trust ledgers and record/retire exact remaining
   `op_bus_permutation_sound` and `bin_table_consumer_wf` consumers by
   global/V2 closure.
 

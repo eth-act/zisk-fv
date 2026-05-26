@@ -262,17 +262,4 @@ def wf_properties (e : BinaryTableEntry FGL) : Prop :=
   ∧ wf_SEXT_00 e
   ∧ wf_SEXT_FF e
 
-/-! ## Trusted axiom (dead in canonical closure)
-
-  T2.4 retired this axiom from the canonical RV64IM theorem's closure.
-  The orphan stack of multiplicity-based helpers in `BinaryPackedCorrect.lean`
-  + `WriteValueProofs/{Arith,BinaryLogic,BinaryCompare}.lean` still
-  references it; full deletion is tracked as a follow-up.
--/
-
-axiom bin_table_consumer_wf
-    (e : BinaryTableEntry FGL)
-    (h_consumer : e.multiplicity = 1) :
-    wf_properties e
-
 end ZiskFv.Airs.Tables.BinaryTable

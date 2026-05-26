@@ -2,7 +2,6 @@ import Mathlib
 
 import ZiskFv.EquivCore.Sltu
 import ZiskFv.EquivCore.Promises.RType
-import ZiskFv.EquivCore.Promises.BinaryHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -16,8 +15,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 # `equiv_SLTU` Compliance wrapper — Binary LTU-shape (unsigned compare)
 
-Refactored to consume per-AIR helpers from
-`Equivalence/Promises/BinaryHelpers.lean`. Trust footprint unchanged.
+Canonical wrapper delegates to the Clean/static provider core. Trust footprint is tracked by the regenerated caller-burden and axiom-closure ledgers.
 -/
 
 namespace ZiskFv.Compliance

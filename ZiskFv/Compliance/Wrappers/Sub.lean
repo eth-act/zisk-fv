@@ -2,7 +2,6 @@ import Mathlib
 
 import ZiskFv.EquivCore.Sub
 import ZiskFv.EquivCore.Promises.RType
-import ZiskFv.EquivCore.Promises.BinaryHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -16,25 +15,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 # `equiv_SUB` Compliance wrapper — Binary 6-field chain shape
 
-Refactored to consume per-AIR helpers from
-`Equivalence/Promises/BinaryHelpers.lean`. The original ~200-line
-proof body collapses to a thin orchestrator:
-
-* `binary_op_disj_of_eq` — builds the 29-way op-bus disjunction
-* `binary_h_emit_op_of_matches_entry` — projects op-emission equation
-* `binary_c_lane_eqs_of_matches_entry` — projects c-lane equations
-* `binary_chain_pin_obtain_64` — unpacks the 8-byte chain bundle
-* `binary_carry_7_zero_of_chain_end_SUB` — derives `carry_7 = 0`
-* `binary_h_match_clo_of_carry_7_zero` / `binary_h_match_chi_standard`
-  — reconstruct `m.c_0` / `m.c_1`
-
-Trust footprint unchanged: same axioms as before
-(`op_bus_perm_sound_Binary`, `binary_consumer_byte_match_chain_pin`,
-`bin_table_consumer_wf`, plus `equiv_SUB`'s closure including
-`binary_per_byte_lookup_witness`, `binary_columns_in_range`,
-`binary_carry_bits_in_range`, `memory_bus_entry_byte_range_perm_sound`,
-`transpile_SUB`). Helpers consume the same axioms inline that the
-wrapper used to consume directly.
+Canonical wrapper delegates to the Clean/static provider core. The old multiplicity-based Binary helper stack and `bin_table_consumer_wf` trust path have been retired; trust footprint is tracked by the regenerated caller-burden and axiom-closure ledgers.
 -/
 
 namespace ZiskFv.Compliance

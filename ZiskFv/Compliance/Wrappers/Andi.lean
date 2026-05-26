@@ -2,7 +2,6 @@ import Mathlib
 
 import ZiskFv.EquivCore.Andi
 import ZiskFv.EquivCore.Promises.IType
-import ZiskFv.EquivCore.Promises.BinaryHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus

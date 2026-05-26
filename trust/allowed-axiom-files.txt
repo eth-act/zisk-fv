@@ -15,7 +15,6 @@
 ZiskFv/Trusted/Transpiler.lean
 
 # Bus-protocol soundness for bus_id=10 (memory bus).
-ZiskFv/Airs/MemoryBus/LaneMatch.lean
 ZiskFv/Airs/MemoryBus/MemBridge.lean
 ZiskFv/Airs/MemoryBus/MemAlignBridge.lean
 ZiskFv/Airs/MemoryBus/EntryRanges.lean

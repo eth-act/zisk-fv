@@ -2,7 +2,6 @@ import Mathlib
 
 import ZiskFv.EquivCore.Addw
 import ZiskFv.EquivCore.Promises.RType
-import ZiskFv.EquivCore.Promises.BinaryHelpers
 import ZiskFv.AirsClean.BinaryFamily.Balance
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
@@ -16,8 +15,7 @@ import ZiskFv.Compliance.SharedBundles
 /-!
 # `equiv_ADDW` Compliance wrapper — Binary W-mode 6-field chain shape
 
-Refactored to consume per-AIR helpers from
-`Equivalence/Promises/BinaryHelpers.lean`. Trust footprint unchanged.
+Canonical wrapper delegates to the Clean/static provider core. Trust footprint is tracked by the regenerated caller-burden and axiom-closure ledgers.
 -/
 
 namespace ZiskFv.Compliance
