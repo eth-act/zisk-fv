@@ -21,6 +21,8 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.EquivCore.WriteValueProofs.Arith
 import ZiskFv.EquivCore.Promises.IType
 import ZiskFv.EquivCore.Bridge.Binary
+import ZiskFv.AirsClean.BinaryAdd.Bridge
+import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Compliance.SharedBundles
 
 /-!
@@ -528,5 +530,59 @@ theorem equiv_ADDI_of_static_row
     out.pi0_ne out.pi1_ne out.pi2_ne out.pi3_ne
     out.pi4_ne out.pi5_ne out.pi6_ne out.pi7_eq
     h_match_clo h_match_chi h_lane_rd
+
+/-- **BinaryAdd-arm row-native equiv_ADDI** (T2.2c). Mirror of
+    `equiv_ADD_of_binaryadd_row` with ADD → ADDI: takes a concrete Clean
+    `BinaryAddRow` + core_every_row at row 0 + matches_entry against
+    the Clean row's emission, derives `m.m32 = 0` + `m.set_pc = 0`
+    via `transpile_ADDI`, projects to the canonical `equiv_ADDI`. -/
+theorem equiv_ADDI_of_binaryadd_row
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (addi_input : PureSpec.AddiInput)
+    (r1 rd : regidx) (imm : BitVec 12)
+    (m : Valid_Main FGL FGL)
+    (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
+        state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
+        (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
+        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
+    (_h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.BinaryAdd.opBusMessage row) 1))
+    (h_core : ZiskFv.Airs.BinaryAdd.core_every_row
+      (ZiskFv.AirsClean.BinaryAdd.validOfRow row) 0)
+    (h_main_subset : add_subset_holds m r_main)
+    (h_addi_subset :
+      ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
+        m r_main addi_input.imm)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_add⟩ := pins
+  let b := ZiskFv.AirsClean.BinaryAdd.validOfRow row
+  -- Derive m.m32 = 0 and m.set_pc = 0 from transpile_ADDI.
+  have h_tr := ZiskFv.Trusted.transpile_ADDI
+    m r_main (0 : Fin 32) (0 : Fin 32)
+    (m.b_0 r_main) (m.b_1 r_main)
+    ({ xreg := fun _ => 0#64, pc := 0#64 } : RV64State)
+    h_main_active h_main_op_add
+  obtain ⟨_, h_m32, h_set_pc, _, _, _, _, _, _, _⟩ := h_tr
+  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
+    ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
+  exact ZiskFv.EquivCore.Addi.equiv_ADDI
+    state addi_input r1 rd imm m ⟨b, fun _ => h_core⟩ r_main
+    ⟨exec_row, e0, e1, e2⟩
+    promises h_main_subset
+    ⟨h_main_active, h_main_op_add, h_m32, h_set_pc⟩
+    h_addi_subset h_lane_rd
+    ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩
 
 end ZiskFv.EquivCore.Addi
