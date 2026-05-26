@@ -1141,6 +1141,28 @@ inductive OpEnvelope
         (PureSpec.lb_state_assumptions lb_input state)
         (PureSpec.execute_LOADB_pure lb_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+  -- ============================ LB via static BinaryExtension lookup ====
+  -- T4 alternate provider arm: takes the BinaryExtension row witness
+  -- + matches_entry directly + static lookup soundness, bypassing
+  -- op_bus_perm_sound_BinaryExtension and bin_ext_table_consumer_wf.
+  | lb_via_static_match
+    (lb_input : PureSpec.LbInput)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (mem : Valid_Mem FGL FGL)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (r_binary offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B)
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+        (PureSpec.lb_state_assumptions lb_input state)
+        (PureSpec.execute_LOADB_pure lb_input).nextPC
+        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ LH ======================================
   | lh
     (lh_input : PureSpec.LhInput)
