@@ -1,5 +1,6 @@
 import ZiskFv.Compliance.OpEnvelope
 import ZiskFv.Equivalence.Add
+import ZiskFv.Equivalence.Alt.Add_via_binary
 import ZiskFv.Equivalence.Addw
 import ZiskFv.Equivalence.Subw
 
@@ -32,6 +33,9 @@ def OpEnvelope.exec_eq_add_rtypew
   | .add _ r1 r2 rd _ bus _ _ _ _ =>
       execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
+  | .add_via_binary _ r1 r2 rd bus _ _ _ _ _ _ _ _ _ =>
+      execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
+        = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   | .addw _ r1 r2 rd _ bus _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
@@ -56,6 +60,12 @@ theorem zisk_riscv_compliant_program_bus_add_rtypew
     simp only [OpEnvelope.exec_eq_add_rtypew]
     exact ZiskFv.Equivalence.Add.equiv_ADD state add_input r1 r2 rd m badd r_main bus pins
       h_main_subset h_lane_rd promises
+  | add_via_binary add_input r1 r2 rd bus pins providerTable providerRow
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises =>
+    simp only [OpEnvelope.exec_eq_add_rtypew]
+    exact ZiskFv.Equivalence.Add.equiv_ADD_via_binary
+      state add_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
   | addw addw_input r1 r2 rd _v bus pins providerTable providerRow h_component
       h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_add_rtypew]

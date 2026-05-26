@@ -16,7 +16,9 @@ import ZiskFv.Compliance.Wrappers.Bge
 import ZiskFv.Compliance.Wrappers.Bltu
 import ZiskFv.Compliance.Wrappers.Bgeu
 import ZiskFv.Compliance.Wrappers.Add
+import ZiskFv.Compliance.Wrappers.Add_via_binary
 import ZiskFv.Compliance.Wrappers.Addi
+import ZiskFv.Compliance.Wrappers.Addi_via_binary
 import ZiskFv.Compliance.Wrappers.Addw
 import ZiskFv.Compliance.Wrappers.Subw
 import ZiskFv.Compliance.Wrappers.Addiw
@@ -323,6 +325,28 @@ inductive OpEnvelope
         state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
         (PureSpec.execute_RTYPE_add_pure add_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+  -- ============================ ADD via Binary arm (alternate provider) =
+  | add_via_binary
+    (add_input : PureSpec.AddInput) (r1 r2 rd : regidx)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
+        (PureSpec.execute_RTYPE_add_pure add_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ ADDI (do-block LHS, BinaryAdd) ==========
   | addi
     (addi_input : PureSpec.AddiInput) (r1 rd : regidx) (imm : BitVec 12)
@@ -330,6 +354,29 @@ inductive OpEnvelope
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
     (h_main_subset : add_subset_holds m r_main)
+    (h_addi_subset : itype_imm_subset_holds_main m r_main addi_input.imm)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
+        state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
+        (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
+        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+  -- ============================ ADDI via Binary arm (alternate provider) =
+  | addi_via_binary
+    (addi_input : PureSpec.AddiInput) (r1 rd : regidx) (imm : BitVec 12)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
+    (providerTable : Air.Flat.Table FGL)
+    (providerRow : Array FGL)
+    (h_component :
+      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    (h_table_spec : providerTable.Spec)
+    (h_provider_row : providerRow ∈ providerTable.table)
+    (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
+      (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+            (providerTable.environment providerRow))) 1))
     (h_addi_subset : itype_imm_subset_holds_main m r_main addi_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
