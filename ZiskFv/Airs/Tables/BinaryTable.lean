@@ -262,10 +262,12 @@ def wf_properties (e : BinaryTableEntry FGL) : Prop :=
   ∧ wf_SEXT_00 e
   ∧ wf_SEXT_FF e
 
-/-! ## Trusted axiom (scheduled for retirement)
+/-! ## Trusted axiom (dead in canonical closure)
 
-  Bus-protocol soundness: any row consumed (multiplicity = 1) by a Binary
-  AIR via the `bus_id = 125` lookup satisfies the per-row spec.
+  T2.4 retired this axiom from the canonical RV64IM theorem's closure.
+  The orphan stack of multiplicity-based helpers in `BinaryPackedCorrect.lean`
+  + `WriteValueProofs/{Arith,BinaryLogic,BinaryCompare}.lean` still
+  references it; full deletion is tracked as a follow-up.
 -/
 
 axiom bin_table_consumer_wf
