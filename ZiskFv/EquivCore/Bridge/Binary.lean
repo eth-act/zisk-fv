@@ -1157,6 +1157,24 @@ lemma carry_7_zero_SUB_of_static_chain
   rw [h_flags] at h_cout_zero
   exact boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
 
+/-- Static-provider route for the ADD final-byte carry close. The final
+    ADD table row's `pos_ind = 1` branch of `wf_ADD` forces
+    `flags % 2 = 0` (overflow-into-bit-8 is discarded for the 64-bit
+    chain end); the Binary carry range then upgrades that to
+    `carry_7 = 0`. Mirror of `carry_7_zero_SUB_of_static_chain`. -/
+lemma carry_7_zero_ADD_of_static_chain
+    (v : Valid_Binary FGL FGL) (r : ℕ)
+    (out : BinaryChainStaticOut64 v r ZiskFv.Airs.Tables.BinaryTable.OP_ADD) :
+    v.carry_7 r = 0 := by
+  obtain ⟨e, h_wf, h_op, _, _, _, _, h_flags, h_pos⟩ := out.chain_7
+  obtain ⟨_, _, _, _, _, _, _, h_add, _, _, _⟩ := h_wf
+  have h_pos_one : e.pos_ind.val = 1 := by
+    rw [h_pos]
+    exact out.pi7_eq
+  have h_cout_zero : e.flags.val % 2 = 0 := (h_add h_op).2.2 h_pos_one
+  rw [h_flags] at h_cout_zero
+  exact boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
+
 private lemma c_byte_zero_of_chain_wf_LTU
     {a b c cin flags pos : FGL}
     (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf

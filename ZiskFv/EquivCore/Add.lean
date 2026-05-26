@@ -392,4 +392,89 @@ theorem equiv_ADD_of_wf
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
 
+/-- Row-native static-provider BinaryTable route for `equiv_ADD`.
+    Mirror of `equiv_SUB_of_static_row`: takes a concrete Clean
+    `BinaryRow` + `StaticBinaryTableWfFacts row` + `mode32 = 0` +
+    `b_op = OP_ADD` pins, derives the 8-byte chain via
+    `byte_chain_discharge_64_of_static_row`, the final-byte
+    `carry_7 = 0` via `carry_7_zero_ADD_of_static_chain`, projects
+    Main↔Binary c-lane matches via `matches_entry`, and delegates to
+    `equiv_ADD_of_wf`. -/
+theorem equiv_ADD_of_static_row
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (add_input : PureSpec.AddInput)
+    (r1 r2 rd : regidx)
+    (m : Valid_Main FGL FGL)
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
+        (PureSpec.execute_RTYPE_add_pure add_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+      (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+        (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
+    (h_core : ZiskFv.Airs.Binary.core_every_row
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0)
+    (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
+    (h_mode32_zero : row.mode.mode32 = 0)
+    (h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
+    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨exec_row, e0, e1, e2⟩ := bus
+  obtain ⟨h_main_active, h_main_op_add⟩ := pins
+  let v := ZiskFv.AirsClean.Binary.validOfRow row
+  have h_match_v : matches_entry (opBus_row_Main m r_main) (opBus_row_Binary v 0) := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.AirsClean.Binary.opBusMessage,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      opBus_row_Binary] using h_match
+  have out :=
+    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_64_of_static_row
+      row h_facts ZiskFv.Airs.Tables.BinaryTable.OP_ADD h_core
+      h_mode32_zero h_b_op
+  have h_carry_7_zero :=
+    ZiskFv.EquivCore.Bridge.Binary.carry_7_zero_ADD_of_static_chain
+      v 0 out
+  have h_lane_eqs := h_match_v
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_lane_eqs
+  obtain ⟨_, _, _, _, _, _, h_c_lo_m, h_c_hi_m, _, _, _, _⟩ := h_lane_eqs
+  have h_match_clo :
+      m.c_0 r_main = v.free_in_c_0 0 + v.free_in_c_1 0 * 256
+        + v.free_in_c_2 0 * 65536 + v.free_in_c_3 0 * 16777216 := by
+    rw [h_c_lo_m, h_carry_7_zero]
+    ring
+  have h_match_chi :
+      m.c_1 r_main = v.free_in_c_4 0 + v.free_in_c_5 0 * 256
+        + v.free_in_c_6 0 * 65536 + v.free_in_c_7 0 * 16777216 := by
+    rw [h_c_hi_m]
+    ring
+  exact ZiskFv.EquivCore.Add.equiv_ADD_of_wf
+    state add_input r1 r2 rd m r_main
+    ⟨exec_row, e0, e1, e2⟩
+    promises
+    v 0
+    ⟨h_main_active, h_main_op_add⟩
+    h_match_v
+    (v.free_in_c_0 0) (v.free_in_c_1 0) (v.free_in_c_2 0)
+    (v.free_in_c_3 0) (v.free_in_c_4 0) (v.free_in_c_5 0)
+    (v.free_in_c_6 0) (v.free_in_c_7 0)
+    (0 : FGL) (v.carry_0 0) (v.carry_1 0) (v.carry_2 0)
+    (v.carry_3 0) (v.carry_4 0) (v.carry_5 0) (v.carry_6 0)
+    (v.carry_0 0) (v.carry_1 0) (v.carry_2 0) (v.carry_3 0)
+    (v.carry_4 0) (v.carry_5 0) (v.carry_6 0) (v.carry_7 0)
+    (2 * v.use_first_byte 0) (0 : FGL) (0 : FGL) (v.mode32 0)
+    (0 : FGL) (0 : FGL) (0 : FGL) (1 - v.mode32 0)
+    out.chain_0 out.chain_1 out.chain_2 out.chain_3
+    out.chain_4 out.chain_5 out.chain_6 out.chain_7
+    out.c0_lt out.c1_lt out.c2_lt out.c3_lt out.c4_lt out.c5_lt out.c6_lt out.c7_lt
+    out.cin0_eq out.cin1_eq out.cin2_eq out.cin3_eq
+    out.cin4_eq out.cin5_eq out.cin6_eq out.cin7_eq
+    out.pi0_ne out.pi1_ne out.pi2_ne out.pi3_ne
+    out.pi4_ne out.pi5_ne out.pi6_ne out.pi7_eq
+    h_match_clo h_match_chi h_lane_rd
+
 end ZiskFv.EquivCore.Add
