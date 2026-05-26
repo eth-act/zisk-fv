@@ -52,11 +52,7 @@ def Assumptions (row : MemRow FGL) : Prop :=
   row.sel.val < 2 ∧ row.sel_dual.val < 2
   ∧ row.addr_changes.val < 2 ∧ row.wr.val < 2
 
-/-- Per-row Spec: the 9 extracted PIL F-typed constraints + 2 byte-pack
-    packing equations tying the 8 byte-lane witnesses (`x0..x7`) to the
-    extracted chunk columns (`value_0`, `value_1`). Byte ranges
-    (`xi.val < 256`) flow from `range_bus_sound` and are not part of
-    the per-row polynomial Spec. -/
+/-- Per-row Spec: the 9 F-typed constraints hold. -/
 def Spec (row : MemRow FGL) : Prop :=
   row.sel_dual * (1 - row.sel_dual) = 0
   ∧ (1 - row.sel) * row.sel_dual = 0
@@ -67,7 +63,5 @@ def Spec (row : MemRow FGL) : Prop :=
   ∧ row.read_same_addr - (1 - row.addr_changes) * (1 - row.wr) = 0
   ∧ (row.addr_changes * (1 - row.wr)) * row.value_0 = 0
   ∧ (row.addr_changes * (1 - row.wr)) * row.value_1 = 0
-  ∧ row.value_0 - (row.x0 + row.x1 * 256 + row.x2 * 65536 + row.x3 * 16777216) = 0
-  ∧ row.value_1 - (row.x4 + row.x5 * 256 + row.x6 * 65536 + row.x7 * 16777216) = 0
 
 end ZiskFv.AirsClean.Mem

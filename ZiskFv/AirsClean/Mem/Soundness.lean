@@ -25,16 +25,11 @@ theorem soundness (row : MemRow FGL)
     (h_wr_implies_sel : row.wr * (1 - row.sel) = 0)
     (h_read_same_addr_def : row.read_same_addr - (1 - row.addr_changes) * (1 - row.wr) = 0)
     (h_addr_change_no_write_value_0 : (row.addr_changes * (1 - row.wr)) * row.value_0 = 0)
-    (h_addr_change_no_write_value_1 : (row.addr_changes * (1 - row.wr)) * row.value_1 = 0)
-    (h_value_0_pack :
-      row.value_0 - (row.x0 + row.x1 * 256 + row.x2 * 65536 + row.x3 * 16777216) = 0)
-    (h_value_1_pack :
-      row.value_1 - (row.x4 + row.x5 * 256 + row.x6 * 65536 + row.x7 * 16777216) = 0) :
+    (h_addr_change_no_write_value_1 : (row.addr_changes * (1 - row.wr)) * row.value_1 = 0) :
     Spec row :=
   ⟨h_sel_dual_bool, h_sel_implies_sel_dual, h_sel_bool,
    h_addr_changes_bool, h_wr_bool, h_wr_implies_sel,
    h_read_same_addr_def,
-   h_addr_change_no_write_value_0, h_addr_change_no_write_value_1,
-   h_value_0_pack, h_value_1_pack⟩
+   h_addr_change_no_write_value_0, h_addr_change_no_write_value_1⟩
 
 end ZiskFv.AirsClean.Mem

@@ -28,11 +28,6 @@ namespace ZiskFv.AirsClean.Mem
 open Goldilocks
 
 
-/-- The byte witness for byte index `i` of a Goldilocks field element `f`,
-    defined as `(f.val / 256^i) % 256` lifted back to the field. -/
-@[reducible]
-def byteOf (f : FGL) (i : ℕ) : FGL := ((f.val / 256 ^ i) % 256 : ℕ)
-
 @[reducible]
 def rowAt (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ) : MemRow FGL where
   addr := v.addr r
@@ -48,17 +43,9 @@ def rowAt (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ) : MemRow FGL where
   increment_0 := v.increment_0 r
   increment_1 := v.increment_1 r
   read_same_addr := v.read_same_addr r
-  x0 := byteOf (v.value_0 r) 0
-  x1 := byteOf (v.value_0 r) 1
-  x2 := byteOf (v.value_0 r) 2
-  x3 := byteOf (v.value_0 r) 3
-  x4 := byteOf (v.value_1 r) 0
-  x5 := byteOf (v.value_1 r) 1
-  x6 := byteOf (v.value_1 r) 2
-  x7 := byteOf (v.value_1 r) 3
 
-/-- The 9 F-typed Mem row constraints + 2 byte-pack equations at row `r`,
-    expressed against a `Valid_Mem`. -/
+/-- The 9 F-typed Mem row constraints at row `r`, expressed against a
+    `Valid_Mem`. -/
 def constraints_at (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ) : Prop :=
   v.sel_dual r * (1 - v.sel_dual r) = 0
   ∧ (1 - v.sel r) * v.sel_dual r = 0
@@ -69,18 +56,10 @@ def constraints_at (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ) : Prop :=
   ∧ v.read_same_addr r - (1 - v.addr_changes r) * (1 - v.wr r) = 0
   ∧ (v.addr_changes r * (1 - v.wr r)) * v.value_0 r = 0
   ∧ (v.addr_changes r * (1 - v.wr r)) * v.value_1 r = 0
-  ∧ v.value_0 r - (byteOf (v.value_0 r) 0
-                + byteOf (v.value_0 r) 1 * 256
-                + byteOf (v.value_0 r) 2 * 65536
-                + byteOf (v.value_0 r) 3 * 16777216) = 0
-  ∧ v.value_1 r - (byteOf (v.value_1 r) 0
-                + byteOf (v.value_1 r) 1 * 256
-                + byteOf (v.value_1 r) 2 * 65536
-                + byteOf (v.value_1 r) 3 * 16777216) = 0
 
 /-- **Bridge theorem.** Given a row of a `Valid_Mem` satisfying the
-    9 Clean Component constraints + 2 byte-pack equations and the
-    boolean range assumptions, the Mem per-row Spec holds. -/
+    9 Clean Component constraints and the boolean range assumptions,
+    the Mem per-row Spec holds. -/
 theorem spec_of_valid
     (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) (r : ℕ)
     (h_assumptions : Assumptions (rowAt v r))

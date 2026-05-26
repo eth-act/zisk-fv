@@ -34,7 +34,7 @@ def circuit : GeneralFormalCircuit FGL MemRow unit :=
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
-      obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := h_holds
+      obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8⟩ := h_holds
       exact ⟨ by simpa only [sub_eq_add_neg] using h0
             , by simpa only [sub_eq_add_neg] using h1
             , by simpa only [sub_eq_add_neg] using h2
@@ -43,9 +43,7 @@ def circuit : GeneralFormalCircuit FGL MemRow unit :=
             , by simpa only [sub_eq_add_neg] using h5
             , by simpa only [sub_eq_add_neg] using h6
             , by simpa only [sub_eq_add_neg] using h7
-            , by simpa only [sub_eq_add_neg] using h8
-            , by simpa only [sub_eq_add_neg] using h9
-            , by simpa only [sub_eq_add_neg] using h10 ⟩
+            , by simpa only [sub_eq_add_neg] using h8 ⟩
     completeness := by
       circuit_proof_start
       simpa only [Spec, sub_eq_add_neg] using h_assumptions }
@@ -74,15 +72,7 @@ theorem spec_via_component (row : MemRow FGL)
       previous_step := .const row.previous_step
       increment_0 := .const row.increment_0
       increment_1 := .const row.increment_1
-      read_same_addr := .const row.read_same_addr
-      x0 := .const row.x0
-      x1 := .const row.x1
-      x2 := .const row.x2
-      x3 := .const row.x3
-      x4 := .const row.x4
-      x5 := .const row.x5
-      x6 := .const row.x6
-      x7 := .const row.x7 }
+      read_same_addr := .const row.read_same_addr }
     row ?_ ?_
   · rfl
   · simpa only [Spec, sub_eq_add_neg] using h_constraints
