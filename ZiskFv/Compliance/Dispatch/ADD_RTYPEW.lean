@@ -56,10 +56,12 @@ theorem zisk_riscv_compliant_program_bus_add_rtypew
     simp only [OpEnvelope.exec_eq_add_rtypew]
     exact ZiskFv.Equivalence.Add.equiv_ADD state add_input r1 r2 rd m badd r_main bus pins
       h_main_subset h_lane_rd promises
-  | addw addw_input r1 r2 rd v bus pins _providerTable _providerRow _h_component
-      _h_table_spec _h_provider_row _h_match_static h_lane_rd promises =>
+  | addw addw_input r1 r2 rd _v bus pins providerTable providerRow h_component
+      h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_add_rtypew]
-    exact ZiskFv.Equivalence.Addw.equiv_ADDW state addw_input r1 r2 rd m v r_main bus pins h_lane_rd promises
+    exact ZiskFv.Equivalence.Addw.equiv_ADDW
+      state addw_input r1 r2 rd m providerTable providerRow r_main bus pins
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises
   | subw subw_input r1 r2 rd _v bus pins providerTable providerRow h_component
       h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_add_rtypew]

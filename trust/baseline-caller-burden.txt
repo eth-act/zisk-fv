@@ -12,17 +12,17 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 955
+# Total rows: 965
 # Category bridge: 66
 # Category bus_shape: 27
 # Category entry: 9
 # Category match: 6
-# Category other: 604
+# Category other: 616
 # Category range: 6
 # Category row: 57
 # Category state: 73
 # Category transpile: 25
-# Category validator: 82
+# Category validator: 80
 #
 ZiskFv.Equivalence.Add.equiv_ADD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Add.equiv_ADD 001 add_input [other] PureSpec.AddInput
@@ -57,25 +57,35 @@ ZiskFv.Equivalence.Addiw.equiv_ADDIW 002 r1 [other] regidx
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 003 rd [other] regidx
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 004 imm [other] BitVec 12
 ZiskFv.Equivalence.Addiw.equiv_ADDIW 005 m [validator] Valid_Main FGL FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 006 v [validator] Valid_Binary FGL FGL
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 007 r_main [row] ℕ
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 008 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 010 h_addiw_subset [other] itype_imm_subset_holds_main m r_main addiw_input.imm
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 011 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
-ZiskFv.Equivalence.Addiw.equiv_ADDIW 012 promises [bridge] ZiskFv.EquivCore.Promises.ITypePromises state addiw_input.r1_val addiw_input.imm
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 006 providerTable [other] Air.Flat.Table FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 007 providerRow [other] Array FGL
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 008 r_main [row] ℕ
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 009 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 011 h_addiw_subset [other] itype_imm_subset_holds_main m r_main addiw_input.imm
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 012 h_component [other] providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 013 h_table_spec [other] providerTable.Spec
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 014 h_provider_row [other] providerRow ∈ providerTable.table
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 015 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 016 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Equivalence.Addiw.equiv_ADDIW 017 promises [bridge] ZiskFv.EquivCore.Promises.ITypePromises state addiw_input.r1_val addiw_input.imm
 ZiskFv.Equivalence.Addw.equiv_ADDW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Addw.equiv_ADDW 001 addw_input [other] PureSpec.AddwInput
 ZiskFv.Equivalence.Addw.equiv_ADDW 002 r1 [other] regidx
 ZiskFv.Equivalence.Addw.equiv_ADDW 003 r2 [other] regidx
 ZiskFv.Equivalence.Addw.equiv_ADDW 004 rd [other] regidx
 ZiskFv.Equivalence.Addw.equiv_ADDW 005 m [validator] Valid_Main FGL FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 006 v [validator] Valid_Binary FGL FGL
-ZiskFv.Equivalence.Addw.equiv_ADDW 007 r_main [row] ℕ
-ZiskFv.Equivalence.Addw.equiv_ADDW 008 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Equivalence.Addw.equiv_ADDW 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W
-ZiskFv.Equivalence.Addw.equiv_ADDW 010 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
-ZiskFv.Equivalence.Addw.equiv_ADDW 011 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state addw_input.r1_val addw_input.r2_va
+ZiskFv.Equivalence.Addw.equiv_ADDW 006 providerTable [other] Air.Flat.Table FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 007 providerRow [other] Array FGL
+ZiskFv.Equivalence.Addw.equiv_ADDW 008 r_main [row] ℕ
+ZiskFv.Equivalence.Addw.equiv_ADDW 009 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Equivalence.Addw.equiv_ADDW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_ADD_W
+ZiskFv.Equivalence.Addw.equiv_ADDW 011 h_component [other] providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+ZiskFv.Equivalence.Addw.equiv_ADDW 012 h_table_spec [other] providerTable.Spec
+ZiskFv.Equivalence.Addw.equiv_ADDW 013 h_provider_row [other] providerRow ∈ providerTable.table
+ZiskFv.Equivalence.Addw.equiv_ADDW 014 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Addw.equiv_ADDW 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Equivalence.Addw.equiv_ADDW 016 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state addw_input.r1_val addw_input.r2_va
 ZiskFv.Equivalence.And.equiv_AND 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.And.equiv_AND 001 and_input [other] PureSpec.AndInput
 ZiskFv.Equivalence.And.equiv_AND 002 r1 [other] regidx

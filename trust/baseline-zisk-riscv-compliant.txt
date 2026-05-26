@@ -25,7 +25,7 @@
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
 # artefacts under `.lake/build/`). Last regenerated: 2026-05-25.
 #
-# Total entries: 92
+# Total entries: 90
 #
 ZiskFv.Airs.Arith.arith_div_nb_eq_msb_of_divisor
 ZiskFv.Airs.Arith.arith_div_np_eq_msb_of_dividend
@@ -40,7 +40,6 @@ ZiskFv.Airs.Arith.arith_mul_table_lookup_sound
 ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_d_sign_pin
 ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin
 ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin
-ZiskFv.Airs.Binary.binary_consumer_byte_match_chain_pin
 ZiskFv.Airs.Binary.binary_w_mode_carry_7_zero
 ZiskFv.Airs.Binary.binary_w_sext_choice_pin
 ZiskFv.Airs.MemoryBus.MemAlignBridge.mem_align_rom_subdoubleword_load_value_1_zero
@@ -54,7 +53,6 @@ ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_subword
 ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
 ZiskFv.Airs.OperationBus.op_bus_permutation_sound
 ZiskFv.Airs.Tables.BinaryExtensionTable.bin_ext_table_consumer_wf
-ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf
 ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness
 ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
 ZiskFv.AirsClean.BinaryAdd.binaryAdd_circuit_completeness

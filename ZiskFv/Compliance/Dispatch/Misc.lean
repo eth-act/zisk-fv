@@ -91,11 +91,13 @@ theorem zisk_riscv_compliant_program_bus_misc
     simp only [OpEnvelope.exec_eq_misc]
     exact ZiskFv.Equivalence.Addi.equiv_ADDI state addi_input r1 rd imm m badd r_main bus
       pins h_main_subset h_addi_subset h_lane_rd promises
-  | addiw addiw_input r1 rd imm v bus pins h_addiw_subset _providerTable _providerRow
-      _h_component _h_table_spec _h_provider_row _h_match_static h_lane_rd promises =>
+  | addiw addiw_input r1 rd imm _v bus pins h_addiw_subset providerTable providerRow
+      h_component h_table_spec h_provider_row h_match_static h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_misc]
-    exact ZiskFv.Equivalence.Addiw.equiv_ADDIW state addiw_input r1 rd imm m v r_main bus
-      pins h_addiw_subset h_lane_rd promises
+    exact ZiskFv.Equivalence.Addiw.equiv_ADDIW
+      state addiw_input r1 rd imm m providerTable providerRow r_main bus pins
+      h_addiw_subset h_component h_table_spec h_provider_row h_match_static
+      h_lane_rd promises
   | _ => trivial
 
 /-- Noncanonical C7 static BinaryExtensionTable route for the signed-load subset
