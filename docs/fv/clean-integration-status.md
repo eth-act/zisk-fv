@@ -734,23 +734,55 @@ when closure proves they are no longer needed.
 
 Checklist:
 
-- ☐ T3.1 classify each control-flow opcode by channel use:
+- 🪓 T3.1 classify each control-flow opcode by channel use:
   no memory, register write, PC/state handshake, memory-bus side effect.
+  Audit findings: branches (BEQ/BNE/BLT/BGE/BLTU/BGEU) and FENCE have
+  empty axiom-deps and zero hypothesis binders — already at the
+  row-native bar. LUI/AUIPC/JAL/JALR depend only on core Main axioms
+  (`main_store_pc_emission_bundle`, `range_bus_sound`, per-opcode
+  `transpile_*`) that retire family-terminal in T6/T7 (range bus) or
+  are irreducible (transpile); no axiom retirement is reachable in T3.
 - ☐ T3.2 expose Main/control-flow row facts from Clean Main rather than
-  hand-rolled Main pin bundles where possible.
-- ☐ T3.3 thread branch opcodes through row-native Main/control-flow routes.
-- ☐ T3.4 thread `JAL/JALR/LUI/AUIPC` through row-native routes, preserving
-  their memory/register-write bus-effect shape.
-- ☐ T3.5 keep `FENCE` under `h_known_bugs` until the documented ZisK FENCE
-  support defect is resolved; do not silently exclude it.
-- ☐ T3.6 regenerate trust ledgers and record any remaining Main/control-flow
+  hand-rolled Main pin bundles where possible. **Deferred** — depends
+  on Main migrating to a Clean `Air.Flat.Component` (out of scope for
+  this milestone; tracked separately).
+- 🪓 T3.3 thread branch opcodes through row-native Main/control-flow routes.
+  Verified: all six branch wrappers are pure pass-throughs over a
+  single `BranchPromises` bundle with no `h_*` binders and empty
+  `baseline-equiv-axiom-deps` lines.
+- 🪓 T3.4 thread `JAL/JALR/LUI/AUIPC` through row-native routes, preserving
+  their memory/register-write bus-effect shape. Removed the caller-
+  supplied `h_lo_bound : (m.pc + offset : FGL).val < 2^32` from all
+  three jump/U-type non-LUI opcodes by deriving it row-natively from
+  `memory_entry_lo_val_lt_2_32` (Class #4 byte-range, derived from
+  `range_bus_sound`) combined with the JAL/JALR/AUIPC collapses of
+  `store_pc_lanes_match_lo`. Net `baseline-hypothesis-count`
+  reduction: AUIPC 16→15 (hyp 4→3), JAL 19→18 (hyp 6→5),
+  JALR 23→22 (hyp 8→7); aggregate 988→985 / 299→296. LUI's only
+  hypothesis (`h_lui_subset`) is a constructibility witness that
+  cannot be derived from the row alone; remaining Sail-side bounds
+  (`h_pc_bound`, `h_pc_offset_lt_2_32`, `h_input_*`) are caller-burden
+  that the wrapper genuinely cannot supply without additional Sail-
+  state structure.
+- 🪓 T3.5 keep `FENCE` under `h_known_bugs` until the documented ZisK FENCE
+  support defect is resolved; do not silently exclude it. Verified:
+  `Equivalence.Fence.equiv_FENCE` already takes zero `h_*` binders
+  and has an empty axiom-deps line — the defect framework keeps the
+  semantic obligation in `Defects.NoKnownDefect`, not in the
+  canonical's signature.
+- 🪓 T3.6 regenerate trust ledgers and record any remaining Main/control-flow
   bus-shape or op-bus consumers instead of claiming retirement early.
+  Done: `baseline-{equiv-axiom-deps,caller-burden,hypothesis-count}.txt`
+  regenerated; no axiom retired (per T3.1 finding); both V1 and V2
+  gates green.
 
 Expected trust movement:
 
-- likely smaller than Binary/Memory/Arith;
-- may retire Main-side bus-shape/emission trust if those facts are no
-  longer needed by any canonical control-flow theorem.
+- no axiom retired (none was retire-able in T3 — see T3.1 finding);
+- caller-burden ledger shrank by three lines on AUIPC/JAL/JALR;
+- the remaining `main_store_pc_emission_bundle` consumers across
+  AUIPC/JAL/JALR/store-PC paths are unchanged, leaving a clean
+  T6/T7 family-terminal retirement target.
 
 ### T4 — Memory-family terminal phase
 

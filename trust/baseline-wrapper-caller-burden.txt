@@ -12,14 +12,14 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 1019
+# Total rows: 1016
 # Total wrappers: 63
 # Category bridge: 66
 # Category bus_shape: 27
 # Category entry: 9
 # Category match: 6
 # Category other: 667
-# Category range: 6
+# Category range: 3
 # Category row: 60
 # Category state: 73
 # Category transpile: 25
@@ -144,8 +144,7 @@ ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 010 pins [other] ZiskFv.Compliance.
 ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 011 h_auipc_subset [other] auipc_subset_holds m r_main next_pc
 ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 012 promises [transpile] ZiskFv.EquivCore.Promises.UTypePromises state auipc_input.imm auipc_input.rd aui
 ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 013 h_no_wrap [other] auipc_input.PC.toNat + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12)
-ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 014 h_lo_bound [range] (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296
-ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 015 h_pc_offset_lt_2_32 [range] (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toN
+ZiskFv.Compliance.Wrappers.Auipc.equiv_AUIPC 014 h_pc_offset_lt_2_32 [range] (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toN
 ZiskFv.Compliance.Wrappers.Beq.equiv_BEQ 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Beq.equiv_BEQ 001 beq_input [other] PureSpec.BeqInput
 ZiskFv.Compliance.Wrappers.Beq.equiv_BEQ 002 ops [other] ZiskFv.Compliance.BranchInstrOperands
@@ -289,8 +288,7 @@ ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 013 promises [transpile] ZiskFv.EquivCo
 ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 014 h_input_imm [other] jal_input.imm = imm
 ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 015 h_not_throws [other] (PureSpec.execute_JAL_pure jal_input).throws = false
 ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 016 h_pc_bound [other] jal_input.PC.toNat < GL_prime - 4
-ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 017 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
-ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 018 h_pc_offset_lt_2_32 [range] (jal_input.PC + 4#64).toNat < 4294967296
+ZiskFv.Compliance.Wrappers.Jal.equiv_JAL 017 h_pc_offset_lt_2_32 [range] (jal_input.PC + 4#64).toNat < 4294967296
 ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 001 jalr_input [other] PureSpec.JalrInput
 ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 002 imm [other] BitVec 12
@@ -312,8 +310,7 @@ ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 017 h_input_rs1 [state] read_xreg (re
 ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 018 h_cur_privilege [other] Sail.readReg Register.cur_privilege state = EStateM.Result.ok Privilege.Machine 
 ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 019 h_mseccfg [other] Sail.readReg Register.mseccfg state = EStateM.Result.ok mseccfg state
 ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 020 h_pc_bound [other] jalr_input.PC.toNat < GL_prime - 4
-ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 021 h_lo_bound [range] (m.pc r_main + 4 : FGL).val < 4294967296
-ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 022 h_pc_offset_lt_2_32 [range] (jalr_input.PC + 4#64).toNat < 4294967296
+ZiskFv.Compliance.Wrappers.Jalr.equiv_JALR 021 h_pc_offset_lt_2_32 [range] (jalr_input.PC + 4#64).toNat < 4294967296
 ZiskFv.Compliance.Wrappers.Lb.equiv_LB 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Lb.equiv_LB 001 lb_input [other] PureSpec.LbInput
 ZiskFv.Compliance.Wrappers.Lb.equiv_LB 002 regs [other] ZiskFv.Compliance.ModeRegsFull

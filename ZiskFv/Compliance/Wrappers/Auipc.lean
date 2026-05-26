@@ -48,7 +48,6 @@ theorem equiv_AUIPC
     (h_no_wrap : auipc_input.PC.toNat
       + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < GL_prime)
-    (h_lo_bound : (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296) :
@@ -59,6 +58,6 @@ theorem equiv_AUIPC
       m r_main next_pc pins.main_active pins.main_op h_auipc_subset
   ZiskFv.EquivCore.Auipc.equiv_AUIPC state auipc_input imm rd
     exec_row e_rd nextPC_val m r_main next_pc
-    promises h_circuit h_no_wrap h_lo_bound h_pc_offset_lt_2_32
+    promises h_circuit h_no_wrap h_pc_offset_lt_2_32
 
 end ZiskFv.Compliance

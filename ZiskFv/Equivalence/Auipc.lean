@@ -43,13 +43,12 @@ theorem equiv_AUIPC
     (h_no_wrap : auipc_input.PC.toNat
       + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < GL_prime)
-    (h_lo_bound : (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296)
     : execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_AUIPC state auipc_input imm rd exec_row e_rd nextPC_val m r_main next_pc pins h_auipc_subset promises h_no_wrap h_lo_bound h_pc_offset_lt_2_32
+  exact ZiskFv.Compliance.equiv_AUIPC state auipc_input imm rd exec_row e_rd nextPC_val m r_main next_pc pins h_auipc_subset promises h_no_wrap h_pc_offset_lt_2_32
 
 end ZiskFv.Equivalence.Auipc

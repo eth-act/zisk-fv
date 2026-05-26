@@ -259,7 +259,6 @@ inductive OpEnvelope
     (h_no_wrap : auipc_input.PC.toNat
       + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < GL_prime)
-    (h_lo_bound : (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296) : OpEnvelope state m r_main
@@ -282,7 +281,6 @@ inductive OpEnvelope
     (h_input_imm : jal_input.imm = imm)
     (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
     (h_pc_bound : jal_input.PC.toNat < GL_prime - 4)
-    (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296) : OpEnvelope state m r_main
   -- ============================ JALR (1 mem entry, do-block) ============
   | jalr
@@ -309,7 +307,6 @@ inductive OpEnvelope
     (h_mseccfg : Sail.readReg Register.mseccfg state
       = EStateM.Result.ok mseccfg state)
     (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
-    (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) : OpEnvelope state m r_main
   -- ============================ ADD via Binary arm (sole provider after T4-purge) =
   | add_via_binary

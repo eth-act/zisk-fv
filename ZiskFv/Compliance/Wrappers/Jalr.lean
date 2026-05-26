@@ -56,7 +56,6 @@ theorem equiv_JALR
     (h_mseccfg : Sail.readReg Register.mseccfg state
       = EStateM.Result.ok mseccfg state)
     (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
-    (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) :
     (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -69,6 +68,6 @@ theorem equiv_JALR
     state jalr_input imm rs1 rd misa_val mseccfg
     exec_row e_rd nextPC_val m r_main next_pc
     promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
-    h_circuit h_pc_bound h_lo_bound h_pc_offset_lt_2_32
+    h_circuit h_pc_bound h_pc_offset_lt_2_32
 
 end ZiskFv.Compliance

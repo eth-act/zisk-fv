@@ -110,7 +110,6 @@ theorem equiv_AUIPC
     (h_no_wrap : auipc_input.PC.toNat
       + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < GL_prime)
-    (h_lo_bound : (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 :
       (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
         < 4294967296)
@@ -125,6 +124,22 @@ theorem equiv_AUIPC
   obtain ⟨h_lane_lo, h_lane_hi⟩ :=
     ZiskFv.EquivCore.Bridge.ControlFlow.auipc_discharge_lanes
       m r_main next_pc e_rd h_circuit h_rd_mult h_rd_as
+  -- Derive `h_lo_bound` row-natively from the byte-pack range bound
+  -- combined with AUIPC's collapse of the lane-match equation
+  -- (`store_pc = 1`; offset = `m.jmp_offset2 r_main`). Replaces a
+  -- caller-supplied hypothesis.
+  have h_lo_bound :
+      (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296 := by
+    have h_sv := ZiskFv.ZiskCircuit.AddUpperImmediatePC.auipc_store_value_lo
+      m r_main next_pc h_circuit
+    have h_eq : ZiskFv.Airs.MemoryBus.memory_entry_lo e_rd
+                  = m.pc r_main + m.jmp_offset2 r_main := by
+      have hl := h_lane_lo
+      simp only [ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo] at hl
+      rw [h_sv] at hl
+      exact hl
+    rw [← h_eq]
+    exact ZiskFv.Airs.MemoryBus.memory_entry_lo_val_lt_2_32 e_rd
   -- Discharge `h_offset_bridge` via `transpile_AUIPC` (trust class #1).
   -- `h_no_wrap` gives `PC + signExt < GL_prime`; since `PC.toNat ≥ 0`,
   -- we deduce `signExt < GL_prime` (the no-wrap bound on the offset

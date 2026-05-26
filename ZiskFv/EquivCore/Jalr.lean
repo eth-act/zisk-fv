@@ -146,7 +146,6 @@ theorem equiv_JALR
     -- Discharge parameters
     (h_circuit : ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc)
     (h_pc_bound : jalr_input.PC.toNat < GL_prime - 4)
-    (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 : (jalr_input.PC + 4#64).toNat < 4294967296) :
     (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -164,6 +163,19 @@ theorem equiv_JALR
   obtain ⟨h_lane_lo, h_lane_hi⟩ :=
     ZiskFv.EquivCore.Bridge.ControlFlow.jalr_discharge_lanes
       m r_main next_pc e_rd h_circuit h_rd_mult h_rd_as
+  -- Derive `h_lo_bound` row-natively from the byte-pack range bound
+  -- combined with JALR's collapse of the lane-match equation
+  -- (`store_pc = 1`, `jmp_offset2 = 4`). Replaces a caller-supplied
+  -- hypothesis.
+  have h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296 := by
+    have h_sv := ZiskFv.ZiskCircuit.Jalr.jalr_store_value m r_main next_pc h_circuit
+    have h_eq : ZiskFv.Airs.MemoryBus.memory_entry_lo e_rd = m.pc r_main + 4 := by
+      have hl := h_lane_lo
+      simp only [ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo] at hl
+      rw [h_sv, h_jmp2] at hl
+      exact hl
+    rw [← h_eq]
+    exact ZiskFv.Airs.MemoryBus.memory_entry_lo_val_lt_2_32 e_rd
   have h_rd_val :=
     ZiskFv.EquivCore.WriteValueProofs.JumpUType.h_rd_val_jut_jalr
       jalr_input.PC m r_main next_pc e_rd

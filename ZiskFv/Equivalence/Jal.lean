@@ -45,11 +45,10 @@ theorem equiv_JAL
     (h_input_imm : jal_input.imm = imm)
     (h_not_throws : (PureSpec.execute_JAL_pure jal_input).throws = false)
     (h_pc_bound : jal_input.PC.toNat < 18446744069414584321 - 4)
-    (h_lo_bound : ↑(m.pc r_main + 4) < 4294967296)
     (h_pc_offset_lt_2_32 : (jal_input.PC + 4#64).toNat < 4294967296)
     : execute_instruction (instruction.JAL (imm, rd)) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_JAL state jal_input imm rd misa_val m r_main next_pc exec_row e_rd nextPC_val pins h_jal_subset promises h_input_imm h_not_throws h_pc_bound h_lo_bound h_pc_offset_lt_2_32
+  exact ZiskFv.Compliance.equiv_JAL state jal_input imm rd misa_val m r_main next_pc exec_row e_rd nextPC_val pins h_jal_subset promises h_input_imm h_not_throws h_pc_bound h_pc_offset_lt_2_32
 
 end ZiskFv.Equivalence.Jal

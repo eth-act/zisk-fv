@@ -944,16 +944,33 @@ after all global consumers are gone.
 
 ### T3 detail — control-flow/no-memory
 
-- ☐ T3.1 classify branch, jump, U-type, and `FENCE` channel use.
+- 🪓 T3.1 classify branch, jump, U-type, and `FENCE` channel use. Done.
+  Branches + FENCE already row-native (empty axiom-deps, hyp=0).
+  LUI/AUIPC/JAL/JALR depend only on core Main axioms that retire
+  family-terminal in T6/T7 (range bus) or are irreducible
+  (transpile). No axiom-retirement opportunity in T3.
 - ☐ T3.2 expose Main/control-flow row facts from Clean Main rather than
-  hand-rolled Main pin bundles where possible.
-- ☐ T3.3 thread branch opcodes through row-native Main/control-flow routes.
-- ☐ T3.4 thread `JAL/JALR/LUI/AUIPC` through row-native routes while
-  preserving register-write/memory-bus shape.
-- ☐ T3.5 keep `FENCE` under `h_known_bugs` until the documented ZisK FENCE
-  support defect is resolved.
-- ☐ T3.6 regenerate trust ledgers and record exact remaining Main/control-flow
-  bus-shape or op-bus consumers.
+  hand-rolled Main pin bundles where possible. **Deferred** —
+  depends on a Clean `Air.Flat.Component` migration of Main
+  (separate epic).
+- 🪓 T3.3 thread branch opcodes through row-native Main/control-flow routes.
+  Done (verified — pre-existing state).
+- 🪓 T3.4 thread `JAL/JALR/LUI/AUIPC` through row-native routes while
+  preserving register-write/memory-bus shape. Done.
+  Internalized `h_lo_bound` for AUIPC/JAL/JALR via the new
+  `memory_entry_lo_val_lt_2_32` helper (Class #4 byte-range derived
+  from `range_bus_sound`) combined with the JAL/JALR/AUIPC collapses
+  of `store_pc_lanes_match_lo`. Per-opcode hypothesis-count delta:
+  AUIPC 16→15, JAL 19→18, JALR 23→22 (aggregate 988→985 /
+  299→296). LUI's lone hypothesis (`h_lui_subset`) is a
+  constructibility witness, not derivable from the row alone.
+- 🪓 T3.5 keep `FENCE` under `h_known_bugs` until the documented ZisK FENCE
+  support defect is resolved. Done (verified — already structured
+  this way).
+- 🪓 T3.6 regenerate trust ledgers and record exact remaining Main/control-flow
+  bus-shape or op-bus consumers. Done — no axiom retired (per T3.1
+  finding); `baseline-{equiv-axiom-deps,caller-burden,hypothesis-count}.txt`
+  regenerated; both V1 + V2 gates green.
 
 ### T4 detail — memory
 
