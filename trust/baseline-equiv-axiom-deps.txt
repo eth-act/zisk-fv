@@ -57,7 +57,7 @@ ZiskFv.Equivalence.Srli.equiv_SRLI: ZiskFv.Channels.RangeBusSoundness.range_bus_
 ZiskFv.Equivalence.Srliw.equiv_SRLIW: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SRLIW
 ZiskFv.Equivalence.Srlw.equiv_SRLW: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SRLW
 ZiskFv.Equivalence.Sub.equiv_SUB: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SUB
-ZiskFv.Equivalence.Subw.equiv_SUBW: ZiskFv.Airs.Binary.binary_consumer_byte_match_chain_pin, ZiskFv.Airs.Binary.binary_w_mode_carry_7_zero, ZiskFv.Airs.Binary.binary_w_sext_choice_pin, ZiskFv.Airs.OperationBus.op_bus_permutation_sound, ZiskFv.Airs.Tables.BinaryTable.bin_table_consumer_wf, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SUBW
+ZiskFv.Equivalence.Subw.equiv_SUBW: ZiskFv.Airs.Binary.binary_w_mode_carry_7_zero, ZiskFv.Airs.Binary.binary_w_sext_choice_pin, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SUBW
 ZiskFv.Equivalence.Sw.equiv_SW: ZiskFv.Airs.MemoryBus.MemBridge.main_store_emission_bundle_subword, ZiskFv.PlatformScope.pmaCheck_is_pure_none, ZiskFv.PlatformScope.pmpCheck_is_pure_none, ZiskFv.PlatformScope.within_clint_is_false, ZiskFv.Trusted.transpile_SW
 ZiskFv.Equivalence.Xor.equiv_XOR: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_XOR
 ZiskFv.Equivalence.Xori.equiv_XORI: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_XORI

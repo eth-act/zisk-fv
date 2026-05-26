@@ -12,17 +12,17 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 950
+# Total rows: 955
 # Category bridge: 66
 # Category bus_shape: 27
 # Category entry: 9
 # Category match: 6
-# Category other: 598
+# Category other: 604
 # Category range: 6
 # Category row: 57
 # Category state: 73
 # Category transpile: 25
-# Category validator: 83
+# Category validator: 82
 #
 ZiskFv.Equivalence.Add.equiv_ADD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Add.equiv_ADD 001 add_input [other] PureSpec.AddInput
@@ -923,12 +923,17 @@ ZiskFv.Equivalence.Subw.equiv_SUBW 002 r1 [other] regidx
 ZiskFv.Equivalence.Subw.equiv_SUBW 003 r2 [other] regidx
 ZiskFv.Equivalence.Subw.equiv_SUBW 004 rd [other] regidx
 ZiskFv.Equivalence.Subw.equiv_SUBW 005 m [validator] Valid_Main FGL FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 006 v [validator] Valid_Binary FGL FGL
-ZiskFv.Equivalence.Subw.equiv_SUBW 007 r_main [row] ℕ
-ZiskFv.Equivalence.Subw.equiv_SUBW 008 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Equivalence.Subw.equiv_SUBW 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB_W
-ZiskFv.Equivalence.Subw.equiv_SUBW 010 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
-ZiskFv.Equivalence.Subw.equiv_SUBW 011 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state subw_input.r1_val subw_input.r2_va
+ZiskFv.Equivalence.Subw.equiv_SUBW 006 providerTable [other] Air.Flat.Table FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 007 providerRow [other] Array FGL
+ZiskFv.Equivalence.Subw.equiv_SUBW 008 r_main [row] ℕ
+ZiskFv.Equivalence.Subw.equiv_SUBW 009 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Equivalence.Subw.equiv_SUBW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB_W
+ZiskFv.Equivalence.Subw.equiv_SUBW 011 h_component [other] providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent
+ZiskFv.Equivalence.Subw.equiv_SUBW 012 h_table_spec [other] providerTable.Spec
+ZiskFv.Equivalence.Subw.equiv_SUBW 013 h_provider_row [other] providerRow ∈ providerTable.table
+ZiskFv.Equivalence.Subw.equiv_SUBW 014 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main 
+ZiskFv.Equivalence.Subw.equiv_SUBW 015 h_lane_rd [other] ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2
+ZiskFv.Equivalence.Subw.equiv_SUBW 016 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state subw_input.r1_val subw_input.r2_va
 ZiskFv.Equivalence.Sw.equiv_SW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Sw.equiv_SW 001 sw_input [other] PureSpec.SwInput
 ZiskFv.Equivalence.Sw.equiv_SW 002 regs [other] ZiskFv.Compliance.ModeRegsFull
