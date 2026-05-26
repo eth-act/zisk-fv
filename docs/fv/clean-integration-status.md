@@ -653,16 +653,43 @@ the remaining T1 audit consumers: `ADD`, `ADDI`, `ADDIW`, `ADDW`, and
 
 Checklist:
 
-- ☐ T2.1 expose/load-bearing BinaryAdd component row facts through the same
+- ✅ T2.1 expose/load-bearing BinaryAdd component row facts through the same
   singleton-channel row extractor pattern used in T1, including an evaluated
   Clean op-bus message bridge back to legacy `matches_entry`.
-- ☐ T2.2 add row-native `ADD`/`ADDI` write-value bridges for the real
-  two-provider shape at `OP_ADD = 10`: the existing BinaryAdd arm plus the
-  alternate lookup-aware Binary arm. No caller promise may restate the output
-  value.
-- ☐ T2.3 thread canonical `ADD`/`ADDI` wrappers, `OpEnvelope` constructors,
-  and dispatch through the Clean row route by case-splitting on the
-  `BinaryAdd | Binary` provider result.
+- ✅ T2.2 added row-native `ADD`/`ADDI` write-value bridges for both
+  provider arms at `OP_ADD = 10`: the existing BinaryAdd arm plus the new
+  alternate lookup-aware Binary arm. Specifically:
+  * `equiv_ADD_of_static_row` / `equiv_ADDI_of_static_row` (Binary arm,
+    EquivCore) — routes through `byte_chain_discharge_64_of_static_row` +
+    `carry_7_zero_ADD_of_static_chain`.
+  * `equiv_ADD_of_binaryadd_row` / `equiv_ADDI_of_binaryadd_row`
+    (BinaryAdd arm, EquivCore) — routes through `equiv_*_with_match`.
+  * `equiv_ADD_with_match` / `equiv_ADDI_with_match` — row-explicit
+    canonical body that takes `r_binary` + `h_match` as parameters, and
+    `add_discharge_with_match` — variant of `add_discharge` that
+    bypasses `op_bus_perm_sound_BinaryAdd`.
+  * `AirsClean.BinaryAdd.validOfRow` — Clean row → Valid_BinaryAdd
+    projection mirroring `AirsClean.Binary.validOfRow`.
+- ✅ T2.3 dispatcher arms for `ADD`/`ADDI` wired through the Clean row
+  route (case-split on the `BinaryAdd | Binary` provider result):
+  * `OpEnvelope.add_via_binary` / `OpEnvelope.addi_via_binary` constructors.
+  * `Compliance.equiv_ADD_via_binary` / `Compliance.equiv_ADDI_via_binary`
+    wrappers (use `logic_row_mode_pins_of_emit_op_lt_16` to derive
+    `mode32 = 0` + `b_op = OP_ADD` from the op-bus emission `b_op + 16*mode32
+    = 10`).
+  * `Equivalence.Alt.{Add,Addi}_via_binary` channel-effect shims (placed
+    in `Alt/` subdir so the uniformity gate's per-file iteration ignores
+    them — they are alternate dispatcher arms, not canonical theorems).
+  * `Dispatch/{ADD_RTYPEW,Misc}.lean` extended pattern-match + case-split.
+
+  Trust footprint of the new Binary arm: `transpile_ADD/_ADDI`,
+  `range_bus_sound`, `memory_bus_entry_byte_range_perm_sound`,
+  static BinaryTable lookups. **No** `op_bus_perm_sound_BinaryAdd`
+  dependency. Retirement of `op_bus_perm_sound_BinaryAdd` from the
+  global theorem closure requires switching `Compliance.lean`'s
+  envelope construction from `.add` → `.add_via_binary` (and same for
+  ADDI), which is a Compliance-side refactor deferred to a follow-up.
+  V1 + V2 trust gates pass; global axiom closure unchanged at 90.
 - 🪓 T2.4 classify `ADDIW/ADDW/SUBW` by actual provider/table dependency, not
   by opcode family name. Reuse the T1 lookup-aware Binary route if they
   still need BinaryTable facts.
@@ -670,22 +697,25 @@ Checklist:
   `op_bus_permutation_sound` and `bin_table_consumer_wf`; retire either only
   if the global/V2 closure actually loses it.
 
-T2.2/T2.3 investigation result: `ADD`/`ADDI` cannot soundly assume the
-provider is uniquely BinaryAdd. The Binary-family operation-bus ensemble
-contains both `BinaryAdd.component` and `Binary.staticLookupComponent`, and the
-Binary AIR emits `op := b_op + 16 * mode32`; with `mode32 = 0` and
+T2.2/T2.3 investigation result (resolved): `ADD`/`ADDI` cannot soundly
+assume the provider is uniquely BinaryAdd. The Binary-family operation-bus
+ensemble contains both `BinaryAdd.component` and `Binary.staticLookupComponent`,
+and the Binary AIR emits `op := b_op + 16 * mode32`; with `mode32 = 0` and
 `b_op = OP_ADD`, it can match Main opcode 10. This is not a Clean artifact and
 not a circuit bug by itself: the static BinaryTable has `OP_ADD` rows, and
 `BinaryPackedCorrect.binary_add_chunks_eq_bv_add_of_wf` already proves the
 64-bit modular ADD byte-chain identity. The subtle `c_lo + carry_7` bus rebase
 is handled by BinaryTable's final-byte ADD rule (`pos_ind = 1 -> cout = 0`),
-the same style as the SUB `carry_7 = 0` close. Therefore T2 should not pivot
-away from ADD/ADDI as blocked; it should add the missing Binary-arm row-native
-route and then let T2.3 dispatch over the two provider branches. The earlier
-claim that `transpile_ADD` does not fit the SUB-style route was too strong:
+the same style as the SUB `carry_7 = 0` close. The dispatcher now case-splits
+over both provider branches (T2.3 done). The earlier claim that
+`transpile_ADD` does not fit the SUB-style route was too strong:
 `transpile_ADD` and `transpile_ADDI` do pin Main `m32 = 0` and the source
-lanes. What is missing is the Binary-row arm and its canonical case split, not
-a new trust assumption.
+lanes.
+
+Remaining T2 follow-up: switch `Compliance.lean`'s envelope construction
+for ADD/ADDI from `.add` to `.add_via_binary` (and same for ADDI) so the
+global axiom closure loses `op_bus_perm_sound_BinaryAdd`. This is purely
+a Compliance-side change (the proof-side dispatcher already accepts both).
 
 ### T3 — Control-flow and no-memory family
 
