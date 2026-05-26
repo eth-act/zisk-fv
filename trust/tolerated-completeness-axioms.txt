@@ -1,0 +1,27 @@
+# Tolerated completeness-direction axioms (V2 gate allowlist)
+#
+# These five axioms live in `ZiskFv/AirsClean/Completeness.lean` as the
+# `circuit.completeness` field of each Clean `GeneralFormalCircuit`.
+# Clean requires both a soundness and a completeness proof for every
+# component; zisk-fv is a soundness-only verification project, so
+# completeness for non-trivial circuits is declared as a documented
+# axiom rather than proved.
+#
+# These axioms are in the project's user-sanctioned D-COMPLETE class
+# (see `docs/fv/clean-integration-plan.md` Risk Register R-4). The V2
+# `check-closure-vs-baseline` gate treats their absence from the
+# global theorem's transitive axiom closure as expected, rather than
+# as dead trust — proper handling requires either retiring the entire
+# Clean component (no longer reaches the axiom) or producing a real
+# completeness proof, both deferred.
+#
+# Adding new entries to this allowlist requires CODEOWNER review (the
+# `/trust/` path is in `.github/CODEOWNERS`).
+#
+# One axiom name per line. # comments and blank lines ignored.
+
+binaryAdd_circuit_completeness
+memAlignByte_circuit_completeness
+memAlignReadByte_circuit_completeness
+arithMul_circuit_completeness
+arithDiv_circuit_completeness
