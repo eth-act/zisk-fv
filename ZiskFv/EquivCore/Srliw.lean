@@ -70,7 +70,7 @@ lemma equiv_SRLIW_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
-    `WriteValueProofs.BinaryShift.h_rd_val_shift_srliw` discharge lemma. -/
+    `WriteValueProofs.BinaryShift.h_rd_val_shift_srliw_of_wf` discharge lemma. -/
 theorem equiv_SRLIW_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (srliw_input : PureSpec.SrliwInput)
@@ -148,7 +148,7 @@ theorem equiv_SRLIW_of_wf
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ofNat, h_input_r1_extract, h_a4_def]
   have h_discharge :=
-    ZiskFv.EquivCore.WriteValueProofs.BinaryShift.h_rd_val_shift_srliw
+    ZiskFv.EquivCore.WriteValueProofs.BinaryShift.h_rd_val_shift_srliw_of_wf
       m v r_main r_binary e2
       (Sail.BitVec.extractLsb srliw_input.r1_val 31 0)
       shift h_op h_bytes h_wfs h_a_range

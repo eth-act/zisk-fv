@@ -685,11 +685,12 @@ Checklist:
   Trust footprint of the new Binary arm: `transpile_ADD/_ADDI`,
   `range_bus_sound`, `memory_bus_entry_byte_range_perm_sound`,
   static BinaryTable lookups. **No** `op_bus_perm_sound_BinaryAdd`
-  dependency. Retirement of `op_bus_perm_sound_BinaryAdd` from the
-  global theorem closure requires switching `Compliance.lean`'s
-  envelope construction from `.add` → `.add_via_binary` (and same for
-  ADDI), which is a Compliance-side refactor deferred to a follow-up.
-  V1 + V2 trust gates pass; global axiom closure unchanged at 90.
+  dependency. Closure investigation after a draft Compliance switch showed
+  that switching ADD/ADDI alone does **not** retire
+  `op_bus_permutation_sound` from the global theorem: signed loads
+  `LB/LH/LW` still consume it through their legacy BinaryExtension
+  sign-extension route. V1 + V2 trust gates pass; global axiom closure
+  unchanged at 90.
 - 🪓 T2.4 classify `ADDIW/ADDW/SUBW` by actual provider/table dependency, not
   by opcode family name. Reuse the T1 lookup-aware Binary route if they
   still need BinaryTable facts.
@@ -712,10 +713,16 @@ over both provider branches (T2.3 done). The earlier claim that
 `transpile_ADD` and `transpile_ADDI` do pin Main `m32 = 0` and the source
 lanes.
 
-Remaining T2 follow-up: switch `Compliance.lean`'s envelope construction
-for ADD/ADDI from `.add` to `.add_via_binary` (and same for ADDI) so the
-global axiom closure loses `op_bus_perm_sound_BinaryAdd`. This is purely
-a Compliance-side change (the proof-side dispatcher already accepts both).
+T2 closure correction: the proof-side two-provider route is complete, but T2
+is not a terminal axiom-retirement phase by itself. A draft deletion of the
+legacy `.add`/`.addi` envelope route would remove only the ADD/ADDI
+BinaryAdd-arm consumers; the global theorem still reaches
+`op_bus_permutation_sound` through `LB`, `LH`, and `LW`. It would also make
+`binaryAdd_circuit_completeness` dead unless the BinaryAdd Clean component were
+deleted or given a real completeness proof. Therefore the next meaningful
+retirement work is T4-purge: finish the signed-load and remaining legacy
+BinaryExtension consumers, then delete the shared axioms only when the global
+closure actually loses them.
 
 ### T3 — Control-flow and no-memory family
 
@@ -761,7 +768,7 @@ Checklist:
   Main/Mem/MemAlignByte/MemAlignReadByte/MemAlign/static ROM providers.
 - ☐ T4.2 prove Clean balance gives concrete memory provider rows matching
   active Main memory interactions.
-- ☐ T4.3 signed-load spike: prove the `LB` chain from memory provider row
+- 🪓 T4.3 signed-load spike: prove the `LB` chain from memory provider row
   bytes to lookup-aware BinaryExtension sign-extension row to Sail result.
 - ☐ T4.4 prove row-native load routes for
   `LD/LB/LH/LW/LBU/LHU/LWU`.
@@ -784,6 +791,39 @@ Expected trust movement:
 - largest known T4 unknown is the signed-load composition across memory and
   BinaryExtension provider rows, so the `LB` spike should happen before
   broad load/store migration.
+
+T4-purge checkpoint after commits `1dc45a3` and `f2cb26c`: row-explicit
+static-lookup chains for signed loads `LB`, `LH`, and `LW` are present, but
+the legacy purge is not complete. Two deletion attempts mapped the actual
+cascade and were reverted to keep the green checkpoint (`lake build`, V1, V2;
+90 axioms). Deleting `op_bus_permutation_sound` requires removing the legacy
+canonical wrapper bodies still using old op-bus handshakes: ADD/ADDI,
+LB/LH/LW, and the twelve shift-family wrappers. Deleting
+`bin_ext_table_consumer_wf` additionally requires removing legacy shift
+write-value and packed-correctness paths; the immediate-shift `_of_wf`
+theorems currently depend on non-`_of_wf` write-value helpers.
+
+Concrete next T4-purge execution checklist:
+
+- ☐ T4.P1 add `_of_wf` write-value helpers for the six immediate shifts:
+  `SLLI`, `SRLI`, `SRAI`, `SLLIW`, `SRLIW`, `SRAIW`.
+- ☐ T4.P2 rewrite the six immediate-shift `equiv_<OP>I_of_wf` theorems to
+  call those `_of_wf` helpers.
+- ☐ T4.P3 cascade-delete the legacy shift write-value helpers,
+  non-`_of_wf` BinaryExtension packed-correctness wrappers, and no-suffix
+  legacy shift `EquivCore` routes.
+- ☐ T4.P4 delete `bin_ext_table_consumer_wf` once no canonical/global closure
+  reaches it.
+- ☐ T4.P5 decide BinaryAdd completeness retirement only after the soundness
+  axioms are gone: either prove `binaryAdd_circuit_completeness` or keep it as
+  a documented completeness-direction axiom if the component remains
+  load-bearing.
+- ☐ T4.P6 delete `op_bus_permutation_sound` and the derived
+  `op_bus_perm_sound_*` helpers after ADD/ADDI, LB/LH/LW, and all shift-family
+  legacy consumers are gone.
+- ☐ T4.P7 regenerate axiom baselines, global closure, hypothesis counts, and
+  caller-burden ledger.
+- ☐ T4.P8 run `lake build`, V1, and V2 before marking T4-purge complete.
 
 ### T5 — Arith-family terminal phase
 

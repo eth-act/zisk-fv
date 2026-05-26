@@ -387,7 +387,7 @@ lemma h_rd_val_shift_sll
     The shift amount on the Sail side is the immediate (5/6-bit shamt) rather
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 64`. -/
-lemma h_rd_val_shift_slli
+lemma h_rd_val_shift_slli_of_wf
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -716,7 +716,7 @@ lemma h_rd_val_shift_srl
 
 /-- **SRLI `h_rd_val` derivation (Tier 1).** Same shape as `h_rd_val_shift_srl`;
     SRLI shares SRL's Zisk opcode (`OP_SRL = 34`) at the BinaryExtension SM. -/
-lemma h_rd_val_shift_srli
+lemma h_rd_val_shift_srli_of_wf
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -1049,7 +1049,7 @@ lemma h_rd_val_shift_sra
     The shift amount on the Sail side is the immediate (5/6-bit shamt) rather
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 64`. -/
-lemma h_rd_val_shift_srai
+lemma h_rd_val_shift_srai_of_wf
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -1381,7 +1381,7 @@ lemma h_rd_val_shift_srlw
     The shift amount on the Sail side is the immediate (5-bit shamt) rather
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 32`. -/
-lemma h_rd_val_shift_srliw
+lemma h_rd_val_shift_srliw_of_wf
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -1709,7 +1709,7 @@ lemma h_rd_val_shift_sllw
     The shift amount on the Sail side is the immediate (5-bit shamt) rather
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 32`. -/
-lemma h_rd_val_shift_slliw
+lemma h_rd_val_shift_slliw_of_wf
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)
@@ -2037,7 +2037,7 @@ lemma h_rd_val_shift_sraw
     The shift amount on the Sail side is the immediate (5-bit shamt) rather
     than rs2; `h_shift` captures the transpile pin equating it to
     `(v.free_in_b r_binary).val % 32`. -/
-lemma h_rd_val_shift_sraiw
+lemma h_rd_val_shift_sraiw_of_wf
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ)
     (e2 : MemoryBusEntry FGL)

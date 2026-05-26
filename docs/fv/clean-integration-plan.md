@@ -891,7 +891,7 @@ thread canonical dispatch, then retire named trust-ledger entries only after
 | **T1** | Binary-family terminal op-bus/table cleanup | `SUB`, `SLT`, `SLTU`, `SLTI`, `SLTIU`, shifts, W-shifts, Binary/BinaryExtension tables | `op_bus_permutation_sound` if last consumer, `bin_table_consumer_wf`, `bin_ext_table_consumer_wf` |
 | **T2** | BinaryAdd/simple add family | `ADD`, `ADDI`, classify `ADDW/SUBW/ADDIW` ownership | BinaryAdd-specific row/bus/range trust that disappears from canonical closure |
 | **T3** | Control-flow/no-memory family | branches, `JAL`, `JALR`, `LUI`, `AUIPC`, `FENCE` | Main/control-flow bus-shape or emission trust, if no longer live |
-| **T4** | Memory-family terminal phase | loads/stores, Mem, MemAlign*, MemAlign ROM | memory-bus lookup/emission axioms, MemAlign permutation/ROM axioms |
+| **T4** | Memory-family terminal phase | loads/stores, Mem, MemAlign*, MemAlign ROM, final signed-load BinaryExtension consumers | memory-bus lookup/emission axioms, MemAlign permutation/ROM axioms, and shared op-bus/BinaryExtension axioms once their last global consumers are gone |
 | **T5** | Arith-family terminal phase | `MUL*`, `DIV*`, `REM*`, ArithTable | Arith lookup/table/range facts not protected by explicit known defects |
 | **T6** | Range-bus terminal phase | byte and signed range facts across families | `range_bus_sound`, `signed_range_bus_sound` |
 | **T7** | Final ensemble re-root/deletion pass | full RV64IM-supported ensemble | residual hand-rolled bus/permutation/range/lookup scaffolding |
@@ -916,13 +916,13 @@ thread canonical dispatch, then retire named trust-ledger entries only after
 
 ### T2 detail — BinaryAdd/simple add
 
-- ☐ T2.1 expose/load-bearing BinaryAdd component row facts with the same
+- 🪓 T2.1 expose/load-bearing BinaryAdd component row facts with the same
   singleton-channel extractor pattern used in T1, including evaluated Clean
   op-bus message bridges back to legacy `matches_entry`.
-- ☐ T2.2 prove row-native `ADD`/`ADDI` write-value bridges for the actual
+- 🪓 T2.2 prove row-native `ADD`/`ADDI` write-value bridges for the actual
   `OP_ADD = 10` provider disjunction: BinaryAdd rows and lookup-aware Binary
   rows. Do not introduce output-value promise hypotheses.
-- ☐ T2.3 thread canonical `ADD`/`ADDI` wrappers, `OpEnvelope`, and dispatch
+- 🪓 T2.3 thread canonical `ADD`/`ADDI` wrappers, `OpEnvelope`, and dispatch
   through the Clean row route by case-splitting on the `BinaryAdd | Binary`
   provider result.
 - 🪓 T2.4 classify `ADDW/SUBW/ADDIW` by actual provider/table dependency and
@@ -930,6 +930,17 @@ thread canonical dispatch, then retire named trust-ledger entries only after
 - 🪓 T2.5 regenerate trust ledgers and record/retire exact remaining
   `op_bus_permutation_sound` and `bin_table_consumer_wf` consumers by
   global/V2 closure.
+
+T2 closure correction: T2 is structurally complete, but it is not a terminal
+retirement point for `op_bus_permutation_sound`. A draft switch from legacy
+`.add`/`.addi` envelope construction to the new `.add_via_binary` /
+`.addi_via_binary` route removes only the ADD/ADDI BinaryAdd-arm consumers.
+The global theorem still reaches `op_bus_permutation_sound` through signed
+loads `LB/LH/LW`, and deleting the BinaryAdd route alone leaves
+`binaryAdd_circuit_completeness` as a dead completeness-direction axiom unless
+the BinaryAdd component is also reworked. Therefore the plan does not chase a
+standalone T2 deletion; it proceeds to T4-purge and deletes shared axioms only
+after all global consumers are gone.
 
 ### T3 detail — control-flow/no-memory
 
@@ -950,7 +961,7 @@ thread canonical dispatch, then retire named trust-ledger entries only after
   providers.
 - ☐ T4.2 prove Clean balance gives concrete memory provider rows matching
   active Main memory interactions.
-- ☐ T4.3 signed-load spike: prove the `LB` chain from memory provider row
+- 🪓 T4.3 signed-load spike: prove the `LB` chain from memory provider row
   bytes to lookup-aware BinaryExtension sign-extension row to Sail result.
 - ☐ T4.4 prove row-native load routes for
   `LD/LB/LH/LW/LBU/LHU/LWU`.
@@ -963,6 +974,27 @@ thread canonical dispatch, then retire named trust-ledger entries only after
   `main_*_emission_bundle` memory axioms when canonical closures lose them.
 - ☐ T4.8 retire MemAlign permutation/ROM axioms only after direct ROM
   membership proves the same provider-row facts.
+
+T4-purge execution checklist, refined after the green `f2cb26c` checkpoint:
+
+- ☐ T4.P1 add `_of_wf` write-value helpers for the six immediate shifts:
+  `SLLI`, `SRLI`, `SRAI`, `SLLIW`, `SRLIW`, `SRAIW`.
+- ☐ T4.P2 rewrite the six immediate-shift `equiv_<OP>I_of_wf` theorems to
+  call those `_of_wf` helpers.
+- ☐ T4.P3 delete the legacy shift write-value helpers, non-`_of_wf`
+  BinaryExtension packed-correctness wrappers, and no-suffix legacy shift
+  `EquivCore` routes.
+- ☐ T4.P4 delete `bin_ext_table_consumer_wf` once no canonical/global closure
+  reaches it.
+- ☐ T4.P5 handle `binaryAdd_circuit_completeness` only after the
+  soundness-critical purge: prove it if retiring the BinaryAdd component
+  completeness axiom is in scope, otherwise leave it documented as
+  completeness-direction trust.
+- ☐ T4.P6 delete `op_bus_permutation_sound` and derived
+  `op_bus_perm_sound_*` helpers after ADD/ADDI, LB/LH/LW, and all shift-family
+  legacy consumers are gone.
+- ☐ T4.P7 regenerate all trust ledgers and closure baselines.
+- ☐ T4.P8 run `lake build`, V1, and V2.
 
 ### T5 detail — arith
 

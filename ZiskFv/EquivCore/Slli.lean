@@ -82,7 +82,7 @@ lemma equiv_SLLI_sail
     LANE-MATCH, RANGE, TRANSPILE-BRIDGE, TRANSPILE-PIN} — no parameter
     asserts the spec output directly; that equation is derived
     internally from circuit witnesses via the
-    `WriteValueProofs.BinaryShift.h_rd_val_shift_slli` discharge lemma. -/
+    `WriteValueProofs.BinaryShift.h_rd_val_shift_slli_of_wf` discharge lemma. -/
 theorem equiv_SLLI_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (slli_input : PureSpec.SlliInput)
@@ -156,7 +156,7 @@ theorem equiv_SLLI_of_wf
     ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7⟩
   set shift : ℕ := slli_input.shamt.toNat with h_shift_def
   have h_discharge :=
-    ZiskFv.EquivCore.WriteValueProofs.BinaryShift.h_rd_val_shift_slli
+    ZiskFv.EquivCore.WriteValueProofs.BinaryShift.h_rd_val_shift_slli_of_wf
       m v r_main r_binary e2 slli_input.r1_val shift h_op h_bytes _h_wfs h_a_range
       hc0 hc2 hc4 hc6 hc8 hc10 hc12 hc14
       hc1 hc3 hc5 hc7 hc9 hc11 hc13 hc15
