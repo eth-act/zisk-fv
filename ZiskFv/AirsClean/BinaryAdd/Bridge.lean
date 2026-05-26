@@ -164,6 +164,33 @@ theorem binary_add_chunks_eq_bv_add_via_component
       Nat.mod_eq_of_lt h_av, Nat.mod_eq_of_lt h_bv, Nat.mod_eq_of_lt h_cv, ← h_spec]
   ring
 
+/-- Project a single Clean `BinaryAddRow` back into a one-row
+    `Valid_BinaryAdd` validator (constant function), pinning all rows
+    to the given row's column values. The stage-2 accumulator columns
+    are zeroed; consumers do not depend on them. Mirrors
+    `AirsClean.Binary.validOfRow`. -/
+@[reducible]
+def validOfRow (row : BinaryAddRow FGL) :
+    ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL where
+  a_0 := fun _ => row.a_0
+  a_1 := fun _ => row.a_1
+  b_0 := fun _ => row.b_0
+  b_1 := fun _ => row.b_1
+  c_chunks_0 := fun _ => row.c_chunks_0
+  c_chunks_1 := fun _ => row.c_chunks_1
+  c_chunks_2 := fun _ => row.c_chunks_2
+  c_chunks_3 := fun _ => row.c_chunks_3
+  cout_0 := fun _ => row.cout_0
+  cout_1 := fun _ => row.cout_1
+  gsum := fun _ => 0
+  im_0 := fun _ => 0
+  im_1 := fun _ => 0
+
+theorem rowAt_validOfRow_zero (row : BinaryAddRow FGL) :
+    rowAt (validOfRow row) 0 = row := by
+  cases row
+  rfl
+
 theorem eval_opBusMessageExpr
     (env : Environment FGL) (row : Var BinaryAddRow FGL) :
     eval env (opBusMessageExpr row) = opBusMessage (eval env row) := by
