@@ -1325,6 +1325,132 @@ lemma binary_sub_chunks_eq_bv_sub_of_wf
   -- Apply sub_close_modular with N = 18446744073709551616, X = Bsum, Y = Csum, A = Asum, B = B7
   exact sub_close_modular Asum Bsum Csum 18446744073709551616 B7 hB7_le hB_lt' hC_lt' h_combined
 
+/-- **Lift for ADD.** 64-bit unsigned addition modulo 2^64.
+
+    Mirror of `binary_sub_chunks_eq_bv_sub_of_wf` for OP_ADD. The Binary
+    AIR (when serving 64-bit ADD as alternate provider to BinaryAdd)
+    emits 8 byte-chain entries at `op = OP_ADD`. The byte-level
+    relation per the BinaryTable wf is
+    `c = (cin + a + b) % 256`, `cout = (cin + a + b) / 256` on
+    non-final bytes; on the final byte `cout = 0` (`pi7 = 1`). The
+    aggregate over 8 bytes is `a64 + b64 = c64` mod 2^64. -/
+lemma binary_add_chunks_eq_bv_add_of_wf
+    (a0 a1 a2 a3 a4 a5 a6 a7
+     b0 b1 b2 b3 b4 b5 b6 b7
+     c0 c1 c2 c3 c4 c5 c6 c7
+     cin0 cin1 cin2 cin3 cin4 cin5 cin6 cin7
+     fl0 fl1 fl2 fl3 fl4 fl5 fl6 fl7
+     pi0 pi1 pi2 pi3 pi4 pi5 pi6 pi7 : FGL)
+    (h_byte_0 : consumer_byte_match_chain_wf OP_ADD a0 b0 c0 cin0 fl0 pi0)
+    (h_byte_1 : consumer_byte_match_chain_wf OP_ADD a1 b1 c1 cin1 fl1 pi1)
+    (h_byte_2 : consumer_byte_match_chain_wf OP_ADD a2 b2 c2 cin2 fl2 pi2)
+    (h_byte_3 : consumer_byte_match_chain_wf OP_ADD a3 b3 c3 cin3 fl3 pi3)
+    (h_byte_4 : consumer_byte_match_chain_wf OP_ADD a4 b4 c4 cin4 fl4 pi4)
+    (h_byte_5 : consumer_byte_match_chain_wf OP_ADD a5 b5 c5 cin5 fl5 pi5)
+    (h_byte_6 : consumer_byte_match_chain_wf OP_ADD a6 b6 c6 cin6 fl6 pi6)
+    (h_byte_7 : consumer_byte_match_chain_wf OP_ADD a7 b7 c7 cin7 fl7 pi7)
+    (ha0 : a0.val < 256) (ha1 : a1.val < 256) (ha2 : a2.val < 256) (ha3 : a3.val < 256)
+    (ha4 : a4.val < 256) (ha5 : a5.val < 256) (ha6 : a6.val < 256) (ha7 : a7.val < 256)
+    (hb0 : b0.val < 256) (hb1 : b1.val < 256) (hb2 : b2.val < 256) (hb3 : b3.val < 256)
+    (hb4 : b4.val < 256) (hb5 : b5.val < 256) (hb6 : b6.val < 256) (hb7 : b7.val < 256)
+    (hc0 : c0.val < 256) (hc1 : c1.val < 256) (hc2 : c2.val < 256) (hc3 : c3.val < 256)
+    (hc4 : c4.val < 256) (hc5 : c5.val < 256) (hc6 : c6.val < 256) (hc7 : c7.val < 256)
+    (h_cin0 : cin0.val = 0)
+    (h_cin1 : cin1.val = fl0.val % 2)
+    (h_cin2 : cin2.val = fl1.val % 2)
+    (h_cin3 : cin3.val = fl2.val % 2)
+    (h_cin4 : cin4.val = fl3.val % 2)
+    (h_cin5 : cin5.val = fl4.val % 2)
+    (h_cin6 : cin6.val = fl5.val % 2)
+    (h_cin7 : cin7.val = fl6.val % 2)
+    (h_pi0 : pi0.val ≠ 1) (h_pi1 : pi1.val ≠ 1) (h_pi2 : pi2.val ≠ 1)
+    (h_pi3 : pi3.val ≠ 1) (h_pi4 : pi4.val ≠ 1) (h_pi5 : pi5.val ≠ 1)
+    (h_pi6 : pi6.val ≠ 1)
+    (_h_pi7 : pi7.val = 1) :
+    BitVec.ofNat 64
+      (a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+        + a4.val * 4294967296 + a5.val * 1099511627776
+        + a6.val * 281474976710656 + a7.val * 72057594037927936)
+    +
+    BitVec.ofNat 64
+      (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+        + b4.val * 4294967296 + b5.val * 1099511627776
+        + b6.val * 281474976710656 + b7.val * 72057594037927936)
+    =
+    BitVec.ofNat 64
+      (c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+        + c4.val * 4294967296 + c5.val * 1099511627776
+        + c6.val * 281474976710656 + c7.val * 72057594037927936) := by
+  have h_cin0_lt : cin0.val < 2 := by omega
+  have h_cin1_lt : cin1.val < 2 := by
+    have : fl0.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin2_lt : cin2.val < 2 := by
+    have : fl1.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin3_lt : cin3.val < 2 := by
+    have : fl2.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin4_lt : cin4.val < 2 := by
+    have : fl3.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin5_lt : cin5.val < 2 := by
+    have : fl4.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin6_lt : cin6.val < 2 := by
+    have : fl5.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  have h_cin7_lt : cin7.val < 2 := by
+    have : fl6.val % 2 < 2 := Nat.mod_lt _ (by norm_num); omega
+  obtain ⟨he0, _hB0_le⟩ := add_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_0 ha0 hb0 h_cin0_lt h_pi0
+  obtain ⟨he1, _hB1_le⟩ := add_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_1 ha1 hb1 h_cin1_lt h_pi1
+  obtain ⟨he2, _hB2_le⟩ := add_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_2 ha2 hb2 h_cin2_lt h_pi2
+  obtain ⟨he3, _hB3_le⟩ := add_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_3 ha3 hb3 h_cin3_lt h_pi3
+  obtain ⟨he4, _hB4_le⟩ := add_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_4 ha4 hb4 h_cin4_lt h_pi4
+  obtain ⟨he5, _hB5_le⟩ := add_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_5 ha5 hb5 h_cin5_lt h_pi5
+  obtain ⟨he6, _hB6_le⟩ := add_byte_nonfinal_eq_of_wf _ _ _ _ _ _ h_byte_6 ha6 hb6 h_cin6_lt h_pi6
+  obtain ⟨B7, hB7_le, he7⟩ := add_byte_uniform_eq_of_wf _ _ _ _ _ _ h_byte_7 ha7 hb7 h_cin7_lt
+  rw [h_cin0] at he0
+  rw [h_cin1] at he1
+  rw [h_cin2] at he2
+  rw [h_cin3] at he3
+  rw [h_cin4] at he4
+  rw [h_cin5] at he5
+  rw [h_cin6] at he6
+  rw [h_cin7] at he7
+  have h_lo := add_telescope_4byte
+    a0.val a1.val a2.val a3.val
+    b0.val b1.val b2.val b3.val
+    c0.val c1.val c2.val c3.val
+    0 (fl0.val % 2) (fl1.val % 2) (fl2.val % 2) (fl3.val % 2)
+    he0 he1 he2 he3
+  have h_hi := add_telescope_4byte
+    a4.val a5.val a6.val a7.val
+    b4.val b5.val b6.val b7.val
+    c4.val c5.val c6.val c7.val
+    (fl3.val % 2) (fl4.val % 2) (fl5.val % 2) (fl6.val % 2) B7
+    he4 he5 he6 he7
+  have h_combined := add_telescope_8byte
+    a0.val a1.val a2.val a3.val a4.val a5.val a6.val a7.val
+    b0.val b1.val b2.val b3.val b4.val b5.val b6.val b7.val
+    c0.val c1.val c2.val c3.val c4.val c5.val c6.val c7.val
+    (fl3.val % 2) B7 h_lo h_hi
+  set Asum := a0.val + a1.val * 256 + a2.val * 65536 + a3.val * 16777216
+                + a4.val * 4294967296 + a5.val * 1099511627776
+                + a6.val * 281474976710656 + a7.val * 72057594037927936 with hAsum
+  set Bsum := b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
+                + b4.val * 4294967296 + b5.val * 1099511627776
+                + b6.val * 281474976710656 + b7.val * 72057594037927936 with hBsum
+  set Csum := c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216
+                + c4.val * 4294967296 + c5.val * 1099511627776
+                + c6.val * 281474976710656 + c7.val * 72057594037927936 with hCsum
+  have hA_lt : Asum < 2 ^ 64 := by
+    rw [hAsum]; exact byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ ha0 ha1 ha2 ha3 ha4 ha5 ha6 ha7
+  have hB_lt : Bsum < 2 ^ 64 := by
+    rw [hBsum]; exact byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
+  have hC_lt : Csum < 2 ^ 64 := by
+    rw [hCsum]; exact byte_sum_lt_two_pow_64 _ _ _ _ _ _ _ _ hc0 hc1 hc2 hc3 hc4 hc5 hc6 hc7
+  have h2_64_eq : (2 : ℕ) ^ 64 = 18446744073709551616 := by norm_num
+  have hC_lt' : Csum < 18446744073709551616 := h2_64_eq ▸ hC_lt
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt hA_lt, Nat.mod_eq_of_lt hB_lt, Nat.mod_eq_of_lt hC_lt]
+  rw [h2_64_eq]
+  exact add_close_modular Asum Bsum Csum 18446744073709551616 B7 hB7_le hC_lt' h_combined
 
 /-! ## Chain lift: LTU
 
