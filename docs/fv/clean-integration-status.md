@@ -656,16 +656,36 @@ Checklist:
 - ☐ T2.1 expose/load-bearing BinaryAdd component row facts through the same
   singleton-channel row extractor pattern used in T1, including an evaluated
   Clean op-bus message bridge back to legacy `matches_entry`.
-- ☐ T2.2 add row-native `ADD`/`ADDI` write-value bridges over concrete
-  Clean BinaryAdd rows; no caller promise may restate the output value.
+- ☐ T2.2 add row-native `ADD`/`ADDI` write-value bridges for the real
+  two-provider shape at `OP_ADD = 10`: the existing BinaryAdd arm plus the
+  alternate lookup-aware Binary arm. No caller promise may restate the output
+  value.
 - ☐ T2.3 thread canonical `ADD`/`ADDI` wrappers, `OpEnvelope` constructors,
-  and dispatch through the Clean row route.
+  and dispatch through the Clean row route by case-splitting on the
+  `BinaryAdd | Binary` provider result.
 - 🪓 T2.4 classify `ADDIW/ADDW/SUBW` by actual provider/table dependency, not
   by opcode family name. Reuse the T1 lookup-aware Binary route if they
   still need BinaryTable facts.
 - 🪓 T2.5 regenerate trust ledgers and record exact remaining consumers of
   `op_bus_permutation_sound` and `bin_table_consumer_wf`; retire either only
   if the global/V2 closure actually loses it.
+
+T2.2/T2.3 investigation result: `ADD`/`ADDI` cannot soundly assume the
+provider is uniquely BinaryAdd. The Binary-family operation-bus ensemble
+contains both `BinaryAdd.component` and `Binary.staticLookupComponent`, and the
+Binary AIR emits `op := b_op + 16 * mode32`; with `mode32 = 0` and
+`b_op = OP_ADD`, it can match Main opcode 10. This is not a Clean artifact and
+not a circuit bug by itself: the static BinaryTable has `OP_ADD` rows, and
+`BinaryPackedCorrect.binary_add_chunks_eq_bv_add_of_wf` already proves the
+64-bit modular ADD byte-chain identity. The subtle `c_lo + carry_7` bus rebase
+is handled by BinaryTable's final-byte ADD rule (`pos_ind = 1 -> cout = 0`),
+the same style as the SUB `carry_7 = 0` close. Therefore T2 should not pivot
+away from ADD/ADDI as blocked; it should add the missing Binary-arm row-native
+route and then let T2.3 dispatch over the two provider branches. The earlier
+claim that `transpile_ADD` does not fit the SUB-style route was too strong:
+`transpile_ADD` and `transpile_ADDI` do pin Main `m32 = 0` and the source
+lanes. What is missing is the Binary-row arm and its canonical case split, not
+a new trust assumption.
 
 ### T3 — Control-flow and no-memory family
 

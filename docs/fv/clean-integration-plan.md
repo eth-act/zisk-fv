@@ -919,10 +919,12 @@ thread canonical dispatch, then retire named trust-ledger entries only after
 - ☐ T2.1 expose/load-bearing BinaryAdd component row facts with the same
   singleton-channel extractor pattern used in T1, including evaluated Clean
   op-bus message bridges back to legacy `matches_entry`.
-- ☐ T2.2 prove row-native `ADD`/`ADDI` write-value bridges over concrete
-  Clean BinaryAdd rows; do not introduce output-value promise hypotheses.
+- ☐ T2.2 prove row-native `ADD`/`ADDI` write-value bridges for the actual
+  `OP_ADD = 10` provider disjunction: BinaryAdd rows and lookup-aware Binary
+  rows. Do not introduce output-value promise hypotheses.
 - ☐ T2.3 thread canonical `ADD`/`ADDI` wrappers, `OpEnvelope`, and dispatch
-  through the Clean row route.
+  through the Clean row route by case-splitting on the `BinaryAdd | Binary`
+  provider result.
 - 🪓 T2.4 classify `ADDW/SUBW/ADDIW` by actual provider/table dependency and
   reuse T1's lookup-aware Binary route where needed.
 - 🪓 T2.5 regenerate trust ledgers and record/retire exact remaining
