@@ -103,48 +103,4 @@ theorem equiv_SUB
     ⟨h_main_active, h_main_op_sub⟩
     h_match h_core h_facts h_row_m32 h_bop h_lane_rd
 
-/-- Static-provider BinaryTable route for `equiv_SUB`.
-
-    The 64-bit row-shape facts are derived from the selected Binary row's
-    op-bus emission plus the Binary column ranges; the caller supplies only
-    the shared static lookup witness and Binary core constraints. -/
-theorem equiv_SUB_of_static_lookup
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (sub_input : PureSpec.SubInput)
-    (r1 r2 rd : regidx)
-    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
-    (r_main offset : ℕ) (env : Environment FGL)
-    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
-    (bus : ZiskFv.Compliance.BusRows)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SUB)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.EquivCore.Promises.RTypePromises
-        state sub_input.r1_val sub_input.r2_val sub_input.rd sub_input.PC
-        (PureSpec.execute_RTYPE_sub_pure sub_input).nextPC
-        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2) :
-    (do
-      Sail.writeReg Register.nextPC
-        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute
-        (instruction.RTYPE (r2, r1, rd, rop.SUB))) state
-      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_main_active, h_main_op_sub⟩ := pins
-  have h_op_disj := binary_op_disj_of_eq m r_main 0x0b h_main_op_sub (by tauto)
-  obtain ⟨r_binary, h_match⟩ :=
-    op_bus_perm_sound_Binary m v r_main h_main_active h_op_disj
-  have h_emit_op := binary_h_emit_op_of_matches_entry (n := 0x0b) h_match h_main_op_sub
-  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_static_lookup v r_binary offset env h_static
-  obtain ⟨h_mode32_zero, h_b_op⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.chain_row_shape_of_emit_op_lt_16
-      v r_binary ZiskFv.Airs.Tables.BinaryTable.OP_SUB (by norm_num [ZiskFv.Airs.Tables.BinaryTable.OP_SUB])
-      (by simpa [ZiskFv.Airs.Tables.BinaryTable.OP_SUB] using h_emit_op)
-  exact ZiskFv.EquivCore.Sub.equiv_SUB_of_static_lookup
-    state sub_input r1 r2 rd m v r_main r_binary offset env h_static
-    h_core h_mode32_zero h_b_op
-    ⟨exec_row, e0, e1, e2⟩
-    promises
-    ⟨h_main_active, h_main_op_sub⟩
-    h_match h_lane_rd
-
 end ZiskFv.Compliance

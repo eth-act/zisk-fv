@@ -88,30 +88,6 @@ theorem equiv_XOR
     h_match h_bop_or_sext h_core h_facts h_lane_rd
 
 
-/-- Static-provider BinaryTable route for `equiv_XOR`. -/
-theorem equiv_XOR_of_static_lookup
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (xor_input : PureSpec.XorInput)
-    (r1 r2 rd : regidx)
-    (m : Valid_Main FGL FGL) (v : Valid_Binary FGL FGL)
-    (r_main offset : ℕ) (env : Environment FGL)
-    (h_static : ZiskFv.AirsClean.Binary.StaticLookupSoundness v)
-    (bus : ZiskFv.Compliance.BusRows)
-    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_XOR)
-    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
-    (promises : ZiskFv.EquivCore.Promises.RTypePromises
-        state xor_input.r1_val xor_input.r2_val xor_input.rd xor_input.PC
-        (PureSpec.execute_RTYPE_xor_pure xor_input).nextPC
-        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
-    : (do
-      Sail.writeReg Register.nextPC
-        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
-      LeanRV64D.Functions.execute
-        (instruction.RTYPE (r2, r1, rd, rop.XOR))) state
-      = state_effect_via_channels
-          ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_XOR_of_static_lookup state xor_input r1 r2 rd m v r_main offset env h_static bus pins h_lane_rd promises
 
 /-- Row-native static-provider route for `equiv_XOR`. The `b_op_or_sext`
     row pin remains explicit because emitted op `16` alone does not determine

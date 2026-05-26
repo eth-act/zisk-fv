@@ -148,7 +148,7 @@ This is a flat reference table: one row per axiom with its class, file:line, and
 
 | # | Axiom | Line | Asserts |
 | - | ----- | ---: | ------- |
-| 1 | `bin_table_consumer_wf` | 283 | **Trusted axiom (consumer-side).** Every entry the Binary AIR consumes against the binary table satisfies `wf_properties`. |
+| 1 | `bin_table_consumer_wf` | 271 | The full trusted per-row well-formedness: range plus all per-op clauses. |
 
 ## #6b Arith range / table / Euclidean pins — `ZiskFv/Airs/Arith/Ranges.lean` (13)
 
