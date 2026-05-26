@@ -1176,12 +1176,50 @@ inductive OpEnvelope
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+  -- ============================ LH via static BinaryExtension lookup ====
+  | lh_via_static_match
+    (lh_input : PureSpec.LhInput)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (mem : Valid_Mem FGL FGL)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (r_binary offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_H)
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+        (PureSpec.lh_state_assumptions lh_input state)
+        (PureSpec.execute_LOADH_pure lh_input).nextPC
+        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
   -- ============================ LW ======================================
   | lw
     (lw_input : PureSpec.LwInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (bus : ZiskFv.Compliance.BusRows)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W)
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+        (PureSpec.lw_state_assumptions lw_input state)
+        (PureSpec.execute_LOADW_pure lw_input).nextPC
+        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+  -- ============================ LW via static BinaryExtension lookup ====
+  | lw_via_static_match
+    (lw_input : PureSpec.LwInput)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (mem : Valid_Mem FGL FGL)
+    (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
+    (r_binary offset : ℕ) (env : Environment FGL)
+    (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
+    (h_match :
+      ZiskFv.Airs.OperationBus.matches_entry
+        (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
+        (ZiskFv.Airs.OperationBus.opBus_row_BinaryExtension v r_binary))
     (bus : ZiskFv.Compliance.BusRows)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W)
     (promises : ZiskFv.EquivCore.Promises.LoadPromises
