@@ -114,21 +114,26 @@ lemma equiv_ADDI_sail
     exceptions.txt`) — `(m, b, ∀ r, core_every_row b r)` collapse into
     shared parameters across all BinaryAdd-shape opcodes in
     `Compliance.lean`; `h_addi_subset` is the per-program
-    constructibility pin delivered uniformly across ADDI rows. -/
-theorem equiv_ADDI
+    constructibility pin delivered uniformly across ADDI rows.
+
+    Row-explicit variant: takes the BinaryAdd row witness + matches_entry
+    directly, bypassing `op_bus_perm_sound_BinaryAdd`. The thin forwarder
+    `equiv_ADDI` below derives them via the axiom. -/
+theorem equiv_ADDI_with_match
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (addi_input : PureSpec.AddiInput)
     (r1 rd : regidx) (imm : BitVec 12)
-    (m : Valid_Main FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness)
-    (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (b : Valid_BinaryAdd FGL FGL)
+    (r_main r_binary : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    -- Structural promise bundle (15 fields, see Promises/IType.lean).
     (promises : ZiskFv.EquivCore.Promises.ITypePromises
         state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
         (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
         r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_main_subset : add_subset_holds m r_main)
     (h_main_mode : main_row_in_addi_mode m r_main)
+    (h_b_core : ZiskFv.Airs.BinaryAdd.core_every_row b r_binary)
+    (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryAdd b r_binary))
     (h_addi_subset :
       ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
         m r_main addi_input.imm)
@@ -140,37 +145,24 @@ theorem equiv_ADDI
       LeanRV64D.Functions.execute
         (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨b, h_b_core⟩ := badd
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ := bounds
   obtain ⟨h_input_r1, h_input_imm, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
           h_rd_idx⟩ := promises
-  -- Project the four mode-pin fields of `main_row_in_addi_mode`.
   have h_active : m.is_external_op r_main = 1 := h_main_mode.1
   have h_op : m.op r_main = (10 : FGL) := h_main_mode.2.1
   have h_m32 : m.m32 r_main = 0 := h_main_mode.2.2.1
-  -- derive the BinaryAdd row witness via op-bus permutation
-  -- soundness (class #4, *trust ledger*).
-  obtain ⟨r_binary, h_match⟩ :=
-    op_bus_perm_sound_BinaryAdd m b r_main h_active h_op
-  -- reconstruct the Tier-1 `addi_circuit_holds_with_binaryadd`
-  -- bundle from the structural-unpacking parameters.
   have h_circuit : ZiskFv.ZiskCircuit.Addi.addi_circuit_holds_with_binaryadd
       m b r_main r_binary :=
-    ⟨h_main_subset, h_b_core r_binary, h_match, h_main_mode⟩
-  -- chunk-range facts via `binary_add_columns_in_range` (no
-  -- caller hypothesis needed).
+    ⟨h_main_subset, h_b_core, h_match, h_main_mode⟩
   obtain ⟨h_a_range, h_b_range, h_c_range⟩ :=
     ZiskFv.EquivCore.Bridge.BinaryAdd.chunk_ranges_at_holds b r_binary
-  -- Main-form input-r1 bridge via SailStateBridge.
   have h_input_r1_main :=
     ZiskFv.EquivCore.Bridge.SailStateBridge.addi_input_r1_main_eq_of_read_xreg
       m r_main state (regidx_to_fin r1) (regidx_to_fin rd)
       addi_input.r1_val h_active h_op h_input_r1
-  -- project matches_entry to translate Main lanes → BinaryAdd
-  -- lanes.
   have h_lane_eqs := h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryAdd]
     at h_lane_eqs
@@ -188,8 +180,6 @@ theorem equiv_ADDI
   have h_input_r1_circuit : addi_input.r1_val
       = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296) := by
     rw [h_input_r1_main, h_a0_val, h_a1_val]
-  -- translate the Main-form `h_addi_subset` (imm-bridge) to
-  -- BinaryAdd-row form.
   have h_input_imm_circuit : BitVec.signExtend 64 addi_input.imm
       = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296) := by
     have h := h_addi_subset
@@ -214,6 +204,40 @@ theorem equiv_ADDI
   split_ifs with h_rd_zero
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
+
+/-- Thin forwarder over `equiv_ADDI_with_match`: derives the BinaryAdd
+    row witness + matches_entry via `op_bus_perm_sound_BinaryAdd`. -/
+theorem equiv_ADDI
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (addi_input : PureSpec.AddiInput)
+    (r1 rd : regidx) (imm : BitVec 12)
+    (m : Valid_Main FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.ITypePromises
+        state addi_input.r1_val addi_input.imm addi_input.rd addi_input.PC
+        (PureSpec.execute_ITYPE_addi_pure addi_input).nextPC
+        r1 rd imm bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_main_subset : add_subset_holds m r_main)
+    (h_main_mode : main_row_in_addi_mode m r_main)
+    (h_addi_subset :
+      ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
+        m r_main addi_input.imm)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.ITYPE (imm, r1, rd, iop.ADDI))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨b, h_b_core⟩ := badd
+  obtain ⟨r_binary, h_match⟩ :=
+    op_bus_perm_sound_BinaryAdd m b r_main h_main_mode.1 h_main_mode.2.1
+  exact equiv_ADDI_with_match
+    state addi_input r1 rd imm m b r_main r_binary bus
+    promises h_main_subset h_main_mode (h_b_core r_binary) h_match
+    h_addi_subset h_lane_rd bounds
 
 /-- **Binary-arm equiv_ADDI** (T2.2 multi-provider migration).
     Mirrors `equiv_ADD_of_wf` with `transpile_ADD → transpile_ADDI`
@@ -577,11 +601,18 @@ theorem equiv_ADDI_of_binaryadd_row
   obtain ⟨_, h_m32, h_set_pc, _, _, _, _, _, _, _⟩ := h_tr
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
     ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
-  exact ZiskFv.EquivCore.Addi.equiv_ADDI
-    state addi_input r1 rd imm m ⟨b, fun _ => h_core⟩ r_main
+  have h_match_b :
+      matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryAdd b 0) := by
+    simpa [b, ZiskFv.AirsClean.BinaryAdd.validOfRow,
+      ZiskFv.AirsClean.BinaryAdd.opBusMessage,
+      ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
+      opBus_row_BinaryAdd] using _h_match
+  exact ZiskFv.EquivCore.Addi.equiv_ADDI_with_match
+    state addi_input r1 rd imm m b r_main 0
     ⟨exec_row, e0, e1, e2⟩
     promises h_main_subset
     ⟨h_main_active, h_main_op_add, h_m32, h_set_pc⟩
+    h_core h_match_b
     h_addi_subset h_lane_rd
     ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩
 

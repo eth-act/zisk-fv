@@ -158,6 +158,73 @@ lemma add_discharge
   exact ⟨r_binary, h_circuit, h_a_range, h_b_range, h_c_range,
          h_input_r1_circuit, h_input_r2_circuit⟩
 
+/-- **BinaryAdd discharge with caller-supplied row witness + match.**
+    Variant of `add_discharge` that takes the BinaryAdd row witness
+    `r_binary` and the cross-AIR `matches_entry` predicate directly
+    as parameters, bypassing `op_bus_perm_sound_BinaryAdd`. The
+    dispatcher routes (`equiv_ADD_of_binaryadd_row`,
+    `equiv_ADDI_of_binaryadd_row`) use this form to avoid pulling the
+    op-bus permutation axiom into their closure when the row witness
+    comes from family-balance extraction. -/
+lemma add_discharge_with_match
+    (m : Valid_Main FGL FGL) (b : Valid_BinaryAdd FGL FGL)
+    (r_main r_binary : ℕ)
+    (h_main_subset : add_subset_holds m r_main)
+    (h_main_mode : main_row_in_add_mode m r_main)
+    (h_b_core : core_every_row b r_binary)
+    (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryAdd b r_binary))
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (rs1 rs2 : Fin 32) (r1_val r2_val : BitVec 64)
+    (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
+    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state) :
+      add_circuit_holds m b r_main r_binary
+      ∧ a_chunks_in_range b r_binary
+      ∧ b_chunks_in_range b r_binary
+      ∧ c_chunks_in_range b r_binary
+      ∧ r1_val
+        = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296)
+      ∧ r2_val
+        = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296) := by
+  have h_active : m.is_external_op r_main = 1 := h_main_mode.1
+  have h_op : m.op r_main = (10 : FGL) := h_main_mode.2.1
+  have h_m32 : m.m32 r_main = 0 := h_main_mode.2.2.1
+  have h_circuit : add_circuit_holds m b r_main r_binary :=
+    ⟨h_main_subset, h_b_core, h_match, h_main_mode⟩
+  have h_a_range : a_chunks_in_range b r_binary :=
+    ⟨ba_a_lo_lt_2_32 b r_binary, ba_a_hi_lt_2_32 b r_binary⟩
+  have h_b_range : b_chunks_in_range b r_binary :=
+    ⟨ba_b_lo_lt_2_32 b r_binary, ba_b_hi_lt_2_32 b r_binary⟩
+  have h_c_range : c_chunks_in_range b r_binary :=
+    ⟨ba_c_chunk_0_lt_2_16 b r_binary,
+     ba_c_chunk_1_lt_2_16 b r_binary,
+     ba_c_chunk_2_lt_2_16 b r_binary,
+     ba_c_chunk_3_lt_2_16 b r_binary⟩
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryAdd]
+    at h_lane_eqs
+  obtain ⟨_, _, h_a_lo, h_a_hi, h_b_lo, h_b_hi, _, _, _, _, _, _⟩ := h_lane_eqs
+  rw [h_m32] at h_a_hi h_b_hi
+  simp only [one_sub_zero_mul] at h_a_hi h_b_hi
+  have h_a0_val : (m.a_0 r_main).val = (b.a_0 r_binary).val :=
+    congrArg Fin.val h_a_lo
+  have h_a1_val : (m.a_1 r_main).val = (b.a_1 r_binary).val :=
+    congrArg Fin.val h_a_hi
+  have h_b0_val : (m.b_0 r_main).val = (b.b_0 r_binary).val :=
+    congrArg Fin.val h_b_lo
+  have h_b1_val : (m.b_1 r_main).val = (b.b_1 r_binary).val :=
+    congrArg Fin.val h_b_hi
+  obtain ⟨h_input_r1_main, h_input_r2_main⟩ :=
+    ZiskFv.EquivCore.Bridge.SailStateBridge.add_input_bridges_of_read_xreg
+      m r_main state rs1 rs2 r1_val r2_val h_active h_op h_read_r1 h_read_r2
+  have h_input_r1_circuit : r1_val
+      = BitVec.ofNat 64 ((b.a_0 r_binary).val + (b.a_1 r_binary).val * 4294967296) := by
+    rw [h_input_r1_main, h_a0_val, h_a1_val]
+  have h_input_r2_circuit : r2_val
+      = BitVec.ofNat 64 ((b.b_0 r_binary).val + (b.b_1 r_binary).val * 4294967296) := by
+    rw [h_input_r2_main, h_b0_val, h_b1_val]
+  exact ⟨h_circuit, h_a_range, h_b_range, h_c_range,
+         h_input_r1_circuit, h_input_r2_circuit⟩
+
 /-! ## Narrow helper for the discharge path (keeps `r_binary`
     as caller-supplied) — analogue of `Bridge.Binary.byte_ranges_at_holds`
 

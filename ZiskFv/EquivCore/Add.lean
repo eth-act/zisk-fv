@@ -99,39 +99,42 @@ lemma equiv_ADD_sail
     pre-discharge: −2 binders. (Further reductions possible by
     deriving `h_input_r{1,2}_main` from `transpile_ADD` + a state-
     bridge, or by universalizing `h_main_subset` / `h_main_mode`
-    from `Valid_Main` constraints.) -/
-theorem equiv_ADD
+    from `Valid_Main` constraints.)
+
+    Row-explicit variant of `equiv_ADD`: caller supplies the BinaryAdd
+    row witness `r_binary` and the cross-AIR `matches_entry` predicate
+    directly, bypassing `op_bus_perm_sound_BinaryAdd`. This is the
+    canonical proof body; `equiv_ADD` below is a thin forwarder that
+    derives `r_binary` + `h_match` via the axiom. -/
+theorem equiv_ADD_with_match
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (add_input : PureSpec.AddInput)
     (r1 r2 rd : regidx)
-    (m : Valid_Main FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness)
-    (r_main : ℕ)
+    (m : Valid_Main FGL FGL) (b : Valid_BinaryAdd FGL FGL)
+    (r_main r_binary : ℕ)
     (bus : ZiskFv.Compliance.BusRows)
-    -- Structural promise bundle (15 fields, see Promises/RType.lean).
     (promises : ZiskFv.EquivCore.Promises.RTypePromises
         state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
         (PureSpec.execute_RTYPE_add_pure add_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_main_subset : add_subset_holds m r_main)
     (h_main_mode : main_row_in_add_mode m r_main)
+    (h_b_core : ZiskFv.Airs.BinaryAdd.core_every_row b r_binary)
+    (h_match : matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryAdd b r_binary))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨b, h_b_core⟩ := badd
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ := bounds
   obtain ⟨h_input_r1_sail, h_input_r2_sail, h_input_rd, h_input_pc,
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
           h_rd_idx⟩ := promises
-  -- *Promise discharge* via the BinaryAdd bridge (with SailStateBridge
-  -- deriving the input bridges from the Sail-form `read_xreg` facts
-  -- that `equiv_ADD_sail` consumes).
-  obtain ⟨r_binary, h_circuit, h_a_range, h_b_range, h_c_range,
+  obtain ⟨h_circuit, h_a_range, h_b_range, h_c_range,
           h_input_r1_circuit, h_input_r2_circuit⟩ :=
-    ZiskFv.EquivCore.Bridge.BinaryAdd.add_discharge
-      m b r_main h_main_subset h_main_mode h_b_core
+    ZiskFv.EquivCore.Bridge.BinaryAdd.add_discharge_with_match
+      m b r_main r_binary h_main_subset h_main_mode h_b_core h_match
       state (regidx_to_fin r1) (regidx_to_fin r2)
       add_input.r1_val add_input.r2_val
       h_input_r1_sail h_input_r2_sail
@@ -154,6 +157,33 @@ theorem equiv_ADD
   split_ifs with h_rd_zero
   · simp only [bind, pure, EStateM.bind, EStateM.pure]
   · rw [h_rd_val]
+
+/-- Thin forwarder over `equiv_ADD_with_match`: derives the BinaryAdd
+    row witness + `matches_entry` via `op_bus_perm_sound_BinaryAdd`. -/
+theorem equiv_ADD
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (add_input : PureSpec.AddInput)
+    (r1 r2 rd : regidx)
+    (m : Valid_Main FGL FGL) (badd : ZiskFv.Compliance.BinaryAddWitness)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state add_input.r1_val add_input.r2_val add_input.rd add_input.PC
+        (PureSpec.execute_RTYPE_add_pure add_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_main_subset : add_subset_holds m r_main)
+    (h_main_mode : main_row_in_add_mode m r_main)
+    (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2) :
+    execute_instruction (instruction.RTYPE (r2, r1, rd, rop.ADD)) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨b, h_b_core⟩ := badd
+  obtain ⟨r_binary, h_match⟩ :=
+    op_bus_perm_sound_BinaryAdd m b r_main h_main_mode.1 h_main_mode.2.1
+  exact equiv_ADD_with_match
+    state add_input r1 r2 rd m b r_main r_binary bus
+    promises h_main_subset h_main_mode (h_b_core r_binary) h_match
+    h_lane_rd bounds
 
 /-- **Binary-arm equiv_ADD** (T2.2 multi-provider migration).
     Takes a Valid_Binary witness with an 8-byte chain at OP_ADD and the
@@ -535,16 +565,12 @@ theorem equiv_ADD_of_binaryadd_row
   -- Discharge the 8 e2 byte ranges via the memory-bus range axiom.
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
     ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
-  -- The canonical equiv_ADD will internally use op_bus_perm_sound_BinaryAdd
-  -- to derive an existential r_binary; the row index it picks may differ
-  -- from our `0`, but the result is the same equivalence. So we route
-  -- through the existing canonical here.
-  -- (For the T2.3 dispatcher we will inline equiv_ADD's body to bypass
-  -- the axiom entirely; see equiv_ADD_of_binaryadd_match below.)
-  exact ZiskFv.EquivCore.Add.equiv_ADD
-    state add_input r1 r2 rd m ⟨b, fun _ => h_core⟩ r_main
+  -- Route through `equiv_ADD_with_match` (skips op_bus_perm_sound_BinaryAdd);
+  -- caller-supplied `h_match_b` is the BinaryAdd-row form of `h_match`.
+  exact ZiskFv.EquivCore.Add.equiv_ADD_with_match
+    state add_input r1 r2 rd m b r_main 0
     ⟨exec_row, e0, e1, e2⟩
-    promises h_main_subset h_main_mode h_lane_rd
+    promises h_main_subset h_main_mode h_core h_match_b h_lane_rd
     ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩
 
 end ZiskFv.EquivCore.Add
