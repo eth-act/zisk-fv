@@ -10,6 +10,8 @@ import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
+import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Compliance.SharedBundles
 
 /-!
@@ -28,6 +30,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithDiv
 open ZiskFv.Airs.OperationBus
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.EquivCore.Promises
 
 
@@ -95,12 +98,15 @@ theorem equiv_REMU
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
         (Or.inr (Or.inl h_main_op_remu))))))))
       h_m2_mult (by rw [h_m2_as])
-  have h_byte_lo_to_c0 : e2.x0.val + e2.x1.val * 256
-      + e2.x2.val * 65536 + e2.x3.val * 16777216
-      = (m.c_0 r_main).val := h_bundle.1
-  have h_byte_hi_to_c1 : e2.x4.val + e2.x5.val * 256
-      + e2.x6.val * 65536 + e2.x7.val * 16777216
-      = (m.c_1 r_main).val := h_bundle.2.1
+  have h_chunks_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e2
+  have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
+      + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
+      = (m.c_0 r_main).val := by
+    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_lo_val_sum_eq e2 h_chunks_range.1, h_bundle.1]
+  have h_byte_hi_to_c1 : (byteAt e2 4).val + (byteAt e2 5).val * 256
+      + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216
+      = (m.c_1 r_main).val := by
+    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_hi_val_sum_eq e2 h_chunks_range.2, h_bundle.2.1]
   obtain ⟨h_a0_lt, h_a1_lt, h_a2_lt, h_a3_lt,
           h_b0_lt, h_b1_lt, h_b2_lt, h_b3_lt,
           h_c0_lt, h_c1_lt, h_c2_lt, h_c3_lt,
