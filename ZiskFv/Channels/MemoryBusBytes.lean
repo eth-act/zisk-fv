@@ -138,6 +138,16 @@ lemma bytes_of_chunk_packing (f : FGL) (h : f.val < 4294967296) :
 def byteAt (e : Interaction.MemoryBusEntry FGL) (i : ℕ) : FGL :=
   if i < 4 then byteOf e.value_0 i else byteOf e.value_1 (i - 4)
 
+/-- `(byteAt e i).val < 256` for every byte projection of a memory-bus
+    entry. Direct consequence of `byteOf_val_lt_256` regardless of which
+    chunk `byteAt` dispatches to. Replaces the 8 byte-range projections
+    callers previously obtained from the retired
+    `memory_bus_entry_byte_range_perm_sound` axiom. -/
+lemma byteAt_val_lt_256 (e : Interaction.MemoryBusEntry FGL) (i : ℕ) :
+    (byteAt e i).val < 256 := by
+  unfold byteAt
+  split <;> exact byteOf_val_lt_256 _ _
+
 /-- The `.val` of a byte projection equals its standard div-mod form.
     Useful for `omega`-based proofs about byte sums. -/
 lemma byteOf_val_eq (f : FGL) (i : ℕ) :
