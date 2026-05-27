@@ -12,6 +12,7 @@ import ZiskFv.SailSpec.sra
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
@@ -37,6 +38,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.Sra
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 
 
 /-- **Sail-level companion.** Wraps
@@ -126,9 +128,16 @@ theorem equiv_SRA_of_wf
     ZiskFv.EquivCore.Bridge.BinaryExtension.shift_pin_eq_of_shift_match_m32_0
       m v r_main r_binary (regidx_to_fin r2) sra_input.r2_val
       h_m32 h_b_lo_t h_b_hi_t h_input_r2 h_op_is_shift h_match
-  -- Derive 8 e2 byte ranges from `memory_bus_entry_byte_range_perm_sound`.
-  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
-    ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
+  -- Derive 8 e2 byte ranges from `byteAt_val_lt_256` (chunk-shape
+  -- replacement for the retired memory_bus_entry_byte_range_perm_sound axiom).
+  have h_e2_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 0
+  have h_e2_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 1
+  have h_e2_2 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 2
+  have h_e2_3 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 3
+  have h_e2_4 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 4
+  have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
+  have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
+  have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
   -- Derive the 8 a-byte ranges + 16 c-byte 32-bit ranges from
   -- `binary_extension_columns_in_range` (BinaryExtension AIR's
   -- range-check soundness axiom on the trust ledger). This discharges
@@ -153,8 +162,8 @@ theorem equiv_SRA_of_wf
   have h_bridge :=
     ZiskFv.EquivCore.WriteValueProofs.SailBridge.sail_sra_bridge
       sra_input.r1_val sra_input.r2_val shift h_shift_def
-  have h_rd_val : U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                              e2.x4, e2.x5, e2.x6, e2.x7]
+  have h_rd_val : U64.toBV #v[byteAt e2 0, byteAt e2 1, byteAt e2 2, byteAt e2 3,
+                              byteAt e2 4, byteAt e2 5, byteAt e2 6, byteAt e2 7]
       = execute_RTYPE_pure sra_input.r1_val sra_input.r2_val rop.SRA := by
     rw [h_discharge, h_bridge]
   rw [equiv_SRA_sail state sra_input r1 r2 rd
