@@ -12,6 +12,7 @@ import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.EquivCore.Bridge.ControlFlow
 import ZiskFv.EquivCore.WriteValueProofs.JumpUType
@@ -48,6 +49,8 @@ which is captured by `auipc_store_value_lo`.
 namespace ZiskFv.EquivCore.Auipc
 
 open Goldilocks
+open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt byteOf_val_lt_256)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
@@ -153,21 +156,27 @@ theorem equiv_AUIPC
     ZiskFv.EquivCore.Bridge.ControlFlow.auipc_offset_discharge
       m r_main next_pc auipc_input.imm h_circuit h_no_wrap_offset
   have h_rd_val :
-      U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
-                  e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
-      = auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ 0#12) :=
-    ZiskFv.EquivCore.WriteValueProofs.JumpUType.h_rd_val_jut_auipc
+      U64.toBV #v[(byteAt e_rd 0 : BitVec 8), (byteAt e_rd 1 : BitVec 8),
+                  (byteAt e_rd 2 : BitVec 8), (byteAt e_rd 3 : BitVec 8),
+                  (byteAt e_rd 4 : BitVec 8), (byteAt e_rd 5 : BitVec 8),
+                  (byteAt e_rd 6 : BitVec 8), (byteAt e_rd 7 : BitVec 8)]
+      = auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ 0#12) := by
+    -- Per-byte ranges follow from `byteOf_val_lt_256` (definitional fact
+    -- about `byteOf`'s `% 256` shape). `byteAt` is `@[reducible]` so it
+    -- unfolds at type-check time to a `byteOf` call on either chunk.
+    have hb0 : (byteAt e_rd 0).val < 256 := byteOf_val_lt_256 e_rd.value_0 0
+    have hb1 : (byteAt e_rd 1).val < 256 := byteOf_val_lt_256 e_rd.value_0 1
+    have hb2 : (byteAt e_rd 2).val < 256 := byteOf_val_lt_256 e_rd.value_0 2
+    have hb3 : (byteAt e_rd 3).val < 256 := byteOf_val_lt_256 e_rd.value_0 3
+    have hb4 : (byteAt e_rd 4).val < 256 := byteOf_val_lt_256 e_rd.value_1 0
+    have hb5 : (byteAt e_rd 5).val < 256 := byteOf_val_lt_256 e_rd.value_1 1
+    have hb6 : (byteAt e_rd 6).val < 256 := byteOf_val_lt_256 e_rd.value_1 2
+    have hb7 : (byteAt e_rd 7).val < 256 := byteOf_val_lt_256 e_rd.value_1 3
+    exact ZiskFv.EquivCore.WriteValueProofs.JumpUType.h_rd_val_jut_auipc
       auipc_input.PC auipc_input.imm m r_main next_pc e_rd
       h_circuit h_offset_bridge h_lane_lo h_lane_hi
       h_no_wrap h_lo_bound h_pc_offset_lt_2_32
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.2.2
+      hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
   rw [equiv_AUIPC_sail state auipc_input imm rd
         h_input_imm h_input_rd h_input_pc]
   symm
