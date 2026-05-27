@@ -883,8 +883,16 @@ Checklist:
 
 #### T4 checklist (original):
 
-- ☐ T4.1 build the memory-family ensemble:
+- 🟡 T4.1 build the memory-family ensemble:
   Main/Mem/MemAlignByte/MemAlignReadByte/MemAlign/static ROM providers.
+  Doubleword Main+Mem half is 🪓 as of commit `5fad84d`
+  (`MemFamily/memBusEnsemble`); `mainWithRomAndMemBus_soundness` →
+  `Main.componentWithRomAndMemBus` wrapped via the documented
+  `mainWithRomAndMemBus_circuit_completeness` axiom (V2 tolerates it
+  through `trust/tolerated-completeness-axioms.txt` until T4.4 routes
+  the global theorem through this Component). The MemAlign* half (for
+  sub-doubleword loads on `MemAlignBusChannel`) is a parallel deliverable
+  still ☐.
 - ☐ T4.2 prove Clean balance gives concrete memory provider rows matching
   active Main memory interactions.
 - 🪓 T4.3 signed-load spike: prove the `LB` chain from memory provider row
