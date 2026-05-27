@@ -9,7 +9,9 @@ import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
+import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Compliance.SharedBundles
 
 /-!
@@ -34,6 +36,7 @@ open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithDiv
 open ZiskFv.Airs.OperationBus
 open ZiskFv.PackedBitVec.SignedChunkLift
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.EquivCore.Promises
 
 
@@ -64,9 +67,9 @@ theorem equiv_REMW
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
     -- Pass-through caller burdens.
     (h_sext_choice :
-      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
+      (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
-      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
+      (((byteAt bus.e2 4).val = 255 ∧ (byteAt bus.e2 5).val = 255 ∧ (byteAt bus.e2 6).val = 255 ∧ (byteAt bus.e2 7).val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
     (h_rs1_value :
       (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
@@ -128,9 +131,11 @@ theorem equiv_REMW
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
         (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_main_op_remw)))))))))))))
       h_m2_mult (by rw [h_m2_as])
-  have h_byte_lo_to_c0 : e2.x0.val + e2.x1.val * 256
-      + e2.x2.val * 65536 + e2.x3.val * 16777216
-      = (m.c_0 r_main).val := h_bundle.1
+  have h_chunks_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e2
+  have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
+      + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
+      = (m.c_0 r_main).val := by
+    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_lo_val_sum_eq e2 h_chunks_range.1, h_bundle.1]
   have h_byte_lo := arith_byte_lane_eq_of_match h_byte_lo_to_c0 h_c0_eq_FGL h_d0_lt h_d1_lt
   -- ============ DISCHARGE h_r_abs / h_r_sign (W-signed remainder bound) ============
   have h_bound :=

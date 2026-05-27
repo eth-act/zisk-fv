@@ -1,5 +1,6 @@
 import ZiskFv.Compliance.Wrappers.Divuw
 import ZiskFv.Channels.StateEffect
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 # `equiv_DIVUW` per-opcode canonical theorem (channel-balance form)
@@ -23,6 +24,7 @@ open ZiskFv.Airs.ArithDiv (Valid_ArithDiv opBus_row_ArithDiv opBus_row_ArithDivS
 open ZiskFv.Airs.OperationBus (matches_entry opBus_row_Main)
 open ZiskFv.Trusted (OP_DIV OP_REM OP_REMU OP_DIV_W OP_DIVU_W OP_REM_W OP_REMU_W)
 open ZiskFv.PackedBitVec.SignedChunkLift (toIntZ)
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 
 namespace ZiskFv.Equivalence.Divuw
 
@@ -42,9 +44,9 @@ theorem equiv_DIVUW
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_row_constraints : ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_sext_choice :
-      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
+      (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
-      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
+      (((byteAt bus.e2 4).val = 255 ∧ (byteAt bus.e2 5).val = 255 ∧ (byteAt bus.e2 6).val = 255 ∧ (byteAt bus.e2 7).val = 255) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
     (h_rs1_value : (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)

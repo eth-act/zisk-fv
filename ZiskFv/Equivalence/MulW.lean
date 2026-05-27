@@ -1,5 +1,6 @@
 import ZiskFv.Compliance.Wrappers.MulW
 import ZiskFv.Channels.StateEffect
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 # `equiv_MULW` per-opcode canonical theorem (channel-balance form)
@@ -23,6 +24,7 @@ open ZiskFv.Airs.ArithMul (Valid_ArithMul)
 open ZiskFv.Airs.OperationBus (matches_entry opBus_row_Main)
 open ZiskFv.Airs.ArithMul (opBus_row_Arith opBus_row_ArithMulSecondary)
 open ZiskFv.Trusted (OP_MUL OP_MULH OP_MULU OP_MULUH OP_MULSUH OP_MUL_W)
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 
 namespace ZiskFv.Equivalence.MulW
 
@@ -42,9 +44,9 @@ theorem equiv_MULW
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_row_constraints : ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (h_sext_choice :
-      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
+      (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
-      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
+      (((byteAt bus.e2 4).val = 255 ∧ (byteAt bus.e2 5).val = 255 ∧ (byteAt bus.e2 6).val = 255 ∧ (byteAt bus.e2 7).val = 255) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
     (h_rs1_value :
       (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt
