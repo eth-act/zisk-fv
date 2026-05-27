@@ -18,6 +18,7 @@ import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.Compliance.SharedBundles
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 End-to-end theorem for RV64M REMUW (unsigned 32-bit divide).
@@ -38,6 +39,7 @@ namespace ZiskFv.EquivCore.Remuw
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithDiv
@@ -93,13 +95,13 @@ theorem equiv_REMUW
     (h_c23 : (v.c_2 r_a).val = 0 ∧ (v.c_3 r_a).val = 0)
     -- W-mode byte-pack lane match: bytes 0..3 pack d_0 + d_1*65536 (remainder low).
     (h_byte_lo :
-      bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16777216
+      (byteAt bus.e2 0).val + (byteAt bus.e2 1).val * 256 + (byteAt bus.e2 2).val * 65536 + (byteAt bus.e2 3).val * 16777216
         = (v.d_0 r_a).val + (v.d_1 r_a).val * 65536)
     -- Sign-extension choice on bytes 4..7 (the 17th ADDED binder).
     (h_sext_choice :
-      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
+      (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
-      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
+      (((byteAt bus.e2 4).val = 255 ∧ (byteAt bus.e2 5).val = 255 ∧ (byteAt bus.e2 6).val = 255 ∧ (byteAt bus.e2 7).val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
     (h_rs1_value : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
@@ -130,7 +132,14 @@ theorem equiv_REMUW
       h_na h_nb h_np h_nr h_m32 h_div
   obtain ⟨h_a2_eq, h_a3_eq, h_b2_eq, h_b3_eq, h_d2_eq, h_d3_eq⟩ :=
     ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin v r_a h_m32 h_div h_op
-  have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
+  have h_e2_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 0
+  have h_e2_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 1
+  have h_e2_2 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 2
+  have h_e2_3 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 3
+  have h_e2_4 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 4
+  have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
+  have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
+  have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
   have h_rd_val :=
     ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_remuw_chunked
       remuw_input.r1_val remuw_input.r2_val e2
@@ -139,9 +148,7 @@ theorem equiv_REMUW
       (v.c_0 r_a) (v.c_1 r_a) (v.c_2 r_a) (v.c_3 r_a)
       (v.d_0 r_a) (v.d_1 r_a) (v.d_2 r_a) (v.d_3 r_a)
       cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
-      h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
-      h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
-      h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
+      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3
       h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
       h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
