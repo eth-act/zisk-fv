@@ -17,6 +17,7 @@ import ZiskFv.SailSpec.ld
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.EquivCore.Promises.Load
 import ZiskFv.Compliance.SharedBundles
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 End-to-end theorem for RV64 LD (load doubleword). Combines:
@@ -48,6 +49,7 @@ namespace ZiskFv.EquivCore.Ld
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
@@ -164,21 +166,21 @@ theorem equiv_LD
   rw [h_ptr_match'] at h_mem
   obtain ⟨he0, he1, he2, he3, he4, he5, he6, he7⟩ := h_mem
   -- Combine with state.mem assumptions to get (e1.x_i : BitVec 8) = data_i.
-  have hd0 : (e1.x0 : BitVec 8) = ld_input.data0 := by
+  have hd0 : ((byteAt e1 0) : BitVec 8) = ld_input.data0 := by
     rw [h_d0] at he0; exact (Option.some.inj he0).symm
-  have hd1 : (e1.x1 : BitVec 8) = ld_input.data1 := by
+  have hd1 : ((byteAt e1 1) : BitVec 8) = ld_input.data1 := by
     rw [h_d1] at he1; exact (Option.some.inj he1).symm
-  have hd2 : (e1.x2 : BitVec 8) = ld_input.data2 := by
+  have hd2 : ((byteAt e1 2) : BitVec 8) = ld_input.data2 := by
     rw [h_d2] at he2; exact (Option.some.inj he2).symm
-  have hd3 : (e1.x3 : BitVec 8) = ld_input.data3 := by
+  have hd3 : ((byteAt e1 3) : BitVec 8) = ld_input.data3 := by
     rw [h_d3] at he3; exact (Option.some.inj he3).symm
-  have hd4 : (e1.x4 : BitVec 8) = ld_input.data4 := by
+  have hd4 : ((byteAt e1 4) : BitVec 8) = ld_input.data4 := by
     rw [h_d4] at he4; exact (Option.some.inj he4).symm
-  have hd5 : (e1.x5 : BitVec 8) = ld_input.data5 := by
+  have hd5 : ((byteAt e1 5) : BitVec 8) = ld_input.data5 := by
     rw [h_d5] at he5; exact (Option.some.inj he5).symm
-  have hd6 : (e1.x6 : BitVec 8) = ld_input.data6 := by
+  have hd6 : ((byteAt e1 6) : BitVec 8) = ld_input.data6 := by
     rw [h_d6] at he6; exact (Option.some.inj he6).symm
-  have hd7 : (e1.x7 : BitVec 8) = ld_input.data7 := by
+  have hd7 : ((byteAt e1 7) : BitVec 8) = ld_input.data7 := by
     rw [h_d7] at he7; exact (Option.some.inj he7).symm
   -- Derive (e2.x_i : BitVec 8) = (e1.x_i : BitVec 8) from circuit witnesses
   -- via copyb passthrough (Main constraints 9/16) plus byte ranges.
@@ -186,28 +188,28 @@ theorem equiv_LD
       main.b_0 r_main = memory_entry_lo e1
       ∧ main.b_1 r_main = memory_entry_hi e1 :=
     ⟨h_main_emit_b.1, h_main_emit_b.2.1⟩
-  -- Memory-bus entry byte ranges discharged via the byte-range bus
-  -- protocol axiom (`memory_bus_entry_byte_range_perm_sound`).
-  have h_e1_range : memory_entry_bytes_in_range e1 :=
-    memory_bus_entry_byte_range_perm_sound e1
-  have h_e2_range : memory_entry_bytes_in_range e2 :=
-    memory_bus_entry_byte_range_perm_sound e2
+  -- Memory-bus entry chunk ranges derived from
+  -- `memory_bus_entry_chunks_range_perm_sound`.
+  have h_e1_range : memory_entry_chunks_in_range e1 :=
+    memory_bus_entry_chunks_range_perm_sound e1
+  have h_e2_range : memory_entry_chunks_in_range e2 :=
+    memory_bus_entry_chunks_range_perm_sound e2
   obtain ⟨h12_0, h12_1, h12_2, h12_3, h12_4, h12_5, h12_6, h12_7⟩ :=
     ZiskFv.ZiskCircuit.LoadDerivation.load_copyb_e1_e2_bytes_eq_bv
       main r_main e1 e2 h_copy0 h_copy1 h_ext h_op
       h_emit_b_lo_hi h_main_emit_c h_e1_range h_e2_range
-  have hd2_0 : (e2.x0 : BitVec 8) = ld_input.data0 := h12_0.trans hd0
-  have hd2_1 : (e2.x1 : BitVec 8) = ld_input.data1 := h12_1.trans hd1
-  have hd2_2 : (e2.x2 : BitVec 8) = ld_input.data2 := h12_2.trans hd2
-  have hd2_3 : (e2.x3 : BitVec 8) = ld_input.data3 := h12_3.trans hd3
-  have hd2_4 : (e2.x4 : BitVec 8) = ld_input.data4 := h12_4.trans hd4
-  have hd2_5 : (e2.x5 : BitVec 8) = ld_input.data5 := h12_5.trans hd5
-  have hd2_6 : (e2.x6 : BitVec 8) = ld_input.data6 := h12_6.trans hd6
-  have hd2_7 : (e2.x7 : BitVec 8) = ld_input.data7 := h12_7.trans hd7
+  have hd2_0 : ((byteAt e2 0) : BitVec 8) = ld_input.data0 := h12_0.trans hd0
+  have hd2_1 : ((byteAt e2 1) : BitVec 8) = ld_input.data1 := h12_1.trans hd1
+  have hd2_2 : ((byteAt e2 2) : BitVec 8) = ld_input.data2 := h12_2.trans hd2
+  have hd2_3 : ((byteAt e2 3) : BitVec 8) = ld_input.data3 := h12_3.trans hd3
+  have hd2_4 : ((byteAt e2 4) : BitVec 8) = ld_input.data4 := h12_4.trans hd4
+  have hd2_5 : ((byteAt e2 5) : BitVec 8) = ld_input.data5 := h12_5.trans hd5
+  have hd2_6 : ((byteAt e2 6) : BitVec 8) = ld_input.data6 := h12_6.trans hd6
+  have hd2_7 : ((byteAt e2 7) : BitVec 8) = ld_input.data7 := h12_7.trans hd7
   -- Build the rd-value equality (the previous `h_rd_val` shape).
   have h_rd_val_derived :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
+      U64.toBV #v[byteAt e2 0, byteAt e2 1, byteAt e2 2, byteAt e2 3,
+                  byteAt e2 4, byteAt e2 5, byteAt e2 6, byteAt e2 7]
         = ld_input.data7 ++ ld_input.data6 ++ ld_input.data5 ++ ld_input.data4
           ++ ld_input.data3 ++ ld_input.data2 ++ ld_input.data1
           ++ ld_input.data0 := by
