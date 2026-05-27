@@ -23,6 +23,7 @@ import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.Compliance.SharedBundles
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 End-to-end theorem for RV64 SUBW. Mirrors
@@ -33,6 +34,7 @@ End-to-end theorem for RV64 SUBW. Mirrors
 namespace ZiskFv.EquivCore.Subw
 
 open Goldilocks
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
@@ -253,8 +255,8 @@ theorem equiv_SUBW_of_wf
       subw_input.r1_val subw_input.r2_val a32sum b32sum
       (h_input_r1_extract.trans (by rw [h_a32_def]))
       (h_input_r2_extract.trans (by rw [h_b32_def]))
-  have h_rd_val : U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                              e2.x4, e2.x5, e2.x6, e2.x7]
+  have h_rd_val : U64.toBV #v[byteAt e2 0, byteAt e2 1, byteAt e2 2, byteAt e2 3,
+                              byteAt e2 4, byteAt e2 5, byteAt e2 6, byteAt e2 7]
       = execute_RTYPEW_pure subw_input.r1_val subw_input.r2_val ropw.SUBW := by
     rw [h_discharge, h_bridge]
   rw [equiv_SUBW_sail state subw_input r1 r2 rd
