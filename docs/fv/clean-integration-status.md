@@ -839,7 +839,46 @@ BinaryExtension provider row supplies the sign-extension table facts. T4 must
 prove those two provider rows are tied to the same Main load result before it
 can retire `bin_ext_table_consumer_wf` for `LB/LH/LW`.
 
+#### T4.0 — ZisK instruction ROM modeling (added 2026-05-27)
+
+Inserted because T4.1's "static ROM providers" line-item turned out to need
+substantial new modeling work: Main's per-row memory-bus emission depends on
+8+ ROM-derived columns (`b_src_ind`, `b_offset_imm0`, `b_mem_op`, `c_mem_op`,
+`c_src_ind`, `c_offset_imm0`, `store_offset`, `store_ind`) that are NOT in
+the current `MainRow` / `Valid_Main` — they appeared only as comments in
+`Trusted/Transpiler.lean` and as outputs of the legacy
+`main_*_emission_bundle` axioms targeted for T4.7 retirement.
+
 Checklist:
+
+- 🪓 T4.0.1 typed `ZiskRomBusChannel` (`Channels/ZiskRomBus.lean`) — 11-slot
+  `ZiskRomMessage` matching PIL `lookup_assumes(ROM_BUS_ID, [pc,
+  a_offset_imm0, a_imm1, b_offset_imm0, b_imm1, ind_width, op,
+  store_offset, jmp_offset1, jmp_offset2, rom_flags])` exactly.
+- 🪓 T4.0.2 program-parameterised `ZiskInstructionRom` `StaticTable`
+  (`AirsClean/ZiskInstructionRom.lean`) — `Program length := Fin length →
+  ZiskRomMessage FGL`; `romStaticTable length program` with exact decoded-row
+  membership.
+- 🪓 T4.0.3 extended `MainRow` layout (`AirsClean/Main/Row.lean`):
+  `MainRomRow` companion with the 5 ROM data columns + 11 boolean flags;
+  `MainRowWithRom = { core, rom }` composite (split to stay below Clean's
+  `ProvableStruct` deriving recursion-depth limit of ~30 fields).
+- 🪓 T4.0.4 `mainWithRom` + `mainWithRomElaborated` (`AirsClean/Main/
+  Constraints.lean`) — adds 14 boolean assertions on `rom_flags` components
+  + the verbatim `romFlagsExpr` packing equation + the
+  `Table.fromStatic (romStaticTable length program)` lookup.
+- ☐ T4.0.5 extend MainRow for the memory-bus emission helpers:
+  `addr0`/`addr1`/`addr2` (witness or const-expr per PIL), `STEP`
+  (`main_segment * N + SEGMENT_STEP` — fixed columns), `sp` (immediate
+  register witness), plus 3 booleans for `a_use_sp_imm1`,
+  `b_use_sp_imm1`, `store_use_sp`.
+- ☐ T4.0.6 `mainWithMemBus` — 3 per-row `MemBusChannel.emit` pushes (a-side,
+  b-side, c-side) matching `main.pil:284,300,323`.
+- ☐ T4.0.7 `memWithMemBus` on the Mem AIR — provider-side
+  `MemBusChannel.emit` from Mem's existing `(addr, step, value_0, value_1,
+  wr, sel)` columns with appropriate multiplicity.
+
+#### T4 checklist (original):
 
 - ☐ T4.1 build the memory-family ensemble:
   Main/Mem/MemAlignByte/MemAlignReadByte/MemAlign/static ROM providers.
