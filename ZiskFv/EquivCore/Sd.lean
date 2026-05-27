@@ -13,6 +13,7 @@ import ZiskFv.SailSpec.sd
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.EquivCore.Promises.Store
 import ZiskFv.Compliance.SharedBundles
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 End-to-end theorem for RV64 SD (store doubleword). The
@@ -26,6 +27,7 @@ namespace ZiskFv.EquivCore.Sd
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
@@ -74,14 +76,14 @@ theorem equiv_SD
     (h_ptr_match :
       bus.e2.ptr.toNat
         = (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat)
-    (h_byte_0 : (bus.e2.x0 : BitVec 8) = BitVec.extractLsb 7 0 sd_input.r2_val)
-    (h_byte_1 : (bus.e2.x1 : BitVec 8) = BitVec.extractLsb 15 8 sd_input.r2_val)
-    (h_byte_2 : (bus.e2.x2 : BitVec 8) = BitVec.extractLsb 23 16 sd_input.r2_val)
-    (h_byte_3 : (bus.e2.x3 : BitVec 8) = BitVec.extractLsb 31 24 sd_input.r2_val)
-    (h_byte_4 : (bus.e2.x4 : BitVec 8) = BitVec.extractLsb 39 32 sd_input.r2_val)
-    (h_byte_5 : (bus.e2.x5 : BitVec 8) = BitVec.extractLsb 47 40 sd_input.r2_val)
-    (h_byte_6 : (bus.e2.x6 : BitVec 8) = BitVec.extractLsb 55 48 sd_input.r2_val)
-    (h_byte_7 : (bus.e2.x7 : BitVec 8) = BitVec.extractLsb 63 56 sd_input.r2_val) :
+    (h_byte_0 : ((byteAt bus.e2 0) : BitVec 8) = BitVec.extractLsb 7 0 sd_input.r2_val)
+    (h_byte_1 : ((byteAt bus.e2 1) : BitVec 8) = BitVec.extractLsb 15 8 sd_input.r2_val)
+    (h_byte_2 : ((byteAt bus.e2 2) : BitVec 8) = BitVec.extractLsb 23 16 sd_input.r2_val)
+    (h_byte_3 : ((byteAt bus.e2 3) : BitVec 8) = BitVec.extractLsb 31 24 sd_input.r2_val)
+    (h_byte_4 : ((byteAt bus.e2 4) : BitVec 8) = BitVec.extractLsb 39 32 sd_input.r2_val)
+    (h_byte_5 : ((byteAt bus.e2 5) : BitVec 8) = BitVec.extractLsb 47 40 sd_input.r2_val)
+    (h_byte_6 : ((byteAt bus.e2 6) : BitVec 8) = BitVec.extractLsb 55 48 sd_input.r2_val)
+    (h_byte_7 : ((byteAt bus.e2 7) : BitVec 8) = BitVec.extractLsb 63 56 sd_input.r2_val) :
     execute_instruction (instruction.STORE (
       sd_input.imm,
       regidx.Regidx sd_input.r2,
