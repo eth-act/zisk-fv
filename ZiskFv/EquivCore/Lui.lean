@@ -12,6 +12,7 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.EquivCore.Bridge.ControlFlow
 import ZiskFv.EquivCore.WriteValueProofs.JumpUType
 import ZiskFv.EquivCore.Promises.UType
@@ -42,6 +43,8 @@ and address spaces on the two buses), so it reuses cleanly here.
 namespace ZiskFv.EquivCore.Lui
 
 open Goldilocks
+open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt byteOf_val_lt_256)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
@@ -114,20 +117,25 @@ theorem equiv_LUI
     ZiskFv.EquivCore.Bridge.ControlFlow.lui_discharge_lanes
       m r_main next_pc e_rd h_circuit h_rd_mult h_rd_as
   have h_rd_val :
-      U64.toBV #v[e_rd.x0, e_rd.x1, e_rd.x2, e_rd.x3,
-                  e_rd.x4, e_rd.x5, e_rd.x6, e_rd.x7]
+      U64.toBV #v[(byteAt e_rd 0 : BitVec 8), (byteAt e_rd 1 : BitVec 8),
+                  (byteAt e_rd 2 : BitVec 8), (byteAt e_rd 3 : BitVec 8),
+                  (byteAt e_rd 4 : BitVec 8), (byteAt e_rd 5 : BitVec 8),
+                  (byteAt e_rd 6 : BitVec 8), (byteAt e_rd 7 : BitVec 8)]
       = BitVec.signExtend 64 (lui_input.imm ++ 0#12) := by
+    -- Per-byte ranges follow from `byteOf_val_lt_256` (definitional fact
+    -- about `byteOf`'s `% 256` shape).
+    have hb0 : (byteAt e_rd 0).val < 256 := byteOf_val_lt_256 e_rd.value_0 0
+    have hb1 : (byteAt e_rd 1).val < 256 := byteOf_val_lt_256 e_rd.value_0 1
+    have hb2 : (byteAt e_rd 2).val < 256 := byteOf_val_lt_256 e_rd.value_0 2
+    have hb3 : (byteAt e_rd 3).val < 256 := byteOf_val_lt_256 e_rd.value_0 3
+    have hb4 : (byteAt e_rd 4).val < 256 := byteOf_val_lt_256 e_rd.value_1 0
+    have hb5 : (byteAt e_rd 5).val < 256 := byteOf_val_lt_256 e_rd.value_1 1
+    have hb6 : (byteAt e_rd 6).val < 256 := byteOf_val_lt_256 e_rd.value_1 2
+    have hb7 : (byteAt e_rd 7).val < 256 := byteOf_val_lt_256 e_rd.value_1 3
     have h := ZiskFv.EquivCore.WriteValueProofs.JumpUType.h_rd_val_jut_lui
       imm m r_main next_pc e_rd
       h_circuit h_lane_rd h_imm_lo_nat h_imm_hi_nat
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.2.2
+      hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
     rw [← h_input_imm] at h
     exact h
   rw [equiv_LUI_sail state lui_input imm rd
