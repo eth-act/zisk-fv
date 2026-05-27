@@ -12,6 +12,7 @@ import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.EquivCore.Bridge.ControlFlow
 import ZiskFv.EquivCore.WriteValueProofs.JumpUType
 import ZiskFv.EquivCore.Promises.Jump
@@ -37,6 +38,8 @@ the execution + memory bus entries matter.
 namespace ZiskFv.EquivCore.Jal
 
 open Goldilocks
+open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt byteOf_val_lt_256)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
@@ -146,19 +149,22 @@ theorem equiv_JAL
       exact hl
     rw [← h_eq]
     exact ZiskFv.Airs.MemoryBus.memory_entry_lo_val_lt_2_32 e_rd
+  -- Per-byte ranges from `byteOf_val_lt_256` (chunk-shape replacement
+  -- for the retired memory_bus_entry_byte_range_perm_sound axiom).
+  have hb0 : (byteAt e_rd 0).val < 256 := byteOf_val_lt_256 e_rd.value_0 0
+  have hb1 : (byteAt e_rd 1).val < 256 := byteOf_val_lt_256 e_rd.value_0 1
+  have hb2 : (byteAt e_rd 2).val < 256 := byteOf_val_lt_256 e_rd.value_0 2
+  have hb3 : (byteAt e_rd 3).val < 256 := byteOf_val_lt_256 e_rd.value_0 3
+  have hb4 : (byteAt e_rd 4).val < 256 := byteOf_val_lt_256 e_rd.value_1 0
+  have hb5 : (byteAt e_rd 5).val < 256 := byteOf_val_lt_256 e_rd.value_1 1
+  have hb6 : (byteAt e_rd 6).val < 256 := byteOf_val_lt_256 e_rd.value_1 2
+  have hb7 : (byteAt e_rd 7).val < 256 := byteOf_val_lt_256 e_rd.value_1 3
   have h_rd_val :=
     ZiskFv.EquivCore.WriteValueProofs.JumpUType.h_rd_val_jut_jal
       jal_input.PC m r_main next_pc e_rd
       h_circuit h_jmp2 h_lane_lo h_lane_hi
       h_pc_bound h_lo_bound h_pc_offset_lt_2_32
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.2.1
-      (ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e_rd).2.2.2.2.2.2.2
+      hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
   rw [equiv_JAL_sail state jal_input imm rd misa_val
         h_input_imm h_input_rd h_input_pc h_input_misa h_misa_c]
   symm
