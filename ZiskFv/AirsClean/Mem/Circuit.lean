@@ -24,6 +24,7 @@ beyond the already-stated per-row relation.
 namespace ZiskFv.AirsClean.Mem
 
 open Goldilocks
+open ZiskFv.Channels.MemoryBus (MemBusChannel)
 
 /-- Mem as a Clean `GeneralFormalCircuit`. -/
 def circuit : GeneralFormalCircuit FGL MemRow unit :=
@@ -50,6 +51,43 @@ def circuit : GeneralFormalCircuit FGL MemRow unit :=
 
 /-- Mem as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+
+/-! ## T4.1 — Mem-with-MemBus Component
+
+`circuitWithMemBus` wraps `memWithMemBusElaborated` (Mem's per-row
+constraints + the memory-bus provider emission) as a Clean
+`GeneralFormalCircuit`. The Spec is unchanged from `Mem.circuit` —
+the channel emission adds no per-row soundness obligation; the
+soundness/completeness proofs use exactly the same body. -/
+
+def circuitWithMemBus : GeneralFormalCircuit FGL MemRow unit :=
+  { memWithMemBusElaborated with
+    Assumptions := fun _ _ => True
+    Spec := fun row _ _ => Spec row
+    ProverAssumptions := fun row _ _ => Spec row
+    ProverSpec := fun _ _ _ => True
+    soundness := by
+      circuit_proof_start
+      refine ⟨?_, ?_⟩
+      · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8⟩ := h_holds
+        exact ⟨ by simpa only [sub_eq_add_neg] using h0
+              , by simpa only [sub_eq_add_neg] using h1
+              , by simpa only [sub_eq_add_neg] using h2
+              , by simpa only [sub_eq_add_neg] using h3
+              , by simpa only [sub_eq_add_neg] using h4
+              , by simpa only [sub_eq_add_neg] using h5
+              , by simpa only [sub_eq_add_neg] using h6
+              , by simpa only [sub_eq_add_neg] using h7
+              , by simpa only [sub_eq_add_neg] using h8 ⟩
+      · intro _
+        trivial
+    completeness := by
+      circuit_proof_start [MemBusChannel]
+      simpa only [Spec, sub_eq_add_neg] using h_assumptions }
+
+/-- Mem as a Clean `Air.Flat.Component` exposing the memory-bus
+    provider emission. Used by the T4.1 memory-family ensemble. -/
+def componentWithMemBus : Air.Flat.Component FGL := ⟨ circuitWithMemBus ⟩
 
 /-- The Mem `Spec` for a row, derived through the Clean Component. -/
 theorem spec_via_component (row : MemRow FGL)
