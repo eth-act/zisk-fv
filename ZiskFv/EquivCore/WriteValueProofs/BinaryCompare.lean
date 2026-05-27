@@ -9,6 +9,8 @@ import ZiskFv.Airs.Binary.BinaryPackedCorrect
 import ZiskFv.Airs.Tables.BinaryTable
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.ZiskCircuit.Slt
 import ZiskFv.ZiskCircuit.Sltu
 import ZiskFv.ZiskCircuit.Slti
@@ -69,6 +71,7 @@ namespace ZiskFv.EquivCore.WriteValueProofs.BinaryCompare
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt byteOf)
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Binary
 open ZiskFv.Airs.Tables.BinaryTable
@@ -85,39 +88,70 @@ equals 0. The lane match equates this to
 `memory_entry_lo/hi e2`. With byte ranges, this forces
 `e2.x0 = cout`, `e2.x1 = ... = e2.x7 = 0`. -/
 
+/-! `byteAt` lo / hi byte-sum convenience helpers (private to this file).
+    Mirrors the `Arith.byteAt_{lo,hi}_val_sum_eq` helpers but kept local
+    here so this file doesn't need to re-export them. -/
+
+private lemma byteAt_lo_val_sum_eq (e : MemoryBusEntry FGL) :
+    (byteAt e 0).val + (byteAt e 1).val * 256
+      + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+    = e.value_0.val := by
+  have hb0 : byteAt e 0 = byteOf e.value_0 0 := by
+    unfold byteAt; simp only [show (0 : ℕ) < 4 from by decide, if_true]
+  have hb1 : byteAt e 1 = byteOf e.value_0 1 := by
+    unfold byteAt; simp only [show (1 : ℕ) < 4 from by decide, if_true]
+  have hb2 : byteAt e 2 = byteOf e.value_0 2 := by
+    unfold byteAt; simp only [show (2 : ℕ) < 4 from by decide, if_true]
+  have hb3 : byteAt e 3 = byteOf e.value_0 3 := by
+    unfold byteAt; simp only [show (3 : ℕ) < 4 from by decide, if_true]
+  rw [hb0, hb1, hb2, hb3]
+  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_0
+          (ZiskFv.Airs.MemoryBus.memory_entry_lo_val_lt_2_32 e)
+
+private lemma byteAt_hi_val_sum_eq (e : MemoryBusEntry FGL) :
+    (byteAt e 4).val + (byteAt e 5).val * 256
+      + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
+    = e.value_1.val := by
+  have hb4 : byteAt e 4 = byteOf e.value_1 0 := by
+    unfold byteAt; simp only [show ¬ (4 : ℕ) < 4 from by decide, if_false]
+  have hb5 : byteAt e 5 = byteOf e.value_1 1 := by
+    unfold byteAt; simp only [show ¬ (5 : ℕ) < 4 from by decide, if_false]
+  have hb6 : byteAt e 6 = byteOf e.value_1 2 := by
+    unfold byteAt; simp only [show ¬ (6 : ℕ) < 4 from by decide, if_false]
+  have hb7 : byteAt e 7 = byteOf e.value_1 3 := by
+    unfold byteAt; simp only [show ¬ (7 : ℕ) < 4 from by decide, if_false]
+  rw [hb4, hb5, hb6, hb7]
+  have h_v1_lt : e.value_1.val < 4294967296 :=
+    (ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e).2
+  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_1 h_v1_lt
+
 private lemma cout_lane_decode
     (e2 : MemoryBusEntry FGL)
     (cout : ℕ)
     (h_cout_le : cout ≤ 1)
     (h_lo : (memory_entry_lo e2).val = cout)
     (h_hi : (memory_entry_hi e2).val = 0)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256) :
-    e2.x0.val = cout ∧ e2.x1.val = 0 ∧ e2.x2.val = 0 ∧ e2.x3.val = 0
-    ∧ e2.x4.val = 0 ∧ e2.x5.val = 0 ∧ e2.x6.val = 0 ∧ e2.x7.val = 0 := by
-  -- Lift memory_entry_lo to a Nat byte sum.
+    (h_e2_0 : (byteAt e2 0).val < 256) (h_e2_1 : (byteAt e2 1).val < 256)
+    (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
+    (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
+    (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256) :
+    (byteAt e2 0).val = cout ∧ (byteAt e2 1).val = 0
+    ∧ (byteAt e2 2).val = 0 ∧ (byteAt e2 3).val = 0
+    ∧ (byteAt e2 4).val = 0 ∧ (byteAt e2 5).val = 0
+    ∧ (byteAt e2 6).val = 0 ∧ (byteAt e2 7).val = 0 := by
+  -- Lift memory_entry_lo to a Nat byte sum via the chunk-shape helper.
   have h_lo_nat : (memory_entry_lo e2).val
-      = e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 := by
-    simp only [memory_entry_lo]
-    have h_cast : e2.x0 + e2.x1 * 256 + e2.x2 * 65536 + e2.x3 * 16777216
-        = (((e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536
-             + e2.x3.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
-    rw [h_cast, Fin.val_natCast]
-    apply Nat.mod_eq_of_lt; omega
+      = (byteAt e2 0).val + (byteAt e2 1).val * 256
+        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
+    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2).symm
   have h_hi_nat : (memory_entry_hi e2).val
-      = e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216 := by
-    simp only [memory_entry_hi]
-    have h_cast : e2.x4 + e2.x5 * 256 + e2.x6 * 65536 + e2.x7 * 16777216
-        = (((e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536
-             + e2.x7.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
-    rw [h_cast, Fin.val_natCast]
-    apply Nat.mod_eq_of_lt; omega
+      = (byteAt e2 4).val + (byteAt e2 5).val * 256
+        + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
+    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2).symm
   rw [h_lo_nat] at h_lo
   rw [h_hi_nat] at h_hi
-  -- h_lo : e2.x0.val + e2.x1.val * 256 + ... = cout (≤ 1)
-  -- h_hi : e2.x4.val + e2.x5.val * 256 + ... = 0
+  -- h_lo : (byteAt e2 0).val + ... = cout (≤ 1)
+  -- h_hi : (byteAt e2 4).val + ... = 0
   -- All bytes are < 256 so we can solve via omega.
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega
 
@@ -127,12 +161,14 @@ Given `e2.x0 = cout, e2.x1..x7 = 0`, compute the byte sum. -/
 
 private lemma byte_sum_cout
     (e2 : MemoryBusEntry FGL) (cout : ℕ)
-    (h0 : e2.x0.val = cout) (h1 : e2.x1.val = 0) (h2 : e2.x2.val = 0)
-    (h3 : e2.x3.val = 0) (h4 : e2.x4.val = 0) (h5 : e2.x5.val = 0)
-    (h6 : e2.x6.val = 0) (h7 : e2.x7.val = 0) :
-    e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-    + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-    + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+    (h0 : (byteAt e2 0).val = cout) (h1 : (byteAt e2 1).val = 0)
+    (h2 : (byteAt e2 2).val = 0) (h3 : (byteAt e2 3).val = 0)
+    (h4 : (byteAt e2 4).val = 0) (h5 : (byteAt e2 5).val = 0)
+    (h6 : (byteAt e2 6).val = 0) (h7 : (byteAt e2 7).val = 0) :
+    (byteAt e2 0).val + (byteAt e2 1).val * 256
+      + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
+    + (byteAt e2 4).val * 4294967296 + (byteAt e2 5).val * 1099511627776
+    + (byteAt e2 6).val * 281474976710656 + (byteAt e2 7).val * 72057594037927936
     = cout := by omega
 
 /-! ## Internal: bridges from Nat-level compare to `BitVec.ult` / `BitVec.slt` -/
@@ -219,12 +255,14 @@ private lemma compare_byte_sum_kernel
     (h_clo : m.c_0 r_main = (cout : FGL))
     (h_chi : m.c_1 r_main = 0)
     (h_lane_rd : register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+    (h_e2_0 : (byteAt e2 0).val < 256) (h_e2_1 : (byteAt e2 1).val < 256)
+    (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
+    (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
+    (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256) :
+    U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8),
+                ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),
+                ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8),
+                ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
       = BitVec.ofNat 64 cout := by
   -- Lane match decodes to lo-equals-cout, hi-equals-zero.
   simp only [register_write_lanes_match] at h_lane_rd
@@ -245,15 +283,17 @@ private lemma compare_byte_sum_kernel
   have h_byte_sum := byte_sum_cout e2 cout hx0 hx1 hx2 hx3 hx4 hx5 hx6 hx7
   -- Now apply bv64_of_byte_sum at spec_val = BitVec.ofNat 64 cout.
   have h_target :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+      (byteAt e2 0).val + (byteAt e2 1).val * 256
+        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
+      + (byteAt e2 4).val * 4294967296 + (byteAt e2 5).val * 1099511627776
+      + (byteAt e2 6).val * 281474976710656 + (byteAt e2 7).val * 72057594037927936
       = (BitVec.ofNat 64 cout).toNat := by
     rw [h_byte_sum, BitVec.toNat_ofNat]
     have : cout < 2^64 := by show _ < 18446744073709551616; omega
     rw [Nat.mod_eq_of_lt this]
-  exact bv64_of_byte_sum (BitVec.ofNat 64 cout) e2.x0 e2.x1 e2.x2 e2.x3
-    e2.x4 e2.x5 e2.x6 e2.x7
+  exact bv64_of_byte_sum (BitVec.ofNat 64 cout)
+    (byteAt e2 0) (byteAt e2 1) (byteAt e2 2) (byteAt e2 3)
+    (byteAt e2 4) (byteAt e2 5) (byteAt e2 6) (byteAt e2 7)
     h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7 h_target
 
 /-! ## SLTU (and SLTIU) -/
@@ -310,10 +350,10 @@ lemma h_rd_val_compare_sltu_of_wf
     -- rd-write lane match.
     (h_lane_rd : register_write_lanes_match m r_main e2)
     -- e2 byte ranges.
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_e2_0 : (byteAt e2 0).val < 256) (h_e2_1 : (byteAt e2 1).val < 256)
+    (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
+    (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
+    (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256)
     -- Cout cell range (flags low bit ∈ {0,1}; expressed in FGL via fl7's low-bit semantics).
     -- The Binary AIR's flags column is uniformly < 256 (per BinaryTable's
     -- range_conditions), so `fl7.val % 2` is what's emitted on the bus
@@ -335,8 +375,10 @@ lemma h_rd_val_compare_sltu_of_wf
           (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
             + b4.val * 4294967296 + b5.val * 1099511627776
             + b6.val * 281474976710656 + b7.val * 72057594037927936)) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+    U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8),
+                ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),
+                ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8),
+                ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
       = if BitVec.ult r1_val r2_val then 1#64 else 0#64 := by
   -- K1-B LTU lift.
   have h_iff := binary_ltu_chunks_eq_bv_ult_of_wf
@@ -470,10 +512,10 @@ lemma h_rd_val_compare_sltiu_of_wf
     (h_match_clo : m.c_0 r_main = fl7)
     (h_match_chi : m.c_1 r_main = 0)
     (h_lane_rd : register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_e2_0 : (byteAt e2 0).val < 256) (h_e2_1 : (byteAt e2 1).val < 256)
+    (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
+    (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
+    (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256)
     (h_fl7_lt_2 : fl7.val < 2)
     (h_input_r1 : r1_val
       = BitVec.ofNat 64
@@ -485,8 +527,10 @@ lemma h_rd_val_compare_sltiu_of_wf
           (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
             + b4.val * 4294967296 + b5.val * 1099511627776
             + b6.val * 281474976710656 + b7.val * 72057594037927936)) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+    U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8),
+                ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),
+                ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8),
+                ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
       = if BitVec.ult r1_val (BitVec.signExtend 64 imm) then 1#64 else 0#64 :=
   h_rd_val_compare_sltu_of_wf m r_main e2 r1_val (BitVec.signExtend 64 imm)
     a0 a1 a2 a3 a4 a5 a6 a7 b0 b1 b2 b3 b4 b5 b6 b7
@@ -547,10 +591,10 @@ lemma h_rd_val_compare_slt_of_wf
     (h_match_clo : m.c_0 r_main = fl7)
     (h_match_chi : m.c_1 r_main = 0)
     (h_lane_rd : register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_e2_0 : (byteAt e2 0).val < 256) (h_e2_1 : (byteAt e2 1).val < 256)
+    (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
+    (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
+    (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256)
     (h_fl7_lt_2 : fl7.val < 2)
     (h_input_r1 : r1_val
       = BitVec.ofNat 64
@@ -562,8 +606,10 @@ lemma h_rd_val_compare_slt_of_wf
           (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
             + b4.val * 4294967296 + b5.val * 1099511627776
             + b6.val * 281474976710656 + b7.val * 72057594037927936)) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+    U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8),
+                ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),
+                ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8),
+                ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
       = if BitVec.slt r1_val r2_val then 1#64 else 0#64 := by
   -- K1-B LT lift (signed).
   have h_iff := binary_lt_chunks_eq_bv_slt_of_wf
@@ -686,10 +732,10 @@ lemma h_rd_val_compare_slti_of_wf
     (h_match_clo : m.c_0 r_main = fl7)
     (h_match_chi : m.c_1 r_main = 0)
     (h_lane_rd : register_write_lanes_match m r_main e2)
-    (h_e2_0 : e2.x0.val < 256) (h_e2_1 : e2.x1.val < 256)
-    (h_e2_2 : e2.x2.val < 256) (h_e2_3 : e2.x3.val < 256)
-    (h_e2_4 : e2.x4.val < 256) (h_e2_5 : e2.x5.val < 256)
-    (h_e2_6 : e2.x6.val < 256) (h_e2_7 : e2.x7.val < 256)
+    (h_e2_0 : (byteAt e2 0).val < 256) (h_e2_1 : (byteAt e2 1).val < 256)
+    (h_e2_2 : (byteAt e2 2).val < 256) (h_e2_3 : (byteAt e2 3).val < 256)
+    (h_e2_4 : (byteAt e2 4).val < 256) (h_e2_5 : (byteAt e2 5).val < 256)
+    (h_e2_6 : (byteAt e2 6).val < 256) (h_e2_7 : (byteAt e2 7).val < 256)
     (h_fl7_lt_2 : fl7.val < 2)
     (h_input_r1 : r1_val
       = BitVec.ofNat 64
@@ -701,8 +747,10 @@ lemma h_rd_val_compare_slti_of_wf
           (b0.val + b1.val * 256 + b2.val * 65536 + b3.val * 16777216
             + b4.val * 4294967296 + b5.val * 1099511627776
             + b6.val * 281474976710656 + b7.val * 72057594037927936)) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+    U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8),
+                ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),
+                ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8),
+                ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
       = if BitVec.slt r1_val (BitVec.signExtend 64 imm) then 1#64 else 0#64 :=
   h_rd_val_compare_slt_of_wf m r_main e2 r1_val (BitVec.signExtend 64 imm)
     a0 a1 a2 a3 a4 a5 a6 a7 b0 b1 b2 b3 b4 b5 b6 b7
