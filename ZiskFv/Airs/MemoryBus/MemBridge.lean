@@ -3,6 +3,7 @@ import LeanRV64D
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
@@ -21,20 +22,22 @@ load/store byte content.
 
 ## Architecture
 
-ZisK's memory-side bus protocol (`bus_id = 10`, `as = 2`) emits 12-slot
-byte-decomposed entries: `[as, ptr, mem_step, bytes, x0, x1, ..., x7,
-multiplicity]`. The Main AIR's load/store rows emit one such entry per
-memory operation; the `Mem` AIR consumes (or produces) the matching
-permutation half via its primary witness columns
-(`addr`, `step`, `value_0`, `value_1`, `wr`, `sel`).
+ZisK's memory-side bus protocol (`bus_id = 10`, `as = 2`) emits 6-slot
+chunk-shape entries: `[as, ptr, mem_step, bytes, value_0, value_1,
+multiplicity]` (matching `zisk/state-machines/mem/pil/mem.pil:436`'s
+`permutation_proves(..., [..., ...value], sel)` where `value` is a
+2-element 32-bit chunk array). The Main AIR's load/store rows emit
+one such entry per memory operation; the `Mem` AIR consumes (or
+produces) the matching permutation half via its primary witness
+columns (`addr`, `step`, `value_0`, `value_1`, `wr`, `sel`).
 
-Because the Mem AIR carries the value as a pair of 32-bit chunks
-(`value_0`, `value_1`) rather than as 8 byte lanes, the Mem-row → bus-entry
-correspondence requires a byte-decomposition witness: the eight bytes
-`x0..x7` must pack into `value_0` (low 32 bits) and `value_1` (high
-32 bits). The byte-range bus discharges this for live mem rows. We
-expose it here as the `entry_packs_mem_row_value` predicate, plus a
-dedicated trusted-surface axiom for the permutation handshake itself.
+Because both Main's bus emission and Mem's witness columns carry the
+value as a pair of 32-bit chunks, the Mem-row → bus-entry
+correspondence is now a direct chunk equality
+(`mem.value_0 = e.value_0 ∧ mem.value_1 = e.value_1`) — no
+byte-decomposition witness needed. We expose it here as the
+`entry_packs_mem_row_value` predicate, plus a dedicated
+trusted-surface axiom for the permutation handshake itself.
 
 ## Trusted surface introduced
 
@@ -63,21 +66,23 @@ open Interaction
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 
 
 /-! ## Mem-row ↔ bus-entry correspondence -/
 
-/-- **Byte decomposition of a Mem row's value chunks.** Asserts that the
-    eight memory-bus byte lanes `e.x0 .. e.x7` pack into the Mem row's
-    32-bit value chunks at `r_mem`:
+/-- **Chunk equality of a Mem row's value chunks.** Asserts that the
+    Mem row's 32-bit value chunks at `r_mem` agree with the bus entry's
+    chunks:
 
-    * low chunk: `value_0 r_mem = x0 + x1*256 + x2*65536 + x3*16777216`
-    * high chunk: `value_1 r_mem = x4 + x5*256 + x6*65536 + x7*16777216`
+    * low chunk: `value_0 r_mem = e.value_0`
+    * high chunk: `value_1 r_mem = e.value_1`
 
-    This is the byte-range invariant the PIL byte-bus discharges:
-    Mem stores values as 32-bit chunks; the memory-side bus carries
-    them byte-decomposed; the byte-bus range-checks each lane to
-    `[0, 256)`. -/
+    Under the chunk-shape entry redesign (C8 Phase 2), this is the
+    direct chunk equality — no byte-decomposition machinery required.
+    Both sides are 32-bit chunks under PIL's `bits(32)` range
+    annotation on Mem's value columns and the memory-bus's chunk
+    range-check. -/
 @[simp]
 def entry_packs_mem_row_value
     (mem : Valid_Mem FGL FGL) (r_mem : ℕ) (e : MemoryBusEntry FGL) : Prop :=
@@ -126,22 +131,26 @@ permutation arguments.
     the predicate is vacuous in that case.
 
     For loads narrower than 8 bytes (LBU=1, LHU=2, LWU=4), ZisK's
-    MemAlign state machines zero-pad the unused high byte lanes of
-    the memory-bus entry. The constraint is enforced via the
-    MemAlign-side permutation argument tying the Main row's
-    `ind_width` selector to the MemAlign* AIR's emitted entry.
-    Citations:
+    MemAlign state machines zero-pad the unused high bytes of the
+    memory-bus entry. Under the chunk-shape redesign (C8 Phase 2):
+    * width = 1 → only the low byte of `value_0` is meaningful;
+      `value_1 = 0 ∧ value_0.val < 256`.
+    * width = 2 → only the low 2 bytes of `value_0` are meaningful;
+      `value_1 = 0 ∧ value_0.val < 65536`.
+    * width = 4 → only `value_0` is meaningful; `value_1 = 0`.
+
+    The constraint is enforced via the MemAlign-side permutation
+    argument tying the Main row's `ind_width` selector to the
+    MemAlign* AIR's emitted entry. Citations:
     * `zisk/state-machines/mem/pil/mem_align_byte.pil:96-101`
       (MemAlignByte: read-byte selector, value[1] = 0).
     * `zisk/state-machines/mem/pil/mem_align.pil:189` (MemAlign:
       sub-doubleword prove side, prove_val[1] = 0). -/
 @[simp]
 def high_bytes_zero_for_width (e : MemoryBusEntry FGL) (width : FGL) : Prop :=
-  (width = 1 → e.x1 = 0 ∧ e.x2 = 0 ∧ e.x3 = 0
-              ∧ e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0)
-  ∧ (width = 2 → e.x2 = 0 ∧ e.x3 = 0
-                ∧ e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0)
-  ∧ (width = 4 → e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0)
+  (width = 1 → e.value_1 = 0 ∧ e.value_0.val < 256)
+  ∧ (width = 2 → e.value_1 = 0 ∧ e.value_0.val < 65536)
+  ∧ (width = 4 → e.value_1 = 0)
 
 /-- **Memory-bus permutation soundness — load side.** Given a Main row
     `r_main` whose memory-bus emission carries the load entry `e`
@@ -492,13 +501,13 @@ axiom main_store_pc_emission_bundle
       assigned `store_pc = 0` / `store_reg = 1` (no PC-write side
       effect; rd is a general-purpose register).
 
-    Conclusion shape: byte-pack lane equalities in **nat form**
-    (consumed directly by `equiv_DIV` / `equiv_MUL` etc.
-    as the `h_byte_lo` / `h_byte_hi` promise hypotheses); plus the
-    rd-routing equation matching the existing `*_load_emission_bundle`
-    family. Byte ranges (each `e_rd.xi.val < 256`) are NOT included
-    here — callers obtain them from `memory_bus_entry_byte_range_perm_sound`
-    (class #5b) so the bundle stays factored.
+    Conclusion shape: chunk-equality of `e_rd.value_0/1` with Main's
+    `c_0/c_1` cells (consumed directly by `equiv_DIV` / `equiv_MUL`
+    etc.); plus the rd-routing equation matching the existing
+    `*_load_emission_bundle` family. Chunk-range (each
+    `e_rd.value_i.val < 2^32`) is NOT included here — callers obtain
+    it from `memory_bus_entry_chunks_range_perm_sound` (class #5b) so
+    the bundle stays factored.
 
     Trust class #4 (memory-bus permutation / lookup-argument
     soundness on `bus_id = 10`) — same class as
@@ -529,16 +538,13 @@ axiom main_external_arith_emission_bundle
                   ∨ op_code = ZiskFv.Trusted.OP_REM_W)
     -- Bus side: e_rd is the rd-write entry.
     (h_e_rd_mult : e_rd.multiplicity = 1) (h_e_rd_as_val : e_rd.as.val = 1) :
-    -- Byte-pack lane equalities in nat form (the c_0 / c_1 Main
-    -- columns are < 2^32 by `bits(32)` register-bus annotation —
-    -- see `main.pil:73` `col witness bits(32) c[RC]` — so the
-    -- pack equation lifts to ℕ without modular reduction).
-    e_rd.x0.val + e_rd.x1.val * 256
-        + e_rd.x2.val * 65536 + e_rd.x3.val * 16777216
-      = (main.c_0 r_main).val
-    ∧ e_rd.x4.val + e_rd.x5.val * 256
-        + e_rd.x6.val * 65536 + e_rd.x7.val * 16777216
-      = (main.c_1 r_main).val
+    -- Chunk equality of e_rd's value chunks with Main's c_0/c_1 cells
+    -- (the c_0 / c_1 Main columns are < 2^32 by `bits(32)` register-bus
+    -- annotation — see `main.pil:73` `col witness bits(32) c[RC]` —
+    -- and e_rd's value chunks are < 2^32 by the memory-bus chunk-range
+    -- guarantee, so the .val equality is the FGL equality).
+    (main.c_0 r_main).val = e_rd.value_0.val
+    ∧ (main.c_1 r_main).val = e_rd.value_1.val
     -- rd routing: `e_rd.ptr` is the destination register (PIL
     -- `store_offset = rd` plus `store_offset → ptr` on `as = 1`).
     ∧ (Transpiler.wrap_to_regidx e_rd.ptr = 0 ↔ rd = 0)
@@ -645,14 +651,14 @@ axiom main_store_emission_bundle_sd
     -- space size, so no wraparound at this level.
     e_st.ptr.toNat = (r1_val + BitVec.signExtend 64 imm).toNat
     -- 8 byte extracts: each e_st.xi is the i-th byte of r2_val.
-    ∧ (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
-    ∧ (e_st.x1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val
-    ∧ (e_st.x2 : BitVec 8) = BitVec.extractLsb 23 16 r2_val
-    ∧ (e_st.x3 : BitVec 8) = BitVec.extractLsb 31 24 r2_val
-    ∧ (e_st.x4 : BitVec 8) = BitVec.extractLsb 39 32 r2_val
-    ∧ (e_st.x5 : BitVec 8) = BitVec.extractLsb 47 40 r2_val
-    ∧ (e_st.x6 : BitVec 8) = BitVec.extractLsb 55 48 r2_val
-    ∧ (e_st.x7 : BitVec 8) = BitVec.extractLsb 63 56 r2_val
+    ∧ (byteAt e_st 0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
+    ∧ (byteAt e_st 1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val
+    ∧ (byteAt e_st 2 : BitVec 8) = BitVec.extractLsb 23 16 r2_val
+    ∧ (byteAt e_st 3 : BitVec 8) = BitVec.extractLsb 31 24 r2_val
+    ∧ (byteAt e_st 4 : BitVec 8) = BitVec.extractLsb 39 32 r2_val
+    ∧ (byteAt e_st 5 : BitVec 8) = BitVec.extractLsb 47 40 r2_val
+    ∧ (byteAt e_st 6 : BitVec 8) = BitVec.extractLsb 55 48 r2_val
+    ∧ (byteAt e_st 7 : BitVec 8) = BitVec.extractLsb 63 56 r2_val
 
 /-! ## Narrow-store emission bundles — RMW high-byte preservation
 
@@ -735,17 +741,17 @@ axiom main_store_emission_bundle_subword
     (h_b_lo : main.b_0 r_main = ZiskFv.Trusted.lane_lo r2_val)
     (h_b_hi : main.b_1 r_main = ZiskFv.Trusted.lane_hi r2_val) :
     e_st.ptr.toNat = (r1_val + BitVec.signExtend 64 imm).toNat
-    ∧ (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
-    ∧ (n ≥ 2 → (e_st.x1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val)
-    ∧ (n ≥ 4 → (e_st.x2 : BitVec 8) = BitVec.extractLsb 23 16 r2_val)
-    ∧ (n ≥ 4 → (e_st.x3 : BitVec 8) = BitVec.extractLsb 31 24 r2_val)
-    ∧ (n < 2 → state.mem[e_st.ptr.toNat + 1]? = some (e_st.x1 : BitVec 8))
-    ∧ (n < 4 → state.mem[e_st.ptr.toNat + 2]? = some (e_st.x2 : BitVec 8))
-    ∧ (n < 4 → state.mem[e_st.ptr.toNat + 3]? = some (e_st.x3 : BitVec 8))
-    ∧ state.mem[e_st.ptr.toNat + 4]? = some (e_st.x4 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 5]? = some (e_st.x5 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 6]? = some (e_st.x6 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 7]? = some (e_st.x7 : BitVec 8)
+    ∧ (byteAt e_st 0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
+    ∧ (n ≥ 2 → (byteAt e_st 1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val)
+    ∧ (n ≥ 4 → (byteAt e_st 2 : BitVec 8) = BitVec.extractLsb 23 16 r2_val)
+    ∧ (n ≥ 4 → (byteAt e_st 3 : BitVec 8) = BitVec.extractLsb 31 24 r2_val)
+    ∧ (n < 2 → state.mem[e_st.ptr.toNat + 1]? = some (byteAt e_st 1 : BitVec 8))
+    ∧ (n < 4 → state.mem[e_st.ptr.toNat + 2]? = some (byteAt e_st 2 : BitVec 8))
+    ∧ (n < 4 → state.mem[e_st.ptr.toNat + 3]? = some (byteAt e_st 3 : BitVec 8))
+    ∧ state.mem[e_st.ptr.toNat + 4]? = some (byteAt e_st 4 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 5]? = some (byteAt e_st 5 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 6]? = some (byteAt e_st 6 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 7]? = some (byteAt e_st 7 : BitVec 8)
 
 /-- **Main memory-bus emission bundle — store side, SB width (1 byte).**
 
@@ -774,14 +780,14 @@ theorem main_store_emission_bundle_sb
     (h_b_lo : main.b_0 r_main = ZiskFv.Trusted.lane_lo r2_val)
     (h_b_hi : main.b_1 r_main = ZiskFv.Trusted.lane_hi r2_val) :
     e_st.ptr.toNat = (r1_val + BitVec.signExtend 64 imm).toNat
-    ∧ (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
-    ∧ state.mem[e_st.ptr.toNat + 1]? = some (e_st.x1 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 2]? = some (e_st.x2 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 3]? = some (e_st.x3 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 4]? = some (e_st.x4 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 5]? = some (e_st.x5 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 6]? = some (e_st.x6 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 7]? = some (e_st.x7 : BitVec 8) := by
+    ∧ (byteAt e_st 0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
+    ∧ state.mem[e_st.ptr.toNat + 1]? = some (byteAt e_st 1 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 2]? = some (byteAt e_st 2 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 3]? = some (byteAt e_st 3 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 4]? = some (byteAt e_st 4 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 5]? = some (byteAt e_st 5 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 6]? = some (byteAt e_st 6 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 7]? = some (byteAt e_st 7 : BitVec 8) := by
   have h := main_store_emission_bundle_subword 1 (.inl rfl)
     main r_main e_st state r1_val r2_val imm h_ext h_op h_ind_width
     h_e_st_mult h_e_st_as_val h_a_lo h_a_hi h_b_lo h_b_hi
@@ -810,14 +816,14 @@ theorem main_store_emission_bundle_sh
     (h_b_lo : main.b_0 r_main = ZiskFv.Trusted.lane_lo r2_val)
     (h_b_hi : main.b_1 r_main = ZiskFv.Trusted.lane_hi r2_val) :
     e_st.ptr.toNat = (r1_val + BitVec.signExtend 64 imm).toNat
-    ∧ (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
-    ∧ (e_st.x1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val
-    ∧ state.mem[e_st.ptr.toNat + 2]? = some (e_st.x2 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 3]? = some (e_st.x3 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 4]? = some (e_st.x4 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 5]? = some (e_st.x5 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 6]? = some (e_st.x6 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 7]? = some (e_st.x7 : BitVec 8) := by
+    ∧ (byteAt e_st 0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
+    ∧ (byteAt e_st 1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val
+    ∧ state.mem[e_st.ptr.toNat + 2]? = some (byteAt e_st 2 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 3]? = some (byteAt e_st 3 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 4]? = some (byteAt e_st 4 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 5]? = some (byteAt e_st 5 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 6]? = some (byteAt e_st 6 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 7]? = some (byteAt e_st 7 : BitVec 8) := by
   have h := main_store_emission_bundle_subword 2 (.inr (.inl rfl))
     main r_main e_st state r1_val r2_val imm h_ext h_op h_ind_width
     h_e_st_mult h_e_st_as_val h_a_lo h_a_hi h_b_lo h_b_hi
@@ -847,14 +853,14 @@ theorem main_store_emission_bundle_sw
     (h_b_lo : main.b_0 r_main = ZiskFv.Trusted.lane_lo r2_val)
     (h_b_hi : main.b_1 r_main = ZiskFv.Trusted.lane_hi r2_val) :
     e_st.ptr.toNat = (r1_val + BitVec.signExtend 64 imm).toNat
-    ∧ (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
-    ∧ (e_st.x1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val
-    ∧ (e_st.x2 : BitVec 8) = BitVec.extractLsb 23 16 r2_val
-    ∧ (e_st.x3 : BitVec 8) = BitVec.extractLsb 31 24 r2_val
-    ∧ state.mem[e_st.ptr.toNat + 4]? = some (e_st.x4 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 5]? = some (e_st.x5 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 6]? = some (e_st.x6 : BitVec 8)
-    ∧ state.mem[e_st.ptr.toNat + 7]? = some (e_st.x7 : BitVec 8) := by
+    ∧ (byteAt e_st 0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
+    ∧ (byteAt e_st 1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val
+    ∧ (byteAt e_st 2 : BitVec 8) = BitVec.extractLsb 23 16 r2_val
+    ∧ (byteAt e_st 3 : BitVec 8) = BitVec.extractLsb 31 24 r2_val
+    ∧ state.mem[e_st.ptr.toNat + 4]? = some (byteAt e_st 4 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 5]? = some (byteAt e_st 5 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 6]? = some (byteAt e_st 6 : BitVec 8)
+    ∧ state.mem[e_st.ptr.toNat + 7]? = some (byteAt e_st 7 : BitVec 8) := by
   have h := main_store_emission_bundle_subword 4 (.inr (.inr rfl))
     main r_main e_st state r1_val r2_val imm h_ext h_op h_ind_width
     h_e_st_mult h_e_st_as_val h_a_lo h_a_hi h_b_lo h_b_hi
