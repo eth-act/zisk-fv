@@ -43,33 +43,35 @@ open ZiskFv.Trusted
 
 
 /-- **Low 16 bits of a memory-bus entry**, packed as an `FGL` element.
-    `x0 + x1 * 2^8`. Used by SH's spec to expose the `c`-packed value as
-    the 2-byte halfword the store writes. -/
+    Under the SH zeroing hypothesis the entire chunk-pack collapses to
+    `value_0`, which holds the half-word as an FGL. Used by SH's spec
+    to expose the `c`-packed value as the 2-byte halfword the store
+    writes. -/
 @[simp]
 def memory_entry_lo_16 (e : MemoryBusEntry FGL) : FGL :=
-  e.x0 + e.x1 * 256
+  e.value_0
 
 /-- **SH high-byte zeroing.** The memory-bus write entry populated by a
-    2-byte store has its top 6 byte lanes (`x2..x7`) pinned to zero,
-    because ZisK's Main AIR only routes `ind_width = 2` bytes from the
-    `c` cell to the memory-bus entry; the remaining lanes are witnessed
+    2-byte store has its high chunk pinned to zero and its low chunk
+    holding only a 16-bit halfword (`value_0.val < 65536`), because
+    ZisK's Main AIR only routes `ind_width = 2` bytes from the `c`
+    cell to the memory-bus entry; the remaining bytes are witnessed
     as zero by the PIL circuit.
 
     Supplied by the caller; the audit derives it from the PIL
     memory-SM `permutation_proves` side + the `ind_width` selector. -/
 @[simp]
 def sh_high_bytes_zero (entry : MemoryBusEntry FGL) : Prop :=
-  entry.x2 = 0 ∧ entry.x3 = 0 ∧ entry.x4 = 0 ∧ entry.x5 = 0
-    ∧ entry.x6 = 0 ∧ entry.x7 = 0
+  entry.value_1 = 0 ∧ entry.value_0.val < 65536
 
 /-- When the high bytes are zero, the packed 64-bit memory-entry value
     reduces to just its low 16 bits (`memory_entry_lo_16`). -/
 lemma memory_entry_toField_of_high_zero_16
     (entry : MemoryBusEntry FGL) (h : sh_high_bytes_zero entry) :
     memory_entry_toField entry = memory_entry_lo_16 entry := by
-  obtain ⟨h2, h3, h4, h5, h6, h7⟩ := h
-  simp only [memory_entry_toField, memory_entry_lo_16, h2, h3, h4, h5, h6, h7]
-  ring
+  obtain ⟨h_v1, _⟩ := h
+  show entry.value_0 + entry.value_1 * 4294967296 = entry.value_0
+  rw [h_v1]; ring
 
 /-- **Compositional SH theorem (c-packed, low-16-specialized).**
     Given the store-archetype circuit-holds (identical to SD/SW's) plus

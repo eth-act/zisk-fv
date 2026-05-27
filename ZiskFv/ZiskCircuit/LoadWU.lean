@@ -24,10 +24,11 @@ LD (`Spec/LoadD.lean`):
 * Same `memory_load_lanes_match` predicate.
 
 The only LWU-specific addition is **`memory_entry_high_bytes_zero`**:
-a hypothesis that the memory-bus entry's high 4 byte lanes (x4..x7) are
+a hypothesis that the memory-bus entry's high chunk (value_1) is
 zero. ZisK's Memory SM pads the unused high bytes with zero when
-`ind_width < 8`; we take this as a compositional hypothesis here (the
-audit derives it from the memory-SM permutation-proves).
+`ind_width < 8` — under the chunk shape this collapses to a single
+`e.value_1 = 0` equation. We take this as a compositional hypothesis
+here (the audit derives it from the memory-SM permutation-proves).
 
 With the zeroing hypothesis, `memory_entry_toField entry = memory_entry_lo entry`
 (bits 32..63 vanish), so the Main row's `c_packed` equals the 32-bit
@@ -50,30 +51,29 @@ open ZiskFv.Tactics.LoadArchetype
 open ZiskFv.Trusted
 
 
-/-- The memory-bus entry's high 4 byte lanes are zero. Holds for any
+/-- The memory-bus entry's high chunk is zero. Holds for any
     `ind_width = 4` load (LWU) because ZisK's Memory SM zero-pads the
-    unused high bytes of the 8-byte memory-bus entry.
+    unused high bytes of the 8-byte memory-bus entry — under the
+    chunk shape this collapses to a single `value_1 = 0` equation.
 
     The audit derives this from the memory-SM `permutation_proves`;
     here it is a compositional hypothesis. -/
 @[simp]
 def memory_entry_high_bytes_zero (e : MemoryBusEntry FGL) : Prop :=
-  e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0
+  e.value_1 = 0
 
-/-- With the high 4 byte lanes zeroed, `memory_entry_hi` collapses to 0. -/
+/-- With the high chunk zeroed, `memory_entry_hi` collapses to 0. -/
 lemma memory_entry_hi_eq_zero {e : MemoryBusEntry FGL}
     (h : memory_entry_high_bytes_zero e) :
-    memory_entry_hi e = 0 := by
-  obtain ⟨h4, h5, h6, h7⟩ := h
-  simp only [memory_entry_hi, h4, h5, h6, h7]
-  ring
+    memory_entry_hi e = 0 := h
 
-/-- With the high 4 byte lanes zeroed, the packed 64-bit value reduces
+/-- With the high chunk zeroed, the packed 64-bit value reduces
     to the low 32-bit half alone. -/
 lemma memory_entry_toField_eq_lo {e : MemoryBusEntry FGL}
     (h : memory_entry_high_bytes_zero e) :
     memory_entry_toField e = memory_entry_lo e := by
-  rw [memory_entry_toField_lo_hi, memory_entry_hi_eq_zero h]
+  show e.value_0 + e.value_1 * 4294967296 = e.value_0
+  rw [show e.value_1 = 0 from h]
   ring
 
 /-- The Main row at `r_main` is in LWU-execution mode: identical to

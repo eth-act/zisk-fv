@@ -23,14 +23,16 @@ infrastructure with the wider variants:
 * Same `memory_load_lanes_match` predicate.
 
 The LBU-specific addition is **`memory_entry_high_bytes_zero_bu`**:
-a hypothesis that the memory-bus entry's 7 high byte lanes (x1..x7)
-are zero. ZisK's Memory SM pads the unused high bytes with zero when
-`ind_width < 8`; this is carried as a compositional hypothesis here
-(the audit derives it from the memory-SM permutation).
+a hypothesis that the memory-bus entry's high chunk is zero and the
+low chunk holds a single byte (`value_0.val < 256`). ZisK's Memory SM
+pads the unused high bytes with zero when `ind_width < 8`; under the
+chunk shape this collapses to `value_1 = 0` plus the byte-range on
+`value_0`. We carry this as a compositional hypothesis here (the
+audit derives it from the memory-SM permutation).
 
 With the zeroing hypothesis, `memory_entry_toField entry` collapses to
-`entry.x0` — the single loaded byte — matching Sail's zero-extension
-semantics for LBU.
+`entry.value_0` — the single loaded byte as an FGL — matching Sail's
+zero-extension semantics for LBU.
 
 The Sail-level companion and equivalence theorem live in
 `Equivalence/Lbu.lean`; the `LoadArchetype` macro is consumed to
@@ -48,30 +50,32 @@ open ZiskFv.Tactics.LoadArchetype
 open ZiskFv.Trusted
 
 
-/-- The memory-bus entry's 7 high byte lanes (x1..x7) are zero. Holds
-    for any `ind_width = 1` load (LBU) because ZisK's Memory SM
-    zero-pads the unused high bytes of the 8-byte memory-bus entry.
+/-- The memory-bus entry's high chunk is zero and the low chunk
+    holds a single byte (`value_0.val < 256`). Holds for any
+    `ind_width = 1` load (LBU) because ZisK's Memory SM zero-pads
+    the unused high bytes of the 8-byte memory-bus entry.
 
     The audit derives this from the memory-SM `permutation_proves`;
     here it is a compositional hypothesis. -/
 @[simp]
 def memory_entry_high_bytes_zero_bu (e : MemoryBusEntry FGL) : Prop :=
-  e.x1 = 0 ∧ e.x2 = 0 ∧ e.x3 = 0 ∧ e.x4 = 0
-    ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0
+  e.value_1 = 0 ∧ e.value_0.val < 256
 
-/-- The 8-bit value (single byte) of a memory-bus entry: `x0`. -/
+/-- The 8-bit value (single byte) of a memory-bus entry — under
+    the LBU zeroing hypothesis the entire chunk-pack collapses to
+    `value_0`, which holds the single byte as an FGL. -/
 @[simp]
 def memory_entry_byte (e : MemoryBusEntry FGL) : FGL :=
-  e.x0
+  e.value_0
 
-/-- With the 7 high byte lanes zeroed, the packed 64-bit value
-    `memory_entry_toField` reduces to `x0` alone. -/
+/-- With the LBU zeroing hypothesis, the packed 64-bit value
+    `memory_entry_toField` reduces to `value_0` alone. -/
 lemma memory_entry_toField_eq_byte {e : MemoryBusEntry FGL}
     (h : memory_entry_high_bytes_zero_bu e) :
     memory_entry_toField e = memory_entry_byte e := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
-  simp only [memory_entry_toField, memory_entry_byte, h1, h2, h3, h4, h5, h6, h7]
-  ring
+  obtain ⟨h_v1, _⟩ := h
+  show e.value_0 + e.value_1 * 4294967296 = e.value_0
+  rw [h_v1]; ring
 
 /-- The Main row at `r_main` is in LBU-execution mode: identical to
     LD-mode. LBU shares `main_row_in_ld_mode` verbatim — aliased here

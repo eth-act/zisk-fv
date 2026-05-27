@@ -49,29 +49,32 @@ open ZiskFv.Tactics.LoadArchetype
 open ZiskFv.Trusted
 
 
-/-- The memory-bus entry's high 6 byte lanes (x2..x7) are zero. Holds
-    for any `ind_width = 2` load (LHU) because ZisK's Memory SM zero-pads
+/-- The memory-bus entry's high chunk is zero and the low chunk
+    holds a 16-bit half (`value_0.val < 65536`). Holds for any
+    `ind_width = 2` load (LHU) because ZisK's Memory SM zero-pads
     the unused high bytes of the 8-byte memory-bus entry.
 
     The audit derives this from the memory-SM `permutation_proves`;
     here it is a compositional hypothesis. -/
 @[simp]
 def memory_entry_high_bytes_zero_hu (e : MemoryBusEntry FGL) : Prop :=
-  e.x2 = 0 ∧ e.x3 = 0 ∧ e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0
+  e.value_1 = 0 ∧ e.value_0.val < 65536
 
-/-- The 16-bit low half of a memory-bus entry: `x0 + x1 * 256`. -/
+/-- The 16-bit low half of a memory-bus entry — under the LHU
+    zeroing hypothesis the entire chunk-pack collapses to
+    `value_0`, which holds the half-word as an FGL. -/
 @[simp]
 def memory_entry_half (e : MemoryBusEntry FGL) : FGL :=
-  e.x0 + e.x1 * 256
+  e.value_0
 
-/-- With the high 6 byte lanes zeroed, the packed 64-bit value
+/-- With the LHU zeroing hypothesis, the packed 64-bit value
     `memory_entry_toField` reduces to the 16-bit half alone. -/
 lemma memory_entry_toField_eq_half {e : MemoryBusEntry FGL}
     (h : memory_entry_high_bytes_zero_hu e) :
     memory_entry_toField e = memory_entry_half e := by
-  obtain ⟨h2, h3, h4, h5, h6, h7⟩ := h
-  simp only [memory_entry_toField, memory_entry_half, h2, h3, h4, h5, h6, h7]
-  ring
+  obtain ⟨h_v1, _⟩ := h
+  show e.value_0 + e.value_1 * 4294967296 = e.value_0
+  rw [h_v1]; ring
 
 /-- The Main row at `r_main` is in LHU-execution mode: identical to
     LD-mode (`is_external_op = 0, op = OP_COPYB = 1, m32 = 0,

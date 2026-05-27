@@ -43,25 +43,24 @@ open ZiskFv.Trusted
 
 
 /-- **SW high-byte zeroing.** The memory-bus write entry populated by a
-    4-byte store has its top 4 byte lanes (`x4..x7`) pinned to zero,
-    because ZisK's Main AIR only routes `ind_width = 4` bytes from the
-    `c` cell to the memory-bus entry; the remaining lanes are witnessed
-    as zero by the PIL circuit.
+    4-byte store has its high chunk (`value_1`) pinned to zero, because
+    ZisK's Main AIR only routes `ind_width = 4` bytes from the `c` cell
+    to the memory-bus entry; the remaining chunk is witnessed as zero
+    by the PIL circuit.
 
     Supplied by the caller; the audit derives it from the PIL
     memory-SM `permutation_proves` side + the `ind_width` selector. -/
 @[simp]
 def sw_high_bytes_zero (entry : MemoryBusEntry FGL) : Prop :=
-  entry.x4 = 0 ∧ entry.x5 = 0 ∧ entry.x6 = 0 ∧ entry.x7 = 0
+  entry.value_1 = 0
 
-/-- When the high bytes are zero, the packed 64-bit memory-entry value
+/-- When the high chunk is zero, the packed 64-bit memory-entry value
     reduces to just its low 32 bits (`memory_entry_lo`). -/
 lemma memory_entry_toField_of_high_zero
     (entry : MemoryBusEntry FGL) (h : sw_high_bytes_zero entry) :
     memory_entry_toField entry = memory_entry_lo entry := by
-  obtain ⟨h4, h5, h6, h7⟩ := h
-  simp only [memory_entry_toField, memory_entry_lo, h4, h5, h6, h7]
-  ring
+  show entry.value_0 + entry.value_1 * 4294967296 = entry.value_0
+  rw [show entry.value_1 = 0 from h]; ring
 
 /-- **Compositional SW theorem (c-packed, low-32-specialized).**
     Given the store-archetype circuit-holds (identical to SD's) plus
