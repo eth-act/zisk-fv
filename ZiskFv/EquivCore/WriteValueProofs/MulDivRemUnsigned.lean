@@ -9,6 +9,7 @@ import ZiskFv.Bits.PackedBitVec.MulNoWrap
 import ZiskFv.Bits.PackedBitVec.SignedNoWrap
 import ZiskFv.Bits.Execution
 import ZiskFv.SailSpec.mulw
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 # WriteValueProofs.MulDivRemUnsigned — `h_rd_val` discharge lemmas for MUL/MULHU/DIVU/REMU/MULW
@@ -23,8 +24,8 @@ from circuit-constraint-shaped primitives directly. The OUTPUT-EQ-shaped
   the polynomial shape down to the unsigned form.
 * Per-chunk and per-carry **range bounds** (RANGE).
 * **Lane-match** byte-pack equations (LANE-MATCH) tying the bus entry
-  bytes `e.x0..e.x7` to Arith chunks at the ℕ level.
-* Per-byte **range bounds** on `e.xᵢ.val < 256` (RANGE).
+  bytes `(byteAt e 0)..(byteAt e 7)` to Arith chunks at the ℕ level.
+* Per-byte **range bounds** on `(byteAt e i).val < 256` (RANGE).
 * Operand **TRANSPILE-BRIDGE** equations equating `opᵢ.toNat` to the
   packed Arith chunks.
 
@@ -46,6 +47,7 @@ namespace ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.PackedBitVec
 open ZiskFv.PackedBitVec.Extensions
 open ZiskFv.PackedBitVec.MulNoWrap
@@ -60,16 +62,16 @@ chunks at the ℕ level), assemble the full 8-byte byte_sum equal to
 `packed4 c₀ c₁ c₂ c₃`. -/
 private lemma byte_sum_eq_packed4
     (e : MemoryBusEntry FGL) (c₀ c₁ c₂ c₃ : ℕ)
-    (h_lo : e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+    (h_lo : (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
               = c₀ + c₁ * 65536)
-    (h_hi : e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
+    (h_hi : (byteAt e 4).val + (byteAt e 5).val * 256 + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
               = c₂ + c₃ * 65536) :
-    e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
-      + e.x4.val * 4294967296 + e.x5.val * 1099511627776
-      + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+    (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+      + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+      + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
     = packed4 c₀ c₁ c₂ c₃ := by
   unfold packed4
-  have hh : (e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216) * 4294967296
+  have hh : ((byteAt e 4).val + (byteAt e 5).val * 256 + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216) * 4294967296
       = (c₂ + c₃ * 65536) * 4294967296 := by rw [h_hi]
   linarith [h_lo, hh]
 
@@ -365,7 +367,7 @@ private theorem fgl_div_unsigned_chunks_to_nat_identity
 
 /-- **`h_rd_val` discharge for MUL (Tier 1).**
 
-    Derives `U64.toBV #v[e.x0, ..., e.x7] = execute_MUL_pure op1 op2 .MUL`
+    Derives `U64.toBV #v[(byteAt e 0), ..., (byteAt e 7)] = execute_MUL_pure op1 op2 .MUL`
     from circuit-shaped primitives.
 
     All parameters are CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE, or
@@ -377,10 +379,10 @@ lemma h_rd_val_mdru_mul
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL)
     (cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
     -- Per-byte range bounds
-    (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
-    (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
-    (h4 : e.x4.val < 256) (h5 : e.x5.val < 256)
-    (h6 : e.x6.val < 256) (h7 : e.x7.val < 256)
+    (h0 : (byteAt e 0).val < 256) (h1 : (byteAt e 1).val < 256)
+    (h2 : (byteAt e 2).val < 256) (h3 : (byteAt e 3).val < 256)
+    (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
+    (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     -- Per-chunk range bounds
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
     (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
@@ -406,16 +408,16 @@ lemma h_rd_val_mdru_mul
     (hC38 : cy₆ = d₃)
     -- Byte-pack lane match (LANE-MATCH): bytes pack c[] (lo half of product)
     (h_byte_lo :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
         = c₀.val + c₁.val * 65536)
     (h_byte_hi :
-      e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
+      (byteAt e 4).val + (byteAt e 5).val * 256 + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
         = c₂.val + c₃.val * 65536)
     -- Operand TRANSPILE-BRIDGE
     (h_rs1_value : op1.toNat = packed4 a₀.val a₁.val a₂.val a₃.val)
     (h_rs2_value : op2.toNat = packed4 b₀.val b₁.val b₂.val b₃.val) :
-    U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
-                (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
+    U64.toBV #v[((byteAt e 0) : BitVec 8), ((byteAt e 1) : BitVec 8), ((byteAt e 2) : BitVec 8), ((byteAt e 3) : BitVec 8),
+                ((byteAt e 4) : BitVec 8), ((byteAt e 5) : BitVec 8), ((byteAt e 6) : BitVec 8), ((byteAt e 7) : BitVec 8)]
       = execute_MUL_pure op1 op2 .MUL := by
   -- ℕ packed identity from the 8 chunk equations.
   have h_packed_nat : packed4 a₀.val a₁.val a₂.val a₃.val
@@ -436,20 +438,20 @@ lemma h_rd_val_mdru_mul
     fgl_mul_unsigned_to_bv64_lo h_c0 h_c1 h_c2 h_c3 h_packed_nat
   -- byte-sum assembly.
   have h_byte_eq_packed :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
-        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
-        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
       = packed4 c₀.val c₁.val c₂.val c₃.val :=
     byte_sum_eq_packed4 e c₀.val c₁.val c₂.val c₃.val h_byte_lo h_byte_hi
   have h_byte_sum :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
-        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
-        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
       = (op1.toNat * op2.toNat) % 2 ^ 64 := by
     rw [h_byte_eq_packed, h_lo_mod]; norm_num
   -- K3 byte-bridge closes.
   exact mul_lo_bv64_of_byte_sum op1 op2
-    e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
+    (byteAt e 0) (byteAt e 1) (byteAt e 2) (byteAt e 3) (byteAt e 4) (byteAt e 5) (byteAt e 6) (byteAt e 7)
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
 
 /-- **`h_rd_val` discharge for MULHU (Tier 1).** -/
@@ -460,10 +462,10 @@ lemma h_rd_val_mdru_mulhu
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL)
     (cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
     -- Per-byte range bounds
-    (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
-    (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
-    (h4 : e.x4.val < 256) (h5 : e.x5.val < 256)
-    (h6 : e.x6.val < 256) (h7 : e.x7.val < 256)
+    (h0 : (byteAt e 0).val < 256) (h1 : (byteAt e 1).val < 256)
+    (h2 : (byteAt e 2).val < 256) (h3 : (byteAt e 3).val < 256)
+    (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
+    (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     -- Per-chunk range bounds
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
     (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
@@ -489,16 +491,16 @@ lemma h_rd_val_mdru_mulhu
     (hC38 : cy₆ = d₃)
     -- Byte-pack lane match (LANE-MATCH): bytes pack d[] (high half of product)
     (h_byte_lo :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
         = d₀.val + d₁.val * 65536)
     (h_byte_hi :
-      e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
+      (byteAt e 4).val + (byteAt e 5).val * 256 + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
         = d₂.val + d₃.val * 65536)
     -- Operand TRANSPILE-BRIDGE
     (h_rs1_value : op1.toNat = packed4 a₀.val a₁.val a₂.val a₃.val)
     (h_rs2_value : op2.toNat = packed4 b₀.val b₁.val b₂.val b₃.val) :
-    U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
-                (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
+    U64.toBV #v[((byteAt e 0) : BitVec 8), ((byteAt e 1) : BitVec 8), ((byteAt e 2) : BitVec 8), ((byteAt e 3) : BitVec 8),
+                ((byteAt e 4) : BitVec 8), ((byteAt e 5) : BitVec 8), ((byteAt e 6) : BitVec 8), ((byteAt e 7) : BitVec 8)]
       = execute_MUL_pure op1 op2 .MULHU := by
   have h_packed_nat : packed4 a₀.val a₁.val a₂.val a₃.val
         * packed4 b₀.val b₁.val b₂.val b₃.val
@@ -516,19 +518,19 @@ lemma h_rd_val_mdru_mulhu
       = (op1.toNat * op2.toNat) / 18446744073709551616 :=
     fgl_mul_unsigned_to_bv64_hi h_c0 h_c1 h_c2 h_c3 h_packed_nat
   have h_byte_eq_packed :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
-        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
-        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
       = packed4 d₀.val d₁.val d₂.val d₃.val :=
     byte_sum_eq_packed4 e d₀.val d₁.val d₂.val d₃.val h_byte_lo h_byte_hi
   have h_byte_sum :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
-        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
-        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
       = (op1.toNat * op2.toNat) / 2 ^ 64 := by
     rw [h_byte_eq_packed, h_hi_div]; norm_num
   exact mul_hi_bv64_of_byte_sum op1 op2
-    e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
+    (byteAt e 0) (byteAt e 1) (byteAt e 2) (byteAt e 3) (byteAt e 4) (byteAt e 5) (byteAt e 6) (byteAt e 7)
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
 
 /-- **`h_rd_val` discharge for DIVU (Tier 1).**
@@ -545,10 +547,10 @@ lemma h_rd_val_mdru_divu
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL)
     (cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
     -- Per-byte range bounds
-    (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
-    (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
-    (h4 : e.x4.val < 256) (h5 : e.x5.val < 256)
-    (h6 : e.x6.val < 256) (h7 : e.x7.val < 256)
+    (h0 : (byteAt e 0).val < 256) (h1 : (byteAt e 1).val < 256)
+    (h2 : (byteAt e 2).val < 256) (h3 : (byteAt e 3).val < 256)
+    (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
+    (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     -- Per-chunk range bounds
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
     (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
@@ -575,10 +577,10 @@ lemma h_rd_val_mdru_divu
     (hC38 : cy₆ = 0)
     -- Byte-pack lane match: bytes pack a[] (quotient)
     (h_byte_lo :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
         = a₀.val + a₁.val * 65536)
     (h_byte_hi :
-      e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
+      (byteAt e 4).val + (byteAt e 5).val * 256 + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
         = a₂.val + a₃.val * 65536)
     -- Operand TRANSPILE-BRIDGE
     (h_rs1_value : op1.toNat = packed4 c₀.val c₁.val c₂.val c₃.val)
@@ -587,8 +589,8 @@ lemma h_rd_val_mdru_divu
     (h_op2_ne : op2.toNat ≠ 0)
     -- Remainder strictly less than divisor (CIRCUIT-CONSTRAINT, from arith range constraints)
     (h_d_lt_b : packed4 d₀.val d₁.val d₂.val d₃.val < op2.toNat) :
-    U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
-                (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
+    U64.toBV #v[((byteAt e 0) : BitVec 8), ((byteAt e 1) : BitVec 8), ((byteAt e 2) : BitVec 8), ((byteAt e 3) : BitVec 8),
+                ((byteAt e 4) : BitVec 8), ((byteAt e 5) : BitVec 8), ((byteAt e 6) : BitVec 8), ((byteAt e 7) : BitVec 8)]
       = (execute_DIV_REM_pure op1 op2 .DRU).1 := by
   -- ℕ Euclidean packed identity.
   have h_packed_nat : packed4 a₀.val a₁.val a₂.val a₃.val
@@ -609,9 +611,9 @@ lemma h_rd_val_mdru_divu
     fgl_div_unsigned_to_bv64 h_op2_ne h_d_lt_b h_packed_nat
   -- byte-sum assembly.
   have h_byte_eq_packed :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
-        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
-        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
       = packed4 a₀.val a₁.val a₂.val a₃.val :=
     byte_sum_eq_packed4 e a₀.val a₁.val a₂.val a₃.val h_byte_lo h_byte_hi
   -- derive the spec-output byte_sum.
@@ -642,13 +644,13 @@ lemma h_rd_val_mdru_divu
         _ < 2 ^ 64 := h_op1_lt
     exact Nat.mod_eq_of_lt h_quot_lt
   have h_byte_sum :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
-        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
-        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
       = (execute_DIV_REM_pure op1 op2 .DRU).1.toNat := by
     rw [h_byte_eq_packed, ← h_quot_eq, h_q_eq]
   exact divu_bv64_of_byte_sum op1 op2
-    e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
+    (byteAt e 0) (byteAt e 1) (byteAt e 2) (byteAt e 3) (byteAt e 4) (byteAt e 5) (byteAt e 6) (byteAt e 7)
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
 
 /-- **`h_rd_val` discharge for REMU (Tier 1).** Same shape as DIVU but
@@ -661,10 +663,10 @@ lemma h_rd_val_mdru_remu
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL)
     (cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
     -- Per-byte range bounds
-    (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
-    (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
-    (h4 : e.x4.val < 256) (h5 : e.x5.val < 256)
-    (h6 : e.x6.val < 256) (h7 : e.x7.val < 256)
+    (h0 : (byteAt e 0).val < 256) (h1 : (byteAt e 1).val < 256)
+    (h2 : (byteAt e 2).val < 256) (h3 : (byteAt e 3).val < 256)
+    (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
+    (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     -- Per-chunk range bounds
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
     (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
@@ -691,10 +693,10 @@ lemma h_rd_val_mdru_remu
     (hC38 : cy₆ = 0)
     -- Byte-pack lane match: bytes pack d[] (remainder)
     (h_byte_lo :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
         = d₀.val + d₁.val * 65536)
     (h_byte_hi :
-      e.x4.val + e.x5.val * 256 + e.x6.val * 65536 + e.x7.val * 16777216
+      (byteAt e 4).val + (byteAt e 5).val * 256 + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
         = d₂.val + d₃.val * 65536)
     -- Operand TRANSPILE-BRIDGE
     (h_rs1_value : op1.toNat = packed4 c₀.val c₁.val c₂.val c₃.val)
@@ -703,8 +705,8 @@ lemma h_rd_val_mdru_remu
     (h_op2_ne : op2.toNat ≠ 0)
     -- Remainder strictly less than divisor
     (h_d_lt_b : packed4 d₀.val d₁.val d₂.val d₃.val < op2.toNat) :
-    U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
-                (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
+    U64.toBV #v[((byteAt e 0) : BitVec 8), ((byteAt e 1) : BitVec 8), ((byteAt e 2) : BitVec 8), ((byteAt e 3) : BitVec 8),
+                ((byteAt e 4) : BitVec 8), ((byteAt e 5) : BitVec 8), ((byteAt e 6) : BitVec 8), ((byteAt e 7) : BitVec 8)]
       = (execute_DIV_REM_pure op1 op2 .DRU).2 := by
   have h_packed_nat : packed4 a₀.val a₁.val a₂.val a₃.val
         * packed4 b₀.val b₁.val b₂.val b₃.val
@@ -722,9 +724,9 @@ lemma h_rd_val_mdru_remu
   have h_rem_eq : op1.toNat % op2.toNat = packed4 d₀.val d₁.val d₂.val d₃.val :=
     fgl_rem_unsigned_to_bv64 h_op2_ne h_d_lt_b h_packed_nat
   have h_byte_eq_packed :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
-        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
-        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
       = packed4 d₀.val d₁.val d₂.val d₃.val :=
     byte_sum_eq_packed4 e d₀.val d₁.val d₂.val d₃.val h_byte_lo h_byte_hi
   -- For DRU: r = Int.tmod op1.toNat op2.toNat = op1.toNat % op2.toNat.
@@ -743,13 +745,13 @@ lemma h_rd_val_mdru_remu
         _ < 2 ^ 64 := op2.isLt
     exact Nat.mod_eq_of_lt h_rem_lt
   have h_byte_sum :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
-        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
-        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
       = (execute_DIV_REM_pure op1 op2 .DRU).2.toNat := by
     rw [h_byte_eq_packed, ← h_rem_eq, h_r_eq]
   exact remu_bv64_of_byte_sum op1 op2
-    e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
+    (byteAt e 0) (byteAt e 1) (byteAt e 2) (byteAt e 3) (byteAt e 4) (byteAt e 5) (byteAt e 6) (byteAt e 7)
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
 
 /-- **`h_rd_val` discharge for MULW (Tier 1).**
@@ -775,22 +777,22 @@ lemma h_rd_val_mdru_mulw
     (op1 op2 : BitVec 64)
     (e : MemoryBusEntry FGL)
     -- Per-byte range bounds
-    (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
-    (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
-    (h4 : e.x4.val < 256) (h5 : e.x5.val < 256)
-    (h6 : e.x6.val < 256) (h7 : e.x7.val < 256)
+    (h0 : (byteAt e 0).val < 256) (h1 : (byteAt e 1).val < 256)
+    (h2 : (byteAt e 2).val < 256) (h3 : (byteAt e 3).val < 256)
+    (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
+    (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     -- Byte-sum-to-MULW-spec bridge (TRANSPILE-BRIDGE — MULW result is a
     -- pure function of the inputs op1, op2)
     (h_byte_mulw :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
-        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
-        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
       = (PureSpec.execute_MULW_pure_val op1 op2).toNat) :
-    U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
-                (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
+    U64.toBV #v[((byteAt e 0) : BitVec 8), ((byteAt e 1) : BitVec 8), ((byteAt e 2) : BitVec 8), ((byteAt e 3) : BitVec 8),
+                ((byteAt e 4) : BitVec 8), ((byteAt e 5) : BitVec 8), ((byteAt e 6) : BitVec 8), ((byteAt e 7) : BitVec 8)]
       = PureSpec.execute_MULW_pure_val op1 op2 :=
   mulw_bv64_of_byte_sum op1 op2
-    e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
+    (byteAt e 0) (byteAt e 1) (byteAt e 2) (byteAt e 3) (byteAt e 4) (byteAt e 5) (byteAt e 6) (byteAt e 7)
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_mulw
 
 /-! ## W-form sign-extension closers (DIVUW / REMUW)
@@ -881,10 +883,10 @@ lemma h_rd_val_mdru_divuw_chunked
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL)
     (cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
     -- Per-byte range bounds
-    (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
-    (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
-    (h4 : e.x4.val < 256) (h5 : e.x5.val < 256)
-    (h6 : e.x6.val < 256) (h7 : e.x7.val < 256)
+    (h0 : (byteAt e 0).val < 256) (h1 : (byteAt e 1).val < 256)
+    (h2 : (byteAt e 2).val < 256) (h3 : (byteAt e 3).val < 256)
+    (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
+    (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     -- Per-chunk range bounds
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
     (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
@@ -917,13 +919,13 @@ lemma h_rd_val_mdru_divuw_chunked
     (h_c23 : c₂.val = 0 ∧ c₃.val = 0)
     -- Byte-pack lane match (W): bytes 0..3 pack a_0 + a_1*65536 (quotient low 32)
     (h_byte_lo :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
         = a₀.val + a₁.val * 65536)
     -- Sign-extension choice on bytes 4..7 (SEXT_00 / SEXT_FF case-disjunction)
     (h_sext_choice :
-      ((e.x4.val = 0 ∧ e.x5.val = 0 ∧ e.x6.val = 0 ∧ e.x7.val = 0) ∧
+      (((byteAt e 4).val = 0 ∧ (byteAt e 5).val = 0 ∧ (byteAt e 6).val = 0 ∧ (byteAt e 7).val = 0) ∧
         a₀.val + a₁.val * 65536 < 2147483648) ∨
-      ((e.x4.val = 255 ∧ e.x5.val = 255 ∧ e.x6.val = 255 ∧ e.x7.val = 255) ∧
+      (((byteAt e 4).val = 255 ∧ (byteAt e 5).val = 255 ∧ (byteAt e 6).val = 255 ∧ (byteAt e 7).val = 255) ∧
         a₀.val + a₁.val * 65536 ≥ 2147483648))
     -- Operand TRANSPILE-BRIDGE (W form: low 32 bits)
     (h_rs1_value : (Sail.BitVec.extractLsb r1 31 0).toNat = c₀.val + c₁.val * 65536)
@@ -932,8 +934,8 @@ lemma h_rd_val_mdru_divuw_chunked
     (h_op2_ne : (Sail.BitVec.extractLsb r2 31 0).toNat ≠ 0)
     -- Remainder strictly less than divisor (CIRCUIT-CONSTRAINT)
     (h_d_lt_b : d₀.val + d₁.val * 65536 < (Sail.BitVec.extractLsb r2 31 0).toNat) :
-    U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
-                (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
+    U64.toBV #v[((byteAt e 0) : BitVec 8), ((byteAt e 1) : BitVec 8), ((byteAt e 2) : BitVec 8), ((byteAt e 3) : BitVec 8),
+                ((byteAt e 4) : BitVec 8), ((byteAt e 5) : BitVec 8), ((byteAt e 6) : BitVec 8), ((byteAt e 7) : BitVec 8)]
       = (let r1_lo32 : BitVec 32 := Sail.BitVec.extractLsb r1 31 0
          let r2_lo32 : BitVec 32 := Sail.BitVec.extractLsb r2 31 0
          let q32 : BitVec 32 :=
@@ -990,7 +992,7 @@ lemma h_rd_val_mdru_divuw_chunked
       h_op2_ne h_d_lt_b h_euclid
   -- close via sext_choice. Use the byte-sum identity from the lane matches.
   apply BitVec.eq_of_toNat_eq
-  rw [u64_toBV_of_bytes_toNat e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
+  rw [u64_toBV_of_bytes_toNat (byteAt e 0) (byteAt e 1) (byteAt e 2) (byteAt e 3) (byteAt e 4) (byteAt e 5) (byteAt e 6) (byteAt e 7)
         h0 h1 h2 h3 h4 h5 h6 h7]
   -- Goal: byte_sum = (BitVec.signExtend 64 ...).toNat
   -- Use h_bv to bridge: BitVec.signExtend 64 (BV32 q_nat) = signExtend 64 (if-form)
@@ -999,9 +1001,9 @@ lemma h_rd_val_mdru_divuw_chunked
   -- Use BV64 of byte_sum = signExtend equation.
   -- The byte_sum decomposes via h_byte_lo and h_sext_choice.
   have h_byte_sum_eq :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
-        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
-        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
       = (BitVec.signExtend 64
           (BitVec.ofNat 32 (a₀.val + a₁.val * 65536))).toNat := by
     rcases h_sext_choice with ⟨⟨hx4, hx5, hx6, hx7⟩, h_pos⟩ |
@@ -1010,51 +1012,51 @@ lemma h_rd_val_mdru_divuw_chunked
       rw [hx4, hx5, hx6, hx7]
       have h_close := w_sext_close_pos
         (a₀.val + a₁.val * 65536)
-        (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+        ((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)
         h_q32_lt (by omega) h_byte_lo h_pos
       have h_lhs_eq :
-          e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+          (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
             + 0 * 4294967296 + 0 * 1099511627776 + 0 * 281474976710656
             + 0 * 72057594037927936
-          = e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216 := by ring
+          = (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216 := by ring
       rw [h_lhs_eq]
       have h_close_lt :
-          e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+          (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
             < 18446744073709551616 := by
         rw [h_byte_lo]; omega
       have h_bv64_inj :
           (BitVec.ofNat 64
-              (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)).toNat
-          = e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216 := by
+              ((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)).toNat
+          = (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216 := by
         rw [BitVec.toNat_ofNat]
         exact Nat.mod_eq_of_lt h_close_lt
       rw [show BitVec.signExtend 64 (BitVec.ofNat 32 (a₀.val + a₁.val * 65536))
             = BitVec.ofNat 64
-                (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+                ((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)
             from h_close]
       exact h_bv64_inj.symm
     · -- Negative: x4..x7 = 255.
       rw [hx4, hx5, hx6, hx7]
       have h_byte_eq_neg :
-          e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+          (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
             + 255 * 4294967296 + 255 * 1099511627776
             + 255 * 281474976710656 + 255 * 72057594037927936
-          = (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+          = ((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)
               + 18446744069414584320 := by ring
       rw [h_byte_eq_neg]
       have h_byte_sum_lt :
-          (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+          ((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)
             + 18446744069414584320 < 18446744073709551616 := by
         rw [h_byte_lo]; omega
       have h_close := w_sext_close_neg
         (a₀.val + a₁.val * 65536)
-        ((e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+        (((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)
           + 18446744069414584320)
         h_q32_lt h_byte_sum_lt
         (by rw [h_byte_lo]) h_neg
       rw [show BitVec.signExtend 64 (BitVec.ofNat 32 (a₀.val + a₁.val * 65536))
             = BitVec.ofNat 64
-                ((e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+                (((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)
                   + 18446744069414584320)
             from h_close]
       rw [BitVec.toNat_ofNat]
@@ -1072,10 +1074,10 @@ lemma h_rd_val_mdru_remuw_chunked
     (e : MemoryBusEntry FGL)
     (a₀ a₁ a₂ a₃ b₀ b₁ b₂ b₃ c₀ c₁ c₂ c₃ d₀ d₁ d₂ d₃ : FGL)
     (cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL)
-    (h0 : e.x0.val < 256) (h1 : e.x1.val < 256)
-    (h2 : e.x2.val < 256) (h3 : e.x3.val < 256)
-    (h4 : e.x4.val < 256) (h5 : e.x5.val < 256)
-    (h6 : e.x6.val < 256) (h7 : e.x7.val < 256)
+    (h0 : (byteAt e 0).val < 256) (h1 : (byteAt e 1).val < 256)
+    (h2 : (byteAt e 2).val < 256) (h3 : (byteAt e 3).val < 256)
+    (h4 : (byteAt e 4).val < 256) (h5 : (byteAt e 5).val < 256)
+    (h6 : (byteAt e 6).val < 256) (h7 : (byteAt e 7).val < 256)
     (h_a0 : a₀.val < 65536) (h_a1 : a₁.val < 65536)
     (h_a2 : a₂.val < 65536) (h_a3 : a₃.val < 65536)
     (h_b0 : b₀.val < 65536) (h_b1 : b₁.val < 65536)
@@ -1103,20 +1105,20 @@ lemma h_rd_val_mdru_remuw_chunked
     (h_c23 : c₂.val = 0 ∧ c₃.val = 0)
     -- Byte-pack lane match (W): bytes 0..3 pack d_0 + d_1*65536 (remainder low 32)
     (h_byte_lo :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
         = d₀.val + d₁.val * 65536)
     -- Sign-extension choice on bytes 4..7 (based on top bit of remainder).
     (h_sext_choice :
-      ((e.x4.val = 0 ∧ e.x5.val = 0 ∧ e.x6.val = 0 ∧ e.x7.val = 0) ∧
+      (((byteAt e 4).val = 0 ∧ (byteAt e 5).val = 0 ∧ (byteAt e 6).val = 0 ∧ (byteAt e 7).val = 0) ∧
         d₀.val + d₁.val * 65536 < 2147483648) ∨
-      ((e.x4.val = 255 ∧ e.x5.val = 255 ∧ e.x6.val = 255 ∧ e.x7.val = 255) ∧
+      (((byteAt e 4).val = 255 ∧ (byteAt e 5).val = 255 ∧ (byteAt e 6).val = 255 ∧ (byteAt e 7).val = 255) ∧
         d₀.val + d₁.val * 65536 ≥ 2147483648))
     (h_rs1_value : (Sail.BitVec.extractLsb r1 31 0).toNat = c₀.val + c₁.val * 65536)
     (h_rs2_value : (Sail.BitVec.extractLsb r2 31 0).toNat = b₀.val + b₁.val * 65536)
     (h_op2_ne : (Sail.BitVec.extractLsb r2 31 0).toNat ≠ 0)
     (h_d_lt_b : d₀.val + d₁.val * 65536 < (Sail.BitVec.extractLsb r2 31 0).toNat) :
-    U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
-                (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
+    U64.toBV #v[((byteAt e 0) : BitVec 8), ((byteAt e 1) : BitVec 8), ((byteAt e 2) : BitVec 8), ((byteAt e 3) : BitVec 8),
+                ((byteAt e 4) : BitVec 8), ((byteAt e 5) : BitVec 8), ((byteAt e 6) : BitVec 8), ((byteAt e 7) : BitVec 8)]
       = (let r1_lo32 : BitVec 32 := Sail.BitVec.extractLsb r1 31 0
          let r2_lo32 : BitVec 32 := Sail.BitVec.extractLsb r2 31 0
          let q32 : BitVec 32 :=
@@ -1162,13 +1164,13 @@ lemma h_rd_val_mdru_remuw_chunked
       r1 r2 (a₀.val + a₁.val * 65536) (d₀.val + d₁.val * 65536)
       h_op2_ne h_d_lt_b h_euclid
   apply BitVec.eq_of_toNat_eq
-  rw [u64_toBV_of_bytes_toNat e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
+  rw [u64_toBV_of_bytes_toNat (byteAt e 0) (byteAt e 1) (byteAt e 2) (byteAt e 3) (byteAt e 4) (byteAt e 5) (byteAt e 6) (byteAt e 7)
         h0 h1 h2 h3 h4 h5 h6 h7]
   rw [← h_bv]
   have h_byte_sum_eq :
-      e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
-        + e.x4.val * 4294967296 + e.x5.val * 1099511627776
-        + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936
+      (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+        + (byteAt e 4).val * 4294967296 + (byteAt e 5).val * 1099511627776
+        + (byteAt e 6).val * 281474976710656 + (byteAt e 7).val * 72057594037927936
       = (BitVec.signExtend 64
           (BitVec.ofNat 32 (d₀.val + d₁.val * 65536))).toNat := by
     rcases h_sext_choice with ⟨⟨hx4, hx5, hx6, hx7⟩, h_pos⟩ |
@@ -1176,50 +1178,50 @@ lemma h_rd_val_mdru_remuw_chunked
     · rw [hx4, hx5, hx6, hx7]
       have h_close := w_sext_close_pos
         (d₀.val + d₁.val * 65536)
-        (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+        ((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)
         h_r32_lt (by omega) h_byte_lo h_pos
       have h_lhs_eq :
-          e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+          (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
             + 0 * 4294967296 + 0 * 1099511627776 + 0 * 281474976710656
             + 0 * 72057594037927936
-          = e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216 := by ring
+          = (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216 := by ring
       rw [h_lhs_eq]
       have h_close_lt :
-          e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+          (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
             < 18446744073709551616 := by
         rw [h_byte_lo]; omega
       have h_bv64_inj :
           (BitVec.ofNat 64
-              (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)).toNat
-          = e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216 := by
+              ((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)).toNat
+          = (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216 := by
         rw [BitVec.toNat_ofNat]
         exact Nat.mod_eq_of_lt h_close_lt
       rw [show BitVec.signExtend 64 (BitVec.ofNat 32 (d₀.val + d₁.val * 65536))
             = BitVec.ofNat 64
-                (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+                ((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)
             from h_close]
       exact h_bv64_inj.symm
     · rw [hx4, hx5, hx6, hx7]
       have h_byte_eq_neg :
-          e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
+          (byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
             + 255 * 4294967296 + 255 * 1099511627776
             + 255 * 281474976710656 + 255 * 72057594037927936
-          = (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+          = ((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)
               + 18446744069414584320 := by ring
       rw [h_byte_eq_neg]
       have h_byte_sum_lt :
-          (e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+          ((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)
             + 18446744069414584320 < 18446744073709551616 := by
         rw [h_byte_lo]; omega
       have h_close := w_sext_close_neg
         (d₀.val + d₁.val * 65536)
-        ((e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+        (((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)
           + 18446744069414584320)
         h_r32_lt h_byte_sum_lt
         (by rw [h_byte_lo]) h_neg
       rw [show BitVec.signExtend 64 (BitVec.ofNat 32 (d₀.val + d₁.val * 65536))
             = BitVec.ofNat 64
-                ((e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216)
+                (((byteAt e 0).val + (byteAt e 1).val * 256 + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216)
                   + 18446744069414584320)
             from h_close]
       rw [BitVec.toNat_ofNat]
