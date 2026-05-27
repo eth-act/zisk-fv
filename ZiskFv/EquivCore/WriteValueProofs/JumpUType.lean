@@ -9,6 +9,7 @@ import ZiskFv.Bits.PackedBitVec.WidePCNoWrap
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.ZiskCircuit.Jal
 import ZiskFv.ZiskCircuit.Jalr
 import ZiskFv.ZiskCircuit.LoadUpperImmediate
@@ -65,6 +66,7 @@ namespace ZiskFv.EquivCore.WriteValueProofs.JumpUType
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt byteOf byteOf_val_lt_256 byteOf_val_sum_eq)
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.MemoryBus
 open ZiskFv.ZiskCircuit.Jal
@@ -87,59 +89,52 @@ the common arithmetic. -/
 /-- **FGL lane-to-byte-sum bridge (lo half).** Given:
     - `memory_entry_lo e2 = fgl_lo : FGL`
     - `(fgl_lo).val = target_nat % 4294967296`
-    - byte ranges on the 4 lo bytes
 
-    derives `x0.val + x1.val*256 + x2.val*65536 + x3.val*16777216 = target_nat % 4294967296`.
+    derives `(byteAt e2 0).val + (byteAt e2 1).val*256 + (byteAt e2 2).val*65536
+      + (byteAt e2 3).val*16777216 = target_nat % 4294967296`.
 
     Used to connect the lo 4 bytes of the memory bus entry to the
     FGL-level store_value expression. -/
 private lemma lo_bytes_from_fgl_eq
     (e2 : MemoryBusEntry FGL) (fgl_lo : FGL)
     (target_nat : ℕ)
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
-    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
     (h_lo_entry : memory_entry_lo e2 = fgl_lo)
     (h_lo_val : fgl_lo.val = target_nat % 4294967296) :
-    e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+    (byteAt e2 0).val + (byteAt e2 1).val * 256
+      + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
       = target_nat % 4294967296 := by
-  -- Unfold memory_entry_lo to expose the FGL sum.
+  -- memory_entry_lo e2 = e2.value_0 by definition.
   simp only [memory_entry_lo] at h_lo_entry
-  -- Cast the FGL sum to its Nat value using push_cast + range bounds.
-  have h_cast : (e2.x0 + e2.x1 * 256 + e2.x2 * 65536 + e2.x3 * 16777216 : FGL)
-      = (((e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216 : ℕ) : FGL)) := by
-    push_cast; ring
-  rw [h_cast] at h_lo_entry
-  have h_lo_fgl_val := congr_arg Fin.val h_lo_entry
-  simp only [Fin.val_natCast] at h_lo_fgl_val
-  -- h_lo_fgl_val : (x0.val + ...) % GL_prime = fgl_lo.val
-  -- Since the sum is at most 4*255 * 2^24 = 4278190080 < 2^32 < GL_prime, the mod is trivial.
-  have h_sum_bound : e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      < 18446744069414584321 := by omega
-  rw [Nat.mod_eq_of_lt h_sum_bound] at h_lo_fgl_val
-  omega
+  -- The byte projections byteAt e2 0..3 collapse to byteOf e2.value_0 0..3.
+  -- e2.value_0.val < 2^32 follows from h_lo_entry + h_lo_val (a mod is < the modulus).
+  have h_v0_lt : e2.value_0.val < 4294967296 := by
+    rw [h_lo_entry]; rw [h_lo_val]; exact Nat.mod_lt _ (by decide)
+  have h_sum := byteOf_val_sum_eq e2.value_0 h_v0_lt
+  -- byteAt e2 i for i < 4 unfolds to byteOf e2.value_0 i; @[reducible].
+  show (byteOf e2.value_0 0).val + (byteOf e2.value_0 1).val * 256
+       + (byteOf e2.value_0 2).val * 65536 + (byteOf e2.value_0 3).val * 16777216
+       = target_nat % 4294967296
+  rw [h_sum, h_lo_entry, h_lo_val]
 
 /-- **FGL lane-to-byte-sum bridge (hi half).** Symmetric with `lo_bytes_from_fgl_eq`
     for the high 4 bytes. -/
 private lemma hi_bytes_from_fgl_eq
     (e2 : MemoryBusEntry FGL) (fgl_hi : FGL)
     (target_nat : ℕ)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
-    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256)
     (h_hi_entry : memory_entry_hi e2 = fgl_hi)
-    (h_hi_val : fgl_hi.val = target_nat / 4294967296) :
-    e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
+    (h_hi_val : fgl_hi.val = target_nat / 4294967296)
+    (h_hi_bound : target_nat / 4294967296 < 4294967296) :
+    (byteAt e2 4).val + (byteAt e2 5).val * 256
+      + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216
       = target_nat / 4294967296 := by
   simp only [memory_entry_hi] at h_hi_entry
-  have h_cast : (e2.x4 + e2.x5 * 256 + e2.x6 * 65536 + e2.x7 * 16777216 : FGL)
-      = (((e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216 : ℕ) : FGL)) := by
-    push_cast; ring
-  rw [h_cast] at h_hi_entry
-  have h_hi_fgl_val := congr_arg Fin.val h_hi_entry
-  simp only [Fin.val_natCast] at h_hi_fgl_val
-  have h_sum_bound : e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
-      < 18446744069414584321 := by omega
-  rw [Nat.mod_eq_of_lt h_sum_bound] at h_hi_fgl_val
-  omega
+  have h_v1_lt : e2.value_1.val < 4294967296 := by
+    rw [h_hi_entry, h_hi_val]; exact h_hi_bound
+  have h_sum := byteOf_val_sum_eq e2.value_1 h_v1_lt
+  show (byteOf e2.value_1 0).val + (byteOf e2.value_1 1).val * 256
+       + (byteOf e2.value_1 2).val * 65536 + (byteOf e2.value_1 3).val * 16777216
+       = target_nat / 4294967296
+  rw [h_sum, h_hi_entry, h_hi_val]
 
 /-- **64-bit byte-sum from lo/hi decomposition.** Assembles the full 8-byte
     byte_sum from the lo and hi 4-byte sums expressed in terms of a target
@@ -147,13 +142,16 @@ private lemma hi_bytes_from_fgl_eq
     hi_bytes = V.toNat / 2^32 → total_byte_sum = V.toNat. -/
 private lemma byte_sum_from_lo_hi
     (e2 : MemoryBusEntry FGL) (V : BitVec 64)
-    (h_lo : e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+    (h_lo : (byteAt e2 0).val + (byteAt e2 1).val * 256
+        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
       = V.toNat % 4294967296)
-    (h_hi : e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
+    (h_hi : (byteAt e2 4).val + (byteAt e2 5).val * 256
+        + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216
       = V.toNat / 4294967296) :
-    e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
-      + e2.x4.val * 4294967296 + e2.x5.val * 1099511627776
-      + e2.x6.val * 281474976710656 + e2.x7.val * 72057594037927936
+    (byteAt e2 0).val + (byteAt e2 1).val * 256
+      + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
+      + (byteAt e2 4).val * 4294967296 + (byteAt e2 5).val * 1099511627776
+      + (byteAt e2 6).val * 281474976710656 + (byteAt e2 7).val * 72057594037927936
     = V.toNat := by
   have h_decomp := Nat.div_add_mod V.toNat 4294967296
   omega
@@ -162,7 +160,7 @@ private lemma byte_sum_from_lo_hi
 
 /-- **`h_rd_val` discharge for JAL (Tier 1).**
 
-    Derives `U64.toBV #v[e2.x0, ..., e2.x7] = PC + 4` from circuit
+    Derives `U64.toBV #v[byteAt e2 0, ..., byteAt e2 7] = PC + 4` from circuit
     primitives. Exposes only {CIRCUIT-CONSTRAINT, LANE-MATCH, RANGE,
     TRANSPILE-PIN} parameters — no OUTPUT-EQ residuals.
 
@@ -186,7 +184,7 @@ private lemma byte_sum_from_lo_hi
     * `h_pc_offset_lt_2_32 : (PC + 4#64).toNat < 4294967296` — RANGE
       (32-bit bound on the link address; immediate from the ROM
       `pc < 2^32` invariant).
-    * `h0..h7 : e2.x{i}.val < 256` — RANGE (per-byte range bounds).
+    * `h0..h7 : (byteAt e2 i).val < 256` — RANGE (per-byte range bounds).
 
     **Proof chain.** `transpile_PC_for_JAL` (gated by mode witnesses
     extracted from `h_circuit`) gives `(m.pc r_main).val = PC.toNat`.
@@ -216,12 +214,14 @@ lemma h_rd_val_jut_jal
     (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 : (PC + 4#64).toNat < 4294967296)
     -- RANGE: per-byte bounds
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
-    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
-    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+    (h0 : (byteAt e2 0).val < 256) (h1 : (byteAt e2 1).val < 256)
+    (h2 : (byteAt e2 2).val < 256) (h3 : (byteAt e2 3).val < 256)
+    (h4 : (byteAt e2 4).val < 256) (h5 : (byteAt e2 5).val < 256)
+    (h6 : (byteAt e2 6).val < 256) (h7 : (byteAt e2 7).val < 256) :
+    U64.toBV #v[(byteAt e2 0 : BitVec 8), (byteAt e2 1 : BitVec 8),
+                (byteAt e2 2 : BitVec 8), (byteAt e2 3 : BitVec 8),
+                (byteAt e2 4 : BitVec 8), (byteAt e2 5 : BitVec 8),
+                (byteAt e2 6 : BitVec 8), (byteAt e2 7 : BitVec 8)]
       = PC + 4 := by
   -- Extract JAL mode witnesses from h_circuit and apply S1's
   -- transpile_PC_for_JAL axiom to derive the FGL→BitVec PC bridge.
@@ -241,18 +241,23 @@ lemma h_rd_val_jut_jal
   rw [h_pc4_eq] at h_lo_val h_hi_val
   -- Bridge each .val equality to the FGL form via the helpers.
   have h_lo_bytes :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      (byteAt e2 0).val + (byteAt e2 1).val * 256
+        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
       = (PC + 4).toNat % 4294967296 :=
     lo_bytes_from_fgl_eq e2 (memory_entry_lo e2) (PC + 4).toNat
-      h0 h1 h2 h3 rfl h_lo_val
+      rfl h_lo_val
+  have h_hi_bound : (PC + 4).toNat / 4294967296 < 4294967296 :=
+    Nat.div_lt_of_lt_mul (by have := (PC + 4).isLt; norm_num at this ⊢; omega)
   have h_hi_bytes :
-      e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
+      (byteAt e2 4).val + (byteAt e2 5).val * 256
+        + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216
       = (PC + 4).toNat / 4294967296 :=
     hi_bytes_from_fgl_eq e2 (memory_entry_hi e2) (PC + 4).toNat
-      h4 h5 h6 h7 rfl h_hi_val
+      rfl h_hi_val h_hi_bound
   -- Assemble byte_sum and close with K3.
   have h_byte_sum := byte_sum_from_lo_hi e2 (PC + 4) h_lo_bytes h_hi_bytes
-  exact pc_plus4_bv64_of_bytes PC e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
+  exact pc_plus4_bv64_of_bytes PC (byteAt e2 0) (byteAt e2 1) (byteAt e2 2) (byteAt e2 3)
+    (byteAt e2 4) (byteAt e2 5) (byteAt e2 6) (byteAt e2 7)
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
 
 /-! ## JALR: rd ← PC + 4 -/
@@ -286,12 +291,14 @@ lemma h_rd_val_jut_jalr
     (h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296)
     (h_pc_offset_lt_2_32 : (PC + 4#64).toNat < 4294967296)
     -- RANGE: per-byte bounds
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
-    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
-    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+    (h0 : (byteAt e2 0).val < 256) (h1 : (byteAt e2 1).val < 256)
+    (h2 : (byteAt e2 2).val < 256) (h3 : (byteAt e2 3).val < 256)
+    (h4 : (byteAt e2 4).val < 256) (h5 : (byteAt e2 5).val < 256)
+    (h6 : (byteAt e2 6).val < 256) (h7 : (byteAt e2 7).val < 256) :
+    U64.toBV #v[(byteAt e2 0 : BitVec 8), (byteAt e2 1 : BitVec 8),
+                (byteAt e2 2 : BitVec 8), (byteAt e2 3 : BitVec 8),
+                (byteAt e2 4 : BitVec 8), (byteAt e2 5 : BitVec 8),
+                (byteAt e2 6 : BitVec 8), (byteAt e2 7 : BitVec 8)]
       = PC + 4 := by
   -- Extract JALR mode witnesses + apply transpile_PC_for_JALR.
   have h_mode := h_circuit.2
@@ -310,24 +317,29 @@ lemma h_rd_val_jut_jalr
   rw [h_pc4_eq] at h_lo_val h_hi_val
   -- Bridge to byte-sum form.
   have h_lo_bytes :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      (byteAt e2 0).val + (byteAt e2 1).val * 256
+        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
       = (PC + 4).toNat % 4294967296 :=
     lo_bytes_from_fgl_eq e2 (memory_entry_lo e2) (PC + 4).toNat
-      h0 h1 h2 h3 rfl h_lo_val
+      rfl h_lo_val
+  have h_hi_bound : (PC + 4).toNat / 4294967296 < 4294967296 :=
+    Nat.div_lt_of_lt_mul (by have := (PC + 4).isLt; norm_num at this ⊢; omega)
   have h_hi_bytes :
-      e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
+      (byteAt e2 4).val + (byteAt e2 5).val * 256
+        + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216
       = (PC + 4).toNat / 4294967296 :=
     hi_bytes_from_fgl_eq e2 (memory_entry_hi e2) (PC + 4).toNat
-      h4 h5 h6 h7 rfl h_hi_val
+      rfl h_hi_val h_hi_bound
   -- Assemble byte_sum and close with K3.
   have h_byte_sum := byte_sum_from_lo_hi e2 (PC + 4) h_lo_bytes h_hi_bytes
-  exact pc_plus4_bv64_of_bytes PC e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
+  exact pc_plus4_bv64_of_bytes PC (byteAt e2 0) (byteAt e2 1) (byteAt e2 2) (byteAt e2 3)
+    (byteAt e2 4) (byteAt e2 5) (byteAt e2 6) (byteAt e2 7)
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
 
 /-! ## LUI: rd ← BitVec.signExtend 64 (imm ++ 0#12) -/
 
 /-- **`h_rd_val` discharge for LUI (Tier 1).** Derives
-    `U64.toBV #v[e2.x0, ..., e2.x7] = BitVec.signExtend 64 (imm ++ 0#12)`
+    `U64.toBV #v[byteAt e2 0, ..., byteAt e2 7] = BitVec.signExtend 64 (imm ++ 0#12)`
     from circuit primitives:
 
     1. `h_circuit : lui_archetype_circuit_holds m r_main next_pc` — gives
@@ -360,12 +372,14 @@ lemma h_rd_val_jut_lui
     (h_imm_hi_nat : (m.b_1 r_main).val
       = (BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat / 4294967296)
     -- (5) Per-byte range bounds
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
-    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
-    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+    (h0 : (byteAt e2 0).val < 256) (h1 : (byteAt e2 1).val < 256)
+    (h2 : (byteAt e2 2).val < 256) (h3 : (byteAt e2 3).val < 256)
+    (h4 : (byteAt e2 4).val < 256) (h5 : (byteAt e2 5).val < 256)
+    (h6 : (byteAt e2 6).val < 256) (h7 : (byteAt e2 7).val < 256) :
+    U64.toBV #v[(byteAt e2 0 : BitVec 8), (byteAt e2 1 : BitVec 8),
+                (byteAt e2 2 : BitVec 8), (byteAt e2 3 : BitVec 8),
+                (byteAt e2 4 : BitVec 8), (byteAt e2 5 : BitVec 8),
+                (byteAt e2 6 : BitVec 8), (byteAt e2 7 : BitVec 8)]
       = BitVec.signExtend 64 (imm ++ (0 : BitVec 12)) := by
   -- Derive the low-half identity internally.
   -- (BitVec.signExtend 64 v).toNat % 2^32 = v.toNat for v : BitVec 32.
@@ -404,22 +418,29 @@ lemma h_rd_val_jut_lui
     rw [h_imm_lo_nat]; exact h_lo_is_lo.symm
   have h_lo_bytes := lo_bytes_from_fgl_eq e2 (m.b_0 r_main)
     (BitVec.signExtend 64 v).toNat
-    h0 h1 h2 h3 h_lo_entry h_b0_as_sext_lo
+    h_lo_entry h_b0_as_sext_lo
   -- Derive hi bytes.
+  have h_hi_bound : (BitVec.signExtend 64 v).toNat / 4294967296 < 4294967296 := by
+    have h_le := (BitVec.signExtend 64 v).isLt
+    have : (BitVec.signExtend 64 v).toNat < 2 ^ 64 := h_le
+    have h64 : (2 : ℕ) ^ 64 = 4294967296 * 4294967296 := by norm_num
+    rw [h64] at this
+    exact Nat.div_lt_of_lt_mul (by linarith)
   have h_hi_bytes := hi_bytes_from_fgl_eq e2 (m.b_1 r_main)
     (BitVec.signExtend 64 v).toNat
-    h4 h5 h6 h7 h_hi_entry h_imm_hi_nat
+    h_hi_entry h_imm_hi_nat h_hi_bound
   -- Assemble byte_sum = signExtend.toNat.
   have h_byte_sum := byte_sum_from_lo_hi e2 (BitVec.signExtend 64 v) h_lo_bytes h_hi_bytes
   -- Close with K3.
-  exact u64_toBV_of_imm20_lanes imm e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
+  exact u64_toBV_of_imm20_lanes imm (byteAt e2 0) (byteAt e2 1) (byteAt e2 2) (byteAt e2 3)
+    (byteAt e2 4) (byteAt e2 5) (byteAt e2 6) (byteAt e2 7)
     h0 h1 h2 h3 h4 h5 h6 h7 h_byte_sum
 
 /-! ## AUIPC: rd ← PC + BitVec.signExtend 64 (imm ++ 0#12) -/
 
 /-- **`h_rd_val` discharge for AUIPC (Tier 1).**
 
-    Derives `U64.toBV #v[e2.x0, ..., e2.x7] = PC + signExtend 64 (imm ++ 0#12)`
+    Derives `U64.toBV #v[byteAt e2 0, ..., byteAt e2 7] = PC + signExtend 64 (imm ++ 0#12)`
     from circuit primitives. AUIPC differs from JAL/JALR in two ways:
 
     1. The offset is `signExtend 64 (imm ++ 0#12)` rather than the
@@ -458,12 +479,14 @@ lemma h_rd_val_jut_auipc
     (h_pc_offset_lt_2_32 :
       (PC + BitVec.signExtend 64 (imm ++ (0 : BitVec 12))).toNat < 4294967296)
     -- RANGE: per-byte bounds
-    (h0 : e2.x0.val < 256) (h1 : e2.x1.val < 256)
-    (h2 : e2.x2.val < 256) (h3 : e2.x3.val < 256)
-    (h4 : e2.x4.val < 256) (h5 : e2.x5.val < 256)
-    (h6 : e2.x6.val < 256) (h7 : e2.x7.val < 256) :
-    U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+    (h0 : (byteAt e2 0).val < 256) (h1 : (byteAt e2 1).val < 256)
+    (h2 : (byteAt e2 2).val < 256) (h3 : (byteAt e2 3).val < 256)
+    (h4 : (byteAt e2 4).val < 256) (h5 : (byteAt e2 5).val < 256)
+    (h6 : (byteAt e2 6).val < 256) (h7 : (byteAt e2 7).val < 256) :
+    U64.toBV #v[(byteAt e2 0 : BitVec 8), (byteAt e2 1 : BitVec 8),
+                (byteAt e2 2 : BitVec 8), (byteAt e2 3 : BitVec 8),
+                (byteAt e2 4 : BitVec 8), (byteAt e2 5 : BitVec 8),
+                (byteAt e2 6 : BitVec 8), (byteAt e2 7 : BitVec 8)]
       = PC + BitVec.signExtend 64 (imm ++ (0 : BitVec 12)) := by
   -- Extract AUIPC mode witnesses + apply transpile_PC_for_AUIPC.
   have h_mode := h_circuit.2
@@ -480,20 +503,26 @@ lemma h_rd_val_jut_auipc
       h_circuit h_lane_hi h_pc_offset_lt_2_32
   -- Bridge to byte-sum form via the helpers.
   have h_lo_bytes :
-      e2.x0.val + e2.x1.val * 256 + e2.x2.val * 65536 + e2.x3.val * 16777216
+      (byteAt e2 0).val + (byteAt e2 1).val * 256
+        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
       = (PC + offset_bv).toNat % 4294967296 :=
     lo_bytes_from_fgl_eq e2 (memory_entry_lo e2) (PC + offset_bv).toNat
-      h0 h1 h2 h3 rfl h_lo_val
+      rfl h_lo_val
+  have h_hi_bound : (PC + offset_bv).toNat / 4294967296 < 4294967296 :=
+    Nat.div_lt_of_lt_mul (by have := (PC + offset_bv).isLt; norm_num at this ⊢; omega)
   have h_hi_bytes :
-      e2.x4.val + e2.x5.val * 256 + e2.x6.val * 65536 + e2.x7.val * 16777216
+      (byteAt e2 4).val + (byteAt e2 5).val * 256
+        + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216
       = (PC + offset_bv).toNat / 4294967296 :=
     hi_bytes_from_fgl_eq e2 (memory_entry_hi e2) (PC + offset_bv).toNat
-      h4 h5 h6 h7 rfl h_hi_val
+      rfl h_hi_val h_hi_bound
   -- Assemble byte_sum = (PC + offset_bv).toNat.
   have h_byte_sum := byte_sum_from_lo_hi e2 (PC + offset_bv) h_lo_bytes h_hi_bytes
   -- Close via BitVec.eq_of_toNat_eq + u64_toBV_of_bytes_toNat.
   apply BitVec.eq_of_toNat_eq
-  rw [ZiskFv.PackedBitVec.u64_toBV_of_bytes_toNat e2.x0 e2.x1 e2.x2 e2.x3 e2.x4 e2.x5 e2.x6 e2.x7
+  rw [ZiskFv.PackedBitVec.u64_toBV_of_bytes_toNat
+        (byteAt e2 0) (byteAt e2 1) (byteAt e2 2) (byteAt e2 3)
+        (byteAt e2 4) (byteAt e2 5) (byteAt e2 6) (byteAt e2 7)
       h0 h1 h2 h3 h4 h5 h6 h7]
   rw [h_byte_sum]
 
