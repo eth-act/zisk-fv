@@ -19,6 +19,7 @@ import ZiskFv.SailSpec.lw
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.EquivCore.Promises.Load
 import ZiskFv.Compliance.SharedBundles
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 End-to-end theorem for RV64 LW (load word, signed / sign-extended).
@@ -37,6 +38,7 @@ namespace ZiskFv.EquivCore.Lw
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
@@ -133,10 +135,10 @@ theorem equiv_LW_of_wf
           + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
           + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
           + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
-    (h_a0_match : (v.free_in_a_0 r_binary).val = bus.e1.x0.val)
-    (h_a1_match : (v.free_in_a_1 r_binary).val = bus.e1.x1.val)
-    (h_a2_match : (v.free_in_a_2 r_binary).val = bus.e1.x2.val)
-    (h_a3_match : (v.free_in_a_3 r_binary).val = bus.e1.x3.val) :
+    (h_a0_match : (v.free_in_a_0 r_binary).val = (byteAt bus.e1 0).val)
+    (h_a1_match : (v.free_in_a_1 r_binary).val = (byteAt bus.e1 1).val)
+    (h_a2_match : (v.free_in_a_2 r_binary).val = (byteAt bus.e1 2).val)
+    (h_a3_match : (v.free_in_a_3 r_binary).val = (byteAt bus.e1 3).val) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -171,31 +173,40 @@ theorem equiv_LW_of_wf
           _h_bound, _h_aligned⟩ := h_opcode_assumptions
   rw [h_ptr_match] at h_mem
   obtain ⟨he0, he1, he2, he3⟩ := h_mem
-  have hd0 : (e1.x0 : BitVec 8) = lw_input.data0 := by
+  have hd0 : ((byteAt e1 0) : BitVec 8) = lw_input.data0 := by
     rw [h_d0] at he0; exact (Option.some.inj he0).symm
-  have hd1 : (e1.x1 : BitVec 8) = lw_input.data1 := by
+  have hd1 : ((byteAt e1 1) : BitVec 8) = lw_input.data1 := by
     rw [h_d1] at he1; exact (Option.some.inj he1).symm
-  have hd2 : (e1.x2 : BitVec 8) = lw_input.data2 := by
+  have hd2 : ((byteAt e1 2) : BitVec 8) = lw_input.data2 := by
     rw [h_d2] at he2; exact (Option.some.inj he2).symm
-  have hd3 : (e1.x3 : BitVec 8) = lw_input.data3 := by
+  have hd3 : ((byteAt e1 3) : BitVec 8) = lw_input.data3 := by
     rw [h_d3] at he3; exact (Option.some.inj he3).symm
   -- Derive the rd-write value equality directly from h_high_bytes_signext
   -- + the per-byte e1.x_i = data_i facts (after rewriting through e1↔e2).
-  have h_e1_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e1
-  have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
+  have h_e1_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e1 0
+  have h_e1_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e1 1
+  have h_e1_2 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e1 2
+  have h_e1_3 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e1 3
+  have h_e2_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 0
+  have h_e2_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 1
+  have h_e2_2 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 2
+  have h_e2_3 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 3
+  have h_e2_4 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 4
+  have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
+  have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
+  have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
   have h_lw_packed :=
     ZiskFv.ZiskCircuit.SextLoadBridge.load_word_c_packed_of_wf
       main r_main v r_binary e1 e2
       h_op_binary h_bytes h_wfs hc_lo_sum_lt hc_hi_sum_lt
       h_match_clo h_match_chi h_main_emit_c
-      h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
-      h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
-      h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
+      h_e2_0 h_e2_1 h_e2_2 h_e2_3
+      h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_a0_match h_a1_match h_a2_match h_a3_match
-      h_e1_range.1 h_e1_range.2.1 h_e1_range.2.2.1 h_e1_range.2.2.2.1
+      h_e1_0 h_e1_1 h_e1_2 h_e1_3
   have h_rd_val_derived :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
+      U64.toBV #v[byteAt e2 0, byteAt e2 1, byteAt e2 2, byteAt e2 3,
+                  byteAt e2 4, byteAt e2 5, byteAt e2 6, byteAt e2 7]
         = BitVec.signExtend 64
             (lw_input.data3 ++ lw_input.data2
              ++ lw_input.data1 ++ lw_input.data0) := by
