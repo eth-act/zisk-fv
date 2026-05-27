@@ -9,6 +9,7 @@ import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
 import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.EquivCore.Bridge.Mem
 import ZiskFv.EquivCore.Bridge.BinaryExtension
 
@@ -65,6 +66,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryExtension
 open ZiskFv.Airs.OperationBus
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 
 
 /-- Output bundle of `load_full_discharge_L{B,H,W}_of_match` — the
@@ -100,10 +102,10 @@ structure LoadFullDischargeAt
                      + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
                      + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
                      + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary
-  h_a0_match : (v.free_in_a_0 r_binary).val = e1.x0.val
-  h_a1_match : (v.free_in_a_1 r_binary).val = e1.x1.val
-  h_a2_match : (v.free_in_a_2 r_binary).val = e1.x2.val
-  h_a3_match : (v.free_in_a_3 r_binary).val = e1.x3.val
+  h_a0_match : (v.free_in_a_0 r_binary).val = (byteAt e1 0).val
+  h_a1_match : (v.free_in_a_1 r_binary).val = (byteAt e1 1).val
+  h_a2_match : (v.free_in_a_2 r_binary).val = (byteAt e1 2).val
+  h_a3_match : (v.free_in_a_3 r_binary).val = (byteAt e1 3).val
 
 lemma load_full_discharge_LB_of_match
     (main : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)

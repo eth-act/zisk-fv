@@ -3,6 +3,7 @@ import Mathlib
 import ZiskFv.EquivCore.Promises.Store
 import ZiskFv.EquivCore.Bridge.Mem
 import ZiskFv.Airs.Main.Main
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.SailSpec.sb
 import ZiskFv.SailSpec.sh
 import ZiskFv.SailSpec.sw
@@ -29,6 +30,7 @@ namespace ZiskFv.EquivCore.Promises
 
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 
 
 /-- Derive SB's `h_mem_eq` from the SB emission bundle. Repackages
@@ -44,14 +46,14 @@ lemma sb_h_mem_eq_of_emission
     (h_ind_width : main.ind_width r_main = 1)
     (h_e_st_mult : e_st.multiplicity = 1) (h_e_st_as_val : e_st.as.val = 2)
     (h_opcode_assumptions : PureSpec.sb_state_assumptions sb_input state) :
-    (((((((state.mem.insert e_st.ptr.toNat e_st.x0
-        ).insert (e_st.ptr.toNat + 1) e_st.x1
-        ).insert (e_st.ptr.toNat + 2) e_st.x2
-        ).insert (e_st.ptr.toNat + 3) e_st.x3
-        ).insert (e_st.ptr.toNat + 4) e_st.x4
-        ).insert (e_st.ptr.toNat + 5) e_st.x5
-        ).insert (e_st.ptr.toNat + 6) e_st.x6
-        ).insert (e_st.ptr.toNat + 7) e_st.x7
+    (((((((state.mem.insert e_st.ptr.toNat (byteAt e_st 0)
+        ).insert (e_st.ptr.toNat + 1) (byteAt e_st 1)
+        ).insert (e_st.ptr.toNat + 2) (byteAt e_st 2)
+        ).insert (e_st.ptr.toNat + 3) (byteAt e_st 3)
+        ).insert (e_st.ptr.toNat + 4) (byteAt e_st 4)
+        ).insert (e_st.ptr.toNat + 5) (byteAt e_st 5)
+        ).insert (e_st.ptr.toNat + 6) (byteAt e_st 6)
+        ).insert (e_st.ptr.toNat + 7) (byteAt e_st 7)
       = state.mem.insert
           (PureSpec.execute_STOREB_pure sb_input).data0.1
           (PureSpec.execute_STOREB_pure sb_input).data0.2 :=
@@ -71,14 +73,14 @@ lemma sh_h_mem_eq_of_emission
     (h_ind_width : main.ind_width r_main = 2)
     (h_e_st_mult : e_st.multiplicity = 1) (h_e_st_as_val : e_st.as.val = 2)
     (h_opcode_assumptions : PureSpec.sh_state_assumptions sh_input state) :
-    (((((((state.mem.insert e_st.ptr.toNat e_st.x0
-        ).insert (e_st.ptr.toNat + 1) e_st.x1
-        ).insert (e_st.ptr.toNat + 2) e_st.x2
-        ).insert (e_st.ptr.toNat + 3) e_st.x3
-        ).insert (e_st.ptr.toNat + 4) e_st.x4
-        ).insert (e_st.ptr.toNat + 5) e_st.x5
-        ).insert (e_st.ptr.toNat + 6) e_st.x6
-        ).insert (e_st.ptr.toNat + 7) e_st.x7
+    (((((((state.mem.insert e_st.ptr.toNat (byteAt e_st 0)
+        ).insert (e_st.ptr.toNat + 1) (byteAt e_st 1)
+        ).insert (e_st.ptr.toNat + 2) (byteAt e_st 2)
+        ).insert (e_st.ptr.toNat + 3) (byteAt e_st 3)
+        ).insert (e_st.ptr.toNat + 4) (byteAt e_st 4)
+        ).insert (e_st.ptr.toNat + 5) (byteAt e_st 5)
+        ).insert (e_st.ptr.toNat + 6) (byteAt e_st 6)
+        ).insert (e_st.ptr.toNat + 7) (byteAt e_st 7)
       = (state.mem.insert
             (PureSpec.execute_STOREH_pure sh_input).data0.1
             (PureSpec.execute_STOREH_pure sh_input).data0.2
@@ -101,14 +103,14 @@ lemma sw_h_mem_eq_of_emission
     (h_ind_width : main.ind_width r_main = 4)
     (h_e_st_mult : e_st.multiplicity = 1) (h_e_st_as_val : e_st.as.val = 2)
     (h_opcode_assumptions : PureSpec.sw_state_assumptions sw_input state) :
-    (((((((state.mem.insert e_st.ptr.toNat e_st.x0
-        ).insert (e_st.ptr.toNat + 1) e_st.x1
-        ).insert (e_st.ptr.toNat + 2) e_st.x2
-        ).insert (e_st.ptr.toNat + 3) e_st.x3
-        ).insert (e_st.ptr.toNat + 4) e_st.x4
-        ).insert (e_st.ptr.toNat + 5) e_st.x5
-        ).insert (e_st.ptr.toNat + 6) e_st.x6
-        ).insert (e_st.ptr.toNat + 7) e_st.x7
+    (((((((state.mem.insert e_st.ptr.toNat (byteAt e_st 0)
+        ).insert (e_st.ptr.toNat + 1) (byteAt e_st 1)
+        ).insert (e_st.ptr.toNat + 2) (byteAt e_st 2)
+        ).insert (e_st.ptr.toNat + 3) (byteAt e_st 3)
+        ).insert (e_st.ptr.toNat + 4) (byteAt e_st 4)
+        ).insert (e_st.ptr.toNat + 5) (byteAt e_st 5)
+        ).insert (e_st.ptr.toNat + 6) (byteAt e_st 6)
+        ).insert (e_st.ptr.toNat + 7) (byteAt e_st 7)
       = (((state.mem.insert
               (PureSpec.execute_STOREW_pure sw_input).data0.1
               (PureSpec.execute_STOREW_pure sw_input).data0.2
@@ -140,14 +142,14 @@ lemma sd_h_mem_eq_of_emission
     (h_e_st_mult : e_st.multiplicity = 1) (h_e_st_as_val : e_st.as.val = 2)
     (h_opcode_assumptions : PureSpec.sd_state_assumptions sd_input state) :
     e_st.ptr.toNat = (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat
-    ∧ (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 sd_input.r2_val
-    ∧ (e_st.x1 : BitVec 8) = BitVec.extractLsb 15 8 sd_input.r2_val
-    ∧ (e_st.x2 : BitVec 8) = BitVec.extractLsb 23 16 sd_input.r2_val
-    ∧ (e_st.x3 : BitVec 8) = BitVec.extractLsb 31 24 sd_input.r2_val
-    ∧ (e_st.x4 : BitVec 8) = BitVec.extractLsb 39 32 sd_input.r2_val
-    ∧ (e_st.x5 : BitVec 8) = BitVec.extractLsb 47 40 sd_input.r2_val
-    ∧ (e_st.x6 : BitVec 8) = BitVec.extractLsb 55 48 sd_input.r2_val
-    ∧ (e_st.x7 : BitVec 8) = BitVec.extractLsb 63 56 sd_input.r2_val := by
+    ∧ ((byteAt e_st 0) : BitVec 8) = BitVec.extractLsb 7 0 sd_input.r2_val
+    ∧ ((byteAt e_st 1) : BitVec 8) = BitVec.extractLsb 15 8 sd_input.r2_val
+    ∧ ((byteAt e_st 2) : BitVec 8) = BitVec.extractLsb 23 16 sd_input.r2_val
+    ∧ ((byteAt e_st 3) : BitVec 8) = BitVec.extractLsb 31 24 sd_input.r2_val
+    ∧ ((byteAt e_st 4) : BitVec 8) = BitVec.extractLsb 39 32 sd_input.r2_val
+    ∧ ((byteAt e_st 5) : BitVec 8) = BitVec.extractLsb 47 40 sd_input.r2_val
+    ∧ ((byteAt e_st 6) : BitVec 8) = BitVec.extractLsb 55 48 sd_input.r2_val
+    ∧ ((byteAt e_st 7) : BitVec 8) = BitVec.extractLsb 63 56 sd_input.r2_val := by
   have h_read_r1 := h_opcode_assumptions.2.1
   have h_read_r2 := h_opcode_assumptions.2.2.1
   have h_read_r1' :
