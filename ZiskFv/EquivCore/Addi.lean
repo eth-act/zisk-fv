@@ -24,6 +24,7 @@ import ZiskFv.EquivCore.Bridge.Binary
 import ZiskFv.AirsClean.BinaryAdd.Bridge
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Compliance.SharedBundles
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 End-to-end theorem for RV64 ADDI.
@@ -44,6 +45,7 @@ register-write ALU ops.
 namespace ZiskFv.EquivCore.Addi
 
 open Goldilocks
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
@@ -568,8 +570,14 @@ theorem equiv_ADDI_of_binaryadd_row
     ({ xreg := fun _ => 0#64, pc := 0#64 } : RV64State)
     h_main_active h_main_op_add
   obtain ⟨_, h_m32, h_set_pc, _, _, _, _, _, _, _⟩ := h_tr
-  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
-    ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
+  have h_e2_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 0
+  have h_e2_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 1
+  have h_e2_2 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 2
+  have h_e2_3 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 3
+  have h_e2_4 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 4
+  have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
+  have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
+  have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
   have h_match_b :
       matches_entry (opBus_row_Main m r_main) (opBus_row_BinaryAdd b 0) := by
     simpa [b, ZiskFv.AirsClean.BinaryAdd.validOfRow,
