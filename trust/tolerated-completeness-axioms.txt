@@ -1,6 +1,6 @@
 # Tolerated completeness-direction axioms (V2 gate allowlist)
 #
-# These five axioms live in `ZiskFv/AirsClean/Completeness.lean` as the
+# These axioms live in `ZiskFv/AirsClean/Completeness.lean` as the
 # `circuit.completeness` field of each Clean `GeneralFormalCircuit`.
 # Clean requires both a soundness and a completeness proof for every
 # component; zisk-fv is a soundness-only verification project, so
@@ -25,3 +25,7 @@ memAlignByte_circuit_completeness
 memAlignReadByte_circuit_completeness
 arithMul_circuit_completeness
 arithDiv_circuit_completeness
+# T4.1 — staging-period entry; will become reachable from the global
+# closure once T4.4 routes the memory-family canonical theorems
+# through `MemFamily.memBusEnsemble`.
+mainWithRomAndMemBus_circuit_completeness

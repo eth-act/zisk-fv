@@ -1,6 +1,7 @@
 import ZiskFv.AirsClean.Main.Constraints
 import ZiskFv.AirsClean.Main.Soundness
 import ZiskFv.AirsClean.Main.Bridge
+import ZiskFv.AirsClean.Completeness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -101,6 +102,33 @@ theorem mainWithRomAndMemBus_soundness (length : ℕ) (program : Program length)
           , by simpa [sub_eq_add_neg] using h7
           , by simpa [sub_eq_add_neg] using h8 ⟩
   · simp only [MemBusChannel, circuit_norm]
+
+/-- Main as a Clean `GeneralFormalCircuit` exposing the ROM lookup and
+    the 3 memory-bus consumer emissions. Soundness comes from
+    `mainWithRomAndMemBus_soundness`; completeness is the declared
+    completeness-direction axiom
+    `mainWithRomAndMemBus_circuit_completeness` (per plan policy:
+    zisk-fv is soundness-only; the axiom is in the tolerated allowlist
+    until T4.4 wires this Component through the global theorem). -/
+def circuitWithRomAndMemBus
+    (length : ℕ) (program : Program length) :
+    GeneralFormalCircuit FGL MainRowWithRom unit :=
+  { mainWithRomAndMemBusElaborated length program with
+    Assumptions := fun _ _ => True
+    Spec := fun row _ _ => Spec row.core
+    ProverAssumptions := fun _ _ _ => True
+    ProverSpec := fun _ _ _ => True
+    soundness := mainWithRomAndMemBus_soundness length program
+    completeness :=
+      ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness length program }
+
+/-- Main as a Clean `Air.Flat.Component` exposing the ROM lookup and
+    the 3 memory-bus consumer interactions. Used by the T4.1
+    memory-family ensemble. -/
+def componentWithRomAndMemBus
+    (length : ℕ) (program : Program length) :
+    Air.Flat.Component FGL :=
+  ⟨ circuitWithRomAndMemBus length program ⟩
 
 theorem component_eval_opBusMessageExpr
     (env : Environment FGL) :

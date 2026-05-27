@@ -3,6 +3,7 @@ import ZiskFv.AirsClean.MemAlignByte.Constraints
 import ZiskFv.AirsClean.MemAlignReadByte.Constraints
 import ZiskFv.AirsClean.ArithMul.Constraints
 import ZiskFv.AirsClean.ArithDiv.Constraints
+import ZiskFv.AirsClean.Main.Constraints
 
 /-!
 # Clean Component completeness axioms (non-security-critical trust class)
@@ -92,3 +93,27 @@ axiom arithDiv_circuit_completeness :
       (fun _ _ _ => True) (fun _ _ _ => True)
 
 end ZiskFv.AirsClean.ArithDiv
+
+namespace ZiskFv.AirsClean.Main
+
+open Goldilocks
+open ZiskFv.AirsClean.ZiskInstructionRom (Program)
+
+/-- **mainWithRomAndMemBus Component completeness** (plan decision
+    D-COMPLETE; T4.1). Declared, not proved — zisk-fv is soundness-only.
+    Completeness-direction: the verification's soundness does not depend
+    on this axiom. Program-parameterised mirroring the underlying
+    elaborated circuit.
+
+    Until T4.4 routes the memory-family canonical theorems through the
+    new Component, this axiom sits in the tolerated-completeness
+    allowlist (`trust/tolerated-completeness-axioms.txt`); V2's
+    dead-axiom check treats its absence from the global closure as
+    expected. -/
+axiom mainWithRomAndMemBus_circuit_completeness
+    (length : ℕ) (program : Program length) :
+    GeneralFormalCircuit.Completeness FGL
+      (mainWithRomAndMemBusElaborated length program)
+      (fun _ _ _ => True) (fun _ _ _ => True)
+
+end ZiskFv.AirsClean.Main
