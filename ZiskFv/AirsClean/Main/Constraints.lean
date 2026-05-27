@@ -120,6 +120,27 @@ def romFlagsExpr (row : Var MainRowWithRom FGL) : Expression FGL :=
   + 16384 * row.rom.b_src_reg
   + 32768 * row.rom.store_reg
 
+/-- Concrete counterpart of `romFlagsExpr`. Useful for future honest-prover
+    completeness work, but not part of the current soundness-only endpoint. -/
+@[reducible]
+def romFlags (row : MainRowWithRom FGL) : FGL :=
+  1
+  + 2 * row.rom.a_src_imm
+  + 4 * row.rom.a_src_mem
+  + 8 * row.rom.is_precompiled
+  + 16 * row.rom.b_src_imm
+  + 32 * row.rom.b_src_mem
+  + 64 * row.core.is_external_op
+  + 128 * row.core.store_pc
+  + 256 * row.rom.store_mem
+  + 512 * row.rom.store_ind
+  + 1024 * row.core.set_pc
+  + 2048 * row.core.m32
+  + 4096 * row.rom.b_src_ind
+  + 8192 * row.rom.a_src_reg
+  + 16384 * row.rom.b_src_reg
+  + 32768 * row.rom.store_reg
+
 /-- Main's per-row ROM lookup tuple, as the typed `ZiskRomMessage`. -/
 @[reducible]
 def romMessageExpr (row : Var MainRowWithRom FGL) :
@@ -135,6 +156,22 @@ def romMessageExpr (row : Var MainRowWithRom FGL) :
     jmp_offset1 := row.core.jmp_offset1
     jmp_offset2 := row.core.jmp_offset2
     flags := romFlagsExpr row }
+
+/-- Concrete counterpart of `romMessageExpr`. -/
+@[reducible]
+def romMessage (row : MainRowWithRom FGL) :
+    ZiskRomMessage FGL :=
+  { line := row.core.pc
+    a_offset_imm0 := row.rom.a_offset_imm0
+    a_imm1 := row.rom.a_imm1
+    b_offset_imm0 := row.rom.b_offset_imm0
+    b_imm1 := row.rom.b_imm1
+    ind_width := row.core.ind_width
+    op := row.core.op
+    store_offset := row.rom.store_offset
+    jmp_offset1 := row.core.jmp_offset1
+    jmp_offset2 := row.core.jmp_offset2
+    flags := romFlags row }
 
 /-- Main constraints + ROM-flag booleanity + instruction ROM lookup.
 

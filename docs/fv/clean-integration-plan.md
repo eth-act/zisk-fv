@@ -5,8 +5,10 @@
 > **"Status and corrections"** section first — it states the current
 > state and the *immediate next action*. The governing constraint is the
 > **"Axiom policy"** section (user-set: retire every retire-able axiom by
-> proof; the only sanctioned new axioms are the ~10 completeness axioms).
-> Last updated 2026-05-21.
+> proof; completeness is explicitly out of scope unless an existing Clean
+> `Component` wrapper already carries a documented completeness-direction
+> axiom).
+> Last updated 2026-05-27.
 
 ## Context
 
@@ -25,11 +27,12 @@ axioms**. The prior plan defined "done" as a structural *marker*
 (`ZiskFv/Circuit.lean` deleted) that was reachable without the substance;
 the marker was hit, the goal was missed.
 
-This plan **finishes the job**: every ZisK AIR becomes a genuine Clean
-`Air.Flat.Component`; they assemble into one `Air.Flat.Ensemble`; Clean's
-proven channel-balance and ensemble-soundness theorems discharge the
-bus/range/lookup trust axioms; the hand-rolled bus layer is deleted; the 63
-per-opcode theorems and the global theorem re-root on the ensemble.
+This plan **finishes the soundness job**: every ZisK AIR/family exposes the
+Clean circuit facts needed for balance, lookup membership, and per-row
+soundness; Clean's proven channel-balance and ensemble-soundness theorems
+discharge the bus/range/lookup trust axioms; the hand-rolled bus layer is
+deleted; the 63 per-opcode theorems and the global theorem re-root on those
+soundness facts.
 
 This is a **large multi-phase epic**, but it is an **incremental refactor of
 the current complete, green proof — not a rewrite, and no from-scratch
@@ -39,9 +42,12 @@ work begins.
 
 ## End state
 
-- All 10 ZisK AIRs are real Clean `Air.Flat.Component`s (a `GeneralFormalCircuit`
-  with discharged `soundness` **and** `completeness`), assembled into one
-  `Air.Flat.Ensemble`.
+- All 10 ZisK AIRs/families have load-bearing Clean circuit definitions and
+  proved `soundness` projections sufficient for the global theorem. Where a
+  `GeneralFormalCircuit` / `Air.Flat.Component` already exists, its
+  completeness side is documented as out of scope; future phases should not
+  spend effort proving completeness or add new completeness obligations just
+  to package a soundness fact.
 - The global theorem and the 63 per-opcode `equiv_<OP>` theorems derive
   from the ensemble's `Soundness`; the ensemble's `Statement` (constraints
   hold + channels balanced) is the honest top-level hypothesis, and is
@@ -59,12 +65,10 @@ work begins.
   classes (~47). Irreducible and retained: ~52 `transpile_<OP>` (a contract
   about ZisK's Rust transpiler — Clean cannot touch it) and ~5 Sail-spec
   axioms (`SailSpec/Auxiliaries.lean`, `ZiskCircuit/MemModel.lean`). **~57 is
-  the accepted soundness-critical floor.** *Plus a new, separate
-  completeness class:* **~10 axioms, one per AIR** (see D-COMPLETE) — these
-  ARE in `#print axioms` of the global theorem, but they are
-  completeness-direction: a falsehood in one cannot make a wrong execution
-  verify. Total closure ~67, cleanly split; the meaningful number is the
-  ~57 soundness-critical.
+  the accepted soundness-critical floor.** *Completeness is not a goal of this
+  epic.* Existing Clean `Component` completeness axioms remain documented as a
+  separate non-security-critical class; new work should prefer soundness-only
+  theorems over introducing additional completeness-direction axioms.
 - Net lines-of-code: a decrease is expected (the hand-rolled `Airs/` bus
   layer is ~14.6k LoC; Clean is a dependency, not counted). **Per the
   user, net-LoC is a heuristic checked once at the end, not a per-phase
@@ -91,28 +95,20 @@ possible**:
 - **The ~57 `transpile_<OP>` + Sail-spec axioms are genuinely
   irreducible** and are retained; the epic neither adds nor removes
   them. "As many as possible" means everything except these.
-- **The one sanctioned exception — the ~10 completeness axioms
-  (D-COMPLETE).** The user has **explicitly greenlit** filling each
-  Component's mandatory `completeness` field with a declared axiom
-  rather than proving it. **The user's rationale:** the epic's *first
-  goal is parity* — with (a) the pre-epic zisk-fv verification and
-  (b) openvm-fv's verification of OpenVM — and **neither establishes
-  completeness**. Completeness is out of scope for the parity bar; a
-  declared completeness axiom is the *intended design*, not an agent
-  shortcut. An agent or reviewer meeting a `<air>_circuit_completeness`
-  axiom must treat it as sanctioned and must NOT flag it as trust
-  inflation.
-  **The sanction has a hard limit:** it permits leaving completeness
-  *unproven* — it is **not** a licence to state it *falsely*. Each
-  `<air>_circuit_completeness` axiom must be a faithfully-stated, true
-  proposition. An over-strong or false completeness axiom is the
-  `arith_table_op_*` defect (see "Status and corrections") repeated —
-  unsound, and not sanctioned. (Proving completeness, beyond parity,
-  is a possible future follow-on — not in scope here.)
+- **Completeness is out of scope.** The user explicitly does **not** want the
+  Clean integration to stall on honest-prover completeness. Existing
+  `<air>_circuit_completeness` axioms that were already introduced for
+  mandatory `GeneralFormalCircuit` fields remain sanctioned only as a
+  separate, non-security-critical trust class. Future work should not add new
+  completeness axioms or prove completeness unless the user starts a separate
+  completeness project. If packaging a new Clean `Component` would require a
+  new completeness proof/axiom, prefer a soundness-only theorem over the
+  elaborated circuit instead.
 
 **Success metric:** the soundness-critical axiom count falls (~104 →
-~57); the only count that rises is the separate, user-sanctioned
-completeness class (+~10); nothing else is added.
+~57). Completeness work is not counted as progress in this epic; no new
+soundness, lookup, table, range, or completeness axiom may be added without a
+separate user decision.
 
 ## What the investigation established (ground truth)
 
@@ -244,9 +240,10 @@ plan is **substantive and measurable**, never a marker:
   or by a documented shared temporary lookup/permutation axiom. `StaticTable`
   proves table-content consequences after membership; it does not itself
   prove a trace row performed a sound lookup. `completeness`
-  is **axiomatized, not proved** (D-COMPLETE) — the project does not claim
-  completeness today, and an honest declared axiom beats spending effort
-  proving a property outside the verification's claim.
+  is a **non-goal** (D-COMPLETE): existing completeness-direction axioms are
+  tolerated where already present, but new work should use soundness-only
+  circuit theorems when a full `Component` wrapper would force a new
+  completeness obligation.
 - **D-EXT — `pil-extract` emits the Clean Component circuits.** Per the
   user. The extractor is extended to emit, per AIR, the `Row` `ProvableStruct`
   and the `main : Circuit FGL Unit` do-block (F-constraints **and** channel/
@@ -264,29 +261,16 @@ plan is **substantive and measurable**, never a marker:
 - **D-LOC — net-LoC is an end-of-epic heuristic check**, not a per-phase
   gate. Each phase records its LoC delta; the cumulative is reckoned once at
   CZ (expected ≤ 0; if not, investigate).
-- **D-COMPLETE — the `completeness` field of every Component is
-  AXIOMATIZED, not proved.** Clean's `GeneralFormalCircuit` makes
-  `completeness` a mandatory field; zisk-fv is a soundness-only verification
-  and does not claim completeness (the pre-Clean code never proved it
-  either — it is, at most, a "constructibility sketch" review obligation).
-  Each AIR's `completeness` field is filled by a per-AIR axiom
-  `<air>_circuit_completeness : GeneralFormalCircuit.Completeness FGL …`.
-  These ~10 axioms form a **new, declared, non-security-critical trust
-  class** — their own allowlisted file (e.g. `ZiskFv/AirsClean/Completeness.lean`),
-  a `docs/fv/trusted-base.md` entry stating "completeness-direction; the
-  verification's soundness does not depend on these", and `.shrinkage-floor`
-  raised to account for them. They DO appear in `#print axioms` of the
-  global theorem (the `Component` value carries the field) — that visibility
-  is the point: an honest declared axiom over a vacuous `ProverAssumptions
-  := False` proof that would hide the non-proof. C0 declares the BinaryAdd
-  completeness axiom; it does not prove completeness.
-  **Provenance — this is the user's decision, not an agent's.** The user
-  greenlit axiomatizing `completeness` because the epic's first goal is
-  *parity* with the pre-epic verification and with openvm-fv — neither
-  establishes completeness (see "Axiom policy"). It is the sole sanctioned
-  new-axiom class; every other axiom is retired by proof. The sanction
-  covers leaving completeness *unproven*, not stating it falsely — the
-  axiom must be a faithfully-stated, true proposition.
+- **D-COMPLETE — completeness is non-goal / soundness-only preferred.**
+  Clean's `GeneralFormalCircuit` makes `completeness` a mandatory field, but
+  zisk-fv is a soundness-only verification and does not claim honest-prover
+  completeness (the pre-Clean code never proved it either). Existing
+  completeness-direction axioms in `ZiskFv/AirsClean/Completeness.lean`
+  remain a documented, non-security-critical trust class. New phase work must
+  not create additional completeness obligations as a side effect of seeking
+  channel-balance or lookup soundness; if a full `Component` wrapper would
+  force that, state and prove the corresponding `GeneralFormalCircuit.Soundness`
+  theorem or lower-level circuit projection directly.
 - **D-CROSSROW — cross-row constraints use `Air/Vm.lean`'s `addVm`**, not
   `OrderedChannel`. `OrderedChannel` is reserved for ordered lookup tables.
 - **D-ROM — static ROM tables use `StaticTable`** with an explicit row
@@ -326,8 +310,10 @@ them — that the hard sub-problems are tractable.
    `GeneralFormalCircuit FGL BinaryAddRow unit`. Discharge `soundness` by
    `circuit_proof_start` (exposes the 4 `assertZero`s as hypotheses) +
    the existing 229-line `Soundness.lean` proof, now folded into the
-   `soundness` field. Fill `completeness` with the per-AIR axiom
-   `binaryAdd_circuit_completeness` (D-COMPLETE) — declared, not proved.
+   `soundness` field. Historical note: this early pilot filled the mandatory
+   `completeness` field with the documented `binaryAdd_circuit_completeness`
+   axiom. Do not generalize this to new phases; D-COMPLETE now prefers
+   soundness-only wrappers where completeness would be the only blocker.
 4. **Assemble a minimal `Ensemble`** — BinaryAdd Component + a deliberately
    trivial consumer Component sharing `OpBusChannel` (not the real Main).
    Template: Clean's `FibonacciWithChannels.lean`.
@@ -346,9 +332,8 @@ them — that the hard sub-problems are tractable.
    spikes mis-scoping #3 in miniature.
 
 **GO requires ALL of:** (a) `binaryAddComponent` elaborates with zero
-`sorry`; `soundness` is proved; `completeness` is the declared axiom
-`binaryAdd_circuit_completeness` (the *only* new axiom — accounted in the
-completeness class, D-COMPLETE); (b) `main` provably emits exactly the
+`sorry`; `soundness` is proved; its historical completeness-direction axiom
+is documented and not treated as soundness progress; (b) `main` provably emits exactly the
 op-bus interaction matching `opBus_row_BinaryAdd` field-for-field; (c) the
 minimal ensemble's `FormalEnsemble`/soundness elaborates with zero `sorry`;
 (d) `equiv_ADD`/`equiv_ADDI` still typecheck and their `#print axioms` no
@@ -357,14 +342,14 @@ longer reaches the hand-rolled BinaryAdd carry lemmas; (e)
 graph; (f) both spikes Z-ROM and Z-VM build; (g) Z-ROOT shows the ADD
 re-root has a constructible witness; (h) trust gate green. **C0 retires no
 *soundness* axiom — and says so** (BinaryAdd has no private soundness axiom;
-per D-SHARED the first soundness retirement is family-terminal); it *adds*
-one completeness axiom.
+per D-SHARED the first soundness retirement is family-terminal). The
+historical completeness axiom is kept in the separate non-goal class.
 
 **NO-GO (stop, bring the user options):** `contains_iff` not provable /
 `decide` blows up on BinaryTable; the op-bus `Channel` cannot faithfully
 represent the emission; the ADD re-root needs a non-constructible witness;
 `circuit_proof_start` does not compose with Goldilocks `FGL`.
-(Completeness is no longer a NO-GO risk — it is axiomatized.)
+(Completeness is no longer a NO-GO risk — it is out of scope.)
 
 ## C0 de-risk findings (propagated to all later phases)
 
@@ -830,8 +815,11 @@ every deliverable **and** verification passes.
   X computes — **non-vacuous, every clause cited to a PIL line**.
   `Assumptions` minimal (prefer ranges to come from X's own lookup
   interactions, not from soundness assumptions).
-- **D-3 `GeneralFormalCircuit`** with `soundness` and `completeness`
-  discharged. `soundness` is **adapted from X's existing correctness proof**
+- **D-3 soundness packaging.** Prefer a `GeneralFormalCircuit.Soundness`
+  theorem or lower-level circuit projection when a full `GeneralFormalCircuit`
+  would introduce a new completeness obligation. If an existing Component is
+  already present, keep its documented completeness-direction axiom separate
+  from the soundness goal. `soundness` is **adapted from X's existing correctness proof**
   (D-REFACTOR), reshaped to the `GeneralFormalCircuit.soundness` signature —
   reuse, not rewrite. For BinaryAdd/ArithMul/ArithDiv/MemAlignByte/
   MemAlignReadByte the proof already exists in `AirsClean/<X>/Soundness.lean`
@@ -840,10 +828,11 @@ every deliverable **and** verification passes.
   finishing the port is real *reshaping* work of varying weight (light where
   the AIR's `Spec` ≈ its constraints — Binary, Mem; heavier for
   BinaryExtension, whose `Spec` is `True` today and must be lifted to the AIR
-  level, and Main). `completeness` is **filled by the per-AIR axiom
-  `<air>_circuit_completeness`** (D-COMPLETE) — declared, not proved; no
-  completeness proof work in any phase.
-- **D-4 `Component`** `xComponent : Component FGL`.
+  level, and Main). No phase should prove completeness as part of this epic.
+- **D-4 `Component` or soundness-only endpoint.** Use `xComponent :
+  Component FGL` only when it already exists or can be packaged without
+  expanding the out-of-scope completeness surface; otherwise expose the
+  elaborated circuit plus its soundness/projection theorem.
 - **D-5 Ensemble integration.** Add X's Component to the accumulating
   ensemble via `addTable` (lookup-style channels) or `addVm` (state-handshake
   channels); discharge the assembly obligations.
@@ -862,9 +851,10 @@ every deliverable **and** verification passes.
 
 **Verification gates (the anti-marker checks):**
 - **V-1** `lake build` green; `check-all.sh` + `check-all-semantic.sh` pass.
-- **V-2** `#print axioms xComponent` — zero `sorry`; the only new axiom is
-  X's declared `<air>_circuit_completeness` (D-COMPLETE); zero new
-  *soundness* axioms, except the explicitly named C3/C4 shared ArithTable
+- **V-2** `#print axioms` on the new endpoint — zero `sorry`; zero new
+  *soundness* or completeness axioms, except documented pre-existing
+  completeness-direction axioms for Components already in the tree, and except
+  the explicitly named C3/C4 shared ArithTable
   lookup/permutation boundary if it replaces the known-bad opcode-specific
   table facts.
 - **V-3** `Spec` reviewed: non-vacuous, clauses PIL-cited, `@[reducible]`.
@@ -872,7 +862,8 @@ every deliverable **and** verification passes.
   dependency graph (anti-orphan — the substance check).
 - **V-5** `trust/baseline-equiv-axiom-deps.txt` diff: every opcode that
   consumed X has its *soundness*-axiom closure shrink or hold; the one
-  permitted addition is X's `<air>_circuit_completeness` axiom.
+  permitted completeness entries are pre-existing, documented
+  completeness-direction axioms.
 - **V-6** Axiom-retirement claim, if any, is named and proven per the
   anti-marker discipline (`#print axioms` on the global theorem;
   `.shrinkage-floor` decremented). Most phases: "retires 0 axioms" — stated.
@@ -975,7 +966,10 @@ after all global consumers are gone.
 ### T4 detail — memory
 
 - ☐ T4.1 assemble Main/Mem/MemAlignByte/MemAlignReadByte/MemAlign/static ROM
-  providers.
+  providers on the soundness path. For Main ROM/memory-bus wiring,
+  completeness is explicitly out of scope: keep the elaborated circuit and
+  soundness/projection theorems, but do not require
+  `componentWithRomAndMemBus` until a separate completeness project exists.
 - ☐ T4.2 prove Clean balance gives concrete memory provider rows matching
   active Main memory interactions.
 - 🪓 T4.3 signed-load spike: prove the `LB` chain from memory provider row
@@ -1048,8 +1042,8 @@ T4-purge execution checklist, refined after the green `f2cb26c` checkpoint
   reintroducing row-local promise hypotheses under new names.
 - ☐ T7.4 delete dead hand-rolled bus/permutation/range/lookup scaffolding.
 - ☐ T7.5 update docs and trust ledgers so the remaining trust splits into
-  irreducible transpiler/Sail axioms, sanctioned completeness axioms, and
-  explicit known-defect hypotheses.
+  irreducible transpiler/Sail axioms, pre-existing documented
+  completeness-direction axioms, and explicit known-defect hypotheses.
 
 **Final re-root warning.** The re-root remains invalid until the ensemble
 `Statement` is constructible for real traces. A theorem of shape
@@ -1063,7 +1057,7 @@ include the constructibility proof, not just a green `lake build`.
 | R-1 | "Axiom retired" used as a marker (rename/intermediate-lemma). | V-6: named axiom, gone from the **global theorem**'s `#print axioms`, `.shrinkage-floor` decremented same-PR. |
 | R-2 | Orphan-Component trap (the exact prior failure). | V-4: Component must be reachable from `zisk_riscv_compliant_program_bus`. |
 | R-3 | A phase deletes shared/hand-rolled code an unmigrated opcode still imports. | D-7 is the **last** phase action, after D-6 + green build. Shared `Airs/{Bus,OperationBus,MemoryBus}/` only deleted at CZ. |
-| R-4 | The ~10 completeness axioms (D-COMPLETE) are mistaken for a soundness regression, or smell like laundering. | **They are user-sanctioned — see "Axiom policy".** A *declared, ledgered, non-security-critical* class — own allowlisted file, `trusted-base.md` entry, separate count. Soundness does not depend on them. An open axiom is the honest choice vs a vacuous `ProverAssumptions := False` proof. The sanction covers leaving completeness *unproven*, NOT stating it falsely — each completeness axiom must be a faithfully-stated, true proposition. |
+| R-4 | Existing completeness-direction axioms (D-COMPLETE) are mistaken for soundness progress/regression, or future work repeats the pattern unnecessarily. | Completeness is out of scope. Existing axioms stay ledgered as a separate non-security-critical class; new phases should use soundness-only endpoints instead of adding completeness axioms. Soundness does not depend on them. |
 | R-5 | Re-root vacuity: unsatisfiable ensemble `Statement` ⟹ silently-vacuous theorems. | C0 Z-ROOT spikes it for ADD; CZ carries an explicit constructibility lemma; reviewer confirms (build cannot). |
 | R-6 | ~~`decide`/`native_decide` blows up on the 74-row ArithTable `StaticTable`~~ — **resolved.** | C0e built the `StaticTable` spike and the real 74-row ArithTable `StaticTable` (`AirsClean/ArithTable.lean`) with a tractable `contains_iff`. The former `arith_table_content` fallback axiom is withdrawn (D-ROM) — a new axiom is not permitted (Axiom policy). |
 | R-7 | The skeleton `AirsClean/<X>/Soundness.lean` files (C5/C6/C8/C9/C11) must be completed. | **Not from-scratch** (D-REFACTOR): the source proofs exist (per-opcode `EquivCore/`, `Airs/<X>/`); the work is *reshaping* them into AIR-level Component soundness. Effort varies — BinaryExtension and Main are heaviest. Ordered into the interior so the BinaryAdd pattern is proven first. |
@@ -1080,12 +1074,13 @@ gates above; commit + tag (`phase-C<N>-<air>-clean-component`).
 
 **End of epic (CZ):**
 - `nix run .#test` green.
-- `#print axioms zisk_riscv_compliant_program_bus` lists ~67: ~57
+- `#print axioms zisk_riscv_compliant_program_bus` lists the reduced
+  soundness-critical closure plus any pre-existing documented
+  completeness-direction axioms: ~57
   soundness-critical (all in `Trusted/Transpiler.lean` or the Sail-spec
-  files — the bus/range/lookup axioms are gone) plus ~10
-  `<air>_circuit_completeness` axioms (the declared non-security-critical
-  class). `trust/.shrinkage-floor` and `docs/fv/trusted-base.md` updated to
-  reflect both classes, kept visibly separate.
+  files — the bus/range/lookup axioms are gone), with the non-goal
+  completeness class kept visibly separate in `trust/.shrinkage-floor` and
+  `docs/fv/trusted-base.md`.
 - Every `AirsClean/<AIR>/` Component is reachable from the global theorem;
   no `AirsClean/` file is orphan.
 - The ensemble `Statement` constructibility lemma is proven and reviewed.
