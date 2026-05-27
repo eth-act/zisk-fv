@@ -12,10 +12,13 @@ requests; Mem (the memory AIR) consumes them and emits provider
 rows; MemAlign* sub-byte read providers handle aligned loads.
 
 This file introduces the channel as
-`Clean.Channel FGL MemBusMessage`. The 11-slot `MemBusMessage`
+`Clean.Channel FGL MemBusMessage`. The 5-slot `MemBusMessage`
 mirrors `Interaction.MemoryBusEntry` minus the multiplicity (Clean
-carries multiplicity as `ChannelInteraction.mult`). A round-trip
-equivalence with `Interaction.MemoryBusEntry FGL` is provided.
+carries multiplicity as `ChannelInteraction.mult`). The shape
+matches the PIL emission (`mem.pil:436`:
+`[mem_op, addr*bytes, step, bytes, ...value]` — `value` is a 2-element
+32-bit chunk array). A round-trip equivalence with
+`Interaction.MemoryBusEntry FGL` is provided.
 
 ## Trust note
 
@@ -29,19 +32,14 @@ namespace ZiskFv.Channels.MemoryBus
 
 open Goldilocks
 
-/-- The 11-slot memory-bus message. Mirrors
-    `Interaction.MemoryBusEntry FGL` minus the multiplicity. -/
+/-- The 5-slot memory-bus message. Mirrors
+    `Interaction.MemoryBusEntry FGL` minus the multiplicity.
+    Chunk-shape, matches PIL emission. -/
 structure MemBusMessage (F : Type) where
   as : F
   ptr : F
-  x0 : F
-  x1 : F
-  x2 : F
-  x3 : F
-  x4 : F
-  x5 : F
-  x6 : F
-  x7 : F
+  value_0 : F
+  value_1 : F
   timestamp : F
 deriving ProvableStruct
 
@@ -51,14 +49,8 @@ def MemBusMessage.toEntry (msg : MemBusMessage FGL) (multiplicity : FGL)
   { multiplicity := multiplicity
   , as := msg.as
   , ptr := msg.ptr
-  , x0 := msg.x0
-  , x1 := msg.x1
-  , x2 := msg.x2
-  , x3 := msg.x3
-  , x4 := msg.x4
-  , x5 := msg.x5
-  , x6 := msg.x6
-  , x7 := msg.x7
+  , value_0 := msg.value_0
+  , value_1 := msg.value_1
   , timestamp := msg.timestamp
   }
 
@@ -67,14 +59,8 @@ def MemBusMessage.ofEntry (entry : Interaction.MemoryBusEntry FGL)
     : MemBusMessage FGL :=
   { as := entry.as
   , ptr := entry.ptr
-  , x0 := entry.x0
-  , x1 := entry.x1
-  , x2 := entry.x2
-  , x3 := entry.x3
-  , x4 := entry.x4
-  , x5 := entry.x5
-  , x6 := entry.x6
-  , x7 := entry.x7
+  , value_0 := entry.value_0
+  , value_1 := entry.value_1
   , timestamp := entry.timestamp
   }
 

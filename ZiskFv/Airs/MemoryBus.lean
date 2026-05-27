@@ -3,6 +3,7 @@ import Mathlib
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Bits.PackedBitVec
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 
@@ -24,45 +25,39 @@ namespace ZiskFv.Airs.MemoryBus
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteOf byteAt)
 
 
-/-- The 64-bit memory value packed from a `MemoryBusEntry`'s byte lanes
-    as a single `FGL` element:
-    `x0 + x1 * 2^8 + x2 * 2^16 + ... + x7 * 2^56`.
+/-- The 64-bit memory value of a `MemoryBusEntry`, formed from the two
+    32-bit chunks: `value_0 + value_1 * 2^32`. Matches the PIL emission
+    shape (`mem.pil:436`, `...value` is a 2-element 32-bit chunk array).
 
     This is the field-level image of `U64.toBV` (which produces a
     `BitVec 64`). The two forms are related by the bridge lemma
     `memory_entry_toField_eq_toBV_toNat` below. -/
 @[simp]
 def memory_entry_toField (e : MemoryBusEntry FGL) : FGL :=
-  e.x0
-  + e.x1 * 256
-  + e.x2 * 65536
-  + e.x3 * 16777216
-  + e.x4 * 4294967296
-  + e.x5 * 1099511627776
-  + e.x6 * 281474976710656
-  + e.x7 * 72057594037927936
+  e.value_0 + e.value_1 * 4294967296
 
-/-- Low 32 bits (= `x0..x3`) of a memory-bus entry, packed as FGL. -/
+/-- Low 32 bits (= chunk `value_0`) of a memory-bus entry, as FGL.
+    Direct projection — matches PIL chunk shape. -/
 @[simp]
-def memory_entry_lo (e : MemoryBusEntry FGL) : FGL :=
-  e.x0 + e.x1 * 256 + e.x2 * 65536 + e.x3 * 16777216
+def memory_entry_lo (e : MemoryBusEntry FGL) : FGL := e.value_0
 
-/-- High 32 bits (= `x4..x7`) of a memory-bus entry, packed as FGL. -/
+/-- High 32 bits (= chunk `value_1`) of a memory-bus entry, as FGL.
+    Direct projection — matches PIL chunk shape. -/
 @[simp]
-def memory_entry_hi (e : MemoryBusEntry FGL) : FGL :=
-  e.x4 + e.x5 * 256 + e.x6 * 65536 + e.x7 * 16777216
+def memory_entry_hi (e : MemoryBusEntry FGL) : FGL := e.value_1
 
 /-- The packed lane decomposition: the full 64-bit value equals
-    `lo + hi * 2^32`. Needed by `Spec/LoadD.lean` to bridge the
-    byte-lane memory-entry representation to the Main row's
-    `(b_0, b_1)` 32-bit-lane representation. -/
+    `lo + hi * 2^32`. Trivial after the chunk-shape redesign — both
+    sides reduce to `e.value_0 + e.value_1 * 2^32`. Retained for
+    backwards compatibility with consumers that previously needed it
+    to bridge byte-lane packs to chunk lanes. -/
 lemma memory_entry_toField_lo_hi (e : MemoryBusEntry FGL) :
     memory_entry_toField e =
       memory_entry_lo e + memory_entry_hi e * 4294967296 := by
   simp only [memory_entry_toField, memory_entry_lo, memory_entry_hi]
-  ring
 
 /-- **Memory-bus entry matching.** Two `MemoryBusEntry`s match when
     every field agrees. Used in `Spec/LoadD.lean` to say: the Main
@@ -73,14 +68,8 @@ def matches_memory_entry (a b : MemoryBusEntry FGL) : Prop :=
   a.multiplicity = b.multiplicity
   ∧ a.as = b.as
   ∧ a.ptr = b.ptr
-  ∧ a.x0 = b.x0
-  ∧ a.x1 = b.x1
-  ∧ a.x2 = b.x2
-  ∧ a.x3 = b.x3
-  ∧ a.x4 = b.x4
-  ∧ a.x5 = b.x5
-  ∧ a.x6 = b.x6
-  ∧ a.x7 = b.x7
+  ∧ a.value_0 = b.value_0
+  ∧ a.value_1 = b.value_1
   ∧ a.timestamp = b.timestamp
 
 /-- **Memory-read lane hypotheses for LD.** The Main row's low/high `b`
@@ -246,51 +235,58 @@ def store_pc_lanes_match_hi
 /-! ## Bridge to `U64.toBV` for register-write values
 
 `memory_entry_toField_eq_toBV_toNat` bridges from
-`memory_entry_toField` (field-level byte pack) to `U64.toBV`
-(`BitVec 64` register-write value) under per-byte range hypotheses and
-a no-wrap bound. Direct consequence of
-`Fundamentals/PackedBitVec.lean`'s `u64_toBV_eq_ofNat_fgl_val`. -/
+`memory_entry_toField` (chunk-shape field value) to `U64.toBV`
+(`BitVec 64` register-write value), using the chunk-pack identity
+`bytes_of_chunk_packing` to decompose each chunk into 4 bytes for the
+byte-addressed Sail memory model. Direct consequence of
+`Channels/MemoryBusBytes.lean`'s `u64_toBV_chunks_eq_ofNat_fgl_val`. -/
 
-/-- **Entry byte ranges.** Each of the 8 byte lanes of a memory-bus
-    entry has `.val < 256` (discharged by the PIL range-check bus). -/
+/-- **Entry chunk ranges.** Each of the 2 chunks of a memory-bus entry
+    has `.val < 2^32` (discharged by the PIL range-check bus, which
+    enforces `value[0], value[1] ∈ [0, 2^32)` per `mem.pil`). -/
 @[simp]
-def memory_entry_bytes_in_range (e : MemoryBusEntry FGL) : Prop :=
-  e.x0.val < 256 ∧ e.x1.val < 256 ∧ e.x2.val < 256 ∧ e.x3.val < 256
-  ∧ e.x4.val < 256 ∧ e.x5.val < 256 ∧ e.x6.val < 256 ∧ e.x7.val < 256
+def memory_entry_chunks_in_range (e : MemoryBusEntry FGL) : Prop :=
+  e.value_0.val < 4294967296 ∧ e.value_1.val < 4294967296
 
-/-- **No-wraparound bound on the packed entry.** The Nat byte-sum
-    `x0.val + x1.val * 256 + … + x7.val * 256^7` is below `GL_prime`.
+/-- **No-wraparound bound on the packed entry.** The Nat chunk-sum
+    `value_0.val + value_1.val * 2^32` is below `GL_prime`.
 
-    Under `memory_entry_bytes_in_range`, the byte-sum is at most
+    Under `memory_entry_chunks_in_range`, the chunk-sum is at most
     `2^64 - 1`, which *can* exceed `GL_prime = 2^64 - 2^32 + 1` in the
     "high-register" range. Callers discharge this either
-    architecturally (e.g. for 32-bit ops the top four bytes are zero)
+    architecturally (e.g. for 32-bit ops the top chunk is zero)
     or from the concrete product range. -/
 @[simp]
 def memory_entry_packed_no_wrap (e : MemoryBusEntry FGL) : Prop :=
-  e.x0.val + e.x1.val * 256 + e.x2.val * 65536 + e.x3.val * 16777216
-  + e.x4.val * 4294967296 + e.x5.val * 1099511627776
-  + e.x6.val * 281474976710656 + e.x7.val * 72057594037927936 < GL_prime
+  e.value_0.val + e.value_1.val * 4294967296 < GL_prime
 
-/-- **Bridge: `U64.toBV` of entry bytes equals `BitVec.ofNat 64
-    (memory_entry_toField e).val`.** Given byte ranges and the
-    no-wraparound bound, the 8 memory-bus byte lanes — fed through
-    `U64.toBV` (which coerces each `FGL` byte to `BitVec 8` via the
-    `mod 256` instance) — produce the same `BitVec 64` as
-    `BitVec.ofNat 64` applied to the field-level packed byte-sum's
-    `.val`. -/
+/-- **Bridge: `U64.toBV` of entry's byte projections equals
+    `BitVec.ofNat 64 (memory_entry_toField e).val`.** Given chunk
+    ranges and the no-wraparound bound, the 8 byte projections of the
+    entry's two 32-bit chunks (`byteAt e 0..7`) — fed through `U64.toBV`
+    (which coerces each `FGL` byte to `BitVec 8` via the `mod 256`
+    instance) — produce the same `BitVec 64` as `BitVec.ofNat 64`
+    applied to the chunk-pack field value's `.val`. -/
 lemma memory_entry_toField_eq_toBV_toNat
     (e : MemoryBusEntry FGL)
-    (h_range : memory_entry_bytes_in_range e)
+    (h_range : memory_entry_chunks_in_range e)
     (h_no_wrap : memory_entry_packed_no_wrap e) :
-    U64.toBV #v[(e.x0 : BitVec 8), (e.x1 : BitVec 8), (e.x2 : BitVec 8), (e.x3 : BitVec 8),
-                (e.x4 : BitVec 8), (e.x5 : BitVec 8), (e.x6 : BitVec 8), (e.x7 : BitVec 8)]
+    U64.toBV #v[(byteAt e 0 : BitVec 8), (byteAt e 1 : BitVec 8),
+                (byteAt e 2 : BitVec 8), (byteAt e 3 : BitVec 8),
+                (byteAt e 4 : BitVec 8), (byteAt e 5 : BitVec 8),
+                (byteAt e 6 : BitVec 8), (byteAt e 7 : BitVec 8)]
     = BitVec.ofNat 64 (memory_entry_toField e).val := by
-  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := h_range
+  obtain ⟨h_v0, h_v1⟩ := h_range
   simp only [memory_entry_packed_no_wrap] at h_no_wrap
   simp only [memory_entry_toField]
-  exact ZiskFv.PackedBitVec.u64_toBV_eq_ofNat_fgl_val
-    e.x0 e.x1 e.x2 e.x3 e.x4 e.x5 e.x6 e.x7
-    h0 h1 h2 h3 h4 h5 h6 h7 h_no_wrap
+  -- Unfold byteAt for indices 0..7: 0..3 from value_0, 4..7 from value_1.
+  show U64.toBV
+        #v[(byteOf e.value_0 0 : BitVec 8), (byteOf e.value_0 1 : BitVec 8),
+           (byteOf e.value_0 2 : BitVec 8), (byteOf e.value_0 3 : BitVec 8),
+           (byteOf e.value_1 0 : BitVec 8), (byteOf e.value_1 1 : BitVec 8),
+           (byteOf e.value_1 2 : BitVec 8), (byteOf e.value_1 3 : BitVec 8)]
+      = BitVec.ofNat 64 (e.value_0 + e.value_1 * 4294967296 : FGL).val
+  exact ZiskFv.Channels.MemoryBusBytes.u64_toBV_chunks_eq_ofNat_fgl_val
+    e.value_0 e.value_1 h_v0 h_v1 h_no_wrap
 
 end ZiskFv.Airs.MemoryBus

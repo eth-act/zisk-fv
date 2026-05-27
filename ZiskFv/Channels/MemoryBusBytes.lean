@@ -1,5 +1,6 @@
 import Mathlib
 import ZiskFv.Field.Goldilocks
+import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Bits.PackedBitVec
 
 /-!
@@ -128,6 +129,14 @@ lemma bytes_of_chunk_packing (f : FGL) (h : f.val < 4294967296) :
   -- f.val = (f.val % 256) + ((f.val/256) % 256)*256 + ... + ((f.val/16777216) % 256)*16777216
   -- Standard nat fact for f.val < 2^32.
   omega
+
+/-- The `i`-th byte of a memory-bus entry, extracted from the chunk
+    that holds it (i = 0..3 from `value_0`, i = 4..7 from `value_1`).
+    Used at the `SailSpec/BusEffect.lean` bridge where the byte-addressed
+    Sail memory model needs per-byte access to the chunk-shaped entry. -/
+@[reducible]
+def byteAt (e : Interaction.MemoryBusEntry FGL) (i : ℕ) : FGL :=
+  if i < 4 then byteOf e.value_0 i else byteOf e.value_1 (i - 4)
 
 /-- The `.val` of a byte projection equals its standard div-mod form.
     Useful for `omega`-based proofs about byte sums. -/
