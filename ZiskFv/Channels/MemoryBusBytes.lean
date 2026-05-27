@@ -192,6 +192,26 @@ lemma byteOf_val_sum_eq (v : FGL) (h : v.val < 4294967296) :
       h0, h1, h2, h3, Nat.div_one]
   omega
 
+/-- Nat byte-pack identity for the lo half of a memory-bus entry: the
+    4-byte sum of `(byteAt e i).val` weights at i ∈ {0..3} recovers
+    `e.value_0.val`. Used by `main_external_arith_emission_bundle`
+    consumers (MUL/MULH/MULHU/MULHSU etc.) to bridge between the chunk-
+    equality conclusion and the byte-pack form. -/
+lemma byteAt_lo_val_sum_eq (e : Interaction.MemoryBusEntry FGL)
+    (h : e.value_0.val < 4294967296) :
+    (byteAt e 0).val + (byteAt e 1).val * 256
+      + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
+    = e.value_0.val :=
+  byteOf_val_sum_eq e.value_0 h
+
+/-- Companion of `byteAt_lo_val_sum_eq` for the hi half. -/
+lemma byteAt_hi_val_sum_eq (e : Interaction.MemoryBusEntry FGL)
+    (h : e.value_1.val < 4294967296) :
+    (byteAt e 4).val + (byteAt e 5).val * 256
+      + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
+    = e.value_1.val :=
+  byteOf_val_sum_eq e.value_1 h
+
 /-! ## Chunk → BitVec 64 bridge
 
 `u64_toBV_chunks_eq_ofNat_fgl_val` is the chunk-shape analogue of
