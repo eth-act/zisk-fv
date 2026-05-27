@@ -10,6 +10,8 @@ import ZiskFv.Airs.Tables.BinaryExtensionTable
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Channels.MemoryBusBytes
+import ZiskFv.Bits.PackedBitVec
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 
 /-!
@@ -734,27 +736,29 @@ Under that flag, the BinExt bus row's `b_lo` lane reduces to
 free_in_a_3` (per `opBus_row_BinaryExtension`'s definition).
 
 Composing with `main_sext_load_emission_bundle`'s
-`m.b_0 r_main = memory_entry_lo e1 = e1.x0 + 256 * e1.x1 + 65536 *
-e1.x2 + 16777216 * e1.x3`, the op-bus permutation handshake
-`m.b_0 r_main = BinExt.b_lo = a0_packed` yields the FGL equation
+`m.b_0 r_main = memory_entry_lo e1 = e1.value_0`, the op-bus
+permutation handshake `m.b_0 r_main = BinExt.b_lo = a0_packed`
+yields the FGL equation
 `free_in_a_0 + 256*free_in_a_1 + 65536*free_in_a_2 + 16777216*free_in_a_3
- = e1.x0 + 256*e1.x1 + 65536*e1.x2 + 16777216*e1.x3`.
+ = e1.value_0`.
 
-Both sides have all bytes < 256 (BinExt side from
-`binary_extension_columns_in_range`; e1 side from
-`memory_bus_entry_byte_range_perm_sound`), so the FGL equation lifts
-to ℕ, and base-256 uniqueness extracts the per-byte equalities
-`(v.free_in_a_i r_binary).val = e1.x_i.val` for i ∈ {0, 1, 2, 3} —
-the exact promise hypotheses (`h_a0_match`..`h_a3_match`) consumed
-by `equiv_LW`. LB consumes only `h_a0_match`; LH consumes `h_a0_match`
-and `h_a1_match`; LW consumes all four.
+Both sides have all bytes < 256: BinExt cells from
+`binary_extension_columns_in_range`; the chunk side decomposes via
+`bytes_of_chunk_packing` under `e1.value_0.val < 2^32` (chunk-range
+from `memory_bus_entry_chunks_range_perm_sound`). The FGL equation
+lifts to ℕ, and base-256 uniqueness extracts the per-byte equalities
+`(v.free_in_a_i r_binary).val = (byteAt e1 i).val` for
+i ∈ {0, 1, 2, 3} — the exact promise hypotheses
+(`h_a0_match`..`h_a3_match`) consumed by `equiv_LW`. LB consumes
+only `h_a0_match`; LH consumes `h_a0_match` and `h_a1_match`; LW
+consumes all four.
 
 No new trust-ledger axioms. Pure-Lean composition of:
 * `op_bus_perm_sound_BinaryExtension` (class #4)
 * `main_sext_load_emission_bundle` (class #4)
 * `binary_extension_op_is_shift_pin` (class #6)
 * `binary_extension_columns_in_range` (class #6)
-* `memory_bus_entry_byte_range_perm_sound` (class #5b).
+* `memory_bus_entry_chunks_range_perm_sound` (class #5b).
 -/
 
 /-- **Base-256 four-byte uniqueness.** A Nat-valued base-256
@@ -774,7 +778,8 @@ private theorem byte_pack4_inj
     `m.b_0 r_main = memory_entry_lo e1`, the SEXT-family flag
     `v.op_is_shift r_binary = 0`, and byte ranges (derived
     internally), produce the per-byte equalities
-    `(v.free_in_a_i r_binary).val = e1.x_i.val` for i ∈ {0, 1, 2, 3}. -/
+    `(v.free_in_a_i r_binary).val = (byteAt e1 i).val`
+    for i ∈ {0, 1, 2, 3}. -/
 lemma sext_lane_match_bytes_eq_of_match
     (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary : ℕ) (e1 : Interaction.MemoryBusEntry FGL)
@@ -782,16 +787,33 @@ lemma sext_lane_match_bytes_eq_of_match
     (h_op_is_shift_zero : v.op_is_shift r_binary = 0)
     (h_match : matches_entry (opBus_row_Main m r_main)
                               (opBus_row_BinaryExtension v r_binary)) :
-    (v.free_in_a_0 r_binary).val = e1.x0.val
-    ∧ (v.free_in_a_1 r_binary).val = e1.x1.val
-    ∧ (v.free_in_a_2 r_binary).val = e1.x2.val
-    ∧ (v.free_in_a_3 r_binary).val = e1.x3.val := by
+    (v.free_in_a_0 r_binary).val = (ZiskFv.Channels.MemoryBusBytes.byteAt e1 0).val
+    ∧ (v.free_in_a_1 r_binary).val = (ZiskFv.Channels.MemoryBusBytes.byteAt e1 1).val
+    ∧ (v.free_in_a_2 r_binary).val = (ZiskFv.Channels.MemoryBusBytes.byteAt e1 2).val
+    ∧ (v.free_in_a_3 r_binary).val = (ZiskFv.Channels.MemoryBusBytes.byteAt e1 3).val := by
   -- Byte ranges (BinExt side).
   obtain ⟨ha0, ha1, ha2, ha3, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _⟩ :=
     binary_extension_columns_in_range v r_binary
-  -- Byte ranges (e1 side).
-  obtain ⟨he0, he1, he2, he3, _, _, _, _⟩ :=
-    ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e1
+  -- Chunk range (e1.value_0 < 2^32) — needed to lift the chunk-pack to ℕ.
+  have h_v0_lt : e1.value_0.val < 4294967296 :=
+    (ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e1).1
+  -- Byte projections of value_0 are all < 256 (from byteOf_val_lt_256).
+  have he0 : (ZiskFv.Channels.MemoryBusBytes.byteAt e1 0).val < 256 := by
+    unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+    simp only [show (0 : ℕ) < 4 from by decide, if_true]
+    exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_lt_256 _ _
+  have he1 : (ZiskFv.Channels.MemoryBusBytes.byteAt e1 1).val < 256 := by
+    unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+    simp only [show (1 : ℕ) < 4 from by decide, if_true]
+    exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_lt_256 _ _
+  have he2 : (ZiskFv.Channels.MemoryBusBytes.byteAt e1 2).val < 256 := by
+    unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+    simp only [show (2 : ℕ) < 4 from by decide, if_true]
+    exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_lt_256 _ _
+  have he3 : (ZiskFv.Channels.MemoryBusBytes.byteAt e1 3).val < 256 := by
+    unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+    simp only [show (3 : ℕ) < 4 from by decide, if_true]
+    exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_lt_256 _ _
   -- Project the b_lo conjunct from matches_entry.
   have h_lane_eqs := h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
@@ -802,13 +824,38 @@ lemma sext_lane_match_bytes_eq_of_match
       = v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
         + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary := by
     rw [h_b_lo_m]; ring
-  -- Combine: packed4 a-bytes = memory_entry_lo e1.
+  -- Combine: packed4 a-bytes = value_0 (= byte-pack of value_0).
   have h_eq_fgl :
       (v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
         + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary : FGL)
-      = e1.x0 + e1.x1 * 256 + e1.x2 * 65536 + e1.x3 * 16777216 := by
+      = ZiskFv.Channels.MemoryBusBytes.byteAt e1 0
+        + ZiskFv.Channels.MemoryBusBytes.byteAt e1 1 * 256
+        + ZiskFv.Channels.MemoryBusBytes.byteAt e1 2 * 65536
+        + ZiskFv.Channels.MemoryBusBytes.byteAt e1 3 * 16777216 := by
     rw [← h_b0_fgl, h_main_b0_eq]
     simp only [ZiskFv.Airs.MemoryBus.memory_entry_lo]
+    -- Goal: e1.value_0 = byteAt0 + byteAt1*256 + byteAt2*65536 + byteAt3*16777216
+    -- byteAt e1 i for i < 4 unfolds to byteOf e1.value_0 i.
+    have hpack := ZiskFv.Channels.MemoryBusBytes.bytes_of_chunk_packing
+                    e1.value_0 h_v0_lt
+    have hb0 : ZiskFv.Channels.MemoryBusBytes.byteAt e1 0
+              = ZiskFv.Channels.MemoryBusBytes.byteOf e1.value_0 0 := by
+      unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+      simp only [show (0 : ℕ) < 4 from by decide, if_true]
+    have hb1 : ZiskFv.Channels.MemoryBusBytes.byteAt e1 1
+              = ZiskFv.Channels.MemoryBusBytes.byteOf e1.value_0 1 := by
+      unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+      simp only [show (1 : ℕ) < 4 from by decide, if_true]
+    have hb2 : ZiskFv.Channels.MemoryBusBytes.byteAt e1 2
+              = ZiskFv.Channels.MemoryBusBytes.byteOf e1.value_0 2 := by
+      unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+      simp only [show (2 : ℕ) < 4 from by decide, if_true]
+    have hb3 : ZiskFv.Channels.MemoryBusBytes.byteAt e1 3
+              = ZiskFv.Channels.MemoryBusBytes.byteOf e1.value_0 3 := by
+      unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+      simp only [show (3 : ℕ) < 4 from by decide, if_true]
+    rw [hb0, hb1, hb2, hb3]
+    exact hpack
   -- Take .val of both sides; both lift to ℕ since byte sums < 2^32 < GL_prime.
   have h_lhs_val :
       (v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
@@ -818,16 +865,15 @@ lemma sext_lane_match_bytes_eq_of_match
         + (v.free_in_a_3 r_binary).val * 16777216 :=
     packed_a_lo_val_eq_of_match v r_binary ha0 ha1 ha2 ha3
   have h_rhs_val :
-      (e1.x0 + e1.x1 * 256 + e1.x2 * 65536 + e1.x3 * 16777216 : FGL).val
-      = e1.x0.val + e1.x1.val * 256 + e1.x2.val * 65536 + e1.x3.val * 16777216 := by
-    have h_cast :
-        e1.x0 + e1.x1 * 256 + e1.x2 * 65536 + e1.x3 * 16777216
-        = ((((e1.x0.val + e1.x1.val * 256 + e1.x2.val * 65536
-              + e1.x3.val * 16777216 : ℕ) : FGL))) := by
-      push_cast; ring
-    rw [h_cast, Fin.val_natCast]
-    apply Nat.mod_eq_of_lt
-    show _ < 18446744069414584321; omega
+      (ZiskFv.Channels.MemoryBusBytes.byteAt e1 0
+        + ZiskFv.Channels.MemoryBusBytes.byteAt e1 1 * 256
+        + ZiskFv.Channels.MemoryBusBytes.byteAt e1 2 * 65536
+        + ZiskFv.Channels.MemoryBusBytes.byteAt e1 3 * 16777216 : FGL).val
+      = (ZiskFv.Channels.MemoryBusBytes.byteAt e1 0).val
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt e1 1).val * 256
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt e1 2).val * 65536
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt e1 3).val * 16777216 :=
+    ZiskFv.PackedBitVec.fgl_packed_4bytes_val_of_byte_range _ _ _ _ he0 he1 he2 he3
   -- Equate the Nat packs and apply base-256 uniqueness.
   have h_val_eq := congr_arg Fin.val h_eq_fgl
   rw [h_lhs_val, h_rhs_val] at h_val_eq

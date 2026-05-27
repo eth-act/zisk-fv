@@ -11,6 +11,7 @@ import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Tactics.ALUITypeArchetype
@@ -244,15 +245,23 @@ The helper below packages the 8-way conjunction as a single
 discharge that every Binary-shape equiv consumes in place of the
 8 individual binders. -/
 
-/-- **e2 byte-range discharge.** Every byte lane of a memory-bus
-    entry has `.val < 256` — direct projection of
-    `memory_bus_entry_byte_range_perm_sound`. Replaces the 8
-    `h_e2_<i>` *promise hypotheses* uniformly across all 14
-    Binary-shape opcodes. -/
+/-- **e2 byte-range discharge.** Every byte projection (`byteAt e i`)
+    of a memory-bus entry has `.val < 256` — direct consequence of
+    `byteOf_val_lt_256` (a Nat-arithmetic fact about the chunk-pack
+    byte projection). Replaces the 8 `h_e2_<i>` *promise hypotheses*
+    uniformly across all 14 Binary-shape opcodes. -/
 lemma e2_byte_ranges_discharge (e : Interaction.MemoryBusEntry FGL) :
-    e.x0.val < 256 ∧ e.x1.val < 256 ∧ e.x2.val < 256 ∧ e.x3.val < 256
-    ∧ e.x4.val < 256 ∧ e.x5.val < 256 ∧ e.x6.val < 256 ∧ e.x7.val < 256 :=
-  ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e
+    (ZiskFv.Channels.MemoryBusBytes.byteAt e 0).val < 256
+    ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt e 1).val < 256
+    ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt e 2).val < 256
+    ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt e 3).val < 256
+    ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt e 4).val < 256
+    ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt e 5).val < 256
+    ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt e 6).val < 256
+    ∧ (ZiskFv.Channels.MemoryBusBytes.byteAt e 7).val < 256 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    (unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+     split <;> exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_lt_256 _ _)
 
 /-! ## Byte-chain discharge for the 3-field family
     (AND / ANDI / OR / ORI / XOR / XORI)
