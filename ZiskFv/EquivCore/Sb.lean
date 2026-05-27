@@ -15,6 +15,7 @@ import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Tactics.StoreArchetype
 import ZiskFv.EquivCore.Promises.Store
 import ZiskFv.Compliance.SharedBundles
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 End-to-end theorem for RV64 SB (store byte).
@@ -24,6 +25,7 @@ namespace ZiskFv.EquivCore.Sb
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
@@ -70,14 +72,14 @@ theorem equiv_SB
         (PureSpec.execute_STOREB_pure sb_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_mem_eq :
-      (((((((state.mem.insert bus.e2.ptr.toNat bus.e2.x0
-          ).insert (bus.e2.ptr.toNat + 1) bus.e2.x1
-          ).insert (bus.e2.ptr.toNat + 2) bus.e2.x2
-          ).insert (bus.e2.ptr.toNat + 3) bus.e2.x3
-          ).insert (bus.e2.ptr.toNat + 4) bus.e2.x4
-          ).insert (bus.e2.ptr.toNat + 5) bus.e2.x5
-          ).insert (bus.e2.ptr.toNat + 6) bus.e2.x6
-          ).insert (bus.e2.ptr.toNat + 7) bus.e2.x7
+      (((((((state.mem.insert bus.e2.ptr.toNat (byteAt bus.e2 0)
+          ).insert (bus.e2.ptr.toNat + 1) (byteAt bus.e2 1)
+          ).insert (bus.e2.ptr.toNat + 2) (byteAt bus.e2 2)
+          ).insert (bus.e2.ptr.toNat + 3) (byteAt bus.e2 3)
+          ).insert (bus.e2.ptr.toNat + 4) (byteAt bus.e2 4)
+          ).insert (bus.e2.ptr.toNat + 5) (byteAt bus.e2 5)
+          ).insert (bus.e2.ptr.toNat + 6) (byteAt bus.e2 6)
+          ).insert (bus.e2.ptr.toNat + 7) (byteAt bus.e2 7)
         = state.mem.insert
             (PureSpec.execute_STOREB_pure sb_input).data0.1
             (PureSpec.execute_STOREB_pure sb_input).data0.2) :
