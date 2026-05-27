@@ -2,6 +2,7 @@ import Mathlib
 
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Main.OpcodeClassification
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Compliance.Wrappers.Lui
@@ -134,6 +135,7 @@ open ZiskFv.Airs.Mem
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.ArithDiv
 open ZiskFv.PackedBitVec.SignedChunkLift
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Tactics.UTypeArchetype
 open ZiskFv.Tactics.ALUITypeArchetype
 open ZiskFv.Compliance
@@ -1241,9 +1243,9 @@ inductive OpEnvelope
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (h_sext_choice :
-      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
+      (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
-      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
+      (((byteAt bus.e2 4).val = 255 ∧ (byteAt bus.e2 5).val = 255 ∧ (byteAt bus.e2 6).val = 255 ∧ (byteAt bus.e2 7).val = 255) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
     (h_rs1_value :
       (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt
@@ -1321,9 +1323,9 @@ inductive OpEnvelope
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
     (h_sext_choice :
-      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
+      (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
-      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
+      (((byteAt bus.e2 4).val = 255 ∧ (byteAt bus.e2 5).val = 255 ∧ (byteAt bus.e2 6).val = 255 ∧ (byteAt bus.e2 7).val = 255) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
     (h_rs1_value :
       (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt
@@ -1354,9 +1356,9 @@ inductive OpEnvelope
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_sext_choice :
-      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
+      (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
-      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
+      (((byteAt bus.e2 4).val = 255 ∧ (byteAt bus.e2 5).val = 255 ∧ (byteAt bus.e2 6).val = 255 ∧ (byteAt bus.e2 7).val = 255) ∧
         (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
     (h_rs1_value : (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
@@ -1431,9 +1433,9 @@ inductive OpEnvelope
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
     (h_sext_choice :
-      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
+      (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
-      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
+      (((byteAt bus.e2 4).val = 255 ∧ (byteAt bus.e2 5).val = 255 ∧ (byteAt bus.e2 6).val = 255 ∧ (byteAt bus.e2 7).val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
     (h_rs1_value :
       (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt
@@ -1464,9 +1466,9 @@ inductive OpEnvelope
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_sext_choice :
-      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
+      (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
-      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
+      (((byteAt bus.e2 4).val = 255 ∧ (byteAt bus.e2 5).val = 255 ∧ (byteAt bus.e2 6).val = 255 ∧ (byteAt bus.e2 7).val = 255) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 ≥ 2147483648))
     (h_rs1_value : (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat
               = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
