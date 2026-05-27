@@ -148,6 +148,24 @@ lemma byteOf_val_eq (f : FGL) (i : ℕ) :
     Nat.lt_of_lt_of_le h_mod_lt (by decide)
   rw [Fin.val_natCast, Nat.mod_eq_of_lt h_lt_p]
 
+/-- The byte projections of the zero field element are zero. -/
+@[simp]
+lemma byteOf_zero (i : ℕ) : byteOf (0 : FGL) i = 0 := by
+  show (((((0 : FGL)).val / 256 ^ i) % 256 : ℕ) : FGL) = 0
+  have : ((0 : FGL)).val = 0 := rfl
+  rw [this]
+  simp
+
+/-- A field element whose `.val` is less than `256^i` has byte
+    projection `0` at index `i` (and higher). Composes with
+    `byteOf_zero` for chunk-wide zero-padding facts. -/
+lemma byteOf_of_lt_pow (f : FGL) (i : ℕ) (h : f.val < 256 ^ i) :
+    byteOf f i = 0 := by
+  show (((f.val / 256 ^ i) % 256 : ℕ) : FGL) = 0
+  have h_div : f.val / 256 ^ i = 0 := Nat.div_eq_of_lt h
+  rw [h_div]
+  simp
+
 /-- Nat-level byte-pack identity for a Goldilocks chunk with
     `v.val < 2^32`: the 4-byte sum of `(byteOf v i).val` weights
     recovers `v.val`. Closes by `omega` after `256 ^ i` normalization. -/
