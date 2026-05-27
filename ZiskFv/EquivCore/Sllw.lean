@@ -14,6 +14,7 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Airs.Binary.BinaryExtension
 import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
@@ -55,6 +56,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
 open ZiskFv.ZiskCircuit.Shift
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 
 
 /-- **Sail-level companion.** `LeanRV64D.execute_instruction` on an
@@ -148,9 +150,16 @@ theorem equiv_SLLW_of_wf
     ZiskFv.EquivCore.Bridge.BinaryExtension.shift_pin_w_eq_of_shift_match
       m v r_main r_binary (regidx_to_fin r2) sllw_input.r2_val
       h_b_lo_t h_b_hi_t h_input_r2 h_op_is_shift h_match
-  -- Derive 8 e2 byte ranges from `memory_bus_entry_byte_range_perm_sound`.
-  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
-    ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
+  -- Derive 8 e2 byte ranges from `byteAt_val_lt_256` (chunk-shape
+  -- replacement for the retired memory_bus_entry_byte_range_perm_sound axiom).
+  have h_e2_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 0
+  have h_e2_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 1
+  have h_e2_2 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 2
+  have h_e2_3 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 3
+  have h_e2_4 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 4
+  have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
+  have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
+  have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
   -- Derive the 8 a-byte ranges + 16 c-byte 32-bit ranges from
   -- `binary_extension_columns_in_range` (BinaryExtension AIR's
   -- range-check soundness axiom on the trust ledger). This discharges
@@ -192,8 +201,8 @@ theorem equiv_SLLW_of_wf
       h_shift_def
   -- Combine: discharge gives `bytes = signExtend 64 (shiftLeft (extractLsb r1 31 0) shift)`,
   -- but with `extractLsb = ofNat 32 a4sum` it becomes the bridge's LHS.
-  have h_rd_val : U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                              e2.x4, e2.x5, e2.x6, e2.x7]
+  have h_rd_val : U64.toBV #v[byteAt e2 0, byteAt e2 1, byteAt e2 2, byteAt e2 3,
+                              byteAt e2 4, byteAt e2 5, byteAt e2 6, byteAt e2 7]
       = execute_RTYPEW_pure sllw_input.r1_val sllw_input.r2_val ropw.SLLW := by
     rw [h_discharge, h_r1lo, h_bridge]
   rw [equiv_SLLW_sail state sllw_input r1 r2 rd
