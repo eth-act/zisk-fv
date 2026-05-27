@@ -9,6 +9,7 @@ import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 # `SharedBundles` — small structural bundles shared across opcode shapes
@@ -26,6 +27,8 @@ is hidden, no premise is reified. Refactor-only.
 namespace ZiskFv.Compliance
 
 open Goldilocks
+open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryAdd
@@ -125,13 +128,13 @@ structure MemAlignWitness where
     canonicals, the Div/Rem opcodes, etc.). Type-indexed on the entry
     so each caller pins its own `e`. -/
 structure ByteBounds (e : Interaction.MemoryBusEntry FGL) where
-  x0_lt : e.x0.val < 256
-  x1_lt : e.x1.val < 256
-  x2_lt : e.x2.val < 256
-  x3_lt : e.x3.val < 256
-  x4_lt : e.x4.val < 256
-  x5_lt : e.x5.val < 256
-  x6_lt : e.x6.val < 256
-  x7_lt : e.x7.val < 256
+  x0_lt : (byteAt e 0).val < 256
+  x1_lt : (byteAt e 1).val < 256
+  x2_lt : (byteAt e 2).val < 256
+  x3_lt : (byteAt e 3).val < 256
+  x4_lt : (byteAt e 4).val < 256
+  x5_lt : (byteAt e 5).val < 256
+  x6_lt : (byteAt e 6).val < 256
+  x7_lt : (byteAt e 7).val < 256
 
 end ZiskFv.Compliance
