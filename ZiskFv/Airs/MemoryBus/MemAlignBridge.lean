@@ -173,129 +173,92 @@ axiom mem_align_rom_subdoubleword_load_value_1_zero
 
 /-! ## Per-AIR proven theorems
 
-Discharge `e.x4..x7 = 0` (and per-width lo-byte zeros) from the
-row-match predicate plus byte-range hypotheses on `e`. The
-arithmetic is the standard Goldilocks-prime base-256 unique
-decomposition: `Σ b_i · 256^i = 0` over `b_i ∈ [0, 256)` ⇒ all zero.
+Discharge `e.value_1 = 0` (and per-width `e.value_0.val < bound`)
+from the row-match predicate. Under the chunk-shape redesign
+(C8 Phase 2), the previous per-byte derivations collapse to direct
+chunk equalities; no Goldilocks-prime base-256 unique decomposition
+is needed.
 -/
 
-/-- High-byte zeros for any LOAD-providing `MemAlignByte` row.
-    Direct from `slot[5] = 0` ↔ `memory_entry_hi e = 0`. -/
+/-- High-chunk zero for any LOAD-providing `MemAlignByte` row.
+    Direct from the row-match's hi-chunk equation. -/
 lemma memalign_byte_load_high_bytes_zero
     (v : Valid_MemAlignByte FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
-    (h_match : memalign_byte_row_matches_load_entry v r e)
-    (h_range : memory_entry_bytes_in_range e) :
-    e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0 := by
+    (h_match : memalign_byte_row_matches_load_entry v r e) :
+    e.value_1 = 0 := by
   obtain ⟨_, _, _, _, h_hi_zero, _⟩ := h_match
-  obtain ⟨_, _, _, _, h4, h5, h6, h7⟩ := h_range
   simp only [memory_entry_hi] at h_hi_zero
-  exact ZiskFv.PackedBitVec.four_bytes_zero_of_packed_zero
-    e.x4 e.x5 e.x6 e.x7 h4 h5 h6 h7 h_hi_zero
+  exact h_hi_zero
 
-/-- Width=1 collapses lo bytes 1..3 to zero. The `bus_byte` slot is
-    range-checked to [0, 256) by the byte-bus, so `lo(e) = bus_byte`
-    (a single-byte value) plus byte ranges on `e.x0..x3` forces
-    `e.x1 = e.x2 = e.x3 = 0`.
-
-    Note: this is not consumed by the derivation theorem (which only
-    needs the high-byte zeros for the `high_bytes_zero_for_width`
-    predicate's width=1 case to *also* need `e.x1..x3 = 0`); it is
-    provided here for completeness with the predicate. The width=1
-    low-byte pinning consumes a separate hypothesis (the byte-bus
-    range check on `bus_byte`) which is supplied at the call site. -/
+/-- Width=1 byte-range on `value_0` for `MemAlignByte`. The `bus_byte`
+    slot is range-checked to [0, 256) by the byte-bus, and the
+    row-match's lo-chunk equation `memory_entry_lo e = bus_byte`
+    transports the bound to `e.value_0`. -/
 lemma memalign_byte_load_low_bytes_zero
     (v : Valid_MemAlignByte FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_byte_row_matches_load_entry v r e)
-    (h_range : memory_entry_bytes_in_range e)
     (h_bus_byte_lt : (v.bus_byte r).val < 256) :
-    e.x1 = 0 ∧ e.x2 = 0 ∧ e.x3 = 0 := by
+    e.value_0.val < 256 := by
   obtain ⟨_, _, _, h_lo, _, _⟩ := h_match
-  obtain ⟨h0, h1, h2, h3, _, _, _, _⟩ := h_range
   simp only [memory_entry_lo] at h_lo
-  -- lo(e) = bus_byte; lo(e).val = bus_byte.val < 256 forces e.x1..3 = 0.
-  have h_lt : (e.x0 + e.x1 * 256 + e.x2 * 65536 + e.x3 * 16777216 : FGL).val < 256 := by
-    rw [← h_lo]; exact h_bus_byte_lt
-  exact ZiskFv.PackedBitVec.four_bytes_high_three_zero_of_packed_lt_256
-    e.x0 e.x1 e.x2 e.x3 h0 h1 h2 h3 h_lt
+  rw [← h_lo]; exact h_bus_byte_lt
 
-/-- High-byte zeros for any LOAD-providing `MemAlignReadByte` row.
+/-- High-chunk zero for any LOAD-providing `MemAlignReadByte` row.
     Same shape as the MemAlignByte case (slot[5] = literal 0). -/
 lemma memalign_read_byte_load_high_bytes_zero
     (v : Valid_MemAlignReadByte FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
-    (h_match : memalign_read_byte_row_matches_load_entry v r e)
-    (h_range : memory_entry_bytes_in_range e) :
-    e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0 := by
+    (h_match : memalign_read_byte_row_matches_load_entry v r e) :
+    e.value_1 = 0 := by
   obtain ⟨_, _, _, h_hi_zero, _⟩ := h_match
-  obtain ⟨_, _, _, _, h4, h5, h6, h7⟩ := h_range
   simp only [memory_entry_hi] at h_hi_zero
-  exact ZiskFv.PackedBitVec.four_bytes_zero_of_packed_zero
-    e.x4 e.x5 e.x6 e.x7 h4 h5 h6 h7 h_hi_zero
+  exact h_hi_zero
 
-/-- Width=1 lo-bytes pinning for `MemAlignReadByte`, analogous to the
-    MemAlignByte version. -/
+/-- Width=1 byte-range on `value_0` for `MemAlignReadByte`, analogous
+    to the MemAlignByte version. -/
 lemma memalign_read_byte_load_low_bytes_zero
     (v : Valid_MemAlignReadByte FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_read_byte_row_matches_load_entry v r e)
-    (h_range : memory_entry_bytes_in_range e)
     (h_byte_value_lt : (v.byte_value r).val < 256) :
-    e.x1 = 0 ∧ e.x2 = 0 ∧ e.x3 = 0 := by
+    e.value_0.val < 256 := by
   obtain ⟨_, _, h_lo, _, _⟩ := h_match
-  obtain ⟨h0, h1, h2, h3, _, _, _, _⟩ := h_range
   simp only [memory_entry_lo] at h_lo
-  have h_lt : (e.x0 + e.x1 * 256 + e.x2 * 65536 + e.x3 * 16777216 : FGL).val < 256 := by
-    rw [← h_lo]; exact h_byte_value_lt
-  exact ZiskFv.PackedBitVec.four_bytes_high_three_zero_of_packed_lt_256
-    e.x0 e.x1 e.x2 e.x3 h0 h1 h2 h3 h_lt
+  rw [← h_lo]; exact h_byte_value_lt
 
-/-- High-byte zeros for any LOAD-providing `MemAlign` row whose
-    width is sub-doubleword. Combines the row-match's
-    `value_1 = hi(e)` with the ROM-lookup axiom's `value_1 = 0`. -/
+/-- High-chunk zero for any LOAD-providing `MemAlign` row whose width
+    is sub-doubleword. Combines the row-match's `value_1 = e.value_1`
+    chunk equality with the ROM-lookup axiom's `value_1 = 0`. -/
 lemma memalign_load_high_bytes_zero
     (v : Valid_MemAlign FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_row_matches_load_entry v r e)
-    (h_range : memory_entry_bytes_in_range e)
     (h_narrow : v.width r = 1 ∨ v.width r = 2 ∨ v.width r = 4) :
-    e.x4 = 0 ∧ e.x5 = 0 ∧ e.x6 = 0 ∧ e.x7 = 0 := by
+    e.value_1 = 0 := by
   obtain ⟨h_live, _, _, _, _, _, _, h_v1_eq, _⟩ := h_match
-  obtain ⟨_, _, _, _, h4, h5, h6, h7⟩ := h_range
   have h_v1_zero := mem_align_rom_subdoubleword_load_value_1_zero v r h_live h_narrow
-  have h_hi_zero : memory_entry_hi e = 0 := by rw [← h_v1_eq, h_v1_zero]
-  simp only [memory_entry_hi] at h_hi_zero
-  exact ZiskFv.PackedBitVec.four_bytes_zero_of_packed_zero
-    e.x4 e.x5 e.x6 e.x7 h4 h5 h6 h7 h_hi_zero
+  simp only [memory_entry_hi] at h_v1_eq
+  rw [← h_v1_eq, h_v1_zero]
 
-/-- Width-conditional low-byte pinning for `MemAlign`. For width=2,
-    `value_0 = lo(e) < 65536`; for width=1, `value_0 = lo(e) < 256`.
-    The byte-range argument needs an explicit bound on `value_0`
-    coming from the ROM/AIR-internal width pinning — supplied at the
-    derivation site as `h_v0_lt`. -/
+/-- Width-conditional `value_0` range for `MemAlign`. For width=1,
+    `value_0 = lo(e) < 256`; the byte-range argument comes from the
+    ROM/AIR-internal width pinning, supplied at the derivation site
+    as `h_v0_lt`. -/
 lemma memalign_load_low_bytes_pinned_for_width_1
     (v : Valid_MemAlign FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_row_matches_load_entry v r e)
-    (h_range : memory_entry_bytes_in_range e)
     (h_v0_lt : (v.value_0 r).val < 256) :
-    e.x1 = 0 ∧ e.x2 = 0 ∧ e.x3 = 0 := by
+    e.value_0.val < 256 := by
   obtain ⟨_, _, _, _, _, _, h_v0_eq, _, _⟩ := h_match
-  obtain ⟨h0, h1, h2, h3, _, _, _, _⟩ := h_range
   simp only [memory_entry_lo] at h_v0_eq
-  have h_lt : (e.x0 + e.x1 * 256 + e.x2 * 65536 + e.x3 * 16777216 : FGL).val < 256 := by
-    rw [← h_v0_eq]; exact h_v0_lt
-  exact ZiskFv.PackedBitVec.four_bytes_high_three_zero_of_packed_lt_256
-    e.x0 e.x1 e.x2 e.x3 h0 h1 h2 h3 h_lt
+  rw [← h_v0_eq]; exact h_v0_lt
 
+/-- Width=2 analogue: `value_0 = lo(e) < 65536`. -/
 lemma memalign_load_low_bytes_pinned_for_width_2
     (v : Valid_MemAlign FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_row_matches_load_entry v r e)
-    (h_range : memory_entry_bytes_in_range e)
     (h_v0_lt : (v.value_0 r).val < 65536) :
-    e.x2 = 0 ∧ e.x3 = 0 := by
+    e.value_0.val < 65536 := by
   obtain ⟨_, _, _, _, _, _, h_v0_eq, _, _⟩ := h_match
-  obtain ⟨h0, h1, h2, h3, _, _, _, _⟩ := h_range
   simp only [memory_entry_lo] at h_v0_eq
-  have h_lt : (e.x0 + e.x1 * 256 + e.x2 * 65536 + e.x3 * 16777216 : FGL).val < 65536 := by
-    rw [← h_v0_eq]; exact h_v0_lt
-  exact ZiskFv.PackedBitVec.four_bytes_high_two_zero_of_packed_lt_65536
-    e.x0 e.x1 e.x2 e.x3 h0 h1 h2 h3 h_lt
+  rw [← h_v0_eq]; exact h_v0_lt
 
 /-! ## Derivation theorem
 
@@ -356,7 +319,6 @@ lemma memalign_subdoubleword_load_high_bytes_zero
     (h_subdw : main.ind_width r_main = 1
              ∨ main.ind_width r_main = 2
              ∨ main.ind_width r_main = 4)
-    (h_byte_range : memory_entry_bytes_in_range e)
     (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
     (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
     (h_low : SubdoublewordLoadLowBytePinning ma) :
@@ -364,28 +326,24 @@ lemma memalign_subdoubleword_load_high_bytes_zero
   rcases memalign_load_perm_sound main mab marb ma r_main e h_emit h_subdw with
     ⟨r, h_match, h_w_eq⟩ | ⟨r, h_match, h_w_eq⟩ | ⟨r, h_match, h_w_eq⟩
   · -- MemAlignByte branch: provider's width is literal 1.
-    obtain ⟨h4, h5, h6, h7⟩ :=
-      memalign_byte_load_high_bytes_zero mab r e h_match h_byte_range
-    obtain ⟨h1, h2, h3⟩ :=
-      memalign_byte_load_low_bytes_zero mab r e h_match h_byte_range
-        (ZiskFv.AirsClean.MemAlignByte.bus_byte_in_range_via_component
-          mab r (h_mab_core r))
+    have h_v1 := memalign_byte_load_high_bytes_zero mab r e h_match
+    have h_v0_lt := memalign_byte_load_low_bytes_zero mab r e h_match
+      (ZiskFv.AirsClean.MemAlignByte.bus_byte_in_range_via_component
+        mab r (h_mab_core r))
     refine ⟨?_, ?_, ?_⟩ <;> intro h_w
-    · exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
+    · exact ⟨h_v1, h_v0_lt⟩
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)
   · -- MemAlignReadByte branch: provider's width is literal 1. The
     -- `byte_value < 256` bound is derived from the MemAlignReadByte
     -- AIR's own `core_every_row` PIL constraints **through the Clean
     -- Component** (C2 re-root) — not a caller promise.
-    obtain ⟨h4, h5, h6, h7⟩ :=
-      memalign_read_byte_load_high_bytes_zero marb r e h_match h_byte_range
-    obtain ⟨h1, h2, h3⟩ :=
-      memalign_read_byte_load_low_bytes_zero marb r e h_match h_byte_range
-        (ZiskFv.AirsClean.MemAlignReadByte.byte_value_in_range_via_component
-          marb r (h_marb_core r))
+    have h_v1 := memalign_read_byte_load_high_bytes_zero marb r e h_match
+    have h_v0_lt := memalign_read_byte_load_low_bytes_zero marb r e h_match
+      (ZiskFv.AirsClean.MemAlignReadByte.byte_value_in_range_via_component
+        marb r (h_marb_core r))
     refine ⟨?_, ?_, ?_⟩ <;> intro h_w
-    · exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
+    · exact ⟨h_v1, h_v0_lt⟩
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)
   · -- MemAlign branch: width is the provider's `width` column.
@@ -394,22 +352,19 @@ lemma memalign_subdoubleword_load_high_bytes_zero
       · exact Or.inl h
       · exact Or.inr (Or.inl h)
       · exact Or.inr (Or.inr h)
-    obtain ⟨h4, h5, h6, h7⟩ :=
-      memalign_load_high_bytes_zero ma r e h_match h_byte_range h_narrow
+    have h_v1 := memalign_load_high_bytes_zero ma r e h_match h_narrow
     refine ⟨?_, ?_, ?_⟩ <;> intro h_w
-    · -- width = 1: also need lo bytes 1..3 zero.
+    · -- width = 1: also need value_0 < 256.
       have h_w_provider : ma.width r = 1 := by rw [h_w_eq]; exact h_w
-      obtain ⟨h1, h2, h3⟩ :=
-        memalign_load_low_bytes_pinned_for_width_1 ma r e h_match h_byte_range
-          (h_low.ma_value_0_lt_for_width_1 r h_w_provider)
-      exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
-    · -- width = 2: need lo bytes 2..3 zero.
+      have h_v0_lt := memalign_load_low_bytes_pinned_for_width_1 ma r e h_match
+        (h_low.ma_value_0_lt_for_width_1 r h_w_provider)
+      exact ⟨h_v1, h_v0_lt⟩
+    · -- width = 2: need value_0 < 65536.
       have h_w_provider : ma.width r = 2 := by rw [h_w_eq]; exact h_w
-      obtain ⟨h2, h3⟩ :=
-        memalign_load_low_bytes_pinned_for_width_2 ma r e h_match h_byte_range
-          (h_low.ma_value_0_lt_for_width_2 r h_w_provider)
-      exact ⟨h2, h3, h4, h5, h6, h7⟩
-    · -- width = 4: only high bytes need to be zero.
-      exact ⟨h4, h5, h6, h7⟩
+      have h_v0_lt := memalign_load_low_bytes_pinned_for_width_2 ma r e h_match
+        (h_low.ma_value_0_lt_for_width_2 r h_w_provider)
+      exact ⟨h_v1, h_v0_lt⟩
+    · -- width = 4: only high chunk needs to be zero.
+      exact h_v1
 
 end ZiskFv.Airs.MemoryBus.MemAlignBridge
