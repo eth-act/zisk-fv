@@ -19,6 +19,7 @@ import ZiskFv.SailSpec.lh
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.EquivCore.Promises.Load
 import ZiskFv.Compliance.SharedBundles
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 End-to-end theorem for RV64 LH (load halfword, signed / sign-extended).
@@ -31,6 +32,7 @@ namespace ZiskFv.EquivCore.Lh
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
@@ -109,8 +111,8 @@ theorem equiv_LH_of_wf
           + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
           + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
           + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
-    (h_a0_match : (v.free_in_a_0 r_binary).val = bus.e1.x0.val)
-    (h_a1_match : (v.free_in_a_1 r_binary).val = bus.e1.x1.val) :
+    (h_a0_match : (v.free_in_a_0 r_binary).val = (byteAt bus.e1 0).val)
+    (h_a1_match : (v.free_in_a_1 r_binary).val = (byteAt bus.e1 1).val) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -143,24 +145,31 @@ theorem equiv_LH_of_wf
           _h_bound, _h_aligned⟩ := h_opcode_assumptions
   rw [h_ptr_match] at h_mem
   obtain ⟨he0, he1⟩ := h_mem
-  have hd0 : (e1.x0 : BitVec 8) = lh_input.data0 := by
+  have hd0 : ((byteAt e1 0) : BitVec 8) = lh_input.data0 := by
     rw [h_d0] at he0; exact (Option.some.inj he0).symm
-  have hd1 : (e1.x1 : BitVec 8) = lh_input.data1 := by
+  have hd1 : ((byteAt e1 1) : BitVec 8) = lh_input.data1 := by
     rw [h_d1] at he1; exact (Option.some.inj he1).symm
-  have h_e1_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e1
-  have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
+  have h_e1_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e1 0
+  have h_e1_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e1 1
+  have h_e2_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 0
+  have h_e2_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 1
+  have h_e2_2 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 2
+  have h_e2_3 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 3
+  have h_e2_4 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 4
+  have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
+  have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
+  have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
   have h_lh_packed :=
     ZiskFv.ZiskCircuit.SextLoadBridge.load_half_c_packed_of_wf
       main r_main v r_binary e1 e2
       h_op_binary h_bytes h_wfs hc_lo_sum_lt hc_hi_sum_lt
       h_match_clo h_match_chi h_main_emit_c
-      h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
-      h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
-      h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
-      h_a0_match h_a1_match h_e1_range.1 h_e1_range.2.1
+      h_e2_0 h_e2_1 h_e2_2 h_e2_3
+      h_e2_4 h_e2_5 h_e2_6 h_e2_7
+      h_a0_match h_a1_match h_e1_0 h_e1_1
   have h_rd_val_derived :
-      U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                  e2.x4, e2.x5, e2.x6, e2.x7]
+      U64.toBV #v[byteAt e2 0, byteAt e2 1, byteAt e2 2, byteAt e2 3,
+                  byteAt e2 4, byteAt e2 5, byteAt e2 6, byteAt e2 7]
         = BitVec.signExtend 64 (lh_input.data1 ++ lh_input.data0) := by
     rw [h_lh_packed, hd0, hd1]
   rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_load_2byte_rrrw
