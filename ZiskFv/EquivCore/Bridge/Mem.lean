@@ -8,6 +8,7 @@ import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.SailSpec.sb
 import ZiskFv.SailSpec.sh
@@ -54,6 +55,8 @@ groups it for uniform downstream access.
 namespace ZiskFv.EquivCore.Bridge.Mem
 
 open Goldilocks
+open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.MemoryBus
 
@@ -423,14 +426,14 @@ lemma sd_discharge_full
     -- (in BitVec-sum form, matching `equiv_SD`).
     e_st.ptr.toNat = (r1_val + BitVec.signExtend 64 imm).toNat
     -- 8 byte extracts of r2_val.
-    ∧ (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
-    ∧ (e_st.x1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val
-    ∧ (e_st.x2 : BitVec 8) = BitVec.extractLsb 23 16 r2_val
-    ∧ (e_st.x3 : BitVec 8) = BitVec.extractLsb 31 24 r2_val
-    ∧ (e_st.x4 : BitVec 8) = BitVec.extractLsb 39 32 r2_val
-    ∧ (e_st.x5 : BitVec 8) = BitVec.extractLsb 47 40 r2_val
-    ∧ (e_st.x6 : BitVec 8) = BitVec.extractLsb 55 48 r2_val
-    ∧ (e_st.x7 : BitVec 8) = BitVec.extractLsb 63 56 r2_val := by
+    ∧ (byteAt e_st 0 : BitVec 8) = BitVec.extractLsb 7 0 r2_val
+    ∧ (byteAt e_st 1 : BitVec 8) = BitVec.extractLsb 15 8 r2_val
+    ∧ (byteAt e_st 2 : BitVec 8) = BitVec.extractLsb 23 16 r2_val
+    ∧ (byteAt e_st 3 : BitVec 8) = BitVec.extractLsb 31 24 r2_val
+    ∧ (byteAt e_st 4 : BitVec 8) = BitVec.extractLsb 39 32 r2_val
+    ∧ (byteAt e_st 5 : BitVec 8) = BitVec.extractLsb 47 40 r2_val
+    ∧ (byteAt e_st 6 : BitVec 8) = BitVec.extractLsb 55 48 r2_val
+    ∧ (byteAt e_st 7 : BitVec 8) = BitVec.extractLsb 63 56 r2_val := by
   -- Materialize the universal-state `transpile_SD` axiom at the
   -- Sail-state-derived RV64 state to deliver `m.a/b lanes ↔
   -- lane_{lo,hi} (xreg rs)` facts. The `_imm_offset` placeholder
@@ -490,14 +493,14 @@ lemma sb_discharge_full
       = EStateM.Result.ok sb_input.r1_val state)
     (h_read_r2 : LeanRV64D.Functions.rX_bits (regidx.Regidx sb_input.r2) state
       = EStateM.Result.ok sb_input.r2_val state) :
-    (((((((state.mem.insert e_st.ptr.toNat e_st.x0
-        ).insert (e_st.ptr.toNat + 1) e_st.x1
-        ).insert (e_st.ptr.toNat + 2) e_st.x2
-        ).insert (e_st.ptr.toNat + 3) e_st.x3
-        ).insert (e_st.ptr.toNat + 4) e_st.x4
-        ).insert (e_st.ptr.toNat + 5) e_st.x5
-        ).insert (e_st.ptr.toNat + 6) e_st.x6
-        ).insert (e_st.ptr.toNat + 7) e_st.x7
+    (((((((state.mem.insert e_st.ptr.toNat (byteAt e_st 0 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 1) (byteAt e_st 1 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 2) (byteAt e_st 2 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 3) (byteAt e_st 3 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 4) (byteAt e_st 4 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 5) (byteAt e_st 5 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 6) (byteAt e_st 6 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 7) (byteAt e_st 7 : BitVec 8)
       = state.mem.insert
           (PureSpec.execute_STOREB_pure sb_input).data0.1
           (PureSpec.execute_STOREB_pure sb_input).data0.2 := by
@@ -545,8 +548,8 @@ lemma sb_discharge_full
   -- then chain `insert_eq_self` on the 7 trailing inserts.
   rw [h_ptr]
   -- The RHS is now `state.mem.insert ptr (extractLsb 7 0 r2_val)`.
-  -- Replace `e_st.x0` in LHS with that same value via h_b0.
-  conv_lhs => rw [show (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 sb_input.r2_val from h_b0]
+  -- Replace `byteAt e_st 0` in LHS with that same value via h_b0.
+  conv_lhs => rw [show (byteAt e_st 0 : BitVec 8) = BitVec.extractLsb 7 0 sb_input.r2_val from h_b0]
   -- Now LHS = 8-insert chain at ptr+0..ptr+7 with first insert matching RHS.
   -- Each of the 7 trailing inserts at ptr+i (i = 1..7) is a no-op because
   -- state.mem[ptr+i]? = some e_st.x_i (RMW preservation).
@@ -570,14 +573,14 @@ lemma sh_discharge_full
       = EStateM.Result.ok sh_input.r1_val state)
     (h_read_r2 : LeanRV64D.Functions.rX_bits (regidx.Regidx sh_input.r2) state
       = EStateM.Result.ok sh_input.r2_val state) :
-    (((((((state.mem.insert e_st.ptr.toNat e_st.x0
-        ).insert (e_st.ptr.toNat + 1) e_st.x1
-        ).insert (e_st.ptr.toNat + 2) e_st.x2
-        ).insert (e_st.ptr.toNat + 3) e_st.x3
-        ).insert (e_st.ptr.toNat + 4) e_st.x4
-        ).insert (e_st.ptr.toNat + 5) e_st.x5
-        ).insert (e_st.ptr.toNat + 6) e_st.x6
-        ).insert (e_st.ptr.toNat + 7) e_st.x7
+    (((((((state.mem.insert e_st.ptr.toNat (byteAt e_st 0 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 1) (byteAt e_st 1 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 2) (byteAt e_st 2 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 3) (byteAt e_st 3 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 4) (byteAt e_st 4 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 5) (byteAt e_st 5 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 6) (byteAt e_st 6 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 7) (byteAt e_st 7 : BitVec 8)
       = (state.mem.insert
             (PureSpec.execute_STOREH_pure sh_input).data0.1
             (PureSpec.execute_STOREH_pure sh_input).data0.2
@@ -615,8 +618,8 @@ lemma sh_discharge_full
       h_a_lo_state h_a_hi_state h_b_lo_state h_b_hi_state
   simp only [PureSpec.execute_STOREH_pure]
   rw [h_ptr]
-  conv_lhs => rw [show (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 sh_input.r2_val from h_b0]
-  conv_lhs => rw [show (e_st.x1 : BitVec 8) = BitVec.extractLsb 15 8 sh_input.r2_val from h_b1]
+  conv_lhs => rw [show (byteAt e_st 0 : BitVec 8) = BitVec.extractLsb 7 0 sh_input.r2_val from h_b0]
+  conv_lhs => rw [show (byteAt e_st 1 : BitVec 8) = BitVec.extractLsb 15 8 sh_input.r2_val from h_b1]
   apply Std.ExtHashMap.ext_getElem?
   intro k
   simp only [Std.ExtHashMap.getElem?_insert, beq_iff_eq]
@@ -637,14 +640,14 @@ lemma sw_discharge_full
       = EStateM.Result.ok sw_input.r1_val state)
     (h_read_r2 : LeanRV64D.Functions.rX_bits (regidx.Regidx sw_input.r2) state
       = EStateM.Result.ok sw_input.r2_val state) :
-    (((((((state.mem.insert e_st.ptr.toNat e_st.x0
-        ).insert (e_st.ptr.toNat + 1) e_st.x1
-        ).insert (e_st.ptr.toNat + 2) e_st.x2
-        ).insert (e_st.ptr.toNat + 3) e_st.x3
-        ).insert (e_st.ptr.toNat + 4) e_st.x4
-        ).insert (e_st.ptr.toNat + 5) e_st.x5
-        ).insert (e_st.ptr.toNat + 6) e_st.x6
-        ).insert (e_st.ptr.toNat + 7) e_st.x7
+    (((((((state.mem.insert e_st.ptr.toNat (byteAt e_st 0 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 1) (byteAt e_st 1 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 2) (byteAt e_st 2 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 3) (byteAt e_st 3 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 4) (byteAt e_st 4 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 5) (byteAt e_st 5 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 6) (byteAt e_st 6 : BitVec 8)
+        ).insert (e_st.ptr.toNat + 7) (byteAt e_st 7 : BitVec 8)
       = (((state.mem.insert
             (PureSpec.execute_STOREW_pure sw_input).data0.1
             (PureSpec.execute_STOREW_pure sw_input).data0.2
@@ -688,10 +691,10 @@ lemma sw_discharge_full
       h_a_lo_state h_a_hi_state h_b_lo_state h_b_hi_state
   simp only [PureSpec.execute_STOREW_pure]
   rw [h_ptr]
-  conv_lhs => rw [show (e_st.x0 : BitVec 8) = BitVec.extractLsb 7 0 sw_input.r2_val from h_b0]
-  conv_lhs => rw [show (e_st.x1 : BitVec 8) = BitVec.extractLsb 15 8 sw_input.r2_val from h_b1]
-  conv_lhs => rw [show (e_st.x2 : BitVec 8) = BitVec.extractLsb 23 16 sw_input.r2_val from h_b2]
-  conv_lhs => rw [show (e_st.x3 : BitVec 8) = BitVec.extractLsb 31 24 sw_input.r2_val from h_b3]
+  conv_lhs => rw [show (byteAt e_st 0 : BitVec 8) = BitVec.extractLsb 7 0 sw_input.r2_val from h_b0]
+  conv_lhs => rw [show (byteAt e_st 1 : BitVec 8) = BitVec.extractLsb 15 8 sw_input.r2_val from h_b1]
+  conv_lhs => rw [show (byteAt e_st 2 : BitVec 8) = BitVec.extractLsb 23 16 sw_input.r2_val from h_b2]
+  conv_lhs => rw [show (byteAt e_st 3 : BitVec 8) = BitVec.extractLsb 31 24 sw_input.r2_val from h_b3]
   apply Std.ExtHashMap.ext_getElem?
   intro k
   simp only [Std.ExtHashMap.getElem?_insert, beq_iff_eq]
