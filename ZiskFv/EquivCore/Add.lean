@@ -25,6 +25,7 @@ import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.AirsClean.BinaryAdd.Bridge
 import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 End-to-end theorem for RV64 ADD. Combines:
@@ -46,6 +47,7 @@ into two companion theorems:
 namespace ZiskFv.EquivCore.Add
 
 open Goldilocks
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.BinaryAdd
@@ -538,9 +540,15 @@ theorem equiv_ADD_of_binaryadd_row
   obtain ⟨_, _, _, _, h_m32, _, _, _, _⟩ := h_tr
   have h_main_mode : main_row_in_add_mode m r_main :=
     ⟨h_main_active, h_main_op_add, h_m32, h_flag⟩
-  -- Discharge the 8 e2 byte ranges via the memory-bus range axiom.
-  obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3, h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
-    ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
+  -- Discharge the 8 e2 byte ranges via the chunk-byte projection lemma.
+  have h_e2_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 0
+  have h_e2_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 1
+  have h_e2_2 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 2
+  have h_e2_3 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 3
+  have h_e2_4 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 4
+  have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
+  have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
+  have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
   -- Route through `equiv_ADD_with_match` (skips op_bus_perm_sound_BinaryAdd);
   -- caller-supplied `h_match_b` is the BinaryAdd-row form of `h_match`.
   exact ZiskFv.EquivCore.Add.equiv_ADD_with_match
