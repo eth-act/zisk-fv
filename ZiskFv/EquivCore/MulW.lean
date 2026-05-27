@@ -21,6 +21,7 @@ import ZiskFv.EquivCore.Bridge.Arith
 import ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.Compliance.SharedBundles
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 End-to-end theorem for RV64 MULW. MULW is the 32-bit word variant of
@@ -39,6 +40,7 @@ DIVUW/REMUW's W-mode sign extension).
 namespace ZiskFv.EquivCore.MulW
 
 open Goldilocks
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
@@ -120,13 +122,13 @@ theorem equiv_MULW
     (h_b23 : (v.b_2 r_a).val = 0 ∧ (v.b_3 r_a).val = 0)
     -- Byte-pack lane match (LANE-MATCH): bytes 0..3 pack c-chunks low 32 (MULW product low half).
     (h_byte_lo :
-      bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16777216
+      (byteAt bus.e2 0).val + (byteAt bus.e2 1).val * 256 + (byteAt bus.e2 2).val * 65536 + (byteAt bus.e2 3).val * 16777216
         = (v.c_0 r_a).val + (v.c_1 r_a).val * 65536)
     -- Sign-extension choice on bytes 4..7 (SEXT_00 / SEXT_FF case-disjunction)
     (h_sext_choice :
-      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
+      (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
-      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
+      (((byteAt bus.e2 4).val = 255 ∧ (byteAt bus.e2 5).val = 255 ∧ (byteAt bus.e2 6).val = 255 ∧ (byteAt bus.e2 7).val = 255) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
     -- Operand TRANSPILE-BRIDGE (W form: low 32 bits, signed toInt).
     (h_rs1_value :
@@ -148,13 +150,18 @@ theorem equiv_MULW
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
           h_rd_idx⟩ := promises
-  have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
+  have h_e2_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 0
+  have h_e2_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 1
+  have h_e2_2 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 2
+  have h_e2_3 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 3
+  have h_e2_4 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 4
+  have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
+  have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
+  have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
   have h_rd_val :=
     ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_mulw_chunked
       mulw_input.r1_val mulw_input.r2_val e2 v r_a
-      h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
-      h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
-      h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
+      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_chain h_nr h_m32 h_div h_op
       h_na_bool h_nb_bool h_np_xor h_a23 h_b23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
   rw [equiv_MULW_sail state mulw_input r1 r2 rd
