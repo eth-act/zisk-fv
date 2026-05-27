@@ -867,16 +867,19 @@ Checklist:
   Constraints.lean`) — adds 14 boolean assertions on `rom_flags` components
   + the verbatim `romFlagsExpr` packing equation + the
   `Table.fromStatic (romStaticTable length program)` lookup.
-- ☐ T4.0.5 extend MainRow for the memory-bus emission helpers:
-  `addr0`/`addr1`/`addr2` (witness or const-expr per PIL), `STEP`
-  (`main_segment * N + SEGMENT_STEP` — fixed columns), `sp` (immediate
-  register witness), plus 3 booleans for `a_use_sp_imm1`,
-  `b_use_sp_imm1`, `store_use_sp`.
-- ☐ T4.0.6 `mainWithMemBus` — 3 per-row `MemBusChannel.emit` pushes (a-side,
-  b-side, c-side) matching `main.pil:284,300,323`.
-- ☐ T4.0.7 `memWithMemBus` on the Mem AIR — provider-side
-  `MemBusChannel.emit` from Mem's existing `(addr, step, value_0, value_1,
-  wr, sel)` columns with appropriate multiplicity.
+- 🪓 T4.0.5 extend MainRomRow with 4 mem-bus emission helpers
+  (`addr0`/`addr1`/`addr2`/`main_step`). `sp` and the 3 sp-use
+  booleans are deferred to a precompiled-path follow-up.
+- 🪓 T4.0.6 `mainWithRomAndMemBus` + `mainWithRomAndMemBusElaborated`
+  — 3 per-row `MemBusChannel.emit (-sel)` consumer pushes (a-side,
+  b-side, c-side) matching `main.pil:284,300,323`. mem_op codes per
+  `mem.pil:71-73`; timestamps `1+main_step*4+slot` per
+  `main.pil:209-210`.
+- 🪓 T4.0.7 `memWithMemBus` + `memWithMemBusElaborated` on the Mem AIR
+  — provider-side `MemBusChannel.emit (+sel)` from Mem's
+  `(addr, step, value_0, value_1, wr, sel)` columns with
+  `as = wr + 1` (LOAD/STORE code) and `ptr = addr * 8` (byte
+  address). Optional `dual_mem` emission deferred.
 
 #### T4 checklist (original):
 
