@@ -74,9 +74,41 @@ closure.
 
 ## Active phase
 
-### C7 — terminal-A op-bus + Binary-family ensemble
+### C8 — Mem (chunk-shape cutover Phase 2 complete; provider-wiring Phase 3 next)
 
-Status: in progress. `AirsClean/BinaryFamily/Ensemble.lean` now assembles
+C8 Phase 2 completed 2026-05-26: `Interaction.MemoryBusEntry` migrated from
+12-slot byte-lane to 6-slot chunk shape matching the PIL emission
+exactly (`mem.pil:436`). ~60 files across the codebase rewired through
+`byteAt e i` (in `Channels/MemoryBusBytes.lean`) for byte-addressed Sail
+memory access, backed by the proven `u64_toBV_chunks_eq_ofNat_fgl_val`
+bridge. Trust footprint unchanged at 88 axioms. Branch HEAD `9308391`.
+This unblocks the actual C10 memory-ensemble work because Mem-to-bus
+correspondence is now a direct chunk equality rather than a synthetic
+byte-decomposition witness.
+
+C8 Phase 3 (Mem as memory-bus provider via Clean balance) is the next
+in-progress concern; it needs design work for how Main's consumer-side
+memory-bus emissions compose against Mem's provider in Clean's balance
+framework. The 9 `MemBridge` axioms targeted by T4.7/T4.8 retire at C10.
+
+### C7 — CLOSED (axiom retirements landed in T4-purge commits)
+
+Closed 2026-05-25/26. The C7 checklist below shows the project state
+when work began; the actual axiom retirements landed in T4-purge
+commits `c2046e6` (T4.P1+P2 immediate-shift `_of_wf` rename),
+`e52485e` (T4.P3+P4+P6 — `op_bus_permutation_sound` and
+`bin_ext_table_consumer_wf` retired from source), `fbfe959` (T4.P5
+tolerated completeness-direction axiom), `774845e`
+(`bin_table_consumer_wf` source + orphan-helper cascade-delete), and
+`fad1a40` (scope-of-follow-up doc). Net: all four C7-target axioms
+(`op_bus_permutation_sound`, `op_bus_perm_sound_{Binary,BinaryAdd,
+BinaryExtension}`, `bin_table_consumer_wf`,
+`bin_ext_table_consumer_wf`) are gone from both
+`trust/baseline-axioms.txt` and the global theorem closure.
+Source-text references that remain are exclusively docstring/comment
+mentions, no live declarations.
+
+`AirsClean/BinaryFamily/Ensemble.lean` now assembles
 the migrated Main assume-side component plus the BinaryAdd, Binary, and
 BinaryExtension provider components behind one finished `OpBusChannel`. The
 old generic op-bus consumer table has been removed from this ensemble.
