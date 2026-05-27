@@ -9,6 +9,7 @@ import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
 import ZiskFv.Airs.BusHypotheses
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 # Circuit.MemModel — memory-model bridge
@@ -90,6 +91,7 @@ namespace ZiskFv.ZiskCircuit.MemModel
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.Mem
 open ZiskFv.Airs.MemoryBus
@@ -128,14 +130,14 @@ axiom row_models_sail_state_load
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (h_match : mem_row_matches_entry mem r_mem e)
     (h_wr : mem.wr r_mem = 0) :
-    state.mem[e.ptr.toNat]? = .some e.x0
-    ∧ state.mem[e.ptr.toNat + 1]? = .some e.x1
-    ∧ state.mem[e.ptr.toNat + 2]? = .some e.x2
-    ∧ state.mem[e.ptr.toNat + 3]? = .some e.x3
-    ∧ state.mem[e.ptr.toNat + 4]? = .some e.x4
-    ∧ state.mem[e.ptr.toNat + 5]? = .some e.x5
-    ∧ state.mem[e.ptr.toNat + 6]? = .some e.x6
-    ∧ state.mem[e.ptr.toNat + 7]? = .some e.x7
+    state.mem[e.ptr.toNat]? = .some (byteAt e 0)
+    ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1)
+    ∧ state.mem[e.ptr.toNat + 2]? = .some (byteAt e 2)
+    ∧ state.mem[e.ptr.toNat + 3]? = .some (byteAt e 3)
+    ∧ state.mem[e.ptr.toNat + 4]? = .some (byteAt e 4)
+    ∧ state.mem[e.ptr.toNat + 5]? = .some (byteAt e 5)
+    ∧ state.mem[e.ptr.toNat + 6]? = .some (byteAt e 6)
+    ∧ state.mem[e.ptr.toNat + 7]? = .some (byteAt e 7)
 
 /-! ## Bridge theorems -/
 
@@ -170,14 +172,14 @@ lemma mem_load_correct
                    ∧ main.b_1 r_main = memory_entry_hi e
                    ∧ e.as = 2
                    ∧ e.multiplicity = -1) :
-    state.mem[e.ptr.toNat]? = .some e.x0
-    ∧ state.mem[e.ptr.toNat + 1]? = .some e.x1
-    ∧ state.mem[e.ptr.toNat + 2]? = .some e.x2
-    ∧ state.mem[e.ptr.toNat + 3]? = .some e.x3
-    ∧ state.mem[e.ptr.toNat + 4]? = .some e.x4
-    ∧ state.mem[e.ptr.toNat + 5]? = .some e.x5
-    ∧ state.mem[e.ptr.toNat + 6]? = .some e.x6
-    ∧ state.mem[e.ptr.toNat + 7]? = .some e.x7 := by
+    state.mem[e.ptr.toNat]? = .some (byteAt e 0)
+    ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1)
+    ∧ state.mem[e.ptr.toNat + 2]? = .some (byteAt e 2)
+    ∧ state.mem[e.ptr.toNat + 3]? = .some (byteAt e 3)
+    ∧ state.mem[e.ptr.toNat + 4]? = .some (byteAt e 4)
+    ∧ state.mem[e.ptr.toNat + 5]? = .some (byteAt e 5)
+    ∧ state.mem[e.ptr.toNat + 6]? = .some (byteAt e 6)
+    ∧ state.mem[e.ptr.toNat + 7]? = .some (byteAt e 7) := by
   obtain ⟨r_mem, h_match, h_wr⟩ :=
     lookup_consumer_matches_provider_load main mem r_main e h_main_emit
   exact row_models_sail_state_load mem r_mem e state h_match h_wr
@@ -221,10 +223,10 @@ lemma mem_load_correct_4byte
                    ∧ main.b_1 r_main = memory_entry_hi e
                    ∧ e.as = 2
                    ∧ e.multiplicity = -1) :
-    state.mem[e.ptr.toNat]? = .some e.x0
-    ∧ state.mem[e.ptr.toNat + 1]? = .some e.x1
-    ∧ state.mem[e.ptr.toNat + 2]? = .some e.x2
-    ∧ state.mem[e.ptr.toNat + 3]? = .some e.x3 := by
+    state.mem[e.ptr.toNat]? = .some (byteAt e 0)
+    ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1)
+    ∧ state.mem[e.ptr.toNat + 2]? = .some (byteAt e 2)
+    ∧ state.mem[e.ptr.toNat + 3]? = .some (byteAt e 3) := by
   have h := mem_load_correct main mem r_main e state h_main_emit
   exact ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩
 
@@ -237,8 +239,8 @@ lemma mem_load_correct_2byte
                    ∧ main.b_1 r_main = memory_entry_hi e
                    ∧ e.as = 2
                    ∧ e.multiplicity = -1) :
-    state.mem[e.ptr.toNat]? = .some e.x0
-    ∧ state.mem[e.ptr.toNat + 1]? = .some e.x1 := by
+    state.mem[e.ptr.toNat]? = .some (byteAt e 0)
+    ∧ state.mem[e.ptr.toNat + 1]? = .some (byteAt e 1) := by
   have h := mem_load_correct main mem r_main e state h_main_emit
   exact ⟨h.1, h.2.1⟩
 
@@ -251,7 +253,7 @@ lemma mem_load_correct_1byte
                    ∧ main.b_1 r_main = memory_entry_hi e
                    ∧ e.as = 2
                    ∧ e.multiplicity = -1) :
-    state.mem[e.ptr.toNat]? = .some e.x0 := by
+    state.mem[e.ptr.toNat]? = .some (byteAt e 0) := by
   have h := mem_load_correct main mem r_main e state h_main_emit
   exact h.1
 
