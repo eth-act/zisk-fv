@@ -165,4 +165,19 @@ def mainWithRom (length : ℕ) (program : Program length)
   -- ROM lookup.
   lookup (Table.fromStatic (romStaticTable length program)) (romMessageExpr row)
 
+/-- Elaborated `mainWithRom` circuit, ready for use in a Clean
+    `Component` / `Ensemble`. Mirrors `mainWithOpBusElaborated`'s
+    structure but on `MainRowWithRom` and with the ROM lookup wired
+    via the static-table `Table.fromStatic` consumer path. -/
+@[reducible] def mainWithRomElaborated (length : ℕ) (program : Program length) :
+    ElaboratedCircuit FGL MainRowWithRom unit where
+  main := mainWithRom length program
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := []
+  exposedChannels _ _ := []
+  channelsLawful := by
+    simp only [circuit_norm, mainWithRom, main, romMessageExpr,
+      romFlagsExpr, romStaticTable]
+
 end ZiskFv.AirsClean.Main
