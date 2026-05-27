@@ -91,6 +91,26 @@ structure MainRomRow (F : Type) where
   b_src_reg : F
   /-- store-register flag (bit 15). -/
   store_reg : F
+  -- T4.0.5 additions: 4 memory-bus emission helper columns.
+  /-- `a`-side memory access address (`main.pil:180,188,191`:
+      `addr0 = a_offset_imm0 + a_use_sp_imm1*sp` in the precompiled path,
+      `addr0 = a_offset_imm0` otherwise). For the LD spike we treat
+      both branches uniformly as a witness column. -/
+  addr0 : F
+  /-- `b`-side memory access address (`main.pil:181,189,192`:
+      `addr1 === b_offset_imm0 + b_src_ind*a[0] + b_use_sp_imm1*sp`,
+      always a `bits(32)` witness per PIL). -/
+  addr1 : F
+  /-- `c`/store-side address (`main.pil:182,190,193`:
+      `addr2 = store_offset + store_ind*a[0] + store_use_sp*sp` in
+      the precompiled path, `addr2 = store_offset + store_ind*a[0]`
+      otherwise). -/
+  addr2 : F
+  /-- `STEP = main_segment * N + SEGMENT_STEP` (`main.pil:90`). Treated
+      as a witness here; the segment-level relation linking it to the
+      segment public + the SEGMENT_STEP fixed column is a cross-row
+      concern outside the per-row Spec. -/
+  main_step : F
 deriving ProvableStruct
 
 /-- The combined Main + ROM witness layout, used by `mainWithRom`. -/

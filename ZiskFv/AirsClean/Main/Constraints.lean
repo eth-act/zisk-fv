@@ -1,6 +1,7 @@
 import ZiskFv.AirsClean.Main.Spec
 import ZiskFv.AirsClean.ZiskInstructionRom
 import ZiskFv.Channels.OperationBus
+import ZiskFv.Channels.MemoryBus
 import ZiskFv.Channels.ZiskRomBus
 import Clean.Circuit.Basic
 import Clean.Circuit.Lookup
@@ -179,5 +180,144 @@ def mainWithRom (length : ℕ) (program : Program length)
   channelsLawful := by
     simp only [circuit_norm, mainWithRom, main, romMessageExpr,
       romFlagsExpr, romStaticTable]
+
+/-! ## T4.0.6 — memory-bus emission extension
+
+`mainWithMemBus` extends `mainWithRom` with the 3 per-row memory-bus
+consumer emissions matching `main.pil:284,300,323`:
+
+1. **a-side** (`main.pil:284-288`) — register read of rs1 (`a_src_reg`)
+   or memory read at `addr0` (`a_src_mem`).
+2. **b-side** (`main.pil:300-305`) — register read of rs2 (`b_src_reg`)
+   or memory access at `addr1` (`b_src_mem + b_src_ind`).
+3. **c-side / store** (`main.pil:323-328`) — register write to rd
+   (`store_reg`) or memory write at `addr2` (`store_mem + store_ind`).
+
+Each `mem_op` PIL macro lowers to a `permutation_assumes(MEMORY_ID,
+[mem_op, addr, mem_step, bytes, value_0, value_1], sel: …)` push.
+Modelled here as a `MemBusChannel.emit` with multiplicity `-sel`
+(consumer side) using the 5-slot `MemBusMessage` (the doubleword-bus
+shape; sub-doubleword goes through the separate `MemAlignBus`).
+
+Memory operation codes (`mem.pil:71-73`):
+* `MEMORY_LOAD_OP = 1`
+* `MEMORY_STORE_OP = 2`
+* `MEMORY_REG_OP = 3`
+
+`mem_step` values per `main.pil:271-273` and the
+`main_step_to_mem_step` macro at `main.pil:209-210`:
+* `a_mem_step = 1 + main_step * 4 + 0`
+* `b_mem_step = 1 + main_step * 4 + 1`
+* `store_mem_step = 1 + main_step * 4 + 2` -/
+
+open ZiskFv.Channels.MemoryBus (MemBusChannel MemBusMessage)
+
+/-- `mem_op` literal for the a-side push: `MEMORY_LOAD_OP * a_src_mem +
+    MEMORY_REG_OP * a_src_reg = a_src_mem + 3 * a_src_reg`. -/
+@[reducible]
+def aMemOpExpr (row : Var MainRowWithRom FGL) : Expression FGL :=
+  row.rom.a_src_mem + 3 * row.rom.a_src_reg
+
+/-- `mem_op` literal for the b-side push: PIL's `MEMORY_LOAD_OP *
+    sel_mem_b + MEMORY_REG_OP * b_src_reg` where
+    `sel_mem_b = b_src_mem + b_src_ind`. -/
+@[reducible]
+def bMemOpExpr (row : Var MainRowWithRom FGL) : Expression FGL :=
+  (row.rom.b_src_mem + row.rom.b_src_ind) + 3 * row.rom.b_src_reg
+
+/-- `mem_op` literal for the c-side push: `MEMORY_STORE_OP *
+    (store_mem + store_ind) + MEMORY_REG_OP * store_reg`. -/
+@[reducible]
+def cMemOpExpr (row : Var MainRowWithRom FGL) : Expression FGL :=
+  2 * (row.rom.store_mem + row.rom.store_ind) + 3 * row.rom.store_reg
+
+/-- `store_value[0]` per `main.pil:311`:
+    `store_pc * (pc + jmp_offset2 - c_0) + c_0`. -/
+@[reducible]
+def storeValueLoExpr (row : Var MainRowWithRom FGL) : Expression FGL :=
+  row.core.store_pc * (row.core.pc + row.core.jmp_offset2 - row.core.c_0)
+    + row.core.c_0
+
+/-- `store_value[1]` per `main.pil:312`: `(1 - store_pc) * c_1`. -/
+@[reducible]
+def storeValueHiExpr (row : Var MainRowWithRom FGL) : Expression FGL :=
+  (1 - row.core.store_pc) * row.core.c_1
+
+/-- a-side memory-bus consumer message: register read of rs1 (or memory
+    read of addr0). `as` carries the `mem_op` literal; `ptr = addr0`;
+    `value` is the a-lane pair; `timestamp = 1 + main_step * 4`. -/
+@[reducible]
+def aMemMessageExpr (row : Var MainRowWithRom FGL) :
+    MemBusMessage (Expression FGL) :=
+  { as := aMemOpExpr row
+    ptr := row.rom.addr0
+    value_0 := row.core.a_0
+    value_1 := row.core.a_1
+    timestamp := 1 + row.rom.main_step * 4 }
+
+/-- b-side memory-bus consumer message. -/
+@[reducible]
+def bMemMessageExpr (row : Var MainRowWithRom FGL) :
+    MemBusMessage (Expression FGL) :=
+  { as := bMemOpExpr row
+    ptr := row.rom.addr1
+    value_0 := row.core.b_0
+    value_1 := row.core.b_1
+    timestamp := 2 + row.rom.main_step * 4 }
+
+/-- c-side / store memory-bus consumer message. The value lanes are
+    PIL's `store_value`, which collapses to `(c_0, c_1)` for
+    `store_pc = 0` and to `(pc + jmp_offset2, 0)` for `store_pc = 1`. -/
+@[reducible]
+def cMemMessageExpr (row : Var MainRowWithRom FGL) :
+    MemBusMessage (Expression FGL) :=
+  { as := cMemOpExpr row
+    ptr := row.rom.addr2
+    value_0 := storeValueLoExpr row
+    value_1 := storeValueHiExpr row
+    timestamp := 3 + row.rom.main_step * 4 }
+
+/-- Main constraints + ROM lookup + 3 memory-bus consumer emissions.
+    Composes `mainWithRom` with the 3 `MemBusChannel.emit` pushes
+    matching `main.pil:284,300,323`. -/
+@[circuit_norm]
+def mainWithRomAndMemBus (length : ℕ) (program : Program length)
+    (row : Var MainRowWithRom FGL) : Circuit FGL Unit := do
+  mainWithRom length program row
+  -- a-side push (active when a_src_mem ∨ a_src_reg).
+  MemBusChannel.emit (-(row.rom.a_src_mem + row.rom.a_src_reg))
+    (aMemMessageExpr row)
+  -- b-side push (active when b_src_mem ∨ b_src_ind ∨ b_src_reg).
+  MemBusChannel.emit (-(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg))
+    (bMemMessageExpr row)
+  -- c-side push (active when store_mem ∨ store_ind ∨ store_reg).
+  MemBusChannel.emit (-(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg))
+    (cMemMessageExpr row)
+
+/-- Elaborated `mainWithRomAndMemBus` circuit. Exposes the 3 mem-bus
+    consumer interactions as channel emissions; the ROM lookup is an
+    internal `Table.fromStatic` consumer push and does not surface as
+    a channel interaction. -/
+@[reducible] def mainWithRomAndMemBusElaborated
+    (length : ℕ) (program : Program length) :
+    ElaboratedCircuit FGL MainRowWithRom unit where
+  main := mainWithRomAndMemBus length program
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [MemBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose MemBusChannel
+      [ MemBusChannel.emitted (-(row.rom.a_src_mem + row.rom.a_src_reg))
+          (aMemMessageExpr row)
+      , MemBusChannel.emitted (-(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg))
+          (bMemMessageExpr row)
+      , MemBusChannel.emitted (-(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg))
+          (cMemMessageExpr row) ]
+  channelsLawful := by
+    simp only [circuit_norm, mainWithRomAndMemBus, mainWithRom, main,
+      romMessageExpr, romFlagsExpr, romStaticTable,
+      aMemMessageExpr, bMemMessageExpr, cMemMessageExpr,
+      aMemOpExpr, bMemOpExpr, cMemOpExpr,
+      storeValueLoExpr, storeValueHiExpr, MemBusChannel]
 
 end ZiskFv.AirsClean.Main
