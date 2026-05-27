@@ -18,6 +18,7 @@ import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.Compliance.SharedBundles
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 End-to-end theorem for RV64 **DIV**. Combines:
@@ -41,6 +42,7 @@ is reused from MUL, so bus matching uses `bus_effect_matches_sail_alu_rrw`.
 namespace ZiskFv.EquivCore.Div
 
 open Goldilocks
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithDiv
@@ -121,10 +123,10 @@ theorem equiv_DIV
               ∧ (v.d_2 r_a).val = 0 ∧ (v.d_3 r_a).val = 0)
     (h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0) (h_div : v.div r_a = 1)
     (h_byte_lo :
-      bus.e2.x0.val + bus.e2.x1.val * 256 + bus.e2.x2.val * 65536 + bus.e2.x3.val * 16777216
+      (byteAt bus.e2 0).val + (byteAt bus.e2 1).val * 256 + (byteAt bus.e2 2).val * 65536 + (byteAt bus.e2 3).val * 16777216
         = (v.a_0 r_a).val + (v.a_1 r_a).val * 65536)
     (h_byte_hi :
-      bus.e2.x4.val + bus.e2.x5.val * 256 + bus.e2.x6.val * 65536 + bus.e2.x7.val * 16777216
+      (byteAt bus.e2 4).val + (byteAt bus.e2 5).val * 256 + (byteAt bus.e2 6).val * 65536 + (byteAt bus.e2 7).val * 16777216
         = (v.a_2 r_a).val + (v.a_3 r_a).val * 65536)
     (h_rs1_value :
       div_input.r1_val.toInt
@@ -157,13 +159,18 @@ theorem equiv_DIV
           h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
           h_rd_idx⟩ := promises
-  have h_e2_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_byte_range_perm_sound e2
+  have h_e2_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 0
+  have h_e2_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 1
+  have h_e2_2 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 2
+  have h_e2_3 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 3
+  have h_e2_4 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 4
+  have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
+  have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
+  have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
   have h_rd_val :=
     ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_div_chunked
       div_input.r1_val div_input.r2_val e2 v r_a
-      h_e2_range.1 h_e2_range.2.1 h_e2_range.2.2.1 h_e2_range.2.2.2.1
-      h_e2_range.2.2.2.2.1 h_e2_range.2.2.2.2.2.1
-      h_e2_range.2.2.2.2.2.2.1 h_e2_range.2.2.2.2.2.2.2
+      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
       h_chain h_sext h_m32 h_div h_na_bool h_nb_bool h_nr_bool
       h_np_xor h_nr_pin h_byte_lo h_byte_hi h_rs1_value h_rs2_value
       h_op2_ne h_no_overflow h_r_abs h_r_sign
