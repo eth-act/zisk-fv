@@ -10,6 +10,8 @@ import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
 import ZiskFv.Airs.MemoryBus.MemBridge
+import ZiskFv.Airs.MemoryBus.EntryRanges
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Compliance.SharedBundles
 
@@ -51,6 +53,7 @@ open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.ArithMul
 open ZiskFv.Airs.OperationBus
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.PackedBitVec.SignedChunkLift
 open ZiskFv.EquivCore.Promises
 
@@ -80,9 +83,9 @@ theorem equiv_MULW
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     -- Pass-through caller burdens (W-mode sign-extension + W-form operand bridges).
     (h_sext_choice :
-      ((bus.e2.x4.val = 0 ∧ bus.e2.x5.val = 0 ∧ bus.e2.x6.val = 0 ∧ bus.e2.x7.val = 0) ∧
+      (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
-      ((bus.e2.x4.val = 255 ∧ bus.e2.x5.val = 255 ∧ bus.e2.x6.val = 255 ∧ bus.e2.x7.val = 255) ∧
+      (((byteAt bus.e2 4).val = 255 ∧ (byteAt bus.e2 5).val = 255 ∧ (byteAt bus.e2 6).val = 255 ∧ (byteAt bus.e2 7).val = 255) ∧
         (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
     (h_rs1_value :
       (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt
@@ -143,9 +146,11 @@ theorem equiv_MULW
       h_main_active rfl
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_main_op_mulw))))))
       h_m2_mult (by rw [h_m2_as])
-  have h_byte_lo_to_c0 : e2.x0.val + e2.x1.val * 256
-      + e2.x2.val * 65536 + e2.x3.val * 16777216
-      = (m.c_0 r_main).val := h_bundle.1
+  have h_chunks_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e2
+  have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
+      + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
+      = (m.c_0 r_main).val := by
+    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_lo_val_sum_eq e2 h_chunks_range.1, h_bundle.1]
   obtain ⟨h_m32_main, _h_sp1, _h_sp2, _h_off1, _h_off2,
          _h_main_a_lo, _h_main_a_hi, _h_main_b_lo, _h_main_b_hi⟩ :=
     ZiskFv.Trusted.transpile_MULW
