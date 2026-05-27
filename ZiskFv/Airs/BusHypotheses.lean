@@ -2,6 +2,7 @@ import Mathlib
 
 import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
+import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.SailSpec.Auxiliaries
 import ZiskFv.SailSpec.BusEffect
@@ -22,7 +23,7 @@ exactly the equalities
 ```
 Sail.readReg Register.PC state = .ok <pc from exec_row[0]> state
 read_xreg (wrap_to_regidx e_read.ptr) state
-  = .ok (U64.toBV #v[e_read.x0, …, e_read.x7]) state
+  = .ok (U64.toBV #v[(byteAt e_read 0), …, (byteAt e_read 7)]) state
 ```
 
 The `chip_bus_hyps_<SHAPE>` lemmas let equivalence theorems consume a
@@ -44,6 +45,7 @@ namespace ZiskFv.Airs.BusHypotheses
 
 open Goldilocks
 open Interaction
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 
 /-- Inversion of `readReg_succ`: from a successful-read equation we can
     recover the `state.regs.get?` equality. Used by equivalence theorems to
@@ -103,13 +105,13 @@ lemma chip_bus_hyps_alu_rrw
             state
     ∧ read_xreg (Transpiler.wrap_to_regidx e0.ptr) state
         = EStateM.Result.ok
-            (U64.toBV #v[e0.x0, e0.x1, e0.x2, e0.x3,
-                          e0.x4, e0.x5, e0.x6, e0.x7])
+            (U64.toBV #v[(byteAt e0 0), (byteAt e0 1), (byteAt e0 2), (byteAt e0 3),
+                          (byteAt e0 4), (byteAt e0 5), (byteAt e0 6), (byteAt e0 7)])
             state
     ∧ read_xreg (Transpiler.wrap_to_regidx e1.ptr) state
         = EStateM.Result.ok
-            (U64.toBV #v[e1.x0, e1.x1, e1.x2, e1.x3,
-                          e1.x4, e1.x5, e1.x6, e1.x7])
+            (U64.toBV #v[(byteAt e1 0), (byteAt e1 1), (byteAt e1 2), (byteAt e1 3),
+                          (byteAt e1 4), (byteAt e1 5), (byteAt e1 6), (byteAt e1 7)])
             state := by
   -- Unfold the bus_effect precondition under the structural hypotheses.
   unfold bus_effect at h_bus
@@ -192,7 +194,7 @@ lemma chip_bus_hyps_jump_rrw
     (as=1); the mem entry is a memory read (as=2); rd is a register write.
 
     The `.1` precondition reduces to: PC read, rs1 register read, and
-    the 8 memory bytes at `e1.ptr..e1.ptr+7` matching `e1.x0..x7`. -/
+    the 8 memory bytes at `e1.ptr..e1.ptr+7` matching `(byteAt e1 0)..x7`. -/
 lemma chip_bus_hyps_load_rrrw
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (exec_row : List (ExecutionBusEntry FGL))
@@ -213,17 +215,17 @@ lemma chip_bus_hyps_load_rrrw
             state
     ∧ read_xreg (Transpiler.wrap_to_regidx e0.ptr) state
         = EStateM.Result.ok
-            (U64.toBV #v[e0.x0, e0.x1, e0.x2, e0.x3,
-                          e0.x4, e0.x5, e0.x6, e0.x7])
+            (U64.toBV #v[(byteAt e0 0), (byteAt e0 1), (byteAt e0 2), (byteAt e0 3),
+                          (byteAt e0 4), (byteAt e0 5), (byteAt e0 6), (byteAt e0 7)])
             state
-    ∧ state.mem[e1.ptr.toNat]? = .some e1.x0
-    ∧ state.mem[e1.ptr.toNat + 1]? = .some e1.x1
-    ∧ state.mem[e1.ptr.toNat + 2]? = .some e1.x2
-    ∧ state.mem[e1.ptr.toNat + 3]? = .some e1.x3
-    ∧ state.mem[e1.ptr.toNat + 4]? = .some e1.x4
-    ∧ state.mem[e1.ptr.toNat + 5]? = .some e1.x5
-    ∧ state.mem[e1.ptr.toNat + 6]? = .some e1.x6
-    ∧ state.mem[e1.ptr.toNat + 7]? = .some e1.x7 := by
+    ∧ state.mem[e1.ptr.toNat]? = .some (byteAt e1 0)
+    ∧ state.mem[e1.ptr.toNat + 1]? = .some (byteAt e1 1)
+    ∧ state.mem[e1.ptr.toNat + 2]? = .some (byteAt e1 2)
+    ∧ state.mem[e1.ptr.toNat + 3]? = .some (byteAt e1 3)
+    ∧ state.mem[e1.ptr.toNat + 4]? = .some (byteAt e1 4)
+    ∧ state.mem[e1.ptr.toNat + 5]? = .some (byteAt e1 5)
+    ∧ state.mem[e1.ptr.toNat + 6]? = .some (byteAt e1 6)
+    ∧ state.mem[e1.ptr.toNat + 7]? = .some (byteAt e1 7) := by
   unfold bus_effect at h_bus
   simp only [h_exec_len, h_e0_mult, h_e1_mult, and_self, if_true,
              List.foldl_cons, List.foldl_nil] at h_bus
@@ -277,13 +279,13 @@ lemma chip_bus_hyps_store_rrrw
             state
     ∧ read_xreg (Transpiler.wrap_to_regidx e0.ptr) state
         = EStateM.Result.ok
-            (U64.toBV #v[e0.x0, e0.x1, e0.x2, e0.x3,
-                          e0.x4, e0.x5, e0.x6, e0.x7])
+            (U64.toBV #v[(byteAt e0 0), (byteAt e0 1), (byteAt e0 2), (byteAt e0 3),
+                          (byteAt e0 4), (byteAt e0 5), (byteAt e0 6), (byteAt e0 7)])
             state
     ∧ read_xreg (Transpiler.wrap_to_regidx e1.ptr) state
         = EStateM.Result.ok
-            (U64.toBV #v[e1.x0, e1.x1, e1.x2, e1.x3,
-                          e1.x4, e1.x5, e1.x6, e1.x7])
+            (U64.toBV #v[(byteAt e1 0), (byteAt e1 1), (byteAt e1 2), (byteAt e1 3),
+                          (byteAt e1 4), (byteAt e1 5), (byteAt e1 6), (byteAt e1 7)])
             state := by
   unfold bus_effect at h_bus
   simp only [h_exec_len, h_e0_mult, h_e1_mult, and_self, if_true,
