@@ -21,6 +21,7 @@ import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.Compliance.SharedBundles
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 End-to-end theorem for RV64 SLTU. Mirrors
@@ -32,6 +33,7 @@ retired by a future audit).
 namespace ZiskFv.EquivCore.Sltu
 
 open Goldilocks
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
@@ -291,8 +293,8 @@ theorem equiv_SLTU_of_wf
       rw [BitVec.lt_def] at h
       exact BitVec.ult_iff_lt.mpr h
   have h_rd_val :
-      U64.toBV #v[(e2.x0 : BitVec 8), (e2.x1 : BitVec 8), (e2.x2 : BitVec 8), (e2.x3 : BitVec 8),
-                  (e2.x4 : BitVec 8), (e2.x5 : BitVec 8), (e2.x6 : BitVec 8), (e2.x7 : BitVec 8)]
+      U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8), ((byteAt e2 2) : BitVec 8), ((byteAt e2 3) : BitVec 8),
+                  ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8), ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
       = if sltu_input.r1_val < sltu_input.r2_val then 1#64 else 0#64 := by
     rw [h_rd_val_bv]
     split_ifs with h₁ h₂ h₂
