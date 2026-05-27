@@ -23,6 +23,7 @@ import ZiskFv.Airs.Binary.Binary
 import ZiskFv.Airs.Binary.BinaryRanges
 import ZiskFv.EquivCore.Promises.IType
 import ZiskFv.Compliance.SharedBundles
+import ZiskFv.Channels.MemoryBusBytes
 
 /-!
 End-to-end theorem for RV64 ADDIW. Sibling of
@@ -43,6 +44,7 @@ operation-bus layer; they differ only in the transpile axiom's
 namespace ZiskFv.EquivCore.Addiw
 
 open Goldilocks
+open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.Trusted
 open ZiskFv.Airs.Main
 open ZiskFv.Airs.OperationBus
@@ -225,8 +227,8 @@ theorem equiv_ADDIW_of_wf
       addiw_input.r1_val imm a32sum b32sum
       (h_input_r1_extract.trans (by rw [h_a32_def]))
       (h_input_imm_extract.trans (by rw [h_b32_def]))
-  have h_rd_val : U64.toBV #v[e2.x0, e2.x1, e2.x2, e2.x3,
-                              e2.x4, e2.x5, e2.x6, e2.x7]
+  have h_rd_val : U64.toBV #v[byteAt e2 0, byteAt e2 1, byteAt e2 2, byteAt e2 3,
+                              byteAt e2 4, byteAt e2 5, byteAt e2 6, byteAt e2 7]
       = execute_ADDIW_pure addiw_input.imm addiw_input.r1_val := by
     rw [h_discharge, h_input_imm, h_bridge]
   rw [equiv_ADDIW_sail state addiw_input r1 rd imm
