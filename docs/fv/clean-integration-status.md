@@ -103,10 +103,11 @@ canonical/global closure by routing LUI/AUIPC/JAL/JALR through selected
 Clean Main `cMemMessage` structural witnesses.
 T7 has also removed `range_bus_sound` from AUIPC/JAL/JALR, from the six
 bitwise Binary-family canonical closures (AND/ANDI/OR/ORI/XOR/XORI), and
-from the static Binary-table ADD/ADDI canonical closures. The bitwise and
-ADD/ADDI slices derive mode/op pins, packed byte bounds, carry booleanity,
-and destination byte-pack bounds from exact static BinaryTable membership
-plus row-local byte-match witnesses rather than from the legacy range bus.
+from the static Binary-table ADD/ADDI/SUB canonical closures. The bitwise,
+ADD/ADDI, and SUB slices derive mode/op pins, packed byte bounds, carry
+booleanity, and destination byte-pack bounds from exact static BinaryTable
+membership plus row-local byte-match witnesses rather than from the legacy
+range bus.
 
 The third T5 landing replaced the raw canonical `ArithTableSpec`
 binders with lookup-aware Clean witnesses:

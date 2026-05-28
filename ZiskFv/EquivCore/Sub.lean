@@ -161,24 +161,54 @@ theorem equiv_SUB_of_wf
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3,
           h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.e2_byte_ranges_discharge e2
-  -- Byte ranges on a-/b-lanes derived from the
-  -- `binary_columns_in_range` axiom (range-check bus soundness).
-  have ha0 : (v.free_in_a_0 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_0_lt_256 v r_binary
-  have ha1 : (v.free_in_a_1 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_1_lt_256 v r_binary
-  have ha2 : (v.free_in_a_2 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_2_lt_256 v r_binary
-  have ha3 : (v.free_in_a_3 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_3_lt_256 v r_binary
-  have ha4 : (v.free_in_a_4 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_4_lt_256 v r_binary
-  have ha5 : (v.free_in_a_5 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_5_lt_256 v r_binary
-  have ha6 : (v.free_in_a_6 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_6_lt_256 v r_binary
-  have ha7 : (v.free_in_a_7 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_7_lt_256 v r_binary
-  have hb0 : (v.free_in_b_0 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_0_lt_256 v r_binary
-  have hb1 : (v.free_in_b_1 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_1_lt_256 v r_binary
-  have hb2 : (v.free_in_b_2 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_2_lt_256 v r_binary
-  have hb3 : (v.free_in_b_3 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_3_lt_256 v r_binary
-  have hb4 : (v.free_in_b_4 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_4_lt_256 v r_binary
-  have hb5 : (v.free_in_b_5 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_5_lt_256 v r_binary
-  have hb6 : (v.free_in_b_6 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_6_lt_256 v r_binary
-  have hb7 : (v.free_in_b_7 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_7_lt_256 v r_binary
+  have ha0 : (v.free_in_a_0 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h_byte_0
+    rw [← h_a]; exact h_wf.1.1
+  have ha1 : (v.free_in_a_1 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h_byte_1
+    rw [← h_a]; exact h_wf.1.1
+  have ha2 : (v.free_in_a_2 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h_byte_2
+    rw [← h_a]; exact h_wf.1.1
+  have ha3 : (v.free_in_a_3 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h_byte_3
+    rw [← h_a]; exact h_wf.1.1
+  have ha4 : (v.free_in_a_4 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h_byte_4
+    rw [← h_a]; exact h_wf.1.1
+  have ha5 : (v.free_in_a_5 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h_byte_5
+    rw [← h_a]; exact h_wf.1.1
+  have ha6 : (v.free_in_a_6 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h_byte_6
+    rw [← h_a]; exact h_wf.1.1
+  have ha7 : (v.free_in_a_7 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h_byte_7
+    rw [← h_a]; exact h_wf.1.1
+  have hb0 : (v.free_in_b_0 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h_byte_0
+    rw [← h_b]; exact h_wf.1.2.1
+  have hb1 : (v.free_in_b_1 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h_byte_1
+    rw [← h_b]; exact h_wf.1.2.1
+  have hb2 : (v.free_in_b_2 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h_byte_2
+    rw [← h_b]; exact h_wf.1.2.1
+  have hb3 : (v.free_in_b_3 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h_byte_3
+    rw [← h_b]; exact h_wf.1.2.1
+  have hb4 : (v.free_in_b_4 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h_byte_4
+    rw [← h_b]; exact h_wf.1.2.1
+  have hb5 : (v.free_in_b_5 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h_byte_5
+    rw [← h_b]; exact h_wf.1.2.1
+  have hb6 : (v.free_in_b_6 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h_byte_6
+    rw [← h_b]; exact h_wf.1.2.1
+  have hb7 : (v.free_in_b_7 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h_byte_7
+    rw [← h_b]; exact h_wf.1.2.1
   -- Input bridges derived from `transpile_SUB` (state-bridged via
   -- `SailStateBridge`) plus `matches_entry`'s a-/b-lane
   -- conjuncts (m32 = 0 collapses the high-lane disjunction). Replaces
