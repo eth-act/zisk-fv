@@ -5,6 +5,7 @@ import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.EquivCore.Promises.ArithHelpers
 import ZiskFv.EquivCore.Bridge.Arith
 import ZiskFv.AirsClean.ArithMul.Bridge
+import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
@@ -55,7 +56,7 @@ open ZiskFv.EquivCore.Promises
     Mixed-sign signature: rs1 routes through the signed bridge,
     rs2 through the unsigned bridge. `nb` is hard-pinned to 0 by
     `arith_table_op_mulhsu_basic_mode_pin`. -/
-theorem equiv_MULHSU
+theorem equiv_MULHSU_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhsu_input : PureSpec.MulhsuInput)
     (r1 r2 rd : regidx)
@@ -70,6 +71,8 @@ theorem equiv_MULHSU
         state mulhsu_input.r1_val mulhsu_input.r2_val mulhsu_input.rd mulhsu_input.PC
         (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (h_no_signed_mul_witness_defect : False)
@@ -117,7 +120,8 @@ theorem equiv_MULHSU
   -- projections. The old axiom is still used only for the overstrong
   -- `np_xor` clause until the signed/unsigned high-half proof is repaired.
   obtain ⟨h_nb_zero, h_nr_eq, h_sext, h_m32, h_div, h_na_bool, _h_np_bool⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_mulhsu_basic_mode_pin v r_a h_op_arith_mulhsu
+    ZiskFv.AirsClean.ArithTableProjections.Mul.mulhsu_basic_mode_pin
+      v r_a h_arith_table h_op_arith_mulhsu
   have h_np_xor :
       ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
         = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.na r_a)
@@ -130,7 +134,8 @@ theorem equiv_MULHSU
   have h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1 := Or.inl h_nb_zero
   -- ============ DISCHARGE main_mul/main_div selector pins (both = 0) ============
   obtain ⟨h_main_mul_zero, h_main_div_zero⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_mulhsu_main_selector_pin v r_a h_op_arith_mulhsu
+    ZiskFv.AirsClean.ArithTableProjections.Mul.mulhsu_main_selector_pin
+      v r_a h_arith_table h_op_arith_mulhsu
   -- Placeholder reflexivity for h_na / h_np.
   have h_na : v.na r_a = v.na r_a := rfl
   have h_np : v.np r_a = v.np r_a := rfl
@@ -219,5 +224,41 @@ theorem equiv_MULHSU
     h_chain h_na h_nb_zero h_np h_nr_eq h_sext h_m32 h_div
     h_na_bool h_nb_bool h_np_xor
     h_byte_lo h_byte_hi h_rs1_value h_rs2_value
+
+/-- Compatibility wrapper preserving the current canonical surface while
+    the Compliance dispatcher is migrated to row-native table witnesses. -/
+theorem equiv_MULHSU
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (mulhsu_input : PureSpec.MulhsuInput)
+    (r1 r2 rd : regidx)
+    (bus : ZiskFv.Compliance.BusRows)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULSUH)
+    (h_match_secondary :
+      matches_entry (opBus_row_Main m r_main)
+                    (opBus_row_ArithMulSecondary v r_a))
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state mulhsu_input.r1_val mulhsu_input.r2_val mulhsu_input.rd mulhsu_input.PC
+        (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (h_no_signed_mul_witness_defect : False)
+    :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MUL
+          (r2, r1, rd,
+           { result_part := VectorHalf.High
+             signed_rs1 := .Signed
+             signed_rs2 := .Unsigned }))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  exact equiv_MULHSU_of_table
+    state mulhsu_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises
+    (ZiskFv.Airs.Arith.arith_mul_table_lookup_sound v r_a)
+    h_row_constraints h_no_signed_mul_witness_defect
 
 end ZiskFv.Compliance

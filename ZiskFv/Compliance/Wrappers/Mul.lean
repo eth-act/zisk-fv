@@ -5,6 +5,7 @@ import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.EquivCore.Promises.ArithHelpers
 import ZiskFv.EquivCore.Bridge.Arith
 import ZiskFv.AirsClean.ArithMul.Bridge
+import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
@@ -89,7 +90,7 @@ open ZiskFv.EquivCore.Promises
        + op-bus projection + `mul_bus_res1_eq_c_hi` (hi side) + FGL→ℕ lift.
     * `h_rs1_value` / `h_rs2_value` from `transpile_MUL` + op-bus projection
        + `packed_lane_eq_of_read_xreg` + chunk-range bounds. -/
-theorem equiv_MUL
+theorem equiv_MUL_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mul_input : PureSpec.MulInput)
     (r1 r2 rd : regidx)
@@ -108,6 +109,8 @@ theorem equiv_MUL
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_no_signed_mul_witness_defect : False)
     :
     (do
@@ -153,13 +156,15 @@ theorem equiv_MUL
   -- overstrong `na = nb = np = 0` use by proving the low-half product
   -- sign-agnostically.
   obtain ⟨h_nr, h_sext, h_m32, h_div, h_na_bool, h_nb_bool, h_np_bool⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_mul_basic_mode_pin v r_a h_op_arith_mul
+    ZiskFv.AirsClean.ArithTableProjections.Mul.mul_basic_mode_pin
+      v r_a h_arith_table h_op_arith_mul
   have h_mul_split :=
-    ZiskFv.Airs.Arith.arith_table_op_mul_np_xor_or_zero_product_shape
-      v r_a h_op_arith_mul
+    ZiskFv.AirsClean.ArithTableProjections.Mul.mul_np_xor_or_zero_product_shape
+      v r_a h_arith_table h_op_arith_mul
   -- ============ DISCHARGE main_mul/main_div selector pins ============
   obtain ⟨h_main_mul_one, h_main_div_zero⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_mul_main_selector_pin v r_a h_op_arith_mul
+    ZiskFv.AirsClean.ArithTableProjections.Mul.mul_main_selector_pin
+      v r_a h_arith_table h_op_arith_mul
   -- ============ DISCHARGE h_byte_lo / h_byte_hi (lane match) ============
   have h_bundle :=
     ZiskFv.Airs.MemoryBus.MemBridge.main_external_arith_emission_bundle
@@ -244,5 +249,43 @@ theorem equiv_MUL
       -- a dynamic zero-product proof or an upstream circuit fix.
       exact False.elim h_no_signed_mul_witness_defect
     exact False.elim h_exception_impossible
+
+/-- Compatibility wrapper preserving the canonical `equiv_MUL` surface.
+    The `_of_table` theorem is the T5 row-native entry point. -/
+theorem equiv_MUL
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (mul_input : PureSpec.MulInput)
+    (r1 r2 rd : regidx)
+    (srs1 srs2 : Signedness)
+    (bus : ZiskFv.Compliance.BusRows)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL)
+    (h_match_primary :
+      matches_entry (opBus_row_Main m r_main)
+                    (opBus_row_Arith v r_a))
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC
+        (PureSpec.execute_MULH_mul_pure mul_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (h_no_signed_mul_witness_defect : False)
+    :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MUL
+          (r2, r1, rd,
+           { result_part := VectorHalf.Low
+             signed_rs1 := srs1
+             signed_rs2 := srs2 }))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
+  equiv_MUL_of_table state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
+    pins h_match_primary promises bounds h_row_constraints
+    (ZiskFv.Airs.Arith.arith_mul_table_lookup_sound v r_a)
+    h_no_signed_mul_witness_defect
 
 end ZiskFv.Compliance

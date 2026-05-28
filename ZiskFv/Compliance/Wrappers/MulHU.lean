@@ -60,7 +60,7 @@ open ZiskFv.EquivCore.Promises
     the lane-match handshake binds Main's c_0/c_1 against the
     *secondary* bus row's `c_lo := v.d_0 + v.d_1 * 65536` and
     `c_hi := v.bus_res1 = v.d_2 + v.d_3 * 65536`. -/
-theorem equiv_MULHU
+theorem equiv_MULHU_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulhu_input : PureSpec.MulhuInput)
     (r1 r2 rd : regidx)
@@ -78,6 +78,8 @@ theorem equiv_MULHU
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     :
     (do
       Sail.writeReg Register.nextPC
@@ -101,7 +103,6 @@ theorem equiv_MULHU
   have h_op_eq := arith_mul_secondary_op_eq h_match_secondary
   have h_op_arith_mulhu : v.op r_a = 177 := by
     rw [h_op_eq, h_main_op_mulhu]; simp [OP_MULUH]
-  have h_arith_table := ZiskFv.Airs.Arith.arith_mul_table_lookup_sound v r_a
   -- ============ Unpack matches_entry lane projections ============
   obtain ⟨h_a_lo_eq_FGL, h_a_hi_eq_FGL, h_b_lo_eq_FGL, h_b_hi_eq_FGL,
           h_c0_eq_FGL, h_c1_eq_FGL⟩ :=
@@ -193,5 +194,42 @@ theorem equiv_MULHU
     ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
     h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div
     h_byte_lo h_byte_hi h_rs1_value h_rs2_value
+
+/-- Compatibility wrapper preserving the canonical `equiv_MULHU` surface.
+    The row-native `_of_table` theorem above is the T5 migration target;
+    this theorem keeps existing dispatchers unchanged until the shared
+    Arith-family Clean ensemble supplies the table membership. -/
+theorem equiv_MULHU
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (mulhu_input : PureSpec.MulhuInput)
+    (r1 r2 rd : regidx)
+    (bus : ZiskFv.Compliance.BusRows)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MULUH)
+    (h_match_secondary :
+      matches_entry (opBus_row_Main m r_main)
+                    (opBus_row_ArithMulSecondary v r_a))
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state mulhu_input.r1_val mulhu_input.r2_val mulhu_input.rd mulhu_input.PC
+        (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MUL
+          (r2, r1, rd,
+           { result_part := VectorHalf.High
+             signed_rs1 := .Unsigned
+             signed_rs2 := .Unsigned }))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
+  equiv_MULHU_of_table state mulhu_input r1 r2 rd bus m r_main v r_a pins
+    h_match_secondary promises bounds h_row_constraints
+    (ZiskFv.Airs.Arith.arith_mul_table_lookup_sound v r_a)
 
 end ZiskFv.Compliance

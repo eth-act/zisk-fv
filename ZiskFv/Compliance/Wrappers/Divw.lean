@@ -5,6 +5,7 @@ import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.EquivCore.Promises.ArithHelpers
 import ZiskFv.EquivCore.Bridge.Arith
 import ZiskFv.EquivCore.Bridge.SailStateBridge
+import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
 import ZiskFv.Airs.OperationBus.Bridge
@@ -53,7 +54,7 @@ open ZiskFv.PackedBitVec.SignedChunkLift
 open ZiskFv.EquivCore.Promises
 
 
-theorem equiv_DIVW
+theorem equiv_DIVW_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (divw_input : PureSpec.DivwInput)
     (r1 r2 rd : regidx)
@@ -70,6 +71,8 @@ theorem equiv_DIVW
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     -- Sign-witness booleanity + XOR (CIRCUIT-CONSTRAINT — caller-supplied).
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
@@ -123,7 +126,8 @@ theorem equiv_DIVW
     ZiskFv.Airs.ArithDiv.div_carry_chain_holds_of_extended v r_a h_row_constraints
   -- ============ DISCHARGE true W-signed static mode pins ============
   obtain ⟨h_m32, h_div⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_basic_mode_pin v r_a h_op_signed
+    ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_signed_w_basic_mode_pin
+      v r_a h_arith_table h_op_signed
   -- ============ DERIVE h_c23 from W-mode + op-bus a_hi projection ============
   obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
          _h_main_a_lo, _h_main_a_hi, _h_main_b_lo, _h_main_b_hi⟩ :=
@@ -237,5 +241,59 @@ theorem equiv_DIVW
     h_chain h_na_bool h_nb_bool h_nr_bool h_np_xor h_m32 h_div
     h_op_full h_op_signed h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
     h_op2_ne h_no_overflow h_r_abs h_r_sign
+
+/-- Compatibility wrapper preserving the current canonical surface while
+    the Compliance dispatcher is migrated to row-native table witnesses. -/
+theorem equiv_DIVW
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (divw_input : PureSpec.DivwInput)
+    (r1 r2 rd : regidx)
+    (bus : ZiskFv.Compliance.BusRows)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV_W)
+    (h_match_primary :
+      matches_entry (opBus_row_Main m r_main)
+                    (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state divw_input.r1_val divw_input.r2_val divw_input.rd divw_input.PC
+        (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    (h_sext_choice :
+      (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
+        (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 < 2147483648) ∨
+      (((byteAt bus.e2 4).val = 255 ∧ (byteAt bus.e2 5).val = 255 ∧ (byteAt bus.e2 6).val = 255 ∧ (byteAt bus.e2 7).val = 255) ∧
+        (v.a_0 r_a).val + (v.a_1 r_a).val * 65536 ≥ 2147483648))
+    (h_rs1_value :
+      (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt
+        = ((v.c_0 r_a).val + (v.c_1 r_a).val * 65536 : ℤ)
+            - toIntZ (v.np r_a) * (2:ℤ)^32)
+    (h_rs2_value :
+      (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt
+        = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+            - toIntZ (v.nb r_a) * (2:ℤ)^32)
+    (h_op2_ne : Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32)
+    (h_no_overflow :
+      ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
+          ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32)) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  exact equiv_DIVW_of_table
+    state divw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises
+    h_row_constraints (ZiskFv.Airs.Arith.arith_div_table_lookup_sound v r_a)
+    h_na_bool h_nb_bool h_nr_bool h_np_xor h_sext_choice h_rs1_value h_rs2_value
+    h_op2_ne h_no_overflow
 
 end ZiskFv.Compliance

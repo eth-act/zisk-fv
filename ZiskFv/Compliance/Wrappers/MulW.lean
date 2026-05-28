@@ -5,6 +5,7 @@ import ZiskFv.EquivCore.Promises.RType
 import ZiskFv.EquivCore.Promises.ArithHelpers
 import ZiskFv.EquivCore.Bridge.Arith
 import ZiskFv.AirsClean.ArithMul.Bridge
+import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.EquivCore.Bridge.SailStateBridge
 import ZiskFv.Airs.Arith.Ranges
 import ZiskFv.Airs.Arith.BusRes1
@@ -64,7 +65,7 @@ open ZiskFv.EquivCore.Promises
     mode pins + `h_byte_lo` + `h_chain` + sign-witness booleanity/XOR
     from the trust ledger; passes through `h_sext_choice`, `h_rs1_value`,
     `h_rs2_value` as W-form operand bridge obligations (analogous to DIVW). -/
-theorem equiv_MULW
+theorem equiv_MULW_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (mulw_input : PureSpec.MulwInput)
     (r1 r2 rd : regidx)
@@ -79,6 +80,8 @@ theorem equiv_MULW
         state mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
         (PureSpec.execute_MULW_pure mulw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     -- Pass-through caller burdens (W-mode sign-extension + W-form operand bridges).
@@ -125,7 +128,8 @@ theorem equiv_MULW
     ZiskFv.AirsClean.ArithMul.mul_carry_chain_holds_via_component v r_a h_chain
   -- ============ DISCHARGE true MULW static mode pins ============
   obtain ⟨h_na, h_nb, h_np, h_nr, h_m32, h_div⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_mulw_basic_mode_pin v r_a h_op_arith_mulw
+    ZiskFv.AirsClean.ArithTableProjections.Mul.mulw_basic_mode_pin
+      v r_a h_arith_table h_op_arith_mulw
   have h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1 := Or.inl h_na
   have h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1 := Or.inl h_nb
   have h_np_xor :
@@ -175,5 +179,48 @@ theorem equiv_MULW
     promises
     h_chain h_nr h_m32 h_div h_op_arith_mulw
     h_na_bool h_nb_bool h_np_xor h_a23 h_b23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
+
+/-- Compatibility wrapper preserving the current canonical surface while
+    the Compliance dispatcher is migrated to row-native table witnesses. -/
+theorem equiv_MULW
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (mulw_input : PureSpec.MulwInput)
+    (r1 r2 rd : regidx)
+    (bus : ZiskFv.Compliance.BusRows)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_MUL_W)
+    (h_match_primary :
+      matches_entry (opBus_row_Main m r_main)
+                    (opBus_row_Arith v r_a))
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
+        (PureSpec.execute_MULW_pure mulw_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (h_sext_choice :
+      (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
+        (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 < 2147483648) ∨
+      (((byteAt bus.e2 4).val = 255 ∧ (byteAt bus.e2 5).val = 255 ∧ (byteAt bus.e2 6).val = 255 ∧ (byteAt bus.e2 7).val = 255) ∧
+        (v.c_0 r_a).val + (v.c_1 r_a).val * 65536 ≥ 2147483648))
+    (h_rs1_value :
+      (Sail.BitVec.extractLsb mulw_input.r1_val 31 0).toInt
+        = ((v.a_0 r_a).val + (v.a_1 r_a).val * 65536 : ℤ)
+            - (v.na r_a).val * (2:ℤ)^32)
+    (h_rs2_value :
+      (Sail.BitVec.extractLsb mulw_input.r2_val 31 0).toInt
+        = ((v.b_0 r_a).val + (v.b_1 r_a).val * 65536 : ℤ)
+            - (v.nb r_a).val * (2:ℤ)^32) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute
+        (instruction.MULW (r2, r1, rd))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  exact equiv_MULW_of_table
+    state mulw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises
+    (ZiskFv.Airs.Arith.arith_mul_table_lookup_sound v r_a)
+    h_row_constraints h_sext_choice h_rs1_value h_rs2_value
 
 end ZiskFv.Compliance

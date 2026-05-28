@@ -34,7 +34,7 @@ open ZiskFv.Channels.MemoryBusBytes (byteAt)
 open ZiskFv.EquivCore.Promises
 
 
-theorem equiv_REMU
+theorem equiv_REMU_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remu_input : PureSpec.RemuInput)
     (r1 r2 rd : regidx)
@@ -52,6 +52,8 @@ theorem equiv_REMU
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_op2_ne : remu_input.r2_val.toNat ≠ 0) :
     (do
       Sail.writeReg Register.nextPC
@@ -71,7 +73,6 @@ theorem equiv_REMU
   have h_op_arith_remu : v.op r_a = 185 := by
     rw [h_op_eq, h_main_op_remu]; simp [OP_REMU]
   have h_op_arith : v.op r_a = 184 ∨ v.op r_a = 185 := Or.inr h_op_arith_remu
-  have h_arith_table := ZiskFv.Airs.Arith.arith_div_table_lookup_sound v r_a
   -- ============ Unpack matches_entry lane projections ============
   obtain ⟨h_a_lo_eq_FGL, h_a_hi_eq_FGL, h_b_lo_eq_FGL, h_b_hi_eq_FGL,
           h_c0_eq_FGL, h_c1_eq_FGL⟩ :=
@@ -166,5 +167,36 @@ theorem equiv_REMU
     ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
     h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div
     h_byte_lo h_byte_hi h_rs1_value h_rs2_value h_op2_ne h_d_lt_b
+
+/-- Compatibility wrapper preserving the current canonical surface while
+    the Compliance dispatcher is migrated to row-native table witnesses. -/
+theorem equiv_REMU
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (remu_input : PureSpec.RemuInput)
+    (r1 r2 rd : regidx)
+    (bus : ZiskFv.Compliance.BusRows)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_REMU)
+    (h_match_secondary :
+      matches_entry (opBus_row_Main m r_main)
+                    (ZiskFv.Airs.ArithDiv.opBus_row_ArithDivSecondary v r_a))
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state remu_input.r1_val remu_input.r2_val remu_input.rd remu_input.PC
+        (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
+    (h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_op2_ne : remu_input.r2_val.toNat ≠ 0) :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, true))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  exact equiv_REMU_of_table
+    state remu_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises
+    bounds h_row_constraints (ZiskFv.Airs.Arith.arith_div_table_lookup_sound v r_a)
+    h_op2_ne
 
 end ZiskFv.Compliance

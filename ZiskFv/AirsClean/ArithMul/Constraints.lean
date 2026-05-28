@@ -35,7 +35,7 @@ namespace ZiskFv.AirsClean.ArithMul
 
 open Goldilocks
 open Circuit (assertZero lookup)
-open ZiskFv.Channels.OperationBus (OpBusChannel)
+open ZiskFv.Channels.OperationBus (OpBusChannel OpBusMessage)
 
 @[circuit_norm]
 def main (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
@@ -146,6 +146,39 @@ def main (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
       extended_arg := 0
       extra_args_0 := 0 }
 
+/-- Primary MUL/MULW op-bus message: low result in the `c[]` chunks. -/
+@[reducible]
+def primaryOpBusMessageExpr (row : Var ArithMulRow FGL) :
+    OpBusMessage (Expression FGL) :=
+  { op := row.flags.op
+    a_lo := row.chunks.a_0 + row.chunks.a_1 * 65536
+    a_hi := row.chunks.a_2 + row.chunks.a_3 * 65536
+    b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
+    b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
+    c_lo := row.chunks.c_0 + row.chunks.c_1 * 65536
+    c_hi := row.flags.bus_res1
+    flag := 0
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
+/-- Secondary MULH/MULHU/MULHSU op-bus message: high result in `d[]`. -/
+@[reducible]
+def secondaryOpBusMessageExpr (row : Var ArithMulRow FGL) :
+    OpBusMessage (Expression FGL) :=
+  { op := row.flags.op
+    a_lo := row.chunks.a_0 + row.chunks.a_1 * 65536
+    a_hi := row.chunks.a_2 + row.chunks.a_3 * 65536
+    b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
+    b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
+    c_lo := row.chunks.d_0 + row.chunks.d_1 * 65536
+    c_hi := row.flags.bus_res1
+    flag := 0
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
+
 /-- Lookup-aware ArithMul circuit path. This appends the full 15-column
     `arith_table_assumes` ROM lookup after the existing carry-chain/op-bus
     component body. The current load-bearing carry-chain component remains
@@ -154,6 +187,7 @@ def main (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
 def mainWithArithTable (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
   main row
   lookup (Table.fromStatic ArithTable.arithTable) (arithTableRow row)
+
 
 /-- Lookup-aware elaboration for the next C3/C4 stage. It is intentionally
     separate from `arithMulElaborated` so existing carry-chain consumers do
@@ -166,6 +200,7 @@ def mainWithArithTable (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
   localLength _ := 0
   output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
+
 
 /-- The elaborated circuit for ArithMul's `main` — 11 `assertZero`
     carry-chain constraints + the op-bus push, no fresh witnesses

@@ -26,6 +26,7 @@ load-bearing for the MUL family.
 namespace ZiskFv.AirsClean.ArithMul
 
 open Goldilocks
+open ZiskFv.Channels.OperationBus
 
 /-- Constant-expression view of an `ArithMulRow`, used when specializing
     lookup-aware Clean soundness to one concrete row. -/
@@ -132,6 +133,69 @@ def rowAt (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :
     carry_3 := v.cy_3 r, carry_4 := v.cy_4 r, carry_5 := v.cy_5 r
     carry_6 := v.cy_6 r, fab := v.fab r, na_fb := v.na_fb r, nb_fa := v.nb_fa r
   }
+
+/-- Concrete primary MUL/MULW op-bus message for a Clean ArithMul row. -/
+@[reducible]
+def primaryOpBusMessage (row : ArithMulRow FGL) : OpBusMessage FGL :=
+  { op := row.flags.op
+    a_lo := row.chunks.a_0 + row.chunks.a_1 * 65536
+    a_hi := row.chunks.a_2 + row.chunks.a_3 * 65536
+    b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
+    b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
+    c_lo := row.chunks.c_0 + row.chunks.c_1 * 65536
+    c_hi := row.flags.bus_res1
+    flag := 0
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
+/-- Concrete secondary MULH/MULHU/MULHSU op-bus message for a Clean row. -/
+@[reducible]
+def secondaryOpBusMessage (row : ArithMulRow FGL) : OpBusMessage FGL :=
+  { op := row.flags.op
+    a_lo := row.chunks.a_0 + row.chunks.a_1 * 65536
+    a_hi := row.chunks.a_2 + row.chunks.a_3 * 65536
+    b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
+    b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
+    c_lo := row.chunks.d_0 + row.chunks.d_1 * 65536
+    c_hi := row.flags.bus_res1
+    flag := 0
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
+theorem eval_primaryOpBusMessageExpr
+    (env : Environment FGL) (row : Var ArithMulRow FGL) :
+    eval env (primaryOpBusMessageExpr row) = primaryOpBusMessage (eval env row) := by
+  rw [OpBusMessage.mk.injEq]
+  simp only [primaryOpBusMessageExpr, ProvableStruct.eval_eq_eval,
+    ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field, Expression.eval]
+  repeat constructor
+
+theorem eval_secondaryOpBusMessageExpr
+    (env : Environment FGL) (row : Var ArithMulRow FGL) :
+    eval env (secondaryOpBusMessageExpr row) =
+      secondaryOpBusMessage (eval env row) := by
+  rw [OpBusMessage.mk.injEq]
+  simp only [secondaryOpBusMessageExpr, ProvableStruct.eval_eq_eval,
+    ProvableStruct.eval, ProvableStruct.fromComponents,
+    ProvableStruct.components, ProvableStruct.toComponents,
+    ProvableStruct.eval.go, ProvableType.eval_field, Expression.eval]
+  repeat constructor
+
+theorem primaryOpBusMessage_toEntry_rowAt_eq_opBus_row
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :
+    OpBusMessage.toEntry (primaryOpBusMessage (rowAt v r)) (v.multiplicity r) =
+      ZiskFv.Airs.ArithMul.opBus_row_Arith v r := by
+  rfl
+
+theorem secondaryOpBusMessage_toEntry_rowAt_eq_opBus_row
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :
+    OpBusMessage.toEntry (secondaryOpBusMessage (rowAt v r)) (v.multiplicity r) =
+      ZiskFv.Airs.ArithMul.opBus_row_ArithMulSecondary v r := by
+  rfl
 
 /-- The Clean Component `Spec` projected at a `Valid_ArithMul` row,
     derived **through the Clean Component**. From the AIR's MUL-mode

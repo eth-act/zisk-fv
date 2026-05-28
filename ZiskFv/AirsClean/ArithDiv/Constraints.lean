@@ -1,6 +1,7 @@
 import ZiskFv.AirsClean.ArithDiv.Spec
 import ZiskFv.AirsClean.ArithTable
 import Clean.Circuit.Basic
+import ZiskFv.Channels.OperationBus
 
 /-!
 # ArithDiv circuit operations (the `main` field of the Component)
@@ -37,6 +38,7 @@ namespace ZiskFv.AirsClean.ArithDiv
 
 open Goldilocks
 open Circuit (assertZero lookup)
+open ZiskFv.Channels.OperationBus (OpBusChannel OpBusMessage)
 
 /-- The 11 DIV carry-chain F-constraints, taking the row's slot values
     as `Expression FGL`s. Returns `Unit` (ArithDiv is a pure assertion —
@@ -133,6 +135,68 @@ def main (row : Var ArithDivRow FGL) : Circuit FGL Unit := do
               + 2 * row.flags.np * row.chunks.d_3 * (1 - row.flags.div)
               + row.aux.carry_6)
 
+/-! ## Operation-bus variants
+
+The original `main` above intentionally stayed as the carry-chain-only
+component while C4 was being staged. T5 needs the same row to provide the
+operation-bus provider interaction, so the op-bus emission is layered as
+separate variants rather than changing the existing component in place.
+-/
+
+/-- Primary DIV/DIVU op-bus message: quotient result in the `a[]` chunks. -/
+@[reducible]
+def primaryOpBusMessageExpr (row : Var ArithDivRow FGL) :
+    OpBusMessage (Expression FGL) :=
+  { op := row.flags.op
+    a_lo := row.chunks.c_0 + row.chunks.c_1 * 65536
+    a_hi := row.chunks.c_2 + row.chunks.c_3 * 65536
+    b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
+    b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
+    c_lo := row.chunks.a_0 + row.chunks.a_1 * 65536
+    c_hi := row.flags.bus_res1
+    flag := 0
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
+/-- Secondary REM/REMU op-bus message: remainder result in the `d[]` chunks. -/
+@[reducible]
+def secondaryOpBusMessageExpr (row : Var ArithDivRow FGL) :
+    OpBusMessage (Expression FGL) :=
+  { op := row.flags.op
+    a_lo := row.chunks.c_0 + row.chunks.c_1 * 65536
+    a_hi := row.chunks.c_2 + row.chunks.c_3 * 65536
+    b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
+    b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
+    c_lo := row.chunks.d_0 + row.chunks.d_1 * 65536
+    c_hi := row.flags.bus_res1
+    flag := 0
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
+@[circuit_norm]
+def mainWithPrimaryOpBus (row : Var ArithDivRow FGL) : Circuit FGL Unit := do
+  main row
+  OpBusChannel.push (primaryOpBusMessageExpr row)
+
+@[circuit_norm]
+def mainWithSecondaryOpBus (row : Var ArithDivRow FGL) : Circuit FGL Unit := do
+  main row
+  OpBusChannel.push (secondaryOpBusMessageExpr row)
+
+@[circuit_norm]
+def mainWithPrimaryOpBusAndArithTable (row : Var ArithDivRow FGL) :
+    Circuit FGL Unit := do
+  mainWithPrimaryOpBus row
+  lookup (Table.fromStatic ArithTable.arithTable) (arithTableRow row)
+
+@[circuit_norm]
+def mainWithSecondaryOpBusAndArithTable (row : Var ArithDivRow FGL) :
+    Circuit FGL Unit := do
+  mainWithSecondaryOpBus row
+  lookup (Table.fromStatic ArithTable.arithTable) (arithTableRow row)
+
 /-- Lookup-aware ArithDiv circuit path. This appends the full 15-column
     `arith_table_assumes` ROM lookup after the existing carry-chain
     component body. The current load-bearing carry-chain component remains
@@ -152,6 +216,58 @@ def mainWithArithTable (row : Var ArithDivRow FGL) : Circuit FGL Unit := do
   main := mainWithArithTable
   localLength _ := 0
   output _ _ := ()
+
+@[reducible] def arithDivPrimaryOpBusElaborated :
+    ElaboratedCircuit FGL ArithDivRow unit where
+  name := "ArithDivPrimaryOpBus"
+  main := mainWithPrimaryOpBus
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (primaryOpBusMessageExpr row)]
+  channelsLawful := by
+    simp only [circuit_norm, mainWithPrimaryOpBus, main, primaryOpBusMessageExpr,
+      OpBusChannel]
+
+@[reducible] def arithDivSecondaryOpBusElaborated :
+    ElaboratedCircuit FGL ArithDivRow unit where
+  name := "ArithDivSecondaryOpBus"
+  main := mainWithSecondaryOpBus
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (secondaryOpBusMessageExpr row)]
+  channelsLawful := by
+    simp only [circuit_norm, mainWithSecondaryOpBus, main, secondaryOpBusMessageExpr,
+      OpBusChannel]
+
+@[reducible] def arithDivPrimaryOpBusWithArithTableElaborated :
+    ElaboratedCircuit FGL ArithDivRow unit where
+  name := "ArithDivPrimaryOpBusWithArithTable"
+  main := mainWithPrimaryOpBusAndArithTable
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (primaryOpBusMessageExpr row)]
+  channelsLawful := by
+    simp only [circuit_norm, mainWithPrimaryOpBusAndArithTable,
+      mainWithPrimaryOpBus, main, primaryOpBusMessageExpr, OpBusChannel]
+
+@[reducible] def arithDivSecondaryOpBusWithArithTableElaborated :
+    ElaboratedCircuit FGL ArithDivRow unit where
+  name := "ArithDivSecondaryOpBusWithArithTable"
+  main := mainWithSecondaryOpBusAndArithTable
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (secondaryOpBusMessageExpr row)]
+  channelsLawful := by
+    simp only [circuit_norm, mainWithSecondaryOpBusAndArithTable,
+      mainWithSecondaryOpBus, main, secondaryOpBusMessageExpr, OpBusChannel]
 
 /-- The elaborated circuit for ArithDiv's `main` — 11 `assertZero`
     constraints, no fresh witnesses (`localLength = 0`, `unit` output)

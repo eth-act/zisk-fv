@@ -82,7 +82,7 @@ open ZiskFv.EquivCore.Promises
     eliminates the vestigial REM dispatch path; a parallel pilot
     `equiv_REM` is the proper future home for REM
     discharge. -/
-theorem equiv_DIV
+theorem equiv_DIV_of_table
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (div_input : PureSpec.DivInput)
     (r1 r2 rd : regidx)
@@ -121,6 +121,8 @@ theorem equiv_DIV
     -- `∀ r, arith_div_row_well_formed v r` parameter.
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -149,7 +151,6 @@ theorem equiv_DIV
   have h_op_arith_div : v.op r_a = 186 := by
     rw [h_op_eq, h_main_op_div]; simp [OP_DIV]
   have h_op_arith : v.op r_a = 186 ∨ v.op r_a = 187 := Or.inl h_op_arith_div
-  have h_arith_table := ZiskFv.Airs.Arith.arith_div_table_lookup_sound v r_a
   -- ============ Unpack matches_entry lane projections ============
   obtain ⟨h_a_lo_eq_FGL, h_a_hi_eq_FGL, h_b_lo_eq_FGL, h_b_hi_eq_FGL,
           h_c0_eq_FGL, h_c1_eq_FGL⟩ :=
@@ -309,5 +310,46 @@ theorem equiv_DIV
     v r_a h_chain h_na_bool h_nb_bool h_nr_bool h_np_xor h_nr_pin
     h_sext h_m32 h_div h_byte_lo h_byte_hi h_rs1_value h_rs2_value
     h_op2_ne h_no_overflow h_r_abs h_r_sign
+
+/-- Compatibility wrapper preserving the current canonical surface while
+    the Compliance dispatcher is migrated to row-native table witnesses. -/
+theorem equiv_DIV
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (div_input : PureSpec.DivInput)
+    (r1 r2 rd : regidx)
+    (bus : ZiskFv.Compliance.BusRows)
+    (m : Valid_Main FGL FGL) (r_main : ℕ)
+    (v : Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_DIV)
+    (h_match_primary :
+      matches_entry (opBus_row_Main m r_main)
+                    (ZiskFv.Airs.ArithDiv.opBus_row_ArithDiv v r_a))
+    (promises : ZiskFv.EquivCore.Promises.RTypePromises
+        state div_input.r1_val div_input.r2_val div_input.rd div_input.PC
+        (PureSpec.execute_DIVREM_div_pure div_input).nextPC
+        r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_op2_ne : div_input.r2_val.toInt ≠ 0)
+    (h_no_overflow :
+      ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
+    (h_row_constraints :
+      ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
+    (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
+    (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
+    (h_np_xor :
+      toIntZ (v.np r_a)
+        = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
+            - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    :
+    (do
+      Sail.writeReg Register.nextPC
+        (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
+      LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
+      = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  exact equiv_DIV_of_table
+    state div_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises
+    h_op2_ne h_no_overflow h_row_constraints
+    (ZiskFv.Airs.Arith.arith_div_table_lookup_sound v r_a)
+    h_na_bool h_nb_bool h_nr_bool h_np_xor
 
 end ZiskFv.Compliance
