@@ -151,8 +151,10 @@ facts. SLL is now the first shift closure to drop the generic
 static-table c-lane and c-sum bounds. SRLI reuses that SRL static-table route
 with the shift-specific Clean `b_0 < 2^24` witness for the immediate shift pin,
 and SLLI does the same with the SLL static-table route. SLL, SRL, SRLI, and
-SLLI now close without the generic range-bus axiom. The remaining shift opcodes
-still need the same static-provider c-lane bound route.
+SLLI now close without the generic range-bus axiom. The follow-on SRAI, SRLIW,
+SLLIW, SRAIW, SLLW, SRLW, SRAW, and SRA closures use the same static-provider
+c-lane bound route; every shift-family canonical theorem now closes without
+`range_bus_sound`.
 
 The first Arith-family T6 prep exposes the ArithMul chunk `bits(16)` checks
 through Clean instead of the generic range-bus axiom. `ArithMul.mainWithChunkRanges`
@@ -160,9 +162,13 @@ adds lookup-aware `rangeTable16` operations for the sixteen `a/b/c/d` chunks,
 `ChunkRangeLookupWitness` projects those bounds from
 `ConstraintsHold.Soundness`, and `Compliance.ArithMulChunkRangeWitness` gives
 canonical/wrapper code a shared structural binder shape for the next cutover.
-This does not yet retire `range_bus_sound` from MUL/MULHU/MULW, because the
-unsigned carry `< 2^17` and signed carry disjunctions are still the live range
-dependencies on those closures.
+MULHU now consumes that chunk witness plus a new
+`ArithMulUnsignedCarryRangeWitness` sourced from lookup-aware `rangeTable17`
+carry checks. Its wrapper derives the remaining rd-write memory byte-sum bounds
+from the selected external-arith memory witness, secondary op-bus equalities,
+and exact Arith chunk bounds instead of the legacy memory-entry range route.
+`equiv_MULHU` now closes without `range_bus_sound`; remaining Arith range
+consumers are `MUL` and `MULW`, both through unsigned/signed carry range facts.
 
 The third T5 landing replaced the raw canonical `ArithTableSpec`
 binders with lookup-aware Clean witnesses:
@@ -1141,9 +1147,11 @@ Checklist:
   `range_bus_sound`; ADD/ADDI/SUB, ADDW/ADDIW/SUBW, and
   SLT/SLTI/SLTU/SLTIU have also dropped it through the static Binary-table
   route. LD, LBU/LHU/LWU, and LB/LH/LW have also dropped it through
-  row-local memory/BinaryExtension evidence. Remaining consumers are the
-  shift and Arith-family paths shown in
-  `trust/baseline-equiv-axiom-deps.txt`.
+  row-local memory/BinaryExtension evidence. All shift-family closures have
+  dropped it through the shift-specific BinaryExtension static-provider route.
+  MULHU has also dropped it through Clean ArithMul chunk and unsigned-carry
+  range witnesses. Remaining consumers are the `MUL` and `MULW` Arith-family
+  paths shown in `trust/baseline-equiv-axiom-deps.txt`.
 - ☐ T6.3 retire `range_bus_sound` and `signed_range_bus_sound` when their
   global closure entries disappear.
 

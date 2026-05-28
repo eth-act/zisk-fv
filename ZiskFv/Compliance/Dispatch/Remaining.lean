@@ -310,10 +310,12 @@ theorem zisk_riscv_compliant_program_bus_remaining
     exact ZiskFv.Equivalence.MulH.equiv_MULH state mulh_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises arith_mem arith_table h_row_constraints h_no_signed_mul_witness_defect
   | mulhu mulhu_input r1 r2 rd bus v r_a pins h_match_secondary
-         promises arith_mem bounds h_row_constraints arith_table =>
+         promises arith_mem bounds h_row_constraints arith_table
+         arith_chunk_ranges arith_carry_ranges =>
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.MulHU.equiv_MULHU state mulhu_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem bounds arith_table h_row_constraints
+      pins h_match_secondary promises arith_mem bounds arith_table
+      arith_chunk_ranges arith_carry_ranges h_row_constraints
   | mulhsu mulhsu_input r1 r2 rd bus v r_a pins h_match_secondary
         promises arith_mem h_row_constraints arith_table =>
     simp only [OpEnvelope.exec_eq_remaining]
@@ -564,10 +566,12 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     exact ZiskFv.Equivalence.MulH.equiv_MULH state mulh_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises arith_mem arith_table h_row_constraints h_no_signed_mul_witness_defect
   | mulhu mulhu_input r1 r2 rd bus v r_a pins h_match_secondary
-         promises arith_mem bounds h_row_constraints arith_table =>
+         promises arith_mem bounds h_row_constraints arith_table
+         arith_chunk_ranges arith_carry_ranges =>
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.MulHU.equiv_MULHU state mulhu_input r1 r2 rd bus m r_main v r_a
-      pins h_match_secondary promises arith_mem bounds arith_table h_row_constraints
+      pins h_match_secondary promises arith_mem bounds arith_table
+      arith_chunk_ranges arith_carry_ranges h_row_constraints
   | mulhsu mulhsu_input r1 r2 rd bus v r_a pins h_match_secondary
         promises arith_mem h_row_constraints arith_table =>
     simp only [OpEnvelope.exec_eq_remaining]

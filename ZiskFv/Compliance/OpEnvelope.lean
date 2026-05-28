@@ -1604,7 +1604,10 @@ inductive OpEnvelope
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
-    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a) :
+    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulUnsignedCarryRangeWitness v r_a) :
     OpEnvelope state m r_main
   -- ============================ MULHSU ==================================
   | mulhsu

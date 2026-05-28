@@ -204,6 +204,60 @@ lemma mul_unsigned_chain_witnesses
   · linear_combination h37
   · linear_combination h38
 
+/-- `mul_unsigned_chain_witnesses` with carry ranges supplied from a concrete
+    Clean lookup witness instead of the legacy range-bus theorem. -/
+lemma mul_unsigned_chain_witnesses_of_carry_ranges
+    (v : Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_chain : mul_carry_chain_holds v r_a)
+    (h_na : v.na r_a = 0) (h_nb : v.nb r_a = 0)
+    (h_np : v.np r_a = 0) (h_nr : v.nr r_a = 0)
+    (_h_sext : v.sext r_a = 0) (h_m32 : v.m32 r_a = 0)
+    (h_div : v.div r_a = 0)
+    (h_carry_ranges :
+      (v.cy_0 r_a).val < 131072 ∧ (v.cy_1 r_a).val < 131072
+    ∧ (v.cy_2 r_a).val < 131072 ∧ (v.cy_3 r_a).val < 131072
+    ∧ (v.cy_4 r_a).val < 131072 ∧ (v.cy_5 r_a).val < 131072
+    ∧ (v.cy_6 r_a).val < 131072) :
+    ∃ cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆ : FGL,
+      cy₀.val < 131072 ∧ cy₁.val < 131072 ∧ cy₂.val < 131072 ∧ cy₃.val < 131072
+    ∧ cy₄.val < 131072 ∧ cy₅.val < 131072 ∧ cy₆.val < 131072
+    ∧ (v.a_0 r_a * v.b_0 r_a = v.c_0 r_a + cy₀ * 65536)
+    ∧ (v.a_1 r_a * v.b_0 r_a + v.a_0 r_a * v.b_1 r_a + cy₀ = v.c_1 r_a + cy₁ * 65536)
+    ∧ (v.a_2 r_a * v.b_0 r_a + v.a_1 r_a * v.b_1 r_a + v.a_0 r_a * v.b_2 r_a + cy₁
+        = v.c_2 r_a + cy₂ * 65536)
+    ∧ (v.a_3 r_a * v.b_0 r_a + v.a_2 r_a * v.b_1 r_a + v.a_1 r_a * v.b_2 r_a
+        + v.a_0 r_a * v.b_3 r_a + cy₂ = v.c_3 r_a + cy₃ * 65536)
+    ∧ (v.a_3 r_a * v.b_1 r_a + v.a_2 r_a * v.b_2 r_a + v.a_1 r_a * v.b_3 r_a + cy₃
+        = v.d_0 r_a + cy₄ * 65536)
+    ∧ (v.a_3 r_a * v.b_2 r_a + v.a_2 r_a * v.b_3 r_a + cy₄
+        = v.d_1 r_a + cy₅ * 65536)
+    ∧ (v.a_3 r_a * v.b_3 r_a + cy₅ = v.d_2 r_a + cy₆ * 65536)
+    ∧ (cy₆ = v.d_3 r_a) := by
+  obtain ⟨h6, h7, h8, h31, h32, h33, h34, h35, h36, h37, h38⟩ := h_chain
+  simp only [mul_constraint_6_named, mul_constraint_7_named, mul_constraint_8_named,
+             h_na, h_nb, mul_zero, zero_mul, add_zero, sub_zero] at h6 h7 h8
+  have h_fab : v.fab r_a = (1 : FGL) := by linear_combination h6
+  have h_nafb : v.na_fb r_a = (0 : FGL) := by linear_combination h7
+  have h_nbfa : v.nb_fa r_a = (0 : FGL) := by linear_combination h8
+  simp only [mul_constraint_31_named, mul_constraint_32_named,
+             mul_constraint_33_named, mul_constraint_34_named,
+             mul_constraint_35_named, mul_constraint_36_named,
+             mul_constraint_37_named, mul_constraint_38_named,
+             h_na, h_nb, h_np, h_nr, h_m32, h_div, h_fab, h_nafb, h_nbfa,
+             mul_zero, zero_mul, add_zero, sub_zero, zero_sub,
+             mul_one, one_mul]
+    at h31 h32 h33 h34 h35 h36 h37 h38
+  obtain ⟨hr0, hr1, hr2, hr3, hr4, hr5, hr6⟩ := h_carry_ranges
+  refine ⟨_, _, _, _, _, _, _, hr0, hr1, hr2, hr3, hr4, hr5, hr6, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · linear_combination h31
+  · linear_combination h32
+  · linear_combination h33
+  · linear_combination h34
+  · linear_combination h35
+  · linear_combination h36
+  · linear_combination h37
+  · linear_combination h38
+
 /-- **DIV-unsigned chain witnesses (existential bundle).**
 
     Same as `mul_unsigned_chain_witnesses` but for the Div view: DIVU /

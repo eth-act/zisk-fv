@@ -81,6 +81,9 @@ theorem equiv_MULHU_of_table
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulUnsignedCarryRangeWitness v r_a)
     :
     (do
       Sail.writeReg Register.nextPC
@@ -132,26 +135,35 @@ theorem equiv_MULHU_of_table
   -- MULHU literal 0xb1 = 177 (OP_MULUH) — position 1 in
   -- main_external_arith_emission_bundle's 14-way disjunction.
   have h_bundle := arith_mem.c_lane_vals
-  have h_chunks_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e2
-  have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
-      + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
-      = (m.c_0 r_main).val := by
-    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_lo_val_sum_eq e2 h_chunks_range.1, h_bundle.1]
-  have h_byte_hi_to_c1 : (byteAt e2 4).val + (byteAt e2 5).val * 256
-      + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216
-      = (m.c_1 r_main).val := by
-    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_hi_val_sum_eq e2 h_chunks_range.2, h_bundle.2]
   obtain ⟨h_a0_lt, h_a1_lt, h_a2_lt, h_a3_lt,
           h_b0_lt, h_b1_lt, h_b2_lt, h_b3_lt,
           _h_c0_lt, _h_c1_lt, _h_c2_lt, _h_c3_lt,
           h_d0_lt, h_d1_lt, h_d2_lt, h_d3_lt⟩ :=
-    ZiskFv.Airs.Arith.arith_mul_columns_in_range v r_a
-  -- Byte-lane lo equation via cross-AIR `arith_byte_lane_eq_of_match`.
-  have h_byte_lo := arith_byte_lane_eq_of_match h_byte_lo_to_c0 h_c0_eq_FGL h_d0_lt h_d1_lt
+    arith_chunk_ranges.ranges
+  have h_arith_chunk_ranges := arith_chunk_ranges.ranges
+  have h_arith_carry_ranges := arith_carry_ranges.ranges
+  have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
+      + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
+      = (m.c_0 r_main).val := by
+    have h_e2_lo_bound : e2.value_0.val < 4294967296 := by
+      rw [← h_bundle.1, h_c0_eq_FGL]
+      rw [arith_h_pair_lift _ _ h_d0_lt h_d1_lt]
+      omega
+    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_lo_val_sum_eq e2 h_e2_lo_bound, h_bundle.1]
   -- Hi lane via mulh_bus_res1_eq_d_hi (Family A — secondary).
   have h_bus_res1_eq : v.bus_res1 r_a = v.d_2 r_a + v.d_3 r_a * 65536 :=
     ZiskFv.Airs.ArithBusRes1.mulh_bus_res1_eq_d_hi v r_a h_c46
       h_sext h_m32 h_main_mul_zero h_main_div_zero
+  have h_byte_hi_to_c1 : (byteAt e2 4).val + (byteAt e2 5).val * 256
+      + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216
+      = (m.c_1 r_main).val := by
+    have h_e2_hi_bound : e2.value_1.val < 4294967296 := by
+      rw [← h_bundle.2, h_c1_eq_FGL, h_bus_res1_eq]
+      rw [arith_h_pair_lift _ _ h_d2_lt h_d3_lt]
+      omega
+    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_hi_val_sum_eq e2 h_e2_hi_bound, h_bundle.2]
+  -- Byte-lane lo equation via cross-AIR `arith_byte_lane_eq_of_match`.
+  have h_byte_lo := arith_byte_lane_eq_of_match h_byte_lo_to_c0 h_c0_eq_FGL h_d0_lt h_d1_lt
   have h_c1_eq_FGL' : m.c_1 r_main = v.d_2 r_a + v.d_3 r_a * 65536 := by
     rw [h_c1_eq_FGL, h_bus_res1_eq]
   have h_byte_hi := arith_byte_lane_eq_of_match h_byte_hi_to_c1 h_c1_eq_FGL' h_d2_lt h_d3_lt
@@ -190,7 +202,8 @@ theorem equiv_MULHU_of_table
     promises
     ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
     h_chain h_na h_nb h_np h_nr h_sext h_m32 h_div
-    h_byte_lo h_byte_hi h_rs1_value h_rs2_value
+    h_byte_lo h_byte_hi h_arith_chunk_ranges h_arith_carry_ranges
+    h_rs1_value h_rs2_value
 
 /-- Compatibility wrapper preserving the canonical `equiv_MULHU` surface.
     The row-native `_of_table` theorem above is the T5 migration target;
@@ -216,6 +229,9 @@ theorem equiv_MULHU
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
+    (arith_chunk_ranges : ZiskFv.Compliance.ArithMulChunkRangeWitness v r_a)
+    (arith_carry_ranges :
+      ZiskFv.Compliance.ArithMulUnsignedCarryRangeWitness v r_a)
     :
     (do
       Sail.writeReg Register.nextPC
@@ -229,6 +245,6 @@ theorem equiv_MULHU
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   equiv_MULHU_of_table state mulhu_input r1 r2 rd bus m r_main v r_a pins
     h_match_secondary promises arith_mem bounds h_row_constraints
-    arith_table
+    arith_table arith_chunk_ranges arith_carry_ranges
 
 end ZiskFv.Compliance

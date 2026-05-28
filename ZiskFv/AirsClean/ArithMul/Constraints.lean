@@ -204,6 +204,20 @@ def mainWithChunkRanges (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
   lookup (Table.fromStatic rangeTable16) row.chunks.d_2
   lookup (Table.fromStatic rangeTable16) row.chunks.d_3
 
+/-- Lookup-aware ArithMul path for the seven unsigned carry columns. This
+    models the `bits(17)` range needed by unsigned MUL/MULHU carry-chain
+    consumers without using the legacy generic range bus. -/
+@[circuit_norm]
+def mainWithUnsignedCarryRanges (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
+  main row
+  lookup (Table.fromStatic rangeTable17) row.carries.carry_0
+  lookup (Table.fromStatic rangeTable17) row.carries.carry_1
+  lookup (Table.fromStatic rangeTable17) row.carries.carry_2
+  lookup (Table.fromStatic rangeTable17) row.carries.carry_3
+  lookup (Table.fromStatic rangeTable17) row.carries.carry_4
+  lookup (Table.fromStatic rangeTable17) row.carries.carry_5
+  lookup (Table.fromStatic rangeTable17) row.carries.carry_6
+
 
 /-- Lookup-aware elaboration for the next C3/C4 stage. It is intentionally
     separate from `arithMulElaborated` so existing carry-chain consumers do
@@ -224,6 +238,17 @@ def mainWithChunkRanges (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
     ElaboratedCircuit FGL ArithMulRow unit where
   name := "ArithMulWithChunkRanges"
   main := mainWithChunkRanges
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [OpBusChannel.toRaw]
+
+/-- Lookup-aware elaboration exposing unsigned carry range lookups. Kept
+    separate from `arithMulElaborated` and chunk ranges so consumers opt in
+    only when replacing a concrete legacy range-bus dependency. -/
+@[reducible] def arithMulWithUnsignedCarryRangesElaborated :
+    ElaboratedCircuit FGL ArithMulRow unit where
+  name := "ArithMulWithUnsignedCarryRanges"
+  main := mainWithUnsignedCarryRanges
   localLength _ := 0
   output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]

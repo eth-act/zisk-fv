@@ -554,6 +554,45 @@ ADDED: arith_table
        (same ArithDiv lookup-aware witness as DIVW.)
 
 # ============================================================
+# T6 ArithMul range-bus structural unpacking (MULHU)
+# ============================================================
+#
+# `equiv_MULHU` previously inherited `range_bus_sound` through the legacy
+# `arith_mul_columns_in_range`, `arith_mul_carry_columns_in_range_unsigned`,
+# and memory-entry chunk-range routes. T6 replaces those generic trust-ledger
+# facts with selected-row Clean lookup witnesses:
+#   * `ArithMulChunkRangeWitness v r_a` for the sixteen `bits(16)` a/b/c/d
+#     chunk lookups, and
+#   * `ArithMulUnsignedCarryRangeWitness v r_a` for the seven unsigned
+#     `bits(17)` carry lookups.
+#
+# This is structural unpacking, not promise laundering, because the added
+# binders expose lookup-aware `ConstraintsHold.Soundness` evidence for the
+# selected Clean ArithMul row. The bounds consumed by the proof are derived
+# by `AirsClean/ArithMul/Bridge.lean`; callers do not supply arbitrary
+# range facts. The wrapper also derives the external-arith rd-write
+# memory-entry byte-sum bounds from the existing `ExternalArithMemoryWitness`,
+# secondary op-bus equalities, and exact Arith chunk bounds instead of using
+# the old memory-entry range-bus route.
+#
+# PIL-BASIS:
+#   * arith.pil:18-21 — a/b/c/d chunk columns are declared `bits(16)`.
+#   * ArithMul Clean `mainWithUnsignedCarryRanges` — unsigned MUL/MULHU
+#     carry consumers use the seven `rangeTable17` carry lookups surfaced by
+#     the Clean range witness, replacing the legacy generic range-bus axiom.
+#   * Main external-arith memory message shape is already covered by the T5
+#     `ExternalArithMemoryWitness` entry above; this T6 slice only changes
+#     where the byte-sum bounds come from.
+
+OPCODE: ZiskFv.Equivalence.MulHU.equiv_MULHU
+DROPPED: range_bus_sound from semantic closure
+ADDED: arith_chunk_ranges, arith_carry_ranges
+       (`ArithMulChunkRangeWitness v r_a` and
+        `ArithMulUnsignedCarryRangeWitness v r_a`, selected-row Clean lookup
+        witnesses deriving the exact chunk and carry bounds consumed by the
+        MULHU bridge.)
+
+# ============================================================
 # T5 external-arith memory structural unpacking (13)
 # ============================================================
 #

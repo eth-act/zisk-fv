@@ -193,6 +193,22 @@ theorem ArithMulChunkRangeWitness.ranges
   ∧ (v.d_2 r).val < 2 ^ 16 ∧ (v.d_3 r).val < 2 ^ 16 :=
   ZiskFv.AirsClean.ArithMul.chunk_ranges_of_lookup_aware_const_soundness w
 
+/-- Lookup-aware Clean witness for a selected ArithMul row's seven unsigned
+    carry `bits(17)` checks. This is the T6 structural source for replacing
+    `arith_mul_carry_columns_in_range_unsigned` on unsigned MUL-family paths. -/
+abbrev ArithMulUnsignedCarryRangeWitness
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :=
+  ZiskFv.AirsClean.ArithMul.UnsignedCarryRangeLookupWitness v r
+
+theorem ArithMulUnsignedCarryRangeWitness.ranges
+    {v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL} {r : ℕ}
+    (w : ArithMulUnsignedCarryRangeWitness v r) :
+    (v.cy_0 r).val < 2 ^ 17 ∧ (v.cy_1 r).val < 2 ^ 17
+  ∧ (v.cy_2 r).val < 2 ^ 17 ∧ (v.cy_3 r).val < 2 ^ 17
+  ∧ (v.cy_4 r).val < 2 ^ 17 ∧ (v.cy_5 r).val < 2 ^ 17
+  ∧ (v.cy_6 r).val < 2 ^ 17 :=
+  ZiskFv.AirsClean.ArithMul.unsigned_carry_ranges_of_lookup_aware_const_soundness w
+
 /-- Lookup-aware Clean witness for a selected ArithDiv row's
     `arith_table_assumes` tuple. Same shape as `ArithMulTableWitness`,
     specialized to the Div view of the Arith AIR. -/
