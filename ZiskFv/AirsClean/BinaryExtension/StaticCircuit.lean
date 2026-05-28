@@ -86,6 +86,9 @@ abbrev StaticBinaryExtensionTableSpecFacts
           c_hi_byte := row.cColsHi.free_in_c_15
           op_is_shift := row.flags.op_is_shift }
 
+abbrev ShiftB0RangeSpecFact (row : BinaryExtensionRow FGL) : Prop :=
+  row.flags.b_0.val < 2 ^ 24
+
 def staticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit :=
   { binaryExtensionWithStaticTableElaborated with
     exposedChannels row _ :=
@@ -126,7 +129,53 @@ def staticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit :=
             , by simpa [sub_eq_add_neg] using h6
             , by simpa [sub_eq_add_neg] using h7 ⟩ }
 
+def shiftStaticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit :=
+  { binaryExtensionWithStaticTableAndShiftRangeElaborated with
+    exposedChannels row _ :=
+      expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
+    channelsLawful := by
+      simp only [circuit_norm, mainWithStaticBinaryExtensionTableAndShiftRange,
+        mainWithStaticBinaryExtensionTable, main, opBusMessageExpr, aLo, aHi,
+        OpBusChannel]
+    Assumptions := fun _ _ => True
+    Spec := fun row _ _ =>
+      Spec row ∧ StaticBinaryExtensionTableSpecFacts row ∧ ShiftB0RangeSpecFact row
+    ProverAssumptions := fun row _ _ =>
+      Spec row ∧ StaticBinaryExtensionTableSpecFacts row ∧ ShiftB0RangeSpecFact row
+    ProverSpec := fun _ _ _ => True
+    soundness := by
+      circuit_proof_start
+      refine ⟨?_, ?_⟩
+      · obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h_b0⟩ := h_holds
+        exact ⟨
+          ⟨ by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h0,
+            by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h1,
+            by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h2,
+            by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h3,
+            by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h4,
+            by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h5,
+            by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h6,
+            by simpa [StaticBinaryExtensionTableSpecFacts, sub_eq_add_neg] using h7 ⟩,
+          by simpa [ShiftB0RangeSpecFact] using h_b0 ⟩
+      · intro _
+        trivial
+    completeness := by
+      circuit_proof_start [OpBusChannel]
+      rcases h_assumptions with ⟨h_static, h_b0⟩
+      rcases h_static with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+      exact ⟨ by simpa [sub_eq_add_neg] using h0
+            , by simpa [sub_eq_add_neg] using h1
+            , by simpa [sub_eq_add_neg] using h2
+            , by simpa [sub_eq_add_neg] using h3
+            , by simpa [sub_eq_add_neg] using h4
+            , by simpa [sub_eq_add_neg] using h5
+            , by simpa [sub_eq_add_neg] using h6
+            , by simpa [sub_eq_add_neg] using h7
+            , by simpa [ShiftB0RangeSpecFact] using h_b0 ⟩ }
+
 def staticLookupComponent : Air.Flat.Component FGL := ⟨ staticLookupCircuit ⟩
+
+def shiftStaticLookupComponent : Air.Flat.Component FGL := ⟨ shiftStaticLookupCircuit ⟩
 
 theorem staticLookupComponent_interactionsWith_opBus :
     staticLookupComponent.operations.interactionsWith OpBusChannel.toRaw =
@@ -139,12 +188,35 @@ theorem staticLookupComponent_interactionsWith_opBus :
     binaryExtensionWithStaticTableElaborated, Component.exposedChannels,
     expose, List.mem_singleton, List.map_cons, List.map_nil]
 
+theorem shiftStaticLookupComponent_interactionsWith_opBus :
+    shiftStaticLookupComponent.operations.interactionsWith OpBusChannel.toRaw =
+      [((OpBusChannel.pushed (opBusMessageExpr shiftStaticLookupComponent.rowInputVar)).toRaw)] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨OpBusChannel.toRaw,
+      [((OpBusChannel.pushed
+        (opBusMessageExpr shiftStaticLookupComponent.rowInputVar)).toRaw)]⟩ ∈
+    shiftStaticLookupComponent.exposedChannels
+  simp only [shiftStaticLookupComponent, shiftStaticLookupCircuit,
+    binaryExtensionWithStaticTableAndShiftRangeElaborated,
+    Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
+    List.map_nil]
+
 theorem staticLookupComponent_spec
     (env : Environment FGL) :
     staticLookupComponent.Spec env =
       (Spec (staticLookupComponent.rowInput env)
         ∧ StaticBinaryExtensionTableSpecFacts
           (staticLookupComponent.rowInput env)) := by
+  rfl
+
+theorem shiftStaticLookupComponent_spec
+    (env : Environment FGL) :
+    shiftStaticLookupComponent.Spec env =
+      (Spec (shiftStaticLookupComponent.rowInput env)
+        ∧ StaticBinaryExtensionTableSpecFacts
+          (shiftStaticLookupComponent.rowInput env)
+        ∧ ShiftB0RangeSpecFact
+          (shiftStaticLookupComponent.rowInput env)) := by
   rfl
 
 theorem static_table_wf_facts_of_spec_facts
@@ -213,5 +285,18 @@ theorem staticLookupComponent_eval_opBusMessageExpr_op
     (by
       simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar] using
         (eval_varFromOffset_valueFromOffset staticLookupComponent.Input 0 env))
+
+theorem shiftStaticLookupComponent_eval_opBusMessageExpr_op
+    (env : Environment FGL) :
+    (eval env (opBusMessageExpr shiftStaticLookupComponent.rowInputVar)).op =
+      (shiftStaticLookupComponent.rowInput env).flags.op := by
+  rw [ZiskFv.Channels.OperationBus.OpBusMessage.eval_op]
+  change Expression.eval env shiftStaticLookupComponent.rowInputVar.flags.op =
+    (shiftStaticLookupComponent.rowInput env).flags.op
+  rw [← row_eval_flags_op env shiftStaticLookupComponent.rowInputVar]
+  exact congrArg (fun row : BinaryExtensionRow FGL => row.flags.op)
+    (by
+      simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar] using
+        (eval_varFromOffset_valueFromOffset shiftStaticLookupComponent.Input 0 env))
 
 end ZiskFv.AirsClean.BinaryExtension

@@ -3,6 +3,7 @@ import Clean.Circuit.Basic
 import ZiskFv.Channels.OperationBus
 import ZiskFv.Channels.BinaryExtensionTable
 import ZiskFv.AirsClean.BinaryExtensionTable
+import ZiskFv.AirsClean.RangeTables
 
 /-!
 # BinaryExtension circuit operations
@@ -243,6 +244,17 @@ def mainWithStaticBinaryExtensionTable (row : Var BinaryExtensionRow FGL) :
       c_hi_byte := row.cColsHi.free_in_c_15
       op_is_shift := row.flags.op_is_shift }
 
+/-- Shift-only static-provider BinaryExtension path. The ZisK PIL range-checks
+    `b[0] < 2^24` under `op_is_shift`; this stricter component is intended
+    only for shift rows, so it can expose that selected range lookup without
+    overconstraining the generic BinaryExtension static-table component. -/
+@[circuit_norm]
+def mainWithStaticBinaryExtensionTableAndShiftRange
+    (row : Var BinaryExtensionRow FGL) : Circuit FGL Unit := do
+  mainWithStaticBinaryExtensionTable row
+  lookup (Table.fromStatic ZiskFv.AirsClean.RangeTables.rangeTable24)
+    row.flags.b_0
+
 @[reducible] def binaryExtensionWithStaticTableElaborated :
     ElaboratedCircuit FGL BinaryExtensionRow unit where
   name := "BinaryExtensionWithStaticTable"
@@ -252,6 +264,20 @@ def mainWithStaticBinaryExtensionTable (row : Var BinaryExtensionRow FGL) :
   channelsLawful := by
     simp only [circuit_norm, mainWithStaticBinaryExtensionTable, main,
       opBusMessageExpr, aLo, aHi, OpBusChannel]
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [OpBusChannel.toRaw]
+
+@[reducible] def binaryExtensionWithStaticTableAndShiftRangeElaborated :
+    ElaboratedCircuit FGL BinaryExtensionRow unit where
+  name := "BinaryExtensionWithStaticTableAndShiftRange"
+  main := mainWithStaticBinaryExtensionTableAndShiftRange
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (opBusMessageExpr row)]
+  channelsLawful := by
+    simp only [circuit_norm, mainWithStaticBinaryExtensionTableAndShiftRange,
+      mainWithStaticBinaryExtensionTable, main, opBusMessageExpr, aLo, aHi,
+      OpBusChannel]
   localLength _ := 0
   output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]

@@ -129,6 +129,16 @@ the existing c-sum bounds. The canonical shift closures still honestly retain
 taking `% 64` / `% 32`, and `b_0` is not part of the
 BinaryExtensionTable lookup row. Retiring that closure requires a real
 row/range witness for `b_0`, not a new caller promise.
+The second shift-family T6 prep adds that missing Clean surface without
+overconstraining non-shift BinaryExtension rows:
+`RangeTables.rangeTable24`, `BinaryExtension.mainWithStaticBinaryExtensionTableAndShiftRange`,
+and `BinaryExtension.shiftStaticLookupComponent` model the PIL-selected
+`range_check(b[0], 0, 2^24 - 1, sel: op_is_shift)` for shift rows only.
+`BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec`
+projects both the existing static BinaryExtensionTable wf facts and the new
+`b_0 < 2^24` fact from one provider-row `table.Spec`. This is structural
+Clean evidence for the next canonical shift cutover; it adds no trust-ledger
+axiom and no universal caller promise.
 
 The first Arith-family T6 prep exposes the ArithMul chunk `bits(16)` checks
 through Clean instead of the generic range-bus axiom. `ArithMul.mainWithChunkRanges`

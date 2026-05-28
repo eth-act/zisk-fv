@@ -61,6 +61,9 @@ def rangeTable16 : StaticTable FGL field :=
 def rangeTable17 : StaticTable FGL field :=
   rangeStaticTable (2 ^ 17) (by decide) "range-17"
 
+def rangeTable24 : StaticTable FGL field :=
+  rangeStaticTable (2 ^ 24) (by decide) "range-24"
+
 def rangeTable32 : StaticTable FGL field :=
   rangeStaticTable (2 ^ 32) (by decide) "range-32"
 

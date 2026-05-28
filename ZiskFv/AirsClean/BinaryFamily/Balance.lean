@@ -239,6 +239,25 @@ theorem exists_staticBinaryExtension_row_eval_of_interaction_mem
       ZiskFv.AirsClean.BinaryExtension.staticLookupComponent_interactionsWith_opBus
   · exact h_mem
 
+/-- Row extraction for a shift-range lookup-aware BinaryExtension
+    operation-bus provider interaction. -/
+theorem exists_shiftStaticBinaryExtension_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+        ((OpBusChannel.pushed
+          (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+            ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInputVar)).toRaw).eval
+          (table.environment row) := by
+  apply exists_row_eval_of_singleton_interactionsWith
+  · simpa [h_component] using
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_interactionsWith_opBus
+  · exact h_mem
+
 /-- Table-spec projection for the lookup-aware BinaryExtension provider: the
     same Clean row used for the op-bus interaction supplies the eight static
     BinaryExtensionTable facts. -/
@@ -258,6 +277,44 @@ theorem staticBinaryExtension_wf_of_table_spec
   rw [ZiskFv.AirsClean.BinaryExtension.staticLookupComponent_spec] at h_component_spec
   exact ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts _
     h_component_spec.2
+
+/-- Table-spec projection for the shift-range lookup-aware BinaryExtension
+    provider. It exposes the same eight static BinaryExtensionTable facts as
+    `staticBinaryExtension_wf_of_table_spec`, plus the selected
+    `b_0 < 2^24` PIL range-check carried by the stricter shift component. -/
+theorem shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
+    {table : Table FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
+    (h_spec : table.Spec)
+    {row : Array FGL} (h_row : row ∈ table.table) :
+    ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts
+      (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+        (table.environment row))
+      ∧ ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+            (table.environment row)) := by
+  have h_component_spec :
+      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.Spec
+        (table.environment row) := by
+    simpa [h_component] using h_spec row h_row
+  rw [ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent_spec] at h_component_spec
+  exact ⟨ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts _
+      h_component_spec.2.1, h_component_spec.2.2⟩
+
+/-- Convenience projection for consumers that only need the shift-selected
+    `b_0 < 2^24` range fact. -/
+theorem shiftStaticBinaryExtension_b0_range_of_table_spec
+    {table : Table FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
+    (h_spec : table.Spec)
+    {row : Array FGL} (h_row : row ∈ table.table) :
+    ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact
+      (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+        (table.environment row)) :=
+  (shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
+    h_component h_spec h_row).2
 
 /-- A lookup-aware BinaryExtension provider row cannot match a bitwise
     Binary opcode (`AND`/`OR`/`XOR`, opcode values 14/15/16). The exclusion is
