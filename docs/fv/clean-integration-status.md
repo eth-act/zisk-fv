@@ -1128,6 +1128,12 @@ identified the concrete unified-Main memory emission, Clean balance yields a
 same-message provider row and a legacy `matches_memory_entry` fact for every
 MemAlignReadByte/MemAlignByte/MemAlign/Mem provider branch, while still
 leaving the unified Main provider branch explicit.
+The legacy memory-match predicate now also has proved reflexive/symmetric/
+transitive composition lemmas plus emitted-provider and pushed-provider
+left-composition adapters. These are the small chaining facts needed to turn
+an existing bus-row-to-Main-message match into a bus-row-to-provider-message
+match when constructing the current `LdCleanWitness` and store witness
+bundles from the full ensemble.
 The unified Main, Mem, and MemAlign-family component modules also expose
 direct projection lemmas from generic Clean component specs to the concrete
 row specs expected by the existing load/store bridge layer:
