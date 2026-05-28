@@ -1122,6 +1122,12 @@ emitted-provider adapter and introduces no new trust.
 case in the provider-to-Main equality orientation produced by Clean balance,
 so full-ensemble memory adapters can handle Mem/MemAlign branches without
 local equality flipping.
+`exists_mem_provider_row_matches_entry_spec_of_active_main_eval` now packages
+that selected-branch path at the full-ensemble level: once a caller has
+identified the concrete unified-Main memory emission, Clean balance yields a
+same-message provider row and a legacy `matches_memory_entry` fact for every
+MemAlignReadByte/MemAlignByte/MemAlign/Mem provider branch, while still
+leaving the unified Main provider branch explicit.
 The unified Main, Mem, and MemAlign-family component modules also expose
 direct projection lemmas from generic Clean component specs to the concrete
 row specs expected by the existing load/store bridge layer:
