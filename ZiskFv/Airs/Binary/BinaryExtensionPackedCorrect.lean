@@ -3108,6 +3108,131 @@ lemma binary_extension_sext_h_chunks_eq_signextend_nat_of_wf
 
 -- legacy binary_extension_sext_h_chunks_eq_signextend_nat (bin_ext_table_consumer_wf route) deleted in T4-purge P3.5.
 
+/-- SEXT_H static table witnesses imply that the low/high c-lane sums each
+    fit in one 32-bit chunk. -/
+lemma binary_extension_sext_h_c_sums_lt_of_wf
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
+    (h_op : (v.op row).val = OP_SEXT_H)
+    (h_bytes : ByteLookupHypotheses v row)
+    (h_wfs : ByteLookupWfHypotheses h_bytes) :
+    ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
+        + (v.free_in_c_4 row).val + (v.free_in_c_6 row).val
+        + (v.free_in_c_8 row).val + (v.free_in_c_10 row).val
+        + (v.free_in_c_12 row).val + (v.free_in_c_14 row).val
+        < 4294967296)
+    ∧ ((v.free_in_c_1 row).val + (v.free_in_c_3 row).val
+        + (v.free_in_c_5 row).val + (v.free_in_c_7 row).val
+        + (v.free_in_c_9 row).val + (v.free_in_c_11 row).val
+        + (v.free_in_c_13 row).val + (v.free_in_c_15 row).val
+        < 4294967296) := by
+  obtain ⟨e0, ⟨_, hop0, hbi0, ha0, _, hcl0, hch0⟩,
+         e1, ⟨_, hop1, hbi1, ha1, _, hcl1, hch1⟩,
+         e2, ⟨_, hop2, hbi2, _, _, hcl2, hch2⟩,
+         e3, ⟨_, hop3, hbi3, _, _, hcl3, hch3⟩,
+         e4, ⟨_, hop4, hbi4, _, _, hcl4, hch4⟩,
+         e5, ⟨_, hop5, hbi5, _, _, hcl5, hch5⟩,
+         e6, ⟨_, hop6, hbi6, _, _, hcl6, hch6⟩,
+         e7, ⟨_, hop7, hbi7, _, _, hcl7, hch7⟩⟩ := h_bytes
+  have h0 := sext_h_byte_eq_of_wf e0 h_wfs.1 (by rw [hop0]; exact h_op)
+  rw [show e0.byte_index.val = 0 from by rw [hbi0]; rfl,
+      show e0.a_byte.val = (v.free_in_a_0 row).val from by rw [ha0],
+      show e0.c_lo_byte.val = (v.free_in_c_0 row).val from by rw [hcl0],
+      show e0.c_hi_byte.val = (v.free_in_c_1 row).val from by rw [hch0]] at h0
+  simp only [if_true] at h0
+  have h1 := sext_h_byte_eq_of_wf e1 h_wfs.2.1 (by rw [hop1]; exact h_op)
+  rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
+      show e1.a_byte.val = (v.free_in_a_1 row).val from by rw [ha1],
+      show e1.c_lo_byte.val = (v.free_in_c_2 row).val from by rw [hcl1],
+      show e1.c_hi_byte.val = (v.free_in_c_3 row).val from by rw [hch1]] at h1
+  simp only [show ((1 : ℕ) = 0) ↔ False from by decide, if_false,
+             show ((1 : ℕ) = 1) ↔ True from by decide, if_true] at h1
+  have h2 := sext_h_byte_eq_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
+  rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
+      show e2.c_lo_byte.val = (v.free_in_c_4 row).val from by rw [hcl2],
+      show e2.c_hi_byte.val = (v.free_in_c_5 row).val from by rw [hch2]] at h2
+  simp only [show ((2 : ℕ) = 0) ↔ False from by decide,
+             show ((2 : ℕ) = 1) ↔ False from by decide, if_false] at h2
+  have h3 := sext_h_byte_eq_of_wf e3 h_wfs.2.2.2.1 (by rw [hop3]; exact h_op)
+  rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
+      show e3.c_lo_byte.val = (v.free_in_c_6 row).val from by rw [hcl3],
+      show e3.c_hi_byte.val = (v.free_in_c_7 row).val from by rw [hch3]] at h3
+  simp only [show ((3 : ℕ) = 0) ↔ False from by decide,
+             show ((3 : ℕ) = 1) ↔ False from by decide, if_false] at h3
+  have h4 := sext_h_byte_eq_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
+  rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
+      show e4.c_lo_byte.val = (v.free_in_c_8 row).val from by rw [hcl4],
+      show e4.c_hi_byte.val = (v.free_in_c_9 row).val from by rw [hch4]] at h4
+  simp only [show ((4 : ℕ) = 0) ↔ False from by decide,
+             show ((4 : ℕ) = 1) ↔ False from by decide, if_false] at h4
+  have h5 := sext_h_byte_eq_of_wf e5 h_wfs.2.2.2.2.2.1 (by rw [hop5]; exact h_op)
+  rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
+      show e5.c_lo_byte.val = (v.free_in_c_10 row).val from by rw [hcl5],
+      show e5.c_hi_byte.val = (v.free_in_c_11 row).val from by rw [hch5]] at h5
+  simp only [show ((5 : ℕ) = 0) ↔ False from by decide,
+             show ((5 : ℕ) = 1) ↔ False from by decide, if_false] at h5
+  have h6 := sext_h_byte_eq_of_wf e6 h_wfs.2.2.2.2.2.2.1 (by rw [hop6]; exact h_op)
+  rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
+      show e6.c_lo_byte.val = (v.free_in_c_12 row).val from by rw [hcl6],
+      show e6.c_hi_byte.val = (v.free_in_c_13 row).val from by rw [hch6]] at h6
+  simp only [show ((6 : ℕ) = 0) ↔ False from by decide,
+             show ((6 : ℕ) = 1) ↔ False from by decide, if_false] at h6
+  have h7 := sext_h_byte_eq_of_wf e7 h_wfs.2.2.2.2.2.2.2 (by rw [hop7]; exact h_op)
+  rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
+      show e7.c_lo_byte.val = (v.free_in_c_14 row).val from by rw [hcl7],
+      show e7.c_hi_byte.val = (v.free_in_c_15 row).val from by rw [hch7]] at h7
+  simp only [show ((7 : ℕ) = 0) ↔ False from by decide,
+             show ((7 : ℕ) = 1) ↔ False from by decide, if_false] at h7
+  have ha0_lt : (v.free_in_a_0 row).val < 256 := by
+    have h := h_wfs.1.1.1
+    simpa [ha0] using h
+  have ha1_lt : (v.free_in_a_1 row).val < 256 := by
+    have h := h_wfs.2.1.1.1
+    simpa [ha1] using h
+  have h1d := (h_wfs.2.1).2.2.2.2.2.2.2.2.1 (by rw [hop1]; exact h_op)
+  rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
+      show e1.a_byte.val = (v.free_in_a_1 row).val from by rw [ha1],
+      show e1.c_lo_byte.val = (v.free_in_c_2 row).val from by rw [hcl1],
+      show e1.c_hi_byte.val = (v.free_in_c_3 row).val from by rw [hch1]] at h1d
+  simp only [show ((1 : ℕ) = 0) ↔ False from by decide, if_false,
+             show ((1 : ℕ) = 1) ↔ True from by decide, if_true] at h1d
+  obtain ⟨h1lo, h1hi, _⟩ := h1d
+  by_cases hsign : (v.free_in_a_1 row).val ≥ 128
+  · simp only [if_pos hsign] at h1
+    simp only [if_pos hsign] at h1lo h1hi
+    have h1lo_eq :
+        (v.free_in_c_2 row).val =
+          (v.free_in_a_1 row).val * 256 + (4294967296 - 65536) := by
+      rw [h1lo]
+      have hlow_lt :
+          (v.free_in_a_1 row).val * 256 + (4294967296 - 65536)
+            < 4294967296 := by omega
+      have hout :
+          (v.free_in_a_1 row).val * 256 + (2 ^ 64 - 2 ^ 16)
+            =
+          ((v.free_in_a_1 row).val * 256 + (4294967296 - 65536))
+            + 4294967296 * 4294967295 := by omega
+      rw [hout]
+      norm_num only [pow_succ, pow_zero, Nat.reduceMul]
+      have hzero : 18446744069414584320 % 4294967296 = 0 := by norm_num
+      rw [Nat.add_mod, Nat.mod_eq_of_lt hlow_lt, hzero, Nat.add_zero,
+        Nat.mod_eq_of_lt hlow_lt]
+    have h1hi_lt : (v.free_in_c_3 row).val < 4294967296 := by
+      rw [h1hi]
+      exact Nat.div_lt_of_lt_mul (by omega)
+    rw [h1lo_eq]
+    constructor <;> omega
+  · simp only [if_neg hsign] at h1
+    simp only [if_neg hsign] at h1lo h1hi
+    have h1lo_eq :
+        (v.free_in_c_2 row).val = (v.free_in_a_1 row).val * 256 := by
+      rw [h1lo]
+      exact Nat.mod_eq_of_lt (by omega)
+    have h1hi_lt : (v.free_in_c_3 row).val < 4294967296 := by
+      rw [h1hi]
+      exact Nat.div_lt_of_lt_mul (by omega)
+    rw [h1lo_eq]
+    constructor <;> omega
+
 lemma binary_extension_sext_w_chunks_eq_signextend_nat_of_wf
     (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
     (h_op : (v.op row).val = OP_SEXT_W)
@@ -3195,5 +3320,140 @@ lemma binary_extension_sext_w_chunks_eq_signextend_nat_of_wf
     omega
 
 -- legacy binary_extension_sext_w_chunks_eq_signextend_nat (bin_ext_table_consumer_wf route) deleted in T4-purge P3.5.
+
+/-- SEXT_W static table witnesses imply that the low/high c-lane sums each
+    fit in one 32-bit chunk. -/
+lemma binary_extension_sext_w_c_sums_lt_of_wf
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
+    (h_op : (v.op row).val = OP_SEXT_W)
+    (h_bytes : ByteLookupHypotheses v row)
+    (h_wfs : ByteLookupWfHypotheses h_bytes) :
+    ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
+        + (v.free_in_c_4 row).val + (v.free_in_c_6 row).val
+        + (v.free_in_c_8 row).val + (v.free_in_c_10 row).val
+        + (v.free_in_c_12 row).val + (v.free_in_c_14 row).val
+        < 4294967296)
+    ∧ ((v.free_in_c_1 row).val + (v.free_in_c_3 row).val
+        + (v.free_in_c_5 row).val + (v.free_in_c_7 row).val
+        + (v.free_in_c_9 row).val + (v.free_in_c_11 row).val
+        + (v.free_in_c_13 row).val + (v.free_in_c_15 row).val
+        < 4294967296) := by
+  obtain ⟨e0, ⟨_, hop0, hbi0, ha0, _, hcl0, hch0⟩,
+         e1, ⟨_, hop1, hbi1, ha1, _, hcl1, hch1⟩,
+         e2, ⟨_, hop2, hbi2, ha2, _, hcl2, hch2⟩,
+         e3, ⟨_, hop3, hbi3, ha3, _, hcl3, hch3⟩,
+         e4, ⟨_, hop4, hbi4, _, _, hcl4, hch4⟩,
+         e5, ⟨_, hop5, hbi5, _, _, hcl5, hch5⟩,
+         e6, ⟨_, hop6, hbi6, _, _, hcl6, hch6⟩,
+         e7, ⟨_, hop7, hbi7, _, _, hcl7, hch7⟩⟩ := h_bytes
+  have h0 := sext_w_byte_eq_of_wf e0 h_wfs.1 (by rw [hop0]; exact h_op)
+  rw [show e0.byte_index.val = 0 from by rw [hbi0]; rfl,
+      show e0.a_byte.val = (v.free_in_a_0 row).val from by rw [ha0],
+      show e0.c_lo_byte.val = (v.free_in_c_0 row).val from by rw [hcl0],
+      show e0.c_hi_byte.val = (v.free_in_c_1 row).val from by rw [hch0]] at h0
+  simp only [show ((0 : ℕ) < 4) ↔ True from by decide, if_true,
+             show ((0 : ℕ) = 3) ↔ False from by decide, false_and, if_false,
+             pow_zero, mul_one] at h0
+  have h1 := sext_w_byte_eq_of_wf e1 h_wfs.2.1 (by rw [hop1]; exact h_op)
+  rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
+      show e1.a_byte.val = (v.free_in_a_1 row).val from by rw [ha1],
+      show e1.c_lo_byte.val = (v.free_in_c_2 row).val from by rw [hcl1],
+      show e1.c_hi_byte.val = (v.free_in_c_3 row).val from by rw [hch1]] at h1
+  simp only [show ((1 : ℕ) < 4) ↔ True from by decide, if_true,
+             show ((1 : ℕ) = 3) ↔ False from by decide, false_and, if_false,
+             pow_one] at h1
+  have h2 := sext_w_byte_eq_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
+  rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
+      show e2.a_byte.val = (v.free_in_a_2 row).val from by rw [ha2],
+      show e2.c_lo_byte.val = (v.free_in_c_4 row).val from by rw [hcl2],
+      show e2.c_hi_byte.val = (v.free_in_c_5 row).val from by rw [hch2]] at h2
+  simp only [show ((2 : ℕ) < 4) ↔ True from by decide, if_true,
+             show ((2 : ℕ) = 3) ↔ False from by decide, false_and, if_false,
+             show (256 ^ 2 : ℕ) = 65536 from by decide] at h2
+  have h3 := sext_w_byte_eq_of_wf e3 h_wfs.2.2.2.1 (by rw [hop3]; exact h_op)
+  rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
+      show e3.a_byte.val = (v.free_in_a_3 row).val from by rw [ha3],
+      show e3.c_lo_byte.val = (v.free_in_c_6 row).val from by rw [hcl3],
+      show e3.c_hi_byte.val = (v.free_in_c_7 row).val from by rw [hch3]] at h3
+  simp only [show ((3 : ℕ) < 4) ↔ True from by decide, if_true,
+             show ((3 : ℕ) = 3) ↔ True from by decide, true_and,
+             show (256 ^ 3 : ℕ) = 16777216 from by decide] at h3
+  have h4 := sext_w_byte_eq_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
+  rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
+      show e4.c_lo_byte.val = (v.free_in_c_8 row).val from by rw [hcl4],
+      show e4.c_hi_byte.val = (v.free_in_c_9 row).val from by rw [hch4]] at h4
+  simp only [show ((4 : ℕ) < 4) ↔ False from by decide, if_false] at h4
+  have h5 := sext_w_byte_eq_of_wf e5 h_wfs.2.2.2.2.2.1 (by rw [hop5]; exact h_op)
+  rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
+      show e5.c_lo_byte.val = (v.free_in_c_10 row).val from by rw [hcl5],
+      show e5.c_hi_byte.val = (v.free_in_c_11 row).val from by rw [hch5]] at h5
+  simp only [show ((5 : ℕ) < 4) ↔ False from by decide, if_false] at h5
+  have h6 := sext_w_byte_eq_of_wf e6 h_wfs.2.2.2.2.2.2.1 (by rw [hop6]; exact h_op)
+  rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
+      show e6.c_lo_byte.val = (v.free_in_c_12 row).val from by rw [hcl6],
+      show e6.c_hi_byte.val = (v.free_in_c_13 row).val from by rw [hch6]] at h6
+  simp only [show ((6 : ℕ) < 4) ↔ False from by decide, if_false] at h6
+  have h7 := sext_w_byte_eq_of_wf e7 h_wfs.2.2.2.2.2.2.2 (by rw [hop7]; exact h_op)
+  rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
+      show e7.c_lo_byte.val = (v.free_in_c_14 row).val from by rw [hcl7],
+      show e7.c_hi_byte.val = (v.free_in_c_15 row).val from by rw [hch7]] at h7
+  simp only [show ((7 : ℕ) < 4) ↔ False from by decide, if_false] at h7
+  have ha0_lt : (v.free_in_a_0 row).val < 256 := by
+    have h := h_wfs.1.1.1
+    simpa [ha0] using h
+  have ha1_lt : (v.free_in_a_1 row).val < 256 := by
+    have h := h_wfs.2.1.1.1
+    simpa [ha1] using h
+  have ha2_lt : (v.free_in_a_2 row).val < 256 := by
+    have h := h_wfs.2.2.1.1.1
+    simpa [ha2] using h
+  have ha3_lt : (v.free_in_a_3 row).val < 256 := by
+    have h := h_wfs.2.2.2.1.1.1
+    simpa [ha3] using h
+  have h3d := (h_wfs.2.2.2.1).2.2.2.2.2.2.2.2.2 (by rw [hop3]; exact h_op)
+  rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
+      show e3.a_byte.val = (v.free_in_a_3 row).val from by rw [ha3],
+      show e3.c_lo_byte.val = (v.free_in_c_6 row).val from by rw [hcl3],
+      show e3.c_hi_byte.val = (v.free_in_c_7 row).val from by rw [hch3]] at h3d
+  simp only [show ((3 : ℕ) < 4) ↔ True from by decide, if_true,
+             show ((3 : ℕ) = 3) ↔ True from by decide, true_and,
+             show (256 ^ 3 : ℕ) = 16777216 from by decide] at h3d
+  obtain ⟨h3lo, h3hi, _⟩ := h3d
+  by_cases hsign : (v.free_in_a_3 row).val ≥ 128
+  · simp only [if_pos hsign] at h3
+    simp only [if_pos hsign] at h3lo h3hi
+    have h3lo_eq :
+        (v.free_in_c_6 row).val =
+          (v.free_in_a_3 row).val * 16777216 := by
+      rw [h3lo]
+      have hlow_lt :
+          (v.free_in_a_3 row).val * 16777216 < 4294967296 := by omega
+      have hout :
+          (v.free_in_a_3 row).val * 16777216 + (2 ^ 64 - 2 ^ 32)
+            =
+          (v.free_in_a_3 row).val * 16777216
+            + 4294967296 * 4294967295 := by omega
+      rw [hout]
+      norm_num only [pow_succ, pow_zero, Nat.reduceMul]
+      have hzero : 18446744069414584320 % 4294967296 = 0 := by norm_num
+      rw [Nat.add_mod, Nat.mod_eq_of_lt hlow_lt, hzero, Nat.add_zero,
+        Nat.mod_eq_of_lt hlow_lt]
+    have h3hi_lt : (v.free_in_c_7 row).val < 4294967296 := by
+      rw [h3hi]
+      exact Nat.div_lt_of_lt_mul (by omega)
+    rw [h3lo_eq]
+    constructor <;> omega
+  · simp only [if_neg hsign] at h3
+    simp only [if_neg hsign] at h3lo h3hi
+    have h3lo_eq :
+        (v.free_in_c_6 row).val =
+          (v.free_in_a_3 row).val * 16777216 := by
+      rw [h3lo]
+      exact Nat.mod_eq_of_lt (by omega)
+    have h3hi_lt : (v.free_in_c_7 row).val < 4294967296 := by
+      rw [h3hi]
+      exact Nat.div_lt_of_lt_mul (by omega)
+    rw [h3lo_eq]
+    constructor <;> omega
 
 end ZiskFv.Airs.BinaryExtension
