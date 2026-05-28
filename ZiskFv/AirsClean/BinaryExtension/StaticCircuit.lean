@@ -86,9 +86,6 @@ abbrev StaticBinaryExtensionTableSpecFacts
           c_hi_byte := row.cColsHi.free_in_c_15
           op_is_shift := row.flags.op_is_shift }
 
-abbrev ShiftB0RangeSpecFact (row : BinaryExtensionRow FGL) : Prop :=
-  row.flags.b_0.val < 2 ^ 24
-
 def staticLookupCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit :=
   { binaryExtensionWithStaticTableElaborated with
     exposedChannels row _ :=

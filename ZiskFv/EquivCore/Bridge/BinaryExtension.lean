@@ -498,6 +498,57 @@ lemma shift_pin_eq_of_shift_match_m32_0
   rw [h_b0_val]
   omega
 
+/-- Variant of `shift_pin_eq_of_shift_match_m32_0` whose no-wrap bound for
+    the BinaryExtension-local `b_0` column is supplied by the shift-specific
+    Clean range witness rather than by `binary_extension_columns_in_range`.
+    The `free_in_b < 256` fact comes from the exact static
+    BinaryExtensionTable row witnesses. -/
+lemma shift_pin_eq_of_shift_match_m32_0_of_b0_range
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
+    (h_m32 : m.m32 r_main = 0)
+    (h_b_lo_t : m.b_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs2))
+    (h_b_hi_t : m.b_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs2))
+    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state)
+    (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary))
+    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
+    (h_b0_lt : (v.b_0 r_binary).val < 2 ^ 24) :
+    r2_val.toNat % 64 = (v.free_in_b r_binary).val % 64 := by
+  have h_b_main : (v.free_in_b r_binary).val < 256 := by
+    have h := h_wfs.1.1.2.2
+    simpa [h_bytes.h0.2.2.2.2.1] using h
+  have h_r2_main :=
+    SailStateBridge.packed_lane_eq_of_read_xreg
+      state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main) h_b_lo_t h_b_hi_t h_read_r2
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
+  obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  rw [h_op_is_shift] at h_b_lo_m
+  have h_b0_fgl : m.b_0 r_main = v.free_in_b r_binary + 256 * v.b_0 r_binary := by
+    rw [h_b_lo_m]; ring
+  rw [h_r2_main]
+  rw [BitVec.toNat_ofNat]
+  rw [Nat.mod_mod_of_dvd _ (by decide : (64 : ℕ) ∣ 2^64)]
+  have h_step : ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296) % 64
+              = (m.b_0 r_main).val % 64 := by omega
+  rw [h_step]
+  have h_b0_val : (m.b_0 r_main).val
+      = (v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val := by
+    rw [h_b0_fgl]
+    have h_cast : v.free_in_b r_binary + 256 * v.b_0 r_binary
+        = ((((v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    show _ < 18446744069414584321
+    omega
+  rw [h_b0_val]
+  omega
+
 /-- **Shift-pin bridge for 64-bit immediate shifts (SLLI/SRLI/SRAI).**
     Derives `shamt.toNat = (v.free_in_b r_binary).val % 64` from
     `transpile_<OPI>`'s `m.b_0 = shamt_b_lo shamt`, op_is_shift = 1,

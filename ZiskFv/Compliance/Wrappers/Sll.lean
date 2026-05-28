@@ -97,13 +97,13 @@ theorem equiv_SLL
     -- the Main AIR's ROM handshake on the row hosting SLL.
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL)
     (h_component :
-      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
     (h_table_spec : providerTable.Spec)
     (h_provider_row : providerRow ∈ providerTable.table)
     (h_match : matches_entry (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
-          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
     -- Lane-match for the rd-write entry — caller-supplied; discharged
     -- downstream from `memory_bus_register_write_perm_sound`.
@@ -111,13 +111,13 @@ theorem equiv_SLL
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   let row :=
-    ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
       (providerTable.environment providerRow)
-  have h_facts :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinaryExtension_wf_of_table_spec
+  have h_shift_facts :=
+    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
   exact ZiskFv.EquivCore.Sll.equiv_SLL_of_static_row state sll_input r1 r2 rd
-    m row r_main bus promises pins h_match h_facts h_lane_rd
+    m row r_main bus promises pins h_match h_shift_facts.1 h_shift_facts.2 h_lane_rd
 
 -- equiv_<OP>_of_static_lookup (alt route, op_bus_perm_sound) deleted in T4-purge P3.2.
 

@@ -116,7 +116,8 @@ theorem equiv_SLL_of_wf
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
     (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
-    (h_op_is_shift : v.op_is_shift r_binary = 1) :
+    (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (h_b0_range : (v.b_0 r_binary).val < 2 ^ 24) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
@@ -152,9 +153,10 @@ theorem equiv_SLL_of_wf
       m v r_main r_binary (regidx_to_fin r1) sll_input.r1_val
       h_m32 h_a_lo_t h_a_hi_t h_input_r1 h_op_is_shift h_match
   have h_shift_pin :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.shift_pin_eq_of_shift_match_m32_0
+    ZiskFv.EquivCore.Bridge.BinaryExtension.shift_pin_eq_of_shift_match_m32_0_of_b0_range
       m v r_main r_binary (regidx_to_fin r2) sll_input.r2_val
       h_m32 h_b_lo_t h_b_hi_t h_input_r2 h_op_is_shift h_match
+      h_bytes h_wfs h_b0_range
   -- Derive 8 e2 byte ranges from `byteAt_val_lt_256` (chunk-shape
   -- replacement for the retired memory_bus_entry_byte_range_perm_sound
   -- axiom). Net **−8 binders** on `equiv_SLL`.
@@ -166,15 +168,26 @@ theorem equiv_SLL_of_wf
   have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
   have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
   have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
-  -- Derive the 8 a-byte ranges + 16 c-byte 32-bit ranges from
-  -- `binary_extension_columns_in_range`. This discharges the 17
-  -- per-byte *promise hypotheses* without any caller obligation.
-  obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7, _hb,
+  -- Derive the a-byte ranges from the exact static BinaryExtensionTable
+  -- rows. The remaining c-byte bounds still come from
+  -- `binary_extension_columns_in_range` until the shift c-lane range
+  -- projection is threaded through the write-value bridge.
+  have h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary := by
+    obtain ⟨e0, h0, e1, h1, e2, h2, e3, h3, e4, h4, e5, h5, e6, h6, e7, h7⟩ :=
+      h_bytes
+    exact ⟨
+      by simpa [h0.2.2.2.1] using h_wfs.1.1.1,
+      by simpa [h1.2.2.2.1] using h_wfs.2.1.1.1,
+      by simpa [h2.2.2.2.1] using h_wfs.2.2.1.1.1,
+      by simpa [h3.2.2.2.1] using h_wfs.2.2.2.1.1.1,
+      by simpa [h4.2.2.2.1] using h_wfs.2.2.2.2.1.1.1,
+      by simpa [h5.2.2.2.1] using h_wfs.2.2.2.2.2.1.1.1,
+      by simpa [h6.2.2.2.1] using h_wfs.2.2.2.2.2.2.1.1.1,
+      by simpa [h7.2.2.2.1] using h_wfs.2.2.2.2.2.2.2.1.1 ⟩
+  obtain ⟨_, _, _, _, _, _, _, _, _,
           hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
           hc8, hc9, hc10, hc11, hc12, hc13, hc14, hc15, _, _⟩ :=
     ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range v r_binary
-  have h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary :=
-    ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7⟩
   set shift : ℕ := sll_input.r2_val.toNat % 64 with h_shift_def
   have h_discharge :=
     ZiskFv.EquivCore.WriteValueProofs.BinaryShift.h_rd_val_shift_sll_of_wf
@@ -226,6 +239,7 @@ theorem equiv_SLL_of_static_row
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
           (ZiskFv.AirsClean.BinaryExtension.opBusMessage row) 1))
     (h_facts : ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableWfFacts row)
+    (h_b0_range : ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact row)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2) :
     execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SLL)) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
@@ -254,6 +268,7 @@ theorem equiv_SLL_of_static_row
       v 0 h_wfs).1 (Or.inl h_op_v_eq)
   exact equiv_SLL_of_wf state sll_input r1 r2 rd m v r_main 0 bus
     promises ⟨h_main_active, h_main_op⟩ h_match_v h_lane_rd
-    h_bytes h_wfs h_op_is_shift
+    h_bytes h_wfs h_op_is_shift (by simpa [v, ZiskFv.AirsClean.BinaryExtension.validOfRow,
+      ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact] using h_b0_range)
 
 end ZiskFv.EquivCore.Sll

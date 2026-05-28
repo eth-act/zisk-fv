@@ -401,6 +401,9 @@ abbrev StaticBinaryExtensionTableWfFacts (row : BinaryExtensionRow FGL) : Prop :
         c_hi_byte := row.cColsHi.free_in_c_15
         op_is_shift := row.flags.op_is_shift } 1)
 
+abbrev ShiftB0RangeSpecFact (row : BinaryExtensionRow FGL) : Prop :=
+  row.flags.b_0.val < 2 ^ 24
+
 open ZiskFv.Airs.Tables.BinaryExtensionTable in
 /-- Static-provider BinaryExtensionTable lookup path, projected all the way to
     the legacy semantic `wf_properties` facts. This consumes exact membership

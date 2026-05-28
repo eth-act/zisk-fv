@@ -139,6 +139,14 @@ projects both the existing static BinaryExtensionTable wf facts and the new
 `b_0 < 2^24` fact from one provider-row `table.Spec`. This is structural
 Clean evidence for the next canonical shift cutover; it adds no trust-ledger
 axiom and no universal caller promise.
+The first canonical cutover through that surface is SLL: its wrapper,
+canonical theorem, and OpEnvelope arm now require the shift-specific static
+BinaryExtension provider component, and the core shift-pin bridge consumes
+the Clean `b_0 < 2^24` witness plus exact byte-table facts instead of using
+`binary_extension_columns_in_range` for the shift amount path. This slice is
+still a structural reroot, not a completed range-bus discharge: SLL honestly
+retains `range_bus_sound` through the remaining c-lane sum/range bridge until
+those c-lane bounds are projected from static BinaryExtensionTable facts.
 
 The first Arith-family T6 prep exposes the ArithMul chunk `bits(16)` checks
 through Clean instead of the generic range-bus axiom. `ArithMul.mainWithChunkRanges`
