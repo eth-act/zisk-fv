@@ -136,7 +136,7 @@ The narrative per-class rationale below stays here.
 | -- | ----------------------------------- | ----: | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 1  | Transpile contracts                 |    44 | `Trusted/Transpiler.lean`             | For each non-defect-gated RV64IM instruction kind, ZisK's Rust transpilation lowers a Sail-decoded `ast` into a Main-row column shape that matches the pure spec. | Direct reading of ZisK's `transpile_*` Rust functions in the `zisk/` submodule; each axiom's docstring cites the exact upstream source line.                 |
 | 2  | Memory state bridge — load          |     1 | `ZiskCircuit/MemModel.lean`           | A Mem-AIR row tagged `wr=0` matching a memory-bus entry implies Sail's `state.mem` agrees with the entry's eight bytes.                           | Bridges Mem AIR's column language to Sail's byte-addressable `Std.HashMap` once class #4 has placed the entry on the bus.                                    |
-| 4  | Bus / lookup soundness              |     1 | `Airs/MemoryBus/MemBridge.lean` (1) | Remaining memory-bus compatibility surface: `main_store_pc_emission_bundle` — lane match for `store_pc ∈ {0,1}` register writes. | PLONK / logUp permutation-argument soundness for the remaining compatibility surface. The T4 Clean memory-channel route retired the load/provider, store, and MemAlign sub-doubleword entries from canonical/global trust. T5's `ExternalArithMemoryWitness` route retired `main_external_arith_emission_bundle` from source and from the canonical/global closure. |
+| 4  | Bus / lookup soundness              |     0 | — | Retired from the live trust ledger. | The T4 Clean memory-channel route retired the load/provider, store, and MemAlign sub-doubleword entries from canonical/global trust. T5 retired `main_external_arith_emission_bundle`; T7 retired `main_store_pc_emission_bundle` by deriving store-PC/register-write lanes from selected Clean Main `cMemMessage` structural witnesses. |
 | 5b | Range-bus / byte-range soundness    |     2 | `Channels/RangeBusSoundness.lean` | Consolidated byte/signed range-bus soundness for `bits(width)` PIL columns and signed Arith carry-table checks. | Lookup-argument soundness on the standard byte-range buses, restricted to participants annotated in the PIL — see citations in each axiom's docstring. |
 | 6  | Binary / BinaryExtension lookup soundness | 2 | `Airs/Binary/BinaryRanges.lean` (2) | Lookup-argument soundness still live for Binary W-mode sign-extension: `binary_w_sext_choice_pin` and `binary_w_mode_carry_7_zero` for ADDW/SUBW. `bin_table_consumer_wf` and `bin_ext_table_consumer_wf` have been retired from source. | Lookup-argument soundness on the Binary AIR, scoped to the remaining W-mode row facts. |
 | 6b | Arith range / Euclidean pins |     0 | `Airs/Arith/Ranges.lean`              | Retired in T5. The shared `arith_{mul,div}_table_lookup_sound` axioms and the remaining dynamic `arith_table_op_*` / `arith_div_*` source axioms were removed. `MUL*`, `DIV*`, and `REM*` proofs now consume lookup-aware `ArithMulTableWitness` / `ArithDivTableWitness` binders for true static `ArithTableSpec` projections, while known dynamic witness gaps are explicit defects. | No live source axioms remain in this class. Future row/range/operation-bus facts must be proved from constraints and range/binary bus soundness rather than reintroduced as class-#6b trust. |
@@ -146,7 +146,7 @@ The narrative per-class rationale below stays here.
 | 10 | Platform — Zicfilp disabled         |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.update_elp_state _ = pure ()`.                                                                                               | Zicfilp landing-pad extension is disabled in ZisK's target; helper reduces to no-op under `currentlyEnabled Ext_Zicfilp = false`.                            |
 | C  | Clean-Component completeness — NON-SECURITY-CRITICAL | 6 | `AirsClean/Completeness.lean` | `binaryAdd_circuit_completeness`, `memAlignByte_circuit_completeness`, `memAlignReadByte_circuit_completeness`, `arithMul_circuit_completeness`, `arithDiv_circuit_completeness`, `mainWithRomAndMemBus_circuit_completeness` — fill mandatory `completeness` fields for Clean `GeneralFormalCircuit`s as integration proceeds. BinaryExtension's C5 component has trivial proved completeness and does not add an axiom. Binary's C6 component also adds no axiom: its prover-completeness side is explicitly conditional on the row `Spec`, while soundness remains proved from constraints. | zisk-fv is a **soundness-only** verification: it does not prove completeness (that an honest prover can satisfy the constraints — the pre-Clean code never established it either). These axioms are **completeness-direction** — a falsehood in any one CANNOT make a wrong execution verify; the verification's *soundness* does not depend on this class. Clean's `GeneralFormalCircuit` simply makes the field mandatory. (Plan decision D-COMPLETE.) |
 
-Total live count: `trust/baseline-axioms.txt` currently records **58**
+Total live count: `trust/baseline-axioms.txt` currently records **57**
 axioms, including the 6 non-security-critical Clean completeness axioms in
 class C. Class C is separate in kind from the soundness-critical trust classes.
 
@@ -428,10 +428,12 @@ carry-column-range disjunctive axioms and two arith-table operand-pin
 axioms for the MULW/DIVW/DIVUW/REMW/REMUW W-variants. Step 4.alpha.A.3
 added the two signed-mode disjunctive carry-range axioms.
 
-### Prior Round-3 ControlFlow lift (+1 axiom)
+### Prior Round-3 ControlFlow lift (+1 axiom, retired in T7)
 
-`main_store_pc_emission_bundle` extended class #4's memory-bus
-emission footprint by 1 axiom.
+`main_store_pc_emission_bundle` temporarily extended class #4's memory-bus
+emission footprint by 1 axiom. T7 retired it from source and from the
+global closure by routing LUI/AUIPC/JAL/JALR through explicit Clean Main
+`cMemMessage` structural witnesses.
 
 ### Prior Round-3 Binary lift (+1 axiom)
 

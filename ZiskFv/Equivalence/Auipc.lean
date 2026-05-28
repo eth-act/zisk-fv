@@ -34,6 +34,7 @@ theorem equiv_AUIPC
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
     (promises : ZiskFv.EquivCore.Promises.UTypePromises
@@ -49,6 +50,6 @@ theorem equiv_AUIPC
     : execute_instruction (instruction.UTYPE (imm, rd, uop.AUIPC)) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_AUIPC state auipc_input imm rd exec_row e_rd nextPC_val m r_main next_pc pins h_auipc_subset promises h_no_wrap h_pc_offset_lt_2_32
+  exact ZiskFv.Compliance.equiv_AUIPC state auipc_input imm rd exec_row e_rd nextPC_val m r_main next_pc store_pc_mem pins h_auipc_subset promises h_no_wrap h_pc_offset_lt_2_32
 
 end ZiskFv.Equivalence.Auipc

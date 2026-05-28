@@ -36,6 +36,7 @@ theorem equiv_JALR
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_jalr_subset : jalr_subset_holds m r_main next_pc)
     (promises : ZiskFv.EquivCore.Promises.JumpPromises
@@ -57,6 +58,6 @@ theorem equiv_JALR
         LeanRV64D.Functions.execute (instruction.JALR (imm, rs1, rd))) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_JALR state jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val m r_main next_pc pins h_jalr_subset promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg h_pc_bound h_pc_offset_lt_2_32
+  exact ZiskFv.Compliance.equiv_JALR state jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val m r_main next_pc store_pc_mem pins h_jalr_subset promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg h_pc_bound h_pc_offset_lt_2_32
 
 end ZiskFv.Equivalence.Jalr

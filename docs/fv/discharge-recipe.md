@@ -77,9 +77,10 @@ form), `h_match_clo`, `h_match_chi`.
 **Generalization.** Every opcode with an rd-write needs lane-match
 discharge. The bundle name varies by op-class (the trust ledger
 exposes parallel bundles in `MemBridge.lean`: `main_load_emission_bundle`
-4(d), `main_sext_load_emission_bundle` 4(e), `main_store_pc_emission_bundle`
-4(f), `main_external_arith_emission_bundle` 4(g)). Match your opcode
-to the bundle covering its op-set.
+4(d), `main_sext_load_emission_bundle` 4(e), and historical
+store-PC/external-arith bundles that have since been retired from the live
+trust ledger). Match your opcode to the currently live bridge surface covering
+its op-set, preferring Clean structural witnesses where available.
 
 **Trust class.** Typically #4 (memory-bus emission bundle soundness),
 plus an op-bus `matches_entry` projection that comes for free with

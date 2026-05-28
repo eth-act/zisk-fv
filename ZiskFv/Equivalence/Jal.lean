@@ -35,6 +35,7 @@ theorem equiv_JAL
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_jal_subset : jump_subset_holds m r_main next_pc)
     (promises : ZiskFv.EquivCore.Promises.JumpPromises
@@ -49,6 +50,6 @@ theorem equiv_JAL
     : execute_instruction (instruction.JAL (imm, rd)) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_JAL state jal_input imm rd misa_val m r_main next_pc exec_row e_rd nextPC_val pins h_jal_subset promises h_input_imm h_not_throws h_pc_bound h_pc_offset_lt_2_32
+  exact ZiskFv.Compliance.equiv_JAL state jal_input imm rd misa_val m r_main next_pc exec_row e_rd nextPC_val store_pc_mem pins h_jal_subset promises h_input_imm h_not_throws h_pc_bound h_pc_offset_lt_2_32
 
 end ZiskFv.Equivalence.Jal

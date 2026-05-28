@@ -223,64 +223,6 @@ lemma jalr_discharge_full
     (0 : FGL) { xreg := fun _ => 0#64, pc := 0#64 } h_ext h_op
   exact h_tr.2.2.2.2.1
 
-/-! ## Round-3 (post-parser-fix): store_pc lane discharge
-
-After the parser-bug fix exposed the true post-round-3 hypothesis
-counts for JAL/JALR (33/21 and 38/23, not the previously-reported
-23/11 and 28/14), this round discharges the two `store_pc_lanes_match_*`
-hypotheses via the new `main_store_pc_emission_bundle` axiom (trust
-class #4, PIL-cited at `main.pil:311-312` / `:323` / `:148` / `:473`).
-
-Per opcode:
-* JAL  — `h_lane_lo` + `h_lane_hi` retired (−2 binders).
-* JALR — `h_lane_lo` + `h_lane_hi` retired (−2 binders).
-* AUIPC — same shape, retired alongside (−2 binders).
-
-The discharge consumes:
-* The JAL / JALR / AUIPC archetype mode pins (already in `h_circuit`)
-  to fire `main_store_pc_emission_bundle`'s `h_ext` / `h_op` /
-  `h_op_disj` activation.
-* The caller's existing `h_rd_mult` / `h_rd_as` bus-shape pins.
-
-Trust ledger: +1 axiom (`main_store_pc_emission_bundle`) in class #4.
--/
-
-/-- **JAL lane discharge.** Retires `h_lane_lo` + `h_lane_hi` for
-    `equiv_JAL` via `main_store_pc_emission_bundle`.
-
-    JAL's circuit mode pins `is_external_op = 0` and `op = OP_FLAG`,
-    activating the bundle's `op_code = OP_FLAG` disjunct. -/
-lemma jal_discharge_lanes
-    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (e_rd : Interaction.MemoryBusEntry FGL)
-    (h_circuit : ZiskFv.ZiskCircuit.Jal.jal_circuit_holds m r_main next_pc)
-    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1) :
-    ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd
-    ∧ ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd := by
-  obtain ⟨_h_subset, h_mode⟩ := h_circuit
-  obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
-  exact ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
-    m r_main e_rd ZiskFv.Trusted.OP_FLAG h_ext h_op (Or.inl rfl)
-    h_rd_mult h_rd_as
-
-/-- **JALR lane discharge.** Retires `h_lane_lo` + `h_lane_hi` for
-    `equiv_JALR` via `main_store_pc_emission_bundle`.
-
-    JALR's circuit mode pins `is_external_op = 0` and `op = OP_COPYB`,
-    activating the bundle's `op_code = OP_COPYB` disjunct. -/
-lemma jalr_discharge_lanes
-    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (e_rd : Interaction.MemoryBusEntry FGL)
-    (h_circuit : ZiskFv.ZiskCircuit.Jalr.jalr_circuit_holds m r_main next_pc)
-    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1) :
-    ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd
-    ∧ ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd := by
-  obtain ⟨_h_subset, h_mode⟩ := h_circuit
-  obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
-  exact ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
-    m r_main e_rd ZiskFv.Trusted.OP_COPYB h_ext h_op (Or.inr rfl)
-    h_rd_mult h_rd_as
-
 /-- **AUIPC offset discharge.** Retires `h_offset_bridge` for
     `equiv_AUIPC` via `transpile_AUIPC` instantiated at
     `imm_offset := ((BitVec.signExtend 64 (imm ++ 0#12)).toNat : FGL)`.
@@ -313,54 +255,5 @@ lemma auipc_offset_discharge
   -- The transpile axiom's 5th conjunct: m.jmp_offset2 r_main = imm_offset.
   have h_eq : m.jmp_offset2 r_main = (N : FGL) := h_tr.2.2.2.2.1
   rw [h_eq, Fin.val_natCast, Nat.mod_eq_of_lt h_no_wrap_offset]
-
-/-- **LUI lane discharge.** Retires `h_lane_rd` for `equiv_LUI`
-    via `main_store_pc_emission_bundle`.
-
-    LUI's circuit mode pins `is_external_op = 0` and `op = OP_COPYB`,
-    activating the bundle's `op_code = OP_COPYB` disjunct. The bundle
-    delivers `store_pc_lanes_match_{lo,hi}` (uniform in `store_pc`);
-    under LUI's `store_pc = 0` pin, the lo formula collapses to
-    `memory_entry_lo e = c_0` and the hi formula to
-    `memory_entry_hi e = c_1` — i.e. `register_write_lanes_match`. -/
-lemma lui_discharge_lanes
-    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (e_rd : Interaction.MemoryBusEntry FGL)
-    (h_circuit :
-      ZiskFv.Tactics.UTypeArchetype.lui_archetype_circuit_holds m r_main next_pc)
-    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1) :
-    ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e_rd := by
-  obtain ⟨_h_subset, h_mode⟩ := h_circuit
-  obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, h_store_pc⟩ := h_mode
-  obtain ⟨h_lo, h_hi⟩ :=
-    ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
-      m r_main e_rd ZiskFv.Trusted.OP_COPYB h_ext h_op (Or.inr rfl)
-      h_rd_mult h_rd_as
-  -- Specialize the uniform store_pc lane match to store_pc = 0 to recover
-  -- register_write_lanes_match (with sides flipped).
-  simp only [ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo, h_store_pc,
-             zero_mul, zero_add] at h_lo
-  simp only [ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi, h_store_pc,
-             sub_zero, one_mul] at h_hi
-  exact ⟨h_lo.symm, h_hi.symm⟩
-
-/-- **AUIPC lane discharge.** Retires `h_lane_lo` + `h_lane_hi` for
-    `equiv_AUIPC` via `main_store_pc_emission_bundle`.
-
-    AUIPC's circuit mode pins `is_external_op = 0` and `op = OP_FLAG`,
-    activating the bundle's `op_code = OP_FLAG` disjunct. -/
-lemma auipc_discharge_lanes
-    (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
-    (e_rd : Interaction.MemoryBusEntry FGL)
-    (h_circuit :
-      ZiskFv.Tactics.UTypeArchetype.auipc_archetype_circuit_holds m r_main next_pc)
-    (h_rd_mult : e_rd.multiplicity = 1) (h_rd_as : e_rd.as.val = 1) :
-    ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo m r_main e_rd
-    ∧ ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi m r_main e_rd := by
-  obtain ⟨_h_subset, h_mode⟩ := h_circuit
-  obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
-  exact ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
-    m r_main e_rd ZiskFv.Trusted.OP_FLAG h_ext h_op (Or.inl rfl)
-    h_rd_mult h_rd_as
 
 end ZiskFv.EquivCore.Bridge.ControlFlow

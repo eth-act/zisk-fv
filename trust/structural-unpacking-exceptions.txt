@@ -669,6 +669,24 @@ ADDED: store_pc_mem
        (`StorePcMemoryWitness m r_main e_rd`, Clean Main `cMemMessage`
         structural witness for store-PC/register-write byte lanes.)
 
+OPCODE: ZiskFv.Equivalence.Auipc.equiv_AUIPC
+DROPPED: main_store_pc_emission_bundle from semantic closure
+ADDED: store_pc_mem
+       (`StorePcMemoryWitness m r_main e_rd`, Clean Main `cMemMessage`
+        structural witness for store-PC/register-write byte lanes.)
+
+OPCODE: ZiskFv.Equivalence.Jal.equiv_JAL
+DROPPED: main_store_pc_emission_bundle from semantic closure
+ADDED: store_pc_mem
+       (`StorePcMemoryWitness m r_main e_rd`, Clean Main `cMemMessage`
+        structural witness for store-PC/register-write byte lanes.)
+
+OPCODE: ZiskFv.Equivalence.Jalr.equiv_JALR
+DROPPED: main_store_pc_emission_bundle from semantic closure
+ADDED: store_pc_mem
+       (`StorePcMemoryWitness m r_main e_rd`, Clean Main `cMemMessage`
+        structural witness for store-PC/register-write byte lanes.)
+
 # ============================================================
 # ITYPE constructibility-bundle ops (Step 4.2r3.I)
 # ============================================================

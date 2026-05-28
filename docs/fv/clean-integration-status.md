@@ -98,7 +98,9 @@ the 13 Arith-family canonical paths now consume an
 `cMemMessage`, row equality, `store_pc = 0`, and memory-entry match
 needed to derive the rd-write byte lanes. The source axiom remains only
 as historical documentation; it is retired from the trust ledger.
-`main_store_pc_emission_bundle` remains a T6/T7 target.
+T7 retired `main_store_pc_emission_bundle` from source and from the
+canonical/global closure by routing LUI/AUIPC/JAL/JALR through selected
+Clean Main `cMemMessage` structural witnesses.
 
 The third T5 landing replaced the raw canonical `ArithTableSpec`
 binders with lookup-aware Clean witnesses:
@@ -808,10 +810,12 @@ Checklist:
   no memory, register write, PC/state handshake, memory-bus side effect.
   Audit findings: branches (BEQ/BNE/BLT/BGE/BLTU/BGEU) and FENCE have
   empty axiom-deps and zero hypothesis binders — already at the
-  row-native bar. LUI/AUIPC/JAL/JALR depend only on core Main axioms
-  (`main_store_pc_emission_bundle`, `range_bus_sound`, per-opcode
-  `transpile_*`) that retire family-terminal in T6/T7 (range bus) or
-  are irreducible (transpile); no axiom retirement is reachable in T3.
+  row-native bar. LUI/AUIPC/JAL/JALR formerly depended on core Main
+  axioms (`main_store_pc_emission_bundle`, `range_bus_sound`,
+  per-opcode `transpile_*`); T7 retired `main_store_pc_emission_bundle`
+  via Clean Main `cMemMessage` structural witnesses. Range bus remains
+  a later family-terminal target, while transpile contracts are
+  irreducible.
 - ☐ T3.2 expose Main/control-flow row facts from Clean Main rather than
   hand-rolled Main pin bundles where possible. **Deferred** — depends
   on Main migrating to a Clean `Air.Flat.Component` (out of scope for
@@ -848,11 +852,11 @@ Checklist:
 
 Expected trust movement:
 
-- no axiom retired (none was retire-able in T3 — see T3.1 finding);
+- T7 later retired `main_store_pc_emission_bundle` from source and from
+  the canonical/global closure;
 - caller-burden ledger shrank by three lines on AUIPC/JAL/JALR;
-- the remaining `main_store_pc_emission_bundle` consumers across
-  AUIPC/JAL/JALR/store-PC paths are unchanged, leaving a clean
-  T6/T7 family-terminal retirement target.
+- the remaining range-bus consumers across control-flow paths are still
+  family-terminal retirement targets.
 
 ### T4 — Memory-family terminal phase
 
@@ -947,8 +951,9 @@ Checklist:
   longer contains those targets; the load/sext-load declarations remain
   as legacy non-canonical compatibility surface, and the SD/subword store
   declarations are retired from source. `main_store_pc_emission_bundle`
-  is a T6/T7 target; `main_external_arith_emission_bundle` was later
-  retired from the canonical/global closure by T5's external-arith
+  was later retired from source and from the canonical/global closure by
+  T7's store-PC Clean Main memory witness; `main_external_arith_emission_bundle`
+  was retired from the canonical/global closure by T5's external-arith
   memory witness.
 - 🪓 T4.8 retire the MemAlign permutation/ROM trust-ledger entries by
   routing LBU/LHU/LWU through `SubdoublewordLoadProviderWitness`, which

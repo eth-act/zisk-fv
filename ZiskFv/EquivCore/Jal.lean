@@ -16,6 +16,7 @@ import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.EquivCore.Bridge.ControlFlow
 import ZiskFv.EquivCore.WriteValueProofs.JumpUType
 import ZiskFv.EquivCore.Promises.Jump
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 JAL. Combines:
@@ -105,8 +106,9 @@ theorem equiv_JAL
     (misa_val : RegisterType Register.misa)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
-    (nextPC_val : BitVec 64)
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
+    (nextPC_val : BitVec 64)
     -- Structural promise bundle (12 fields, see Promises/Jump.lean).
     (promises : ZiskFv.EquivCore.Promises.JumpPromises
         state jal_input.PC jal_input.rd misa_val
@@ -131,11 +133,9 @@ theorem equiv_JAL
   have h_jmp2 : m.jmp_offset2 r_main = 4 :=
     ZiskFv.EquivCore.Bridge.ControlFlow.jal_discharge_full
       m r_main next_pc h_circuit
-  -- Discharge `h_lane_lo`/`h_lane_hi` via `main_store_pc_emission_bundle`
-  -- (trust class #4).
-  obtain ⟨h_lane_lo, h_lane_hi⟩ :=
-    ZiskFv.EquivCore.Bridge.ControlFlow.jal_discharge_lanes
-      m r_main next_pc e_rd h_circuit h_rd_mult h_rd_as
+  -- Discharge `h_lane_lo`/`h_lane_hi` from the selected Clean Main
+  -- `cMemMessage` row, rather than through `main_store_pc_emission_bundle`.
+  obtain ⟨h_lane_lo, h_lane_hi⟩ := store_pc_mem.lanes
   -- Derive `h_lo_bound : (m.pc + 4 : FGL).val < 2^32` row-natively from the
   -- byte-pack range bound `memory_entry_lo_val_lt_2_32` (Class #4 byte-range)
   -- combined with the JAL collapse of the lane-match equation. Replaces a

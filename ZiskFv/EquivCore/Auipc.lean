@@ -17,6 +17,7 @@ import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.EquivCore.Bridge.ControlFlow
 import ZiskFv.EquivCore.WriteValueProofs.JumpUType
 import ZiskFv.EquivCore.Promises.UType
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 AUIPC. Combines:
@@ -100,8 +101,9 @@ theorem equiv_AUIPC
     (rd : regidx)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
-    (nextPC_val : BitVec 64)
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
+    (nextPC_val : BitVec 64)
     -- Structural promise bundle (11 fields, see Promises/UType.lean).
     (promises : ZiskFv.EquivCore.Promises.UTypePromises
         state auipc_input.imm auipc_input.rd auipc_input.PC
@@ -122,11 +124,9 @@ theorem equiv_AUIPC
   obtain ⟨h_input_imm, h_input_rd, h_input_pc, h_exec_len, h_e0_mult,
           h_e1_mult, h_nextPC_matches, h_rd_mult, h_rd_as, h_nextPC_eq,
           h_rd_idx⟩ := promises
-  -- Discharge `h_lane_lo`/`h_lane_hi` via `main_store_pc_emission_bundle`
-  -- (trust class #4).
-  obtain ⟨h_lane_lo, h_lane_hi⟩ :=
-    ZiskFv.EquivCore.Bridge.ControlFlow.auipc_discharge_lanes
-      m r_main next_pc e_rd h_circuit h_rd_mult h_rd_as
+  -- Discharge `h_lane_lo`/`h_lane_hi` from the selected Clean Main
+  -- `cMemMessage` row, rather than through `main_store_pc_emission_bundle`.
+  obtain ⟨h_lane_lo, h_lane_hi⟩ := store_pc_mem.lanes
   -- Derive `h_lo_bound` row-natively from the byte-pack range bound
   -- combined with AUIPC's collapse of the lane-match equation
   -- (`store_pc = 1`; offset = `m.jmp_offset2 r_main`). Replaces a

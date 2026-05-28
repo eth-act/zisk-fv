@@ -38,6 +38,7 @@ theorem equiv_JALR
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     -- Activation / opcode pins on Main + per-row subset constraint.
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_jalr_subset :
@@ -66,7 +67,7 @@ theorem equiv_JALR
       m r_main next_pc pins.main_active pins.main_op h_jalr_subset
   ZiskFv.EquivCore.Jalr.equiv_JALR
     state jalr_input imm rs1 rd misa_val mseccfg
-    exec_row e_rd nextPC_val m r_main next_pc
+    exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
     promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
     h_circuit h_pc_bound h_pc_offset_lt_2_32
 

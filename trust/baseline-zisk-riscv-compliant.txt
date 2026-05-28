@@ -25,11 +25,10 @@
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
 # artefacts under `.lake/build/`). Last regenerated: 2026-05-28.
 #
-# Total entries: 55
+# Total entries: 54
 #
 ZiskFv.Airs.Binary.binary_w_mode_carry_7_zero
 ZiskFv.Airs.Binary.binary_w_sext_choice_pin
-ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
 ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
 ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
 ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness

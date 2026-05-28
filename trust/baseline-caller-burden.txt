@@ -12,12 +12,12 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 1031
+# Total rows: 1034
 # Category bridge: 72
 # Category bus_shape: 27
 # Category entry: 9
 # Category match: 6
-# Category other: 676
+# Category other: 679
 # Category range: 3
 # Category row: 60
 # Category state: 73
@@ -139,11 +139,12 @@ ZiskFv.Equivalence.Auipc.equiv_AUIPC 006 nextPC_val [other] BitVec 64
 ZiskFv.Equivalence.Auipc.equiv_AUIPC 007 m [validator] Valid_Main FGL FGL
 ZiskFv.Equivalence.Auipc.equiv_AUIPC 008 r_main [row] ℕ
 ZiskFv.Equivalence.Auipc.equiv_AUIPC 009 next_pc [other] FGL
-ZiskFv.Equivalence.Auipc.equiv_AUIPC 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG
-ZiskFv.Equivalence.Auipc.equiv_AUIPC 011 h_auipc_subset [other] auipc_subset_holds m r_main next_pc
-ZiskFv.Equivalence.Auipc.equiv_AUIPC 012 promises [transpile] ZiskFv.EquivCore.Promises.UTypePromises state auipc_input.imm auipc_input.rd aui
-ZiskFv.Equivalence.Auipc.equiv_AUIPC 013 h_no_wrap [other] auipc_input.PC.toNat + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12)
-ZiskFv.Equivalence.Auipc.equiv_AUIPC 014 h_pc_offset_lt_2_32 [range] (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toN
+ZiskFv.Equivalence.Auipc.equiv_AUIPC 010 store_pc_mem [other] ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd
+ZiskFv.Equivalence.Auipc.equiv_AUIPC 011 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG
+ZiskFv.Equivalence.Auipc.equiv_AUIPC 012 h_auipc_subset [other] auipc_subset_holds m r_main next_pc
+ZiskFv.Equivalence.Auipc.equiv_AUIPC 013 promises [transpile] ZiskFv.EquivCore.Promises.UTypePromises state auipc_input.imm auipc_input.rd aui
+ZiskFv.Equivalence.Auipc.equiv_AUIPC 014 h_no_wrap [other] auipc_input.PC.toNat + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12)
+ZiskFv.Equivalence.Auipc.equiv_AUIPC 015 h_pc_offset_lt_2_32 [range] (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toN
 ZiskFv.Equivalence.Beq.equiv_BEQ 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Beq.equiv_BEQ 001 beq_input [other] PureSpec.BeqInput
 ZiskFv.Equivalence.Beq.equiv_BEQ 002 ops [other] BranchInstrOperands
@@ -280,13 +281,14 @@ ZiskFv.Equivalence.Jal.equiv_JAL 007 next_pc [other] FGL
 ZiskFv.Equivalence.Jal.equiv_JAL 008 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
 ZiskFv.Equivalence.Jal.equiv_JAL 009 e_rd [entry] Interaction.MemoryBusEntry FGL
 ZiskFv.Equivalence.Jal.equiv_JAL 010 nextPC_val [other] BitVec 64
-ZiskFv.Equivalence.Jal.equiv_JAL 011 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG
-ZiskFv.Equivalence.Jal.equiv_JAL 012 h_jal_subset [other] jump_subset_holds m r_main next_pc
-ZiskFv.Equivalence.Jal.equiv_JAL 013 promises [transpile] ZiskFv.EquivCore.Promises.JumpPromises state jal_input.PC jal_input.rd misa_val
-ZiskFv.Equivalence.Jal.equiv_JAL 014 h_input_imm [other] jal_input.imm = imm
-ZiskFv.Equivalence.Jal.equiv_JAL 015 h_not_throws [other] (PureSpec.execute_JAL_pure jal_input).throws = false
-ZiskFv.Equivalence.Jal.equiv_JAL 016 h_pc_bound [other] jal_input.PC.toNat < 18446744069414584321 - 4
-ZiskFv.Equivalence.Jal.equiv_JAL 017 h_pc_offset_lt_2_32 [range] (jal_input.PC + 4#64).toNat < 4294967296
+ZiskFv.Equivalence.Jal.equiv_JAL 011 store_pc_mem [other] ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd
+ZiskFv.Equivalence.Jal.equiv_JAL 012 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG
+ZiskFv.Equivalence.Jal.equiv_JAL 013 h_jal_subset [other] jump_subset_holds m r_main next_pc
+ZiskFv.Equivalence.Jal.equiv_JAL 014 promises [transpile] ZiskFv.EquivCore.Promises.JumpPromises state jal_input.PC jal_input.rd misa_val
+ZiskFv.Equivalence.Jal.equiv_JAL 015 h_input_imm [other] jal_input.imm = imm
+ZiskFv.Equivalence.Jal.equiv_JAL 016 h_not_throws [other] (PureSpec.execute_JAL_pure jal_input).throws = false
+ZiskFv.Equivalence.Jal.equiv_JAL 017 h_pc_bound [other] jal_input.PC.toNat < 18446744069414584321 - 4
+ZiskFv.Equivalence.Jal.equiv_JAL 018 h_pc_offset_lt_2_32 [range] (jal_input.PC + 4#64).toNat < 4294967296
 ZiskFv.Equivalence.Jalr.equiv_JALR 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Jalr.equiv_JALR 001 jalr_input [other] PureSpec.JalrInput
 ZiskFv.Equivalence.Jalr.equiv_JALR 002 imm [other] BitVec 12
@@ -300,15 +302,16 @@ ZiskFv.Equivalence.Jalr.equiv_JALR 009 nextPC_val [other] BitVec 64
 ZiskFv.Equivalence.Jalr.equiv_JALR 010 m [validator] Valid_Main FGL FGL
 ZiskFv.Equivalence.Jalr.equiv_JALR 011 r_main [row] ℕ
 ZiskFv.Equivalence.Jalr.equiv_JALR 012 next_pc [other] FGL
-ZiskFv.Equivalence.Jalr.equiv_JALR 013 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB
-ZiskFv.Equivalence.Jalr.equiv_JALR 014 h_jalr_subset [other] jalr_subset_holds m r_main next_pc
-ZiskFv.Equivalence.Jalr.equiv_JALR 015 promises [transpile] ZiskFv.EquivCore.Promises.JumpPromises state jalr_input.PC jalr_input.rd misa_va
-ZiskFv.Equivalence.Jalr.equiv_JALR 016 h_input_imm [other] jalr_input.imm = imm
-ZiskFv.Equivalence.Jalr.equiv_JALR 017 h_input_rs1 [state] read_xreg (regidx_to_fin rs1) state = EStateM.Result.ok jalr_input.rs1_val state
-ZiskFv.Equivalence.Jalr.equiv_JALR 018 h_cur_privilege [other] Sail.readReg Register.cur_privilege state = EStateM.Result.ok Privilege.Machine
-ZiskFv.Equivalence.Jalr.equiv_JALR 019 h_mseccfg [other] Sail.readReg Register.mseccfg state = EStateM.Result.ok mseccfg state
-ZiskFv.Equivalence.Jalr.equiv_JALR 020 h_pc_bound [other] jalr_input.PC.toNat < GL_prime - 4
-ZiskFv.Equivalence.Jalr.equiv_JALR 021 h_pc_offset_lt_2_32 [range] (jalr_input.PC + 4#64).toNat < 4294967296
+ZiskFv.Equivalence.Jalr.equiv_JALR 013 store_pc_mem [other] ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd
+ZiskFv.Equivalence.Jalr.equiv_JALR 014 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB
+ZiskFv.Equivalence.Jalr.equiv_JALR 015 h_jalr_subset [other] jalr_subset_holds m r_main next_pc
+ZiskFv.Equivalence.Jalr.equiv_JALR 016 promises [transpile] ZiskFv.EquivCore.Promises.JumpPromises state jalr_input.PC jalr_input.rd misa_va
+ZiskFv.Equivalence.Jalr.equiv_JALR 017 h_input_imm [other] jalr_input.imm = imm
+ZiskFv.Equivalence.Jalr.equiv_JALR 018 h_input_rs1 [state] read_xreg (regidx_to_fin rs1) state = EStateM.Result.ok jalr_input.rs1_val state
+ZiskFv.Equivalence.Jalr.equiv_JALR 019 h_cur_privilege [other] Sail.readReg Register.cur_privilege state = EStateM.Result.ok Privilege.Machine
+ZiskFv.Equivalence.Jalr.equiv_JALR 020 h_mseccfg [other] Sail.readReg Register.mseccfg state = EStateM.Result.ok mseccfg state
+ZiskFv.Equivalence.Jalr.equiv_JALR 021 h_pc_bound [other] jalr_input.PC.toNat < GL_prime - 4
+ZiskFv.Equivalence.Jalr.equiv_JALR 022 h_pc_offset_lt_2_32 [range] (jalr_input.PC + 4#64).toNat < 4294967296
 ZiskFv.Equivalence.Lb.equiv_LB 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lb.equiv_LB 001 lb_input [other] PureSpec.LbInput
 ZiskFv.Equivalence.Lb.equiv_LB 002 regs [other] ZiskFv.Compliance.ModeRegsFull

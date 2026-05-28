@@ -584,7 +584,7 @@ bridge axioms below absorb them).
 | Axiom | Class | Source | Discharges |
 |---|---|---|---|
 | `lookup_consumer_matches_provider_store` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:178` | Main-row store consumer (`c_*`) is matched by a Mem-AIR row |
-| `main_store_pc_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:495` | rd-write entry lanes match `store_pc_lanes_match_{lo,hi}` for `is_external_op = 0`, `op ∈ {OP_FLAG, OP_COPYB}` — consumed by JAL/JALR/AUIPC/LUI |
+| ~~`main_store_pc_emission_bundle`~~ | retired #4 (memory-bus) | retired from source in T7 | rd-write entry lanes now come from Clean Main `cMemMessage` structural witnesses for JAL/JALR/AUIPC/LUI |
 | `memory_bus_register_write_perm_sound` | #5 (memory-bus perm) | `Airs/MemoryBus/LaneMatch.lean:138` | Main rd-write entry pairs with a "next read" Mem row at same address |
 | `memory_bus_register_write_perm_sound_store_pc` | #5 (memory-bus perm) | `Airs/MemoryBus/LaneMatch.lean:329` | `store_pc = 1` variant of the above |
 | `memory_bus_entry_byte_range_perm_sound` | #5b (range-bus) | `Airs/MemoryBus/EntryRanges.lean:52` | every memory-bus entry's 8 `x0..x7` byte cells in `[0, 256)` |
@@ -762,7 +762,7 @@ ControlFlow has **no AIR-specific axioms**. It consumes:
 | `transpile_AUIPC`, `transpile_BEQ`, `transpile_BNE`, `transpile_JAL`, `transpile_JALR`, `transpile_FENCE`, `transpile_BLT`, `transpile_BGE`, `transpile_BLTU`, `transpile_BGEU`, `transpile_LUI` | #1 (transpile) | `Fundamentals/Transpiler.lean` | every opcode in the shape — Main column ↔ Sail-decoded `ast` |
 | `transpile_PC_for_JAL`, `transpile_PC_for_JALR`, `transpile_PC_for_AUIPC` | #1 (transpile) | `Fundamentals/Transpiler.lean:2719,2741,2770` | the PC-update half (separate axiom from the operand half) |
 | `main_columns_in_range` | #5b (range-bus) | `Airs/Main/Ranges.lean:67` | `bits(N)`-annotated Main column ranges |
-| `main_store_pc_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:495` | JAL/JALR/AUIPC/LUI rd-write entry lane equalities (`store_pc=0` or `store_pc=1` per op) |
+| ~~`main_store_pc_emission_bundle`~~ | retired #4 (memory-bus) | retired from source in T7 | JAL/JALR/AUIPC/LUI rd-write lane equalities now derive from Clean Main `cMemMessage` structural witnesses |
 | `memory_bus_register_write_perm_sound{,_store_pc}` | #5 (memory-bus perm) | `Airs/MemoryBus/LaneMatch.lean:138,329` | rd-write entry pairs with Mem row (consumed by JAL/JALR/AUIPC/LUI) |
 | `memory_bus_entry_byte_range_perm_sound` | #5b (range-bus) | `Airs/MemoryBus/EntryRanges.lean:52` | register-write entry byte ranges (consumed by AUIPC, JAL) |
 
@@ -773,11 +773,12 @@ ControlFlow has **no AIR-specific axioms**. It consumes:
     pure Main. The `r1_val` / `r2_val` packed-lane forms used by
     BLT / BLTU / BGE / BGEU come from `Bridge/SailStateBridge.lean`
     + transpile axioms; pure Lean.
-  * U-type: Discharged via `main_store_pc_emission_bundle`
-    (`store_pc = 0` specialization for LUI; `store_pc = 1` for
-    AUIPC).
-  * Jumps: Discharged via `main_store_pc_emission_bundle` +
-    transpile PC axioms.
+  * U-type: formerly discharged via `main_store_pc_emission_bundle`;
+    T7 now derives these lanes from Clean Main `cMemMessage`
+    (`store_pc = 0` specialization for LUI; `store_pc = 1` for AUIPC).
+  * Jumps: formerly discharged via `main_store_pc_emission_bundle`;
+    T7 now derives these lanes from Clean Main `cMemMessage`, with
+    transpile PC axioms still covering the PC side.
 * **Mode pins:** N/A — these opcodes do not flow through a
   provider AIR with mode columns.
 * **Sign-witness pins:** **Bridge-only.** BLT / BGE require signed
@@ -809,7 +810,7 @@ delta of the seven AIRs.**
 `equiv_LUI`). Matches the prediction above.
 
 Composition: `transpile_LUI` (class #1) + `equiv_LUI`'s existing
-transitive closure (`main_store_pc_emission_bundle` class #4,
+transitive closure (formerly `main_store_pc_emission_bundle` class #4,
 `memory_bus_entry_byte_range_perm_sound` class #5b,
 `main_columns_in_range` class #5b). No category 1–5 work surfaced
 a new axiom: lane-match, range/bound, and the lone (Main-side)

@@ -37,6 +37,7 @@ theorem equiv_AUIPC
     (e_rd : Interaction.MemoryBusEntry FGL)
     (nextPC_val : BitVec 64)
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     -- Activation / opcode pins on Main + per-row subset constraint.
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_FLAG)
     (h_auipc_subset : auipc_subset_holds m r_main next_pc)
@@ -57,7 +58,7 @@ theorem equiv_AUIPC
     ZiskFv.EquivCore.Promises.auipc_h_circuit_of_main_constraints
       m r_main next_pc pins.main_active pins.main_op h_auipc_subset
   ZiskFv.EquivCore.Auipc.equiv_AUIPC state auipc_input imm rd
-    exec_row e_rd nextPC_val m r_main next_pc
+    exec_row e_rd m r_main next_pc store_pc_mem nextPC_val
     promises h_circuit h_no_wrap h_pc_offset_lt_2_32
 
 end ZiskFv.Compliance

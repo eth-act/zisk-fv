@@ -990,8 +990,8 @@ after all global consumers are gone.
   `main_store_emission_bundle_sd`, `main_store_emission_bundle_subword`)
   when canonical closures lose them. The canonical/global closure no
   longer contains these targets; the remaining load/sext-load declarations
-  are legacy compatibility surface. `main_store_pc_emission_bundle` is a
-  T6/T7 target; `main_external_arith_emission_bundle` is a T5 target.
+  are legacy compatibility surface. `main_store_pc_emission_bundle` was
+  retired in T7; `main_external_arith_emission_bundle` was a T5 target.
 - 🪓 T4.8 retire MemAlign permutation/ROM axioms by exposing the same
   provider-row and ROM-derived facts through the structural
   `SubdoublewordLoadProviderWitness`.

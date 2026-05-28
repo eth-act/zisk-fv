@@ -407,23 +407,23 @@ theorem zisk_riscv_compliant_program_bus_remaining
       pins h_match_secondary promises arith_mem arith_table h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
       h_no_arith_div_dynamic_defect
   -- Jumps
-  | jal jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val
+  | jal jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val store_pc_mem
         pins h_jal_subset
         promises h_input_imm h_not_throws
         h_pc_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Jal.equiv_JAL state jal_input imm rd misa_val m r_main next_pc
-      exec_row e_rd nextPC_val pins h_jal_subset
+      exec_row e_rd nextPC_val store_pc_mem pins h_jal_subset
       promises h_input_imm h_not_throws
       h_pc_bound h_pc_offset_lt_2_32
-  | jalr jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val next_pc
+  | jalr jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val next_pc store_pc_mem
          pins h_jalr_subset
          promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
          h_pc_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Jalr.equiv_JALR state jalr_input imm rs1 rd misa_val mseccfg
       exec_row e_rd nextPC_val m r_main next_pc
-      pins h_jalr_subset
+      store_pc_mem pins h_jalr_subset
       promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
       h_pc_bound h_pc_offset_lt_2_32
   | _ => trivial
@@ -659,23 +659,23 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     exact ZiskFv.Equivalence.Remuw.equiv_REMUW state remuw_input r1 r2 rd bus m r_main v r_a
       pins h_match_secondary promises arith_mem arith_table h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
       h_no_arith_div_dynamic_defect
-  | jal jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val
+  | jal jal_input imm rd misa_val next_pc exec_row e_rd nextPC_val store_pc_mem
         pins h_jal_subset
         promises h_input_imm h_not_throws
         h_pc_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Jal.equiv_JAL state jal_input imm rd misa_val m r_main next_pc
-      exec_row e_rd nextPC_val pins h_jal_subset
+      exec_row e_rd nextPC_val store_pc_mem pins h_jal_subset
       promises h_input_imm h_not_throws
       h_pc_bound h_pc_offset_lt_2_32
-  | jalr jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val next_pc
+  | jalr jalr_input imm rs1 rd misa_val mseccfg exec_row e_rd nextPC_val next_pc store_pc_mem
          pins h_jalr_subset
          promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
          h_pc_bound h_pc_offset_lt_2_32 =>
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Jalr.equiv_JALR state jalr_input imm rs1 rd misa_val mseccfg
       exec_row e_rd nextPC_val m r_main next_pc
-      pins h_jalr_subset
+      store_pc_mem pins h_jalr_subset
       promises h_input_imm h_input_rs1 h_cur_privilege h_mseccfg
       h_pc_bound h_pc_offset_lt_2_32
   | _ => trivial
