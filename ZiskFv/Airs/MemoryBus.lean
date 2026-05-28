@@ -73,6 +73,19 @@ def matches_memory_entry (a b : MemoryBusEntry FGL) : Prop :=
   ∧ a.value_1 = b.value_1
   ∧ a.timestamp = b.timestamp
 
+/-- Payload-only memory-bus entry matching.
+
+This is the right shape for relating a Main-side Clean pull to a provider
+push: their PIL message payloads agree, but legacy multiplicity polarity is
+opposite. Provider-row facts such as `mem_row_matches_entry` consume these
+payload fields and keep selector/polarity obligations separately. -/
+def matches_memory_payload (a b : MemoryBusEntry FGL) : Prop :=
+  a.as = b.as
+  ∧ a.ptr = b.ptr
+  ∧ a.value_0 = b.value_0
+  ∧ a.value_1 = b.value_1
+  ∧ a.timestamp = b.timestamp
+
 theorem matches_memory_entry_refl (a : MemoryBusEntry FGL) :
     matches_memory_entry a a := by
   simp [matches_memory_entry]
@@ -92,6 +105,21 @@ theorem matches_memory_entry_trans {a b c : MemoryBusEntry FGL}
   exact ⟨hab_mult.trans hbc_mult, hab_as.trans hbc_as,
     hab_ptr.trans hbc_ptr, hab_v0.trans hbc_v0, hab_v1.trans hbc_v1,
     hab_ts.trans hbc_ts⟩
+
+theorem matches_memory_payload_of_matches_memory_entry {a b : MemoryBusEntry FGL}
+    (h : matches_memory_entry a b) :
+    matches_memory_payload a b := by
+  obtain ⟨_h_mult, h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h
+  exact ⟨h_as, h_ptr, h_v0, h_v1, h_ts⟩
+
+theorem matches_memory_payload_trans {a b c : MemoryBusEntry FGL}
+    (hab : matches_memory_payload a b)
+    (hbc : matches_memory_payload b c) :
+    matches_memory_payload a c := by
+  obtain ⟨hab_as, hab_ptr, hab_v0, hab_v1, hab_ts⟩ := hab
+  obtain ⟨hbc_as, hbc_ptr, hbc_v0, hbc_v1, hbc_ts⟩ := hbc
+  exact ⟨hab_as.trans hbc_as, hab_ptr.trans hbc_ptr,
+    hab_v0.trans hbc_v0, hab_v1.trans hbc_v1, hab_ts.trans hbc_ts⟩
 
 /-- Equal evaluated Clean memory-bus message arrays give equal legacy
     memory-bus payloads once both are viewed with the same legacy
@@ -129,6 +157,36 @@ theorem matches_memory_entry_of_eval_msg_eq
     simpa [ProvableType.fromElements_eval_toElements] using h_from
   rw [h_eval]
   simp [matches_memory_entry]
+
+/-- Equal evaluated Clean memory-bus messages give equal legacy payloads,
+    even when the legacy multiplicities supplied on the two sides differ. -/
+theorem matches_memory_payload_of_eval_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult providerMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    {mainMultiplicity providerMultiplicity as : FGL}
+    (h_msg :
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          mainEnv).msg =
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted providerMult providerMsg).toRaw).eval
+          providerEnv).msg) :
+    matches_memory_payload
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval mainEnv mainMsg) mainMultiplicity as)
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval providerEnv providerMsg) providerMultiplicity as) := by
+  have h_vec :
+      Vector.map (Expression.eval mainEnv) (toElements mainMsg) =
+        Vector.map (Expression.eval providerEnv) (toElements providerMsg) := by
+    apply Vector.toArray_injective
+    simpa [ChannelInteraction.toRaw, AbstractInteraction.eval] using h_msg
+  have h_eval : eval mainEnv mainMsg = eval providerEnv providerMsg := by
+    have h_from := congrArg
+      (fun xs => (fromElements xs :
+        ZiskFv.Channels.MemoryBus.MemBusMessage FGL)) h_vec
+    simpa [ProvableType.fromElements_eval_toElements] using h_from
+  rw [h_eval]
+  simp [matches_memory_payload]
 
 /-- Same as `matches_memory_entry_of_eval_msg_eq`, with the raw message
     equality oriented as provider-to-Main.
@@ -176,6 +234,31 @@ theorem matches_memory_entry_of_left_match_eval_emitted_provider_msg_eq
         (eval providerEnv providerMsg) multiplicity as) := by
   exact matches_memory_entry_trans h_entry
     (matches_memory_entry_of_eval_emitted_provider_msg_eq (h_msg := h_msg))
+
+/-- Payload-only version of
+    `matches_memory_entry_of_left_match_eval_emitted_provider_msg_eq`, allowing
+    opposite legacy multiplicities on Main and provider rows. -/
+theorem matches_memory_payload_of_left_match_eval_emitted_provider_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult providerMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    {entry : MemoryBusEntry FGL}
+    {mainMultiplicity providerMultiplicity as : FGL}
+    (h_entry :
+      matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval mainEnv mainMsg) mainMultiplicity as))
+    (h_msg :
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted providerMult providerMsg).toRaw).eval
+          providerEnv).msg =
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          mainEnv).msg) :
+    matches_memory_payload entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval providerEnv providerMsg) providerMultiplicity as) := by
+  exact matches_memory_payload_trans
+    (matches_memory_payload_of_matches_memory_entry h_entry)
+    (matches_memory_payload_of_eval_msg_eq (h_msg := h_msg.symm))
 
 /-- Variant of `matches_memory_entry_of_eval_msg_eq` for provider rows exposed
     as Clean `push` interactions.
@@ -235,6 +318,48 @@ theorem matches_memory_entry_of_left_match_eval_pushed_msg_eq
         (eval providerEnv providerMsg) multiplicity as) := by
   exact matches_memory_entry_trans h_entry
     (matches_memory_entry_of_eval_pushed_msg_eq (h_msg := h_msg))
+
+/-- Payload-only version of
+    `matches_memory_entry_of_left_match_eval_pushed_msg_eq`, allowing opposite
+    legacy multiplicities on Main and provider rows. -/
+theorem matches_memory_payload_of_left_match_eval_pushed_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    {entry : MemoryBusEntry FGL}
+    {mainMultiplicity providerMultiplicity as : FGL}
+    (h_entry :
+      matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval mainEnv mainMsg) mainMultiplicity as))
+    (h_msg :
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.pushed providerMsg).toRaw).eval
+          providerEnv).msg =
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          mainEnv).msg) :
+    matches_memory_payload entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval providerEnv providerMsg) providerMultiplicity as) := by
+  have h_provider :
+      matches_memory_payload
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval mainEnv mainMsg) mainMultiplicity as)
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval providerEnv providerMsg) providerMultiplicity as) := by
+    have h_vec :
+        Vector.map (Expression.eval providerEnv) (toElements providerMsg) =
+          Vector.map (Expression.eval mainEnv) (toElements mainMsg) := by
+      apply Vector.toArray_injective
+      simpa [ChannelInteraction.toRaw, AbstractInteraction.eval] using h_msg
+    have h_eval : eval providerEnv providerMsg = eval mainEnv mainMsg := by
+      have h_from := congrArg
+        (fun xs => (fromElements xs :
+          ZiskFv.Channels.MemoryBus.MemBusMessage FGL)) h_vec
+      simpa [ProvableType.fromElements_eval_toElements] using h_from
+    rw [h_eval]
+    simp [matches_memory_payload]
+  exact matches_memory_payload_trans
+    (matches_memory_payload_of_matches_memory_entry h_entry) h_provider
 
 /-- **Memory-read lane hypotheses for LD.** The Main row's low/high `b`
     lanes (as FGL field elements) equal the low/high halves of the

@@ -1134,6 +1134,14 @@ left-composition adapters. These are the small chaining facts needed to turn
 an existing bus-row-to-Main-message match into a bus-row-to-provider-message
 match when constructing the current `LdCleanWitness` and store witness
 bundles from the full ensemble.
+The Mem provider bridge now exposes a payload-only adapter,
+`mem_row_matches_entry_of_payload_match_valid`. This repairs the next
+load-witness wiring issue honestly: Clean balance relates a Main memory pull
+to a provider push with equal PIL payloads but opposite legacy multiplicity
+polarity, while the Mem row predicate only consumes the address-space,
+pointer, timestamp, and value fields. Full `matches_memory_entry` remains
+available for same-polarity legacy rows, but provider construction no longer
+has to pretend the multiplicities agree.
 The unified Main, Mem, and MemAlign-family component modules also expose
 direct projection lemmas from generic Clean component specs to the concrete
 row specs expected by the existing load/store bridge layer:
