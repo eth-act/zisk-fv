@@ -715,9 +715,10 @@ T1.7/T1.8 audit result, after T2.4/T2.5 cleanup:
 closure. `trust/baseline-equiv-axiom-deps.txt` still lists
 `op_bus_permutation_sound` in canonical closures for `ADD`, `ADDI`, and signed
 loads `LB/LH/LW`; it is also still in the global compliance closure.
-`ADDIW/ADDW/SUBW` now use the Clean/static Binary route and retain only the
-W-mode Binary refinements `binary_w_sext_choice_pin` and
-`binary_w_mode_carry_7_zero` besides range/transpile trust.
+`ADDIW/ADDW/SUBW` now use the Clean/static Binary route and have dropped
+`range_bus_sound`; they retain only the W-mode Binary refinements
+`binary_w_sext_choice_pin` and `binary_w_mode_carry_7_zero` besides
+transpile trust.
 `bin_ext_table_consumer_wf` remains in signed loads `LB/LH/LW`. The remaining
 consumers move to T2 BinaryAdd `ADD/ADDI` work and T4 memory/signed-load work.
 
@@ -1079,8 +1080,9 @@ Checklist:
   rule: the fact must be tied to the same concrete provider row used by the
   channel/matches proof.
   Progress: AUIPC/JAL/JALR canonical closures no longer list
-  `range_bus_sound`; remaining consumers are the Binary/shift/SLT,
-  load/store, and Arith-family paths shown in
+  `range_bus_sound`; ADD/ADDI/SUB and ADDW/ADDIW/SUBW have also dropped it
+  through the static Binary-table route. Remaining consumers are the
+  shift/SLT, load/store, and Arith-family paths shown in
   `trust/baseline-equiv-axiom-deps.txt`.
 - ☐ T6.3 retire `range_bus_sound` and `signed_range_bus_sound` when their
   global closure entries disappear.

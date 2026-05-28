@@ -87,7 +87,7 @@ theorem equiv_SUBW
     simpa [ZiskFv.Trusted.OP_SUB_W] using h_main_op_subw
   obtain ⟨h_mode32_one, h_bop_val⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.chain_row_shape_W_of_emit
-      row h_spec_facts 0x1B (Or.inr rfl) h_emit
+      row h_spec_facts h_core 0x1B (Or.inr rfl) h_emit
   have h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_SUB := by
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_SUB] using h_bop_val
   let v := ZiskFv.AirsClean.Binary.validOfRow row

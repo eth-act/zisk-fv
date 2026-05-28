@@ -86,7 +86,7 @@ theorem equiv_ADDIW
     simpa [ZiskFv.Trusted.OP_ADD_W] using h_main_op_addiw
   obtain ⟨h_mode32_one, h_bop_val⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.chain_row_shape_W_of_emit
-      row h_spec_facts 0x1A (Or.inl rfl) h_emit
+      row h_spec_facts h_core 0x1A (Or.inl rfl) h_emit
   have h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD := by
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_ADD] using h_bop_val
   let v := ZiskFv.AirsClean.Binary.validOfRow row
@@ -123,10 +123,22 @@ theorem equiv_ADDIW
   have h_subset := h_addiw_subset
   simp only [ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main,
              h_input_imm] at h_subset
-  have hb0 : (v.free_in_b_0 0).val < 256 := bin_b_0_lt_256 v 0
-  have hb1 : (v.free_in_b_1 0).val < 256 := bin_b_1_lt_256 v 0
-  have hb2 : (v.free_in_b_2 0).val < 256 := bin_b_2_lt_256 v 0
-  have hb3 : (v.free_in_b_3 0).val < 256 := bin_b_3_lt_256 v 0
+  have hb0 : (v.free_in_b_0 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.1.1.2.1
+  have hb1 : (v.free_in_b_1 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.2.1.1.2.1
+  have hb2 : (v.free_in_b_2 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.2.2.1.1.2.1
+  have hb3 : (v.free_in_b_3 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h_facts.2.2.2.1.1.2.1
   have h_b0_val : (m.b_0 r_main).val =
       (v.free_in_b_0 0).val + (v.free_in_b_1 0).val * 256
       + (v.free_in_b_2 0).val * 65536

@@ -148,14 +148,30 @@ theorem equiv_ADDIW_of_wf
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3,
           h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.e2_byte_ranges_discharge e2
-  have ha0 : (v.free_in_a_0 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_0_lt_256 v r_binary
-  have ha1 : (v.free_in_a_1 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_1_lt_256 v r_binary
-  have ha2 : (v.free_in_a_2 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_2_lt_256 v r_binary
-  have ha3 : (v.free_in_a_3 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_3_lt_256 v r_binary
-  have hb0 : (v.free_in_b_0 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_0_lt_256 v r_binary
-  have hb1 : (v.free_in_b_1 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_1_lt_256 v r_binary
-  have hb2 : (v.free_in_b_2 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_2_lt_256 v r_binary
-  have hb3 : (v.free_in_b_3 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_3_lt_256 v r_binary
+  have ha0 : (v.free_in_a_0 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h_byte_0
+    rw [← h_a]; exact h_wf.1.1
+  have ha1 : (v.free_in_a_1 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h_byte_1
+    rw [← h_a]; exact h_wf.1.1
+  have ha2 : (v.free_in_a_2 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h_byte_2
+    rw [← h_a]; exact h_wf.1.1
+  have ha3 : (v.free_in_a_3 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h_byte_3
+    rw [← h_a]; exact h_wf.1.1
+  have hb0 : (v.free_in_b_0 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h_byte_0
+    rw [← h_b]; exact h_wf.1.2.1
+  have hb1 : (v.free_in_b_1 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h_byte_1
+    rw [← h_b]; exact h_wf.1.2.1
+  have hb2 : (v.free_in_b_2 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h_byte_2
+    rw [← h_b]; exact h_wf.1.2.1
+  have hb3 : (v.free_in_b_3 r_binary).val < 256 := by
+    obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h_byte_3
+    rw [← h_b]; exact h_wf.1.2.1
   have h_input_r1_extract :
       (Sail.BitVec.extractLsb addiw_input.r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
       = ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
@@ -413,14 +429,26 @@ theorem equiv_ADDIW_of_static_row
         + v.free_in_c_6 0 * 65536 + v.free_in_c_7 0 * 16777216 := by
     rw [h_c_hi_m]
     ring
-  have hc4 : (v.free_in_c_4 0).val < 256 :=
-    ZiskFv.Airs.Binary.bin_c_4_lt_256 v 0
-  have hc5 : (v.free_in_c_5 0).val < 256 :=
-    ZiskFv.Airs.Binary.bin_c_5_lt_256 v 0
-  have hc6 : (v.free_in_c_6 0).val < 256 :=
-    ZiskFv.Airs.Binary.bin_c_6_lt_256 v 0
-  have hc7 : (v.free_in_c_7 0).val < 256 :=
-    ZiskFv.Airs.Binary.bin_c_7_lt_256 v 0
+  have hc4 : (v.free_in_c_4 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using
+      h_facts.2.2.2.2.1.1.2.2.1
+  have hc5 : (v.free_in_c_5 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using
+      h_facts.2.2.2.2.2.1.1.2.2.1
+  have hc6 : (v.free_in_c_6 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using
+      h_facts.2.2.2.2.2.2.1.1.2.2.1
+  have hc7 : (v.free_in_c_7 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using
+      h_facts.2.2.2.2.2.2.2.1.2.2.1
   have h_sext_choice_v :
       (((v.free_in_c_4 0).val = 0 ∧ (v.free_in_c_5 0).val = 0
           ∧ (v.free_in_c_6 0).val = 0 ∧ (v.free_in_c_7 0).val = 0) ∧
