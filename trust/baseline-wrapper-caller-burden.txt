@@ -865,7 +865,7 @@ ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 008 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 009 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 010 promises [bridge] ZiskFv.EquivCore.Promises.ShiftImmPromises state slli_input.r1_val slli_input.sh
 ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 011 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL
-ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 012 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 012 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComp
 ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 013 h_table_spec [other] providerTable.Spec
 ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 014 h_provider_row [other] providerRow ∈ providerTable.table
 ZiskFv.Compliance.Wrappers.Slli.equiv_SLLI 015 h_match [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Channels.OperationBus.OpBusMessa
