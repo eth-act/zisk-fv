@@ -768,17 +768,31 @@ theorem exists_staticBinaryExtension_row_eval_of_interaction_mem
       ZiskFv.AirsClean.BinaryExtension.staticLookupComponent_interactionsWith_opBus
   · exact h_mem
 
+/-- Row extraction for an ArithMul operation-bus provider interaction in the
+    full ensemble. -/
+theorem exists_arithMul_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.ArithMul.component)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+        ((OpBusChannel.pushed
+          (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+            ZiskFv.AirsClean.ArithMul.component.rowInputVar)).toRaw).eval
+          (table.environment row) := by
+  apply exists_opBus_row_eval_of_singleton_interactionsWith
+  · simpa [h_component] using
+      ZiskFv.AirsClean.ArithMul.component_interactionsWith_opBus
+  · exact h_mem
+
 /-! ## Full-ensemble operation-bus row bridges -/
 
 /-- Spec-carrying full-ensemble operation-bus projection: an active
     unified-Main operation-bus interaction has a balanced same-message
     provider counterpart, and the Binary-family provider branches are
     resolved to concrete table rows carrying `witness.Spec`.
-
-The ArithMul branch is kept explicit because this module does not yet expose
-    a cheap ArithMul operation-bus row extractor. Keeping that branch visible
-    avoids laundering the remaining Arith path into the Binary provider
-    theorem. -/
+    The ArithMul provider branch is also resolved to a concrete row. -/
 theorem exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
     {length : ℕ} {program : Program length}
     (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
@@ -811,7 +825,14 @@ theorem exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
             ∧ ∃ providerTable ∈ witness.allTables,
               providerInteraction ∈ providerTable.interactionsWith OpBusChannel.toRaw
                 ∧
-                ((providerTable.component = ZiskFv.AirsClean.ArithMul.component)
+                ((∃ providerRow ∈ providerTable.table,
+                    providerTable.component.Spec (providerTable.environment providerRow)
+                      ∧ providerTable.component = ZiskFv.AirsClean.ArithMul.component
+                      ∧ providerInteraction =
+                        ((OpBusChannel.pushed
+                          (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+                            ZiskFv.AirsClean.ArithMul.component.rowInputVar)).toRaw).eval
+                          (providerTable.environment providerRow))
                   ∨ (∃ providerRow ∈ providerTable.table,
                     providerTable.component.Spec (providerTable.environment providerRow)
                       ∧ providerTable.component =
@@ -857,8 +878,12 @@ theorem exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
   have h_providerSpecs : providerTable.Spec :=
     h_specs providerTable h_providerTable
   rcases h_providerComponent with h_arithMul | h_binExt | h_binary | h_binaryAdd
-  · left
-    exact h_arithMul
+  · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
+      exists_arithMul_row_eval_of_interaction_mem
+        h_arithMul h_providerInteraction
+    left
+    exact ⟨providerRow, h_providerRow,
+      h_providerSpecs providerRow h_providerRow, h_arithMul, h_providerEval⟩
   · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
       exists_staticBinaryExtension_row_eval_of_interaction_mem
         h_binExt h_providerInteraction

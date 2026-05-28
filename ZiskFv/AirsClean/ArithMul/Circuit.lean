@@ -40,6 +40,7 @@ namespace ZiskFv.AirsClean.ArithMul
 
 open Goldilocks
 open ZiskFv.Channels.OperationBus (OpBusChannel)
+open Air.Flat
 
 set_option maxHeartbeats 1000000 in
 /-- ArithMul as a Clean `GeneralFormalCircuit`. `Assumptions := True` —
@@ -82,6 +83,26 @@ def circuit : GeneralFormalCircuit FGL ArithMulRow unit :=
 
 /-- ArithMul as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+
+/-- Project the generic Clean component `Spec` to the concrete ArithMul row
+    `Spec`. -/
+theorem component_spec (env : Environment FGL) :
+    component.Spec env = Spec (component.rowInput env) := by
+  rfl
+
+set_option maxHeartbeats 1000000 in
+/-- The ArithMul component exposes exactly its primary operation-bus
+    provider interaction. -/
+theorem component_interactionsWith_opBus :
+    component.operations.interactionsWith OpBusChannel.toRaw =
+      [((OpBusChannel.pushed (primaryOpBusMessageExpr component.rowInputVar)).toRaw)] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨OpBusChannel.toRaw,
+      [((OpBusChannel.pushed (primaryOpBusMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
+    component.exposedChannels
+  simp only [component, circuit, arithMulElaborated, Component.exposedChannels,
+    expose, List.mem_singleton, List.map_cons, List.map_nil,
+    primaryOpBusMessageExpr]
 
 set_option maxHeartbeats 1000000 in
 /-- The ArithMul `Spec` for a row, derived **through the Clean Component

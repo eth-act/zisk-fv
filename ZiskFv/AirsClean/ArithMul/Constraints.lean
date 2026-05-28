@@ -37,6 +37,38 @@ open Goldilocks
 open Circuit (assertZero lookup)
 open ZiskFv.Channels.OperationBus (OpBusChannel OpBusMessage)
 
+/-- Primary MUL/MULW op-bus message: low result in the `c[]` chunks. -/
+@[reducible]
+def primaryOpBusMessageExpr (row : Var ArithMulRow FGL) :
+    OpBusMessage (Expression FGL) :=
+  { op := row.flags.op
+    a_lo := row.chunks.a_0 + row.chunks.a_1 * 65536
+    a_hi := row.chunks.a_2 + row.chunks.a_3 * 65536
+    b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
+    b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
+    c_lo := row.chunks.c_0 + row.chunks.c_1 * 65536
+    c_hi := row.flags.bus_res1
+    flag := 0
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
+/-- Secondary MULH/MULHU/MULHSU op-bus message: high result in `d[]`. -/
+@[reducible]
+def secondaryOpBusMessageExpr (row : Var ArithMulRow FGL) :
+    OpBusMessage (Expression FGL) :=
+  { op := row.flags.op
+    a_lo := row.chunks.a_0 + row.chunks.a_1 * 65536
+    a_hi := row.chunks.a_2 + row.chunks.a_3 * 65536
+    b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
+    b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
+    c_lo := row.chunks.d_0 + row.chunks.d_1 * 65536
+    c_hi := row.flags.bus_res1
+    flag := 0
+    main_step := 0
+    extended_arg := 0
+    extra_args_0 := 0 }
+
 @[circuit_norm]
 def main (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
   -- Constraint 6: fab − ((1 − 2·na) − 2·nb + 4·na·nb) = 0.
@@ -133,50 +165,7 @@ def main (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
   -- Reconstructed from the proves-side `gsum_debug_data` hint;
   -- slot-for-slot faithful to `Airs/Arith/Mul.lean::opBus_row_Arith`
   -- (the `multiplicity` slot is carried separately by Clean's channel).
-  OpBusChannel.push
-    { op := row.flags.op
-      a_lo := ((row.chunks.a_0) + (row.chunks.a_1 * 65536))
-      a_hi := ((row.chunks.a_2) + (row.chunks.a_3 * 65536))
-      b_lo := ((row.chunks.b_0) + (row.chunks.b_1 * 65536))
-      b_hi := ((row.chunks.b_2) + (row.chunks.b_3 * 65536))
-      c_lo := ((row.chunks.c_0) + (row.chunks.c_1 * 65536))
-      c_hi := row.flags.bus_res1
-      flag := 0
-      main_step := 0
-      extended_arg := 0
-      extra_args_0 := 0 }
-
-/-- Primary MUL/MULW op-bus message: low result in the `c[]` chunks. -/
-@[reducible]
-def primaryOpBusMessageExpr (row : Var ArithMulRow FGL) :
-    OpBusMessage (Expression FGL) :=
-  { op := row.flags.op
-    a_lo := row.chunks.a_0 + row.chunks.a_1 * 65536
-    a_hi := row.chunks.a_2 + row.chunks.a_3 * 65536
-    b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
-    b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
-    c_lo := row.chunks.c_0 + row.chunks.c_1 * 65536
-    c_hi := row.flags.bus_res1
-    flag := 0
-    main_step := 0
-    extended_arg := 0
-    extra_args_0 := 0 }
-
-/-- Secondary MULH/MULHU/MULHSU op-bus message: high result in `d[]`. -/
-@[reducible]
-def secondaryOpBusMessageExpr (row : Var ArithMulRow FGL) :
-    OpBusMessage (Expression FGL) :=
-  { op := row.flags.op
-    a_lo := row.chunks.a_0 + row.chunks.a_1 * 65536
-    a_hi := row.chunks.a_2 + row.chunks.a_3 * 65536
-    b_lo := row.chunks.b_0 + row.chunks.b_1 * 65536
-    b_hi := row.chunks.b_2 + row.chunks.b_3 * 65536
-    c_lo := row.chunks.d_0 + row.chunks.d_1 * 65536
-    c_hi := row.flags.bus_res1
-    flag := 0
-    main_step := 0
-    extended_arg := 0
-    extra_args_0 := 0 }
+  OpBusChannel.push (primaryOpBusMessageExpr row)
 
 
 /-- Lookup-aware ArithMul circuit path. This appends the full 15-column
@@ -214,5 +203,9 @@ def mainWithArithTable (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
   localLength _ := 0
   output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose OpBusChannel [OpBusChannel.pushed (primaryOpBusMessageExpr row)]
+  channelsLawful := by
+    simp only [circuit_norm, main, primaryOpBusMessageExpr, OpBusChannel]
 
 end ZiskFv.AirsClean.ArithMul
