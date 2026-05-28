@@ -106,4 +106,250 @@ theorem memBus_balanced_of_witness
   simpa [EnsembleWitness.BalancedChannel,
     EnsembleWitness.interactionsWith_allTablesWitness] using h
 
+/-! ## Row extraction from full-ensemble channel interactions -/
+
+/-- If a table's operation-bus abstract interactions are a singleton, any
+    concrete table-level interaction on that channel is that singleton
+    evaluated at some row. -/
+theorem exists_opBus_row_eval_of_singleton_interactionsWith
+    {table : Table FGL} {abstractInteraction : AbstractInteraction FGL}
+    (h_singleton :
+      table.component.operations.interactionsWith OpBusChannel.toRaw =
+        [abstractInteraction])
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction = abstractInteraction.eval (table.environment row) := by
+  simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
+    h_singleton] at h_mem
+  exact h_mem
+
+/-- If a table's memory-bus abstract interactions are a singleton, any
+    concrete table-level interaction on that channel is that singleton
+    evaluated at some row. -/
+theorem exists_memBus_row_eval_of_singleton_interactionsWith
+    {table : Table FGL} {abstractInteraction : AbstractInteraction FGL}
+    (h_singleton :
+      table.component.operations.interactionsWith MemBusChannel.toRaw =
+        [abstractInteraction])
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith MemBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction = abstractInteraction.eval (table.environment row) := by
+  simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
+    h_singleton] at h_mem
+  exact h_mem
+
+/-- Row extraction for the unified Main operation-bus interaction in the full
+    ensemble. The extracted row is a `MainRowWithRom`; its `.core` is the same
+    row that emits Main's memory-bus interactions. -/
+theorem exists_main_op_row_eval_of_interaction_mem
+    {length : ℕ} {program : Program length}
+    {table : Table FGL}
+    (h_component :
+      table.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+        ((OpBusChannel.emitted
+          (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core.is_external_op)
+          (ZiskFv.AirsClean.Main.opBusMessageExpr
+            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+              length program).rowInputVar.core)).toRaw).eval
+          (table.environment row) := by
+  apply exists_opBus_row_eval_of_singleton_interactionsWith
+  · simpa [h_component] using
+      ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_opBus
+        length program
+  · exact h_mem
+
+/-- Row extraction for the unified Main memory-bus interactions in the full
+    ensemble. Main exposes three memory interactions (`a`, `b`, and
+    `c/store`), so the result keeps that side disjunction explicit. -/
+theorem exists_main_mem_row_eval_of_interaction_mem
+    {length : ℕ} {program : Program length}
+    {table : Table FGL}
+    (h_component :
+      table.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith MemBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+          ((MemBusChannel.emitted
+            (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.a_src_mem
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.a_src_reg))
+            (ZiskFv.AirsClean.Main.aMemMessageExpr
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar)).toRaw).eval
+            (table.environment row)
+        ∨ interaction =
+          ((MemBusChannel.emitted
+            (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.b_src_mem
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.b_src_ind
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.b_src_reg))
+            (ZiskFv.AirsClean.Main.bMemMessageExpr
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar)).toRaw).eval
+            (table.environment row)
+        ∨ interaction =
+          ((MemBusChannel.emitted
+            (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.store_mem
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.store_ind
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.store_reg))
+            (ZiskFv.AirsClean.Main.cMemMessageExpr
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar)).toRaw).eval
+            (table.environment row) := by
+  have h_interactions :=
+    ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus_interactionsWith_memBus
+      length program
+  simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map,
+    h_component, h_interactions] at h_mem
+  rcases h_mem with ⟨row, h_row, h_eq | h_eq | h_eq⟩
+  · exact ⟨row, h_row, Or.inl h_eq⟩
+  · exact ⟨row, h_row, Or.inr (Or.inl h_eq)⟩
+  · exact ⟨row, h_row, Or.inr (Or.inr h_eq)⟩
+
+/-- Row extraction for a BinaryAdd operation-bus provider interaction in the
+    full ensemble. -/
+theorem exists_binaryAdd_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.BinaryAdd.component)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+        ((OpBusChannel.pushed
+          (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+            ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)).toRaw).eval
+          (table.environment row) := by
+  apply exists_opBus_row_eval_of_singleton_interactionsWith
+  · simpa [h_component] using
+      ZiskFv.AirsClean.BinaryAdd.component_interactionsWith_opBus
+  · exact h_mem
+
+/-- Row extraction for a lookup-aware Binary operation-bus provider
+    interaction in the full ensemble. -/
+theorem exists_staticBinary_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+        ((OpBusChannel.pushed
+          (ZiskFv.AirsClean.Binary.opBusMessageExpr
+            ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)).toRaw).eval
+          (table.environment row) := by
+  apply exists_opBus_row_eval_of_singleton_interactionsWith
+  · simpa [h_component] using
+      ZiskFv.AirsClean.Binary.staticLookupComponent_interactionsWith_opBus
+  · exact h_mem
+
+/-- Row extraction for a lookup-aware BinaryExtension operation-bus provider
+    interaction in the full ensemble. -/
+theorem exists_staticBinaryExtension_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith OpBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+        ((OpBusChannel.pushed
+          (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+            ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInputVar)).toRaw).eval
+          (table.environment row) := by
+  apply exists_opBus_row_eval_of_singleton_interactionsWith
+  · simpa [h_component] using
+      ZiskFv.AirsClean.BinaryExtension.staticLookupComponent_interactionsWith_opBus
+  · exact h_mem
+
+/-- Row extraction for a Mem memory-bus provider interaction in the full
+    ensemble. -/
+theorem exists_mem_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.Mem.componentWithMemBus)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith MemBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+        ((MemBusChannel.emitted
+          ZiskFv.AirsClean.Mem.componentWithMemBus.rowInputVar.sel
+          (ZiskFv.AirsClean.Mem.memBusMessageExpr
+            ZiskFv.AirsClean.Mem.componentWithMemBus.rowInputVar)).toRaw).eval
+          (table.environment row) := by
+  apply exists_memBus_row_eval_of_singleton_interactionsWith
+  · simpa [h_component] using
+      ZiskFv.AirsClean.Mem.componentWithMemBus_interactionsWith_memBus
+  · exact h_mem
+
+/-- Row extraction for a MemAlign memory-bus interaction in the full ensemble. -/
+theorem exists_memAlign_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.MemAlign.component)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith MemBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+        ((MemBusChannel.emitted
+          (ZiskFv.AirsClean.MemAlign.component.rowInputVar.sel_prove
+            - ZiskFv.AirsClean.MemAlign.selAssumeExpr
+              ZiskFv.AirsClean.MemAlign.component.rowInputVar)
+          (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
+            ZiskFv.AirsClean.MemAlign.component.rowInputVar)).toRaw).eval
+          (table.environment row) := by
+  apply exists_memBus_row_eval_of_singleton_interactionsWith
+  · simpa [h_component] using
+      ZiskFv.AirsClean.MemAlign.component_interactionsWith_memBus
+  · exact h_mem
+
+/-- Row extraction for a MemAlignByte memory-bus provider interaction in the
+    full ensemble. -/
+theorem exists_memAlignByte_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.MemAlignByte.component)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith MemBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+        ((MemBusChannel.pushed
+          (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+            ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).toRaw).eval
+          (table.environment row) := by
+  apply exists_memBus_row_eval_of_singleton_interactionsWith
+  · simpa [h_component] using
+      ZiskFv.AirsClean.MemAlignByte.component_interactionsWith_memBus
+  · exact h_mem
+
+/-- Row extraction for a MemAlignReadByte memory-bus provider interaction in
+    the full ensemble. -/
+theorem exists_memAlignReadByte_row_eval_of_interaction_mem
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.MemAlignReadByte.component)
+    {interaction : Interaction FGL}
+    (h_mem : interaction ∈ table.interactionsWith MemBusChannel.toRaw) :
+    ∃ row ∈ table.table,
+      interaction =
+        ((MemBusChannel.pushed
+          (ZiskFv.AirsClean.MemAlignReadByte.memBusMessageExpr
+            ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar)).toRaw).eval
+          (table.environment row) := by
+  apply exists_memBus_row_eval_of_singleton_interactionsWith
+  · simpa [h_component] using
+      ZiskFv.AirsClean.MemAlignReadByte.component_interactionsWith_memBus
+  · exact h_mem
+
 end ZiskFv.AirsClean.FullEnsemble
