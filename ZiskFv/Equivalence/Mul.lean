@@ -42,6 +42,7 @@ theorem equiv_MUL
         state mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC
         (PureSpec.execute_MULH_mul_pure mul_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints : ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
@@ -59,6 +60,6 @@ theorem equiv_MUL
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_MUL_of_table state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
-    pins h_match_primary promises bounds h_row_constraints h_arith_table h_no_signed_mul_witness_defect
+    pins h_match_primary promises arith_mem bounds h_row_constraints h_arith_table h_no_signed_mul_witness_defect
 
 end ZiskFv.Equivalence.Mul

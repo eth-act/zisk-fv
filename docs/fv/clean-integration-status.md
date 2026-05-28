@@ -89,12 +89,18 @@ The active phase is **T5 — Arith-family terminal phase**. The first
 T5 landing retired `arith_mul_table_lookup_sound` /
 `arith_div_table_lookup_sound` from source and from the global closure:
 canonical `MUL*`, `DIV*`, and `REM*` paths now consume explicit
-row-native `ArithTableSpec` witnesses. The remaining T5 work is to
-source those witnesses from a shared Arith-family Clean ensemble, retire
-the remaining dynamic Arith facts where possible, and keep the
+row-native `ArithTableSpec` witnesses. The second T5 landing retired
+`main_external_arith_emission_bundle` from the canonical/global closure:
+the 13 Arith-family canonical paths now consume an
+`ExternalArithMemoryWitness` that exposes the selected Clean Main
+`cMemMessage`, row equality, `store_pc = 0`, and memory-entry match
+needed to derive the rd-write byte lanes. The source axiom remains only
+as historical documentation; it is retired from the trust ledger. The
+remaining T5 work is to source the ArithTable witnesses from a shared
+Arith-family Clean ensemble, retire the remaining dynamic Arith facts
+where possible, and keep the
 signed-MUL/MULH/MULHSU defects explicit through `h_known_bugs`.
-`main_external_arith_emission_bundle` (still in the closure) remains a
-T5 target; `main_store_pc_emission_bundle` is a T6/T7 target.
+`main_store_pc_emission_bundle` is a T6/T7 target.
 
 ### C7 — CLOSED (axiom retirements landed in T4-purge commits)
 
@@ -927,7 +933,9 @@ Checklist:
   longer contains those targets; the load/sext-load declarations remain
   as legacy non-canonical compatibility surface, and the SD/subword store
   declarations are retired from source. `main_store_pc_emission_bundle`
-  is a T6/T7 target; `main_external_arith_emission_bundle` is a T5 target.
+  is a T6/T7 target; `main_external_arith_emission_bundle` was later
+  retired from the canonical/global closure by T5's external-arith
+  memory witness.
 - 🪓 T4.8 retire the MemAlign permutation/ROM trust-ledger entries by
   routing LBU/LHU/LWU through `SubdoublewordLoadProviderWitness`, which
   exposes the selected provider row and ROM-derived row facts explicitly.
@@ -1006,6 +1014,10 @@ Checklist:
 - ☐ T5.6b retire every remaining true static `arith_table_*` fact that is no
   longer needed in the global closure; if a fact remains because of a defect
   or later family, record the exact consumer as in T1.7/T1.8.
+- ☑ T5.6c retire `main_external_arith_emission_bundle` from the
+  canonical/global closure by exposing `ExternalArithMemoryWitness`
+  structural binders for the 13 Arith-family opcodes. The source axiom is
+  retired from the trust ledger.
 
 Expected trust movement:
 

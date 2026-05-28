@@ -1202,6 +1202,7 @@ inductive OpEnvelope
         state mul_input.r1_val mul_input.r2_val mul_input.rd mul_input.PC
         (PureSpec.execute_MULH_mul_pure mul_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
@@ -1221,6 +1222,7 @@ inductive OpEnvelope
         state mulh_input.r1_val mulh_input.r2_val mulh_input.rd mulh_input.PC
         (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
@@ -1239,6 +1241,7 @@ inductive OpEnvelope
         state mulhu_input.r1_val mulhu_input.r2_val mulhu_input.rd mulhu_input.PC
         (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
@@ -1258,6 +1261,7 @@ inductive OpEnvelope
         state mulhsu_input.r1_val mulhsu_input.r2_val mulhsu_input.rd mulhsu_input.PC
         (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
@@ -1276,6 +1280,7 @@ inductive OpEnvelope
         state mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
         (PureSpec.execute_MULW_pure mulw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
@@ -1307,6 +1312,7 @@ inductive OpEnvelope
         state div_input.r1_val div_input.r2_val div_input.rd div_input.PC
         (PureSpec.execute_DIVREM_div_pure div_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_op2_ne : div_input.r2_val.toInt ≠ 0)
     (h_no_overflow :
       ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
@@ -1335,6 +1341,7 @@ inductive OpEnvelope
         state divu_input.r1_val divu_input.r2_val divu_input.rd divu_input.PC
         (PureSpec.execute_DIVREM_divu_pure divu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
@@ -1355,6 +1362,7 @@ inductive OpEnvelope
         state divw_input.r1_val divw_input.r2_val divw_input.rd divw_input.PC
         (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
@@ -1397,6 +1405,7 @@ inductive OpEnvelope
         state divuw_input.r1_val divuw_input.r2_val divuw_input.rd divuw_input.PC
         (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
@@ -1425,6 +1434,7 @@ inductive OpEnvelope
         state rem_input.r1_val rem_input.r2_val rem_input.rd rem_input.PC
         (PureSpec.execute_DIVREM_rem_pure rem_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_op2_ne : rem_input.r2_val.toInt ≠ 0)
     (h_no_overflow :
       ¬ (rem_input.r1_val.toInt = -(2:ℤ)^63 ∧ rem_input.r2_val.toInt = -1))
@@ -1453,6 +1463,7 @@ inductive OpEnvelope
         state remu_input.r1_val remu_input.r2_val remu_input.rd remu_input.PC
         (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
@@ -1473,6 +1484,7 @@ inductive OpEnvelope
         state remw_input.r1_val remw_input.r2_val remw_input.rd remw_input.PC
         (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
@@ -1515,6 +1527,7 @@ inductive OpEnvelope
         state remuw_input.r1_val remuw_input.r2_val remuw_input.rd remuw_input.PC
         (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec

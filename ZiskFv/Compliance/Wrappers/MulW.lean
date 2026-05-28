@@ -80,6 +80,7 @@ theorem equiv_MULW_of_table
         state mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
         (PureSpec.execute_MULW_pure mulw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
       (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_row_constraints :
@@ -144,12 +145,7 @@ theorem equiv_MULW_of_table
   -- OP_MUL_W literal 0xb6 = 182 — position 5 in the
   -- main_external_arith_emission_bundle 14-way disjunction
   -- (MULU, MULUH, MULSUH, MUL, MULH, MUL_W, …).
-  have h_bundle :=
-    ZiskFv.Airs.MemoryBus.MemBridge.main_external_arith_emission_bundle
-      m r_main e2 (0 : BitVec 5) (m.op r_main)
-      h_main_active rfl
-      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h_main_op_mulw))))))
-      h_m2_mult (by rw [h_m2_as])
+  have h_bundle := arith_mem.c_lane_vals
   have h_chunks_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e2
   have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
       + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
@@ -197,6 +193,7 @@ theorem equiv_MULW
         state mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
         (PureSpec.execute_MULW_pure mulw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
       (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_row_constraints :
@@ -221,7 +218,7 @@ theorem equiv_MULW
         (instruction.MULW (r2, r1, rd))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   exact equiv_MULW_of_table
-    state mulw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises
+    state mulw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises arith_mem
     h_arith_table
     h_row_constraints h_sext_choice h_rs1_value h_rs2_value
 

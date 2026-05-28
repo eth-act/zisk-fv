@@ -40,6 +40,7 @@ theorem equiv_REMU
         state remu_input.r1_val remu_input.r2_val remu_input.rd remu_input.PC
         (PureSpec.execute_DIVREM_remu_pure remu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints : ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
@@ -50,6 +51,6 @@ theorem equiv_REMU
       LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, true))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_REMU_of_table state remu_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises bounds h_row_constraints h_arith_table h_op2_ne
+  exact ZiskFv.Compliance.equiv_REMU_of_table state remu_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises arith_mem bounds h_row_constraints h_arith_table h_op2_ne
 
 end ZiskFv.Equivalence.Remu

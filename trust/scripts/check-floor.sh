@@ -8,7 +8,7 @@ cd "$(git rev-parse --show-toplevel)"
 # Floor 1: total number of axiom/opaque/constant declarations in the
 # baseline must be >= MIN_AXIOMS. Catches a sabotaged regenerate.py
 # that produces empty output, or an allowlist edited to empty.
-MIN_AXIOMS=80
+MIN_AXIOMS=79
 axiom_count=$(grep -cE '^[0-9a-f]{16}  ' trust/baseline-axioms.txt 2>/dev/null || echo 0)
 if [ "$axiom_count" -lt "$MIN_AXIOMS" ]; then
   echo "trust-gate: FLOOR FAILURE — only $axiom_count axioms in baseline (expected >= $MIN_AXIOMS)."

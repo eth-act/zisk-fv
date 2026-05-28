@@ -548,6 +548,94 @@ ADDED: h_arith_table
        (same ArithDiv row-native membership as DIVW.)
 
 # ============================================================
+# T5 external-arith memory structural unpacking (13)
+# ============================================================
+#
+# The same 13 Arith-family canonical theorems are allowed to add one
+# `arith_mem : ExternalArithMemoryWitness m r_main bus.e2` binder while
+# removing `main_external_arith_emission_bundle` from their semantic
+# closures.
+#
+# This is structural unpacking, not promise laundering, because the added
+# binder exposes the selected Clean Main memory row and the exact adapter
+# premises needed to derive the old rd-write byte-lane conclusion:
+#   * `row : MainRowWithRom FGL`
+#   * `row_eq : row.core = rowAt main r_main`
+#   * `store_pc_zero : row.core.store_pc = 0`
+#   * `rd_write_match : matches_memory_entry bus.e2
+#       (MemBusMessage.toEntry (cMemMessage row) 1 1)`
+#
+# The proved adapter in `AirsClean/Main/Bridge.lean` derives the lane
+# equalities from the real Clean Main `cMemMessage` and the legacy
+# memory-entry match. No new axiom is introduced, and the old axiom is
+# retired from the trust ledger. A future
+# Compliance-level Clean Main ensemble can supply this witness once for the
+# selected Main row; the canonical theorem no longer silently reaches the
+# memory-bus trust-ledger axiom through its closure.
+#
+# PIL-BASIS for all 13 entries below:
+#   * Main's PIL memory channel emits the `c`/store message with the
+#     `store_pc` selector and byte-packed `c_val` lanes.
+#   * `AirsClean/Main/Bridge.lean` maps `cMemMessage row` to the legacy
+#     memory-bus entry shape used by existing arithmetic wrappers.
+#   * `store_pc = 0` pins the message as the external-arith rd-write lane,
+#     not the PC-store lane covered by `main_store_pc_emission_bundle`.
+
+OPCODE: ZiskFv.Equivalence.Mul.equiv_MUL
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem
+       (`ExternalArithMemoryWitness m r_main bus.e2`, Clean Main
+        `cMemMessage` structural witness for rd-write byte lanes.)
+
+OPCODE: ZiskFv.Equivalence.MulH.equiv_MULH
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.MulHSU.equiv_MULHSU
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.MulHU.equiv_MULHU
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.MulW.equiv_MULW
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Div.equiv_DIV
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Divu.equiv_DIVU
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Divuw.equiv_DIVUW
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Divw.equiv_DIVW
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Rem.equiv_REM
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Remu.equiv_REMU
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Remuw.equiv_REMUW
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+OPCODE: ZiskFv.Equivalence.Remw.equiv_REMW
+DROPPED: main_external_arith_emission_bundle from semantic closure
+ADDED: arith_mem (same external-arith memory witness as MUL.)
+
+# ============================================================
 # ITYPE constructibility-bundle ops (Step 4.2r3.I)
 # ============================================================
 #

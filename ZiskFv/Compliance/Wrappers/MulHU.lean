@@ -76,6 +76,7 @@ theorem equiv_MULHU_of_table
         state mulhu_input.r1_val mulhu_input.r2_val mulhu_input.rd mulhu_input.PC
         (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
@@ -130,12 +131,7 @@ theorem equiv_MULHU_of_table
   -- ============ DISCHARGE h_byte_lo / h_byte_hi (lane match — Family A) ============
   -- MULHU literal 0xb1 = 177 (OP_MULUH) — position 1 in
   -- main_external_arith_emission_bundle's 14-way disjunction.
-  have h_bundle :=
-    ZiskFv.Airs.MemoryBus.MemBridge.main_external_arith_emission_bundle
-      m r_main e2 (0 : BitVec 5) (m.op r_main)
-      h_main_active rfl
-      (Or.inr (Or.inl h_main_op_mulhu))
-      h_m2_mult (by rw [h_m2_as])
+  have h_bundle := arith_mem.c_lane_vals
   have h_chunks_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e2
   have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
       + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
@@ -144,7 +140,7 @@ theorem equiv_MULHU_of_table
   have h_byte_hi_to_c1 : (byteAt e2 4).val + (byteAt e2 5).val * 256
       + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216
       = (m.c_1 r_main).val := by
-    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_hi_val_sum_eq e2 h_chunks_range.2, h_bundle.2.1]
+    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_hi_val_sum_eq e2 h_chunks_range.2, h_bundle.2]
   obtain ⟨h_a0_lt, h_a1_lt, h_a2_lt, h_a3_lt,
           h_b0_lt, h_b1_lt, h_b2_lt, h_b3_lt,
           _h_c0_lt, _h_c1_lt, _h_c2_lt, _h_c3_lt,
@@ -215,6 +211,7 @@ theorem equiv_MULHU
         state mulhu_input.r1_val mulhu_input.r2_val mulhu_input.rd mulhu_input.PC
         (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
@@ -232,7 +229,7 @@ theorem equiv_MULHU
              signed_rs2 := .Unsigned }))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   equiv_MULHU_of_table state mulhu_input r1 r2 rd bus m r_main v r_a pins
-    h_match_secondary promises bounds h_row_constraints
+    h_match_secondary promises arith_mem bounds h_row_constraints
     h_arith_table
 
 end ZiskFv.Compliance

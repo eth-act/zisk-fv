@@ -40,6 +40,7 @@ theorem equiv_DIV
         state div_input.r1_val div_input.r2_val div_input.rd div_input.PC
         (PureSpec.execute_DIVREM_div_pure div_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_op2_ne : div_input.r2_val.toInt ≠ 0)
     (h_no_overflow :
       ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
@@ -58,6 +59,6 @@ theorem equiv_DIV
       LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_DIV_of_table state div_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises h_op2_ne h_no_overflow h_row_constraints h_arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
+  exact ZiskFv.Compliance.equiv_DIV_of_table state div_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises arith_mem h_op2_ne h_no_overflow h_row_constraints h_arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
 
 end ZiskFv.Equivalence.Div

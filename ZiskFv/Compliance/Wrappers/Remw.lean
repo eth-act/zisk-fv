@@ -56,6 +56,7 @@ theorem equiv_REMW_of_table
         state remw_input.r1_val remw_input.r2_val remw_input.rd remw_input.PC
         (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
@@ -127,14 +128,7 @@ theorem equiv_REMW_of_table
   have h_c23 := arith_chunk_pair_eq_zero_of_m32_one
     (m.a_1 r_main) (m.m32 r_main) h_a_hi_eq_FGL _h_m32_m h_c2_lt h_c3_lt
   -- ============ DISCHARGE h_byte_lo (lane match on d[] — secondary) ============
-  have h_bundle :=
-    ZiskFv.Airs.MemoryBus.MemBridge.main_external_arith_emission_bundle
-      m r_main e2 (0 : BitVec 5) (m.op r_main)
-      h_main_active rfl
-      -- OP_REM_W is the 14th (last) literal in the 14-way disjunction.
-      (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
-        (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h_main_op_remw)))))))))))))
-      h_m2_mult (by rw [h_m2_as])
+  have h_bundle := arith_mem.c_lane_vals
   have h_chunks_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e2
   have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
       + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
@@ -180,6 +174,7 @@ theorem equiv_REMW
         state remw_input.r1_val remw_input.r2_val remw_input.rd remw_input.PC
         (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
@@ -214,7 +209,7 @@ theorem equiv_REMW
       LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, false))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   exact equiv_REMW_of_table
-    state remw_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises
+    state remw_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises arith_mem
     h_row_constraints h_arith_table
     h_na_bool h_nb_bool h_nr_bool h_np_xor h_sext_choice h_rs1_value h_rs2_value
     h_op2_ne h_no_overflow_w

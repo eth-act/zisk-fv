@@ -388,7 +388,7 @@ via separate signatures (`arith_mul_*` vs `arith_div_*`).
 | `arith_mul_na_eq_msb_of_a` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (Step 4.2 r3.III) | r3.III: `op ∈ {179, 181}` ⇒ `na.val = MSB(packed4 a[0..3])` |
 | `arith_mul_nb_eq_msb_of_b` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (Step 4.2 r3.III) | r3.III: `op = 181` ⇒ `nb.val = MSB(packed4 b[0..3])` |
 | `arith_table_op_mulw_mode_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (Step 4.2 r3.III) | r3.III MULW mode pin: `op = 182` ⇒ `nr=sext=div=0, m32=1`, na/nb boolean, np XOR |
-| `main_external_arith_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:553` | rd-write entry byte-pack lanes equal Main's `c_0`/`c_1` for MUL/DIV-family rows (`is_external_op = 1`, `op ∈ 0xb0..0xbf`) — shared with ArithDiv |
+| `ExternalArithMemoryWitness` | structural witness | `Compliance/SharedBundles.lean` | T5 replacement for the retired `main_external_arith_emission_bundle`: rd-write entry byte-pack lanes are derived from the selected Clean Main `cMemMessage` row, `store_pc = 0`, and the memory-entry match. |
 
 ### Pilot status — landed at Step 4.1.8
 
@@ -398,7 +398,7 @@ discharge categories for the low-half MUL opcode (OP_MUL = 180) end-to-end
 using **2 new class-#6b axioms** (the two pins listed above) — well
 within the 3-5 prediction.
 
-* **Lane-match:** Discharged via `main_external_arith_emission_bundle`
+* **Lane-match:** Discharged via `ExternalArithMemoryWitness`
   (the c_0/c_1 byte lanes) composed with the op-bus `matches_entry`
   projection on `opBus_row_Arith` plus, for the hi side, the existing
   `mul_bus_res1_eq_c_hi` bridge (`Airs/Arith/Bridge1.lean:56`) under
@@ -509,7 +509,7 @@ pilot wrapper `ZiskFv/Compliance/Wrappers/Div.lean`.
 | `arith_div_np_eq_msb_of_dividend` | #6b (table-pin) | `Airs/Arith/Ranges.lean:502` | DIV-pilot GAP-B: `np = MSB(C)` |
 | `arith_div_nb_eq_msb_of_divisor` | #6b (table-pin) | `Airs/Arith/Ranges.lean:530` | DIV-pilot GAP-B: `nb = MSB(B)` |
 | `arith_div_remainder_bound` | #6b (range-bus) | `Airs/Arith/Ranges.lean:602` | DIV-pilot GAP-C: Euclidean remainder magnitude/sign bound (`arith.pil:274`) |
-| `main_external_arith_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:553` | shared with ArithMul — rd-write byte-pack lanes |
+| `ExternalArithMemoryWitness` | structural witness | `Compliance/SharedBundles.lean` | shared with ArithMul — rd-write byte-pack lanes derived from Clean Main `cMemMessage` rather than a trust-ledger axiom |
 
 ### Predicted gaps for the AIR's discharge pilot
 
@@ -518,7 +518,7 @@ pilot (`Compliance/Wrappers/Div.lean`) closed all five categories for
 `equiv_DIV` end-to-end. Remaining items to lift the DIV pilot to
 the full 8-opcode DIV/REM family:
 
-* **Lane-match:** Discharged for DIV via `main_external_arith_emission_bundle`
+* **Lane-match:** Discharged for DIV via `ExternalArithMemoryWitness`
   + `arith_table_op_div_rem_main_selector_pin` + `div_bus_res1_eq_a_hi`.
   Extension to REM (`op = 187`) reuses the same axioms (the selector
   pin covers both `op = 186` and `op = 187`); REM-secondary uses
@@ -585,7 +585,6 @@ bridge axioms below absorb them).
 |---|---|---|---|
 | `lookup_consumer_matches_provider_store` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:178` | Main-row store consumer (`c_*`) is matched by a Mem-AIR row |
 | `main_store_pc_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:495` | rd-write entry lanes match `store_pc_lanes_match_{lo,hi}` for `is_external_op = 0`, `op ∈ {OP_FLAG, OP_COPYB}` — consumed by JAL/JALR/AUIPC/LUI |
-| `main_external_arith_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:553` | rd-write entry lanes for MUL/DIV-family rows — shared with ArithMul/ArithDiv |
 | `memory_bus_register_write_perm_sound` | #5 (memory-bus perm) | `Airs/MemoryBus/LaneMatch.lean:138` | Main rd-write entry pairs with a "next read" Mem row at same address |
 | `memory_bus_register_write_perm_sound_store_pc` | #5 (memory-bus perm) | `Airs/MemoryBus/LaneMatch.lean:329` | `store_pc = 1` variant of the above |
 | `memory_bus_entry_byte_range_perm_sound` | #5b (range-bus) | `Airs/MemoryBus/EntryRanges.lean:52` | every memory-bus entry's 8 `x0..x7` byte cells in `[0, 256)` |
@@ -970,10 +969,10 @@ Grand total at this snapshot: **116 axioms** (matches
 
 ### Flagged for review
 
-* **`main_external_arith_emission_bundle`** straddles ArithMul and
-  ArithDiv — it's counted under both in this document. The PIL
-  citation (`main.pil:311-312`) is identical for both consumers;
-  this is intentional (one bundle, two consumers).
+* **`ExternalArithMemoryWitness`** straddles ArithMul and ArithDiv.
+  T5 retired the prior `main_external_arith_emission_bundle` source
+  axiom; the PIL citation (`main.pil:311-312`) is now carried by the
+  Clean Main structural witness and adapter proof.
 * **The op-bus axioms** are listed under each AIR's "provider-bus
   axiom" header but counted only once in the totals
   (`Airs/OperationBus/Bridge.lean` has 6 axioms total, one per

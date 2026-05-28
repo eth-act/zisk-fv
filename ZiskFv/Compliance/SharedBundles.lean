@@ -9,6 +9,7 @@ import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
+import ZiskFv.AirsClean.Main.Bridge
 import ZiskFv.Channels.MemoryBusBytes
 
 /-!
@@ -69,6 +70,47 @@ structure MainRowPins (m : Valid_Main FGL FGL) (r_main : ℕ)
     (active : FGL) (opKind : FGL) where
   main_active : m.is_external_op r_main = active
   main_op : m.op r_main = opKind
+
+/-! ## Main structural memory witnesses -/
+
+/-- Structural witness for an external-arithmetic rd-write on Main's
+    unified memory channel.
+
+The witness ties the existing `Valid_Main` row to a Clean
+`MainRowWithRom`, pins the arithmetic `store_pc = 0` case, and carries
+the legacy-entry match against Main's real PIL-shaped `c` memory
+message. It replaces the lane portion of
+`main_external_arith_emission_bundle` without assuming that a Clean PIL
+message is definitionally a legacy `MemoryBusEntry`. -/
+structure ExternalArithMemoryWitness
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
+    (e_rd : Interaction.MemoryBusEntry FGL) where
+  row : ZiskFv.AirsClean.Main.MainRowWithRom FGL
+  row_eq : row.core = ZiskFv.AirsClean.Main.rowAt main r_main
+  store_pc_zero : row.core.store_pc = 0
+  rd_write_match :
+    ZiskFv.Airs.MemoryBus.matches_memory_entry e_rd
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (ZiskFv.AirsClean.Main.cMemMessage row) 1 1)
+
+theorem ExternalArithMemoryWitness.c_lanes
+    {main : Valid_Main FGL FGL} {r_main : ℕ}
+    {e_rd : Interaction.MemoryBusEntry FGL}
+    (w : ExternalArithMemoryWitness main r_main e_rd) :
+    main.c_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e_rd
+    ∧ main.c_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e_rd :=
+  ZiskFv.AirsClean.Main.external_arith_register_write_lanes_of_message_match_valid
+    main r_main w.row e_rd w.row_eq w.store_pc_zero w.rd_write_match
+
+theorem ExternalArithMemoryWitness.c_lane_vals
+    {main : Valid_Main FGL FGL} {r_main : ℕ}
+    {e_rd : Interaction.MemoryBusEntry FGL}
+    (w : ExternalArithMemoryWitness main r_main e_rd) :
+    (main.c_0 r_main).val = e_rd.value_0.val
+    ∧ (main.c_1 r_main).val = e_rd.value_1.val := by
+  obtain ⟨h0, h1⟩ := w.c_lanes
+  exact ⟨by simpa [ZiskFv.Airs.MemoryBus.memory_entry_lo] using congrArg Fin.val h0,
+    by simpa [ZiskFv.Airs.MemoryBus.memory_entry_hi] using congrArg Fin.val h1⟩
 
 /-! ## BinaryAdd validator + universal core constraint -/
 

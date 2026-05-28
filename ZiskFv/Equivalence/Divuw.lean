@@ -42,6 +42,7 @@ theorem equiv_DIVUW
         state divuw_input.r1_val divuw_input.r2_val divuw_input.rd divuw_input.PC
         (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
       (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_row_constraints : ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
@@ -60,6 +61,6 @@ theorem equiv_DIVUW
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, true))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_DIVUW_of_table state divuw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises h_arith_table h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
+  exact ZiskFv.Compliance.equiv_DIVUW_of_table state divuw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises arith_mem h_arith_table h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
 
 end ZiskFv.Equivalence.Divuw

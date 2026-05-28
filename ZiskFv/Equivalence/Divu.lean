@@ -41,6 +41,7 @@ theorem equiv_DIVU
         state divu_input.r1_val divu_input.r2_val divu_input.rd divu_input.PC
         (PureSpec.execute_DIVREM_divu_pure divu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
@@ -54,6 +55,6 @@ theorem equiv_DIVU
       = state_effect_via_channels
           ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_DIVU_of_table state divu_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises bounds h_row_constraints h_arith_table h_op2_ne
+  exact ZiskFv.Compliance.equiv_DIVU_of_table state divu_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises arith_mem bounds h_row_constraints h_arith_table h_op2_ne
 
 end ZiskFv.Equivalence.Divu

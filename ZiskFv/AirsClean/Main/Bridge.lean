@@ -235,6 +235,65 @@ theorem cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
       (MemBusMessage.toEntry (cMemMessage row) 1 1) := by
   simp [h_store_pc]
 
+/-- Main external-arithmetic rd-write lane adapter for a concrete Clean
+    Main row.
+
+This is the lane portion of the legacy
+`MemBridge.main_external_arith_emission_bundle`, but it is derived from
+Main's real PIL-shaped `c` memory message. The `store_pc = 0` premise is
+kept explicit: arithmetic rows write the computed `c_0/c_1` value to
+`rd`, while `store_pc = 1` rows use the PC-write formula. -/
+theorem external_arith_register_write_lanes_of_message
+    (row : MainRowWithRom FGL)
+    (h_store_pc : row.core.store_pc = 0) :
+    (validOfRow row.core).c_0 0 =
+        ZiskFv.Airs.MemoryBus.memory_entry_lo
+          (MemBusMessage.toEntry (cMemMessage row) 1 1)
+    ∧ (validOfRow row.core).c_1 0 =
+        ZiskFv.Airs.MemoryBus.memory_entry_hi
+          (MemBusMessage.toEntry (cMemMessage row) 1 1) := by
+  exact cMemMessage_toEntry_register_write_lanes_match_of_store_pc_zero
+    row h_store_pc
+
+/-- External-arithmetic rd-write lane adapter for an arbitrary legacy
+    entry matched to the concrete Clean Main `c` message. -/
+theorem external_arith_register_write_lanes_of_message_match
+    (row : MainRowWithRom FGL)
+    (e : Interaction.MemoryBusEntry FGL)
+    (h_store_pc : row.core.store_pc = 0)
+    (h_e_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry e
+        (MemBusMessage.toEntry (cMemMessage row) 1 1)) :
+    (validOfRow row.core).c_0 0 =
+        ZiskFv.Airs.MemoryBus.memory_entry_lo e
+    ∧ (validOfRow row.core).c_1 0 =
+        ZiskFv.Airs.MemoryBus.memory_entry_hi e := by
+  obtain ⟨_h_mult, _h_as, _h_ptr, h_v0, h_v1, _h_ts⟩ := h_e_match
+  constructor
+  · simpa [validOfRow, ZiskFv.Airs.MemoryBus.memory_entry_lo,
+      cMemMessage, MemBusMessage.toEntry, h_store_pc] using h_v0.symm
+  · simpa [validOfRow, ZiskFv.Airs.MemoryBus.memory_entry_hi,
+      cMemMessage, MemBusMessage.toEntry, h_store_pc] using h_v1.symm
+
+/-- Variant of `external_arith_register_write_lanes_of_message_match`
+    projected back to an existing `Valid_Main` row. -/
+theorem external_arith_register_write_lanes_of_message_match_valid
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
+    (row : MainRowWithRom FGL)
+    (e : Interaction.MemoryBusEntry FGL)
+    (h_row : row.core = rowAt main r_main)
+    (h_store_pc : row.core.store_pc = 0)
+    (h_e_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry e
+        (MemBusMessage.toEntry (cMemMessage row) 1 1)) :
+    main.c_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e
+    ∧ main.c_1 r_main = ZiskFv.Airs.MemoryBus.memory_entry_hi e := by
+  have h_raw :=
+    external_arith_register_write_lanes_of_message_match row e
+      h_store_pc h_e_match
+  rw [h_row] at h_raw
+  simpa [validOfRow, rowAt] using h_raw
+
 theorem cMemMessage_toEntry_memory_store_lanes_match_of_store_pc_zero
     (row : MainRowWithRom FGL)
     (h_store_pc : row.core.store_pc = 0) :
