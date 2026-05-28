@@ -225,6 +225,14 @@ def componentWithRomMemAndOpBus
     Air.Flat.Component FGL :=
   ⟨ circuitWithRomMemAndOpBus length program ⟩
 
+/-- Project the generic Clean component `Spec` for the unified
+    ROM/memory/op-bus Main component to the concrete Main-row `Spec`. -/
+theorem componentWithRomMemAndOpBus_spec
+    (length : ℕ) (program : Program length) (env : Environment FGL) :
+    (componentWithRomMemAndOpBus length program).Spec env =
+      Spec ((componentWithRomMemAndOpBus length program).rowInput env).core := by
+  rfl
+
 theorem componentWithRomMemAndOpBus_interactionsWith_memBus
     (length : ℕ) (program : Program length) :
     (componentWithRomMemAndOpBus length program).operations.interactionsWith

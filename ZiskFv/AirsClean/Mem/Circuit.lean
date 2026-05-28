@@ -103,6 +103,14 @@ theorem componentWithMemBus_interactionsWith_memBus :
     Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
     List.map_nil]
 
+/-- Project the generic Clean component `Spec` for `componentWithMemBus` to
+    the concrete Mem row `Spec`. -/
+theorem spec_of_componentWithMemBus_spec
+    (env : Environment FGL)
+    (h_spec : componentWithMemBus.Spec env) :
+    Spec (componentWithMemBus.rowInput env) := by
+  exact h_spec
+
 /-- The Mem `Spec` for a row, derived through the Clean Component. -/
 theorem spec_via_component (row : MemRow FGL)
     (_h_assumptions : Assumptions row)
