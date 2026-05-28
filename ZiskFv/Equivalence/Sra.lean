@@ -41,14 +41,14 @@ theorem equiv_SRA
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 1 OP_SRA)
     (h_component :
-      providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent)
+      providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent)
     (h_table_spec : providerTable.Spec)
     (h_provider_row : providerRow ∈ providerTable.table)
     (h_match : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.BinaryExtension.opBusMessage
-          (ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     : execute_instruction (instruction.RTYPE (r2, r1, rd, rop.SRA)) state

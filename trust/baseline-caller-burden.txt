@@ -828,7 +828,7 @@ ZiskFv.Equivalence.Sra.equiv_SRA 008 r_main [row] ℕ
 ZiskFv.Equivalence.Sra.equiv_SRA 009 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Sra.equiv_SRA 010 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state sra_input.r1_val sra_input.r2_val
 ZiskFv.Equivalence.Sra.equiv_SRA 011 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_SRA
-ZiskFv.Equivalence.Sra.equiv_SRA 012 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+ZiskFv.Equivalence.Sra.equiv_SRA 012 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComp
 ZiskFv.Equivalence.Sra.equiv_SRA 013 h_table_spec [other] providerTable.Spec
 ZiskFv.Equivalence.Sra.equiv_SRA 014 h_provider_row [other] providerRow ∈ providerTable.table
 ZiskFv.Equivalence.Sra.equiv_SRA 015 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main
@@ -845,7 +845,7 @@ ZiskFv.Equivalence.Srai.equiv_SRAI 008 r_main [row] ℕ
 ZiskFv.Equivalence.Srai.equiv_SRAI 009 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Srai.equiv_SRAI 010 promises [bridge] ZiskFv.EquivCore.Promises.ShiftImmPromises state srai_input.r1_val srai_input.sh
 ZiskFv.Equivalence.Srai.equiv_SRAI 011 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_SRA
-ZiskFv.Equivalence.Srai.equiv_SRAI 012 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+ZiskFv.Equivalence.Srai.equiv_SRAI 012 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComp
 ZiskFv.Equivalence.Srai.equiv_SRAI 013 h_table_spec [other] providerTable.Spec
 ZiskFv.Equivalence.Srai.equiv_SRAI 014 h_provider_row [other] providerRow ∈ providerTable.table
 ZiskFv.Equivalence.Srai.equiv_SRAI 015 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main

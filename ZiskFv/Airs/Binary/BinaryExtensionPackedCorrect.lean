@@ -1375,6 +1375,25 @@ private lemma sra_byte_eq_of_wf
 
 -- legacy sra_byte_eq (bin_ext_table_consumer_wf route) deleted in T4-purge P3.6.
 
+private lemma sra_byte_parts_eq_of_wf
+    (e : BinaryExtensionTableEntry FGL)
+    (h_wf : wf_properties e)
+    (h_op_val : e.op.val = OP_SRA) :
+    let s : ℕ := e.shift_amount.val % 64
+    let positioned : ℕ := e.a_byte.val * 256 ^ e.byte_index.val
+    let base : ℕ := positioned / 2 ^ s
+    let ext : ℕ :=
+      if e.byte_index.val = 7 ∧ e.a_byte.val ≥ 128
+      then 2 ^ 64 - 2 ^ (64 - s)
+      else 0
+    e.c_lo_byte.val = (base + ext) % 2 ^ 32 ∧
+    e.c_hi_byte.val = (base + ext) / 2 ^ 32 := by
+  have h_sra : wf_SRA e := h_wf.2.2.2.1
+  have ⟨h_lo, h_hi, _⟩ := h_sra h_op_val
+  simp only
+  rw [h_lo, h_hi, Nat.shiftRight_eq_div_pow]
+  exact ⟨rfl, rfl⟩
+
 private lemma sllw_byte_eq_of_wf
     (e : BinaryExtensionTableEntry FGL)
     (h_wf : wf_properties e)
@@ -1995,6 +2014,313 @@ lemma binary_extension_sra_chunks_eq_bv_sshr_of_wf
     sft
     ha0r ha1r ha2r ha3r ha4r ha5r ha6r ha7r hsft_lt
     eq0 eq1 eq2 eq3 eq4 eq5 eq6 eq7
+
+set_option maxHeartbeats 4000000 in
+private lemma sra_lo_sum_bound_core
+    (a0v a1v a2v a3v a4v a5v a6v a7v : ℕ)
+    (cl0 cl1 cl2 cl3 cl4 cl5 cl6 cl7 : ℕ)
+    (sft : ℕ)
+    (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (ha3r : a3v < 256)
+    (ha4r : a4v < 256) (ha5r : a5v < 256) (ha6r : a6v < 256) (ha7r : a7v < 256)
+    (hsft_lt : sft < 64)
+    (eq0 : cl0 = (a0v * 1 / 2 ^ sft) % 2 ^ 32)
+    (eq1 : cl1 = (a1v * 256 / 2 ^ sft) % 2 ^ 32)
+    (eq2 : cl2 = (a2v * 65536 / 2 ^ sft) % 2 ^ 32)
+    (eq3 : cl3 = (a3v * 16777216 / 2 ^ sft) % 2 ^ 32)
+    (eq4 : cl4 = (a4v * 4294967296 / 2 ^ sft) % 2 ^ 32)
+    (eq5 : cl5 = (a5v * 1099511627776 / 2 ^ sft) % 2 ^ 32)
+    (eq6 : cl6 = (a6v * 281474976710656 / 2 ^ sft) % 2 ^ 32)
+    (eq7 : cl7 =
+      (a7v * 72057594037927936 / 2 ^ sft
+        + (if a7v ≥ 128 then 2 ^ 64 - 2 ^ (64 - sft) else 0)) % 2 ^ 32) :
+    cl0 + cl1 + cl2 + cl3 + cl4 + cl5 + cl6 + cl7 < 2 ^ 32 := by
+  subst eq0; subst eq1; subst eq2; subst eq3; subst eq4; subst eq5; subst eq6; subst eq7
+  by_cases hsign : a7v ≥ 128
+  <;> simp only [hsign, if_true, if_false]
+  <;> interval_cases sft
+  <;> omega
+
+set_option maxHeartbeats 4000000 in
+private lemma sra_hi_sum_bound_core
+    (a0v a1v a2v a3v a4v a5v a6v a7v : ℕ)
+    (ch0 ch1 ch2 ch3 ch4 ch5 ch6 ch7 : ℕ)
+    (sft : ℕ)
+    (ha0r : a0v < 256) (ha1r : a1v < 256) (ha2r : a2v < 256) (ha3r : a3v < 256)
+    (ha4r : a4v < 256) (ha5r : a5v < 256) (ha6r : a6v < 256) (ha7r : a7v < 256)
+    (hsft_lt : sft < 64)
+    (eq0 : ch0 = (a0v * 1 / 2 ^ sft) / 2 ^ 32)
+    (eq1 : ch1 = (a1v * 256 / 2 ^ sft) / 2 ^ 32)
+    (eq2 : ch2 = (a2v * 65536 / 2 ^ sft) / 2 ^ 32)
+    (eq3 : ch3 = (a3v * 16777216 / 2 ^ sft) / 2 ^ 32)
+    (eq4 : ch4 = (a4v * 4294967296 / 2 ^ sft) / 2 ^ 32)
+    (eq5 : ch5 = (a5v * 1099511627776 / 2 ^ sft) / 2 ^ 32)
+    (eq6 : ch6 = (a6v * 281474976710656 / 2 ^ sft) / 2 ^ 32)
+    (eq7 : ch7 =
+      (a7v * 72057594037927936 / 2 ^ sft
+        + (if a7v ≥ 128 then 2 ^ 64 - 2 ^ (64 - sft) else 0)) / 2 ^ 32) :
+    ch0 + ch1 + ch2 + ch3 + ch4 + ch5 + ch6 + ch7 < 2 ^ 32 := by
+  subst eq0; subst eq1; subst eq2; subst eq3; subst eq4; subst eq5; subst eq6; subst eq7
+  by_cases hsign : a7v ≥ 128
+  <;> simp only [hsign, if_true, if_false]
+  <;> interval_cases sft
+  <;> omega
+
+set_option maxHeartbeats 4000000 in
+/-- SRA's exact byte-table witnesses imply that the low and high c-lane
+    aggregates each fit in one 32-bit memory chunk. This avoids the generic
+    BinaryExtension range-bus soundness axiom for SRA/SRAI. -/
+lemma binary_extension_sra_c_sums_lt_of_wf
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
+    (h_op : (v.op row).val = OP_SRA)
+    (h_bytes : ByteLookupHypotheses v row)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
+    (h_a_range : a_bytes_in_range v row) :
+    ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
+        + (v.free_in_c_4 row).val + (v.free_in_c_6 row).val
+        + (v.free_in_c_8 row).val + (v.free_in_c_10 row).val
+        + (v.free_in_c_12 row).val + (v.free_in_c_14 row).val
+        < 4294967296)
+    ∧ ((v.free_in_c_1 row).val + (v.free_in_c_3 row).val
+        + (v.free_in_c_5 row).val + (v.free_in_c_7 row).val
+        + (v.free_in_c_9 row).val + (v.free_in_c_11 row).val
+        + (v.free_in_c_13 row).val + (v.free_in_c_15 row).val
+        < 4294967296) := by
+  obtain ⟨e0, ⟨_, hop0, hbi0, ha0, hs0, hcl0, hch0⟩,
+         e1, ⟨_, hop1, hbi1, ha1, hs1, hcl1, hch1⟩,
+         e2, ⟨_, hop2, hbi2, ha2, hs2, hcl2, hch2⟩,
+         e3, ⟨_, hop3, hbi3, ha3, hs3, hcl3, hch3⟩,
+         e4, ⟨_, hop4, hbi4, ha4, hs4, hcl4, hch4⟩,
+         e5, ⟨_, hop5, hbi5, ha5, hs5, hcl5, hch5⟩,
+         e6, ⟨_, hop6, hbi6, ha6, hs6, hcl6, hch6⟩,
+         e7, ⟨_, hop7, hbi7, ha7, hs7, hcl7, hch7⟩⟩ := h_bytes
+  set sft : ℕ := (v.free_in_b row).val % 64 with sft_def
+  have hsft_lt : sft < 64 := Nat.mod_lt _ (by decide)
+  have eq0 : (v.free_in_c_0 row).val =
+      ((v.free_in_a_0 row).val * 1 / 2 ^ sft) % 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e0 h_wfs.1 (by rw [hop0]; exact h_op)
+    rw [show e0.byte_index.val = 0 from by rw [hbi0]; rfl,
+        show e0.shift_amount.val = (v.free_in_b row).val from by rw [hs0],
+        show e0.a_byte.val = (v.free_in_a_0 row).val from by rw [ha0],
+        show e0.c_lo_byte.val = (v.free_in_c_0 row).val from by rw [hcl0]] at h
+    have hp : (256 : ℕ) ^ 0 = 1 := by norm_num
+    rw [hp] at h
+    simp only [show ¬((0 : ℕ) = 7 ∧ (v.free_in_a_0 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h.1
+  have eq1 : (v.free_in_c_2 row).val =
+      ((v.free_in_a_1 row).val * 256 / 2 ^ sft) % 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e1 h_wfs.2.1 (by rw [hop1]; exact h_op)
+    rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
+        show e1.shift_amount.val = (v.free_in_b row).val from by rw [hs1],
+        show e1.a_byte.val = (v.free_in_a_1 row).val from by rw [ha1],
+        show e1.c_lo_byte.val = (v.free_in_c_2 row).val from by rw [hcl1]] at h
+    have hp : (256 : ℕ) ^ 1 = 256 := by norm_num
+    rw [hp] at h
+    simp only [show ¬((1 : ℕ) = 7 ∧ (v.free_in_a_1 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h.1
+  have eq2 : (v.free_in_c_4 row).val =
+      ((v.free_in_a_2 row).val * 65536 / 2 ^ sft) % 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
+    rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
+        show e2.shift_amount.val = (v.free_in_b row).val from by rw [hs2],
+        show e2.a_byte.val = (v.free_in_a_2 row).val from by rw [ha2],
+        show e2.c_lo_byte.val = (v.free_in_c_4 row).val from by rw [hcl2]] at h
+    have hp : (256 : ℕ) ^ 2 = 65536 := by norm_num
+    rw [hp] at h
+    simp only [show ¬((2 : ℕ) = 7 ∧ (v.free_in_a_2 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h.1
+  have eq3 : (v.free_in_c_6 row).val =
+      ((v.free_in_a_3 row).val * 16777216 / 2 ^ sft) % 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e3 h_wfs.2.2.2.1 (by rw [hop3]; exact h_op)
+    rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
+        show e3.shift_amount.val = (v.free_in_b row).val from by rw [hs3],
+        show e3.a_byte.val = (v.free_in_a_3 row).val from by rw [ha3],
+        show e3.c_lo_byte.val = (v.free_in_c_6 row).val from by rw [hcl3]] at h
+    have hp : (256 : ℕ) ^ 3 = 16777216 := by norm_num
+    rw [hp] at h
+    simp only [show ¬((3 : ℕ) = 7 ∧ (v.free_in_a_3 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h.1
+  have eq4 : (v.free_in_c_8 row).val =
+      ((v.free_in_a_4 row).val * 4294967296 / 2 ^ sft) % 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
+    rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
+        show e4.shift_amount.val = (v.free_in_b row).val from by rw [hs4],
+        show e4.a_byte.val = (v.free_in_a_4 row).val from by rw [ha4],
+        show e4.c_lo_byte.val = (v.free_in_c_8 row).val from by rw [hcl4]] at h
+    have hp : (256 : ℕ) ^ 4 = 4294967296 := by norm_num
+    rw [hp] at h
+    simp only [show ¬((4 : ℕ) = 7 ∧ (v.free_in_a_4 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h.1
+  have eq5 : (v.free_in_c_10 row).val =
+      ((v.free_in_a_5 row).val * 1099511627776 / 2 ^ sft) % 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e5 h_wfs.2.2.2.2.2.1 (by rw [hop5]; exact h_op)
+    rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
+        show e5.shift_amount.val = (v.free_in_b row).val from by rw [hs5],
+        show e5.a_byte.val = (v.free_in_a_5 row).val from by rw [ha5],
+        show e5.c_lo_byte.val = (v.free_in_c_10 row).val from by rw [hcl5]] at h
+    have hp : (256 : ℕ) ^ 5 = 1099511627776 := by norm_num
+    rw [hp] at h
+    simp only [show ¬((5 : ℕ) = 7 ∧ (v.free_in_a_5 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h.1
+  have eq6 : (v.free_in_c_12 row).val =
+      ((v.free_in_a_6 row).val * 281474976710656 / 2 ^ sft) % 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e6 h_wfs.2.2.2.2.2.2.1 (by rw [hop6]; exact h_op)
+    rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
+        show e6.shift_amount.val = (v.free_in_b row).val from by rw [hs6],
+        show e6.a_byte.val = (v.free_in_a_6 row).val from by rw [ha6],
+        show e6.c_lo_byte.val = (v.free_in_c_12 row).val from by rw [hcl6]] at h
+    have hp : (256 : ℕ) ^ 6 = 281474976710656 := by norm_num
+    rw [hp] at h
+    simp only [show ¬((6 : ℕ) = 7 ∧ (v.free_in_a_6 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h.1
+  have eq7 : (v.free_in_c_14 row).val =
+      ((v.free_in_a_7 row).val * 72057594037927936 / 2 ^ sft
+        + (if (v.free_in_a_7 row).val ≥ 128 then 2 ^ 64 - 2 ^ (64 - sft) else 0))
+          % 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e7 h_wfs.2.2.2.2.2.2.2 (by rw [hop7]; exact h_op)
+    rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
+        show e7.shift_amount.val = (v.free_in_b row).val from by rw [hs7],
+        show e7.a_byte.val = (v.free_in_a_7 row).val from by rw [ha7],
+        show e7.c_lo_byte.val = (v.free_in_c_14 row).val from by rw [hcl7]] at h
+    have hp : (256 : ℕ) ^ 7 = 72057594037927936 := by norm_num
+    rw [hp] at h
+    simp only [true_and] at h
+    show _ = _ % 2 ^ 32
+    rw [show sft = (v.free_in_b row).val % 64 from rfl]
+    exact h.1
+  have ech0 : (v.free_in_c_1 row).val =
+      ((v.free_in_a_0 row).val * 1 / 2 ^ sft) / 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e0 h_wfs.1 (by rw [hop0]; exact h_op)
+    rw [show e0.byte_index.val = 0 from by rw [hbi0]; rfl,
+        show e0.shift_amount.val = (v.free_in_b row).val from by rw [hs0],
+        show e0.a_byte.val = (v.free_in_a_0 row).val from by rw [ha0],
+        show e0.c_hi_byte.val = (v.free_in_c_1 row).val from by rw [hch0]] at h
+    have hp : (256 : ℕ) ^ 0 = 1 := by norm_num
+    rw [hp] at h
+    simp only [show ¬((0 : ℕ) = 7 ∧ (v.free_in_a_0 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h.2
+  have ech1 : (v.free_in_c_3 row).val =
+      ((v.free_in_a_1 row).val * 256 / 2 ^ sft) / 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e1 h_wfs.2.1 (by rw [hop1]; exact h_op)
+    rw [show e1.byte_index.val = 1 from by rw [hbi1]; rfl,
+        show e1.shift_amount.val = (v.free_in_b row).val from by rw [hs1],
+        show e1.a_byte.val = (v.free_in_a_1 row).val from by rw [ha1],
+        show e1.c_hi_byte.val = (v.free_in_c_3 row).val from by rw [hch1]] at h
+    have hp : (256 : ℕ) ^ 1 = 256 := by norm_num
+    rw [hp] at h
+    simp only [show ¬((1 : ℕ) = 7 ∧ (v.free_in_a_1 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h.2
+  have ech2 : (v.free_in_c_5 row).val =
+      ((v.free_in_a_2 row).val * 65536 / 2 ^ sft) / 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
+    rw [show e2.byte_index.val = 2 from by rw [hbi2]; rfl,
+        show e2.shift_amount.val = (v.free_in_b row).val from by rw [hs2],
+        show e2.a_byte.val = (v.free_in_a_2 row).val from by rw [ha2],
+        show e2.c_hi_byte.val = (v.free_in_c_5 row).val from by rw [hch2]] at h
+    have hp : (256 : ℕ) ^ 2 = 65536 := by norm_num
+    rw [hp] at h
+    simp only [show ¬((2 : ℕ) = 7 ∧ (v.free_in_a_2 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h.2
+  have ech3 : (v.free_in_c_7 row).val =
+      ((v.free_in_a_3 row).val * 16777216 / 2 ^ sft) / 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e3 h_wfs.2.2.2.1 (by rw [hop3]; exact h_op)
+    rw [show e3.byte_index.val = 3 from by rw [hbi3]; rfl,
+        show e3.shift_amount.val = (v.free_in_b row).val from by rw [hs3],
+        show e3.a_byte.val = (v.free_in_a_3 row).val from by rw [ha3],
+        show e3.c_hi_byte.val = (v.free_in_c_7 row).val from by rw [hch3]] at h
+    have hp : (256 : ℕ) ^ 3 = 16777216 := by norm_num
+    rw [hp] at h
+    simp only [show ¬((3 : ℕ) = 7 ∧ (v.free_in_a_3 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h.2
+  have ech4 : (v.free_in_c_9 row).val =
+      ((v.free_in_a_4 row).val * 4294967296 / 2 ^ sft) / 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
+    rw [show e4.byte_index.val = 4 from by rw [hbi4]; rfl,
+        show e4.shift_amount.val = (v.free_in_b row).val from by rw [hs4],
+        show e4.a_byte.val = (v.free_in_a_4 row).val from by rw [ha4],
+        show e4.c_hi_byte.val = (v.free_in_c_9 row).val from by rw [hch4]] at h
+    have hp : (256 : ℕ) ^ 4 = 4294967296 := by norm_num
+    rw [hp] at h
+    simp only [show ¬((4 : ℕ) = 7 ∧ (v.free_in_a_4 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h.2
+  have ech5 : (v.free_in_c_11 row).val =
+      ((v.free_in_a_5 row).val * 1099511627776 / 2 ^ sft) / 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e5 h_wfs.2.2.2.2.2.1 (by rw [hop5]; exact h_op)
+    rw [show e5.byte_index.val = 5 from by rw [hbi5]; rfl,
+        show e5.shift_amount.val = (v.free_in_b row).val from by rw [hs5],
+        show e5.a_byte.val = (v.free_in_a_5 row).val from by rw [ha5],
+        show e5.c_hi_byte.val = (v.free_in_c_11 row).val from by rw [hch5]] at h
+    have hp : (256 : ℕ) ^ 5 = 1099511627776 := by norm_num
+    rw [hp] at h
+    simp only [show ¬((5 : ℕ) = 7 ∧ (v.free_in_a_5 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h.2
+  have ech6 : (v.free_in_c_13 row).val =
+      ((v.free_in_a_6 row).val * 281474976710656 / 2 ^ sft) / 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e6 h_wfs.2.2.2.2.2.2.1 (by rw [hop6]; exact h_op)
+    rw [show e6.byte_index.val = 6 from by rw [hbi6]; rfl,
+        show e6.shift_amount.val = (v.free_in_b row).val from by rw [hs6],
+        show e6.a_byte.val = (v.free_in_a_6 row).val from by rw [ha6],
+        show e6.c_hi_byte.val = (v.free_in_c_13 row).val from by rw [hch6]] at h
+    have hp : (256 : ℕ) ^ 6 = 281474976710656 := by norm_num
+    rw [hp] at h
+    simp only [show ¬((6 : ℕ) = 7 ∧ (v.free_in_a_6 row).val ≥ 128) from by omega,
+               if_false, Nat.add_zero] at h
+    exact h.2
+  have ech7 : (v.free_in_c_15 row).val =
+      ((v.free_in_a_7 row).val * 72057594037927936 / 2 ^ sft
+        + (if (v.free_in_a_7 row).val ≥ 128 then 2 ^ 64 - 2 ^ (64 - sft) else 0))
+          / 2 ^ 32 := by
+    have h := sra_byte_parts_eq_of_wf e7 h_wfs.2.2.2.2.2.2.2 (by rw [hop7]; exact h_op)
+    rw [show e7.byte_index.val = 7 from by rw [hbi7]; rfl,
+        show e7.shift_amount.val = (v.free_in_b row).val from by rw [hs7],
+        show e7.a_byte.val = (v.free_in_a_7 row).val from by rw [ha7],
+        show e7.c_hi_byte.val = (v.free_in_c_15 row).val from by rw [hch7]] at h
+    have hp : (256 : ℕ) ^ 7 = 72057594037927936 := by norm_num
+    rw [hp] at h
+    simp only [true_and] at h
+    show _ = _ / 2 ^ 32
+    rw [show sft = (v.free_in_b row).val % 64 from rfl]
+    exact h.2
+  obtain ⟨ha0r, ha1r, ha2r, ha3r, ha4r, ha5r, ha6r, ha7r⟩ := h_a_range
+  constructor
+  · show _ < 4294967296
+    have h := sra_lo_sum_bound_core
+      (v.free_in_a_0 row).val (v.free_in_a_1 row).val
+      (v.free_in_a_2 row).val (v.free_in_a_3 row).val
+      (v.free_in_a_4 row).val (v.free_in_a_5 row).val
+      (v.free_in_a_6 row).val (v.free_in_a_7 row).val
+      (v.free_in_c_0 row).val (v.free_in_c_2 row).val
+      (v.free_in_c_4 row).val (v.free_in_c_6 row).val
+      (v.free_in_c_8 row).val (v.free_in_c_10 row).val
+      (v.free_in_c_12 row).val (v.free_in_c_14 row).val
+      sft ha0r ha1r ha2r ha3r ha4r ha5r ha6r ha7r hsft_lt
+      eq0 eq1 eq2 eq3 eq4 eq5 eq6 eq7
+    simpa using h
+  · show _ < 4294967296
+    have h := sra_hi_sum_bound_core
+      (v.free_in_a_0 row).val (v.free_in_a_1 row).val
+      (v.free_in_a_2 row).val (v.free_in_a_3 row).val
+      (v.free_in_a_4 row).val (v.free_in_a_5 row).val
+      (v.free_in_a_6 row).val (v.free_in_a_7 row).val
+      (v.free_in_c_1 row).val (v.free_in_c_3 row).val
+      (v.free_in_c_5 row).val (v.free_in_c_7 row).val
+      (v.free_in_c_9 row).val (v.free_in_c_11 row).val
+      (v.free_in_c_13 row).val (v.free_in_c_15 row).val
+      sft ha0r ha1r ha2r ha3r ha4r ha5r ha6r ha7r hsft_lt
+      ech0 ech1 ech2 ech3 ech4 ech5 ech6 ech7
+    simpa using h
 
 -- legacy binary_extension_sra_chunks_eq_bv_sshr (bin_ext_table_consumer_wf route) deleted in T4-purge P3.5.
 
