@@ -192,6 +192,95 @@ theorem arithDiv_table_interactionsWith_opBus_nil
   rw [h_component]
   exact h_not
 
+/-! ## Empty memory-bus surfaces inside the full ensemble -/
+
+/-- A table whose component is BinaryAdd has no memory-bus interactions. -/
+theorem binaryAdd_table_interactionsWith_memBus_nil
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.BinaryAdd.component) :
+    table.interactionsWith MemBusChannel.toRaw = [] := by
+  have h_not :
+      MemBusChannel.toRaw ∉
+        ZiskFv.AirsClean.BinaryAdd.component.circuit.channels := by
+    simp [circuit_norm, ZiskFv.AirsClean.BinaryAdd.component,
+      ZiskFv.AirsClean.BinaryAdd.circuit,
+      ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated,
+      OpBusChannel, MemBusChannel]
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
+/-- A table whose component is lookup-aware Binary has no memory-bus
+    interactions. -/
+theorem staticBinary_table_interactionsWith_memBus_nil
+    {table : Table FGL}
+    (h_component :
+      table.component = ZiskFv.AirsClean.Binary.staticLookupComponent) :
+    table.interactionsWith MemBusChannel.toRaw = [] := by
+  have h_not :
+      MemBusChannel.toRaw ∉
+        ZiskFv.AirsClean.Binary.staticLookupComponent.circuit.channels := by
+    simp [circuit_norm, ZiskFv.AirsClean.Binary.staticLookupComponent,
+      ZiskFv.AirsClean.Binary.staticLookupCircuit,
+      ZiskFv.AirsClean.Binary.binaryWithStaticBinaryTableElaborated,
+      OpBusChannel, MemBusChannel]
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
+/-- A table whose component is lookup-aware BinaryExtension has no memory-bus
+    interactions. -/
+theorem staticBinaryExtension_table_interactionsWith_memBus_nil
+    {table : Table FGL}
+    (h_component :
+      table.component =
+        ZiskFv.AirsClean.BinaryExtension.staticLookupComponent) :
+    table.interactionsWith MemBusChannel.toRaw = [] := by
+  have h_not :
+      MemBusChannel.toRaw ∉
+        ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.circuit.channels := by
+    simp [circuit_norm,
+      ZiskFv.AirsClean.BinaryExtension.staticLookupComponent,
+      ZiskFv.AirsClean.BinaryExtension.staticLookupCircuit,
+      ZiskFv.AirsClean.BinaryExtension.binaryExtensionWithStaticTableElaborated,
+      OpBusChannel, MemBusChannel]
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
+/-- A table whose component is ArithMul has no memory-bus interactions. -/
+theorem arithMul_table_interactionsWith_memBus_nil
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.ArithMul.component) :
+    table.interactionsWith MemBusChannel.toRaw = [] := by
+  have h_not :
+      MemBusChannel.toRaw ∉
+        ZiskFv.AirsClean.ArithMul.component.circuit.channels := by
+    simp [circuit_norm, ZiskFv.AirsClean.ArithMul.component,
+      ZiskFv.AirsClean.ArithMul.circuit,
+      ZiskFv.AirsClean.ArithMul.arithMulElaborated,
+      OpBusChannel, MemBusChannel]
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
+/-- A table whose component is the current ArithDiv carry-chain component has
+    no memory-bus interactions. -/
+theorem arithDiv_table_interactionsWith_memBus_nil
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.ArithDiv.component) :
+    table.interactionsWith MemBusChannel.toRaw = [] := by
+  have h_not :
+      MemBusChannel.toRaw ∉
+        ZiskFv.AirsClean.ArithDiv.component.circuit.channels := by
+    simp [circuit_norm, ZiskFv.AirsClean.ArithDiv.component,
+      ZiskFv.AirsClean.ArithDiv.circuit,
+      ZiskFv.AirsClean.ArithDiv.arithDivElaborated,
+      MemBusChannel]
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  exact h_not
+
 /-! ## Full-ensemble op-bus counterpart classification -/
 
 /-- Clean balance replacement shape for the full ensemble: an active Main
@@ -402,6 +491,111 @@ theorem exists_matching_provider_op_component_of_active_main_interaction
     rcases h_mult with h_neg | h_zero
     · exact False.elim (h_nonpull h_neg)
     · exact False.elim (h_nonzero h_zero)
+
+/-! ## Full-ensemble memory-bus counterpart classification -/
+
+/-- Clean balance replacement shape for full-ensemble memory interactions:
+    an active Main memory-bus interaction has a same-message counterpart
+    whose multiplicity is neither another pull nor zero. -/
+theorem exists_matching_nonzero_nonpull_of_active_main_mem_interaction
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_balanced : witness.BalancedChannels)
+    {mainInteraction : Interaction FGL}
+    (h_mem : mainInteraction ∈ witness.interactionsWith MemBusChannel.toRaw)
+    (h_active : mainInteraction.mult = -1) :
+    ∃ providerInteraction ∈ witness.interactionsWith MemBusChannel.toRaw,
+      providerInteraction.msg = mainInteraction.msg
+        ∧ providerInteraction.mult ≠ -1
+        ∧ providerInteraction.mult ≠ 0 := by
+  exact exists_nonzero_push_of_pull (witness.interactionsWith MemBusChannel.toRaw)
+    (memBus_balanced_of_witness witness h_balanced)
+    mainInteraction h_mem h_active
+
+/-- Classify the balanced same-message memory-bus counterpart in the full
+    ensemble after excluding verifier and components that expose no
+    memory-bus interactions.
+
+The unified Main case is intentionally explicit, matching the Mem-family
+    bridge: excluding it requires selector legality beyond the current
+    Main row soundness, and keeping it visible avoids laundering that missing
+    proof into a provider theorem. -/
+theorem exists_matching_mem_component_of_active_main_interaction
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_balanced : witness.BalancedChannels)
+    {mainInteraction : Interaction FGL}
+    (h_mem : mainInteraction ∈ witness.interactionsWith MemBusChannel.toRaw)
+    (h_active : mainInteraction.mult = -1) :
+    ∃ providerInteraction ∈ witness.interactionsWith MemBusChannel.toRaw,
+      providerInteraction.msg = mainInteraction.msg
+        ∧ providerInteraction.mult ≠ -1
+        ∧ providerInteraction.mult ≠ 0
+        ∧ ∃ table ∈ witness.allTables,
+          providerInteraction ∈ table.interactionsWith MemBusChannel.toRaw
+            ∧ (table.component = ZiskFv.AirsClean.MemAlignReadByte.component
+              ∨ table.component = ZiskFv.AirsClean.MemAlignByte.component
+              ∨ table.component = ZiskFv.AirsClean.MemAlign.component
+              ∨ table.component = ZiskFv.AirsClean.Mem.componentWithMemBus
+              ∨ table.component =
+                  ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program) := by
+  obtain ⟨providerInteraction, h_mem_provider, h_msg, h_nonpull, h_nonzero⟩ :=
+    exists_matching_nonzero_nonpull_of_active_main_mem_interaction
+      witness h_balanced h_mem h_active
+  rw [EnsembleWitness.mem_interactionsWith] at h_mem_provider
+  obtain ⟨table, h_table, h_mem_table⟩ := h_mem_provider
+  have h_component_mem :
+      table.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
+    EnsembleWitness.mem_allTables_component_of_mem_allTables h_table
+  rcases component_mem_fullRv64im_cases h_component_mem with
+    h_verifier | h_marb | h_mab | h_memAlign | h_mem | h_arithDiv |
+    h_arithMul | h_binExt | h_binary | h_binaryAdd | h_main
+  · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
+      have h_ops_nil :
+          table.component.operations.interactionsWith MemBusChannel.toRaw = [] := by
+        simpa [h_verifier] using verifierTable_interactionsWith_memBus_nil length program
+      simp [Table.interactionsWith, Operations.interactionValuesWith_eq_map, h_ops_nil]
+    simp [h_nil] at h_mem_table
+  · exact ⟨providerInteraction, by
+        rw [EnsembleWitness.mem_interactionsWith]
+        exact ⟨table, h_table, h_mem_table⟩,
+      h_msg, h_nonpull, h_nonzero, table, h_table, h_mem_table,
+      Or.inl h_marb⟩
+  · exact ⟨providerInteraction, by
+        rw [EnsembleWitness.mem_interactionsWith]
+        exact ⟨table, h_table, h_mem_table⟩,
+      h_msg, h_nonpull, h_nonzero, table, h_table, h_mem_table,
+      Or.inr (Or.inl h_mab)⟩
+  · exact ⟨providerInteraction, by
+        rw [EnsembleWitness.mem_interactionsWith]
+        exact ⟨table, h_table, h_mem_table⟩,
+      h_msg, h_nonpull, h_nonzero, table, h_table, h_mem_table,
+      Or.inr (Or.inr (Or.inl h_memAlign))⟩
+  · exact ⟨providerInteraction, by
+        rw [EnsembleWitness.mem_interactionsWith]
+        exact ⟨table, h_table, h_mem_table⟩,
+      h_msg, h_nonpull, h_nonzero, table, h_table, h_mem_table,
+      Or.inr (Or.inr (Or.inr (Or.inl h_mem)))⟩
+  · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
+      exact arithDiv_table_interactionsWith_memBus_nil h_arithDiv
+    simp [h_nil] at h_mem_table
+  · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
+      exact arithMul_table_interactionsWith_memBus_nil h_arithMul
+    simp [h_nil] at h_mem_table
+  · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
+      exact staticBinaryExtension_table_interactionsWith_memBus_nil h_binExt
+    simp [h_nil] at h_mem_table
+  · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
+      exact staticBinary_table_interactionsWith_memBus_nil h_binary
+    simp [h_nil] at h_mem_table
+  · have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
+      exact binaryAdd_table_interactionsWith_memBus_nil h_binaryAdd
+    simp [h_nil] at h_mem_table
+  · exact ⟨providerInteraction, by
+        rw [EnsembleWitness.mem_interactionsWith]
+        exact ⟨table, h_table, h_mem_table⟩,
+      h_msg, h_nonpull, h_nonzero, table, h_table, h_mem_table,
+      Or.inr (Or.inr (Or.inr (Or.inr h_main)))⟩
 
 /-! ## Row extraction from full-ensemble channel interactions -/
 

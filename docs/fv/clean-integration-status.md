@@ -1091,6 +1091,13 @@ the unified Main table. A second classifier now rules out the unified Main
 self-provider case from `witness.Constraints`, using the row-local
 `is_external_op` boolean assertion already present in
 `componentWithRomMemAndOpBus`; no caller promise is added.
+For the memory bus, the same full-ensemble balance layer now classifies an
+active Main memory interaction's same-message counterpart into MemAlignReadByte,
+MemAlignByte, MemAlign, Mem, or the unified Main table after proving the
+operation-only/static tables expose no memory-bus interactions. The unified
+Main memory case remains explicit for the same reason as the earlier
+Mem-family bridge: selector legality needed to exclude it is not yet carried
+by the Clean Main row soundness.
 The current ArithDiv carry-chain component and memory-only tables are proved
 to expose no operation-bus interactions in this ensemble; DIV/REM op-bus
 surfaces still depend on their dedicated defect-gated route.
@@ -1104,8 +1111,9 @@ Checklist:
   scope. `FullEnsemble.fullRv64imEnsemble` now uses a row-coherent unified
   Main component and has direct full-ensemble balance / row-extraction
   lemmas, plus same-message op-bus counterpart classification with
-  unified-Main self-provider exclusion. Constructibility and canonical
-  re-root remain open.
+  unified-Main self-provider exclusion and memory-bus counterpart
+  classification with the honest unified-Main case still visible.
+  Constructibility and canonical re-root remain open.
 - ☐ T7.2 prove constructibility: real ZisK traces produce an
   `EnsembleWitness` satisfying constraints and balanced channels, modulo
   explicit `h_known_bugs`.
