@@ -861,7 +861,7 @@ ZiskFv.Equivalence.Sraiw.equiv_SRAIW 007 r_main [row] ℕ
 ZiskFv.Equivalence.Sraiw.equiv_SRAIW 008 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Sraiw.equiv_SRAIW 009 promises [bridge] ZiskFv.EquivCore.Promises.ShiftWImmPromises state sraiw_input.r1_val sraiw_input
 ZiskFv.Equivalence.Sraiw.equiv_SRAIW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_SRA_W
-ZiskFv.Equivalence.Sraiw.equiv_SRAIW 011 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+ZiskFv.Equivalence.Sraiw.equiv_SRAIW 011 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComp
 ZiskFv.Equivalence.Sraiw.equiv_SRAIW 012 h_table_spec [other] providerTable.Spec
 ZiskFv.Equivalence.Sraiw.equiv_SRAIW 013 h_provider_row [other] providerRow ∈ providerTable.table
 ZiskFv.Equivalence.Sraiw.equiv_SRAIW 014 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main
@@ -892,7 +892,7 @@ ZiskFv.Equivalence.Sraw.equiv_SRAW 022 h_m2_mult [bus_shape] bus.e2.multiplicity
 ZiskFv.Equivalence.Sraw.equiv_SRAW 023 h_m2_as [bus_shape] bus.e2.as.val = 1
 ZiskFv.Equivalence.Sraw.equiv_SRAW 024 h_rd_idx [transpile] sraw_input.rd = Transpiler.wrap_to_regidx bus.e2.ptr
 ZiskFv.Equivalence.Sraw.equiv_SRAW 025 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_SRA_W
-ZiskFv.Equivalence.Sraw.equiv_SRAW 026 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+ZiskFv.Equivalence.Sraw.equiv_SRAW 026 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComp
 ZiskFv.Equivalence.Sraw.equiv_SRAW 027 h_table_spec [other] providerTable.Spec
 ZiskFv.Equivalence.Sraw.equiv_SRAW 028 h_provider_row [other] providerRow ∈ providerTable.table
 ZiskFv.Equivalence.Sraw.equiv_SRAW 029 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main
