@@ -1098,6 +1098,11 @@ operation-only/static tables expose no memory-bus interactions. The unified
 Main memory case remains explicit for the same reason as the earlier
 Mem-family bridge: selector legality needed to exclude it is not yet carried
 by the Clean Main row soundness.
+The full-ensemble memory bridge now also projects an active unified-Main
+memory interaction to concrete provider table rows with same-message evidence,
+again keeping the unified Main branch explicit. This is the row-native hook
+needed before load/store canonical paths can stop depending on the
+family-local memory ensemble.
 The current ArithDiv carry-chain component and memory-only tables are proved
 to expose no operation-bus interactions in this ensemble; DIV/REM op-bus
 surfaces still depend on their dedicated defect-gated route.
@@ -1112,8 +1117,8 @@ Checklist:
   Main component and has direct full-ensemble balance / row-extraction
   lemmas, plus same-message op-bus counterpart classification with
   unified-Main self-provider exclusion and memory-bus counterpart
-  classification with the honest unified-Main case still visible.
-  Constructibility and canonical re-root remain open.
+  classification / row projection with the honest unified-Main case still
+  visible. Constructibility and canonical re-root remain open.
 - ☐ T7.2 prove constructibility: real ZisK traces produce an
   `EnsembleWitness` satisfying constraints and balanced channels, modulo
   explicit `h_known_bugs`.

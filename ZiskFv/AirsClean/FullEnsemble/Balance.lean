@@ -843,4 +843,151 @@ theorem exists_memAlignReadByte_row_eval_of_interaction_mem
       ZiskFv.AirsClean.MemAlignReadByte.component_interactionsWith_memBus
   · exact h_mem
 
+/-! ## Full-ensemble memory-bus row bridges -/
+
+/-- Row-native full-ensemble memory projection: an active unified-Main
+    memory-bus interaction has a balanced same-message counterpart on a
+    concrete full-ensemble table row.
+
+The provider side keeps the unified Main branch explicit. This mirrors
+    `exists_matching_mem_component_of_active_main_interaction`: excluding
+    Main memory self-matches still needs selector legality that is not yet
+    available from Clean Main row soundness. -/
+theorem exists_mem_provider_row_msg_eq_of_active_main_table_interaction
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_balanced : witness.BalancedChannels)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    (h_mainComponent :
+      mainTable.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ mainTable.interactionsWith MemBusChannel.toRaw)
+    (h_active : mainInteraction.mult = -1) :
+    ∃ mainRow ∈ mainTable.table,
+      ∃ providerInteraction ∈ witness.interactionsWith MemBusChannel.toRaw,
+        providerInteraction.msg = mainInteraction.msg
+          ∧ providerInteraction.mult ≠ -1
+          ∧ providerInteraction.mult ≠ 0
+          ∧ ∃ providerTable ∈ witness.allTables,
+            providerInteraction ∈ providerTable.interactionsWith MemBusChannel.toRaw
+              ∧
+              ((∃ providerRow ∈ providerTable.table,
+                  providerTable.component =
+                    ZiskFv.AirsClean.MemAlignReadByte.component
+                    ∧ providerInteraction =
+                      ((MemBusChannel.pushed
+                        (ZiskFv.AirsClean.MemAlignReadByte.memBusMessageExpr
+                          ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar)).toRaw).eval
+                        (providerTable.environment providerRow))
+                ∨ (∃ providerRow ∈ providerTable.table,
+                  providerTable.component = ZiskFv.AirsClean.MemAlignByte.component
+                    ∧ providerInteraction =
+                      ((MemBusChannel.pushed
+                        (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+                          ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).toRaw).eval
+                        (providerTable.environment providerRow))
+                ∨ (∃ providerRow ∈ providerTable.table,
+                  providerTable.component = ZiskFv.AirsClean.MemAlign.component
+                    ∧ providerInteraction =
+                      ((MemBusChannel.emitted
+                        (ZiskFv.AirsClean.MemAlign.component.rowInputVar.sel_prove
+                          - ZiskFv.AirsClean.MemAlign.selAssumeExpr
+                            ZiskFv.AirsClean.MemAlign.component.rowInputVar)
+                        (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
+                          ZiskFv.AirsClean.MemAlign.component.rowInputVar)).toRaw).eval
+                        (providerTable.environment providerRow))
+                ∨ (∃ providerRow ∈ providerTable.table,
+                  providerTable.component = ZiskFv.AirsClean.Mem.componentWithMemBus
+                    ∧ providerInteraction =
+                      ((MemBusChannel.emitted
+                        ZiskFv.AirsClean.Mem.componentWithMemBus.rowInputVar.sel
+                        (ZiskFv.AirsClean.Mem.memBusMessageExpr
+                          ZiskFv.AirsClean.Mem.componentWithMemBus.rowInputVar)).toRaw).eval
+                        (providerTable.environment providerRow))
+                ∨ (∃ providerRow ∈ providerTable.table,
+                  providerTable.component =
+                    ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
+                    ∧
+                    (providerInteraction =
+                        ((MemBusChannel.emitted
+                          (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                              length program).rowInputVar.rom.a_src_mem
+                            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                              length program).rowInputVar.rom.a_src_reg))
+                          (ZiskFv.AirsClean.Main.aMemMessageExpr
+                            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                              length program).rowInputVar)).toRaw).eval
+                          (providerTable.environment providerRow)
+                      ∨ providerInteraction =
+                        ((MemBusChannel.emitted
+                          (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                              length program).rowInputVar.rom.b_src_mem
+                            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                              length program).rowInputVar.rom.b_src_ind
+                            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                              length program).rowInputVar.rom.b_src_reg))
+                          (ZiskFv.AirsClean.Main.bMemMessageExpr
+                            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                              length program).rowInputVar)).toRaw).eval
+                          (providerTable.environment providerRow)
+                      ∨ providerInteraction =
+                        ((MemBusChannel.emitted
+                          (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                              length program).rowInputVar.rom.store_mem
+                            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                              length program).rowInputVar.rom.store_ind
+                            + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                              length program).rowInputVar.rom.store_reg))
+                          (ZiskFv.AirsClean.Main.cMemMessageExpr
+                            (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                              length program).rowInputVar)).toRaw).eval
+                          (providerTable.environment providerRow)))) := by
+  have h_main_mem_witness :
+      mainInteraction ∈ witness.interactionsWith MemBusChannel.toRaw := by
+    rw [EnsembleWitness.mem_interactionsWith]
+    exact ⟨mainTable, h_mainTable, h_mainInteraction⟩
+  obtain ⟨mainRow, h_mainRow, _h_mainEval⟩ :=
+    exists_main_mem_row_eval_of_interaction_mem h_mainComponent h_mainInteraction
+  obtain ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
+      providerTable, h_providerTable, h_providerInteraction, h_providerComponent⟩ :=
+    exists_matching_mem_component_of_active_main_interaction
+      witness h_balanced h_main_mem_witness h_active
+  refine ⟨mainRow, h_mainRow, providerInteraction, h_provider_witness, h_msg,
+    h_nonpull, h_nonzero, providerTable, h_providerTable,
+    h_providerInteraction, ?_⟩
+  rcases h_providerComponent with h_marb | h_mab | h_memAlign | h_mem | h_main
+  · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
+      exists_memAlignReadByte_row_eval_of_interaction_mem
+        h_marb h_providerInteraction
+    left
+    exact ⟨providerRow, h_providerRow, h_marb, h_providerEval⟩
+  · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
+      exists_memAlignByte_row_eval_of_interaction_mem h_mab h_providerInteraction
+    right
+    left
+    exact ⟨providerRow, h_providerRow, h_mab, h_providerEval⟩
+  · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
+      exists_memAlign_row_eval_of_interaction_mem h_memAlign h_providerInteraction
+    right
+    right
+    left
+    exact ⟨providerRow, h_providerRow, h_memAlign, h_providerEval⟩
+  · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
+      exists_mem_row_eval_of_interaction_mem h_mem h_providerInteraction
+    right
+    right
+    right
+    left
+    exact ⟨providerRow, h_providerRow, h_mem, h_providerEval⟩
+  · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
+      exists_main_mem_row_eval_of_interaction_mem h_main h_providerInteraction
+    right
+    right
+    right
+    right
+    exact ⟨providerRow, h_providerRow, h_main, h_providerEval⟩
+
 end ZiskFv.AirsClean.FullEnsemble
