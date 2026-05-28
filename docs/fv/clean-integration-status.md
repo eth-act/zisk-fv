@@ -1079,15 +1079,19 @@ ArithDiv, Mem, MemAlign, MemAlignByte, and MemAlignReadByte behind the
 shared operation and memory channels. The first skeleton's split Main table
 has been retired: `Main.componentWithRomMemAndOpBus` exposes both Main
 channel surfaces from one `MainRowWithRom`, and projection lemmas expose the
-two interaction lists for later balance bridges. T7.2/T7.3 still need the
-constructibility statement and canonical theorem re-root before those
-closures can honestly be claimed to depend on the full ensemble.
+two interaction lists for later balance bridges.
+`AirsClean.FullEnsemble.Balance` now exposes the full ensemble's table
+classification plus operation-bus and memory-bus balanced-channel
+projections. T7.2/T7.3 still need the constructibility statement and
+canonical theorem re-root before those closures can honestly be claimed to
+depend on the full ensemble.
 
 Checklist:
 
 - ◐ T7.1 define the full Clean ensemble statement for the supported RV64IM
   scope. `FullEnsemble.fullRv64imEnsemble` now uses a row-coherent unified
-  Main component, but constructibility and canonical re-root remain open.
+  Main component and has direct full-ensemble balance projection lemmas, but
+  constructibility and canonical re-root remain open.
 - ☐ T7.2 prove constructibility: real ZisK traces produce an
   `EnsembleWitness` satisfying constraints and balanced channels, modulo
   explicit `h_known_bugs`.
