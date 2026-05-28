@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.ArithMul.Spec
 import ZiskFv.AirsClean.ArithTable
+import ZiskFv.AirsClean.RangeTables
 import Clean.Circuit.Basic
 import ZiskFv.Channels.OperationBus
 
@@ -35,6 +36,7 @@ namespace ZiskFv.AirsClean.ArithMul
 
 open Goldilocks
 open Circuit (assertZero lookup)
+open ZiskFv.AirsClean.RangeTables
 open ZiskFv.Channels.OperationBus (OpBusChannel OpBusMessage)
 
 /-- Primary MUL/MULW op-bus message: low result in the `c[]` chunks. -/
@@ -177,6 +179,31 @@ def mainWithArithTable (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
   main row
   lookup (Table.fromStatic ArithTable.arithTable) (arithTableRow row)
 
+/-- Lookup-aware ArithMul path for the sixteen `bits(16)` chunk columns.
+    This models the column-level PIL declarations at `arith.pil:18-21`.
+    It is kept separate from the carry-chain component and from the
+    `arith_range_table_assumes` lookups so consumers can retire the generic
+    range-bus dependency slice by slice. -/
+@[circuit_norm]
+def mainWithChunkRanges (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
+  main row
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.a_3
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.b_3
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.c_3
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_0
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_1
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_2
+  lookup (Table.fromStatic rangeTable16) row.chunks.d_3
+
 
 /-- Lookup-aware elaboration for the next C3/C4 stage. It is intentionally
     separate from `arithMulElaborated` so existing carry-chain consumers do
@@ -186,6 +213,17 @@ def mainWithArithTable (row : Var ArithMulRow FGL) : Circuit FGL Unit := do
     ElaboratedCircuit FGL ArithMulRow unit where
   name := "ArithMulWithArithTable"
   main := mainWithArithTable
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [OpBusChannel.toRaw]
+
+/-- Lookup-aware elaboration exposing the chunk-column range lookups from
+    `mainWithChunkRanges`. Kept out of the base carry-chain component so no
+    existing theorem gains a new premise implicitly. -/
+@[reducible] def arithMulWithChunkRangesElaborated :
+    ElaboratedCircuit FGL ArithMulRow unit where
+  name := "ArithMulWithChunkRanges"
+  main := mainWithChunkRanges
   localLength _ := 0
   output _ _ := ()
   channelsWithRequirements := [OpBusChannel.toRaw]

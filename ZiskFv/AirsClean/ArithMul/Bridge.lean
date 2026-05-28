@@ -134,6 +134,52 @@ def rowAt (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :
     carry_6 := v.cy_6 r, fab := v.fab r, na_fb := v.na_fb r, nb_fa := v.nb_fa r
   }
 
+/-- Lookup-aware Clean witness for the sixteen `bits(16)` chunk lookups in
+    a selected ArithMul row. This is structural evidence for the Clean
+    `lookup rangeTable16` operations in `mainWithChunkRanges`; it is not a
+    replacement range axiom. -/
+structure ChunkRangeLookupWitness
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) where
+  offset : ℕ
+  env : Environment FGL
+  holds :
+    ConstraintsHold.Soundness env
+      ((mainWithChunkRanges (constVar (rowAt v r))).operations offset)
+
+theorem chunk_ranges_of_lookup_aware_const_soundness
+    {v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL} {r : ℕ}
+    (w : ChunkRangeLookupWitness v r) :
+    (v.a_0 r).val < 2 ^ 16 ∧ (v.a_1 r).val < 2 ^ 16
+  ∧ (v.a_2 r).val < 2 ^ 16 ∧ (v.a_3 r).val < 2 ^ 16
+  ∧ (v.b_0 r).val < 2 ^ 16 ∧ (v.b_1 r).val < 2 ^ 16
+  ∧ (v.b_2 r).val < 2 ^ 16 ∧ (v.b_3 r).val < 2 ^ 16
+  ∧ (v.c_0 r).val < 2 ^ 16 ∧ (v.c_1 r).val < 2 ^ 16
+  ∧ (v.c_2 r).val < 2 ^ 16 ∧ (v.c_3 r).val < 2 ^ 16
+  ∧ (v.d_0 r).val < 2 ^ 16 ∧ (v.d_1 r).val < 2 ^ 16
+  ∧ (v.d_2 r).val < 2 ^ 16 ∧ (v.d_3 r).val < 2 ^ 16 := by
+  have h_holds := w.holds
+  simp only [mainWithChunkRanges, main, circuit_norm] at h_holds
+  rcases h_holds with
+    ⟨_h6, _h7, _h8, _h31, _h32, _h33, _h34, _h35, _h36, _h37, _h38,
+      h_a0, h_a1, h_a2, h_a3, h_b0, h_b1, h_b2, h_b3,
+      h_c0, h_c1, h_c2, h_c3, h_d0, h_d1, h_d2, h_d3⟩
+  exact ⟨by simpa [rowAt, constVar] using h_a0,
+    by simpa [rowAt, constVar] using h_a1,
+    by simpa [rowAt, constVar] using h_a2,
+    by simpa [rowAt, constVar] using h_a3,
+    by simpa [rowAt, constVar] using h_b0,
+    by simpa [rowAt, constVar] using h_b1,
+    by simpa [rowAt, constVar] using h_b2,
+    by simpa [rowAt, constVar] using h_b3,
+    by simpa [rowAt, constVar] using h_c0,
+    by simpa [rowAt, constVar] using h_c1,
+    by simpa [rowAt, constVar] using h_c2,
+    by simpa [rowAt, constVar] using h_c3,
+    by simpa [rowAt, constVar] using h_d0,
+    by simpa [rowAt, constVar] using h_d1,
+    by simpa [rowAt, constVar] using h_d2,
+    by simpa [rowAt, constVar] using h_d3⟩
+
 /-- Concrete primary MUL/MULW op-bus message for a Clean ArithMul row. -/
 @[reducible]
 def primaryOpBusMessage (row : ArithMulRow FGL) : OpBusMessage FGL :=

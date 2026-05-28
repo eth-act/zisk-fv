@@ -130,6 +130,16 @@ taking `% 64` / `% 32`, and `b_0` is not part of the
 BinaryExtensionTable lookup row. Retiring that closure requires a real
 row/range witness for `b_0`, not a new caller promise.
 
+The first Arith-family T6 prep exposes the ArithMul chunk `bits(16)` checks
+through Clean instead of the generic range-bus axiom. `ArithMul.mainWithChunkRanges`
+adds lookup-aware `rangeTable16` operations for the sixteen `a/b/c/d` chunks,
+`ChunkRangeLookupWitness` projects those bounds from
+`ConstraintsHold.Soundness`, and `Compliance.ArithMulChunkRangeWitness` gives
+canonical/wrapper code a shared structural binder shape for the next cutover.
+This does not yet retire `range_bus_sound` from MUL/MULHU/MULW, because the
+unsigned carry `< 2^17` and signed carry disjunctions are still the live range
+dependencies on those closures.
+
 The third T5 landing replaced the raw canonical `ArithTableSpec`
 binders with lookup-aware Clean witnesses:
 `ArithMulTableWitness` / `ArithDivTableWitness`. These witnesses carry

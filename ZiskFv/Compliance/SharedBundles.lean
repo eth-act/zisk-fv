@@ -169,6 +169,30 @@ theorem ArithMulTableWitness.spec
   ZiskFv.AirsClean.ArithMul.arith_table_spec_of_lookup_aware_const_soundness
     w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r) w.holds
 
+/-- Lookup-aware Clean witness for a selected ArithMul row's sixteen
+    `bits(16)` chunk checks.
+
+This is the T6 structural source for replacing
+`arith_mul_columns_in_range` on MUL-family paths: callers expose the Clean
+operation soundness proof for `mainWithChunkRanges`, and the actual
+`a/b/c/d` chunk bounds are derived by `AirsClean.ArithMul.Bridge`. -/
+abbrev ArithMulChunkRangeWitness
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) :=
+  ZiskFv.AirsClean.ArithMul.ChunkRangeLookupWitness v r
+
+theorem ArithMulChunkRangeWitness.ranges
+    {v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL} {r : ℕ}
+    (w : ArithMulChunkRangeWitness v r) :
+    (v.a_0 r).val < 2 ^ 16 ∧ (v.a_1 r).val < 2 ^ 16
+  ∧ (v.a_2 r).val < 2 ^ 16 ∧ (v.a_3 r).val < 2 ^ 16
+  ∧ (v.b_0 r).val < 2 ^ 16 ∧ (v.b_1 r).val < 2 ^ 16
+  ∧ (v.b_2 r).val < 2 ^ 16 ∧ (v.b_3 r).val < 2 ^ 16
+  ∧ (v.c_0 r).val < 2 ^ 16 ∧ (v.c_1 r).val < 2 ^ 16
+  ∧ (v.c_2 r).val < 2 ^ 16 ∧ (v.c_3 r).val < 2 ^ 16
+  ∧ (v.d_0 r).val < 2 ^ 16 ∧ (v.d_1 r).val < 2 ^ 16
+  ∧ (v.d_2 r).val < 2 ^ 16 ∧ (v.d_3 r).val < 2 ^ 16 :=
+  ZiskFv.AirsClean.ArithMul.chunk_ranges_of_lookup_aware_const_soundness w
+
 /-- Lookup-aware Clean witness for a selected ArithDiv row's
     `arith_table_assumes` tuple. Same shape as `ArithMulTableWitness`,
     specialized to the Div view of the Arith AIR. -/
