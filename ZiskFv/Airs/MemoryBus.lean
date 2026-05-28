@@ -110,6 +110,42 @@ theorem matches_memory_entry_of_eval_msg_eq
   rw [h_eval]
   simp [matches_memory_entry]
 
+/-- Variant of `matches_memory_entry_of_eval_msg_eq` for provider rows exposed
+    as Clean `push` interactions.
+
+Full-ensemble memory balance can match a Main emitted interaction with
+MemAlignByte/MemAlignReadByte provider pushes. The raw channel message is
+still the same PIL-shaped memory tuple; only the interaction multiplicity
+polarity differs, and legacy multiplicity/address-space slots remain explicit
+arguments to `MemBusMessage.toEntry`. -/
+theorem matches_memory_entry_of_eval_pushed_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    {multiplicity as : FGL}
+    (h_msg :
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.pushed providerMsg).toRaw).eval
+          providerEnv).msg =
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          mainEnv).msg) :
+    matches_memory_entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval mainEnv mainMsg) multiplicity as)
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval providerEnv providerMsg) multiplicity as) := by
+  have h_vec :
+      Vector.map (Expression.eval providerEnv) (toElements providerMsg) =
+        Vector.map (Expression.eval mainEnv) (toElements mainMsg) := by
+    apply Vector.toArray_injective
+    simpa [ChannelInteraction.toRaw, AbstractInteraction.eval] using h_msg
+  have h_eval : eval providerEnv providerMsg = eval mainEnv mainMsg := by
+    have h_from := congrArg
+      (fun xs => (fromElements xs :
+        ZiskFv.Channels.MemoryBus.MemBusMessage FGL)) h_vec
+    simpa [ProvableType.fromElements_eval_toElements] using h_from
+  rw [h_eval]
+  simp [matches_memory_entry]
+
 /-- **Memory-read lane hypotheses for LD.** The Main row's low/high `b`
     lanes (as FGL field elements) equal the low/high halves of the
     memory-bus entry's packed 8-byte value.

@@ -1113,6 +1113,11 @@ future load/store adapters can translate the exact Clean Main message into
 legacy `matches_memory_entry` facts. This is structural unpacking only: it
 reuses the full-ensemble `Spec` fact and row-extraction evidence rather than
 adding any row-local promise.
+`Airs.MemoryBus.matches_memory_entry_of_eval_pushed_msg_eq` now provides the
+missing message-level adapter for provider rows exposed as Clean `push`
+interactions, matching the MemAlignByte/MemAlignReadByte branches used by the
+full ensemble. It is the pushed-provider analogue of the existing
+emitted-provider adapter and introduces no new trust.
 The unified Main, Mem, and MemAlign-family component modules also expose
 direct projection lemmas from generic Clean component specs to the concrete
 row specs expected by the existing load/store bridge layer:
@@ -1154,8 +1159,9 @@ Checklist:
   visible. The memory row bridge now also carries row-local `Spec` facts from
   `witness.Spec`, with projection lemmas for unified Main, Mem, and
   MemAlign-family concrete row specs, while preserving the selected Main
-  memory interaction branch. The op-bus row bridge now also carries row-local
-  `Spec` facts for unified Main, ArithMul, and the lookup-aware
+  memory interaction branch. Memory-bus legacy-entry adapters now cover both
+  emitted and pushed provider interactions. The op-bus row bridge now also
+  carries row-local `Spec` facts for unified Main, ArithMul, and the lookup-aware
   Binary-family provider branches, and it has a derived legacy
   `OperationBus.matches_entry` adapter plus a legacy-`Valid_Main`
   specialization. Constructibility and canonical re-root remain open.
