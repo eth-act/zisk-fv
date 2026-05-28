@@ -4,9 +4,9 @@ This is the working branch for the full Clean integration per
 [`/home/cody/.claude/plans/ok-i-will-let-humble-reddy.md`]. It
 branches off `clean-integration` (which had landed the bus-level
 axiom consolidation from 122 → 116 axioms without taking Clean as
-a dep). Current working status after the Binary-family table migration:
-`lake build`, V1, and V2 pass with 92 axioms in the baseline and global
-closure.
+a dep). Current working status after T5:
+`lake build`, V1, and V2 pass with 58 source trust-ledger axioms and a
+55-name global compliance closure.
 
 ## Completed phases
 
@@ -75,7 +75,7 @@ closure.
 
 ## Active phase
 
-### T5 — Arith-family terminal phase (next)
+### T6 — Range-bus terminal phase (next)
 
 T4 (memory-family terminal phase) is **CLOSED** as of commit `f8528f2`
 (2026-05-27). All load/store canonical paths route through Clean
@@ -86,7 +86,8 @@ retired from the global closure. Trust ledger: 82 source axioms /
 C8 (chunk-shape `MemoryBusEntry` cutover) and T4.0 (ZisK instruction
 ROM modeling) were the enabling prerequisites and are also closed.
 
-The active phase is **T5 — Arith-family terminal phase**. The first
+T5 (Arith-family terminal phase) is **CLOSED** as of commit `de5080d`
+(2026-05-28). The first
 T5 landing retired `arith_mul_table_lookup_sound` /
 `arith_div_table_lookup_sound` from source and from the global closure:
 canonical `MUL*`, `DIV*`, and `REM*` paths now consume explicit
@@ -96,12 +97,8 @@ the 13 Arith-family canonical paths now consume an
 `ExternalArithMemoryWitness` that exposes the selected Clean Main
 `cMemMessage`, row equality, `store_pc = 0`, and memory-entry match
 needed to derive the rd-write byte lanes. The source axiom remains only
-as historical documentation; it is retired from the trust ledger. The
-remaining T5 work is to source the ArithTable witnesses from a shared
-Arith-family Clean ensemble, retire the remaining dynamic Arith facts
-where possible, and keep the
-signed-MUL/MULH/MULHSU defects explicit through `h_known_bugs`.
-`main_store_pc_emission_bundle` is a T6/T7 target.
+as historical documentation; it is retired from the trust ledger.
+`main_store_pc_emission_bundle` remains a T6/T7 target.
 
 The third T5 landing replaced the raw canonical `ArithTableSpec`
 binders with lookup-aware Clean witnesses:
@@ -110,6 +107,13 @@ binders with lookup-aware Clean witnesses:
 `mainWithArithTable (constVar (rowAt v r_a))` operation and derive
 `ArithTableSpec` through the Clean bridge, so table membership is no
 longer an opaque caller promise.
+
+The final T5 landings retired the signed-MUL witness trust through explicit
+defect gating, retired every remaining class-#6b Arith dynamic source axiom,
+and removed the DIV/REM transpiler contracts from the trust ledger while
+those opcodes are blocked by
+`ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`. The active phase is now
+**T6 — Range-bus terminal phase**.
 
 ### C7 — CLOSED (axiom retirements landed in T4-purge commits)
 
@@ -1011,7 +1015,7 @@ Checklist:
   projections for all true static facts, and route canonical table
   membership through `ArithMulTableWitness` / `ArithDivTableWitness`
   rather than a raw `ArithTableSpec` binder.
-- ☐ T5.3 prove row-native non-defective `MUL/MULHU/MULW` facts from the same
+- ☑ T5.3 prove row-native non-defective `MUL/MULHU/MULW` facts from the same
   Arith provider rows that balance the Main channel interaction, without
   opcode-shaped ArithTable axioms.
 - ☑ T5.4 keep signed-MUL defect predicates explicit through
@@ -1086,14 +1090,17 @@ Checklist:
 
 | Metric                 | Value |
 | ---------------------- | ----- |
-| Axiom baseline         | 92    |
+| Axiom baseline         | 58    |
+| Global closure         | 55    |
 | Canonical equiv_<OP>   | 63    |
 | Wrapper equiv_<OP>     | 63    |
 | V1 checks              | 11/11 |
 | V2 semantic            | green |
 | `lake build`           | green |
 
-The current 92-axiom baseline includes the sanctioned Clean completeness
-axioms already present in `AirsClean/Completeness.lean`. The two retired
-Binary bitwise axioms are absent from both `trust/baseline-axioms.txt` and
-the global compliance closure.
+The current 58-axiom baseline includes the sanctioned Clean completeness
+axioms already present in `AirsClean/Completeness.lean`. T4 memory-family
+trust, T5 external-Arith memory trust, class-#6b Arith table/range trust,
+the signed-MUL witness trust, and DIV/REM dynamic witness trust are absent
+from both `trust/baseline-axioms.txt` and the global compliance closure
+except where represented as explicit known-defect hypotheses.

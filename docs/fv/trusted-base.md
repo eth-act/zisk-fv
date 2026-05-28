@@ -13,16 +13,14 @@ ZiskFv.Compliance.zisk_riscv_compliant_program_bus
 [`trust/baseline-zisk-riscv-compliant.txt`](../../trust/baseline-zisk-riscv-compliant.txt)
 and as a hashed source-line ledger in
 [`trust/baseline-axioms.txt`](../../trust/baseline-axioms.txt) —
-**is** the trusted computing base for zisk-fv. The closure currently
-contains **104 axioms**, organised into the rationale classes
-summarised below.
+**is** the trusted computing base for zisk-fv. The source trust ledger
+currently records **58 axioms** and the global compliance closure contains
+**55 names**, organised into the rationale classes summarised below.
 
-**As of the `clean-integration` + `clean-full` work** (commits up to
-`5e255bb`, tag `phase-5-complete-clean-full`), the floor is 104 — down
-from 116 prior. The 12-axiom reduction is the result of the
-`range_bus_sound` + `signed_range_bus_sound` consolidations
-(class #5b/#6/#6b range axioms collapsed into 2 shared axioms; see
-`ZiskFv/Channels/RangeBusSoundness.lean`).
+**As of T5 on `clean-air-integration`** (commit `de5080d`), the floor is
+58 source trust-ledger axioms. The larger historical reductions include the
+range-bus consolidations, T4's Clean memory-channel route, and T5's
+Arith-family retirement of class-#6b source trust.
 
 The global theorem dispatches the 63 RV64IM opcodes through a 63-arm
 `OpEnvelope` sum type to per-opcode `equiv_<OP>` wrappers
@@ -34,8 +32,9 @@ global theorem; the V3 trust gates (`check-closure-vs-baseline` +
 the wrapper caller-burden ledger) mechanically prevent regression.
 
 Together with Lean 4's kernel and the LeanRV64D Sail-translated
-specification (the LHS of every per-opcode equivalence), the 116
-axioms below **are** the trusted computing base. Adding, removing,
+specification (the LHS of every per-opcode equivalence), the 58
+source trust-ledger axioms below **are** the project-internal trusted
+computing base. Adding, removing,
 renaming, or weakening any axiom is a trust-surface change — see
 "Changing the trust surface" at the bottom.
 
@@ -46,7 +45,7 @@ Three independent checks, all run from the repo root:
 ```bash
 trust/scripts/check-all.sh                                      # full V1 gate (CI runs this)
 trust/scripts/check-all-semantic.sh                             # full V2 gate (post lake build)
-awk '$3=="axiom" {print $4}' trust/baseline-axioms.txt | wc -l  # total: 116
+awk '$3=="axiom" {print $4}' trust/baseline-axioms.txt | wc -l  # total: 58
 ```
 
 The V2 gate's `check-closure-vs-baseline` subcommand enforces that
@@ -183,7 +182,7 @@ Further consolidation would require typeclass abstractions or
 disjunctive conclusion shapes that compromise per-axiom
 auditability.
 
-### Out-of-scope assumptions (NOT in the 116)
+### Out-of-scope assumptions (NOT in the 58)
 
 For completeness, two trusts the proofs rely on that are not counted
 here:
@@ -196,7 +195,7 @@ here:
   `flake.lock` (`sail-src`, `sail-riscv-src`); the build is
   reproduced by `nix build .#sail-lean-tree`.
 
-These are scope decisions, not omissions. The 116 axioms above are the
+These are scope decisions, not omissions. The 58 axioms above are the
 project-internal assumptions on top of those external trusts.
 
 ### Load-equivalence trust path
@@ -292,11 +291,11 @@ CODEOWNER-protected change.
 
 The trust ledger grew incrementally as the per-opcode `equiv_<OP>`
 proofs were closed; the rounds below preserve the audit trail of
-which axiom landed when and why. The current state — 116 axioms,
-verified equal to the project-axiom closure of
-`zisk_riscv_compliant_program_bus` — is the result of the rounds
-chronologically listed below, with the Step-4 dead-code cleanup
-trimming the ledger from 147 to 122.
+which axiom landed when and why. The current state — 58 source
+trust-ledger axioms and a 55-name global compliance closure — is the
+result of the rounds chronologically listed below, with the Step-4
+dead-code cleanup trimming the ledger from 147 to 122 and the later
+Clean terminal phases retiring memory and Arith-family trust.
 
 ### Step 4 dead-code cleanup (147 → 122)
 
