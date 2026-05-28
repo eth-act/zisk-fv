@@ -1160,6 +1160,11 @@ full-ensemble Main `b` and Mem provider rows. These constructors still expose
 the row-equality, ROM/transpile, and legacy Main-side match pins, but the Mem
 provider payload match is no longer an independent field: it is derived from
 the full-ensemble same-message evidence.
+`Compliance.Wrappers.Ld.ld_eq_of_full_ensemble_mem_provider` is the first
+consumer-facing route through those constructors. It proves the LD wrapper
+equality directly from selected full-ensemble Main/Mem row evidence and then
+calls the existing Clean-backed `equiv_LD`, leaving canonical signatures
+unchanged while giving the `OpEnvelope` migration a concrete target.
 The unified Main, Mem, and MemAlign-family component modules also expose
 direct projection lemmas from generic Clean component specs to the concrete
 row specs expected by the existing load/store bridge layer:
