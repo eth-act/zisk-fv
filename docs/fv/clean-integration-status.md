@@ -1126,6 +1126,12 @@ then adapts that same Clean message-equality evidence into the legacy
 `OperationBus.matches_entry` shape used by current opcode bridges, preserving
 the concrete provider-row and provider-spec branches without excluding any
 branch by caller promise.
+`exists_op_provider_row_matches_legacy_main_spec_of_active_main_table_interaction`
+specializes the selected unified Clean Main row back to the existing
+`Valid_Main` row surface, so each provider branch now matches
+`opBus_row_Main m r_main` directly. The theorem still returns all honest
+provider alternatives; opcode-specific branch pruning remains a future
+derived step, not a caller-supplied promise.
 The current ArithDiv carry-chain component and memory-only tables are proved
 to expose no operation-bus interactions in this ensemble; DIV/REM op-bus
 surfaces still depend on their dedicated defect-gated route.
@@ -1146,8 +1152,8 @@ Checklist:
   MemAlign-family concrete row specs. The op-bus row bridge now also carries
   row-local `Spec` facts for unified Main, ArithMul, and the lookup-aware
   Binary-family provider branches, and it has a derived legacy
-  `OperationBus.matches_entry` adapter. Constructibility and canonical
-  re-root remain open.
+  `OperationBus.matches_entry` adapter plus a legacy-`Valid_Main`
+  specialization. Constructibility and canonical re-root remain open.
 - ☐ T7.2 prove constructibility: real ZisK traces produce an
   `EnsembleWitness` satisfying constraints and balanced channels, modulo
   explicit `h_known_bugs`.
