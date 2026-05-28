@@ -41,8 +41,7 @@ theorem equiv_MULHSU
         (PureSpec.execute_MULH_mulhsu_pure mulhsu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (arith_mem : ZiskFv.Compliance.ExternalArithMemoryWitness m r_main bus.e2)
-    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
-      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
+    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
     (h_row_constraints : ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (h_no_signed_mul_witness_defect : False)
     : (do
@@ -52,6 +51,6 @@ theorem equiv_MULHSU
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_MULHSU_of_table state mulhsu_input r1 r2 rd bus m r_main v r_a
-    pins h_match_secondary promises arith_mem h_arith_table h_row_constraints h_no_signed_mul_witness_defect
+    pins h_match_secondary promises arith_mem arith_table h_row_constraints h_no_signed_mul_witness_defect
 
 end ZiskFv.Equivalence.MulHSU

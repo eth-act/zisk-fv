@@ -10,6 +10,8 @@ import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
 import ZiskFv.AirsClean.Main.Bridge
+import ZiskFv.AirsClean.ArithMul.Bridge
+import ZiskFv.AirsClean.ArithDiv.Bridge
 import ZiskFv.Channels.MemoryBusBytes
 
 /-!
@@ -111,6 +113,54 @@ theorem ExternalArithMemoryWitness.c_lane_vals
   obtain ⟨h0, h1⟩ := w.c_lanes
   exact ⟨by simpa [ZiskFv.Airs.MemoryBus.memory_entry_lo] using congrArg Fin.val h0,
     by simpa [ZiskFv.Airs.MemoryBus.memory_entry_hi] using congrArg Fin.val h1⟩
+
+/-! ## ArithTable lookup witnesses -/
+
+/-- Lookup-aware Clean witness for a selected ArithMul row's
+    `arith_table_assumes` tuple.
+
+This is structural unpacking of the former raw
+`ArithTableSpec (rowAt v r)` binder: callers expose the Clean operation
+soundness proof for `mainWithArithTable`, and the table membership is
+derived by `AirsClean.ArithMul.Bridge`. -/
+structure ArithMulTableWitness
+    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r : ℕ) where
+  offset : ℕ
+  env : Environment FGL
+  holds :
+    ConstraintsHold.Soundness env
+      ((ZiskFv.AirsClean.ArithMul.mainWithArithTable
+        (ZiskFv.AirsClean.ArithMul.constVar
+          (ZiskFv.AirsClean.ArithMul.rowAt v r))).operations offset)
+
+theorem ArithMulTableWitness.spec
+    {v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL} {r : ℕ}
+    (w : ArithMulTableWitness v r) :
+    ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r) :=
+  ZiskFv.AirsClean.ArithMul.arith_table_spec_of_lookup_aware_const_soundness
+    w.offset w.env (ZiskFv.AirsClean.ArithMul.rowAt v r) w.holds
+
+/-- Lookup-aware Clean witness for a selected ArithDiv row's
+    `arith_table_assumes` tuple. Same shape as `ArithMulTableWitness`,
+    specialized to the Div view of the Arith AIR. -/
+structure ArithDivTableWitness
+    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r : ℕ) where
+  offset : ℕ
+  env : Environment FGL
+  holds :
+    ConstraintsHold.Soundness env
+      ((ZiskFv.AirsClean.ArithDiv.mainWithArithTable
+        (ZiskFv.AirsClean.ArithDiv.constVar
+          (ZiskFv.AirsClean.ArithDiv.rowAt v r))).operations offset)
+
+theorem ArithDivTableWitness.spec
+    {v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL} {r : ℕ}
+    (w : ArithDivTableWitness v r) :
+    ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r) :=
+  ZiskFv.AirsClean.ArithDiv.arith_table_spec_of_lookup_aware_const_soundness
+    w.offset w.env (ZiskFv.AirsClean.ArithDiv.rowAt v r) w.holds
 
 /-! ## BinaryAdd validator + universal core constraint -/
 

@@ -102,6 +102,14 @@ where possible, and keep the
 signed-MUL/MULH/MULHSU defects explicit through `h_known_bugs`.
 `main_store_pc_emission_bundle` is a T6/T7 target.
 
+The third T5 landing replaced the raw canonical `ArithTableSpec`
+binders with lookup-aware Clean witnesses:
+`ArithMulTableWitness` / `ArithDivTableWitness`. These witnesses carry
+`ConstraintsHold.Soundness` for the selected
+`mainWithArithTable (constVar (rowAt v r_a))` operation and derive
+`ArithTableSpec` through the Clean bridge, so table membership is no
+longer an opaque caller promise.
+
 ### C7 — CLOSED (axiom retirements landed in T4-purge commits)
 
 Closed 2026-05-25/26. The C7 checklist below shows the project state
@@ -996,10 +1004,12 @@ hypotheses rather than hiding known defects behind fresh trust.
 
 Checklist:
 
-- ☐ T5.1 build lookup-aware ArithMul and ArithDiv component routes that emit
+- ☑ T5.1 build lookup-aware ArithMul and ArithDiv component routes that emit
   the same ArithTable rows used by their op proofs.
-- ☐ T5.2 build the static ArithTable provider with exact 74-row membership
-  projections for all true static facts.
+- ☑ T5.2 build the static ArithTable provider with exact 74-row membership
+  projections for all true static facts, and route canonical table
+  membership through `ArithMulTableWitness` / `ArithDivTableWitness`
+  rather than a raw `ArithTableSpec` binder.
 - ☐ T5.3 prove row-native non-defective `MUL/MULHU/MULW` facts from the same
   Arith provider rows that balance the Main channel interaction, without
   opcode-shaped ArithTable axioms.

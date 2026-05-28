@@ -42,6 +42,40 @@ namespace ZiskFv.AirsClean.ArithDiv
 open Goldilocks
 open ZiskFv.Channels.OperationBus
 
+/-- Constant-expression view of an `ArithDivRow`, used when specializing
+    lookup-aware Clean soundness to one concrete row. -/
+@[reducible]
+def constVar (row : ArithDivRow FGL) : Var ArithDivRow FGL where
+  chunks :=
+    { a_0 := .const row.chunks.a_0, a_1 := .const row.chunks.a_1,
+      a_2 := .const row.chunks.a_2, a_3 := .const row.chunks.a_3,
+      b_0 := .const row.chunks.b_0, b_1 := .const row.chunks.b_1,
+      b_2 := .const row.chunks.b_2, b_3 := .const row.chunks.b_3,
+      c_0 := .const row.chunks.c_0, c_1 := .const row.chunks.c_1,
+      c_2 := .const row.chunks.c_2, c_3 := .const row.chunks.c_3,
+      d_0 := .const row.chunks.d_0, d_1 := .const row.chunks.d_1,
+      d_2 := .const row.chunks.d_2, d_3 := .const row.chunks.d_3 }
+  flags :=
+    { na := .const row.flags.na, nb := .const row.flags.nb,
+      nr := .const row.flags.nr, np := .const row.flags.np,
+      sext := .const row.flags.sext, m32 := .const row.flags.m32,
+      div := .const row.flags.div,
+      div_by_zero := .const row.flags.div_by_zero,
+      div_overflow := .const row.flags.div_overflow,
+      main_div := .const row.flags.main_div,
+      main_mul := .const row.flags.main_mul, op := .const row.flags.op,
+      signed := .const row.flags.signed,
+      range_ab := .const row.flags.range_ab,
+      range_cd := .const row.flags.range_cd,
+      bus_res1 := .const row.flags.bus_res1,
+      multiplicity := .const row.flags.multiplicity }
+  aux :=
+    { carry_0 := .const row.aux.carry_0, carry_1 := .const row.aux.carry_1,
+      carry_2 := .const row.aux.carry_2, carry_3 := .const row.aux.carry_3,
+      carry_4 := .const row.aux.carry_4, carry_5 := .const row.aux.carry_5,
+      carry_6 := .const row.aux.carry_6, fab := .const row.aux.fab,
+      na_fb := .const row.aux.na_fb, nb_fa := .const row.aux.nb_fa }
+
 /-- The lookup-aware Clean circuit sources ArithTable membership from its
     `lookup (Table.fromStatic ArithTable.arithTable) ...` operation.
 
@@ -70,6 +104,18 @@ theorem arith_table_spec_of_lookup_aware_soundness
       h_lookup⟩
   simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable, Table.toRaw,
     ArithTableSpec, arithTableRow] using h_lookup
+
+/-- Constant-row specialization of
+    `arith_table_spec_of_lookup_aware_soundness`. -/
+theorem arith_table_spec_of_lookup_aware_const_soundness
+    (offset : ℕ) (env : Environment FGL) (row : ArithDivRow FGL)
+    (h_holds :
+      ConstraintsHold.Soundness env
+        ((mainWithArithTable (constVar row)).operations offset)) :
+    ArithTableSpec row := by
+  have h_table :=
+    arith_table_spec_of_lookup_aware_soundness offset env (constVar row) h_holds
+  simpa [ArithTableSpec, arithTableRow, constVar] using h_table
 
 /-- Project a `Valid_ArithDiv` at row `r` into a Clean `ArithDivRow FGL`.
     The 38 columns map 1:1 (`carry_i` ↔ `Valid_ArithDiv.cy_i`). -/

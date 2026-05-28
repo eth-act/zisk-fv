@@ -53,14 +53,14 @@ theorem equiv_REMU_of_table
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
-    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
-      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
+    (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (h_op2_ne : remu_input.r2_val.toNat ≠ 0) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, true))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  have h_arith_table := arith_table.spec
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
   obtain ⟨h_main_active, h_main_op_remu⟩ := pins
@@ -183,8 +183,7 @@ theorem equiv_REMU
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
-    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
-      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
+    (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (h_op2_ne : remu_input.r2_val.toNat ≠ 0) :
     (do
       Sail.writeReg Register.nextPC
@@ -193,7 +192,7 @@ theorem equiv_REMU
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   exact equiv_REMU_of_table
     state remu_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises arith_mem
-    bounds h_row_constraints h_arith_table
+    bounds h_row_constraints arith_table
     h_op2_ne
 
 end ZiskFv.Compliance

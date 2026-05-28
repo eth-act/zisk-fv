@@ -110,8 +110,7 @@ theorem equiv_MUL_of_table
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
-    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
-      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
+    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
     (h_no_signed_mul_witness_defect : False)
     :
     (do
@@ -124,6 +123,7 @@ theorem equiv_MUL_of_table
              signed_rs1 := srs1
              signed_rs2 := srs2 }))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  have h_arith_table := arith_table.spec
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := bounds
   obtain ⟨h_main_active, h_main_op_mul⟩ := pins
@@ -267,8 +267,7 @@ theorem equiv_MUL
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
-    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
-      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
+    (arith_table : ZiskFv.Compliance.ArithMulTableWitness v r_a)
     (h_no_signed_mul_witness_defect : False)
     :
     (do
@@ -283,7 +282,7 @@ theorem equiv_MUL
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   equiv_MUL_of_table state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
     pins h_match_primary promises arith_mem bounds h_row_constraints
-    h_arith_table
+    arith_table
     h_no_signed_mul_witness_defect
 
 end ZiskFv.Compliance
