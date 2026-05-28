@@ -68,6 +68,9 @@ theorem equiv_SLTI
   obtain ⟨h_core, h_facts⟩ :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
       h_component h_table_spec h_provider_row
+  have h_spec_facts :=
+    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
+      h_component h_table_spec h_provider_row
   obtain ⟨h_main_active, h_main_op_slti⟩ := pins
   have h_emit : row.chain.b_op + 16 * row.mode.mode32 =
       (ZiskFv.Airs.Tables.BinaryTable.OP_LT : FGL) := by
@@ -79,8 +82,8 @@ theorem equiv_SLTI
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_LT, ZiskFv.Trusted.OP_LT] using
       h_main_op_slti
   obtain ⟨h_row_m32, h_bop, _⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16
-      row ZiskFv.Airs.Tables.BinaryTable.OP_LT (by
+    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
+      row h_spec_facts ZiskFv.Airs.Tables.BinaryTable.OP_LT (by
         simp [ZiskFv.Airs.Tables.BinaryTable.OP_LT])
       h_core h_emit
   let v := ZiskFv.AirsClean.Binary.validOfRow row
@@ -89,14 +92,27 @@ theorem equiv_SLTI
       ZiskFv.AirsClean.Binary.opBusMessage,
       ZiskFv.Channels.OperationBus.OpBusMessage.toEntry,
       opBus_row_Binary] using h_match
+  have h_row_m32_v : v.mode32 0 = 0 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h_row_m32
+  have h_bop_v : (v.b_op 0).val = ZiskFv.Airs.Tables.BinaryTable.OP_LT := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h_bop
+  have h_bop_or_sext : row.chain.b_op_or_sext.val =
+      ZiskFv.Airs.Tables.BinaryTable.OP_LT := by
+    have h :=
+      ZiskFv.EquivCore.Bridge.Binary.b_op_or_sext_val_eq_of_mode32_zero
+        v 0 ZiskFv.Airs.Tables.BinaryTable.OP_LT h_core h_row_m32_v h_bop_v
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h
+  have h_matches :=
+    ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_logic_of_static_row
+      row h_facts ZiskFv.Airs.Tables.BinaryTable.OP_LT h_bop h_bop_or_sext
   obtain ⟨h_m32, _, _, _, _, _, _, _, _⟩ :=
     transpile_SLTI m r_main (regidx_to_fin r1) (regidx_to_fin rd)
       (m.b_0 r_main) (m.b_1 r_main)
       (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
       h_main_active h_main_op_slti
   have h_input_imm_v :=
-    ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main
-      m v r_main 0 slti_input.imm h_m32 h_match_v h_slti_subset
+    ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
+      m row r_main slti_input.imm h_matches h_m32 h_match h_slti_subset
   have h_input_imm_row : BitVec.signExtend 64 slti_input.imm
       = BitVec.ofNat 64
           ((row.bBytes.free_in_b_0).val + (row.bBytes.free_in_b_1).val * 256
@@ -106,7 +122,7 @@ theorem equiv_SLTI
             + (row.bBytes.free_in_b_5).val * 1099511627776
             + (row.bBytes.free_in_b_6).val * 281474976710656
             + (row.bBytes.free_in_b_7).val * 72057594037927936) := by
-    simpa [v, ZiskFv.AirsClean.Binary.validOfRow] using h_input_imm_v
+    exact h_input_imm_v
   exact ZiskFv.EquivCore.Slti.equiv_SLTI_of_static_row
     state slti_input r1 rd imm m row r_main bus promises
     ⟨h_main_active, h_main_op_slti⟩

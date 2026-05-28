@@ -92,7 +92,8 @@ equals 0. The lane match equates this to
     Mirrors the `Arith.byteAt_{lo,hi}_val_sum_eq` helpers but kept local
     here so this file doesn't need to re-export them. -/
 
-private lemma byteAt_lo_val_sum_eq (e : MemoryBusEntry FGL) :
+private lemma byteAt_lo_val_sum_eq (e : MemoryBusEntry FGL)
+    (h : e.value_0.val < 4294967296) :
     (byteAt e 0).val + (byteAt e 1).val * 256
       + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
     = e.value_0.val := by
@@ -106,9 +107,10 @@ private lemma byteAt_lo_val_sum_eq (e : MemoryBusEntry FGL) :
     unfold byteAt; simp only [show (3 : ℕ) < 4 from by decide, if_true]
   rw [hb0, hb1, hb2, hb3]
   exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_0
-          (ZiskFv.Airs.MemoryBus.memory_entry_lo_val_lt_2_32 e)
+          h
 
-private lemma byteAt_hi_val_sum_eq (e : MemoryBusEntry FGL) :
+private lemma byteAt_hi_val_sum_eq (e : MemoryBusEntry FGL)
+    (h : e.value_1.val < 4294967296) :
     (byteAt e 4).val + (byteAt e 5).val * 256
       + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
     = e.value_1.val := by
@@ -121,9 +123,7 @@ private lemma byteAt_hi_val_sum_eq (e : MemoryBusEntry FGL) :
   have hb7 : byteAt e 7 = byteOf e.value_1 3 := by
     unfold byteAt; simp only [show ¬ (7 : ℕ) < 4 from by decide, if_false]
   rw [hb4, hb5, hb6, hb7]
-  have h_v1_lt : e.value_1.val < 4294967296 :=
-    (ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e).2
-  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_1 h_v1_lt
+  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_1 h
 
 private lemma cout_lane_decode
     (e2 : MemoryBusEntry FGL)
@@ -140,14 +140,20 @@ private lemma cout_lane_decode
     ∧ (byteAt e2 4).val = 0 ∧ (byteAt e2 5).val = 0
     ∧ (byteAt e2 6).val = 0 ∧ (byteAt e2 7).val = 0 := by
   -- Lift memory_entry_lo to a Nat byte sum via the chunk-shape helper.
+  have h_v0_lt : e2.value_0.val < 4294967296 := by
+    simp only [memory_entry_lo] at h_lo
+    omega
+  have h_v1_lt : e2.value_1.val < 4294967296 := by
+    simp only [memory_entry_hi] at h_hi
+    omega
   have h_lo_nat : (memory_entry_lo e2).val
       = (byteAt e2 0).val + (byteAt e2 1).val * 256
         + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
-    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2).symm
+    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2 h_v0_lt).symm
   have h_hi_nat : (memory_entry_hi e2).val
       = (byteAt e2 4).val + (byteAt e2 5).val * 256
         + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
-    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2).symm
+    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2 h_v1_lt).symm
   rw [h_lo_nat] at h_lo
   rw [h_hi_nat] at h_hi
   -- h_lo : (byteAt e2 0).val + ... = cout (≤ 1)

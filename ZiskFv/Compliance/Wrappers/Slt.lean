@@ -64,6 +64,9 @@ theorem equiv_SLT
   obtain ⟨h_core, h_facts⟩ :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
       h_component h_table_spec h_provider_row
+  have h_spec_facts :=
+    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
+      h_component h_table_spec h_provider_row
   obtain ⟨h_main_active, h_main_op_slt⟩ := pins
   have h_emit : row.chain.b_op + 16 * row.mode.mode32 =
       (ZiskFv.Airs.Tables.BinaryTable.OP_LT : FGL) := by
@@ -75,8 +78,8 @@ theorem equiv_SLT
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_LT, ZiskFv.Trusted.OP_LT] using
       h_main_op_slt
   obtain ⟨h_row_m32, h_bop, _⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16
-      row ZiskFv.Airs.Tables.BinaryTable.OP_LT (by
+    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
+      row h_spec_facts ZiskFv.Airs.Tables.BinaryTable.OP_LT (by
         simp [ZiskFv.Airs.Tables.BinaryTable.OP_LT])
       h_core h_emit
   exact ZiskFv.EquivCore.Slt.equiv_SLT_of_static_row

@@ -100,6 +100,35 @@ lemma byte_ranges_at_holds (v : Valid_Binary FGL FGL) (r : ℕ) :
    bin_c_4_lt_256 v r, bin_c_5_lt_256 v r,
    bin_c_6_lt_256 v r, bin_c_7_lt_256 v r⟩
 
+lemma chain_a_byte_lt_256
+    {op : ℕ} {a b c cin flags pos : FGL}
+    (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op a b c cin flags pos) :
+    a.val < 256 := by
+  obtain ⟨_, h_wf, _, h_a, _, _, _, _, _⟩ := h
+  rw [← h_a]
+  exact h_wf.1.1
+
+lemma chain_b_byte_lt_256
+    {op : ℕ} {a b c cin flags pos : FGL}
+    (h : ZiskFv.Airs.Binary.consumer_byte_match_chain_wf op a b c cin flags pos) :
+    b.val < 256 := by
+  obtain ⟨_, h_wf, _, _, h_b, _, _, _, _⟩ := h
+  rw [← h_b]
+  exact h_wf.1.2.1
+
+lemma carry_7_val_lt_2_of_row_core
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_core : ZiskFv.Airs.Binary.core_every_row
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0) :
+    ((ZiskFv.AirsClean.Binary.validOfRow row).carry_7 0).val < 2 := by
+  rcases h_core with ⟨_, h_carry_7_bool, _, _, _, _, _⟩
+  have h_bool : row.chain.carry_7 * (1 - row.chain.carry_7) = 0 := by
+    simpa [ZiskFv.Airs.Binary.boolean_carry_7,
+      ZiskFv.AirsClean.Binary.validOfRow] using h_carry_7_bool
+  rcases fgl_boolean_cases_local h_bool with h_zero | h_one
+  · simp [h_zero]
+  · simp [h_one]
+
 /-! ## Static-table carry_7 discharge for AND / OR / XOR rows -/
 
 open ZiskFv.Airs.Binary in

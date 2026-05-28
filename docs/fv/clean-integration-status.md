@@ -102,12 +102,12 @@ T7 retired `main_store_pc_emission_bundle` from source and from the
 canonical/global closure by routing LUI/AUIPC/JAL/JALR through selected
 Clean Main `cMemMessage` structural witnesses.
 T7 has also removed `range_bus_sound` from AUIPC/JAL/JALR, from the six
-bitwise Binary-family canonical closures (AND/ANDI/OR/ORI/XOR/XORI), and
-from the static Binary-table ADD/ADDI/SUB canonical closures. The bitwise,
-ADD/ADDI, and SUB slices derive mode/op pins, packed byte bounds, carry
-booleanity, and destination byte-pack bounds from exact static BinaryTable
-membership plus row-local byte-match witnesses rather than from the legacy
-range bus.
+bitwise Binary-family canonical closures (AND/ANDI/OR/ORI/XOR/XORI), from
+the static Binary-table ADD/ADDI/SUB and ADDW/ADDIW/SUBW closures, and from
+SLT/SLTI/SLTU/SLTIU. These slices derive mode/op pins, packed byte bounds,
+carry booleanity, compare-result bounds, and destination byte-pack bounds
+from exact static BinaryTable membership plus row-local byte-match witnesses
+rather than from the legacy range bus.
 
 The third T5 landing replaced the raw canonical `ArithTableSpec`
 binders with lookup-aware Clean witnesses:
@@ -1080,9 +1080,10 @@ Checklist:
   rule: the fact must be tied to the same concrete provider row used by the
   channel/matches proof.
   Progress: AUIPC/JAL/JALR canonical closures no longer list
-  `range_bus_sound`; ADD/ADDI/SUB and ADDW/ADDIW/SUBW have also dropped it
-  through the static Binary-table route. Remaining consumers are the
-  shift/SLT, load/store, and Arith-family paths shown in
+  `range_bus_sound`; ADD/ADDI/SUB, ADDW/ADDIW/SUBW, and
+  SLT/SLTI/SLTU/SLTIU have also dropped it through the static Binary-table
+  route. Remaining consumers are the shift, load/store, and Arith-family
+  paths shown in
   `trust/baseline-equiv-axiom-deps.txt`.
 - ☐ T6.3 retire `range_bus_sound` and `signed_range_bus_sound` when their
   global closure entries disappear.

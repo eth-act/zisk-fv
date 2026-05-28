@@ -152,23 +152,39 @@ theorem equiv_SLTI_of_wf
   obtain ⟨h_e2_0, h_e2_1, h_e2_2, h_e2_3,
           h_e2_4, h_e2_5, h_e2_6, h_e2_7⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.e2_byte_ranges_discharge e2
-  -- Byte ranges from `binary_columns_in_range`.
-  have ha0 : (v.free_in_a_0 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_0_lt_256 v r_binary
-  have ha1 : (v.free_in_a_1 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_1_lt_256 v r_binary
-  have ha2 : (v.free_in_a_2 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_2_lt_256 v r_binary
-  have ha3 : (v.free_in_a_3 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_3_lt_256 v r_binary
-  have ha4 : (v.free_in_a_4 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_4_lt_256 v r_binary
-  have ha5 : (v.free_in_a_5 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_5_lt_256 v r_binary
-  have ha6 : (v.free_in_a_6 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_6_lt_256 v r_binary
-  have ha7 : (v.free_in_a_7 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_a_7_lt_256 v r_binary
-  have hb0 : (v.free_in_b_0 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_0_lt_256 v r_binary
-  have hb1 : (v.free_in_b_1 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_1_lt_256 v r_binary
-  have hb2 : (v.free_in_b_2 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_2_lt_256 v r_binary
-  have hb3 : (v.free_in_b_3 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_3_lt_256 v r_binary
-  have hb4 : (v.free_in_b_4 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_4_lt_256 v r_binary
-  have hb5 : (v.free_in_b_5 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_5_lt_256 v r_binary
-  have hb6 : (v.free_in_b_6 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_6_lt_256 v r_binary
-  have hb7 : (v.free_in_b_7 r_binary).val < 256 := ZiskFv.Airs.Binary.bin_b_7_lt_256 v r_binary
+  -- Byte ranges on a/b derive from the same per-byte table witnesses.
+  have ha0 : (v.free_in_a_0 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 h_byte_0
+  have ha1 : (v.free_in_a_1 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 h_byte_1
+  have ha2 : (v.free_in_a_2 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 h_byte_2
+  have ha3 : (v.free_in_a_3 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 h_byte_3
+  have ha4 : (v.free_in_a_4 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 h_byte_4
+  have ha5 : (v.free_in_a_5 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 h_byte_5
+  have ha6 : (v.free_in_a_6 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 h_byte_6
+  have ha7 : (v.free_in_a_7 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_a_byte_lt_256 h_byte_7
+  have hb0 : (v.free_in_b_0 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 h_byte_0
+  have hb1 : (v.free_in_b_1 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 h_byte_1
+  have hb2 : (v.free_in_b_2 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 h_byte_2
+  have hb3 : (v.free_in_b_3 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 h_byte_3
+  have hb4 : (v.free_in_b_4 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 h_byte_4
+  have hb5 : (v.free_in_b_5 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 h_byte_5
+  have hb6 : (v.free_in_b_6 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 h_byte_6
+  have hb7 : (v.free_in_b_7 r_binary).val < 256 :=
+    ZiskFv.EquivCore.Bridge.Binary.chain_b_byte_lt_256 h_byte_7
   -- Input bridge for r1: transpile_SLTI + SailStateBridge + matches_entry's a lanes.
   have h_input_r1_circuit : slti_input.r1_val
       = BitVec.ofNat 64
@@ -378,7 +394,7 @@ theorem equiv_SLTI_of_static_row
   obtain ⟨h_match_clo, h_match_chi⟩ :=
     ZiskFv.EquivCore.Bridge.Binary.compare_c_lanes_LT_of_static_chain h_match_v out
   have h_fl7_lt_2 : (v.carry_7 0).val < 2 :=
-    ZiskFv.Airs.Binary.bin_carry_7_lt_2 v 0
+    ZiskFv.EquivCore.Bridge.Binary.carry_7_val_lt_2_of_row_core row h_core
   have h_input_imm_v : BitVec.signExtend 64 slti_input.imm
       = BitVec.ofNat 64
           ((v.free_in_b_0 0).val + (v.free_in_b_1 0).val * 256

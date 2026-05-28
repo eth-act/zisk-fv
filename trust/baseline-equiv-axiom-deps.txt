@@ -44,10 +44,10 @@ ZiskFv.Equivalence.Sll.equiv_SLL: ZiskFv.Channels.RangeBusSoundness.range_bus_so
 ZiskFv.Equivalence.Slli.equiv_SLLI: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SLLI
 ZiskFv.Equivalence.Slliw.equiv_SLLIW: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SLLIW
 ZiskFv.Equivalence.Sllw.equiv_SLLW: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SLLW
-ZiskFv.Equivalence.Slt.equiv_SLT: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SLT
-ZiskFv.Equivalence.Slti.equiv_SLTI: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SLTI
-ZiskFv.Equivalence.Sltiu.equiv_SLTIU: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SLTIU
-ZiskFv.Equivalence.Sltu.equiv_SLTU: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SLTU
+ZiskFv.Equivalence.Slt.equiv_SLT: ZiskFv.Trusted.transpile_SLT
+ZiskFv.Equivalence.Slti.equiv_SLTI: ZiskFv.Trusted.transpile_SLTI
+ZiskFv.Equivalence.Sltiu.equiv_SLTIU: ZiskFv.Trusted.transpile_SLTIU
+ZiskFv.Equivalence.Sltu.equiv_SLTU: ZiskFv.Trusted.transpile_SLTU
 ZiskFv.Equivalence.Sra.equiv_SRA: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SRA
 ZiskFv.Equivalence.Srai.equiv_SRAI: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SRAI
 ZiskFv.Equivalence.Sraiw.equiv_SRAIW: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_SRAIW
