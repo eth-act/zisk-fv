@@ -1013,8 +1013,13 @@ Checklist:
 - ☐ T5.3 prove row-native non-defective `MUL/MULHU/MULW` facts from the same
   Arith provider rows that balance the Main channel interaction, without
   opcode-shaped ArithTable axioms.
-- ☐ T5.4 keep signed-MUL defect predicates explicit through
+- ☑ T5.4 keep signed-MUL defect predicates explicit through
   `h_known_bugs` until the circuit/witness issue is fixed upstream.
+  MULH and MULHSU now close directly from their existing
+  `h_no_signed_mul_witness_defect : False` theorem-side exclusion, so
+  the dead `arith_mul_na_eq_msb_of_a`, `arith_mul_nb_eq_msb_of_b`,
+  `transpile_MULH`, and `transpile_MULHSU` declarations are retired from
+  the source trust ledger.
 - ☐ T5.5 prove row-native non-defective `DIV/REM` facts and keep remaining
   documented dynamic defects under `h_known_bugs`.
 - ☑ T5.6a retire `arith_mul_table_lookup_sound`,

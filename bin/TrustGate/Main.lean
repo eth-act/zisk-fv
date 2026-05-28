@@ -43,7 +43,8 @@ def renderDepsBaseline (env : Environment) : String := Id.run do
   for n in canonical do
     let deps := AxiomClosure.axiomDepsForTheorem env n
     let depsStr := String.intercalate ", " (deps.map (·.toString)).toList
-    lines := lines.push s!"{n}: {depsStr}"
+    let line := if depsStr.isEmpty then s!"{n}:" else s!"{n}: {depsStr}"
+    lines := lines.push line
   String.intercalate "\n" lines.toList ++ "\n"
 
 /-- Parse `trust/forbidden-types.txt` (one fully-qualified Name per line;

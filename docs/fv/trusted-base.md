@@ -325,9 +325,10 @@ via the new pure-Lean `itype_imm_subset_holds_main` bundle +
 `itype_imm_subset_binary_row_of_main` bridge); one class-#6 axiom
 (`binary_consumer_byte_match_chain_pin`) from the Binary 6-field
 chain branch (3 wrappers: SUB/SLTU/SLT; SLTI/SLTIU/ADDIW/SUBW/ADDW
-deferred pending integration); two remaining class-#6b axioms from the
-MULH-family branch (`arith_mul_na_eq_msb_of_a`,
-`arith_mul_nb_eq_msb_of_b`) for MULH/MULHSU wrappers; three class-#4
+deferred pending integration); the former class-#6b signed-MUL MSB facts
+(`arith_mul_na_eq_msb_of_a`, `arith_mul_nb_eq_msb_of_b`) are retired after
+T5 made MULH/MULHSU close through the explicit signed-MUL defect
+exclusion; three class-#4
 axioms from the Mem-stores
 RMW branch (`main_store_emission_bundle_{sb,sh,sw}` — narrow-width
 RMW emission bundles for SB/SH/SW).

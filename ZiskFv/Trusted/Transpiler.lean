@@ -539,40 +539,6 @@ axiom transpile_MUL :
       ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
       ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
 
-/-- The axiomatic RV64 → Zisk row contract for MULH.
-
-    Per `zisk/core/src/riscv2zisk_context.rs:244` an RV64 MULH
-    `rd, rs1, rs2` transpiles via `create_register_op(..., "mulh", 4)`
-    — the identical helper MUL uses, only the opcode string changes. One
-    Main-AIR row with:
-    * `op = OP_MULH = 181`;
-    * `is_external_op = 1` — dispatch to Arith SM over the operation bus;
-    * `set_pc = 0`, `store_pc = 0` — MULH does not touch PC;
-    * `jmp_offset1 = jmp_offset2 = 4` — fall-through advance;
-    * `m32 = 0` — 64-bit operand form (`"mulh"` has no `_w` suffix);
-    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)` same as MUL;
-    * `flag` is populated by the Arith bus-pop with `div_by_zero = 0`.
-
-    **Trust basis.** Pure spec of the `"mulh"` arm in
-    `riscv2zisk_context.rs:244`. Differs from `transpile_MUL` only in the
-    opcode literal (180 → 181); MULHSU / MULHU share the same shape with
-    opcodes 179 / 177 respectively. The Arith SM selects high-64 vs.
-    low-64 via the secondary op; the Main row's transpile contract is
-    uniform across the family. -/
-axiom transpile_MULH :
-    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_MULH →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
 /-- The axiomatic RV64 → Zisk row contract for SLLW.
 
     Per `zisk/core/src/riscv2zisk_context.rs:155` an RV64 SLLW
@@ -1014,8 +980,8 @@ axiom transpile_SRAIW :
     Per `zisk/core/src/riscv2zisk_context.rs:246` an RV64 MULHU
     `rd, rs1, rs2` transpiles via
     `create_register_op(..., "muluh", 4)` — note the string rename
-    (`"mulhu" → "muluh"`). Differs from `transpile_MULH` only in the
-    opcode literal (181 → 177). One Main-AIR row with:
+    (`"mulhu" → "muluh"`). Differs from the former MULH transpile contract
+    only in the opcode literal (181 → 177). One Main-AIR row with:
 
     * `op = OP_MULUH = 177`;
     * `is_external_op = 1` — dispatch to Arith SM over the operation bus;
@@ -1027,45 +993,12 @@ axiom transpile_SRAIW :
     * `flag` is populated by the Arith bus-pop with `div_by_zero = 0`.
 
     **Trust basis.** Pure spec of the `"mulhu"` arm in
-    `riscv2zisk_context.rs:246`. Differs from `transpile_MULH` only in
-    the opcode literal (181 → 177). -/
+    `riscv2zisk_context.rs:246`. Differs from the former MULH contract only
+    in the opcode literal (181 → 177). -/
 axiom transpile_MULHU :
     ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
       m.is_external_op r_main = 1 →
       m.op r_main = OP_MULUH →
-        m.m32 r_main = 0
-      ∧ m.set_pc r_main = 0
-      ∧ m.store_pc r_main = 0
-      ∧ m.jmp_offset1 r_main = 4
-      ∧ m.jmp_offset2 r_main = 4
-      ∧ m.a_0 r_main = lane_lo (state.xreg rs1)
-      ∧ m.a_1 r_main = lane_hi (state.xreg rs1)
-      ∧ m.b_0 r_main = lane_lo (state.xreg rs2)
-      ∧ m.b_1 r_main = lane_hi (state.xreg rs2)
-
-/-- The axiomatic RV64 → Zisk row contract for MULHSU.
-
-    Per `zisk/core/src/riscv2zisk_context.rs:245` an RV64 MULHSU
-    `rd, rs1, rs2` transpiles via
-    `create_register_op(..., "mulsuh", 4)` — note the string rename
-    (`"mulhsu" → "mulsuh"`). Differs from `transpile_MULH` only in the
-    opcode literal (181 → 179). One Main-AIR row with:
-
-    * `op = OP_MULSUH = 179`;
-    * `is_external_op = 1` — dispatch to Arith SM over the operation bus;
-    * `set_pc = 0`, `store_pc = 0` — MULHSU does not touch PC;
-    * `jmp_offset1 = jmp_offset2 = 4` — fall-through advance;
-    * `m32 = 0` — 64-bit operand form;
-    * `a`/`b` lanes carry `xreg(rs1)` / `xreg(rs2)` same as MUL;
-    * `flag` is populated by the Arith bus-pop with `div_by_zero = 0`.
-
-    **Trust basis.** Pure spec of the `"mulhsu"` arm in
-    `riscv2zisk_context.rs:245`. Differs from `transpile_MULH` only in
-    the opcode literal (181 → 179). -/
-axiom transpile_MULHSU :
-    ∀ (m : Valid_Main FGL FGL) (r_main : ℕ) (rs1 rs2 _rd : Fin 32) (state : RV64State),
-      m.is_external_op r_main = 1 →
-      m.op r_main = OP_MULSUH →
         m.m32 r_main = 0
       ∧ m.set_pc r_main = 0
       ∧ m.store_pc r_main = 0

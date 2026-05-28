@@ -385,8 +385,8 @@ via separate signatures (`arith_mul_*` vs `arith_div_*`).
 | `arith_table_op_mulh_main_selector_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:993` | MULH selector pin: `op = 181` ⇒ `main_mul = 0, main_div = 0` |
 | `arith_table_op_mulhsu_mode_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:1003` | MULHSU mode pin: `op = 179` ⇒ `nb=nr=sext=m32=div=0`, na boolean, np XOR |
 | `arith_table_op_mulhsu_main_selector_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean:1018` | MULHSU selector pin: `op = 179` ⇒ `main_mul = 0, main_div = 0` |
-| `arith_mul_na_eq_msb_of_a` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (Step 4.2 r3.III) | r3.III: `op ∈ {179, 181}` ⇒ `na.val = MSB(packed4 a[0..3])` |
-| `arith_mul_nb_eq_msb_of_b` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (Step 4.2 r3.III) | r3.III: `op = 181` ⇒ `nb.val = MSB(packed4 b[0..3])` |
+| `arith_mul_na_eq_msb_of_a` | retired | removed in T5 | Former signed-MUL MSB pin; MULH/MULHSU now close through the explicit signed-MUL defect exclusion until a dynamic proof exists. |
+| `arith_mul_nb_eq_msb_of_b` | retired | removed in T5 | Former signed-MUL MSB pin; same status as `arith_mul_na_eq_msb_of_a`. |
 | `arith_table_op_mulw_mode_pin` | #6b (table-pin) | `Airs/Arith/Ranges.lean` (Step 4.2 r3.III) | r3.III MULW mode pin: `op = 182` ⇒ `nr=sext=div=0, m32=1`, na/nb boolean, np XOR |
 | `ExternalArithMemoryWitness` | structural witness | `Compliance/SharedBundles.lean` | T5 replacement for the retired `main_external_arith_emission_bundle`: rd-write entry byte-pack lanes are derived from the selected Clean Main `cMemMessage` row, `store_pc = 0`, and the memory-entry match. |
 
@@ -464,7 +464,7 @@ Total ArithMul axiom delta across the whole Step 4.2 effort (r2 + r3.III):
 * `arith_table_op_mulhu_mode_pin` + `arith_table_op_mulhu_main_selector_pin` (r2)
 * `arith_table_op_mulh_mode_pin` + `arith_table_op_mulh_main_selector_pin` (r2)
 * `arith_table_op_mulhsu_mode_pin` + `arith_table_op_mulhsu_main_selector_pin` (r2)
-* `arith_mul_na_eq_msb_of_a` + `arith_mul_nb_eq_msb_of_b` (r3.III)
+* retired in T5: `arith_mul_na_eq_msb_of_a` + `arith_mul_nb_eq_msb_of_b` (r3.III)
 * `arith_table_op_mulw_mode_pin` (r3.III)
 
 11 class-#6b axioms across all 5 MUL-family opcodes — slightly above
