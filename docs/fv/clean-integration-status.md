@@ -1084,6 +1084,15 @@ two interaction lists for later balance bridges.
 classification plus operation-bus and memory-bus balanced-channel
 projections, along with table-row extraction lemmas for unified Main,
 lookup-aware Binary/BinaryExtension, BinaryAdd, Mem, and the MemAlign family.
+It also classifies a balanced same-message operation-bus counterpart for an
+active Main interaction into the full ensemble's op-bus-capable tables:
+ArithMul, lookup-aware BinaryExtension, lookup-aware Binary, BinaryAdd, or
+the unified Main table. The unified Main case is deliberately kept explicit
+instead of hidden behind a promise hypothesis; excluding it still needs a
+cheap row-local Main multiplicity lemma for `componentWithRomMemAndOpBus`.
+The current ArithDiv carry-chain component and memory-only tables are proved
+to expose no operation-bus interactions in this ensemble; DIV/REM op-bus
+surfaces still depend on their dedicated defect-gated route.
 T7.2/T7.3 still need the constructibility statement and canonical theorem
 re-root before those closures can honestly be claimed to depend on the full
 ensemble.
@@ -1093,7 +1102,9 @@ Checklist:
 - ◐ T7.1 define the full Clean ensemble statement for the supported RV64IM
   scope. `FullEnsemble.fullRv64imEnsemble` now uses a row-coherent unified
   Main component and has direct full-ensemble balance / row-extraction
-  lemmas, but constructibility and canonical re-root remain open.
+  lemmas, plus same-message op-bus counterpart classification. Unified-Main
+  self-provider exclusion, constructibility, and canonical re-root remain
+  open.
 - ☐ T7.2 prove constructibility: real ZisK traces produce an
   `EnsembleWitness` satisfying constraints and balanced channels, modulo
   explicit `h_known_bugs`.
