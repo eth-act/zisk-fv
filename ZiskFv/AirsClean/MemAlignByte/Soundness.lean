@@ -9,8 +9,8 @@ The 5 algebraic `Spec` clauses follow directly from PIL constraints
 reasoning; these constraints have the same shape as their Spec
 components modulo `linear_combination` reshuffling. The 3 `bits(N)`
 range clauses are supplied to `soundness_of_ranges` as explicit
-hypotheses — the Clean Component's `soundness` field draws them from
-`range_bus_sound` (the range-checker bus, plan F-4).
+hypotheses — the Clean Component's `soundness` field now draws them from
+concrete Clean static lookups emitted by `main`.
 
 ## Trust note
 
@@ -28,9 +28,9 @@ open Goldilocks
     range bounds pass straight through.
 
     This is the form the Clean `Component`'s `soundness` field
-    consumes — the 3 range bounds arrive from `range_bus_sound` (the
-    range-checker bus), so the Component's `Assumptions` can be
-    `True`. The four boolean constraints (0, 1, 2, 4) are unused. -/
+    consumes — the 3 range bounds arrive from static lookup soundness,
+    so the Component's `Assumptions` can be `True`. The four boolean
+    constraints (0, 1, 2, 4) are unused. -/
 theorem soundness_of_ranges (row : MemAlignByteRow FGL)
     (h_composed :
       row.composed_value

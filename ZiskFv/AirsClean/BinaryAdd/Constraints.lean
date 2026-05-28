@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.BinaryAdd.Spec
+import ZiskFv.AirsClean.RangeTables
 import Clean.Circuit.Basic
 import ZiskFv.Channels.OperationBus
 
@@ -22,7 +23,8 @@ No axioms. Pure operational declaration.
 namespace ZiskFv.AirsClean.BinaryAdd
 
 open Goldilocks
-open Circuit (assertZero)
+open Circuit (assertZero lookup)
+open ZiskFv.AirsClean.RangeTables
 open ZiskFv.Channels.OperationBus (OpBusChannel OpBusMessage)
 
 @[reducible]
@@ -44,6 +46,16 @@ def opBusMessageExpr (row : Var BinaryAddRow FGL) : OpBusMessage (Expression FGL
     assertion — no fresh witnesses introduced inside the circuit). -/
 @[circuit_norm]
 def main (row : Var BinaryAddRow FGL) : Circuit FGL Unit := do
+  -- range lookups (binary/pil/binary_add.pil: a/b are 32-bit limbs,
+  -- c_chunks are 16-bit limbs)
+  lookup (Table.fromStatic rangeTable32) row.a_0
+  lookup (Table.fromStatic rangeTable32) row.a_1
+  lookup (Table.fromStatic rangeTable32) row.b_0
+  lookup (Table.fromStatic rangeTable32) row.b_1
+  lookup (Table.fromStatic rangeTable16) row.c_chunks_0
+  lookup (Table.fromStatic rangeTable16) row.c_chunks_1
+  lookup (Table.fromStatic rangeTable16) row.c_chunks_2
+  lookup (Table.fromStatic rangeTable16) row.c_chunks_3
   -- constraint 0 (binary/pil/binary_add.pil:14)
   assertZero (row.cout_0 * (1 - row.cout_0))
   -- constraint 1 (binary/pil/binary_add.pil:19)

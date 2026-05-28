@@ -1,7 +1,6 @@
 import ZiskFv.AirsClean.BinaryAdd.Constraints
 import ZiskFv.AirsClean.BinaryAdd.Soundness
 import ZiskFv.AirsClean.Completeness
-import ZiskFv.Channels.RangeBusSoundness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -15,8 +14,8 @@ Packages ZisK's BinaryAdd AIR as a Clean `Air.Flat.Component`:
 * `circuit` — the `GeneralFormalCircuit`. `Assumptions := True` (plan D-2:
   a Component carries no soundness-assumptions — every fact comes from its
   constraints or its channel interactions). `soundness` discharges the
-  BinaryAdd relation from the 4 constraints (`soundness_of_ranges`), drawing
-  the 8 column range bounds from `range_bus_sound` (the range-checker bus).
+  BinaryAdd relation from the 4 constraints (`soundness_of_ranges`) and the
+  8 Clean static range lookups emitted by `main`.
   `completeness` is the declared axiom `binaryAdd_circuit_completeness`
   (`AirsClean/Completeness.lean`; plan D-COMPLETE — zisk-fv is soundness-only).
 * `component` — the `Air.Flat.Component`.
@@ -26,9 +25,8 @@ Packages ZisK's BinaryAdd AIR as a Clean `Air.Flat.Component`:
 `Assumptions := True` is what lets the Component compose into an ensemble
 non-vacuously (the `AssumptionsConsistency` obligation becomes trivial).
 Axioms in the closure: `binaryAdd_circuit_completeness` (completeness-
-direction, non-security-critical) and `range_bus_sound` (the range-checker
-bus — a pre-existing trust-ledger axiom, retired epic-terminal). No `sorry`;
-the `soundness` field is genuinely proved.
+direction, non-security-critical). No `sorry`; the `soundness` field is
+genuinely proved.
 -/
 
 namespace ZiskFv.AirsClean.BinaryAdd
@@ -36,11 +34,10 @@ namespace ZiskFv.AirsClean.BinaryAdd
 open Goldilocks
 open Air.Flat
 open ZiskFv.Channels.OperationBus (OpBusChannel)
-open ZiskFv.Channels.RangeBusSoundness (range_bus_sound)
 
 /-- BinaryAdd as a Clean `GeneralFormalCircuit`. `Assumptions := True` —
     the 8 column range bounds the soundness proof needs are supplied by
-    `range_bus_sound`, not by a caller assumption (plan D-2). -/
+    Clean static lookups, not by a caller assumption. -/
 def circuit : GeneralFormalCircuit FGL BinaryAddRow unit :=
   { binaryAddElaborated with
     Assumptions := fun _ _ => True
@@ -51,18 +48,12 @@ def circuit : GeneralFormalCircuit FGL BinaryAddRow unit :=
       circuit_proof_start
       refine ⟨?_, ?_⟩
       · -- the BinaryAdd algebraic relation: 4 assertZero constraints +
-        -- the 8 `bits(N)` column range bounds from the range-checker bus.
-        obtain ⟨hb0, hc0, hb1, hc1⟩ := h_holds
+        -- the 8 `bits(N)` column range bounds from Clean static lookups.
+        obtain ⟨ha0, ha1, hb0, hb1, hc0r, hc1r, hc2r, hc3r,
+          hb0eq, hc0eq, hb1eq, hc1eq⟩ := h_holds
         exact BinaryAdd.soundness_of_ranges _
-          (range_bus_sound _ (fun (r : BinaryAddRow FGL) _ => r.a_0) 32 trivial 0)
-          (range_bus_sound _ (fun (r : BinaryAddRow FGL) _ => r.a_1) 32 trivial 0)
-          (range_bus_sound _ (fun (r : BinaryAddRow FGL) _ => r.b_0) 32 trivial 0)
-          (range_bus_sound _ (fun (r : BinaryAddRow FGL) _ => r.b_1) 32 trivial 0)
-          (range_bus_sound _ (fun (r : BinaryAddRow FGL) _ => r.c_chunks_0) 16 trivial 0)
-          (range_bus_sound _ (fun (r : BinaryAddRow FGL) _ => r.c_chunks_1) 16 trivial 0)
-          (range_bus_sound _ (fun (r : BinaryAddRow FGL) _ => r.c_chunks_2) 16 trivial 0)
-          (range_bus_sound _ (fun (r : BinaryAddRow FGL) _ => r.c_chunks_3) 16 trivial 0)
-          hb0 hc0 hb1 hc1
+          ha0 ha1 hb0 hb1 hc0r hc1r hc2r hc3r
+          hb0eq hc0eq hb1eq hc1eq
       · -- the op-bus push's requirement: `OpBusChannel.Guarantees` is `True`
         intro _
         trivial
@@ -91,6 +82,10 @@ theorem component_interactionsWith_opBus :
     `whnf` explodes); the working idiom is to normalize its type with the
     `circuit_norm` simp set first, then feed it a constant-expression row. -/
 theorem spec_via_component (row : BinaryAddRow FGL)
+    (h_a0 : row.a_0.val < 2 ^ 32) (h_a1 : row.a_1.val < 2 ^ 32)
+    (h_b0 : row.b_0.val < 2 ^ 32) (h_b1 : row.b_1.val < 2 ^ 32)
+    (h_c0 : row.c_chunks_0.val < 2 ^ 16) (h_c1 : row.c_chunks_1.val < 2 ^ 16)
+    (h_c2 : row.c_chunks_2.val < 2 ^ 16) (h_c3 : row.c_chunks_3.val < 2 ^ 16)
     (h0 : row.cout_0 * (1 + -row.cout_0) = 0)
     (h1 : row.a_0 + row.b_0
             + -(row.cout_0 * 4294967296 + row.c_chunks_1 * 65536 + row.c_chunks_0) = 0)
@@ -110,6 +105,7 @@ theorem spec_via_component (row : BinaryAddRow FGL)
     row ?_ ?_).1
   · simp [circuit_norm]
   · simp only [circuit_norm]
-    exact ⟨h0, h1, h2, h3⟩
+    exact ⟨h_a0, h_a1, h_b0, h_b1, h_c0, h_c1, h_c2, h_c3,
+      h0, h1, h2, h3⟩
 
 end ZiskFv.AirsClean.BinaryAdd

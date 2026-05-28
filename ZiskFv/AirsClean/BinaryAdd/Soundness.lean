@@ -203,9 +203,9 @@ lemma carry_chain_hi_nat
     constraints + the 8 `bits(N)` column range bounds imply the Spec.
 
     This is the form the Clean `Component`'s `soundness` field consumes —
-    the range bounds arrive from `range_bus_sound` (the range-checker bus),
-    so the Component's `Assumptions` can be `True`. The carry-pin conjuncts
-    of `Assumptions` are *not* needed here. -/
+    the range bounds arrive from concrete Clean static lookups, so the
+    Component's `Assumptions` can be `True`. The carry-pin conjuncts of
+    `Assumptions` are *not* needed here. -/
 theorem soundness_of_ranges (row : BinaryAddRow FGL)
     (h_a0 : row.a_0.val < 2 ^ 32) (h_a1 : row.a_1.val < 2 ^ 32)
     (h_b0 : row.b_0.val < 2 ^ 32) (h_b1 : row.b_1.val < 2 ^ 32)

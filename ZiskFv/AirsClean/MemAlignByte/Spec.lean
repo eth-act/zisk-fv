@@ -33,17 +33,16 @@ byte/selector columns the AIR declares:
 * `byte_value.val < 256`      — `mem_align_byte.pil:30` (`bits(8)`).
 * `is_write.val < 2`          — `mem_align_byte.pil:70` (`bits(1)`).
 
-These are the standard range-checker-bus lookup bounds — the Clean
-Component's `soundness` discharges them from `range_bus_sound` (the
-range-checker bus, plan F-4: column bounds come from inside
-`soundness`, not from `Assumptions`). The `bus_byte` bound is the
-fact the LBU / LHU / LWU narrow-load consumers need
+These are standard range lookup bounds — the Clean Component's `soundness`
+discharges them from concrete `StaticTable` lookups emitted by the circuit,
+not from `range_bus_sound` or from `Assumptions`. The `bus_byte` bound is
+the fact the LBU / LHU / LWU narrow-load consumers need
 (`SubdoublewordLoadLowBytePinning`).
 
 ## Trust note
 
-No axioms (the `Spec` is a pure definition; `range_bus_sound` is
-consumed only inside the Component's `soundness` proof).
+No axioms (the `Spec` is a pure definition; the Component's range clauses
+come from constructive Clean static lookup soundness).
 -/
 
 namespace ZiskFv.AirsClean.MemAlignByte
@@ -92,7 +91,7 @@ def Spec (row : MemAlignByteRow FGL) : Prop :=
         + row.direct_value
   ∧ row.bus_byte
     = row.is_write * (row.written_byte_value - row.byte_value) + row.byte_value
-  -- `bits(N)` range bounds (from `range_bus_sound`, discharged inside
+  -- `bits(N)` range bounds (from Clean static lookups, discharged inside
   -- the Component's `soundness`):
   ∧ row.bus_byte.val < 2 ^ 8
   ∧ row.byte_value.val < 2 ^ 8

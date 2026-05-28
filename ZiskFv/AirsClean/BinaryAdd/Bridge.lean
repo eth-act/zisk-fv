@@ -121,13 +121,20 @@ theorem spec_of_valid
     isolating that adapter is the next C0d step. -/
 theorem spec_of_core_every_row_via_component
     (v : ZiskFv.Airs.BinaryAdd.Valid_BinaryAdd FGL FGL) (row : ℕ)
-    (h_chain : ZiskFv.Airs.BinaryAdd.core_every_row v row) :
+    (h_chain : ZiskFv.Airs.BinaryAdd.core_every_row v row)
+    (h_a_range : ZiskFv.Airs.BinaryAdd.a_chunks_in_range v row)
+    (h_b_range : ZiskFv.Airs.BinaryAdd.b_chunks_in_range v row)
+    (h_c_range : ZiskFv.Airs.BinaryAdd.c_chunks_in_range v row) :
     Spec (rowAt v row) := by
   obtain ⟨h_bool0, h_carry0, h_bool1, h_carry1⟩ := h_chain
+  obtain ⟨h_a0, h_a1⟩ := h_a_range
+  obtain ⟨h_b0, h_b1⟩ := h_b_range
+  obtain ⟨h_c0, h_c1, h_c2, h_c3⟩ := h_c_range
   simp only [ZiskFv.Airs.BinaryAdd.boolean_cout_0, ZiskFv.Airs.BinaryAdd.carry_chain_0,
     ZiskFv.Airs.BinaryAdd.boolean_cout_1, ZiskFv.Airs.BinaryAdd.carry_chain_1,
     sub_eq_add_neg] at h_bool0 h_carry0 h_bool1 h_carry1
-  exact spec_via_component (rowAt v row) h_bool0 h_carry0 h_bool1 h_carry1
+  exact spec_via_component (rowAt v row) h_a0 h_a1 h_b0 h_b1 h_c0 h_c1 h_c2 h_c3
+    h_bool0 h_carry0 h_bool1 h_carry1
 
 /-- **C0d re-root — the BitVec adapter.** Same statement as the hand-rolled
     `Airs.Binary.BinaryAddPackedCorrect.binary_add_chunks_eq_bv_add`, so it
@@ -150,6 +157,7 @@ theorem binary_add_chunks_eq_bv_add_via_component
           + (v.c_chunks_2 row).val * 4294967296
           + (v.c_chunks_3 row).val * 281474976710656) := by
   have h_spec := spec_of_core_every_row_via_component v row h_chain
+    h_a_range h_b_range h_c_range
   simp only [Spec, cPacked, packed32, Nat.reducePow] at h_spec
   obtain ⟨h_a0, h_a1⟩ := h_a_range
   obtain ⟨h_b0, h_b1⟩ := h_b_range

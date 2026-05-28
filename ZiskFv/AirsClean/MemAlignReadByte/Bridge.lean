@@ -1,5 +1,6 @@
 import ZiskFv.AirsClean.MemAlignReadByte.Circuit
 import ZiskFv.Airs.MemAlignReadByte
+import ZiskFv.Channels.RangeBusSoundness
 
 /-!
 # `Valid_MemAlignReadByte` ↔ `MemAlignReadByteRow` compatibility + Component re-root
@@ -22,6 +23,7 @@ already in every load opcode's closure.
 namespace ZiskFv.AirsClean.MemAlignReadByte
 
 open Goldilocks
+open ZiskFv.Channels.RangeBusSoundness (range_bus_sound)
 
 
 /-- Project a `Valid_MemAlignReadByte` at row `r` into a Clean
@@ -96,6 +98,7 @@ theorem byte_value_in_range_via_component
   -- each `rowAt` field is `@[reducible]`-defeq to `v.<col> r`.
   have h_spec : Spec (rowAt v r) :=
     spec_via_component (rowAt v r) h_composed h_b0 h_b1 h_b2
+      (range_bus_sound (rowAt v r) (fun row _ => row.byte_value) 8 trivial 0)
   exact h_spec.2
 
 end ZiskFv.AirsClean.MemAlignReadByte

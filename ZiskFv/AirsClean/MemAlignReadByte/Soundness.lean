@@ -10,8 +10,8 @@ b_factor + value_8b * v8_factor + value_16b * v16_factor) = 0`) via
 `linear_combination` — no carry-chain reasoning; the constraint *is*
 the Spec clause modulo `linear_combination` reshuffling. The `bits(8)`
 range clause is supplied to `soundness_of_ranges` as an explicit
-hypothesis — the Clean Component's `soundness` field draws it from
-`range_bus_sound` (the range-checker bus, plan F-4).
+hypothesis — the Clean Component's `soundness` field now draws it from
+a concrete Clean static lookup emitted by `main`.
 
 ## Trust note
 
@@ -29,10 +29,9 @@ open Goldilocks
     the range bound passes straight through.
 
     This is the form the Clean `Component`'s `soundness` field
-    consumes — the range bound arrives from `range_bus_sound` (the
-    range-checker bus), so the Component's `Assumptions` can be `True`
-    (plan D-2 / F-4). The three boolean selector constraints are
-    unused. -/
+    consumes — the range bound arrives from static lookup soundness, so
+    the Component's `Assumptions` can be `True` (plan D-2 / F-4). The
+    three boolean selector constraints are unused. -/
 theorem soundness_of_ranges (row : MemAlignReadByteRow FGL)
     (h_composed :
       row.composed_value

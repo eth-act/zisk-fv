@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.MemAlignReadByte.Spec
+import ZiskFv.AirsClean.RangeTables
 import Clean.Circuit.Basic
 import ZiskFv.Channels.MemoryBus
 
@@ -22,7 +23,8 @@ No axioms. Pure operational declaration.
 namespace ZiskFv.AirsClean.MemAlignReadByte
 
 open Goldilocks
-open Circuit (assertZero)
+open Circuit (assertZero lookup)
+open ZiskFv.AirsClean.RangeTables
 open ZiskFv.Channels.MemoryBus (MemBusChannel MemBusMessage)
 
 @[reducible]
@@ -40,6 +42,8 @@ def memBusMessageExpr (row : Var MemAlignReadByteRow FGL) :
     assertion — no fresh witnesses introduced inside the circuit). -/
 @[circuit_norm]
 def main (row : Var MemAlignReadByteRow FGL) : Circuit FGL Unit := do
+  -- range lookup for the byte value bits declaration
+  lookup (Table.fromStatic rangeTable8) row.byte_value
   -- constraint 0 (mem/pil/mem_align_byte.pil:35)
   assertZero (row.sel_high_4b * (1 - row.sel_high_4b))
   -- constraint 1 (mem/pil/mem_align_byte.pil:36)

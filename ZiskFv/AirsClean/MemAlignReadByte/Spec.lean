@@ -21,17 +21,16 @@ column the AIR declares:
 
 * `byte_value.val < 256`      — `mem_align_byte.pil:30` (`bits(8)`).
 
-This is the standard range-checker-bus lookup bound — the Clean
-Component's `soundness` discharges it from `range_bus_sound` (the
-range-checker bus, plan F-4: column bounds come from inside
-`soundness`, not from `Assumptions`). The `byte_value` bound is the
-fact the LBU / LHU / LWU narrow-load consumers need
+This is a standard range lookup bound — the Clean Component's `soundness`
+discharges it from a concrete `StaticTable` lookup emitted by the circuit,
+not from `range_bus_sound` or from `Assumptions`. The `byte_value` bound is
+the fact the LBU / LHU / LWU narrow-load consumers need
 (`SubdoublewordLoadLowBytePinning.read_byte_value_lt`).
 
 ## Trust note
 
-No axioms (the `Spec` is a pure definition; `range_bus_sound` is
-consumed only inside the Component's `soundness` proof).
+No axioms (the `Spec` is a pure definition; the Component's range clause
+comes from constructive Clean static lookup soundness).
 -/
 
 namespace ZiskFv.AirsClean.MemAlignReadByte
@@ -70,13 +69,13 @@ def Assumptions (row : MemAlignReadByteRow FGL) : Prop :=
     `composed_value` clause restates `mem_align_byte.pil:57`; the
     `byte_value` bound restates the `bits(8)` declaration at
     `mem_align_byte.pil:30` and is discharged inside the Component's
-    `soundness` from `range_bus_sound`. -/
+    `soundness` from a Clean static lookup. -/
 def Spec (row : MemAlignReadByteRow FGL) : Prop :=
   row.composed_value
     = row.byte_value * byte_value_factor row.sel_high_2b row.sel_high_b
     + row.value_8b * value_8b_factor row.sel_high_2b row.sel_high_b
     + row.value_16b * value_16b_factor row.sel_high_2b
-  -- `bits(8)` range bound (from `range_bus_sound`, discharged inside
+  -- `bits(8)` range bound (from a Clean static lookup, discharged inside
   -- the Component's `soundness`):
   ∧ row.byte_value.val < 2 ^ 8
 

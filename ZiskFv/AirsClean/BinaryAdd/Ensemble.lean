@@ -39,11 +39,11 @@ def opBusConsumer : GeneralFormalCircuit FGL OpBusMessage unit where
 
     `toFormal`'s `AssumptionsConsistency` obligation discharges because both
     Components carry `Assumptions := True` (plan D-2 — BinaryAdd's column
-    range bounds are sourced inside `soundness` from `range_bus_sound`, not
-    from a caller assumption). The resulting ensemble soundness is genuine —
-    *not* vacuous: its trust closure is `range_bus_sound` (a documented
-    pre-existing axiom) + the per-Component completeness axiom, no `sorry`,
-    no `False`-style assumption. This is the C0c GO criterion met. -/
+    range bounds are sourced inside `soundness` from concrete Clean static
+    range lookups, not from a caller assumption). The resulting ensemble
+    soundness is genuine — not vacuous: its ZiskFv closure contains the
+    per-Component completeness axiom, no `range_bus_sound`, no `sorry`, and
+    no `False`-style assumption. -/
 def binaryAddEnsemble : FormalEnsemble FGL unit :=
   SoundEnsemble.empty FGL unit
     |>.addTable component

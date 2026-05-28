@@ -1,7 +1,6 @@
 import ZiskFv.AirsClean.MemAlignReadByte.Constraints
 import ZiskFv.AirsClean.MemAlignReadByte.Soundness
 import ZiskFv.AirsClean.Completeness
-import ZiskFv.Channels.RangeBusSoundness
 import Clean.Air.FlatComponent
 import Clean.Utils.Tactics
 
@@ -19,7 +18,7 @@ Packages ZisK's MemAlignReadByte AIR as a Clean `Air.Flat.Component`:
   `soundness` proof needs none; the algebraic Spec clause follows from the
   definitional `composed_value` constraint alone). `soundness` discharges
   the MemAlignReadByte algebraic relation (`MemAlignReadByte.soundness`),
-  drawing the `byte_value` `bits(8)` range bound from `range_bus_sound`.
+  drawing the `byte_value` `bits(8)` range bound from a Clean static lookup.
   `completeness` is the declared axiom `memAlignReadByte_circuit_completeness`
   (`AirsClean/Completeness.lean`; plan D-COMPLETE — zisk-fv is
   soundness-only).
@@ -30,32 +29,30 @@ Packages ZisK's MemAlignReadByte AIR as a Clean `Air.Flat.Component`:
 `Assumptions := True` is what lets the Component compose into an ensemble
 non-vacuously (the `AssumptionsConsistency` obligation becomes trivial).
 Axioms in the closure: `memAlignReadByte_circuit_completeness` (completeness-
-direction, non-security-critical) and `range_bus_sound` (the range-checker
-bus — a pre-existing trust-ledger axiom, retired epic-terminal). NO new
-soundness axiom — the `soundness` field is genuinely proved (the algebraic
-relation follows from the definitional `assertZero` with the single range
-clause from `range_bus_sound`). No `sorry`.
+direction, non-security-critical). NO new soundness axiom — the `soundness`
+field is genuinely proved (the algebraic relation follows from the
+definitional `assertZero` with the single range clause from a Clean static
+lookup). No `sorry`.
 -/
 
 namespace ZiskFv.AirsClean.MemAlignReadByte
 
 open Goldilocks
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
-open ZiskFv.Channels.RangeBusSoundness (range_bus_sound)
 open Air.Flat
 
 set_option maxHeartbeats 1000000 in
 /-- MemAlignReadByte as a Clean `GeneralFormalCircuit`. `Assumptions := True`
     — the algebraic `Spec` clause follows from the definitional
     `composed_value` `assertZero` constraint alone; the `bits(8)` range
-    clause comes from `range_bus_sound` (the range-checker bus) *inside*
+    clause comes from a Clean static lookup emitted by `main` inside
     `soundness`, so no caller assumption is needed (plan D-2 / F-4).
 
     The `soundness` field is **adapted from** `MemAlignReadByte.soundness_of_ranges`
     (`Soundness.lean`) — same `linear_combination` algebraic discharge,
     reshaped to consume the `circuit_norm`-normalized constraints (in
-    `a + -b` form) directly, with the range clause fed from
-    `range_bus_sound`. The three boolean selector constraints (0, 1, 2)
+    `a + -b` form) directly, with the range clause fed from static lookup
+    soundness. The three boolean selector constraints (0, 1, 2)
     are unused. -/
 def circuit : GeneralFormalCircuit FGL MemAlignReadByteRow unit :=
   { memAlignReadByteElaborated with
@@ -65,33 +62,17 @@ def circuit : GeneralFormalCircuit FGL MemAlignReadByteRow unit :=
     ProverSpec := fun _ _ _ => True
     soundness := by
       circuit_proof_start
-      -- The input row reassembled from its destructured field
-      -- variables — `range_bus_sound` consumes a genuine column
-      -- projection off it.
-      set inputRow : MemAlignReadByteRow FGL :=
-        { sel_high_4b := input_sel_high_4b, sel_high_2b := input_sel_high_2b,
-          sel_high_b := input_sel_high_b, direct_value := input_direct_value,
-          composed_value := input_composed_value,
-          value_16b := input_value_16b, value_8b := input_value_8b,
-          byte_value := input_byte_value, addr_w := input_addr_w,
-          step := input_step } with _
       refine ⟨?_, ?_⟩
       · -- the MemAlignReadByte algebraic relation: the definitional
         -- `composed_value` constraint implies the algebraic Spec clause;
-        -- the `bits(8)` range clause comes from `range_bus_sound` over a
-        -- genuine `MemAlignReadByteRow` column projection. The 3 boolean
-        -- constraints (0, 1, 2) are unused.
-        obtain ⟨_h0, _h1, _h2, h_composed⟩ := h_holds
+        -- the `bits(8)` range clause comes from the static range lookup
+        -- prepended to `main`. The 3 boolean constraints (0, 1, 2) are
+        -- unused.
+        obtain ⟨h_byte_range, _h0, _h1, _h2, h_composed⟩ := h_holds
         simp only [byte_value_factor, value_8b_factor, value_16b_factor]
         refine ⟨?_, ?_⟩
         · linear_combination h_composed
-        -- The `bits(8)` range clause, sourced from the range-checker
-        -- bus. `range_bus_sound` is applied to a genuine
-        -- `MemAlignReadByteRow` column projection — the witness row is
-        -- the input reassembled from its `circuit_proof_start`-
-        -- destructured fields, so `col row 0` is definitionally the
-        -- column value.
-        · exact range_bus_sound inputRow (fun r _ => r.byte_value) 8 trivial 0
+        · exact h_byte_range
       · -- the memory-bus push's requirement: `MemBusChannel.Guarantees`
         -- is `True`.
         intro _
@@ -131,7 +112,8 @@ theorem spec_via_component (row : MemAlignReadByteRow FGL)
             + row.value_16b * value_16b_factor row.sel_high_2b) = 0)
     (h_b0 : row.sel_high_4b * (1 - row.sel_high_4b) = 0)
     (h_b1 : row.sel_high_2b * (1 - row.sel_high_2b) = 0)
-    (h_b2 : row.sel_high_b * (1 - row.sel_high_b) = 0) :
+    (h_b2 : row.sel_high_b * (1 - row.sel_high_b) = 0)
+    (h_byte_value_range : row.byte_value.val < 2 ^ 8) :
     Spec row := by
   have hsound := circuit.soundness
   simp only [GeneralFormalCircuit.Soundness, circuit, memAlignReadByteElaborated,
@@ -150,6 +132,6 @@ theorem spec_via_component (row : MemAlignReadByteRow FGL)
     row ?_ ?_).1
   · simp [circuit_norm]
   · simp only [circuit_norm]
-    exact ⟨h_b0, h_b1, h_b2, h_composed⟩
+    exact ⟨h_byte_value_range, h_b0, h_b1, h_b2, h_composed⟩
 
 end ZiskFv.AirsClean.MemAlignReadByte
