@@ -990,4 +990,153 @@ theorem exists_mem_provider_row_msg_eq_of_active_main_table_interaction
     right
     exact ⟨providerRow, h_providerRow, h_main, h_providerEval⟩
 
+/-- Spec-carrying variant of
+    `exists_mem_provider_row_msg_eq_of_active_main_table_interaction`.
+
+This is structural unpacking only: `witness.Spec` already states per-row
+specification for every table in the full ensemble, and this lemma threads it
+to the concrete Main/provider rows selected by balance. -/
+theorem exists_mem_provider_row_msg_eq_spec_of_active_main_table_interaction
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    (h_mainComponent :
+      mainTable.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ mainTable.interactionsWith MemBusChannel.toRaw)
+    (h_active : mainInteraction.mult = -1) :
+    ∃ mainRow ∈ mainTable.table,
+      mainTable.component.Spec (mainTable.environment mainRow)
+        ∧ ∃ providerInteraction ∈ witness.interactionsWith MemBusChannel.toRaw,
+          providerInteraction.msg = mainInteraction.msg
+            ∧ providerInteraction.mult ≠ -1
+            ∧ providerInteraction.mult ≠ 0
+            ∧ ∃ providerTable ∈ witness.allTables,
+              providerInteraction ∈ providerTable.interactionsWith MemBusChannel.toRaw
+                ∧
+                ((∃ providerRow ∈ providerTable.table,
+                    providerTable.component.Spec (providerTable.environment providerRow)
+                      ∧ providerTable.component =
+                        ZiskFv.AirsClean.MemAlignReadByte.component
+                      ∧ providerInteraction =
+                        ((MemBusChannel.pushed
+                          (ZiskFv.AirsClean.MemAlignReadByte.memBusMessageExpr
+                            ZiskFv.AirsClean.MemAlignReadByte.component.rowInputVar)).toRaw).eval
+                          (providerTable.environment providerRow))
+                  ∨ (∃ providerRow ∈ providerTable.table,
+                    providerTable.component.Spec (providerTable.environment providerRow)
+                      ∧ providerTable.component = ZiskFv.AirsClean.MemAlignByte.component
+                      ∧ providerInteraction =
+                        ((MemBusChannel.pushed
+                          (ZiskFv.AirsClean.MemAlignByte.memBusMessageExpr
+                            ZiskFv.AirsClean.MemAlignByte.component.rowInputVar)).toRaw).eval
+                          (providerTable.environment providerRow))
+                  ∨ (∃ providerRow ∈ providerTable.table,
+                    providerTable.component.Spec (providerTable.environment providerRow)
+                      ∧ providerTable.component = ZiskFv.AirsClean.MemAlign.component
+                      ∧ providerInteraction =
+                        ((MemBusChannel.emitted
+                          (ZiskFv.AirsClean.MemAlign.component.rowInputVar.sel_prove
+                            - ZiskFv.AirsClean.MemAlign.selAssumeExpr
+                              ZiskFv.AirsClean.MemAlign.component.rowInputVar)
+                          (ZiskFv.AirsClean.MemAlign.memBusMessageExpr
+                            ZiskFv.AirsClean.MemAlign.component.rowInputVar)).toRaw).eval
+                          (providerTable.environment providerRow))
+                  ∨ (∃ providerRow ∈ providerTable.table,
+                    providerTable.component.Spec (providerTable.environment providerRow)
+                      ∧ providerTable.component = ZiskFv.AirsClean.Mem.componentWithMemBus
+                      ∧ providerInteraction =
+                        ((MemBusChannel.emitted
+                          ZiskFv.AirsClean.Mem.componentWithMemBus.rowInputVar.sel
+                          (ZiskFv.AirsClean.Mem.memBusMessageExpr
+                            ZiskFv.AirsClean.Mem.componentWithMemBus.rowInputVar)).toRaw).eval
+                          (providerTable.environment providerRow))
+                  ∨ (∃ providerRow ∈ providerTable.table,
+                    providerTable.component.Spec (providerTable.environment providerRow)
+                      ∧ providerTable.component =
+                        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program
+                      ∧
+                      (providerInteraction =
+                          ((MemBusChannel.emitted
+                            (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar.rom.a_src_mem
+                              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar.rom.a_src_reg))
+                            (ZiskFv.AirsClean.Main.aMemMessageExpr
+                              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar)).toRaw).eval
+                            (providerTable.environment providerRow)
+                        ∨ providerInteraction =
+                          ((MemBusChannel.emitted
+                            (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar.rom.b_src_mem
+                              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar.rom.b_src_ind
+                              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar.rom.b_src_reg))
+                            (ZiskFv.AirsClean.Main.bMemMessageExpr
+                              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar)).toRaw).eval
+                            (providerTable.environment providerRow)
+                        ∨ providerInteraction =
+                          ((MemBusChannel.emitted
+                            (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar.rom.store_mem
+                              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar.rom.store_ind
+                              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar.rom.store_reg))
+                            (ZiskFv.AirsClean.Main.cMemMessageExpr
+                              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar)).toRaw).eval
+                            (providerTable.environment providerRow)))) := by
+  obtain ⟨mainRow, h_mainRow, providerInteraction, h_provider_witness, h_msg,
+      h_nonpull, h_nonzero, providerTable, h_providerTable,
+      h_providerInteraction, h_providerComponent⟩ :=
+    exists_mem_provider_row_msg_eq_of_active_main_table_interaction
+      witness h_balanced h_mainTable h_mainComponent h_mainInteraction h_active
+  have h_mainSpec :
+      mainTable.component.Spec (mainTable.environment mainRow) :=
+    h_specs mainTable h_mainTable mainRow h_mainRow
+  refine ⟨mainRow, h_mainRow, h_mainSpec, providerInteraction,
+    h_provider_witness, h_msg, h_nonpull, h_nonzero, providerTable,
+    h_providerTable, h_providerInteraction, ?_⟩
+  have h_providerSpecs : providerTable.Spec :=
+    h_specs providerTable h_providerTable
+  rcases h_providerComponent with h_marb | h_mab | h_memAlign | h_mem | h_main
+  · rcases h_marb with ⟨providerRow, h_providerRow, h_component, h_eval⟩
+    left
+    exact ⟨providerRow, h_providerRow,
+      h_providerSpecs providerRow h_providerRow, h_component, h_eval⟩
+  · rcases h_mab with ⟨providerRow, h_providerRow, h_component, h_eval⟩
+    right
+    left
+    exact ⟨providerRow, h_providerRow,
+      h_providerSpecs providerRow h_providerRow, h_component, h_eval⟩
+  · rcases h_memAlign with ⟨providerRow, h_providerRow, h_component, h_eval⟩
+    right
+    right
+    left
+    exact ⟨providerRow, h_providerRow,
+      h_providerSpecs providerRow h_providerRow, h_component, h_eval⟩
+  · rcases h_mem with ⟨providerRow, h_providerRow, h_component, h_eval⟩
+    right
+    right
+    right
+    left
+    exact ⟨providerRow, h_providerRow,
+      h_providerSpecs providerRow h_providerRow, h_component, h_eval⟩
+  · rcases h_main with ⟨providerRow, h_providerRow, h_component, h_eval⟩
+    right
+    right
+    right
+    right
+    exact ⟨providerRow, h_providerRow,
+      h_providerSpecs providerRow h_providerRow, h_component, h_eval⟩
+
 end ZiskFv.AirsClean.FullEnsemble

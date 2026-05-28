@@ -75,7 +75,7 @@ a dep). Current working status after T5:
 
 ## Active phase
 
-### T6 — Range-bus terminal phase (next)
+### T7 — Final ensemble re-root and deletion pass
 
 T4 (memory-family terminal phase) is **CLOSED** as of commit `f8528f2`
 (2026-05-27). All load/store canonical paths route through Clean
@@ -113,7 +113,8 @@ defect gating, retired every remaining class-#6b Arith dynamic source axiom,
 and removed the DIV/REM transpiler contracts from the trust ledger while
 those opcodes are blocked by
 `ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`. The active phase is now
-**T6 — Range-bus terminal phase**.
+**T7 — Final ensemble re-root and deletion pass**. T6's range-bus terminal
+retirement remains an open dependency for final T7 closure.
 
 ### C7 — CLOSED (axiom retirements landed in T4-purge commits)
 
@@ -1103,6 +1104,11 @@ memory interaction to concrete provider table rows with same-message evidence,
 again keeping the unified Main branch explicit. This is the row-native hook
 needed before load/store canonical paths can stop depending on the
 family-local memory ensemble.
+The spec-carrying variant,
+`exists_mem_provider_row_msg_eq_spec_of_active_main_table_interaction`, now
+threads `witness.Spec` through that bridge to the selected Main row and each
+selected provider row. This is structural unpacking only: it reuses the
+full-ensemble `Spec` fact rather than adding any row-local promise.
 The current ArithDiv carry-chain component and memory-only tables are proved
 to expose no operation-bus interactions in this ensemble; DIV/REM op-bus
 surfaces still depend on their dedicated defect-gated route.
@@ -1118,7 +1124,8 @@ Checklist:
   lemmas, plus same-message op-bus counterpart classification with
   unified-Main self-provider exclusion and memory-bus counterpart
   classification / row projection with the honest unified-Main case still
-  visible. Constructibility and canonical re-root remain open.
+  visible. The memory row bridge now also carries row-local `Spec` facts from
+  `witness.Spec`. Constructibility and canonical re-root remain open.
 - ☐ T7.2 prove constructibility: real ZisK traces produce an
   `EnsembleWitness` satisfying constraints and balanced channels, modulo
   explicit `h_known_bugs`.
