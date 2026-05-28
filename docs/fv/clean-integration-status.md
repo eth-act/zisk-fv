@@ -1109,10 +1109,11 @@ The spec-carrying variant,
 threads `witness.Spec` through that bridge to the selected Main row and each
 selected provider row. This is structural unpacking only: it reuses the
 full-ensemble `Spec` fact rather than adding any row-local promise.
-The unified Main and Mem component modules also expose direct projection
-lemmas (`componentWithRomMemAndOpBus_spec` and
-`spec_of_componentWithMemBus_spec`) from generic Clean component specs to the
-concrete row specs expected by the existing load/store bridge layer.
+The unified Main, Mem, and MemAlign-family component modules also expose
+direct projection lemmas from generic Clean component specs to the concrete
+row specs expected by the existing load/store bridge layer:
+`componentWithRomMemAndOpBus_spec`, `spec_of_componentWithMemBus_spec`, and
+the MemAlign-family `component_spec` lemmas.
 The current ArithDiv carry-chain component and memory-only tables are proved
 to expose no operation-bus interactions in this ensemble; DIV/REM op-bus
 surfaces still depend on their dedicated defect-gated route.
@@ -1129,8 +1130,9 @@ Checklist:
   unified-Main self-provider exclusion and memory-bus counterpart
   classification / row projection with the honest unified-Main case still
   visible. The memory row bridge now also carries row-local `Spec` facts from
-  `witness.Spec`, with projection lemmas for unified Main and Mem concrete row
-  specs. Constructibility and canonical re-root remain open.
+  `witness.Spec`, with projection lemmas for unified Main, Mem, and
+  MemAlign-family concrete row specs. Constructibility and canonical re-root
+  remain open.
 - ☐ T7.2 prove constructibility: real ZisK traces produce an
   `EnsembleWitness` satisfying constraints and balanced channels, modulo
   explicit `h_known_bugs`.

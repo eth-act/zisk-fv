@@ -61,6 +61,12 @@ def circuit : GeneralFormalCircuit FGL MemAlignRow unit :=
 
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
 
+/-- Project the generic Clean component `Spec` to the concrete MemAlign row
+    `Spec`. -/
+theorem component_spec (env : Environment FGL) :
+    component.Spec env = Spec (component.rowInput env) := by
+  rfl
+
 /-- The MemAlign component exposes exactly its one memory-bus interaction. -/
 theorem component_interactionsWith_memBus :
     component.operations.interactionsWith MemBusChannel.toRaw =
