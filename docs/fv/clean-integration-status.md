@@ -74,24 +74,25 @@ closure.
 
 ## Active phase
 
-### C8 — Mem (chunk-shape cutover Phase 2 complete; provider-wiring Phase 3 next)
+### T5 — Arith-family terminal phase (next)
 
-C8 Phase 2 completed 2026-05-26: `Interaction.MemoryBusEntry` migrated from
-12-slot byte-lane to 6-slot chunk shape matching the PIL emission
-exactly (`mem.pil:436`). ~60 files across the codebase rewired through
-`byteAt e i` (in `Channels/MemoryBusBytes.lean`) for byte-addressed Sail
-memory access, backed by the proven `u64_toBV_chunks_eq_ofNat_fgl_val`
-bridge. Trust footprint unchanged at 88 axioms. Branch HEAD `9308391`.
-This unblocks the actual C10 memory-ensemble work because Mem-to-bus
-correspondence is now a direct chunk equality rather than a synthetic
-byte-decomposition witness.
+T4 (memory-family terminal phase) is **CLOSED** as of commit `f8528f2`
+(2026-05-27). All load/store canonical paths route through Clean
+structural memory witnesses; 7 memory-bus / MemAlign trust axioms
+retired from the global closure. Trust ledger: 82 source axioms /
+80-name compliance closure. `lake build` + V1 + V2 all green.
 
-C8 Phase 3 (Mem as memory-bus provider via Clean balance) is the next
-in-progress concern; it needs design work for how Main's consumer-side
-memory-bus emissions compose against Mem's provider in Clean's balance
-framework. The load/store `MemBridge` and MemAlign axioms targeted by
-T4.7/T4.8 retire in T4; `main_store_pc_emission_bundle` and
-`main_external_arith_emission_bundle` are later T6/T7 and T5 targets.
+C8 (chunk-shape `MemoryBusEntry` cutover) and T4.0 (ZisK instruction
+ROM modeling) were the enabling prerequisites and are also closed.
+
+The next active phase is **T5 — Arith-family terminal phase**: route
+ArithMul/ArithDiv through lookup-aware Clean components + a static
+ArithTable provider, retire `arith_mul_table_lookup_sound` /
+`arith_div_table_lookup_sound` and the remaining `arith_table_*`
+facts, and keep the signed-MUL/MULH/MULHSU defects explicit through
+`h_known_bugs`. `main_external_arith_emission_bundle` (still in the
+closure) is a T5 target; `main_store_pc_emission_bundle` is a T6/T7
+target.
 
 ### C7 — CLOSED (axiom retirements landed in T4-purge commits)
 
@@ -885,18 +886,27 @@ Checklist:
 
 #### T4 checklist (original):
 
-- 🟡 T4.1 build the memory-family ensemble:
+- 🪓 T4.1 build the memory-family ensemble:
   Main/Mem/MemAlignByte/MemAlignReadByte/MemAlign/static ROM providers.
-  Doubleword Main+Mem half is 🪓 as of commit `5fad84d`
-  (`MemFamily/memBusEnsemble`); `mainWithRomAndMemBus_soundness` →
+  Doubleword Main+Mem half landed at commit `5fad84d`
+  (`MemFamily/memBusEnsemble`); the full ensemble (Main + Mem +
+  MemAlign + MemAlignByte + MemAlignReadByte) was completed at
+  commit `f8528f2`. `mainWithRomAndMemBus_soundness` →
   `Main.componentWithRomAndMemBus` wrapped via the documented
   `mainWithRomAndMemBus_circuit_completeness` axiom (V2 tolerates it
-  through `trust/tolerated-completeness-axioms.txt` until T4.4 routes
-  the global theorem through this Component). The MemAlign* half (for
-  sub-doubleword loads on `MemAlignBusChannel`) is a parallel deliverable
-  still ☐.
-- ☐ T4.2 prove Clean balance gives concrete memory provider rows matching
-  active Main memory interactions.
+  through `trust/tolerated-completeness-axioms.txt`). The
+  MemAlign* sub-doubleword path is handled through the
+  `SubdoublewordLoadProviderWitness` structural witness rather than
+  a separate `MemAlignBusChannel` ensemble (a valid alternative that
+  exposes the selected provider row + ROM-derived row facts
+  explicitly).
+- 🪓 T4.2 prove Clean balance gives concrete memory provider rows matching
+  active Main memory interactions. Done at commit `f8528f2`:
+  `MemFamily/Balance.lean` now carries the full projection chain —
+  `memBus_balanced_of_witness`,
+  `exists_matching_nonzero_nonpull_of_active_main_interaction`,
+  per-component row extractors (Main/Mem/MemAlign/MemAlignByte/
+  MemAlignReadByte), and `exists_matching_component_of_active_main_interaction`.
 - 🪓 T4.3 signed-load spike: prove the `LB` chain from memory provider row
   bytes to lookup-aware BinaryExtension sign-extension row to Sail result.
 - 🪓 T4.4 prove row-native load routes for
