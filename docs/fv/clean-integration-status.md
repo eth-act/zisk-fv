@@ -147,8 +147,10 @@ the Clean `b_0 < 2^24` witness plus exact byte-table facts instead of using
 SLL range cutover projects `a`-byte bounds, `c`-lane bounds, and `c`-lane
 low/high sum bounds from the same exact static BinaryExtensionTable provider
 facts. SLL is now the first shift closure to drop the generic
-`range_bus_sound` axiom; the remaining shift opcodes still need the same
-static-provider c-lane bound route.
+`range_bus_sound` axiom. SRL follows the same route with SRL-specific
+static-table c-lane and c-sum bounds, so both 64-bit logical register shifts
+now close without the generic range-bus axiom. The remaining shift opcodes
+still need the same static-provider c-lane bound route.
 
 The first Arith-family T6 prep exposes the ArithMul chunk `bits(16)` checks
 through Clean instead of the generic range-bus axiom. `ArithMul.mainWithChunkRanges`

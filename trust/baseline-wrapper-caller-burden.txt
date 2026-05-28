@@ -986,7 +986,7 @@ ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 008 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 009 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 010 promises [bridge] ZiskFv.EquivCore.Promises.RTypePromises state srl_input.r1_val srl_input.r2_val
 ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 011 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SRL
-ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 012 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 012 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComp
 ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 013 h_table_spec [other] providerTable.Spec
 ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 014 h_provider_row [other] providerRow ∈ providerTable.table
 ZiskFv.Compliance.Wrappers.Srl.equiv_SRL 015 h_match [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Channels.OperationBus.OpBusMessa
