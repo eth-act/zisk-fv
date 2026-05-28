@@ -114,6 +114,32 @@ theorem ExternalArithMemoryWitness.c_lane_vals
   exact ⟨by simpa [ZiskFv.Airs.MemoryBus.memory_entry_lo] using congrArg Fin.val h0,
     by simpa [ZiskFv.Airs.MemoryBus.memory_entry_hi] using congrArg Fin.val h1⟩
 
+/-- Structural witness for an internal store-PC rd-write on Main's unified
+memory channel.
+
+This exposes the selected Clean Main `c` memory row and its legacy-entry
+match. It is the structural-unpacking replacement for
+`main_store_pc_emission_bundle` on LUI/AUIPC/JAL/JALR-style rows; opcode
+mode pins still live outside this witness. -/
+structure StorePcMemoryWitness
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
+    (e_rd : Interaction.MemoryBusEntry FGL) where
+  row : ZiskFv.AirsClean.Main.MainRowWithRom FGL
+  row_eq : row.core = ZiskFv.AirsClean.Main.rowAt main r_main
+  rd_write_match :
+    ZiskFv.Airs.MemoryBus.matches_memory_entry e_rd
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (ZiskFv.AirsClean.Main.cMemMessage row) 1 1)
+
+theorem StorePcMemoryWitness.lanes
+    {main : Valid_Main FGL FGL} {r_main : ℕ}
+    {e_rd : Interaction.MemoryBusEntry FGL}
+    (w : StorePcMemoryWitness main r_main e_rd) :
+    ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo main r_main e_rd
+    ∧ ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi main r_main e_rd :=
+  ZiskFv.AirsClean.Main.store_pc_lanes_of_message_match_valid
+    main r_main w.row e_rd w.row_eq w.rd_write_match
+
 /-! ## ArithTable lookup witnesses -/
 
 /-- Lookup-aware Clean witness for a selected ArithMul row's

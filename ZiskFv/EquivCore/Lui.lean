@@ -16,6 +16,7 @@ import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.EquivCore.Bridge.ControlFlow
 import ZiskFv.EquivCore.WriteValueProofs.JumpUType
 import ZiskFv.EquivCore.Promises.UType
+import ZiskFv.Compliance.SharedBundles
 
 /-!
 End-to-end theorem for RV64 LUI. Combines:
@@ -94,6 +95,7 @@ theorem equiv_LUI
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     (nextPC_val : BitVec 64)
     -- Structural promise bundle (11 fields, see Promises/UType.lean).
     (promises : ZiskFv.EquivCore.Promises.UTypePromises
@@ -111,11 +113,17 @@ theorem equiv_LUI
   obtain ⟨h_imm_lo_nat, h_imm_hi_nat⟩ :=
     ZiskFv.EquivCore.Bridge.ControlFlow.lui_discharge_full
       m r_main next_pc imm h_circuit
-  -- Discharge `h_lane_rd` via `main_store_pc_emission_bundle` (trust
-  -- class #4).
-  have h_lane_rd :=
-    ZiskFv.EquivCore.Bridge.ControlFlow.lui_discharge_lanes
-      m r_main next_pc e_rd h_circuit h_rd_mult h_rd_as
+  -- Discharge `h_lane_rd` from the selected Clean Main `cMemMessage`
+  -- row, rather than through `main_store_pc_emission_bundle`.
+  have h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main e_rd := by
+    obtain ⟨h_lo, h_hi⟩ := store_pc_mem.lanes
+    obtain ⟨_h_subset, h_mode⟩ := h_circuit
+    obtain ⟨_h_ext, _h_op, _h_m32, _h_set_pc, h_store_pc⟩ := h_mode
+    simp only [ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo, h_store_pc,
+               zero_mul, zero_add] at h_lo
+    simp only [ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi, h_store_pc,
+               sub_zero, one_mul] at h_hi
+    exact ⟨h_lo.symm, h_hi.symm⟩
   have h_rd_val :
       U64.toBV #v[(byteAt e_rd 0 : BitVec 8), (byteAt e_rd 1 : BitVec 8),
                   (byteAt e_rd 2 : BitVec 8), (byteAt e_rd 3 : BitVec 8),

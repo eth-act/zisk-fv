@@ -12,12 +12,12 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 1030
+# Total rows: 1031
 # Category bridge: 72
 # Category bus_shape: 27
 # Category entry: 9
 # Category match: 6
-# Category other: 675
+# Category other: 676
 # Category range: 3
 # Category row: 60
 # Category state: 73
@@ -384,9 +384,10 @@ ZiskFv.Equivalence.Lui.equiv_LUI 005 r_main [row] ℕ
 ZiskFv.Equivalence.Lui.equiv_LUI 006 next_pc [other] FGL
 ZiskFv.Equivalence.Lui.equiv_LUI 007 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
 ZiskFv.Equivalence.Lui.equiv_LUI 008 e_rd [entry] Interaction.MemoryBusEntry FGL
-ZiskFv.Equivalence.Lui.equiv_LUI 009 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB
-ZiskFv.Equivalence.Lui.equiv_LUI 010 h_lui_subset [other] lui_subset_holds m r_main next_pc
-ZiskFv.Equivalence.Lui.equiv_LUI 011 promises [transpile] ZiskFv.EquivCore.Promises.UTypePromises state lui_input.imm lui_input.rd lui_inp
+ZiskFv.Equivalence.Lui.equiv_LUI 009 store_pc_mem [other] ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd
+ZiskFv.Equivalence.Lui.equiv_LUI 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB
+ZiskFv.Equivalence.Lui.equiv_LUI 011 h_lui_subset [other] lui_subset_holds m r_main next_pc
+ZiskFv.Equivalence.Lui.equiv_LUI 012 promises [transpile] ZiskFv.EquivCore.Promises.UTypePromises state lui_input.imm lui_input.rd lui_inp
 ZiskFv.Equivalence.Lw.equiv_LW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lw.equiv_LW 001 lw_input [other] PureSpec.LwInput
 ZiskFv.Equivalence.Lw.equiv_LW 002 regs [other] ZiskFv.Compliance.ModeRegsFull

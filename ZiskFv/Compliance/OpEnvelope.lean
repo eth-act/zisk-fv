@@ -239,6 +239,7 @@ inductive OpEnvelope
     (imm : BitVec 20) (rd : regidx) (next_pc : FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
     (promises : ZiskFv.EquivCore.Promises.UTypePromises

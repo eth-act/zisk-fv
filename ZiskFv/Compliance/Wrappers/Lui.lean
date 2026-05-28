@@ -38,6 +38,7 @@ theorem equiv_LUI
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     -- Activation / opcode pins on Main + per-row subset constraint
     -- (consumed by the UTypeHelpers helper that fires `transpile_LUI`).
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
@@ -53,7 +54,7 @@ theorem equiv_LUI
     ZiskFv.EquivCore.Promises.lui_h_circuit_of_main_constraints
       m r_main next_pc pins.main_active pins.main_op h_lui_subset
   ZiskFv.EquivCore.Lui.equiv_LUI state lui_input imm rd
-    m r_main next_pc exec_row e_rd (lui_input.PC + 4#64)
+    m r_main next_pc exec_row e_rd store_pc_mem (lui_input.PC + 4#64)
     promises h_circuit
 
 end ZiskFv.Compliance

@@ -33,6 +33,7 @@ theorem equiv_LUI
     (m : Valid_Main FGL FGL) (r_main : ℕ) (next_pc : FGL)
     (exec_row : List (Interaction.ExecutionBusEntry FGL))
     (e_rd : Interaction.MemoryBusEntry FGL)
+    (store_pc_mem : ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_lui_subset : lui_subset_holds m r_main next_pc)
     (promises : ZiskFv.EquivCore.Promises.UTypePromises
@@ -42,6 +43,7 @@ theorem equiv_LUI
     : execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
       = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_LUI state lui_input imm rd m r_main next_pc exec_row e_rd pins h_lui_subset promises
+  exact ZiskFv.Compliance.equiv_LUI state lui_input imm rd m r_main next_pc exec_row e_rd
+    store_pc_mem pins h_lui_subset promises
 
 end ZiskFv.Equivalence.Lui

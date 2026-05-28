@@ -637,6 +637,39 @@ DROPPED: main_external_arith_emission_bundle from semantic closure
 ADDED: arith_mem (same external-arith memory witness as MUL.)
 
 # ============================================================
+# T7 store-PC memory structural unpacking (4)
+# ============================================================
+#
+# The LUI/AUIPC/JAL/JALR store-PC/register-write family previously derived
+# its rd-write lanes through `main_store_pc_emission_bundle`. T7 replaces
+# that compressed trust-ledger edge with an explicit selected Clean Main
+# `cMemMessage` row and a legacy-entry match against that real PIL-shaped
+# memory interaction.
+#
+# This is structural unpacking, not promise laundering: the added
+# `StorePcMemoryWitness` exposes the Clean row, the row equality to
+# `Valid_Main`, and the exact `matches_memory_entry e_rd
+# (MemBusMessage.toEntry (cMemMessage row) 1 1)` adapter premise. The lane
+# facts are then proved by `AirsClean/Main/Bridge.lean` from the concrete
+# `store_value` expressions. Later full-ensemble work supplies this witness
+# from Main-table row selection plus memory-channel balance, shared across
+# the global theorem rather than as independent per-opcode promises.
+#
+# PIL-BASIS:
+#   * main.pil:311-312 — `store_value[0/1]` formulas in terms of
+#     `store_pc`, `pc`, `jmp_offset2`, `c_0`, and `c_1`;
+#   * main.pil:323-326 — Main c-side memory interaction emits the
+#     rd-write/store message;
+#   * `AirsClean/Main/Bridge.lean` maps `cMemMessage row` to the legacy
+#     memory-bus entry shape consumed by the existing control-flow proofs.
+
+OPCODE: ZiskFv.Equivalence.Lui.equiv_LUI
+DROPPED: main_store_pc_emission_bundle from semantic closure
+ADDED: store_pc_mem
+       (`StorePcMemoryWitness m r_main e_rd`, Clean Main `cMemMessage`
+        structural witness for store-PC/register-write byte lanes.)
+
+# ============================================================
 # ITYPE constructibility-bundle ops (Step 4.2r3.I)
 # ============================================================
 #

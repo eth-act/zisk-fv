@@ -12,13 +12,13 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 1060
+# Total rows: 1061
 # Total wrappers: 63
 # Category bridge: 72
 # Category bus_shape: 27
 # Category entry: 9
 # Category match: 6
-# Category other: 705
+# Category other: 706
 # Category range: 3
 # Category row: 60
 # Category state: 73
@@ -402,10 +402,11 @@ ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 005 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 006 next_pc [other] FGL
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 007 exec_row [entry] List (Interaction.ExecutionBusEntry FGL)
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 008 e_rd [entry] Interaction.MemoryBusEntry FGL
-ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 009 _ [other] consumed by the UTypeHelpers helper that fires `transpile_LUI`
-ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB
-ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 011 h_lui_subset [other] lui_subset_holds m r_main next_pc
-ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 012 promises [transpile] ZiskFv.EquivCore.Promises.UTypePromises state lui_input.imm lui_input.rd lui_inp
+ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 009 store_pc_mem [other] ZiskFv.Compliance.StorePcMemoryWitness m r_main e_rd
+ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 010 _ [other] consumed by the UTypeHelpers helper that fires `transpile_LUI`
+ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 011 pins [other] ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB
+ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 012 h_lui_subset [other] lui_subset_holds m r_main next_pc
+ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 013 promises [transpile] ZiskFv.EquivCore.Promises.UTypePromises state lui_input.imm lui_input.rd lui_inp
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 001 lw_input [other] PureSpec.LwInput
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 002 regs [other] ZiskFv.Compliance.ModeRegsFull

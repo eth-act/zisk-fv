@@ -31,7 +31,7 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
     Falls through to `True` for unhandled arms. -/
 def OpEnvelope.exec_eq_nomem
     : OpEnvelope state m r_main → Prop
-  | .lui _ imm rd _ exec_row e_rd _ _ _ =>
+  | .lui _ imm rd _ exec_row e_rd _ _ _ _ =>
       execute_instruction (instruction.UTYPE (imm, rd, uop.LUI)) state
         = state_effect_via_channels ⟨exec_row, [e_rd]⟩ state
   | .auipc _ imm rd exec_row e_rd _ _ _ _ _ _ _ =>
@@ -47,10 +47,10 @@ theorem zisk_riscv_compliant_program_bus_nomem
     (env : OpEnvelope state m r_main) :
     env.exec_eq_nomem := by
   cases env with
-  | lui lui_input imm rd next_pc exec_row e_rd pins h_lui_subset promises =>
+  | lui lui_input imm rd next_pc exec_row e_rd store_pc_mem pins h_lui_subset promises =>
     simp only [OpEnvelope.exec_eq_nomem]
     exact ZiskFv.Equivalence.Lui.equiv_LUI state lui_input imm rd m r_main next_pc
-      exec_row e_rd pins h_lui_subset promises
+      exec_row e_rd store_pc_mem pins h_lui_subset promises
   | auipc auipc_input imm rd exec_row e_rd nextPC_val next_pc
           pins h_auipc_subset
           promises h_no_wrap h_pc_offset_lt_2_32 =>

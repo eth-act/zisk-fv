@@ -294,6 +294,34 @@ theorem external_arith_register_write_lanes_of_message_match_valid
   rw [h_row] at h_raw
   simpa [validOfRow, rowAt] using h_raw
 
+/-- Store-PC rd-write lane adapter for an arbitrary legacy entry matched to
+Main's real PIL-shaped `c` memory message.
+
+This is the lane portion of the legacy
+`MemBridge.main_store_pc_emission_bundle`, derived directly from the Clean
+`cMemMessage` formula
+`[store_pc * (pc + jmp_offset2 - c_0) + c_0, (1 - store_pc) * c_1]`. -/
+theorem store_pc_lanes_of_message_match_valid
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL) (r_main : ℕ)
+    (row : MainRowWithRom FGL)
+    (e : Interaction.MemoryBusEntry FGL)
+    (h_row : row.core = rowAt main r_main)
+    (h_e_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry e
+        (MemBusMessage.toEntry (cMemMessage row) 1 1)) :
+    ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo main r_main e
+    ∧ ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi main r_main e := by
+  obtain ⟨_h_mult, _h_as, _h_ptr, h_v0, h_v1, _h_ts⟩ := h_e_match
+  constructor
+  · simp only [ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo,
+      ZiskFv.Airs.MemoryBus.memory_entry_lo]
+    rw [h_v0]
+    simp [h_row, rowAt]
+  · simp only [ZiskFv.Airs.MemoryBus.store_pc_lanes_match_hi,
+      ZiskFv.Airs.MemoryBus.memory_entry_hi]
+    rw [h_v1]
+    simp [h_row, rowAt]
+
 theorem cMemMessage_toEntry_memory_store_lanes_match_of_store_pc_zero
     (row : MainRowWithRom FGL)
     (h_store_pc : row.core.store_pc = 0) :
