@@ -827,10 +827,12 @@ Checklist:
 - 🪓 T3.4 thread `JAL/JALR/LUI/AUIPC` through row-native routes, preserving
   their memory/register-write bus-effect shape. Removed the caller-
   supplied `h_lo_bound : (m.pc + offset : FGL).val < 2^32` from all
-  three jump/U-type non-LUI opcodes by deriving it row-natively from
-  `memory_entry_lo_val_lt_2_32` (Class #4 byte-range, derived from
-  `range_bus_sound`) combined with the JAL/JALR/AUIPC collapses of
-  `store_pc_lanes_match_lo`. Net `baseline-hypothesis-count`
+  three jump/U-type non-LUI opcodes. The initial discharge used
+  `memory_entry_lo_val_lt_2_32`; T7 then removed the residual
+  `range_bus_sound` closure for AUIPC/JAL/JALR by deriving the low bound
+  from `transpile_PC_for_{AUIPC,JAL,JALR}`, existing no-wrap/link-address
+  bounds, and the Clean Main store-PC lane witnesses. Net
+  `baseline-hypothesis-count`
   reduction: AUIPC 16→15 (hyp 4→3), JAL 19→18 (hyp 6→5),
   JALR 23→22 (hyp 8→7); aggregate 988→985 / 299→296. LUI's only
   hypothesis (`h_lui_subset`) is a constructibility witness that
@@ -1069,6 +1071,10 @@ Checklist:
   relevant family phase rather than a new global range axiom. Follow T1's
   rule: the fact must be tied to the same concrete provider row used by the
   channel/matches proof.
+  Progress: AUIPC/JAL/JALR canonical closures no longer list
+  `range_bus_sound`; remaining consumers are the Binary/shift/SLT,
+  load/store, and Arith-family paths shown in
+  `trust/baseline-equiv-axiom-deps.txt`.
 - ☐ T6.3 retire `range_bus_sound` and `signed_range_bus_sound` when their
   global closure entries disappear.
 

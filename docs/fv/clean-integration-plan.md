@@ -948,10 +948,12 @@ after all global consumers are gone.
   Done (verified — pre-existing state).
 - 🪓 T3.4 thread `JAL/JALR/LUI/AUIPC` through row-native routes while
   preserving register-write/memory-bus shape. Done.
-  Internalized `h_lo_bound` for AUIPC/JAL/JALR via the new
-  `memory_entry_lo_val_lt_2_32` helper (Class #4 byte-range derived
-  from `range_bus_sound`) combined with the JAL/JALR/AUIPC collapses
-  of `store_pc_lanes_match_lo`. Per-opcode hypothesis-count delta:
+  Internalized `h_lo_bound` for AUIPC/JAL/JALR first via the
+  `memory_entry_lo_val_lt_2_32` helper, then T7 removed the residual
+  `range_bus_sound` closure by deriving the same bound directly from
+  `transpile_PC_for_{AUIPC,JAL,JALR}`, the existing no-wrap/link-address
+  bounds, and the already-proved Clean Main store-PC lane witnesses.
+  Per-opcode hypothesis-count delta:
   AUIPC 16→15, JAL 19→18, JALR 23→22 (aggregate 988→985 /
   299→296). LUI's lone hypothesis (`h_lui_subset`) is a
   constructibility witness, not derivable from the row alone.
@@ -1045,6 +1047,9 @@ T4-purge execution checklist, refined after the green `f2cb26c` checkpoint
 - ☐ T6.2 replace each with row/static-table/local component facts from the
   relevant family, tied to the same concrete provider rows used by the
   channel/matches proof.
+  Progress: AUIPC/JAL/JALR no longer depend on `range_bus_sound`; their
+  low-lane range proof now uses PC/transpile no-wrap facts instead of
+  `MemoryBus.EntryRanges`.
 - ☐ T6.3 retire both range-bus axioms once global closure loses them.
 - ☐ T7.1 define the full Clean ensemble statement for supported RV64IM.
 - ☐ T7.2 prove constructibility modulo explicit `h_known_bugs`.

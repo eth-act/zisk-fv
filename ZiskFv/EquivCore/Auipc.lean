@@ -11,7 +11,6 @@ import ZiskFv.SailSpec.auipc
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Tactics.UTypeArchetype
 import ZiskFv.EquivCore.Bridge.ControlFlow
@@ -127,22 +126,6 @@ theorem equiv_AUIPC
   -- Discharge `h_lane_lo`/`h_lane_hi` from the selected Clean Main
   -- `cMemMessage` row, rather than through `main_store_pc_emission_bundle`.
   obtain ⟨h_lane_lo, h_lane_hi⟩ := store_pc_mem.lanes
-  -- Derive `h_lo_bound` row-natively from the byte-pack range bound
-  -- combined with AUIPC's collapse of the lane-match equation
-  -- (`store_pc = 1`; offset = `m.jmp_offset2 r_main`). Replaces a
-  -- caller-supplied hypothesis.
-  have h_lo_bound :
-      (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296 := by
-    have h_sv := ZiskFv.ZiskCircuit.AddUpperImmediatePC.auipc_store_value_lo
-      m r_main next_pc h_circuit
-    have h_eq : ZiskFv.Airs.MemoryBus.memory_entry_lo e_rd
-                  = m.pc r_main + m.jmp_offset2 r_main := by
-      have hl := h_lane_lo
-      simp only [ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo] at hl
-      rw [h_sv] at hl
-      exact hl
-    rw [← h_eq]
-    exact ZiskFv.Airs.MemoryBus.memory_entry_lo_val_lt_2_32 e_rd
   -- Discharge `h_offset_bridge` via `transpile_AUIPC` (trust class #1).
   -- `h_no_wrap` gives `PC + signExt < GL_prime`; since `PC.toNat ≥ 0`,
   -- we deduce `signExt < GL_prime` (the no-wrap bound on the offset
@@ -155,6 +138,37 @@ theorem equiv_AUIPC
       = (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat :=
     ZiskFv.EquivCore.Bridge.ControlFlow.auipc_offset_discharge
       m r_main next_pc auipc_input.imm h_circuit h_no_wrap_offset
+  -- Derive `h_lo_bound` from the PC/offset bridges and the existing
+  -- 32-bit result bound, avoiding the legacy range bus.
+  have h_lo_bound :
+      (m.pc r_main + m.jmp_offset2 r_main : FGL).val < 4294967296 := by
+    obtain ⟨_h_subset, h_mode⟩ := h_circuit
+    obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
+    have h_pc_bridge : (m.pc r_main).val = auipc_input.PC.toNat :=
+      ZiskFv.Trusted.transpile_PC_for_AUIPC m r_main auipc_input.PC h_ext h_op
+    have h_no_wrap_fgl :
+        (m.pc r_main).val + (m.jmp_offset2 r_main).val < GL_prime := by
+      rw [h_pc_bridge, h_offset_bridge]
+      exact h_no_wrap
+    have h_fgl_val :
+        (m.pc r_main + m.jmp_offset2 r_main : FGL).val =
+          auipc_input.PC.toNat
+            + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat := by
+      rw [Fin.val_add, Nat.mod_eq_of_lt h_no_wrap_fgl, h_pc_bridge, h_offset_bridge]
+    have h_bv_add :
+        (auipc_input.PC + BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat =
+          auipc_input.PC.toNat
+            + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat := by
+      rw [BitVec.toNat_add]
+      have h_lt_64 :
+          auipc_input.PC.toNat
+            + (BitVec.signExtend 64 (auipc_input.imm ++ (0 : BitVec 12))).toNat
+              < 18446744073709551616 := by
+        have h_gl_lt : GL_prime < 18446744073709551616 := by decide
+        omega
+      rw [Nat.mod_eq_of_lt h_lt_64]
+    rw [h_fgl_val, ← h_bv_add]
+    exact h_pc_offset_lt_2_32
   have h_rd_val :
       U64.toBV #v[(byteAt e_rd 0 : BitVec 8), (byteAt e_rd 1 : BitVec 8),
                   (byteAt e_rd 2 : BitVec 8), (byteAt e_rd 3 : BitVec 8),

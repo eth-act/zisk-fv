@@ -13,7 +13,6 @@ import ZiskFv.Airs.BusHypotheses
 import ZiskFv.Airs.OpBusEffect
 import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.EquivCore.Bridge.ControlFlow
 import ZiskFv.EquivCore.WriteValueProofs.JumpUType
@@ -166,19 +165,27 @@ theorem equiv_JALR
   -- Discharge `h_lane_lo`/`h_lane_hi` from the selected Clean Main
   -- `cMemMessage` row, rather than through `main_store_pc_emission_bundle`.
   obtain ⟨h_lane_lo, h_lane_hi⟩ := store_pc_mem.lanes
-  -- Derive `h_lo_bound` row-natively from the byte-pack range bound
-  -- combined with JALR's collapse of the lane-match equation
-  -- (`store_pc = 1`, `jmp_offset2 = 4`). Replaces a caller-supplied
-  -- hypothesis.
+  -- Derive `h_lo_bound` from the PC bridge and the existing link-address
+  -- bound, avoiding the legacy range bus.
   have h_lo_bound : (m.pc r_main + 4 : FGL).val < 4294967296 := by
-    have h_sv := ZiskFv.ZiskCircuit.Jalr.jalr_store_value m r_main next_pc h_circuit
-    have h_eq : ZiskFv.Airs.MemoryBus.memory_entry_lo e_rd = m.pc r_main + 4 := by
-      have hl := h_lane_lo
-      simp only [ZiskFv.Airs.MemoryBus.store_pc_lanes_match_lo] at hl
-      rw [h_sv, h_jmp2] at hl
-      exact hl
-    rw [← h_eq]
-    exact ZiskFv.Airs.MemoryBus.memory_entry_lo_val_lt_2_32 e_rd
+    obtain ⟨_h_subset, h_mode⟩ := h_circuit
+    obtain ⟨h_ext, h_op, _h_m32, _h_set_pc, _h_store_pc⟩ := h_mode
+    have h_pc_bridge : (m.pc r_main).val = jalr_input.PC.toNat :=
+      ZiskFv.Trusted.transpile_PC_for_JALR m r_main jalr_input.PC h_ext h_op
+    have h4 : ((4 : FGL)).val = 4 := by decide
+    have h_no_wrap : (m.pc r_main).val + ((4 : FGL)).val < GL_prime := by
+      rw [h_pc_bridge, h4]
+      omega
+    have h_fgl_val : (m.pc r_main + 4 : FGL).val = jalr_input.PC.toNat + 4 := by
+      rw [Fin.val_add, Nat.mod_eq_of_lt h_no_wrap, h_pc_bridge, h4]
+    have h_bv_add : (jalr_input.PC + 4#64).toNat = jalr_input.PC.toNat + 4 := by
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat]
+      have h_lt_64 : jalr_input.PC.toNat + 4 < 18446744073709551616 := by
+        have h_gl_lt : GL_prime < 18446744073709551616 := by decide
+        omega
+      rw [Nat.mod_eq_of_lt h_lt_64]
+    rw [h_fgl_val, ← h_bv_add]
+    exact h_pc_offset_lt_2_32
   -- Per-byte ranges from `byteOf_val_lt_256` (chunk-shape replacement
   -- for the retired memory_bus_entry_byte_range_perm_sound axiom).
   have hb0 : (byteAt e_rd 0).val < 256 := byteOf_val_lt_256 e_rd.value_0 0

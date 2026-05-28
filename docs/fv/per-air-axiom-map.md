@@ -764,7 +764,7 @@ ControlFlow has **no AIR-specific axioms**. It consumes:
 | `main_columns_in_range` | #5b (range-bus) | `Airs/Main/Ranges.lean:67` | `bits(N)`-annotated Main column ranges |
 | ~~`main_store_pc_emission_bundle`~~ | retired #4 (memory-bus) | retired from source in T7 | JAL/JALR/AUIPC/LUI rd-write lane equalities now derive from Clean Main `cMemMessage` structural witnesses |
 | `memory_bus_register_write_perm_sound{,_store_pc}` | #5 (memory-bus perm) | `Airs/MemoryBus/LaneMatch.lean:138,329` | rd-write entry pairs with Mem row (consumed by JAL/JALR/AUIPC/LUI) |
-| `memory_bus_entry_byte_range_perm_sound` | #5b (range-bus) | `Airs/MemoryBus/EntryRanges.lean:52` | register-write entry byte ranges (consumed by AUIPC, JAL) |
+| ~~`memory_bus_entry_byte_range_perm_sound` for AUIPC/JAL/JALR~~ | retired from canonical ControlFlow closure in T7 | — | AUIPC/JAL/JALR low-lane range now derives from PC/transpile no-wrap facts plus the existing 32-bit link/result bounds |
 
 ### Predicted gaps for the AIR's discharge pilot
 
