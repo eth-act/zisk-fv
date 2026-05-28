@@ -281,6 +281,36 @@ theorem componentWithRomMemAndOpBus_interactionsWith_opBus
     mainWithRomMemAndOpBusElaborated, Component.exposedChannels, expose,
     List.map_cons, List.map_nil]
 
+theorem is_external_op_boolean_of_mainWithRomMemAndOpBus_constraints
+    (length : ℕ) (program : Program length)
+    (row : Var MainRowWithRom FGL) (offset : ℕ) (env : Environment FGL)
+    (h_holds :
+      Operations.ConstraintsHold env
+        ((mainWithRomMemAndOpBus length program row).operations offset)) :
+    env (row.core.is_external_op * (1 - row.core.is_external_op)) = 0 := by
+  simp only [mainWithRomMemAndOpBus, mainWithRomAndMemBus, mainWithRom,
+    main, circuit_norm] at h_holds
+  exact h_holds.1 (row.core.is_external_op * (1 - row.core.is_external_op))
+    (Or.inr (Or.inl rfl))
+
+theorem is_external_op_boolean_of_componentWithRomMemAndOpBus_constraints
+    (length : ℕ) (program : Program length)
+    (env : Environment FGL)
+    (h_holds :
+      (componentWithRomMemAndOpBus length program).operations.ConstraintsHold env) :
+    env ((componentWithRomMemAndOpBus length program).rowInputVar.core.is_external_op
+        * (1 - (componentWithRomMemAndOpBus length program).rowInputVar.core.is_external_op)) = 0 := by
+  have h_row :
+      (componentWithRomMemAndOpBus length program).rowOperations.ConstraintsHold env :=
+    (Component.constraintsHold_iff
+      (component := componentWithRomMemAndOpBus length program) env).mp h_holds
+  exact is_external_op_boolean_of_mainWithRomMemAndOpBus_constraints
+    length program
+    (componentWithRomMemAndOpBus length program).rowInputVar
+    (componentWithRomMemAndOpBus length program).rowOffset env (by
+      simpa only [componentWithRomMemAndOpBus, circuitWithRomMemAndOpBus,
+        Component.rowOperations] using h_row)
+
 theorem romBoolSpec_of_componentWithRomAndMemBus_constraints
     (length : ℕ) (program : Program length)
     (env : Environment FGL)
