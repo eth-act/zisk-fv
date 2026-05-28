@@ -134,9 +134,7 @@ lemma load_copyb_e1_e2_bytes_eq
       ∧ m.b_1 r_main = memory_entry_hi e1)
     (h_emit_c :
       m.c_0 r_main = memory_entry_lo e2
-      ∧ m.c_1 r_main = memory_entry_hi e2)
-    (_h_e1_range : memory_entry_chunks_in_range e1)
-    (_h_e2_range : memory_entry_chunks_in_range e2) :
+      ∧ m.c_1 r_main = memory_entry_hi e2) :
     (byteAt e1 0) = (byteAt e2 0) ∧ (byteAt e1 1) = (byteAt e2 1) ∧ (byteAt e1 2) = (byteAt e2 2) ∧ (byteAt e1 3) = (byteAt e2 3)
     ∧ (byteAt e1 4) = (byteAt e2 4) ∧ (byteAt e1 5) = (byteAt e2 5) ∧ (byteAt e1 6) = (byteAt e2 6) ∧ (byteAt e1 7) = (byteAt e2 7) := by
   obtain ⟨h_b0, h_b1⟩ := h_emit_b
@@ -181,9 +179,7 @@ lemma load_copyb_e1_e2_bytes_eq_bv
       ∧ m.b_1 r_main = memory_entry_hi e1)
     (h_emit_c :
       m.c_0 r_main = memory_entry_lo e2
-      ∧ m.c_1 r_main = memory_entry_hi e2)
-    (h_e1_range : memory_entry_chunks_in_range e1)
-    (h_e2_range : memory_entry_chunks_in_range e2) :
+      ∧ m.c_1 r_main = memory_entry_hi e2) :
     ((byteAt e2 0) : BitVec 8) = (byteAt e1 0)
     ∧ ((byteAt e2 1) : BitVec 8) = (byteAt e1 1)
     ∧ ((byteAt e2 2) : BitVec 8) = (byteAt e1 2)
@@ -194,7 +190,7 @@ lemma load_copyb_e1_e2_bytes_eq_bv
     ∧ ((byteAt e2 7) : BitVec 8) = (byteAt e1 7) := by
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ :=
     load_copyb_e1_e2_bytes_eq m r_main e1 e2
-      h_copy0 h_copy1 h_ext h_op h_emit_b h_emit_c h_e1_range h_e2_range
+      h_copy0 h_copy1 h_ext h_op h_emit_b h_emit_c
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     <;> exact (byte_bitvec_eq_of_fgl_eq (by assumption)).symm
 
@@ -263,8 +259,6 @@ lemma load_lbu_c_packed
     (h_emit_c :
       m.c_0 r_main = memory_entry_lo e2
       ∧ m.c_1 r_main = memory_entry_hi e2)
-    (h_e1_range : memory_entry_chunks_in_range e1)
-    (h_e2_range : memory_entry_chunks_in_range e2)
     (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
     (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
     (h_provider :
@@ -278,7 +272,7 @@ lemma load_lbu_c_packed
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ :=
     load_copyb_e1_e2_bytes_eq_bv m r_main e1 e2
       h_copy0 h_copy1 h_ext h_op
-      ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c h_e1_range h_e2_range
+      ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
       m mab marb ma r_main e1 h_emit_b (Or.inl h_width) h_mab_core
@@ -344,8 +338,6 @@ lemma load_lhu_c_packed
     (h_emit_c :
       m.c_0 r_main = memory_entry_lo e2
       ∧ m.c_1 r_main = memory_entry_hi e2)
-    (h_e1_range : memory_entry_chunks_in_range e1)
-    (h_e2_range : memory_entry_chunks_in_range e2)
     (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
     (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
     (h_provider :
@@ -359,7 +351,7 @@ lemma load_lhu_c_packed
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ :=
     load_copyb_e1_e2_bytes_eq_bv m r_main e1 e2
       h_copy0 h_copy1 h_ext h_op
-      ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c h_e1_range h_e2_range
+      ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
       m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inl h_width)) h_mab_core
@@ -421,8 +413,6 @@ lemma load_lwu_c_packed
     (h_emit_c :
       m.c_0 r_main = memory_entry_lo e2
       ∧ m.c_1 r_main = memory_entry_hi e2)
-    (h_e1_range : memory_entry_chunks_in_range e1)
-    (h_e2_range : memory_entry_chunks_in_range e2)
     (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
     (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
     (h_provider :
@@ -437,7 +427,7 @@ lemma load_lwu_c_packed
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ :=
     load_copyb_e1_e2_bytes_eq_bv m r_main e1 e2
       h_copy0 h_copy1 h_ext h_op
-      ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c h_e1_range h_e2_range
+      ⟨h_emit_b.1, h_emit_b.2.1⟩ h_emit_c
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
       m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inr h_width)) h_mab_core

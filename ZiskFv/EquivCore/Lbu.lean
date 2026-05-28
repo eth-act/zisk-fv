@@ -13,7 +13,6 @@ import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.EquivCore.Bridge.Mem
 import ZiskFv.EquivCore.Bridge.MemClean
@@ -130,14 +129,10 @@ theorem equiv_LBU_of_discharged
   rw [h_ptr_match] at h_mem
   have hd0 : ((byteAt e1 0) : BitVec 8) = lbu_input.data0 := by
     rw [h_d0] at h_mem; exact (Option.some.inj h_mem).symm
-  have h_e1_range : memory_entry_chunks_in_range e1 :=
-    memory_bus_entry_chunks_range_perm_sound e1
-  have h_e2_range : memory_entry_chunks_in_range e2 :=
-    memory_bus_entry_chunks_range_perm_sound e2
   have h_lbu_packed :=
     ZiskFv.ZiskCircuit.LoadDerivation.load_lbu_c_packed
       main r_main mab marb ma e1 e2 h_copy0 h_copy1 h_ext h_op h_width
-      h_main_emit_b h_main_emit_c h_e1_range h_e2_range mab_core marb_core h_provider
+      h_main_emit_b h_main_emit_c mab_core marb_core h_provider
   have h_rd_val_derived :
       U64.toBV #v[byteAt e2 0, byteAt e2 1, byteAt e2 2, byteAt e2 3,
                   byteAt e2 4, byteAt e2 5, byteAt e2 6, byteAt e2 7]

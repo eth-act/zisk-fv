@@ -104,10 +104,12 @@ Clean Main `cMemMessage` structural witnesses.
 T7 has also removed `range_bus_sound` from AUIPC/JAL/JALR, from the six
 bitwise Binary-family canonical closures (AND/ANDI/OR/ORI/XOR/XORI), from
 the static Binary-table ADD/ADDI/SUB and ADDW/ADDIW/SUBW closures, and from
-SLT/SLTI/SLTU/SLTIU. These slices derive mode/op pins, packed byte bounds,
-carry booleanity, compare-result bounds, and destination byte-pack bounds
-from exact static BinaryTable membership plus row-local byte-match witnesses
-rather than from the legacy range bus.
+SLT/SLTI/SLTU/SLTIU. LD also no longer depends on `range_bus_sound`: its
+copyb byte passthrough is pure chunk equality, so the dead memory-entry
+range premises were removed from `LoadDerivation`. These slices derive
+mode/op pins, packed byte bounds, carry booleanity, compare-result bounds,
+and destination byte-pack bounds from exact static BinaryTable membership
+plus row-local byte-match witnesses rather than from the legacy range bus.
 
 The first shift-family T6 prep removed the write-value kernels' dependency on
 legacy memory-entry chunk range: the six base BinaryShift kernels now derive

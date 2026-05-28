@@ -10,7 +10,6 @@ import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Airs.MemoryBus.MemBridge
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.EquivCore.Bridge.Mem
 import ZiskFv.EquivCore.Bridge.MemClean
@@ -189,14 +188,10 @@ theorem equiv_LD_of_discharged
       main.b_0 r_main = memory_entry_lo e1
       ∧ main.b_1 r_main = memory_entry_hi e1 :=
     ⟨h_main_emit_b.1, h_main_emit_b.2.1⟩
-  have h_e1_range : memory_entry_chunks_in_range e1 :=
-    memory_bus_entry_chunks_range_perm_sound e1
-  have h_e2_range : memory_entry_chunks_in_range e2 :=
-    memory_bus_entry_chunks_range_perm_sound e2
   obtain ⟨h12_0, h12_1, h12_2, h12_3, h12_4, h12_5, h12_6, h12_7⟩ :=
     ZiskFv.ZiskCircuit.LoadDerivation.load_copyb_e1_e2_bytes_eq_bv
       main r_main e1 e2 h_copy0 h_copy1 h_ext h_op
-      h_emit_b_lo_hi h_main_emit_c h_e1_range h_e2_range
+      h_emit_b_lo_hi h_main_emit_c
   have hd2_0 : ((byteAt e2 0) : BitVec 8) = ld_input.data0 := h12_0.trans hd0
   have hd2_1 : ((byteAt e2 1) : BitVec 8) = ld_input.data1 := h12_1.trans hd1
   have hd2_2 : ((byteAt e2 2) : BitVec 8) = ld_input.data2 := h12_2.trans hd2
