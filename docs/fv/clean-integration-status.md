@@ -1107,8 +1107,12 @@ family-local memory ensemble.
 The spec-carrying variant,
 `exists_mem_provider_row_msg_eq_spec_of_active_main_table_interaction`, now
 threads `witness.Spec` through that bridge to the selected Main row and each
-selected provider row. This is structural unpacking only: it reuses the
-full-ensemble `Spec` fact rather than adding any row-local promise.
+selected provider row. The memory bridge now also preserves the selected
+Main-side memory branch (`a`, `b`, or `c/store`) instead of dropping it, so
+future load/store adapters can translate the exact Clean Main message into
+legacy `matches_memory_entry` facts. This is structural unpacking only: it
+reuses the full-ensemble `Spec` fact and row-extraction evidence rather than
+adding any row-local promise.
 The unified Main, Mem, and MemAlign-family component modules also expose
 direct projection lemmas from generic Clean component specs to the concrete
 row specs expected by the existing load/store bridge layer:
@@ -1149,8 +1153,9 @@ Checklist:
   classification / row projection with the honest unified-Main case still
   visible. The memory row bridge now also carries row-local `Spec` facts from
   `witness.Spec`, with projection lemmas for unified Main, Mem, and
-  MemAlign-family concrete row specs. The op-bus row bridge now also carries
-  row-local `Spec` facts for unified Main, ArithMul, and the lookup-aware
+  MemAlign-family concrete row specs, while preserving the selected Main
+  memory interaction branch. The op-bus row bridge now also carries row-local
+  `Spec` facts for unified Main, ArithMul, and the lookup-aware
   Binary-family provider branches, and it has a derived legacy
   `OperationBus.matches_entry` adapter plus a legacy-`Valid_Main`
   specialization. Constructibility and canonical re-root remain open.

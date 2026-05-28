@@ -1271,7 +1271,41 @@ theorem exists_mem_provider_row_msg_eq_of_active_main_table_interaction
       mainInteraction ∈ mainTable.interactionsWith MemBusChannel.toRaw)
     (h_active : mainInteraction.mult = -1) :
     ∃ mainRow ∈ mainTable.table,
-      ∃ providerInteraction ∈ witness.interactionsWith MemBusChannel.toRaw,
+      (mainInteraction =
+          ((MemBusChannel.emitted
+            (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.a_src_mem
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.a_src_reg))
+            (ZiskFv.AirsClean.Main.aMemMessageExpr
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar)).toRaw).eval
+            (mainTable.environment mainRow)
+        ∨ mainInteraction =
+          ((MemBusChannel.emitted
+            (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.b_src_mem
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.b_src_ind
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.b_src_reg))
+            (ZiskFv.AirsClean.Main.bMemMessageExpr
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar)).toRaw).eval
+            (mainTable.environment mainRow)
+        ∨ mainInteraction =
+          ((MemBusChannel.emitted
+            (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.store_mem
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.store_ind
+              + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.rom.store_reg))
+            (ZiskFv.AirsClean.Main.cMemMessageExpr
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar)).toRaw).eval
+            (mainTable.environment mainRow))
+      ∧ ∃ providerInteraction ∈ witness.interactionsWith MemBusChannel.toRaw,
         providerInteraction.msg = mainInteraction.msg
           ∧ providerInteraction.mult ≠ -1
           ∧ providerInteraction.mult ≠ 0
@@ -1353,14 +1387,14 @@ theorem exists_mem_provider_row_msg_eq_of_active_main_table_interaction
       mainInteraction ∈ witness.interactionsWith MemBusChannel.toRaw := by
     rw [EnsembleWitness.mem_interactionsWith]
     exact ⟨mainTable, h_mainTable, h_mainInteraction⟩
-  obtain ⟨mainRow, h_mainRow, _h_mainEval⟩ :=
+  obtain ⟨mainRow, h_mainRow, h_mainEval⟩ :=
     exists_main_mem_row_eval_of_interaction_mem h_mainComponent h_mainInteraction
   obtain ⟨providerInteraction, h_provider_witness, h_msg, h_nonpull, h_nonzero,
       providerTable, h_providerTable, h_providerInteraction, h_providerComponent⟩ :=
     exists_matching_mem_component_of_active_main_interaction
       witness h_balanced h_main_mem_witness h_active
-  refine ⟨mainRow, h_mainRow, providerInteraction, h_provider_witness, h_msg,
-    h_nonpull, h_nonzero, providerTable, h_providerTable,
+  refine ⟨mainRow, h_mainRow, h_mainEval, providerInteraction,
+    h_provider_witness, h_msg, h_nonpull, h_nonzero, providerTable, h_providerTable,
     h_providerInteraction, ?_⟩
   rcases h_providerComponent with h_marb | h_mab | h_memAlign | h_mem | h_main
   · obtain ⟨providerRow, h_providerRow, h_providerEval⟩ :=
@@ -1416,6 +1450,41 @@ theorem exists_mem_provider_row_msg_eq_spec_of_active_main_table_interaction
     (h_active : mainInteraction.mult = -1) :
     ∃ mainRow ∈ mainTable.table,
       mainTable.component.Spec (mainTable.environment mainRow)
+        ∧
+        (mainInteraction =
+            ((MemBusChannel.emitted
+              (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                  length program).rowInputVar.rom.a_src_mem
+                + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                  length program).rowInputVar.rom.a_src_reg))
+              (ZiskFv.AirsClean.Main.aMemMessageExpr
+                (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                  length program).rowInputVar)).toRaw).eval
+              (mainTable.environment mainRow)
+          ∨ mainInteraction =
+            ((MemBusChannel.emitted
+              (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                  length program).rowInputVar.rom.b_src_mem
+                + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                  length program).rowInputVar.rom.b_src_ind
+                + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                  length program).rowInputVar.rom.b_src_reg))
+              (ZiskFv.AirsClean.Main.bMemMessageExpr
+                (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                  length program).rowInputVar)).toRaw).eval
+              (mainTable.environment mainRow)
+          ∨ mainInteraction =
+            ((MemBusChannel.emitted
+              (-((ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                  length program).rowInputVar.rom.store_mem
+                + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                  length program).rowInputVar.rom.store_ind
+                + (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                  length program).rowInputVar.rom.store_reg))
+              (ZiskFv.AirsClean.Main.cMemMessageExpr
+                (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                  length program).rowInputVar)).toRaw).eval
+              (mainTable.environment mainRow))
         ∧ ∃ providerInteraction ∈ witness.interactionsWith MemBusChannel.toRaw,
           providerInteraction.msg = mainInteraction.msg
             ∧ providerInteraction.mult ≠ -1
@@ -1499,15 +1568,15 @@ theorem exists_mem_provider_row_msg_eq_spec_of_active_main_table_interaction
                               (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
                                 length program).rowInputVar)).toRaw).eval
                             (providerTable.environment providerRow)))) := by
-  obtain ⟨mainRow, h_mainRow, providerInteraction, h_provider_witness, h_msg,
-      h_nonpull, h_nonzero, providerTable, h_providerTable,
+  obtain ⟨mainRow, h_mainRow, h_mainEval, providerInteraction,
+      h_provider_witness, h_msg, h_nonpull, h_nonzero, providerTable, h_providerTable,
       h_providerInteraction, h_providerComponent⟩ :=
     exists_mem_provider_row_msg_eq_of_active_main_table_interaction
       witness h_balanced h_mainTable h_mainComponent h_mainInteraction h_active
   have h_mainSpec :
       mainTable.component.Spec (mainTable.environment mainRow) :=
     h_specs mainTable h_mainTable mainRow h_mainRow
-  refine ⟨mainRow, h_mainRow, h_mainSpec, providerInteraction,
+  refine ⟨mainRow, h_mainRow, h_mainSpec, h_mainEval, providerInteraction,
     h_provider_witness, h_msg, h_nonpull, h_nonzero, providerTable,
     h_providerTable, h_providerInteraction, ?_⟩
   have h_providerSpecs : providerTable.Spec :=
