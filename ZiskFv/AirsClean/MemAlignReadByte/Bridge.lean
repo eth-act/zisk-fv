@@ -23,6 +23,7 @@ already in every load opcode's closure.
 namespace ZiskFv.AirsClean.MemAlignReadByte
 
 open Goldilocks
+open ZiskFv.Channels.MemoryBus
 open ZiskFv.Channels.RangeBusSoundness (range_bus_sound)
 
 
@@ -41,6 +42,45 @@ def rowAt (v : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL) (r :
   byte_value := v.byte_value r
   addr_w := v.addr_w r
   step := v.step r
+
+@[reducible]
+def validOfRow (row : MemAlignReadByteRow FGL) :
+    ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL where
+  sel_high_4b := fun _ => row.sel_high_4b
+  sel_high_2b := fun _ => row.sel_high_2b
+  sel_high_b := fun _ => row.sel_high_b
+  direct_value := fun _ => row.direct_value
+  composed_value := fun _ => row.composed_value
+  value_16b := fun _ => row.value_16b
+  value_8b := fun _ => row.value_8b
+  byte_value := fun _ => row.byte_value
+  addr_w := fun _ => row.addr_w
+  step := fun _ => row.step
+
+/-- Concrete MemAlignReadByte memory-bus message:
+`[1, addr_w * 8 + byte_offset, step, 1, byte_value, 0]`.
+
+This is the PIL-shaped message emitted by `memBusMessageExpr`. -/
+@[reducible]
+def memBusMessage (row : MemAlignReadByteRow FGL) : MemBusMessage FGL :=
+  { mem_op := 1
+    ptr := row.addr_w * 8
+      + (row.sel_high_4b * 4 + row.sel_high_2b * 2 + row.sel_high_b)
+    timestamp := row.step
+    width := 1
+    value_0 := row.byte_value
+    value_1 := 0 }
+
+theorem eval_memBusMessageExpr
+    (env : Environment FGL) (row : Var MemAlignReadByteRow FGL) :
+    eval env (memBusMessageExpr row) = memBusMessage (eval env row) := by
+  rw [MemBusMessage.mk.injEq]
+  simp only [memBusMessageExpr,
+    ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, Expression.eval]
+  repeat constructor
 
 /-- The 4 F-typed MemAlignReadByte row constraints at row `r`,
     expressed against a `Valid_MemAlignReadByte`. -/

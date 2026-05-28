@@ -23,6 +23,7 @@ already in every load opcode's closure.
 namespace ZiskFv.AirsClean.MemAlignByte
 
 open Goldilocks
+open ZiskFv.Channels.MemoryBus
 open ZiskFv.Channels.RangeBusSoundness (range_bus_sound)
 
 
@@ -45,6 +46,51 @@ def rowAt (v : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL) (r : ℕ)
   mem_write_values_0 := v.mem_write_values_0 r
   mem_write_values_1 := v.mem_write_values_1 r
   bus_byte := v.bus_byte r
+
+@[reducible]
+def validOfRow (row : MemAlignByteRow FGL) :
+    ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL where
+  sel_high_4b := fun _ => row.sel_high_4b
+  sel_high_2b := fun _ => row.sel_high_2b
+  sel_high_b := fun _ => row.sel_high_b
+  direct_value := fun _ => row.direct_value
+  composed_value := fun _ => row.composed_value
+  written_composed_value := fun _ => row.written_composed_value
+  written_byte_value := fun _ => row.written_byte_value
+  value_16b := fun _ => row.value_16b
+  value_8b := fun _ => row.value_8b
+  byte_value := fun _ => row.byte_value
+  addr_w := fun _ => row.addr_w
+  step := fun _ => row.step
+  is_write := fun _ => row.is_write
+  mem_write_values_0 := fun _ => row.mem_write_values_0
+  mem_write_values_1 := fun _ => row.mem_write_values_1
+  bus_byte := fun _ => row.bus_byte
+
+/-- Concrete MemAlignByte memory-bus message:
+`[1 + is_write, addr_w * 8 + byte_offset, step, 1, bus_byte, 0]`.
+
+This is the PIL-shaped message emitted by `memBusMessageExpr`. -/
+@[reducible]
+def memBusMessage (row : MemAlignByteRow FGL) : MemBusMessage FGL :=
+  { mem_op := 1 + row.is_write
+    ptr := row.addr_w * 8
+      + (row.sel_high_4b * 4 + row.sel_high_2b * 2 + row.sel_high_b)
+    timestamp := row.step
+    width := 1
+    value_0 := row.bus_byte
+    value_1 := 0 }
+
+theorem eval_memBusMessageExpr
+    (env : Environment FGL) (row : Var MemAlignByteRow FGL) :
+    eval env (memBusMessageExpr row) = memBusMessage (eval env row) := by
+  rw [MemBusMessage.mk.injEq]
+  simp only [memBusMessageExpr,
+    ProvableStruct.eval_eq_eval, ProvableStruct.eval,
+    ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go,
+    ProvableType.eval_field, Expression.eval]
+  repeat constructor
 
 /-- The 9 F-typed MemAlignByte row constraints at row `r`, expressed
     against a `Valid_MemAlignByte`. The 5 definitional identities (4,

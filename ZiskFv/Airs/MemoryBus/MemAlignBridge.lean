@@ -173,6 +173,56 @@ lemma memalign_byte_load_low_bytes_zero
   simp only [memory_entry_lo] at h_lo
   rw [← h_lo]; exact h_bus_byte_lt
 
+/-- Row-native MemAlignByte low-byte range from the Clean provider `Spec`.
+
+This is the full-ensemble replacement surface for the older
+`bus_byte_in_range_via_component` route: a selected Clean provider row
+already carries its `Spec` through `witness.Spec`, and that `Spec` contains
+the byte range supplied by the component's static lookup. -/
+lemma memalign_byte_load_low_bytes_zero_of_clean_spec
+    (row : ZiskFv.AirsClean.MemAlignByte.MemAlignByteRow FGL)
+    (e : MemoryBusEntry FGL)
+    (h_match :
+      memalign_byte_row_matches_load_entry
+        (ZiskFv.AirsClean.MemAlignByte.validOfRow row) 0 e)
+    (h_spec : ZiskFv.AirsClean.MemAlignByte.Spec row) :
+    e.value_0.val < 256 := by
+  exact memalign_byte_load_low_bytes_zero
+    (ZiskFv.AirsClean.MemAlignByte.validOfRow row) 0 e h_match
+    (by
+      simpa [ZiskFv.AirsClean.MemAlignByte.validOfRow] using
+        h_spec.2.2.2.2.2.1)
+
+/-- Adapt a Clean MemAlignByte provider message match back to the legacy
+load-provider predicate used by the existing zero-padding bridge. -/
+theorem memalign_byte_row_matches_load_entry_of_message_match_valid
+    (mab : Valid_MemAlignByte FGL FGL) (r_mab : ℕ)
+    (row : ZiskFv.AirsClean.MemAlignByte.MemAlignByteRow FGL)
+    (e : MemoryBusEntry FGL)
+    (h_row : row = ZiskFv.AirsClean.MemAlignByte.rowAt mab r_mab)
+    (h_is_write : mab.is_write r_mab = 0)
+    (h_match :
+      matches_memory_entry e
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.MemAlignByte.memBusMessage row) 1 2)) :
+    memalign_byte_row_matches_load_entry mab r_mab e := by
+  obtain ⟨_h_mult, h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h_match
+  rw [h_row] at h_ptr h_v0 h_v1 h_ts
+  refine ⟨h_is_write, ?_, ?_, ?_, ?_, h_as⟩
+  · rw [h_ptr]
+    ring
+  · simpa [ZiskFv.AirsClean.MemAlignByte.rowAt,
+      ZiskFv.AirsClean.MemAlignByte.memBusMessage,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_ts.symm
+  · simpa [ZiskFv.AirsClean.MemAlignByte.rowAt,
+      ZiskFv.AirsClean.MemAlignByte.memBusMessage,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry,
+      memory_entry_lo] using h_v0.symm
+  · simpa [ZiskFv.AirsClean.MemAlignByte.rowAt,
+      ZiskFv.AirsClean.MemAlignByte.memBusMessage,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry,
+      memory_entry_hi] using h_v1
+
 /-- High-chunk zero for any LOAD-providing `MemAlignReadByte` row.
     Same shape as the MemAlignByte case (slot[5] = literal 0). -/
 lemma memalign_read_byte_load_high_bytes_zero
@@ -193,6 +243,51 @@ lemma memalign_read_byte_load_low_bytes_zero
   obtain ⟨_, _, h_lo, _, _⟩ := h_match
   simp only [memory_entry_lo] at h_lo
   rw [← h_lo]; exact h_byte_value_lt
+
+/-- Row-native MemAlignReadByte low-byte range from the Clean provider
+`Spec`. This consumes the exact selected provider row supplied by the full
+memory ensemble, rather than a caller-level byte-range promise. -/
+lemma memalign_read_byte_load_low_bytes_zero_of_clean_spec
+    (row : ZiskFv.AirsClean.MemAlignReadByte.MemAlignReadByteRow FGL)
+    (e : MemoryBusEntry FGL)
+    (h_match :
+      memalign_read_byte_row_matches_load_entry
+        (ZiskFv.AirsClean.MemAlignReadByte.validOfRow row) 0 e)
+    (h_spec : ZiskFv.AirsClean.MemAlignReadByte.Spec row) :
+    e.value_0.val < 256 := by
+  exact memalign_read_byte_load_low_bytes_zero
+    (ZiskFv.AirsClean.MemAlignReadByte.validOfRow row) 0 e h_match
+    (by
+      simpa [ZiskFv.AirsClean.MemAlignReadByte.validOfRow] using h_spec.2)
+
+/-- Adapt a Clean MemAlignReadByte provider message match back to the legacy
+load-provider predicate used by the existing zero-padding bridge. -/
+theorem memalign_read_byte_row_matches_load_entry_of_message_match_valid
+    (marb : Valid_MemAlignReadByte FGL FGL) (r_marb : ℕ)
+    (row : ZiskFv.AirsClean.MemAlignReadByte.MemAlignReadByteRow FGL)
+    (e : MemoryBusEntry FGL)
+    (h_row : row = ZiskFv.AirsClean.MemAlignReadByte.rowAt marb r_marb)
+    (h_match :
+      matches_memory_entry e
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.MemAlignReadByte.memBusMessage row) 1 2)) :
+    memalign_read_byte_row_matches_load_entry marb r_marb e := by
+  obtain ⟨_h_mult, h_as, h_ptr, h_v0, h_v1, h_ts⟩ := h_match
+  rw [h_row] at h_ptr h_v0 h_v1 h_ts
+  refine ⟨?_, ?_, ?_, ?_, h_as⟩
+  · rw [h_ptr]
+    ring
+  · simpa [ZiskFv.AirsClean.MemAlignReadByte.rowAt,
+      ZiskFv.AirsClean.MemAlignReadByte.memBusMessage,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry] using h_ts.symm
+  · simpa [ZiskFv.AirsClean.MemAlignReadByte.rowAt,
+      ZiskFv.AirsClean.MemAlignReadByte.memBusMessage,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry,
+      memory_entry_lo] using h_v0.symm
+  · simpa [ZiskFv.AirsClean.MemAlignReadByte.rowAt,
+      ZiskFv.AirsClean.MemAlignReadByte.memBusMessage,
+      ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry,
+      memory_entry_hi] using h_v1
 
 /-- High-chunk zero for any LOAD-providing `MemAlign` row whose width
     is sub-doubleword. The `value_1 = 0` fact is supplied by the
