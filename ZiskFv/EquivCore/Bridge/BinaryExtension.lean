@@ -425,6 +425,60 @@ lemma packed_a_eq_of_shift_match_m32_0
   rw [h_a0_val, h_a1_val]
   ring
 
+lemma packed_a_eq_of_shift_match_m32_0_of_a_range
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
+    (h_m32 : m.m32 r_main = 0)
+    (h_a_lo_t : m.a_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs1))
+    (h_a_hi_t : m.a_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs1))
+    (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
+    (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary))
+    (h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary) :
+    r1_val
+      = BitVec.ofNat 64
+          ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+            + (v.free_in_a_2 r_binary).val * 65536
+            + (v.free_in_a_3 r_binary).val * 16777216
+            + (v.free_in_a_4 r_binary).val * 4294967296
+            + (v.free_in_a_5 r_binary).val * 1099511627776
+            + (v.free_in_a_6 r_binary).val * 281474976710656
+            + (v.free_in_a_7 r_binary).val * 72057594037927936) := by
+  obtain ⟨ha0, ha1, ha2, ha3, ha4, ha5, ha6, ha7⟩ := h_a_range
+  have h_r1_main :=
+    SailStateBridge.packed_lane_eq_of_read_xreg
+      state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main) h_a_lo_t h_a_hi_t h_read_r1
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
+  obtain ⟨_, _, h_a_lo_m, h_a_hi_m, _, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  rw [h_m32] at h_a_hi_m
+  simp only [one_sub_zero_mul] at h_a_hi_m
+  rw [h_op_is_shift] at h_a_lo_m h_a_hi_m
+  have h_a0_fgl : m.a_0 r_main
+      = v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
+        + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary := by
+    rw [h_a_lo_m]; ring
+  have h_a1_fgl : m.a_1 r_main
+      = v.free_in_a_4 r_binary + 256 * v.free_in_a_5 r_binary
+        + 65536 * v.free_in_a_6 r_binary + 16777216 * v.free_in_a_7 r_binary := by
+    rw [h_a_hi_m]; ring
+  have h_a0_val : (m.a_0 r_main).val =
+      (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+      + (v.free_in_a_2 r_binary).val * 65536 + (v.free_in_a_3 r_binary).val * 16777216 := by
+    rw [h_a0_fgl]
+    exact packed_a_lo_val_eq_of_match v r_binary ha0 ha1 ha2 ha3
+  have h_a1_val : (m.a_1 r_main).val =
+      (v.free_in_a_4 r_binary).val + (v.free_in_a_5 r_binary).val * 256
+      + (v.free_in_a_6 r_binary).val * 65536 + (v.free_in_a_7 r_binary).val * 16777216 := by
+    rw [h_a1_fgl]
+    exact packed_a_hi_val_eq_of_match v r_binary ha4 ha5 ha6 ha7
+  rw [h_r1_main]
+  apply congrArg (BitVec.ofNat 64)
+  rw [h_a0_val, h_a1_val]
+  ring
+
 /-- **Shift-pin bridge for 64-bit register shifts (SLL/SRL/SRA, m32 = 0).**
     Derives `r2_val.toNat % 64 = (v.free_in_b r_binary).val % 64` from
     transpile lanes (`m.b_0 = lane_lo (xreg rs2)`, `m.b_1 = lane_hi …`),

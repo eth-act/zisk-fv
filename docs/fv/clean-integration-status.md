@@ -143,10 +143,12 @@ The first canonical cutover through that surface is SLL: its wrapper,
 canonical theorem, and OpEnvelope arm now require the shift-specific static
 BinaryExtension provider component, and the core shift-pin bridge consumes
 the Clean `b_0 < 2^24` witness plus exact byte-table facts instead of using
-`binary_extension_columns_in_range` for the shift amount path. This slice is
-still a structural reroot, not a completed range-bus discharge: SLL honestly
-retains `range_bus_sound` through the remaining c-lane sum/range bridge until
-those c-lane bounds are projected from static BinaryExtensionTable facts.
+`binary_extension_columns_in_range` for the shift amount path. The follow-on
+SLL range cutover projects `a`-byte bounds, `c`-lane bounds, and `c`-lane
+low/high sum bounds from the same exact static BinaryExtensionTable provider
+facts. SLL is now the first shift closure to drop the generic
+`range_bus_sound` axiom; the remaining shift opcodes still need the same
+static-provider c-lane bound route.
 
 The first Arith-family T6 prep exposes the ArithMul chunk `bits(16)` checks
 through Clean instead of the generic range-bus axiom. `ArithMul.mainWithChunkRanges`

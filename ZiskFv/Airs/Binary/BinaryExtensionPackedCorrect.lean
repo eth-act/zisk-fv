@@ -156,6 +156,224 @@ private lemma sll_byte_eq_of_wf
 
 -- legacy sll_byte_eq (bin_ext_table_consumer_wf route) deleted in T4-purge P3.6.
 
+lemma sll_byte_c_bounds_of_wf
+    (e : BinaryExtensionTableEntry FGL)
+    (h_wf : wf_properties e)
+    (h_op_val : e.op.val = OP_SLL) :
+    e.c_lo_byte.val < 4294967296 ∧ e.c_hi_byte.val < 4294967296 := by
+  have h_sll : wf_SLL e := h_wf.2.1
+  obtain ⟨h_lo, h_hi, _⟩ := h_sll h_op_val
+  rw [h_lo, h_hi]
+  constructor
+  · exact Nat.mod_lt _ (by norm_num : 0 < 2 ^ 32)
+  · apply Nat.div_lt_of_lt_mul
+    exact Nat.mod_lt _ (by norm_num : 0 < 2 ^ 64)
+
+lemma sll_byte_c_values_of_wf
+    (e : BinaryExtensionTableEntry FGL)
+    (h_wf : wf_properties e)
+    (h_op_val : e.op.val = OP_SLL) :
+    e.c_lo_byte.val =
+        (e.a_byte.val * 256 ^ e.byte_index.val * 2 ^ (e.shift_amount.val % 64))
+          % 2 ^ 64 % 2 ^ 32
+    ∧ e.c_hi_byte.val =
+        (e.a_byte.val * 256 ^ e.byte_index.val * 2 ^ (e.shift_amount.val % 64))
+          % 2 ^ 64 / 2 ^ 32 := by
+  have h_sll : wf_SLL e := h_wf.2.1
+  obtain ⟨h_lo, h_hi, _⟩ := h_sll h_op_val
+  constructor
+  · simpa [Nat.shiftLeft_eq] using h_lo
+  · simpa [Nat.shiftLeft_eq] using h_hi
+
+set_option maxHeartbeats 2000000 in
+private theorem sll_lo_sum_bound_core
+    (a0 a1 a2 a3 a4 a5 a6 a7 s : ℕ)
+    (ha0 : a0 < 256) (ha1 : a1 < 256) (ha2 : a2 < 256) (_ha3 : a3 < 256)
+    (_ha4 : a4 < 256) (_ha5 : a5 < 256) (_ha6 : a6 < 256) (_ha7 : a7 < 256)
+    (hs : s < 64) :
+    ((a0 * 1 * 2^s % 2^64) % 2^32)
+    + ((a1 * 256 * 2^s % 2^64) % 2^32)
+    + ((a2 * 65536 * 2^s % 2^64) % 2^32)
+    + ((a3 * 16777216 * 2^s % 2^64) % 2^32)
+    + ((a4 * 4294967296 * 2^s % 2^64) % 2^32)
+    + ((a5 * 1099511627776 * 2^s % 2^64) % 2^32)
+    + ((a6 * 281474976710656 * 2^s % 2^64) % 2^32)
+    + ((a7 * 72057594037927936 * 2^s % 2^64) % 2^32)
+    < 2^32 := by
+  interval_cases s <;> norm_num at * <;> omega
+
+set_option maxHeartbeats 2000000 in
+private theorem sll_hi_sum_bound_core
+    (a0 a1 a2 a3 a4 a5 a6 a7 s : ℕ)
+    (ha0 : a0 < 256) (ha1 : a1 < 256) (ha2 : a2 < 256) (ha3 : a3 < 256)
+    (ha4 : a4 < 256) (ha5 : a5 < 256) (ha6 : a6 < 256) (_ha7 : a7 < 256)
+    (hs : s < 64) :
+    ((a0 * 1 * 2^s % 2^64) / 2^32)
+    + ((a1 * 256 * 2^s % 2^64) / 2^32)
+    + ((a2 * 65536 * 2^s % 2^64) / 2^32)
+    + ((a3 * 16777216 * 2^s % 2^64) / 2^32)
+    + ((a4 * 4294967296 * 2^s % 2^64) / 2^32)
+    + ((a5 * 1099511627776 * 2^s % 2^64) / 2^32)
+    + ((a6 * 281474976710656 * 2^s % 2^64) / 2^32)
+    + ((a7 * 72057594037927936 * 2^s % 2^64) / 2^32)
+    < 2^32 := by
+  interval_cases s <;> norm_num at * <;> omega
+
+lemma binary_extension_sll_c_lanes_lt_of_wf
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
+    (h_op : (v.op row).val = OP_SLL)
+    (h_bytes : ByteLookupHypotheses v row)
+    (h_wfs : ByteLookupWfHypotheses h_bytes) :
+    (v.free_in_c_0 row).val < 4294967296
+      ∧ (v.free_in_c_1 row).val < 4294967296
+      ∧ (v.free_in_c_2 row).val < 4294967296
+      ∧ (v.free_in_c_3 row).val < 4294967296
+      ∧ (v.free_in_c_4 row).val < 4294967296
+      ∧ (v.free_in_c_5 row).val < 4294967296
+      ∧ (v.free_in_c_6 row).val < 4294967296
+      ∧ (v.free_in_c_7 row).val < 4294967296
+      ∧ (v.free_in_c_8 row).val < 4294967296
+      ∧ (v.free_in_c_9 row).val < 4294967296
+      ∧ (v.free_in_c_10 row).val < 4294967296
+      ∧ (v.free_in_c_11 row).val < 4294967296
+      ∧ (v.free_in_c_12 row).val < 4294967296
+      ∧ (v.free_in_c_13 row).val < 4294967296
+      ∧ (v.free_in_c_14 row).val < 4294967296
+      ∧ (v.free_in_c_15 row).val < 4294967296 := by
+  obtain ⟨e0, ⟨_, hop0, _, _, _, hcl0, hch0⟩,
+         e1, ⟨_, hop1, _, _, _, hcl1, hch1⟩,
+         e2, ⟨_, hop2, _, _, _, hcl2, hch2⟩,
+         e3, ⟨_, hop3, _, _, _, hcl3, hch3⟩,
+         e4, ⟨_, hop4, _, _, _, hcl4, hch4⟩,
+         e5, ⟨_, hop5, _, _, _, hcl5, hch5⟩,
+         e6, ⟨_, hop6, _, _, _, hcl6, hch6⟩,
+         e7, ⟨_, hop7, _, _, _, hcl7, hch7⟩⟩ := h_bytes
+  have h0 := sll_byte_c_bounds_of_wf e0 h_wfs.1 (by rw [hop0]; exact h_op)
+  have h1 := sll_byte_c_bounds_of_wf e1 h_wfs.2.1 (by rw [hop1]; exact h_op)
+  have h2 := sll_byte_c_bounds_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
+  have h3 := sll_byte_c_bounds_of_wf e3 h_wfs.2.2.2.1 (by rw [hop3]; exact h_op)
+  have h4 := sll_byte_c_bounds_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
+  have h5 := sll_byte_c_bounds_of_wf e5 h_wfs.2.2.2.2.2.1 (by rw [hop5]; exact h_op)
+  have h6 := sll_byte_c_bounds_of_wf e6 h_wfs.2.2.2.2.2.2.1 (by rw [hop6]; exact h_op)
+  have h7 := sll_byte_c_bounds_of_wf e7 h_wfs.2.2.2.2.2.2.2 (by rw [hop7]; exact h_op)
+  exact ⟨ by simpa [hcl0] using h0.1
+        , by simpa [hch0] using h0.2
+        , by simpa [hcl1] using h1.1
+        , by simpa [hch1] using h1.2
+        , by simpa [hcl2] using h2.1
+        , by simpa [hch2] using h2.2
+        , by simpa [hcl3] using h3.1
+        , by simpa [hch3] using h3.2
+        , by simpa [hcl4] using h4.1
+        , by simpa [hch4] using h4.2
+        , by simpa [hcl5] using h5.1
+        , by simpa [hch5] using h5.2
+        , by simpa [hcl6] using h6.1
+        , by simpa [hch6] using h6.2
+        , by simpa [hcl7] using h7.1
+        , by simpa [hch7] using h7.2 ⟩
+
+lemma binary_extension_sll_c_sums_lt_of_wf
+    (v : Valid_BinaryExtension FGL FGL) (row : ℕ)
+    (h_op : (v.op row).val = OP_SLL)
+    (h_bytes : ByteLookupHypotheses v row)
+    (h_wfs : ByteLookupWfHypotheses h_bytes)
+    (h_a_range : a_bytes_in_range v row) :
+    ((v.free_in_c_0 row).val + (v.free_in_c_2 row).val
+        + (v.free_in_c_4 row).val + (v.free_in_c_6 row).val
+        + (v.free_in_c_8 row).val + (v.free_in_c_10 row).val
+        + (v.free_in_c_12 row).val + (v.free_in_c_14 row).val
+        < 4294967296)
+    ∧ ((v.free_in_c_1 row).val + (v.free_in_c_3 row).val
+        + (v.free_in_c_5 row).val + (v.free_in_c_7 row).val
+        + (v.free_in_c_9 row).val + (v.free_in_c_11 row).val
+        + (v.free_in_c_13 row).val + (v.free_in_c_15 row).val
+        < 4294967296) := by
+  obtain ⟨e0, ⟨_, hop0, hbi0, ha0, hs0, hcl0, hch0⟩,
+         e1, ⟨_, hop1, hbi1, ha1, hs1, hcl1, hch1⟩,
+         e2, ⟨_, hop2, hbi2, ha2, hs2, hcl2, hch2⟩,
+         e3, ⟨_, hop3, hbi3, ha3, hs3, hcl3, hch3⟩,
+         e4, ⟨_, hop4, hbi4, ha4, hs4, hcl4, hch4⟩,
+         e5, ⟨_, hop5, hbi5, ha5, hs5, hcl5, hch5⟩,
+         e6, ⟨_, hop6, hbi6, ha6, hs6, hcl6, hch6⟩,
+         e7, ⟨_, hop7, hbi7, ha7, hs7, hcl7, hch7⟩⟩ := h_bytes
+  obtain ⟨ha0r, ha1r, ha2r, ha3r, ha4r, ha5r, ha6r, ha7r⟩ := h_a_range
+  set s : ℕ := (v.free_in_b row).val % 64 with hs_def
+  have hs_lt : s < 64 := by
+    rw [hs_def]
+    exact Nat.mod_lt _ (by decide : 0 < 64)
+  have h0 := sll_byte_c_values_of_wf e0 h_wfs.1 (by rw [hop0]; exact h_op)
+  have h1 := sll_byte_c_values_of_wf e1 h_wfs.2.1 (by rw [hop1]; exact h_op)
+  have h2 := sll_byte_c_values_of_wf e2 h_wfs.2.2.1 (by rw [hop2]; exact h_op)
+  have h3 := sll_byte_c_values_of_wf e3 h_wfs.2.2.2.1 (by rw [hop3]; exact h_op)
+  have h4 := sll_byte_c_values_of_wf e4 h_wfs.2.2.2.2.1 (by rw [hop4]; exact h_op)
+  have h5 := sll_byte_c_values_of_wf e5 h_wfs.2.2.2.2.2.1 (by rw [hop5]; exact h_op)
+  have h6 := sll_byte_c_values_of_wf e6 h_wfs.2.2.2.2.2.2.1 (by rw [hop6]; exact h_op)
+  have h7 := sll_byte_c_values_of_wf e7 h_wfs.2.2.2.2.2.2.2 (by rw [hop7]; exact h_op)
+  have h0lo : (v.free_in_c_0 row).val = ((v.free_in_a_0 row).val * 1 * 2^s % 2^64) % 2^32 := by
+    rw [← hcl0]
+    simpa [hbi0, ha0, hs0, hs_def] using h0.1
+  have h0hi : (v.free_in_c_1 row).val = ((v.free_in_a_0 row).val * 1 * 2^s % 2^64) / 2^32 := by
+    rw [← hch0]
+    simpa [hbi0, ha0, hs0, hs_def] using h0.2
+  have h1lo : (v.free_in_c_2 row).val = ((v.free_in_a_1 row).val * 256 * 2^s % 2^64) % 2^32 := by
+    rw [← hcl1]
+    simpa [hbi1, ha1, hs1, hs_def] using h1.1
+  have h1hi : (v.free_in_c_3 row).val = ((v.free_in_a_1 row).val * 256 * 2^s % 2^64) / 2^32 := by
+    rw [← hch1]
+    simpa [hbi1, ha1, hs1, hs_def] using h1.2
+  have h2lo : (v.free_in_c_4 row).val = ((v.free_in_a_2 row).val * 65536 * 2^s % 2^64) % 2^32 := by
+    rw [← hcl2]
+    simpa [hbi2, ha2, hs2, hs_def] using h2.1
+  have h2hi : (v.free_in_c_5 row).val = ((v.free_in_a_2 row).val * 65536 * 2^s % 2^64) / 2^32 := by
+    rw [← hch2]
+    simpa [hbi2, ha2, hs2, hs_def] using h2.2
+  have h3lo : (v.free_in_c_6 row).val = ((v.free_in_a_3 row).val * 16777216 * 2^s % 2^64) % 2^32 := by
+    rw [← hcl3]
+    simpa [hbi3, ha3, hs3, hs_def] using h3.1
+  have h3hi : (v.free_in_c_7 row).val = ((v.free_in_a_3 row).val * 16777216 * 2^s % 2^64) / 2^32 := by
+    rw [← hch3]
+    simpa [hbi3, ha3, hs3, hs_def] using h3.2
+  have h4lo : (v.free_in_c_8 row).val = ((v.free_in_a_4 row).val * 4294967296 * 2^s % 2^64) % 2^32 := by
+    rw [← hcl4]
+    simpa [hbi4, ha4, hs4, hs_def] using h4.1
+  have h4hi : (v.free_in_c_9 row).val = ((v.free_in_a_4 row).val * 4294967296 * 2^s % 2^64) / 2^32 := by
+    rw [← hch4]
+    simpa [hbi4, ha4, hs4, hs_def] using h4.2
+  have h5lo : (v.free_in_c_10 row).val = ((v.free_in_a_5 row).val * 1099511627776 * 2^s % 2^64) % 2^32 := by
+    rw [← hcl5]
+    simpa [hbi5, ha5, hs5, hs_def] using h5.1
+  have h5hi : (v.free_in_c_11 row).val = ((v.free_in_a_5 row).val * 1099511627776 * 2^s % 2^64) / 2^32 := by
+    rw [← hch5]
+    simpa [hbi5, ha5, hs5, hs_def] using h5.2
+  have h6lo : (v.free_in_c_12 row).val = ((v.free_in_a_6 row).val * 281474976710656 * 2^s % 2^64) % 2^32 := by
+    rw [← hcl6]
+    simpa [hbi6, ha6, hs6, hs_def] using h6.1
+  have h6hi : (v.free_in_c_13 row).val = ((v.free_in_a_6 row).val * 281474976710656 * 2^s % 2^64) / 2^32 := by
+    rw [← hch6]
+    simpa [hbi6, ha6, hs6, hs_def] using h6.2
+  have h7lo : (v.free_in_c_14 row).val = ((v.free_in_a_7 row).val * 72057594037927936 * 2^s % 2^64) % 2^32 := by
+    rw [← hcl7]
+    simpa [hbi7, ha7, hs7, hs_def] using h7.1
+  have h7hi : (v.free_in_c_15 row).val = ((v.free_in_a_7 row).val * 72057594037927936 * 2^s % 2^64) / 2^32 := by
+    rw [← hch7]
+    simpa [hbi7, ha7, hs7, hs_def] using h7.2
+  constructor
+  · rw [h0lo, h1lo, h2lo, h3lo, h4lo, h5lo, h6lo, h7lo]
+    exact sll_lo_sum_bound_core
+      (v.free_in_a_0 row).val (v.free_in_a_1 row).val
+      (v.free_in_a_2 row).val (v.free_in_a_3 row).val
+      (v.free_in_a_4 row).val (v.free_in_a_5 row).val
+      (v.free_in_a_6 row).val (v.free_in_a_7 row).val s
+      ha0r ha1r ha2r ha3r ha4r ha5r ha6r ha7r hs_lt
+  · rw [h0hi, h1hi, h2hi, h3hi, h4hi, h5hi, h6hi, h7hi]
+    exact sll_hi_sum_bound_core
+      (v.free_in_a_0 row).val (v.free_in_a_1 row).val
+      (v.free_in_a_2 row).val (v.free_in_a_3 row).val
+      (v.free_in_a_4 row).val (v.free_in_a_5 row).val
+      (v.free_in_a_6 row).val (v.free_in_a_7 row).val s
+      ha0r ha1r ha2r ha3r ha4r ha5r ha6r ha7r hs_lt
+
 private lemma srl_byte_eq_of_wf
     (e : BinaryExtensionTableEntry FGL)
     (h_wf : wf_properties e)

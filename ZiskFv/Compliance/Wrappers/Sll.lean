@@ -68,14 +68,12 @@ open ZiskFv.EquivCore.Promises
       with the op-disjunction satisfied via `Or.inl h_main_op`.
 
     Trust footprint: `op_bus_perm_sound_BinaryExtension` (class #4)
-    plus `equiv_SLL`'s existing closure (which transitively consumes
-    `transpile_SLL` (class #1), `binary_extension_columns_in_range`
-    (class #6), `binary_extension_op_is_shift_pin` (class #6),
-    `binary_extension_row_byte_lookups` (class #6),
-    `memory_bus_entry_byte_range_perm_sound` (class #5b),
-    `main_columns_in_range` (class #5b)). Zero new axioms — UNDER
-    `docs/fv/per-air-axiom-map.md`'s 1–2 prediction (SRA-family
-    sign-witness pin is N/A for SLL specifically). -/
+    plus `equiv_SLL`'s closure. The core SLL proof now derives the
+    shift pin, `a`-byte ranges, `c`-lane ranges, and `c`-lane sum
+    bounds from the exact Clean/static BinaryExtensionTable provider
+    row, so its semantic closure no longer includes the generic
+    `range_bus_sound` axiom. The remaining opcode-specific trust is
+    `transpile_SLL` (class #1). Zero new axioms. -/
 theorem equiv_SLL
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)

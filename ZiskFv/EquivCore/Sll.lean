@@ -16,7 +16,6 @@ import ZiskFv.Airs.OpBusHypotheses
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Airs.Binary.BinaryExtension
-import ZiskFv.Airs.Binary.BinaryExtensionRanges
 import ZiskFv.Airs.Binary.BinaryExtensionPackedCorrect
 import ZiskFv.EquivCore.WriteValueProofs.BinaryShift
 import ZiskFv.EquivCore.WriteValueProofs.SailBridge
@@ -87,16 +86,10 @@ lemma equiv_SLL_sail
     `WriteValueProofs.BinaryShift.h_rd_val_shift_sll` discharge lemma.
 
     **Canonical exemplar for the BinaryExtension shape.**
-    17 *promise hypotheses* dropped from caller burden — `h_a_range`
-    (8 a-byte ranges, as a single bundled struct binder) + 16 c-byte
-    32-bit range hypotheses (`hc_lo_0..7`, `hc_hi_0..7`) — all derived
-    inside the proof from
-    `ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range`
-    (BinaryExtension AIR's range-check soundness axiom). Sum bounds
-    `hc_{lo,hi}_sum_lt` are genuinely stronger than per-byte ranges
-    (sum of 8×32-bit can overflow 2^32) and remain caller-supplied
-    until a follow-up consumes `h_match_clo`/`h_match_chi` +
-    `main_columns_in_range`. Net: 17 binders removed, none added. -/
+    The a-byte ranges, c-lane ranges, and c-lane sum bounds are all derived
+    from the exact static BinaryExtensionTable row facts threaded through the
+    Clean shift provider. SLL therefore no longer consumes the legacy generic
+    range-bus soundness axiom. -/
 theorem equiv_SLL_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sll_input : PureSpec.SllInput)
@@ -133,14 +126,6 @@ theorem equiv_SLL_of_wf
       m v r_main r_binary h_match
   have h_op : (v.op r_binary).val = ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SLL := by
     rw [← h_op_fgl, h_main_op]; decide
-  -- Discharge c-lo/c-hi sum bounds from the projected match equations
-  -- plus `main_columns_in_range` + `binary_extension_columns_in_range`.
-  have hc_lo_sum_lt :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.hc_lo_sum_lt_of_match
-      m v r_main r_binary h_match_clo
-  have hc_hi_sum_lt :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.hc_hi_sum_lt_of_match
-      m v r_main r_binary h_match_chi
   -- Discharge h_input_r1_circuit via the SailStateBridge + transpile_SLL
   -- + matches_entry's `a_lo`/`a_hi` projection (with m32 = 0 collapse and
   -- op_is_shift = 1 collapse).
@@ -148,10 +133,23 @@ theorem equiv_SLL_of_wf
     transpile_SLL m r_main (regidx_to_fin r1) (regidx_to_fin r2) (regidx_to_fin rd)
       (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
       h_main_active h_main_op
+  have h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary := by
+    obtain ⟨e0, h0, e1, h1, e2, h2, e3, h3, e4, h4, e5, h5, e6, h6, e7, h7⟩ :=
+      h_bytes
+    exact ⟨
+      by simpa [h0.2.2.2.1] using h_wfs.1.1.1,
+      by simpa [h1.2.2.2.1] using h_wfs.2.1.1.1,
+      by simpa [h2.2.2.2.1] using h_wfs.2.2.1.1.1,
+      by simpa [h3.2.2.2.1] using h_wfs.2.2.2.1.1.1,
+      by simpa [h4.2.2.2.1] using h_wfs.2.2.2.2.1.1.1,
+      by simpa [h5.2.2.2.1] using h_wfs.2.2.2.2.2.1.1.1,
+      by simpa [h6.2.2.2.1] using h_wfs.2.2.2.2.2.2.1.1.1,
+      by simpa [h7.2.2.2.1] using h_wfs.2.2.2.2.2.2.2.1.1 ⟩
   have h_input_r1_circuit :=
-    ZiskFv.EquivCore.Bridge.BinaryExtension.packed_a_eq_of_shift_match_m32_0
+    ZiskFv.EquivCore.Bridge.BinaryExtension.packed_a_eq_of_shift_match_m32_0_of_a_range
       m v r_main r_binary (regidx_to_fin r1) sll_input.r1_val
       h_m32 h_a_lo_t h_a_hi_t h_input_r1 h_op_is_shift h_match
+      h_a_range
   have h_shift_pin :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.shift_pin_eq_of_shift_match_m32_0_of_b0_range
       m v r_main r_binary (regidx_to_fin r2) sll_input.r2_val
@@ -168,26 +166,15 @@ theorem equiv_SLL_of_wf
   have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
   have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
   have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
-  -- Derive the a-byte ranges from the exact static BinaryExtensionTable
-  -- rows. The remaining c-byte bounds still come from
-  -- `binary_extension_columns_in_range` until the shift c-lane range
-  -- projection is threaded through the write-value bridge.
-  have h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary := by
-    obtain ⟨e0, h0, e1, h1, e2, h2, e3, h3, e4, h4, e5, h5, e6, h6, e7, h7⟩ :=
-      h_bytes
-    exact ⟨
-      by simpa [h0.2.2.2.1] using h_wfs.1.1.1,
-      by simpa [h1.2.2.2.1] using h_wfs.2.1.1.1,
-      by simpa [h2.2.2.2.1] using h_wfs.2.2.1.1.1,
-      by simpa [h3.2.2.2.1] using h_wfs.2.2.2.1.1.1,
-      by simpa [h4.2.2.2.1] using h_wfs.2.2.2.2.1.1.1,
-      by simpa [h5.2.2.2.1] using h_wfs.2.2.2.2.2.1.1.1,
-      by simpa [h6.2.2.2.1] using h_wfs.2.2.2.2.2.2.1.1.1,
-      by simpa [h7.2.2.2.1] using h_wfs.2.2.2.2.2.2.2.1.1 ⟩
-  obtain ⟨_, _, _, _, _, _, _, _, _,
-          hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
-          hc8, hc9, hc10, hc11, hc12, hc13, hc14, hc15, _, _⟩ :=
-    ZiskFv.Airs.BinaryExtension.binary_extension_columns_in_range v r_binary
+  -- Derive the c-byte ranges and c-lane sum bounds from the exact static
+  -- BinaryExtensionTable rows, with no range-bus axiom.
+  obtain ⟨hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
+          hc8, hc9, hc10, hc11, hc12, hc13, hc14, hc15⟩ :=
+    ZiskFv.Airs.BinaryExtension.binary_extension_sll_c_lanes_lt_of_wf
+      v r_binary h_op h_bytes h_wfs
+  obtain ⟨hc_lo_sum_lt, hc_hi_sum_lt⟩ :=
+    ZiskFv.Airs.BinaryExtension.binary_extension_sll_c_sums_lt_of_wf
+      v r_binary h_op h_bytes h_wfs h_a_range
   set shift : ℕ := sll_input.r2_val.toNat % 64 with h_shift_def
   have h_discharge :=
     ZiskFv.EquivCore.WriteValueProofs.BinaryShift.h_rd_val_shift_sll_of_wf
