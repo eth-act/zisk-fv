@@ -1176,6 +1176,10 @@ The LBU arm now follows the same pattern through
 `lbu_eq_of_full_ensemble_mem_provider` and the generic full-ensemble load
 witness constructor. Its envelope evidence keeps the existing alignment and
 width pins, but no longer accepts a caller-built `LoadCleanWitness`.
+LHU and LWU now use the same full-ensemble route via
+`lhu_eq_of_full_ensemble_mem_provider` and
+`lwu_eq_of_full_ensemble_mem_provider`, preserving their existing alignment
+and width pins while reconstructing `LoadCleanWitness` inside the dispatcher.
 The unified Main, Mem, and MemAlign-family component modules also expose
 direct projection lemmas from generic Clean component specs to the concrete
 row specs expected by the existing load/store bridge layer:
