@@ -232,7 +232,7 @@ theorem equiv_LWU_clean_provider
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
           (ZiskFv.AirsClean.Main.cMemMessage mainRow) 1 1))
     (h_mem_match :
-      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+      ZiskFv.Airs.MemoryBus.matches_memory_payload bus.e1
         (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
           (ZiskFv.AirsClean.Mem.memBusMessage memRow) 1 2))
     (h_addr1 :

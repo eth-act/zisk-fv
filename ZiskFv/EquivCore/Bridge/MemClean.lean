@@ -195,7 +195,7 @@ structure LdCleanWitness
       (MemBusMessage.toEntry
         (ZiskFv.AirsClean.Main.cMemMessage mainRow) 1 1)
   mem_match :
-    ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+    ZiskFv.Airs.MemoryBus.matches_memory_payload bus.e1
       (MemBusMessage.toEntry
         (ZiskFv.AirsClean.Mem.memBusMessage memRow) 1 2)
   addr1 :
@@ -238,7 +238,7 @@ structure LoadCleanWitness
       (MemBusMessage.toEntry
         (ZiskFv.AirsClean.Main.cMemMessage mainRow) 1 1)
   mem_match :
-    ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+    ZiskFv.Airs.MemoryBus.matches_memory_payload bus.e1
       (MemBusMessage.toEntry
         (ZiskFv.AirsClean.Mem.memBusMessage memRow) 1 2)
   addr1 :
@@ -289,7 +289,7 @@ theorem ld_discharge_full_clean_provider
         (MemBusMessage.toEntry
           (ZiskFv.AirsClean.Main.cMemMessage mainRow) 1 1))
     (h_mem_match :
-      ZiskFv.Airs.MemoryBus.matches_memory_entry e1
+      ZiskFv.Airs.MemoryBus.matches_memory_payload e1
         (MemBusMessage.toEntry
           (ZiskFv.AirsClean.Mem.memBusMessage memRow) 1 2))
     (h_addr1 :
@@ -336,7 +336,7 @@ theorem ld_discharge_full_clean_provider
       h_addr1 h_addr2_zero_iff h_addr2_idx
   have h_provider :
       ZiskFv.Airs.MemoryBus.MemBridge.mem_row_matches_entry mem r_mem e1 :=
-    ZiskFv.AirsClean.Mem.mem_row_matches_entry_of_message_match_valid
+    ZiskFv.AirsClean.Mem.mem_row_matches_entry_of_payload_match_valid
       mem r_mem memRow e1 h_mem_row h_mem_sel h_mem_legacy_addr h_mem_match
   have h_mem :=
     ZiskFv.ZiskCircuit.MemModel.mem_load_correct_of_provider_row

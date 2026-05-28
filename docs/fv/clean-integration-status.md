@@ -1142,6 +1142,12 @@ polarity, while the Mem row predicate only consumes the address-space,
 pointer, timestamp, and value fields. Full `matches_memory_entry` remains
 available for same-polarity legacy rows, but provider construction no longer
 has to pretend the multiplicities agree.
+The `LdCleanWitness`, generic `LoadCleanWitness`, and load-family Clean
+discharge entry points now use `matches_memory_payload` for the Mem provider
+row. Main-side consumer/register-write matches remain full
+`matches_memory_entry` facts because those legacy rows still need their
+consumer/write multiplicities. This moves the load witness shape closer to
+the full ensemble bridge without adding a new promise.
 The unified Main, Mem, and MemAlign-family component modules also expose
 direct projection lemmas from generic Clean component specs to the concrete
 row specs expected by the existing load/store bridge layer:
