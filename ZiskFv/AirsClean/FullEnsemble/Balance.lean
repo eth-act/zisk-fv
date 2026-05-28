@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.FullEnsemble
+import ZiskFv.AirsClean.Mem.Bridge
 
 /-!
 # Full Clean ensemble balance projections
@@ -1248,6 +1249,69 @@ theorem exists_memAlignReadByte_row_eval_of_interaction_mem
   · exact h_mem
 
 /-! ## Full-ensemble memory-bus row bridges -/
+
+/-- Compose a selected Main `b` memory pull from the full ensemble with a
+    selected Mem provider row.
+
+Clean balance supplies equality of the raw PIL memory-bus messages, while
+the load witness carries a legacy-entry match for the Main pull.  This
+adapter translates those facts into the payload-only provider match needed
+by the Mem row bridge; multiplicity polarity is intentionally not part of
+the conclusion. -/
+theorem mem_provider_payload_match_of_main_b_match_and_msg_eq
+    {mainRow : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL}
+    {memRow : Var ZiskFv.AirsClean.Mem.MemRow FGL}
+    {mainEnv memEnv : Environment FGL}
+    {mainMult providerMult : Expression FGL}
+    {mainInteraction providerInteraction : Interaction FGL}
+    {entry : Interaction.MemoryBusEntry FGL}
+    (h_mainEval :
+      mainInteraction =
+        ((MemBusChannel.emitted mainMult
+          (ZiskFv.AirsClean.Main.bMemMessageExpr mainRow)).toRaw).eval
+          mainEnv)
+    (h_providerEval :
+      providerInteraction =
+        ((MemBusChannel.emitted providerMult
+          (ZiskFv.AirsClean.Mem.memBusMessageExpr memRow)).toRaw).eval
+          memEnv)
+    (h_msg : providerInteraction.msg = mainInteraction.msg)
+    (h_main_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.bMemMessage (eval mainEnv mainRow)) (-1) 2)) :
+    ZiskFv.Airs.MemoryBus.matches_memory_payload entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (ZiskFv.AirsClean.Mem.memBusMessage (eval memEnv memRow)) 1 2) := by
+  have h_entry :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry entry
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (eval mainEnv (ZiskFv.AirsClean.Main.bMemMessageExpr mainRow))
+          (-1) 2) := by
+    simpa [ZiskFv.AirsClean.Main.eval_bMemMessageExpr] using h_main_match
+  have h_raw :
+      (((MemBusChannel.emitted providerMult
+          (ZiskFv.AirsClean.Mem.memBusMessageExpr memRow)).toRaw).eval
+          memEnv).msg =
+        (((MemBusChannel.emitted mainMult
+          (ZiskFv.AirsClean.Main.bMemMessageExpr mainRow)).toRaw).eval
+          mainEnv).msg := by
+    rw [← h_providerEval, ← h_mainEval]
+    exact h_msg
+  have h_payload :=
+    ZiskFv.Airs.MemoryBus.matches_memory_payload_of_left_match_eval_emitted_provider_msg_eq
+      (mainMsg := ZiskFv.AirsClean.Main.bMemMessageExpr mainRow)
+      (providerMsg := ZiskFv.AirsClean.Mem.memBusMessageExpr memRow)
+      (mainMult := mainMult)
+      (providerMult := providerMult)
+      (mainEnv := mainEnv)
+      (providerEnv := memEnv)
+      (entry := entry)
+      (mainMultiplicity := (-1 : FGL))
+      (providerMultiplicity := (1 : FGL))
+      (as := (2 : FGL))
+      h_entry h_raw
+  simpa [ZiskFv.AirsClean.Mem.eval_memBusMessageExpr] using h_payload
 
 /-- Row-native full-ensemble memory projection: an active unified-Main
     memory-bus interaction has a balanced same-message counterpart on a

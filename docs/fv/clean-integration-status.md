@@ -1148,6 +1148,12 @@ row. Main-side consumer/register-write matches remain full
 `matches_memory_entry` facts because those legacy rows still need their
 consumer/write multiplicities. This moves the load witness shape closer to
 the full ensemble bridge without adding a new promise.
+`mem_provider_payload_match_of_main_b_match_and_msg_eq` is the corresponding
+full-ensemble adapter for selected load rows: it composes the caller's
+Main-side legacy `b`-message match with the full-ensemble same-message Mem
+provider row to produce the payload-only provider match consumed by
+`LoadCleanWitness`. The adapter is purely structural and keeps multiplicity
+polarity out of the provider premise.
 The unified Main, Mem, and MemAlign-family component modules also expose
 direct projection lemmas from generic Clean component specs to the concrete
 row specs expected by the existing load/store bridge layer:
