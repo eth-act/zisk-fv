@@ -1121,6 +1121,11 @@ provider interaction, with `witness.Spec` threaded to the selected Main row
 and to concrete ArithMul plus lookup-aware BinaryExtension/Binary/BinaryAdd
 provider rows. ArithMul now exposes its op-bus channel through
 `component_interactionsWith_opBus`, matching the other provider components.
+`exists_op_provider_row_matches_entry_spec_of_active_main_table_interaction`
+then adapts that same Clean message-equality evidence into the legacy
+`OperationBus.matches_entry` shape used by current opcode bridges, preserving
+the concrete provider-row and provider-spec branches without excluding any
+branch by caller promise.
 The current ArithDiv carry-chain component and memory-only tables are proved
 to expose no operation-bus interactions in this ensemble; DIV/REM op-bus
 surfaces still depend on their dedicated defect-gated route.
@@ -1140,8 +1145,9 @@ Checklist:
   `witness.Spec`, with projection lemmas for unified Main, Mem, and
   MemAlign-family concrete row specs. The op-bus row bridge now also carries
   row-local `Spec` facts for unified Main, ArithMul, and the lookup-aware
-  Binary-family provider branches. Constructibility and canonical re-root
-  remain open.
+  Binary-family provider branches, and it has a derived legacy
+  `OperationBus.matches_entry` adapter. Constructibility and canonical
+  re-root remain open.
 - ☐ T7.2 prove constructibility: real ZisK traces produce an
   `EnsembleWitness` satisfying constraints and balanced channels, modulo
   explicit `h_known_bugs`.

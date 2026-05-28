@@ -908,6 +908,142 @@ theorem exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
     exact ⟨providerRow, h_providerRow,
       h_providerSpecs providerRow h_providerRow, h_binaryAdd, h_providerEval⟩
 
+/-- Legacy-entry view of the full-ensemble operation-bus bridge.
+
+    Clean balance proves equality of raw operation-bus message arrays.  This
+    adapter keeps the full-ensemble provider row/spec information while
+    translating each provider branch into the `OperationBus.matches_entry`
+    shape consumed by the existing opcode proofs. -/
+theorem exists_op_provider_row_matches_entry_spec_of_active_main_table_interaction
+    {length : ℕ} {program : Program length}
+    (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
+    (h_constraints : witness.Constraints)
+    (h_balanced : witness.BalancedChannels)
+    (h_specs : witness.Spec)
+    {mainTable : Table FGL}
+    (h_mainTable : mainTable ∈ witness.allTables)
+    (h_mainComponent :
+      mainTable.component =
+        ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
+    {mainInteraction : Interaction FGL}
+    (h_mainInteraction :
+      mainInteraction ∈ mainTable.interactionsWith OpBusChannel.toRaw)
+    (h_active : mainInteraction.mult = -1) :
+    ∃ mainRow ∈ mainTable.table,
+      mainTable.component.Spec (mainTable.environment mainRow)
+        ∧ mainInteraction =
+          ((OpBusChannel.emitted
+            (-(ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.core.is_external_op)
+            (ZiskFv.AirsClean.Main.opBusMessageExpr
+              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                length program).rowInputVar.core)).toRaw).eval
+            (mainTable.environment mainRow)
+        ∧ ∃ providerInteraction ∈ witness.interactionsWith OpBusChannel.toRaw,
+          providerInteraction.msg = mainInteraction.msg
+            ∧ providerInteraction.mult ≠ -1
+            ∧ providerInteraction.mult ≠ 0
+            ∧ ∃ providerTable ∈ witness.allTables,
+              providerInteraction ∈ providerTable.interactionsWith OpBusChannel.toRaw
+                ∧
+                ((∃ providerRow ∈ providerTable.table,
+                    providerTable.component.Spec (providerTable.environment providerRow)
+                      ∧ providerTable.component = ZiskFv.AirsClean.ArithMul.component
+                      ∧ ZiskFv.Airs.OperationBus.matches_entry
+                        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+                          (eval (mainTable.environment mainRow)
+                            (ZiskFv.AirsClean.Main.opBusMessageExpr
+                              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar.core)) 1)
+                        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+                          (eval (providerTable.environment providerRow)
+                            (ZiskFv.AirsClean.ArithMul.primaryOpBusMessageExpr
+                              ZiskFv.AirsClean.ArithMul.component.rowInputVar)) 1))
+                  ∨ (∃ providerRow ∈ providerTable.table,
+                    providerTable.component.Spec (providerTable.environment providerRow)
+                      ∧ providerTable.component =
+                        ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+                      ∧ ZiskFv.Airs.OperationBus.matches_entry
+                        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+                          (eval (mainTable.environment mainRow)
+                            (ZiskFv.AirsClean.Main.opBusMessageExpr
+                              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar.core)) 1)
+                        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+                          (eval (providerTable.environment providerRow)
+                            (ZiskFv.AirsClean.BinaryExtension.opBusMessageExpr
+                              ZiskFv.AirsClean.BinaryExtension.staticLookupComponent.rowInputVar)) 1))
+                  ∨ (∃ providerRow ∈ providerTable.table,
+                    providerTable.component.Spec (providerTable.environment providerRow)
+                      ∧ providerTable.component =
+                        ZiskFv.AirsClean.Binary.staticLookupComponent
+                      ∧ ZiskFv.Airs.OperationBus.matches_entry
+                        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+                          (eval (mainTable.environment mainRow)
+                            (ZiskFv.AirsClean.Main.opBusMessageExpr
+                              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar.core)) 1)
+                        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+                          (eval (providerTable.environment providerRow)
+                            (ZiskFv.AirsClean.Binary.opBusMessageExpr
+                              ZiskFv.AirsClean.Binary.staticLookupComponent.rowInputVar)) 1))
+                  ∨ (∃ providerRow ∈ providerTable.table,
+                    providerTable.component.Spec (providerTable.environment providerRow)
+                      ∧ providerTable.component = ZiskFv.AirsClean.BinaryAdd.component
+                      ∧ ZiskFv.Airs.OperationBus.matches_entry
+                        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+                          (eval (mainTable.environment mainRow)
+                            (ZiskFv.AirsClean.Main.opBusMessageExpr
+                              (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+                                length program).rowInputVar.core)) 1)
+                        (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
+                          (eval (providerTable.environment providerRow)
+                            (ZiskFv.AirsClean.BinaryAdd.opBusMessageExpr
+                              ZiskFv.AirsClean.BinaryAdd.component.rowInputVar)) 1))) := by
+  obtain ⟨mainRow, h_mainRow, h_mainSpec, h_mainEval, providerInteraction,
+      h_provider_witness, h_msg, h_nonpull, h_nonzero, providerTable,
+      h_providerTable, h_providerInteraction, h_providerBranch⟩ :=
+    exists_op_provider_row_msg_eq_spec_of_active_main_table_interaction
+      witness h_constraints h_balanced h_specs h_mainTable h_mainComponent
+      h_mainInteraction h_active
+  refine ⟨mainRow, h_mainRow, h_mainSpec, h_mainEval, providerInteraction,
+    h_provider_witness, h_msg, h_nonpull, h_nonzero, providerTable,
+    h_providerTable, h_providerInteraction, ?_⟩
+  rcases h_providerBranch with h_arithMul | h_binExt | h_binary | h_binaryAdd
+  · obtain ⟨providerRow, h_providerRow, h_providerSpec, h_providerComponent,
+      h_providerEval⟩ := h_arithMul
+    left
+    refine ⟨providerRow, h_providerRow, h_providerSpec, h_providerComponent, ?_⟩
+    apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+    rw [← h_providerEval, ← h_mainEval]
+    exact h_msg
+  · obtain ⟨providerRow, h_providerRow, h_providerSpec, h_providerComponent,
+      h_providerEval⟩ := h_binExt
+    right
+    left
+    refine ⟨providerRow, h_providerRow, h_providerSpec, h_providerComponent, ?_⟩
+    apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+    rw [← h_providerEval, ← h_mainEval]
+    exact h_msg
+  · obtain ⟨providerRow, h_providerRow, h_providerSpec, h_providerComponent,
+      h_providerEval⟩ := h_binary
+    right
+    right
+    left
+    refine ⟨providerRow, h_providerRow, h_providerSpec, h_providerComponent, ?_⟩
+    apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+    rw [← h_providerEval, ← h_mainEval]
+    exact h_msg
+  · obtain ⟨providerRow, h_providerRow, h_providerSpec, h_providerComponent,
+      h_providerEval⟩ := h_binaryAdd
+    right
+    right
+    right
+    refine ⟨providerRow, h_providerRow, h_providerSpec, h_providerComponent, ?_⟩
+    apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
+    rw [← h_providerEval, ← h_mainEval]
+    exact h_msg
+
 /-- Row extraction for a Mem memory-bus provider interaction in the full
     ensemble. -/
 theorem exists_mem_row_eval_of_interaction_mem
