@@ -1172,6 +1172,10 @@ evidence, and the existing structural ROM/Main-side bus pins. The LD
 dispatcher constructs the Clean witness internally through
 `ld_eq_of_full_ensemble_mem_provider`, so this is structural unpacking rather
 than a new caller promise or axiom.
+The LBU arm now follows the same pattern through
+`lbu_eq_of_full_ensemble_mem_provider` and the generic full-ensemble load
+witness constructor. Its envelope evidence keeps the existing alignment and
+width pins, but no longer accepts a caller-built `LoadCleanWitness`.
 The unified Main, Mem, and MemAlign-family component modules also expose
 direct projection lemmas from generic Clean component specs to the concrete
 row specs expected by the existing load/store bridge layer:
