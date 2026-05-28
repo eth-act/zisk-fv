@@ -1154,6 +1154,12 @@ Main-side legacy `b`-message match with the full-ensemble same-message Mem
 provider row to produce the payload-only provider match consumed by
 `LoadCleanWitness`. The adapter is purely structural and keeps multiplicity
 polarity out of the provider premise.
+`EquivCore.Bridge.MemCleanFullEnsemble` now provides reducible constructors
+for the generic load witness and `LdCleanWitness` from selected
+full-ensemble Main `b` and Mem provider rows. These constructors still expose
+the row-equality, ROM/transpile, and legacy Main-side match pins, but the Mem
+provider payload match is no longer an independent field: it is derived from
+the full-ensemble same-message evidence.
 The unified Main, Mem, and MemAlign-family component modules also expose
 direct projection lemmas from generic Clean component specs to the concrete
 row specs expected by the existing load/store bridge layer:
