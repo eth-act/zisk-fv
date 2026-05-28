@@ -70,15 +70,15 @@ def OpEnvelope.exec_eq_remaining
         lwu_input.imm, regidx.Regidx lwu_input.r1, regidx.Regidx lwu_input.rd, true, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   -- Sub-doubleword stores (3)
-  | .sb sb_input _ bus _ _ _ _ _ =>
+  | .sb sb_input _ bus .. =>
       execute_instruction (instruction.STORE (
         sb_input.imm, regidx.Regidx sb_input.r2, regidx.Regidx sb_input.r1, 1
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .sh sh_input _ bus _ _ _ _ _ =>
+  | .sh sh_input _ bus .. =>
       execute_instruction (instruction.STORE (
         sh_input.imm, regidx.Regidx sh_input.r2, regidx.Regidx sh_input.r1, 2
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .sw sw_input _ bus _ _ _ _ _ =>
+  | .sw sw_input _ bus .. =>
       execute_instruction (instruction.STORE (
         sw_input.imm, regidx.Regidx sw_input.r2, regidx.Regidx sw_input.r1, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
@@ -213,18 +213,30 @@ theorem zisk_riscv_compliant_program_bus_remaining
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
-  | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises w =>
+  | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises
+      h_main_row h_main_spec h_store_pc h_main_c_match h_addr2 h_m1 h_m2
+      h_m3 h_m4 h_m5 h_m6 h_m7 =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Sb.equiv_SB state sb_input regs m r_main bus pins
-      h_main_ind_width h_opcode_assumptions promises w
-  | sh sh_input regs bus pins h_main_ind_width h_opcode_assumptions promises w =>
+    exact ZiskFv.Compliance.sb_eq_of_full_ensemble_main_c
+      state sb_input regs m r_main bus pins h_main_ind_width
+      h_opcode_assumptions promises h_main_row h_main_spec h_store_pc
+      h_main_c_match h_addr2 h_m1 h_m2 h_m3 h_m4 h_m5 h_m6 h_m7
+  | sh sh_input regs bus pins h_main_ind_width h_opcode_assumptions promises
+      h_main_row h_main_spec h_store_pc h_main_c_match h_addr2 h_m2 h_m3
+      h_m4 h_m5 h_m6 h_m7 =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Sh.equiv_SH state sh_input regs m r_main bus pins
-      h_main_ind_width h_opcode_assumptions promises w
-  | sw sw_input regs bus pins h_main_ind_width h_opcode_assumptions promises w =>
+    exact ZiskFv.Compliance.sh_eq_of_full_ensemble_main_c
+      state sh_input regs m r_main bus pins h_main_ind_width
+      h_opcode_assumptions promises h_main_row h_main_spec h_store_pc
+      h_main_c_match h_addr2 h_m2 h_m3 h_m4 h_m5 h_m6 h_m7
+  | sw sw_input regs bus pins h_main_ind_width h_opcode_assumptions promises
+      h_main_row h_main_spec h_store_pc h_main_c_match h_addr2 h_m4 h_m5
+      h_m6 h_m7 =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Sw.equiv_SW state sw_input regs m r_main bus pins
-      h_main_ind_width h_opcode_assumptions promises w
+    exact ZiskFv.Compliance.sw_eq_of_full_ensemble_main_c
+      state sw_input regs m r_main bus pins h_main_ind_width
+      h_opcode_assumptions promises h_main_row h_main_spec h_store_pc
+      h_main_c_match h_addr2 h_m4 h_m5 h_m6 h_m7
   -- W-shifts
   | sllw sllw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
@@ -457,18 +469,30 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
       h_mainEval h_providerEval h_msg h_main_row h_mem_row h_main_spec
       h_store_pc h_main_b_match h_main_c_match h_addr1 h_addr2_zero_iff
       h_addr2_idx h_mem_sel h_mem_legacy_addr h_mem_wr
-  | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises w =>
+  | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises
+      h_main_row h_main_spec h_store_pc h_main_c_match h_addr2 h_m1 h_m2
+      h_m3 h_m4 h_m5 h_m6 h_m7 =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Sb.equiv_SB state sb_input regs m r_main bus pins
-      h_main_ind_width h_opcode_assumptions promises w
-  | sh sh_input regs bus pins h_main_ind_width h_opcode_assumptions promises w =>
+    exact ZiskFv.Compliance.sb_eq_of_full_ensemble_main_c
+      state sb_input regs m r_main bus pins h_main_ind_width
+      h_opcode_assumptions promises h_main_row h_main_spec h_store_pc
+      h_main_c_match h_addr2 h_m1 h_m2 h_m3 h_m4 h_m5 h_m6 h_m7
+  | sh sh_input regs bus pins h_main_ind_width h_opcode_assumptions promises
+      h_main_row h_main_spec h_store_pc h_main_c_match h_addr2 h_m2 h_m3
+      h_m4 h_m5 h_m6 h_m7 =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Sh.equiv_SH state sh_input regs m r_main bus pins
-      h_main_ind_width h_opcode_assumptions promises w
-  | sw sw_input regs bus pins h_main_ind_width h_opcode_assumptions promises w =>
+    exact ZiskFv.Compliance.sh_eq_of_full_ensemble_main_c
+      state sh_input regs m r_main bus pins h_main_ind_width
+      h_opcode_assumptions promises h_main_row h_main_spec h_store_pc
+      h_main_c_match h_addr2 h_m2 h_m3 h_m4 h_m5 h_m6 h_m7
+  | sw sw_input regs bus pins h_main_ind_width h_opcode_assumptions promises
+      h_main_row h_main_spec h_store_pc h_main_c_match h_addr2 h_m4 h_m5
+      h_m6 h_m7 =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Sw.equiv_SW state sw_input regs m r_main bus pins
-      h_main_ind_width h_opcode_assumptions promises w
+    exact ZiskFv.Compliance.sw_eq_of_full_ensemble_main_c
+      state sw_input regs m r_main bus pins h_main_ind_width
+      h_opcode_assumptions promises h_main_row h_main_spec h_store_pc
+      h_main_c_match h_addr2 h_m4 h_m5 h_m6 h_m7
   | sllw sllw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

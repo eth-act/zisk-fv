@@ -170,4 +170,157 @@ def ldCleanWitness_of_full_ensemble_main_b_mem_provider
       mem_legacy_addr := w.mem_legacy_addr
       mem_wr := w.mem_wr }
 
+/-- Build the SD store witness from a selected full-ensemble Main `c` row. -/
+@[reducible]
+def sdCleanWitness_of_full_ensemble_main_c
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (sd_input : PureSpec.SdInput)
+    {mainRowVar : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL}
+    {mainEnv : Environment FGL}
+    (h_main_row :
+      (eval mainEnv mainRowVar).core =
+        ZiskFv.AirsClean.Main.rowAt main r_main)
+    (h_main_spec : ZiskFv.AirsClean.Main.Spec (eval mainEnv mainRowVar).core)
+    (h_store_pc : (eval mainEnv mainRowVar).core.store_pc = 0)
+    (h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage (eval mainEnv mainRowVar)) 1 2))
+    (h_addr2 :
+      (eval mainEnv mainRowVar).rom.addr2.toNat =
+        (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat) :
+    SdCleanWitness main r_main bus sd_input :=
+  { mainRow := eval mainEnv mainRowVar
+    main_row := h_main_row
+    main_spec := h_main_spec
+    store_pc := h_store_pc
+    main_c_match := h_main_c_match
+    addr2 := h_addr2 }
+
+/-- Build the SB store witness from a selected full-ensemble Main `c` row. -/
+@[reducible]
+def sbCleanWitness_of_full_ensemble_main_c
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sb_input : PureSpec.SbInput)
+    {mainRowVar : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL}
+    {mainEnv : Environment FGL}
+    (h_main_row :
+      (eval mainEnv mainRowVar).core =
+        ZiskFv.AirsClean.Main.rowAt main r_main)
+    (h_main_spec : ZiskFv.AirsClean.Main.Spec (eval mainEnv mainRowVar).core)
+    (h_store_pc : (eval mainEnv mainRowVar).core.store_pc = 0)
+    (h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage (eval mainEnv mainRowVar)) 1 2))
+    (h_addr2 :
+      (eval mainEnv mainRowVar).rom.addr2.toNat =
+        (sb_input.r1_val + BitVec.signExtend 64 sb_input.imm).toNat)
+    (h_m1 : state.mem[bus.e2.ptr.toNat + 1]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 1 : BitVec 8))
+    (h_m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2 : BitVec 8))
+    (h_m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3 : BitVec 8))
+    (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4 : BitVec 8))
+    (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5 : BitVec 8))
+    (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6 : BitVec 8))
+    (h_m7 : state.mem[bus.e2.ptr.toNat + 7]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7 : BitVec 8)) :
+    SbCleanWitness main r_main bus state sb_input :=
+  { mainRow := eval mainEnv mainRowVar
+    main_row := h_main_row
+    main_spec := h_main_spec
+    store_pc := h_store_pc
+    main_c_match := h_main_c_match
+    addr2 := h_addr2
+    m1 := h_m1
+    m2 := h_m2
+    m3 := h_m3
+    m4 := h_m4
+    m5 := h_m5
+    m6 := h_m6
+    m7 := h_m7 }
+
+/-- Build the SH store witness from a selected full-ensemble Main `c` row. -/
+@[reducible]
+def shCleanWitness_of_full_ensemble_main_c
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sh_input : PureSpec.ShInput)
+    {mainRowVar : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL}
+    {mainEnv : Environment FGL}
+    (h_main_row :
+      (eval mainEnv mainRowVar).core =
+        ZiskFv.AirsClean.Main.rowAt main r_main)
+    (h_main_spec : ZiskFv.AirsClean.Main.Spec (eval mainEnv mainRowVar).core)
+    (h_store_pc : (eval mainEnv mainRowVar).core.store_pc = 0)
+    (h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage (eval mainEnv mainRowVar)) 1 2))
+    (h_addr2 :
+      (eval mainEnv mainRowVar).rom.addr2.toNat =
+        (sh_input.r1_val + BitVec.signExtend 64 sh_input.imm).toNat)
+    (h_m2 : state.mem[bus.e2.ptr.toNat + 2]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 2 : BitVec 8))
+    (h_m3 : state.mem[bus.e2.ptr.toNat + 3]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 3 : BitVec 8))
+    (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4 : BitVec 8))
+    (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5 : BitVec 8))
+    (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6 : BitVec 8))
+    (h_m7 : state.mem[bus.e2.ptr.toNat + 7]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7 : BitVec 8)) :
+    ShCleanWitness main r_main bus state sh_input :=
+  { mainRow := eval mainEnv mainRowVar
+    main_row := h_main_row
+    main_spec := h_main_spec
+    store_pc := h_store_pc
+    main_c_match := h_main_c_match
+    addr2 := h_addr2
+    m2 := h_m2
+    m3 := h_m3
+    m4 := h_m4
+    m5 := h_m5
+    m6 := h_m6
+    m7 := h_m7 }
+
+/-- Build the SW store witness from a selected full-ensemble Main `c` row. -/
+@[reducible]
+def swCleanWitness_of_full_ensemble_main_c
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
+    (r_main : ℕ)
+    (bus : ZiskFv.Compliance.BusRows)
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sw_input : PureSpec.SwInput)
+    {mainRowVar : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL}
+    {mainEnv : Environment FGL}
+    (h_main_row :
+      (eval mainEnv mainRowVar).core =
+        ZiskFv.AirsClean.Main.rowAt main r_main)
+    (h_main_spec : ZiskFv.AirsClean.Main.Spec (eval mainEnv mainRowVar).core)
+    (h_store_pc : (eval mainEnv mainRowVar).core.store_pc = 0)
+    (h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage (eval mainEnv mainRowVar)) 1 2))
+    (h_addr2 :
+      (eval mainEnv mainRowVar).rom.addr2.toNat =
+        (sw_input.r1_val + BitVec.signExtend 64 sw_input.imm).toNat)
+    (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 4 : BitVec 8))
+    (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 5 : BitVec 8))
+    (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 6 : BitVec 8))
+    (h_m7 : state.mem[bus.e2.ptr.toNat + 7]? = some (ZiskFv.Channels.MemoryBusBytes.byteAt bus.e2 7 : BitVec 8)) :
+    SwCleanWitness main r_main bus state sw_input :=
+  { mainRow := eval mainEnv mainRowVar
+    main_row := h_main_row
+    main_spec := h_main_spec
+    store_pc := h_store_pc
+    main_c_match := h_main_c_match
+    addr2 := h_addr2
+    m4 := h_m4
+    m5 := h_m5
+    m6 := h_m6
+    m7 := h_m7 }
+
 end ZiskFv.EquivCore.Bridge.MemClean

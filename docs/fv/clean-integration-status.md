@@ -1187,6 +1187,13 @@ The signed load arms `LB/LH/LW` now also reconstruct their memory
 `lw_eq_of_full_ensemble_mem_provider`. Their BinaryExtension static-match
 operation-bus evidence remains explicit for now; this slice removes only the
 caller-built memory witness.
+The store arms `SD/SB/SH/SW` now reconstruct their Clean store witnesses
+from selected full-ensemble Main `c/store` rows through
+`sd_eq_of_full_ensemble_main_c`, `sb_eq_of_full_ensemble_main_c`,
+`sh_eq_of_full_ensemble_main_c`, and `sw_eq_of_full_ensemble_main_c`.
+The subword store high-byte RMW facts remain explicit; this slice removes
+the caller-built `SdCleanWitness`, `SbCleanWitness`, `ShCleanWitness`, and
+`SwCleanWitness` values from the envelope.
 The unified Main, Mem, and MemAlign-family component modules also expose
 direct projection lemmas from generic Clean component specs to the concrete
 row specs expected by the existing load/store bridge layer:
