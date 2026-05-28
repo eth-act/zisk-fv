@@ -718,7 +718,7 @@ ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 022 h_m2_mult [bus_shape] bus.e2.mul
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 023 h_m2_as [bus_shape] bus.e2.as.val = 1
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 024 h_rd_idx [transpile] sllw_input.rd = Transpiler.wrap_to_regidx bus.e2.ptr
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 025 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL_W
-ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 026 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 026 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComp
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 027 h_table_spec [other] providerTable.Spec
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 028 h_provider_row [other] providerRow ∈ providerTable.table
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 029 h_match [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Channels.OperationBus.OpBusMessa
@@ -734,7 +734,7 @@ ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 007 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 008 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 009 promises [bridge] ZiskFv.EquivCore.Promises.ShiftWImmPromises state slliw_input.r1_val slliw_input
 ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 ZiskFv.Trusted.OP_SLL_W
-ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 011 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 011 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComp
 ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 012 h_table_spec [other] providerTable.Spec
 ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 013 h_provider_row [other] providerRow ∈ providerTable.table
 ZiskFv.Compliance.Wrappers.ShiftLI.equiv_SLLIW 014 h_match [other] matches_entry (opBus_row_Main m r_main) (ZiskFv.Channels.OperationBus.OpBusMessa

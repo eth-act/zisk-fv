@@ -775,6 +775,56 @@ lemma packed_a_lo32_eq_of_shift_match_m32_1
         < 4294967296 := by omega
   omega
 
+/-- Variant of `packed_a_lo32_eq_of_shift_match_m32_1` whose a-byte
+    bounds are supplied by the exact static BinaryExtensionTable witness. -/
+lemma packed_a_lo32_eq_of_shift_match_m32_1_of_a_range
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (r_main r_binary : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
+    (h_m32 : m.m32 r_main = 1)
+    (h_a_lo_t : m.a_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs1))
+    (h_a_hi_t : m.a_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs1))
+    (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok r1_val state)
+    (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary))
+    (h_a_range : ZiskFv.Airs.BinaryExtension.a_bytes_in_range v r_binary) :
+    (Sail.BitVec.extractLsb r1_val 31 0 : BitVec (31 - 0 + 1)).toNat
+      = ((v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+          + (v.free_in_a_2 r_binary).val * 65536
+          + (v.free_in_a_3 r_binary).val * 16777216) % 2^32 := by
+  obtain ⟨ha0, ha1, ha2, ha3, _, _, _, _⟩ := h_a_range
+  have h_r1_main :=
+    SailStateBridge.packed_lane_eq_of_read_xreg
+      state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main) h_a_lo_t h_a_hi_t h_read_r1
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
+  obtain ⟨_, _, h_a_lo_m, _, _, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  rw [h_op_is_shift] at h_a_lo_m
+  have h_a0_fgl : m.a_0 r_main
+      = v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
+        + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary := by
+    rw [h_a_lo_m]; ring
+  have h_a0_val : (m.a_0 r_main).val =
+      (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+      + (v.free_in_a_2 r_binary).val * 65536 + (v.free_in_a_3 r_binary).val * 16777216 := by
+    rw [h_a0_fgl]
+    exact packed_a_lo_val_eq_of_match v r_binary ha0 ha1 ha2 ha3
+  rw [h_r1_main]
+  have h_extract_eq :
+      (Sail.BitVec.extractLsb
+        (BitVec.ofNat 64
+          ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296)) 31 0
+        : BitVec (31 - 0 + 1)).toNat
+      = ((m.a_0 r_main).val + (m.a_1 r_main).val * 4294967296) % 2^32 := by
+    simp [Sail.BitVec.extractLsb, BitVec.extractLsb, BitVec.extractLsb',
+          BitVec.toNat_ofNat]
+  rw [h_extract_eq, h_a0_val]
+  have h_a0_lt : (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+        + (v.free_in_a_2 r_binary).val * 65536 + (v.free_in_a_3 r_binary).val * 16777216
+        < 4294967296 := by omega
+  omega
+
 /-- **W-variant register shift-pin bridge.** Derives
     `(extractLsb r2_val 31 0).toNat % 32 = (v.free_in_b).val % 32` from
     transpile lanes (`m.b_0 = lane_lo (xreg rs2)`, …), read_xreg,
@@ -833,6 +883,57 @@ lemma shift_pin_w_eq_of_shift_match
   -- Both 256 * b_0.val and m.b_1.val * 2^32 are multiples of 32 (256 = 8*32).
   omega
 
+/-- Variant of `shift_pin_w_eq_of_shift_match` whose no-wrap bound for
+    `b_0` is supplied by the shift-specific Clean range witness. -/
+lemma shift_pin_w_eq_of_shift_match_of_b0_range
+    {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (r_main r_binary : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
+    (h_b_lo_t : m.b_0 r_main = lane_lo ((SailStateBridge.sail_to_rv64 state).xreg rs2))
+    (h_b_hi_t : m.b_1 r_main = lane_hi ((SailStateBridge.sail_to_rv64 state).xreg rs2))
+    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok r2_val state)
+    (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary))
+    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
+    (h_b0_lt : (v.b_0 r_binary).val < 2 ^ 24) :
+    (Sail.BitVec.extractLsb r2_val 31 0 : BitVec (31 - 0 + 1)).toNat % 32
+      = (v.free_in_b r_binary).val % 32 := by
+  have h_b_main : (v.free_in_b r_binary).val < 256 := by
+    have h := h_wfs.1.1.2.2
+    simpa [h_bytes.h0.2.2.2.2.1] using h
+  have h_r2_main :=
+    SailStateBridge.packed_lane_eq_of_read_xreg
+      state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main) h_b_lo_t h_b_hi_t h_read_r2
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
+  obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  rw [h_op_is_shift] at h_b_lo_m
+  have h_b0_fgl : m.b_0 r_main = v.free_in_b r_binary + 256 * v.b_0 r_binary := by
+    rw [h_b_lo_m]; ring
+  have h_b0_val : (m.b_0 r_main).val
+      = (v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val := by
+    rw [h_b0_fgl]
+    have h_cast : v.free_in_b r_binary + 256 * v.b_0 r_binary
+        = ((((v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    show _ < 18446744069414584321
+    omega
+  rw [h_r2_main]
+  have h_extract_eq :
+      (Sail.BitVec.extractLsb
+        (BitVec.ofNat 64
+          ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296)) 31 0
+        : BitVec (31 - 0 + 1)).toNat
+      = ((m.b_0 r_main).val + (m.b_1 r_main).val * 4294967296) % 2^32 := by
+    simp [Sail.BitVec.extractLsb, BitVec.extractLsb, BitVec.extractLsb',
+          BitVec.toNat_ofNat]
+  rw [h_extract_eq, h_b0_val]
+  omega
+
 /-- **W-variant immediate shift-pin bridge (SLLIW/SRLIW/SRAIW).**
     Derives `shamt.toNat = (v.free_in_b).val % 32` where `shamt : BitVec 5`.
     Mirrors `shift_pin_immediate_eq_of_shift_match` but for the 5-bit
@@ -868,6 +969,51 @@ lemma shift_pin_w_immediate_eq_of_shift_match
     rw [h_cast, Fin.val_natCast]
     apply Nat.mod_eq_of_lt
     show _ < 18446744069414584321; omega
+  have h_shamt_val : shamt.toNat
+      = (v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val := by
+    have h := congr_arg Fin.val h_shamt_eq
+    rw [h_lhs_val, h_rhs_val] at h
+    exact h
+  have h_shamt_lt : shamt.toNat < 32 := shamt.isLt
+  have : shamt.toNat = shamt.toNat % 32 := (Nat.mod_eq_of_lt h_shamt_lt).symm
+  rw [this, h_shamt_val]
+  omega
+
+/-- Variant of `shift_pin_w_immediate_eq_of_shift_match` whose no-wrap
+    bound for `b_0` is supplied by the shift-specific Clean range witness. -/
+lemma shift_pin_w_immediate_eq_of_shift_match_of_b0_range
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (r_main r_binary : ℕ) (shamt : BitVec 5)
+    (h_b_lo_t : m.b_0 r_main = shamt_w_b_lo shamt)
+    (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary))
+    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
+    (h_b0_lt : (v.b_0 r_binary).val < 2 ^ 24) :
+    shamt.toNat = (v.free_in_b r_binary).val % 32 := by
+  have h_b_main : (v.free_in_b r_binary).val < 256 := by
+    have h := h_wfs.1.1.2.2
+    simpa [h_bytes.h0.2.2.2.2.1] using h
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
+  obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  rw [h_op_is_shift] at h_b_lo_m
+  have h_b0_fgl : m.b_0 r_main = v.free_in_b r_binary + 256 * v.b_0 r_binary := by
+    rw [h_b_lo_m]; ring
+  have h_shamt_eq : shamt_w_b_lo shamt = v.free_in_b r_binary + 256 * v.b_0 r_binary := by
+    rw [← h_b_lo_t, h_b0_fgl]
+  have h_lhs_val : (shamt_w_b_lo shamt : FGL).val = shamt.toNat := by
+    simp [shamt_w_b_lo]
+  have h_rhs_val : (v.free_in_b r_binary + 256 * v.b_0 r_binary : FGL).val
+      = (v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val := by
+    have h_cast : v.free_in_b r_binary + 256 * v.b_0 r_binary
+        = ((((v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    show _ < 18446744069414584321
+    omega
   have h_shamt_val : shamt.toNat
       = (v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val := by
     have h := congr_arg Fin.val h_shamt_eq

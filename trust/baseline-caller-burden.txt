@@ -710,7 +710,7 @@ ZiskFv.Equivalence.Slliw.equiv_SLLIW 007 r_main [row] ℕ
 ZiskFv.Equivalence.Slliw.equiv_SLLIW 008 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Slliw.equiv_SLLIW 009 promises [bridge] ZiskFv.EquivCore.Promises.ShiftWImmPromises state slliw_input.r1_val slliw_input
 ZiskFv.Equivalence.Slliw.equiv_SLLIW 010 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_SLL_W
-ZiskFv.Equivalence.Slliw.equiv_SLLIW 011 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+ZiskFv.Equivalence.Slliw.equiv_SLLIW 011 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComp
 ZiskFv.Equivalence.Slliw.equiv_SLLIW 012 h_table_spec [other] providerTable.Spec
 ZiskFv.Equivalence.Slliw.equiv_SLLIW 013 h_provider_row [other] providerRow ∈ providerTable.table
 ZiskFv.Equivalence.Slliw.equiv_SLLIW 014 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main
@@ -741,7 +741,7 @@ ZiskFv.Equivalence.Sllw.equiv_SLLW 022 h_m2_mult [bus_shape] bus.e2.multiplicity
 ZiskFv.Equivalence.Sllw.equiv_SLLW 023 h_m2_as [bus_shape] bus.e2.as.val = 1
 ZiskFv.Equivalence.Sllw.equiv_SLLW 024 h_rd_idx [transpile] sllw_input.rd = Transpiler.wrap_to_regidx bus.e2.ptr
 ZiskFv.Equivalence.Sllw.equiv_SLLW 025 pins [other] ZiskFv.Compliance.MainRowPins m r_main 1 OP_SLL_W
-ZiskFv.Equivalence.Sllw.equiv_SLLW 026 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.staticLookupComponent
+ZiskFv.Equivalence.Sllw.equiv_SLLW 026 h_component [other] providerTable.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComp
 ZiskFv.Equivalence.Sllw.equiv_SLLW 027 h_table_spec [other] providerTable.Spec
 ZiskFv.Equivalence.Sllw.equiv_SLLW 028 h_provider_row [other] providerRow ∈ providerTable.table
 ZiskFv.Equivalence.Sllw.equiv_SLLW 029 h_match [other] ZiskFv.Airs.OperationBus.matches_entry (ZiskFv.Airs.OperationBus.opBus_row_Main
