@@ -110,6 +110,30 @@ theorem matches_memory_entry_of_eval_msg_eq
   rw [h_eval]
   simp [matches_memory_entry]
 
+/-- Same as `matches_memory_entry_of_eval_msg_eq`, with the raw message
+    equality oriented as provider-to-Main.
+
+Clean balance projections usually expose same-message evidence as
+`providerInteraction.msg = mainInteraction.msg`. This wrapper keeps later
+full-ensemble adapters from locally flipping that equality for every emitted
+provider branch. -/
+theorem matches_memory_entry_of_eval_emitted_provider_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult providerMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    {multiplicity as : FGL}
+    (h_msg :
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted providerMult providerMsg).toRaw).eval
+          providerEnv).msg =
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          mainEnv).msg) :
+    matches_memory_entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval mainEnv mainMsg) multiplicity as)
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval providerEnv providerMsg) multiplicity as) := by
+  exact matches_memory_entry_of_eval_msg_eq (h_msg := h_msg.symm)
+
 /-- Variant of `matches_memory_entry_of_eval_msg_eq` for provider rows exposed
     as Clean `push` interactions.
 
