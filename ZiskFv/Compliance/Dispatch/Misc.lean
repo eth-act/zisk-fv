@@ -30,21 +30,21 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 def OpEnvelope.exec_eq_misc
     : OpEnvelope state m r_main → Prop
   -- Signed loads
-  | .lb_via_static_match lb_input _ _ _ _ _ _ _ _ bus _ _ =>
+  | .lb_via_static_match lb_input _ _ _ _ _ _ _ _ bus _ _ _ =>
       (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.LOAD (
           lb_input.imm, regidx.Regidx lb_input.r1, regidx.Regidx lb_input.rd, false, 1
         ))) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .lh_via_static_match lh_input _ _ _ _ _ _ _ _ bus _ _ =>
+  | .lh_via_static_match lh_input _ _ _ _ _ _ _ _ bus _ _ _ =>
       (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.LOAD (
           lh_input.imm, regidx.Regidx lh_input.r1, regidx.Regidx lh_input.rd, false, 2
         ))) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .lw_via_static_match lw_input _ _ _ _ _ _ _ _ bus _ _ =>
+  | .lw_via_static_match lw_input _ _ _ _ _ _ _ _ bus _ _ _ =>
       (do
         Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
         LeanRV64D.Functions.execute (instruction.LOAD (
@@ -68,18 +68,18 @@ theorem zisk_riscv_compliant_program_bus_misc
     (env : OpEnvelope state m r_main) :
     env.exec_eq_misc := by
   cases env with
-  | lb_via_static_match lb_input regs mem v r_binary offset env h_static h_match bus pins promises =>
+  | lb_via_static_match lb_input regs mem v r_binary offset env h_static h_match bus pins promises w =>
     simp only [OpEnvelope.exec_eq_misc]
     exact ZiskFv.Equivalence.Lb.equiv_LB
-      state lb_input regs m mem r_main v r_binary offset env h_static h_match bus pins promises
-  | lh_via_static_match lh_input regs mem v r_binary offset env h_static h_match bus pins promises =>
+      state lb_input regs m mem r_main v r_binary offset env h_static h_match bus pins promises w
+  | lh_via_static_match lh_input regs mem v r_binary offset env h_static h_match bus pins promises w =>
     simp only [OpEnvelope.exec_eq_misc]
     exact ZiskFv.Equivalence.Lh.equiv_LH
-      state lh_input regs m mem r_main v r_binary offset env h_static h_match bus pins promises
-  | lw_via_static_match lw_input regs mem v r_binary offset env h_static h_match bus pins promises =>
+      state lh_input regs m mem r_main v r_binary offset env h_static h_match bus pins promises w
+  | lw_via_static_match lw_input regs mem v r_binary offset env h_static h_match bus pins promises w =>
     simp only [OpEnvelope.exec_eq_misc]
     exact ZiskFv.Equivalence.Lw.equiv_LW
-      state lw_input regs m mem r_main v r_binary offset env h_static h_match bus pins promises
+      state lw_input regs m mem r_main v r_binary offset env h_static h_match bus pins promises w
   | addi_via_binary addi_input r1 rd imm bus pins providerTable providerRow
       h_component h_table_spec h_provider_row h_match_static h_addi_subset h_lane_rd promises =>
     simp only [OpEnvelope.exec_eq_misc]

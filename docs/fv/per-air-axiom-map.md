@@ -583,14 +583,7 @@ bridge axioms below absorb them).
 
 | Axiom | Class | Source | Discharges |
 |---|---|---|---|
-| `lookup_consumer_matches_provider_load` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:162` | Main-row load consumer (`b_*`, `as = 2`) is matched by a Mem-AIR row |
 | `lookup_consumer_matches_provider_store` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:178` | Main-row store consumer (`c_*`) is matched by a Mem-AIR row |
-| `main_store_emission_bundle_sd` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:673` | SD-pilot store emission — byte-extracted store entry contents + ptr-match for SD (`ind_width = 8`); consumed by `Bridge.Mem.sd_discharge_full` |
-| `main_store_emission_bundle_sb` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:768` | SB (1-byte) store emission — ptr-match + low byte + 7 RMW high-byte preservations; consumed by `Bridge.Mem.sb_discharge_full` |
-| `main_store_emission_bundle_sh` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:804` | SH (2-byte) store emission — ptr-match + 2 low bytes + 6 RMW high-byte preservations; consumed by `Bridge.Mem.sh_discharge_full` |
-| `main_store_emission_bundle_sw` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:832` | SW (4-byte) store emission — ptr-match + 4 low bytes + 4 RMW high-byte preservations; consumed by `Bridge.Mem.sw_discharge_full` |
-| `main_load_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:374` | internal-copyb (load) Main-row b/c emission lane equalities — consumed by LD/LBU/LHU/LWU discharge |
-| `main_sext_load_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:433` | external-row analog of the above for signed loads (LB/LH/LW; `is_external_op = 1`, `op ∈ OP_SIGNEXTEND_*`) |
 | `main_store_pc_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:495` | rd-write entry lanes match `store_pc_lanes_match_{lo,hi}` for `is_external_op = 0`, `op ∈ {OP_FLAG, OP_COPYB}` — consumed by JAL/JALR/AUIPC/LUI |
 | `main_external_arith_emission_bundle` | #4 (memory-bus) | `Airs/MemoryBus/MemBridge.lean:553` | rd-write entry lanes for MUL/DIV-family rows — shared with ArithMul/ArithDiv |
 | `memory_bus_register_write_perm_sound` | #5 (memory-bus perm) | `Airs/MemoryBus/LaneMatch.lean:138` | Main rd-write entry pairs with a "next read" Mem row at same address |
@@ -601,29 +594,27 @@ bridge axioms below absorb them).
 
 #### MemAlign / MemAlignByte / MemAlignReadByte (sub-doubleword loads)
 
-| Axiom | Class | Source | Discharges |
-|---|---|---|---|
-| `memalign_load_perm_sound` | #4 (memory-bus perm) | `Airs/MemoryBus/MemAlignBridge.lean:135` | sub-doubleword load consumers (`ind_width ∈ {1,2,4}`) are matched by a MemAlign / MemAlignByte / MemAlignReadByte row |
-| `mem_align_rom_subdoubleword_load_value_1_zero` | #4 (ROM-lookup) | `Airs/MemoryBus/MemAlignBridge.lean:168` | MemAlignRom pins `value_1 = 0` for sub-doubleword prove-side rows |
+No live trust-ledger axioms remain for the canonical LBU/LHU/LWU
+zero-padding route. `MemAlignBridge.SubdoublewordLoadProviderWitness`
+structurally unpacks the selected provider row and the ROM-derived
+row facts; `memalign_subdoubleword_load_high_bytes_zero` then derives
+the high-byte-zero predicate in Lean.
 
 ### Predicted gaps for the AIR's discharge pilot
 
-* **Lane-match (Mem core):** Discharged for both loads and stores
-  via the `main_*_emission_bundle` family. Note this is heavier
-  than the Arith case — Mem has **five separate emission bundles**
-  (load, sext-load, store_pc, external_arith) because Main's
-  memory-bus emission shape varies with the op-class.
+* **Lane-match (Mem core):** Canonical LD/LB/LH/LW/LBU/LHU/LWU and
+  SB/SH/SW/SD now use Clean structural witnesses on the PIL-shaped
+  memory channel instead of the legacy load/store emission bundle
+  axioms. The remaining `main_*_emission_bundle` declarations are
+  legacy compatibility surface for non-canonical paths: `store_pc`
+  belongs to T6/T7, and `external_arith` belongs to T5.
 * **Lane-match (MemAlign sub-doubleword):** Discharged for LBU /
-  LHU / LWU via `memalign_load_perm_sound` plus the derived
+  LHU / LWU via the structural provider witness plus the derived
   theorem `memalign_subdoubleword_load_high_bytes_zero` (in
   `MemAlignBridge.lean`, pure Lean derivation).
 * **Mode pins:** N/A for Mem core in the usual sense (no
-  multi-mode rows). MemAlign has an `ind_width` selector that is
-  pinned by `mem_align_rom_subdoubleword_load_value_1_zero`'s ROM
-  lookup. **Predicted minor gap**: the MemAlign* validators are
-  not extracted as named-column wrappers yet (AIR inventory
-  Category B); a constructibility refactor will likely surface
-  small mode-pin equations as the named wrappers are stood up.
+  multi-mode rows). MemAlign's sub-doubleword width/value pins now
+  live in the structural provider witness instead of the trust ledger.
 * **Sign-witness pins:** N/A for Mem. Signed-load sign-extension
   is handled by BinaryExtension (via the SEXT chain in
   `Circuit/SextLoadBridge.lean`), not by Mem itself.
@@ -652,27 +643,14 @@ first AIR to receive comprehensive axiom coverage (the
 load-output-eq-closure work in `docs/fv/plans/`) and its pilot is
 largely a packaging exercise atop existing axioms.
 
-### Actual delta (Step 4.1.3 — SD exemplar)
+### Actual delta (Step 4.1.3 — SD exemplar, retired in T4)
 
-**1 new axiom** added: `main_store_emission_bundle_sd` (class #4,
-`MemBridge.lean:672`). The SD-side store-emission bundle was not
-covered by the pre-existing emission-bundle family
-(`main_load_emission_bundle`, `main_sext_load_emission_bundle`,
-`main_store_pc_emission_bundle`, `main_external_arith_emission_bundle`)
-because the store-side memory-bus emission shape (`c` → `e_st`
-with `as = 2`, `mult = 1`) is a fresh combination of slots — it
-mixes the c-side lanes (like `main_store_pc_emission_bundle`)
-with the byte-extracted form needed by `equiv_SD`'s
-`h_byte_{0..7}` hypotheses. The new bundle covers SD specifically
-(`ind_width = 8`, all 8 lanes meaningful); SB/SH/SW will each
-need their own width-specialized bundle (with high-byte
-zero-padding pins). All four sit in class #4. Matches the lower
-half of the 0-2 prediction range.
-
-The `Bridge.Mem.sd_discharge_full` derivation theorem (pure Lean,
-no axiom) composes the new bundle with `transpile_SD` (class #1)
-and the Sail `read_xreg` bridge to deliver the 9-hypothesis
-promise bundle that `equiv_SD` consumes.
+`main_store_emission_bundle_sd` was removed from the trust ledger
+during T4. The canonical `equiv_SD` wrapper now carries a structural
+Clean `SdCleanWitness` tying the selected Main row to the PIL-shaped
+c-side memory interaction, and the proved Clean adapter derives the
+ptr-match plus 8 byte equalities. This is recorded as structural
+unpacking for SD rather than an active class-#4 trust-ledger axiom.
 
 ### Actual delta (Step 4.2.r3.IV — SB/SH/SW narrow-store wrappers)
 
@@ -705,16 +683,15 @@ already contains the inserted value at that key.
 * (b) Pure-Lean composition with an existing memory-bus
   permutation-soundness fact + at most one new class-#5 axiom.
 
-Option (b) is not feasible without 3 new axioms anyway: the
-existing `main_store_emission_bundle_sd` produces byte-extract
-equalities for **all 8 bytes** under the (wrong-for-narrow) `ind_width = 8`
-assumption; for SB/SH/SW only the low `N` byte extracts are valid,
-and the high `8 - N` lanes follow a different (RMW) protocol that
-must be axiomatized separately. The cleanest factoring is one
-narrow-width axiom per width, mirroring the SD bundle's shape on
-the low side and adding the RMW clause on the high side. All three
-axioms fit class #4 with the same PIL citation surface as SD plus
-the MemAlign write-protocol citations.
+Option (b) is not feasible without 3 new axioms anyway: SD's
+full-width Clean path proves byte-extract equalities for **all 8
+bytes** under `ind_width = 8`; for SB/SH/SW only the low `N` byte
+extracts are valid, and the high `8 - N` lanes follow a different
+(RMW) protocol that must be represented separately. The cleanest
+factoring is one narrow-width axiom per width, mirroring the
+full-width store shape on the low side and adding the RMW clause on
+the high side. All three axioms fit class #4 with the same PIL
+citation surface plus the MemAlign write-protocol citations.
 
 Matches the upper half of the original Mem-shape 0-2 prediction
 (prediction was for the full pilot; this wraps up the

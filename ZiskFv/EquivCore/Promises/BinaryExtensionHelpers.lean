@@ -54,9 +54,8 @@ CONSUME existing trust-ledger axioms
 `binary_extension_row_byte_lookups`) without adding any new axioms.
 The `baseline-equiv-axiom-deps.txt` closure is preserved.
 
-**Naming convention:** `binexec_<predicate>_<of|from>_<inputs>`
-following the `BranchHelpers.lean` / `StoreHelpers.lean` /
-`BinaryHelpers.lean` precedent.
+	**Naming convention:** `binexec_<predicate>_<of|from>_<inputs>`
+	following the `BranchHelpers.lean` / `BinaryHelpers.lean` precedent.
 -/
 
 namespace ZiskFv.EquivCore.Promises
@@ -107,18 +106,16 @@ structure LoadFullDischargeAt
   h_a2_match : (v.free_in_a_2 r_binary).val = (byteAt e1 2).val
   h_a3_match : (v.free_in_a_3 r_binary).val = (byteAt e1 3).val
 
-lemma load_full_discharge_LB_of_match
+lemma load_full_discharge_LB_of_match_clean
     (main : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary offset : ℕ) (env : Environment FGL)
-    (e1 e2 : Interaction.MemoryBusEntry FGL)
-    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (e1 : Interaction.MemoryBusEntry FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :
       matches_entry (opBus_row_Main main r_main) (opBus_row_BinaryExtension v r_binary))
-    (h_main_active : main.is_external_op r_main = 1)
     (h_main_op : main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_B)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) :
+    (h_main_b0_eq :
+      main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1) :
     LoadFullDischargeAt main v r_main r_binary e1
       ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_B := by
   obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
@@ -138,13 +135,6 @@ lemma load_full_discharge_LB_of_match
   have h_op_is_shift_zero : v.op_is_shift r_binary = 0 :=
     ZiskFv.Airs.BinaryExtension.op_is_shift_zero_SIGNEXTEND_B_of_static_lookup
       v r_binary offset env h_static h_op_v_eq
-  obtain ⟨h_main_emit_b, _h_main_emit_c, _h_ptr_match,
-          _h_rd_zero_iff, _h_rd_idx⟩ :=
-    ZiskFv.EquivCore.Bridge.Mem.lb_discharge_full
-      main r_main e1 e2 r1_val imm rd
-      h_main_active h_main_op h_m1_mult h_m1_as h_m2_mult h_m2_as
-  have h_main_b0_eq : main.b_0 r_main
-      = ZiskFv.Airs.MemoryBus.memory_entry_lo e1 := h_main_emit_b.1
   obtain ⟨h_a0_match, h_a1_match, h_a2_match, h_a3_match⟩ :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.sext_lane_match_bytes_eq_of_match
       main v r_main r_binary e1 h_main_b0_eq h_op_is_shift_zero h_match
@@ -160,18 +150,16 @@ lemma load_full_discharge_LB_of_match
       h_a2_match := h_a2_match
       h_a3_match := h_a3_match }
 
-lemma load_full_discharge_LH_of_match
+lemma load_full_discharge_LH_of_match_clean
     (main : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary offset : ℕ) (env : Environment FGL)
-    (e1 e2 : Interaction.MemoryBusEntry FGL)
-    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (e1 : Interaction.MemoryBusEntry FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :
       matches_entry (opBus_row_Main main r_main) (opBus_row_BinaryExtension v r_binary))
-    (h_main_active : main.is_external_op r_main = 1)
     (h_main_op : main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_H)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) :
+    (h_main_b0_eq :
+      main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1) :
     LoadFullDischargeAt main v r_main r_binary e1
       ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_H := by
   obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
@@ -191,13 +179,6 @@ lemma load_full_discharge_LH_of_match
   have h_op_is_shift_zero : v.op_is_shift r_binary = 0 :=
     ZiskFv.Airs.BinaryExtension.op_is_shift_zero_SIGNEXTEND_H_of_static_lookup
       v r_binary offset env h_static h_op_v_eq
-  obtain ⟨h_main_emit_b, _h_main_emit_c, _h_ptr_match,
-          _h_rd_zero_iff, _h_rd_idx⟩ :=
-    ZiskFv.EquivCore.Bridge.Mem.lh_discharge_full
-      main r_main e1 e2 r1_val imm rd
-      h_main_active h_main_op h_m1_mult h_m1_as h_m2_mult h_m2_as
-  have h_main_b0_eq : main.b_0 r_main
-      = ZiskFv.Airs.MemoryBus.memory_entry_lo e1 := h_main_emit_b.1
   obtain ⟨h_a0_match, h_a1_match, h_a2_match, h_a3_match⟩ :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.sext_lane_match_bytes_eq_of_match
       main v r_main r_binary e1 h_main_b0_eq h_op_is_shift_zero h_match
@@ -213,18 +194,16 @@ lemma load_full_discharge_LH_of_match
       h_a2_match := h_a2_match
       h_a3_match := h_a3_match }
 
-lemma load_full_discharge_LW_of_match
+lemma load_full_discharge_LW_of_match_clean
     (main : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
     (r_main r_binary offset : ℕ) (env : Environment FGL)
-    (e1 e2 : Interaction.MemoryBusEntry FGL)
-    (r1_val : BitVec 64) (imm : BitVec 12) (rd : BitVec 5)
+    (e1 : Interaction.MemoryBusEntry FGL)
     (h_static : ZiskFv.AirsClean.BinaryExtension.StaticLookupSoundness v)
     (h_match :
       matches_entry (opBus_row_Main main r_main) (opBus_row_BinaryExtension v r_binary))
-    (h_main_active : main.is_external_op r_main = 1)
     (h_main_op : main.op r_main = ZiskFv.Trusted.OP_SIGNEXTEND_W)
-    (h_m1_mult : e1.multiplicity = -1) (h_m1_as : e1.as.val = 2)
-    (h_m2_mult : e2.multiplicity = 1) (h_m2_as : e2.as.val = 1) :
+    (h_main_b0_eq :
+      main.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1) :
     LoadFullDischargeAt main v r_main r_binary e1
       ZiskFv.Airs.Tables.BinaryExtensionTable.OP_SEXT_W := by
   obtain ⟨h_op_fgl, h_match_clo, h_match_chi⟩ :=
@@ -244,13 +223,6 @@ lemma load_full_discharge_LW_of_match
   have h_op_is_shift_zero : v.op_is_shift r_binary = 0 :=
     ZiskFv.Airs.BinaryExtension.op_is_shift_zero_SIGNEXTEND_W_of_static_lookup
       v r_binary offset env h_static h_op_v_eq
-  obtain ⟨h_main_emit_b, _h_main_emit_c, _h_ptr_match,
-          _h_rd_zero_iff, _h_rd_idx⟩ :=
-    ZiskFv.EquivCore.Bridge.Mem.lw_discharge_full
-      main r_main e1 e2 r1_val imm rd
-      h_main_active h_main_op h_m1_mult h_m1_as h_m2_mult h_m2_as
-  have h_main_b0_eq : main.b_0 r_main
-      = ZiskFv.Airs.MemoryBus.memory_entry_lo e1 := h_main_emit_b.1
   obtain ⟨h_a0_match, h_a1_match, h_a2_match, h_a3_match⟩ :=
     ZiskFv.EquivCore.Bridge.BinaryExtension.sext_lane_match_bytes_eq_of_match
       main v r_main r_binary e1 h_main_b0_eq h_op_is_shift_zero h_match

@@ -6,7 +6,7 @@ import Clean.Air.Vm
 
 Assembles MemAlignReadByte's Clean `Component` into a minimal `Air.Flat`
 ensemble — the MemAlignReadByte provider Component plus a deliberately
-trivial memory-bus consumer, with `MemAlignBusChannel` finished. Proves
+trivial memory-bus consumer, with `MemBusChannel` finished. Proves
 the ensemble-assembly API (`SoundEnsemble` / `addTable` /
 `addFinishedChannel` / `toFormal`) composes for the MemAlignReadByte AIR
 Component.
@@ -19,25 +19,25 @@ end-to-end. Mirrors `AirsClean/MemAlignByte/Ensemble.lean`.
 namespace ZiskFv.AirsClean.MemAlignReadByte
 
 open Goldilocks
-open ZiskFv.Channels.MemAlignBus
+open ZiskFv.Channels.MemoryBus
 open Air.Flat
 
 /-- A deliberately trivial memory-bus consumer: pulls one
-    `MemAlignBusMessage`. Stands in for the real Main consumer (a
+    `MemBusMessage`. Stands in for the real Main consumer (a
     later phase). -/
-def memAlignBusConsumer : GeneralFormalCircuit FGL MemAlignBusMessage unit where
+def memAlignBusConsumer : GeneralFormalCircuit FGL MemBusMessage unit where
   name := "MemAlignReadByteBusConsumer"
-  main msg := do MemAlignBusChannel.pull msg
+  main msg := do MemBusChannel.pull msg
   localLength _ := 0
   output _ _ := ()
-  channelsWithGuarantees := [MemAlignBusChannel.toRaw]
-  channelsLawful := by simp only [circuit_norm, MemAlignBusChannel]
+  channelsWithGuarantees := [MemBusChannel.toRaw]
+  channelsLawful := by simp only [circuit_norm, MemBusChannel]
   Spec _ _ _ := True
-  soundness := by circuit_proof_start [MemAlignBusChannel]
-  completeness := by circuit_proof_start [MemAlignBusChannel]
+  soundness := by circuit_proof_start [MemBusChannel]
+  completeness := by circuit_proof_start [MemBusChannel]
 
 /-- The minimal MemAlignReadByte ensemble: the MemAlignReadByte provider
-    Component + the trivial memory-bus consumer, `MemAlignBusChannel`
+    Component + the trivial memory-bus consumer, `MemBusChannel`
     finished, taken all the way through `toFormal` to a `FormalEnsemble`.
 
     `toFormal`'s `AssumptionsConsistency` obligation discharges because both
@@ -51,7 +51,7 @@ def memAlignReadByteEnsemble : FormalEnsemble FGL unit :=
     |>.addTable component
         (by simp [circuit_norm, component, circuit, memAlignReadByteElaborated])
         (by simp [circuit_norm, component, circuit, memAlignReadByteElaborated])
-    |>.addFinishedChannel MemAlignBusChannel.toRaw
+    |>.addFinishedChannel MemBusChannel.toRaw
     |>.addTable ⟨ memAlignBusConsumer ⟩
         (by simp [circuit_norm, memAlignBusConsumer])
         (by simp [circuit_norm, memAlignBusConsumer])

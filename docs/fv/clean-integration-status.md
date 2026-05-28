@@ -89,7 +89,9 @@ byte-decomposition witness.
 C8 Phase 3 (Mem as memory-bus provider via Clean balance) is the next
 in-progress concern; it needs design work for how Main's consumer-side
 memory-bus emissions compose against Mem's provider in Clean's balance
-framework. The 9 `MemBridge` axioms targeted by T4.7/T4.8 retire at C10.
+framework. The load/store `MemBridge` and MemAlign axioms targeted by
+T4.7/T4.8 retire in T4; `main_store_pc_emission_bundle` and
+`main_external_arith_emission_bundle` are later T6/T7 and T5 targets.
 
 ### C7 — CLOSED (axiom retirements landed in T4-purge commits)
 
@@ -897,18 +899,37 @@ Checklist:
   active Main memory interactions.
 - 🪓 T4.3 signed-load spike: prove the `LB` chain from memory provider row
   bytes to lookup-aware BinaryExtension sign-extension row to Sail result.
-- ☐ T4.4 prove row-native load routes for
+- 🪓 T4.4 prove row-native load routes for
   `LD/LB/LH/LW/LBU/LHU/LWU`.
-- ☐ T4.5 prove row-native store routes for `SB/SH/SW/SD`.
-- ☐ T4.6 for signed loads `LB/LH/LW`, replace the remaining
+- 🪓 T4.5 prove row-native store routes for `SB/SH/SW/SD`.
+- 🪓 T4.6 for signed loads `LB/LH/LW`, replace the remaining
   `bin_ext_table_consumer_wf` closure with exact lookup-aware
   BinaryExtension provider-row facts, reusing T1's shift-family route.
-- ☐ T4.7 retire `lookup_consumer_matches_provider_load` and the
-  `main_*_emission_bundle` memory axioms when the canonical closures lose
-  them.
-- ☐ T4.8 retire `memalign_load_perm_sound` and
-  `mem_align_rom_subdoubleword_load_value_1_zero` only after the direct ROM
-  membership route proves the corresponding facts for the same provider row.
+  Done in the T4-purge commits: `bin_ext_table_consumer_wf` is gone from
+  source and canonical closures.
+- 🪓 T4.7 retire `lookup_consumer_matches_provider_load` and the
+  load/store `main_*_emission_bundle` memory axioms
+  (`main_load_emission_bundle`, `main_sext_load_emission_bundle`,
+  `main_store_emission_bundle_sd`, `main_store_emission_bundle_subword`)
+  when canonical closures lose them. The canonical/global closure no
+  longer contains those targets; the load/sext-load declarations remain
+  as legacy non-canonical compatibility surface, and the SD/subword store
+  declarations are retired from source. `main_store_pc_emission_bundle`
+  is a T6/T7 target; `main_external_arith_emission_bundle` is a T5 target.
+- 🪓 T4.8 retire the MemAlign permutation/ROM trust-ledger entries by
+  routing LBU/LHU/LWU through `SubdoublewordLoadProviderWitness`, which
+  exposes the selected provider row and ROM-derived row facts explicitly.
+
+T4 memory-bus checkpoint (2026-05-27): all canonical load/store paths
+now use Clean structural memory witnesses. `LD/LBU/LHU/LWU` no longer
+reach `main_load_emission_bundle` or
+`lookup_consumer_matches_provider_load`; `LB/LH/LW` no longer reach
+`main_sext_load_emission_bundle` or the provider-load axiom; `SD` no
+longer reaches `main_store_emission_bundle_sd`; and `SB/SH/SW` no longer
+reach `main_store_emission_bundle_subword`. The global closure baseline
+drops the same T4 Main/provider memory targets, plus the MemAlign
+permutation/ROM targets. `LBU/LHU/LWU` now depend on the structural
+provider witness instead of those trust-ledger axioms.
 
 Expected trust movement:
 
@@ -919,38 +940,31 @@ Expected trust movement:
   BinaryExtension provider rows, so the `LB` spike should happen before
   broad load/store migration.
 
-T4-purge checkpoint after commits `1dc45a3` and `f2cb26c`: row-explicit
-static-lookup chains for signed loads `LB`, `LH`, and `LW` are present, but
-the legacy purge is not complete. Two deletion attempts mapped the actual
-cascade and were reverted to keep the green checkpoint (`lake build`, V1, V2;
-90 axioms). Deleting `op_bus_permutation_sound` requires removing the legacy
-canonical wrapper bodies still using old op-bus handshakes: ADD/ADDI,
-LB/LH/LW, and the twelve shift-family wrappers. Deleting
-`bin_ext_table_consumer_wf` additionally requires removing legacy shift
-write-value and packed-correctness paths; the immediate-shift `_of_wf`
-theorems currently depend on non-`_of_wf` write-value helpers.
+T4-purge execution checklist, refined after the green `f2cb26c` checkpoint
+and now complete:
 
-Concrete next T4-purge execution checklist:
-
-- ☐ T4.P1 add `_of_wf` write-value helpers for the six immediate shifts:
-  `SLLI`, `SRLI`, `SRAI`, `SLLIW`, `SRLIW`, `SRAIW`.
-- ☐ T4.P2 rewrite the six immediate-shift `equiv_<OP>I_of_wf` theorems to
-  call those `_of_wf` helpers.
-- ☐ T4.P3 cascade-delete the legacy shift write-value helpers,
-  non-`_of_wf` BinaryExtension packed-correctness wrappers, and no-suffix
-  legacy shift `EquivCore` routes.
-- ☐ T4.P4 delete `bin_ext_table_consumer_wf` once no canonical/global closure
-  reaches it.
-- ☐ T4.P5 decide BinaryAdd completeness retirement only after the soundness
-  axioms are gone: either prove `binaryAdd_circuit_completeness` or keep it as
-  a documented completeness-direction axiom if the component remains
-  load-bearing.
-- ☐ T4.P6 delete `op_bus_permutation_sound` and the derived
+- 🪓 T4.P1 add `_of_wf` write-value helpers for the six immediate shifts:
+  `SLLI`, `SRLI`, `SRAI`, `SLLIW`, `SRLIW`, `SRAIW`. Done (commit `c2046e6`).
+- 🪓 T4.P2 rewrite the six immediate-shift `equiv_<OP>I_of_wf` theorems to
+  call those `_of_wf` helpers. Done (commit `c2046e6`).
+- 🪓 T4.P3 delete the legacy shift write-value helpers, non-`_of_wf`
+  BinaryExtension packed-correctness wrappers, and no-suffix legacy shift
+  `EquivCore` routes; swap LB/LH/LW + ADD/ADDI canonicals to the
+  static-match / via-binary forms. Done (commit `e52485e`, 80 files, 428
+  ins / 5378 del).
+- 🪓 T4.P4 delete `bin_ext_table_consumer_wf` once no canonical/global closure
+  reaches it. Done (commit `e52485e`).
+- 🪓 T4.P5 handle `binaryAdd_circuit_completeness`: kept as documented
+  completeness-direction axiom (D-COMPLETE class). V2 gate allowlist
+  added in `trust/tolerated-completeness-axioms.txt` covering all five
+  Clean `circuit.completeness` axioms (commit `fbfe959`).
+- 🪓 T4.P6 delete `op_bus_permutation_sound` and derived
   `op_bus_perm_sound_*` helpers after ADD/ADDI, LB/LH/LW, and all shift-family
-  legacy consumers are gone.
-- ☐ T4.P7 regenerate axiom baselines, global closure, hypothesis counts, and
-  caller-burden ledger.
-- ☐ T4.P8 run `lake build`, V1, and V2 before marking T4-purge complete.
+  legacy consumers are gone. Done (commit `e52485e`).
+- 🪓 T4.P7 regenerate all trust ledgers and closure baselines. Done
+  (commit `e52485e`).
+- 🪓 T4.P8 run `lake build`, V1, and V2. Done — all green at commit
+  `fbfe959`.
 
 ### T5 — Arith-family terminal phase
 

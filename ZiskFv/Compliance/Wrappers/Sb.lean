@@ -1,22 +1,19 @@
 import Mathlib
 
 import ZiskFv.EquivCore.Sb
+import ZiskFv.EquivCore.Bridge.MemClean
 import ZiskFv.EquivCore.Promises.Store
-import ZiskFv.EquivCore.Promises.StoreHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Compliance.SharedBundles
 
 /-!
-# `equiv_SB` Compliance wrapper — Mem-stores shape, 1-byte width
+# `equiv_SB` Compliance wrapper — Clean Main c/store witness
 
 The wrapper takes the structural `StorePromises` bundle along with the
-upstream activation/opcode/width pins on Main, and internally calls
-`sb_h_mem_eq_of_emission` (which transitively consumes
-`main_store_emission_bundle_sb` and `transpile_SB`) to derive the
-`h_mem_eq` premise that the canonical `equiv_SB` consumes. This keeps
-both axioms transitively reachable from the global compliance theorem.
+upstream activation/opcode/width pins on Main and a Clean structural
+witness for the Main c/store interaction plus high-byte RMW facts.
 -/
 
 namespace ZiskFv.Compliance
@@ -30,10 +27,8 @@ open ZiskFv.ZiskCircuit.StoreD
 open ZiskFv.ZiskCircuit.StoreB
 
 
-/-- **Wrapper for `equiv_SB`.** Derives `h_mem_eq` from
-    `sb_h_mem_eq_of_emission` (which consumes
-    `main_store_emission_bundle_sb` + `transpile_SB`) and delegates to
-    canonical `equiv_SB`. -/
+/-- **Wrapper for `equiv_SB`.** Derives `h_mem_eq` from the Clean
+    c/store witness and delegates to canonical `equiv_SB`. -/
 theorem equiv_SB
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sb_input : PureSpec.SbInput)
@@ -42,9 +37,7 @@ theorem equiv_SB
     (main : Valid_Main FGL FGL) (r_main : ℕ)
     -- Structural bus rows.
     (bus : ZiskFv.Compliance.BusRows)
-    -- Activation / opcode pins on Main (consumed by the StoreHelpers
-    -- helper that transitively fires `transpile_SB` and
-    -- `main_store_emission_bundle_sb`).
+    -- Activation / opcode pins on Main (consumed by the Clean store helper).
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     -- Width pin stays inline (per-opcode literal).
     (h_main_ind_width : main.ind_width r_main = 1)
@@ -55,19 +48,17 @@ theorem equiv_SB
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sb_state_assumptions sb_input state)
         (PureSpec.execute_STOREB_pure sb_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) :
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.SbCleanWitness
+        main r_main bus state sb_input) :
     execute_instruction (instruction.STORE (
       sb_input.imm,
       regidx.Regidx sb_input.r2,
       regidx.Regidx sb_input.r1,
       1
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
-  have h_mem_eq :=
-    ZiskFv.EquivCore.Promises.sb_h_mem_eq_of_emission
-      main r_main bus.e2 state sb_input
-      pins.main_active pins.main_op h_main_ind_width
-      promises.m2_mult promises.m2_as h_opcode_assumptions
-  ZiskFv.EquivCore.Sb.equiv_SB
-    state sb_input regs bus promises h_mem_eq
+  ZiskFv.EquivCore.Sb.equiv_SB_clean_provider_witness
+    state sb_input regs bus promises main r_main pins h_main_ind_width
+    h_opcode_assumptions w
 
 end ZiskFv.Compliance

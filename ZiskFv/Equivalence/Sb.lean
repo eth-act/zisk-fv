@@ -38,10 +38,14 @@ theorem equiv_SB
         (PureSpec.sb_state_assumptions sb_input state)
         (PureSpec.execute_STOREB_pure sb_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.SbCleanWitness
+        main r_main bus state sb_input)
     : execute_instruction (instruction.STORE (
       sb_input.imm, regidx.Regidx sb_input.r2, regidx.Regidx sb_input.r1, 1
     )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_SB state sb_input regs main r_main bus pins h_main_ind_width h_opcode_assumptions promises
+  exact ZiskFv.Compliance.equiv_SB
+    state sb_input regs main r_main bus pins h_main_ind_width
+    h_opcode_assumptions promises w
 
 end ZiskFv.Equivalence.Sb

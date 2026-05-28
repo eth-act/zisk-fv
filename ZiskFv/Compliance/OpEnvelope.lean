@@ -1007,7 +1007,9 @@ inductive OpEnvelope
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sb_state_assumptions sb_input state)
         (PureSpec.execute_STOREB_pure sb_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.SbCleanWitness
+        m r_main bus state sb_input) : OpEnvelope state m r_main
   -- ============================ SH (store, Main-only) ===================
   | sh
     (sh_input : PureSpec.ShInput)
@@ -1020,7 +1022,9 @@ inductive OpEnvelope
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sh_state_assumptions sh_input state)
         (PureSpec.execute_STOREH_pure sh_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.ShCleanWitness
+        m r_main bus state sh_input) : OpEnvelope state m r_main
   -- ============================ SW (store, Main-only) ===================
   | sw
     (sw_input : PureSpec.SwInput)
@@ -1033,7 +1037,9 @@ inductive OpEnvelope
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sw_state_assumptions sw_input state)
         (PureSpec.execute_STOREW_pure sw_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.SwCleanWitness
+        m r_main bus state sw_input) : OpEnvelope state m r_main
   -- ============================ SD (store, Main-only) ===================
   | sd
     (sd_input : PureSpec.SdInput)
@@ -1045,7 +1051,9 @@ inductive OpEnvelope
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sd_state_assumptions sd_input state)
         (PureSpec.execute_STORED_pure sd_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.SdCleanWitness
+        m r_main bus sd_input) : OpEnvelope state m r_main
   -- ============================ LD (load doubleword) ====================
   | ld
     (ld_input : PureSpec.LdInput)
@@ -1057,49 +1065,60 @@ inductive OpEnvelope
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.ld_state_assumptions ld_input state)
         (PureSpec.execute_LOADD_pure ld_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.LdCleanWitness
+        m mem r_main bus ld_input) : OpEnvelope state m r_main
   -- ============================ LBU =====================================
   | lbu
     (lbu_input : PureSpec.LbuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
-    (align : ZiskFv.Compliance.MemAlignWitness)
     (bus : ZiskFv.Compliance.BusRows)
+    (align : ZiskFv.Compliance.MemAlignWitness m r_main bus.e1)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (1 : FGL))
     (promises : ZiskFv.EquivCore.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lbu_state_assumptions lbu_input state)
         (PureSpec.execute_LOADBU_pure lbu_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
+        m mem r_main bus lbu_input.r1_val lbu_input.imm lbu_input.rd) :
+      OpEnvelope state m r_main
   -- ============================ LHU =====================================
   | lhu
     (lhu_input : PureSpec.LhuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
-    (align : ZiskFv.Compliance.MemAlignWitness)
     (bus : ZiskFv.Compliance.BusRows)
+    (align : ZiskFv.Compliance.MemAlignWitness m r_main bus.e1)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (2 : FGL))
     (promises : ZiskFv.EquivCore.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lhu_state_assumptions lhu_input state)
         (PureSpec.execute_LOADHU_pure lhu_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
+        m mem r_main bus lhu_input.r1_val lhu_input.imm lhu_input.rd) :
+      OpEnvelope state m r_main
   -- ============================ LWU =====================================
   | lwu
     (lwu_input : PureSpec.LwuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (mem : Valid_Mem FGL FGL)
-    (align : ZiskFv.Compliance.MemAlignWitness)
     (bus : ZiskFv.Compliance.BusRows)
+    (align : ZiskFv.Compliance.MemAlignWitness m r_main bus.e1)
     (pins : ZiskFv.Compliance.MainRowPins m r_main 0 OP_COPYB)
     (h_width : m.ind_width r_main = (4 : FGL))
     (promises : ZiskFv.EquivCore.Promises.LoadPromises
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lwu_state_assumptions lwu_input state)
         (PureSpec.execute_LOADWU_pure lwu_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
+        m mem r_main bus lwu_input.r1_val lwu_input.imm lwu_input.rd) :
+      OpEnvelope state m r_main
   -- ============================ LB via static BinaryExtension lookup ====
   -- T4 alternate provider arm: takes the BinaryExtension row witness
   -- + matches_entry directly + static lookup soundness, bypassing
@@ -1121,7 +1140,10 @@ inductive OpEnvelope
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lb_state_assumptions lb_input state)
         (PureSpec.execute_LOADB_pure lb_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
+        m mem r_main bus lb_input.r1_val lb_input.imm lb_input.rd) :
+      OpEnvelope state m r_main
   -- ============================ LH via static BinaryExtension lookup ====
   | lh_via_static_match
     (lh_input : PureSpec.LhInput)
@@ -1140,7 +1162,10 @@ inductive OpEnvelope
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
+        m mem r_main bus lh_input.r1_val lh_input.imm lh_input.rd) :
+      OpEnvelope state m r_main
   -- ============================ LW via static BinaryExtension lookup ====
   | lw_via_static_match
     (lw_input : PureSpec.LwInput)
@@ -1159,7 +1184,10 @@ inductive OpEnvelope
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lw_state_assumptions lw_input state)
         (PureSpec.execute_LOADW_pure lw_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) : OpEnvelope state m r_main
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
+        m mem r_main bus lw_input.r1_val lw_input.imm lw_input.rd) :
+      OpEnvelope state m r_main
   -- ============================ MUL =====================================
   | mul
     (mul_input : PureSpec.MulInput) (r1 r2 rd : regidx)

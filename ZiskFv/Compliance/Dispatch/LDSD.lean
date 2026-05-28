@@ -26,7 +26,7 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 def OpEnvelope.exec_eq_ldsd
     : OpEnvelope state m r_main → Prop
-  | .ld ld_input _ _ bus _ _ =>
+  | .ld ld_input _ _ bus _ _ _ =>
       execute_instruction (instruction.LOAD (
         ld_input.imm,
         regidx.Regidx ld_input.r1,
@@ -35,7 +35,7 @@ def OpEnvelope.exec_eq_ldsd
         8
       )) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .sd sd_input _ bus _ _ _ =>
+  | .sd sd_input _ bus _ _ _ _ =>
       execute_instruction (instruction.STORE (
         sd_input.imm,
         regidx.Regidx sd_input.r2,
@@ -49,12 +49,12 @@ theorem zisk_riscv_compliant_program_bus_ldsd
     (env : OpEnvelope state m r_main) :
     env.exec_eq_ldsd := by
   cases env with
-  | ld ld_input regs mem bus pins promises =>
+  | ld ld_input regs mem bus pins promises w =>
     simp only [OpEnvelope.exec_eq_ldsd]
-    exact ZiskFv.Equivalence.Ld.equiv_LD state ld_input regs m mem r_main bus pins promises
-  | sd sd_input regs bus pins h_opcode_assumptions promises =>
+    exact ZiskFv.Equivalence.Ld.equiv_LD state ld_input regs m mem r_main bus pins promises w
+  | sd sd_input regs bus pins h_opcode_assumptions promises w =>
     simp only [OpEnvelope.exec_eq_ldsd]
-    exact ZiskFv.Equivalence.Sd.equiv_SD state sd_input regs m r_main bus pins h_opcode_assumptions promises
+    exact ZiskFv.Equivalence.Sd.equiv_SD state sd_input regs m r_main bus pins h_opcode_assumptions promises w
   | _ => trivial
 
 end ZiskFv.Compliance

@@ -33,7 +33,7 @@ hypotheses on `equiv_ADD` / `equiv_ADDI`.
 Trust class: lookup-argument soundness on the standard range-checker
 bus (same scope as `main_columns_in_range`,
 `bin_table_consumer_wf`, `bin_ext_table_consumer_wf`,
-`mem_align_rom_subdoubleword_load_value_1_zero`).
+and the other range/lookup soundness entries in the trust ledger).
 -/
 
 namespace ZiskFv.Airs.BinaryAdd

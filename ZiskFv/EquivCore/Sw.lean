@@ -16,6 +16,7 @@ import ZiskFv.Tactics.StoreArchetype
 import ZiskFv.EquivCore.Promises.Store
 import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Channels.MemoryBusBytes
+import ZiskFv.EquivCore.Bridge.MemClean
 
 /-!
 End-to-end theorem for RV64 SW (store word). The 4-byte narrow store
@@ -136,5 +137,103 @@ theorem equiv_SW
   -- Goal: bus 8-insert chain on state.mem = Sail 4-insert chain on
   -- state.mem. Close via the bridging premise.
   exact h_mem_eq
+
+/-- Clean-backed staging variant for SW.
+
+The low four bytes and pointer come from the Clean Main c/store message;
+the high-byte preservation parameters are the remaining MemAlign RMW
+facts. -/
+theorem equiv_SW_clean_provider
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sw_input : PureSpec.SwInput)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.StorePromises
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+        (PureSpec.sw_state_assumptions sw_input state)
+        (PureSpec.execute_STOREW_pure sw_input).nextPC
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
+    (mainRow : ZiskFv.AirsClean.Main.MainRowWithRom FGL)
+    (rs1 rs2 : Fin 32)
+    (h_main_row :
+      mainRow.core = ZiskFv.AirsClean.Main.rowAt main r_main)
+    (h_main_spec : ZiskFv.AirsClean.Main.Spec mainRow.core)
+    (h_store_pc : mainRow.core.store_pc = 0)
+    (h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage mainRow) 1 2))
+    (h_addr2 :
+      mainRow.rom.addr2.toNat =
+        (sw_input.r1_val + BitVec.signExtend 64 sw_input.imm).toNat)
+    (h_active : main.is_external_op r_main = 0)
+    (h_op_main : main.op r_main = ZiskFv.Trusted.OP_COPYB)
+    (h_ind_width : main.ind_width r_main = 4)
+    (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok sw_input.r1_val state)
+    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok sw_input.r2_val state)
+    (h_m4 : state.mem[bus.e2.ptr.toNat + 4]? = some (byteAt bus.e2 4 : BitVec 8))
+    (h_m5 : state.mem[bus.e2.ptr.toNat + 5]? = some (byteAt bus.e2 5 : BitVec 8))
+    (h_m6 : state.mem[bus.e2.ptr.toNat + 6]? = some (byteAt bus.e2 6 : BitVec 8))
+    (h_m7 : state.mem[bus.e2.ptr.toNat + 7]? = some (byteAt bus.e2 7 : BitVec 8)) :
+    execute_instruction (instruction.STORE (
+      sw_input.imm,
+      regidx.Regidx sw_input.r2,
+      regidx.Regidx sw_input.r1,
+      4
+    )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  have h_mem_eq :=
+    ZiskFv.EquivCore.Bridge.MemClean.sw_discharge_full_clean_provider
+      main r_main mainRow bus.e2 state rs1 rs2 sw_input
+      h_main_row h_main_spec h_store_pc h_main_c_match h_addr2
+      h_active h_op_main h_ind_width h_read_r1 h_read_r2
+      h_m4 h_m5 h_m6 h_m7
+  exact equiv_SW state sw_input regs bus promises h_mem_eq
+
+theorem equiv_SW_clean_provider_witness
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sw_input : PureSpec.SwInput)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.StorePromises
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+        (PureSpec.sw_state_assumptions sw_input state)
+        (PureSpec.execute_STOREW_pure sw_input).nextPC
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
+    (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
+    (h_main_ind_width : main.ind_width r_main = 4)
+    (h_opcode_assumptions : PureSpec.sw_state_assumptions sw_input state)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.SwCleanWitness
+        main r_main bus state sw_input) :
+    execute_instruction (instruction.STORE (
+      sw_input.imm,
+      regidx.Regidx sw_input.r2,
+      regidx.Regidx sw_input.r1,
+      4
+    )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  have h_read_r1 := h_opcode_assumptions.2.1
+  have h_read_r2 := h_opcode_assumptions.2.2.1
+  have h_read_r1' :
+      read_xreg (regidx_to_fin (regidx.Regidx sw_input.r1)) state
+        = EStateM.Result.ok sw_input.r1_val state := by
+    rw [← rX_read_xreg_equiv state (regidx.Regidx sw_input.r1)
+          (regidx_to_fin (regidx.Regidx sw_input.r1))
+          (by simp [regidx_to_fin])]
+    exact h_read_r1
+  have h_read_r2' :
+      read_xreg (regidx_to_fin (regidx.Regidx sw_input.r2)) state
+        = EStateM.Result.ok sw_input.r2_val state := by
+    rw [← rX_read_xreg_equiv state (regidx.Regidx sw_input.r2)
+          (regidx_to_fin (regidx.Regidx sw_input.r2))
+          (by simp [regidx_to_fin])]
+    exact h_read_r2
+  exact equiv_SW_clean_provider state sw_input regs bus promises
+    main r_main w.mainRow
+    (regidx_to_fin (regidx.Regidx sw_input.r1))
+    (regidx_to_fin (regidx.Regidx sw_input.r2))
+    w.main_row w.main_spec w.store_pc w.main_c_match w.addr2
+    pins.main_active pins.main_op h_main_ind_width h_read_r1' h_read_r2'
+    w.m4 w.m5 w.m6 w.m7
 
 end ZiskFv.EquivCore.Sw

@@ -12,13 +12,13 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 1016
+# Total rows: 1027
 # Total wrappers: 63
-# Category bridge: 66
+# Category bridge: 72
 # Category bus_shape: 27
 # Category entry: 9
 # Category match: 6
-# Category other: 667
+# Category other: 672
 # Category range: 3
 # Category row: 60
 # Category state: 73
@@ -326,19 +326,21 @@ ZiskFv.Compliance.Wrappers.Lb.equiv_LB 011 h_match [other] matches_entry (opBus_
 ZiskFv.Compliance.Wrappers.Lb.equiv_LB 012 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Lb.equiv_LB 013 pins [other] ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B
 ZiskFv.Compliance.Wrappers.Lb.equiv_LB 014 promises [transpile] ZiskFv.EquivCore.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.mi
+ZiskFv.Compliance.Wrappers.Lb.equiv_LB 015 w [bridge] ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness main mem r_main bus lb_input.r
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 001 lbu_input [other] PureSpec.LbuInput
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 002 regs [other] ZiskFv.Compliance.ModeRegsFull
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 004 mem [validator] Valid_Mem FGL FGL
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 005 r_main [row] ℕ
-ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 006 align [other] ZiskFv.Compliance.MemAlignWitness
-ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 006 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 007 align [other] ZiskFv.Compliance.MemAlignWitness main r_main bus.e1
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 008 _ [other] Compliance ROM handshake
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 009 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 010 h_width [match] main.ind_width r_main = (1 : FGL)
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 011 _ [other] 12 fields, see Promises/Load.lean
 ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 012 promises [transpile] ZiskFv.EquivCore.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.mi
+ZiskFv.Compliance.Wrappers.Lbu.equiv_LBU 013 w [bridge] ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness main mem r_main bus lbu_input.
 ZiskFv.Compliance.Wrappers.Ld.equiv_LD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Ld.equiv_LD 001 ld_input [other] PureSpec.LdInput
 ZiskFv.Compliance.Wrappers.Ld.equiv_LD 002 regs [other] ZiskFv.Compliance.ModeRegsFull
@@ -350,6 +352,7 @@ ZiskFv.Compliance.Wrappers.Ld.equiv_LD 007 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Ld.equiv_LD 008 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
 ZiskFv.Compliance.Wrappers.Ld.equiv_LD 009 _ [other] 12 fields, see Promises/Load.lean
 ZiskFv.Compliance.Wrappers.Ld.equiv_LD 010 promises [transpile] ZiskFv.EquivCore.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.mi
+ZiskFv.Compliance.Wrappers.Ld.equiv_LD 011 w [other] ZiskFv.EquivCore.Bridge.MemClean.LdCleanWitness main mem r_main bus ld_input
 ZiskFv.Compliance.Wrappers.Lh.equiv_LH 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Lh.equiv_LH 001 lh_input [other] PureSpec.LhInput
 ZiskFv.Compliance.Wrappers.Lh.equiv_LH 002 regs [other] ZiskFv.Compliance.ModeRegsFull
@@ -365,17 +368,19 @@ ZiskFv.Compliance.Wrappers.Lh.equiv_LH 011 h_match [other] matches_entry (opBus_
 ZiskFv.Compliance.Wrappers.Lh.equiv_LH 012 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Lh.equiv_LH 013 pins [other] ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_H
 ZiskFv.Compliance.Wrappers.Lh.equiv_LH 014 promises [transpile] ZiskFv.EquivCore.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.mi
+ZiskFv.Compliance.Wrappers.Lh.equiv_LH 015 w [bridge] ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness main mem r_main bus lh_input.r
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 001 lhu_input [other] PureSpec.LhuInput
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 002 regs [other] ZiskFv.Compliance.ModeRegsFull
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 004 mem [validator] Valid_Mem FGL FGL
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 005 r_main [row] ℕ
-ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 006 align [other] ZiskFv.Compliance.MemAlignWitness
-ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 006 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 007 align [other] ZiskFv.Compliance.MemAlignWitness main r_main bus.e1
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 008 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 009 h_width [match] main.ind_width r_main = (2 : FGL)
 ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 010 promises [transpile] ZiskFv.EquivCore.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.mi
+ZiskFv.Compliance.Wrappers.Lhu.equiv_LHU 011 w [bridge] ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness main mem r_main bus lhu_input.
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 001 lui_input [other] PureSpec.LuiInput
 ZiskFv.Compliance.Wrappers.Lui.equiv_LUI 002 imm [other] BitVec 20
@@ -404,17 +409,19 @@ ZiskFv.Compliance.Wrappers.Lw.equiv_LW 011 h_match [other] matches_entry (opBus_
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 012 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 013 pins [other] ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_W
 ZiskFv.Compliance.Wrappers.Lw.equiv_LW 014 promises [transpile] ZiskFv.EquivCore.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.mi
+ZiskFv.Compliance.Wrappers.Lw.equiv_LW 015 w [bridge] ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness main mem r_main bus lw_input.r
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 001 lwu_input [other] PureSpec.LwuInput
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 002 regs [other] ZiskFv.Compliance.ModeRegsFull
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 004 mem [validator] Valid_Mem FGL FGL
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 005 r_main [row] ℕ
-ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 006 align [other] ZiskFv.Compliance.MemAlignWitness
-ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 006 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 007 align [other] ZiskFv.Compliance.MemAlignWitness main r_main bus.e1
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 008 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 009 h_width [match] main.ind_width r_main = (4 : FGL)
 ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 010 promises [transpile] ZiskFv.EquivCore.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.mi
+ZiskFv.Compliance.Wrappers.Lwu.equiv_LWU 011 w [bridge] ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness main mem r_main bus lwu_input.
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 001 mul_input [other] PureSpec.MulInput
 ZiskFv.Compliance.Wrappers.Mul.equiv_MUL 002 r1 [other] regidx
@@ -616,7 +623,7 @@ ZiskFv.Compliance.Wrappers.Sb.equiv_SB 002 regs [other] ZiskFv.Compliance.ModeRe
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 004 r_main [row] ℕ
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 005 bus [other] ZiskFv.Compliance.BusRows
-ZiskFv.Compliance.Wrappers.Sb.equiv_SB 006 _ [other] consumed by the StoreHelpers -- helper that transitively fires `transpile_SB` an
+ZiskFv.Compliance.Wrappers.Sb.equiv_SB 006 _ [other] consumed by the Clean store helper
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 007 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 008 _ [other] per-opcode literal
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 009 h_main_ind_width [match] main.ind_width r_main = 1
@@ -624,6 +631,7 @@ ZiskFv.Compliance.Wrappers.Sb.equiv_SB 010 _ [other] also consumed by the helper
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 011 h_opcode_assumptions [other] PureSpec.sb_state_assumptions sb_input state
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 012 _ [other] 12 fields
 ZiskFv.Compliance.Wrappers.Sb.equiv_SB 013 promises [transpile] ZiskFv.EquivCore.Promises.StorePromises state regs.mstatus regs.pmaRegion regs.m
+ZiskFv.Compliance.Wrappers.Sb.equiv_SB 014 w [other] ZiskFv.EquivCore.Bridge.MemClean.SbCleanWitness main r_main bus state sb_input
 ZiskFv.Compliance.Wrappers.Sd.equiv_SD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Sd.equiv_SD 001 sd_input [other] PureSpec.SdInput
 ZiskFv.Compliance.Wrappers.Sd.equiv_SD 002 regs [other] ZiskFv.Compliance.ModeRegsFull
@@ -634,6 +642,7 @@ ZiskFv.Compliance.Wrappers.Sd.equiv_SD 006 pins [other] ZiskFv.Compliance.MainRo
 ZiskFv.Compliance.Wrappers.Sd.equiv_SD 007 h_opcode_assumptions [other] PureSpec.sd_state_assumptions sd_input state
 ZiskFv.Compliance.Wrappers.Sd.equiv_SD 008 _ [other] 12 fields
 ZiskFv.Compliance.Wrappers.Sd.equiv_SD 009 promises [transpile] ZiskFv.EquivCore.Promises.StorePromises state regs.mstatus regs.pmaRegion regs.m
+ZiskFv.Compliance.Wrappers.Sd.equiv_SD 010 w [other] ZiskFv.EquivCore.Bridge.MemClean.SdCleanWitness main r_main bus sd_input
 ZiskFv.Compliance.Wrappers.Sh.equiv_SH 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Sh.equiv_SH 001 sh_input [other] PureSpec.ShInput
 ZiskFv.Compliance.Wrappers.Sh.equiv_SH 002 regs [other] ZiskFv.Compliance.ModeRegsFull
@@ -645,6 +654,7 @@ ZiskFv.Compliance.Wrappers.Sh.equiv_SH 007 h_main_ind_width [match] main.ind_wid
 ZiskFv.Compliance.Wrappers.Sh.equiv_SH 008 h_opcode_assumptions [other] PureSpec.sh_state_assumptions sh_input state
 ZiskFv.Compliance.Wrappers.Sh.equiv_SH 009 _ [other] 12 fields
 ZiskFv.Compliance.Wrappers.Sh.equiv_SH 010 promises [transpile] ZiskFv.EquivCore.Promises.StorePromises state regs.mstatus regs.pmaRegion regs.m
+ZiskFv.Compliance.Wrappers.Sh.equiv_SH 011 w [other] ZiskFv.EquivCore.Bridge.MemClean.ShCleanWitness main r_main bus state sh_input
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 001 sllw_input [other] PureSpec.SllwInput
 ZiskFv.Compliance.Wrappers.Shift.equiv_SLLW 002 r1 [other] regidx
@@ -1006,6 +1016,7 @@ ZiskFv.Compliance.Wrappers.Sw.equiv_SW 007 h_main_ind_width [match] main.ind_wid
 ZiskFv.Compliance.Wrappers.Sw.equiv_SW 008 h_opcode_assumptions [other] PureSpec.sw_state_assumptions sw_input state
 ZiskFv.Compliance.Wrappers.Sw.equiv_SW 009 _ [other] 12 fields
 ZiskFv.Compliance.Wrappers.Sw.equiv_SW 010 promises [transpile] ZiskFv.EquivCore.Promises.StorePromises state regs.mstatus regs.pmaRegion regs.m
+ZiskFv.Compliance.Wrappers.Sw.equiv_SW 011 w [other] ZiskFv.EquivCore.Bridge.MemClean.SwCleanWitness main r_main bus state sw_input
 ZiskFv.Compliance.Wrappers.Xor.equiv_XOR 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Compliance.Wrappers.Xor.equiv_XOR 001 xor_input [other] PureSpec.XorInput
 ZiskFv.Compliance.Wrappers.Xor.equiv_XOR 002 r1 [other] regidx

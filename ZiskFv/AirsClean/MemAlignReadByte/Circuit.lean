@@ -40,8 +40,9 @@ clause from `range_bus_sound`). No `sorry`.
 namespace ZiskFv.AirsClean.MemAlignReadByte
 
 open Goldilocks
-open ZiskFv.Channels.MemAlignBus (MemAlignBusChannel)
+open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.Channels.RangeBusSoundness (range_bus_sound)
+open Air.Flat
 
 set_option maxHeartbeats 1000000 in
 /-- MemAlignReadByte as a Clean `GeneralFormalCircuit`. `Assumptions := True`
@@ -91,7 +92,7 @@ def circuit : GeneralFormalCircuit FGL MemAlignReadByteRow unit :=
         -- destructured fields, so `col row 0` is definitionally the
         -- column value.
         · exact range_bus_sound inputRow (fun r _ => r.byte_value) 8 trivial 0
-      · -- the memory-bus push's requirement: `MemAlignBusChannel.Guarantees`
+      · -- the memory-bus push's requirement: `MemBusChannel.Guarantees`
         -- is `True`.
         intro _
         trivial
@@ -99,6 +100,17 @@ def circuit : GeneralFormalCircuit FGL MemAlignReadByteRow unit :=
 
 /-- MemAlignReadByte as a Clean `Air.Flat.Component`. -/
 def component : Air.Flat.Component FGL := ⟨ circuit ⟩
+
+theorem component_interactionsWith_memBus :
+    component.operations.interactionsWith MemBusChannel.toRaw =
+      [((MemBusChannel.pushed (memBusMessageExpr component.rowInputVar)).toRaw)] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨MemBusChannel.toRaw,
+      [((MemBusChannel.pushed (memBusMessageExpr component.rowInputVar)).toRaw)]⟩ ∈
+    component.exposedChannels
+  simp only [component, circuit, memAlignReadByteElaborated,
+    Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
+    List.map_nil]
 
 set_option maxHeartbeats 1000000 in
 /-- The MemAlignReadByte `Spec` for a row, derived **through the Clean

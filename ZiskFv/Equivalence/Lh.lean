@@ -35,6 +35,8 @@ theorem equiv_LH
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
+        main mem r_main bus lh_input.r1_val lh_input.imm lh_input.rd)
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.LOAD (
@@ -43,6 +45,6 @@ theorem equiv_LH
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.Compliance.equiv_LH
     state lh_input regs main mem r_main v r_binary offset env h_static h_match
-    bus pins promises
+    bus pins promises w
 
 end ZiskFv.Equivalence.Lh

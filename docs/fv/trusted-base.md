@@ -137,7 +137,7 @@ The narrative per-class rationale below stays here.
 | -- | ----------------------------------- | ----: | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 1  | Transpile contracts                 |    52 | `Trusted/Transpiler.lean`             | For each RV64IM instruction kind, ZisK's Rust transpilation lowers a Sail-decoded `ast` into a Main-row column shape that matches the pure spec. | Direct reading of ZisK's `transpile_*` Rust functions in the `zisk/` submodule; each axiom's docstring cites the exact upstream source line.                 |
 | 2  | Memory state bridge — load          |     1 | `ZiskCircuit/MemModel.lean`           | A Mem-AIR row tagged `wr=0` matching a memory-bus entry implies Sail's `state.mem` agrees with the entry's eight bytes.                           | Bridges Mem AIR's column language to Sail's byte-addressable `Std.HashMap` once class #4 has placed the entry on the bus.                                    |
-| 4  | Bus / lookup soundness              |    10 | `Airs/OperationBus/Consolidated.lean` (1), `Airs/MemoryBus/{MemBridge,MemAlignBridge}.lean` (7 + 2) | Permutation-argument and lookup soundness on the operation-bus, memory-bus, and MemAlign providers: (i) `op_bus_perm_sound_{BinaryAdd,Binary,BinaryExtension}` — a Main-row consumer pairs with a row in the provider AIR (operation_bus); (ii) `lookup_consumer_matches_provider_load` — load consumer ↔ Mem AIR row; (iii) `memalign_load_perm_sound` — sub-doubleword load consumer ↔ MemAlign* row; (iv) `mem_align_rom_subdoubleword_load_value_1_zero` — MemAlignRom lookup pins `value_1 = 0`; (v) `main_load_emission_bundle` / `main_sext_load_emission_bundle` — load and signed-load lane / ptr / rd-routing bundle on Main; (vi) `main_store_pc_emission_bundle` — lane match for `store_pc ∈ {0,1}` register writes; (vii) `main_external_arith_emission_bundle` — rd-write byte-pack lanes for the MUL/DIV family; (viii) `main_store_emission_bundle_{sd,sb,sh,sw}` — byte-extract + ptr-match + RMW high-byte preservation for the four store widths. | PLONK / logUp permutation-argument soundness for `bus_id = 10` (op-bus + mem-bus) and ROM-lookup soundness for the MemAlignRom table. Each axiom's docstring cites the PIL line and Rust transpile function it mirrors. |
+| 4  | Bus / lookup soundness              |     3 | `Airs/OperationBus/Consolidated.lean` (1), `Airs/MemoryBus/MemBridge.lean` (2) | Remaining permutation-argument soundness: (i) `op_bus_permutation_sound` — a Main-row consumer pairs with a row in the provider AIR (operation_bus); (ii) `main_store_pc_emission_bundle` — lane match for `store_pc ∈ {0,1}` register writes; (iii) `main_external_arith_emission_bundle` — rd-write byte-pack lanes for the MUL/DIV family. | PLONK / logUp permutation-argument soundness for the remaining operation/memory-bus compatibility surfaces. The T4 Clean memory-channel route retired the load/provider, store, and MemAlign sub-doubleword entries from canonical/global trust. |
 | 5b | Range-bus / byte-range soundness    |     2 | `Channels/RangeBusSoundness.lean` | Consolidated byte/signed range-bus soundness for `bits(width)` PIL columns and signed Arith carry-table checks. | Lookup-argument soundness on the standard byte-range buses, restricted to participants annotated in the PIL — see citations in each axiom's docstring. |
 | 6  | Binary / BinaryExtension lookup soundness | 3 | `Airs/Binary/BinaryRanges.lean` (2), `Airs/Tables/BinaryExtensionTable.lean` (1) | Lookup-argument soundness still live for Binary/BinaryExtension: `bin_ext_table_consumer_wf` for signed-load BinaryExtension rows, plus `binary_w_sext_choice_pin` and `binary_w_mode_carry_7_zero` for ADDW/SUBW W-mode sign-extension. `bin_table_consumer_wf` has been retired. | Lookup-argument soundness on the Binary and BinaryExtension AIRs (same trust kind as class #4), scoped to lookups against the static table row enumerations. |
 | 6b | Arith range / table / Euclidean pins |    13 | `Airs/Arith/Ranges.lean`              | Range-checker bus lookups + shared ArithTable lookup membership + remaining arith-table sign / operand / W-mode / sign-witness pins + Euclidean-remainder bounds. **Correction in progress:** old `arith_table_op_*` mode/selector axioms are being replaced by `arith_{mul,div}_table_lookup_sound` plus finite-table projection theorems; the remaining `arith_table_op_*` subfamily is a retirement queue. | Range-checker bus lookup soundness on the Arith AIR's `bits(16)`-annotated chunk columns and on the `ARITH_RANGE_CARRY` entry of the arith_range_table; binary-bus lookup soundness on the Arith `assumes_operation(|d|<|b|)` consumer for the Euclidean magnitude/sign bound; and, temporarily, ArithTable lookup/permutation soundness stated as table membership. Opcode-specific conclusions should be theorems from `ArithTableSpec`, not axioms. |
@@ -147,30 +147,28 @@ The narrative per-class rationale below stays here.
 | 10 | Platform — Zicfilp disabled         |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.update_elp_state _ = pure ()`.                                                                                               | Zicfilp landing-pad extension is disabled in ZisK's target; helper reduces to no-op under `currentlyEnabled Ext_Zicfilp = false`.                            |
 | C  | Clean-Component completeness — NON-SECURITY-CRITICAL | 5 | `AirsClean/Completeness.lean` | `binaryAdd_circuit_completeness`, `memAlignByte_circuit_completeness`, `memAlignReadByte_circuit_completeness`, `arithMul_circuit_completeness`, `arithDiv_circuit_completeness` — fill the mandatory `completeness` field of the BinaryAdd / MemAlignByte / MemAlignReadByte / ArithMul / ArithDiv Clean `GeneralFormalCircuit`s (one such axiom per AIR as the Clean integration proceeds). BinaryExtension's C5 component has trivial proved completeness and does not add an axiom. Binary's C6 component also adds no axiom: its prover-completeness side is explicitly conditional on the row `Spec`, while soundness remains proved from constraints. | zisk-fv is a **soundness-only** verification: it does not prove completeness (that an honest prover can satisfy the constraints — the pre-Clean code never established it either). These axioms are **completeness-direction** — a falsehood in any one CANNOT make a wrong execution verify; the verification's *soundness* does not depend on this class. Clean's `GeneralFormalCircuit` simply makes the field mandatory. (Plan decision D-COMPLETE.) |
 
-Total live count: `trust/baseline-axioms.txt` currently records **90**
+Total live count: `trust/baseline-axioms.txt` currently records **82**
 axioms, including the 5 non-security-critical Clean completeness axioms in
 class C. Class C is separate in kind from the soundness-critical trust classes.
 
 ### Recent consolidations (clean-integration branch)
 
-Three structural-symmetry consolidations replaced groups of
-per-AIR / per-opcode axioms with bus-level / op-parameterized
-axioms while preserving the per-target results as derived
-theorems. Net: −6 axioms over the prior 122-axiom baseline.
+Structural-symmetry consolidations replaced groups of per-AIR /
+per-opcode axioms with bus-level / op-parameterized axioms where the
+trust content was genuinely shared. The T4 Clean memory route then
+retired the subword-store emission axiom entirely from source.
 
 * `op_bus_perm_sound_{BinaryAdd, Binary, BinaryExtension}` (3) →
   `op_bus_permutation_sound` (1) — parameterized over an
   `OpBusProvider` sum type. `ZiskFv/Airs/OperationBus/Consolidated.lean`.
-* `main_store_emission_bundle_{sb, sh, sw}` (3) →
-  `main_store_emission_bundle_subword` (1) — parameterized over
-  store width `n ∈ {1, 2, 4}`. `ZiskFv/Airs/MemoryBus/MemBridge.lean`.
 * `binary_b_op_or_sext_eq_OP_{AND, OR, XOR}` (3) →
   `binary_b_op_or_sext_eq_op_general` (1) — parameterized over
   opcode literal. `ZiskFv/Airs/Binary/BinaryRanges.lean`.
 
-The per-target results are preserved as theorems with original
-names and signatures, so downstream consumers (per-AIR discharge
-bridges, Compliance wrappers) require no changes.
+The binary per-target results are preserved as theorems with original
+names and signatures, so downstream consumers require no changes.
+The retired subword-store memory results are replaced on canonical
+SB/SH/SW paths by Clean structural witnesses plus proved adapters.
 
 Remaining axiom classes (#1 transpile, #2 mem state bridge, #6b
 Arith range/table/Euclidean, #7–10 platform) are honestly at the
@@ -226,16 +224,12 @@ rewritten to derive these equations from circuit witnesses:
   high-bytes-zero claim for sub-doubleword loads
   (`ind_width ∈ {1, 2, 4}`) is a *theorem* —
   `memalign_subdoubleword_load_high_bytes_zero` in
-  `Airs/MemoryBus/MemAlignBridge.lean`. It is derived from two
-  narrow class-#4 axioms: (i) `memalign_load_perm_sound`, the
-  bus-`bus_id=10` permutation-soundness handshake between Main
-  consumers and the MemAlign* providers (MemAlignByte /
-  MemAlignReadByte / MemAlign); (ii)
-  `mem_align_rom_subdoubleword_load_value_1_zero`, ROM-lookup
-  soundness pinning `value_1 = 0` on MemAlign provider rows of
-  sub-doubleword width. No standalone closure axiom for the
-  zero-pad — the byte-range arithmetic that closes
-  `e.x4..x7 = 0 ∧ ...` is in pure Lean, atop the two axioms.
+  `Airs/MemoryBus/MemAlignBridge.lean`. It is derived from an explicit
+  `SubdoublewordLoadProviderWitness` that unpacks the selected
+  MemAlign-family provider row and the ROM-derived row facts. No
+  MemAlign permutation or MemAlignRom axiom remains in canonical/global
+  closure; the byte-range arithmetic that closes `e.x4..x7 = 0 ∧ ...`
+  is pure Lean over that structural witness.
 
 After this rewrite all 63 canonical `equiv_<OP>` theorems pass the
 `check-no-output-eq.sh` gate uniformly with no `EXEMPT_STEMS`
@@ -399,11 +393,12 @@ pure-Lean alignment lemma).
 `binary_b_op_or_sext_eq_OP_OR` (Binary AIR table-pin sub-class)
 consumed by `equiv_OR` (`Compliance/Wrappers/Or.lean`).
 
-### Step 4.1.3 — Mem-stores shape exemplar SD (+1 axiom)
+### Step 4.1.3 — Mem-stores shape exemplar SD (retired in T4)
 
-`main_store_emission_bundle_sd` (class-#4) delivers byte-extracted
-store entry contents and ptr-match for the `equiv_SD`
-wrapper in `Compliance/Wrappers/Sd.lean`.
+`main_store_emission_bundle_sd` was retired in T4. The `equiv_SD`
+wrapper now consumes a structural Clean `SdCleanWitness`, and the
+ptr/byte facts are derived by the Clean Main c/store adapter instead
+of a class-#4 trust-ledger axiom.
 
 ### Step 4 DIV pilot — GAP-B sign-witness MSB pins (+2 axioms)
 

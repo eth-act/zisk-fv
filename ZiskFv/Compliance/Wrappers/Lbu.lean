@@ -2,7 +2,7 @@ import Mathlib
 
 import ZiskFv.EquivCore.Lbu
 import ZiskFv.EquivCore.Promises.Load
-import ZiskFv.EquivCore.Bridge.Mem
+import ZiskFv.EquivCore.Bridge.MemClean
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.Mem
@@ -10,7 +10,7 @@ import ZiskFv.Airs.MemoryBus
 import ZiskFv.Compliance.SharedBundles
 
 /-!
-# `equiv_LBU` Compliance wrapper — Mem-loads (zero-ext) shape
+# `equiv_LBU` Compliance wrapper — Clean Main/Mem load witness
 
 > **Status:** within-shape wrapper, derived mechanically from
 > `Wrappers/Ld.lean`. Lives outside the canonical
@@ -19,9 +19,7 @@ import ZiskFv.Compliance.SharedBundles
 
 ## 5-category discharge applied
 
-* **Lane-match.** Pre-discharged on the canonical surface via
-  `Bridge.Mem.lbu_discharge_full` (consumes `main_load_emission_bundle`,
-  class #4).
+* **Lane-match.** Discharged from the Clean structural load witness.
 * **Mode pins.** N/A on the provider side (Mem core has no mode columns).
 * **Sign-witness pins.** N/A — LBU is zero-extended.
 * **Range/bound.** Pre-discharged via
@@ -34,9 +32,8 @@ import ZiskFv.Compliance.SharedBundles
 
 ## Anti-laundering report
 
-* **Zero new axioms** — consumes only `equiv_LBU`'s existing
-  transitive closure. Matches per-AIR axiom map's 0-new-axioms
-  prediction for the zero-extended narrow loads.
+* **Zero new axioms** — the Main/Mem load path no longer consumes
+  `main_load_emission_bundle` or `lookup_consumer_matches_provider_load`.
 -/
 
 namespace ZiskFv.Compliance
@@ -58,8 +55,8 @@ theorem equiv_LBU
     (regs : ZiskFv.Compliance.ModeRegsFull)
     -- AIR validators + row index.
     (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
-    (align : ZiskFv.Compliance.MemAlignWitness)
     (bus : ZiskFv.Compliance.BusRows)
+    (align : ZiskFv.Compliance.MemAlignWitness main r_main bus.e1)
     -- Activation + opcode pins (Compliance ROM handshake).
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_width : main.ind_width r_main = (1 : FGL))
@@ -68,7 +65,9 @@ theorem equiv_LBU
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lbu_state_assumptions lbu_input state)
         (PureSpec.execute_LOADBU_pure lbu_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) :
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
+        main mem r_main bus lbu_input.r1_val lbu_input.imm lbu_input.rd) :
     execute_instruction (instruction.LOAD (
       lbu_input.imm,
       regidx.Regidx lbu_input.r1,
@@ -76,10 +75,9 @@ theorem equiv_LBU
       true,
       1
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  -- `OP_COPYB := 1` definitionally; canonical accepts `pins`/`align` verbatim.
-  exact ZiskFv.EquivCore.Lbu.equiv_LBU
+  exact ZiskFv.EquivCore.Lbu.equiv_LBU_clean_provider_witness
     state lbu_input regs bus
     promises
-    main mem r_main align pins h_width
+    main mem r_main align pins h_width w
 
 end ZiskFv.Compliance

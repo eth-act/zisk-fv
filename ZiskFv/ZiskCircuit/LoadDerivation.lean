@@ -205,9 +205,9 @@ lemma load_copyb_e1_e2_bytes_eq_bv
 /-! ## Family A + C — zero-extension load c-packed forms
 
 For LBU/LHU/LWU, Family A passthrough plus the MemAlign zero-padding
-conjunct of `lookup_consumer_matches_provider_load` compose into the
-`U64.toBV` equation each canonical equivalence proof expects. These
-BitVec shapes — `(setWidth 32 b).setWidth 64`, etc. — match the
+theorem over the structural provider witness compose into the `U64.toBV`
+equation each canonical equivalence proof expects. These BitVec shapes
+— `(setWidth 32 b).setWidth 64`, etc. — match the
 `bus_effect_matches_sail_loadu_<n>byte_rrrw` consumer side. -/
 
 /-- BitVec helper: a `U64.toBV` whose top 7 byte lanes are zero
@@ -267,7 +267,9 @@ lemma load_lbu_c_packed
     (h_e2_range : memory_entry_chunks_in_range e2)
     (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
     (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
-    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning ma) :
+    (h_provider :
+      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+        m mab marb ma r_main e1) :
     U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8), ((byteAt e2 2) : BitVec 8),
                 ((byteAt e2 3) : BitVec 8), ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8),
                 ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
@@ -280,7 +282,7 @@ lemma load_lbu_c_packed
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
       m mab marb ma r_main e1 h_emit_b (Or.inl h_width) h_mab_core
-      h_marb_core h_low
+      h_marb_core h_provider
   -- Width = 1 chunk-shape zero-pad: e1.value_1 = 0 ∧ e1.value_0.val < 256.
   obtain ⟨hv1_zero, hv0_lt⟩ := h_zero_pad.1 h_width
   -- Derive the 7 zero-byte facts at the FGL level (byteAt e1 i for i = 1..7).
@@ -346,7 +348,9 @@ lemma load_lhu_c_packed
     (h_e2_range : memory_entry_chunks_in_range e2)
     (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
     (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
-    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning ma) :
+    (h_provider :
+      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+        m mab marb ma r_main e1) :
     U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8), ((byteAt e2 2) : BitVec 8),
                 ((byteAt e2 3) : BitVec 8), ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8),
                 ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
@@ -359,7 +363,7 @@ lemma load_lhu_c_packed
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
       m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inl h_width)) h_mab_core
-      h_marb_core h_low
+      h_marb_core h_provider
   -- Width = 2 chunk-shape zero-pad: e1.value_1 = 0 ∧ e1.value_0.val < 65536.
   obtain ⟨hv1_zero, hv0_lt⟩ := h_zero_pad.2.1 h_width
   -- Derive bytes 2..7 of e1 are 0 at the FGL level.
@@ -421,7 +425,9 @@ lemma load_lwu_c_packed
     (h_e2_range : memory_entry_chunks_in_range e2)
     (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
     (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
-    (h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning ma) :
+    (h_provider :
+      ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+        m mab marb ma r_main e1) :
     U64.toBV #v[((byteAt e2 0) : BitVec 8), ((byteAt e2 1) : BitVec 8), ((byteAt e2 2) : BitVec 8),
                 ((byteAt e2 3) : BitVec 8), ((byteAt e2 4) : BitVec 8), ((byteAt e2 5) : BitVec 8),
                 ((byteAt e2 6) : BitVec 8), ((byteAt e2 7) : BitVec 8)]
@@ -435,7 +441,7 @@ lemma load_lwu_c_packed
   have h_zero_pad :=
     ZiskFv.Airs.MemoryBus.MemAlignBridge.memalign_subdoubleword_load_high_bytes_zero
       m mab marb ma r_main e1 h_emit_b (Or.inr (Or.inr h_width)) h_mab_core
-      h_marb_core h_low
+      h_marb_core h_provider
   -- Width = 4 chunk-shape zero-pad: e1.value_1 = 0.
   have hv1_zero : e1.value_1 = 0 := h_zero_pad.2.2 h_width
   -- Derive bytes 4..7 of e1 are 0 at the FGL level.

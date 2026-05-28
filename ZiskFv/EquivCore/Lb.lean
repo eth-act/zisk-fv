@@ -15,6 +15,7 @@ import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.EquivCore.Bridge.Mem
+import ZiskFv.EquivCore.Bridge.MemClean
 import ZiskFv.SailSpec.lb
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.EquivCore.Promises.Load
@@ -71,8 +72,12 @@ lemma equiv_LB_sail
   PureSpec.execute_LOADB_pure_equiv
     lb_input risc_v_assumptions h_opcode_assumptions
 
-/-- LB equivalence with BinaryExtension table semantics supplied explicitly. -/
-theorem equiv_LB_of_wf
+/-- Clean-backed LB equivalence for the Main/Mem load path.
+
+This removes `main_sext_load_emission_bundle` and
+`lookup_consumer_matches_provider_load` from the Main/Mem portion of LB. The
+BinaryExtension witnesses still supply the signed-extension packing facts. -/
+theorem equiv_LB_clean_provider_of_wf
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lb_input : PureSpec.LbInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -82,10 +87,8 @@ theorem equiv_LB_of_wf
         (PureSpec.lb_state_assumptions lb_input state)
         (PureSpec.execute_LOADB_pure lb_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
-    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
-    (pins : ZiskFv.Compliance.MainRowPins main r_main 1 ZiskFv.Trusted.OP_SIGNEXTEND_B)
-    -- BinaryExtension AIR connection witnesses (Op-bus permutation handshake +
-    -- per-byte lookup soundness).
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL)
+    (r_main r_mem : ℕ)
     (v : ZiskFv.Airs.BinaryExtension.Valid_BinaryExtension FGL FGL)
     (r_binary : ℕ)
     (h_op_binary :
@@ -112,7 +115,37 @@ theorem equiv_LB_of_wf
           + v.free_in_c_5 r_binary + v.free_in_c_7 r_binary
           + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
           + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary)
-    (h_a0_match : (v.free_in_a_0 r_binary).val = (byteAt bus.e1 0).val) :
+    (h_a0_match : (v.free_in_a_0 r_binary).val = (byteAt bus.e1 0).val)
+    (mainRow : ZiskFv.AirsClean.Main.MainRowWithRom FGL)
+    (memRow : ZiskFv.AirsClean.Mem.MemRow FGL)
+    (h_main_row :
+      mainRow.core = ZiskFv.AirsClean.Main.rowAt main r_main)
+    (h_mem_row :
+      memRow = ZiskFv.AirsClean.Mem.rowAt mem r_mem)
+    (h_main_spec : ZiskFv.AirsClean.Main.Spec mainRow.core)
+    (h_store_pc : mainRow.core.store_pc = 0)
+    (h_main_b_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.bMemMessage mainRow) (-1) 2))
+    (h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage mainRow) 1 1))
+    (h_mem_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Mem.memBusMessage memRow) 1 2))
+    (h_addr1 :
+      mainRow.rom.addr1.toNat =
+        lb_input.r1_val.toNat + (BitVec.signExtend 64 lb_input.imm).toNat)
+    (h_addr2_zero_iff :
+      Transpiler.wrap_to_regidx mainRow.rom.addr2 = 0 ↔ lb_input.rd = 0)
+    (h_addr2_idx :
+      lb_input.rd.toNat = (Transpiler.wrap_to_regidx mainRow.rom.addr2).val)
+    (h_mem_sel : mem.sel r_mem = 1)
+    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
+    (h_mem_wr : mem.wr r_mem = 0) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -124,28 +157,27 @@ theorem equiv_LB_of_wf
         1
       ))) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_ext, h_op⟩ := pins
   obtain ⟨mstatus, pmaRegion, misa, mseccfg⟩ := regs
   obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
-  -- Step 0. Discharge the Mem-shape promise hypotheses via the
-  -- Bridge.Mem entry point (consumes `main_sext_load_emission_bundle`
-  -- — class #4 trust ledger).
+  obtain ⟨h_bundle, h_mem8⟩ :=
+    ZiskFv.EquivCore.Bridge.MemClean.ld_discharge_full_clean_provider
+      main mem r_main r_mem mainRow memRow e1 e2 state
+      lb_input.r1_val lb_input.imm lb_input.rd
+      h_main_row h_mem_row h_main_spec h_store_pc
+      h_main_b_match h_main_c_match h_mem_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx
+      h_mem_sel h_mem_legacy_addr h_mem_wr
   obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match,
-          h_rd_zero_iff, h_rd_idx⟩ :=
-    ZiskFv.EquivCore.Bridge.Mem.lb_discharge_full
-      main r_main e1 e2 lb_input.r1_val lb_input.imm lb_input.rd
-      h_ext h_op h_m1_mult h_m1_as h_m2_mult h_m2_as
+          h_rd_zero_iff, h_rd_idx, _h_copy0, _h_copy1⟩ := h_bundle
   rw [equiv_LB_sail state lb_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
   symm
-  have h_mem :=
-    ZiskFv.ZiskCircuit.MemModel.mem_load_correct_1byte
-      main mem r_main e1 state h_main_emit_b
   obtain ⟨_h_pc, _h_r1_read,
           h_d0,
           _h_bound⟩ := h_opcode_assumptions
+  have h_mem := h_mem8.1
   rw [h_ptr_match] at h_mem
   have hd0 : ((byteAt e1 0) : BitVec 8) = lb_input.data0 := by
     rw [h_d0] at h_mem; exact (Option.some.inj h_mem).symm

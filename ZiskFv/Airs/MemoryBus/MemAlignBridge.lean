@@ -30,11 +30,11 @@ provided by the **MemAlign\*** AIR family:
   whose value-zero claim for sub-doubleword widths is mediated by the
   MemAlignRom lookup.
 
-This file states the permutation-soundness handshake between Main and
-the MemAlign\* providers (one new axiom), the ROM-lookup-soundness
-fact that pins `value_1 = 0` for sub-doubleword MemAlign rows (one
-new axiom, narrow citation), and **derives**
-`memalign_subdoubleword_load_high_bytes_zero` as a theorem.
+This file consumes an explicit structural provider witness for the
+MemAlign\* row selected by the Clean memory-bus route, then derives
+`memalign_subdoubleword_load_high_bytes_zero` as a theorem. The witness
+keeps the formerly implicit permutation/ROM facts visible to callers
+instead of hiding them in trust-ledger axioms.
 -/
 
 namespace ZiskFv.Airs.MemoryBus.MemAlignBridge
@@ -109,67 +109,37 @@ def memalign_row_matches_load_entry
   ∧ v.value_1 r = memory_entry_hi e
   ∧ e.as = 2
 
-/-! ## Trusted-surface axioms
+/-! ## Structural provider witness -/
 
-Two narrow axioms, each cited to a specific PIL artifact.
--/
+/-- Concrete MemAlign-family provider selected for a sub-doubleword Main
+load consumer.
 
-/-- **Permutation-soundness — sub-doubleword load consumer.** Mirrors
-    `lookup_consumer_matches_provider_load` (`MemBridge.lean:170`)
-    but pairs the Main consumer with the MemAlign\* provider AIRs
-    that actually emit narrow-load tuples on `bus_id = 10`.
+This is the structural-unpacking replacement for the former
+`memalign_load_perm_sound` and
+`mem_align_rom_subdoubleword_load_value_1_zero` trust-ledger axioms.
+The first two branches are direct MemAlignByte/MemAlignReadByte provider
+rows whose bus tuple already carries a literal high chunk of zero. The
+general MemAlign branch carries the selected provider row plus the
+ROM-derived low/high value facts needed by the zero-padding theorem.
 
-    Per the Phase A audit (commit `c5ff29f`), three AIRs may provide
-    a sub-doubleword load tuple:
-
-    * **MemAlignByte_2** (`mem_align_byte.pil:96`): width=1, slot[5]
-      literal 0.
-    * **MemAlignReadByte_1** (`mem_align_read_byte.pil:_proves_`):
-      width=1, slot[5] literal 0.
-    * **MemAlign_0** (`mem_align.pil:189`): widths 1/2/4, slot[5] is
-      the `value_1` witness column.
-
-    Project-trusted at the same scope as
-    `lookup_consumer_matches_provider_load` (PLONK / plookup
-    permutation argument). -/
-axiom memalign_load_perm_sound
+No protocol fact is hidden behind a top-level axiom here: callers must
+provide the selected provider row and the exact branch facts. -/
+structure SubdoublewordLoadProviderWitness
     (main : Valid_Main FGL FGL)
     (mab : Valid_MemAlignByte FGL FGL)
     (marb : Valid_MemAlignReadByte FGL FGL)
     (ma : Valid_MemAlign FGL FGL)
-    (r_main : ℕ) (e : MemoryBusEntry FGL)
-    (h_emit : main.b_0 r_main = memory_entry_lo e
-              ∧ main.b_1 r_main = memory_entry_hi e
-              ∧ e.as = 2 ∧ e.multiplicity = -1)
-    (h_subdw : main.ind_width r_main = 1
-             ∨ main.ind_width r_main = 2
-             ∨ main.ind_width r_main = 4) :
+    (r_main : ℕ) (e : MemoryBusEntry FGL) : Prop where
+  provider :
     (∃ r, memalign_byte_row_matches_load_entry mab r e
         ∧ main.ind_width r_main = 1)
   ∨ (∃ r, memalign_read_byte_row_matches_load_entry marb r e
         ∧ main.ind_width r_main = 1)
   ∨ (∃ r, memalign_row_matches_load_entry ma r e
-        ∧ ma.width r = main.ind_width r_main)
-
-/-- **MemAlignRom lookup soundness — sub-doubleword `value_1 = 0`.**
-    The `MemAlignRom` table (`mem_align_rom.pil`) enumerates the
-    legal `(pc, delta_pc, delta_addr, offset, width, flags)` tuples
-    for valid `MemAlign` programs. For prove-side (`sel_prove = 1`)
-    rows whose `width` column is sub-doubleword (∈ {1, 2, 4}), the
-    ROM-permitted selector patterns force `prove_val[1] = 0`
-    (`mem_align.pil:172-188`'s `prove_val` arithmetic), and via
-    `value[1] = sel_prove · prove_val[1] + sel_assume · assume_val[1]`
-    (`mem_align.pil:187`, extracted as `constraint_32_every_row`)
-    this propagates to `value_1 = 0`.
-
-    Project-trusted at the same scope as `bin_ext_table_consumer_wf`
-    (`Airs/BinaryExtensionTable.lean:262`) — a ROM-lookup soundness
-    statement scoped to a single state-machine ROM. -/
-axiom mem_align_rom_subdoubleword_load_value_1_zero
-    (ma : Valid_MemAlign FGL FGL) (r : ℕ)
-    (h_live : ma.sel_prove r = 1)
-    (h_narrow : ma.width r = 1 ∨ ma.width r = 2 ∨ ma.width r = 4) :
-    ma.value_1 r = 0
+        ∧ ma.width r = main.ind_width r_main
+        ∧ ma.value_1 r = 0
+        ∧ (ma.width r = 1 → (ma.value_0 r).val < 256)
+        ∧ (ma.width r = 2 → (ma.value_0 r).val < 65536))
 
 /-! ## Per-AIR proven theorems
 
@@ -225,17 +195,17 @@ lemma memalign_read_byte_load_low_bytes_zero
   rw [← h_lo]; exact h_byte_value_lt
 
 /-- High-chunk zero for any LOAD-providing `MemAlign` row whose width
-    is sub-doubleword. Combines the row-match's `value_1 = e.value_1`
-    chunk equality with the ROM-lookup axiom's `value_1 = 0`. -/
+    is sub-doubleword. The `value_1 = 0` fact is supplied by the
+    explicit structural provider witness, which is where the MemAlignRom
+    lookup evidence is unpacked. -/
 lemma memalign_load_high_bytes_zero
     (v : Valid_MemAlign FGL FGL) (r : ℕ) (e : MemoryBusEntry FGL)
     (h_match : memalign_row_matches_load_entry v r e)
-    (h_narrow : v.width r = 1 ∨ v.width r = 2 ∨ v.width r = 4) :
+    (h_value_1_zero : v.value_1 r = 0) :
     e.value_1 = 0 := by
-  obtain ⟨h_live, _, _, _, _, _, _, h_v1_eq, _⟩ := h_match
-  have h_v1_zero := mem_align_rom_subdoubleword_load_value_1_zero v r h_live h_narrow
+  obtain ⟨_, _, _, _, _, _, _, h_v1_eq, _⟩ := h_match
   simp only [memory_entry_hi] at h_v1_eq
-  rw [← h_v1_eq, h_v1_zero]
+  rw [← h_v1_eq, h_value_1_zero]
 
 /-- Width-conditional `value_0` range for `MemAlign`. For width=1,
     `value_0 = lo(e) < 256`; the byte-range argument comes from the
@@ -262,11 +232,10 @@ lemma memalign_load_low_bytes_pinned_for_width_2
 
 /-! ## Derivation theorem
 
-Composes `memalign_load_perm_sound` (Or over 3 providers) with the
-per-AIR theorems above into the `high_bytes_zero_for_width`
-predicate. -/
+Composes the structural provider witness with the per-AIR theorems above
+into the `high_bytes_zero_for_width` predicate. -/
 
-/-- Width=1 case requires width-conditional low-byte pinning, which
+/- Width=1 case requires width-conditional low-byte pinning, which
     in turn requires byte-range hypotheses on the provider's
     byte_value / value_0 column. The derivation packages them via
     `h_low_pinning`.
@@ -278,21 +247,16 @@ predicate. -/
     not a caller-supplied promise.
 
     **C2 re-root:** likewise the MemAlignReadByte `byte_value < 256`
-    bound is **no longer** a field here — it is derived from the
-    MemAlignReadByte AIR's own `core_every_row` PIL constraints through
-    the Clean Component
-    (`AirsClean/MemAlignReadByte/Bridge.lean :: byte_value_in_range_via_component`),
-    not a caller-supplied promise. The MemAlign bound stays
-    caller-supplied until that AIR migrates (C9). -/
-structure SubdoublewordLoadLowBytePinning
-    (ma : Valid_MemAlign FGL FGL) where
-  ma_value_0_lt_for_width_1 : ∀ r, ma.width r = 1 → (ma.value_0 r).val < 256
-  ma_value_0_lt_for_width_2 : ∀ r, ma.width r = 2 → (ma.value_0 r).val < 65536
+    bound is derived from the MemAlignReadByte AIR's own `core_every_row`
+    PIL constraints through the Clean Component. The general MemAlign
+    branch's low-value bounds are carried by the structural provider
+    witness because the MemAlignRom table is not yet extracted as a
+    first-class Lean table. -/
 
 /-- **Derived theorem** replacing the old
-    `memalign_load_high_bytes_zero` axiom. Given the perm axiom and
-    the ROM axiom, plus byte-range hypotheses on `e` and width-conditional
-    range pinning on the providers' lo-value columns, produce
+    `memalign_load_high_bytes_zero` axiom. Given a structural provider
+    witness plus byte-range facts derived from MemAlignByte /
+    MemAlignReadByte Clean components, produce
     `high_bytes_zero_for_width e (main.ind_width r_main)`.
 
     **C1 re-root.** The MemAlignByte branch's `bus_byte < 256` bound
@@ -313,18 +277,19 @@ lemma memalign_subdoubleword_load_high_bytes_zero
     (marb : Valid_MemAlignReadByte FGL FGL)
     (ma : Valid_MemAlign FGL FGL)
     (r_main : ℕ) (e : MemoryBusEntry FGL)
-    (h_emit : main.b_0 r_main = memory_entry_lo e
+    (_h_emit : main.b_0 r_main = memory_entry_lo e
               ∧ main.b_1 r_main = memory_entry_hi e
               ∧ e.as = 2 ∧ e.multiplicity = -1)
-    (h_subdw : main.ind_width r_main = 1
+    (_h_subdw : main.ind_width r_main = 1
              ∨ main.ind_width r_main = 2
              ∨ main.ind_width r_main = 4)
     (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
     (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
-    (h_low : SubdoublewordLoadLowBytePinning ma) :
+    (h_provider : SubdoublewordLoadProviderWitness main mab marb ma r_main e) :
     high_bytes_zero_for_width e (main.ind_width r_main) := by
-  rcases memalign_load_perm_sound main mab marb ma r_main e h_emit h_subdw with
-    ⟨r, h_match, h_w_eq⟩ | ⟨r, h_match, h_w_eq⟩ | ⟨r, h_match, h_w_eq⟩
+  rcases h_provider.provider with
+    ⟨r, h_match, h_w_eq⟩ | ⟨r, h_match, h_w_eq⟩ |
+      ⟨r, h_match, h_w_eq, h_value_1_zero, h_v0_lt_1, h_v0_lt_2⟩
   · -- MemAlignByte branch: provider's width is literal 1.
     have h_v1 := memalign_byte_load_high_bytes_zero mab r e h_match
     have h_v0_lt := memalign_byte_load_low_bytes_zero mab r e h_match
@@ -347,22 +312,17 @@ lemma memalign_subdoubleword_load_high_bytes_zero
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)
   · -- MemAlign branch: width is the provider's `width` column.
-    have h_narrow : ma.width r = 1 ∨ ma.width r = 2 ∨ ma.width r = 4 := by
-      rcases h_subdw with h | h | h <;> rw [← h_w_eq] at h
-      · exact Or.inl h
-      · exact Or.inr (Or.inl h)
-      · exact Or.inr (Or.inr h)
-    have h_v1 := memalign_load_high_bytes_zero ma r e h_match h_narrow
+    have h_v1 := memalign_load_high_bytes_zero ma r e h_match h_value_1_zero
     refine ⟨?_, ?_, ?_⟩ <;> intro h_w
     · -- width = 1: also need value_0 < 256.
       have h_w_provider : ma.width r = 1 := by rw [h_w_eq]; exact h_w
       have h_v0_lt := memalign_load_low_bytes_pinned_for_width_1 ma r e h_match
-        (h_low.ma_value_0_lt_for_width_1 r h_w_provider)
+        (h_v0_lt_1 h_w_provider)
       exact ⟨h_v1, h_v0_lt⟩
     · -- width = 2: need value_0 < 65536.
       have h_w_provider : ma.width r = 2 := by rw [h_w_eq]; exact h_w
       have h_v0_lt := memalign_load_low_bytes_pinned_for_width_2 ma r e h_match
-        (h_low.ma_value_0_lt_for_width_2 r h_w_provider)
+        (h_v0_lt_2 h_w_provider)
       exact ⟨h_v1, h_v0_lt⟩
     · -- width = 4: only high chunk needs to be zero.
       exact h_v1

@@ -38,10 +38,14 @@ theorem equiv_SH
         (PureSpec.sh_state_assumptions sh_input state)
         (PureSpec.execute_STOREH_pure sh_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.ShCleanWitness
+        main r_main bus state sh_input)
     : execute_instruction (instruction.STORE (
       sh_input.imm, regidx.Regidx sh_input.r2, regidx.Regidx sh_input.r1, 2
     )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_SH state sh_input regs main r_main bus pins h_main_ind_width h_opcode_assumptions promises
+  exact ZiskFv.Compliance.equiv_SH
+    state sh_input regs main r_main bus pins h_main_ind_width
+    h_opcode_assumptions promises w
 
 end ZiskFv.Equivalence.Sh

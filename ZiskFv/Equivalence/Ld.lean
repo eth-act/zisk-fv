@@ -37,6 +37,8 @@ theorem equiv_LD
         (PureSpec.ld_state_assumptions ld_input state)
         (PureSpec.execute_LOADD_pure ld_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.LdCleanWitness
+        main mem r_main bus ld_input)
     : execute_instruction (instruction.LOAD (
       ld_input.imm,
       regidx.Regidx ld_input.r1,
@@ -47,6 +49,6 @@ theorem equiv_LD
       = state_effect_via_channels
           ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_LD state ld_input regs main mem r_main bus pins promises
+  exact ZiskFv.Compliance.equiv_LD state ld_input regs main mem r_main bus pins promises w
 
 end ZiskFv.Equivalence.Ld

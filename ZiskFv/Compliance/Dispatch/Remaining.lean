@@ -57,28 +57,28 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 def OpEnvelope.exec_eq_remaining
     : OpEnvelope state m r_main → Prop
   -- Unsigned loads (3)
-  | .lbu lbu_input _ _ _ bus _ _ _ =>
+  | .lbu lbu_input _ _ bus _ _ _ _ _ =>
       execute_instruction (instruction.LOAD (
         lbu_input.imm, regidx.Regidx lbu_input.r1, regidx.Regidx lbu_input.rd, true, 1
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .lhu lhu_input _ _ _ bus _ _ _ =>
+  | .lhu lhu_input _ _ bus _ _ _ _ _ =>
       execute_instruction (instruction.LOAD (
         lhu_input.imm, regidx.Regidx lhu_input.r1, regidx.Regidx lhu_input.rd, true, 2
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .lwu lwu_input _ _ _ bus _ _ _ =>
+  | .lwu lwu_input _ _ bus _ _ _ _ _ =>
       execute_instruction (instruction.LOAD (
         lwu_input.imm, regidx.Regidx lwu_input.r1, regidx.Regidx lwu_input.rd, true, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   -- Sub-doubleword stores (3)
-  | .sb sb_input _ bus _ _ _ _ =>
+  | .sb sb_input _ bus _ _ _ _ _ =>
       execute_instruction (instruction.STORE (
         sb_input.imm, regidx.Regidx sb_input.r2, regidx.Regidx sb_input.r1, 1
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .sh sh_input _ bus _ _ _ _ =>
+  | .sh sh_input _ bus _ _ _ _ _ =>
       execute_instruction (instruction.STORE (
         sh_input.imm, regidx.Regidx sh_input.r2, regidx.Regidx sh_input.r1, 2
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .sw sw_input _ bus _ _ _ _ =>
+  | .sw sw_input _ bus _ _ _ _ _ =>
       execute_instruction (instruction.STORE (
         sw_input.imm, regidx.Regidx sw_input.r2, regidx.Regidx sw_input.r1, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
@@ -183,27 +183,27 @@ theorem zisk_riscv_compliant_program_bus_remaining
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq_remaining := by
   cases env with
-  | lbu lbu_input regs mem align bus pins h_width promises =>
+  | lbu lbu_input regs mem bus align pins h_width promises w =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Lbu.equiv_LBU state lbu_input regs m mem r_main align bus pins h_width promises
-  | lhu lhu_input regs mem align bus pins h_width promises =>
+    exact ZiskFv.Equivalence.Lbu.equiv_LBU state lbu_input regs m mem r_main bus align pins h_width promises w
+  | lhu lhu_input regs mem bus align pins h_width promises w =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Lhu.equiv_LHU state lhu_input regs m mem r_main align bus pins h_width promises
-  | lwu lwu_input regs mem align bus pins h_width promises =>
+    exact ZiskFv.Equivalence.Lhu.equiv_LHU state lhu_input regs m mem r_main bus align pins h_width promises w
+  | lwu lwu_input regs mem bus align pins h_width promises w =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Lwu.equiv_LWU state lwu_input regs m mem r_main align bus pins h_width promises
-  | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
+    exact ZiskFv.Equivalence.Lwu.equiv_LWU state lwu_input regs m mem r_main bus align pins h_width promises w
+  | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises w =>
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Sb.equiv_SB state sb_input regs m r_main bus pins
-      h_main_ind_width h_opcode_assumptions promises
-  | sh sh_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
+      h_main_ind_width h_opcode_assumptions promises w
+  | sh sh_input regs bus pins h_main_ind_width h_opcode_assumptions promises w =>
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Sh.equiv_SH state sh_input regs m r_main bus pins
-      h_main_ind_width h_opcode_assumptions promises
-  | sw sw_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
+      h_main_ind_width h_opcode_assumptions promises w
+  | sw sw_input regs bus pins h_main_ind_width h_opcode_assumptions promises w =>
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Sw.equiv_SW state sw_input regs m r_main bus pins
-      h_main_ind_width h_opcode_assumptions promises
+      h_main_ind_width h_opcode_assumptions promises w
   -- W-shifts
   | sllw sllw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
@@ -378,27 +378,27 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
     (h_known_bugs : Defects.NoKnownDefect env) :
     env.exec_eq_remaining := by
   cases env with
-  | lbu lbu_input regs mem align bus pins h_width promises =>
+  | lbu lbu_input regs mem bus align pins h_width promises w =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Lbu.equiv_LBU state lbu_input regs m mem r_main align bus pins h_width promises
-  | lhu lhu_input regs mem align bus pins h_width promises =>
+    exact ZiskFv.Equivalence.Lbu.equiv_LBU state lbu_input regs m mem r_main bus align pins h_width promises w
+  | lhu lhu_input regs mem bus align pins h_width promises w =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Lhu.equiv_LHU state lhu_input regs m mem r_main align bus pins h_width promises
-  | lwu lwu_input regs mem align bus pins h_width promises =>
+    exact ZiskFv.Equivalence.Lhu.equiv_LHU state lhu_input regs m mem r_main bus align pins h_width promises w
+  | lwu lwu_input regs mem bus align pins h_width promises w =>
     simp only [OpEnvelope.exec_eq_remaining]
-    exact ZiskFv.Equivalence.Lwu.equiv_LWU state lwu_input regs m mem r_main align bus pins h_width promises
-  | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
+    exact ZiskFv.Equivalence.Lwu.equiv_LWU state lwu_input regs m mem r_main bus align pins h_width promises w
+  | sb sb_input regs bus pins h_main_ind_width h_opcode_assumptions promises w =>
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Sb.equiv_SB state sb_input regs m r_main bus pins
-      h_main_ind_width h_opcode_assumptions promises
-  | sh sh_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
+      h_main_ind_width h_opcode_assumptions promises w
+  | sh sh_input regs bus pins h_main_ind_width h_opcode_assumptions promises w =>
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Sh.equiv_SH state sh_input regs m r_main bus pins
-      h_main_ind_width h_opcode_assumptions promises
-  | sw sw_input regs bus pins h_main_ind_width h_opcode_assumptions promises =>
+      h_main_ind_width h_opcode_assumptions promises w
+  | sw sw_input regs bus pins h_main_ind_width h_opcode_assumptions promises w =>
     simp only [OpEnvelope.exec_eq_remaining]
     exact ZiskFv.Equivalence.Sw.equiv_SW state sw_input regs m r_main bus pins
-      h_main_ind_width h_opcode_assumptions promises
+      h_main_ind_width h_opcode_assumptions promises w
   | sllw sllw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
          h_exec_len h_e0_mult h_e1_mult h_nextPC_matches

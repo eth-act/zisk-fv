@@ -4,6 +4,7 @@ import ZiskFv.Field.Goldilocks
 import ZiskFv.Airs.Bus.Interaction
 import ZiskFv.Bits.PackedBitVec
 import ZiskFv.Channels.MemoryBusBytes
+import ZiskFv.Channels.MemoryBus
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 
@@ -71,6 +72,43 @@ def matches_memory_entry (a b : MemoryBusEntry FGL) : Prop :=
   ∧ a.value_0 = b.value_0
   ∧ a.value_1 = b.value_1
   ∧ a.timestamp = b.timestamp
+
+/-- Equal evaluated Clean memory-bus message arrays give equal legacy
+    memory-bus payloads once both are viewed with the same legacy
+    multiplicity and address space.
+
+This is the message-level adapter needed by T4: Clean balance proves
+equality of PIL-shaped `[mem_op, ptr, timestamp, width, value_0, value_1]`
+messages, while the existing load/store proofs consume legacy
+`MemoryBusEntry` facts. The legacy `as` slot is supplied explicitly
+because it is not the PIL `mem_op` slot. -/
+theorem matches_memory_entry_of_eval_msg_eq
+    {mainMsg providerMsg : ZiskFv.Channels.MemoryBus.MemBusMessage (Expression FGL)}
+    {mainMult providerMult : Expression FGL}
+    {mainEnv providerEnv : Environment FGL}
+    {multiplicity as : FGL}
+    (h_msg :
+      (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult mainMsg).toRaw).eval
+          mainEnv).msg =
+        (((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted providerMult providerMsg).toRaw).eval
+          providerEnv).msg) :
+    matches_memory_entry
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval mainEnv mainMsg) multiplicity as)
+      (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+        (eval providerEnv providerMsg) multiplicity as) := by
+  have h_vec :
+      Vector.map (Expression.eval mainEnv) (toElements mainMsg) =
+        Vector.map (Expression.eval providerEnv) (toElements providerMsg) := by
+    apply Vector.toArray_injective
+    simpa [ChannelInteraction.toRaw, AbstractInteraction.eval] using h_msg
+  have h_eval : eval mainEnv mainMsg = eval providerEnv providerMsg := by
+    have h_from := congrArg
+      (fun xs => (fromElements xs :
+        ZiskFv.Channels.MemoryBus.MemBusMessage FGL)) h_vec
+    simpa [ProvableType.fromElements_eval_toElements] using h_from
+  rw [h_eval]
+  simp [matches_memory_entry]
 
 /-- **Memory-read lane hypotheses for LD.** The Main row's low/high `b`
     lanes (as FGL field elements) equal the low/high halves of the

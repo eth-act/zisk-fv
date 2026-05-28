@@ -965,26 +965,36 @@ after all global consumers are gone.
 
 ### T4 detail — memory
 
-- ☐ T4.1 assemble Main/Mem/MemAlignByte/MemAlignReadByte/MemAlign/static ROM
-  providers on the soundness path. For Main ROM/memory-bus wiring,
-  completeness is explicitly out of scope: keep the elaborated circuit and
-  soundness/projection theorems, but do not require
-  `componentWithRomAndMemBus` until a separate completeness project exists.
+- 🟡 T4.1 assemble Main/Mem/MemAlignByte/MemAlignReadByte/MemAlign/static ROM
+  providers on the soundness path. Main+Mem doubleword wiring is present:
+  `mainWithRomAndMemBus_soundness` is wrapped by
+  `componentWithRomAndMemBus` using the documented tolerated
+  completeness-direction axiom. This is still a soundness-only endpoint;
+  honest-prover completeness remains out of scope. The MemAlign* half is
+  still open.
 - ☐ T4.2 prove Clean balance gives concrete memory provider rows matching
   active Main memory interactions.
 - 🪓 T4.3 signed-load spike: prove the `LB` chain from memory provider row
   bytes to lookup-aware BinaryExtension sign-extension row to Sail result.
-- ☐ T4.4 prove row-native load routes for
+- 🪓 T4.4 prove row-native load routes for
   `LD/LB/LH/LW/LBU/LHU/LWU`.
-- ☐ T4.5 prove row-native store routes for `SB/SH/SW/SD`.
-- ☐ T4.6 replace signed-load `LB/LH/LW` uses of
+- 🪓 T4.5 prove row-native store routes for `SB/SH/SW/SD`.
+- 🪓 T4.6 replace signed-load `LB/LH/LW` uses of
   `bin_ext_table_consumer_wf` with exact lookup-aware BinaryExtension
   provider-row facts, tied to the same Main load result as the memory
-  provider row.
-- ☐ T4.7 retire `lookup_consumer_matches_provider_load` and the
-  `main_*_emission_bundle` memory axioms when canonical closures lose them.
-- ☐ T4.8 retire MemAlign permutation/ROM axioms only after direct ROM
-  membership proves the same provider-row facts.
+  provider row. Done in the T4-purge commits: `bin_ext_table_consumer_wf`
+  is gone from source and canonical closures.
+- 🪓 T4.7 retire `lookup_consumer_matches_provider_load` and the
+  load/store `main_*_emission_bundle` memory axioms
+  (`main_load_emission_bundle`, `main_sext_load_emission_bundle`,
+  `main_store_emission_bundle_sd`, `main_store_emission_bundle_subword`)
+  when canonical closures lose them. The canonical/global closure no
+  longer contains these targets; the remaining load/sext-load declarations
+  are legacy compatibility surface. `main_store_pc_emission_bundle` is a
+  T6/T7 target; `main_external_arith_emission_bundle` is a T5 target.
+- 🪓 T4.8 retire MemAlign permutation/ROM axioms by exposing the same
+  provider-row and ROM-derived facts through the structural
+  `SubdoublewordLoadProviderWitness`.
 
 T4-purge execution checklist, refined after the green `f2cb26c` checkpoint
 (retires `op_bus_permutation_sound` + `bin_ext_table_consumer_wf`):

@@ -1,21 +1,19 @@
 import Mathlib
 
 import ZiskFv.EquivCore.Sw
+import ZiskFv.EquivCore.Bridge.MemClean
 import ZiskFv.EquivCore.Promises.Store
-import ZiskFv.EquivCore.Promises.StoreHelpers
 import ZiskFv.Trusted.Transpiler
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.MemoryBus
 import ZiskFv.Compliance.SharedBundles
 
 /-!
-# `equiv_SW` Compliance wrapper — Mem-stores shape, 4-byte width
+# `equiv_SW` Compliance wrapper — Clean Main c/store witness
 
 The wrapper takes the structural `StorePromises` bundle along with the
-upstream activation/opcode/width pins on Main, and internally calls
-`sw_h_mem_eq_of_emission` (which transitively consumes
-`main_store_emission_bundle_sw` and `transpile_SW`) to derive the
-`h_mem_eq` premise that the canonical `equiv_SW` consumes.
+upstream activation/opcode/width pins on Main and a Clean structural
+witness for the Main c/store interaction plus high-byte RMW facts.
 -/
 
 namespace ZiskFv.Compliance
@@ -28,10 +26,8 @@ open ZiskFv.Airs.MemoryBus
 open ZiskFv.ZiskCircuit.StoreD
 
 
-/-- **Wrapper for `equiv_SW`.** Derives `h_mem_eq` from
-    `sw_h_mem_eq_of_emission` (which consumes
-    `main_store_emission_bundle_sw` + `transpile_SW`) and delegates to
-    canonical `equiv_SW`. -/
+/-- **Wrapper for `equiv_SW`.** Derives `h_mem_eq` from the Clean
+    c/store witness and delegates to canonical `equiv_SW`. -/
 theorem equiv_SW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (sw_input : PureSpec.SwInput)
@@ -51,19 +47,17 @@ theorem equiv_SW
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.sw_state_assumptions sw_input state)
         (PureSpec.execute_STOREW_pure sw_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) :
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.SwCleanWitness
+        main r_main bus state sw_input) :
     execute_instruction (instruction.STORE (
       sw_input.imm,
       regidx.Regidx sw_input.r2,
       regidx.Regidx sw_input.r1,
       4
     )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
-  have h_mem_eq :=
-    ZiskFv.EquivCore.Promises.sw_h_mem_eq_of_emission
-      main r_main bus.e2 state sw_input
-      pins.main_active pins.main_op h_main_ind_width
-      promises.m2_mult promises.m2_as h_opcode_assumptions
-  ZiskFv.EquivCore.Sw.equiv_SW
-    state sw_input regs bus promises h_mem_eq
+  ZiskFv.EquivCore.Sw.equiv_SW_clean_provider_witness
+    state sw_input regs bus promises main r_main pins h_main_ind_width
+    h_opcode_assumptions w
 
 end ZiskFv.Compliance

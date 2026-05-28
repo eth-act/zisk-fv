@@ -1,6 +1,7 @@
 import Mathlib
 
 import ZiskFv.EquivCore.Lw
+import ZiskFv.EquivCore.Bridge.MemClean
 import ZiskFv.EquivCore.Promises.Load
 import ZiskFv.EquivCore.Promises.BinaryExtensionHelpers
 import ZiskFv.Trusted.Transpiler
@@ -47,7 +48,9 @@ theorem equiv_LW
         state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
         (PureSpec.lw_state_assumptions lw_input state)
         (PureSpec.execute_LOADW_pure lw_input).nextPC
-        bus.exec_row bus.e0 bus.e1 bus.e2) :
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
+        main mem r_main bus lw_input.r1_val lw_input.imm lw_input.rd) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -55,27 +58,37 @@ theorem equiv_LW
         lw_input.imm, regidx.Regidx lw_input.r1, regidx.Regidx lw_input.rd, false, 4
       ))) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_main_active, h_main_op⟩ := pins
+  obtain ⟨_h_main_active, h_main_op⟩ := pins
+  obtain ⟨h_clean_bundle, _h_mem8⟩ :=
+    ZiskFv.EquivCore.Bridge.MemClean.ld_discharge_full_clean_provider
+      main mem r_main w.r_mem w.mainRow w.memRow e1 e2 state
+      lw_input.r1_val lw_input.imm lw_input.rd
+      w.main_row w.mem_row w.main_spec w.store_pc
+      w.main_b_match w.main_c_match w.mem_match
+      w.addr1 w.addr2_zero_iff w.addr2_idx
+      w.mem_sel w.mem_legacy_addr w.mem_wr
   have lfd :=
-    ZiskFv.EquivCore.Promises.load_full_discharge_LW_of_match main v r_main r_binary offset env e1 e2
-      lw_input.r1_val lw_input.imm lw_input.rd h_static h_match
-      h_main_active h_main_op
-      promises.m1_mult promises.m1_as promises.m2_mult promises.m2_as
+    ZiskFv.EquivCore.Promises.load_full_discharge_LW_of_match_clean
+      main v r_main r_binary offset env e1 h_static h_match h_main_op
+      h_clean_bundle.1.1
   let h_bytes :=
     ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookups v r_binary
   have h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes := by
     simpa [h_bytes] using
       ZiskFv.Airs.BinaryExtension.binary_extension_row_byte_lookup_wfs_of_static_lookup
         v r_binary offset env h_static
-  exact ZiskFv.EquivCore.Lw.equiv_LW_of_wf
+  exact ZiskFv.EquivCore.Lw.equiv_LW_clean_provider_of_wf
     state lw_input regs
     ⟨exec_row, e0, e1, e2⟩
     promises
-    main mem r_main
-    ⟨h_main_active, h_main_op⟩
+    main mem r_main w.r_mem
     v r_binary lfd.h_op_binary h_bytes h_wfs
     lfd.hc_lo_sum_lt lfd.hc_hi_sum_lt
     lfd.h_match_clo lfd.h_match_chi
     lfd.h_a0_match lfd.h_a1_match lfd.h_a2_match lfd.h_a3_match
+    w.mainRow w.memRow w.main_row w.mem_row w.main_spec w.store_pc
+    w.main_b_match w.main_c_match w.mem_match
+    w.addr1 w.addr2_zero_iff w.addr2_idx
+    w.mem_sel w.mem_legacy_addr w.mem_wr
 
 end ZiskFv.Compliance

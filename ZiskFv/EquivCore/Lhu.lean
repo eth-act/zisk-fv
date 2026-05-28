@@ -16,6 +16,7 @@ import ZiskFv.Airs.MemoryBus.MemAlignBridge
 import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Airs.Bus.BusEmission
 import ZiskFv.EquivCore.Bridge.Mem
+import ZiskFv.EquivCore.Bridge.MemClean
 import ZiskFv.SailSpec.lhu
 import ZiskFv.SailSpec.BusEffect
 import ZiskFv.EquivCore.Promises.Load
@@ -70,8 +71,13 @@ lemma equiv_LHU_sail
   PureSpec.execute_LOADHU_pure_equiv
     lhu_input risc_v_assumptions h_opcode_assumptions
 
-/-- **Canonical equivalence.** -/
-theorem equiv_LHU
+/-- LHU equivalence from already-discharged Main/provider memory facts.
+
+This proof core lets the Main-load and Mem-provider path be supplied either
+by the legacy axiom-backed bridge or by the Clean memory-bus bridge. The
+MemAlign zero-padding path is still the existing `MemAlignWitness`-based
+derivation. -/
+theorem equiv_LHU_of_discharged
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (lhu_input : PureSpec.LhuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
@@ -81,10 +87,30 @@ theorem equiv_LHU
         (PureSpec.lhu_state_assumptions lhu_input state)
         (PureSpec.execute_LOADHU_pure lhu_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
-    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
-    (align : ZiskFv.Compliance.MemAlignWitness)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
+    (align : ZiskFv.Compliance.MemAlignWitness main r_main bus.e1)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
-    (h_width : main.ind_width r_main = (2 : FGL)) :
+    (h_width : main.ind_width r_main = (2 : FGL))
+    (h_main_emit_b :
+      main.b_0 r_main = memory_entry_lo bus.e1
+      ∧ main.b_1 r_main = memory_entry_hi bus.e1
+      ∧ bus.e1.as = 2
+      ∧ bus.e1.multiplicity = -1)
+    (h_main_emit_c :
+      main.c_0 r_main = memory_entry_lo bus.e2
+      ∧ main.c_1 r_main = memory_entry_hi bus.e2)
+    (h_ptr_match :
+      bus.e1.ptr.toNat = lhu_input.r1_val.toNat
+        + (BitVec.signExtend 64 lhu_input.imm).toNat)
+    (h_rd_zero_iff :
+      Transpiler.wrap_to_regidx bus.e2.ptr = 0 ↔ lhu_input.rd = 0)
+    (h_rd_idx :
+      lhu_input.rd.toNat = (Transpiler.wrap_to_regidx bus.e2.ptr).val)
+    (h_copy0 : ZiskFv.Airs.Main.internal_op1_copies_b0 main r_main)
+    (h_copy1 : ZiskFv.Airs.Main.internal_op1_copies_b1 main r_main)
+    (h_mem :
+      state.mem[bus.e1.ptr.toNat]? = .some (byteAt bus.e1 0)
+      ∧ state.mem[bus.e1.ptr.toNat + 1]? = .some (byteAt bus.e1 1)) :
     execute_instruction (instruction.LOAD (
       lhu_input.imm,
       regidx.Regidx lhu_input.r1,
@@ -95,21 +121,13 @@ theorem equiv_LHU
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_ext, h_op⟩ := pins
   obtain ⟨mstatus, pmaRegion, misa, mseccfg⟩ := regs
-  obtain ⟨mab, marb, ma, mab_core, marb_core, h_low⟩ := align
+  obtain ⟨mab, marb, ma, mab_core, marb_core, h_provider⟩ := align
   obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
-  obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match,
-          h_rd_zero_iff, h_rd_idx, h_copy0, h_copy1⟩ :=
-    ZiskFv.EquivCore.Bridge.Mem.lhu_discharge_full
-      main r_main e1 e2 lhu_input.r1_val lhu_input.imm lhu_input.rd
-      h_ext h_op h_m1_mult h_m1_as h_m2_mult h_m2_as
   rw [equiv_LHU_sail state lhu_input mstatus pmaRegion misa mseccfg
         risc_v_assumptions h_opcode_assumptions]
   symm
-  have h_mem :=
-    ZiskFv.ZiskCircuit.MemModel.mem_load_correct_2byte
-      main mem r_main e1 state h_main_emit_b
   obtain ⟨_h_pc, _h_r1_read,
           h_d0, h_d1,
           _h_bound, _h_aligned⟩ := h_opcode_assumptions
@@ -128,7 +146,7 @@ theorem equiv_LHU
   have h_lhu_packed :=
     ZiskFv.ZiskCircuit.LoadDerivation.load_lhu_c_packed
       main r_main mab marb ma e1 e2 h_copy0 h_copy1 h_ext h_op h_width
-      h_main_emit_b h_main_emit_c h_e1_range h_e2_range mab_core marb_core h_low
+      h_main_emit_b h_main_emit_c h_e1_range h_e2_range mab_core marb_core h_provider
   have h_rd_val_derived :
       U64.toBV #v[byteAt e2 0, byteAt e2 1, byteAt e2 2, byteAt e2 3,
                   byteAt e2 4, byteAt e2 5, byteAt e2 6, byteAt e2 7]
@@ -172,5 +190,113 @@ theorem equiv_LHU
               Finset.mem_Icc.mpr ⟨by omega, by omega⟩⟩ := by
       apply Subtype.ext; exact h_rd_idx.symm
     rw [h_idx_eq]
+
+/-- Clean-backed LHU equivalence for the Main/Mem load path.
+
+This removes `main_load_emission_bundle` and
+`lookup_consumer_matches_provider_load` from the Main/Mem portion of LHU. The
+existing MemAlign witness still supplies the zero-padding/packing derivation,
+so the MemAlign T4 targets remain to be retired separately. -/
+theorem equiv_LHU_clean_provider
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (lhu_input : PureSpec.LhuInput)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+        (PureSpec.lhu_state_assumptions lhu_input state)
+        (PureSpec.execute_LOADHU_pure lhu_input).nextPC
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL)
+    (r_main r_mem : ℕ)
+    (align : ZiskFv.Compliance.MemAlignWitness main r_main bus.e1)
+    (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
+    (h_width : main.ind_width r_main = (2 : FGL))
+    (mainRow : ZiskFv.AirsClean.Main.MainRowWithRom FGL)
+    (memRow : ZiskFv.AirsClean.Mem.MemRow FGL)
+    (h_main_row :
+      mainRow.core = ZiskFv.AirsClean.Main.rowAt main r_main)
+    (h_mem_row :
+      memRow = ZiskFv.AirsClean.Mem.rowAt mem r_mem)
+    (h_main_spec : ZiskFv.AirsClean.Main.Spec mainRow.core)
+    (h_store_pc : mainRow.core.store_pc = 0)
+    (h_main_b_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.bMemMessage mainRow) (-1) 2))
+    (h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage mainRow) 1 1))
+    (h_mem_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Mem.memBusMessage memRow) 1 2))
+    (h_addr1 :
+      mainRow.rom.addr1.toNat =
+        lhu_input.r1_val.toNat + (BitVec.signExtend 64 lhu_input.imm).toNat)
+    (h_addr2_zero_iff :
+      Transpiler.wrap_to_regidx mainRow.rom.addr2 = 0 ↔ lhu_input.rd = 0)
+    (h_addr2_idx :
+      lhu_input.rd.toNat = (Transpiler.wrap_to_regidx mainRow.rom.addr2).val)
+    (h_mem_sel : mem.sel r_mem = 1)
+    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
+    (h_mem_wr : mem.wr r_mem = 0) :
+    execute_instruction (instruction.LOAD (
+      lhu_input.imm,
+      regidx.Regidx lhu_input.r1,
+      regidx.Regidx lhu_input.rd,
+      true,
+      2
+    )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨h_bundle, h_mem8⟩ :=
+    ZiskFv.EquivCore.Bridge.MemClean.ld_discharge_full_clean_provider
+      main mem r_main r_mem mainRow memRow bus.e1 bus.e2 state
+      lhu_input.r1_val lhu_input.imm lhu_input.rd
+      h_main_row h_mem_row h_main_spec h_store_pc
+      h_main_b_match h_main_c_match h_mem_match
+      h_addr1 h_addr2_zero_iff h_addr2_idx
+      h_mem_sel h_mem_legacy_addr h_mem_wr
+  obtain ⟨h_main_emit_b, h_main_emit_c, h_ptr_match, h_rd_zero_iff,
+          h_rd_idx, h_copy0, h_copy1⟩ := h_bundle
+  have h_mem :
+      state.mem[bus.e1.ptr.toNat]? = .some (byteAt bus.e1 0)
+      ∧ state.mem[bus.e1.ptr.toNat + 1]? = .some (byteAt bus.e1 1) :=
+    ⟨h_mem8.1, h_mem8.2.1⟩
+  exact equiv_LHU_of_discharged state lhu_input regs bus promises main r_main
+    align pins h_width h_main_emit_b h_main_emit_c h_ptr_match h_rd_zero_iff
+    h_rd_idx h_copy0 h_copy1 h_mem
+
+/-- Clean-backed LHU equivalence from the bundled structural load witness. -/
+theorem equiv_LHU_clean_provider_witness
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (lhu_input : PureSpec.LhuInput)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.LoadPromises
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+        (PureSpec.lhu_state_assumptions lhu_input state)
+        (PureSpec.execute_LOADHU_pure lhu_input).nextPC
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL)
+    (r_main : ℕ)
+    (align : ZiskFv.Compliance.MemAlignWitness main r_main bus.e1)
+    (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
+    (h_width : main.ind_width r_main = (2 : FGL))
+    (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
+      main mem r_main bus lhu_input.r1_val lhu_input.imm lhu_input.rd) :
+    execute_instruction (instruction.LOAD (
+      lhu_input.imm,
+      regidx.Regidx lhu_input.r1,
+      regidx.Regidx lhu_input.rd,
+      true,
+      2
+    )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
+  equiv_LHU_clean_provider
+    state lhu_input regs bus promises main mem r_main w.r_mem align pins h_width
+    w.mainRow w.memRow w.main_row w.mem_row w.main_spec w.store_pc
+    w.main_b_match w.main_c_match w.mem_match
+    w.addr1 w.addr2_zero_iff w.addr2_idx
+    w.mem_sel w.mem_legacy_addr w.mem_wr
 
 end ZiskFv.EquivCore.Lhu

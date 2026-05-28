@@ -14,6 +14,7 @@ import ZiskFv.SailSpec.BusEffect
 import ZiskFv.EquivCore.Promises.Store
 import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Channels.MemoryBusBytes
+import ZiskFv.EquivCore.Bridge.MemClean
 
 /-!
 End-to-end theorem for RV64 SD (store doubleword). The
@@ -118,5 +119,103 @@ theorem equiv_SD
         MonadStateOf.set, EStateM.set, get, MonadState.get, getThe,
         MonadStateOf.get, EStateM.get,
         Sail.writeReg, PreSail.writeReg]
+
+/-- Clean-backed staging variant for SD.
+
+The canonical theorem remains promise-shaped; this variant derives the
+ptr/byte store facts from a concrete Clean Main c/store message and then
+delegates to `equiv_SD`. It is the migration target for retiring
+`main_store_emission_bundle_sd` from the canonical wrapper. -/
+theorem equiv_SD_clean_provider
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sd_input : PureSpec.SdInput)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.StorePromises
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+        (PureSpec.sd_state_assumptions sd_input state)
+        (PureSpec.execute_STORED_pure sd_input).nextPC
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
+    (mainRow : ZiskFv.AirsClean.Main.MainRowWithRom FGL)
+    (rs1 rs2 : Fin 32)
+    (h_main_row :
+      mainRow.core = ZiskFv.AirsClean.Main.rowAt main r_main)
+    (h_main_spec : ZiskFv.AirsClean.Main.Spec mainRow.core)
+    (h_store_pc : mainRow.core.store_pc = 0)
+    (h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage mainRow) 1 2))
+    (h_addr2 :
+      mainRow.rom.addr2.toNat =
+        (sd_input.r1_val + BitVec.signExtend 64 sd_input.imm).toNat)
+    (h_active : main.is_external_op r_main = 0)
+    (h_op_main : main.op r_main = ZiskFv.Trusted.OP_COPYB)
+    (h_read_r1 : read_xreg rs1 state = EStateM.Result.ok sd_input.r1_val state)
+    (h_read_r2 : read_xreg rs2 state = EStateM.Result.ok sd_input.r2_val state) :
+    execute_instruction (instruction.STORE (
+      sd_input.imm,
+      regidx.Regidx sd_input.r2,
+      regidx.Regidx sd_input.r1,
+      8
+    )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  obtain ⟨h_ptr, hb0, hb1, hb2, hb3, hb4, hb5, hb6, hb7⟩ :=
+    ZiskFv.EquivCore.Bridge.MemClean.sd_discharge_full_clean_provider
+      main r_main mainRow bus.e2 state rs1 rs2
+      sd_input.r1_val sd_input.r2_val sd_input.imm
+      h_main_row h_main_spec h_store_pc h_main_c_match h_addr2
+      h_active h_op_main h_read_r1 h_read_r2
+  exact equiv_SD state sd_input regs bus promises
+    h_ptr hb0 hb1 hb2 hb3 hb4 hb5 hb6 hb7
+
+/-- Bundle-shaped Clean-backed SD equivalence.
+
+This is the canonical migration form for T4: the Main c/store emission
+facts are supplied by one structural Clean witness, while the register
+reads are derived from `sd_state_assumptions`. -/
+theorem equiv_SD_clean_provider_witness
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (sd_input : PureSpec.SdInput)
+    (regs : ZiskFv.Compliance.ModeRegsFull)
+    (bus : ZiskFv.Compliance.BusRows)
+    (promises : ZiskFv.EquivCore.Promises.StorePromises
+        state regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
+        (PureSpec.sd_state_assumptions sd_input state)
+        (PureSpec.execute_STORED_pure sd_input).nextPC
+        bus.exec_row bus.e0 bus.e1 bus.e2)
+    (main : Valid_Main FGL FGL) (r_main : ℕ)
+    (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
+    (h_opcode_assumptions : PureSpec.sd_state_assumptions sd_input state)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.SdCleanWitness
+        main r_main bus sd_input) :
+    execute_instruction (instruction.STORE (
+      sd_input.imm,
+      regidx.Regidx sd_input.r2,
+      regidx.Regidx sd_input.r1,
+      8
+    )) state = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
+  have h_read_r1 := h_opcode_assumptions.2.1
+  have h_read_r2 := h_opcode_assumptions.2.2.1
+  have h_read_r1' :
+      read_xreg (regidx_to_fin (regidx.Regidx sd_input.r1)) state
+        = EStateM.Result.ok sd_input.r1_val state := by
+    rw [← rX_read_xreg_equiv state (regidx.Regidx sd_input.r1)
+          (regidx_to_fin (regidx.Regidx sd_input.r1))
+          (by simp [regidx_to_fin])]
+    exact h_read_r1
+  have h_read_r2' :
+      read_xreg (regidx_to_fin (regidx.Regidx sd_input.r2)) state
+        = EStateM.Result.ok sd_input.r2_val state := by
+    rw [← rX_read_xreg_equiv state (regidx.Regidx sd_input.r2)
+          (regidx_to_fin (regidx.Regidx sd_input.r2))
+          (by simp [regidx_to_fin])]
+    exact h_read_r2
+  exact equiv_SD_clean_provider state sd_input regs bus promises
+    main r_main w.mainRow
+    (regidx_to_fin (regidx.Regidx sd_input.r1))
+    (regidx_to_fin (regidx.Regidx sd_input.r2))
+    w.main_row w.main_spec w.store_pc w.main_c_match w.addr2
+    pins.main_active pins.main_op h_read_r1' h_read_r2'
 
 end ZiskFv.EquivCore.Sd

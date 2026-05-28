@@ -65,11 +65,11 @@ permutation_proves(MEMORY_ID, expressions: [mem_op, addr * bytes, step, bytes, .
 ```
 
 For the Mem AIR specifically, `bytes = 8` always (aligned doublewords
-only; sub-doubleword goes through MemAlign* on the separate
-MemAlignBus). The byte address is `addr * 8`, `mem_op = wr + 1`
+only; sub-doubleword goes through MemAlign* on the same unified
+MemoryBus). The byte address is `addr * 8`, `mem_op = wr + 1`
 (read = 1, write = 2), and the multiplicity is `+sel` (provider side).
 
-Modelled here as a `MemBusChannel.emit` with the 5-slot
+Modelled here as a `MemBusChannel.emit` with the 6-slot
 `MemBusMessage` shape. The optional `dual_mem` emission at
 `mem.pil:438-441` is not included; it adds a second push that's a
 mirror of the primary one with `step_dual` and `sel_dual`. T4.1 will
@@ -77,16 +77,17 @@ include it once the dual_mem flag handling lands. -/
 
 open ZiskFv.Channels.MemoryBus (MemBusChannel MemBusMessage)
 
-/-- Mem's provider-side memory-bus message: `as = wr + 1` (LOAD=1,
-    STORE=2), `ptr = addr * 8`, `value` from the row's chunks,
-    `timestamp = step`. -/
+/-- Mem's provider-side memory-bus message: `mem_op = wr + 1` (LOAD=1,
+    STORE=2), `ptr = addr * 8`, `width = 8`, `value` from the row's
+    chunks, `timestamp = step`. -/
 @[reducible]
 def memBusMessageExpr (row : Var MemRow FGL) : MemBusMessage (Expression FGL) :=
-  { as := row.wr + 1
+  { mem_op := row.wr + 1
     ptr := row.addr * 8
+    timestamp := row.step
+    width := 8
     value_0 := row.value_0
-    value_1 := row.value_1
-    timestamp := row.step }
+    value_1 := row.value_1 }
 
 /-- Mem constraints + provider-side memory-bus emission.
 

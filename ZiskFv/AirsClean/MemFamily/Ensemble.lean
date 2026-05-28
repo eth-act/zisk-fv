@@ -1,5 +1,8 @@
 import ZiskFv.AirsClean.Main.Circuit
 import ZiskFv.AirsClean.Mem.Circuit
+import ZiskFv.AirsClean.MemAlign.Circuit
+import ZiskFv.AirsClean.MemAlignByte.Circuit
+import ZiskFv.AirsClean.MemAlignReadByte.Circuit
 import Clean.Air.Vm
 
 /-!
@@ -8,14 +11,12 @@ import Clean.Air.Vm
 Memory-family ensemble for the shared memory bus (`MemBusChannel`,
 `bus_id = MEMORY_ID = 10`). Assembles the migrated Main consumer-side
 component (`Main.componentWithRomAndMemBus` — 3 per-row memory-bus
-emissions plus the ZisK instruction ROM lookup) with the Mem
-provider-side component (`Mem.componentWithMemBus` — the per-row
-`(addr, step, value_0, value_1, wr, sel)` provider push).
+emissions plus the ZisK instruction ROM lookup) with the Mem,
+MemAlign, MemAlignByte, and MemAlignReadByte provider-side components.
 
 Sub-doubleword loads (LB/LH/LW/LBU/LHU/LWU) are handled by the
-**MemAlign\*** family on a separate `MemAlignBusChannel` per the
-existing C1/C2 architecture; the MemAlign-family ensemble is a
-parallel deliverable in T4.1.
+**MemAlign\*** family on the same unified `MemBusChannel`; the
+MemAlign-family provider path is a parallel deliverable in T4.1.
 
 ## Trust note
 
@@ -68,6 +69,33 @@ def memBusEnsemble (length : ℕ) (program : Program length) :
               ZiskFv.AirsClean.Mem.componentWithMemBus,
               ZiskFv.AirsClean.Mem.circuitWithMemBus,
               ZiskFv.AirsClean.Mem.memWithMemBusElaborated])
+    |>.addTable ZiskFv.AirsClean.MemAlign.component
+        (by simp [circuit_norm,
+              ZiskFv.AirsClean.MemAlign.component,
+              ZiskFv.AirsClean.MemAlign.circuit,
+              ZiskFv.AirsClean.MemAlign.memAlignWithMemBusElaborated])
+        (by simp [circuit_norm,
+              ZiskFv.AirsClean.MemAlign.component,
+              ZiskFv.AirsClean.MemAlign.circuit,
+              ZiskFv.AirsClean.MemAlign.memAlignWithMemBusElaborated])
+    |>.addTable ZiskFv.AirsClean.MemAlignByte.component
+        (by simp [circuit_norm,
+              ZiskFv.AirsClean.MemAlignByte.component,
+              ZiskFv.AirsClean.MemAlignByte.circuit,
+              ZiskFv.AirsClean.MemAlignByte.memAlignByteElaborated])
+        (by simp [circuit_norm,
+              ZiskFv.AirsClean.MemAlignByte.component,
+              ZiskFv.AirsClean.MemAlignByte.circuit,
+              ZiskFv.AirsClean.MemAlignByte.memAlignByteElaborated])
+    |>.addTable ZiskFv.AirsClean.MemAlignReadByte.component
+        (by simp [circuit_norm,
+              ZiskFv.AirsClean.MemAlignReadByte.component,
+              ZiskFv.AirsClean.MemAlignReadByte.circuit,
+              ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated])
+        (by simp [circuit_norm,
+              ZiskFv.AirsClean.MemAlignReadByte.component,
+              ZiskFv.AirsClean.MemAlignReadByte.circuit,
+              ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated])
     |>.addFinishedChannel MemBusChannel.toRaw
     |>.toFormal (fun _ => True) (fun _ => True)
         (by
@@ -75,10 +103,19 @@ def memBusEnsemble (length : ℕ) (program : Program length) :
           have h := EnsembleWitness.mem_allTables_component_of_mem_allTables h_mem
           clear h_mem
           simp only [circuit_norm, Ensemble.allTables] at h
-          -- 3-way disjunction: verifier table (empty), Mem, Main.
-          rcases h with h | h | h <;>
+          -- Components appear newest-first after the verifier table.
+          rcases h with h | h | h | h | h | h <;>
             (rw [h]
              simp [circuit_norm, Air.Flat.Component.Assumptions,
+               ZiskFv.AirsClean.MemAlignReadByte.component,
+               ZiskFv.AirsClean.MemAlignReadByte.circuit,
+               ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByteElaborated,
+               ZiskFv.AirsClean.MemAlignByte.component,
+               ZiskFv.AirsClean.MemAlignByte.circuit,
+               ZiskFv.AirsClean.MemAlignByte.memAlignByteElaborated,
+               ZiskFv.AirsClean.MemAlign.component,
+               ZiskFv.AirsClean.MemAlign.circuit,
+               ZiskFv.AirsClean.MemAlign.memAlignWithMemBusElaborated,
                ZiskFv.AirsClean.Mem.componentWithMemBus,
                ZiskFv.AirsClean.Mem.circuitWithMemBus,
                ZiskFv.AirsClean.Mem.memWithMemBusElaborated,

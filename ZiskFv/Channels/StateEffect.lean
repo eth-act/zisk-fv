@@ -41,7 +41,6 @@ namespace ZiskFv.Channels
 
 open Goldilocks
 open ZiskFv.Channels.OperationBus (OpBusMessage)
-open ZiskFv.Channels.MemoryBus (MemBusMessage)
 
 /-- Channel-interaction output sufficient to compute the post-state
     for one executed instruction. Mirrors the shape currently
@@ -67,13 +66,6 @@ namespace ChannelEnsembleOutput
 def execEntryOfOpBus (multiplicity : FGL) (_msg : OpBusMessage FGL)
     (pc : FGL) (timestamp : FGL) : Interaction.ExecutionBusEntry FGL :=
   { multiplicity := multiplicity, pc := pc, timestamp := timestamp }
-
-/-- Convert a `MemBusMessage` channel-interaction into a memory-bus
-    entry by supplying the multiplicity. -/
-@[reducible]
-def memEntryOfMemBus (multiplicity : FGL) (msg : MemBusMessage FGL)
-    : Interaction.MemoryBusEntry FGL :=
-  ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry msg multiplicity
 
 end ChannelEnsembleOutput
 

@@ -12,12 +12,12 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 985
-# Category bridge: 66
+# Total rows: 996
+# Category bridge: 72
 # Category bus_shape: 27
 # Category entry: 9
 # Category match: 6
-# Category other: 636
+# Category other: 641
 # Category range: 3
 # Category row: 60
 # Category state: 73
@@ -312,17 +312,19 @@ ZiskFv.Equivalence.Lb.equiv_LB 011 h_match [other] ZiskFv.Airs.OperationBus.matc
 ZiskFv.Equivalence.Lb.equiv_LB 012 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Lb.equiv_LB 013 pins [other] ZiskFv.Compliance.MainRowPins main r_main 1 OP_SIGNEXTEND_B
 ZiskFv.Equivalence.Lb.equiv_LB 014 promises [transpile] ZiskFv.EquivCore.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.mi
+ZiskFv.Equivalence.Lb.equiv_LB 015 w [bridge] ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness main mem r_main bus lb_input.r
 ZiskFv.Equivalence.Lbu.equiv_LBU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lbu.equiv_LBU 001 lbu_input [other] PureSpec.LbuInput
 ZiskFv.Equivalence.Lbu.equiv_LBU 002 regs [other] ZiskFv.Compliance.ModeRegsFull
 ZiskFv.Equivalence.Lbu.equiv_LBU 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Equivalence.Lbu.equiv_LBU 004 mem [validator] Valid_Mem FGL FGL
 ZiskFv.Equivalence.Lbu.equiv_LBU 005 r_main [row] ℕ
-ZiskFv.Equivalence.Lbu.equiv_LBU 006 align [other] ZiskFv.Compliance.MemAlignWitness
-ZiskFv.Equivalence.Lbu.equiv_LBU 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Equivalence.Lbu.equiv_LBU 006 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Equivalence.Lbu.equiv_LBU 007 align [other] ZiskFv.Compliance.MemAlignWitness main r_main bus.e1
 ZiskFv.Equivalence.Lbu.equiv_LBU 008 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
 ZiskFv.Equivalence.Lbu.equiv_LBU 009 h_width [match] main.ind_width r_main = (1 : FGL)
 ZiskFv.Equivalence.Lbu.equiv_LBU 010 promises [transpile] ZiskFv.EquivCore.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.mi
+ZiskFv.Equivalence.Lbu.equiv_LBU 011 w [bridge] ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness main mem r_main bus lbu_input.
 ZiskFv.Equivalence.Ld.equiv_LD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Ld.equiv_LD 001 ld_input [other] PureSpec.LdInput
 ZiskFv.Equivalence.Ld.equiv_LD 002 regs [other] ZiskFv.Compliance.ModeRegsFull
@@ -332,6 +334,7 @@ ZiskFv.Equivalence.Ld.equiv_LD 005 r_main [row] ℕ
 ZiskFv.Equivalence.Ld.equiv_LD 006 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Ld.equiv_LD 007 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
 ZiskFv.Equivalence.Ld.equiv_LD 008 promises [transpile] ZiskFv.EquivCore.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.mi
+ZiskFv.Equivalence.Ld.equiv_LD 009 w [other] ZiskFv.EquivCore.Bridge.MemClean.LdCleanWitness main mem r_main bus ld_input
 ZiskFv.Equivalence.Lh.equiv_LH 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lh.equiv_LH 001 lh_input [other] PureSpec.LhInput
 ZiskFv.Equivalence.Lh.equiv_LH 002 regs [other] ZiskFv.Compliance.ModeRegsFull
@@ -347,17 +350,19 @@ ZiskFv.Equivalence.Lh.equiv_LH 011 h_match [other] ZiskFv.Airs.OperationBus.matc
 ZiskFv.Equivalence.Lh.equiv_LH 012 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Lh.equiv_LH 013 pins [other] ZiskFv.Compliance.MainRowPins main r_main 1 OP_SIGNEXTEND_H
 ZiskFv.Equivalence.Lh.equiv_LH 014 promises [transpile] ZiskFv.EquivCore.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.mi
+ZiskFv.Equivalence.Lh.equiv_LH 015 w [bridge] ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness main mem r_main bus lh_input.r
 ZiskFv.Equivalence.Lhu.equiv_LHU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lhu.equiv_LHU 001 lhu_input [other] PureSpec.LhuInput
 ZiskFv.Equivalence.Lhu.equiv_LHU 002 regs [other] ZiskFv.Compliance.ModeRegsFull
 ZiskFv.Equivalence.Lhu.equiv_LHU 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Equivalence.Lhu.equiv_LHU 004 mem [validator] Valid_Mem FGL FGL
 ZiskFv.Equivalence.Lhu.equiv_LHU 005 r_main [row] ℕ
-ZiskFv.Equivalence.Lhu.equiv_LHU 006 align [other] ZiskFv.Compliance.MemAlignWitness
-ZiskFv.Equivalence.Lhu.equiv_LHU 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Equivalence.Lhu.equiv_LHU 006 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Equivalence.Lhu.equiv_LHU 007 align [other] ZiskFv.Compliance.MemAlignWitness main r_main bus.e1
 ZiskFv.Equivalence.Lhu.equiv_LHU 008 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
 ZiskFv.Equivalence.Lhu.equiv_LHU 009 h_width [match] main.ind_width r_main = (2 : FGL)
 ZiskFv.Equivalence.Lhu.equiv_LHU 010 promises [transpile] ZiskFv.EquivCore.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.mi
+ZiskFv.Equivalence.Lhu.equiv_LHU 011 w [bridge] ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness main mem r_main bus lhu_input.
 ZiskFv.Equivalence.Lui.equiv_LUI 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lui.equiv_LUI 001 lui_input [other] PureSpec.LuiInput
 ZiskFv.Equivalence.Lui.equiv_LUI 002 imm [other] BitVec 20
@@ -385,17 +390,19 @@ ZiskFv.Equivalence.Lw.equiv_LW 011 h_match [other] ZiskFv.Airs.OperationBus.matc
 ZiskFv.Equivalence.Lw.equiv_LW 012 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Lw.equiv_LW 013 pins [other] ZiskFv.Compliance.MainRowPins main r_main 1 OP_SIGNEXTEND_W
 ZiskFv.Equivalence.Lw.equiv_LW 014 promises [transpile] ZiskFv.EquivCore.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.mi
+ZiskFv.Equivalence.Lw.equiv_LW 015 w [bridge] ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness main mem r_main bus lw_input.r
 ZiskFv.Equivalence.Lwu.equiv_LWU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Lwu.equiv_LWU 001 lwu_input [other] PureSpec.LwuInput
 ZiskFv.Equivalence.Lwu.equiv_LWU 002 regs [other] ZiskFv.Compliance.ModeRegsFull
 ZiskFv.Equivalence.Lwu.equiv_LWU 003 main [validator] Valid_Main FGL FGL
 ZiskFv.Equivalence.Lwu.equiv_LWU 004 mem [validator] Valid_Mem FGL FGL
 ZiskFv.Equivalence.Lwu.equiv_LWU 005 r_main [row] ℕ
-ZiskFv.Equivalence.Lwu.equiv_LWU 006 align [other] ZiskFv.Compliance.MemAlignWitness
-ZiskFv.Equivalence.Lwu.equiv_LWU 007 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Equivalence.Lwu.equiv_LWU 006 bus [other] ZiskFv.Compliance.BusRows
+ZiskFv.Equivalence.Lwu.equiv_LWU 007 align [other] ZiskFv.Compliance.MemAlignWitness main r_main bus.e1
 ZiskFv.Equivalence.Lwu.equiv_LWU 008 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
 ZiskFv.Equivalence.Lwu.equiv_LWU 009 h_width [match] main.ind_width r_main = (4 : FGL)
 ZiskFv.Equivalence.Lwu.equiv_LWU 010 promises [transpile] ZiskFv.EquivCore.Promises.LoadPromises state regs.mstatus regs.pmaRegion regs.mi
+ZiskFv.Equivalence.Lwu.equiv_LWU 011 w [bridge] ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness main mem r_main bus lwu_input.
 ZiskFv.Equivalence.Mul.equiv_MUL 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Mul.equiv_MUL 001 mul_input [other] PureSpec.MulInput
 ZiskFv.Equivalence.Mul.equiv_MUL 002 r1 [other] regidx
@@ -598,6 +605,7 @@ ZiskFv.Equivalence.Sb.equiv_SB 006 pins [other] ZiskFv.Compliance.MainRowPins ma
 ZiskFv.Equivalence.Sb.equiv_SB 007 h_main_ind_width [match] main.ind_width r_main = 1
 ZiskFv.Equivalence.Sb.equiv_SB 008 h_opcode_assumptions [other] PureSpec.sb_state_assumptions sb_input state
 ZiskFv.Equivalence.Sb.equiv_SB 009 promises [transpile] ZiskFv.EquivCore.Promises.StorePromises state regs.mstatus regs.pmaRegion regs.m
+ZiskFv.Equivalence.Sb.equiv_SB 010 w [other] ZiskFv.EquivCore.Bridge.MemClean.SbCleanWitness main r_main bus state sb_input
 ZiskFv.Equivalence.Sd.equiv_SD 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Sd.equiv_SD 001 sd_input [other] PureSpec.SdInput
 ZiskFv.Equivalence.Sd.equiv_SD 002 regs [other] ZiskFv.Compliance.ModeRegsFull
@@ -607,6 +615,7 @@ ZiskFv.Equivalence.Sd.equiv_SD 005 bus [other] ZiskFv.Compliance.BusRows
 ZiskFv.Equivalence.Sd.equiv_SD 006 pins [other] ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB
 ZiskFv.Equivalence.Sd.equiv_SD 007 h_opcode_assumptions [other] PureSpec.sd_state_assumptions sd_input state
 ZiskFv.Equivalence.Sd.equiv_SD 008 promises [transpile] ZiskFv.EquivCore.Promises.StorePromises state regs.mstatus regs.pmaRegion regs.m
+ZiskFv.Equivalence.Sd.equiv_SD 009 w [other] ZiskFv.EquivCore.Bridge.MemClean.SdCleanWitness main r_main bus sd_input
 ZiskFv.Equivalence.Sh.equiv_SH 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Sh.equiv_SH 001 sh_input [other] PureSpec.ShInput
 ZiskFv.Equivalence.Sh.equiv_SH 002 regs [other] ZiskFv.Compliance.ModeRegsFull
@@ -617,6 +626,7 @@ ZiskFv.Equivalence.Sh.equiv_SH 006 pins [other] ZiskFv.Compliance.MainRowPins ma
 ZiskFv.Equivalence.Sh.equiv_SH 007 h_main_ind_width [match] main.ind_width r_main = 2
 ZiskFv.Equivalence.Sh.equiv_SH 008 h_opcode_assumptions [other] PureSpec.sh_state_assumptions sh_input state
 ZiskFv.Equivalence.Sh.equiv_SH 009 promises [transpile] ZiskFv.EquivCore.Promises.StorePromises state regs.mstatus regs.pmaRegion regs.m
+ZiskFv.Equivalence.Sh.equiv_SH 010 w [other] ZiskFv.EquivCore.Bridge.MemClean.ShCleanWitness main r_main bus state sh_input
 ZiskFv.Equivalence.Sll.equiv_SLL 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Sll.equiv_SLL 001 sll_input [other] PureSpec.SllInput
 ZiskFv.Equivalence.Sll.equiv_SLL 002 r1 [other] regidx
@@ -974,6 +984,7 @@ ZiskFv.Equivalence.Sw.equiv_SW 006 pins [other] ZiskFv.Compliance.MainRowPins ma
 ZiskFv.Equivalence.Sw.equiv_SW 007 h_main_ind_width [match] main.ind_width r_main = 4
 ZiskFv.Equivalence.Sw.equiv_SW 008 h_opcode_assumptions [other] PureSpec.sw_state_assumptions sw_input state
 ZiskFv.Equivalence.Sw.equiv_SW 009 promises [transpile] ZiskFv.EquivCore.Promises.StorePromises state regs.mstatus regs.pmaRegion regs.m
+ZiskFv.Equivalence.Sw.equiv_SW 010 w [other] ZiskFv.EquivCore.Bridge.MemClean.SwCleanWitness main r_main bus state sw_input
 ZiskFv.Equivalence.Xor.equiv_XOR 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Xor.equiv_XOR 001 xor_input [other] PureSpec.XorInput
 ZiskFv.Equivalence.Xor.equiv_XOR 002 r1 [other] regidx

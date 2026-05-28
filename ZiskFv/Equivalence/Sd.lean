@@ -37,6 +37,8 @@ theorem equiv_SD
         (PureSpec.sd_state_assumptions sd_input state)
         (PureSpec.execute_STORED_pure sd_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.SdCleanWitness
+        main r_main bus sd_input)
     : execute_instruction (instruction.STORE (
       sd_input.imm,
       regidx.Regidx sd_input.r2,
@@ -46,6 +48,6 @@ theorem equiv_SD
       = state_effect_via_channels
           ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_SD state sd_input regs main r_main bus pins h_opcode_assumptions promises
+  exact ZiskFv.Compliance.equiv_SD state sd_input regs main r_main bus pins h_opcode_assumptions promises w
 
 end ZiskFv.Equivalence.Sd

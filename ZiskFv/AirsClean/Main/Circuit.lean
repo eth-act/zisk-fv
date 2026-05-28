@@ -103,6 +103,51 @@ theorem mainWithRomAndMemBus_soundness (length : ℕ) (program : Program length)
           , by simpa [sub_eq_add_neg] using h8 ⟩
   · simp only [MemBusChannel, circuit_norm]
 
+/-! ### Structural ROM projections for T4
+
+These lemmas expose obligations already asserted by
+`mainWithRomAndMemBus`. They are intentionally narrower than a
+"well-formed program" promise: the ROM lookup conclusion is exact
+membership in the program-parameterised `romStaticTable`, and the boolean
+facts are only the per-row flag boolean assertions present in `main.pil`.
+-/
+
+theorem romBoolSpec_of_mainWithRomAndMemBus_constraints
+    (length : ℕ) (program : Program length)
+    (row : Var MainRowWithRom FGL) (offset : ℕ) (env : Environment FGL)
+    (h_holds :
+      Operations.ConstraintsHold env
+        ((mainWithRomAndMemBus length program row).operations offset)) :
+    env (row.core.m32 * (1 - row.core.m32)) = 0
+  ∧ env (row.core.set_pc * (1 - row.core.set_pc)) = 0
+  ∧ env (row.core.store_pc * (1 - row.core.store_pc)) = 0
+  ∧ env (row.rom.a_src_imm * (1 - row.rom.a_src_imm)) = 0
+  ∧ env (row.rom.a_src_mem * (1 - row.rom.a_src_mem)) = 0
+  ∧ env (row.rom.is_precompiled * (1 - row.rom.is_precompiled)) = 0
+  ∧ env (row.rom.b_src_imm * (1 - row.rom.b_src_imm)) = 0
+  ∧ env (row.rom.b_src_mem * (1 - row.rom.b_src_mem)) = 0
+  ∧ env (row.rom.store_mem * (1 - row.rom.store_mem)) = 0
+  ∧ env (row.rom.store_ind * (1 - row.rom.store_ind)) = 0
+  ∧ env (row.rom.b_src_ind * (1 - row.rom.b_src_ind)) = 0
+  ∧ env (row.rom.a_src_reg * (1 - row.rom.a_src_reg)) = 0
+  ∧ env (row.rom.b_src_reg * (1 - row.rom.b_src_reg)) = 0
+  ∧ env (row.rom.store_reg * (1 - row.rom.store_reg)) = 0 := by
+  simp only [mainWithRomAndMemBus, mainWithRom, main, circuit_norm] at h_holds
+  exact ⟨ h_holds.1 (row.core.m32 * (1 - row.core.m32)) (by simp)
+        , h_holds.1 (row.core.set_pc * (1 - row.core.set_pc)) (by simp)
+        , h_holds.1 (row.core.store_pc * (1 - row.core.store_pc)) (by simp)
+        , h_holds.1 (row.rom.a_src_imm * (1 - row.rom.a_src_imm)) (by simp)
+        , h_holds.1 (row.rom.a_src_mem * (1 - row.rom.a_src_mem)) (by simp)
+        , h_holds.1 (row.rom.is_precompiled * (1 - row.rom.is_precompiled)) (by simp)
+        , h_holds.1 (row.rom.b_src_imm * (1 - row.rom.b_src_imm)) (by simp)
+        , h_holds.1 (row.rom.b_src_mem * (1 - row.rom.b_src_mem)) (by simp)
+        , h_holds.1 (row.rom.store_mem * (1 - row.rom.store_mem)) (by simp)
+        , h_holds.1 (row.rom.store_ind * (1 - row.rom.store_ind)) (by simp)
+        , h_holds.1 (row.rom.b_src_ind * (1 - row.rom.b_src_ind)) (by simp)
+        , h_holds.1 (row.rom.a_src_reg * (1 - row.rom.a_src_reg)) (by simp)
+        , h_holds.1 (row.rom.b_src_reg * (1 - row.rom.b_src_reg)) (by simp)
+        , h_holds.1 (row.rom.store_reg * (1 - row.rom.store_reg)) (by simp) ⟩
+
 /-- Main as a Clean `GeneralFormalCircuit` exposing the ROM lookup and
     the 3 memory-bus consumer emissions. Soundness comes from
     `mainWithRomAndMemBus_soundness`; completeness is the declared
@@ -129,6 +174,89 @@ def componentWithRomAndMemBus
     (length : ℕ) (program : Program length) :
     Air.Flat.Component FGL :=
   ⟨ circuitWithRomAndMemBus length program ⟩
+
+theorem romBoolSpec_of_componentWithRomAndMemBus_constraints
+    (length : ℕ) (program : Program length)
+    (env : Environment FGL)
+    (h_holds :
+      (componentWithRomAndMemBus length program).operations.ConstraintsHold env) :
+    env ((componentWithRomAndMemBus length program).rowInputVar.core.m32
+        * (1 - (componentWithRomAndMemBus length program).rowInputVar.core.m32)) = 0
+  ∧ env ((componentWithRomAndMemBus length program).rowInputVar.core.set_pc
+        * (1 - (componentWithRomAndMemBus length program).rowInputVar.core.set_pc)) = 0
+  ∧ env ((componentWithRomAndMemBus length program).rowInputVar.core.store_pc
+        * (1 - (componentWithRomAndMemBus length program).rowInputVar.core.store_pc)) = 0
+  ∧ env ((componentWithRomAndMemBus length program).rowInputVar.rom.a_src_imm
+        * (1 - (componentWithRomAndMemBus length program).rowInputVar.rom.a_src_imm)) = 0
+  ∧ env ((componentWithRomAndMemBus length program).rowInputVar.rom.a_src_mem
+        * (1 - (componentWithRomAndMemBus length program).rowInputVar.rom.a_src_mem)) = 0
+  ∧ env ((componentWithRomAndMemBus length program).rowInputVar.rom.is_precompiled
+        * (1 - (componentWithRomAndMemBus length program).rowInputVar.rom.is_precompiled)) = 0
+  ∧ env ((componentWithRomAndMemBus length program).rowInputVar.rom.b_src_imm
+        * (1 - (componentWithRomAndMemBus length program).rowInputVar.rom.b_src_imm)) = 0
+  ∧ env ((componentWithRomAndMemBus length program).rowInputVar.rom.b_src_mem
+        * (1 - (componentWithRomAndMemBus length program).rowInputVar.rom.b_src_mem)) = 0
+  ∧ env ((componentWithRomAndMemBus length program).rowInputVar.rom.store_mem
+        * (1 - (componentWithRomAndMemBus length program).rowInputVar.rom.store_mem)) = 0
+  ∧ env ((componentWithRomAndMemBus length program).rowInputVar.rom.store_ind
+        * (1 - (componentWithRomAndMemBus length program).rowInputVar.rom.store_ind)) = 0
+  ∧ env ((componentWithRomAndMemBus length program).rowInputVar.rom.b_src_ind
+        * (1 - (componentWithRomAndMemBus length program).rowInputVar.rom.b_src_ind)) = 0
+  ∧ env ((componentWithRomAndMemBus length program).rowInputVar.rom.a_src_reg
+        * (1 - (componentWithRomAndMemBus length program).rowInputVar.rom.a_src_reg)) = 0
+  ∧ env ((componentWithRomAndMemBus length program).rowInputVar.rom.b_src_reg
+        * (1 - (componentWithRomAndMemBus length program).rowInputVar.rom.b_src_reg)) = 0
+  ∧ env ((componentWithRomAndMemBus length program).rowInputVar.rom.store_reg
+        * (1 - (componentWithRomAndMemBus length program).rowInputVar.rom.store_reg)) = 0 := by
+  have h_row :
+      (componentWithRomAndMemBus length program).rowOperations.ConstraintsHold env :=
+    (Component.constraintsHold_iff
+      (component := componentWithRomAndMemBus length program) env).mp h_holds
+  exact romBoolSpec_of_mainWithRomAndMemBus_constraints
+    length program
+    (componentWithRomAndMemBus length program).rowInputVar
+    (componentWithRomAndMemBus length program).rowOffset env (by
+      simpa only [componentWithRomAndMemBus, circuitWithRomAndMemBus,
+        Component.rowOperations] using h_row)
+
+theorem componentWithRomAndMemBus_interactionsWith_memBus
+    (length : ℕ) (program : Program length) :
+    (componentWithRomAndMemBus length program).operations.interactionsWith
+        MemBusChannel.toRaw =
+      [ ((MemBusChannel.emitted
+            (-((componentWithRomAndMemBus length program).rowInputVar.rom.a_src_mem
+              + (componentWithRomAndMemBus length program).rowInputVar.rom.a_src_reg))
+            (aMemMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (-((componentWithRomAndMemBus length program).rowInputVar.rom.b_src_mem
+              + (componentWithRomAndMemBus length program).rowInputVar.rom.b_src_ind
+              + (componentWithRomAndMemBus length program).rowInputVar.rom.b_src_reg))
+            (bMemMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (-((componentWithRomAndMemBus length program).rowInputVar.rom.store_mem
+              + (componentWithRomAndMemBus length program).rowInputVar.rom.store_ind
+              + (componentWithRomAndMemBus length program).rowInputVar.rom.store_reg))
+            (cMemMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw) ] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨MemBusChannel.toRaw,
+      [ ((MemBusChannel.emitted
+            (-((componentWithRomAndMemBus length program).rowInputVar.rom.a_src_mem
+              + (componentWithRomAndMemBus length program).rowInputVar.rom.a_src_reg))
+            (aMemMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (-((componentWithRomAndMemBus length program).rowInputVar.rom.b_src_mem
+              + (componentWithRomAndMemBus length program).rowInputVar.rom.b_src_ind
+              + (componentWithRomAndMemBus length program).rowInputVar.rom.b_src_reg))
+            (bMemMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (-((componentWithRomAndMemBus length program).rowInputVar.rom.store_mem
+              + (componentWithRomAndMemBus length program).rowInputVar.rom.store_ind
+              + (componentWithRomAndMemBus length program).rowInputVar.rom.store_reg))
+            (cMemMessageExpr (componentWithRomAndMemBus length program).rowInputVar)).toRaw) ]⟩ ∈
+    (componentWithRomAndMemBus length program).exposedChannels
+  simp only [componentWithRomAndMemBus, circuitWithRomAndMemBus,
+    mainWithRomAndMemBusElaborated, Component.exposedChannels, expose,
+    List.mem_singleton, List.map_cons, List.map_nil]
 
 theorem component_eval_opBusMessageExpr
     (env : Environment FGL) :

@@ -30,8 +30,8 @@ theorem equiv_LBU
     (lbu_input : PureSpec.LbuInput)
     (regs : ZiskFv.Compliance.ModeRegsFull)
     (main : Valid_Main FGL FGL) (mem : Valid_Mem FGL FGL) (r_main : ℕ)
-    (align : ZiskFv.Compliance.MemAlignWitness)
     (bus : ZiskFv.Compliance.BusRows)
+    (align : ZiskFv.Compliance.MemAlignWitness main r_main bus.e1)
     (pins : ZiskFv.Compliance.MainRowPins main r_main 0 OP_COPYB)
     (h_width : main.ind_width r_main = (1 : FGL))
     (promises : ZiskFv.EquivCore.Promises.LoadPromises
@@ -39,10 +39,13 @@ theorem equiv_LBU
         (PureSpec.lbu_state_assumptions lbu_input state)
         (PureSpec.execute_LOADBU_pure lbu_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
+    (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
+        main mem r_main bus lbu_input.r1_val lbu_input.imm lbu_input.rd)
     : execute_instruction (instruction.LOAD (
       lbu_input.imm, regidx.Regidx lbu_input.r1, regidx.Regidx lbu_input.rd, true, 1
     )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_LBU state lbu_input regs main mem r_main align bus pins h_width promises
+  exact ZiskFv.Compliance.equiv_LBU
+    state lbu_input regs main mem r_main bus align pins h_width promises w
 
 end ZiskFv.Equivalence.Lbu

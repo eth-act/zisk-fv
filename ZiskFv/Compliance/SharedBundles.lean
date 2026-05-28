@@ -90,7 +90,7 @@ structure ModeRegsFull where
   misa : RegisterType Register.misa
   mseccfg : RegisterType Register.mseccfg
 
-/-! ## MemAlign witness triple + low-byte pinning -/
+/-! ## MemAlign witness triple + structural provider pinning -/
 
 /-- The three MemAlign-family provider witnesses plus the low-byte
     pinning bridge they jointly support. Shared by LBU, LHU, LWU.
@@ -99,7 +99,7 @@ structure ModeRegsFull where
     `core_every_row` PIL constraints — a *constructibility* fact (a
     real ZisK MemAlignByte trace satisfies its PIL). It replaces the
     former free-floating `bus_byte < 256` promise (`byte_value_lt`,
-    removed from `SubdoublewordLoadLowBytePinning`): the narrow loads
+    removed from the MemAlign provider witness): the narrow loads
     now *derive* that range bound from `mab_core` **through the Clean
     `memAlignByteComponent`** (`bus_byte_in_range_via_component`),
     rather than accept it as a caller promise. Same validator-bundled
@@ -112,14 +112,25 @@ structure ModeRegsFull where
     `SubdoublewordLoadLowBytePinning`): the narrow loads now *derive*
     that range bound from `marb_core` **through the Clean
     `memAlignReadByteComponent`** (`byte_value_in_range_via_component`),
-    rather than accept it as a caller promise. -/
-structure MemAlignWitness where
+    rather than accept it as a caller promise.
+
+    **T4 structural unpacking.** `provider` replaces the former
+    MemAlign-family permutation and MemAlignRom trust-ledger axioms with
+    an explicit selected-provider-row witness. The general MemAlign
+    branch carries the ROM-derived row facts because `MemAlignRom` is not
+    currently extracted as a first-class Lean table. -/
+structure MemAlignWitness
+    (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
+    (r_main : ℕ)
+    (e : Interaction.MemoryBusEntry FGL) where
   mab : ZiskFv.Airs.MemAlignByte.Valid_MemAlignByte FGL FGL
   marb : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL
   ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL
   mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r
   marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r
-  h_low : ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadLowBytePinning ma
+  provider :
+    ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
+      main mab marb ma r_main e
 
 /-! ## Byte-range bounds on a memory-bus entry -/
 

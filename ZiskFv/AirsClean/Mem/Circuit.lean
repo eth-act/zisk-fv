@@ -25,6 +25,7 @@ namespace ZiskFv.AirsClean.Mem
 
 open Goldilocks
 open ZiskFv.Channels.MemoryBus (MemBusChannel)
+open Air.Flat
 
 /-- Mem as a Clean `GeneralFormalCircuit`. -/
 def circuit : GeneralFormalCircuit FGL MemRow unit :=
@@ -88,6 +89,19 @@ def circuitWithMemBus : GeneralFormalCircuit FGL MemRow unit :=
 /-- Mem as a Clean `Air.Flat.Component` exposing the memory-bus
     provider emission. Used by the T4.1 memory-family ensemble. -/
 def componentWithMemBus : Air.Flat.Component FGL := ⟨ circuitWithMemBus ⟩
+
+theorem componentWithMemBus_interactionsWith_memBus :
+    componentWithMemBus.operations.interactionsWith MemBusChannel.toRaw =
+      [((MemBusChannel.emitted componentWithMemBus.rowInputVar.sel
+          (memBusMessageExpr componentWithMemBus.rowInputVar)).toRaw)] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨MemBusChannel.toRaw,
+      [((MemBusChannel.emitted componentWithMemBus.rowInputVar.sel
+          (memBusMessageExpr componentWithMemBus.rowInputVar)).toRaw)]⟩ ∈
+    componentWithMemBus.exposedChannels
+  simp only [componentWithMemBus, circuitWithMemBus, memWithMemBusElaborated,
+    Component.exposedChannels, expose, List.mem_singleton, List.map_cons,
+    List.map_nil]
 
 /-- The Mem `Spec` for a row, derived through the Clean Component. -/
 theorem spec_via_component (row : MemRow FGL)

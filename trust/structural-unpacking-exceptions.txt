@@ -34,6 +34,111 @@
 # Adding a new entry requires CODEOWNER review.
 
 # ============================================================
+# T4 memory-bus structural unpacking (11)
+# ============================================================
+#
+# The load/store opcodes below are allowed to replace the compressed
+# Main/MemAlign memory-bus *promise hypotheses* with explicit Clean
+# memory-channel structure: a memory-family ensemble witness, the
+# `MemBusChannel` balance proof, selected Main/provider component rows,
+# row-equality pins tying the Clean Main row to the existing `Valid_Main`
+# row, and ROM/transpile pins for `addr1`, `addr2`, `main_step`,
+# source/store selectors, `store_offset`, and width selectors.
+#
+# This is structural unpacking, not promise laundering, because the added
+# binders expose the provider row and ROM fields that the old bundles
+# hid behind trust-class #4 axioms. The global `Compliance.lean` theorem
+# already carries the memory-family Clean witnesses once per provider AIR;
+# opcode wrappers may specialize those shared witnesses to their selected
+# row instead of adding per-opcode universal promises.
+#
+# PIL-BASIS for all 11 entries below:
+#   * main.pil:300 — Main b-side memory read emits
+#     `[mem_op, addr1, main_step*4+2, bytes, b[0], b[1]]`
+#   * main.pil:323-326 — Main c/store memory interaction emits
+#     `[mem_op, addr2, main_step*4+3, bytes, store_value[0], store_value[1]]`
+#   * main.pil:181 / 314-321 — ROM-derived address equations for
+#     `addr1` / `addr2`
+#   * main.pil:311-312 — `store_value` equations, collapsing to `c`
+#     when `store_pc = 0`
+#   * mem.pil:524-527 — Mem provider participates on the same 6-slot
+#     memory bus tuple
+#   * mem_align.pil:189 — MemAlign provider participates on the same
+#     memory bus permutation for sub-doubleword load/store alignment
+
+OPCODE: ZiskFv.Equivalence.Ld.equiv_LD
+DROPPED: main_load_emission_bundle, lookup_consumer_matches_provider_load
+ADDED: mem-family Clean witness, MemBusChannel balance proof,
+       selected Main row equality, selected Mem provider row equality,
+       ROM pins for addr1/addr2/main_step/b_src_ind/store_reg/store_offset,
+       width pin `ind_width = 8`, same-message proof from Clean balance
+       (structural pins only; no new universal promise hypothesis)
+
+OPCODE: ZiskFv.Equivalence.Lbu.equiv_LBU
+DROPPED: main_load_emission_bundle, lookup_consumer_matches_provider_load,
+         memalign_load_perm_sound, mem_align_rom_subdoubleword_load_value_1_zero
+ADDED: mem-family Clean witness, MemBusChannel balance proof,
+       selected Main row equality, selected MemAlign provider row equality,
+       ROM pins for addr1/addr2/main_step/b_src_ind/store_reg/store_offset,
+       width pin `ind_width = 1`, same-message proof from Clean balance,
+       lookup-aware provider fact deriving value_1 zero-padding from the
+       MemAlign row
+
+OPCODE: ZiskFv.Equivalence.Lhu.equiv_LHU
+DROPPED: main_load_emission_bundle, lookup_consumer_matches_provider_load,
+         memalign_load_perm_sound, mem_align_rom_subdoubleword_load_value_1_zero
+ADDED: same structural shape as LBU with width pin `ind_width = 2`
+
+OPCODE: ZiskFv.Equivalence.Lwu.equiv_LWU
+DROPPED: main_load_emission_bundle, lookup_consumer_matches_provider_load,
+         memalign_load_perm_sound
+ADDED: same structural shape as LBU with width pin `ind_width = 4`
+
+OPCODE: ZiskFv.Equivalence.Lb.equiv_LB
+DROPPED: main_sext_load_emission_bundle, lookup_consumer_matches_provider_load,
+         memalign_load_perm_sound
+ADDED: mem-family Clean witness, MemBusChannel balance proof,
+       selected Main row equality, selected MemAlign provider row equality,
+       ROM pins for addr1/addr2/main_step/b_src_ind/store_reg/store_offset,
+       width pin `ind_width = 1`, BinaryExtension sign-extension provider
+       pins already used by the signed-load bridge, same-message proof
+       from Clean balance
+
+OPCODE: ZiskFv.Equivalence.Lh.equiv_LH
+DROPPED: main_sext_load_emission_bundle, lookup_consumer_matches_provider_load,
+         memalign_load_perm_sound
+ADDED: same structural shape as LB with width pin `ind_width = 2`
+
+OPCODE: ZiskFv.Equivalence.Lw.equiv_LW
+DROPPED: main_sext_load_emission_bundle, lookup_consumer_matches_provider_load,
+         memalign_load_perm_sound
+ADDED: same structural shape as LB with width pin `ind_width = 4`
+
+OPCODE: ZiskFv.Equivalence.Sd.equiv_SD
+DROPPED: main_store_emission_bundle_sd
+ADDED: mem-family Clean witness, MemBusChannel balance proof,
+       selected Main row equality, selected Mem provider row equality,
+       ROM pins for addr2/main_step/store_ind/store_mem/store_offset,
+       width pin `ind_width = 8`, same-message proof from Clean balance,
+       byte-range facts for the provider row
+
+OPCODE: ZiskFv.Equivalence.Sb.equiv_SB
+DROPPED: main_store_emission_bundle_subword
+ADDED: mem-family Clean witness, MemBusChannel balance proof,
+       selected Main row equality, selected MemAlign provider row equality,
+       ROM pins for addr2/main_step/store_ind/store_mem/store_offset,
+       width pin `ind_width = 1`, same-message proof from Clean balance,
+       MemAlign RMW high-byte preservation facts
+
+OPCODE: ZiskFv.Equivalence.Sh.equiv_SH
+DROPPED: main_store_emission_bundle_subword
+ADDED: same structural shape as SB with width pin `ind_width = 2`
+
+OPCODE: ZiskFv.Equivalence.Sw.equiv_SW
+DROPPED: main_store_emission_bundle_subword
+ADDED: same structural shape as SB with width pin `ind_width = 4`
+
+# ============================================================
 # Arith byte-sum-circuit ops (9)
 # ============================================================
 #

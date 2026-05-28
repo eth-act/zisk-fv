@@ -233,8 +233,7 @@ consumer emissions matching `main.pil:284,300,323`:
 Each `mem_op` PIL macro lowers to a `permutation_assumes(MEMORY_ID,
 [mem_op, addr, mem_step, bytes, value_0, value_1], sel: …)` push.
 Modelled here as a `MemBusChannel.emit` with multiplicity `-sel`
-(consumer side) using the 5-slot `MemBusMessage` (the doubleword-bus
-shape; sub-doubleword goes through the separate `MemAlignBus`).
+(consumer side) using the unified 6-slot PIL `MemBusMessage`.
 
 Memory operation codes (`mem.pil:71-73`):
 * `MEMORY_LOAD_OP = 1`
@@ -281,26 +280,31 @@ def storeValueHiExpr (row : Var MainRowWithRom FGL) : Expression FGL :=
   (1 - row.core.store_pc) * row.core.c_1
 
 /-- a-side memory-bus consumer message: register read of rs1 (or memory
-    read of addr0). `as` carries the `mem_op` literal; `ptr = addr0`;
-    `value` is the a-lane pair; `timestamp = 1 + main_step * 4`. -/
+    read of addr0). `mem_op` carries the PIL operation literal;
+    `ptr = addr0`; `width = 8`; `value` is the a-lane pair;
+    `timestamp = 1 + main_step * 4`. -/
 @[reducible]
 def aMemMessageExpr (row : Var MainRowWithRom FGL) :
     MemBusMessage (Expression FGL) :=
-  { as := aMemOpExpr row
+  { mem_op := aMemOpExpr row
     ptr := row.rom.addr0
+    timestamp := 1 + row.rom.main_step * 4
+    width := 8
     value_0 := row.core.a_0
-    value_1 := row.core.a_1
-    timestamp := 1 + row.rom.main_step * 4 }
+    value_1 := row.core.a_1 }
 
-/-- b-side memory-bus consumer message. -/
+/-- b-side memory-bus consumer message. The width expression is the PIL
+    `b_src_ind * (ind_width - 8) + 8`, which is `ind_width` for
+    indirect memory access and `8` for register / direct memory reads. -/
 @[reducible]
 def bMemMessageExpr (row : Var MainRowWithRom FGL) :
     MemBusMessage (Expression FGL) :=
-  { as := bMemOpExpr row
+  { mem_op := bMemOpExpr row
     ptr := row.rom.addr1
+    timestamp := 2 + row.rom.main_step * 4
+    width := row.rom.b_src_ind * (row.core.ind_width - 8) + 8
     value_0 := row.core.b_0
-    value_1 := row.core.b_1
-    timestamp := 2 + row.rom.main_step * 4 }
+    value_1 := row.core.b_1 }
 
 /-- c-side / store memory-bus consumer message. The value lanes are
     PIL's `store_value`, which collapses to `(c_0, c_1)` for
@@ -308,11 +312,12 @@ def bMemMessageExpr (row : Var MainRowWithRom FGL) :
 @[reducible]
 def cMemMessageExpr (row : Var MainRowWithRom FGL) :
     MemBusMessage (Expression FGL) :=
-  { as := cMemOpExpr row
+  { mem_op := cMemOpExpr row
     ptr := row.rom.addr2
+    timestamp := 3 + row.rom.main_step * 4
+    width := row.rom.store_ind * (row.core.ind_width - 8) + 8
     value_0 := storeValueLoExpr row
-    value_1 := storeValueHiExpr row
-    timestamp := 3 + row.rom.main_step * 4 }
+    value_1 := storeValueHiExpr row }
 
 /-- Main constraints + ROM lookup + 3 memory-bus consumer emissions.
     Composes `mainWithRom` with the 3 `MemBusChannel.emit` pushes
