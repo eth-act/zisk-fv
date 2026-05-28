@@ -109,7 +109,11 @@ copyb byte passthrough is pure chunk equality, so the dead memory-entry
 range premises were removed from `LoadDerivation`. LBU/LHU/LWU no longer
 depend on `range_bus_sound` either: MemAlignByte/MemAlignReadByte byte
 bounds now flow through lookup-aware Clean `rangeTable*` witnesses in
-`MemAlignWitness`, then through the existing Component `Spec` bridge.
+`MemAlignWitness`, then through the existing Component `Spec` bridge. LB's
+signed-load BinaryExtension path has also dropped `range_bus_sound`: its
+SEXT_B c-lane chunk bounds and `e1.value_0` byte lane match now come from the
+exact static BinaryExtensionTable row witnesses, with the memory chunk bound
+derived from the op-bus equality instead of the legacy range bus.
 These slices derive mode/op pins, packed byte bounds, carry booleanity,
 compare-result bounds, and destination byte-pack bounds from exact static
 table membership plus row-local byte-match witnesses rather than from the
@@ -1101,8 +1105,9 @@ Checklist:
   Progress: AUIPC/JAL/JALR canonical closures no longer list
   `range_bus_sound`; ADD/ADDI/SUB, ADDW/ADDIW/SUBW, and
   SLT/SLTI/SLTU/SLTIU have also dropped it through the static Binary-table
-  route. Remaining consumers are the shift, load/store, and Arith-family
-  paths shown in
+  route. LD, LBU/LHU/LWU, and LB have also dropped it through row-local
+  memory/BinaryExtension evidence. Remaining consumers are the signed
+  halfword/word loads, shift, and Arith-family paths shown in
   `trust/baseline-equiv-axiom-deps.txt`.
 - ☐ T6.3 retire `range_bus_sound` and `signed_range_bus_sound` when their
   global closure entries disappear.

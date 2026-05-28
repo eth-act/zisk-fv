@@ -880,4 +880,126 @@ lemma sext_lane_match_bytes_eq_of_match
   exact byte_pack4_inj _ _ _ _ _ _ _ _ ha0 ha1 ha2 ha3
     he0 he1 he2 he3 h_val_eq
 
+/-- Static-table variant of `sext_lane_match_bytes_eq_of_match`.
+
+The BinExt byte ranges come from the exact `BinaryExtensionTable`
+provider rows in `h_wfs`. The memory chunk range needed for the byte-pack
+identity is derived after the op-bus equality pins `e1.value_0` to the
+packed four-byte BinExt input, so this route does not consume
+`binary_extension_columns_in_range` or memory-bus chunk range soundness. -/
+lemma sext_lane_match_bytes_eq_of_match_wf
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (r_main r_binary : ℕ) (e1 : Interaction.MemoryBusEntry FGL)
+    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
+    (h_main_b0_eq : m.b_0 r_main = ZiskFv.Airs.MemoryBus.memory_entry_lo e1)
+    (h_op_is_shift_zero : v.op_is_shift r_binary = 0)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary)) :
+    (v.free_in_a_0 r_binary).val = (ZiskFv.Channels.MemoryBusBytes.byteAt e1 0).val
+    ∧ (v.free_in_a_1 r_binary).val = (ZiskFv.Channels.MemoryBusBytes.byteAt e1 1).val
+    ∧ (v.free_in_a_2 r_binary).val = (ZiskFv.Channels.MemoryBusBytes.byteAt e1 2).val
+    ∧ (v.free_in_a_3 r_binary).val = (ZiskFv.Channels.MemoryBusBytes.byteAt e1 3).val := by
+  obtain ⟨e0, ⟨_, _, _, ha0_eq, _, _, _⟩,
+         e1b, ⟨_, _, _, ha1_eq, _, _, _⟩,
+         e2, ⟨_, _, _, ha2_eq, _, _, _⟩,
+         e3, ⟨_, _, _, ha3_eq, _, _, _⟩,
+         _, _, _, _, _, _, _, _⟩ := h_bytes
+  have ha0 : (v.free_in_a_0 r_binary).val < 256 := by
+    have h := h_wfs.1.1.1
+    simpa [ha0_eq] using h
+  have ha1 : (v.free_in_a_1 r_binary).val < 256 := by
+    have h := h_wfs.2.1.1.1
+    simpa [ha1_eq] using h
+  have ha2 : (v.free_in_a_2 r_binary).val < 256 := by
+    have h := h_wfs.2.2.1.1.1
+    simpa [ha2_eq] using h
+  have ha3 : (v.free_in_a_3 r_binary).val < 256 := by
+    have h := h_wfs.2.2.2.1.1.1
+    simpa [ha3_eq] using h
+  have he0 : (ZiskFv.Channels.MemoryBusBytes.byteAt e1 0).val < 256 := by
+    unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+    simp only [show (0 : ℕ) < 4 from by decide, if_true]
+    exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_lt_256 _ _
+  have he1 : (ZiskFv.Channels.MemoryBusBytes.byteAt e1 1).val < 256 := by
+    unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+    simp only [show (1 : ℕ) < 4 from by decide, if_true]
+    exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_lt_256 _ _
+  have he2 : (ZiskFv.Channels.MemoryBusBytes.byteAt e1 2).val < 256 := by
+    unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+    simp only [show (2 : ℕ) < 4 from by decide, if_true]
+    exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_lt_256 _ _
+  have he3 : (ZiskFv.Channels.MemoryBusBytes.byteAt e1 3).val < 256 := by
+    unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+    simp only [show (3 : ℕ) < 4 from by decide, if_true]
+    exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_lt_256 _ _
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
+  obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  rw [h_op_is_shift_zero] at h_b_lo_m
+  have h_b0_fgl : m.b_0 r_main
+      = v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
+        + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary := by
+    rw [h_b_lo_m]; ring
+  have h_eq_chunk :
+      (v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
+        + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary : FGL)
+      = e1.value_0 := by
+    rw [← h_b0_fgl, h_main_b0_eq]
+    rfl
+  have h_lhs_val :
+      (v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
+        + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary : FGL).val
+      = (v.free_in_a_0 r_binary).val + (v.free_in_a_1 r_binary).val * 256
+        + (v.free_in_a_2 r_binary).val * 65536
+        + (v.free_in_a_3 r_binary).val * 16777216 :=
+    packed_a_lo_val_eq_of_match v r_binary ha0 ha1 ha2 ha3
+  have h_value_eq := congr_arg Fin.val h_eq_chunk
+  rw [h_lhs_val] at h_value_eq
+  have h_v0_lt : e1.value_0.val < 4294967296 := by
+    rw [← h_value_eq]
+    omega
+  have h_eq_fgl :
+      (v.free_in_a_0 r_binary + 256 * v.free_in_a_1 r_binary
+        + 65536 * v.free_in_a_2 r_binary + 16777216 * v.free_in_a_3 r_binary : FGL)
+      = ZiskFv.Channels.MemoryBusBytes.byteAt e1 0
+        + ZiskFv.Channels.MemoryBusBytes.byteAt e1 1 * 256
+        + ZiskFv.Channels.MemoryBusBytes.byteAt e1 2 * 65536
+        + ZiskFv.Channels.MemoryBusBytes.byteAt e1 3 * 16777216 := by
+    rw [h_eq_chunk]
+    have hpack := ZiskFv.Channels.MemoryBusBytes.bytes_of_chunk_packing
+                    e1.value_0 h_v0_lt
+    have hb0 : ZiskFv.Channels.MemoryBusBytes.byteAt e1 0
+              = ZiskFv.Channels.MemoryBusBytes.byteOf e1.value_0 0 := by
+      unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+      simp only [show (0 : ℕ) < 4 from by decide, if_true]
+    have hb1 : ZiskFv.Channels.MemoryBusBytes.byteAt e1 1
+              = ZiskFv.Channels.MemoryBusBytes.byteOf e1.value_0 1 := by
+      unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+      simp only [show (1 : ℕ) < 4 from by decide, if_true]
+    have hb2 : ZiskFv.Channels.MemoryBusBytes.byteAt e1 2
+              = ZiskFv.Channels.MemoryBusBytes.byteOf e1.value_0 2 := by
+      unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+      simp only [show (2 : ℕ) < 4 from by decide, if_true]
+    have hb3 : ZiskFv.Channels.MemoryBusBytes.byteAt e1 3
+              = ZiskFv.Channels.MemoryBusBytes.byteOf e1.value_0 3 := by
+      unfold ZiskFv.Channels.MemoryBusBytes.byteAt
+      simp only [show (3 : ℕ) < 4 from by decide, if_true]
+    rw [hb0, hb1, hb2, hb3]
+    exact hpack
+  have h_rhs_val :
+      (ZiskFv.Channels.MemoryBusBytes.byteAt e1 0
+        + ZiskFv.Channels.MemoryBusBytes.byteAt e1 1 * 256
+        + ZiskFv.Channels.MemoryBusBytes.byteAt e1 2 * 65536
+        + ZiskFv.Channels.MemoryBusBytes.byteAt e1 3 * 16777216 : FGL).val
+      = (ZiskFv.Channels.MemoryBusBytes.byteAt e1 0).val
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt e1 1).val * 256
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt e1 2).val * 65536
+        + (ZiskFv.Channels.MemoryBusBytes.byteAt e1 3).val * 16777216 :=
+    ZiskFv.PackedBitVec.fgl_packed_4bytes_val_of_byte_range _ _ _ _ he0 he1 he2 he3
+  have h_val_eq := congr_arg Fin.val h_eq_fgl
+  rw [h_lhs_val, h_rhs_val] at h_val_eq
+  exact byte_pack4_inj _ _ _ _ _ _ _ _ ha0 ha1 ha2 ha3
+    he0 he1 he2 he3 h_val_eq
+
 end ZiskFv.EquivCore.Bridge.BinaryExtension
