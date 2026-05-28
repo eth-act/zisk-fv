@@ -24,6 +24,7 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 inductive DefectId where
   | arithTableTrustShape
   | arithMulSignedWitnessSoundness
+  | arithDivDynamicWitnessSoundness
   | fenceIncomplete
   deriving DecidableEq, Repr
 
@@ -52,6 +53,25 @@ def MaliciousSignedMulWitnessShape
   | .mulhsu .. => True
   | _ => False
 
+/-- Conservative marker for remaining dynamic DIV/REM witness facts.
+
+The retired `arith_table_op_*` and `arith_div_*` assumptions were not pure
+finite-table projections: they connected row selectors to concrete operand
+chunks, sign witnesses, and remainder bounds. Until those facts are proved
+from the ArithDiv row/range/operation-bus constraints, the eight DIV/REM
+arms are excluded from the defect-qualified claim. -/
+def ArithDivDynamicWitnessShape
+    : OpEnvelope state m r_main → Prop
+  | .div .. => True
+  | .divu .. => True
+  | .divw .. => True
+  | .divuw .. => True
+  | .rem .. => True
+  | .remu .. => True
+  | .remw .. => True
+  | .remuw .. => True
+  | _ => False
+
 /-- Conservative marker for remaining opcode-shaped ArithTable trust.
 
 This starts broad across the ArithMul/ArithDiv opcode families because the
@@ -70,6 +90,8 @@ def Blocks (id : DefectId) (env : OpEnvelope state m r_main) : Prop :=
       UsesOpcodeSpecificArithTableAxiom env
   | .arithMulSignedWitnessSoundness =>
       MaliciousSignedMulWitnessShape env
+  | .arithDivDynamicWitnessSoundness =>
+      ArithDivDynamicWitnessShape env
   | .fenceIncomplete =>
       ¬ FenceNopEquivalent env
 
@@ -90,6 +112,12 @@ theorem no_malicious_signed_mul_witness_of_no_known_defect
     (h_known_bugs : NoKnownDefect env) :
     ¬ MaliciousSignedMulWitnessShape env :=
   h_known_bugs .arithMulSignedWitnessSoundness
+
+theorem no_arith_div_dynamic_witness_of_no_known_defect
+    {env : OpEnvelope state m r_main}
+    (h_known_bugs : NoKnownDefect env) :
+    ¬ ArithDivDynamicWitnessShape env :=
+  h_known_bugs .arithDivDynamicWitnessSoundness
 
 theorem no_opcode_specific_arith_table_axiom_of_no_known_defect
     {env : OpEnvelope state m r_main}

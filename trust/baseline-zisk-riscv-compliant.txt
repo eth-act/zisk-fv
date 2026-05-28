@@ -25,21 +25,11 @@
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
 # artefacts under `.lake/build/`). Last regenerated: 2026-05-28.
 #
-# Total entries: 73
+# Total entries: 55
 #
-ZiskFv.Airs.Arith.arith_div_nb_eq_msb_of_divisor
-ZiskFv.Airs.Arith.arith_div_np_eq_msb_of_dividend
-ZiskFv.Airs.Arith.arith_div_remainder_bound
-ZiskFv.Airs.Arith.arith_div_remainder_bound_signed_w
-ZiskFv.Airs.Arith.arith_div_remainder_bound_unsigned
-ZiskFv.Airs.Arith.arith_div_remainder_bound_unsigned_w
-ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_d_sign_pin
-ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin
-ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin
 ZiskFv.Airs.Binary.binary_w_mode_carry_7_zero
 ZiskFv.Airs.Binary.binary_w_sext_choice_pin
 ZiskFv.Airs.MemoryBus.MemBridge.main_store_pc_emission_bundle
-ZiskFv.AirsClean.ArithDiv.arithDiv_circuit_completeness
 ZiskFv.AirsClean.ArithMul.arithMul_circuit_completeness
 ZiskFv.AirsClean.MemAlignByte.memAlignByte_circuit_completeness
 ZiskFv.AirsClean.MemAlignReadByte.memAlignReadByte_circuit_completeness
@@ -56,10 +46,6 @@ ZiskFv.Trusted.transpile_ADDW
 ZiskFv.Trusted.transpile_AND
 ZiskFv.Trusted.transpile_ANDI
 ZiskFv.Trusted.transpile_AUIPC
-ZiskFv.Trusted.transpile_DIV
-ZiskFv.Trusted.transpile_DIVU
-ZiskFv.Trusted.transpile_DIVUW
-ZiskFv.Trusted.transpile_DIVW
 ZiskFv.Trusted.transpile_JAL
 ZiskFv.Trusted.transpile_JALR
 ZiskFv.Trusted.transpile_LUI
@@ -71,10 +57,6 @@ ZiskFv.Trusted.transpile_ORI
 ZiskFv.Trusted.transpile_PC_for_AUIPC
 ZiskFv.Trusted.transpile_PC_for_JAL
 ZiskFv.Trusted.transpile_PC_for_JALR
-ZiskFv.Trusted.transpile_REM
-ZiskFv.Trusted.transpile_REMU
-ZiskFv.Trusted.transpile_REMUW
-ZiskFv.Trusted.transpile_REMW
 ZiskFv.Trusted.transpile_SB
 ZiskFv.Trusted.transpile_SD
 ZiskFv.Trusted.transpile_SH

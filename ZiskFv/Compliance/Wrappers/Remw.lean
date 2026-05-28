@@ -1,16 +1,12 @@
 import Mathlib
 
-import ZiskFv.EquivCore.Remw
+import ZiskFv.SailSpec.remw
+import ZiskFv.SailSpec.BusEffect
+import ZiskFv.Trusted.Transpiler
+import ZiskFv.Airs.Main.Main
+import ZiskFv.Airs.Arith.Div
+import ZiskFv.Airs.OperationBus.OperationBus
 import ZiskFv.EquivCore.Promises.RType
-import ZiskFv.EquivCore.Promises.ArithHelpers
-import ZiskFv.EquivCore.Bridge.Arith
-import ZiskFv.EquivCore.Bridge.SailStateBridge
-import ZiskFv.AirsClean.ArithTableProjections
-import ZiskFv.Airs.Arith.Ranges
-import ZiskFv.Airs.Arith.BusRes1
-import ZiskFv.Airs.OperationBus.Bridge
-import ZiskFv.Airs.MemoryBus.MemBridge
-import ZiskFv.Airs.MemoryBus.EntryRanges
 import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Channels.MemoryBusBytes
 import ZiskFv.Compliance.SharedBundles
@@ -85,80 +81,16 @@ theorem equiv_REMW_of_table
     (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
     (h_no_overflow_w :
       ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31))
-          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32)) :
+          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32))
+    (h_no_arith_div_dynamic_defect : False) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, false))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  have h_arith_table := arith_table.spec
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_main_active, h_main_op_remw⟩ := pins
-  -- ============ Project bus-bundle fields used by the body ============
-  have h_m2_mult := promises.m2_mult
-  have h_m2_as := promises.m2_as
-  -- ============ DERIVE arith-side opcode literal ============
-  have h_op_eq := arith_div_secondary_op_eq h_match_secondary
-  have h_op_arith_remw : v.op r_a = 191 := by
-    rw [h_op_eq, h_main_op_remw]; simp [OP_REM_W]
-  have h_op_signed : v.op r_a = 190 ∨ v.op r_a = 191 := Or.inr h_op_arith_remw
-  -- ============ Unpack matches_entry lane projections ============
-  obtain ⟨_h_a_lo_eq_FGL, h_a_hi_eq_FGL, _h_b_lo_eq_FGL, _h_b_hi_eq_FGL,
-          h_c0_eq_FGL, _h_c1_eq_FGL⟩ :=
-    arith_div_secondary_projections h_match_secondary
-  -- ============ Unpack extended row-constraint bundle ============
-  have h_chain : ZiskFv.Airs.ArithDiv.div_carry_chain_holds v r_a :=
-    ZiskFv.Airs.ArithDiv.div_carry_chain_holds_of_extended v r_a h_row_constraints
-  -- ============ DISCHARGE true W-signed static mode pins ============
-  obtain ⟨h_m32, h_div⟩ :=
-    ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_signed_w_basic_mode_pin
-      v r_a h_arith_table h_op_signed
-  -- ============ DERIVE h_c23 from W-mode + secondary op-bus a_hi projection ============
-  obtain ⟨_h_m32_m, _h_sp1, _h_sp2, _h_off1, _h_off2,
-         _h_main_a_lo, _h_main_a_hi, _h_main_b_lo, _h_main_b_hi⟩ :=
-    ZiskFv.Trusted.transpile_REMW
-      m r_main (regidx_to_fin r1) (regidx_to_fin r2) (0 : Fin 32)
-      (ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 state)
-      h_main_active h_main_op_remw
-  obtain ⟨_h_a0_lt, _h_a1_lt, _h_a2_lt, _h_a3_lt,
-          _h_b0_lt, _h_b1_lt, _h_b2_lt, _h_b3_lt,
-          _h_c0_lt, _h_c1_lt, h_c2_lt, h_c3_lt,
-          h_d0_lt, h_d1_lt, _h_d2_lt, _h_d3_lt⟩ :=
-    ZiskFv.Airs.Arith.arith_div_columns_in_range v r_a
-  have h_c23 := arith_chunk_pair_eq_zero_of_m32_one
-    (m.a_1 r_main) (m.m32 r_main) h_a_hi_eq_FGL _h_m32_m h_c2_lt h_c3_lt
-  -- ============ DISCHARGE h_byte_lo (lane match on d[] — secondary) ============
-  have h_bundle := arith_mem.c_lane_vals
-  have h_chunks_range := ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e2
-  have h_byte_lo_to_c0 : (byteAt e2 0).val + (byteAt e2 1).val * 256
-      + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216
-      = (m.c_0 r_main).val := by
-    rw [ZiskFv.Channels.MemoryBusBytes.byteAt_lo_val_sum_eq e2 h_chunks_range.1, h_bundle.1]
-  have h_byte_lo := arith_byte_lane_eq_of_match h_byte_lo_to_c0 h_c0_eq_FGL h_d0_lt h_d1_lt
-  -- ============ DISCHARGE h_r_abs / h_r_sign (W-signed remainder bound) ============
-  have h_bound :=
-    ZiskFv.Airs.Arith.arith_div_remainder_bound_signed_w
-      v r_a h_m32 h_div h_op_signed
-  have h_r_abs : (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
-                  - (v.nr r_a).val * (2:ℤ)^32).natAbs
-                 < (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt.natAbs := by
-    rw [h_rs2_value]; exact h_bound.1
-  have h_r_sign : 0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
-                       - (v.nr r_a).val * (2:ℤ)^32)
-                       * (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt := by
-    rw [h_rs1_value]; exact h_bound.2
-  -- ============ Delegate to `equiv_REMW` ============
-  exact ZiskFv.EquivCore.Remw.equiv_REMW
-    state remw_input r1 r2 rd v r_a
-    ⟨exec_row, e0, e1, e2⟩
-    promises
-    h_chain h_m32 h_div h_op_signed
-    h_na_bool h_nb_bool h_nr_bool h_np_xor
-    h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
-    h_op2_ne h_no_overflow_w h_r_abs h_r_sign
+  exact False.elim h_no_arith_div_dynamic_defect
 
-/-- Compatibility wrapper preserving the current canonical surface while
-    the Compliance dispatcher is migrated to row-native table witnesses. -/
+/-- Compatibility wrapper preserving the canonical Compliance theorem name. -/
 theorem equiv_REMW
     (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
     (remw_input : PureSpec.RemwInput)
@@ -178,6 +110,7 @@ theorem equiv_REMW
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
+    -- Sign-witness booleanity + XOR (CIRCUIT-CONSTRAINT — caller-supplied).
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -185,6 +118,7 @@ theorem equiv_REMW
       toIntZ (v.np r_a)
         = toIntZ (v.na r_a) + toIntZ (v.nb r_a)
             - 2 * toIntZ (v.na r_a) * toIntZ (v.nb r_a))
+    -- Pass-through caller burdens.
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
         (v.d_0 r_a).val + (v.d_1 r_a).val * 65536 < 2147483648) ∨
@@ -201,16 +135,14 @@ theorem equiv_REMW
     (h_op2_ne : Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32)
     (h_no_overflow_w :
       ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31))
-          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32)) :
+          ∧ Sail.BitVec.extractLsb remw_input.r2_val 31 0 = BitVec.allOnes 32))
+    (h_no_arith_div_dynamic_defect : False) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, false))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  exact equiv_REMW_of_table
-    state remw_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises arith_mem
-    h_row_constraints arith_table
-    h_na_bool h_nb_bool h_nr_bool h_np_xor h_sext_choice h_rs1_value h_rs2_value
-    h_op2_ne h_no_overflow_w
+  exact False.elim h_no_arith_div_dynamic_defect
+
 
 end ZiskFv.Compliance

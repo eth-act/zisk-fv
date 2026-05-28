@@ -22,14 +22,11 @@ import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Channels.MemoryBusBytes
 
 /-!
-End-to-end theorem for RV64 **REM**. REM is the
-**secondary** lane on a signed-DIV Arith row (`main_mul = main_div = 0`,
-`secondary = 1`). Combines:
-
-* `ZiskFv.Trusted.transpile_REM` (opcode 187),
-* `Circuit.Rem.rem_compositional` (instantiates
-  `arith_archetype_rem_bus_match` at `OP_REM`),
-* `PureSpec.execute_DIVREM_rem_pure_equiv`.
+End-to-end theorem for RV64 **REM**. This legacy core is retained for
+imports, but the canonical REM theorem is now defect-gated by
+`ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS` until the dynamic Arith
+remainder witness route is proved. The Sail-level companion still reduces
+through `PureSpec.execute_DIVREM_rem_pure_equiv`.
 
 Two canonical theorems:
 * `equiv_REM_sail` — Sail-level: `execute_instruction` on an RV64 REM

@@ -1,5 +1,6 @@
 import ZiskFv.Compliance.Wrappers.Divu
 import ZiskFv.Channels.StateEffect
+import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 
 /-!
 # `equiv_DIVU` per-opcode canonical theorem (channel-balance form)
@@ -47,13 +48,14 @@ theorem equiv_DIVU
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (arith_table : ZiskFv.Compliance.ArithDivTableWitness v r_a)
     (h_op2_ne : divu_input.r2_val.toNat ≠ 0)
+    (h_no_arith_div_dynamic_defect : False)
     : (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIV (r2, r1, rd, true))) state
       = state_effect_via_channels
           ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_DIVU_of_table state divu_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises arith_mem bounds h_row_constraints arith_table h_op2_ne
+  exact False.elim h_no_arith_div_dynamic_defect
+
 
 end ZiskFv.Equivalence.Divu

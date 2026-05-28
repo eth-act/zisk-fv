@@ -206,8 +206,8 @@ bound consumed by `arith_div_remainder_bound`).
   `signed_packed_toInt_eq_of_read_xreg`
   (`Equivalence/Bridge/SailStateBridge.lean:190`). Inputs: the Sail
   `read_xreg` predicate `h_input_r1`, the unsigned `r1_val.toNat =
-  packed4` identity (derived from `transpile_DIV` + op-bus
-  `matches_entry` lane projections + chunk-range bounds; see
+  packed4` identity (formerly derived from the DIV transpile contract +
+  op-bus `matches_entry` lane projections + chunk-range bounds; see
   `Wrappers/Div.lean:347-435`), the chunk-range bundle, and the
   `np = MSB` pin from category 3.
 * `h_op2` discharged symmetrically at `Wrappers/Div.lean:476-482`.

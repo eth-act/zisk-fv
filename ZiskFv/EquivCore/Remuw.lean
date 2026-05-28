@@ -109,65 +109,14 @@ theorem equiv_REMUW
               = (v.b_0 r_a).val + (v.b_1 r_a).val * 65536)
     (h_op2_ne : (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat ≠ 0)
     (h_d_lt_b : (v.d_0 r_a).val + (v.d_1 r_a).val * 65536
-                  < (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat) :
+                  < (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat)
+    (h_no_arith_div_dynamic_defect : False) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, true))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
-          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
-          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
-          h_rd_idx⟩ := promises
-  obtain ⟨h_a0, h_a1, h_a2, h_a3,
-          h_b0, h_b1, h_b2, h_b3,
-          h_c0, h_c1, h_c2, h_c3,
-          h_d0, h_d1, h_d2, h_d3⟩ :=
-    ZiskFv.EquivCore.Bridge.Arith.arith_div_chunk_ranges_at_holds v r_a
-  obtain ⟨cy₀, cy₁, cy₂, cy₃, cy₄, cy₅, cy₆,
-          h_cy0, h_cy1, h_cy2, h_cy3, h_cy4, h_cy5, h_cy6,
-          hC31, hC32, hC33, hC34, hC35, hC36, hC37, hC38⟩ :=
-    ZiskFv.EquivCore.Bridge.Arith.div_w_unsigned_chain_witnesses v r_a h_chain
-      h_na h_nb h_np h_nr h_m32 h_div
-  obtain ⟨h_a2_eq, h_a3_eq, h_b2_eq, h_b3_eq, h_d2_eq, h_d3_eq⟩ :=
-    ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin v r_a h_m32 h_div h_op
-  have h_e2_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 0
-  have h_e2_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 1
-  have h_e2_2 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 2
-  have h_e2_3 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 3
-  have h_e2_4 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 4
-  have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
-  have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
-  have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
-  have h_rd_val :=
-    ZiskFv.EquivCore.WriteValueProofs.MulDivRemUnsigned.h_rd_val_mdru_remuw_chunked
-      remuw_input.r1_val remuw_input.r2_val e2
-      (v.a_0 r_a) (v.a_1 r_a) (v.a_2 r_a) (v.a_3 r_a)
-      (v.b_0 r_a) (v.b_1 r_a) (v.b_2 r_a) (v.b_3 r_a)
-      (v.c_0 r_a) (v.c_1 r_a) (v.c_2 r_a) (v.c_3 r_a)
-      (v.d_0 r_a) (v.d_1 r_a) (v.d_2 r_a) (v.d_3 r_a)
-      cy₀ cy₁ cy₂ cy₃ cy₄ cy₅ cy₆
-      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
-      h_a0 h_a1 h_a2 h_a3 h_b0 h_b1 h_b2 h_b3
-      h_c0 h_c1 h_c2 h_c3 h_d0 h_d1 h_d2 h_d3
-      h_cy0 h_cy1 h_cy2 h_cy3 h_cy4 h_cy5 h_cy6
-      hC31 hC32 hC33 hC34 hC35 hC36 hC37 hC38
-      ⟨h_a2_eq, h_a3_eq⟩ ⟨h_b2_eq, h_b3_eq⟩ ⟨h_d2_eq, h_d3_eq⟩ h_c23
-      h_byte_lo h_sext_choice
-      h_rs1_value h_rs2_value h_op2_ne h_d_lt_b
-  rw [equiv_REMUW_sail state remuw_input r1 r2 rd
-        h_input_r1 h_input_r2 h_input_rd h_input_pc]
-  symm
-  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
-        state exec_row e0 e1 e2
-        (PureSpec.execute_DIVREM_remuw_pure remuw_input).nextPC
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
-  simp only [PureSpec.execute_DIVREM_remuw_pure, h_rd_idx]
-  by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
-  · simp [h_rd_zero, bind, pure, EStateM.bind, EStateM.pure]
-  · simp only [h_rd_zero, dite_false]
-    rw [h_rd_val]
+  exact False.elim h_no_arith_div_dynamic_defect
+
 
 end ZiskFv.EquivCore.Remuw

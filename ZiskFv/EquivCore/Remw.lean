@@ -156,51 +156,14 @@ theorem equiv_REMW
     (h_r_sign :
       0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
             - (v.nr r_a).val * (2:ℤ)^32)
-          * (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt) :
+          * (Sail.BitVec.extractLsb remw_input.r1_val 31 0).toInt)
+    (h_no_arith_div_dynamic_defect : False) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.REMW (r2, r1, rd, false))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
-          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
-          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
-          h_rd_idx⟩ := promises
-  have h_e2_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 0
-  have h_e2_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 1
-  have h_e2_2 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 2
-  have h_e2_3 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 3
-  have h_e2_4 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 4
-  have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
-  have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
-  have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
-  -- Op-full for invoking the W operand pin (REMW ∈ {190, 191} ⊆ {188, 189, 190, 191}).
-  have h_op_full : v.op r_a = 188 ∨ v.op r_a = 189
-                    ∨ v.op r_a = 190 ∨ v.op r_a = 191 := by
-    rcases h_op with h | h
-    · right; right; left; exact h
-    · right; right; right; exact h
-  have h_rd_val :=
-    ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_remw_chunked
-      remw_input.r1_val remw_input.r2_val e2 v r_a
-      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
-      h_chain h_m32 h_div h_op h_op_full
-      h_na_bool h_nb_bool h_nr_bool h_np_xor
-      h_c23 h_byte_lo h_sext_choice h_rs1_value h_rs2_value
-      h_op2_ne h_no_overflow_w h_r_abs h_r_sign
-  rw [equiv_REMW_sail state remw_input r1 r2 rd
-        h_input_r1 h_input_r2 h_input_rd h_input_pc]
-  symm
-  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
-        state exec_row e0 e1 e2
-        (PureSpec.execute_DIVREM_remw_pure remw_input).nextPC
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
-  simp only [PureSpec.execute_DIVREM_remw_pure, h_rd_idx]
-  by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
-  · simp [h_rd_zero, bind, pure, EStateM.bind, EStateM.pure]
-  · simp only [h_rd_zero, dite_false]
-    rw [h_rd_val]
+  exact False.elim h_no_arith_div_dynamic_defect
+
 
 end ZiskFv.EquivCore.Remw

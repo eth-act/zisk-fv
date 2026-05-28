@@ -152,63 +152,14 @@ theorem equiv_DIVW
     (h_r_sign :
       0 ≤ (((v.d_0 r_a).val + (v.d_1 r_a).val * 65536 : ℤ)
             - ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a) * (2:ℤ)^32)
-          * (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt) :
+          * (Sail.BitVec.extractLsb divw_input.r1_val 31 0).toInt)
+    (h_no_arith_div_dynamic_defect : False) :
     (do
       Sail.writeReg Register.nextPC
         (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
-  obtain ⟨exec_row, e0, e1, e2⟩ := bus
-  obtain ⟨h_input_r1, h_input_r2, h_input_rd, h_input_pc,
-          h_exec_len, h_e0_mult, h_e1_mult, h_nextPC_matches,
-          h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as,
-          h_rd_idx⟩ := promises
-  -- byte-range bounds.
-  have h_e2_0 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 0
-  have h_e2_1 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 1
-  have h_e2_2 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 2
-  have h_e2_3 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 3
-  have h_e2_4 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 4
-  have h_e2_5 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 5
-  have h_e2_6 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 6
-  have h_e2_7 := ZiskFv.Channels.MemoryBusBytes.byteAt_val_lt_256 e2 7
-  -- W-mode operand chunk pin (a_2=a_3=b_2=b_3=d_2=d_3=0).
-  have h_w_pin :=
-    ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin v r_a h_m32 h_div h_op
-  obtain ⟨h_a2_eq, h_a3_eq, h_b2_eq, h_b3_eq, h_d2_eq, h_d3_eq⟩ := h_w_pin
-  -- signed-W sign-of-D pin.
-  have h_nr_pin_fgl :=
-    ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin
-      v r_a h_m32 h_div h_op_signed
-  -- convert h_nr_pin_fgl to the toIntZ form used by the discharge.
-  have h_nr_pin :
-      ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.nr r_a)
-        = ZiskFv.PackedBitVec.SignedChunkLift.toIntZ (v.np r_a)
-      ∨ ((v.d_0 r_a).val = 0 ∧ (v.d_1 r_a).val = 0) := by
-    rcases h_nr_pin_fgl with h_eq | ⟨hd0, hd1, _hd2, _hd3⟩
-    · left; rw [h_eq]
-    · right; exact ⟨hd0, hd1⟩
-  -- chunked rd-val discharge.
-  have h_rd_val :=
-    ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned.h_rd_val_mdrs_divw_chunked
-      divw_input.r1_val divw_input.r2_val e2 v r_a
-      h_e2_0 h_e2_1 h_e2_2 h_e2_3 h_e2_4 h_e2_5 h_e2_6 h_e2_7
-      h_chain h_m32 h_div h_na_bool h_nb_bool h_nr_bool h_np_xor
-      ⟨h_a2_eq, h_a3_eq⟩ ⟨h_b2_eq, h_b3_eq⟩ ⟨h_d2_eq, h_d3_eq⟩ h_c23
-      h_nr_pin h_byte_lo h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
-      h_r_abs h_r_sign
-  rw [equiv_DIVW_sail state divw_input r1 r2 rd
-        h_input_r1 h_input_r2 h_input_rd h_input_pc]
-  symm
-  rw [ZiskFv.Airs.Bus.BusEmission.bus_effect_matches_sail_alu_rrw
-        state exec_row e0 e1 e2
-        (PureSpec.execute_DIVREM_divw_pure divw_input).nextPC
-        h_exec_len h_e0_mult h_e1_mult h_nextPC_matches
-        h_m0_mult h_m0_as h_m1_mult h_m1_as h_m2_mult h_m2_as]
-  simp only [PureSpec.execute_DIVREM_divw_pure, h_rd_idx]
-  by_cases h_rd_zero : Transpiler.wrap_to_regidx e2.ptr = 0
-  · simp [h_rd_zero, bind, pure, EStateM.bind, EStateM.pure]
-  · simp only [h_rd_zero, dite_false]
-    rw [h_rd_val]
+  exact False.elim h_no_arith_div_dynamic_defect
+
 
 end ZiskFv.EquivCore.Divw

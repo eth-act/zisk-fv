@@ -12,12 +12,12 @@
 #             bus_shape | transpile | byte_chain | loose | row |
 #             instance | other
 #
-# Total rows: 1022
+# Total rows: 1030
 # Category bridge: 72
 # Category bus_shape: 27
 # Category entry: 9
 # Category match: 6
-# Category other: 667
+# Category other: 675
 # Category range: 3
 # Category row: 60
 # Category state: 73
@@ -190,6 +190,7 @@ ZiskFv.Equivalence.Div.equiv_DIV 018 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a
 ZiskFv.Equivalence.Div.equiv_DIV 019 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
 ZiskFv.Equivalence.Div.equiv_DIV 020 h_nr_bool [other] v.nr r_a = 0 ∨ v.nr r_a = 1
 ZiskFv.Equivalence.Div.equiv_DIV 021 h_np_xor [other] toIntZ (v.np r_a) = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a
+ZiskFv.Equivalence.Div.equiv_DIV 022 h_no_arith_div_dynamic_defect [other] False
 ZiskFv.Equivalence.Divu.equiv_DIVU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Divu.equiv_DIVU 001 divu_input [other] PureSpec.DivuInput
 ZiskFv.Equivalence.Divu.equiv_DIVU 002 r1 [other] regidx
@@ -208,6 +209,7 @@ ZiskFv.Equivalence.Divu.equiv_DIVU 014 bounds [other] ZiskFv.Compliance.ByteBoun
 ZiskFv.Equivalence.Divu.equiv_DIVU 015 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
 ZiskFv.Equivalence.Divu.equiv_DIVU 016 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
 ZiskFv.Equivalence.Divu.equiv_DIVU 017 h_op2_ne [bridge] divu_input.r2_val.toNat ≠ 0
+ZiskFv.Equivalence.Divu.equiv_DIVU 018 h_no_arith_div_dynamic_defect [other] False
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 001 divuw_input [other] PureSpec.DivuwInput
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 002 r1 [other] regidx
@@ -228,6 +230,7 @@ ZiskFv.Equivalence.Divuw.equiv_DIVUW 016 h_sext_choice [other] (((byteAt bus.e2 
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 017 h_rs1_value [bridge] (Sail.BitVec.extractLsb divuw_input.r1_val 31 0).toNat = (v.c_0 r_a).val + (v.c_
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 018 h_rs2_value [bridge] (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat = (v.b_0 r_a).val + (v.b_
 ZiskFv.Equivalence.Divuw.equiv_DIVUW 019 h_op2_ne [bridge] (Sail.BitVec.extractLsb divuw_input.r2_val 31 0).toNat ≠ 0
+ZiskFv.Equivalence.Divuw.equiv_DIVUW 020 h_no_arith_div_dynamic_defect [other] False
 ZiskFv.Equivalence.Divw.equiv_DIVW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Divw.equiv_DIVW 001 divw_input [other] PureSpec.DivwInput
 ZiskFv.Equivalence.Divw.equiv_DIVW 002 r1 [other] regidx
@@ -253,6 +256,7 @@ ZiskFv.Equivalence.Divw.equiv_DIVW 021 h_rs1_value [bridge] (Sail.BitVec.extract
 ZiskFv.Equivalence.Divw.equiv_DIVW 022 h_rs2_value [bridge] (Sail.BitVec.extractLsb divw_input.r2_val 31 0).toInt = ((v.b_0 r_a).val + (v.b_
 ZiskFv.Equivalence.Divw.equiv_DIVW 023 h_op2_ne [bridge] Sail.BitVec.extractLsb divw_input.r2_val 31 0 ≠ 0#32
 ZiskFv.Equivalence.Divw.equiv_DIVW 024 h_no_overflow [bridge] ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31) ∧ Sail
+ZiskFv.Equivalence.Divw.equiv_DIVW 025 h_no_arith_div_dynamic_defect [other] False
 ZiskFv.Equivalence.Fence.equiv_FENCE 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Fence.equiv_FENCE 001 fence_input [other] PureSpec.FenceInput
 ZiskFv.Equivalence.Fence.equiv_FENCE 002 fm [other] BitVec 4
@@ -558,6 +562,7 @@ ZiskFv.Equivalence.Rem.equiv_REM 018 h_na_bool [other] v.na r_a = 0 ∨ v.na r_a
 ZiskFv.Equivalence.Rem.equiv_REM 019 h_nb_bool [other] v.nb r_a = 0 ∨ v.nb r_a = 1
 ZiskFv.Equivalence.Rem.equiv_REM 020 h_nr_bool [other] v.nr r_a = 0 ∨ v.nr r_a = 1
 ZiskFv.Equivalence.Rem.equiv_REM 021 h_np_xor [other] toIntZ (v.np r_a) = toIntZ (v.na r_a) + toIntZ (v.nb r_a) - 2 * toIntZ (v.na r_a
+ZiskFv.Equivalence.Rem.equiv_REM 022 h_no_arith_div_dynamic_defect [other] False
 ZiskFv.Equivalence.Remu.equiv_REMU 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Remu.equiv_REMU 001 remu_input [other] PureSpec.RemuInput
 ZiskFv.Equivalence.Remu.equiv_REMU 002 r1 [other] regidx
@@ -576,6 +581,7 @@ ZiskFv.Equivalence.Remu.equiv_REMU 014 bounds [other] ZiskFv.Compliance.ByteBoun
 ZiskFv.Equivalence.Remu.equiv_REMU 015 h_row_constraints [other] ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a
 ZiskFv.Equivalence.Remu.equiv_REMU 016 arith_table [other] ZiskFv.Compliance.ArithDivTableWitness v r_a
 ZiskFv.Equivalence.Remu.equiv_REMU 017 h_op2_ne [bridge] remu_input.r2_val.toNat ≠ 0
+ZiskFv.Equivalence.Remu.equiv_REMU 018 h_no_arith_div_dynamic_defect [other] False
 ZiskFv.Equivalence.Remuw.equiv_REMUW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Remuw.equiv_REMUW 001 remuw_input [other] PureSpec.RemuwInput
 ZiskFv.Equivalence.Remuw.equiv_REMUW 002 r1 [other] regidx
@@ -596,6 +602,7 @@ ZiskFv.Equivalence.Remuw.equiv_REMUW 016 h_sext_choice [other] (((byteAt bus.e2 
 ZiskFv.Equivalence.Remuw.equiv_REMUW 017 h_rs1_value [bridge] (Sail.BitVec.extractLsb remuw_input.r1_val 31 0).toNat = (v.c_0 r_a).val + (v.c_
 ZiskFv.Equivalence.Remuw.equiv_REMUW 018 h_rs2_value [bridge] (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat = (v.b_0 r_a).val + (v.b_
 ZiskFv.Equivalence.Remuw.equiv_REMUW 019 h_op2_ne [bridge] (Sail.BitVec.extractLsb remuw_input.r2_val 31 0).toNat ≠ 0
+ZiskFv.Equivalence.Remuw.equiv_REMUW 020 h_no_arith_div_dynamic_defect [other] False
 ZiskFv.Equivalence.Remw.equiv_REMW 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Remw.equiv_REMW 001 remw_input [other] PureSpec.RemwInput
 ZiskFv.Equivalence.Remw.equiv_REMW 002 r1 [other] regidx
@@ -621,6 +628,7 @@ ZiskFv.Equivalence.Remw.equiv_REMW 021 h_rs1_value [bridge] (Sail.BitVec.extract
 ZiskFv.Equivalence.Remw.equiv_REMW 022 h_rs2_value [bridge] (Sail.BitVec.extractLsb remw_input.r2_val 31 0).toInt = ((v.b_0 r_a).val + (v.b_
 ZiskFv.Equivalence.Remw.equiv_REMW 023 h_op2_ne [bridge] Sail.BitVec.extractLsb remw_input.r2_val 31 0 ≠ 0#32
 ZiskFv.Equivalence.Remw.equiv_REMW 024 h_no_overflow_w [bridge] ¬ (Sail.BitVec.extractLsb remw_input.r1_val 31 0 = (BitVec.ofNat 32 (2^31)) ∧ Sa
+ZiskFv.Equivalence.Remw.equiv_REMW 025 h_no_arith_div_dynamic_defect [other] False
 ZiskFv.Equivalence.Sb.equiv_SB 000 state [state] PreSail.SequentialState RegisterType Sail.trivialChoiceSource
 ZiskFv.Equivalence.Sb.equiv_SB 001 sb_input [other] PureSpec.SbInput
 ZiskFv.Equivalence.Sb.equiv_SB 002 regs [other] ZiskFv.Compliance.ModeRegsFull

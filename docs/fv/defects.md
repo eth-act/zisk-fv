@@ -34,6 +34,18 @@ explicit exception predicate in the theorem statement.
 | `claim impact` | This is not a normal opcode input exception. The global theorem now explicitly takes `h_known_bugs : Defects.NoKnownDefect env`, and the affected `MUL`, `MULH`, and `MULHSU` wrapper/canonical theorems carry a visible `h_no_signed_mul_witness_defect : False` binder. This is claim weakening, not promise discharge. |
 | `retirement condition` | Upstream constraints reject the malicious witness, or Lean proves the affected witness shape impossible from the real constraints and shared table/lookup boundaries. The repro must fail in verifier/prover mode after the fix. |
 
+### ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS
+
+| Field | Value |
+|-------|-------|
+| `kind` | `circuit-soundness` |
+| `status` | `open` |
+| `affected` | Arith division/remainder witness relations for `DIV`, `DIVU`, `DIVW`, `DIVUW`, `REM`, `REMU`, `REMW`, and `REMUW`. |
+| `condition` | The retired `arith_table_op_*` and `arith_div_*` assumptions were not pure ArithTable projections. They connected row selectors to concrete operand chunks, sign witnesses, W-mode upper-chunk pins, and Euclidean remainder bounds. |
+| `evidence` | `docs/fv/arith-table-axiom-audit.md` classifies these facts as `not pure table / dynamic-or-range proof needed` or `dynamic/protocol boundary`. T5 removed the nine source axioms from `ZiskFv.Airs.Arith.Ranges` instead of keeping them in the trust ledger. |
+| `claim impact` | The global theorem excludes the eight DIV/REM arms through `Defects.ArithDivDynamicWitnessShape`. The corresponding wrapper/canonical theorem surfaces carry a visible `h_no_arith_div_dynamic_defect : False` binder. This is claim weakening, not promise discharge. |
+| `retirement condition` | Prove the row/range/operation-bus facts from the real ArithDiv constraints and range/binary bus soundness, or change the circuit so the impossible witness shapes are rejected directly. |
+
 ### ZISK-DEFECT-FENCE-INCOMPLETE
 
 | Field | Value |

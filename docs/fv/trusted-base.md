@@ -135,20 +135,20 @@ The narrative per-class rationale below stays here.
 
 | #  | Class                               | Count | File                                  | What is asserted                                                                                                                                  | Why we trust it                                                                                                                                              |
 | -- | ----------------------------------- | ----: | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1  | Transpile contracts                 |    52 | `Trusted/Transpiler.lean`             | For each RV64IM instruction kind, ZisK's Rust transpilation lowers a Sail-decoded `ast` into a Main-row column shape that matches the pure spec. | Direct reading of ZisK's `transpile_*` Rust functions in the `zisk/` submodule; each axiom's docstring cites the exact upstream source line.                 |
+| 1  | Transpile contracts                 |    44 | `Trusted/Transpiler.lean`             | For each non-defect-gated RV64IM instruction kind, ZisK's Rust transpilation lowers a Sail-decoded `ast` into a Main-row column shape that matches the pure spec. | Direct reading of ZisK's `transpile_*` Rust functions in the `zisk/` submodule; each axiom's docstring cites the exact upstream source line.                 |
 | 2  | Memory state bridge — load          |     1 | `ZiskCircuit/MemModel.lean`           | A Mem-AIR row tagged `wr=0` matching a memory-bus entry implies Sail's `state.mem` agrees with the entry's eight bytes.                           | Bridges Mem AIR's column language to Sail's byte-addressable `Std.HashMap` once class #4 has placed the entry on the bus.                                    |
 | 4  | Bus / lookup soundness              |     1 | `Airs/MemoryBus/MemBridge.lean` (1) | Remaining memory-bus compatibility surface: `main_store_pc_emission_bundle` — lane match for `store_pc ∈ {0,1}` register writes. | PLONK / logUp permutation-argument soundness for the remaining compatibility surface. The T4 Clean memory-channel route retired the load/provider, store, and MemAlign sub-doubleword entries from canonical/global trust. T5's `ExternalArithMemoryWitness` route retired `main_external_arith_emission_bundle` from source and from the canonical/global closure. |
 | 5b | Range-bus / byte-range soundness    |     2 | `Channels/RangeBusSoundness.lean` | Consolidated byte/signed range-bus soundness for `bits(width)` PIL columns and signed Arith carry-table checks. | Lookup-argument soundness on the standard byte-range buses, restricted to participants annotated in the PIL — see citations in each axiom's docstring. |
 | 6  | Binary / BinaryExtension lookup soundness | 2 | `Airs/Binary/BinaryRanges.lean` (2) | Lookup-argument soundness still live for Binary W-mode sign-extension: `binary_w_sext_choice_pin` and `binary_w_mode_carry_7_zero` for ADDW/SUBW. `bin_table_consumer_wf` and `bin_ext_table_consumer_wf` have been retired from source. | Lookup-argument soundness on the Binary AIR, scoped to the remaining W-mode row facts. |
-| 6b | Arith range / Euclidean pins |    11 | `Airs/Arith/Ranges.lean`              | Range-checker bus lookups + remaining arith sign / operand / W-mode / sign-witness pins + Euclidean-remainder bounds. T5 retired the shared `arith_{mul,div}_table_lookup_sound` axioms; `MUL*`, `DIV*`, and `REM*` proofs now consume lookup-aware `ArithMulTableWitness` / `ArithDivTableWitness` binders that derive row-native `ArithTableSpec`. | Range-checker bus lookup soundness on the Arith AIR's `bits(16)`-annotated chunk columns and on the `ARITH_RANGE_CARRY` entry of the arith_range_table; binary-bus lookup soundness on the Arith `assumes_operation(|d|<|b|)` consumer for the Euclidean magnitude/sign bound. Opcode-specific static conclusions are theorems from derived `ArithTableSpec`, not axioms. |
+| 6b | Arith range / Euclidean pins |     0 | `Airs/Arith/Ranges.lean`              | Retired in T5. The shared `arith_{mul,div}_table_lookup_sound` axioms and the remaining dynamic `arith_table_op_*` / `arith_div_*` source axioms were removed. `MUL*`, `DIV*`, and `REM*` proofs now consume lookup-aware `ArithMulTableWitness` / `ArithDivTableWitness` binders for true static `ArithTableSpec` projections, while known dynamic witness gaps are explicit defects. | No live source axioms remain in this class. Future row/range/operation-bus facts must be proved from constraints and range/binary bus soundness rather than reintroduced as class-#6b trust. |
 | 7  | Platform — PMP inert                |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.pmpCheck _ _ _ _ = pure none`.                                                                                               | ZisK's RV64IM target excludes PMP. Axiomatising as inert is strictly stronger than threading state-level disjointness through every load/store proof.        |
 | 8  | Platform — CLINT disjoint           |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.within_clint _ _ = pure false`.                                                                                              | ZisK programs do not access the CLINT MMIO region. Same scope-honest framing as #7.                                                                          |
 | 9  | Platform — PMA inert                |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.pmaCheck _ _ _ _ = pure none`.                                                                                               | Alignment-fault arm short-circuited under the `RISC_V_assumptions` fields already recorded by LeanRV64D.                                                     |
 | 10 | Platform — Zicfilp disabled         |     1 | `SailSpec/Auxiliaries.lean`               | `LeanRV64D.Functions.update_elp_state _ = pure ()`.                                                                                               | Zicfilp landing-pad extension is disabled in ZisK's target; helper reduces to no-op under `currentlyEnabled Ext_Zicfilp = false`.                            |
 | C  | Clean-Component completeness — NON-SECURITY-CRITICAL | 6 | `AirsClean/Completeness.lean` | `binaryAdd_circuit_completeness`, `memAlignByte_circuit_completeness`, `memAlignReadByte_circuit_completeness`, `arithMul_circuit_completeness`, `arithDiv_circuit_completeness`, `mainWithRomAndMemBus_circuit_completeness` — fill mandatory `completeness` fields for Clean `GeneralFormalCircuit`s as integration proceeds. BinaryExtension's C5 component has trivial proved completeness and does not add an axiom. Binary's C6 component also adds no axiom: its prover-completeness side is explicitly conditional on the row `Spec`, while soundness remains proved from constraints. | zisk-fv is a **soundness-only** verification: it does not prove completeness (that an honest prover can satisfy the constraints — the pre-Clean code never established it either). These axioms are **completeness-direction** — a falsehood in any one CANNOT make a wrong execution verify; the verification's *soundness* does not depend on this class. Clean's `GeneralFormalCircuit` simply makes the field mandatory. (Plan decision D-COMPLETE.) |
 
-Total live count: `trust/baseline-axioms.txt` currently records **79**
-axioms, including the 5 non-security-critical Clean completeness axioms in
+Total live count: `trust/baseline-axioms.txt` currently records **58**
+axioms, including the 6 non-security-critical Clean completeness axioms in
 class C. Class C is separate in kind from the soundness-critical trust classes.
 
 ### Recent consolidations (clean-integration branch)
@@ -156,7 +156,11 @@ class C. Class C is separate in kind from the soundness-critical trust classes.
 Structural-symmetry consolidations replaced groups of per-AIR /
 per-opcode axioms with bus-level / op-parameterized axioms where the
 trust content was genuinely shared. The T4 Clean memory route then
-retired the subword-store emission axiom entirely from source.
+retired the subword-store emission axiom entirely from source. T5 then
+removed the eight DIV/REM transpiler contracts from the trust ledger because
+those opcodes are now explicitly gated by
+`ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS` until the dynamic Arith
+division/remainder witness route is proved.
 
 * `op_bus_perm_sound_{BinaryAdd, Binary, BinaryExtension}` (3) →
   `op_bus_permutation_sound` (1) — parameterized over an
@@ -336,8 +340,8 @@ RMW emission bundles for SB/SH/SW).
 ### C3.2-P5 — MULW transpiler contract (+1 in class #1)
 
 `transpile_MULW` fills the missing RV64M MULW Main-row contract in the
-same class as `transpile_MUL`, `transpile_MULH`, `transpile_DIVUW`,
-`transpile_DIVW`, and the other per-opcode transpiler pins. It cites
+same class as `transpile_MUL`, `transpile_MULH`, and the other live
+per-opcode transpiler pins. It cites
 `riscv2zisk_context.rs:247`, where MULW is emitted through
 `create_register_op(..., "mul_w", 4)`: opcode `OP_MUL_W`, external-op
 dispatch, `m32 = 1`, no PC/store-PC side effect, `jmp_offset1 =
@@ -349,10 +353,8 @@ premise. That false axiom declaration has since been deleted.
 
 ### Step 4.2 round 2 — W-variant Arith + high-half MUL (+13 axioms)
 
-W-variant Arith class-#6b facts
-(`arith_div_remainder_bound_{unsigned,signed}_w` plus faithful derived
-mode/selector projections) for the
-DIVUW/REMUW/DIVW/REMW wrappers; one class-#4 op-bus axiom
+W-variant Arith class-#6b facts were later retired in T5 by placing the
+remaining DIV/REM dynamic witness gap under `h_known_bugs`; one class-#4 op-bus axiom
 (`op_bus_perm_sound_ArithMulSecondary`) opening the secondary lane
 for the high-half MUL family; and faithful high-half MUL
 mode/selector projections consumed by `equiv_MULHU`. The false W-mode
@@ -362,10 +364,10 @@ addressed in round 3).
 
 ### Step 4.2 round 1 — within-shape mass authoring (+5 axioms, 28 wrappers)
 
-Three class-#6b axioms from the Arith batch
-(`arith_table_op_div_rem_unsigned_mode_pin`,
-`arith_table_op_div_rem_unsigned_main_selector_pin`,
-`arith_div_remainder_bound_unsigned` for DIVU/REMU/REM wrappers);
+Three former class-#6b Arith facts from the Arith batch were later retired
+in T5: true static mode/main-selector pins became finite-table projections,
+and the unsigned remainder bound moved under the explicit DIV/REM dynamic
+defect;
 two class-#6 axioms from the Binary batch
 (`binary_b_op_or_sext_eq_OP_AND`, `binary_b_op_or_sext_eq_OP_XOR` for
 AND/XOR wrappers); the Mem+ControlFlow batch added zero new axioms
@@ -401,27 +403,24 @@ wrapper now consumes a structural Clean `SdCleanWitness`, and the
 ptr/byte facts are derived by the Clean Main c/store adapter instead
 of a class-#4 trust-ledger axiom.
 
-### Step 4 DIV pilot — GAP-B sign-witness MSB pins (+2 axioms)
+### Step 4 DIV pilot — GAP-B sign-witness MSB pins (retired in T5)
 
 `arith_div_np_eq_msb_of_dividend` and `arith_div_nb_eq_msb_of_divisor`
-(class-#6b sign-witness MSB pins on signed DIV/REM rows that link
-`np` to MSB(C) and `nb` to MSB(B)) — consumed by the
-`Compliance/Wrappers/Div.lean` wrapper via the new generic
-`signed_packed_toInt_eq_of_read_xreg` Sail-state bridge to
-discharge the `h_op1` / `h_op2` operand TRANSPILE-BRIDGE binders
-of `equiv_DIV` end-to-end.
+(former class-#6b sign-witness MSB pins on signed DIV/REM rows) were
+removed from the trust ledger in T5. The unproved dynamic witness relation is
+now represented by `ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS`.
 
-### Step 4 DIV pilot — GAP-M / GAP-C / GAP-A (+3 axioms)
+### Step 4 DIV pilot — GAP-M / GAP-C / GAP-A (retired in T5)
 
-`arith_table_op_div_rem_signed_mode_pin` (GAP-M, signed non-W
-mode-pin), `arith_div_remainder_bound` (GAP-C, Euclidean-remainder
-magnitude/sign bound on `arith.pil:274`), and
-`arith_table_op_div_rem_main_selector_pin` (GAP-A hi-lane, the
-`main_div`/`main_mul` selector pin on signed DIV/REM rows).
+The true static signed mode and selector pins are finite-table projections
+from `ArithDivTableWitness`. The dynamic Euclidean-remainder bound was
+removed from the trust ledger in T5 and is now covered by the explicit
+DIV/REM dynamic defect.
 
-### Step 4 DIVW — W-mode signed sign-of-D pin (+1 axiom)
+### Step 4 DIVW — W-mode signed sign-of-D pin (retired in T5)
 
-`arith_table_op_div_rem_signed_w_d_sign_pin` (class-#6b).
+`arith_table_op_div_rem_signed_w_d_sign_pin` was removed from the trust
+ledger in T5 and is now covered by the explicit DIV/REM dynamic defect.
 
 ### Step 4 alpha — W-mode + signed disjunctive ranges (+6 axioms)
 

@@ -21,14 +21,11 @@ import ZiskFv.Compliance.SharedBundles
 import ZiskFv.Channels.MemoryBusBytes
 
 /-!
-End-to-end theorem for RV64 **DIV**. Combines:
-
-* the trusted RV64 → Zisk transpilation contract
-  (`ZiskFv.Trusted.transpile_DIV`),
-* the compositional DIV spec (`ZiskFv.ZiskCircuit.Div.div_compositional`),
-* the Sail pure-function equivalence (`PureSpec.execute_DIVREM_div_pure_equiv`),
-
-into three canonical theorems:
+End-to-end theorem for RV64 **DIV**. This legacy core is retained for
+imports, but the canonical DIV theorem is now defect-gated by
+`ZISK-DEFECT-ARITH-DIV-DYNAMIC-WITNESS-SOUNDNESS` until the dynamic Arith
+division witness route is proved. The Sail-level companion still reduces
+through `PureSpec.execute_DIVREM_div_pure_equiv`.
 
 * `equiv_DIV_sail` — Sail-level. `execute_instruction` on an RV64 DIV
   reduces to the pure-function block.

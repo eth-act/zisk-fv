@@ -2,17 +2,8 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 75
+# Total entries: 58
 #
-8c6c6e5b2f3462c0  ZiskFv/Airs/Arith/Ranges.lean:321  axiom     arith_table_op_div_rem_signed_d_sign_pin
-c66916b28bbea235  ZiskFv/Airs/Arith/Ranges.lean:344  axiom     arith_table_op_div_rem_signed_w_d_sign_pin
-93b63a1c68a6dad5  ZiskFv/Airs/Arith/Ranges.lean:442  axiom     arith_table_op_divw_operand_pin
-a0393e8c59f1c0f6  ZiskFv/Airs/Arith/Ranges.lean:600  axiom     arith_div_np_eq_msb_of_dividend
-fa99203f44f899fd  ZiskFv/Airs/Arith/Ranges.lean:628  axiom     arith_div_nb_eq_msb_of_divisor
-5388c4bab53855b4  ZiskFv/Airs/Arith/Ranges.lean:700  axiom     arith_div_remainder_bound
-8385759630519673  ZiskFv/Airs/Arith/Ranges.lean:729  axiom     arith_div_remainder_bound_unsigned
-4368d4be9eec39ce  ZiskFv/Airs/Arith/Ranges.lean:767  axiom     arith_div_remainder_bound_unsigned_w
-8113c5562ed67ef8  ZiskFv/Airs/Arith/Ranges.lean:781  axiom     arith_div_remainder_bound_signed_w
 f44f05cf9d736e28  ZiskFv/Airs/Binary/BinaryRanges.lean:291  axiom     binary_w_sext_choice_pin
 d96debfe468fadd0  ZiskFv/Airs/Binary/BinaryRanges.lean:317  axiom     binary_w_mode_carry_7_zero
 a4e475d3cb9046f9  ZiskFv/Airs/MemoryBus/MemBridge.lean:255  axiom     main_store_pc_emission_bundle
@@ -67,15 +58,7 @@ dc7fca2661b82b7e  ZiskFv/Trusted/Transpiler.lean:1428  axiom     transpile_ORI
 4b9d2fd962adce6c  ZiskFv/Trusted/Transpiler.lean:1567  axiom     transpile_ADDW
 7d34dc6ef492e50f  ZiskFv/Trusted/Transpiler.lean:1596  axiom     transpile_SUBW
 059171ef93f17ac3  ZiskFv/Trusted/Transpiler.lean:1641  axiom     transpile_ADDIW
-97226a5f9a7b3518  ZiskFv/Trusted/Transpiler.lean:1750  axiom     transpile_DIVUW
-47616db8bd46f01b  ZiskFv/Trusted/Transpiler.lean:1767  axiom     transpile_REMUW
-e34405a4e088379c  ZiskFv/Trusted/Transpiler.lean:1782  axiom     transpile_DIVW
-e3705bd01b161ecc  ZiskFv/Trusted/Transpiler.lean:1797  axiom     transpile_REMW
-16884ef2b5e53d29  ZiskFv/Trusted/Transpiler.lean:1832  axiom     transpile_DIVU
-a48670418a77bae9  ZiskFv/Trusted/Transpiler.lean:1866  axiom     transpile_REMU
-588c3213db211f28  ZiskFv/Trusted/Transpiler.lean:1903  axiom     transpile_DIV
-2decc77260de1958  ZiskFv/Trusted/Transpiler.lean:1936  axiom     transpile_REM
-6ea7556907569111  ZiskFv/Trusted/Transpiler.lean:2050  axiom     transpile_PC_for_JAL
-b262a1ef230870ea  ZiskFv/Trusted/Transpiler.lean:2071  axiom     transpile_PC_for_JALR
-d6212bf68a2ad3c1  ZiskFv/Trusted/Transpiler.lean:2099  axiom     transpile_PC_for_AUIPC
+6ea7556907569111  ZiskFv/Trusted/Transpiler.lean:1847  axiom     transpile_PC_for_JAL
+b262a1ef230870ea  ZiskFv/Trusted/Transpiler.lean:1868  axiom     transpile_PC_for_JALR
+d6212bf68a2ad3c1  ZiskFv/Trusted/Transpiler.lean:1896  axiom     transpile_PC_for_AUIPC
 b4ad9615202917eb  ZiskFv/ZiskCircuit/MemModel.lean:121  axiom     row_models_sail_state_load

@@ -1,5 +1,6 @@
 import ZiskFv.Compliance.Wrappers.Divw
 import ZiskFv.Channels.StateEffect
+import ZiskFv.Bits.PackedBitVec.SignedChunkLift
 import ZiskFv.Channels.MemoryBusBytes
 
 /-!
@@ -67,11 +68,12 @@ theorem equiv_DIVW
     (h_no_overflow :
       ¬ (Sail.BitVec.extractLsb divw_input.r1_val 31 0 = BitVec.ofNat 32 (2^31)
           ∧ Sail.BitVec.extractLsb divw_input.r2_val 31 0 = BitVec.allOnes 32))
+    (h_no_arith_div_dynamic_defect : False)
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
       LeanRV64D.Functions.execute (instruction.DIVW (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
-  rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_DIVW_of_table state divw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises arith_mem h_row_constraints arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor h_sext_choice h_rs1_value h_rs2_value h_op2_ne h_no_overflow
+  exact False.elim h_no_arith_div_dynamic_defect
+
 
 end ZiskFv.Equivalence.Divw
