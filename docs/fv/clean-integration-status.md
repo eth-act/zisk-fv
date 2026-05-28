@@ -1165,6 +1165,13 @@ consumer-facing route through those constructors. It proves the LD wrapper
 equality directly from selected full-ensemble Main/Mem row evidence and then
 calls the existing Clean-backed `equiv_LD`, leaving canonical signatures
 unchanged while giving the `OpEnvelope` migration a concrete target.
+The LD `OpEnvelope` arm is now re-rooted on that full-ensemble evidence:
+instead of carrying a prebuilt `LdCleanWitness`, it carries the selected
+unified Main row, selected Mem provider row, same-message Clean balance
+evidence, and the existing structural ROM/Main-side bus pins. The LD
+dispatcher constructs the Clean witness internally through
+`ld_eq_of_full_ensemble_mem_provider`, so this is structural unpacking rather
+than a new caller promise or axiom.
 The unified Main, Mem, and MemAlign-family component modules also expose
 direct projection lemmas from generic Clean component specs to the concrete
 row specs expected by the existing load/store bridge layer:
