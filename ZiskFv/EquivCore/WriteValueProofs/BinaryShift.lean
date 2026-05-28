@@ -94,14 +94,15 @@ open ZiskFv.EquivCore.WriteValueProofs.Arith
 After the C8 Phase 2 cutover, `memory_entry_lo e2 = e2.value_0` and
 `memory_entry_hi e2 = e2.value_1`. The byte sum of the 4 byte
 projections of each chunk recovers the chunk's `.val` via
-`ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq` composed with the
-chunk-range soundness from `Airs/MemoryBus/EntryRanges`.
+`ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq` composed with a local
+bound derived from the same c-lane equality used by the shift proof.
 
 These private helpers mirror the same-named helpers in
 `EquivCore/WriteValueProofs/Arith.lean` (private there, replicated
 here to keep BinaryShift self-contained). -/
 
-private lemma byteAt_lo_val_sum_eq (e : MemoryBusEntry FGL) :
+private lemma byteAt_lo_val_sum_eq (e : MemoryBusEntry FGL)
+    (h : e.value_0.val < 4294967296) :
     (byteAt e 0).val + (byteAt e 1).val * 256
       + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
     = e.value_0.val := by
@@ -115,9 +116,10 @@ private lemma byteAt_lo_val_sum_eq (e : MemoryBusEntry FGL) :
     unfold byteAt; simp only [show (3 : ℕ) < 4 from by decide, if_true]
   rw [hb0, hb1, hb2, hb3]
   exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_0
-          (ZiskFv.Airs.MemoryBus.memory_entry_lo_val_lt_2_32 e)
+          h
 
-private lemma byteAt_hi_val_sum_eq (e : MemoryBusEntry FGL) :
+private lemma byteAt_hi_val_sum_eq (e : MemoryBusEntry FGL)
+    (h : e.value_1.val < 4294967296) :
     (byteAt e 4).val + (byteAt e 5).val * 256
       + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
     = e.value_1.val := by
@@ -130,9 +132,49 @@ private lemma byteAt_hi_val_sum_eq (e : MemoryBusEntry FGL) :
   have hb7 : byteAt e 7 = byteOf e.value_1 3 := by
     unfold byteAt; simp only [show ¬ (7 : ℕ) < 4 from by decide, if_false]
   rw [hb4, hb5, hb6, hb7]
-  have h_v1_lt : e.value_1.val < 4294967296 :=
-    (ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e).2
-  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_1 h_v1_lt
+  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_1 h
+
+private lemma memory_entry_lo_bound_of_shift_sum
+    (e : MemoryBusEntry FGL)
+    (c0 c1 c2 c3 c4 c5 c6 c7 : FGL)
+    (h_eq : memory_entry_lo e = c0 + c1 + c2 + c3 + c4 + c5 + c6 + c7)
+    (h_sum_lt : c0.val + c1.val + c2.val + c3.val + c4.val + c5.val + c6.val + c7.val
+      < 4294967296) :
+    e.value_0.val < 4294967296 := by
+  have h_sum_val :
+      (c0 + c1 + c2 + c3 + c4 + c5 + c6 + c7 : FGL).val
+        = c0.val + c1.val + c2.val + c3.val + c4.val + c5.val + c6.val + c7.val := by
+    have h_cast :
+        c0 + c1 + c2 + c3 + c4 + c5 + c6 + c7
+          = ((((c0.val + c1.val + c2.val + c3.val + c4.val + c5.val + c6.val + c7.val : ℕ) : FGL))) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_val := congrArg Fin.val h_eq
+  simp only [memory_entry_lo] at h_val
+  rw [h_sum_val] at h_val
+  omega
+
+private lemma memory_entry_hi_bound_of_shift_sum
+    (e : MemoryBusEntry FGL)
+    (c0 c1 c2 c3 c4 c5 c6 c7 : FGL)
+    (h_eq : memory_entry_hi e = c0 + c1 + c2 + c3 + c4 + c5 + c6 + c7)
+    (h_sum_lt : c0.val + c1.val + c2.val + c3.val + c4.val + c5.val + c6.val + c7.val
+      < 4294967296) :
+    e.value_1.val < 4294967296 := by
+  have h_sum_val :
+      (c0 + c1 + c2 + c3 + c4 + c5 + c6 + c7 : FGL).val
+        = c0.val + c1.val + c2.val + c3.val + c4.val + c5.val + c6.val + c7.val := by
+    have h_cast :
+        c0 + c1 + c2 + c3 + c4 + c5 + c6 + c7
+          = ((((c0.val + c1.val + c2.val + c3.val + c4.val + c5.val + c6.val + c7.val : ℕ) : FGL))) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    exact Nat.mod_eq_of_lt (by omega)
+  have h_val := congrArg Fin.val h_eq
+  simp only [memory_entry_hi] at h_val
+  rw [h_sum_val] at h_val
+  omega
 
 
 /-! ## SLL -/
@@ -243,12 +285,26 @@ lemma h_rd_val_shift_sll_of_wf
         + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary := by
     rw [← h_hi_match, h_match_chi]
   -- Lift to Nat. The c-lo sum bound gives < 2^32 < GL_prime.
+  have h_v0_lt : e2.value_0.val < 4294967296 :=
+    memory_entry_lo_bound_of_shift_sum e2
+      (v.free_in_c_0 r_binary) (v.free_in_c_2 r_binary)
+      (v.free_in_c_4 r_binary) (v.free_in_c_6 r_binary)
+      (v.free_in_c_8 r_binary) (v.free_in_c_10 r_binary)
+      (v.free_in_c_12 r_binary) (v.free_in_c_14 r_binary)
+      h_lo_eq_fgl hc_lo_sum_lt
+  have h_v1_lt : e2.value_1.val < 4294967296 :=
+    memory_entry_hi_bound_of_shift_sum e2
+      (v.free_in_c_1 r_binary) (v.free_in_c_3 r_binary)
+      (v.free_in_c_5 r_binary) (v.free_in_c_7 r_binary)
+      (v.free_in_c_9 r_binary) (v.free_in_c_11 r_binary)
+      (v.free_in_c_13 r_binary) (v.free_in_c_15 r_binary)
+      h_hi_eq_fgl hc_hi_sum_lt
   have h_lo_nat : (memory_entry_lo e2).val
       = (byteAt e2 0).val + (byteAt e2 1).val * 256 + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
-    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2).symm
+    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2 h_v0_lt).symm
   have h_hi_nat : (memory_entry_hi e2).val
       = (byteAt e2 4).val + (byteAt e2 5).val * 256 + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
-    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2).symm
+    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2 h_v1_lt).symm
   -- The c-lo binary-side sum lift to Nat.
   have h_lo_bin_nat :
       (v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
@@ -493,12 +549,26 @@ lemma h_rd_val_shift_srl_of_wf
         + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
         + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary := by
     rw [← h_hi_match, h_match_chi]
+  have h_v0_lt : e2.value_0.val < 4294967296 :=
+    memory_entry_lo_bound_of_shift_sum e2
+      (v.free_in_c_0 r_binary) (v.free_in_c_2 r_binary)
+      (v.free_in_c_4 r_binary) (v.free_in_c_6 r_binary)
+      (v.free_in_c_8 r_binary) (v.free_in_c_10 r_binary)
+      (v.free_in_c_12 r_binary) (v.free_in_c_14 r_binary)
+      h_lo_eq_fgl hc_lo_sum_lt
+  have h_v1_lt : e2.value_1.val < 4294967296 :=
+    memory_entry_hi_bound_of_shift_sum e2
+      (v.free_in_c_1 r_binary) (v.free_in_c_3 r_binary)
+      (v.free_in_c_5 r_binary) (v.free_in_c_7 r_binary)
+      (v.free_in_c_9 r_binary) (v.free_in_c_11 r_binary)
+      (v.free_in_c_13 r_binary) (v.free_in_c_15 r_binary)
+      h_hi_eq_fgl hc_hi_sum_lt
   have h_lo_nat : (memory_entry_lo e2).val
       = (byteAt e2 0).val + (byteAt e2 1).val * 256 + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
-    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2).symm
+    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2 h_v0_lt).symm
   have h_hi_nat : (memory_entry_hi e2).val
       = (byteAt e2 4).val + (byteAt e2 5).val * 256 + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
-    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2).symm
+    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2 h_v1_lt).symm
   have h_lo_bin_nat :
       (v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
        + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
@@ -735,12 +805,26 @@ lemma h_rd_val_shift_sra_of_wf
         + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
         + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary := by
     rw [← h_hi_match, h_match_chi]
+  have h_v0_lt : e2.value_0.val < 4294967296 :=
+    memory_entry_lo_bound_of_shift_sum e2
+      (v.free_in_c_0 r_binary) (v.free_in_c_2 r_binary)
+      (v.free_in_c_4 r_binary) (v.free_in_c_6 r_binary)
+      (v.free_in_c_8 r_binary) (v.free_in_c_10 r_binary)
+      (v.free_in_c_12 r_binary) (v.free_in_c_14 r_binary)
+      h_lo_eq_fgl hc_lo_sum_lt
+  have h_v1_lt : e2.value_1.val < 4294967296 :=
+    memory_entry_hi_bound_of_shift_sum e2
+      (v.free_in_c_1 r_binary) (v.free_in_c_3 r_binary)
+      (v.free_in_c_5 r_binary) (v.free_in_c_7 r_binary)
+      (v.free_in_c_9 r_binary) (v.free_in_c_11 r_binary)
+      (v.free_in_c_13 r_binary) (v.free_in_c_15 r_binary)
+      h_hi_eq_fgl hc_hi_sum_lt
   have h_lo_nat : (memory_entry_lo e2).val
       = (byteAt e2 0).val + (byteAt e2 1).val * 256 + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
-    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2).symm
+    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2 h_v0_lt).symm
   have h_hi_nat : (memory_entry_hi e2).val
       = (byteAt e2 4).val + (byteAt e2 5).val * 256 + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
-    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2).symm
+    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2 h_v1_lt).symm
   have h_lo_bin_nat :
       (v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
        + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
@@ -980,12 +1064,26 @@ lemma h_rd_val_shift_srlw_of_wf
         + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
         + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary := by
     rw [← h_hi_match, h_match_chi]
+  have h_v0_lt : e2.value_0.val < 4294967296 :=
+    memory_entry_lo_bound_of_shift_sum e2
+      (v.free_in_c_0 r_binary) (v.free_in_c_2 r_binary)
+      (v.free_in_c_4 r_binary) (v.free_in_c_6 r_binary)
+      (v.free_in_c_8 r_binary) (v.free_in_c_10 r_binary)
+      (v.free_in_c_12 r_binary) (v.free_in_c_14 r_binary)
+      h_lo_eq_fgl hc_lo_sum_lt
+  have h_v1_lt : e2.value_1.val < 4294967296 :=
+    memory_entry_hi_bound_of_shift_sum e2
+      (v.free_in_c_1 r_binary) (v.free_in_c_3 r_binary)
+      (v.free_in_c_5 r_binary) (v.free_in_c_7 r_binary)
+      (v.free_in_c_9 r_binary) (v.free_in_c_11 r_binary)
+      (v.free_in_c_13 r_binary) (v.free_in_c_15 r_binary)
+      h_hi_eq_fgl hc_hi_sum_lt
   have h_lo_nat : (memory_entry_lo e2).val
       = (byteAt e2 0).val + (byteAt e2 1).val * 256 + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
-    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2).symm
+    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2 h_v0_lt).symm
   have h_hi_nat : (memory_entry_hi e2).val
       = (byteAt e2 4).val + (byteAt e2 5).val * 256 + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
-    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2).symm
+    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2 h_v1_lt).symm
   have h_lo_bin_nat :
       (v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
        + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
@@ -1221,12 +1319,26 @@ lemma h_rd_val_shift_sllw_of_wf
         + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
         + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary := by
     rw [← h_hi_match, h_match_chi]
+  have h_v0_lt : e2.value_0.val < 4294967296 :=
+    memory_entry_lo_bound_of_shift_sum e2
+      (v.free_in_c_0 r_binary) (v.free_in_c_2 r_binary)
+      (v.free_in_c_4 r_binary) (v.free_in_c_6 r_binary)
+      (v.free_in_c_8 r_binary) (v.free_in_c_10 r_binary)
+      (v.free_in_c_12 r_binary) (v.free_in_c_14 r_binary)
+      h_lo_eq_fgl hc_lo_sum_lt
+  have h_v1_lt : e2.value_1.val < 4294967296 :=
+    memory_entry_hi_bound_of_shift_sum e2
+      (v.free_in_c_1 r_binary) (v.free_in_c_3 r_binary)
+      (v.free_in_c_5 r_binary) (v.free_in_c_7 r_binary)
+      (v.free_in_c_9 r_binary) (v.free_in_c_11 r_binary)
+      (v.free_in_c_13 r_binary) (v.free_in_c_15 r_binary)
+      h_hi_eq_fgl hc_hi_sum_lt
   have h_lo_nat : (memory_entry_lo e2).val
       = (byteAt e2 0).val + (byteAt e2 1).val * 256 + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
-    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2).symm
+    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2 h_v0_lt).symm
   have h_hi_nat : (memory_entry_hi e2).val
       = (byteAt e2 4).val + (byteAt e2 5).val * 256 + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
-    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2).symm
+    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2 h_v1_lt).symm
   have h_lo_bin_nat :
       (v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
        + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary
@@ -1462,12 +1574,26 @@ lemma h_rd_val_shift_sraw_of_wf
         + v.free_in_c_9 r_binary + v.free_in_c_11 r_binary
         + v.free_in_c_13 r_binary + v.free_in_c_15 r_binary := by
     rw [← h_hi_match, h_match_chi]
+  have h_v0_lt : e2.value_0.val < 4294967296 :=
+    memory_entry_lo_bound_of_shift_sum e2
+      (v.free_in_c_0 r_binary) (v.free_in_c_2 r_binary)
+      (v.free_in_c_4 r_binary) (v.free_in_c_6 r_binary)
+      (v.free_in_c_8 r_binary) (v.free_in_c_10 r_binary)
+      (v.free_in_c_12 r_binary) (v.free_in_c_14 r_binary)
+      h_lo_eq_fgl hc_lo_sum_lt
+  have h_v1_lt : e2.value_1.val < 4294967296 :=
+    memory_entry_hi_bound_of_shift_sum e2
+      (v.free_in_c_1 r_binary) (v.free_in_c_3 r_binary)
+      (v.free_in_c_5 r_binary) (v.free_in_c_7 r_binary)
+      (v.free_in_c_9 r_binary) (v.free_in_c_11 r_binary)
+      (v.free_in_c_13 r_binary) (v.free_in_c_15 r_binary)
+      h_hi_eq_fgl hc_hi_sum_lt
   have h_lo_nat : (memory_entry_lo e2).val
       = (byteAt e2 0).val + (byteAt e2 1).val * 256 + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
-    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2).symm
+    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2 h_v0_lt).symm
   have h_hi_nat : (memory_entry_hi e2).val
       = (byteAt e2 4).val + (byteAt e2 5).val * 256 + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
-    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2).symm
+    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2 h_v1_lt).symm
   have h_lo_bin_nat :
       (v.free_in_c_0 r_binary + v.free_in_c_2 r_binary
        + v.free_in_c_4 r_binary + v.free_in_c_6 r_binary

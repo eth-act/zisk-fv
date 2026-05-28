@@ -109,6 +109,16 @@ carry booleanity, compare-result bounds, and destination byte-pack bounds
 from exact static BinaryTable membership plus row-local byte-match witnesses
 rather than from the legacy range bus.
 
+The first shift-family T6 prep removed the write-value kernels' dependency on
+legacy memory-entry chunk range: the six base BinaryShift kernels now derive
+the `e2.value_{0,1} < 2^32` byte-pack bounds from their c-lane equality plus
+the existing c-sum bounds. The canonical shift closures still honestly retain
+`range_bus_sound`: the shift-pin bridge needs the BinaryExtension AIR-local
+`b_0` range to prove `free_in_b + 256*b_0` does not wrap in Goldilocks before
+taking `% 64` / `% 32`, and `b_0` is not part of the
+BinaryExtensionTable lookup row. Retiring that closure requires a real
+row/range witness for `b_0`, not a new caller promise.
+
 The third T5 landing replaced the raw canonical `ArithTableSpec`
 binders with lookup-aware Clean witnesses:
 `ArithMulTableWitness` / `ArithDivTableWitness`. These witnesses carry
