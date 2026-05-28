@@ -72,21 +72,10 @@ theorem equiv_XORI
     simpa [h_component] using h_table_spec providerRow h_provider_row
   rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
   obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
-  have h_emit :
-      row.chain.b_op + 16 * row.mode.mode32 = (16 : FGL) := by
-    have h_match_op := h_match.2.1
-    change (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-      (ZiskFv.AirsClean.Binary.opBusMessage row) 1).op = (16 : FGL)
-    rw [← h_match_op]
-    simpa [row, ZiskFv.AirsClean.Binary.opBusMessage, ZiskFv.Trusted.OP_XOR]
-      using pins.main_op
-  have h_pins :=
-    ZiskFv.AirsClean.Binary.static_table_xor_mode_pins_of_emit
-      row h_row_spec h_static_specs h_emit
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.EquivCore.Xori.equiv_XORI_of_static_row
     state xori_input r1 rd imm m row r_main bus promises pins
-    h_match h_pins.2.2 h_core h_facts h_lane_rd h_xori_subset
+    h_match h_row_spec h_core h_static_specs h_facts h_lane_rd h_xori_subset
 
 
 /-- Row-native static-provider route for `equiv_XORI`. -/
@@ -103,10 +92,10 @@ theorem equiv_XORI_of_static_row
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
-    (h_bop_or_sext :
-      row.chain.b_op_or_sext.val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR)
+    (h_row_spec : ZiskFv.AirsClean.Binary.Spec row)
     (h_core : ZiskFv.Airs.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
+    (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_xori_subset : itype_imm_subset_holds_main m r_main xori_input.imm)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
@@ -124,7 +113,7 @@ theorem equiv_XORI_of_static_row
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
   exact ZiskFv.EquivCore.Xori.equiv_XORI_of_static_row
     state xori_input r1 rd imm m row r_main bus promises pins
-    h_match h_bop_or_sext h_core h_facts h_lane_rd h_xori_subset
+    h_match h_row_spec h_core h_static h_facts h_lane_rd h_xori_subset
 
 /-- Lookup-aware Clean table-row route for `XORI`. -/
 theorem equiv_XORI_of_static_table_row
@@ -172,18 +161,7 @@ theorem equiv_XORI_of_static_table_row
     simpa [h_component] using h_table_spec providerRow h_provider_row
   rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
   obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
-  have h_emit :
-      row.chain.b_op + 16 * row.mode.mode32 = (16 : FGL) := by
-    have h_match_op := h_match.2.1
-    change (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-      (ZiskFv.AirsClean.Binary.opBusMessage row) 1).op = (16 : FGL)
-    rw [← h_match_op]
-    simpa [row, ZiskFv.AirsClean.Binary.opBusMessage, ZiskFv.Trusted.OP_XOR]
-      using pins.main_op
-  have h_pins :=
-    ZiskFv.AirsClean.Binary.static_table_xor_mode_pins_of_emit
-      row h_row_spec h_static_specs h_emit
   exact equiv_XORI_of_static_row state xori_input r1 rd imm m row r_main
-    bus pins h_match h_pins.2.2 h_core h_facts h_xori_subset h_lane_rd promises
+    bus pins h_match h_row_spec h_core h_static_specs h_facts h_xori_subset h_lane_rd promises
 
 end ZiskFv.Equivalence.Xori

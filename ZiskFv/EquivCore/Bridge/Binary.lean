@@ -1720,10 +1720,12 @@ open ZiskFv.EquivCore.Bridge.SailStateBridge in
     view, so it does not assert correspondence with any external
     `Valid_Binary` trace. -/
 lemma input_r1_packed_a_row
+    {op_val : ℕ}
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (m : Valid_Main FGL FGL)
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (r_main : ℕ) (rs1 : Fin 32) (r1_val : BitVec 64)
+    (h_matches : all_byte_matches_wf_at_row row op_val)
     (h_m32 : m.m32 r_main = 0)
     (h_a_lo_t : m.a_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs1))
     (h_a_hi_t : m.a_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs1))
@@ -1739,21 +1741,70 @@ lemma input_r1_packed_a_row
           + row.aBytes.free_in_a_5.val * 1099511627776
           + row.aBytes.free_in_a_6.val * 281474976710656
           + row.aBytes.free_in_a_7.val * 72057594037927936) := by
+  rcases h_matches with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨ha0, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h0
+  obtain ⟨ha1, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h1
+  obtain ⟨ha2, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h2
+  obtain ⟨ha3, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h3
+  obtain ⟨ha4, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h4
+  obtain ⟨ha5, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h5
+  obtain ⟨ha6, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h6
+  obtain ⟨ha7, _, _⟩ := byte_ranges_of_consumer_byte_match_wf h7
   have h_match' : matches_entry (opBus_row_Main m r_main)
       (opBus_row_Binary (ZiskFv.AirsClean.Binary.validOfRow row) 0) := by
     simpa [ZiskFv.AirsClean.Binary.validOfRow,
       ZiskFv.AirsClean.Binary.opBusMessage] using h_match
-  simpa [ZiskFv.AirsClean.Binary.validOfRow] using
-    input_r1_packed_a m (ZiskFv.AirsClean.Binary.validOfRow row)
-      r_main 0 rs1 r1_val h_m32 h_a_lo_t h_a_hi_t h_match' h_input_r1
+  have h_r1_main :=
+    packed_lane_eq_of_read_xreg state rs1 r1_val (m.a_0 r_main) (m.a_1 r_main)
+      h_a_lo_t h_a_hi_t h_input_r1
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match'
+  obtain ⟨_, _, h_a_lo_m, h_a_hi_m, _, _, _, _, _, _, _, _⟩ := h_match'
+  rw [h_m32] at h_a_hi_m
+  simp only [one_sub_zero_mul] at h_a_hi_m
+  have h_a0_val : (m.a_0 r_main).val =
+      row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+      + row.aBytes.free_in_a_2.val * 65536
+      + row.aBytes.free_in_a_3.val * 16777216 := by
+    rw [h_a_lo_m]
+    have h_cast :
+        row.aBytes.free_in_a_0 + 256 * row.aBytes.free_in_a_1
+          + 65536 * row.aBytes.free_in_a_2 + 16777216 * row.aBytes.free_in_a_3
+        = (((row.aBytes.free_in_a_0.val + row.aBytes.free_in_a_1.val * 256
+              + row.aBytes.free_in_a_2.val * 65536
+              + row.aBytes.free_in_a_3.val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    omega
+  have h_a1_val : (m.a_1 r_main).val =
+      row.aBytes.free_in_a_4.val + row.aBytes.free_in_a_5.val * 256
+      + row.aBytes.free_in_a_6.val * 65536
+      + row.aBytes.free_in_a_7.val * 16777216 := by
+    rw [h_a_hi_m]
+    have h_cast :
+        row.aBytes.free_in_a_4 + 256 * row.aBytes.free_in_a_5
+          + 65536 * row.aBytes.free_in_a_6 + 16777216 * row.aBytes.free_in_a_7
+        = (((row.aBytes.free_in_a_4.val + row.aBytes.free_in_a_5.val * 256
+              + row.aBytes.free_in_a_6.val * 65536
+              + row.aBytes.free_in_a_7.val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    omega
+  rw [h_r1_main]
+  apply congrArg (BitVec.ofNat 64)
+  rw [h_a0_val, h_a1_val]
+  ring
 
 open ZiskFv.EquivCore.Bridge.SailStateBridge in
 /-- Row-native `input_r2_packed_b`, with a Clean `BinaryRow` provider side. -/
 lemma input_r2_packed_b_row
+    {op_val : ℕ}
     {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
     (m : Valid_Main FGL FGL)
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (r_main : ℕ) (rs2 : Fin 32) (r2_val : BitVec 64)
+    (h_matches : all_byte_matches_wf_at_row row op_val)
     (h_m32 : m.m32 r_main = 0)
     (h_b_lo_t : m.b_0 r_main = lane_lo ((sail_to_rv64 state).xreg rs2))
     (h_b_hi_t : m.b_1 r_main = lane_hi ((sail_to_rv64 state).xreg rs2))
@@ -1769,13 +1820,60 @@ lemma input_r2_packed_b_row
           + row.bBytes.free_in_b_5.val * 1099511627776
           + row.bBytes.free_in_b_6.val * 281474976710656
           + row.bBytes.free_in_b_7.val * 72057594037927936) := by
+  rcases h_matches with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨_, hb0, _⟩ := byte_ranges_of_consumer_byte_match_wf h0
+  obtain ⟨_, hb1, _⟩ := byte_ranges_of_consumer_byte_match_wf h1
+  obtain ⟨_, hb2, _⟩ := byte_ranges_of_consumer_byte_match_wf h2
+  obtain ⟨_, hb3, _⟩ := byte_ranges_of_consumer_byte_match_wf h3
+  obtain ⟨_, hb4, _⟩ := byte_ranges_of_consumer_byte_match_wf h4
+  obtain ⟨_, hb5, _⟩ := byte_ranges_of_consumer_byte_match_wf h5
+  obtain ⟨_, hb6, _⟩ := byte_ranges_of_consumer_byte_match_wf h6
+  obtain ⟨_, hb7, _⟩ := byte_ranges_of_consumer_byte_match_wf h7
   have h_match' : matches_entry (opBus_row_Main m r_main)
       (opBus_row_Binary (ZiskFv.AirsClean.Binary.validOfRow row) 0) := by
     simpa [ZiskFv.AirsClean.Binary.validOfRow,
       ZiskFv.AirsClean.Binary.opBusMessage] using h_match
-  simpa [ZiskFv.AirsClean.Binary.validOfRow] using
-    input_r2_packed_b m (ZiskFv.AirsClean.Binary.validOfRow row)
-      r_main 0 rs2 r2_val h_m32 h_b_lo_t h_b_hi_t h_match' h_input_r2
+  have h_r2_main :=
+    packed_lane_eq_of_read_xreg state rs2 r2_val (m.b_0 r_main) (m.b_1 r_main)
+      h_b_lo_t h_b_hi_t h_input_r2
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match'
+  obtain ⟨_, _, _, _, h_b_lo_m, h_b_hi_m, _, _, _, _, _, _⟩ := h_match'
+  rw [h_m32] at h_b_hi_m
+  simp only [one_sub_zero_mul] at h_b_hi_m
+  have h_b0_val : (m.b_0 r_main).val =
+      row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+      + row.bBytes.free_in_b_2.val * 65536
+      + row.bBytes.free_in_b_3.val * 16777216 := by
+    rw [h_b_lo_m]
+    have h_cast :
+        row.bBytes.free_in_b_0 + 256 * row.bBytes.free_in_b_1
+          + 65536 * row.bBytes.free_in_b_2 + 16777216 * row.bBytes.free_in_b_3
+        = (((row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+              + row.bBytes.free_in_b_2.val * 65536
+              + row.bBytes.free_in_b_3.val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    omega
+  have h_b1_val : (m.b_1 r_main).val =
+      row.bBytes.free_in_b_4.val + row.bBytes.free_in_b_5.val * 256
+      + row.bBytes.free_in_b_6.val * 65536
+      + row.bBytes.free_in_b_7.val * 16777216 := by
+    rw [h_b_hi_m]
+    have h_cast :
+        row.bBytes.free_in_b_4 + 256 * row.bBytes.free_in_b_5
+          + 65536 * row.bBytes.free_in_b_6 + 16777216 * row.bBytes.free_in_b_7
+        = (((row.bBytes.free_in_b_4.val + row.bBytes.free_in_b_5.val * 256
+              + row.bBytes.free_in_b_6.val * 65536
+              + row.bBytes.free_in_b_7.val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    omega
+  rw [h_r2_main]
+  apply congrArg (BitVec.ofNat 64)
+  rw [h_b0_val, h_b1_val]
+  ring
 
 /-! ## c-lane match discharge for AND / OR / XOR rows (Round-3 lift)
 
@@ -2068,9 +2166,11 @@ lemma itype_imm_subset_binary_row_of_main
 /-- Row-native `itype_imm_subset_binary_row_of_main`, with a Clean
     `BinaryRow` provider side. -/
 lemma itype_imm_subset_binary_row_of_main_row
+    {op_val : ℕ}
     (m : Valid_Main FGL FGL)
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (r_main : ℕ) (imm : BitVec 12)
+    (h_matches : all_byte_matches_wf_at_row row op_val)
     (h_main_m32 : m.m32 r_main = 0)
     (h_match : matches_entry (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -2087,14 +2187,59 @@ lemma itype_imm_subset_binary_row_of_main_row
             + row.bBytes.free_in_b_5.val * 1099511627776
             + row.bBytes.free_in_b_6.val * 281474976710656
             + row.bBytes.free_in_b_7.val * 72057594037927936) := by
+  rcases h_matches with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨_, hb0, _⟩ := byte_ranges_of_consumer_byte_match_wf h0
+  obtain ⟨_, hb1, _⟩ := byte_ranges_of_consumer_byte_match_wf h1
+  obtain ⟨_, hb2, _⟩ := byte_ranges_of_consumer_byte_match_wf h2
+  obtain ⟨_, hb3, _⟩ := byte_ranges_of_consumer_byte_match_wf h3
+  obtain ⟨_, hb4, _⟩ := byte_ranges_of_consumer_byte_match_wf h4
+  obtain ⟨_, hb5, _⟩ := byte_ranges_of_consumer_byte_match_wf h5
+  obtain ⟨_, hb6, _⟩ := byte_ranges_of_consumer_byte_match_wf h6
+  obtain ⟨_, hb7, _⟩ := byte_ranges_of_consumer_byte_match_wf h7
   have h_match' : matches_entry (opBus_row_Main m r_main)
       (opBus_row_Binary (ZiskFv.AirsClean.Binary.validOfRow row) 0) := by
     simpa [ZiskFv.AirsClean.Binary.validOfRow,
       ZiskFv.AirsClean.Binary.opBusMessage] using h_match
-  simpa [ZiskFv.AirsClean.Binary.validOfRow] using
-    itype_imm_subset_binary_row_of_main
-      m (ZiskFv.AirsClean.Binary.validOfRow row) r_main 0 imm
-      h_main_m32
-      h_match' h_addi_subset
+  have h_subset := h_addi_subset
+  simp only [ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main]
+    at h_subset
+  simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_match'
+  obtain ⟨_, _, _, _, h_b_lo_m, h_b_hi_m, _, _, _, _, _, _⟩ := h_match'
+  rw [h_main_m32] at h_b_hi_m
+  simp only [one_sub_zero_mul] at h_b_hi_m
+  have h_b0_val : (m.b_0 r_main).val =
+      row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+      + row.bBytes.free_in_b_2.val * 65536
+      + row.bBytes.free_in_b_3.val * 16777216 := by
+    rw [h_b_lo_m]
+    have h_cast :
+        row.bBytes.free_in_b_0 + 256 * row.bBytes.free_in_b_1
+          + 65536 * row.bBytes.free_in_b_2 + 16777216 * row.bBytes.free_in_b_3
+        = (((row.bBytes.free_in_b_0.val + row.bBytes.free_in_b_1.val * 256
+              + row.bBytes.free_in_b_2.val * 65536
+              + row.bBytes.free_in_b_3.val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    omega
+  have h_b1_val : (m.b_1 r_main).val =
+      row.bBytes.free_in_b_4.val + row.bBytes.free_in_b_5.val * 256
+      + row.bBytes.free_in_b_6.val * 65536
+      + row.bBytes.free_in_b_7.val * 16777216 := by
+    rw [h_b_hi_m]
+    have h_cast :
+        row.bBytes.free_in_b_4 + 256 * row.bBytes.free_in_b_5
+          + 65536 * row.bBytes.free_in_b_6 + 16777216 * row.bBytes.free_in_b_7
+        = (((row.bBytes.free_in_b_4.val + row.bBytes.free_in_b_5.val * 256
+              + row.bBytes.free_in_b_6.val * 65536
+              + row.bBytes.free_in_b_7.val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    omega
+  rw [h_subset]
+  apply congrArg (BitVec.ofNat 64)
+  rw [h_b0_val, h_b1_val]
+  ring
 
 end ZiskFv.EquivCore.Bridge.Binary

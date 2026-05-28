@@ -73,18 +73,8 @@ theorem equiv_XORI
     simpa [h_component] using h_table_spec providerRow h_provider_row
   rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
   obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
-  have h_emit : row.chain.b_op + 16 * row.mode.mode32 = (16 : FGL) := by
-    have h_match_op := h_match.2.1
-    change (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
-      (ZiskFv.AirsClean.Binary.opBusMessage row) 1).op = (16 : FGL)
-    rw [← h_match_op]
-    simpa [row, ZiskFv.AirsClean.Binary.opBusMessage, ZiskFv.Trusted.OP_XOR]
-      using pins.main_op
-  have h_pins :=
-    ZiskFv.AirsClean.Binary.static_table_xor_mode_pins_of_emit
-      row h_row_spec h_static_specs h_emit
   exact ZiskFv.EquivCore.Xori.equiv_XORI_of_static_row
     state xori_input r1 rd imm m row r_main bus promises pins
-    h_match h_pins.2.2 h_core h_facts h_lane_rd h_xori_subset
+    h_match h_row_spec h_core h_static_specs h_facts h_lane_rd h_xori_subset
 
 end ZiskFv.Compliance

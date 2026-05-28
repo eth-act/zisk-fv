@@ -77,10 +77,10 @@ theorem equiv_XORI_of_static_row
     (h_match : matches_entry (opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage row) 1))
-    (h_bop_or_sext :
-      row.chain.b_op_or_sext.val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR)
+    (h_row_spec : ZiskFv.AirsClean.Binary.Spec row)
     (h_core : ZiskFv.Airs.Binary.core_every_row
       (ZiskFv.AirsClean.Binary.validOfRow row) 0)
+    (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row)
     (h_lane_rd : ZiskFv.Airs.MemoryBus.register_write_lanes_match m r_main bus.e2)
     (h_xori_subset :
@@ -112,15 +112,10 @@ theorem equiv_XORI_of_static_row
     simpa [ZiskFv.AirsClean.Binary.opBusMessage,
       ZiskFv.Airs.Tables.BinaryTable.OP_XOR, ZiskFv.Trusted.OP_XOR]
       using h_main_op_xori
-  have h_bop_legacy :=
-    ZiskFv.EquivCore.Bridge.Binary.b_op_val_eq_of_logic_core
-      (ZiskFv.AirsClean.Binary.validOfRow row) 0
-      ZiskFv.Airs.Tables.BinaryTable.OP_XOR h_core (.inr (.inr rfl))
-      (by simpa [ZiskFv.AirsClean.Binary.validOfRow] using h_emit)
-      (by simpa [ZiskFv.AirsClean.Binary.validOfRow] using h_bop_or_sext)
-  have h_bop :
-      row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR := by
-    simpa [ZiskFv.AirsClean.Binary.validOfRow] using h_bop_legacy
+  obtain ⟨_, h_bop, h_bop_or_sext⟩ :=
+    ZiskFv.AirsClean.Binary.static_table_logic_mode_pins_of_emit
+      row h_row_spec h_static ZiskFv.Airs.Tables.BinaryTable.OP_XOR
+      (.inr (.inr rfl)) h_emit
   have h_matches :=
     ZiskFv.EquivCore.Bridge.Binary.byte_chain_discharge_logic_of_static_row
       row h_facts ZiskFv.Airs.Tables.BinaryTable.OP_XOR h_bop h_bop_or_sext
@@ -135,10 +130,10 @@ theorem equiv_XORI_of_static_row
   have h_input_r1_circuit :=
     ZiskFv.EquivCore.Bridge.Binary.input_r1_packed_a_row
       m row r_main (regidx_to_fin r1) xori_input.r1_val
-      h_main_m32 h_a_lo_t h_a_hi_t h_match h_input_r1
+      h_matches h_main_m32 h_a_lo_t h_a_hi_t h_match h_input_r1
   have h_input_imm_circuit :=
     ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
-      m row r_main xori_input.imm h_main_m32 h_match h_xori_subset
+      m row r_main xori_input.imm h_matches h_main_m32 h_match h_xori_subset
   obtain ⟨h_lo_match, h_hi_match⟩ := h_lane_rd
   have h_match_clo_mem :
       row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256

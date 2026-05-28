@@ -585,6 +585,25 @@ theorem spec_op_val_ne_zero {t : BinaryTableMessage FGL}
   rcases h with ⟨i, rfl⟩
   exact rowOfIndex_op_val_ne_zero i
 
+theorem rowOfIndex_op_val_lt_514 (i : Fin tableSize) :
+    (rowOfIndex i.val).op.val < 514 := by
+  have h_block_lt : blockOfIndex i.val < 19 := blockOfIndex_lt_19 i
+  unfold rowOfIndex opOfIndex
+  rw [Fin.val_natCast]
+  generalize h_block : blockOfIndex i.val = block
+  have h_block_lt' : block < 19 := by
+    rw [← h_block]
+    exact h_block_lt
+  interval_cases block <;> norm_num [opOfBlock, OP_AND, OP_OR, OP_XOR,
+    OP_LTU, OP_LT, OP_GT, OP_EQ, OP_ADD, OP_SUB, OP_LEU, OP_LE,
+    OP_SEXT_00, OP_SEXT_FF, OP_MINU, OP_MIN, OP_MAXU, OP_MAX,
+    OP_LT_ABS_NP, OP_LT_ABS_PN]
+
+theorem spec_op_val_lt_514 {t : BinaryTableMessage FGL}
+    (h : binaryTable.Spec t) : t.op.val < 514 := by
+  rcases h with ⟨i, rfl⟩
+  exact rowOfIndex_op_val_lt_514 i
+
 /-- No static BinaryTable row carries op_val = 0x1A or 0x1B (those are
     W-mode bus opcodes ADDW/SUBW, not byte-table opcodes). Used by the
     W-mode dispatch to exclude the alternate (mode32 = 0, b_op = op_emit)

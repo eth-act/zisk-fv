@@ -555,6 +555,65 @@ theorem static_table_xor_mode_pins_of_emit
     have h_ne := ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_zero h3
     exact False.elim (h_ne (by rw [h_bop_zero]; norm_num))
 
+/-- Exact static BinaryTable membership plus the Binary boolean/core row
+    constraints pin the 64-bit logic op-bus shapes without the legacy
+    range-bus column bounds. -/
+theorem static_table_logic_mode_pins_of_emit
+    (row : BinaryRow FGL)
+    (h_spec : Spec row)
+    (h_static : StaticBinaryTableSpecFacts row)
+    (op_val : ℕ)
+    (h_op_logic :
+      op_val = ZiskFv.Airs.Tables.BinaryTable.OP_AND
+        ∨ op_val = ZiskFv.Airs.Tables.BinaryTable.OP_OR
+        ∨ op_val = ZiskFv.Airs.Tables.BinaryTable.OP_XOR)
+    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = (op_val : FGL)) :
+    row.mode.mode32 = 0
+      ∧ row.chain.b_op.val = op_val
+      ∧ row.chain.b_op_or_sext.val = op_val := by
+  rcases h_spec with ⟨h_mode32, _, _, _, _, h_bop_or_sext_def, _⟩
+  rcases h_static with ⟨h0, _, _, _, _, _, _, _⟩
+  have h_bop_lt : row.chain.b_op.val < 514 := by
+    have h := ZiskFv.AirsClean.BinaryTable.spec_op_val_lt_514 h0
+    simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h
+  have h_bop_ne_zero : row.chain.b_op.val ≠ 0 := by
+    have h := ZiskFv.AirsClean.BinaryTable.spec_op_val_ne_zero h0
+    simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry] using h
+  have h_op_small : op_val < 17 := by
+    rcases h_op_logic with h | h | h <;>
+      simp [h, ZiskFv.Airs.Tables.BinaryTable.OP_AND,
+        ZiskFv.Airs.Tables.BinaryTable.OP_OR,
+        ZiskFv.Airs.Tables.BinaryTable.OP_XOR]
+  have h_mode : row.mode.mode32 = 0 ∨ row.mode.mode32 = 1 := by
+    rcases mul_eq_zero.mp h_mode32 with h_zero | h_one_sub
+    · exact Or.inl h_zero
+    · exact Or.inr ((sub_eq_zero.mp h_one_sub).symm)
+  rcases h_mode with h_zero | h_one
+  · have h_bop : row.chain.b_op = (op_val : FGL) := by
+      simpa [h_zero] using h_emit
+    have h_bop_or_eq : row.chain.b_op_or_sext = row.chain.b_op := by
+      have h_eq := sub_eq_zero.mp h_bop_or_sext_def
+      rw [h_zero] at h_eq
+      simpa using h_eq
+    refine ⟨h_zero, ?_, ?_⟩
+    · have h_val := congrArg Fin.val h_bop
+      rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega : op_val < GL_prime)] at h_val
+      exact h_val
+    · rw [h_bop_or_eq]
+      have h_val := congrArg Fin.val h_bop
+      rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega : op_val < GL_prime)] at h_val
+      exact h_val
+  · have hval : row.chain.b_op.val + 16 = op_val := by
+      have hv := congrArg Fin.val h_emit
+      rw [h_one, Fin.val_add, Fin.val_mul, Fin.val_natCast] at hv
+      have hsmall : row.chain.b_op.val + 16 < GL_prime := by omega
+      simp [Nat.mod_eq_of_lt hsmall,
+        Nat.mod_eq_of_lt (by omega : 16 < GL_prime),
+        Nat.mod_eq_of_lt (by omega : op_val < GL_prime)] at hv
+      exact hv
+    have h_bop_zero : row.chain.b_op.val = 0 := by omega
+    exact False.elim (h_bop_ne_zero h_bop_zero)
+
 /-- Shared C7 witness surface for Binary's static-table lookup path.
     This is intentionally family-level and row-indexed; it is the shape a
     terminal Binary-family ensemble can provide once the static provider is

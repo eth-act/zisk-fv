@@ -4,9 +4,9 @@ This is the working branch for the full Clean integration per
 [`/home/cody/.claude/plans/ok-i-will-let-humble-reddy.md`]. It
 branches off `clean-integration` (which had landed the bus-level
 axiom consolidation from 122 → 116 axioms without taking Clean as
-a dep). Current working status after T5:
-`lake build`, V1, and V2 pass with 58 source trust-ledger axioms and a
-55-name global compliance closure.
+a dep). Current working status after the latest T7 range-retirement slice:
+`lake build`, V1, and V2 pass with 57 source trust-ledger axioms and a
+54-name global compliance closure.
 
 ## Completed phases
 
@@ -101,6 +101,11 @@ as historical documentation; it is retired from the trust ledger.
 T7 retired `main_store_pc_emission_bundle` from source and from the
 canonical/global closure by routing LUI/AUIPC/JAL/JALR through selected
 Clean Main `cMemMessage` structural witnesses.
+T7 has also removed `range_bus_sound` from AUIPC/JAL/JALR and from the six
+bitwise Binary-family canonical closures (AND/ANDI/OR/ORI/XOR/XORI). The
+bitwise slice derives mode/op pins and packed byte bounds from exact static
+BinaryTable membership plus row-local byte-match witnesses rather than from
+the legacy range bus.
 
 The third T5 landing replaced the raw canonical `ArithTableSpec`
 binders with lookup-aware Clean witnesses:

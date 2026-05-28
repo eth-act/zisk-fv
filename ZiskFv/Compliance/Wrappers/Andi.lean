@@ -125,8 +125,14 @@ theorem equiv_ANDI
   obtain ⟨h_core, h_facts⟩ :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
       h_component h_table_spec h_provider_row
+  have h_component_spec :
+      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
+        (providerTable.environment providerRow) := by
+    simpa [h_component] using h_table_spec providerRow h_provider_row
+  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
+  obtain ⟨h_row_spec, h_static_specs⟩ := h_component_spec
   exact ZiskFv.EquivCore.Andi.equiv_ANDI_of_static_row
     state andi_input r1 rd imm m row r_main bus promises pins
-    h_match h_core h_facts h_lane_rd h_andi_subset
+    h_match h_row_spec h_core h_static_specs h_facts h_lane_rd h_andi_subset
 
 end ZiskFv.Compliance

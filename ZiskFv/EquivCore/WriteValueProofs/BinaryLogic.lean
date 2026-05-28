@@ -81,7 +81,8 @@ open ZiskFv.EquivCore.WriteValueProofs.Arith
 Mirrors the Arith.lean helpers: project a memory-bus entry's two value
 chunks into per-byte sums via `byteAt` + `byteOf_val_sum_eq`. -/
 
-private lemma byteAt_lo_val_sum_eq (e : MemoryBusEntry FGL) :
+private lemma byteAt_lo_val_sum_eq (e : MemoryBusEntry FGL)
+    (h : e.value_0.val < 4294967296) :
     (byteAt e 0).val + (byteAt e 1).val * 256
       + (byteAt e 2).val * 65536 + (byteAt e 3).val * 16777216
     = e.value_0.val := by
@@ -94,10 +95,10 @@ private lemma byteAt_lo_val_sum_eq (e : MemoryBusEntry FGL) :
   have hb3 : byteAt e 3 = byteOf e.value_0 3 := by
     unfold byteAt; simp only [show (3 : ℕ) < 4 from by decide, if_true]
   rw [hb0, hb1, hb2, hb3]
-  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_0
-          (ZiskFv.Airs.MemoryBus.memory_entry_lo_val_lt_2_32 e)
+  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_0 h
 
-private lemma byteAt_hi_val_sum_eq (e : MemoryBusEntry FGL) :
+private lemma byteAt_hi_val_sum_eq (e : MemoryBusEntry FGL)
+    (h : e.value_1.val < 4294967296) :
     (byteAt e 4).val + (byteAt e 5).val * 256
       + (byteAt e 6).val * 65536 + (byteAt e 7).val * 16777216
     = e.value_1.val := by
@@ -110,9 +111,7 @@ private lemma byteAt_hi_val_sum_eq (e : MemoryBusEntry FGL) :
   have hb7 : byteAt e 7 = byteOf e.value_1 3 := by
     unfold byteAt; simp only [show ¬ (7 : ℕ) < 4 from by decide, if_false]
   rw [hb4, hb5, hb6, hb7]
-  have h_v1_lt : e.value_1.val < 4294967296 :=
-    (ZiskFv.Airs.MemoryBus.memory_bus_entry_chunks_range_perm_sound e).2
-  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_1 h_v1_lt
+  exact ZiskFv.Channels.MemoryBusBytes.byteOf_val_sum_eq e.value_1 h
 
 /-! ## Internal kernel: byte-sum identity from c-lane bus-match + lane-match -/
 
@@ -170,16 +169,42 @@ private lemma byte_sum_from_binary_lane_match
       = v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256
         + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216 := by
     rw [← h_hi_match, h_match_chi]
+  have h_lo_bound : e2.value_0.val < 4294967296 := by
+    change (memory_entry_lo e2).val < 4294967296
+    rw [h_lo_eq]
+    have h_cast :
+        v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
+        + v.free_in_c_2 r_binary * 65536 + v.free_in_c_3 r_binary * 16777216
+        = ((((v.free_in_c_0 r_binary).val + (v.free_in_c_1 r_binary).val * 256
+             + (v.free_in_c_2 r_binary).val * 65536
+             + (v.free_in_c_3 r_binary).val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    rw [Nat.mod_eq_of_lt (by omega)]
+    omega
+  have h_hi_bound : e2.value_1.val < 4294967296 := by
+    change (memory_entry_hi e2).val < 4294967296
+    rw [h_hi_eq]
+    have h_cast :
+        v.free_in_c_4 r_binary + v.free_in_c_5 r_binary * 256
+        + v.free_in_c_6 r_binary * 65536 + v.free_in_c_7 r_binary * 16777216
+        = ((((v.free_in_c_4 r_binary).val + (v.free_in_c_5 r_binary).val * 256
+             + (v.free_in_c_6 r_binary).val * 65536
+             + (v.free_in_c_7 r_binary).val * 16777216 : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    rw [Nat.mod_eq_of_lt (by omega)]
+    omega
   -- Chunk-shape: memory_entry_lo e2 = e2.value_0; byteAt projections of value_0
   -- pack-decompose via byteAt_lo_val_sum_eq.
   have h_lo_nat : (memory_entry_lo e2).val
       = (byteAt e2 0).val + (byteAt e2 1).val * 256
         + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
-    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2).symm
+    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2 h_lo_bound).symm
   have h_hi_nat : (memory_entry_hi e2).val
       = (byteAt e2 4).val + (byteAt e2 5).val * 256
         + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
-    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2).symm
+    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2 h_hi_bound).symm
   -- RHS Nat lifting on the binary-c side.
   have h_lo_bin_nat :
       (v.free_in_c_0 r_binary + v.free_in_c_1 r_binary * 256
@@ -258,14 +283,6 @@ private lemma byte_sum_from_binary_row_lane_match
       + row.cBytes.free_in_c_5.val * 1099511627776
       + row.cBytes.free_in_c_6.val * 281474976710656
       + row.cBytes.free_in_c_7.val * 72057594037927936 := by
-  have h_lo_nat : (memory_entry_lo e2).val
-      = (byteAt e2 0).val + (byteAt e2 1).val * 256
-        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
-    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2).symm
-  have h_hi_nat : (memory_entry_hi e2).val
-      = (byteAt e2 4).val + (byteAt e2 5).val * 256
-        + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
-    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2).symm
   have h_lo_row_nat :
       (row.cBytes.free_in_c_0 + row.cBytes.free_in_c_1 * 256
        + row.cBytes.free_in_c_2 * 65536
@@ -298,6 +315,22 @@ private lemma byte_sum_from_binary_row_lane_match
              + row.cBytes.free_in_c_7.val * 16777216 : ℕ) : FGL)) := by push_cast; ring
     rw [h_cast, Fin.val_natCast]
     apply Nat.mod_eq_of_lt; omega
+  have h_lo_bound : e2.value_0.val < 4294967296 := by
+    change (memory_entry_lo e2).val < 4294967296
+    rw [← h_match_clo, h_lo_row_nat]
+    omega
+  have h_hi_bound : e2.value_1.val < 4294967296 := by
+    change (memory_entry_hi e2).val < 4294967296
+    rw [← h_match_chi, h_hi_row_nat]
+    omega
+  have h_lo_nat : (memory_entry_lo e2).val
+      = (byteAt e2 0).val + (byteAt e2 1).val * 256
+        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
+    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2 h_lo_bound).symm
+  have h_hi_nat : (memory_entry_hi e2).val
+      = (byteAt e2 4).val + (byteAt e2 5).val * 256
+        + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
+    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2 h_hi_bound).symm
   have h_lo_val := congrArg Fin.val h_match_clo
   have h_hi_val := congrArg Fin.val h_match_chi
   rw [h_lo_row_nat, h_lo_nat] at h_lo_val
