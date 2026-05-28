@@ -1306,9 +1306,50 @@ inductive OpEnvelope
         (PureSpec.lb_state_assumptions lb_input state)
         (PureSpec.execute_LOADB_pure lb_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
-    (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
-        m mem r_main bus lb_input.r1_val lb_input.imm lb_input.rd) :
-      OpEnvelope state m r_main
+    (r_mem : ℕ)
+    {mainRowVar : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL}
+    {memRowVar : Var ZiskFv.AirsClean.Mem.MemRow FGL}
+    {mainEnv memEnv : Environment FGL}
+    {mainMult providerMult : Expression FGL}
+    {mainInteraction providerInteraction : Interaction FGL}
+    (h_mainEval :
+      mainInteraction =
+        ((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult
+          (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)).toRaw).eval
+          mainEnv)
+    (h_providerEval :
+      providerInteraction =
+        ((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted providerMult
+          (ZiskFv.AirsClean.Mem.memBusMessageExpr memRowVar)).toRaw).eval
+          memEnv)
+    (h_msg : providerInteraction.msg = mainInteraction.msg)
+    (h_main_row :
+      (eval mainEnv mainRowVar).core =
+        ZiskFv.AirsClean.Main.rowAt m r_main)
+    (h_mem_row :
+      eval memEnv memRowVar = ZiskFv.AirsClean.Mem.rowAt mem r_mem)
+    (h_main_spec : ZiskFv.AirsClean.Main.Spec (eval mainEnv mainRowVar).core)
+    (h_store_pc : (eval mainEnv mainRowVar).core.store_pc = 0)
+    (h_main_b_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.bMemMessage (eval mainEnv mainRowVar)) (-1) 2))
+    (h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage (eval mainEnv mainRowVar)) 1 1))
+    (h_addr1 :
+      (eval mainEnv mainRowVar).rom.addr1.toNat =
+        lb_input.r1_val.toNat + (BitVec.signExtend 64 lb_input.imm).toNat)
+    (h_addr2_zero_iff :
+      Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2 = 0 ↔
+        lb_input.rd = 0)
+    (h_addr2_idx :
+      lb_input.rd.toNat =
+        (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
+    (h_mem_sel : mem.sel r_mem = 1)
+    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
+    (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ LH via static BinaryExtension lookup ====
   | lh_via_static_match
     (lh_input : PureSpec.LhInput)
@@ -1328,9 +1369,50 @@ inductive OpEnvelope
         (PureSpec.lh_state_assumptions lh_input state)
         (PureSpec.execute_LOADH_pure lh_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
-    (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
-        m mem r_main bus lh_input.r1_val lh_input.imm lh_input.rd) :
-      OpEnvelope state m r_main
+    (r_mem : ℕ)
+    {mainRowVar : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL}
+    {memRowVar : Var ZiskFv.AirsClean.Mem.MemRow FGL}
+    {mainEnv memEnv : Environment FGL}
+    {mainMult providerMult : Expression FGL}
+    {mainInteraction providerInteraction : Interaction FGL}
+    (h_mainEval :
+      mainInteraction =
+        ((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult
+          (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)).toRaw).eval
+          mainEnv)
+    (h_providerEval :
+      providerInteraction =
+        ((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted providerMult
+          (ZiskFv.AirsClean.Mem.memBusMessageExpr memRowVar)).toRaw).eval
+          memEnv)
+    (h_msg : providerInteraction.msg = mainInteraction.msg)
+    (h_main_row :
+      (eval mainEnv mainRowVar).core =
+        ZiskFv.AirsClean.Main.rowAt m r_main)
+    (h_mem_row :
+      eval memEnv memRowVar = ZiskFv.AirsClean.Mem.rowAt mem r_mem)
+    (h_main_spec : ZiskFv.AirsClean.Main.Spec (eval mainEnv mainRowVar).core)
+    (h_store_pc : (eval mainEnv mainRowVar).core.store_pc = 0)
+    (h_main_b_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.bMemMessage (eval mainEnv mainRowVar)) (-1) 2))
+    (h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage (eval mainEnv mainRowVar)) 1 1))
+    (h_addr1 :
+      (eval mainEnv mainRowVar).rom.addr1.toNat =
+        lh_input.r1_val.toNat + (BitVec.signExtend 64 lh_input.imm).toNat)
+    (h_addr2_zero_iff :
+      Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2 = 0 ↔
+        lh_input.rd = 0)
+    (h_addr2_idx :
+      lh_input.rd.toNat =
+        (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
+    (h_mem_sel : mem.sel r_mem = 1)
+    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
+    (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ LW via static BinaryExtension lookup ====
   | lw_via_static_match
     (lw_input : PureSpec.LwInput)
@@ -1350,9 +1432,50 @@ inductive OpEnvelope
         (PureSpec.lw_state_assumptions lw_input state)
         (PureSpec.execute_LOADW_pure lw_input).nextPC
         bus.exec_row bus.e0 bus.e1 bus.e2)
-    (w : ZiskFv.EquivCore.Bridge.MemClean.LoadCleanWitness
-        m mem r_main bus lw_input.r1_val lw_input.imm lw_input.rd) :
-      OpEnvelope state m r_main
+    (r_mem : ℕ)
+    {mainRowVar : Var ZiskFv.AirsClean.Main.MainRowWithRom FGL}
+    {memRowVar : Var ZiskFv.AirsClean.Mem.MemRow FGL}
+    {mainEnv memEnv : Environment FGL}
+    {mainMult providerMult : Expression FGL}
+    {mainInteraction providerInteraction : Interaction FGL}
+    (h_mainEval :
+      mainInteraction =
+        ((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted mainMult
+          (ZiskFv.AirsClean.Main.bMemMessageExpr mainRowVar)).toRaw).eval
+          mainEnv)
+    (h_providerEval :
+      providerInteraction =
+        ((ZiskFv.Channels.MemoryBus.MemBusChannel.emitted providerMult
+          (ZiskFv.AirsClean.Mem.memBusMessageExpr memRowVar)).toRaw).eval
+          memEnv)
+    (h_msg : providerInteraction.msg = mainInteraction.msg)
+    (h_main_row :
+      (eval mainEnv mainRowVar).core =
+        ZiskFv.AirsClean.Main.rowAt m r_main)
+    (h_mem_row :
+      eval memEnv memRowVar = ZiskFv.AirsClean.Mem.rowAt mem r_mem)
+    (h_main_spec : ZiskFv.AirsClean.Main.Spec (eval mainEnv mainRowVar).core)
+    (h_store_pc : (eval mainEnv mainRowVar).core.store_pc = 0)
+    (h_main_b_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e1
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.bMemMessage (eval mainEnv mainRowVar)) (-1) 2))
+    (h_main_c_match :
+      ZiskFv.Airs.MemoryBus.matches_memory_entry bus.e2
+        (ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry
+          (ZiskFv.AirsClean.Main.cMemMessage (eval mainEnv mainRowVar)) 1 1))
+    (h_addr1 :
+      (eval mainEnv mainRowVar).rom.addr1.toNat =
+        lw_input.r1_val.toNat + (BitVec.signExtend 64 lw_input.imm).toNat)
+    (h_addr2_zero_iff :
+      Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2 = 0 ↔
+        lw_input.rd = 0)
+    (h_addr2_idx :
+      lw_input.rd.toNat =
+        (Transpiler.wrap_to_regidx (eval mainEnv mainRowVar).rom.addr2).val)
+    (h_mem_sel : mem.sel r_mem = 1)
+    (h_mem_legacy_addr : mem.addr r_mem = bus.e1.ptr)
+    (h_mem_wr : mem.wr r_mem = 0) : OpEnvelope state m r_main
   -- ============================ MUL =====================================
   | mul
     (mul_input : PureSpec.MulInput) (r1 r2 rd : regidx)

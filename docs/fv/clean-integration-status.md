@@ -1180,6 +1180,13 @@ LHU and LWU now use the same full-ensemble route via
 `lhu_eq_of_full_ensemble_mem_provider` and
 `lwu_eq_of_full_ensemble_mem_provider`, preserving their existing alignment
 and width pins while reconstructing `LoadCleanWitness` inside the dispatcher.
+The signed load arms `LB/LH/LW` now also reconstruct their memory
+`LoadCleanWitness` from selected full-ensemble Main/Mem rows through
+`lb_eq_of_full_ensemble_mem_provider`,
+`lh_eq_of_full_ensemble_mem_provider`, and
+`lw_eq_of_full_ensemble_mem_provider`. Their BinaryExtension static-match
+operation-bus evidence remains explicit for now; this slice removes only the
+caller-built memory witness.
 The unified Main, Mem, and MemAlign-family component modules also expose
 direct projection lemmas from generic Clean component specs to the concrete
 row specs expected by the existing load/store bridge layer:
