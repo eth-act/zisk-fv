@@ -656,6 +656,53 @@ lemma shift_pin_immediate_eq_of_shift_match
   rw [this, h_shamt_val]
   omega
 
+/-- Variant of `shift_pin_immediate_eq_of_shift_match` whose no-wrap bound
+    for the BinaryExtension-local `b_0` column is supplied by the
+    shift-specific Clean range witness, while `free_in_b < 256` comes from
+    the exact static BinaryExtensionTable byte witnesses. -/
+lemma shift_pin_immediate_eq_of_shift_match_of_b0_range
+    (m : Valid_Main FGL FGL) (v : Valid_BinaryExtension FGL FGL)
+    (r_main r_binary : ℕ) (shamt : BitVec 6)
+    (h_b_lo_t : m.b_0 r_main = shamt_b_lo shamt)
+    (h_op_is_shift : v.op_is_shift r_binary = 1)
+    (h_match : matches_entry (opBus_row_Main m r_main)
+                              (opBus_row_BinaryExtension v r_binary))
+    (h_bytes : ZiskFv.Airs.BinaryExtension.ByteLookupHypotheses v r_binary)
+    (h_wfs : ZiskFv.Airs.BinaryExtension.ByteLookupWfHypotheses h_bytes)
+    (h_b0_lt : (v.b_0 r_binary).val < 2 ^ 24) :
+    shamt.toNat = (v.free_in_b r_binary).val % 64 := by
+  have h_b_main : (v.free_in_b r_binary).val < 256 := by
+    have h := h_wfs.1.1.2.2
+    simpa [h_bytes.h0.2.2.2.2.1] using h
+  have h_lane_eqs := h_match
+  simp only [matches_entry, opBus_row_Main, opBus_row_BinaryExtension] at h_lane_eqs
+  obtain ⟨_, _, _, _, h_b_lo_m, _, _, _, _, _, _, _⟩ := h_lane_eqs
+  rw [h_op_is_shift] at h_b_lo_m
+  have h_b0_fgl : m.b_0 r_main = v.free_in_b r_binary + 256 * v.b_0 r_binary := by
+    rw [h_b_lo_m]; ring
+  have h_shamt_eq : shamt_b_lo shamt = v.free_in_b r_binary + 256 * v.b_0 r_binary := by
+    rw [← h_b_lo_t, h_b0_fgl]
+  have h_lhs_val : (shamt_b_lo shamt : FGL).val = shamt.toNat := by
+    simp [shamt_b_lo]
+  have h_rhs_val : (v.free_in_b r_binary + 256 * v.b_0 r_binary : FGL).val
+      = (v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val := by
+    have h_cast : v.free_in_b r_binary + 256 * v.b_0 r_binary
+        = ((((v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val : ℕ) : FGL)) := by
+      push_cast; ring
+    rw [h_cast, Fin.val_natCast]
+    apply Nat.mod_eq_of_lt
+    show _ < 18446744069414584321
+    omega
+  have h_shamt_val : shamt.toNat
+      = (v.free_in_b r_binary).val + 256 * (v.b_0 r_binary).val := by
+    have h := congr_arg Fin.val h_shamt_eq
+    rw [h_lhs_val, h_rhs_val] at h
+    exact h
+  have h_shamt_lt : shamt.toNat < 64 := shamt.isLt
+  have : shamt.toNat = shamt.toNat % 64 := (Nat.mod_eq_of_lt h_shamt_lt).symm
+  rw [this, h_shamt_val]
+  omega
+
 /-! ## Input bridge / shift-pin discharge (shift family, m32 = 1, W variants)
 
 For the 32-bit W-variant shifts (SLLW/SRLW/SRAW/SLLIW/SRLIW/SRAIW),
