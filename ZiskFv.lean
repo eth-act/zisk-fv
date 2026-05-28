@@ -125,4 +125,5 @@ import ZiskFv.EquivCore.WriteValueProofs.MulDivRemSigned
 import ZiskFv.EquivCore.Bridge.MemClean
 import ZiskFv.AirsClean.ArithTableProjections
 import ZiskFv.AirsClean.BinaryFamily.Balance
+import ZiskFv.AirsClean.FullEnsemble
 import ZiskFv.Compliance

@@ -1071,10 +1071,21 @@ Checklist:
 Purpose: after terminal families retire their shared trust, collapse the
 hybrid proof surface into the intended Clean ensemble proof architecture.
 
+Status note (2026-05-28): T7.1 has started with
+`ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble`, a top-level-imported
+`FormalEnsemble` that assembles the currently migrated Main op-bus surface,
+Main ROM/memory surface, lookup-aware Binary/BinaryExtension providers,
+BinaryAdd, ArithMul, ArithDiv, Mem, MemAlign, MemAlignByte, and
+MemAlignReadByte behind the shared operation and memory channels. This is an
+ensemble skeleton only: Main is still split into op-bus and memory-bus
+components, so T7.2/T7.3 still need the row-coherence and constructibility
+statement before canonical theorem closures can honestly be re-rooted on it.
+
 Checklist:
 
-- ☐ T7.1 define the full Clean ensemble statement for the supported RV64IM
-  scope.
+- ◐ T7.1 define the full Clean ensemble statement for the supported RV64IM
+  scope. Initial skeleton exists as `FullEnsemble.fullRv64imEnsemble`; final
+  row-coherent statement remains open.
 - ☐ T7.2 prove constructibility: real ZisK traces produce an
   `EnsembleWitness` satisfying constraints and balanced channels, modulo
   explicit `h_known_bugs`.
