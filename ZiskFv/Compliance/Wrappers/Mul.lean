@@ -271,6 +271,8 @@ theorem equiv_MUL
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_no_signed_mul_witness_defect : False)
     :
     (do
@@ -285,7 +287,7 @@ theorem equiv_MUL
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   equiv_MUL_of_table state mul_input r1 r2 rd srs1 srs2 bus m r_main v r_a
     pins h_match_primary promises bounds h_row_constraints
-    (ZiskFv.Airs.Arith.arith_mul_table_lookup_sound v r_a)
+    h_arith_table
     h_no_signed_mul_witness_defect
 
 end ZiskFv.Compliance

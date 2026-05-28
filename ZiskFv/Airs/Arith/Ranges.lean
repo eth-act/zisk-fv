@@ -41,36 +41,13 @@ namespace ZiskFv.Airs.Arith
 open Goldilocks
 open ZiskFv.Channels.RangeBusSoundness
 
-/-! ## ArithTable lookup/permutation boundary
+/-! ## ArithTable row-native projections
 
-These are the corrected C3/C4-b trust boundary for the ArithTable ROM
-lookup. They state only row/table membership for the emitted
-`arith_table_assumes` tuple. Opcode-specific mode and selector facts must
-be proved separately from this membership and the translated 74-row table.
-
-Temporary trust class: lookup/permutation soundness for the ArithTable
-channel, replacing the older over-specific `arith_table_op_*` facts.
+T5 retired the shared ArithTable lookup/permutation axioms from the
+canonical closure. Opcode-specific mode and selector facts below are proved
+from an explicit row-native `ArithTableSpec (rowAt v r)` witness, supplied by
+the caller or a future Clean ensemble bridge.
 -/
-
-/-- **ArithMul ArithTable lookup/permutation soundness (class #6b).**
-    For every ArithMul-view row, the 15-column `arith_table_assumes`
-    tuple emitted by the AIR is a member of the translated 74-row
-    ArithTable. This is the shared C3/C4-b lookup boundary; opcode facts
-    are derived separately from `ArithTableSpec`. -/
-axiom arith_mul_table_lookup_sound
-    (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ) :
-    ZiskFv.AirsClean.ArithMul.ArithTableSpec
-      (ZiskFv.AirsClean.ArithMul.rowAt v r_a)
-
-/-- **ArithDiv ArithTable lookup/permutation soundness (class #6b).**
-    For every ArithDiv-view row, the 15-column `arith_table_assumes`
-    tuple emitted by the AIR is a member of the translated 74-row
-    ArithTable. This is the shared C3/C4-b lookup boundary; opcode facts
-    are derived separately from `ArithTableSpec`. -/
-axiom arith_div_table_lookup_sound
-    (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ) :
-    ZiskFv.AirsClean.ArithDiv.ArithTableSpec
-      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a)
 
 
 /-- **ArithMul range-check soundness (derived).** Every `a_i`, `b_i`,
@@ -498,10 +475,12 @@ columns from the `op` literal). -/
     OpBus permutation matching `m.op r_main` to `v.op r_a`). -/
 theorem arith_table_op_div_rem_signed_mode_pin
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
     v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 1 :=
   ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_signed_mode_pin
-    v r_a (arith_div_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-! ## Arith-table primary/secondary selector pin — signed DIV / REM (m32 = 0)
 
@@ -541,11 +520,13 @@ DIV/REM rows). Same kind, narrower covering set. -/
      hi-lane discharge. -/
 theorem arith_table_op_div_rem_main_selector_pin
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_op : v.op r_a = 186 ∨ v.op r_a = 187) :
     (v.op r_a = 186 → v.main_div r_a = 1 ∧ v.main_mul r_a = 0)
   ∧ (v.op r_a = 187 → v.main_div r_a = 0 ∧ v.main_mul r_a = 0) :=
   ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_main_selector_pin
-    v r_a (arith_div_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-! ## Arith-table signed DIV/REM sign-witness MSB pins — `np = MSB(C)`, `nb = MSB(B)`
 
@@ -846,13 +827,15 @@ emits the low product through `bus_res0`).
     but does not pin those sign witnesses to zero. -/
 theorem arith_table_op_mul_basic_mode_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_op : v.op r_a = 180) :
     v.nr r_a = 0 ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
       ∧ (v.na r_a = 0 ∨ v.na r_a = 1)
       ∧ (v.nb r_a = 0 ∨ v.nb r_a = 1)
       ∧ (v.np r_a = 0 ∨ v.np r_a = 1) :=
   ZiskFv.AirsClean.ArithTableProjections.Mul.mul_basic_mode_pin
-    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-- **Arith-table MUL range pins (derived).**
     For low-half signed MUL (`op = 180`), the static table classifies
@@ -863,6 +846,8 @@ theorem arith_table_op_mul_basic_mode_pin
     side conditions needed to replace the old all-zero sign shortcut. -/
 theorem arith_table_op_mul_range_pins
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_op : v.op r_a = 180) :
     (v.na r_a = 0 → v.nb r_a = 0 → v.range_ab r_a = 4)
       ∧ (v.na r_a = 1 → v.nb r_a = 0 → v.range_ab r_a = 7)
@@ -871,7 +856,7 @@ theorem arith_table_op_mul_range_pins
       ∧ (v.np r_a = 0 → v.range_cd r_a = 1)
       ∧ (v.np r_a = 1 → v.range_cd r_a = 2) :=
   ZiskFv.AirsClean.ArithTableProjections.Mul.mul_range_pins
-    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-- **Arith-table MUL sign-product split (derived).**
     For low-half signed MUL (`op = 180`), the static ROM rows either
@@ -884,12 +869,14 @@ theorem arith_table_op_mul_range_pins
     sign shortcut can be deleted. -/
 theorem arith_table_op_mul_np_xor_or_zero_product_shape
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_op : v.op r_a = 180) :
     v.np r_a = v.na r_a + v.nb r_a - 2 * v.na r_a * v.nb r_a
       ∨ (v.na r_a = 1 ∧ v.nb r_a = 0 ∧ v.np r_a = 0)
       ∨ (v.na r_a = 0 ∧ v.nb r_a = 1 ∧ v.np r_a = 0) :=
   ZiskFv.AirsClean.ArithTableProjections.Mul.mul_np_xor_or_zero_product_shape
-    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-- **Arith-table MUL primary/secondary selector pin (class #6b).**
     For every `Valid_ArithMul` row with `op = 180` (MUL — low 64 bits)
@@ -912,10 +899,12 @@ theorem arith_table_op_mul_np_xor_or_zero_product_shape
     as `arith_table_op_div_rem_main_selector_pin` (the DIV analog). -/
 theorem arith_table_op_mul_main_selector_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_op : v.op r_a = 180) :
     v.main_mul r_a = 1 ∧ v.main_div r_a = 0 :=
   ZiskFv.AirsClean.ArithTableProjections.Mul.mul_main_selector_pin
-    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-! ## Arith-table unsigned non-W DIV/REM mode pin (DIVU = 184, REMU = 185)
 
@@ -939,11 +928,13 @@ scope, as `arith_table_op_div_rem_signed_mode_pin`.
     witnesses to 0, plus `sext = 0`, `m32 = 0`, `div = 1`. -/
 theorem arith_table_op_div_rem_unsigned_mode_pin
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_op : v.op r_a = 184 ∨ v.op r_a = 185) :
     v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
       ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 1 :=
   ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_unsigned_mode_pin
-    v r_a (arith_div_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-- **Arith-table unsigned non-W DIV/REM primary/secondary selector pin (class #6b).**
     For every `Valid_ArithDiv` row with `op = 184` (DIVU), the
@@ -954,11 +945,13 @@ theorem arith_table_op_div_rem_unsigned_mode_pin
     rows for `op = 184 / 185`. -/
 theorem arith_table_op_div_rem_unsigned_main_selector_pin
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_op : v.op r_a = 184 ∨ v.op r_a = 185) :
     (v.op r_a = 184 → v.main_div r_a = 1 ∧ v.main_mul r_a = 0)
   ∧ (v.op r_a = 185 → v.main_div r_a = 0 ∧ v.main_mul r_a = 0) :=
   ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_unsigned_main_selector_pin
-    v r_a (arith_div_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-! ## Arith-table W-mode DIV/REM mode pins (m32 = 1)
 
@@ -992,21 +985,25 @@ the W-variant rows of `arith_table.pil` /
     pinned here: concrete ROM rows include both `sext = 0` and `sext = 1`. -/
 theorem arith_table_op_div_rem_unsigned_w_basic_mode_pin
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_op : v.op r_a = 188 ∨ v.op r_a = 189) :
     v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
       ∧ v.m32 r_a = 1 ∧ v.div r_a = 1 :=
   ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_unsigned_w_basic_mode_pin
-    v r_a (arith_div_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-- **Arith-table signed-W DIV/REM basic mode pin (derived).**
     True static subset of the signed W rows. `sext` is intentionally not
     pinned here: the table contains sign-extending rows. -/
 theorem arith_table_op_div_rem_signed_w_basic_mode_pin
     (v : ZiskFv.Airs.ArithDiv.Valid_ArithDiv FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_op : v.op r_a = 190 ∨ v.op r_a = 191) :
     v.m32 r_a = 1 ∧ v.div r_a = 1 :=
   ZiskFv.AirsClean.ArithTableProjections.Div.div_rem_signed_w_basic_mode_pin
-    v r_a (arith_div_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-! ## Arith-table MULHU mode pin (op = 0xb1 = 177)
 
@@ -1033,11 +1030,13 @@ Same kind, narrower scope, as `arith_table_op_mul_mode_pin`.
     `arith_table_data.rs::ARITH_TABLE`. -/
 theorem arith_table_op_mulhu_mode_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_op : v.op r_a = 177) :
     v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
       ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0 :=
   ZiskFv.AirsClean.ArithTableProjections.Mul.mulhu_mode_pin
-    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-- **Arith-table MULHU primary/secondary selector pin (class #6b).**
     For every `Valid_ArithMul` row with `op = 177` (MULHU), the same
@@ -1054,10 +1053,12 @@ theorem arith_table_op_mulhu_mode_pin
     `arith_table_op_mul_main_selector_pin` (the low-half MUL analog). -/
 theorem arith_table_op_mulhu_main_selector_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_op : v.op r_a = 177) :
     v.main_mul r_a = 0 ∧ v.main_div r_a = 0 :=
   ZiskFv.AirsClean.ArithTableProjections.Mul.mulhu_main_selector_pin
-    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-! ## Arith-table signed high-half MUL mode projections (MULH = 181, MULHSU = 179)
 
@@ -1080,13 +1081,15 @@ composed with the MULH=0xb5 / MULHSU=0xb3 rows of
     sign witnesses. The XOR/product-sign relation is not a static ROM fact. -/
 theorem arith_table_op_mulh_basic_mode_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_op : v.op r_a = 181) :
     v.nr r_a = 0 ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
       ∧ (v.na r_a = 0 ∨ v.na r_a = 1)
       ∧ (v.nb r_a = 0 ∨ v.nb r_a = 1)
       ∧ (v.np r_a = 0 ∨ v.np r_a = 1) :=
   ZiskFv.AirsClean.ArithTableProjections.Mul.mulh_basic_mode_pin
-    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-- **Arith-table MULH primary/secondary selector pin (class #6b).**
     For every `Valid_ArithMul` row with `op = 181` (MULH), the same
@@ -1094,10 +1097,12 @@ theorem arith_table_op_mulh_basic_mode_pin
     to MULH-secondary: `main_mul = 0, main_div = 0`. -/
 theorem arith_table_op_mulh_main_selector_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_op : v.op r_a = 181) :
     v.main_mul r_a = 0 ∧ v.main_div r_a = 0 :=
   ZiskFv.AirsClean.ArithTableProjections.Mul.mulh_main_selector_pin
-    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-- **Arith-table MULHSU basic mode pin (derived).**
     True static subset of the MULHSU rows: unsigned second operand, mode
@@ -1105,23 +1110,27 @@ theorem arith_table_op_mulh_main_selector_pin
     XOR relation is not a static ROM fact. -/
 theorem arith_table_op_mulhsu_basic_mode_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_op : v.op r_a = 179) :
     v.nb r_a = 0
       ∧ v.nr r_a = 0 ∧ v.sext r_a = 0 ∧ v.m32 r_a = 0 ∧ v.div r_a = 0
       ∧ (v.na r_a = 0 ∨ v.na r_a = 1)
       ∧ (v.np r_a = 0 ∨ v.np r_a = 1) :=
   ZiskFv.AirsClean.ArithTableProjections.Mul.mulhsu_basic_mode_pin
-    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-- **Arith-table MULHSU primary/secondary selector pin (class #6b).**
     For every `Valid_ArithMul` row with `op = 179` (MULHSU), the same
     `arith_table_assumes` lookup pins `main_mul = 0, main_div = 0`. -/
 theorem arith_table_op_mulhsu_main_selector_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_op : v.op r_a = 179) :
     v.main_mul r_a = 0 ∧ v.main_div r_a = 0 :=
   ZiskFv.AirsClean.ArithTableProjections.Mul.mulhsu_main_selector_pin
-    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 /-! ## Arith-table high-half MUL sign-witness MSB pins — `na = MSB(A)`, `nb = MSB(B)`
 
@@ -1224,10 +1233,12 @@ PIL citation for the faithful static subset below: `arith.pil:286-287`
     here: concrete ROM rows include both `sext = 0` and `sext = 1`. -/
 theorem arith_table_op_mulw_basic_mode_pin
     (v : ZiskFv.Airs.ArithMul.Valid_ArithMul FGL FGL) (r_a : ℕ)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_op : v.op r_a = 182) :
     v.na r_a = 0 ∧ v.nb r_a = 0 ∧ v.np r_a = 0 ∧ v.nr r_a = 0
       ∧ v.m32 r_a = 1 ∧ v.div r_a = 0 :=
   ZiskFv.AirsClean.ArithTableProjections.Mul.mulw_basic_mode_pin
-    v r_a (arith_mul_table_lookup_sound v r_a) h_op
+    v r_a h_arith_table h_op
 
 end ZiskFv.Airs.Arith

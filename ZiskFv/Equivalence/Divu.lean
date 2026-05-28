@@ -44,6 +44,8 @@ theorem equiv_DIVU
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_op2_ne : divu_input.r2_val.toNat ≠ 0)
     : (do
       Sail.writeReg Register.nextPC
@@ -52,6 +54,6 @@ theorem equiv_DIVU
       = state_effect_via_channels
           ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_DIVU state divu_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises bounds h_row_constraints h_op2_ne
+  exact ZiskFv.Compliance.equiv_DIVU_of_table state divu_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises bounds h_row_constraints h_arith_table h_op2_ne
 
 end ZiskFv.Equivalence.Divu

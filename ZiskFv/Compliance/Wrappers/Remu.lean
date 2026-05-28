@@ -188,6 +188,8 @@ theorem equiv_REMU
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_op2_ne : remu_input.r2_val.toNat ≠ 0) :
     (do
       Sail.writeReg Register.nextPC
@@ -196,7 +198,7 @@ theorem equiv_REMU
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   exact equiv_REMU_of_table
     state remu_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises
-    bounds h_row_constraints (ZiskFv.Airs.Arith.arith_div_table_lookup_sound v r_a)
+    bounds h_row_constraints h_arith_table
     h_op2_ne
 
 end ZiskFv.Compliance

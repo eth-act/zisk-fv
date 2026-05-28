@@ -271,6 +271,8 @@ theorem equiv_MULH
         state mulh_input.r1_val mulh_input.r2_val mulh_input.rd mulh_input.PC
         (PureSpec.execute_MULH_mulh_pure mulh_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (h_no_signed_mul_witness_defect : False)
@@ -287,7 +289,7 @@ theorem equiv_MULH
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   exact equiv_MULH_of_table
     state mulh_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises
-    (ZiskFv.Airs.Arith.arith_mul_table_lookup_sound v r_a)
+    h_arith_table
     h_row_constraints h_no_signed_mul_witness_defect
 
 end ZiskFv.Compliance

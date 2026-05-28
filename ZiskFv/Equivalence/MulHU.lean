@@ -41,6 +41,8 @@ theorem equiv_MULHU
         (PureSpec.execute_MULH_mulhu_pure mulhu_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_row_constraints : ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     : (do
       Sail.writeReg Register.nextPC (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -48,6 +50,6 @@ theorem equiv_MULHU
         (instruction.MUL (r2, r1, rd, { result_part := VectorHalf.High, signed_rs1 := .Unsigned, signed_rs2 := .Unsigned }))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_MULHU state mulhu_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises bounds h_row_constraints
+  exact ZiskFv.Compliance.equiv_MULHU_of_table state mulhu_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises bounds h_row_constraints h_arith_table
 
 end ZiskFv.Equivalence.MulHU

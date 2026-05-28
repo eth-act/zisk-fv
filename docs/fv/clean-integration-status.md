@@ -85,14 +85,16 @@ retired from the global closure. Trust ledger: 82 source axioms /
 C8 (chunk-shape `MemoryBusEntry` cutover) and T4.0 (ZisK instruction
 ROM modeling) were the enabling prerequisites and are also closed.
 
-The next active phase is **T5 — Arith-family terminal phase**: route
-ArithMul/ArithDiv through lookup-aware Clean components + a static
-ArithTable provider, retire `arith_mul_table_lookup_sound` /
-`arith_div_table_lookup_sound` and the remaining `arith_table_*`
-facts, and keep the signed-MUL/MULH/MULHSU defects explicit through
-`h_known_bugs`. `main_external_arith_emission_bundle` (still in the
-closure) is a T5 target; `main_store_pc_emission_bundle` is a T6/T7
-target.
+The active phase is **T5 — Arith-family terminal phase**. The first
+T5 landing retired `arith_mul_table_lookup_sound` /
+`arith_div_table_lookup_sound` from source and from the global closure:
+canonical `MUL*`, `DIV*`, and `REM*` paths now consume explicit
+row-native `ArithTableSpec` witnesses. The remaining T5 work is to
+source those witnesses from a shared Arith-family Clean ensemble, retire
+the remaining dynamic Arith facts where possible, and keep the
+signed-MUL/MULH/MULHSU defects explicit through `h_known_bugs`.
+`main_external_arith_emission_bundle` (still in the closure) remains a
+T5 target; `main_store_pc_emission_bundle` is a T6/T7 target.
 
 ### C7 — CLOSED (axiom retirements landed in T4-purge commits)
 
@@ -997,11 +999,13 @@ Checklist:
   `h_known_bugs` until the circuit/witness issue is fixed upstream.
 - ☐ T5.5 prove row-native non-defective `DIV/REM` facts and keep remaining
   documented dynamic defects under `h_known_bugs`.
-- ☐ T5.6 retire `arith_mul_table_lookup_sound`,
+- ☑ T5.6a retire `arith_mul_table_lookup_sound`,
   `arith_div_table_lookup_sound`, and every remaining true static
-  `arith_table_*` fact that is no longer needed in the global closure; if a
-  fact remains because of a defect or later family, record the exact consumer
-  as in T1.7/T1.8.
+  ArithTable lookup boundary from source and the global closure by exposing
+  row-native `ArithTableSpec` witnesses.
+- ☐ T5.6b retire every remaining true static `arith_table_*` fact that is no
+  longer needed in the global closure; if a fact remains because of a defect
+  or later family, record the exact consumer as in T1.7/T1.8.
 
 Expected trust movement:
 

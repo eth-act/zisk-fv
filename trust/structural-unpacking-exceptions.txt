@@ -448,6 +448,106 @@ ADDED: v, r_a, h_chain, h_na, h_nb, h_np, h_nr, h_sext, h_m32, h_div,
         axiom.)
 
 # ============================================================
+# T5 ArithTable lookup structural unpacking (13)
+# ============================================================
+#
+# The 13 Arith-family canonical theorems below are allowed to add one
+# `h_arith_table : ArithTableSpec (rowAt v r_a)` binder while removing
+# the shared `arith_mul_table_lookup_sound` / `arith_div_table_lookup_sound`
+# axioms from their semantic closures.
+#
+# This is structural unpacking, not promise laundering, because the added
+# binder exposes the exact row-native static ArithTable membership that the
+# old wrappers obtained by calling a global lookup/permutation axiom inside
+# each canonical proof. The compatibility wrappers still exist for legacy
+# callers and still consume the shared lookup boundary, but the canonical
+# theorem shape now separates the structural provider-row witness from the
+# opcode proof. A future Compliance-level ensemble can supply this binder
+# once per selected Arith provider row, instead of each opcode silently
+# depending on the shared lookup axiom through its closure.
+#
+# PIL-BASIS for all 13 entries below:
+#   * arith.pil:280 and arith.pil:286-287 — Arith AIR emits the
+#     `arith_table_assumes` tuple and consumes it through the table lookup.
+#   * Clean bridge `rowAt v r_a` definitions — the 15-field row-native
+#     tuple translated from the lookup.
+#   * `AirsClean/Arith{Mul,Div}/Bridge.lean` finite-table projection lemmas
+#     prove opcode mode/selector facts from `ArithTableSpec`, leaving no
+#     opcode-shaped ArithTable axiom in canonical closures.
+
+OPCODE: ZiskFv.Equivalence.Mul.equiv_MUL
+DROPPED: arith_mul_table_lookup_sound from semantic closure
+ADDED: h_arith_table
+       (`ArithMul.ArithTableSpec (ArithMul.rowAt v r_a)`, row-native
+        structural membership for the selected ArithMul row.)
+
+OPCODE: ZiskFv.Equivalence.MulH.equiv_MULH
+DROPPED: arith_mul_table_lookup_sound from semantic closure
+ADDED: h_arith_table
+       (same ArithMul row-native membership as MUL; signed-MUL dynamic
+        witness facts remain separate and explicit.)
+
+OPCODE: ZiskFv.Equivalence.MulHSU.equiv_MULHSU
+DROPPED: arith_mul_table_lookup_sound from semantic closure
+ADDED: h_arith_table
+       (same ArithMul row-native membership as MULH.)
+
+OPCODE: ZiskFv.Equivalence.MulHU.equiv_MULHU
+DROPPED: arith_mul_table_lookup_sound from semantic closure
+ADDED: h_arith_table
+       (same ArithMul row-native membership as MUL.)
+
+OPCODE: ZiskFv.Equivalence.MulW.equiv_MULW
+DROPPED: arith_mul_table_lookup_sound from semantic closure
+ADDED: h_arith_table
+       (same ArithMul row-native membership as MUL, specialized by the
+        existing W-mode structural pins.)
+
+OPCODE: ZiskFv.Equivalence.Div.equiv_DIV
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: h_arith_table
+       (`ArithDiv.ArithTableSpec (ArithDiv.rowAt v r_a)`, row-native
+        structural membership for the selected ArithDiv row.)
+
+OPCODE: ZiskFv.Equivalence.Divu.equiv_DIVU
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: h_arith_table
+       (same ArithDiv row-native membership as DIV.)
+
+OPCODE: ZiskFv.Equivalence.Divuw.equiv_DIVUW
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: h_arith_table
+       (same ArithDiv row-native membership as DIV, specialized by the
+        existing unsigned W-mode structural pins.)
+
+OPCODE: ZiskFv.Equivalence.Divw.equiv_DIVW
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: h_arith_table
+       (same ArithDiv row-native membership as DIV, with signed W-mode
+        dynamic facts remaining separate and explicit.)
+
+OPCODE: ZiskFv.Equivalence.Rem.equiv_REM
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: h_arith_table
+       (same ArithDiv row-native membership as DIV; remainder dynamic
+        facts remain separate and explicit.)
+
+OPCODE: ZiskFv.Equivalence.Remu.equiv_REMU
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: h_arith_table
+       (same ArithDiv row-native membership as DIVU.)
+
+OPCODE: ZiskFv.Equivalence.Remuw.equiv_REMUW
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: h_arith_table
+       (same ArithDiv row-native membership as DIVUW.)
+
+OPCODE: ZiskFv.Equivalence.Remw.equiv_REMW
+DROPPED: arith_div_table_lookup_sound from semantic closure
+ADDED: h_arith_table
+       (same ArithDiv row-native membership as DIVW.)
+
+# ============================================================
 # ITYPE constructibility-bundle ops (Step 4.2r3.I)
 # ============================================================
 #

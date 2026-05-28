@@ -42,6 +42,8 @@ theorem equiv_MULW
         state mulw_input.r1_val mulw_input.r2_val mulw_input.rd mulw_input.PC
         (PureSpec.execute_MULW_pure mulw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     (h_row_constraints : ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
     (h_sext_choice :
       (((byteAt bus.e2 4).val = 0 ∧ (byteAt bus.e2 5).val = 0 ∧ (byteAt bus.e2 6).val = 0 ∧ (byteAt bus.e2 7).val = 0) ∧
@@ -59,6 +61,6 @@ theorem equiv_MULW
       LeanRV64D.Functions.execute (instruction.MULW (r2, r1, rd))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_MULW state mulw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises h_row_constraints h_sext_choice h_rs1_value h_rs2_value
+  exact ZiskFv.Compliance.equiv_MULW_of_table state mulw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises h_arith_table h_row_constraints h_sext_choice h_rs1_value h_rs2_value
 
 end ZiskFv.Equivalence.MulW

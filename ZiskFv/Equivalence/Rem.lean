@@ -44,6 +44,8 @@ theorem equiv_REM
     (h_no_overflow :
       ¬ (rem_input.r1_val.toInt = -(2:ℤ)^63 ∧ rem_input.r2_val.toInt = -1))
     (h_row_constraints : ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -56,6 +58,6 @@ theorem equiv_REM
       LeanRV64D.Functions.execute (instruction.REM (r2, r1, rd, false))) state
       = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state := by
   rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
-  exact ZiskFv.Compliance.equiv_REM state rem_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises h_op2_ne h_no_overflow h_row_constraints h_na_bool h_nb_bool h_nr_bool h_np_xor
+  exact ZiskFv.Compliance.equiv_REM_of_table state rem_input r1 r2 rd bus m r_main v r_a pins h_match_secondary promises h_op2_ne h_no_overflow h_row_constraints h_arith_table h_na_bool h_nb_bool h_nr_bool h_np_xor
 
 end ZiskFv.Equivalence.Rem

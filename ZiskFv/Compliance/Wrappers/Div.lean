@@ -66,7 +66,7 @@ open ZiskFv.EquivCore.Promises
     * `h_op_arith : v.op r_a = 186 ∨ v.op r_a = 187` — from the
       `matches_entry` op-slot equality (op-bus permutation).
     * `h_sext`, `h_m32`, `h_div` — from
-      `arith_div_table_lookup_sound` plus finite-table projections.
+      row-native `ArithTableSpec` plus finite-table projections.
     * `h_nr_pin` — from
       `arith_table_op_div_rem_signed_d_sign_pin` (existing).
     * `h_r_abs`, `h_r_sign` — from `arith_div_remainder_bound`
@@ -333,6 +333,8 @@ theorem equiv_DIV
       ¬ (div_input.r1_val.toInt = -(2:ℤ)^63 ∧ div_input.r2_val.toInt = -1))
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_na_bool : v.na r_a = 0 ∨ v.na r_a = 1)
     (h_nb_bool : v.nb r_a = 0 ∨ v.nb r_a = 1)
     (h_nr_bool : v.nr r_a = 0 ∨ v.nr r_a = 1)
@@ -349,7 +351,7 @@ theorem equiv_DIV
   exact equiv_DIV_of_table
     state div_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises
     h_op2_ne h_no_overflow h_row_constraints
-    (ZiskFv.Airs.Arith.arith_div_table_lookup_sound v r_a)
+    h_arith_table
     h_na_bool h_nb_bool h_nr_bool h_np_xor
 
 end ZiskFv.Compliance

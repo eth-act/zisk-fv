@@ -23,9 +23,9 @@
 #     > trust/baseline-zisk-riscv-compliant.txt
 #
 # Refresh via `trust/scripts/regenerate.sh` (requires `lake build`
-# artefacts under `.lake/build/`). Last regenerated: 2026-05-27.
+# artefacts under `.lake/build/`). Last regenerated: 2026-05-28.
 #
-# Total entries: 80
+# Total entries: 78
 #
 ZiskFv.Airs.Arith.arith_div_nb_eq_msb_of_divisor
 ZiskFv.Airs.Arith.arith_div_np_eq_msb_of_dividend
@@ -33,10 +33,8 @@ ZiskFv.Airs.Arith.arith_div_remainder_bound
 ZiskFv.Airs.Arith.arith_div_remainder_bound_signed_w
 ZiskFv.Airs.Arith.arith_div_remainder_bound_unsigned
 ZiskFv.Airs.Arith.arith_div_remainder_bound_unsigned_w
-ZiskFv.Airs.Arith.arith_div_table_lookup_sound
 ZiskFv.Airs.Arith.arith_mul_na_eq_msb_of_a
 ZiskFv.Airs.Arith.arith_mul_nb_eq_msb_of_b
-ZiskFv.Airs.Arith.arith_mul_table_lookup_sound
 ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_d_sign_pin
 ZiskFv.Airs.Arith.arith_table_op_div_rem_signed_w_d_sign_pin
 ZiskFv.Airs.Arith.arith_table_op_divw_operand_pin

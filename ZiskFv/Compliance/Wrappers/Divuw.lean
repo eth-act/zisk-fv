@@ -178,6 +178,8 @@ theorem equiv_DIVUW
         state divuw_input.r1_val divuw_input.r2_val divuw_input.rd divuw_input.PC
         (PureSpec.execute_DIVREM_divuw_pure divuw_input).nextPC
         r1 r2 rd bus.exec_row bus.e0 bus.e1 bus.e2)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
     (h_sext_choice :
@@ -197,7 +199,7 @@ theorem equiv_DIVUW
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 := by
   exact equiv_DIVUW_of_table
     state divuw_input r1 r2 rd bus m r_main v r_a pins h_match_primary promises
-    (ZiskFv.Airs.Arith.arith_div_table_lookup_sound v r_a)
+    h_arith_table
     h_row_constraints h_sext_choice h_rs1_value h_rs2_value h_op2_ne
 
 end ZiskFv.Compliance

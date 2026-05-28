@@ -27,7 +27,8 @@ import ZiskFv.Compliance.SharedBundles
 >
 > Discharged promise hypotheses:
 > * Seven **mode pins** (`h_na`, `h_nb`, `h_np`, `h_nr`, `h_sext`,
->   `h_m32`, `h_div`) — discharged via `arith_mul_table_lookup_sound`
+>   `h_m32`, `h_div`) — discharged via the row-native
+>   `ArithTableSpec` witness
 >   plus a finite-table projection.
 > * Two **lane-match** equations (`h_byte_lo`, `h_byte_hi`) over
 >   `v.d_*` chunks — discharged via `main_external_arith_emission_bundle`
@@ -217,6 +218,8 @@ theorem equiv_MULHU
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithMul.mul_row_constraints_with_c46 v r_a)
+    (h_arith_table : ZiskFv.AirsClean.ArithMul.ArithTableSpec
+      (ZiskFv.AirsClean.ArithMul.rowAt v r_a))
     :
     (do
       Sail.writeReg Register.nextPC
@@ -230,6 +233,6 @@ theorem equiv_MULHU
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   equiv_MULHU_of_table state mulhu_input r1 r2 rd bus m r_main v r_a pins
     h_match_secondary promises bounds h_row_constraints
-    (ZiskFv.Airs.Arith.arith_mul_table_lookup_sound v r_a)
+    h_arith_table
 
 end ZiskFv.Compliance

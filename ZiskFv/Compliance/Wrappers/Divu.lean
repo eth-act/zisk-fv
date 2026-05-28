@@ -21,7 +21,7 @@ import ZiskFv.Compliance.SharedBundles
 > bridge, primary lane) for the DIVU opcode (op = 0xb8 = 184).
 >
 > Discharge categories:
-> * Mode pins via `arith_div_table_lookup_sound` plus finite-table projections.
+> * Mode pins via row-native `ArithTableSpec` plus finite-table projections.
 > * Selector pin via the same shared ArithTable lookup membership.
 > * Lane-match via `main_external_arith_emission_bundle` + op-bus
 >   `matches_entry` projection on `opBus_row_ArithDiv` (primary, lo via
@@ -200,6 +200,8 @@ theorem equiv_DIVU
     (bounds : ZiskFv.Compliance.ByteBounds bus.e2)
     (h_row_constraints :
       ZiskFv.Airs.ArithDiv.div_row_constraints_with_c46 v r_a)
+    (h_arith_table : ZiskFv.AirsClean.ArithDiv.ArithTableSpec
+      (ZiskFv.AirsClean.ArithDiv.rowAt v r_a))
     (h_op2_ne : divu_input.r2_val.toNat ≠ 0) :
     (do
       Sail.writeReg Register.nextPC
@@ -208,6 +210,6 @@ theorem equiv_DIVU
       = (bus_effect bus.exec_row [bus.e0, bus.e1, bus.e2] state).2 :=
   equiv_DIVU_of_table state divu_input r1 r2 rd bus m r_main v r_a pins
     h_match_primary promises bounds h_row_constraints
-    (ZiskFv.Airs.Arith.arith_div_table_lookup_sound v r_a) h_op2_ne
+    h_arith_table h_op2_ne
 
 end ZiskFv.Compliance

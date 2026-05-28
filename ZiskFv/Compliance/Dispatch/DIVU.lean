@@ -26,7 +26,7 @@ variable {m : Valid_Main FGL FGL} {r_main : ℕ}
 
 def OpEnvelope.exec_eq_divu
     : OpEnvelope state m r_main → Prop
-  | .divu _ r1 r2 rd bus _ _ _ _ _ _ _ _ =>
+  | .divu _ r1 r2 rd bus _ _ _ _ _ _ _ _ _ =>
       (do
         Sail.writeReg Register.nextPC
           (Sail.BitVec.addInt (← Sail.readReg Register.PC) 4)
@@ -39,10 +39,10 @@ theorem zisk_riscv_compliant_program_bus_divu
     env.exec_eq_divu := by
   cases env with
   | divu divu_input r1 r2 rd bus v r_a
-         pins h_match_primary promises bounds h_row_constraints h_op2_ne =>
+         pins h_match_primary promises bounds h_row_constraints h_arith_table h_op2_ne =>
     simp only [OpEnvelope.exec_eq_divu]
     exact ZiskFv.Equivalence.Divu.equiv_DIVU state divu_input r1 r2 rd bus m r_main v r_a
-      pins h_match_primary promises bounds h_row_constraints h_op2_ne
+      pins h_match_primary promises bounds h_row_constraints h_arith_table h_op2_ne
   | _ => trivial
 
 /-- Defect-aware DIVU dispatcher.
@@ -55,10 +55,10 @@ theorem zisk_riscv_compliant_program_bus_divu_except_known_defects
     env.exec_eq_divu := by
   cases env with
   | divu divu_input r1 r2 rd bus v r_a
-         pins h_match_primary promises bounds h_row_constraints h_op2_ne =>
+         pins h_match_primary promises bounds h_row_constraints h_arith_table h_op2_ne =>
     simp only [OpEnvelope.exec_eq_divu]
     exact ZiskFv.Equivalence.Divu.equiv_DIVU state divu_input r1 r2 rd bus m r_main v r_a
-      pins h_match_primary promises bounds h_row_constraints h_op2_ne
+      pins h_match_primary promises bounds h_row_constraints h_arith_table h_op2_ne
   | _ => trivial
 
 end ZiskFv.Compliance

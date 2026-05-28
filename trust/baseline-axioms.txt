@@ -2,21 +2,19 @@
 # Run `trust/scripts/regenerate.sh` after any legitimate trust-surface change.
 # Format: <sha256-prefix>  <file>:<line>  <kind>  <name>
 #
-# Total entries: 82
+# Total entries: 80
 #
-5146b31aab2412d7  ZiskFv/Airs/Arith/Ranges.lean:60  axiom     arith_mul_table_lookup_sound
-5023f778af7563b7  ZiskFv/Airs/Arith/Ranges.lean:70  axiom     arith_div_table_lookup_sound
-8c6c6e5b2f3462c0  ZiskFv/Airs/Arith/Ranges.lean:344  axiom     arith_table_op_div_rem_signed_d_sign_pin
-c66916b28bbea235  ZiskFv/Airs/Arith/Ranges.lean:367  axiom     arith_table_op_div_rem_signed_w_d_sign_pin
-93b63a1c68a6dad5  ZiskFv/Airs/Arith/Ranges.lean:465  axiom     arith_table_op_divw_operand_pin
-a0393e8c59f1c0f6  ZiskFv/Airs/Arith/Ranges.lean:619  axiom     arith_div_np_eq_msb_of_dividend
-fa99203f44f899fd  ZiskFv/Airs/Arith/Ranges.lean:647  axiom     arith_div_nb_eq_msb_of_divisor
-5388c4bab53855b4  ZiskFv/Airs/Arith/Ranges.lean:719  axiom     arith_div_remainder_bound
-8385759630519673  ZiskFv/Airs/Arith/Ranges.lean:748  axiom     arith_div_remainder_bound_unsigned
-4368d4be9eec39ce  ZiskFv/Airs/Arith/Ranges.lean:786  axiom     arith_div_remainder_bound_unsigned_w
-8113c5562ed67ef8  ZiskFv/Airs/Arith/Ranges.lean:800  axiom     arith_div_remainder_bound_signed_w
-4795fba538119f8e  ZiskFv/Airs/Arith/Ranges.lean:1172  axiom     arith_mul_na_eq_msb_of_a
-e5e831f6110f53e0  ZiskFv/Airs/Arith/Ranges.lean:1199  axiom     arith_mul_nb_eq_msb_of_b
+8c6c6e5b2f3462c0  ZiskFv/Airs/Arith/Ranges.lean:321  axiom     arith_table_op_div_rem_signed_d_sign_pin
+c66916b28bbea235  ZiskFv/Airs/Arith/Ranges.lean:344  axiom     arith_table_op_div_rem_signed_w_d_sign_pin
+93b63a1c68a6dad5  ZiskFv/Airs/Arith/Ranges.lean:442  axiom     arith_table_op_divw_operand_pin
+a0393e8c59f1c0f6  ZiskFv/Airs/Arith/Ranges.lean:600  axiom     arith_div_np_eq_msb_of_dividend
+fa99203f44f899fd  ZiskFv/Airs/Arith/Ranges.lean:628  axiom     arith_div_nb_eq_msb_of_divisor
+5388c4bab53855b4  ZiskFv/Airs/Arith/Ranges.lean:700  axiom     arith_div_remainder_bound
+8385759630519673  ZiskFv/Airs/Arith/Ranges.lean:729  axiom     arith_div_remainder_bound_unsigned
+4368d4be9eec39ce  ZiskFv/Airs/Arith/Ranges.lean:767  axiom     arith_div_remainder_bound_unsigned_w
+8113c5562ed67ef8  ZiskFv/Airs/Arith/Ranges.lean:781  axiom     arith_div_remainder_bound_signed_w
+4795fba538119f8e  ZiskFv/Airs/Arith/Ranges.lean:1181  axiom     arith_mul_na_eq_msb_of_a
+e5e831f6110f53e0  ZiskFv/Airs/Arith/Ranges.lean:1208  axiom     arith_mul_nb_eq_msb_of_b
 f44f05cf9d736e28  ZiskFv/Airs/Binary/BinaryRanges.lean:291  axiom     binary_w_sext_choice_pin
 d96debfe468fadd0  ZiskFv/Airs/Binary/BinaryRanges.lean:317  axiom     binary_w_mode_carry_7_zero
 a4e475d3cb9046f9  ZiskFv/Airs/MemoryBus/MemBridge.lean:255  axiom     main_store_pc_emission_bundle

@@ -22,8 +22,8 @@ Status key:
 
 | Name | Status | Audit |
 |---|---|---|
-| `arith_mul_table_lookup_sound` | protocol boundary | This is the shared ArithMul lookup/permutation soundness assumption. It is not an opcode fact and is expected to remain until the global lookup/permutation argument is modeled. |
-| `arith_div_table_lookup_sound` | protocol boundary | Same boundary for ArithDiv. Opcode projections should depend on this, not become independent axioms. |
+| `arith_mul_table_lookup_sound` | retired in T5 | The shared ArithMul lookup/permutation axiom was removed. Canonical and compatibility wrappers now consume explicit row-native `ArithTableSpec (ArithMul.rowAt v r)` witnesses. |
+| `arith_div_table_lookup_sound` | retired in T5 | Same boundary for ArithDiv. Canonical and compatibility DIV/REM-family proofs now consume explicit row-native `ArithTableSpec (ArithDiv.rowAt v r)` witnesses instead of calling a lookup axiom inside the proof. |
 
 ## Baseline ArithTable Opcode Facts
 
@@ -33,20 +33,20 @@ Status key:
 | `arith_table_op_div_rem_signed_w_d_sign_pin` | not pure table / dynamic-or-range proof needed | W-mode analog of the previous row. It cannot be a pure Clean finite-table projection because the table lookup does not expose concrete `d[]` chunks. |
 | `arith_table_op_mulw_operand_pin` | not pure table / W operand proof needed | C3.2-P3 corrected the earlier audit: the lookup tuple has mode/sign/range selectors, not concrete `a_2/a_3/b_2/b_3` chunks. The upper-operand zero fact must come from W-mode row constraints / bus shape, under an independently justified W-mode premise. |
 | `arith_table_op_divw_operand_pin` | not pure table / W operand proof needed | Same for DIV/REM W-family operands and upper remainder chunks. The table lookup can supply `m32/div/range_*` selectors, but not concrete zero chunk values. |
-| `arith_table_op_div_rem_signed_mode_pin` | derived-via-lookup | Already theorem from `Div.div_rem_signed_mode_pin` plus `arith_div_table_lookup_sound`. True static non-W signed DIV/REM mode fact. |
-| `arith_table_op_div_rem_main_selector_pin` | derived-via-lookup | Already theorem from `Div.div_rem_main_selector_pin` plus `arith_div_table_lookup_sound`. True selector projection. |
+| `arith_table_op_div_rem_signed_mode_pin` | derived-via-row-witness | Already theorem from `Div.div_rem_signed_mode_pin` plus explicit `ArithDiv.ArithTableSpec`. True static non-W signed DIV/REM mode fact. |
+| `arith_table_op_div_rem_main_selector_pin` | derived-via-row-witness | Already theorem from `Div.div_rem_main_selector_pin` plus explicit `ArithDiv.ArithTableSpec`. True selector projection. |
 | `arith_table_op_mul_mode_pin` | false-as-static / dynamic-proof-needed | Pins `na = nb = np = 0` for `MUL`. The replacement already in the tree shows the true static facts are only `mul_basic_mode_pin`, range pins, and `mul_np_xor_or_zero_product_shape`; exceptional sign rows exist. Correctness must use the dynamic carry/range proof or remain defect-gated. |
-| `arith_table_op_mul_main_selector_pin` | derived-via-lookup | Already theorem from `Mul.mul_main_selector_pin` plus `arith_mul_table_lookup_sound`. True selector projection. |
-| `arith_table_op_div_rem_unsigned_mode_pin` | derived-via-lookup | Already theorem from `Div.div_rem_unsigned_mode_pin` plus `arith_div_table_lookup_sound`. True static DIVU/REMU mode fact. |
-| `arith_table_op_div_rem_unsigned_main_selector_pin` | derived-via-lookup | Already theorem from `Div.div_rem_unsigned_main_selector_pin` plus `arith_div_table_lookup_sound`. True selector projection. |
+| `arith_table_op_mul_main_selector_pin` | derived-via-row-witness | Already theorem from `Mul.mul_main_selector_pin` plus explicit `ArithMul.ArithTableSpec`. True selector projection. |
+| `arith_table_op_div_rem_unsigned_mode_pin` | derived-via-row-witness | Already theorem from `Div.div_rem_unsigned_mode_pin` plus explicit `ArithDiv.ArithTableSpec`. True static DIVU/REMU mode fact. |
+| `arith_table_op_div_rem_unsigned_main_selector_pin` | derived-via-row-witness | Already theorem from `Div.div_rem_unsigned_main_selector_pin` plus explicit `ArithDiv.ArithTableSpec`. True selector projection. |
 | `arith_table_op_div_rem_unsigned_w_mode_pin` | false-as-static | Pins `sext = 0` for all DIVUW/REMUW rows. Clean has `Counterexamples.divuw_sext_zero_not_static`, so this cannot be a table projection. The true static subset is `div_rem_unsigned_w_basic_mode_pin`. |
 | `arith_table_op_div_rem_signed_w_mode_pin` | false-as-static | Pins `sext = 0` for all DIVW/REMW rows. Clean has `Counterexamples.divw_sext_zero_not_static`, so this cannot be a table projection. The true static subset is `div_rem_signed_w_basic_mode_pin`. |
-| `arith_table_op_mulhu_mode_pin` | derived-via-lookup | Already theorem from `Mul.mulhu_mode_pin` plus `arith_mul_table_lookup_sound`. True static MULHU mode fact. |
-| `arith_table_op_mulhu_main_selector_pin` | derived-via-lookup | Already theorem from `Mul.mulhu_main_selector_pin` plus `arith_mul_table_lookup_sound`. True selector projection. |
+| `arith_table_op_mulhu_mode_pin` | derived-via-row-witness | Already theorem from `Mul.mulhu_mode_pin` plus explicit `ArithMul.ArithTableSpec`. True static MULHU mode fact. |
+| `arith_table_op_mulhu_main_selector_pin` | derived-via-row-witness | Already theorem from `Mul.mulhu_main_selector_pin` plus explicit `ArithMul.ArithTableSpec`. True selector projection. |
 | `arith_table_op_mulh_mode_pin` | false-as-static / dynamic-proof-needed | Its basic mode/boolean subset is true and already derived, but the `np_xor` conclusion is false as a static table fact. Clean proves `Counterexamples.mulh_np_xor_not_static`. C3.2 needs a different signed high-half dynamic proof or a defect. |
-| `arith_table_op_mulh_main_selector_pin` | derived-via-lookup | Already theorem from `Mul.mulh_main_selector_pin` plus `arith_mul_table_lookup_sound`. True selector projection. |
+| `arith_table_op_mulh_main_selector_pin` | derived-via-row-witness | Already theorem from `Mul.mulh_main_selector_pin` plus explicit `ArithMul.ArithTableSpec`. True selector projection. |
 | `arith_table_op_mulhsu_mode_pin` | false-as-static / dynamic-proof-needed | Same problem as MULH: basic facts are true and already derived, but static `np_xor` is false. Clean proves `Counterexamples.mulhsu_np_xor_not_static`. |
-| `arith_table_op_mulhsu_main_selector_pin` | derived-via-lookup | Already theorem from `Mul.mulhsu_main_selector_pin` plus `arith_mul_table_lookup_sound`. True selector projection. |
+| `arith_table_op_mulhsu_main_selector_pin` | derived-via-row-witness | Already theorem from `Mul.mulhsu_main_selector_pin` plus explicit `ArithMul.ArithTableSpec`. True selector projection. |
 | `arith_table_op_mulw_mode_pin` | false-as-static | Pins `sext = 0` and `np_xor` for all MULW rows. Clean has `Counterexamples.mulw_sext_zero_not_static`; the true static subset is `mulw_basic_mode_pin`. Any remaining signed-product relation must be proved dynamically. |
 
 ## Adjacent Sign / Bound Facts
@@ -81,6 +81,22 @@ The old opcode-shaped ArithTable axiom family splits into three groups:
 The third group cannot be retired by deriving the same statement. It must be
 replaced by dynamic proofs from row constraints/range facts, or by explicit
 defects if the full constraints admit a bad witness.
+
+## T5 Canonical Lookup Split
+
+T5 routes all 13 canonical `MUL*`, `DIV*`, and `REM*` equivalence theorems
+through row-native `_of_table` wrappers. Each canonical theorem now exposes one
+structural `h_arith_table` binder for the selected Arith provider row, and the
+semantic closures no longer include `arith_mul_table_lookup_sound` or
+`arith_div_table_lookup_sound`. This is recorded as a structural-unpacking
+exception because the binder is the row membership witness formerly hidden
+inside the wrapper closure, not an opcode-specific arithmetic promise.
+
+The legacy wrappers with the old names remain as compatibility entry points,
+but their signatures now also require the explicit row-native witness. That
+preserves existing theorem names while retiring the lookup axioms from the
+trust ledger and leaving the path ready for a future Compliance-level Arith
+ensemble witness.
 
 ## C3.2-P2 Active-Closure Purge
 
