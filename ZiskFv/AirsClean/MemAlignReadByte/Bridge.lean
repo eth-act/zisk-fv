@@ -1,6 +1,5 @@
 import ZiskFv.AirsClean.MemAlignReadByte.Circuit
 import ZiskFv.Airs.MemAlignReadByte
-import ZiskFv.Channels.RangeBusSoundness
 
 /-!
 # `Valid_MemAlignReadByte` ↔ `MemAlignReadByteRow` compatibility + Component re-root
@@ -16,16 +15,29 @@ caller-supplied promise.
 ## Trust note
 
 No axioms. The Component-routed bridge inherits `circuit`'s closure
-(`memAlignReadByte_circuit_completeness` + `range_bus_sound`); both are
-already in every load opcode's closure.
+(`memAlignReadByte_circuit_completeness`) and its byte range fact comes
+from a lookup-aware witness for the Clean `lookup rangeTable8` operation.
 -/
 
 namespace ZiskFv.AirsClean.MemAlignReadByte
 
 open Goldilocks
 open ZiskFv.Channels.MemoryBus
-open ZiskFv.Channels.RangeBusSoundness (range_bus_sound)
 
+/-- Constant-expression view of a `MemAlignReadByteRow`, used when
+    specializing lookup-aware Clean soundness to one concrete row. -/
+@[reducible]
+def constVar (row : MemAlignReadByteRow FGL) : Var MemAlignReadByteRow FGL where
+  sel_high_4b := .const row.sel_high_4b
+  sel_high_2b := .const row.sel_high_2b
+  sel_high_b := .const row.sel_high_b
+  direct_value := .const row.direct_value
+  composed_value := .const row.composed_value
+  value_16b := .const row.value_16b
+  value_8b := .const row.value_8b
+  byte_value := .const row.byte_value
+  addr_w := .const row.addr_w
+  step := .const row.step
 
 /-- Project a `Valid_MemAlignReadByte` at row `r` into a Clean
     `MemAlignReadByteRow FGL`. -/
@@ -94,6 +106,29 @@ def constraints_at
       + v.value_8b r * value_8b_factor (v.sel_high_2b r) (v.sel_high_b r)
       + v.value_16b r * value_16b_factor (v.sel_high_2b r)) = 0
 
+/-- Lookup-aware Clean witness for the byte-value range lookup in a
+    selected MemAlignReadByte row. This exposes the real
+    `lookup (rangeTable8) byte_value` operation from `main`; it is
+    structural evidence, not a replacement range axiom. -/
+structure RangeLookupWitness
+    (v : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL) (r : ℕ) where
+  offset : ℕ
+  env : Environment FGL
+  holds :
+    ConstraintsHold.Soundness env
+      ((main (constVar (rowAt v r))).operations offset)
+
+/-- Project the byte-value range fact supplied by the Clean lookup
+    operation in `MemAlignReadByte.main`. -/
+theorem byte_value_range_of_lookup_aware_const_soundness
+    {v : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL} {r : ℕ}
+    (w : RangeLookupWitness v r) :
+    (v.byte_value r).val < 2 ^ 8 := by
+  have h_holds := w.holds
+  simp only [main, circuit_norm] at h_holds
+  rcases h_holds with ⟨h_byte_range, _h0, _h1, _h2, _h_composed⟩
+  simpa [rowAt, constVar] using h_byte_range
+
 /-- **Bridge theorem.** Given a row of a `Valid_MemAlignReadByte`
     satisfying the 4 Clean Component constraints + the boolean
     assumptions + the `bits(8)` range bound, the MemAlignReadByte Spec
@@ -117,28 +152,33 @@ own `core_every_row` PIL constraints, rather than as a
 caller-supplied promise hypothesis.
 
 `Spec` carries the `bits(8)` `byte_value` bound as its 2nd conjunct;
-that conjunct is discharged inside `circuit.soundness` from
-`range_bus_sound`. Routing through `MemAlignReadByte.spec_via_component`
-makes the Clean Component genuinely load-bearing for the load
-opcodes: their `#print axioms` reaches `memAlignReadByte_circuit_completeness`.
+that conjunct is supplied from the Clean `lookup rangeTable8` operation
+exposed by `RangeLookupWitness`. Routing through
+`MemAlignReadByte.spec_via_component` makes the Clean Component genuinely
+load-bearing for the load opcodes: their `#print axioms` reaches
+`memAlignReadByte_circuit_completeness`.
 -/
 
 /-- **C2 re-root entry point.** From the MemAlignReadByte AIR's
-    `core_every_row` PIL constraints at row `r`, derive `byte_value`'s
-    `< 256` range bound **through the Clean Component** (its proven
-    `Spec`, via `spec_via_component`). This is what the LBU / LHU /
-    LWU narrow loads consume — making `memAlignReadByteComponent`
-    load-bearing for those opcodes. -/
+    `core_every_row` PIL constraints plus lookup-aware Clean range
+    evidence at row `r`, derive `byte_value`'s `< 256` range bound
+    **through the Clean Component** (its proven `Spec`, via
+    `spec_via_component`). This is what the LBU / LHU / LWU narrow
+    loads consume — making `memAlignReadByteComponent` load-bearing
+    for those opcodes. -/
 theorem byte_value_in_range_via_component
     (v : ZiskFv.Airs.MemAlignReadByte.Valid_MemAlignReadByte FGL FGL) (r : ℕ)
-    (h_core : ZiskFv.Airs.MemAlignReadByte.core_every_row v r) :
+    (h_core : ZiskFv.Airs.MemAlignReadByte.core_every_row v r)
+    (h_lookup : RangeLookupWitness v r) :
     (v.byte_value r).val < 2 ^ 8 := by
   obtain ⟨h_b0, h_b1, h_b2, h_composed⟩ := h_core
+  have h_byte_value_range :=
+    byte_value_range_of_lookup_aware_const_soundness h_lookup
   -- `rowAt v r` projects the AIR row into the Clean Component row;
   -- each `rowAt` field is `@[reducible]`-defeq to `v.<col> r`.
   have h_spec : Spec (rowAt v r) :=
     spec_via_component (rowAt v r) h_composed h_b0 h_b1 h_b2
-      (range_bus_sound (rowAt v r) (fun row _ => row.byte_value) 8 trivial 0)
+      h_byte_value_range
   exact h_spec.2
 
 end ZiskFv.AirsClean.MemAlignReadByte

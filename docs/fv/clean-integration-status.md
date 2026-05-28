@@ -106,10 +106,14 @@ bitwise Binary-family canonical closures (AND/ANDI/OR/ORI/XOR/XORI), from
 the static Binary-table ADD/ADDI/SUB and ADDW/ADDIW/SUBW closures, and from
 SLT/SLTI/SLTU/SLTIU. LD also no longer depends on `range_bus_sound`: its
 copyb byte passthrough is pure chunk equality, so the dead memory-entry
-range premises were removed from `LoadDerivation`. These slices derive
-mode/op pins, packed byte bounds, carry booleanity, compare-result bounds,
-and destination byte-pack bounds from exact static BinaryTable membership
-plus row-local byte-match witnesses rather than from the legacy range bus.
+range premises were removed from `LoadDerivation`. LBU/LHU/LWU no longer
+depend on `range_bus_sound` either: MemAlignByte/MemAlignReadByte byte
+bounds now flow through lookup-aware Clean `rangeTable*` witnesses in
+`MemAlignWitness`, then through the existing Component `Spec` bridge.
+These slices derive mode/op pins, packed byte bounds, carry booleanity,
+compare-result bounds, and destination byte-pack bounds from exact static
+table membership plus row-local byte-match witnesses rather than from the
+legacy range bus.
 
 The first shift-family T6 prep removed the write-value kernels' dependency on
 legacy memory-entry chunk range: the six base BinaryShift kernels now derive
@@ -990,7 +994,10 @@ longer reaches `main_store_emission_bundle_sd`; and `SB/SH/SW` no longer
 reach `main_store_emission_bundle_subword`. The global closure baseline
 drops the same T4 Main/provider memory targets, plus the MemAlign
 permutation/ROM targets. `LBU/LHU/LWU` now depend on the structural
-provider witness instead of those trust-ledger axioms.
+provider witness instead of those trust-ledger axioms. A later T7 slice
+also moved their MemAlignByte/MemAlignReadByte byte bounds from
+`range_bus_sound` to lookup-aware Clean `rangeTable*` witnesses carried by
+`MemAlignWitness`.
 
 Expected trust movement:
 

@@ -82,17 +82,22 @@ ADDED: mem-family Clean witness, MemBusChannel balance proof,
        ROM pins for addr1/addr2/main_step/b_src_ind/store_reg/store_offset,
        width pin `ind_width = 1`, same-message proof from Clean balance,
        lookup-aware provider fact deriving value_1 zero-padding from the
-       MemAlign row
+       MemAlign row, lookup-aware Clean MemAlignByte/MemAlignReadByte
+       `rangeTable*` witnesses for low-byte bounds
 
 OPCODE: ZiskFv.Equivalence.Lhu.equiv_LHU
 DROPPED: main_load_emission_bundle, lookup_consumer_matches_provider_load,
          memalign_load_perm_sound, mem_align_rom_subdoubleword_load_value_1_zero
-ADDED: same structural shape as LBU with width pin `ind_width = 2`
+ADDED: same structural shape as LBU with width pin `ind_width = 2`,
+       including the lookup-aware Clean MemAlignByte/MemAlignReadByte
+       `rangeTable*` witnesses
 
 OPCODE: ZiskFv.Equivalence.Lwu.equiv_LWU
 DROPPED: main_load_emission_bundle, lookup_consumer_matches_provider_load,
          memalign_load_perm_sound
-ADDED: same structural shape as LBU with width pin `ind_width = 4`
+ADDED: same structural shape as LBU with width pin `ind_width = 4`,
+       including the lookup-aware Clean MemAlignByte/MemAlignReadByte
+       `rangeTable*` witnesses
 
 OPCODE: ZiskFv.Equivalence.Lb.equiv_LB
 DROPPED: main_sext_load_emission_bundle, lookup_consumer_matches_provider_load,

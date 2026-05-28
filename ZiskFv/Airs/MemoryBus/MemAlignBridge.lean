@@ -343,10 +343,10 @@ into the `high_bytes_zero_for_width` predicate. -/
 
     **C2 re-root:** likewise the MemAlignReadByte `byte_value < 256`
     bound is derived from the MemAlignReadByte AIR's own `core_every_row`
-    PIL constraints through the Clean Component. The general MemAlign
-    branch's low-value bounds are carried by the structural provider
-    witness because the MemAlignRom table is not yet extracted as a
-    first-class Lean table. -/
+    PIL constraints plus lookup-aware Clean range evidence. The general
+    MemAlign branch's low-value bounds are carried by the structural
+    provider witness because the MemAlignRom table is not yet extracted
+    as a first-class Lean table. -/
 
 /-- **Derived theorem** replacing the old
     `memalign_load_high_bytes_zero` axiom. Given a structural provider
@@ -356,15 +356,17 @@ into the `high_bytes_zero_for_width` predicate. -/
 
     **C1 re-root.** The MemAlignByte branch's `bus_byte < 256` bound
     is derived from `h_mab_core` (the MemAlignByte AIR's own
-    `core_every_row` PIL constraints) **through the Clean Component**
-    (`bus_byte_in_range_via_component`) — not a caller promise. This
-    makes `memAlignByteComponent` load-bearing for LBU / LHU / LWU.
+    `core_every_row` PIL constraints) and `h_mab_lookup` (the Clean
+    `lookup rangeTable*` evidence) **through the Clean Component**
+    (`bus_byte_in_range_via_component`) — not from `range_bus_sound`.
+    This makes `memAlignByteComponent` load-bearing for LBU / LHU / LWU.
 
     **C2 re-root.** Likewise the MemAlignReadByte branch's
     `byte_value < 256` bound is derived from `h_marb_core` (the
     MemAlignReadByte AIR's own `core_every_row` PIL constraints)
+    and `h_marb_lookup` (the Clean `lookup rangeTable8` evidence)
     **through the Clean Component** (`byte_value_in_range_via_component`)
-    — not a caller promise. This makes `memAlignReadByteComponent`
+    — not from `range_bus_sound`. This makes `memAlignReadByteComponent`
     load-bearing for LBU / LHU / LWU. -/
 lemma memalign_subdoubleword_load_high_bytes_zero
     (main : Valid_Main FGL FGL)
@@ -380,6 +382,10 @@ lemma memalign_subdoubleword_load_high_bytes_zero
              ∨ main.ind_width r_main = 4)
     (h_mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r)
     (h_marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r)
+    (h_mab_lookup :
+      ∀ r, ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness mab r)
+    (h_marb_lookup :
+      ∀ r, ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness marb r)
     (h_provider : SubdoublewordLoadProviderWitness main mab marb ma r_main e) :
     high_bytes_zero_for_width e (main.ind_width r_main) := by
   rcases h_provider.provider with
@@ -389,7 +395,7 @@ lemma memalign_subdoubleword_load_high_bytes_zero
     have h_v1 := memalign_byte_load_high_bytes_zero mab r e h_match
     have h_v0_lt := memalign_byte_load_low_bytes_zero mab r e h_match
       (ZiskFv.AirsClean.MemAlignByte.bus_byte_in_range_via_component
-        mab r (h_mab_core r))
+        mab r (h_mab_core r) (h_mab_lookup r))
     refine ⟨?_, ?_, ?_⟩ <;> intro h_w
     · exact ⟨h_v1, h_v0_lt⟩
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)
@@ -401,7 +407,7 @@ lemma memalign_subdoubleword_load_high_bytes_zero
     have h_v1 := memalign_read_byte_load_high_bytes_zero marb r e h_match
     have h_v0_lt := memalign_read_byte_load_low_bytes_zero marb r e h_match
       (ZiskFv.AirsClean.MemAlignReadByte.byte_value_in_range_via_component
-        marb r (h_marb_core r))
+        marb r (h_marb_core r) (h_marb_lookup r))
     refine ⟨?_, ?_, ?_⟩ <;> intro h_w
     · exact ⟨h_v1, h_v0_lt⟩
     · exfalso; rw [h_w_eq] at h_w; exact absurd h_w (by decide)

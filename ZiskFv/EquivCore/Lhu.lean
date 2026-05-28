@@ -120,7 +120,7 @@ theorem equiv_LHU_of_discharged
   obtain ⟨exec_row, e0, e1, e2⟩ := bus
   obtain ⟨h_ext, h_op⟩ := pins
   obtain ⟨mstatus, pmaRegion, misa, mseccfg⟩ := regs
-  obtain ⟨mab, marb, ma, mab_core, marb_core, h_provider⟩ := align
+  obtain ⟨mab, marb, ma, mab_core, marb_core, mab_lookup, marb_lookup, h_provider⟩ := align
   obtain ⟨risc_v_assumptions, h_opcode_assumptions, h_exec_len,
           h_e0_mult, h_e1_mult, h_nextPC_matches,
           h_m0_mult, h_m0_as, h_m1_mult, h_m1_as, h_m2_mult, h_m2_as⟩ := promises
@@ -139,7 +139,7 @@ theorem equiv_LHU_of_discharged
   have h_lhu_packed :=
     ZiskFv.ZiskCircuit.LoadDerivation.load_lhu_c_packed
       main r_main mab marb ma e1 e2 h_copy0 h_copy1 h_ext h_op h_width
-      h_main_emit_b h_main_emit_c mab_core marb_core h_provider
+      h_main_emit_b h_main_emit_c mab_core marb_core mab_lookup marb_lookup h_provider
   have h_rd_val_derived :
       U64.toBV #v[byteAt e2 0, byteAt e2 1, byteAt e2 2, byteAt e2 3,
                   byteAt e2 4, byteAt e2 5, byteAt e2 6, byteAt e2 7]

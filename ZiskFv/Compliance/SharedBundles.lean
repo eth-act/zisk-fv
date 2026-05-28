@@ -9,6 +9,8 @@ import ZiskFv.Airs.MemAlignByte
 import ZiskFv.Airs.MemAlignReadByte
 import ZiskFv.Airs.MemAlign
 import ZiskFv.Airs.MemoryBus.MemAlignBridge
+import ZiskFv.AirsClean.MemAlignByte.Bridge
+import ZiskFv.AirsClean.MemAlignReadByte.Bridge
 import ZiskFv.AirsClean.Main.Bridge
 import ZiskFv.AirsClean.ArithMul.Bridge
 import ZiskFv.AirsClean.ArithDiv.Bridge
@@ -236,7 +238,13 @@ structure ModeRegsFull where
     MemAlign-family permutation and MemAlignRom trust-ledger axioms with
     an explicit selected-provider-row witness. The general MemAlign
     branch carries the ROM-derived row facts because `MemAlignRom` is not
-    currently extracted as a first-class Lean table. -/
+    currently extracted as a first-class Lean table.
+
+    **T7 range re-root.** `mab_lookup` / `marb_lookup` expose
+    lookup-aware Clean `ConstraintsHold.Soundness` for the selected
+    MemAlignByte / MemAlignReadByte rows. The byte bounds now come from
+    those concrete `lookup rangeTable*` operations instead of
+    `range_bus_sound`. -/
 structure MemAlignWitness
     (main : ZiskFv.Airs.Main.Valid_Main FGL FGL)
     (r_main : ℕ)
@@ -246,6 +254,10 @@ structure MemAlignWitness
   ma : ZiskFv.Airs.MemAlign.Valid_MemAlign FGL FGL
   mab_core : ∀ r, ZiskFv.Airs.MemAlignByte.core_every_row mab r
   marb_core : ∀ r, ZiskFv.Airs.MemAlignReadByte.core_every_row marb r
+  mab_lookup :
+    ∀ r, ZiskFv.AirsClean.MemAlignByte.RangeLookupWitness mab r
+  marb_lookup :
+    ∀ r, ZiskFv.AirsClean.MemAlignReadByte.RangeLookupWitness marb r
   provider :
     ZiskFv.Airs.MemoryBus.MemAlignBridge.SubdoublewordLoadProviderWitness
       main mab marb ma r_main e
