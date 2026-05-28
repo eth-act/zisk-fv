@@ -18,16 +18,15 @@ T7 starts from a single ensemble statement for the RV64IM-supported Clean
 surface rather than family-local assembly artefacts.  This module assembles
 the migrated components that currently exist:
 
-* Main's operation-bus consumer component;
-* Main's ROM + memory-bus consumer component;
+* Main's unified ROM + memory-bus + operation-bus consumer component;
 * BinaryAdd plus lookup-aware Binary and BinaryExtension providers;
 * ArithMul and ArithDiv row components;
 * Mem, MemAlign, MemAlignByte, and MemAlignReadByte memory providers.
 
-This is a T7.1 skeleton, not the final T7 theorem.  The two Main surfaces
-are still split into separate components, so T7.2/T7.3 must add the row
-coherence and constructibility statement before canonical theorems may be
-claimed to be rooted on this ensemble.
+This is still not the final T7 theorem.  The Main row is now coherent across
+the operation and memory channels, but T7.2/T7.3 must still add the
+constructibility statement and re-root canonical theorems before those
+theorems may be claimed to be rooted on this ensemble.
 
 ## Trust note
 
@@ -46,27 +45,21 @@ open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 
 /-- The currently migrated full Clean ensemble for the supported RV64IM
     surface. It finishes the operation and memory channels and includes
-    lookup-aware Binary/BinaryExtension providers, but it still exposes
-    split Main op-bus and memory-bus components. -/
+    lookup-aware Binary/BinaryExtension providers. Main is represented by
+    one row-coherent component exposing both operation-bus and memory-bus
+    interactions. -/
 def fullRv64imEnsemble (length : ℕ) (program : Program length) :
     FormalEnsemble FGL unit :=
   SoundEnsemble.empty FGL unit
-    |>.addTable ZiskFv.AirsClean.Main.component
-        (by simp [circuit_norm, ZiskFv.AirsClean.Main.component,
-          ZiskFv.AirsClean.Main.circuit,
-          ZiskFv.AirsClean.Main.mainWithOpBusElaborated])
-        (by simp [circuit_norm, ZiskFv.AirsClean.Main.component,
-          ZiskFv.AirsClean.Main.circuit,
-          ZiskFv.AirsClean.Main.mainWithOpBusElaborated])
-    |>.addTable (ZiskFv.AirsClean.Main.componentWithRomAndMemBus length program)
+    |>.addTable (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program)
         (by simp [circuit_norm,
-          ZiskFv.AirsClean.Main.componentWithRomAndMemBus,
-          ZiskFv.AirsClean.Main.circuitWithRomAndMemBus,
-          ZiskFv.AirsClean.Main.mainWithRomAndMemBusElaborated])
+          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus,
+          ZiskFv.AirsClean.Main.circuitWithRomMemAndOpBus,
+          ZiskFv.AirsClean.Main.mainWithRomMemAndOpBusElaborated])
         (by simp [circuit_norm,
-          ZiskFv.AirsClean.Main.componentWithRomAndMemBus,
-          ZiskFv.AirsClean.Main.circuitWithRomAndMemBus,
-          ZiskFv.AirsClean.Main.mainWithRomAndMemBusElaborated])
+          ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus,
+          ZiskFv.AirsClean.Main.circuitWithRomMemAndOpBus,
+          ZiskFv.AirsClean.Main.mainWithRomMemAndOpBusElaborated])
     |>.addTable ZiskFv.AirsClean.BinaryAdd.component
         (by simp [circuit_norm, ZiskFv.AirsClean.BinaryAdd.component,
           ZiskFv.AirsClean.BinaryAdd.circuit,
@@ -141,15 +134,12 @@ def fullRv64imEnsemble (length : ℕ) (program : Program length) :
           clear h_mem
           simp only [circuit_norm, Ensemble.allTables] at h
           rcases h with
-            h | h | h | h | h | h | h | h | h | h | h | h <;>
+            h | h | h | h | h | h | h | h | h | h | h <;>
             (rw [h]
              simp [circuit_norm, Air.Flat.Component.Assumptions,
-               ZiskFv.AirsClean.Main.component,
-               ZiskFv.AirsClean.Main.circuit,
-               ZiskFv.AirsClean.Main.mainWithOpBusElaborated,
-               ZiskFv.AirsClean.Main.componentWithRomAndMemBus,
-               ZiskFv.AirsClean.Main.circuitWithRomAndMemBus,
-               ZiskFv.AirsClean.Main.mainWithRomAndMemBusElaborated,
+               ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus,
+               ZiskFv.AirsClean.Main.circuitWithRomMemAndOpBus,
+               ZiskFv.AirsClean.Main.mainWithRomMemAndOpBusElaborated,
                ZiskFv.AirsClean.BinaryAdd.component,
                ZiskFv.AirsClean.BinaryAdd.circuit,
                ZiskFv.AirsClean.BinaryAdd.binaryAddElaborated,

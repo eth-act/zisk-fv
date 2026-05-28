@@ -362,4 +362,53 @@ def mainWithRomAndMemBus (length : ℕ) (program : Program length)
       aMemOpExpr, bMemOpExpr, cMemOpExpr,
       storeValueLoExpr, storeValueHiExpr, MemBusChannel]
 
+/-! ## T7.2 — unified Main row for operation and memory channels
+
+The first full-ensemble skeleton used two separate Main components: one
+over `MainRow` for the operation bus and one over `MainRowWithRom` for
+ROM/memory.  That was useful while the channels were migrated separately,
+but it leaves T7 with no structural statement that both channel surfaces are
+the same Main row.  This combined circuit exposes both channels from the
+single `MainRowWithRom.core`.
+-/
+
+/-- Main constraints + ROM lookup + memory-bus consumer emissions +
+    operation-bus consumer emission, all from one `MainRowWithRom`.
+
+The operation-bus message is exactly `opBusMessageExpr row.core`, so the
+T7 full ensemble can use one Main table instead of separate op-bus and
+ROM/memory Main tables. -/
+@[circuit_norm]
+def mainWithRomMemAndOpBus (length : ℕ) (program : Program length)
+    (row : Var MainRowWithRom FGL) : Circuit FGL Unit := do
+  mainWithRomAndMemBus length program row
+  OpBusChannel.emit (-row.core.is_external_op) (opBusMessageExpr row.core)
+
+/-- Elaborated unified Main circuit for the full Clean ensemble. -/
+@[reducible] def mainWithRomMemAndOpBusElaborated
+    (length : ℕ) (program : Program length) :
+    ElaboratedCircuit FGL MainRowWithRom unit where
+  main := mainWithRomMemAndOpBus length program
+  localLength _ := 0
+  output _ _ := ()
+  channelsWithRequirements := [MemBusChannel.toRaw, OpBusChannel.toRaw]
+  exposedChannels row _ :=
+    expose MemBusChannel
+      [ MemBusChannel.emitted (-(row.rom.a_src_mem + row.rom.a_src_reg))
+          (aMemMessageExpr row)
+      , MemBusChannel.emitted (-(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg))
+          (bMemMessageExpr row)
+      , MemBusChannel.emitted (-(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg))
+          (cMemMessageExpr row) ]
+    ++ expose OpBusChannel
+      [ OpBusChannel.emitted (-row.core.is_external_op)
+          (opBusMessageExpr row.core) ]
+  channelsLawful := by
+    simp [circuit_norm, mainWithRomMemAndOpBus, mainWithRomAndMemBus,
+      mainWithRom, main, romMessageExpr, romFlagsExpr, romStaticTable,
+      aMemMessageExpr, bMemMessageExpr, cMemMessageExpr,
+      aMemOpExpr, bMemOpExpr, cMemOpExpr,
+      storeValueLoExpr, storeValueHiExpr, opBusMessageExpr,
+      MemBusChannel, OpBusChannel]
+
 end ZiskFv.AirsClean.Main

@@ -175,6 +175,112 @@ def componentWithRomAndMemBus
     Air.Flat.Component FGL :=
   ⟨ circuitWithRomAndMemBus length program ⟩
 
+/-! ### Unified Main component for the full T7 ensemble -/
+
+/-- Soundness wrapper for the unified Main component. The added
+    operation-bus emission is an exposed channel interaction, not a new
+    Main constraint; the row-local Main/ROM/memory soundness is inherited
+    from `mainWithRomAndMemBus_soundness`. -/
+theorem mainWithRomMemAndOpBus_soundness (length : ℕ) (program : Program length) :
+    GeneralFormalCircuit.Soundness FGL
+      (mainWithRomMemAndOpBusElaborated length program)
+      (fun _ _ => True)
+      (fun row _ _ => Spec row.core) := by
+  intro offset env input_var input h_input h_assumptions h_holds
+  have h_mem :
+      ConstraintsHold.Soundness env
+        ((mainWithRomAndMemBus length program input_var).operations offset) := by
+    simpa [mainWithRomMemAndOpBus, circuit_norm] using h_holds
+  have h_sound :=
+    mainWithRomAndMemBus_soundness length program
+      offset env input_var input h_input h_assumptions h_mem
+  simpa [mainWithRomMemAndOpBus, circuit_norm, OpBusChannel, MemBusChannel] using h_sound
+
+/-- Main as one Clean `GeneralFormalCircuit` exposing both Main channel
+    surfaces from the same `MainRowWithRom`: the operation-bus consumer
+    interaction and the ROM/memory-bus consumer interactions. -/
+def circuitWithRomMemAndOpBus
+    (length : ℕ) (program : Program length) :
+    GeneralFormalCircuit FGL MainRowWithRom unit :=
+  { mainWithRomMemAndOpBusElaborated length program with
+    Assumptions := fun _ _ => True
+    Spec := fun row _ _ => Spec row.core
+    ProverAssumptions := fun _ _ _ => True
+    ProverSpec := fun _ _ _ => True
+    soundness := mainWithRomMemAndOpBus_soundness length program
+    completeness := by
+      intro offset env input_var h_env input h_input h_assumptions
+      have h_mem_env :
+          env.UsesLocalWitnessesCompleteness offset
+            ((mainWithRomAndMemBus length program input_var).operations offset) := by
+        simp [mainWithRomMemAndOpBus, circuit_norm] at h_env ⊢
+      have h_mem :=
+        ZiskFv.AirsClean.Main.mainWithRomAndMemBus_circuit_completeness
+          length program offset env input_var h_mem_env input h_input h_assumptions
+      simpa [mainWithRomMemAndOpBus, circuit_norm, OpBusChannel, MemBusChannel] using h_mem }
+
+/-- Unified Main component used by the T7 full ensemble. -/
+def componentWithRomMemAndOpBus
+    (length : ℕ) (program : Program length) :
+    Air.Flat.Component FGL :=
+  ⟨ circuitWithRomMemAndOpBus length program ⟩
+
+theorem componentWithRomMemAndOpBus_interactionsWith_memBus
+    (length : ℕ) (program : Program length) :
+    (componentWithRomMemAndOpBus length program).operations.interactionsWith
+        MemBusChannel.toRaw =
+      [ ((MemBusChannel.emitted
+            (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_mem
+              + (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg))
+            (aMemMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_mem
+              + (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_ind
+              + (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg))
+            (bMemMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.store_mem
+              + (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_ind
+              + (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg))
+            (cMemMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw) ] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨MemBusChannel.toRaw,
+      [ ((MemBusChannel.emitted
+            (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_mem
+              + (componentWithRomMemAndOpBus length program).rowInputVar.rom.a_src_reg))
+            (aMemMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_mem
+              + (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_ind
+              + (componentWithRomMemAndOpBus length program).rowInputVar.rom.b_src_reg))
+            (bMemMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw)
+      , ((MemBusChannel.emitted
+            (-((componentWithRomMemAndOpBus length program).rowInputVar.rom.store_mem
+              + (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_ind
+              + (componentWithRomMemAndOpBus length program).rowInputVar.rom.store_reg))
+            (cMemMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar)).toRaw) ]⟩ ∈
+    (componentWithRomMemAndOpBus length program).exposedChannels
+  simp [componentWithRomMemAndOpBus, circuitWithRomMemAndOpBus,
+    mainWithRomMemAndOpBusElaborated, Component.exposedChannels, expose,
+    List.map_cons, List.map_nil]
+
+theorem componentWithRomMemAndOpBus_interactionsWith_opBus
+    (length : ℕ) (program : Program length) :
+    (componentWithRomMemAndOpBus length program).operations.interactionsWith
+        OpBusChannel.toRaw =
+      [((OpBusChannel.emitted
+          (-(componentWithRomMemAndOpBus length program).rowInputVar.core.is_external_op)
+          (opBusMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar.core)).toRaw)] := by
+  apply Component.interactionsWith_of_exposedChannels
+  change ⟨OpBusChannel.toRaw,
+      [((OpBusChannel.emitted
+          (-(componentWithRomMemAndOpBus length program).rowInputVar.core.is_external_op)
+          (opBusMessageExpr (componentWithRomMemAndOpBus length program).rowInputVar.core)).toRaw)]⟩ ∈
+    (componentWithRomMemAndOpBus length program).exposedChannels
+  simp [componentWithRomMemAndOpBus, circuitWithRomMemAndOpBus,
+    mainWithRomMemAndOpBusElaborated, Component.exposedChannels, expose,
+    List.map_cons, List.map_nil]
+
 theorem romBoolSpec_of_componentWithRomAndMemBus_constraints
     (length : ℕ) (program : Program length)
     (env : Environment FGL)
