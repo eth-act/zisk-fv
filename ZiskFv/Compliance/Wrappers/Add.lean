@@ -75,6 +75,9 @@ theorem equiv_ADD
   obtain ⟨h_core, h_facts⟩ :=
     ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
       h_component h_table_spec h_provider_row
+  have h_spec_facts :=
+    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
+      h_component h_table_spec h_provider_row
   have h_emit : row.chain.b_op + 16 * row.mode.mode32 = (10 : FGL) := by
     have h_lane_eqs := h_match
     simp only [matches_entry, opBus_row_Main] at h_lane_eqs
@@ -82,8 +85,8 @@ theorem equiv_ADD
     rw [← h_op_match]
     simpa [ZiskFv.Trusted.OP_ADD] using h_main_op_add
   obtain ⟨h_mode32_zero, h_bop_val, _⟩ :=
-    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16
-      row 10 (by decide) h_core h_emit
+    ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
+      row h_spec_facts 10 (by decide) h_core h_emit
   have h_b_op : row.chain.b_op.val = ZiskFv.Airs.Tables.BinaryTable.OP_ADD := by
     simpa [ZiskFv.Airs.Tables.BinaryTable.OP_ADD] using h_bop_val
   exact ZiskFv.EquivCore.Add.equiv_ADD_of_static_row

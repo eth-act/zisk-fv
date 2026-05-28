@@ -503,14 +503,6 @@ private lemma byte_sum_from_chain_lane_match
     rw [← h_lo_match, h_match_clo]
   have h_hi_eq : memory_entry_hi e2 = c4 + c5 * 256 + c6 * 65536 + c7 * 16777216 := by
     rw [← h_hi_match, h_match_chi]
-  have h_lo_nat : (memory_entry_lo e2).val
-      = (byteAt e2 0).val + (byteAt e2 1).val * 256
-        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
-    simp only [memory_entry_lo]; exact (byteAt_lo_val_sum_eq e2).symm
-  have h_hi_nat : (memory_entry_hi e2).val
-      = (byteAt e2 4).val + (byteAt e2 5).val * 256
-        + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
-    simp only [memory_entry_hi]; exact (byteAt_hi_val_sum_eq e2).symm
   have h_lo_c_nat : (c0 + c1 * 256 + c2 * 65536 + c3 * 16777216 : FGL).val
       = c0.val + c1.val * 256 + c2.val * 65536 + c3.val * 16777216 := by
     have h_cast :
@@ -527,6 +519,26 @@ private lemma byte_sum_from_chain_lane_match
              + c7.val * 16777216 : ℕ) : FGL))) := by push_cast; ring
     rw [h_cast, Fin.val_natCast]
     apply Nat.mod_eq_of_lt; omega
+  have h_lo_bound : (memory_entry_lo e2).val < 4294967296 := by
+    have h_lo_val := congr_arg Fin.val h_lo_eq
+    rw [h_lo_c_nat] at h_lo_val
+    rw [h_lo_val]
+    omega
+  have h_hi_bound : (memory_entry_hi e2).val < 4294967296 := by
+    have h_hi_val := congr_arg Fin.val h_hi_eq
+    rw [h_hi_c_nat] at h_hi_val
+    rw [h_hi_val]
+    omega
+  have h_lo_nat : (memory_entry_lo e2).val
+      = (byteAt e2 0).val + (byteAt e2 1).val * 256
+        + (byteAt e2 2).val * 65536 + (byteAt e2 3).val * 16777216 := by
+    simp only [memory_entry_lo] at h_lo_bound ⊢
+    exact (ZiskFv.Channels.MemoryBusBytes.byteAt_lo_val_sum_eq e2 h_lo_bound).symm
+  have h_hi_nat : (memory_entry_hi e2).val
+      = (byteAt e2 4).val + (byteAt e2 5).val * 256
+        + (byteAt e2 6).val * 65536 + (byteAt e2 7).val * 16777216 := by
+    simp only [memory_entry_hi] at h_hi_bound ⊢
+    exact (ZiskFv.Channels.MemoryBusBytes.byteAt_hi_val_sum_eq e2 h_hi_bound).symm
   have h_lo_val := congr_arg Fin.val h_lo_eq
   have h_hi_val := congr_arg Fin.val h_hi_eq
   rw [h_lo_nat, h_lo_c_nat] at h_lo_val

@@ -1,5 +1,5 @@
-ZiskFv.Equivalence.Add.equiv_ADD: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_ADD
-ZiskFv.Equivalence.Addi.equiv_ADDI: ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_ADDI
+ZiskFv.Equivalence.Add.equiv_ADD: ZiskFv.Trusted.transpile_ADD
+ZiskFv.Equivalence.Addi.equiv_ADDI: ZiskFv.Trusted.transpile_ADDI
 ZiskFv.Equivalence.Addiw.equiv_ADDIW: ZiskFv.Airs.Binary.binary_w_mode_carry_7_zero, ZiskFv.Airs.Binary.binary_w_sext_choice_pin, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_ADDIW
 ZiskFv.Equivalence.Addw.equiv_ADDW: ZiskFv.Airs.Binary.binary_w_mode_carry_7_zero, ZiskFv.Airs.Binary.binary_w_sext_choice_pin, ZiskFv.Channels.RangeBusSoundness.range_bus_sound, ZiskFv.Trusted.transpile_ADDW
 ZiskFv.Equivalence.And.equiv_AND: ZiskFv.Trusted.transpile_AND

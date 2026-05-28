@@ -713,6 +713,65 @@ lemma logic_row_mode_pins_of_emit_op_lt_16
     by simpa [ZiskFv.AirsClean.Binary.validOfRow] using h_bop,
     by simpa [ZiskFv.AirsClean.Binary.validOfRow] using h_bop_or⟩
 
+/-- Row-native static-table variant of
+    `logic_row_mode_pins_of_emit_op_lt_16`. The opcode bound comes from exact
+    static BinaryTable membership instead of the legacy Binary range bus. -/
+lemma logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
+    (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
+    (h_static : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts row)
+    (op_val : ℕ)
+    (h_op_lt : op_val < 16)
+    (h_core : ZiskFv.Airs.Binary.core_every_row
+      (ZiskFv.AirsClean.Binary.validOfRow row) 0)
+    (h_emit : row.chain.b_op + 16 * row.mode.mode32 = (op_val : FGL)) :
+    row.mode.mode32 = 0
+      ∧ row.chain.b_op.val = op_val
+      ∧ row.chain.b_op_or_sext.val = op_val := by
+  have h_bop_lt : row.chain.b_op.val < 514 := by
+    have h := ZiskFv.AirsClean.BinaryTable.spec_op_val_lt_514 h_static.1
+    simpa using h
+  have h_mode_bool : row.mode.mode32 * (1 - row.mode.mode32) = 0 := by
+    simpa [ZiskFv.Airs.Binary.boolean_mode32,
+      ZiskFv.AirsClean.Binary.validOfRow] using h_core.1
+  rcases fgl_boolean_cases_local h_mode_bool with h_mode_zero | h_mode_one
+  · have h_bop_val : row.chain.b_op.val = op_val := by
+      have hv := congrArg Fin.val h_emit
+      rw [Fin.val_add, Fin.val_mul, Fin.val_natCast] at hv
+      have hsmall : row.chain.b_op.val + 16 * row.mode.mode32.val < GL_prime := by
+        rw [h_mode_zero]
+        omega
+      have hmulsmall : 16 * row.mode.mode32.val < GL_prime := by
+        rw [h_mode_zero]
+        omega
+      have hopsmall : op_val < GL_prime := by omega
+      simp [Nat.mod_eq_of_lt hsmall, Nat.mod_eq_of_lt hmulsmall,
+        Nat.mod_eq_of_lt (by omega : 16 < GL_prime),
+        Nat.mod_eq_of_lt hopsmall] at hv
+      omega
+    have h_bop_or :=
+      b_op_or_sext_val_eq_of_mode32_zero
+        (ZiskFv.AirsClean.Binary.validOfRow row) 0 op_val
+        h_core (by simpa [ZiskFv.AirsClean.Binary.validOfRow] using h_mode_zero)
+        (by simpa [ZiskFv.AirsClean.Binary.validOfRow] using h_bop_val)
+    exact ⟨h_mode_zero, h_bop_val,
+      by simpa [ZiskFv.AirsClean.Binary.validOfRow] using h_bop_or⟩
+  · exfalso
+    have h_bad : row.chain.b_op.val + 16 = op_val := by
+      have hv := congrArg Fin.val h_emit
+      rw [Fin.val_add, Fin.val_mul, Fin.val_natCast] at hv
+      have hsmall : row.chain.b_op.val + 16 * row.mode.mode32.val < GL_prime := by
+        rw [h_mode_one]
+        omega
+      have hmulsmall : 16 * row.mode.mode32.val < GL_prime := by
+        rw [h_mode_one]
+        omega
+      have hopsmall : op_val < GL_prime := by omega
+      simp [Nat.mod_eq_of_lt hsmall, Nat.mod_eq_of_lt hmulsmall,
+        Nat.mod_eq_of_lt (by omega : 16 < GL_prime),
+        Nat.mod_eq_of_lt hopsmall] at hv
+      simpa [h_mode_one] using hv
+    omega
+
 private lemma static_binary_table_wf_row_slot7
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL)
     (h_facts : ZiskFv.AirsClean.Binary.StaticBinaryTableWfFacts row) :
@@ -973,16 +1032,66 @@ lemma byte_chain_discharge_64_of_static_row
   rcases h_facts with ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩
   rcases h_core with
     ⟨_, _, _, h_use_first_byte_bool, _, _, _⟩
-  have hc0 := ZiskFv.Airs.Binary.bin_c_0_lt_256 v 0
-  have hc1 := ZiskFv.Airs.Binary.bin_c_1_lt_256 v 0
-  have hc2 := ZiskFv.Airs.Binary.bin_c_2_lt_256 v 0
-  have hc3 := ZiskFv.Airs.Binary.bin_c_3_lt_256 v 0
-  have hc4 := ZiskFv.Airs.Binary.bin_c_4_lt_256 v 0
-  have hc5 := ZiskFv.Airs.Binary.bin_c_5_lt_256 v 0
-  have hc6 := ZiskFv.Airs.Binary.bin_c_6_lt_256 v 0
-  have hc7 := ZiskFv.Airs.Binary.bin_c_7_lt_256 v 0
-  obtain ⟨hcarry0, hcarry1, hcarry2, hcarry3, hcarry4, hcarry5, hcarry6, _⟩ :=
-    ZiskFv.Airs.Binary.binary_carry_bits_in_range v 0
+  have hc0 : (v.free_in_c_0 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h0.1.2.2.1
+  have hc1 : (v.free_in_c_1 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h1.1.2.2.1
+  have hc2 : (v.free_in_c_2 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h2.1.2.2.1
+  have hc3 : (v.free_in_c_3 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h3.1.2.2.1
+  have hc4 : (v.free_in_c_4 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h4.1.2.2.1
+  have hc5 : (v.free_in_c_5 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h5.1.2.2.1
+  have hc6 : (v.free_in_c_6 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h6.1.2.2.1
+  have hc7 : (v.free_in_c_7 0).val < 256 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h7.1.2.2.1
+  have hcarry0 : (v.carry_0 0).val < 2 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h1.1.2.2.2
+  have hcarry1 : (v.carry_1 0).val < 2 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h2.1.2.2.2
+  have hcarry2 : (v.carry_2 0).val < 2 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h3.1.2.2.2
+  have hcarry3 : (v.carry_3 0).val < 2 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h4.1.2.2.2
+  have hcarry4 : (v.carry_4 0).val < 2 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h5.1.2.2.2
+  have hcarry5 : (v.carry_5 0).val < 2 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h6.1.2.2.2
+  have hcarry6 : (v.carry_6 0).val < 2 := by
+    simpa [v, ZiskFv.AirsClean.Binary.validOfRow,
+      ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
+      ZiskFv.Airs.Tables.BinaryTable.range_conditions] using h7.1.2.2.2
   refine {
     chain_0 := ?_, chain_1 := ?_, chain_2 := ?_, chain_3 := ?_,
     chain_4 := ?_, chain_5 := ?_, chain_6 := ?_, chain_7 := ?_,
@@ -1084,7 +1193,8 @@ lemma byte_chain_discharge_64_of_static_row
     upgrades that low-bit fact to the field equality `carry_7 = 0`. -/
 lemma carry_7_zero_SUB_of_static_chain
     (v : Valid_Binary FGL FGL) (r : ℕ)
-    (out : BinaryChainStaticOut64 v r ZiskFv.Airs.Tables.BinaryTable.OP_SUB) :
+    (out : BinaryChainStaticOut64 v r ZiskFv.Airs.Tables.BinaryTable.OP_SUB)
+    (h_carry_7_bool : v.carry_7 r * (1 - v.carry_7 r) = 0) :
     v.carry_7 r = 0 := by
   obtain ⟨e, h_wf, h_op, _, _, _, _, h_flags, h_pos⟩ := out.chain_7
   obtain ⟨_, _, _, _, _, _, _, _, h_sub, _⟩ := h_wf
@@ -1093,7 +1203,7 @@ lemma carry_7_zero_SUB_of_static_chain
     exact out.pi7_eq
   have h_cout_zero : e.flags.val % 2 = 0 := (h_sub h_op).2.2.2 h_pos_one
   rw [h_flags] at h_cout_zero
-  exact boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
+  exact boolean_carry_implies_eq_zero h_carry_7_bool h_cout_zero
 
 /-- Static-provider route for the ADD final-byte carry close. The final
     ADD table row's `pos_ind = 1` branch of `wf_ADD` forces
@@ -1102,7 +1212,8 @@ lemma carry_7_zero_SUB_of_static_chain
     `carry_7 = 0`. Mirror of `carry_7_zero_SUB_of_static_chain`. -/
 lemma carry_7_zero_ADD_of_static_chain
     (v : Valid_Binary FGL FGL) (r : ℕ)
-    (out : BinaryChainStaticOut64 v r ZiskFv.Airs.Tables.BinaryTable.OP_ADD) :
+    (out : BinaryChainStaticOut64 v r ZiskFv.Airs.Tables.BinaryTable.OP_ADD)
+    (h_carry_7_bool : v.carry_7 r * (1 - v.carry_7 r) = 0) :
     v.carry_7 r = 0 := by
   obtain ⟨e, h_wf, h_op, _, _, _, _, h_flags, h_pos⟩ := out.chain_7
   obtain ⟨_, _, _, _, _, _, _, h_add, _, _, _⟩ := h_wf
@@ -1111,7 +1222,7 @@ lemma carry_7_zero_ADD_of_static_chain
     exact out.pi7_eq
   have h_cout_zero : e.flags.val % 2 = 0 := (h_add h_op).2.2 h_pos_one
   rw [h_flags] at h_cout_zero
-  exact boolean_carry_implies_eq_zero (bin_carry_7_is_boolean v r) h_cout_zero
+  exact boolean_carry_implies_eq_zero h_carry_7_bool h_cout_zero
 
 private lemma c_byte_zero_of_chain_wf_LTU
     {a b c cin flags pos : FGL}

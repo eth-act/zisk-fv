@@ -365,7 +365,7 @@ theorem equiv_SUB_of_static_lookup
       ZiskFv.Airs.Tables.BinaryTable.OP_SUB h_core h_mode32_zero h_b_op
   have h_carry_7_zero :=
     ZiskFv.EquivCore.Bridge.Binary.carry_7_zero_SUB_of_static_chain
-      v r_binary out
+      v r_binary out h_core.2.1
   have h_lane_eqs := h_match
   simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_lane_eqs
   obtain ⟨_, _, _, _, _, _, h_c_lo_m, h_c_hi_m, _, _, _, _⟩ := h_lane_eqs
@@ -447,7 +447,7 @@ theorem equiv_SUB_of_static_row
       h_mode32_zero h_b_op
   have h_carry_7_zero :=
     ZiskFv.EquivCore.Bridge.Binary.carry_7_zero_SUB_of_static_chain
-      v 0 out
+      v 0 out h_core.2.1
   have h_lane_eqs := h_match_v
   simp only [matches_entry, opBus_row_Main, opBus_row_Binary] at h_lane_eqs
   obtain ⟨_, _, _, _, _, _, h_c_lo_m, h_c_hi_m, _, _, _, _⟩ := h_lane_eqs
